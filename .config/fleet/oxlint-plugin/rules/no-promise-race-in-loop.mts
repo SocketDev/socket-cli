@@ -1,18 +1,17 @@
 /**
  * @file Per CLAUDE.md "Promise.race / Promise.any in loops" rule + the
- *   `plug-leaking-promise-race` skill: never re-race a pool that survives
- *   across iterations. Each call's handlers stack onto the surviving promises,
- *   leaking memory and deferring rejection propagation. Detects:
+ *   `plugging-promise-race` skill: never re-race a pool that survives across
+ *   iterations. Each call's handlers stack onto the surviving promises, leaking
+ *   memory and deferring rejection propagation. Detects:
  *
  *   - `Promise.race(...)` / `Promise.any(...)` syntactically inside a `for`,
  *     `for-of`, `for-in`, `while`, or `do-while` body. The semantic check
  *     (whether the racer is the SAME pool across iterations) is undecidable
  *     from syntax. We flag every race-in-loop and let the human confirm it's
  *     safe (e.g., a freshly-built array each iteration). The skill at
- *     .claude/skills/fleet/plug-leaking-promise-race/ documents the safe
- *     shapes. No autofix: the right fix is design-level (track the pool outside
- *     the loop, use AbortController, or restructure to a single race).
- *     Reporting only.
+ *     .claude/skills/fleet/plugging-promise-race/ documents the safe shapes. No
+ *     autofix: the right fix is design-level (track the pool outside the loop,
+ *     use AbortController, or restructure to a single race). Reporting only.
  */
 
 import type { AstNode, RuleContext } from '../lib/rule-types.mts'
@@ -61,7 +60,7 @@ const rule = {
     },
     messages: {
       banned:
-        'Promise.{{method}}() inside a loop — handlers stack on surviving promises across iterations and leak. See .claude/skills/fleet/plug-leaking-promise-race/SKILL.md for safe shapes.',
+        'Promise.{{method}}() inside a loop — handlers stack on surviving promises across iterations and leak. See .claude/skills/fleet/plugging-promise-race/SKILL.md for safe shapes.',
     },
     schema: [],
   },

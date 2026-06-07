@@ -4,23 +4,23 @@
  *   committed code. A bare `.skip` is a test that never runs again and rots
  *   silently. ADAPTED from `@vitest/eslint-plugin`'s `no-disabled-tests`: the
  *   fleet legitimately uses CONDITIONAL skips, so those are ALLOWED:
- *     - `it.skipIf(cond)(...)` / `it.runIf(cond)(...)` — runtime-gated, fine.
- *     - `describe(name, { skip: <expr> }, fn)` — options-object skip with any
- *       expression, fine (the fleet's coverage-mode pattern:
- *       `describe(eco, { skip: !pkgs.length }, …)`).
- *   Only an unconditional `.skip` / `x*` alias with no gating condition is
- *   reported. Scope: `*.test.*`. Report-only — un-skip vs. delete is the
- *   author's call. Built on lib/vitest-fn-call.mts.
+ *
+ *   - `it.skipIf(cond)(...)` / `it.runIf(cond)(...)` — runtime-gated, fine.
+ *   - `describe(name, { skip: <expr> }, fn)` — options-object skip with any
+ *     expression, fine (the fleet's coverage-mode pattern: `describe(eco, {
+ *     skip: !pkgs.length }, …)`). Only an unconditional `.skip` / `x*` alias
+ *     with no gating condition is reported. Scope: `*.test.*`. Report-only —
+ *     un-skip vs. delete is the author's call. Built on
+ *     lib/vitest-fn-call.mts.
  */
 
+import { TEST_FILE_RE } from '../lib/test-file.mts'
 import {
   classifyVitestCall,
   collectVitestNames,
 } from '../lib/vitest-fn-call.mts'
 
 import type { AstNode, RuleContext } from '../lib/rule-types.mts'
-
-const TEST_FILE_RE = /\.test\.(?:[mc]?[jt]s)$/
 
 // `xit` / `xtest` / `xdescribe` are unconditional-skip aliases.
 const SKIP_ALIASES: ReadonlySet<string> = new Set(['xdescribe', 'xit', 'xtest'])

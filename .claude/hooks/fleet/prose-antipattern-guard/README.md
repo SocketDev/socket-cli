@@ -31,8 +31,7 @@ path, so it holds on every platform.
 
 ## Bypass
 
-The user types `Allow prose-antipattern bypass` verbatim in a recent turn, or set
-`SOCKET_PROSE_ANTIPATTERN_GUARD_DISABLED=1` to turn the guard off entirely.
+The user types `Allow prose-antipattern bypass` verbatim in a recent turn.
 
 ## Test
 

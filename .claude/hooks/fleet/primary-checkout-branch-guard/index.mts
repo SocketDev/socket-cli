@@ -1,0 +1,151 @@
+#!/usr/bin/env node
+// Claude Code PreToolUse hook — primary-checkout-branch-guard.
+//
+// Blocks branch creation / switching in the PRIMARY checkout. Per CLAUDE.md
+// "Parallel Claude sessions": multiple sessions may share one `.git/`, so
+// `git checkout/switch <branch>`, `git checkout -b`, and `git switch -c` are
+// forbidden in the primary checkout — they yank HEAD out from under any other
+// session working in that same directory. Branch work goes in a `git worktree`.
+//
+// What it catches (a `git` command in the primary checkout):
+//   - `git checkout -b <name>` / `git checkout -B <name>`  (create + switch)
+//   - `git switch -c <name>` / `git switch -C <name>`      (create + switch)
+//   - `git switch <name>`                                  (switch existing)
+//   - `git checkout <branch>`                              (switch existing)
+//
+// What it ALLOWS (not branch ops):
+//   - `git checkout -- <file>` / `git checkout .` (file restore — has `--`
+//     or a `.` arg)
+//   - any of the above inside a LINKED worktree (the sanctioned place for
+//     branch work)
+//   - `git checkout`/`switch` with no branch argument
+//
+// Why a guard, not just the doc rule: the CLAUDE.md clause listed the
+// prohibition but shipped no enforcer, so an agent created a `fix/...` branch
+// directly in the primary checkout while two sibling worktree sessions were
+// live. The fix landed via cherry-pick; this guard stops the branch from being
+// cut in the primary checkout at all.
+//
+// Bypass: "Allow primary-branch bypass" in a recent user turn.
+//
+// Fails OPEN on its own errors (exit 0 + stderr log).
+
+import process from 'node:process'
+
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
+
+import { withBashGuard } from '../_shared/payload.mts'
+import { commandsFor } from '../_shared/shell-command.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
+
+const logger = getDefaultLogger()
+
+const BYPASS_PHRASES = [
+  'Allow primary-branch bypass',
+  'Allow primary branch bypass',
+] as const
+
+// A `git checkout` arg list that's a working-tree / file restore rather than a
+// branch switch: `git checkout -- <file>` or `git checkout .`. Conservative —
+// anything ambiguous is treated as a branch (the guard is about NOT moving
+// HEAD in the primary checkout).
+function looksLikePathRestore(args: readonly string[]): boolean {
+  return args.includes('--') || args.includes('.')
+}
+
+/**
+ * Inspect a single `git` command's args; return the branch operation it
+ * performs, or undefined if it's not a branch create/switch.
+ */
+export function branchOpKind(
+  args: readonly string[],
+): 'create' | 'switch' | undefined {
+  const sub = args.find(a => a === 'checkout' || a === 'switch')
+  if (!sub) {
+    return undefined
+  }
+  const rest = args.slice(args.indexOf(sub) + 1)
+  // Create-and-switch flags on either subcommand.
+  if (
+    rest.includes('-b') ||
+    rest.includes('-B') ||
+    rest.includes('-c') ||
+    rest.includes('-C')
+  ) {
+    return 'create'
+  }
+  if (sub === 'switch') {
+    // `git switch <name>` — switching to an existing branch. A bare `git
+    // switch` with no positional has no branch to move to → ignore.
+    const positional = rest.find(a => !a.startsWith('-'))
+    return positional ? 'switch' : undefined
+  }
+  // sub === 'checkout': a branch switch only when there's a positional arg
+  // that isn't a file-restore form.
+  if (looksLikePathRestore(rest)) {
+    return undefined
+  }
+  const positional = rest.find(a => !a.startsWith('-'))
+  return positional ? 'switch' : undefined
+}
+
+/**
+ * True when `cwd` is the PRIMARY checkout (not a linked worktree). In a linked
+ * worktree `git rev-parse --git-dir` resolves under `.git/worktrees/<name>`; in
+ * the primary it's the repo's own `.git`.
+ */
+export function isPrimaryCheckout(cwd: string): boolean {
+  const r = spawnSync('git', ['rev-parse', '--git-dir'], {
+    cwd,
+    timeout: 5_000,
+  })
+  if (r.status !== 0) {
+    // Not a git repo (or git unavailable) — nothing to guard, fail open.
+    return false
+  }
+  const gitDir = String(r.stdout).trim().replace(/\\/g, '/')
+  return !gitDir.includes('/.git/worktrees/')
+}
+
+export function firstBranchOp(
+  command: string,
+): { kind: 'create' | 'switch' } | undefined {
+  for (const c of commandsFor(command, 'git')) {
+    const kind = branchOpKind(c.args)
+    if (kind) {
+      return { kind }
+    }
+  }
+  return undefined
+}
+
+if (process.argv[1]?.endsWith('index.mts')) {
+  await withBashGuard((command, payload) => {
+    const op = firstBranchOp(command)
+    if (!op) {
+      return
+    }
+    const cwd = payload.cwd ?? process.cwd()
+    if (!isPrimaryCheckout(cwd)) {
+      // Branch work in a linked worktree is exactly what the rule wants.
+      return
+    }
+    if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)) {
+      return
+    }
+    const verb = op.kind === 'create' ? 'Creating' : 'Switching'
+    logger.error(
+      `\n[primary-checkout-branch-guard] Blocked: ${verb} a branch in the ` +
+        `PRIMARY checkout.\n` +
+        `  Mantra: branch work goes in a git worktree.\n` +
+        `  Multiple sessions may share this \`.git/\`; moving HEAD here yanks ` +
+        `it out from under any sibling session.\n` +
+        `  Fix: cut a worktree instead —\n` +
+        `    git worktree add ../<repo>-<topic> -b <branch>\n` +
+        `    cd ../<repo>-<topic>\n` +
+        `  Bypass: type "Allow primary-branch bypass" in a recent message.\n`,
+    )
+    process.exitCode = 2
+  })
+}

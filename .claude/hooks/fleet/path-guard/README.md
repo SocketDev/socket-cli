@@ -24,7 +24,7 @@ them silently. Centralizing the construction in a single `paths.mts`
 per package means a refactor is a one-file diff, and divergence
 becomes impossible because every consumer imports the same value.
 
-The companion `scripts/fleet/check-paths.mts` runs a deeper whole-repo
+The companion `scripts/fleet/check/paths-are-canonical.mts` runs a deeper whole-repo
 scan at `pnpm check` time, catching anything this hook missed.
 
 ## What it blocks
@@ -38,12 +38,12 @@ The hook fires on `Edit` and `Write` tool calls when the target path
 ends in `.mts` or `.cts`. Other extensions (`.ts`, `.mjs`, `.js`,
 `.yml`, `.json`, `.md`) pass through — TS path code lives in `.mts`
 per fleet convention, and other file types are covered by the
-`scripts/fleet/check-paths.mts` gate at commit time.
+`scripts/fleet/check/paths-are-canonical.mts` gate at commit time.
 
 ## What it allows
 
 - Edits to a `paths.mts` (the canonical constructor).
-- Edits to `scripts/fleet/check-paths.mts` (the gate itself, which
+- Edits to `scripts/fleet/check/paths-are-canonical.mts` (the gate itself, which
   legitimately enumerates patterns).
 - Edits to this hook's own files (the test suite has to enumerate
   the same patterns).
@@ -86,7 +86,7 @@ When a new package joins the workspace, add it to
 If the hook itself crashes, it writes a log line and exits `0` —
 i.e. _the edit is allowed_. A buggy security hook that blocks
 everything is worse than one that temporarily lets things through.
-The companion `scripts/fleet/check-paths.mts` gate at commit time catches
+The companion `scripts/fleet/check/paths-are-canonical.mts` gate at commit time catches
 anything the hook missed.
 
 ## Testing

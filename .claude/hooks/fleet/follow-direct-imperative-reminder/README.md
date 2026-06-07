@@ -32,12 +32,6 @@ Both signals fire: stderr reminder lands in the next turn's context.
 - Long contextual user messages. Those carry their own framing.
 - Assistant turns that hedge after the tool call. Post-action qualification is fine.
 
-## Disable
-
-```bash
-SOCKET_FOLLOW_DIRECT_IMPERATIVE_REMINDER_DISABLED=1
-```
-
 ## Related
 
 - `dont-stop-mid-queue-reminder`: Stop hook for premature "what's next?" after authorized continuous-work directives.

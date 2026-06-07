@@ -31,7 +31,7 @@ Stop hooks fire after the turn. Blocking would just truncate the findings. The w
 
 ## Configuration
 
-`SOCKET_VARIANT_ANALYSIS_REMINDER_DISABLED=1` — turn off entirely.
+No bypass — fix the underlying issue (do the variant search). The hook only reminds and never blocks.
 
 ## Test
 

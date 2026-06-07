@@ -11,14 +11,13 @@
  *   globals-off, import-based test style via lib/vitest-fn-call.mts.
  */
 
+import { TEST_FILE_RE } from '../lib/test-file.mts'
 import {
   classifyVitestCall,
   collectVitestNames,
 } from '../lib/vitest-fn-call.mts'
 
 import type { AstNode, RuleContext } from '../lib/rule-types.mts'
-
-const TEST_FILE_RE = /\.test\.(?:[mc]?[jt]s)$/
 
 // `fit` / `fdescribe` are focused aliases that carry no `.only` modifier — the
 // focus is baked into the root name.

@@ -26,10 +26,6 @@ If the build fails, you'll see the error tail in stderr. The hook still exits 0 
 pnpm --filter @socketsecurity/trusted-publisher-extension build
 ```
 
-## How to disable in tests
-
-`SOCKET_EXTENSION_BUILD_CURRENT_GUARD_DISABLED=1`.
-
 ## Test
 
 ```sh

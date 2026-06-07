@@ -87,23 +87,23 @@ test('does not block own-repo paths (socket-lib editing socket-lib paths)', asyn
   assert.equal(code, 0)
 })
 
-test('respects // socket-hook: allow cross-repo marker', async () => {
+test('respects // socket-lint: allow cross-repo marker', async () => {
   const { code } = await runHook({
     tool_name: 'Write',
     tool_input: {
       file_path: 'src/foo.ts',
-      content: `const p = '../../socket-cli/x' // socket-hook: allow cross-repo`,
+      content: `const p = '../../socket-cli/x' // socket-lint: allow cross-repo`,
     },
   })
   assert.equal(code, 0)
 })
 
-test('respects bare // socket-hook: allow marker', async () => {
+test('respects bare // socket-lint: allow marker', async () => {
   const { code } = await runHook({
     tool_name: 'Write',
     tool_input: {
       file_path: 'src/foo.ts',
-      content: `const p = '../../socket-cli/x' // socket-hook: allow`,
+      content: `const p = '../../socket-cli/x' // socket-lint: allow`,
     },
   })
   assert.equal(code, 0)

@@ -166,17 +166,3 @@ test('does NOT false-positive on "high quality" / "high-performance"', () => {
     cleanup()
   }
 })
-
-test('disabled env var short-circuits', () => {
-  const { path: p, cleanup } = makeTranscript('Critical: bug found')
-  try {
-    const result = spawnSync('node', [HOOK_PATH], {
-      input: JSON.stringify({ transcript_path: p }),
-      env: { ...process.env, SOCKET_VARIANT_ANALYSIS_REMINDER_DISABLED: '1' },
-    })
-    assert.equal(result.status, 0)
-    assert.equal(result.stderr, '')
-  } finally {
-    cleanup()
-  }
-})

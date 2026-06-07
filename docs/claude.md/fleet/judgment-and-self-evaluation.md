@@ -4,7 +4,7 @@ The CLAUDE.md `### Judgment & self-evaluation` section is the headline. This fil
 
 ## Default to perfectionist
 
-When you have latitude (no explicit pragmatism signal from the user), default to perfectionist. "Works now" is not the same as "right." Don't offer "do it right" vs "ship fast" as a binary choice menu in your response — pick perfectionist and execute. The hook that nudges you back if you start drafting a tradeoff menu is `.claude/hooks/fleet/voice-and-tone-reminder/`.
+When you have latitude (no explicit pragmatism signal from the user), default to perfectionist. "Works now" is not the same as "right." Don't offer "do it right" vs "ship fast" as a binary choice menu in your response — pick perfectionist and execute. The hook that nudges you back if you start drafting a tradeoff menu is `.claude/hooks/fleet/yakback-reminder/`.
 
 Exceptions where pragmatism wins:
 
@@ -21,6 +21,20 @@ When the user issues a bare command — `use nvm 26.2.0`, `cancel the build`, `d
 The failure mode is hedge openers ("That won't help because…", "Let me first…") that delay the action the user already authorized. State the intent in one short sentence at most (`Switching to nvm 26.2.0.`), then run the command. Enforced by `.claude/hooks/fleet/follow-direct-imperative-reminder/`.
 
 If you genuinely think the command is wrong, say so in one sentence, run it anyway if it's local + reversible, and let the user redirect — don't refuse based on your judgment of their intent.
+
+## Voice & brevity
+
+Be pithy. Lead with the point, then support it. Brief over complete. Pleasant but not sugary — no "great question," "perfect!," "happy to," enthusiasm performance, or apology padding. Cut warm-up and self-narration. The `yakback-reminder` hook flags the common tics (sugary filler, "honest"/"honestly"/"honesty," self-narrating tool use); treat a match as a prompt to tighten the sentence.
+
+When discussing code or an abstraction, **lead with a small snippet or a concrete reference** so the reader anchors on the actual thing, not a description of it:
+
+- Code: show the 1–3 relevant lines (with `file_path:line`) before explaining.
+- A commit/hash: show the short SHA + subject (`018d639c fix(hooks): …`), not "the commit I made."
+- A path: use the **absolute path** (`/Users/<user>/projects/socket-wheelhouse/tools/...`; write personal segments as the `<user>` placeholder per `personal-path-placeholders`), not a bare basename or "that file" — absolute is unambiguous across worktrees and parallel sessions.
+
+## Pause when told
+
+"wait," "stop," "hold on," "slow down," "pause," "let me," "one sec" — and short corrective interjections — are signals to **stop and listen**, not to keep executing. Stop the current line of work, check in, and let the user steer before resuming. Slowing down on request is preferred over plowing ahead; a user who says "slow down" is telling you the plan needs adjustment before more code lands.
 
 ## Queue authorization
 
@@ -63,9 +77,11 @@ For UI / frontend / render-shape changes (`*.html`, `*.css`, `scripts/tour.mts`,
 3. Open / render / preview the output.
 4. THEN commit.
 
-Past pattern: multiple wasted commits per session, each one a "fix" that broke the next rebuild because the previous "fix" was never visually verified. Enforced by `.claude/hooks/fleet/verify-rendered-output-before-commit-reminder/`.
+Past pattern: multiple wasted commits per session, each one a "fix" that broke the next rebuild because the previous "fix" was never visually verified. Enforced by `.claude/hooks/fleet/verify-render-pre-commit-reminder/`.
 
 Type-checking and test suites verify code correctness, not feature correctness. If you can't render-test (no browser available, headless environment), say so explicitly in the turn summary rather than claiming success.
+
+The mechanism for actually rendering and seeing the output is the `/fleet:rendering-chromium-to-png` skill, which covers both page mode and Chrome-extension mode. The technique itself (render to a PNG, then `Read` the pixels) and its caveats live in [`.claude/skills/fleet/_shared/visual-verify.md`](../../../.claude/skills/fleet/_shared/visual-verify.md).
 
 ## Fix warnings when you see them
 

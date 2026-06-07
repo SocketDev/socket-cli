@@ -1,14 +1,17 @@
 /**
  * @file Forbid underscore-prefixed _identifiers_ (functions, variables,
- *   classes, interfaces, type aliases, parameters, imports). Privacy in
- *   TypeScript is handled by module boundaries (not exporting) or by the
- *   `_internal/` _directory_ pattern — not by leading underscores on symbol
- *   names. The underscore-as-internal-marker convention is borrowed from other
- *   languages where it has runtime meaning (Python name mangling, Ruby
- *   visibility); in TS the underscore is decorative and adds noise to `git
- *   blame` and IDE autocomplete. Commit-time partner of the edit-time
- *   `.claude/hooks/fleet/no-underscore-identifier-guard/`. Allowed (skipped by
- *   this rule):
+ *   classes, interfaces, type aliases, imports). Function PARAMETERS are
+ *   excluded — there a leading `_` is TypeScript's own sanctioned marker for an
+ *   intentionally-unused param under `noUnusedParameters` (TS6133), so banning
+ *   it would conflict with the compiler. Privacy in TypeScript is handled by
+ *   module boundaries (not exporting) or by the `_internal/` _directory_
+ *   pattern — not by leading underscores on symbol names. The
+ *   underscore-as-internal-marker convention is borrowed from other languages
+ *   where it has runtime meaning (Python name mangling, Ruby visibility); in TS
+ *   the underscore is decorative and adds noise to `git blame` and IDE
+ *   autocomplete. Commit-time partner of the edit-time
+ *   `.claude/hooks/fleet/no-underscore-ident-guard/`. Allowed (skipped by this
+ *   rule):
  *
  *   - Bare `_` as a throwaway (`for (const _ of arr)`, destructuring rest).
  *   - Files under any `_internal/` directory — the canonical structural pattern
@@ -107,6 +110,28 @@ const rule = {
           checkIdentifier(context, node.id, node.id.name)
         }
       },
+      // Method / class-field NAMES we own (`class K { _doFoo() {} }`,
+      // `class K { _field = 1 }`). Computed keys (`[expr]`) are skipped — the
+      // name isn't a literal we control.
+      MethodDefinition(node: AstNode) {
+        if (!node.computed && node.key?.type === 'Identifier') {
+          checkIdentifier(context, node.key, node.key.name)
+        }
+      },
+      PropertyDefinition(node: AstNode) {
+        if (!node.computed && node.key?.type === 'Identifier') {
+          checkIdentifier(context, node.key, node.key.name)
+        }
+      },
+      // NOTE: function/method/arrow PARAMETERS are intentionally NOT checked.
+      // A leading underscore on a parameter is TypeScript's own sanctioned
+      // marker for an intentionally-unused param under `noUnusedParameters`
+      // (TS6133). Banning `_` there directly conflicts with that compiler
+      // setting: a positionally-required-but-unused param (Proxy traps,
+      // fixed-arity callbacks) MUST keep the `_` or the build breaks. So params
+      // are governed by tsc (`noUnusedParameters` + the `_` convention), not by
+      // this rule. A `_`-param that the body DOES use is a separate smell that
+      // tsc won't flag — catch that in review, not here.
     }
   },
 }

@@ -33,7 +33,6 @@
 //
 //   node .claude/hooks/fleet/setup-security-tools/install.mts
 //
-// Disabled via `SOCKET_SETUP_SECURITY_TOOLS_DISABLED=1`.
 //
 // Fails open on every error (exit 0 + stderr log). The hook must
 // not block the conversation on its own bugs.
@@ -293,9 +292,6 @@ export function repairShims(home: string): Finding[] {
 }
 
 async function main(): Promise<void> {
-  if (process.env['SOCKET_SETUP_SECURITY_TOOLS_DISABLED']) {
-    return
-  }
   // Read the Stop payload from stdin. We use `transcript_path` to
   // scan the most recent assistant turn for the 401 error signature.
   // Drain even if we can't parse so the pipe doesn't buffer-stall.

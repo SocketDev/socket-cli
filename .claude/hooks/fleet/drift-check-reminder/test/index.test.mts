@@ -86,13 +86,3 @@ test('does NOT fire on non-drift edits', () => {
   assert.equal(exitCode, 0)
   assert.equal(stderr, '')
 })
-
-test('disabled env var short-circuits', () => {
-  const t = makeTranscript('Bumped external-tools.json.')
-  const result = spawnSync('node', [HOOK_PATH], {
-    input: JSON.stringify({ transcript_path: t }),
-    env: { ...process.env, SOCKET_DRIFT_CHECK_REMINDER_DISABLED: '1' },
-  })
-  assert.equal(result.status, 0)
-  assert.equal(result.stderr, '')
-})

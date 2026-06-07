@@ -80,7 +80,7 @@ test('ALLOWS with one-off override marker on [submodule] line', () => {
     tool_input: {
       file_path: '/repo/.gitmodules',
       content:
-        '[submodule "vendor/foo"] # socket-hook: allow gitmodules-no-comment\n\tpath = x\n',
+        '[submodule "vendor/foo"] # socket-lint: allow gitmodules-no-comment\n\tpath = x\n',
     },
   })
   assert.equal(exitCode, 0)

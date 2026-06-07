@@ -16,8 +16,9 @@
 //
 // 2. **SessionStart** — scans every fleet repo under ~/projects/ for an
 //    already-corrupted `.git/config` (bare = true, test-fixture email
-//    leak, etc.) and emits ONE informational warning. Never blocks; the
-//    user fixes manually per the "never update the git config" rule.
+//    leak, etc.) and reports them. `core.bare = true` is AUTO-RESTORED (it's
+//    always wrong for a non-bare checkout and breaks every git command); the
+//    identity/signing findings are reported for manual cleanup. Never blocks.
 //
 // Bypass: `Allow git-config-write bypass` (single-use, for genuine
 // operator scenarios — initial signing setup on a fresh checkout, etc.).
@@ -33,6 +34,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { FLEET_REPO_NAMES } from '../_shared/fleet-repos.mts'
 import { withBashGuard, type ToolCallPayload } from '../_shared/payload.mts'
@@ -233,6 +235,10 @@ function emitBlock(
 // SessionStart: corruption probe
 // ---------------------------------------------------------------------------
 
+// Sentinel issue string for core.bare=true — the one corruption the probe
+// auto-reverts (always wrong for a non-bare fleet checkout; safe to fix).
+const BARE_ISSUE = 'core.bare = true (work tree treated as bare repo)'
+
 const TEST_EMAIL_PATTERNS: readonly RegExp[] = [
   /test@example\.com/i,
   /test@.*\.example/i,
@@ -260,9 +266,13 @@ export function scanRepoConfig(configPath: string): readonly string[] {
     return []
   }
   const issues: string[] = []
-  // bare = true under [core]
+  // bare = true under [core] — ALWAYS wrong for a non-bare fleet checkout
+  // (a worktree op can set it as a side effect; it then breaks `git add`/
+  // `commit` with "must be run in a work tree" for any session on this `.git/`).
+  // Unlike the identity/signing findings below, this is safe to revert
+  // mechanically, so the caller auto-restores it.
   if (/\[core\][^[]*bare\s*=\s*true/i.test(raw)) {
-    issues.push('core.bare = true (work tree treated as bare repo)')
+    issues.push(BARE_ISSUE)
   }
   // Test-fixture email leaks
   for (let i = 0, { length } = TEST_EMAIL_PATTERNS; i < length; i += 1) {
@@ -324,6 +334,23 @@ export function scanFleetRepos(
   return findings
 }
 
+/**
+ * Revert `core.bare = true` in a fleet repo's local config by unsetting the key
+ * (default is non-bare). Operates on the config FILE directly (`-f`), not
+ * `--local`: with core.bare=true the checkout reads as bare, so `git config
+ * --local` is refused ("must be run in a work tree"). Returns true if it acted.
+ * core.bare=true on a non-bare checkout is never intentional, so — unlike the
+ * identity/signing findings — this one is auto-fixed.
+ */
+export function restoreBareToFalse(configPath: string): boolean {
+  const r = spawnSync(
+    'git',
+    ['config', '-f', configPath, '--unset', 'core.bare'],
+    { encoding: 'utf8' },
+  )
+  return r.status === 0
+}
+
 function emitSessionStartReport(findings: readonly CorruptionFinding[]): void {
   if (findings.length === 0) {
     return
@@ -337,14 +364,21 @@ function emitSessionStartReport(findings: readonly CorruptionFinding[]): void {
     const f = findings[i]!
     lines.push(`  ${f.repo}`)
     lines.push(`    ${f.configPath}`)
+    const restoredBare =
+      f.issues.includes(BARE_ISSUE) && restoreBareToFalse(f.configPath)
     for (let j = 0, jl = f.issues.length; j < jl; j += 1) {
-      lines.push(`      - ${f.issues[j]}`)
+      const issue = f.issues[j]!
+      const suffix =
+        issue === BARE_ISSUE && restoredBare
+          ? ' — AUTO-RESTORED to non-bare'
+          : ''
+      lines.push(`      - ${issue}${suffix}`)
     }
     lines.push('')
   }
-  lines.push('  Manual cleanup recommended. Per the "never update the git')
-  lines.push('  config" rule, this probe never auto-fixes — edit `.git/config`')
-  lines.push('  directly or use `git config --unset <key>` per finding.')
+  lines.push('  core.bare = true is reverted automatically (always wrong for a')
+  lines.push('  non-bare fleet checkout). Remaining findings need manual')
+  lines.push('  cleanup — edit `.git/config` or `git config --unset <key>`.')
   lines.push('')
   lines.push('  Spec: docs/claude.md/fleet/git-config-write-guard.md')
   // Stdout is the channel Claude Code surfaces at SessionStart.
@@ -438,7 +472,7 @@ async function main(): Promise<void> {
   checkPreToolUse(payload as ToolCallPayload)
 }
 
-if (process.argv[1] && process.argv[1].endsWith('index.mts')) {
+if (process.argv[1]?.endsWith('index.mts')) {
   main().catch(() => {
     // Fail open per the fleet's hook contract.
     process.exitCode = 0

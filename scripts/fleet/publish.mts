@@ -42,6 +42,7 @@ import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { checkbox, password } from '@socketsecurity/lib/stdio/prompts'
 
+import { REPO_ROOT } from './paths.mts'
 import {
   extractFirstJson,
   fetchVersionTrustInfo,
@@ -51,8 +52,7 @@ import {
 } from './publish-shared.mts'
 
 const logger = getDefaultLogger()
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const rootPath = path.join(__dirname, '..')
+const rootPath = REPO_ROOT
 interface StageListEntry {
   name?: string | undefined
   version?: string | undefined

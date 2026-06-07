@@ -19,11 +19,11 @@ a positional source-file argument:
 
     gcc: error: x64: linker input file not found
 
-**Past incident:** libpq.yml dispatch 26351344690 (2026-05-24) —
-every Linux + darwin platform failed at `make -j -C src/common`
-because the workflow set `TARGET_ARCH: ${{ matrix.arch }}` and
-`libpq-builder/scripts/build.mts` inherited it. The fix in that
-script was a single line:
+**Why:** when a workflow sets `TARGET_ARCH: ${{ matrix.arch }}` and a
+make-driven builder script inherits it, every Linux + darwin platform
+red-lines at `make` because gcc treats the arch string as a source-file
+argument. The fix is a single line — read the value, then drop it from
+the spawned env:
 
     const TARGET_ARCH = process.env.TARGET_ARCH || process.arch
     delete process.env.TARGET_ARCH

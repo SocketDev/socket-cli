@@ -42,8 +42,8 @@ CLAUDE.md → "Don't leave the worktree dirty" → "Stage only when
 you're about to commit".
 ```
 
-## Disable
+## Bypass
 
-`SOCKET_NO_ORPHANED_STAGING_DISABLED=1` in the env. Use during
-intentional mid-refactor pauses or worktree migrations where staged
-state is the work-product.
+No bypass — it's a reminder (exit 0), not a block. During intentional
+mid-refactor pauses or worktree migrations where staged state is the
+work-product, the stderr note is informational and safe to ignore.

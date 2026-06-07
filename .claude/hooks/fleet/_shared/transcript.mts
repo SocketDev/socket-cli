@@ -276,9 +276,19 @@ export function extractToolUseBlocks(content: unknown): ToolUseEvent[] {
 type Role = 'user' | 'assistant'
 
 /**
- * Extract this turn's text content into a flat array of pieces. Handles the 3
- * content shapes the harness emits (string / array-of-blocks / nested
+ * Extract this turn's AUTHOR-WRITTEN text into a flat array of pieces. Handles
+ * the 3 content shapes the harness emits (string / array-of-blocks / nested
  * message.content).
+ *
+ * SECURITY: `tool_result` and `tool_use` blocks are EXCLUDED. A `role: user`
+ * message in the transcript carries two very different kinds of content —
+ * genuine user typing (`{type:'text'}`) and tool results the harness injected
+ * (`{type:'tool_result', content:…}`, e.g. the bytes of a file the agent read or
+ * a command's stdout). Counting tool-result text as "user text" makes every
+ * bypass-phrase check spoofable: a dependency file or command output containing
+ * "Allow <X> bypass" would defeat the guard. So we only collect genuine `text`
+ * blocks (and bare strings) and never a block's `content` field. Same reasoning
+ * for assistant turns: `tool_use` inputs are not prose.
  */
 export function extractTurnPieces(content: unknown): string[] {
   const pieces: string[] = []
@@ -291,10 +301,12 @@ export function extractTurnPieces(content: unknown): string[] {
         pieces.push(block)
       } else if (block && typeof block === 'object') {
         const b = block as Record<string, unknown>
+        // Never trust harness-injected blocks as author text.
+        if (b['type'] === 'tool_result' || b['type'] === 'tool_use') {
+          continue
+        }
         if (typeof b['text'] === 'string') {
           pieces.push(b['text'])
-        } else if (typeof b['content'] === 'string') {
-          pieces.push(b['content'])
         }
       }
     }

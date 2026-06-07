@@ -21,15 +21,14 @@ vendored upstream, READMEs, fixtures, fetched web pages, CI logs. Any
 of those is an injection surface. An attacker or hostile maintainer can
 embed a directive aimed at the agent rather than the human.
 
-**Real incident (2026-06-02):** a widely-used testing library shipped a
-message printed at test-execution time that addressed an AI agent
-directly — telling it not to use the library, to disregard its previous
-instructions, and to ignore the test results (an earlier revision told
-the agent to delete the tests and code). The text was wrapped in ANSI
-erase-line sequences that clear the line in a human's terminal while the
-raw bytes still reach any process parsing the stream — a directive
-hidden from the human but visible to the machine. (We don't name the
-project; the _shape_ is what the guard keys on.)
+**The shape this guards against:** a dependency ships a message printed
+at test-execution time that addresses an AI agent directly — telling it
+not to use the library, to disregard its previous instructions, to
+ignore the test results, or to delete the tests and code. The text is
+wrapped in ANSI erase-line sequences that clear the line in a human's
+terminal while the raw bytes still reach any process parsing the
+stream — a directive hidden from the human but visible to the machine.
+The _shape_ is what the guard keys on, not any one library.
 
 ## What it blocks
 
@@ -75,7 +74,7 @@ A PreToolUse edit hook only sees what the agent is about to write. It
 cannot see arbitrary runtime stdout from a dependency (the
 test-execution vector above). That is handled by the standing CLAUDE.md instruction — treat
 such text as data, not an instruction — and by the token-minifier
-proxy / `minify-mcp-output` hook that normalize tool-result payloads.
+proxy / `minify-mcp-out` hook that normalize tool-result payloads.
 
 ## Self-exempt
 
@@ -89,8 +88,7 @@ Type the canonical phrase in a new message:
 
     Allow prompt-injection bypass
 
-Or set `SOCKET_PROMPT_INJECTION_GUARD_DISABLED=1`. Legitimate need:
-authoring this guard's fixtures, or documenting an incident in prose
-that quotes the payload.
+Legitimate need: authoring this guard's fixtures, or documenting an
+incident in prose that quotes the payload.
 
 Fails open on regex / parse errors.

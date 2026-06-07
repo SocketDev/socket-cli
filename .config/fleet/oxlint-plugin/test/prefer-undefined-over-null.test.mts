@@ -28,6 +28,10 @@ describe('socket/prefer-undefined-over-null', () => {
           name: '=== null comparison (allowed)',
           code: 'if (x === null) {}\n',
         },
+        {
+          name: 'switch case null (allowed — === match, not interchangeable)',
+          code: 'switch (x) {\n  case null:\n    break\n}\n',
+        },
       ],
       invalid: [
         {

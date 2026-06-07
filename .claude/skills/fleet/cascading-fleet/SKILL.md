@@ -36,28 +36,43 @@ Propagates a `socket-wheelhouse/template/` SHA to every fleet repo. The flow:
 
 The `FLEET_SYNC=1` sentinel is recognized by the wheelhouse `no-revert-guard` + `overeager-staging-guard` hooks. It allowlists exactly: `git commit --no-verify` whose message starts with `chore(wheelhouse): cascade template@`, `git push --no-verify`, and `git add -A`/`-u`/`.`. Nothing else.
 
-### Mode 2: `registry-pins`
+### Mode 2: `registry-pins` (tool-version layered-pin cascade)
 
-Propagates a `socket-registry` pin chain through the fleet. Different shape: uses `scripts/repo/sync-registry-workflow-shas.mts --sha <M'>` to rewrite the registry `uses:` SHAs in `template/.github/workflows/*.yml`; the regular sync-scaffolding cascade then repins every fleet consumer's workflows to match. Documented here for completeness; the cascade script in `lib/cascade-template.mts` covers Mode 1, and a future `lib/sync-registry-workflow-shas.mts` will cover Mode 2.
+Bumping a core / security tool (pnpm, zizmor, sfw, …) threads through the fleet differently from a template cascade: socket-registry is the workspace + CI authority, so the bump flows **wheelhouse → socket-registry → fleet**. The wheelhouse normally dogfoods itself first, but for CI it _consumes_ the registry's reusable workflows — so the registry's shared-workflow pin must land (and go CI-green) before the wheelhouse can validate the CI side.
 
-For now, the registry-pin cascade is two steps documented inline:
+The executable law is **`lib/cascade-tool-pins.mts`** (the orchestrator that chains the existing pieces with the CI-green gate enforced in code):
 
+```bash
+node .claude/skills/fleet/cascading-fleet/lib/cascade-tool-pins.mts            # REPORT (read-only — copies nothing, writes nothing)
+node .claude/skills/fleet/cascading-fleet/lib/cascade-tool-pins.mts --execute  # run the chain (pushes to registry main, gates on CI, repins template)
 ```
-Step 1 (intra-registry): node socket-registry/scripts/cascade-workflows.mts
-Step 2 (intra-registry): git push to registry main; record new tip M'.
-Step 3 (template): node socket-wheelhouse/scripts/repo/sync-registry-workflow-shas.mts --sha M' (cascade propagates to fleet)
-```
 
-Skipping Step 1 means Step 3 propagates a SHA whose dependency graph still pins the pre-fix revision. Always run Step 1 first.
+It runs: (1) bump `external-tools.json` (+ catalog), reconcile the wheelhouse lockfile; (2) `socket-registry/scripts/cascade-workflows.mts` — intra-registry bump-until-stable across the action pins (Layer 1 → setup → setup-and-install → reusable workflows), push registry `main`; (3) 🛑 **CI-green gate** — the propagation SHA's own CI must be `completed`+`success` or it throws (a merged-but-red SHA blasted fleet-wide breaks every consumer at once — no bypass); (4) `_local` Layer-4 pins (folded into convergence) point at the propagation SHA; (5) `scripts/fleet/sync-registry-workflow-pins.mts --fix` repins the template `uses:` SHAs. It then STOPS before the fleet-wide push — review the template diff, commit, and run Mode 1 (`cascade-template.mts`) + `reconcile-fleet-lockfiles`. Full layer definitions + propagation-SHA semantics: socket-registry's `updating-workflows` SKILL.
 
 ## How to invoke
 
 ```bash
 # Mode 1: propagate wheelhouse template SHA
-node .claude/skills/cascading-fleet/lib/cascade-template.mts <template-sha>
+node .claude/skills/fleet/cascading-fleet/lib/cascade-template.mts <template-sha>
 ```
 
 The script reads the fleet-repo list from `lib/fleet-repos.txt` (single source of truth), iterates, and writes a per-repo result line to stdout. Output also tees to `/tmp/cascade-<sha>.log` for post-hoc inspection.
+
+## Post-cascade: reconcile lockfiles (in parallel)
+
+🚨 A cascade that changes the catalog (`pnpm-workspace.yaml`), `packageManager`, or dep overrides lands a **lockfile-less** commit downstream — the worktree's `pnpm-lock.yaml` regenerates locally but is excluded from the cascade commit. Downstream CI runs `pnpm install --frozen-lockfile`, so a stale lockfile **red-lines every consumer**. The cascade is not done until each affected repo's lockfile is reconciled.
+
+This is a parallel fleet operation, so it is **a Workflow, not a shell loop** (`for r in …; do … & done; wait` races — multiple instances land on one repo and orphan worktrees). Two layered surfaces, executable-first:
+
+1. **The per-repo executable (the law):** `lib/reconcile-lockfiles.mts` — worktrees off the repo default branch, runs `pnpm install` (repo-pinned pnpm) to regenerate the lockfile against the cascaded catalog, and IF it changed commits `chore(wheelhouse): reconcile pnpm-lock.yaml after cascade` (FLEET_SYNC sentinel) + pushes, then force-removes its worktree. Idempotent — a repo already current reports `noop:lockfile-current` and pushes nothing. Scope to one repo with `--skip <all-others>`.
+2. **The fan-out (the orchestrator):** the saved Workflow `reconcile-fleet-lockfiles` (`.claude/workflows/reconcile-fleet-lockfiles.js`) runs surface 1 once per repo in parallel — bounded concurrency, one task per repo, structured results, no leaked PIDs. Run it after a catalog cascade:
+
+```
+Workflow({ name: 'reconcile-fleet-lockfiles' })                 # whole roster (already-current repos no-op)
+Workflow({ name: 'reconcile-fleet-lockfiles', args: ['socket-lib', 'sdxgen'] })   # only the cascade's targets
+```
+
+Because surface 1 is idempotent, running the whole roster is safe; pass `args` (a repo-name array, or `{ only, skip }`) to narrow to just the repos a cascade touched. Local/experimental workflow scripts save to `~/.claude/workflows/` — the repo's `.claude/workflows/` is fleet-owned and delete-and-replace mirrored.
 
 ## Worktree cleanup: the branch-cleanup bug
 
@@ -84,11 +99,11 @@ The cascade script (`lib/cascade-template.mts`) is deterministic — it `--no-ve
 
 2. **Stranded local commits** (local `main` diverged with un-pushed `chore(wheelhouse): cascade …` commits that origin already superseded). Confirm with `git branch -r --contains <sha>` (empty = local-only) and `git log --oneline HEAD..origin/main` (origin has newer cascades). If origin already has the work in canonical form, `git reset --hard origin/main` (needs `Allow reset bypass`) — nothing real is lost. Otherwise rebase the genuine local-unique commits on top.
 
-3. **Soak-bypassing a tool bump** (pnpm/zizmor/sfw newer than the 7-day `minimumReleaseAge`). The auto-updater (`scripts/update-external-tools.mts`) skips fresh releases. To bump anyway: hand-pin `external-tools.json` (version + every platform asset + recomputed sha256 integrity from the upstream GitHub release; npm-tarball platforms use npm `dist.integrity`), needs `Allow soak-time bypass` (alias: `Allow minimumReleaseAge bypass`). Then run `socket-registry/scripts/cascade-workflows.mts` to bump-until-stable the internal action pins, push, and `scripts/repo/sync-registry-workflow-shas.mts --sha <M'>` to rewrite the template workflow pins (the cascade propagates them fleet-wide). **Why:** 2026-06-01 a stale pnpm pin (11.4.0 vs runner 11.3.0) red-lined fleet CI; the bump to 11.5.0 also surfaced an `allowBuilds: esbuild` placeholder that `ERR_PNPM_IGNORED_BUILDS` then blocked on.
+3. **Soak-bypassing a tool bump** (pnpm/zizmor/sfw newer than the 7-day `minimumReleaseAge`). The auto-updater (`scripts/repo/update-external-tools.mts`, dry-run by default; `--apply` flushes) skips fresh releases. To bump anyway: hand-pin `external-tools.json` (version + every platform asset + recomputed sha256 integrity from the upstream GitHub release; npm-tarball platforms use npm `dist.integrity`), needs `Allow soak-time bypass` (alias: `Allow minimumReleaseAge bypass`). Then run the Mode 2 orchestrator (`lib/cascade-tool-pins.mts --execute`) to bump-until-stable the registry action pins, gate on CI-green, and repin the template. **Why:** a `packageManager` pin that drifts from the CI runner's pnpm red-lines fleet CI, and a pnpm bump can surface a previously-dormant `allowBuilds` placeholder that then trips `ERR_PNPM_IGNORED_BUILDS` — bump the tool and reconcile the build allowlist in the same wave.
 
 ## Reference
 
 - FLEET_SYNC sentinel: `template/.claude/hooks/fleet/no-revert-guard/` + `template/.claude/hooks/fleet/overeager-staging-guard/`.
 - Wheelhouse sync-scaffolding: `socket-wheelhouse/scripts/repo/sync-scaffolding/cli.mts`.
 - Fleet-repo manifest: `lib/fleet-repos.txt`.
-- Registry-pin cascade (Mode 2): `socket-registry/scripts/cascade-workflows.mts` (intra-registry bump-until-stable) → `scripts/repo/sync-registry-workflow-shas.mts --sha <M'>` (rewrites template workflows; cascade propagates fleet-wide).
+- Registry-pin cascade (Mode 2): `lib/cascade-tool-pins.mts` (the orchestrator) chains `socket-registry/scripts/cascade-workflows.mts` (intra-registry bump-until-stable) → CI-green gate → `scripts/fleet/sync-registry-workflow-pins.mts --fix` (rewrites template workflow pins; Mode 1 then propagates fleet-wide).

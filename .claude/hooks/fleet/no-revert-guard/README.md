@@ -18,6 +18,17 @@ PreToolUse Bash hook that blocks destructive git commands and hook bypasses unle
 | `DISABLE_PRECOMMIT_TEST=1`                                  | `Allow test bypass`       |
 | `git push --force` / `-f`                                   | `Allow force-push bypass` |
 
+## Inline sentinels (scoped auto-bypass)
+
+Two batch flows run the same blocked operations many times and would otherwise need a fresh typed phrase per command. Each marks intent with an inline `NAME=1` assignment (opt-in per command — no global env poisoning), scoped to exactly the operations that flow needs. Anything else carrying the sentinel falls through to the normal blocking checks.
+
+| Sentinel          | Flow                  | Allows only                                                                                                                                                |
+| ----------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FLEET_SYNC=1`    | wheelhouse cascade    | `git commit` whose message starts `chore(wheelhouse): cascade template@`; any `git push`                                                                   |
+| `SQUASH_HISTORY=1`| `squashing-history` skill | a single un-chained `git commit --amend -m "chore: initial commit"`; a single un-chained `git push --force`/`--force-with-lease` to a bare remote + one plain branch ref |
+
+`SQUASH_HISTORY=1` is hardened against malicious bypass (a poisoned prompt riding the sentinel to clobber a remote or chain extra work): it parses the command and honors the sentinel **only** when the line is exactly one statically-resolved `git` segment — no `&&`/`;`/`|` chaining, no `$(…)` substitution, no `$VAR`/`eval` indirection, no extra inline env assignment, no refspec (`src:dst`) / `--mirror` / `--all` / `--delete` / `--no-verify` on the push.
+
 ## How the bypass works
 
 The hook reads the conversation transcript (path passed in the PreToolUse JSON payload) and searches the concatenated user-turn text for the exact phrase. The match is **case-sensitive** and **substring-based** — a paraphrase like "go ahead and revert" does not count.

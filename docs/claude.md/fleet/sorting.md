@@ -27,7 +27,7 @@ These are the exact semantics every `socket/sort-*` lint rule uses.
   module scope (and inside `export const` / `export default`) sort
   alphanumerically. Exception: `__proto__: null` always comes first, ahead of
   any data key. Object literals that are position-bearing (HTTP header order,
-  protocol field order) opt out with `// socket-hook: allow object-property-order`.
+  protocol field order) opt out with `// socket-lint: allow object-property-order`.
   Enforced by `socket/sort-object-literal-properties`.
 - **Method / function placement**: within a module, sort top-level functions
   alphabetically. Private functions (lowercase / un-exported) sort first,
@@ -43,7 +43,7 @@ These are the exact semantics every `socket/sort-*` lint rule uses.
   Capturing, non-capturing, and named-capture groups all follow the rule.
   Auto-fixable when every alternative is a simple literal. Order-bearing
   alternations (rare; markup parsers where `<!--|-->` would silently mismatch if
-  reordered) append `// socket-hook: allow regex-alternation-order`. Enforced by
+  reordered) append `// socket-lint: allow regex-alternation-order`. Enforced by
   `socket/sort-regex-alternations`.
 - **String-equality disjunctions**: `x === 'a' || x === 'b' || x === 'c'` reads
   with the comparand strings in alpha order. The De Morgan dual
@@ -59,7 +59,7 @@ These are the exact semantics every `socket/sort-*` lint rule uses.
   Members are interchangeable at the type level; alpha order makes "which values
   can this take?" answerable without scanning. Position-bearing unions (a
   discriminator where order encodes priority) append
-  `// socket-hook: allow union-order`. _(Rule planned; see Roadmap.)_
+  `// socket-lint: allow union-order`. _(Rule planned; see Roadmap.)_
 
 ## Where to sort: non-code surfaces (hook-reminded, manual)
 
@@ -116,7 +116,7 @@ one unsorted that did costs a merge conflict later.
 | Surface                                                              | Plan                                                                           |
 | -------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | `export { … }` lists                                                 | `socket/sort-named-exports` — mirror `sort-named-imports`.                     |
-| TS string-literal unions                                             | `socket/sort-union-members` — with `// socket-hook: allow union-order` escape. |
+| TS string-literal unions                                             | `socket/sort-union-members` — with `// socket-lint: allow union-order` escape. |
 | Module-scope const arrays                                            | `socket/sort-array-literals` — skip position-bearing arrays.                   |
 | Independent switch-case branches                                     | future rule; skip fall-through / early-return chains.                          |
 | `.claude/settings.json` permission lists, `external-tools.json` keys | sync-scaffolding sort check.                                                   |

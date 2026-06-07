@@ -14,8 +14,7 @@
 // action-verb first word + rejects questions, which a regex can't
 // express cleanly.
 //
-// Informational; never blocks. Disable via
-// SOCKET_FOLLOW_DIRECT_IMPERATIVE_REMINDER_DISABLED.
+// Informational; never blocks.
 
 import process from 'node:process'
 
@@ -114,10 +113,9 @@ export function hasHedge(text: string): boolean {
 // Entrypoint guard: only run the hook when executed directly. The test
 // imports this module for `looksLikeImperative` / `hasHedge`; without the
 // guard the top-level await would block on readStdin at import time.
-if (process.argv[1] && process.argv[1].endsWith('index.mts')) {
+if (process.argv[1]?.endsWith('index.mts')) {
   await runTurnPairReminder({
     name: 'follow-direct-imperative-reminder',
-    disabledEnvVar: 'SOCKET_FOLLOW_DIRECT_IMPERATIVE_REMINDER_DISABLED',
     userTriggers: [
       {
         label: 'bare imperative (short, action-verb-led, no question)',

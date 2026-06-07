@@ -68,6 +68,25 @@ export function summarizeImportTarget(
     if (!localName) {
       continue
     }
+    // A top-level `function localName(){}` / `class localName{}` (with or
+    // without `export`) is also a binding that collides with an injected
+    // import — e.g. a file with its own `function existsSync(){}` must not get
+    // `import { existsSync } from 'node:fs'` hoisted above it (TS2440).
+    const declNode =
+      stmt.type === 'ExportNamedDeclaration' ||
+      stmt.type === 'ExportDefaultDeclaration'
+        ? (stmt.declaration ?? stmt)
+        : stmt
+    if (
+      (declNode.type === 'FunctionDeclaration' ||
+        declNode.type === 'ClassDeclaration') &&
+      declNode.id &&
+      declNode.id.type === 'Identifier' &&
+      declNode.id.name === localName
+    ) {
+      hasLocal = true
+      continue
+    }
     // A top-level `const localName = ...` (with or without `export`).
     // The legacy walk only looked at bare `VariableDeclaration`; an
     // `export const logger = ...` is an `ExportNamedDeclaration`

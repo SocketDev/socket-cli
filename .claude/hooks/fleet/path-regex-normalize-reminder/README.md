@@ -29,7 +29,3 @@ code fences. Exit code is always 0.
 Type `Allow path-regex-normalize bypass` verbatim in a recent user turn.
 (Reminders don't strictly need bypasses since they don't block; the phrase
 is for consistency with other fleet hooks.)
-
-## Disable
-
-Set `SOCKET_PATH_REGEX_NORMALIZE_REMINDER_DISABLED=1` in the env.

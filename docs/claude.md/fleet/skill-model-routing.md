@@ -8,18 +8,18 @@ The fleet uses this to match model capability to task shape:
 
 Skills where the work is "run the tool, commit, push" without judgment:
 
-- `auditing-gha-settings` — drift report
+- `auditing-gha` — drift report
 - `cascading-fleet` — propagate wheelhouse template to fleet
-- `cleaning-redundant-ci` — sweep orphan workflow files
+- `cleaning-ci` — sweep orphan workflow files
 - `guarding-paths` — path-dedup audit
 - `refreshing-history` — squash + reset
-- `regenerating-plugin-patches` — regenerate patches against pinned upstream
+- `regenerating-patches` — regenerate patches against pinned upstream
 - `running-test262` — conformance suite runner
 - `squashing-history` — git reset/squash
 - `updating` — pnpm update + soak
 - `updating-coverage` — coverage badge refresh
 - `updating-lockstep` — lockstep.json drift bump
-- `worktree-management` — worktree create/fanout
+- `managing-worktrees` — worktree create/fanout
 
 These tasks fail-cheap (the sync runner / git command decides what changes), so Haiku's faster latency + lower cost dominates.
 
@@ -30,7 +30,7 @@ Skills with some judgment but mostly mechanical:
 - `driving-cursor-bugbot` — classify Bugbot threads
 - `greening-ci` — watch CI, surface failures
 - `handing-off` — conversation → handoff doc
-- `plug-leaking-promise-race` — concurrency bug reference
+- `plugging-promise-race` — concurrency bug reference
 - `prose` — prose editing
 - `trimming-bundle` — stub unused dist/ paths
 - `updating-security` — Dependabot resolution

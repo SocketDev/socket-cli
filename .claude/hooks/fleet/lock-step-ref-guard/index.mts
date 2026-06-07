@@ -3,7 +3,7 @@
 //
 // Flags two failure modes in `Lock-step` comments at the moment they
 // land in a file, before they reach CI (which is gated separately by
-// `scripts/check-lock-step-refs.mts`):
+// `scripts/fleet/check/lock-step-refs-resolve.mts`):
 //
 //   1. STALE — the comment names a path that no longer exists in the
 //      target impl. The CI gate also catches this; the hook catches it
@@ -39,8 +39,7 @@
 //   - Skips test/ directories and *.test.* files — illustrative
 //     example refs are common in tests.
 //
-// Bypass: type `Allow lock-step bypass` in a recent user message,
-// or set SOCKET_LOCK_STEP_REF_GUARD_DISABLED=1.
+// Bypass: type `Allow lock-step bypass` in a recent user message.
 
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
@@ -67,7 +66,6 @@ interface LockStepConfig {
   readonly extensions: readonly string[]
 }
 
-const ENV_DISABLE = 'SOCKET_LOCK_STEP_REF_GUARD_DISABLED'
 const BYPASS_PHRASES = [
   'Allow lock-step bypass',
   'Allow lockstep bypass',
@@ -288,9 +286,6 @@ export function loadConfig(repoRoot: string): LockStepConfig | undefined {
 }
 
 async function main(): Promise<void> {
-  if (process.env[ENV_DISABLE]) {
-    process.exit(0)
-  }
   const payloadRaw = await readStdin()
   let payload: PreToolUsePayload
   try {
@@ -362,10 +357,9 @@ async function main(): Promise<void> {
   }
   out.push('  Spec: docs/claude.md/fleet/parser-comments.md §5–6.')
   out.push(
-    '  CI gate: scripts/fleet/check-lock-step-refs.mts (run via `pnpm check`).',
+    '  CI gate: scripts/fleet/check/lock-step-refs-resolve.mts (run via `pnpm check`).',
   )
-  out.push('  Bypass: "Allow lock-step bypass" in a recent user message, or')
-  out.push(`  ${ENV_DISABLE}=1.`)
+  out.push('  Bypass: "Allow lock-step bypass" in a recent user message.')
   out.push('')
   process.stderr.write(out.join('\n') + '\n')
   // Informational — exit 0. The CI gate is the blocking layer.

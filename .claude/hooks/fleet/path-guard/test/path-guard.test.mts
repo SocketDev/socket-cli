@@ -247,11 +247,15 @@ describe('path-guard — exempt files', () => {
     assert.equal(code, 0)
   })
 
-  it('allows edits to check-paths.mts (the gate)', () => {
+  it('allows edits to the path gate (paths-are-canonical.mts)', () => {
     const source = `
       const PATTERNS = [path.join('build', 'Final', 'wasm')]
     `
-    const { code } = runHook('Write', 'scripts/fleet/check-paths.mts', source)
+    const { code } = runHook(
+      'Write',
+      'scripts/fleet/check/paths-are-canonical.mts',
+      source,
+    )
     assert.equal(code, 0)
   })
 

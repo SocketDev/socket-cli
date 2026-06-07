@@ -24,9 +24,9 @@ const SIBLING_PATH_RES = [
   // Detect bare ../<segment>/ where the first segment doesn't start with `.`
   // (i.e. genuine sibling, not the current repo's `..` for monorepo packages).
   // `(?:^|\s)` alternation order is the canonical regex idiom (anchor-first).
-  /(?:^|\s)\.\.\/socket-[\w-]+\//i, // socket-hook: allow regex-alternation-order
-  /(?:^|\s)\.\.\/sdxgen\//, // socket-hook: allow regex-alternation-order
-  /(?:^|\s)\.\.\/stuie\//, // socket-hook: allow regex-alternation-order
+  /(?:^|\s)\.\.\/socket-[\w-]+\//i, // socket-lint: allow regex-alternation-order
+  /(?:^|\s)\.\.\/sdxgen\//, // socket-lint: allow regex-alternation-order
+  /(?:^|\s)\.\.\/stuie\//, // socket-lint: allow regex-alternation-order
 ]
 
 /**

@@ -10,7 +10,7 @@ Watch the latest CI run for `$ARGUMENTS` and drive it back to green.
 
 1.  Invoke the `greening-ci` skill runner:
 
-        node .claude/skills/greening-ci/run.mts --repo <owner/repo> [--workflow <name>] [--mode <fast|release|cool>] [--branch <ref>]
+        node .claude/skills/fleet/greening-ci/run.mts --repo <owner/repo> [--workflow <name>] [--mode <fast|release|cool>] [--branch <ref>]
 
     Parse the final stdout line as JSON.
 

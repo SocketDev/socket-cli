@@ -15,10 +15,10 @@
 import { makeBypassChecker } from '../lib/comment-markers.mts'
 import type { AstNode, RuleContext } from '../lib/rule-types.mts'
 
-// socket-hook: allow top-level-await -- opt-out for ESM-only entry points
+// socket-lint: allow top-level-await -- opt-out for ESM-only entry points
 // that never get bundled to CJS (e.g. a pure-ESM CLI script that runs via
 // node --experimental-vm-modules and ships nothing to the CJS bundle).
-const BYPASS_RE = /socket-hook:\s*allow\s+top-level-await/
+const BYPASS_RE = /socket-lint:\s*allow\s+top-level-await/
 
 const FUNCTION_TYPES = new Set<string>([
   'FunctionDeclaration',

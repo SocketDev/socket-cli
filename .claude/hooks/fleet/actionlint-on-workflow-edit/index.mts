@@ -15,7 +15,7 @@
 // PostToolUse (not PreToolUse) so the edit lands first and the scanners
 // read on-disk state. No block — reporting only. The block surface is
 // covered by sibling hooks (`workflow-uses-comment-guard`,
-// `workflow-yaml-multiline-body-guard`, `pull-request-target-guard`).
+// `workflow-multiline-body-guard`, `pull-request-target-guard`).
 //
 // No-op for either scanner when it isn't on PATH — most fleet machines
 // have both via brew or setup-security-tools, CI runners have them

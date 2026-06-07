@@ -27,7 +27,7 @@
  *      `itWindowsOnly` / `describeWindowsOnly`.
  *   4. Per-test timeout literal `≥ 5000` in the third positional arg of `it(...)`
  *      / `test(...)` — suggest `tolerantTimeout(N)` so the Windows leg gets the
- *      multiplier. Per-line opt-out: `// socket-hook: allow raw-windows-test`
+ *      multiplier. Per-line opt-out: `// socket-lint: allow raw-windows-test`
  *      or `// oxlint-disable-next-line socket/prefer-windows-test-helpers`.
  */
 import { existsSync } from 'node:fs'
@@ -46,8 +46,8 @@ const HELPER_DIR_PATH = 'test/_shared/fleet/lib'
 const TEST_FILE_RE = /\.(?:test|spec)\.[cm]?[jt]sx?$/
 const SMALL_SLEEP_MAX_MS = 200
 const LONG_TIMEOUT_MIN_MS = 5_000
-const SOCKET_HOOK_MARKER_RE =
-  /(?:#|\/\/|\/\*)\s*socket-hook:\s*allow(?:\s+([\w-]+))?/
+const SOCKET_LINT_MARKER_RE =
+  /(?:#|\/\/|\/\*)\s*socket-lint:\s*allow(?:\s+([\w-]+))?/
 
 // Cache the opt-in result per ancestor directory so we don't re-stat for
 // every test file. The cascade is atomic: if the helper directory exists at
@@ -84,7 +84,7 @@ function findHelperFile(testFilePath: string): boolean {
 }
 
 function isLineMarkered(line: string): boolean {
-  const m = line.match(SOCKET_HOOK_MARKER_RE)
+  const m = line.match(SOCKET_LINT_MARKER_RE)
   if (!m) {
     return false
   }

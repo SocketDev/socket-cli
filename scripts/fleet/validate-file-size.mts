@@ -11,14 +11,14 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
+import { REPO_ROOT } from './paths.mts'
+
 const logger = getDefaultLogger()
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const rootPath = path.join(__dirname, '..')
+const rootPath = REPO_ROOT
 
 // Maximum file size: 2MB (2,097,152 bytes)
 const MAX_FILE_SIZE = 2 * 1024 * 1024

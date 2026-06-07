@@ -101,10 +101,3 @@ test('ALLOWS with "Allow default-branch bypass" phrase', () => {
   const { exitCode } = runHook('BASE=main && git diff $BASE..HEAD', t)
   assert.equal(exitCode, 0)
 })
-
-test('disabled env var short-circuits', () => {
-  const { exitCode } = runHook('BASE=main', undefined, {
-    SOCKET_DEFAULT_BRANCH_GUARD_DISABLED: '1',
-  })
-  assert.equal(exitCode, 0)
-})

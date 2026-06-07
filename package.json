@@ -15,7 +15,7 @@
     "// Quality Checks": "",
     "check": "node scripts/fleet/check.mts",
     "check:all": "node scripts/fleet/check.mts --all",
-    "check:paths": "node scripts/fleet/check-paths.mts",
+    "check:paths": "node scripts/fleet/check/paths-are-canonical.mts",
     "fix": "node scripts/fleet/fix.mts",
     "fix:all": "node scripts/fleet/fix.mts --all",
     "lint": "node scripts/fleet/lint.mts",
@@ -50,7 +50,7 @@
     "prepare": "node scripts/fleet/install-git-hooks.mts && node scripts/fleet/install-git-hooks.mts",
     "pretest": "pnpm run build:cli",
     "setup-security-tools": "node .claude/hooks/fleet/setup-security-tools/install.mts",
-    "ci:local": "agent-ci run --all"
+    "ci:local": "agent-ci run --all --quiet --pause-on-failure --github-token"
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "catalog:",

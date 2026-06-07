@@ -475,7 +475,10 @@ const rule = {
               '`' +
               originalTpl
                 .slice(1)
-                .replace(/^\\?n+/, '')
+                // Strip leading ESCAPED newlines (`\n` = two source chars).
+                // `\\?n+` was greedy: it also ate a following literal `n`
+                // (`\nnext steps` → `ext steps`). Match whole `\n` escapes.
+                .replace(/^(?:\\n)+/, '')
                 .replace(/^\n+/, '')
             const found = findStatusEmoji(firstCooked)
             const semanticMethod = found?.method ?? origMethod

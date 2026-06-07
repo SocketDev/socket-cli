@@ -24,7 +24,6 @@
 // The hook reads recent user turns and skips if any contains those
 // signals.
 //
-// Disable via SOCKET_DONT_STOP_MID_QUEUE_REMINDER_DISABLED.
 
 import process from 'node:process'
 
@@ -129,9 +128,6 @@ const USER_STOP_AUTHORIZATION_RE =
 
 async function main(): Promise<void> {
   const payloadRaw = await readStdin()
-  if (process.env['SOCKET_DONT_STOP_MID_QUEUE_REMINDER_DISABLED']) {
-    process.exit(0)
-  }
   let payload: StopPayload
   try {
     payload = JSON.parse(payloadRaw) as StopPayload

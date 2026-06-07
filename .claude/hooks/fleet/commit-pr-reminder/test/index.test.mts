@@ -67,13 +67,3 @@ test('does NOT fire on the word "generated" without "claude" nearby', () => {
   assert.equal(exitCode, 0)
   assert.equal(stderr, '')
 })
-
-test('disabled env var short-circuits', () => {
-  const t = makeTranscript('Generated with Claude Code')
-  const result = spawnSync('node', [HOOK_PATH], {
-    input: JSON.stringify({ transcript_path: t }),
-    env: { ...process.env, SOCKET_COMMIT_PR_REMINDER_DISABLED: '1' },
-  })
-  assert.equal(result.status, 0)
-  assert.equal(result.stderr, '')
-})

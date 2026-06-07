@@ -157,20 +157,11 @@ test('allows a surgical `git add <file>` even with foreign paths present', () =>
   assert.equal(r.code, 0)
 })
 
-// ─── Bypass / sentinel / disable ──────────────────────────────────
+// ─── Bypass / sentinel ────────────────────────────────────────────
 
 test('FLEET_SYNC=1 prefix bypasses the block', () => {
   writeForeign(repo, 'theirs.txt')
   const r = runHook('FLEET_SYNC=1 git add -A', { cwd: repo })
-  assert.equal(r.code, 0)
-})
-
-test('disabled via env var', () => {
-  writeForeign(repo, 'theirs.txt')
-  const r = runHook('git stash', {
-    cwd: repo,
-    env: { SOCKET_PARALLEL_AGENT_STAGING_GUARD_DISABLED: '1' },
-  })
   assert.equal(r.code, 0)
 })
 

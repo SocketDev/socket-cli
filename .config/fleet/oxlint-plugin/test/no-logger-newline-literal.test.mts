@@ -103,6 +103,13 @@ describe('socket/no-logger-newline-literal', () => {
           code: 'logger.error(`\\n❌ ${msg}`)\n',
           errors: [{ messageId: 'leadingNewline' }],
         },
+        {
+          name: 'template leading \\n before a word starting with `n` (greedy-strip regression)',
+          code: 'logger.error(`\\nnext steps`)\n',
+          errors: [{ messageId: 'leadingNewlineNoEmoji' }],
+          // The leading-`\n` strip must NOT eat the literal `n` of "next".
+          output: "logger.error('')\nlogger.error(`next steps`)\n",
+        },
       ],
     })
   })

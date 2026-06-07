@@ -31,7 +31,7 @@ The skill picks `fast` by default. After running `release` and getting a first s
 
 `run.mts` is **eyes-only**: it watches a run, dumps the failure log tail to a tmp file, and prints a JSON verdict on its final line. The fix-and-push loop is driven by the calling agent. The full sequence:
 
-1. Invoke `node .claude/skills/greening-ci/run.mts --repo <owner/name> [--workflow ci.yml] [--mode fast]`.
+1. Invoke `node .claude/skills/fleet/greening-ci/run.mts --repo <owner/name> [--workflow ci.yml] [--mode fast]`.
 2. Parse the last line of stdout as JSON. Shape:
    ```json
    {
@@ -61,7 +61,7 @@ The log tail almost always ends in one of these patterns. The skill calls these 
 | `npm ERR! 401`/`403` reaching `registry.npmjs.org`                              | Stale `NPM_TOKEN` secret, scoped-package permission drift, or registry filter. | Surface to user; token rotation is out of scope for an auto-fix.                                         |
 | `error: process "/bin/sh -c ..." did not complete successfully`                 | Docker build step crashed; read the inner `RUN` for the real error.            | Read the Docker context for what `RUN` produced the exit code; fix that.                                 |
 | `Failed to restore from cache` followed by `Process completed with exit code 1` | Cache miss + the build doesn't degrade: it errors.                             | Bump the `cache-versions.json` entry to invalidate, OR fix the degraded-mode code path.                  |
-| `denied by enterprise admin` / `not allowed to be used`                         | GH Actions allowlist missing an action. See `auditing-gha-settings`.           | Add the action to the org allowlist. The repo can't fix this; escalate.                                  |
+| `denied by enterprise admin` / `not allowed to be used`                         | GH Actions allowlist missing an action. See `auditing-gha`.           | Add the action to the org allowlist. The repo can't fix this; escalate.                                  |
 
 When the pattern isn't in the table, fall back to careful read-through of the log tail. Don't guess.
 
@@ -75,7 +75,7 @@ Budget tiers:
 - `release` build matrix: **60 min**. Most build-server matrices finish in 20–45min; 60min covers the worst case.
 - `cool` confirmation: **30 min** is fine. At this point you've already seen one success; you just want the rest.
 
-## Companion: `auditing-gha-settings`
+## Companion: `auditing-gha`
 
 Some CI failures aren't code; they're GitHub Actions policy. If you see `denied by enterprise admin` or `the action <name> is not allowed to be used`, that's a GH org-level setting drift, not a code fix. Run `/audit-gha-settings <owner/repo>` (when available) to diff the repo's policy + allowlist against the fleet baseline. The current baseline must include:
 

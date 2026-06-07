@@ -10,7 +10,7 @@ The companion guards that actually block `git commit` / `gh pr create` invocatio
 
 ## Bypass
 
-- `SOCKET_COMMIT_PR_REMINDER_DISABLED=1` — turn off entirely.
+No bypass — the reminder never blocks; it only nudges.
 
 ## Test
 

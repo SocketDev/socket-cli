@@ -17,7 +17,7 @@ Stays quiet in the primary checkout — `dirty-worktree-on-stop-reminder` and `c
 
 ## Bypass
 
-- `SOCKET_COMMIT_CADENCE_REMINDER_DISABLED=1`.
+No bypass — the reminder never blocks.
 
 ## Test
 

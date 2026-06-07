@@ -1,8 +1,8 @@
 /**
  * @file Shared "is there a bypass marker adjacent to this node?" scanner used
  *   by the rules that support an inline opt-out comment
- *   (`no-which-for-local-bin` → `socket-hook: allow which-lookup`,
- *   `prefer-ellipsis-char` → `socket-hook: allow literal-ellipsis`,
+ *   (`no-which-for-local-bin` → `socket-lint: allow which-lookup`,
+ *   `prefer-ellipsis-char` → `socket-lint: allow literal-ellipsis`,
  *   `use-fleet-canonical-api-token-getter` → `socket-api-token-getter: allow
  *   direct-env`). Why a source-text line scan instead of the AST comment APIs:
  *   at the catalog-pinned oxlint version the plugin engine's

@@ -147,14 +147,16 @@ packages/socket/*.png
 # re-cascade via `pnpm run sync`. Project-specific ignores stay
 # OUTSIDE this block; the fixer preserves them.
 # Per-machine Claude Code permission config + log dirs stay ignored;
-# the cascaded subdirs (agents, commands, hooks, settings.json, skills)
-# are explicitly re-included so the wheelhouse cascade can ship them.
+# the cascaded subdirs (agents, commands, hooks, settings.json, skills,
+# workflows) are explicitly re-included so the wheelhouse cascade can
+# ship them.
 /.claude/*
 !/.claude/agents/
 !/.claude/commands/
 !/.claude/hooks/
 !/.claude/settings.json
 !/.claude/skills/
+!/.claude/workflows/
 
 # OS noise
 .DS_Store

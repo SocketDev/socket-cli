@@ -137,6 +137,44 @@ test('Agent codex:codex-rescue with diagnosis passes', async () => {
   assert.strictEqual(r.code, 0)
 })
 
+// A read-only REVIEW prompt naturally mentions write verbs as subject matter
+// (the code under review edits/fixes/adds things). These must NOT block — only
+// an imperative directed at Codex does. Regression guard for the 2026-06-06
+// false-positives where a review prompt was blocked on "edit"/"fix"/"write".
+test('Agent codex review prompt mentioning write verbs as subject matter passes', async () => {
+  const r = await runHook({
+    tool_name: 'Agent',
+    tool_input: {
+      subagent_type: 'codex:codex-rescue',
+      prompt:
+        'Read-only assessment. Judge whether claims hold. The Edit hook gates on tool name; does it fix stale paths? Commit message bodies are outside its reach. Confirm whether runPropagate omits the update step.',
+    },
+  })
+  assert.strictEqual(r.code, 0)
+})
+
+test('Agent codex prompt with a leading "Fix" imperative blocked', async () => {
+  const r = await runHook({
+    tool_name: 'Agent',
+    tool_input: {
+      subagent_type: 'codex:codex-rescue',
+      prompt: 'Fix the off-by-one in the tokenizer.',
+    },
+  })
+  assert.strictEqual(r.code, 2)
+})
+
+test('Agent codex prompt with a list-item "Add" imperative blocked', async () => {
+  const r = await runHook({
+    tool_name: 'Agent',
+    tool_input: {
+      subagent_type: 'codex:codex-rescue',
+      prompt: 'Review the design, then:\n- Add a retry around the fetch',
+    },
+  })
+  assert.strictEqual(r.code, 2)
+})
+
 test('Agent for non-codex subagent passes', async () => {
   const r = await runHook({
     tool_name: 'Agent',

@@ -38,6 +38,51 @@ Bad sanity-check prompts:
 - "Review the last 12 commits." (no anchor, no specific question)
 - "Help me design the next refactor." (that's design work, not verification; use `Plan` or `codex:codex-rescue`)
 
+## Verifying subagent output (their claims are leads, not facts)
+
+A subagent that you fan out to audit/search/review returns a confident, specific, fluent
+report. **Treat its structural claims as leads to verify, not facts to relay.** Fan-out
+audit agents reliably produce reports that mix real findings with overstatements and
+outright inversions — stated with the same confidence.
+
+**What to spot-verify before relaying to the user or acting on it:**
+
+- **Counts** — "52 `-guard` hooks only advise", "TEST_FILE_RE in 6 rules", "17 hooks declare
+  their own type". A count is one `grep -c` away from ground truth.
+- **File / item lists** — the agent names specific files as having property X. Sample 2–3
+  and check; if the sample is wrong, distrust the whole list.
+- **Behavior / exit-code / config assertions** — "this guard exits 0 not 2", "this rule is
+  type-dependent", "X is cascaded downstream". Read the file / run the command.
+- **Negative claims** — "no skill declares effort", "nothing references this". Easiest to
+  state, easy to be wrong; one search confirms or kills it.
+
+**How:** re-derive the load-bearing claim from the source. `grep`/read the cited files, run
+the one-line command the agent could have run. A file:line citation from an agent is a
+pointer to check, not evidence.
+
+**Why this is the rule, not paranoia (incidents):**
+
+- **2026-06-03, DRY/KISS audit:** an agent reported "52 `-guard` hooks only advise (exit 0),
+  not block". Spot-checking six named guards: every one exits 2 (blocks). A complete
+  inversion of the convention, stated confidently with a 50-file list. One `grep -c
+  'exit(2)'` killed it.
+- **2026-06-03, wheelhouse-segment audit:** an agent flagged 5 hooks/skills as wheelhouse-only
+  and movable to `repo/`. Hand-verification (does the dependency exist downstream?) cut it to
+  2 — and those 2 turned out to stay too (data-sharing / dispatch-reach). Net real moves: 0.
+- Same session, an agent listed "~17 hooks declare their own `ToolInput` type"; the three
+  sampled declared none.
+
+**The discriminator** — what makes a claim worth the verification round-trip: it's *cheap to
+verify* (one grep/read) and *expensive to fabricate correctly* (the agent had to actually
+read each file to get the count right, and often didn't). High-confidence + high-specificity
++ cheap-to-check = verify it. Vague impressions ("the code seems complex") aren't worth a
+round-trip; precise falsifiable claims are.
+
+**Budget for it.** When you fan out N audit agents, budget the verification pass as part of
+the work — it's not optional polish. The synthesized report you hand the user should contain
+only what you confirmed, plus an explicit "disproved / unverified" section for the rest. Do
+not launder an agent's unchecked claim into your own voice.
+
 There are two delegation surfaces in this fleet. They look similar but are used differently.
 
 ## Surface 1: CLI subprocess delegation (skills)

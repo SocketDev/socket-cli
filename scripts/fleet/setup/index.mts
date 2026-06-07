@@ -13,14 +13,15 @@ import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
+import { REPO_ROOT } from '../paths.mts'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const repoRoot = path.resolve(__dirname, '..', '..', '..')
 
 function run(script: string, extraArgs: string[] = []): boolean {
   const r = spawnSync(
     'node',
     ['--experimental-strip-types', script, ...extraArgs],
-    { cwd: repoRoot, stdio: 'inherit' },
+    { cwd: REPO_ROOT, stdio: 'inherit' },
   )
   return r.status === 0
 }
@@ -63,7 +64,7 @@ function main(): void {
       'Security tools',
       run(
         path.join(
-          repoRoot,
+          REPO_ROOT,
           '.claude',
           'hooks',
           'fleet',

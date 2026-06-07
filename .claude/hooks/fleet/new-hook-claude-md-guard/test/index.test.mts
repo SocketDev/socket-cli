@@ -242,21 +242,3 @@ test('IGNORES test files inside hook dirs', () => {
     repo.cleanup()
   }
 })
-
-test('disabled env var short-circuits', () => {
-  const repo = makeFakeRepo('# no reference')
-  try {
-    const result = spawnSync('node', [HOOK_PATH], {
-      input: JSON.stringify({
-        tool_name: 'Write',
-        tool_input: { file_path: repo.hookIndexPath('my-new-hook') },
-        transcript_path: makeTranscript(repo.root),
-      }),
-      env: { ...process.env, SOCKET_NEW_HOOK_CLAUDE_MD_GUARD_DISABLED: '1' },
-    })
-    assert.equal(result.status, 0)
-    assert.equal(result.stderr, '')
-  } finally {
-    repo.cleanup()
-  }
-})

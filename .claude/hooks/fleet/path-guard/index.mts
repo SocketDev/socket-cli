@@ -68,8 +68,8 @@ const logger = getDefaultLogger()
 
 const EXEMPT_FILE_PATTERNS: RegExp[] = [
   /(?:^|\/)paths\.(?:cts|mts)$/,
-  /scripts\/check-paths\.mts$/,
-  /scripts\/check-paths\//,
+  /scripts\/fleet\/check\/paths-are-canonical\.mts$/,
+  /scripts\/fleet\/check\/paths\//,
   /\.claude\/hooks\/(?:fleet\/)?path-guard\/index\.(?:cts|mts)$/,
   /\.claude\/hooks\/(?:fleet\/)?path-guard\/test\//,
   /scripts\/check-consistency\.mts$/,

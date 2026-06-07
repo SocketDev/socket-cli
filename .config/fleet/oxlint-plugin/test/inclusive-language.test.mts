@@ -19,8 +19,27 @@ describe('socket/inclusive-language', () => {
           name: 'main branch',
           code: 'const branch = "main"\nconsole.log(branch)\n',
         },
+        // Linkage positions: renaming would break the binding — never flag.
+        {
+          name: 're-export specifier (module exports `whitelist`)',
+          code: 'export { whitelist } from "pkg"\n',
+        },
+        {
+          name: 'member property access (external field)',
+          code: 'const cfg = globalThis.cfg\nconsole.log(cfg.whitelist)\n',
+        },
+        {
+          name: 'object-literal key (API shape)',
+          code: 'const opts = { whitelist: 1 }\nconsole.log(opts)\n',
+        },
       ],
       invalid: [
+        {
+          name: 'owned variable name still flags + fixes (whitelist → allowlist)',
+          code: 'const whitelist = ["a"]\n',
+          errors: [{ messageId: 'legacy' }],
+          output: 'const allowlist = ["a"]\n',
+        },
         {
           name: 'master/slave naming',
           code: 'const master = true\nconst slave = false\nconsole.log(master, slave)\n',

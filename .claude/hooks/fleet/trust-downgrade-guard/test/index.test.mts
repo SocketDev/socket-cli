@@ -1,8 +1,7 @@
 /**
  * @file Unit tests for trust-downgrade-guard hook. Spawns the hook as a child
  *   process with synthesized PreToolUse payloads. Covers Bash + Edit/Write
- *   downgrade detection, single-use bypass consumption, the disabled env var,
- *   and fail-open.
+ *   downgrade detection, single-use bypass consumption, and fail-open.
  */
 
 import assert from 'node:assert/strict'
@@ -187,14 +186,7 @@ test('two phrases authorize two downgrades (one prior, one now)', () => {
   assert.equal(r.code, 0)
 })
 
-// ─── Disable + fail-open ──────────────────────────────────────────
-
-test('disabled via env var', () => {
-  const r = run(bash('pnpm install --config.trustPolicy=trust-all'), {
-    SOCKET_TRUST_DOWNGRADE_GUARD_DISABLED: '1',
-  })
-  assert.equal(r.code, 0)
-})
+// ─── Fail-open ────────────────────────────────────────────────────
 
 test('fails open on malformed payload', () => {
   const r = spawnSync('node', [HOOK], { input: 'not json', env: process.env })

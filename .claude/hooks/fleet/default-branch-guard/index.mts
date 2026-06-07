@@ -23,7 +23,6 @@
 // fires when the command shape implies a reusable script.
 //
 // Bypass: "Allow default-branch bypass" in a recent user turn, or set
-// SOCKET_DEFAULT_BRANCH_GUARD_DISABLED=1.
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
@@ -77,9 +76,6 @@ const TRIPLE_DOT_BRANCH_RE = /\b(?:main|master)\.{2,3}HEAD\b/
 // withBashGuard handles the stdin drain, tool_name gate, command narrow,
 // and fail-open on any throw.
 await withBashGuard((command, payload) => {
-  if (process.env['SOCKET_DEFAULT_BRANCH_GUARD_DISABLED']) {
-    return
-  }
 
   const hits: string[] = []
   for (let i = 0, { length } = SCRIPT_CONTEXT_PATTERNS; i < length; i += 1) {

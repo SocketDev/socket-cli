@@ -72,7 +72,13 @@ const rule = {
       if (summary) {
         return summary
       }
-      summary = summarizeImportTarget(sourceCode.ast, 'existsSync')
+      // Pass localName so a file with its OWN `existsSync` binding (import,
+      // const, or function) is detected — see hasLocal use below.
+      summary = summarizeImportTarget(
+        sourceCode.ast,
+        'existsSync',
+        'existsSync',
+      )
       return summary
     }
 
@@ -126,6 +132,14 @@ const rule = {
             }
 
             const s = ensureSummary()
+            // The file already binds `existsSync` to something else (its own
+            // import/const/function). Rewriting the call to `existsSync(...)`
+            // would resolve to THAT binding, not node:fs, and injecting the
+            // import would collide (TS2440). Report without a fix.
+            if (s.hasLocal) {
+              context.report({ node, messageId: 'fileExists', data: { name } })
+              return
+            }
             const argText = sourceCode.getText(node.arguments[0])
 
             context.report({

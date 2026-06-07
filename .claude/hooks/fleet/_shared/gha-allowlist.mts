@@ -13,7 +13,7 @@
  *   this list — the `workflow-third-party-action-guard` hook enforces that at
  *   edit time. Shared by:
  *
- *   - .claude/skills/fleet/auditing-gha-settings/run.mts (audits org-level
+ *   - .claude/skills/fleet/auditing-gha/run.mts (audits org-level
  *     Actions permissions against this baseline).
  *   - .claude/hooks/fleet/workflow-third-party-action-guard/ (blocks Edit/Write
  *     of a workflow that introduces a non-allowlisted `uses:` line).
@@ -115,7 +115,7 @@ const USES_RE = /^\s*-?\s*uses:\s+(\S+)/
 
 /**
  * Find every `uses:` line in `text` (a workflow YAML body) and return one entry
- * per line. The order matches source order. Lines marked `# socket-hook: allow
+ * per line. The order matches source order. Lines marked `# socket-lint: allow
  * third-party-action` are excluded — they're a one-off opt-out for cases where
  * inlining isn't practical (e.g. a vendor-mandated action with a fleet
  * exception on file).
@@ -125,7 +125,7 @@ export function extractActionRefs(text: string): UsesRefMatch[] {
   const lines = text.split('\n')
   for (let i = 0, { length } = lines; i < length; i += 1) {
     const line = lines[i]!
-    if (line.includes('# socket-hook: allow third-party-action')) {
+    if (line.includes('# socket-lint: allow third-party-action')) {
       continue
     }
     const m = USES_RE.exec(line)

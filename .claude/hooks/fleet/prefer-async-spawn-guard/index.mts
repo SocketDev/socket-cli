@@ -24,7 +24,6 @@
 //
 // Fails open on malformed payloads (exit 0 + stderr log).
 //
-// Disable via SOCKET_PREFER_ASYNC_SPAWN_GUARD_DISABLED.
 // Bypass (per call): user types `Allow async-spawn bypass`.
 
 import process from 'node:process'
@@ -95,16 +94,12 @@ export function findChildProcessImports(text: string): Finding[] {
   return findings
 }
 
-if (process.env['SOCKET_PREFER_ASYNC_SPAWN_GUARD_DISABLED']) {
-  process.exit(0)
-}
-
 // withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
 // content extraction (new_string / content), and fail-open on any throw.
 //
 // Gate the top-level invocation on argv[1] so unit tests can import the
 // exported detectors without the harness blocking on stdin.
-if (process.argv[1] && process.argv[1].endsWith('index.mts')) {
+if (process.argv[1]?.endsWith('index.mts')) {
   await withEditGuard((filePath, content, payload) => {
     if (isExemptPath(filePath)) {
       return

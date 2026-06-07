@@ -12,10 +12,10 @@
 // when `stop_hook_active` is set, so this can fire at most once per
 // stop chain — Claude is given one forced chance to fix or to state
 // the trade-off explicitly.
-//
-// Disabled via SOCKET_EXCUSE_DETECTOR_DISABLED env var.
 
 import { runStopReminder } from '../_shared/stop-reminder.mts'
+
+import type { ReminderHit } from '../_shared/stop-reminder.mts'
 
 // Deferral-verb fragment shared by every bare-phrase pattern that
 // the assistant might quote descriptively in a summary. Phrases
@@ -42,7 +42,6 @@ export function withDeferralVerb(phraseRe: string): RegExp {
 
 await runStopReminder({
   name: 'excuse-detector',
-  disabledEnvVar: 'SOCKET_EXCUSE_DETECTOR_DISABLED',
   blocking: true,
   // Strip quoted spans so the hook doesn't self-fire when the
   // assistant *describes* the phrases it detects (e.g. a summary
@@ -138,4 +137,30 @@ await runStopReminder({
   ],
   closingHint:
     "These phrases usually precede a deferral. The Stop hook will block once so Claude must act on the matched item — either fix it now, or state the trade-off explicitly with the user's constraint.",
+  // Relaying an unverified subagent/audit claim. A single regex over-fires on
+  // "the agent found 52, but grep showed 0" (verified relays), so this is a
+  // two-step sentence-scoped check: find the claim (agent/audit + report-verb +
+  // a number = a structural count), then confirm the SAME sentence carries no
+  // verification / correction verb. CLAUDE.md "Verify subagent claims": counts
+  // are leads, not facts.
+  extraCheck: (text: string): readonly ReminderHit[] => {
+    const CLAIM =
+      /\b(?:the )?(?:(?:sub)?agent|audit|reviewer)\b[^.?!\n]{0,40}\b(?:found|flagged|identified|reported|says?|claims?)\b[^.?!\n]{0,30}\d/gi
+    const VERIFIED =
+      /\b(?:verif|grep|checked|confirm|spot-check|re-deriv|disprov|false|wrong|actually|but|however)\w*/i
+    const hits: ReminderHit[] = []
+    for (const m of text.matchAll(CLAIM)) {
+      const rest = text.slice(m.index)
+      const endRel = rest.search(/[.?!\n]/)
+      const sentence = endRel === -1 ? rest : rest.slice(0, endRel)
+      if (!VERIFIED.test(sentence)) {
+        hits.push({
+          label: 'relaying an unverified subagent claim (count)',
+          why: 'CLAUDE.md "Verify subagent claims before relaying or acting": a subagent\'s counts / lists / behavior assertions are leads, not facts. grep/read the cited files and report only what you confirmed (plus an explicit disproved / unverified section). See docs/claude.md/fleet/agent-delegation.md.',
+          snippet: sentence.length > 80 ? sentence.slice(0, 77) + '…' : sentence,
+        })
+      }
+    }
+    return hits
+  },
 })

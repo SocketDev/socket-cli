@@ -116,16 +116,6 @@ test('ignores untracked-by-default trees (vendor/)', () => {
   assert.doesNotMatch(r.stderr, /vendor\/dep\.js/)
 })
 
-test('disabled via env var', () => {
-  writeFile(repo, 'theirs.txt')
-  const r = runHook({
-    cwd: repo,
-    env: { SOCKET_PARALLEL_AGENT_REMINDER_DISABLED: '1' },
-  })
-  assert.equal(r.code, 0)
-  assert.equal(r.stderr.trim(), '')
-})
-
 test('fails open on malformed payload', () => {
   writeFile(repo, 'theirs.txt')
   const r = spawnSync('node', [HOOK], {

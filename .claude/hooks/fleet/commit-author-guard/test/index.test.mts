@@ -290,27 +290,6 @@ test('ALLOWS with hyphenless variant "Allow commit author bypass"', () => {
   }
 })
 
-test('disabled env var short-circuits', () => {
-  const repo = makeFakeRepo()
-  try {
-    const { exitCode } = runHook(
-      {
-        tool_name: 'Bash',
-        tool_input: {
-          command: 'git commit --author="Wrong <w@e.com>" -m "fix"',
-        },
-        transcript_path: makeTranscript(repo.root),
-        cwd: path.join(repo.root, 'repo'),
-      },
-      repo.home,
-      { SOCKET_COMMIT_AUTHOR_GUARD_DISABLED: '1' },
-    )
-    assert.equal(exitCode, 0)
-  } finally {
-    repo.cleanup()
-  }
-})
-
 test('fails open when no canonical email is configured anywhere', () => {
   // Delete the git-authors.json AND clear global git config email
   // path is checked separately — here we just ensure the JSON path

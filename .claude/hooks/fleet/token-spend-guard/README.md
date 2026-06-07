@@ -19,7 +19,6 @@ Mechanical work is dumb-bit propagation; a cheap/fast model at low/medium effort
 
 - `Allow model bypass` (keep the premium model for this task) — also accepts `Allow model-spend bypass`.
 - `Allow effort bypass` (keep high effort for this task).
-- `SOCKET_TOKEN_SPEND_GUARD_DISABLED=1` (disable entirely).
 
 ## Test
 

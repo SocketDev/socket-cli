@@ -47,7 +47,7 @@ Same hook runs at SessionStart and walks fleet repos under `~/projects/` looking
 - `[user] name = Test User`
 - Local `commit.gpgsign = false`
 
-Findings are emitted to stderr at SessionStart (informational, never blocks). Cleanup is operator-driven: edit `.git/config` manually, or `git config --unset <key>` per finding. Per the fleet's "never update the git config" rule, no auto-fix.
+Findings are reported at SessionStart (informational, never blocks). `core.bare = true` is the one exception to "no auto-fix": it is unset automatically (`git config -f <path> --unset core.bare`) because it is always wrong for a non-bare fleet checkout and breaks every `git` command on that `.git/` for any session — there is no legitimate reason to keep it, so restoring it needs no human judgment. The identity/signing findings (test-fixture email, `Test User`, `commit.gpgsign = false`) stay operator-driven: edit `.git/config` manually, or `git config --unset <key>` per finding.
 
 ## Why this exists
 

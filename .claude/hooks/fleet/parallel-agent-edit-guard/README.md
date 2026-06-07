@@ -21,11 +21,11 @@ no parallel agent is active — all pass through.
 
 ## Why
 
-Incident 2026-05-27: two Claude sessions plus a Codex companion shared one
-`socket-wheelhouse` checkout. One session repeatedly re-cascaded
-`shell-command.mts` + test files, silently reverting the other session's
-type-error fixes one Edit at a time. The four-times-clobbered fixes only
-stuck once both sessions stopped touching the same files.
+When two Claude sessions (or a Claude session plus a Codex companion) share
+one checkout, one session can repeatedly re-cascade a file the other is
+editing — silently reverting the other session's type-error fixes one Edit
+at a time. The clobbered fixes only stick once both sessions stop touching
+the same files.
 
 `parallel-agent-staging-guard` catches the _git-op_ version of this hazard
 (`git add -A` / `stash` / `reset --hard`); it can't see a plain `Write`
@@ -44,7 +44,6 @@ All three share the `_shared/foreign-paths.mts` heuristic.
 
 - User types `Allow parallel-agent-edit bypass` in chat (case-sensitive),
   then retry — one action.
-- `SOCKET_PARALLEL_AGENT_EDIT_GUARD_DISABLED=1` in env.
 - `FLEET_SYNC=1` in env — cascade scripts run in a fresh worktree off
   `origin/main`, so there is no parallel-session hazard.
 

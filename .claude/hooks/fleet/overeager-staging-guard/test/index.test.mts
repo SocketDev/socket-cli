@@ -178,14 +178,6 @@ test('bypass: `Allow add-all bypass` in transcript allows broad add', () => {
   assert.equal(r.code, 0)
 })
 
-test('env disable short-circuits', () => {
-  const r = runHook('git add -A', {
-    cwd: tmpRepo,
-    env: { SOCKET_OVEREAGER_STAGING_GUARD_DISABLED: '1' },
-  })
-  assert.equal(r.code, 0)
-})
-
 // ─── Layer 2: BLOCK a bare git commit that sweeps unfamiliar files ─
 
 test('git commit with empty index passes silently', () => {

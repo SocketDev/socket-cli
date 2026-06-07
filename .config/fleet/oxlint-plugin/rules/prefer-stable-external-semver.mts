@@ -19,10 +19,10 @@
 import { makeBypassChecker } from '../lib/comment-markers.mts'
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
-// socket-hook: allow bare-semver -- opt-out for `semver` consumers inside the
+// socket-lint: allow bare-semver -- opt-out for `semver` consumers inside the
 // `src/external/` wrapper itself or anywhere the bundle-deps concern doesn't
 // apply (e.g. a bundler config that needs the upstream package directly).
-const BYPASS_RE = /socket-hook:\s*allow\s+bare-semver/
+const BYPASS_RE = /socket-lint:\s*allow\s+bare-semver/
 
 const STABLE_PATH = '@socketsecurity/lib-stable/external/semver'
 
@@ -77,7 +77,8 @@ const rule = {
           node: source,
           messageId: 'banned',
           fix(fixer: RuleFixer) {
-            return fixer.replaceText(source, `'${replacement}'`)
+            const q = source.raw?.[0] === '"' ? '"' : "'"
+            return fixer.replaceText(source, `${q}${replacement}${q}`)
           },
         })
       },

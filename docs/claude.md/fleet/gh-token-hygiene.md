@@ -147,7 +147,7 @@ Three recovery paths, ordered from cleanest to most surgical:
    node ~/.claude/hooks/fleet/gh-token-hygiene-guard/index.mts --stamp
    ```
    Writes a fresh `Date.now()` to the stamp file. Use this when you've already done `gh auth refresh` externally and don't want to re-run it.
-3. **Auto-correction of malformed values.** If the stamp file contains a value less than `1577836800000` (2020-01-01 in ms) — e.g. you accidentally wrote POSIX seconds via `date "+%s" > ~/.claude/gh-token-issued-at` — the hook treats it as malformed on the next read, re-stamps, and proceeds. No manual intervention required; the malformed-value branch is there as a safety net for cases like the seconds-vs-ms confusion (2026-05-28 incident).
+3. **Auto-correction of malformed values.** If the stamp file contains a value less than `1577836800000` (2020-01-01 in ms) — e.g. you accidentally wrote POSIX seconds via `date "+%s" > ~/.claude/gh-token-issued-at` — the hook treats it as malformed on the next read, re-stamps, and proceeds. No manual intervention required; the malformed-value branch is there as a safety net for cases like the seconds-vs-ms confusion.
 
 The stamp file is purely an in-process record of "when did the hook last see a refresh"; the actual token security lives in the OS keychain. A wrong stamp value can't escalate access — at worst it temporarily locks the user out of gh tool calls until they reauth or re-stamp.
 

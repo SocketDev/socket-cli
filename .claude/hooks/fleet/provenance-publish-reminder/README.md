@@ -23,7 +23,7 @@ For the resolved name@version:
 3. If 2xx and BOTH `dist.attestations` + `_npmUser.trustedPublisher`
    are present: silent.
 4. Otherwise: warn to stderr listing the missing signals and pointing
-   at `scripts/check-provenance.mts` for follow-up.
+   at `scripts/fleet/check/provenance-is-attested.mts` for follow-up.
 
 The hook never fails the turn — Stop hooks shouldn't gate. The warning
 surfaces; the operator decides what to do.
@@ -34,11 +34,10 @@ surfaces; the operator decides what to do.
 `<name>@<version>` string so a given release is checked at most once.
 Bumping the version resets the throttle (different stateKey).
 
-## Configuration
+## Bypass
 
-| Env var                               | Behavior       |
-| ------------------------------------- | -------------- |
-| `SOCKET_PROVENANCE_REMINDER_DISABLED` | Skip entirely. |
+No bypass — it's a reminder (exit 0), not a block. A 404 (release in
+flight) or both trust signals present already keeps it silent.
 
 ## Why this exists
 

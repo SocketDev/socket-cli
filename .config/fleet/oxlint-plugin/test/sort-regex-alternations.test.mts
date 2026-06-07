@@ -15,12 +15,21 @@ describe('socket/sort-regex-alternations', () => {
           name: 'sorted alternation',
           code: 'export const r = /^(alpha|beta|gamma)$/\n',
         },
+        {
+          name: 'prefix-overlap left unsorted is NOT flagged (order-sensitive)',
+          code: 'export const r = /(jsx|js)/\n',
+        },
+        {
+          name: 'prefix-overlap already-alpha is also left alone',
+          code: 'export const r = /(js|jsx)/\n',
+        },
       ],
       invalid: [
         {
           name: 'unsorted alternation',
           code: 'export const r = /^(gamma|alpha|beta)$/\n',
           errors: [{ messageId: 'unsorted' }],
+          output: 'export const r = /^(alpha|beta|gamma)$/\n',
         },
       ],
     })

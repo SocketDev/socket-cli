@@ -62,9 +62,9 @@ The file-path heuristic only suppresses the **prose** signal. The behavioral sig
 
 Stop hooks fire after the turn. Blocking would just truncate the assistant's response. The warning prompts the next turn to write the rule.
 
-## Configuration
+## Bypass
 
-`SOCKET_COMPOUND_LESSONS_REMINDER_DISABLED=1` — turn off entirely.
+No bypass — the reminder never blocks.
 
 ## Test
 

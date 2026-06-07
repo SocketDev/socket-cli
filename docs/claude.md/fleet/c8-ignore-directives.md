@@ -83,10 +83,10 @@ That one line. No body, no follow-on statements. The directive does what its nam
 
 ## Real-world impact
 
-The socket-lib coverage push from 98.9% → 99.15% in one commit came almost entirely from converting 9 files' worth of `c8 ignore next N` directives to start/stop blocks. The "uncovered" lines weren't untested code. They were defensive arms that c8 had been instructed to ignore but the reporter quietly kept counting because the directive form was wrong.
+A coverage report can show a cluster of "uncovered" lines that all carry a `c8 ignore next N` directive directly above them. Converting those directives to start/stop blocks lifts the reported number with zero test changes. The "uncovered" lines weren't untested code. They were defensive arms that c8 had been instructed to ignore but the reporter quietly kept counting because the directive form was wrong.
 
 The bug is in the c8/v8 reporter's directive parser, not in any user code; until upstream fixes it, the fleet rule is **always use start/stop brackets for multi-line bodies, even when `next N` would seem to suffice.**
 
 ## Reason
 
-> Past incident, 2026-05-24: socket-lib's coverage report showed ~30 "uncovered" lines that all had `c8 ignore next N` directives directly above them. Converting all of them to `c8 ignore start` / `c8 ignore stop` blocks moved coverage from 98.9% → 99.15% with zero test changes. The lines had been correctly marked as untestable defensive arms all along, but the reporter wasn't honoring the directive form. This compound lesson promotes the workaround to a fleet rule.
+> When a coverage report flags a batch of "uncovered" lines that all carry a `c8 ignore next N` directive directly above them, converting every one to a `c8 ignore start` / `c8 ignore stop` block recovers the coverage with zero test changes. The lines were correctly marked as untestable defensive arms all along; the reporter wasn't honoring the line-counting directive form. This compound lesson promotes the workaround to a fleet rule.

@@ -19,6 +19,7 @@ import {
   gitLines,
   normalizePath,
   readFileForScan,
+  runStagedTestsReminder,
   scanAwsKeys,
   scanCrossRepoPaths,
   scanDocsPnpmFirst,
@@ -30,7 +31,7 @@ import {
   scanPrivateKeys,
   scanSocketApiKeys,
   shouldSkipFile,
-  socketHookMarkerFor,
+  socketLintMarkerFor,
 } from '../_shared/helpers.mts'
 
 const logger = getDefaultLogger()
@@ -168,7 +169,7 @@ const main = (): number => {
           '`/Users/<user>/...` (macOS), `/home/<user>/...` (Linux), or ' +
           '`C:\\Users\\<USERNAME>\\...` (Windows). Env vars also work ' +
           '(`$HOME`, `${USER}`). For documentation lines that need the ' +
-          `literal form, append the marker \`${socketHookMarkerFor(file, 'personal-path')}\`.`,
+          `literal form, append the marker \`${socketLintMarkerFor(file, 'personal-path')}\`.`,
       )
       errors++
     }
@@ -287,7 +288,7 @@ const main = (): number => {
       logger.info(
         "Use 'pnpm exec <package>' or 'pnpm run <script>' instead. For " +
           'documentation lines that need the literal `npx` form, append ' +
-          `the marker \`${socketHookMarkerFor(file, 'npx')}\`.`,
+          `the marker \`${socketLintMarkerFor(file, 'npx')}\`.`,
       )
       errors++
     }
@@ -298,7 +299,7 @@ const main = (): number => {
   // Fleet rule: user-facing install commands in docs lead with the
   // pnpm form. npm/yarn fallbacks come after. Block-only — inline
   // backtick spans are not scanned. Suppress per-block with
-  // `socket-hook: allow pnpm-first`.
+  // `socket-lint: allow pnpm-first`.
   logger.info('Checking docs lead with pnpm install commands…')
   for (const file of stagedFiles) {
     if (shouldSkipFile(file)) {
@@ -322,7 +323,7 @@ const main = (): number => {
       }
       logger.info(
         'Lead with the pnpm form; keep npm/yarn as fallbacks. To ' +
-          'suppress a fenced block, include `socket-hook: allow ' +
+          'suppress a fenced block, include `socket-lint: allow ' +
           'pnpm-first` anywhere in the block.',
       )
     }
@@ -381,7 +382,7 @@ const main = (): number => {
       logger.info(
         'Use `getDefaultLogger()` from `@socketsecurity/lib-stable/logger/default`. ' +
           'For documentation lines that need the literal call, append ' +
-          `the marker \`${socketHookMarkerFor(file, 'logger')}\`.`,
+          `the marker \`${socketLintMarkerFor(file, 'logger')}\`.`,
       )
       errors++
     }
@@ -431,7 +432,7 @@ const main = (): number => {
           'are forbidden — they assume sibling-clone layout and break in CI / fresh clones. ' +
           'Import via the published npm package instead (`@socketsecurity/lib-stable/<subpath>`, ' +
           `\`@socketsecurity/registry-stable/<subpath>\`). For documentation lines that need the ` +
-          `literal path, append the marker \`${socketHookMarkerFor(file, 'cross-repo')}\`.`,
+          `literal path, append the marker \`${socketLintMarkerFor(file, 'cross-repo')}\`.`,
       )
       errors++
     }
@@ -465,6 +466,28 @@ const main = (): number => {
     logger.fail(`Security check failed with ${errors} error(s).`)
     logger.error('Fix the issues above and try again.')
     return 1
+  }
+
+  // Staged-test reminder — NON-BLOCKING. Runs `vitest related` on the staged
+  // delta and warns if anything fails, so breakage surfaces at the earliest
+  // moment. It never blocks: the fleet cadence allows per-step `--no-verify`
+  // commits and gates tests at the merge (`fix --all` / `check --all` / `test`
+  // before landing). This runs LAST, after the security gate has passed, so a
+  // slow test pass doesn't delay a security-failing commit's feedback.
+  logger.info('Running staged tests (reminder)…')
+  const testFailure = runStagedTestsReminder(
+    stagedFiles,
+    repoTopline || process.cwd(),
+  )
+  if (testFailure) {
+    logger.warn('Staged tests are failing — run before landing:')
+    for (const line of testFailure.split('\n').slice(-12)) {
+      logger.info(line)
+    }
+    logger.warn(
+      'Not blocking this commit (fleet cadence gates tests at the merge), ' +
+        'but fix these before `fix --all` / `check --all` / `test` + push.',
+    )
   }
 
   logger.success('All security checks passed!')

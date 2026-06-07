@@ -25,7 +25,6 @@
 // The skip list errs on the side of suppressing false positives;
 // genuine in-scope files past the cap will still surface.
 //
-// Disable via SOCKET_FILE_SIZE_REMINDER_DISABLED.
 
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import process from 'node:process'
@@ -165,9 +164,6 @@ export function isExempt(absPath: string): boolean {
 
 async function main(): Promise<void> {
   const payloadRaw = await readStdin()
-  if (process.env['SOCKET_FILE_SIZE_REMINDER_DISABLED']) {
-    process.exit(0)
-  }
   let payload: StopPayload
   try {
     payload = JSON.parse(payloadRaw) as StopPayload

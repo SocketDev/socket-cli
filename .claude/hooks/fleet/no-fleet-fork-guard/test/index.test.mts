@@ -395,3 +395,63 @@ test('empty stdin passes through', async () => {
   })
   assert.strictEqual(result.code, 0)
 })
+
+// Root-level files (dirname === '.') previously mis-resolved to `template/.`
+// (the template dir, which always exists) and were wrongly blocked. A root file
+// is canonical only when an actual template/<file> twin exists.
+test('Edit on a root-level file with NO template twin passes (e.g. pnpm-workspace.yaml)', async () => {
+  const repo = makeFakeFleetRepo()
+  try {
+    // The repo HAS a template/ dir but no template/pnpm-workspace.yaml.
+    mkdirSync(path.join(repo, 'template'), { recursive: true })
+    const file = path.join(repo, 'pnpm-workspace.yaml')
+    writeFileSync(file, 'catalog:\n')
+    const result = await runHook({
+      tool_input: { file_path: file, new_string: 'x' },
+      tool_name: 'Edit',
+    })
+    assert.strictEqual(result.code, 0)
+  } finally {
+    rmSync(repo, { force: true, recursive: true })
+  }
+})
+
+test('Edit on CLAUDE.md (hybrid file WITH FLEET-CANONICAL markers) is ALLOWED', async () => {
+  // CLAUDE.md carries BEGIN/END FLEET-CANONICAL markers: only the block between
+  // them is canonical, so the preamble + project-specific postamble are
+  // repo-owned and editing them is not a fork. A fork inside the block is caught
+  // by the sync's claude_md_fleet_drift check at commit time.
+  const repo = makeFakeFleetRepo()
+  try {
+    mkdirSync(path.join(repo, 'template'), { recursive: true })
+    writeFileSync(path.join(repo, 'template/CLAUDE.md'), '# canonical\n')
+    const file = path.join(repo, 'CLAUDE.md')
+    const result = await runHook({
+      tool_input: { file_path: file, new_string: 'x' },
+      tool_name: 'Edit',
+    })
+    assert.strictEqual(result.code, 0)
+  } finally {
+    rmSync(repo, { force: true, recursive: true })
+  }
+})
+
+test('Edit on a root-level canonical file WITHOUT fleet-block markers is BLOCKED', async () => {
+  // A root file that has a template/ twin but carries NO BEGIN/END markers is
+  // fully canonical (not a hybrid) — editing it downstream is a fork.
+  const repo = makeFakeFleetRepo()
+  try {
+    mkdirSync(path.join(repo, 'template'), { recursive: true })
+    writeFileSync(path.join(repo, 'template/oxlintrc.json'), '{}\n')
+    const file = path.join(repo, 'oxlintrc.json')
+    writeFileSync(file, '{}\n')
+    const result = await runHook({
+      tool_input: { file_path: file, new_string: '{"x":1}' },
+      tool_name: 'Edit',
+    })
+    assert.strictEqual(result.code, 2)
+    assert.match(result.stderr, /no-fleet-fork-guard/)
+  } finally {
+    rmSync(repo, { force: true, recursive: true })
+  }
+})

@@ -46,8 +46,8 @@ require/import that escapes the repo.
   (`.git-hooks/_helpers.mts`), the canonical `CLAUDE.md` fleet block
   (which documents fleet repos by name), `.gitmodules`, lockfiles, and
   Claude memory files.
-- **Exempts** lines tagged `// socket-hook: allow cross-repo` (or `#`
-  / `/*` for non-TS files). The bare `// socket-hook: allow` form also
+- **Exempts** lines tagged `// socket-lint: allow cross-repo` (or `#`
+  / `/*` for non-TS files). The bare `// socket-lint: allow` form also
   works for blanket suppression.
 
 ## Fleet repo list

@@ -27,11 +27,14 @@
 // message string, flag if it's <40 chars AND matches a vague-only
 // shape.
 //
-// Disable via SOCKET_ERROR_MESSAGE_QUALITY_REMINDER_DISABLED.
 
 import process from 'node:process'
 
 import { findThrowNew } from '../_shared/acorn/index.mts'
+import {
+  ERROR_CLASS_RE,
+  gradeMessage,
+} from '../_shared/error-message-quality.mts'
 import {
   extractCodeFences,
   readLastAssistantText,
@@ -43,74 +46,14 @@ interface StopPayload {
   readonly transcript_path?: string | undefined
 }
 
-// Vague-only error messages — too short to contain "what / where /
-// saw vs. wanted / fix" content. Each pattern matches the WHOLE
-// message string (anchored), so longer messages containing these
-// words but also a field path or rule are not flagged.
-//
-// The shape is: a verb or adjective + optional generic noun, with
-// no colon (a colon usually signals a field-path prefix like
-// "user.email: must be lowercase"), no period sentences, no quoted
-// values.
-const VAGUE_MESSAGE_PATTERNS: ReadonlyArray<{
-  label: string
-  regex: RegExp
-  hint: string
-}> = [
-  {
-    label: 'bare "invalid"',
-    regex:
-      /^(?:invalid|invalid value|invalid input|invalid argument|invalid format)\.?$/i,
-    hint: '"Invalid" describes the fallout, not the rule. Say what shape was expected: "must be lowercase", "must match /^[a-z]+$/", "must be one of X / Y / Z".',
-  },
-  {
-    label: 'bare "failed"',
-    regex:
-      /^(?:failed|failure|operation failed|request failed|action failed)\.?$/i,
-    hint: '"Failed" describes the symptom. Name what was attempted and what blocked it: "could not write <path>: ENOENT", "fetch <url> returned 503".',
-  },
-  {
-    label: 'bare "error occurred"',
-    regex: /^(?:an? )?error(?:\s+occurred)?\.?$/i,
-    hint: 'The message says nothing the reader can act on. State the rule, the location, the bad value.',
-  },
-  {
-    label: 'bare "something went wrong"',
-    regex: /^something went wrong\.?$/i,
-    hint: 'Pure filler. CLAUDE.md "Error messages": the reader should fix the problem from the message alone.',
-  },
-  {
-    label: 'bare "unable to X" / "could not X" (verb-only)',
-    regex: /^(?:unable to|could not|cannot|can'?t)\s+\w+\.?$/i,
-    hint: 'No object / no reason. "Unable to read" → "could not read <path>: <errno>".',
-  },
-  {
-    label: 'bare "not found"',
-    regex: /^(?:not found|not\s+exist|does not exist|missing)\.?$/i,
-    hint: 'Missing what? Where? Say "config file not found: <path>" with the specific path.',
-  },
-  {
-    label: 'bare "bad" / "wrong" / "incorrect"',
-    regex:
-      /^(?:bad|wrong|incorrect|invalid format)(?:\s+(?:argument|data|format|input|value))?\.?$/i,
-    hint: 'Same as "invalid" — describe the rule the value violated, not how you feel about it.',
-  },
-]
-
-// AST-based detector — walks every `throw new <Ctor>(...)` via the
-// shared acorn helper. The previous version had to parse the throw
-// shape with a single complex regex that:
-//   1. Couldn't handle interpolated template literals (it relied on
-//      the body containing no quote characters at all).
-//   2. Could false-positive on string literals containing the literal
-//      text `throw new Error("...")`.
-//
-// AST eliminates both. We accept any constructor matching `/Error$/`
-// or the literal `TemporalError`, then inspect the first argument; if
-// it's a string Literal, we grade it.
-
-// Match any Error-suffixed class plus the legacy TemporalError name.
-const ERROR_CLASS_RE = /(?:Error|TemporalError)$/
+// The vague-message patterns + grading bar live in the shared
+// `_shared/error-message-quality.mts` (VAGUE_MESSAGE_PATTERNS, gradeMessage,
+// ERROR_CLASS_RE) so this Stop reminder and the commit-time
+// `error-messages-are-thorough` check grade identically. AST-based detection:
+// `findThrowNew` walks every `throw new <Ctor>(...)` so an interpolated
+// template literal or a string containing the literal text `throw new
+// Error("...")` can't fool a regex; the message string is then run through the
+// shared `gradeMessage`.
 
 interface MessageFinding {
   readonly errorClass: string
@@ -133,39 +76,14 @@ export function gradeMessages(
     for (let i = 0, { length } = throwSites; i < length; i += 1) {
       const site = throwSites[i]!
       const message = (site.message ?? '').trim()
-      if (message.length === 0) {
-        // Non-string-Literal first arg (template literal with
-        // interpolation, an identifier, etc.) — out of scope; this
-        // hook only grades static-string violations.
-        continue
-      }
-      // Skip messages that contain a colon (suggests field-path prefix)
-      // or a quoted value (suggests "saw vs. wanted" present).
-      if (
-        message.includes(':') ||
-        message.includes('"') ||
-        message.includes('`')
-      ) {
-        continue
-      }
-      if (message.length > 40) {
-        continue
-      }
-      for (
-        let pi = 0, { length: patternsLen } = VAGUE_MESSAGE_PATTERNS;
-        pi < patternsLen;
-        pi += 1
-      ) {
-        const pattern = VAGUE_MESSAGE_PATTERNS[pi]!
-        if (pattern.regex.test(message)) {
-          findings.push({
-            errorClass: site.ctorName,
-            message,
-            label: pattern.label,
-            hint: pattern.hint,
-          })
-          break
-        }
+      const grade = gradeMessage(message)
+      if (grade) {
+        findings.push({
+          errorClass: site.ctorName,
+          message,
+          label: grade.label,
+          hint: grade.hint,
+        })
       }
     }
   }
@@ -174,9 +92,6 @@ export function gradeMessages(
 
 async function main(): Promise<void> {
   const payloadRaw = await readStdin()
-  if (process.env['SOCKET_ERROR_MESSAGE_QUALITY_REMINDER_DISABLED']) {
-    process.exit(0)
-  }
   let payload: StopPayload
   try {
     payload = JSON.parse(payloadRaw) as StopPayload

@@ -73,14 +73,25 @@ async function runHook(
     cwd,
     stdio: 'pipe',
   })
-  let stderr = ''
-  child.stderr.on('data', chunk => {
-    stderr += chunk.toString('utf8')
-  })
-  child.stdin.end(pushLine)
-  return new Promise(resolve => {
-    child.on('exit', code => resolve({ code: code ?? 0, stderr }))
-  })
+  // The fleet `spawn` returns `{ process } & Promise<{ code, stderr, … }>`; the
+  // real ChildProcess (for stdin) is `child.process`, and the wrapper REJECTS
+  // on a non-zero exit with an error carrying `.code` + `.stderr`. Write the
+  // push line to stdin, then await — treating a rejection as the hook's exit
+  // result so the blocking (code 1) cases are observable.
+  child.process.stdin?.end(pushLine)
+  try {
+    const result = await child
+    return {
+      code: typeof result.code === 'number' ? result.code : 0,
+      stderr: String(result.stderr ?? ''),
+    }
+  } catch (e) {
+    const err = e as { code?: number | undefined; stderr?: unknown }
+    return {
+      code: typeof err.code === 'number' ? err.code : 1,
+      stderr: String(err.stderr ?? ''),
+    }
+  }
 }
 
 test('pre-push: empty stdin exits 0 (nothing to push)', async () => {
@@ -239,13 +250,18 @@ test('pre-push: SOCKET_PRE_PUSH_ALLOW_UNSIGNED env var no longer bypasses the ch
       stdio: 'pipe',
       env: { ...process.env, SOCKET_PRE_PUSH_ALLOW_UNSIGNED: '1' },
     })
-    child.stdin.end(pushLine)
-    const code = await new Promise<number>(resolve => {
-      child.on('exit', c => resolve(c ?? 0))
-    })
-    assert.strictEqual(
+    // Lib `spawn`: stdin is on `child.process`; the wrapper rejects on a
+    // non-zero exit with an error carrying `.code`.
+    child.process.stdin?.end(pushLine)
+    let code: number
+    try {
+      code = (await child).code ?? 0
+    } catch (e) {
+      code = (e as { code?: number | undefined }).code ?? 1
+    }
+    assert.notStrictEqual(
       code,
-      2,
+      0,
       'unsigned push is always blocked — no bypass exists',
     )
   } finally {

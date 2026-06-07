@@ -1,7 +1,7 @@
 /**
  * @file Unit tests for paths-mts-inherit-guard. Test strategy: spawn the hook
  *   with a JSON payload on stdin and assert the exit code + stderr. Mirrors the
- *   shape used by the no-revert-guard / no-external-issue-ref-guard tests.
+ *   shape used by the no-revert-guard / no-ext-issue-ref-guard tests.
  */
 
 import assert from 'node:assert/strict'

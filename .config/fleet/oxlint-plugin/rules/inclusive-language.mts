@@ -176,6 +176,37 @@ const rule = {
       if (!node.name) {
         return
       }
+      // Skip positions where the identifier name is LINKAGE, not a name this
+      // file owns — renaming it would break the binding: an import/export
+      // specifier (the module exports the original name), a non-computed
+      // member property (`obj.whitelist` reads an external field), or a
+      // non-computed object-literal key (an API/config shape). Variable,
+      // function, and parameter names ARE owned here, so they still flag.
+      const parent: AstNode = node.parent
+      if (parent) {
+        if (
+          parent.type === 'ImportSpecifier' ||
+          parent.type === 'ImportDefaultSpecifier' ||
+          parent.type === 'ImportNamespaceSpecifier' ||
+          parent.type === 'ExportSpecifier'
+        ) {
+          return
+        }
+        if (
+          parent.type === 'MemberExpression' &&
+          parent.property === node &&
+          !parent.computed
+        ) {
+          return
+        }
+        if (
+          parent.type === 'Property' &&
+          parent.key === node &&
+          !parent.computed
+        ) {
+          return
+        }
+      }
       const hits = findHits(node.name)
       if (hits.length === 0) {
         return

@@ -10,6 +10,19 @@ Finish a code change → **commit it**. Don't end a turn with uncommitted edits,
 - **If you can't commit yet** (mid-refactor, tests failing, waiting on the user), say so in the turn summary. The user needs to know the dirty state is intentional. Silent dirty worktrees are the failure mode.
 - **`git worktree add` worktrees.** Same rule, sharper. Leave the task-worktree clean (committed + pushed) before `git worktree remove`. Otherwise the removal refuses and the work strands.
 
+## Branch discipline (and the checkout trap)
+
+"Smallest chunks" governs the *commit*, not the *branch*. A fresh branch holds a whole queue of related commits — **one logical change does not mean one commit, and one branch is not one commit.** The `no-branch-reuse-guard` enforces this: it fires only when you commit onto a branch that already has a **remote upstream** (a shared branch others may have pushed to). It stays silent on the default branch and on a fresh local branch with no upstream. So:
+
+- **Stack related commits on one fresh local branch.** Building a multi-fix queue? Commit each fix onto the same branch, in order. That is correct and expected, not "branch reuse."
+- **"Shared" = has a remote upstream.** Only then cut a new branch. A local-only branch is yours to keep committing to.
+- **Never `git checkout` / `git switch` to another branch to "start the next chunk."** Switching branches:
+  - discards uncommitted working-tree edits (they don't follow you if they conflict), and
+  - **reverts commits that live only on the branch you left** — the new branch doesn't have them, so your files snap back to that branch's state.
+- **To move a commit between branches, `git cherry-pick` it** — never switch away from work in progress and hope it follows.
+
+Example: mid-queue on a multi-fix branch, `git checkout <default>` to "branch the next fix off the default" reverts the first fix's already-committed source changes (that fix lives only on the abandoned branch) and leaves the working tree on a branch missing it. To move a commit, `cherry-pick` it onto the target — never leave the branch holding the queue.
+
 ## The principle
 
 The working tree at end-of-turn should match where the user thinks the work is. "Done" means committed. Anything else is paused, and you announce pauses.

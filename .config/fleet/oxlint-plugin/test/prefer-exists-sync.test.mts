@@ -30,6 +30,17 @@ describe('socket/prefer-exists-sync', () => {
           name: 'fileExists wrapper',
           code: 'import { fileExists } from "./util"\nif (fileExists("/x")) {}\n',
           errors: [{ messageId: 'fileExists' }],
+          output:
+            'import { fileExists } from "./util"\nimport { existsSync } from \'node:fs\'\nif (existsSync("/x")) {}\n',
+        },
+        {
+          name: 'wrapper in a file with its OWN existsSync — reported, NOT autofixed (would collide)',
+          code: 'function existsSync(p: string) { return !!p }\nimport { pathExists } from "./util"\nif (pathExists("/x")) {}\n',
+          // No fix: rewriting to existsSync() would bind to the local function,
+          // and injecting the node:fs import would be a TS2440 collision.
+          output:
+            'function existsSync(p: string) { return !!p }\nimport { pathExists } from "./util"\nif (pathExists("/x")) {}\n',
+          errors: [{ messageId: 'fileExists' }],
         },
       ],
     })

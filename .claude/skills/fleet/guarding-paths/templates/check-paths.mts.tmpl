@@ -56,10 +56,10 @@
  * narrow — entries should be specific, not blanket.
  *
  * Usage:
- *   node scripts/check-paths.mts             # default: report + fail
- *   node scripts/check-paths.mts --explain   # long-form explanation
- *   node scripts/check-paths.mts --json      # machine-readable
- *   node scripts/check-paths.mts --quiet     # silent on clean
+ *   node scripts/fleet/check/paths-are-canonical.mts             # default: report + fail
+ *   node scripts/fleet/check/paths-are-canonical.mts --explain   # long-form explanation
+ *   node scripts/fleet/check/paths-are-canonical.mts --json      # machine-readable
+ *   node scripts/fleet/check/paths-are-canonical.mts --quiet     # silent on clean
  *
  * Exit codes:
  *   0 — clean (no findings, or every finding is allowlisted)
@@ -191,7 +191,7 @@ const loadAllowlist = (): AllowlistEntry[] => {
     const obj = e as Record<string, unknown>
     if (typeof obj['reason'] !== 'string' || obj['reason'].length === 0) {
       process.stderr.write(
-        `[check-paths] pathsAllowlist[${i}] missing required \`reason\`; skipping.\n`,
+        `[check-paths-are-canonical] pathsAllowlist[${i}] missing required \`reason\`; skipping.\n`,
       )
       continue
     }

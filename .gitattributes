@@ -8,11 +8,13 @@
 .claude/commands/fleet linguist-generated=true
 .claude/hooks/fleet linguist-generated=true
 .claude/skills/fleet linguist-generated=true
+.claude/workflows linguist-generated=true
 .config/fleet/.markdownlint-cli2.jsonc linguist-generated=true
 .config/fleet/.prettierignore linguist-generated=true
 .config/fleet/markdownlint-rules linguist-generated=true
 .config/fleet/oxfmtrc.json linguist-generated=true
 .config/fleet/oxlint-plugin linguist-generated=true
+.config/fleet/oxlint.config.mts linguist-generated=true
 .config/fleet/oxlintrc.json linguist-generated=true
 .config/fleet/sfw-bypass-list.txt linguist-generated=true
 .config/fleet/taze.config.mts linguist-generated=true
@@ -56,6 +58,7 @@ packages/build-infra/lib/release-checksums/producer.mts linguist-generated=true
 packages/build-infra/release-assets.schema.json linguist-generated=true
 scripts/fleet linguist-generated=true
 test/_shared/fleet/lib linguist-generated=true
+test/unit/fleet linguist-generated=true
 
 # Vendored binary blobs (no diff, no merge, no text-mode).
 .claude/hooks/_shared/acorn/acorn.wasm binary

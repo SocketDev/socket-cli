@@ -29,7 +29,6 @@
 //   - `cd <path> 2>/dev/null` short forms used for existence probes
 //     (caller knows what they're doing)
 //
-// Disable via SOCKET_AVOID_CD_REMINDER_DISABLED.
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
@@ -85,9 +84,6 @@ function detectsBareCd(command: string): boolean {
 // and fail-open on any throw. The env-var disable and the bare-cd check
 // run inside the callback.
 await withBashGuard(command => {
-  if (process.env['SOCKET_AVOID_CD_REMINDER_DISABLED']) {
-    return
-  }
   if (!detectsBareCd(command)) {
     return
   }
@@ -107,8 +103,6 @@ await withBashGuard(command => {
       '',
       '    (c) Capture the resulting cwd so the next call can see it:',
       '          cd /abs/path && some-command && pwd',
-      '',
-      '  Disable: SOCKET_AVOID_CD_REMINDER_DISABLED=1',
       '',
     ].join('\n'),
   )

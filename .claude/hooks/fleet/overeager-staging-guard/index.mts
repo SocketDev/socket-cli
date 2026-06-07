@@ -36,7 +36,6 @@
 // Bypass:
 //   - `Allow add-all bypass` in a recent user turn — disables layer 1.
 //   - `Allow index-sweep bypass` — lets a bare commit take the whole index.
-//   - `SOCKET_OVEREAGER_STAGING_GUARD_DISABLED=1` — disables both.
 //
 // Reads a Claude Code PreToolUse JSON payload from stdin:
 //   { "tool_name": "Bash",
@@ -47,7 +46,7 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import path from 'node:path'
 import process from 'node:process'
 
-import { readTouchedPaths } from '../_shared/foreign-paths.mts'
+import { readSessionTouchedPaths } from '../_shared/foreign-paths.mts'
 import {
   commandsFor,
   detectBroadGitAdd,
@@ -61,7 +60,6 @@ interface ToolInput {
   readonly transcript_path?: string | undefined
 }
 
-const ENV_DISABLE = 'SOCKET_OVEREAGER_STAGING_GUARD_DISABLED'
 const BYPASS_PHRASES = ['Allow add-all bypass'] as const
 // Separate phrase for the index-sweep block: it's a different decision from the
 // `git add -A` block, so it gets its own bypass.
@@ -115,9 +113,6 @@ export function listStagedFiles(repoDir: string): string[] {
 }
 
 async function main(): Promise<void> {
-  if (process.env[ENV_DISABLE]) {
-    process.exit(0)
-  }
   const raw = await readStdin()
   let payload: ToolInput
   try {
@@ -197,7 +192,7 @@ async function main(): Promise<void> {
     if (staged.length === 0) {
       process.exit(0)
     }
-    const touched = readTouchedPaths(transcriptPath)
+    const touched = readSessionTouchedPaths(transcriptPath)
     const unfamiliar: string[] = []
     for (let i = 0, { length } = staged; i < length; i += 1) {
       const f = staged[i]!

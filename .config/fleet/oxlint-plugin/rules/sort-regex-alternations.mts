@@ -10,7 +10,7 @@
  *   - Single-alternative groups (`(foo)`) — nothing to sort.
  *   - Position-bearing alternations where order encodes precedence (e.g.
  *     `<!--|-->` where `-->` MUST be tried after `<!--`). The rule can't prove
- *     this is the case, so it requires authors to append `// socket-hook: allow
+ *     this is the case, so it requires authors to append `// socket-lint: allow
  *     regex-alternation-order` on the line for the genuine exception.
  *   - Alternations whose elements aren't simple literals (containing `(`, `[`,
  *     `?`, `*`, `+`, `{`, etc.) — sorting may change match semantics in subtle
@@ -41,13 +41,13 @@ interface AlternationGroup {
   start: number
 }
 
-const SOCKET_HOOK_MARKER_RE =
-  /(?:#|\/\/|\/\*)\s*socket-hook:\s*allow(?:\s+([\w-]+))?/
+const SOCKET_LINT_MARKER_RE =
+  /(?:#|\/\/|\/\*)\s*socket-lint:\s*allow(?:\s+([\w-]+))?/
 
 const SIMPLE_ALT_ELEMENT_RE = /^[\w\-:./]+$/
 
 function isLineMarkered(line: string): boolean {
-  const m = line.match(SOCKET_HOOK_MARKER_RE)
+  const m = line.match(SOCKET_LINT_MARKER_RE)
   if (!m) {
     return false
   }
@@ -148,6 +148,23 @@ function findAlternationGroups(pattern: string): AlternationGroup[] {
 }
 
 /**
+ * True if any alternative is a prefix of another distinct alternative. When
+ * this holds, alternation order is semantically load-bearing (leftmost match
+ * wins), so the group must not be sorted OR flagged — alphabetical order would
+ * be wrong. e.g. `js` is a prefix of `jsx`.
+ */
+export function hasPrefixOverlap(alts: readonly string[]): boolean {
+  for (let i = 0, { length } = alts; i < length; i += 1) {
+    for (let j = 0; j < length; j += 1) {
+      if (i !== j && alts[j]!.startsWith(alts[i]!)) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
+/**
  * Sort an alternation in alphanumeric order. Returns null if any element isn't
  * a simple literal (caller should report-only).
  */
@@ -160,6 +177,14 @@ function sortAlternativesIfSimple(
   )
   const allSimple = alts.every((a: string) => SIMPLE_ALT_ELEMENT_RE.test(a))
   if (!allSimple) {
+    return undefined
+  }
+  // Prefix-overlap guard: JS alternation is leftmost-match-wins, so if one alt
+  // is a prefix of another (`js`/`jsx`), reordering them changes which match
+  // wins — `/(jsx|js)/.exec('jsx')` is `jsx`, but `/(js|jsx)/.exec('jsx')` is
+  // `js`. Alphabetical sort always puts the shorter prefix first, so autofixing
+  // here would silently change behavior. Bail to the report-only path.
+  if (hasPrefixOverlap(alts)) {
     return undefined
   }
   const sorted = [...alts].toSorted()
@@ -186,7 +211,7 @@ const rule = {
       unsorted:
         'Regex alternation `({{actual}})` is not sorted alphanumerically. Expected `({{sorted}})`.',
       unsortedNoFix:
-        'Regex alternation `({{actual}})` is not sorted alphanumerically. Expected `({{sorted}})`. (Not auto-fixed: contains non-literal elements; sort manually or append `// socket-hook: allow regex-alternation-order` if the order is intentional.)',
+        'Regex alternation `({{actual}})` is not sorted alphanumerically. Expected `({{sorted}})`. (Not auto-fixed: contains non-literal elements; sort manually or append `// socket-lint: allow regex-alternation-order` if the order is intentional.)',
     },
     schema: [],
   },
@@ -213,6 +238,11 @@ const rule = {
           const alts = group.altsRanges.map((r: AltRange) =>
             pattern.slice(r.start, r.end),
           )
+          // Prefix-overlap groups are order-sensitive (leftmost match wins);
+          // neither sorting nor "sort manually" is correct advice — skip them.
+          if (hasPrefixOverlap(alts)) {
+            continue
+          }
           const sortedRaw = [...alts].toSorted()
           if (alts.every((a: string, i: number) => a === sortedRaw[i])) {
             continue

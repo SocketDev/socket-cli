@@ -28,6 +28,9 @@ Layered enforcement, with each layer catching what the previous one missed.
 | Pre-existing branch protection   | `lint-github-settings.mts`                              | Audits the default branch's protection on GitHub for `required_signatures`, `required_pull_request_reviews` (≥1 + dismiss_stale_reviews), `allow_force_pushes=false`, `allow_deletions=false`, `enforce_admins=true` |
 | Commit signing                   | `.git-hooks/pre-commit.mts` + `.git-hooks/pre-push.mts` | Pre-commit: `commit.gpgsign=true` + `user.signingkey` set. Pre-push: `git log --format='%G?'` excludes `N` and `B` for commits landing on `main`/`master`.                                                           |
 | Hook bypass attempts             | `.claude/hooks/fleet/no-revert-guard/`                  | Blocks `git revert`, `--no-verify`, `DISABLE_PRECOMMIT_*`, `--no-gpg-sign`, force-push — all gated by canonical `Allow X bypass` phrases                                                                             |
+| Programmatic-Claude lockdown     | `.git-hooks/pre-push.mts` (push-time) + `claude-lockdown-guard` (Bash-time) | Pre-push BLOCKS a pushed `.mts` that drives Claude (`query()`/`new ClaudeSDKClient()`) without all four lockdown options, or with `bypassPermissions`/`default`. Guard-infra trees exempt (they name the patterns they detect). |
+| Soak-bypass date annotations     | `.git-hooks/pre-push.mts` (push-time) + `soak-excludes-have-dates.mts` (CI) + `soak-exclude-date-guard` (edit-time) | Pre-push BLOCKS a `pnpm-workspace.yaml` exact-pin soak entry missing `# published: … \| removable: …` (the 7-day malware-soak record). Honors the `socket-lint: allow soak-exclude-no-date-annotation` marker. |
+| AI-config poison (push-time)     | `.git-hooks/pre-push.mts` (WARN) + `ai-config-poisoning-guard` (edit-time) | Pre-push WARNS (never blocks — heuristic) when a staged `.claude`/`.cursor`/`.gemini`/`.vscode` config (non-hook, non-`.md`) carries a planted `Allow X bypass`, an exfiltration line, or a disable-the-guard directive. |
 
 ## Layer 3: enforce token lifetime
 
@@ -44,7 +47,7 @@ Layered enforcement, with each layer catching what the previous one missed.
 | GitHub Actions workflow YAML | `.claude/hooks/fleet/actionlint-on-workflow-edit/`        | PostToolUse after Edit/Write to `.github/workflows/*.y*ml`. Runs `actionlint` (YAML / shell / SHA-pin) + `zizmor` (security: privilege escalation, secret leaks, untrusted-input-in-script, `pull_request_target` misuse) |
 | `pull_request_target` misuse | `.claude/hooks/fleet/pull-request-target-guard/`          | Blocks Edit/Write that creates a `pull_request_target` workflow checking out the fork head + executing the checked-out code in the same job                                                                               |
 | Workflow `uses:` SHA pinning | `.claude/hooks/fleet/workflow-uses-comment-guard/`        | Every SHA-pinned `uses:` line needs a `# <tag> (YYYY-MM-DD)` comment for staleness tracking                                                                                                                               |
-| Workflow heredoc bodies      | `.claude/hooks/fleet/workflow-yaml-multiline-body-guard/` | Blocks `gh ... --body "..."` (multi-line markdown breaks YAML) in favor of `--body-file <path>`                                                                                                                           |
+| Workflow heredoc bodies      | `.claude/hooks/fleet/workflow-multiline-body-guard/` | Blocks `gh ... --body "..."` (multi-line markdown breaks YAML) in favor of `--body-file <path>`                                                                                                                           |
 | GitHub repo settings         | `scripts/lint-github-settings.mts`                        | Audits visibility, merge settings, branch protection, required apps. Weekly cache-gated; CI doesn't burn API quota                                                                                                        |
 | AgentShield + zizmor         | `/scanning-security` skill                                | A-F graded report on `.claude/` config + workflow YAML. Run after touching `.claude/` or workflows, before releases                                                                                                       |
 
@@ -54,11 +57,32 @@ Layered enforcement, with each layer catching what the previous one missed.
 | -------------------------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | Pushing a real customer / company name | `.claude/hooks/fleet/private-name-guard/`                      | Real names in commits / PR text / release notes                        |
 | Linear ticket refs                     | `.claude/hooks/fleet/private-name-guard/`                      | `SOC-123`, `ENG-456`, Linear URLs in code or PR text                   |
-| External issue refs (auto-link spam)   | `.claude/hooks/fleet/no-external-issue-ref-guard/`             | `<owner>/<repo>#<num>` in commits or PR bodies for non-SocketDev repos |
+| External issue refs (auto-link spam)   | `.claude/hooks/fleet/no-ext-issue-ref-guard/`             | `<owner>/<repo>#<num>` in commits or PR bodies for non-SocketDev repos |
 | Empty commits                          | `.claude/hooks/fleet/no-empty-commit-guard/`                   | `git commit --allow-empty`, `cherry-pick --allow-empty`                |
 | `--no-verify` use                      | `.claude/hooks/fleet/no-revert-guard/`                         | Hook bypass via `--no-verify` without typed bypass phrase              |
 | Personal paths in code                 | `pre-commit.mts` / `pre-push.mts`                              | `/Users/<name>/`, `/home/<name>/`, `C:\Users\<NAME>\`                  |
 | Cross-repo path imports                | `.claude/hooks/fleet/cross-repo-guard/` + `scanCrossRepoPaths` | `../<fleet-repo>/` and absolute `/projects/<fleet-repo>/` references   |
+
+## Layer 6: find and fix code vulnerabilities
+
+Layers 1-5 keep the harness and the operator safe. Layer 6 audits the **code under review** for exploitable vulnerabilities and lands fixes. It is a four-skill loop, each leg a separate skill so a run can stop, checkpoint, and resume at any boundary:
+
+| Stage | Skill | Input → output | Notes |
+| --- | --- | --- | --- |
+| Map | `/fleet:threat-modeling` | source + git history → `THREAT_MODEL.md` | Three modes (interview / bootstrap / bootstrap-then-interview); 8-section contract that the next two stages read. |
+| Find | `/fleet:scanning-vulns` | target tree → `VULN-FINDINGS.json` | Static fan-out, one read-only finder per focus area. Never drops a finding; ranks by confidence. For an arbitrary tree (dependency, vendored lib, external repo) — own-repo pre-merge scanning stays in `/fleet:scanning-quality`. |
+| Verify | `/fleet:triaging-findings` | findings → `TRIAGE.json` + `TRIAGE.md` | N independent blind verifiers per finding, each told the scanner is wrong by default; 16 FP-exclusion rules; dedupe-before-verify; exploitability re-rank; CODEOWNERS/git-log owner routing. |
+| Fix | `/fleet:patching-findings` | `TRIAGE.json` → applied commits | Per true-positive: a patch agent writes a minimal root-cause fix, an independent reviewer that never sees the finding prose gates it, and on ACCEPT the fix is applied and committed (fleet "fix it, don't defer"). `--dry-run` previews. |
+
+Three properties make the loop trustworthy:
+
+- **Verifier and reviewer independence.** Every verify/review agent runs in a fresh context seeing only one finding. A shared context would leak one scanner's framing into another finding's judgment, the exact failure mode adversarial verification exists to prevent. The skills enforce this via `Workflow` fan-out.
+- **Prompt-injection containment.** Scanner `description` fields can carry injected instructions. The patch author reads them (it must, to know what to fix); the reviewer that authorizes the commit never does, so injected text cannot pass its own gate. Consistent with the fleet prompt-injection rule.
+- **Air-gapped review.** No network in verify or rank: no CVE-database or upstream-commit lookups, so a triage pass is reproducible offline.
+
+Resumable state for the long-running legs goes through `.claude/skills/fleet/_shared/scripts/checkpoint.mts` (atomic writes, cwd path-confinement, payload-via-`--from` so repo-derived bytes never touch Bash argv). The `./.triage-state/`, `./.threat-model-state/`, and `./.patch-state/` scratch dirs belong in `.gitignore`.
+
+The loop is adapted from [`anthropics/defending-code-reference-harness`](https://github.com/anthropics/defending-code-reference-harness) (Apache-2.0); the upstream's autonomous fuzzing pipeline (Docker + gVisor + ASAN) is out of fleet scope.
 
 ## Setup helpers
 
@@ -107,7 +131,7 @@ Every bypass mechanism is one-shot. No env var in `~/.zshrc`. No persistent sett
 When a hook blocks you, the right responses in order of preference:
 
 1. **Fix the underlying issue.** Sign the commit. Use a `--body-file`. Drop the personal path. Use the canonical fleet helper.
-2. **Add a per-line marker** if the rule has one (e.g. `// socket-hook: allow console` for the console-prefer-logger rule). Documents the exemption inline.
+2. **Add a per-line marker** if the rule has one (e.g. `// socket-lint: allow console` for the console-prefer-logger rule). Documents the exemption inline.
 3. **Type the canonical bypass phrase** if the operation is exceptional. The phrase is one-shot: typing it again authorizes a second action.
 4. **Last resort: edit the hook** to change the rule. If the rule blocks you twice for the same kind of operation, it's the wrong rule, not the wrong commit. Land the change at the source so every fleet repo benefits.
 

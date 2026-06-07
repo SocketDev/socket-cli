@@ -361,13 +361,25 @@ test('python -c without file write is NOT blocked', async () => {
   assert.strictEqual(result.code, 0)
 })
 
-test('git push --force is blocked', async () => {
+test('git push --force is blocked, needs the hard phrase', async () => {
   const result = await runHook({
     tool_input: { command: 'git push --force origin main' },
     tool_name: 'Bash',
   })
   assert.strictEqual(result.code, 2)
-  assert.match(result.stderr, /Allow force-push bypass/)
+  assert.match(result.stderr, /Allow force-push-hard bypass/)
+})
+
+test('bare --force is NOT authorized by the lease phrase', async () => {
+  const result = await runHook(
+    {
+      tool_input: { command: 'git push --force origin main' },
+      tool_name: 'Bash',
+    },
+    userTurn('Allow force-with-lease bypass'),
+  )
+  assert.strictEqual(result.code, 2)
+  assert.match(result.stderr, /Allow force-push-hard bypass/)
 })
 
 test('paraphrase does not count', async () => {
@@ -573,6 +585,28 @@ test('git push --force-with-lease is blocked', async () => {
   assert.strictEqual(result.code, 2)
 })
 
+test('--force-with-lease allowed by its own phrase', async () => {
+  const result = await runHook(
+    {
+      tool_input: { command: 'git push --force-with-lease origin main' },
+      tool_name: 'Bash',
+    },
+    userTurn('Allow force-with-lease bypass'),
+  )
+  assert.strictEqual(result.code, 0)
+})
+
+test('--force-with-lease ALSO allowed by the stronger force-push phrase', async () => {
+  const result = await runHook(
+    {
+      tool_input: { command: 'git push --force-with-lease origin main' },
+      tool_name: 'Bash',
+    },
+    userTurn('Allow force-push bypass'),
+  )
+  assert.strictEqual(result.code, 0)
+})
+
 test('git push -f is blocked', async () => {
   const result = await runHook({
     tool_input: { command: 'git push -f origin main' },
@@ -620,4 +654,181 @@ test('a word ending in "git" is not a git command (e.g. legit)', async () => {
     tool_name: 'Bash',
   })
   assert.strictEqual(result.code, 0)
+})
+
+// ── SQUASH_HISTORY=1 sentinel (squashing-history skill) ──
+//
+// The sentinel authorizes exactly the two squash operations and nothing
+// else. The rejection tests below are the malicious-bypass surface: a
+// poisoned prompt must NOT be able to ride the sentinel to clobber an
+// arbitrary remote, delete refs, or chain extra destructive work.
+
+test('SQUASH_HISTORY=1 allows the squash collapse commit (--amend, exact message)', async () => {
+  const result = await runHook({
+    tool_input: {
+      command: 'SQUASH_HISTORY=1 git commit --amend -m "chore: initial commit"',
+    },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 0)
+  assert.strictEqual(result.stderr, '')
+})
+
+test('SQUASH_HISTORY=1 allows the squash force-push (--force-with-lease)', async () => {
+  const result = await runHook({
+    tool_input: {
+      command: 'SQUASH_HISTORY=1 git push --force-with-lease origin main',
+    },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 0)
+  assert.strictEqual(result.stderr, '')
+})
+
+test('SQUASH_HISTORY=1 allows the squash force-push (bare --force)', async () => {
+  const result = await runHook({
+    tool_input: {
+      command: 'SQUASH_HISTORY=1 git push --force origin master',
+    },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 0)
+  assert.strictEqual(result.stderr, '')
+})
+
+test('SQUASH_HISTORY=1 does NOT grant the bypass on a wrong-message amend', async () => {
+  // A wrong commit message means the sentinel does not fire. To prove the
+  // sentinel (not benign-ness) is what's withheld, pair the wrong message
+  // with `--no-verify`: that flag MUST still be blocked because the sentinel
+  // refused to authorize this shape.
+  const result = await runHook({
+    tool_input: {
+      command:
+        'SQUASH_HISTORY=1 git commit --amend --no-verify -m "feat: sneak this past the guard"',
+    },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+  assert.match(result.stderr, /Allow no-verify bypass/)
+})
+
+test('SQUASH_HISTORY=1 does NOT allow a commit without --amend', async () => {
+  const result = await runHook({
+    tool_input: {
+      command:
+        'SQUASH_HISTORY=1 git commit --no-verify -m "chore: initial commit"',
+    },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+  assert.match(result.stderr, /Allow no-verify bypass/)
+})
+
+test('SQUASH_HISTORY=1 does NOT allow chaining a destructive command (&&)', async () => {
+  const result = await runHook({
+    tool_input: {
+      command:
+        'SQUASH_HISTORY=1 git push --force origin main && rm -rf /important',
+    },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+})
+
+test('SQUASH_HISTORY=1 does NOT allow chaining a destructive git op (;)', async () => {
+  const result = await runHook({
+    tool_input: {
+      command:
+        'SQUASH_HISTORY=1 git commit --amend -m "chore: initial commit"; git reset --hard origin/main',
+    },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+})
+
+test('SQUASH_HISTORY=1 does NOT allow a command substitution', async () => {
+  const result = await runHook({
+    tool_input: {
+      command: 'SQUASH_HISTORY=1 git push --force origin $(cat /tmp/evil-ref)',
+    },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+})
+
+test('SQUASH_HISTORY=1 does NOT allow a refspec push (src:dst)', async () => {
+  const result = await runHook({
+    tool_input: {
+      command: 'SQUASH_HISTORY=1 git push --force origin main:production',
+    },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+})
+
+test('SQUASH_HISTORY=1 does NOT allow a branch-delete push', async () => {
+  const result = await runHook({
+    tool_input: {
+      command: 'SQUASH_HISTORY=1 git push --force --delete origin main',
+    },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+})
+
+test('SQUASH_HISTORY=1 does NOT allow --mirror push', async () => {
+  const result = await runHook({
+    tool_input: {
+      command: 'SQUASH_HISTORY=1 git push --force --mirror origin',
+    },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+})
+
+test('SQUASH_HISTORY=1 does NOT allow an extra inline env assignment', async () => {
+  const result = await runHook({
+    tool_input: {
+      command:
+        'SQUASH_HISTORY=1 GIT_SSH_COMMAND="ssh -i /tmp/evil" git push --force origin main',
+    },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+})
+
+test('SQUASH_HISTORY=1 does NOT relax an unrelated destructive op (stash)', async () => {
+  const result = await runHook({
+    tool_input: { command: 'SQUASH_HISTORY=1 git stash drop' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+})
+
+test('SQUASH_HISTORY=1 does NOT relax git reset --hard', async () => {
+  const result = await runHook({
+    tool_input: { command: 'SQUASH_HISTORY=1 git reset --hard HEAD~1' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+  assert.match(result.stderr, /Allow revert bypass/)
+})
+
+test('SQUASH_HISTORY=0 (explicit off) does NOT activate the allowlist', async () => {
+  const result = await runHook({
+    tool_input: {
+      command: 'SQUASH_HISTORY=0 git push --force origin main',
+    },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+})
+
+test('no SQUASH_HISTORY sentinel: the squash push still requires a phrase', async () => {
+  const result = await runHook({
+    tool_input: { command: 'git push --force origin main' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+  assert.match(result.stderr, /Allow force-push-hard bypass/)
 })

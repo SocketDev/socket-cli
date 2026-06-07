@@ -95,7 +95,7 @@ export function hasExistingRemoteHistory(cwd: string, branch: string): boolean {
   return revParse.status === 0
 }
 
-if (process.argv[1] && process.argv[1].endsWith('index.mts')) {
+if (process.argv[1]?.endsWith('index.mts')) {
   await withBashGuard((command, payload) => {
     if (!isGitCommit(command)) {
       return

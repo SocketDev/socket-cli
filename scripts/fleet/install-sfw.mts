@@ -31,7 +31,6 @@ import {
 } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 
 import { WIN32, getArch } from '@socketsecurity/lib-stable/constants/platform'
@@ -44,13 +43,10 @@ import {
   getUserHomeDir,
 } from '@socketsecurity/lib-stable/paths/socket'
 
+import { REPO_ROOT } from './paths.mts'
+
 const logger = getDefaultLogger()
 
-// Resolve the repo-root external-tools.json. Scripts live at
-// <repo-root>/scripts/install-sfw.mts, so go one dir up.
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-const REPO_ROOT = path.join(__dirname, '..')
 const EXTERNAL_TOOLS_PATH = path.join(REPO_ROOT, 'external-tools.json')
 
 // Resolve the user-home wheelhouse umbrella via the canonical lib-stable

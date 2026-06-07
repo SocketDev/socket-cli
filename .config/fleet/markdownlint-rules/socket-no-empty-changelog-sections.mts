@@ -5,15 +5,14 @@
  *   (docs/claude.md/fleet/version-bumps.md §2) says "delete the heading when
  *   its body filters down to nothing." Empty headings make the reader
  *   disambiguate "section intentionally empty" from "section forgot its
- *   content." Pairs with the
- *   .claude/hooks/fleet/changelog-no-empty-sections-guard/ edit-time blocker.
- *   The hook catches the agent's Edit/Write; this rule catches any straggler
- *   that lands via direct editor save or via a different toolchain. Autofix:
- *   delete the empty heading line. Following blank lines are left alone
- *   (markdownlint's MD012 / MD022 handle multi- blank collapse and heading
- *   spacing). Scope: only matches files named CHANGELOG.md (any directory).
- *   Per-repo subdirs (e.g. packages/<pkg>/CHANGELOG.md) are linted on the same
- *   rule.
+ *   content." Pairs with the .claude/hooks/fleet/changelog-no-empty-guard/
+ *   edit-time blocker. The hook catches the agent's Edit/Write; this rule
+ *   catches any straggler that lands via direct editor save or via a different
+ *   toolchain. Autofix: delete the empty heading line. Following blank lines
+ *   are left alone (markdownlint's MD012 / MD022 handle multi- blank collapse
+ *   and heading spacing). Scope: only matches files named CHANGELOG.md (any
+ *   directory). Per-repo subdirs (e.g. packages/<pkg>/CHANGELOG.md) are linted
+ *   on the same rule.
  */
 
 const RULE_NAME = 'socket-no-empty-changelog-sections'

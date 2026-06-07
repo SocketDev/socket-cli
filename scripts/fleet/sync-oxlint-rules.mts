@@ -36,12 +36,9 @@
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
-// scripts/fleet/sync-oxlint-rules.mts → walk up 3 levels (file → fleet → scripts → repo root).
-const REPO_ROOT = path.dirname(
-  path.dirname(path.dirname(fileURLToPath(import.meta.url))),
-)
+import { REPO_ROOT } from './paths.mts'
+
 const PLUGIN_DIR = path.join(REPO_ROOT, '.config', 'fleet', 'oxlint-plugin')
 const RULES_DIR = path.join(PLUGIN_DIR, 'rules')
 const TEST_DIR = path.join(PLUGIN_DIR, 'test')

@@ -10,7 +10,7 @@ GitHub Actions suppresses every event created with the default `GITHUB_TOKEN` â€
 - The `gh pr close` + `gh pr reopen` "kick it" workaround â€” the API call still acts as `GITHUB_TOKEN`, so reopen fires no event either.
 - Pushing a branch with `GITHUB_TOKEN` and expecting a `push`-triggered workflow.
 
-**Why:** discovered 2026-04-07 when automated PRs from `generate.yml` / `weekly-update.yml` sat with checks never starting; the close/reopen workaround was tried and also failed.
+**Why:** an automated-PR job opening its PR with `GITHUB_TOKEN` leaves required checks never starting; the close/reopen "kick it" workaround fires no event either, since the reopen still acts as `GITHUB_TOKEN`.
 
 ## What works
 

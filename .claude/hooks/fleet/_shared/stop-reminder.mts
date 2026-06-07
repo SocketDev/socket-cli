@@ -56,7 +56,6 @@ export interface ReminderHit {
 
 export interface ReminderConfig {
   readonly name: string
-  readonly disabledEnvVar: string
   readonly patterns: readonly RuleViolation[]
   readonly closingHint?: string | undefined
   /**
@@ -100,7 +99,6 @@ export interface ReminderConfig {
  */
 export interface ReminderGroup {
   readonly name: string
-  readonly disabledEnvVar: string
   readonly patterns: readonly RuleViolation[]
   readonly closingHint?: string | undefined
   readonly stripQuotedSpans?: boolean | undefined
@@ -163,11 +161,10 @@ export function formatReminderBlock(
 
 /**
  * Run several informational reminder groups in ONE Stop-hook process. Reads
- * stdin + the most-recent assistant turn once, then scans each group whose
- * `disabledEnvVar` is unset — preserving per-group disabling exactly as if each
- * were its own hook. Emits one stderr block per group with hits. Always exits
- * 0. Use when merging pure-table reminders to cut process count without losing
- * the granular disable env vars.
+ * stdin + the most-recent assistant turn once, then scans each group. Emits one
+ * stderr block per group with hits. Always exits 0. Use when merging pure-table
+ * reminders to cut process count. Hooks are not disableable by env var — the
+ * only sanctioned escape hatch is the `Allow <X> bypass` phrase.
  */
 export async function runStopReminders(
   groups: readonly ReminderGroup[],
@@ -187,9 +184,6 @@ export async function runStopReminders(
   const blocks: string[] = []
   for (let i = 0, { length } = groups; i < length; i += 1) {
     const group = groups[i]!
-    if (process.env[group.disabledEnvVar]) {
-      continue
-    }
     const text = group.stripQuotedSpans
       ? stripQuotedSpans(fencesStripped)
       : fencesStripped
@@ -212,9 +206,6 @@ export async function runStopReminders(
  */
 export async function runStopReminder(config: ReminderConfig): Promise<void> {
   const payloadRaw = await readStdin()
-  if (process.env[config.disabledEnvVar]) {
-    process.exit(0)
-  }
   let payload: StopPayload
   try {
     payload = JSON.parse(payloadRaw) as StopPayload
@@ -277,7 +268,6 @@ export interface TurnPairRule {
 
 export interface TurnPairConfig {
   readonly name: string
-  readonly disabledEnvVar: string
   readonly userTriggers: readonly TurnPairRule[]
   readonly assistantDeflections: readonly TurnPairRule[]
   readonly closingHint?: string | undefined
@@ -302,9 +292,6 @@ export async function runTurnPairReminder(
   config: TurnPairConfig,
 ): Promise<void> {
   const payloadRaw = await readStdin()
-  if (process.env[config.disabledEnvVar]) {
-    process.exit(0)
-  }
   let payload: StopPayload
   try {
     payload = JSON.parse(payloadRaw) as StopPayload

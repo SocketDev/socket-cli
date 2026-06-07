@@ -28,7 +28,6 @@
 // release-day breakage (accumulated lint debt, an unpinned advisory).
 //
 // Bypass: "Allow version-bump-order bypass" in a recent user turn, or
-// SOCKET_VERSION_BUMP_ORDER_GUARD_DISABLED=1. The gate half alone can be
 // skipped with SOCKET_VERSION_BUMP_SKIP_GATE=1 when the bump ordering is
 // fine but the gate is being run out-of-band.
 
@@ -121,9 +120,6 @@ function runPreReleaseGate(opts: { cwd?: string }): string[] {
 // withBashGuard handles the stdin drain, tool_name gate, command narrow,
 // and fail-open on any throw.
 await withBashGuard((command, payload) => {
-  if (process.env['SOCKET_VERSION_BUMP_ORDER_GUARD_DISABLED']) {
-    return
-  }
   if (!isVersionTagCommand(command)) {
     return
   }

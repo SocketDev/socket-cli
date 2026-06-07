@@ -46,8 +46,7 @@ A comment that opens with a pointer phrase — `see X` / `see X for details` / `
 
 ## Bypass
 
-- Type `Allow pointer-comment bypass` in a recent user message (also accepts `Allow pointer comment bypass` / `Allow pointercomment bypass`), or
-- Set `SOCKET_POINTER_COMMENT_GUARD_DISABLED=1`.
+- Type `Allow pointer-comment bypass` in a recent user message (also accepts `Allow pointer comment bypass` / `Allow pointercomment bypass`).
 
 ## Test
 

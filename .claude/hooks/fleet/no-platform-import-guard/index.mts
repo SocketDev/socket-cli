@@ -88,10 +88,8 @@ export function findViolations(
 }
 
 async function main(): Promise<void> {
-  await withEditGuard(async ({ toolInput, transcriptPath }) => {
-    const filePath: string = toolInput.file_path ?? ''
-    const content: string = toolInput.content ?? toolInput.new_string ?? ''
-
+  await withEditGuard((filePath, content, payload) => {
+    const transcriptPath = payload.transcript_path
     if (!content) {
       return
     }

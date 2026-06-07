@@ -22,9 +22,9 @@ If no arguments given, audit the canonical fleet repo list:
 
 ## Process
 
-1. Invoke the `auditing-gha-settings` skill runner:
+1. Invoke the `auditing-gha` skill runner:
 
-   node .claude/skills/auditing-gha-settings/run.mts <owner/repo>...
+   node .claude/skills/fleet/auditing-gha/run.mts <owner/repo>...
 
 2. The runner exits non-zero if any repo fails the baseline. Read the per-repo findings on stdout.
 

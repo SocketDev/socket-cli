@@ -1,6 +1,6 @@
 /**
  * @file Canonical opt-out marker handling shared across hooks. The fleet `//
- *   socket-hook: allow <rule>` marker has two surfaces:
+ *   socket-lint: allow <rule>` marker has two surfaces:
  *
  *   1. `.claude/hooks/*-guard/index.mts` (PreToolUse hooks, Claude Code).
  *   2. `.git-hooks/_helpers.mts` (pre-commit / pre-push scanners). Both surfaces
@@ -13,11 +13,11 @@
 
 // `<comment-prefix>` is `#`, `//`, or `/*` to match shell, JS/TS, and
 // C-block comment lexers. The capture group catches the optional rule
-// name (`socket-hook: allow personal-path` → `'personal-path'`); the
-// bare form (`socket-hook: allow`) leaves capture undefined and means
+// name (`socket-lint: allow personal-path` → `'personal-path'`); the
+// bare form (`socket-lint: allow`) leaves capture undefined and means
 // "blanket suppress every scanner on this line."
-export const SOCKET_HOOK_MARKER_RE: RegExp =
-  /(?:#|\/\/|\/\*)\s*socket-hook:\s*allow(?:\s+([\w-]+))?/
+export const SOCKET_LINT_MARKER_RE: RegExp =
+  /(?:#|\/\/|\/\*)\s*socket-lint:\s*allow(?:\s+([\w-]+))?/
 
 /**
  * Legacy marker names recognized as equivalent to a current rule for one
@@ -48,14 +48,14 @@ export function aliasMatches(marker: string, rule: string): boolean {
 
 /**
  * True when `line` carries a marker that suppresses `rule`. A bare
- * `socket-hook: allow` (no rule name) is treated as a blanket allow and returns
+ * `socket-lint: allow` (no rule name) is treated as a blanket allow and returns
  * true for every `rule`.
  *
  * `rule === undefined` means "is any marker present at all" — used by generic
  * line-iteration helpers that don't carry a rule context.
  */
 export function lineIsSuppressed(line: string, rule?: string): boolean {
-  const m = line.match(SOCKET_HOOK_MARKER_RE)
+  const m = line.match(SOCKET_LINT_MARKER_RE)
   if (!m) {
     return false
   }

@@ -25,8 +25,6 @@
 //     forbidden strings, e.g. a CLAUDE.md edit that quotes them as
 //     examples).
 //
-// Env disable (testing only): SOCKET_COMMIT_MESSAGE_FORMAT_GUARD_DISABLED=1.
-//
 // Hook contract:
 //   - Reads PreToolUse JSON from stdin.
 //   - Exits 0 (allow) or 2 (block + stderr explanation).
@@ -45,7 +43,6 @@ interface PreToolUsePayload {
   readonly cwd?: string | undefined
 }
 
-const ENV_DISABLE = 'SOCKET_COMMIT_MESSAGE_FORMAT_GUARD_DISABLED'
 const BYPASS_FORMAT = 'Allow commit-format bypass'
 const BYPASS_AI = 'Allow ai-attribution bypass'
 
@@ -215,9 +212,6 @@ function emitBlock(reason: string, body: string): never {
 }
 
 async function main(): Promise<void> {
-  if (process.env[ENV_DISABLE]) {
-    process.exit(0)
-  }
   const raw = await readStdin()
   let payload: PreToolUsePayload
   try {

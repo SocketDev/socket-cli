@@ -2,7 +2,7 @@
 name: guarding-paths
 description: Audits and fixes path duplication in a Socket repo. Applies the strict "1 path, 1 reference" rule: every build/test/runtime/config path is constructed exactly once; everywhere else references the constructed value. Default mode finds and fixes; `check` mode reports only; `install` mode drops the gate + hook + rule into a fresh repo. Use when path drift surfaces from `pnpm check`, when a new sibling package needs path conventions, or when bootstrapping a fresh Socket repo.
 user-invocable: true
-allowed-tools: Task, Read, Edit, Write, Grep, Glob, AskUserQuestion, Bash(pnpm run check:*), Bash(node scripts/check-paths:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(git:*)
+allowed-tools: Task, Read, Edit, Write, Grep, Glob, AskUserQuestion, Bash(pnpm run check:*), Bash(node scripts/fleet/check/paths-are-canonical.mts:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(git:*)
 model: claude-haiku-4-5
 context: fork
 ---
@@ -26,7 +26,7 @@ The strategy lives in three artifacts that ship together:
 
 1. **CLAUDE.md rule**: the mantra and detection rules in plain language. Every fleet repo's CLAUDE.md carries `## 1 path, 1 reference`. Synced from [`_shared/path-guard-rule.md`](../_shared/path-guard-rule.md).
 2. **Hook**: `.claude/hooks/fleet/path-guard/index.mts` runs `PreToolUse` on `Edit` / `Write` of `.mts` / `.cts` files. Blocks new violations at edit time.
-3. **Gate**: `scripts/fleet/check-paths.mts` runs in `pnpm check` (and CI). Whole-repo scan. Fails the build on any unsanctioned violation.
+3. **Gate**: `scripts/fleet/check/paths-are-canonical.mts` runs in `pnpm check` (and CI). Whole-repo scan. Fails the build on any unsanctioned violation.
 
 The hook and gate share their stage / build-root / mode / sibling-package vocabulary via `.claude/hooks/fleet/path-guard/segments.mts`: a single canonical source. Adding a new stage segment or fleet package means editing one file; the two consumers can never drift on what counts as a build-output path.
 
@@ -82,10 +82,10 @@ For Socket repos that don't yet have the gate:
 
 1. Copy the gate file:
    ```bash
-   cp .claude/skills/guarding-paths/templates/check-paths.mts.tmpl scripts/fleet/check-paths.mts
+   cp .claude/skills/guarding-paths/templates/check-paths.mts.tmpl scripts/fleet/check/paths-are-canonical.mts
    ```
 2. No allowlist file to create — exemptions live in the `pathsAllowlist` array of `.config/socket-wheelhouse.json` (absent key = no exemptions, which is the default).
-3. Add `"check:paths": "node scripts/fleet/check-paths.mts"` to `package.json`.
+3. Add `"check:paths": "node scripts/fleet/check/paths-are-canonical.mts"` to `package.json`.
 4. Wire `runPathHygieneCheck()` into `scripts/check.mts` (after the existing checks).
 5. Append the rule snippet from [`_shared/path-guard-rule.md`](../_shared/path-guard-rule.md) to the repo's `CLAUDE.md` if a `1 path, 1 reference` section is missing.
 6. Add the hook entry to `.claude/settings.json` `PreToolUse` matcher `Edit|Write`:

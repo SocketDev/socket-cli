@@ -81,11 +81,11 @@ const REQUIRED_SECTIONS = [
 const WHEELHOUSE_LEAK_RE = /socket-wheelhouse/i
 const SIBLING_PATH_RES: readonly RegExp[] = [
   /\b(?:bun|deno|node|npm|pnpm|yarn)\s+\.\.\/[\w@-]+\//,
-  // socket-hook: allow regex-alternation-order
+  // socket-lint: allow regex-alternation-order
   /(?:^|\s)\.\.\/socket-[\w-]+\//i,
-  // socket-hook: allow regex-alternation-order
+  // socket-lint: allow regex-alternation-order
   /(?:^|\s)\.\.\/sdxgen\//,
-  // socket-hook: allow regex-alternation-order
+  // socket-lint: allow regex-alternation-order
   /(?:^|\s)\.\.\/stuie\//,
 ]
 

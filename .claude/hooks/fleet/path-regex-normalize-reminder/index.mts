@@ -23,7 +23,6 @@
 // assistant message. Markdown / READMEs / docs are skipped because
 // example regexes there are illustrative, not run.
 //
-// Disable via SOCKET_PATH_REGEX_NORMALIZE_REMINDER_DISABLED.
 
 import process from 'node:process'
 
@@ -152,9 +151,6 @@ export function isDualSeparator(pattern: string): boolean {
 
 async function main(): Promise<void> {
   const payloadRaw = await readStdin()
-  if (process.env['SOCKET_PATH_REGEX_NORMALIZE_REMINDER_DISABLED']) {
-    process.exit(0)
-  }
   let payload: StopPayload
   try {
     payload = JSON.parse(payloadRaw) as StopPayload
@@ -212,7 +208,7 @@ async function main(): Promise<void> {
   )
   lines.push(`  Bypass: type "${BYPASS_PHRASE}" verbatim in a recent message.`)
   lines.push('')
-  process.stderr.write(lines.join('\n') + '\n') // socket-hook: allow console
+  process.stderr.write(lines.join('\n') + '\n') // socket-lint: allow console
   process.exit(0)
 }
 

@@ -21,7 +21,7 @@
  *
  *   - The plugin's own rules/ + test/ files (this file names the banned commands
  *     as lookup-table data / fixtures).
- *   - Lines carrying a `socket-hook: allow which-lookup` comment — for the rare
+ *   - Lines carrying a `socket-lint: allow which-lookup` comment — for the rare
  *     case that legitimately needs a global PATH search (e.g. locating the
  *     user's real `git` / system tool, not a project dependency).
  */
@@ -46,8 +46,8 @@ import type { AstNode, RuleContext } from '../lib/rule-types.mts'
 const SHELL_LOOKUP_RE =
   /^(?:command\s+-[vV]|type\s+-P|where|which)\s+[\w./@+-]+$/
 
-// socket-hook: allow which-lookup -- this marker string is the rule's own bypass token, not a real usage.
-const BYPASS_RE = /socket-hook:\s*allow\s+which-lookup/
+// socket-lint: allow which-lookup -- this marker string is the rule's own bypass token, not a real usage.
+const BYPASS_RE = /socket-lint:\s*allow\s+which-lookup/
 
 /**
  * True when `value` is a string that invokes a PATH-lookup command, either as a
@@ -68,7 +68,7 @@ const rule = {
     },
     messages: {
       whichLookup:
-        '`{{cmd}}` shells out to search the GLOBAL PATH for a binary — fleet binaries live in `node_modules/.bin`. Use `whichSync(name, { path: <binDir>, nothrow: true })` from @socketsecurity/lib-stable/bin/which (handles the `.cmd` wrapper + existence check), or resolve the `.bin` path directly. If you really need a global lookup (system git, etc.), add `// socket-hook: allow which-lookup`.',
+        '`{{cmd}}` shells out to search the GLOBAL PATH for a binary — fleet binaries live in `node_modules/.bin`. Use `whichSync(name, { path: <binDir>, nothrow: true })` from @socketsecurity/lib-stable/bin/which (handles the `.cmd` wrapper + existence check), or resolve the `.bin` path directly. If you really need a global lookup (system git, etc.), add `// socket-lint: allow which-lookup`.',
     },
     schema: [],
   },

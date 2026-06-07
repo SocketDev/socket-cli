@@ -27,9 +27,9 @@ Don't compound for one-off fixes that won't recur. Don't write a "lesson" doc wh
 ## How to compound
 
 1. **Name the rule** — one sentence, imperative voice. "Never X." "Always Y."
-2. **Cite the incident** — one-line `**Why:**` line referencing the commit, PR, or finding. Don't write a paragraph.
+2. **Cite the motivating case generically** — one-line `**Why:**` line stating the _shape_ of the problem the rule prevents, framed as a timeless example. NOT a dated incident log: no ISO dates, version deltas, percentages, or commit SHAs — those age into a changelog and leak detail in a fleet-duplicated file. ✗ "**Why:** 2026-06-07 pnpm 11.0.0 vs 11.5.1 broke the cascade at SHA abc1234" → ✓ "**Why:** a stale pnpm on PATH fails the version check and aborts the cascade install." (Enforced: `dated-citation-reminder` at edit time + `scripts/fleet/check/rule-citations-are-generic.mts` in `check --all`.)
 3. **State the application** — one-line `**How to apply:**` line saying when the rule fires.
-4. **Land it where it'll fire** — CLAUDE.md, hook, or skill prompt. Pick the lowest-friction surface that catches the next occurrence.
+4. **Land it where it'll fire** — CLAUDE.md, hook, or skill prompt. Pick the lowest-friction surface that catches the next occurrence. When the discipline is a procedure (a cascade, a reconcile, a bump), the lowest-friction surface is an **executable** `.mts` / saved Workflow — the law is code that runs identically for a human and an agent; the CLAUDE.md rule, hook, and skill are the explanatory + enforcing layer ON TOP. Don't stop at prose for something a script could do.
 
 Skip the retrospective doc. Skip the post-mortem template. The rule is the artifact.
 
@@ -37,7 +37,8 @@ Skip the retrospective doc. Skip the post-mortem template. The rule is the artif
 
 - **The "lessons learned" graveyard** — a `docs/lessons/` folder where dated markdown files rot. Don't. The rule belongs in the live config that fires on the next run.
 - **Vague rules** — "be careful with X." Useless. If you can't write the rule as a `rg` pattern or a CLAUDE.md `🚨` line, it isn't a rule yet.
-- **Rules without why** — future readers can't judge edge cases without the original incident. Always cite.
+- **Rules without why** — future readers can't judge edge cases without the motivating case. Always cite it — generically, as the problem shape, never a dated log.
+- **Dated incident logs as rationale** — `**Why:** 2026-06-07 …`. The date/version/SHA is dead weight the moment the versions move; write the timeless example instead.
 
 ## Source
 

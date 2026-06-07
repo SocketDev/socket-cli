@@ -268,15 +268,6 @@ test('BYPASS via "Allow lock-step bypass" user message', () => {
   assert.equal(stderr, '')
 })
 
-test('BYPASS via SOCKET_LOCK_STEP_REF_GUARD_DISABLED=1', () => {
-  const content = '// lockstep with Go: parser.go\nconst x = 1'
-  const { stderr, exitCode } = runHook('Write', '/repo/src/foo.rs', content, {
-    env: { SOCKET_LOCK_STEP_REF_GUARD_DISABLED: '1' },
-  })
-  assert.equal(exitCode, 0)
-  assert.equal(stderr, '')
-})
-
 // HARDENING — bad payloads don't crash
 
 test('exits 0 on invalid JSON payload', () => {

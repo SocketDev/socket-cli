@@ -30,6 +30,6 @@ Scans the last 3 user turns. The matched turn must be the ENTIRE trimmed
 message body, not a substring — this avoids firing on "yes" buried in
 sentence prose.
 
-## Disable
+## Bypass
 
-Set `SOCKET_ASK_SUPPRESSION_REMINDER_DISABLED=1` in the environment.
+No bypass — the reminder never blocks.

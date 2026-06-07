@@ -175,22 +175,3 @@ test('deduplicates multiple edits to the same file', () => {
     rmSync(dir, { recursive: true, force: true })
   }
 })
-
-test('disabled env var short-circuits', () => {
-  const dir = mkdtempSync(path.join(os.tmpdir(), 'fsize-'))
-  try {
-    const target = path.join(dir, 'big.mts')
-    writeLines(target, 1500)
-    const transcript = makeTranscript(dir, [
-      { name: 'Write', input: { file_path: target, content: '...' } },
-    ])
-    const result = spawnSync('node', [HOOK_PATH], {
-      input: JSON.stringify({ transcript_path: transcript }),
-      env: { ...process.env, SOCKET_FILE_SIZE_REMINDER_DISABLED: '1' },
-    })
-    assert.equal(result.status, 0)
-    assert.equal(result.stderr, '')
-  } finally {
-    rmSync(dir, { recursive: true, force: true })
-  }
-})

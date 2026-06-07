@@ -39,20 +39,14 @@ specific version and re-resolving** — never by disabling the policy.
 
 ## Why
 
-Incident 2026-05-27: an agent ran `pnpm install --config.trustPolicy=trust-all`
-to force a lockfile refresh past a stale-entry rejection, disabling package-
-takeover protection to make a command succeed. CLAUDE.md "Never weaken a
-supply-chain trust gate" states the rule; this hook enforces it.
-
-## Config
-
-- Disable: `SOCKET_TRUST_DOWNGRADE_GUARD_DISABLED=1` — note this env var is
-  itself a persisted downgrade; it exists only for this hook's test harness and
-  emergency wedged-session recovery.
+An agent that runs `pnpm install --config.trustPolicy=trust-all` to force a
+lockfile refresh past a stale-entry rejection disables package-takeover
+protection to make a command succeed. CLAUDE.md "Never weaken a supply-chain
+trust gate" states the rule; this hook enforces it.
 
 ## Related
 
-- `minimum-release-age-guard` / `soak-exclude-date-annotation-guard` — the soak side.
+- `minimum-release-age-guard` / `soak-exclude-date-guard` — the soak side.
 - `check-new-deps` — Socket-scores new deps at edit time.
 - `release-workflow-guard` — the single-use-bypass pattern this mirrors.
 - CLAUDE.md → "Never weaken a supply-chain trust gate".

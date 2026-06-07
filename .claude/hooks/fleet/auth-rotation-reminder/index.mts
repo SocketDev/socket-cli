@@ -37,7 +37,6 @@
 //     How long between actual auth-rotation runs (state-file throttle).
 //     Set to 0 to run on every Stop event (verbose).
 //
-//   SOCKET_AUTH_ROTATION_DISABLED        default: unset
 //     If set to a truthy value, skip the hook entirely.
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
@@ -386,9 +385,6 @@ export function reportRotation(result: RotationResult): void {
 
 export async function run(stdinPayload: string): Promise<void> {
   if (process.env['CI']) {
-    return
-  }
-  if (process.env['SOCKET_AUTH_ROTATION_DISABLED']) {
     return
   }
   const snooze = await checkSnoozes()

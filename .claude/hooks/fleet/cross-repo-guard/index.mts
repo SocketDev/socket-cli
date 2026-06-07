@@ -23,7 +23,7 @@
 //
 // Exit code 2 makes Claude Code refuse the edit so the diff never
 // lands. Doc lines that legitimately need to mention a path can carry
-// the canonical opt-out marker `// socket-hook: allow cross-repo`
+// the canonical opt-out marker `// socket-lint: allow cross-repo`
 // (`#`/`/*` accepted).
 //
 // Scope:
@@ -50,13 +50,18 @@ const logger = getDefaultLogger()
 const FLEET_RE_FRAGMENT = FLEET_REPO_NAMES.join('|')
 
 // `../<repo>/…` and deeper variants like `../../<repo>/…`. Boundary
-// chars in front prevent matching e.g. `socketdev-../socket-cli/`.
+// chars in front prevent matching e.g. `socketdev-../socket-cli/`. The
+// trailing `/` (not `\b`) requires the repo name to name a DIRECTORY:
+// `\b` treats `-` as a boundary, so it false-matched a sibling FILE
+// whose basename merely starts with a repo name (e.g. a `<repo>-config`
+// import in the same dir). A real cross-repo path is `../<repo>/…`,
+// always with a separator after the name.
 const CROSS_REPO_RELATIVE_RE = new RegExp(
-  String.raw`(?:^|[\s'"\`(=,])\.\.(?:/\.\.)*/(?:${FLEET_RE_FRAGMENT})\b`,
+  String.raw`(?:^|[\s'"\`(=,])\.\.(?:/\.\.)*/(?:${FLEET_RE_FRAGMENT})/`,
 )
 // `…/projects/<repo>/…` — absolute or env-rooted variant.
 const CROSS_REPO_ABSOLUTE_RE = new RegExp(
-  String.raw`/projects/(?:${FLEET_RE_FRAGMENT})\b`,
+  String.raw`/projects/(?:${FLEET_RE_FRAGMENT})/`,
 )
 const CROSS_REPO_ANY_RE = new RegExp(
   `${CROSS_REPO_RELATIVE_RE.source}|${CROSS_REPO_ABSOLUTE_RE.source}`,
@@ -80,8 +85,8 @@ const EXEMPT_PATH_PATTERNS: RegExp[] = [
   /\.claude\/projects\/.*\/memory\//,
 ]
 
-const SOCKET_HOOK_MARKER_RE =
-  /(?:#|\/\/|\/\*)\s*socket-hook:\s*allow(?:\s+([\w-]+))?/
+const SOCKET_LINT_MARKER_RE =
+  /(?:#|\/\/|\/\*)\s*socket-lint:\s*allow(?:\s+([\w-]+))?/
 
 export function emitBlock(filePath: string, hits: Hit[]): void {
   const lines: string[] = []
@@ -101,7 +106,7 @@ export function emitBlock(filePath: string, hits: Hit[]): void {
     lines.push(`  …and ${hits.length - 3} more.`)
   }
   lines.push(
-    '  Opt-out for one line (rare): append `// socket-hook: allow cross-repo`.',
+    '  Opt-out for one line (rare): append `// socket-lint: allow cross-repo`.',
   )
   logger.error(lines.join('\n'))
 }
@@ -120,7 +125,7 @@ export function isInScope(filePath: string): boolean {
 }
 
 export function isMarkerSuppressed(line: string): boolean {
-  const m = line.match(SOCKET_HOOK_MARKER_RE)
+  const m = line.match(SOCKET_LINT_MARKER_RE)
   if (!m) {
     return false
   }

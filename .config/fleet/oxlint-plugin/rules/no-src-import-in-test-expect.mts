@@ -21,9 +21,9 @@
  *   `@socketsecurity/<pkg>-stable/<subpath>`).
  */
 
-import type { AstNode, RuleContext } from '../lib/rule-types.mts'
+import { TEST_FILE_RE } from '../lib/test-file.mts'
 
-const TEST_FILE_RE = /\.test\.(?:[mc]?[jt]s)$/
+import type { AstNode, RuleContext } from '../lib/rule-types.mts'
 
 // A relative specifier that points into a `src/` tree: `./src/x`,
 // `../src/x`, `../../../src/paths/normalize`, etc.

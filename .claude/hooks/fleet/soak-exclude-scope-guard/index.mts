@@ -7,7 +7,7 @@
 // weakens the policy without justification. Third-party version
 // pins go in `overrides:` instead.
 //
-// Sibling guard: `soak-exclude-date-annotation-guard` enforces
+// Sibling guard: `soak-exclude-date-guard` enforces
 // `# published: ... | removable: ...` annotations on entries. This
 // guard is orthogonal — it restricts WHICH packages can appear at
 // all, not how they're annotated.

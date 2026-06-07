@@ -99,7 +99,7 @@ test('ALLOWS one-off override marker', () => {
     tool_name: 'Write',
     tool_input: {
       file_path: '/repo/.github/workflows/ci.yml',
-      content: `      - uses: third-party/action@${SHA} # socket-hook: allow uses-no-stamp\n`,
+      content: `      - uses: third-party/action@${SHA} # socket-lint: allow uses-no-stamp\n`,
     },
   })
   assert.equal(exitCode, 0)

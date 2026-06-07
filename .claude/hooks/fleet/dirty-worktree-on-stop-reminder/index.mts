@@ -29,7 +29,6 @@
 // Exit codes:
 //   0 — always. Informational; never blocks.
 //
-// Disabled via `SOCKET_DIRTY_WORKTREE_REMINDER_DISABLED=1`.
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import process from 'node:process'
@@ -115,9 +114,6 @@ export function listDirtyEntries(repoDir: string): DirtyEntry[] {
 }
 
 async function main(): Promise<void> {
-  if (process.env['SOCKET_DIRTY_WORKTREE_REMINDER_DISABLED']) {
-    return
-  }
   await drainStdin()
 
   const repoDir = getProjectDir()

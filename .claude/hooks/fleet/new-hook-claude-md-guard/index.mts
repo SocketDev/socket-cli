@@ -2,8 +2,9 @@
 // Claude Code PreToolUse hook — new-hook-claude-md-guard.
 //
 // Blocks Write/Edit operations that create or modify a hook's
-// `index.mts` unless the relevant CLAUDE.md contains an
-// `(enforced by `.claude/hooks/<hook-name>/`)` reference.
+// `index.mts` unless the relevant CLAUDE.md contains a backticked
+// `(`.claude/hooks/<hook-name>/`)` citation (minimal form — no prose
+// wrapper required).
 //
 // Two-mode behavior:
 //
@@ -28,8 +29,7 @@
 //   - Test files (`test/*.test.mts`)
 //   - This hook itself (chicken-and-egg)
 //
-// Disable: `Allow new-hook bypass` in a recent user turn, or set
-// SOCKET_NEW_HOOK_CLAUDE_MD_GUARD_DISABLED=1.
+// Bypass: `Allow new-hook bypass` in a recent user turn.
 
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
@@ -48,7 +48,6 @@ interface PreToolUsePayload {
   readonly cwd?: string | undefined
 }
 
-const ENV_DISABLE = 'SOCKET_NEW_HOOK_CLAUDE_MD_GUARD_DISABLED'
 const BYPASS_PHRASES = [
   'Allow new-hook bypass',
   'Allow new hook bypass',
@@ -123,9 +122,6 @@ export function readPayload(raw: string): PreToolUsePayload | undefined {
 }
 
 async function main(): Promise<void> {
-  if (process.env[ENV_DISABLE]) {
-    return
-  }
   const payloadRaw = await readStdin()
   const payload = readPayload(payloadRaw)
   if (!payload) {
@@ -180,10 +176,12 @@ async function main(): Promise<void> {
   } catch {
     return
   }
-  // Three citation shapes recognized:
-  //   1. Inline rule:    `enforced by \`.claude/hooks/fleet/<name>/\``
-  //   2. Comma-listed:   `enforced by \`.claude/hooks/fleet/a/\`, \`.../b/\``
-  //   3. Brace-grouped:  `enforced by \`.claude/hooks/fleet/{a,b,c}/\``
+  // Three citation shapes recognized (the backticked path is the citation —
+  // no prose wrapper required; minimal `(\`.claude/hooks/fleet/<name>/\`)` is
+  // the canonical form):
+  //   1. Inline rule:    `(\`.claude/hooks/fleet/<name>/\`)`
+  //   2. Comma-listed:   `(\`.claude/hooks/fleet/a/\`, \`.../b/\`)`
+  //   3. Brace-grouped:  `(\`.claude/hooks/fleet/{a,b,c}/\`)`
   // 1+2 contain the literal backticked path; 3 is a brace expansion
   // — the leaf name appears between `{...}`.
   const literalSlashed = `\`.claude/hooks/${hookPathSuffix}/\``
@@ -236,7 +234,7 @@ async function main(): Promise<void> {
     `        docs/claude.md/fleet/hook-registry.md, as a bullet:`,
     `          - \`${leaf}\` — <one-line description>`,
     `    - or inline in CLAUDE.md, attached to the rule it enforces:`,
-    `          (enforced by \`.claude/hooks/${hookPathSuffix}/\`)`,
+    `          (\`.claude/hooks/${hookPathSuffix}/\`)`,
     '',
     '  Why: fleet repos read CLAUDE.md + its linked docs as the source of',
     "  truth. A hook with no entry is policy that doesn't exist on paper —",

@@ -28,7 +28,6 @@
 // it (no git op involved) — the clobber was a plain Write.
 //
 // Bypass:
-//   • `SOCKET_PARALLEL_AGENT_EDIT_GUARD_DISABLED=1`.
 //   • `Allow parallel-agent-edit bypass` in a recent user turn
 //     (case-sensitive) — one action.
 //   • `FLEET_SYNC=1` in env — cascade scripts run in a fresh worktree off
@@ -45,7 +44,8 @@ import process from 'node:process'
 
 import {
   listForeignDirtyPaths,
-  readTouchedPaths,
+  readSessionTouchedPaths,
+  recordTouchedPath,
 } from '../_shared/foreign-paths.mts'
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
@@ -55,7 +55,6 @@ interface ToolPayload {
   readonly transcript_path?: string | undefined
 }
 
-const ENV_DISABLE = 'SOCKET_PARALLEL_AGENT_EDIT_GUARD_DISABLED'
 const BYPASS_PHRASES = ['Allow parallel-agent-edit bypass'] as const
 const EDIT_TOOLS = new Set(['Edit', 'NotebookEdit', 'Write'])
 
@@ -64,7 +63,7 @@ function getProjectDir(): string {
 }
 
 async function main(): Promise<void> {
-  if (process.env[ENV_DISABLE] || process.env['FLEET_SYNC'] === '1') {
+  if (process.env['FLEET_SYNC'] === '1') {
     process.exit(0)
   }
   const raw = await readStdin()
@@ -87,14 +86,20 @@ async function main(): Promise<void> {
   const repoDir = getProjectDir()
   const targetAbs = path.resolve(repoDir, filePath)
 
-  const touched = readTouchedPaths(payload.transcript_path)
+  const touched = readSessionTouchedPaths(payload.transcript_path)
   // If THIS session already authored the target, it's ours — not foreign.
   if (touched.has(targetAbs)) {
+    // Re-record so a third+ edit this turn keeps recognizing it (the
+    // transcript still lags; the ledger is what carries the memory).
+    recordTouchedPath(payload.transcript_path, targetAbs)
     process.exit(0)
   }
 
   const foreign = listForeignDirtyPaths(repoDir, touched)
   if (foreign.length === 0) {
+    // Not a parallel-agent hazard — allow, and remember we touched it so a
+    // follow-up edit this turn doesn't read the now-dirty file as foreign.
+    recordTouchedPath(payload.transcript_path, targetAbs)
     process.exit(0)
   }
   // The target is foreign only if it's in the foreign-dirty set.
@@ -102,6 +107,7 @@ async function main(): Promise<void> {
     rel => path.resolve(repoDir, rel) === targetAbs,
   )
   if (!targetIsForeign) {
+    recordTouchedPath(payload.transcript_path, targetAbs)
     process.exit(0)
   }
 
@@ -109,6 +115,7 @@ async function main(): Promise<void> {
     payload.transcript_path &&
     bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES, 3)
   ) {
+    recordTouchedPath(payload.transcript_path, targetAbs)
     process.exit(0)
   }
 

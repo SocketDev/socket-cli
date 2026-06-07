@@ -21,10 +21,10 @@ import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
 const SCRIPT_OPENER_RE = /<script\b([^>]*)>/gi
 
-// socket-hook: allow inline-defer -- opt-out for a string that contains a
+// socket-lint: allow inline-defer -- opt-out for a string that contains a
 // `<script ...>` snippet as DATA (e.g. a hook's own diagnostic text describing
 // the banned shape), not as real inline-script markup.
-const BYPASS_RE = /socket-hook:\s*allow\s+inline-defer/
+const BYPASS_RE = /socket-lint:\s*allow\s+inline-defer/
 
 interface Match {
   /**

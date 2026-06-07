@@ -14,10 +14,6 @@ Assistant turn that:
 2. AND uses an edit verb (`updated`, `edited`, `bumped`, `added`, `removed`, `landed`, etc.).
 3. AND does NOT mention `cascade` / `sync` / `drift` / `fleet` / `other repos` / `downstream` / `chore(wheelhouse)` / `re-cascade`.
 
-## Bypass
-
-- `SOCKET_DRIFT_CHECK_REMINDER_DISABLED=1` — turn off entirely.
-
 ## Test
 
 ```sh

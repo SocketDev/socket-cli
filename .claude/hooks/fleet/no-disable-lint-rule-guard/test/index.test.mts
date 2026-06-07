@@ -186,21 +186,6 @@ test('ALLOWS with bypass phrase', () => {
   assert.equal(exitCode, 0)
 })
 
-test('ALLOWS with env disable', () => {
-  const { exitCode } = runHook(
-    {
-      tool_name: 'Edit',
-      tool_input: {
-        file_path: '/repo/.config/oxlintrc.json',
-        old_string: '"rules": {}',
-        new_string: '"rules": {\n  "socket/foo": "off"\n}',
-      },
-    },
-    { env: { SOCKET_NO_DISABLE_LINT_RULE_GUARD_DISABLED: '1' } },
-  )
-  assert.equal(exitCode, 0)
-})
-
 // Write tool: file doesn't exist yet -> baseline = empty
 
 test('BLOCKS Write of new lint config with rule-off', () => {

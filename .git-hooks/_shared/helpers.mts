@@ -119,7 +119,7 @@ export const splitLines = (text: string): string[] =>
 // anywhere (TLD, paths, prose like "see .example below") were silently
 // allowlisted. Now we require either an explicit per-line marker or
 // the canonical fixture filename pattern `.env.example`.
-const SOCKET_API_KEY_ALLOW_MARKER = 'socket-hook: allow socket-api-key'
+const SOCKET_API_KEY_ALLOW_MARKER = 'socket-lint: allow socket-api-key'
 const isAllowedApiKey = (line: string): boolean =>
   line.includes(ALLOWED_PUBLIC_KEY) ||
   line.includes(FAKE_TOKEN_MARKER) ||
@@ -168,14 +168,14 @@ const PERSONAL_PATH_PLACEHOLDER_RE =
 
 // Per-line opt-out marker for our pre-commit / pre-push scanners.
 //
-// Canonical form:    <comment-prefix> socket-hook: allow
-// Targeted form:     <comment-prefix> socket-hook: allow <rule>
+// Canonical form:    <comment-prefix> socket-lint: allow
+// Targeted form:     <comment-prefix> socket-lint: allow <rule>
 //
 // `<comment-prefix>` is whichever comment style the host file uses —
 // `#` for shell / YAML / TOML / Dockerfile, `//` for TS / JS / Rust /
 // Go / C-family, or `/*` for the C-block-comment opener. The hook is
 // invoked from many file types; pinning to `#` made the marker fail
-// silently in `.ts` / `.mts` files (where `// socket-hook: allow` is
+// silently in `.ts` / `.mts` files (where `// socket-lint: allow` is
 // the only sensible spelling) and confused contributors.
 //
 // The targeted form names a specific rule (`personal-path`, `npx`,
@@ -186,8 +186,8 @@ const PERSONAL_PATH_PLACEHOLDER_RE =
 // Legacy `# zizmor: ...` markers are still recognized for one cycle so
 // existing files don't have to be rewritten in the same change that
 // renames the marker.
-const SOCKET_HOOK_MARKER_RE =
-  /(?:#|\/\/|\/\*)\s*socket-hook:\s*allow(?:\s+([\w-]+))?/
+const SOCKET_LINT_MARKER_RE =
+  /(?:#|\/\/|\/\*)\s*socket-lint:\s*allow(?:\s+([\w-]+))?/
 
 // File extensions whose natural comment syntax is `//` (C-family + cousins).
 // Anything else falls through to `#` (shell / YAML / TOML / Dockerfile /
@@ -200,13 +200,13 @@ const SLASH_COMMENT_EXT_RE =
  *
  * The marker regex above accepts `#`, `//`, and `/*` prefixes — but error
  * messages should print the _one_ form a contributor would actually paste into
- * that file. TS edits get `// socket-hook: allow <rule>`; YAML gets `#
- * socket-hook: allow <rule>`. Same rule, different comment lexer.
+ * that file. TS edits get `// socket-lint: allow <rule>`; YAML gets `#
+ * socket-lint: allow <rule>`. Same rule, different comment lexer.
  */
-export const socketHookMarkerFor = (filePath: string, rule: string): string =>
+export const socketLintMarkerFor = (filePath: string, rule: string): string =>
   SLASH_COMMENT_EXT_RE.test(filePath)
-    ? `// socket-hook: allow ${rule}`
-    : `# socket-hook: allow ${rule}`
+    ? `// socket-lint: allow ${rule}`
+    : `# socket-lint: allow ${rule}`
 const LEGACY_ZIZMOR_MARKER_RE = /(?:#|\/\/|\/\*)\s*zizmor:\s*[\w-]+/
 
 // Aliases: legacy marker names recognized as equivalent to a current
@@ -234,7 +234,7 @@ export function lineIsSuppressed(line: string, rule?: string): boolean {
   if (LEGACY_ZIZMOR_MARKER_RE.test(line)) {
     return true
   }
-  const m = line.match(SOCKET_HOOK_MARKER_RE)
+  const m = line.match(SOCKET_LINT_MARKER_RE)
   if (!m) {
     return false
   }
@@ -552,7 +552,7 @@ export const scanNpxDlx = (text: string): LineHit[] =>
 // Inline backtick spans (a single `npm install foo` in prose) are
 // NOT scanned; only block-level fences.
 //
-// Suppression: a line containing `socket-hook: allow pnpm-first`
+// Suppression: a line containing `socket-lint: allow pnpm-first`
 // anywhere in the fence (or just above it) skips that block.
 
 // Match shell install commands at line start (allowing leading
@@ -567,7 +567,7 @@ const NPM_YARN_INSTALL_LINE_RE =
 // just count fences as we go and treat alternating opens/closes.
 const FENCE_OPEN_RE = /^\s*(?:```|~~~)/
 
-const PNPM_FIRST_SUPPRESS_RE = /socket-hook:\s*allow\s+pnpm-first\b/
+const PNPM_FIRST_SUPPRESS_RE = /socket-lint:\s*allow\s+pnpm-first\b/
 
 export const scanDocsPnpmFirst = (text: string): LineHit[] => {
   const hits: LineHit[] = []
@@ -645,19 +645,27 @@ export const scanDocsPnpmFirst = (text: string): LineHit[] => {
 // ── Logger leak scanner ────────────────────────────────────────────
 //
 // The fleet rule: source code uses `getDefaultLogger()` from
-// `@socketsecurity/lib-stable/logger/default`. Direct calls to `process.stderr.write`,
-// `process.stdout.write`, `console.log`, `console.error`, `console.warn`,
-// `console.info`, `console.debug` are blocked. Doc-context lines are
-// exempt; lines carrying `// socket-hook: allow console` (or `#` in
-// non-TS files) are exempt too. Legacy `allow logger` is accepted as
-// an alias for one deprecation cycle.
+// `@socketsecurity/lib-stable/logger/default`. Two distinct leak shapes,
+// each with its OWN per-line opt-out marker so a reviewer can tell which
+// exemption was granted:
+//
+//   - `console.{log,error,warn,info,debug}` → rule `console`, marker
+//     `// socket-lint: allow console`. Legacy `allow logger` is accepted
+//     as an alias for one deprecation cycle.
+//   - `process.std{out,err}.write` → rule `process-stdio`, marker
+//     `// socket-lint: allow process-stdio`. Reserved for the rare CLI
+//     whose stdio IS a protocol (a runner whose stdout a caller parses
+//     back), where a logger prefix would corrupt the bytes.
+//
+// Doc-context lines are exempt from both. `scanLoggerLeaks` merges the
+// two passes so callers (pre-commit / pre-push) keep one entry point.
 
-const LOGGER_LEAK_RE =
-  /\b(process\.std(?:err|out)\.write|console\.(?:debug|error|info|log|warn))\s*\(/
+const CONSOLE_LEAK_RE = /\bconsole\.(?:debug|error|info|log|warn)\s*\(/
+const PROCESS_STDIO_LEAK_RE = /\bprocess\.std(?:err|out)\.write\s*\(/
 
-// Map each direct call to its lib-logger equivalent. process.stdout is
-// closer to logger.info; process.stderr / console.error → logger.error;
-// console.warn → logger.warn; console.info / console.log → logger.info;
+// Map each direct call to its lib-logger equivalent. process.stdout /
+// console.log / console.info → logger.info; process.stderr /
+// console.error → logger.error; console.warn → logger.warn;
 // console.debug → logger.debug.
 export function suggestLoggerReplacement(line: string): string {
   return line
@@ -670,11 +678,30 @@ export function suggestLoggerReplacement(line: string): string {
     .replace(/\bconsole\.log\s*\(/g, 'logger.info(')
 }
 
-export const scanLoggerLeaks = (text: string): LineHit[] =>
-  scanLines(text, LOGGER_LEAK_RE, {
+export const scanConsoleLeaks = (text: string): LineHit[] =>
+  scanLines(text, CONSOLE_LEAK_RE, {
     skipDocs: { rule: 'console' },
     suggest: suggestLoggerReplacement,
   })
+
+export const scanProcessStdioLeaks = (text: string): LineHit[] =>
+  scanLines(text, PROCESS_STDIO_LEAK_RE, {
+    skipDocs: { rule: 'process-stdio' },
+    suggest: suggestLoggerReplacement,
+  })
+
+// Merged entry point: both leak shapes, in line order, deduped by line
+// number so a single line carrying both forms is reported once.
+export function scanLoggerLeaks(text: string): LineHit[] {
+  const hits = [...scanConsoleLeaks(text), ...scanProcessStdioLeaks(text)]
+  const byLine = new Map<number, LineHit>()
+  for (const hit of hits) {
+    if (!byLine.has(hit.lineNumber)) {
+      byLine.set(hit.lineNumber, hit)
+    }
+  }
+  return [...byLine.values()].sort((a, b) => a.lineNumber - b.lineNumber)
+}
 
 // ── Cross-repo path scanner ────────────────────────────────────────
 //
@@ -692,7 +719,7 @@ export const scanLoggerLeaks = (text: string): LineHit[] =>
 // The right way is to import from the published npm package
 // (`@socketsecurity/lib-stable/...`, `@socketsecurity/registry-stable/...`).
 // Scanner detects both shapes; suppress with the canonical marker
-// `<comment-prefix> socket-hook: allow cross-repo`.
+// `<comment-prefix> socket-lint: allow cross-repo`.
 
 const FLEET_REPO_NAMES = [
   'claude-code',
@@ -713,16 +740,20 @@ const FLEET_REPO_NAMES = [
 ] as const
 
 // `../<repo>/…` or `../../<repo>/…` etc. — relative path that walks
-// out of the current repo into a sibling fleet repo.
+// out of the current repo into a sibling fleet repo. The trailing `/`
+// (not `\b`) requires the repo name to name a DIRECTORY: `\b` treats
+// `-` as a boundary, so it false-matched a sibling FILE whose basename
+// merely starts with a repo name (e.g. a `<repo>-config` import in the
+// same dir). A real cross-repo path always has a separator after the name.
 const CROSS_REPO_RELATIVE_RE = new RegExp(
-  String.raw`(?:^|[\s'"\`(=,])\.\.(?:/\.\.)*/(?:${FLEET_REPO_NAMES.join('|')})\b`,
+  String.raw`(?:^|[\s'"\`(=,])\.\.(?:/\.\.)*/(?:${FLEET_REPO_NAMES.join('|')})/`,
 )
 // `…/projects/<repo>/…` — absolute or env-rooted path into a sibling
 // fleet repo. Catches cases where scanPersonalPaths has already been
 // satisfied via `${HOME}` / `<user>` substitution but the path itself
 // still escapes into another repo.
 const CROSS_REPO_ABSOLUTE_RE = new RegExp(
-  String.raw`/projects/(?:${FLEET_REPO_NAMES.join('|')})\b`,
+  String.raw`/projects/(?:${FLEET_REPO_NAMES.join('|')})/`,
 )
 const CROSS_REPO_ANY_RE = new RegExp(
   `${CROSS_REPO_RELATIVE_RE.source}|${CROSS_REPO_ABSOLUTE_RE.source}`,
@@ -1030,4 +1061,182 @@ export const checkOxlintRuleWiringStaged = (
     (r.stdout ?? '').trim() ||
     'sync-oxlint-rules --check reported drift.'
   )
+}
+
+// ── Staged-test reminder (WARN, never blocks) ──────────────────────
+//
+// `scripts/fleet/test.mts --staged` runs `vitest related` on the staged delta.
+// Nothing invoked it at commit time, so a commit could break its own tests and
+// the breakage only surfaced at pre-push / CI. This runs it as a NON-BLOCKING
+// reminder: a failure prints a warning so the author sees it at the earliest
+// moment, but the commit still lands. That's deliberate — the fleet cadence
+// (CLAUDE.md "Smallest chunks, land ASAP") explicitly allows per-step
+// `--no-verify` commits and gates tests at the MERGE (`fix --all` / `check
+// --all` / `test` before landing). A blocking pre-commit test run would fight
+// that workflow and slow every commit; the reminder surfaces breakage without
+// changing the cadence. Returns a warning string on test failure, undefined on
+// pass / no-related-tests / spawn error (fail-open).
+
+const TEST_RUNNER_REL = 'scripts/fleet/test.mts'
+
+// A staged file that could change test outcomes: a TS/JS source or test file.
+// Lockfiles, markdown, JSON config, assets don't map to `vitest related`.
+const TESTABLE_FILE_RE = /\.(?:c|m)?[jt]sx?$/
+
+export const runStagedTestsReminder = (
+  stagedFiles: readonly string[],
+  repoRoot: string,
+): string | undefined => {
+  const anyTestable = stagedFiles.some(f => TESTABLE_FILE_RE.test(f))
+  if (!anyTestable) {
+    return undefined
+  }
+  const runnerPath = `${repoRoot}/${TEST_RUNNER_REL}`
+  if (!existsSync(runnerPath)) {
+    return undefined
+  }
+  const r = spawnSync(process.execPath, [runnerPath, '--staged', '--quiet'], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  })
+  // Fail open: a spawn error (missing deps on a fresh checkout, node crash) is
+  // not a test failure. Only a clean non-zero exit means staged tests failed.
+  if (r.error || typeof r.status !== 'number' || r.status === 0) {
+    return undefined
+  }
+  return (
+    (r.stdout ?? '').trim() ||
+    (r.stderr ?? '').trim() ||
+    'vitest related reported failing tests for the staged delta.'
+  )
+}
+
+// ── Programmatic-Claude lockdown (HARD block) ──────────────────────
+//
+// A `.mts` that drives Claude programmatically (the agent SDK `query({…})`
+// or `new ClaudeSDKClient({…})`) MUST pin the four lockdown options; a headless
+// agent without them can be steered into arbitrary tool use. The
+// claude-lockdown-guard hook covers the `claude` CLI at Bash time; this covers
+// the SDK call sites in committed source (round-2 code-is-law gap: no
+// commit/push tier existed for the non-Bash form). Deterministic, so it blocks.
+//
+// Flags a line that opens a `query(` / `new ClaudeSDKClient(` call when the
+// surrounding file does NOT also mention all four option keys, OR when it sets a
+// forbidden permission mode. Conservative: only fires when a driver call is
+// actually present, and reads the whole file for the keys (they're often on
+// separate lines), so a call with the options nearby passes.
+const CLAUDE_DRIVER_RE = /\b(?:query|new\s+ClaudeSDKClient)\s*\(/
+const LOCKDOWN_KEYS = [
+  'tools',
+  'allowedTools',
+  'disallowedTools',
+  'permissionMode',
+] as const
+const BAD_PERMISSION_MODE_RE =
+  /permissionMode\s*:\s*['"`](?:bypassPermissions|default)['"`]/
+const BYPASS_PERMISSIONS_RE = /\bbypassPermissions\b/
+
+export const scanProgrammaticClaudeLockdown = (text: string): LineHit[] => {
+  if (!CLAUDE_DRIVER_RE.test(text)) {
+    return []
+  }
+  // A forbidden mode anywhere is an immediate fail, pointed at its line.
+  const badMode = scanLines(text, BAD_PERMISSION_MODE_RE)
+  if (badMode.length > 0) {
+    return badMode
+  }
+  // bypassPermissions in any form (string/flag) is forbidden.
+  const bypass = scanLines(text, BYPASS_PERMISSIONS_RE)
+  if (bypass.length > 0) {
+    return bypass
+  }
+  // All four keys must appear somewhere in the file. If any is missing, flag
+  // the driver-call line(s).
+  const missing = LOCKDOWN_KEYS.filter(
+    k => !new RegExp(`\\b${k}\\s*:`).test(text),
+  )
+  if (missing.length === 0) {
+    return []
+  }
+  return scanLines(text, CLAUDE_DRIVER_RE)
+}
+
+// ── Soak-exclude date annotations (HARD block, pnpm-workspace.yaml) ──
+//
+// Every exact-pin soak-bypass entry (`'pkg@1.2.3'`) under
+// `minimumReleaseAgeExclude:` MUST carry a `# published: YYYY-MM-DD | removable:
+// YYYY-MM-DD` annotation on the line above. The edit-time guard + the
+// soak-excludes-have-dates check cover Claude-authored edits + CI; this is the
+// push-time tier for entries that landed via non-Claude paths. Deterministic.
+const SOAK_BLOCK_RE = /^\s*minimumReleaseAgeExclude:\s*$/
+const SOAK_PIN_RE = /^\s*-\s*['"]?[^'"#\s]+@[^'"#\s]+['"]?\s*$/
+const SOAK_ANNOTATION_RE =
+  /^\s*#\s+published:\s+\d{4}-\d{2}-\d{2}\s+\|\s+removable:\s+\d{4}-\d{2}-\d{2}\s*$/
+// Same opt-out the canonical soak-excludes-have-dates check honors — an entry
+// that legitimately can't carry a date annotation marks the slot above it.
+const SOAK_ALLOW_MARKER = '# socket-lint: allow soak-exclude-no-date-annotation'
+
+export const scanSoakExcludeDateAnnotations = (text: string): LineHit[] => {
+  const lines = text.split('\n')
+  const hits: LineHit[] = []
+  let inBlock = false
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
+    if (SOAK_BLOCK_RE.test(line)) {
+      inBlock = true
+      continue
+    }
+    // Block ends at the next non-indented, non-blank line.
+    if (inBlock && line !== '' && !/^\s/.test(line)) {
+      inBlock = false
+    }
+    if (!inBlock) {
+      continue
+    }
+    // An exact-pin bullet (`- 'pkg@1.2.3'`) needs the annotation directly above
+    // — unless the slot above carries the allow-marker (parity with the
+    // canonical soak-excludes-have-dates check).
+    if (SOAK_PIN_RE.test(line)) {
+      const prev = i > 0 ? lines[i - 1]! : ''
+      if (!SOAK_ANNOTATION_RE.test(prev) && !prev.includes(SOAK_ALLOW_MARKER)) {
+        hits.push({ lineNumber: i + 1, line })
+      }
+    }
+  }
+  return hits
+}
+
+// ── AI-config poison fingerprints (WARN — heuristic, never blocks) ──
+//
+// Out-of-band writes to `.claude/`/`.cursor/`/`.gemini/`/`.vscode/` that tell an
+// agent to bypass a guard, exfiltrate secrets, or store tokens off-keychain are
+// the npm-worm postinstall signature. The edit-time ai-config-poisoning-guard
+// sees only Claude's OWN writes; a poison file that arrives via a dependency /
+// merge / outside editor reaches push unscanned. Heuristic + literal-pattern, so
+// it WARNS (surfaces for a human glance) rather than blocking — a false block on
+// a mandatory push gate is worse than a missed nudge.
+const POISON_RES: readonly RegExp[] = [
+  // An `Allow <x> bypass` phrase planted in a config file (not a hook/doc).
+  /\bAllow\s+[a-z][a-z0-9-]*\s+bypass\b/i,
+  // Exfiltration: curl/fetch/POST a SOCKET_API* / GITHUB_TOKEN somewhere.
+  /(?:curl|fetch|https?:\/\/)[^\n]*(?:SOCKET_API|GITHUB_TOKEN|GH_TOKEN)/i,
+  // Store a token off-keychain (into a dotenv / dotfile).
+  /(?:SOCKET_API\w*|GITHUB_TOKEN)\s*=.*(?:>>?\s*[~.]|\.env|\.zshrc|\.bashrc)/i,
+  // Tell the agent to disable / ignore a guard.
+  /(?:disable|ignore|skip|turn off)\s+(?:the\s+)?[a-z-]*(?:guard|hook|check)\b/i,
+]
+
+export const scanAiConfigPoison = (text: string): LineHit[] => {
+  const hits: LineHit[] = []
+  const lines = text.split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
+    for (let p = 0, { length: pLen } = POISON_RES; p < pLen; p += 1) {
+      if (POISON_RES[p]!.test(line)) {
+        hits.push({ lineNumber: i + 1, line })
+        break
+      }
+    }
+  }
+  return hits
 }

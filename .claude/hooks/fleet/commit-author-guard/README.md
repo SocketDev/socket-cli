@@ -64,8 +64,7 @@ Fallback when the JSON config is absent. Reads the user's real identity from the
 For legitimate cases where a different identity is needed (e.g., committing to a third-party repo where the work email is correct):
 
 - Add the email to `aliases[]` in `~/.claude/git-authors.json` (persistent), or
-- Type `Allow commit-author bypass` (or `Allow commit author bypass` / `Allow commitauthor bypass`) in a recent user message (one-shot), or
-- Set `SOCKET_COMMIT_AUTHOR_GUARD_DISABLED=1` to turn off entirely.
+- Type `Allow commit-author bypass` (or `Allow commit author bypass` / `Allow commitauthor bypass`) in a recent user message (one-shot).
 
 ## Test
 

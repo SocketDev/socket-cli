@@ -166,18 +166,6 @@ test('ALLOWS with bypass phrase', () => {
   }
 })
 
-test('disabled env var short-circuits', () => {
-  const repo = makeRepoWithHeadSubject('feat: random commit')
-  try {
-    const { exitCode } = runHook('git tag v1.0.0', repo.root, undefined, {
-      SOCKET_VERSION_BUMP_ORDER_GUARD_DISABLED: '1',
-    })
-    assert.equal(exitCode, 0)
-  } finally {
-    repo.cleanup()
-  }
-})
-
 test('fails open when not in a git repo', () => {
   const root = mkdtempSync(path.join(os.tmpdir(), 'bumporder-nogit-'))
   try {

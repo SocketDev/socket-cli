@@ -32,9 +32,7 @@ If any of the 3 most recent user turns contains an explicit stop signal — "sto
 - Final turns of a single-item request (no queue → nothing to mid-queue-stop).
 - The assistant deciding mid-task that it needs user input ("which option do you prefer?") — that's a clarification, not a stop.
 
-## Bypass
-
-- `SOCKET_DONT_STOP_MID_QUEUE_REMINDER_DISABLED=1` — turn off entirely.
+## Why it doesn't block
 
 This hook is a soft reminder (exit 0 with stderr message), not a blocker (exit 2). The Stop event runs _after_ the turn is over; blocking would be too late to be useful. Instead, the next assistant turn sees the reminder in its context.
 

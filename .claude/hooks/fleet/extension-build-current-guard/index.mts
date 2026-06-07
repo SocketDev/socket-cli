@@ -14,8 +14,6 @@
 //
 // Build failures are surfaced to stderr so the operator sees them,
 // but the hook still exits 0.
-//
-// Env disable (testing only): SOCKET_EXTENSION_BUILD_CURRENT_GUARD_DISABLED=1.
 
 import { existsSync } from 'node:fs'
 import path from 'node:path'
@@ -31,7 +29,6 @@ interface PostToolUsePayload {
   readonly cwd?: string | undefined
 }
 
-const ENV_DISABLE = 'SOCKET_EXTENSION_BUILD_CURRENT_GUARD_DISABLED'
 const EXTENSION_SRC_PREFIX = 'tools/trusted-publisher-extension/src/'
 const EXTENSION_FILTER = '@socketsecurity/trusted-publisher-extension'
 
@@ -66,9 +63,6 @@ export function findRepoRoot(start: string): string | undefined {
 }
 
 async function main(): Promise<void> {
-  if (process.env[ENV_DISABLE]) {
-    process.exit(0)
-  }
   let payload: PostToolUsePayload
   try {
     const raw = await readStdin()

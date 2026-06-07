@@ -16,7 +16,6 @@
 //
 // Behavior on Stop:
 //   1. Drain stdin (Stop payload; we don't use it).
-//   2. Skip if SOCKET_PROVENANCE_REMINDER_DISABLED is set.
 //   3. Read package.json → name + version.
 //   4. Check HEAD for release-shape markers. Skip if none.
 //   5. Throttle via .claude/state/provenance-reminder.last so each
@@ -28,7 +27,6 @@
 //      stderr (visible in transcript, not blocking).
 //
 // Configuration env vars (all optional):
-//   SOCKET_PROVENANCE_REMINDER_DISABLED   skip entirely
 //
 // The hook NEVER fails the turn. Stop hooks shouldn't gate; they
 // nudge. The warning surfaces so the operator decides what to do.
@@ -58,9 +56,6 @@ async function main(): Promise<void> {
   // Drain stdin. Stop hooks always receive a payload; we don't need it.
   await readStdin()
 
-  if (process.env['SOCKET_PROVENANCE_REMINDER_DISABLED']) {
-    return
-  }
 
   const repoRoot = process.cwd()
   const pkgPath = path.join(repoRoot, 'package.json')
@@ -113,7 +108,7 @@ async function main(): Promise<void> {
     [
       `[provenance-publish-reminder] ${stateKey} is published but missing:`,
       ...missing.map(m => `  - ${m}`),
-      `  Verify with: pnpm exec node scripts/fleet/check-provenance.mts ${pkg.name} --version ${pkg.version}`,
+      `  Verify with: node scripts/fleet/check/provenance-is-attested.mts ${pkg.name} --version ${pkg.version}`,
       `  This typically means the publish workflow regressed (e.g. fell back from staged-publish + OIDC to a classic-token publish).`,
       '',
     ].join('\n'),
@@ -195,7 +190,7 @@ async function fetchVersionInfo(
 ): Promise<RegistryVersionInfo | undefined> {
   const url = `https://registry.npmjs.org/${encodeURIComponent(name).replace('%40', '@')}/${encodeURIComponent(version)}`
   try {
-    // socket-hook: allow global-fetch -- provenance check probes the npm registry; runs as a standalone hook without the lib http-request helper wired up.
+    // socket-lint: allow global-fetch -- provenance check probes the npm registry; runs as a standalone hook without the lib http-request helper wired up.
     const response = await fetch(url, {
       headers: { accept: 'application/json' },
     })

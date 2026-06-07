@@ -1,0 +1,126 @@
+// Fleet check — every check script's name reads as an ASSERTION.
+//
+// The fleet convention (lint rule / skill / guard / reminder / check naming):
+// a check's basename should STATE THE INVARIANT IT ASSERTS IS TRUE, so the file
+// list reads as a spec — `paths-are-canonical`, `lock-step-refs-resolve`,
+// `soak-excludes-have-dates` — not as a topic (`paths`, `lock-step-refs`,
+// `soak-exclude-dates`). A reader scanning `scripts/fleet/check/` then sees
+// WHAT each gate guarantees, not merely what area it touches.
+//
+// This gate fails `check --all` when a check basename is NOT in assertion form.
+// Assertion form = the name ends in one of a small set of predicate tails (a
+// verb phrase or "are/is/have <state>"), OR the name is in the explicit
+// ALLOWLIST of already-blessed names whose shape predates / sidesteps the tails
+// (e.g. `oxlint-plugin-loads`, `fleet-soak-exclude-parity`).
+//
+// Scope: `scripts/fleet/check/*.mts` only — the check scripts themselves.
+// Excludes `check.mts` (the runner), this file's own name is allowlisted, and
+// helper subdirectories (`check/paths/`) are not scanned.
+//
+// Why an allowlist AND a pattern: the pattern catches the common shapes
+// deterministically; the allowlist covers the handful of legitimate names that
+// read as assertions without matching a tail (`-loads`, `-parity`), so the
+// gate is exact and self-consistent rather than fuzzy.
+//
+// Usage: node scripts/fleet/check/check-names-are-assertions.mts [--quiet]
+
+import { readdirSync } from 'node:fs'
+import path from 'node:path'
+import process from 'node:process'
+import { fileURLToPath } from 'node:url'
+
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+
+import { REPO_ROOT } from '../paths.mts'
+
+const logger = getDefaultLogger()
+
+// Predicate tails that read as an assertion. A basename in assertion form ends
+// with one of these (after its subject), e.g. `paths-are-canonical`,
+// `lock-step-refs-resolve`, `soak-excludes-have-dates`.
+//   -are-<state>   dirs-ARE-segmented, paths-ARE-canonical, …-ARE-absent
+//   -is-<state>    setup-IS-prompt-less, provenance-IS-attested
+//   -have-<state>  enforcers-HAVE-thorough-tests, soak-excludes-HAVE-dates
+//   -resolve(s)    citations-RESOLVE, script-paths-RESOLVE
+//   -match(es)     lock-step-headers-MATCH
+//   -loads         oxlint-plugin-LOADS
+//   -parity        fleet-soak-exclude-PARITY
+const ASSERTION_TAIL =
+  /-(?:are|have|is)-[a-z][a-z0-9-]*$|-(?:resolve|resolves|match|matches|loads|parity)$/
+
+// Names that read as assertions but are exempt from the tail pattern (their
+// shape is blessed). Keep this short + justified — it is the exact set, not an
+// escape hatch.
+const ALLOWLIST = new Set<string>([
+  // Self: this gate's own name reads as an assertion ("names ARE assertions")
+  // but `assertions` is a noun tail, not in the verb set.
+  'check-names-are-assertions',
+])
+
+export function isAssertionName(basename: string): boolean {
+  if (ALLOWLIST.has(basename)) {
+    return true
+  }
+  return ASSERTION_TAIL.test(basename)
+}
+
+export interface NameViolation {
+  readonly name: string
+  readonly suggestion: string
+}
+
+export function scanCheckNames(repoRoot: string): NameViolation[] {
+  const dir = path.join(repoRoot, 'scripts', 'fleet', 'check')
+  let entries: string[]
+  try {
+    entries = readdirSync(dir, { withFileTypes: true })
+      .filter(d => d.isFile() && d.name.endsWith('.mts'))
+      .map(d => d.name)
+  } catch {
+    return []
+  }
+  const violations: NameViolation[] = []
+  for (let i = 0, { length } = entries; i < length; i += 1) {
+    const file = entries[i]!
+    const base = file.slice(0, -'.mts'.length)
+    if (base === 'check') {
+      // the runner, not a check
+      continue
+    }
+    if (!isAssertionName(base)) {
+      violations.push({
+        name: file,
+        suggestion: `rename so the basename asserts the invariant (e.g. <subject>-are-<state> / -resolve / -match / -have-<state>); "${base}" reads as a topic, not an assertion`,
+      })
+    }
+  }
+  return violations
+}
+
+function main(): void {
+  const quiet = process.argv.includes('--quiet')
+  const violations = scanCheckNames(REPO_ROOT)
+  if (violations.length) {
+    logger.fail(
+      '[check-names-are-assertions] check scripts whose name is not an assertion:',
+    )
+    for (let i = 0, { length } = violations; i < length; i += 1) {
+      const v = violations[i]!
+      logger.error(`  ✗ ${v.name} — ${v.suggestion}`)
+    }
+    logger.error(
+      '  A check basename should state what it asserts is true, so the check/ dir reads as a spec. Rename it (and its check.mts wiring, log prefix, test, oxlintrc entry).',
+    )
+    process.exitCode = 1
+    return
+  }
+  if (!quiet) {
+    logger.success(
+      '[check-names-are-assertions] every check basename reads as an assertion.',
+    )
+  }
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main()
+}

@@ -23,6 +23,20 @@ describe('socket/no-bare-crypto-named-usage', () => {
           name: 'default import + member access',
           code: "import crypto from 'node:crypto'\nconst h = crypto.createHash('sha256')\n",
         },
+        {
+          name: 'exported local shadows the crypto name — bare call is the local',
+          code:
+            "import crypto from 'node:crypto'\n" +
+            'export function randomBytes(n) { return n }\n' +
+            'const b = randomBytes(16)\n',
+        },
+        {
+          name: 'exported const local shadows the crypto name',
+          code:
+            "import crypto from 'node:crypto'\n" +
+            'export const createHash = (a) => a\n' +
+            "const h = createHash('x')\n",
+        },
       ],
       invalid: [
         {

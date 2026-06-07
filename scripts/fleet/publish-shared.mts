@@ -202,9 +202,9 @@ export interface RegistryVersionInfo {
  *
  * Callers pick: `'abbreviated'` for cheap attestation-only checks (Stop-hook,
  * approve-flow enrich), `'full'` for audits that need to confirm
- * trusted-publisher attribution (check-provenance.mts).
+ * trusted-publisher attribution (check/provenance-is-attested.mts).
  *
- * Use this from `check-provenance.mts` (CLI audit), the approve flow (show
+ * Use this from `check/provenance-is-attested.mts` (CLI audit), the approve flow (show
  * prior-version status), and the Stop-hook (verify a freshly- bumped version
  * landed with provenance).
  */
@@ -245,7 +245,7 @@ export async function fetchVersionTrustInfo(
       variant === 'abbreviated'
         ? { accept: 'application/vnd.npm.install-v1+json' }
         : { accept: 'application/json' }
-    // socket-hook: allow global-fetch -- publish tooling probes the npm registry directly; the lib http-request helper isn't a dependency here.
+    // socket-lint: allow global-fetch -- publish tooling probes the npm registry directly; the lib http-request helper isn't a dependency here.
     const response = await fetch(url, { headers })
     if (!response.ok) {
       return {}

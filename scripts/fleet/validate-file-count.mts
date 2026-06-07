@@ -7,20 +7,17 @@
  *   - Prevents overly large commits that are hard to review
  */
 
-import { exec } from 'node:child_process'
-import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
-import { promisify } from 'node:util'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+
+import { REPO_ROOT } from './paths.mts'
 
 const logger = getDefaultLogger()
-const execAsync = promisify(exec)
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const rootPath = path.join(__dirname, '..')
+const rootPath = REPO_ROOT
 
 // Maximum number of files in a single commit
 const MAX_FILES_PER_COMMIT = 50
@@ -39,24 +36,25 @@ async function validateStagedFileCount(): Promise<
 > {
   try {
     // Check if we're in a git repository
-    const { stdout: gitRoot } = await execAsync(
-      'git rev-parse --show-toplevel',
+    const { stdout: gitRoot } = await spawn(
+      'git',
+      ['rev-parse', '--show-toplevel'],
       {
         cwd: rootPath,
       },
     )
 
     // Not a git repository
-    if (!gitRoot.trim()) {
+    if (!String(gitRoot).trim()) {
       return undefined
     }
 
     // Get list of staged files
-    const { stdout } = await execAsync('git diff --cached --name-only', {
+    const { stdout } = await spawn('git', ['diff', '--cached', '--name-only'], {
       cwd: rootPath,
     })
 
-    const stagedFiles = stdout
+    const stagedFiles = String(stdout)
       .trim()
       .split('\n')
       .filter(line => line.length > 0)

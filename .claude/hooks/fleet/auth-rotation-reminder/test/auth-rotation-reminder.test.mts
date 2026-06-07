@@ -73,23 +73,6 @@ test('exits 0 silently when CI env var is set', async () => {
   }
 })
 
-test('exits 0 silently when SOCKET_AUTH_ROTATION_DISABLED is set', async () => {
-  const repo = makeRepo()
-  try {
-    const { code, stderr } = await runHook({
-      cwd: repo,
-      env: {
-        CI: '',
-        SOCKET_AUTH_ROTATION_DISABLED: '1',
-      },
-    })
-    assert.equal(code, 0)
-    assert.equal(stderr, '')
-  } finally {
-    await safeDelete(repo)
-  }
-})
-
 test('honors a project-local snooze with future expiry', async () => {
   const repo = makeRepo()
   try {

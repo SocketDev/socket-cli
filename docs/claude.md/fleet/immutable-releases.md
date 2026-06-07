@@ -21,7 +21,7 @@ Org-level (recommended; applies to all repos by default):
 
 > **Organization → Settings → Code, planning, and automation → Releases → ☑ Enforce immutable releases for all repositories**
 
-The fleet baseline is **org-level on, no per-repo opt-out**. Run `auditing-gha-settings` periodically to flag drift once the GH API surfaces the toggle.
+The fleet baseline is **org-level on, no per-repo opt-out**. Run `auditing-gha` periodically to flag drift once the GH API surfaces the toggle.
 
 ## Workflow pattern: draft → upload → publish
 

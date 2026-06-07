@@ -29,8 +29,6 @@
 // Fail-open contract: if compromise.js fails to load (or its data
 // initializer throws), fall back to regex-only detection — the hook
 // still flags fixed phrases, just misses the modal-verb signal.
-//
-// Disable via SOCKET_JUDGMENT_REMINDER_DISABLED.
 
 import { runStopReminder } from '../_shared/stop-reminder.mts'
 import type { ReminderHit, RuleViolation } from '../_shared/stop-reminder.mts'
@@ -175,7 +173,6 @@ const FIXED_HEDGE_PATTERNS: readonly RuleViolation[] = [
 
 await runStopReminder({
   name: 'judgment-reminder',
-  disabledEnvVar: 'SOCKET_JUDGMENT_REMINDER_DISABLED',
   patterns: FIXED_HEDGE_PATTERNS,
   extraCheck: detectModalHedges,
   closingHint:

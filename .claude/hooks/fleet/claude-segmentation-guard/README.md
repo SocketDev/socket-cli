@@ -12,7 +12,7 @@ Every entry under those four directories must live under one of:
 
 Top-level dangling entries like `.claude/skills/foo/SKILL.md` shadow the canonical `.claude/skills/fleet/foo/SKILL.md` copy and break skill resolution in unpredictable ways.
 
-Past incident: 2026-06-01 fleet-wide audit found ~200 dangling entries across 10 repos — every fleet repo had at least 18 duplicate top-level skill directories shadowing their `fleet/<name>/` counterparts. The cleanup script (`node scripts/fleet/check-claude-segmentation.mts --fix`) resolved them in bulk; this hook prevents the regression at edit time.
+Left unchecked, dangling top-level entries accumulate across the fleet — duplicate top-level skill directories shadow their `fleet/<name>/` counterparts and break resolution. The cleanup script (`node scripts/fleet/check/claude-dirs-are-segmented.mts --fix`) resolves them in bulk; this hook prevents the regression at edit time.
 
 ## What it blocks
 
@@ -39,7 +39,7 @@ Fails open on malformed payloads or unknown errors (exit 0).
 
 ## Bypass
 
-None. The autofix is always available: `node scripts/fleet/check-claude-segmentation.mts --fix` moves dangling entries into the right subdir based on the wheelhouse-canonical fleet/ set.
+None. The autofix is always available: `node scripts/fleet/check/claude-dirs-are-segmented.mts --fix` moves dangling entries into the right subdir based on the wheelhouse-canonical fleet/ set.
 
 ## Test
 

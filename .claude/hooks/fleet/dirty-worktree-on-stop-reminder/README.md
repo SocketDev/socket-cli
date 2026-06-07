@@ -32,12 +32,6 @@ commit / revert / explicitly announce.
 Never blocks. Informational stderr only — the Stop event has no tool
 call to refuse.
 
-## Disable
-
-```bash
-SOCKET_DIRTY_WORKTREE_REMINDER_DISABLED=1
-```
-
 ## Related
 
 - `no-orphaned-staging` — Stop hook for staged-but-uncommitted hunks

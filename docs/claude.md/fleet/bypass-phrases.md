@@ -25,7 +25,28 @@ The phrase format is `Allow <X> bypass`. Case-insensitive; hyphens, spaces, and 
 | Importing from `node:child_process` (or bare `child_process`) — use `spawn` from `@socketsecurity/lib-stable/process/spawn/child` instead. Sync `spawnSync` only when genuinely needed, still from the lib.                                                                                                                                                                                                                                                                                             | `Allow async-spawn bypass`                                                                |
 | Keeping a **premium model** (Opus) for a command `token-spend-guard` flagged as mechanical (cascade, lint-autofix sweep, format sweep). Type it when the "mechanical" task genuinely needs the headroom.                                                                                                                                                                                                                                                                                                | `Allow model bypass` (alias: `Allow model-spend bypass`)                                  |
 | Keeping **high reasoning effort** (`high`/`xhigh`/`max`) for a command `token-spend-guard` flagged as mechanical. Independent of the model bypass — flag each dimension separately.                                                                                                                                                                                                                                                                                                                     | `Allow effort bypass`                                                                     |
-| Writing an inline `type` specifier in a value import (`import { type X, Y }`) instead of a separate `import type { X }` statement — `prefer-separate-type-import-guard`. Rare; the separate form is fleet-canonical ~200:1.                                                                                                                                                                                                                                                                             | `Allow separate-type-import bypass`                                                       |
+| Writing an inline `type` specifier in a value import (`import { type X, Y }`) instead of a separate `import type { X }` statement — `prefer-type-import-guard`. Rare; the separate form is fleet-canonical ~200:1.                                                                                                                                                                                                                                                                             | `Allow separate-type-import bypass`                                                       |
+
+## Inline sentinels (scoped auto-bypass)
+
+Two batch flows run the same blocked operations repeatedly and would otherwise need a fresh typed phrase per command. Each marks intent with an inline `NAME=1` assignment on the command (opt-in per command — no global env-var poisoning), scoped to exactly the operations that flow needs. Anything else carrying the sentinel falls through to the normal phrase-gated checks.
+
+### `FLEET_SYNC=1` — wheelhouse cascade
+
+Allows, on a command prefixed with `FLEET_SYNC=1`:
+
+- `git commit --no-verify` whose message starts `chore(wheelhouse): cascade template@`
+- any `git push` (`--no-verify` included)
+- broad-stage `git add -A` / `-u` / `.` inside a fresh worktree (via `overeager-staging-guard`)
+
+### `SQUASH_HISTORY=1` — `squashing-history` skill
+
+The skill collapses the whole default branch into one commit, then force-pushes it. The collapse commit trips the `--no-verify` rule and the push trips the force-push rule, yet both are intrinsic to the squash — the resulting tree is byte-verified identical to a backup branch before the push, so the hook chain has nothing new to check. Allows, on a command prefixed with `SQUASH_HISTORY=1`:
+
+- a `git commit --amend` whose `-m` message is exactly `chore: initial commit`
+- a `git push` carrying `--force` / `--force-with-lease` / `-f`
+
+**Hardening (malicious-bypass surface).** A poisoned prompt (from a dep, fixture, or fetched doc) must not be able to ride the sentinel to clobber an arbitrary remote, delete refs, or chain extra destructive work. The guard parses the command and honors `SQUASH_HISTORY=1` **only** when the line is exactly one statically-resolved `git` segment: no `&&` / `;` / `|` chaining, no `$(…)` substitution, no `$VAR` / `eval` indirection, no second inline env assignment, and on the push form no refspec (`src:dst`), `--mirror`, `--all`, `--delete`, or `--no-verify`, with at most one plain positional branch ref. Any deviation voids the sentinel and the command falls back to needing the typed phrase.
 
 ## Scope
 

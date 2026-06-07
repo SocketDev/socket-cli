@@ -34,6 +34,13 @@ describe('socket/prefer-cached-for-loop', () => {
           code: '[1,2,3].forEach((x) => {})\n',
           errors: [{ messageId: 'preferCachedForNoFix' }],
         },
+        {
+          name: 'forEach autofix terminates the inserted decl with a semicolon (ASI hazard: body starts with `[`)',
+          code: 'const xs = [[1]]\nxs.forEach((item) => {\n  ;[a] = item\n})\n',
+          errors: [{ messageId: 'preferCachedFor' }],
+          output:
+            'const xs = [[1]]\nfor (let i = 0, { length } = xs; i < length; i += 1) {\n  const item = xs[i]!;\n  ;[a] = item\n\n}\n',
+        },
       ],
     })
   })

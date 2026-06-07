@@ -15,7 +15,6 @@
 // does the actual squash.
 //
 // Bypass phrase: `Allow squash-history-reminder bypass`. Disable
-// entirely via SOCKET_SQUASH_HISTORY_REMINDER_DISABLED.
 
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
@@ -137,9 +136,6 @@ function commitCount(cwd: string, ref: string): number {
 }
 
 async function main(): Promise<void> {
-  if (process.env['SOCKET_SQUASH_HISTORY_REMINDER_DISABLED']) {
-    return
-  }
   const raw = await readStdin()
   if (!raw.trim()) {
     return
@@ -206,8 +202,7 @@ async function main(): Promise<void> {
       `   The default branch \`${branch}\` has ${count} commits (threshold ${HISTORY_COMMIT_THRESHOLD}).`,
       `   Consider running the \`squashing-history\` skill to collapse to a single Initial commit.`,
       `   Skill: .claude/skills/squashing-history/SKILL.md`,
-      `   Suppress for this session: type "${BYPASS_PHRASE}" verbatim, or set`,
-      `   SOCKET_SQUASH_HISTORY_REMINDER_DISABLED=1 to disable entirely.`,
+      `   Suppress for this session: type "${BYPASS_PHRASE}" verbatim.`,
       '',
     ].join('\n'),
   )

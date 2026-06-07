@@ -41,10 +41,6 @@ The skip list errs on the side of suppressing false positives — genuine in-sco
 
 Stop hooks fire after the tool has run. Blocking would just truncate the warning. The size violation is in the diff already; the warning prompts the next turn to address it.
 
-## Configuration
-
-`SOCKET_FILE_SIZE_REMINDER_DISABLED=1` — turn off entirely. Useful for sessions intentionally working on a generated-file context the skip list doesn't recognize.
-
 ## Test
 
 ```sh

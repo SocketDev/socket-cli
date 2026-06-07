@@ -24,14 +24,33 @@ import { fileURLToPath } from 'node:url'
 
 const HOOKS_DIR = '.git-hooks/fleet'
 
-// Anchor on the script's own location instead of process.cwd(). The
-// `prepare` hook normally runs from the package root, but some
-// invocations (e.g. `pnpm --filter <pkg> install` from a parent
-// dir, or workspace `prepare` chains) execute with a cwd that
-// differs from the script's repo root. `scripts/install-git-hooks.mts`
-// is always at `<repo-root>/scripts/install-git-hooks.mts`, so the
-// parent of __dirname is the repo root.
-const REPO_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
+// Resolve the repo root by walking up from this script's own location to the
+// nearest `package.json` ancestor. Inlined (not imported from paths.mts) on
+// purpose: this script runs at `pnpm prepare` time and gets copied/run in
+// isolation (tarball installs, the unit-test fixture), so it must stay
+// self-contained with no sibling-module dependency. The walk is
+// depth-independent — unlike a hardcoded `..` count, it survives the script
+// moving between directories (the 73c691d9 scripts-into-fleet/ refactor broke
+// the old count).
+function resolveRepoRoot(): string {
+  let cur = path.dirname(fileURLToPath(import.meta.url))
+  const root = path.parse(cur).root
+  while (cur && cur !== root) {
+    if (existsSync(path.join(cur, 'package.json'))) {
+      return cur
+    }
+    const parent = path.dirname(cur)
+    if (parent === cur) {
+      break
+    }
+    cur = parent
+  }
+  // No package.json ancestor (e.g. a bare copy with no manifest) — fall back to
+  // the script's own dir so the existsSync guards below simply skip.
+  return path.dirname(fileURLToPath(import.meta.url))
+}
+
+const REPO_ROOT = resolveRepoRoot()
 
 function main(): void {
   if (!existsSync(path.join(REPO_ROOT, '.git'))) {

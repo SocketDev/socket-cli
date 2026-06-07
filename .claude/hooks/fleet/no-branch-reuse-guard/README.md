@@ -9,11 +9,11 @@ one for the current logical change.
 
 Reusing a branch mixes unrelated commits into one PR, complicates code
 review, and causes rebase pain when the branch is already on the remote.
-The incident that prompted this rule (2026-06-02): a session cut
-`feat/spawn-kill-tree` on socket-lib because it assumed PR workflow,
-then had to work around the feature-branch instead of pushing straight to
-main. The correct move was `git push origin feat/spawn-kill-tree:main`
-— which would have been obvious if the branch hadn't been created at all.
+The shape this rule prevents: a session cuts a `feat/<name>` branch
+because it assumes a PR workflow, then has to work around the
+feature-branch instead of pushing straight to main. The correct move
+was `git push origin feat/<name>:main` — which would have been obvious
+if the branch hadn't been created at all.
 
 ## When it fires
 

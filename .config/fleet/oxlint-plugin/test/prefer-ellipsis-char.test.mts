@@ -50,7 +50,7 @@ describe('socket/prefer-ellipsis-char', () => {
         {
           name: 'bypass marker allows the literal form',
           code:
-            '// socket-hook: allow literal-ellipsis\n' +
+            '// socket-lint: allow literal-ellipsis\n' +
             "const usage = 'truncated word...'\n",
         },
       ],

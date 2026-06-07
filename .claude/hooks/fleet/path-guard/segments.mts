@@ -1,5 +1,5 @@
 // Canonical path-segment vocabulary shared by the path-guard hook
-// (.claude/hooks/fleet/path-guard/index.mts) and gate (scripts/fleet/check-paths.mts).
+// (.claude/hooks/fleet/path-guard/index.mts) and gate (scripts/fleet/check/paths-are-canonical.mts).
 //
 // Mantra: 1 path, 1 reference. This module is the *one* place stage,
 // build-root, mode, and sibling-package vocabulary is defined. Both

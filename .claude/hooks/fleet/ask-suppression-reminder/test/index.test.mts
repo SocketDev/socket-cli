@@ -104,28 +104,3 @@ test('digit-only directive ("1") fires reminder', async () => {
   assert.strictEqual(r.code, 0)
   assert.ok(String(r.stderr).includes('go-ahead directive'))
 })
-
-test('disabled via env var', async () => {
-  const child = spawn(process.execPath, [HOOK], {
-    stdio: 'pipe',
-    env: {
-      ...process.env,
-      SOCKET_ASK_SUPPRESSION_REMINDER_DISABLED: '1',
-    },
-  })
-  child.stdin!.end(
-    JSON.stringify({
-      tool_name: 'AskUserQuestion',
-      transcript_path: writeTranscript(['do it']),
-    }),
-  )
-  let stderr = ''
-  child.process.stderr!.on('data', chunk => {
-    stderr += chunk.toString('utf8')
-  })
-  const code = await new Promise<number>(resolve => {
-    child.process.on('exit', c => resolve(c ?? 0))
-  })
-  assert.strictEqual(code, 0)
-  assert.strictEqual(stderr, '')
-})

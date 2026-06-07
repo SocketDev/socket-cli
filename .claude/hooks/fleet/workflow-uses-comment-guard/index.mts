@@ -29,7 +29,7 @@
 //     they don't carry SHAs.
 //   - Reusable-workflow refs (`uses: org/repo/.github/workflows/x.yml@sha`)
 //     are checked.
-//   - Lines marked `# socket-hook: allow uses-no-stamp` are exempt for
+//   - Lines marked `# socket-lint: allow uses-no-stamp` are exempt for
 //     one-off legitimate cases.
 //
 // The hook fails OPEN on its own bugs (exit 0 + stderr log) so a bad
@@ -37,7 +37,7 @@
 
 import process from 'node:process'
 
-const ALLOW_MARKER = '# socket-hook: allow uses-no-stamp'
+const ALLOW_MARKER = '# socket-lint: allow uses-no-stamp'
 
 // Matches a YAML `uses:` line that pins a 40-char SHA, e.g.
 //   `        uses: actions/checkout@de0fac2e... # v6.0.2 (2026-05-15)`
@@ -157,7 +157,7 @@ function main() {
           'when you pinned/refreshed (today is fine for new pins). The\n' +
           'date-stamp is the staleness signal — reviewers can see at-a-glance\n' +
           'when a SHA was last touched without running a drift audit.\n' +
-          '\nOne-off override: append `# socket-hook: allow uses-no-stamp`\n' +
+          '\nOne-off override: append `# socket-lint: allow uses-no-stamp`\n' +
           'to the `uses:` line.\n',
       )
       process.exit(2)

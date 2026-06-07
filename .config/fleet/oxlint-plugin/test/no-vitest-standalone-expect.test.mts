@@ -30,6 +30,16 @@ describe('socket/no-vitest-standalone-expect', () => {
           filename: 'src/a.ts',
           code: `${IMPORTS}expect(1).toBe(1)\n`,
         },
+        {
+          name: 'expect inside a custom it<Upper> wrapper (e.g. itWindowsOnly) is fine',
+          filename: 'test/unit/a.test.mts',
+          code: `${IMPORTS}itWindowsOnly('x', () => { expect(1).toBe(1) })\n`,
+        },
+        {
+          name: 'expect inside a custom describe<Upper> wrapper is fine',
+          filename: 'test/unit/a.test.mts',
+          code: `${IMPORTS}describeUnixOnly('grp', () => { it('x', () => { expect(1).toBe(1) }) })\n`,
+        },
       ],
       invalid: [
         {

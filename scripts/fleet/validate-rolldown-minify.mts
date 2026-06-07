@@ -10,17 +10,17 @@
  *   order):
  *
  *   1. The rolldown-validate manifest — `.config/repo/rolldown-validate.json`,
- *      then legacy top-level `.config/rolldown-validate.json` — an optional
- *      `{ "configs": [...] }` array of repo-root-relative config paths. Repos
+ *      then legacy top-level `.config/rolldown-validate.json` — an optional `{
+ *      "configs": [...] }` array of repo-root-relative config paths. Repos
  *      whose configs are nested (monorepo packages) or non-standard-named list
  *      them here. Each listed path is validated.
- *   2. `.config/repo/rolldown.config.mts`, then legacy `.config/rolldown.config.mts`,
- *      then root `rolldown.config.mts` — the single-config fallback for simple
- *      single-package repos. If none resolves the repo has no rolldown build and
- *      the check is a no-op pass.
- *      Export shapes tolerated per config: a `default` export (single options
- *      object or array), named `buildConfig` / `configs` exports (object or
- *      array), and a named `getRolldownConfig(entry, out)` factory (probed with
+ *   2. `.config/repo/rolldown.config.mts`, then legacy
+ *      `.config/rolldown.config.mts`, then root `rolldown.config.mts` — the
+ *      single-config fallback for simple single-package repos. If none resolves
+ *      the repo has no rolldown build and the check is a no-op pass. Export
+ *      shapes tolerated per config: a `default` export (single options object
+ *      or array), named `buildConfig` / `configs` exports (object or array),
+ *      and a named `getRolldownConfig(entry, out)` factory (probed with
  *      placeholder args). All discovered `output.minify` flags must be false or
  *      unset.
  */
@@ -28,14 +28,14 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
+import { REPO_ROOT } from './paths.mts'
+
 const logger = getDefaultLogger()
 
-const here = path.dirname(fileURLToPath(import.meta.url))
-const rootPath = path.join(here, '..')
+const rootPath = REPO_ROOT
 
 interface MinifyViolation {
   config: string

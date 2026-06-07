@@ -22,24 +22,24 @@ function nodeOnLine(line: number): { loc: { start: { line: number } } } {
   return { loc: { start: { line } } }
 }
 
-const MARKER = /socket-hook:\s*allow\s+sample/
+const MARKER = /socket-lint:\s*allow\s+sample/
 
 describe('lib/comment-markers makeBypassChecker', () => {
   test('marker on the node’s own line (trailing comment) → bypassed', () => {
-    const src = 'const x = doThing() // socket-hook: allow sample\n'
+    const src = 'const x = doThing() // socket-lint: allow sample\n'
     const has = makeBypassChecker(ctx(src) as never, MARKER)
     assert.equal(has(nodeOnLine(1) as never), true)
   })
 
   test('marker on the line directly above → bypassed', () => {
-    const src = '// socket-hook: allow sample\nconst x = doThing()\n'
+    const src = '// socket-lint: allow sample\nconst x = doThing()\n'
     const has = makeBypassChecker(ctx(src) as never, MARKER)
     assert.equal(has(nodeOnLine(2) as never), true)
   })
 
   test('marker in a contiguous leading-comment block (2 lines up) → bypassed', () => {
     const src =
-      '// socket-hook: allow sample\n// continuation note\nconst x = doThing()\n'
+      '// socket-lint: allow sample\n// continuation note\nconst x = doThing()\n'
     const has = makeBypassChecker(ctx(src) as never, MARKER)
     assert.equal(has(nodeOnLine(3) as never), true)
   })
@@ -52,20 +52,20 @@ describe('lib/comment-markers makeBypassChecker', () => {
 
   test('marker separated from the node by a code line → not bypassed', () => {
     const src =
-      '// socket-hook: allow sample\nconst unrelated = 1\nconst x = doThing()\n'
+      '// socket-lint: allow sample\nconst unrelated = 1\nconst x = doThing()\n'
     const has = makeBypassChecker(ctx(src) as never, MARKER)
     assert.equal(has(nodeOnLine(3) as never), false)
   })
 
   test('marker too far above (beyond the leading-block window) → not bypassed', () => {
     const src =
-      '// socket-hook: allow sample\n//\n//\n//\nconst x = doThing()\n'
+      '// socket-lint: allow sample\n//\n//\n//\nconst x = doThing()\n'
     const has = makeBypassChecker(ctx(src) as never, MARKER)
     assert.equal(has(nodeOnLine(5) as never), false)
   })
 
   test('falls back to range offset when loc is absent', () => {
-    const src = '// socket-hook: allow sample\nconst x = doThing()\n'
+    const src = '// socket-lint: allow sample\nconst x = doThing()\n'
     const has = makeBypassChecker(ctx(src) as never, MARKER)
     // Node on line 2 via range: offset of `const` is after the first newline.
     const offset = src.indexOf('const')
@@ -73,7 +73,7 @@ describe('lib/comment-markers makeBypassChecker', () => {
   })
 
   test('returns false when the node has no position info', () => {
-    const src = '// socket-hook: allow sample\nconst x = doThing()\n'
+    const src = '// socket-lint: allow sample\nconst x = doThing()\n'
     const has = makeBypassChecker(ctx(src) as never, MARKER)
     assert.equal(has({} as never), false)
   })

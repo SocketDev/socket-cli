@@ -125,7 +125,7 @@ await withEditGuard((filePath, content, payload) => {
 
   logger.error(
     [
-      // socket-hook: allow inline-defer -- the hook's own diagnostic text names the banned shape; it isn't real inline-script markup.
+      // socket-lint: allow inline-defer -- the hook's own diagnostic text names the banned shape; it isn't real inline-script markup.
       '[inline-script-defer-guard] Blocked: <script defer/async> without src=',
       '',
       `  File: ${filePath}`,

@@ -54,9 +54,36 @@ import { isDirSync } from '@socketsecurity/lib-stable/fs/inspect'
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
 type ToolInput = {
-  tool_input?: { file_path?: string | undefined } | undefined
+  tool_input?:
+    | {
+        file_path?: string | undefined
+        content?: string | undefined
+        new_string?: string | undefined
+      }
+    | undefined
   tool_name?: string | undefined
   transcript_path?: string | undefined
+}
+
+// True when a string carries both fleet-block markers. Two marker dialects are
+// recognized: the lowercase parenthetical form used by gitignore / gitattributes
+// / workflows (`BEGIN fleet-canonical (managed by socket-wheelhouse …)`), and
+// the uppercase form CLAUDE.md uses (`<!-- BEGIN FLEET-CANONICAL … -->`). Both
+// mark a HYBRID file: only the content between the markers is canonical, so the
+// preamble + `🏗️ Project-Specific` postamble are repo-owned and editing them is
+// not a fork. A fork INSIDE the block is still caught by the sync's
+// claude_md_fleet_drift / *-fleet-block checks at commit time.
+function textHasFleetBlockMarkers(text: string | undefined): boolean {
+  if (text === undefined) {
+    return false
+  }
+  const lowerForm =
+    text.includes('BEGIN fleet-canonical (managed by socket-wheelhouse') &&
+    text.includes('END fleet-canonical')
+  const upperForm =
+    text.includes('BEGIN FLEET-CANONICAL') &&
+    text.includes('END FLEET-CANONICAL')
+  return lowerForm || upperForm
 }
 
 const BYPASS_PHRASE = 'Allow fleet-fork bypass'
@@ -109,19 +136,45 @@ export function findFleetRepoRoot(filePath: string): string | undefined {
   return undefined
 }
 
+// True when the on-disk file carries the fleet-block BEGIN/END markers — i.e.
+// it's a hybrid file whose content outside the markers is repo-owned. The
+// markers are the same comment sentinels the sync's *-fleet-block checks use
+// (gitignore, gitattributes, workflows). Comment-prefix-agnostic: match the
+// marker text regardless of the leading `#`.
+function hasFleetBlockMarkers(absPath: string): boolean {
+  if (!existsSync(absPath)) {
+    return false
+  }
+  try {
+    return textHasFleetBlockMarkers(readFileSync(absPath, 'utf8'))
+  } catch {
+    return false
+  }
+}
+
 export function isCanonicalRelativePath(
   rel: string,
   repoRoot?: string | undefined,
 ): boolean {
   const normalized = rel.replace(/\\/g, '/')
-  // A file is fleet-canonical iff its parent directory exists under
-  // template/ in the wheelhouse. Directory-level check: if the dir is
-  // in the template, every file in that dir is canonical.
-  if (repoRoot) {
-    const dir = path.posix.dirname(normalized)
-    return isDirSync(path.join(repoRoot, 'template', dir))
+  if (!repoRoot) {
+    return false
   }
-  return false
+  const dir = path.posix.dirname(normalized)
+  // Root-level files (dir === '.') have no parent dir to probe — `template/.`
+  // is the template dir itself and ALWAYS exists, which would wrongly mark
+  // EVERY root file (pnpm-workspace.yaml, package.json) as canonical. Root
+  // config like pnpm-workspace.yaml is the wheelhouse's OWN source of truth
+  // (synthesized into downstream via the cascade, not via a template/ copy) —
+  // there is no `template/pnpm-workspace.yaml`. So for a root file, require an
+  // actual `template/<file>` to exist before calling it canonical.
+  if (dir === '.') {
+    return existsSync(path.join(repoRoot, 'template', normalized))
+  }
+  // A file is fleet-canonical iff its parent directory exists under template/
+  // in the wheelhouse. Directory-level: if the dir is in the template, every
+  // file in that dir is canonical.
+  return isDirSync(path.join(repoRoot, 'template', dir))
 }
 
 export function isInsideTemplate(filePath: string): boolean {
@@ -172,6 +225,19 @@ async function main(): Promise<number> {
   const relToRepo = path.relative(repoRoot, absPath)
 
   if (!isCanonicalRelativePath(relToRepo, repoRoot)) {
+    return 0
+  }
+
+  // Fleet-block allowance: a canonical file that carries the
+  // `# ─── BEGIN/END fleet-canonical ───` markers is only PART fleet-managed —
+  // content outside the markers is repo-owned (e.g. a workflow's repo-specific
+  // jobs below the END marker). Allow edits when the markers are present
+  // either on disk OR in the incoming content (the bootstrap that first adds
+  // the markers). The sync's workflow-fleet-block check re-validates the marked
+  // block at commit time, so a fork INSIDE the block is still caught.
+  const incoming =
+    payload.tool_input?.content ?? payload.tool_input?.new_string
+  if (hasFleetBlockMarkers(absPath) || textHasFleetBlockMarkers(incoming)) {
     return 0
   }
 

@@ -27,30 +27,46 @@ function setupRepo(): string {
   return dir
 }
 
-async function runHook(
+// Spawn the hook with the GIVEN env (no implicit bypass) and capture
+// code + stderr. The fleet `spawn` returns `{ process } & Promise<{ code,
+// stderr, … }>` (not a bare ChildProcess) and REJECTS on a non-zero exit with
+// an error that still carries `.code` + `.stderr`; await it, treating a
+// rejection as the hook's exit result so the blocking (code 1) cases are
+// observable. Used directly by the signing-gate tests, which need the gate LIVE.
+async function spawnHook(
   cwd: string,
   extraEnv: Record<string, string> = {},
 ): Promise<{ code: number; stderr: string }> {
   const child = spawn(process.execPath, [HOOK], {
     cwd,
     stdio: 'pipe',
-    // Default: bypass the signing-config gate so tests that verify
-    // OTHER hook behaviors (secret detection, path leak, etc.) aren't
-    // blocked by the unrelated signing requirement. Tests that
-    // specifically verify the signing gate pass extraEnv = {} (or omit
-    // the bypass).
-    env: {
-      ...process.env,
-      SOCKET_PRE_COMMIT_ALLOW_UNSIGNED: '1',
-      ...extraEnv,
-    },
+    env: { ...process.env, ...extraEnv },
   })
-  let stderr = ''
-  child.stderr.on('data', chunk => {
-    stderr += chunk.toString('utf8')
-  })
-  return new Promise(resolve => {
-    child.on('exit', code => resolve({ code: code ?? 0, stderr }))
+  try {
+    const result = await child
+    return {
+      code: typeof result.code === 'number' ? result.code : 0,
+      stderr: String(result.stderr ?? ''),
+    }
+  } catch (e) {
+    const err = e as { code?: number | undefined; stderr?: unknown }
+    return {
+      code: typeof err.code === 'number' ? err.code : 1,
+      stderr: String(err.stderr ?? ''),
+    }
+  }
+}
+
+// Most tests verify NON-signing behavior (secret detection, path leak, etc.) —
+// bypass the signing-config gate so the unrelated requirement doesn't block.
+// The signing-gate tests call spawnHook directly with the gate live.
+async function runHook(
+  cwd: string,
+  extraEnv: Record<string, string> = {},
+): Promise<{ code: number; stderr: string }> {
+  return await spawnHook(cwd, {
+    SOCKET_PRE_COMMIT_ALLOW_UNSIGNED: '1',
+    ...extraEnv,
   })
 }
 
@@ -128,14 +144,7 @@ test('pre-commit: blocks when commit.gpgsign is false', async () => {
     writeFileSync(path.join(dir, 'foo.ts'), 'export const X = 1\n')
     spawnSync('git', ['add', 'foo.ts'], { cwd: dir })
     // No SOCKET_PRE_COMMIT_ALLOW_UNSIGNED → gate fires.
-    const child = spawn(process.execPath, [HOOK], { cwd: dir, stdio: 'pipe' })
-    let stderr = ''
-    child.stderr.on('data', chunk => {
-      stderr += chunk.toString('utf8')
-    })
-    const code = await new Promise<number>(resolve => {
-      child.on('exit', c => resolve(c ?? 0))
-    })
+    const { code, stderr } = await spawnHook(dir)
     assert.notStrictEqual(code, 0, 'unsigned config must block the commit')
     assert.match(stderr, /commit\.gpgsign is not enabled/i)
   } finally {
@@ -155,17 +164,9 @@ test('pre-commit: blocks when user.signingkey is unset', async () => {
     // "no signingkey at all" path. HOME is git's primary lookup for
     // ~/.gitconfig; pointing it at the test dir means git only sees
     // the repo-local config.
-    const child = spawn(process.execPath, [HOOK], {
-      cwd: dir,
-      stdio: 'pipe',
-      env: { ...process.env, HOME: dir, GIT_CONFIG_GLOBAL: '/dev/null' },
-    })
-    let stderr = ''
-    child.stderr.on('data', chunk => {
-      stderr += chunk.toString('utf8')
-    })
-    const code = await new Promise<number>(resolve => {
-      child.on('exit', c => resolve(c ?? 0))
+    const { code, stderr } = await spawnHook(dir, {
+      HOME: dir,
+      GIT_CONFIG_GLOBAL: '/dev/null',
     })
     assert.notStrictEqual(code, 0, 'missing signingkey must block')
     assert.match(stderr, /user\.signingkey is not set/i)
@@ -184,14 +185,7 @@ test('pre-commit: passes when gpgsign=true and signingkey is set', async () => {
     writeFileSync(path.join(dir, 'foo.ts'), 'export const X = 1\n')
     spawnSync('git', ['add', 'foo.ts'], { cwd: dir })
     // Run WITHOUT the bypass env — gate should accept the good config.
-    const child = spawn(process.execPath, [HOOK], { cwd: dir, stdio: 'pipe' })
-    let stderr = ''
-    child.stderr.on('data', chunk => {
-      stderr += chunk.toString('utf8')
-    })
-    const code = await new Promise<number>(resolve => {
-      child.on('exit', c => resolve(c ?? 0))
-    })
+    const { code, stderr } = await spawnHook(dir)
     assert.strictEqual(
       code,
       0,

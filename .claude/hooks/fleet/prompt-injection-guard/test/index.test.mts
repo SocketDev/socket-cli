@@ -195,29 +195,6 @@ test('bypass phrase in transcript allows the write', async () => {
   assert.strictEqual(r.code, 0)
 })
 
-test('disable env var allows the write', async () => {
-  const child = spawn(process.execPath, [HOOK], {
-    stdio: 'pipe',
-    env: { ...process.env, SOCKET_PROMPT_INJECTION_GUARD_DISABLED: '1' },
-  })
-  void child.catch(() => undefined)
-  const p = tmpFile('x.txt', 'a\n')
-  child.stdin!.end(
-    JSON.stringify({
-      tool_name: 'Write',
-      tool_input: { file_path: p, content: `a\n${overrideDirective}\n` },
-    }),
-  )
-  let stderr = ''
-  child.process.stderr!.on('data', chunk => {
-    stderr += chunk.toString('utf8')
-  })
-  const code: number = await new Promise(resolve => {
-    child.process.on('exit', c => resolve(c ?? 0))
-  })
-  assert.strictEqual(code, 0)
-})
-
 test('self-file (path under prompt-injection-guard/) is exempt', async () => {
   const dir = mkdtempSync(path.join(os.tmpdir(), 'pi-self-'))
   const guardDir = path.join(dir, 'prompt-injection-guard')

@@ -89,15 +89,6 @@ echo vault >> .claude/auth-rotation.services-skip
 One id per line. Lines starting with `#` are comments. Service ids
 are stable — see the table above.
 
-## Disable temporarily
-
-```bash
-SOCKET_AUTH_ROTATION_DISABLED=1   # any non-empty value
-```
-
-For pairing sessions, demos, etc. The hook short-circuits before
-doing any work.
-
 ## Wiring
 
 In `.claude/settings.json`:

@@ -32,7 +32,6 @@
 // Exit codes:
 //   0 — always. This is informational; never blocks.
 //
-// Disabled via `SOCKET_NO_ORPHANED_STAGING_DISABLED=1`.
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import process from 'node:process'
@@ -73,9 +72,6 @@ export function listStagedFiles(repoDir: string): string[] {
 }
 
 async function main(): Promise<void> {
-  if (process.env['SOCKET_NO_ORPHANED_STAGING_DISABLED']) {
-    return
-  }
   await drainStdin()
 
   const repoDir = getProjectDir()

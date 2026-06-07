@@ -121,19 +121,6 @@ test('QUIET in the PRIMARY checkout even when dirty (worktree-only scope)', () =
   }
 })
 
-test('disabled env var short-circuits', () => {
-  const repo = makeRepoWithWorktree()
-  try {
-    writeFileSync(path.join(repo.worktree, 'work.ts'), 'export const x = 1\n')
-    const { stderr } = runHook(repo.worktree, {
-      SOCKET_COMMIT_CADENCE_REMINDER_DISABLED: '1',
-    })
-    assert.doesNotMatch(stderr, /commit-cadence-reminder/)
-  } finally {
-    repo.cleanup()
-  }
-})
-
 test('never blocks (exit 0) even when reminding', () => {
   const repo = makeRepoWithWorktree()
   try {

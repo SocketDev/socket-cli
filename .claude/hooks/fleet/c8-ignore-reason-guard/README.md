@@ -20,5 +20,4 @@ reader distinguish a principled ignore from a coverage dodge on core SDK logic
 
 ## Bypass
 
-- Type `Allow c8-ignore-reason bypass` in a recent message, or set
-  `SOCKET_C8_IGNORE_REASON_GUARD_DISABLED=1`.
+- Type `Allow c8-ignore-reason bypass` in a recent message.

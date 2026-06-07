@@ -79,7 +79,12 @@ const rule = {
 
     function ensureSummary() {
       if (!summary) {
-        summary = summarizeImportTarget(sourceCode.ast, 'envAsBoolean')
+        // localName so a file with its own `envAsBoolean` binding is detected.
+        summary = summarizeImportTarget(
+          sourceCode.ast,
+          'envAsBoolean',
+          'envAsBoolean',
+        )
       }
       return summary
     }
@@ -91,6 +96,16 @@ const rule = {
     ): void {
       const innerText = sourceCode.getText(innerExpr)
       const s = ensureSummary()
+      // A local `envAsBoolean` binding means the rewrite would resolve to it,
+      // not the lib, and the import would collide — report without a fix.
+      if (s.hasLocal) {
+        context.report({
+          node,
+          messageId: 'coerce',
+          data: { shape, inner: innerText },
+        })
+        return
+      }
       context.report({
         node,
         messageId: 'coerce',

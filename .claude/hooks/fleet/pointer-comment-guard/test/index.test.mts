@@ -160,15 +160,6 @@ test('ACCEPTS with "Allow pointer-comment bypass" phrase', () => {
   assert.equal(stderr, '')
 })
 
-test('disabled env var short-circuits', () => {
-  const content = '// See the @fileoverview JSDoc above.'
-  const { exitCode, stderr } = runHook('Write', '/repo/src/foo.ts', content, {
-    env: { SOCKET_POINTER_COMMENT_GUARD_DISABLED: '1' },
-  })
-  assert.equal(exitCode, 0)
-  assert.equal(stderr, '')
-})
-
 test('handles block comments — bare pointer in /* … */ is flagged', () => {
   const content = [
     '/**',

@@ -10,6 +10,7 @@ import {
   findBannedBashWrites,
   findBannedConfigWrites,
   isLocalGitConfigPath,
+  restoreBareToFalse,
   scanRepoConfig,
 } from '../index.mts'
 
@@ -328,5 +329,31 @@ test('CLI: SessionStart with no corrupted repos exits 0 silent', () => {
     assert.equal(String(result.stdout).trim(), '')
   } finally {
     rmSync(tmpdir, { recursive: true, force: true })
+  }
+})
+
+// ---------------------------------------------------------------------------
+// core.bare auto-restore
+// ---------------------------------------------------------------------------
+
+test('restoreBareToFalse reverts core.bare=true (operates on a bare-flagged repo)', () => {
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'gcbare-'))
+  try {
+    spawnSync('git', ['init', '-q', dir], {})
+    spawnSync('git', ['-C', dir, 'config', 'core.bare', 'true'], {})
+    const cfg = path.join(dir, '.git', 'config')
+    // Precondition: bare detected, and the checkout reads as bare.
+    assert.ok(scanRepoConfig(cfg).some(s => /core\.bare/.test(s)))
+    // The fix must work even though `git config --local` would be refused.
+    assert.equal(restoreBareToFalse(cfg), true)
+    assert.equal(scanRepoConfig(cfg).some(s => /core\.bare/.test(s)), false)
+    const inWorkTree = spawnSync(
+      'git',
+      ['-C', dir, 'rev-parse', '--is-inside-work-tree'],
+      { encoding: 'utf8' },
+    )
+    assert.equal(String(inWorkTree.stdout).trim(), 'true')
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
   }
 })

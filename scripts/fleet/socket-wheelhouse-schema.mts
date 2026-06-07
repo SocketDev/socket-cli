@@ -259,7 +259,7 @@ const GithubSchema = Type.Object(
 
 // ---------------------------------------------------------------------------
 // pathsAllowlist — exemptions for the path-hygiene gate
-// (scripts/fleet/check-paths.mts). The sole allowlist source, per the
+// (scripts/fleet/check/paths-are-canonical.mts). The sole allowlist source, per the
 // "JSON not YAML for our own configs" rule.
 // ---------------------------------------------------------------------------
 
@@ -288,7 +288,7 @@ const PathsAllowlistEntrySchema = Type.Object(
     snippet_hash: Type.Optional(
       Type.String({
         description:
-          "12-char SHA-256 prefix of the normalized snippet (whitespace collapsed). Drift-resistant: keeps matching after reformatting that doesn't change the offending construction. Get via `node scripts/fleet/check-paths.mts --show-hashes`.",
+          "12-char SHA-256 prefix of the normalized snippet (whitespace collapsed). Drift-resistant: keeps matching after reformatting that doesn't change the offending construction. Get via `node scripts/fleet/check/paths-are-canonical.mts --show-hashes`.",
       }),
     ),
     reason: Type.String({
@@ -333,7 +333,7 @@ export const SocketWheelhouseConfigSchema = Type.Object(
     pathsAllowlist: Type.Optional(
       Type.Array(PathsAllowlistEntrySchema, {
         description:
-          'Exemptions for the path-hygiene gate (scripts/fleet/check-paths.mts). Each entry needs a `reason`; prefer narrow entries (rule + file + snippet_hash + pattern) over blanket file-level exempts.',
+          'Exemptions for the path-hygiene gate (scripts/fleet/check/paths-are-canonical.mts). Each entry needs a `reason`; prefer narrow entries (rule + file + snippet_hash + pattern) over blanket file-level exempts.',
       }),
     ),
   },

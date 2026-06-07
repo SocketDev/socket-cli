@@ -143,7 +143,7 @@ async function main(): Promise<void> {
 // CLI entrypoint — only fires when this file is the main module so
 // the test importer can pull `sweepDsStore` without triggering the
 // stdin reader.
-if (process.argv[1] && process.argv[1].endsWith('index.mts')) {
+if (process.argv[1]?.endsWith('index.mts')) {
   main().catch(e => {
     process.stderr.write(
       `[sweep-ds-store] hook error (allowing): ${(e as Error).message}${os.EOL}`,

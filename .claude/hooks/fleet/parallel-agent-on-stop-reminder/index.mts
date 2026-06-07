@@ -26,7 +26,6 @@
 //   0 — always. Informational; never blocks (Stop hooks fire after the
 //       turn ended — there's no tool call to refuse).
 //
-// Disabled via `SOCKET_PARALLEL_AGENT_REMINDER_DISABLED=1`.
 
 import process from 'node:process'
 
@@ -45,9 +44,6 @@ function getProjectDir(): string | undefined {
 }
 
 async function main(): Promise<void> {
-  if (process.env['SOCKET_PARALLEL_AGENT_REMINDER_DISABLED']) {
-    return
-  }
   const raw = await readStdin()
   let payload: StopPayload = {}
   try {

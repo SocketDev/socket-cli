@@ -59,6 +59,29 @@ function pickConfig(basename: string): string {
   return path.join('.config', 'fleet', basename)
 }
 
+// oxlint config picker. Prefers the composable `oxlint.config.mts` factory
+// (a repo's `.config/repo/oxlint.config.mts` imports the fleet factory and
+// augments it in JS — see `.config/fleet/oxlint.config.mts`). oxlint's own
+// `extends` can't compose fleet + repo cleanly (it drops plugins/categories/
+// ignorePatterns and mis-roots relative globs), so the fleet uses a JS factory
+// instead. Falls back to `oxlintrc.json` for repos that haven't adopted the
+// factory yet. Order at each tier: repo `.mts` → fleet `.mts` → repo `.json`
+// → fleet `.json`.
+function pickOxlintConfig(): string {
+  const candidates = [
+    path.join('.config', 'repo', 'oxlint.config.mts'),
+    path.join('.config', 'fleet', 'oxlint.config.mts'),
+    path.join('.config', 'repo', 'oxlintrc.json'),
+    path.join('.config', 'fleet', 'oxlintrc.json'),
+  ]
+  for (let i = 0, { length } = candidates; i < length; i += 1) {
+    if (existsSync(candidates[i]!)) {
+      return candidates[i]!
+    }
+  }
+  return path.join('.config', 'fleet', 'oxlintrc.json')
+}
+
 // Paths that, when touched, force a full-workspace lint.
 const ESCALATION_PATTERNS = [
   /^\.config\//,
@@ -195,7 +218,7 @@ function runAll(): number {
     return 1
   }
   log('Running oxlint on all files…')
-  const oxlintArgs = ['exec', 'oxlint', '-c', pickConfig('oxlintrc.json')]
+  const oxlintArgs = ['exec', 'oxlint', '-c', pickOxlintConfig()]
   if (fix) {
     oxlintArgs.push('--fix')
   }
@@ -284,7 +307,7 @@ function runFiles(files: string[]): number {
     'exec',
     'oxlint',
     '-c',
-    pickConfig('oxlintrc.json'),
+    pickOxlintConfig(),
     '--no-error-on-unmatched-pattern',
   ]
   if (fix) {

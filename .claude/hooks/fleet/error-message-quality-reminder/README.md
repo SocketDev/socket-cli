@@ -42,10 +42,6 @@ Conservative by design: the goal is to flag the cases that are 100% definitely w
 
 Stop hooks fire after the assistant produced the code. The vague-error is already in the diff. The warning prompts the next turn to revise.
 
-## Configuration
-
-`SOCKET_ERROR_MESSAGE_QUALITY_REMINDER_DISABLED=1` — turn off entirely.
-
 ## Test
 
 ```sh

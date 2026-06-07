@@ -27,13 +27,23 @@ async function runHook(commitMsg: string): Promise<{
   writeFileSync(msgFile, commitMsg)
   try {
     const child = spawn(process.execPath, [HOOK, msgFile], { stdio: 'pipe' })
-    let stderr = ''
-    child.stderr.on('data', chunk => {
-      stderr += chunk.toString('utf8')
-    })
-    const result = await new Promise<Result>(resolve => {
-      child.on('exit', code => resolve({ code: code ?? 0, stderr }))
-    })
+    // The fleet `spawn` returns `{ process } & Promise<{ code, stderr, … }>`
+    // and REJECTS on a non-zero exit (error carries `.code` + `.stderr`).
+    // Await it, treating a rejection as the hook's exit result.
+    let result: Result
+    try {
+      const r = await child
+      result = {
+        code: typeof r.code === 'number' ? r.code : 0,
+        stderr: String(r.stderr ?? ''),
+      }
+    } catch (e) {
+      const err = e as { code?: number | undefined; stderr?: unknown }
+      result = {
+        code: typeof err.code === 'number' ? err.code : 1,
+        stderr: String(err.stderr ?? ''),
+      }
+    }
     const rewrittenMessage = readFileSync(msgFile, 'utf8')
     return { result, rewrittenMessage }
   } finally {

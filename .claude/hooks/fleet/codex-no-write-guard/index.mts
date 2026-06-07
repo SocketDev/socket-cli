@@ -58,7 +58,40 @@ const WRITE_INTENT_VERBS = [
   'modify',
 ]
 
+// Detect a write-intent verb used as an IMPERATIVE directed at Codex — i.e. an
+// instruction to make changes ("Implement X", "Fix Y", "1. Add Z", "- Patch W")
+// — NOT a write verb appearing as subject matter inside a read-only review /
+// diagnosis prompt ("inspect the Edit hook", "does it fix stale paths?",
+// "commit bodies", "fix-it-don't-defer").
+//
+// Signal: the verb begins a directive — it sits at the start of the whole text,
+// or right after a clause boundary (sentence end, newline, or a list marker
+// like `-`, `*`, `1.`), optionally preceded by a polite lead-in ("please ",
+// "then "). A bare base-form verb (no -s/-ing/-ed) in that position is an
+// imperative; the inflected forms ("fixes", "editing", "updated") are
+// descriptive prose and are NOT matched here, which is the common review-prose
+// case. The Bash path keeps the broader match on the codex command's own args
+// (a CLI prompt arg is itself the instruction, so any occurrence counts there).
+const IMPERATIVE_LEAD = String.raw`(?:^|[.!?\n]|(?:^|\n)\s*(?:[-*]|\d+\.)\s*)\s*(?:please\s+|then\s+|now\s+|also\s+)?`
+
 export function hasWriteIntent(text: string): string | undefined {
+  const lower = text.toLowerCase()
+  for (let i = 0, { length } = WRITE_INTENT_VERBS; i < length; i += 1) {
+    const verb = WRITE_INTENT_VERBS[i]!
+    // Base-form verb at a directive position, followed by a space (it takes an
+    // object) — the shape of an instruction, not a mid-sentence mention.
+    const re = new RegExp(`${IMPERATIVE_LEAD}${verb}\\s`, 'm')
+    if (re.test(lower)) {
+      return verb
+    }
+  }
+  return undefined
+}
+
+// Broad match (verb anywhere, any inflection) — used ONLY on a codex CLI
+// command's own prompt arg, where the entire arg IS the instruction so a
+// descriptive-vs-imperative distinction doesn't apply.
+export function hasWriteIntentInArg(text: string): string | undefined {
   const lower = text.toLowerCase()
   for (let i = 0, { length } = WRITE_INTENT_VERBS; i < length; i += 1) {
     const verb = WRITE_INTENT_VERBS[i]!
@@ -113,7 +146,7 @@ async function main(): Promise<void> {
         // (the prompt), not the whole shell line — so a sibling command
         // or a path containing a verb word doesn't trip the guard.
         const codexArgText = codexCommands.flatMap(c => c.args).join(' ')
-        const verb = hasWriteIntent(codexArgText)
+        const verb = hasWriteIntentInArg(codexArgText)
         if (verb) {
           blocked = { kind: 'bash', reason: `write-intent verb "${verb}"` }
         }

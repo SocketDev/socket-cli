@@ -35,8 +35,7 @@ from the lib, not the builtin.
 
 ## Bypass
 
-Type `Allow async-spawn bypass` in a recent message. Silence entirely with
-`SOCKET_PREFER_ASYNC_SPAWN_GUARD_DISABLED=1`.
+Type `Allow async-spawn bypass` in a recent message.
 
 ## Exemptions
 

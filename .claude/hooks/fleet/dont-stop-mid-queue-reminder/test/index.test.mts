@@ -332,18 +332,6 @@ test('ignores stopping phrases INSIDE code fences', () => {
   assert.equal(stderr, '')
 })
 
-test('disabled env var short-circuits', () => {
-  const transcriptPath = makeTranscript([
-    { role: 'user', text: 'complete each one' },
-    { role: 'assistant', text: 'Item 1 done. Stopping here.' },
-  ])
-  const { stderr, exitCode } = runHook(transcriptPath, {
-    SOCKET_DONT_STOP_MID_QUEUE_REMINDER_DISABLED: '1',
-  })
-  assert.equal(exitCode, 0)
-  assert.equal(stderr, '')
-})
-
 test('does not crash on missing transcript_path', () => {
   const result = spawnSync('node', [HOOK_PATH], {
     input: JSON.stringify({}),

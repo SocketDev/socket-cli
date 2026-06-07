@@ -21,7 +21,15 @@
  *   Autofix: rewrite the specifier's package segment from `@scope/name` to
  *   `@scope/name-stable`, preserving the subpath:
  *   `@socketsecurity/lib/logger/default` →
- *   `@socketsecurity/lib-stable/logger/default`. Per
+ *   `@socketsecurity/lib-stable/logger/default`. ALSO flags a relative import
+ *   that reaches into the repo's own `src/` tree (e.g.
+ *   `../../src/packages/read.ts`) from scripts/ + hooks/ — same
+ *   WIP-vs-published hazard, just spelled as a relative path instead of the
+ *   bare package name. 2026-06-04: a post-build script imported
+ *   `../../src/packages/read.ts` during the 6.0.7 straddle; the bundler choked
+ *   on the source's extensionless imports. No autofix for the relative form
+ *   (the src→stable subpath mapping isn't mechanical); the message points at
+ *   the `-stable` equivalent. Per
  *   https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices
  *   — give scripted/AI-driven tooling a deterministic, published dependency
  *   surface rather than a moving local-src target, so generated edits build
@@ -70,6 +78,8 @@ const rule = {
     messages: {
       preferStable:
         '`{{specifier}}` imports the repo-owned package `{{owned}}` by its bare name. In scripts/ + .claude/hooks/ use the `{{owned}}-stable` alias — the bare name resolves to local `src/` (WIP), but tooling must run against the published snapshot. Fix: `{{fixed}}`.',
+      noRelativeSrc:
+        "`{{specifier}}` reaches into the repo's `src/` tree from scripts/ + .claude/hooks/. Tooling must run against the PUBLISHED `-stable` surface, never WIP src/ (a relative src/ import breaks during a version straddle when the file is mid-edit or its subpath is unpublished — ERR_PACKAGE_PATH_NOT_EXPORTED / ERR_MODULE_NOT_FOUND). Import the equivalent helper from `@socketsecurity/<owned>-stable/<subpath>` instead.",
     },
     schema: [],
   },
@@ -97,6 +107,19 @@ const rule = {
     const ownedPrefix = `${owned}/`
 
     const checkSpecifier = (node: AstNode, raw: string): void => {
+      // A relative import that climbs (one or more `../`) into a `src/` tree —
+      // e.g. `../../src/packages/read.ts`. From a scripts/ or hooks/ file this
+      // is a reach into the repo's WIP source. Layout-independent: we match the
+      // climb-then-`src/` shape rather than resolving against a package root
+      // (the file is already known to be under scripts/ or .claude/hooks/).
+      if (/^(?:\.\.\/)+src\//.test(raw)) {
+        context.report({
+          node,
+          messageId: 'noRelativeSrc',
+          data: { specifier: raw },
+        })
+        return
+      }
       if (raw !== owned && !raw.startsWith(ownedPrefix)) {
         return
       }

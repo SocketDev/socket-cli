@@ -21,7 +21,6 @@
 // primary checkout, dirty-worktree-on-stop-reminder + commit-pr-reminder cover
 // the dirty/landing cases; this hook stays quiet there to avoid double-nagging.
 //
-// Bypass: SOCKET_COMMIT_CADENCE_REMINDER_DISABLED=1.
 //
 // Exit codes: 0 always — informational, never blocks.
 
@@ -108,9 +107,6 @@ function commitsAheadOfBase(repoDir: string): number {
 }
 
 async function main(): Promise<void> {
-  if (process.env['SOCKET_COMMIT_CADENCE_REMINDER_DISABLED']) {
-    return
-  }
   await drainStdin()
 
   const repoDir = process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
@@ -142,7 +138,6 @@ async function main(): Promise<void> {
       '    pnpm run test',
     )
   }
-  lines.push('', '  Disable: SOCKET_COMMIT_CADENCE_REMINDER_DISABLED=1.', '')
   logger.error(lines.join('\n') + '\n')
 }
 

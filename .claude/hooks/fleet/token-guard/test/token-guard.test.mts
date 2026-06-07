@@ -211,7 +211,7 @@ describe('token-guard hook', () => {
     // a sensitive env reference. Word-boundary fix means `PASS` must
     // be a standalone token (or at a `_`/`-`/`.`/`/` boundary).
     it('a "paths-" filename does not trip PASS', () => {
-      assert.equal(runHook('cat scripts/fleet/check-paths.mts').code, 0)
+      assert.equal(runHook('cat scripts/fleet/check/paths-are-canonical.mts').code, 0)
     })
     it('AUTHOR_NAME does not trip AUTH', () => {
       // AUTHOR ends with R; the boundary-after match correctly skips

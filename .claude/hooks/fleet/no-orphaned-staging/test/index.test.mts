@@ -82,17 +82,6 @@ describe('no-orphaned-staging', () => {
     }
   })
 
-  test('disabled via env → silent even when staged', () => {
-    writeFileSync(path.join(tmpRepo, 'foo.txt'), 'staged content\n')
-    git(tmpRepo, ['add', 'foo.txt'])
-    const r = runHook({
-      CLAUDE_PROJECT_DIR: tmpRepo,
-      SOCKET_NO_ORPHANED_STAGING_DISABLED: '1',
-    })
-    assert.equal(r.code, 0)
-    assert.equal(r.stderr, '')
-  })
-
   test('non-repo dir → silent (not a git repo)', () => {
     const nonRepo = mkdtempSync(path.join(os.tmpdir(), 'not-a-repo-'))
     try {

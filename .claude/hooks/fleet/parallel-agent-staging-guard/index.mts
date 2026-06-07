@@ -42,7 +42,6 @@
 //     worktree off origin/main have no parallel-session hazard.
 //   • `Allow parallel-agent-staging bypass` in a recent user turn
 //     (case-sensitive) — one action.
-//   • `SOCKET_PARALLEL_AGENT_STAGING_GUARD_DISABLED=1`.
 //
 // Fails open on hook bugs (exit 0 + stderr log). Reads a PreToolUse JSON
 // payload from stdin:
@@ -54,7 +53,8 @@ import process from 'node:process'
 
 import {
   listForeignDirtyPaths,
-  readTouchedPaths,
+  readSessionTouchedPaths,
+  recordTouchedFromBash,
 } from '../_shared/foreign-paths.mts'
 import {
   detectBroadGitAdd,
@@ -69,7 +69,6 @@ interface ToolPayload {
   readonly transcript_path?: string | undefined
 }
 
-const ENV_DISABLE = 'SOCKET_PARALLEL_AGENT_STAGING_GUARD_DISABLED'
 const BYPASS_PHRASES = ['Allow parallel-agent-staging bypass'] as const
 
 function getProjectDir(): string {
@@ -118,9 +117,6 @@ export function detectGatedGitOp(command: string): string | undefined {
 }
 
 async function main(): Promise<void> {
-  if (process.env[ENV_DISABLE]) {
-    process.exit(0)
-  }
   const raw = await readStdin()
   let payload: ToolPayload
   try {
@@ -137,6 +133,13 @@ async function main(): Promise<void> {
     process.exit(0)
   }
 
+  // Record any `git add|mv|rm <path>` targets into the session ledger BEFORE
+  // any exit. The transcript lags within a turn, so without this a `git mv old
+  // new` here followed by an Edit to `new` next would read `new` as foreign
+  // (a parallel agent's file) and block the session's own rename. This is the
+  // only PreToolUse hook that sees every Bash command, so it owns the recording.
+  recordTouchedFromBash(payload.transcript_path, command)
+
   // Fleet-sync cascade sentinel: no parallel-session hazard in a fresh
   // cascade worktree off origin/main.
   if (/(?:^|\s)FLEET_SYNC\s*=\s*1\b/.test(command)) {
@@ -149,7 +152,7 @@ async function main(): Promise<void> {
   }
 
   const repoDir = getProjectDir()
-  const touched = readTouchedPaths(payload.transcript_path)
+  const touched = readSessionTouchedPaths(payload.transcript_path)
   const foreign = listForeignDirtyPaths(repoDir, touched)
   if (foreign.length === 0) {
     // No parallel-agent signal — let the op through (overeager-staging-

@@ -73,13 +73,3 @@ test('does NOT fire on plain non-plan prose', () => {
   assert.equal(exitCode, 0)
   assert.equal(stderr, '')
 })
-
-test('disabled env var short-circuits', () => {
-  const t = makeTranscript("Here's the plan: do stuff.")
-  const result = spawnSync('node', [HOOK_PATH], {
-    input: JSON.stringify({ transcript_path: t }),
-    env: { ...process.env, SOCKET_PLAN_REVIEW_REMINDER_DISABLED: '1' },
-  })
-  assert.equal(result.status, 0)
-  assert.equal(result.stderr, '')
-})

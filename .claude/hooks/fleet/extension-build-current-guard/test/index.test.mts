@@ -48,21 +48,6 @@ test('ALLOWS Edit to a non-extension file', () => {
   assert.equal(exitCode, 0)
 })
 
-// Env disable short-circuits
-
-test('ALLOWS with env disable', () => {
-  const { exitCode } = runHook(
-    {
-      tool_name: 'Edit',
-      tool_input: {
-        file_path: '/repo/tools/trusted-publisher-extension/src/popup.mts',
-      },
-    },
-    { SOCKET_EXTENSION_BUILD_CURRENT_GUARD_DISABLED: '1' },
-  )
-  assert.equal(exitCode, 0)
-})
-
 // repoRoot not found: hook exits 0 (fail-open)
 
 test('ALLOWS when repo root cannot be located', () => {

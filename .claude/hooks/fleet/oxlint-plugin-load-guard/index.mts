@@ -6,7 +6,7 @@
 // import in any rule or lib helper disables EVERY socket/ rule — oxlint only
 // warns and never checks the rule count, so a green lint can hide a dead
 // plugin. This is the edit-time complement to the commit-time gate
-// `scripts/fleet/check-oxlint-plugin-loads.mts` (defense in depth): catch the
+// `scripts/fleet/check/oxlint-plugin-loads.mts` (defense in depth): catch the
 // breakage the moment it's introduced, in the same session, before it rides a
 // cascade out to the fleet.
 //
@@ -21,7 +21,6 @@
 
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
@@ -30,15 +29,16 @@ import { withEditGuard } from '../_shared/payload.mts'
 
 const logger = getDefaultLogger()
 
-// The hook lives at .claude/hooks/fleet/oxlint-plugin-load-guard/; the repo
-// root is four levels up.
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const repoRoot = path.join(__dirname, '..', '..', '..', '..')
+// Anchor on CLAUDE_PROJECT_DIR (the repo root the session opened), falling back
+// to cwd. Stable regardless of how deep the hook lives — a hardcoded `..` count
+// from the hook's own location breaks the moment the hook dir moves.
+const repoRoot = process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
 const checkScript = path.join(
   repoRoot,
   'scripts',
   'fleet',
-  'check-oxlint-plugin-loads.mts',
+  'check',
+  'oxlint-plugin-loads.mts',
 )
 
 // Only re-check when the edit touched a plugin source file.
@@ -62,7 +62,7 @@ await withEditGuard(filePath => {
   // breakage is impossible to miss right after the edit.
   if (result.status !== 0) {
     logger.error(
-      `🚨 oxlint-plugin-load-guard: the socket/ oxlint plugin no longer loads cleanly after editing ${filePath}. Every socket/ rule is disabled until this is fixed. Details above (from check-oxlint-plugin-loads.mts); run \`node scripts/fleet/check-oxlint-plugin-loads.mts\` to re-check.`,
+      `🚨 oxlint-plugin-load-guard: the socket/ oxlint plugin no longer loads cleanly after editing ${filePath}. Every socket/ rule is disabled until this is fixed. Details above (from check-oxlint-plugin-loads.mts); run \`node scripts/fleet/check/oxlint-plugin-loads.mts\` to re-check.`,
     )
     const detail = String(result.stdout ?? '').trim()
     if (detail) {

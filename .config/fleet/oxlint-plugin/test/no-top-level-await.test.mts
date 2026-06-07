@@ -7,7 +7,7 @@
  *   does not support module-scope `await`. A regression there either fails the
  *   bundle outright or silently emits an uninitialized export. The valid cases
  *   pin the supported escape hatches (await inside an async function, an async
- *   IIFE, the `socket-hook: allow top-level-await` comment) so a future
+ *   IIFE, the `socket-lint: allow top-level-await` comment) so a future
  *   refactor can't quietly drop them.
  */
 
@@ -34,7 +34,7 @@ describe('socket/no-top-level-await', () => {
         },
         {
           name: 'bypass comment opts module out',
-          code: '// socket-hook: allow top-level-await\nawait Promise.resolve()\n',
+          code: '// socket-lint: allow top-level-await\nawait Promise.resolve()\n',
         },
       ],
       invalid: [

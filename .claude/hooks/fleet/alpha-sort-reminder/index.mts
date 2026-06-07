@@ -16,7 +16,6 @@
 // block is a review catch, a wrong nag trains the agent to ignore the hook.
 // Always exits 0; the message is informational on stderr.
 //
-// Disable via SOCKET_ALPHA_SORT_REMINDER_DISABLED.
 
 import path from 'node:path'
 import process from 'node:process'
@@ -211,9 +210,6 @@ function emit(filePath: string, findings: readonly SortFinding[]): void {
 }
 
 async function main(): Promise<void> {
-  if (process.env['SOCKET_ALPHA_SORT_REMINDER_DISABLED']) {
-    return
-  }
   const raw = await readStdin()
   if (!raw) {
     return

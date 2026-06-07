@@ -72,6 +72,18 @@ export function collectDeclaredNames(stmt: AstNode, out: Set<string>): void {
   if (!stmt || typeof stmt.type !== 'string') {
     return
   }
+  // Unwrap `export const/function/class …` (and `export default function …`)
+  // so an EXPORTED local binding is still recognized as declared — otherwise a
+  // user's `export const randomBytes = …` is missed and its call sites get
+  // rewritten to the crypto builtin.
+  if (
+    (stmt.type === 'ExportNamedDeclaration' ||
+      stmt.type === 'ExportDefaultDeclaration') &&
+    stmt.declaration
+  ) {
+    collectDeclaredNames(stmt.declaration, out)
+    return
+  }
   if (stmt.type === 'VariableDeclaration') {
     const decls = Array.isArray(stmt.declarations) ? stmt.declarations : []
     for (let i = 0, { length } = decls; i < length; i += 1) {

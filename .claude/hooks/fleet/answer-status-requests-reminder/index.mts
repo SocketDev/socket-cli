@@ -35,7 +35,6 @@
 // a status update, ALWAYS run the check and report what's there. The
 // status is what they're asking for; rate-limiting it is gatekeeping.
 //
-// Disable via SOCKET_ANSWER_STATUS_REQUESTS_REMINDER_DISABLED.
 
 import process from 'node:process'
 
@@ -110,9 +109,6 @@ const DECLINE_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> = [
 ]
 
 async function main(): Promise<void> {
-  if (process.env['SOCKET_ANSWER_STATUS_REQUESTS_REMINDER_DISABLED']) {
-    return
-  }
   const payloadRaw = await readStdin()
   let payload: StopPayload
   try {

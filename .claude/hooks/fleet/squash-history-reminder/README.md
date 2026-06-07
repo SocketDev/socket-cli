@@ -18,12 +18,9 @@ When all three fire, stderr emits a one-paragraph reminder pointing at the `squa
 
 User types **`Allow squash-history-reminder bypass`** verbatim in a recent message (within the last 8 user turns). Case-sensitive; paraphrases don't count.
 
-Or set `SOCKET_SQUASH_HISTORY_REMINDER_DISABLED=1` in the env to disable entirely.
-
 ## Configuration
 
 - `SOCKET_SQUASH_HISTORY_COMMIT_THRESHOLD` — integer; default 50. Below this count, the hook stays silent.
-- `SOCKET_SQUASH_HISTORY_REMINDER_DISABLED` — any truthy value short-circuits the hook.
 
 ## Failing open
 

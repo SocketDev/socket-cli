@@ -93,7 +93,7 @@ skipped with a warning.
   README row) and **delete** the patch + its `manifest.mts` entry. The reapply
   step no-ops cleanly when no patch matches an installed plugin.
 - **Upstream drifts but the bug persists** → regenerate the patch against the
-  new pinned source via the `regenerating-plugin-patches` skill, rename to the
+  new pinned source via the `regenerating-patches` skill, rename to the
   new version, update the manifest entry.
 
 ## Why a separate dir (not `.claude-plugin/`, not `/patches/`)

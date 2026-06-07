@@ -100,59 +100,59 @@ test('allows tests to use console.log', async () => {
   assert.equal(code, 0)
 })
 
-test('respects # socket-hook: allow console marker', async () => {
+test('respects # socket-lint: allow console marker', async () => {
   const { code } = await runHook({
     tool_name: 'Edit',
     tool_input: {
       file_path: 'src/foo.ts',
       new_string:
-        'const x = 1; console.error("a") // # socket-hook: allow console',
+        'const x = 1; console.error("a") // # socket-lint: allow console',
     },
   })
   assert.equal(code, 0)
 })
 
 // Legacy spelling — accepted as alias for one deprecation cycle.
-test('respects # socket-hook: allow logger marker (legacy alias)', async () => {
+test('respects # socket-lint: allow logger marker (legacy alias)', async () => {
   const { code } = await runHook({
     tool_name: 'Edit',
     tool_input: {
       file_path: 'src/foo.ts',
       new_string:
-        'const x = 1; console.error("legacy") // # socket-hook: allow logger',
+        'const x = 1; console.error("legacy") // # socket-lint: allow logger',
     },
   })
   assert.equal(code, 0)
 })
 
-test('respects bare # socket-hook: allow marker', async () => {
+test('respects bare # socket-lint: allow marker', async () => {
   const { code } = await runHook({
     tool_name: 'Edit',
     tool_input: {
       file_path: 'src/foo.ts',
-      new_string: 'console.warn("a") // # socket-hook: allow',
+      new_string: 'console.warn("a") // # socket-lint: allow',
     },
   })
   assert.equal(code, 0)
 })
 
-test('respects // socket-hook: allow console marker (slash-slash prefix)', async () => {
+test('respects // socket-lint: allow console marker (slash-slash prefix)', async () => {
   const { code } = await runHook({
     tool_name: 'Edit',
     tool_input: {
       file_path: 'src/foo.ts',
-      new_string: 'process.stderr.write(buf) // socket-hook: allow console',
+      new_string: 'process.stderr.write(buf) // socket-lint: allow console',
     },
   })
   assert.equal(code, 0)
 })
 
-test('respects /* socket-hook: allow console */ marker (block-comment prefix)', async () => {
+test('respects /* socket-lint: allow console */ marker (block-comment prefix)', async () => {
   const { code } = await runHook({
     tool_name: 'Edit',
     tool_input: {
       file_path: 'src/foo.ts',
-      new_string: 'console.error("a") /* socket-hook: allow console */',
+      new_string: 'console.error("a") /* socket-lint: allow console */',
     },
   })
   assert.equal(code, 0)

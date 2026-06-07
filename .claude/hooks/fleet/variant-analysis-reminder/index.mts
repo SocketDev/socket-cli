@@ -27,7 +27,6 @@
 // This is a Stop hook so the user reads the warning alongside the
 // turn's findings — next turn does the variant analysis.
 //
-// Disable via SOCKET_VARIANT_ANALYSIS_REMINDER_DISABLED.
 
 import process from 'node:process'
 
@@ -94,9 +93,6 @@ export function detectSeverityMentions(text: string): DetectedSeverity[] {
 
 async function main(): Promise<void> {
   const payloadRaw = await readStdin()
-  if (process.env['SOCKET_VARIANT_ANALYSIS_REMINDER_DISABLED']) {
-    process.exit(0)
-  }
   let payload: StopPayload
   try {
     payload = JSON.parse(payloadRaw) as StopPayload

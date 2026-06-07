@@ -23,14 +23,12 @@
 //
 // Exit codes: 0 pass, 2 block. Fails open on its own errors.
 //
-// Bypass: `Allow c8-ignore-reason bypass` in a recent user turn, or
-// SOCKET_C8_IGNORE_REASON_GUARD_DISABLED=1.
+// Bypass: `Allow c8-ignore-reason bypass` in a recent user turn.
 
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { isHookDisabled } from '../_shared/hook-env.mts'
 import { withEditGuard } from '../_shared/payload.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
@@ -84,9 +82,6 @@ export function isInScope(filePath: string): boolean {
 }
 
 await withEditGuard((filePath, content, payload) => {
-  if (isHookDisabled('c8-ignore-reason-guard')) {
-    return
-  }
   if (!isInScope(filePath)) {
     return
   }

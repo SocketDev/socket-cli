@@ -16,15 +16,12 @@
 // This hook only flags drafted text in the assistant turn — it doesn't
 // inspect real git/gh invocations. The git/PR ones live in their own
 // PreToolUse guards.
-//
-// Disable via SOCKET_COMMIT_PR_REMINDER_DISABLED.
 
 import { AI_ATTRIBUTION_PATTERNS } from '../_shared/ai-attribution.mts'
 import { runStopReminder } from '../_shared/stop-reminder.mts'
 
 await runStopReminder({
   name: 'commit-pr-reminder',
-  disabledEnvVar: 'SOCKET_COMMIT_PR_REMINDER_DISABLED',
   patterns: AI_ATTRIBUTION_PATTERNS.map(p => ({
     label: `AI attribution: ${p.label}`,
     regex: p.regex,

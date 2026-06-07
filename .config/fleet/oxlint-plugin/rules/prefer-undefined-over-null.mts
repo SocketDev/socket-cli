@@ -97,6 +97,11 @@ const rule = {
       if (!parent) {
         return false
       }
+      // `switch (x) { case null: }` matches with `===`, so `case undefined:`
+      // would change which value hits — same semantic distinction as `=== null`.
+      if (parent.type === 'SwitchCase' && parent.test === node) {
+        return true
+      }
       if (parent.type !== 'BinaryExpression') {
         return false
       }

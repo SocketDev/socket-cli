@@ -620,7 +620,7 @@ function reapplyPluginPatches(): void {
         logger.warn(
           `Patch "${file}" did not apply to ${pluginName}@${version} ` +
             '(neither forward nor already-applied). The plugin may have ' +
-            'changed upstream — regenerate via the regenerating-plugin-patches skill.',
+            'changed upstream — regenerate via the regenerating-patches skill.',
         )
       }
       continue

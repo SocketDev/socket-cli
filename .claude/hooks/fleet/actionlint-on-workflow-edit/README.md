@@ -23,7 +23,7 @@ to Claude via this hook's stderr. If `actionlint` isn't on PATH, no-op.
 This hook is reporting-only. Blocking is covered by:
 
 - `workflow-uses-comment-guard` (SHA-pin comment format)
-- `workflow-yaml-multiline-body-guard` (multi-line `--body "..."`)
+- `workflow-multiline-body-guard` (multi-line `--body "..."`)
 - `pull-request-target-guard` (privileged context misuse)
 
 If a future block-worthy actionlint check is identified, promote it to

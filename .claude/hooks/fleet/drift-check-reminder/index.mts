@@ -18,7 +18,6 @@
 //
 // Heuristic; false positives expected. Soft reminder.
 //
-// Disable via SOCKET_DRIFT_CHECK_REMINDER_DISABLED.
 
 import process from 'node:process'
 
@@ -53,9 +52,6 @@ const EDIT_VERB_RE =
 
 async function main(): Promise<void> {
   const payloadRaw = await readStdin()
-  if (process.env['SOCKET_DRIFT_CHECK_REMINDER_DISABLED']) {
-    process.exit(0)
-  }
   let payload: StopPayload
   try {
     payload = JSON.parse(payloadRaw) as StopPayload

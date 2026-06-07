@@ -3,23 +3,22 @@
  *   `socket/no-vitest-*` guardrail rules. A lean adaptation of
  *   `@vitest/eslint-plugin`'s `parse-vitest-fn-call.ts` (612 lines, heavy on
  *   the TS type checker + scope analysis) tailored to how the fleet actually
- *   writes tests: globals are OFF everywhere (`globals: false` in every
- *   vitest config), so a bare `it` / `describe` / `expect` is a vitest call
- *   ONLY when imported from `'vitest'`. That collapses upstream's scope walk
- *   into a single import-binding pass. Callers run inside `*.test.*` files.
+ *   writes tests: globals are OFF everywhere (`globals: false` in every vitest
+ *   config), so a bare `it` / `describe` / `expect` is a vitest call ONLY when
+ *   imported from `'vitest'`. That collapses upstream's scope walk into a
+ *   single import-binding pass. Callers run inside `*.test.*` files. Vocabulary
+ *   (mirrors upstream `types.ts`):
  *
- *   Vocabulary (mirrors upstream `types.ts`):
  *   - test-case names: it, test, fit, xit, xtest, bench
  *   - describe names: describe, fdescribe, xdescribe
  *   - hook names: beforeAll, beforeEach, afterAll, afterEach
  *   - modifiers chained after a test/describe: only, skip, todo, concurrent,
- *     sequential, each, fails, skipIf, runIf, for
- *
- *   `getVitestCallChain(callNode, names)` returns the dotted member chain rooted
- *   at a known vitest binding (e.g. `['it','skip']`, `['describe','each']`,
- *   `['expect']`) or undefined. `collectVitestNames(program)` builds the set of
- *   local binding names that resolve to a vitest import (plus the always-known
- *   globals as a fallback so a globals-on fixture still classifies).
+ *     sequential, each, fails, skipIf, runIf, for `getVitestCallChain(callNode,
+ *     names)` returns the dotted member chain rooted at a known vitest binding
+ *     (e.g. `['it','skip']`, `['describe','each']`, `['expect']`) or undefined.
+ *     `collectVitestNames(program)` builds the set of local binding names that
+ *     resolve to a vitest import (plus the always-known globals as a fallback
+ *     so a globals-on fixture still classifies).
  */
 
 import type { AstNode } from './rule-types.mts'
@@ -204,6 +203,31 @@ export function classifyVitestCall(
   const localRoot = chain[0]!
   const imported = names.get(localRoot)
   if (!imported) {
+    // Custom test/describe wrappers: a fleet convention is to wrap
+    // `it.skipIf(...)` / `describe.skipIf(...)` in a name-encoded helper
+    // (`itWindowsOnly`, `itUnixOnly`, `itNetworkOnly`, `describeWindowsOnly`,
+    // …) so the gate condition is static and greppable rather than an inline
+    // boolean (see test/unit/util/skip-helpers). These aren't imported from
+    // 'vitest', so the import-binding pass above misses them — but the
+    // callback they take IS a real test/describe body, and an `expect` inside
+    // it is NOT standalone. Recognize the `it<Upper>` / `test<Upper>` /
+    // `describe<Upper>` camelCase shape as the corresponding kind.
+    if (/^(?:it|test)[A-Z]/.test(localRoot)) {
+      return {
+        root: localRoot,
+        kind: 'test',
+        modifiers: chain.slice(1),
+        localChain: chain,
+      }
+    }
+    if (/^describe[A-Z]/.test(localRoot)) {
+      return {
+        root: localRoot,
+        kind: 'describe',
+        modifiers: chain.slice(1),
+        localChain: chain,
+      }
+    }
     return undefined
   }
   const modifiers = chain.slice(1)

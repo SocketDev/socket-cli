@@ -23,7 +23,7 @@
 // Scope:
 //   - Fires on Edit and Write tool calls.
 //   - Only inspects `.gitmodules` at the repo root.
-//   - Lines marked `# socket-hook: allow gitmodules-no-comment` are
+//   - Lines marked `# socket-lint: allow gitmodules-no-comment` are
 //     exempt for one-off legitimate cases.
 //
 // The hook fails OPEN on its own bugs (exit 0 + stderr log) so a bad
@@ -37,7 +37,7 @@ import { withEditGuard } from '../_shared/payload.mts'
 
 const logger = getDefaultLogger()
 
-const ALLOW_MARKER = '# socket-hook: allow gitmodules-no-comment'
+const ALLOW_MARKER = '# socket-lint: allow gitmodules-no-comment'
 
 // Match `[submodule "PATH"]` with PATH captured. Tolerant of
 // whitespace and quoting variations.
@@ -106,7 +106,7 @@ await withEditGuard((filePath, content) => {
       '\n  # semver-7.7.4\n  [submodule "packages/.../upstream/semver"]\n' +
       '\nThe slug should be a short name (no path); the version is\n' +
       'whatever the upstream tags (v25.9.0, 1.7.19, liburing-2.14, etc.).\n' +
-      '\nOne-off override: append `# socket-hook: allow gitmodules-no-comment`\n' +
+      '\nOne-off override: append `# socket-lint: allow gitmodules-no-comment`\n' +
       'to the [submodule] line.\n',
   )
   process.exitCode = 2

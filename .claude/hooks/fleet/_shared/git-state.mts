@@ -3,7 +3,7 @@
  *   when a repo is NOT on a normal branch tip — detached HEAD or an in-progress
  *   rebase / merge / cherry-pick. A fresh commit in that state lands on a stale
  *   or throwaway ref, so cascade auto-commit (sync-scaffolding/commit.mts) and
- *   the no-cascade-on-transient-git-state-guard hook both gate on this. Single
+ *   the no-cascade-transient-git-guard hook both gate on this. Single
  *   source of truth so the two paths can't drift.
  */
 

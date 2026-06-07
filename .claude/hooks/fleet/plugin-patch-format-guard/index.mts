@@ -157,7 +157,7 @@ export function classifyPluginPatch(
         reason:
           'Body is a `git diff` (found `diff --git`). Use a plain ' +
           '`diff -u a/file b/file` instead — git markers break `patch -p1`. ' +
-          'Regenerate via the regenerating-plugin-patches skill.',
+          'Regenerate via the regenerating-patches skill.',
       }
     }
     if (/^index [0-9a-f]+\.\./.test(line)) {
@@ -166,7 +166,7 @@ export function classifyPluginPatch(
         reason:
           'Body has a git `index <hash>..<hash>` line. Use a plain ' +
           '`diff -u` body (no git markers); regenerate via the ' +
-          'regenerating-plugin-patches skill.',
+          'regenerating-patches skill.',
       }
     }
     if (line.startsWith('new file mode ')) {
@@ -175,7 +175,7 @@ export function classifyPluginPatch(
         reason:
           'Body has a git `new file mode` line. Use a plain `diff -u` ' +
           'body (no git markers); regenerate via the ' +
-          'regenerating-plugin-patches skill.',
+          'regenerating-patches skill.',
       }
     }
   }

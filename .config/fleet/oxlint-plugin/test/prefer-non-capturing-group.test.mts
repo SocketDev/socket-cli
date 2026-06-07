@@ -36,7 +36,7 @@ describe('socket/prefer-non-capturing-group', () => {
         },
         {
           name: 'line-level allow-capture marker',
-          code: 'export const r = /(md|mdx)/ // socket-hook: allow capture\n',
+          code: 'export const r = /(md|mdx)/ // socket-lint: allow capture\n',
         },
         {
           name: 'lookahead (?=...)',

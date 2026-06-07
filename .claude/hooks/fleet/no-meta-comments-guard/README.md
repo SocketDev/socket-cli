@@ -27,7 +27,7 @@ Only matches source files: `.{m,c,}{j,t}sx?`, `.cc`, `.cpp`, `.h`, `.hpp`, `.rs`
 
 ## Bypass
 
-There's no canonical bypass phrase. The fix is to rewrite the comment per the suggestion. If you genuinely need the comment to read as-is (rare — usually means the explanation is missing important context), the hook can be temporarily disabled via `SOCKET_NO_META_COMMENTS_DISABLED=1` for the session.
+There's no canonical bypass phrase. The fix is to rewrite the comment per the suggestion.
 
 ## Source of truth
 

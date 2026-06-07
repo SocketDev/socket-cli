@@ -101,14 +101,6 @@ test('cascade commit subject triggers the guard', () => {
   assert.equal(exitCode, 2)
 })
 
-test('disabled env var short-circuits', () => {
-  const t = makeTranscript('claude-opus-4-8')
-  const { exitCode } = runHook(CASCADE, t, 'high', {
-    SOCKET_TOKEN_SPEND_GUARD_DISABLED: '1',
-  })
-  assert.equal(exitCode, 0)
-})
-
 test('IGNORES non-Bash tools', () => {
   const result = spawnSync('node', [HOOK_PATH], {
     input: JSON.stringify({

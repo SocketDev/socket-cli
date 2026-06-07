@@ -37,11 +37,11 @@ Same as `parallel-agent-on-stop-reminder` — see `_shared/foreign-paths.mts`.
 - `FLEET_SYNC=1` command prefix — cascade worktrees off origin/main have no
   parallel-session hazard.
 - `Allow parallel-agent-staging bypass` in a recent user turn — one action.
-- `SOCKET_PARALLEL_AGENT_STAGING_GUARD_DISABLED=1` — disable entirely.
 
 Fails open on hook bugs (exit 0 + stderr log).
 
 ## Why
 
-Incident 2026-05-27, socket-lib — see `parallel-agent-on-stop-reminder`. The
-reminder surfaces the signal; this guard refuses the destructive action.
+When two sessions share one `.git/` checkout, a broad-stage or destructive git
+op sweeps up the other's in-flight work — see `parallel-agent-on-stop-reminder`.
+The reminder surfaces the signal; this guard refuses the destructive action.

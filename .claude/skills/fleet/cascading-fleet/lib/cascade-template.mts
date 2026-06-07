@@ -35,11 +35,31 @@ const logger = getDefaultLogger()
 const LOG_PATH_PREFIX = '/tmp/cascade-'
 
 function usage(): never {
-  logger.error(`usage: ${process.argv[1]} <template-sha>`)
+  logger.error(
+    `usage: ${process.argv[1]} [--dry-run] [--skip <repo>[,<repo>…]] <template-sha>`,
+  )
   process.exit(2)
 }
 
-const TEMPLATE_SHA = process.argv[2]
+const ARGV = process.argv.slice(2)
+// --dry-run: worktree + sync + report what WOULD change, then clean up. No
+// stranded-cleanup mutation, no commit, no push, no PR. Use it to surface
+// per-repo errors / conflicts / dirty checkouts before a real cascade wave.
+const DRY_RUN = ARGV.includes('--dry-run')
+// --skip <repo>[,<repo>…] (repeatable): exclude repos from this wave — e.g. one
+// with a live uncommitted session whose main shouldn't advance under it yet.
+const SKIP_REPOS = new Set<string>()
+for (let i = 0, { length } = ARGV; i < length; i += 1) {
+  if (ARGV[i] === '--skip' && ARGV[i + 1]) {
+    for (const r of ARGV[i + 1]!.split(',')) {
+      const name = r.trim()
+      if (name) {
+        SKIP_REPOS.add(name)
+      }
+    }
+  }
+}
+const TEMPLATE_SHA = ARGV.find(a => !a.startsWith('-') && !SKIP_REPOS.has(a))
 if (!TEMPLATE_SHA) {
   usage()
 }
@@ -47,7 +67,7 @@ if (!TEMPLATE_SHA) {
 const SCRIPT_DIR = import.meta.dirname
 const FLEET_REPOS_FILE = path.join(SCRIPT_DIR, 'fleet-repos.txt')
 const PROJECTS = process.env['PROJECTS'] || path.join(os.homedir(), 'projects')
-// socket-hook: allow cross-repo
+// socket-lint: allow cross-repo
 const WH_SCRIPT = path.join(
   PROJECTS,
   'socket-wheelhouse',
@@ -56,7 +76,7 @@ const WH_SCRIPT = path.join(
   'sync-scaffolding',
   'cli.mts',
 )
-// socket-hook: allow cross-repo
+// socket-lint: allow cross-repo
 const CLEANUP_SCRIPT = path.join(
   PROJECTS,
   'socket-wheelhouse',
@@ -65,13 +85,14 @@ const CLEANUP_SCRIPT = path.join(
   'cleanup-stranded.mts',
 )
 
-// Prepend the active Node version's bin dir to PATH so the `node` invoked by
-// the wheelhouse CLI matches the operator's expected toolchain (avoids the
-// pre-commit hook's "wrong Node" fallback). Honors NVM_BIN when set; otherwise
-// leaves PATH alone so a Volta / homebrew / system Node still resolves.
-if (process.env['NVM_BIN']) {
-  process.env['PATH'] = `${process.env['NVM_BIN']}:${process.env['PATH'] || ''}`
-}
+// Prepend the RUNNING node's own bin dir so the `node` (and corepack-managed
+// pnpm) spawned by the cascade matches the toolchain that launched this script.
+// Do NOT use NVM_BIN — it can point at a DIFFERENT Node whose corepack pnpm is
+// an old version (e.g. v22's pnpm 11.0.0), which then fails a downstream repo's
+// `packageManager: pnpm@11.5.x` version check and makes the cascade's `pnpm
+// install` abort — silently committing without the reconciled lockfile.
+const NODE_BIN_DIR = path.dirname(process.execPath)
+process.env['PATH'] = `${NODE_BIN_DIR}:${process.env['PATH'] || ''}`
 
 if (!existsSync(FLEET_REPOS_FILE)) {
   logger.error(`fleet-repos.txt not found at ${FLEET_REPOS_FILE}`)
@@ -97,7 +118,7 @@ function log(line: string): void {
 
 const RESULTS: string[] = []
 
-log(`══ Cascade ${TEMPLATE_SHA} ══`)
+log(`══ Cascade ${TEMPLATE_SHA}${DRY_RUN ? ' (DRY RUN)' : ''} ══`)
 log(`Log: ${LOG_FILE}`)
 log('')
 
@@ -190,6 +211,11 @@ for (const rawLine of fleetReposRaw) {
   if (!repo || repo.startsWith('#')) {
     continue
   }
+  if (SKIP_REPOS.has(repo)) {
+    log(`── ${repo} ──`)
+    RESULTS.push(`${repo}|skip:requested`)
+    continue
+  }
 
   const src = resolveLocalCheckout(repo)
   const wt = path.join('/tmp', `cascade-${repo}-${process.pid}`)
@@ -207,9 +233,14 @@ for (const rawLine of fleetReposRaw) {
   // inside the script bail the repo (no-op) if anything looks ambiguous;
   // only removes commits matching the cascade subject regex, authored by a
   // trusted identity, touching only cascade-allowlisted files, and whose
-  // template SHA strictly precedes origin's current cascade SHA.
+  // template SHA strictly precedes origin's current cascade SHA. In dry-run we
+  // pass --dry-run through so it REPORTS strandedness without mutating the
+  // source repo.
   if (existsSync(CLEANUP_SCRIPT)) {
-    const cleanup = run('node', [CLEANUP_SCRIPT, '--target', src], { cwd: src })
+    const cleanupArgs = DRY_RUN
+      ? [CLEANUP_SCRIPT, '--target', src, '--dry-run']
+      : [CLEANUP_SCRIPT, '--target', src]
+    const cleanup = run('node', cleanupArgs, { cwd: src })
     logTail(cleanup.stdout + cleanup.stderr, 3)
   }
 
@@ -247,6 +278,32 @@ for (const rawLine of fleetReposRaw) {
   // broken state — operator gets a clear `fail:lockfile-stale` row.
   if (sync.status === 3) {
     RESULTS.push(`${repo}|fail:lockfile-stale`)
+    gitSilent(src, ['worktree', 'remove', '--force', wt])
+    gitSilent(src, ['branch', '-D', branch])
+    continue
+  }
+
+  // Dry-run: report what WOULD change, then tear down without pushing. The
+  // sync-scaffolding `--fix` step COMMITS inside the worktree, so the change
+  // lands as a commit ahead of origin/<base> (not as `status --porcelain`
+  // dirt). Measure the real delta as `origin/<base>..HEAD` (committed) plus any
+  // residual uncommitted dirt, and stat against origin/<base> so deletions
+  // (removed/renamed files the REMOVED_FILES + dir-mirror sweep) show too.
+  if (DRY_RUN) {
+    const aheadOut = git(wt, ['rev-list', '--count', `origin/${base}..HEAD`])
+    const ahead =
+      aheadOut.status === 0 ? parseInt(aheadOut.stdout.trim(), 10) || 0 : 0
+    const dirty = git(wt, ['status', '--porcelain']).stdout.trim()
+    if (ahead === 0 && !dirty) {
+      RESULTS.push(`${repo}|dry:noop`)
+    } else {
+      const stat = git(wt, ['diff', '--stat', `origin/${base}`]).stdout.trim()
+      const fileCount = stat.split('\n').filter(l => l.includes('|')).length
+      logTail(stat, 14)
+      RESULTS.push(
+        `${repo}|dry:would-change(${fileCount} file(s), ${ahead} commit(s))`,
+      )
+    }
     gitSilent(src, ['worktree', 'remove', '--force', wt])
     gitSilent(src, ['branch', '-D', branch])
     continue

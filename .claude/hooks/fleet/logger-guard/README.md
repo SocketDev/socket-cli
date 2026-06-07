@@ -44,9 +44,9 @@ The hook is intentionally narrow:
 - **Exempts** `.claude/hooks/`, `.git-hooks/`, `scripts/`, tests,
   fixtures, and external/vendored code — those have legitimate
   reasons to write directly.
-- **Exempts** lines tagged `# socket-hook: allow console` (canonical
+- **Exempts** lines tagged `# socket-lint: allow console` (canonical
   per-line opt-out — names the construct being allowed, not the
-  recommended replacement). The bare form `# socket-hook: allow`
+  recommended replacement). The bare form `# socket-lint: allow`
   also works for blanket suppression. Legacy `allow logger` is
   accepted as an alias for one deprecation cycle.
 - **Exempts** lines that look like documentation: lines starting

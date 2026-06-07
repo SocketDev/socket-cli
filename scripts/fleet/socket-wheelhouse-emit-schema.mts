@@ -6,21 +6,19 @@
 
 import { writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
+import { CONFIG_DIR, REPO_ROOT } from './paths.mts'
 import { SocketWheelhouseConfigSchema } from './socket-wheelhouse-schema.mts'
 
 const logger = getDefaultLogger()
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const rootDir = path.resolve(__dirname, '..')
 // Schema lives in `.config/` next to the per-repo
 // `.config/socket-wheelhouse.json` it describes — the marker's
 // `$schema` ref is `./socket-wheelhouse-schema.json`.
-const outPath = path.join(rootDir, '.config', 'socket-wheelhouse-schema.json')
+const outPath = path.join(CONFIG_DIR, 'socket-wheelhouse-schema.json')
 
 const enriched = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
@@ -40,9 +38,9 @@ await spawn(
   'pnpm',
   ['exec', 'oxfmt', '-c', '.config/fleet/oxfmtrc.json', outPath],
   {
-    cwd: rootDir,
+    cwd: REPO_ROOT,
     stdio: 'inherit',
   },
 )
 
-logger.success(`wrote ${path.relative(rootDir, outPath)}`)
+logger.success(`wrote ${path.relative(REPO_ROOT, outPath)}`)

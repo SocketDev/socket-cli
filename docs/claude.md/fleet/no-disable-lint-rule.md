@@ -31,7 +31,7 @@ The reason after `--` is mandatory. `git blame` will surface it to the next read
 
 A disable on an `import` statement suppresses the rule for **every** binding the import brings in and **every** site that uses them. Before adding one, read every usage of the flagged binding — a multi-binding import flagged once often has one legitimate site and one real violation hiding behind the same suppression.
 
-**Why:** 2026-06-03 (socket-lib), `test/native-messaging/install.test.mts` imported `HOST_NAME` from `src/` and got flagged by `no-src-import-in-test-expect`. A blanket import-line disable was added with the reason "HOST_NAME is the actual, not an expected-value builder." That was only half true:
+**Why:** a test imports a constant like `HOST_NAME` from `src/` and gets flagged by `no-src-import-in-test-expect`. A blanket import-line disable goes on with the reason "HOST_NAME is the actual, not an expected-value builder." That reason is only half true:
 
 ```ts
 expect(HOST_NAME).toBe('dev.socket.trusted_publisher_host')  // HOST_NAME is the ACTUAL — fine from src/

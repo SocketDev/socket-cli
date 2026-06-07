@@ -52,6 +52,10 @@ git branch | grep backup-
 
 ### Phase 8: Force Push with Retry
 
+`$BASE` is the default branch resolved in Phase 1 (never hard-code `main`). The
+`SQUASH_HISTORY=1` sentinel clears the `no-revert-guard` force-push block, and
+`--force-with-lease` aborts if the remote moved since the last fetch.
+
 ```bash
 # Retry force push up to 3 times for transient failures
 ITERATION=1
@@ -60,7 +64,7 @@ MAX_ITERATIONS=3
 while [ $ITERATION -le $MAX_ITERATIONS ]; do
   echo "Force push attempt $ITERATION/$MAX_ITERATIONS"
 
-  if git push --force origin main; then
+  if SQUASH_HISTORY=1 git push --force-with-lease origin "$BASE"; then
     echo "✓ Force push succeeded"
     break
   fi
@@ -209,7 +213,7 @@ Common causes:
 
 1. **No remote access:** Check remote URL: `git remote -v`
 2. **Branch protection:** Check GitHub/GitLab branch protection rules
-3. **No remote tracking:** Add with `git push --set-upstream origin main --force`
+3. **No remote tracking:** Add with `SQUASH_HISTORY=1 git push --set-upstream --force-with-lease origin "$BASE"`
 
 Recovery:
 

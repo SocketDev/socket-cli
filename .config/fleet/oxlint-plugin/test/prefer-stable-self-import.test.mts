@@ -48,6 +48,18 @@ describe('socket/prefer-stable-self-import', () => {
           // `@socketsecurity/lib-extra` is NOT `@socketsecurity/lib`.
           code: "import { x } from '@socketsecurity/lib-extra/y'\n",
         },
+        {
+          name: 'relative import NOT into src/ is fine (sibling script)',
+          filename: 'scripts/foo.mts',
+          packageJson: OWNED,
+          code: "import { x } from './helpers.mts'\n",
+        },
+        {
+          name: 'relative src/ import from a SRC file is allowed (not tooling)',
+          filename: 'src/packages/read.ts',
+          packageJson: OWNED,
+          code: "import { x } from '../fs/find'\n",
+        },
       ],
       invalid: [
         {
@@ -83,6 +95,20 @@ describe('socket/prefer-stable-self-import', () => {
           code: "export { x } from '@socketsecurity/lib/y'\n",
           errors: [{ messageId: 'preferStable' }],
           output: "export { x } from '@socketsecurity/lib-stable/y'\n",
+        },
+        {
+          name: 'relative ../src/ import from scripts/ is flagged (no autofix)',
+          filename: 'scripts/post-build/foo.mts',
+          packageJson: OWNED,
+          code: "import { readPackageJson } from '../../src/packages/read.ts'\n",
+          errors: [{ messageId: 'noRelativeSrc' }],
+        },
+        {
+          name: 'relative ../src/ import from .claude/hooks/ is flagged',
+          filename: '.claude/hooks/foo/index.mts',
+          packageJson: OWNED,
+          code: "import { x } from '../../src/paths/normalize'\n",
+          errors: [{ messageId: 'noRelativeSrc' }],
         },
       ],
     })

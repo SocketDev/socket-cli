@@ -26,7 +26,7 @@ Resets the default branch to a single signed commit, with deps freshly resolved 
 ## Run
 
 ```bash
-node .claude/skills/refreshing-history/run.mts /path/to/<repo>
+node .claude/skills/fleet/refreshing-history/run.mts /path/to/<repo>
 ```
 
 The runner walks 10 phases end-to-end. See [`run.mts`](run.mts) for the implementation.

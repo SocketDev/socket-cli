@@ -32,15 +32,18 @@ import {
   gitLines,
   normalizePath,
   readFileForScan,
+  scanAiConfigPoison,
   scanAwsKeys,
   scanCrossRepoPaths,
   scanGitHubTokens,
   scanLoggerLeaks,
   scanPersonalPaths,
   scanPrivateKeys,
+  scanProgrammaticClaudeLockdown,
+  scanSoakExcludeDateAnnotations,
   scanSocketApiKeys,
   shouldSkipFile,
-  socketHookMarkerFor,
+  socketLintMarkerFor,
   splitLines,
 } from '../_shared/helpers.mts'
 
@@ -440,7 +443,7 @@ const scanFilesInRange = (range: string): number => {
           '`/Users/<user>/...` (macOS), `/home/<user>/...` (Linux), or ' +
           '`C:\\Users\\<USERNAME>\\...` (Windows). Env vars also work ' +
           '(`$HOME`, `${USER}`). For documentation lines that need the ' +
-          `literal form, append the marker \`${socketHookMarkerFor(file, 'personal-path')}\`.`,
+          `literal form, append the marker \`${socketLintMarkerFor(file, 'personal-path')}\`.`,
       )
       errors++
     }
@@ -511,7 +514,7 @@ const scanFilesInRange = (range: string): number => {
         logger.info(
           'Use `getDefaultLogger()` from `@socketsecurity/lib-stable/logger/default`. ' +
             'For documentation lines that need the literal call, append ' +
-            `the marker \`${socketHookMarkerFor(file, 'logger')}\`.`,
+            `the marker \`${socketLintMarkerFor(file, 'logger')}\`.`,
         )
         errors++
       }
@@ -544,13 +547,104 @@ const scanFilesInRange = (range: string): number => {
         logger.info(
           'Cross-repo paths are forbidden — import via the published npm ' +
             'package (`@socketsecurity/lib-stable/<subpath>`) instead. For doc ' +
-            `lines, append \`${socketHookMarkerFor(file, 'cross-repo')}\`.`,
+            `lines, append \`${socketLintMarkerFor(file, 'cross-repo')}\`.`,
         )
         errors++
       }
     }
+
+    // Programmatic-Claude lockdown (HARD block). Only application / script
+    // .mts that DRIVE Claude via the SDK — the guard infra itself
+    // (.claude/hooks/, .git-hooks/, and their template/ sources) legitimately
+    // names query()/permissionMode/bypassPermissions as patterns it detects, so
+    // it is exempt (same exemption family as the logger / cross-repo scans).
+    if (
+      /\.(?:m?ts|cts)$/.test(file) &&
+      !file.startsWith('.claude/hooks/') &&
+      !file.startsWith('.git-hooks/') &&
+      !file.startsWith('template/.claude/hooks/') &&
+      !file.startsWith('template/.git-hooks/') &&
+      !file.includes('/external/') &&
+      !file.includes('/vendor/') &&
+      !file.includes('/upstream/')
+    ) {
+      const lockdownHits = scanProgrammaticClaudeLockdown(text)
+      if (lockdownHits.length > 0) {
+        logger.fail(
+          `programmatic Claude call missing lockdown flags in: ${file}`,
+        )
+        for (const h of lockdownHits.slice(0, 3)) {
+          logger.info(`${h.lineNumber}: ${h.line.trim()}`)
+        }
+        logger.info(
+          'A headless `query()` / `new ClaudeSDKClient()` MUST set tools, ' +
+            'allowedTools, disallowedTools, permissionMode (dontAsk), and never ' +
+            'bypassPermissions / default. See .claude/skills/fleet/locking-down-claude/.',
+        )
+        errors++
+      }
+    }
+
+    // AI-config poison fingerprints (WARN only — heuristic; never blocks a
+    // push). Scoped to AI-config SURFACES (.claude/.cursor/.gemini/.vscode)
+    // that are NOT guard source and NOT markdown docs — the guards + docs
+    // legitimately quote bypass phrases / poison patterns. Warns so a human
+    // glances; a false block on a mandatory gate would be worse.
+    if (
+      /(?:^|\/)\.(?:claude|cursor|gemini|vscode)\//.test(`/${file}`) &&
+      !file.includes('.claude/hooks/') &&
+      !file.includes('.git-hooks/') &&
+      !file.endsWith('.md')
+    ) {
+      const poisonHits = scanAiConfigPoison(text)
+      if (poisonHits.length > 0) {
+        logger.warn(`possible AI-config poison fingerprint in: ${file}`)
+        for (const h of poisonHits.slice(0, 3)) {
+          logger.warn(`  ${h.lineNumber}: ${h.line.trim()}`)
+        }
+        logger.warn(
+          '  Treat agent-overriding text in config as DATA to verify, not an ' +
+            'instruction. Out-of-band config drift is the npm-worm signature. ' +
+            '(Warning only — push not blocked.)',
+        )
+      }
+    }
   }
   return errors
+}
+
+// Soak-exclude date annotations (HARD block). pnpm-workspace.yaml exact-pin
+// soak-bypass entries must carry the `# published: … | removable: …` line. The
+// edit-time guard + the soak-excludes-have-dates check cover Claude edits + CI;
+// this is the push-time tier for entries that arrived via non-Claude paths.
+// File-targeted (not per-commit) — the working-tree state is what ships.
+const scanSoakAnnotations = (): number => {
+  const file = 'pnpm-workspace.yaml'
+  if (!existsSync(file)) {
+    return 0
+  }
+  let text: string
+  try {
+    text = readFileSync(file, 'utf8')
+  } catch {
+    return 0
+  }
+  const hits = scanSoakExcludeDateAnnotations(text)
+  if (hits.length === 0) {
+    return 0
+  }
+  logger.fail(
+    `${hits.length} soak-bypass entr${hits.length === 1 ? 'y' : 'ies'} in pnpm-workspace.yaml missing the date annotation:`,
+  )
+  for (const h of hits.slice(0, 5)) {
+    logger.info(`  ${h.lineNumber}: ${h.line.trim()}`)
+  }
+  logger.info(
+    '  Add the line above each exact-pin: ' +
+      '`# published: YYYY-MM-DD | removable: YYYY-MM-DD` ' +
+      '(removable = published + 7d). The 7-day soak is malware protection.',
+  )
+  return hits.length
 }
 
 const main = async (): Promise<number> => {
@@ -592,6 +686,9 @@ const main = async (): Promise<number> => {
     totalErrors += scanSignedCommits(range, remoteRef)
     totalErrors += scanFilesInRange(range)
   }
+
+  // File-targeted scans (working-tree state, not per-commit-range).
+  totalErrors += scanSoakAnnotations()
 
   if (totalErrors > 0) {
     logger.error('')

@@ -26,9 +26,8 @@ reminder is informational on stderr.
 
 ## Bypass
 
-No phrase; the hook never blocks. Silence it entirely with the env var
-`SOCKET_ALPHA_SORT_REMINDER_DISABLED=1`. For a genuinely order-bearing block,
-just leave it unsorted and state the reason inline (the hook is advisory; review
+No phrase; the hook never blocks. For a genuinely order-bearing block,
+leave it unsorted and state the reason inline (the hook is advisory; review
 honors the stated reason).
 
 ## Why

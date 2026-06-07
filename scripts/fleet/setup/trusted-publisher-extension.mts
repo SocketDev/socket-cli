@@ -9,13 +9,12 @@
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const repoRoot = path.resolve(__dirname, '..', '..', '..')
-const extDir = path.join(repoRoot, 'tools', 'trusted-publisher-extension')
+import { REPO_ROOT } from '../paths.mts'
+
+const extDir = path.join(REPO_ROOT, 'tools', 'trusted-publisher-extension')
 
 function main(): void {
   const logger = getDefaultLogger()
@@ -24,7 +23,7 @@ function main(): void {
   const build = spawnSync(
     'pnpm',
     ['--filter', '@socketsecurity/trusted-publisher-extension', 'build'],
-    { cwd: repoRoot, stdio: 'inherit' },
+    { cwd: REPO_ROOT, stdio: 'inherit' },
   )
 
   if (build.status !== 0) {

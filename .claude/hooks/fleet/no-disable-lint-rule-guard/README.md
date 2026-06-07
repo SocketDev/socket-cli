@@ -25,10 +25,6 @@ Allow examples:
 
 `Allow disable-lint-rule bypass` typed verbatim in a recent message. Use sparingly — the right answer is almost always to fix the code or use a per-line exemption with a reason.
 
-## How to disable in tests
-
-`SOCKET_NO_DISABLE_LINT_RULE_GUARD_DISABLED=1` short-circuits the hook. Only used by the hook's own test suite.
-
 ## Test
 
 ```sh

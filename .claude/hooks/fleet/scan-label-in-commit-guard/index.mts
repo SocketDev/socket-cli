@@ -225,7 +225,7 @@ export { checkCommand }
 // import `findScanLabels` / `extractCommitMessage` directly without
 // triggering withBashGuard (which would drain stdin and never see an
 // `end` event in the test env, hanging the process).
-if (process.argv[1] && process.argv[1].endsWith('index.mts')) {
+if (process.argv[1]?.endsWith('index.mts')) {
   // withBashGuard handles the stdin drain, tool_name gate, command
   // narrow, and fail-open on any throw.
   await withBashGuard(checkCommand)

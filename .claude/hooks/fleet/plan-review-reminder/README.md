@@ -9,7 +9,7 @@ Stop hook that nudges when an assistant turn proposes a plan in prose without th
 
 ## Bypass
 
-- `SOCKET_PLAN_REVIEW_REMINDER_DISABLED=1` — turn off entirely.
+No bypass — it's a reminder (exit 0), not a block.
 
 ## Test
 

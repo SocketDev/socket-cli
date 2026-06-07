@@ -215,20 +215,6 @@ test('does NOT false-positive on "again" inside code fence', () => {
   }
 })
 
-test('disabled env var short-circuits', () => {
-  const { path: p, cleanup } = makeTranscript('Hitting this again.')
-  try {
-    const result = spawnSync('node', [HOOK_PATH], {
-      input: JSON.stringify({ transcript_path: p }),
-      env: { ...process.env, SOCKET_COMPOUND_LESSONS_REMINDER_DISABLED: '1' },
-    })
-    assert.equal(result.status, 0)
-    assert.equal(result.stderr, '')
-  } finally {
-    cleanup()
-  }
-})
-
 // Behavioral signal — repeated edits to fleet-canonical surfaces.
 
 test('flags repeat edit to same hook file across turns', () => {

@@ -20,7 +20,6 @@
 //
 // Bypass: `Allow disable-lint-rule bypass` typed verbatim in a
 // recent user message.
-// Env disable (testing only): SOCKET_NO_DISABLE_LINT_RULE_GUARD_DISABLED=1.
 //
 // Hook contract:
 //   - Reads PreToolUse JSON from stdin.
@@ -45,7 +44,6 @@ interface PreToolUsePayload {
   readonly transcript_path?: string | undefined
 }
 
-const ENV_DISABLE = 'SOCKET_NO_DISABLE_LINT_RULE_GUARD_DISABLED'
 const BYPASS_PHRASE = 'Allow disable-lint-rule bypass'
 
 // Matches: ESLint configs and oxlint configs by filename, anywhere in path.
@@ -155,9 +153,6 @@ function reportBlock(reason: BlockReason): void {
 }
 
 async function main(): Promise<void> {
-  if (process.env[ENV_DISABLE]) {
-    process.exit(0)
-  }
   let payload: PreToolUsePayload
   try {
     const raw = await readStdin()

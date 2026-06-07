@@ -22,7 +22,7 @@
 //   - Only inspects `.ts` / `.mts` / `.cts` / `.tsx` source files.
 //     Hooks, git-hooks, scripts, tests, fixtures, external/vendored
 //     code are exempt — see EXEMPT_PATH_PATTERNS.
-//   - Lines marked `// socket-hook: allow console` are exempt.
+//   - Lines marked `// socket-lint: allow console` are exempt.
 //
 // AST-based detector (vendored acorn-wasm in `../_shared/acorn/`).
 // Replaced the regex implementation that had to compensate for
@@ -95,7 +95,7 @@ export function emitBlock(filePath: string, hits: Hit[]): void {
     out.push(`  …and ${hits.length - 3} more.`)
   }
   out.push(
-    '  Opt-out for one line (rare): append `// socket-hook: allow console`.',
+    '  Opt-out for one line (rare): append `// socket-lint: allow console`.',
   )
   out.push('')
   logger.error(out.join('\n'))
@@ -136,7 +136,7 @@ export function scan(source: string): Hit[] {
     )
     for (let i = 0, { length } = matches; i < length; i += 1) {
       const m = matches[i]!
-      // Per-line allow marker: `// socket-hook: allow console`. The
+      // Per-line allow marker: `// socket-lint: allow console`. The
       // marker has to appear on the same source line as the call.
       const sourceLine = lines[m.line - 1] ?? ''
       if (lineIsSuppressed(sourceLine, 'console')) {

@@ -40,10 +40,6 @@
 //   0 — allowed (not a downgrade, or an unconsumed bypass is present),
 //       and on any hook error (fail-open + stderr log).
 //
-// Disabled via `SOCKET_TRUST_DOWNGRADE_GUARD_DISABLED=1` — note this env
-// var ITSELF is a persisted trust downgrade; it exists only for the
-// hook's own test harness and emergency wedged-session recovery.
-//
 // Reads a PreToolUse JSON payload from stdin:
 //   { "tool_name": "Bash" | "Edit" | "Write" | "MultiEdit",
 //     "tool_input": { "command"? , "file_path"?, "content"?, "new_string"? },
@@ -68,7 +64,6 @@ interface Payload {
   readonly transcript_path?: string | undefined
 }
 
-const ENV_DISABLE = 'SOCKET_TRUST_DOWNGRADE_GUARD_DISABLED'
 const BYPASS_PHRASE = 'Allow trust-downgrade bypass'
 
 // Fleet minimumReleaseAge floor (minutes) — 7 days. A lower value is a
@@ -247,9 +242,6 @@ export function countPriorDowngrades(
 }
 
 async function main(): Promise<void> {
-  if (process.env[ENV_DISABLE]) {
-    process.exit(0)
-  }
   const raw = await readStdin()
   let payload: Payload
   try {

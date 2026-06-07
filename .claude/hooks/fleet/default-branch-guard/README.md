@@ -20,8 +20,7 @@ Fleet repos are mostly on `main`, but legacy/vendored repos still use `master`. 
 
 ## Bypass
 
-- Type `Allow default-branch bypass` in a recent user message (also accepts `Allow default branch bypass` / `Allow defaultbranch bypass`), or
-- Set `SOCKET_DEFAULT_BRANCH_GUARD_DISABLED=1`.
+- Type `Allow default-branch bypass` in a recent user message (also accepts `Allow default branch bypass` / `Allow defaultbranch bypass`).
 
 ## Test
 

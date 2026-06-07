@@ -229,16 +229,6 @@ test('AI bypass alone does NOT authorize format errors', () => {
   assert.match(stderr, /Conventional Commits/)
 })
 
-// Env-var disable
-
-test('disabled env var short-circuits', () => {
-  const { exitCode } = runHook(
-    'git commit -m "totally invalid 🤖 Generated with Claude"',
-    { env: { SOCKET_COMMIT_MESSAGE_FORMAT_GUARD_DISABLED: '1' } },
-  )
-  assert.equal(exitCode, 0)
-})
-
 // Ignore non-commit / non-Bash
 
 test('IGNORES non-Bash tool', () => {

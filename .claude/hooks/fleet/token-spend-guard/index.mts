@@ -20,7 +20,6 @@
 //
 // Bypass: "Allow model bypass" (keep the premium model) or "Allow effort
 // bypass" (keep high effort) in a recent user turn, or
-// SOCKET_TOKEN_SPEND_GUARD_DISABLED=1.
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import process from 'node:process'
@@ -84,9 +83,6 @@ function readCurrentModel(transcriptPath: string | undefined): string {
 }
 
 await withBashGuard((command, payload) => {
-  if (process.env['SOCKET_TOKEN_SPEND_GUARD_DISABLED']) {
-    return
-  }
   if (!isMechanical(command)) {
     return
   }
@@ -131,7 +127,7 @@ await withBashGuard((command, payload) => {
     '',
     '  Mechanical = cascades, lint-autofix sweeps, rename/path migrations.',
     '  Reserve premium model + high effort for design, hard debugging,',
-    '  security review. Disable entirely: SOCKET_TOKEN_SPEND_GUARD_DISABLED=1.',
+    '  security review.',
     '',
   )
   logger.error(lines.join('\n') + '\n')

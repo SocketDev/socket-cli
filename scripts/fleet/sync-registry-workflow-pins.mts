@@ -33,6 +33,35 @@ import { REPO_ROOT } from './paths.mts'
 
 const logger = getDefaultLogger()
 
+// git context vars a hook (or a parent git invocation) exports. Any git command
+// we run against a DIFFERENT repo via `-C` must drop these, or it will operate
+// on the ambient repo's index/objects/worktree instead — under a pre-commit
+// hook, `GIT_INDEX_FILE`/`GIT_DIR` point at THIS repo, corrupting a sibling-repo
+// or temp-repo git op ("invalid object … Error building trees").
+const GIT_CONTEXT_VARS = [
+  'GIT_DIR',
+  'GIT_INDEX_FILE',
+  'GIT_WORK_TREE',
+  'GIT_OBJECT_DIRECTORY',
+  'GIT_ALTERNATE_OBJECT_DIRECTORIES',
+  'GIT_COMMON_DIR',
+  'GIT_NAMESPACE',
+  'GIT_CEILING_DIRECTORIES',
+  'GIT_PREFIX',
+] as const
+
+/**
+ * A copy of process.env with the inherited git-context vars stripped, so a git
+ * command run against another repo via `-C` resolves that repo's own git dir.
+ */
+export function gitEnvForOtherRepo(): NodeJS.ProcessEnv {
+  const env = { ...process.env }
+  for (let i = 0, { length } = GIT_CONTEXT_VARS; i < length; i += 1) {
+    delete env[GIT_CONTEXT_VARS[i]!]
+  }
+  return env
+}
+
 const REGISTRY = 'SocketDev/socket-registry'
 // The reusable workflows a fleet repo references from socket-registry. Each has
 // a matching `_local-not-for-reuse-<name>.yml` self-caller that pins the live SHA.
@@ -64,7 +93,7 @@ export function pinLineRe(workflow: string): RegExp {
 export function findRegistryCheckout(
   repoRoot: string = REPO_ROOT,
 ): string | undefined {
-  // socket-hook: allow cross-repo -- locating a sibling checkout by path is the function's purpose.
+  // socket-lint: allow cross-repo -- locating a sibling checkout by path is the function's purpose.
   const sibling = path.join(path.dirname(repoRoot), 'socket-registry')
   return existsSync(path.join(sibling, '.github', 'workflows'))
     ? sibling
@@ -119,13 +148,13 @@ export function readLocalPinFromGit(
     spawnSync(
       'git',
       ['-C', registryCheckout, 'fetch', '--quiet', 'origin', 'main'],
-      {},
+      { env: gitEnvForOtherRepo() },
     )
   }
   const r = spawnSync(
     'git',
     ['-C', registryCheckout, 'show', `origin/main:${relPath}`],
-    {},
+    { env: gitEnvForOtherRepo() },
   )
   if (r.status !== 0) {
     return undefined
@@ -196,6 +225,11 @@ export interface PinDrift {
   wantedSha: string
 }
 
+export interface ReconcilePinsOptions {
+  // When true, rewrite drifted pins in place; otherwise report-only.
+  fix?: boolean | undefined
+}
+
 /**
  * Rewrite (or, in report mode, collect) every registry-reusable pin in `files`
  * to match `pins`. Returns the drift it found (whether or not it was fixed).
@@ -203,8 +237,12 @@ export interface PinDrift {
 export function reconcilePins(
   files: readonly string[],
   pins: ReadonlyMap<string, RegistryPin>,
-  fix: boolean,
+  options?: ReconcilePinsOptions | undefined,
 ): PinDrift[] {
+  const { fix = false } = {
+    __proto__: null,
+    ...options,
+  } as ReconcilePinsOptions
   const drift: PinDrift[] = []
   for (let i = 0, { length } = files; i < length; i += 1) {
     const file = files[i]!
@@ -285,7 +323,7 @@ function main(): void {
   }
 
   const files = listWorkflowFiles(REPO_ROOT)
-  const drift = reconcilePins(files, pins, fix)
+  const drift = reconcilePins(files, pins, { fix })
 
   if (!drift.length) {
     if (!quiet) {

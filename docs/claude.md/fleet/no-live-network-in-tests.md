@@ -51,7 +51,7 @@ Three layers enforce this:
    `127.0.0.1` / `localhost` (for fixture servers). Any unmocked request throws
    `NetConnectNotAllowedError` at run time, so a missing stub fails loudly
    instead of silently reaching the internet.
-2. **Edit-time hook** — `.claude/hooks/fleet/no-unmocked-network-in-tests-guard/`
+2. **Edit-time hook** — `.claude/hooks/fleet/no-unmocked-net-guard/`
    blocks a Write/Edit to a `*.test.*` file that calls `httpJson` / `httpText` /
    `fetch` / `request` against a non-localhost host with no `nock` reference in
    the file. Catches it as you author.

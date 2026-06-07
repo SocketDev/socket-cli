@@ -150,15 +150,6 @@ test('FLEET_SYNC=1 env bypasses the block', () => {
   assert.equal(r.code, 0)
 })
 
-test('disabled via env var', () => {
-  const theirs = writeForeign(repo, 'theirs.txt')
-  const r = runHook(theirs, {
-    cwd: repo,
-    env: { SOCKET_PARALLEL_AGENT_EDIT_GUARD_DISABLED: '1' },
-  })
-  assert.equal(r.code, 0)
-})
-
 test('non-edit tool is ignored', () => {
   writeForeign(repo, 'theirs.txt')
   const r = spawnSync('node', [HOOK], {

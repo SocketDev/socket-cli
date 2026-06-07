@@ -23,7 +23,7 @@ Type `Allow non-fleet-publish bypass` verbatim in a recent user turn. Per the fl
 
 ## Why a hook
 
-A captured-plan task that says "file an upstream issue" isn't permission to run `gh issue create` against that repo. 2026-05-28 incident: working through a deferred-tasks list, I ran `gh issue create --repo oxc-project/oxc ...` from a captured plan without re-confirming. The user said "don't create an issue" but the bg `gh` call had already completed; the issue was live until closed post-hoc.
+A captured-plan task that says "file an upstream issue" isn't permission to run `gh issue create` against that repo. Working a deferred-tasks list, an agent fires `gh issue create --repo <upstream>/<repo> ...` straight from the captured plan without re-confirming; by the time the user says "don't create an issue", the background `gh` call has already completed and the issue is live until closed post-hoc.
 
 This hook makes the rule enforceable at edit time — the bg call blocks before the API request fires.
 

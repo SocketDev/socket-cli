@@ -45,7 +45,7 @@ describe('socket/sort-object-literal-properties', () => {
         },
         {
           name: 'bypass marker on the line',
-          code: 'const o = { beta: 1, alpha: 2 } // socket-hook: allow object-property-order\n',
+          code: 'const o = { beta: 1, alpha: 2 } // socket-lint: allow object-property-order\n',
         },
       ],
       invalid: [
@@ -53,6 +53,14 @@ describe('socket/sort-object-literal-properties', () => {
           name: 'unsorted module-scope const (single line)',
           code: 'const o = { gamma: 1, alpha: 2, beta: 3 }\n',
           output: 'const o = { alpha: 2, beta: 3, gamma: 1 }\n',
+          errors: [{ messageId: 'unsorted' }],
+        },
+        {
+          name: 'side-effecting values reported but NOT autofixed (eval-order safe)',
+          // `sideB()`/`sideA()` would swap call order if reordered — flag, no fix.
+          code: 'declare function sideA(): number\ndeclare function sideB(): number\nconst o = { b: sideB(), a: sideA() }\n',
+          output:
+            'declare function sideA(): number\ndeclare function sideB(): number\nconst o = { b: sideB(), a: sideA() }\n',
           errors: [{ messageId: 'unsorted' }],
         },
         {

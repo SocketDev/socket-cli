@@ -18,7 +18,7 @@
  *     fixing. Autofix: replaces the matched word-final `...` run with `…`.
  *     Allowed (skipped):
  *   - The plugin's own rules/ + test/ files (fixtures contain `...` as data).
- *   - Any text carrying a `socket-hook: allow literal-ellipsis` comment.
+ *   - Any text carrying a `socket-lint: allow literal-ellipsis` comment.
  */
 
 import { makeBypassChecker } from '../lib/comment-markers.mts'
@@ -45,7 +45,7 @@ const WORD_FINAL_ELLIPSIS_RE_G = new RegExp(
   'g',
 )
 
-const BYPASS_RE = /socket-hook:\s*allow\s+literal-ellipsis/
+const BYPASS_RE = /socket-lint:\s*allow\s+literal-ellipsis/
 
 const rule = {
   meta: {
@@ -59,7 +59,7 @@ const rule = {
     fixable: 'code',
     messages: {
       literalEllipsis:
-        'Three literal dots `...` in text — use the ellipsis character `…` (U+2026). It reads as one glyph and matches fleet typography. (Spread/rest `...` operators are not flagged.) For an intentional three-dot form, add `// socket-hook: allow literal-ellipsis`.',
+        'Three literal dots `...` in text — use the ellipsis character `…` (U+2026). It reads as one glyph and matches fleet typography. (Spread/rest `...` operators are not flagged.) For an intentional three-dot form, add `// socket-lint: allow literal-ellipsis`.',
     },
     schema: [],
   },

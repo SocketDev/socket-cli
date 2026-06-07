@@ -32,7 +32,7 @@ describe('socket/no-which-for-local-bin', () => {
         {
           name: 'explicit bypass marker for a legit global lookup',
           code:
-            '// socket-hook: allow which-lookup\n' +
+            '// socket-lint: allow which-lookup\n' +
             "const git = execSync('which git')\n",
         },
       ],

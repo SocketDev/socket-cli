@@ -99,7 +99,7 @@ export function isExemptPath(filePath: string): boolean {
   )
 }
 
-if (process.argv[1] && process.argv[1].endsWith('index.mts')) {
+if (process.argv[1]?.endsWith('index.mts')) {
   await withEditGuard((filePath, content, payload) => {
     if (isExemptPath(filePath)) {
       return

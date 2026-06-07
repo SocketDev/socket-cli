@@ -686,7 +686,7 @@ function main(): void {
       // let it through. Stderr only — no exit-code change, hook
       // behaves as if it never fired.
       process.stderr.write(
-        // socket-hook: allow console
+        // socket-lint: allow console
         `[release-workflow-guard] ALLOWED: ${shape} on ${workflow ?? '<unknown>'} — ${allowedReason}\n`,
       )
     }
@@ -716,7 +716,7 @@ function main(): void {
     )
     if (remaining > 0) {
       process.stderr.write(
-        // socket-hook: allow console
+        // socket-lint: allow console
         `[release-workflow-guard] ALLOWED: ${shape} on ${workflow} — bypass phrase consumed (${remaining - 1} remaining for this workflow)\n`,
       )
       return
@@ -752,7 +752,7 @@ function main(): void {
     '  manually. Tell the user to run the command in their own',
     '  terminal (or via the GitHub Actions UI), then resume.',
   ]
-  process.stderr.write(lines.join('\n') + '\n') // socket-hook: allow console
+  process.stderr.write(lines.join('\n') + '\n') // socket-lint: allow console
   process.exitCode = 2
 }
 

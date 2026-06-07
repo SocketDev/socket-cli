@@ -44,7 +44,6 @@
 //     passes (the bug we're guarding against is pointer-without-why).
 //
 // Bypass: "Allow pointer-comment bypass" in a recent user turn, or
-// SOCKET_POINTER_COMMENT_GUARD_DISABLED=1.
 
 import process from 'node:process'
 
@@ -198,9 +197,6 @@ export function findPointerOnlyComments(blocks: readonly Comment[]): Hit[] {
 // withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
 // content extraction (new_string / content), and fail-open on any throw.
 await withEditGuard((filePath, content, payload) => {
-  if (process.env['SOCKET_POINTER_COMMENT_GUARD_DISABLED']) {
-    return
-  }
   if (!SOURCE_EXT_RE.test(filePath)) {
     return
   }
@@ -248,9 +244,8 @@ await withEditGuard((filePath, content, payload) => {
   lines.push("    // V8's existing hot path beats trampoline overhead here.")
   lines.push('')
   lines.push(
-    '  Bypass: "Allow pointer-comment bypass" in a recent user message,',
+    '  Bypass: "Allow pointer-comment bypass" in a recent user message.',
   )
-  lines.push('  or SOCKET_POINTER_COMMENT_GUARD_DISABLED=1.')
   lines.push('')
   logger.error(lines.join('\n') + '\n')
   // Informational — does not block the edit. The hook leaves the

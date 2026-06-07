@@ -39,14 +39,10 @@ The compromise.js library tags verbs with POS so we can distinguish judgment hed
 
 Stop hooks fire after the assistant has produced its response. Blocking would truncate. The warning surfaces alongside the response so the user reads both and can push back next turn.
 
-## Configuration
-
-`SOCKET_JUDGMENT_REMINDER_DISABLED=1` — turn off entirely.
-
 ## Relationship to other reminders
 
 - `excuse-detector` — catches fix-vs-defer choice menus
-- `voice-and-tone-reminder` (perfectionist group) — catches speed-vs-depth choice menus
+- `yakback-reminder` (perfectionist group) — catches speed-vs-depth choice menus
 - `judgment-reminder` (this) — catches hedging within a single position
 
 All three address the same underlying anti-pattern: offloading judgment the assistant should have made.

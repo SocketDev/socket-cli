@@ -21,8 +21,6 @@
 //     / "go" / "continue" / digit-only ("1") / "all of them".
 //   - Conservative: only flags when at least one directive appears AS the
 //     most recent user turn's text content (not buried in a paragraph).
-//
-// Disable: SOCKET_ASK_SUPPRESSION_REMINDER_DISABLED=1 env var.
 
 import { readFileSync } from 'node:fs'
 import process from 'node:process'
@@ -34,7 +32,6 @@ interface ToolInput {
   readonly transcript_path?: string | undefined
 }
 
-const ENV_DISABLE = 'SOCKET_ASK_SUPPRESSION_REMINDER_DISABLED'
 
 // Patterns that signal "you have go-ahead; don't ask again". Match against
 // the full trimmed text of a user turn — must be the entire message body,
@@ -128,9 +125,6 @@ export function readRecentUserTurns(
 }
 
 async function main(): Promise<void> {
-  if (process.env[ENV_DISABLE]) {
-    process.exit(0)
-  }
   let raw: string
   try {
     raw = await readStdin()
@@ -187,8 +181,6 @@ async function main(): Promise<void> {
       '',
       '  Per CLAUDE.md Judgment & self-evaluation: skip AskUserQuestion',
       '  when intent is clear; pick the obvious default and execute.',
-      '',
-      '  Disable this reminder: set SOCKET_ASK_SUPPRESSION_REMINDER_DISABLED=1.',
       '',
     ].join('\n'),
   )

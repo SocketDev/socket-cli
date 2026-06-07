@@ -8,18 +8,16 @@
 
 import { writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
+import { REPO_ROOT } from '../paths.mts'
 import { LockstepManifestSchema } from './schema.mts'
 
 const logger = getDefaultLogger()
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-// scripts/fleet/lockstep/emit-schema.mts → ../../ is the repo root.
-const rootDir = path.resolve(__dirname, '..', '..')
+const rootDir = REPO_ROOT
 const outPath = path.join(rootDir, 'lockstep.schema.json')
 
 // TypeBox schemas carry JSON Schema shape directly, plus a Symbol-keyed

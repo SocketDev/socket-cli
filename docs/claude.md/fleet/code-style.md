@@ -80,19 +80,19 @@ Stale. The fleet runs oxlint / oxfmt. Don't reference `.eslintrc` / `eslint-conf
 
 ## `structuredClone` vs JSON round-trip
 
-`structuredClone(x)` is banned for JSON-shaped data. `JSON.parse(JSON.stringify(x))` (or `JSONParse(JSONStringify(x))` from `@socketsecurity/lib/primordials/json`) is 3-5× faster because it skips the full HTML structured-clone algorithm (type tagging, transferable handling, prototype preservation, cycle detection; none of which the JSON subset needs). The common case is "defensive-copy a `JSON.parse`d value to defend against caller mutation". That's purely JSON-shaped by construction. Opt back in per-line with `// oxlint-disable-next-line socket/no-structured-clone-prefer-json -- <reason>` when the value contains `Date` / `Map` / `Set` / `RegExp` / `ArrayBuffer` / typed-array shapes. Enforced edit-time by `.claude/hooks/fleet/no-structured-clone-prefer-json-guard/` + the `socket/no-structured-clone-prefer-json` oxlint rule. Bypass: `Allow no-structured-clone-prefer-json bypass`.
+`structuredClone(x)` is banned for JSON-shaped data. `JSON.parse(JSON.stringify(x))` (or `JSONParse(JSONStringify(x))` from `@socketsecurity/lib/primordials/json`) is 3-5× faster because it skips the full HTML structured-clone algorithm (type tagging, transferable handling, prototype preservation, cycle detection; none of which the JSON subset needs). The common case is "defensive-copy a `JSON.parse`d value to defend against caller mutation". That's purely JSON-shaped by construction. Opt back in per-line with `// oxlint-disable-next-line socket/no-structured-clone-prefer-json -- <reason>` when the value contains `Date` / `Map` / `Set` / `RegExp` / `ArrayBuffer` / typed-array shapes. Enforced edit-time by `.claude/hooks/fleet/prefer-json-clone-guard/` + the `socket/no-structured-clone-prefer-json` oxlint rule. Bypass: `Allow no-structured-clone-prefer-json bypass`.
 
 ## Ellipsis character, not three dots
 
-In user-facing text (string / template / comment), a trailing ellipsis is the single character `…` (U+2026), not three literal dots `...`. It reads as one glyph and matches fleet typography. Only WORD-FINAL ellipses are flagged (`Loading...` → `Loading…`); the spread/rest operator (`...args`), path globs (`/Users/<user>/...`), and CLI placeholder notation (`[path...]`, `args...`) are left untouched. Enforced + auto-fixed by the `socket/prefer-ellipsis-char` oxlint rule. Bypass for an intentional three-dot form: `// socket-hook: allow literal-ellipsis`.
+In user-facing text (string / template / comment), a trailing ellipsis is the single character `…` (U+2026), not three literal dots `...`. It reads as one glyph and matches fleet typography. Only WORD-FINAL ellipses are flagged (`Loading...` → `Loading…`); the spread/rest operator (`...args`), path globs (`/Users/<user>/...`), and CLI placeholder notation (`[path...]`, `args...`) are left untouched. Enforced + auto-fixed by the `socket/prefer-ellipsis-char` oxlint rule. Bypass for an intentional three-dot form: `// socket-lint: allow literal-ellipsis`.
 
 ## Binary resolution: `node_modules/.bin`, not global `which`
 
-Don't shell out to `which` / `command -v` / `where` to locate a project binary — those search the GLOBAL PATH. Fleet binaries are linked into `node_modules/.bin` by `pnpm install`; a global lookup returns nothing on a normal checkout (so the caller silently degrades) or, worse, finds a different-version binary and runs against the wrong engine. Resolve the installed package instead: `require.resolve('<pkg>/package.json')` → read its `bin` field → `resolveBinaryPath()` from `@socketsecurity/lib-stable/dlx/binary-resolution` for the platform `.cmd`/`.ps1` wrapper. (`@socketsecurity/lib-stable/bin/which`'s `whichSync` is the right tool when you genuinely need a PATH search, e.g. the user's system `git`.) Enforced by the `socket/no-which-for-local-bin` oxlint rule. Bypass for a genuine global lookup: `// socket-hook: allow which-lookup`.
+Don't shell out to `which` / `command -v` / `where` to locate a project binary — those search the GLOBAL PATH. Fleet binaries are linked into `node_modules/.bin` by `pnpm install`; a global lookup returns nothing on a normal checkout (so the caller silently degrades) or, worse, finds a different-version binary and runs against the wrong engine. Resolve the installed package instead: `require.resolve('<pkg>/package.json')` → read its `bin` field → `resolveBinaryPath()` from `@socketsecurity/lib-stable/dlx/binary-resolution` for the platform `.cmd`/`.ps1` wrapper. (`@socketsecurity/lib-stable/bin/which`'s `whichSync` is the right tool when you genuinely need a PATH search, e.g. the user's system `git`.) Enforced by the `socket/no-which-for-local-bin` oxlint rule. Bypass for a genuine global lookup: `// socket-lint: allow which-lookup`.
 
 ## Comments: cross-port Lock-step
 
-See [`parser-comments.md`](parser-comments.md) §5–7 for the full Lock-step comment spec (port provenance, byte-identical header block, deviation paragraphs). Enforced edit-time by `.claude/hooks/fleet/lock-step-ref-guard/` and CI-gate-time by `scripts/check-lock-step-refs.mts` + `scripts/check-lock-step-header.mts`. Bypass: `Allow lock-step bypass`.
+See [`parser-comments.md`](parser-comments.md) §5–7 for the full Lock-step comment spec (port provenance, byte-identical header block, deviation paragraphs). Enforced edit-time by `.claude/hooks/fleet/lock-step-ref-guard/` and CI-gate-time by `scripts/fleet/check/lock-step-refs-resolve.mts` + `scripts/fleet/check/lock-step-headers-match.mts`. Bypass: `Allow lock-step bypass`.
 
 ## Pointer comments
 
@@ -100,7 +100,7 @@ See [`parser-comments.md`](parser-comments.md) §5–7 for the full Lock-step co
 
 ## `Promise.race` / `Promise.any` in loops
 
-Never re-race a pool that survives across iterations (the handlers stack). See `.claude/skills/plug-leaking-promise-race/SKILL.md`.
+Never re-race a pool that survives across iterations (the handlers stack). See `.claude/skills/plugging-promise-race/SKILL.md`.
 
 ## `Safe` suffix
 

@@ -47,10 +47,6 @@ Per the fleet's `Allow <X> bypass` convention:
 
 Type the canonical phrase verbatim in a recent user message; the hook then allows the next matching commit.
 
-## How to disable in tests
-
-Set `SOCKET_COMMIT_MESSAGE_FORMAT_GUARD_DISABLED=1` to short-circuit the hook entirely. Used only by the hook's own test suite — never set in operator config.
-
 ## Test
 
 ```sh

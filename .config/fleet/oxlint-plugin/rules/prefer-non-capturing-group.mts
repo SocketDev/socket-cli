@@ -23,7 +23,7 @@
  *   - Single-character groups holding a single alternation element only when the
  *     regex flags include `g`/`y`/`d`: those modes change capture semantics
  *     enough that we keep hands off.
- *   - The line carries `// socket-hook: allow capture` (or `# / /*` variants).
+ *   - The line carries `// socket-lint: allow capture` (or `# / /*` variants).
  *     This rule encodes a small but persistent cleanup the fleet keeps wanting:
  *     regex alternation groups written `(md|mdx)` when `(?:md|mdx)` was meant —
  *     no replacement, no `match[N]` indexing — wastes a capture allocation per
@@ -38,8 +38,8 @@ interface CaptureGroup {
   inner: string
 }
 
-const SOCKET_HOOK_MARKER_RE =
-  /(?:#|\/\/|\/\*)\s*socket-hook:\s*allow(?:\s+([\w-]+))?/
+const SOCKET_LINT_MARKER_RE =
+  /(?:#|\/\/|\/\*)\s*socket-lint:\s*allow(?:\s+([\w-]+))?/
 
 // Markers that indicate at least one regex in the file uses captures.
 // Conservative — any single hit disables autofix for the whole file
@@ -83,7 +83,7 @@ const CAPTURE_USAGE_RES: readonly RegExp[] = [
 ]
 
 function isLineMarkered(line: string): boolean {
-  const m = line.match(SOCKET_HOOK_MARKER_RE)
+  const m = line.match(SOCKET_LINT_MARKER_RE)
   if (!m) {
     return false
   }
@@ -189,7 +189,7 @@ const rule = {
       unused:
         'Capturing group `({{inner}})` is unused. Use `(?:{{inner}})` (non-capturing) instead.',
       unusedNoFix:
-        'Capturing group `({{inner}})` looks unused, but the file contains capture-usage markers elsewhere. Either convert manually to `(?:{{inner}})`, or append `// socket-hook: allow capture` on this line if the capture is intentional.',
+        'Capturing group `({{inner}})` looks unused, but the file contains capture-usage markers elsewhere. Either convert manually to `(?:{{inner}})`, or append `// socket-lint: allow capture` on this line if the capture is intentional.',
     },
     schema: [],
   },

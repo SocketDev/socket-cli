@@ -43,10 +43,6 @@ The right enforcement is layered:
 - **This hook** surfaces violations at end-of-turn.
 - **The user** demands the fix in the next turn.
 
-## Configuration
-
-`SOCKET_EXCUSE_DETECTOR_DISABLED=1` — turn the hook off entirely. Useful for sessions where the policy genuinely doesn't apply (e.g. running a long-form review that intentionally calls out scope boundaries).
-
 ## Test
 
 ```sh

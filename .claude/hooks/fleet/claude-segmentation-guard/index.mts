@@ -11,7 +11,7 @@
 // entries across 10 repos — every fleet repo had at least 18
 // duplicate top-level skill directories shadowing their `fleet/<name>/`
 // counterparts. The cleanup script
-// (`scripts/fleet/check-claude-segmentation.mts --fix`) resolved them in
+// (`scripts/fleet/check/claude-dirs-are-segmented.mts --fix`) resolved them in
 // bulk; this hook prevents the regression at edit time.
 //
 // Allowed paths:
@@ -151,7 +151,7 @@ process.stdin.on('end', () => {
         '    Repo-only:',
         `      ${targetForRepo}`,
         '',
-        '  Or run `node scripts/fleet/check-claude-segmentation.mts --fix` from the',
+        '  Or run `node scripts/fleet/check/claude-dirs-are-segmented.mts --fix` from the',
         '  repo root to auto-resolve any dangling entries already on disk.',
         '',
       ].join('\n'),

@@ -18,10 +18,11 @@ The fix for a third-party version that needs to bypass soak is a
 **pnpm override**, not an exclude — overrides bypass the age check
 without weakening the policy.
 
-Past incident: 2026-04-06, an automated PR added `@anthropic-ai/*`
-to `minimumReleaseAgeExclude` across 4 sibling repos
-(socket-sdk-js, socket-cli, socket-registry, socket-lib). All four
-had to be reverted to use `pnpm-workspace.yaml` `overrides:` instead.
+Example: an automated PR that drops a third-party scope like
+`@anthropic-ai/*` into `minimumReleaseAgeExclude` across sibling
+repos has to be reverted everywhere — the exclude weakens the soak
+gate, and the right tool is a `pnpm-workspace.yaml` `overrides:`
+entry instead.
 
 ## What it blocks
 

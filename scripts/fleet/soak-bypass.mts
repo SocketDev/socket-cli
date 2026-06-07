@@ -20,9 +20,10 @@
  */
 
 import { readFileSync, writeFileSync } from 'node:fs'
-import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+
+import { PNPM_WORKSPACE_YAML } from './paths.mts'
 
 const SOAK_DAYS = 7
 
@@ -125,7 +126,7 @@ async function fetchPublishDate(
 ): Promise<string | undefined> {
   const url = `https://registry.npmjs.org/${encodeURIComponent(name).replace('%40', '@')}`
   try {
-    // socket-hook: allow global-fetch -- soak tooling probes the npm registry directly; the lib http-request helper isn't a dependency in scripts/.
+    // socket-lint: allow global-fetch -- soak tooling probes the npm registry directly; the lib http-request helper isn't a dependency in scripts/.
     const response = await fetch(url, {
       headers: { accept: 'application/json' },
     })
@@ -162,10 +163,7 @@ async function main(): Promise<void> {
   const publishedISO = published.slice(0, 10)
   const removableISO = addDaysISO(published, SOAK_DAYS)
 
-  const here = path.dirname(fileURLToPath(import.meta.url))
-  const repoRoot = path.resolve(here, '..')
-  const yamlPath = path.join(repoRoot, 'pnpm-workspace.yaml')
-  const content = readFileSync(yamlPath, 'utf8')
+  const content = readFileSync(PNPM_WORKSPACE_YAML, 'utf8')
   const next = spliceSoakEntry(content, spec, publishedISO, removableISO)
   if (next === undefined) {
     process.stderr.write(
@@ -180,7 +178,7 @@ async function main(): Promise<void> {
     )
     process.exit(0)
   }
-  writeFileSync(yamlPath, next)
+  writeFileSync(PNPM_WORKSPACE_YAML, next)
   process.stdout.write(
     `soak-bypass: added ${spec.name}@${spec.version} to minimumReleaseAgeExclude\n` +
       `  # published: ${publishedISO} | removable: ${removableISO}\n\n` +

@@ -12,6 +12,9 @@
 
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { mkdtempSync, rmSync } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 
 import {
   aliasMatches,
@@ -22,16 +25,20 @@ import {
   lineIsSuppressed,
   looksLikeDocumentation,
   normalizePath,
+  runStagedTestsReminder,
   scanAwsKeys,
+  scanConsoleLeaks,
   scanCrossRepoPaths,
   scanDocsPnpmFirst,
   scanGitHubTokens,
   scanLinearRefs,
+  scanLoggerLeaks,
   scanPackageJsonPnpmOverrides,
   scanPersonalPaths,
   scanPrivateKeys,
+  scanProcessStdioLeaks,
   scanSocketApiKeys,
-  socketHookMarkerFor,
+  socketLintMarkerFor,
   splitLines,
   stripAiAttribution,
   suggestLoggerReplacement,
@@ -194,22 +201,22 @@ test('aliasMatches: unrelated names do not match', () => {
 
 test('lineIsSuppressed: bare marker = blanket allow', () => {
   assert.strictEqual(
-    lineIsSuppressed('console.log("x") // socket-hook: allow', 'console'),
+    lineIsSuppressed('console.log("x") // socket-lint: allow', 'console'),
     true,
   )
-  assert.strictEqual(lineIsSuppressed('foo() // socket-hook: allow'), true)
+  assert.strictEqual(lineIsSuppressed('foo() // socket-lint: allow'), true)
 })
 
 test('lineIsSuppressed: rule-named marker matches the named rule', () => {
   assert.strictEqual(
     lineIsSuppressed(
-      'console.log("x") // socket-hook: allow console',
+      'console.log("x") // socket-lint: allow console',
       'console',
     ),
     true,
   )
   assert.strictEqual(
-    lineIsSuppressed('console.log("x") // socket-hook: allow npx', 'console'),
+    lineIsSuppressed('console.log("x") // socket-lint: allow npx', 'console'),
     false,
     'npx marker does NOT suppress console rule',
   )
@@ -219,7 +226,7 @@ test('lineIsSuppressed: alias-named marker also matches', () => {
   // legacy `allow logger` still suppresses the console rule
   assert.strictEqual(
     lineIsSuppressed(
-      'console.log("x") // socket-hook: allow logger',
+      'console.log("x") // socket-lint: allow logger',
       'console',
     ),
     true,
@@ -228,6 +235,49 @@ test('lineIsSuppressed: alias-named marker also matches', () => {
 
 test('lineIsSuppressed: returns false when no marker', () => {
   assert.strictEqual(lineIsSuppressed('console.log("x")', 'console'), false)
+})
+
+// ── console vs process-stdio leak scanners (split rules) ──────────
+
+test('scanConsoleLeaks: flags console.* and suppresses only with allow console', () => {
+  assert.strictEqual(scanConsoleLeaks('console.log("x")').length, 1)
+  assert.strictEqual(
+    scanConsoleLeaks('console.log("x") // socket-lint: allow console').length,
+    0,
+  )
+  assert.strictEqual(
+    scanConsoleLeaks('console.log("x") // socket-lint: allow process-stdio')
+      .length,
+    1,
+    'process-stdio marker does NOT suppress a console leak',
+  )
+})
+
+test('scanProcessStdioLeaks: flags process.std*.write, suppresses only with allow process-stdio', () => {
+  assert.strictEqual(scanProcessStdioLeaks('process.stdout.write(x)').length, 1)
+  assert.strictEqual(scanProcessStdioLeaks('process.stderr.write(x)').length, 1)
+  assert.strictEqual(
+    scanProcessStdioLeaks(
+      'process.stdout.write(x) // socket-lint: allow process-stdio',
+    ).length,
+    0,
+  )
+  assert.strictEqual(
+    scanProcessStdioLeaks(
+      'process.stdout.write(x) // socket-lint: allow console',
+    ).length,
+    1,
+    'console marker does NOT suppress a process-stdio leak',
+  )
+})
+
+test('scanLoggerLeaks: merges both shapes, deduped by line', () => {
+  const hits = scanLoggerLeaks('console.log(a)\nprocess.stdout.write(b)\n')
+  assert.strictEqual(hits.length, 2)
+  assert.deepStrictEqual(
+    hits.map(h => h.lineNumber),
+    [1, 2],
+  )
 })
 
 // ── isInsideBackticks ─────────────────────────────────────────────
@@ -311,13 +361,13 @@ test('filterAllowedApiKeys: drops fake-token + env-var-name + .env.example + mar
   // for the assignment shape, not the bare name in prose.
   // Past variant: bare `.example` substring was overbroad. Tightened
   // to `.env.example` (canonical fixture filename) + an explicit
-  // per-line `socket-hook: allow socket-api-key` marker.
+  // per-line `socket-lint: allow socket-api-key` marker.
   const lines = [
     'const real = "abc123secretvalueabcdef"',
     'const fake = "socket-test-fake-token-abc"',
     'export SOCKET_API_TOKEN=somevalue',
     'see .env.example for the canonical shape',
-    'const marker = "sktsec_fixture" // socket-hook: allow socket-api-key',
+    'const marker = "sktsec_fixture" // socket-lint: allow socket-api-key',
   ]
   const filtered = filterAllowedApiKeys(lines)
   assert.deepStrictEqual(filtered, ['const real = "abc123secretvalueabcdef"'])
@@ -338,19 +388,19 @@ test('filterAllowedApiKeys: retains lines without allowlist hits', () => {
   assert.deepStrictEqual(filterAllowedApiKeys(lines), lines)
 })
 
-// ── socketHookMarkerFor ───────────────────────────────────────────
+// ── socketLintMarkerFor ───────────────────────────────────────────
 
-test('socketHookMarkerFor: emits canonical comment for .ts', () => {
-  const marker = socketHookMarkerFor('src/foo.ts', 'console')
-  assert.match(marker, /socket-hook:\s*allow\s+console/)
+test('socketLintMarkerFor: emits canonical comment for .ts', () => {
+  const marker = socketLintMarkerFor('src/foo.ts', 'console')
+  assert.match(marker, /socket-lint:\s*allow\s+console/)
 })
 
-test('socketHookMarkerFor: chooses comment style by file extension', () => {
-  const py = socketHookMarkerFor('foo.py', 'npx')
-  const yml = socketHookMarkerFor('ci.yml', 'npx')
+test('socketLintMarkerFor: chooses comment style by file extension', () => {
+  const py = socketLintMarkerFor('foo.py', 'npx')
+  const yml = socketLintMarkerFor('ci.yml', 'npx')
   assert.match(py, /^#/)
   assert.match(yml, /^#/)
-  const ts = socketHookMarkerFor('foo.ts', 'npx')
+  const ts = socketLintMarkerFor('foo.ts', 'npx')
   assert.match(ts, /^\/\//)
 })
 
@@ -452,14 +502,14 @@ test('scanPersonalPaths: does NOT flag ~/ or $HOME/ (username-free forms)', () =
 test('scanPersonalPaths: respects suppression marker', () => {
   // Canonical rule name is singular: `personal-path`.
   const hits = scanPersonalPaths(
-    'const p = "/Users/jdalton/foo" // socket-hook: allow personal-path',
+    'const p = "/Users/jdalton/foo" // socket-lint: allow personal-path',
   )
   assert.strictEqual(hits.length, 0)
 })
 
 test('scanPersonalPaths: bare-allow marker also suppresses', () => {
   const hits = scanPersonalPaths(
-    'const p = "/Users/jdalton/foo" // socket-hook: allow',
+    'const p = "/Users/jdalton/foo" // socket-lint: allow',
   )
   assert.strictEqual(hits.length, 0)
 })
@@ -755,7 +805,7 @@ test('scanDocsPnpmFirst: ignores inline backtick spans', () => {
 test('scanDocsPnpmFirst: per-block suppression marker', () => {
   const md = [
     '```sh',
-    '# socket-hook: allow pnpm-first',
+    '# socket-lint: allow pnpm-first',
     'npm install lodash',
     '```',
   ].join('\n')
@@ -764,7 +814,7 @@ test('scanDocsPnpmFirst: per-block suppression marker', () => {
 
 test('scanDocsPnpmFirst: suppression marker on line above fence', () => {
   const md = [
-    '<!-- socket-hook: allow pnpm-first -->',
+    '<!-- socket-lint: allow pnpm-first -->',
     '```sh',
     'npm install lodash',
     '```',
@@ -799,4 +849,28 @@ test('scanDocsPnpmFirst: ignores non-install npm commands', () => {
   // rule (which is about how users *get* a package).
   const md = ['```sh', 'npm run build', '```'].join('\n')
   assert.strictEqual(scanDocsPnpmFirst(md).length, 0)
+})
+
+// ── runStagedTestsReminder (WARN, never blocks) ───────────────────
+
+test('runStagedTestsReminder: no testable file staged → undefined (skip)', () => {
+  // Only non-source files staged — nothing maps to `vitest related`.
+  assert.strictEqual(
+    runStagedTestsReminder(
+      ['README.md', 'pnpm-lock.yaml', 'assets/logo.svg'],
+      process.cwd(),
+    ),
+    undefined,
+  )
+})
+
+test('runStagedTestsReminder: no test runner present → undefined (fail-open)', () => {
+  // A tmpdir with a testable staged file but no scripts/fleet/test.mts —
+  // a fresh / non-fleet checkout must never be blocked.
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'staged-test-'))
+  try {
+    assert.strictEqual(runStagedTestsReminder(['src/x.mts'], dir), undefined)
+  } finally {
+    rmSync(dir, { force: true, recursive: true })
+  }
 })

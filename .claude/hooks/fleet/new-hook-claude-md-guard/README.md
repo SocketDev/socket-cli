@@ -43,8 +43,6 @@ For follow-up commits on the same PR where the CLAUDE.md entry lands separately,
 - `Allow new hook bypass`
 - `Allow newhook bypass`
 
-Or set `SOCKET_NEW_HOOK_CLAUDE_MD_GUARD_DISABLED=1` to turn off entirely.
-
 ## Test
 
 ```sh

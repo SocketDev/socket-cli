@@ -18,7 +18,7 @@ describe('socket/no-fetch-prefer-http-request', () => {
         { name: 'no fetch call', code: 'const x = 1\n' },
         {
           name: 'bypass marker on the line above → allowed',
-          code: '// socket-hook: allow global-fetch\nconst r = await fetch("https://x")\n',
+          code: '// socket-lint: allow global-fetch\nconst r = await fetch("https://x")\n',
         },
       ],
       invalid: [

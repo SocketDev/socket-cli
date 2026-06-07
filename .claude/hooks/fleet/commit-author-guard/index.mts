@@ -33,8 +33,7 @@
 //   (b) `git config --global user.email` + `--global user.name` — the
 //       user's real identity, fallback when the config file is absent.
 //
-// Bypass: type "Allow commit-author bypass" in a recent user message,
-// or set SOCKET_COMMIT_AUTHOR_GUARD_DISABLED=1.
+// Bypass: type "Allow commit-author bypass" in a recent user message.
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
@@ -58,7 +57,6 @@ interface AllowedAuthors {
   readonly aliases: readonly GitAuthor[]
 }
 
-const ENV_DISABLE = 'SOCKET_COMMIT_AUTHOR_GUARD_DISABLED'
 const BYPASS_PHRASES = [
   'Allow commit-author bypass',
   'Allow commit author bypass',
@@ -177,9 +175,6 @@ export function readCheckoutAuthor(cwd: string | undefined): GitAuthor {
 // withBashGuard handles the stdin drain, tool_name gate, command narrow,
 // and fail-open on any throw.
 await withBashGuard((command, payload) => {
-  if (process.env[ENV_DISABLE]) {
-    return
-  }
   if (!isGitCommit(command)) {
     return
   }

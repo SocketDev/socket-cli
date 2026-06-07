@@ -9,7 +9,8 @@
 //   two PRs, or two fleet repos — promote it to a rule instead of
 //   fixing it again. Land it in CLAUDE.md, a `.claude/hooks/*`
 //   block, or a skill prompt — pick the lowest-friction surface.
-//   Always cite the original incident in a `**Why:**` line.
+//   Cite the motivating case in a `**Why:**` line generically, as a
+//   timeless example — not a dated incident log.
 //
 // Detection (any signal fires the warning, missing rule-promotion
 // evidence keeps it firing):
@@ -33,7 +34,6 @@
 //   2. A `**Why:**` line in the current turn's written content — the
 //      canonical shape for citing the original incident.
 //
-// Disable via SOCKET_COMPOUND_LESSONS_REMINDER_DISABLED.
 
 import { existsSync } from 'node:fs'
 import path from 'node:path'
@@ -256,9 +256,6 @@ export function hasRulePromotionEvidence(
 
 async function main(): Promise<void> {
   const payloadRaw = await readStdin()
-  if (process.env['SOCKET_COMPOUND_LESSONS_REMINDER_DISABLED']) {
-    process.exit(0)
-  }
   let payload: StopPayload
   try {
     payload = JSON.parse(payloadRaw) as StopPayload
@@ -321,8 +318,9 @@ async function main(): Promise<void> {
   lines.push(
     '  a `.claude/hooks/*` block, or a skill prompt — pick the lowest-',
   )
-  lines.push('  friction surface. Always cite the original incident in a')
-  lines.push('  `**Why:**` line.')
+  lines.push('  friction surface. Cite the motivating case in a `**Why:**`')
+  lines.push('  line GENERICALLY, as a timeless example — not a dated incident')
+  lines.push('  log (no dates / version deltas / percentages / SHAs).')
   lines.push('')
   // If the rule is fleet-wide (not just this repo), it belongs in
   // socket-wheelhouse/template/. Help the user find the right path
