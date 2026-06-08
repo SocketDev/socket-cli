@@ -32,7 +32,7 @@ const bundleToolsPath = path.join(__dirname, 'bundle-tools.json')
 const inlinedEnv: Record<string, string> = {}
 if (existsSync(bundleToolsPath)) {
   try {
-    const tools = JSON.parse(readFileSync(bundleToolsPath, 'utf8'))
+    const tools = JSON.parse(readFileSync(bundleToolsPath, 'utf8')).tools
     const toolVersions: Record<string, string | undefined> = {
       INLINED_CDXGEN_VERSION: tools['@cyclonedx/cdxgen']?.version,
       INLINED_COANA_VERSION: tools['@coana-tech/cli']?.version,

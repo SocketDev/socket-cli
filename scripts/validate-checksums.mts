@@ -23,9 +23,10 @@ const logger = getDefaultLogger()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
 
-// Load external tools configuration.
+// Load external tools configuration. Entries live under the `tools` key
+// (the shared external-tools shape).
 const externalToolsPath = path.join(rootPath, 'packages/cli/bundle-tools.json')
-const externalTools = JSON.parse(readFileSync(externalToolsPath, 'utf8'))
+const externalTools = JSON.parse(readFileSync(externalToolsPath, 'utf8')).tools
 
 /**
  * Validate that all required checksums exist for external tools.
@@ -67,8 +68,8 @@ export function validateChecksums(): boolean {
       continue
     }
 
-    // Only GitHub release tools need checksums.
-    if (toolConfig.type !== 'github-release') {
+    // Only GitHub release-asset tools need per-asset checksums.
+    if (toolConfig.release !== 'asset') {
       continue
     }
 
@@ -94,7 +95,7 @@ export function validateChecksums(): boolean {
 
   // Check for extra checksums that aren't used (informational).
   for (const [toolName, toolConfig] of Object.entries(externalTools)) {
-    if (toolConfig.type !== 'github-release' || !toolConfig.checksums) {
+    if (toolConfig.release !== 'asset' || !toolConfig.checksums) {
       continue
     }
 

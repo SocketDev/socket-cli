@@ -27,7 +27,8 @@ const logger = getDefaultLogger()
  */
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const externalToolsPath = path.join(__dirname, '../../bundle-tools.json')
-const externalTools = JSON.parse(readFileSync(externalToolsPath, 'utf8'))
+// Entries live under the `tools` key (the shared external-tools shape).
+const externalTools = JSON.parse(readFileSync(externalToolsPath, 'utf8')).tools
 
 /**
  * Combine npm packages and external tools into a single VFS archive.

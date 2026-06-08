@@ -60,10 +60,11 @@ export class EnvironmentVariables {
       }
     } catch {}
 
-    // Get external tool versions from bundle-tools.json.
+    // Get external tool versions from bundle-tools.json. Entries live under
+    // the `tools` key (the shared external-tools shape).
     const externalTools = JSON.parse(
       readFileSync(path.join(rootPath, 'bundle-tools.json'), 'utf-8'),
-    )
+    ).tools
 
     /**
      * Helper to get external tool version with validation.
@@ -161,7 +162,7 @@ export class EnvironmentVariables {
     try {
       const externalTools = JSON.parse(
         readFileSync(path.join(rootPath, 'bundle-tools.json'), 'utf-8'),
-      )
+      ).tools
       return {
         INLINED_COANA_VERSION: externalTools['@coana-tech/cli']?.version || '',
         INLINED_PYCLI_VERSION: externalTools.socketsecurity?.version || '',

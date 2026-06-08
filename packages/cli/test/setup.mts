@@ -17,7 +17,9 @@ const externalToolsPath = path.join(__dirname, '..', 'bundle-tools.json')
 
 if (existsSync(externalToolsPath)) {
   try {
-    const externalTools = JSON.parse(readFileSync(externalToolsPath, 'utf8'))
+    const externalTools = JSON.parse(
+      readFileSync(externalToolsPath, 'utf8'),
+    ).tools
 
     // Set inlined environment variables if not already set.
     // All tools now use 'version' field. GitHub-released tools also have optional 'tag'.

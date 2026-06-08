@@ -213,16 +213,13 @@ async function main() {
     return
   }
 
-  const externalTools = JSON.parse(readFileSync(EXTERNAL_TOOLS_FILE, 'utf8'))
+  // Entries live under `tools`; keep the outer config for the round-trip write.
+  const config = JSON.parse(readFileSync(EXTERNAL_TOOLS_FILE, 'utf8'))
+  const externalTools = config.tools
 
   // Find all GitHub-released tools.
   const githubTools = Object.entries(externalTools)
-    .filter(([key, value]) => {
-      if (key.startsWith('$')) {
-        return false
-      } // Skip schema keys
-      return value.release === 'asset'
-    })
+    .filter(([, value]) => value.release === 'asset')
     .map(([key, value]) => ({ key, ...value }))
 
   if (toolFilter) {
@@ -301,7 +298,7 @@ async function main() {
   if (updated > 0 && !dryRun) {
     await fs.writeFile(
       EXTERNAL_TOOLS_FILE,
-      JSON.stringify(externalTools, null, 2) + '\n',
+      JSON.stringify(config, null, 2) + '\n',
       'utf8',
     )
     logger.log(`Updated ${EXTERNAL_TOOLS_FILE}`)
