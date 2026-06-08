@@ -1,4 +1,4 @@
-/* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
+/* max-file-lines: cohesive-module — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 /**
  * Git utilities for Socket CLI. Provides git operations for repository
  * management, branch handling, and commits.

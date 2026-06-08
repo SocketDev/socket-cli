@@ -1,4 +1,4 @@
-/* max-file-lines: legitimate — comprehensive test suite for one command/module; splitting would fragment closely related assertions. */
+/* max-file-lines: test — comprehensive test suite for one command/module; splitting would fragment closely related assertions. */
 /**
  * @file Integration tests for SEA (Single Executable Application) binary.
  */

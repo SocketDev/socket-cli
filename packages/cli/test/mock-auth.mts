@@ -1,4 +1,4 @@
-/* max-file-lines: legitimate — single-package test-mock surface (token persist + clear + fixtures); splitting would scatter the shared fixture state. */
+/* max-file-lines: test — single-package test-mock surface (token persist + clear + fixtures); splitting would scatter the shared fixture state. */
 /**
  * Mock authentication utilities for Socket CLI testing. Provides mock functions
  * for authentication flows.

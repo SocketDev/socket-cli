@@ -1,4 +1,4 @@
-/* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
+/* max-file-lines: cohesive-module — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 import process from 'node:process'
 
 /**

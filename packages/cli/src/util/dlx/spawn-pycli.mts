@@ -1,4 +1,4 @@
-/* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
+/* max-file-lines: cohesive-module — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 /**
  * Python CLI spawn utilities. These use bundled Python from SEA VFS or download
  * portable Python via DLX.

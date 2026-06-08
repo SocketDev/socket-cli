@@ -1,4 +1,3 @@
-/* max-file-lines: legitimate — comprehensive CLI execution test harness; splitting would scatter tightly coupled spawn / assertion / sandbox helpers. */
 /**
  * @file CLI execution test helpers for Socket CLI. Provides high-level
  *   utilities for executing CLI commands with comprehensive output validation

@@ -1,4 +1,4 @@
-/* max-file-lines: legitimate state-machine — the trust-verification + stage pipeline is one phase; splitting would scatter the publish-attempt's failure-mode boundary. */
+/* max-file-lines: state-machine — the trust-verification + stage pipeline is one phase; splitting would scatter the publish-attempt's failure-mode boundary. */
 /**
  * @file Stager + verifier for cross-org binary-tail publishes. Consumed by
  *   socket-bin (standalone CLI tails) and socket-addon (.node NAPI tails) to

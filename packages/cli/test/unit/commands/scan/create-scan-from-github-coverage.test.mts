@@ -1,4 +1,4 @@
-/* max-file-lines: legitimate — coverage-targeted tests for one command/module; splitting would fragment closely related assertions. */
+/* max-file-lines: test — coverage-targeted tests for one command/module; splitting would fragment closely related assertions. */
 /**
  * Coverage tests for create-scan-from-github helpers.
  *
