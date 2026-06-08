@@ -79,19 +79,19 @@
     "description": "Socket Firewall (sfw) - GitHub binary for SEA, npm package for CLI",
     "repository": "github:SocketDev/sfw-free",
     "release": "asset",
-    "version": "v1.6.1",
+    "version": "v1.12.0",
     "checksums": {
-      "sfw-free-linux-arm64": "df2eedb2daf2572eee047adb8bfd81c9069edcb200fc7d3710fca98ec3ca81a1",
-      "sfw-free-linux-x86_64": "4a1e8b65e90fce7d5fd066cf0af6c93d512065fa4222a475c8d959a6bc14b9ff",
-      "sfw-free-macos-arm64": "bf1616fc44ac49f1cb2067fedfa127a3ae65d6ec6d634efbb3098cfa355e5555",
-      "sfw-free-macos-x86_64": "724ccea19d847b79db8cc8e38f5f18ce2dd32336007f42b11bed7d2e5f4a2566",
-      "sfw-free-musl-linux-arm64": "41e5ebfe84e33eb7f34846eeb1b0e0c3039b2ba8bcdb87f4a75a5ccb89c64ae1",
-      "sfw-free-musl-linux-x86_64": "19f26c163311d5d0b184d305304972d26c52e445659c9142cefc7d8a11e06c3a",
-      "sfw-free-windows-x86_64.exe": "c953e62ad7928d4d8f2302f5737884ea1a757babc26bed6a42b9b6b68a5d54af"
+      "sfw-free-linux-arm64": "598c8d19c80832ef5ca7fdb0a9fc35c045847fd02889126a7115c0345a478da3",
+      "sfw-free-linux-x86_64": "51824f02a242f892c61c42223e05b7e82bb624762337f026afc2ac229ffcade7",
+      "sfw-free-macos-arm64": "319aeba93d5e57c2db68d6709e5a04aa122e326b2d95a27c1074d0a84c567031",
+      "sfw-free-macos-x86_64": "b05fca25c8ba13fad01a16f05b99d21b866591c6b46f9c662f68ba3120b5a1b3",
+      "sfw-free-musl-linux-arm64": "b036cab9a76fa078540480fa92d6559bc2cede3683aacbbc59b91890157204ae",
+      "sfw-free-musl-linux-x86_64": "fe321d0b0f0c3bb9c84ca61c414563205b3d27b20b0061ad5f0c108e70b39488",
+      "sfw-free-windows-x86_64.exe": "820d0868b7870afb47c094c9368666bf9af18744d75c946533a334b57ed9f18a"
     },
     "npm": {
       "package": "sfw",
-      "version": "2.0.4"
+      "version": "2.0.6"
     }
   },
   "synp": {
