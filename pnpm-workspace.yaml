@@ -198,11 +198,7 @@ minimumReleaseAgeExclude:
   - '@ultrathink/*'
   - '@yuku-parser/*'
   - '@socketoverride/*'
-  - '@redwoodjs/agent-ci@0.16.2'
-  - 'dtu-github-actions@0.16.2'
-  - 'npm-run-all2@9.0.0'
-  # published: 2026-05-22 | removable: 2026-05-29
-  - 'shell-quote@1.8.4'
+  - 'shell-quote'
 
 # Refuse transitive dependencies declared via git/tarball/local-tarball
 # specs — an npm package shouldn't be allowed to drag in a git URL we
