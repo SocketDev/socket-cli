@@ -8,7 +8,7 @@ import { parse as yamlParse } from 'yaml'
 import { isDirSync } from '@socketsecurity/lib-stable/fs/inspect'
 import { safeReadFile } from '@socketsecurity/lib-stable/fs/read-file'
 import { defaultIgnore } from '@socketsecurity/lib-stable/globs/defaults'
-import { readPackageJson } from '@socketsecurity/lib-stable/packages/operations'
+import { readPackageJson } from '@socketsecurity/lib-stable/packages/read'
 import { transform } from '@socketsecurity/lib-stable/streams/transform'
 import { isNonEmptyString } from '@socketsecurity/lib-stable/strings/predicates'
 

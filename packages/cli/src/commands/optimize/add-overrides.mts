@@ -28,8 +28,8 @@ import { getMajor } from '../../util/semver.mts'
 import type { GetOverridesResult } from './get-overrides-by-agent.mts'
 import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
 import type { AliasResult } from '../../util/npm/package-arg.mts'
-import type { Logger } from '@socketsecurity/lib-stable/logger/types'
-import type { PackageJson } from '@socketsecurity/lib-stable/packages/operations'
+import type { Logger } from '@socketsecurity/lib-stable/logger/logger'
+import type { PackageJson } from '@socketsecurity/lib-stable/packages/types'
 import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 
 type AddOverridesOptions = {

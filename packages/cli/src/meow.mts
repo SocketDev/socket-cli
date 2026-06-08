@@ -5,7 +5,7 @@
 
 import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { readPackageJsonSync } from '@socketsecurity/lib-stable/packages/operations'
+import { readPackageJsonSync } from '@socketsecurity/lib-stable/packages/read'
 
 import type {
   ParseArgsConfig,

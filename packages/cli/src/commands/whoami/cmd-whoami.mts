@@ -100,7 +100,7 @@ export async function run(
 
   if (apiToken) {
     const visiblePrefix = getVisibleTokenPrefix()
-    const tokenDisplay = `${TOKEN_PREFIX}${visiblePrefix}...`
+    const tokenDisplay = `${TOKEN_PREFIX}${visiblePrefix}…`
 
     if (flags['json']) {
       outputWhoami({

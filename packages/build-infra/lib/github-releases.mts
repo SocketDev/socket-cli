@@ -123,9 +123,18 @@ export async function getLatestRelease(
           throw new Error(`Failed to fetch releases: ${response.status}`)
         }
 
+        // `response.body` may already be parsed (the lib auto-parses JSON
+        // responses into an object/array) or still be a raw string, depending
+        // on the installed @socketsecurity/lib version. JSON.parse on an
+        // already-parsed object stringifies to "[object Object]" and throws —
+        // that was the "Failed to parse releases response" build failure.
+        // Accept both shapes.
         let releases
         try {
-          releases = JSON.parse(response.body)
+          releases =
+            typeof response.body === 'string'
+              ? JSON.parse(response.body)
+              : response.body
         } catch (e) {
           throw new Error(
             `Failed to parse GitHub API response: ${e instanceof Error ? e.message : String(e)}`,
@@ -220,9 +229,14 @@ export async function getReleaseAssetUrl(
           throw new Error(`Failed to fetch release ${tag}: ${response.status}`)
         }
 
+        // See the releases-list parse above: `response.body` may be a parsed
+        // object or a raw string depending on the lib version. Accept both.
         let release
         try {
-          release = JSON.parse(response.body)
+          release =
+            typeof response.body === 'string'
+              ? JSON.parse(response.body)
+              : response.body
         } catch (e) {
           throw new Error(
             `Failed to parse GitHub release ${tag}: ${e instanceof Error ? e.message : String(e)}`,

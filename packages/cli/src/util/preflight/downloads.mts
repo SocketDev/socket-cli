@@ -12,7 +12,7 @@
 
 import { setTimeout as sleep } from 'node:timers/promises'
 
-import { downloadPackage } from '@socketsecurity/lib-stable/dlx/package'
+import { downloadNpmPackage } from '@socketsecurity/lib-stable/dlx/package'
 
 import { getCI } from '@socketsecurity/lib-stable/env/ci'
 
@@ -51,10 +51,10 @@ export function runPreflightDownloads(): void {
       // 1. @coana-tech/cli preflight.
       const coanaVersion = getCoanaVersion()
       const coanaSpec = `@coana-tech/cli@${coanaVersion}`
-      await downloadPackage({
-        package: coanaSpec,
+      await downloadNpmPackage({
         binaryName: 'coana',
         force: false,
+        spec: coanaSpec,
       })
 
       // Delay before next download to avoid resource contention.
@@ -63,10 +63,10 @@ export function runPreflightDownloads(): void {
       // 2. @cyclonedx/cdxgen preflight.
       const cdxgenVersion = getCdxgenVersion()
       const cdxgenSpec = `@cyclonedx/cdxgen@${cdxgenVersion}`
-      await downloadPackage({
-        package: cdxgenSpec,
+      await downloadNpmPackage({
         binaryName: 'cdxgen',
         force: false,
+        spec: cdxgenSpec,
       })
 
       // Delay before next download to avoid resource contention.

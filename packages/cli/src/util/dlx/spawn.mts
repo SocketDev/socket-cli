@@ -282,10 +282,10 @@ export async function spawnDlx(
   const result = await dlxPackage(
     args,
     {
-      package: packageString,
       binaryName: packageSpec.binaryName,
       force,
       spawnOptions: spawnOpts,
+      spec: packageString,
     },
     spawnExtra,
   )

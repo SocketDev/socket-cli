@@ -66,7 +66,7 @@ export async function outputListRepos(
   logger.log(chalkTable(options, result.data.results))
   if (nextPage) {
     logger.info(
-      `This is page ${page}. Server indicated there are more results available on page ${nextPage}...`,
+      `This is page ${page}. Server indicated there are more results available on page ${nextPage}…`,
     )
     logger.info(
       `(Hint: you can use \`socket repository list --page ${nextPage}\`)`,

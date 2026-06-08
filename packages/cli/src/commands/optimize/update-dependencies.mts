@@ -9,7 +9,7 @@ import { cmdPrefixMessage } from '../../util/process/cmd.mts'
 
 import type { CResult } from '../../types.mts'
 import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
-import type { Logger } from '@socketsecurity/lib-stable/logger/types'
+import type { Logger } from '@socketsecurity/lib-stable/logger/logger'
 import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 
 type UpdateDependenciesOptions = {
@@ -33,7 +33,7 @@ export async function updateDependencies(
 
   const wasSpinning = !!spinner?.isSpinning
 
-  spinner?.start(`Updating ${pkgEnvDetails.lockName}...`)
+  spinner?.start(`Updating ${pkgEnvDetails.lockName}…`)
 
   try {
     await runAgentInstall(pkgEnvDetails, { spinner })

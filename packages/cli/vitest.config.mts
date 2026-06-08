@@ -24,6 +24,12 @@ if (!process.env['TZ']) {
 // "process.env.INLINED_COANA_VERSION is empty at runtime".
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const bundleToolsPath = path.join(__dirname, 'bundle-tools.json')
+
+// INLINED_* values fed into worker `test.env` (below). Built from
+// bundle-tools.json so source-run tests see the same versions esbuild
+// would inline at build time. Stays empty if bundle-tools.json is
+// missing/unreadable; test/setup.mts is the fallback.
+const inlinedEnv: Record<string, string> = {}
 if (existsSync(bundleToolsPath)) {
   try {
     const tools = JSON.parse(readFileSync(bundleToolsPath, 'utf8'))
@@ -49,6 +55,9 @@ if (existsSync(bundleToolsPath)) {
       INLINED_VERSION_HASH: '0.0.0-test:abc1234:test',
     }
     for (const [key, value] of Object.entries(toolVersions)) {
+      if (value !== undefined) {
+        inlinedEnv[key] = value
+      }
       if (!process.env[key] && value) {
         process.env[key] = value
       }
@@ -97,6 +106,7 @@ export default defineConfig({
     // worker process before any module loads, so this is set early
     // enough that V8's internal timezone cache picks it up.
     env: {
+      ...inlinedEnv,
       TZ: 'UTC',
     },
     include: ['test/**/*.test.{mts,ts}'],
