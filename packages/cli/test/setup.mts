@@ -34,7 +34,6 @@ if (existsSync(externalToolsPath)) {
       INLINED_PYTHON_BUILD_TAG: externalTools['python']?.tag,
       INLINED_PYTHON_VERSION: externalTools['python']?.version,
       INLINED_SENTRY_BUILD: '',
-      INLINED_SFW_NPM_VERSION: externalTools['sfw']?.npm?.version,
       INLINED_SFW_VERSION: externalTools['sfw']?.version,
       INLINED_SOCKET_PATCH_VERSION: externalTools['socket-patch']?.version,
       INLINED_SYNP_VERSION: externalTools['synp']?.version,

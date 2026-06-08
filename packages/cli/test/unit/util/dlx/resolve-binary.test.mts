@@ -57,7 +57,7 @@ vi.mock(import('../../../../src/env/cdxgen-version.mts'), () => ({
   getCdxgenVersion: () => '10.0.0',
 }))
 vi.mock(import('../../../../src/env/sfw-version.mts'), () => ({
-  getSfwNpmVersion: () => '2.0.0',
+  getSwfVersion: () => 'v1.12.0',
 }))
 vi.mock(import('../../../../src/env/socket-patch-version.mts'), () => ({
   getSocketPatchVersion: () => '2.0.0',
@@ -85,6 +85,9 @@ vi.mock(import('../../../../src/env/opengrep-checksums.mts'), () => ({
 }))
 vi.mock(import('../../../../src/env/socket-patch-checksums.mts'), () => ({
   requireSocketPatchChecksum: vi.fn(() => 'socket-patch-sha'),
+}))
+vi.mock(import('../../../../src/env/sfw-checksums.mts'), () => ({
+  requireSfwChecksum: vi.fn(() => 'sfw-sha'),
 }))
 
 // Mock os module.
@@ -199,17 +202,22 @@ describe('binary resolution utilities', () => {
   })
 
   describe('resolveSfw', () => {
-    it('returns dlx spec when no local path is set', async () => {
+    it('returns github-release spec when no local path is set', async () => {
+      mockOs.platform.mockReturnValue('darwin')
+      mockOs.arch.mockReturnValue('arm64')
+
       const { resolveSfw } =
         await import('../../../../src/util/dlx/resolve-binary.mts')
 
       const result = resolveSfw()
 
-      expect(result).toEqual({
-        type: 'dlx',
+      expect(result).toMatchObject({
+        type: 'github-release',
         details: {
-          name: 'sfw',
-          version: '2.0.0',
+          owner: 'SocketDev',
+          repo: 'sfw-free',
+          version: 'v1.12.0',
+          assetName: 'sfw-free-macos-arm64',
           binaryName: 'sfw',
         },
       })

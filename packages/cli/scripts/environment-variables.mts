@@ -97,14 +97,8 @@ export class EnvironmentVariables {
     const socketPatchVersion = getExternalToolVersion('socket-patch')
     const trivyVersion = getExternalToolVersion('trivy')
     const trufflehogVersion = getExternalToolVersion('trufflehog')
-    // sfw uses both: GitHub binary for SEA, npm package for CLI.
+    // sfw ships as a GitHub binary (sfw-free) used by both SEA and CLI dlx.
     const sfwVersion = getExternalToolVersion('sfw')
-    const sfwNpmVersion = externalTools['sfw']?.npm?.version
-    if (!sfwNpmVersion) {
-      throw new Error(
-        'External tool "sfw" is missing required field "npm.version" in bundle-tools.json.',
-      )
-    }
 
     // Build-time constants that can be overridden by environment variables.
     const publishedBuild = process.env['INLINED_PUBLISHED_BUILD'] === '1'
@@ -142,7 +136,6 @@ export class EnvironmentVariables {
       INLINED_PYTHON_VERSION: pythonVersion,
       INLINED_SENTRY_BUILD: sentryBuild ? '1' : '',
       INLINED_SFW_CHECKSUMS: JSON.stringify(sfwChecksums),
-      INLINED_SFW_NPM_VERSION: sfwNpmVersion,
       INLINED_SFW_VERSION: sfwVersion,
       INLINED_SOCKET_PATCH_CHECKSUMS: JSON.stringify(socketPatchChecksums),
       INLINED_SOCKET_PATCH_VERSION: socketPatchVersion,
@@ -172,7 +165,6 @@ export class EnvironmentVariables {
       return {
         INLINED_COANA_VERSION: externalTools['@coana-tech/cli']?.version || '',
         INLINED_PYCLI_VERSION: externalTools.socketsecurity?.version || '',
-        INLINED_SFW_NPM_VERSION: externalTools.sfw?.npm?.version || '',
         INLINED_SFW_VERSION: externalTools.sfw?.version || '',
         INLINED_SOCKET_PATCH_VERSION:
           externalTools['socket-patch']?.version || '',

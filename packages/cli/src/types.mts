@@ -7,6 +7,7 @@ export type OutputKind = 'json' | 'markdown' | 'text'
 export type OpengrepChecksums = Record<string, string>
 export type PyCliChecksums = Record<string, string>
 export type PythonChecksums = Record<string, string>
+export type SfwChecksums = Record<string, string>
 export type SocketPatchChecksums = Record<string, string>
 export type TrivyChecksums = Record<string, string>
 export type TrufflehogChecksums = Record<string, string>

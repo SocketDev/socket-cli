@@ -88,10 +88,6 @@
       "sfw-free-musl-linux-arm64": "b036cab9a76fa078540480fa92d6559bc2cede3683aacbbc59b91890157204ae",
       "sfw-free-musl-linux-x86_64": "fe321d0b0f0c3bb9c84ca61c414563205b3d27b20b0061ad5f0c108e70b39488",
       "sfw-free-windows-x86_64.exe": "820d0868b7870afb47c094c9368666bf9af18744d75c946533a334b57ed9f18a"
-    },
-    "npm": {
-      "package": "sfw",
-      "version": "2.0.6"
     }
   },
   "synp": {
