@@ -100,6 +100,17 @@ const steps: Array<() => boolean> = [
   // incident: a drifted tool entry left an INLINED_* env var empty and hung a
   // pre-commit test run.
   () => run('node', ['scripts/fleet/check/external-tools-are-valid.mts']),
+  // Every tool entry with release:"asset"|"archive" and a github: repository
+  // must reference a tag that exists as a real GitHub release. Schema shape
+  // checks accept any string for version/tag; a fabricated tag only surfaces
+  // at runtime as an asset-download failure. Network-gated: skips cleanly
+  // when gh is absent or unauthenticated so offline dev and CI without gh
+  // are not broken. Runs after the fast schema check (above) because a
+  // malformed file fails the schema check before reaching here.
+  () =>
+    run('node', [
+      'scripts/fleet/check/external-tools-release-tags-resolve.mts',
+    ]),
   // researching-recency SKILL.md must quote the engine's output markers
   // verbatim (badge, evidence envelope, footer fences) so the model's
   // pass-through/synthesis instructions match what the engine emits.
