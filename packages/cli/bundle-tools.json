@@ -2,9 +2,9 @@
   "$schema": "Bundle tools configuration for Socket CLI VFS bundling",
   "@coana-tech/cli": {
     "description": "Coana CLI for static analysis and reachability detection",
-    "version": "14.12.165",
+    "version": "15.3.17",
     "packageManager": "npm",
-    "integrity": "sha512-Fs/gGzBEFl23x0Xw+eBOnyX2WUaoc82ppgZrrDN9hpB84CN8r0ZEw22IQRpiJTmhmOlbSwiArpRw45VkgJY5sw=="
+    "integrity": "sha512-CMIVavPZdW7GqzwfDgemvkRWgRWZI62vXAG1NWLJx4VCqKpHb6udMJLfabSYl+lcFQTSzfcQUUTVRt+KvpA/1w=="
   },
   "@cyclonedx/cdxgen": {
     "description": "CycloneDX SBOM generator for software bill of materials",
