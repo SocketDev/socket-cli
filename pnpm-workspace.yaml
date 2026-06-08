@@ -198,8 +198,11 @@ minimumReleaseAgeExclude:
   - '@ultrathink/*'
   - '@yuku-parser/*'
   - '@socketoverride/*'
+  # published: 2026-05-22 | removable: 2026-05-29
   - '@redwoodjs/agent-ci@0.16.2'
+  # published: 2026-05-22 | removable: 2026-05-29
   - 'dtu-github-actions@0.16.2'
+  # published: 2026-05-19 | removable: 2026-05-26
   - 'npm-run-all2@9.0.0'
   # published: 2026-05-22 | removable: 2026-05-29
   - 'shell-quote@1.8.4'
