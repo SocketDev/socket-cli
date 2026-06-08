@@ -1,2 +1,4 @@
 # Run commit message validation and auto-strip AI attribution.
-node .git-hooks/commit-msg.mts "$1"
+# Fleet hooks are segmented under .git-hooks/fleet/; the shell shim there
+# resolves node + runs the .mts.
+.git-hooks/fleet/commit-msg "$1"
