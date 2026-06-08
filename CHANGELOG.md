@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.117](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.117) - 2026-06-08
+
+### Changed
+- The published package no longer bundles the unused Terminus bitmap font (pulled in transitively by the vendored `blessed` dependency), so its declared license is now `MIT` instead of `MIT AND OFL-1.1`.
+
 ## [1.1.116](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.116) - 2026-06-06
 
 ### Changed
