@@ -831,7 +831,7 @@ describe('meow-with-subcommands', () => {
         logout: stub('logout'),
         manifest: stub('manifest'),
         npm: stub('npm'),
-        npx: stub('npx'), // socket-hook: allow npx
+        npx: stub('npx'), // socket-lint: allow npx
         nuget: stub('nuget'),
         optimize: stub('optimize'),
         organization: stub('organization'),
