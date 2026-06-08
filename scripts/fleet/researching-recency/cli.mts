@@ -1,17 +1,15 @@
 #!/usr/bin/env node
 /**
- * @file researching-recency engine CLI. Orchestrates the pipeline the SKILL.md
+ * @file Researching-recency engine CLI. Orchestrates the pipeline the SKILL.md
  *   contract drives: resolve a query plan (model-supplied via --plan, or a
  *   default single-subquery plan for a bare topic), fan out to the programming
  *   sources, dedupe each stream, fuse via reciprocal-rank, render the compact
  *   evidence envelope + pass-through footer, and save the raw brief. The model
  *   reads the envelope and synthesizes prose; the footer it passes through
- *   verbatim.
- *
- *   Usage:
- *     node cli.mts "<topic>" [--emit=compact] [--days=30] [--depth=quick|default|deep]
- *       [--search=github,hackernews,reddit,lobsters,devto,bluesky,web]
- *       [--plan <path|json>] [--web-file <path>] [--save-dir <dir>]
+ *   verbatim. Usage: node cli.mts "<topic>" [--emit=compact] [--days=30]
+ *   [--depth=quick|default|deep]
+ *   [--search=github,hackernews,reddit,lobsters,devto,bluesky,web] [--plan
+ *   <path|json>] [--web-file <path>] [--save-dir <dir>]
  */
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
@@ -200,6 +198,9 @@ async function main(): Promise<void> {
 }
 
 if (process.argv[1]?.endsWith('cli.mts')) {
-  // main() handles its own errors + sets process.exitCode; no top-level await.
-  void main()
+  // Async IIFE: await inside (no top-level await — CJS bundle target), promise
+  // still awaited so a rejection isn't silently floated. main() sets exitCode.
+  void (async () => {
+    await main()
+  })()
 }

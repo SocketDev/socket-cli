@@ -121,7 +121,7 @@ Exceptions (state the trade-off + ask): large refactor on a small bug, file belo
 
 ### Hook bypasses require the canonical phrase
 
-🚨 Reverting tracked changes or bypassing a hook (`--no-verify`, `DISABLE_PRECOMMIT_*`, `--no-gpg-sign`, force-push) requires the user to type **`Allow <X> bypass`** verbatim in a recent turn (e.g. `Allow revert bypass`, `Allow no-verify bypass`). Paraphrases don't count (`.claude/hooks/fleet/no-revert-guard/`). Phrase table: [`bypass-phrases`](docs/claude.md/fleet/bypass-phrases.md). That phrase is the ONLY disable — hooks carry NO env kill-switch (`disabledEnvVar` / `SOCKET_*_DISABLED` / `process.env[...DISABLED]` banned in a hook's `index.mts`; `.claude/hooks/fleet/no-env-kill-switch-guard/`).
+🚨 Reverting tracked changes or bypassing a hook (`--no-verify`, `--no-gpg-sign`, force-push) requires the user to type **`Allow <X> bypass`** verbatim in a recent turn (e.g. `Allow revert bypass`, `Allow no-verify bypass`). Paraphrases don't count (`.claude/hooks/fleet/no-revert-guard/`). Phrase table: [`bypass-phrases`](docs/claude.md/fleet/bypass-phrases.md). `--no-verify` is the ONLY disable — hooks carry NO env kill-switch (`disabledEnvVar` / `SOCKET_*_DISABLED` / `DISABLE_PRECOMMIT_*` / `process.env[...DISABLED]` banned in a hook's `index.mts`; `.claude/hooks/fleet/no-env-kill-switch-guard/`).
 
 **Exception — inline sentinels.** `FLEET_SYNC=1` (cascade): `git commit/push --no-verify` for `chore(wheelhouse): cascade template@…`, broad-stage in a worktree. `SQUASH_HISTORY=1` (`squashing-history`): one un-chained squash `git commit --amend` / `git push --force*`. Else needs the phrase; see [`bypass-phrases`](docs/claude.md/fleet/bypass-phrases.md). (`.claude/hooks/fleet/{no-revert-guard,overeager-staging-guard}/`.)
 

@@ -1,7 +1,7 @@
 /**
- * @file Unit tests for socket/require-async-iife-entry — flags a floating
- *   `void main()` / `main()` in a module-scope entry guard, accepts the async
- *   IIFE form, and stays out of no-top-level-await's lane.
+ * @file Unit tests for socket/require-async-iife-entry — flags a floating `void
+ *   main()` / `main()` in a module-scope entry guard, accepts the async IIFE
+ *   form, and stays out of no-top-level-await's lane.
  */
 
 import { describe, test } from 'node:test'

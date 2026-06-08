@@ -25,7 +25,7 @@
 //
 // Usage: node scripts/fleet/check/env-kill-switches-are-absent.mts [--quiet]
 
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -78,9 +78,7 @@ export function scanText(relFile: string, text: string): KillSwitchHit[] {
 function isScannableHookFile(filePath: string): boolean {
   const base = path.basename(filePath)
   return (
-    base === 'index.mts' ||
-    base === 'README.md' ||
-    base.endsWith('.test.mts')
+    base === 'index.mts' || base === 'README.md' || base.endsWith('.test.mts')
   )
 }
 
@@ -95,7 +93,7 @@ export function collectHookFiles(hooksDir: string): string[] {
     return out
   }
   for (let i = 0, { length } = entries; i < length; i += 1) {
-    const name = entries[i]!;
+    const name = entries[i]!
     if (name === 'node_modules' || name.startsWith('.')) {
       continue
     }
@@ -114,7 +112,6 @@ export function collectHookFiles(hooksDir: string): string[] {
     } else if (isScannableHookFile(abs)) {
       out.push(abs)
     }
-  
   }
   return out
 }

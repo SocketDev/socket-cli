@@ -4,12 +4,12 @@
  *   actually exist. CLAUDE.md documents the fleet's guardrails by naming the
  *   enforcing hook (a backticked `.claude/hooks/fleet/<name>/` citation — the
  *   minimal form, no prose wrapper) and the lint rule (a "socket/<rule>"
- *   reference). When a hook is renamed/removed
- *   or a rule is dropped, the citation goes stale and the doc lies — a reader
- *   (human or agent) trusts a guard that no longer exists. The
- *   `new-hook-claude-md-guard` enforces the FORWARD direction at edit time (new
- *   hook ⇒ needs a citation); this gate enforces the REVERSE at commit time
- *   (citation ⇒ the thing exists), which nothing else checks. Checks:
+ *   reference). When a hook is renamed/removed or a rule is dropped, the
+ *   citation goes stale and the doc lies — a reader (human or agent) trusts a
+ *   guard that no longer exists. The `new-hook-claude-md-guard` enforces the
+ *   FORWARD direction at edit time (new hook ⇒ needs a citation); this gate
+ *   enforces the REVERSE at commit time (citation ⇒ the thing exists), which
+ *   nothing else checks. Checks:
  *
  *   1. Every `.claude/hooks/fleet/<name>/` cited in CLAUDE.md resolves to a real
  *      hook dir. Brace-grouped citations (`{a,b,c}/`) are expanded. Repo-only
@@ -24,7 +24,7 @@
  *      resolves; 1 — at least one cited hook / rule is missing.
  */
 
-import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 

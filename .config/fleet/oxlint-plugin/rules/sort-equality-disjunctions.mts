@@ -1,10 +1,11 @@
 /**
  * @file Sort string-equality disjunctions alphanumerically. Per CLAUDE.md
  *   "Sorting" rule, `x === 'a' || x === 'b' || x === 'c'` is sorted by the
- *   comparand string (natural order: case-insensitive + numeric-aware). Order doesn't
- *   affect runtime semantics — JS's `||` short-circuits regardless of operand
- *   order — but keeps the diff churn low when adding a new comparand and makes
- *   "is X in this set?" checks visually consistent across the fleet. Detects:
+ *   comparand string (natural order: case-insensitive + numeric-aware). Order
+ *   doesn't affect runtime semantics — JS's `||` short-circuits regardless of
+ *   operand order — but keeps the diff churn low when adding a new comparand
+ *   and makes "is X in this set?" checks visually consistent across the fleet.
+ *   Detects:
  *
  *   - `(x === 'a' || x === 'b')`
  *   - `(x !== 'a' && x !== 'b')` — De Morgan dual; ordering rule applies

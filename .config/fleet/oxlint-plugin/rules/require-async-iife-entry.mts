@@ -1,20 +1,17 @@
 /**
  * @file Require a module-scope entry guard to run its async `main()` via an
- *   async IIFE, never bare `await main()` or a floating `void main()` / `main()`.
- *
- *   The fleet entry-guard idiom is `if (process.argv[1]?.endsWith('…')) { … }`.
- *   When the body runs an async function there are three shapes:
- *
- *     await main()                  // top-level await — CJS bundle can't (caught
- *                                   // by socket/no-top-level-await)
- *     void main()  /  main()        // floats the promise: an unhandled rejection
- *                                   // is silent and exitCode timing is implicit
- *     void (async () => { await main() })()   // correct — await inside the IIFE
- *
- *   This rule catches the middle shape: a `void <asyncFn>()` or a bare
- *   `<asyncFn>()` expression-statement inside the entry guard, where `<asyncFn>`
- *   is a module-scope async function declaration. Report-only (the right rewrite
- *   wraps the call in an async IIFE; the author confirms intent).
+ *   async IIFE, never bare `await main()` or a floating `void main()` /
+ *   `main()`. The fleet entry-guard idiom is `if
+ *   (process.argv[1]?.endsWith('…')) { … }`. When the body runs an async
+ *   function there are three shapes: await main() // top-level await — CJS
+ *   bundle can't (caught // by socket/no-top-level-await) void main() / main()
+ *   // floats the promise: an unhandled rejection // is silent and exitCode
+ *   timing is implicit void (async () => { await main() })() // correct — await
+ *   inside the IIFE This rule catches the middle shape: a `void <asyncFn>()` or
+ *   a bare `<asyncFn>()` expression-statement inside the entry guard, where
+ *   `<asyncFn>` is a module-scope async function declaration. Report-only (the
+ *   right rewrite wraps the call in an async IIFE; the author confirms
+ *   intent).
  */
 
 import type { AstNode, RuleContext } from '../lib/rule-types.mts'
@@ -49,7 +46,10 @@ function isEntryGuardTest(test: AstNode): boolean {
   // (import.meta.url) — the two canonical entry anchors. Walk the object chain.
   let obj = callee.object
   for (let depth = 0; obj && depth < 6; depth += 1) {
-    if (obj.type === 'Identifier' && (obj.name === 'argv' || obj.name === 'process')) {
+    if (
+      obj.type === 'Identifier' &&
+      (obj.name === 'argv' || obj.name === 'process')
+    ) {
       return true
     }
     if (obj.type === 'MetaProperty') {

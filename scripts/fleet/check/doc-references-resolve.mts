@@ -22,7 +22,7 @@
 //
 // Usage: node scripts/fleet/check/doc-references-resolve.mts [--quiet]
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -161,7 +161,9 @@ function main(): void {
     )
     for (let i = 0, { length } = hits; i < length; i += 1) {
       const h = hits[i]!
-      logger.error(`  ✗ ${h.doc}:${h.line} → node ${h.scriptPath} (file not found)`)
+      logger.error(
+        `  ✗ ${h.doc}:${h.line} → node ${h.scriptPath} (file not found)`,
+      )
     }
     logger.error(
       '  A SKILL.md / command doc that names a missing script rots silently. Point it at the real path, or remove the row.',

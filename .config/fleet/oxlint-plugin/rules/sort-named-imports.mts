@@ -1,18 +1,18 @@
 /**
  * @file Per CLAUDE.md "Sorting" rule: sort the named-imports inside a single
  *   `import { ... }` statement alphanumerically (natural order:
- *   case-insensitive + numeric-aware). Default + namespace imports (`import foo, { ... } from`,
- *   `import * as ns from`) keep their leading binding; only the named-imports
- *   clause gets sorted. Detects `import { c, b, a } from 'pkg'` (and aliased
- *   forms like `import { c as x, b, a } from 'pkg'`). Autofix: rewrites the
- *   brace contents in alphabetical order. Comments inside the brace are NOT
- *   moved — when there's a comment between specifiers, the rule skips the
- *   autofix and only reports, because reordering through a comment can break
- *   attribution. The rewrite preserves trailing-newline / multi-line layout: a
- *   single-line block stays single-line; a multi-line block stays multi-line
- *   with one specifier per line. Sort key: the _imported_ name (before any `as`
- *   alias), so `Z as a, A as z` sorts to `A as z, Z as a` (the import side is
- *   the stable identity, not the local).
+ *   case-insensitive + numeric-aware). Default + namespace imports (`import
+ *   foo, { ... } from`, `import * as ns from`) keep their leading binding; only
+ *   the named-imports clause gets sorted. Detects `import { c, b, a } from
+ *   'pkg'` (and aliased forms like `import { c as x, b, a } from 'pkg'`).
+ *   Autofix: rewrites the brace contents in alphabetical order. Comments inside
+ *   the brace are NOT moved — when there's a comment between specifiers, the
+ *   rule skips the autofix and only reports, because reordering through a
+ *   comment can break attribution. The rewrite preserves trailing-newline /
+ *   multi-line layout: a single-line block stays single-line; a multi-line
+ *   block stays multi-line with one specifier per line. Sort key: the
+ *   _imported_ name (before any `as` alias), so `Z as a, A as z` sorts to `A as
+ *   z, Z as a` (the import side is the stable identity, not the local).
  */
 
 /**

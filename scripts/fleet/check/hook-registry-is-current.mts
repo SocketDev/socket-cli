@@ -16,7 +16,7 @@
  *   — no stale bullets; 1 — stale bullet(s).
  */
 
-import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -65,6 +65,7 @@ export function staleBullets(
   bullets: readonly string[],
   real: ReadonlySet<string>,
 ): string[] {
+  // oxlint-disable-next-line unicorn/no-array-sort -- .filter() already returns a fresh array (no shared mutation); .toSorted() would trip socket/no-es2023-array-methods-below-node20 in cascaded Node-18 repos.
   return bullets.filter(id => !real.has(id)).sort()
 }
 
@@ -79,6 +80,7 @@ function main(): void {
 
   // Report (non-fatal) undocumented hooks so the completeness gap stays visible.
   const documented = new Set(bullets)
+  // oxlint-disable-next-line unicorn/no-array-sort -- spread already copies; .toSorted() would trip socket/no-es2023-array-methods-below-node20 in cascaded Node-18 repos.
   const undocumented = [...real].filter(h => !documented.has(h)).sort()
   if (undocumented.length > 0) {
     logger.info(

@@ -25,7 +25,7 @@
 //
 // Usage: node scripts/fleet/check/enforcers-have-thorough-tests.mts [--quiet]
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -46,9 +46,11 @@ const MIN_HOOK_CASES = 2
 // this short and justified — it is the exception, not the escape hatch.
 const NO_TEST_ALLOWLIST: Record<string, string> = {
   __proto__: null as never,
-  'broken-hook-detector': 'SessionStart probe — exercised by the hooks it scans',
+  'broken-hook-detector':
+    'SessionStart probe — exercised by the hooks it scans',
   // installer hooks shell out to the host machine (keychain, pipx, git config)
-  'setup-security-tools': 'installer — mutates the host machine, no pure surface',
+  'setup-security-tools':
+    'installer — mutates the host machine, no pure surface',
   'setup-signing': 'installer — writes git signing config to the host',
 }
 
@@ -136,7 +138,7 @@ export function scanRules(repoRoot: string): TestGap[] {
     return gaps
   }
   for (let i = 0, { length } = rules; i < length; i += 1) {
-    const f = rules[i]!;
+    const f = rules[i]!
     const name = f.slice(0, -'.mts'.length)
     if (NO_TEST_ALLOWLIST[name]) {
       continue
@@ -151,10 +153,10 @@ export function scanRules(repoRoot: string): TestGap[] {
       gaps.push({
         kind: 'rule',
         name,
-        reason: 'token test — missing a valid[] or invalid[] arm (RuleTester must drive both)',
+        reason:
+          'token test — missing a valid[] or invalid[] arm (RuleTester must drive both)',
       })
     }
-  
   }
   return gaps
 }

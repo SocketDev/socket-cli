@@ -8,15 +8,14 @@
  *   sort *​/` block comment, where the author has declared the order
  *   irrelevant. Uses the fleet `stringComparator` (natural order:
  *   case-insensitive + numeric-aware), identical to the rest of the
- *   `socket/sort-*` family.
- *   Autofix rewrites the elements in order. Only fires when every element is a
- *   string/number Literal — a mixed-type or expression-bearing array is
- *   reported (so the marker isn't silently ignored) but not auto-fixed.
- *   Detection is range-based rather than AST-comment-attachment-based: oxlint
- *   attaches a leading comment to the `export`/declaration wrapper, not the
- *   ArrayExpression, so the rule pairs each `/* sort *​/` comment with the
- *   array whose `range[0]` follows it across only a declaration prefix (`export
- *   const NAME =`), nothing else.
+ *   `socket/sort-*` family. Autofix rewrites the elements in order. Only fires
+ *   when every element is a string/number Literal — a mixed-type or
+ *   expression-bearing array is reported (so the marker isn't silently ignored)
+ *   but not auto-fixed. Detection is range-based rather than
+ *   AST-comment-attachment-based: oxlint attaches a leading comment to the
+ *   `export`/declaration wrapper, not the ArrayExpression, so the rule pairs
+ *   each `/* sort *​/` comment with the array whose `range[0]` follows it
+ *   across only a declaration prefix (`export const NAME =`), nothing else.
  */
 
 import { stringComparator } from '../lib/comparators.mts'
