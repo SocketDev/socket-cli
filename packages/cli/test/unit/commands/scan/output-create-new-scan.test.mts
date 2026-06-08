@@ -42,7 +42,7 @@ const mockSerializeResultJson = vi.hoisted(() =>
 const mockOpenDefault = vi.hoisted(() => vi.fn())
 const mockConfirmFn = vi.hoisted(() => vi.fn())
 
-vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))

@@ -30,7 +30,7 @@ const mockSpinner = vi.hoisted(() => ({
   stop: vi.fn(),
 }))
 
-vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
 }))
 vi.mock(import('@socketsecurity/lib-stable/process/spawn/child'), () => ({

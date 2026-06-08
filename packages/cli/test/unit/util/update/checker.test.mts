@@ -28,7 +28,7 @@ vi.mock(import('@socketsecurity/lib-stable/events/exit/handler'), () => ({
 }))
 
 // Mock logger.
-vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => ({
     log: vi.fn(),
     warn: vi.fn(),

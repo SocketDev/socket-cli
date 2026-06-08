@@ -37,7 +37,7 @@ const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
 }))
 
-vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   logger: mockLogger,
   getDefaultLogger: () => mockLogger,
 }))

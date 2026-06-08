@@ -66,7 +66,7 @@ vi.mock(import('@socketsecurity/lib-stable/fs/read-file'), () => ({
 
 const mockReadPackageJson = vi.hoisted(() => vi.fn())
 const mockToEditablePackageJson = vi.hoisted(() => vi.fn())
-vi.mock(import('@socketsecurity/lib-stable/packages/operations'), () => ({
+vi.mock(import('@socketsecurity/lib-stable/packages/read'), () => ({
   readPackageJson: mockReadPackageJson,
 }))
 vi.mock(import('@socketsecurity/lib-stable/packages/edit'), () => ({

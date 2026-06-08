@@ -14,7 +14,7 @@ import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock dependencies.
-vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => ({ warn: vi.fn() }),
 }))
 

@@ -90,7 +90,7 @@ const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
 }))
 
-vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
@@ -274,7 +274,7 @@ describe('meow-with-subcommands', () => {
 
   describe('emitBanner', () => {
     it('emits banner with name and org', async () => {
-      vi.mocked(await import('@socketsecurity/lib-stable/logger'))
+      vi.mocked(await import('@socketsecurity/lib-stable/logger/default'))
 
       emitBanner('socket', 'test-org', false)
 
@@ -282,7 +282,7 @@ describe('meow-with-subcommands', () => {
     })
 
     it('emits compact banner when compact mode is true', async () => {
-      vi.mocked(await import('@socketsecurity/lib-stable/logger'))
+      vi.mocked(await import('@socketsecurity/lib-stable/logger/default'))
 
       emitBanner('socket', 'test-org', true)
 
@@ -290,7 +290,7 @@ describe('meow-with-subcommands', () => {
     })
 
     it('handles undefined org', async () => {
-      vi.mocked(await import('@socketsecurity/lib-stable/logger'))
+      vi.mocked(await import('@socketsecurity/lib-stable/logger/default'))
 
       emitBanner('socket', undefined, false)
 

@@ -17,7 +17,7 @@ const mockLogger = vi.hoisted(() => ({
 vi.mock(import('../../../../src/util/socket/api.mts'), () => ({
   queryApiSafeJson: mockQueryApiSafeJson,
 }))
-vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
 }))
 

@@ -41,7 +41,7 @@ vi.mock(import('@socketsecurity/lib-stable/debug/output'), () => ({
   debugDir: vi.fn(),
 }))
 
-vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: vi.fn(() => ({
     fail: vi.fn(),
     group: vi.fn(),

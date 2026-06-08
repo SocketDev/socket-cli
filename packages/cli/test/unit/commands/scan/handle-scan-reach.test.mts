@@ -48,7 +48,7 @@ const mockCheckCommandInput = vi.hoisted(() => vi.fn())
 const mockGetPackageFilesForScan = vi.hoisted(() => vi.fn())
 const mockPluralize = vi.hoisted(() => vi.fn(str => str))
 
-vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))

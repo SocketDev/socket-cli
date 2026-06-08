@@ -54,7 +54,7 @@ const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
 }))
 
-vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
@@ -129,7 +129,7 @@ describe('npm-paths utilities', () => {
         path: undefined,
       })
 
-      vi.mocked(await import('@socketsecurity/lib-stable/logger'))
+      vi.mocked(await import('@socketsecurity/lib-stable/logger/default'))
 
       expect(() => getNpmBinPath()).toThrow('process.exit(127)')
       expect(mockLogger.fail).toHaveBeenCalledWith(
@@ -177,7 +177,7 @@ describe('npm-paths utilities', () => {
         path: undefined,
       })
 
-      vi.mocked(await import('@socketsecurity/lib-stable/logger'))
+      vi.mocked(await import('@socketsecurity/lib-stable/logger/default'))
 
       expect(() => getNpxBinPath()).toThrow('process.exit(127)')
       expect(mockLogger.fail).toHaveBeenCalledWith(

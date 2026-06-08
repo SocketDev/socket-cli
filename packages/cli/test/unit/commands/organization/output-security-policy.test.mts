@@ -47,7 +47,7 @@ describe('outputSecurityPolicy', () => {
     }
     const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
 
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
     }))
 
@@ -87,7 +87,7 @@ describe('outputSecurityPolicy', () => {
     }
     const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
 
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
     }))
 
@@ -123,7 +123,7 @@ describe('outputSecurityPolicy', () => {
     const mockMdHeader = vi.fn(title => `# ${title}`)
     const mockMdTableOfPairs = vi.fn(pairs => `Table with ${pairs.length} rows`)
 
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
     }))
 
@@ -177,7 +177,7 @@ describe('outputSecurityPolicy', () => {
     }
     const mockFailMsgWithBadge = vi.fn((msg, cause) => `${msg}: ${cause}`)
 
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
     }))
 
@@ -220,7 +220,7 @@ describe('outputSecurityPolicy', () => {
     const mockMdHeader = vi.fn(title => `# ${title}`)
     const mockMdTableOfPairs = vi.fn(pairs => `Table with ${pairs.length} rows`)
 
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
     }))
 
@@ -259,7 +259,7 @@ describe('outputSecurityPolicy', () => {
     const mockMdHeader = vi.fn(title => `# ${title}`)
     const mockMdTableOfPairs = vi.fn(pairs => `Table with ${pairs.length} rows`)
 
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
     }))
 
@@ -295,7 +295,7 @@ describe('outputSecurityPolicy', () => {
     const mockMdHeader = vi.fn(title => `# ${title}`)
     const mockMdTableOfPairs = vi.fn(pairs => `Table with ${pairs.length} rows`)
 
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
     }))
 
@@ -342,7 +342,7 @@ describe('outputSecurityPolicy', () => {
     }
     const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
 
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
     }))
 
@@ -373,7 +373,7 @@ describe('outputSecurityPolicy', () => {
     }
     const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
 
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
     }))
 
@@ -411,7 +411,7 @@ describe('outputSecurityPolicy', () => {
       (pairs: Array<[string, string]>) => `${pairs.length} entries`,
     )
 
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
     }))
     vi.doMock(import('../../../../src/util/output/markdown.mts'), () => ({

@@ -48,7 +48,7 @@ describe('outputDependencies', () => {
     }
     const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
 
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
     }))
 
@@ -98,7 +98,7 @@ describe('outputDependencies', () => {
     }
     const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
 
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
     }))
 
@@ -139,7 +139,7 @@ describe('outputDependencies', () => {
       (_options, data) => `Table with ${data.length} rows`,
     )
 
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
     }))
 
@@ -218,7 +218,7 @@ describe('outputDependencies', () => {
     }
     const mockFailMsgWithBadge = vi.fn((msg, cause) => `${msg}: ${cause}`)
 
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
     }))
 
@@ -266,7 +266,7 @@ describe('outputDependencies', () => {
       (_options, data) => `Table with ${data.length} rows`,
     )
 
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
     }))
 
@@ -330,7 +330,7 @@ describe('outputDependencies', () => {
       (_options, data) => `Table with ${data.length} rows`,
     )
 
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
     }))
 
@@ -379,7 +379,7 @@ describe('outputDependencies', () => {
     }
     const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
 
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
     }))
 

@@ -47,7 +47,7 @@ describe('outputQuota', () => {
     const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
@@ -84,7 +84,7 @@ describe('outputQuota', () => {
     const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
@@ -120,7 +120,7 @@ describe('outputQuota', () => {
     }
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
@@ -156,7 +156,7 @@ describe('outputQuota', () => {
       error: vi.fn(),
     }
 
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
@@ -186,7 +186,7 @@ describe('outputQuota', () => {
       error: vi.fn(),
     }
 
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
@@ -225,7 +225,7 @@ describe('outputQuota', () => {
       error: vi.fn(),
     }
 
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
@@ -264,7 +264,7 @@ describe('outputQuota', () => {
       error: vi.fn(),
     }
 
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
@@ -300,7 +300,7 @@ describe('outputQuota', () => {
       warn: vi.fn(),
       error: vi.fn(),
     }
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
@@ -334,7 +334,7 @@ describe('outputQuota', () => {
       warn: vi.fn(),
       error: vi.fn(),
     }
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
@@ -369,7 +369,7 @@ describe('outputQuota', () => {
       warn: vi.fn(),
       error: vi.fn(),
     }
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
@@ -402,7 +402,7 @@ describe('outputQuota', () => {
       warn: vi.fn(),
       error: vi.fn(),
     }
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
@@ -439,7 +439,7 @@ describe('outputQuota', () => {
     const mockFailMsgWithBadge = vi.fn((msg, cause) => `${msg}: ${cause}`)
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
@@ -482,7 +482,7 @@ describe('outputQuota', () => {
     }
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
@@ -527,7 +527,7 @@ describe('outputQuota', () => {
     }
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
@@ -562,7 +562,7 @@ describe('outputQuota', () => {
     }
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
@@ -599,7 +599,7 @@ describe('outputQuota', () => {
     const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
@@ -629,7 +629,7 @@ describe('outputQuota', () => {
       error: vi.fn(),
     }
 
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))

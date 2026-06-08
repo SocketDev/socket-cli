@@ -158,8 +158,8 @@ describe('spawnDlx', () => {
     expect(mockDlxPackage).toHaveBeenCalledWith(
       ['--help'],
       expect.objectContaining({
-        package: 'lodash@4.17.21',
         force: false,
+        spec: 'lodash@4.17.21',
       }),
       undefined,
     )

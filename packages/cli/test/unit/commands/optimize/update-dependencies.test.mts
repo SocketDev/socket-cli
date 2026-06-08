@@ -36,7 +36,7 @@ const mockDefaultSpinner = vi.hoisted(() => ({
 
 const mockRunAgentInstall = vi.hoisted(() => vi.fn())
 
-vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
 }))
 

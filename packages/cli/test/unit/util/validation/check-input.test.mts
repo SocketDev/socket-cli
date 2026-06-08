@@ -40,7 +40,7 @@ const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
 }))
 
-vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
@@ -124,7 +124,7 @@ describe('checkCommandInput', () => {
 
   describe('when some checks fail', () => {
     it('returns false and sets exit code to 2', async () => {
-      vi.mocked(await import('@socketsecurity/lib-stable/logger'))
+      vi.mocked(await import('@socketsecurity/lib-stable/logger/default'))
       const { failMsgWithBadge } = vi.mocked(
         await import('../../../../src/util/error/fail-msg-with-badge.mts'),
       )
@@ -158,7 +158,7 @@ describe('checkCommandInput', () => {
     })
 
     it('handles json output kind', async () => {
-      vi.mocked(await import('@socketsecurity/lib-stable/logger'))
+      vi.mocked(await import('@socketsecurity/lib-stable/logger/default'))
       const { serializeResultJson } = vi.mocked(
         await import('../../../../src/util/output/result-json.mts'),
       )

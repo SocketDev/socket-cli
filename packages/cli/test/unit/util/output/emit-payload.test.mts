@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 const mockStdoutLog = vi.fn()
 const mockStderrLog = vi.fn()
 
-vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => ({
     log: (...args: unknown[]) => {
       mockStdoutLog(...args)

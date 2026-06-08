@@ -37,7 +37,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
+import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 
 const {
   mockExtractTier1ReachabilityScanId,
@@ -105,7 +105,7 @@ const mockLogger = vi.hoisted(() => ({
   info: vi.fn(),
 }))
 
-vi.mock(import('@socketsecurity/lib-stable/logger'), async importOriginal => {
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), async importOriginal => {
   const actual = await importOriginal<typeof LoggerModule>()
   return {
     ...actual,

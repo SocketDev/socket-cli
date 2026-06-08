@@ -45,7 +45,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { httpRequest } from '@socketsecurity/lib-stable/http-request/request'
 
 import type * as HttpModule from 'node:http'
-import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
+import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 import type * as NetModule from 'node:net'
 
 const mockLogger = vi.hoisted(() => ({
@@ -54,7 +54,7 @@ const mockLogger = vi.hoisted(() => ({
   warn: vi.fn(),
 }))
 
-vi.mock(import('@socketsecurity/lib-stable/logger'), async importOriginal => {
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), async importOriginal => {
   const actual = await importOriginal<typeof LoggerModule>()
   return {
     ...actual,

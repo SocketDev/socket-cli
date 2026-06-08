@@ -34,7 +34,7 @@ const mockDebugDir = vi.hoisted(() => vi.fn())
 const mockIsDebug = vi.hoisted(() => vi.fn())
 const mockGetDefaultApiToken = vi.hoisted(() => vi.fn(() => 'test-token'))
 
-vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))

@@ -54,7 +54,7 @@ describe('fetchScanData', () => {
       debugDir: vi.fn(),
     }))
 
-    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))

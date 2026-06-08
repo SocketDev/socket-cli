@@ -53,7 +53,7 @@ vi.mock(
     outputAuditLog: mockOutputAuditLog,
   }),
 )
-vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: mockGetDefaultLogger,
 }))
 

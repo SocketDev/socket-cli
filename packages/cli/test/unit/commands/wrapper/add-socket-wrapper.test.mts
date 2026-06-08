@@ -33,7 +33,7 @@ const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
 }))
 
-vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
@@ -44,7 +44,7 @@ describe('addSocketWrapper', () => {
   })
 
   it('successfully adds wrapper aliases to file', async () => {
-    await import('@socketsecurity/lib-stable/logger')
+    await import('@socketsecurity/lib-stable/logger/default')
     const fs = await import('node:fs')
     const mockAppendFile = vi.mocked(fs.promises.appendFile)
 
@@ -109,7 +109,7 @@ describe('addSocketWrapper', () => {
   })
 
   it('logs disable instructions', async () => {
-    await import('@socketsecurity/lib-stable/logger')
+    await import('@socketsecurity/lib-stable/logger/default')
     const fs = await import('node:fs')
     const mockAppendFile = vi.mocked(fs.promises.appendFile)
 

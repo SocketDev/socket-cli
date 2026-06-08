@@ -22,7 +22,7 @@ vi.mock(import('node:fs'), () => ({
   existsSync: mockExistsSync,
   readFileSync: mockReadFileSync,
 }))
-vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
 }))
 

@@ -51,7 +51,7 @@ const mockSocketDocsLink = vi.hoisted(() => vi.fn())
 const mockDetectManifestActions = vi.hoisted(() => vi.fn())
 const mockGenerateAutoManifest = vi.hoisted(() => vi.fn())
 
-vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))

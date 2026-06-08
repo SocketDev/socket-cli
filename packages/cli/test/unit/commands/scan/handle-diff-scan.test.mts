@@ -34,7 +34,7 @@ const mockLogger = vi.hoisted(() => ({
 const mockFetchDiffScan = vi.hoisted(() => vi.fn())
 const mockOutputDiffScan = vi.hoisted(() => vi.fn())
 
-vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))

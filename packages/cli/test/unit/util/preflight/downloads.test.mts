@@ -16,7 +16,7 @@ const mockDownloadPackage = vi.hoisted(() =>
   vi.fn().mockResolvedValue(undefined),
 )
 vi.mock(import('@socketsecurity/lib-stable/dlx/package'), () => ({
-  downloadPackage: mockDownloadPackage,
+  downloadNpmPackage: mockDownloadPackage,
 }))
 
 const mockGetCI = vi.hoisted(() => vi.fn(() => false))
@@ -121,7 +121,7 @@ describe('preflight downloads', () => {
       // Coana + cdxgen should have been queued.
       expect(mockDownloadPackage).toHaveBeenCalled()
       const specs = mockDownloadPackage.mock.calls.map(
-        (c: unknown) => (c[0] as { package: string }).package,
+        (c: unknown) => (c[0] as { spec: string }).spec,
       )
       expect(specs.some((s: string) => s.startsWith('@coana-tech/cli@'))).toBe(
         true,

@@ -74,7 +74,7 @@ vi.mock(import('@socketsecurity/lib-stable/debug/namespace'), () => ({
   isDebug: mockIsDebug,
 }))
 
-vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
