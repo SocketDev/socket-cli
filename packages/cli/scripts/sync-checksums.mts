@@ -28,10 +28,13 @@ import { fileURLToPath } from 'node:url'
 import { pipeline } from 'node:stream/promises'
 
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const packageRoot = path.join(__dirname, '..')
+
+const logger = getDefaultLogger()
 
 const EXTERNAL_TOOLS_FILE = path.join(packageRoot, 'bundle-tools.json')
 
