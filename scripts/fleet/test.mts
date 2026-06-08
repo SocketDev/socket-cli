@@ -176,10 +176,18 @@ function runWorkspaceTests(): number {
   return 0
 }
 
+// A workspace with no root vitest config keeps its config + env wrappers (e.g.
+// INLINED_* injection) per package. Root-level `vitest run` / `vitest related`
+// / `vitest --changed` all bypass those wrappers, so any scoped run there fails
+// or hangs. In that layout every scope delegates to per-package `test:unit`;
+// the per-file related/changed filtering vitest would do at the root is the
+// optimization that breaks, and a per-package full run is the safe trade.
+function isDelegatedWorkspace(): boolean {
+  return !existsSync(ROOT_VITEST_CONFIG) && existsSync(ROOT_WORKSPACE_MANIFEST)
+}
+
 function runAll(): number {
-  // Workspace with no root config → delegate to per-package test:unit so each
-  // package's env wrapper runs; a bare root vitest would miss it and hang.
-  if (!existsSync(ROOT_VITEST_CONFIG) && existsSync(ROOT_WORKSPACE_MANIFEST)) {
+  if (isDelegatedWorkspace()) {
     return runWorkspaceTests()
   }
   return runVitest(['run'], 'all')
@@ -213,6 +221,13 @@ function main(): void {
 
   if (files.length === 0) {
     log(`No ${mode} files; skipping tests.`)
+    return
+  }
+
+  // No-root-config workspace: root-level scoped vitest bypasses per-package
+  // env wrappers, so delegate every scope to per-package test:unit.
+  if (isDelegatedWorkspace()) {
+    process.exitCode = runWorkspaceTests()
     return
   }
 
