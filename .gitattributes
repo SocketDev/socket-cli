@@ -26,6 +26,7 @@
 .config/repo/rolldown/lib-stub.mts linguist-generated=true
 .config/repo/vitest.config.mts linguist-generated=true
 .config/socket-wheelhouse-schema.json linguist-generated=true
+.editorconfig linguist-generated=true
 .git-hooks linguist-generated=true
 .github/dependabot.yml linguist-generated=true
 .npmrc linguist-generated=true

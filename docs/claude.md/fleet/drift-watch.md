@@ -20,7 +20,7 @@ A fleet cascade that touches many repos and hundreds of files is the normal, saf
 
 The recovery model is symmetric. If a cascade over-applies or applies a stale value, the fix is another cascade. There is no irreversible-action risk to gate on here, so the "confirm before hard-to-reverse outward-facing actions" instinct does not fire for cascades — they are idempotent and self-correcting. Pre-existing drift in a target repo riding along in the cascade commit is part of the design. Surface a finding only when a cascade **can't apply** (lockfile reject, soak window, broken hook): bump the blocker or defer and report.
 
-**Why:** 2026-06-07, a session ran the full `--all --fix` cascade and stopped to warn that 16 repos / hundreds of findings was a "large blast radius." The operator corrected: fleet cascades are safe and known; a too-broad sweep is fixed by another cascade — do not warn, run it.
+**Why:** a session once ran the full `--all --fix` cascade and stopped to warn that a wide sweep across many repos with hundreds of findings was a "large blast radius." The operator corrected: fleet cascades are safe and known; a too-broad sweep is fixed by another cascade — do not warn, run it.
 
 ## Where drift commonly hides
 

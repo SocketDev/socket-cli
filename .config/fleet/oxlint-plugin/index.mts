@@ -19,6 +19,7 @@ import noCachedForOnIterable from './rules/no-cached-for-on-iterable.mts'
 import noConsolePreferLogger from './rules/no-console-prefer-logger.mts'
 import noDefaultExport from './rules/no-default-export.mts'
 import noDynamicImportOutsideBundle from './rules/no-dynamic-import-outside-bundle.mts'
+import noEs2023ArrayMethodsBelowNode20 from './rules/no-es2023-array-methods-below-node20.mts'
 import noEslintBiomeConfigRef from './rules/no-eslint-biome-config-ref.mts'
 import noFetchPreferHttpRequest from './rules/no-fetch-prefer-http-request.mts'
 import noFileScopeOxlintDisable from './rules/no-file-scope-oxlint-disable.mts'
@@ -28,6 +29,7 @@ import noLoggerNewlineLiteral from './rules/no-logger-newline-literal.mts'
 import noNpxDlx from './rules/no-npx-dlx.mts'
 import noPlaceholders from './rules/no-placeholders.mts'
 import noPlatformSpecificImport from './rules/no-platform-specific-import.mts'
+import noProcessChdir from './rules/no-process-chdir.mts'
 import noProcessCwdInScriptsHooks from './rules/no-process-cwd-in-scripts-hooks.mts'
 import noPromiseRace from './rules/no-promise-race.mts'
 import noPromiseRaceInLoop from './rules/no-promise-race-in-loop.mts'
@@ -101,6 +103,7 @@ const plugin = {
     'no-console-prefer-logger': noConsolePreferLogger,
     'no-default-export': noDefaultExport,
     'no-dynamic-import-outside-bundle': noDynamicImportOutsideBundle,
+    'no-es2023-array-methods-below-node20': noEs2023ArrayMethodsBelowNode20,
     'no-eslint-biome-config-ref': noEslintBiomeConfigRef,
     'no-fetch-prefer-http-request': noFetchPreferHttpRequest,
     'no-file-scope-oxlint-disable': noFileScopeOxlintDisable,
@@ -110,6 +113,7 @@ const plugin = {
     'no-npx-dlx': noNpxDlx,
     'no-placeholders': noPlaceholders,
     'no-platform-specific-import': noPlatformSpecificImport,
+    'no-process-chdir': noProcessChdir,
     'no-process-cwd-in-scripts-hooks': noProcessCwdInScriptsHooks,
     'no-promise-race': noPromiseRace,
     'no-promise-race-in-loop': noPromiseRaceInLoop,

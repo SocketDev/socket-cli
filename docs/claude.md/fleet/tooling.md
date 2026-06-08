@@ -155,3 +155,13 @@ warning), has no GH-secret access, no concurrency groups, and a simplified
 job-`if` evaluator. Useful for the self-contained `ci.yml` jobs (lint /
 type / test matrix), not the provenance/release reusable workflows. Repos
 that adopt it pin the version in their own `external-tools.json`.
+
+## npm 2FA registry ops
+
+`npm deprecate` / `publish` / `access` / `owner` / `unpublish` / `dist-tag`
+require a one-time password from an authenticator, and npm only prompts for
+it on an **interactive TTY**. The `!` / headless channel has no TTY, so the
+prompt is swallowed and the command dies with `EOTP`. Tell the user to run
+the op in a **real terminal** where the prompt can appear; fall back to
+`--otp=<code>` only when no TTY is available and the user supplies a fresh
+code. Reminder hook: `.claude/hooks/fleet/npm-otp-flow-reminder/`.

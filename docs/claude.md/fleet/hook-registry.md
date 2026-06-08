@@ -21,7 +21,6 @@ The fleet hooks each cite their own trigger + bypass surface in their `README.md
 - `c8-ignore-reason-guard` — blocks a c8/v8 coverage-ignore directive with no reason
 - `codex-no-write-guard` — blocks `codex` invocations with write-intent flags
 - `commit-author-guard` — canonical-identity gate on git author email
-- `concurrent-cargo-build-guard` — blocks a second `cargo build --release` while one runs
 - `dogfood-cascade-reminder` — Stop-time: edited template/ but the dogfood copy is stale → cascade
 - `enterprise-push-reminder` — GitHub enterprise ruleset push-property reminders
 - `extension-build-current-guard` — pairs `tools/.../extension/src/**` edits with a build
@@ -73,5 +72,34 @@ The fleet hooks each cite their own trigger + bypass surface in their `README.md
 - `vitest-vs-node-test-guard` — vitest vs node-test runner separation
 - `workflow-uses-comment-guard` — SHA-pinned `uses:` lines need `# <tag> (YYYY-MM-DD)`
 - `workflow-multiline-body-guard` — `gh ... --body-file` over inline `--body "..."`
+
+Tooling + package manager:
+
+- `no-strip-types-guard` — blocks `--experimental-strip-types`
+- `no-tail-install-out-guard` — blocks piping install/check/test/build to `tail`/`head` (hides SFW warnings)
+- `prefer-pipx-over-pip-guard` — blocks `pip`/`pip3`; use `pypa-tool` or `pipx install <pkg>==<ver>`
+- `reserved-script-dir-guard` — blocks build/output dir names under `scripts/`; bypass `Allow reserved-script-dir bypass`
+- `npm-otp-flow-reminder` — npm 2FA registry ops need an interactive-TTY OTP (run in a real terminal)
+
+Supply-chain hygiene:
+
+- `check-new-deps` — Socket-scores newly added dependencies at edit time
+- `minimum-release-age-guard` — enforces the 7-day soak on new deps
+- `soak-exclude-date-guard` — a soak-bypass entry needs a `# published: … | removable: …` annotation
+- `soak-exclude-scope-guard` — soak-exclude entries are exact-pin + scoped
+- `no-pkgjson-pnpm-overrides-guard` — version-range pins go in `pnpm-workspace.yaml` `overrides:`, not `package.json`
+- `bundle-flags-guard` — guards bundler trust/exotic-subdep flags
+- `catch-message-guard` — keeps catch-block error messages thorough
+- `target-arch-env-guard` — guards cross-arch build env vars
+- `trust-downgrade-guard` — blocks weakening a `trustPolicy`/`trust-all`/`blockExoticSubdeps` gate
+
+Prompt-injection + agent-DoS:
+
+- `prompt-injection-guard` — flags agent-overriding text in deps/upstreams/fixtures/fetched docs
+- `ai-config-poisoning-guard` — blocks `.claude`/`.cursor`/`.gemini`/`.vscode` writes that bypass a guard, exfiltrate, or store tokens off-keychain
+- `ai-config-drift-reminder` — Stop-time nudge on AI-config drift
+- `claude-code-action-lockdown-guard` — enforces Agents-Rule-of-Two on CI agent workflows
+- `no-shell-injection-bypass-guard` — blocks allowlist-evasion shell constructs (`=cmd`, `<()`/`>()`/`=()`, zsh-module builtins); bypass `Allow shell-injection bypass`
+- `proc-environ-exfil-guard` — blocks reads of `/proc/*/environ`-style secret exfil
 
 The set drifts; the citation gate (`new-hook-claude-md-guard`) catches additions that ship without a CLAUDE.md reference.

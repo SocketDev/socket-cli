@@ -38,6 +38,12 @@ const steps: Array<() => boolean> = [
   // CLAUDE.md doc integrity: every cited hook + socket/ rule must exist (catches
   // stale citations after a rename/removal — the reverse of new-hook-claude-md-guard).
   () => run('node', ['scripts/fleet/check/claude-md-citations-resolve.mts']),
+  // Hook-registry doc integrity: every `- \`<name>\`` bullet in
+  // docs/claude.md/fleet/hook-registry.md names a real .claude/hooks/fleet/<name>/
+  // dir. CLAUDE.md defers its full hook list to the registry, so a stale/renamed
+  // bullet points readers at policy that doesn't exist. Stale bullets fail;
+  // undocumented hooks are reported, not enforced (many are internal tooling).
+  () => run('node', ['scripts/fleet/check/hook-registry-is-current.mts']),
   // Global Claude config stays hardened (copyOnSelect: false → no TUI OSC-52
   // clipboard banner). setup/claude-config.mts sets it; this catches drift.
   () => run('node', ['scripts/fleet/check/claude-config-is-hardened.mts']),
@@ -87,6 +93,13 @@ const steps: Array<() => boolean> = [
   // script leaves the doc instruction dead. Past incident (2026-06-06):
   // setup-repo/SKILL.md cited 3 setup scripts that didn't exist.
   () => run('node', ['scripts/fleet/check/doc-references-resolve.mts']),
+  // Every external-tools.json / bundle-tools.json must match the shared
+  // TypeBox schema (scripts/fleet/lib/external-tools-schema.mts). These files
+  // pin tool versions + integrities; an unvalidated shape drift surfaces only
+  // at runtime as an undefined-at-runtime throw mid-build/install. Past
+  // incident: a drifted tool entry left an INLINED_* env var empty and hung a
+  // pre-commit test run.
+  () => run('node', ['scripts/fleet/check/external-tools-are-valid.mts']),
   // researching-recency SKILL.md must quote the engine's output markers
   // verbatim (badge, evidence envelope, footer fences) so the model's
   // pass-through/synthesis instructions match what the engine emits.

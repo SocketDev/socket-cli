@@ -51,6 +51,10 @@
       "optIns": ["squash-history"]
     },
     {
+      "name": "ultrathink",
+      "description": "Multi-language acorn JavaScript parser: Rust (reference), Go, C++, TypeScript"
+    },
+    {
       "name": "socket-wheelhouse",
       "description": "Internal scaffolding template for socket-* repos"
     }
