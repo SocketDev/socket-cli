@@ -45,6 +45,10 @@ function main(): void {
   ])
   logger.log('')
 
+  logger.log('── Claude config ──────────────────────────')
+  results.push(['Claude config', run(path.join(__dirname, 'claude-config.mts'))])
+  logger.log('')
+
   if (!skipNativeHost) {
     logger.log('── Native Messaging Host ──────────────────')
     results.push(['Native host', run(path.join(__dirname, 'native-host.mts'))])

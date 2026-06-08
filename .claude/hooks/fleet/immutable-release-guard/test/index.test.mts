@@ -1,4 +1,4 @@
-// node --test specs for the immutable-release-pattern-guard hook.
+// node --test specs for the immutable-release-guard hook.
 
 // prefer-async-spawn: streaming-stdio-required — test spawns child
 // subprocess and pipes stdin/stdout/stderr; Node spawn returns the

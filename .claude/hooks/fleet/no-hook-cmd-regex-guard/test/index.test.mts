@@ -1,5 +1,5 @@
 /**
- * @file Unit tests for no-command-regex-in-hooks-guard's pure detectors.
+ * @file Unit tests for no-hook-cmd-regex-guard's pure detectors.
  *   findCommandRegexes flags regex literals that parse a shell command (a shell
  *   binary next to a whitespace/boundary metachar); isHookFile scopes the guard
  *   to .claude/hooks/ TS files.
@@ -55,7 +55,7 @@ test('isHookFile: false outside .claude/hooks', () => {
 test('isHookFile: false for this guard’s own files (self-exempt)', () => {
   assert.equal(
     isHookFile(
-      '/r/.claude/hooks/fleet/no-command-regex-in-hooks-guard/index.mts',
+      '/r/.claude/hooks/fleet/no-hook-cmd-regex-guard/index.mts',
     ),
     false,
   )

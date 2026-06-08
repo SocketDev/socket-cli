@@ -31,7 +31,7 @@ No bypass — it's a reminder (exit 0), not a block.
 
 - `parallel-agent-staging-guard` — PreToolUse block on destructive git ops while
   foreign paths exist (the enforcement half).
-- `dirty-worktree-on-stop-reminder` — the broader "you left the worktree dirty"
+- `dirty-worktree-stop-reminder` — the broader "you left the worktree dirty"
   reminder this is modeled on.
 - `overeager-staging-guard` — commit-time block on staging unfamiliar files.
 - CLAUDE.md → "Parallel Claude sessions".

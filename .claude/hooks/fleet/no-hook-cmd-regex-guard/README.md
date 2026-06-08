@@ -1,4 +1,4 @@
-# no-command-regex-in-hooks-guard
+# no-hook-cmd-regex-guard
 
 PreToolUse Write/Edit guard that blocks introducing a regex which parses
 a shell command into a `.claude/hooks/**` file. Enforces CLAUDE.md's

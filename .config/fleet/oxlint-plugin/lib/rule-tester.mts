@@ -232,6 +232,12 @@ function runOxlint(args: {
   cliArgs.push(args.fixturePath)
   const r = spawnSync(args.oxlintBin, cliArgs, {
     timeout: 15_000,
+    // Pipe (never inherit) the child's stdio: oxlint detects a TTY and emits an
+    // OSC-52 clipboard escape when stdout/stderr is a terminal, which trips the
+    // OS "terminal attempted to access the clipboard" denial on every test run.
+    // Piping makes isatty() false so the escape is never written, and we read
+    // r.stdout below anyway.
+    stdio: ['ignore', 'pipe', 'pipe'],
   })
   // oxlint's JSON reporter has changed shape across versions:
   //   - Older: line-delimited diagnostic objects, one per line.

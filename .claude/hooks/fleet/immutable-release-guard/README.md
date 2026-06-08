@@ -1,4 +1,4 @@
-# immutable-release-pattern-guard
+# immutable-release-guard
 
 PreToolUse Edit/Write hook that blocks introducing a single-call
 `gh release create <tag> <files>` into a workflow YAML file.

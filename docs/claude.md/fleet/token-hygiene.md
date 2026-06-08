@@ -50,6 +50,29 @@ Two layers, on purpose:
 
 Don't confuse any of these with `SOCKET_CLI_API_TOKEN` (socket-cli's separate setting).
 
+## Clipboard + screen capture
+
+The system clipboard and the screen are exfiltration surfaces. Two separate
+concerns:
+
+**Our code.** A script or hook must never read or write the clipboard (a
+`pbcopy` / `pbpaste` / `xclip` / `wl-copy` CLI, or an OSC-52 escape) or capture
+the screen (`screencapture` / `scrot` / `grim` / `import` / `snippingtool`). The
+`no-clipboard-access-guard` and `no-screenshot-guard` PreToolUse hooks block
+these at edit/run time; bypass with `Allow clipboard-access bypass` /
+`Allow screenshot bypass` for a genuine operator-driven need.
+
+**The Claude Code client (separate from our code).** The TUI auto-copies on
+mouse-selection and emits an OSC-52 clipboard escape on each copy (verified in
+the client's `setClipboard` path). iTerm2 denies OSC-52 by default and shows a
+"terminal attempted to access the clipboard" banner. This is the client, not
+fleet tooling, so the guards above do not affect it. The fix is the
+`copyOnSelect: false` global setting in `~/.claude.json` (a global-only config
+key, read via `getGlobalConfig()`; a project-scoped or `settings.json` value is
+ignored). The `setup-claude-config` install step writes it and the
+`claude-config-is-hardened` check verifies it stays set. With it off, `ctrl+c`
+and `/copy` still copy; only auto-copy-on-select stops.
+
 ## Cross-repo path references
 
 `../<fleet-repo>/...` (relative escape) and `/<abs-prefix>/projects/<fleet-repo>/...` (absolute sibling-clone) are both forbidden. Either form hardcodes a clone-layout assumption that breaks in CI / fresh clones / non-standard checkouts. Import via the published npm package (`@socketsecurity/lib/<subpath>`, `@socketsecurity/registry/<subpath>`). Every fleet repo is a real workspace dep. The `cross-repo-guard` PreToolUse hook blocks both forms at edit time; the git-side `scanCrossRepoPaths` gate catches commits/pushes too.

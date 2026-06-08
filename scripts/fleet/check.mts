@@ -38,6 +38,9 @@ const steps: Array<() => boolean> = [
   // CLAUDE.md doc integrity: every cited hook + socket/ rule must exist (catches
   // stale citations after a rename/removal — the reverse of new-hook-claude-md-guard).
   () => run('node', ['scripts/fleet/check/claude-md-citations-resolve.mts']),
+  // Global Claude config stays hardened (copyOnSelect: false → no TUI OSC-52
+  // clipboard banner). setup/claude-config.mts sets it; this catches drift.
+  () => run('node', ['scripts/fleet/check/claude-config-is-hardened.mts']),
   // Cost routing: every mutating (fix) skill must declare a model: tier so
   // mechanical work runs cheap. See docs/claude.md/fleet/skill-model-routing.md.
   () => run('node', ['scripts/fleet/check/mutating-skills-have-model.mts']),

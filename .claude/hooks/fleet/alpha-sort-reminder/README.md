@@ -9,13 +9,14 @@ covers those surfaces per [`docs/claude.md/fleet/sorting.md`](../../../../docs/c
 
 | Surface                                            | Detects                                                                   | Key shape   |
 | -------------------------------------------------- | ------------------------------------------------------------------------- | ----------- |
-| JSON / JSONC (`.json`, `.jsonc`, `.oxlintrc.json`) | runs of object keys at one indent, out of ASCII order                     | `"name": …` |
+| JSON / JSONC (`.json`, `.jsonc`, `.oxlintrc.json`) | runs of object keys at one indent, out of natural order                   | `"name": …` |
 | YAML (`.yml`, `.yaml`)                             | runs of mapping keys at one indent (`env:` / `with:` / matrix)            | `name:`     |
 | Markdown (`.md`, `.markdown`)                      | runs of `-`/`*` bullets out of order; bullets ending in `…`/`...`         | `- text`    |
 | Bash (`.sh`, `.bash`)                              | runs of all-caps `NAME=…` assignments out of order (cache-key var blocks) | `NAME=…`    |
 
-Detection is conservative: **3+** adjacent siblings at the same indent, ASCII
-byte order only. False quiet beats false nag: a missed block is a review catch,
+Detection is conservative: **3+** adjacent siblings at the same indent, natural
+order (case-insensitive + numeric-aware, via lib's `naturalCompare`). False
+quiet beats false nag: a missed block is a review catch,
 while a wrong nag trains the agent to ignore the hook.
 
 ## Trigger

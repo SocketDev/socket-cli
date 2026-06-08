@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Claude Code PreToolUse hook — npm-otp-browser-flow-reminder.
+// Claude Code PreToolUse hook — npm-otp-flow-reminder.
 //
 // npm's account-mutating registry operations require 2FA: `npm deprecate`,
 // `publish`, `access`, `owner`, `unpublish`, `dist-tag`. npm's PREFERRED
@@ -62,7 +62,7 @@ await withBashGuard(command => {
   }
   logger.error(
     [
-      '[npm-otp-browser-flow-reminder] This npm op needs a 2FA one-time password.',
+      '[npm-otp-flow-reminder] This npm op needs a 2FA one-time password.',
       '',
       "  npm's PREFERRED flow opens a browser and waits on an interactive TTY",
       '  prompt. The `!` / headless channel is not a TTY, so that prompt is',

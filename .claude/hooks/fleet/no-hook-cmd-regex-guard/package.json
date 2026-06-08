@@ -1,5 +1,5 @@
 {
-  "name": "hook-dirty-worktree-on-stop-reminder",
+  "name": "hook-no-hook-cmd-regex-guard",
   "private": true,
   "type": "module",
   "main": "./index.mts",

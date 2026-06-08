@@ -23,6 +23,7 @@ Master onboarding wizard. Runs each setup phase in order, skips phases already c
 | Script                                                     | What it does                                   |
 | ---------------------------------------------------------- | ---------------------------------------------- |
 | `node scripts/fleet/setup/token.mts`                       | API token → OS keychain + shell rc bridge      |
+| `node scripts/fleet/setup/claude-config.mts`               | Harden `~/.claude.json` (`copyOnSelect: false`) |
 | `node scripts/fleet/setup/native-host.mts`                 | Chrome native messaging host manifest          |
 | `node scripts/fleet/setup/trusted-publisher-extension.mts` | Build + load-unpacked + verify host connection |
 | `node scripts/fleet/install-sfw.mts`                       | Socket Firewall shims                          |

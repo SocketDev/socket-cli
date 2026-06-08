@@ -1,7 +1,7 @@
 /**
  * @file Sort `new Set([...])` array elements alphanumerically. Per CLAUDE.md
- *   "Sorting" rule, Set/SafeSet constructor arguments are sorted (literal byte
- *   order, ASCII before letters). Order doesn't affect Set semantics but keeps
+ *   "Sorting" rule, Set/SafeSet constructor arguments are sorted (natural
+ *   order: case-insensitive + numeric-aware). Order doesn't affect Set semantics but keeps
  *   diff churn low and reading easier. Autofix: rewrites the array literal in
  *   sorted order. Only fires when every element is a Literal (string or number)
  *   — mixed-type arrays or arrays containing identifiers/expressions get

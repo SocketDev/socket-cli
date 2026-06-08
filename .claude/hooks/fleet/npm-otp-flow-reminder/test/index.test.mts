@@ -1,4 +1,4 @@
-// node --test specs for the npm-otp-browser-flow-reminder hook.
+// node --test specs for the npm-otp-flow-reminder hook.
 //
 // Spawns the hook as a subprocess, pipes a Bash PreToolUse payload on
 // stdin, captures stderr + exit code. The hook never blocks (always
@@ -34,7 +34,7 @@ async function runHook(command: string): Promise<Result> {
   })
 }
 
-const REMINDER = /npm-otp-browser-flow-reminder/
+const REMINDER = /npm-otp-flow-reminder/
 
 test('npm deprecate without --otp emits the reminder', async () => {
   const r = await runHook(

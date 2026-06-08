@@ -15,8 +15,9 @@ describe('socket/sort-array-literals', () => {
     new RuleTester().run('sort-array-literals', rule, {
       valid: [
         {
-          name: 'marked + already sorted (ASCII: uppercase before lowercase)',
-          code: '/* sort */\nexport const a = ["Beta", "alpha", "gamma"]\n',
+          // Natural order: case-insensitive, so alpha < Beta < gamma.
+          name: 'marked + already sorted (case-insensitive)',
+          code: '/* sort */\nexport const a = ["alpha", "Beta", "gamma"]\n',
         },
         {
           // No marker -> the rule must not touch a position-bearing array.
@@ -39,16 +40,24 @@ describe('socket/sort-array-literals', () => {
       ],
       invalid: [
         {
-          name: 'marked + unsorted autofixes to ASCII order',
+          name: 'marked + unsorted autofixes to case-insensitive order',
           code: '/* sort */\nexport const a = ["gamma", "alpha", "Beta"]\n',
           errors: [{ messageId: 'unsorted' }],
-          output: '/* sort */\nexport const a = ["Beta", "alpha", "gamma"]\n',
+          output: '/* sort */\nexport const a = ["alpha", "Beta", "gamma"]\n',
         },
         {
-          name: 'marked + uppercase sorts before lowercase (byte order)',
-          code: '/* sort */\nconst a = ["boshen_c", "JoviDeC"]\n',
+          // Natural order is case-insensitive: boshen_c (b) before JoviDeC (j).
+          name: 'marked + case-insensitive: b before J',
+          code: '/* sort */\nconst a = ["JoviDeC", "boshen_c"]\n',
           errors: [{ messageId: 'unsorted' }],
-          output: '/* sort */\nconst a = ["JoviDeC", "boshen_c"]\n',
+          output: '/* sort */\nconst a = ["boshen_c", "JoviDeC"]\n',
+        },
+        {
+          // Natural order is numeric-aware: v2 before v10 (not lexical v10<v2).
+          name: 'marked + numeric-aware ordering',
+          code: '/* sort */\nconst a = ["v10", "v2", "v1"]\n',
+          errors: [{ messageId: 'unsorted' }],
+          output: '/* sort */\nconst a = ["v1", "v2", "v10"]\n',
         },
         {
           name: 'marked + mixed-type elements are flagged, not fixed',

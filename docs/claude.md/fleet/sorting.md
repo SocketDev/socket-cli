@@ -1,18 +1,22 @@
 # Sorting reference
 
-Sort lists alphanumerically (literal byte order, ASCII before letters). This is a
-**universal** rule: any block of sibling items, in any file type, gets sorted
-unless there's a documented ordering reason. When you touch an unsorted block,
-**fully re-sort it**. Don't append the new entry and leave the rest unsorted.
+Sort lists alphanumerically (natural order: case-insensitive and numeric-aware).
+This is a **universal** rule: any block of sibling items, in any file type, gets
+sorted unless there's a documented ordering reason. When you touch an unsorted
+block, **fully re-sort it**. Don't append the new entry and leave the rest unsorted.
 
 ## What "alphanumeric" means here
 
-1. **ASCII byte order**, not natural/numeric order. `'name-10'` sorts **before**
-   `'name-2'`. Stable across Node versions and machines.
-2. **Case-sensitive.** `'Z' < 'a'` (uppercase first). Raw `<` comparison, not
-   `localeCompare`.
-3. **No locale-aware collation.** No `Intl.Collator`, no `numeric: true`.
-4. **Whole-token comparison**, not character-class buckets.
+The one canonical comparator is `naturalCompare` from
+`@socketsecurity/lib/sorts/natural`. Every `socket/sort-*` rule and the
+`alpha-sort-reminder` hook delegate to it, so all surfaces agree.
+
+1. **Natural numeric order.** `'name-2'` sorts **before** `'name-10'` (the
+   embedded number is compared as a number, not character by character).
+2. **Case-insensitive.** `'apple'`, `'Mango'`, `'zebra'` (a lowercase word is
+   not forced behind an uppercase one). Capitalization is a tiebreak, not the
+   primary key.
+3. **Whole-token comparison**, not character-class buckets.
 
 These are the exact semantics every `socket/sort-*` lint rule uses.
 

@@ -40,12 +40,12 @@ const MAX_HANDLES = 20
 // /* sort */ marker has socket/sort-array-literals enforce + autofix it.
 /* sort */
 export const DEFAULT_DEV_HANDLES: readonly string[] = [
-  'JoviDeC', // Preact core / Shopify, DX + web perf
-  'Kikobeats', // prolific OSS author (microlink, many npm pkgs)
   'boshen_c', // oxc (oxlint/oxfmt) author
   'dalmaer', // Dion Almaer, web platform / AI dev
   'jonchurch', // Express.js maintainer
+  'JoviDeC', // Preact core / Shopify, DX + web perf
   'kdaigle', // GitHub
+  'Kikobeats', // prolific OSS author (microlink, many npm pkgs)
   'pnpmjs', // pnpm
   'realamlug', // Perry (TS -> native)
   'robpalmer2', // TC39 / standards

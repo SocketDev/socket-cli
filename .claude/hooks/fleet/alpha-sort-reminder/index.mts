@@ -6,19 +6,22 @@
 // `socket/sort-*` lint rules can't reach JSON / YAML / markdown / bash — this
 // hook covers those surfaces per `docs/claude.md/fleet/sorting.md`:
 //
-//   - JSON / JSONC: runs of `"key":` lines at one indent, ASCII order.
+//   - JSON / JSONC: runs of `"key":` lines at one indent, natural order.
 //   - YAML: runs of `key:` mapping lines at one indent (env:/with:/matrix).
 //   - Markdown: runs of `-`/`*` bullets; also flags trailing-ellipsis lines.
 //   - Bash: runs of `NAME=...` assignments (cache-key var blocks).
 //
 // Detection is deliberately conservative: 3+ adjacent siblings at the same
-// indent, and only ASCII-comparison. False quiet beats false nag — a missed
+// indent, natural order (case-insensitive + numeric-aware, lib's
+// naturalCompare). False quiet beats false nag — a missed
 // block is a review catch, a wrong nag trains the agent to ignore the hook.
 // Always exits 0; the message is informational on stderr.
 //
 
 import path from 'node:path'
 import process from 'node:process'
+
+import { naturalCompare } from '@socketsecurity/lib-stable/sorts/natural'
 
 import { readStdin } from '../_shared/transcript.mts'
 
@@ -42,10 +45,12 @@ export interface SortFinding {
 // too little signal (and are often guard pairs); 3+ is unambiguously a list.
 const MIN_RUN = 3
 
-// ASCII byte order, ascending. Returns true when already sorted.
+// Fleet natural order (case-insensitive + numeric-aware, via lib's
+// naturalCompare — the same comparator the socket/sort-* rules use). Returns
+// true when already sorted.
 function isAscadSorted(keys: readonly string[]): boolean {
   for (let i = 1; i < keys.length; i += 1) {
-    if (keys[i - 1]! > keys[i]!) {
+    if (naturalCompare(keys[i - 1]!, keys[i]!) > 0) {
       return false
     }
   }
@@ -203,7 +208,7 @@ function emit(filePath: string, findings: readonly SortFinding[]): void {
     lines.push(`  • (${f.surface}) ${f.hint}`)
   }
   lines.push(
-    '  Sort sibling items alphanumerically (ASCII order) unless order is load-bearing.',
+    '  Sort sibling items alphanumerically (natural order) unless order is load-bearing.',
     '  Fully re-sort the block when you touch it. See docs/claude.md/fleet/sorting.md.',
   )
   process.stderr.write(lines.join('\n') + '\n')

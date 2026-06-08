@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Claude Code Stop hook — dirty-worktree-on-stop-reminder.
+// Claude Code Stop hook — dirty-worktree-stop-reminder.
 //
 // Fires at turn-end. Checks `git status --porcelain` in the harness
 // project dir. If anything is modified, untracked, or staged but
@@ -127,7 +127,7 @@ async function main(): Promise<void> {
   }
 
   process.stderr.write(
-    `[dirty-worktree-on-stop-reminder] Turn ended with ${dirty.length} dirty path(s):\n`,
+    `[dirty-worktree-stop-reminder] Turn ended with ${dirty.length} dirty path(s):\n`,
   )
   for (const e of dirty.slice(0, 10)) {
     process.stderr.write(`  ${e.status} ${e.path}\n`)
@@ -150,6 +150,6 @@ async function main(): Promise<void> {
 
 main().catch(e => {
   process.stderr.write(
-    `[dirty-worktree-on-stop-reminder] hook bug — fail-open. ${e instanceof Error ? e.message : String(e)}\n`,
+    `[dirty-worktree-stop-reminder] hook bug — fail-open. ${e instanceof Error ? e.message : String(e)}\n`,
   )
 })

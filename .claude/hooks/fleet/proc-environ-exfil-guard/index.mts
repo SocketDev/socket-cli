@@ -86,7 +86,7 @@ export function isProsePath(normalized: string): boolean {
 // whitespace — but NOT another `/`, so a sibling path can't bridge two
 // unrelated occurrences. Bounded to 64 chars so the cross-literal window can't
 // run away. This is a literal PATH match, not a shell-command-structure parse,
-// so it is exempt from no-command-regex-in-hooks-guard.
+// so it is exempt from no-hook-cmd-regex-guard.
 const PROC_ENVIRON_RE = /\/proc\/[^/]{0,64}\/(?:environ|cmdline)\b/
 
 // Commands that read a file's contents. The Bash arm fires only when one of

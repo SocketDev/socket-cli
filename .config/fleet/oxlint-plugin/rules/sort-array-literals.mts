@@ -1,22 +1,22 @@
 /**
  * @file Sort an array literal's elements alphanumerically when it carries a
- *   leading `/* sort *​/` marker comment. Per CLAUDE.md "Sorting": config lists,
- *   allowlists, and set-like collections sort; position-bearing arrays (argv,
- *   priority lists, weight tables) keep their meaningful order. Plain arrays
- *   can't be sorted blindly — order often carries meaning — so this rule is
- *   OPT-IN: it fires only on an array whose declaration is preceded by a
- *   `/* sort *​/` block comment, where the author has declared the order
- *   irrelevant. Uses the fleet `stringComparator` (ASCII byte order, uppercase
- *   before lowercase), identical to the rest of the `socket/sort-*` family.
+ *   leading `/* sort *​/` marker comment. Per CLAUDE.md "Sorting": config
+ *   lists, allowlists, and set-like collections sort; position-bearing arrays
+ *   (argv, priority lists, weight tables) keep their meaningful order. Plain
+ *   arrays can't be sorted blindly — order often carries meaning — so this rule
+ *   is OPT-IN: it fires only on an array whose declaration is preceded by a `/*
+ *   sort *​/` block comment, where the author has declared the order
+ *   irrelevant. Uses the fleet `stringComparator` (natural order:
+ *   case-insensitive + numeric-aware), identical to the rest of the
+ *   `socket/sort-*` family.
  *   Autofix rewrites the elements in order. Only fires when every element is a
  *   string/number Literal — a mixed-type or expression-bearing array is
  *   reported (so the marker isn't silently ignored) but not auto-fixed.
- *
  *   Detection is range-based rather than AST-comment-attachment-based: oxlint
  *   attaches a leading comment to the `export`/declaration wrapper, not the
  *   ArrayExpression, so the rule pairs each `/* sort *​/` comment with the
- *   array whose `range[0]` follows it across only a declaration prefix
- *   (`export const NAME =`), nothing else.
+ *   array whose `range[0]` follows it across only a declaration prefix (`export
+ *   const NAME =`), nothing else.
  */
 
 import { stringComparator } from '../lib/comparators.mts'

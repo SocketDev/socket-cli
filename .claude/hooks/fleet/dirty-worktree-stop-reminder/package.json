@@ -1,5 +1,5 @@
 {
-  "name": "hook-npm-otp-browser-flow-reminder",
+  "name": "hook-dirty-worktree-stop-reminder",
   "private": true,
   "type": "module",
   "main": "./index.mts",
@@ -8,9 +8,6 @@
   },
   "scripts": {
     "test": "node --test test/*.test.mts"
-  },
-  "dependencies": {
-    "shell-quote": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:"

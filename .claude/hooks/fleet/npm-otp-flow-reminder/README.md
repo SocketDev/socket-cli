@@ -1,4 +1,4 @@
-# npm-otp-browser-flow-reminder
+# npm-otp-flow-reminder
 
 PreToolUse(Bash) reminder. Nudges (never blocks) when a Bash command runs an
 npm registry operation that triggers npm's 2FA one-time-password challenge,

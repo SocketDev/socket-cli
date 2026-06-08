@@ -1,4 +1,4 @@
-# dirty-worktree-on-stop-reminder
+# dirty-worktree-stop-reminder
 
 Stop hook that emits a stderr reminder at turn-end if `git status
 --porcelain` shows any modified, untracked, or staged-uncommitted

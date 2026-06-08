@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Claude Code PreToolUse hook — no-command-regex-in-hooks-guard.
+// Claude Code PreToolUse hook — no-hook-cmd-regex-guard.
 //
 // Edit-time enforcement of CLAUDE.md's "prefer AST-based parsing over
 // regex when a Bash-allowlist hook reasons about command structure".
@@ -113,7 +113,7 @@ export function isHookFile(filePath: string): boolean {
     filePath.includes('/.claude/hooks/') &&
     !filePath.includes('/node_modules/') &&
     // This guard's own source + tests discuss the banned shape.
-    !filePath.includes('/no-command-regex-in-hooks-guard/') &&
+    !filePath.includes('/no-hook-cmd-regex-guard/') &&
     /\.(?:c|m)?ts$/.test(filePath)
   )
 }
@@ -133,7 +133,7 @@ if (process.argv[1]?.endsWith('index.mts')) {
     }
     if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
       logger.error(
-        `no-command-regex-in-hooks-guard: ${findings.length} command-shaped regex(es) — bypassed via "${BYPASS_PHRASE}"\n`,
+        `no-hook-cmd-regex-guard: ${findings.length} command-shaped regex(es) — bypassed via "${BYPASS_PHRASE}"\n`,
       )
       return
     }
@@ -144,7 +144,7 @@ if (process.argv[1]?.endsWith('index.mts')) {
       )
       .join('\n')
     logger.error(
-      `no-command-regex-in-hooks-guard: refusing to introduce a regex that parses a shell command.\n` +
+      `no-hook-cmd-regex-guard: refusing to introduce a regex that parses a shell command.\n` +
         `\n` +
         `${lines}\n` +
         `\n` +

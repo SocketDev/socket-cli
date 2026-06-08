@@ -1,7 +1,7 @@
 /**
  * @file Per CLAUDE.md "Sorting" rule: sort the named-imports inside a single
- *   `import { ... }` statement alphanumerically (literal byte order — ASCII
- *   before letters). Default + namespace imports (`import foo, { ... } from`,
+ *   `import { ... }` statement alphanumerically (natural order:
+ *   case-insensitive + numeric-aware). Default + namespace imports (`import foo, { ... } from`,
  *   `import * as ns from`) keep their leading binding; only the named-imports
  *   clause gets sorted. Detects `import { c, b, a } from 'pkg'` (and aliased
  *   forms like `import { c as x, b, a } from 'pkg'`). Autofix: rewrites the

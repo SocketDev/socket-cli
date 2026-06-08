@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Claude Code PreToolUse hook — immutable-release-pattern-guard.
+// Claude Code PreToolUse hook — immutable-release-guard.
 //
 // Blocks Edit/Write to `.github/workflows/*.y*ml` files that introduce a
 // single-call `gh release create <tag> [...flags] <files>` pattern.
@@ -128,7 +128,7 @@ await withEditGuard((filePath, content, payload) => {
   const preview = unsafe.replace(/\s+/g, ' ').slice(0, 90)
   logger.error(
     [
-      '[immutable-release-pattern-guard] Blocked: single-call `gh release create` in workflow YAML',
+      '[immutable-release-guard] Blocked: single-call `gh release create` in workflow YAML',
       '',
       `  File:    ${path.basename(filePath)}`,
       `  Call:    ${preview}...`,

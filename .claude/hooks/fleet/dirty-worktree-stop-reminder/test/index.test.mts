@@ -1,4 +1,4 @@
-// node --test specs for the dirty-worktree-on-stop-reminder hook.
+// node --test specs for the dirty-worktree-stop-reminder hook.
 
 import test from 'node:test'
 import assert from 'node:assert/strict'
