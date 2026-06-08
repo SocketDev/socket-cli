@@ -1,6 +1,6 @@
 # c8 / v8 coverage ignore directives
 
-`c8 ignore next N` does not work the way the name implies for multi-line code. Use `c8 ignore start` / `c8 ignore stop` brackets for any body that spans more than one line.
+`c8 ignore next N` does not work the way the name implies for multi-line code. Use `c8 ignore start` / `c8 ignore stop` brackets for any body that spans more than one line. Enforced at edit time by `.claude/hooks/fleet/c8-ignore-reason-guard/` (blocks `next N` with N ≥ 2, and any directive without a reason).
 
 ## The bug
 

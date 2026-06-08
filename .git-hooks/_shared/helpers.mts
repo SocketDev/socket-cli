@@ -1125,7 +1125,11 @@ export const runStagedTestsReminder = (
 // forbidden permission mode. Conservative: only fires when a driver call is
 // actually present, and reads the whole file for the keys (they're often on
 // separate lines), so a call with the options nearby passes.
-const CLAUDE_DRIVER_RE = /\b(?:query|new\s+ClaudeSDKClient)\s*\(/
+//
+// The SDK `query` is the bare imported function — `query({…})`, never a method.
+// The negative lookbehind on `.` excludes unrelated method calls that happen to
+// be named query (`chrome.tabs.query(…)`, `db.query(…)`), which are not the SDK.
+const CLAUDE_DRIVER_RE = /(?:(?<!\.)\bquery|new\s+ClaudeSDKClient)\s*\(/
 const LOCKDOWN_KEYS = [
   'tools',
   'allowedTools',

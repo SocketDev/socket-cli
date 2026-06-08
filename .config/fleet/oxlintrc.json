@@ -37,6 +37,7 @@
     "socket/no-sync-rm-in-test-lifecycle": "error",
     "socket/no-top-level-await": "error",
     "socket/no-underscore-identifier": "error",
+    "socket/no-use-strict-in-esm": "error",
     "socket/no-vitest-empty-test": "error",
     "socket/no-vitest-focused-tests": "error",
     "socket/no-vitest-identical-title": "error",

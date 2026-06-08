@@ -1,88 +1,53 @@
 #!/usr/bin/env node
 // Claude Code PreToolUse hook — commit-author-guard.
 //
-// Blocks `git commit` invocations that would author the commit as
-// someone other than the user's canonical GitHub identity. Catches:
+// Blocks `git commit` invocations whose author is a denied placeholder
+// identity, or (when an allowlist is configured) not on it. Catches:
 //
 //   1. Wrong --author override:
-//        git commit --author="Wrong <wrong@example.com>" -m "..."
-//
+//        git commit --author="Test <test@example.com>" -m "..."
 //   2. Wrong -c user.email override:
-//        git commit -c user.email=wrong@example.com -m "..."
+//        git commit -c user.email=test@example.com -m "..."
+//   3. Local checkout user.email is a placeholder / off-allowlist.
 //
-//   3. Local checkout user.email differs from canonical (e.g. an
-//      assistant edited .git/config to point at a Socket work email
-//      instead of the personal GitHub email). The commit itself
-//      doesn't override but the checkout config is wrong.
+// Identity policy is the cascaded, wheelhouse-scoped config (read by the
+// shared .git-hooks/_shared/git-identity.mts — the SAME source the commit-msg
+// git-stage backstop uses, so the two never diverge):
+//   .config/repo/git-authors.json   (per-repo override, optional)
+//   .config/fleet/git-authors.json  (cascaded fleet default)
+// No machine-local (~/) source by design. The fleet config ships the universal
+// DENYLIST (placeholder identities never valid anywhere); the ALLOWLIST
+// (canonical/aliases) is per-repo. A denylist hit is ALWAYS blocked; an
+// allowlist-miss is blocked only when an allowlist is configured.
 //
-// Canonical identity sources, in order:
-//   (a) ~/.claude/git-authors.json — explicit allowlist, the source
-//       of truth when present. Shape:
-//         {
-//           "canonical": {
-//             "name": "jdalton",
-//             "email": "john.david.dalton@gmail.com"
-//           },
-//           "aliases": [
-//             { "name": "jdalton", "email": "jdalton@socket.dev" }
-//           ]
-//         }
-//       Canonical is the default; aliases are also allowed (for cases
-//       where work email is intentional, e.g. socket-internal repos).
-//
-//   (b) `git config --global user.email` + `--global user.name` — the
-//       user's real identity, fallback when the config file is absent.
+// This guard covers Claude `git commit` TOOL CALLS; subprocess / worktree / CI
+// commits are caught by the commit-msg git-stage backstop.
 //
 // Bypass: type "Allow commit-author bypass" in a recent user message.
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-import { existsSync, readFileSync } from 'node:fs'
-import os from 'node:os'
-import path from 'node:path'
 import process from 'node:process'
 
 import { withBashGuard } from '../_shared/payload.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
+// Cross-tree shared reader (canonical home: .git-hooks/_shared/). The DATA it
+// reads is the cascaded .config/fleet|repo/git-authors.json — the single
+// source of truth shared with the commit-msg git-stage backstop.
+import {
+  isAllowedAuthor,
+  isDeniedIdentity,
+  readIdentityPolicy,
+} from '../../../../.git-hooks/_shared/git-identity.mts'
+import type { GitAuthor } from '../../../../.git-hooks/_shared/git-identity.mts'
 
 const logger = getDefaultLogger()
-
-interface GitAuthor {
-  readonly name?: string | undefined
-  readonly email?: string | undefined
-}
-
-interface AllowedAuthors {
-  readonly canonical: GitAuthor
-  readonly aliases: readonly GitAuthor[]
-}
 
 const BYPASS_PHRASES = [
   'Allow commit-author bypass',
   'Allow commit author bypass',
   'Allow commitauthor bypass',
 ] as const
-
-export function isAllowedAuthor(
-  candidate: GitAuthor,
-  allowed: AllowedAuthors,
-): boolean {
-  const candidateEmail = candidate.email?.toLowerCase()
-  if (!candidateEmail) {
-    // No email in candidate; can't compare. Treat as ok — git will
-    // fail on its own if no identity is configured.
-    return true
-  }
-  if (allowed.canonical.email?.toLowerCase() === candidateEmail) {
-    return true
-  }
-  for (let i = 0, { length } = allowed.aliases; i < length; i += 1) {
-    if (allowed.aliases[i]!.email?.toLowerCase() === candidateEmail) {
-      return true
-    }
-  }
-  return false
-}
 
 // Detect whether the command is `git commit ...` (not push, not log).
 // Also returns true for `git -c ... commit ...` and other forms with
@@ -124,36 +89,6 @@ export function parseAuthorOverride(command: string): GitAuthor | undefined {
   return undefined
 }
 
-export function readAllowedAuthors(): AllowedAuthors {
-  // Source (a): ~/.claude/git-authors.json
-  const configPath = path.join(os.homedir(), '.claude', 'git-authors.json')
-  if (existsSync(configPath)) {
-    try {
-      const raw = JSON.parse(readFileSync(configPath, 'utf8')) as {
-        canonical?: GitAuthor | undefined
-        aliases?: GitAuthor[] | undefined
-      }
-      const canonical = raw.canonical ?? {}
-      const aliases = Array.isArray(raw.aliases) ? raw.aliases : []
-      return { canonical, aliases }
-    } catch {
-      // Fall through to git-config fallback.
-    }
-  }
-  // Source (b): global git config
-  let email: string | undefined
-  let name: string | undefined
-  const emailResult = spawnSync('git', ['config', '--global', 'user.email'])
-  if (emailResult.status === 0) {
-    email = String(emailResult.stdout).trim() || undefined
-  }
-  const nameResult = spawnSync('git', ['config', '--global', 'user.name'])
-  if (nameResult.status === 0) {
-    name = String(nameResult.stdout).trim() || undefined
-  }
-  return { canonical: { name, email }, aliases: [] }
-}
-
 // Read the local checkout's user.email + user.name. Falls through to
 // undefined on failure. Used when the command has no explicit override
 // — we need to know what git would use by default.
@@ -179,18 +114,18 @@ await withBashGuard((command, payload) => {
     return
   }
 
-  const allowed = readAllowedAuthors()
-  // If we don't have a canonical email configured anywhere, fail open —
-  // the hook can't enforce something it doesn't know.
-  if (!allowed.canonical.email) {
-    return
-  }
+  // Policy comes from the cascaded config (.config/fleet|repo/git-authors.json),
+  // rooted at the commit's cwd. Same source the commit-msg backstop reads.
+  const policy = readIdentityPolicy(payload.cwd ?? process.cwd())
 
   // Determine the effective author for this commit.
   const override = parseAuthorOverride(command)
-  const effective = override ?? readCheckoutAuthor(payload.cwd)
+  const effective: GitAuthor = override ?? readCheckoutAuthor(payload.cwd)
 
-  if (isAllowedAuthor(effective, allowed)) {
+  // Two distinct gates: a denied placeholder identity is ALWAYS blocked; an
+  // allowlist-miss is blocked only when an allowlist is configured.
+  const denied = isDeniedIdentity(effective, policy)
+  if (!denied && isAllowedAuthor(effective, policy)) {
     return
   }
 
@@ -200,33 +135,39 @@ await withBashGuard((command, payload) => {
     return
   }
 
+  const who = `${effective.name ?? '(unset)'} <${effective.email ?? '(unset)'}>`
   const lines = [
-    '[commit-author-guard] Commit author does not match canonical identity.',
+    denied
+      ? `[commit-author-guard] Commit author is a placeholder/sandbox identity: ${who}`
+      : `[commit-author-guard] Commit author does not match the allowed identity: ${who}`,
     '',
-    `  Effective author : ${effective.name ?? '(unset)'} <${effective.email ?? '(unset)'}>`,
-    `  Canonical author : ${allowed.canonical.name ?? '(unset)'} <${allowed.canonical.email}>`,
   ]
-  if (allowed.aliases.length > 0) {
+  if (policy.canonical.email) {
+    lines.push(
+      `  Canonical author : ${policy.canonical.name ?? '(unset)'} <${policy.canonical.email}>`,
+    )
+  }
+  if (policy.aliases.length > 0) {
     lines.push('  Allowed aliases  :')
-    for (let i = 0, { length } = allowed.aliases; i < length; i += 1) {
-      const a = allowed.aliases[i]!
+    for (let i = 0, { length } = policy.aliases; i < length; i += 1) {
+      const a = policy.aliases[i]!
       lines.push(`    - ${a.name ?? '(any)'} <${a.email ?? '(any)'}>`)
     }
   }
   lines.push('')
-  lines.push('  Fix one of these before committing:')
+  lines.push('  Set a real identity before committing:')
+  lines.push('    git config user.email "<you>@<domain>"')
+  lines.push('    git config user.name "<Your Name>"')
   lines.push('')
-  lines.push('    # Use the canonical identity for this commit:')
-  lines.push(`    git -c user.email=${allowed.canonical.email} commit ...`)
-  lines.push('')
-  lines.push('    # Or correct the local checkout config:')
-  lines.push(`    git config user.email ${allowed.canonical.email}`)
   lines.push(
-    `    git config user.name "${allowed.canonical.name ?? 'jdalton'}"`,
+    '  Allowed authors: .config/repo/git-authors.json (per-repo) overriding',
   )
-  lines.push('')
-  lines.push('  Allowed-author list: ~/.claude/git-authors.json')
-  lines.push('  (falls back to `git config --global user.email` when absent)')
+  lines.push(
+    '  .config/fleet/git-authors.json (cascaded). The fleet denylist of',
+  )
+  lines.push(
+    '  placeholder identities (test@example.com, Test, …) is never allowed.',
+  )
   lines.push('')
   lines.push('  Bypass: type "Allow commit-author bypass" in a recent message.')
   lines.push('')

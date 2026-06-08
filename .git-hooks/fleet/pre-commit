@@ -6,14 +6,13 @@
 # Optional checks — can be bypassed with --no-verify for fast local
 # commits. Mandatory security checks ALSO run in pre-push hook.
 #
-# Use --no-verify for:
+# Use --no-verify (gated by the `Allow no-verify bypass` phrase) for:
 # - History operations (squash, rebase, amend)
 # - Emergency hotfixes
 # - When tests require binaries that haven't been built yet
 #
-# Use environment variables to selectively disable:
-# - DISABLE_PRECOMMIT_LINT=1 to skip linting
-# - DISABLE_PRECOMMIT_TEST=1 to skip testing
+# There is NO per-step env kill-switch — `--no-verify` is the only
+# disable, so the choice to skip checks is always explicit and gated.
 
 # Skip guards during rebase — commits are being replayed; lint/test on
 # each pick is noisy and slow. Signing is unaffected: git signs via
@@ -80,28 +79,12 @@ run_step() {
   return "$status"
 }
 
-if [ -z "${DISABLE_PRECOMMIT_LINT}" ]; then
-  run_step lint pnpm lint --staged || exit $?
-else
-  echo "Skipping lint due to DISABLE_PRECOMMIT_LINT env var"
-fi
+run_step lint pnpm lint --staged || exit $?
 
-if [ -z "${DISABLE_PRECOMMIT_TEST}" ]; then
-  # Each repo's `pnpm test` script wraps a runner that understands
-  # `--staged` (e.g. scripts/test.mts forwards staged-filtering to
-  # vitest, or filters the staged set in a pre-pass). When
-  # DISABLE_PRECOMMIT_LINT is set, also pass --fast so the test
-  # runner skips its embedded format/lint check (otherwise lint
-  # bypass leaks through this path and re-blocks the commit).
-  #
-  # Repos whose `pnpm test` is bare vitest without a wrapper need a
-  # local override that pre-filters with `git diff --cached --name-only`
-  # then runs `pnpm test`.
-  if [ -n "${DISABLE_PRECOMMIT_LINT}" ]; then
-    run_step test pnpm test --staged --fast || exit $?
-  else
-    run_step test pnpm test --staged || exit $?
-  fi
-else
-  echo "Skipping testing due to DISABLE_PRECOMMIT_TEST env var"
-fi
+# Each repo's `pnpm test` script wraps a runner that understands
+# `--staged` (e.g. scripts/test.mts forwards staged-filtering to
+# vitest, or filters the staged set in a pre-pass). Repos whose
+# `pnpm test` is bare vitest without a wrapper need a local override
+# that pre-filters with `git diff --cached --name-only` then runs
+# `pnpm test`.
+run_step test pnpm test --staged || exit $?

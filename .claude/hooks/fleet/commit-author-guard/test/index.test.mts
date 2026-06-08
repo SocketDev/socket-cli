@@ -1,3 +1,9 @@
+// node --test specs for the commit-author-guard PreToolUse hook.
+//
+// The guard reads the cascaded, wheelhouse-scoped identity policy
+// (.config/fleet|repo/git-authors.json under the commit cwd). These tests
+// build a fake repo with those config files and drive the hook over stdin.
+
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
@@ -10,318 +16,275 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const HOOK_PATH = path.join(__dirname, '..', 'index.mts')
 
 interface FakeRepo {
-  readonly root: string
-  readonly home: string
-  readonly authorsJsonPath: string
+  readonly repo: string
   cleanup(): void
 }
 
-function makeFakeRepo(
-  canonicalEmail = 'john.david.dalton@gmail.com',
-): FakeRepo {
+// Universal denylist every fleet repo ships (mirrors
+// template/.config/fleet/git-authors.json). `allowlist` is optional, matching
+// the real model where the canonical allowlist is per-repo (.config/repo).
+function makeFakeRepo(allowlist?: {
+  canonical?: { name?: string; email?: string }
+  aliases?: Array<{ name?: string; email?: string }>
+}): FakeRepo {
   const root = mkdtempSync(path.join(os.tmpdir(), 'authorguard-'))
-  const home = path.join(root, 'home')
-  mkdirSync(path.join(home, '.claude'), { recursive: true })
-  // Init a git repo so `git config user.email` calls don't error out.
   const repo = path.join(root, 'repo')
-  mkdirSync(repo, { recursive: true })
+  mkdirSync(path.join(repo, '.config', 'fleet'), { recursive: true })
   spawnSync('git', ['init', '-q'], { cwd: repo })
-  spawnSync('git', ['config', 'user.email', canonicalEmail], { cwd: repo })
-  spawnSync('git', ['config', 'user.name', 'jdalton'], { cwd: repo })
-  const authorsJsonPath = path.join(home, '.claude', 'git-authors.json')
+  spawnSync('git', ['config', 'user.email', 'real@socket.dev'], { cwd: repo })
+  spawnSync('git', ['config', 'user.name', 'Real Dev'], { cwd: repo })
   writeFileSync(
-    authorsJsonPath,
+    path.join(repo, '.config', 'fleet', 'git-authors.json'),
     JSON.stringify({
-      canonical: { name: 'jdalton', email: canonicalEmail },
-      aliases: [{ name: 'jdalton', email: 'jdalton@socket.dev' }],
+      denylist: {
+        emails: ['*@example.com', '*@example.org', 'you@localhost'],
+        names: ['Test', 'User', 'Unknown'],
+      },
+      canonical: {},
+      aliases: [],
     }),
   )
-  return {
-    root,
-    home,
-    authorsJsonPath,
-    cleanup: () => rmSync(root, { recursive: true, force: true }),
+  if (allowlist) {
+    mkdirSync(path.join(repo, '.config', 'repo'), { recursive: true })
+    writeFileSync(
+      path.join(repo, '.config', 'repo', 'git-authors.json'),
+      JSON.stringify(allowlist),
+    )
   }
+  return { repo, cleanup: () => rmSync(root, { recursive: true, force: true }) }
 }
 
 function makeTranscript(dir: string, bypassPhrase?: string): string {
   const transcriptPath = path.join(dir, 'session.jsonl')
-  const userContent = bypassPhrase ?? 'normal message'
   writeFileSync(
     transcriptPath,
-    JSON.stringify({ role: 'user', content: userContent }),
+    JSON.stringify({ role: 'user', content: bypassPhrase ?? 'normal message' }),
   )
   return transcriptPath
 }
 
-function runHook(
-  payload: object,
-  home: string,
-  extraEnv: Record<string, string> = {},
-): { stderr: string; exitCode: number } {
+function runHook(payload: object): { stderr: string; exitCode: number } {
   const result = spawnSync('node', [HOOK_PATH], {
     input: JSON.stringify(payload),
-    env: { ...process.env, HOME: home, ...extraEnv },
   })
   return { stderr: String(result.stderr), exitCode: result.status ?? -1 }
 }
 
-test('BLOCKS --author override with wrong email', () => {
-  const repo = makeFakeRepo()
+// ── Denylist (universal — always blocks, no allowlist needed) ──
+
+test('BLOCKS --author override with a denylisted (placeholder) email', () => {
+  const r = makeFakeRepo()
   try {
-    const { stderr, exitCode } = runHook(
-      {
-        tool_name: 'Bash',
-        tool_input: {
-          command: 'git commit --author="Wrong <wrong@example.com>" -m "fix"',
-        },
-        transcript_path: makeTranscript(repo.root),
-        cwd: path.join(repo.root, 'repo'),
+    const { stderr, exitCode } = runHook({
+      tool_name: 'Bash',
+      tool_input: {
+        command: 'git commit --author="Wrong <wrong@example.com>" -m "fix"',
       },
-      repo.home,
-    )
+      transcript_path: makeTranscript(r.repo),
+      cwd: r.repo,
+    })
     assert.equal(exitCode, 2)
     assert.match(stderr, /commit-author-guard/)
-    assert.match(stderr, /wrong@example\.com/)
+    assert.match(stderr, /placeholder/)
   } finally {
-    repo.cleanup()
+    r.cleanup()
   }
 })
 
-test('ALLOWS --author override with canonical email', () => {
-  const repo = makeFakeRepo()
+test('BLOCKS -c user.email override with a denylisted email', () => {
+  const r = makeFakeRepo()
   try {
-    const { exitCode } = runHook(
-      {
-        tool_name: 'Bash',
-        tool_input: {
-          command:
-            'git commit --author="jdalton <john.david.dalton@gmail.com>" -m "fix"',
-        },
-        transcript_path: makeTranscript(repo.root),
-        cwd: path.join(repo.root, 'repo'),
+    const { exitCode } = runHook({
+      tool_name: 'Bash',
+      tool_input: {
+        command: 'git -c user.email=imposter@example.com commit -m "fix"',
       },
-      repo.home,
-    )
-    assert.equal(exitCode, 0)
-  } finally {
-    repo.cleanup()
-  }
-})
-
-test('ALLOWS --author override with allowlisted alias email', () => {
-  const repo = makeFakeRepo()
-  try {
-    const { exitCode } = runHook(
-      {
-        tool_name: 'Bash',
-        tool_input: {
-          command:
-            'git commit --author="jdalton <jdalton@socket.dev>" -m "fix"',
-        },
-        transcript_path: makeTranscript(repo.root),
-        cwd: path.join(repo.root, 'repo'),
-      },
-      repo.home,
-    )
-    assert.equal(exitCode, 0)
-  } finally {
-    repo.cleanup()
-  }
-})
-
-test('BLOCKS -c user.email override with wrong email', () => {
-  const repo = makeFakeRepo()
-  try {
-    const { stderr, exitCode } = runHook(
-      {
-        tool_name: 'Bash',
-        tool_input: {
-          command: 'git -c user.email=imposter@example.com commit -m "fix"',
-        },
-        transcript_path: makeTranscript(repo.root),
-        cwd: path.join(repo.root, 'repo'),
-      },
-      repo.home,
-    )
-    assert.equal(exitCode, 2)
-    assert.match(stderr, /imposter@example\.com/)
-  } finally {
-    repo.cleanup()
-  }
-})
-
-test('BLOCKS when local checkout has wrong user.email and no override', () => {
-  const repo = makeFakeRepo()
-  try {
-    // Reset the repo's user.email to a wrong value, simulating a corrupted
-    // local checkout config.
-    spawnSync('git', ['config', 'user.email', 'imposter@example.com'], {
-      cwd: path.join(repo.root, 'repo'),
+      transcript_path: makeTranscript(r.repo),
+      cwd: r.repo,
     })
-    const { stderr, exitCode } = runHook(
-      {
-        tool_name: 'Bash',
-        tool_input: { command: 'git commit -m "fix"' },
-        transcript_path: makeTranscript(repo.root),
-        cwd: path.join(repo.root, 'repo'),
-      },
-      repo.home,
-    )
     assert.equal(exitCode, 2)
-    assert.match(stderr, /imposter@example\.com/)
   } finally {
-    repo.cleanup()
+    r.cleanup()
   }
 })
 
-test('ALLOWS plain git commit when local checkout is canonical', () => {
-  const repo = makeFakeRepo()
+test('BLOCKS local checkout with a denylisted name (Test)', () => {
+  const r = makeFakeRepo()
   try {
-    const { exitCode } = runHook(
-      {
-        tool_name: 'Bash',
-        tool_input: { command: 'git commit -m "fix"' },
-        transcript_path: makeTranscript(repo.root),
-        cwd: path.join(repo.root, 'repo'),
-      },
-      repo.home,
-    )
-    assert.equal(exitCode, 0)
+    spawnSync('git', ['config', 'user.name', 'Test'], { cwd: r.repo })
+    spawnSync('git', ['config', 'user.email', 'real@socket.dev'], {
+      cwd: r.repo,
+    })
+    const { exitCode } = runHook({
+      tool_name: 'Bash',
+      tool_input: { command: 'git commit -m "fix"' },
+      transcript_path: makeTranscript(r.repo),
+      cwd: r.repo,
+    })
+    assert.equal(exitCode, 2)
   } finally {
-    repo.cleanup()
+    r.cleanup()
   }
 })
+
+// ── Denylist-only repo: real off-list emails are ALLOWED (no allowlist) ──
+
+test('ALLOWS a real email when no allowlist is configured (denylist-only repo)', () => {
+  const r = makeFakeRepo()
+  try {
+    const { exitCode } = runHook({
+      tool_name: 'Bash',
+      tool_input: { command: 'git commit -m "fix"' },
+      transcript_path: makeTranscript(r.repo),
+      cwd: r.repo,
+    })
+    assert.equal(exitCode, 0)
+  } finally {
+    r.cleanup()
+  }
+})
+
+// ── Allowlist configured (.config/repo): off-allowlist real email blocks ──
+
+test('BLOCKS an off-allowlist real email when an allowlist IS configured', () => {
+  const r = makeFakeRepo({
+    canonical: { name: 'jdalton', email: 'john.david.dalton@gmail.com' },
+    aliases: [{ name: 'jdalton', email: 'jdalton@socket.dev' }],
+  })
+  try {
+    const { stderr, exitCode } = runHook({
+      tool_name: 'Bash',
+      tool_input: {
+        command: 'git commit --author="Other <other@gmail.com>" -m "fix"',
+      },
+      transcript_path: makeTranscript(r.repo),
+      cwd: r.repo,
+    })
+    assert.equal(exitCode, 2)
+    assert.match(stderr, /allowed identity/)
+  } finally {
+    r.cleanup()
+  }
+})
+
+test('ALLOWS the canonical email when an allowlist is configured', () => {
+  const r = makeFakeRepo({
+    canonical: { name: 'jdalton', email: 'john.david.dalton@gmail.com' },
+    aliases: [{ name: 'jdalton', email: 'jdalton@socket.dev' }],
+  })
+  try {
+    const { exitCode } = runHook({
+      tool_name: 'Bash',
+      tool_input: {
+        command:
+          'git commit --author="jdalton <john.david.dalton@gmail.com>" -m "fix"',
+      },
+      transcript_path: makeTranscript(r.repo),
+      cwd: r.repo,
+    })
+    assert.equal(exitCode, 0)
+  } finally {
+    r.cleanup()
+  }
+})
+
+test('ALLOWS an allowlisted alias email', () => {
+  const r = makeFakeRepo({
+    canonical: { name: 'jdalton', email: 'john.david.dalton@gmail.com' },
+    aliases: [{ name: 'jdalton', email: 'jdalton@socket.dev' }],
+  })
+  try {
+    const { exitCode } = runHook({
+      tool_name: 'Bash',
+      tool_input: {
+        command: 'git commit --author="jdalton <jdalton@socket.dev>" -m "fix"',
+      },
+      transcript_path: makeTranscript(r.repo),
+      cwd: r.repo,
+    })
+    assert.equal(exitCode, 0)
+  } finally {
+    r.cleanup()
+  }
+})
+
+// ── Non-applicability + bypass ──
 
 test('IGNORES non-Bash tools', () => {
-  const repo = makeFakeRepo()
+  const r = makeFakeRepo()
   try {
-    const { exitCode } = runHook(
-      {
-        tool_name: 'Write',
-        tool_input: { command: 'git commit --author="Wrong <w@e.com>" -m "x"' },
-        transcript_path: makeTranscript(repo.root),
-      },
-      repo.home,
-    )
+    const { exitCode } = runHook({
+      tool_name: 'Write',
+      tool_input: { command: 'git commit --author="Test <test@example.com>"' },
+      transcript_path: makeTranscript(r.repo),
+      cwd: r.repo,
+    })
     assert.equal(exitCode, 0)
   } finally {
-    repo.cleanup()
+    r.cleanup()
   }
 })
 
 test('IGNORES git commands that are not commit', () => {
-  const repo = makeFakeRepo()
+  const r = makeFakeRepo()
   try {
-    const { exitCode } = runHook(
-      {
-        tool_name: 'Bash',
-        tool_input: { command: 'git log --author=anyone' },
-        transcript_path: makeTranscript(repo.root),
-      },
-      repo.home,
-    )
+    const { exitCode } = runHook({
+      tool_name: 'Bash',
+      tool_input: { command: 'git log --author=anyone' },
+      transcript_path: makeTranscript(r.repo),
+      cwd: r.repo,
+    })
     assert.equal(exitCode, 0)
   } finally {
-    repo.cleanup()
+    r.cleanup()
   }
 })
 
-test('IGNORES git config commit.gpgsign (must not match commit subcommand)', () => {
-  const repo = makeFakeRepo()
+test('IGNORES git config commit.gpgsign (not the commit subcommand)', () => {
+  const r = makeFakeRepo()
   try {
-    const { exitCode } = runHook(
-      {
-        tool_name: 'Bash',
-        tool_input: { command: 'git config commit.gpgsign true' },
-        transcript_path: makeTranscript(repo.root),
-      },
-      repo.home,
-    )
+    const { exitCode } = runHook({
+      tool_name: 'Bash',
+      tool_input: { command: 'git config commit.gpgsign true' },
+      transcript_path: makeTranscript(r.repo),
+      cwd: r.repo,
+    })
     assert.equal(exitCode, 0)
   } finally {
-    repo.cleanup()
+    r.cleanup()
   }
 })
 
 test('ALLOWS with "Allow commit-author bypass" phrase', () => {
-  const repo = makeFakeRepo()
+  const r = makeFakeRepo()
   try {
-    const { exitCode } = runHook(
-      {
-        tool_name: 'Bash',
-        tool_input: {
-          command: 'git commit --author="Wrong <w@e.com>" -m "fix"',
-        },
-        transcript_path: makeTranscript(
-          repo.root,
-          'Allow commit-author bypass',
-        ),
-        cwd: path.join(repo.root, 'repo'),
+    const { exitCode } = runHook({
+      tool_name: 'Bash',
+      tool_input: {
+        command: 'git commit --author="Wrong <wrong@example.com>" -m "fix"',
       },
-      repo.home,
-    )
-    assert.equal(exitCode, 0)
-  } finally {
-    repo.cleanup()
-  }
-})
-
-test('ALLOWS with hyphenless variant "Allow commit author bypass"', () => {
-  const repo = makeFakeRepo()
-  try {
-    const { exitCode } = runHook(
-      {
-        tool_name: 'Bash',
-        tool_input: {
-          command: 'git commit --author="Wrong <w@e.com>" -m "fix"',
-        },
-        transcript_path: makeTranscript(
-          repo.root,
-          'Allow commit author bypass',
-        ),
-        cwd: path.join(repo.root, 'repo'),
-      },
-      repo.home,
-    )
-    assert.equal(exitCode, 0)
-  } finally {
-    repo.cleanup()
-  }
-})
-
-test('fails open when no canonical email is configured anywhere', () => {
-  // Delete the git-authors.json AND clear global git config email
-  // path is checked separately — here we just ensure the JSON path
-  // missing means we use the global config (which may or may not be set).
-  // The hook should not block when it has no canonical to enforce.
-  const root = mkdtempSync(path.join(os.tmpdir(), 'authorguard-empty-'))
-  const home = path.join(root, 'home')
-  mkdirSync(path.join(home, '.claude'), { recursive: true })
-  const repo = path.join(root, 'repo')
-  mkdirSync(repo, { recursive: true })
-  spawnSync('git', ['init', '-q'], { cwd: repo })
-  spawnSync('git', ['config', 'user.email', 'whoever@example.com'], {
-    cwd: repo,
-  })
-  try {
-    // The hook will fall back to the user's REAL global git config. Since
-    // we can't safely unset that, we just verify the hook doesn't crash on
-    // a missing git-authors.json. If global config is also unset, the hook
-    // fails open; if it's set to the user's real email, this test's
-    // imposter email gets blocked. Either way, the hook should not crash.
-    const result = spawnSync('node', [HOOK_PATH], {
-      input: JSON.stringify({
-        tool_name: 'Bash',
-        tool_input: { command: 'git commit -m "fix"' },
-        cwd: repo,
-      }),
-      env: { ...process.env, HOME: home },
+      transcript_path: makeTranscript(r.repo, 'Allow commit-author bypass'),
+      cwd: r.repo,
     })
-    // Exit code is either 0 (fail open) or 2 (real global config caught it);
-    // never -1 (crash).
-    assert.ok(result.status === 0 || result.status === 2)
+    assert.equal(exitCode, 0)
   } finally {
-    rmSync(root, { recursive: true, force: true })
+    r.cleanup()
+  }
+})
+
+test('ALLOWS hyphenless bypass variant "Allow commit author bypass"', () => {
+  const r = makeFakeRepo()
+  try {
+    const { exitCode } = runHook({
+      tool_name: 'Bash',
+      tool_input: {
+        command: 'git commit --author="Wrong <wrong@example.com>" -m "fix"',
+      },
+      transcript_path: makeTranscript(r.repo, 'Allow commit author bypass'),
+      cwd: r.repo,
+    })
+    assert.equal(exitCode, 0)
+  } finally {
+    r.cleanup()
   }
 })

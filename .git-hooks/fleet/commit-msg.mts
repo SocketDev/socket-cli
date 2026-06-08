@@ -30,8 +30,35 @@ import {
   shouldSkipFile,
   stripAiAttribution,
 } from '../_shared/helpers.mts'
+// Canonical shared identity reader (.git-hooks/_shared/). Same source the
+// commit-author-guard PreToolUse hook uses; the DATA is the cascaded
+// .config/fleet|repo/git-authors.json.
+import {
+  isAllowedAuthor,
+  isDeniedIdentity,
+  readIdentityPolicy,
+} from '../_shared/git-identity.mts'
+import type { GitAuthor } from '../_shared/git-identity.mts'
+import {
+  commitSubject,
+  isPlaceholderSubject,
+} from '../_shared/commit-subject.mts'
 
 const logger = getDefaultLogger()
+
+// Parse `Name <email>` out of a `git var GIT_AUTHOR_IDENT` string
+// (`Name <email> <ts> <tz>`).
+function parseIdent(ident: string): GitAuthor {
+  const m = /^(.*?)\s*<([^>]*)>/.exec(ident)
+  return {
+    name: m?.[1]?.trim() || undefined,
+    email: m?.[2]?.trim() || undefined,
+  }
+}
+
+function identLabel(which: 'GIT_AUTHOR_IDENT' | 'GIT_COMMITTER_IDENT'): string {
+  return which === 'GIT_AUTHOR_IDENT' ? 'author' : 'committer'
+}
 
 const main = (): number => {
   let errors = 0
@@ -117,6 +144,51 @@ const main = (): number => {
       logger.success(
         `Auto-stripped ${removed} AI attribution line(s) from commit message`,
       )
+    }
+
+    // Placeholder-subject git-stage backstop. The companion
+    // no-placeholder-commit-subject-guard catches Claude `git commit -m` tool
+    // calls; this catches the same junk subject (`initial`/`wip`/`test`) on a
+    // subprocess / worktree / CI / test-harness commit the tool layer misses.
+    const subject = commitSubject(cleaned || original)
+    if (isPlaceholderSubject(subject)) {
+      logger.fail(`Commit blocked: placeholder subject "${subject}".`)
+      logger.info(
+        'Write a Conventional Commits subject stating what changed (e.g. `fix(scan): handle empty manifest`). Placeholder titles like "initial"/"wip"/"test" are the fingerprint of a test-harness or replayed commit.',
+      )
+      errors++
+    }
+  }
+
+  // Git-stage backstop for commit author/committer identity. The
+  // commit-author-guard PreToolUse hook checks Claude `git commit` tool
+  // calls, but a subprocess / fresh worktree / CI / test-harness commit
+  // never routes through that layer — that is how a batch of
+  // test@example.com commits once reached a fleet repo's main. This fires on
+  // the git commit-msg stage regardless of origin, reading the SAME cascaded
+  // .config/fleet|repo/git-authors.json policy so the two never diverge.
+  const policy = readIdentityPolicy(process.cwd())
+  for (const which of ['GIT_AUTHOR_IDENT', 'GIT_COMMITTER_IDENT'] as const) {
+    let ident = ''
+    try {
+      ident = gitLines('var', which)[0] ?? ''
+    } catch {
+      // `git var` failed (unusual env) — fail open, don't block a real commit.
+      continue
+    }
+    const who = parseIdent(ident)
+    const denied = isDeniedIdentity(who, policy)
+    if (denied || !isAllowedAuthor(who, policy)) {
+      const id = `${who.name ?? '(unset)'} <${who.email ?? '(unset)'}>`
+      logger.fail(
+        denied
+          ? `Commit blocked: ${identLabel(which)} is a placeholder/sandbox identity ${id}.`
+          : `Commit blocked: ${identLabel(which)} ${id} is not on the allowed-author list.`,
+      )
+      logger.info(
+        'Set a real identity (`git config user.email "<you>@<domain>"`). Allowed authors come from .config/repo/git-authors.json (per-repo) over .config/fleet/git-authors.json (cascaded); placeholder identities (test@example.com, Test, …) are never allowed.',
+      )
+      errors++
     }
   }
 

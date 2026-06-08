@@ -60,12 +60,35 @@ test('ALLOWS `c8 ignore next - reason`', () => {
   assert.equal(code, 0)
 })
 
-test('ALLOWS `c8 ignore next 3 - reason`', () => {
-  const { code } = runHook({
+test('BLOCKS `c8 ignore next 3 - reason` (multi-line next N, even with reason)', () => {
+  const { code, stderr } = runHook({
     tool_name: 'Write',
     tool_input: {
       file_path: F,
       content: '/* c8 ignore next 3 - third-party */',
+    },
+  })
+  assert.equal(code, 2)
+  assert.match(stderr, /use start\/stop/)
+})
+
+test('BLOCKS `c8 ignore next 2 - reason` (smallest multi-line N)', () => {
+  const { code } = runHook({
+    tool_name: 'Write',
+    tool_input: {
+      file_path: F,
+      content: '/* c8 ignore next 2 - reason */',
+    },
+  })
+  assert.equal(code, 2)
+})
+
+test('ALLOWS `c8 ignore next 1 - reason` (single physical line)', () => {
+  const { code } = runHook({
+    tool_name: 'Write',
+    tool_input: {
+      file_path: F,
+      content: '/* c8 ignore next 1 - external shape */',
     },
   })
   assert.equal(code, 0)

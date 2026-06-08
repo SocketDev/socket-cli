@@ -35,6 +35,21 @@ describe('socket/export-top-level-functions', () => {
             'function getObject(idx) { return idx }\n' +
             'module.exports.getObject = getObject\n',
         },
+        {
+          name: 'inline export interface',
+          filename: 'fixture.mts',
+          code: 'export interface Foo { a: number }\n',
+        },
+        {
+          name: 'inline export type alias',
+          filename: 'fixture.mts',
+          code: 'export type Foo = { a: number }\n',
+        },
+        {
+          name: 'inline export class',
+          filename: 'fixture.mts',
+          code: 'export class Foo {}\n',
+        },
       ],
       invalid: [
         {
@@ -51,6 +66,30 @@ describe('socket/export-top-level-functions', () => {
           // the duplicate-name footgun (autofix is skipped to keep
           // the rewrite human-decided).
           code: 'function foo() {}\nexport { foo }\n',
+          errors: [{ messageId: 'missingAlreadyReExported' }],
+        },
+        {
+          name: 'unexported top-level interface',
+          filename: 'fixture.mts',
+          code: 'interface Foo { a: number }\n',
+          errors: [{ messageId: 'missing' }],
+        },
+        {
+          name: 'unexported top-level type alias',
+          filename: 'fixture.mts',
+          code: 'type Foo = { a: number }\n',
+          errors: [{ messageId: 'missing' }],
+        },
+        {
+          name: 'unexported top-level class',
+          filename: 'fixture.mts',
+          code: 'class Foo {}\n',
+          errors: [{ messageId: 'missing' }],
+        },
+        {
+          name: 'interface declared then re-exported via export-named',
+          filename: 'fixture.mts',
+          code: 'interface Foo { a: number }\nexport { Foo }\n',
           errors: [{ messageId: 'missingAlreadyReExported' }],
         },
       ],

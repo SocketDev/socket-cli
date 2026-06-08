@@ -179,23 +179,19 @@ test('git push --no-verify is still blocked even alongside rebase', async () => 
   assert.match(result.stderr, /Allow no-verify bypass/)
 })
 
-test('DISABLE_PRECOMMIT_LINT=1 is blocked without phrase', async () => {
+test('DISABLE_PRECOMMIT_LINT=1 is no longer a recognized bypass (env knob removed)', async () => {
   const result = await runHook({
     tool_input: { command: 'DISABLE_PRECOMMIT_LINT=1 git commit -m "foo"' },
     tool_name: 'Bash',
   })
-  assert.strictEqual(result.code, 2)
-  assert.match(result.stderr, /Allow lint bypass/)
+  assert.strictEqual(result.code, 0)
 })
 
-test('DISABLE_PRECOMMIT_LINT=1 allowed with phrase', async () => {
-  const result = await runHook(
-    {
-      tool_input: { command: 'DISABLE_PRECOMMIT_LINT=1 git commit -m "foo"' },
-      tool_name: 'Bash',
-    },
-    userTurn('Allow lint bypass — manual cleanup follows'),
-  )
+test('DISABLE_PRECOMMIT_TEST=1 is no longer a recognized bypass (env knob removed)', async () => {
+  const result = await runHook({
+    tool_input: { command: 'DISABLE_PRECOMMIT_TEST=1 git commit -m "foo"' },
+    tool_name: 'Bash',
+  })
   assert.strictEqual(result.code, 0)
 })
 

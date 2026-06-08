@@ -18,6 +18,15 @@ test('lockdown: flags a query() call missing a lockdown key', () => {
   assert.equal(scanProgrammaticClaudeLockdown(src).length, 1)
 })
 
+test('lockdown: does NOT flag an unrelated method named query', () => {
+  // `chrome.tabs.query(…)` / `db.query(…)` are method calls, not the bare SDK
+  // `query` import — the negative lookbehind on `.` excludes them.
+  const chrome = 'const [t] = await chrome.tabs.query({ active: true })'
+  const db = 'const rows = await db.query(sql)'
+  assert.equal(scanProgrammaticClaudeLockdown(chrome).length, 0)
+  assert.equal(scanProgrammaticClaudeLockdown(db).length, 0)
+})
+
 test('lockdown: passes a query() call with all four keys present in the file', () => {
   const src = [
     'const opts = {',

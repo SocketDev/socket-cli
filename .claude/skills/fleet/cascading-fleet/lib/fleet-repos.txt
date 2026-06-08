@@ -9,3 +9,4 @@ socket-registry
 socket-sdk-js
 sdxgen
 stuie
+ultrathink

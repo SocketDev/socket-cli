@@ -10,10 +10,9 @@
 // The bypass-phrase contract:
 //   - Revert (git checkout/restore/reset/stash drop/stash pop/clean) →
 //       user must type "Allow revert bypass" in a recent user turn.
-//   - Hook bypass (--no-verify, DISABLE_PRECOMMIT_*, --no-gpg-sign) →
+//   - Hook bypass (--no-verify, --no-gpg-sign) →
 //       user must type "Allow <X> bypass" where <X> matches the flag
-//       (e.g. "Allow no-verify bypass", "Allow lint bypass",
-//        "Allow gpg bypass").
+//       (e.g. "Allow no-verify bypass", "Allow gpg bypass").
 //   - Force push --force-with-lease (safer; aborts if remote moved) →
 //       user must type "Allow force-with-lease bypass" OR the stronger
 //       "Allow force-push bypass" (which subsumes the safer lease op).
@@ -62,8 +61,8 @@ type GuardCheck = {
   readonly label: string
   // Detector. Exactly one of `pattern` / `matches` is set:
   //   - `pattern`: a regex matched anywhere in the command. Correct for
-  //     flag / env-var rules (`--no-verify`, `DISABLE_PRECOMMIT_LINT=1`)
-  //     that apply regardless of which binary they sit on.
+  //     flag rules (`--no-verify`, `--no-gpg-sign`) that apply
+  //     regardless of which binary they sit on.
   //   - `matches`: a parser-based detector for command-STRUCTURE rules
   //     (which git subcommand runs). Returns the offending substring for
   //     the log, or undefined when no match. Sees through chains / `$(…)`
@@ -96,16 +95,6 @@ const CHECKS: readonly GuardCheck[] = [
     bypassPhrase: 'Allow gpg bypass',
     label: 'git --no-gpg-sign / commit.gpgsign=false',
     pattern: /(?:--no-gpg-sign|commit\.gpgsign\s*=\s*false)\b/,
-  },
-  {
-    bypassPhrase: 'Allow lint bypass',
-    label: 'DISABLE_PRECOMMIT_LINT=1 (skips lint step in pre-commit hook)',
-    pattern: /\bDISABLE_PRECOMMIT_LINT\s*=\s*[1-9]/,
-  },
-  {
-    bypassPhrase: 'Allow test bypass',
-    label: 'DISABLE_PRECOMMIT_TEST=1 (skips test step in pre-commit hook)',
-    pattern: /\bDISABLE_PRECOMMIT_TEST\s*=\s*[1-9]/,
   },
   {
     // SKIP_ASSET_DOWNLOAD is a documented degraded-mode flag in

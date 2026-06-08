@@ -1,19 +1,20 @@
 /**
- * @file Require every top-level `function` declaration to be `export`ed. Per
- *   the fleet rule: "we should export all methods for testing." Exposing
- *   internal helpers as named exports lets tests import them directly, no
- *   `__test_only__` shim or per-test rebuild. Scope: top-level function
- *   declarations only (not class methods, not arrow functions assigned to
- *   const, not local nested functions). Local helpers and arrow-as-const are
- *   visible to their parent module's tests via the parent function; only the
- *   top-level surface needs explicit export. Allowed exceptions (skipped):
+ * @file Require every top-level declaration — `function`, `interface`, `type`
+ *   alias, and `class` — to be `export`ed. Per the fleet rule "Export
+ *   everything; privacy is handled by NOT importing, never by leaving a symbol
+ *   unexported." Exposing internal helpers + types as named exports lets tests
+ *   import them directly, no `__test_only__` shim or per-test rebuild. Scope:
+ *   top-level declarations only (not class methods, not arrow functions
+ *   assigned to const, not local nested declarations). Local helpers and
+ *   arrow-as-const are visible to their parent module's tests via the parent;
+ *   only the top-level surface needs explicit export. Allowed exceptions
+ *   (skipped):
  *
- *   - The function is named `main` (script entrypoint convention). Autofix:
- *     prepends `export ` to the function declaration when the function isn't
- *     already named in a sibling `export { ... }` statement. If a
- *     named-re-export already exists, report without autofix (the human picks:
- *     keep the named-re-export shape, or collapse to the inline `export
- *     function`).
+ *   - A function named `main` (script entrypoint convention). Autofix: prepends
+ *     `export ` to the declaration when it isn't already named in a sibling
+ *     `export { ... }` statement. If a named-re-export already exists, report
+ *     without autofix (the human picks: keep the named-re-export shape, or
+ *     collapse to the inline `export`).
  */
 
 import path from 'node:path'
@@ -70,9 +71,9 @@ const rule = {
     fixable: 'code',
     messages: {
       missing:
-        'Top-level function `{{name}}` should be `export function {{name}}`. Exporting internal helpers makes them directly testable.',
+        'Top-level {{kind}} `{{name}}` should be exported (`export {{kind}} {{name}}`). Exporting the top-level surface makes it directly importable + testable; privacy is handled by not importing, not by leaving it unexported.',
       missingAlreadyReExported:
-        'Top-level function `{{name}}` is named in a separate `export {{ }}` statement; collapse to inline `export function {{name}}` for clarity (autofix skipped to avoid creating a duplicate export).',
+        'Top-level {{kind}} `{{name}}` is named in a separate `export {{ }}` statement; collapse to inline `export {{kind}} {{name}}` for clarity (autofix skipped to avoid creating a duplicate export).',
     },
     schema: [],
   },
@@ -113,39 +114,55 @@ const rule = {
 
     let exportedNames: Set<string> | undefined
 
-    return {
-      'Program > FunctionDeclaration'(node: AstNode) {
-        if (!node.id || node.id.type !== 'Identifier') {
-          return
-        }
-        const name = node.id.name
-        if (SCRIPT_ENTRY_NAMES.has(name)) {
-          return
-        }
-        if (!exportedNames) {
-          exportedNames = collectExportedNames(sourceCode.ast)
-        }
-        if (exportedNames.has(name)) {
-          // Already exported via `export { name }` — report without
-          // autofix; the human can choose whether to collapse to the
-          // inline export.
-          context.report({
-            node: node.id,
-            messageId: 'missingAlreadyReExported',
-            data: { name },
-          })
-          return
-        }
+    // Shared handler for every top-level declaration shape. `kind` is the
+    // human label used in the message + autofix (`function`/`interface`/
+    // `type`/`class`); `allowMain` exempts the `main` script-entry convention,
+    // which only applies to functions.
+    function check(node: AstNode, kind: string, allowMain: boolean): void {
+      if (!node.id || node.id.type !== 'Identifier') {
+        return
+      }
+      const name = node.id.name
+      if (allowMain && SCRIPT_ENTRY_NAMES.has(name)) {
+        return
+      }
+      if (!exportedNames) {
+        exportedNames = collectExportedNames(sourceCode.ast)
+      }
+      if (exportedNames.has(name)) {
+        // Already exported via `export { name }` — report without autofix;
+        // the human can choose whether to collapse to the inline export.
         context.report({
           node: node.id,
-          messageId: 'missing',
-          data: { name },
-          fix(fixer: RuleFixer) {
-            // Insert `export ` at the function's start. Handles both
-            // `function name(...)` and `async function name(...)`.
-            return fixer.insertTextBefore(node, 'export ')
-          },
+          messageId: 'missingAlreadyReExported',
+          data: { kind, name },
         })
+        return
+      }
+      context.report({
+        node: node.id,
+        messageId: 'missing',
+        data: { kind, name },
+        fix(fixer: RuleFixer) {
+          // Insert `export ` at the declaration's start. Handles `function`,
+          // `async function`, `interface`, `type`, and `class` alike.
+          return fixer.insertTextBefore(node, 'export ')
+        },
+      })
+    }
+
+    return {
+      'Program > FunctionDeclaration'(node: AstNode) {
+        check(node, 'function', true)
+      },
+      'Program > TSInterfaceDeclaration'(node: AstNode) {
+        check(node, 'interface', false)
+      },
+      'Program > TSTypeAliasDeclaration'(node: AstNode) {
+        check(node, 'type', false)
+      },
+      'Program > ClassDeclaration'(node: AstNode) {
+        check(node, 'class', false)
       },
     }
   },

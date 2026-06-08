@@ -39,6 +39,7 @@ import noStructuredClonePreferJson from './rules/no-structured-clone-prefer-json
 import noSyncRmInTestLifecycle from './rules/no-sync-rm-in-test-lifecycle.mts'
 import noTopLevelAwait from './rules/no-top-level-await.mts'
 import noUnderscoreIdentifier from './rules/no-underscore-identifier.mts'
+import noUseStrictInEsm from './rules/no-use-strict-in-esm.mts'
 import noVitestEmptyTest from './rules/no-vitest-empty-test.mts'
 import noVitestFocusedTests from './rules/no-vitest-focused-tests.mts'
 import noVitestIdenticalTitle from './rules/no-vitest-identical-title.mts'
@@ -123,6 +124,7 @@ const plugin = {
     'no-sync-rm-in-test-lifecycle': noSyncRmInTestLifecycle,
     'no-top-level-await': noTopLevelAwait,
     'no-underscore-identifier': noUnderscoreIdentifier,
+    'no-use-strict-in-esm': noUseStrictInEsm,
     'no-vitest-empty-test': noVitestEmptyTest,
     'no-vitest-focused-tests': noVitestFocusedTests,
     'no-vitest-identical-title': noVitestIdenticalTitle,

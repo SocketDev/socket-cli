@@ -14,8 +14,6 @@ PreToolUse Bash hook that blocks destructive git commands and hook bypasses unle
 | `git rm -r{f,}`                                             | `Allow revert bypass`     |
 | `--no-verify`                                               | `Allow no-verify bypass`  |
 | `--no-gpg-sign` / `commit.gpgsign=false`                    | `Allow gpg bypass`        |
-| `DISABLE_PRECOMMIT_LINT=1`                                  | `Allow lint bypass`       |
-| `DISABLE_PRECOMMIT_TEST=1`                                  | `Allow test bypass`       |
 | `git push --force` / `-f`                                   | `Allow force-push bypass` |
 
 ## Inline sentinels (scoped auto-bypass)
