@@ -121,7 +121,13 @@ async function copyExternalPackages() {
   // Cleanup package files.
   await Promise.all(
     [
-      [blessedPath, ['lib/**/*.js', 'usr/**/**', 'vendor/**/*.js']],
+      // Keep blessed's terminfo (the flat files in usr/, e.g. usr/xterm) but
+      // NOT usr/fonts/** — the OFL-1.1 Terminus bitmap font is only used by the
+      // unused BigText widget, and shipping it forces an OFL-1.1 license. The
+      // 'usr/*' glob matches one level deep, so usr/fonts/<file> is dropped.
+      // Re-verify usr/ contents on a blessed upgrade (a nested terminfo dir
+      // would be dropped too).
+      [blessedPath, ['lib/**/*.js', 'usr/*', 'vendor/**/*.js']],
       [blessedContribPath, ['lib/**/*.js', 'index.js']],
       [
         socketRegistryPath,
