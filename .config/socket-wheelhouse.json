@@ -2,6 +2,6 @@
   "$schema": "./socket-wheelhouse-schema.json",
   "schemaVersion": 1,
   "repoName": "socket-cli",
-  "layout": "monorepo",
-  "native": "consumer"
+  "repo": { "type": "monorepo" },
+  "build": { "from": "npm-registry", "type": "js" }
 }
