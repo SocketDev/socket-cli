@@ -28,6 +28,7 @@
 .config/socket-wheelhouse-schema.json linguist-generated=true
 .editorconfig linguist-generated=true
 .git-hooks linguist-generated=true
+.github/agent-ci.Dockerfile linguist-generated=true
 .github/dependabot.yml linguist-generated=true
 .npmrc linguist-generated=true
 assets/README.md linguist-generated=true
@@ -62,6 +63,6 @@ test/_shared/fleet/lib linguist-generated=true
 test/unit/fleet linguist-generated=true
 
 # Vendored binary blobs (no diff, no merge, no text-mode).
-.claude/hooks/_shared/acorn/acorn.wasm binary
-template/.claude/hooks/_shared/acorn/acorn.wasm binary
+.claude/hooks/fleet/_shared/acorn/acorn.wasm binary
+template/.claude/hooks/fleet/_shared/acorn/acorn.wasm binary
 # ─── END fleet-canonical ────────────────────────────────────────

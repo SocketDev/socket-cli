@@ -27,6 +27,7 @@ import noInlineDeferAsync from './rules/no-inline-defer-async.mts'
 import noInlineLogger from './rules/no-inline-logger.mts'
 import noLoggerNewlineLiteral from './rules/no-logger-newline-literal.mts'
 import noNpxDlx from './rules/no-npx-dlx.mts'
+import noPackageManagerAutoUpdateReenable from './rules/no-package-manager-auto-update-reenable.mts'
 import noPlaceholders from './rules/no-placeholders.mts'
 import noPlatformSpecificImport from './rules/no-platform-specific-import.mts'
 import noProcessChdir from './rules/no-process-chdir.mts'
@@ -74,6 +75,7 @@ import preferTypeboxSchema from './rules/prefer-typebox-schema.mts'
 import preferUndefinedOverNull from './rules/prefer-undefined-over-null.mts'
 import preferWindowsTestHelpers from './rules/prefer-windows-test-helpers.mts'
 import requireAsyncIifeEntry from './rules/require-async-iife-entry.mts'
+import requireRegexComment from './rules/require-regex-comment.mts'
 import socketApiTokenEnv from './rules/socket-api-token-env.mts'
 import sortArrayLiterals from './rules/sort-array-literals.mts'
 import sortBooleanChains from './rules/sort-boolean-chains.mts'
@@ -112,6 +114,8 @@ const plugin = {
     'no-inline-logger': noInlineLogger,
     'no-logger-newline-literal': noLoggerNewlineLiteral,
     'no-npx-dlx': noNpxDlx,
+    'no-package-manager-auto-update-reenable':
+      noPackageManagerAutoUpdateReenable,
     'no-placeholders': noPlaceholders,
     'no-platform-specific-import': noPlatformSpecificImport,
     'no-process-chdir': noProcessChdir,
@@ -159,6 +163,7 @@ const plugin = {
     'prefer-undefined-over-null': preferUndefinedOverNull,
     'prefer-windows-test-helpers': preferWindowsTestHelpers,
     'require-async-iife-entry': requireAsyncIifeEntry,
+    'require-regex-comment': requireRegexComment,
     'socket-api-token-env': socketApiTokenEnv,
     'sort-array-literals': sortArrayLiterals,
     'sort-boolean-chains': sortBooleanChains,

@@ -58,6 +58,15 @@ export function parseSoakExcludeBlock(content: string): string[] {
     if (ln === '' || (ln.length > 0 && !/^\s/.test(ln))) {
       break
     }
+    // Match a YAML bullet entry line and capture the unquoted package specifier.
+    // ^\s*        leading whitespace
+    // -\s*        YAML list dash + trailing space(s)
+    // ['"]?       optional opening single- or double-quote
+    // ([^'"#\s]+) capture group: package name — no quotes, hashes, or whitespace
+    // ['"]?       optional closing quote
+    // \s*         optional trailing whitespace before an inline comment
+    // (?:#.*)?    non-capturing optional inline comment starting with #
+    // $           end of line
     const m = /^\s*-\s*['"]?([^'"#\s]+)['"]?\s*(?:#.*)?$/.exec(ln)
     if (m) {
       entries.push(m[1]!)

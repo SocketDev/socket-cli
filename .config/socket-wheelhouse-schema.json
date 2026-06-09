@@ -54,6 +54,34 @@
         }
       ]
     },
+    "kind": {
+      "description": "Build/run character (drives CI breadth), orthogonal to `native`. `node-runner` = the repo runs on Node; its checks/tests are OS-independent, so CI runs lean (Linux-only by default). `native-builder` = the repo compiles native artifacts on a build server (heavy toolchain image, multi-OS/arch matrix; socket-btm). Optional — defaults to `node-runner`. NOTE: orthogonal to `native` — socket-cli is `native: consumer` yet `kind: node-runner` (it pulls prebuilt binaries; its own CI just runs Node).",
+      "anyOf": [
+        {
+          "const": "node-runner",
+          "type": "string"
+        },
+        {
+          "const": "native-builder",
+          "type": "string"
+        }
+      ]
+    },
+    "capabilities": {
+      "description": "Repo capabilities — traits the repo HAS that fleet tooling keys off (NOT specific to any one tool). Each KEY is a lowercase trait token; each VALUE is an array of package globs (repo-relative) saying WHERE in the repo the trait applies. Repo-wide = `[\".\"]`. Consumers: off-by-default hooks gate on key-presence (a hook fires on commands anywhere in the repo, so it only needs to know the trait exists); capability-specific lint rules + build/CI lanes scope to the globs (e.g. run clippy only under the cargo packages). Keys are enum-constrained so a typo fails validation instead of silently gating nothing.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cargo": {
+          "description": "Repo builds Rust via `cargo build --release` (or a fleet build-prod alias). Value = package globs containing the Rust/cargo source (e.g. `[\"packages/*-builder\"]`). Gates concurrent-cargo-build-guard (key-presence) today; future cargo/clippy lint rules + rust build/CI lanes scope to these globs.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "hooks": {
       "description": "Git-hook opt-ins.",
       "type": "object",
@@ -152,6 +180,19 @@
         "requirePinnedFullSha": {
           "description": "Enforce 40-char SHA pins on every `uses:` ref. Defaults to true; an opt-out is reserved for special cases (e.g. workflow-dispatch test rigs) and currently has no consumer.",
           "type": "boolean"
+        },
+        "testOs": {
+          "description": "OS breadth for the reusable ci.yml TEST job (check/lint/type are always Linux-only). `all` (default) runs ubuntu+macos+windows; `linux` runs ubuntu only. Opt into `linux` ONLY for code with no OS-sensitive behavior (e.g. a pure HTTP/string lib). Repos with path/fs/spawn/platform branches (socket-lib, socket-registry) MUST stay `all` — Linux-only would hide Windows regressions. The caller `ci.yml` reads this to set `os-versions`.",
+          "anyOf": [
+            {
+              "const": "all",
+              "type": "string"
+            },
+            {
+              "const": "linux",
+              "type": "string"
+            }
+          ]
         }
       }
     },
@@ -159,6 +200,20 @@
       "description": "Claude Code opt-ins.",
       "type": "object",
       "properties": {
+        "capabilities": {
+          "description": "Repo capabilities that gate off-by-default fleet hooks. Each is a trait the repo HAS (e.g. `cargo` = builds Rust via cargo), not a hook name — the wheelhouse `CAPABILITY_HOOKS` map decides which hooks each capability installs. Declared here once; cascade installs the gated hooks + wires settings.json only for repos that list the capability. Enum-constrained so a typo fails validation instead of silently no-op-ing.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "anyOf": [
+              {
+                "const": "cargo",
+                "description": "Repo builds Rust via `cargo build --release` (or a fleet build-prod alias). Installs `concurrent-cargo-build-guard`, which blocks a second release build while one is in flight.",
+                "type": "string"
+              }
+            ]
+          }
+        },
         "includeSecurityScanSkill": {
           "description": "Ship `.claude/skills/fleet/scanning-security/SKILL.md`.",
           "type": "boolean"

@@ -38,6 +38,26 @@ const FLEET_HOOKS_DIR = path.join(REPO_ROOT, '.claude', 'hooks', 'fleet')
 // Bullet shape: `- \`<name>\` — description`. Captures the backticked hook id.
 const REGISTRY_BULLET_RE = /^- `([a-z0-9-]+)`/gm
 
+// A bullet is "capability-gated" when its prose declares the hook installs only
+// in repos opting into a capability — the canonical phrasing cites the hook's
+// `@socket-capability <cap>` header. Such a hook is LEGITIMATELY absent from any
+// repo that doesn't declare that capability (the cascade's dir-mirror copy
+// filter skips it), so its bullet must NOT be flagged stale there. The registry
+// markdown is byte-identical in every repo, so this signal travels downstream
+// even though the hook DIRECTORY does not. Capture the whole bullet line so we
+// can pair each hook id with its own text.
+//
+// Regex parts:
+//   ^- `         a registry bullet opens with "- `" at line start.
+//   ([a-z0-9-]+) the hook id (kebab-case), captured.
+//   `            closing backtick of the id.
+//   [^\n]*       the rest of the bullet's first line (its prose).
+const REGISTRY_BULLET_LINE_RE = /^- `([a-z0-9-]+)`[^\n]*/gm
+
+// Marker in a bullet's prose that flags the hook as capability-gated. Matches
+// the canonical phrasing `@socket-capability <cap>` (in backticks in the prose).
+const CAPABILITY_GATED_RE = /@socket-capability\s+[a-z0-9-]+/
+
 // The real fleet hook directory names (every `.claude/hooks/fleet/<name>/`
 // except the shared-utility dir, which is not a hook).
 export function realFleetHooks(fleetHooksDir: string): Set<string> {
@@ -60,13 +80,31 @@ export function registryBullets(registryText: string): string[] {
   return ids
 }
 
+// Hook ids whose bullet declares them capability-gated. These are legitimately
+// absent in repos that don't opt into the capability, so a missing dir is NOT
+// staleness for them.
+export function capabilityGatedBullets(registryText: string): Set<string> {
+  const gated = new Set<string>()
+  let m
+  while ((m = REGISTRY_BULLET_LINE_RE.exec(registryText)) !== null) {
+    if (CAPABILITY_GATED_RE.test(m[0])) {
+      gated.add(m[1]!)
+    }
+  }
+  return gated
+}
+
 // Bullets that name no real hook dir (stale / misnamed) — the hard-fail set.
+// A capability-gated bullet whose hook is absent is NOT stale: the cascade
+// intentionally skips installing it in repos lacking the capability, yet the
+// canonical registry (identical in every repo) still documents it.
 export function staleBullets(
   bullets: readonly string[],
   real: ReadonlySet<string>,
+  capabilityGated: ReadonlySet<string> = new Set(),
 ): string[] {
   // oxlint-disable-next-line unicorn/no-array-sort -- .filter() already returns a fresh array (no shared mutation); .toSorted() would trip socket/no-es2023-array-methods-below-node20 in cascaded Node-18 repos.
-  return bullets.filter(id => !real.has(id)).sort()
+  return bullets.filter(id => !real.has(id) && !capabilityGated.has(id)).sort()
 }
 
 function main(): void {
@@ -75,8 +113,10 @@ function main(): void {
     return
   }
   const real = realFleetHooks(FLEET_HOOKS_DIR)
-  const bullets = registryBullets(readFileSync(REGISTRY_PATH, 'utf8'))
-  const stale = staleBullets(bullets, real)
+  const registryText = readFileSync(REGISTRY_PATH, 'utf8')
+  const bullets = registryBullets(registryText)
+  const capabilityGated = capabilityGatedBullets(registryText)
+  const stale = staleBullets(bullets, real, capabilityGated)
 
   // Report (non-fatal) undocumented hooks so the completeness gap stays visible.
   const documented = new Set(bullets)

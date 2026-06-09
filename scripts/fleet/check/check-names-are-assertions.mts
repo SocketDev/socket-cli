@@ -45,7 +45,12 @@ const logger = getDefaultLogger()
 //   -match(es)     lock-step-headers-MATCH
 //   -loads         oxlint-plugin-LOADS
 //   -parity        fleet-soak-exclude-PARITY
+// Two alternatives anchored at end-of-string ($):
+//   alt 1: hyphen + non-capturing group (are|have|is) + hyphen + [a-z] (state initial)
+//          + [a-z0-9-]* (rest of state word) + $ — matches -are-canonical, -is-absent, …
+//   alt 2: hyphen + non-capturing group of fixed verb tails + $ — matches -resolve, -loads, …
 const ASSERTION_TAIL =
+  // alt1: -(?:are|have|is)-[a-z][a-z0-9-]*$  |  alt2: -(?:resolve|resolves|match|matches|loads|parity)$
   /-(?:are|have|is)-[a-z][a-z0-9-]*$|-(?:resolve|resolves|match|matches|loads|parity)$/
 
 // Names that read as assertions but are exempt from the tail pattern (their

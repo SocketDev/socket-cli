@@ -97,6 +97,34 @@ describe('token-guard hook', () => {
       assert.equal(r.code, 2)
       assert.match(r.stderr, /Linear API token/)
     })
+    it('Anthropic API key (sk-ant-)', () => {
+      const r = runHook('echo sk-ant-api03-ABCDEFGHIJKLMNOPQRSTUVWXYZ012345')
+      assert.equal(r.code, 2)
+      assert.match(r.stderr, /Anthropic API key/)
+    })
+    it('OpenAI project key (sk-proj-)', () => {
+      const r = runHook('echo sk-proj-ABCDEFGHIJKLMNOPQRSTUVWXYZ012345')
+      assert.equal(r.code, 2)
+      assert.match(r.stderr, /OpenAI project key/)
+    })
+    it('Hugging Face token (hf_)', () => {
+      const r = runHook('echo hf_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+      assert.equal(r.code, 2)
+      assert.match(r.stderr, /Hugging Face token/)
+    })
+    it('npm access token (npm_)', () => {
+      const r = runHook('echo npm_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ab')
+      assert.equal(r.code, 2)
+      assert.match(r.stderr, /npm access token/)
+    })
+    it('DigitalOcean PAT (dop_v1_)', () => {
+      // Assemble the 64-hex token at runtime — a contiguous `dop_v1_<64hex>`
+      // literal in source trips GitHub push-protection secret scanning. The
+      // guard still sees the same assembled string the user would echo.
+      const r = runHook(`echo dop_v1_${'a'.repeat(64)}`)
+      assert.equal(r.code, 2)
+      assert.match(r.stderr, /DigitalOcean PAT/)
+    })
     it('GitHub PAT', () => {
       const r = runHook('echo ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcd1234')
       assert.equal(r.code, 2)
@@ -211,7 +239,10 @@ describe('token-guard hook', () => {
     // a sensitive env reference. Word-boundary fix means `PASS` must
     // be a standalone token (or at a `_`/`-`/`.`/`/` boundary).
     it('a "paths-" filename does not trip PASS', () => {
-      assert.equal(runHook('cat scripts/fleet/check/paths-are-canonical.mts').code, 0)
+      assert.equal(
+        runHook('cat scripts/fleet/check/paths-are-canonical.mts').code,
+        0,
+      )
     })
     it('AUTHOR_NAME does not trip AUTH', () => {
       // AUTHOR ends with R; the boundary-after match correctly skips

@@ -75,6 +75,10 @@ const BACKENDS: Readonly<Record<BackendName, BackendDescriptor>> = {
     name: 'claude',
     run(_promptFile, _outFile) {
       const model = process.env['CLAUDE_MODEL'] ?? 'opus'
+      // Pair the model with a reasoning effort (claude `--effort`) — see
+      // _shared/multi-agent-backends.md. Review is judgment-heavy, so the
+      // default is `high`; codex's sibling knob is CODEX_REASONING.
+      const effort = process.env['CLAUDE_EFFORT'] ?? 'high'
       // Programmatic-Claude lockdown — all four flags per CLAUDE.md
       // (tools / allowedTools / disallowedTools / permission-mode).
       // The official permission flow is hooks → deny → mode → allow →
@@ -89,6 +93,8 @@ const BACKENDS: Readonly<Record<BackendName, BackendDescriptor>> = {
           '--print',
           '--model',
           model,
+          '--effort',
+          effort,
           '--no-session-persistence',
           '--permission-mode',
           'dontAsk',
@@ -117,12 +123,21 @@ const BACKENDS: Readonly<Record<BackendName, BackendDescriptor>> = {
     hybrid: true,
     name: 'opencode',
     run(_promptFile, _outFile) {
-      // opencode reads the prompt from stdin and writes to stdout in
-      // its non-interactive form. It is hybrid (routes to other
-      // providers internally per its config) so model selection lives
-      // outside the runner.
+      // opencode reads the prompt from stdin and writes to stdout in its
+      // non-interactive `run` form. It is hybrid — it dispatches to whatever
+      // provider its own config selects — so by default model selection lives
+      // outside this runner (opencode's config / its `recent` model).
+      //
+      // `OPENCODE_MODEL` lets a caller pin a `provider/model` slug for this run
+      // — the way the Fireworks + Synthetic providers are reached (e.g.
+      // `fireworks-ai/accounts/fireworks/models/glm-5p1`,
+      // `synthetic/hf:moonshotai/Kimi-K2.5`); see
+      // _shared/multi-agent-backends.md for the provider-slug catalog. Absent
+      // the env, opencode picks per its own config.
+      const model = process.env['OPENCODE_MODEL']
+      const argv = model ? ['run', '--model', model] : ['run']
       return {
-        argv: ['run'],
+        argv,
         outMode: 'stdout',
       }
     },

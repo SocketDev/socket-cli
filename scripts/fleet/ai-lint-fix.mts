@@ -42,7 +42,11 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { hasClaudeCli, runClaudeFix } from './ai-lint-fix/claude.mts'
 import { runLintJson } from './ai-lint-fix/oxlint-json.mts'
 import { bucketFindings, buildPrompt } from './ai-lint-fix/prompt.mts'
-import { TIER_MODEL, escalateTier } from './ai-lint-fix/rule-guidance.mts'
+import {
+  TIER_EFFORT,
+  TIER_MODEL,
+  escalateTier,
+} from './ai-lint-fix/rule-guidance.mts'
 
 const logger = getDefaultLogger()
 
@@ -113,18 +117,20 @@ async function main(): Promise<void> {
 
   for (const [filePath, findings] of byFile) {
     const rel = path.relative(cwd, filePath)
-    // Pick the model from the highest-tier rule in this file's batch.
-    // Pure-Haiku files (identifier renames, null→undefined, etc.) run
-    // cheap; any caller-chain rewrite escalates to Sonnet; a
-    // `socket/max-file-lines` finding escalates to Opus.
+    // Pick the model AND effort from the highest-tier rule in this file's
+    // batch. Pure-Haiku files (identifier renames, null→undefined, etc.) run
+    // cheap on low effort; any caller-chain rewrite escalates to Sonnet on
+    // medium; a `socket/max-file-lines` finding escalates to Opus on high.
+    // Effort tracks the tier per the CLAUDE.md token-spend rule.
     const ruleIds = findings
       .map(f => f.ruleId)
       .filter((r): r is string => typeof r === 'string')
     const tier = escalateTier(ruleIds)
     const model = TIER_MODEL[tier]
-    logger.log(`AI-fix ${rel} (${findings.length} findings, ${tier})…`)
+    const effort = TIER_EFFORT[tier]
+    logger.log(`AI-fix ${rel} (${findings.length} findings, ${tier}/${effort})…`)
     const prompt = buildPrompt(filePath, findings)
-    const { exitCode, stderr } = await runClaudeFix(prompt, cwd, model)
+    const { exitCode, stderr } = await runClaudeFix(prompt, cwd, model, effort)
     if (exitCode === 0) {
       totalEdits += findings.length
       continue

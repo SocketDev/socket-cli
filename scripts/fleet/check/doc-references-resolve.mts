@@ -68,6 +68,28 @@ export function isWheelhouseOwnedRef(scriptPath: string): boolean {
   return false
 }
 
+// The canonical fleet opt-out marker (the same one cross-repo-guard honors). A
+// SKILL that documents how to cascade FROM the wheelhouse INTO a member repo
+// prints a multi-line shell block — `cd <…>/socket-wheelhouse && \n node
+// scripts/repo/sync-scaffolding/cli.mts …` — where the `node` path resolves in
+// the wheelhouse, not in the member repo running this check. Such a path is
+// documented-on-purpose, not rot, and the block carries the marker. The marker
+// sits on the `cd` line (`# socket-lint: allow cross-repo`), so the ref one
+// line below it is exempt too: cross-repo cascade instructions are inherently
+// two-line `cd && node` echo blocks.
+const CROSS_REPO_ALLOW_RE = /socket-lint:\s*allow cross-repo/
+
+export function lineIsCrossRepoExempt(
+  lines: readonly string[],
+  index: number,
+): boolean {
+  if (CROSS_REPO_ALLOW_RE.test(lines[index] ?? '')) {
+    return true
+  }
+  // The marker on the immediately-preceding line covers the `cd && node` pair.
+  return index > 0 && CROSS_REPO_ALLOW_RE.test(lines[index - 1] ?? '')
+}
+
 /**
  * Find every `node <local-script>` reference in a markdown body whose target is
  * missing under repoRoot. Scans line by line so a doc can carry many refs;
@@ -83,6 +105,9 @@ export function scanDoc(
   const lines = text.split('\n')
   for (let i = 0, { length } = lines; i < length; i += 1) {
     const line = lines[i]!
+    if (lineIsCrossRepoExempt(lines, i)) {
+      continue
+    }
     // A line can contain `node …` inside a table cell / backticks / prose.
     // Slice from each `node ` occurrence and let the extractor read the path.
     let idx = line.indexOf('node ')

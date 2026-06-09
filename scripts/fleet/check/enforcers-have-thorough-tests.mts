@@ -79,6 +79,12 @@ function listDirs(dir: string): string[] {
 
 // Count `test('…'` / `it('…'` case registrations in a test source.
 export function countTestCases(src: string): number {
+  // Match every test-case registration call in source text:
+  // \b           — word boundary so "iteit" doesn't match
+  // (?:it|test)  — the two vitest case-registration identifiers
+  // \s*          — optional whitespace before .each or (
+  // (?:\.each\([^)]*\))? — optional .each(...) call with any arguments
+  // \s*\(        — required opening paren that starts the case callback
   const matches = src.match(/\b(?:it|test)\s*(?:\.each\([^)]*\))?\s*\(/g)
   return matches ? matches.length : 0
 }

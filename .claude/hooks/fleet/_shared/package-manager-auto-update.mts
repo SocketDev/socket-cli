@@ -265,6 +265,36 @@ export const AUTO_UPDATE_CHECKS: readonly AutoUpdateCheck[] = [
   },
 ]
 
+export interface MacosPkgAutoUpdateEnv {
+  // The env-var name a shell `export` sets.
+  name: string
+  // The value that disables auto-update (always '1' today).
+  value: string
+  // The AutoUpdateCheck ids this knob disables, for traceability back to the
+  // source-of-truth detectors above.
+  managerIds: readonly string[]
+}
+
+// The env knobs setup-security-tools persists into the managed shell-rc block on
+// macOS so a mid-task `brew` / `npm` / `pnpm` run can't auto-update a tool under
+// a build/scan. Single source of truth shared with the detectors above — the
+// shell-rc bridge imports this list instead of hardcoding a divergent copy, so
+// adding a future macOS knob here flows into the persisted block automatically.
+// HOMEBREW_NO_AUTO_UPDATE maps to the 'homebrew' check; NO_UPDATE_NOTIFIER is
+// honored by both 'npm' and 'pnpm'. Listed alphabetically by env name.
+export const MACOS_PKG_AUTO_UPDATE_ENV: readonly MacosPkgAutoUpdateEnv[] = [
+  {
+    name: 'HOMEBREW_NO_AUTO_UPDATE',
+    value: '1',
+    managerIds: ['homebrew'],
+  },
+  {
+    name: 'NO_UPDATE_NOTIFIER',
+    value: '1',
+    managerIds: ['npm', 'pnpm'],
+  },
+]
+
 // True when `name` (a platform string) applies to the current OS.
 export function platformApplies(platform: PkgManagerPlatform): boolean {
   return platform === 'all' || platform === os.platform()

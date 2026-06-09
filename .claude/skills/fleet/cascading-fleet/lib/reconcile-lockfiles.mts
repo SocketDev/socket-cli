@@ -63,12 +63,19 @@ type RunResult = { status: number; stdout: string; stderr: string }
 function run(
   cmd: string,
   args: string[],
-  opts: { cwd: string; env?: NodeJS.ProcessEnv | undefined },
+  opts: {
+    cwd: string
+    env?: NodeJS.ProcessEnv | undefined
+    timeoutMs?: number | undefined
+  },
 ): RunResult {
   const r = spawnSync(cmd, args, {
     cwd: opts.cwd,
     env: opts.env ?? process.env,
     encoding: 'utf8',
+    // A wedged install (Socket Firewall proxy contention on a large repo) would
+    // otherwise hang the reconcile for hours; cap it. SIGTERM on timeout.
+    timeout: opts.timeoutMs,
   })
   return {
     status: r.status ?? 1,
@@ -119,7 +126,9 @@ function sweepStaleReconcileWorktrees(src: string, repo: string): void {
     }
     const pid = Number(name.slice(prefix.length))
     if (Number.isInteger(pid) && pid !== process.pid && !pidAlive(pid)) {
-      logger.warn(`  sweeping stale reconcile worktree: ${wtPath} (pid ${pid} dead)`)
+      logger.warn(
+        `  sweeping stale reconcile worktree: ${wtPath} (pid ${pid} dead)`,
+      )
       gitSilent(src, ['worktree', 'remove', '--force', wtPath])
       gitSilent(src, ['worktree', 'prune'])
     }
@@ -192,11 +201,32 @@ for (const rawLine of fleetReposRaw) {
     continue
   }
 
+  // Lockfile-only first: this resolves the lockfile WITHOUT the fetch/link
+  // phase, so it's near-instant and never touches the Socket Firewall proxy
+  // (the phase that wedges on a large repo). If it reports the lockfile is
+  // already current, the full install is unnecessary — most repos after a
+  // cascade are exactly this case. 2-minute cap as a backstop.
+  const probe = run('pnpm', ['install', '--lockfile-only'], {
+    cwd: wt,
+    timeoutMs: 2 * 60 * 1000,
+  })
+  const lockChanged = git(wt, ['status', '--porcelain', '--', 'pnpm-lock.yaml'])
+  if (probe.status === 0 && lockChanged.stdout.trim() === '') {
+    // Lockfile already current — nothing to reconcile. Don't run the full
+    // (proxy-bound, wedge-prone) install at all.
+    RESULTS.push(`${repo}|noop:lockfile-current`)
+    gitSilent(src, ['worktree', 'remove', '--force', wt])
+    continue
+  }
+
+  // Lockfile drifted (or the probe couldn't decide) — do the full install to
+  // materialize it, but cap it so a proxy wedge can't hang the reconcile.
   const install = run(
     'pnpm',
     ['install', '--config.confirmModulesPurge=false'],
     {
       cwd: wt,
+      timeoutMs: 8 * 60 * 1000,
     },
   )
   if (install.status !== 0) {
@@ -204,7 +234,7 @@ for (const rawLine of fleetReposRaw) {
     // Surface the real failure — an error message is UI; `fail:install` alone
     // forces the reader to reproduce the install by hand. Print the tail of
     // stderr (then stdout) so the cause (a missing export, a version-check
-    // abort, a build-script crash) is visible in the RESULTS run itself.
+    // abort, a build-script crash, or a timeout) is visible in the RESULTS run.
     const detail = (install.stderr.trim() || install.stdout.trim()).slice(-1500)
     if (detail) {
       logger.error(`  pnpm install failed in ${repo}:`)

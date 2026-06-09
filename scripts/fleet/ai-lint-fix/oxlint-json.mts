@@ -1,8 +1,8 @@
 /**
- * @file oxlint `--format=json` data layer for the ai-lint-fix step: the raw
- *   diagnostic shapes, normalization into the ESLint-style OxlintFile[] the rest
- *   of the step consumes, and the runner that invokes oxlint and parses its
- *   output. Keeps the JSON/spawn concerns out of the orchestrator.
+ * @file Oxlint `--format=json` data layer for the ai-lint-fix step: the raw
+ *   diagnostic shapes, normalization into the ESLint-style OxlintFile[] the
+ *   rest of the step consumes, and the runner that invokes oxlint and parses
+ *   its output. Keeps the JSON/spawn concerns out of the orchestrator.
  */
 
 import process from 'node:process'
@@ -70,7 +70,7 @@ export function normalizeOxlintJson(payload: OxlintJsonOutput): OxlintFile[] {
     // "eslint(no-unused-vars)"; strip the plugin wrapper.
     const ruleId =
       typeof d.code === 'string' && d.code.includes('(')
-        ? d.code.replace(/^[^(]+\(([^)]+)\).*$/, '$1')
+        ? d.code.replace(/^[^(]+\(([^)]+)\).*$/, '$1') // `^[^(]+` plugin name; `([^)]+)` captures rule id; `\).*$` discards the rest
         : d.code
     const msg: OxlintMessage = {
       ruleId,

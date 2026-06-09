@@ -211,3 +211,73 @@ export const SENSITIVE_NAME_FRAGMENTS: readonly string[] = [
   'AUTH',
   'CREDENTIAL',
 ]
+
+export interface SecretValuePattern {
+  // The regex that matches the literal secret VALUE shape (not the env-var
+  // name) — `AKIA…`, `ghp_…`, `sktsec_…`, a JWT, a PEM header.
+  re: RegExp
+  // Human label naming the vendor / kind, used in the block message.
+  label: string
+}
+
+// Literal secret-VALUE shapes — if any matches in arbitrary text, a real
+// credential has been pasted somewhere it shouldn't be. Distinct from the
+// `*_TOKEN_PATTERNS` above (those match an env-var KEY name). This is the
+// single source of truth shared by the Bash-time `token-guard`, the edit-time
+// `secret-content-guard`, and the commit-time scanners — one catalog so a new
+// vendor shape is added once and every gate picks it up (code is law, DRY).
+export const SECRET_VALUE_PATTERNS: readonly SecretValuePattern[] = [
+  { re: /sktsec_[A-Za-z0-9]{20,}/, label: 'Socket API key (sktsec_)' },
+  { re: /\bvtwn_[A-Za-z0-9_-]{8,}/, label: 'Val Town token (vtwn_)' },
+  { re: /\blin_api_[A-Za-z0-9_-]{8,}/, label: 'Linear API token (lin_api_)' },
+  { re: /\bsk-ant-[A-Za-z0-9_-]{20,}/, label: 'Anthropic API key (sk-ant-)' },
+  { re: /\bsk-proj-[A-Za-z0-9_-]{20,}/, label: 'OpenAI project key (sk-proj-)' },
+  { re: /\bhf_[A-Za-z0-9]{30,}/, label: 'Hugging Face token (hf_)' },
+  { re: /\bnpm_[A-Za-z0-9]{36}/, label: 'npm access token (npm_)' },
+  { re: /\bdop_v1_[a-f0-9]{64}/, label: 'DigitalOcean PAT (dop_v1_)' },
+  { re: /\bsk-[A-Za-z0-9_-]{20,}/, label: 'OpenAI/Anthropic-style secret key (sk-)' },
+  { re: /\bsk_live_[A-Za-z0-9_-]{16,}/, label: 'Stripe live secret (sk_live_)' },
+  { re: /\bsk_test_[A-Za-z0-9_-]{16,}/, label: 'Stripe test secret (sk_test_)' },
+  { re: /\bpk_live_[A-Za-z0-9_-]{16,}/, label: 'Stripe live publishable (pk_live_)' },
+  { re: /\brk_live_[A-Za-z0-9_-]{16,}/, label: 'Stripe live restricted (rk_live_)' },
+  { re: /\bghp_[A-Za-z0-9]{30,}/, label: 'GitHub personal access token (ghp_)' },
+  { re: /\bgho_[A-Za-z0-9]{30,}/, label: 'GitHub OAuth token (gho_)' },
+  // ghs_ / ghu_ char classes include `.` and `_` to match both the classic
+  // opaque format AND the stateless JWT format (≥36 is the min for both).
+  { re: /\bghs_[A-Za-z0-9._]{36,}/, label: 'GitHub app server token (ghs_)' },
+  { re: /\bghu_[A-Za-z0-9._]{36,}/, label: 'GitHub user access token (ghu_)' },
+  { re: /\bghr_[A-Za-z0-9]{30,}/, label: 'GitHub refresh token (ghr_)' },
+  { re: /\bgithub_pat_[A-Za-z0-9_]{20,}/, label: 'GitHub fine-grained PAT' },
+  { re: /\bglpat-[A-Za-z0-9_-]{16,}/, label: 'GitLab PAT (glpat-)' },
+  { re: /\bAKIA[0-9A-Z]{16}/, label: 'AWS access key ID (AKIA)' },
+  { re: /\bxox[baprs]-[A-Za-z0-9-]{10,}/, label: 'Slack token (xox_-)' },
+  { re: /\bAIza[0-9A-Za-z_-]{35}/, label: 'Google API key (AIza)' },
+  {
+    re: /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/,
+    label: 'JWT',
+  },
+  {
+    re: /-----BEGIN [A-Z ]*PRIVATE KEY( BLOCK)?-----/,
+    label: 'private key (PEM block)',
+  },
+]
+
+export interface SecretValueHit {
+  label: string
+  // The matched secret substring, for the block message. Callers MUST redact
+  // before logging if the surface could be public.
+  match: string
+}
+
+// Return the first secret-VALUE shape matched in `text`, or undefined. Used by
+// every secret gate (Bash / edit / commit) so they share one detection list.
+export function scanSecretValues(text: string): SecretValueHit | undefined {
+  for (let i = 0, { length } = SECRET_VALUE_PATTERNS; i < length; i += 1) {
+    const { label, re } = SECRET_VALUE_PATTERNS[i]!
+    const m = re.exec(text)
+    if (m) {
+      return { label, match: m[0] }
+    }
+  }
+  return undefined
+}

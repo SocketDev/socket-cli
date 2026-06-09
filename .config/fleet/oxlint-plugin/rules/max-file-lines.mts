@@ -12,11 +12,12 @@
  *   > the. natural seams are. The rule's job is to make the cap visible at every
  *   > commit. Allowed exceptions:
  *
- *   - Files marked at the top with a comment containing `max-file-lines:
- *     legitimate parser/state-machine/table` or `eslint-disable
- *     socket/max-file-lines`. Per CLAUDE.md the rare legitimate cases are
- *     parsers, state machines, and config tables; they should self-document
- *     with a one-line comment.
+ *   - Files marked at the top with `max-file-lines: <category> — <reason>`: a
+ *     category word naming WHAT the file is (parser, state-machine, table, cli,
+ *     …) plus a `—`/`-`/`:`-separated reason for WHY it can't split. The filler
+ *     word `legitimate` is NOT a category — `max-file-lines: legitimate` does
+ *     not exempt (it was the loophole that let a padded test dodge splitting).
+ *     Say what the file is, not that you deem it acceptable.
  *   - Generated artifacts — the rule trusts .config/fleet/oxlintrc.json's
  *     ignorePatterns to keep generated files out of scope.
  */
@@ -26,8 +27,14 @@ import type { AstNode, RuleContext } from '../lib/rule-types.mts'
 const SOFT_CAP = 500
 const HARD_CAP = 1000
 
-const BYPASS_RE =
-  /max-file-lines:\s*(?:legitimate|parser|state[- ]?machine|table)/i
+// A file self-exempts with `max-file-lines: <category> — <reason>`: a real
+// category word (parser, state-machine, table, cli, …) followed by a `—`/`-`/
+// `:`-separated justification. `<category> — <reason>` is the whole contract —
+// the category names WHAT the file is, the reason says WHY it can't split. The
+// filler word `legitimate` is NOT a category: `max-file-lines: legitimate …`
+// does not exempt. "No blanket file exclusions" — say what it is, not that you
+// deem it OK.
+const BYPASS_RE = /max-file-lines:\s*(?!legitimate\b)[a-z][a-z-]*\s*[—:-]\s*\S/i
 
 /**
  * @type {import('eslint').Rule.RuleModule}

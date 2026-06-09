@@ -41,9 +41,21 @@
       "description": "JavaScript SDK for the socket.dev API"
     },
     {
+      "name": "socket-vscode",
+      "description": "VS Code extension for socket.dev security analysis (published as vscode-socket-security)"
+    },
+    {
+      "name": "socket-webext",
+      "description": "Browser extension for socket.dev security analysis"
+    },
+    {
       "name": "sdxgen",
       "description": "CycloneDX and SPDX manifest generator (Socket dx gen)",
       "optIns": ["squash-history"]
+    },
+    {
+      "name": "skills",
+      "description": "Shared Claude Code skills published as socket-skills"
     },
     {
       "name": "stuie",

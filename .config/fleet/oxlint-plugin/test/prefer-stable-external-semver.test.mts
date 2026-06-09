@@ -4,10 +4,12 @@
  *   lib/rule-tester.mts). Skips silently when `oxlint` isn't on PATH so a
  *   fresh-laptop checkout doesn't false-fail before `pnpm install` materializes
  *   the bin link. Why the rule exists: bare `semver` from npm carries weeks of
- *   fresh-tarball risk during the soak window. The wheelhouse vendors a pinned,
- *   vetted semver under `@socketsecurity/lib-stable/external/semver`. The rule
- *   rewrites bare `import ... from "semver"` to the vetted path; rewriting the
- *   path is deterministic so the autofix is safe.
+ *   fresh-tarball risk during the soak window, and shipping it as a runtime dep
+ *   defeats the bundled-deps policy. The wheelhouse vendors a pinned, vetted
+ *   semver internally and exposes it through the curated
+ *   `@socketsecurity/lib-stable/versions/*` helpers. The rule is report-only:
+ *   the public surface is named helpers across several modules, so there is no
+ *   single specifier to autofix to — the author picks the right helper.
  */
 
 import { describe, test } from 'node:test'
@@ -20,8 +22,12 @@ describe('socket/prefer-stable-external-semver', () => {
     new RuleTester().run('prefer-stable-external-semver', rule, {
       valid: [
         {
-          name: 'already importing the vetted path',
-          code: 'import semver from "@socketsecurity/lib-stable/external/semver"\n',
+          name: 'already using a curated versions helper',
+          code: 'import { isValidVersion } from "@socketsecurity/lib-stable/versions/parse"\n',
+        },
+        {
+          name: 'type-only import is allowed',
+          code: 'import type { ReleaseType } from "semver"\n',
         },
         {
           name: 'unrelated import',
@@ -33,15 +39,16 @@ describe('socket/prefer-stable-external-semver', () => {
           name: 'bare default import',
           code: 'import semver from "semver"\n',
           errors: [{ messageId: 'banned' }],
-          output:
-            'import semver from "@socketsecurity/lib-stable/external/semver"\n',
         },
         {
           name: 'bare named import',
           code: 'import { gte } from "semver"\n',
           errors: [{ messageId: 'banned' }],
-          output:
-            'import { gte } from "@socketsecurity/lib-stable/external/semver"\n',
+        },
+        {
+          name: 'bare subpath import',
+          code: 'import satisfies from "semver/functions/satisfies"\n',
+          errors: [{ messageId: 'banned' }],
         },
       ],
     })

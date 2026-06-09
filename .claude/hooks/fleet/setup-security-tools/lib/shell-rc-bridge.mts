@@ -31,6 +31,8 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
+import { MACOS_PKG_AUTO_UPDATE_ENV } from '../../_shared/package-manager-auto-update.mts'
+
 // Sentinels are intentionally simple — no env-var names in the
 // BEGIN/END lines so user search-replace on a token name can't
 // accidentally orphan the block.
@@ -47,12 +49,19 @@ const BLOCK_END = '# END socketsecurity env'
  */
 export function buildBlockBody(token: string): string {
   const quoted = shellSingleQuote(token)
+  const autoUpdateExports = MACOS_PKG_AUTO_UPDATE_ENV.map(
+    knob => `export ${knob.name}=${shellSingleQuote(knob.value)}`,
+  ).join('\n')
   return `# Token persisted by setup-security-tools install.mts.
 # Rotate via: node .claude/hooks/fleet/setup-security-tools/install.mts --rotate
 # Keychain copy still lives at: security find-generic-password -s socketsecurity -a SOCKET_API_KEY
 # SOCKET_API_KEY is universally supported across Socket tools (CLI, SDK, sfw,
 # fleet scripts) — one env var covers the whole surface with no fallback chain.
-export SOCKET_API_KEY=${quoted}`
+export SOCKET_API_KEY=${quoted}
+# Disable package-manager auto-update so a mid-task brew/npm/pnpm run can't
+# change a tool version under a build/scan (reproducibility + supply-chain
+# hazard). Knobs sourced from _shared/package-manager-auto-update.mts.
+${autoUpdateExports}`
 }
 
 /**

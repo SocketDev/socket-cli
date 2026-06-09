@@ -77,6 +77,18 @@ If the script reports `not cleaning up: <reason>`, the repo has at least one loc
 3. **Cascade commit from an untrusted author**: usually means another agent / contributor authored it. Validate the commit by hand, then either trust the author (add to `~/.claude/git-authors.json` aliases) or rebase the commit out manually.
 4. **Template SHA that's not a strict ancestor**: the local commit may be from a branch of `socket-wheelhouse/template/` that was never merged. Confirm by inspecting the SHA in the wheelhouse history (`git -C $PROJECTS/socket-wheelhouse log <sha>`). If it's orphan / abandoned, `git reset --hard origin/<base>` manually after backing up the SHA in case it's wanted later.
 
+## Dogfood cascade sweeps parallel-session work: inspect before push
+
+A dogfood cascade (`sync-scaffolding/cli.mts --target . --fix`) reconciles the **entire** repo against the template, not only the file you edited, and commits everything it fixes in one `chore(wheelhouse): cascade template@<sha>` commit. When a parallel session has landed (or is mid-flight on) other fleet work, that single commit captures THEIR files (new hooks, soak entries, oxlint rules) under YOUR authorship, and can pull an un-annotated `pnpm-workspace.yaml` soak entry that blocks your push at the soak-date gate.
+
+The trap: you edit one `template/` file, cascade to sync its live copy, and land a 9-to-17-file commit dominated by another session's work, plus an un-pushable workspace file.
+
+Discipline:
+
+1. After a dogfood cascade, run **`git show --stat HEAD`** before pushing.
+2. If the cascade commit touches files you did NOT author this turn, `git reset --hard <your-source-sha>` to drop it and push your source commit by itself. The live `.claude/` / `.config/` copies sync on the next clean cascade by whoever owns the wave. Your source edit is the deliverable; the dogfood cascade is convenience, not a requirement for your change to be correct.
+3. The per-commit push succeeds; folding the live-copy sync into your push captures a parallel session's work in your commit.
+
 ## What this rule does NOT do
 
 - It does **not** sync the cascade's actual content. That's `sync-scaffolding/cli.mts`'s job.

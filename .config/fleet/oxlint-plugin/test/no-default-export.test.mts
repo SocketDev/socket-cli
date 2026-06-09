@@ -21,6 +21,21 @@ describe('socket/no-default-export', () => {
           name: 'named re-export',
           code: 'export { foo } from "./mod"\n',
         },
+        {
+          name: 'config entrypoint: vitest.config.mts default export exempt',
+          filename: 'vitest.config.mts',
+          code: 'export default defineConfig({ test: {} })\n',
+        },
+        {
+          name: 'config entrypoint: oxlint.config.ts default export exempt',
+          filename: 'oxlint.config.ts',
+          code: 'export default config({ rules: {} })\n',
+        },
+        {
+          name: 'config entrypoint: nested .config.mjs exempt',
+          filename: 'packages/foo/rolldown.config.mjs',
+          code: 'export default { input: "x" }\n',
+        },
       ],
       invalid: [
         {

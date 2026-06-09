@@ -169,6 +169,18 @@ Declare the trust model in the agent's system prompt too: name the surfaces it
 may read, state plainly that each is untrusted user input, and pin the agent to
 one narrow task so a scope-creep injection has nothing to grab.
 
+## Shell-injection bypass constructs
+
+The shell-injection guard blocks evasion-only constructs that defeat Bash
+allowlists (the `command:*` deny rules) by smuggling a command past the matcher:
+
+- Zsh `=cmd` EQUALS expansion (resolves `=foo` to the path of `foo`).
+- Process substitution `<()` / `>()` / `=()`.
+- Zsh-module builtins: `zmodload`, `ztcp`, `zpty`, `syswrite`, `emulate -c`.
+
+These have no legitimate use in fleet automation, so they are blocked outright
+(bypass `Allow shell-injection bypass`).
+
 ## Bypass
 
 Legitimate need to write injection-shaped text (e.g. authoring _this_ guard's

@@ -21,6 +21,7 @@ The fleet hooks each cite their own trigger + bypass surface in their `README.md
 - `c8-ignore-reason-guard` — blocks a c8/v8 coverage-ignore directive with no reason
 - `codex-no-write-guard` — blocks `codex` invocations with write-intent flags
 - `commit-author-guard` — canonical-identity gate on git author email
+- `concurrent-cargo-build-guard` — blocks a second `cargo build --release` while one is in flight (an OOM guard). Capability-gated via the `@socket-capability cargo` header, so the cascade installs it only in repos declaring `claude.capabilities: ["cargo"]`.
 - `dogfood-cascade-reminder` — Stop-time: edited template/ but the dogfood copy is stale → cascade
 - `enterprise-push-reminder` — GitHub enterprise ruleset push-property reminders
 - `extension-build-current-guard` — pairs `tools/.../extension/src/**` edits with a build
@@ -28,6 +29,8 @@ The fleet hooks each cite their own trigger + bypass surface in their `README.md
 - `inline-script-defer-guard` — blocks `<script>` without `defer`/`async`/`module`
 - `judgment-reminder` — perfectionist / direct-imperative / queue-completion nudges
 - `mass-delete-guard` — blocks a commit deleting ≥50 files or >75% of the tree (clobbered index)
+- `no-amend-foreign-commit-guard` — blocks `git commit --amend` onto an unpushed commit not authored this turn (a parallel session's work); bypass `Allow amend-foreign bypass`
+- `no-blanket-file-exclusion-guard` — blocks a `max-file-lines:` exemption marker that names a self-judgment word (`legitimate`, `ok`, …) instead of a real category; no bypass
 - `no-blind-keychain-read-guard` — blocks Bash reads of platform keychain tokens
 - `no-cascade-transient-git-guard` — blocks cascade commits on a cherry-pick/detached/rebase HEAD
 - `no-empty-commit-guard` — blocks `--allow-empty` commits without bypass
@@ -40,6 +43,7 @@ The fleet hooks each cite their own trigger + bypass surface in their `README.md
 - `no-test-in-scripts-guard` — blocks `node:test` suites under `scripts/` (they never run in CI; move to `test/unit/` vitest)
 - `prefer-json-clone-guard` — `JSON.parse(JSON.stringify(x))` over `structuredClone`
 - `no-token-in-dotenv-guard` — blocks raw token writes into `.env*` / `.envrc`
+- `no-unisolated-git-fixture-guard` — blocks a test that spawns `git` against a temp-dir fixture without stripping the inherited `GIT_DIR`/`GIT_WORK_TREE` env + pinning `GIT_CONFIG_GLOBAL`, which under pre-commit leaks onto the live `.git/config` (sets `core.bare`/junk identity, stacks junk commits); bypass `Allow unisolated-git-fixture bypass`
 - `node-modules-staging-guard` — blocks staging `node_modules/` into git
 - `parallel-agent-edit-guard` — blocks edits to files another agent owns this session
 - `path-guard` — blocks multi-stage paths constructed outside `paths.mts`

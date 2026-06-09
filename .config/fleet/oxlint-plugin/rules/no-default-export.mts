@@ -17,7 +17,15 @@
  *     declarations, no canonical name to assign.
  *   - `export default <expression>` where the expression isn't a bare identifier
  *     (e.g. `export default { foo: 1 }`, `export default makePlugin(...)`) —
- *     choosing a name requires human input.
+ *     choosing a name requires human input. Exempt: tooling **config
+ *     entrypoints** (`*.config.{mts,ts,cts,mjs,js,cjs}`). vitest / oxlint /
+ *     rolldown / vite / tsup read the module's `default` export by contract —
+ *     `export default defineConfig({...})` is the documented shape and there is
+ *     no named-export alternative the tool will honor. Flagging it is a false
+ *     positive (the config file can't satisfy both the tool and the rule), so a
+ *     config-entrypoint filename short-circuits the rule. This mirrors how the
+ *     plugin's own rule files carry a per-file disable for the same "the tool's
+ *     contract requires a default export" reason.
  */
 
 /**
@@ -25,6 +33,17 @@
  */
 
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
+
+// Tooling config entrypoints whose loader reads the module's `default` export
+// by contract (vitest / oxlint / rolldown / vite / tsup / …): `foo.config.mts`,
+// `vitest.config.ts`, etc. The path is normalized to `/` first (the same
+// inline form `no-platform-specific-import` uses) so the suffix test holds on
+// win32 without dragging a runtime dependency into the plugin's rule modules.
+const CONFIG_ENTRYPOINT_RE = /\.config\.[cm]?[jt]s$/
+
+export function isConfigEntrypoint(filename: string): boolean {
+  return CONFIG_ENTRYPOINT_RE.test(filename.replace(/\\/g, '/'))
+}
 
 const rule = {
   meta: {
@@ -46,6 +65,11 @@ const rule = {
   },
 
   create(context: RuleContext) {
+    const filename = context.filename ?? context.getFilename?.() ?? ''
+    if (isConfigEntrypoint(filename)) {
+      return {}
+    }
+
     const sourceCode = context.getSourceCode
       ? context.getSourceCode()
       : context.sourceCode

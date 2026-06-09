@@ -26,7 +26,9 @@ export interface BlueskyPost {
   author?:
     | { handle?: string | undefined; displayName?: string | undefined }
     | undefined
-  record?: { text?: string | undefined; createdAt?: string | undefined } | undefined
+  record?:
+    | { text?: string | undefined; createdAt?: string | undefined }
+    | undefined
   likeCount?: number | undefined
   repostCount?: number | undefined
   replyCount?: number | undefined
@@ -44,6 +46,9 @@ function isSearchResponse(value: unknown): value is SearchPostsResponse {
 // Turn an at:// post URI into a bsky.app web link the reader can open.
 export function postWebUrl(post: BlueskyPost): string {
   const uri = post.uri ?? ''
+  // Matches an AT Protocol post URI: anchor ^ / $; group 1 `(did:[^/]+)` captures the
+  // DID authority (e.g. did:plc:xyz) up to the first `/`; literal path segment
+  // `app\.bsky\.feed\.post`; group 2 `(.+)` captures the record key (rkey).
   const match = uri.match(/^at:\/\/(did:[^/]+)\/app\.bsky\.feed\.post\/(.+)$/)
   if (!match) {
     return ''

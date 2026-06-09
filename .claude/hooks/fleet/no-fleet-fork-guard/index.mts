@@ -152,6 +152,22 @@ function hasFleetBlockMarkers(absPath: string): boolean {
   }
 }
 
+// Per-repo marker files: listed in the manifest's EXPECTED_FILES (presence
+// required, CONTENT VARIES per repo), NOT IDENTICAL_FILES (byte-identical
+// canonical). Every repo's socket-wheelhouse.json carries its own repoName /
+// layout / native / kind — editing it downstream is normal per-repo work, not a
+// canonical fork. Without this exemption the parent-dir-under-template rule in
+// isCanonicalRelativePath marks `.config/socket-wheelhouse.json` canonical
+// (because template/.config/ exists), false-blocking legitimate marker edits.
+const PER_REPO_MARKER_PATHS: readonly string[] = [
+  '.config/socket-wheelhouse.json',
+  '.socket-wheelhouse.json',
+]
+
+export function isPerRepoMarkerPath(rel: string): boolean {
+  return PER_REPO_MARKER_PATHS.includes(rel.replace(/\\/g, '/'))
+}
+
 export function isCanonicalRelativePath(
   rel: string,
   repoRoot?: string | undefined,
@@ -223,6 +239,12 @@ async function main(): Promise<number> {
   }
 
   const relToRepo = path.relative(repoRoot, absPath)
+
+  // Per-repo marker files carry per-repo content (EXPECTED_FILES, not
+  // IDENTICAL_FILES) — editing them downstream is expected, not a fork.
+  if (isPerRepoMarkerPath(relToRepo)) {
+    return 0
+  }
 
   if (!isCanonicalRelativePath(relToRepo, repoRoot)) {
     return 0

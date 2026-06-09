@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// max-file-lines: cli -- single-purpose CLI port; argparse + 4 subcommands; splitting fractures the flow
+// max-file-lines: cli — single-purpose port; argparse + 4 subcommands; splitting fractures the flow
 
 /**
  * @file Add / clone / save-sparse / restore-sparse partial submodules. Ported

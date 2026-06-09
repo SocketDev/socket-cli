@@ -364,6 +364,46 @@ test('does NOT fire on descriptive "pre-existing X was fixed"', async () => {
   assert.strictEqual(result.stdout, '')
 })
 
+test('detects "fix it … or leave it broken" false binary', async () => {
+  const result = await runHook([
+    {
+      type: 'assistant',
+      content:
+        'Two options: fix the annotation at the source and cascade fleet-wide, or leave the 5 commits stranded until the other session lands.',
+    },
+  ])
+  assertBlock(result, /Fix > defer/)
+  assert.match(result.stdout, /excuse-detector/)
+})
+
+test('detects "fix it or just leave it as-is"', async () => {
+  const result = await runHook([
+    {
+      type: 'assistant',
+      content: 'I can repair the gate or just leave it broken for now.',
+    },
+  ])
+  assertBlock(result, /Fix > defer/)
+})
+
+test('does NOT fire on descriptive "the build was broken, now fixed"', async () => {
+  // The pattern requires the fix-vs-leave-broken CHOICE shape ("fix … or
+  // leave it broken"). A bare adjective near a deferral verb ("left the
+  // build broken; I fixed it") is descriptive, not a false binary — it
+  // must not fire. (This is why there's no bare-"broken"-deferral pattern:
+  // "broken"/"failing" are too common in fix-reporting prose.)
+  const result = await runHook([
+    {
+      type: 'assistant',
+      content:
+        'The cascade left the build broken; I fixed it and tests are green again.',
+    },
+  ])
+  assert.strictEqual(result.code, 0)
+  assert.strictEqual(result.stderr, '')
+  assert.strictEqual(result.stdout, '')
+})
+
 test('handles array-of-blocks content shape', async () => {
   const transcript = setupTranscript(
     JSON.stringify({

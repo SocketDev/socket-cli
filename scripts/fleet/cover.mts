@@ -118,6 +118,11 @@ export async function runQuiet(
 }
 
 export function parseTypeCoveragePercent(output: string): number | undefined {
+  // Extracts a floating-point percentage from type-coverage output.
+  // \( ... \)  — literal parens wrapping the fraction, e.g. "(123 / 456)"
+  // [\d\s/]+   — digits, spaces, and "/" inside the parens
+  // \s+        — whitespace separator between fraction and percentage
+  // ([\d.]+)%  — capture group 1: the percentage digits before the "%" sign
   const match = output.match(/\([\d\s/]+\)\s+([\d.]+)%/)
   return match?.[1] ? Number.parseFloat(match[1]) : undefined
 }
@@ -173,6 +178,11 @@ export function displayCodeCoverage(
     }
 
     const coverageHeaderMatch = mainOutput.match(
+      // Matches the v8 coverage table header block in full.
+      // " % Coverage report from v8\n"  — literal heading line
+      // ([-|]+)                          — capture group 1: separator row of dashes and pipes
+      // \n([^\n]+)\n                     — capture group 2: the column-name row between separators
+      // \1                               — backreference: the same separator row repeated below headers
       / % Coverage report from v8\n([-|]+)\n([^\n]+)\n\1/,
     )
     const allFilesMatch = mainOutput.match(

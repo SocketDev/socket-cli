@@ -134,6 +134,24 @@ await runStopReminder({
         /\bwant me to (?:address|build|do|fix|implement) [^.?!\n]+(?:or|,)\s+(?:skip|defer|document|treat|accept|leave|move on)\b/i,
       why: 'CLAUDE.md "Fix > defer": same pattern — re-litigating the fix decision. The user already said yes by virtue of asking.',
     },
+    {
+      label: 'fix it … or leave it broken/stranded',
+      // The "fix vs leave-broken" false binary. The other menu patterns
+      // catch "fix … or accept/defer/document/skip"; this one targets the
+      // bluntest framing — offering "leave it broken / stranded / unfixed"
+      // as a co-equal option to fixing. When the real choice is fix-vs-
+      // leave-broken, the answer is always fix.
+      //
+      // Anchored on BOTH a fix-verb AND an explicit "leave/let … broken"
+      // option separated by "or"/comma. A bare adjective ("the build was
+      // broken, I fixed it") must NOT fire — only the offered-as-a-choice
+      // shape does, which is why there's no bare-adjective deferral pattern
+      // here (that false-fires on descriptive prose like "left it broken;
+      // fixed now").
+      regex:
+        /\b(?:fix|correct|repair)(?:\s+it)?\b[^.?!\n]{0,80}(?:\bor\b|,)\s*(?:just\s+)?(?:leave|let)\b[^.?!\n]{0,40}\b(?:broken|stranded|unfixed|as[- ]is|stuck|blocked|failing|red)\b/i,
+      why: 'CLAUDE.md "Fix > defer" + "Never offer fix-vs-accept-as-gap as a choice": fix-vs-leave-broken is not a real choice. Pick the fix and execute. The only valid exception is a genuinely large refactor or off-machine action — state that trade-off explicitly, do not present "leave it broken" as a peer option.',
+    },
   ],
   closingHint:
     "These phrases usually precede a deferral. The Stop hook will block once so Claude must act on the matched item — either fix it now, or state the trade-off explicitly with the user's constraint.",

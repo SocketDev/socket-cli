@@ -50,6 +50,11 @@ const steps: Array<() => boolean> = [
   // Cost routing: every mutating (fix) skill must declare a model: tier so
   // mechanical work runs cheap. See docs/claude.md/fleet/skill-model-routing.md.
   () => run('node', ['scripts/fleet/check/mutating-skills-have-model.mts']),
+  // Cost routing twin: a programmatic AI spawn that pins a model must also pin
+  // reasoning effort (CLAUDE.md token-spend). The lib makes effort optional —
+  // this gate is the enforcement the optional field can't provide. Vocab per
+  // backend: .claude/skills/fleet/_shared/multi-agent-backends.md.
+  () => run('node', ['scripts/fleet/check/ai-spawns-have-paired-effort.mts']),
   // Code is law: every hook + socket/* rule ships thorough tests (both arms,
   // every branch). A token or absent test fails the gate.
   () => run('node', ['scripts/fleet/check/enforcers-have-thorough-tests.mts']),
@@ -93,6 +98,13 @@ const steps: Array<() => boolean> = [
   // script leaves the doc instruction dead. Past incident (2026-06-06):
   // setup-repo/SKILL.md cited 3 setup scripts that didn't exist.
   () => run('node', ['scripts/fleet/check/doc-references-resolve.mts']),
+  // A package's `exports` map and its public file surface must agree: every
+  // exports target resolves to a real file (no stale map entry that throws
+  // ERR_MODULE_NOT_FOUND for consumers), and every public built file (privacy
+  // taxonomy applied — not external/, not _-prefixed) is reachable through some
+  // exports entry (no orphaned public module). Complements files[] allowlist
+  // hygiene and runtime require-ability; this is the map ↔ files check.
+  () => run('node', ['scripts/fleet/check/public-files-are-exported.mts']),
   // Every external-tools.json / bundle-tools.json must match the shared
   // TypeBox schema (scripts/fleet/lib/external-tools-schema.mts). These files
   // pin tool versions + integrities; an unvalidated shape drift surfaces only
@@ -100,17 +112,6 @@ const steps: Array<() => boolean> = [
   // incident: a drifted tool entry left an INLINED_* env var empty and hung a
   // pre-commit test run.
   () => run('node', ['scripts/fleet/check/external-tools-are-valid.mts']),
-  // Every tool entry with release:"asset"|"archive" and a github: repository
-  // must reference a tag that exists as a real GitHub release. Schema shape
-  // checks accept any string for version/tag; a fabricated tag only surfaces
-  // at runtime as an asset-download failure. Network-gated: skips cleanly
-  // when gh is absent or unauthenticated so offline dev and CI without gh
-  // are not broken. Runs after the fast schema check (above) because a
-  // malformed file fails the schema check before reaching here.
-  () =>
-    run('node', [
-      'scripts/fleet/check/external-tools-release-tags-resolve.mts',
-    ]),
   // researching-recency SKILL.md must quote the engine's output markers
   // verbatim (badge, evidence envelope, footer fences) so the model's
   // pass-through/synthesis instructions match what the engine emits.

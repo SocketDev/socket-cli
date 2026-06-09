@@ -121,6 +121,10 @@ function rewriteIndex(source: string, ids: readonly string[]): string {
     .map(id => `    '${id}': ${toCamel(id)},`)
     .join('\n')
   return withImports.replace(
+    // Splice the rules block: capture group 1 = `\n<indent>rules: {\n` (opening brace line);
+    // `[\s\S]*?` = lazy-any — skips existing entries non-greedily;
+    // capture group 2 = `\n<indent>},\n` (closing brace line with trailing newline).
+    // Both captured delimiters are re-emitted verbatim; only the body between them is replaced.
     /(\n\s*rules:\s*\{\n)[\s\S]*?(\n\s*\},\n)/,
     (_m, open: string, close: string) => `${open}${registryEntries}${close}`,
   )

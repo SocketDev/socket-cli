@@ -1,0 +1,146 @@
+#!/usr/bin/env node
+// Claude Code PreToolUse hook — no-unisolated-git-fixture-guard.
+//
+// Blocks Write/Edit on a test file that spawns `git` against a temp-dir
+// fixture WITHOUT isolating the inherited git environment. When such a suite
+// runs inside the pre-commit hook, git exports GIT_DIR / GIT_WORK_TREE /
+// GIT_INDEX_FILE pointing at THE LIVE repo, and git honors those above the
+// cwd-based discovery — so the fixture's `git config` / `git init` / `git
+// commit` escape onto the real .git/config and HEAD. Observed damage: the
+// real config gets `user.email=test@example.com` (junk-authored commits) and
+// `core.bare=true` (breaks every worktree op), plus junk commits stacked on
+// the working branch.
+//
+// Detection model:
+//   - Fires only on a test file (`*.test.*`/`*.spec.*` or under test/).
+//   - The file spawns git: `spawnSync(... 'git' ...)`, `spawn(... 'git' ...)`,
+//     or `execFileSync(... 'git' ...)`.
+//   - AND builds a temp-dir fixture: `mkdtemp`/`tmpdir()`/`os.tmpdir`, or runs
+//     `git init`. (A test invoking git against the REAL repo for read-only
+//     introspection is out of scope — the temp-fixture signal is what marks a
+//     repo the test mutates.)
+//   - Allowed (isolation present) when the file does ANY of:
+//       * pins `GIT_CONFIG_GLOBAL` (and/or GIT_CONFIG_SYSTEM), OR
+//       * strips the inherited context (mentions `GIT_DIR` in a delete /
+//         env-scrub — e.g. `delete env['GIT_DIR']` or a LEAKY_GIT_VARS list), OR
+//       * its git config writes are all `config --local` (can't escape the
+//         fixture's own .git/config) AND it sets no global identity.
+//   - Otherwise block.
+//
+// Bypass: `Allow unisolated-git-fixture bypass` typed verbatim in a recent
+// user turn.
+//
+// Fails open on non-test files / parse problems — under-blocking beats
+// blocking on infrastructure noise.
+
+import process from 'node:process'
+
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+
+import { withEditGuard } from '../_shared/payload.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
+
+const logger = getDefaultLogger()
+
+const BYPASS_PHRASE = 'Allow unisolated-git-fixture bypass'
+
+// A path is a test file if its basename matches `*.test.*` / `*.spec.*` or it
+// lives under a `test/` / `__tests__/` directory.
+export function isTestFilePath(filePath: string): boolean {
+  const normalized = filePath.replace(/\\/g, '/')
+  if (/\.(?:test|spec)\.[cm]?[jt]sx?$/.test(normalized)) {
+    return true
+  }
+  return /(?:^|\/)(?:test|tests|__tests__)\//.test(normalized)
+}
+
+// The file spawns git as a child process.
+const GIT_SPAWN_RE =
+  /\b(?:spawnSync|spawn|execFileSync|execFile)\s*\(\s*['"]git['"]/
+
+export function spawnsGit(text: string): boolean {
+  return GIT_SPAWN_RE.test(text)
+}
+
+// The file builds a temp-dir fixture repo (the signal that it MUTATES a repo it
+// created, where leaked GIT_DIR redirects writes to the live repo).
+const TEMP_FIXTURE_RE = /\bmkdtemp(?:Sync)?\b|\btmpdir\s*\(|\bos\.tmpdir\b/
+const GIT_INIT_RE = /['"]init['"]/
+
+export function buildsTempFixture(text: string): boolean {
+  return TEMP_FIXTURE_RE.test(text) && GIT_INIT_RE.test(text)
+}
+
+// Isolation present: pins the config files, or strips the inherited GIT_DIR
+// context, or confines all config writes to `--local`.
+export function isIsolated(text: string): boolean {
+  // Pins the global/system config to /dev/null (or any path) — writes can't
+  // reach a real config.
+  if (/\bGIT_CONFIG_GLOBAL\b/.test(text)) {
+    return true
+  }
+  // Strips the inherited repo-pointing context (delete env['GIT_DIR'], a
+  // LEAKY_GIT_VARS scrub list, etc.).
+  if (/\bGIT_DIR\b/.test(text) && /\bdelete\b|LEAKY_GIT|GIT_WORK_TREE/.test(text)) {
+    return true
+  }
+  return false
+}
+
+export function shouldBlock(filePath: string, content: string): boolean {
+  if (!isTestFilePath(filePath)) {
+    return false
+  }
+  if (!spawnsGit(content) || !buildsTempFixture(content)) {
+    return false
+  }
+  if (isIsolated(content)) {
+    return false
+  }
+  return true
+}
+
+async function main(): Promise<void> {
+  await withEditGuard((filePath, content, payload) => {
+    if (!shouldBlock(filePath, content ?? '')) {
+      return
+    }
+    if (
+      payload.transcript_path &&
+      bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
+    ) {
+      return
+    }
+    logger.error(
+      [
+        '[no-unisolated-git-fixture-guard] Blocked: git fixture is not isolated from the live repo',
+        '',
+        `  File: ${filePath}`,
+        '',
+        '  This test spawns `git` against a temp-dir fixture but never strips the',
+        '  inherited GIT_DIR / GIT_WORK_TREE env or pins GIT_CONFIG_GLOBAL. Under',
+        '  the pre-commit hook those vars point at the LIVE repo, so the fixture',
+        '  writes onto the real .git/config (core.bare, junk identity) and HEAD.',
+        '',
+        '  Fix: isolate every git spawn. Either pass a cleaned env per spawn, or',
+        '  strip the vars in beforeEach (restore in afterEach):',
+        '    for (const v of ["GIT_DIR","GIT_WORK_TREE","GIT_INDEX_FILE",',
+        '         "GIT_COMMON_DIR","GIT_OBJECT_DIRECTORY","GIT_PREFIX",',
+        '         "GIT_CEILING_DIRECTORIES","GIT_NAMESPACE",',
+        '         "GIT_ALTERNATE_OBJECT_DIRECTORIES"]) delete process.env[v]',
+        "    process.env.GIT_CONFIG_GLOBAL = '/dev/null'",
+        "    process.env.GIT_CONFIG_SYSTEM = '/dev/null'",
+        '',
+        `  Bypass: type "${BYPASS_PHRASE}" in a new message, then retry.`,
+        '',
+      ].join('\n'),
+    )
+    process.exitCode = 2
+  })
+}
+
+// Only run the guard when invoked as the hook entrypoint; the test suite
+// imports the exported helpers directly.
+if (process.argv[1]?.endsWith('index.mts')) {
+  await main()
+}

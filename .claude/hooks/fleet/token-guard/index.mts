@@ -26,7 +26,10 @@
 
 import process from 'node:process'
 
-import { SENSITIVE_NAME_FRAGMENTS } from '../_shared/token-patterns.mts'
+import {
+  SECRET_VALUE_PATTERNS,
+  SENSITIVE_NAME_FRAGMENTS,
+} from '../_shared/token-patterns.mts'
 
 // Name fragments matched case-insensitively against the command.
 // Sourced from the shared catalog in `_shared/token-patterns.mts` so
@@ -67,37 +70,10 @@ const ENV_FILE_READ = /\b(?:bat|cat|head|less|more|tail)\b[^|]*\.env[^/\s|]*/
 const CURL_WITH_AUTH =
   /\bcurl\b(?:[^|]|\|(?!\s*(?:grep|head|jq|sed|tail)))*(?:--header|-H)\s*['"]?Authorization:/i
 
-// Literal token-shape patterns — if any match in the command string,
-// a real token has been pasted somewhere it shouldn't have been.
-const LITERAL_TOKEN_PATTERNS: Array<[RegExp, string]> = [
-  [/\bvtwn_[A-Za-z0-9_-]{8,}/, 'Val Town token (vtwn_)'],
-  [/\blin_api_[A-Za-z0-9_-]{8,}/, 'Linear API token (lin_api_)'],
-  [/\bsk-[A-Za-z0-9_-]{20,}/, 'OpenAI/Anthropic-style secret key (sk-)'],
-  [/\bsk_live_[A-Za-z0-9_-]{16,}/, 'Stripe live secret (sk_live_)'],
-  [/\bsk_test_[A-Za-z0-9_-]{16,}/, 'Stripe test secret (sk_test_)'],
-  [/\bpk_live_[A-Za-z0-9_-]{16,}/, 'Stripe live publishable (pk_live_)'],
-  [/\brk_live_[A-Za-z0-9_-]{16,}/, 'Stripe live restricted (rk_live_)'],
-  [/\bghp_[A-Za-z0-9]{30,}/, 'GitHub personal access token (ghp_)'],
-  [/\bgho_[A-Za-z0-9]{30,}/, 'GitHub OAuth token (gho_)'],
-  // ghs_ and ghu_ char classes include `.` and `_` to match both the
-  // classic opaque format AND the new stateless JWT format GitHub is
-  // rolling out (announced 2026-04, opt-in via X-GitHub-Stateless-S2S-Token
-  // header per 2026-05-15 changelog). JWT-format tokens are ~520 chars
-  // and contain two dots; classic opaque tokens are short and have no
-  // dots. The recommended regex from GitHub's docs is
-  // `ghs_[A-Za-z0-9\._]{36,}` — 36 is the minimum for both formats.
-  // Same applies to ghu_ prophylactically since user-to-server tokens
-  // are scheduled for the same format change (timing TBD per changelog).
-  [/\bghs_[A-Za-z0-9._]{36,}/, 'GitHub app server token (ghs_)'],
-  [/\bghu_[A-Za-z0-9._]{36,}/, 'GitHub user access token (ghu_)'],
-  [/\bghr_[A-Za-z0-9]{30,}/, 'GitHub refresh token (ghr_)'],
-  [/\bgithub_pat_[A-Za-z0-9_]{20,}/, 'GitHub fine-grained PAT'],
-  [/\bglpat-[A-Za-z0-9_-]{16,}/, 'GitLab PAT (glpat-)'],
-  [/\bAKIA[0-9A-Z]{16}/, 'AWS access key ID (AKIA)'],
-  [/\bxox[baprs]-[A-Za-z0-9-]{10,}/, 'Slack token (xox_-)'],
-  [/\bAIza[0-9A-Za-z_-]{35}/, 'Google API key (AIza)'],
-  [/\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/, 'JWT'],
-]
+// Literal token-shape patterns live in the shared SECRET_VALUE_PATTERNS
+// catalog (_shared/token-patterns.mts) — the SAME list the edit-time
+// secret-content-guard and the commit-time scanners read, so a new vendor
+// shape is added once and every gate picks it up (code is law, DRY).
 
 class BlockError extends Error {
   public readonly rule: string
@@ -190,8 +166,8 @@ export function check(command: string) {
   // 0. Literal token-shape in the command string — hardest block.
   // A real token value already landed in the command, which itself is
   // logged. We refuse to echo it further and urge rotation.
-  for (const [pattern, label] of LITERAL_TOKEN_PATTERNS) {
-    if (pattern.test(command)) {
+  for (const { label, re } of SECRET_VALUE_PATTERNS) {
+    if (re.test(command)) {
       throw new BlockError(
         `literal ${label} found in command string`,
         'Rotate the exposed token immediately. Never paste tokens into commands; read them from .env.local or a keychain at subprocess spawn time.',

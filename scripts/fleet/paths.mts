@@ -110,23 +110,24 @@ export const PNPM_LOCK = path.join(REPO_ROOT, 'pnpm-lock.yaml')
 /**
  * Wheelhouse-side vendored acorn-wasm directory. `refresh-vendored-acorn.mts`
  * copies the ultrathink build's output here; the cascade then ships it to every
- * fleet repo's `.claude/hooks/_shared/acorn/`.
+ * fleet repo's `.claude/hooks/fleet/_shared/acorn/`.
  */
 export const VENDORED_ACORN_DIR = path.join(
   REPO_ROOT,
-  'template/.claude/hooks/_shared/acorn',
+  'template/.claude/hooks/fleet/_shared/acorn',
 )
 
 /**
- * Files copied from the ultrathink acorn build into VENDORED_ACORN_DIR.
- * README.md is generated/stamped by the refresh script, not copied, so it's not
- * listed.
+ * Files copied from the ultrathink acorn build into VENDORED_ACORN_DIR. Only
+ * the artifacts that change with a new parser build are refreshed: the wasm
+ * binary and its wasm-bindgen glue. The hand-written `acorn-sync.mts` loader
+ * and `index.mts` API wrapper live in the dir verbatim and are not build
+ * outputs, so the refresh leaves them untouched. README.md is stamped by the
+ * refresh script, not copied.
  */
 export const VENDORED_ACORN_FILES: readonly string[] = [
   'acorn-bindgen.cjs',
-  'acorn-wasm-sync.mts',
   'acorn.wasm',
-  'index.mts',
 ]
 
 /**

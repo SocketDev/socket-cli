@@ -63,10 +63,14 @@ test(
     assert.ok(r)
     assert.equal(r.outcome, 'inserted')
     const content = readFileSync(rcPath, 'utf8')
-    assert.match(content, /BEGIN socket-cli env/)
-    assert.match(content, /END socket-cli env/)
+    assert.match(content, /BEGIN socketsecurity env/)
+    assert.match(content, /END socketsecurity env/)
     // Token literal exported as the primary universally-supported var.
     assert.match(content, new RegExp(`export SOCKET_API_KEY='${FAKE_TOKEN}'`))
+    // Package-manager auto-update knobs are persisted in the same block so a
+    // mid-task brew/npm/pnpm run can't change a tool version under a scan.
+    assert.match(content, /export HOMEBREW_NO_AUTO_UPDATE='1'/)
+    assert.match(content, /export NO_UPDATE_NOTIFIER='1'/)
     // The forward-canonical name is NOT exported — every Socket tool reads
     // SOCKET_API_KEY directly, so one export covers the whole surface.
     assert.doesNotMatch(content, /export SOCKET_API_TOKEN=/)
@@ -80,6 +84,29 @@ test(
     // Preserves existing content.
     assert.match(content, /existing/)
     assert.match(content, /export PATH/)
+  }),
+)
+
+test(
+  'auto-update knobs match the shared source-of-truth list (no divergence)',
+  withFakeHome(async rcPath => {
+    if (!IS_MACOS) {
+      return
+    }
+    writeFileSync(rcPath, '')
+    const { installShellRcBridge } = await import('../lib/shell-rc-bridge.mts')
+    const { MACOS_PKG_AUTO_UPDATE_ENV } = await import(
+      '../../_shared/package-manager-auto-update.mts'
+    )
+    installShellRcBridge(FAKE_TOKEN)
+    const content = readFileSync(rcPath, 'utf8')
+    for (const knob of MACOS_PKG_AUTO_UPDATE_ENV) {
+      assert.match(
+        content,
+        new RegExp(`export ${knob.name}='${knob.value}'`),
+        `expected ${knob.name} export in the managed block`,
+      )
+    }
   }),
 )
 
@@ -113,7 +140,7 @@ test(
     assert.equal(r.outcome, 'updated')
     const content = readFileSync(rcPath, 'utf8')
     // Only one block.
-    const beginCount = (content.match(/BEGIN socket-cli env/g) || []).length
+    const beginCount = (content.match(/BEGIN socketsecurity env/g) || []).length
     assert.equal(beginCount, 1)
     // New token is present; old is gone.
     assert.match(content, new RegExp(`export SOCKET_API_KEY='${rotated}'`))
@@ -142,7 +169,7 @@ test(
     assert.ok(r)
     assert.equal(r.outcome, 'updated')
     const content = readFileSync(rcPath, 'utf8')
-    const beginCount = (content.match(/BEGIN socket-cli env/g) || []).length
+    const beginCount = (content.match(/BEGIN socketsecurity env/g) || []).length
     assert.equal(beginCount, 1)
     assert.match(content, new RegExp(`export SOCKET_API_KEY='${FAKE_TOKEN}'`))
     assert.doesNotMatch(content, /export SOCKET_API_KEY='junk'/)
@@ -196,7 +223,7 @@ test(
     const removed = uninstallShellRcBridge()
     assert.equal(removed, true)
     const content = readFileSync(rcPath, 'utf8')
-    assert.doesNotMatch(content, /BEGIN socket-cli env/)
+    assert.doesNotMatch(content, /BEGIN socketsecurity env/)
     assert.match(content, /# before/)
     assert.match(content, /export PATH/)
   }),

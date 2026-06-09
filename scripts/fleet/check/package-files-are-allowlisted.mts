@@ -19,7 +19,13 @@
  *      Exit 0 = clean. Exit 1 = drift, with per-package finding lists.
  */
 
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import {
+  existsSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 // oxlint-disable-next-line socket/prefer-async-spawn -- sync stdin/stdout + typed string return matches the read-stdout-then-parse-JSON shape; v5 lib spawnSync omits 'encoding' from SpawnSyncOptions and returns string-or-Buffer.
@@ -105,6 +111,9 @@ export function findWorkspacePackages(repoRoot: string): string[] {
     if (ln === '' || (ln.length > 0 && !/^\s/.test(ln))) {
       break
     }
+    // Match a pnpm-workspace.yaml list item: optional leading whitespace, `- `,
+    // optional quote chars, capture group 1 = the glob value (non-greedy, stops
+    // before `'`, `"`, or `#`), optional trailing quote, optional `# comment`.
     const m = /^\s*-\s*['"]?([^'"#]+?)['"]?\s*(?:#.*)?$/.exec(ln)
     if (m?.[1]) {
       globs.push(m[1].trim())
@@ -234,10 +243,27 @@ export function checkPackage(
   }
 
   // Undershoot: each `files:` glob must match at least one path.
+  //
+  // A `files:` entry naming a build-output dir (`dist` / `build`) legitimately
+  // matches nothing in an UNBUILT checkout — `npm pack` finds no built files
+  // because none were produced. CI's lint/check job runs without guaranteeing a
+  // build, so don't flag a build-output entry as undershoot when that dir is
+  // absent on disk; a populated build still gets checked. The entry's first
+  // path segment names the dir to probe.
+  const BUILD_OUTPUT_DIRS = new Set(['build', 'dist'])
+  function isUnbuiltOutputEntry(entry: string): boolean {
+    // `files:` entries are package.json globs — always forward-slash, so the
+    // first path segment is the leading dir. No path normalization needed.
+    const firstSeg = entry.replace(/^\.\//, '').split('/')[0]!
+    return (
+      BUILD_OUTPUT_DIRS.has(firstSeg) &&
+      !existsSync(path.join(pkgDir, firstSeg))
+    )
+  }
   if (Array.isArray(pkg.files)) {
     for (let i = 0, { length } = pkg.files; i < length; i += 1) {
       const entry = pkg.files[i]!
-      if (!matchesAny(paths, entry)) {
+      if (!matchesAny(paths, entry) && !isUnbuiltOutputEntry(entry)) {
         findings.push({
           kind: 'undershoot',
           pkgDir,
@@ -262,12 +288,51 @@ export function checkPackage(
   }
 }
 
+// npm includes these unconditionally regardless of `files:`; they never need a
+// `files:` entry, so the canonical allowlist omits them.
+// `^` / `$` anchor the full filename; outer `(?:…|…|…|…)` alternates the four
+// unconditional names; each inner `(?:\.md)?` / `(?:\.md|\.txt)?` group covers
+// the optional extension; `[CS]` char class matches both LICENSE and LICENCE;
+// `i` flag makes the whole match case-insensitive.
+// prettier-ignore
+const ALWAYS_PUBLISHED_RE = /^(?:CHANGELOG(?:\.md)?|LICEN[CS]E(?:\.md|\.txt)?|README(?:\.md)?|package\.json)$/i
+
 /**
- * Run the check on every workspace package in `repoRoot`. Returns exit code (0
- * = clean, 1 = findings).
+ * Derive a tight, canonical `files:` allowlist from a package's publish output.
+ * Drops forbidden dev/test content and the always-published essentials, then
+ * collapses each top-level directory that ships any file into a single `dir`
+ * entry (npm's `files:` semantics include the whole subtree). Top-level files
+ * that aren't essentials are listed explicitly. Result is sorted (ASCII).
  */
-export function runCheck(repoRoot: string): number {
+export function computeCanonicalFiles(packOut: PackOutput): string[] {
+  const dirs = new Set<string>()
+  const topFiles = new Set<string>()
+  for (let i = 0, { length } = packOut.files; i < length; i += 1) {
+    const p = packOut.files[i]!.path
+    if (
+      ALWAYS_PUBLISHED_RE.test(p) ||
+      FORBIDDEN_PUBLISHED_PATTERNS.some(re => re.test(p))
+    ) {
+      continue
+    }
+    const slash = p.indexOf('/')
+    if (slash === -1) {
+      topFiles.add(p)
+    } else {
+      dirs.add(p.slice(0, slash))
+    }
+  }
+  return [...dirs, ...topFiles].toSorted()
+}
+
+/**
+ * Run the check on every workspace package in `repoRoot`. With `fix`, rewrites
+ * each package.json `files:` to {@link computeCanonicalFiles}. Returns exit code
+ * (0 = clean / fixed, 1 = findings remain in report mode).
+ */
+export function runCheck(repoRoot: string, fix = false): number {
   const findings: Finding[] = []
+  const fixed: string[] = []
   const pkgDirs = findWorkspacePackages(repoRoot)
   for (let i = 0, { length } = pkgDirs; i < length; i += 1) {
     const pkgDir = pkgDirs[i]!
@@ -285,7 +350,37 @@ export function runCheck(repoRoot: string): number {
       })
       continue
     }
+    if (fix) {
+      const canonical = computeCanonicalFiles(packOut)
+      const current = JSON.stringify(pkg.files ?? [])
+      if (JSON.stringify(canonical) !== current) {
+        const pkgPath = path.join(pkgDir, 'package.json')
+        const raw = JSON.parse(readFileSync(pkgPath, 'utf8')) as Record<
+          string,
+          unknown
+        >
+        raw['files'] = canonical
+        writeFileSync(pkgPath, `${JSON.stringify(raw, null, 2)}\n`, 'utf8')
+        fixed.push(`${pkg.name}: files = ${JSON.stringify(canonical)}`)
+      }
+      continue
+    }
     checkPackage(pkgDir, pkg, packOut, findings)
+  }
+  if (fix) {
+    if (fixed.length) {
+      logger.success(
+        `[check-package-files-are-allowlisted] rewrote files: in ${fixed.length} package(s):`,
+      )
+      for (let i = 0, { length } = fixed; i < length; i += 1) {
+        logger.log(`  ${fixed[i]!}`)
+      }
+    } else {
+      logger.log(
+        '[check-package-files-are-allowlisted] all files: lists already canonical',
+      )
+    }
+    return 0
   }
   if (findings.length === 0) {
     logger.log(
@@ -305,5 +400,5 @@ export function runCheck(repoRoot: string): number {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  process.exit(runCheck(REPO_ROOT))
+  process.exit(runCheck(REPO_ROOT, process.argv.includes('--fix')))
 }

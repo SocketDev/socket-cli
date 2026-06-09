@@ -108,6 +108,67 @@ if (!existsSync(WH_SCRIPT)) {
 // CLEANUP_SCRIPT is optional — older wheelhouse checkouts won't have it.
 // When missing, skip auto-cleanup; the cascade still runs.
 
+// Preflight (skipped under --dry-run, which is the safe way to inspect a dirty
+// tree). A cascade copies FROM the local wheelhouse template; sync-scaffolding
+// SILENTLY SKIPS any fleet dir whose template source is git-dirty, so a wave
+// run mid-edit lands a PARTIAL cascade downstream. And two concurrent cascades
+// contend on the Socket Firewall proxy and wedge. Refuse both up front rather
+// than produce a half-applied wave.
+const WH_DIR = path.join(PROJECTS, 'socket-wheelhouse')
+function preflightOrAbort(): void {
+  if (DRY_RUN) {
+    return
+  }
+  // (1) Template must be clean. Lockfiles are regenerable; ignore them.
+  const status = spawnSync(
+    'git',
+    ['-C', WH_DIR, 'status', '--porcelain', '--', 'template/'],
+    { encoding: 'utf8' },
+  )
+  const dirty = String(status.stdout ?? '')
+    .split('\n')
+    .map(l => l.trim())
+    .filter(l => l && !/pnpm-lock\.yaml$|pnpm-workspace\.yaml$/.test(l))
+  if (dirty.length > 0) {
+    logger.error(
+      [
+        '[cascade] Refusing to start: the wheelhouse template is dirty.',
+        '',
+        ...dirty.slice(0, 8).map(l => `  ${l}`),
+        dirty.length > 8 ? `  …and ${dirty.length - 8} more` : '',
+        '',
+        '  The cascade copies FROM template/; a dirty fleet dir is SKIPPED,',
+        '  landing a partial cascade downstream. Commit/stash the template',
+        '  changes first (a parallel session may own them — wait for it), or',
+        '  use --dry-run to inspect without mutating.',
+      ]
+        .filter(Boolean)
+        .join('\n'),
+    )
+    process.exit(2)
+  }
+  // (2) No other cascade in flight (concurrent waves wedge on the sfw proxy).
+  const ps = spawnSync('pgrep', ['-f', 'cascade-template\\.mts'], {
+    encoding: 'utf8',
+  })
+  const others = String(ps.stdout ?? '')
+    .split('\n')
+    .map(s => s.trim())
+    .filter(Boolean)
+    .filter(pid => Number(pid) !== process.pid)
+  if (others.length > 0) {
+    logger.error(
+      [
+        '[cascade] Refusing to start: another cascade-template run is active',
+        `  (pid ${others.join(', ')}). Concurrent cascades contend on the`,
+        '  Socket Firewall proxy and wedge. Wait for it to finish.',
+      ].join('\n'),
+    )
+    process.exit(2)
+  }
+}
+preflightOrAbort()
+
 const LOG_FILE = `${LOG_PATH_PREFIX}${TEMPLATE_SHA}.log`
 writeFileSync(LOG_FILE, '')
 
