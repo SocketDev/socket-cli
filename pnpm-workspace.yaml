@@ -148,7 +148,7 @@ catalog:
   registry-url: 7.2.0
   # Fleet bundler (replaces esbuild) for the CLI bundle. Fleet-latest,
   # single-sourced; the override forces vite's bundled rolldown to match.
-  rolldown: 1.1.0
+  rolldown: 1.0.3
   safe-buffer: npm:@socketregistry/safe-buffer@^1.0.9
   safer-buffer: npm:@socketregistry/safer-buffer@^1.0.10
   semver: 7.7.2
