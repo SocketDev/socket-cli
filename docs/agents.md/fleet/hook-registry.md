@@ -41,6 +41,7 @@ The fleet hooks each cite their own trigger + bypass surface in their `README.md
 - `no-pkgjson-pnpm-overrides-guard` — keeps overrides in `pnpm-workspace.yaml`
 - `no-pm-exec-guard` — blocks `<pm> exec` (wrapper overhead) + `npx`/`pnpm dlx`/`yarn dlx` (fetch+exec) Bash invocations; bypass `Allow pm-exec bypass`
 - `no-platform-import-guard` — blocks direct `/node` or `/browser` imports of platform-split modules (http-request, logger); bypass `Allow platform-http-import bypass`
+- `no-premature-commit-kill-guard` — PreToolUse Bash: blocks `run_in_background:true` on a `git commit`/`rebase`/`merge`/`cherry-pick` (its bounded ~60s pre-commit looks like a hang when backgrounded), and blocks a `pkill`/`kill` targeting a `git commit` or `vitest` (killing a mid-pre-commit run corrupts the index + leaks vitest workers); bypass `Allow background-git bypass`
 - `no-test-in-scripts-guard` — blocks `node:test` suites under `scripts/` (they never run in CI; move to `test/unit/` vitest)
 - `prefer-json-clone-guard` — `JSON.parse(JSON.stringify(x))` over `structuredClone`
 - `no-token-in-dotenv-guard` — blocks raw token writes into `.env*` / `.envrc`

@@ -38,7 +38,7 @@ const ANNOTATION_RE =
 const ALLOW_MARKER = '# socket-lint: allow soak-exclude-no-date-annotation'
 
 export interface Finding {
-  kind: 'missing' | 'stale'
+  kind: 'missing' | 'stale' | 'unpinned'
   line: number
   name: string
   version: string
@@ -62,14 +62,30 @@ export function scan(text: string, todayISO: string): Finding[] {
       inBlock = false
       continue
     }
-    const m = ENTRY_RE.exec(line)
-    if (!m) {
-      continue
-    }
     if (line.includes(ALLOW_MARKER)) {
       continue
     }
-    if (GLOB_ENTRY_RE.test(line) || BARE_NAME_ENTRY_RE.test(line)) {
+    // Glob entries (`@scope/*`, `socket-*`) trust a whole first-party scope —
+    // exempt from version-pinning by design.
+    if (GLOB_ENTRY_RE.test(line)) {
+      continue
+    }
+    // A concrete (non-glob) entry MUST be version-pinned: `name@version`. A bare
+    // name pins no version, so the soak-bypass leaks to every future release of
+    // the package — exactly the gap a dated `# published:/removable:` annotation
+    // is supposed to scope. Flag it.
+    if (BARE_NAME_ENTRY_RE.test(line)) {
+      const bareName = /^\s*-\s*['"]?([^'"\s]+)['"]?\s*$/.exec(line)?.[1] ?? '<unknown>'
+      findings.push({
+        kind: 'unpinned',
+        line: i + 1,
+        name: bareName,
+        version: '<none>',
+      })
+      continue
+    }
+    const m = ENTRY_RE.exec(line)
+    if (!m) {
       continue
     }
     const name = m[1] ?? '<unknown>'
@@ -136,6 +152,7 @@ function main(): void {
   const findings = scan(content, todayISO)
   const missing = findings.filter(f => f.kind === 'missing')
   const stale = findings.filter(f => f.kind === 'stale')
+  const unpinned = findings.filter(f => f.kind === 'unpinned')
 
   if (stale.length > 0 && fix) {
     // Promote: the soak cleared, so the bypass is no longer needed.
@@ -184,6 +201,26 @@ function main(): void {
         `  # published: <YYYY-MM-DD> | removable: <YYYY-MM-DD>\n` +
         `  - 'pkg@1.2.3'\n` +
         `\nReference: docs/agents.md/fleet/tooling.md "Soak time".\n`,
+    )
+    process.exit(1)
+  }
+
+  if (unpinned.length > 0) {
+    process.stderr.write(
+      `[check-soak-excludes-have-dates] ${unpinned.length} unpinned third-party ` +
+        `soak-exclude entr${unpinned.length === 1 ? 'y' : 'ies'} (bare name, no ` +
+        `\`@version\`):\n`,
+    )
+    for (let i = 0, { length } = unpinned; i < length; i += 1) {
+      const f = unpinned[i]!
+      process.stderr.write(`  line ${f.line}: ${f.name}\n`)
+    }
+    process.stderr.write(
+      `\nA concrete soak-exclude must pin the exact version, so the bypass can't ` +
+        `leak to a future release:\n` +
+        `  - 'pkg@1.2.3'   not   - 'pkg'\n` +
+        `First-party scope globs (\`@scope/*\`, \`socket-*\`) are exempt.\n` +
+        `Reference: docs/agents.md/fleet/tooling.md "Soak time".\n`,
     )
     process.exit(1)
   }

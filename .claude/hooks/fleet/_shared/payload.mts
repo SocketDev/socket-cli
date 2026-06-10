@@ -61,6 +61,10 @@ export interface ToolInput {
   readonly old_string?: unknown | undefined
   // Bash
   readonly command?: unknown | undefined
+  // Bash: true when the call requested `run_in_background`. Hooks that gate
+  // backgrounding (a backgrounded git commit hides its bounded pre-commit's
+  // completion) read it. Optional + unknown so a shape surprise can't crash.
+  readonly run_in_background?: unknown | undefined
 }
 
 /**
