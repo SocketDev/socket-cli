@@ -15,7 +15,7 @@
  *
  * Build-time package preparation: npm packages use @npmcli/arborist to download
  * complete packages with node_modules/ and all production dependencies. See
- * scripts/sea-build-util/npm-packages.mts:
+ * scripts/sea-build-utils/npm-packages.mts:
  *
  * ```javascript
  * import { Arborist } from '@npmcli/arborist'

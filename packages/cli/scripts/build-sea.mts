@@ -22,11 +22,11 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { parsePlatformArgs } from 'build-infra/lib/platform-targets'
 import { getSocketbinBinaryPath } from 'package-builder/scripts/paths.mts'
 
-import { buildTarget } from './sea-build-util/orchestration.mts'
+import { buildTarget } from './sea-build-utils/orchestration.mts'
 import {
   getBuildTargets,
   getDefaultNodeVersion,
-} from './sea-build-util/targets.mts'
+} from './sea-build-utils/targets.mts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')

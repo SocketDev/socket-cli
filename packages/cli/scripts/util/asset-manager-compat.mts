@@ -1,6 +1,6 @@
 /**
  * @file Backward-compatible wrappers for AssetManager. Maintains existing API
- *   signatures from sea-build-util/downloads.mts while using the unified
+ *   signatures from sea-build-utils/downloads.mts while using the unified
  *   AssetManager internally. Phase 1 of AssetManager migration - provides
  *   drop-in replacements without modifying existing code.
  */
@@ -83,7 +83,7 @@ const assetManager = new AssetManager({
 
 /**
  * Download Node.js binary for a specific platform (backward-compatible
- * wrapper). Maintains exact API signature from sea-build-util/downloads.mts.
+ * wrapper). Maintains exact API signature from sea-build-utils/downloads.mts.
  *
  * @example
  *   const nodePath = await downloadNodeBinary('20251213-7cf90d2', 'darwin', 'arm64')
@@ -111,7 +111,7 @@ export async function downloadNodeBinary(version, platform, arch, libc) {
 
 /**
  * Download binject binary for the current platform (backward-compatible
- * wrapper). Maintains exact API signature from sea-build-util/downloads.mts.
+ * wrapper). Maintains exact API signature from sea-build-utils/downloads.mts.
  *
  * @example
  *   const binjectPath = await downloadBinject('1.0.0')
@@ -142,7 +142,7 @@ export async function downloadBinject(version) {
  * string (e.g., "1.0.0").
  *
  * Note: This function currently delegates to the original implementation in
- * sea-build-util/downloads.mts. Future enhancement: move to AssetManager.
+ * sea-build-utils/downloads.mts. Future enhancement: move to AssetManager.
  *
  * @example
  *   const version = await getLatestBinjectVersion()
@@ -153,9 +153,7 @@ export async function downloadBinject(version) {
  * @throws {Error} When socket-btm releases cannot be fetched.
  */
 export async function getLatestBinjectVersion() {
-  // Delegate to original implementation for now.
-  // TODO: Move this to AssetManager in Phase 4.
   const { getLatestBinjectVersion: getLatest } =
-    await import('../sea-build-util/downloads.mts')
+    await import('../sea-build-utils/downloads.mts')
   return getLatest()
 }

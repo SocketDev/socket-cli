@@ -412,8 +412,8 @@ async function runWithToolsMode(platform, toolPaths) {
 
   // Dynamic import Socket modules.
   const { getDefaultLogger } = await import('@socketsecurity/lib-stable/logger')
-  const { injectSeaBlob } = await import('./sea-build-util/builder.mts')
-  const { downloadNodeBinary } = await import('./sea-build-util/downloads.mts')
+  const { injectSeaBlob } = await import('./sea-build-utils/builder.mts')
+  const { downloadNodeBinary } = await import('./sea-build-utils/downloads.mts')
 
   const logger = getDefaultLogger()
   const totalToolSize = await displayToolInfo(toolPaths)

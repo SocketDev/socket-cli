@@ -1,6 +1,6 @@
 /**
  * @file Unified asset manager for socket-btm releases. Consolidates download
- *   functionality from download-assets.mts and sea-build-util/downloads.mts.
+ *   functionality from download-assets.mts and sea-build-utils/downloads.mts.
  *   This module provides:
  *
  *   - Unified binary downloads (node-smol, binject)
