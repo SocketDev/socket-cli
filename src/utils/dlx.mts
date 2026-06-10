@@ -350,6 +350,43 @@ async function spawnCoanaViaNpmInstall(
   }
 }
 
+type CoanaLauncherMode = 'auto' | 'npm-install' | 'npx'
+
+/**
+ * Resolve how the Coana engine should be launched.
+ *
+ * SOCKET_CLI_COANA_LAUNCHER wins when set:
+ * - 'auto' (default): try dlx first, fall back to `npm install` + `node` on
+ *   launcher-level failures.
+ * - 'npm-install': skip dlx entirely; always `npm install` + `node`.
+ * - 'npx': dlx only; never fall back.
+ * Unrecognized values warn and behave as 'auto'.
+ *
+ * The legacy boolean variables SOCKET_CLI_COANA_FORCE_NPM_INSTALL
+ * ('npm-install') and SOCKET_CLI_COANA_DISABLE_NPM_FALLBACK ('npx') are still
+ * honored when the new variable is unset, but are intentionally undocumented.
+ */
+function getCoanaLauncherMode(): CoanaLauncherMode {
+  const rawMode = process.env['SOCKET_CLI_COANA_LAUNCHER']
+  const mode = rawMode?.trim().toLowerCase()
+  if (mode) {
+    if (mode === 'auto' || mode === 'npm-install' || mode === 'npx') {
+      return mode
+    }
+    logger.warn(
+      `Ignoring unrecognized SOCKET_CLI_COANA_LAUNCHER value "${rawMode}"; expected "auto", "npm-install", or "npx".`,
+    )
+    return 'auto'
+  }
+  if (process.env['SOCKET_CLI_COANA_FORCE_NPM_INSTALL']) {
+    return 'npm-install'
+  }
+  if (process.env['SOCKET_CLI_COANA_DISABLE_NPM_FALLBACK']) {
+    return 'npx'
+  }
+  return 'auto'
+}
+
 /**
  * Helper to spawn coana with dlx.
  * Automatically uses force and silent when version is not pinned exactly.
@@ -360,9 +397,10 @@ async function spawnCoanaViaNpmInstall(
  *
  * If the dlx path fails (e.g. broken `npx` on the host), falls back to
  * `npm install`-ing @coana-tech/cli into a temp directory and invoking it
- * directly via `node`. The fallback can be disabled with
- * SOCKET_CLI_COANA_DISABLE_NPM_FALLBACK or forced as the primary path with
- * SOCKET_CLI_COANA_FORCE_NPM_INSTALL.
+ * directly via `node`. The launcher strategy can be overridden with
+ * SOCKET_CLI_COANA_LAUNCHER: 'auto' (the default) tries dlx with the
+ * npm-install fallback, 'npm-install' skips dlx entirely, and 'npx' never
+ * falls back.
  */
 export async function spawnCoanaDlx(
   args: string[] | readonly string[],
@@ -432,9 +470,11 @@ export async function spawnCoanaDlx(
     }
   }
 
+  const launcherMode = getCoanaLauncherMode()
+
   // Allow forcing the npm-install path for debugging or for environments
   // where dlx is known-broken.
-  if (process.env['SOCKET_CLI_COANA_FORCE_NPM_INSTALL']) {
+  if (launcherMode === 'npm-install') {
     return await spawnCoanaViaNpmInstall(
       args,
       resolvedVersion,
@@ -490,7 +530,7 @@ export async function spawnCoanaDlx(
   } catch (e) {
     const dlxError = buildDlxErrorResult(e)
 
-    if (process.env['SOCKET_CLI_COANA_DISABLE_NPM_FALLBACK']) {
+    if (launcherMode === 'npx') {
       return dlxError
     }
 
