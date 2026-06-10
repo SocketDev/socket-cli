@@ -81,7 +81,7 @@ async function main(): Promise<void> {
       '  • If you saw these appear after your own build / check run, they\n' +
       "    are the other agent's edits landing — not your regression.\n" +
       '\nSee: CLAUDE.md → "Parallel Claude sessions"\n' +
-      '     docs/claude.md/fleet/parallel-claude-sessions.md\n',
+      '     docs/agents.md/fleet/parallel-claude-sessions.md\n',
   )
 }
 

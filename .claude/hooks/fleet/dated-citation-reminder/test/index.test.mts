@@ -109,7 +109,7 @@ test('findDatedCitations leaves a single targeted version alone', () => {
 test('isRuleProseSurface matches the rule-prose surfaces', () => {
   assert.ok(isRuleProseSurface('CLAUDE.md'))
   assert.ok(isRuleProseSurface('template/CLAUDE.md'))
-  assert.ok(isRuleProseSurface('template/docs/claude.md/fleet/tooling.md'))
+  assert.ok(isRuleProseSurface('template/docs/agents.md/fleet/tooling.md'))
   assert.ok(isRuleProseSurface('.claude/skills/fleet/prose/SKILL.md'))
   assert.ok(isRuleProseSurface('.claude/hooks/fleet/foo-guard/README.md'))
 })

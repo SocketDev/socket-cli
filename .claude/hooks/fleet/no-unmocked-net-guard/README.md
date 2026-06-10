@@ -26,7 +26,7 @@ Type `Allow unmocked-network-in-tests bypass` verbatim in a recent message.
 
 2026-05-27, socket-packageurl-js: `purlExists` conda/docker dispatch tests hit
 live `api.anaconda.org` / `hub.docker.com`, timing out at 15s. Full rationale:
-`docs/claude.md/fleet/no-live-network-in-tests.md`.
+`docs/agents.md/fleet/no-live-network-in-tests.md`.
 
 Defense in depth with the fleet `test/scripts/fleet/setup.mts` (runtime `disableNetConnect()`)
 and the CLAUDE.md rule.

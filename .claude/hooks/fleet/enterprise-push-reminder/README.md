@@ -24,7 +24,7 @@ The hook makes this discoverable. Without it, the rejection error leaves the ope
    - The property name + required literal-string value (`"true"`)
    - The current property value (queried via `gh api repos/{owner}/{repo}/properties/values`)
    - A link to the repo's properties page in the GitHub UI
-   - A pointer to `docs/claude.md/fleet/push-policy.md` for full rationale
+   - A pointer to `docs/agents.md/fleet/push-policy.md` for full rationale
 
 The hook **does not** modify the property or retry the push. The operator decides whether the bypass is appropriate for the current change set.
 
@@ -45,6 +45,6 @@ The pattern requires both error lines for a tight match — generic "permission 
 
 ## See also
 
-- `docs/claude.md/fleet/push-policy.md` — full rationale + operator flow.
+- `docs/agents.md/fleet/push-policy.md` — full rationale + operator flow.
 - `scripts/_shared/repo-properties.mts` — `canSkipReviewGate()` implementation used by the cascade.
 - `.claude/hooks/fleet/pr-vs-push-default-reminder/` — sibling hook for the reverse case (Claude opening a PR when direct push would have worked).

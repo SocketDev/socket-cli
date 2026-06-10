@@ -142,11 +142,11 @@ export function isInternalDirPath(filePath: string): boolean {
 export function isPluginOrHookTestPath(filePath: string): boolean {
   return (
     filePath.includes('/.claude/hooks/fleet/no-underscore-ident-guard/') ||
+    // The rule lives at .config/oxlint-plugin/fleet/no-underscore-identifier/
+    // (index.mts + test/), carrying banned `_`-prefixed identifiers as fixture
+    // data; the per-rule dir prefix exempts both files.
     filePath.includes(
-      '/.config/fleet/oxlint-plugin/rules/no-underscore-identifier.',
-    ) ||
-    filePath.includes(
-      '/.config/fleet/oxlint-plugin/test/no-underscore-identifier',
+      '/.config/oxlint-plugin/fleet/no-underscore-identifier/',
     )
   )
 }

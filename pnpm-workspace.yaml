@@ -148,7 +148,8 @@ catalog:
   registry-url: 7.2.0
   # Fleet bundler (replaces esbuild) for the CLI bundle. Fleet-latest,
   # single-sourced; the override forces vite's bundled rolldown to match.
-  rolldown: 1.0.3
+  'regjsparser': 0.13.1
+  rolldown: 1.1.0
   safe-buffer: npm:@socketregistry/safe-buffer@^1.0.9
   safer-buffer: npm:@socketregistry/safer-buffer@^1.0.10
   semver: 7.7.2
@@ -198,8 +199,6 @@ minimumReleaseAgeExclude:
   - '@ultrathink/*'
   - '@yuku-parser/*'
   - '@socketoverride/*'
-  # published: 2026-05-22 | removable: 2026-05-29
-  - 'shell-quote@1.8.4'
 
 # Refuse transitive dependencies declared via git/tarball/local-tarball
 # specs — an npm package shouldn't be allowed to drag in a git URL we

@@ -59,23 +59,26 @@ export interface Finding {
  * --dry-run` includes any of these, the `files:` allowlist is broken or
  * missing. Each pattern is matched against the publish-relative path.
  */
+// Each entry uses the `(^|\/)<name>\/` path-boundary idiom: matches `<name>`
+// at the repo root (`^`) or after any `/`. The `(^|\/)` alternation pairs an
+// anchor with a literal, so sort-regex-alternations leaves its order alone.
 export const FORBIDDEN_PUBLISHED_PATTERNS: readonly RegExp[] = [
   // Test files of any common shape.
-  /(^|\/)test\//, // socket-lint: allow regex-alternation-order — `^` (start anchor) before `\/` (literal slash) reads as "either start-of-path or a slash boundary".
-  /(^|\/)tests\//, // socket-lint: allow regex-alternation-order — `^` (start anchor) before `\/` (literal slash) reads as "either start-of-path or a slash boundary".
+  /(^|\/)test\//,
+  /(^|\/)tests\//,
   /\.test\.[cm]?[jt]sx?$/,
   /\.spec\.[cm]?[jt]sx?$/,
   // Build/dev scripts that aren't part of the published API.
-  /(^|\/)scripts\//, // socket-lint: allow regex-alternation-order — `^` (start anchor) before `\/` (literal slash) reads as "either start-of-path or a slash boundary".
+  /(^|\/)scripts\//,
   // Per-developer config dirs.
-  /(^|\/)\.config\//, // socket-lint: allow regex-alternation-order
-  /(^|\/)\.github\//, // socket-lint: allow regex-alternation-order
-  /(^|\/)\.claude\//, // socket-lint: allow regex-alternation-order
-  /(^|\/)\.git-hooks\//, // socket-lint: allow regex-alternation-order
-  /(^|\/)\.vscode\//, // socket-lint: allow regex-alternation-order
+  /(^|\/)\.config\//,
+  /(^|\/)\.github\//,
+  /(^|\/)\.claude\//,
+  /(^|\/)\.git-hooks\//,
+  /(^|\/)\.vscode\//,
   // Lockfiles + workspace metadata.
-  /(^|\/)pnpm-lock\.yaml$/, // socket-lint: allow regex-alternation-order
-  /(^|\/)pnpm-workspace\.yaml$/, // socket-lint: allow regex-alternation-order
+  /(^|\/)pnpm-lock\.yaml$/,
+  /(^|\/)pnpm-workspace\.yaml$/,
 ]
 
 /**
@@ -86,6 +89,7 @@ export const FORBIDDEN_PUBLISHED_PATTERNS: readonly RegExp[] = [
  */
 export const ESSENTIAL_FILES: readonly RegExp[] = [
   /^README(\.md)?$/i,
+  // LICENSE with an optional `.md` or `.txt` extension, case-insensitive.
   /^LICENSE(\.md|\.txt)?$/i,
 ]
 

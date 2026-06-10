@@ -142,7 +142,7 @@ export function emitBlock(
     lines.push(`  Line ${line}: \`### ${name}\` has no bullets.`)
   }
   lines.push('')
-  lines.push('  Per docs/claude.md/fleet/version-bumps.md §2, the CHANGELOG')
+  lines.push('  Per docs/agents.md/fleet/version-bumps.md §2, the CHANGELOG')
   lines.push('  is public/customer-facing only. When the filter leaves a')
   lines.push('  Keep-a-Changelog section empty, delete the heading too — a')
   lines.push('  reader scanning the release should not have to disambiguate')

@@ -81,11 +81,8 @@ const REQUIRED_SECTIONS = [
 const WHEELHOUSE_LEAK_RE = /socket-wheelhouse/i
 const SIBLING_PATH_RES: readonly RegExp[] = [
   /\b(?:bun|deno|node|npm|pnpm|yarn)\s+\.\.\/[\w@-]+\//,
-  // socket-lint: allow regex-alternation-order
   /(?:^|\s)\.\.\/socket-[\w-]+\//i,
-  // socket-lint: allow regex-alternation-order
   /(?:^|\s)\.\.\/sdxgen\//,
-  // socket-lint: allow regex-alternation-order
   /(?:^|\s)\.\.\/stuie\//,
 ]
 
@@ -110,9 +107,11 @@ export function isRootReadme(filePath: string): boolean {
     'docs',
     'examples',
     'hooks',
+    'lib',
     'packages',
     'pkg-node',
     'scripts',
+    'src',
     'template',
     'test',
     'tools',

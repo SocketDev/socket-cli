@@ -73,3 +73,39 @@ test('does NOT fire on plain non-plan prose', () => {
   assert.equal(exitCode, 0)
   assert.equal(stderr, '')
 })
+
+test('FLAGS a name/schema shape spread across the cascade without it being settled', () => {
+  const t = makeTranscript(
+    "I'll add a new schema field and rename the check, then cascade it across every fleet repo.",
+  )
+  const { stderr, exitCode } = runHook(t)
+  assert.equal(exitCode, 0)
+  assert.match(stderr, /name or schema shape/)
+})
+
+test('does NOT fire when the final name/shape is settled', () => {
+  const t = makeTranscript(
+    "I'll rename the check and cascade it fleet-wide; the final name is settled: `paths-are-canonical`.",
+  )
+  const { stderr, exitCode } = runHook(t)
+  assert.equal(exitCode, 0)
+  assert.doesNotMatch(stderr, /name or schema shape/)
+})
+
+test('does NOT fire when the naming choice is routed to the user', () => {
+  const t = makeTranscript(
+    "I'll add a new schema field across template/ and every repo, but first AskUserQuestion which name to use.",
+  )
+  const { stderr, exitCode } = runHook(t)
+  assert.equal(exitCode, 0)
+  assert.doesNotMatch(stderr, /name or schema shape/)
+})
+
+test('does NOT fire on a single-file rename (no cascade / multi-surface)', () => {
+  const t = makeTranscript(
+    "I'll rename the helper inside foo.mts and update its one caller.",
+  )
+  const { stderr, exitCode } = runHook(t)
+  assert.equal(exitCode, 0)
+  assert.doesNotMatch(stderr, /name or schema shape/)
+})

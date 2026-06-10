@@ -17,7 +17,7 @@ File-scope disables (without `-next-line`) silently exempt every line of the fil
 
 ## Exemptions
 
-Files under `.config/fleet/oxlint-plugin/rules/` and `.config/fleet/oxlint-plugin/test/` may file-scope-disable their own rule (the banned shape is lookup-table data in the rule definition or test fixture).
+Files under the plugin's rule subtree (`.config/oxlint-plugin/{fleet,repo}/<id>/`, holding each rule's `index.mts` + its `test/`) may file-scope-disable their own rule (the banned shape is lookup-table data in the rule definition or test fixture).
 
 ## Bypass
 

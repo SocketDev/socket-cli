@@ -19,7 +19,7 @@
 # lines. Stopgap until fixed upstream; on a fixing release, bump the marketplace
 # SHA pin and delete this patch + sidecar + manifest entry. Regenerate against a
 # new pin via the regenerating-patches skill. Spec:
-# docs/claude.md/fleet/plugin-cache-patches.md.
+# docs/agents.md/fleet/plugin-cache-patches.md.
 #
 --- a/scripts/lib/fs.mjs
 +++ b/scripts/lib/fs.mjs

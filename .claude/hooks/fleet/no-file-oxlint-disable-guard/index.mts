@@ -21,10 +21,10 @@
 //   // oxlint-disable-next-line <rule>       (line, per call)
 //   /* oxlint-enable <rule> */               (re-enables; pairs with disables)
 //
-// Exemption: files under `.config/fleet/oxlint-plugin/rules/` and
-// `.config/fleet/oxlint-plugin/test/` are allowed to file-scope-disable
-// their own rule (the banned shape is lookup-table data in the rule
-// definition or in test fixtures).
+// Exemption: files under the plugin's rule subtree
+// (`.config/oxlint-plugin/{fleet,repo}/<id>/`, holding each rule's index.mts +
+// its test/) are allowed to file-scope-disable their own rule (the banned
+// shape is lookup-table data in the rule definition or in test fixtures).
 //
 // Reads PreToolUse JSON payload from stdin:
 //   { "tool_name": "Edit"|"Write",
@@ -48,10 +48,12 @@ const FILE_SCOPE_DISABLE_RE =
   /^[ \t]*(?:\/\*|\/\/)[ \t]*oxlint-disable(?!-next-line)[ \t]+/
 
 // Plugin-internal rule + test files are exempt — the banned shape is
-// lookup-table data in the rule definition or test fixture.
+// lookup-table data in the rule definition or test fixture. Each rule lives at
+// `.config/oxlint-plugin/{fleet,repo}/<id>/` with its index.mts + test/, so the
+// tier prefix covers both.
 const EXEMPT_PATH_SUFFIXES: readonly string[] = [
-  '.config/fleet/oxlint-plugin/rules/',
-  '.config/fleet/oxlint-plugin/test/',
+  '.config/oxlint-plugin/fleet/',
+  '.config/oxlint-plugin/repo/',
 ]
 
 interface Finding {

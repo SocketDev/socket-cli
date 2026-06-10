@@ -2,7 +2,7 @@
 // Claude Code PreToolUse hook — dated-citation-reminder.
 //
 // Nudges (never blocks) when an Edit/Write ADDS a dated-incident citation to a
-// fleet-facing rule-prose surface (CLAUDE.md, docs/claude.md/fleet,
+// fleet-facing rule-prose surface (CLAUDE.md, docs/agents.md/fleet,
 // .claude/skills/**/SKILL.md, .claude/hooks/fleet/**/README.md).
 //
 // The fleet rule (CLAUDE.md "Compound lessons into rules"): when rule/hook/doc

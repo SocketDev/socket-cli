@@ -4,7 +4,7 @@
 // Nudges (never blocks) when an Edit/Write to a non-code file introduces a
 // block of sibling items that looks unsorted. oxlint only sees JS/TS, so the
 // `socket/sort-*` lint rules can't reach JSON / YAML / markdown / bash — this
-// hook covers those surfaces per `docs/claude.md/fleet/sorting.md`:
+// hook covers those surfaces per `docs/agents.md/fleet/sorting.md`:
 //
 //   - JSON / JSONC: runs of `"key":` lines at one indent, natural order.
 //   - YAML: runs of `key:` mapping lines at one indent (env:/with:/matrix).
@@ -209,7 +209,7 @@ function emit(filePath: string, findings: readonly SortFinding[]): void {
   }
   lines.push(
     '  Sort sibling items alphanumerically (natural order) unless order is load-bearing.',
-    '  Fully re-sort the block when you touch it. See docs/claude.md/fleet/sorting.md.',
+    '  Fully re-sort the block when you touch it. See docs/agents.md/fleet/sorting.md.',
   )
   process.stderr.write(lines.join('\n') + '\n')
 }

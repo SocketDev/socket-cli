@@ -6,7 +6,7 @@ or a render that throws partway and aborts. The only way to know what a UI actua
 like is to **look at it**. This is the technique for doing that.
 
 Referenced by the `rendering-chromium-to-png` skill and the "verify rendered output before
-commit" rule (`docs/claude.md/fleet/judgment-and-self-evaluation.md`).
+commit" rule (`docs/agents.md/fleet/judgment-and-self-evaluation.md`).
 
 ## The mechanism
 

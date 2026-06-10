@@ -4,7 +4,7 @@
  *   can SEE it — open the PNG with the Read tool and the rendered pixels go
  *   into context, catching layout / color / empty-state / render-throw bugs
  *   that code-reading misses. Pairs with the fleet "verify rendered output
- *   before commit" discipline (docs/claude.md/fleet/judgment-and-self-evaluation.md)
+ *   before commit" discipline (docs/agents.md/fleet/judgment-and-self-evaluation.md)
  *   — it's the HOW behind that rule. Technique + caveats:
  *   `.claude/skills/fleet/_shared/visual-verify.md`.
  *

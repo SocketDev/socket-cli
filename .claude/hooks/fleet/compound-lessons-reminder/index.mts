@@ -131,7 +131,7 @@ const FLEET_CANONICAL_FILE_PATTERNS: readonly RegExp[] = [
   /\/\.claude\/commands\/fleet\//,
   /\/\.config\/fleet\//,
   /\/scripts\/fleet\//,
-  /\/docs\/claude\.md\/fleet\//,
+  /\/docs\/agents\.md\/fleet\//,
 ]
 
 function isFleetCanonicalPath(filePath: string): boolean {

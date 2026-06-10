@@ -10,7 +10,7 @@
 // doesn't match the convention is silently skipped (or worse, fails to
 // apply) at reconcile time — this hook catches the mistake at edit time.
 //
-// What it enforces (full spec: docs/claude.md/fleet/plugin-cache-patches.md):
+// What it enforces (full spec: docs/agents.md/fleet/plugin-cache-patches.md):
 //
 //   1. Filename `<plugin>-<version>-<slug>.patch` — lowercase-kebab
 //      plugin, dotted semver version, lowercase-kebab slug.
@@ -212,7 +212,7 @@ export function emitBlock(filePath: string, reason: string): void {
   lines.push(
     '    - a plain `diff -u` body (a/… b/…, NO `diff --git`/`index`/`mode`).',
   )
-  lines.push('  Spec: docs/claude.md/fleet/plugin-cache-patches.md')
+  lines.push('  Spec: docs/agents.md/fleet/plugin-cache-patches.md')
   process.stderr.write(lines.join('\n') + '\n')
 }
 

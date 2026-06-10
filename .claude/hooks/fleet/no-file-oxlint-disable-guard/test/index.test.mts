@@ -46,7 +46,7 @@ async function runHook(payload: Record<string, unknown>): Promise<Result> {
   })
 }
 
-// A non-exempt source file: outside `.config/fleet/oxlint-plugin/rules|test/`.
+// A non-exempt source file: outside `.config/oxlint-plugin/{fleet,repo}/`.
 const SRC_FILE = '/Users/x/projects/socket-foo/src/widget.mts'
 
 // FIRES — block-comment file-scope disable `/* oxlint-disable <rule> */`.
@@ -167,26 +167,26 @@ test('allows oxlint-disable appearing mid-line in code/string', async () => {
   assert.strictEqual(result.code, 0)
 })
 
-// EXEMPTION — files under the plugin's own rules/ dir may file-scope-disable.
-test('allows file-scope disable under oxlint-plugin/rules/', async () => {
+// EXEMPTION — a rule's own index.mts under fleet/<id>/ may file-scope-disable.
+test('allows file-scope disable under oxlint-plugin/fleet/<id>/', async () => {
   const result = await runHook({
     tool_name: 'Write',
     tool_input: {
       file_path:
-        '/Users/x/socket-foo/.config/fleet/oxlint-plugin/rules/no-foo.mts',
+        '/Users/x/socket-foo/.config/oxlint-plugin/fleet/no-foo/index.mts',
       content: '/* oxlint-disable socket/no-foo */\n',
     },
   })
   assert.strictEqual(result.code, 0)
 })
 
-// EXEMPTION — files under the plugin's own test/ dir are exempt too.
-test('allows file-scope disable under oxlint-plugin/test/', async () => {
+// EXEMPTION — a rule's co-located test under fleet/<id>/test/ is exempt too.
+test('allows file-scope disable under oxlint-plugin/fleet/<id>/test/', async () => {
   const result = await runHook({
     tool_name: 'Write',
     tool_input: {
       file_path:
-        '/Users/x/socket-foo/.config/fleet/oxlint-plugin/test/no-foo.test.mts',
+        '/Users/x/socket-foo/.config/oxlint-plugin/fleet/no-foo/test/no-foo.test.mts',
       content: '// oxlint-disable socket/no-foo\n',
     },
   })

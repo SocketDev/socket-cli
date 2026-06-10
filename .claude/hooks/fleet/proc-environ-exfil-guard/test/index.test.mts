@@ -112,7 +112,7 @@ test('Bash: does NOT flag an echo / --body mention', () => {
 
 test('Edit arm exempts a markdown doc', () => {
   assert.equal(
-    isSelfExempt('/r/docs/claude.md/fleet/prompt-injection.md'),
+    isSelfExempt('/r/docs/agents.md/fleet/prompt-injection.md'),
     true,
   )
   assert.equal(isSelfExempt('/r/README.md'), true)

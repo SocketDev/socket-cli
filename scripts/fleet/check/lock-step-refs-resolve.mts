@@ -19,7 +19,7 @@
  *   the path is resolved against. The first root that contains the file wins.
  *   `scan` lists directories the gate walks looking for comments. `extensions`
  *   filters which files are inspected. Comment shapes recognized (all four are
- *   documented in `docs/claude.md/fleet/parser-comments.md` §5): //! Lock-step
+ *   documented in `docs/agents.md/fleet/parser-comments.md` §5): //! Lock-step
  *   with Go: src/parser/class.go //! Lock-step from Rust:
  *   crates/parser/src/class.rs // Lock-step with Go: parser.go:6450-6457 //
  *   Lock-step note: <freeform — not validated, by design> Only forms that carry

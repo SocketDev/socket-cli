@@ -61,7 +61,7 @@ const BYPASS_PHRASES = [
 // Captures the hook name in group 1. The optional `template/` segment
 // covers the wheelhouse path; the optional `fleet/` or `repo/` segment
 // covers the docs-style `.claude/hooks/{fleet,repo}/<name>/` layout
-// (matches the parallel docs/claude.md/{fleet,repo}/ convention).
+// (matches the parallel docs/agents.md/{fleet,repo}/ convention).
 // hookName is the LEAF name (e.g. `avoid-cd-reminder`), not the
 // segment-qualified path — citations and registry refs use the full
 // canonical path (`\`.claude/hooks/fleet/<name>/\``) so the guard's
@@ -207,7 +207,7 @@ async function main(): Promise<void> {
   // backticked leaf there satisfies the gate (in addition to the path forms).
   const registryPath = claudeMdPath.replace(
     /CLAUDE\.md$/,
-    'docs/claude.md/fleet/hook-registry.md',
+    'docs/agents.md/fleet/hook-registry.md',
   )
   let registryCited = false
   if (registryPath !== claudeMdPath && existsSync(registryPath)) {
@@ -231,7 +231,7 @@ async function main(): Promise<void> {
     '  lands, in EITHER place:',
     '',
     `    - the hook-registry doc (preferred — CLAUDE.md is size-capped):`,
-    `        docs/claude.md/fleet/hook-registry.md, as a bullet:`,
+    `        docs/agents.md/fleet/hook-registry.md, as a bullet:`,
     `          - \`${leaf}\` — <one-line description>`,
     `    - or inline in CLAUDE.md, attached to the rule it enforces:`,
     `          (\`.claude/hooks/${hookPathSuffix}/\`)`,

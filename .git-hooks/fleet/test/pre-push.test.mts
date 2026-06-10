@@ -10,7 +10,7 @@ import {
   spawn,
   spawnSync,
 } from '@socketsecurity/lib-stable/process/spawn/child'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
 import { fileURLToPath } from 'node:url'
@@ -20,8 +20,16 @@ const HOOK = path.join(here, '..', 'pre-push.mts')
 
 const ZERO_SHA = '0000000000000000000000000000000000000000'
 
-function setupRepo(): string {
-  const dir = mkdtempSync(path.join(os.tmpdir(), 'pre-push-test-'))
+// `nestUnder` places the repo at `<tmp>/<nestUnder>/repo` so its
+// `git rev-parse --show-toplevel` path contains that segment — used to exercise
+// the fast-check tier's skip when the checkout lives under an ignored dir
+// (`.claude/worktrees/…`).
+function setupRepo(nestUnder?: string): string {
+  const base = mkdtempSync(path.join(os.tmpdir(), 'pre-push-test-'))
+  const dir = nestUnder ? path.join(base, nestUnder, 'repo') : base
+  if (nestUnder) {
+    mkdirSync(dir, { recursive: true })
+  }
   spawnSync('git', ['init', '-q', '-b', 'main'], { cwd: dir })
   spawnSync('git', ['config', 'user.email', 'test@example.com'], { cwd: dir })
   spawnSync('git', ['config', 'user.name', 'Test'], { cwd: dir })
@@ -115,6 +123,90 @@ test('pre-push: clean commit + clean message passes', async () => {
     )
     // Push to a topic branch — the signed-commit check exempts non-main
     // refs since these test cases aren't about signing.
+    const pushLine = `refs/heads/topic ${sha} refs/heads/topic ${ZERO_SHA}\n`
+    const { code } = await runHook(dir, pushLine)
+    assert.strictEqual(code, 0)
+  } finally {
+    rmSync(dir, { force: true, recursive: true })
+  }
+})
+
+test('pre-push: fast-check tier skips a repo with no `lint` script', async () => {
+  // The clean-push case above already has no package.json lint script and
+  // passes — this asserts the skip is intentional: a repo that doesn't lint
+  // isn't blocked by the fast-check tier.
+  const dir = setupRepo()
+  try {
+    writeFileSync(
+      path.join(dir, 'package.json'),
+      JSON.stringify({ name: 'x', scripts: { build: 'true' } }),
+    )
+    const sha = commit(dir, 'foo.ts', 'export const X = 1\n', 'feat: add x')
+    const pushLine = `refs/heads/topic ${sha} refs/heads/topic ${ZERO_SHA}\n`
+    const { code } = await runHook(dir, pushLine)
+    assert.strictEqual(code, 0)
+  } finally {
+    rmSync(dir, { force: true, recursive: true })
+  }
+})
+
+test('pre-push: fast-check tier blocks when the lint runner exits non-zero', async () => {
+  const dir = setupRepo()
+  try {
+    // The tier invokes the `lint` script's `node <path>` runner directly. A
+    // runner that exits 1 stands in for a real lint/format failure; the tier
+    // must block the push on it.
+    writeFileSync(path.join(dir, 'lint.mjs'), 'process.exit(1)\n')
+    writeFileSync(
+      path.join(dir, 'package.json'),
+      JSON.stringify({ name: 'x', scripts: { lint: 'node lint.mjs' } }),
+    )
+    const sha = commit(dir, 'foo.ts', 'export const X = 1\n', 'feat: add x')
+    const pushLine = `refs/heads/topic ${sha} refs/heads/topic ${ZERO_SHA}\n`
+    const { code } = await runHook(dir, pushLine)
+    assert.strictEqual(code, 1)
+  } finally {
+    rmSync(dir, { force: true, recursive: true })
+  }
+})
+
+test('pre-push: fast-check tier skips when the checkout is under .claude/', async () => {
+  // A linked worktree under `.claude/worktrees/…` makes the formatter's
+  // `**/.claude/**` ignore match the checkout's own path ancestor, excluding
+  // every file ("Expected at least one target file"). The tier detects a
+  // toplevel under `.claude/` and skips (CI re-lints from a clean tree) rather
+  // than false-block. A failing lint runner here must NOT block the push.
+  const dir = setupRepo(path.join('.claude', 'worktrees', 'wt'))
+  try {
+    writeFileSync(path.join(dir, 'lint.mjs'), 'process.exit(1)\n')
+    writeFileSync(
+      path.join(dir, 'package.json'),
+      JSON.stringify({ name: 'x', scripts: { lint: 'node lint.mjs' } }),
+    )
+    const sha = commit(dir, 'foo.ts', 'export const X = 1\n', 'feat: add x')
+    const pushLine = `refs/heads/topic ${sha} refs/heads/topic ${ZERO_SHA}\n`
+    const { code } = await runHook(dir, pushLine)
+    // Skipped, not blocked — even though the lint runner would exit 1.
+    assert.strictEqual(code, 0)
+  } finally {
+    // dir is `<tmp>/.claude/worktrees/wt/repo`; remove the tmp base.
+    rmSync(path.join(dir, '..', '..', '..', '..'), {
+      force: true,
+      recursive: true,
+    })
+  }
+})
+
+test("pre-push: fast-check tier skips a non-node lint script (can't run safely)", async () => {
+  // A `lint` script that isn't `node <path>` (e.g. shells out to a tool) is
+  // skipped — running it directly isn't safe without pnpm; CI covers it.
+  const dir = setupRepo()
+  try {
+    writeFileSync(
+      path.join(dir, 'package.json'),
+      JSON.stringify({ name: 'x', scripts: { lint: 'eslint .' } }),
+    )
+    const sha = commit(dir, 'foo.ts', 'export const X = 1\n', 'feat: add x')
     const pushLine = `refs/heads/topic ${sha} refs/heads/topic ${ZERO_SHA}\n`
     const { code } = await runHook(dir, pushLine)
     assert.strictEqual(code, 0)

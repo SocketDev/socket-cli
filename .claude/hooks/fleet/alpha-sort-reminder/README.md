@@ -3,7 +3,7 @@
 PreToolUse Edit/Write hook that nudges (never blocks) when a non-code file edit
 introduces a sibling block that looks unsorted. oxlint only sees JS/TS, so the
 `socket/sort-*` lint rules can't reach JSON / YAML / markdown / bash. This hook
-covers those surfaces per [`docs/claude.md/fleet/sorting.md`](../../../../docs/claude.md/fleet/sorting.md).
+covers those surfaces per [`docs/agents.md/fleet/sorting.md`](../../../../docs/agents.md/fleet/sorting.md).
 
 ## What it flags
 

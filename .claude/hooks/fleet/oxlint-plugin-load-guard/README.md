@@ -1,6 +1,6 @@
 # oxlint-plugin-load-guard
 
-**Trigger:** PostToolUse on `Edit` / `Write` touching `.config/fleet/oxlint-plugin/**`.
+**Trigger:** PostToolUse on `Edit` / `Write` touching `.config/oxlint-plugin/**`.
 
 **What it does:** re-runs `scripts/fleet/check/oxlint-plugin-loads.mts` after the edit lands
 and prints a loud warning if the socket/ oxlint plugin no longer loads or its registered

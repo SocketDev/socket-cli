@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * @file Doc-integrity gate for the fleet hook registry
- *   (`docs/claude.md/fleet/hook-registry.md`). The registry is the canonical
+ *   (`docs/agents.md/fleet/hook-registry.md`). The registry is the canonical
  *   per-hook listing CLAUDE.md defers to; it has historically drifted (bullets
  *   for renamed hooks left behind, new hooks never added). This asserts the one
  *   invariant that is unambiguous and false-positive-free: Every `- \`<name>``
@@ -29,7 +29,7 @@ const logger = getDefaultLogger()
 const REGISTRY_PATH = path.join(
   REPO_ROOT,
   'docs',
-  'claude.md',
+  'agents.md',
   'fleet',
   'hook-registry.md',
 )

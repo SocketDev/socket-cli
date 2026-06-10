@@ -183,7 +183,7 @@ function main(): void {
       `\nEach per-package soak-bypass needs the canonical annotation directly above the bullet:\n` +
         `  # published: <YYYY-MM-DD> | removable: <YYYY-MM-DD>\n` +
         `  - 'pkg@1.2.3'\n` +
-        `\nReference: docs/claude.md/fleet/tooling.md "Soak time".\n`,
+        `\nReference: docs/agents.md/fleet/tooling.md "Soak time".\n`,
     )
     process.exit(1)
   }

@@ -6,7 +6,7 @@
 // softer signal: when an Edit/Write adds a NEW `###` section to the
 // fleet block whose body looks like detail (multi-line prose, lists,
 // tables, `**Why:**` blocks, code fences) but contains NO link to a
-// `docs/claude.md/{fleet,repo,wheelhouse}/<topic>.md` companion file,
+// `docs/agents.md/{fleet,repo,wheelhouse}/<topic>.md` companion file,
 // nudge the author to move the detail externally before the section
 // hits the line cap.
 //
@@ -16,7 +16,7 @@
 //   2. The new content adds at least one NEW `### ` heading inside the
 //      fleet block (BEGIN/END markers).
 //   3. The new section's body contains ≥3 non-blank lines.
-//   4. The new section has NO `docs/claude.md/{fleet,repo,wheelhouse}/`
+//   4. The new section has NO `docs/agents.md/{fleet,repo,wheelhouse}/`
 //      link in its body.
 //
 // Why all four conditions:
@@ -49,7 +49,7 @@ const logger = getDefaultLogger()
 const FLEET_BEGIN_MARKER = '<!-- BEGIN FLEET-CANONICAL'
 const FLEET_END_MARKER = '<!-- END FLEET-CANONICAL'
 const MIN_BODY_LINES_FOR_REMINDER = 3
-const DOCS_LINK_RE = /docs[/\\]claude\.md[/\\](?:fleet|repo|wheelhouse)[/\\]/
+const DOCS_LINK_RE = /docs[/\\]agents\.md[/\\](?:fleet|repo|wheelhouse)[/\\]/
 
 // ---------------------------------------------------------------------------
 // Shared helpers (intentionally duplicated from claude-md-section-size-guard
@@ -160,7 +160,7 @@ interface AddedSection {
 /**
  * Diff pre-edit vs post-edit fleet blocks and return sections whose heading is
  * NEW (didn't exist before this edit) AND whose body is long enough + lacks a
- * docs/claude.md/ link to merit the reminder.
+ * docs/agents.md/ link to merit the reminder.
  */
 export function findAddedSectionsLackingLink(
   preContent: string | undefined,
@@ -268,7 +268,7 @@ function emitReminder(filePath: string, added: readonly AddedSection[]): void {
   lines.push('')
   lines.push('  CLAUDE.md is the fleet rulebook; long-form expansion goes in')
   lines.push(
-    '  `docs/claude.md/fleet/<topic>.md` (or `docs/claude.md/repo/<topic>.md`',
+    '  `docs/agents.md/fleet/<topic>.md` (or `docs/agents.md/repo/<topic>.md`',
   )
   lines.push(
     '  for repo-specific detail). Keep the rule + one-line "Why:" inline,',
@@ -279,7 +279,7 @@ function emitReminder(filePath: string, added: readonly AddedSection[]): void {
     '    🚨 Rule statement. **Why:** one-line incident. Bypass: `Allow X bypass`.',
   )
   lines.push(
-    '    Spec: [`docs/claude.md/fleet/<topic>.md`](docs/claude.md/fleet/<topic>.md)',
+    '    Spec: [`docs/agents.md/fleet/<topic>.md`](docs/agents.md/fleet/<topic>.md)',
   )
   lines.push('    (`.claude/hooks/fleet/<name>/`).')
   lines.push('')

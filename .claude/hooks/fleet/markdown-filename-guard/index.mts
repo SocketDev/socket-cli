@@ -202,7 +202,19 @@ export function isAtAllowedRegularLocation(relPath: string): boolean {
 
 export function isAtAllowedScreamingLocation(relPath: string): boolean {
   const dir = path.posix.dirname(relPath)
-  return dir === '.' || dir === '.claude' || dir === 'docs'
+  // Repo-root-equivalent locations for SCREAMING_CASE allowlist files.
+  // `template/` is the wheelhouse's scaffolding seed: its CLAUDE.md /
+  // README.md / docs/ / .claude/ are the canonical sources each fleet repo's
+  // OWN root copies derive from, so they get the same allowance as the
+  // repo-root forms (template/CLAUDE.md → <repo>/CLAUDE.md after cascade).
+  return (
+    dir === '.' ||
+    dir === '.claude' ||
+    dir === 'docs' ||
+    dir === 'template' ||
+    dir === 'template/.claude' ||
+    dir === 'template/docs'
+  )
 }
 
 export function isLowercaseHyphenated(nameWithoutExt: string): boolean {

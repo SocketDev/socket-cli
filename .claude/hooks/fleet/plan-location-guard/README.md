@@ -51,5 +51,5 @@ obvious place" to put a plan.
 
 ## Reading
 
-- `docs/claude.md/fleet/plan-storage.md` — full rule + migration playbook.
+- `docs/agents.md/fleet/plan-storage.md` — full rule + migration playbook.
 - CLAUDE.md → `### Plan storage` — inline summary.

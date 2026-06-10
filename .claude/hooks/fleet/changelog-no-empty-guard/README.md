@@ -4,7 +4,7 @@ PreToolUse hook on `Edit` / `Write` against `CHANGELOG.md`. Blocks the operation
 
 ## Why
 
-The `docs/claude.md/fleet/version-bumps.md` §2 rule (CHANGELOG public-facing only) tells the author to filter internal commits out. When the filter happens to leave a section empty, the heading should be deleted too. Leaving an empty heading makes the reader disambiguate "section intentionally empty" from "section forgot its content."
+The `docs/agents.md/fleet/version-bumps.md` §2 rule (CHANGELOG public-facing only) tells the author to filter internal commits out. When the filter happens to leave a section empty, the heading should be deleted too. Leaving an empty heading makes the reader disambiguate "section intentionally empty" from "section forgot its content."
 
 ## What counts as empty
 

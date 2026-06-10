@@ -1,6 +1,6 @@
 ---
 name: onboarding-fleet-member
-description: Onboard a repo into the socket fleet end-to-end — full adoption, not just a scaffolding cascade. Registers the repo, writes its marker config (layout/native/capabilities detected), converts its tooling to fleet standards (eslint/prettier/biome → oxlint+oxfmt, esbuild/tsup → rolldown CJS bundle, jest/mocha → vitest), ports coding style + socket-lib + packageurl-js + repo-overlays + CLAUDE.md + the canonical README with badges, trims the bundle, dedupes deps via overrides, installs the security/hooks/signing toolchain, verifies the repo is green, and lands it. Use when adding a new repo to the fleet, or bringing a half-onboarded repo to full adoption.
+description: Onboard a repo into the socket fleet end-to-end — full adoption, not just a scaffolding cascade. Registers the repo, writes its marker config (repo.type + build.{from,type} + capabilities detected), converts its tooling to fleet standards (eslint/prettier/biome → oxlint+oxfmt, esbuild/tsup → rolldown CJS bundle, jest/mocha → vitest), ports coding style + socket-lib + packageurl-js + repo-overlays + CLAUDE.md + the canonical README with badges, trims the bundle, dedupes deps via overrides, installs the security/hooks/signing toolchain, verifies the repo is green, and lands it. Use when adding a new repo to the fleet, or bringing a half-onboarded repo to full adoption.
 user-invocable: true
 allowed-tools: AskUserQuestion, Read, Edit, Write, Grep, Glob, Skill, Bash(git:*), Bash(node:*), Bash(pnpm:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(cat:*), Bash(jq:*), Bash(mkdir:*), Bash(cp:*), Bash(mv:*), Bash(rm:*), Bash(chmod:*), Bash(diff:*), Bash(wc:*)
 model: claude-opus-4-8
@@ -30,16 +30,22 @@ rule text and false-positive a grep). The shared detector is
 `scripts/repo/check/fleet-members-are-onboarded.mts` (exports `antiFleetDeps`,
 `antiFleetConfigFiles`, `countWorkspaceMembers`, `hasRolldownConfig`) — reuse it.
 
-Detect and record:
-- **layout** — `single-package` vs `monorepo`, by COUNTING `packages/*/package.json`
+Detect and record (the marker groups these as `repo` + `build`):
+- **repo.type** — `single-package` vs `monorepo`, by COUNTING `packages/*/package.json`
   members. `pnpm-workspace.yaml` presence is NOT the signal (every fleet repo ships one).
   A `packages/` with one member is still monorepo.
-- **native role** — `none` / `consumer` / `producer` / `both`. This is the
-  release-artifact role, NOT inferable from Cargo.toml. ASK if ambiguous.
+- **build.from** — `npm-registry` (published as an npm package) vs `github-release` (raw
+  artifacts attached to a GH Release). ASK if ambiguous.
+- **build.type** — `js` (plain JS package), `addon` (`.node` native addon), or `binary`
+  (a native binary — executable OR wasm module; wasm is a binary format, so it lives under
+  `binary`). NOT inferable from Cargo.toml. Examples: socket-lib/cli/registry = `js`;
+  socket-addon = `addon`; socket-bin = `binary`; socket-btm = `github-release` + `binary`.
+  Note `build` is orthogonal to `capabilities`: ultrathink builds the acorn Rust parser
+  (`cargo` capability) yet publishes a JS package (`build.type: js`).
 - **capabilities** — `cargo` when the repo has tracked non-fixture `.rs`/`Cargo.toml`;
   map the trait to its package globs (e.g. `{ cargo: ["packages/*-builder"] }` for a
   builder monorepo, `{ cargo: ["packages/acorn/lang/rust"] }` for a nested crate). These
-  are orthogonal to layout AND native — never conflate.
+  are orthogonal to `repo` AND `build` — never conflate.
 - **publish identity** — `name` + `private`. A non-private package gets the published-name
   README badge token; a private repo doesn't publish.
 - **has bin** — drives a CLI-shaped README Usage section.
@@ -60,9 +66,10 @@ Detect and record:
    repo is `squash-history` opt-in (currently socket-addon/bin/btm/sdxgen/stuie).
 
 3. **Marker config.** Write `<repo>/.config/socket-wheelhouse.json`: required
-   `schemaVersion: 1`, `repoName`, `layout`, `native`; plus detected `capabilities` map.
-   Validate by running `readSocketWheelhouseConfig` (the parser fails loudly on a bad
-   shape). The schema reference points at `./socket-wheelhouse-schema.json`.
+   `schemaVersion: 1`, `repoName`, `repo: { type }`, `build: { from, type }`; plus the
+   detected `capabilities` map. Validate by running `readSocketWheelhouseConfig` (the
+   parser fails loudly on a bad shape). The schema reference points at
+   `./socket-wheelhouse-schema.json`.
 
 4. **Package manager.** Must be pnpm — set `packageManager: "pnpm@<version>"` (catalog
    version) if absent or another PM. Convert npm/yarn lockfiles + scripts. The fleet is
@@ -70,20 +77,21 @@ Detect and record:
 
 5. **Linter/formatter → oxlint + oxfmt.** Remove `.eslintrc*` / `eslint.config.*` /
    `biome.json` / `.prettierrc*` and their deps. Install the fleet oxlint plugin
-   (cascaded under `.config/fleet/oxlint-plugin/`) + `oxlintrc.json` (comes via the
+   (cascaded under `.config/oxlint-plugin/`) + `oxlintrc.json` (comes via the
    cascade in step 6). Rewrite `lint`/`fix` scripts to the fleet form. Genuinely
    repo-specific rules → `.config/repo/` overrides, never inline disables.
 
 6. **Scaffolding cascade.** Run `pnpm run onboard -- --target <repo>` (which backs up,
    spins a temp worktree, runs `sync-scaffolding --fix`) OR the `cascading-fleet` skill.
    This installs the fleet-canonical trees (`.claude/`, `.config/fleet/`, `.git-hooks/`,
-   `scripts/fleet/`, `docs/claude.md/fleet/`, canonical scripts). Review the diff.
+   `scripts/fleet/`, `docs/agents.md/fleet/`, canonical scripts). Review the diff.
 
 7. **Bundler → rolldown, CJS output.** The fleet ships a **CJS bundle** built by rolldown
    (`format: 'cjs'`), even though source is ESM. Convert esbuild/tsup/tsc-emit to a
    `.config/repo/rolldown.config.mts` (or `rolldown.<variant>.config.mts`). Output at the
-   canonical `build/<mode>/<platform-arch>/out/Final/` path. Skip for native-producer
-   repos (they build artifacts, not a JS bundle) and private non-published repos.
+   canonical `build/<mode>/<platform-arch>/out/Final/` path. Skip for native-builder
+   repos (`build.from: github-release` — they build artifacts, not a JS bundle) and
+   private non-published repos.
 
 8. **Build script** adopts the fleet build flow + canonical output path.
 
@@ -102,7 +110,7 @@ Detect and record:
     replace the bespoke parser with the fleet impl + catalog dep + override.
 
 12. **repo/\* overlays.** Move genuinely repo-specific hooks/docs/scripts/config to the
-    `repo/` tier: `.claude/hooks/repo/`, `docs/claude.md/repo/`, `scripts/repo/`,
+    `repo/` tier: `.claude/hooks/repo/`, `docs/agents.md/repo/`, `scripts/repo/`,
     `.config/repo/` — so they survive the cascade and aren't fleet-canonical forks.
 
 13. **CLAUDE.md.** Run `node scripts/repo/migrate-claude-md.mts --target <repo> --apply`
@@ -116,17 +124,11 @@ Detect and record:
     `<PUBLISHED_NAME>` (the npm name), `<REPO_SLUG>` (the GitHub repo), `<PCT>` (measured
     coverage). No `socket-wheelhouse` mentions, no sibling-relative script paths. Include
     the **light/dark Socket logo footer** after License — the `<picture>` block from
-    `template/README.md` referencing `assets/socket-logo-dark.svg` (dark mode) +
-    `assets/socket-logo-light.svg` (light mode). If the repo has an OLD logo block (a
+    `template/README.md` referencing the cascaded `assets/socket-logo-dark.svg` (dark mode)
+    + `assets/socket-logo-light.svg` (light mode). If the repo has an OLD logo block (a
     plain `<img>`, or broken `logo-white.png`/`logo-black.png` refs like socket-mcp's),
-    REPLACE it with the canonical `<picture>` form.
-    **Prerequisite — install the assets first.** The wordmark SVGs live in
-    `OPTIONAL_IDENTICAL_FILES` (opt-in: the cascade only mirrors `assets/` when the dir
-    already exists). A footer referencing absent assets is a BROKEN image (the exact bug
-    in socket-mcp). So before adding the footer, create the repo's `assets/` dir and copy
-    `socket-logo-{dark,light}.svg` (+ the `.png` fallbacks) from `template/assets/`, then
-    re-run the cascade so the assets are tracked. Verify the srcset paths resolve to real
-    files before committing.
+    REPLACE it with the canonical `<picture>` form. The SVG wordmarks ship via the
+    `assets/` cascade, so the relative `assets/...` srcset resolves in every repo.
 
 15. **Dependency dedupe via overrides.** Add the repo's shared fleet deps to
     `pnpm-workspace.yaml` `overrides:` pinned to `catalog:` so the bundle collapses
@@ -142,12 +144,29 @@ Detect and record:
     (`node scripts/fleet/install-git-hooks.mts`), security scanners
     (`node .claude/hooks/fleet/setup-claude-scanners/install.mts`).
 
-18. **Verify GREEN.** `pnpm install`, then `pnpm run check --all` + `pnpm test` +
+18. **CI + local-CI verification.** Three pieces, all cascaded — confirm they landed:
+    - **Reusable CI** — the repo's `.github/workflows/ci.yml` is the thin caller that
+      delegates to `SocketDev/socket-registry/.github/workflows/ci.yml@<pin>`. Its
+      `setup-and-install` action caches the pnpm store (keyed on the lockfile), so install
+      is warm on every job + matrix cell — automatic, nothing to wire per-repo.
+    - **Local CI (`pnpm run ci:local`)** — runs the repo's workflows locally in Docker via
+      `@redwoodjs/agent-ci` (see the `agent-ci` skill). To skip the cold per-container
+      pnpm bootstrap, adopt the warm-pnpm base: copy `template/.github/agent-ci.Dockerfile`
+      into `<repo>/.github/` (it's `OPTIONAL_IDENTICAL` — opt-in, so a repo adopts it once
+      and the sync keeps it byte-identical). agent-ci content-hash-caches the built image.
+    - **The gated local-CI test** — `test/unit/fleet/agent-ci-local.test.mts` cascades via
+      the `test/unit/fleet` dir-mirror. It asserts the `ci:local` script keeps its
+      canonical flag set (always) and, on a local box with Docker (skipped under `getCI()`
+      + when no daemon), runs the pipeline and asserts exit 0. Confirm it's present.
+    A native-builder repo (`build.from: github-release`, e.g. socket-btm) ALSO owns its
+    build-server Docker/depot prebake — that's repo-owned, NOT cascaded from the wheelhouse.
+
+19. **Verify GREEN.** `pnpm install`, then `pnpm run check --all` + `pnpm test` +
     `pnpm run build` must all pass. Fix what fails. Run
     `node scripts/repo/check/fleet-members-are-onboarded.mts` (from the wheelhouse) —
     no coherence FAIL, adoption-gap reports addressed. Do NOT proceed to land otherwise.
 
-19. **Land.** Commit the conversion in fleet-clean commits — Conventional Commits,
+20. **Land.** Commit the conversion in fleet-clean commits — Conventional Commits,
     signed, surgical (`git commit -o <files>`, never `-A`). Register-side change
     (fleet-repos.json) commits in the wheelhouse; the repo-side conversion commits in the
     target. Push direct → PR only on rejection. For squash-history opt-in repos,

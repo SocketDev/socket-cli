@@ -105,7 +105,7 @@ export function isRuleProseSurface(filePath: string): boolean {
   }
   return (
     /(?:^|\/)CLAUDE\.md$/.test(filePath) ||
-    /(?:^|\/)docs\/claude\.md\/fleet\//.test(filePath) ||
+    /(?:^|\/)docs\/agents\.md\/fleet\//.test(filePath) ||
     /(?:^|\/)\.claude\/skills\/.*\/SKILL\.md$/.test(filePath) ||
     /(?:^|\/)\.claude\/hooks\/fleet\/[^/]+\/README\.md$/.test(filePath)
   )

@@ -75,7 +75,7 @@ Two files under `~/.claude/`:
   intercept the auth call. (`gh` itself stays PATH-resolved; there's
   no single canonical path across Homebrew / Intel / Linux.)
 - **Known gaps** (documented in
-  [`docs/claude.md/fleet/security-stack.md`](../../../docs/claude.md/fleet/security-stack.md)):
+  [`docs/agents.md/fleet/security-stack.md`](../../../docs/agents.md/fleet/security-stack.md)):
   the transcript JSONL the bypass-phrase check reads is
   unauthenticated (needs harness HMAC), and `containsGhInvocation` is
   regex-based, not AST-based (shell-variable / eval evasion possible).

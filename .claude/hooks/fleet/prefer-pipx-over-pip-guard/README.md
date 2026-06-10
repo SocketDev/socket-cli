@@ -20,7 +20,7 @@ newer version. Mid-CI surprise. pipx is the documented fix: each
 tool gets its own venv, version is exact, upgrades are explicit.
 
 The fleet has zero active `pip install <pkg>` call sites in build
-code as of 2026-06-01 (the inventory is in `docs/claude.md/fleet/
+code as of 2026-06-01 (the inventory is in `docs/agents.md/fleet/
 pip-to-pipx.md`). This guard exists to keep that count at zero.
 
 ## What it blocks

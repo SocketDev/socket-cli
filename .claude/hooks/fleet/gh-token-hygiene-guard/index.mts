@@ -905,7 +905,7 @@ function maybePrintTouchIdSetupNudge(): void {
       'Touch ID dialog instead of asking for your password.',
       '',
       'This tip is shown once. Full doc:',
-      '  docs/claude.md/fleet/gh-token-hygiene.md',
+      '  docs/agents.md/fleet/gh-token-hygiene.md',
       '',
     ].join('\n'),
   )

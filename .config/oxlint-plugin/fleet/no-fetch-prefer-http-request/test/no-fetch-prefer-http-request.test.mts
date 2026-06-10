@@ -1,0 +1,33 @@
+/**
+ * @file Unit tests for socket/no-fetch-prefer-http-request.
+ */
+
+import { describe, test } from 'node:test'
+
+import { RuleTester } from '../../../lib/rule-tester.mts'
+import rule from '../index.mts'
+
+describe('socket/no-fetch-prefer-http-request', () => {
+  test('valid + invalid cases', () => {
+    new RuleTester().run('no-fetch-prefer-http-request', rule, {
+      valid: [
+        {
+          name: 'httpJson import',
+          code: 'import { httpJson } from "@socketsecurity/lib-stable/http-request"\nawait httpJson("https://x")\n',
+        },
+        { name: 'no fetch call', code: 'const x = 1\n' },
+        {
+          name: 'bypass marker on the line above → allowed',
+          code: '// socket-lint: allow global-fetch\nconst r = await fetch("https://x")\n',
+        },
+      ],
+      invalid: [
+        {
+          name: 'top-level fetch',
+          code: 'await fetch("https://x")\n',
+          errors: [{ messageId: 'banned' }],
+        },
+      ],
+    })
+  })
+})

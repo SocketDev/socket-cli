@@ -14,7 +14,7 @@
 //      CI scanner at all — they'd silently rot forever. The hook is
 //      the only place that catches the typo class.
 //
-// Convention spec: `docs/claude.md/fleet/parser-comments.md` §5–6.
+// Convention spec: `docs/agents.md/fleet/parser-comments.md` §5–6.
 // Recognized forms:
 //
 //   //! Lock-step with <Lang>: <path>               (canonical side)
@@ -355,7 +355,7 @@ async function main(): Promise<void> {
     }
     out.push('')
   }
-  out.push('  Spec: docs/claude.md/fleet/parser-comments.md §5–6.')
+  out.push('  Spec: docs/agents.md/fleet/parser-comments.md §5–6.')
   out.push(
     '  CI gate: scripts/fleet/check/lock-step-refs-resolve.mts (run via `pnpm check`).',
   )

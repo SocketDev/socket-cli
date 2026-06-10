@@ -164,7 +164,7 @@ type RoleSpec = {
   readonly preferenceOrder: readonly BackendName[]
   // Wall-clock cap per spawn for this role. Heavyweight investigation
   // passes (discovery, discovery-secondary, remediation) cap at 15min
-  // per docs/claude.md/fleet/agent-delegation.md — rescue-tier work.
+  // per docs/agents.md/fleet/agent-delegation.md — rescue-tier work.
   // Verify is a quick check on an already-written report, so 5min.
   // Spawn rejects on timeout; the catch in runBackend logs cleanly.
   readonly timeoutMs: number

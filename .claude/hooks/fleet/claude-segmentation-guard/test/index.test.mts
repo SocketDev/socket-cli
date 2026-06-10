@@ -56,7 +56,7 @@ test('empty / unparseable payload passes through', async () => {
 test('paths outside .claude/ pass through', async () => {
   for (const p of [
     'src/index.ts',
-    'docs/claude.md/fleet/topic.md',
+    'docs/agents.md/fleet/topic.md',
     'README.md',
     'package.json',
   ]) {

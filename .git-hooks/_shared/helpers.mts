@@ -15,6 +15,20 @@ import { existsSync, readFileSync, statSync } from 'node:fs'
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
+// Personal-path matcher lives in the gate-free _shared/personal-path.mts so the
+// edit-time personal-path-guard shares THIS code (was a lock-step inline copy).
+import {
+  PERSONAL_PATH_RE,
+  isPurePlaceholder,
+  suggestPlaceholder,
+} from './personal-path.mts'
+// Cross-repo matcher likewise shared with the edit-time cross-repo-guard.
+import { CROSS_REPO_ANY_RE } from './cross-repo.mts'
+// Logger-leak detector — AST-based, shared with the edit-time logger-guard.
+import { findLoggerLeaks } from './logger-leaks.mts'
+
+export { PERSONAL_PATH_RE, isPurePlaceholder, suggestPlaceholder }
+
 // Hard-fail if Node is below 25. This runs at module load — every
 // hook invocation imports _shared/helpers.mts before doing anything, so the
 // version check is the first thing that happens.
@@ -135,36 +149,9 @@ export const filterAllowedApiKeys = (lines: readonly string[]): string[] =>
   lines.filter(line => !isAllowedApiKey(line))
 
 // ── Personal-path scanner ──────────────────────────────────────────
-
-// Real personal paths to flag: /Users/foo/, /home/foo/, C:\Users\foo\.
-// The scanner's job is to catch a hardcoded USERNAME leak. `~/...` and
-// `$HOME/...` are the OPPOSITE — they're the recommended username-free
-// forms (and the placeholder-allowlist below explicitly accepts them),
-// so they MUST NOT be flagged. (An earlier revision added `~/` /
-// `$HOME/` here, which wrongly flagged canonical fixed paths like
-// `~/.config/gh/hosts.yml` and `~/.claude/...` and blocked the push.)
-// NFKC normalization is applied at the scanLines layer before this
-// regex runs so full-width / Unicode variants of `/Users` (e.g.
-// `／Users／foo／`) don't slip past.
-const PERSONAL_PATH_RE =
-  /(\/Users\/[^/\s]+\/|\/home\/[^/\s]+\/|C:\\Users\\[^\\]+\\)/
-
-// Placeholders we ALLOW (documentation, not real leaks). The scanner
-// accepts any path component wrapped in <...> or starting with $VAR /
-// ${VAR}, but for **canonical fleet style** use exactly these forms in
-// docs / tests / comments / error messages — pick the one matching the
-// path's platform:
-//
-//   POSIX  →  /Users/<user>/...     (macOS — `<user>` matches $USER)
-//   POSIX  →  /home/<user>/...      (Linux — same convention)
-//   Windows →  C:\Users\<USERNAME>\... (matches %USERNAME%)
-//
-// Don't drift to `<name>` / `<me>` / `<USER>` / `<u>` etc. The
-// `suggestPersonalPathReplacement` helper below auto-rewrites real
-// paths into these canonical shapes; mirror its output everywhere
-// else.
-const PERSONAL_PATH_PLACEHOLDER_RE =
-  /(\/Users\/<[^>]*>\/|\/home\/<[^>]*>\/|C:\\Users\\<[^>]*>\\|\/Users\/\$\{?[A-Z_]+\}?\/|\/home\/\$\{?[A-Z_]+\}?\/)/
+// PERSONAL_PATH_RE / the placeholder filter / suggestPlaceholder are imported
+// from _shared/personal-path.mts (the cross-tree canonical home). See that
+// module for the leak shapes + allowed-placeholder rationale.
 
 // Per-line opt-out marker for our pre-commit / pre-push scanners.
 //
@@ -370,44 +357,36 @@ function scanLines(
   return hits
 }
 
-// Build a suggested rewrite for a documentation-style personal path.
-// Replaces the matched real-path username segment with the canonical
-// placeholder form: `<user>` / `<USERNAME>` (matching the platform
-// convention of the surrounding path).
-export function suggestPlaceholder(line: string): string {
-  return line
-    .replace(/\/Users\/[^/\s]+\//g, '/Users/<user>/')
-    .replace(/\/home\/[^/\s]+\//g, '/home/<user>/')
-    .replace(/C:\\Users\\[^\\]+\\/g, 'C:\\Users\\<USERNAME>\\')
-}
-
 // Returns lines that contain a real personal path (excludes lines that
 // are pure placeholders or look like documentation examples). Each hit
 // carries a `suggested` rewrite when the scanner can offer one — the
-// caller surfaces it to the user as the fix recipe.
+// caller surfaces it to the user as the fix recipe. The regex, the
+// pure-placeholder filter, and suggestPlaceholder are imported from the
+// shared _shared/personal-path.mts (single source for both hook trees).
 export const scanPersonalPaths = (text: string): LineHit[] =>
   scanLines(text, PERSONAL_PATH_RE, {
     // NFKC-normalize before match — catches full-width and ligature
     // variants that would otherwise slip past the ASCII-only regex.
     normalizeForMatch: true,
-    filter: line => {
-      // Pure-placeholder lines (no real path remains after stripping
-      // every `<...>` placeholder) are documentation, not leaks.
-      if (!PERSONAL_PATH_PLACEHOLDER_RE.test(line)) {
-        return false
-      }
-      const stripped = line.replace(
-        new RegExp(PERSONAL_PATH_PLACEHOLDER_RE, 'g'),
-        '',
-      )
-      return !PERSONAL_PATH_RE.test(stripped)
-    },
+    // Pure-placeholder lines (no real path remains after stripping every
+    // `<...>` placeholder) are documentation, not leaks.
+    filter: isPurePlaceholder,
     skipDocs: { rule: 'personal-path' },
     suggest: suggestPlaceholder,
   })
 
 // ── Secret scanners ────────────────────────────────────────────────
-
+//
+// These are DELIBERATELY NOT the same as the value-shape catalog in
+// .claude/hooks/fleet/_shared/token-patterns.mts (SECRET_VALUE_PATTERNS,
+// consumed by secret-content-guard / token-guard). The two serve different
+// jobs and must not be merged: the catalog is precise credential VALUE shapes
+// (AKIA…, ghp_…) for the edit/Bash guards, where a false positive blocks a
+// keystroke; the commit-time scanners below are intentionally BROADER — they
+// also flag env-NAME mentions (`aws_access_key`, `aws_secret`) and a loose
+// `sktsec_…` of any length, because at commit time a near-miss should still
+// surface a leak rather than wave it through. Unifying them would either
+// weaken this commit-time net or over-trigger the guards. Keep separate.
 const SOCKET_API_KEY_RE = /sktsec_[a-zA-Z0-9_-]+/
 const AWS_KEY_RE = /(aws_access_key|aws_secret|\bAKIA[0-9A-Z]{16}\b)/i
 // GitHub token formats — accepts both classic opaque and new JWT
@@ -516,20 +495,25 @@ const NPX_DLX_RE = /(?<![\w\-:=.])\b(npx|yarn dlx)\b(?![\w\-:=.])/
 
 // Suggest the canonical replacement for a runtime npx/dlx call.
 // Documentation contexts (comments, JSDoc) are exempt via
-// looksLikeDocumentation(); we only ever land here for code lines, where
-// the right swap is `pnpm exec` (since `pnpm` is the fleet's package
-// manager) or `pnpm run` for script entries. For documentation lines
-// All dlx-style invocations rewrite to `pnpm exec`. This matches the
-// `socket/no-npx-dlx` oxlint rule's autofix and the CLAUDE.md tooling
-// rule (NEVER use npx / pnpm dlx / yarn dlx — use pnpm exec). Keep
-// the alternation ordered longest-prefix-first so `pnpm dlx` matches
-// before any future `pnpm`-anchored rule could shadow it.
+// looksLikeDocumentation(); we only ever land here for code lines. The
+// right swap is the bin-direct form `node_modules/.bin/<tool>` — NOT
+// `pnpm exec <tool>`: the Claude Bash-time `no-pm-exec-guard` BLOCKS
+// `pnpm exec` / `npm exec` / `yarn exec` as package-manager + Socket
+// Firewall startup overhead, so suggesting `pnpm exec` here would hand
+// the developer a command that the guard then rejects. `node_modules/`
+// `.bin/<tool>` is the form that guard endorses (it prints the same
+// fix). Script entries should instead become `pnpm run <script>`; this
+// scanner can't infer a script name, so it emits the bin-direct form
+// and leaves the trailing `<tool> <args>` intact. The alternation is
+// ordered longest-prefix-first so `pnpm dlx` / `yarn dlx` match before
+// the bare `npx` / `pnx` binaries.
 export function suggestNpxReplacement(line: string): string {
   return line
-    .replace(/\bpnpm dlx\b/g, 'pnpm exec')
-    .replace(/\byarn dlx\b/g, 'pnpm exec')
-    .replace(/\bpnx\b/g, 'pnpm exec')
-    .replace(/\bnpx\b/g, 'pnpm exec')
+    .replace(/\bpnpm dlx\b/g, 'node_modules/.bin/')
+    .replace(/\byarn dlx\b/g, 'node_modules/.bin/')
+    .replace(/\bpnx\b/g, 'node_modules/.bin/')
+    .replace(/\bnpx\b/g, 'node_modules/.bin/')
+    .replace(/node_modules\/\.bin\/ +/g, 'node_modules/.bin/')
 }
 
 export const scanNpxDlx = (text: string): LineHit[] =>
@@ -659,14 +643,15 @@ export const scanDocsPnpmFirst = (text: string): LineHit[] => {
 //
 // Doc-context lines are exempt from both. `scanLoggerLeaks` merges the
 // two passes so callers (pre-commit / pre-push) keep one entry point.
+//
+// AST-based, via the shared findLoggerLeaks (acorn) — the SAME detector the
+// edit-time logger-guard uses, so the two surfaces can't disagree (the old
+// regex flagged `console.log` inside string literals / comments; the AST walk
+// does not). The acorn parser is already loaded for other commit-time checks.
 
-const CONSOLE_LEAK_RE = /\bconsole\.(?:debug|error|info|log|warn)\s*\(/
-const PROCESS_STDIO_LEAK_RE = /\bprocess\.std(?:err|out)\.write\s*\(/
-
-// Map each direct call to its lib-logger equivalent. process.stdout /
-// console.log / console.info → logger.info; process.stderr /
-// console.error → logger.error; console.warn → logger.warn;
-// console.debug → logger.debug.
+// Map each direct call to its lib-logger equivalent (used for the `suggested`
+// rewrite a hit carries). process.stdout / console.log / console.info →
+// logger.info; process.stderr / console.error → logger.error; etc.
 export function suggestLoggerReplacement(line: string): string {
   return line
     .replace(/\bprocess\.stderr\.write\s*\(/g, 'logger.error(')
@@ -678,27 +663,28 @@ export function suggestLoggerReplacement(line: string): string {
     .replace(/\bconsole\.log\s*\(/g, 'logger.info(')
 }
 
-export const scanConsoleLeaks = (text: string): LineHit[] =>
-  scanLines(text, CONSOLE_LEAK_RE, {
-    skipDocs: { rule: 'console' },
-    suggest: suggestLoggerReplacement,
-  })
-
-export const scanProcessStdioLeaks = (text: string): LineHit[] =>
-  scanLines(text, PROCESS_STDIO_LEAK_RE, {
-    skipDocs: { rule: 'process-stdio' },
-    suggest: suggestLoggerReplacement,
-  })
-
-// Merged entry point: both leak shapes, in line order, deduped by line
-// number so a single line carrying both forms is reported once.
+// Merged entry point: every console.* / process.std*.write leak, deduped by
+// line. Per-line `// socket-lint: allow console` (or `allow process-stdio` for
+// the stdio form) suppresses a hit, matching the old skipDocs semantics.
 export function scanLoggerLeaks(text: string): LineHit[] {
-  const hits = [...scanConsoleLeaks(text), ...scanProcessStdioLeaks(text)]
+  const lines = splitLines(text)
   const byLine = new Map<number, LineHit>()
-  for (const hit of hits) {
-    if (!byLine.has(hit.lineNumber)) {
-      byLine.set(hit.lineNumber, hit)
+  for (const leak of findLoggerLeaks(text)) {
+    if (byLine.has(leak.line)) {
+      continue
     }
+    const sourceLine = lines[leak.line - 1] ?? ''
+    const rule = leak.fullCall.startsWith('process.')
+      ? 'process-stdio'
+      : 'console'
+    if (lineIsSuppressed(sourceLine, rule)) {
+      continue
+    }
+    byLine.set(leak.line, {
+      lineNumber: leak.line,
+      line: sourceLine,
+      suggested: suggestLoggerReplacement(sourceLine),
+    })
   }
   return [...byLine.values()].sort((a, b) => a.lineNumber - b.lineNumber)
 }
@@ -721,43 +707,10 @@ export function scanLoggerLeaks(text: string): LineHit[] {
 // Scanner detects both shapes; suppress with the canonical marker
 // `<comment-prefix> socket-lint: allow cross-repo`.
 
-const FLEET_REPO_NAMES = [
-  'claude-code',
-  'skills',
-  'socket-addon',
-  'socket-btm',
-  'socket-cli',
-  'socket-lib',
-  'socket-packageurl-js',
-  'socket-registry',
-  'socket-wheelhouse',
-  'socket-sdk-js',
-  'socket-sdxgen',
-  'socket-stuie',
-  'socket-vscode',
-  'socket-webext',
-  'ultrathink',
-] as const
-
-// `../<repo>/…` or `../../<repo>/…` etc. — relative path that walks
-// out of the current repo into a sibling fleet repo. The trailing `/`
-// (not `\b`) requires the repo name to name a DIRECTORY: `\b` treats
-// `-` as a boundary, so it false-matched a sibling FILE whose basename
-// merely starts with a repo name (e.g. a `<repo>-config` import in the
-// same dir). A real cross-repo path always has a separator after the name.
-const CROSS_REPO_RELATIVE_RE = new RegExp(
-  String.raw`(?:^|[\s'"\`(=,])\.\.(?:/\.\.)*/(?:${FLEET_REPO_NAMES.join('|')})/`,
-)
-// `…/projects/<repo>/…` — absolute or env-rooted path into a sibling
-// fleet repo. Catches cases where scanPersonalPaths has already been
-// satisfied via `${HOME}` / `<user>` substitution but the path itself
-// still escapes into another repo.
-const CROSS_REPO_ABSOLUTE_RE = new RegExp(
-  String.raw`/projects/(?:${FLEET_REPO_NAMES.join('|')})/`,
-)
-const CROSS_REPO_ANY_RE = new RegExp(
-  `${CROSS_REPO_RELATIVE_RE.source}|${CROSS_REPO_ABSOLUTE_RE.source}`,
-)
+// CROSS_REPO_ANY_RE (built from the canonical FLEET_REPO_NAMES) is imported
+// from the gate-free _shared/cross-repo.mts — the SAME regex the edit-time
+// cross-repo-guard uses, sourced from the canonical fleet-repos.mts roster
+// (was a divergent inline copy + a stale local repo list).
 
 export const scanCrossRepoPaths = (
   text: string,
@@ -817,6 +770,66 @@ export const stripAiAttribution = (
     }
   }
   return { cleaned: kept.join('\n'), removed }
+}
+
+// ── Scan-report-internal label scrubber ────────────────────────────
+//
+// The Claude-side scan-label-in-commit-guard PreToolUse hook
+// (.claude/hooks/fleet/scan-label-in-commit-guard/index.mts) BLOCKS a
+// `git commit` whose message body carries scan-report-internal
+// scratch-pad IDs (B5, M9, H3, L4) — the labels the
+// /fleet:scanning-quality and /fleet:scanning-security skills assign to
+// findings inside one review session. They mean nothing outside that
+// session: a future reader of `git log` who lacks the original report
+// can't decode "fix B5". This is the commit-msg-stage twin for commits
+// that never route through Claude's Bash layer (subprocess / worktree /
+// CI / test-harness). It MUTATES — parity with stripAiAttribution —
+// scrubbing the label token in place rather than blocking, so a
+// non-interactive commit still lands with a clean message.
+//
+// SAME matcher source as the guard's LABEL_RE (the guard keeps it
+// module-private, so the source string is duplicated here, not
+// imported) plus the guard's fenced-code exemption: labels inside
+// triple-backtick fences are quoted log output / SQL, never a finding
+// reference, so they're left untouched.
+const SCAN_LABEL_RE = /(?<![A-Za-z0-9_-])[BMHL][0-9]{1,4}(?![A-Za-z0-9_-])/g
+const SCAN_LABEL_FENCE_RE = /```[\s\S]*?```/g
+
+// Removes scan-report-internal labels from a commit message, scrubbing
+// the token in place (collapsing the orphaned space) so the surrounding
+// subject/body text survives. Returns the cleaned text plus the count
+// of label tokens removed, so the caller writes the file only when
+// `removed > 0` — the same { cleaned, removed } contract as
+// stripAiAttribution.
+export const stripScanLabels = (
+  text: string,
+): { cleaned: string; removed: number } => {
+  let removed = 0
+  // Walk fence boundaries so labels inside ``` … ``` are preserved
+  // verbatim (parity with the guard's stripFencedCode exemption).
+  let cleaned = ''
+  let lastIndex = 0
+  SCAN_LABEL_FENCE_RE.lastIndex = 0
+  const scrub = (segment: string): string =>
+    segment.replace(SCAN_LABEL_RE, () => {
+      removed += 1
+      return ''
+    })
+  let fence: RegExpExecArray | null
+  while ((fence = SCAN_LABEL_FENCE_RE.exec(text)) !== null) {
+    cleaned += scrub(text.slice(lastIndex, fence.index))
+    cleaned += fence[0]
+    lastIndex = fence.index + fence[0].length
+  }
+  cleaned += scrub(text.slice(lastIndex))
+  if (removed > 0) {
+    // Collapse the spaces left behind by a scrubbed mid-sentence label
+    // and trim per-line trailing whitespace so the rewrite reads clean.
+    cleaned = splitLines(cleaned)
+      .map(line => line.replace(/  +/g, ' ').replace(/\s+$/, ''))
+      .join('\n')
+  }
+  return { cleaned, removed }
 }
 
 // ── Linear reference scanner ──────────────────────────────────────
@@ -914,6 +927,18 @@ export const scanLinearRefs = (text: string, limit = 5): string[] => {
   }
   return hits
 }
+
+// ── External GitHub issue/PR reference scanner ─────────────────────
+// Re-exported from the gate-free .git-hooks/_shared/external-issue-ref.mts
+// (single definition). The Claude-side no-ext-issue-ref-guard imports that
+// module directly because helpers.mts carries a Node-25 hard-exit a Claude
+// hook on an older operator Node must not trip; the git-stage commit-msg
+// backstop imports it from here.
+export {
+  ALLOWED_ISSUE_REF_ORGS,
+  scanExternalIssueRefs,
+} from './external-issue-ref.mts'
+export type { ExternalIssueRef } from './external-issue-ref.mts'
 
 // ── File classification ────────────────────────────────────────────
 
@@ -1126,10 +1151,13 @@ export const runStagedTestsReminder = (
 // actually present, and reads the whole file for the keys (they're often on
 // separate lines), so a call with the options nearby passes.
 //
-// The SDK `query` is the bare imported function — `query({…})`, never a method.
-// The negative lookbehind on `.` excludes unrelated method calls that happen to
-// be named query (`chrome.tabs.query(…)`, `db.query(…)`), which are not the SDK.
-const CLAUDE_DRIVER_RE = /(?:(?<!\.)\bquery|new\s+ClaudeSDKClient)\s*\(/
+// The SDK `query` is the bare imported function — `query({…})`, never a method
+// and never inside a string. The negative lookbehind excludes:
+//   - method calls named query (`chrome.tabs.query(…)`, `db.query(…)`) — the `.`
+//   - a `query(` opening INSIDE a string / template literal — the `` ` ``/`'`/`"`.
+//     The canonical false positive is a GraphQL request body
+//     (`query: ` + a backtick + `query($owner: …`), which is data, not a driver.
+const CLAUDE_DRIVER_RE = /(?:(?<![.`'"])\bquery|new\s+ClaudeSDKClient)\s*\(/
 const LOCKDOWN_KEYS = [
   'tools',
   'allowedTools',
@@ -1243,4 +1271,91 @@ export const scanAiConfigPoison = (text: string): LineHit[] => {
     }
   }
   return hits
+}
+
+// ── Catastrophic mass-deletion (pre-commit tier) ────────────────────
+//
+// The PreToolUse `mass-delete-guard` inspects the staged index when the `git
+// commit` Bash command is FIRST seen — but a pre-commit step (lint/test) can
+// stage deletions DURING the commit, after that check passed. A wedged
+// `pnpm test` once left the entire `.claude/` tree staged-for-deletion mid
+// commit, and the index snapshotted ~2400 deletions. This re-runs the same
+// catastrophic-deletion check at pre-commit time — the index here IS the
+// about-to-commit tree, post-churn — so no commit path can land a wipe.
+//
+// Thresholds kept in sync with .claude/hooks/fleet/mass-delete-guard/index.mts.
+const DELETE_FLOOR = 50
+const DELETE_RATIO = 0.75
+
+// The catastrophic-deletion reason for the CURRENT staged index, or undefined
+// when the staged deletions are within normal bounds. Pure of side effects
+// beyond the git reads; the test drives `catastrophicDeletionFromCounts`.
+export function catastrophicDeletionFromCounts(
+  deletions: number,
+  tracked: number,
+): string | undefined {
+  if (deletions >= DELETE_FLOOR) {
+    return `${deletions} files staged for deletion (≥ ${DELETE_FLOOR})`
+  }
+  const denom = Math.max(tracked, 1)
+  if (deletions / denom > DELETE_RATIO) {
+    return `${deletions} of ${tracked} tracked files staged for deletion (> ${Math.round(
+      DELETE_RATIO * 100,
+    )}%)`
+  }
+  return undefined
+}
+
+export function catastrophicDeletionReason(): string | undefined {
+  const deletions = gitLines(
+    'diff',
+    '--cached',
+    '--diff-filter=D',
+    '--name-only',
+  ).length
+  if (deletions === 0) {
+    return undefined
+  }
+  const tracked = gitLines('ls-files').length
+  return catastrophicDeletionFromCounts(deletions, tracked)
+}
+
+// Markers git writes under $GIT_DIR while a merge / cherry-pick / revert is
+// mid-resolution. A commit recorded during one of these legitimately carries
+// no staged delta of its own, so the empty-index gate must stand down.
+const MERGE_STATE_MARKERS = ['MERGE_HEAD', 'CHERRY_PICK_HEAD', 'REVERT_HEAD']
+
+/**
+ * True when a merge, cherry-pick, or revert is in progress — detected by the
+ * presence of git's in-progress marker files under `$GIT_DIR`. Resolves the git
+ * dir via `git rev-parse --git-path <marker>` (handles worktrees, where the
+ * marker lives in the per-worktree git dir, not the common dir). Best-effort:
+ * if git can't be reached we report `false`, which means the empty-index gate
+ * stays armed — failing toward the stricter check.
+ */
+export function mergeInProgress(): boolean {
+  for (const marker of MERGE_STATE_MARKERS) {
+    const markerPath = git('rev-parse', '--git-path', marker)
+    if (markerPath && existsSync(markerPath)) {
+      return true
+    }
+  }
+  return false
+}
+
+/**
+ * True when the staged index carries no change of ANY kind relative to HEAD —
+ * the about-to-be-recorded tree is identical to the parent, i.e. an empty
+ * commit. Uses `git diff --cached --quiet`, whose exit code is the canonical
+ * emptiness signal: 0 = no staged changes, 1 = some staged changes. This spans
+ * every diff filter, so a pure-deletion commit correctly reports `false`.
+ *
+ * Best-effort: a non-0/1 status (git unreachable, no HEAD yet on a brand-new
+ * repo) reports `false` so a legitimate first commit isn't blocked.
+ */
+export function stagedIndexIsEmpty(): boolean {
+  const result = spawnSync('git', ['diff', '--cached', '--quiet'], {
+    encoding: 'utf8',
+  })
+  return result.status === 0
 }

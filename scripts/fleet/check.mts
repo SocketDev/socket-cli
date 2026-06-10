@@ -38,8 +38,19 @@ const steps: Array<() => boolean> = [
   // CLAUDE.md doc integrity: every cited hook + socket/ rule must exist (catches
   // stale citations after a rename/removal — the reverse of new-hook-claude-md-guard).
   () => run('node', ['scripts/fleet/check/claude-md-citations-resolve.mts']),
+  // Code-is-law coverage: every 🚨 (hard-discipline) rule in the CLAUDE.md fleet
+  // block and in docs/agents.md/fleet/*.md must resolve to an EXECUTABLE enforcer
+  // (a hook with index/install.mts, a socket/ or typescript/ lint rule, or a
+  // scripts/{fleet,repo}/*.mts), directly or via the detail surface it links.
+  // Where claude-md-rules-are-informative accepts a docs link ALONE as an anchor,
+  // this fails a hard rule with no code behind it (the policy-on-paper state the
+  // Code-is-law rule forbids). Granularity is the 🚨 paragraph, so a multi-rule
+  // section passes only when EVERY hard rule resolves. A rule that genuinely
+  // can't be coded carries an inline `<!-- enforcement: <category> reason -->`
+  // opt-out.
+  () => run('node', ['scripts/fleet/check/claude-md-rules-are-enforced.mts']),
   // Hook-registry doc integrity: every `- \`<name>\`` bullet in
-  // docs/claude.md/fleet/hook-registry.md names a real .claude/hooks/fleet/<name>/
+  // docs/agents.md/fleet/hook-registry.md names a real .claude/hooks/fleet/<name>/
   // dir. CLAUDE.md defers its full hook list to the registry, so a stale/renamed
   // bullet points readers at policy that doesn't exist. Stale bullets fail;
   // undocumented hooks are reported, not enforced (many are internal tooling).
@@ -48,8 +59,12 @@ const steps: Array<() => boolean> = [
   // clipboard banner). setup/claude-config.mts sets it; this catches drift.
   () => run('node', ['scripts/fleet/check/claude-config-is-hardened.mts']),
   // Cost routing: every mutating (fix) skill must declare a model: tier so
-  // mechanical work runs cheap. See docs/claude.md/fleet/skill-model-routing.md.
+  // mechanical work runs cheap. See docs/agents.md/fleet/skill-model-routing.md.
   () => run('node', ['scripts/fleet/check/mutating-skills-have-model.mts']),
+  // Code is law for the onboarding skill's CI step: the ci:local script keeps
+  // its canonical agent-ci flag set, and the agent-ci Dockerfile (when adopted)
+  // stays byte-identical to the template.
+  () => run('node', ['scripts/fleet/check/ci-local-is-canonical.mts']),
   // Cost routing twin: a programmatic AI spawn that pins a model must also pin
   // reasoning effort (CLAUDE.md token-spend). The lib makes effort optional —
   // this gate is the enforcement the optional field can't provide. Vocab per
@@ -70,7 +85,7 @@ const steps: Array<() => boolean> = [
   // can't drift. Reporting candidates the human rewrites; never auto-fixed.
   () => run('node', ['scripts/fleet/check/error-messages-are-thorough.mts']),
   // Rule citations are generic (CLAUDE.md "Compound lessons into rules"): a
-  // `**Why:**`/incident line in fleet rule prose (CLAUDE.md, docs/claude.md/
+  // `**Why:**`/incident line in fleet rule prose (CLAUDE.md, docs/agents.md/
   // fleet, SKILL.md, hook READMEs) must be a timeless example, not a dated log
   // — no ISO dates, version deltas, percentages, or commit SHAs (they age into
   // a changelog + leak detail in a fleet-duplicated file). Commit-time twin of
@@ -80,6 +95,13 @@ const steps: Array<() => boolean> = [
   // invariant it guarantees — paths-are-canonical, lock-step-refs-resolve), so
   // the check/ dir reads as a spec. A bare-topic name (paths, provenance) fails.
   () => run('node', ['scripts/fleet/check/check-names-are-assertions.mts']),
+  // A recorded fleet rename is FINISHED, not half-done. When a file carries a
+  // `renamed-from: <old>` marker, the prior name must be fully gone — absent as
+  // a live file (script / hook dir / lint rule) AND unreferenced across the
+  // fleet surfaces. Catches the incoherent old-and-new-coexist state a rename
+  // leaves when it lands across some files but not all (the structural twin of
+  // the plan-review-reminder "settle the shape before the cascade" nudge).
+  () => run('node', ['scripts/fleet/check/name-rename-is-complete.mts']),
   // The only hook disable is the canonical "Allow <X> bypass" phrase. A
   // SOCKET_*_DISABLED env var / disabledEnvVar field / isHookDisabled() call
   // lets a session silently neuter a guard. The edit-time
@@ -112,6 +134,20 @@ const steps: Array<() => boolean> = [
   // incident: a drifted tool entry left an INLINED_* env var empty and hung a
   // pre-commit test run.
   () => run('node', ['scripts/fleet/check/external-tools-are-valid.mts']),
+  // Every .gitmodules submodule is sparse-checkout'd to its consumed subtree
+  // or annotated `# full-checkout: <reason>`. A vendored upstream drags its
+  // whole tree into every clone otherwise. Determination is the
+  // optimizing-submodules skill; this gate keeps the result from regressing.
+  () =>
+    run('node', [
+      'scripts/fleet/check/submodules-are-sparse-or-annotated.mts',
+      '--quiet',
+    ]),
+  // Companion: every sparse submodule declares a `verify =` consumer (the
+  // command that build-proves the pattern) or `verify = none` (reference-only).
+  // A sparse pattern with no declared consumer is unproven — the verify is
+  // run separately (heavy: clone + build) via verify-submodule-sparse --run.
+  () => run('node', ['scripts/fleet/verify-submodule-sparse.mts', '--check']),
   // researching-recency SKILL.md must quote the engine's output markers
   // verbatim (badge, evidence envelope, footer fences) so the model's
   // pass-through/synthesis instructions match what the engine emits.
@@ -129,14 +165,14 @@ const steps: Array<() => boolean> = [
   // cross-language ports (acorn quadruplet, socket-btm mcp/*.cpp),
   // it validates every `Lock-step with <Lang>: <path>` comment resolves
   // to an existing file. Forms documented in
-  // docs/claude.md/fleet/parser-comments.md §5–6.
+  // docs/agents.md/fleet/parser-comments.md §5–6.
   () =>
     run('node', ['scripts/fleet/check/lock-step-refs-resolve.mts', '--quiet']),
   // Lock-step header byte-equality. Same opt-in. Where the path-refs
   // gate above catches stale REFERENCES, this one catches drift in the
   // top-of-file `BEGIN LOCK-STEP HEADER` / `END LOCK-STEP HEADER` block
   // — the intent tripwire across the quadruplet. Spec:
-  // docs/claude.md/fleet/parser-comments.md §7.
+  // docs/agents.md/fleet/parser-comments.md §7.
   () =>
     run('node', ['scripts/fleet/check/lock-step-headers-match.mts', '--quiet']),
   // Soak-exclude date-annotation gate — pairs with
@@ -182,6 +218,14 @@ const steps: Array<() => boolean> = [
   // `"private": true`. Uses `npm pack --dry-run --json` as the source of
   // truth — same logic npm itself uses for publish.
   () => run('node', ['scripts/fleet/check/package-files-are-allowlisted.mts']),
+  // README coverage badge matches the latest coverage run. When
+  // coverage/coverage-summary.json (vitest json-summary) exists AND the README
+  // carries a populated `![Coverage](…coverage-NN%…)` badge, the percent must
+  // equal the rounded line-coverage total. Fails open when not checkable (no
+  // badge, the `<PCT>` placeholder, or no coverage data — a lint/type CI lane).
+  // Pre-bump-wave twin of `make-coverage-badge.mts`; shares lib/coverage-badge.
+  () =>
+    run('node', ['scripts/fleet/check/coverage-badge-is-current.mts']),
   // Reminder/guard duplication gate. The fleet convention: a `-guard` hook
   // BLOCKS, a `-reminder` hook NUDGES — one surface per concern, never both.
   // Errors when a base name has both `<base>-guard` and `<base>-reminder`

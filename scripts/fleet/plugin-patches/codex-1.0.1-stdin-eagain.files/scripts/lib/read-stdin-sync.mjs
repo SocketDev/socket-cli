@@ -9,7 +9,7 @@
 // Kept as a standalone module — not inlined into the patch — so the patch's
 // diff footprint stays tiny (an import + two call-site swaps). The reapply step
 // in install-claude-plugins.mts copies this file into the cache before applying
-// the diff. Provenance + lifecycle: docs/claude.md/fleet/plugin-cache-patches.md.
+// the diff. Provenance + lifecycle: docs/agents.md/fleet/plugin-cache-patches.md.
 
 import fs from 'node:fs'
 

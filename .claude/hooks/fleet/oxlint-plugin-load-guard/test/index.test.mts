@@ -11,15 +11,17 @@ const here = path.dirname(fileURLToPath(import.meta.url))
 
 test('isPluginPath matches plugin source files', () => {
   assert.equal(
-    isPluginPath('/repo/.config/fleet/oxlint-plugin/rules/no-vitest-focused-tests.mts'),
+    isPluginPath(
+      '/repo/.config/oxlint-plugin/fleet/no-vitest-focused-tests/index.mts',
+    ),
     true,
   )
   assert.equal(
-    isPluginPath('/repo/.config/fleet/oxlint-plugin/lib/vitest-fn-call.mts'),
+    isPluginPath('/repo/.config/oxlint-plugin/lib/vitest-fn-call.mts'),
     true,
   )
   assert.equal(
-    isPluginPath('/repo/.config/fleet/oxlint-plugin/index.mts'),
+    isPluginPath('/repo/.config/oxlint-plugin/index.mts'),
     true,
   )
 })

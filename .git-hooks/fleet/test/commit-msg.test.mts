@@ -98,6 +98,37 @@ test('commit-msg: keeps prose mentioning Claude in context', async () => {
   assert.match(rewrittenMessage, /\.claude\//)
 })
 
+test('commit-msg: BLOCKS a foreign owner/repo#num issue reference', async () => {
+  // A real identity (so the author gate stays out of the way) plus a
+  // foreign `<owner>/<repo>#<num>` token in the body — the ext-issue-ref
+  // scan must block it.
+  const { result } = await runHook(
+    'fix(scan): handle empty manifest\n\nMatches behavior in spencermountain/compromise#1203.\n',
+    {
+      GIT_AUTHOR_NAME: 'John-David Dalton',
+      GIT_AUTHOR_EMAIL: 'john.david.dalton@gmail.com',
+      GIT_COMMITTER_NAME: 'John-David Dalton',
+      GIT_COMMITTER_EMAIL: 'john.david.dalton@gmail.com',
+    },
+  )
+  assert.strictEqual(result.code, 1)
+  assert.match(result.stderr, /non-SocketDev GitHub issue\/PR/)
+  assert.match(result.stderr, /spencermountain\/compromise#1203/)
+})
+
+test('commit-msg: ALLOWS a SocketDev-owned owner/repo#num reference', async () => {
+  const { result } = await runHook(
+    'fix(scan): align with SocketDev/socket-lib#42\n',
+    {
+      GIT_AUTHOR_NAME: 'John-David Dalton',
+      GIT_AUTHOR_EMAIL: 'john.david.dalton@gmail.com',
+      GIT_COMMITTER_NAME: 'John-David Dalton',
+      GIT_COMMITTER_EMAIL: 'john.david.dalton@gmail.com',
+    },
+  )
+  assert.strictEqual(result.code, 0)
+})
+
 test('commit-msg: BLOCKS a placeholder subject "initial"', async () => {
   const { result } = await runHook('initial\n')
   assert.strictEqual(result.code, 1)

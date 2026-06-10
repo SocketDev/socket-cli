@@ -296,7 +296,7 @@ async function main(): Promise<void> {
         '  • Run: git status ; git diff <vanished-path> (history may show the move)\n' +
         '  • Confer with the user before proceeding.\n' +
         '\nSee: CLAUDE.md → "Parallel Claude sessions"\n' +
-        '     docs/claude.md/fleet/parallel-claude-sessions.md\n',
+        '     docs/agents.md/fleet/parallel-claude-sessions.md\n',
     )
   } else {
     process.stderr.write(

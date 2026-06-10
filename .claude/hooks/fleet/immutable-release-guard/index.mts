@@ -148,7 +148,7 @@ await withEditGuard((filePath, content, payload) => {
       '    gh release upload "$TAG" release/*.tar.gz release/checksums.txt',
       '    gh release edit "$TAG" --draft=false',
       '',
-      '  Detail: docs/claude.md/fleet/immutable-releases.md',
+      '  Detail: docs/agents.md/fleet/immutable-releases.md',
       '',
       `  Bypass: type "${BYPASS_PHRASE}" in a new message, then retry.`,
       '',

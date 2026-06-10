@@ -27,7 +27,7 @@ import os from 'node:os'
 import path from 'node:path'
 
 // Untracked-by-default path prefixes — kept in lock-step with
-// dirty-worktree-stop-reminder. Vendored / build-copied trees are
+// dirty-worktree-stop-guard. Vendored / build-copied trees are
 // expected to be dirty and are never "another agent's work".
 const UNTRACKED_BY_DEFAULT_PREFIXES = [
   'additions/source-patched/',

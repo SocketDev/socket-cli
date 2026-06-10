@@ -13,7 +13,7 @@ At turn-end, in a linked worktree:
 
 The worktree is scratch space — committing each step keeps work landable and rebases cheap, and the heavy gate runs once before merge rather than on every commit. Merging a worktree branch before the gate is green is how broken/unformatted/red changes reach the target branch. A reminder (not a block) because Stop hooks fire after the turn.
 
-Stays quiet in the primary checkout — `dirty-worktree-stop-reminder` and `commit-pr-reminder` cover that case; this hook avoids double-nagging.
+Stays quiet in the primary checkout — `dirty-worktree-stop-guard` and `commit-pr-reminder` cover that case; this hook avoids double-nagging.
 
 ## Bypass
 

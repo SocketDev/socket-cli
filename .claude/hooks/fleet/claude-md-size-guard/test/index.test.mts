@@ -73,7 +73,7 @@ test('Write of file over 40KB is blocked', async () => {
   assert.strictEqual(result.code, 2)
   assert.match(result.stderr, /claude-md-size-guard/)
   assert.match(result.stderr, /too large/)
-  assert.match(result.stderr, /docs\/claude\.md\/fleet\//)
+  assert.match(result.stderr, /docs\/agents\.md\/fleet\//)
 })
 
 test('cap override via env var', async () => {
@@ -127,4 +127,51 @@ test('Edit splice that keeps file under cap is allowed', async () => {
     tool_name: 'Edit',
   })
   assert.strictEqual(result.code, 0)
+})
+
+function writeTranscript(userText: string): string {
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'claude-md-size-guard-tx-'))
+  const file = path.join(dir, 'transcript.jsonl')
+  writeFileSync(
+    file,
+    JSON.stringify({
+      message: { content: userText, role: 'user' },
+      type: 'user',
+    }) + '\n',
+  )
+  return file
+}
+
+test('over-cap edit is allowed when the bypass phrase is in transcript', async () => {
+  const transcriptPath = writeTranscript(
+    'please land this, Allow claude-md-size bypass',
+  )
+  const result = await runHook({
+    tool_input: { content: 'x'.repeat(45 * 1024), file_path: 'CLAUDE.md' },
+    tool_name: 'Write',
+    transcript_path: transcriptPath,
+  })
+  assert.strictEqual(result.code, 0)
+  assert.match(result.stderr, /allowed by/)
+  assert.match(result.stderr, /Allow claude-md-size bypass/)
+})
+
+test('over-cap edit stays blocked when transcript lacks the phrase', async () => {
+  const transcriptPath = writeTranscript('just make it fit somehow')
+  const result = await runHook({
+    tool_input: { content: 'x'.repeat(45 * 1024), file_path: 'CLAUDE.md' },
+    tool_name: 'Write',
+    transcript_path: transcriptPath,
+  })
+  assert.strictEqual(result.code, 2)
+  assert.match(result.stderr, /too large/)
+})
+
+test('block message names the bypass phrase', async () => {
+  const result = await runHook({
+    tool_input: { content: 'x'.repeat(45 * 1024), file_path: 'CLAUDE.md' },
+    tool_name: 'Write',
+  })
+  assert.strictEqual(result.code, 2)
+  assert.match(result.stderr, /Allow claude-md-size bypass/)
 })

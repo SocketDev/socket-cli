@@ -33,7 +33,7 @@ A behavior the repo depends on that has NO executable enforcer firing at the mom
 
 The hard part isn't finding gaps — it's picking the RIGHT surface so the rule fires where the violation happens, with the least friction. Decide per gap by asking, in order:
 
-1. **Is the violation visible in source text / AST, and is the right form deterministic?** → **Lint rule** (`.config/fleet/oxlint-plugin/rules/<name>.mts`). Catches it for every file on every lint, in the editor + CI. Default `"error"` (never `"warn"`); ship an autofix (`fixable: 'code'`) when the rewrite is deterministic. Best for code-shape rules (naming, imports, API choice).
+1. **Is the violation visible in source text / AST, and is the right form deterministic?** → **Lint rule** (`.config/oxlint-plugin/fleet/<name>/index.mts` — each rule is its own dir, mirroring `.claude/hooks/`). Catches it for every file on every lint, in the editor + CI. Default `"error"` (never `"warn"`); ship an autofix (`fixable: 'code'`) when the rewrite is deterministic. Best for code-shape rules (naming, imports, API choice).
 2. **Is the violation a TOOL ACTION (a Bash command, an Edit/Write) or an end-of-turn state?** → **Hook** (`.claude/hooks/fleet/<name>/`):
    - **`-guard` (PreToolUse, exit 2 = BLOCK)** when the action is dangerous/irreversible and should be STOPPED before it happens (a destructive git command, writing a secret, a forbidden edit). Pair with a bypass phrase for the rare legit case.
    - **`-reminder` (Stop or PreToolUse, exit 0 = NUDGE)** when you can't hard-block (state already exists at turn-end) or a block would be too blunt (a soft "you probably want to cascade now"). Fires, never refuses.
@@ -57,7 +57,7 @@ Every codification this skill produces ships with **thorough tests** (plural —
 
 Per surface:
 
-- **Lint rule** → `RuleTester` test at `.config/fleet/oxlint-plugin/test/<name>.test.mts` with a full `valid[]` + `invalid[]` matrix (every shape + every exemption), and an `output` assertion on each autofix case (assert the FIXED TEXT, not just `messageId` — the fleet has been bitten by autofix-corruption bugs that passed because tests only checked `messageId`). Confirm the plugin still loads (`oxlint-plugin-loads.mts`); a broken rule import silently disables ALL `socket/` rules.
+- **Lint rule** → `RuleTester` test at `.config/oxlint-plugin/fleet/<name>/test/<name>.test.mts` with a full `valid[]` + `invalid[]` matrix (every shape + every exemption), and an `output` assertion on each autofix case (assert the FIXED TEXT, not just `messageId` — the fleet has been bitten by autofix-corruption bugs that passed because tests only checked `messageId`). Confirm the plugin still loads (`oxlint-plugin-loads.mts`); a broken rule import silently disables ALL `socket/` rules.
 - **Hook** → `test/index.test.mts` that spawns the hook as a subprocess across the full case set above: each blocked shape, each passing shape, the bypass phrase, a pass-through tool, and a malformed-payload fail-open. Assert exit code + message per case.
 - **Check script** → drifted fixture → non-zero exit; clean fixture → zero; plus a fixture per distinct drift kind it detects.
 - **Skill / command** → structural checks (`model:` tier on a mutating skill, citation resolves) + a dry-run of the happy path AND a degraded path (missing input, non-interactive).
@@ -80,7 +80,7 @@ Read-only scan; warn about a dirty tree but continue.
 Build the ground-truth set the scanners compare against:
 
 - Hooks: `ls .claude/hooks/fleet .claude/hooks/repo`
-- Lint rules: `ls .config/fleet/oxlint-plugin/rules`
+- Lint rules: `ls .config/oxlint-plugin/fleet`
 - Check scripts: `ls scripts/fleet/check`
 - CLAUDE.md rules + their citations (parse `(`.claude/hooks/…`)` and `socket/<rule>` refs)
 - **Auto-memory dir (read-only, best-effort)**: resolve the Claude project memory dir for source #6 — machine-local, OUTSIDE the repo. Find it via `CLAUDE_PROJECT_DIR`'s sibling memory path, or `find "$HOME/.claude/projects" -type d -name memory 2>/dev/null` matching this repo's slug. Read `memory/*.md` + `MEMORY.md` as discovery input only — never edit or delete them. If none is found (CI, fresh checkout, headless with no memory), skip source #6 silently; the repo-source scans always run.

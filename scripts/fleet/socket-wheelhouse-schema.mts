@@ -34,24 +34,43 @@ import type { Static } from '@sinclair/typebox'
 // the manifest is the source of truth for parity tracking.
 // ---------------------------------------------------------------------------
 
-const LayoutSchema = Type.Union(
-  [Type.Literal('single-package'), Type.Literal('monorepo')],
+const RepoSchema = Type.Object(
   {
-    description:
-      'Package layout. `single-package` = one `package.json` at root, no `packages/`. `monorepo` = pnpm workspaces under `packages/`.',
+    type: Type.Union(
+      [Type.Literal('single-package'), Type.Literal('monorepo')],
+      {
+        description:
+          'Package layout. `single-package` = one `package.json` at root, no `packages/`. `monorepo` = pnpm workspaces under `packages/`.',
+      },
+    ),
+  },
+  {
+    description: 'Repo shape.',
+    additionalProperties: false,
   },
 )
 
-const NativeSchema = Type.Union(
-  [
-    Type.Literal('none'),
-    Type.Literal('consumer'),
-    Type.Literal('producer'),
-    Type.Literal('both'),
-  ],
+const BuildSchema = Type.Object(
+  {
+    from: Type.Union(
+      [Type.Literal('npm-registry'), Type.Literal('github-release')],
+      {
+        description:
+          'Release source/target. `npm-registry` = published as an npm package. `github-release` = raw artifacts attached to a GitHub Release.',
+      },
+    ),
+    type: Type.Union(
+      [Type.Literal('js'), Type.Literal('addon'), Type.Literal('binary')],
+      {
+        description:
+          'Artifact kind. `js` = plain JS package. `addon` = `.node` native addon. `binary` = a native binary (executable or wasm module — wasm is a binary format, so it lives here, not its own value).',
+      },
+    ),
+  },
   {
     description:
-      'Native-binary supply-chain role. `none` = pure-npm publish path. `consumer` = pulls prebuilt binaries from a sibling producer. `producer` = ships native artifacts via GH releases. `both` = consumes one set, produces another. (Per-language ports live in `lockstep.json` `lang-parity` rows, not here.)',
+      'How the repo is built + released. Drives the release-checksums file cascade + CI breadth. `from: github-release` repos are native producers (socket-btm); `from: npm-registry` + non-`js` type wrap prebuilt native bits (socket-bin/socket-addon); `type: js` is a plain package.',
+    additionalProperties: false,
   },
 )
 
@@ -319,10 +338,10 @@ export const SocketWheelhouseConfigSchema = Type.Object(
     repoName: Type.String({
       pattern: '^[a-z0-9][a-z0-9-]*$',
       description:
-        'Canonical repo basename (e.g. `socket-lib`, `ultrathink`). Used for layout / native-independent exemptions like the oxlint `socket-lib` carve-out.',
+        'Canonical repo basename (e.g. `socket-lib`, `ultrathink`). Used for shape-independent exemptions like the oxlint `socket-lib` carve-out.',
     }),
-    layout: LayoutSchema,
-    native: NativeSchema,
+    repo: RepoSchema,
+    build: BuildSchema,
     hooks: Type.Optional(HooksSchema),
     scripts: Type.Optional(ScriptsSchema),
     lint: Type.Optional(LintSchema),
@@ -344,5 +363,5 @@ export const SocketWheelhouseConfigSchema = Type.Object(
 )
 
 export type SocketWheelhouseConfig = Static<typeof SocketWheelhouseConfigSchema>
-export type Layout = Static<typeof LayoutSchema>
-export type Native = Static<typeof NativeSchema>
+export type Repo = Static<typeof RepoSchema>
+export type Build = Static<typeof BuildSchema>

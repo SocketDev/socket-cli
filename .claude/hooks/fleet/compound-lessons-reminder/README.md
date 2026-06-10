@@ -43,7 +43,7 @@ Surfaces that count:
 - `.claude/commands/fleet/**`
 - `.config/fleet/**`
 - `scripts/fleet/**`
-- `docs/claude.md/fleet/**`
+- `docs/agents.md/fleet/**`
 
 Edits to non-fleet-canonical paths (`src/`, `test/`, repo-local `.claude/hooks/repo/`) don't fire — those aren't fleet-shared surfaces, so the compound-lessons-into-rules pattern doesn't apply.
 

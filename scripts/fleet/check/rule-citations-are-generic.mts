@@ -20,7 +20,7 @@
 // carry a specificity token are flagged — a bare date in a SHA-pin comment,
 // soak annotation, .gitmodules stamp, or CHANGELOG entry is left alone.
 //
-// Scope: the fleet-facing rule-prose surfaces — CLAUDE.md, docs/claude.md/fleet,
+// Scope: the fleet-facing rule-prose surfaces — CLAUDE.md, docs/agents.md/fleet,
 // .claude/skills/**/SKILL.md, .claude/hooks/fleet/**/README.md. Reporting-only;
 // never auto-fixed (rewriting to the generic form needs judgment).
 //

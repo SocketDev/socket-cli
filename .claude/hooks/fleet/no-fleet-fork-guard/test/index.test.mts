@@ -125,7 +125,7 @@ test('Edit on a canonical path outside a fleet repo passes', async () => {
   // Tmp dir without CLAUDE.md → the walk-up never finds a fleet root.
   const dir = mkdtempSync(path.join(os.tmpdir(), 'non-fleet-'))
   try {
-    const file = path.join(dir, '.config/fleet/oxlint-plugin/rules/foo.mts')
+    const file = path.join(dir, '.config/oxlint-plugin/fleet/foo/index.mts')
     mkdirSync(path.dirname(file), { recursive: true })
     writeFileSync(file, '// content\n')
     const result = await runHook({
@@ -138,12 +138,12 @@ test('Edit on a canonical path outside a fleet repo passes', async () => {
   }
 })
 
-test('Edit on .config/fleet/oxlint-plugin/rules/* in a fleet repo is BLOCKED', async () => {
+test('Edit on .config/oxlint-plugin/fleet/* in a fleet repo is BLOCKED', async () => {
   const repo = makeFakeFleetRepo()
   try {
     const file = makeCanonicalFile(
       repo,
-      '.config/fleet/oxlint-plugin/rules/example.mts',
+      '.config/oxlint-plugin/fleet/example/index.mts',
     )
     const result = await runHook({
       tool_input: { file_path: file, new_string: 'x' },
@@ -190,10 +190,10 @@ test('Edit on .claude/hooks/* in a fleet repo is BLOCKED', async () => {
   }
 })
 
-test('Edit on docs/claude.md/* in a fleet repo is BLOCKED', async () => {
+test('Edit on docs/agents.md/* in a fleet repo is BLOCKED', async () => {
   const repo = makeFakeFleetRepo()
   try {
-    const file = makeCanonicalFile(repo, 'docs/claude.md/sorting.md')
+    const file = makeCanonicalFile(repo, 'docs/agents.md/sorting.md')
     const result = await runHook({
       tool_input: { file_path: file, new_string: 'x' },
       tool_name: 'Edit',
@@ -204,13 +204,13 @@ test('Edit on docs/claude.md/* in a fleet repo is BLOCKED', async () => {
   }
 })
 
-test('Edit on docs/claude.md/repo/* in a fleet repo is ALLOWED (per-repo carve-out)', async () => {
+test('Edit on docs/agents.md/repo/* in a fleet repo is ALLOWED (per-repo carve-out)', async () => {
   // The repo/ subdirectory is the per-repo analog of fleet/. Host repos
   // drop architecture/commands/build detail here to fit the whole-file
   // size cap without cascading the content fleet-wide.
   const repo = makeFakeFleetRepo()
   try {
-    const file = makeCanonicalFile(repo, 'docs/claude.md/repo/architecture.md')
+    const file = makeCanonicalFile(repo, 'docs/agents.md/repo/architecture.md')
     const result = await runHook({
       tool_input: { file_path: file, new_string: 'x' },
       tool_name: 'Edit',
@@ -226,7 +226,7 @@ test('Write tool also blocked, not just Edit', async () => {
   try {
     const file = makeCanonicalFile(
       repo,
-      '.config/fleet/oxlint-plugin/rules/new-rule.mts',
+      '.config/oxlint-plugin/fleet/new-rule/index.mts',
     )
     const result = await runHook({
       tool_input: { file_path: file, content: 'export default {}' },
@@ -243,7 +243,7 @@ test('MultiEdit tool also blocked', async () => {
   try {
     const file = makeCanonicalFile(
       repo,
-      '.config/fleet/oxlint-plugin/rules/foo.mts',
+      '.config/oxlint-plugin/fleet/foo/index.mts',
     )
     const result = await runHook({
       tool_input: { file_path: file, edits: [] },
@@ -262,7 +262,7 @@ test('repo without FLEET-CANONICAL marker passes through', async () => {
   try {
     const file = makeCanonicalFile(
       repo,
-      '.config/fleet/oxlint-plugin/rules/x.mts',
+      '.config/oxlint-plugin/fleet/x/index.mts',
     )
     const result = await runHook({
       tool_input: { file_path: file, new_string: 'x' },
@@ -451,6 +451,55 @@ test('Edit on a root-level canonical file WITHOUT fleet-block markers is BLOCKED
     })
     assert.strictEqual(result.code, 2)
     assert.match(result.stderr, /no-fleet-fork-guard/)
+  } finally {
+    rmSync(repo, { force: true, recursive: true })
+  }
+})
+
+// A wheelhouse checkout is identified by `template/CLAUDE.md` (the
+// byte-canonical marker every wheelhouse has, downstream repos don't).
+function makeFakeWheelhouseRepo(): string {
+  const repo = mkdtempSync(path.join(os.tmpdir(), 'fake-wheelhouse-'))
+  writeFileSync(path.join(repo, 'package.json'), '{"name":"socket-wheelhouse"}\n')
+  writeFileSync(path.join(repo, 'CLAUDE.md'), '# socket-wheelhouse\n')
+  mkdirSync(path.join(repo, 'template'), { recursive: true })
+  // The wheelhouse marker + the README PLACEHOLDER (distinct from the
+  // wheelhouse's own authored root README).
+  writeFileSync(path.join(repo, 'template/CLAUDE.md'), '# <REPO_NAME>\n')
+  writeFileSync(path.join(repo, 'template/README.md'), '# <REPO_NAME>\n')
+  return repo
+}
+
+test("Edit on the wheelhouse's OWN root README.md is ALLOWED (repo-owned, not a cascade copy)", async () => {
+  const repo = makeFakeWheelhouseRepo()
+  try {
+    const file = path.join(repo, 'README.md')
+    writeFileSync(file, '# socket-wheelhouse\n\nFleet axes prose.\n')
+    const result = await runHook({
+      tool_input: { file_path: file, new_string: '# socket-wheelhouse (edited)' },
+      tool_name: 'Edit',
+    })
+    assert.strictEqual(result.code, 0)
+    assert.strictEqual(result.stderr, '')
+  } finally {
+    rmSync(repo, { force: true, recursive: true })
+  }
+})
+
+test('Edit on a DOWNSTREAM root README.md (no template/) passes through — not canonical there', async () => {
+  // A downstream fleet repo has no template/, so isCanonicalRelativePath
+  // already returns false for its root README — the wheelhouse exemption is
+  // not even reached, but the net effect (allowed) is the same. This pins
+  // that a non-wheelhouse repo's README is never blocked by this path.
+  const repo = makeFakeFleetRepo()
+  try {
+    const file = path.join(repo, 'README.md')
+    writeFileSync(file, '# socket-foo\n')
+    const result = await runHook({
+      tool_input: { file_path: file, new_string: '# socket-foo (edited)' },
+      tool_name: 'Edit',
+    })
+    assert.strictEqual(result.code, 0)
   } finally {
     rmSync(repo, { force: true, recursive: true })
   }

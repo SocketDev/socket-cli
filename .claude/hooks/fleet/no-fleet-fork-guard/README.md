@@ -4,15 +4,15 @@ PreToolUse Edit/Write hook that blocks edits to fleet-canonical files inside dow
 
 ## What it enforces
 
-The fleet rule "Never fork fleet-canonical files locally" (CLAUDE.md fleet block, full reference at [`docs/claude.md/no-local-fork-canonical.md`](../../../docs/claude.md/no-local-fork-canonical.md)).
+The fleet rule "Never fork fleet-canonical files locally" (CLAUDE.md fleet block, full reference at [`docs/agents.md/no-local-fork-canonical.md`](../../../docs/agents.md/no-local-fork-canonical.md)).
 
 Fleet-canonical surfaces (anything tracked by `socket-wheelhouse/scripts/sync-scaffolding/manifest.mts`):
 
-- `.config/fleet/oxlint-plugin/` — oxlint plugin index + rules
+- `.config/oxlint-plugin/` — oxlint plugin index + rules
 - `.git-hooks/` — commit-msg / pre-commit / pre-push entry shims + .mts helpers (git invokes the shims when `core.hooksPath` is set to this directory)
 - `.claude/hooks/` — PreToolUse / PostToolUse hooks
 - `.claude/skills/_shared/` — shared skill helpers
-- `docs/claude.md/` — CLAUDE.md offshoot references
+- `docs/agents.md/` — CLAUDE.md offshoot references
 
 When Claude tries to Edit/Write a file under one of these prefixes in a fleet member (any repo with `CLAUDE.md` containing the `BEGIN FLEET-CANONICAL` marker, except `socket-wheelhouse/template/`), the hook exits 2 with a stderr message that:
 
@@ -44,8 +44,10 @@ For each Edit/Write/MultiEdit call:
 3. Walk up directories looking for a fleet repo root: `package.json` AND `CLAUDE.md` containing the `BEGIN FLEET-CANONICAL` marker.
 4. If no fleet repo root is found (the file is outside any fleet repo), allow.
 5. Compute the file path relative to the repo root.
-6. If the relative path matches one of the canonical prefixes, check the bypass phrase.
-7. No bypass → exit 2 with the explanation.
+6. **Wheelhouse-own-README exemption:** if the path is the root `README.md` AND the repo is the wheelhouse itself (identified by a `template/CLAUDE.md` marker via `isWheelhouseRoot`), allow. The wheelhouse's root README is authored repo content (`# socket-wheelhouse`, real badges), not a cascade copy of `template/README.md`. That template file is the `<REPO_NAME>` placeholder fresh repos adopt, a different file: the cascade synthesizes each downstream README from the placeholder and never overwrites the wheelhouse's own. (A downstream repo has no `template/`, so its root README is already non-canonical and reaches this point allowed anyway.)
+7. **Fleet-block exemption:** if the file carries `BEGIN/END FLEET-CANONICAL` markers (on disk or in the incoming content), it's a hybrid whose content outside the markers is repo-owned, so allow. The sync's fleet-block check re-validates the marked region at commit time.
+8. If the relative path matches one of the canonical prefixes, check the bypass phrase.
+9. No bypass → exit 2 with the explanation.
 
 ## Failing open
 
@@ -64,5 +66,5 @@ When a new directory becomes fleet-canonical (cascades via sync-scaffolding):
 
 1. Add it to `CANONICAL_PREFIXES` in `index.mts`.
 2. Add it to the bullet list in this README.
-3. Add it to the bullet list in `docs/claude.md/no-local-fork-canonical.md`.
+3. Add it to the bullet list in `docs/agents.md/no-local-fork-canonical.md`.
 4. Add the surface to the sync manifest.

@@ -48,9 +48,67 @@ test('blocks node --require hook --test file', () => {
   assert.equal(code, 2)
 })
 
+test('blocks node --test --import tsx <file>', () => {
+  const { code, stderr } = run('node --test --import tsx test/foo.test.mts')
+  assert.equal(code, 2)
+  assert.match(stderr, /node_modules\/\.bin\/vitest run/)
+})
+
+test('blocks bare tsx running a test file', () => {
+  const { code, stderr } = run('tsx test/unit/foo.test.mts')
+  assert.equal(code, 2)
+  assert.match(stderr, /vitest/)
+})
+
+test('blocks ts-node running a spec file', () => {
+  const { code } = run('ts-node src/foo.spec.ts')
+  assert.equal(code, 2)
+})
+
+test('allows tsx running a non-test script', () => {
+  const { code } = run('tsx scripts/build.mts')
+  assert.equal(code, 0)
+})
+
 test('allows node --run (pnpm script runner)', () => {
   const { code } = run('node --run test')
   assert.equal(code, 0)
+})
+
+test('allows node --test for a hook test (canonical cwd-relative glob)', () => {
+  // The form scripts/repo/run-hook-tests.mts uses, cwd = the hook dir.
+  const { code } = run('node --test test/*.test.mts')
+  assert.equal(code, 0)
+})
+
+test('allows node --test for a hook test (full .claude/hooks path)', () => {
+  const { code } = run(
+    'node --test .claude/hooks/fleet/some-guard/test/index.test.mts',
+  )
+  assert.equal(code, 0)
+})
+
+test('allows node --test for an oxlint-plugin rule test', () => {
+  // .config/fleet/oxlint-plugin/test/** is vitest-excluded → node --test tier.
+  const { code } = run(
+    'node --test .config/fleet/oxlint-plugin/test/max-file-lines.test.mts',
+  )
+  assert.equal(code, 0)
+})
+
+test('allows node --test for an oxlint-plugin test glob', () => {
+  const { code } = run(
+    'node --test .config/fleet/oxlint-plugin/test/*.test.mts',
+  )
+  assert.equal(code, 0)
+})
+
+test('blocks node --test mixing a hook test with a src test', () => {
+  // Not every target is node-test-tier → still a vitest-tier misuse.
+  const { code } = run(
+    'node --test .claude/hooks/fleet/x/test/a.test.mts test/unit/b.test.mts',
+  )
+  assert.equal(code, 2)
 })
 
 test('allows node_modules/.bin/vitest run', () => {

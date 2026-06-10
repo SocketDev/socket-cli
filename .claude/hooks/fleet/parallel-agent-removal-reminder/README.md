@@ -51,4 +51,4 @@ No bypass — it's a reminder (exit 0), not a block.
 ## Related
 
 - CLAUDE.md → "Parallel Claude sessions".
-- `docs/claude.md/fleet/parallel-claude-sessions.md`.
+- `docs/agents.md/fleet/parallel-claude-sessions.md`.

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Claude Code PostToolUse hook — oxlint-plugin-load-guard.
 //
-// After an Edit/Write touches `.config/fleet/oxlint-plugin/**`, re-verify that
+// After an Edit/Write touches `.config/oxlint-plugin/**`, re-verify that
 // the whole socket/ plugin still LOADS and registers every rule. A broken
 // import in any rule or lib helper disables EVERY socket/ rule — oxlint only
 // warns and never checks the rule count, so a green lint can hide a dead
@@ -43,7 +43,7 @@ const checkScript = path.join(
 
 // Only re-check when the edit touched a plugin source file.
 export function isPluginPath(filePath: string): boolean {
-  return filePath.includes('.config/fleet/oxlint-plugin/')
+  return filePath.includes('.config/oxlint-plugin/')
 }
 
 // withEditGuard handles the stdin drain, tool_name gate, file_path narrow, and

@@ -21,7 +21,7 @@
 // On match, it writes a stderr reminder to Claude with:
 //   - The property name + required value (`"true"` literal string)
 //   - The current value of that property (via `gh api`)
-//   - A link to docs/claude.md/fleet/push-policy.md
+//   - A link to docs/agents.md/fleet/push-policy.md
 //
 // The hook does NOT modify the property or retry the push — the
 // operator decides whether the bypass is appropriate.
@@ -186,7 +186,7 @@ export function formatReminder(
   lines.push('(re-engages the ruleset).')
   lines.push('')
   lines.push(
-    'Full rationale: docs/claude.md/fleet/push-policy.md (Enterprise-ruleset',
+    'Full rationale: docs/agents.md/fleet/push-policy.md (Enterprise-ruleset',
   )
   lines.push('escape hatch section).')
   lines.push('')

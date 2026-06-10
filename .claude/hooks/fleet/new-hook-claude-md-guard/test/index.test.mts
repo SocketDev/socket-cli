@@ -107,7 +107,7 @@ test('ALLOWS when only the hook-registry doc cites the hook (bullet form)', () =
     const registryPath = path.join(
       repo.templatePath,
       'docs',
-      'claude.md',
+      'agents.md',
       'fleet',
       'hook-registry.md',
     )

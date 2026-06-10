@@ -5,7 +5,7 @@
 // third-party host without mocking it via `nock`. Live network in tests is
 // flaky, slow, and a data-exfil surface; the fleet pattern is
 // `nock.disableNetConnect()` + endpoint stubs (see the `registry-*.test.mts`
-// suites and `docs/claude.md/fleet/no-live-network-in-tests.md`).
+// suites and `docs/agents.md/fleet/no-live-network-in-tests.md`).
 //
 // Detection model:
 //   - Fires only on Write/Edit whose target path looks like a test file
@@ -118,7 +118,7 @@ async function main(): Promise<void> {
         '    afterEach(() => { nock.cleanAll(); nock.enableNetConnect() })',
         "    nock('https://host').get('/path').reply(200, { ... })",
         '',
-        '  Detail: docs/claude.md/fleet/no-live-network-in-tests.md',
+        '  Detail: docs/agents.md/fleet/no-live-network-in-tests.md',
         `  Bypass: type "${BYPASS_PHRASE}" in a new message, then retry.`,
         '',
       ].join('\n'),

@@ -283,7 +283,7 @@ async function main(): Promise<number> {
       `  ${suggestion}`,
       ``,
       `Background reading:`,
-      `  docs/claude.md/fleet/plan-storage.md`,
+      `  docs/agents.md/fleet/plan-storage.md`,
       ``,
       `One-shot bypass (rare): user types "${BYPASS_PHRASE}" verbatim`,
       `in a recent message.`,

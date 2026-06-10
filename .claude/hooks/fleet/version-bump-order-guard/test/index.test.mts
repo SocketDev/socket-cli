@@ -209,3 +209,66 @@ test('SOCKET_VERSION_BUMP_SKIP_GATE=1 skips the gate (ordering still checked)', 
     repo.cleanup()
   }
 })
+
+// ── pre-bump-COMMIT gate (the bump commit, not just the tag) ──────
+
+test('GATE BLOCKS a `git commit -m "chore: bump version"` when lint --all fails', () => {
+  const repo = makeRepoWithLintScript(1)
+  try {
+    const { stderr, exitCode } = runHook(
+      'git commit -o package.json -m "chore: bump version to 1.2.3"',
+      repo.root,
+    )
+    assert.equal(exitCode, 2)
+    assert.match(stderr, /Pre-bump gate failed/)
+    assert.match(stderr, /lint --all/)
+  } finally {
+    repo.cleanup()
+  }
+})
+
+test('GATE ALLOWS the bump commit when lint --all passes', () => {
+  const repo = makeRepoWithLintScript(0)
+  try {
+    const { exitCode } = runHook(
+      'git commit -m "chore: bump version to 1.2.3"',
+      repo.root,
+    )
+    assert.equal(exitCode, 0)
+  } finally {
+    repo.cleanup()
+  }
+})
+
+test('bump-commit gate honors --message= form + SKIP_GATE env', () => {
+  const repo = makeRepoWithLintScript(1)
+  try {
+    const blocked = runHook(
+      'git commit --message="chore: bump version to 1.2.3"',
+      repo.root,
+    )
+    assert.equal(blocked.exitCode, 2, 'failing lint blocks via --message= form')
+    const skipped = runHook(
+      'git commit -m "chore: bump version to 1.2.3"',
+      repo.root,
+      undefined,
+      { SOCKET_VERSION_BUMP_SKIP_GATE: '1' },
+    )
+    assert.equal(skipped.exitCode, 0, 'SKIP_GATE bypasses the bump-commit gate')
+  } finally {
+    repo.cleanup()
+  }
+})
+
+test('IGNORES a non-bump commit (no gate, no block)', () => {
+  const repo = makeRepoWithLintScript(1) // lint would fail IF the gate ran
+  try {
+    const { exitCode } = runHook(
+      'git commit -m "feat: add a thing"',
+      repo.root,
+    )
+    assert.equal(exitCode, 0, 'a normal commit is not gated')
+  } finally {
+    repo.cleanup()
+  }
+})

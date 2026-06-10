@@ -24,7 +24,7 @@ import { existsSync, readFileSync } from 'node:fs'
 /**
  * Is any canonical bypass phrase present in a recent user turn? Substring
  * match, case-sensitive (intentional — `allow X bypass` lowercase doesn't
- * count, matches the fleet rule stated in docs/claude.md/bypass-phrases.md).
+ * count, matches the fleet rule stated in docs/agents.md/bypass-phrases.md).
  *
  * Accepts a string or string[] so callers with a single canonical spelling and
  * callers with equivalent spellings (e.g. "soaktime" / "soak time" /

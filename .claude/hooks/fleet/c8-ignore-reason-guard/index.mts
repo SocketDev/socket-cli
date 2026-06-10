@@ -3,7 +3,7 @@
 //
 // Blocks Edit/Write that introduces a c8 / v8 coverage-ignore directive
 // WITHOUT a reason. The fleet rule (CLAUDE.md "c8 / v8 coverage ignore
-// directives", docs/claude.md/fleet/c8-ignore-directives.md): a coverage
+// directives", docs/agents.md/fleet/c8-ignore-directives.md): a coverage
 // ignore is only for external-library paths + genuinely-unreachable
 // branches, and every directive must say WHY in the same comment so a
 // future reader can tell a principled ignore from a coverage dodge on
@@ -158,7 +158,7 @@ await withEditGuard((filePath, content, payload) => {
       '',
       ...guidance,
       '',
-      '  See docs/claude.md/fleet/c8-ignore-directives.md.',
+      '  See docs/agents.md/fleet/c8-ignore-directives.md.',
       '',
       `  Bypass: type "${BYPASS_PHRASE}" in a recent message.`,
       '',

@@ -19,7 +19,7 @@ Fires only when the target `file_path` resolves under `scripts/fleet/plugin-patc
 
 ## Why
 
-A plugin-cache patch is replayed over a cache Claude Code regenerates on every install. The format is load-bearing: the filename maps to the cache dir, the header carries provenance, and the body must be a tool-`patch`-compatible plain diff. Git-diff output (`git diff` / `git format-patch`) injects `index`/`mode` markers that bare `patch` rejects — a classic foot-gun this gate closes. Full spec: [`docs/claude.md/fleet/plugin-cache-patches.md`](../../../docs/claude.md/fleet/plugin-cache-patches.md). Regenerate stale patches via the `regenerating-patches` skill.
+A plugin-cache patch is replayed over a cache Claude Code regenerates on every install. The format is load-bearing: the filename maps to the cache dir, the header carries provenance, and the body must be a tool-`patch`-compatible plain diff. Git-diff output (`git diff` / `git format-patch`) injects `index`/`mode` markers that bare `patch` rejects — a classic foot-gun this gate closes. Full spec: [`docs/agents.md/fleet/plugin-cache-patches.md`](../../../docs/agents.md/fleet/plugin-cache-patches.md). Regenerate stale patches via the `regenerating-patches` skill.
 
 ## No bypass
 

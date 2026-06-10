@@ -13,7 +13,7 @@ Regenerate the wheelhouse-owned plugin-cache patches in `scripts/fleet/plugin-pa
 
 Patches are reapplied over the plugin cache by `scripts/install-claude-plugins.mts` (`reapplyPluginPatches()` → `patch -p1`). The cache is regenerated from the pinned source on every install, so a stale patch warns and no-ops — it never wedges the reconcile, but the bug it fixed reappears until the patch is regenerated.
 
-The authority on the patch format is [`docs/claude.md/fleet/plugin-cache-patches.md`](../../../docs/claude.md/fleet/plugin-cache-patches.md). The edit-time gate is `.claude/hooks/fleet/plugin-patch-format-guard/`.
+The authority on the patch format is [`docs/agents.md/fleet/plugin-cache-patches.md`](../../../docs/agents.md/fleet/plugin-cache-patches.md). The edit-time gate is `.claude/hooks/fleet/plugin-patch-format-guard/`.
 
 ## Phase 1 — validate
 
@@ -58,7 +58,7 @@ When the fix is more than a few lines, move the logic into a standalone module a
 
 ## Patch format
 
-A `# @key: value` provenance header above a **plain `diff -u` body**. Filename `<plugin>-<version>-<slug>.patch` (dotted semver version); substantial logic lives in the companion `<x>.files/` sidecar, not the diff. Authority: [`docs/claude.md/fleet/plugin-cache-patches.md`](../../../docs/claude.md/fleet/plugin-cache-patches.md).
+A `# @key: value` provenance header above a **plain `diff -u` body**. Filename `<plugin>-<version>-<slug>.patch` (dotted semver version); substantial logic lives in the companion `<x>.files/` sidecar, not the diff. Authority: [`docs/agents.md/fleet/plugin-cache-patches.md`](../../../docs/agents.md/fleet/plugin-cache-patches.md).
 
 ```
 # @plugin: codex

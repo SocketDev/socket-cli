@@ -10,7 +10,7 @@
 // in-context tokens for every Claude session opened in the repo, AND
 // fleet content is duplicated across ~12 socket-* repos. The 40KB
 // ceiling forces ruthless reference-deferral: each rule states the
-// invariant + a one-line "Why" + a link to docs/claude.md/fleet/<topic>.md
+// invariant + a one-line "Why" + a link to docs/agents.md/fleet/<topic>.md
 // for the full pattern catalog. Detail goes in the linked doc.
 //
 // What the hook does:
@@ -37,8 +37,11 @@ import process from 'node:process'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { withEditGuard } from '../_shared/payload.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 const logger = getDefaultLogger()
+
+const BYPASS_PHRASE = 'Allow claude-md-size bypass'
 
 const DEFAULT_CAP_BYTES = 40 * 1024
 
@@ -99,11 +102,12 @@ export function emitBlock(
   lines.push('  40KB ceiling forces ruthless reference-deferral:')
   lines.push('')
   lines.push('    1. State the invariant + one-line "Why" inline.')
-  lines.push('    2. Move detail to `docs/claude.md/fleet/<topic>.md`.')
-  lines.push('    3. Link from the rule: `[Full details](docs/claude.md/...)`.')
+  lines.push('    2. Move detail to `docs/agents.md/fleet/<topic>.md`.')
+  lines.push('    3. Link from the rule: `[Full details](docs/agents.md/...)`.')
   lines.push('')
-  lines.push('  See `docs/claude.md/fleet/bypass-phrases.md` for an example')
-  lines.push('  of the one-paragraph + reference shape.')
+  lines.push(`  Genuinely can't trim now? Type \`${BYPASS_PHRASE}\` to`)
+  lines.push('  land this edit over-cap (one edit per phrase). See')
+  lines.push('  `docs/agents.md/fleet/bypass-phrases.md`.')
   logger.error(lines.join('\n') + '\n')
 }
 
@@ -154,6 +158,15 @@ await withEditGuard((filePath, content, payload) => {
   const cap = getCap()
   const size = Buffer.byteLength(postEdit, 'utf8')
   if (size <= cap) {
+    return
+  }
+  // Authorized over-cap edit: the user typed the bypass phrase this turn.
+  // One phrase authorizes one over-cap edit; the message names the phrase.
+  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
+    logger.error(
+      `[claude-md-size-guard] Over-cap edit allowed by \`${BYPASS_PHRASE}\` ` +
+        `(${size} bytes > ${cap} cap). Trim back under cap when you can.\n`,
+    )
     return
   }
   emitBlock(filePath, size, cap)

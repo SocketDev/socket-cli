@@ -21,7 +21,7 @@ Reusable test helpers belong in `test/_shared/fleet/lib/`, not a
 
 - `*.test.*` under `test/**` — the canonical home.
 - The co-located test homes that own their own runners and are NOT under
-  `scripts/`: `.config/fleet/oxlint-plugin/test/`, `.claude/hooks/**/test/`,
+  `scripts/`: `.config/oxlint-plugin/fleet/<id>/test/`, `.claude/hooks/**/test/`,
   `.git-hooks/**/test/`.
 - Non-test files under `scripts/` — only `*.test.*` paths are blocked.
 

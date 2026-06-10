@@ -76,28 +76,28 @@ test('flags added section with no docs link + ≥3 body lines', () => {
   assert.equal(added[0]!.bodyLineCount, 3)
 })
 
-test('does NOT flag added section with docs/claude.md/fleet/ link', () => {
+test('does NOT flag added section with docs/agents.md/fleet/ link', () => {
   const pre = fleetDoc('### Existing\none-liner')
   const post = fleetDoc(
-    '### Existing\none-liner\n\n### New Rule\nLine 1.\nLine 2.\nLine 3. Spec: docs/claude.md/fleet/new-rule.md',
+    '### Existing\none-liner\n\n### New Rule\nLine 1.\nLine 2.\nLine 3. Spec: docs/agents.md/fleet/new-rule.md',
   )
   const added = findAddedSectionsLackingLink(pre, post)
   assert.equal(added.length, 0)
 })
 
-test('does NOT flag added section with docs/claude.md/repo/ link', () => {
+test('does NOT flag added section with docs/agents.md/repo/ link', () => {
   const pre = fleetDoc('### Existing\none-liner')
   const post = fleetDoc(
-    '### Existing\none-liner\n\n### Repo Rule\nLine 1.\nLine 2.\nLine 3. See docs/claude.md/repo/x.md',
+    '### Existing\none-liner\n\n### Repo Rule\nLine 1.\nLine 2.\nLine 3. See docs/agents.md/repo/x.md',
   )
   const added = findAddedSectionsLackingLink(pre, post)
   assert.equal(added.length, 0)
 })
 
-test('does NOT flag added section with docs/claude.md/wheelhouse/ link', () => {
+test('does NOT flag added section with docs/agents.md/wheelhouse/ link', () => {
   const pre = fleetDoc('### Existing\none-liner')
   const post = fleetDoc(
-    '### Existing\none-liner\n\n### WH Rule\nLine 1.\nLine 2.\nLine 3. See docs/claude.md/wheelhouse/x.md',
+    '### Existing\none-liner\n\n### WH Rule\nLine 1.\nLine 2.\nLine 3. See docs/agents.md/wheelhouse/x.md',
   )
   const added = findAddedSectionsLackingLink(pre, post)
   assert.equal(added.length, 0)
@@ -206,7 +206,7 @@ test('CLI: Edit CLAUDE.md adding a linked section is silent', () => {
     writeFileSync(filePath, initial)
     const oldString = '### Old\nshort'
     const newString =
-      '### Old\nshort\n\n### Big New Rule\nLine 1\nLine 2\nLine 3 docs/claude.md/fleet/big-new-rule.md'
+      '### Old\nshort\n\n### Big New Rule\nLine 1\nLine 2\nLine 3 docs/agents.md/fleet/big-new-rule.md'
     const { stderr, exitCode } = runHook({
       tool_name: 'Edit',
       tool_input: {

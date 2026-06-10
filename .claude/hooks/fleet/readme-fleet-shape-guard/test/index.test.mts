@@ -81,6 +81,30 @@ test('nested README is ignored', async () => {
   assert.strictEqual(result.code, 0)
 })
 
+test('nested src/<dir>/README.md is ignored', async () => {
+  // A sub-package doc under src/ (e.g. src/temporal/README.md) is a scoped
+  // doc, not the repo root — must not be held to the fleet skeleton.
+  const result = await runHook({
+    tool_input: {
+      file_path: '/Users/x/projects/foo/src/temporal/README.md',
+      content: '# temporal\n\nNo canonical sections at all.\n',
+    },
+    tool_name: 'Write',
+  })
+  assert.strictEqual(result.code, 0)
+})
+
+test('nested lib/<dir>/README.md is ignored', async () => {
+  const result = await runHook({
+    tool_input: {
+      file_path: '/Users/x/projects/foo/lib/util/README.md',
+      content: '# util\n\nNo canonical sections at all.\n',
+    },
+    tool_name: 'Write',
+  })
+  assert.strictEqual(result.code, 0)
+})
+
 test('nested hooks/<name>/README.md is ignored', async () => {
   // A shipped product hook documents itself with a free-form README under
   // hooks/<name>/; that directory is a scoped doc, not the repo root.

@@ -4,7 +4,7 @@ PreToolUse hook (informational; never blocks) that flags malformed and stale `Lo
 
 ## Why
 
-Per CLAUDE.md's _Code style → Cross-port files_ rule, files that ship in multiple language implementations use a `Lock-step` comment convention to cross-reference the canonical impl. The full forms live in [`docs/claude.md/fleet/parser-comments.md`](../../../docs/claude.md/fleet/parser-comments.md) §5–6.
+Per CLAUDE.md's _Code style → Cross-port files_ rule, files that ship in multiple language implementations use a `Lock-step` comment convention to cross-reference the canonical impl. The full forms live in [`docs/agents.md/fleet/parser-comments.md`](../../../docs/agents.md/fleet/parser-comments.md) §5–6.
 
 The CI gate (`scripts/fleet/check/lock-step-refs-resolve.mts`) catches stale `<path>` references at commit time, but two classes of bugs slip past it:
 

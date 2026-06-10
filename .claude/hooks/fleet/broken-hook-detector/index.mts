@@ -1,39 +1,80 @@
 #!/usr/bin/env node
-// Claude Code SessionStart hook — broken-hook-detector.
+// Claude Code SessionStart hook — broken-hook-detector (single, standalone
+// hook-recovery net).
 //
 // Symptom this hook exists to catch:
 //   Every Bash invocation prints noisy `PreToolUse:Bash hook error
 //   Failed with non-blocking status code: node:internal/modules/
 //   package_json_reader:314` lines, with no indication of WHICH hook
-//   crashed or WHAT it needed. Happens whenever a fleet-cascade adds
-//   a new `import` to a shared hook (e.g. `_shared/shell-command.mts`)
-//   and the consuming repo hasn't installed the dep yet.
+//   crashed or WHAT it needed. Two distinct causes, both surfaced here:
+//
+//   (A) MISSING DEP — a fleet-cascade added a new `import` to a shared hook
+//       and the consuming repo hasn't installed the dep yet. The package is
+//       absent from node_modules ENTIRELY (not in the .pnpm store). Recovery
+//       is a real `pnpm i <pkg>`; we report the command (can't safely guess
+//       the catalog/soak entry a new dep needs).
+//
+//   (B) GUTTED node_modules — a `pnpm install` aborted mid-purge
+//       (ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY) and deleted the
+//       top-level package links while leaving the .pnpm virtual store intact
+//       AND a stale node_modules/.pnpm-workspace-state-v1.json. That stale
+//       marker makes every subsequent `pnpm install`/`--force` no-op with
+//       "Already up to date" while node_modules stays unlinked, so every
+//       fleet hook crashes on @socketsecurity/lib-stable. This is the common,
+//       deterministic case — and it AUTO-REPAIRS: rm the stale markers, then
+//       `CI=true pnpm install` re-links from the intact store in <1s (no
+//       network, since every package is already in .pnpm).
 //
 // What it does:
 //   At SessionStart (once per session, no Bash spam), walk every
-//   `.claude/hooks/*/index.mts` plus `.claude/hooks/_shared/*.mts`,
-//   spawn `node --check` on each, and aggregate the failures. If any
-//   crash with ERR_MODULE_NOT_FOUND, surface ONE structured message
-//   that names: the failing hook, the missing package(s), and the
-//   exact `pnpm i` recovery command.
+//   `.claude/hooks/*/index.mts`, probe each via import(), and classify any
+//   ERR_MODULE_NOT_FOUND: GUTTED (pkg in .pnpm store but unlinked + stale
+//   marker present) vs MISSING-DEP (pkg absent from the store). GUTTED is
+//   auto-repaired under guards (see repairGutted); MISSING-DEP is reported.
 //
 // **Self-imposed constraint: Node built-ins ONLY.**
-//   This hook is the safety net for "hook deps are broken"; it must
-//   not itself depend on anything installed via pnpm. fs, path, child
-//   process, url — that's the entire import surface.
+//   This hook is the safety net for "hook deps are broken"; it must not
+//   itself depend on anything installed via pnpm. fs, path, child process,
+//   url — that's the entire import surface. (It SPAWNS pnpm for the gutted
+//   repair, but never IMPORTS a pnpm-installed module — so it works even when
+//   every such module is unresolvable, which is the whole point. Documented
+//   exemption from prefer-async-spawn-guard: the recovery net cannot route
+//   through the lib it recovers.)
 //
-// Fail-open: probe never blocks. On any internal error (timeout,
-// permission, whatever) the hook silently exits 0 and lets the
-// session proceed — same posture as socket-token-minifier-start.
+// Fail-open: probe + repair never block. On any internal error (timeout,
+// permission, a guard tripping, install failure) the hook silently exits 0
+// and lets the session proceed — same posture as socket-token-minifier-start.
+// The repair is bounded and guarded: it only fires on the precise GUTTED
+// signature, skips when a pnpm install is already running (no double-install
+// collision — that collision is what CAUSES the gutting), runs at most once
+// per session, and removes the stale markers ONLY immediately before a
+// guarded install so it never leaves node_modules in a worse state.
 
 import { spawnSync } from 'node:child_process'
-import { readdirSync, statSync } from 'node:fs'
+import { existsSync, lstatSync, readdirSync, rmSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 
 const PROJECT_DIR = process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
 const HOOKS_DIR = path.join(PROJECT_DIR, '.claude', 'hooks')
+const NODE_MODULES = path.join(PROJECT_DIR, 'node_modules')
+const PNPM_STORE = path.join(NODE_MODULES, '.pnpm')
+// The stale state markers an aborted purge leaves behind. Their presence is
+// what makes `pnpm install` no-op while node_modules is unlinked; removing
+// them forces a real re-link from the intact store.
+const STALE_MARKERS = [
+  path.join(NODE_MODULES, '.pnpm-workspace-state-v1.json'),
+  path.join(NODE_MODULES, '.modules.yaml'),
+]
+// Once-per-session repair guard: a temp-dir marker keyed by the project path,
+// so a single session doesn't loop on repair if the install can't fix it.
+const TMP_DIR =
+  process.env['TMPDIR'] ?? process.env['TEMP'] ?? process.env['TMP'] ?? '/tmp'
+const REPAIR_SENTINEL = path.join(
+  TMP_DIR,
+  `broken-hook-recovery-${PROJECT_DIR.replace(/[^a-zA-Z0-9]/g, '_')}.attempted`,
+)
 
 // 4-second total budget. Each `node --check` is ~50-150 ms; with
 // ~80 hooks that's well under the SessionStart hook timeout.
@@ -86,6 +127,127 @@ function findHookEntrypoints(): readonly string[] {
     }
   }
   return entries
+}
+
+// The precise GUTTED signature (3-way AND — narrow on purpose so a fresh
+// clone, a mid-install, or a hoisted-linker repo never false-positives):
+//   1. the .pnpm virtual store exists + is populated (packages are present
+//      ON DISK, just not linked at the top level);
+//   2. a stale state marker is present (what forces `pnpm install` to no-op);
+//   3. a sentinel top-level link is MISSING (@socketsecurity/ — every fleet
+//      hook imports @socketsecurity/lib-stable, so its absence is exactly the
+//      crash the session is seeing).
+// A genuine missing-dep (case A) fails #1 (the pkg isn't in the store) or #3
+// (the top level is otherwise linked), so it never trips this.
+function isGuttedNodeModules(): boolean {
+  let storePopulated = false
+  try {
+    storePopulated = readdirSync(PNPM_STORE).length > 0
+  } catch {
+    return false
+  }
+  if (!storePopulated) {
+    return false
+  }
+  const staleMarkerPresent = STALE_MARKERS.some(m => existsSync(m))
+  if (!staleMarkerPresent) {
+    return false
+  }
+  // Sentinel: the @socketsecurity scope link every fleet hook needs.
+  return !existsSync(path.join(NODE_MODULES, '@socketsecurity'))
+}
+
+// The catalog alias every fleet hook imports. pnpm links it as a symlink into
+// the .pnpm store (`@socketsecurity/lib-stable -> ../.pnpm/@socketsecurity+lib@…`).
+const LIB_STABLE_LINK = path.join(
+  NODE_MODULES,
+  '@socketsecurity',
+  'lib-stable',
+)
+
+// MODE B — a DANGLING lib-stable symlink (distinct from the full gut above).
+// When a git worktree exists under the repo and a `pnpm install` runs, pnpm can
+// relink the MAIN repo's `@socketsecurity/lib-stable` to point INTO that
+// worktree's .pnpm store; removing the worktree (`git worktree remove`) then
+// leaves the symlink dangling — every lib-stable import fails repo-wide while
+// the .pnpm store + the rest of node_modules stay intact (so the gutted check
+// above, which keys on the stale marker + the whole @socketsecurity dir being
+// gone, does NOT fire). Signature: the link EXISTS as a symlink (lstat) but its
+// target does NOT resolve (existsSync follows the link → false). A healthy link
+// or a real dir both fail this (target resolves). The repair is the same
+// relink-from-store as the gutted case.
+function hasDanglingLibSymlink(): boolean {
+  let isSymlink = false
+  try {
+    isSymlink = lstatSync(LIB_STABLE_LINK).isSymbolicLink()
+  } catch {
+    // Not present at all → not THIS mode (full-gut handles absence).
+    return false
+  }
+  if (!isSymlink) {
+    return false
+  }
+  // Symlink present but target unresolvable = dangling.
+  return !existsSync(LIB_STABLE_LINK)
+}
+
+// True when a `pnpm install` (or its Socket Firewall `sfw` wrapper) is already
+// running anywhere — running our own concurrently is the exact collision that
+// CAUSES the gutting (ERR_PNPM_ABORTED_REMOVE_MODULES_DIR). Best-effort via
+// pgrep; on any failure we treat it as "running" (fail SAFE — skip the repair).
+function pnpmInstallRunning(): boolean {
+  const r = spawnSync('pgrep', ['-f', 'pnpm.*install|sfw.*install'], {
+    timeout: 1500,
+    encoding: 'utf8',
+  })
+  // pgrep exit 1 = no match (safe to install); 0 = match; anything else
+  // (pgrep absent, error) = be conservative and assume running.
+  if (r.status === 1) {
+    return false
+  }
+  if (r.status === 0) {
+    return true
+  }
+  return true
+}
+
+// Auto-repair the gutted state: remove the stale markers (which force the
+// no-op) then re-link from the intact store with `CI=true pnpm install` (no
+// network — every pkg is in .pnpm; CI=true skips the no-TTY purge abort).
+// Returns a human-readable outcome line. Guarded by the caller; this function
+// only runs when the signature is confirmed + no install is in flight + the
+// once-per-session sentinel is unset. Removes markers ONLY here, immediately
+// before the install, so a bail-out earlier never worsens the state.
+function repairGutted(): string {
+  // Drop the once-per-session sentinel up front: if the install hangs or fails,
+  // we do NOT retry within this session (avoids a repair loop).
+  try {
+    spawnSync('touch', [REPAIR_SENTINEL], { timeout: 1000 })
+  } catch {
+    // Sentinel is best-effort; proceed.
+  }
+  for (const marker of STALE_MARKERS) {
+    try {
+      rmSync(marker, { force: true })
+    } catch {
+      // Marker may not exist or be unremovable; the install attempt still runs.
+    }
+  }
+  const r = spawnSync('pnpm', ['install'], {
+    cwd: PROJECT_DIR,
+    timeout: 120_000,
+    encoding: 'utf8',
+    env: { ...process.env, CI: 'true' },
+  })
+  const relinked = existsSync(path.join(NODE_MODULES, '@socketsecurity'))
+  if (r.status === 0 && relinked) {
+    return 'node_modules was gutted (pnpm store intact, links missing, stale workspace-state marker). Auto-repaired: removed the stale marker(s) + `CI=true pnpm install` re-linked from the store. Hooks are healthy again.'
+  }
+  // Install ran but didn't restore — surface the manual command (don't loop).
+  return (
+    'node_modules is gutted (pnpm store intact, links missing) and the auto-repair did not restore it. Run manually:\n' +
+    '  rm node_modules/.pnpm-workspace-state-v1.json node_modules/.modules.yaml && CI=true pnpm install'
+  )
 }
 
 // Module-not-found error shape from Node ≥22:
@@ -211,6 +373,58 @@ function formatReport(failures: readonly ProbeFailure[]): string {
 }
 
 function main(): void {
+  // GUTTED check first: it's the common, deterministic, auto-fixable cause and
+  // it makes EVERY hook fail — no point probing 80 hooks one-by-one when the
+  // top-level links are simply gone. A single signature check + guarded repair.
+  if (isGuttedNodeModules()) {
+    if (existsSync(REPAIR_SENTINEL)) {
+      // Already attempted this session and it didn't take — don't loop; point
+      // at the manual command.
+      emitAdditionalContext(
+        'node_modules is gutted and auto-repair was already attempted this session. Run manually:\n' +
+          '  rm node_modules/.pnpm-workspace-state-v1.json node_modules/.modules.yaml && CI=true pnpm install',
+      )
+      return
+    }
+    if (pnpmInstallRunning()) {
+      // A pnpm install is already in flight (maybe mid-restore, maybe the very
+      // one that gutted things). Never run a second concurrently — that
+      // collision is what causes the gutting. Report the command + let it
+      // finish or the user run it.
+      emitAdditionalContext(
+        'node_modules looks gutted but a `pnpm install` is already running — not starting a second (collision risk). If it finishes without restoring, run:\n' +
+          '  rm node_modules/.pnpm-workspace-state-v1.json node_modules/.modules.yaml && CI=true pnpm install',
+      )
+      return
+    }
+    emitAdditionalContext(repairGutted())
+    return
+  }
+
+  // MODE B: a dangling lib-stable symlink (a removed git worktree orphaned the
+  // MAIN repo's @socketsecurity/lib-stable link). Same relink-from-store repair
+  // as the gutted case, same guards. Distinct check because the gutted signature
+  // keys on the stale marker + a missing @socketsecurity dir, neither of which
+  // holds here (the dir exists; only the child symlink dangles).
+  if (hasDanglingLibSymlink()) {
+    if (existsSync(REPAIR_SENTINEL)) {
+      emitAdditionalContext(
+        'node_modules has a dangling @socketsecurity/lib-stable symlink (a removed git worktree orphaned it) and auto-repair was already attempted this session. Run manually:\n' +
+          '  rm node_modules/.pnpm-workspace-state-v1.json node_modules/.modules.yaml && CI=true pnpm install',
+      )
+      return
+    }
+    if (pnpmInstallRunning()) {
+      emitAdditionalContext(
+        'node_modules has a dangling @socketsecurity/lib-stable symlink but a `pnpm install` is already running — not starting a second (collision risk). If it finishes without restoring, run:\n' +
+          '  rm node_modules/.pnpm-workspace-state-v1.json node_modules/.modules.yaml && CI=true pnpm install',
+      )
+      return
+    }
+    emitAdditionalContext(repairGutted())
+    return
+  }
+
   const entrypoints = findHookEntrypoints()
   if (entrypoints.length === 0) {
     return

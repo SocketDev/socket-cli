@@ -35,6 +35,12 @@
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
 
+// Cross-tree shared matcher (canonical home: .git-hooks/_shared/). The
+// SAME source the commit-msg git-stage backstop scans, so the Bash-time
+// guard and the commit hook never diverge on what counts as a foreign
+// ref.
+import { scanExternalIssueRefs } from '../../../../.git-hooks/_shared/external-issue-ref.mts'
+import type { ExternalIssueRef } from '../../../../.git-hooks/_shared/external-issue-ref.mts'
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
 type ToolInput = {
@@ -55,32 +61,10 @@ const PUBLIC_MESSAGE_COMMANDS: RegExp[] = [
   /\bgh\s+release\s+(create|edit)\b/,
 ]
 
-// Org allowlist — case-insensitive, but kept lowercase for comparison.
-// GitHub treats orgs case-insensitively in URLs and refs, so `socketdev`,
-// `SocketDev`, `SOCKETDEV` all resolve to the same org. Storing
-// canonical-case here keeps the hook honest about what it accepts.
-const ALLOWED_ORGS = new Set<string>(['socketdev'])
-
-// Detect `<owner>/<repo>#<num>` token. Owner and repo names follow
-// GitHub's rules: alphanumerics, dashes, underscores, dots (no
-// leading dot/dash). We're permissive on the boundaries since we're
-// pattern-matching prose, not validating canonical refs.
-//
-//   (^|\s|\() — anchor at start, whitespace, or open paren. Prevents
-//                matching URL fragments that already contain the form
-//                (those are matched separately by the URL regex below).
-//   ([A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?) — owner
-//   /
-//   ([A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?) — repo
-//   #
-//   (\d+) — issue/PR number
-//   (?=\b|[\s.,;:)\]]|$) — terminate cleanly
-const OWNER_REPO_REF_RE =
-  /(?:^|\s|\()([A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?)\/([A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?)#(\d+)(?=\b|[\s.,;:)\]]|$)/g
-
-// Detect full GitHub issue/PR URLs to non-SocketDev orgs.
-const GITHUB_URL_RE =
-  /https?:\/\/github\.com\/([A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?)\/([A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?)\/(?:issues|pull)\/(\d+)/g
+// `<owner>/<repo>#<num>` token + github.com issue/PR URL detection and
+// the org allowlist live in the canonical .git-hooks/_shared/helpers.mts
+// home (scanExternalIssueRefs) so the Bash-time guard and the commit-msg
+// git-stage backstop share one matcher.
 
 /**
  * Extract the textual message body from a shell command. Covers the three
@@ -133,59 +117,6 @@ export function extractMessageBodies(command: string): string {
   }
 
   return out.join('\n')
-}
-
-/**
- * Walk the message text and collect every external-org reference. Returns an
- * empty array when the text only references same-repo (`#123`) or
- * SocketDev-owned (`SocketDev/socket-lib#42`) issues.
- */
-export function findExternalRefs(text: string): ExternalRef[] {
-  const out: ExternalRef[] = []
-
-  let m: RegExpExecArray | null
-  // Reset regex lastIndex (the regexes are module-scoped /g globals).
-  OWNER_REPO_REF_RE.lastIndex = 0
-  while ((m = OWNER_REPO_REF_RE.exec(text)) !== null) {
-    const owner = m[1]!
-    const repo = m[2]!
-    const num = m[3]!
-    if (!ALLOWED_ORGS.has(owner.toLowerCase())) {
-      out.push({
-        kind: 'token',
-        owner,
-        repo,
-        num,
-        raw: `${owner}/${repo}#${num}`,
-      })
-    }
-  }
-
-  GITHUB_URL_RE.lastIndex = 0
-  while ((m = GITHUB_URL_RE.exec(text)) !== null) {
-    const owner = m[1]!
-    const repo = m[2]!
-    const num = m[3]!
-    if (!ALLOWED_ORGS.has(owner.toLowerCase())) {
-      out.push({
-        kind: 'url',
-        owner,
-        repo,
-        num,
-        raw: m[0]!,
-      })
-    }
-  }
-
-  return out
-}
-
-interface ExternalRef {
-  kind: 'token' | 'url'
-  owner: string
-  repo: string
-  num: string
-  raw: string
 }
 
 export function isPublicMessageCommand(command: string): boolean {
@@ -246,7 +177,7 @@ async function main(): Promise<number> {
     return 0
   }
 
-  const refs = findExternalRefs(body)
+  const refs = scanExternalIssueRefs(body)
   if (refs.length === 0) {
     return 0
   }
@@ -264,7 +195,7 @@ async function main(): Promise<number> {
   // Build the user-facing block message. Group by ref so a single
   // ref repeated three times in a HEREDOC body doesn't print three
   // times.
-  const dedup = new Map<string, ExternalRef>()
+  const dedup = new Map<string, ExternalIssueRef>()
   for (let i = 0, { length } = refs; i < length; i += 1) {
     const r = refs[i]!
     if (!dedup.has(r.raw)) {

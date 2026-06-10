@@ -6,7 +6,7 @@
 // Without this, an Edit can grow a single rule from 2 lines into
 // 20 paragraphs without ever tripping the byte cap — until enough
 // other sections accrete that one tries to add 1 byte and breaks.
-// The section cap forces the "outsource to docs/claude.md/fleet/<topic>.md"
+// The section cap forces the "outsource to docs/agents.md/fleet/<topic>.md"
 // pattern at the moment a section is written, when the operator has
 // the long-form text in hand.
 //
@@ -22,7 +22,7 @@
 //      excluding blank lines at the very top of the section).
 //   6. If any section's body exceeds the cap, exits 2 with a stderr
 //      message naming the section + the cap + the canonical fix
-//      (outsource to `docs/claude.md/fleet/<topic>.md` and replace
+//      (outsource to `docs/agents.md/fleet/<topic>.md` and replace
 //      the section body with a one-sentence summary + link).
 //
 // Cap policy:
@@ -60,7 +60,7 @@ import process from 'node:process'
 import { readStdin } from '../_shared/transcript.mts'
 
 // Default cap: 8 body lines. Sections above this should have a
-// long-form companion under docs/claude.md/fleet/ and the inline body
+// long-form companion under docs/agents.md/fleet/ and the inline body
 // should shrink to 1-2 sentences plus a link. Catches the failure
 // mode where a single section grows to 30+ lines while leaving room
 // for short rules to stay self-contained.
@@ -291,12 +291,12 @@ async function main(): Promise<number> {
   lines.push(
     `  2. Move the long-form content (rationale, examples, edge cases)`,
   )
-  lines.push(`     into a new doc: docs/claude.md/fleet/<topic>.md (cascaded`)
+  lines.push(`     into a new doc: docs/agents.md/fleet/<topic>.md (cascaded`)
   lines.push(`     via socket-wheelhouse — add the path to the sync manifest).`)
   lines.push(`  3. Replace the section body with the summary plus a markdown`)
   lines.push(`     link to the new doc:`)
   lines.push(
-    `         Full rationale in [\`docs/claude.md/fleet/<topic>.md\`].`,
+    `         Full rationale in [\`docs/agents.md/fleet/<topic>.md\`].`,
   )
   lines.push(``)
   lines.push(`Override (rare; per-edit): set CLAUDE_MD_FLEET_SECTION_MAX_LINES`)

@@ -1,6 +1,6 @@
 # claude-md-defer-detail-reminder
 
-PreToolUse(Edit|Write|MultiEdit) reminder that fires when a new `###` section is added to CLAUDE.md's fleet block whose body looks like detail (≥3 non-blank lines) but contains no link to `docs/claude.md/{fleet,repo,wheelhouse}/<topic>.md`.
+PreToolUse(Edit|Write|MultiEdit) reminder that fires when a new `###` section is added to CLAUDE.md's fleet block whose body looks like detail (≥3 non-blank lines) but contains no link to `docs/agents.md/{fleet,repo,wheelhouse}/<topic>.md`.
 
 ## Why
 
@@ -15,7 +15,7 @@ ALL of:
 1. The edit targets a `CLAUDE.md` (root or repo-specific).
 2. The new content adds at least one NEW `###` section inside the fleet block (BEGIN/END markers).
 3. The new section's body has ≥3 non-blank lines.
-4. The new section's body has NO `docs/claude.md/{fleet,repo,wheelhouse}/` link.
+4. The new section's body has NO `docs/agents.md/{fleet,repo,wheelhouse}/` link.
 
 Growing an existing section, adding a short one-liner, or adding a long section that already cites a docs/ companion all pass silently.
 
@@ -29,12 +29,12 @@ Growing an existing section, adding a short one-liner, or adding a long section 
   ### <heading> — N body lines, no docs/ link
 
   CLAUDE.md is the fleet rulebook; long-form expansion goes in
-  `docs/claude.md/fleet/<topic>.md` (or `docs/claude.md/repo/<topic>.md`
+  `docs/agents.md/fleet/<topic>.md` (or `docs/agents.md/repo/<topic>.md`
   for repo-specific detail). Keep the rule + one-line "Why:" inline,
   link to the expansion. Example:
 
     🚨 Rule statement. **Why:** one-line incident. Bypass: `Allow X bypass`.
-    Spec: [`docs/claude.md/fleet/<topic>.md`](docs/claude.md/fleet/<topic>.md)
+    Spec: [`docs/agents.md/fleet/<topic>.md`](docs/agents.md/fleet/<topic>.md)
     (enforced by `.claude/hooks/fleet/<name>/`).
 
   This is a soft reminder — the edit proceeds. (The hard 8-line cap

@@ -1,0 +1,15 @@
+{
+  "name": "socket-oxlint-rule-require-regex-comment",
+  "private": true,
+  "type": "module",
+  "main": "./index.mts",
+  "exports": {
+    ".": "./index.mts"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mts"
+  },
+  "dependencies": {
+    "regjsparser": "catalog:"
+  }
+}

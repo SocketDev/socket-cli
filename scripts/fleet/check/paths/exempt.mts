@@ -4,7 +4,7 @@
  *   (`paths.mts`), build-infra helpers, and the scanners / hooks that READ the
  *   segment vocabulary in order to flag everyone else. Pure data + predicate;
  *   no I/O. Paths are normalized to forward-slash form before matching so the
- *   regexes work on Windows too — see [`docs/claude.md/fleet/code-style.md`]
+ *   regexes work on Windows too — see [`docs/agents.md/fleet/code-style.md`]
  *   (cross-platform path matching).
  */
 

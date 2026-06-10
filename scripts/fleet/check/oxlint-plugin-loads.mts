@@ -17,9 +17,10 @@
  *
  *   1. `await import(index.mts)` does not throw, and the default export has a
  *      non-empty `rules` object.
- *   2. The registered rule count matches the number of rule FILES in `rules/` —
- *      catches a rule that silently dropped out of the `index.mts` registry
- *      (file present, never wired). oxlint loads such a plugin happily and
+ *   2. The registered rule count matches the number of rule DIRS under `fleet/`
+ *      (each holds an index.mts) — catches a rule that silently dropped out of
+ *      the `index.mts` registry (dir present, never wired). oxlint loads such a
+ *      plugin happily and
  *      lints green; this is the only gate that notices. No magic number — the
  *      expected count is derived from the file listing. Pairs with the
  *      edit-time `.claude/hooks/fleet/oxlint-plugin-load-guard/` (defense in
@@ -31,9 +32,11 @@
  *      (2026-06-03).
  */
 
-import { readdirSync } from 'node:fs'
+import { existsSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+
+import type { Dirent } from 'node:fs'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
@@ -41,23 +44,27 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { REPO_ROOT } from '../paths.mts'
 
 const logger = getDefaultLogger()
-const pluginDir = path.join(REPO_ROOT, '.config', 'fleet', 'oxlint-plugin')
+const pluginDir = path.join(REPO_ROOT, '.config', 'oxlint-plugin')
 const indexPath = path.join(pluginDir, 'index.mts')
-const rulesDir = path.join(pluginDir, 'rules')
+const fleetDir = path.join(pluginDir, 'fleet')
 
-// Count the rule source files. Every file directly under `rules/` is one rule
-// (lib helpers live in `lib/`, tests in `test/` — neither is here).
-export function countRuleFiles(dir: string): number {
-  let entries: string[]
+// Count the rules: each is a dir under `fleet/` holding an index.mts (mirrors
+// .claude/hooks/fleet/<name>/). lib helpers + _shared/ are not rule dirs.
+export function countRuleDirs(dir: string): number {
+  let entries: Dirent[]
   try {
-    entries = readdirSync(dir)
+    entries = readdirSync(dir, { withFileTypes: true })
   } catch {
     return 0
   }
   let count = 0
   for (let i = 0, { length } = entries; i < length; i += 1) {
-    const name = entries[i]!
-    if (name.endsWith('.mts') && !name.endsWith('.test.mts')) {
+    const d = entries[i]!
+    if (
+      d.isDirectory() &&
+      !d.name.startsWith('_') &&
+      existsSync(path.join(dir, d.name, 'index.mts'))
+    ) {
       count += 1
     }
   }
@@ -65,7 +72,7 @@ export function countRuleFiles(dir: string): number {
 }
 
 async function main(): Promise<void> {
-  const expected = countRuleFiles(rulesDir)
+  const expected = countRuleDirs(fleetDir)
   if (expected === 0) {
     // No plugin in this repo (scaffolding-only) — nothing to verify.
     logger.success('No oxlint-plugin rules to verify (scaffolding-only repo).')
@@ -80,7 +87,7 @@ async function main(): Promise<void> {
     plugin = mod.default
   } catch (e) {
     logger.error(
-      'socket oxlint plugin FAILED TO LOAD — every socket/ rule is silently disabled. Fix the import/syntax error in .config/fleet/oxlint-plugin/ and re-run.',
+      'socket oxlint plugin FAILED TO LOAD — every socket/ rule is silently disabled. Fix the import/syntax error in .config/oxlint-plugin/ and re-run.',
     )
     logger.error(`  ${errorMessage(e)}`)
     process.exitCode = 1
@@ -98,14 +105,14 @@ async function main(): Promise<void> {
 
   if (registered !== expected) {
     logger.error(
-      `socket oxlint plugin rule-count mismatch: ${expected} rule file(s) in rules/, but ${registered} registered in index.mts. A rule is unwired (file present, not in the registry) — run \`pnpm run sync-oxlint-rules\`.`,
+      `socket oxlint plugin rule-count mismatch: ${expected} rule dir(s) under fleet/, but ${registered} registered in index.mts. A rule is unwired (dir present, not in the registry) — run \`pnpm run sync-oxlint-rules\`.`,
     )
     process.exitCode = 1
     return
   }
 
   logger.success(
-    `socket oxlint plugin loads — ${registered} rules registered (matches rules/).`,
+    `socket oxlint plugin loads — ${registered} rules registered (matches fleet/).`,
   )
 }
 

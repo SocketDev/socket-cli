@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
   "plugins": ["typescript", "unicorn", "import"],
-  "jsPlugins": ["./oxlint-plugin/index.mts"],
+  "jsPlugins": ["../oxlint-plugin/index.mts"],
   "categories": {
     "correctness": "error",
     "suspicious": "error"
@@ -209,7 +209,7 @@
     "**/*.tsbuildinfo",
     "#fleet-canonical-begin (managed by socket-wheelhouse sync)",
     "**/.claude/**",
-    "**/.config/fleet/oxlint-plugin/**",
+    "**/.config/oxlint-plugin/**",
     "**/.config/rolldown/**",
     "**/.git-hooks/**",
     "**/.pnpm-store/**",

@@ -2,7 +2,7 @@
  * @file Flag empty Keep-a-Changelog section headings in CHANGELOG.md. A `###
  *   <SectionName>` heading whose next non-blank line is another `###` / `## [`
  *   heading or end-of-file has no bullets — and the canonical fleet rule
- *   (docs/claude.md/fleet/version-bumps.md §2) says "delete the heading when
+ *   (docs/agents.md/fleet/version-bumps.md §2) says "delete the heading when
  *   its body filters down to nothing." Empty headings make the reader
  *   disambiguate "section intentionally empty" from "section forgot its
  *   content." Pairs with the .claude/hooks/fleet/changelog-no-empty-guard/
@@ -82,7 +82,7 @@ const rule = {
       // adjacent real sections.
       onError({
         lineNumber: i + 1,
-        detail: `Empty \`### ${name}\` section — delete the heading or add a bullet. Per docs/claude.md/fleet/version-bumps.md §2, public-facing-only filtering should drop the heading when it leaves no bullets.`,
+        detail: `Empty \`### ${name}\` section — delete the heading or add a bullet. Per docs/agents.md/fleet/version-bumps.md §2, public-facing-only filtering should drop the heading when it leaves no bullets.`,
         fixInfo: {
           lineNumber: i + 1,
           deleteCount: -1,

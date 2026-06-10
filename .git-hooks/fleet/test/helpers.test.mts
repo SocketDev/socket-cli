@@ -27,7 +27,6 @@ import {
   normalizePath,
   runStagedTestsReminder,
   scanAwsKeys,
-  scanConsoleLeaks,
   scanCrossRepoPaths,
   scanDocsPnpmFirst,
   scanGitHubTokens,
@@ -36,7 +35,6 @@ import {
   scanPackageJsonPnpmOverrides,
   scanPersonalPaths,
   scanPrivateKeys,
-  scanProcessStdioLeaks,
   scanSocketApiKeys,
   socketLintMarkerFor,
   splitLines,
@@ -239,31 +237,31 @@ test('lineIsSuppressed: returns false when no marker', () => {
 
 // ── console vs process-stdio leak scanners (split rules) ──────────
 
-test('scanConsoleLeaks: flags console.* and suppresses only with allow console', () => {
-  assert.strictEqual(scanConsoleLeaks('console.log("x")').length, 1)
+test('scanLoggerLeaks: flags console.* and suppresses only with allow console', () => {
+  assert.strictEqual(scanLoggerLeaks('console.log("x")').length, 1)
   assert.strictEqual(
-    scanConsoleLeaks('console.log("x") // socket-lint: allow console').length,
+    scanLoggerLeaks('console.log("x") // socket-lint: allow console').length,
     0,
   )
   assert.strictEqual(
-    scanConsoleLeaks('console.log("x") // socket-lint: allow process-stdio')
+    scanLoggerLeaks('console.log("x") // socket-lint: allow process-stdio')
       .length,
     1,
     'process-stdio marker does NOT suppress a console leak',
   )
 })
 
-test('scanProcessStdioLeaks: flags process.std*.write, suppresses only with allow process-stdio', () => {
-  assert.strictEqual(scanProcessStdioLeaks('process.stdout.write(x)').length, 1)
-  assert.strictEqual(scanProcessStdioLeaks('process.stderr.write(x)').length, 1)
+test('scanLoggerLeaks: flags process.std*.write, suppresses only with allow process-stdio', () => {
+  assert.strictEqual(scanLoggerLeaks('process.stdout.write(x)').length, 1)
+  assert.strictEqual(scanLoggerLeaks('process.stderr.write(x)').length, 1)
   assert.strictEqual(
-    scanProcessStdioLeaks(
+    scanLoggerLeaks(
       'process.stdout.write(x) // socket-lint: allow process-stdio',
     ).length,
     0,
   )
   assert.strictEqual(
-    scanProcessStdioLeaks(
+    scanLoggerLeaks(
       'process.stdout.write(x) // socket-lint: allow console',
     ).length,
     1,
@@ -419,31 +417,31 @@ test('suggestPlaceholder: rewrites C:\\Users\\<USERNAME>\\ → C:\\Users\\<USERN
 
 // ── suggestNpxReplacement ─────────────────────────────────────────
 
-test('suggestNpxReplacement: npx → pnpm exec', () => {
+test('suggestNpxReplacement: npx → node_modules/.bin', () => {
   assert.strictEqual(
     suggestNpxReplacement('npx prettier --check'),
-    'pnpm exec prettier --check',
+    'node_modules/.bin/prettier --check',
   )
 })
 
-test('suggestNpxReplacement: pnpm dlx → pnpm exec', () => {
+test('suggestNpxReplacement: pnpm dlx → node_modules/.bin', () => {
   assert.strictEqual(
     suggestNpxReplacement('pnpm dlx tsx foo.ts'),
-    'pnpm exec tsx foo.ts',
+    'node_modules/.bin/tsx foo.ts',
   )
 })
 
-test('suggestNpxReplacement: yarn dlx → pnpm exec', () => {
+test('suggestNpxReplacement: yarn dlx → node_modules/.bin', () => {
   assert.strictEqual(
     suggestNpxReplacement('yarn dlx tsx foo.ts'),
-    'pnpm exec tsx foo.ts',
+    'node_modules/.bin/tsx foo.ts',
   )
 })
 
-test('suggestNpxReplacement: pnx → pnpm exec', () => {
+test('suggestNpxReplacement: pnx → node_modules/.bin', () => {
   assert.strictEqual(
     suggestNpxReplacement('pnx tsx foo.ts'),
-    'pnpm exec tsx foo.ts',
+    'node_modules/.bin/tsx foo.ts',
   )
 })
 

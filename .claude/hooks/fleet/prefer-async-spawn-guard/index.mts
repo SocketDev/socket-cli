@@ -63,15 +63,12 @@ export function isExemptPath(filePath: string): boolean {
     filePath.includes('/build/') ||
     filePath.includes('/node_modules/') ||
     filePath.includes('/.claude/hooks/fleet/prefer-async-spawn-guard/') ||
+    // The two spawn rules live at .config/oxlint-plugin/fleet/<id>/ (index.mts +
+    // test/), embedding the banned execSync/spawnSync shape as rule data; the
+    // per-rule dir prefix exempts both files at once.
+    filePath.includes('/.config/oxlint-plugin/fleet/prefer-async-spawn/') ||
     filePath.includes(
-      '/.config/fleet/oxlint-plugin/rules/prefer-async-spawn.',
-    ) ||
-    filePath.includes(
-      '/.config/fleet/oxlint-plugin/rules/prefer-spawn-over-execsync.',
-    ) ||
-    filePath.includes('/.config/fleet/oxlint-plugin/test/prefer-async-spawn') ||
-    filePath.includes(
-      '/.config/fleet/oxlint-plugin/test/prefer-spawn-over-execsync',
+      '/.config/oxlint-plugin/fleet/prefer-spawn-over-execsync/',
     ) ||
     filePath.includes(
       '/.config/fleet/markdownlint-rules/_shared/wheelhouse-self-skip.',

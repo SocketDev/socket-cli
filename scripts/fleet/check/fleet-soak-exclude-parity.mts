@@ -17,6 +17,15 @@
  *   lists the diffs. CI gate via `scripts/check.mts`. Wheelhouse-only — fleet
  *   repos don't have an EXPECTED_RELEASE_AGE_EXCLUDE; the cascade hands them
  *   the synth.
+ *
+ *   Second invariant: no EXPECTED `name@version` pin may have soaked past its
+ *   7-day window. A cleared pin is dead weight — the cascade's insert loop and
+ *   prune loop disagree about it (insert wants the canonical pin present, prune
+ *   drops a soak-cleared one), so it flip-flops on every wave and the pre-push
+ *   soak gate rejects the re-add. Failing here keeps the manifest minimal: drop
+ *   a pin the day its `removable` date passes (the dep stays in the catalog; it
+ *   no longer needs a soak bypass). Pairs with the soak-fixer rule in
+ *   checks/workspace-config.mts (expired target → drop, not re-pin).
  */
 
 import { existsSync, readFileSync } from 'node:fs'
@@ -132,6 +141,35 @@ export function diffSoakExclude(
   return missing
 }
 
+/**
+ * EXPECTED `name@version` soak-pins whose annotated `removable` date is on or
+ * before `today` (ISO `YYYY-MM-DD`). These have cleared their 7-day soak: the
+ * gate admits the version without a bypass, so the pin is dead weight that the
+ * cascade re-pins (insert loop) and drops (prune loop) on every wave — a
+ * tug-of-war. Globs and bare names have no version to soak and are skipped. An
+ * entry with no annotation is skipped (can't date it offline; the parity diff
+ * already requires versioned entries to be annotated for the synth comment).
+ */
+export function expiredExpectedPins(
+  expected: readonly string[],
+  annotations: Readonly<
+    Record<string, { removable?: string | undefined } | undefined>
+  >,
+  today: string,
+): string[] {
+  const expired: string[] = []
+  for (const entry of expected) {
+    if (entry.includes('*') || entry.lastIndexOf('@') <= 0) {
+      continue
+    }
+    const removable = annotations[entry]?.removable
+    if (removable && removable <= today) {
+      expired.push(entry)
+    }
+  }
+  return expired
+}
+
 async function main(): Promise<void> {
   // Wheelhouse-only check. Fleet repos don't ship `EXPECTED_RELEASE_AGE_EXCLUDE`;
   // when the manifest file is absent, this check is a no-op so the canonical
@@ -149,9 +187,45 @@ async function main(): Promise<void> {
   }
   // Dynamic import keeps fleet repos (no manifest.mts) from failing at
   // module-resolution time — the existsSync gate above gives us safe-to-load.
-  const { EXPECTED_RELEASE_AGE_EXCLUDE } = (await import(MANIFEST)) as {
-    EXPECTED_RELEASE_AGE_EXCLUDE: readonly string[]
+  const { EXPECTED_RELEASE_AGE_EXCLUDE, RELEASE_AGE_EXCLUDE_ANNOTATIONS } =
+    (await import(MANIFEST)) as {
+      EXPECTED_RELEASE_AGE_EXCLUDE: readonly string[]
+      RELEASE_AGE_EXCLUDE_ANNOTATIONS: Readonly<
+        Record<string, { published?: string | undefined; removable?: string | undefined } | undefined>
+      >
+    }
+
+  // Second invariant: no EXPECTED soak-pin may have cleared its window.
+  const today = new Date().toISOString().slice(0, 10)
+  const expired = expiredExpectedPins(
+    EXPECTED_RELEASE_AGE_EXCLUDE,
+    RELEASE_AGE_EXCLUDE_ANNOTATIONS,
+    today,
+  )
+  if (expired.length > 0) {
+    logger.fail(
+      [
+        '[check-fleet-soak-exclude-parity] Stale soak-pin(s) in EXPECTED_RELEASE_AGE_EXCLUDE.',
+        '',
+        '  These `name@version` entries have soaked past their 7-day window',
+        '  (annotated `removable` date is on/before today). A cleared pin is dead',
+        '  weight: the cascade re-pins it (insert) AND drops it (prune) on every',
+        '  wave, and the pre-push soak gate rejects the re-pin.',
+        '',
+        '  Soak-cleared (drop from the manifest):',
+        ...expired.map(e => `    - '${e}'`),
+        '',
+        '  Fix: remove each from `EXPECTED_RELEASE_AGE_EXCLUDE` and its',
+        '  `RELEASE_AGE_EXCLUDE_ANNOTATIONS` entry in',
+        '  `scripts/repo/sync-scaffolding/manifest/workspace.mts`. The dep stays',
+        '  in the catalog; it no longer needs a soak bypass.',
+        '',
+      ].join('\n'),
+    )
+    process.exitCode = 1
+    return
   }
+
   const wheelhouseEntries = parseSoakExcludeBlock(content)
   const missing = diffSoakExclude(
     wheelhouseEntries,

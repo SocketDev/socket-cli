@@ -44,4 +44,4 @@ Type `Allow claude-action-lockdown bypass` verbatim in a recent user turn.
 
 The rule lives in [`CLAUDE.md`](../../../CLAUDE.md) under "Prompt-injection +
 agent-DoS"; full threat model in
-[`docs/claude.md/fleet/prompt-injection.md`](../../../docs/claude.md/fleet/prompt-injection.md).
+[`docs/agents.md/fleet/prompt-injection.md`](../../../docs/agents.md/fleet/prompt-injection.md).

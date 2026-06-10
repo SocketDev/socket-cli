@@ -5,10 +5,51 @@ import assert from 'node:assert/strict'
 import { test } from 'vitest'
 
 import {
+  catastrophicDeletionFromCounts,
   scanAiConfigPoison,
   scanProgrammaticClaudeLockdown,
   scanSoakExcludeDateAnnotations,
+  stripScanLabels,
 } from '../helpers.mts'
+
+// ── stripScanLabels (commit-msg twin of scan-label-in-commit-guard) ──
+
+test('scan-label: scrubs a label from the subject and counts it', () => {
+  const { cleaned, removed } = stripScanLabels(
+    'fix(http-request): B5 download truncation race',
+  )
+  assert.equal(removed, 1)
+  assert.equal(cleaned, 'fix(http-request): download truncation race')
+})
+
+test('scan-label: scrubs every B/M/H/L shape and counts each', () => {
+  const { cleaned, removed } = stripScanLabels('fix: B1 M9 H3 L4 cleanup')
+  assert.equal(removed, 4)
+  assert.equal(cleaned, 'fix: cleanup')
+})
+
+test('scan-label: leaves a clean message untouched (removed === 0)', () => {
+  const msg = 'fix(scan): handle empty manifest'
+  const { cleaned, removed } = stripScanLabels(msg)
+  assert.equal(removed, 0)
+  assert.equal(cleaned, msg)
+})
+
+test('scan-label: does NOT scrub 5+-digit IDs or hyphen-adjacent shapes', () => {
+  // B12345 (5 digits = a real ID) and GHSA-B1-… (hyphen-adjacent) are the
+  // guard\'s documented non-matches.
+  const msg = 'fix: bump B12345 and cite GHSA-B1-xxxx'
+  const { cleaned, removed } = stripScanLabels(msg)
+  assert.equal(removed, 0)
+  assert.equal(cleaned, msg)
+})
+
+test('scan-label: preserves labels inside fenced code blocks', () => {
+  const msg = 'fix: real change\n\n```\nB5 came from the report output\n```'
+  const { cleaned, removed } = stripScanLabels(msg)
+  assert.equal(removed, 0)
+  assert.equal(cleaned, msg)
+})
 
 // ── scanProgrammaticClaudeLockdown (HARD block) ─────────────────
 
@@ -25,6 +66,17 @@ test('lockdown: does NOT flag an unrelated method named query', () => {
   const db = 'const rows = await db.query(sql)'
   assert.equal(scanProgrammaticClaudeLockdown(chrome).length, 0)
   assert.equal(scanProgrammaticClaudeLockdown(db).length, 0)
+})
+
+test('lockdown: does NOT flag a query( inside a string (GraphQL request body)', () => {
+  // A GraphQL request body opens with `query(` inside a template literal —
+  // data, not an SDK driver call. The lookbehind excludes a preceding `, ', ".
+  const gqlBacktick = 'body: { query: `query($owner: String!) { repository }` }'
+  const gqlSingle = "const q = 'query($id: ID!) { node(id: $id) { id } }'"
+  const gqlDouble = 'const q = "query($id: ID!) { node }"'
+  assert.equal(scanProgrammaticClaudeLockdown(gqlBacktick).length, 0)
+  assert.equal(scanProgrammaticClaudeLockdown(gqlSingle).length, 0)
+  assert.equal(scanProgrammaticClaudeLockdown(gqlDouble).length, 0)
 })
 
 test('lockdown: passes a query() call with all four keys present in the file', () => {
@@ -134,4 +186,38 @@ test('poison: flags a disable-the-guard directive', () => {
 test('poison: clean config text does not fire', () => {
   const text = '{ "hooks": { "PreToolUse": ["node x.mts"] } }'
   assert.equal(scanAiConfigPoison(text).length, 0)
+})
+
+// ── catastrophicDeletionFromCounts (pre-commit mass-deletion gate) ──
+
+test('mass-delete: flags ≥ 50 staged deletions regardless of tree size', () => {
+  assert.match(
+    catastrophicDeletionFromCounts(50, 100000) ?? '',
+    /50 files staged for deletion/,
+  )
+})
+
+test('mass-delete: flags > 75% of a small tree deleted', () => {
+  // 8 of 10 = 80% — over the ratio even though it is under the 50-file floor.
+  assert.match(
+    catastrophicDeletionFromCounts(8, 10) ?? '',
+    /8 of 10 tracked files staged for deletion/,
+  )
+})
+
+test('mass-delete: allows a normal deletion count', () => {
+  assert.equal(catastrophicDeletionFromCounts(3, 5000), undefined)
+})
+
+test('mass-delete: allows exactly the floor minus one', () => {
+  assert.equal(catastrophicDeletionFromCounts(49, 100000), undefined)
+})
+
+test('mass-delete: zero tracked files does not divide-by-zero', () => {
+  // The 2400-deletion socket-lib poison shape: huge deletions, and even if
+  // ls-files momentarily reads empty the floor still trips.
+  assert.match(
+    catastrophicDeletionFromCounts(2400, 0) ?? '',
+    /2400 files staged for deletion/,
+  )
 })

@@ -31,7 +31,7 @@ export function foo(x: T, options?: FooOptions | undefined): void {
 Key invariants: field types `?: T | undefined` (both `?` AND `| undefined`);
 options param `?: TypedOptions | undefined`; body resolves via the
 `{ __proto__: null, ...options }` spread. Full recipe in
-[`docs/claude.md/fleet/options-object.md`](../../../docs/claude.md/fleet/options-object.md).
+[`docs/agents.md/fleet/options-object.md`](../../../docs/agents.md/fleet/options-object.md).
 
 ## Allowed
 

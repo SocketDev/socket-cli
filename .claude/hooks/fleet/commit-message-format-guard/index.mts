@@ -34,7 +34,29 @@
 import process from 'node:process'
 
 import { AI_ATTRIBUTION_PATTERNS } from '../_shared/ai-attribution.mts'
+import {
+  extractCommitMessage,
+  isGitCommit,
+} from '../_shared/commit-command.mts'
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
+// Conventional Commits header validation lives in the cross-tree canonical home
+// .git-hooks/_shared/commit-format.mts so the commit-msg git-stage backstop
+// shares THIS code (the shared thing is the validation). That module is
+// side-effect-free; importing it never triggers a hook's stdin-reading main().
+import {
+  ALLOWED_TYPES,
+  HEADER_RE,
+  suggestReplacement,
+  validateHeader,
+} from '../../../../.git-hooks/_shared/commit-format.mts'
+import type { HeaderCheck } from '../../../../.git-hooks/_shared/commit-format.mts'
+
+// Re-exported so existing importers (and the placeholder-subject guard) can
+// reach them; the canonical definitions live in _shared/commit-command.mts /
+// commit-format.mts.
+export { extractCommitMessage, isGitCommit }
+export { HEADER_RE, suggestReplacement, validateHeader }
+export type { HeaderCheck }
 
 interface PreToolUsePayload {
   readonly tool_name?: string | undefined
@@ -45,117 +67,6 @@ interface PreToolUsePayload {
 
 const BYPASS_FORMAT = 'Allow commit-format bypass'
 const BYPASS_AI = 'Allow ai-attribution bypass'
-
-const ALLOWED_TYPES = [
-  'build',
-  'chore',
-  'ci',
-  'docs',
-  'feat',
-  'fix',
-  'perf',
-  'refactor',
-  'revert',
-  'style',
-  'test',
-] as const
-
-const ALLOWED_TYPE_SET: ReadonlySet<string> = new Set(ALLOWED_TYPES)
-
-// Header form: <type>[(scope)][!]: <description>
-// - type: lowercase letters
-// - optional (scope) in parens
-// - optional `!` breaking-change marker
-// - `: ` separator (colon + space)
-// - non-empty description
-const HEADER_RE = /^([a-z]+)(\([^)]+\))?(!)?: (.+)$/
-
-/**
- * True when the command is a `git commit ...` invocation. Tolerates leading
- * `git -c k=v` flags before the subcommand.
- */
-export function isGitCommit(command: string): boolean {
-  return /\bgit\b(?:\s+-c\s+\S+)*\s+commit(?:\s|$)/.test(command)
-}
-
-/**
- * Extract the inline message text from `git commit -m …` / `--message=…` forms.
- * Returns undefined when the command has no inline message (e.g. uses `-F
- * file`, `-e` to open the editor, or neither) — we don't block those forms; the
- * operator's editor or file is responsible.
- *
- * Multiple `-m` flags concatenate with blank-line separators (matching git's
- * behavior); the first line of the joined result is the header.
- */
-export function extractCommitMessage(command: string): string | undefined {
-  const matches = [
-    ...command.matchAll(
-      /(?:^|\s)-m\s+(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'|(\S+))/g,
-    ),
-    ...command.matchAll(
-      /--message(?:\s+|=)(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'|(\S+))/g,
-    ),
-  ]
-  if (matches.length === 0) {
-    return undefined
-  }
-  const pieces = matches.map(m => m[1] ?? m[2] ?? m[3] ?? '')
-  return pieces.join('\n\n')
-}
-
-/**
- * Result of validating a single message header.
- *
- * - Kind: 'ok' — header passes
- * - Kind: 'no-type' — first line has no `<type>: ` prefix at all
- * - Kind: 'bad-type' — first line has a `<word>: ` prefix but word isn't
- *   lowercase / not in the type set
- * - Kind: 'uppercase-type' — type letters are present but include uppercase
- * - Kind: 'empty-description' — header has `<type>: ` but description is
- *   empty/whitespace
- */
-export type HeaderCheck =
-  | { kind: 'ok' }
-  | { kind: 'no-type'; line: string }
-  | { kind: 'bad-type'; line: string; type: string }
-  | { kind: 'uppercase-type'; line: string; type: string }
-  | { kind: 'empty-description'; line: string; type: string }
-
-export function validateHeader(line: string): HeaderCheck {
-  // Quick pre-check: does the line look like a Conventional header at all?
-  // We accept any leading word-token before `: ` for diagnosis even if the
-  // case is wrong; the strict HEADER_RE then refines.
-  const looseMatch = /^([A-Za-z]+)(\([^)]+\))?(!)?:\s*(.*)$/.exec(line)
-  if (!looseMatch) {
-    return { kind: 'no-type', line }
-  }
-  const type = looseMatch[1]!
-  const desc = looseMatch[4]!
-  // Type must be all-lowercase.
-  if (type !== type.toLowerCase()) {
-    return { kind: 'uppercase-type', line, type }
-  }
-  // Type must be in the allowed set.
-  if (!ALLOWED_TYPE_SET.has(type)) {
-    return { kind: 'bad-type', line, type }
-  }
-  // Strict format check (catches "feat:description" without space, etc.).
-  const strictMatch = HEADER_RE.exec(line)
-  if (!strictMatch) {
-    // The loose pattern matched but the strict one didn't — that means
-    // either the `: ` separator is missing the space, or the description
-    // is empty.
-    if (!desc.trim()) {
-      return { kind: 'empty-description', line, type }
-    }
-    return { kind: 'no-type', line }
-  }
-  const description = strictMatch[4]!
-  if (!description.trim()) {
-    return { kind: 'empty-description', line, type }
-  }
-  return { kind: 'ok' }
-}
 
 /**
  * Scan the full message body for AI-attribution markers. Returns the first
@@ -169,41 +80,6 @@ export function findAiAttribution(message: string): string | undefined {
     }
   }
   return undefined
-}
-
-/**
- * Build a context-appropriate suggestion for an invalid header. We look at the
- * user's input and propose ONE example of a valid replacement based on what
- * they typed.
- */
-export function suggestReplacement(check: HeaderCheck): string {
-  if (check.kind === 'ok') {
-    return ''
-  }
-  const text = check.line.trim()
-  // Lowercase variant: try to recover the intent.
-  if (check.kind === 'uppercase-type') {
-    return `${check.type.toLowerCase()}: ${text.slice(text.indexOf(':') + 1).trim()}`
-  }
-  if (check.kind === 'bad-type') {
-    // Suggest 'feat' as a generic recoverable type, keep the rest.
-    const rest =
-      text.slice(text.indexOf(':') + 1).trim() || 'describe the change'
-    return `feat: ${rest}`
-  }
-  if (check.kind === 'empty-description') {
-    return `${check.type}: describe the change`
-  }
-  // no-type: try to fold whatever the user typed into a feat header.
-  const words = text.split(/\s+/).filter(Boolean)
-  const first = (words[0] ?? '').toLowerCase()
-  // If the first word looks like a noun (e.g. "parser", "extension"), use it
-  // as a scope and keep the rest as the description.
-  if (words.length >= 2 && /^[a-z][a-z0-9-]*$/.test(first)) {
-    const rest = words.slice(1).join(' ')
-    return `feat(${first}): ${rest}`
-  }
-  return `feat: ${text || 'describe the change'}`
 }
 
 function emitBlock(reason: string, body: string): never {

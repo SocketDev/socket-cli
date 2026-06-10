@@ -52,6 +52,7 @@ import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { isDirSync } from '@socketsecurity/lib-stable/fs/inspect'
 
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
+import { isWheelhouseRoot } from '../_shared/wheelhouse-root.mts'
 
 type ToolInput = {
   tool_input?:
@@ -250,6 +251,21 @@ async function main(): Promise<number> {
     return 0
   }
 
+  // Wheelhouse-own-README allowance: the wheelhouse's OWN root README.md is
+  // authored repo content (`# socket-wheelhouse`, real badges, the Fleet-axes
+  // prose), NOT a cascade copy of `template/README.md` — that template file is
+  // the `<REPO_NAME>` placeholder fresh repos adopt, a DIFFERENT file. The
+  // cascade synthesizes each downstream README from the placeholder + per-repo
+  // data; it never overwrites the wheelhouse's own. So in the wheelhouse repo
+  // (identified by the `template/CLAUDE.md` marker), editing root README.md is
+  // legitimate authoring, not a downstream fork. Downstream repos still hit the
+  // guard (they have no `template/`, so `isCanonicalRelativePath` already
+  // returned false above for them anyway — this only matters in the wheelhouse).
+  const relNormalized = relToRepo.replace(/\\/g, '/')
+  if (relNormalized === 'README.md' && isWheelhouseRoot(repoRoot)) {
+    return 0
+  }
+
   // Fleet-block allowance: a canonical file that carries the
   // `# ─── BEGIN/END fleet-canonical ───` markers is only PART fleet-managed —
   // content outside the markers is repo-owned (e.g. a workflow's repo-specific
@@ -295,7 +311,7 @@ async function main(): Promise<number> {
       `If you genuinely need to bypass (e.g. emergency hotfix that`,
       `can't wait for cascade), the user must type \`${BYPASS_PHRASE}\``,
       `verbatim in a recent user turn. Reference:`,
-      `docs/claude.md/no-local-fork-canonical.md`,
+      `docs/agents.md/no-local-fork-canonical.md`,
       ``,
     ].join('\n'),
   )

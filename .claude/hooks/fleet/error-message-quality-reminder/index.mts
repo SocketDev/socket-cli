@@ -129,7 +129,7 @@ async function main(): Promise<void> {
     '  (2) Where — exact file/line/key/field. (3) Saw vs. wanted — bad',
   )
   lines.push('  value + allowed shape. (4) Fix — one imperative action. Full')
-  lines.push('  guidance: docs/claude.md/error-messages.md.')
+  lines.push('  guidance: docs/agents.md/error-messages.md.')
   lines.push('')
   process.stderr.write(lines.join('\n') + '\n')
   process.exit(0)

@@ -75,7 +75,7 @@ test('allows .test.* under test/', async () => {
 
 test('allows the co-located tooling test homes (not under scripts/)', async () => {
   for (const fp of [
-    '.config/fleet/oxlint-plugin/test/rule.test.mts',
+    '.config/oxlint-plugin/fleet/some-rule/test/some-rule.test.mts',
     '.claude/hooks/fleet/some-guard/test/index.test.mts',
     '.git-hooks/fleet/test/pre-commit.test.mts',
   ]) {

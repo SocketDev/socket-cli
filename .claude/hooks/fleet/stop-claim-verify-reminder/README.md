@@ -37,4 +37,4 @@ check or qualifies. Exit code is always 0.
 
 The rule lives in [`CLAUDE.md`](../../../CLAUDE.md) under "Judgment &
 self-evaluation"; detail in
-[`docs/claude.md/fleet/judgment-and-self-evaluation.md`](../../../docs/claude.md/fleet/judgment-and-self-evaluation.md).
+[`docs/agents.md/fleet/judgment-and-self-evaluation.md`](../../../docs/agents.md/fleet/judgment-and-self-evaluation.md).

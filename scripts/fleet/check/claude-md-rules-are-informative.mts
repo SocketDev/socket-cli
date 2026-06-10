@@ -6,7 +6,7 @@
  *
  *   1. A hook citation: `(enforced by \`.claude/hooks/...`)` or `enforced by
  *      `.claude/hooks/...``
- *   2. A docs link: `[anything](docs/claude.md/...)` or `[anything](docs/...)`
+ *   2. A docs link: `[anything](docs/agents.md/...)` or `[anything](docs/...)`
  *      pointing at a same-repo detail file
  *   3. An explicit opt-out: `(advisory, no enforcement)` anywhere in the section
  *      body Sections that are pure prose without one of these three signals are
@@ -40,7 +40,7 @@ const SECTION_HEADER_RE = /^###\s+(.+?)\s*$/
 const HOOK_CITATION_RE = /[`'"]\.claude\/hooks\/[^\s'"`)]+/i
 
 // Docs link to a same-repo detail file. Match any `[text](URL)` where
-// URL contains `docs/` — covers `docs/claude.md/...`, `docs/references/...`,
+// URL contains `docs/` — covers `docs/agents.md/...`, `docs/references/...`,
 // package-scoped `packages/<pkg>/docs/...`, and skill-relative `.claude/
 // skills/.../docs/...`. The `[text](path)` form is the only one that
 // matters; bare URLs in prose don't count.

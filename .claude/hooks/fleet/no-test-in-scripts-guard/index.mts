@@ -9,9 +9,10 @@
 // written, green-looking, never executed).
 //
 // The only legitimate co-located test homes are the tooling trees that own
-// their own suites and have their own runners: `.config/fleet/oxlint-plugin/
-// test/`, `.claude/hooks/**/test/`, `.git-hooks/**/test/`. Those are NOT under
-// scripts/, so this guard never touches them.
+// their own suites and have their own runners: the oxlint plugin's per-rule
+// `.config/oxlint-plugin/fleet/<id>/test/`, `.claude/hooks/**/test/`,
+// `.git-hooks/**/test/`. Those are NOT under scripts/, so this guard never
+// touches them.
 //
 // Incident: 2026-06-04 the wheelhouse had 11 scripts/fleet/test/*.test.mts +
 // 22 scripts/repo/sync-scaffolding/test/*.test.mts suites that imported
@@ -74,7 +75,7 @@ void (async () => {
         '',
         '  Reusable test helpers go in test/_shared/fleet/lib/.',
         '  Co-located test homes (NOT under scripts/) are the only exception:',
-        '  .config/fleet/oxlint-plugin/test/, .claude/hooks/**/test/,',
+        '  .config/oxlint-plugin/fleet/<id>/test/, .claude/hooks/**/test/,',
         '  .git-hooks/**/test/.',
         '',
         `  Bypass: type \`${BYPASS_PHRASE}\` if this is genuinely intended.`,

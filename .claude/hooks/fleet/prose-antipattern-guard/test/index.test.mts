@@ -70,7 +70,7 @@ test('blocks a CHANGELOG.md write carrying an antipattern', () => {
 
 test('blocks a docs/**/*.md write carrying an antipattern', () => {
   const { exitCode } = runGuard({
-    file_path: '/p/socket-lib/docs/claude.md/fleet/foo.md',
+    file_path: '/p/socket-lib/docs/agents.md/fleet/foo.md',
     content: "Here's the thing about caching.",
   })
   assert.equal(exitCode, 2)
@@ -133,12 +133,19 @@ test('findProseAntipatterns returns matches, empty when clean', () => {
 
 test('exported patterns match their target shapes', () => {
   const byLabel = new Map(PROSE_PATTERNS.map(p => [p.label, p.regex]))
-  assert.equal(byLabel.size, 4)
+  assert.equal(byLabel.size, 5)
   assert.match('a — b — c', byLabel.get('em-dash chain')!)
   assert.doesNotMatch('a — b', byLabel.get('em-dash chain')!)
   assert.match('Let me explain', byLabel.get('throat-clearing opener')!)
   assert.match("not fast, it's slow", byLabel.get('"not X, it\'s Y" contrast')!)
   assert.match('essentially done', byLabel.get('hedging adverb')!)
+  const honest = byLabel.get('self-congratulatory honesty framing')!
+  assert.match('One honest residual (recorded, not papered over)', honest)
+  assert.match('to be honest, this is', honest)
+  assert.match('the honest answer is', honest)
+  // Benign uses of "honest" must not trip it.
+  assert.doesNotMatch('the threat model stays honest', honest)
+  assert.doesNotMatch('an honest mistake', honest)
 })
 
 // ---------- CHANGELOG implementation-detail guard ----------

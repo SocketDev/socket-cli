@@ -69,8 +69,8 @@ describe('prefer-async-spawn-guard / isExemptPath', () => {
   test('exempts the hook + rule + self-skip files', () => {
     for (const p of [
       '/repo/.claude/hooks/fleet/prefer-async-spawn-guard/index.mts',
-      '/repo/.config/fleet/oxlint-plugin/rules/prefer-async-spawn.mts',
-      '/repo/.config/fleet/oxlint-plugin/rules/prefer-spawn-over-execsync.mts',
+      '/repo/.config/oxlint-plugin/fleet/prefer-async-spawn/index.mts',
+      '/repo/.config/oxlint-plugin/fleet/prefer-spawn-over-execsync/index.mts',
       '/repo/.config/fleet/markdownlint-rules/_shared/wheelhouse-self-skip.mjs',
       '/repo/dist/foo.js',
       '/repo/node_modules/x/y.js',

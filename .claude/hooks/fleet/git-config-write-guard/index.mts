@@ -15,10 +15,21 @@
 //    banned keys.
 //
 // 2. **SessionStart** — scans every fleet repo under ~/projects/ for an
-//    already-corrupted `.git/config` (bare = true, test-fixture email
-//    leak, etc.) and reports them. `core.bare = true` is AUTO-RESTORED (it's
-//    always wrong for a non-bare checkout and breaks every git command); the
-//    identity/signing findings are reported for manual cleanup. Never blocks.
+//    already-corrupted `.git/config` (bare = true, placeholder/test-fixture
+//    identity leak, etc.) and reports them. Two findings AUTO-FIX (the rest
+//    report for manual cleanup, never blocks):
+//      - `core.bare = true` is unset (always wrong for a non-bare checkout;
+//        breaks every git command).
+//      - a PLACEHOLDER local `user.email` / `user.name`
+//        (`*@example.com`, agent-ci, etc.) is unset WHEN a `--global`
+//        identity exists to fall back to. A placeholder author email can't
+//        be verified against the signing key on GitHub, so `required_signa-
+//        tures` rejects the push, and the bad value was planted outside the
+//        tool channel (an agent-CI container entrypoint), so the PreToolUse
+//        write-block never saw it. Unsetting the local override lets the
+//        signed global identity win. With NO global identity to fall back
+//        to, it is reported (not unset) so the repo is not stranded with no
+//        author.
 //
 // Bypass: `Allow git-config-write bypass` (single-use, for genuine
 // operator scenarios — initial signing setup on a fresh checkout, etc.).
@@ -27,7 +38,7 @@
 //   0 — pass / SessionStart / fail-open.
 //   2 — block (PreToolUse).
 //
-// Full rationale + key table: docs/claude.md/fleet/git-config-write-guard.md
+// Full rationale + key table: docs/agents.md/fleet/git-config-write-guard.md
 
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
@@ -37,6 +48,10 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { FLEET_REPO_NAMES } from '../_shared/fleet-repos.mts'
+import {
+  PLACEHOLDER_EMAIL_PATTERNS,
+  hasGlobalIdentity,
+} from '../_shared/git-identity.mts'
 import { withBashGuard, type ToolCallPayload } from '../_shared/payload.mts'
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
@@ -45,7 +60,7 @@ const logger = getDefaultLogger()
 const BYPASS_PHRASE = 'Allow git-config-write bypass'
 
 // Keys that must never live in a fleet repo's local `.git/config`.
-// See docs/claude.md/fleet/git-config-write-guard.md for per-key
+// See docs/agents.md/fleet/git-config-write-guard.md for per-key
 // rationale.
 const BANNED_LOCAL_KEYS: readonly string[] = [
   'core.bare',
@@ -226,7 +241,7 @@ function emitBlock(
   lines.push('       to REMOVE the existing local override (allowed).')
   lines.push('')
   lines.push(`  Bypass: type "${BYPASS_PHRASE}" in your next message.`)
-  lines.push('  Full spec: docs/claude.md/fleet/git-config-write-guard.md')
+  lines.push('  Full spec: docs/agents.md/fleet/git-config-write-guard.md')
   logger.error(lines.join('\n') + '\n')
   process.exitCode = 2
 }
@@ -239,11 +254,28 @@ function emitBlock(
 // auto-reverts (always wrong for a non-bare fleet checkout; safe to fix).
 const BARE_ISSUE = 'core.bare = true (work tree treated as bare repo)'
 
-const TEST_EMAIL_PATTERNS: readonly RegExp[] = [
-  /test@example\.com/i,
-  /test@.*\.example/i,
-  /@example\.(com|org|net)/i,
-]
+// Sentinel for a placeholder local identity — auto-unset when a global
+// identity exists (see restorePlaceholderIdentity).
+const PLACEHOLDER_IDENTITY_ISSUE =
+  'user.email is a non-verifiable placeholder (breaks signed-push verification)'
+
+// The placeholder-email patterns + isPlaceholderEmail live in
+// `_shared/git-identity.mts` (one source, shared with
+// git-identity-drift-reminder). TEST_EMAIL_PATTERNS aliases them so the scan
+// below reads unchanged.
+const TEST_EMAIL_PATTERNS: readonly RegExp[] = PLACEHOLDER_EMAIL_PATTERNS
+
+// Pull the `email = …` value out of a `[user]` section of a config body.
+export function readConfigEmail(raw: string): string | undefined {
+  // Find the [user] section, then the first email = value within it (until
+  // the next [section]).
+  const userBlock = /\[user\]([^[]*)/i.exec(raw)
+  if (!userBlock) {
+    return undefined
+  }
+  const m = /(?:^|\n)\s*email\s*=\s*(.+)/i.exec(userBlock[1]!)
+  return m ? m[1]!.trim() : undefined
+}
 
 interface CorruptionFinding {
   readonly repo: string
@@ -274,12 +306,12 @@ export function scanRepoConfig(configPath: string): readonly string[] {
   if (/\[core\][^[]*bare\s*=\s*true/i.test(raw)) {
     issues.push(BARE_ISSUE)
   }
-  // Test-fixture email leaks
+  // Placeholder / test-fixture email leaks (test@example.com,
+  // agent-ci@example.com, any *.example domain). Auto-unset later when a
+  // global identity exists.
   for (let i = 0, { length } = TEST_EMAIL_PATTERNS; i < length; i += 1) {
     if (TEST_EMAIL_PATTERNS[i]!.test(raw)) {
-      issues.push(
-        'user.email looks like a test fixture (e.g. test@example.com)',
-      )
+      issues.push(PLACEHOLDER_IDENTITY_ISSUE)
       break
     }
   }
@@ -351,6 +383,28 @@ export function restoreBareToFalse(configPath: string): boolean {
   return r.status === 0
 }
 
+/**
+ * Unset a placeholder local `user.email` / `user.name` in a fleet repo's config
+ * FILE so the signed global identity takes over. Operates on the file directly
+ * (`-f`) to match restoreBareToFalse and to work even from an odd cwd. Only the
+ * caller decides WHEN to invoke this (placeholder detected AND a global identity
+ * exists); this just performs the unset. Returns true if it removed at least one
+ * key. A missing key is a no-op (git exits non-zero for --unset of an absent
+ * key, which we treat as "nothing to do" for that key).
+ */
+export function restorePlaceholderIdentity(configPath: string): boolean {
+  let acted = false
+  for (const key of ['user.email', 'user.name']) {
+    const r = spawnSync('git', ['config', '-f', configPath, '--unset', key], {
+      encoding: 'utf8',
+    })
+    if (r.status === 0) {
+      acted = true
+    }
+  }
+  return acted
+}
+
 function emitSessionStartReport(findings: readonly CorruptionFinding[]): void {
   if (findings.length === 0) {
     return
@@ -360,27 +414,42 @@ function emitSessionStartReport(findings: readonly CorruptionFinding[]): void {
     '[git-config-write-guard] Corruption detected in fleet repo local git configs:',
   )
   lines.push('')
+  // A placeholder identity is auto-unset ONLY when a global identity exists
+  // to fall back to. Probe once (it's the same global config for every repo).
+  const globalIdentityExists = hasGlobalIdentity()
   for (let i = 0, { length } = findings; i < length; i += 1) {
     const f = findings[i]!
     lines.push(`  ${f.repo}`)
     lines.push(`    ${f.configPath}`)
     const restoredBare =
       f.issues.includes(BARE_ISSUE) && restoreBareToFalse(f.configPath)
+    // Auto-unset a placeholder local identity when a global one underneath
+    // can take over. Without a global fallback we leave it (reported) so the
+    // repo isn't stranded with no author.
+    const restoredIdentity =
+      f.issues.includes(PLACEHOLDER_IDENTITY_ISSUE) &&
+      globalIdentityExists &&
+      restorePlaceholderIdentity(f.configPath)
     for (let j = 0, jl = f.issues.length; j < jl; j += 1) {
       const issue = f.issues[j]!
-      const suffix =
-        issue === BARE_ISSUE && restoredBare
-          ? ' — AUTO-RESTORED to non-bare'
-          : ''
+      let suffix = ''
+      if (issue === BARE_ISSUE && restoredBare) {
+        suffix = ' — AUTO-RESTORED to non-bare'
+      } else if (issue === PLACEHOLDER_IDENTITY_ISSUE) {
+        suffix = restoredIdentity
+          ? ' — AUTO-UNSET (signed global identity now wins)'
+          : ' — no global identity to fall back to; unset manually'
+      }
       lines.push(`      - ${issue}${suffix}`)
     }
     lines.push('')
   }
-  lines.push('  core.bare = true is reverted automatically (always wrong for a')
-  lines.push('  non-bare fleet checkout). Remaining findings need manual')
-  lines.push('  cleanup — edit `.git/config` or `git config --unset <key>`.')
+  lines.push('  core.bare = true and a placeholder local identity (with a')
+  lines.push('  global fallback) are reverted automatically. Remaining')
+  lines.push('  findings need manual cleanup: edit `.git/config` or')
+  lines.push('  `git config --unset <key>`.')
   lines.push('')
-  lines.push('  Spec: docs/claude.md/fleet/git-config-write-guard.md')
+  lines.push('  Spec: docs/agents.md/fleet/git-config-write-guard.md')
   // Stdout is the channel Claude Code surfaces at SessionStart.
   process.stdout.write(lines.join('\n') + '\n')
 }

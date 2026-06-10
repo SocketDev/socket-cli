@@ -106,6 +106,10 @@ claude --print \
 - ❌ Omitting `tools`; SDK default is the full claude_code preset.
 - ❌ `Agent` / `Task` permitted; sub-agents inherit modes and can escape per-subagent restrictions when the parent is `bypassPermissions`/`acceptEdits`/`auto`.
 
+## Enforcement
+
+The four-flag lockdown is enforced at edit time by `.claude/hooks/fleet/claude-lockdown-guard/`, which blocks a Write/Edit that introduces a `claude` CLI / `ClaudeSDKClient` spawn missing any of `tools` / `allowedTools` / `disallowedTools` / `permissionMode: 'dontAsk'`, or that sets `default` / `bypassPermissions`. The cost-routing twin `scripts/fleet/check/ai-spawns-have-paired-effort.mts` (in `check --all`) fails when a programmatic AI spawn pins a model without pinning reasoning effort.
+
 ## Reference implementation
 
 `socket-lib/tools/prim/src/disambiguate.mts`: canonical SDK-form callsite. The file header documents each flag against the eval-flow step it enforces.

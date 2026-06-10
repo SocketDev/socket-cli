@@ -18,7 +18,7 @@
 // turn that created the state.
 //
 // Scope: only nudges inside a worktree (the workflow this rule targets). In the
-// primary checkout, dirty-worktree-stop-reminder + commit-pr-reminder cover
+// primary checkout, dirty-worktree-stop-guard + commit-pr-reminder cover
 // the dirty/landing cases; this hook stays quiet there to avoid double-nagging.
 //
 //

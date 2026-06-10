@@ -1,17 +1,19 @@
 #!/usr/bin/env node
 /**
- * @file Single source of truth for wiring fleet `socket/*` oxlint rules. The
- *   rule FILES in `.config/fleet/oxlint-plugin/rules/*.mts` are the canonical
- *   inventory; everything that references a rule by id is derived from them:
+ * @file Single source of truth for wiring fleet `socket/*` oxlint rules. Each
+ *   rule is its own directory `.config/oxlint-plugin/fleet/<id>/` (holding
+ *   `index.mts` + `package.json` + `test/<id>.test.mts`, mirroring
+ *   `.claude/hooks/fleet/<name>/`); that dir inventory is canonical and
+ *   everything that references a rule by id is derived from it:
  *
- *   1. `.config/fleet/oxlint-plugin/index.mts` — the plugin's import list +
- *      `rules: {}` registry. Every rule file gets a camelCase default import
- *      and a kebab-id registry entry; both blocks are sorted by rule id. Only
- *      those two regions are rewritten — the file's `@file` doc, the `@type`
- *      JSDoc, the `meta` block, and `export default plugin` are left
- *      byte-for-byte.
+ *   1. `.config/oxlint-plugin/index.mts` — the plugin's import list +
+ *      `rules: {}` registry. Every rule dir gets a camelCase default import
+ *      (`./fleet/<id>/index.mts`) and a kebab-id registry entry; both blocks
+ *      are sorted by rule id. Only those two regions are rewritten — the
+ *      file's `@file` doc, the `@type` JSDoc, the `meta` block, and
+ *      `export default plugin` are left byte-for-byte.
  *   2. `.config/fleet/oxlintrc.json` — the top-level `rules` block. Every rule
- *      file gets a `socket/<id>: "error"` activation. Activations for rules no
+ *      gets a `socket/<id>: "error"` activation. Activations for rules no
  *      longer present are dropped. Non-socket rules, the `overrides` block
  *      (which carries intentional per-path socket disables), `ignorePatterns`,
  *      and existing key ordering are all preserved — missing socket rules are
@@ -22,30 +24,65 @@
  *   - `--check`: exit non-zero if either would change (no write). Used by the
  *     pre-commit hook + sync-scaffolding so a half-wired rule can't land. What
  *     this does NOT generate: per-rule test files. A rule without a
- *     `test/<id>.test.mts` is reported (it's a coverage gap the author must
- *     fill); the body can't be auto-written. `--check` treats a missing test as
- *     a failure so the triad (rule file + registration + test) stays complete.
- *     Underscore-prefixed files (`_inject-import.mts`) are private helpers, not
- *     rules — excluded from every derivation. Why a generator instead of
- *     hand-editing three places: rules drifted — a rule file was present +
+ *     `fleet/<id>/test/<id>.test.mts` is reported (it's a coverage gap the
+ *     author must fill); the body can't be auto-written. `--check` treats a
+ *     missing test as a failure so the triad (rule + registration + test)
+ *     stays complete. Underscore-prefixed dirs are private helpers, not rules
+ *     — excluded from every derivation. Why a generator instead of
+ *     hand-editing three places: rules drifted — a rule was present +
  *     imported but never activated in oxlintrc, so it sat silently dormant
- *     fleet-wide. Deriving the wiring from the file inventory makes "add a rule
- *     file" the only manual step.
+ *     fleet-wide. Deriving the wiring from the dir inventory makes "add a rule
+ *     dir" the only manual step.
  */
 
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
+// prefer-async-spawn: sync-required — this is a sequential CLI generator that
+// formats its output inline before the drift comparison; no concurrency.
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
+
 import { REPO_ROOT } from './paths.mts'
 
-const PLUGIN_DIR = path.join(REPO_ROOT, '.config', 'fleet', 'oxlint-plugin')
-const RULES_DIR = path.join(PLUGIN_DIR, 'rules')
-const TEST_DIR = path.join(PLUGIN_DIR, 'test')
+const PLUGIN_DIR = path.join(REPO_ROOT, '.config', 'oxlint-plugin')
+// Each rule is its own dir under the cascaded `fleet/` tier (mirrors
+// .claude/hooks/fleet/<name>/): fleet/<id>/index.mts + fleet/<id>/test/.
+const FLEET_RULES_DIR = path.join(PLUGIN_DIR, 'fleet')
 const INDEX_PATH = path.join(PLUGIN_DIR, 'index.mts')
 const OXLINTRC_PATH = path.join(REPO_ROOT, '.config', 'fleet', 'oxlintrc.json')
+const OXFMT_BIN = path.join(REPO_ROOT, 'node_modules', '.bin', 'oxfmt')
+const OXFMT_CONFIG = path.join(REPO_ROOT, '.config', 'fleet', 'oxfmtrc.json')
 
 const SOCKET_PREFIX = 'socket/'
+
+// Run a generated source string through oxfmt (stdin → stdout) so the
+// regenerated text matches the committed, oxfmt-formatted style. Without this,
+// the generator's own line-wrapping differs from oxfmt's, so a freshly
+// regenerated index.mts/oxlintrc.json reports as drift on every run even when no
+// rule changed (and a write commits a 100+-line reformat). Applied to BOTH the
+// write path and the `--check` comparison so the two never diverge. `filename`
+// only tells oxfmt which parser to use (.mts vs .json); the file isn't read.
+// Returns the input unchanged if oxfmt is unavailable or errors, so a missing
+// binary degrades to the prior (unformatted) behavior rather than crashing.
+function formatViaOxfmt(source: string, filename: string): string {
+  if (!existsSync(OXFMT_BIN)) {
+    return source
+  }
+  const result = spawnSync(
+    OXFMT_BIN,
+    [`--stdin-filepath=${filename}`, '-c', OXFMT_CONFIG],
+    { input: source, encoding: 'utf8' },
+  )
+  const formatted = String(result.stdout ?? '')
+  if (result.status !== 0 || !formatted) {
+    return source
+  }
+  // oxfmt's stdin mode omits the trailing newline that its file mode (and the
+  // committed files) keep; normalize to exactly one so the formatted output
+  // matches on-disk style instead of introducing a no-final-newline drift.
+  return `${formatted.replace(/\n+$/, '')}\n`
+}
 
 // Rules deliberately registered in the plugin but NOT activated at `error` in
 // oxlintrc's top-level `rules` block. Keyed by rule id with a one-line reason
@@ -67,20 +104,29 @@ function toCamel(id: string): string {
 }
 
 /**
- * Every rule id under rules/ (kebab-case, no `_`-prefixed helpers), sorted.
+ * Every rule id under fleet/ (a rule = a dir holding index.mts; kebab-case, no
+ * `_`-prefixed helper dirs), sorted.
  */
 function ruleIds(): string[] {
-  return readdirSync(RULES_DIR)
-    .filter(f => f.endsWith('.mts') && !f.startsWith('_'))
-    .map(f => f.slice(0, -'.mts'.length))
+  return readdirSync(FLEET_RULES_DIR, { withFileTypes: true })
+    .filter(
+      d =>
+        d.isDirectory() &&
+        !d.name.startsWith('_') &&
+        existsSync(path.join(FLEET_RULES_DIR, d.name, 'index.mts')),
+    )
+    .map(d => d.name)
     .toSorted()
 }
 
 /**
- * Rule ids missing a `test/<id>.test.mts`.
+ * Rule ids missing a `fleet/<id>/test/<id>.test.mts`.
  */
 function rulesMissingTests(ids: readonly string[]): string[] {
-  return ids.filter(id => !existsSync(path.join(TEST_DIR, `${id}.test.mts`)))
+  return ids.filter(
+    id =>
+      !existsSync(path.join(FLEET_RULES_DIR, id, 'test', `${id}.test.mts`)),
+  )
 }
 
 /**
@@ -90,11 +136,11 @@ function rulesMissingTests(ids: readonly string[]): string[] {
  * an unchanged result as "no drift").
  */
 function rewriteIndex(source: string, ids: readonly string[]): string {
-  // -- import run: the contiguous block of `import X from './rules/...'`
+  // -- import run: the contiguous block of `import X from './fleet/<id>/index.mts'`
   // lines. Find first and last; replace the span between them (inclusive).
   const lines = source.split('\n')
   const isRuleImport = (l: string): boolean =>
-    /^import\s+\w+\s+from\s+'\.\/rules\//.test(l)
+    /^import\s+\w+\s+from\s+'\.\/fleet\//.test(l)
   const firstImport = lines.findIndex(isRuleImport)
   let lastImport = -1
   for (let i = lines.length - 1; i >= 0; i -= 1) {
@@ -107,7 +153,7 @@ function rewriteIndex(source: string, ids: readonly string[]): string {
     return source
   }
   const importBlock = ids.map(
-    id => `import ${toCamel(id)} from './rules/${id}.mts'`,
+    id => `import ${toCamel(id)} from './fleet/${id}/index.mts'`,
   )
   const withImports = [
     ...lines.slice(0, firstImport),
@@ -115,10 +161,20 @@ function rewriteIndex(source: string, ids: readonly string[]): string {
     ...lines.slice(lastImport + 1),
   ].join('\n')
 
-  // -- registry body: between `rules: {` and its matching `},`. Capture the
-  // indentation of the first entry so the regenerated body matches.
+  // -- registry body: between `rules: {` and its matching `},`. Each entry is
+  // `    '<id>': <camel>,` (4-space indent inside the `rules: {` block). oxfmt
+  // (printWidth 80) wraps an entry that would exceed the width onto two lines —
+  // the value drops to a 6-space-indented continuation. Match that wrap here so
+  // the generator's output is oxfmt-stable (otherwise the generator unwraps and
+  // oxfmt rewraps every run, and both --check gates can't pass at once).
   const registryEntries = ids
-    .map(id => `    '${id}': ${toCamel(id)},`)
+    .map(id => {
+      const oneLine = `    '${id}': ${toCamel(id)},`
+      if (oneLine.length <= 80) {
+        return oneLine
+      }
+      return `    '${id}':\n      ${toCamel(id)},`
+    })
     .join('\n')
   return withImports.replace(
     // Splice the rules block: capture group 1 = `\n<indent>rules: {\n` (opening brace line);
@@ -234,12 +290,12 @@ function main(): number {
   // 1. index.mts
   if (existsSync(INDEX_PATH)) {
     const current = readFileSync(INDEX_PATH, 'utf8')
-    const next = rewriteIndex(current, ids)
+    const next = formatViaOxfmt(rewriteIndex(current, ids), 'index.mts')
     if (current !== next) {
       drift = true
       if (check) {
         problems.push(
-          '.config/fleet/oxlint-plugin/index.mts is out of sync with rules/. Run `pnpm run sync-oxlint-rules`.',
+          '.config/oxlint-plugin/index.mts is out of sync with fleet/. Run `pnpm run sync-oxlint-rules`.',
         )
       } else {
         writeFileSync(INDEX_PATH, next)
@@ -250,12 +306,12 @@ function main(): number {
   // 2. oxlintrc.json activations
   if (existsSync(OXLINTRC_PATH)) {
     const current = readFileSync(OXLINTRC_PATH, 'utf8')
-    const next = rewriteOxlintrc(current, ids)
+    const next = formatViaOxfmt(rewriteOxlintrc(current, ids), 'oxlintrc.json')
     if (current !== next) {
       drift = true
       if (check) {
         problems.push(
-          '.config/fleet/oxlintrc.json socket/* activations are out of sync with rules/. Run `pnpm run sync-oxlint-rules`.',
+          '.config/fleet/oxlintrc.json socket/* activations are out of sync with the plugin fleet/ rules. Run `pnpm run sync-oxlint-rules`.',
         )
       } else {
         writeFileSync(OXLINTRC_PATH, next)
@@ -267,7 +323,7 @@ function main(): number {
   const missingTests = rulesMissingTests(ids)
   for (const id of missingTests) {
     problems.push(
-      `rule '${id}' has no test/${id}.test.mts — add one (the triad rule file + registration + test must be complete).`,
+      `rule '${id}' has no fleet/${id}/test/${id}.test.mts — add one (the triad rule + registration + test must be complete).`,
     )
   }
 

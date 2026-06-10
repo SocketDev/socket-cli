@@ -9,7 +9,7 @@
 //   count; name files for what's in them; co-locate helpers with
 //   consumers.
 //
-// Exceptions (also from CLAUDE.md / docs/claude.md/file-size.md):
+// Exceptions (also from CLAUDE.md / docs/agents.md/file-size.md):
 //
 //   - A single function that legitimately needs the space (the user
 //     notes this inline at the top of the function).
@@ -201,7 +201,7 @@ async function main(): Promise<void> {
     '  Exceptions (single legitimate large function / generated artifact)',
   )
   lines.push(
-    '  should be stated inline. Full playbook: docs/claude.md/file-size.md.',
+    '  should be stated inline. Full playbook: docs/agents.md/file-size.md.',
   )
   lines.push('')
   process.stderr.write(lines.join('\n') + '\n')

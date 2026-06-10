@@ -111,6 +111,7 @@ export function scanSpawnCalls(
     //                 `model}` as the last property). This is what lets the
     //                 check see both `model: foo` and the shorthand `model`.
     const hasModel = /(?:[\s,{]|^)model\s*[:,}]/.test(span)
+    // Same key-boundary shape as the `model` probe above, for the `effort` key.
     const hasEffort = /(?:[\s,{]|^)effort\s*[:,}]/.test(span)
     if (hasModel && !hasEffort) {
       hits.push({
@@ -124,32 +125,39 @@ export function scanSpawnCalls(
 }
 
 // A hand-rolled backend runner argv that pushes `--model` must also push an
-// effort flag for claude / codex. Detected at the argv-literal level: an array
-// containing the `--model` token but no effort token.
+// effort flag — but ONLY for the claude / codex backends. kimi / gemini /
+// opencode have no reasoning-effort flag (see _shared/multi-agent-backends.md),
+// so their `--model` push is legitimately effort-free and must NOT be flagged.
+//
+// Scoping: each backend's `run()` body is a small block. We decide a `--model`
+// push belongs to claude/codex by the SAME-BLOCK presence of that backend's
+// model env var (`CLAUDE_MODEL` / `CODEX_MODEL`) or `bin: 'claude'|'codex'`
+// within a proximity window — not by a file-level claude/codex reference, which
+// would wrongly implicate a kimi block sitting in the same file.
 export function scanBackendArgv(
   text: string,
 ): Array<{ index: number; detail: string }> {
   const hits: Array<{ index: number; detail: string }> = []
-  // Only flag a `--model` token that lives next to a claude/codex effort
-  // surface in the same file — a gemini/opencode runner legitimately has no
-  // effort flag. The signal: the file references claude `--effort` or codex
-  // `model_reasoning_effort` AND has a `--model` push that isn't paired.
-  const refsClaude = text.includes("'claude'") || text.includes('"claude"')
-  const refsCodex = text.includes("'codex'") || text.includes('"codex"')
-  if (!refsClaude && !refsCodex) {
-    return hits
-  }
+  // Match the property-key / env-var that identifies a claude or codex backend
+  // block: CLAUDE_MODEL / CODEX_MODEL, or a `bin: 'claude'|'codex'` literal.
+  const CLAUDE_BLOCK_RE = /CLAUDE_MODEL|bin:\s*['"]claude['"]/
+  // Same shape for the codex backend: the CODEX_MODEL env var OR a quoted
+  // `bin: 'codex'` / `bin: "codex"` literal.
+  const CODEX_BLOCK_RE = /CODEX_MODEL|bin:\s*['"]codex['"]/
   const modelFlagRe = /['"]--model['"]/g
-  const hasClaudeEffort = /['"]--effort['"]/.test(text)
-  const hasCodexEffort = /model_reasoning_effort=/.test(text)
   let m: RegExpExecArray | null
   while ((m = modelFlagRe.exec(text))) {
-    // Look at the surrounding ~400 chars (one backend's run() body) for a
-    // paired effort flag of either flavor.
+    // One backend's run() body fits in ~400 chars around the --model push.
     const around = text.slice(Math.max(0, m.index - 400), m.index + 400)
+    const isClaudeBlock = CLAUDE_BLOCK_RE.test(around)
+    const isCodexBlock = CODEX_BLOCK_RE.test(around)
+    // kimi / gemini / opencode block → no effort flag expected → skip.
+    if (!isClaudeBlock && !isCodexBlock) {
+      continue
+    }
     const pairedHere =
-      (hasClaudeEffort && /['"]--effort['"]/.test(around)) ||
-      (hasCodexEffort && /model_reasoning_effort=/.test(around))
+      (isClaudeBlock && /['"]--effort['"]/.test(around)) ||
+      (isCodexBlock && /model_reasoning_effort=/.test(around))
     if (!pairedHere) {
       hits.push({
         index: m.index,

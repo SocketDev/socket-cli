@@ -52,6 +52,6 @@ flag. Any non-draft call is a violation.
 
 ## Related
 
-- Fleet doc: [`docs/claude.md/fleet/immutable-releases.md`](../../docs/claude.md/fleet/immutable-releases.md)
-- Fleet doc: [`docs/claude.md/fleet/version-bumps.md`](../../docs/claude.md/fleet/version-bumps.md)
+- Fleet doc: [`docs/agents.md/fleet/immutable-releases.md`](../../docs/agents.md/fleet/immutable-releases.md)
+- Fleet doc: [`docs/agents.md/fleet/version-bumps.md`](../../docs/agents.md/fleet/version-bumps.md)
 - Memory: `feedback_immutable_releases_three_step.md`

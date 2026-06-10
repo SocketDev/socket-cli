@@ -147,7 +147,7 @@ function filterLintable(files: string[]): string[] {
 //
 // `template/**` ships byte-identical to every fleet repo via the
 // sync-scaffolding cascade — including `template/.claude/hooks/`
-// (the actual fleet hook code) and `template/.config/fleet/oxlint-plugin/`
+// (the actual fleet hook code) and `template/.config/oxlint-plugin/`
 // (the canonical rule definitions). The wheelhouse must lint these
 // here, before they propagate, because downstream repos can't
 // independently fix drift in fleet-canonical files.
@@ -157,7 +157,7 @@ function filterLintable(files: string[]): string[] {
 // fleet-canonical. It's a copy of `template/.claude/` plus per-machine
 // overrides; linting it would double-flag every issue once in
 // `template/` and once in `.claude/`.
-const DOGFOOD_LINT_PATHS = ['.config/fleet/oxlint-plugin', 'template']
+const DOGFOOD_LINT_PATHS = ['.config/oxlint-plugin', 'template']
 
 // Markdown lint pass — gated behind LINT_MARKDOWN=1 so existing fleet
 // repos with pre-existing markdown hygiene findings aren't blocked
@@ -226,7 +226,7 @@ function runAll(): number {
   if (lintRes.status !== 0) {
     return 1
   }
-  // Wheelhouse-self dogfood: lint the .config/fleet/oxlint-plugin/ + template/
+  // Wheelhouse-self dogfood: lint the .config/oxlint-plugin/ + template/
   // trees too. The canonical .config/fleet/oxlintrc.json ignores those paths so
   // downstream fleet repos don't waste cycles linting opaque tooling, but
   // the wheelhouse is the author — every change here lands in every

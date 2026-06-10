@@ -47,6 +47,26 @@ const FLEET_SHARED_RE =
 const SECOND_OPINION_RE =
   /\b(?:second[- ]opinion|review (?:the|this) plan|sanity[- ]check|pair[- ]review|invite a review)\b/i
 
+// A plan that establishes a NAME or a SCHEMA SHAPE: a new/renamed check,
+// script, hook, lint rule, skill, or a manifest/schema/marker field. Once
+// landed across files + cascaded, these are expensive to rename — so the final
+// shape belongs IN THE PLAN, not iterated across commits (the
+// make-/generate-/make- round-trip and the kind→layout+native→repo.type churn
+// are the motivating examples).
+const NAME_OR_SCHEMA_RE =
+  /\b(?:rename|renaming|new (?:check|script|hook|rule|skill|field|schema)|name (?:it|the|this)|call (?:it|the)|add (?:a |the )?(?:field|schema|marker)|schema (?:field|shape|key)|marker (?:field|shape))\b/i
+
+// Language signalling the shape lands across MORE THAN ONE file/commit/the
+// cascade — exactly when settling-the-shape-first matters (a single
+// self-contained file is cheap to rename later; a cascaded name is not).
+const MULTI_SURFACE_RE =
+  /\b(?:cascade|across (?:the )?fleet|every (?:fleet )?repo|multiple (?:files|commits)|template\/ and|both template|fleet-wide|each repo|propagat)/i
+
+// Language showing the author already locked the final shape (so the nudge is
+// noise) — an explicit decision, or routing the choice to the user.
+const SHAPE_SETTLED_RE =
+  /\b(?:final name|settled (?:on|the)|decided (?:on|the)|locked (?:in|the)|canonical name (?:is|will be)|naming (?:is )?decided|AskUserQuestion|ask(?:ing|ed)? (?:the user|you)|which name)\b/i
+
 async function main(): Promise<void> {
   const payloadRaw = await readStdin()
   let payload: StopPayload
@@ -94,6 +114,28 @@ async function main(): Promise<void> {
           'CLAUDE.md "Plan review before approval", invite review before code',
       )
     }
+  }
+
+  // Check 3: a plan that establishes a NAME or SCHEMA SHAPE spread across more
+  // than one file / commit / the cascade, without signalling the final shape is
+  // settled. Once a name or schema field lands across the fleet, renaming it is
+  // expensive — settle it in the plan (or route the choice to the user) first.
+  const looksLikePlan =
+    PLAN_PHRASE_RE.test(text) ||
+    /\b(?:I'?ll|I will|I'm going to|plan(?:ning)? to)\b/i.test(rawText)
+  if (
+    looksLikePlan &&
+    NAME_OR_SCHEMA_RE.test(text) &&
+    MULTI_SURFACE_RE.test(text) &&
+    !SHAPE_SETTLED_RE.test(text)
+  ) {
+    hits.push(
+      'plan introduces/renames a name or schema shape that will land across ' +
+        'multiple files / the cascade, but does not settle the FINAL shape ' +
+        'first — per CLAUDE.md "Plan review before approval", decide the name/' +
+        'field shape in the plan (or ask the user) before the commit fan-out; ' +
+        'renaming a cascaded name is expensive (see "Compound lessons").',
+    )
   }
 
   if (hits.length === 0) {

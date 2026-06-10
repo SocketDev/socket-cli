@@ -144,7 +144,7 @@ function reportBlock(reason: BlockReason): void {
     '',
     '    // oxlint-disable-next-line <rule> -- <reason>',
     '',
-    '  See docs/claude.md/fleet/no-disable-lint-rule.md for the full',
+    '  See docs/agents.md/fleet/no-disable-lint-rule.md for the full',
     '  rationale + scoped-override recipe.',
     '',
     `  Bypass: type "${BYPASS_PHRASE}" in a recent message.`,

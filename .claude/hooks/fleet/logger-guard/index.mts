@@ -38,8 +38,10 @@ import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { findMemberCalls } from '../_shared/acorn/index.mts'
-import type { MemberCallSite } from '../_shared/acorn/index.mts'
+// Logger-leak detection (the FORBIDDEN_LOGGER_CALLS table + the AST walk) is
+// shared with the commit-time scanLoggerLeaks via the gate-free
+// _shared/logger-leaks.mts, so the edit-time and commit-time gates agree.
+import { findLoggerLeaks } from '../../../../.git-hooks/_shared/logger-leaks.mts'
 import { lineIsSuppressed } from '../_shared/markers.mts'
 import { withEditGuard } from '../_shared/payload.mts'
 
@@ -60,22 +62,9 @@ const EXEMPT_PATH_PATTERNS: RegExp[] = [
   /(?:^|\/)src\/logger\//,
 ]
 
-// The forbidden calls and the canonical logger replacement for each.
-// Two-segment chains (`console.log`) and three-segment chains
-// (`process.stderr.write`) — `findMemberCalls` handles both.
-const FORBIDDEN_CALLS: Array<{
-  object: string
-  property: string
-  replacement: string
-}> = [
-  { object: 'console', property: 'log', replacement: 'logger.info' },
-  { object: 'console', property: 'error', replacement: 'logger.error' },
-  { object: 'console', property: 'warn', replacement: 'logger.warn' },
-  { object: 'console', property: 'info', replacement: 'logger.info' },
-  { object: 'console', property: 'debug', replacement: 'logger.debug' },
-  { object: 'process.stderr', property: 'write', replacement: 'logger.error' },
-  { object: 'process.stdout', property: 'write', replacement: 'logger.info' },
-]
+// The forbidden-call table + AST detector live in the shared
+// _shared/logger-leaks.mts (FORBIDDEN_LOGGER_CALLS / findLoggerLeaks), so the
+// commit-time scanLoggerLeaks and this edit-time guard use one source.
 
 export function emitBlock(filePath: string, hits: Hit[]): void {
   const out: string[] = []
@@ -125,34 +114,22 @@ export function isInScope(filePath: string): boolean {
 }
 
 export function scan(source: string): Hit[] {
-  const hits: Hit[] = []
   const lines = source.split('\n')
-  for (let i = 0, { length } = FORBIDDEN_CALLS; i < length; i += 1) {
-    const spec = FORBIDDEN_CALLS[i]!
-    const matches: MemberCallSite[] = findMemberCalls(
-      source,
-      spec.object,
-      spec.property,
-    )
-    for (let i = 0, { length } = matches; i < length; i += 1) {
-      const m = matches[i]!
-      // Per-line allow marker: `// socket-lint: allow console`. The
-      // marker has to appear on the same source line as the call.
-      const sourceLine = lines[m.line - 1] ?? ''
-      if (lineIsSuppressed(sourceLine, 'console')) {
-        continue
-      }
-      hits.push({
-        line: m.line,
-        text: m.text,
-        fullCall: `${spec.object}.${spec.property}`,
-        replacement: spec.replacement,
-      })
+  const hits: Hit[] = []
+  for (const leak of findLoggerLeaks(source)) {
+    // Per-line allow marker: `// socket-lint: allow console`. The marker
+    // must appear on the same source line as the call.
+    const sourceLine = lines[leak.line - 1] ?? ''
+    if (lineIsSuppressed(sourceLine, 'console')) {
+      continue
     }
+    hits.push({
+      line: leak.line,
+      text: leak.text,
+      fullCall: leak.fullCall,
+      replacement: leak.replacement,
+    })
   }
-  // Multiple FORBIDDEN_CALLS iterations may produce out-of-order
-  // results when several different calls land on different lines.
-  // Sort by line for readable output.
   hits.sort((a, b) => a.line - b.line)
   return hits
 }

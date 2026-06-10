@@ -10,7 +10,9 @@ import {
   findBannedBashWrites,
   findBannedConfigWrites,
   isLocalGitConfigPath,
+  readConfigEmail,
   restoreBareToFalse,
+  restorePlaceholderIdentity,
   scanRepoConfig,
 } from '../index.mts'
 
@@ -205,7 +207,44 @@ test('scanRepoConfig detects test@example.com email', () => {
     const cfg = makeRepo(dir, '[user]\n\temail = test@example.com\n')
     const issues = scanRepoConfig(cfg)
     assert.equal(issues.length, 1)
-    assert.match(issues[0]!, /test fixture/)
+    assert.match(issues[0]!, /non-verifiable placeholder/)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('scanRepoConfig detects agent-ci@example.com (the real incident)', () => {
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'gccfg-'))
+  try {
+    const cfg = makeRepo(dir, '[user]\n\temail = agent-ci@example.com\n')
+    const issues = scanRepoConfig(cfg)
+    assert.equal(issues.length, 1)
+    assert.match(issues[0]!, /non-verifiable placeholder/)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('readConfigEmail pulls the [user] email value', () => {
+  assert.equal(
+    readConfigEmail('[user]\n\temail = agent-ci@example.com\n\tname = agent-ci\n'),
+    'agent-ci@example.com',
+  )
+  assert.equal(readConfigEmail('[core]\n\tbare = false\n'), undefined)
+})
+
+test('restorePlaceholderIdentity unsets local user.email + user.name', () => {
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'gccfg-'))
+  try {
+    const cfg = makeRepo(
+      dir,
+      '[user]\n\temail = agent-ci@example.com\n\tname = agent-ci\n',
+    )
+    const acted = restorePlaceholderIdentity(cfg)
+    assert.equal(acted, true)
+    // Both keys gone afterward.
+    const after = scanRepoConfig(cfg)
+    assert.equal(after.length, 0)
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }

@@ -1,9 +1,10 @@
 # version-bump-order-guard
 
-PreToolUse hook that blocks `git tag vX.Y.Z` when HEAD isn't a bump commit **or** the tree fails the fast pre-release gate. Enforces steps 1, 3, and 4 of CLAUDE.md's "Version bumps" rule.
+PreToolUse hook that gates the version-bump flow at two points: the bump **commit** and the **tag**. It blocks either when the tree fails the fast pre-release gate, and blocks a tag placed on a non-bump commit. Enforces steps 1, 3, and 4 of CLAUDE.md's "Version bumps" rule.
 
 ## What it catches
 
+- A bump **commit** (`git commit -m "chore: bump version to X.Y.Z"`, also `--message=…`) whose tree fails `pnpm run lint --all` or has open `pnpm audit` advisories. The bump commit is where a still-broken tree lands; gating it stops a bump from being committed onto code CI then rejects on push.
 - `git tag v1.2.3` (or `git tag -a v…`, `git tag -s v…`) when the most-recent commit subject doesn't match `chore: bump version to X.Y.Z` or `chore(scope): release X.Y.Z`.
 - A version tag whose tree fails `pnpm run lint --all` (the exact command CI's Check job runs) — accumulated lint debt that CI will reject.
 - A version tag whose tree has open `pnpm audit` advisories — a release carrying known-vulnerable dependencies.

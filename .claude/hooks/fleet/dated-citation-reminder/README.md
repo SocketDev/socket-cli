@@ -2,7 +2,7 @@
 
 PreToolUse hook. Nudges (never blocks) when an `Edit`/`Write`/`MultiEdit` adds a
 **dated-incident citation** to a fleet-facing rule-prose surface — `CLAUDE.md`,
-`docs/claude.md/fleet/**`, `.claude/skills/**/SKILL.md`, or a
+`docs/agents.md/fleet/**`, `.claude/skills/**/SKILL.md`, or a
 `.claude/hooks/fleet/**/README.md`.
 
 ## Why

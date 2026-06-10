@@ -12,11 +12,14 @@
 //   4. THEN `git tag vX.Y.Z` at the bump commit.
 //   5. Do NOT dispatch the publish workflow.
 //
-// This hook is a guard around step 4: when the user runs `git tag
-// v...`, the most-recent commit on HEAD must look like a bump commit
-// (its subject matches `bump version to X.Y.Z` or `chore: release
-// X.Y.Z`). Without that, the tag is being placed on a non-bump commit,
-// which produces a broken release.
+// Two invariants are enforced:
+//   - A bump COMMIT (`git commit -m "chore: bump version to X.Y.Z"`) must sit
+//     on a green tree — the fast gate (`lint --all` + `pnpm audit`) runs before
+//     it, so the bump cannot land atop lint debt that CI then rejects on push.
+//     (The slow half — typecheck/tests/coverage — stays in CI.)
+//   - A version TAG (`git tag v...`) must sit on a bump commit: HEAD's subject
+//     must match `bump version to X.Y.Z` / `chore: release X.Y.Z`, and the same
+//     fast gate runs. A tag on a non-bump commit produces a broken release.
 //
 // It ALSO runs the fast half of the pre-release gate at tag time — the
 // two checks cheap enough for a synchronous hook: `pnpm run lint --all`
@@ -33,7 +36,7 @@
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -65,6 +68,37 @@ function isVersionTagCommand(command: string): boolean {
 const BUMP_SUBJECT_RE =
   /^(?:chore(?:\([\w-]+\))?:\s+(?:bump version to|release)\s+v?\d+\.\d+\.\d+|chore(?:\([\w-]+\))?:\s+v?\d+\.\d+\.\d+\s+release)/i
 
+// `git commit … -m "chore: bump version to X.Y.Z"` — the bump commit itself.
+// Parser-based: a real `git commit` whose `-m`/`--message` value matches the
+// bump-subject shape. The gate runs HERE too, not only at tag time, because the
+// bump commit is the point a still-broken tree (accumulated lint debt) silently
+// lands — by tag time it's already committed (and maybe pushed). A quoted
+// "git commit" inside another command's string isn't a real invocation, so it
+// won't trigger.
+function bumpCommitMessage(command: string): string | undefined {
+  for (const c of commandsFor(command, 'git')) {
+    if (!c.args.includes('commit')) {
+      continue
+    }
+    for (let i = 0, { length } = c.args; i < length; i += 1) {
+      const arg = c.args[i]!
+      // `-m <msg>` / `--message <msg>` (next arg) or `-m=<msg>` / `--message=<msg>`.
+      let msg: string | undefined
+      if ((arg === '-m' || arg === '--message') && i + 1 < length) {
+        msg = c.args[i + 1]
+      } else if (arg.startsWith('-m=')) {
+        msg = arg.slice(3)
+      } else if (arg.startsWith('--message=')) {
+        msg = arg.slice('--message='.length)
+      }
+      if (msg && BUMP_SUBJECT_RE.test(msg.trim())) {
+        return msg.trim()
+      }
+    }
+  }
+  return undefined
+}
+
 // Whether the repo at `cwd` declares a `lint` script. The gate only runs
 // where there's something to gate — a repo with no `lint` script (or no
 // package.json at all) fails open, so this guard stays a pure tag-ordering
@@ -88,8 +122,77 @@ function hasLintScript(cwd: string): boolean {
 // of human-readable failures; an empty list means the gate passed. Fails
 // open on a non-spawnable tool — the gate enforces what it can confirm,
 // never invents a failure.
+// Newest mtime (ms) under a dir tree, or 0 when absent/empty. Skips
+// node_modules + dotdirs so a stray install timestamp can't mask staleness.
+function newestMtime(dir: string): number {
+  let newest = 0
+  let entries: string[]
+  try {
+    entries = readdirSync(dir)
+  } catch {
+    return 0
+  }
+  for (let i = 0, { length } = entries; i < length; i += 1) {
+    const name = entries[i]!
+    if (name === 'node_modules' || name.startsWith('.')) {
+      continue
+    }
+    const abs = path.join(dir, name)
+    let st
+    try {
+      st = statSync(abs)
+    } catch {
+      continue
+    }
+    if (st.isDirectory()) {
+      newest = Math.max(newest, newestMtime(abs))
+    } else {
+      newest = Math.max(newest, st.mtimeMs)
+    }
+  }
+  return newest
+}
+
+// A bump commit must sit on a tree whose coverage was MEASURED after the last
+// source change — proof `pnpm run cover` ran on the current code, not a stale
+// run from before the final edits. Returns a failure string when the repo opts
+// into coverage (a `src/` tree exists) but coverage/coverage-summary.json is
+// missing or older than the newest src file. Fail-open (no failure) when there
+// is no `src/` (nothing to measure) so non-source repos aren't blocked.
+function coverageFreshnessFailure(cwd: string): string | undefined {
+  const srcDir = path.join(cwd, 'src')
+  if (!existsSync(srcDir)) {
+    return undefined
+  }
+  const summary = path.join(cwd, 'coverage', 'coverage-summary.json')
+  if (!existsSync(summary)) {
+    return (
+      'no coverage/coverage-summary.json — run `pnpm run cover` on the ' +
+      'current tree before the bump (the json-summary reporter emits it).'
+    )
+  }
+  let summaryMtime = 0
+  try {
+    summaryMtime = statSync(summary).mtimeMs
+  } catch {
+    return undefined
+  }
+  if (newestMtime(srcDir) > summaryMtime) {
+    return (
+      'coverage/coverage-summary.json is older than the latest src/ change — ' +
+      're-run `pnpm run cover` so coverage reflects the code being released.'
+    )
+  }
+  return undefined
+}
+
 function runPreReleaseGate(opts: { cwd?: string }): string[] {
   const failures: string[] = []
+  const gateCwd = opts.cwd ?? process.cwd()
+  const coverageFailure = coverageFreshnessFailure(gateCwd)
+  if (coverageFailure) {
+    failures.push(coverageFailure)
+  }
   const spawnOpts = { ...opts, stdio: 'pipe' as const }
   // `pnpm run lint --all` — the exact command CI's Check job runs. A
   // non-zero exit means accumulated lint debt that CI will reject.
@@ -120,7 +223,9 @@ function runPreReleaseGate(opts: { cwd?: string }): string[] {
 // withBashGuard handles the stdin drain, tool_name gate, command narrow,
 // and fail-open on any throw.
 await withBashGuard((command, payload) => {
-  if (!isVersionTagCommand(command)) {
+  const bumpMsg = bumpCommitMessage(command)
+  const isTag = isVersionTagCommand(command)
+  if (!bumpMsg && !isTag) {
     return
   }
   if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)) {
@@ -128,6 +233,49 @@ await withBashGuard((command, payload) => {
   }
 
   const opts = payload.cwd ? { cwd: payload.cwd } : {}
+
+  // Pre-bump-COMMIT gate: the bump commit is where a still-broken tree
+  // (accumulated lint debt) silently lands — front-run the same fast gate the
+  // tag step runs, so the bump can't be committed onto a tree CI will reject.
+  // (Past incident: a `chore: bump version` committed atop 100+ lint errors
+  // sailed in, then failed CI on push.)
+  if (
+    bumpMsg &&
+    !process.env['SOCKET_VERSION_BUMP_SKIP_GATE'] &&
+    hasLintScript(opts.cwd ?? process.cwd())
+  ) {
+    const gateFailures = runPreReleaseGate(opts)
+    if (gateFailures.length) {
+      const lines = [
+        '[version-bump-order-guard] Pre-bump gate failed — refusing the bump commit.',
+        '',
+        `  Bump commit : ${bumpMsg}`,
+        '',
+        ...gateFailures.map(f => `  ✗ ${f}`),
+        '',
+        '  The bump commit must sit on a GREEN tree. Run the prep wave clean',
+        '  BEFORE committing the bump:',
+        '',
+        '    pnpm run update',
+        '    pnpm i',
+        '    pnpm run fix --all',
+        '    pnpm run check --all   # typecheck + unit tests + coverage',
+        '',
+        '  Then commit `chore: bump version to X.Y.Z`.',
+        '',
+        '  Bypass the gate only: SOCKET_VERSION_BUMP_SKIP_GATE=1',
+        '  Bypass the whole guard: "Allow version-bump-order bypass".',
+        '',
+      ]
+      logger.error(lines.join('\n') + '\n')
+      process.exitCode = 2
+    }
+    // A bump commit isn't a tag — once gated (pass or block), we're done.
+    return
+  }
+  if (!isTag) {
+    return
+  }
 
   // Fast pre-release gate: a tag whose tree fails lint or carries an open
   // advisory would publish a broken / vulnerable release. Run it before

@@ -35,6 +35,15 @@ export const PROSE_PATTERNS: readonly ProsePattern[] = [
     regex: /\b(?:basically|essentially|fundamentally|simply|just)\b/i,
     why: 'Vague hedging adverb doing no work. Cut it or replace with the concrete fact.',
   },
+  {
+    label: 'self-congratulatory honesty framing',
+    // Meta-commentary on one's own candor ("to be honest", "the honest
+    // residual", "if I'm honest", "honestly,") and the "(not) papered over"
+    // self-defense. State the fact; the honesty is assumed, not announced.
+    regex:
+      /\b(?:to be honest|honest(?:ly)?\s+(?:residual|answer|truth|assessment)|the honest\b|if (?:I'm|we're|i am|we are) honest|papered over)\b/i,
+    why: 'Announcing your own honesty is throat-clearing. Drop "honest"/"papered over" framing and state the fact plainly.',
+  },
 ]
 
 /**

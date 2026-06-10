@@ -42,30 +42,14 @@ import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { FLEET_REPO_NAMES } from '../_shared/fleet-repos.mts'
 import { withEditGuard } from '../_shared/payload.mts'
+// CROSS_REPO_ANY_RE (built from the canonical FLEET_REPO_NAMES roster) is
+// imported from the gate-free cross-tree _shared/cross-repo.mts — the SAME
+// regex the commit-time scanCrossRepoPaths uses, so the two can't drift (was
+// a duplicated inline copy here).
+import { CROSS_REPO_ANY_RE } from '../../../../.git-hooks/_shared/cross-repo.mts'
 
 const logger = getDefaultLogger()
-
-const FLEET_RE_FRAGMENT = FLEET_REPO_NAMES.join('|')
-
-// `../<repo>/…` and deeper variants like `../../<repo>/…`. Boundary
-// chars in front prevent matching e.g. `socketdev-../socket-cli/`. The
-// trailing `/` (not `\b`) requires the repo name to name a DIRECTORY:
-// `\b` treats `-` as a boundary, so it false-matched a sibling FILE
-// whose basename merely starts with a repo name (e.g. a `<repo>-config`
-// import in the same dir). A real cross-repo path is `../<repo>/…`,
-// always with a separator after the name.
-const CROSS_REPO_RELATIVE_RE = new RegExp(
-  String.raw`(?:^|[\s'"\`(=,])\.\.(?:/\.\.)*/(?:${FLEET_RE_FRAGMENT})/`,
-)
-// `…/projects/<repo>/…` — absolute or env-rooted variant.
-const CROSS_REPO_ABSOLUTE_RE = new RegExp(
-  String.raw`/projects/(?:${FLEET_RE_FRAGMENT})/`,
-)
-const CROSS_REPO_ANY_RE = new RegExp(
-  `${CROSS_REPO_RELATIVE_RE.source}|${CROSS_REPO_ABSOLUTE_RE.source}`,
-)
 
 // Files exempt from the rule. Comments explain why each is excluded.
 const EXEMPT_PATH_PATTERNS: RegExp[] = [

@@ -140,7 +140,7 @@ if (process.argv[1]?.endsWith('index.mts')) {
         `    …\n` +
         `  }\n` +
         `\n` +
-        `See docs/claude.md/fleet/options-object.md for the full recipe.\n` +
+        `See docs/agents.md/fleet/options-object.md for the full recipe.\n` +
         `Bypass: type "${BYPASS_PHRASE}" in a recent message.\n`,
     )
     process.exitCode = 2
