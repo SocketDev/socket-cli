@@ -42,7 +42,10 @@ import { isYarnBerry } from './yarn-version.mts'
 
 import type { ShadowBinOptions, ShadowBinResult } from '../shadow/npm-base.mts'
 import type { CResult } from '../types.mts'
-import type { SpawnExtra } from '@socketsecurity/registry/lib/spawn'
+import type {
+  SpawnExtra,
+  SpawnOptions,
+} from '@socketsecurity/registry/lib/spawn'
 
 const require = createRequire(import.meta.url)
 
@@ -228,7 +231,10 @@ async function spawnCoanaScriptViaNode(
   scriptPath: string,
   args: string[] | readonly string[],
   finalEnv: NodeJS.ProcessEnv,
-  options: { cwd?: string | URL | undefined },
+  options: {
+    cwd?: string | URL | undefined
+    stdio?: SpawnOptions['stdio'] | undefined
+  },
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<CResult<string>> {
   const isBinary = !scriptPath.endsWith('.js') && !scriptPath.endsWith('.mjs')
@@ -237,7 +243,7 @@ async function spawnCoanaScriptViaNode(
   const spawnResult = await spawn(isBinary ? scriptPath : 'node', spawnArgs, {
     cwd: options.cwd,
     env: sanitizeEnvForCoanaSubprocess(finalEnv),
-    stdio: spawnExtra?.['stdio'] || 'inherit',
+    stdio: options.stdio ?? spawnExtra?.['stdio'] ?? 'inherit',
   })
 
   return { ok: true, data: spawnResult.stdout }
@@ -322,7 +328,10 @@ async function spawnCoanaViaNpmInstall(
   args: string[] | readonly string[],
   version: string,
   finalEnv: NodeJS.ProcessEnv,
-  options: { cwd?: string | URL | undefined },
+  options: {
+    cwd?: string | URL | undefined
+    stdio?: SpawnOptions['stdio'] | undefined
+  },
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<CResult<string>> {
   let scriptPath: string
@@ -454,6 +463,18 @@ export async function spawnCoanaDlx(
   const resolvedVersion =
     coanaVersion || constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION
 
+  // `shadowNpmBase` (the dlx launcher) configures the child's stdio from its
+  // `options` arg, NOT from the registry-spawn `extra` arg — the latter only
+  // attaches metadata to the result. Callers that requested streaming via
+  // `spawnExtra` (the 4th arg), e.g. `{ stdio: 'inherit' }` from
+  // `socket manifest gradle`, were therefore silently ignored on this path:
+  // Coana ran piped and its output — including the real failure reason — never
+  // reached the user, leaving only an unhelpful "command failed". Resolve the
+  // requested stdio from either argument and honor it on every launch path:
+  // dlx, local-path, and npm-install (e.g. `socket fix --silence` requests
+  // `stdio: 'pipe'` via options).
+  const requestedStdio = spawnExtra?.['stdio'] ?? getOwn(dlxOptions, 'stdio')
+
   const localCoanaPath = process.env['SOCKET_CLI_COANA_LOCAL_PATH']
   // Use local Coana CLI if path is provided.
   if (localCoanaPath) {
@@ -462,7 +483,7 @@ export async function spawnCoanaDlx(
         localCoanaPath,
         args,
         finalEnv,
-        { cwd: dlxOptions.cwd },
+        { cwd: dlxOptions.cwd, stdio: requestedStdio },
         spawnExtra,
       )
     } catch (e) {
@@ -479,22 +500,10 @@ export async function spawnCoanaDlx(
       args,
       resolvedVersion,
       finalEnv,
-      { cwd: dlxOptions.cwd },
+      { cwd: dlxOptions.cwd, stdio: requestedStdio },
       spawnExtra,
     )
   }
-
-  // `shadowNpmBase` (the dlx launcher) configures the child's stdio from its
-  // `options` arg, NOT from the registry-spawn `extra` arg — the latter only
-  // attaches metadata to the result. Callers that requested streaming via
-  // `spawnExtra` (the 4th arg), e.g. `{ stdio: 'inherit' }` from
-  // `socket manifest gradle`, were therefore silently ignored on this path:
-  // Coana ran piped and its output — including the real failure reason — never
-  // reached the user, leaving only an unhelpful "command failed". Promote the
-  // requested stdio into the dlx options so it is honored here too.
-  // `spawnCoanaScriptViaNode` already reads `spawnExtra.stdio` for the
-  // local-path and npm-install branches, so this aligns all three paths.
-  const requestedStdio = spawnExtra?.['stdio'] ?? getOwn(dlxOptions, 'stdio')
 
   try {
     // Use npm/dlx version.
@@ -549,7 +558,7 @@ export async function spawnCoanaDlx(
       args,
       resolvedVersion,
       finalEnv,
-      { cwd: dlxOptions.cwd },
+      { cwd: dlxOptions.cwd, stdio: requestedStdio },
       spawnExtra,
     )
     if (fallbackResult.ok) {

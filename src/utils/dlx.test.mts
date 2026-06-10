@@ -452,6 +452,32 @@ describe('utils/dlx', () => {
       expect(npmInstallCalls).toHaveLength(1)
     })
 
+    it('honors options.stdio on the npm-install path', async () => {
+      process.env['SOCKET_CLI_COANA_LAUNCHER'] = 'npm-install'
+
+      const result = await spawnCoanaDlx(['run', '.'], 'acme', {
+        coanaVersion: nextVersion(),
+        stdio: 'pipe',
+      })
+
+      expect(result.ok).toBe(true)
+      const nodeCalls = mockSpawn.mock.calls.filter(([cmd]) => cmd === 'node')
+      expect(nodeCalls).toHaveLength(1)
+      expect((nodeCalls[0]![2] as { stdio?: unknown }).stdio).toBe('pipe')
+    })
+
+    it('honors options.stdio in the auto-mode npm-install fallback', async () => {
+      const result = await spawnCoanaDlx(['run', '.'], 'acme', {
+        coanaVersion: nextVersion(),
+        stdio: 'pipe',
+      })
+
+      expect(result.ok).toBe(true)
+      const nodeCalls = mockSpawn.mock.calls.filter(([cmd]) => cmd === 'node')
+      expect(nodeCalls).toHaveLength(1)
+      expect((nodeCalls[0]![2] as { stdio?: unknown }).stdio).toBe('pipe')
+    })
+
     it('surfaces both dlx and install errors when fallback install fails', async () => {
       // Make npm install fail; node would not be reached.
       mockSpawn.mockImplementation(async (cmd: string) => {
