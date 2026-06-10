@@ -4,6 +4,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { extractBazelToMaven } from './bazel/extract_bazel_to_maven.mts'
 import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
+import { convertMavenToFacts } from './convert-maven-to-facts.mts'
 import { convertSbtToFacts } from './convert-sbt-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
@@ -110,6 +111,28 @@ export async function generateAutoManifest({
       )
       await convertGradleToMaven(gradleArgs)
     }
+  }
+
+  if (!sockJson?.defaults?.manifest?.maven?.disabled && detected.maven) {
+    // Maven is facts-only: the project's pom.xml is already a static manifest
+    // Socket scans natively, so there is no pom-generation branch here.
+    logger.log('Detected a Maven pom.xml, generating Socket facts...')
+    await convertMavenToFacts({
+      // Note: `mvn` is more likely to be resolved against PATH env.
+      bin: sockJson.defaults?.manifest?.maven?.bin ?? 'mvn',
+      cwd,
+      excludeConfigs: sockJson.defaults?.manifest?.maven?.excludeConfigs ?? '',
+      ignoreUnresolved: Boolean(
+        sockJson.defaults?.manifest?.maven?.ignoreUnresolved,
+      ),
+      includeConfigs: sockJson.defaults?.manifest?.maven?.includeConfigs ?? '',
+      mavenOpts:
+        sockJson.defaults?.manifest?.maven?.mavenOpts
+          ?.split(' ')
+          .map(s => s.trim())
+          .filter(Boolean) ?? [],
+      verbose: Boolean(sockJson.defaults?.manifest?.maven?.verbose),
+    })
   }
 
   if (!sockJson?.defaults?.manifest?.conda?.disabled && detected.conda) {

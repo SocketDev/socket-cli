@@ -70,6 +70,11 @@ export async function setupManifestConfig(
         'Generate a Socket facts file or pom.xml (for Kotlin) through gradle',
     },
     {
+      name: 'Maven'.padEnd(30, ' '),
+      value: 'maven',
+      description: 'Generate a Socket facts file through maven',
+    },
+    {
       name: 'Scala (gradle)'.padEnd(30, ' '),
       value: 'gradle',
       description:
@@ -145,6 +150,13 @@ export async function setupManifestConfig(
         sockJson.defaults.manifest.gradle = {}
       }
       result = await setupGradle(sockJson.defaults.manifest.gradle)
+      break
+    }
+    case 'maven': {
+      if (!sockJson.defaults.manifest.maven) {
+        sockJson.defaults.manifest.maven = {}
+      }
+      result = await setupMaven(sockJson.defaults.manifest.maven)
       break
     }
     case 'sbt': {
@@ -301,6 +313,53 @@ async function setupGradle(
     if (!factsOptions.ok || factsOptions.data.canceled) {
       return factsOptions
     }
+  }
+
+  const verbose = await askForVerboseFlag(config.verbose)
+  if (verbose === undefined) {
+    return canceledByUser()
+  } else if (verbose === 'yes' || verbose === 'no') {
+    config.verbose = verbose === 'yes'
+  } else {
+    delete config.verbose
+  }
+
+  return notCanceled()
+}
+
+async function setupMaven(
+  config: NonNullable<
+    NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['maven']
+  >,
+): Promise<CResult<{ canceled: boolean }>> {
+  const bin = await askForBin(config.bin || 'mvn')
+  if (bin === undefined) {
+    return canceledByUser()
+  } else if (bin) {
+    config.bin = bin
+  } else {
+    delete config.bin
+  }
+
+  const opts = await input({
+    message: '(--maven-opts) Enter maven options to pass through',
+    default: config.mavenOpts || '',
+    required: false,
+    // validate: async string => bool
+  })
+  if (opts === undefined) {
+    return canceledByUser()
+  } else if (opts) {
+    config.mavenOpts = opts
+  } else {
+    delete config.mavenOpts
+  }
+
+  // Maven is facts-only (the project's pom.xml is already a static manifest),
+  // so there is no --facts/--pom prompt; always configure the facts options.
+  const factsOptions = await setupFactsOptions(config)
+  if (!factsOptions.ok || factsOptions.data.canceled) {
+    return factsOptions
   }
 
   const verbose = await askForVerboseFlag(config.verbose)

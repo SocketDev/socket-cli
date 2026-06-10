@@ -72,4 +72,23 @@ describe('detectManifestActions — bazel detector', () => {
     expect(result.gradle).toBe(true)
     expect(result.count).toBe(2)
   })
+
+  it('detects a Maven pom.xml', async () => {
+    touch(cwd, 'pom.xml')
+    const result = await detectManifestActions(null, cwd)
+    expect(result.maven).toBe(true)
+    expect(result.count).toBe(1)
+  })
+
+  it('skips maven when defaults.manifest.maven.disabled is true', async () => {
+    touch(cwd, 'pom.xml')
+    const result = await detectManifestActions(
+      {
+        defaults: { manifest: { maven: { disabled: true } } },
+      } as SocketJson,
+      cwd,
+    )
+    expect(result.maven).toBe(false)
+    expect(result.count).toBe(0)
+  })
 })

@@ -17,6 +17,9 @@ vi.mock('./convert_sbt_to_maven.mts', () => ({
 vi.mock('./convert-gradle-to-facts.mts', () => ({
   convertGradleToFacts: vi.fn(async () => undefined),
 }))
+vi.mock('./convert-maven-to-facts.mts', () => ({
+  convertMavenToFacts: vi.fn(async () => undefined),
+}))
 vi.mock('./convert-sbt-to-facts.mts', () => ({
   convertSbtToFacts: vi.fn(async () => undefined),
 }))
@@ -29,6 +32,7 @@ vi.mock('../../utils/socket-json.mts', () => ({
 
 import { extractBazelToMaven } from './bazel/extract_bazel_to_maven.mts'
 import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
+import { convertMavenToFacts } from './convert-maven-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { generateAutoManifest } from './generate_auto_manifest.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
@@ -41,6 +45,7 @@ const baseDetected = {
   conda: false,
   count: 0,
   gradle: false,
+  maven: false,
   sbt: false,
 }
 
@@ -49,6 +54,7 @@ describe('generateAutoManifest — bazel branch', () => {
     vi.mocked(extractBazelToMaven).mockClear()
     vi.mocked(convertGradleToFacts).mockClear()
     vi.mocked(convertGradleToMaven).mockClear()
+    vi.mocked(convertMavenToFacts).mockClear()
     vi.mocked(readOrDefaultSocketJson).mockReturnValue({} as SocketJson)
     vi.mocked(extractBazelToMaven).mockResolvedValue({
       artifactCount: 1,
@@ -249,6 +255,54 @@ describe('generateAutoManifest — bazel branch', () => {
     })
     expect(convertGradleToMaven).toHaveBeenCalledTimes(1)
     expect(convertGradleToFacts).not.toHaveBeenCalled()
+  })
+
+  it('generates Socket facts for the maven branch when detected', async () => {
+    await generateAutoManifest({
+      cwd: '/tmp/repo',
+      detected: { ...baseDetected, maven: true, count: 1 },
+      outputKind: 'text',
+      verbose: false,
+    })
+    expect(convertMavenToFacts).toHaveBeenCalledTimes(1)
+    expect(convertMavenToFacts).toHaveBeenCalledWith(
+      expect.objectContaining({ bin: 'mvn', cwd: '/tmp/repo' }),
+    )
+  })
+
+  it('does NOT run the maven branch when defaults.manifest.maven.disabled is true', async () => {
+    vi.mocked(readOrDefaultSocketJson).mockReturnValue({
+      defaults: { manifest: { maven: { disabled: true } } },
+    } as SocketJson)
+    await generateAutoManifest({
+      cwd: '/tmp/repo',
+      detected: { ...baseDetected, maven: true, count: 1 },
+      outputKind: 'text',
+      verbose: false,
+    })
+    expect(convertMavenToFacts).not.toHaveBeenCalled()
+  })
+
+  it('plumbs maven bin and opts from socket.json defaults', async () => {
+    vi.mocked(readOrDefaultSocketJson).mockReturnValue({
+      defaults: {
+        manifest: {
+          maven: { bin: '/usr/bin/mvn', mavenOpts: '-o --batch-mode' },
+        },
+      },
+    } as SocketJson)
+    await generateAutoManifest({
+      cwd: '/tmp/repo',
+      detected: { ...baseDetected, maven: true, count: 1 },
+      outputKind: 'text',
+      verbose: false,
+    })
+    expect(convertMavenToFacts).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bin: '/usr/bin/mvn',
+        mavenOpts: ['-o', '--batch-mode'],
+      }),
+    )
   })
 
   it('honors socket.json out override (user-supplied .socket-auto-manifest dir)', async () => {

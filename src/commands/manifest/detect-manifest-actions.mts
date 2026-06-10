@@ -20,6 +20,7 @@ export interface GeneratableManifests {
   count: number
   conda: boolean
   gradle: boolean
+  maven: boolean
   sbt: boolean
 }
 
@@ -35,6 +36,7 @@ export async function detectManifestActions(
     count: 0,
     conda: false,
     gradle: false,
+    maven: false,
     sbt: false,
   }
 
@@ -73,6 +75,17 @@ export async function detectManifestActions(
   } else if (existsSync(path.join(cwd, 'gradlew'))) {
     debugLog('notice', '[DEBUG] - Detected a gradle build file')
     output.gradle = true
+    output.count += 1
+  }
+
+  if (sockJson?.defaults?.manifest?.maven?.disabled) {
+    debugLog(
+      'notice',
+      `[DEBUG] - maven auto-detection is disabled in ${SOCKET_JSON}`,
+    )
+  } else if (existsSync(path.join(cwd, 'pom.xml'))) {
+    debugLog('notice', '[DEBUG] - Detected a Maven pom.xml')
+    output.maven = true
     output.count += 1
   }
 

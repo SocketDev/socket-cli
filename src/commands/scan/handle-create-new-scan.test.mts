@@ -169,6 +169,36 @@ describe('handleCreateNewScan excludePaths', () => {
     expect(mockFetchCreateOrgFullScan).toHaveBeenCalled()
   })
 
+  it('keeps Socket facts files (drops SCA manifests) with --reach-use-only-pregenerated-sboms', async () => {
+    // A pregenerated facts file (e.g. from `socket manifest maven`) at a nested
+    // path plus a plain SCA manifest. With pregenerated-SBOMs-only, the facts
+    // file must survive and the package.json must be dropped.
+    mockGetPackageFilesForScan.mockResolvedValueOnce([
+      'package.json',
+      'sub/.socket.facts.json',
+    ])
+
+    await handleCreateNewScan(
+      createConfig({
+        reach: {
+          ...createConfig().reach,
+          reachUseOnlyPregeneratedSboms: true,
+          runReachabilityAnalysis: true,
+        },
+      }),
+    )
+
+    expect(mockFetchCreateOrgFullScan).toHaveBeenCalledTimes(1)
+    const uploadedPaths = mockFetchCreateOrgFullScan.mock
+      .calls[0]![0] as string[]
+    // The nested pregenerated facts file is retained.
+    expect(uploadedPaths).toContain('sub/.socket.facts.json')
+    // The reachability report (a fresh .socket.facts.json) is appended.
+    expect(uploadedPaths).toContain('.socket.facts.json')
+    // The SCA manifest is filtered out.
+    expect(uploadedPaths).not.toContain('package.json')
+  })
+
   it('aborts before scan creation when auto-manifest generation fails', async () => {
     mockGenerateAutoManifest.mockRejectedValueOnce(
       new Error('Bazel auto-manifest generation failed'),

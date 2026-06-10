@@ -34,9 +34,9 @@ export async function runCoanaManifestFacts({
 }: {
   bin: string
   buildOpts: string[]
-  buildOptsFlag: '--gradle-opts' | '--sbt-opts'
+  buildOptsFlag: '--gradle-opts' | '--maven-opts' | '--sbt-opts'
   cwd: string
-  ecosystem: 'gradle' | 'sbt'
+  ecosystem: 'gradle' | 'maven' | 'sbt'
   excludeConfigs: string
   ignoreUnresolved: boolean
   includeConfigs: string

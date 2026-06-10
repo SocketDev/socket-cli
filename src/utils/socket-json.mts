@@ -68,6 +68,15 @@ export interface SocketJson {
         ignoreUnresolved?: boolean | undefined
         verbose?: boolean | undefined
       }
+      maven?: {
+        disabled?: boolean | undefined
+        bin?: string | undefined
+        excludeConfigs?: string | undefined
+        includeConfigs?: string | undefined
+        ignoreUnresolved?: boolean | undefined
+        mavenOpts?: string | undefined
+        verbose?: boolean | undefined
+      }
       sbt?: {
         disabled?: boolean | undefined
         infile?: string | undefined

@@ -33,10 +33,20 @@ import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 // Keys for CDX and SPDX in the supported files response.
 const CDX_SPDX_KEYS = ['cdx', 'spdx']
 
-function getCdxSpdxPatterns(
+// Globs matching Socket facts files. These are pregenerated SBOMs in their own
+// right (e.g. emitted by `socket manifest maven|gradle|sbt`), so they count
+// alongside CDX/SPDX when `--reach-use-only-pregenerated-sboms` is set. The
+// first pattern matches the canonical dotfile name (`.socket.facts.json`); the
+// second matches any prefixed variant (e.g. `module.socket.facts.json`).
+const SOCKET_FACTS_PATTERNS = [
+  `**/${constants.DOT_SOCKET_DOT_FACTS_JSON}`,
+  `**/*${constants.DOT_SOCKET_DOT_FACTS_JSON}`,
+]
+
+function getPregeneratedSbomPatterns(
   supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
 ): string[] {
-  const patterns: string[] = []
+  const patterns: string[] = [...SOCKET_FACTS_PATTERNS]
   for (const key of CDX_SPDX_KEYS) {
     const supported = supportedFiles[key]
     if (supported) {
@@ -48,11 +58,15 @@ function getCdxSpdxPatterns(
   return patterns
 }
 
-function filterToCdxSpdxOnly(
+// Keeps only pregenerated SBOM files: CDX/SPDX documents and Socket facts
+// files. Used when `--reach-use-only-pregenerated-sboms` is set so the scan is
+// built solely from those, dropping SCA manifests (package.json, pom.xml, ...)
+// that Coana did not analyze.
+function filterToPregeneratedSbomsOnly(
   filepaths: string[],
   supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
 ): string[] {
-  const patterns = getCdxSpdxPatterns(supportedFiles)
+  const patterns = getPregeneratedSbomPatterns(supportedFiles)
   return filepaths.filter(filepath =>
     micromatch.some(filepath, patterns, { nocase: true }),
   )
@@ -256,16 +270,32 @@ export async function handleCreateNewScan({
 
     reachabilityReport = reachResult.data?.reachabilityReport
 
-    // Ensure the .socket.facts.json isn't duplicated in case it happened
-    // to be in the scan folder before the analysis was run.
-    const filteredPackagePaths = packagePaths.filter(
-      p => path.basename(p) !== constants.DOT_SOCKET_DOT_FACTS_JSON,
-    )
+    // The reachability report we just generated is itself a
+    // `.socket.facts.json`; it is appended below, so drop any pre-existing copy
+    // at that exact path to avoid uploading it twice.
+    const resolvedReportPath = reachabilityReport
+      ? path.resolve(cwd, reachabilityReport)
+      : undefined
 
-    // When using pregenerated SBOMs only, filter to CDX/SPDX files.
-    const pathsForScan = reach.reachUseOnlyPregeneratedSboms
-      ? filterToCdxSpdxOnly(filteredPackagePaths, supportedFiles)
-      : filteredPackagePaths
+    let pathsForScan: string[]
+    if (reach.reachUseOnlyPregeneratedSboms) {
+      // Pregenerated-SBOMs-only: build the scan solely from pregenerated SBOM
+      // files (CDX/SPDX and Socket facts files such as those from
+      // `socket manifest maven`). Keep Socket facts files, dropping only the
+      // exact report path we re-add below.
+      pathsForScan = filterToPregeneratedSbomsOnly(
+        packagePaths,
+        supportedFiles,
+      ).filter(
+        p => !resolvedReportPath || path.resolve(cwd, p) !== resolvedReportPath,
+      )
+    } else {
+      // Otherwise keep every discovered manifest, but drop any pre-existing
+      // `.socket.facts.json` since the freshly generated report supersedes it.
+      pathsForScan = packagePaths.filter(
+        p => path.basename(p) !== constants.DOT_SOCKET_DOT_FACTS_JSON,
+      )
+    }
 
     scanPaths = [
       ...pathsForScan,
