@@ -218,6 +218,12 @@ const steps: Array<() => boolean> = [
   // `"private": true`. Uses `npm pack --dry-run --json` as the source of
   // truth — same logic npm itself uses for publish.
   () => run('node', ['scripts/fleet/check/package-files-are-allowlisted.mts']),
+  // No tracked symlink is self-referential or points at an absolute path
+  // inside the repo (a `node_modules → /abs/<repo>/node_modules` self-loop
+  // bricked fresh clones fleet-wide with ELOOP; git kept it tracked despite
+  // .gitignore). Reads the git object's link target so it catches one already
+  // committed regardless of how it was staged.
+  () => run('node', ['scripts/fleet/check/tracked-symlinks-are-safe.mts']),
   // README coverage badge matches the latest coverage run. When
   // coverage/coverage-summary.json (vitest json-summary) exists AND the README
   // carries a populated `![Coverage](…coverage-NN%…)` badge, the percent must

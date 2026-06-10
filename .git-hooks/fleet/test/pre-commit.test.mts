@@ -4,6 +4,11 @@
 // from inside it, and inspect exit code + stderr. Covers the clean
 // path and the secret-leak block path.
 
+// Side-effect import FIRST: strip inherited git discovery vars so this
+// fixture's git ops resolve from its own cwd and can't escape onto the live
+// .git/config (core.bare / test-identity leak). node:test skips vitest setup.
+import '../../_shared/isolate-git-env.mts'
+
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {

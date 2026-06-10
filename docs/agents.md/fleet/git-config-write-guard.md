@@ -55,6 +55,19 @@ Findings are reported at SessionStart (informational, never blocks). `core.bare 
 
 The blast radius is high: a single bad config write knocks out an entire repo for the rest of the session.
 
+## Preventing the leak at the source
+
+The SessionStart auto-unset is a backstop. The leak is prevented at the source by neutralizing the inherited git env in tests, so a fixture's `git init` / `git config` can never escape. The single source of truth is `.git-hooks/_shared/isolate-git-env.mts`:
+
+- vitest loads it via `test/scripts/fleet/setup.mts`, calling `isolateGitEnv({ pinConfigToNull: true })` (strip discovery vars + pin the config files).
+- `node --test` git-fixture suites do NOT load the vitest setup, so each side-effect imports the module at the top: `import '<…>/.git-hooks/_shared/isolate-git-env.mts'`. The default strips the `GIT_*` discovery vars (which is what stops the escape), leaving each fixture free to scope its own `GIT_CONFIG_GLOBAL` per-spawn (the signing-gate tests need that).
+
+`no-unisolated-git-fixture-guard` blocks authoring a git-fixture test without that import (or an equivalent scrub).
+
+## Self-referential symlinks
+
+A related fleet-breaker: a `node_modules` symlink whose target is the repo's own absolute path (a self-loop) committed via a cascade's broad `git add`. git keeps it tracked despite `.gitignore`, and every fresh clone then aborts `pnpm install` with `ELOOP: too many symbolic links`. The `tracked-symlinks-are-safe` check (in `check --all`) reads each tracked symlink's git-object target and fails on a self-referential link, an absolute target inside the repo, or any tracked `node_modules`. A symlink that must be tracked has to be relative and point outside its own subtree.
+
 ## Companion rules
 
 - [`docs/agents.md/fleet/commit-signing.md`](commit-signing.md) — the signing topology this guards

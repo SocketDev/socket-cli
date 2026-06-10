@@ -60,6 +60,20 @@ describe('isIsolated', () => {
       true,
     )
   })
+  it('true with a side-effect import of the shared isolate-git-env helper', () => {
+    assert.equal(
+      isIsolated("import '../../_shared/isolate-git-env.mts'"),
+      true,
+    )
+  })
+  it('true with a named import of isolateGitEnv', () => {
+    assert.equal(
+      isIsolated(
+        "import { isolateGitEnv } from '../../_shared/isolate-git-env.mts'",
+      ),
+      true,
+    )
+  })
   it('false when no isolation present', () => {
     assert.equal(isIsolated("spawnSync('git', ['init', dir])"), false)
   })

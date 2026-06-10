@@ -1108,9 +1108,21 @@ const TEST_RUNNER_REL = 'scripts/fleet/test.mts'
 // Lockfiles, markdown, JSON config, assets don't map to `vitest related`.
 const TESTABLE_FILE_RE = /\.(?:c|m)?[jt]sx?$/
 
+// Hard ceiling for the reminder's `vitest related` run. `vitest related`
+// expands a staged delta to every test whose module graph reaches it; staging
+// a universally-imported file (the vitest setup, a shared lib, the check
+// runner) makes that ~the whole suite, which can run for many minutes and
+// stall the commit (the reminder is non-blocking, but it still WAITS for the
+// child). The timeout bounds it: past the ceiling the child is killed and the
+// reminder skips with a note (fail-open), so a commit is never held hostage by
+// a slow/over-broad related-run. CI / the merge gate still run the full suite.
+const STAGED_TEST_TIMEOUT_MS = 60_000
+
 export const runStagedTestsReminder = (
   stagedFiles: readonly string[],
   repoRoot: string,
+  // Overridable for tests; production uses the 60s ceiling.
+  timeoutMs: number = STAGED_TEST_TIMEOUT_MS,
 ): string | undefined => {
   const anyTestable = stagedFiles.some(f => TESTABLE_FILE_RE.test(f))
   if (!anyTestable) {
@@ -1123,7 +1135,18 @@ export const runStagedTestsReminder = (
   const r = spawnSync(process.execPath, [runnerPath, '--staged', '--quiet'], {
     cwd: repoRoot,
     encoding: 'utf8',
+    timeout: timeoutMs,
+    killSignal: 'SIGKILL',
   })
+  // Timed out → the related-set was too broad to run quickly. Skip with a note
+  // (fail-open) rather than block; the merge gate runs the full suite anyway.
+  // spawnSync sets `signal` (and `error.code === 'ETIMEDOUT'`) on a timeout.
+  if (
+    r.signal === 'SIGKILL' ||
+    (r.error as { code?: string } | undefined)?.code === 'ETIMEDOUT'
+  ) {
+    return undefined
+  }
   // Fail open: a spawn error (missing deps on a fresh checkout, node crash) is
   // not a test failure. Only a clean non-zero exit means staged tests failed.
   if (r.error || typeof r.status !== 'number' || r.status === 0) {

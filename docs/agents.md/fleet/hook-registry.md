@@ -44,7 +44,7 @@ The fleet hooks each cite their own trigger + bypass surface in their `README.md
 - `no-test-in-scripts-guard` — blocks `node:test` suites under `scripts/` (they never run in CI; move to `test/unit/` vitest)
 - `prefer-json-clone-guard` — `JSON.parse(JSON.stringify(x))` over `structuredClone`
 - `no-token-in-dotenv-guard` — blocks raw token writes into `.env*` / `.envrc`
-- `no-unisolated-git-fixture-guard` — blocks a test that spawns `git` against a temp-dir fixture without stripping the inherited `GIT_DIR`/`GIT_WORK_TREE` env + pinning `GIT_CONFIG_GLOBAL`, which under pre-commit leaks onto the live `.git/config` (sets `core.bare`/junk identity, stacks junk commits); bypass `Allow unisolated-git-fixture bypass`
+- `no-unisolated-git-fixture-guard` — blocks a test that spawns `git` against a temp-dir fixture without isolation. Under pre-commit the inherited `GIT_DIR`/`GIT_WORK_TREE` leaks the fixture's writes onto the live `.git/config` (sets `core.bare`/junk identity, stacks junk commits). Satisfy it with the blessed one-liner `import '.git-hooks/_shared/isolate-git-env.mts'` (strips the discovery vars on load; vitest does this via its setup) or by pinning `GIT_CONFIG_GLOBAL` per-spawn. Bypass `Allow unisolated-git-fixture bypass`
 - `node-modules-staging-guard` — blocks staging `node_modules/` into git
 - `parallel-agent-edit-guard` — blocks edits to files another agent owns this session
 - `path-guard` — blocks multi-stage paths constructed outside `paths.mts`

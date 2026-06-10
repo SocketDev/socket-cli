@@ -1,6 +1,6 @@
 ---
 name: managing-worktrees
-description: Manages git worktrees per the fleet's parallel-Claude-sessions rule. Creates new task-worktrees, fans out one worktree per open PR for parallel review, and prunes stale worktrees whose branches were deleted upstream. Use when starting a task that needs an isolated working tree, when reviewing every open PR locally without disturbing the primary checkout, or when cleaning up after merges.
+description: Manages git worktrees per the fleet's parallel-Claude-sessions rule. Creates new task-worktrees, fans out one worktree per open PR for parallel review, and prunes spent worktrees that have nothing left to land — clean trees whose branch was deleted upstream OR is fully merged into the remote default branch. Use when starting a task that needs an isolated working tree, when reviewing every open PR locally without disturbing the primary checkout, or when cleaning up after merges.
 user-invocable: true
 allowed-tools: Bash(git worktree:*), Bash(git branch:*), Bash(git fetch:*), Bash(gh pr list:*), Bash(gh auth status), Bash(ls:*), Read
 model: claude-haiku-4-5
@@ -75,33 +75,53 @@ This is the multi-Claude review setup: each open PR gets its own checkout so a p
 
 ### Mode 3: `prune`
 
-Remove worktrees whose **branch no longer exists** on the remote AND whose **working tree is clean**. Never auto-remove a dirty tree. That may be active work.
+Remove a worktree when its **working tree is clean** AND it has **nothing left to land** — meaning either its **branch no longer exists** on the remote OR its branch is **fully merged into the remote's default branch** (every commit is already an ancestor of `origin/<base>`, so the worktree is spent). Never auto-remove a dirty tree. That may be active work.
+
+**Cleanup if nothing to land.** A merged-but-not-deleted branch is the common leftover after a fast-forward / squash merge: the ref lingers locally, `git ls-remote` still finds nothing newer, and the old "branch gone from remote" check alone would keep it forever. The `--is-ancestor` test catches that case — if the branch tip is already in `origin/<base>`, there is nothing to land, so prune it.
 
 ```bash
+# Default-branch fallback per CLAUDE.md: main → master → assume main.
+BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
+if [ -z "$BASE" ] && git show-ref --verify --quiet refs/remotes/origin/main;   then BASE=main;   fi
+if [ -z "$BASE" ] && git show-ref --verify --quiet refs/remotes/origin/master; then BASE=master; fi
+BASE="${BASE:-main}"
+git fetch origin "$BASE" >/dev/null 2>&1
+
 git worktree list --porcelain | awk '/^worktree /{path=$2} /^branch /{branch=$2; print path"\t"branch}' | while IFS=$'\t' read -r path branch; do
   # Skip the primary checkout
   if [ "$path" = "$(git rev-parse --show-toplevel)" ]; then continue; fi
 
   branch_short="${branch#refs/heads/}"
 
-  # Skip if branch still exists on remote
-  if git ls-remote --exit-code --heads origin "$branch_short" >/dev/null 2>&1; then
-    echo "= keep $path (branch $branch_short still on remote)"
-    continue
-  fi
-
-  # Skip if working tree is dirty
+  # Skip if working tree is dirty — uncommitted work, never auto-remove.
   if [ -n "$(git -C "$path" status --porcelain 2>/dev/null)" ]; then
     echo "! skip $path (dirty; has uncommitted changes; commit first per 'Don't leave the worktree dirty' rule)"
     continue
   fi
 
-  echo "- prune $path (branch $branch_short gone from remote, tree clean)"
-  git worktree remove "$path"
+  # Prunable reason 1: branch no longer on the remote.
+  if ! git ls-remote --exit-code --heads origin "$branch_short" >/dev/null 2>&1; then
+    echo "- prune $path (branch $branch_short gone from remote, tree clean)"
+    git worktree remove "$path"
+    git branch -D "$branch_short" 2>/dev/null
+    continue
+  fi
+
+  # Prunable reason 2: branch is fully merged into origin/$BASE — nothing to
+  # land. The ref still exists on the remote, but every commit is already an
+  # ancestor of the base, so the worktree is spent.
+  if git merge-base --is-ancestor "$branch_short" "origin/$BASE" 2>/dev/null; then
+    echo "- prune $path (branch $branch_short fully merged into origin/$BASE, tree clean)"
+    git worktree remove "$path"
+    git branch -D "$branch_short" 2>/dev/null
+    continue
+  fi
+
+  echo "= keep $path (branch $branch_short still on remote with unlanded commits)"
 done
 ```
 
-The `prune` mode never passes `--force`. If the user wants to discard dirty work, they do it deliberately, outside this skill.
+The `prune` mode never passes `--force`. If the user wants to discard dirty work, they do it deliberately, outside this skill. After pruning, `pnpm i` in the primary checkout — a `git worktree remove` can dangle the main checkout's `node_modules` symlinks (per the _Don't leave the worktree dirty_ rule).
 
 ## Safety contract
 

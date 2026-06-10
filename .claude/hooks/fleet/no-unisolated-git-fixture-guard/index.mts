@@ -71,9 +71,15 @@ export function buildsTempFixture(text: string): boolean {
   return TEMP_FIXTURE_RE.test(text) && GIT_INIT_RE.test(text)
 }
 
-// Isolation present: pins the config files, or strips the inherited GIT_DIR
-// context, or confines all config writes to `--local`.
+// Isolation present: imports the shared isolate-git-env helper (the blessed
+// one-liner), pins the config files, or strips the inherited GIT_DIR context.
 export function isIsolated(text: string): boolean {
+  // The blessed form: a side-effect (or named) import of the shared
+  // `.git-hooks/_shared/isolate-git-env.mts`, which strips the GIT_* discovery
+  // vars on import. Prefer this over re-spelling the scrub in every fixture.
+  if (/isolate-git-env(?:\.mts)?['"]/.test(text)) {
+    return true
+  }
   // Pins the global/system config to /dev/null (or any path) — writes can't
   // reach a real config.
   if (/\bGIT_CONFIG_GLOBAL\b/.test(text)) {
@@ -122,14 +128,12 @@ async function main(): Promise<void> {
         '  the pre-commit hook those vars point at the LIVE repo, so the fixture',
         '  writes onto the real .git/config (core.bare, junk identity) and HEAD.',
         '',
-        '  Fix: isolate every git spawn. Either pass a cleaned env per spawn, or',
-        '  strip the vars in beforeEach (restore in afterEach):',
-        '    for (const v of ["GIT_DIR","GIT_WORK_TREE","GIT_INDEX_FILE",',
-        '         "GIT_COMMON_DIR","GIT_OBJECT_DIRECTORY","GIT_PREFIX",',
-        '         "GIT_CEILING_DIRECTORIES","GIT_NAMESPACE",',
-        '         "GIT_ALTERNATE_OBJECT_DIRECTORIES"]) delete process.env[v]',
-        "    process.env.GIT_CONFIG_GLOBAL = '/dev/null'",
-        "    process.env.GIT_CONFIG_SYSTEM = '/dev/null'",
+        '  Fix (preferred): side-effect import the shared isolation helper as',
+        '  the FIRST import — it strips the GIT_* discovery vars on load:',
+        "    import '<…>/.git-hooks/_shared/isolate-git-env.mts'",
+        '  (vitest already does this via test/scripts/fleet/setup.mts; only',
+        '  node:test git-fixture suites need the explicit import.) For the',
+        '  stronger config-pin form, call isolateGitEnv({ pinConfigToNull: true }).',
         '',
         `  Bypass: type "${BYPASS_PHRASE}" in a new message, then retry.`,
         '',
