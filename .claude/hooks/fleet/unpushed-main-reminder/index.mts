@@ -101,9 +101,14 @@ async function main(): Promise<void> {
   )
 }
 
-main().catch(e => {
-  // Fail open: a reminder bug must not disrupt the turn.
-  process.stderr.write(
-    `unpushed-main-reminder: hook error (continuing): ${(e as Error).message}\n`,
-  )
-})
+// Entrypoint-guarded: run main() only when invoked directly, NOT when the test
+// imports this module for its pure helpers (else main() blocks on stdin at
+// import and the test file never terminates).
+if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+  main().catch(e => {
+    // Fail open: a reminder bug must not disrupt the turn.
+    process.stderr.write(
+      `unpushed-main-reminder: hook error (continuing): ${(e as Error).message}\n`,
+    )
+  })
+}

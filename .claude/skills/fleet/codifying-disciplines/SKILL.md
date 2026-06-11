@@ -2,7 +2,7 @@
 name: codifying-disciplines
 description: Scans a repo for disciplines that exist only in prose, convention, or agent memory but are NOT enforced by executable code, then codifies each into the right surface — a script, a hook, a lint rule, or a CLAUDE.md rule. Runs a Workflow that fans out scanner agents (CLAUDE.md rules with no enforcer, repeated review/PR feedback, build/release steps relying on humans remembering, conventions stated in docs but unchecked), dedups, ranks by blast radius, and for each gap proposes the lowest-friction codification with a concrete diff. "Code is law" — agent memory and prose don't enforce; scripts/hooks/rules do. Use after a session surfaces a recurring discipline, when onboarding a repo, or whenever "we keep having to remember X" comes up.
 user-invocable: true
-allowed-tools: Workflow, Task, Read, Grep, Glob, Write, AskUserQuestion, Bash(git status:*), Bash(git log:*), Bash(git diff:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(cat:*), Bash(wc:*), Bash(head:*), Bash(tail:*)
+allowed-tools: Workflow, Task, Read, Grep, Glob, Write, AskUserQuestion, Bash(git status:*), Bash(git log:*), Bash(git diff:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(cat:*), Bash(wc:*), Bash(head:*), Bash(tail:*), Bash(node scripts/fleet/ai-codify/cli.mts:*), Bash(node scripts/fleet/codify-rule.mts:*), Bash(node scripts/repo/run-hook-tests.mts:*), Bash(node scripts/fleet/check/:*), Bash(node scripts/repo/sync-scaffolding/cli.mts:*)
 model: claude-opus-4-8
 context: fork
 ---
@@ -12,6 +12,10 @@ context: fork
 Find the disciplines a repo *relies on but doesn't enforce*, and turn each into executable law. The premise: **agent memory is per-session and unreliable, and prose is read-when-convenient — neither enforces anything.** A rule only holds if a script, hook, or lint rule makes the wrong move fail (or at least nag) at the moment it happens. This skill scans for the gaps and codifies them.
 
 Especially load-bearing for **builds and release steps**: "remember to rebuild the bundle before committing," "cascade the template after editing it," "run the floor sync after a version bump" — anything a human or agent has to remember is a latent failure. Code is law.
+
+## When to run
+
+Run after a session surfaces a recurring discipline, when onboarding a repo, or whenever "we keep having to remember X" comes up. The **`uncodified-lesson-reminder`** Stop hook is the automatic trigger: when a `feedback`/`project` memory lands with an enforceable shape and no enforcer citation, it nudges you here — that nudge is the cue to run this skill on that memory (pass it as the `--memory` source in Phase 5). Codifying is the second half of _Compound lessons_: the memory captures the *why*; this skill makes the *what* fail in code.
 
 ## Modes
 
@@ -41,9 +45,11 @@ The hard part isn't finding gaps — it's picking the RIGHT surface so the rule 
 3. **Is it a repo-wide structural / state invariant best caught at commit/CI?** (drift, parity, file layout, a cross-file consistency rule) → **Check script** (`scripts/fleet/check/<name>.mts`, wired into `check --all`). Fails the gate; not per-file.
 4. **Is the discipline "remember to run X"?** → **Build-step automation** (`scripts/…`): make the flow run X itself or gate on its output, so it can't be forgotten. Strictly better than a reminder when X can be invoked programmatically.
 5. **Is it a multi-step PROCEDURE a human/agent runs (not a violation to catch)?** → **Skill** (`.claude/skills/fleet/<gerund>/SKILL.md`) + a **command** (`.claude/commands/fleet/<name>.md`) to invoke it. Use when the discipline is "here's how to do the multi-step thing right," not "here's a wrong move to block."
-6. **CLAUDE.md rule** — the human-readable statement. NECESSARY (a reader/agent needs the prose) but NOT sufficient alone: a CLAUDE.md rule with no enforcer from 1–5 is exactly the gap this skill flags. Always pair it with one of the above + its `(`.claude/hooks/…`)` or `socket/<rule>` citation.
+6. **CLAUDE.md rule + `agents.md` doc** — the human-readable statement. NECESSARY (a reader/agent needs the prose) but NOT sufficient alone: a CLAUDE.md rule with no enforcer from 1–5 is exactly the gap this skill flags. Always pair it with one of the above + its `(`.claude/hooks/…`)` or `socket/<rule>` citation. The CLAUDE.md entry is a TERSE one-line bullet under the 40KB whole-file + ≤8-line-per-section caps; all prose goes in a detail doc. Choose the doc scope by the discipline's reach: a **fleet-wide invariant** (applies to every socket-\* repo) → `template/docs/agents.md/fleet/<topic>.md` (cascades out); a **repo-specific** rule → `docs/agents.md/repo/<topic>.md` (this repo only). The `agents-doc` apply surface (Phase 5) routes both through `codify-rule.mts`, which keeps the bullet under the caps; never hand-edit CLAUDE.md for a rule line.
 
 **Combinations are common and encouraged** (defense in depth): a code-shape rule often wants BOTH a lint rule (CI/editor) AND a CLAUDE.md line (the why) AND, for AI-generated code, an edit-time hook — having one doesn't excuse the others. A build step wants automation + a backstop reminder. Pick the combination that makes the wrong move fail at every point it could happen.
+
+**Every codification you land is a future DRY-sweep input.** Before authoring a new hook, check whether its decision logic already lives in a `_shared/` helper (`payload.mts`, `transcript.mts`, `shell-command.mts`, …) — absorb the helper instead of copy-pasting. The `updating-hooks-dry` skill periodically sweeps the hook tree for copy-paste clusters + dead `_shared/` exports; the less it finds, the better you codified. Prefer the shared helper over a fresh copy at authoring time.
 
 ## Tests are mandatory — a codification without a test is not done
 
@@ -104,8 +110,12 @@ Return `{ report, gapCount, byBlastRadius, proposals }`.
 
 ### Phase 5: Apply or report
 
-- **Interactive**: `AskUserQuestion` — which proposals to apply now. For each applied: create the enforcer AND its test together per the relevant fleet rules (new hook needs a CLAUDE.md/registry citation first; new lint rule defaults to `error` + autofix + a `RuleTester` test with `output` assertions; a hook + a CLAUDE.md edit both trigger the **same-turn dogfood cascade** in the wheelhouse). RUN the test before committing — a codification whose test doesn't pass isn't done. Commit each codification (enforcer + test together) separately. Memory is read-only input — never delete or edit it; it can keep describing the *why* alongside the now-enforcing code.
-- **Non-interactive**: save the report to `reports/codifying-disciplines-YYYY-MM-DD.md` (each proposal includes its `testDiff`); apply nothing.
+- **Interactive**: `AskUserQuestion` — which proposals to apply now. Route each applied proposal through the **`ai-codify` orchestrator** rather than hand-authoring — it pins model + effort to the surface (token-spend rule) and enforces the four-flag programmatic-Claude lockdown:
+  - **Enforcer surfaces** (`hook-guard` / `hook-reminder` / `lint-rule` / `check`): `node scripts/fleet/ai-codify/cli.mts --surface <surface> --discipline "<rule>" --incident "<generic case>" [--memory <path>] [--name <kebab>] --apply`. It authors the surface + its mandatory test on the tier-matched model (hook/lint → opus/high, check → sonnet/medium) and runs the surface's own verifier before returning.
+  - **Documentation surface** (`agents-doc` — the terse CLAUDE.md bullet + `docs/agents.md/{fleet,repo}/<topic>.md` detail doc): pass `--surface agents-doc --memory <path>`; ai-codify shells out to `scripts/fleet/codify-rule.mts`, which owns the 40KB CLAUDE.md budget + defer-to-docs split (never hand-edit CLAUDE.md for a rule bullet).
+  - For a **combination** (defense-in-depth), run ai-codify once per surface.
+  After ai-codify returns: RUN the test before committing — a codification whose test doesn't pass isn't done. A hook + a CLAUDE.md edit both trigger the **same-turn dogfood cascade** in the wheelhouse. Commit each codification (enforcer + test together) separately. Memory is read-only input — never delete or edit it; it can keep describing the *why* alongside the now-enforcing code.
+- **Non-interactive**: save the report to `reports/codifying-disciplines-YYYY-MM-DD.md` (each proposal includes its `testDiff` + the exact `ai-codify` invocation that would apply it); apply nothing.
 
 ### Phase 6: Summary
 

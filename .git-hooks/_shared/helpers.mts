@@ -1118,12 +1118,12 @@ const TESTABLE_FILE_RE = /\.(?:c|m)?[jt]sx?$/
 // a slow/over-broad related-run. CI / the merge gate still run the full suite.
 const STAGED_TEST_TIMEOUT_MS = 60_000
 
-export const runStagedTestsReminder = (
+export function runStagedTestsReminder(
   stagedFiles: readonly string[],
   repoRoot: string,
   // Overridable for tests; production uses the 60s ceiling.
   timeoutMs: number = STAGED_TEST_TIMEOUT_MS,
-): string | undefined => {
+): string | undefined {
   const anyTestable = stagedFiles.some(f => TESTABLE_FILE_RE.test(f))
   if (!anyTestable) {
     return undefined
@@ -1132,6 +1132,18 @@ export const runStagedTestsReminder = (
   if (!existsSync(runnerPath)) {
     return undefined
   }
+  // Announce the bound BEFORE the spawn. The run is silent otherwise, so a
+  // commit that is mid-run (especially a backgrounded one) is visually
+  // indistinguishable from a true hang — which invites the wrong reaction
+  // (`pkill -f vitest`, then concluding "it hung"). A visible deadline makes
+  // the budget legible: this line + the skip note below mean an observer can
+  // always tell "still within the 60s budget" from "stuck forever". Seconds,
+  // not ms, so the number reads at a glance.
+  const budgetSeconds = Math.round(timeoutMs / 1000)
+  process.stderr.write(
+    `[staged-tests] running related tests for the staged delta ` +
+      `(<=${budgetSeconds}s budget, non-blocking)...\n`,
+  )
   const r = spawnSync(process.execPath, [runnerPath, '--staged', '--quiet'], {
     cwd: repoRoot,
     encoding: 'utf8',
@@ -1145,6 +1157,14 @@ export const runStagedTestsReminder = (
     r.signal === 'SIGKILL' ||
     (r.error as { code?: string } | undefined)?.code === 'ETIMEDOUT'
   ) {
+    // Emit the promised note: this is a fail-open SKIP at the budget, not a
+    // failure and not a hang. The reaching-the-ceiling case is exactly when an
+    // observer is most tempted to kill the process — say plainly that the
+    // budget already did, so the commit proceeds.
+    process.stderr.write(
+      `[staged-tests] skipped after ${budgetSeconds}s budget — non-blocking; ` +
+        `the merge gate runs the full suite.\n`,
+    )
     return undefined
   }
   // Fail open: a spawn error (missing deps on a fresh checkout, node crash) is

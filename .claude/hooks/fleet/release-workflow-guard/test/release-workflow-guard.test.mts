@@ -922,7 +922,13 @@ describe('release-workflow-guard hook', () => {
       assert.equal(r.code, 2, `Expected 2 but got ${r.code}: ${r.stderr}`)
     })
 
-    it('phrase match is case-sensitive (lowercased phrase does NOT bypass)', async () => {
+    it('phrase match is case-INsensitive (lowercased phrase still bypasses)', async () => {
+      // Fleet-wide policy: bypass phrases are matched through
+      // _shared/transcript.mts normalizeBypassText, which folds case (and
+      // dashes/whitespace). Typing the phrase is the deliberate act; casing
+      // carries no extra signal. So a lowercased `allow workflow-dispatch
+      // bypass: build.yml` consumes the slot exactly like the canonical
+      // mixed-case form. (Words + order are load-bearing, not casing.)
       const { projectDir, cleanup } = await makeWorkflowFixture(
         'build.yml',
         [
@@ -938,7 +944,7 @@ describe('release-workflow-guard hook', () => {
       cleanups.push(cleanup)
       const { transcriptPath, cleanup: cleanupTranscript } =
         await makeTranscript(
-          'allow workflow-dispatch bypass: build.yml — wrong case',
+          'allow workflow-dispatch bypass: build.yml — lowercased',
         )
       cleanups.push(cleanupTranscript)
       const r = await runHook(
@@ -948,7 +954,7 @@ describe('release-workflow-guard hook', () => {
         undefined,
         transcriptPath,
       )
-      assert.equal(r.code, 2, `Expected 2 but got ${r.code}: ${r.stderr}`)
+      assert.equal(r.code, 0, `Expected 0 but got ${r.code}: ${r.stderr}`)
     })
 
     it('paraphrased intent does NOT bypass', async () => {

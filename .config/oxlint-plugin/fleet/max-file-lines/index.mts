@@ -3,23 +3,24 @@
  *   lines and a hard cap of 1000 lines. Past those thresholds, split the file
  *   along its natural seams. Two severities:
  *
- *   - > 500 lines: warning, with the message pointing at the splitting guidance in.
+ *   - > 500 lines (soft band, 501–1000): warning. The file MUST split — there is
+ *     no exemption marker in this band. A top-of-file `max-file-lines:` marker is
+ *     IGNORED here; the warning fires regardless. Split along a natural seam.
+ *   - > 1000 lines (hard cap): error. No autofix — splitting requires judgment
+ *     about where the natural seams are.
  *
- *   > CLAUDE.md.
+ *   The marker exempts ONLY a file past the HARD cap (>1000): the rare genuine
+ *   case where one cohesive unit (a single function that needs the space, a
+ *   generated artifact, an exhaustive table) truly can't split. Form:
+ *   `max-file-lines: <category> — <reason>` — a category word naming WHAT the
+ *   file is (parser, state-machine, table, cli, …) plus a `—`/`-`/`:`-separated
+ *   reason for WHY it can't split. The filler word `legitimate` is NOT a category
+ *   (it was the loophole that let a padded test dodge splitting). Say what the
+ *   file is, not that you deem it acceptable. A soft-band file CANNOT use this
+ *   marker to dodge the cap — the cap forces the split.
  *
- *   - > 1000 lines: error. No autofix — splitting requires judgment about where.
- *
- *   > the. natural seams are. The rule's job is to make the cap visible at every
- *   > commit. Allowed exceptions:
- *
- *   - Files marked at the top with `max-file-lines: <category> — <reason>`: a
- *     category word naming WHAT the file is (parser, state-machine, table, cli,
- *     …) plus a `—`/`-`/`:`-separated reason for WHY it can't split. The filler
- *     word `legitimate` is NOT a category — `max-file-lines: legitimate` does
- *     not exempt (it was the loophole that let a padded test dodge splitting).
- *     Say what the file is, not that you deem it acceptable.
- *   - Generated artifacts — the rule trusts .config/fleet/oxlintrc.json's
- *     ignorePatterns to keep generated files out of scope.
+ *   Generated artifacts: the rule trusts .config/fleet/oxlintrc.json's
+ *   ignorePatterns to keep generated files out of scope.
  */
 
 import type { AstNode, RuleContext } from '../../lib/rule-types.mts'
@@ -72,16 +73,23 @@ const rule = {
           return
         }
 
-        // Bypass detection — scan leading comments only. A bypass
-        // comment buried 600 lines deep doesn't communicate intent at
-        // the file level.
-        const leadingComments = sourceCode
-          .getAllComments()
-          .filter((c: AstNode) => c.loc.start.line <= 5)
-        for (let i = 0, { length } = leadingComments; i < length; i += 1) {
-          const c = leadingComments[i]!
-          if (BYPASS_RE.test(c.value)) {
-            return
+        // The bypass marker is HARD-CAP-ONLY. A file in the soft band
+        // (501–1000) can NEVER exempt itself — it must split. The marker
+        // exempts only a file PAST the hard cap (>1000): the rare genuine
+        // single-function/cohesive-unit case. So a soft-band file falls
+        // straight through to the `soft` report regardless of any marker.
+        if (lines > HARD_CAP) {
+          // Bypass detection — scan leading comments only. A bypass
+          // comment buried 600 lines deep doesn't communicate intent at
+          // the file level.
+          const leadingComments = sourceCode
+            .getAllComments()
+            .filter((c: AstNode) => c.loc.start.line <= 5)
+          for (let i = 0, { length } = leadingComments; i < length; i += 1) {
+            const c = leadingComments[i]!
+            if (BYPASS_RE.test(c.value)) {
+              return
+            }
           }
         }
 

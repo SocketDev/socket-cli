@@ -161,6 +161,11 @@ test('stale-process-sweeper: ignores live-parent test workers', async () => {
     ],
     { stdio: 'ignore', detached: false },
   )
+  // The lib `spawn` resolves a promise on exit and REJECTS when the process
+  // is killed (the `finally` SIGKILLs it). Nothing awaits `fakeWorker`, so
+  // that rejection would surface as an unhandledRejection AFTER this test
+  // ends — which node:test counts as a file-level failure. Swallow it.
+  void fakeWorker.catch(() => undefined)
   // Give the OS a moment to register the child.
   await new Promise(r => setTimeout(r, 100))
   try {

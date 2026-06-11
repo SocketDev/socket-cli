@@ -255,9 +255,14 @@ async function main(): Promise<void> {
   )
 }
 
-main().catch(e => {
-  // Internal-error fail-closed: never block session start. Log to
-  // stderr so a noisy install issue is at least visible.
-  logger.fail(`socket-token-minifier-start hook error: ${String(e)}`)
-  process.exit(0)
-})
+// Entrypoint-guarded: run main() only when invoked directly, NOT when the test
+// imports this module for its pure helpers (else the proxy-reap side effects
+// fire on import inside the node --test runner).
+if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+  main().catch(e => {
+    // Internal-error fail-closed: never block session start. Log to
+    // stderr so a noisy install issue is at least visible.
+    logger.fail(`socket-token-minifier-start hook error: ${String(e)}`)
+    process.exit(0)
+  })
+}

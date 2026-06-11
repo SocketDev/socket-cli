@@ -311,7 +311,7 @@ async function main(): Promise<number> {
       `If you genuinely need to bypass (e.g. emergency hotfix that`,
       `can't wait for cascade), the user must type \`${BYPASS_PHRASE}\``,
       `verbatim in a recent user turn. Reference:`,
-      `docs/agents.md/no-local-fork-canonical.md`,
+      `docs/agents.md/fleet/no-local-fork-canonical.md`,
       ``,
     ].join('\n'),
   )

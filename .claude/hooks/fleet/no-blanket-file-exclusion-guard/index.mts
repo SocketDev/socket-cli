@@ -21,6 +21,16 @@
 // time, and the soft/hard caps fire at every commit. Catching it at
 // Write time means the padded marker never lands in the first place.
 //
+// HARD-CAP-ONLY: the exemption marker exempts a file only past the
+// 1000-line HARD cap (the rare genuine cohesive-unit / generated case).
+// A file in the SOFT band (501–1000) gets NO exemption — it must split,
+// so the `socket/max-file-lines` rule ignores any marker there and reports
+// anyway. This hook can't see the line count from a single Edit's
+// new_string, so it enforces only the shape contract here (a marker that
+// lands must name a real category + reason); the rule enforces the size
+// gate. Splitting is the soft-band answer in every case — the block
+// message says so.
+//
 // Recognized banned shapes (a `max-file-lines:` marker that fails the
 // `<category> — <reason>` contract):
 //   max-file-lines: legitimate                       (self-judgment, no category)
@@ -166,9 +176,13 @@ await withEditGuard((filePath, content) => {
   out.push('not that you deem it acceptable.')
   out.push('')
   out.push(
-    'Better still: the cap nudges you to SPLIT. Prefer splitting along a natural',
+    'And the marker is HARD-CAP-ONLY (>1000 lines): a file in the soft band',
   )
-  out.push('seam over marking the whole file exempt.')
+  out.push(
+    '(501–1000) gets NO exemption — it MUST split. So in almost every case the',
+  )
+  out.push('answer is the same: SPLIT along a natural seam. Reach for the marker only')
+  out.push('for a genuine single cohesive unit past 1000 lines (or a generated file).')
   logger.error(out.join('\n') + '\n')
   process.exitCode = 2
 })

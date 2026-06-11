@@ -103,8 +103,9 @@ export const TIER_MODEL: Readonly<Record<'haiku' | 'opus' | 'sonnet', string>> =
  * job's complexity, so effort tracks it: regex-shaped Haiku rewrites run `low`;
  * caller-chain Sonnet rewrites run `medium`; Opus module splits (the one tier
  * that genuinely reasons over the whole file) run `high`. The lib's
- * `spawnAiAgent` passes this through as the claude `--effort` flag; other agents
- * ignore it. Resolved via `AiEffort` from `@socketsecurity/lib-stable/ai/types`.
+ * `spawnAiAgent` passes this through as the claude `--effort` flag; other
+ * agents ignore it. Resolved via `AiEffort` from
+ * `@socketsecurity/lib-stable/ai/types`.
  */
 export const TIER_EFFORT: Readonly<
   Record<'haiku' | 'opus' | 'sonnet', AiEffort>
@@ -209,7 +210,7 @@ export const RULE_GUIDANCE: Readonly<Record<string, string>> = {
   'socket/prefer-undefined-over-null':
     'In the target file, flip BOTH the value and the surrounding type annotation in lockstep: `let x: string | null = null` → `let x: string | undefined = undefined`. Apply to function-parameter annotations, return-type annotations, generic-parameter constraints, interface / type-alias members. For tight-equality checks in the same file: `x === null` → `x === undefined` (loose `x == null` already covers both — leave loose-equality alone). DO NOT edit other files; if a caller in another file depends on the type, the lint rule will fire there on the next run and a separate AI-fix subprocess will pick it up. Skip the finding if the type is a third-party API contract you cannot change (e.g. a return type from a library).',
   'socket/max-file-lines':
-    'Split the file along its natural seams: one tool/domain/phase per file. Name the new files descriptively (`spawn-cdxgen.mts`, `parse-arguments.mts`). Update import paths in callers. Do not introduce a barrel just to hide the split. If the file is a single legitimate parser/state-machine/table, add a leading `// max-file-lines: legitimate parser` comment instead of splitting.',
+    'Split the file along its natural seams: one tool/domain/phase per file. Name the new files descriptively (`spawn-cdxgen.mts`, `parse-arguments.mts`). Update import paths in callers. Do not introduce a barrel just to hide the split. A file in the soft band (501–1000 lines) MUST split — there is no exemption marker there. The exemption is hard-cap-only (>1000 lines): only when one genuine cohesive unit (a single parser/state-machine/table that truly cannot split, or a generated artifact) exceeds 1000 lines, add a leading max-file-lines comment of the form category-then-reason naming WHAT the file is (never the self-judgment words legitimate/ok/exempt).',
   'socket/no-placeholders':
     'Implement the placeholder. If the work is too large, do NOT delete the marker — leave the file unchanged and explain in your final reply.',
   'socket/no-fetch-prefer-http-request':

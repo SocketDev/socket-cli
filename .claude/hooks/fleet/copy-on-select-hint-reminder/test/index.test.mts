@@ -2,11 +2,11 @@
  * @file Unit tests for copy-on-select-hint-reminder.
  */
 
+import assert from 'node:assert/strict'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import {
   copyHint,
@@ -33,59 +33,62 @@ describe('copy-on-select-hint-reminder', () => {
 
   describe('copyOnSelectDisabled', () => {
     it('is true only when copyOnSelect is explicitly false', () => {
-      expect(copyOnSelectDisabled(writeConfig(false))).toBe(true)
+      assert.strictEqual(copyOnSelectDisabled(writeConfig(false)), true)
     })
 
     it('is false when copyOnSelect is true', () => {
-      expect(copyOnSelectDisabled(writeConfig(true))).toBe(false)
+      assert.strictEqual(copyOnSelectDisabled(writeConfig(true)), false)
     })
 
     it('is false when the config file is absent', () => {
-      expect(copyOnSelectDisabled(path.join(tmpDir, 'nope.json'))).toBe(false)
+      assert.strictEqual(
+        copyOnSelectDisabled(path.join(tmpDir, 'nope.json')),
+        false,
+      )
     })
 
     it('is false on malformed JSON', () => {
       const p = path.join(tmpDir, '.claude.json')
       writeFileSync(p, '{ not valid', 'utf8')
-      expect(copyOnSelectDisabled(p)).toBe(false)
+      assert.strictEqual(copyOnSelectDisabled(p), false)
     })
   })
 
   describe('isMouseReportingTerminal', () => {
     it('recognizes iTerm.app', () => {
-      expect(isMouseReportingTerminal('iTerm.app')).toBe(true)
+      assert.strictEqual(isMouseReportingTerminal('iTerm.app'), true)
     })
 
     it('recognizes Apple_Terminal', () => {
-      expect(isMouseReportingTerminal('Apple_Terminal')).toBe(true)
+      assert.strictEqual(isMouseReportingTerminal('Apple_Terminal'), true)
     })
 
     it('is false for an unknown terminal', () => {
-      expect(isMouseReportingTerminal('some-other-term')).toBe(false)
+      assert.strictEqual(isMouseReportingTerminal('some-other-term'), false)
     })
 
     it('is false for undefined TERM_PROGRAM', () => {
-      expect(isMouseReportingTerminal(undefined)).toBe(false)
+      assert.strictEqual(isMouseReportingTerminal(undefined), false)
     })
   })
 
   describe('copyHint', () => {
     it('returns the Option-drag hint when both conditions hold', () => {
       const hint = copyHint(writeConfig(false), 'iTerm.app')
-      expect(hint).toBeDefined()
-      expect(hint).toContain('Option')
+      assert.notStrictEqual(hint, undefined)
+      assert.ok(hint!.includes('Option'))
     })
 
     it('is undefined when copyOnSelect is on', () => {
-      expect(copyHint(writeConfig(true), 'iTerm.app')).toBeUndefined()
+      assert.strictEqual(copyHint(writeConfig(true), 'iTerm.app'), undefined)
     })
 
     it('is undefined in a non-mouse-reporting terminal', () => {
-      expect(copyHint(writeConfig(false), 'dumb-term')).toBeUndefined()
+      assert.strictEqual(copyHint(writeConfig(false), 'dumb-term'), undefined)
     })
 
     it('is undefined when neither holds', () => {
-      expect(copyHint(writeConfig(true), 'dumb-term')).toBeUndefined()
+      assert.strictEqual(copyHint(writeConfig(true), 'dumb-term'), undefined)
     })
   })
 })

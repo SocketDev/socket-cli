@@ -3,7 +3,7 @@
 PreToolUse Bash hook. Blocks two anti-patterns that share one root cause:
 
 1. **Backgrounding a `git commit`** (or `rebase` / `merge` / `cherry-pick`) via `run_in_background: true`.
-2. **`pkill` / `kill` / `killall` of a `git commit` or `vitest`** process.
+2. **`pkill` / `kill` / `killall` of a `git commit` / `git push`, a `pre-commit` / `pre-push` hook process, or a `vitest` run.** The worker-scoped reap `vitest/dist/workers` is exempt.
 
 ## Why
 
@@ -12,16 +12,17 @@ A `git commit` (and the other three, which also fire the pre-commit chain) runs 
 The failure loop this guard breaks:
 
 - Backgrounding the commit hides the bounded run's completion. The operator checks too early, sees it "still going", and concludes it hung.
-- Then a `pkill` / `kill` of the git-commit (or the vitest it spawned) tears down a mid-pre-commit run. That leaves a stale `.git/index.lock` (index corruption — the next git op fails with "Another git process seems to be running") and leaks vitest worker processes that pile up across attempts.
+- Then a `pkill` / `kill` of the git op (or the vitest it spawned) tears down a mid-hook run. That leaves a stale `.git/index.lock` (index corruption — the next git op fails with "Another git process seems to be running") and leaks vitest worker processes that pile up across attempts.
+- A `git push` has the same shape — its pre-push gate is also bounded. Worse, a **broad** kill pattern (`pkill -f "git push"`, `pkill -f pre-push`) matches the same op in **every sibling checkout**, so it can reap a parallel session's in-flight push in another repo. If a kill is genuinely needed, scope the pattern to a full repo path (`pkill -f "<repo>/.git-hooks/.../pre-push"`) and verify the PID's cwd first (`lsof -a -p <pid> -d cwd -Fn`).
 
-Running the commit in the **foreground** and waiting for the bounded pre-commit avoids the whole loop. CI / the merge gate run the full suite regardless, so nothing is lost by letting the local bounded reminder finish.
+Running the op in the **foreground** and waiting for the bounded hook avoids the whole loop. CI / the merge gate run the full suite regardless, so nothing is lost by letting the local bounded reminder finish.
 
 ## Detection
 
 AST-parsed via `_shared/shell-command.mts` (`findInvocation` / `commandsFor`), never a raw regex on the line:
 
 - `run_in_background === true` **and** the command invokes `git commit` / `git rebase` / `git merge` / `git cherry-pick`.
-- a `pkill` / `kill` / `killall` whose args reference a `git commit` or `vitest` target. A `kill <pid>` of an unrelated process is not matched (no git/vitest token).
+- a `pkill` / `kill` / `killall` whose args reference `git commit` / `git push`, a `pre-commit` / `pre-push` hook process, or a bare `vitest` run. Two non-matches: a `kill <pid>` of an unrelated process (no git/test token), and `pkill -f "vitest/dist/workers"` (the blessed orphan-reap — the hook must not block its own recommended recovery).
 
 ## Bypass
 

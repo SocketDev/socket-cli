@@ -23,7 +23,7 @@
  *      plugin happily and
  *      lints green; this is the only gate that notices. No magic number — the
  *      expected count is derived from the file listing. Pairs with the
- *      edit-time `.claude/hooks/fleet/oxlint-plugin-load-guard/` (defense in
+ *      edit-time `.claude/hooks/fleet/oxlint-plugin-load-reminder/` (defense in
  *      depth). Exit codes: 0 — plugin loads + count matches; 1 — load threw,
  *      empty rules, or count mismatch. **Why:** memory
  *      `project_oxlint_plugin_load_silent_fail` — a bad import in any rule

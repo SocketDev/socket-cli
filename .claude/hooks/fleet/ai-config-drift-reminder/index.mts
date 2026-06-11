@@ -105,9 +105,14 @@ async function main(): Promise<void> {
   process.stderr.write(lines.join('\n'))
 }
 
-main().catch(e => {
-  // Fail open: a reminder bug must not disrupt the turn.
-  process.stderr.write(
-    `ai-config-drift-reminder: hook error (continuing): ${(e as Error).message}\n`,
-  )
-})
+// Entrypoint-guarded: run main() only when invoked directly, NOT when the test
+// imports this module for its pure helpers — otherwise main() blocks reading
+// stdin on import and the test file never terminates.
+if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+  main().catch(e => {
+    // Fail open: a reminder bug must not disrupt the turn.
+    process.stderr.write(
+      `ai-config-drift-reminder: hook error (continuing): ${(e as Error).message}\n`,
+    )
+  })
+}

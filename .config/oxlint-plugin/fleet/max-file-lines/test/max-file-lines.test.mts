@@ -24,18 +24,19 @@ describe('socket/max-file-lines', () => {
         { name: 'small file', code: lines(50) },
         { name: 'just under soft cap', code: lines(499) },
         {
-          // A real structural category + justification exempts the file.
-          name: 'over cap with parser-category marker',
-          code: `/* max-file-lines: parser — recursive-descent grammar, one cohesive table */\n${lines(600)}`,
+          // The marker is HARD-CAP-ONLY: a real category + justification exempts
+          // a file PAST 1000 lines (the rare genuine cohesive-unit case).
+          name: 'past hard cap with parser-category marker',
+          code: `/* max-file-lines: parser — recursive-descent grammar, one cohesive table */\n${lines(1100)}`,
         },
         {
-          name: 'over cap with state-machine marker',
-          code: `/* max-file-lines: state-machine — exhaustive transition table */\n${lines(600)}`,
+          name: 'past hard cap with state-machine marker',
+          code: `/* max-file-lines: state-machine — exhaustive transition table */\n${lines(1100)}`,
         },
         {
           // Categories are open (not a fixed allowlist) — `cli` is fine.
-          name: 'over cap with cli category marker',
-          code: `// max-file-lines: cli — single-command argparse + subcommand flow\n${lines(600)}`,
+          name: 'past hard cap with cli category marker',
+          code: `// max-file-lines: cli — single-command argparse + subcommand flow\n${lines(1100)}`,
         },
       ],
       invalid: [
@@ -50,23 +51,34 @@ describe('socket/max-file-lines', () => {
           errors: [{ messageId: 'hard' }],
         },
         {
-          // Bare `legitimate` (no category) no longer exempts.
-          name: 'bare legitimate marker is NOT a valid exemption',
+          // SOFT-BAND marker no longer exempts: a 501–1000 file MUST split, so a
+          // valid `<category> — <reason>` marker is IGNORED and `soft` fires.
+          name: 'soft-band file with valid marker still reports (hard-cap-only)',
+          code: `/* max-file-lines: parser — recursive-descent grammar */\n${lines(600)}`,
+          errors: [{ messageId: 'soft' }],
+        },
+        {
+          name: 'soft-band state-machine marker still reports',
+          code: `/* max-file-lines: state-machine — exhaustive transition table */\n${lines(600)}`,
+          errors: [{ messageId: 'soft' }],
+        },
+        {
+          // Bare `legitimate` (no category) never exempts, at any size.
+          name: 'bare legitimate marker is NOT a valid exemption (soft band)',
           code: `/* max-file-lines: legitimate — one cohesive module */\n${lines(600)}`,
           errors: [{ messageId: 'soft' }],
         },
         {
-          // `legitimate` is filler, not a category — even with a category word
-          // after it, the marker must lead with the real category.
-          name: 'legitimate-prefix before a category is rejected (filler word)',
-          code: `// max-file-lines: legitimate parser — grammar\n${lines(600)}`,
-          errors: [{ messageId: 'soft' }],
+          // `legitimate` is filler, not a category — even past the hard cap.
+          name: 'legitimate-prefix past hard cap is still rejected (filler word)',
+          code: `// max-file-lines: legitimate parser — grammar\n${lines(1100)}`,
+          errors: [{ messageId: 'hard' }],
         },
         {
-          // A category with no `— reason` separator is rejected.
-          name: 'category with no reason is rejected',
-          code: `/* max-file-lines: parser */\n${lines(600)}`,
-          errors: [{ messageId: 'soft' }],
+          // A category with no `— reason` separator is rejected, even past 1000.
+          name: 'category with no reason is rejected past hard cap',
+          code: `/* max-file-lines: parser */\n${lines(1100)}`,
+          errors: [{ messageId: 'hard' }],
         },
       ],
     })

@@ -1,10 +1,11 @@
+import assert from 'node:assert/strict'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { spawnSync } from 'node:child_process'
 import os from 'node:os'
 import path from 'node:path'
+import { afterEach, beforeEach, describe, test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
-import { afterEach, beforeEach, describe, expect, test } from 'vitest'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const HOOK_PATH = path.join(__dirname, '..', 'index.mts')
@@ -15,10 +16,10 @@ function runHook(
 ): { stderr: string; exitCode: number } {
   const result = spawnSync('node', [HOOK_PATH], {
     input: JSON.stringify(payload),
-    encoding: 'utf8',
+    stdioString: true,
     cwd: options.cwd,
   })
-  return { stderr: result.stderr ?? '', exitCode: result.status ?? -1 }
+  return { stderr: String(result.stderr ?? ''), exitCode: result.status ?? -1 }
 }
 
 describe('uses-sha-verify-guard — workflow / action: uses: pin', () => {
@@ -31,9 +32,9 @@ describe('uses-sha-verify-guard — workflow / action: uses: pin', () => {
           'jobs:\n  job:\n    steps:\n      - uses: actions/checkout@abc123\n',
       },
     })
-    expect(exitCode).toBe(2)
-    expect(stderr).toMatch(/uses-sha-verify-guard/)
-    expect(stderr).toMatch(/truncated SHA/)
+    assert.strictEqual(exitCode, 2)
+    assert.match(stderr, /uses-sha-verify-guard/)
+    assert.match(stderr, /truncated SHA/)
   })
 
   test('blocks workflow `uses:` with version tag', () => {
@@ -44,8 +45,8 @@ describe('uses-sha-verify-guard — workflow / action: uses: pin', () => {
         content: '      - uses: actions/checkout@v4\n',
       },
     })
-    expect(exitCode).toBe(2)
-    expect(stderr).toMatch(/not a SHA pin/)
+    assert.strictEqual(exitCode, 2)
+    assert.match(stderr, /not a SHA pin/)
   })
 
   test('ignores file outside .github/workflows/ + .github/actions/', () => {
@@ -56,7 +57,7 @@ describe('uses-sha-verify-guard — workflow / action: uses: pin', () => {
         content: '      - uses: actions/checkout@v4\n',
       },
     })
-    expect(exitCode).toBe(0)
+    assert.strictEqual(exitCode, 0)
   })
 })
 
@@ -70,9 +71,9 @@ describe('uses-sha-verify-guard — .gitmodules: BOTH header + ref required', ()
           '[submodule "vendor/foo"]\n\tpath = vendor/foo\n\turl = https://github.com/owner/foo.git\n',
       },
     })
-    expect(exitCode).toBe(2)
-    expect(stderr).toMatch(/missing.*sha256:<64hex>/)
-    expect(stderr).toMatch(/missing `ref = <40hex>`/)
+    assert.strictEqual(exitCode, 2)
+    assert.match(stderr, /missing.*sha256:<64hex>/)
+    assert.match(stderr, /missing `ref = <40hex>`/)
   })
 
   test('blocks .gitmodules submodule with header but no ref', () => {
@@ -86,8 +87,8 @@ describe('uses-sha-verify-guard — .gitmodules: BOTH header + ref required', ()
           '\n[submodule "vendor/foo"]\n\tpath = vendor/foo\n\turl = https://github.com/owner/foo.git\n',
       },
     })
-    expect(exitCode).toBe(2)
-    expect(stderr).toMatch(/missing `ref = <40hex>`/)
+    assert.strictEqual(exitCode, 2)
+    assert.match(stderr, /missing `ref = <40hex>`/)
   })
 
   test('blocks .gitmodules header sha256 of wrong length', () => {
@@ -103,8 +104,8 @@ describe('uses-sha-verify-guard — .gitmodules: BOTH header + ref required', ()
           '\n',
       },
     })
-    expect(exitCode).toBe(2)
-    expect(stderr).toMatch(/sha256 must be exactly 64 hex chars/)
+    assert.strictEqual(exitCode, 2)
+    assert.match(stderr, /sha256 must be exactly 64 hex chars/)
   })
 
   test('blocks .gitmodules ref of wrong length', () => {
@@ -118,8 +119,8 @@ describe('uses-sha-verify-guard — .gitmodules: BOTH header + ref required', ()
           '\n[submodule "vendor/foo"]\n\tpath = vendor/foo\n\tref = abc123\n',
       },
     })
-    expect(exitCode).toBe(2)
-    expect(stderr).toMatch(/ref must be exactly 40 hex chars/)
+    assert.strictEqual(exitCode, 2)
+    assert.match(stderr, /ref must be exactly 40 hex chars/)
   })
 })
 
@@ -133,8 +134,8 @@ describe('uses-sha-verify-guard — package.json GitHub URL deps', () => {
           '{"dependencies": {"foo": "git+https://github.com/owner/foo#abc123"}}',
       },
     })
-    expect(exitCode).toBe(2)
-    expect(stderr).toMatch(/truncated SHA/)
+    assert.strictEqual(exitCode, 2)
+    assert.match(stderr, /truncated SHA/)
   })
 
   test('blocks package.json git+https://github.com URL with version tag', () => {
@@ -146,8 +147,8 @@ describe('uses-sha-verify-guard — package.json GitHub URL deps', () => {
           '{"dependencies": {"foo": "git+https://github.com/owner/foo.git#v1.2.3"}}',
       },
     })
-    expect(exitCode).toBe(2)
-    expect(stderr).toMatch(/not a SHA pin/)
+    assert.strictEqual(exitCode, 2)
+    assert.match(stderr, /not a SHA pin/)
   })
 
   test('ignores node_modules/package.json', () => {
@@ -158,7 +159,7 @@ describe('uses-sha-verify-guard — package.json GitHub URL deps', () => {
         content: '{"dependencies": {"x": "git+https://github.com/owner/x#abc"}}',
       },
     })
-    expect(exitCode).toBe(0)
+    assert.strictEqual(exitCode, 0)
   })
 })
 
@@ -168,7 +169,7 @@ describe('uses-sha-verify-guard — Bash surface', () => {
       tool_name: 'Bash',
       tool_input: { command: 'git status' },
     })
-    expect(exitCode).toBe(0)
+    assert.strictEqual(exitCode, 0)
   })
 
   test('passes Bash command that mentions a workflow path but no SHA', () => {
@@ -176,7 +177,7 @@ describe('uses-sha-verify-guard — Bash surface', () => {
       tool_name: 'Bash',
       tool_input: { command: 'cat .github/workflows/ci.yml' },
     })
-    expect(exitCode).toBe(0)
+    assert.strictEqual(exitCode, 0)
   })
 
   describe('with a fixture workflow file in cwd', () => {
@@ -224,10 +225,10 @@ jobs:
         },
         { cwd: fixtureDir },
       )
-      expect(exitCode).toBe(2)
-      expect(stderr).toMatch(/Bash surface/)
-      expect(stderr).toMatch(/not reachable/)
-      expect(stderr).toMatch(/deadbeefde/)
+      assert.strictEqual(exitCode, 2)
+      assert.match(stderr, /Bash surface/)
+      assert.match(stderr, /not reachable/)
+      assert.match(stderr, /deadbeefde/)
     })
 
     test('rejects path-traversal attempt that would escape cwd', () => {
@@ -245,7 +246,7 @@ jobs:
         },
         { cwd: fixtureDir },
       )
-      expect(exitCode).toBe(0)
+      assert.strictEqual(exitCode, 0)
     })
   })
 })

@@ -306,10 +306,19 @@ test('expired token age (>8h) blocks non-auth commands', async () => {
     path.join(fakeHome, '.claude', 'gh-token-issued-at'),
     String(Date.now() - 9 * 60 * 60 * 1000), // 9h ago
   )
+  // The fake gh must FAIL the live `gh api user` self-heal probe — a
+  // stale stamp triggers isTokenFresh() to re-probe the token, and an
+  // exit-0 probe would re-stamp + un-block. To exercise the >8h BLOCK,
+  // the token must be genuinely dead: `gh api …` exits non-zero, while
+  // `gh auth status` still prints the keyring block (exit 0).
   const fakeGh = path.join(tmp, 'gh')
   writeFileSync(
     fakeGh,
-    `#!/bin/sh\nprintf '%s\\n' '${KEYRING_OUTPUT_NO_WORKFLOW.replace(/'/g, "'\\''")}'\n`,
+    [
+      '#!/bin/sh',
+      'if [ "$1" = "api" ]; then exit 1; fi',
+      `printf '%s\\n' '${KEYRING_OUTPUT_NO_WORKFLOW.replace(/'/g, "'\\''")}'`,
+    ].join('\n') + '\n',
   )
   chmodSync(fakeGh, 0o755)
   const child = spawn(process.execPath, [HOOK], {

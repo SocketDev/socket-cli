@@ -79,6 +79,18 @@ const steps: Array<() => boolean> = [
   // 10 such husks accumulated before this gate (2026-06-06). Fails check --all
   // so the next rename sweeps its own leftover.
   () => run('node', ['scripts/fleet/check/hook-dirs-are-not-husks.mts']),
+  // Every exporting hook's main() must run only behind the entrypoint guard
+  // (`if (process.argv[1] && import.meta.url === ...)`). A bare top-level
+  // `main()` / `await withEditGuard(...)` hangs the hook's test on import —
+  // this exact hang hit 15 hooks before the gate. Fails check --all so the
+  // next hook that forgets the guard is caught, not silently hung.
+  () =>
+    run('node', ['scripts/fleet/check/hook-main-is-entrypoint-guarded.mts']),
+  // ADVISORY (never fails): surface `_shared/` hook-helper exports with no
+  // in-repo consumer — dead weight in the cascaded layer / a DRY signal. Can't
+  // hard-gate: some are consumed out-of-repo (user-global dispatch) and removal
+  // is a judgment call. The fleet DRY sweep is plan-only.
+  () => run('node', ['scripts/fleet/check/shared-hook-helpers-are-used.mts']),
   // Error messages are UI (CLAUDE.md "Error messages"): no bare vague-only
   // `throw new Error("invalid")` across the source tree. Commit-time twin of the
   // error-message-quality-reminder Stop hook — shares the classifier so the two
@@ -230,8 +242,7 @@ const steps: Array<() => boolean> = [
   // equal the rounded line-coverage total. Fails open when not checkable (no
   // badge, the `<PCT>` placeholder, or no coverage data — a lint/type CI lane).
   // Pre-bump-wave twin of `make-coverage-badge.mts`; shares lib/coverage-badge.
-  () =>
-    run('node', ['scripts/fleet/check/coverage-badge-is-current.mts']),
+  () => run('node', ['scripts/fleet/check/coverage-badge-is-current.mts']),
   // Reminder/guard duplication gate. The fleet convention: a `-guard` hook
   // BLOCKS, a `-reminder` hook NUDGES — one surface per concern, never both.
   // Errors when a base name has both `<base>-guard` and `<base>-reminder`
@@ -241,6 +252,15 @@ const steps: Array<() => boolean> = [
   () =>
     run('node', [
       'scripts/fleet/check/hooks-have-no-guard-reminder-overlap.mts',
+      '--quiet',
+    ]),
+  // Hook name ⟷ blocking behavior: a `-guard` must BLOCK (exitCode=2 /
+  // exit(2) / return 2 / decision:'block'), a `-reminder` must only NUDGE.
+  // Errors when a `-guard` never blocks (→ should be `-reminder`) or a
+  // `-reminder` blocks (→ should be `-guard`).
+  () =>
+    run('node', [
+      'scripts/fleet/check/hook-names-match-blocking.mts',
       '--quiet',
     ]),
 ]

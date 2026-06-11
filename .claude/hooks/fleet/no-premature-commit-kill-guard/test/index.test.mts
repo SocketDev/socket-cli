@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 
-import { invokesPreCommitGit, killsCommitOrVitest } from '../index.mts'
+import { invokesPreCommitGit, killsGitOpOrTestRun } from '../index.mts'
 
 const HOOK = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -61,17 +61,40 @@ test('invokesPreCommitGit: non-pre-commit git is undefined', () => {
   assert.equal(invokesPreCommitGit('node build.mts'), undefined)
 })
 
-test('killsCommitOrVitest: pkill/kill of vitest or git commit', () => {
-  assert.ok(killsCommitOrVitest('pkill -f vitest'))
-  assert.ok(killsCommitOrVitest('pkill -9 -f "vitest/dist/workers"'))
-  assert.ok(killsCommitOrVitest("pkill -f 'git commit'"))
-  assert.ok(killsCommitOrVitest('killall vitest'))
+test('killsGitOpOrTestRun: pkill/kill of vitest, git commit, or git push', () => {
+  assert.ok(killsGitOpOrTestRun('pkill -f vitest'))
+  assert.ok(killsGitOpOrTestRun("pkill -f 'git commit'"))
+  assert.ok(killsGitOpOrTestRun('killall vitest'))
+  // git push mid-flight is the same teardown shape (and can hit a parallel
+  // session's push) — now caught.
+  assert.ok(killsGitOpOrTestRun("pkill -f 'git push origin HEAD:main'"))
+  assert.equal(killsGitOpOrTestRun("pkill -f 'git push'"), 'pkill … git push')
 })
 
-test('killsCommitOrVitest: unrelated kill is undefined', () => {
-  assert.equal(killsCommitOrVitest('kill 12345'), undefined)
-  assert.equal(killsCommitOrVitest('pkill -f my-dev-server'), undefined)
-  assert.equal(killsCommitOrVitest('git status'), undefined)
+test('killsGitOpOrTestRun: pkill of a pre-commit/pre-push hook process', () => {
+  // `pkill -f "…/pre-push"` targets the gate process directly — the exact
+  // broad pattern that reaped a parallel session's push.
+  assert.equal(
+    killsGitOpOrTestRun('pkill -f "repo/.git-hooks/fleet/pre-push"'),
+    'pkill … pre-push',
+  )
+  assert.equal(killsGitOpOrTestRun('pkill -f pre-commit'), 'pkill … pre-commit')
+})
+
+test('killsGitOpOrTestRun: the worker-scoped reap is EXEMPT (blessed recovery)', () => {
+  // CLAUDE.md documents `pkill -f "vitest/dist/workers"` as the sanctioned
+  // orphan-reap; the hook must not block its own recommended recovery.
+  assert.equal(
+    killsGitOpOrTestRun('pkill -9 -f "vitest/dist/workers"'),
+    undefined,
+  )
+  assert.equal(killsGitOpOrTestRun('pkill -f vitest/dist/workers'), undefined)
+})
+
+test('killsGitOpOrTestRun: unrelated kill is undefined', () => {
+  assert.equal(killsGitOpOrTestRun('kill 12345'), undefined)
+  assert.equal(killsGitOpOrTestRun('pkill -f my-dev-server'), undefined)
+  assert.equal(killsGitOpOrTestRun('git status'), undefined)
 })
 
 // --- end-to-end (spawned hook) ---
@@ -107,6 +130,23 @@ test('blocks pkill of vitest', () => {
 test('blocks pkill of a git commit', () => {
   const { code } = run("pkill -f 'git commit'")
   assert.equal(code, 2)
+})
+
+test('blocks pkill of a git push (cross-checkout footgun)', () => {
+  const { code, stderr } = run("pkill -f 'git push origin HEAD:main'")
+  assert.equal(code, 2)
+  // The message must steer toward a repo-path-scoped, cwd-verified kill.
+  assert.match(stderr, /sibling checkout|repo path|lsof/)
+})
+
+test('blocks pkill of a pre-push hook process', () => {
+  const { code } = run('pkill -f "repo/.git-hooks/fleet/pre-push"')
+  assert.equal(code, 2)
+})
+
+test('allows the worker-scoped reap (blessed recovery)', () => {
+  const { code } = run('pkill -f "vitest/dist/workers"')
+  assert.equal(code, 0)
 })
 
 test('allows kill of an unrelated pid', () => {

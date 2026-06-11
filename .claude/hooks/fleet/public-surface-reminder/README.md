@@ -72,7 +72,7 @@ Always `0`. The hook prints a reminder and steps aside.
 
 ## Sibling hooks
 
-- [`private-name-guard`](../private-name-guard/) — primes on private
+- [`private-name-reminder`](../private-name-reminder/) — primes on private
   repo / project names.
 - [`token-guard`](../token-guard/) — _blocks_ Bash calls that would
   leak literal secrets to stdout. (The blocking sibling, contrasted

@@ -113,4 +113,9 @@ async function main(): Promise<void> {
   })
 }
 
-main()
+// Entrypoint-guarded: run main() only when invoked directly, NOT when the test
+// imports this module for its pure helpers (else main() blocks on stdin at
+// import and the test file never terminates).
+if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+  main()
+}

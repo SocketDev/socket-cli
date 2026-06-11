@@ -6,7 +6,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { findUnbackedClaims } from '../index.mts'
+import { findUnbackedClaims } from '../../_shared/unbacked-claims.mts'
 
 // ── unbacked claim → hit ────────────────────────────────────────
 
