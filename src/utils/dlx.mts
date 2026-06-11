@@ -42,7 +42,10 @@ import { isYarnBerry } from './yarn-version.mts'
 
 import type { ShadowBinOptions, ShadowBinResult } from '../shadow/npm-base.mts'
 import type { CResult } from '../types.mts'
-import type { SpawnExtra } from '@socketsecurity/registry/lib/spawn'
+import type {
+  SpawnExtra,
+  SpawnOptions,
+} from '@socketsecurity/registry/lib/spawn'
 
 const require = createRequire(import.meta.url)
 
@@ -228,7 +231,10 @@ async function spawnCoanaScriptViaNode(
   scriptPath: string,
   args: string[] | readonly string[],
   finalEnv: NodeJS.ProcessEnv,
-  options: { cwd?: string | URL | undefined },
+  options: {
+    cwd?: string | URL | undefined
+    stdio?: SpawnOptions['stdio'] | undefined
+  },
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<CResult<string>> {
   const isBinary = !scriptPath.endsWith('.js') && !scriptPath.endsWith('.mjs')
@@ -237,7 +243,7 @@ async function spawnCoanaScriptViaNode(
   const spawnResult = await spawn(isBinary ? scriptPath : 'node', spawnArgs, {
     cwd: options.cwd,
     env: sanitizeEnvForCoanaSubprocess(finalEnv),
-    stdio: spawnExtra?.['stdio'] || 'inherit',
+    stdio: options.stdio ?? spawnExtra?.['stdio'] ?? 'inherit',
   })
 
   return { ok: true, data: spawnResult.stdout }
@@ -322,7 +328,10 @@ async function spawnCoanaViaNpmInstall(
   args: string[] | readonly string[],
   version: string,
   finalEnv: NodeJS.ProcessEnv,
-  options: { cwd?: string | URL | undefined },
+  options: {
+    cwd?: string | URL | undefined
+    stdio?: SpawnOptions['stdio'] | undefined
+  },
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<CResult<string>> {
   let scriptPath: string
@@ -350,6 +359,43 @@ async function spawnCoanaViaNpmInstall(
   }
 }
 
+type CoanaLauncherMode = 'auto' | 'npm-install' | 'npx'
+
+/**
+ * Resolve how the Coana engine should be launched.
+ *
+ * SOCKET_CLI_COANA_LAUNCHER wins when set:
+ * - 'auto' (default): try dlx first, fall back to `npm install` + `node` on
+ *   launcher-level failures.
+ * - 'npm-install': skip dlx entirely; always `npm install` + `node`.
+ * - 'npx': dlx only; never fall back.
+ * Unrecognized values warn and behave as 'auto'.
+ *
+ * The legacy boolean variables SOCKET_CLI_COANA_FORCE_NPM_INSTALL
+ * ('npm-install') and SOCKET_CLI_COANA_DISABLE_NPM_FALLBACK ('npx') are still
+ * honored when the new variable is unset, but are intentionally undocumented.
+ */
+function getCoanaLauncherMode(): CoanaLauncherMode {
+  const rawMode = process.env['SOCKET_CLI_COANA_LAUNCHER']
+  const mode = rawMode?.trim().toLowerCase()
+  if (mode) {
+    if (mode === 'auto' || mode === 'npm-install' || mode === 'npx') {
+      return mode
+    }
+    logger.warn(
+      `Ignoring unrecognized SOCKET_CLI_COANA_LAUNCHER value "${rawMode}"; expected "auto", "npm-install", or "npx".`,
+    )
+    return 'auto'
+  }
+  if (process.env['SOCKET_CLI_COANA_FORCE_NPM_INSTALL']) {
+    return 'npm-install'
+  }
+  if (process.env['SOCKET_CLI_COANA_DISABLE_NPM_FALLBACK']) {
+    return 'npx'
+  }
+  return 'auto'
+}
+
 /**
  * Helper to spawn coana with dlx.
  * Automatically uses force and silent when version is not pinned exactly.
@@ -360,9 +406,10 @@ async function spawnCoanaViaNpmInstall(
  *
  * If the dlx path fails (e.g. broken `npx` on the host), falls back to
  * `npm install`-ing @coana-tech/cli into a temp directory and invoking it
- * directly via `node`. The fallback can be disabled with
- * SOCKET_CLI_COANA_DISABLE_NPM_FALLBACK or forced as the primary path with
- * SOCKET_CLI_COANA_FORCE_NPM_INSTALL.
+ * directly via `node`. The launcher strategy can be overridden with
+ * SOCKET_CLI_COANA_LAUNCHER: 'auto' (the default) tries dlx with the
+ * npm-install fallback, 'npm-install' skips dlx entirely, and 'npx' never
+ * falls back.
  */
 export async function spawnCoanaDlx(
   args: string[] | readonly string[],
@@ -416,6 +463,18 @@ export async function spawnCoanaDlx(
   const resolvedVersion =
     coanaVersion || constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION
 
+  // `shadowNpmBase` (the dlx launcher) configures the child's stdio from its
+  // `options` arg, NOT from the registry-spawn `extra` arg — the latter only
+  // attaches metadata to the result. Callers that requested streaming via
+  // `spawnExtra` (the 4th arg), e.g. `{ stdio: 'inherit' }` from
+  // `socket manifest gradle`, were therefore silently ignored on this path:
+  // Coana ran piped and its output — including the real failure reason — never
+  // reached the user, leaving only an unhelpful "command failed". Resolve the
+  // requested stdio from either argument and honor it on every launch path:
+  // dlx, local-path, and npm-install (e.g. `socket fix --silence` requests
+  // `stdio: 'pipe'` via options).
+  const requestedStdio = spawnExtra?.['stdio'] ?? getOwn(dlxOptions, 'stdio')
+
   const localCoanaPath = process.env['SOCKET_CLI_COANA_LOCAL_PATH']
   // Use local Coana CLI if path is provided.
   if (localCoanaPath) {
@@ -424,7 +483,7 @@ export async function spawnCoanaDlx(
         localCoanaPath,
         args,
         finalEnv,
-        { cwd: dlxOptions.cwd },
+        { cwd: dlxOptions.cwd, stdio: requestedStdio },
         spawnExtra,
       )
     } catch (e) {
@@ -432,29 +491,19 @@ export async function spawnCoanaDlx(
     }
   }
 
+  const launcherMode = getCoanaLauncherMode()
+
   // Allow forcing the npm-install path for debugging or for environments
   // where dlx is known-broken.
-  if (process.env['SOCKET_CLI_COANA_FORCE_NPM_INSTALL']) {
+  if (launcherMode === 'npm-install') {
     return await spawnCoanaViaNpmInstall(
       args,
       resolvedVersion,
       finalEnv,
-      { cwd: dlxOptions.cwd },
+      { cwd: dlxOptions.cwd, stdio: requestedStdio },
       spawnExtra,
     )
   }
-
-  // `shadowNpmBase` (the dlx launcher) configures the child's stdio from its
-  // `options` arg, NOT from the registry-spawn `extra` arg — the latter only
-  // attaches metadata to the result. Callers that requested streaming via
-  // `spawnExtra` (the 4th arg), e.g. `{ stdio: 'inherit' }` from
-  // `socket manifest gradle`, were therefore silently ignored on this path:
-  // Coana ran piped and its output — including the real failure reason — never
-  // reached the user, leaving only an unhelpful "command failed". Promote the
-  // requested stdio into the dlx options so it is honored here too.
-  // `spawnCoanaScriptViaNode` already reads `spawnExtra.stdio` for the
-  // local-path and npm-install branches, so this aligns all three paths.
-  const requestedStdio = spawnExtra?.['stdio'] ?? getOwn(dlxOptions, 'stdio')
 
   try {
     // Use npm/dlx version.
@@ -490,7 +539,7 @@ export async function spawnCoanaDlx(
   } catch (e) {
     const dlxError = buildDlxErrorResult(e)
 
-    if (process.env['SOCKET_CLI_COANA_DISABLE_NPM_FALLBACK']) {
+    if (launcherMode === 'npx') {
       return dlxError
     }
 
@@ -509,7 +558,7 @@ export async function spawnCoanaDlx(
       args,
       resolvedVersion,
       finalEnv,
-      { cwd: dlxOptions.cwd },
+      { cwd: dlxOptions.cwd, stdio: requestedStdio },
       spawnExtra,
     )
     if (fallbackResult.ok) {

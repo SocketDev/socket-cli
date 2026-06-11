@@ -224,6 +224,7 @@ describe('utils/dlx', () => {
     beforeEach(async () => {
       delete process.env['SOCKET_CLI_COANA_FORCE_NPM_INSTALL']
       delete process.env['SOCKET_CLI_COANA_DISABLE_NPM_FALLBACK']
+      delete process.env['SOCKET_CLI_COANA_LAUNCHER']
       delete process.env['SOCKET_CLI_COANA_LOCAL_PATH']
 
       installRoot = await fs.mkdtemp(
@@ -296,6 +297,7 @@ describe('utils/dlx', () => {
       mockSpawn.mockReset()
       delete process.env['SOCKET_CLI_COANA_FORCE_NPM_INSTALL']
       delete process.env['SOCKET_CLI_COANA_DISABLE_NPM_FALLBACK']
+      delete process.env['SOCKET_CLI_COANA_LAUNCHER']
       await fs.rm(installRoot, { recursive: true, force: true })
     })
 
@@ -381,6 +383,99 @@ describe('utils/dlx', () => {
         ([cmd, args]) => cmd === 'npm' && (args as string[])[0] === 'install',
       )
       expect(npmInstallCalls).toHaveLength(1)
+    })
+
+    it('skips fallback when SOCKET_CLI_COANA_LAUNCHER is npx', async () => {
+      process.env['SOCKET_CLI_COANA_LAUNCHER'] = 'npx'
+
+      const result = await spawnCoanaDlx(['run', '.'], 'acme', {
+        coanaVersion: nextVersion(),
+      })
+
+      expect(result.ok).toBe(false)
+      // No npm install was attempted.
+      const npmInstallCalls = mockSpawn.mock.calls.filter(
+        ([cmd, args]) => cmd === 'npm' && (args as string[])[0] === 'install',
+      )
+      expect(npmInstallCalls).toHaveLength(0)
+    })
+
+    it('skips dlx and goes straight to install when SOCKET_CLI_COANA_LAUNCHER is npm-install', async () => {
+      process.env['SOCKET_CLI_COANA_LAUNCHER'] = 'npm-install'
+
+      const result = await spawnCoanaDlx(['run', '.'], 'acme', {
+        coanaVersion: nextVersion(),
+      })
+
+      expect(result.ok).toBe(true)
+      // dlx (any shadow bin) was never invoked.
+      expect(mockDlxBin).not.toHaveBeenCalled()
+      // npm install ran.
+      const npmInstallCalls = mockSpawn.mock.calls.filter(
+        ([cmd, args]) => cmd === 'npm' && (args as string[])[0] === 'install',
+      )
+      expect(npmInstallCalls).toHaveLength(1)
+    })
+
+    it('prefers SOCKET_CLI_COANA_LAUNCHER over the legacy variables', async () => {
+      process.env['SOCKET_CLI_COANA_LAUNCHER'] = 'auto'
+      process.env['SOCKET_CLI_COANA_FORCE_NPM_INSTALL'] = '1'
+      process.env['SOCKET_CLI_COANA_DISABLE_NPM_FALLBACK'] = '1'
+
+      const result = await spawnCoanaDlx(['run', '.'], 'acme', {
+        coanaVersion: nextVersion(),
+      })
+
+      // The legacy variables are ignored: dlx is still attempted (not forced
+      // to npm install) and the fallback still runs (not disabled).
+      expect(result.ok).toBe(true)
+      expect(mockDlxBin).toHaveBeenCalledTimes(1)
+      const npmInstallCalls = mockSpawn.mock.calls.filter(
+        ([cmd, args]) => cmd === 'npm' && (args as string[])[0] === 'install',
+      )
+      expect(npmInstallCalls).toHaveLength(1)
+    })
+
+    it('treats an unrecognized SOCKET_CLI_COANA_LAUNCHER value as auto', async () => {
+      process.env['SOCKET_CLI_COANA_LAUNCHER'] = 'bogus'
+
+      const result = await spawnCoanaDlx(['run', '.'], 'acme', {
+        coanaVersion: nextVersion(),
+      })
+
+      // Default behavior: dlx attempted, then the npm-install fallback.
+      expect(result.ok).toBe(true)
+      expect(mockDlxBin).toHaveBeenCalledTimes(1)
+      const npmInstallCalls = mockSpawn.mock.calls.filter(
+        ([cmd, args]) => cmd === 'npm' && (args as string[])[0] === 'install',
+      )
+      expect(npmInstallCalls).toHaveLength(1)
+    })
+
+    it('honors options.stdio on the npm-install path', async () => {
+      process.env['SOCKET_CLI_COANA_LAUNCHER'] = 'npm-install'
+
+      const result = await spawnCoanaDlx(['run', '.'], 'acme', {
+        coanaVersion: nextVersion(),
+        stdio: 'pipe',
+      })
+
+      expect(result.ok).toBe(true)
+      const nodeCalls = mockSpawn.mock.calls.filter(([cmd]) => cmd === 'node')
+      expect(nodeCalls).toHaveLength(1)
+      expect((nodeCalls[0]![2] as { stdio?: unknown }).stdio).toBe('pipe')
+    })
+
+    it('honors options.stdio in the auto-mode npm-install fallback', async () => {
+      const result = await spawnCoanaDlx(['run', '.'], 'acme', {
+        coanaVersion: nextVersion(),
+        stdio: 'pipe',
+      })
+
+      expect(result.ok).toBe(true)
+      const nodeCalls = mockSpawn.mock.calls.filter(([cmd]) => cmd === 'node')
+      expect(nodeCalls).toHaveLength(1)
+      expect((nodeCalls[0]![2] as { stdio?: unknown }).stdio).toBe('pipe')
     })
 
     it('surfaces both dlx and install errors when fallback install fails', async () => {
@@ -577,6 +672,7 @@ describe('utils/dlx', () => {
     beforeEach(() => {
       delete process.env['SOCKET_CLI_COANA_FORCE_NPM_INSTALL']
       delete process.env['SOCKET_CLI_COANA_DISABLE_NPM_FALLBACK']
+      delete process.env['SOCKET_CLI_COANA_LAUNCHER']
       delete process.env['SOCKET_CLI_COANA_LOCAL_PATH']
 
       // The dlx launcher succeeds by default. spawnDlx picks the shadow bin by

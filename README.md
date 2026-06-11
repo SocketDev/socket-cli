@@ -110,6 +110,7 @@ npm exec socket
 - `SOCKET_CLI_API_BASE_URL` - API base URL (default: `https://api.socket.dev/v0/`)
 - `SOCKET_CLI_API_PROXY` - Proxy for API requests (aliases: `HTTPS_PROXY`, `https_proxy`, `HTTP_PROXY`, `http_proxy`)
 - `SOCKET_CLI_API_TIMEOUT` - API request timeout in milliseconds
+- `SOCKET_CLI_COANA_LAUNCHER` - How the reachability engine (`@coana-tech/cli`) is launched: `auto` (default; try `npx`, fall back to `npm install` + `node` if the launcher fails), `npx` (never fall back), or `npm-install` (skip `npx` entirely)
 - `SOCKET_CLI_DEBUG` - Enable debug logging
 - `DEBUG` - Enable [`debug`](https://socket.dev/npm/package/debug) package logging
 
