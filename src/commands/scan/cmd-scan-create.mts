@@ -13,6 +13,7 @@ import { suggestTarget } from './suggest_target.mts'
 import { validateReachabilityTarget } from './validate-reachability-target.mts'
 import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
+import { buildAutoManifestConfig } from '../../utils/auto-manifest-config.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
@@ -622,6 +623,15 @@ async function run(
     pendingHead: Boolean(pendingHead),
     pullRequest: Number(pullRequest),
     reach: {
+      // Build-tool config for the reach-time resolution, mapped from socket.json
+      // (per-ecosystem). Best-effort on plain --reach; under --auto-manifest the
+      // config carries top-level failOnBuildToolError=true (fail-closed). Only
+      // built when reachability runs.
+      autoManifestConfig: reach
+        ? buildAutoManifestConfig(sockJson, {
+            autoManifest: Boolean(autoManifest),
+          })
+        : undefined,
       excludePaths,
       reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
       reachAnalysisTimeout: Number(reachAnalysisTimeout),
