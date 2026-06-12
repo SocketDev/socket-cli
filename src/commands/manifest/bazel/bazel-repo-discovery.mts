@@ -86,6 +86,106 @@ const SHOW_EXT_SECTION_HEADER_RE =
 const FETCHED_HUB_BULLET_RE =
   /^ {2}- (?<name>\S+) \(imported by (?<importers>[^)]+)\)\s*$/
 
+// `bazel mod show_extension @rules_jvm_external//:extensions.bzl%maven`
+// exits non-zero in two very different situations, and conflating them is
+// dangerous for a security tool:
+//
+//   (a) `@rules_jvm_external` simply isn't in the root module's resolved
+//       dependency graph. This is the COMMON case for any bzlmod repo that
+//       doesn't use rules_jvm_external (no Maven at all). Bazel's ModCommand
+//       resolves the extension argument up front via
+//       `ExtensionArg.resolveToExtensionId`, which throws
+//       `InvalidArgumentException` and exits non-zero before evaluating any
+//       Starlark. This is NOT a failure to analyze; it is a positive,
+//       authoritative "there is no maven extension here". It must map to
+//       `not-defined` so the workspace cleanly contributes no Maven.
+//
+//   (b) The module graph genuinely fails to evaluate: a Starlark eval error,
+//       an unbound name (e.g. a MODULE.bazel referencing `PYTHON_VERSION` /
+//       `pip` before definition), a syntax error, or the bazel binary itself
+//       being missing/spawn-failed (normalized to code -1). Here we have NO
+//       evidence about whether a maven extension exists, so it must map to
+//       `indeterminate` and the run can never be reported complete.
+//
+// We classify by stderr shape. The exact wording differs across Bazel
+// versions; the regex families below are intentionally broad and SHOULD be
+// confirmed against live `bazel mod show_extension` output.
+
+// Family (a): the extension / module is not resolvable in the dependency
+// graph — an argument-resolution error, not an evaluation failure. These all
+// mean "rules_jvm_external (and thus the maven extension) is not present",
+// i.e. legitimately not-defined.
+const SHOW_EXT_NOT_IN_GRAPH_STDERR_RE =
+  /(?:in extension argument|extension argument)?.*(?:not (?:found|resolvable|defined)|no such (?:module|repo(?:sitory)?)|cannot be resolved|is not (?:a )?(?:visible |known )?(?:module|repo(?:sitory)?|extension)|not in the (?:dependency )?graph|unknown (?:module|extension)|does not (?:exist|use the extension))/i
+// Bazel's canonical phrasing when the named module backing the extension
+// (here `rules_jvm_external`) isn't a dependency of the root module.
+const SHOW_EXT_MODULE_NOT_DEP_STDERR_RE =
+  /(?:rules_jvm_external|module ['"`]?[A-Za-z0-9._+~-]+['"`]?).*(?:is not (?:a )?(?:direct )?dep(?:endenc(?:y|ies))?|not (?:a )?dependency)/i
+
+// Family (b): a genuine evaluation / load failure of the module graph. These
+// mean we could not determine whether a maven extension exists, so the result
+// is indeterminate, never a clean not-defined.
+const SHOW_EXT_EVAL_FAILURE_STDERR_RE =
+  /(?:error (?:evaluating|loading|computing)|failed to (?:evaluate|load)|evaluation (?:of|failed)|cannot load|syntax error|name ['"`]?[A-Za-z0-9_]+['"`]? is not defined|variable ['"`]?[A-Za-z0-9_]+['"`]? (?:is|was) (?:referenced|not)|unbound|invalid MODULE\.bazel|MODULE\.bazel.*(?:error|failed)|Traceback|Error in)/i
+
+// Outcome of running `bazel mod show_extension` for the maven extension,
+// distinct from the per-repo `ProbeStatus`:
+//   `not-defined`   — authoritative: no maven extension in this workspace
+//                     (clean run with zero kept hubs, OR rules_jvm_external is
+//                     not in the dependency graph).
+//   `indeterminate` — enumeration could not be performed (eval/load failure,
+//                     binary missing); the run must not be reported complete.
+//   `defined`       — the report parsed and yielded one or more root hubs;
+//                     the caller uses the parsed hub list directly.
+export type ShowExtensionStatus = 'defined' | 'indeterminate' | 'not-defined'
+
+// Classify a `bazel mod show_extension` result. `keptRootHubCount` is the
+// number of root-imported hubs the caller parsed from a code-0 run (see
+// `parseShowExtensionOutput` + the `<root>` importer filter); it disambiguates
+// the code-0 cases without re-parsing here.
+//
+// IMPORTANT (security correctness): a non-zero exit is the DEFAULT outcome for
+// every bzlmod repo that does not use rules_jvm_external, so we must NOT treat
+// non-zero as indeterminate by default. We only escalate to `indeterminate`
+// when stderr looks like a real evaluation/load failure; an argument/resolution
+// error about the missing extension is the legitimate no-Maven case.
+export function classifyShowExtensionResult(
+  result: ProbeResult,
+  keptRootHubCount: number,
+): ShowExtensionStatus {
+  if (result.code === 0) {
+    // Clean run. Either it enumerated root hubs (`defined`) or it ran fine and
+    // found no maven extension for the root (`not-defined`).
+    return keptRootHubCount > 0 ? 'defined' : 'not-defined'
+  }
+  // A spawn failure / missing binary is normalized to code -1 upstream; there
+  // is no usable stderr classification and we definitely could not enumerate.
+  if (result.code === -1) {
+    return 'indeterminate'
+  }
+  const { stderr } = result
+  // A genuine module-graph evaluation/load failure wins: we cannot conclude
+  // anything about maven presence, so surface it as indeterminate.
+  if (SHOW_EXT_EVAL_FAILURE_STDERR_RE.test(stderr)) {
+    return 'indeterminate'
+  }
+  // The maven extension / rules_jvm_external is simply not in the dependency
+  // graph: an argument-resolution error. This is the common no-Maven bzlmod
+  // repo and is authoritatively not-defined.
+  if (
+    SHOW_EXT_NOT_IN_GRAPH_STDERR_RE.test(stderr) ||
+    SHOW_EXT_MODULE_NOT_DEP_STDERR_RE.test(stderr)
+  ) {
+    return 'not-defined'
+  }
+  // Truly unrecognized non-zero exit. Bias toward not-defined: the dominant
+  // real-world non-zero case is "extension not in the graph", and a missing
+  // bullet here would otherwise abort the user's entire scan. We only reach
+  // `indeterminate` above when stderr positively looks like an eval/load
+  // failure, which is the case the flag exists for.
+  return 'not-defined'
+}
+
 // Pure parser for `bazel mod show_extension @rules_jvm_external//:extensions.bzl%maven`
 // stdout. Returns the hub repos listed under `Fetched repositories:` — i.e.
 // items annotated with `(imported by ...)` — each carrying the set of modules

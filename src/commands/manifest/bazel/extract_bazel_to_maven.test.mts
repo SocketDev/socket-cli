@@ -986,15 +986,19 @@ Fetched repositories:
     expect(skipped).toContain('maven_dev')
   })
 
-  it('flags partial (never complete) when show_extension fails to execute but a probed hub extracts', async () => {
-    // show_extension errored (non-zero exit): authoritative hub enumeration is
-    // indeterminate, so custom-named hubs may have been missed. The
+  it('flags partial (never complete) when show_extension fails to evaluate the module graph but a probed hub extracts', async () => {
+    // show_extension hit a genuine module-graph EVALUATION failure (not merely
+    // "rules_jvm_external isn't a dependency"): authoritative hub enumeration
+    // is indeterminate, so custom-named hubs may have been missed. The
     // conventional probe still finds @maven and extracts it, but the run must
     // be partial — never silently complete.
+    // NOTE: exact bazel stderr wording for an eval failure should be confirmed
+    // against a live bazel run (sandbox blocks bazel here).
     vi.mocked(runBazelModShowMavenExtension).mockResolvedValue({
-      code: 37,
+      code: 1,
       stdout: '',
-      stderr: 'ERROR: bazel mod show_extension failed to run\n',
+      stderr:
+        "ERROR: Error evaluating MODULE.bazel: name 'PYTHON_VERSION' is not defined\n",
     })
     vi.mocked(buildMavenProbeFor).mockReturnValue(async (name: string) => {
       if (name === 'maven') {
@@ -1077,14 +1081,60 @@ Fetched repositories:
     expect(hubStates).not.toContain('indeterminate')
   })
 
-  it('hard-fails (never complete) when show_extension fails to execute and nothing extracts', async () => {
-    // Enumeration failed and no conventional hub probes populated: nothing
-    // analyzable was produced, but the indeterminate enumeration means this is
-    // NOT a clean "no Maven here" — it must be a hard failure, never complete.
+  it('reports noEcosystem (never hard-fails) when show_extension exits non-zero on a no-Maven bzlmod repo and nothing extracts', async () => {
+    // `bazel mod show_extension @rules_jvm_external//:extensions.bzl%maven`
+    // exits non-zero on EVERY bzlmod repo that doesn't depend on
+    // rules_jvm_external — its argument resolution throws before any Starlark
+    // runs. This generic non-zero exit (no eval-failure signature) is the
+    // common no-Maven case, NOT a failed enumeration. With no probed hub
+    // populating, the run is a clean noEcosystem — it must NOT hard-fail, which
+    // would abort the user's entire `scan create --auto-manifest`.
+    // NOTE: exact bazel stderr wording should be confirmed against a live bazel
+    // run (sandbox blocks bazel here).
     vi.mocked(runBazelModShowMavenExtension).mockResolvedValue({
-      code: 37,
+      code: 1,
       stdout: '',
-      stderr: 'ERROR: bazel mod show_extension failed to run\n',
+      stderr:
+        "ERROR: In extension argument '@rules_jvm_external//:extensions.bzl%maven': module 'rules_jvm_external' is not a dependency of the root module\n",
+    })
+    vi.mocked(buildMavenProbeFor).mockReturnValue(async () => ({
+      code: 1,
+      stdout: '',
+      stderr: "ERROR: No repository visible as '@x' from main repository\n",
+    }))
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      outLayout: 'flat',
+      verbose: false,
+    })
+    expect(result.status).toBe('noEcosystem')
+    expect(result.complete).toBe(false)
+    // No hub was flagged indeterminate: the non-zero exit was correctly read as
+    // "no maven extension here", not a failed enumeration.
+    const hubStates = result.workspaceOutcomes.flatMap(w =>
+      w.hubs.map(h => h.state),
+    )
+    expect(hubStates).not.toContain('indeterminate')
+  })
+
+  it('hard-fails (never complete) when show_extension fails to evaluate the module graph and nothing extracts', async () => {
+    // A genuine module-graph evaluation failure (Starlark eval error / unbound
+    // name) leaves hub enumeration indeterminate. With no probed hub
+    // populating, nothing analyzable was produced — and because enumeration was
+    // indeterminate this is NOT a clean "no Maven here", so it must be a hard
+    // failure, never complete and never silently noEcosystem.
+    // NOTE: exact bazel stderr wording should be confirmed against a live bazel
+    // run (sandbox blocks bazel here).
+    vi.mocked(runBazelModShowMavenExtension).mockResolvedValue({
+      code: 1,
+      stdout: '',
+      stderr:
+        "ERROR: Error evaluating MODULE.bazel: name 'pip' is not defined\n",
     })
     vi.mocked(buildMavenProbeFor).mockReturnValue(async () => ({
       code: 1,
@@ -1103,6 +1153,10 @@ Fetched repositories:
     })
     expect(result.status).toBe('hardFailure')
     expect(result.complete).toBe(false)
+    const hubStates = result.workspaceOutcomes.flatMap(w =>
+      w.hubs.map(h => h.state),
+    )
+    expect(hubStates).toContain('indeterminate')
   })
 
   it('never reports complete when one workspace fails to load while another extracts', async () => {

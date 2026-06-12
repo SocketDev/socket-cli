@@ -23,6 +23,7 @@ import {
 import {
   CONVENTIONAL_MAVEN_REPO_NAMES,
   ROOT_MODULE_IMPORTER,
+  classifyShowExtensionResult,
   parseShowExtensionOutput,
   probeCandidate,
 } from './bazel-repo-discovery.mts'
@@ -500,11 +501,15 @@ type DiscoverResult = {
   // a hub, so the run can never be reported complete.
   indeterminateProbes: string[]
   // True when authoritative hub enumeration could not be performed: under
-  // Bzlmod, `bazel mod show_extension` FAILED TO EXECUTE (non-zero exit). That
-  // is NOT the legitimate "ran fine, no maven extension defined" case (which
-  // is a clean code-0 with zero kept hubs) — it means we may have missed
-  // custom-named hubs the conventional-name probe cannot find, so the run can
-  // never be reported complete.
+  // Bzlmod, `bazel mod show_extension` failed in a way that signals the module
+  // graph itself could not be evaluated (Starlark eval error, unbound name,
+  // syntax error, or the binary being missing). That is distinct from BOTH a
+  // clean code-0 run with zero kept hubs AND a non-zero exit that merely means
+  // rules_jvm_external isn't in the dependency graph — those are legitimate
+  // "no maven extension here" outcomes (the common no-Maven bzlmod repo) and
+  // must NOT flip the run to indeterminate. Only a genuine evaluation failure
+  // means we may have missed custom-named hubs, so the run can never be
+  // reported complete. See `classifyShowExtensionResult`.
   discoveryIndeterminate: boolean
 }
 
@@ -520,15 +525,20 @@ async function discoverCandidatesForWorkspace(
   let discoveryIndeterminate = false
   if (mode.bzlmod) {
     const extResult = await runBazelModShowMavenExtension(queryOpts)
-    if (extResult.code === 0) {
-      // The maven extension generates a hub for EVERY module that uses it —
-      // the root's own `maven.install` hub(s) plus the rulesets' internal
-      // hubs (rules_jvm_external_deps, stardoc_maven, …). Keep only hubs
-      // imported by <root>; the rest are build-tooling, not the user's SBOM.
-      const entries = parseShowExtensionOutput(extResult.stdout)
-      const kept = entries.filter(e =>
-        e.importers.includes(ROOT_MODULE_IMPORTER),
-      )
+    // The maven extension generates a hub for EVERY module that uses it — the
+    // root's own `maven.install` hub(s) plus the rulesets' internal hubs
+    // (rules_jvm_external_deps, stardoc_maven, …). Keep only hubs imported by
+    // <root>; the rest are build-tooling, not the user's SBOM. On a non-zero
+    // exit the output is empty, so `kept` is naturally empty too.
+    const entries = parseShowExtensionOutput(extResult.stdout)
+    const kept = entries.filter(e => e.importers.includes(ROOT_MODULE_IMPORTER))
+    // Classify the run rather than treating ANY non-zero exit as a failure:
+    // `bazel mod show_extension` exits non-zero on every bzlmod repo that
+    // doesn't depend on rules_jvm_external (its argument resolution throws
+    // before any Starlark runs), so a blanket non-zero=indeterminate would
+    // wrongly flag the common no-Maven repo and abort the user's whole scan.
+    const showExtStatus = classifyShowExtensionResult(extResult, kept.length)
+    if (showExtStatus === 'defined') {
       candidates.push(...kept.map(e => e.name))
       // Gate the probe fallback on the KEPT count, not the raw parse: a
       // report listing only transitive ruleset hubs (all filtered out) must
@@ -548,19 +558,27 @@ async function discoverCandidatesForWorkspace(
           }
         }
       }
-    } else {
-      // show_extension FAILED TO EXECUTE (non-zero exit). This is distinct
-      // from a clean run that found no maven extension (code 0, zero kept
-      // hubs): a failed enumeration means custom-named hubs may exist that the
-      // conventional-name probe below cannot find. Mark discovery
-      // indeterminate so the run is never reported complete, while still
-      // falling through to the conventional probe for best-effort coverage.
+    } else if (showExtStatus === 'indeterminate') {
+      // The module graph itself could not be evaluated (Starlark eval error,
+      // unbound name, syntax error, or a missing binary normalized to code
+      // -1). We have NO evidence about whether custom-named maven hubs exist,
+      // so mark discovery indeterminate — the run can never be reported
+      // complete — while still falling through to the conventional probe for
+      // best-effort coverage.
       discoveryIndeterminate = true
       if (verbose) {
         logger.log(
-          `[VERBOSE] workspace ${workspaceRoot}: show_extension failed to execute (code=${extResult.code}); hub enumeration is indeterminate — falling back to conventional probe`,
+          `[VERBOSE] workspace ${workspaceRoot}: show_extension failed to evaluate the module graph (code=${extResult.code}); hub enumeration is indeterminate — falling back to conventional probe`,
         )
       }
+    } else if (verbose) {
+      // `not-defined`: either a clean run with no root maven extension, or a
+      // non-zero exit that merely means rules_jvm_external isn't in the
+      // dependency graph. Both are authoritative "no maven here"; we still
+      // probe conventional names for a hybrid WORKSPACE-maven repo.
+      logger.log(
+        `[VERBOSE] workspace ${workspaceRoot}: show_extension reports no root maven extension (code=${extResult.code}); treating as not-defined — probing conventional hub names`,
+      )
     }
   }
   // Probe candidates the show_extension path could not authoritatively

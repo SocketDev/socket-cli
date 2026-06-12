@@ -5,6 +5,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import {
   CONVENTIONAL_MAVEN_REPO_NAMES,
   classifyProbeResult,
+  classifyShowExtensionResult,
   parseShowExtensionOutput,
   probeCandidate,
 } from './bazel-repo-discovery.mts'
@@ -13,6 +14,7 @@ import type {
   ProbeResult,
   ProbeStatus,
   RepoProbe,
+  ShowExtensionStatus,
 } from './bazel-repo-discovery.mts'
 
 // Truncated text-format report Bazel 8.4.2 emits on tink-java for
@@ -203,6 +205,99 @@ describe('bazel-repo-discovery', () => {
       expect(
         classifyProbeResult(probeResult({ code: 37, stderr: '' })),
       ).toBe<ProbeStatus>('indeterminate')
+    })
+  })
+
+  describe('classifyShowExtensionResult', () => {
+    // NOTE: the exact bazel stderr wording for these error families should be
+    // confirmed against a live `bazel mod show_extension` run; the sandbox
+    // blocks bazel here, so the strings below are representative shapes.
+    it('classifies code=0 with parsed root hubs as defined', () => {
+      expect(
+        classifyShowExtensionResult(probeResult({ code: 0 }), 2),
+      ).toBe<ShowExtensionStatus>('defined')
+    })
+
+    it('classifies a clean code=0 run with zero kept hubs as not-defined', () => {
+      // Ran fine, no maven extension for the root: legitimate absence.
+      expect(
+        classifyShowExtensionResult(
+          probeResult({ code: 0, stdout: 'No extensions defined.\n' }),
+          0,
+        ),
+      ).toBe<ShowExtensionStatus>('not-defined')
+    })
+
+    it('classifies "module is not a dependency of the root module" (rules_jvm_external not in dep graph) as not-defined', () => {
+      // The COMMON no-Maven bzlmod repo: ModCommand resolves the extension
+      // argument up front and throws InvalidArgumentException before any
+      // Starlark runs. Non-zero exit, but authoritatively "no maven here".
+      expect(
+        classifyShowExtensionResult(
+          probeResult({
+            code: 1,
+            stderr:
+              "ERROR: In extension argument '@rules_jvm_external//:extensions.bzl%maven': module 'rules_jvm_external' is not a dependency of the root module\n",
+          }),
+          0,
+        ),
+      ).toBe<ShowExtensionStatus>('not-defined')
+    })
+
+    it('classifies a generic "extension not found / not resolvable" arg error as not-defined', () => {
+      expect(
+        classifyShowExtensionResult(
+          probeResult({
+            code: 1,
+            stderr:
+              'ERROR: extension argument: no such module @rules_jvm_external\n',
+          }),
+          0,
+        ),
+      ).toBe<ShowExtensionStatus>('not-defined')
+    })
+
+    it('classifies a genuine MODULE.bazel evaluation failure (unbound name) as indeterminate', () => {
+      expect(
+        classifyShowExtensionResult(
+          probeResult({
+            code: 1,
+            stderr:
+              "ERROR: Error evaluating MODULE.bazel: name 'PYTHON_VERSION' is not defined\n",
+          }),
+          0,
+        ),
+      ).toBe<ShowExtensionStatus>('indeterminate')
+    })
+
+    it('classifies a Starlark syntax error in the module graph as indeterminate', () => {
+      expect(
+        classifyShowExtensionResult(
+          probeResult({
+            code: 1,
+            stderr: 'ERROR: /work/MODULE.bazel:3:1: syntax error near pip\n',
+          }),
+          0,
+        ),
+      ).toBe<ShowExtensionStatus>('indeterminate')
+    })
+
+    it('classifies a spawn failure / missing binary (normalized code -1) as indeterminate', () => {
+      expect(
+        classifyShowExtensionResult(probeResult({ code: -1 }), 0),
+      ).toBe<ShowExtensionStatus>('indeterminate')
+    })
+
+    it('biases a truly unrecognized non-zero exit toward not-defined (extension-not-in-graph dominates; never abort the scan)', () => {
+      // We only escalate to indeterminate when stderr positively looks like an
+      // eval/load failure. An unrecognized arg-style error must not flip a
+      // no-Maven repo into a hard failure that aborts the whole scan.
+      expect(
+        classifyShowExtensionResult(
+          probeResult({ code: 7, stderr: 'ERROR: something unexpected\n' }),
+          0,
+        ),
+      ).toBe<ShowExtensionStatus>('not-defined')
     })
   })
 
