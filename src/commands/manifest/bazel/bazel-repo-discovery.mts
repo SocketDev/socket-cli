@@ -114,9 +114,12 @@ const FETCHED_HUB_BULLET_RE =
 // Family (a): the extension / module is not resolvable in the dependency
 // graph — an argument-resolution error, not an evaluation failure. These all
 // mean "rules_jvm_external (and thus the maven extension) is not present",
-// i.e. legitimately not-defined.
+// i.e. legitimately not-defined. The `no module ... exists in the dependency
+// graph` branch is Bazel's verified real wording (`bazel mod show_extension`
+// against a bzlmod repo without rules_jvm_external: "No module with the
+// apparent repo name @rules_jvm_external exists in the dependency graph").
 const SHOW_EXT_NOT_IN_GRAPH_STDERR_RE =
-  /(?:in extension argument|extension argument)?.*(?:not (?:found|resolvable|defined)|no such (?:module|repo(?:sitory)?)|cannot be resolved|is not (?:a )?(?:visible |known )?(?:module|repo(?:sitory)?|extension)|not in the (?:dependency )?graph|unknown (?:module|extension)|does not (?:exist|use the extension))/i
+  /(?:in extension argument|extension argument)?.*(?:not (?:found|resolvable|defined)|no such (?:module|repo(?:sitory)?)|cannot be resolved|is not (?:a )?(?:visible |known )?(?:module|repo(?:sitory)?|extension)|not in the (?:dependency )?graph|no module[^\n]*exists in the (?:dependency )?graph|unknown (?:module|extension)|does not (?:exist|use the extension))/i
 // Bazel's canonical phrasing when the named module backing the extension
 // (here `rules_jvm_external`) isn't a dependency of the root module.
 const SHOW_EXT_MODULE_NOT_DEP_STDERR_RE =

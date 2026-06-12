@@ -244,6 +244,41 @@ describe('bazel-repo-discovery', () => {
       ).toBe<ShowExtensionStatus>('not-defined')
     })
 
+    it('classifies the real Bazel "no module ... exists in the dependency graph" arg error (exit 2) as not-defined', () => {
+      // Verbatim stderr from `bazel mod show_extension` on a bzlmod repo
+      // without rules_jvm_external (verified on real Bazel against angular and
+      // buildbuddy: exit code 2). This is the dominant no-Maven case and must
+      // never be escalated to indeterminate / hardFailure.
+      expect(
+        classifyShowExtensionResult(
+          probeResult({
+            code: 2,
+            stderr:
+              'ERROR: In extension argument @rules_jvm_external//:extensions.bzl%maven: No module with the apparent repo name @rules_jvm_external exists in the dependency graph. Type \'bazel help mod\' for syntax and help.\n',
+          }),
+          0,
+        ),
+      ).toBe<ShowExtensionStatus>('not-defined')
+    })
+
+    it('classifies the real Bazel unbound-name MODULE.bazel failure (exit 2) as indeterminate', () => {
+      // Verbatim stderr from `bazel mod show_extension --enable_bzlmod` on the
+      // envoy mobile/ fragment (verified on real Bazel: exit 2). A genuine
+      // eval failure: we cannot conclude maven is absent, so it is
+      // indeterminate even though the unbound-name text also trips the
+      // not-in-graph "not defined" branch (eval-failure is checked first).
+      expect(
+        classifyShowExtensionResult(
+          probeResult({
+            code: 2,
+            stderr:
+              "ERROR: /work/mobile/MODULE.bazel:26:1: name 'pip' is not defined (did you mean 'zip'?)\nERROR: syntax error in MODULE.bazel file for <root>.\n",
+          }),
+          0,
+        ),
+      ).toBe<ShowExtensionStatus>('indeterminate')
+    })
+
     it('classifies a generic "extension not found / not resolvable" arg error as not-defined', () => {
       expect(
         classifyShowExtensionResult(
