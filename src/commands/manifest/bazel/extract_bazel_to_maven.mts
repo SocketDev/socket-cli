@@ -334,49 +334,57 @@ function hubManifestFileName(repoName: string): string {
     : `${repoName}_maven_install.json`
 }
 
-// Does a committed lockfile already cover this workspace/hub? The server-side
-// walker globs `**/*maven_install.json` at any depth, so a real committed
-// lockfile anywhere under the workspace root is already ingested and the CLI
-// must not re-emit a synthetic complement (double-emit). We check the
-// workspace root itself and any committed lockfile beneath it, while skipping
-// the directory we are about to write synthetic manifests into so we never
-// mistake our own prior output for a committed file.
+// Directory basenames the CLI itself writes synthetic manifests into. A file
+// living inside one of these is our own output, NOT a committed lockfile, no
+// matter which run wrote it: the auto-manifest sibling dir (flat layout) and
+// the explicit-command default output dir. The gate must never read a file in
+// one of these as evidence of committed coverage, or a stale prior-run
+// synthetic file would let a later run wrongly skip a hub.
+const CLI_SYNTHETIC_OUTPUT_DIR_NAMES: ReadonlySet<string> = new Set([
+  '.socket-auto-manifest',
+  'bazel-manifests',
+])
+
+// Does a committed lockfile already cover THIS hub at THIS hub's own workspace
+// root? Each workspace is processed independently by the caller, and a
+// committed lockfile covers the workspace it lives IN — a nested workspace's
+// `maven_install.json` covers that nested hub, not this one. The server-side
+// walker ingests every committed `**/*_maven_install.json`, but each one only
+// covers its own workspace. So the gate checks DEPTH-0 only: a lockfile named
+// for this hub sitting directly in `workspaceRoot`. A recursive descent would
+// let an unrelated nested/fixture lockfile mask an uncovered root hub —
+// silently dropping its distinct coordinates.
+//
+// The CLI's own synthetic output is never a committed lockfile: we skip the
+// current run's `manifestDir` and any known synthetic output dir basename so a
+// stale prior-run file can't be misread as committed.
 function committedLockfileCovers(args: {
   fileName: string
   manifestDir: string
   workspaceRoot: string
 }): string | undefined {
   const { fileName, manifestDir, workspaceRoot } = args
-  // Resolve once so the manifest-dir skip comparison is path-normalized.
+  // The current run's synthetic output dir, resolved for an exact compare.
   const manifestDirResolved = path.resolve(manifestDir)
-  const stack: string[] = [workspaceRoot]
-  while (stack.length) {
-    const dir = stack.pop()!
-    // Never treat our own synthetic output directory as a committed lockfile.
-    if (path.resolve(dir) === manifestDirResolved) {
-      continue
-    }
-    let entries: Dirent[]
-    try {
-      entries = readdirSync(dir, { withFileTypes: true })
-    } catch {
-      continue
-    }
-    for (const entry of entries) {
-      if (entry.isDirectory()) {
-        const name = entry.name
-        // Don't descend the noise dirs the walker also prunes; this keeps the
-        // gate cheap and avoids walking node_modules/VCS trees.
-        if (
-          DEFAULT_BAZEL_WALKER_IGNORE_DIR_NAMES.has(name) ||
-          DEFAULT_BAZEL_WALKER_IGNORE_DIR_PREFIXES.some(p => name.startsWith(p))
-        ) {
-          continue
-        }
-        stack.push(path.join(dir, entry.name))
-      } else if (entry.isFile() && entry.name === fileName) {
-        return path.join(dir, entry.name)
-      }
+  const workspaceRootResolved = path.resolve(workspaceRoot)
+  // The committed lockfile, if any, lives directly in the hub's own workspace
+  // root — not in a nested workspace and not in the CLI's output dir.
+  if (
+    workspaceRootResolved === manifestDirResolved ||
+    CLI_SYNTHETIC_OUTPUT_DIR_NAMES.has(path.basename(workspaceRootResolved))
+  ) {
+    // The workspace root IS an output location; nothing here is committed.
+    return undefined
+  }
+  let entries: Dirent[]
+  try {
+    entries = readdirSync(workspaceRootResolved, { withFileTypes: true })
+  } catch {
+    return undefined
+  }
+  for (const entry of entries) {
+    if (entry.isFile() && entry.name === fileName) {
+      return path.join(workspaceRootResolved, entry.name)
     }
   }
   return undefined
@@ -491,6 +499,13 @@ type DiscoverResult = {
   // an unrecognized error). A non-empty list means discovery may have missed
   // a hub, so the run can never be reported complete.
   indeterminateProbes: string[]
+  // True when authoritative hub enumeration could not be performed: under
+  // Bzlmod, `bazel mod show_extension` FAILED TO EXECUTE (non-zero exit). That
+  // is NOT the legitimate "ran fine, no maven extension defined" case (which
+  // is a clean code-0 with zero kept hubs) — it means we may have missed
+  // custom-named hubs the conventional-name probe cannot find, so the run can
+  // never be reported complete.
+  discoveryIndeterminate: boolean
 }
 
 async function discoverCandidatesForWorkspace(
@@ -502,6 +517,7 @@ async function discoverCandidatesForWorkspace(
   const candidates: string[] = []
   const indeterminateProbes: string[] = []
   let showExtensionSucceeded = false
+  let discoveryIndeterminate = false
   if (mode.bzlmod) {
     const extResult = await runBazelModShowMavenExtension(queryOpts)
     if (extResult.code === 0) {
@@ -532,10 +548,19 @@ async function discoverCandidatesForWorkspace(
           }
         }
       }
-    } else if (verbose) {
-      logger.log(
-        `[VERBOSE] workspace ${workspaceRoot}: show_extension failed (code=${extResult.code}); falling back to conventional probe`,
-      )
+    } else {
+      // show_extension FAILED TO EXECUTE (non-zero exit). This is distinct
+      // from a clean run that found no maven extension (code 0, zero kept
+      // hubs): a failed enumeration means custom-named hubs may exist that the
+      // conventional-name probe below cannot find. Mark discovery
+      // indeterminate so the run is never reported complete, while still
+      // falling through to the conventional probe for best-effort coverage.
+      discoveryIndeterminate = true
+      if (verbose) {
+        logger.log(
+          `[VERBOSE] workspace ${workspaceRoot}: show_extension failed to execute (code=${extResult.code}); hub enumeration is indeterminate — falling back to conventional probe`,
+        )
+      }
     }
   }
   // Probe candidates the show_extension path could not authoritatively
@@ -547,7 +572,7 @@ async function discoverCandidatesForWorkspace(
     showExtensionSucceeded ? [] : [...CONVENTIONAL_MAVEN_REPO_NAMES]
   ).filter(name => !seen.has(name))
   if (!toProbe.length) {
-    return { candidates, indeterminateProbes }
+    return { candidates, discoveryIndeterminate, indeterminateProbes }
   }
   const probe = buildMavenProbeFor(queryOpts)
   for (const name of toProbe) {
@@ -563,7 +588,7 @@ async function discoverCandidatesForWorkspace(
       indeterminateProbes.push(name)
     }
   }
-  return { candidates, indeterminateProbes }
+  return { candidates, discoveryIndeterminate, indeterminateProbes }
 }
 
 // Best-effort reap of a Bazel server. Spawned with a short timeout so
@@ -794,7 +819,7 @@ export async function extractBazelToMaven(
           verbose,
         })
 
-      const { candidates, indeterminateProbes } =
+      const { candidates, discoveryIndeterminate, indeterminateProbes } =
         // eslint-disable-next-line no-await-in-loop
         await discoverCandidatesForWorkspace(
           workspaceRoot,
@@ -802,6 +827,22 @@ export async function extractBazelToMaven(
           queryOptsFor(outputUserRoot),
           verbose,
         )
+      // Authoritative hub enumeration failed to execute (e.g. `bazel mod
+      // show_extension` errored under Bzlmod): custom-named hubs may have been
+      // missed, so the run can never be complete. Record it as an
+      // indeterminate hub outcome under a synthetic name so the completeness
+      // signal carries the gap.
+      if (discoveryIndeterminate) {
+        anyIndeterminate = true
+        hubOutcomes.push({
+          hub: '(enumeration)',
+          reason: 'show-extension-failed',
+          state: 'indeterminate',
+        })
+        logger.warn(
+          `Workspace ${relPath || '.'}: Maven hub enumeration failed; custom-named hubs may be missing. The run is reported known-incomplete.`,
+        )
+      }
       for (const indeterminate of indeterminateProbes) {
         anyIndeterminate = true
         hubOutcomes.push({
