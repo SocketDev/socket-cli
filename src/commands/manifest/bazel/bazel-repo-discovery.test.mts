@@ -177,12 +177,15 @@ describe('bazel-repo-discovery', () => {
       ).toBe<ProbeStatus>('not-defined')
     })
 
-    it('classifies code=1 + unrecognized stderr conservatively as not-defined', () => {
+    it('classifies code=1 + unrecognized stderr as indeterminate (not a silent skip)', () => {
+      // An unrecognized non-zero exit is NOT proof the repo is absent; it must
+      // surface as indeterminate so the orchestrator never reports complete on
+      // a workspace it could not actually analyze.
       expect(
         classifyProbeResult(
           probeResult({ code: 1, stderr: 'some other failure\n' }),
         ),
-      ).toBe<ProbeStatus>('not-defined')
+      ).toBe<ProbeStatus>('indeterminate')
     })
 
     it('classifies code=1 + "no such package" stderr as not-defined', () => {
@@ -195,6 +198,12 @@ describe('bazel-repo-discovery', () => {
         ),
       ).toBe<ProbeStatus>('not-defined')
     })
+
+    it('classifies a non-zero exit with no recognizable message as indeterminate', () => {
+      expect(
+        classifyProbeResult(probeResult({ code: 37, stderr: '' })),
+      ).toBe<ProbeStatus>('indeterminate')
+    })
   })
 
   describe('probeCandidate', () => {
@@ -204,9 +213,9 @@ describe('bazel-repo-discovery', () => {
       ).toBe<ProbeStatus>('populated')
     })
 
-    it('returns not-defined when the probe throws', async () => {
+    it('returns indeterminate when the probe throws (infra failure, not absence)', async () => {
       expect(await probeCandidate('crash', probeThrows)).toBe<ProbeStatus>(
-        'not-defined',
+        'indeterminate',
       )
     })
   })
@@ -253,7 +262,7 @@ describe('bazel-repo-discovery', () => {
     it('probeCandidate logs the throw reason under verbose', async () => {
       await probeCandidate('crash', probeThrows, true)
       expect(loggedLines()).toMatch(
-        /probe @crash:\s*not-defined \(probe threw: bazel exploded\)/,
+        /probe @crash:\s*indeterminate \(probe threw: bazel exploded\)/,
       )
     })
   })

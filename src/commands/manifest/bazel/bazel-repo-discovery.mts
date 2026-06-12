@@ -36,7 +36,17 @@ export type ProbeResult = {
 
 export type RepoProbe = (repoName: string) => Promise<ProbeResult>
 
-export type ProbeStatus = 'populated' | 'empty' | 'not-defined'
+// `indeterminate` means the probe could not be classified: an unrecognized
+// non-zero exit, or the probe threw outright (the Bazel invocation itself
+// failed). It is NOT evidence that the repo is undefined — treating it as
+// `not-defined` would silently under-report a hub that may well hold Maven
+// deps. The orchestrator must propagate it so the run is never reported
+// `complete` when a probe was indeterminate.
+export type ProbeStatus =
+  | 'populated'
+  | 'empty'
+  | 'not-defined'
+  | 'indeterminate'
 
 // Conventional Maven hub names rules_jvm_external sets up under
 // WORKSPACE-mode invocations. Probing each one is cheap (a failed visibility
@@ -154,13 +164,16 @@ export function classifyProbeResult(result: ProbeResult): ProbeStatus {
     return 'empty'
   }
   // Code 0 with empty stdout: WORKSPACE-mode probes do this when the repo
-  // name isn't declared (Exp 5c). Treat as not-defined.
+  // name isn't declared. Treat as not-defined.
   if (result.code === 0) {
     return 'not-defined'
   }
-  // Code 1 with no recognizable message: be conservative and call it
-  // not-defined so the orchestrator skips it without erroring the workspace.
-  return 'not-defined'
+  // Non-zero exit with no recognizable message: the probe failed for a reason
+  // we can't classify (Bazel infra error, analysis crash, unexpected stderr).
+  // This is NOT proof the repo is undefined, so do NOT downgrade it to
+  // not-defined — surface it as indeterminate so the orchestrator can flag
+  // the workspace as not fully analyzable rather than silently skipping it.
+  return 'indeterminate'
 }
 
 // Convenience: probe a single candidate and return its classified status,
@@ -176,14 +189,18 @@ export async function probeCandidate(
   try {
     result = await probe(repoName)
   } catch (e) {
+    // A thrown probe means the Bazel invocation itself failed; we have no
+    // evidence about whether the repo exists. Surface it as indeterminate so
+    // the run is not reported complete, rather than swallowing it as a
+    // not-defined skip.
     if (verbose) {
       logger.log(
-        `[VERBOSE] discovery: probe @${repoName}: not-defined (probe threw: ${
+        `[VERBOSE] discovery: probe @${repoName}: indeterminate (probe threw: ${
           e instanceof Error ? e.message : String(e)
         })`,
       )
     }
-    return 'not-defined'
+    return 'indeterminate'
   }
   const status = classifyProbeResult(result)
   if (verbose) {
