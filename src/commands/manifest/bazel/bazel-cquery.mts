@@ -551,12 +551,13 @@ export async function runMetadataCqueryForRepo(
       signal?: unknown
       stderr?: unknown
       stdout?: unknown
-      timedOut?: unknown
     }
     const stdout = typeof err.stdout === 'string' ? err.stdout : ''
     const stderr = typeof err.stderr === 'string' ? err.stderr : ''
+    // On a `timeout`, the registry spawn kills the child, so Node sets
+    // `killed: true` and `signal: 'SIGTERM'` (or `SIGKILL`). There is no
+    // `timedOut` flag on the real rejection, so do not test for one.
     const timedOut =
-      err.timedOut === true ||
       err.killed === true ||
       err.signal === 'SIGTERM' ||
       err.signal === 'SIGKILL'

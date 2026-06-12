@@ -642,11 +642,15 @@ describe('runMetadataCqueryForRepo', () => {
     expect(r.artifacts).toEqual([])
   })
 
-  it('returns status:timeout when spawn rejects with timedOut=true', async () => {
+  it('returns status:timeout when spawn is killed on timeout (killed=true + SIGTERM)', async () => {
+    // The real registry spawn does not set `timedOut`; on a `timeout` it kills
+    // the child, so Node populates `killed: true` and `signal: 'SIGTERM'`.
+    // Mock that shape so the test pins the behaviour real spawn produces.
     mocked.mockRejectedValueOnce(
       Object.assign(new Error('command timed out'), {
         code: null,
-        timedOut: true,
+        killed: true,
+        signal: 'SIGTERM',
         stderr: '',
         stdout: '',
       }),
