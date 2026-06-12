@@ -225,6 +225,46 @@ minimumReleaseAgeExclude:
   - '@yuku-parser/binding-win32-arm64@0.5.31'
   # published: 2026-06-09 | removable: 2026-06-16
   - '@yuku-parser/binding-win32-x64@0.5.31'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - 'oxfmt@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-android-arm-eabi@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-android-arm64@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-darwin-arm64@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-darwin-x64@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-freebsd-x64@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-linux-arm-gnueabihf@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-linux-arm-musleabihf@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-linux-arm64-gnu@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-linux-arm64-musl@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-linux-ppc64-gnu@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-linux-riscv64-gnu@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-linux-riscv64-musl@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-linux-s390x-gnu@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-linux-x64-gnu@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-linux-x64-musl@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-openharmony-arm64@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-win32-arm64-msvc@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-win32-ia32-msvc@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-win32-x64-msvc@0.54.0'
 
 # Refuse transitive dependencies declared via git/tarball/local-tarball
 # specs — an npm package shouldn't be allowed to drag in a git URL we

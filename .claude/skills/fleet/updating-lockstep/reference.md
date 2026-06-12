@@ -28,18 +28,19 @@ git status --porcelain | grep -v '^??' && { echo "dirty tree; aborting"; exit 1;
 [ "$CI" = "true" ] || [ -n "$GITHUB_ACTIONS" ] && CI_MODE=true || CI_MODE=false
 ```
 
-### Phase 2 — Collect drift
+### Phase 2 — Collect + plan drift
 
 ```bash
 pnpm run lockstep --json > /tmp/lockstep-report.json
+node scripts/fleet/lockstep/auto-bump.mts --plan --report /tmp/lockstep-report.json --tags /tmp/tags.json
 ```
 
-Parse `reports[]` from the JSON. Split into:
+`auto-bump.mts --plan` partitions the report into:
 
-- **auto** — rows where `severity == "drift"` AND `kind == "version-pin"` AND `upgrade_policy` ∈ `{ "track-latest", "major-gate" }`.
-- **advisory** — everything else with `severity != "ok"`.
+- **auto** — version-pin rows with an actionable `upgrade_policy` (`track-latest` / `major-gate`) AND a resolvable newer stable tag. Each carries the already-resolved `targetTag`.
+- **advisory** — everything else with `severity != "ok"`, plus any version-pin that can't auto-bump (locked, no-newer-tag, or a major bump gated by `major-gate`) — surfaced as an advisory line, never silently dropped.
 
-If both lists are empty: exit 0 with "no lockstep drift".
+`--tags <tags.json>` is `{ "<upstream>": ["<tag>", …] }` (the fetched tags per upstream — `git -C <submodule> tag` after `git fetch --tags`); omit it and the auto list resolves no targets (the rows fall to advisory with "no parseable stable tags"). If both lists are empty: exit 0 with "no lockstep drift". The partition + the entire tag-scheme/semver/major-gate resolution (the old Phase 3a/3b inline jq) live in the engine — see its unit tests for the four tag schemes.
 
 ### Phase 3 — Auto-bump version-pin rows
 
@@ -54,16 +55,14 @@ git fetch origin --tags --quiet
 OLD_SHA=$(git rev-parse HEAD)
 ```
 
-**3b. Find the target tag**
+**3b. Find the target tag — already resolved by the planner.**
 
-Examine existing `pinned_tag` to identify the tag scheme, then match:
-
-- `v1.2.3` (v-prefixed semver)
-- `1.2.3` (bare semver)
-- `<prefix>-1.2.3` (project-prefixed)
-- `<prefix>_1_2_3` (underscore style; curl, liburing)
-
-For `major-gate` policy: parse major version from `LATEST` vs current `pinned_tag`. If majors differ, skip — add to advisory with note "major bump needs human review".
+The Phase-2 `auto-bump.mts --plan` output carries each auto row's `targetTag`,
+resolved by the engine's tag resolver: it filters pre-release tags (the
+stability filter below), detects the scheme (`v1.2.3` / `1.2.3` /
+`<prefix>-1.2.3` / `<prefix>_1_2_3`), semver-sorts within the current prefix,
+and applies the policy (`major-gate` surfaces a major jump as advisory rather
+than bumping). Use `targetTag` from the plan — don't re-derive it in shell.
 
 **3c. Check out + capture new SHA**
 
@@ -86,7 +85,13 @@ jq --arg id "$ROW_ID" --arg sha "$NEW_SHA" --arg tag "$LATEST" \
   lockstep.json > lockstep.json.tmp && mv lockstep.json.tmp lockstep.json
 ```
 
-Update `.gitmodules` version comment via Edit tool (NOT sed per CLAUDE.md) — replace `# <prefix>-<old>` with `# <prefix>-<new>` on the comment line above the submodule block.
+Update the submodule ref + its `.gitmodules` version comment through the canonical owner — don't hand-edit the comment (that re-implements `gen-gitmodules-hash.mts`):
+
+```bash
+node scripts/fleet/gen-gitmodules-hash.mts --set "$SUBMODULE" "$LATEST"
+```
+
+It bumps the gitlink and rewrites the `# <name>-<version>` comment in one place, so the comment can't drift from the pinned ref.
 
 **3e. Validate + commit**
 

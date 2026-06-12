@@ -6,9 +6,13 @@ unless the user typed `Allow trust-downgrade bypass` — and the bypass is
 
 ## What it blocks
 
-**Bash commands** that relax a policy at invocation time:
+**Bash commands** that relax a policy at invocation time (matched by
+AST-parsing the command line with `_shared/shell-command.mts`, so a flag
+behind a `&&` chain, quoting, or `$(…)` substitution is still caught, and a
+flag mentioned inside an unrelated quoted string does not false-fire):
 
-- `--config.trustPolicy=trust-all` (or any non-`no-downgrade` value)
+- `--config.trustPolicy=trust-all` (or any non-`no-downgrade` value), inline
+  or space-separated, plus the persisted `pnpm config set trustPolicy …` form
 - `--config.minimumReleaseAge=0`
 - `--no-verify-store-integrity`
 - `--dangerously-allow-all-scripts` / `--dangerously-allow-all-builds`
@@ -19,6 +23,8 @@ unless the user typed `Allow trust-downgrade bypass` — and the bypass is
 
 - sets `trustPolicy` to anything but `no-downgrade`
 - lowers `minimumReleaseAge` below the fleet floor (10080)
+- lowers the npm `min-release-age` (days) in `.npmrc` below its floor (7) —
+  the npm-side parallel of the pnpm `minimumReleaseAge` soak
 - rewrites `pnpm-workspace.yaml` without `trustPolicy: no-downgrade` or
   `blockExoticSubdeps: true`
 

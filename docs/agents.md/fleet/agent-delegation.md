@@ -65,18 +65,19 @@ pointer to check, not evidence.
 - **2026-06-03, DRY/KISS audit:** an agent reported "52 `-guard` hooks only advise (exit 0),
   not block". Spot-checking six named guards: every one exits 2 (blocks). A complete
   inversion of the convention, stated confidently with a 50-file list. One `grep -c
-  'exit(2)'` killed it.
+'exit(2)'` killed it.
 - **2026-06-03, wheelhouse-segment audit:** an agent flagged 5 hooks/skills as wheelhouse-only
   and movable to `repo/`. Hand-verification (does the dependency exist downstream?) cut it to
   2 — and those 2 turned out to stay too (data-sharing / dispatch-reach). Net real moves: 0.
 - Same session, an agent listed "~17 hooks declare their own `ToolInput` type"; the three
   sampled declared none.
 
-**The discriminator** — what makes a claim worth the verification round-trip: it's *cheap to
-verify* (one grep/read) and *expensive to fabricate correctly* (the agent had to actually
+**The discriminator** — what makes a claim worth the verification round-trip: it's _cheap to
+verify_ (one grep/read) and _expensive to fabricate correctly_ (the agent had to actually
 read each file to get the count right, and often didn't). High-confidence + high-specificity
-+ cheap-to-check = verify it. Vague impressions ("the code seems complex") aren't worth a
-round-trip; precise falsifiable claims are.
+
+- cheap-to-check = verify it. Vague impressions ("the code seems complex") aren't worth a
+  round-trip; precise falsifiable claims are.
 
 **Budget for it.** When you fan out N audit agents, budget the verification pass as part of
 the work — it's not optional polish. The synthesized report you hand the user should contain
@@ -87,7 +88,7 @@ There are two delegation surfaces in this fleet. They look similar but are used 
 
 ## Surface 1: CLI subprocess delegation (skills)
 
-Skills that need multi-model output spawn the agent CLIs (`codex`, `claude`, `kimi`, `opencode`) as subprocesses and fold the results into a report. The contract (backend registry, detection policy, fallback order, attribution) lives in [`_shared/multi-agent-backends.md`](../../.claude/skills/_shared/multi-agent-backends.md). The canonical implementation is [`reviewing-code/run.mts`](../../.claude/skills/reviewing-code/run.mts).
+Skills that need multi-model output spawn the agent CLIs (`codex`, `claude`, `kimi`, `opencode`) as subprocesses and fold the results into a report. The contract (backend registry, detection policy, fallback order, attribution) lives in [`_shared/multi-agent-backends.md`](../../.claude/skills/fleet/_shared/multi-agent-backends.md), and the registry itself is `@socketsecurity/lib/ai/backends`. The canonical implementation is [`reviewing-code/run.mts`](../../.claude/skills/fleet/reviewing-code/run.mts).
 
 Use this surface when _the skill itself_ is the orchestrator (multi-pass review, parallel scans, fleet-wide runs).
 
@@ -97,7 +98,7 @@ When the _current_ Claude session wants to hand off a single task to another mod
 
 | Subagent             | When to use                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `codex:codex-rescue` | You want GPT-5.4's take or a heavyweight async investigation. Best for: hard debugging you're stuck on, second implementation pass on a tricky design, deep root-cause work. Persistent runtime; check progress with `/codex:status`, get output with `/codex:result`. Also exposed as `/codex:rescue` for user-driven invocation.                                                                                                                                                                     |
+| `codex:codex-rescue` | You want GPT-5.5's take or a heavyweight async investigation. Best for: hard debugging you're stuck on, second implementation pass on a tricky design, deep root-cause work. Persistent runtime; check progress with `/codex:status`, get output with `/codex:result`. Also exposed as `/codex:rescue` for user-driven invocation.                                                                                                                                                                     |
 | `delegate`           | You want a Fireworks / Synthetic / Kimi open model via [OpenCode](https://opencode.ai). Best for: cheap bulk work (classification, summarization, drafting many things), specialist routing (e.g. Qwen-Coder for code-heavy tasks), second opinions from a non-GPT/non-Claude model. Caller specifies the model in the prompt (e.g. `fireworks/qwen3-coder-480b`). Fire-and-forget. **Optional**: only available if the dev has set up the `delegate` agent locally. Skill code must not depend on it. |
 | `Explore`            | Codebase search / "where is X defined" / cross-file lookups. Different model isn't the point; context isolation is.                                                                                                                                                                                                                                                                                                                                                                                    |
 | `Plan`               | Implementation strategy for a non-trivial task before writing code.                                                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -110,6 +111,19 @@ When the _current_ Claude session wants to hand off a single task to another mod
 - **Want a sanity check on a non-trivial design or diff** → `/codex:adversarial-review` (slash command) _or_ `delegate` to a different family, depending on which perspective is more useful.
 - **Big codebase question that'll burn context** → `Explore`.
 - **Building a multi-pass workflow** → don't use `Agent(...)` ad hoc; write a skill that uses Surface 1.
+
+## Subagent return contract
+
+A delegated subagent ends in one of four terminal states. Orchestrators route on the state, not on prose, so a subagent that finished with a reservation is handled differently from one that is genuinely stuck. The vocabulary and the escalation each maps to are encoded in `@socketsecurity/lib/ai/subagent-status` (`SubagentStatus` + `escalationFor`); the table below is checked against that type, so the two cannot drift.
+
+| Status               | Meaning                                                   | Orchestrator does                                              |
+| -------------------- | --------------------------------------------------------- | -------------------------------------------------------------- |
+| `done`               | Work complete, no reservations.                           | `advance` to the next unit.                                    |
+| `done-with-concerns` | Complete, but the subagent flagged a risk or follow-up.   | `surface` the concern, then advance.                           |
+| `needs-context`      | Lacks information it cannot obtain itself.                | `redispatch` with the missing context added (a fresh attempt). |
+| `blocked`            | Cannot proceed without a decision only the user can make. | `escalate` to the user and stop.                               |
+
+Two rules fall out of the contract. Never force the same model to retry an unchanged prompt on a non-`done` state: `needs-context` means change the input, `blocked` means hand off. And never silently swallow a `done-with-concerns` — the concern is the point of having a distinct state from `done`.
 
 ## When the surfaces overlap
 

@@ -10,6 +10,16 @@
 **/.claude/**
 .claude/**
 
+# `.agents/skills/` is the GENERATED cross-tool skill mirror
+# (gen-agents-skills-mirror.mts copies .claude/skills/{fleet,repo}/<name>/ to a
+# flat .agents/skills/<tier>-<name>/ for Codex + OpenCode). It's generated
+# output, never hand-edited — and its source (.claude/) is itself unformatted-
+# by-design above, so the byte-identical mirror must be ignored too, or the
+# format gate flags copies of already-exempt content. The
+# agents-skills-mirror-is-current check enforces it stays in sync with source.
+**/.agents/**
+.agents/**
+
 # Everything under a `fleet/` segment is fleet-canonical: the wheelhouse
 # authors it under `template/`, every other repo gets a cascaded copy
 # (`.config/fleet/`, `scripts/fleet/`, `docs/agents.md/fleet/`, …). A
@@ -56,3 +66,10 @@ vendor/**
 third_party/**
 **/external/**
 external/**
+
+# gh-aw generated workflows. `gh aw compile` turns a `<name>.md` agentic
+# workflow into a hardened `<name>.lock.yml`; that artifact is tool-owned and
+# must stay byte-identical to the compiler output (the .md is the source of
+# truth). Formatting it would drift it from `gh aw compile`.
+**/.github/workflows/*.lock.yml
+.github/workflows/*.lock.yml

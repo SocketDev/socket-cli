@@ -11,6 +11,8 @@ context: fork
 
 Watch a target repo's CI, surface failures the moment they land, and drive a fix-and-push loop until the run is green.
 
+**Local twin:** to validate a workflow in local Docker containers BEFORE pushing or dispatching remotely — no remote runner minutes — use the **`greening-ci-local`** skill (`/green-ci-local`). It runs the workflow via Agent-CI, pauses on a failure, and you fix-then-retry in place. Reach for it as the pre-flight; reach for this (remote) once the run is dispatched or a failure only reproduces on real runners.
+
 ## When to use
 
 - **main is red.** Don't move on with new work while the trunk is broken. Run `/green-ci` to lock onto the failing run, fix it, push, and confirm green before resuming.

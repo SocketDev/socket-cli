@@ -39,6 +39,19 @@ test('BLOCKS uses: with comment missing date', () => {
   assert.equal(exitCode, 2)
 })
 
+test('ALLOWS a gh-aw generated .lock.yml with date-less version comments', () => {
+  // gh-aw compiles <name>.md → <name>.lock.yml; the generated file SHA-pins
+  // with `# <version>` (no date) and is never hand-edited, so it's exempt.
+  const { exitCode } = runHook({
+    tool_name: 'Write',
+    tool_input: {
+      file_path: '/repo/.github/workflows/audit-api-surface.lock.yml',
+      content: `      - uses: actions/checkout@${SHA} # v6.0.3\n`,
+    },
+  })
+  assert.equal(exitCode, 0)
+})
+
 test('BLOCKS uses: with date in wrong format', () => {
   const { exitCode } = runHook({
     tool_name: 'Write',

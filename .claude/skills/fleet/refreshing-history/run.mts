@@ -28,64 +28,13 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 const logger = getDefaultLogger()
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib/errors'
 import { isError } from '@socketsecurity/lib/errors/predicates'
-import { isSpawnError } from '@socketsecurity/lib/process/spawn/errors'
-import { spawn } from '@socketsecurity/lib/process/spawn/child'
 
 import { resolveDefaultBranch } from '../_shared/scripts/git-default-branch.mts'
+// Shared run/timestamp/header helpers — one owner, not a per-runner copy.
+import { header, run, timestamp } from '../_shared/scripts/run-helpers.mts'
 
-export function header(label: string, value: string): void {
-  logger.info(`  ${label}: ${value}`)
-}
-
-type SpawnOutcome = {
-  readonly stdout: string
-  readonly stderr: string
-}
-
-export async function run(
-  cmd: string,
-  args: readonly string[],
-  cwd: string,
-  options: { readonly allowFailure?: boolean | undefined } = {},
-): Promise<SpawnOutcome> {
-  try {
-    const result = await spawn(cmd, args, { cwd, stdioString: true })
-    return {
-      stderr: String(result.stderr ?? ''),
-      stdout: String(result.stdout ?? '').trim(),
-    }
-  } catch (e) {
-    if (options.allowFailure) {
-      // Spawn failures still carry stdout/stderr on the SpawnError shape;
-      // surface them so callers can inspect the partial output.
-      if (isSpawnError(e)) {
-        return {
-          stderr: String(e.stderr ?? ''),
-          stdout: String(e.stdout ?? ''),
-        }
-      }
-      return { stderr: errorMessage(e), stdout: '' }
-    }
-    if (isSpawnError(e)) {
-      const stderrText = String(e.stderr ?? '').trim()
-      throw new Error(
-        `${cmd} ${args.join(' ')} failed (exit ${String(e.code ?? '?')})${stderrText ? `: ${stderrText}` : ''}`,
-      )
-    }
-    throw e
-  }
-}
-
-export function timestamp(): string {
-  const now = new Date()
-  const pad = (n: number, w = 2): string => String(n).padStart(w, '0')
-  return (
-    `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}` +
-    `-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
-  )
-}
+export { header, run, timestamp }
 
 async function main(): Promise<number> {
   const src = process.argv[2]

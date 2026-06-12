@@ -92,6 +92,17 @@ export function classifyMarkdownPath(absPath: string): Verdict {
     }
   }
 
+  // A `.md` under `.github/workflows/` is a GitHub Agentic Workflows (gh-aw)
+  // source, not a doc — `gh aw compile` turns it into a sibling `.lock.yml`.
+  // It owns its own naming (lowercase-hyphenated, matching the workflow), so
+  // the human-docs filename convention doesn't apply.
+  if (absPath.includes('.github')) {
+    const normalized = normalizePath(absPath)
+    if (normalized.includes('/.github/workflows/')) {
+      return { ok: true }
+    }
+  }
+
   const relPath = normalizePath(toRepoRelative(absPath))
   // For docs that describe a specific code file (e.g. `smol-ffi.js.md`),
   // strip the source-file hint before validating the stem.

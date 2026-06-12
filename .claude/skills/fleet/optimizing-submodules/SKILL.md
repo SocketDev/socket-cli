@@ -2,7 +2,7 @@
 name: optimizing-submodules
 description: Determines and applies the minimal sparse-checkout for each .gitmodules submodule so a vendored upstream pulls only the subtrees this repo consumes, not its whole tree. Use when adding a submodule, when a submodule drags a large tree into clones, or when the submodules-are-sparse-or-annotated check fails. The determination is AI-assisted (analyze what consumes the submodule); the apply + verify + enforcement are scripted.
 user-invocable: true
-allowed-tools: Bash(git config:*), Bash(git submodule:*), Bash(git -C:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(du:*), Bash(node scripts/fleet/git-partial-submodule.mts:*), Bash(node scripts/fleet/check/submodules-are-sparse-or-annotated.mts:*), Read, Grep, Glob
+allowed-tools: Bash(git config:*), Bash(git submodule:*), Bash(git -C:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(du:*), Bash(node scripts/fleet/optimizing-submodules/collect-submodule-consumers.mts:*), Bash(node scripts/fleet/git-partial-submodule.mts:*), Bash(node scripts/fleet/verify-submodule-sparse.mts:*), Bash(node scripts/fleet/check/submodules-are-sparse-or-annotated.mts:*), Read, Grep, Glob
 model: claude-sonnet-4-6
 ---
 
@@ -18,16 +18,22 @@ The `submodules-are-sparse-or-annotated` gate (`scripts/fleet/check/`) fails `ch
 
 ### 1. Determine (analyze what consumes the submodule)
 
-`rg` the repo for references to `upstream/<name>/` paths — **from files OUTSIDE the submodule's own directory**. Cover:
+First gather the evidence — one deterministic pass that `rg`s every submodule, applies the outside-only filter, and buckets the surviving hits by file type:
 
-- Rust: `Cargo.toml` **path/git** deps (a `version = "=x"` crates.io pin is NOT consumption — the code comes from the registry, the submodule is reference-only), `build.rs`.
-- C/C++: `CMakeLists.txt`, `binding.gyp` (which subdir does `add_subdirectory` / a `*_DIR` var point at?).
-- Go: `go.mod` (a registry module is not the submodule).
-- JS/TS: imports, `package.json` (a `workspace:*` fork supersedes the submodule), vitest configs.
-- Test corpora: the conformance runner under `test/` / `test/scripts/` — find the **exact fixture subdir** it walks (`readdirSync`/`join` of `tests/`, `src/`, `test_parsing/`, …).
-- Build/bench scripts under `scripts/` and `packages/*/scripts/`.
+```bash
+node scripts/fleet/optimizing-submodules/collect-submodule-consumers.mts --pretty
+```
 
-**Trap — internal self-references.** A vendored crate's own files reference each other (e.g. blake3's `b3sum/Cargo.toml` has `path = ".."`, blake3's `c/blake3_c_rust_bindings/build.rs` compiles `c/*.c`). Those are the submodule consuming itself, NOT your repo consuming it. Only references from **outside** `upstream/<name>/` count. Getting this wrong over-checks (the false "full checkout needed" verdict).
+It emits, per submodule, the OUTSIDE-only consumer hits bucketed `rust` / `cpp` / `go` / `jsts` / `testCorpus` / `build` / `other`, the current sparse/verify state, the on-disk tree size (the why-bother signal), and an `internalHitCount` (the self-references it excluded). Plain (no `--pretty`) emits the same as a JSON envelope. It renders **no verdict** — that is your call from the buckets. Read each bucket and interpret it:
+
+- Rust (`Cargo.toml` / `build.rs`): a **path/git** dep is consumption; a `version = "=x"` crates.io pin is NOT (the code comes from the registry, the submodule is reference-only).
+- C/C++ (`CMakeLists.txt` / `binding.gyp`): which subdir does `add_subdirectory` / a `*_DIR` var point at?
+- Go (`go.mod`): a registry module is not the submodule.
+- JS/TS (imports / `package.json` / vitest): a `workspace:*` fork supersedes the submodule.
+- Test corpora: in the conformance runner under `test/`, find the **exact fixture subdir** it walks.
+- Build/bench scripts.
+
+**Trap — internal self-references (now handled by the collector).** A vendored crate's own files reference each other (e.g. blake3's `b3sum/Cargo.toml` has `path = ".."`). Those are the submodule consuming itself, NOT your repo consuming it. The collector already drops every hit inside `upstream/<name>/` (the `isInsideSubmodule` filter) and reports the count as `internalHitCount`, so the over-check that filter prevents is code, not a hand-discipline.
 
 Outcomes per submodule:
 - **Subtree-consumed** → the minimal pattern (e.g. `c`, `src`, `tests files-toml-1.0.0`, `files`).

@@ -4,12 +4,11 @@
  *   over the date window and returns structured posts. This is the keychain-
  *   friendly path: a single bearer token (`XAI_API_KEY`), no browser-cookie
  *   scraping. When the key is absent the adapter reports `skipped` with a
- *   reason, so the keyless sources still carry the run.
- *
- *   Auth: the key lives in `XAI_API_KEY` (process env), populated from the OS
- *   keychain at session start — never read from the keychain on the hot path
- *   (that triggers a per-call UI prompt; see no-blind-keychain-read-guard). See
- *   the skill reference for the keychain how-to.
+ *   reason, so the keyless sources still carry the run. Auth: the key lives in
+ *   `XAI_API_KEY` (process env), populated from the OS keychain at session
+ *   start — never read from the keychain on the hot path (that triggers a
+ *   per-call UI prompt; see no-blind-keychain-read-guard). See the skill
+ *   reference for the keychain how-to.
  */
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
@@ -51,6 +50,7 @@ export const DEFAULT_DEV_HANDLES: readonly string[] = [
   'robpalmer2', // TC39 / standards
   'sarahgooding', // Socket / OSS news
   'sebastienlorber', // Docusaurus / This Week in React
+  'SemiAnalysis', // model/hardware/cost economics analysis
   'tannerlinsley', // TanStack
   'zkochan', // pnpm creator / lead
 ]

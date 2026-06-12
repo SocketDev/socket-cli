@@ -54,11 +54,12 @@ export type Gitmodules = {
  * the spawn result, or undefined on dry-run.
  */
 export async function runGit(
-  opts: CommonOpts,
+  options: CommonOpts,
   gitArgs: string[],
-  options: { okReturnCodes?: number[] | undefined } = {},
+  runOptions: { okReturnCodes?: number[] | undefined } = {},
 ): Promise<{ code: number | null } | undefined> {
-  const okReturnCodes = options.okReturnCodes ?? [0]
+  const opts = { __proto__: null, ...options } as CommonOpts
+  const okReturnCodes = runOptions.okReturnCodes ?? [0]
   if (opts.verbose || opts.dryRun) {
     logger.log(`git ${gitArgs.join(' ')}`)
   }
@@ -129,9 +130,10 @@ export async function checkGitVersion(
  * <branch> (optional) sparse-checkout = a b c (our extension; space-separated)
  */
 export async function readGitmodules(
-  opts: CommonOpts,
+  options: CommonOpts,
   worktreeRoot: string,
 ): Promise<Gitmodules> {
+  const opts = { __proto__: null, ...options } as CommonOpts
   const gitmodulesPath = path.join(worktreeRoot, '.gitmodules')
   if (!existsSync(gitmodulesPath)) {
     logger.error("Couldn't parse .gitmodules!")
@@ -209,12 +211,12 @@ export async function getRoots(): Promise<{
  * split on whitespace (quoted paths are not yet supported).
  */
 export async function applySparsePatterns(
-  opts: CommonOpts,
+  options: CommonOpts,
   submoduleWorktreeRoot: string,
   patterns: string,
 ): Promise<void> {
-  await runGit(opts, ['-C', submoduleWorktreeRoot, 'sparse-checkout', 'init'])
-  await runGit(opts, [
+  await runGit(options, ['-C', submoduleWorktreeRoot, 'sparse-checkout', 'init'])
+  await runGit(options, [
     '-C',
     submoduleWorktreeRoot,
     'sparse-checkout',

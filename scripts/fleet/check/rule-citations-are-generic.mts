@@ -62,7 +62,7 @@ const SKIP_DIRS = new Set([
 // in their own prose; exempt them so the gate doesn't fire on itself.
 const SELF_EXEMPT_FRAGMENTS = [
   '_shared/dated-citation',
-  'dated-citation-reminder/',
+  'dated-citation-guard/',
   'check/rule-citations-are-generic',
 ]
 

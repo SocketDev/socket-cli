@@ -11,7 +11,7 @@ description: >-
   --auto to skip the interview.
 argument-hint: "<findings-path> [--auto] [--votes N] [--repo PATH] [--fp-rules FILE] [--fresh]"
 user-invocable: true
-allowed-tools: Workflow, Task, Read, Glob, Grep, Write, AskUserQuestion, Bash(git log:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(wc:*), Bash(node .claude/skills/fleet/_shared/scripts/checkpoint.mts:*)
+allowed-tools: Workflow, Task, Read, Glob, Grep, Write, AskUserQuestion, Bash(git log:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(wc:*), Bash(node .claude/skills/fleet/_shared/scripts/checkpoint.mts:*), Bash(node scripts/fleet/triaging-findings/cli.mts:*)
 model: claude-opus-4-8
 context: fork
 ---
@@ -229,37 +229,28 @@ If nothing parseable is found, stop and report what was seen.
 
 ### 1b. Normalize fields
 
-For each raw record, build a finding dict. **Pull what's present; never guess
-what's absent.** Field map (source-key aliases → canonical):
+Once 1a has produced the raw records array, the normalization is deterministic —
+hand it to the engine:
 
-| Canonical            | Also accept                                              |
-| -------------------- | -------------------------------------------------------- |
-| `file`               | `path`, `location.file`, `filename`                      |
-| `line`               | `line_number`, `location.line`, `lineno`                 |
-| `category`           | `type`, `cwe`, `rule_id`, `crash_type`, `vuln_class`     |
-| `severity`           | `severity_rating`, `level`, `priority`, `risk`           |
-| `title`              | `name`, `summary`, `message`                             |
-| `description`        | `details`, `report`, `body`, `evidence`                  |
-| `exploit_scenario`   | `attack_scenario`, `poc`, `reproduction`                 |
-| `preconditions`      | `requirements`, `assumptions`                            |
-| `recommendation`     | `fix`, `remediation`, `mitigation`                       |
-| `scanner_confidence` | `confidence`, `score`, `certainty` (normalize to 0.0-1.0)|
+```bash
+node scripts/fleet/triaging-findings/cli.mts ingest --from <records>.json --source <label> --out ./.triage-state/ingested.json
+```
 
-Attach to every finding:
-
-- `id`: `f001`, `f002`, … in ingest order. If `scanner_confidence` is present on
-  most findings, order ingest by it descending so high-signal findings get
-  verified first; otherwise keep source order. Scheduling prior only — it does
-  not affect verdicts.
-- `source`: relative path of the file it came from, plus source format.
-- `missing_fields`: list of canonical fields that were absent. If `file` is
-  missing or does not resolve under `--repo`, the finding is **unlocatable**: it
-  skips dedup and verification and is emitted directly with `verdict:
-  false_positive`, `verify_verdict: needs_manual_test`, `confidence: 0`,
-  `refute_reasons: ["doesnt_exist"]`, `rationale: "no source location in input;
-  cannot verify statically; human review required"`. Never emit a confident
-  verdict on a finding you could not locate, and never let it absorb or be
-  absorbed by dedup.
+It applies the source-key alias map (`path`/`location.file`/`filename` → `file`;
+`type`/`cwe`/`rule_id`/`crash_type`/`vuln_class` → `category`;
+`severity_rating`/`level`/`priority`/`risk` → `severity`;
+`name`/`summary`/`message` → `title`; `details`/`report`/`body`/`evidence` →
+`description`; `confidence`/`score`/`certainty` → `scanner_confidence`,
+normalized to 0.0-1.0; and the rest), assigns `f001`, `f002`, … in ingest order
+(by `scanner_confidence` desc when most records carry it — a scheduling prior
+that does not affect verdicts), records `missing_fields`, and — for any finding
+with no `file` — emits the fixed **unlocatable** envelope (`verdict:
+false_positive`, `verify_verdict: needs_manual_test`, `confidence: 0`,
+`refute_reasons: ["doesnt_exist"]`, the human-review rationale). The constant
+verdict shape lives in the engine so a confident verdict is never emitted on a
+finding that couldn't be located, and an unlocatable never enters dedup. **Pull
+what's present; never guess what's absent** is the engine's contract — the
+alias table is its `FIELD_ALIASES`, unit-tested.
 
 ### 1c. Locate the target codebase
 
@@ -636,14 +627,25 @@ Attach as `owner_hint`; state the source. For non-true-positive findings,
 
 ## Phase 6: Output
 
-### 6a. Sort
+### 6a + 6b. Sort + write `./TRIAGE.json` (engine)
 
-1. `verdict`: `true_positive`, then `duplicate`, then `false_positive`.
-2. Within true positives: `severity` HIGH > MEDIUM > LOW, then `confidence` desc,
-   then `severity_alignment` desc.
-3. Within others: original `id`.
+The sort, the summary counts, and the every-finding-once invariant are
+deterministic — hand the triaged findings to the engine:
 
-### 6b. Write `./TRIAGE.json`
+```bash
+node scripts/fleet/triaging-findings/cli.mts report --from ./.triage-state/triaged.json --out-json ./TRIAGE.json
+```
+
+`triaged.json` is `{ context, findings, input_ids }` (the full ingest id set as
+`input_ids`). The engine sorts by verdict (`true_positive`, then `duplicate`,
+then `false_positive`; within true positives by `severity` HIGH>MEDIUM>LOW, then
+`confidence` desc, then `severity_alignment` desc; others by id), computes the
+summary counts, **asserts every input id appears exactly once** (a dropped,
+duplicated, or invented id throws — the report is never silently lossy), writes
+the envelope below to `./TRIAGE.json`, and prints the Phase-6d terminal summary
+to stdout. Don't print the JSON to the terminal; the engine writes file-only.
+
+The TRIAGE.json shape it writes:
 
 ```json
 {
@@ -717,9 +719,10 @@ append ./TRIAGE.md --from ./.triage-state/_chunk.tmp`:
 
 ### 6d. Terminal summary
 
-Under ~12 lines: confirmed/FP/dup counts; HIGH/MEDIUM/LOW with the top HIGH
-title + owner; needs-manual-test count; top 3 refute reasons; "Wrote ./TRIAGE.md
-and ./TRIAGE.json".
+The `report` engine call (6a/6b) already prints the counts line, the
+HIGH/MEDIUM/LOW split, and the top HIGH title + owner to stdout — relay it. Add
+the top 3 refute reasons and "Wrote ./TRIAGE.md and ./TRIAGE.json". Keep it under
+~12 lines.
 
 ---
 

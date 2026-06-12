@@ -90,6 +90,14 @@ export interface VitestNames {
   // a signal that bare test calls are NOT vitest and runner-specific rules
   // should stand down.
   importsNodeTest: boolean
+  // EVERY local name bound by an import in the file, regardless of source
+  // module. A camelCase wrapper like `describeNetworkOnly` imported from
+  // `'./util/skip-helpers'` classifies as a describe call (the wrapper
+  // heuristic) but is NOT from `'vitest'`; without this set the
+  // require-vitest-globals-import rule would falsely flag it as an unimported
+  // global. A name in `importedNames` is a real binding, so it's never
+  // "undefined at runtime".
+  importedNames: Set<string>
 }
 
 const NODE_TEST_SPECIFIERS: ReadonlySet<string> = new Set([
@@ -105,13 +113,14 @@ const NODE_TEST_SPECIFIERS: ReadonlySet<string> = new Set([
 export function collectVitestNames(program: AstNode): VitestNames {
   const names = new Map<string, string>()
   const fromVitestImport = new Set<string>()
+  const importedNames = new Set<string>()
   let importsNodeTest = false
   // Seed the tolerant map with the always-known roots mapping to themselves.
   for (const root of ALWAYS_KNOWN_ROOTS) {
     names.set(root, root)
   }
   if (!program || !Array.isArray(program.body)) {
-    return { names, fromVitestImport, importsNodeTest }
+    return { fromVitestImport, importedNames, importsNodeTest, names }
   }
   for (let i = 0, { length } = program.body; i < length; i += 1) {
     const stmt = program.body[i] as AstNode
@@ -121,6 +130,15 @@ export function collectVitestNames(program: AstNode): VitestNames {
       !Array.isArray(stmt.specifiers)
     ) {
       continue
+    }
+    // Record the local name of EVERY import specifier (named, default, or
+    // namespace) from ANY module — a real binding is never an unimported
+    // global, even when the wrapper heuristic classifies it as a test call.
+    for (let j = 0, { length: slen } = stmt.specifiers; j < slen; j += 1) {
+      const spec = stmt.specifiers[j] as AstNode
+      if (spec?.local?.type === 'Identifier') {
+        importedNames.add(spec.local.name)
+      }
     }
     const specifier = String(stmt.source.value)
     if (NODE_TEST_SPECIFIERS.has(specifier)) {
@@ -142,7 +160,7 @@ export function collectVitestNames(program: AstNode): VitestNames {
       }
     }
   }
-  return { names, fromVitestImport, importsNodeTest }
+  return { fromVitestImport, importedNames, importsNodeTest, names }
 }
 
 // Walk a CallExpression's callee to extract the dotted member chain, e.g.
@@ -150,6 +168,34 @@ export function collectVitestNames(program: AstNode): VitestNames {
 // ['describe','concurrent','each'], `expect(x)` → ['expect']. Returns undefined
 // for computed/dynamic members. The first element is the ROOT binding name (the
 // local name, which `names` maps back to the imported vitest name).
+// True when a CallExpression has the genuine titled-test shape `name('title',
+// fn)`: a string-literal (or template-literal) title followed by a function
+// body. This is the shape every fleet test/describe wrapper is invoked with
+// (`itWindowsOnly('x', () => {…})`, `describeUnixOnly('grp', () => {…})`). It is
+// the discriminator that keeps the camelCase wrapper heuristic from mis-firing
+// on a same-prefixed NON-test local: `testRequire('@npmcli/arborist')` (string
+// arg, NO callback), `testServer(...)`, a `createRequire` result, etc. Those
+// match `/^test[A-Z]/` by name but are not titled-test invocations, so they are
+// rejected here.
+export function isTitledCallWithBody(node: AstNode): boolean {
+  const args = node?.arguments
+  if (!Array.isArray(args) || args.length < 2) {
+    return false
+  }
+  const title = args[0] as AstNode
+  const titleIsString =
+    (title?.type === 'Literal' && typeof title.value === 'string') ||
+    title?.type === 'TemplateLiteral'
+  if (!titleIsString) {
+    return false
+  }
+  const body = args[1] as AstNode
+  return (
+    body?.type === 'FunctionExpression' ||
+    body?.type === 'ArrowFunctionExpression'
+  )
+}
+
 export function getCalleeChain(node: AstNode): string[] | undefined {
   if (node?.type !== 'CallExpression') {
     return undefined
@@ -212,20 +258,31 @@ export function classifyVitestCall(
     // callback they take IS a real test/describe body, and an `expect` inside
     // it is NOT standalone. Recognize the `it<Upper>` / `test<Upper>` /
     // `describe<Upper>` camelCase shape as the corresponding kind.
-    if (/^(?:it|test)[A-Z]/.test(localRoot)) {
-      return {
-        root: localRoot,
-        kind: 'test',
-        modifiers: chain.slice(1),
-        localChain: chain,
+    //
+    // GUARD: only a DIRECT titled call with a function body — `name('t', fn)` —
+    // is a wrapper invocation. `chain.length === 1` rejects a member chain
+    // (`testFoo.bar(...)`), and `isTitledCallWithBody` rejects same-prefixed
+    // NON-test locals invoked without a callback: `testRequire('pkg')` (a
+    // `createRequire` result — string arg, no fn), `testServer(...)`, etc.
+    // Without this guard those classify as `kind:'test'` and
+    // require-vitest-globals-import flags them as unimported vitest globals — a
+    // false positive, since they are ordinary user functions, not vitest.
+    if (chain.length === 1 && isTitledCallWithBody(node)) {
+      if (/^(?:it|test)[A-Z]/.test(localRoot)) {
+        return {
+          root: localRoot,
+          kind: 'test',
+          modifiers: chain.slice(1),
+          localChain: chain,
+        }
       }
-    }
-    if (/^describe[A-Z]/.test(localRoot)) {
-      return {
-        root: localRoot,
-        kind: 'describe',
-        modifiers: chain.slice(1),
-        localChain: chain,
+      if (/^describe[A-Z]/.test(localRoot)) {
+        return {
+          root: localRoot,
+          kind: 'describe',
+          modifiers: chain.slice(1),
+          localChain: chain,
+        }
       }
     }
     return undefined

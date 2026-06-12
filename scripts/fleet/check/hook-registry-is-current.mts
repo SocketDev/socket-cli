@@ -103,7 +103,7 @@ export function staleBullets(
   real: ReadonlySet<string>,
   capabilityGated: ReadonlySet<string> = new Set(),
 ): string[] {
-  // oxlint-disable-next-line unicorn/no-array-sort -- .filter() already returns a fresh array (no shared mutation); .toSorted() would trip socket/no-es2023-array-methods-below-node20 in cascaded Node-18 repos.
+  // oxlint-disable-next-line unicorn/no-array-sort -- .filter() already returns a fresh array (no shared mutation); .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
   return bullets.filter(id => !real.has(id) && !capabilityGated.has(id)).sort()
 }
 
@@ -120,7 +120,7 @@ function main(): void {
 
   // Report (non-fatal) undocumented hooks so the completeness gap stays visible.
   const documented = new Set(bullets)
-  // oxlint-disable-next-line unicorn/no-array-sort -- spread already copies; .toSorted() would trip socket/no-es2023-array-methods-below-node20 in cascaded Node-18 repos.
+  // oxlint-disable-next-line unicorn/no-array-sort -- spread already copies; .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
   const undocumented = [...real].filter(h => !documented.has(h)).sort()
   if (undocumented.length > 0) {
     logger.info(

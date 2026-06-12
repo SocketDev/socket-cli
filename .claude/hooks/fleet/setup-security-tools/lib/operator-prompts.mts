@@ -11,12 +11,18 @@
  *   - `main()` — orchestration, not a helper.
  */
 
+import os from 'node:os'
 import process from 'node:process'
 import readline from 'node:readline'
 
 import { getCI } from '@socketsecurity/lib-stable/env/ci'
 import type { Logger } from '@socketsecurity/lib-stable/logger/logger'
 
+import {
+  detectSparkle,
+  disableSparkle,
+  SPARKLE_APPS,
+} from '../../_shared/sparkle-auto-update.mts'
 import { installShellRcBridge } from './shell-rc-bridge.mts'
 import type { BridgeWriteResult } from './shell-rc-bridge.mts'
 import { keychainAvailable, writeTokenToKeychain } from './token-storage.mts'
@@ -216,5 +222,38 @@ export function wireBridgeIntoShellRc(logger: Logger, token: string): void {
       `Failed to write the shell-rc env block: ${(e as Error).message}. ` +
         'You will need to export SOCKET_API_KEY manually for Socket tools to pick it up.',
     )
+  }
+}
+
+/**
+ * Disable Sparkle auto-update for every fleet-tooling macOS GUI app that ships
+ * a Sparkle updater (e.g. OrbStack). A Sparkle app can swap a tool version under
+ * a running build / scan and rides its own update channel outside the soak gate.
+ * Writes the disable defaults via `_shared/sparkle-auto-update.mts` (shared with
+ * the `check --all` audit). No-op off macOS. Idempotent — `defaults write` of
+ * the same value is a no-op.
+ */
+export function disableSparkleAutoUpdate(logger: Logger): void {
+  if (os.platform() !== 'darwin') {
+    return
+  }
+  for (let i = 0, { length } = SPARKLE_APPS; i < length; i += 1) {
+    const app = SPARKLE_APPS[i]!
+    const before = detectSparkle(app)
+    if (before.state === 'absent') {
+      continue
+    }
+    if (before.state === 'disabled') {
+      logger.log(`  ${app.name} Sparkle auto-update already disabled.`)
+      continue
+    }
+    if (disableSparkle(app)) {
+      logger.log(`  Disabled ${app.name} Sparkle auto-update.`)
+    } else {
+      logger.warn(
+        `  Failed to disable ${app.name} Sparkle auto-update; run manually: ` +
+          `defaults write ${app.domain} SUEnableAutomaticChecks -bool false`,
+      )
+    }
   }
 }

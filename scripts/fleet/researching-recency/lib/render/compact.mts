@@ -6,11 +6,7 @@
  *   EVIDENCE markers so the model knows not to dump it verbatim.
  */
 
-import {
-  BADGE_PREFIX,
-  EVIDENCE_CLOSE,
-  EVIDENCE_OPEN,
-} from '../markers.mts'
+import { BADGE_PREFIX, EVIDENCE_CLOSE, EVIDENCE_OPEN } from '../markers.mts'
 import { renderFooter } from './footer.mts'
 
 import type { Candidate, SourceResult } from '../types.mts'
@@ -72,8 +68,10 @@ export function renderCompact(options: {
   fromDate: string
   savedPath: string
 }): string {
-  const { candidates, fromDate, results, savedPath, syncedDate, topic } =
-    options
+  const { candidates, fromDate, results, savedPath, syncedDate, topic } = {
+    __proto__: null,
+    ...options,
+  }
   const activeSources = results
     .filter(result => result.status === 'ok')
     .map(result => result.source)

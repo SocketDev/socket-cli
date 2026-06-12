@@ -26,7 +26,7 @@ Iteratively stub heavyweight modules that the bundler statically pulls in but th
 
 ## Required: rolldown/lib-stub.mts
 
-🚨 This skill **REQUIRES** `.config/repo/rolldown/lib-stub.mts` to be present and to export `createLibStubPlugin`. The file is fleet-canonical (cascades from `socket-wheelhouse/template/.config/rolldown/lib-stub.mts` via sync-scaffolding) and must NOT be edited locally per the no-fleet-fork rule.
+🚨 This skill **REQUIRES** `.config/repo/rolldown/lib-stub.mts` to be present and to export `createLibStubPlugin`. The file is fleet-canonical (cascades from `socket-wheelhouse/template/.config/repo/rolldown/lib-stub.mts` via sync-scaffolding) and must NOT be edited locally per the no-fleet-fork rule.
 
 Before doing anything else:
 
@@ -65,13 +65,18 @@ grep -q "createLibStubPlugin" .config/repo/rolldown.config.mts || {
 
 ```bash
 pnpm build
-ls -lah dist/
+node scripts/fleet/trimming-bundle/measure-bundle.mts --json
 pnpm test
 ```
 
-Record:
+`measure-bundle.mts` emits `{ bundleSizeBytes, perFileSizes (heaviest-first),
+preconditions (dist exists / rolldown.config imports createLibStubPlugin /
+lib-stub.mts present), rawDistImportSurvey (the deduped dist import specifiers,
+at full subpath granularity) }`. It MEASURES only — the candidate discovery +
+HIGH/MEDIUM/LOW grading in Phase 2 stay your call (the static signal is
+ambiguous; the engine deliberately renders no verdict). Record:
 
-- Current bundle size (sum of `dist/*.js`).
+- The baseline `bundleSizeBytes` (re-run after each stub for the delta).
 - Current test pass count.
 - Any pre-existing test failures (do NOT proceed if tests were already failing; fix first).
 

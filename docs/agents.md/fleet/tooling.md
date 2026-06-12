@@ -18,9 +18,24 @@ NEVER pass `--experimental-strip-types` to `node`. Runners are `.mts` executed b
 
 The Socket Firewall (SFW) footer carries malware/soak warnings; piping `pnpm install`/`check`/`test`/`build` output to `tail` or `head` hides it. Let the full output through (`.claude/hooks/fleet/no-tail-install-out-guard/`).
 
-## Python: never `pip` / `pip3`
+## Python: `uv` for projects, never `pip` / `pip3`
 
-Python tooling goes through `@socketsecurity/lib/external-tools/pypa-tool`; the dev shortcut is `pipx install <pkg>==<ver>` (pinned). Never bare `pip`/`pip3` (`.claude/hooks/fleet/prefer-pipx-over-pip-guard/`).
+A Python project uses [`uv`](https://docs.astral.sh/uv/) (Astral), pinned in `external-tools.json` (currently `0.11.21`). uv is the Python analog of the fleet's pnpm model: a hash-verified `uv.lock` plus an `exclude-newer` soak. The dev shortcut for one-off CLI tools stays `pipx install <pkg>==<ver>` (pinned). Never bare `pip`/`pip3` (`.claude/hooks/fleet/prefer-pipx-over-pip-guard/`).
+
+A project opts into uv with a `[tool.uv]` table in `pyproject.toml`. Such a project MUST commit a `uv.lock` and pin the soak; `scripts/fleet/check/uv-lockfiles-are-current.mts` (in `check --all`) fails otherwise. Both the check and any future guard read `_shared/uv-config.mts`.
+
+- **Lockfile.** `uv lock` writes `uv.lock` with per-dependency hashes; uv verifies them on install, so no separate `--require-hashes`. Commit it like `pnpm-lock.yaml`.
+- **Reproducible CI.** `uv sync --locked` installs strictly from the lock and errors if it's stale (the `--frozen-lockfile` analog). `uv sync --frozen` skips the staleness check. `uv lock --check` asserts the lock is current with no side effects.
+- **Soak.** Pin `[tool.uv] exclude-newer` to the 7-day window (the `minimumReleaseAge` analog) — uv then refuses any package published more recently, blocking freshly-published malware:
+
+```toml
+[tool.uv]
+exclude-newer = "7 days"
+```
+
+- **Malware scan (optional).** `UV_MALWARE_CHECK=1` makes `uv sync` run a lightweight OSV scan of the lockfile.
+
+uv is pre-1.0 (`0.x`) — adopted as a noted exception to the stable-1.0+ rule because it is de-facto stable, Astral-backed, Apache-2.0 / MIT, and ships as a single static binary. It replaces the unpinned `pip3 install --break-system-packages` pattern in Dockerfiles, which has no lockfile or soak.
 
 ## Reserved `scripts/` dir names
 
@@ -33,6 +48,28 @@ A `curl`/`wget`/`fetch` to an off-allowlist host is blocked — fetch only from 
 ## Package-manager auto-update OFF
 
 Every package manager the fleet uses for tooling (`brew`/`choco`/`winget`/`scoop`/`npm`/`pnpm`) must have auto-update disabled, so an invocation can't change a tool version mid-task or pull an unsoaked package. Knobs set by `setup-security-tools`, audited in `check --all`, enforced at invocation. Bypass `Allow package-manager-auto-update bypass` (or `Allow <name> auto-update bypass` per manager) (`.claude/hooks/fleet/package-manager-auto-update-guard/`).
+
+## Homebrew supply-chain hardening (macOS)
+
+Homebrew 6.0.0 added two opt-in supply-chain controls. The fleet requires both, plus the version floor they depend on — a `brew` below 6.0.0 or with a knob unset is blocked at invocation (`.claude/hooks/fleet/brew-supply-chain-guard/`), audited in `check --all` (`scripts/fleet/check/brew-supply-chain-is-hardened.mts`), and set by `setup-security-tools` (persists both knobs into the managed shell-rc block). All three read `_shared/brew-supply-chain.mts`.
+
+- **`HOMEBREW_REQUIRE_TAP_TRUST=1`** — refuse to evaluate a third-party tap's code until it is explicitly trusted (`brew trust user/repo`, or `--formula`/`--cask`/`--command` for a single item). Closes the tap-as-RCE surface. Official taps stay trusted by default. See <https://docs.brew.sh/Tap-Trust>.
+- **`HOMEBREW_CASK_OPTS_REQUIRE_SHA=1`** — refuse a cask whose download has no pinned checksum (`sha256 :no_check`). See <https://docs.brew.sh/Supply-Chain-Security>.
+
+Both env knobs are silently ignored by an older Homebrew, so the **≥6.0.0 version floor is the real gate**. The guard reads the installed version from `brew --version`; on a machine below the floor every `brew` invocation is blocked until `brew update && brew upgrade` clears it. Bypass `Allow brew-supply-chain bypass`. This is a distinct concern from auto-update (which owns `HOMEBREW_NO_AUTO_UPDATE`) — two single-purpose guards on `brew`, one per concern.
+
+## Sparkle GUI-app auto-update OFF (macOS)
+
+macOS GUI apps the fleet uses for tooling that self-update via the [Sparkle](https://sparkle-project.org/) framework (e.g. OrbStack, bundle `dev.kdrag0n.MacVirt`) must have auto-update disabled. A Sparkle install can swap a tool version under a running build or scan, and it rides the app's own update channel outside the soak gate. Set by `setup-security-tools`, audited in `check --all` (`scripts/fleet/check/sparkle-auto-update-is-disabled.mts`); both read `_shared/sparkle-auto-update.mts`. There's no PreToolUse guard: a GUI app self-updates with no Bash invocation to gate, so persist plus audit are the surfaces.
+
+The disable writes two Sparkle prefs into the app's defaults domain (a user-level `defaults write` overrides the Info.plist default):
+
+```sh
+defaults write dev.kdrag0n.MacVirt SUAutomaticallyUpdate -bool false
+defaults write dev.kdrag0n.MacVirt SUEnableAutomaticChecks -bool false
+```
+
+`SUEnableAutomaticChecks=false` stops the background update check; `SUAutomaticallyUpdate=false` stops silent install of a found update. Add a new Sparkle app by appending to `SPARKLE_APPS` in `_shared/sparkle-auto-update.mts` (id, name, bundle-id domain); the persist and audit pick it up automatically.
 
 ## Docs lead with pnpm
 
@@ -84,7 +121,7 @@ This is a four-stage orchestrator. Don't reach for any of the lower-level script
 | Stage | Does                                                                                                                                                                                                                                                                                                                                                                                                                       | Driven by                                                    |
 | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
 | A     | Bumps `socket-registry/external-tools.json`: downloads every platform binary from upstream, recomputes sha256 ourselves (integrity model is binary-download + own-checksum, not trust in upstream-published values), writes the file. Commits to registry.                                                                                                                                                                 | `tools/pnpm.mts#applyToRegistry` (+ `zizmor.mts`, `sfw.mts`) |
-| B     | Delegates to `socket-registry/scripts/cascade-workflows.mts`: recursively bumps every SHA pin in registry's own workflows (`setup-and-install` → `setup` → `checkout`), converging to a fixed point. Commits to registry.                                                                                                                                                                                                   | `pipeline.mts#stageB`                                        |
+| B     | Delegates to `socket-registry/scripts/cascade-workflows.mts`: recursively bumps every SHA pin in registry's own workflows (`setup-and-install` → `setup` → `checkout`), converging to a fixed point. Commits to registry.                                                                                                                                                                                                  | `pipeline.mts#stageB`                                        |
 | C     | Pushes registry main; polls GitHub Actions for the cascade SHA's CI to land green. Aborts the whole cascade if registry CI fails. Fleet repos must not pin to a broken registry. Skipped via `--skip-ci-wait`.                                                                                                                                                                                                             | `pipeline.mts#stageC`                                        |
 | D     | For every primary fleet checkout: runs `cleanup-stranded.mts --against <stageBSha>` (no-layering rule discards prior unpushed cascade commits), rewrites every `setup-and-install@<old-sha>` reference to the new registry SHA via diff-based pin matching, optionally runs the tool's per-fleet step (pnpm bumps `packageManager` + `engines.pnpm`), runs `pnpm run format` to fold pre-existing drift, commits + pushes. | `pipeline.mts#stageD`                                        |
 

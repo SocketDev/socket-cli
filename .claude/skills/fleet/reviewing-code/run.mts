@@ -1,8 +1,9 @@
 /**
- * Reviewing-code skill runner — multi-agent four-pass review of a branch.
+ * Reviewing-code skill runner — multi-agent multi-pass review of a branch.
  *
- * Pipeline (defaults): 1. discovery — codex 2. discovery-secondary — codex 3.
- * remediation — codex 4. verify — claude.
+ * Pipeline (defaults): 1. spec-compliance — codex (gates the quality passes) 2.
+ * discovery — codex 3. discovery-secondary — codex 4. remediation — codex 5.
+ * verify — claude.
  *
  * Each pass picks the preferred backend per role from a small registry, with
  * graceful fallback through the ordered preference list when a CLI isn't
@@ -25,7 +26,12 @@ import { spawn } from '@socketsecurity/lib/process/spawn/child'
 
 const logger = getDefaultLogger()
 
-type Role = 'discovery' | 'discovery-secondary' | 'remediation' | 'verify'
+type Role =
+  | 'spec-compliance'
+  | 'discovery'
+  | 'discovery-secondary'
+  | 'remediation'
+  | 'verify'
 
 type BackendName = 'codex' | 'claude' | 'opencode' | 'kimi'
 
@@ -50,7 +56,7 @@ const BACKENDS: Readonly<Record<BackendName, BackendDescriptor>> = {
     hybrid: false,
     name: 'codex',
     run(promptFile, outFile) {
-      const model = process.env['CODEX_MODEL'] ?? 'gpt-5.4'
+      const model = process.env['CODEX_MODEL'] ?? 'gpt-5.5'
       const reasoning = process.env['CODEX_REASONING'] ?? 'xhigh'
       return {
         argv: [
@@ -77,8 +83,12 @@ const BACKENDS: Readonly<Record<BackendName, BackendDescriptor>> = {
       const model = process.env['CLAUDE_MODEL'] ?? 'opus'
       // Pair the model with a reasoning effort (claude `--effort`) — see
       // _shared/multi-agent-backends.md. Review is judgment-heavy, so the
-      // default is `high`; codex's sibling knob is CODEX_REASONING.
+      // default is `high`; codex's sibling knob is CODEX_REASONING. Fable /
+      // Mythos are adaptive-thinking-only, so omit --effort for them rather
+      // than pass a level they ignore.
       const effort = process.env['CLAUDE_EFFORT'] ?? 'high'
+      const adaptiveOnly = /fable|mythos/i.test(model)
+      const effortArgs = adaptiveOnly ? [] : ['--effort', effort]
       // Programmatic-Claude lockdown — all four flags per CLAUDE.md
       // (tools / allowedTools / disallowedTools / permission-mode).
       // The official permission flow is hooks → deny → mode → allow →
@@ -93,8 +103,7 @@ const BACKENDS: Readonly<Record<BackendName, BackendDescriptor>> = {
           '--print',
           '--model',
           model,
-          '--effort',
-          effort,
+          ...effortArgs,
           '--no-session-persistence',
           '--permission-mode',
           'dontAsk',
@@ -175,11 +184,55 @@ const TIMEOUT_VERIFY_MS = 5 * 60 * 1000
 
 const ROLES: Readonly<Record<Role, RoleSpec>> = {
   __proto__: null,
+  'spec-compliance': {
+    preferenceOrder: ['codex', 'kimi', 'claude'],
+    timeoutMs: TIMEOUT_HEAVY_MS,
+    buildPrompt:
+      ctx => `Review the current branch for SPEC COMPLIANCE only. This pass gates the later quality review: the question is whether the change does what it set out to do, no more and no less — not whether the code is well written.
+
+Scope:
+- current branch: ${ctx.branch}
+- base ref: ${ctx.baseRef}
+- merge base: ${ctx.mergeBase}
+- review range: ${ctx.range}
+
+Commits in range:
+${ctx.commitList}
+
+Diff stat:
+${ctx.diffStat}
+
+Instructions:
+- Inspect the repository directly. Use git diff, git log, git show, and read files as needed.
+- Review only the changes introduced in ${ctx.range}. Do not review uncommitted changes.
+- Infer the change's STATED INTENT from the commit messages, PR-style summary, and the shape of the diff. State that intent explicitly at the top so the reader can judge your verdict against it.
+- Then assess three failure modes against that intent:
+  - OVER-BUILDING: code added beyond what the intent requires — speculative abstraction, unused options, unrequested features, refactors riding along with a bug fix, error handling for cases that cannot happen.
+  - SCOPE CREEP: changes to files / behavior unrelated to the stated intent.
+  - UNDER-BUILDING: the intent is only partly delivered — a stated case left unhandled, a TODO standing in for the work, a path the change claims to cover but does not.
+- Do NOT report code-quality, style, naming, or performance issues here. Those belong to the later quality pass. If you are unsure whether something is a compliance issue or a quality issue, leave it for quality.
+- Every finding cites the affected file + line and explains how it diverges from the stated intent.
+- End with an explicit verdict line: \`Spec compliance: PASS\` when the change matches its intent with no over/under/scope issues, or \`Spec compliance: CONCERNS\` with the count, so the orchestrator can gate.
+- Return only the raw markdown document itself, suitable for saving under docs/. Do not add preamble, code fences, or wrapper text.
+
+Use this structure:
+# <descriptive title>
+## Scope
+## Stated Intent
+## Spec Compliance
+### Over-building
+### Scope creep
+### Under-building
+<verdict line>
+`,
+  },
   discovery: {
     preferenceOrder: ['codex', 'kimi', 'claude'],
     timeoutMs: TIMEOUT_HEAVY_MS,
     buildPrompt:
       ctx => `Take a look at the current branch and give me a full and thorough review. This is a big one, so take your time.
+
+A spec-compliance pass has already run and written its section to the report at \`${ctx.outputPath}\`. Preserve that section. Read it first, then add your findings BELOW it without removing or rewriting the spec-compliance content.
 
 Scope:
 - current branch: ${ctx.branch}
@@ -210,12 +263,14 @@ Instructions:
 - For especially important findings, include a concrete trace through the affected code path. If a small local repro is feasible, use it.
 - For each finding, include affected file and line references, the issue, and the impact.
 - If there are no findings, say that explicitly and mention any residual risks or validation gaps.
-- Return only the raw markdown document itself, suitable for saving under docs/.
+- Return only the raw markdown document itself, suitable for saving under docs/. Output the FULL document: keep the existing \`## Stated Intent\` and \`## Spec Compliance\` sections from the spec-compliance pass verbatim, and add your bug findings below them.
 - Do not add preamble text, code fences, or wrapper text like "Updated <path>".
 
-Use this structure:
+Use this structure (the Stated Intent + Spec Compliance sections are already present from the prior pass — preserve them):
 # <descriptive title>
 ## Scope
+## Stated Intent
+## Spec Compliance
 ## Executive Summary
 ## Findings
 ### 1. <title>
@@ -330,12 +385,51 @@ type Args = {
   readonly skipVerify: boolean
 }
 
+// Order is the contract: spec-compliance runs FIRST and gates the quality
+// passes (discovery / remediation). Matching an implementation against its
+// stated intent (over-building, scope creep, under-building) is cheaper to fix
+// before quality review than after, and a quality pass on out-of-scope code
+// wastes the round-trip. The check `review-stages-are-ordered.mts` asserts this
+// ordering so it can't silently regress.
 const ALL_ROLES: readonly Role[] = [
+  'spec-compliance',
   'discovery',
   'discovery-secondary',
   'remediation',
   'verify',
 ]
+
+// Pull the `## Stated Intent` + `## Spec Compliance` block out of the report so
+// a later overwriting pass can't silently drop the gate's output. Returns the
+// block (both headings through to the next `## Executive Summary` or end), or ''
+// when the report has no spec-compliance section yet.
+export function extractSpecSection(report: string): string {
+  const start = report.search(/^## Stated Intent\b/m)
+  if (start < 0) {
+    return ''
+  }
+  const after = report.slice(start)
+  const end = after.search(/^## Executive Summary\b/m)
+  return (end < 0 ? after : after.slice(0, end)).trimEnd()
+}
+
+// Guarantee the spec-compliance block survives a pass that rewrote the whole
+// report. If `written` already contains a `## Stated Intent` section the agent
+// preserved it — return as-is. Otherwise re-insert the captured block ahead of
+// the first `## ` section (or prepend it) so the gate's verdict is never lost.
+export function ensureSpecSection(
+  written: string,
+  specSection: string,
+): string {
+  if (!specSection || /^## Stated Intent\b/m.test(written)) {
+    return written
+  }
+  const firstSection = written.search(/^## /m)
+  if (firstSection < 0) {
+    return `${written.trimEnd()}\n\n${specSection}\n`
+  }
+  return `${written.slice(0, firstSection)}${specSection}\n\n${written.slice(firstSection)}`
+}
 
 export async function appendSkipNote(
   reportPath: string,
@@ -702,6 +796,10 @@ async function main(): Promise<void> {
     return true
   })
 
+  // Captured after the spec-compliance pass so later overwriting passes can't
+  // silently drop the gate's verdict (code-level guarantee, not prompt trust).
+  let specSection = ''
+
   for (let i = 0, { length } = rolesToRun; i < length; i += 1) {
     const role = rolesToRun[i]!
     const passLabel = `${rolesToRun.indexOf(role) + 1}-${role}`
@@ -735,19 +833,30 @@ async function main(): Promise<void> {
     }
     if (role === 'verify') {
       await appendVerificationSection(outputPath, result.output, backend)
+    } else if (role === 'spec-compliance') {
+      // The gate creates the report. Capture its section so later passes that
+      // rewrite the whole document can't drop it.
+      await fs.writeFile(outputPath, result.output)
+      specSection = extractSpecSection(result.output)
     } else if (role === 'discovery-secondary') {
       // Only overwrite if the secondary pass actually returned a
       // different document (caller asked for "no diff = no change").
       const before = existsSync(outputPath)
         ? await fs.readFile(outputPath, 'utf8')
         : ''
-      if (before.trim() !== result.output.trim()) {
-        await fs.writeFile(outputPath, result.output)
+      const merged = ensureSpecSection(result.output, specSection)
+      if (before.trim() !== merged.trim()) {
+        await fs.writeFile(outputPath, merged)
       } else {
         logger.info(`${passLabel}: no additional findings; report unchanged`)
       }
     } else {
-      await fs.writeFile(outputPath, result.output)
+      // discovery / remediation rewrite the whole report; re-insert the
+      // spec-compliance section if the agent dropped it.
+      await fs.writeFile(
+        outputPath,
+        ensureSpecSection(result.output, specSection),
+      )
     }
   }
 

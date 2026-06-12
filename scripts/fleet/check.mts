@@ -35,6 +35,12 @@ const steps: Array<() => boolean> = [
   // gate asserts both explicitly and fails closed. No-op in repos with no
   // plugin.
   () => run('node', ['scripts/fleet/check/oxlint-plugin-loads.mts']),
+  // Fleet uses oxlint + oxfmt ONLY. Fail on a tracked foreign linter/formatter
+  // config (biome/eslint/prettier/dprint) or a package.json declaring one as a
+  // dep — the committed-state gate paired with the edit-time
+  // no-other-linters-guard hook. Vendored upstream (upstream/, vendor/, *-upstream)
+  // is exempt; we never touch upstream tooling.
+  () => run('node', ['scripts/fleet/check/linters-are-oxlint-oxfmt-only.mts']),
   // CLAUDE.md doc integrity: every cited hook + socket/ rule must exist (catches
   // stale citations after a rename/removal — the reverse of new-hook-claude-md-guard).
   () => run('node', ['scripts/fleet/check/claude-md-citations-resolve.mts']),
@@ -58,18 +64,58 @@ const steps: Array<() => boolean> = [
   // Global Claude config stays hardened (copyOnSelect: false → no TUI OSC-52
   // clipboard banner). setup/claude-config.mts sets it; this catches drift.
   () => run('node', ['scripts/fleet/check/claude-config-is-hardened.mts']),
+  // Structural floor: every skill dir is a well-formed skill — has a SKILL.md
+  // with frontmatter whose name matches the dir + a description. Catches a
+  // half-built skill (engine/test, no SKILL.md) that the mirror + citation
+  // gates would otherwise trip on later.
+  () => run('node', ['scripts/fleet/check/skills-are-well-formed.mts']),
   // Cost routing: every mutating (fix) skill must declare a model: tier so
   // mechanical work runs cheap. See docs/agents.md/fleet/skill-model-routing.md.
   () => run('node', ['scripts/fleet/check/mutating-skills-have-model.mts']),
+  // Cross-tool skills: the generated .agents/skills/ mirror (flat <tier>-<name>
+  // so Codex + OpenCode's one-level discovery finds every fleet/repo skill)
+  // stays in sync with the segmented .claude/skills/ source. Fails if a skill
+  // was added/renamed/removed without regenerating, or the mirror was
+  // hand-edited. Fix: node scripts/fleet/gen-agents-skills-mirror.mts.
+  () =>
+    run('node', ['scripts/fleet/check/agents-skills-mirror-is-current.mts']),
   // Code is law for the onboarding skill's CI step: the ci:local script keeps
   // its canonical agent-ci flag set, and the agent-ci Dockerfile (when adopted)
   // stays byte-identical to the template.
   () => run('node', ['scripts/fleet/check/ci-local-is-canonical.mts']),
+  // Agent CI can't parse a gh-aw compiled .lock.yml (GitHub's
+  // @actions/workflow-parser crashes on its agent-runtime jobs). The
+  // agent-ci-skip-locks.mts wrapper turns that cryptic crash into an
+  // informative error/skip; this gate keeps the wrapper's guard surface intact.
+  () => run('node', ['scripts/fleet/check/agent-ci-skip-locks-is-guarded.mts']),
   // Cost routing twin: a programmatic AI spawn that pins a model must also pin
   // reasoning effort (CLAUDE.md token-spend). The lib makes effort optional —
   // this gate is the enforcement the optional field can't provide. Vocab per
   // backend: .claude/skills/fleet/_shared/multi-agent-backends.md.
   () => run('node', ['scripts/fleet/check/ai-spawns-have-paired-effort.mts']),
+  // Subagent return contract twin: the SubagentStatus union in
+  // @socketsecurity/lib/ai/subagent-status and the status table in
+  // agent-delegation.md must list the same four states, so an orchestrator
+  // reading the doc routes on a contract the code honors (code is law).
+  () =>
+    run('node', ['scripts/fleet/check/subagent-status-doc-is-current.mts']),
+  // Review-pipeline ordering is a contract: the reviewing-code skill's
+  // spec-compliance pass must precede the quality passes (discovery /
+  // remediation) in ALL_ROLES, so a quality review never runs on out-of-scope
+  // code. Parses run.mts and fails if the order regressed (code is law).
+  () => run('node', ['scripts/fleet/check/review-stages-are-ordered.mts']),
+  // Model-pricing data stays fresh: the cost-ladder figures in skill-model-
+  // routing.md drive tier routing, and vendor prices move. Parses the doc's
+  // MODEL-PRICING-SNAPSHOT date and REMINDS (non-fatal) when it's >35 days old,
+  // pointing the fix at the researching-recency skill. Turns the prose
+  // "re-verify if stale" note into an enforced surface (code is law).
+  () => run('node', ['scripts/fleet/check/pricing-data-is-current.mts']),
+  // Multi-agent routing is legal: every skill's per-role `preferenceOrder`
+  // names a known backend and never lists a hybrid one (opencode), which the
+  // resolver never auto-picks. Catches a dead/no-op entry at commit time that
+  // the runtime would silently skip. Mirrors the @socketsecurity/lib/ai/backends
+  // registry; see _shared/multi-agent-backends.md.
+  () => run('node', ['scripts/fleet/check/backend-routing-is-legal.mts']),
   // Code is law: every hook + socket/* rule ships thorough tests (both arms,
   // every branch). A token or absent test fails the gate.
   () => run('node', ['scripts/fleet/check/enforcers-have-thorough-tests.mts']),
@@ -204,6 +250,38 @@ const steps: Array<() => boolean> = [
   // EXPECTED_RELEASE_AGE_EXCLUDE — every fleet repo went red on the
   // next install.
   () => run('node', ['scripts/fleet/check/fleet-soak-exclude-parity.mts']),
+  // Supply-chain trust-gate floors + the pnpm trust-expansion opt-out, for
+  // the non-Claude edit path. Mirrors the trust-downgrade-guard +
+  // npmrc-trust-optout-guard hooks (shared detection via
+  // _shared/{trust-gates,npmrc-trust}.mts): asserts pnpm-workspace.yaml keeps
+  // minimumReleaseAge >= 10080 / trustPolicy: no-downgrade / blockExoticSubdeps:
+  // true, and that no tracked script/workflow/.npmrc sets
+  // PNPM_CONFIG_NPMRC_AUTH_FILE / a repo-local NPM_CONFIG_USERCONFIG or a
+  // `${ENV}` beside an auth/registry key.
+  () => run('node', ['scripts/fleet/check/trust-gates-are-not-weakened.mts']),
+  // Homebrew supply-chain posture (macOS). Asserts brew >= 6.0.0 with
+  // tap-trust + cask-SHA enforcement; `absent` (no brew) is a pass — CI
+  // runners lack brew. Shares detection with the brew-supply-chain-guard
+  // hook + setup-security-tools via _shared/brew-supply-chain.mts.
+  () => run('node', ['scripts/fleet/check/brew-supply-chain-is-hardened.mts']),
+  // Sparkle GUI-app auto-update OFF (macOS). Asserts apps that self-update via
+  // Sparkle (e.g. OrbStack, bundle dev.kdrag0n.MacVirt) have SUEnableAutomatic-
+  // Checks + SUAutomaticallyUpdate set false; `absent` (not installed / not
+  // macOS) is a pass. Shares detection with setup-security-tools via
+  // _shared/sparkle-auto-update.mts. No guard twin — a GUI app self-updates
+  // with no Bash invocation to gate, so persist + audit are the surfaces.
+  () =>
+    run('node', ['scripts/fleet/check/sparkle-auto-update-is-disabled.mts']),
+  // uv (Python) reproducibility: every pyproject.toml with a [tool.uv] table
+  // ships a hash-verified uv.lock + an exclude-newer soak pin (the Python
+  // analog of pnpm --frozen-lockfile + minimumReleaseAge). Vacuous pass in
+  // repos with no uv project. Shares policy with _shared/uv-config.mts.
+  () => run('node', ['scripts/fleet/check/uv-lockfiles-are-current.mts']),
+  // gh-aw agentic workflows: each `<name>.md` source has a compiled
+  // `<name>.lock.yml` (what Actions runs) whose embedded body_hash matches
+  // the .md body — catches a prompt edited without `gh aw compile`. Pure
+  // node, no gh-aw dependency; vacuous pass with no agentic workflows.
+  () => run('node', ['scripts/fleet/check/gh-aw-locks-are-current.mts']),
   // CLAUDE.md informativeness audit. Every `###` section in the fleet
   // block must anchor to one of: a hook citation
   // (`.claude/hooks/...` reference), a docs link
@@ -259,10 +337,7 @@ const steps: Array<() => boolean> = [
   // Errors when a `-guard` never blocks (→ should be `-reminder`) or a
   // `-reminder` blocks (→ should be `-guard`).
   () =>
-    run('node', [
-      'scripts/fleet/check/hook-names-match-blocking.mts',
-      '--quiet',
-    ]),
+    run('node', ['scripts/fleet/check/hook-names-are-accurate.mts', '--quiet']),
 ]
 
 for (let i = 0, { length } = steps; i < length; i += 1) {

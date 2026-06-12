@@ -2,7 +2,7 @@
 name: updating-coverage
 description: Refresh the coverage badge in the root README by running the repo's coverage script and rewriting the `![Coverage](https://img.shields.io/badge/coverage-<PCT>%25-brightgreen)` line. Sibling of `updating-security` / `updating-lockstep` under the `updating` umbrella.
 user-invocable: true
-allowed-tools: Read, Edit, Bash(pnpm run cover:*), Bash(pnpm run coverage:*), Bash(pnpm run test:cover:*), Bash(node:*), Bash(git:*), Bash(jq:*), Bash(cat:*)
+allowed-tools: Read, Bash(pnpm run cover:*), Bash(pnpm run coverage:*), Bash(pnpm run test:cover:*), Bash(node:*), Bash(git:*)
 model: claude-haiku-4-5
 context: fork
 ---
@@ -31,26 +31,22 @@ Runs the repo's coverage script and rewrites the README badge so the published n
 
 ## Phases
 
-| #   | Phase     | Outcome                                                                                                                        |
-| --- | --------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | Discovery | Find the coverage script in `package.json` (`cover` / `coverage` / `test:cover`, in that preference).                          |
-| 2   | Run       | `pnpm run <script>`. Capture stdout. Fail loudly if the run errors.                                                            |
-| 3   | Parse     | Extract the percentage. Two paths: read `coverage/coverage-summary.json` if present, otherwise scrape `All files \| ...` line. |
-| 4   | Rewrite   | Replace the `<PCT>` in the README badge URL with the parsed value (two decimals).                                              |
-| 5   | Commit    | `docs(readme): refresh coverage badge to N.NN%`. Direct-push per fleet norm.                                                   |
+| #   | Phase     | Outcome                                                                                              |
+| --- | --------- | ---------------------------------------------------------------------------------------------------- |
+| 1   | Discovery | Find the coverage script in `package.json` (`cover` / `coverage` / `test:cover`, in that preference). |
+| 2   | Run       | `pnpm run <script>`. Fail loudly if the run errors.                                                  |
+| 3   | Rewrite   | `node scripts/fleet/make-coverage-badge.mts` — reads `coverage/coverage-summary.json`, rewrites the badge. |
+| 4   | Commit    | `docs(readme): refresh coverage badge to N%`. Direct-push per fleet norm.                            |
+
+The parse + rewrite math (read the summary, round the percent, pick the color bucket, edit the README) is owned by `scripts/fleet/make-coverage-badge.mts` and its lib `scripts/fleet/lib/coverage-badge.mts` — the same owner the commit-time gate `scripts/fleet/check/coverage-badge-is-current.mts` reads. This skill never re-derives the number or the format in shell; if it did, the badge it wrote (e.g. two decimals, a hard-coded color) would be rejected by `check --all`. The skill is orchestration over those scripts; the judgment it keeps is surfacing a real coverage-run failure.
 
 ## Phase 1: discovery
 
 ```sh
-node -e '
-const p = require("./package.json").scripts ?? {};
-for (const name of ["cover", "coverage", "test:cover"]) {
-  if (p[name]) { console.log(name); process.exit(0); }
-}
-process.exit(1);'
+node -e "import('./scripts/fleet/lib/coverage-badge.mts').then(m => { const s = m.coverageScriptName(process.cwd()); if (!s) { process.exit(1) } console.log(s) })"
 ```
 
-If no matching script exists, the skill emits `no coverage script found` and exits cleanly (this is not a failure mode; many fleet repos don't track coverage).
+`coverageScriptName` returns the first of `cover` / `coverage` / `test:cover` declared in `package.json`, or exits non-zero when the repo tracks no coverage. That is not a failure mode — many fleet repos don't track coverage; the skill exits cleanly.
 
 ## Phase 2: run
 
@@ -58,44 +54,29 @@ If no matching script exists, the skill emits `no coverage script found` and exi
 pnpm run <SCRIPT>
 ```
 
-Use the standard pnpm runner so we pick up the repo's own env config (catalog versions, etc.).
+Use the standard pnpm runner so the repo's own env config (catalog versions, etc.) applies. A real coverage-run failure is surfaced, not swallowed — that's the judgment this skill keeps.
 
-## Phase 3: parse
-
-**Preferred path**: read `coverage/coverage-summary.json` (vitest / istanbul format):
+## Phase 3: rewrite
 
 ```sh
-jq -r '.total.lines.pct' coverage/coverage-summary.json
+node scripts/fleet/make-coverage-badge.mts
 ```
 
-The number is a float with one decimal place. Two decimals is the canonical badge format; pad with `.00` when needed.
+This reads `coverage/coverage-summary.json` (the `json-summary` reporter's output) and rewrites the README badge in place: the percent is `Math.round`-ed to an integer and the color is the bucket `badgeColor` computes (red → brightgreen). Exit 0 = written or already current; exit 1 = no coverage data / no badge to fill. To see the before value first, run `node scripts/fleet/make-coverage-badge.mts --check` (the dry-run the gate uses) and read its output.
 
-**Fallback path**: scrape the `All files | ...` line from coverage stdout:
-
-```sh
-pnpm run cover | tee /tmp/cover-output.txt
-awk -F '|' '/^All files/ { gsub(/ /, "", $2); print $2 }' /tmp/cover-output.txt
-```
-
-Whichever column the tool prints first (statements vs lines) is acceptable; the badge is approximate by design. Document the column choice in the commit message.
-
-## Phase 4: rewrite
-
-The canonical badge line in `README.md` is:
+The canonical badge line in `README.md` is the placeholder a seeded repo ships:
 
 ```markdown
 ![Coverage](https://img.shields.io/badge/coverage-<PCT>%25-brightgreen)
 ```
 
-Use the Edit tool to replace the `<PCT>` placeholder with the actual percentage. The `%25` is URL-encoded `%`; leave it alone.
+The script fills `<PCT>` (and updates the color); the `%25` is URL-encoded `%` and is left alone.
 
-If the README has been canonicalized but the badge still reads `<PCT>` (e.g. just-canonicalized by the readme-skeleton work), Phase 4 substitutes; otherwise the existing number is replaced.
-
-## Phase 5: commit
+## Phase 4: commit
 
 ```sh
 git add README.md
-git commit -m "docs(readme): refresh coverage badge to <N.NN>%"
+git commit -m "docs(readme): refresh coverage badge to <N>%"
 git push origin <default-branch>
 ```
 
@@ -103,13 +84,7 @@ Direct-push per the fleet's `Commits & PRs → Push policy` rule; fall back to P
 
 ## Output
 
-When called via `/update-coverage`, emit a one-line summary:
-
-```
-updated coverage badge: 96.42% → 97.18% (source: coverage/coverage-summary.json)
-```
-
-When no coverage script exists or the percentage is unchanged, exit silently.
+When called via `/update-coverage`, emit a one-line summary of the integer percent before → after (read from the `--check` run). When no coverage script exists or the percentage is unchanged, exit silently.
 
 ## Related
 

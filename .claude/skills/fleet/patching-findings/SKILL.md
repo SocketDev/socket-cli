@@ -10,7 +10,7 @@ description: >-
   triage".
 argument-hint: "<findings-path> [--repo PATH] [--top N] [--id fNNN] [--dry-run] [--fresh]"
 user-invocable: true
-allowed-tools: Workflow, Task, Read, Glob, Grep, Edit, Write, AskUserQuestion, Bash(git status:*), Bash(git diff:*), Bash(git add:*), Bash(git commit:*), Bash(git log:*), Bash(rg:*), Bash(grep:*), Bash(ls:*), Bash(wc:*), Bash(node .claude/skills/fleet/_shared/scripts/checkpoint.mts:*)
+allowed-tools: Workflow, Task, Read, Glob, Grep, Edit, Write, AskUserQuestion, Bash(git status:*), Bash(git diff:*), Bash(git add:*), Bash(git commit:*), Bash(git log:*), Bash(rg:*), Bash(grep:*), Bash(ls:*), Bash(wc:*), Bash(node .claude/skills/fleet/_shared/scripts/checkpoint.mts:*), Bash(node scripts/fleet/patching-findings/cli.mts:*)
 model: claude-opus-4-8
 context: fork
 ---
@@ -212,10 +212,17 @@ positive), emit:
 <rationale>why no patch is appropriate</rationale>
 ```
 
-Parse the five tagged blocks from each result (tolerate fences and HTML-escaped
-entities — unescape `&lt;`/`&gt;`/`&amp;` before using the diff). If `<patch_diff>`
-is `NONE`/empty, mark `status: "no_patch"`. Otherwise hold the diff text +
-metadata in working state (do NOT apply yet — review gates application).
+Parse the five tagged blocks from each result with the engine (it tolerates
+fences and unescapes `&lt;`/`&gt;`/`&amp;` before using the diff):
+
+```bash
+node scripts/fleet/patching-findings/cli.mts parse-patch --from <reply>.txt
+```
+
+It returns `{ status, patch_diff, rationale, variants_checked,
+bypass_considered, test_note }`; a `NONE`/empty `<patch_diff>` → `status:
+no_patch`. Hold the diff + metadata in working state (do NOT apply yet — review
+gates application).
 
 Checkpoint per finding via `checkpoint.mts shard ./.patch-state <id> --from
 ./.patch-state/_chunk.tmp`, then the consolidated `checkpoint.mts save
@@ -271,9 +278,19 @@ ACCEPT requires: in-scope, root-cause fix, no new attack surface, style >= 5.
 Otherwise REJECT.
 ```
 
-Parse the trailing block. Attach `review`, `style_score`, `out_of_scope_hunks`,
-`review_reason` to each finding. Checkpoint `checkpoint.mts save ./.patch-state 3
-review --from ./.patch-state/_chunk.tmp`.
+Parse the trailing block with the engine:
+
+```bash
+node scripts/fleet/patching-findings/cli.mts parse-review --from <reply>.txt
+```
+
+It returns `{ review, style_score, out_of_scope_hunks, review_reason,
+style_contradiction }`. The `review` verdict is taken **verbatim** — the
+`style_contradiction` flag (set when an ACCEPT carries `style_score < 5`,
+violating the prompt's "ACCEPT requires style >= 5" rule) is surfaced for
+notice, never used to alter the verdict; the reviewer's ACCEPT/REJECT is the
+gate. Attach the parsed fields to each finding. Checkpoint `checkpoint.mts save
+./.patch-state 3 review --from ./.patch-state/_chunk.tmp`.
 
 ---
 
@@ -312,28 +329,20 @@ Checkpoint per applied finding via `checkpoint.mts shard`, then the final
 
 ## Phase 5: Report
 
-Write `./PATCHES.md` (incremental, via `checkpoint.mts append`) summarizing what
-landed:
+Write the per-finding outcomes (`{id, title, severity, file, line, status,
+review, applied, commit_sha, rationale, variants_checked, review_reason,
+skip_reason}`) to a JSON array, then render the report + terminal summary with
+the engine:
 
-```
-# Security Patches
-
-**Input:** {findings_path} · **Repo:** {repo} · {N} findings → {A} applied, {R} rejected, {S} skipped
-
-## Landed
-{per applied finding: ## [{severity}] {title} ({id}) · `{file}:{line}` · commit {sha}
- **Rationale:** {rationale}  **Variants checked:** {variants_checked}}
-
-## Rejected by reviewer
-{per rejected: {id} {title} — {review_reason}}
-
-## Skipped
-{no-patch / apply-failed / no-location, with reason}
+```bash
+node scripts/fleet/patching-findings/cli.mts report --from <outcomes>.json --findings <findings_path> --repo <repo>
 ```
 
-Terminal summary (≤10 lines): applied / rejected / no-patch counts; top applied
-finding + commit sha; reminder to run `fix --all` / `check --all` / `test` before
-opening the PR (the merge gate, per the fleet smallest-chunks rule).
+It writes `./PATCHES.md` (Landed / Rejected by reviewer / Skipped sections,
+counts computed from the outcomes) and prints the terminal summary line —
+applied / rejected / skipped counts and the reminder to run `fix --all` /
+`check --all` / `test` before opening the PR (the merge gate, per the fleet
+smallest-chunks rule).
 
 ---
 

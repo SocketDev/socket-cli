@@ -39,11 +39,13 @@ The fleet hooks each cite their own trigger + bypass surface in their `README.md
 - `no-env-kill-switch-guard` — blocks adding a `disabledEnvVar` / `SOCKET_*_DISABLED` kill switch to a hook
 - `no-ext-issue-ref-guard` — blocks `<owner>/<repo>#<num>` from non-SocketDev orgs
 - `no-orphaned-staging` — blocks ending a turn with staged-but-uncommitted hunks
+- `no-other-linters-guard` — PreToolUse Edit/Write: fleet uses oxlint + oxfmt ONLY. Blocks creating a biome/eslint/prettier/dprint config file or adding `@biomejs/biome`/`eslint`/`@eslint/*`/`@typescript-eslint/*`/`prettier`/`dprint`/`rome` to a `package.json`. Vendored upstream (`upstream/`, `vendor/`, `*-upstream`) exempt. Committed-state gate: `scripts/fleet/check/only-oxlint-oxfmt.mts`. Bypass `Allow other-linter bypass`
 - `no-pkgjson-pnpm-overrides-guard` — keeps overrides in `pnpm-workspace.yaml`
 - `no-pm-exec-guard` — blocks `<pm> exec` (wrapper overhead) + `npx`/`pnpm dlx`/`yarn dlx` (fetch+exec) Bash invocations; bypass `Allow pm-exec bypass`
 - `no-platform-import-guard` — blocks direct `/node` or `/browser` imports of platform-split modules (http-request, logger); bypass `Allow platform-http-import bypass`
 - `no-premature-commit-kill-guard` — PreToolUse Bash: blocks `run_in_background:true` on a `git commit`/`rebase`/`merge`/`cherry-pick` (its bounded ~60s pre-commit looks like a hang when backgrounded), and blocks a `pkill`/`kill` targeting a `git commit`/`git push`, a `pre-commit`/`pre-push` hook process, or a `vitest` run (killing a mid-hook run corrupts the index + leaks workers; a broad bare-verb pattern also reaps a parallel session's op in a sibling checkout). The worker-scoped reap `vitest/dist/workers` is exempt. Bypass `Allow background-git bypass`
 - `no-test-in-scripts-guard` — blocks `node:test` suites under `scripts/` (they never run in CI; move to `test/unit/` vitest)
+- `options-param-naming-guard` — PreToolUse Edit/Write: blocks introducing a function options-bag param named `opts` into a code file (the param is `options`, the normalized local is `opts`). AST-parsed via `_shared/acorn` (no regex; the parser handles TS). Edit-time half of the pair with the `socket/options-param-naming` lint rule. Skips `.d.ts` + test files; per-line marker `// socket-lint: allow options-param-naming`; bypass `Allow options-param-naming bypass`
 - `prefer-json-clone-guard` — `JSON.parse(JSON.stringify(x))` over `structuredClone`
 - `no-token-in-dotenv-guard` — blocks raw token writes into `.env*` / `.envrc`
 - `no-unisolated-git-fixture-guard` — blocks a test that spawns `git` against a temp-dir fixture without isolation. Under pre-commit the inherited `GIT_DIR`/`GIT_WORK_TREE` leaks the fixture's writes onto the live `.git/config` (sets `core.bare`/junk identity, stacks junk commits). Satisfy it with the blessed one-liner `import '.git-hooks/_shared/isolate-git-env.mts'` (strips the discovery vars on load; vitest does this via its setup) or by pinning `GIT_CONFIG_GLOBAL` per-spawn. Bypass `Allow unisolated-git-fixture bypass`
@@ -100,6 +102,7 @@ Supply-chain hygiene:
 - `no-pkgjson-pnpm-overrides-guard` — version-range pins go in `pnpm-workspace.yaml` `overrides:`, not `package.json`
 - `bundle-flags-guard` — guards bundler trust/exotic-subdep flags
 - `catch-message-guard` — keeps catch-block error messages thorough
+- `npmrc-trust-optout-guard` — blocks the pnpm trust-aware env-expansion opt-out (`PNPM_CONFIG_NPMRC_AUTH_FILE`/`NPM_CONFIG_USERCONFIG`) + `${ENV}`-beside-`_authToken` in a committed `.npmrc`
 - `target-arch-env-guard` — guards cross-arch build env vars
 - `trust-downgrade-guard` — blocks weakening a `trustPolicy`/`trust-all`/`blockExoticSubdeps` gate
 

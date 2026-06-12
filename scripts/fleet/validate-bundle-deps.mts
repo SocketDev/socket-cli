@@ -37,7 +37,7 @@ const BUILTIN_MODULES = new Set([
 /**
  * Find all JavaScript files in dist directory.
  */
-async function findDistFiles(distPath: string): Promise<string[]> {
+export async function findDistFiles(distPath: string): Promise<string[]> {
   const files: string[] = []
 
   try {

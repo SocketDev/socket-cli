@@ -572,7 +572,8 @@ function reapplyPluginPatches(): void {
   }
   const patchFiles = readdirSync(PLUGIN_PATCHES_DIR)
     .filter(f => f.endsWith('.patch'))
-    .toSorted()
+    // oxlint-disable-next-line unicorn/no-array-sort -- .filter() already returns a fresh array (no shared mutation); .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
+    .sort()
   for (let i = 0, { length } = patchFiles; i < length; i += 1) {
     const file = patchFiles[i]!
     const parsed = parsePatchFileName(file)

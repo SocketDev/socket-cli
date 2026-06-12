@@ -95,12 +95,12 @@ Run the enabled scans as a **`Workflow`** (not ad-hoc `Task` spawns). The scan s
 Author the script inline (don't pre-Write it). Shape:
 
 1. **`phase('Scan')` — parallel independent finders.** One `agent()` per enabled scan type whose prompt is the scan's `reference.md` section (legacy 1–8) or `scans/<type>.md` (modular). Each uses `agentType: 'Explore'` (read-only sweep), a `FINDINGS_SCHEMA` (`{ scanType, findings: [{ file, line, issue, severity: critical|high|medium|low, pattern, trigger, fix, impact }] }`), and runs under `parallel(...)` — `variant-analysis` is NOT in this batch (it depends on the others).
-2. **Barrier → dedup.** Collect all finder results, `.filter(Boolean)`, flatten findings, dedup by `file:line:issue` in plain code (genuinely needs all findings at once — the barrier is justified).
-3. **`phase('Variant')` — dependent stage.** For each High/Critical deduped finding, one `agent()` (the `scans/variant-analysis.md` prompt) searching the repo for the same shape; merge new variants in.
-4. **`phase('Verify')` — adversarial pass** (thorough/release runs only): per High/Critical finding, spawn a skeptic that tries to REFUTE it (`{ isReal, why }` schema); drop findings ≥majority refute. Skip for a quick scan — `log()` that it was skipped so the report doesn't read as fully verified.
-5. **Synthesize** — a final `agent()` takes the deduped+verified JSON and writes the A-F prioritized markdown report (sections by severity, file:line refs, fixes, coverage metrics).
+2. **Barrier → dedup.** Collect all finder results, `.filter(Boolean)`, flatten findings, then `dedupeFindings(...)` from `scripts/fleet/scanning-quality/lib/findings.mts` (dedup by `file:line:issue` with a normalized issue key — genuinely needs all findings at once, so the barrier is justified). The dedupe key, the refute threshold, and the grade rubric all live in that one tested module.
+3. **`phase('Variant')` — dependent stage.** For each High/Critical deduped finding, one `agent()` (the `scans/variant-analysis.md` prompt) searching the repo for the same shape; fold new variants in with `mergeVariants(base, variants)` (dedups across the combined set).
+4. **`phase('Verify')` — adversarial pass** (thorough/release runs only): per High/Critical finding, spawn a skeptic that tries to REFUTE it (`{ isReal, why }` schema); `dropRefuted(findings, votesByIndex)` removes the ones a majority refuted (a tie keeps — the conservative direction). Skip for a quick scan — `log()` that it was skipped so the report doesn't read as fully verified.
+5. **Synthesize** — a final `agent()` takes the deduped+verified JSON and writes the A-F prioritized markdown report (sections by severity, file:line refs, fixes, coverage metrics). The narrative is the agent's; the grade itself is `gradeOf(findings)` from the lib (the same A-F rubric scanning-security uses), so the two scanners can't disagree on a count→letter.
 
-Return `{ report, findingCount, bySeverity }` from the script. Each finder's `FINDINGS_SCHEMA` replaces the old free-text "File / Issue / Severity / Pattern / Trigger / Fix / Impact" shape — same fields, now validated.
+Return `{ report, findingCount, bySeverity }` from the script (`bySeverity` = `countBySeverity(findings)` from the lib). Each finder's `FINDINGS_SCHEMA` replaces the old free-text "File / Issue / Severity / Pattern / Trigger / Fix / Impact" shape — same fields, now validated.
 
 ### Phase 8: Save the report
 

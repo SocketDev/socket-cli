@@ -111,6 +111,29 @@ test(
 )
 
 test(
+  'brew supply-chain knobs match the shared source-of-truth list (no divergence)',
+  withFakeHome(async rcPath => {
+    if (!IS_MACOS) {
+      return
+    }
+    writeFileSync(rcPath, '')
+    const { installShellRcBridge } = await import('../lib/shell-rc-bridge.mts')
+    const { MACOS_BREW_SECURITY_ENV } = await import(
+      '../../_shared/brew-supply-chain.mts'
+    )
+    installShellRcBridge(FAKE_TOKEN)
+    const content = readFileSync(rcPath, 'utf8')
+    for (const knob of MACOS_BREW_SECURITY_ENV) {
+      assert.match(
+        content,
+        new RegExp(`export ${knob.name}='${knob.value}'`),
+        `expected ${knob.name} export in the managed block`,
+      )
+    }
+  }),
+)
+
+test(
   'second run with same token returns outcome=unchanged',
   withFakeHome(async rcPath => {
     if (!IS_MACOS) {

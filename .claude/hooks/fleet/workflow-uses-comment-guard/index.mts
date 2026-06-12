@@ -109,6 +109,13 @@ export function isWorkflowYamlPath(p: string): boolean {
   if (!/\.(ya?ml)$/.test(p)) {
     return false
   }
+  // gh-aw compiles a `<name>.md` agentic workflow to a generated
+  // `<name>.lock.yml`. That artifact is tool-owned (never hand-edited) and
+  // SHA-pins every action with a `# <version>` comment plus a full manifest
+  // header, so the hand-authored `(YYYY-MM-DD)` convention doesn't apply.
+  if (/\.lock\.ya?ml$/.test(p)) {
+    return false
+  }
   return (
     /\/\.github\/workflows\/[^/]+\.(ya?ml)$/.test(p) ||
     /\/\.github\/actions\/[^/]+\/action\.(ya?ml)$/.test(p)

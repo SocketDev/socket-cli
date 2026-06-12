@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 /**
- * @file Audit a repo's GitHub Actions permissions + allowlist against the fleet
- *   baseline. Read-only — reports drift, does not write. The fix is a manual
- *   step in the repo's Settings → Actions → General page (or via `gh api` PUT
- *   with admin scope), because flipping these silently is too dangerous to
- *   automate. Baseline (every fleet repo must match): permissions.enabled =
- *   true permissions.allowed_actions = 'selected'
+ * @file Check (and optionally conform) a repo's GitHub Actions permissions +
+ *   allowlist against the fleet baseline. Default is read-only audit (reports
+ *   drift, exits non-zero on failure); `--conform` (alias `--fix`) WRITES the
+ *   baseline via `gh api` PUT (needs admin scope). Conform is superset-safe: it
+ *   sets allowed_actions=selected, github_owned_allowed=false,
+ *   verified_allowed=false, and the UNION of the repo's current patterns + the
+ *   canonical set — a repo's extra pins are preserved, only missing canonical
+ *   patterns are added, never pruned. Baseline (every fleet repo must match):
+ *   permissions.enabled = true permissions.allowed_actions = 'selected'
  *   selected_actions.github_owned_allowed = false (don't allow github-owned
  *   actions implicitly — the patterns_allowed list IS the canonical set; an
  *   unlisted github/foo would slip in) selected_actions.verified_allowed =
@@ -19,6 +22,9 @@
  *   toggles to flip.
  */
 
+import { rmSync, writeFileSync } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
@@ -55,6 +61,7 @@ const CANONICAL_PATTERNS: readonly string[] = [
   'depot/build-push-action@*',
   'depot/setup-action@*',
   'github/codeql-action/upload-sarif@*',
+  'github/gh-aw-actions/*',
 ]
 
 export async function auditOne(repo: string): Promise<RepoFinding> {
@@ -182,6 +189,110 @@ export async function auditOne(repo: string): Promise<RepoFinding> {
   return { repo, ok: !failedRequired, details }
 }
 
+/**
+ * Conform a repo to the baseline (the `--conform` write mode). Idempotent and
+ * superset-safe: sets `allowed_actions=selected`, `github_owned_allowed=false`,
+ * `verified_allowed=false`, and the `patterns_allowed` UNION of the repo's
+ * current patterns + CANONICAL_PATTERNS. A repo's extra (non-canonical) pins
+ * are preserved, never pruned — conform only ADDS the missing canonical
+ * patterns and tightens the two toggles. Returns the patterns it added (empty
+ * when already compliant). Skips a repo whose per-repo override is unset
+ * (`enabled=false`): org policy governs there and a per-repo PUT would silently
+ * create an override.
+ */
+export async function conformOne(repo: string): Promise<ConformResult> {
+  let perms: PermissionsResponse
+  try {
+    perms = await fetchPermissions(repo)
+  } catch (e) {
+    return {
+      repo,
+      changed: false,
+      added: [],
+      error: `could not read permissions (admin scope needed): ${
+        e instanceof Error ? e.message : String(e)
+      }`,
+    }
+  }
+  if (!perms.enabled) {
+    return {
+      repo,
+      changed: false,
+      added: [],
+      error:
+        'per-repo Actions override is unset (org policy governs); not creating ' +
+        'an override automatically — opt in at Settings → Actions first',
+    }
+  }
+
+  // Ensure allowed_actions=selected before touching the selected-actions list
+  // (the selected-actions endpoint 404s under all/local_only). The permissions
+  // PUT requires BOTH `enabled` (bool, -F) and `allowed_actions` (-f) — a
+  // partial body is rejected `Invalid request`.
+  if (perms.allowed_actions !== 'selected') {
+    await gh([
+      'api',
+      '--method',
+      'PUT',
+      `repos/${repo}/actions/permissions`,
+      '-F',
+      'enabled=true',
+      '-f',
+      'allowed_actions=selected',
+    ])
+  }
+
+  let current: SelectedActionsResponse
+  try {
+    current = await fetchSelectedActions(repo)
+  } catch {
+    current = {
+      github_owned_allowed: false,
+      verified_allowed: false,
+      patterns_allowed: [],
+    }
+  }
+
+  // Union: keep every existing pattern, add any missing canonical one. Sorted
+  // for a stable, diff-friendly write.
+  const union = new Set(current.patterns_allowed)
+  const added: string[] = []
+  for (let i = 0, { length } = CANONICAL_PATTERNS; i < length; i += 1) {
+    const p = CANONICAL_PATTERNS[i]!
+    if (!union.has(p)) {
+      union.add(p)
+      added.push(p)
+    }
+  }
+  const tighteningToggles =
+    current.github_owned_allowed || current.verified_allowed
+  const wasSelected = perms.allowed_actions === 'selected'
+  if (added.length === 0 && !tighteningToggles && wasSelected) {
+    return { repo, changed: false, added: [] }
+  }
+
+  const merged = [...union].sort()
+  const body = JSON.stringify({
+    github_owned_allowed: false,
+    verified_allowed: false,
+    patterns_allowed: merged,
+  })
+  // PUT the full selected-actions object via a temp-file body (--input
+  // <file>) so the array + booleans go as proper JSON, not -f string fields.
+  await ghInput(
+    [
+      'api',
+      '--method',
+      'PUT',
+      `repos/${repo}/actions/permissions/selected-actions`,
+      '--input',
+      '{body}',
+    ],
+    body,
+  )
+  return { repo, changed: true, added }
+}
+
 export async function fetchPermissions(
   repo: string,
 ): Promise<PermissionsResponse> {
@@ -218,6 +329,16 @@ interface RepoFinding {
   details: string[]
 }
 
+interface ConformResult {
+  repo: string
+  // True when a PUT was issued (drift existed and was corrected).
+  changed: boolean
+  // Canonical patterns added by the conform (subset of CANONICAL_PATTERNS).
+  added: string[]
+  // Set when conform couldn't run (no admin scope / org-governed repo).
+  error?: string | undefined
+}
+
 export async function gh(args: readonly string[]): Promise<string> {
   const r = await spawn('gh', args as string[], {
     stdio: 'pipe',
@@ -227,26 +348,65 @@ export async function gh(args: readonly string[]): Promise<string> {
   return String(r.stdout ?? '').trim()
 }
 
+// `gh api` with a JSON request body (for PUT bodies carrying arrays + booleans,
+// which `-f key=value` can't express). The body is written to a temp file and
+// passed via `gh api --input <file>` — the lib spawn does not wire a child's
+// stdin, so `--input -` (stdin) doesn't work here; a file is the robust path.
+// `{body}` in `args` is replaced with the temp-file path.
+export async function ghInput(
+  args: readonly string[],
+  body: string,
+): Promise<string> {
+  const file = path.join(
+    os.tmpdir(),
+    `gha-conform-${process.pid}-${args.length}.json`,
+  )
+  writeFileSync(file, body)
+  try {
+    const resolved = args.map(a => (a === '{body}' ? file : a))
+    const r = await spawn('gh', resolved, {
+      stdio: 'pipe',
+      stdioString: true,
+      timeout: 30_000,
+    })
+    return String(r.stdout ?? '').trim()
+  } finally {
+    rmSync(file, { force: true })
+  }
+}
+
 export function parseArgs(argv: readonly string[]): {
   repos: string[]
   json: boolean
+  conform: boolean
 } {
   const repos: string[] = []
   let json = false
+  let conform = false
   for (let i = 0, { length } = argv; i < length; i += 1) {
     const a = argv[i]!
     if (a === '--json') {
       json = true
+    } else if (a === '--conform' || a === '--fix') {
+      conform = true
     } else if (a === '--help' || a === '-h') {
       logger.info(
         // oxlint-disable-next-line socket/no-logger-newline-literal -- CLI help text is intentionally a single multi-line block; splitting would garble the columnar formatting users expect.
-        `Usage: node run.mts [--json] <owner/repo>...
+        `Usage: node run.mts [--json] [--conform] <owner/repo>...
 
-Audits GH Actions permissions + allowlist against the fleet baseline.
-Exits non-zero if any repo fails any required check.
+Checks GH Actions permissions + allowlist against the fleet baseline.
+Default is read-only (audit); exits non-zero if any repo fails a check.
+
+  --conform  (alias --fix) WRITE mode: PUT the baseline to each repo —
+             allowed_actions=selected, github_owned_allowed=false,
+             verified_allowed=false, and the UNION of the repo's current
+             patterns + the canonical set (extras preserved, never pruned;
+             only missing canonical patterns are added). Needs admin scope.
+  --json     machine-readable findings.
 
 Examples:
   node run.mts SocketDev/socket-btm SocketDev/socket-cli
+  node run.mts --conform SocketDev/socket-btm
   node run.mts --json SocketDev/socket-btm | jq`,
       )
       process.exit(0)
@@ -259,17 +419,57 @@ Examples:
   if (repos.length === 0) {
     throw new Error('At least one <owner/repo> argument is required.')
   }
-  return { repos, json }
+  return { repos, json, conform }
 }
 
-async function main(): Promise<void> {
-  const { repos, json } = parseArgs(process.argv.slice(2))
+async function runConform(
+  repos: readonly string[],
+  json: boolean,
+): Promise<void> {
+  const results: ConformResult[] = []
+  for (let i = 0, { length } = repos; i < length; i += 1) {
+    // eslint-disable-next-line no-await-in-loop -- serial GH API writes
+    results.push(await conformOne(repos[i]!))
+  }
+  if (json) {
+    logger.info(JSON.stringify(results, null, 2))
+  } else {
+    for (let i = 0, { length } = results; i < length; i += 1) {
+      const r = results[i]!
+      if (r.error) {
+        logger.warn(`✗ ${r.repo}: ${r.error}`)
+      } else if (r.changed) {
+        logger.info(
+          `✦ ${r.repo}: conformed${
+            r.added.length ? ` (+${r.added.join(', +')})` : ''
+          }`,
+        )
+      } else {
+        logger.info(`✓ ${r.repo}: already conformant`)
+      }
+    }
+    const errors = results.filter(r => r.error).length
+    const changed = results.filter(r => r.changed).length
+    logger.info('')
+    logger.info(
+      `Conformed: ${changed}  Already-ok: ${
+        results.length - changed - errors
+      }  Errored: ${errors}`,
+    )
+  }
+  // A conform run fails only on a repo it COULDN'T conform (no scope / org-
+  // governed) — a successful write is success, not a failure.
+  process.exitCode = results.some(r => r.error) ? 1 : 0
+}
+
+async function runAudit(
+  repos: readonly string[],
+  json: boolean,
+): Promise<void> {
   const findings: RepoFinding[] = []
   for (let i = 0, { length } = repos; i < length; i += 1) {
-    const r = repos[i]!
     // eslint-disable-next-line no-await-in-loop -- serial GH API calls
-    const f = await auditOne(r)
-    findings.push(f)
+    findings.push(await auditOne(repos[i]!))
   }
   if (json) {
     logger.info(JSON.stringify(findings, null, 2))
@@ -293,6 +493,15 @@ async function main(): Promise<void> {
     logger.info(`OK: ${okCount}  Failed: ${failCount}`)
   }
   process.exitCode = findings.some(f => !f.ok) ? 1 : 0
+}
+
+async function main(): Promise<void> {
+  const { repos, json, conform } = parseArgs(process.argv.slice(2))
+  if (conform) {
+    await runConform(repos, json)
+  } else {
+    await runAudit(repos, json)
+  }
 }
 
 main().catch(e => {

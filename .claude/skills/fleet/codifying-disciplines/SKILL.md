@@ -2,7 +2,7 @@
 name: codifying-disciplines
 description: Scans a repo for disciplines that exist only in prose, convention, or agent memory but are NOT enforced by executable code, then codifies each into the right surface — a script, a hook, a lint rule, or a CLAUDE.md rule. Runs a Workflow that fans out scanner agents (CLAUDE.md rules with no enforcer, repeated review/PR feedback, build/release steps relying on humans remembering, conventions stated in docs but unchecked), dedups, ranks by blast radius, and for each gap proposes the lowest-friction codification with a concrete diff. "Code is law" — agent memory and prose don't enforce; scripts/hooks/rules do. Use after a session surfaces a recurring discipline, when onboarding a repo, or whenever "we keep having to remember X" comes up.
 user-invocable: true
-allowed-tools: Workflow, Task, Read, Grep, Glob, Write, AskUserQuestion, Bash(git status:*), Bash(git log:*), Bash(git diff:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(cat:*), Bash(wc:*), Bash(head:*), Bash(tail:*), Bash(node scripts/fleet/ai-codify/cli.mts:*), Bash(node scripts/fleet/codify-rule.mts:*), Bash(node scripts/repo/run-hook-tests.mts:*), Bash(node scripts/fleet/check/:*), Bash(node scripts/repo/sync-scaffolding/cli.mts:*)
+allowed-tools: Workflow, Task, Read, Grep, Glob, Write, AskUserQuestion, Bash(git status:*), Bash(git log:*), Bash(git diff:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(cat:*), Bash(wc:*), Bash(head:*), Bash(tail:*), Bash(node scripts/fleet/ai-codify/cli.mts:*), Bash(node scripts/fleet/codify-rule.mts:*), Bash(node scripts/fleet/codify-scan/inventory.mts:*), Bash(node scripts/repo/run-hook-tests.mts:*), Bash(node scripts/fleet/check/:*), Bash(node scripts/repo/sync-scaffolding/cli.mts:*)
 model: claude-opus-4-8
 context: fork
 ---
@@ -83,12 +83,14 @@ Read-only scan; warn about a dirty tree but continue.
 
 ### Phase 2: Inventory the enforcement surfaces
 
-Build the ground-truth set the scanners compare against:
+Build the ground-truth set the scanners compare against in one deterministic pass:
 
-- Hooks: `ls .claude/hooks/fleet .claude/hooks/repo`
-- Lint rules: `ls .config/oxlint-plugin/fleet`
-- Check scripts: `ls scripts/fleet/check`
-- CLAUDE.md rules + their citations (parse `(`.claude/hooks/…`)` and `socket/<rule>` refs)
+```bash
+node scripts/fleet/codify-scan/inventory.mts
+```
+
+It emits `{ hooks: { guards, reminders, installers }, lintRules: { socket, typescript }, checks, scripts, fleetDocs }` — the authoritative enforcement surface (it wraps `lib/enforcer-inventory.mts`, the same owner the code-is-law gate reads, so the directory conventions live in one place). Pass this JSON as the Workflow `args` so every scanner agent compares proposals against the same set rather than re-running `ls`/`grep` by hand.
+
 - **Auto-memory dir (read-only, best-effort)**: resolve the Claude project memory dir for source #6 — machine-local, OUTSIDE the repo. Find it via `CLAUDE_PROJECT_DIR`'s sibling memory path, or `find "$HOME/.claude/projects" -type d -name memory 2>/dev/null` matching this repo's slug. Read `memory/*.md` + `MEMORY.md` as discovery input only — never edit or delete them. If none is found (CI, fresh checkout, headless with no memory), skip source #6 silently; the repo-source scans always run.
 
 ### Phase 3: Determine scan scope
@@ -115,7 +117,7 @@ Return `{ report, gapCount, byBlastRadius, proposals }`.
   - **Documentation surface** (`agents-doc` — the terse CLAUDE.md bullet + `docs/agents.md/{fleet,repo}/<topic>.md` detail doc): pass `--surface agents-doc --memory <path>`; ai-codify shells out to `scripts/fleet/codify-rule.mts`, which owns the 40KB CLAUDE.md budget + defer-to-docs split (never hand-edit CLAUDE.md for a rule bullet).
   - For a **combination** (defense-in-depth), run ai-codify once per surface.
   After ai-codify returns: RUN the test before committing — a codification whose test doesn't pass isn't done. A hook + a CLAUDE.md edit both trigger the **same-turn dogfood cascade** in the wheelhouse. Commit each codification (enforcer + test together) separately. Memory is read-only input — never delete or edit it; it can keep describing the *why* alongside the now-enforcing code.
-- **Non-interactive**: save the report to `reports/codifying-disciplines-YYYY-MM-DD.md` (each proposal includes its `testDiff` + the exact `ai-codify` invocation that would apply it); apply nothing.
+- **Non-interactive**: save the report to `.claude/reports/codifying-disciplines-YYYY-MM-DD.md` (the untracked report location per the _Plan & report storage_ rule — never a committable `reports/` path) (each proposal includes its `testDiff` + the exact `ai-codify` invocation that would apply it); apply nothing.
 
 ### Phase 6: Summary
 
@@ -126,4 +128,4 @@ Report gaps found, by blast radius; proposals applied vs. deferred; and any gap 
 - Codify the highest-blast-radius gaps (build/release/security) first.
 - Each codification is its own commit (`feat(hooks): …`, `fix(lint): …`, `feat(scripts): …`), and the enforcer + its test land in that SAME commit — never an enforcer without its test. Never bundle several unrelated enforcers in one commit.
 - A new hook follows the full ceremony: CLAUDE.md (or hook-registry) citation BEFORE the index, a test, settings.json registration, and the dogfood cascade.
-- The report itself: `docs(reports): codifying-disciplines YYYY-MM-DD`, committed before applying so the gap inventory is referenceable.
+- The report at `.claude/reports/` is never committed (the report location is untracked by the fleet `.gitignore`); it's a local reference for which gaps to codify, not an artifact.

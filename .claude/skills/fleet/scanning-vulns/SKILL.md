@@ -9,7 +9,7 @@ description: >-
   <dir>", or as the step between threat-modeling and triaging-findings.
 argument-hint: "<target-dir> [--focus <area>] [--single] [--extra <file>] [--no-score]"
 user-invocable: true
-allowed-tools: Workflow, Task, Read, Glob, Grep, Write, Bash(rg:*), Bash(grep:*), Bash(ls:*), Bash(wc:*), Bash(head:*), Bash(find:*)
+allowed-tools: Workflow, Task, Read, Glob, Grep, Write, Bash(rg:*), Bash(grep:*), Bash(ls:*), Bash(wc:*), Bash(head:*), Bash(find:*), Bash(node scripts/fleet/scanning-vulns/cli.mts:*)
 model: claude-opus-4-8
 context: fork
 ---
@@ -171,11 +171,21 @@ list with a one-line note of what you covered.
 
 ## Step 3 — Collate
 
-1. Collect findings from all agents. Drop empty/placeholder results.
-2. **Light dedupe** — if two findings cite the same `file:line` with the same
-   category, keep the one with the longer description and note the duplicate.
-   (Heavy dedupe is `triaging-findings`'s job; don't over-engineer here.)
-3. Assign stable ids `F-001`, `F-002`, … in (severity desc, file, line) order.
+Collect the findings from all agents, write them to a scratch JSON file (a
+`{ findings: [...] }` envelope), then hand the deterministic collation to the
+engine:
+
+```bash
+node scripts/fleet/scanning-vulns/cli.mts collate --from <scratch>.json --target <target-dir>
+```
+
+It drops empty/placeholder results, light-dedupes (same `file:line`+category →
+keep the longer description, count the drop — heavy dedupe is
+`triaging-findings`'s job), and assigns stable ids `F-001`, `F-002`, … in
+(severity desc, file, line) order, writing the interim findings to
+`<target-dir>/.vuln-collated.json`. That id-stable set is what the Step 3b
+scoring agents read. The drop/dedupe/sort/id math lives in the engine so a count
+can't be fabricated by hand.
 
 ## Step 3b — Confidence pass (skip if `--no-score`)
 
@@ -205,14 +215,24 @@ STEP 3 — Score 1-10 that this is a real, actionable vulnerability:
 Return: confidence (1-10), reason (one line).
 ```
 
-**Resolve:** overwrite each finding's `confidence` with the score (normalized to
-0.0-1.0) and attach `confidence_reason`. Re-sort by (`confidence` desc, `severity`
-desc, `file`, `line`) and reassign ids `F-001..`. Compute `low_confidence_count`
-= findings with confidence < 0.4.
+**Resolve (Step 4 + Step 5 in one engine call).** Write a scratch JSON carrying
+the collated `findings`, the per-id `scores` (each `{ id, confidence: 1-10,
+reason }`), plus `focus_areas` and `source_file_count`, then:
 
-## Step 4 — Write output
+```bash
+node scripts/fleet/scanning-vulns/cli.mts finalize --from <scratch>.json --target <target-dir> --scanned-at <iso8601>
+```
 
-Write **both** files to `<target-dir>/`:
+(With `--no-score`: pass `--no-score-applied` instead of a `scores` array.) The
+engine overwrites each finding's `confidence` with the normalized score (1-10 →
+0.0-1.0), attaches `confidence_reason`, re-sorts by (`confidence` desc,
+`severity` desc, `file`, `line`), reassigns `F-001..`, computes the summary
+(incl. `low_confidence` = confidence < 0.4), and writes **both** output files
+under `<target-dir>/`, then prints the Step-5 hand-back summary to stdout.
+
+## Step 4 — Output (written by the engine)
+
+`finalize` writes both files to `<target-dir>/`:
 
 **`VULN-FINDINGS.json`** — the `triaging-findings` ingest shape:
 
@@ -237,12 +257,12 @@ description.
 
 ## Step 5 — Hand back
 
-1. Counts: N findings (H/M/L split, X low-confidence), across K focus areas, from
-   M source files.
-2. Top 3 by confidence, one line each.
-3. Next step: `> /fleet:triaging-findings <target-dir>/VULN-FINDINGS.json --repo
+The `finalize` stdout already carries the counts line + the top-3-by-confidence.
+Relay it, then:
+
+1. Next step: `> /fleet:triaging-findings <target-dir>/VULN-FINDINGS.json --repo
    <target-dir>`
-4. Remind: these are **static candidates**, not verified.
+2. Remind: these are **static candidates**, not verified.
 
 ## Provenance
 

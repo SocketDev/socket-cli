@@ -25,16 +25,26 @@
 //      (outsource to `docs/agents.md/fleet/<topic>.md` and replace
 //      the section body with a one-sentence summary + link).
 //
-// Cap policy:
-//   - Default: 8 body lines per `### ` section. (8 ≈ a tight rule
-//     with 2 short paragraphs OR a rule + a "Why:" + a "How:" line.)
-//   - Override via env `CLAUDE_MD_FLEET_SECTION_MAX_LINES`.
+// Cap policy (two metrics of one concern — "section too big"):
+//   - BYTE cap: default 1500 body bytes per section. The line cap alone
+//     misses the real bloat mode — a single 600-char one-liner is 1 line
+//     but a big chunk of the 40KB whole-file budget that ships to every
+//     fleet repo. The byte cap forces dense prose out to a docs page even
+//     when it fits on few lines. Override via env
+//     `CLAUDE_MD_FLEET_SECTION_MAX_BYTES`.
+//   - LINE cap: default 12 body lines per `### ` section. A bullet-list
+//     `Detail:` block (one line per linked doc) spends 3-6 lines, so the
+//     cap is above the old prose-era 8. Override via env
+//     `CLAUDE_MD_FLEET_SECTION_MAX_LINES`.
+//   - A section is flagged when it exceeds EITHER cap; the message names
+//     which one(s) and by how much.
 //   - Headings only inside the fleet block are checked. Per-repo
 //     content (outside the markers) is uncapped — repo-specific
 //     sections can be as long as they need to be.
 //
-// What counts as a "body line":
-//   - Any non-blank line below the `### ` heading.
+// What counts as a "body line" / "body byte":
+//   - Any non-blank line below the `### ` heading (its UTF-8 byte length,
+//     plus 1 for the newline, accrues to the section's byte total).
 //   - Code-block lines (between ``` fences) count too. A long code
 //     example pushes the section into the "outsource" regime same
 //     as long prose.
@@ -64,7 +74,8 @@ import { readStdin } from '../_shared/transcript.mts'
 // should shrink to 1-2 sentences plus a link. Catches the failure
 // mode where a single section grows to 30+ lines while leaving room
 // for short rules to stay self-contained.
-const DEFAULT_MAX_BODY_LINES = 8
+const DEFAULT_MAX_BODY_BYTES = 1500
+const DEFAULT_MAX_BODY_LINES = 12
 const FLEET_BEGIN_MARKER = '<!-- BEGIN FLEET-CANONICAL'
 const FLEET_END_MARKER = '<!-- END FLEET-CANONICAL'
 
@@ -116,18 +127,25 @@ export function extractFleetBlock(content: string): string | undefined {
 interface SectionTooLong {
   heading: string
   bodyLineCount: number
+  bodyByteCount: number
   lineNumberInBlock: number
+  // Which cap(s) the section exceeded — drives the message.
+  overLines: boolean
+  overBytes: boolean
 }
 
 /**
- * Walk the fleet block and return any `### ` sections whose body exceeds
- * `maxBodyLines`. Sections are bounded by the next `### ` heading or by the end
- * of the input. Headings at `##` or `#` level are NOT inspected — only `### `
- * (third-level) since that's the rule-level heading in the fleet block.
+ * Walk the fleet block and return any `### ` sections whose body exceeds the
+ * line cap OR the byte cap. Sections are bounded by the next `### ` heading or
+ * by the end of the input. Headings at `##` or `#` level are NOT inspected —
+ * only `### ` (third-level) since that's the rule-level heading in the fleet
+ * block. Both metrics count only non-blank body lines; a body byte is the UTF-8
+ * length of each counted line plus 1 for its newline.
  */
 export function findTooLongSections(
   fleetBlock: string,
   maxBodyLines: number,
+  maxBodyBytes: number,
 ): SectionTooLong[] {
   const lines = fleetBlock.split('\n')
   const findings: SectionTooLong[] = []
@@ -135,13 +153,22 @@ export function findTooLongSections(
   let currentHeading: string | undefined
   let currentHeadingLine = 0
   let bodyLineCount = 0
+  let bodyByteCount = 0
 
   function flushIfTooLong(): void {
-    if (currentHeading !== undefined && bodyLineCount > maxBodyLines) {
+    if (currentHeading === undefined) {
+      return
+    }
+    const overLines = bodyLineCount > maxBodyLines
+    const overBytes = bodyByteCount > maxBodyBytes
+    if (overLines || overBytes) {
       findings.push({
         heading: currentHeading,
         bodyLineCount,
+        bodyByteCount,
         lineNumberInBlock: currentHeadingLine,
+        overLines,
+        overBytes,
       })
     }
   }
@@ -153,16 +180,30 @@ export function findTooLongSections(
       currentHeading = line.slice(4).trim()
       currentHeadingLine = i + 1
       bodyLineCount = 0
+      bodyByteCount = 0
     } else if (currentHeading !== undefined) {
-      // Body line — count only non-blank ones.
+      // Body — count only non-blank lines for both metrics.
       if (line.trim() !== '') {
         bodyLineCount += 1
+        bodyByteCount += Buffer.byteLength(line, 'utf8') + 1
       }
     }
   }
   flushIfTooLong()
 
   return findings
+}
+
+export function getMaxBodyBytes(): number {
+  const env = process.env['CLAUDE_MD_FLEET_SECTION_MAX_BYTES']
+  if (!env) {
+    return DEFAULT_MAX_BODY_BYTES
+  }
+  const n = Number.parseInt(env, 10)
+  if (!Number.isFinite(n) || n <= 0) {
+    return DEFAULT_MAX_BODY_BYTES
+  }
+  return n
 }
 
 export function getMaxBodyLines(): number {
@@ -257,7 +298,8 @@ async function main(): Promise<number> {
   }
 
   const maxLines = getMaxBodyLines()
-  const tooLong = findTooLongSections(fleetBlock, maxLines)
+  const maxBytes = getMaxBodyBytes()
+  const tooLong = findTooLongSections(fleetBlock, maxLines, maxBytes)
   if (tooLong.length === 0) {
     return 0
   }
@@ -268,13 +310,24 @@ async function main(): Promise<number> {
   )
   lines.push(``)
   lines.push(`File:           ${filePath}`)
-  lines.push(`Cap:            ${maxLines} body lines per ### section`)
+  lines.push(
+    `Caps:           ${maxLines} body lines AND ${maxBytes} body bytes per ### section`,
+  )
   lines.push(``)
   for (let i = 0, { length } = tooLong; i < length; i += 1) {
     const t = tooLong[i]!
-    lines.push(
-      `  ### ${t.heading} — ${t.bodyLineCount} body lines (${t.bodyLineCount - maxLines} over)`,
-    )
+    const reasons: string[] = []
+    if (t.overLines) {
+      reasons.push(
+        `${t.bodyLineCount} lines (${t.bodyLineCount - maxLines} over)`,
+      )
+    }
+    if (t.overBytes) {
+      reasons.push(
+        `${t.bodyByteCount} bytes (${t.bodyByteCount - maxBytes} over)`,
+      )
+    }
+    lines.push(`  ### ${t.heading} — ${reasons.join(', ')}`)
   }
   lines.push(``)
   lines.push(`Why this cap exists:`)

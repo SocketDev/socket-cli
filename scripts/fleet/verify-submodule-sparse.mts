@@ -210,8 +210,20 @@ async function main(): Promise<void> {
     ? path.resolve(fileArg)
     : path.join(repoRoot, '.gitmodules')
   if (!existsSync(gitmodulesPath)) {
-    logger.fail(`verify-submodule-sparse: no .gitmodules at ${gitmodulesPath}.`)
-    process.exit(1)
+    // No .gitmodules means no submodules — nothing to verify. For --check and
+    // --run-all that's a clean pass (the same way submodules-are-sparse-or-
+    // annotated treats an absent file). Only --run, which targets a specific
+    // named submodule the caller asked to verify, is a real error here.
+    if (mode === '--run') {
+      logger.fail(
+        `verify-submodule-sparse --run: no .gitmodules at ${gitmodulesPath} — there are no submodules to verify.`,
+      )
+      process.exit(1)
+    }
+    logger.success(
+      'verify-submodule-sparse: no .gitmodules — no submodules to verify.',
+    )
+    process.exit(0)
   }
   const blocks = parseBlocks(readFileSync(gitmodulesPath, 'utf8'))
 

@@ -336,3 +336,20 @@ test('anything under .claude/ at any depth bypasses the rules', async () => {
     )
   }
 })
+
+test('a .md under .github/workflows/ is a gh-aw source, not a doc — allowed', async () => {
+  for (const filename of [
+    '/Users/x/projects/foo/.github/workflows/audit-api-surface.md',
+    '/Users/x/projects/foo/template/.github/workflows/weekly-update.md',
+  ]) {
+    const result = await runHook({
+      tool_input: { content: '---\non: {}\n---\n# wf', file_path: filename },
+      tool_name: 'Write',
+    })
+    assert.strictEqual(
+      result.code,
+      0,
+      `${filename} should be allowed as a gh-aw workflow source (got code ${result.code}: ${result.stderr})`,
+    )
+  }
+})
