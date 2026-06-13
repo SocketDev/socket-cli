@@ -74,11 +74,14 @@ export interface RegistryPin {
 
 /**
  * `<repo>/.github/workflows/<workflow>.yml@<40-hex>` with an optional trailing
- * `# main (YYYY-MM-DD)` comment, captured per workflow name.
+ * `# main (YYYY-MM-DD)` comment, captured per workflow name. The optional
+ * `.lock` segment matches BOTH the legacy reusable `<workflow>.yml` and the
+ * gh-aw compiled `<workflow>.lock.yml` form, so the fixer repins delegators
+ * across the gh-aw migration without caring which extension a member is on.
  */
 export function pinLineRe(workflow: string): RegExp {
   return new RegExp(
-    `(SocketDev/socket-registry/\\.github/workflows/${workflow}\\.yml@)[0-9a-f]{40}([^\\n]*)`,
+    `(SocketDev/socket-registry/\\.github/workflows/${workflow}(?:\\.lock)?\\.yml@)[0-9a-f]{40}([^\\n]*)`,
   )
 }
 
@@ -104,14 +107,16 @@ export function findRegistryCheckout(
 /**
  * Extract the `<workflow>.yml@<sha>` pin (+ trailing `# main (date)` comment)
  * from a `_local-not-for-reuse-<workflow>.yml`'s text. Pure — used by both the
- * local-checkout and API readers. Returns undefined when no pin matches.
+ * local-checkout and API readers. Returns undefined when no pin matches. The
+ * optional `.lock` segment matches the gh-aw compiled `<workflow>.lock.yml`
+ * form as well as the legacy `<workflow>.yml`.
  */
 export function parseLocalPin(
   workflow: string,
   content: string,
 ): RegistryPin | undefined {
   const m = new RegExp(
-    `socket-registry/\\.github/workflows/${workflow}\\.yml@([0-9a-f]{40})(\\s*#[^\\n]*)?`,
+    `socket-registry/\\.github/workflows/${workflow}(?:\\.lock)?\\.yml@([0-9a-f]{40})(\\s*#[^\\n]*)?`,
   ).exec(content)
   if (!m) {
     return undefined

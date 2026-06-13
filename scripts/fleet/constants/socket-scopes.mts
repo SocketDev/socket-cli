@@ -49,8 +49,8 @@ export const SOCKET_PACKAGE_PATTERNS: readonly string[] = [
   '@ultrathink/*',
   // Unscoped Socket packages — named exactly, never a `socket-*` prefix glob
   // (that would bypass the soak for any attacker-published `socket-…` name).
-  // `socket` is the live CLI; `sfw` is Socket Firewall. (`socket-cli` +
-  // `socket-mcp` are deprecated / renamed to @socketsecurity/* — not listed.)
+  // `socket` is the live CLI; `sfw` is Socket Firewall. (`socket-cli` is renamed
+  // to @socketsecurity/* — not listed.)
   'sfw',
   'socket',
 ]

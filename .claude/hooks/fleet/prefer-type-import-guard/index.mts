@@ -91,4 +91,4 @@ await withEditGuard((filePath, content, payload) => {
     ].join('\n') + '\n',
   )
   process.exitCode = 2
-})
+}, { fleetOnly: true })

@@ -136,5 +136,5 @@ if (process.argv[1]?.endsWith('index.mts')) {
         `Bypass: type "${BYPASS_PHRASE}".\n`,
     )
     process.exitCode = 2
-  })
+  }, { fleetOnly: true })
 }

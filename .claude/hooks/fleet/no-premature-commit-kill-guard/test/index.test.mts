@@ -10,7 +10,11 @@ import { fileURLToPath } from 'node:url'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 
-import { invokesPreCommitGit, killsGitOpOrTestRun } from '../index.mts'
+import {
+  invokesPausingCi,
+  invokesPreCommitGit,
+  killsGitOpOrTestRun,
+} from '../index.mts'
 
 const HOOK = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -43,7 +47,10 @@ function run(
       transcript_path: opts?.transcriptPath,
     }),
   })
-  return { code: typeof r.status === 'number' ? r.status : -1, stderr: String(r.stderr ?? '') }
+  return {
+    code: typeof r.status === 'number' ? r.status : -1,
+    stderr: String(r.stderr ?? ''),
+  }
 }
 
 // --- pure helpers ---
@@ -59,6 +66,35 @@ test('invokesPreCommitGit: non-pre-commit git is undefined', () => {
   assert.equal(invokesPreCommitGit('git status'), undefined)
   assert.equal(invokesPreCommitGit('git push origin main'), undefined)
   assert.equal(invokesPreCommitGit('node build.mts'), undefined)
+})
+
+test('invokesPausingCi: agent-ci run --pause-on-failure (direct + wrapper)', () => {
+  assert.equal(
+    invokesPausingCi('agent-ci run --all --quiet --pause-on-failure'),
+    'agent-ci run --pause-on-failure',
+  )
+  assert.equal(
+    invokesPausingCi(
+      'node scripts/fleet/agent-ci-skip-locks.mts run --all --pause-on-failure --github-token',
+    ),
+    'agent-ci run --pause-on-failure',
+  )
+  assert.equal(
+    invokesPausingCi('pnpm run ci:local'),
+    undefined,
+    'pnpm run ci:local alias is not the raw agent-ci invocation the guard parses',
+  )
+})
+
+test('invokesPausingCi: non-pausing agent-ci + unrelated commands are undefined', () => {
+  // Plain CI run (no pause) exits on failure — safe.
+  assert.equal(invokesPausingCi('agent-ci run --all --quiet'), undefined)
+  assert.equal(
+    invokesPausingCi('node scripts/fleet/agent-ci-skip-locks.mts run --all'),
+    undefined,
+  )
+  assert.equal(invokesPausingCi('git commit -m x'), undefined)
+  assert.equal(invokesPausingCi('node build.mts'), undefined)
 })
 
 test('killsGitOpOrTestRun: pkill/kill of vitest, git commit, or git push', () => {
@@ -118,6 +154,27 @@ test('allows a FOREGROUND git commit', () => {
 
 test('allows backgrounding a non-git command (dev server)', () => {
   const { code } = run('node dev-server.mts', { background: true })
+  assert.equal(code, 0)
+})
+
+test('blocks agent-ci --pause-on-failure (parks headless, holds index lock)', () => {
+  const { code, stderr } = run(
+    'node scripts/fleet/agent-ci-skip-locks.mts run --all --quiet --pause-on-failure --github-token',
+  )
+  assert.equal(code, 2)
+  assert.match(stderr, /never answer the pause/)
+})
+
+test('allows non-pausing agent-ci run', () => {
+  const { code } = run('agent-ci run --all --quiet')
+  assert.equal(code, 0)
+})
+
+test('pausing-CI block respects the bypass phrase', () => {
+  const tx = writeTranscript('Allow background-git bypass')
+  const { code } = run('agent-ci run --all --pause-on-failure', {
+    transcriptPath: tx,
+  })
   assert.equal(code, 0)
 })
 

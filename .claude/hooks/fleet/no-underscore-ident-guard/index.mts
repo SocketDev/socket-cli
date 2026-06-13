@@ -201,4 +201,4 @@ await withEditGuard((filePath, content, payload) => {
       `Bypass: type "${BYPASS_PHRASE}" in a recent message.\n`,
   )
   process.exitCode = 2
-})
+}, { fleetOnly: true })

@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 // Claude Code PreToolUse hook — no-premature-commit-kill-guard.
 //
-// Two Bash anti-patterns, one root cause: a `git commit` (and rebase/merge/
-// cherry-pick, which also fire the pre-commit chain) runs the staged-test
-// reminder, which is BOUNDED to ~60s (STAGED_TEST_TIMEOUT_MS) but still takes
-// real time. A commit that is "still running" before that elapses is NOT a
-// hang.
+// Three Bash anti-patterns, one theme — a git/test op wedged or torn down in a
+// context that can't finish it. A `git commit` (and rebase/merge/cherry-pick,
+// which also fire the pre-commit chain) runs the staged-test reminder, which is
+// BOUNDED to ~60s (STAGED_TEST_TIMEOUT_MS) but still takes real time. A commit
+// that is "still running" before that elapses is NOT a hang.
 //
 //   1. Backgrounding it (`run_in_background: true`) hides the bounded run's
 //      completion, so the operator checks too early, sees it "still going",
@@ -17,6 +17,12 @@
 //      pattern (bare `git push` / `pre-push`) matches the same op in every
 //      sibling checkout — so it can reap a PARALLEL session's git op in
 //      another repo.
+//   3. `agent-ci run … --pause-on-failure` (the `ci:local` shape) holds the run
+//      at the first failing step for an interactive keypress. A non-interactive
+//      agent can never answer it, so the run parks forever AND pins the
+//      worktree's `.git/index.lock`, wedging every concurrent `git commit` in
+//      that checkout. Independent of run_in_background (the harness may
+//      auto-background a slow foreground commit), so matched on command shape.
 //
 // Both are blocked here so the loop can't start: run git ops in the FOREGROUND
 // and WAIT for the bounded hook; never kill one mid-flight. When a kill is
@@ -44,12 +50,7 @@ import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
 const BYPASS_PHRASE = 'Allow background-git bypass'
 
-const GIT_PRE_COMMIT_SUBCOMMANDS = [
-  'commit',
-  'rebase',
-  'merge',
-  'cherry-pick',
-]
+const GIT_PRE_COMMIT_SUBCOMMANDS = ['commit', 'rebase', 'merge', 'cherry-pick']
 
 interface Payload {
   tool_name?: unknown | undefined
@@ -69,6 +70,33 @@ export function invokesPreCommitGit(command: string): string | undefined {
     }
   }
   return undefined
+}
+
+// True when the command runs agent-ci with `--pause-on-failure` (the canonical
+// `ci:local` shape, directly or via the `agent-ci-skip-locks.mts run` wrapper).
+// That flag holds the container at the first failing step waiting for an
+// interactive keypress. The agent is non-interactive — it can never answer the
+// pause — so the run parks indefinitely, and because agent-ci stages into the
+// worktree it pins the worktree's `.git/index.lock`, wedging every concurrent
+// `git commit` in that checkout (observed: a backgrounded relock commit parked
+// ~5h behind a paused `ci:local`). `ci:local` is for a human at a terminal; an
+// agent must run the non-pausing CI path instead.
+export function invokesPausingCi(command: string): string | undefined {
+  // agent-ci can be invoked directly (`agent-ci run …`) or through the
+  // fleet wrapper (`node scripts/fleet/agent-ci-skip-locks.mts run …`).
+  const hit =
+    findInvocation(command, { binary: 'agent-ci', subcommand: 'run' }) ||
+    commandsFor(command, 'node').some(c =>
+      c.args.some(a => a.includes('agent-ci-skip-locks.mts')),
+    )
+  if (!hit) {
+    return undefined
+  }
+  // Only the pausing form is the trap — a plain `agent-ci run` (CI / --quiet)
+  // exits on failure and is fine. Inspect the already-extracted command text.
+  return command.includes('--pause-on-failure')
+    ? 'agent-ci run --pause-on-failure'
+    : undefined
 }
 
 // True when the command is a process-kill (`pkill`/`kill`/`killall`) whose
@@ -154,14 +182,35 @@ function emitKillBlock(label: string): void {
       '  pre-commit/pre-push staged-test reminder is bounded to ~60s — WAIT.',
       '',
       '  A broad pattern (bare `git push` / `pre-push`) also matches the SAME op',
-      '  in every sibling checkout — so this can reap a PARALLEL session\'s git',
+      "  in every sibling checkout — so this can reap a PARALLEL session's git",
       '  op in another repo. If you must stop one, scope the pattern to a full',
       '  repo path (`pkill -f "<repo>/.git-hooks/.../pre-push"`) and verify the',
-      '  PID\'s cwd first (`lsof -a -p <pid> -d cwd -Fn`).',
+      "  PID's cwd first (`lsof -a -p <pid> -d cwd -Fn`).",
       '',
       '  If a run is genuinely dead (confirmed, not just slow), reap the orphan',
       '  with `pkill -f "vitest/dist/workers"` after the op has exited (that',
       `  worker-scoped pattern is allowed), or type "${BYPASS_PHRASE}".`,
+    ].join('\n') + '\n',
+  )
+}
+
+function emitPausingCiBlock(label: string): void {
+  process.stderr.write(
+    [
+      `[no-premature-commit-kill-guard] Blocked: \`${label}\`.`,
+      '',
+      '  `--pause-on-failure` holds agent-ci at the first failing step waiting',
+      '  for an interactive keypress. This session is non-interactive — it can',
+      '  never answer the pause, so the run parks forever. Worse, agent-ci stages',
+      '  into the worktree and pins `.git/index.lock`, so every concurrent',
+      '  `git commit` in this checkout wedges behind it.',
+      '',
+      '  Run the non-pausing CI path instead: drop `--pause-on-failure` (plain',
+      '  `agent-ci run --all --quiet` exits on failure and prints the log), or',
+      '  use the `/fleet:green-ci-local` skill which drives agent-ci and fixes',
+      '  the first failure programmatically.',
+      '',
+      `  Bypass (only if a human is at this terminal): type "${BYPASS_PHRASE}".`,
     ].join('\n') + '\n',
   )
 }
@@ -190,8 +239,12 @@ async function main(): Promise<void> {
   const backgrounded = payload.tool_input?.run_in_background === true
   const bgGit = backgrounded ? invokesPreCommitGit(command) : undefined
   const killTarget = killsGitOpOrTestRun(command)
+  // The pausing-CI trap is independent of run_in_background: the harness may
+  // auto-background a slow foreground command, so the field can't be relied on.
+  // Match the command shape directly.
+  const pausingCi = invokesPausingCi(command)
 
-  if (!bgGit && !killTarget) {
+  if (!bgGit && !killTarget && !pausingCi) {
     process.exit(0)
   }
 
@@ -204,7 +257,10 @@ async function main(): Promise<void> {
   // try a reap), so the user's bypass phrase routinely ages past a 3-turn window
   // before the kill command re-fires. 8 turns keeps the granted bypass live
   // through that back-and-forth.
-  if (transcriptPath && bypassPhrasePresent(transcriptPath, [BYPASS_PHRASE], 8)) {
+  if (
+    transcriptPath &&
+    bypassPhrasePresent(transcriptPath, [BYPASS_PHRASE], 8)
+  ) {
     process.exit(0)
   }
 
@@ -212,6 +268,8 @@ async function main(): Promise<void> {
     emitBackgroundBlock(bgGit)
   } else if (killTarget) {
     emitKillBlock(killTarget)
+  } else if (pausingCi) {
+    emitPausingCiBlock(pausingCi)
   }
   process.exit(2)
 }

@@ -49,6 +49,23 @@ const PJ_WITH_TSESLINT =
   '{\n  "name": "x",\n  "devDependencies": { "@typescript-eslint/parser": "^8.0.0" }\n}\n'
 const PJ_CLEAN =
   '{\n  "name": "x",\n  "devDependencies": { "oxlint": "1.0.0", "@types/node": "24.0.0" }\n}\n'
+const PJ_HOST_TEST_OK = JSON.stringify({
+  name: 'x',
+  devDependencies: { eslint: '^9.0.0' },
+  fleet: { hostTestDeps: ['eslint'] },
+  scripts: { test: 'vitest run src/aqs-adapters/__tests__/to-eslint.test.ts' },
+})
+const PJ_HOST_TEST_RUNTIME = JSON.stringify({
+  name: 'x',
+  dependencies: { eslint: '^9.0.0' },
+  fleet: { hostTestDeps: ['eslint'] },
+})
+const PJ_HOST_TEST_SCRIPT = JSON.stringify({
+  name: 'x',
+  devDependencies: { eslint: '^9.0.0' },
+  fleet: { hostTestDeps: ['eslint'] },
+  scripts: { lint: 'eslint src' },
+})
 
 test('non-Edit/Write tool passes', async () => {
   const r = await runHook({
@@ -124,6 +141,35 @@ test('clean package.json (oxlint only) passes', async () => {
     tool_input: { file_path: p, content: PJ_CLEAN },
   })
   assert.strictEqual(r.code, 0, r.stderr)
+})
+
+test('fleet.hostTestDeps host-test dep in devDependencies passes', async () => {
+  const p = tmpFile('package.json', PJ_HOST_TEST_OK)
+  const r = await runHook({
+    tool_name: 'Write',
+    tool_input: { file_path: p, content: PJ_HOST_TEST_OK },
+  })
+  assert.strictEqual(r.code, 0, r.stderr)
+})
+
+test('fleet.hostTestDeps dep in runtime dependencies is still blocked', async () => {
+  const p = tmpFile('package.json', PJ_HOST_TEST_RUNTIME)
+  const r = await runHook({
+    tool_name: 'Write',
+    tool_input: { file_path: p, content: PJ_HOST_TEST_RUNTIME },
+  })
+  assert.strictEqual(r.code, 2)
+  assert.match(r.stderr, /devDependencies\/peerDependencies/)
+})
+
+test('fleet.hostTestDeps dep invoked by a script is still blocked', async () => {
+  const p = tmpFile('package.json', PJ_HOST_TEST_SCRIPT)
+  const r = await runHook({
+    tool_name: 'Write',
+    tool_input: { file_path: p, content: PJ_HOST_TEST_SCRIPT },
+  })
+  assert.strictEqual(r.code, 2)
+  assert.match(r.stderr, /invokes `eslint`/)
 })
 
 test('vendored upstream/ biome.json is exempt', async () => {

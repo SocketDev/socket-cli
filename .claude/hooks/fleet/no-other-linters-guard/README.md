@@ -26,13 +26,39 @@ toolchain, enforced.
 `third_party/`, `external/`, or a package dir ending `-upstream`. We never touch
 upstream files, and upstream ships its own tooling (out of fleet-tooling scope).
 
+**Host-test deps (`fleet.hostTestDeps`)** — a package whose code ADAPTS TO a
+foreign tool (e.g. converts plugins into ESLint rules) legitimately needs that
+tool installed to integration-test against. It declares the exemption
+explicitly in its `package.json`:
+
+```json
+{
+  "fleet": { "hostTestDeps": ["eslint"] }
+}
+```
+
+The allowance holds only while ALL of:
+
+1. the dep name is listed in `fleet.hostTestDeps` (exact match);
+2. the dep lives only in `devDependencies` / `peerDependencies` — a runtime
+   `dependencies` / `optionalDependencies` entry ships the tool to consumers
+   and stays blocked;
+3. no package script invokes the tool's binary (including via `npx` /
+   `pnpm exec`) — running it makes it a lint/format gate, which is exactly
+   what this rule forbids.
+
+Foreign **config files stay blocked unconditionally** — host APIs used in tests
+(ESLint `RuleTester` / `Linter`, Babel programmatic transforms) need no config
+file. The contract + audit logic live in `_shared/foreign-linters.mts`, shared
+with the committed-state check.
+
 ## Defense in depth
 
 This guard is the **edit-time block**. It complements:
 - `socket/no-eslint-biome-config-ref` — **reports** stale string refs to legacy
   tools in TS/JS source (lint rule).
-- `scripts/fleet/check/only-oxlint-oxfmt.mts` — gates **committed state** (a hard
-  gate in `check --all`).
+- `scripts/fleet/check/linters-are-oxlint-oxfmt-only.mts` — gates **committed
+  state** (a hard gate in `check --all`).
 
 ## Fix
 

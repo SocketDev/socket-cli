@@ -108,11 +108,21 @@ interface OptoutHit {
   readonly detail: string
 }
 
+// The opt-out detector + its hook are where these env-var names legitimately
+// live as detection literals, not as a real opt-out. Skip the guard's own dir
+// (in both the live and template trees) so the enforcer doesn't flag itself.
+function isSelfDetectorPath(file: string): boolean {
+  return file.includes('npmrc-trust-optout-guard/')
+}
+
 function scanCommittedOptouts(): OptoutHit[] {
   const hits: OptoutHit[] = []
   const files = trackedFiles()
   for (let i = 0, { length } = files; i < length; i += 1) {
     const file = files[i]!
+    if (isSelfDetectorPath(file)) {
+      continue
+    }
     const text = readTextOrUndefined(file)
     if (text === undefined) {
       continue

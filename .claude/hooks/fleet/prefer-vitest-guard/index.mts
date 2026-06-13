@@ -36,8 +36,9 @@
 import { existsSync, readFileSync } from 'node:fs'
 import process from 'node:process'
 
+import { isFleetManagedDir } from '../_shared/fleet-repo.mts'
+import { commandsFor, commandWorkingDir } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
-import { commandsFor } from '../_shared/shell-command.mts'
 
 const BYPASS_PHRASE = 'Allow node-test-runner bypass' as const
 
@@ -218,6 +219,12 @@ async function main(): Promise<void> {
       ? payload.tool_input.command
       : ''
   if (!command.trim()) {
+    process.exit(0)
+  }
+
+  // Skip when the command's working dir is a non-fleet repo: it runs its own
+  // test runner, so the fleet vitest convention doesn't apply there.
+  if (!isFleetManagedDir(commandWorkingDir(command))) {
     process.exit(0)
   }
 

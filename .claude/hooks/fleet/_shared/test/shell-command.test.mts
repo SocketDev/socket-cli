@@ -1,9 +1,11 @@
 // node --test specs for the shared shell-command parser util.
 
-import test from 'node:test'
 import assert from 'node:assert/strict'
+import process from 'node:process'
+import test from 'node:test'
 
 import {
+  commandWorkingDir,
   commandsFor,
   findInvocation,
   hasOpaqueInvocation,
@@ -159,4 +161,35 @@ test('invocationHasFlag: flag only inside a quoted string does NOT count', () =>
 
 test('invocationHasFlag: flag on a different binary does NOT count', () => {
   assert.ok(!invocationHasFlag('rm --write-protect x', 'codex', ['--write']))
+})
+
+test('commandWorkingDir: leading cd target wins', () => {
+  assert.strictEqual(
+    commandWorkingDir('cd /Users/me/projects/firewall && node --test x.test.ts'),
+    '/Users/me/projects/firewall',
+  )
+})
+
+test('commandWorkingDir: git -C target when no leading cd', () => {
+  assert.strictEqual(
+    commandWorkingDir('git -C /Users/me/projects/firewall status'),
+    '/Users/me/projects/firewall',
+  )
+})
+
+test('commandWorkingDir: no cd → CLAUDE_PROJECT_DIR', () => {
+  const prev = process.env['CLAUDE_PROJECT_DIR']
+  process.env['CLAUDE_PROJECT_DIR'] = '/Users/me/projects/ultrathink'
+  try {
+    assert.strictEqual(
+      commandWorkingDir('node --test x.test.ts'),
+      '/Users/me/projects/ultrathink',
+    )
+  } finally {
+    if (prev === undefined) {
+      delete process.env['CLAUDE_PROJECT_DIR']
+    } else {
+      process.env['CLAUDE_PROJECT_DIR'] = prev
+    }
+  }
 })

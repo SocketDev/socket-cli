@@ -21,6 +21,8 @@ import path from 'node:path'
 import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url))
 
 /**
@@ -55,8 +57,10 @@ export function readRoster(): string[] {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const logger = getDefaultLogger()
   for (const repo of readRoster()) {
-    // Plain roster list to stdout; a logger prefix would corrupt it.
-    process.stdout.write(`${repo}\n`) // socket-lint: allow
+    // logger.log is prefix-free plain stdout — stays one repo per line for
+    // shell piping.
+    logger.log(repo)
   }
 }
