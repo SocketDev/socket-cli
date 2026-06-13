@@ -38,6 +38,12 @@ function main(): void {
   logger.log('=== Socket Repo Setup ===')
   logger.log('')
 
+  if (!skipTools) {
+    logger.log('── Tools (pnpm + sfw + bootstrap) ─────────')
+    results.push(['Tools', run(path.join(__dirname, 'setup-tools.mjs'))])
+    logger.log('')
+  }
+
   logger.log('── Token ──────────────────────────────────')
   results.push([
     'Token',
@@ -46,7 +52,10 @@ function main(): void {
   logger.log('')
 
   logger.log('── Claude config ──────────────────────────')
-  results.push(['Claude config', run(path.join(__dirname, 'claude-config.mts'))])
+  results.push([
+    'Claude config',
+    run(path.join(__dirname, 'claude-config.mts')),
+  ])
   logger.log('')
 
   if (!skipNativeHost) {

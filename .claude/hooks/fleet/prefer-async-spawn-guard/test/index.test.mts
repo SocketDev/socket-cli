@@ -74,6 +74,10 @@ describe('prefer-async-spawn-guard / isExemptPath', () => {
       '/repo/.config/fleet/markdownlint-rules/_shared/wheelhouse-self-skip.mjs',
       '/repo/dist/foo.js',
       '/repo/node_modules/x/y.js',
+      // Pre-pnpm bootstrap .mjs provisioners (install pnpm before node_modules
+      // exists, so the lib spawn wrapper isn't importable yet).
+      '/repo/scripts/fleet/setup/lib/install-tool.mjs',
+      '/repo/scripts/fleet/setup/setup-tools.mjs',
     ]) {
       assert.equal(isExemptPath(p), true, p)
     }
@@ -82,5 +86,9 @@ describe('prefer-async-spawn-guard / isExemptPath', () => {
   test('does not exempt ordinary source', () => {
     assert.equal(isExemptPath('/repo/scripts/foo.mts'), false)
     assert.equal(isExemptPath('/repo/src/bar.ts'), false)
+    // The setup dir's `.mts` steps run AFTER setup, so they stay guarded —
+    // only the pre-node `.mjs` bootstrap files are exempt.
+    assert.equal(isExemptPath('/repo/scripts/fleet/setup/index.mts'), false)
+    assert.equal(isExemptPath('/repo/scripts/fleet/setup/token.mts'), false)
   })
 })

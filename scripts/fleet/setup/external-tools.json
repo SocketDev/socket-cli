@@ -1,0 +1,130 @@
+{
+  "pnpm": {
+    "notes": [
+      "pnpm publishes 7 platform-native binaries: linux-{x64,arm64}{,-musl}, darwin-arm64, win-{x64,arm64}. Verified against v11.6.0 (2026-06-13).",
+      "linux-*-musl tarballs are first-class assets with distinct integrity from the glibc tarballs — the binaries are linked against different libcs and only the matching one runs on its target. Don't 'simplify' by pointing musl keys at the glibc asset.",
+      "darwin-x64 is the odd one out: upstream dropped the SEA binary in 11.0.5 because of nodejs/node#62893 (upstream LIEF/Mach-O bug that the Node team has declined to fix). Intel Mac instead installs the npm-registry JS tarball (`pnpm-<version>.tgz`) + runs it through system Node. update-external-tools.mts recognizes the `<pkg>-<version>.tgz` asset shape and fetches its integrity from the npm registry rather than the GitHub release.",
+      "v11.6.0 was bumped via update-external-tools.mts (all 8 platforms re-hashed: GitHub assets + darwin-x64 from the npm registry). It published 2026-06-11, inside the 7-day minimumReleaseAge soak, so the bump rode a dated `soakBypass` entry (auto-disarms at `removable`) — pnpm releases are GitHub-asset distributions from a known publisher; the soak targets npm typosquats / malicious freshpubs. Drop the cleared soakBypass on the next routine bump."
+    ],
+    "description": "Fast, disk space efficient package manager",
+    "repository": "github:pnpm/pnpm",
+    "version": "11.6.0",
+    "soakBypass": {
+      "version": "11.6.0",
+      "published": "2026-06-11",
+      "removable": "2026-06-18"
+    },
+    "release": "asset",
+    "platforms": {
+      "darwin-arm64": {
+        "asset": "pnpm-darwin-arm64.tar.gz",
+        "integrity": "sha512-DHKwseQ/HKcfXLOrzwLGFAd4SWOyo3jW+PileiHwQaI8/ZDpg0IR1vVz0SzBWWv7O7HinYUjbm1elENkR8EG9w=="
+      },
+      "darwin-x64": {
+        "asset": "pnpm-11.6.0.tgz",
+        "integrity": "sha512-mjZRgiQIDG/lFlr9z+eb+hGMKb5wPz9GKx4y7+HpjkfodQsUjggoYlCq1BE8x5k8pBPE4s1Ed1JwjC7ldRvJXw=="
+      },
+      "linux-arm64": {
+        "asset": "pnpm-linux-arm64.tar.gz",
+        "integrity": "sha512-x1bEpvzYu6CLlxc78cfNl4pDTa2sITFCaictgW/TK+QFL1uD1IJe9ssV3tAfclD+RhsIaSrxanPajHzJjGyrlg=="
+      },
+      "linux-arm64-musl": {
+        "asset": "pnpm-linux-arm64-musl.tar.gz",
+        "integrity": "sha512-gpdSD/YT0eAm3jmS6dWdWwzDuW0gaRuWVQ4qjsWBDX9/KcYCWW1PLZ3JLZ6tiXkkT2a1GSKQUaHuKul57wbqlQ=="
+      },
+      "linux-x64": {
+        "asset": "pnpm-linux-x64.tar.gz",
+        "integrity": "sha512-uj1Zz76+lcHATLkCrM/JUIIUaIYgXEEXOXNvSO+g3cYd5RXpS6MacuII9TRBAknr2n5XTIi/bAbOLfxF3hk4nw=="
+      },
+      "linux-x64-musl": {
+        "asset": "pnpm-linux-x64-musl.tar.gz",
+        "integrity": "sha512-4IC9DBZbiJVXz2/VtrZFtXc+OVXUIOhGv6WfN/p27k/rFJOj/57iNNC+MzZDRzlCZsZIAb3WAJUe2B4AAPLsnQ=="
+      },
+      "win-arm64": {
+        "asset": "pnpm-win32-arm64.zip",
+        "integrity": "sha512-VITunLEwYnoEeVF/UP5QD1qOCDhDy+C+BVhBKq5IT4UTiP3X2wanWCtL1nk5OTHg+oPB7NHaWah0SkLqtMcqTA=="
+      },
+      "win-x64": {
+        "asset": "pnpm-win32-x64.zip",
+        "integrity": "sha512-oX2y8mihTVM6QEDA8MdXyBGOQ8xxGjqhX1I9+jLfrFY5vCrwpkArhu8bTMq//vMPaS2Rl/nQ7cSgOySnhsvFog=="
+      }
+    }
+  },
+  "sfw": {
+    "notes": [
+      "SFW (Socket Firewall) is published in two flavors: free (public, SocketDev/sfw-free) and enterprise (private, SocketDev/firewall-release). Both ship the same 7-platform set: linux-{x64,arm64}{,-musl}, darwin-{x64,arm64}, win-x64. win-arm64 is intentionally absent — upstream does not yet build it. Unlike zizmor (a security audit), SFW is a required dependency of the install flow, so consumers on win-arm64 must skip SFW-dependent steps until upstream support lands.",
+      "Setup action picks the enterprise flavor when SOCKET_API_KEY is in env, otherwise the free flavor. Enterprise downloads require GITHUB_TOKEN auth (private repo); install-tool.mjs forwards GITHUB_TOKEN automatically when set."
+    ],
+    "description": "Socket Firewall — package manager command wrapper",
+    "version": "1.12.0",
+    "release": "asset",
+    "free": {
+      "repository": "github:SocketDev/sfw-free",
+      "binaryName": "sfw",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "sfw-free-macos-arm64",
+          "integrity": "sha512-lwh/AIf7HXVIrE28LDfvtJqnaGb7azC+Up8Hi/c9hIfn9wMRt55misCKx9b6CjYi+d3bHladYNYPlqVtlqNpcQ=="
+        },
+        "darwin-x64": {
+          "asset": "sfw-free-macos-x86_64",
+          "integrity": "sha512-iBLJ7bzrnnUPmUbN8FFzmXNYowWnahOD4DWzKYbneeCsvFa1xlHT4LaLWTysatd5npJIO7QOiRow6yw/tgjCWw=="
+        },
+        "linux-arm64": {
+          "asset": "sfw-free-linux-arm64",
+          "integrity": "sha512-TZ0hzAzPyNfi1PgqU5+TzkrlBcWXZlXaSHkx1/wzIck4vlZXFQI8i7CCvWYihrJQ3zgEwVI30MmrqsJ9W7xWQw=="
+        },
+        "linux-arm64-musl": {
+          "asset": "sfw-free-musl-linux-arm64",
+          "integrity": "sha512-O+X0JxQJJn2YpAJFP38ZuG156pewgk+HJBVUTJZM8AMZSbERLy6LLDD2S8uwPXpMXDD9uRy8/h7EpRcu1OQLcw=="
+        },
+        "linux-x64": {
+          "asset": "sfw-free-linux-x86_64",
+          "integrity": "sha512-Yuu+qoqxa0n7WIS9NMI3uuitUMoELbbUqJm3W6L2AsMJNZpVekXKmrZIhEjxWjJqvKt3mErKxK+izdP3/F+64Q=="
+        },
+        "linux-x64-musl": {
+          "asset": "sfw-free-musl-linux-x86_64",
+          "integrity": "sha512-U4WJeq+/Z634uFvW0+Hvmb/BUutMeiZQ1dwP40/wKMiCDwKGPr+Unl4KqwaG3qaLjkTRJ938sUWQy+/gFeEmDg=="
+        },
+        "win-x64": {
+          "asset": "sfw-free-windows-x86_64.exe",
+          "integrity": "sha512-tkZHeaxydBStW6SsCi5S2jLMtdj2UQ/PdZb/ch8W532UjFdZUJD0oygW/YWliK0HQkcyw5GQm2d1iZU0P/yElg=="
+        }
+      }
+    },
+    "enterprise": {
+      "repository": "github:SocketDev/firewall-release",
+      "binaryName": "sfw",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "sfw-macos-arm64",
+          "integrity": "sha512-G7te2xB1Q+K/k/2Wijbn96eJZUZoNFlDNKURydLBLB69Jkuc1M1lNFbqxiyP8tfOlMIBKWxRwfZyeX9ipPy4Ew=="
+        },
+        "darwin-x64": {
+          "asset": "sfw-macos-x86_64",
+          "integrity": "sha512-/ogpJY01pDTEcvDPq09FNxGP5eXu4d+ab2RxT1r4he0ptfCOGOO3rQXfxTFqrOmS+OSz5RZe+4qPupM4nGriMQ=="
+        },
+        "linux-arm64": {
+          "asset": "sfw-linux-arm64",
+          "integrity": "sha512-oXhTWx/I/1yZRn0ik3DL5y2/4RZqv/msJpTi6m190jBGg/x7bgqJO4uCOUJe1+iudK3bNGsYB8zs6vIJTLwA7g=="
+        },
+        "linux-arm64-musl": {
+          "asset": "sfw-musl-linux-arm64",
+          "integrity": "sha512-VtvO4OkLNO7XW1YwY73WoIZeRp7sMg+LbdeL2CVy5bgysTnuBxKrkkJvW41BsuScVdf7nt/bh5V8ZBAMN993rg=="
+        },
+        "linux-x64": {
+          "asset": "sfw-linux-x86_64",
+          "integrity": "sha512-91W90AOLI0RBN6lsPor2wf7wUvV3hzebXf0SM7SEzVPGM76Yjwj2D5E/jtJ8LjNNE7afggUDEtgMvFSTmgnZDg=="
+        },
+        "linux-x64-musl": {
+          "asset": "sfw-musl-linux-x86_64",
+          "integrity": "sha512-5CUE3LnXKzRqoT7SmT/yDBtyVyiUqwKtgS11j7qEhb2KJI3kztBuUQwBoOKPxxwpS0X7R/DuANvax7pQ76f4xw=="
+        },
+        "win-x64": {
+          "asset": "sfw-windows-x86_64.exe",
+          "integrity": "sha512-GXKV67rN0XTP+2v9VTfzz84N09x9UkEItj2wmcA7pmy5YoLPF/+Z/XkVGoUHzVSTTeivbYicRLAxl8BNkoUZ6w=="
+        }
+      }
+    }
+  }
+}
