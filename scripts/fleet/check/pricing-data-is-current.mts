@@ -30,10 +30,13 @@ import { REPO_ROOT } from '../paths.mts'
 
 const logger = getDefaultLogger()
 
-// Days after the snapshot date before the data is considered stale. One month
-// plus slack — pricing rarely changes more than monthly, and a tighter window
-// would nag on routine runs.
-const FRESHNESS_DAYS = 35
+// Days after the snapshot date before the data is considered stale. Derived
+// from the weekly `updating` cadence that refreshes it (the `updating-pricing`
+// sub-skill runs in the umbrella, `cron: 0 9 * * 1`): one week plus a few days
+// of slack so a delayed or skipped weekly run doesn't nag immediately. This is
+// anchored to a real cadence, not a guessed "monthly-ish" window — if the
+// weekly refresh runs, the snapshot is never older than ~7 days.
+const FRESHNESS_DAYS = 10
 
 const ROUTING_DOC = path.join(
   REPO_ROOT,
@@ -80,10 +83,10 @@ function main(): void {
   const iso = snapshot.toISOString().slice(0, 10)
   if (age > FRESHNESS_DAYS) {
     logger.warn(
-      `[check-pricing-data-is-current] model-pricing snapshot is ${age} days old (${iso}, window ${FRESHNESS_DAYS}d).`,
+      `[check-pricing-data-is-current] model-pricing snapshot is ${age} days old (${iso}, window ${FRESHNESS_DAYS}d — the weekly updating cadence).`,
     )
     logger.warn(
-      '  Fix: run the `researching-recency` skill (/researching-recency) on current model pricing, refresh the figures in docs/agents.md/fleet/skill-model-routing.md + the .claude/reports/ cost-ladder report, then bump the MODEL-PRICING-SNAPSHOT date.',
+      '  Fix: run the `updating-pricing` sub-skill (/update-pricing) — it re-sources per-model prices from the vendor page and restamps both model-pricing.json and the MODEL-PRICING-SNAPSHOT marker. (Or let the weekly `updating` umbrella run it.)',
     )
     return
   }

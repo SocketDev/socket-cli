@@ -74,12 +74,18 @@ const STALE_PATTERNS: Array<{ name: string; rx: RegExp }> = [
     rx: /esbuild\/(bin|lib)\/.*\bservice\b/,
   },
   // Socket Firewall command wrappers. Deployment layouts seen in the wild:
-  //   - ~/.socket/sfw/bin/sfw[-<version>]              (versioned dev install)
-  //   - ~/.socket/_wheelhouse/sfw-stable/sfw           (shim exec target — the
-  //                                                     one the package-manager
-  //                                                     shims actually run)
-  //   - ~/.socket/_wheelhouse/bin/sfw[-<version>]      (older dev install)
-  //   - ~/.socket/_dlx/<hash>/sfw                      (dlxBinary cache)
+  //   - ~/.socket/_wheelhouse/rack/sfw/<version>/sfw   (current: the readable
+  //                                                     rack path both installers
+  //                                                     expose — real binary for
+  //                                                     setup-tools, a symlink to
+  //                                                     the _dlx store for
+  //                                                     install-sfw)
+  //   - ~/.socket/_dlx/<hash>/sfw                      (dlxBinary store — the
+  //                                                     real binary behind the
+  //                                                     rack symlink)
+  //   - ~/.socket/sfw/bin/sfw[-<version>]              (legacy versioned install)
+  //   - ~/.socket/_wheelhouse/sfw-stable/sfw           (legacy shim exec target)
+  //   - ~/.socket/_wheelhouse/bin/sfw[-<version>]      (legacy dev install)
   //   - ${RUNNER_TEMP}/sfw-bin/sfw[.exe]               (CI runner install)
   // Path component is invariant across home prefixes (/Users/<user>/ vs
   // /home/<user>/). The CI path uses RUNNER_TEMP which varies per OS but
@@ -97,10 +103,12 @@ const STALE_PATTERNS: Array<{ name: string; rx: RegExp }> = [
     //   (?:                          ── start: alternation of parent dirs
     //     \.socket\/                  literal ".socket/" (the install root)
     //     (?:                         ── one of these subtrees under .socket/
-    //       _dlx\/[0-9a-f]+           "_dlx/<hex-hash>"  — dlxBinary cache
-    //       | sfw\/bin                "sfw/bin"          — versioned dev install
-    //       | _wheelhouse\/           "_wheelhouse/" then…
-    //         (?: bin | sfw-stable )    "bin" or "sfw-stable" (shim exec target)
+    //       _dlx\/[0-9a-f]+           "_dlx/<hex-hash>"  — dlxBinary store
+    //       | sfw\/bin                "sfw/bin"          — legacy dev install
+    //       | _wheelhouse\/           "_wheelhouse/" then one of…
+    //         (?: bin                   "bin"            (legacy dev install)
+    //           | rack\/sfw\/[\w.]+     "rack/sfw/<ver>" (current readable path)
+    //           | sfw-stable )          "sfw-stable"     (legacy shim target)
     //     )
     //     | sfw-bin                   OR bare "sfw-bin"  — CI ${RUNNER_TEMP}/sfw-bin
     //   )
@@ -114,7 +122,7 @@ const STALE_PATTERNS: Array<{ name: string; rx: RegExp }> = [
     // `.exe` branch) matches a future Windows process source too. Negative
     // cases: a plain "/Library/pnpm/pnpm" (no sfw wrapper) and editors/IDEs
     // never match.
-    rx: /(?:\.socket\/(?:_dlx\/[0-9a-f]+|sfw\/bin|_wheelhouse\/(?:bin|sfw-stable))|sfw-bin)\/sfw(?:-[\w.]+)?(?:\.exe)?\b/,
+    rx: /(?:\.socket\/(?:_dlx\/[0-9a-f]+|sfw\/bin|_wheelhouse\/(?:bin|rack\/sfw\/[\w.]+|sfw-stable))|sfw-bin)\/sfw(?:-[\w.]+)?(?:\.exe)?\b/,
   },
 ]
 

@@ -1,6 +1,6 @@
 ---
 name: auditing-api-surface
-description: Audits a lib's published export surface for dead/unconsumed subpaths. For each `package.json#exports` subpath, checks whether any other fleet repo imports it and whether the lib's own `src/` references it, then classifies every subpath (dead / single-consumer / internal-only / consumed) into a ranked report. Read-only — reports prune candidates, never deletes. Use weekly (the `audit-api-surface.yml` cron drives it), before a major version bump, or when trimming bundle size on an infra lib.
+description: Audits a lib's published export surface for dead/unconsumed subpaths. For each `package.json#exports` subpath, checks whether any other fleet repo imports it and whether the lib's own `src/` references it, then classifies every subpath (dead / single-consumer / internal-only / consumed) into a ranked report. Read-only — reports prune candidates, never deletes. Use weekly (the `audit-api-surface.lock.yml` gh-aw cron drives it), before a major version bump, or when trimming bundle size on an infra lib.
 user-invocable: true
 allowed-tools: Read, Grep, Glob, Bash(node:*), Bash(rg:*), Bash(git:*), Bash(gh:*)
 model: claude-haiku-4-5
@@ -22,9 +22,9 @@ target; other libs get a meaningful report too.
 
 ## When to use
 
-- **Weekly health check** — the `audit-api-surface.yml` cron runs this and opens
-  a tracking issue. Dead surface accumulates silently; a weekly sweep keeps it
-  visible.
+- **Weekly health check** — the `audit-api-surface.lock.yml` gh-aw cron (Monday
+  09:23 UTC; source `audit-api-surface.md`) runs this and opens a tracking
+  issue. Dead surface accumulates silently; a weekly sweep keeps it visible.
 - **Before a major version bump** — a `dead` or `single-consumer` export is a
   candidate to remove (major) or inline into its one consumer.
 - **Bundle trimming** — pairs with `trimming-bundle`; an unconsumed subpath is

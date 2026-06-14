@@ -148,12 +148,21 @@ const SELF_NARRATION: ReminderGroup = {
       why: 'Narrating the next tool call adds no signal — make the call. Open on the result or the decision, not the intent.',
     },
     {
-      label: 'BANNED word "honest" — hard rule, this match is a VERDICT not a heuristic',
+      label:
+        'virtue-narration opener ("let me be disciplined / to be thorough / be careful here")',
+      regex:
+        /\b(?:let me be (?:disciplined|careful|honest|precise|rigorous|thorough|methodical)|to be (?:thorough|rigorous|careful|disciplined|precise|safe)|i'?ll be (?:careful|thorough|disciplined|rigorous)\s+here|let me (?:think (?:hard|carefully)|step back)(?:\s+(?:here|about|on))?)\b/i,
+      why: "Diligence theater — performing rigor instead of doing it. Cut the preamble and do the careful thing; the work IS the evidence of care. (Chat analog of the prose skill's throat-clearing-opener ban.)",
+    },
+    {
+      label:
+        'BANNED word "honest" — hard rule, this match is a VERDICT not a heuristic',
       regex: /\bhonest(?:ly|y)?\b|\bin all honesty\b/i,
       why: 'Remove the word — honest / honestly / honesty / "in all honesty". This is a categorical user ban, NOT one of the over-firing heuristics below: a match here is always wrong, never a false positive. Claiming honesty implies the rest is not. State the fact, the limitation, or the recommendation plainly and delete the word.',
     },
     {
-      label: 'conversational hedge ("to be fair / the reality is / be straight with you")',
+      label:
+        'conversational hedge ("to be fair / the reality is / be straight with you")',
       regex:
         /\bto be fair\b|\bthe reality is\b|\btruth be told\b|\bbe straight with you\b/i,
       why: 'Filler hedge that softens or pre-apologizes for a direct statement. Drop it and state the point plainly.',
@@ -165,7 +174,8 @@ const SELF_NARRATION: ReminderGroup = {
       why: 'Reflexive agreement/apology padding. Acknowledge the correction by fixing it, not by performing contrition.',
     },
     {
-      label: 'sugary enthusiasm padding ("great question / perfect / excellent / happy to")',
+      label:
+        'sugary enthusiasm padding ("great question / perfect / excellent / happy to")',
       regex:
         /\b(?:great\s+(?:question|point|idea|catch)|perfect[!.]|excellent[!.]|absolutely[!,]|happy\s+to|i'?d\s+be\s+(?:happy|glad)\s+to|sounds\s+(?:great|good)[!.])/i,
       why: 'Overly sugary filler. Be pleasant but plain — no enthusiasm performance. Get to the point.',

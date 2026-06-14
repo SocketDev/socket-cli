@@ -1,66 +1,100 @@
 {
-  "pnpm": {
-    "notes": [
-      "pnpm publishes 7 platform-native binaries: linux-{x64,arm64}{,-musl}, darwin-arm64, win-{x64,arm64}. Verified against v11.6.0 (2026-06-13).",
-      "linux-*-musl tarballs are first-class assets with distinct integrity from the glibc tarballs — the binaries are linked against different libcs and only the matching one runs on its target. Don't 'simplify' by pointing musl keys at the glibc asset.",
-      "darwin-x64 is the odd one out: upstream dropped the SEA binary in 11.0.5 because of nodejs/node#62893 (upstream LIEF/Mach-O bug that the Node team has declined to fix). Intel Mac instead installs the npm-registry JS tarball (`pnpm-<version>.tgz`) + runs it through system Node. update-external-tools.mts recognizes the `<pkg>-<version>.tgz` asset shape and fetches its integrity from the npm registry rather than the GitHub release.",
-      "v11.6.0 was bumped via update-external-tools.mts (all 8 platforms re-hashed: GitHub assets + darwin-x64 from the npm registry). It published 2026-06-11, inside the 7-day minimumReleaseAge soak, so the bump rode a dated `soakBypass` entry (auto-disarms at `removable`) — pnpm releases are GitHub-asset distributions from a known publisher; the soak targets npm typosquats / malicious freshpubs. Drop the cleared soakBypass on the next routine bump."
-    ],
-    "description": "Fast, disk space efficient package manager",
-    "repository": "github:pnpm/pnpm",
-    "version": "11.6.0",
-    "soakBypass": {
-      "version": "11.6.0",
-      "published": "2026-06-11",
-      "removable": "2026-06-18"
-    },
-    "release": "asset",
-    "platforms": {
-      "darwin-arm64": {
-        "asset": "pnpm-darwin-arm64.tar.gz",
-        "integrity": "sha512-DHKwseQ/HKcfXLOrzwLGFAd4SWOyo3jW+PileiHwQaI8/ZDpg0IR1vVz0SzBWWv7O7HinYUjbm1elENkR8EG9w=="
+  "description": "Build/release tools the from-scratch bootstrap (setup-tools.mjs) installs before pnpm: pnpm itself, Socket Firewall (free + enterprise SKUs), and codedb. Shape is the shared { tools: { <name>: ToolEntry } } container validated by scripts/fleet/lib/external-tools-schema.mts.",
+  "tools": {
+    "codedb": {
+      "notes": [
+        "codedb is a Zig code-intelligence MCP server (justrach/codedb). Each platform asset is a RAW executable (codedb-<os>-<arch>), not a tarball — install copies it directly and chmod +x. setup-tools.mjs installs it to rack/codedb/<version>/codedb with a telemetry-off bin/codedb shim (CODEDB_NO_TELEMETRY=1, always — the documented opt-out).",
+        "v0.2.5825 published 2026-06-12, inside the 7-day minimumReleaseAge soak, so the pin rides a dated soakBypass (auto-disarms at removable). Each asset's sha512 was verified against the upstream checksums.sha256 before hashing. darwin-x64 maps to codedb-darwin-x86_64, linux-x64 to codedb-linux-x86_64."
+      ],
+      "description": "Zig code-intelligence MCP server (indexes a repo for fast code search)",
+      "repository": "github:justrach/codedb",
+      "version": "0.2.5825",
+      "soakBypass": {
+        "version": "0.2.5825",
+        "published": "2026-06-12",
+        "removable": "2026-06-19"
       },
-      "darwin-x64": {
-        "asset": "pnpm-11.6.0.tgz",
-        "integrity": "sha512-mjZRgiQIDG/lFlr9z+eb+hGMKb5wPz9GKx4y7+HpjkfodQsUjggoYlCq1BE8x5k8pBPE4s1Ed1JwjC7ldRvJXw=="
-      },
-      "linux-arm64": {
-        "asset": "pnpm-linux-arm64.tar.gz",
-        "integrity": "sha512-x1bEpvzYu6CLlxc78cfNl4pDTa2sITFCaictgW/TK+QFL1uD1IJe9ssV3tAfclD+RhsIaSrxanPajHzJjGyrlg=="
-      },
-      "linux-arm64-musl": {
-        "asset": "pnpm-linux-arm64-musl.tar.gz",
-        "integrity": "sha512-gpdSD/YT0eAm3jmS6dWdWwzDuW0gaRuWVQ4qjsWBDX9/KcYCWW1PLZ3JLZ6tiXkkT2a1GSKQUaHuKul57wbqlQ=="
-      },
-      "linux-x64": {
-        "asset": "pnpm-linux-x64.tar.gz",
-        "integrity": "sha512-uj1Zz76+lcHATLkCrM/JUIIUaIYgXEEXOXNvSO+g3cYd5RXpS6MacuII9TRBAknr2n5XTIi/bAbOLfxF3hk4nw=="
-      },
-      "linux-x64-musl": {
-        "asset": "pnpm-linux-x64-musl.tar.gz",
-        "integrity": "sha512-4IC9DBZbiJVXz2/VtrZFtXc+OVXUIOhGv6WfN/p27k/rFJOj/57iNNC+MzZDRzlCZsZIAb3WAJUe2B4AAPLsnQ=="
-      },
-      "win-arm64": {
-        "asset": "pnpm-win32-arm64.zip",
-        "integrity": "sha512-VITunLEwYnoEeVF/UP5QD1qOCDhDy+C+BVhBKq5IT4UTiP3X2wanWCtL1nk5OTHg+oPB7NHaWah0SkLqtMcqTA=="
-      },
-      "win-x64": {
-        "asset": "pnpm-win32-x64.zip",
-        "integrity": "sha512-oX2y8mihTVM6QEDA8MdXyBGOQ8xxGjqhX1I9+jLfrFY5vCrwpkArhu8bTMq//vMPaS2Rl/nQ7cSgOySnhsvFog=="
+      "release": "asset",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "codedb-darwin-arm64",
+          "integrity": "sha512-dlDOa6MfpQxJHMIKI5M4C+2y6X14QpEHiMmmqfyAx9zxBML0Zz5xrmf1pS4oAgZIBJn2R6nRKFS/ppkT+TA0Xg=="
+        },
+        "darwin-x64": {
+          "asset": "codedb-darwin-x86_64",
+          "integrity": "sha512-bHdINGyi7A3xSeXLnh/UAFYE3Af6zgj602tL6bnsIwyb0j3r6yHb6AobecgCxD0qfUYsRRRQDbtlvJYi7aoA/A=="
+        },
+        "linux-arm64": {
+          "asset": "codedb-linux-arm64",
+          "integrity": "sha512-1ttAxL53tI57MqUHk33+6PHnYKEIoEgUuK8Y9mYygxPUq5LP9QG9Ja1cT3Br1E1ABcgBkb/abwsHBreEj3CMwg=="
+        },
+        "linux-x64": {
+          "asset": "codedb-linux-x86_64",
+          "integrity": "sha512-fNbPFko38kdrEokWqwsR0VBLdwBthgdp4gRFc/OrJ/khD0Np2r+lfhwflJwKEPi1Eg1QJ3MAm1LwmW1vWQGOiA=="
+        }
       }
-    }
-  },
-  "sfw": {
-    "notes": [
-      "SFW (Socket Firewall) is published in two flavors: free (public, SocketDev/sfw-free) and enterprise (private, SocketDev/firewall-release). Both ship the same 7-platform set: linux-{x64,arm64}{,-musl}, darwin-{x64,arm64}, win-x64. win-arm64 is intentionally absent — upstream does not yet build it. Unlike zizmor (a security audit), SFW is a required dependency of the install flow, so consumers on win-arm64 must skip SFW-dependent steps until upstream support lands.",
-      "Setup action picks the enterprise flavor when SOCKET_API_KEY is in env, otherwise the free flavor. Enterprise downloads require GITHUB_TOKEN auth (private repo); install-tool.mjs forwards GITHUB_TOKEN automatically when set."
-    ],
-    "description": "Socket Firewall — package manager command wrapper",
-    "version": "1.12.0",
-    "release": "asset",
-    "free": {
+    },
+    "pnpm": {
+      "notes": [
+        "pnpm publishes 7 platform-native binaries: linux-{x64,arm64}{,-musl}, darwin-arm64, win-{x64,arm64}. Verified against v11.6.0 (2026-06-13).",
+        "linux-*-musl tarballs are first-class assets with distinct integrity from the glibc tarballs — the binaries are linked against different libcs and only the matching one runs on its target. Don't 'simplify' by pointing musl keys at the glibc asset.",
+        "darwin-x64 is the odd one out: upstream dropped the SEA binary in 11.0.5 because of nodejs/node#62893 (upstream LIEF/Mach-O bug that the Node team has declined to fix). Intel Mac instead installs the npm-registry JS tarball (`pnpm-<version>.tgz`) + runs it through system Node. update-external-tools.mts recognizes the `<pkg>-<version>.tgz` asset shape and fetches its integrity from the npm registry rather than the GitHub release.",
+        "v11.6.0 was bumped via update-external-tools.mts (all 8 platforms re-hashed: GitHub assets + darwin-x64 from the npm registry). It published 2026-06-11, inside the 7-day minimumReleaseAge soak, so the bump rode a dated `soakBypass` entry (auto-disarms at `removable`) — pnpm releases are GitHub-asset distributions from a known publisher; the soak targets npm typosquats / malicious freshpubs. Drop the cleared soakBypass on the next routine bump."
+      ],
+      "description": "Fast, disk space efficient package manager",
+      "repository": "github:pnpm/pnpm",
+      "version": "11.6.0",
+      "soakBypass": {
+        "version": "11.6.0",
+        "published": "2026-06-11",
+        "removable": "2026-06-18"
+      },
+      "release": "asset",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "pnpm-darwin-arm64.tar.gz",
+          "integrity": "sha512-DHKwseQ/HKcfXLOrzwLGFAd4SWOyo3jW+PileiHwQaI8/ZDpg0IR1vVz0SzBWWv7O7HinYUjbm1elENkR8EG9w=="
+        },
+        "darwin-x64": {
+          "asset": "pnpm-11.6.0.tgz",
+          "integrity": "sha512-mjZRgiQIDG/lFlr9z+eb+hGMKb5wPz9GKx4y7+HpjkfodQsUjggoYlCq1BE8x5k8pBPE4s1Ed1JwjC7ldRvJXw=="
+        },
+        "linux-arm64": {
+          "asset": "pnpm-linux-arm64.tar.gz",
+          "integrity": "sha512-x1bEpvzYu6CLlxc78cfNl4pDTa2sITFCaictgW/TK+QFL1uD1IJe9ssV3tAfclD+RhsIaSrxanPajHzJjGyrlg=="
+        },
+        "linux-arm64-musl": {
+          "asset": "pnpm-linux-arm64-musl.tar.gz",
+          "integrity": "sha512-gpdSD/YT0eAm3jmS6dWdWwzDuW0gaRuWVQ4qjsWBDX9/KcYCWW1PLZ3JLZ6tiXkkT2a1GSKQUaHuKul57wbqlQ=="
+        },
+        "linux-x64": {
+          "asset": "pnpm-linux-x64.tar.gz",
+          "integrity": "sha512-uj1Zz76+lcHATLkCrM/JUIIUaIYgXEEXOXNvSO+g3cYd5RXpS6MacuII9TRBAknr2n5XTIi/bAbOLfxF3hk4nw=="
+        },
+        "linux-x64-musl": {
+          "asset": "pnpm-linux-x64-musl.tar.gz",
+          "integrity": "sha512-4IC9DBZbiJVXz2/VtrZFtXc+OVXUIOhGv6WfN/p27k/rFJOj/57iNNC+MzZDRzlCZsZIAb3WAJUe2B4AAPLsnQ=="
+        },
+        "win-arm64": {
+          "asset": "pnpm-win32-arm64.zip",
+          "integrity": "sha512-VITunLEwYnoEeVF/UP5QD1qOCDhDy+C+BVhBKq5IT4UTiP3X2wanWCtL1nk5OTHg+oPB7NHaWah0SkLqtMcqTA=="
+        },
+        "win-x64": {
+          "asset": "pnpm-win32-x64.zip",
+          "integrity": "sha512-oX2y8mihTVM6QEDA8MdXyBGOQ8xxGjqhX1I9+jLfrFY5vCrwpkArhu8bTMq//vMPaS2Rl/nQ7cSgOySnhsvFog=="
+        }
+      }
+    },
+    "sfw-free": {
+      "notes": [
+        "SFW (Socket Firewall) free flavor (public, SocketDev/sfw-free). Ships a 7-platform set: linux-{x64,arm64}{,-musl}, darwin-{x64,arm64}, win-x64. win-arm64 is intentionally absent — upstream does not yet build it. SFW is a required dependency of the install flow, so consumers on win-arm64 skip SFW-dependent steps until upstream support lands.",
+        "Installed when neither SOCKET_API_KEY nor SOCKET_API_TOKEN is set; the enterprise flavor (sfw-enterprise) is selected when one of those is present. The two flavors share a version and install to the same `sfw` binary name."
+      ],
+      "description": "Socket Firewall (free tier) — package manager command wrapper",
+      "version": "1.12.0",
       "repository": "github:SocketDev/sfw-free",
       "binaryName": "sfw",
+      "release": "asset",
       "platforms": {
         "darwin-arm64": {
           "asset": "sfw-free-macos-arm64",
@@ -92,9 +126,16 @@
         }
       }
     },
-    "enterprise": {
+    "sfw-enterprise": {
+      "notes": [
+        "SFW (Socket Firewall) enterprise flavor (private, SocketDev/firewall-release). Same 7-platform set as sfw-free. Enterprise downloads require GITHUB_TOKEN auth (private repo); install-tool.mjs forwards GITHUB_TOKEN automatically when set.",
+        "Installed when SOCKET_API_KEY (or SOCKET_API_TOKEN) is set; otherwise the free flavor (sfw-free) is used. The two flavors share a version and install to the same `sfw` binary name."
+      ],
+      "description": "Socket Firewall (enterprise tier) — package manager command wrapper",
+      "version": "1.12.0",
       "repository": "github:SocketDev/firewall-release",
       "binaryName": "sfw",
+      "release": "asset",
       "platforms": {
         "darwin-arm64": {
           "asset": "sfw-macos-arm64",

@@ -16,7 +16,7 @@ Node release, a pnpm pin).
 
 ## Cascade scope is never a hazard to warn about
 
-A fleet cascade that touches many repos and hundreds of files is the normal, safe, expected shape. The template is the source of truth and `sync-scaffolding` is the authority; a wide sweep means the fleet had drifted that far. Do NOT pause, ask, or warn because a `--all --fix` run reports a large repo count or finding count. Run it.
+A fleet cascade that touches many repos and hundreds of files is the normal, safe, expected shape. The template is the source of truth and `sync-scaffolding` is the authority; a wide sweep means the fleet had drifted that far. Do NOT pause, ask, or warn because a `--all --fix` run reports a large repo count or finding count. Run it. A cascade is one atomic unit of update, not churn — see [`cascade-is-a-unit.md`](cascade-is-a-unit.md).
 
 The recovery model is symmetric. If a cascade over-applies or applies a stale value, the fix is another cascade. There is no irreversible-action risk to gate on here, so the "confirm before hard-to-reverse outward-facing actions" instinct does not fire for cascades — they are idempotent and self-correcting. Pre-existing drift in a target repo riding along in the cascade commit is part of the design. Surface a finding only when a cascade **can't apply** (lockfile reject, soak window, broken hook): bump the blocker or defer and report.
 

@@ -35,6 +35,6 @@ umbrella's exported helpers — single source of truth.
 | Surface                                                            | Source                                                              |
 | ------------------------------------------------------------------ | ------------------------------------------------------------------- |
 | sfw binary (enterprise or free, depending on token)                | github:SocketDev/firewall-release (enterprise) / SocketDev/sfw-free |
-| PATH shims for npm / pnpm / yarn / pip / uv / cargo / etc.         | `~/.socket/sfw/shims/`                                              |
+| PATH shims for npm / pnpm / yarn / pip / uv / cargo / etc.         | `~/.socket/_wheelhouse/bin/`                                        |
 | Shell-rc env block (`~/.zshenv` on macOS)                          | `setup-security-tools/lib/shell-rc-bridge.mts`                      |
 | OS keychain entry (macOS Keychain / libsecret / CredentialManager) | `setup-security-tools/lib/token-storage.mts`                        |

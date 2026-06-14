@@ -13,16 +13,22 @@ Eliminate AI writing patterns from prose.
 
 Hardik Pandya wrote the upstream version (`stop-slop`). MIT-licensed. Source: https://github.com/hardikpandya/stop-slop. Core rules + references run verbatim. Edit only in `socket-wheelhouse/template/`; the cascade refreshes downstream copies.
 
-## Fleet surfaces
+## Fleet surfaces — two modes
 
-Apply this skill when you write:
+This skill runs in two modes. Both strip the AI-slop the Core Rules target; the conversational mode adds brevity + voice on top.
 
-- Commit message bodies (multi-paragraph). Subject lines stay terse and imperative per `commit-message-format-guard`.
-- PR descriptions (`gh pr create --body`, `gh pr edit --body`).
-- CHANGELOG entries.
-- README sections.
-- `docs/` markdown.
-- GitHub Release notes.
+**Route by surface:**
+
+- Targeting a `docs/**` file, README, CHANGELOG, GitHub Release notes, or API-reference prose → **documentation mode** (the Core Rules below, unchanged).
+- Targeting a PR description / comment (`gh pr create/edit/comment --body`), an issue body or reply (`gh issue create/comment`), a review comment, a Linear issue/comment, a status summary, or a multi-paragraph commit *body* → **conversational mode**: the Core Rules **plus** [references/conversational.md](references/conversational.md) (lead with the point, be brief, show the receipt, drop the AI scaffolding).
+
+**Documentation mode applies to:**
+
+- CHANGELOG entries, README sections, `docs/` markdown, GitHub Release notes, API-reference prose. Complete + precise + durable; length serves correctness.
+
+**Conversational mode applies to:**
+
+- PR descriptions + comments, issue bodies + replies, review comments, Linear issues/comments, status summaries, and multi-paragraph commit bodies. Land the point now, to a person; length serves the point (often 1–3 sentences). Commit subject lines stay terse + imperative per `commit-message-format-guard` (not this skill).
 
 ## When to skip this skill
 

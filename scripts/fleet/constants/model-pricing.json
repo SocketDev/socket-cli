@@ -1,0 +1,27 @@
+{
+  "$comment": "Structured model-pricing data for scripts/fleet/estimate-ai-cost.mts. Sourced + timestamped: snapshot is the capture date, source is the vendor page. Refreshed by the updating-pricing sub-skill (weekly, via the /updating umbrella) or on demand (/update-pricing). Prices are USD per million tokens (MTok). Do not hand-edit numbers — re-source from the vendor page so the snapshot date stays honest. Edit in socket-wheelhouse/template/ then cascade.",
+  "snapshot": "2026-06-14",
+  "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+  "currency": "USD",
+  "unit": "per-Mtok",
+  "notes": [
+    "batchMultiplier 0.5 = the Batch API's 50%-off on input + output.",
+    "cacheReadMultiplier 0.1 = a prompt-cache hit costs 0.1x base input.",
+    "cacheWrite5mMultiplier 1.25 / cacheWrite1hMultiplier 2.0 are write-time input multipliers.",
+    "Opus 4.7 and later use a new tokenizer that can emit up to ~35% more tokens for the same text — fold this into token-profile estimates for Opus/Fable, not into the per-token price.",
+    "Fast mode (Opus only, research preview) bills at a premium and is not used by the fleet — omitted here."
+  ],
+  "multipliers": {
+    "batch": 0.5,
+    "cacheRead": 0.1,
+    "cacheWrite5m": 1.25,
+    "cacheWrite1h": 2.0
+  },
+  "models": {
+    "claude-haiku-4-5": { "inputPerMtok": 1.0, "outputPerMtok": 5.0 },
+    "claude-sonnet-4-6": { "inputPerMtok": 3.0, "outputPerMtok": 15.0 },
+    "claude-opus-4-8": { "inputPerMtok": 5.0, "outputPerMtok": 25.0 },
+    "claude-fable-5": { "inputPerMtok": 10.0, "outputPerMtok": 50.0 },
+    "claude-mythos-5": { "inputPerMtok": 10.0, "outputPerMtok": 50.0 }
+  }
+}

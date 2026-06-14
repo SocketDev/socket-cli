@@ -51,6 +51,8 @@ test('stale-process-sweeper: classifies every sfw wrapper layout', () => {
   // orphaned probe processes over ~7h. All known layouts must classify
   // as 'sfw-wrapper'.
   const layouts = [
+    // Current readable rack path (both installers expose it).
+    '/Users/u/.socket/_wheelhouse/rack/sfw/1.7.2/sfw /lib/pnpm run build',
     '/Users/u/.socket/_wheelhouse/sfw-stable/sfw /lib/pnpm run test',
     '/Users/u/.socket/_wheelhouse/bin/sfw-1.7.2 /lib/pnpm install',
     '/Users/u/.socket/sfw/bin/sfw /lib/pnpm list',

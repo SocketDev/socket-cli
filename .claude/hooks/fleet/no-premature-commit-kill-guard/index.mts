@@ -3,9 +3,14 @@
 //
 // Three Bash anti-patterns, one theme — a git/test op wedged or torn down in a
 // context that can't finish it. A `git commit` (and rebase/merge/cherry-pick,
-// which also fire the pre-commit chain) runs the staged-test reminder, which is
-// BOUNDED to ~60s (STAGED_TEST_TIMEOUT_MS) but still takes real time. A commit
-// that is "still running" before that elapses is NOT a hang.
+// which also fire the pre-commit chain) runs the staged tests, BOUNDED to ~60s
+// on BOTH paths: the non-blocking reminder (STAGED_TEST_TIMEOUT_MS in
+// _shared/helpers.mts) and the blocking pre-commit step (STAGED_TEST_BUDGET_S
+// in .git-hooks/fleet/pre-commit, which kills the whole process group — the sfw
+// wrapper + vitest workers — and fails open at the ceiling). Both still take
+// real time. A commit that is "still running" before ~60s elapses is NOT a
+// hang, and the bound means an sfw-proxy deadlock self-clears — so do not kill
+// it; let the budget do it.
 //
 //   1. Backgrounding it (`run_in_background: true`) hides the bounded run's
 //      completion, so the operator checks too early, sees it "still going",

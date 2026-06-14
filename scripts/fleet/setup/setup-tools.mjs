@@ -2,14 +2,20 @@
  * @file Local from-scratch tool bootstrap — the LOCAL-dev counterpart of
  *   socket-registry's `.github/actions/setup` composite action, running the
  *   SAME steps via the SAME `lib/` helpers so `local == CI`. On a bare machine
- *   (system Node only, before pnpm / node_modules exist) it:
+ *   (system Node only, before pnpm / node_modules exist) it: Tools install
+ *   under `~/.socket/_wheelhouse/`: real binaries racked at
+ *   `rack/<tool>/<version>/…`, with a flat handle per tool in `bin/` (the one
+ *   dir on PATH — the shim IS the bin, npm prefix/bin ⟷ lib/node_modules,
+ *   Homebrew bin/ ⟷ Cellar). Steps:
  *
  *   1. installs pnpm — version + per-platform asset/integrity from the local
  *      `external-tools.json`, downloaded + SRI-verified + extracted by
  *      `lib/install-tool.mjs`. NO corepack.
  *   2. installs Socket Firewall (sfw-free) the same way.
- *   3. regenerates sfw shims (npm/yarn/pnpm/pip/uv/cargo) routing those package
- *      managers through sfw.
+ *   3. regenerates sfw shims (npm/yarn/pnpm/pip/uv/cargo) into `bin/`, routing
+ *      those package managers through sfw. 3b. installs codedb (Zig
+ *      code-intelligence MCP server) + a telemetry-off `bin/codedb` shim
+ *      (CODEDB_NO_TELEMETRY=1, always).
  *   4. bootstraps the zero-dep Socket packages into `node_modules/` (direct
  *      tarball + firewall check) so root scripts / .claude/hooks can import
  *      them before `pnpm install` runs. Dependency-free on purpose: it
@@ -36,6 +42,12 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
+import {
+  hasSocketToken,
+  hintFor,
+  shimCommands,
+} from './setup-tools-sfw.mjs'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const LIB = path.join(__dirname, 'lib')
 const TOOLS_FILE = path.join(__dirname, 'external-tools.json')
@@ -61,12 +73,25 @@ function findRepoRoot(from) {
   }
 }
 
-// PNPM_HOME is the standard pnpm-standalone location; honor it if set so the
-// installed pnpm lands where the user's PATH already expects it.
+// _wheelhouse tool layout — Lock-step with @socketsecurity/lib
+// src/paths/socket.ts: BIN_DIR == getSocketWheelhouseBinDir() (the one PATH
+// entry, flat handles), RACK_DIR == getSocketRackDir() (real binaries racked
+// as rack/<tool>/<version>/…, getSocketRackToolDir). The shim IS the bin — a
+// handle in BIN_DIR points at a binary under RACK_DIR (npm prefix/bin ⟷
+// lib/node_modules, Homebrew bin/ ⟷ Cellar). Hard-coded here (not imported)
+// because this bootstrap runs before @socketsecurity/lib is on disk.
 const SOCKET_HOME = path.join(os.homedir(), '.socket')
-const PNPM_DIR = process.env.PNPM_HOME || path.join(SOCKET_HOME, 'pnpm')
-const SFW_DIR = path.join(SOCKET_HOME, 'sfw-bin')
-const SHIM_DIR = path.join(SOCKET_HOME, 'sfw-shim')
+const WHEELHOUSE_DIR = path.join(SOCKET_HOME, '_wheelhouse')
+const RACK_DIR = path.join(WHEELHOUSE_DIR, 'rack')
+const BIN_DIR = path.join(WHEELHOUSE_DIR, 'bin')
+// PNPM_HOME is the standard pnpm-standalone location; honor it if set so the
+// installed pnpm lands where the user's PATH already expects it. Otherwise it
+// is racked like every other tool.
+const PNPM_DIR = process.env.PNPM_HOME || path.join(RACK_DIR, 'pnpm')
+// sfw racks version-dir'd as rack/sfw/<version>/sfw — the SAME readable path
+// install-sfw.mts exposes (there as a symlink into the _dlx store), so both
+// installers agree and the stale-process-sweeper tracks one sfw path.
+const SFW_RACK_DIR = path.join(RACK_DIR, 'sfw')
 const REPO_ROOT = findRepoRoot(__dirname)
 
 function log(msg) {
@@ -121,11 +146,11 @@ function installTool(url, integrity, destDir, binName) {
   return r.status === 0
 }
 
-// Resolve a command's real path with the shim dir stripped from PATH, so we
-// wrap the ACTUAL tool (not our own shim). Returns '' when not found.
+// Resolve a command's real path with the bin (shim) dir stripped from PATH, so
+// we wrap the ACTUAL tool (not our own shim). Returns '' when not found.
 function resolveReal(cmd) {
   const cleanPath = process.env.PATH.split(path.delimiter)
-    .filter(d => d !== SHIM_DIR)
+    .filter(d => d !== BIN_DIR)
     .join(path.delimiter)
   const r = spawnSync('command', ['-v', cmd], {
     encoding: 'utf8',
@@ -196,80 +221,121 @@ function installPnpm(platform) {
   return pnpmBin
 }
 
-// ── 2. sfw (free flavor; local skips the enterprise SKU probe) ───────────────
-function installSfw(platform) {
-  const version = jq('sfw', 'version')
-  const asset = jq('sfw', 'free', 'platforms', platform, 'asset')
+// ── 2. sfw (free vs enterprise SKU, selected by key) ─────────────────────────
+// Lock-step with scripts/fleet/install-sfw.mts: both installers read the same
+// `tools.sfw-free` / `tools.sfw-enterprise` entries and pick the SKU off the
+// same SOCKET_API_KEY/SOCKET_API_TOKEN env keys.
+// The two SKUs are separate tools (sfw-free, sfw-enterprise) sharing a binary
+// name. Pick the enterprise flavor when a Socket credential is in env (its
+// private release assets auth via GITHUB_TOKEN, which install-tool forwards),
+// otherwise the public free flavor. Everything — repository, assets, binary
+// name — is read from the chosen tool entry, so the URL isn't hardcoded twice.
+function installSfw(platform, enterprise) {
+  // Flavor decided by the caller via hasSocketToken() (env OR keychain — see
+  // setup-tools-sfw.mjs), lock-step with install-sfw.mts. Enterprise's private
+  // release assets auth via GITHUB_TOKEN, which install-tool forwards.
+  const tool = enterprise ? 'sfw-enterprise' : 'sfw-free'
+  const version = jq(tool, 'version')
+  const asset = jq(tool, 'platforms', platform, 'asset')
   if (!version || !asset) {
     warn(
-      `× sfw-free has no asset for ${platform} — skipping sfw (shims become helpful-error stubs)`,
+      `× ${tool} has no asset for ${platform} — skipping sfw (shims become helpful-error stubs)`,
     )
     return undefined
   }
-  const integrity = jq('sfw', 'free', 'platforms', platform, 'integrity')
-  let binName = jq('sfw', 'free', 'binaryName') || 'sfw'
+  const integrity = jq(tool, 'platforms', platform, 'integrity')
+  let binName = jq(tool, 'binaryName') || 'sfw'
   if (asset.endsWith('.exe')) {
     binName = `${binName}.exe`
   }
-  const sfwBin = path.join(SFW_DIR, binName)
+  // repository is `github:<owner>/<repo>` — derive the release-asset URL.
+  const repo = String(jq(tool, 'repository') || '').replace(/^github:/, '')
+  const sfwVerDir = path.join(SFW_RACK_DIR, version)
+  const sfwBin = path.join(sfwVerDir, binName)
   if (existsSync(sfwBin)) {
     log(`✓ sfw already installed at ${sfwBin}`)
     return sfwBin
   }
-  log(`Installing sfw-free@${version} (${asset}) → ${SFW_DIR}`)
+  log(`Installing ${tool}@${version} (${asset}) → ${sfwVerDir}`)
   if (
     !installTool(
-      `https://github.com/SocketDev/sfw-free/releases/download/v${version}/${asset}`,
+      `https://github.com/${repo}/releases/download/v${version}/${asset}`,
       integrity,
-      SFW_DIR,
+      sfwVerDir,
       binName,
     )
   ) {
     warn('× sfw install failed — shims become helpful-error stubs')
     return undefined
   }
-  log(`✓ sfw-free@${version} → ${sfwBin}`)
+  log(`✓ ${tool}@${version} → ${sfwBin}`)
   return sfwBin
+}
+
+// ── 2b. codedb (Zig code-intelligence MCP server) ────────────────────────────
+// Raw-binary asset (the asset IS the executable). Racked at
+// rack/codedb/<version>/codedb; a bin/codedb shim sets CODEDB_NO_TELEMETRY=1 on
+// every invocation (the documented opt-out — telemetry is NEVER on). Skipped
+// (no error) when codedb is absent from external-tools.json.
+function installCodedb(platform) {
+  const version = jq('codedb', 'version')
+  const asset = jq('codedb', 'platforms', platform, 'asset')
+  if (!version || !asset) {
+    log('· codedb not pinned for this platform — skipping')
+    return undefined
+  }
+  const integrity = jq('codedb', 'platforms', platform, 'integrity')
+  const destDir = path.join(RACK_DIR, 'codedb', version)
+  const codedbBin = path.join(destDir, 'codedb')
+  const shimPath = path.join(BIN_DIR, 'codedb')
+  if (existsSync(codedbBin)) {
+    log(`✓ codedb@${version} already installed at ${codedbBin}`)
+  } else {
+    log(`Installing codedb@${version} (${asset}) → ${destDir}`)
+    if (
+      !installTool(
+        `https://github.com/justrach/codedb/releases/download/v${version}/${asset}`,
+        integrity,
+        destDir,
+        'codedb',
+      )
+    ) {
+      warn('× codedb install failed — skipping shim')
+      return undefined
+    }
+    log(`✓ codedb@${version} → ${codedbBin}`)
+  }
+  // Telemetry-off shim: CODEDB_NO_TELEMETRY=1 is non-negotiable.
+  mkdirSync(BIN_DIR, { recursive: true })
+  writeFileSync(
+    shimPath,
+    `#!/bin/bash\nexport CODEDB_NO_TELEMETRY=1\nexec "${codedbBin}" "$@"\n`,
+  )
+  chmodSync(shimPath, 0o755)
+  log(`✓ codedb shim → ${shimPath} (CODEDB_NO_TELEMETRY=1)`)
+  return codedbBin
 }
 
 // ── 3. sfw shims (POSIX) ─────────────────────────────────────────────────────
 // Route package managers through sfw. Mirrors the CI action's "Create sfw
-// shims" step (POSIX branch). The pnpm not-found hint points at THIS script,
-// never corepack (the fleet provisions pnpm via dlx+integrity, not corepack).
-function hintFor(cmd) {
-  switch (cmd) {
-    case 'npm':
-      return 'Install Node.js (which provides npm) from https://nodejs.org or via nvm: https://github.com/nvm-sh/nvm'
-    case 'yarn':
-      return 'Install Yarn from https://yarnpkg.com'
-    case 'pnpm':
-      return 'Run the fleet setup: `node scripts/fleet/setup/setup-tools.mjs` (installs pnpm via dlx+integrity — the fleet does NOT use corepack).'
-    case 'pip':
-    case 'pip3':
-      return `Install Python (which provides ${cmd}) from https://www.python.org or via brew: brew install python`
-    case 'uv':
-      return 'Install uv from https://docs.astral.sh/uv/getting-started/installation/'
-    case 'cargo':
-      return 'Install Rust (which provides cargo) from https://rustup.rs'
-    default:
-      return `Install ${cmd} from your package manager`
-  }
-}
-
-function regenerateShims(sfwBin) {
-  rmSync(SHIM_DIR, { recursive: true, force: true })
-  mkdirSync(SHIM_DIR, { recursive: true })
-  const cmds = ['npm', 'yarn', 'pnpm', 'pip', 'pip3', 'uv', 'cargo']
+// shims" step (POSIX branch). shimCommands / hintFor / hasSocketToken live in
+// ./setup-tools-sfw.mjs (split out for file size).
+function regenerateShims(sfwBin, enterprise) {
+  // BIN_DIR is the SHARED handle dir (_wheelhouse/bin) — it also holds the
+  // codedb / sfw / socket-token-minifier handles, so NEVER rm the whole dir.
+  // Just ensure it exists and overwrite the pm-shims in place (idempotent).
+  mkdirSync(BIN_DIR, { recursive: true })
+  const cmds = shimCommands(enterprise)
   for (let i = 0, { length } = cmds; i < length; i += 1) {
     const cmd = cmds[i]
     const real = sfwBin ? resolveReal(cmd) : ''
-    const shimPath = path.join(SHIM_DIR, cmd)
+    const shimPath = path.join(BIN_DIR, cmd)
     if (real && existsSync(real)) {
       // Trap-and-reap shim: run sfw in its own process group, kill the group
       // on any exit so nothing orphans. Matches the CI action's shim body.
       const lines = [
         '#!/bin/bash',
-        `export PATH="$(echo "$PATH" | tr ':' '\\n' | grep -vxF '${SHIM_DIR}' | paste -sd: -)"`,
+        `export PATH="$(echo "$PATH" | tr ':' '\\n' | grep -vxF '${BIN_DIR}' | paste -sd: -)"`,
         'export SFW_UNKNOWN_HOST_ACTION=ignore',
         'set -m',
         `"${sfwBin}" "${real}" "$@" &`,
@@ -299,8 +365,8 @@ function regenerateShims(sfwBin) {
     }
     chmodSync(shimPath, 0o755)
   }
-  log(`✓ sfw shims → ${SHIM_DIR}`)
-  log(`  Add to PATH (if not already): export PATH="${SHIM_DIR}:$PATH"`)
+  log(`✓ sfw shims → ${BIN_DIR}`)
+  log(`  Add to PATH (if not already): export PATH="${BIN_DIR}:$PATH"`)
 }
 
 // ── 4. bootstrap zero-dep packages into node_modules/ ────────────────────────
@@ -393,8 +459,14 @@ function main() {
   const platform = detectPlatform()
   log(`Platform: ${platform}`)
   installPnpm(platform)
-  const sfwBin = installSfw(platform)
-  regenerateShims(sfwBin)
+  // Token present (env OR keychain) ⇒ enterprise flavor + its fuller shim set.
+  const enterprise = hasSocketToken()
+  log(
+    `sfw flavor: ${enterprise ? 'enterprise (Socket token found)' : 'free (no token)'}`,
+  )
+  const sfwBin = installSfw(platform, enterprise)
+  regenerateShims(sfwBin, enterprise)
+  installCodedb(platform)
   bootstrapZeroDepPackages()
   log('✓ setup-tools complete.')
 }

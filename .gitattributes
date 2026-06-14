@@ -34,6 +34,7 @@
 .git-hooks linguist-generated=true
 .github/agent-ci.Dockerfile linguist-generated=true
 .github/dependabot.yml linguist-generated=true
+.github/workflows/weekly-update-non-gh-aw.yml.disabled linguist-generated=true
 .npmrc linguist-generated=true
 assets/README.md linguist-generated=true
 assets/socket-icon-brand-128.png linguist-generated=true

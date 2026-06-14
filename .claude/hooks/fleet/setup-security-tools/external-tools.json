@@ -275,6 +275,61 @@
         }
       }
     },
+    "codedb": {
+      "description": "codedb — justrach/codedb Zig code-intelligence MCP server. Raw-binary release assets (the asset IS the executable). Telemetry MUST stay off (CODEDB_NO_TELEMETRY=1) at install + invocation. No Windows build. Integrity verified against the upstream checksums.sha256.",
+      "version": "v0.2.5825",
+      "repository": "github:justrach/codedb",
+      "release": "asset",
+      "installDir": "wheelhouse",
+      "soakBypass": {
+        "version": "v0.2.5825",
+        "published": "2026-06-12",
+        "removable": "2026-06-19"
+      },
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "codedb-darwin-arm64",
+          "integrity": "sha512-dlDOa6MfpQxJHMIKI5M4C+2y6X14QpEHiMmmqfyAx9zxBML0Zz5xrmf1pS4oAgZIBJn2R6nRKFS/ppkT+TA0Xg=="
+        },
+        "darwin-x64": {
+          "asset": "codedb-darwin-x86_64",
+          "integrity": "sha512-bHdINGyi7A3xSeXLnh/UAFYE3Af6zgj602tL6bnsIwyb0j3r6yHb6AobecgCxD0qfUYsRRRQDbtlvJYi7aoA/A=="
+        },
+        "linux-arm64": {
+          "asset": "codedb-linux-arm64",
+          "integrity": "sha512-1ttAxL53tI57MqUHk33+6PHnYKEIoEgUuK8Y9mYygxPUq5LP9QG9Ja1cT3Br1E1ABcgBkb/abwsHBreEj3CMwg=="
+        },
+        "linux-x64": {
+          "asset": "codedb-linux-x86_64",
+          "integrity": "sha512-fNbPFko38kdrEokWqwsR0VBLdwBthgdp4gRFc/OrJ/khD0Np2r+lfhwflJwKEPi1Eg1QJ3MAm1LwmW1vWQGOiA=="
+        }
+      }
+    },
+    "h5i": {
+      "description": "h5i — h5i-dev/h5i provenance/handoff tool. Version-templated tarballs; arm64-only darwin (no darwin-x64), like janus. Binary is telemetry-free. Integrity verified against the upstream .sha256 sidecars.",
+      "version": "v0.1.7",
+      "repository": "github:h5i-dev/h5i",
+      "release": "asset",
+      "installDir": "wheelhouse",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "h5i-v0.1.7-aarch64-apple-darwin.tar.gz",
+          "integrity": "sha512-idolWWCucz/Yp4sy5lpKSa1ePlSJGPSoUW9WYFWVnWCOE6yxMSm/Kg+W2zXnE9o4RwBtUIPihNvUDTL4OelSRQ=="
+        },
+        "linux-arm64": {
+          "asset": "h5i-v0.1.7-aarch64-unknown-linux-musl.tar.gz",
+          "integrity": "sha512-RxhG5vZvcvArliOqUoSChlUiSZyr0pyMdZndzfXrGFesb5XJBVj3CBoszNWzJmVPCOxJ3KSogeSkNHmwJK8qZQ=="
+        },
+        "linux-x64": {
+          "asset": "h5i-v0.1.7-x86_64-unknown-linux-musl.tar.gz",
+          "integrity": "sha512-2/zreb6+haTjXcMbxeX2ZGnfRFYKoA2nT03ylklZkSmcEgwXnRTZ52pxLW16ZggQat9wj0FgNOc3XiM4di3tLA=="
+        },
+        "win-x64": {
+          "asset": "h5i-v0.1.7-x86_64-pc-windows-msvc.zip",
+          "integrity": "sha512-JUG6GXWnUfgfRawGltA97MXO4oy/xjKctwl2EKA0ICS/1fwslKkkgs2cZs8jyjKffXEZWJIhcLqJ0aKxzBVZfQ=="
+        }
+      }
+    },
     "janus": {
       "description": "janus — divmain/janus single-binary tool. Installed under the shared Socket Wheelhouse dir so every fleet member sees the same binary. Currently darwin-arm64 only; other platforms will be added as upstream ships builds.",
       "version": "v1.23.1",

@@ -156,6 +156,38 @@ Every executable script (skill runner, hook handler, fleet automation) is TypeSc
 
 (pnpm-workspace.yaml `minimumReleaseAge`, default 7 days). Never add packages to `minimumReleaseAgeExclude` in CI. Locally, ASK before adding (security control).
 
+## External repo clones
+
+When reviewing or referencing an external GitHub repo (not a fleet member), clone it locally so an agent can read, search, and index it — rather than fetching through the GitHub web API.
+
+### What
+
+Clone to `~/.socket/_wheelhouse/repo-clones/<org>-<repo>/`, where `<org>-<repo>` is lowercase + dash-cased (e.g. `justrach-codedb`). Resolve the directory via `getSocketRepoClonesDir()` from `@socketsecurity/lib/paths/socket`. Never clone into `~/projects/` — that path is for fleet-member checkouts, and the fleet's sibling-walk tooling (cascade `--all`, fleet-roster discovery) would mistake a reference clone for a member repo.
+
+### Why
+
+Agents need a local tree to run `grep`/`read`/index operations efficiently. A standardized path keeps reference clones discoverable across sessions and safely isolated from the fleet-member space.
+
+### How to apply
+
+Clone the smallest practical way — blobless + shallow:
+
+```bash
+git clone --depth=1 --single-branch --filter=blob:none <url> <dest>
+```
+
+- `--depth=1` — no history.
+- `--single-branch` — skip other refs.
+- `--filter=blob:none` — blobless partial clone; file blobs fetched lazily on first access, so the initial download is tree-metadata only.
+
+Treeless (`--filter=tree:0`) is smaller but refetches trees on every walk (slow, breaks offline) — blobless is the smallest-practical balance.
+
+This is distinct from a submodule (nested, pinned-in-parent) and a worktree (second working dir of an existing local repo). A reference clone is a standalone checkout.
+
+### Enforcement
+
+`.claude/hooks/fleet/clone-reviewed-repo-nudge/` — nudges when reviewing an external repo with no local clone, and when a `git clone` of an external repo omits the smallest-practical flags.
+
 ## Upstream submodules: always shallow
 
 Every entry in `.gitmodules` MUST set `shallow = true`. Every `git submodule update --init` call (postinstall.mts, CI, manual) MUST pass `--depth 1 --single-branch`. Upstream repos like yarnpkg/berry, oven-sh/bun, rust-lang/cargo are multi-GB with full history. We only ever need the pinned SHA's tree. A non-shallow init can take 30+ minutes and waste GB of disk on every fresh clone. There is no scenario where the fleet needs upstream submodule history.

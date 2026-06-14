@@ -97,8 +97,7 @@ const steps: Array<() => boolean> = [
   // @socketsecurity/lib/ai/subagent-status and the status table in
   // agent-delegation.md must list the same four states, so an orchestrator
   // reading the doc routes on a contract the code honors (code is law).
-  () =>
-    run('node', ['scripts/fleet/check/subagent-status-doc-is-current.mts']),
+  () => run('node', ['scripts/fleet/check/subagent-status-doc-is-current.mts']),
   // Review-pipeline ordering is a contract: the reviewing-code skill's
   // spec-compliance pass must precede the quality passes (discovery /
   // remediation) in ALL_ROLES, so a quality review never runs on out-of-scope
@@ -277,6 +276,11 @@ const steps: Array<() => boolean> = [
   // analog of pnpm --frozen-lockfile + minimumReleaseAge). Vacuous pass in
   // repos with no uv project. Shares policy with _shared/uv-config.mts.
   () => run('node', ['scripts/fleet/check/uv-lockfiles-are-current.mts']),
+  // pnpm-lock.yaml resolves vite rolldown-native (8.x) with no esbuild —
+  // the fleet bundler is rolldown, esbuild is banned. A vitest repo whose
+  // transitive vite floats to 7.x drags esbuild in (noisy Dependabot
+  // advisories); this fails the cascade until vite is pinned to 8.x.
+  () => run('node', ['scripts/fleet/check/vite-is-rolldown-native.mts']),
   // gh-aw agentic workflows: each `<name>.md` source has a compiled
   // `<name>.lock.yml` (what Actions runs) whose embedded body_hash matches
   // the .md body — catches a prompt edited without `gh aw compile`. Pure
