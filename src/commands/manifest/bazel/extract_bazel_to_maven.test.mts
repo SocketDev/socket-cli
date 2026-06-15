@@ -53,10 +53,18 @@ vi.mock('./bazel-python-shim.mts', () => ({
 vi.mock('./bazel-java-shim.mts', () => ({
   ensureJavaOnPath: vi.fn(),
 }))
+// Mock the workspace walker so single-workspace tests exercise the existing
+// extraction path against the tmp dir directly, without needing a real
+// MODULE.bazel marker on disk. Defaults to "the scan root is the only
+// workspace"; multi-workspace tests override this per-case.
+vi.mock('./bazel-workspace-walk.mts', () => ({
+  findWorkspaceRoots: vi.fn((opts: { cwd: string }) => [opts.cwd]),
+}))
 
 import { validateOutputBase } from './bazel-output-base-check.mts'
 import { discoverMavenRepos } from './bazel-repo-discovery.mts'
 import { detectWorkspaceMode } from './bazel-workspace-detect.mts'
+import { findWorkspaceRoots } from './bazel-workspace-walk.mts'
 import {
   extractBazelToMaven,
   normalizeToMavenInstallJson,
@@ -97,6 +105,11 @@ describe('extractBazelToMaven', () => {
       bzlmod: true,
       workspace: false,
     })
+    // Default: the scan root is the only workspace. resetAllMocks() in
+    // afterEach clears this, so re-establish it before each test.
+    vi.mocked(findWorkspaceRoots).mockImplementation(
+      (opts: { cwd: string }) => [opts.cwd],
+    )
     process.exitCode = 0
   })
 
@@ -175,6 +188,7 @@ describe('extractBazelToMaven', () => {
     expect(result).toEqual({
       artifactCount: 2,
       manifestPath: path.join(tmp, 'maven_install.json'),
+      manifestPaths: [path.join(tmp, 'maven_install.json')],
       ok: true,
     })
 
@@ -224,6 +238,9 @@ describe('extractBazelToMaven', () => {
         '.socket-auto-manifest',
         'maven_install.json',
       ),
+      manifestPaths: [
+        path.join(tmp, '.socket-auto-manifest', 'maven_install.json'),
+      ],
       ok: true,
     })
 
@@ -285,6 +302,7 @@ describe('extractBazelToMaven', () => {
     expect(result).toEqual({
       artifactCount: 0,
       manifestPath: path.join(tmp, 'maven_install.json'),
+      manifestPaths: [path.join(tmp, 'maven_install.json')],
       noEcosystemFound: true,
       ok: false,
     })
@@ -315,6 +333,7 @@ describe('extractBazelToMaven', () => {
     expect(result).toEqual({
       artifactCount: 0,
       manifestPath: path.join(tmp, 'maven_install.json'),
+      manifestPaths: [path.join(tmp, 'maven_install.json')],
       ok: false,
     })
     expect(result.noEcosystemFound).toBeUndefined()
@@ -354,6 +373,7 @@ describe('extractBazelToMaven', () => {
     expect(result).toEqual({
       artifactCount: 2,
       manifestPath: path.join(tmp, 'maven_install.json'),
+      manifestPaths: [path.join(tmp, 'maven_install.json')],
       ok: true,
     })
   })
@@ -386,6 +406,7 @@ describe('extractBazelToMaven', () => {
     expect(process.exitCode).toBe(0)
     expect(result).toEqual({
       artifactCount: 0,
+      manifestPaths: [],
       ok: false,
     })
     expect(existsSync(path.join(tmp, 'maven_install.json'))).toBe(false)
@@ -459,6 +480,122 @@ describe('extractBazelToMaven', () => {
     } finally {
       logSpy.mockRestore()
     }
+  })
+})
+
+describe('extractBazelToMaven sub-workspace discovery', () => {
+  let tmp: string
+
+  beforeEach(() => {
+    tmp = mkdtempSync(path.join(os.tmpdir(), 'bazel-subws-'))
+    vi.mocked(detectWorkspaceMode).mockReturnValue({
+      bzlmod: true,
+      workspace: false,
+    })
+    process.exitCode = 0
+  })
+
+  afterEach(() => {
+    rmSync(tmp, { recursive: true, force: true })
+    vi.resetAllMocks()
+    process.exitCode = 0
+  })
+
+  it('runs extraction per discovered workspace and mirrors nested manifest paths', async () => {
+    const sample = readFileSync(
+      path.join(FIXTURES, 'jvm-import-sample.txt'),
+      'utf8',
+    )
+    vi.mocked(discoverMavenRepos).mockResolvedValue(
+      new Map([['maven', sample]]),
+    )
+    // Walker reports the root plus a nested `mobile/` workspace.
+    const nested = path.join(tmp, 'mobile')
+    vi.mocked(findWorkspaceRoots).mockReturnValue([tmp, nested])
+
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      verbose: false,
+    })
+
+    // detectWorkspaceMode is invoked once per workspace, with that
+    // workspace's root as the spawn cwd.
+    expect(vi.mocked(detectWorkspaceMode)).toHaveBeenCalledWith(tmp)
+    expect(vi.mocked(detectWorkspaceMode)).toHaveBeenCalledWith(nested)
+    expect(vi.mocked(detectWorkspaceMode)).toHaveBeenCalledTimes(2)
+
+    // Root manifest lands where v1.x always wrote it; the nested workspace's
+    // manifest mirrors its path relative to the scan root.
+    const rootManifest = path.join(tmp, 'maven_install.json')
+    const nestedManifest = path.join(tmp, 'mobile', 'maven_install.json')
+    expect(existsSync(rootManifest)).toBe(true)
+    expect(existsSync(nestedManifest)).toBe(true)
+
+    expect(result.ok).toBe(true)
+    expect(result.artifactCount).toBe(4)
+    expect(result.manifestPath).toBe(rootManifest)
+    expect(result.manifestPaths).toEqual([rootManifest, nestedManifest])
+  })
+
+  it('keeps the root output path byte-for-byte identical to v1.x for a single workspace', async () => {
+    const sample = readFileSync(
+      path.join(FIXTURES, 'jvm-import-sample.txt'),
+      'utf8',
+    )
+    vi.mocked(discoverMavenRepos).mockResolvedValue(
+      new Map([['maven', sample]]),
+    )
+    // Only the root workspace is discovered — the common case.
+    vi.mocked(findWorkspaceRoots).mockReturnValue([tmp])
+
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      verbose: false,
+    })
+
+    // The single manifest is written exactly at <out>/maven_install.json,
+    // with no nested directory and no extra sidecars.
+    const rootManifest = path.join(tmp, 'maven_install.json')
+    expect(result).toEqual({
+      artifactCount: 2,
+      manifestPath: rootManifest,
+      manifestPaths: [rootManifest],
+      ok: true,
+    })
+    expect(walk(tmp)).toEqual([rootManifest])
+  })
+
+  it('reports noEcosystemFound when the walker finds no workspace', async () => {
+    vi.mocked(findWorkspaceRoots).mockReturnValue([])
+
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      verbose: false,
+    })
+
+    // No workspace means we never invoke per-workspace extraction.
+    expect(vi.mocked(detectWorkspaceMode)).not.toHaveBeenCalled()
+    expect(result).toEqual({
+      artifactCount: 0,
+      manifestPaths: [],
+      noEcosystemFound: true,
+      ok: false,
+    })
   })
 })
 

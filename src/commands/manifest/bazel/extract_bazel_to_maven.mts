@@ -29,10 +29,29 @@ import {
   detectWorkspaceMode,
   getBazelInvocationFlags,
 } from './bazel-workspace-detect.mts'
+import { findWorkspaceRoots } from './bazel-workspace-walk.mts'
 import { getErrorCause } from '../../../utils/errors.mts'
+import { IGNORED_DIRS } from '../../../utils/glob.mts'
 
 import type { ExtractedArtifact } from './bazel-build-parser.mts'
 import type { BazelQueryOptions } from './bazel-query-runner.mts'
+
+// Default directory-prune policy handed to the workspace walker. The walker
+// hardcodes none of these; the Bazel orchestrator composes the codebase-wide
+// `IGNORED_DIRS` list with the common VCS/IDE dirs and the auto-manifest
+// sibling so the walk never descends `node_modules`/VCS/vendored trees.
+// Callers may pass extra names/prefixes to EXTEND, not replace, this set.
+const DEFAULT_BAZEL_WALKER_IGNORE_DIR_NAMES: ReadonlySet<string> = new Set([
+  ...IGNORED_DIRS,
+  '.hg',
+  '.idea',
+  '.pnpm-store',
+  '.socket-auto-manifest',
+  '.svn',
+  '.vscode',
+])
+// Bazel's `bazel-*` output_base symlinks.
+const DEFAULT_BAZEL_WALKER_IGNORE_DIR_PREFIXES: readonly string[] = ['bazel-']
 
 export type ExtractBazelOptions = {
   bazelFlags: string | undefined
@@ -50,7 +69,14 @@ export type ExtractBazelOptions = {
 
 export type ExtractBazelResult = {
   artifactCount: number
+  // Path of the manifest for the FIRST (root) workspace. Retained for
+  // back-compat with single-workspace callers; equals manifestPaths[0] when
+  // present.
   manifestPath?: string | undefined
+  // One entry per workspace that produced a manifest, ordered by the walker's
+  // sorted discovery order (root first). Populated even in the single-root
+  // case so callers can iterate uniformly.
+  manifestPaths?: string[] | undefined
   noEcosystemFound?: boolean | undefined
   ok: boolean
 }
@@ -329,7 +355,11 @@ async function extractFromOneRepo(
   }))
 }
 
-export async function extractBazelToMaven(
+// Extracts Maven deps from a SINGLE workspace rooted at `opts.cwd`, writing
+// one manifest under `opts.out`. This is the original single-workspace
+// algorithm, behavior-unchanged; the exported `extractBazelToMaven` wraps it
+// to run once per discovered (sub-)workspace.
+async function extractOneWorkspace(
   opts: ExtractBazelOptions,
 ): Promise<ExtractBazelResult> {
   const { cwd, out, verbose } = opts
@@ -504,5 +534,83 @@ export async function extractBazelToMaven(
       logger.info('Re-run with --verbose for the full stack.')
     }
     return { artifactCount: 0, ok: false }
+  }
+}
+
+// Discovers every Bazel (sub-)workspace beneath `opts.cwd` and runs the
+// single-workspace extraction once per discovered root, writing one manifest
+// per workspace.
+//
+// Output paths mirror each workspace's location relative to the scan root:
+// the root workspace writes exactly where v1.x wrote its single manifest
+// (`<out>/maven_install.json`, or `<out>/.socket-auto-manifest/...` under the
+// `flat` layout), and a nested workspace at `<cwd>/<rel>` writes under
+// `<out>/<rel>/...`. When only the root workspace exists — the common case —
+// the output path and behavior are identical to v1.x.
+export async function extractBazelToMaven(
+  opts: ExtractBazelOptions,
+): Promise<ExtractBazelResult> {
+  const { cwd, verbose } = opts
+  // Always apply the default prune policy so no caller can forget it;
+  // callers EXTEND it via ignoreDirNames/ignoreDirPrefixes.
+  const workspaceRoots = findWorkspaceRoots({
+    cwd,
+    ignoreDirNames: DEFAULT_BAZEL_WALKER_IGNORE_DIR_NAMES,
+    ignoreDirPrefixes: DEFAULT_BAZEL_WALKER_IGNORE_DIR_PREFIXES,
+    verbose,
+  })
+  if (!workspaceRoots.length) {
+    logger.warn(
+      `No Bazel workspace found at ${cwd} or beneath (looked for MODULE.bazel / WORKSPACE / WORKSPACE.bazel).`,
+    )
+    return {
+      artifactCount: 0,
+      manifestPaths: [],
+      noEcosystemFound: true,
+      ok: false,
+    }
+  }
+  if (verbose) {
+    logger.log(
+      `[VERBOSE] discovered ${workspaceRoots.length} workspace root(s):`,
+      workspaceRoots,
+    )
+  }
+
+  const manifestPaths: string[] = []
+  let totalArtifacts = 0
+  let anyOk = false
+  let anyEcosystemFound = false
+  for (const workspaceRoot of workspaceRoots) {
+    // Mirror the workspace's location relative to the scan root under `out`.
+    // The root workspace (relPath === '') writes exactly where v1.x did.
+    const relPath = path.relative(cwd, workspaceRoot)
+    const workspaceOut = relPath ? path.join(opts.out, relPath) : opts.out
+    // eslint-disable-next-line no-await-in-loop
+    const result = await extractOneWorkspace({
+      ...opts,
+      cwd: workspaceRoot,
+      out: workspaceOut,
+    })
+    totalArtifacts += result.artifactCount
+    if (result.ok) {
+      anyOk = true
+    }
+    if (!result.noEcosystemFound) {
+      anyEcosystemFound = true
+    }
+    if (result.manifestPath) {
+      manifestPaths.push(result.manifestPath)
+    }
+  }
+
+  return {
+    artifactCount: totalArtifacts,
+    manifestPath: manifestPaths[0],
+    manifestPaths,
+    // Only flag "no ecosystem" when EVERY workspace reported it; a single
+    // workspace with Maven repos means the ecosystem is present.
+    noEcosystemFound: anyEcosystemFound ? undefined : true,
+    ok: anyOk,
   }
 }
