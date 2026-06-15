@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  AUTO_MANIFEST_CONFIG_MIN_COANA_VERSION,
   buildAutoManifestConfig,
+  coanaSupportsAutoManifestConfig,
   isAutoManifestConfigEmpty,
 } from './auto-manifest-config.mts'
 
@@ -73,6 +75,31 @@ describe('buildAutoManifestConfig', () => {
     )
     expect(config.gradle).toBeUndefined()
     expect(config.sbt).toBeDefined()
+  })
+})
+
+describe('coanaSupportsAutoManifestConfig', () => {
+  it('supports the minimum version', () => {
+    expect(
+      coanaSupportsAutoManifestConfig(AUTO_MANIFEST_CONFIG_MIN_COANA_VERSION),
+    ).toBe(true)
+  })
+
+  it('supports versions newer than the minimum', () => {
+    expect(coanaSupportsAutoManifestConfig('15.5.0')).toBe(true)
+    expect(coanaSupportsAutoManifestConfig('16.0.0')).toBe(true)
+  })
+
+  it('does not support versions older than the minimum', () => {
+    expect(coanaSupportsAutoManifestConfig('15.3.26')).toBe(false)
+    expect(coanaSupportsAutoManifestConfig('15.4.0')).toBe(false)
+    expect(coanaSupportsAutoManifestConfig('14.12.222')).toBe(false)
+  })
+
+  it('treats unparseable or missing versions as supported (no second-guessing overrides)', () => {
+    expect(coanaSupportsAutoManifestConfig(undefined)).toBe(true)
+    expect(coanaSupportsAutoManifestConfig('')).toBe(true)
+    expect(coanaSupportsAutoManifestConfig('main')).toBe(true)
   })
 })
 

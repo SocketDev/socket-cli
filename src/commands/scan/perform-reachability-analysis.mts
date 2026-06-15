@@ -7,7 +7,11 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
-import { isAutoManifestConfigEmpty } from '../../utils/auto-manifest-config.mts'
+import {
+  AUTO_MANIFEST_CONFIG_MIN_COANA_VERSION,
+  coanaSupportsAutoManifestConfig,
+  isAutoManifestConfigEmpty,
+} from '../../utils/auto-manifest-config.mts'
 import { extractTier1ReachabilityScanId } from '../../utils/coana.mts'
 import { spawnCoanaDlx } from '../../utils/dlx.mts'
 import { hasEnterpriseOrgPlan } from '../../utils/organization.mts'
@@ -183,15 +187,32 @@ export async function performReachabilityAnalysis(
   let autoManifestConfigPath: string | undefined
   const { autoManifestConfig } = reachabilityOptions
   if (autoManifestConfig && !isAutoManifestConfigEmpty(autoManifestConfig)) {
-    autoManifestConfigPath = path.join(
-      tmpdir(),
-      `socket-auto-manifest-config-${randomUUID()}.json`,
-    )
-    await fs.writeFile(
-      autoManifestConfigPath,
-      JSON.stringify(autoManifestConfig),
-      'utf8',
-    )
+    // A local Coana build (SOCKET_CLI_COANA_LOCAL_PATH) has no resolvable version
+    // and is a developer opt-in, so assume it supports the flag. Otherwise gate
+    // on the resolved version understanding `--auto-manifest-config`; passing it
+    // to an older Coana would abort the run on an unknown flag.
+    const usingLocalCoana = !!process.env['SOCKET_CLI_COANA_LOCAL_PATH']
+    const resolvedCoanaVersion =
+      reachabilityOptions.reachVersion ||
+      constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION
+    if (
+      usingLocalCoana ||
+      coanaSupportsAutoManifestConfig(resolvedCoanaVersion)
+    ) {
+      autoManifestConfigPath = path.join(
+        tmpdir(),
+        `socket-auto-manifest-config-${randomUUID()}.json`,
+      )
+      await fs.writeFile(
+        autoManifestConfigPath,
+        JSON.stringify(autoManifestConfig),
+        'utf8',
+      )
+    } else {
+      logger.warn(
+        `Ignoring socket.json build-tool config for reachability: Coana ${resolvedCoanaVersion} does not support --auto-manifest-config (requires >= ${AUTO_MANIFEST_CONFIG_MIN_COANA_VERSION}).`,
+      )
+    }
   }
 
   // Build Coana arguments.
@@ -253,8 +274,7 @@ export async function performReachabilityAnalysis(
       ? ['--use-only-pregenerated-sboms']
       : []),
     // Hand the per-ecosystem build-tool config (mapped from socket.json) to
-    // Coana's reach-time resolution, as a temp JSON file path. Coana side:
-    // REA-547.
+    // Coana's reach-time resolution, as a temp JSON file path.
     ...(autoManifestConfigPath
       ? ['--auto-manifest-config', autoManifestConfigPath]
       : []),
