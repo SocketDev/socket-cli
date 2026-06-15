@@ -108,6 +108,10 @@ export function findWorkspaceRoots(opts: FindWorkspaceRootsOptions): string[] {
       if (ignoreDirNames.has(name)) {
         continue
       }
+      // Note: `Dirent.isDirectory()` does not follow symlinks, so Bazel's
+      // `bazel-*` output symlinks are already excluded by the gate above. This
+      // prefix prune is what catches a REAL directory named `bazel-*` (and is
+      // cheap defense-in-depth for the symlink case).
       let pruned = false
       for (const prefix of ignoreDirPrefixes) {
         if (name.startsWith(prefix)) {
