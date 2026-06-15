@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.120](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.120) - 2026-06-12
+
+### Changed
+- `socket scan create --reach` now applies your project's build-tool settings from `socket.json` (configured via `socket manifest setup`) — custom build-tool binary, include/exclude configs, and Gradle/sbt options — when resolving dependencies for Gradle and sbt reachability analysis, instead of always invoking the build tool with defaults.
+- `socket scan create --auto-manifest --reach` now fails with an error when a build tool fails during manifest generation, rather than tolerating it. Plain `--reach` (without `--auto-manifest`) keeps generating manifests on a best-effort basis.
+- Updated the Coana CLI to v `15.4.1`.
+
 ## [1.1.119](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.119) - 2026-06-11
 
 ### Changed
