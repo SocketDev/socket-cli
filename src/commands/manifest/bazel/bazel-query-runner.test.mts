@@ -256,8 +256,19 @@ describe('runBazelModShowMavenExtension', () => {
       'mod',
       'show_extension',
       '@rules_jvm_external//:extensions.bzl%maven',
+      '--lockfile_mode=off',
       '--extension_usages=<root>',
     ])
+  })
+
+  it('pins the lockfile read-only so the scan never rewrites MODULE.bazel.lock', async () => {
+    await runBazelModShowMavenExtension({
+      bin: 'bazel',
+      cwd: '/repo',
+      invocationFlags: [],
+    })
+    const argv = mocked.mock.calls[0]![1] as string[]
+    expect(argv).toContain('--lockfile_mode=off')
   })
 
   it('threads outputUserRoot ahead of the subcommand', async () => {
@@ -273,6 +284,7 @@ describe('runBazelModShowMavenExtension', () => {
       'mod',
       'show_extension',
       '@rules_jvm_external//:extensions.bzl%maven',
+      '--lockfile_mode=off',
       '--extension_usages=<root>',
     ])
   })
@@ -320,6 +332,7 @@ describe('runBazelModShowPipExtension', () => {
       'mod',
       'show_extension',
       '@rules_python//python/extensions:pip.bzl%pip',
+      '--lockfile_mode=off',
       '--extension_usages=<root>',
     ])
   })
