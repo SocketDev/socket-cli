@@ -1,9 +1,13 @@
+import { randomUUID } from 'node:crypto'
+import { promises as fs } from 'node:fs'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
+import { isAutoManifestConfigEmpty } from '../../utils/auto-manifest-config.mts'
 import { extractTier1ReachabilityScanId } from '../../utils/coana.mts'
 import { spawnCoanaDlx } from '../../utils/dlx.mts'
 import { hasEnterpriseOrgPlan } from '../../utils/organization.mts'
@@ -12,10 +16,12 @@ import { socketDevLink } from '../../utils/terminal-link.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
 import type { CResult } from '../../types.mts'
+import type { AutoManifestConfig } from '../../utils/auto-manifest-config.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 export type ReachabilityOptions = {
+  autoManifestConfig?: AutoManifestConfig | undefined
   excludePaths: string[]
   reachAnalysisMemoryLimit: number
   reachAnalysisTimeout: number
@@ -170,6 +176,24 @@ export async function performReachabilityAnalysis(
   spinner?.infoAndStop('Running reachability analysis with Coana...')
 
   const outputFilePath = outputPath || constants.DOT_SOCKET_DOT_FACTS_JSON
+
+  // Coana reads `--auto-manifest-config` from a JSON file, so write the resolved
+  // per-ecosystem build-tool config (mapped from socket.json) to a temp file and
+  // pass its absolute path. Cleaned up in the finally below.
+  let autoManifestConfigPath: string | undefined
+  const { autoManifestConfig } = reachabilityOptions
+  if (autoManifestConfig && !isAutoManifestConfigEmpty(autoManifestConfig)) {
+    autoManifestConfigPath = path.join(
+      tmpdir(),
+      `socket-auto-manifest-config-${randomUUID()}.json`,
+    )
+    await fs.writeFile(
+      autoManifestConfigPath,
+      JSON.stringify(autoManifestConfig),
+      'utf8',
+    )
+  }
+
   // Build Coana arguments.
   const coanaArgs = [
     'run',
@@ -228,6 +252,11 @@ export async function performReachabilityAnalysis(
     ...(reachabilityOptions.reachUseOnlyPregeneratedSboms
       ? ['--use-only-pregenerated-sboms']
       : []),
+    // Hand the per-ecosystem build-tool config (mapped from socket.json) to
+    // Coana's reach-time resolution, as a temp JSON file path.
+    ...(autoManifestConfigPath
+      ? ['--auto-manifest-config', autoManifestConfigPath]
+      : []),
   ]
 
   // Build environment variables.
@@ -241,48 +270,59 @@ export async function performReachabilityAnalysis(
     coanaEnv['SOCKET_BRANCH_NAME'] = branchName
   }
 
-  // Run Coana with the manifests tar hash.
-  const coanaResult = await spawnCoanaDlx(coanaArgs, orgSlug, {
-    coanaVersion: reachabilityOptions.reachVersion,
-    cwd,
-    env: coanaEnv,
-    spinner,
-    stdio: 'inherit',
-  })
+  try {
+    // Run Coana with the manifests tar hash.
+    const coanaResult = await spawnCoanaDlx(coanaArgs, orgSlug, {
+      coanaVersion: reachabilityOptions.reachVersion,
+      cwd,
+      env: coanaEnv,
+      spinner,
+      stdio: 'inherit',
+    })
 
-  if (wasSpinning) {
-    spinner.start()
-  }
-
-  if (!coanaResult.ok) {
-    const coanaVersion =
-      reachabilityOptions.reachVersion ||
-      constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION
-    logger.error(
-      `Coana reachability analysis failed. Version: ${coanaVersion}, target: ${analysisTarget}, cwd: ${cwd}`,
-    )
-    if (coanaResult.message) {
-      logger.error(`Details: ${coanaResult.message}`)
+    if (wasSpinning) {
+      spinner.start()
     }
-    return coanaResult
-  }
 
-  // Coana writes the facts file relative to the scan `cwd` (it is spawned
-  // with `cwd` above), so resolve the read path against `cwd` too. Reading
-  // the bare relative path would resolve against `process.cwd()` and miss
-  // the file whenever `cwd !== process.cwd()` (e.g. `--cwd <dir>`), silently
-  // dropping the tier 1 scan id and skipping finalize downstream.
-  const resolvedReportPath = path.resolve(cwd, outputFilePath)
+    if (!coanaResult.ok) {
+      const coanaVersion =
+        reachabilityOptions.reachVersion ||
+        constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION
+      logger.error(
+        `Coana reachability analysis failed. Version: ${coanaVersion}, target: ${analysisTarget}, cwd: ${cwd}`,
+      )
+      if (coanaResult.message) {
+        logger.error(`Details: ${coanaResult.message}`)
+      }
+      return coanaResult
+    }
 
-  return {
-    ok: true,
-    data: {
-      // Use the actual output filename for the scan. Keep this `cwd`-relative
-      // so the upload (which relativizes against `cwd`) and the post-success
-      // unlink (`path.resolve(cwd, reachabilityReport)`) keep working.
-      reachabilityReport: outputFilePath,
-      tier1ReachabilityScanId:
-        extractTier1ReachabilityScanId(resolvedReportPath),
-    },
+    // Coana writes the facts file relative to the scan `cwd` (it is spawned
+    // with `cwd` above), so resolve the read path against `cwd` too. Reading
+    // the bare relative path would resolve against `process.cwd()` and miss
+    // the file whenever `cwd !== process.cwd()` (e.g. `--cwd <dir>`), silently
+    // dropping the tier 1 scan id and skipping finalize downstream.
+    const resolvedReportPath = path.resolve(cwd, outputFilePath)
+
+    return {
+      ok: true,
+      data: {
+        // Use the actual output filename for the scan. Keep this `cwd`-relative
+        // so the upload (which relativizes against `cwd`) and the post-success
+        // unlink (`path.resolve(cwd, reachabilityReport)`) keep working.
+        reachabilityReport: outputFilePath,
+        tier1ReachabilityScanId:
+          extractTier1ReachabilityScanId(resolvedReportPath),
+      },
+    }
+  } finally {
+    // The run no longer needs the temp config file; best-effort cleanup.
+    if (autoManifestConfigPath) {
+      try {
+        await fs.unlink(autoManifestConfigPath)
+      } catch {
+        // File may already be gone or unwritable.
+      }
+    }
   }
 }

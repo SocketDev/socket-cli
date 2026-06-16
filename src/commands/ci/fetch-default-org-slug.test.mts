@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
-import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 import { getConfigValueOrUndef } from '../../utils/config.mts'
+import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
 vi.mock('../organization/fetch-organization-list.mts', () => ({
   fetchOrganization: vi.fn(),
