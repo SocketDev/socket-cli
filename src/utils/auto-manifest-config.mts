@@ -1,11 +1,4 @@
-import semver from 'semver'
-
 import type { SocketJson } from './socket-json.mts'
-
-// Coana gained the `--auto-manifest-config` option in this version. Older Coana
-// builds reject the unknown flag and abort the run, so callers must not forward
-// the config to a Coana older than this.
-export const AUTO_MANIFEST_CONFIG_MIN_COANA_VERSION = '15.4.1'
 
 // Per-ecosystem build-tool options handed off to the Coana CLI — used both when
 // generating manifests (`coana manifest <ecosystem>`) and, in socket mode, for
@@ -105,19 +98,6 @@ export function buildAutoManifestConfig(
   }
 
   return config
-}
-
-// Whether a resolved Coana version understands `--auto-manifest-config`. An
-// unparseable version (e.g. a git ref or custom build tag) is treated as
-// supported so explicit overrides aren't second-guessed; callers gate local
-// Coana builds (which have no resolvable version) separately.
-export function coanaSupportsAutoManifestConfig(
-  version: string | undefined,
-): boolean {
-  const coerced = version ? semver.coerce(version) : undefined
-  return coerced
-    ? semver.gte(coerced, AUTO_MANIFEST_CONFIG_MIN_COANA_VERSION)
-    : true
 }
 
 // True when there's nothing to hand to Coana: no per-ecosystem options and the
