@@ -85,6 +85,10 @@ function buildBazelModShowMavenExtensionArgv(
     'mod',
     'show_extension',
     '@rules_jvm_external//:extensions.bzl%maven',
+    // A read-only scan must never rewrite the user's MODULE.bazel.lock; pin
+    // the lockfile read-only before user flags, mirroring the query/cquery
+    // argv builders.
+    '--lockfile_mode=off',
     // Belt-and-suspenders output reducer mirroring the PyPI path: bias the
     // report toward the root module's usages. The authoritative pruning is
     // the importers-filter applied to the parsed output, so this is not
@@ -101,6 +105,10 @@ function buildBazelModShowPipExtensionArgv(opts: BazelQueryOptions): string[] {
     'mod',
     'show_extension',
     '@rules_python//python/extensions:pip.bzl%pip',
+    // A read-only scan must never rewrite the user's MODULE.bazel.lock; pin
+    // the lockfile read-only before user flags, mirroring the query/cquery
+    // argv builders.
+    '--lockfile_mode=off',
     '--extension_usages=<root>',
     ...userFlags,
   ]

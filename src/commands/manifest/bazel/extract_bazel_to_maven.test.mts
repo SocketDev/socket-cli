@@ -509,7 +509,8 @@ Fetched repositories:
       outLayout: 'flat',
       verbose: false,
     })
-    const call = vi.mocked(findWorkspaceRoots).mock.calls.at(-1)![0]
+    const calls = vi.mocked(findWorkspaceRoots).mock.calls
+    const call = calls[calls.length - 1]![0]
     const names = [...(call.ignoreDirNames ?? [])]
     expect(names).toContain('node_modules')
     expect(names).toContain('.git')
@@ -536,7 +537,8 @@ Fetched repositories:
       outLayout: 'flat',
       verbose: false,
     })
-    const call = vi.mocked(findWorkspaceRoots).mock.calls.at(-1)![0]
+    const calls = vi.mocked(findWorkspaceRoots).mock.calls
+    const call = calls[calls.length - 1]![0]
     const names = [...(call.ignoreDirNames ?? [])]
     expect(names).toEqual(
       expect.arrayContaining(['node_modules', 'custom_dir']),
@@ -695,6 +697,583 @@ Fetched repositories:
     } finally {
       logSpy.mockRestore()
     }
+  })
+
+  it('flags partial (never complete) when a probe is indeterminate but another hub succeeds', async () => {
+    // WORKSPACE mode so the conventional-name probe runs. `maven` succeeds and
+    // extracts; `maven_install` probe returns an unrecognized non-zero exit
+    // (indeterminate). The run must be partial, never complete, and carry the
+    // completeness signal.
+    vi.mocked(detectWorkspaceMode).mockReturnValue({
+      bzlmod: false,
+      workspace: true,
+    })
+    vi.mocked(buildMavenProbeFor).mockReturnValue(async (name: string) => {
+      if (name === 'maven') {
+        return { code: 0, stdout: '@maven//:foo\n', stderr: '' }
+      }
+      if (name === 'maven_install') {
+        // Unrecognized non-zero exit -> indeterminate.
+        return { code: 1, stdout: '', stderr: 'bazel internal error\n' }
+      }
+      return {
+        code: 1,
+        stdout: '',
+        stderr: "ERROR: No repository visible as '@x' from main repository\n",
+      }
+    })
+    vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
+      mkResult({
+        artifacts: [mkArt('com.example:a:1.0', 'a')],
+        repoName: 'maven',
+      }),
+    )
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      outLayout: 'flat',
+      verbose: false,
+    })
+    expect(result.status).toBe('partial')
+    expect(result.complete).toBe(false)
+    expect(result.manifestPaths).toHaveLength(1)
+    // The indeterminate hub is recorded in the completeness signal.
+    const hubStates = result.workspaceOutcomes.flatMap(w =>
+      w.hubs.map(h => h.state),
+    )
+    expect(hubStates).toContain('indeterminate')
+  })
+
+  it('hard-fails (never complete) when the only probe is indeterminate and nothing extracts', async () => {
+    vi.mocked(detectWorkspaceMode).mockReturnValue({
+      bzlmod: false,
+      workspace: true,
+    })
+    // Every conventional name probe returns an unrecognized non-zero exit.
+    vi.mocked(buildMavenProbeFor).mockReturnValue(async () => ({
+      code: 1,
+      stdout: '',
+      stderr: 'bazel internal error\n',
+    }))
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      outLayout: 'flat',
+      verbose: false,
+    })
+    // Nothing analyzable was produced, but a probe was indeterminate, so this
+    // is a hard failure, NOT noEcosystem (which would imply "no Maven here").
+    expect(result.status).toBe('hardFailure')
+    expect(result.complete).toBe(false)
+  })
+
+  it('skips emitting a hub manifest when a committed lockfile already covers it', async () => {
+    // A committed maven_install.json under the workspace means the server-side
+    // walker already ingests it; the CLI must NOT re-emit a synthetic copy.
+    writeFileSync(
+      path.join(tmp, 'maven_install.json'),
+      JSON.stringify({ artifacts: {}, dependencies: {} }),
+      'utf8',
+    )
+    vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
+      mkResult({
+        artifacts: [mkArt('com.example:a:1.0', 'a')],
+        repoName: 'maven',
+      }),
+    )
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      outLayout: 'flat',
+      verbose: false,
+    })
+    // The hub was skipped, so no synthetic manifest and the cquery never runs.
+    expect(result.manifestPaths).toHaveLength(0)
+    expect(runMetadataCqueryForRepo).not.toHaveBeenCalled()
+    const skipped = result.workspaceOutcomes.flatMap(w =>
+      w.hubs.filter(h => h.state === 'skipped-lockfile').map(h => h.hub),
+    )
+    expect(skipped).toContain('maven')
+  })
+
+  it('extracts the root hub even when a nested dir holds a maven_install.json (no any-depth match)', async () => {
+    // The root @maven is UNCOVERED: there is no maven_install.json directly in
+    // the workspace root. A nested fixture/example holds its own
+    // maven_install.json, which covers ITS workspace, not the root hub. An
+    // any-depth gate would wrongly judge the root hub covered, skip its
+    // synthetic emit, and silently drop its distinct coordinates. The gate is
+    // depth-0, so the root hub must still be extracted.
+    const nested = path.join(tmp, 'examples', 'nested')
+    mkdirSync(nested, { recursive: true })
+    writeFileSync(
+      path.join(nested, 'maven_install.json'),
+      JSON.stringify({ artifacts: {}, dependencies: {} }),
+      'utf8',
+    )
+    vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
+      mkResult({
+        artifacts: [mkArt('com.example:rootonly:1.0', 'rootonly')],
+        repoName: 'maven',
+      }),
+    )
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      outLayout: 'flat',
+      verbose: false,
+    })
+    // The root hub was NOT skipped: cquery ran and the synthetic manifest
+    // carrying the root's distinct coordinate was emitted.
+    expect(runMetadataCqueryForRepo).toHaveBeenCalledTimes(1)
+    expect(result.manifestPaths).toHaveLength(1)
+    const manifest = readManifest(tmp) as {
+      artifacts: Record<string, { version: string }>
+    }
+    expect(Object.keys(manifest.artifacts)).toEqual(['com.example:rootonly'])
+    const skipped = result.workspaceOutcomes.flatMap(w =>
+      w.hubs.filter(h => h.state === 'skipped-lockfile').map(h => h.hub),
+    )
+    expect(skipped).toEqual([])
+  })
+
+  it('reports complete:true with zero synthetic manifests when every hub is covered by a committed root-level lockfile', async () => {
+    // A committed maven_install.json sits directly in the workspace root, so
+    // the only discovered hub is covered. The CLI writes zero synthetic
+    // manifests and the run must headline complete:true.
+    writeFileSync(
+      path.join(tmp, 'maven_install.json'),
+      JSON.stringify({ artifacts: {}, dependencies: {} }),
+      'utf8',
+    )
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      outLayout: 'flat',
+      verbose: false,
+    })
+    expect(result.status).toBe('complete')
+    expect(result.complete).toBe(true)
+    expect(result.manifestPaths).toHaveLength(0)
+    expect(runMetadataCqueryForRepo).not.toHaveBeenCalled()
+    // The emitted completeness summary also headlines complete:true.
+    const summary = JSON.parse(
+      readFileSync(
+        path.join(
+          tmp,
+          '.socket-auto-manifest',
+          'socket-bazel-manifest-summary.json',
+        ),
+        'utf8',
+      ),
+    ) as { complete: boolean; status: string }
+    expect(summary.complete).toBe(true)
+    expect(summary.status).toBe('complete')
+  })
+
+  it('does not treat a prior-run synthetic manifest in the output dir as a committed lockfile', async () => {
+    // A previous run left a synthetic maven_install.json inside the output dir
+    // (.socket-auto-manifest). A later run must NOT read it as a committed
+    // lockfile and skip the hub; it must re-extract.
+    const outputDir = path.join(tmp, '.socket-auto-manifest')
+    mkdirSync(outputDir, { recursive: true })
+    writeFileSync(
+      path.join(outputDir, 'maven_install.json'),
+      JSON.stringify({ artifacts: {}, dependencies: {} }),
+      'utf8',
+    )
+    vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
+      mkResult({
+        artifacts: [mkArt('com.example:a:1.0', 'a')],
+        repoName: 'maven',
+      }),
+    )
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      outLayout: 'flat',
+      verbose: false,
+    })
+    // The stale synthetic file did not gate the hub: cquery ran and a manifest
+    // was emitted.
+    expect(runMetadataCqueryForRepo).toHaveBeenCalledTimes(1)
+    expect(result.manifestPaths).toHaveLength(1)
+    const skipped = result.workspaceOutcomes.flatMap(w =>
+      w.hubs.filter(h => h.state === 'skipped-lockfile').map(h => h.hub),
+    )
+    expect(skipped).toEqual([])
+  })
+
+  it('maps a hub named maven to maven_install.json for the committed-lockfile gate', async () => {
+    // The default `maven` hub is covered by a committed `maven_install.json`.
+    writeFileSync(
+      path.join(tmp, 'maven_install.json'),
+      JSON.stringify({ artifacts: {}, dependencies: {} }),
+      'utf8',
+    )
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      outLayout: 'flat',
+      verbose: false,
+    })
+    expect(runMetadataCqueryForRepo).not.toHaveBeenCalled()
+    const skipped = result.workspaceOutcomes.flatMap(w =>
+      w.hubs.filter(h => h.state === 'skipped-lockfile').map(h => h.hub),
+    )
+    expect(skipped).toContain('maven')
+  })
+
+  it('maps a non-default hub to <hub>_maven_install.json for the committed-lockfile gate', async () => {
+    // A non-default hub `maven_dev` is covered only by a committed file named
+    // `maven_dev_maven_install.json`. A bare `maven_install.json` must NOT
+    // cover it, and the prefixed file must.
+    vi.mocked(runBazelModShowMavenExtension).mockResolvedValue({
+      code: 0,
+      stdout: `## @@rules_jvm_external+//:extensions.bzl%maven:
+
+Fetched repositories:
+  - maven_dev (imported by <root>)
+`,
+      stderr: '',
+    })
+    writeFileSync(
+      path.join(tmp, 'maven_dev_maven_install.json'),
+      JSON.stringify({ artifacts: {}, dependencies: {} }),
+      'utf8',
+    )
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      outLayout: 'flat',
+      verbose: false,
+    })
+    expect(runMetadataCqueryForRepo).not.toHaveBeenCalled()
+    const skipped = result.workspaceOutcomes.flatMap(w =>
+      w.hubs.filter(h => h.state === 'skipped-lockfile').map(h => h.hub),
+    )
+    expect(skipped).toContain('maven_dev')
+  })
+
+  it('flags partial (never complete) when show_extension fails to evaluate the module graph but a probed hub extracts', async () => {
+    // show_extension hit a genuine module-graph EVALUATION failure (not merely
+    // "rules_jvm_external isn't a dependency"): authoritative hub enumeration
+    // is indeterminate, so custom-named hubs may have been missed. The
+    // conventional probe still finds @maven and extracts it, but the run must
+    // be partial — never silently complete.
+    // NOTE: exact bazel stderr wording for an eval failure should be confirmed
+    // against a live bazel run (sandbox blocks bazel here).
+    vi.mocked(runBazelModShowMavenExtension).mockResolvedValue({
+      code: 1,
+      stdout: '',
+      stderr:
+        "ERROR: Error evaluating MODULE.bazel: name 'PYTHON_VERSION' is not defined\n",
+    })
+    vi.mocked(buildMavenProbeFor).mockReturnValue(async (name: string) => {
+      if (name === 'maven') {
+        return { code: 0, stdout: '@maven//:foo\n', stderr: '' }
+      }
+      return {
+        code: 1,
+        stdout: '',
+        stderr: "ERROR: No repository visible as '@x' from main repository\n",
+      }
+    })
+    vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
+      mkResult({
+        artifacts: [mkArt('com.example:a:1.0', 'a')],
+        repoName: 'maven',
+      }),
+    )
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      outLayout: 'flat',
+      verbose: false,
+    })
+    expect(result.status).toBe('partial')
+    expect(result.complete).toBe(false)
+    expect(result.manifestPaths).toHaveLength(1)
+    // The failed enumeration is recorded as an indeterminate hub outcome.
+    const hubStates = result.workspaceOutcomes.flatMap(w =>
+      w.hubs.map(h => h.state),
+    )
+    expect(hubStates).toContain('indeterminate')
+  })
+
+  it('stays complete when show_extension runs cleanly and finds no maven extension (legitimate not-defined)', async () => {
+    // show_extension ran fine (code 0) but the report has no maven section, so
+    // the parse yields zero hubs. This is the legitimate "no maven extension
+    // defined" case — NOT an execution failure. The conventional probe then
+    // finds @maven and extracts it; the run is complete (no indeterminate
+    // enumeration outcome).
+    vi.mocked(runBazelModShowMavenExtension).mockResolvedValue({
+      code: 0,
+      stdout: 'No extensions defined.\n',
+      stderr: '',
+    })
+    vi.mocked(buildMavenProbeFor).mockReturnValue(async (name: string) => {
+      if (name === 'maven') {
+        return { code: 0, stdout: '@maven//:foo\n', stderr: '' }
+      }
+      return {
+        code: 1,
+        stdout: '',
+        stderr: "ERROR: No repository visible as '@x' from main repository\n",
+      }
+    })
+    vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
+      mkResult({
+        artifacts: [mkArt('com.example:a:1.0', 'a')],
+        repoName: 'maven',
+      }),
+    )
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      outLayout: 'flat',
+      verbose: false,
+    })
+    expect(result.status).toBe('complete')
+    expect(result.complete).toBe(true)
+    const hubStates = result.workspaceOutcomes.flatMap(w =>
+      w.hubs.map(h => h.state),
+    )
+    expect(hubStates).not.toContain('indeterminate')
+  })
+
+  it('reports noEcosystem (never hard-fails) when show_extension exits non-zero on a no-Maven bzlmod repo and nothing extracts', async () => {
+    // `bazel mod show_extension @rules_jvm_external//:extensions.bzl%maven`
+    // exits non-zero on EVERY bzlmod repo that doesn't depend on
+    // rules_jvm_external — its argument resolution throws before any Starlark
+    // runs. This generic non-zero exit (no eval-failure signature) is the
+    // common no-Maven case, NOT a failed enumeration. With no probed hub
+    // populating, the run is a clean noEcosystem — it must NOT hard-fail, which
+    // would abort the user's entire `scan create --auto-manifest`.
+    // NOTE: exact bazel stderr wording should be confirmed against a live bazel
+    // run (sandbox blocks bazel here).
+    vi.mocked(runBazelModShowMavenExtension).mockResolvedValue({
+      code: 1,
+      stdout: '',
+      stderr:
+        "ERROR: In extension argument '@rules_jvm_external//:extensions.bzl%maven': module 'rules_jvm_external' is not a dependency of the root module\n",
+    })
+    vi.mocked(buildMavenProbeFor).mockReturnValue(async () => ({
+      code: 1,
+      stdout: '',
+      stderr: "ERROR: No repository visible as '@x' from main repository\n",
+    }))
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      outLayout: 'flat',
+      verbose: false,
+    })
+    expect(result.status).toBe('noEcosystem')
+    expect(result.complete).toBe(false)
+    // No hub was flagged indeterminate: the non-zero exit was correctly read as
+    // "no maven extension here", not a failed enumeration.
+    const hubStates = result.workspaceOutcomes.flatMap(w =>
+      w.hubs.map(h => h.state),
+    )
+    expect(hubStates).not.toContain('indeterminate')
+  })
+
+  it('hard-fails (never complete) when show_extension fails to evaluate the module graph and nothing extracts', async () => {
+    // A genuine module-graph evaluation failure (Starlark eval error / unbound
+    // name) leaves hub enumeration indeterminate. With no probed hub
+    // populating, nothing analyzable was produced — and because enumeration was
+    // indeterminate this is NOT a clean "no Maven here", so it must be a hard
+    // failure, never complete and never silently noEcosystem.
+    // NOTE: exact bazel stderr wording should be confirmed against a live bazel
+    // run (sandbox blocks bazel here).
+    vi.mocked(runBazelModShowMavenExtension).mockResolvedValue({
+      code: 1,
+      stdout: '',
+      stderr:
+        "ERROR: Error evaluating MODULE.bazel: name 'pip' is not defined\n",
+    })
+    vi.mocked(buildMavenProbeFor).mockReturnValue(async () => ({
+      code: 1,
+      stdout: '',
+      stderr: "ERROR: No repository visible as '@x' from main repository\n",
+    }))
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      outLayout: 'flat',
+      verbose: false,
+    })
+    expect(result.status).toBe('hardFailure')
+    expect(result.complete).toBe(false)
+    const hubStates = result.workspaceOutcomes.flatMap(w =>
+      w.hubs.map(h => h.state),
+    )
+    expect(hubStates).toContain('indeterminate')
+  })
+
+  it('never reports complete when one workspace fails to load while another extracts', async () => {
+    // Two workspaces: the first loads and extracts cleanly; the second throws
+    // on load (e.g. an unreadable MODULE.bazel). A load failure is NOT "no
+    // Maven here" — the run must be partial (a manifest was written), never
+    // complete.
+    const nested = path.join(tmp, 'broken')
+    mkdirSync(nested, { recursive: true })
+    vi.mocked(findWorkspaceRoots).mockReturnValue([tmp, nested])
+    vi.mocked(detectWorkspaceMode).mockImplementation((root: string) => {
+      if (root === nested) {
+        throw new Error('unbound variable in MODULE.bazel')
+      }
+      return { bzlmod: true, workspace: false }
+    })
+    vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
+      mkResult({
+        artifacts: [mkArt('com.example:a:1.0', 'a')],
+        repoName: 'maven',
+      }),
+    )
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      outLayout: 'flat',
+      verbose: false,
+    })
+    expect(result.status).toBe('partial')
+    expect(result.complete).toBe(false)
+    expect(result.manifestPaths).toHaveLength(1)
+    const loadFailed = result.workspaceOutcomes.filter(
+      w => w.load === 'failed',
+    )
+    expect(loadFailed).toHaveLength(1)
+  })
+
+  it('hard-fails (never complete) when the only workspace fails to load', async () => {
+    // A single workspace that cannot be read produces zero manifests. This is
+    // a load failure, not noEcosystem — it must be a hard failure, never
+    // complete and never silently "no Maven here".
+    vi.mocked(detectWorkspaceMode).mockImplementation(() => {
+      throw new Error('unbound variable in MODULE.bazel')
+    })
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      outLayout: 'flat',
+      verbose: false,
+    })
+    expect(result.status).toBe('hardFailure')
+    expect(result.complete).toBe(false)
+    expect(result.manifestPaths).toEqual([])
+  })
+
+  it('still emits a synthetic manifest when no committed lockfile covers the hub', async () => {
+    vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
+      mkResult({
+        artifacts: [mkArt('com.example:a:1.0', 'a')],
+        repoName: 'maven',
+      }),
+    )
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      outLayout: 'flat',
+      verbose: false,
+    })
+    expect(result.manifestPaths).toHaveLength(1)
+    expect(runMetadataCqueryForRepo).toHaveBeenCalledTimes(1)
+  })
+
+  it('writes a completeness summary carrying the machine-readable signal', async () => {
+    vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
+      mkResult({
+        artifacts: [mkArt('com.example:a:1.0', 'a')],
+        repoName: 'maven',
+        status: 'partial',
+        unresolvedLabels: ['@maven//:missing'],
+      }),
+    )
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      outLayout: 'flat',
+      verbose: false,
+    })
+    expect(result.status).toBe('partial')
+    const summary = JSON.parse(
+      readFileSync(
+        path.join(
+          tmp,
+          '.socket-auto-manifest',
+          'socket-bazel-manifest-summary.json',
+        ),
+        'utf8',
+      ),
+    ) as { complete: boolean; status: string; workspaces: unknown[] }
+    expect(summary.complete).toBe(false)
+    expect(summary.status).toBe('partial')
+    expect(Array.isArray(summary.workspaces)).toBe(true)
   })
 
   it('writes maven_install.json into .socket-auto-manifest in flat layout', async () => {

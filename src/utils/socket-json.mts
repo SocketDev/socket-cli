@@ -47,6 +47,7 @@ export interface SocketJson {
         bin?: string | undefined
         disabled?: boolean | undefined
         out?: string | undefined
+        perRepoTimeout?: number | undefined
         verbose?: boolean | undefined
       }
       conda?: {

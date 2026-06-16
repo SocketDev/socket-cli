@@ -154,8 +154,24 @@ export async function generateAutoManifest({
     if (mavenResult.status === 'complete' || mavenResult.status === 'partial') {
       generatedFiles.push(...mavenResult.manifestPaths)
       if (mavenResult.status === 'partial') {
+        // Hybrid handling: still upload the partial SBOM, but be loud AND
+        // leave a machine-readable trail. The extractor writes a completeness
+        // summary (complete=false + per-hub/workspace breakdown) into the
+        // manifest dir; that summary is the structured signal a downstream
+        // consumer reads to know this upload is known-incomplete.
+        const incomplete = mavenResult.workspaceOutcomes
+          .flatMap(w =>
+            w.load === 'failed'
+              ? [`${w.relPath || '.'} (workspace load failed)`]
+              : w.hubs
+                  .filter(
+                    h => h.state === 'failed' || h.state === 'indeterminate',
+                  )
+                  .map(h => `${w.relPath || '.'}@${h.hub} (${h.state})`),
+          )
+          .join(', ')
         logger.warn(
-          `Bazel Maven manifest generation was partial (${mavenResult.manifestPaths.length} manifest(s) written); some hubs failed or had incomplete dependency graphs. Uploading what was generated.`,
+          `WARNING: Bazel Maven manifest generation was PARTIAL (${mavenResult.manifestPaths.length} manifest(s) written); the uploaded SBOM is known-incomplete and may under-report dependencies. Incomplete: ${incomplete || 'see completeness summary'}. Uploading what was generated.`,
         )
       }
     } else {

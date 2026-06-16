@@ -56,6 +56,11 @@ const config: CliCommandConfig = {
       description:
         'Output directory for generated manifests; default: ./.socket/bazel-manifests/',
     },
+    perRepoTimeout: {
+      type: 'number',
+      description:
+        'Per-hub bazel cquery timeout in milliseconds; default: 120000',
+    },
     verbose: {
       type: 'boolean',
       description:
@@ -100,6 +105,12 @@ const config: CliCommandConfig = {
   `,
 }
 
+// The explicit `socket manifest bazel` command gives each hub more time than
+// the auto-manifest path: a user running it directly is waiting on this one
+// extraction, whereas auto-manifest must not stall the wider scan. Auto's
+// shorter default lives in extract_bazel_to_maven.mts.
+const EXPLICIT_PER_REPO_TIMEOUT_MS = 120_000
+
 export const cmdManifestBazel = {
   description: config.description,
   hidden: config.hidden,
@@ -110,6 +121,11 @@ export type EcosystemOutcome = {
   ecosystem: 'maven' | 'pypi'
   status: ExtractBazelStatus
   manifestPaths: string[]
+  // Machine-readable completeness signal. True only when the ecosystem's
+  // extraction was complete; a `partial` upload sets this false so the CLI
+  // surfaces it honestly (exit 0 + prominent warning) rather than as plain
+  // success.
+  complete: boolean
 }
 
 // Pure outcome-matrix evaluator. Exported so dispatcher behavior can be
@@ -138,10 +154,20 @@ export function evaluateEcosystemOutcomes(
   const hardFailures = outcomes.filter(o => o.status === 'hardFailure')
   const noDiscoveries = outcomes.filter(o => o.status === 'noEcosystem')
 
+  // Surface a machine-readable completeness signal for every produced
+  // ecosystem so a partial upload is never presented as a complete one. The
+  // per-workspace / per-hub detail is written to the manifest dir's
+  // completeness summary by the extractor; this is the human-facing echo.
+  for (const outcome of produced) {
+    logger.info(
+      `Bazel ${outcome.ecosystem} extraction status: ${outcome.status} (complete=${outcome.complete}).`,
+    )
+  }
+
   for (const partial of outcomes) {
     if (partial.status === 'partial') {
       logger.warn(
-        `Bazel ${partial.ecosystem} manifest generation was partial; the uploaded SBOM is known-incomplete.`,
+        `WARNING: Bazel ${partial.ecosystem} manifest generation was PARTIAL. The uploaded SBOM is known-incomplete and may under-report dependencies; review the completeness summary before relying on the results.`,
       )
     }
   }
@@ -188,14 +214,18 @@ function pypiOutcome(result: {
   manifestPath?: string | undefined
   noEcosystemFound?: boolean | undefined
   ok: boolean
-}): { manifestPaths: string[]; status: ExtractBazelStatus } {
+}): { complete: boolean; manifestPaths: string[]; status: ExtractBazelStatus } {
   if (result.noEcosystemFound) {
-    return { manifestPaths: [], status: 'noEcosystem' }
+    return { complete: false, manifestPaths: [], status: 'noEcosystem' }
   }
   if (result.ok && result.manifestPath) {
-    return { manifestPaths: [result.manifestPath], status: 'complete' }
+    return {
+      complete: true,
+      manifestPaths: [result.manifestPath],
+      status: 'complete',
+    }
   }
-  return { manifestPaths: [], status: 'hardFailure' }
+  return { complete: false, manifestPaths: [], status: 'hardFailure' }
 }
 
 async function run(
@@ -232,6 +262,7 @@ async function run(
 
   const { ecosystem } = cli.flags
   let { bazel, bazelFlags, bazelOutputBase, bazelRc, out, verbose } = cli.flags
+  let perRepoTimeout = cli.flags['perRepoTimeout'] as number | undefined
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (!bazel) {
@@ -285,6 +316,19 @@ async function run(
       logger.info(`Using default --verbose from ${SOCKET_JSON}:`, verbose)
     } else {
       verbose = false
+    }
+  }
+  if (perRepoTimeout === undefined) {
+    if (sockJson.defaults?.manifest?.bazel?.perRepoTimeout !== undefined) {
+      perRepoTimeout = sockJson.defaults?.manifest?.bazel?.perRepoTimeout
+      logger.info(
+        `Using default --per-repo-timeout from ${SOCKET_JSON}:`,
+        perRepoTimeout,
+      )
+    } else {
+      // Explicit invocation default; longer than the auto-manifest default
+      // because the user is waiting on this single extraction.
+      perRepoTimeout = EXPLICIT_PER_REPO_TIMEOUT_MS
     }
   }
 
@@ -347,9 +391,11 @@ async function run(
         bin: bazel as string | undefined,
         cwd,
         out: out as string,
+        perRepoTimeoutMs: perRepoTimeout,
         verbose: Boolean(verbose),
       })
       outcomes.push({
+        complete: mavenResult.complete,
         ecosystem: 'maven',
         manifestPaths: mavenResult.manifestPaths,
         status: mavenResult.status,
