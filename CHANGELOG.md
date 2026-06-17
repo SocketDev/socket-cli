@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.121](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.121) - 2026-06-17
+
+### Fixed
+- `socket config set` now persists correctly when a Socket API token is supplied via an environment variable. Previously, setting `SOCKET_CLI_API_TOKEN` / `SOCKET_SECURITY_API_TOKEN` put the entire config into read-only mode, so `socket config set <key> <value>` silently failed to save (and a later `socket config get` showed nothing) while still printing `OK`. A token from the environment now overrides authentication only: unrelated keys such as `defaultOrg` are written to disk as expected, and the env-supplied token itself is still never persisted.
+- `socket config set` no longer reports a misleading `OK` when the value genuinely cannot be saved. When the config is fully overridden (and therefore ephemeral) via `--config`, `SOCKET_CLI_CONFIG`, or `SOCKET_CLI_NO_API_TOKEN`, the command now fails with a clear error explaining that the value was not saved, instead of pretending it succeeded.
+
 ## [1.1.120](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.120) - 2026-06-12
 
 ### Changed

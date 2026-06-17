@@ -26,16 +26,9 @@ export async function outputConfigSet(
     logger.log(`# Update config`)
     logger.log('')
     logger.log(result.message)
-    if (result.data) {
-      logger.log('')
-      logger.log(result.data)
-    }
-  } else {
-    logger.log(`OK`)
-    logger.log(result.message)
-    if (result.data) {
-      logger.log('')
-      logger.log(result.data)
-    }
+    return
   }
+
+  logger.log(`OK`)
+  logger.log(result.message)
 }

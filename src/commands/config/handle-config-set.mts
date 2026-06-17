@@ -3,7 +3,7 @@ import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { outputConfigSet } from './output-config-set.mts'
 import { updateConfigValue } from '../../utils/config.mts'
 
-import type { OutputKind } from '../../types.mts'
+import type { CResult, OutputKind } from '../../types.mts'
 import type { LocalConfig } from '../../utils/config.mts'
 
 export async function handleConfigSet({
@@ -20,8 +20,23 @@ export async function handleConfigSet({
 
   const result = updateConfigValue(key, value)
 
-  debugFn('notice', `Config update ${result.ok ? 'succeeded' : 'failed'}`)
-  debugDir('inspect', { result })
+  // `config set` is a one-shot command: an in-memory-only change is a no-op
+  // because the process exits before anything reads it. updateConfigValue only
+  // populates `data` when the config is read-only (a full --config /
+  // SOCKET_CLI_CONFIG / SOCKET_CLI_NO_API_TOKEN override), so in that case
+  // report a failure instead of a misleading success.
+  const outcome: CResult<undefined | string> =
+    result.ok && result.data
+      ? {
+          ok: false,
+          code: 1,
+          message: `Config key '${key}' was not saved`,
+          cause: result.data,
+        }
+      : result
 
-  await outputConfigSet(result, outputKind)
+  debugFn('notice', `Config update ${outcome.ok ? 'succeeded' : 'failed'}`)
+  debugDir('inspect', { outcome, result })
+
+  await outputConfigSet(outcome, outputKind)
 }

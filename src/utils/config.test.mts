@@ -12,7 +12,10 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import {
   findSocketYmlSync,
+  isConfigFromFlag,
   overrideCachedConfig,
+  overrideConfigApiToken,
+  resetConfigForTesting,
   updateConfigValue,
 } from './config.mts'
 import { testPath } from '../../test/utils.mts'
@@ -30,7 +33,7 @@ describe('utils/config', () => {
         updateConfigValue('defaultOrg', 'fake_test_org'),
       ).toMatchInlineSnapshot(`
         {
-          "data": "Change applied but not persisted; current config is overridden through env var or flag",
+          "data": "The active config is read-only because it was fully overridden by the --config flag, SOCKET_CLI_CONFIG, or SOCKET_CLI_NO_API_TOKEN. Remove the override to save changes to disk.",
           "message": "Config key 'defaultOrg' was updated",
           "ok": true,
         }
@@ -51,6 +54,28 @@ describe('utils/config', () => {
           "ok": false,
         }
       `)
+    })
+  })
+
+  describe('read-only state', () => {
+    it('does not mark the config read-only when only the API token is overridden via env', () => {
+      // A token from SOCKET_CLI_API_TOKEN / SOCKET_SECURITY_API_TOKEN overrides
+      // auth only; unrelated keys must still be persistable.
+      resetConfigForTesting()
+      overrideConfigApiToken('sktsec_faketoken')
+      expect(isConfigFromFlag()).toBe(false)
+    })
+
+    it('marks the config read-only when fully overridden via --config / SOCKET_CLI_CONFIG', () => {
+      resetConfigForTesting()
+      overrideCachedConfig({})
+      expect(isConfigFromFlag()).toBe(true)
+    })
+
+    it('marks the config read-only when no token is forced (SOCKET_CLI_NO_API_TOKEN)', () => {
+      resetConfigForTesting()
+      overrideConfigApiToken(undefined)
+      expect(isConfigFromFlag()).toBe(true)
     })
   })
 
