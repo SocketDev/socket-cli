@@ -476,8 +476,10 @@ export async function meowWithSubcommands(
   } else {
     const tokenOverride = constants.ENV.SOCKET_CLI_API_TOKEN
     if (tokenOverride) {
-      // This will set the token (even if there was a config override) and
-      // set it to readOnly, making sure the temp token won't be persisted.
+      // The env token overrides authentication only. getDefaultApiToken reads it
+      // straight from the environment, so overrideConfigApiToken does not inject
+      // it into the cached config and leaves the config writable — unrelated keys
+      // still persist, while the env token itself is never written to disk.
       overrideConfigApiToken(tokenOverride)
     }
   }
