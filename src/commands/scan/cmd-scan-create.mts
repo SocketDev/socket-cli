@@ -11,8 +11,10 @@ import { excludePathsFlag, reachabilityFlags } from './reachability-flags.mts'
 import {
   REACH_ANALYSIS_MEMORY_LIMIT_HELP,
   REACH_ANALYSIS_TIMEOUT_HELP,
+  isOmittedReachValue,
   isValidReachAnalysisMemoryLimit,
   isValidReachAnalysisTimeout,
+  reachMemoryLimitToMb,
 } from './reachability-units.mts'
 import { suggestOrgSlug } from './suggest-org-slug.mts'
 import { suggestTarget } from './suggest_target.mts'
@@ -491,12 +493,19 @@ async function run(
 
   const hasReachExcludePaths = reachExcludePaths.length > 0
 
+  // Compare by resolved magnitude, not string identity: 8192, 8192MB and 8GB
+  // all mean the default, and an omitted/zero timeout means "use the default".
+  // A naive string compare would flag those equivalents as non-default and
+  // wrongly require --reach.
+  const memoryLimitMb = reachMemoryLimitToMb(reachAnalysisMemoryLimit)
   const isUsingNonDefaultMemoryLimit =
-    reachAnalysisMemoryLimit !==
-    reachabilityFlags['reachAnalysisMemoryLimit']?.default
+    memoryLimitMb !== null &&
+    memoryLimitMb !==
+      reachMemoryLimitToMb(
+        String(reachabilityFlags['reachAnalysisMemoryLimit']?.default ?? ''),
+      )
 
-  const isUsingNonDefaultTimeout =
-    reachAnalysisTimeout !== reachabilityFlags['reachAnalysisTimeout']?.default
+  const isUsingNonDefaultTimeout = !isOmittedReachValue(reachAnalysisTimeout)
 
   const isUsingNonDefaultConcurrency =
     reachConcurrency !== reachabilityFlags['reachConcurrency']?.default

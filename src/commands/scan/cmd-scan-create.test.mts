@@ -279,6 +279,56 @@ describe('socket scan create', async () => {
       '--branch',
       'abc',
       '--reach-analysis-memory-limit',
+      '8GB',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should succeed when --reach-analysis-memory-limit equals the default in a different unit (8GB) without --reach',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(code, 'should treat 8GB as the default 8192MB').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      FLAG_ORG,
+      'fakeOrg',
+      'target',
+      FLAG_DRY_RUN,
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach-analysis-timeout',
+      '0',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should succeed when --reach-analysis-timeout is the zero/omit sentinel without --reach',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(code, 'should treat 0 as the default (omit) timeout').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      FLAG_ORG,
+      'fakeOrg',
+      'target',
+      FLAG_DRY_RUN,
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach-analysis-memory-limit',
       '4096',
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',

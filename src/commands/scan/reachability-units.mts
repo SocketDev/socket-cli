@@ -36,3 +36,19 @@ export function isValidReachAnalysisMemoryLimit(value: string): boolean {
 export function isValidReachAnalysisTimeout(value: string): boolean {
   return value === '' || REACH_ANALYSIS_TIMEOUT_PATTERN.test(value)
 }
+
+// Resolve a memory-limit value to its magnitude in MB (the unit Coana uses), or
+// null when the value is omitted/zero (Coana then applies its own default).
+// Lets callers compare a value against the default regardless of how the unit
+// is written: 8192, 8192MB and 8GB all resolve to 8192.
+export function reachMemoryLimitToMb(value: string): number | null {
+  if (isOmittedReachValue(value)) {
+    return null
+  }
+  const match = /^(\d+)(mb|gb)?$/i.exec(value)
+  if (!match) {
+    return null
+  }
+  const amount = Number(match[1])
+  return match[2]?.toLowerCase() === 'gb' ? amount * 1024 : amount
+}
