@@ -95,6 +95,7 @@ export async function handleScanReach({
   const result = await performReachabilityAnalysis({
     cwd,
     orgSlug,
+    outputKind,
     outputPath,
     packagePaths,
     reachabilityOptions: mergedReachabilityOptions,
