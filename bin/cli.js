@@ -3,6 +3,7 @@
 
 void (async () => {
   const Module = require('node:module')
+  const os = require('node:os')
   const path = require('node:path')
   const rootPath = path.join(__dirname, '..')
   Module.enableCompileCache?.(path.join(rootPath, '.cache'))
@@ -67,11 +68,12 @@ void (async () => {
   // See https://nodejs.org/api/child_process.html#event-exit.
   spawnPromise.process.on('exit', (code, signalName) => {
     if (signalName) {
-      // Mirror a signal death. Drop our own handlers first so the re-raise actually
-      // terminates us instead of being swallowed by onSigint/onSigterm above.
-      process.removeListener('SIGINT', onSigint)
-      process.removeListener('SIGTERM', onSigterm)
-      process.kill(process.pid, signalName)
+      // Mirror a signal death as the conventional 128 + signum exit code. Exit explicitly
+      // rather than re-raising the signal: with our handlers installed the re-raise would
+      // race `await spawnPromise` resolving and could leave the default exitCode of 1.
+      const signum = os.constants.signals[signalName] ?? 0
+      // eslint-disable-next-line n/no-process-exit
+      process.exit(128 + signum)
     } else if (typeof code === 'number') {
       // eslint-disable-next-line n/no-process-exit
       process.exit(code)
