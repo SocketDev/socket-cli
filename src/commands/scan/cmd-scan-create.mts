@@ -8,6 +8,12 @@ import { assertValidExcludePaths } from './exclude-paths.mts'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { excludePathsFlag, reachabilityFlags } from './reachability-flags.mts'
+import {
+  REACH_ANALYSIS_MEMORY_LIMIT_HELP,
+  REACH_ANALYSIS_TIMEOUT_HELP,
+  isValidReachAnalysisMemoryLimit,
+  isValidReachAnalysisTimeout,
+} from './reachability-units.mts'
 import { suggestOrgSlug } from './suggest-org-slug.mts'
 import { suggestTarget } from './suggest_target.mts'
 import { validateReachabilityTarget } from './validate-reachability-target.mts'
@@ -284,8 +290,8 @@ async function run(
     tmp: boolean
     // Reachability flags.
     reach: boolean
-    reachAnalysisMemoryLimit: number
-    reachAnalysisTimeout: number
+    reachAnalysisMemoryLimit: string
+    reachAnalysisTimeout: string
     reachConcurrency: number
     reachContinueOnAnalysisErrors: boolean
     reachContinueOnInstallErrors: boolean
@@ -574,6 +580,18 @@ async function run(
     },
     {
       nook: true,
+      test: !reach || isValidReachAnalysisTimeout(reachAnalysisTimeout),
+      message: `The --reach-analysis-timeout must be ${REACH_ANALYSIS_TIMEOUT_HELP}`,
+      fail: `invalid value "${reachAnalysisTimeout}"`,
+    },
+    {
+      nook: true,
+      test: !reach || isValidReachAnalysisMemoryLimit(reachAnalysisMemoryLimit),
+      message: `The --reach-analysis-memory-limit must be ${REACH_ANALYSIS_MEMORY_LIMIT_HELP}`,
+      fail: `invalid value "${reachAnalysisMemoryLimit}"`,
+    },
+    {
+      nook: true,
       test: !reach || reachTargetValidation.isValid,
       message:
         'Reachability analysis requires exactly one target directory when --reach is enabled',
@@ -633,8 +651,8 @@ async function run(
           })
         : undefined,
       excludePaths,
-      reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
-      reachAnalysisTimeout: Number(reachAnalysisTimeout),
+      reachAnalysisMemoryLimit,
+      reachAnalysisTimeout,
       reachConcurrency: Number(reachConcurrency),
       reachContinueOnAnalysisErrors: Boolean(reachContinueOnAnalysisErrors),
       reachContinueOnInstallErrors: Boolean(reachContinueOnInstallErrors),

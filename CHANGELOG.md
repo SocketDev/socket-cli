@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.123](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.123) - 2026-06-18
+
+### Added
+- `socket scan create --reach` and `socket scan reach` now accept unit suffixes on `--reach-analysis-timeout` (`s`, `m`, `h` — e.g. `90s`, `10m`, `1h`) and `--reach-analysis-memory-limit` (`MB`, `GB` — e.g. `512MB`, `8GB`). Plain numbers keep working as before.
+
+### Changed
+- Updated the Coana CLI to v `15.5.0`.
+
 ## [1.1.122](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.122) - 2026-06-17
 
 ### Changed

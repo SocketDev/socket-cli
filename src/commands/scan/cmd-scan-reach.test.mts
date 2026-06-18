@@ -38,8 +38,8 @@ describe('socket scan reach', async () => {
 
           Reachability Options
             --exclude-paths     List of glob patterns to exclude from the scan, including SCA/SBOM manifest discovery and (when --reach is enabled) Tier 1 reachability analysis. Patterns are anchored micromatch globs matched relative to the Socket scan root, which is the command working directory (\`--cwd\` if set), not the reachability target: \`tests\` matches only \`<cwd>/tests\`; use \`**/tests\` to match at any depth. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags.
-            --reach-analysis-memory-limit  The maximum memory in MB to use for the reachability analysis. The default is 8192MB.
-            --reach-analysis-timeout  Set timeout for the reachability analysis. Split analysis runs may cause the total scan time to exceed this timeout significantly.
+            --reach-analysis-memory-limit  The maximum memory for the reachability analysis as a whole number optionally followed by MB or GB (e.g. 512MB, 8GB). The default is 8GB.
+            --reach-analysis-timeout  Set the timeout for the reachability analysis as a whole number optionally followed by s, m or h (e.g. 90s, 10m, 1h). Defaults to 10m. Split analysis runs may cause the total scan time to exceed this timeout significantly.
             --reach-concurrency  Set the maximum number of concurrent reachability analysis runs. It is recommended to choose a concurrency level that ensures each analysis run has at least the --reach-analysis-memory-limit amount of memory available.
             --reach-continue-on-analysis-errors  Continue reachability analysis when errors occur (timeouts, OOM, parse errors, etc.), falling back to precomputed (Tier 2) results. By default, the CLI halts on analysis errors.
             --reach-continue-on-install-errors  Continue reachability analysis when package installation fails, falling back to precomputed (Tier 2) results. By default, the CLI halts on installation errors.
@@ -1054,8 +1054,10 @@ describe('socket scan reach', async () => {
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         const output = stdout + stderr
-        expect(output).toContain('[DryRun]: Bailing now')
-        expect(code).toBe(0)
+        expect(output).toContain(
+          'The --reach-analysis-memory-limit must be a whole number optionally followed by MB or GB',
+        )
+        expect(code).not.toBe(0)
       },
     )
 
@@ -1065,18 +1067,20 @@ describe('socket scan reach', async () => {
         'reach',
         FLAG_DRY_RUN,
         '--reach-analysis-memory-limit',
-        '-1',
+        '512kb',
         '--org',
         'fakeOrg',
         FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
-      'should show clear error for negative memory limit',
+      'should show clear error for unsupported memory unit',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         const output = stdout + stderr
-        expect(output).toContain('[DryRun]: Bailing now')
-        expect(code).toBe(0)
+        expect(output).toContain(
+          'The --reach-analysis-memory-limit must be a whole number optionally followed by MB or GB',
+        )
+        expect(code).not.toBe(0)
       },
     )
 
@@ -1096,8 +1100,10 @@ describe('socket scan reach', async () => {
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         const output = stdout + stderr
-        expect(output).toContain('[DryRun]: Bailing now')
-        expect(code).toBe(0)
+        expect(output).toContain(
+          'The --reach-analysis-timeout must be a whole number optionally followed by s, m or h',
+        )
+        expect(code).not.toBe(0)
       },
     )
 
@@ -1107,13 +1113,13 @@ describe('socket scan reach', async () => {
         'reach',
         FLAG_DRY_RUN,
         '--reach-analysis-timeout',
-        '0',
+        '10m',
         '--org',
         'fakeOrg',
         FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
-      'should show clear error for zero timeout',
+      'should accept a timeout value with a unit suffix',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         const output = stdout + stderr
