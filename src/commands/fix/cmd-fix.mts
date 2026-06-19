@@ -56,6 +56,12 @@ export const cmdFix = {
 }
 
 const generalFlags: MeowFlags = {
+  allowOverrides: {
+    type: 'boolean',
+    default: false,
+    description:
+      'Write npm overrides / pnpm.overrides when no upgrade satisfies declared semver (npm/pnpm only).',
+  },
   autopilot: {
     type: 'boolean',
     default: false,
@@ -321,6 +327,7 @@ async function run(
 
   const {
     all,
+    allowOverrides,
     applyFixes,
     autopilot,
     debug,
@@ -347,6 +354,7 @@ async function run(
     unknownFlags = [],
   } = cli.flags as {
     all: boolean
+    allowOverrides: boolean
     applyFixes: boolean
     autopilot: boolean
     debug: boolean
@@ -512,6 +520,7 @@ async function run(
 
   await handleFix({
     all,
+    allowOverrides,
     applyFixes,
     autopilot,
     coanaVersion: fixVersion,

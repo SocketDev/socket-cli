@@ -164,6 +164,7 @@ describe('socket fix', async () => {
 
           Options
             --all               Process all discovered vulnerabilities in local mode. Cannot be used with --id.
+            --allow-overrides   Write npm overrides / pnpm.overrides when no upgrade satisfies declared semver (npm/pnpm only).
             --autopilot         Enable auto-merge for pull requests that Socket opens.
                                 See GitHub documentation (https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository) for managing auto-merge for pull requests in your repository.
             --debug             Enable debug logging in the Coana-based Socket Fix CLI invocation.

@@ -4,6 +4,7 @@ import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 export type FixConfig = {
   all: boolean
+  allowOverrides: boolean
   applyFixes: boolean
   autopilot: boolean
   coanaVersion: string | undefined

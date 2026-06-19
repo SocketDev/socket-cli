@@ -64,6 +64,65 @@ type DiscoverGhsaIdsOptions = {
   spinner?: Spinner | undefined
 }
 
+// How a vulnerability was resolved. Coana writes an npm `overrides` /
+// pnpm `pnpm.overrides` entry ('override') when no published version satisfies
+// the declared semver range; otherwise it performs a normal version bump
+// ('upgrade').
+export type FixMethod = 'override' | 'upgrade'
+
+export type FixMethodEntry = {
+  fixedVersion?: string | undefined
+  ghsaId: string
+  method: FixMethod
+  purl: string
+}
+
+/**
+ * Normalizes Coana's fix-result JSON into a flat list of per-purl fix methods.
+ * Coana emits, per fixed GHSA, an array of `{ purl, fixedVersion, method }`
+ * objects under `fixes`. The `method` field distinguishes an override from a
+ * plain upgrade; it is treated as optional and defaults to 'upgrade' so older
+ * Coana builds that do not emit it remain backward-compatible.
+ */
+export function extractFixMethods(result: unknown): FixMethodEntry[] {
+  const entries: FixMethodEntry[] = []
+  if (!result || typeof result !== 'object') {
+    return entries
+  }
+  const { fixes } = result as { fixes?: unknown }
+  if (!fixes || typeof fixes !== 'object') {
+    return entries
+  }
+  for (const ghsaId of Object.keys(fixes)) {
+    const ghsaFixes = (fixes as Record<string, unknown>)[ghsaId]
+    // Some result shapes (e.g. only-direct-dependency-upgrades) key `fixes`
+    // by a non-array value; skip anything that is not the expected fix list.
+    if (!Array.isArray(ghsaFixes)) {
+      continue
+    }
+    for (const fix of ghsaFixes) {
+      if (!fix || typeof fix !== 'object') {
+        continue
+      }
+      const { fixedVersion, method, purl } = fix as {
+        fixedVersion?: unknown
+        method?: unknown
+        purl?: unknown
+      }
+      if (typeof purl !== 'string') {
+        continue
+      }
+      entries.push({
+        ...(typeof fixedVersion === 'string' ? { fixedVersion } : {}),
+        ghsaId,
+        method: method === 'override' ? 'override' : 'upgrade',
+        purl,
+      })
+    }
+  }
+  return entries
+}
+
 /**
  * Discovers GHSA IDs by running coana without applying fixes.
  * Returns a list of GHSA IDs, optionally limited.
@@ -116,11 +175,16 @@ async function discoverGhsaIds(
   return []
 }
 
-export async function coanaFix(
-  fixConfig: FixConfig,
-): Promise<CResult<{ fixedAll: boolean; ghsaDetails: unknown[] }>> {
+export async function coanaFix(fixConfig: FixConfig): Promise<
+  CResult<{
+    fixedAll: boolean
+    fixMethods: FixMethodEntry[]
+    ghsaDetails: unknown[]
+  }>
+> {
   const {
     all,
+    allowOverrides,
     applyFixes,
     autopilot,
     coanaVersion,
@@ -282,7 +346,10 @@ export async function coanaFix(
       if (!silence) {
         spinner?.stop()
       }
-      return { ok: true, data: { fixedAll: false, ghsaDetails: [] } }
+      return {
+        ok: true,
+        data: { fixedAll: false, fixMethods: [], ghsaDetails: [] },
+      }
     }
 
     // Create a temporary file for the output.
@@ -315,6 +382,7 @@ export async function coanaFix(
           ...(!applyFixes ? [FLAG_DRY_RUN] : []),
           '--output-file',
           tmpFile,
+          ...(allowOverrides ? ['--allow-overrides'] : []),
           ...(debug ? ['--debug'] : []),
           ...(disableExternalToolChecks
             ? ['--disable-external-tool-checks']
@@ -361,6 +429,7 @@ export async function coanaFix(
         ok: true,
         data: {
           fixedAll: true,
+          fixMethods: extractFixMethods(fixesResultJson),
           ghsaDetails: fixesResultJson ? [fixesResultJson] : [],
         },
       }
@@ -429,7 +498,10 @@ export async function coanaFix(
     if (!silence) {
       spinner?.stop()
     }
-    return { ok: true, data: { fixedAll: false, ghsaDetails: [] } }
+    return {
+      ok: true,
+      data: { fixedAll: false, fixMethods: [], ghsaDetails: [] },
+    }
   }
 
   debugFn('notice', `fetch: ${ids.length} GHSA details for ${joinAnd(ids)}`)
@@ -441,6 +513,7 @@ export async function coanaFix(
 
   let count = 0
   let overallFixed = false
+  const fixMethods: FixMethodEntry[] = []
   const ghsaFixResults: unknown[] = []
 
   // Process each GHSA ID individually.
@@ -484,6 +557,7 @@ export async function coanaFix(
         ...(showAffectedDirectDependencies
           ? ['--show-affected-direct-dependencies']
           : []),
+        ...(allowOverrides ? ['--allow-overrides'] : []),
         '--output-file',
         tmpFile,
         ...fixConfig.unknownFlags,
@@ -653,6 +727,7 @@ export async function coanaFix(
             pullRequestLink: data.html_url,
             pullRequestNumber: data.number,
           })
+          fixMethods.push(...extractFixMethods(fixResultJson))
         }
 
         if (!silence) {
@@ -774,6 +849,6 @@ export async function coanaFix(
 
   return {
     ok: true,
-    data: { fixedAll: overallFixed, ghsaDetails: ghsaFixResults },
+    data: { fixedAll: overallFixed, fixMethods, ghsaDetails: ghsaFixResults },
   }
 }

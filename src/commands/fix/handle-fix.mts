@@ -115,6 +115,7 @@ export async function convertIdsToGhsas(
 
 export async function handleFix({
   all,
+  allowOverrides,
   applyFixes,
   autopilot,
   coanaVersion,
@@ -144,6 +145,7 @@ export async function handleFix({
   debugFn('notice', `Starting fix command for ${orgSlug}`)
   debugDir('inspect', {
     all,
+    allowOverrides,
     applyFixes,
     autopilot,
     coanaVersion,
@@ -172,6 +174,7 @@ export async function handleFix({
   await outputFixResult(
     await coanaFix({
       all,
+      allowOverrides,
       applyFixes,
       autopilot,
       coanaVersion,
