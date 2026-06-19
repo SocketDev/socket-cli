@@ -9,6 +9,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - `socket scan create --reach` accepts a new `--reach-retain-facts-file` flag. By default the CLI deletes the `.socket.facts.json` reachability report from the scan directory after a successful scan; pass this flag to keep it (e.g. for inspection or debugging). **Important:** you must delete the retained `.socket.facts.json` before running a fresh tier 1 reachability scan — a stale file left in place is picked up as a pre-generated input and silently overrides fresh analysis, so the new scan results will not be reliable.
 
+### Changed
+- Updated the Coana CLI to v `15.5.4`.
+
 ## [1.1.123](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.123) - 2026-06-18
 
 ### Added
