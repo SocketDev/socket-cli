@@ -52,8 +52,8 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
     pullRequest: 0,
     reach: {
       excludePaths: [],
-      reachAnalysisMemoryLimit: 0,
-      reachAnalysisTimeout: 0,
+      reachAnalysisMemoryLimit: '',
+      reachAnalysisTimeout: '',
       reachConcurrency: 1,
       reachContinueOnAnalysisErrors: false,
       reachContinueOnInstallErrors: false,

@@ -5,6 +5,7 @@ import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { isOmittedReachValue } from './reachability-units.mts'
 import constants from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
 import { isAutoManifestConfigEmpty } from '../../utils/auto-manifest-config.mts'
@@ -24,8 +25,8 @@ import type { StdioOptions } from 'node:child_process'
 export type ReachabilityOptions = {
   autoManifestConfig?: AutoManifestConfig | undefined
   excludePaths: string[]
-  reachAnalysisMemoryLimit: number
-  reachAnalysisTimeout: number
+  reachAnalysisMemoryLimit: string
+  reachAnalysisTimeout: string
   reachConcurrency: number
   reachContinueOnAnalysisErrors: boolean
   reachContinueOnInstallErrors: boolean
@@ -206,12 +207,12 @@ export async function performReachabilityAnalysis(
     '--socket-mode',
     outputFilePath,
     '--disable-report-submission',
-    ...(reachabilityOptions.reachAnalysisTimeout
-      ? ['--analysis-timeout', `${reachabilityOptions.reachAnalysisTimeout}`]
-      : []),
-    ...(reachabilityOptions.reachAnalysisMemoryLimit
-      ? ['--memory-limit', `${reachabilityOptions.reachAnalysisMemoryLimit}`]
-      : []),
+    ...(isOmittedReachValue(reachabilityOptions.reachAnalysisTimeout)
+      ? []
+      : ['--analysis-timeout', reachabilityOptions.reachAnalysisTimeout]),
+    ...(isOmittedReachValue(reachabilityOptions.reachAnalysisMemoryLimit)
+      ? []
+      : ['--memory-limit', reachabilityOptions.reachAnalysisMemoryLimit]),
     ...(reachabilityOptions.reachConcurrency
       ? ['--concurrency', `${reachabilityOptions.reachConcurrency}`]
       : []),

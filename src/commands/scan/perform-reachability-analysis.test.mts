@@ -76,8 +76,8 @@ vi.mock('@socketsecurity/registry/lib/logger', () => ({
 function makeReachabilityOptions(): ReachabilityOptions {
   return {
     excludePaths: [],
-    reachAnalysisMemoryLimit: 0,
-    reachAnalysisTimeout: 0,
+    reachAnalysisMemoryLimit: '',
+    reachAnalysisTimeout: '',
     reachConcurrency: 0,
     reachContinueOnAnalysisErrors: false,
     reachContinueOnInstallErrors: false,
@@ -160,6 +160,65 @@ describe('performReachabilityAnalysis facts-file resolution', () => {
 
     expect(result.ok).toBe(true)
     expect(result.ok && result.data.tier1ReachabilityScanId).toBeUndefined()
+  })
+})
+
+describe('performReachabilityAnalysis timeout/memory forwarding', () => {
+  let scanCwd: string
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockFetchOrganization.mockResolvedValue({
+      ok: true,
+      data: { organizations: {} },
+    })
+    mockHasEnterpriseOrgPlan.mockReturnValue(true)
+    mockSpawnCoanaDlx.mockResolvedValue({ ok: true, data: '' })
+    scanCwd = mkdtempSync(path.join(tmpdir(), 'socket-reaf-'))
+  })
+
+  afterEach(() => {
+    rmSync(scanCwd, { force: true, recursive: true })
+  })
+
+  async function coanaArgsFor(
+    overrides: Partial<ReachabilityOptions>,
+  ): Promise<string[]> {
+    await performReachabilityAnalysis({
+      cwd: scanCwd,
+      reachabilityOptions: { ...makeReachabilityOptions(), ...overrides },
+      target: scanCwd,
+    })
+    return mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
+  }
+
+  it('forwards unit-bearing values to Coana verbatim', async () => {
+    const args = await coanaArgsFor({
+      reachAnalysisTimeout: '90s',
+      reachAnalysisMemoryLimit: '8GB',
+    })
+    expect(args).toContain('--analysis-timeout')
+    expect(args[args.indexOf('--analysis-timeout') + 1]).toBe('90s')
+    expect(args).toContain('--memory-limit')
+    expect(args[args.indexOf('--memory-limit') + 1]).toBe('8GB')
+  })
+
+  it('omits both flags for empty values so Coana applies its defaults', async () => {
+    const args = await coanaArgsFor({
+      reachAnalysisTimeout: '',
+      reachAnalysisMemoryLimit: '',
+    })
+    expect(args).not.toContain('--analysis-timeout')
+    expect(args).not.toContain('--memory-limit')
+  })
+
+  it('omits flags for zero-magnitude values (back-compat sentinel)', async () => {
+    const args = await coanaArgsFor({
+      reachAnalysisTimeout: '0',
+      reachAnalysisMemoryLimit: '0',
+    })
+    expect(args).not.toContain('--analysis-timeout')
+    expect(args).not.toContain('--memory-limit')
   })
 })
 

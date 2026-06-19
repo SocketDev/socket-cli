@@ -15,8 +15,8 @@ function makeReachOptions(
 ): ReachabilityOptions {
   return {
     excludePaths: [],
-    reachAnalysisMemoryLimit: 8192,
-    reachAnalysisTimeout: 0,
+    reachAnalysisMemoryLimit: '8192',
+    reachAnalysisTimeout: '',
     reachConcurrency: 1,
     reachContinueOnAnalysisErrors: false,
     reachContinueOnInstallErrors: false,

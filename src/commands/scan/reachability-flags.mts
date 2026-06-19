@@ -8,16 +8,16 @@ export const reachabilityFlags: MeowFlags = {
     description: `Override the version of @coana-tech/cli used for reachability analysis. Default: ${constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION}.`,
   },
   reachAnalysisMemoryLimit: {
-    type: 'number',
-    default: 8192,
+    type: 'string',
+    default: '8192',
     description:
-      'The maximum memory in MB to use for the reachability analysis. The default is 8192MB.',
+      'The maximum memory for the reachability analysis as a whole number optionally followed by MB or GB (e.g. 512MB, 8GB). The default is 8GB.',
   },
   reachAnalysisTimeout: {
-    type: 'number',
-    default: 0,
+    type: 'string',
+    default: '',
     description:
-      'Set timeout for the reachability analysis. Split analysis runs may cause the total scan time to exceed this timeout significantly.',
+      'Set the timeout for the reachability analysis as a whole number optionally followed by s, m or h (e.g. 90s, 10m, 1h). Defaults to 10m. Split analysis runs may cause the total scan time to exceed this timeout significantly.',
   },
   reachConcurrency: {
     type: 'number',

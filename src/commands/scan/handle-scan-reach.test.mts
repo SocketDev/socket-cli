@@ -105,8 +105,8 @@ describe('handleScanReach', () => {
   it('applies excludePaths to manifest discovery and reachability analysis', async () => {
     const reachabilityOptions = {
       excludePaths: ['tests', 'packages/*'],
-      reachAnalysisMemoryLimit: 8192,
-      reachAnalysisTimeout: 0,
+      reachAnalysisMemoryLimit: '8192',
+      reachAnalysisTimeout: '',
       reachConcurrency: 1,
       reachContinueOnAnalysisErrors: false,
       reachContinueOnInstallErrors: false,
@@ -156,8 +156,8 @@ describe('handleScanReach', () => {
   it('translates excludePaths from the scan root for nested targets', async () => {
     const reachabilityOptions = {
       excludePaths: ['apps/api/tests', '**/dist'],
-      reachAnalysisMemoryLimit: 8192,
-      reachAnalysisTimeout: 0,
+      reachAnalysisMemoryLimit: '8192',
+      reachAnalysisTimeout: '',
       reachConcurrency: 1,
       reachContinueOnAnalysisErrors: false,
       reachContinueOnInstallErrors: false,
@@ -217,8 +217,8 @@ describe('handleScanReach', () => {
     )
     const reachabilityOptions = {
       excludePaths: ['apps/api'],
-      reachAnalysisMemoryLimit: 8192,
-      reachAnalysisTimeout: 0,
+      reachAnalysisMemoryLimit: '8192',
+      reachAnalysisTimeout: '',
       reachConcurrency: 1,
       reachContinueOnAnalysisErrors: false,
       reachContinueOnInstallErrors: false,
@@ -264,8 +264,8 @@ describe('handleScanReach', () => {
 
     const reachabilityOptions = {
       excludePaths: ['tests'],
-      reachAnalysisMemoryLimit: 8192,
-      reachAnalysisTimeout: 0,
+      reachAnalysisMemoryLimit: '8192',
+      reachAnalysisTimeout: '',
       reachConcurrency: 1,
       reachContinueOnAnalysisErrors: false,
       reachContinueOnInstallErrors: false,
@@ -315,8 +315,8 @@ describe('handleScanReach', () => {
     })
     const reachabilityOptions = {
       excludePaths: [],
-      reachAnalysisMemoryLimit: 8192,
-      reachAnalysisTimeout: 0,
+      reachAnalysisMemoryLimit: '8192',
+      reachAnalysisTimeout: '',
       reachConcurrency: 1,
       reachContinueOnAnalysisErrors: false,
       reachContinueOnInstallErrors: false,
@@ -351,8 +351,8 @@ describe('handleScanReach', () => {
   it('does not call finalize when Coana did not return a tier1 reachability scan id', async () => {
     const reachabilityOptions = {
       excludePaths: [],
-      reachAnalysisMemoryLimit: 8192,
-      reachAnalysisTimeout: 0,
+      reachAnalysisMemoryLimit: '8192',
+      reachAnalysisTimeout: '',
       reachConcurrency: 1,
       reachContinueOnAnalysisErrors: false,
       reachContinueOnInstallErrors: false,
@@ -400,8 +400,8 @@ describe('handleScanReach', () => {
     })
     const reachabilityOptions = {
       excludePaths: [],
-      reachAnalysisMemoryLimit: 8192,
-      reachAnalysisTimeout: 0,
+      reachAnalysisMemoryLimit: '8192',
+      reachAnalysisTimeout: '',
       reachConcurrency: 1,
       reachContinueOnAnalysisErrors: false,
       reachContinueOnInstallErrors: false,

@@ -147,8 +147,8 @@ async function run(
     markdown: boolean
     org: string
     output: string
-    reachAnalysisMemoryLimit: number
-    reachAnalysisTimeout: number
+    reachAnalysisMemoryLimit: string
+    reachAnalysisTimeout: string
     reachConcurrency: number
     reachContinueOnAnalysisErrors: boolean
     reachContinueOnInstallErrors: boolean
@@ -277,8 +277,8 @@ async function run(
     outputPath: outputPath || '',
     reachabilityOptions: {
       excludePaths,
-      reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
-      reachAnalysisTimeout: Number(reachAnalysisTimeout),
+      reachAnalysisMemoryLimit,
+      reachAnalysisTimeout,
       reachConcurrency: Number(reachConcurrency),
       reachContinueOnAnalysisErrors: Boolean(reachContinueOnAnalysisErrors),
       reachContinueOnInstallErrors: Boolean(reachContinueOnInstallErrors),
