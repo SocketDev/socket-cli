@@ -69,6 +69,7 @@ describe('socket scan create', async () => {
             --reach-disable-external-tool-checks  Disable external tool checks during reachability analysis.
             --reach-ecosystems  List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Defaults to all ecosystems.
             --reach-enable-analysis-splitting  Allow the reachability analysis to partition CVEs into buckets that are processed in separate analysis runs. May improve accuracy, but not recommended by default.
+            --reach-retain-facts-file  Keep the \`.socket.facts.json\` reachability report that the analysis writes to the scan directory instead of deleting it after a successful scan. IMPORTANT: you must delete this file before running a fresh tier 1 reachability scan. A stale \`.socket.facts.json\` left in place is picked up as a pre-generated input and silently overrides fresh analysis, so the new scan results will not be reliable.
             --reach-skip-cache  Skip caching-based optimizations. By default, the reachability analysis will use cached configurations from previous runs to speed up the analysis.
             --reach-use-only-pregenerated-sboms  When using this option, the scan is created based only on pre-generated CDX and SPDX files in your project.
             --reach-version     Override the version of @coana-tech/cli used for reachability analysis. Default: <coana-version>.
