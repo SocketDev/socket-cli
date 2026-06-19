@@ -137,6 +137,7 @@ async function run(
     reachDisableExternalToolChecks,
     reachEnableAnalysisSplitting,
     reachLazyMode,
+    reachRetainFactsFile,
     reachSkipCache,
     reachUseOnlyPregeneratedSboms,
     reachVersion,
@@ -161,6 +162,7 @@ async function run(
     reachDisableExternalToolChecks: boolean
     reachEnableAnalysisSplitting: boolean
     reachLazyMode: boolean
+    reachRetainFactsFile: boolean
     reachSkipCache: boolean
     reachUseOnlyPregeneratedSboms: boolean
     reachVersion: string | undefined
@@ -292,6 +294,7 @@ async function run(
       reachEnableAnalysisSplitting: Boolean(reachEnableAnalysisSplitting),
       reachExcludePaths,
       reachLazyMode: Boolean(reachLazyMode),
+      reachRetainFactsFile: Boolean(reachRetainFactsFile),
       reachSkipCache: Boolean(reachSkipCache),
       reachUseOnlyPregeneratedSboms: Boolean(reachUseOnlyPregeneratedSboms),
       reachVersion,
