@@ -336,8 +336,16 @@ export async function handleCreateNewScan({
   // (e.g. from `socket manifest gradle --facts`) are NOT touched here —
   // those are user-owned input that the user can clean up themselves; in
   // the --reach path coana overwrites that file with its enriched output
-  // anyway, so it's the same path that gets removed.
-  if (fullScanCResult.ok && scanId && reachabilityReport) {
+  // anyway, so it's the same path that gets removed. `--reach-retain-facts-file`
+  // opts out of this cleanup so the report can be inspected; the user is then
+  // responsible for deleting it before the next tier 1 scan (a stale file is
+  // picked up as pre-generated input and would make those results unreliable).
+  if (
+    fullScanCResult.ok &&
+    scanId &&
+    reachabilityReport &&
+    !reach.reachRetainFactsFile
+  ) {
     try {
       await unlink(path.resolve(cwd, reachabilityReport))
       debugFn(

@@ -40,6 +40,7 @@ export type ReachabilityOptions = {
   reachEnableAnalysisSplitting: boolean
   reachExcludePaths: string[]
   reachLazyMode: boolean
+  reachRetainFactsFile: boolean
   reachSkipCache: boolean
   reachUseOnlyPregeneratedSboms: boolean
   reachVersion: string | undefined
