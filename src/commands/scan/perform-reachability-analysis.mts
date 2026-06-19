@@ -16,10 +16,11 @@ import { setupSdk } from '../../utils/sdk.mts'
 import { socketDevLink } from '../../utils/terminal-link.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
-import type { CResult } from '../../types.mts'
+import type { CResult, OutputKind } from '../../types.mts'
 import type { AutoManifestConfig } from '../../utils/auto-manifest-config.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { StdioOptions } from 'node:child_process'
 
 export type ReachabilityOptions = {
   autoManifestConfig?: AutoManifestConfig | undefined
@@ -48,6 +49,7 @@ export type ReachabilityAnalysisOptions = {
   branchName?: string | undefined
   cwd?: string | undefined
   orgSlug?: string | undefined
+  outputKind?: OutputKind | undefined
   outputPath?: string | undefined
   packagePaths?: string[] | undefined
   reachabilityOptions: ReachabilityOptions
@@ -69,6 +71,7 @@ export async function performReachabilityAnalysis(
     branchName,
     cwd = process.cwd(),
     orgSlug,
+    outputKind = 'text',
     outputPath,
     packagePaths,
     reachabilityOptions,
@@ -271,6 +274,14 @@ export async function performReachabilityAnalysis(
     coanaEnv['SOCKET_BRANCH_NAME'] = branchName
   }
 
+  // In machine-readable modes (--json/--markdown) the final payload is written
+  // to stdout by the output layer. Coana streams progress/logs over stdout
+  // under `inherit`, which would corrupt that payload, so redirect the child's
+  // stdout to our stderr (fd 2). Progress stays visible for humans and
+  // `2>/dev/null` isolates the JSON/markdown. stdin and stderr stay inherited.
+  const coanaStdio: StdioOptions =
+    outputKind === 'text' ? 'inherit' : ['inherit', 2, 'inherit']
+
   try {
     // Run Coana with the manifests tar hash.
     const coanaResult = await spawnCoanaDlx(coanaArgs, orgSlug, {
@@ -278,7 +289,7 @@ export async function performReachabilityAnalysis(
       cwd,
       env: coanaEnv,
       spinner,
-      stdio: 'inherit',
+      stdio: coanaStdio,
     })
 
     if (wasSpinning) {

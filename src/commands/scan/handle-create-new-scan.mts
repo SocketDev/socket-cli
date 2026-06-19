@@ -238,6 +238,7 @@ export async function handleCreateNewScan({
       branchName,
       cwd,
       orgSlug,
+      outputKind,
       packagePaths,
       reachabilityOptions: mergedReachabilityOptions,
       repoName,

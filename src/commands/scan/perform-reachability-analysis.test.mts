@@ -221,3 +221,77 @@ describe('performReachabilityAnalysis timeout/memory forwarding', () => {
     expect(args).not.toContain('--memory-limit')
   })
 })
+
+describe('performReachabilityAnalysis stdio routing by output kind', () => {
+  let scanCwd: string
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockFetchOrganization.mockResolvedValue({
+      ok: true,
+      data: { organizations: {} },
+    })
+    mockHasEnterpriseOrgPlan.mockReturnValue(true)
+    mockSpawnCoanaDlx.mockResolvedValue({ ok: true, data: '' })
+    scanCwd = mkdtempSync(path.join(tmpdir(), 'socket-rea-stdio-'))
+    writeFileSync(
+      path.join(scanCwd, '.socket.facts.json'),
+      JSON.stringify({ components: [] }),
+    )
+  })
+
+  afterEach(() => {
+    rmSync(scanCwd, { force: true, recursive: true })
+  })
+
+  it('inherits stdio in text output mode', async () => {
+    await performReachabilityAnalysis({
+      cwd: scanCwd,
+      outputKind: 'text',
+      reachabilityOptions: makeReachabilityOptions(),
+      target: scanCwd,
+    })
+
+    expect(mockSpawnCoanaDlx.mock.calls[0]![2]).toMatchObject({
+      stdio: 'inherit',
+    })
+  })
+
+  it('defaults to inheriting stdio when no output kind is given', async () => {
+    await performReachabilityAnalysis({
+      cwd: scanCwd,
+      reachabilityOptions: makeReachabilityOptions(),
+      target: scanCwd,
+    })
+
+    expect(mockSpawnCoanaDlx.mock.calls[0]![2]).toMatchObject({
+      stdio: 'inherit',
+    })
+  })
+
+  it('redirects Coana stdout to stderr (fd 2) in json output mode', async () => {
+    await performReachabilityAnalysis({
+      cwd: scanCwd,
+      outputKind: 'json',
+      reachabilityOptions: makeReachabilityOptions(),
+      target: scanCwd,
+    })
+
+    expect(mockSpawnCoanaDlx.mock.calls[0]![2]).toMatchObject({
+      stdio: ['inherit', 2, 'inherit'],
+    })
+  })
+
+  it('redirects Coana stdout to stderr (fd 2) in markdown output mode', async () => {
+    await performReachabilityAnalysis({
+      cwd: scanCwd,
+      outputKind: 'markdown',
+      reachabilityOptions: makeReachabilityOptions(),
+      target: scanCwd,
+    })
+
+    expect(mockSpawnCoanaDlx.mock.calls[0]![2]).toMatchObject({
+      stdio: ['inherit', 2, 'inherit'],
+    })
+  })
+})
