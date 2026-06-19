@@ -9,11 +9,7 @@ import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { excludePathsFlag, reachabilityFlags } from './reachability-flags.mts'
 import {
-  REACH_ANALYSIS_MEMORY_LIMIT_HELP,
-  REACH_ANALYSIS_TIMEOUT_HELP,
   isOmittedReachValue,
-  isValidReachAnalysisMemoryLimit,
-  isValidReachAnalysisTimeout,
   reachMemoryLimitToMb,
 } from './reachability-units.mts'
 import { suggestOrgSlug } from './suggest-org-slug.mts'
@@ -586,18 +582,6 @@ async function run(
       test: reach || !isUsingAnyReachabilityFlags,
       message: 'Reachability analysis flags require --reach to be enabled',
       fail: 'add --reach flag to use --reach-* options',
-    },
-    {
-      nook: true,
-      test: !reach || isValidReachAnalysisTimeout(reachAnalysisTimeout),
-      message: `The --reach-analysis-timeout must be ${REACH_ANALYSIS_TIMEOUT_HELP}`,
-      fail: `invalid value "${reachAnalysisTimeout}"`,
-    },
-    {
-      nook: true,
-      test: !reach || isValidReachAnalysisMemoryLimit(reachAnalysisMemoryLimit),
-      message: `The --reach-analysis-memory-limit must be ${REACH_ANALYSIS_MEMORY_LIMIT_HELP}`,
-      fail: `invalid value "${reachAnalysisMemoryLimit}"`,
     },
     {
       nook: true,

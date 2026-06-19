@@ -1050,14 +1050,12 @@ describe('socket scan reach', async () => {
         FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
-      'should show clear error for invalid memory limit',
+      'should forward an unrecognized memory value to Coana without locally rejecting it',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         const output = stdout + stderr
-        expect(output).toContain(
-          'The --reach-analysis-memory-limit must be a whole number optionally followed by MB or GB',
-        )
-        expect(code).not.toBe(0)
+        expect(output).toContain('[DryRun]: Bailing now')
+        expect(code).toBe(0)
       },
     )
 
@@ -1073,14 +1071,12 @@ describe('socket scan reach', async () => {
         FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
-      'should show clear error for unsupported memory unit',
+      'should forward an unsupported memory unit to Coana without locally rejecting it',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         const output = stdout + stderr
-        expect(output).toContain(
-          'The --reach-analysis-memory-limit must be a whole number optionally followed by MB or GB',
-        )
-        expect(code).not.toBe(0)
+        expect(output).toContain('[DryRun]: Bailing now')
+        expect(code).toBe(0)
       },
     )
 
@@ -1096,14 +1092,12 @@ describe('socket scan reach', async () => {
         FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
-      'should show clear error for invalid timeout value',
+      'should forward an unrecognized timeout value to Coana without locally rejecting it',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         const output = stdout + stderr
-        expect(output).toContain(
-          'The --reach-analysis-timeout must be a whole number optionally followed by s, m or h',
-        )
-        expect(code).not.toBe(0)
+        expect(output).toContain('[DryRun]: Bailing now')
+        expect(code).toBe(0)
       },
     )
 

@@ -6,12 +6,6 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { assertValidExcludePaths } from './exclude-paths.mts'
 import { handleScanReach } from './handle-scan-reach.mts'
 import { excludePathsFlag, reachabilityFlags } from './reachability-flags.mts'
-import {
-  REACH_ANALYSIS_MEMORY_LIMIT_HELP,
-  REACH_ANALYSIS_TIMEOUT_HELP,
-  isValidReachAnalysisMemoryLimit,
-  isValidReachAnalysisTimeout,
-} from './reachability-units.mts'
 import { suggestTarget } from './suggest_target.mts'
 import { validateReachabilityTarget } from './validate-reachability-target.mts'
 import constants from '../../constants.mts'
@@ -264,18 +258,6 @@ async function run(
       test: targetValidation.isInsideCwd,
       message: 'Target directory must be inside the current working directory',
       fail: 'provide a path inside the working directory',
-    },
-    {
-      nook: true,
-      test: isValidReachAnalysisTimeout(reachAnalysisTimeout),
-      message: `The --reach-analysis-timeout must be ${REACH_ANALYSIS_TIMEOUT_HELP}`,
-      fail: `invalid value "${reachAnalysisTimeout}"`,
-    },
-    {
-      nook: true,
-      test: isValidReachAnalysisMemoryLimit(reachAnalysisMemoryLimit),
-      message: `The --reach-analysis-memory-limit must be ${REACH_ANALYSIS_MEMORY_LIMIT_HELP}`,
-      fail: `invalid value "${reachAnalysisMemoryLimit}"`,
     },
   )
   if (!wasValidInput) {
