@@ -7,8 +7,8 @@ settings:
 catalogs:
   default:
     '@anthropic-ai/claude-code':
-      specifier: 2.1.98
-      version: 2.1.98
+      specifier: 2.1.163
+      version: 2.1.163
     '@babel/core':
       specifier: 7.28.4
       version: 7.28.4
@@ -180,9 +180,6 @@ catalogs:
     lint-staged:
       specifier: 16.1.6
       version: 16.1.6
-    magic-string:
-      specifier: 0.30.19
-      version: 0.30.19
     micromatch:
       specifier: 4.0.8
       version: 4.0.8
@@ -246,17 +243,41 @@ catalogs:
 
 overrides:
   '@socketregistry/packageurl-js': npm:@socketregistry/packageurl-js@1.4.2
-  '@socketsecurity/lib': 6.0.7
+  '@socketsecurity/lib': 6.0.8
   '@socketsecurity/registry': npm:@socketsecurity/registry@2.0.2
   '@socketsecurity/sdk': npm:@socketsecurity/sdk@4.0.1
+  chalk@>=5: 5.6.2
+  es-define-property: npm:@socketregistry/es-define-property@1.0.7
+  es-set-tostringtag: npm:@socketregistry/es-set-tostringtag@1.0.10
+  function-bind: npm:@socketregistry/function-bind@1.0.7
+  glob: 13.0.6
+  gopd: npm:@socketregistry/gopd@1.0.7
+  has-symbols: npm:@socketregistry/has-symbols@1.0.7
+  has-tostringtag: npm:@socketregistry/has-tostringtag@1.0.7
+  hasown: npm:@socketregistry/hasown@1.0.7
+  iconv-lite: 0.7.2
+  isexe@>=3: 4.0.0
+  lru-cache@>=10: 11.3.6
+  magic-string: 0.30.21
+  mime-db: 1.54.0
+  mime-types@>=3: 3.0.2
+  minipass@>=4: 7.1.3
+  safe-buffer: npm:@socketregistry/safe-buffer@1.0.9
+  safer-buffer: npm:@socketregistry/safer-buffer@1.0.10
   semver@>=5.0.0 <7.6.0: 7.8.1
+  side-channel: npm:@socketregistry/side-channel@1.0.10
+  ssri@>=12: 13.0.1
+  string-width@>=5: 8.1.0
   update-notifier@>=4.0.0: 7.3.1
   uuid: 11.1.1
+  which@>=4: 7.0.0
+  wrap-ansi@>=8: 9.0.2
+  yaml@2: 2.9.0
   '@octokit/graphql': 9.0.1
   '@octokit/request-error': 7.0.0
   '@sigstore/sign': 4.1.0
   '@socketregistry/packageurl-js-stable': npm:@socketregistry/packageurl-js@1.4.2
-  '@socketsecurity/lib-stable': npm:@socketsecurity/lib@6.0.7
+  '@socketsecurity/lib-stable': npm:@socketsecurity/lib@6.0.8
   '@socketsecurity/registry-stable': npm:@socketsecurity/registry@2.0.2
   '@socketsecurity/sdk-stable': npm:@socketsecurity/sdk@4.0.1
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.15
@@ -264,19 +285,11 @@ overrides:
   brace-expansion: 5.0.5
   defu: '>=6.1.7'
   emoji-regex: 10.6.0
-  es-define-property: npm:@socketregistry/es-define-property@^1.0.7
-  es-set-tostringtag: npm:@socketregistry/es-set-tostringtag@^1.0.10
   fast-uri: '>=3.1.2'
-  function-bind: npm:@socketregistry/function-bind@^1.0.7
-  glob: '>=13.0.6'
   globalthis: npm:@socketregistry/globalthis@^1.0.8
-  gopd: npm:@socketregistry/gopd@^1.0.7
   graceful-fs: 4.2.11
   has-property-descriptors: npm:@socketregistry/has-property-descriptors@^1.0.7
   has-proto: npm:@socketregistry/has-proto@^1.0.7
-  has-symbols: npm:@socketregistry/has-symbols@^1.0.7
-  has-tostringtag: npm:@socketregistry/has-tostringtag@^1.0.7
-  hasown: npm:@socketregistry/hasown@^1.0.7
   hono: '>=4.12.23'
   https-proxy-agent: 7.0.6
   indent-string: npm:@socketregistry/indent-string@^1.0.14
@@ -290,12 +303,9 @@ overrides:
   postcss: '>=8.5.15'
   qs: '>=6.15.2'
   rolldown: 1.1.0
-  safe-buffer: npm:@socketregistry/safe-buffer@^1.0.9
-  safer-buffer: npm:@socketregistry/safer-buffer@^1.0.10
   semver: 7.7.2
   set-function-length: npm:@socketregistry/set-function-length@^1.0.10
   shell-quote: 1.8.4
-  side-channel: npm:@socketregistry/side-channel@^1.0.10
   signal-exit: 4.1.0
   string-width: 8.1.0
   string_decoder: 0.10.31
@@ -322,7 +332,7 @@ importers:
     devDependencies:
       '@anthropic-ai/claude-code':
         specifier: 'catalog:'
-        version: 2.1.98
+        version: 2.1.163
       '@babel/core':
         specifier: 'catalog:'
         version: 7.28.4
@@ -408,11 +418,11 @@ importers:
         specifier: 'catalog:'
         version: 1.0.25
       '@socketsecurity/lib':
-        specifier: 6.0.7
-        version: 6.0.7(typescript@5.9.3)
+        specifier: 6.0.8
+        version: 6.0.8(typescript@5.9.3)
       '@socketsecurity/lib-stable':
-        specifier: npm:@socketsecurity/lib@6.0.7
-        version: '@socketsecurity/lib@6.0.7(typescript@5.9.3)'
+        specifier: npm:@socketsecurity/lib@6.0.8
+        version: '@socketsecurity/lib@6.0.8(typescript@5.9.3)'
       '@socketsecurity/registry':
         specifier: npm:@socketsecurity/registry@2.0.2
         version: 2.0.2(typescript@5.9.3)
@@ -504,8 +514,8 @@ importers:
         specifier: 'catalog:'
         version: 16.1.6
       magic-string:
-        specifier: 'catalog:'
-        version: 0.30.19
+        specifier: 0.30.21
+        version: 0.30.21
       micromatch:
         specifier: 'catalog:'
         version: 4.0.8
@@ -768,14 +778,14 @@ importers:
         specifier: 'catalog:'
         version: 0.34.49
       '@socketsecurity/lib':
-        specifier: 6.0.7
-        version: 6.0.7(typescript@5.9.3)
+        specifier: 6.0.8
+        version: 6.0.8(typescript@5.9.3)
       '@socketsecurity/lib-stable':
-        specifier: npm:@socketsecurity/lib@6.0.7
-        version: '@socketsecurity/lib@6.0.7(typescript@5.9.3)'
+        specifier: npm:@socketsecurity/lib@6.0.8
+        version: '@socketsecurity/lib@6.0.8(typescript@5.9.3)'
       magic-string:
-        specifier: 'catalog:'
-        version: 0.30.19
+        specifier: 0.30.21
+        version: 0.30.21
 
   packages/cli:
     devDependencies:
@@ -828,11 +838,11 @@ importers:
         specifier: 'catalog:'
         version: 1.0.25
       '@socketsecurity/lib':
-        specifier: 6.0.7
-        version: 6.0.7(typescript@5.9.3)
+        specifier: 6.0.8
+        version: 6.0.8(typescript@5.9.3)
       '@socketsecurity/lib-stable':
-        specifier: npm:@socketsecurity/lib@6.0.7
-        version: '@socketsecurity/lib@6.0.7(typescript@5.9.3)'
+        specifier: npm:@socketsecurity/lib@6.0.8
+        version: '@socketsecurity/lib@6.0.8(typescript@5.9.3)'
       '@socketsecurity/registry':
         specifier: npm:@socketsecurity/registry@2.0.2
         version: 2.0.2(typescript@5.9.3)
@@ -900,8 +910,8 @@ importers:
         specifier: 'catalog:'
         version: 7.0.5
       lru-cache:
-        specifier: 11.2.6
-        version: 11.2.6
+        specifier: 11.3.6
+        version: 11.3.6
       micromatch:
         specifier: 'catalog:'
         version: 4.0.8
@@ -957,8 +967,8 @@ importers:
   packages/package-builder:
     dependencies:
       '@socketsecurity/lib':
-        specifier: 6.0.7
-        version: 6.0.7(typescript@5.9.3)
+        specifier: 6.0.8
+        version: 6.0.8(typescript@5.9.3)
       build-infra:
         specifier: workspace:*
         version: link:../build-infra
@@ -981,8 +991,52 @@ packages:
     engines: {node: '>=20.19.0'}
     hasBin: true
 
-  '@anthropic-ai/claude-code@2.1.98':
-    resolution: {integrity: sha512-qecREauMWXHplkpjqsuDuUv4ww+NprMl71k9sMuLkZU7qwjLMkTPxRBjuKvZWWMrAPvZWdGZE9LljUTfCQ1lWQ==}
+  '@anthropic-ai/claude-code-darwin-arm64@2.1.163':
+    resolution: {integrity: sha512-SZPoYNIjj8Osgde5m2UtJcUlKPqnqajc1uwzBk87qU+cqpMKg2KNBMN5rGUoHCX81fNs6jdWJuKuJgCB6Eqazw==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@anthropic-ai/claude-code-darwin-x64@2.1.163':
+    resolution: {integrity: sha512-MTy4TO8LUqnRxGXoIE3Jk5bYgiRqvJlXSIZxAO2m69Is9HK+mLevzU9Rr1ZKy+49ExJCNp8392G6+LEUP5+hdQ==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@anthropic-ai/claude-code-linux-arm64-musl@2.1.163':
+    resolution: {integrity: sha512-Quu85w7PxNYxxikc0tMQvT5EQH4debsci8EuTx97AYiuptmHmKgi5EkwQxwNo8YXS5IttwUU9QLc41FA6JEa8A==}
+    cpu: [arm64]
+    os: [linux]
+    libc: [musl]
+
+  '@anthropic-ai/claude-code-linux-arm64@2.1.163':
+    resolution: {integrity: sha512-DLKiXFVTIuUfTnmeGoOEvOTwv5z0xi0yY1wSigubX3Q0jP12RgL3IBYOAtb4ytM3voAi4n/NhixvTwOWly2EEw==}
+    cpu: [arm64]
+    os: [linux]
+    libc: [glibc]
+
+  '@anthropic-ai/claude-code-linux-x64-musl@2.1.163':
+    resolution: {integrity: sha512-DAEhRqBlUkURnOiVGQWIu3Mje466l9dOSQn8TVZx3HdZwUtb0JiRul4rIGWuV10APnVpKteUHdw3WvBASkKluQ==}
+    cpu: [x64]
+    os: [linux]
+    libc: [musl]
+
+  '@anthropic-ai/claude-code-linux-x64@2.1.163':
+    resolution: {integrity: sha512-K0CAuLxVqLhenPzi56Ysx157GHDXvcSyegyEFlr3jKdmjIClBynQZlRdZdePeQWBdmz5KrnzJ/lT5zzSH5GKUQ==}
+    cpu: [x64]
+    os: [linux]
+    libc: [glibc]
+
+  '@anthropic-ai/claude-code-win32-arm64@2.1.163':
+    resolution: {integrity: sha512-wqFdygVVhpl3SZ9OlWx41+sU9G45FeSxHqXS9vKoHGk+h7n8SdNLipiXcqslhTBIilcKslQpq9WxlU8o8gyjeQ==}
+    cpu: [arm64]
+    os: [win32]
+
+  '@anthropic-ai/claude-code-win32-x64@2.1.163':
+    resolution: {integrity: sha512-uTd+gFmqTQ9lVsA9dsVBYKeIKj6lB5zVNWWKUqV9RdDavDFXTgbbPw7LffEfQcbkiAU4UK+CQFuRRqXjJqsCDQ==}
+    cpu: [x64]
+    os: [win32]
+
+  '@anthropic-ai/claude-code@2.1.163':
+    resolution: {integrity: sha512-aK+hmLIaxp6v2M/fifhrCdYJ+kuQuGOl4Iok+AwRijeZl/HMn55rkwF6lEIq1Ny0xNCp2UKiZcmCegyoMumoWg==}
     engines: {node: '>=18.0.0'}
     hasBin: true
 
@@ -1270,105 +1324,6 @@ packages:
     engines: {node: '>=18.14.1'}
     peerDependencies:
       hono: '>=4.12.23'
-
-  '@img/sharp-darwin-arm64@0.34.5':
-    resolution: {integrity: sha512-imtQ3WMJXbMY4fxb/Ndp6HBTNVtWCUI0WdobyheGf5+ad6xX8VIDO8u2xE4qc/fr08CKG/7dDseFtn6M6g/r3w==}
-    engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
-    cpu: [arm64]
-    os: [darwin]
-
-  '@img/sharp-darwin-x64@0.34.5':
-    resolution: {integrity: sha512-YNEFAF/4KQ/PeW0N+r+aVVsoIY0/qxxikF2SWdp+NRkmMB7y9LBZAVqQ4yhGCm/H3H270OSykqmQMKLBhBJDEw==}
-    engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
-    cpu: [x64]
-    os: [darwin]
-
-  '@img/sharp-libvips-darwin-arm64@1.2.4':
-    resolution: {integrity: sha512-zqjjo7RatFfFoP0MkQ51jfuFZBnVE2pRiaydKJ1G/rHZvnsrHAOcQALIi9sA5co5xenQdTugCvtb1cuf78Vf4g==}
-    cpu: [arm64]
-    os: [darwin]
-
-  '@img/sharp-libvips-darwin-x64@1.2.4':
-    resolution: {integrity: sha512-1IOd5xfVhlGwX+zXv2N93k0yMONvUlANylbJw1eTah8K/Jtpi15KC+WSiaX/nBmbm2HxRM1gZ0nSdjSsrZbGKg==}
-    cpu: [x64]
-    os: [darwin]
-
-  '@img/sharp-libvips-linux-arm64@1.2.4':
-    resolution: {integrity: sha512-excjX8DfsIcJ10x1Kzr4RcWe1edC9PquDRRPx3YVCvQv+U5p7Yin2s32ftzikXojb1PIFc/9Mt28/y+iRklkrw==}
-    cpu: [arm64]
-    os: [linux]
-    libc: [glibc]
-
-  '@img/sharp-libvips-linux-arm@1.2.4':
-    resolution: {integrity: sha512-bFI7xcKFELdiNCVov8e44Ia4u2byA+l3XtsAj+Q8tfCwO6BQ8iDojYdvoPMqsKDkuoOo+X6HZA0s0q11ANMQ8A==}
-    cpu: [arm]
-    os: [linux]
-    libc: [glibc]
-
-  '@img/sharp-libvips-linux-x64@1.2.4':
-    resolution: {integrity: sha512-tJxiiLsmHc9Ax1bz3oaOYBURTXGIRDODBqhveVHonrHJ9/+k89qbLl0bcJns+e4t4rvaNBxaEZsFtSfAdquPrw==}
-    cpu: [x64]
-    os: [linux]
-    libc: [glibc]
-
-  '@img/sharp-libvips-linuxmusl-arm64@1.2.4':
-    resolution: {integrity: sha512-FVQHuwx1IIuNow9QAbYUzJ+En8KcVm9Lk5+uGUQJHaZmMECZmOlix9HnH7n1TRkXMS0pGxIJokIVB9SuqZGGXw==}
-    cpu: [arm64]
-    os: [linux]
-    libc: [musl]
-
-  '@img/sharp-libvips-linuxmusl-x64@1.2.4':
-    resolution: {integrity: sha512-+LpyBk7L44ZIXwz/VYfglaX/okxezESc6UxDSoyo2Ks6Jxc4Y7sGjpgU9s4PMgqgjj1gZCylTieNamqA1MF7Dg==}
-    cpu: [x64]
-    os: [linux]
-    libc: [musl]
-
-  '@img/sharp-linux-arm64@0.34.5':
-    resolution: {integrity: sha512-bKQzaJRY/bkPOXyKx5EVup7qkaojECG6NLYswgktOZjaXecSAeCWiZwwiFf3/Y+O1HrauiE3FVsGxFg8c24rZg==}
-    engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
-    cpu: [arm64]
-    os: [linux]
-    libc: [glibc]
-
-  '@img/sharp-linux-arm@0.34.5':
-    resolution: {integrity: sha512-9dLqsvwtg1uuXBGZKsxem9595+ujv0sJ6Vi8wcTANSFpwV/GONat5eCkzQo/1O6zRIkh0m/8+5BjrRr7jDUSZw==}
-    engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
-    cpu: [arm]
-    os: [linux]
-    libc: [glibc]
-
-  '@img/sharp-linux-x64@0.34.5':
-    resolution: {integrity: sha512-MEzd8HPKxVxVenwAa+JRPwEC7QFjoPWuS5NZnBt6B3pu7EG2Ge0id1oLHZpPJdn3OQK+BQDiw9zStiHBTJQQQQ==}
-    engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
-    cpu: [x64]
-    os: [linux]
-    libc: [glibc]
-
-  '@img/sharp-linuxmusl-arm64@0.34.5':
-    resolution: {integrity: sha512-fprJR6GtRsMt6Kyfq44IsChVZeGN97gTD331weR1ex1c1rypDEABN6Tm2xa1wE6lYb5DdEnk03NZPqA7Id21yg==}
-    engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
-    cpu: [arm64]
-    os: [linux]
-    libc: [musl]
-
-  '@img/sharp-linuxmusl-x64@0.34.5':
-    resolution: {integrity: sha512-Jg8wNT1MUzIvhBFxViqrEhWDGzqymo3sV7z7ZsaWbZNDLXRJZoRGrjulp60YYtV4wfY8VIKcWidjojlLcWrd8Q==}
-    engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
-    cpu: [x64]
-    os: [linux]
-    libc: [musl]
-
-  '@img/sharp-win32-arm64@0.34.5':
-    resolution: {integrity: sha512-WQ3AgWCWYSb2yt+IG8mnC6Jdk9Whs7O0gxphblsLvdhSpSTtmu69ZG1Gkb6NuvxsNACwiPV6cNSZNzt0KPsw7g==}
-    engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
-    cpu: [arm64]
-    os: [win32]
-
-  '@img/sharp-win32-x64@0.34.5':
-    resolution: {integrity: sha512-+29YMsqY2/9eFEiW93eqWnuLcWcufowXewwSNIT6UwZdUUCrM3oFjMWH/Z6/TMmb4hlFenmfAVbpWeup2jryCw==}
-    engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
-    cpu: [x64]
-    os: [win32]
 
   '@isaacs/fs-minipass@4.0.1':
     resolution: {integrity: sha512-wgm9Ehl2jpeqP3zw/7mo3kRHFp5MEDhqAdwy1fTGkHAwnkGOVsgpvQhL8B5n1qlb01jV3n/bI0ZfZp5lWA1k4w==}
@@ -2162,8 +2117,8 @@ packages:
     resolution: {integrity: sha512-f8AqJMH1+BL15G6bHDzb1jyY+wW4gOYQs5JumSxmnE/H/+KgqbIZgaPwDdRwoeciDGojoSVrRHiTZjbe7n7dJA==}
     engines: {node: '>=18'}
 
-  '@socketsecurity/lib@6.0.7':
-    resolution: {integrity: sha512-W7lhNnZ6areTQLWG2Bh3r3hs2F9hvRqtUp1zj79KxBFGB39KUvO3Mc9Kqqvwlu9T91qQtIxf00JlzLbVd16KMg==}
+  '@socketsecurity/lib@6.0.8':
+    resolution: {integrity: sha512-cHQy7siiqNocfdxHd+l1VlhiTdv+nbnI/L+dSKsfLujSMZHPwxN6y++UGoqArQaeu9KqksRFohXDgK3Tm6x2MA==}
     engines: {node: '>=22', npm: '>=11.16.0', pnpm: '>=11.5.1'}
     hasBin: true
     peerDependencies:
@@ -3296,10 +3251,6 @@ packages:
   isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
 
-  isexe@3.1.5:
-    resolution: {integrity: sha512-6B3tLtFqtQS4ekarvLVMZ+X+VlvQekbe4taUkf/rhVO3d/h0M2rfARm/pXLcPEsjjMsFgrFgSrhQIxcSVrBz8w==}
-    engines: {node: '>=18'}
-
   isexe@4.0.0:
     resolution: {integrity: sha512-FFUtZMpoZ8RqHS3XeXEmHWLA4thH+ZxCv2lOiPIn1Xc7CxrqhWzNSDzD+/chS/zbYezmiwWLdQC09JdQKmthOw==}
     engines: {node: '>=20'}
@@ -3493,11 +3444,8 @@ packages:
   long@5.3.2:
     resolution: {integrity: sha512-mNAgZ1GmyNhD7AuqnTG3/VQ26o760+ZYBPKjPvugO8+nLbYfX6TVpJPseBvopbdY+qpZ/lKUnmEc1LeZYS3QAA==}
 
-  lru-cache@10.4.3:
-    resolution: {integrity: sha512-JNAzZcXrCt42VGLuYz0zfAzDfAvJWW6AfYlDBQyDV5DClI2m5sAmK+OIO7s59XfsRsWHp02jAJrRadPRGTt6SQ==}
-
-  lru-cache@11.2.6:
-    resolution: {integrity: sha512-ESL2CrkS/2wTPfuend7Zhkzo2u0daGJ/A2VucJOgQ/C48S/zB8MMeMHSGKYpXhIjbPxfuezITkaBH1wqv00DDQ==}
+  lru-cache@11.3.6:
+    resolution: {integrity: sha512-Gf/KoL3C/MlI7Bt0PGI9I+TeTC/I6r/csU58N4BSNc4lppLBeKsOdFYkK+dX0ABDUMJNfCHTyPpzwwO21Awd3A==}
     engines: {node: 20 || >=22}
 
   lru-cache@5.1.1:
@@ -3506,9 +3454,6 @@ packages:
   lru-cache@6.0.0:
     resolution: {integrity: sha512-Jo6dJ04CmSjuznwJSS3pUeWmd/H0ffTlkXXgwZi+eq1UCmqQwCh+eLsYOYCwY991i2Fah4h1BEMCx4qThGbsiA==}
     engines: {node: '>=10'}
-
-  magic-string@0.30.19:
-    resolution: {integrity: sha512-2N21sPY9Ws53PZvsEpVtNuSW+ScYbQdp4b9qUaL+9QkHUrGFKo56Lg9Emg5s9V/qrtNBmiR01sYhUOwu3H+VOw==}
 
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
@@ -3566,10 +3511,6 @@ packages:
   micromatch@4.0.8:
     resolution: {integrity: sha512-PXwfBhYu0hBCPw8Dn0E+WDYb7af3dSLVWKi3HGv84IdF4TyFoC0ysxFd0Goxw7nSv4T/PzEJQxsYsEiFCKo2BA==}
     engines: {node: '>=8.6'}
-
-  mime-db@1.52.0:
-    resolution: {integrity: sha512-sPU4uV7dYlvtWJxwwxHD0PuihVNiE7TyAbQ5SWxDCB9mUYvOgroQOwYQQOKPJ8CIbE+1ETVlOoK1UC2nU3gYvg==}
-    engines: {node: '>= 0.6'}
 
   mime-db@1.54.0:
     resolution: {integrity: sha512-aU5EJuIN2WDemCcAp2vFBfp/m4EAhWJnUNSSw0ixs7/kXbd6Pg64EmwJkNdFhB8aWt1sH2CTXrLxo/iAGV3oPQ==}
@@ -4662,16 +4603,6 @@ packages:
     engines: {node: '>= 8'}
     hasBin: true
 
-  which@5.0.0:
-    resolution: {integrity: sha512-JEdGzHwwkrbWoGOlIHqQ5gtprKGOenpDHpxE9zVR1bWbOtYRyPPHMe9FaP6x61CmNaTThSkb0DAJte5jD+DmzQ==}
-    engines: {node: ^18.17.0 || >=20.5.0}
-    hasBin: true
-
-  which@6.0.1:
-    resolution: {integrity: sha512-oGLe46MIrCRqX7ytPUf66EAYvdeMIZYn3WaocqqKZAxrBpkqHfL/qvTyJ/bTk5+AqHCjXmrv3CEWgy368zhRUg==}
-    engines: {node: ^20.17.0 || >=22.9.0}
-    hasBin: true
-
   which@7.0.0:
     resolution: {integrity: sha512-RancgH2dmbLdHl6LRhEqvklWMgl/Hdnun0Y90KhBOLkMefg8Qa7/Zel8Sm+8HEcP6DEjzsWzpkuBQEZok58isA==}
     engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
@@ -4782,17 +4713,40 @@ snapshots:
       tinyexec: 1.1.2
       tinyglobby: 0.2.16
 
-  '@anthropic-ai/claude-code@2.1.98':
+  '@anthropic-ai/claude-code-darwin-arm64@2.1.163':
+    optional: true
+
+  '@anthropic-ai/claude-code-darwin-x64@2.1.163':
+    optional: true
+
+  '@anthropic-ai/claude-code-linux-arm64-musl@2.1.163':
+    optional: true
+
+  '@anthropic-ai/claude-code-linux-arm64@2.1.163':
+    optional: true
+
+  '@anthropic-ai/claude-code-linux-x64-musl@2.1.163':
+    optional: true
+
+  '@anthropic-ai/claude-code-linux-x64@2.1.163':
+    optional: true
+
+  '@anthropic-ai/claude-code-win32-arm64@2.1.163':
+    optional: true
+
+  '@anthropic-ai/claude-code-win32-x64@2.1.163':
+    optional: true
+
+  '@anthropic-ai/claude-code@2.1.163':
     optionalDependencies:
-      '@img/sharp-darwin-arm64': 0.34.5
-      '@img/sharp-darwin-x64': 0.34.5
-      '@img/sharp-linux-arm': 0.34.5
-      '@img/sharp-linux-arm64': 0.34.5
-      '@img/sharp-linux-x64': 0.34.5
-      '@img/sharp-linuxmusl-arm64': 0.34.5
-      '@img/sharp-linuxmusl-x64': 0.34.5
-      '@img/sharp-win32-arm64': 0.34.5
-      '@img/sharp-win32-x64': 0.34.5
+      '@anthropic-ai/claude-code-darwin-arm64': 2.1.163
+      '@anthropic-ai/claude-code-darwin-x64': 2.1.163
+      '@anthropic-ai/claude-code-linux-arm64': 2.1.163
+      '@anthropic-ai/claude-code-linux-arm64-musl': 2.1.163
+      '@anthropic-ai/claude-code-linux-x64': 2.1.163
+      '@anthropic-ai/claude-code-linux-x64-musl': 2.1.163
+      '@anthropic-ai/claude-code-win32-arm64': 2.1.163
+      '@anthropic-ai/claude-code-win32-x64': 2.1.163
 
   '@anthropic-ai/sdk@0.39.0':
     dependencies:
@@ -5179,68 +5133,6 @@ snapshots:
     dependencies:
       hono: 4.12.23
 
-  '@img/sharp-darwin-arm64@0.34.5':
-    optionalDependencies:
-      '@img/sharp-libvips-darwin-arm64': 1.2.4
-    optional: true
-
-  '@img/sharp-darwin-x64@0.34.5':
-    optionalDependencies:
-      '@img/sharp-libvips-darwin-x64': 1.2.4
-    optional: true
-
-  '@img/sharp-libvips-darwin-arm64@1.2.4':
-    optional: true
-
-  '@img/sharp-libvips-darwin-x64@1.2.4':
-    optional: true
-
-  '@img/sharp-libvips-linux-arm64@1.2.4':
-    optional: true
-
-  '@img/sharp-libvips-linux-arm@1.2.4':
-    optional: true
-
-  '@img/sharp-libvips-linux-x64@1.2.4':
-    optional: true
-
-  '@img/sharp-libvips-linuxmusl-arm64@1.2.4':
-    optional: true
-
-  '@img/sharp-libvips-linuxmusl-x64@1.2.4':
-    optional: true
-
-  '@img/sharp-linux-arm64@0.34.5':
-    optionalDependencies:
-      '@img/sharp-libvips-linux-arm64': 1.2.4
-    optional: true
-
-  '@img/sharp-linux-arm@0.34.5':
-    optionalDependencies:
-      '@img/sharp-libvips-linux-arm': 1.2.4
-    optional: true
-
-  '@img/sharp-linux-x64@0.34.5':
-    optionalDependencies:
-      '@img/sharp-libvips-linux-x64': 1.2.4
-    optional: true
-
-  '@img/sharp-linuxmusl-arm64@0.34.5':
-    optionalDependencies:
-      '@img/sharp-libvips-linuxmusl-arm64': 1.2.4
-    optional: true
-
-  '@img/sharp-linuxmusl-x64@0.34.5':
-    optionalDependencies:
-      '@img/sharp-libvips-linuxmusl-x64': 1.2.4
-    optional: true
-
-  '@img/sharp-win32-arm64@0.34.5':
-    optional: true
-
-  '@img/sharp-win32-x64@0.34.5':
-    optional: true
-
   '@isaacs/fs-minipass@4.0.1':
     dependencies:
       minipass: 7.1.3
@@ -5325,7 +5217,7 @@ snapshots:
       agent-base: 7.1.4
       http-proxy-agent: 7.0.2
       https-proxy-agent: 7.0.6
-      lru-cache: 11.2.6
+      lru-cache: 11.3.6
       socks-proxy-agent: 8.0.5
     transitivePeerDependencies:
       - supports-color
@@ -5349,7 +5241,7 @@ snapshots:
       common-ancestor-path: 2.0.0
       hosted-git-info: 9.0.2
       json-stringify-nice: 1.1.4
-      lru-cache: 11.2.6
+      lru-cache: 11.3.6
       minimatch: 10.2.5
       nopt: 9.0.0
       npm-install-checks: 8.0.0
@@ -5388,23 +5280,23 @@ snapshots:
     dependencies:
       '@npmcli/promise-spawn': 8.0.3
       ini: 5.0.0
-      lru-cache: 10.4.3
+      lru-cache: 11.3.6
       npm-pick-manifest: 10.0.0
       proc-log: 5.0.0
       promise-retry: 2.0.1
       semver: 7.7.2
-      which: 5.0.0
+      which: 7.0.0
 
   '@npmcli/git@7.0.2':
     dependencies:
       '@gar/promise-retry': 1.0.3
       '@npmcli/promise-spawn': 9.0.1
       ini: 6.0.0
-      lru-cache: 11.2.6
+      lru-cache: 11.3.6
       npm-pick-manifest: 11.0.3
       proc-log: 6.1.0
       semver: 7.7.2
-      which: 6.0.1
+      which: 7.0.0
 
   '@npmcli/installed-package-contents@4.0.0':
     dependencies:
@@ -5463,11 +5355,11 @@ snapshots:
 
   '@npmcli/promise-spawn@8.0.3':
     dependencies:
-      which: 5.0.0
+      which: 7.0.0
 
   '@npmcli/promise-spawn@9.0.1':
     dependencies:
-      which: 6.0.1
+      which: 7.0.0
 
   '@npmcli/query@5.0.0':
     dependencies:
@@ -5961,7 +5853,7 @@ snapshots:
     dependencies:
       yoctocolors-cjs: 2.1.3
 
-  '@socketsecurity/lib@6.0.7(typescript@5.9.3)':
+  '@socketsecurity/lib@6.0.8(typescript@5.9.3)':
     optionalDependencies:
       typescript: 5.9.3
 
@@ -6447,7 +6339,7 @@ snapshots:
       '@npmcli/fs': 5.0.0
       fs-minipass: 3.0.3
       glob: 13.0.6
-      lru-cache: 11.2.6
+      lru-cache: 11.3.6
       minipass: 7.1.3
       minipass-collect: 2.0.1
       minipass-flush: 1.0.7
@@ -6978,11 +6870,11 @@ snapshots:
 
   hosted-git-info@8.1.0:
     dependencies:
-      lru-cache: 10.4.3
+      lru-cache: 11.3.6
 
   hosted-git-info@9.0.2:
     dependencies:
-      lru-cache: 11.2.6
+      lru-cache: 11.3.6
 
   hpagent@1.2.0: {}
 
@@ -7090,8 +6982,6 @@ snapshots:
       is-inside-container: 1.0.0
 
   isexe@2.0.0: {}
-
-  isexe@3.1.5: {}
 
   isexe@4.0.0: {}
 
@@ -7247,9 +7137,7 @@ snapshots:
 
   long@5.3.2: {}
 
-  lru-cache@10.4.3: {}
-
-  lru-cache@11.2.6: {}
+  lru-cache@11.3.6: {}
 
   lru-cache@5.1.1:
     dependencies:
@@ -7258,10 +7146,6 @@ snapshots:
   lru-cache@6.0.0:
     dependencies:
       yallist: 4.0.0
-
-  magic-string@0.30.19:
-    dependencies:
-      '@jridgewell/sourcemap-codec': 1.5.5
 
   magic-string@0.30.21:
     dependencies:
@@ -7334,13 +7218,11 @@ snapshots:
       braces: 3.0.3
       picomatch: 2.3.2
 
-  mime-db@1.52.0: {}
-
   mime-db@1.54.0: {}
 
   mime-types@2.1.35:
     dependencies:
-      mime-db: 1.52.0
+      mime-db: 1.54.0
 
   mime-types@3.0.2:
     dependencies:
@@ -7482,7 +7364,7 @@ snapshots:
       semver: 7.7.2
       tar: 7.5.13
       tinyglobby: 0.2.16
-      which: 6.0.1
+      which: 7.0.0
     transitivePeerDependencies:
       - supports-color
 
@@ -7731,7 +7613,7 @@ snapshots:
 
   path-scurry@2.0.2:
     dependencies:
-      lru-cache: 11.2.6
+      lru-cache: 11.3.6
       minipass: 7.1.3
 
   path-to-regexp@8.4.2: {}
@@ -8420,7 +8302,7 @@ snapshots:
   unplugin-purge-polyfills@0.1.0:
     dependencies:
       defu: 6.1.7
-      magic-string: 0.30.19
+      magic-string: 0.30.21
       mlly: 1.8.2
       unplugin: 2.3.11
 
@@ -8525,14 +8407,6 @@ snapshots:
   which@2.0.2:
     dependencies:
       isexe: 2.0.0
-
-  which@5.0.0:
-    dependencies:
-      isexe: 3.1.5
-
-  which@6.0.1:
-    dependencies:
-      isexe: 4.0.0
 
   which@7.0.0:
     dependencies:

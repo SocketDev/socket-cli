@@ -21,7 +21,7 @@ allowBuilds:
 pmOnFail: error
 
 catalog:
-  '@anthropic-ai/claude-code': 2.1.98
+  '@anthropic-ai/claude-code': 2.1.163
   '@babel/core': 7.28.4
   '@babel/generator': 7.28.5
   '@babel/parser': 7.28.4
