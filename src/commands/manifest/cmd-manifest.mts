@@ -2,6 +2,7 @@ import { cmdManifestBazel } from './bazel/cmd-manifest-bazel.mts'
 import { cmdManifestAuto } from './cmd-manifest-auto.mts'
 import { cmdManifestCdxgen } from './cmd-manifest-cdxgen.mts'
 import { cmdManifestConda } from './cmd-manifest-conda.mts'
+import { cmdManifestDotnet } from './cmd-manifest-dotnet.mts'
 import { cmdManifestGradle } from './cmd-manifest-gradle.mts'
 import { cmdManifestKotlin } from './cmd-manifest-kotlin.mts'
 import { cmdManifestMaven } from './cmd-manifest-maven.mts'
@@ -39,8 +40,8 @@ const config: CliCommandConfig = {
     configurations available. See \`manifest <language> --help\` for usage details
     per language.
 
-    Currently supported language: bazel [beta], gradle [beta], kotlin (through
-    gradle) [beta], maven [beta], scala [beta].
+    Currently supported language: bazel [beta], dotnet [beta], gradle [beta],
+    kotlin (through gradle) [beta], maven [beta], scala [beta].
 
     Examples
 
@@ -73,6 +74,7 @@ async function run(
         bazel: cmdManifestBazel,
         cdxgen: cmdManifestCdxgen,
         conda: cmdManifestConda,
+        dotnet: cmdManifestDotnet,
         gradle: cmdManifestGradle,
         kotlin: cmdManifestKotlin,
         maven: cmdManifestMaven,

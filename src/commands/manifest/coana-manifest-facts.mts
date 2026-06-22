@@ -17,10 +17,11 @@ import { spawnCoanaDlx } from '../../utils/dlx.mts'
 // facts file.
 //
 // `spawnCoanaDlx` resolves the Coana CLI via dlx (or a local build when
-// `SOCKET_CLI_COANA_LOCAL_PATH` is set). `bin` (the gradle/maven/sbt executable)
-// is always resolved by the caller to a concrete default (`<cwd>/gradlew`, or
-// `mvn`/`sbt` on PATH) before we get here, so it is forwarded verbatim; the
-// empty guard below is just a cheap safeguard against passing `--bin ''`.
+// `SOCKET_CLI_COANA_LOCAL_PATH` is set). `bin` (the build-tool executable) is
+// always resolved by the caller to a concrete default (`<cwd>/gradlew`, or
+// `mvn`/`sbt`/`dotnet` on PATH) before we get here, so it is forwarded
+// verbatim; the empty guard below is just a cheap safeguard against passing
+// `--bin ''`.
 export async function runCoanaManifestFacts({
   bin,
   buildOpts,
@@ -34,9 +35,13 @@ export async function runCoanaManifestFacts({
 }: {
   bin: string
   buildOpts: string[]
-  buildOptsFlag: '--gradle-opts' | '--maven-opts' | '--sbt-opts'
+  buildOptsFlag:
+    | '--dotnet-opts'
+    | '--gradle-opts'
+    | '--maven-opts'
+    | '--sbt-opts'
   cwd: string
-  ecosystem: 'gradle' | 'maven' | 'sbt'
+  ecosystem: 'dotnet' | 'gradle' | 'maven' | 'sbt'
   excludeConfigs: string
   ignoreUnresolved: boolean
   includeConfigs: string

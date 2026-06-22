@@ -140,6 +140,16 @@ have a working cdxgen configuration.
 Converts a Conda `environment.yml` file to a Python `requirements.txt` so the
 Socket scan pipeline can consume the resulting manifest.
 
+## socket manifest dotnet [beta]
+
+Generates a Socket facts file (`.socket.facts.json`) from a .NET project
+(`*.csproj` / `*.fsproj` / `*.vbproj` / `*.sln`), using the `dotnet` host on
+PATH to run a bundled NuGet/MSBuild resolver (SDK-style and legacy
+`packages.config` projects are both supported). Override the host with `--bin`
+and pass extra options through with `--dotnet-opts`. Unlike the JVM generators
+there are no configuration filters (`--include-configs` / `--exclude-configs`
+do not apply).
+
 ## socket manifest gradle [beta]
 
 Uses Gradle (via the project's `gradlew`) to emit a `pom.xml` per subproject,

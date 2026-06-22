@@ -3,6 +3,7 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { extractBazelToMaven } from './bazel/extract_bazel_to_maven.mts'
+import { convertDotnetToFacts } from './convert-dotnet-to-facts.mts'
 import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
 import { convertMavenToFacts } from './convert-maven-to-facts.mts'
 import { convertSbtToFacts } from './convert-sbt-to-facts.mts'
@@ -123,6 +124,22 @@ export async function generateAutoManifest({
         sockJson.defaults?.manifest?.maven?.mavenOpts,
       ),
       verbose: Boolean(sockJson.defaults?.manifest?.maven?.verbose),
+    })
+  }
+
+  if (!sockJson?.defaults?.manifest?.dotnet?.disabled && detected.dotnet) {
+    logger.log('Detected a .NET project, generating Socket facts...')
+    await convertDotnetToFacts({
+      // Note: `dotnet` is more likely to be resolved against PATH env.
+      bin: sockJson.defaults?.manifest?.dotnet?.bin ?? 'dotnet',
+      cwd,
+      dotnetOpts: parseBuildToolOpts(
+        sockJson.defaults?.manifest?.dotnet?.dotnetOpts,
+      ),
+      ignoreUnresolved: Boolean(
+        sockJson.defaults?.manifest?.dotnet?.ignoreUnresolved,
+      ),
+      verbose: Boolean(sockJson.defaults?.manifest?.dotnet?.verbose),
     })
   }
 

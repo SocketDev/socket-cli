@@ -59,6 +59,11 @@ export async function setupManifestConfig(
       description: `Generate ${REQUIREMENTS_TXT} from a Conda environment.yml`,
     },
     {
+      name: '.NET'.padEnd(30, ' '),
+      value: 'dotnet',
+      description: 'Generate a Socket facts file through dotnet',
+    },
+    {
       name: 'Gradle'.padEnd(30, ' '),
       value: 'gradle',
       description: 'Generate a Socket facts file or pom.xml through gradle',
@@ -143,6 +148,13 @@ export async function setupManifestConfig(
         sockJson.defaults.manifest.conda = {}
       }
       result = await setupConda(sockJson.defaults.manifest.conda)
+      break
+    }
+    case 'dotnet': {
+      if (!sockJson.defaults.manifest.dotnet) {
+        sockJson.defaults.manifest.dotnet = {}
+      }
+      result = await setupDotnet(sockJson.defaults.manifest.dotnet)
       break
     }
     case 'gradle': {
@@ -255,6 +267,57 @@ async function setupConda(
         delete config.outfile
       }
     }
+  }
+
+  const verbose = await askForVerboseFlag(config.verbose)
+  if (verbose === undefined) {
+    return canceledByUser()
+  } else if (verbose === 'yes' || verbose === 'no') {
+    config.verbose = verbose === 'yes'
+  } else {
+    delete config.verbose
+  }
+
+  return notCanceled()
+}
+
+async function setupDotnet(
+  config: NonNullable<
+    NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['dotnet']
+  >,
+): Promise<CResult<{ canceled: boolean }>> {
+  const bin = await askForBin(config.bin || 'dotnet')
+  if (bin === undefined) {
+    return canceledByUser()
+  } else if (bin) {
+    config.bin = bin
+  } else {
+    delete config.bin
+  }
+
+  const opts = await input({
+    message: '(--dotnet-opts) Enter dotnet options to pass through',
+    default: config.dotnetOpts || '',
+    required: false,
+  })
+  if (opts === undefined) {
+    return canceledByUser()
+  } else if (opts) {
+    config.dotnetOpts = opts
+  } else {
+    delete config.dotnetOpts
+  }
+
+  // .NET resolution has no config filters; only --ignore-unresolved applies.
+  const ignoreUnresolved = await askForIgnoreUnresolvedFlag(
+    config.ignoreUnresolved,
+  )
+  if (ignoreUnresolved === undefined) {
+    return canceledByUser()
+  } else if (ignoreUnresolved === 'yes' || ignoreUnresolved === 'no') {
+    config.ignoreUnresolved = ignoreUnresolved === 'yes'
+  } else {
+    delete config.ignoreUnresolved
   }
 
   const verbose = await askForVerboseFlag(config.verbose)

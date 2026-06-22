@@ -1,7 +1,7 @@
 // The point here is to attempt to detect the various supported manifest files
 // the CLI can generate. This would be environments that we can't do server side
 
-import { existsSync } from 'node:fs'
+import { existsSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 
 import { debugLog } from '@socketsecurity/registry/lib/debug'
@@ -19,9 +19,32 @@ export interface GeneratableManifests {
   cdxgen: boolean
   count: number
   conda: boolean
+  dotnet: boolean
   gradle: boolean
   maven: boolean
   sbt: boolean
+}
+
+// .NET has no single fixed manifest filename; a project or solution file
+// (`*.sln`, `*.csproj`, `*.fsproj`, `*.vbproj`) at the directory root is the
+// trigger. Coana's bundled tool handles discovery/restore from there.
+const DOTNET_PROJECT_EXTENSIONS = new Set([
+  '.csproj',
+  '.fsproj',
+  '.sln',
+  '.vbproj',
+])
+
+function hasDotnetProjectFile(cwd: string): boolean {
+  let entries: string[]
+  try {
+    entries = readdirSync(cwd)
+  } catch {
+    return false
+  }
+  return entries.some(name =>
+    DOTNET_PROJECT_EXTENSIONS.has(path.extname(name).toLowerCase()),
+  )
 }
 
 export async function detectManifestActions(
@@ -35,6 +58,7 @@ export async function detectManifestActions(
     cdxgen: false, // TODO
     count: 0,
     conda: false,
+    dotnet: false,
     gradle: false,
     maven: false,
     sbt: false,
@@ -86,6 +110,17 @@ export async function detectManifestActions(
   } else if (existsSync(path.join(cwd, 'pom.xml'))) {
     debugLog('notice', '[DEBUG] - Detected a Maven pom.xml build file')
     output.maven = true
+    output.count += 1
+  }
+
+  if (sockJson?.defaults?.manifest?.dotnet?.disabled) {
+    debugLog(
+      'notice',
+      `[DEBUG] - dotnet auto-detection is disabled in ${SOCKET_JSON}`,
+    )
+  } else if (hasDotnetProjectFile(cwd)) {
+    debugLog('notice', '[DEBUG] - Detected a .NET project/solution file')
+    output.dotnet = true
     output.count += 1
   }
 

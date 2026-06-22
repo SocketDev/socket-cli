@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.126](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.126) - 2026-06-22
+
+### Added
+- New `socket manifest dotnet` command generates a Socket facts file (`.socket.facts.json`) from a .NET project (`.csproj`/`.fsproj`/`.vbproj`/`.sln`). It runs the `dotnet` host on PATH to resolve NuGet/MSBuild dependencies (SDK-style and legacy `packages.config` projects), auto-detects your project, and plugs into `socket manifest auto` and the `socket manifest setup` configurator. Use `--bin` to point at a specific dotnet host and `--dotnet-opts` to pass options through.
+
+### Changed
+- Updated the Coana CLI to v `15.5.6`.
+
 ## [1.1.125](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.125) - 2026-06-22
 
 ### Added
