@@ -4,6 +4,7 @@ import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { convertMavenToFacts } from './convert-maven-to-facts.mts'
+import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import constants, { SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
@@ -218,10 +219,7 @@ async function run(
     return
   }
 
-  const parsedMavenOpts = String(mavenOpts || '')
-    .split(' ')
-    .map(s => s.trim())
-    .filter(Boolean)
+  const parsedMavenOpts = parseBuildToolOpts(String(mavenOpts || ''))
 
   await convertMavenToFacts({
     bin: String(bin),

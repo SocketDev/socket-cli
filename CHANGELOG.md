@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.1.124](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.125) - 2026-06-19
+## [1.1.125](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.125) - 2026-06-19
 
 ### Added
 - New `socket manifest maven` command generates a Socket facts file (`.socket.facts.json`) directly from a Maven `pom.xml` project. Like the Gradle and sbt generators, it auto-detects your project, plugs into `socket manifest auto` and the `socket manifest setup` configurator, and accepts `--maven-opts` to pass options through to Maven (e.g. `--maven-opts="-P release -s settings.xml"`), plus `--bin` to point at a wrapper such as `./mvnw`.
