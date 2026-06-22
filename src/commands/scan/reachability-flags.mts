@@ -108,7 +108,7 @@ export const reachabilityFlags: MeowFlags = {
     type: 'boolean',
     default: false,
     description:
-      'Keep the `.socket.facts.json` reachability report that the analysis writes to the scan directory instead of deleting it after a successful scan. IMPORTANT: you must delete this file before running a fresh tier 1 reachability scan. A stale `.socket.facts.json` left in place is picked up as a pre-generated input and silently overrides fresh analysis, so the new scan results will not be reliable.',
+      'Keep the `.socket.facts.json` reachability report that the analysis writes to the scan directory instead of deleting it after a successful scan. IMPORTANT: you must delete this file before running a fresh full application reachability scan. A stale `.socket.facts.json` left in place is picked up as a pre-generated input and silently overrides fresh analysis, so the new scan results will not be reliable.',
   },
   reachSkipCache: {
     type: 'boolean',

@@ -338,8 +338,9 @@ export async function handleCreateNewScan({
   // the --reach path coana overwrites that file with its enriched output
   // anyway, so it's the same path that gets removed. `--reach-retain-facts-file`
   // opts out of this cleanup so the report can be inspected; the user is then
-  // responsible for deleting it before the next tier 1 scan (a stale file is
-  // picked up as pre-generated input and would make those results unreliable).
+  // responsible for deleting it before the next full application reachability
+  // scan (a stale file is picked up as pre-generated input and would make those
+  // results unreliable).
   if (
     fullScanCResult.ok &&
     scanId &&

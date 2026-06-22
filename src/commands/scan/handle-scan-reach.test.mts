@@ -309,7 +309,7 @@ describe('handleScanReach', () => {
     )
   })
 
-  it('finalizes the tier1 reachability scan with a null report_run_id when Coana returned a scan id', async () => {
+  it('finalizes the full application reachability scan with a null report_run_id when Coana returned a scan id', async () => {
     mockPerformReachabilityAnalysis.mockResolvedValueOnce({
       ok: true,
       data: {
@@ -353,7 +353,7 @@ describe('handleScanReach', () => {
     expect(mockFinalizeTier1Scan).toHaveBeenCalledWith('tier1-id', null)
   })
 
-  it('does not call finalize when Coana did not return a tier1 reachability scan id', async () => {
+  it('does not call finalize when Coana did not return a full application reachability scan id', async () => {
     const reachabilityOptions = {
       excludePaths: [],
       reachAnalysisMemoryLimit: '8192',
@@ -390,7 +390,7 @@ describe('handleScanReach', () => {
     expect(mockFinalizeTier1Scan).not.toHaveBeenCalled()
   })
 
-  it('warns but still produces scan output when tier1 finalize fails', async () => {
+  it('warns but still produces scan output when full application reachability finalize fails', async () => {
     mockPerformReachabilityAnalysis.mockResolvedValueOnce({
       ok: true,
       data: {
@@ -445,7 +445,9 @@ describe('handleScanReach', () => {
     // The failure is surfaced as a single warning carrying message and cause.
     expect(mockLoggerWarn).toHaveBeenCalledTimes(1)
     const { 0: warnMessage } = mockLoggerWarn.mock.calls[0]
-    expect(warnMessage).toContain('Failed to finalize tier1 reachability scan')
+    expect(warnMessage).toContain(
+      'Failed to finalize full application reachability scan',
+    )
     expect(warnMessage).toContain('Finalize request failed')
     expect(warnMessage).toContain('Socket API server error (503)')
     // Normal scan output is still produced; the command is not blocked.
