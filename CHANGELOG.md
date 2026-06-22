@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.126](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.126) - 2026-06-22
+
+### Changed
+- Reachability analysis types are now referred to by descriptive names in command help, output, and docs: Full application reachability (formerly Tier 1), Precomputed reachability (formerly Tier 2), and Dependency reachability (formerly Tier 3).
+- Updated the Coana CLI to v `15.5.7`.
+
 ## [1.1.125](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.125) - 2026-06-22
 
 ### Added
@@ -14,7 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [1.1.124](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.124) - 2026-06-19
 
-- `socket scan create --reach` accepts a new `--reach-retain-facts-file` flag. By default the CLI deletes the `.socket.facts.json` reachability report from the scan directory after a successful scan; pass this flag to keep it (e.g. for inspection or debugging). **Important:** you must delete the retained `.socket.facts.json` before running a fresh tier 1 reachability scan — a stale file left in place is picked up as a pre-generated input and silently overrides fresh analysis, so the new scan results will not be reliable.
+- `socket scan create --reach` accepts a new `--reach-retain-facts-file` flag. By default the CLI deletes the `.socket.facts.json` reachability report from the scan directory after a successful scan; pass this flag to keep it (e.g. for inspection or debugging). **Important:** you must delete the retained `.socket.facts.json` before running a fresh full application reachability scan — a stale file left in place is picked up as a pre-generated input and silently overrides fresh analysis, so the new scan results will not be reliable.
 
 ### Changed
 - Updated the Coana CLI to v `15.5.4`.
