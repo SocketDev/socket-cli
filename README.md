@@ -60,6 +60,14 @@ All aliases support the flags and arguments of the commands they alias.
 
 - `socket ci` - Alias for `socket scan create --report` (creates report and exits with error if unhealthy)
 
+## Reachability analysis
+
+Socket reachability analysis comes in three forms:
+
+- **Full application reachability** (formerly Tier 1): Analyzes your application together with its dependencies to determine whether vulnerable code is actually invoked from your code through the full dependency graph — the highest-precision reachability analysis. Run it with `socket scan create --reach`.
+- **Precomputed reachability** (formerly Tier 2): Determines whether vulnerable code in transitive dependencies is reachable through your direct dependencies, using precomputed static analysis of dependency chains (no access to your application code required). In the CLI this is the fallback used when full application reachability cannot complete (see the `--reach-continue-on-*` flags).
+- **Dependency reachability** (formerly Tier 3): Package-level filtering that detects which dependencies are actually used, so CVEs in unused/dead dependencies can be filtered out.
+
 ## Flags
 
 ### Output flags

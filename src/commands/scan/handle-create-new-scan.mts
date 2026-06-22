@@ -320,13 +320,13 @@ export async function handleCreateNewScan({
     scanId &&
     !tier1ReachabilityScanId
   ) {
-    // Reachability analysis ran and a scan was created, but no tier 1
-    // reachability scan id was extracted from the facts file. Surface this
-    // instead of silently skipping finalize — otherwise the tier 1 row stays
-    // stuck (e.g. at COANA_DONE) and the full scan is never linked to its
-    // reachability report.
+    // Reachability analysis ran and a scan was created, but no full
+    // application reachability scan id was extracted from the facts file.
+    // Surface this instead of silently skipping finalize — otherwise the
+    // reachability row stays stuck (e.g. at COANA_DONE) and the full scan is
+    // never linked to its reachability report.
     logger.warn(
-      'Reachability analysis ran but no tier 1 reachability scan ID was found; skipping tier 1 finalize. The scan was created but its reachability report was not linked.',
+      'Reachability analysis ran but no full application reachability scan ID was found; skipping reachability finalize. The scan was created but its reachability report was not linked.',
     )
   }
 
@@ -338,8 +338,9 @@ export async function handleCreateNewScan({
   // the --reach path coana overwrites that file with its enriched output
   // anyway, so it's the same path that gets removed. `--reach-retain-facts-file`
   // opts out of this cleanup so the report can be inspected; the user is then
-  // responsible for deleting it before the next tier 1 scan (a stale file is
-  // picked up as pre-generated input and would make those results unreliable).
+  // responsible for deleting it before the next full application reachability
+  // scan (a stale file is picked up as pre-generated input and would make those
+  // results unreliable).
   if (
     fullScanCResult.ok &&
     scanId &&

@@ -8,11 +8,13 @@ export type FinalizeTier1ScanOptions = {
 }
 
 /**
- * Finalize a tier1 reachability scan.
- *  - Associates the tier1 reachability scan metadata with the full scan
+ * Finalize a full application reachability scan (formerly known as "tier 1";
+ * the wire endpoint and request fields below retain the legacy tier1 name as
+ * a backend contract).
+ *  - Associates the reachability scan metadata with the full scan
  *    (or with `null` when called from a standalone reachability flow that
  *    has no full scan to bind to).
- *  - Transitions the tier1 reachability scan to its DONE terminal state.
+ *  - Transitions the reachability scan to its DONE terminal state.
  */
 export async function finalizeTier1Scan(
   tier1ReachabilityScanId: string,

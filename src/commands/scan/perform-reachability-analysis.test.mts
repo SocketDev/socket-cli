@@ -3,7 +3,7 @@
  *
  * Test Coverage:
  * - When the scan `cwd` differs from `process.cwd()` (e.g. the
- *   `--cwd <dir>` flag), the tier 1 reachability scan id must be read from the
+ *   `--cwd <dir>` flag), the full application reachability scan id must be read from the
  *   facts file Coana actually wrote at `<cwd>/.socket.facts.json`, not from a
  *   relative path resolved against `process.cwd()`.
  *
@@ -117,7 +117,7 @@ describe('performReachabilityAnalysis facts-file resolution', () => {
     rmSync(scanCwd, { force: true, recursive: true })
   })
 
-  it('extracts the tier 1 scan id from the facts file under the scan cwd, not process.cwd()', async () => {
+  it('extracts the full application reachability scan id from the facts file under the scan cwd, not process.cwd()', async () => {
     // Coana (mocked) is spawned with `cwd`, so it writes the facts file under
     // the scan cwd. Pre-write it here to stand in for that output.
     writeFileSync(
@@ -147,7 +147,7 @@ describe('performReachabilityAnalysis facts-file resolution', () => {
     )
   })
 
-  it('returns undefined tier 1 scan id when the facts file under cwd has none', async () => {
+  it('returns undefined full application reachability scan id when the facts file under cwd has none', async () => {
     writeFileSync(
       path.join(scanCwd, '.socket.facts.json'),
       JSON.stringify({ components: [] }),

@@ -31,7 +31,7 @@ import type {
 
 export const CMD_NAME = 'reach'
 
-const description = 'Compute tier 1 reachability'
+const description = 'Compute full application reachability'
 
 const hidden = true
 

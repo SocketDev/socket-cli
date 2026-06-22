@@ -116,7 +116,7 @@ const generalFlags: MeowFlags = {
   reach: {
     type: 'boolean',
     default: false,
-    description: 'Run tier 1 full application reachability analysis',
+    description: 'Run full application reachability analysis',
   },
   readOnly: {
     type: 'boolean',
