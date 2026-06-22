@@ -29,6 +29,7 @@ describe('socket manifest', async () => {
             conda                       [beta] Convert a Conda environment.yml file to a python requirements.txt
             gradle                      [beta] Generate a Socket facts file (or \`pom.xml\` with --pom) for a Gradle/Java/Kotlin/etc project
             kotlin                      [beta] Generate a Socket facts file (or \`pom.xml\` with --pom) for a Kotlin project
+            maven                       [beta] Generate a Socket facts file from a Maven \`pom.xml\` project
             scala                       [beta] Generate a Socket facts file (or \`pom.xml\` with --pom) from a Scala \`build.sbt\` project
             setup                       Start interactive configurator to customize default flag values for \`socket manifest\` in this dir
 

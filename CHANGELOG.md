@@ -4,9 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.1.124](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.124) - 2026-06-19
+## [1.1.125](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.125) - 2026-06-22
 
 ### Added
+- New `socket manifest maven` command generates a Socket facts file (`.socket.facts.json`) directly from a Maven `pom.xml` project. Like the Gradle and sbt generators, it auto-detects your project, plugs into `socket manifest auto` and the `socket manifest setup` configurator, and accepts `--maven-opts` to pass options through to Maven (e.g. `--maven-opts="-P release -s settings.xml"`), plus `--bin` to point at a wrapper such as `./mvnw`.
+
+### Changed
+- Updated the Coana CLI to v `15.5.5`.
+
+## [1.1.124](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.124) - 2026-06-19
+
 - `socket scan create --reach` accepts a new `--reach-retain-facts-file` flag. By default the CLI deletes the `.socket.facts.json` reachability report from the scan directory after a successful scan; pass this flag to keep it (e.g. for inspection or debugging). **Important:** you must delete the retained `.socket.facts.json` before running a fresh tier 1 reachability scan — a stale file left in place is picked up as a pre-generated input and silently overrides fresh analysis, so the new scan results will not be reliable.
 
 ### Changed
