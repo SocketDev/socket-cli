@@ -112,7 +112,7 @@ export async function performReachabilityAnalysis(
   if (!hasEnterpriseOrgPlan(organizations)) {
     return {
       ok: false,
-      message: 'Tier 1 Reachability analysis requires an enterprise plan',
+      message: 'Full application reachability analysis requires an enterprise plan',
       cause: `Please ${socketDevLink('upgrade your plan', '/pricing')}. This feature is only available for organizations with an enterprise plan.`,
     }
   }
@@ -313,7 +313,7 @@ export async function performReachabilityAnalysis(
     // with `cwd` above), so resolve the read path against `cwd` too. Reading
     // the bare relative path would resolve against `process.cwd()` and miss
     // the file whenever `cwd !== process.cwd()` (e.g. `--cwd <dir>`), silently
-    // dropping the tier 1 scan id and skipping finalize downstream.
+    // dropping the full application reachability scan id and skipping finalize downstream.
     const resolvedReportPath = path.resolve(cwd, outputFilePath)
 
     return {

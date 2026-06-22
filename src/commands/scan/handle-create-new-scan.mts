@@ -320,13 +320,13 @@ export async function handleCreateNewScan({
     scanId &&
     !tier1ReachabilityScanId
   ) {
-    // Reachability analysis ran and a scan was created, but no tier 1
-    // reachability scan id was extracted from the facts file. Surface this
-    // instead of silently skipping finalize — otherwise the tier 1 row stays
-    // stuck (e.g. at COANA_DONE) and the full scan is never linked to its
-    // reachability report.
+    // Reachability analysis ran and a scan was created, but no full
+    // application reachability scan id was extracted from the facts file.
+    // Surface this instead of silently skipping finalize — otherwise the
+    // reachability row stays stuck (e.g. at COANA_DONE) and the full scan is
+    // never linked to its reachability report.
     logger.warn(
-      'Reachability analysis ran but no tier 1 reachability scan ID was found; skipping tier 1 finalize. The scan was created but its reachability report was not linked.',
+      'Reachability analysis ran but no full application reachability scan ID was found; skipping reachability finalize. The scan was created but its reachability report was not linked.',
     )
   }
 

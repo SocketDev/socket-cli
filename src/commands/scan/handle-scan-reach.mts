@@ -106,9 +106,9 @@ export async function handleScanReach({
 
   spinner.stop()
 
-  // Standalone reachability has no full scan to bind to, but the tier1
-  // reachability scan row still needs to transition to its DONE terminal
-  // state — otherwise it sits at the post-Coana intermediate state forever
+  // Standalone reachability has no full scan to bind to, but the full
+  // application reachability scan row still needs to transition to its DONE
+  // terminal state — otherwise it sits at the post-Coana intermediate state forever
   // and looks indistinguishable from a stuck run. Pass `null` as the full
   // scan id; the endpoint accepts it for this flow. Best-effort: never
   // block the user-visible output on this.
@@ -117,7 +117,7 @@ export async function handleScanReach({
     const finalizeResult = await finalizeTier1Scan(tier1Id, null)
     if (!finalizeResult.ok) {
       logger.warn(
-        `Failed to finalize tier1 reachability scan: ${finalizeResult.message}${finalizeResult.cause ? ` — ${finalizeResult.cause}` : ''}`,
+        `Failed to finalize full application reachability scan: ${finalizeResult.message}${finalizeResult.cause ? ` — ${finalizeResult.cause}` : ''}`,
       )
     }
   }

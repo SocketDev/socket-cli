@@ -13,7 +13,7 @@
  * Integration:
  * - Works with @coana-tech/cli for reachability analysis
  * - Processes socket facts JSON files
- * - Extracts tier 1 reachability scan identifiers
+ * - Extracts full application reachability scan identifiers
  */
 
 import { createReadStream, createWriteStream, existsSync } from 'node:fs'
