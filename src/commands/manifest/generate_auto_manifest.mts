@@ -4,10 +4,12 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { extractBazelToMaven } from './bazel/extract_bazel_to_maven.mts'
 import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
+import { convertMavenToFacts } from './convert-maven-to-facts.mts'
 import { convertSbtToFacts } from './convert-sbt-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
+import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
@@ -44,11 +46,7 @@ export async function generateAutoManifest({
       // Note: `sbt` is more likely to be resolved against PATH env.
       bin: sockJson.defaults?.manifest?.sbt?.bin ?? 'sbt',
       cwd,
-      sbtOpts:
-        sockJson.defaults?.manifest?.sbt?.sbtOpts
-          ?.split(' ')
-          .map(s => s.trim())
-          .filter(Boolean) ?? [],
+      sbtOpts: parseBuildToolOpts(sockJson.defaults?.manifest?.sbt?.sbtOpts),
       verbose: Boolean(sockJson.defaults?.manifest?.sbt?.verbose),
     }
     // Socket facts is the default; opt into pom generation with
@@ -82,11 +80,9 @@ export async function generateAutoManifest({
         : path.join(cwd, 'gradlew'),
       cwd,
       verbose: Boolean(sockJson.defaults?.manifest?.gradle?.verbose),
-      gradleOpts:
-        sockJson.defaults?.manifest?.gradle?.gradleOpts
-          ?.split(' ')
-          .map(s => s.trim())
-          .filter(Boolean) ?? [],
+      gradleOpts: parseBuildToolOpts(
+        sockJson.defaults?.manifest?.gradle?.gradleOpts,
+      ),
     }
     // Socket facts is the default; opt into pom generation with
     // `defaults.manifest.gradle.facts: false` in socket.json.
@@ -110,6 +106,24 @@ export async function generateAutoManifest({
       )
       await convertGradleToMaven(gradleArgs)
     }
+  }
+
+  if (!sockJson?.defaults?.manifest?.maven?.disabled && detected.maven) {
+    logger.log('Detected a Maven pom.xml build, generating Socket facts...')
+    await convertMavenToFacts({
+      // Note: `mvn` is more likely to be resolved against PATH env.
+      bin: sockJson.defaults?.manifest?.maven?.bin ?? 'mvn',
+      cwd,
+      excludeConfigs: sockJson.defaults?.manifest?.maven?.excludeConfigs ?? '',
+      ignoreUnresolved: Boolean(
+        sockJson.defaults?.manifest?.maven?.ignoreUnresolved,
+      ),
+      includeConfigs: sockJson.defaults?.manifest?.maven?.includeConfigs ?? '',
+      mavenOpts: parseBuildToolOpts(
+        sockJson.defaults?.manifest?.maven?.mavenOpts,
+      ),
+      verbose: Boolean(sockJson.defaults?.manifest?.maven?.verbose),
+    })
   }
 
   if (!sockJson?.defaults?.manifest?.conda?.disabled && detected.conda) {

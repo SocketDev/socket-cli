@@ -5,6 +5,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { convertSbtToFacts } from './convert-sbt-to-facts.mts'
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
+import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
@@ -337,10 +338,7 @@ async function run(
     return
   }
 
-  const parsedSbtOpts = String(sbtOpts || '')
-    .split(' ')
-    .map(s => s.trim())
-    .filter(Boolean)
+  const parsedSbtOpts = parseBuildToolOpts(String(sbtOpts || ''))
 
   if (facts) {
     await convertSbtToFacts({

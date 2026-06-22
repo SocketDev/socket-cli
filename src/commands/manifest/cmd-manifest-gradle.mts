@@ -5,6 +5,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
+import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
@@ -280,10 +281,7 @@ async function run(
     return
   }
 
-  const parsedGradleOpts = String(gradleOpts || '')
-    .split(' ')
-    .map(s => s.trim())
-    .filter(Boolean)
+  const parsedGradleOpts = parseBuildToolOpts(String(gradleOpts || ''))
 
   if (facts) {
     await convertGradleToFacts({

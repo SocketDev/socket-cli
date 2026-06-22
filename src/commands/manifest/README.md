@@ -151,6 +151,13 @@ scala flows.
 Uses Gradle to generate a manifest file (`pom.xml`) for a Kotlin project; the
 underlying flow is identical to the gradle subcommand.
 
+## socket manifest maven [beta]
+
+Generates a Socket facts file (`.socket.facts.json`) from a Maven `pom.xml`
+project, using `mvn` (override with `--bin`, e.g. a project `./mvnw` wrapper).
+Pass extra options through to maven with `--maven-opts` (e.g.
+`--maven-opts="-P release -s settings.xml"`).
+
 ## socket manifest scala [beta]
 
 Generates a manifest file (`pom.xml`) from Scala's `build.sbt` file.
