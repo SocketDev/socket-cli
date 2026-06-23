@@ -291,28 +291,10 @@ export async function globWithGitIgnore(
     }
   }
 
-  // Match every gitignore-derived pattern through a single reused `ignore`
-  // instance instead of handing the whole set to fast-glob's native `ignore`
-  // option. fast-glob re-compiles and re-tests its entire ignore array inside
-  // each directory scan (`node::fs::AfterScanDir`), so a large monorepo whose
-  // nested `.gitignore` files union to tens of thousands of patterns aborts with
-  // `CALL_AND_RETRY_LAST … heap out of memory`. Raising `--max-old-space-size`
-  // does not reliably help: much of the cost is regex executable code in V8 code
-  // space rather than the data heap. The `ignore` package compiles each rule
-  // once and memoizes it, so the cost scales with the pattern count rather than
-  // being multiplied by the number of directories walked. fast-glob
-  // keeps only the small, bounded set it needs to PRUNE directories during the
-  // walk (`defaultIgnore`, which already excludes node_modules and .git, plus
-  // the anchored CLI minimatch ignores); the high-cardinality gitignore set is
-  // applied per streamed entry by `ig` below. The `ignore` package also honors
-  // negated re-includes, which fast-glob, globby, and tinyglobby cannot express.
-  // The negated-pattern path already worked this way; routing both cases through
-  // it removes the asymmetry that left the common, non-negated case crashing on
-  // large repos.
-  // Match fast-glob's case sensitivity (its `caseSensitiveMatch` defaults to
-  // true) so routing the non-negated path through the `ignore` package does not
-  // silently start matching case-insensitively, which is the `ignore` package's
-  // own default.
+  // Match the high-cardinality gitignore set through one reused `ignore`
+  // instance, not fast-glob's `ignore` (which recompiles its whole array per
+  // directory scan and OOMs on tens of thousands of patterns); fast-glob keeps
+  // only the bounded prune set. `ignorecase` tracks fast-glob's default.
   const ig = ignore({
     ignorecase: additionalOptions.caseSensitiveMatch === false,
   }).add([...ignores])
@@ -343,11 +325,10 @@ export async function globWithGitIgnore(
     globOptions,
   ) as AsyncIterable<string>
   for await (const p of stream) {
-    // Note: the input files must be INSIDE the cwd. If you get strange looking
-    // relative path errors here, most likely your path is outside the given cwd.
     // Normalize to POSIX separators: the `ignore` patterns are forward-slash
-    // anchored (see ignoreFileLinesToGlobPatterns), so a Windows backslash path
-    // from path.relative would never match them.
+    // anchored (ignoreFileLinesToGlobPatterns), so a Windows backslash path from
+    // path.relative would never match. Input must be inside cwd, else
+    // path.relative returns an odd `..`-prefixed relative path.
     const relPath = normalizePath(
       globOptions.absolute ? path.relative(cwd, p) : p,
     )

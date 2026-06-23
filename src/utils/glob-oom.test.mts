@@ -16,16 +16,10 @@ function filterJsonFiles(filepath: string): boolean {
 // This suite lives in its own file, with no mock-fs node_modules preload, so the
 // large ignore set it builds is the only significant allocation in the worker.
 describe('globWithGitIgnore() large monorepo memory', () => {
-  // Regression: `socket fix` / `socket scan` aborted with
-  // `FATAL ERROR: CALL_AND_RETRY_LAST … heap out of memory` (SIGABRT) on large
-  // monorepos. globWithGitIgnore discovers every nested .gitignore and unions
-  // their patterns; handing that whole set to fast-glob's `ignore` option made
-  // fast-glob re-compile and re-test the entire array inside every directory
-  // scan, so tens of thousands of patterns exhausted V8 code space. Routing the
-  // gitignore set through a single reused `ignore` instance bounds the cost. The
-  // flat union built below is large enough to crash the old path; the walk must
-  // instead complete and return the right manifests. Uses the real filesystem
-  // because mock-fs would hold every pattern in memory and add its own overhead.
+  // Regression: scanning a large monorepo OOM'd because the whole unioned
+  // gitignore set was handed to fast-glob, which recompiled it per directory
+  // scan. The 100k-pattern tree below crashes the pre-fix path; the walk must
+  // complete with the right manifests. Real fs (mock-fs is too heavy here).
   it('does not exhaust memory on a huge nested-.gitignore pattern set', async () => {
     const realTmp = mkdtempSync(path.join(tmpdir(), 'socket-glob-oom-'))
     try {

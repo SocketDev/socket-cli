@@ -145,11 +145,9 @@ export async function getPackageFilesForScan(
   } as PackageFilesForScanOptions
 
   // Apply the supported files filter during streaming so globWithGitIgnore drops
-  // non-manifest paths as they are walked instead of collecting every path first.
-  // This bounds RESULT-path memory on large monorepos with 100k+ files. Note it
-  // does NOT bound the gitignore ignore-pattern memory: that OOM (regex compile
-  // exhausting V8 code space) is handled inside globWithGitIgnore by matching the
-  // gitignore set through a single reused `ignore` instance.
+  // non-manifest paths as they are walked. This bounds RESULT-path memory; it
+  // does NOT bound the gitignore ignore-pattern memory (that OOM is handled
+  // inside globWithGitIgnore via a single reused `ignore` instance).
   const filter = createSupportedFilesFilter(supportedFiles)
 
   const normalizedInputPaths = inputPaths.map(p =>
