@@ -290,22 +290,32 @@ export async function globWithGitIgnore(
     }
   }
 
-  let hasNegatedPattern = false
-  for (const p of ignores) {
-    if (p.charCodeAt(0) === 33 /*'!'*/) {
-      hasNegatedPattern = true
-      break
-    }
-  }
+  // Match every gitignore-derived pattern through a single reused `ignore`
+  // instance instead of handing the whole set to fast-glob's native `ignore`
+  // option. fast-glob re-compiles and re-tests its entire ignore array inside
+  // each directory scan (`node::fs::AfterScanDir`), so a large monorepo whose
+  // nested `.gitignore` files union to tens of thousands of patterns aborts with
+  // `CALL_AND_RETRY_LAST … heap out of memory`. Raising `--max-old-space-size`
+  // does not reliably help: much of the cost is regex executable code in V8 code
+  // space rather than the data heap. The `ignore` package compiles each rule
+  // once and memoizes it, so the cost scales with the pattern count rather than
+  // being multiplied by the number of directories walked. fast-glob
+  // keeps only the small, bounded set it needs to PRUNE directories during the
+  // walk (`defaultIgnore`, which already excludes node_modules and .git, plus
+  // the anchored CLI minimatch ignores); the high-cardinality gitignore set is
+  // applied per streamed entry by `ig` below. The `ignore` package also honors
+  // negated re-includes, which fast-glob, globby, and tinyglobby cannot express.
+  // The negated-pattern path already worked this way; routing both cases through
+  // it removes the asymmetry that left the common, non-negated case crashing on
+  // large repos.
+  const ig = ignore().add([...ignores])
 
   const globOptions = {
     __proto__: null,
     absolute: true,
     cwd,
     dot: true,
-    ignore: hasNegatedPattern
-      ? [...defaultIgnore, ...cliMinimatchIgnores]
-      : [...ignores, ...cliMinimatchIgnores].map(stripTrailingSlash),
+    ignore: [...defaultIgnore, ...cliMinimatchIgnores],
     ...additionalOptions,
     // Skip directories the running user cannot read rather than aborting the
     // whole walk on the first `EACCES` (see the .gitignore discovery walk
@@ -316,33 +326,22 @@ export async function globWithGitIgnore(
     suppressErrors: true,
   } as GlobOptions
 
-  // When no filter is provided and no negated patterns exist, use the fast path.
-  if (!hasNegatedPattern && !filter) {
-    return await fastGlob.glob(patterns as string[], globOptions)
-  }
-  // Add support for negated "ignore" patterns which many globbing libraries,
-  // including 'fast-glob', 'globby', and 'tinyglobby', lack support for.
-  // Use streaming to avoid unbounded memory accumulation.
-  // This is critical for large monorepos with 100k+ files.
+  // Stream results so memory stays bounded on large monorepos with 100k+ files:
+  // `ig` applies the gitignore matching per entry and the optional caller filter
+  // (e.g. manifest files only) drops non-matches before they accumulate, instead
+  // of collecting every path and filtering afterward.
   const results: string[] = []
-  const ig = hasNegatedPattern ? ignore().add([...ignores]) : null
   const stream = fastGlob.globStream(
     patterns as string[],
     globOptions,
   ) as AsyncIterable<string>
   for await (const p of stream) {
-    // Check gitignore patterns with negation support.
-    if (ig) {
-      // Note: the input files must be INSIDE the cwd. If you get strange looking
-      // relative path errors here, most likely your path is outside the given cwd.
-      const relPath = globOptions.absolute ? path.relative(cwd, p) : p
-      if (ig.ignores(relPath)) {
-        continue
-      }
+    // Note: the input files must be INSIDE the cwd. If you get strange looking
+    // relative path errors here, most likely your path is outside the given cwd.
+    const relPath = globOptions.absolute ? path.relative(cwd, p) : p
+    if (ig.ignores(relPath)) {
+      continue
     }
-    // Apply the optional filter to reduce memory usage.
-    // When scanning large monorepos, this filters early (e.g., to manifest files only)
-    // instead of accumulating all 100k+ files and filtering later.
     if (filter && !filter(p)) {
       continue
     }
