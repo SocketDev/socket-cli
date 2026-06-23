@@ -210,6 +210,28 @@ describe('glob utilities', () => {
       ])
     })
 
+    it('matches gitignore entries case-sensitively, like fast-glob', async () => {
+      // The `ignore` package defaults to case-insensitive matching, but
+      // fast-glob (caseSensitiveMatch defaults to true) and git treat the
+      // ignore set case-sensitively. A `dist/` entry must ignore `dist/` but
+      // leave a differently-cased `Dist/` sibling alone.
+      mockTestFs({
+        [`${mockFixturePath}/.gitignore`]: 'dist/\n',
+        [`${mockFixturePath}/package.json`]: '{}',
+        [`${mockFixturePath}/dist/a.json`]: '{}',
+        [`${mockFixturePath}/Dist/b.json`]: '{}',
+      })
+
+      const results = await globWithGitIgnore(['**/*.json'], {
+        cwd: mockFixturePath,
+      })
+
+      expect(results.map(normalizePath).sort()).toEqual([
+        `${mockFixturePath}/Dist/b.json`,
+        `${mockFixturePath}/package.json`,
+      ])
+    })
+
     it('keeps additionalIgnores anchored even when a gitignore negation forces the streaming path', async () => {
       // A bare `tests` pattern means "the entry `tests` at the scan root".
       // The streaming path uses the `ignore` package for gitignore-translated

@@ -8,6 +8,7 @@ import { parse as yamlParse } from 'yaml'
 import { isDirSync, safeReadFile } from '@socketsecurity/registry/lib/fs'
 import { defaultIgnore } from '@socketsecurity/registry/lib/globs'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
+import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { transform } from '@socketsecurity/registry/lib/streams'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
@@ -308,7 +309,13 @@ export async function globWithGitIgnore(
   // The negated-pattern path already worked this way; routing both cases through
   // it removes the asymmetry that left the common, non-negated case crashing on
   // large repos.
-  const ig = ignore().add([...ignores])
+  // Match fast-glob's case sensitivity (its `caseSensitiveMatch` defaults to
+  // true) so routing the non-negated path through the `ignore` package does not
+  // silently start matching case-insensitively, which is the `ignore` package's
+  // own default.
+  const ig = ignore({
+    ignorecase: additionalOptions.caseSensitiveMatch === false,
+  }).add([...ignores])
 
   const globOptions = {
     __proto__: null,
@@ -338,7 +345,12 @@ export async function globWithGitIgnore(
   for await (const p of stream) {
     // Note: the input files must be INSIDE the cwd. If you get strange looking
     // relative path errors here, most likely your path is outside the given cwd.
-    const relPath = globOptions.absolute ? path.relative(cwd, p) : p
+    // Normalize to POSIX separators: the `ignore` patterns are forward-slash
+    // anchored (see ignoreFileLinesToGlobPatterns), so a Windows backslash path
+    // from path.relative would never match them.
+    const relPath = normalizePath(
+      globOptions.absolute ? path.relative(cwd, p) : p,
+    )
     if (ig.ignores(relPath)) {
       continue
     }
