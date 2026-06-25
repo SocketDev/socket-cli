@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.128](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.128) - 2026-06-25
+
+### Changed
+- Updated the Coana CLI to v `15.5.10`.
+
+### Fixed
+- Scans now skip Python virtual environments when collecting manifest files. Folders named `.venv`, and any folder containing a `pyvenv.cfg` marker (covering `venv`, `env`, and custom-named environments), are excluded — so `socket scan`, reachability, and `socket fix` stay focused on your project's own manifests instead of the thousands installed inside a virtualenv.
+
 ## [1.1.127](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.127) - 2026-06-24
 
 ### Changed
