@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.130](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.130) - 2026-06-29
+
+### Fixed
+- Reachability analysis no longer fails to start in pnpm workspaces that define a `.pnpmfile.cjs`. Socket now launches its bundled analysis tools without running the project's pnpm hooks, so a broken or environment-specific hook (for example, one that loads a file managed by Git LFS) can no longer stop a scan before it begins.
+
 ## [1.1.129](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.129) - 2026-06-26
 
 ### Changed
