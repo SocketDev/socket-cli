@@ -181,6 +181,25 @@ describe('utils/dlx', () => {
       expect(options.env.npm_config_dlx_cache_max_age).toBe('0')
     })
 
+    it('should set npm_config_ignore_pnpmfile env var for pnpm regardless of force', async () => {
+      const packageSpec: DlxPackageSpec = {
+        name: '@coana-tech/cli',
+        version: '1.0.0',
+      }
+
+      // force defaults to false here, exercising the non-force path.
+      await spawnDlx(packageSpec, ['run', '/some/path'], { agent: 'pnpm' })
+
+      expect(mockShadowPnpmBin).toHaveBeenCalledTimes(1)
+      const [, options] = mockShadowPnpmBin.mock.calls[0]
+
+      // The target project's `.pnpmfile.cjs` must be ignored so a broken hook
+      // (e.g. a require of an unresolved Git LFS pointer) cannot crash the
+      // `pnpm dlx` launcher before the tool starts.
+      expect(options.env).toBeDefined()
+      expect(options.env.npm_config_ignore_pnpmfile).toBe('true')
+    })
+
     it('should handle pinned version without silent flag by default', async () => {
       const packageSpec: DlxPackageSpec = {
         name: '@coana-tech/cli',
