@@ -128,19 +128,26 @@ export async function spawnDlx(
       spawnArgs.push(FLAG_SILENT)
     }
     spawnArgs.push('dlx')
+    // Never let the target project's `.pnpmfile.cjs` hooks run while we launch
+    // a third-party tool via `pnpm dlx`. In a pnpm workspace root, `pnpm dlx`
+    // loads the cwd's `.pnpmfile.cjs`, so a broken hook there (e.g. a `require`
+    // of an unresolved Git LFS pointer) crashes the launcher with a bare exit
+    // code before our tool ever starts. The dlx tool installs into an isolated
+    // store, so the project's install hooks are irrelevant to it. pnpm honors
+    // this only as a config setting, not as a `dlx` CLI flag, so it must be set
+    // via the npm_config_ env var. See: https://pnpm.io/npmrc#settings
+    const pnpmEnv: Record<string, string | undefined> = {
+      ...getOwn(finalShadowOptions, 'env'),
+      npm_config_ignore_pnpmfile: 'true',
+    }
     if (force) {
-      // For pnpm, set dlx-cache-max-age to 0 via env to force fresh download.
-      // This ensures we always get the latest version within the range.
-      finalShadowOptions = {
-        ...finalShadowOptions,
-        env: {
-          ...getOwn(finalShadowOptions, 'env'),
-          // Set dlx cache max age to 0 minutes to bypass cache.
-          // The npm_config_ prefix is how pnpm reads config from environment variables.
-          // See: https://pnpm.io/npmrc#settings
-          npm_config_dlx_cache_max_age: '0',
-        },
-      }
+      // Set dlx-cache-max-age to 0 minutes to bypass cache and force a fresh
+      // download. This ensures we always get the latest version within the range.
+      pnpmEnv['npm_config_dlx_cache_max_age'] = '0'
+    }
+    finalShadowOptions = {
+      ...finalShadowOptions,
+      env: pnpmEnv,
     }
     spawnArgs.push(packageString, ...args)
 
