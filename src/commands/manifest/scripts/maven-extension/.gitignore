@@ -1,3 +1,4 @@
-# Build artifacts — the jar is compiled from source (build-jar.sh), never committed.
+# Maven build output. The shaded jar (coana-maven-extension.jar) is committed so
+# the published package ships it without a build-time network fetch; rebuild it
+# with build-jar.sh after changing the extension source.
 target/
-coana-maven-extension.jar

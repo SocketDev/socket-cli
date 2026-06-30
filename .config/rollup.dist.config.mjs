@@ -82,9 +82,8 @@ async function copyInitGradle() {
 
 // Copy the JVM build-tool resolution assets (Gradle init script, sbt plugin,
 // Maven extension jar) into dist/manifest-scripts, where run.mts resolves them
-// at runtime. The Maven jar is compiled by maven-extension/build-jar.sh (run in
-// CI / local dev) and is absent from a fresh checkout — copy it only if present;
-// run.mts surfaces a build hint when it's missing.
+// at runtime. The Maven jar is committed (rebuilt by maven-extension/build-jar.sh
+// after source changes); the published build fails closed if it is missing.
 async function copyManifestScripts() {
   const srcDir = path.join(constants.srcPath, 'commands/manifest/scripts')
   const destDir = path.join(constants.distPath, 'manifest-scripts')
