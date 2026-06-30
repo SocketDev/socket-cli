@@ -204,6 +204,18 @@ jobs:
       - name: Install dependencies
         run: pnpm install --loglevel error
 
+      # Compile the Maven manifest extension jar so the dist build bundles it
+      # into dist/manifest-scripts (the jar is never committed; it ships only in
+      # the published package). The org action allowlist forbids actions/setup-java,
+      # so use a JDK pre-installed on the runner image (JAVA_HOME_17_X64), falling
+      # back to the runner's default `java`. build-jar.sh uses the Maven wrapper.
+      - name: Build Maven manifest extension jar
+        run: |
+          if [ -n "${JAVA_HOME_17_X64:-}" ]; then
+            export JAVA_HOME="$JAVA_HOME_17_X64"
+          fi
+          pnpm run build:maven-extension
+
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build:dist
       - name: Publish socket
         id: publish_socket

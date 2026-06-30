@@ -1,0 +1,479 @@
+// Invoke via:
+//   ./gradlew --init-script socket-facts.init.gradle socketFacts
+
+import java.util.Collections
+
+// Emits a flat line-protocol RECORDS file (NOT the final .socket.facts.json, and NOT to stdout). The
+// TS assembler (utils/src/manifest-scripts/assemble.ts) reads the records and owns all SBOM
+// construction — graph merge, content-addressed ids, contentHash. This script only RESOLVES and emits
+// raw facts. See records.ts for the record grammar.
+
+// `Project.findProperty` only exists since Gradle 2.13; fall back to hasProperty/property for older Gradle.
+gradle.ext.socketProp = { proj, name -> proj.hasProperty(name) ? proj.property(name) : null }
+
+// Synchronized collections so --parallel-enabled builds don't race; lives on gradle.ext so every
+// collector and the root aggregator share one instance.
+gradle.ext.socketFactsState = [
+  nodes              : Collections.synchronizedMap([:]),
+  directIds          : Collections.synchronizedSet([] as Set),
+  // `detail` is the build tool's failure message verbatim; Coana classifies the failure KIND from it.
+  failures           : Collections.synchronizedList([]),
+  scannedConfigs     : Collections.synchronizedSet([] as Set),
+  projectKeys        : Collections.synchronizedSet([] as Set),
+  // Only populated with `-Psocket.withFiles=true`: reading `artifact.file` downloads the artifact.
+  paths              : Collections.synchronizedMap([:]),
+  perSub             : Collections.synchronizedMap([:]),
+  projectsInfo       : Collections.synchronizedList([]),
+  // "group:name" -> the module's real artifact extension (e.g. jar), so an intra-project dep that
+  // resolves without selecting a published artifact still gets its true coordinate, not ext-less.
+  projectArtifactExt : Collections.synchronizedMap([:]),
+]
+
+// Capture every project's (group:name) before collectors run so they can filter intra-project
+// deps without an ordering dependency on other subprojects.
+gradle.projectsEvaluated { g ->
+  def rootPath = g.rootProject.projectDir.toPath()
+  // '/'-normalized so values are stable across OSes and portable to another machine.
+  def rel = { java.io.File f ->
+    def r = rootPath.relativize(f.toPath()).toString().replace(File.separator, '/')
+    r.isEmpty() ? '.' : r
+  }
+  g.rootProject.allprojects.each { p ->
+    g.socketFactsState.projectKeys.add("${p.group ?: ''}:${p.name}")
+    // The module's real artifact extension (jar for java; '' for a project that builds no archive,
+    // e.g. a pure aggregator). Used to stamp intra-project deps that resolve without an artifact.
+    def artExt = ''
+    try {
+      def jt = p.tasks.findByName('jar')
+      if (jt != null) {
+        artExt = 'jar'
+        try { def e = jt.archiveExtension.getOrNull(); if (e) artExt = e } catch (Exception ig1) {
+          try { def e = jt.extension; if (e) artExt = e } catch (Exception ig2) {}
+        }
+      }
+    } catch (Exception ignore) {}
+    g.socketFactsState.projectArtifactExt["${p.group ?: ''}:${p.name}".toString()] = artExt
+    // Guarded: projects without the java `sourceSets` convention (pure aggregators, AGP-only
+    // Android modules) contribute empty lists rather than failing.
+    // `classesDirs` (Gradle 4+) falls back to the legacy single `classesDir` on older Gradle.
+    def sources = [] as Set
+    def targets = [] as Set
+    try {
+      if (p.hasProperty('sourceSets')) {
+        ['main', 'test'].each { sn ->
+          def ss = p.sourceSets.findByName(sn)
+          if (ss != null) {
+            ss.allSource.srcDirs.each { d -> sources << d.absolutePath }
+            try {
+              ss.output.classesDirs.each { d -> targets << d.absolutePath }
+            } catch (Exception e1) {
+              try { targets << ss.output.classesDir.absolutePath } catch (Exception ignore) {}
+            }
+          }
+        }
+      }
+    } catch (Exception ignore) {}
+    g.socketFactsState.projectsInfo.add([
+      path   : p.path,
+      group  : (p.group ?: '').toString(),
+      name   : p.name,
+      version: (p.version ?: '').toString(),
+      dir    : rel(p.projectDir),
+      sources: (sources as List).sort(),
+      targets: (targets as List).sort(),
+    ])
+  }
+}
+
+allprojects { project ->
+  def collectTask = project.tasks.create('socketFactsCollect') {
+    description = "Resolves ${project.path}'s configurations into the build-wide Socket facts accumulator"
+    // Dependency resolution depends on state Gradle's up-to-date tracking can't represent reliably.
+    outputs.upToDateWhen { false }
+
+    doLast {
+      def state = gradle.socketFactsState
+      // Per-RESOLUTION-ROOT accumulators, LOCAL to this collector: one (subproject, configuration)
+      // classpath resolved into its own coordinate-keyed tree. Reassigned per config below (the
+      // visit/upsertNode closures capture them); `failures`/`scannedConfigs` stay shared.
+      def nodes = [:]
+      def directIds = [] as Set
+      def failures = state.failures
+      def scannedConfigs = state.scannedConfigs
+      def projectKeys = state.projectKeys
+      def projectArtifactExt = state.projectArtifactExt
+      def paths = [:]
+      def withFiles = gradle.socketProp.call(project, 'socket.withFiles')?.toString()?.toLowerCase() == 'true'
+      // Optional `-Psocket.populateFilesFor=<file>` (newline-delimited GAVs): scope `--with-files`
+      // materialization to those GAVs. This run walks EVERY resolvable config (not told the SBOM's
+      // include/exclude), so without a scope it would force-download the build's entire dep universe.
+      // Matched at GAV level to tolerate untrustworthy-ext SBOMs (lockfile / version catalog hardcode
+      // ext=jar). Absent/empty/missing file -> materialize all. Parsed once under the state monitor.
+      def populateFilesFor = gradle.socketProp.call(project, 'socket.populateFilesFor')?.toString()
+      def populateGavs = null
+      if (withFiles && populateFilesFor != null && !populateFilesFor.trim().isEmpty()) {
+        synchronized (state) {
+          if (!state.containsKey('populateGavs')) {
+            def f = new File(populateFilesFor.trim())
+            if (f.exists()) {
+              def set = [] as Set
+              f.eachLine { line -> def t = line.trim(); if (!t.isEmpty()) { set << t } }
+              if (set.isEmpty()) {
+                // Empty file is more likely a wiring slip than a deliberate "fetch nothing"; materialize all.
+                state.populateGavs = null
+                println "[socket-facts] WARN populateFilesFor file empty; materializing files for all resolved artifacts"
+              } else {
+                state.populateGavs = set
+                println "[socket-facts] --with-files scoped to ${set.size()} SBOM artifact(s)"
+              }
+            } else {
+              // Missing file is more likely a wiring bug than an intentional empty scope; materialize all.
+              state.populateGavs = null
+              println "[socket-facts] WARN populateFilesFor file not found; materializing files for all resolved artifacts"
+            }
+          }
+        }
+        populateGavs = state.populateGavs
+      }
+
+      // Full Maven coordinate (absent segments dropped) — each ext/classifier variant is its own
+      // component; the id is the coordinate key reachability joins on (see mavenCoordinateKey).
+      def coordId = { coord ->
+        [coord.groupId, coord.artifactId, coord.ext, coord.classifier, coord.version].findAll { it }.join(':')
+      }
+
+      def isIntraProject = { String group, String name ->
+        projectKeys.contains("${group ?: ''}:${name}")
+      }
+
+      // A first-party module dep can resolve with no published artifact (classes-dir variant, or
+      // variant-ambiguous moduleArtifacts), leaving it ext-less. Stamp the module's real artifact
+      // extension so it keeps a full, stable coordinate instead of an ext-less one.
+      def effExt = { String group, String name, String ext ->
+        if ((ext == null || ext.isEmpty()) && isIntraProject(group, name)) {
+          projectArtifactExt["${group ?: ''}:${name}".toString()] ?: ''
+        } else {
+          ext ?: ''
+        }
+      }
+
+      // A node is created once; its prod flag accumulates (OR) across the configs that reach it.
+      def upsertNode = { Map coord, boolean isProd ->
+        def id = coordId(coord)
+        synchronized (nodes) {
+          def node = nodes[id]
+          if (node == null) {
+            node = [coord: coord, children: [] as Set, prod: false]
+            nodes[id] = node
+          }
+          if (isProd) {
+            node.prod = true
+          }
+        }
+        id
+      }
+
+      // Walk a resolved dependency and its transitive closure. We never touch `artifact.file` here —
+      // that forces Gradle to download the file (catastrophic on builds declaring distribution
+      // archives as deps); `artifact.extension`/`artifact.classifier` read already-resolved metadata.
+      // Intra-project deps (project(':lib')) ARE emitted and recursed, so an external the consumer
+      // pins/forces to a different version THROUGH the edge is captured (firstLevelModuleDependencies
+      // lists only declared deps, so a project dep's transitives are reachable only via the edge).
+      def visit
+      visit = { dep, boolean isProd, Map cache ->
+        if (cache.containsKey(dep)) {
+          return cache[dep]
+        }
+        // Pre-populate the cache to break cycles before we recurse.
+        def producedIds = [] as Set
+        cache[dep] = producedIds
+
+        // `moduleArtifacts` forces ARTIFACT-level variant selection, which can throw on a
+        // variant-ambiguous dep even when the dependency GRAPH resolves fine. Guard per-dep: on
+        // failure emit at GAV level and keep walking so one ambiguous artifact can't sink the config.
+        def artifacts
+        try {
+          artifacts = dep.moduleArtifacts
+        } catch (Exception e) {
+          artifacts = [] as Set
+        }
+        if (artifacts.isEmpty()) {
+          def ext = effExt(dep.moduleGroup, dep.moduleName, '')
+          // Skip a no-artifact first-party module (aggregator / build root): it builds no archive, so
+          // it's fully described by `projects` and is never a real artifact dependency.
+          if (!(ext.isEmpty() && isIntraProject(dep.moduleGroup, dep.moduleName))) {
+            producedIds << upsertNode([
+              groupId   : dep.moduleGroup ?: '',
+              artifactId: dep.moduleName,
+              version   : dep.moduleVersion ?: '',
+              classifier: '',
+              ext       : ext,
+            ], isProd)
+          }
+        } else {
+          // Build the GAV scope key only when a scope is set: the no-scope path never reads it and
+          // this is the hottest line under --parallel.
+          def shouldMaterialize
+          if (!withFiles) {
+            shouldMaterialize = false
+          } else if (populateGavs == null) {
+            shouldMaterialize = true
+          } else {
+            def gav = "${dep.moduleGroup ?: ''}:${dep.moduleName}:${dep.moduleVersion ?: ''}".toString()
+            shouldMaterialize = populateGavs.contains(gav)
+          }
+          artifacts.each { a ->
+            // Directory variants (java-classes-directory etc.) carry no extension; for a first-party
+            // module fall back to its real artifact ext (never artifact.type, a Gradle variant attr).
+            def ext = effExt(dep.moduleGroup, dep.moduleName, a.extension)
+            // Skip a no-artifact first-party module (see the empty-artifacts branch above).
+            if (ext.isEmpty() && isIntraProject(dep.moduleGroup, dep.moduleName)) return
+            def aid = upsertNode([
+              groupId   : dep.moduleGroup ?: '',
+              artifactId: dep.moduleName,
+              version   : dep.moduleVersion ?: '',
+              classifier: a.classifier ?: '',
+              ext       : ext,
+            ], isProd)
+            producedIds << aid
+            // `a.file` downloads the artifact if not already cached, so scoping avoids fetching
+            // artifacts the SBOM doesn't reference. Per-artifact try/catch: a single download can
+            // fail without the whole config being unresolvable.
+            if (shouldMaterialize) {
+              try {
+                def path = a.file.absolutePath
+                synchronized (paths) {
+                  def set = paths[aid]
+                  if (set == null) { set = [] as Set; paths[aid] = set }
+                  set << path
+                }
+              } catch (Exception e) {
+                println "[socket-facts] could not materialize ${aid}: ${e.message?.readLines()?.first()}"
+              }
+            }
+          }
+        }
+
+        def childIds = [] as Set
+        dep.children.each { child ->
+          childIds.addAll(visit(child, isProd, cache))
+        }
+        // A skipped no-artifact first-party module produced no node, so bubble its resolved children
+        // up to the parent (return childIds) — otherwise the module's transitives orphan (attached to
+        // nothing, not bubbled). The module itself is described by `projects`.
+        if (producedIds.isEmpty()) {
+          cache[dep] = childIds
+          return childIds
+        }
+        synchronized (nodes) {
+          producedIds.each { pid ->
+            // Drop self-edges: a project that depends on its own output (test → main) can resolve
+            // to the same coordinate as its root, which would otherwise emit a node listing itself.
+            nodes[pid].children.addAll(childIds.findAll { it != pid })
+          }
+        }
+        producedIds
+      }
+
+      def isTestConfig = { String name -> name.toLowerCase().contains('test') }
+      // Matches real compile/runtime classpaths (modern `*Classpath`, legacy `compile`/`runtime`),
+      // NOT a loose substring that would wrongly promote war-plugin `providedCompile`/`providedRuntime`
+      // (provided deps are dev). Sets the informational `dev` flag only — never gates analysis.
+      def isClasspathConfig = { String name ->
+        def n = name.toLowerCase()
+        n.contains('classpath') || n == 'compile' || n == 'runtime'
+      }
+
+      // Config-name glob (`*`/`?` only) to a case-INSENSITIVE regex — Gradle config names are
+      // camelCase, so a case-sensitive `*Classpath` would miss the base `compileClasspath`.
+      def globToRegex = { String glob ->
+        def sb = new StringBuilder()
+        glob.each { String ch ->
+          switch (ch) {
+            case '*': sb << '.*'; break
+            case '?': sb << '.'; break
+            case '.': case '\\': case '^': case '$': case '|':
+            case '+': case '(': case ')':
+            case '[': case ']': case '{': case '}':
+              sb << '\\' << ch; break
+            default: sb << ch
+          }
+        }
+        java.util.regex.Pattern.compile(sb.toString(), java.util.regex.Pattern.CASE_INSENSITIVE)
+      }
+
+      // `-Psocket.includeConfigs`/`-Psocket.excludeConfigs`: comma-separated config-name globs. A
+      // config is walked when it matches some include (or there are none) AND matches no exclude.
+      def parsePatterns = { String s ->
+        def out = []
+        if (s != null && !s.trim().isEmpty()) {
+          s.split(',').each { raw ->
+            def p = raw.trim()
+            if (!p.isEmpty()) out << globToRegex(p)
+          }
+        }
+        out
+      }
+      def includePatterns = parsePatterns(gradle.socketProp.call(project, 'socket.includeConfigs')?.toString())
+      def excludePatterns = parsePatterns(gradle.socketProp.call(project, 'socket.excludeConfigs')?.toString())
+
+      // Don't filter by canBeConsumed: Gradle defaults both role flags to true, so a plain resolvable
+      // config is also consumable, and excluding consumable configs would drop legitimate custom ones.
+      // `isCanBeResolved` only exists since Gradle 3.3; older Gradle has no split (all resolvable).
+      def isResolvable = { c -> c.metaClass.respondsTo(c, 'isCanBeResolved') ? c.canBeResolved : true }
+      def targetConfigs = project.configurations.findAll {
+        if (!isResolvable(it)) return false
+        def name = it.name
+        if (excludePatterns.any { p -> p.matcher(name).matches() }) return false
+        if (!includePatterns.isEmpty() && !includePatterns.any { p -> p.matcher(name).matches() }) return false
+        return true
+      }
+
+      // Deepest cause's message, in FULL — Coana classifies/templates it, so we don't categorize here.
+      def rawDetail = { problem ->
+        def deepest = null
+        def t = problem
+        int guard = 0
+        while (t != null && guard++ < 12) { if (t.message) { deepest = t.message }; t = t.cause }
+        return (deepest ?: 'unknown resolution failure').toString().trim()
+      }
+
+      targetConfigs.each { cfg ->
+        // Recorded even if it resolves nothing or throws — Coana surfaces the full scanned set.
+        scannedConfigs.add(cfg.name)
+        // Informational only (OR-accumulated across configs); never gates analysis, so this name
+        // heuristic can only mis-bucket a dep in prod/dev views, never drop it.
+        def isProd = isClasspathConfig(cfg.name) && !isTestConfig(cfg.name)
+        // Fresh tree for THIS resolution root — captured by visit/upsertNode, so no union with siblings.
+        nodes = [:]
+        directIds = [] as Set
+        paths = [:]
+        // Per-config try/catch: AGP-style configs can fail variant ambiguity from an init-script
+        // context lacking the consumer attributes AGP sets internally.
+        try {
+          def lenient = cfg.resolvedConfiguration.lenientConfiguration
+          def cache = [:]
+          // No-arg getter only since Gradle 3.3; older Gradle has just the Spec-taking overload.
+          def firstLevel
+          try {
+            firstLevel = lenient.firstLevelModuleDependencies
+          } catch (MissingPropertyException e) {
+            firstLevel = lenient.getFirstLevelModuleDependencies({ true } as org.gradle.api.specs.Spec)
+          }
+          firstLevel.each { dep ->
+            directIds.addAll(visit(dep, isProd, cache))
+          }
+          // Unresolved deps drive the root aggregator's abort/warn decision but are NOT emitted as
+          // nodes — their selector-only coordinates would surface as half-formed phantom artifacts.
+          lenient.unresolvedModuleDependencies.each { dep ->
+            def sel = dep.selector
+            if (isIntraProject(sel.group, sel.name)) {
+              return
+            }
+            failures << [
+              coord : "${sel.group}:${sel.name}${sel.version ? ':' + sel.version : ''}".toString(),
+              detail: rawDetail(dep.problem),
+              config: cfg.name,
+            ]
+          }
+        } catch (Exception e) {
+          println "[socket-facts] skipping ${project.path}:${cfg.name}: ${e.message?.readLines()?.first()}"
+        }
+        // Stash this resolution root's tree; the key only has to be unique per root (aggregator
+        // groups by subtree hash). Skip empty configs — they'd contribute nothing.
+        if (!nodes.isEmpty()) {
+          synchronized (state.perSub) {
+            state.perSub["${project.path}::${cfg.name}".toString()] =
+              [nodes: nodes, direct: directIds, paths: paths, projectPath: project.path, config: cfg.name, prod: isProd]
+          }
+        }
+      }
+    }
+  }
+}
+
+rootProject { rp ->
+  // Hoist property reads to configuration time: the configuration cache forbids `Task.project` from
+  // task actions. The Socket CLI disables the cache for this run, but hoisting is cheap insurance.
+  def recordsFileOverride = gradle.socketProp.call(rp, 'socket.recordsFile')?.toString()
+  def defaultRecordsFile = new File(rp.projectDir, '.socket.facts.records.tsv').absolutePath
+  // `sources`/`targets` are --with-files-only; a plain run emits only the graph fields.
+  def withFilesProjects = gradle.socketProp.call(rp, 'socket.withFiles')?.toString()?.toLowerCase() == 'true'
+
+  rp.tasks.create('socketFacts') {
+    group = 'socket'
+    description = 'Emits Socket facts records for the entire build'
+    outputs.upToDateWhen { false }
+
+    doLast {
+      def state = gradle.socketFactsState
+
+      // Backslash-escape so a value can never break line/field framing (see records.ts unescape).
+      def esc = { v ->
+        (v == null ? '' : v.toString())
+          .replace('\\', '\\\\').replace('\t', '\\t').replace('\n', '\\n').replace('\r', '\\r')
+      }
+      def lines = []
+      def rec = { List fields -> lines << fields.collect { esc(it) }.join('\t') }
+
+      rec(['meta', 'gradle', gradle.gradleVersion, System.getProperty('java.version')])
+
+      // One `project` record per build module (sources/targets only with --with-files).
+      def projectsInfo
+      synchronized (state.projectsInfo) { projectsInfo = new ArrayList(state.projectsInfo) }
+      projectsInfo.each { pi ->
+        rec(['project', pi.path, pi.group ?: '', pi.name, pi.version ?: '', pi.dir])
+        if (withFilesProjects) {
+          pi.sources.each { s -> rec(['projectSrc', pi.path, s]) }
+          pi.targets.each { t -> rec(['projectTgt', pi.path, t]) }
+        }
+      }
+
+      // One resolution root per (subproject, configuration); the TS assembler merges them
+      // path-sensitively and content-addresses divergent subtrees.
+      def perSub
+      synchronized (state.perSub) { perSub = new LinkedHashMap(state.perSub) }
+      int rootIdx = 0
+      perSub.each { rootKey, tree ->
+        def rootId = (rootIdx++).toString()
+        rec(['root', rootId, tree.projectPath, tree.config, tree.prod ? '1' : '0'])
+        tree.nodes.each { coordId, node ->
+          def c = node.coord
+          rec(['node', rootId, coordId, c.groupId ?: '', c.artifactId ?: '', c.version ?: '', c.ext ?: '',
+               c.classifier ?: '', tree.direct.contains(coordId) ? '1' : '0'])
+          node.children.each { childId -> rec(['edge', rootId, coordId, childId]) }
+          def fs = tree.paths[coordId]
+          if (fs) { (fs as List).sort().each { p -> rec(['file', rootId, coordId, p]) } }
+        }
+      }
+
+      // Scanned configs + raw failures (Coana owns the abort/warn policy and report rendering).
+      def scanned
+      synchronized (state.scannedConfigs) { scanned = (state.scannedConfigs as List).sort() }
+      scanned.each { name -> rec(['scanned', name]) }
+      def failures
+      synchronized (state.failures) { failures = new ArrayList(state.failures) }
+      failures.each { f -> rec(['failure', f.coord, f.detail, f.config]) }
+
+      def outFile = new File(recordsFileOverride ?: defaultRecordsFile)
+      outFile.parentFile?.mkdirs()
+      // Explicit UTF-8: the TS reader reads UTF-8, but `File.text =` would encode
+      // with the JVM default charset (Cp1252 / US-ASCII on Windows or a non-UTF-8
+      // locale on JDK <=17), corrupting non-ASCII paths and failure messages.
+      outFile.withWriter('UTF-8') { it.write(lines.join('\n') + '\n') }
+      println "Socket facts records written to: ${outFile.absolutePath}"
+    }
+  }
+}
+
+gradle.projectsEvaluated { g ->
+  def aggregator = g.rootProject.tasks.findByName('socketFacts')
+  if (aggregator) {
+    g.rootProject.allprojects.each { p ->
+      def collector = p.tasks.findByName('socketFactsCollect')
+      if (collector) {
+        aggregator.dependsOn(collector)
+      }
+    }
+  }
+}

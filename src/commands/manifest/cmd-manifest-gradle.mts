@@ -6,6 +6,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
+import { resolveBuildToolBin } from './scripts/build-tool.mts'
 import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
@@ -28,7 +29,8 @@ const config: CliCommandConfig = {
     ...commonFlags,
     bin: {
       type: 'string',
-      description: 'Location of gradlew binary to use, default: CWD/gradlew',
+      description:
+        'Location of the gradle binary to use, default: ./gradlew if present, else gradle on PATH',
     },
     facts: {
       type: 'boolean',
@@ -156,7 +158,8 @@ async function run(
       bin = sockJson.defaults?.manifest?.gradle?.bin
       logger.info(`Using default --bin from ${SOCKET_JSON}:`, bin)
     } else {
-      bin = path.join(cwd, 'gradlew')
+      // Prefer the project's ./gradlew wrapper, else `gradle` on PATH.
+      bin = resolveBuildToolBin('gradle', cwd)
     }
   }
   if (!gradleOpts) {
