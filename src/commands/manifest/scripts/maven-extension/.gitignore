@@ -1,0 +1,3 @@
+# Build artifacts — the jar is compiled from source (build-jar.sh), never committed.
+target/
+coana-maven-extension.jar

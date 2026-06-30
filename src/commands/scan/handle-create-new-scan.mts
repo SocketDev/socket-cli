@@ -27,6 +27,7 @@ import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 import type { REPORT_LEVEL } from './types.mts'
 import type { OutputKind } from '../../types.mts'
+import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
@@ -129,6 +130,8 @@ export async function handleCreateNewScan({
     workspace,
   })
 
+  // Sidecar forwarded to reachability; populated only when reach runs.
+  let resolvedPathsSidecar: ResolvedPathsSidecar | undefined
   if (autoManifest) {
     logger.info('Auto-generating manifest files ...')
     debugFn('notice', 'Auto-manifest mode enabled')
@@ -136,11 +139,14 @@ export async function handleCreateNewScan({
     const detected = await detectManifestActions(sockJson, cwd)
     debugDir('inspect', { detected })
     const autoManifestResult = await generateAutoManifest({
-      detected,
+      computeArtifactsSidecar: reach.runReachabilityAnalysis,
       cwd,
+      detected,
       outputKind,
+      reachContinueOnInstallErrors: reach.reachContinueOnInstallErrors,
       verbose: false,
     })
+    resolvedPathsSidecar = autoManifestResult.resolvedPathsSidecar
     if (autoManifestResult.generatedFiles.length) {
       scanTargets = Array.from(
         new Set([...targets, ...autoManifestResult.generatedFiles]),
@@ -242,6 +248,7 @@ export async function handleCreateNewScan({
       packagePaths,
       reachabilityOptions: mergedReachabilityOptions,
       repoName,
+      resolvedPathsSidecar,
       spinner,
       target: targets[0]!,
     })

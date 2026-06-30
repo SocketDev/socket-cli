@@ -1,12 +1,10 @@
-import { runCoanaManifestFacts } from './coana-manifest-facts.mts'
+import { runManifestFacts } from './run-manifest-facts.mts'
 
-// Generates a `.socket.facts.json` for an sbt project by delegating to the
-// Coana CLI's `manifest sbt` command (which owns the sbt plugin that resolves
-// the dependency graph). socket-cli no longer runs sbt itself; an explicit
-// `bin` is forwarded as `--bin`, otherwise Coana defaults to `sbt` on PATH.
-// JDK-compatibility guidance (sbt 0.13/early 1.x cannot run on modern JDKs) is
-// handled by Coana; pass a compatible JDK via `--sbt-opts "--java-home <path>"`
-// or `JAVA_HOME`.
+import type { SidecarAccumulator } from './scripts/sidecar.mts'
+
+// Generates `.socket.facts.json` for an sbt project via the bundled sbt plugin.
+// sbt 0.13/early 1.x can't run on modern JDKs — pass a compatible JDK via
+// `--sbt-opts "--java-home <path>"` or `JAVA_HOME`.
 export async function convertSbtToFacts({
   bin,
   cwd,
@@ -14,7 +12,9 @@ export async function convertSbtToFacts({
   ignoreUnresolved,
   includeConfigs,
   sbtOpts,
+  sidecarAcc,
   verbose,
+  withFiles,
 }: {
   bin: string
   cwd: string
@@ -22,17 +22,20 @@ export async function convertSbtToFacts({
   ignoreUnresolved: boolean
   includeConfigs: string
   sbtOpts: string[]
+  sidecarAcc?: SidecarAccumulator | undefined
   verbose: boolean
+  withFiles?: boolean | undefined
 }): Promise<void> {
-  await runCoanaManifestFacts({
+  await runManifestFacts({
     bin,
     buildOpts: sbtOpts,
-    buildOptsFlag: '--sbt-opts',
     cwd,
     ecosystem: 'sbt',
     excludeConfigs,
     ignoreUnresolved,
     includeConfigs,
+    sidecarAcc,
     verbose,
+    withFiles,
   })
 }

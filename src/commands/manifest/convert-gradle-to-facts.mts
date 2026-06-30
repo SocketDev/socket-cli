@@ -1,10 +1,8 @@
-import { runCoanaManifestFacts } from './coana-manifest-facts.mts'
+import { runManifestFacts } from './run-manifest-facts.mts'
 
-// Generates a `.socket.facts.json` for a Gradle project by delegating to the
-// Coana CLI's `manifest gradle` command (which owns the Gradle init script that
-// resolves the dependency graph). socket-cli no longer runs gradle itself; an
-// explicit `bin` is forwarded as `--bin`, otherwise Coana defaults to
-// `./gradlew`.
+import type { SidecarAccumulator } from './scripts/sidecar.mts'
+
+// Generates `.socket.facts.json` for a Gradle project via the bundled init script.
 export async function convertGradleToFacts({
   bin,
   cwd,
@@ -12,7 +10,9 @@ export async function convertGradleToFacts({
   gradleOpts,
   ignoreUnresolved,
   includeConfigs,
+  sidecarAcc,
   verbose,
+  withFiles,
 }: {
   bin: string
   cwd: string
@@ -20,17 +20,20 @@ export async function convertGradleToFacts({
   gradleOpts: string[]
   ignoreUnresolved: boolean
   includeConfigs: string
+  sidecarAcc?: SidecarAccumulator | undefined
   verbose: boolean
+  withFiles?: boolean | undefined
 }): Promise<void> {
-  await runCoanaManifestFacts({
+  await runManifestFacts({
     bin,
     buildOpts: gradleOpts,
-    buildOptsFlag: '--gradle-opts',
     cwd,
     ecosystem: 'gradle',
     excludeConfigs,
     ignoreUnresolved,
     includeConfigs,
+    sidecarAcc,
     verbose,
+    withFiles,
   })
 }

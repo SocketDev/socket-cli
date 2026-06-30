@@ -23,7 +23,7 @@ describe('socket manifest gradle', async () => {
             $ socket manifest gradle [options] [CWD=.]
 
           Options
-            --bin               Location of gradlew binary to use, default: CWD/gradlew
+            --bin               Location of the gradle binary to use, default: ./gradlew if present, else gradle on PATH
             --exclude-configs   When generating facts: comma-separated glob patterns; Gradle configurations matching any pattern are skipped (applied after --include-configs)
             --facts             Emit a Socket facts JSON file (\`.socket.facts.json\`) describing the resolved dependency graph. This is the default; pass \`--pom\` to generate \`pom.xml\` files instead
             --gradle-opts       Additional options to pass on to ./gradlew, see \`./gradlew --help\`

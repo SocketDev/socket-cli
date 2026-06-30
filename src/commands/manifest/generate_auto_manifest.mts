@@ -10,29 +10,53 @@ import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
+import { resolveBuildToolBin } from './scripts/build-tool.mts'
+import { serializeSidecar } from './scripts/sidecar.mts'
 import { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
 import type { GeneratableManifests } from './detect-manifest-actions.mts'
+import type {
+  ResolvedPathsSidecar,
+  SidecarAccumulator,
+} from './scripts/sidecar.mts'
 import type { OutputKind } from '../../types.mts'
 
 export type GenerateAutoManifestResult = {
   generatedFiles: string[]
+  // Reachability path only: resolved on-disk paths from the build-tool run.
+  resolvedPathsSidecar?: ResolvedPathsSidecar | undefined
 }
 
 export async function generateAutoManifest({
+  computeArtifactsSidecar,
   cwd,
   detected,
   outputKind,
+  reachContinueOnInstallErrors,
   verbose,
 }: {
+  // Reachability path: run build tools with files to emit the sidecar.
+  computeArtifactsSidecar?: boolean | undefined
   detected: GeneratableManifests
   cwd: string
   outputKind: OutputKind
+  // Reachability install-error gate: tolerate a blocking resolution failure.
+  reachContinueOnInstallErrors?: boolean | undefined
   verbose: boolean
 }): Promise<GenerateAutoManifestResult> {
   const sockJson = readOrDefaultSocketJson(cwd)
   const generatedFiles: string[] = []
+
+  // Resolved paths across all JVM roots, serialized to one sidecar at the end.
+  const sidecarAcc: SidecarAccumulator | undefined = computeArtifactsSidecar
+    ? new Map()
+    : undefined
+  // Reachability: the install-error gate decides abort; manifest path: socket.json.
+  const resolveIgnoreUnresolved = (configured: boolean): boolean =>
+    computeArtifactsSidecar
+      ? configured || Boolean(reachContinueOnInstallErrors)
+      : configured
 
   if (verbose) {
     logger.info(`Using this ${SOCKET_JSON} for defaults:`, sockJson)
@@ -56,10 +80,12 @@ export async function generateAutoManifest({
       await convertSbtToFacts({
         ...sbtArgs,
         excludeConfigs: sockJson.defaults?.manifest?.sbt?.excludeConfigs ?? '',
-        ignoreUnresolved: Boolean(
-          sockJson.defaults?.manifest?.sbt?.ignoreUnresolved,
+        ignoreUnresolved: resolveIgnoreUnresolved(
+          Boolean(sockJson.defaults?.manifest?.sbt?.ignoreUnresolved),
         ),
         includeConfigs: sockJson.defaults?.manifest?.sbt?.includeConfigs ?? '',
+        sidecarAcc,
+        withFiles: computeArtifactsSidecar,
       })
     } else {
       logger.log('Detected a Scala sbt build, generating pom files with sbt...')
@@ -72,12 +98,10 @@ export async function generateAutoManifest({
 
   if (!sockJson?.defaults?.manifest?.gradle?.disabled && detected.gradle) {
     const gradleArgs = {
-      // Note: `gradlew` is more likely to be resolved against cwd.
-      // Note: .resolve() won't butcher an absolute path.
-      // TODO: `gradlew` (or anything else given) may want to resolve against PATH.
+      // Configured bin wins; else prefer ./gradlew, else gradle on PATH.
       bin: sockJson.defaults?.manifest?.gradle?.bin
         ? path.resolve(cwd, sockJson.defaults.manifest.gradle.bin)
-        : path.join(cwd, 'gradlew'),
+        : resolveBuildToolBin('gradle', cwd),
       cwd,
       verbose: Boolean(sockJson.defaults?.manifest?.gradle?.verbose),
       gradleOpts: parseBuildToolOpts(
@@ -94,11 +118,13 @@ export async function generateAutoManifest({
         ...gradleArgs,
         excludeConfigs:
           sockJson.defaults?.manifest?.gradle?.excludeConfigs ?? '',
-        ignoreUnresolved: Boolean(
-          sockJson.defaults?.manifest?.gradle?.ignoreUnresolved,
+        ignoreUnresolved: resolveIgnoreUnresolved(
+          Boolean(sockJson.defaults?.manifest?.gradle?.ignoreUnresolved),
         ),
         includeConfigs:
           sockJson.defaults?.manifest?.gradle?.includeConfigs ?? '',
+        sidecarAcc,
+        withFiles: computeArtifactsSidecar,
       })
     } else {
       logger.log(
@@ -111,18 +137,22 @@ export async function generateAutoManifest({
   if (!sockJson?.defaults?.manifest?.maven?.disabled && detected.maven) {
     logger.log('Detected a Maven pom.xml build, generating Socket facts...')
     await convertMavenToFacts({
-      // Note: `mvn` is more likely to be resolved against PATH env.
-      bin: sockJson.defaults?.manifest?.maven?.bin ?? 'mvn',
+      // Configured bin wins; else prefer ./mvnw, else mvn on PATH.
+      bin:
+        sockJson.defaults?.manifest?.maven?.bin ??
+        resolveBuildToolBin('maven', cwd),
       cwd,
       excludeConfigs: sockJson.defaults?.manifest?.maven?.excludeConfigs ?? '',
-      ignoreUnresolved: Boolean(
-        sockJson.defaults?.manifest?.maven?.ignoreUnresolved,
+      ignoreUnresolved: resolveIgnoreUnresolved(
+        Boolean(sockJson.defaults?.manifest?.maven?.ignoreUnresolved),
       ),
       includeConfigs: sockJson.defaults?.manifest?.maven?.includeConfigs ?? '',
       mavenOpts: parseBuildToolOpts(
         sockJson.defaults?.manifest?.maven?.mavenOpts,
       ),
+      sidecarAcc,
       verbose: Boolean(sockJson.defaults?.manifest?.maven?.verbose),
+      withFiles: computeArtifactsSidecar,
     })
   }
 
@@ -193,5 +223,9 @@ export async function generateAutoManifest({
     }
   }
 
-  return { generatedFiles }
+  return {
+    generatedFiles,
+    resolvedPathsSidecar:
+      sidecarAcc && sidecarAcc.size ? serializeSidecar(sidecarAcc) : undefined,
+  }
 }

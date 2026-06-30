@@ -8,7 +8,6 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { isOmittedReachValue } from './reachability-units.mts'
 import constants from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
-import { isAutoManifestConfigEmpty } from '../../utils/auto-manifest-config.mts'
 import { extractTier1ReachabilityScanId } from '../../utils/coana.mts'
 import { spawnCoanaDlx } from '../../utils/dlx.mts'
 import { hasEnterpriseOrgPlan } from '../../utils/organization.mts'
@@ -17,13 +16,12 @@ import { socketDevLink } from '../../utils/terminal-link.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { AutoManifestConfig } from '../../utils/auto-manifest-config.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
+import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 import type { StdioOptions } from 'node:child_process'
 
 export type ReachabilityOptions = {
-  autoManifestConfig?: AutoManifestConfig | undefined
   excludePaths: string[]
   reachAnalysisMemoryLimit: string
   reachAnalysisTimeout: string
@@ -54,6 +52,9 @@ export type ReachabilityAnalysisOptions = {
   outputPath?: string | undefined
   packagePaths?: string[] | undefined
   reachabilityOptions: ReachabilityOptions
+  // Resolved-paths sidecar from the auto-manifest run; passed to coana so it
+  // reuses these paths instead of re-resolving the build.
+  resolvedPathsSidecar?: ResolvedPathsSidecar | undefined
   repoName?: string | undefined
   spinner?: Spinner | undefined
   target: string
@@ -77,6 +78,7 @@ export async function performReachabilityAnalysis(
     packagePaths,
     reachabilityOptions,
     repoName,
+    resolvedPathsSidecar,
     spinner,
     target,
     uploadManifests = true,
@@ -113,7 +115,8 @@ export async function performReachabilityAnalysis(
   if (!hasEnterpriseOrgPlan(organizations)) {
     return {
       ok: false,
-      message: 'Full application reachability analysis requires an enterprise plan',
+      message:
+        'Full application reachability analysis requires an enterprise plan',
       cause: `Please ${socketDevLink('upgrade your plan', '/pricing')}. This feature is only available for organizations with an enterprise plan.`,
     }
   }
@@ -182,19 +185,17 @@ export async function performReachabilityAnalysis(
 
   const outputFilePath = outputPath || constants.DOT_SOCKET_DOT_FACTS_JSON
 
-  // Coana reads `--auto-manifest-config` from a JSON file, so write the resolved
-  // per-ecosystem build-tool config (mapped from socket.json) to a temp file and
-  // pass its absolute path. Cleaned up in the finally below.
-  let autoManifestConfigPath: string | undefined
-  const { autoManifestConfig } = reachabilityOptions
-  if (autoManifestConfig && !isAutoManifestConfigEmpty(autoManifestConfig)) {
-    autoManifestConfigPath = path.join(
+  // Write the sidecar to a temp file for `--compute-artifacts-sidecar`; cleaned
+  // up in the finally below.
+  let sidecarPath: string | undefined
+  if (resolvedPathsSidecar?.length) {
+    sidecarPath = path.join(
       tmpdir(),
-      `socket-auto-manifest-config-${randomUUID()}.json`,
+      `socket-compute-artifacts-sidecar-${randomUUID()}.json`,
     )
     await fs.writeFile(
-      autoManifestConfigPath,
-      JSON.stringify(autoManifestConfig),
+      sidecarPath,
+      JSON.stringify(resolvedPathsSidecar),
       'utf8',
     )
   }
@@ -257,11 +258,7 @@ export async function performReachabilityAnalysis(
     ...(reachabilityOptions.reachUseOnlyPregeneratedSboms
       ? ['--use-only-pregenerated-sboms']
       : []),
-    // Hand the per-ecosystem build-tool config (mapped from socket.json) to
-    // Coana's reach-time resolution, as a temp JSON file path.
-    ...(autoManifestConfigPath
-      ? ['--auto-manifest-config', autoManifestConfigPath]
-      : []),
+    ...(sidecarPath ? ['--compute-artifacts-sidecar', sidecarPath] : []),
   ]
 
   // Build environment variables.
@@ -329,10 +326,10 @@ export async function performReachabilityAnalysis(
       },
     }
   } finally {
-    // The run no longer needs the temp config file; best-effort cleanup.
-    if (autoManifestConfigPath) {
+    // Best-effort cleanup of the temp sidecar.
+    if (sidecarPath) {
       try {
-        await fs.unlink(autoManifestConfigPath)
+        await fs.unlink(sidecarPath)
       } catch {
         // File may already be gone or unwritable.
       }

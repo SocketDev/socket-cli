@@ -1,10 +1,8 @@
-import { runCoanaManifestFacts } from './coana-manifest-facts.mts'
+import { runManifestFacts } from './run-manifest-facts.mts'
 
-// Generates a `.socket.facts.json` for a Maven project by delegating to the
-// Coana CLI's `manifest maven` command (which owns the Maven plugin that
-// resolves the dependency graph). socket-cli no longer runs maven itself; an
-// explicit `bin` is forwarded as `--bin`, otherwise Coana defaults to `mvn` on
-// PATH.
+import type { SidecarAccumulator } from './scripts/sidecar.mts'
+
+// Generates `.socket.facts.json` for a Maven project via the bundled extension.
 export async function convertMavenToFacts({
   bin,
   cwd,
@@ -12,7 +10,9 @@ export async function convertMavenToFacts({
   ignoreUnresolved,
   includeConfigs,
   mavenOpts,
+  sidecarAcc,
   verbose,
+  withFiles,
 }: {
   bin: string
   cwd: string
@@ -20,17 +20,20 @@ export async function convertMavenToFacts({
   ignoreUnresolved: boolean
   includeConfigs: string
   mavenOpts: string[]
+  sidecarAcc?: SidecarAccumulator | undefined
   verbose: boolean
+  withFiles?: boolean | undefined
 }): Promise<void> {
-  await runCoanaManifestFacts({
+  await runManifestFacts({
     bin,
     buildOpts: mavenOpts,
-    buildOptsFlag: '--maven-opts',
     cwd,
     ecosystem: 'maven',
     excludeConfigs,
     ignoreUnresolved,
     includeConfigs,
+    sidecarAcc,
     verbose,
+    withFiles,
   })
 }
