@@ -32,9 +32,9 @@ export type GenerateAutoManifestResult = {
 // Under --auto-manifest, a manifest generator that failed — raising the exit
 // code above the value captured before it ran — aborts the whole run: a partial
 // or empty SBOM silently under-reports dependencies. The generator has already
-// logged the specifics. Tolerated failures (ignoreUnresolved /
-// reachContinueOnInstallErrors) warn without touching the exit code, so they
-// pass through here and the run continues.
+// logged the specifics. A tolerated resolution failure (ignoreUnresolved) warns
+// without touching the exit code, so it passes through here and the run
+// continues.
 function abortManifestRunIfFailed(
   ecosystem: string,
   beforeExitCode: string | number | undefined,
@@ -51,7 +51,6 @@ export async function generateAutoManifest({
   cwd,
   detected,
   outputKind,
-  reachContinueOnInstallErrors,
   verbose,
 }: {
   // Reachability path: run build tools with files to emit the sidecar.
@@ -59,8 +58,6 @@ export async function generateAutoManifest({
   detected: GeneratableManifests
   cwd: string
   outputKind: OutputKind
-  // Reachability install-error gate: tolerate a blocking resolution failure.
-  reachContinueOnInstallErrors?: boolean | undefined
   verbose: boolean
 }): Promise<GenerateAutoManifestResult> {
   const sockJson = readOrDefaultSocketJson(cwd)
@@ -70,11 +67,6 @@ export async function generateAutoManifest({
   const sidecarAcc: SidecarAccumulator | undefined = computeArtifactsSidecar
     ? new Map()
     : undefined
-  // Reachability: the install-error gate decides abort; manifest path: socket.json.
-  const resolveIgnoreUnresolved = (configured: boolean): boolean =>
-    computeArtifactsSidecar
-      ? configured || Boolean(reachContinueOnInstallErrors)
-      : configured
 
   if (verbose) {
     logger.info(`Using this ${SOCKET_JSON} for defaults:`, sockJson)
@@ -99,8 +91,8 @@ export async function generateAutoManifest({
       await convertSbtToFacts({
         ...sbtArgs,
         excludeConfigs: sockJson.defaults?.manifest?.sbt?.excludeConfigs ?? '',
-        ignoreUnresolved: resolveIgnoreUnresolved(
-          Boolean(sockJson.defaults?.manifest?.sbt?.ignoreUnresolved),
+        ignoreUnresolved: Boolean(
+          sockJson.defaults?.manifest?.sbt?.ignoreUnresolved,
         ),
         includeConfigs: sockJson.defaults?.manifest?.sbt?.includeConfigs ?? '',
         sidecarAcc,
@@ -141,8 +133,8 @@ export async function generateAutoManifest({
         ...gradleArgs,
         excludeConfigs:
           sockJson.defaults?.manifest?.gradle?.excludeConfigs ?? '',
-        ignoreUnresolved: resolveIgnoreUnresolved(
-          Boolean(sockJson.defaults?.manifest?.gradle?.ignoreUnresolved),
+        ignoreUnresolved: Boolean(
+          sockJson.defaults?.manifest?.gradle?.ignoreUnresolved,
         ),
         includeConfigs:
           sockJson.defaults?.manifest?.gradle?.includeConfigs ?? '',
@@ -170,8 +162,8 @@ export async function generateAutoManifest({
         resolveBuildToolBin('maven', cwd),
       cwd,
       excludeConfigs: sockJson.defaults?.manifest?.maven?.excludeConfigs ?? '',
-      ignoreUnresolved: resolveIgnoreUnresolved(
-        Boolean(sockJson.defaults?.manifest?.maven?.ignoreUnresolved),
+      ignoreUnresolved: Boolean(
+        sockJson.defaults?.manifest?.maven?.ignoreUnresolved,
       ),
       includeConfigs: sockJson.defaults?.manifest?.maven?.includeConfigs ?? '',
       mavenOpts: parseBuildToolOpts(

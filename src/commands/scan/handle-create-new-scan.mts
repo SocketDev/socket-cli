@@ -143,7 +143,6 @@ export async function handleCreateNewScan({
       cwd,
       detected,
       outputKind,
-      reachContinueOnInstallErrors: reach.reachContinueOnInstallErrors,
       verbose: false,
     })
     resolvedPathsSidecar = autoManifestResult.resolvedPathsSidecar
