@@ -7,16 +7,29 @@ import { renderResolutionErrorReport } from './scripts/resolution-report-render.
 import { runManifestScript } from './scripts/run.mts'
 import { accumulateSidecar } from './scripts/sidecar.mts'
 import constants from '../../constants.mts'
-import { InputError } from '../../utils/errors.mts'
 
 import type { BuildTool } from './scripts/build-tool.mts'
+import type { ManifestRunResult } from './scripts/run.mts'
 import type { SidecarAccumulator } from './scripts/sidecar.mts'
+
+const MAX_FAILURE_OUTPUT_LINES = 40
+
+// Last N non-empty lines of the captured build output, for diagnosing a crash
+// without forcing a --verbose rebuild.
+function tailBuildOutput(stdout: string, stderr: string): string {
+  const combined = [stdout, stderr]
+    .map(s => s.trimEnd())
+    .filter(Boolean)
+    .join('\n')
+  return combined.split('\n').slice(-MAX_FAILURE_OUTPUT_LINES).join('\n')
+}
 
 // Runs the bundled build-tool resolution script for a JVM project and writes
 // `.socket.facts.json`. `withFiles` (reachability only) additionally folds
-// resolved artifact paths into `sidecarAcc`. A blocking resolution failure — or
-// a build that crashes without emitting any facts — throws unless
-// `ignoreUnresolved`.
+// resolved artifact paths into `sidecarAcc`. A blocking resolution failure sets
+// a non-zero exit code and returns (matching the `--pom` generator) unless
+// `ignoreUnresolved`; a crashed build — a process failure, not an unresolved
+// dependency — always fails.
 export async function runManifestFacts({
   bin,
   buildOpts,
@@ -46,17 +59,53 @@ export async function runManifestFacts({
     `Generating Socket facts for the ${ecosystem} project at \`${cwd}\` ...`,
   )
 
-  const { artifactPaths, code, facts, report } = await runManifestScript(
-    ecosystem,
-    {
-      bin: bin || undefined,
-      excludeConfigs: excludeConfigs || undefined,
-      includeConfigs: includeConfigs || undefined,
-      projectDir: cwd,
-      toolOpts: buildOpts,
-      withFiles,
-    },
-  )
+  const scriptOpts = {
+    bin: bin || undefined,
+    excludeConfigs: excludeConfigs || undefined,
+    includeConfigs: includeConfigs || undefined,
+    projectDir: cwd,
+    // Stream the build tool's output only when asked; otherwise capture it and
+    // show a spinner, surfacing the output only if the build crashes.
+    stdio: verbose ? ('inherit' as const) : ('pipe' as const),
+    toolOpts: buildOpts,
+    withFiles,
+  }
+  const { spinner } = constants
+  let result: ManifestRunResult
+  try {
+    if (verbose) {
+      logger.info(
+        `(Running ${ecosystem} with output streaming; this can take a while.)`,
+      )
+      result = await runManifestScript(ecosystem, scriptOpts)
+    } else {
+      logger.info(
+        `(No live output; pass --verbose to stream the ${ecosystem} build output.)`,
+      )
+      spinner.start(`Resolving ${ecosystem} dependencies ...`)
+      result = await runManifestScript(ecosystem, scriptOpts)
+      if (result.code === 0) {
+        spinner.successAndStop(`Resolved ${ecosystem} dependencies.`)
+      } else {
+        spinner.failAndStop(
+          `${ecosystem} build exited with code ${result.code}.`,
+        )
+      }
+    }
+  } catch (e) {
+    // Only a spawn-level failure (e.g. the build tool missing from PATH) reaches
+    // here; runNeverThrow returns non-zero build exits rather than throwing.
+    if (!verbose) {
+      spinner.failAndStop(`Failed to run ${ecosystem}.`)
+    }
+    process.exitCode = 1
+    logger.fail(
+      `Could not run the ${ecosystem} build tool` +
+        (verbose ? `: ${e}` : ' (run with --verbose for details).'),
+    )
+    return
+  }
+  const { artifactPaths, code, facts, report, stderr, stdout } = result
 
   const rendered = renderResolutionErrorReport(
     report.failures,
@@ -69,10 +118,12 @@ export async function runManifestFacts({
     if (ignoreUnresolved) {
       logger.warn(rendered.summary)
     } else {
+      process.exitCode = 1
+      logger.fail(rendered.summary)
       if (verbose && rendered.details) {
         logger.log(rendered.details)
       }
-      throw new InputError(rendered.summary)
+      return
     }
   }
   if (rendered.nonBlockingNotice) {
@@ -94,11 +145,22 @@ export async function runManifestFacts({
     !facts.projects?.length &&
     !report.failures.length
   ) {
-    const message = `The ${ecosystem} build failed (exit code ${code}) before producing any Socket facts. Re-run with --verbose for the build tool's output.`
-    if (!ignoreUnresolved) {
-      throw new InputError(message)
+    if (!verbose) {
+      const tail = tailBuildOutput(stdout, stderr)
+      if (tail) {
+        logger.group('Build output:')
+        logger.error(tail)
+        logger.groupEnd()
+      }
     }
-    logger.warn(message)
+    // A crashed build is a process failure (missing JDK/build tool, unparseable
+    // project, OOM, plugin error), not an unresolved dependency, so it fails
+    // regardless of `ignoreUnresolved` — that flag only tolerates dependencies a
+    // successful run couldn't resolve.
+    process.exitCode = 1
+    logger.fail(
+      `The ${ecosystem} build failed (exit code ${code}) before producing any Socket facts.`,
+    )
     return
   }
 
