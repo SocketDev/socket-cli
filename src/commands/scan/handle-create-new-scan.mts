@@ -31,14 +31,17 @@ import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
-// Keys for CDX and SPDX in the supported files response.
-const CDX_SPDX_KEYS = ['cdx', 'spdx']
+// Supported-files response keys whose files count as pre-generated SBOMs:
+// CycloneDX, SPDX, and Socket facts (`.socket.facts.json`, under `socket`).
+// Kept in sync with Coana's `--use-only-pregenerated-sboms` selection
+// (extractPregeneratedSbomPatterns), which matches the same three keys.
+const PREGENERATED_SBOM_KEYS = ['cdx', 'socket', 'spdx']
 
-function getCdxSpdxPatterns(
+function getPregeneratedSbomPatterns(
   supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
 ): string[] {
   const patterns: string[] = []
-  for (const key of CDX_SPDX_KEYS) {
+  for (const key of PREGENERATED_SBOM_KEYS) {
     const supported = supportedFiles[key]
     if (supported) {
       for (const entry of Object.values(supported)) {
@@ -49,13 +52,15 @@ function getCdxSpdxPatterns(
   return patterns
 }
 
-function filterToCdxSpdxOnly(
+function filterToPregeneratedSboms(
   filepaths: string[],
   supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
 ): string[] {
-  const patterns = getCdxSpdxPatterns(supportedFiles)
+  const patterns = getPregeneratedSbomPatterns(supportedFiles)
+  // `dot: true` lets `*`-prefixed patterns match leading-dot filenames such as
+  // `.socket.facts.json` (advertised as `*.socket.facts.json`).
   return filepaths.filter(filepath =>
-    micromatch.some(filepath, patterns, { nocase: true }),
+    micromatch.some(filepath, patterns, { dot: true, nocase: true }),
   )
 }
 
@@ -263,19 +268,24 @@ export async function handleCreateNewScan({
 
     reachabilityReport = reachResult.data?.reachabilityReport
 
-    // Ensure the .socket.facts.json isn't duplicated in case it happened
-    // to be in the scan folder before the analysis was run.
-    const filteredPackagePaths = packagePaths.filter(
-      p => path.basename(p) !== constants.DOT_SOCKET_DOT_FACTS_JSON,
-    )
-
-    // When using pregenerated SBOMs only, filter to CDX/SPDX files.
+    // When using only pre-generated SBOMs, build the scan from those inputs —
+    // CycloneDX, SPDX, and Socket facts (`.socket.facts.json`) — matching
+    // Coana's `--use-only-pregenerated-sboms` selection. Otherwise drop any
+    // stray `.socket.facts.json`; coana's fresh reachability report (appended
+    // below) is the authoritative facts file for the scan.
     const pathsForScan = reach.reachUseOnlyPregeneratedSboms
-      ? filterToCdxSpdxOnly(filteredPackagePaths, supportedFiles)
-      : filteredPackagePaths
+      ? filterToPregeneratedSboms(packagePaths, supportedFiles)
+      : packagePaths.filter(
+          p => path.basename(p) !== constants.DOT_SOCKET_DOT_FACTS_JSON,
+        )
 
+    // Append coana's reachability report, but not twice: a pre-generated facts
+    // input can resolve to the same path coana wrote its report to.
+    const reportPath = reachabilityReport
+      ? path.resolve(cwd, reachabilityReport)
+      : undefined
     scanPaths = [
-      ...pathsForScan,
+      ...pathsForScan.filter(p => path.resolve(cwd, p) !== reportPath),
       ...(reachabilityReport ? [reachabilityReport] : []),
     ]
 

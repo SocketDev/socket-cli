@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.134](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.134) - 2026-07-01
+
+### Fixed
+- `--reach-use-only-pregenerated-sboms` now recognizes Socket facts files (`.socket.facts.json`) as pre-generated SBOMs, alongside CycloneDX and SPDX — matching what the reachability analyzer accepts. Previously a project whose only pre-generated SBOM was a `.socket.facts.json` was ignored by this flag.
+
 ## [1.1.133](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.133) - 2026-07-01
 
 ### Changed
