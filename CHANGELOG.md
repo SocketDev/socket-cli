@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 - More reliable reachability for Gradle, sbt, and Maven projects with dynamic versions (git versions, CI build numbers, timestamps): the build is resolved once and its artifact paths reused, avoiding spurious "failed to install" errors.
 - `socket manifest` and `--auto-manifest` now prefer your project's build-tool wrapper (`./gradlew`, `./mvnw`) when present, falling back to `gradle`/`mvn` on PATH.
-- Updated the Coana CLI to v `15.6.3`.
+- Updated the Coana CLI to v `15.6.6`.
 
 ## [1.1.131](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.131) - 2026-06-29
 
