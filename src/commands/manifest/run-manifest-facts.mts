@@ -10,7 +10,20 @@ import constants from '../../constants.mts'
 import { InputError } from '../../utils/errors.mts'
 
 import type { BuildTool } from './scripts/build-tool.mts'
+import type { ManifestRunResult } from './scripts/run.mts'
 import type { SidecarAccumulator } from './scripts/sidecar.mts'
+
+const MAX_FAILURE_OUTPUT_LINES = 40
+
+// Last N non-empty lines of the captured build output, for diagnosing a crash
+// without forcing a --verbose rebuild.
+function tailBuildOutput(stdout: string, stderr: string): string {
+  const combined = [stdout, stderr]
+    .map(s => s.trimEnd())
+    .filter(Boolean)
+    .join('\n')
+  return combined.split('\n').slice(-MAX_FAILURE_OUTPUT_LINES).join('\n')
+}
 
 // Runs the bundled build-tool resolution script for a JVM project and writes
 // `.socket.facts.json`. `withFiles` (reachability only) additionally folds
@@ -46,17 +59,32 @@ export async function runManifestFacts({
     `Generating Socket facts for the ${ecosystem} project at \`${cwd}\` ...`,
   )
 
-  const { artifactPaths, code, facts, report } = await runManifestScript(
-    ecosystem,
-    {
-      bin: bin || undefined,
-      excludeConfigs: excludeConfigs || undefined,
-      includeConfigs: includeConfigs || undefined,
-      projectDir: cwd,
-      toolOpts: buildOpts,
-      withFiles,
-    },
-  )
+  const scriptOpts = {
+    bin: bin || undefined,
+    excludeConfigs: excludeConfigs || undefined,
+    includeConfigs: includeConfigs || undefined,
+    projectDir: cwd,
+    // Stream the build tool's output only when asked; otherwise capture it and
+    // show a spinner, surfacing the output only if the build crashes.
+    stdio: verbose ? ('inherit' as const) : ('pipe' as const),
+    toolOpts: buildOpts,
+    withFiles,
+  }
+  const { spinner } = constants
+  let result: ManifestRunResult
+  if (verbose) {
+    result = await runManifestScript(ecosystem, scriptOpts)
+  } else {
+    spinner.start(
+      `Resolving ${ecosystem} dependencies (pass --verbose to stream build output) ...`,
+    )
+    try {
+      result = await runManifestScript(ecosystem, scriptOpts)
+    } finally {
+      spinner.stop()
+    }
+  }
+  const { artifactPaths, code, facts, report, stderr, stdout } = result
 
   const rendered = renderResolutionErrorReport(
     report.failures,
@@ -94,7 +122,15 @@ export async function runManifestFacts({
     !facts.projects?.length &&
     !report.failures.length
   ) {
-    const message = `The ${ecosystem} build failed (exit code ${code}) before producing any Socket facts. Re-run with --verbose for the build tool's output.`
+    if (!verbose) {
+      const tail = tailBuildOutput(stdout, stderr)
+      if (tail) {
+        logger.group('Build output:')
+        logger.error(tail)
+        logger.groupEnd()
+      }
+    }
+    const message = `The ${ecosystem} build failed (exit code ${code}) before producing any Socket facts.`
     if (!ignoreUnresolved) {
       throw new InputError(message)
     }

@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.133](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.133) - 2026-07-01
+
+### Changed
+- Quieter `socket manifest gradle`, `sbt`, and `maven`: the build tool's output is now hidden behind a progress spinner and shown only if the build fails. Pass `--verbose` to stream it live.
+
 ## [1.1.132](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.132) - 2026-06-30
 
 ### Changed

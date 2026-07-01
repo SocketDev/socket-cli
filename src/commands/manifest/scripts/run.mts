@@ -2,7 +2,7 @@ import { existsSync, promises as fs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
-import { isSpawnError, spawn } from '@socketsecurity/registry/lib/spawn'
+import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { assembleFacts } from './assemble.mts'
 import { resolveBuildToolBin } from './build-tool.mts'
@@ -34,6 +34,9 @@ export type ManifestRunResult = {
   facts: SocketFactsSbom
   report: ResolutionReport
   artifactPaths: ResolvedArtifactPaths
+  // Captured build-tool output (empty when stdio is 'inherit').
+  stderr: string
+  stdout: string
 }
 
 type RunOutput = { code: number; stdout: string; stderr: string }
@@ -67,11 +70,21 @@ async function runNeverThrow(
       stderr: typeof result.stderr === 'string' ? result.stderr : '',
     }
   } catch (e) {
-    if (isSpawnError(e)) {
+    // A non-zero exit rejects with the spawn-result shape: a numeric `code` plus
+    // captured stdout/stderr. Return it so the caller can assemble failure
+    // records. Anything else (e.g. a missing executable, whose `code` is the
+    // string 'ENOENT') propagates. Duck-typed on purpose: the registry's
+    // isSpawnError is unreliable, so the numeric-code check is the real signal.
+    if (
+      e !== null &&
+      typeof e === 'object' &&
+      typeof (e as { code?: unknown }).code === 'number'
+    ) {
+      const err = e as { code: number; stdout?: unknown; stderr?: unknown }
       return {
-        code: e.code,
-        stdout: typeof e.stdout === 'string' ? e.stdout : '',
-        stderr: typeof e.stderr === 'string' ? e.stderr : '',
+        code: err.code,
+        stdout: typeof err.stdout === 'string' ? err.stdout : '',
+        stderr: typeof err.stderr === 'string' ? err.stderr : '',
       }
     }
     throw e
@@ -101,14 +114,21 @@ async function writeSbtPlugin(globalBase: string): Promise<void> {
 }
 
 async function assembleFromRecords(
-  code: number,
+  out: RunOutput,
   recordsFile: string,
 ): Promise<ManifestRunResult> {
   const text = existsSync(recordsFile)
     ? await fs.readFile(recordsFile, 'utf8')
     : ''
   const { artifactPaths, facts, report } = assembleFacts(parseRecords(text))
-  return { code, facts, report, artifactPaths }
+  return {
+    code: out.code,
+    facts,
+    report,
+    artifactPaths,
+    stderr: out.stderr,
+    stdout: out.stdout,
+  }
 }
 
 // Missing only in an unbuilt local checkout. Fail loudly: without the extension,
@@ -179,7 +199,7 @@ async function runGradle(
       '--console=plain',
     ]
     const out = await runNeverThrow(bin, args, opts)
-    return await assembleFromRecords(out.code, recordsFile)
+    return await assembleFromRecords(out, recordsFile)
   })
 }
 
@@ -211,7 +231,7 @@ async function runSbt(opts: ManifestScriptOptions): Promise<ManifestRunResult> {
       FACTS_TASK,
     ]
     const out = await runNeverThrow(bin, args, opts)
-    return await assembleFromRecords(out.code, recordsFile)
+    return await assembleFromRecords(out, recordsFile)
   })
 }
 
@@ -241,6 +261,6 @@ async function runMaven(
       'validate',
     ]
     const out = await runNeverThrow(bin, args, opts)
-    return await assembleFromRecords(out.code, recordsFile)
+    return await assembleFromRecords(out, recordsFile)
   })
 }
