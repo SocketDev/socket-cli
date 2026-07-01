@@ -7,7 +7,6 @@ import { renderResolutionErrorReport } from './scripts/resolution-report-render.
 import { runManifestScript } from './scripts/run.mts'
 import { accumulateSidecar } from './scripts/sidecar.mts'
 import constants from '../../constants.mts'
-import { InputError } from '../../utils/errors.mts'
 
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { ManifestRunResult } from './scripts/run.mts'
@@ -72,17 +71,38 @@ export async function runManifestFacts({
   }
   const { spinner } = constants
   let result: ManifestRunResult
-  if (verbose) {
-    result = await runManifestScript(ecosystem, scriptOpts)
-  } else {
-    spinner.start(
-      `Resolving ${ecosystem} dependencies (pass --verbose to stream build output) ...`,
-    )
-    try {
+  try {
+    if (verbose) {
+      logger.info(
+        `(Running ${ecosystem} with output streaming; this can take a while.)`,
+      )
       result = await runManifestScript(ecosystem, scriptOpts)
-    } finally {
-      spinner.stop()
+    } else {
+      logger.info(
+        `(No live output; pass --verbose to stream the ${ecosystem} build output.)`,
+      )
+      spinner.start(`Resolving ${ecosystem} dependencies ...`)
+      result = await runManifestScript(ecosystem, scriptOpts)
+      if (result.code === 0) {
+        spinner.successAndStop(`Resolved ${ecosystem} dependencies.`)
+      } else {
+        spinner.failAndStop(
+          `${ecosystem} build exited with code ${result.code}.`,
+        )
+      }
     }
+  } catch (e) {
+    // Only a spawn-level failure (e.g. the build tool missing from PATH) reaches
+    // here; runNeverThrow returns non-zero build exits rather than throwing.
+    if (!verbose) {
+      spinner.failAndStop(`Failed to run ${ecosystem}.`)
+    }
+    process.exitCode = 1
+    logger.fail(
+      `Could not run the ${ecosystem} build tool` +
+        (verbose ? `: ${e}` : ' (run with --verbose for details).'),
+    )
+    return
   }
   const { artifactPaths, code, facts, report, stderr, stdout } = result
 
@@ -97,10 +117,12 @@ export async function runManifestFacts({
     if (ignoreUnresolved) {
       logger.warn(rendered.summary)
     } else {
+      process.exitCode = 1
+      logger.fail(rendered.summary)
       if (verbose && rendered.details) {
         logger.log(rendered.details)
       }
-      throw new InputError(rendered.summary)
+      return
     }
   }
   if (rendered.nonBlockingNotice) {
@@ -131,10 +153,12 @@ export async function runManifestFacts({
       }
     }
     const message = `The ${ecosystem} build failed (exit code ${code}) before producing any Socket facts.`
-    if (!ignoreUnresolved) {
-      throw new InputError(message)
+    if (ignoreUnresolved) {
+      logger.warn(message)
+      return
     }
-    logger.warn(message)
+    process.exitCode = 1
+    logger.fail(message)
     return
   }
 

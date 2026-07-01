@@ -70,11 +70,13 @@ async function runNeverThrow(
       stderr: typeof result.stderr === 'string' ? result.stderr : '',
     }
   } catch (e) {
-    // A non-zero exit rejects with the spawn-result shape: a numeric `code` plus
-    // captured stdout/stderr. Return it so the caller can assemble failure
-    // records. Anything else (e.g. a missing executable, whose `code` is the
-    // string 'ENOENT') propagates. Duck-typed on purpose: the registry's
-    // isSpawnError is unreliable, so the numeric-code check is the real signal.
+    // A build tool that exits non-zero rejects with the spawn-result shape: a
+    // numeric exit `code` plus captured stdout/stderr. Return it so the caller
+    // can assemble failure records / surface the output. Anything else — e.g. a
+    // missing executable, whose `code` is a string like 'ENOENT' — propagates.
+    // This mirrors how utils/dlx.mts classifies spawn failures (a numeric `code`
+    // is a real process exit); the registry's isSpawnError is avoided here
+    // because it is currently broken and never matches.
     if (
       e !== null &&
       typeof e === 'object' &&
