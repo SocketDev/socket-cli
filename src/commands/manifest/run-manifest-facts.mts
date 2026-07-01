@@ -27,8 +27,8 @@ function tailBuildOutput(stdout: string, stderr: string): string {
 // Runs the bundled build-tool resolution script for a JVM project and writes
 // `.socket.facts.json`. `withFiles` (reachability only) additionally folds
 // resolved artifact paths into `sidecarAcc`. A blocking resolution failure — or
-// a build that crashes without emitting any facts — throws unless
-// `ignoreUnresolved`.
+// a build that crashes without emitting any facts — sets a non-zero exit code
+// and returns (matching the `--pom` generator) unless `ignoreUnresolved`.
 export async function runManifestFacts({
   bin,
   buildOpts,
