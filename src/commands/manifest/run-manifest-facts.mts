@@ -26,9 +26,10 @@ function tailBuildOutput(stdout: string, stderr: string): string {
 
 // Runs the bundled build-tool resolution script for a JVM project and writes
 // `.socket.facts.json`. `withFiles` (reachability only) additionally folds
-// resolved artifact paths into `sidecarAcc`. A blocking resolution failure — or
-// a build that crashes without emitting any facts — sets a non-zero exit code
-// and returns (matching the `--pom` generator) unless `ignoreUnresolved`.
+// resolved artifact paths into `sidecarAcc`. A blocking resolution failure sets
+// a non-zero exit code and returns (matching the `--pom` generator) unless
+// `ignoreUnresolved`; a crashed build — a process failure, not an unresolved
+// dependency — always fails.
 export async function runManifestFacts({
   bin,
   buildOpts,
@@ -152,13 +153,14 @@ export async function runManifestFacts({
         logger.groupEnd()
       }
     }
-    const message = `The ${ecosystem} build failed (exit code ${code}) before producing any Socket facts.`
-    if (ignoreUnresolved) {
-      logger.warn(message)
-      return
-    }
+    // A crashed build is a process failure (missing JDK/build tool, unparseable
+    // project, OOM, plugin error), not an unresolved dependency, so it fails
+    // regardless of `ignoreUnresolved` — that flag only tolerates dependencies a
+    // successful run couldn't resolve.
     process.exitCode = 1
-    logger.fail(message)
+    logger.fail(
+      `The ${ecosystem} build failed (exit code ${code}) before producing any Socket facts.`,
+    )
     return
   }
 

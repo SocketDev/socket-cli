@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - Quieter `socket manifest gradle`, `sbt`, and `maven`: the build tool's output is now hidden behind a progress spinner and shown only if the build fails. Pass `--verbose` to stream it live.
-- `--auto-manifest` now fails fast: if a Gradle, sbt, or Maven build can't be resolved, the run stops instead of continuing with an incomplete SBOM. Opt into tolerating install errors to keep going.
+- `--auto-manifest` now fails fast: if a Gradle, sbt, or Maven build fails, the run stops instead of continuing with an incomplete SBOM.
 
 ## [1.1.132](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.132) - 2026-06-30
 
