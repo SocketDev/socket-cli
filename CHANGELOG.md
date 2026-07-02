@@ -12,7 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   the run unless you pass `--ignore-unresolved`, so an incomplete scan can't slip
   by unnoticed. Benign variant-selection ambiguity stays a one-line notice.
 - `--include-configs` / `--exclude-configs` patterns for `socket manifest
-  gradle`, `kotlin`, `sbt`, and `maven` are now matched case-sensitively (as
+  gradle`, `kotlin`, `scala`, and `maven` are now matched case-sensitively (as
   documented) and support `[...]` character classes — e.g. `*[Tt]est*` matches
   both `testCompileClasspath` and `androidTestCompileClasspath`.
 
