@@ -11,8 +11,14 @@ export function classifyGradleFailure(detail: string): FailureCategory {
   if (t.includes('conflict on capability')) {
     return 'capability-conflict'
   }
-  // Zero compatible variants — the opposite of ambiguity below.
-  if (t.includes('no matching variant') || t.includes('no variants of')) {
+  // Zero compatible variants — the opposite of ambiguity below. Gradle phrases
+  // this several ways depending on version and whether attributes were supplied.
+  if (
+    t.includes('no matching variant') ||
+    t.includes('no variants of') ||
+    t.includes('unable to find a matching variant') ||
+    t.includes('no compatible variant')
+  ) {
     return 'no-matching-variant'
   }
   if (t.includes('cannot choose between')) {
