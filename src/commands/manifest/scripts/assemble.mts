@@ -443,5 +443,14 @@ function buildReport(parsed: ParsedRecords): ResolutionReport {
     seen.add(key)
     return true
   })
-  return { failures, scannedConfigs: parsed.scannedConfigs }
+  const seenUnscannable = new Set<string>()
+  const unscannable = parsed.unscannable.filter(u => {
+    const key = `${u.config}|${u.detail}`
+    if (seenUnscannable.has(key)) {
+      return false
+    }
+    seenUnscannable.add(key)
+    return true
+  })
+  return { failures, scannedConfigs: parsed.scannedConfigs, unscannable }
 }
