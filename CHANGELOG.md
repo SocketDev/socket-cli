@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+- `socket manifest gradle --facts` no longer silently skips a Gradle
+  configuration it can't resolve. Such configurations are now reported and stop
+  the run unless you pass `--ignore-unresolved`, so an incomplete scan can't slip
+  by unnoticed. Benign variant-selection ambiguity stays a one-line notice.
+
 ## [1.1.135](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.135) - 2026-07-01
 
 ### Changed
