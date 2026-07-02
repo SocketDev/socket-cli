@@ -45,7 +45,7 @@ const config: CliCommandConfig = {
     includeConfigs: {
       type: 'string',
       description:
-        'When generating facts: comma-separated glob patterns matched against Gradle configuration names (case-sensitive, `*` and `?` wildcards). Only configurations matching at least one pattern are resolved. e.g. `*CompileClasspath,*RuntimeClasspath`. Default: every resolvable configuration except AGP instrumented-test classpaths',
+        'When generating facts: comma-separated glob patterns matched against Gradle configuration names (case-sensitive, `*` and `?` wildcards). Only configurations matching at least one pattern are resolved. e.g. `*CompileClasspath,*RuntimeClasspath`. Default: every resolvable configuration',
     },
     excludeConfigs: {
       type: 'string',

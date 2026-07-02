@@ -111,7 +111,7 @@ export async function runManifestFacts({
     report.failures,
     report.scannedConfigs,
     ecosystem,
-    { ignoreUnresolved },
+    { ignoreUnresolved, unscannable: report.unscannable },
   )
 
   if (rendered.hasBlockingFailures) {
@@ -143,7 +143,8 @@ export async function runManifestFacts({
     code !== 0 &&
     !facts.components.length &&
     !facts.projects?.length &&
-    !report.failures.length
+    !report.failures.length &&
+    !report.unscannable.length
   ) {
     if (!verbose) {
       const tail = tailBuildOutput(stdout, stderr)

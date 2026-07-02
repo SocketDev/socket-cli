@@ -42,6 +42,22 @@ describe('resolution failure classification', () => {
     expect(r.nonBlockingNotice).toContain('ambiguous variant')
   })
 
+  it("classifies Gradle's 'unable to find a matching variant' phrasing as blocking no-matching-variant", () => {
+    const r = renderResolutionErrorReport(
+      [
+        f(
+          'com.example:lib:1.0',
+          "Unable to find a matching variant of com.example:lib:1.0:\n  - Variant 'apiElements'",
+        ),
+      ],
+      ['runtimeClasspath'],
+      'gradle',
+    )
+    expect(r.hasBlockingFailures).toBe(true)
+    expect(r.summary).toContain('No compatible variant')
+    expect(r.nonBlockingNotice).toBe('')
+  })
+
   it('classifies a Gradle capability conflict as blocking', () => {
     const r = renderResolutionErrorReport(
       [
@@ -126,5 +142,45 @@ describe('resolution failure classification', () => {
     expect(r.hasBlockingFailures).toBe(false)
     expect(r.summary).toBe('')
     expect(r.nonBlockingNotice).toBe('')
+  })
+
+  it('treats an ambiguity-driven config throw as a non-blocking notice', () => {
+    const r = renderResolutionErrorReport(
+      [],
+      ['debugAndroidTestCompileClasspath'],
+      'gradle',
+      {
+        unscannable: [
+          {
+            config: 'debugAndroidTestCompileClasspath',
+            detail:
+              'Cannot choose between the following variants of com.example:foo:1.0',
+          },
+        ],
+      },
+    )
+    expect(r.hasBlockingFailures).toBe(false)
+    expect(r.summary).toBe('')
+    expect(r.nonBlockingNotice).toContain('Could not scan 1 configuration(s)')
+    expect(r.details).toContain('debugAndroidTestCompileClasspath')
+  })
+
+  it('treats a non-ambiguity config throw as a blocking failure', () => {
+    const r = renderResolutionErrorReport([], ['runtimeClasspath'], 'gradle', {
+      unscannable: [
+        {
+          config: 'runtimeClasspath',
+          detail:
+            'Could not GET https://repo.example/foo. Received status code 401',
+        },
+      ],
+    })
+    expect(r.hasBlockingFailures).toBe(true)
+    expect(r.summary).toContain('Could not scan 1 configuration(s)')
+    expect(r.summary).toContain('runtimeClasspath')
+    expect(r.nonBlockingNotice).toBe('')
+    // With no per-dep failures the summary must not lead with a blank line
+    // (which would render as a dangling ✗ under logger.fail).
+    expect(r.summary.startsWith('\n')).toBe(false)
   })
 })

@@ -1,4 +1,7 @@
-import type { ResolutionFailure } from './resolution-report.mts'
+import type {
+  ResolutionFailure,
+  UnscannableConfig,
+} from './resolution-report.mts'
 
 // Line-protocol the build-tool scripts emit to a records file (NOT stdout — sbt
 // prints unsilenceable resolution noise there). One record per line, fields
@@ -16,6 +19,7 @@ import type { ResolutionFailure } from './resolution-report.mts'
 //   file        rootId  coordId  path                    (--with-files only)
 //   scanned     config
 //   failure     coord  detail  config
+//   unscannable config  detail
 //
 // A `root` is one (subproject, configuration) resolution root; `coordId` is the
 // coordinate key (`group:name:ext:classifier:version`, empty segments dropped),
@@ -64,6 +68,7 @@ export type ParsedRecords = {
   roots: Map<string, RawRoot>
   scannedConfigs: string[]
   failures: ResolutionFailure[]
+  unscannable: UnscannableConfig[]
 }
 
 export function unescapeField(s: string): string {
@@ -96,6 +101,7 @@ export function parseRecords(text: string): ParsedRecords {
     roots: new Map(),
     scannedConfigs: [],
     failures: [],
+    unscannable: [],
   }
   const scanned = new Set<string>()
 
@@ -210,6 +216,14 @@ export function parseRecords(text: string): ParsedRecords {
             coord: f[1],
             detail: f[2] ?? '',
             config: f[3] ?? '',
+          })
+        }
+        break
+      case 'unscannable':
+        if (f[1]) {
+          result.unscannable.push({
+            config: f[1],
+            detail: f[2] ?? '',
           })
         }
         break
