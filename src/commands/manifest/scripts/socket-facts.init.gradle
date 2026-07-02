@@ -18,6 +18,8 @@ gradle.ext.socketFactsState = [
   directIds          : Collections.synchronizedSet([] as Set),
   // `detail` is the build tool's failure message verbatim; Coana classifies the failure KIND from it.
   failures           : Collections.synchronizedList([]),
+  // Whole configs whose resolution threw (vs a single unresolved dep in `failures`).
+  unscannable        : Collections.synchronizedList([]),
   scannedConfigs     : Collections.synchronizedSet([] as Set),
   projectKeys        : Collections.synchronizedSet([] as Set),
   // Only populated with `-Psocket.withFiles=true`: reading `artifact.file` downloads the artifact.
@@ -394,7 +396,10 @@ allprojects { project ->
             ]
           }
         } catch (Exception e) {
-          println "[socket-facts] skipping ${project.path}:${cfg.name}: ${e.message?.readLines()?.first()}"
+          // A config-LEVEL resolution failure (a resolutionStrategy/beforeResolve rule that throws,
+          // an artifact-transform failure, a broken repository, ...) rather than a per-dep failure.
+          // Record it instead of swallowing; the build still exits cleanly and the TS layer surfaces it.
+          state.unscannable << [config: cfg.name, detail: rawDetail(e)]
         }
         // Stash this resolution root's tree; the key only has to be unique per root (aggregator
         // groups by subtree hash). Skip empty configs — they'd contribute nothing.
@@ -471,6 +476,9 @@ rootProject { rp ->
       def failures
       synchronized (state.failures) { failures = new ArrayList(state.failures) }
       failures.each { f -> rec(['failure', f.coord, f.detail, f.config]) }
+      def unscannable
+      synchronized (state.unscannable) { unscannable = new ArrayList(state.unscannable) }
+      unscannable.each { u -> rec(['unscannable', u.config, u.detail]) }
 
       def outFile = new File(recordsFileOverride ?: defaultRecordsFile)
       outFile.parentFile?.mkdirs()

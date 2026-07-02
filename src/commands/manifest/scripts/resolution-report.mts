@@ -6,7 +6,14 @@ export type ResolutionFailure = {
   config: string
 }
 
+// A whole config whose resolution threw, vs a single unresolved dep (`ResolutionFailure`).
+export type UnscannableConfig = {
+  config: string
+  detail: string
+}
+
 export type ResolutionReport = {
   failures: ResolutionFailure[]
   scannedConfigs: string[]
+  unscannable: UnscannableConfig[]
 }

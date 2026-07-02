@@ -7,10 +7,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Changed
+- `socket manifest gradle --facts` no longer silently skips a Gradle
+  configuration it can't resolve. Such configurations are now reported and stop
+  the run unless you pass `--ignore-unresolved`, so an incomplete scan can't slip
+  by unnoticed. Benign variant-selection ambiguity stays a one-line notice.
 - `--include-configs` / `--exclude-configs` patterns for `socket manifest
   gradle`, `kotlin`, `sbt`, and `maven` are now matched case-sensitively (as
   documented) and support `[...]` character classes — e.g. `*[Tt]est*` matches
   both `testCompileClasspath` and `androidTestCompileClasspath`.
+
+### Fixed
+- `socket manifest auto` and `scan create --auto-manifest` now detect a Gradle
+  project by its build files (`build.gradle`/`.kts` or `settings.gradle`/`.kts`)
+  instead of requiring a `gradlew` wrapper, so a project that builds with
+  `gradle` on your PATH — including a settings-only multi-module root — is no
+  longer skipped.
 
 ## [1.1.135](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.135) - 2026-07-01
 
