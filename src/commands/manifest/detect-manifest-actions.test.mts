@@ -99,6 +99,20 @@ describe('detectManifestActions — gradle detector', () => {
     expect(result.count).toBe(1)
   })
 
+  it('detects settings.gradle', async () => {
+    touch(cwd, 'settings.gradle')
+    const result = await detectManifestActions(null, cwd)
+    expect(result.gradle).toBe(true)
+    expect(result.count).toBe(1)
+  })
+
+  it('detects a settings-only Kotlin-DSL root (settings.gradle.kts, no build.gradle)', async () => {
+    touch(cwd, 'settings.gradle.kts')
+    touch(cwd, 'gradlew')
+    const result = await detectManifestActions(null, cwd)
+    expect(result.gradle).toBe(true)
+  })
+
   it('detects a wrapper-less gradle project (build.gradle, no gradlew)', async () => {
     touch(cwd, 'build.gradle')
     const result = await detectManifestActions(null, cwd)

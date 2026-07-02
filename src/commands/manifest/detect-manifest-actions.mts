@@ -74,11 +74,12 @@ export async function detectManifestActions(
     )
   } else if (
     existsSync(path.join(cwd, 'build.gradle')) ||
-    existsSync(path.join(cwd, 'build.gradle.kts'))
+    existsSync(path.join(cwd, 'build.gradle.kts')) ||
+    existsSync(path.join(cwd, 'settings.gradle')) ||
+    existsSync(path.join(cwd, 'settings.gradle.kts'))
   ) {
-    // Detect by build script, not the `gradlew` wrapper: a project can build
-    // with `gradle` on PATH (no wrapper), matching how `socket manifest gradle`
-    // resolves its bin. Mirrors `pom.xml` (Maven) and `build.sbt` (sbt).
+    // Detect by build descriptor, not the `gradlew` wrapper (a project can build via
+    // `gradle` on PATH). `settings.gradle(.kts)` covers Kotlin-DSL roots with no root build script.
     debugLog('notice', '[DEBUG] - Detected a gradle build file')
     output.gradle = true
     output.count += 1
