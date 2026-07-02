@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+- `--include-configs` / `--exclude-configs` patterns for `socket manifest
+  gradle`, `kotlin`, `sbt`, and `maven` are now matched case-sensitively (as
+  documented) and support `[...]` character classes — e.g. `*[Tt]est*` matches
+  both `testCompileClasspath` and `androidTestCompileClasspath`.
+
 ## [1.1.135](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.135) - 2026-07-01
 
 ### Changed

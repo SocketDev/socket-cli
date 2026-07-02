@@ -27,7 +27,7 @@ describe('socket manifest scala', async () => {
             --exclude-configs   When generating facts: comma-separated glob patterns; sbt configurations matching any pattern are skipped (applied after --include-configs)
             --facts             Emit a Socket facts JSON file (\`.socket.facts.json\`) describing the resolved dependency graph. This is the default; pass \`--pom\` to generate \`pom.xml\` files instead
             --ignore-unresolved  When generating facts: warn on unresolved dependencies instead of failing the run (unresolved deps are not emitted to the facts file)
-            --include-configs   When generating facts: comma-separated glob patterns matched against sbt configuration names (case-sensitive, \`*\` and \`?\` wildcards). Only configurations matching at least one pattern are resolved. e.g. \`compile,test\`. Default: compile,optional,provided,runtime,test
+            --include-configs   When generating facts: comma-separated glob patterns matched against sbt configuration names (case-sensitive; \`*\`, \`?\`, and \`[...]\` wildcards). Only configurations matching at least one pattern are resolved. e.g. \`compile,test\`. Default: compile,optional,provided,runtime,test
             --out               Only with --pom: path of the output \`pom.xml\`, see also --stdout. Does not apply when generating Socket facts (always written to the project root as \`.socket.facts.json\`)
             --pom               Generate \`pom.xml\` manifest file(s) instead of the default Socket facts file (\`.socket.facts.json\`)
             --sbt-opts          Additional options to pass on to sbt, as per \`sbt --help\`

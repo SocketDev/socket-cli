@@ -336,16 +336,39 @@ object SocketFactsPlugin extends AutoPlugin {
     }
   }
 
+  // Case-SENSITIVE (matching is documented as case-sensitive). Supports `*`, `?`, and `[...]`
+  // character classes: enumerations (`[cC]`), ranges (`[a-z]`), and `[!..]` negation. A malformed
+  // glob falls back to a literal match rather than throwing.
   private def globToRegex(glob: String): java.util.regex.Pattern = {
     val sb = new StringBuilder
-    glob.foreach {
-      case '*' => sb.append(".*")
-      case '?' => sb.append('.')
-      case c if "\\.^$|+()[]{}".indexOf(c.toInt) >= 0 =>
-        sb.append('\\').append(c)
-      case c => sb.append(c)
+    var i = 0
+    val n = glob.length
+    while (i < n) {
+      val c = glob.charAt(i)
+      if (c == '*') { sb.append(".*"); i += 1 }
+      else if (c == '?') { sb.append('.'); i += 1 }
+      else if (c == '[') {
+        val j = glob.indexOf(']', i + 1)
+        // Treat as a class only with a non-empty body; else a literal `[`.
+        if (j <= i + 1) { sb.append("\\["); i += 1 }
+        else {
+          var body = glob.substring(i + 1, j)
+          val neg = body.startsWith("!")
+          if (neg) body = body.substring(1)
+          // Only literal chars and `-` ranges are meaningful; neutralize regex-class tricks.
+          body = body.replace("\\", "\\\\").replace("[", "\\[").replace("&", "\\&")
+          sb.append('[').append(if (neg) "^" else "").append(body).append(']')
+          i = j + 1
+        }
+      } else if ("\\.^$|+(){}]".indexOf(c.toInt) >= 0) {
+        sb.append('\\').append(c); i += 1
+      } else { sb.append(c); i += 1 }
     }
-    java.util.regex.Pattern.compile(sb.toString, java.util.regex.Pattern.CASE_INSENSITIVE)
+    try java.util.regex.Pattern.compile(sb.toString)
+    catch {
+      case _: java.util.regex.PatternSyntaxException =>
+        java.util.regex.Pattern.compile(java.util.regex.Pattern.quote(glob))
+    }
   }
 
   // ConfigurationReport.configuration is a String on sbt 0.13, a ConfigRef on 1.x: read `.name` reflectively.

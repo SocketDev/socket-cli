@@ -43,7 +43,7 @@ const config: CliCommandConfig = {
     includeConfigs: {
       type: 'string',
       description:
-        'When generating facts: comma-separated glob patterns matched against sbt configuration names (case-sensitive, `*` and `?` wildcards). Only configurations matching at least one pattern are resolved. e.g. `compile,test`. Default: compile,optional,provided,runtime,test',
+        'When generating facts: comma-separated glob patterns matched against sbt configuration names (case-sensitive; `*`, `?`, and `[...]` wildcards). Only configurations matching at least one pattern are resolved. e.g. `compile,test`. Default: compile,optional,provided,runtime,test',
     },
     excludeConfigs: {
       type: 'string',

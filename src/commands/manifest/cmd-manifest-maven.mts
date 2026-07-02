@@ -34,7 +34,7 @@ const config: CliCommandConfig = {
     includeConfigs: {
       type: 'string',
       description:
-        'Comma-separated glob patterns matched against Maven dependency scopes (case-sensitive, `*` and `?` wildcards). Only scopes matching at least one pattern are resolved. e.g. `compile,runtime`. Default: every scope',
+        'Comma-separated glob patterns matched against Maven dependency scopes (case-sensitive; `*`, `?`, and `[...]` wildcards). Only scopes matching at least one pattern are resolved. e.g. `compile,runtime`. Default: every scope',
     },
     excludeConfigs: {
       type: 'string',
