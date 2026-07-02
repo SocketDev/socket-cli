@@ -179,5 +179,8 @@ describe('resolution failure classification', () => {
     expect(r.summary).toContain('Could not scan 1 configuration(s)')
     expect(r.summary).toContain('runtimeClasspath')
     expect(r.nonBlockingNotice).toBe('')
+    // With no per-dep failures the summary must not lead with a blank line
+    // (which would render as a dangling ✗ under logger.fail).
+    expect(r.summary.startsWith('\n')).toBe(false)
   })
 })

@@ -193,7 +193,11 @@ export function renderResolutionReport(
       }
     }
     if (blockingUnscannable.length) {
-      out.push('')
+      // Separate from the per-dep block above, but only if there is one — otherwise
+      // the summary would lead with a blank line (a dangling ✗ under logger.fail).
+      if (out.length) {
+        out.push('')
+      }
       out.push(
         opts.ignoreUnresolved
           ? `Ignored ${blockingUnscannable.length} configuration(s) that could not be scanned:`
@@ -243,8 +247,8 @@ export function renderResolutionReport(
     const configCount = new Set(infos.flatMap(i => [...i.configs])).size
     notices.push(spec.notice(name, infos.length, configCount))
   }
-  // Ambiguity-driven config-throws (e.g. AGP *AndroidTest*) are surfaced, not failed:
-  // deliberately lenient, matching the per-dep variant-ambiguity policy.
+  // A config-level throw whose cause classifies as variant ambiguity is surfaced, not failed —
+  // matching the deliberately-lenient per-dep variant-ambiguity policy.
   if (nonBlockingUnscannable.length) {
     const n = new Set(nonBlockingUnscannable.map(u => u.config)).size
     notices.push(
