@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Fixed
+- `socket manifest auto` and `scan create --auto-manifest` now detect a Gradle
+  project by its `build.gradle` / `build.gradle.kts` build script instead of
+  requiring a `gradlew` wrapper, so a project that builds with `gradle` on your
+  PATH is no longer skipped.
+
 ## [1.1.135](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.135) - 2026-07-01
 
 ### Changed

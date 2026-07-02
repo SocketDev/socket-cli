@@ -72,7 +72,13 @@ export async function detectManifestActions(
       'notice',
       `[DEBUG] - gradle auto-detection is disabled in ${SOCKET_JSON}`,
     )
-  } else if (existsSync(path.join(cwd, 'gradlew'))) {
+  } else if (
+    existsSync(path.join(cwd, 'build.gradle')) ||
+    existsSync(path.join(cwd, 'build.gradle.kts'))
+  ) {
+    // Detect by build script, not the `gradlew` wrapper: a project can build
+    // with `gradle` on PATH (no wrapper), matching how `socket manifest gradle`
+    // resolves its bin. Mirrors `pom.xml` (Maven) and `build.sbt` (sbt).
     debugLog('notice', '[DEBUG] - Detected a gradle build file')
     output.gradle = true
     output.count += 1
