@@ -337,8 +337,8 @@ object SocketFactsPlugin extends AutoPlugin {
   }
 
   // Case-SENSITIVE (matching is documented as case-sensitive). Supports `*`, `?`, and `[...]`
-  // character classes: enumerations (`[cC]`), ranges (`[a-z]`), and `[!..]` negation. A malformed
-  // glob falls back to a literal match rather than throwing.
+  // character classes: enumerations (`[cC]`), ranges (`[a-z]`), and `[!..]`/`[^..]` negation. A
+  // malformed glob falls back to a literal match, never throws.
   private def globToRegex(glob: String): java.util.regex.Pattern = {
     val sb = new StringBuilder
     var i = 0

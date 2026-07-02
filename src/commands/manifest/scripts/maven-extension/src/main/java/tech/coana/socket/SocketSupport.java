@@ -42,7 +42,7 @@ public final class SocketSupport {
   /**
    * Translate a config-name glob to a case-sensitive regex. Supports {@code *}, {@code ?}, and
    * {@code [...]} character classes: enumerations ({@code [cC]}), ranges ({@code [a-z]}), and
-   * {@code [!..]} negation. A malformed glob falls back to a literal match rather than throwing.
+   * {@code [!..]}/{@code [^..]} negation. A malformed glob falls back to a literal match, never throws.
    */
   public static Pattern globToRegex(String glob) {
     StringBuilder sb = new StringBuilder();

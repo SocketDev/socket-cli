@@ -286,7 +286,7 @@ allprojects { project ->
 
       // Config-name glob to a case-SENSITIVE regex (matching is documented as case-sensitive).
       // Supports `*`, `?`, and `[...]` character classes: enumerations (`[cC]`), ranges (`[a-z]`),
-      // and `[!..]` negation. A malformed glob falls back to a literal match rather than throwing.
+      // and `[!..]`/`[^..]` negation. A malformed glob falls back to a literal match, never throws.
       def globToRegex = { String glob ->
         def sb = new StringBuilder()
         int i = 0
