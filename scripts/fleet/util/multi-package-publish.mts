@@ -18,19 +18,20 @@
  *      row's `triplets` set.
  *   4. Name conformance — every archive's `package.json.name` equals
  *      `buildTailPackageName(entry, triplet)`.
- *   5. SHA verification — every archive's sha256 matches its line in the release's
- *      SHA256SUMS file.
+ *   5. SHA verification — every asset's sha256 matches its line in the release's
+ *      checksums manifest (the row's `checksumsAsset`, default `SHA256SUMS`).
  *   6. Attestation verification — `gh attestation verify` against the row's
- *      `attestationSubject` passes for every archive AND for SHA256SUMS itself.
- *      Any failure aborts the whole family — no partial stage. The staging
- *      directory is left in place on failure for diagnostics; the consumer's
- *      wrapping script is responsible for cleanup on retry.
+ *      `attestationSubject` passes for every asset AND for the checksums
+ *      manifest itself. Any failure aborts the whole family — no partial
+ *      stage. The staging directory is left in place on failure for
+ *      diagnostics; the consumer's wrapping script is responsible for cleanup
+ *      on retry.
  *
  * @see ./source-allowlist.mts for `SourceAllowlistEntry` + helpers.
  * @see ./pack-app-triplets.mts for the canonical triplet set.
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { chmodSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
@@ -40,6 +41,7 @@ import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import {
   extractVersionFromTag,
   findArchiveForTriplet,
+  findRawBinaryForTriplet,
   parseShaSums,
   runCommand,
   runGh,
@@ -210,7 +212,11 @@ export async function stageMultiPackagePublish(
   // Stage 2 — parse the version segment off the release tag. Used to
   // stamp every tail's package.json + to validate triplet conformance
   // when archive names are version-suffixed.
-  const version = extractVersionFromTag(config.releaseTag, entry.tagPattern)
+  const version = extractVersionFromTag(
+    config.releaseTag,
+    entry.tagPattern,
+    entry.versionScheme,
+  )
   if (!version) {
     throw new MultiPackageStageError(
       `Could not extract a semver-shaped version from tag ${config.releaseTag} (pattern ${entry.tagPattern}).`,
@@ -246,18 +252,19 @@ export async function stageMultiPackagePublish(
     )
   }
 
-  // Stage 5 — read SHA256SUMS.
-  const sumsPath = path.join(config.stagingDir, 'SHA256SUMS')
+  // Stage 5 — read the checksums manifest.
+  const checksumsAsset = entry.checksumsAsset ?? 'SHA256SUMS'
+  const sumsPath = path.join(config.stagingDir, checksumsAsset)
   if (!existsSync(sumsPath)) {
     throw new MultiPackageStageError(
-      `Release ${config.releaseTag} has no SHA256SUMS file. Refusing to stage without a hash manifest.`,
+      `Release ${config.releaseTag} has no ${checksumsAsset} file. Refusing to stage without a hash manifest.`,
       'sha-list-missing',
     )
   }
   const sums = parseShaSums(readFileSync(sumsPath, 'utf8'))
 
-  // Stage 6 — verify SHA256SUMS itself is attested.
-  logger.log('Verifying SHA256SUMS attestation')
+  // Stage 6 — verify the checksums manifest itself is attested.
+  logger.log(`Verifying ${checksumsAsset} attestation`)
   await verifyAttestation(sumsPath, config.sourceRepo, entry.attestationSubject)
 
   // Stage 7 — for each requested triplet, find + verify + extract + stage.
@@ -275,84 +282,94 @@ export async function stageMultiPackagePublish(
     }
 
     // Find the archive matching this triplet. Convention:
-    // `<prefix><triplet>.tgz` or `<prefix><triplet>.tar.gz`.
+    // `<prefix><triplet>.tgz` or `<prefix><triplet>.tar.gz`. `cli` families
+    // that ship a raw, extension-less per-triplet binary instead of a tarball
+    // (`<binaryName>-<triplet>`, `.exe` for win32) fall back to that.
     const archiveName = findArchiveForTriplet(
       config.stagingDir,
       entry.namePrefix,
       triplet,
     )
-    if (!archiveName) {
+    const rawBinaryName =
+      archiveName === undefined && entry.kind === 'cli'
+        ? findRawBinaryForTriplet(config.stagingDir, entry.binaryName, triplet)
+        : undefined
+    const assetName = archiveName ?? rawBinaryName
+    if (!assetName) {
       throw new MultiPackageStageError(
-        `No archive in release for triplet ${triplet} (expected ${entry.namePrefix}${triplet}.{tgz,tar.gz}).`,
+        `No archive or raw binary in release for triplet ${triplet} (expected ${entry.namePrefix}${triplet}.{tgz,tar.gz} or ${entry.binaryName}-${triplet}${triplet.startsWith('win32-') ? '.exe' : ''}).`,
         'download',
         triplet,
       )
     }
-    const archivePath = path.join(config.stagingDir, archiveName)
+    const assetPath = path.join(config.stagingDir, assetName)
 
-    // Verify sha against SHA256SUMS.
-    const actualSha = sha256Of(archivePath)
-    const expectedSha = sums.get(archiveName)
+    // Verify sha against the checksums manifest.
+    const actualSha = sha256Of(assetPath)
+    const expectedSha = sums.get(assetName)
     if (!expectedSha) {
       throw new MultiPackageStageError(
-        `${archiveName} not listed in SHA256SUMS.`,
+        `${assetName} not listed in ${checksumsAsset}.`,
         'sha-mismatch',
         triplet,
       )
     }
     if (actualSha !== expectedSha) {
       throw new MultiPackageStageError(
-        `${archiveName} sha256 mismatch: got ${actualSha}, expected ${expectedSha}.`,
+        `${assetName} sha256 mismatch: got ${actualSha}, expected ${expectedSha}.`,
         'sha-mismatch',
         triplet,
       )
     }
 
-    // Verify per-archive attestation.
+    // Verify per-asset attestation.
     // eslint-disable-next-line no-await-in-loop
     await verifyAttestation(
-      archivePath,
+      assetPath,
       config.sourceRepo,
       entry.attestationSubject,
     )
 
-    // Extract.
-    const extractDir = path.join(config.stagingDir, `extract-${triplet}`)
-    // eslint-disable-next-line no-await-in-loop
-    await safeMkdir(extractDir, { recursive: true })
-    // eslint-disable-next-line no-await-in-loop
-    const extractResult = await runCommand(
-      'tar',
-      ['-xzf', archivePath, '-C', extractDir],
-      config.stagingDir,
-    )
-    if (extractResult.code !== 0) {
-      throw new MultiPackageStageError(
-        `tar extract failed for ${archiveName}: ${extractResult.stderr}`,
-        'archive-extract',
-        triplet,
-      )
-    }
-
-    // Validate name conformance from extracted manifest.
-    const extractedManifestPath = path.join(extractDir, 'package.json')
-    if (!existsSync(extractedManifestPath)) {
-      throw new MultiPackageStageError(
-        `Extracted archive ${archiveName} has no package.json at the top level.`,
-        'archive-extract',
-        triplet,
-      )
-    }
-    const extractedManifest = JSON.parse(
-      readFileSync(extractedManifestPath, 'utf8'),
-    ) as { name?: string | undefined; version?: string | undefined }
     const expectedName = buildTailPackageName(entry, triplet)
-    if (extractedManifest.name !== expectedName) {
-      throw new MultiPackageStageError(
-        `Extracted ${archiveName} name mismatch: got ${extractedManifest.name}, expected ${expectedName}.`,
-        'name-conformance',
-        triplet,
+    let extractDir = ''
+    if (archiveName) {
+      // Extract.
+      extractDir = path.join(config.stagingDir, `extract-${triplet}`)
+      // eslint-disable-next-line no-await-in-loop
+      await safeMkdir(extractDir, { recursive: true })
+      // eslint-disable-next-line no-await-in-loop
+      const extractResult = await runCommand(
+        'tar',
+        ['-xzf', assetPath, '-C', extractDir],
+        config.stagingDir,
       )
+      if (extractResult.code !== 0) {
+        throw new MultiPackageStageError(
+          `tar extract failed for ${archiveName}: ${extractResult.stderr}`,
+          'archive-extract',
+          triplet,
+        )
+      }
+
+      // Validate name conformance from extracted manifest.
+      const extractedManifestPath = path.join(extractDir, 'package.json')
+      if (!existsSync(extractedManifestPath)) {
+        throw new MultiPackageStageError(
+          `Extracted archive ${archiveName} has no package.json at the top level.`,
+          'archive-extract',
+          triplet,
+        )
+      }
+      const extractedManifest = JSON.parse(
+        readFileSync(extractedManifestPath, 'utf8'),
+      ) as { name?: string | undefined; version?: string | undefined }
+      if (extractedManifest.name !== expectedName) {
+        throw new MultiPackageStageError(
+          `Extracted ${archiveName} name mismatch: got ${extractedManifest.name}, expected ${expectedName}.`,
+          'name-conformance',
+          triplet,
+        )
+      }
     }
 
     // Stage into consumer's per-tail dir (unless dry-run).
@@ -397,20 +414,26 @@ export async function stageMultiPackagePublish(
         )
       }
 
-      // Move the extracted binary into place. The extracted layout
-      // mirrors the published tail, so the binary's relative path
-      // inside the extract matches binaryRelative.
-      const extractedBinary = path.join(extractDir, binaryRelative)
-      if (!existsSync(extractedBinary)) {
-        throw new MultiPackageStageError(
-          `Extracted archive ${archiveName} has no binary at ${binaryRelative} (relative to archive root).`,
-          'archive-extract',
-          triplet,
-        )
-      }
       // eslint-disable-next-line no-await-in-loop
       await safeMkdir(path.dirname(stagedBinary), { recursive: true })
-      writeFileSync(stagedBinary, readFileSync(extractedBinary))
+      if (archiveName) {
+        // Move the extracted binary into place. The extracted layout
+        // mirrors the published tail, so the binary's relative path
+        // inside the extract matches binaryRelative.
+        const extractedBinary = path.join(extractDir, binaryRelative)
+        if (!existsSync(extractedBinary)) {
+          throw new MultiPackageStageError(
+            `Extracted archive ${archiveName} has no binary at ${binaryRelative} (relative to archive root).`,
+            'archive-extract',
+            triplet,
+          )
+        }
+        writeFileSync(stagedBinary, readFileSync(extractedBinary))
+      } else {
+        // Raw binary release asset — it IS the binary, no extraction.
+        writeFileSync(stagedBinary, readFileSync(assetPath))
+        chmodSync(stagedBinary, 0o755)
+      }
     }
 
     outcomes.push({

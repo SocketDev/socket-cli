@@ -28,6 +28,7 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import {
   auditForeignDeps,
   isForeignConfigFile,
+  isTestFixture,
   isVendoredUpstream,
 } from '../../../.claude/hooks/fleet/_shared/foreign-linters.mts'
 import { REPO_ROOT } from '../paths.mts'
@@ -43,7 +44,7 @@ function trackedFiles(): string[] {
 function main(): void {
   const failures: string[] = []
   for (const rel of trackedFiles()) {
-    if (isVendoredUpstream(rel)) {
+    if (isVendoredUpstream(rel) || isTestFixture(rel)) {
       continue
     }
     const basename = path.basename(rel)

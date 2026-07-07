@@ -42,6 +42,7 @@ export const CONVENTION_GUARDS: readonly string[] = [
   'no-revert-guard',
   'private-name-nudge',
   'shallow-clone-guard',
+  'test-script-defers-guard',
   'version-bump-order-guard',
 ]
 

@@ -66,6 +66,18 @@ let checked = 0
 
 for (let i = 0, { length } = mdFiles; i < length; i += 1) {
   const md = mdFiles[i]!
+  // A gh-aw workflow source always opens with YAML frontmatter (`---`); plain
+  // documentation living beside the workflows (README.md) does not, and has no
+  // .lock.yml to compile.
+  let head = ''
+  try {
+    head = readFileSync(md, 'utf8').slice(0, 4)
+  } catch {
+    head = ''
+  }
+  if (!head.startsWith('---')) {
+    continue
+  }
   const lock = md.replace(/\.md$/u, '.lock.yml')
   if (!existsSync(lock)) {
     problems.push(

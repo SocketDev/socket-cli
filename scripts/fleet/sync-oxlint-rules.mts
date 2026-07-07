@@ -38,6 +38,7 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+import { pathToFileURL } from 'node:url'
 
 // prefer-async-spawn: sync-required — this is a sequential CLI generator that
 // formats its output inline before the drift comparison; no concurrency.
@@ -238,7 +239,10 @@ function rewriteIndex(source: string, ids: readonly string[]): string {
  * the desired sorted set. Returns the new file text. Throws if the rules block
  * or socket run can't be located (a structural assumption broke).
  */
-function rewriteOxlintrc(source: string, ids: readonly string[]): string {
+export function rewriteOxlintrc(
+  source: string,
+  ids: readonly string[],
+): string {
   // oxlint-disable-next-line unicorn/no-array-sort -- .filter() already returns a fresh array (no shared mutation); .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
   const active = ids.filter(id => !(id in DORMANT_RULES)).sort()
   // Parse to recover any array-form (rule + options) configs we must preserve
@@ -282,12 +286,33 @@ function rewriteOxlintrc(source: string, ids: readonly string[]): string {
       'sync-oxlint-rules: could not find end of top-level `rules` block in oxlintrc.json',
     )
   }
-  // Match each socket/* line WITHIN the top-level rules block only. The fleet
-  // keeps socket activations single-line, so detect by leading `"socket/`.
+  // Match each socket/* activation WITHIN the top-level rules block only. An
+  // activation with an options array spans multiple lines once oxfmt wraps it
+  // (`"socket/x": ["error", {…}]` → 4 lines), so after a `"socket/` opener,
+  // consume continuation lines until the entry's brackets balance and claim
+  // the whole span as socket-owned.
+  const countEntryDepth = (line: string, depthIn: number): number => {
+    let d = depthIn
+    for (const ch of line) {
+      if (ch === '[' || ch === '{') {
+        d += 1
+      } else if (ch === ']' || ch === '}') {
+        d -= 1
+      }
+    }
+    return d
+  }
   const socketLineIdx: number[] = []
   for (let i = rulesOpenIdx + 1; i < rulesCloseIdx; i += 1) {
-    if (lines[i]!.trimStart().startsWith(`"${SOCKET_PREFIX}`)) {
+    if (!lines[i]!.trimStart().startsWith(`"${SOCKET_PREFIX}`)) {
+      continue
+    }
+    socketLineIdx.push(i)
+    let entryDepth = countEntryDepth(lines[i]!, 0)
+    while (entryDepth > 0 && i + 1 < rulesCloseIdx) {
+      i += 1
       socketLineIdx.push(i)
+      entryDepth = countEntryDepth(lines[i]!, entryDepth)
     }
   }
   if (socketLineIdx.length === 0) {
@@ -297,10 +322,11 @@ function rewriteOxlintrc(source: string, ids: readonly string[]): string {
   }
   const firstSocket = socketLineIdx[0]!
   const lastSocket = socketLineIdx[socketLineIdx.length - 1]!
-  // Guard: the socket lines must be contiguous (no interleaved foreign rules).
+  // Guard: the socket spans must be contiguous (no interleaved foreign rules).
   // If a non-socket rule sneaked into the run, bail loudly rather than corrupt.
+  const socketLineSet = new Set(socketLineIdx)
   for (let i = firstSocket; i <= lastSocket; i += 1) {
-    if (!lines[i]!.trimStart().startsWith(`"${SOCKET_PREFIX}`)) {
+    if (!socketLineSet.has(i)) {
       throw new Error(
         'sync-oxlint-rules: socket/* activations are not contiguous in oxlintrc.json; refusing to splice',
       )
@@ -445,4 +471,9 @@ function main(): number {
   return 0
 }
 
-process.exitCode = main()
+const invokedDirectly =
+  process.argv[1] !== undefined &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+if (invokedDirectly) {
+  process.exitCode = main()
+}

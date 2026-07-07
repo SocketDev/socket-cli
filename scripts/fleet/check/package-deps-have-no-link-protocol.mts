@@ -44,7 +44,19 @@ export interface LinkViolation {
 export async function checkPackageJson(
   filePath: string,
 ): Promise<LinkViolation[]> {
-  const pkg = JSON.parse(await fs.readFile(filePath, 'utf8')) as PackageJson
+  const text = await fs.readFile(filePath, 'utf8')
+  let pkg: PackageJson
+  try {
+    pkg = JSON.parse(text) as PackageJson
+  } catch (e) {
+    // An unparseable package.json outside a skipped tree is a repo defect the
+    // OWNING check reports; this gate only cares about link: deps, so name the
+    // file loudly and move on rather than dying mid-scan with no path.
+    logger.warn(
+      `link-protocol check: skipping unparseable ${filePath}: ${e instanceof Error ? e.message : String(e)}`,
+    )
+    return []
+  }
   const violations: LinkViolation[] = []
   for (const field of DEP_FIELDS) {
     const deps = pkg[field]
@@ -69,7 +81,14 @@ export async function findPackageJsonFiles(dir: string): Promise<string[]> {
       entry.name === '.git' ||
       entry.name === 'build' ||
       entry.name === 'dist' ||
-      entry.name === 'node_modules'
+      entry.name === 'node_modules' ||
+      // Vendored upstream trees (submodule corpora) carry foreign — sometimes
+      // deliberately malformed — fixture package.jsons that are data, not this
+      // repo's dependency surface.
+      entry.name === 'external' ||
+      entry.name === 'third_party' ||
+      entry.name === 'upstream' ||
+      entry.name === 'vendor'
     ) {
       continue
     }

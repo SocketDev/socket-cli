@@ -18,6 +18,7 @@
 // prefer-async-spawn: sync-required — sequential per-workflow gh subprocess +
 // git file-list; no async flow needed.
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -30,8 +31,11 @@ const logger = getDefaultLogger()
 
 // Enumerate tracked gh-aw workflow markdown sources via `git ls-files`. The
 // glob `*.github/workflows/*.md` matches both `.github/workflows/*.md` (at the
-// repo root) and nested paths (template layers in the wheelhouse). Returns
-// absolute paths.
+// repo root) and nested paths (template layers in the wheelhouse). A gh-aw
+// workflow source always opens with YAML frontmatter (`---`); plain
+// documentation living beside the workflows (README.md) does not, and feeding
+// it to `gh aw compile` fails the whole sync — filter those out (same gate as
+// check/gh-aw-locks-are-current.mts). Returns absolute paths.
 export function listTrackedMarkdown(): string[] {
   const r = spawnSync('git', ['ls-files', '*.github/workflows/*.md'], {
     cwd: REPO_ROOT,
@@ -46,6 +50,15 @@ export function listTrackedMarkdown(): string[] {
     .map(s => s.trim())
     .filter(Boolean)
     .map(rel => path.join(REPO_ROOT, rel))
+    .filter(abs => {
+      let head = ''
+      try {
+        head = readFileSync(abs, 'utf8').slice(0, 4)
+      } catch {
+        head = ''
+      }
+      return head.startsWith('---')
+    })
     .toSorted()
 }
 

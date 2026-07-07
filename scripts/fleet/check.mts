@@ -638,6 +638,12 @@ const steps: Array<() => boolean> = [
       '--strict',
       '--quiet',
     ]),
+  // package.json test*-script convention (CLAUDE.md "test-scripts-defer-to-mts"):
+  // route through a .mts wrapper, never a raw vitest/jest/mocha/ava/tap
+  // binary (the hook/lint-rule tier's `node --test` is exempt). REPORT-ONLY
+  // (exits 0) — the fleet backlog of raw invocations predates this gate; flip
+  // to --strict once it clears.
+  () => run('node', ['scripts/fleet/check/test-scripts-are-deferred.mts']),
 ]
 
 for (let i = 0, { length } = steps; i < length; i += 1) {

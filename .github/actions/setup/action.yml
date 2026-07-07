@@ -113,22 +113,26 @@ runs:
         # into a loud failure rather than a silent empty env export
         # that surfaces later as `cp: cannot stat ''`.
         JQ="${GITHUB_ACTION_PATH}/../lib/jq.mjs"
-        PNPM_VERSION="$(node "$JQ" "$TOOLS_FILE" pnpm version)"
+        # The tools file nests entries under `tools` (current schema) or at the
+        # top level (legacy flat). Probe once; an empty $NS splits away.
+        NS="tools"
+        node "$JQ" "$TOOLS_FILE" tools >/dev/null 2>&1 || NS=""
+        PNPM_VERSION="$(node "$JQ" "$TOOLS_FILE" $NS pnpm version)"
         PNPM_DIR="${RUNNER_TEMP:-/tmp}/pnpm-bin"
         # Canonical platform string (linux-x64, linux-arm64-musl,
         # darwin-arm64, win-x64, …). Detects musl via Node's own
         # process.report so we don't shell out to ldd.
         PLATFORM_TOOL="${GITHUB_ACTION_PATH}/../lib/platform.mjs"
         PLATFORM="$(node "$PLATFORM_TOOL")"
-        ASSET="$(node "$JQ" "$TOOLS_FILE" pnpm platforms "$PLATFORM" asset)"
-        INTEGRITY="$(node "$JQ" "$TOOLS_FILE" pnpm platforms "$PLATFORM" integrity)"
+        ASSET="$(node "$JQ" "$TOOLS_FILE" $NS pnpm platforms "$PLATFORM" asset)"
+        INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS pnpm platforms "$PLATFORM" integrity)"
         # Optional `source` field. When set to `npm-registry`, the asset
         # is a JS-only npm tarball (e.g. pnpm-11.0.8.tgz) — runs through
         # the system Node instead of being a SEA binary. Currently used
         # only for darwin-x64 because upstream pnpm dropped the SEA
         # binary in 11.0.5 due to nodejs/node#62893.
-        SOURCE="$(node "$JQ" "$TOOLS_FILE" pnpm platforms "$PLATFORM" source 2>/dev/null || echo "")"
-        BINARY_REL="$(node "$JQ" "$TOOLS_FILE" pnpm platforms "$PLATFORM" binary 2>/dev/null || echo "")"
+        SOURCE="$(node "$JQ" "$TOOLS_FILE" $NS pnpm platforms "$PLATFORM" source 2>/dev/null || echo "")"
+        BINARY_REL="$(node "$JQ" "$TOOLS_FILE" $NS pnpm platforms "$PLATFORM" binary 2>/dev/null || echo "")"
         PNPM_BIN="$PNPM_DIR/pnpm"
         [[ "$ASSET" == *.zip ]] && PNPM_BIN="$PNPM_DIR/pnpm.exe"
         # Shared installer: fetches, integrity-verifies (SRI), extracts.
@@ -219,13 +223,19 @@ runs:
       run: | # zizmor: ignore[github-env]
         set -euo pipefail
         # SFW (Socket Firewall) version + per-platform asset/integrity
-        # live in external-tools.json under sfw.<flavor>.platforms.
+        # live in external-tools.json — canonical schema keeps each flavor
+        # as its own `sfw-<flavor>` entry; legacy flat files nest both
+        # flavors under one `sfw` key.
         # Bumping a tool requires updating the version AND every
         # platform's integrity (SRI string) there in the same commit.
         # The lib/ scripts below resolve platform → asset → URL →
         # install at the currently-detected runner.
         TOOLS_FILE="${GITHUB_ACTION_PATH}/../../../external-tools.json"
         JQ="${GITHUB_ACTION_PATH}/../lib/jq.mjs"
+        # The tools file nests entries under `tools` (current schema) or at the
+        # top level (legacy flat). Probe once; an empty $NS splits away.
+        NS="tools"
+        node "$JQ" "$TOOLS_FILE" tools >/dev/null 2>&1 || NS=""
         PLATFORM_TOOL="${GITHUB_ACTION_PATH}/../lib/platform.mjs"
         INSTALL_TOOL="${GITHUB_ACTION_PATH}/../lib/install-tool.mjs"
         # Enterprise flavor when SOCKET_API_TOKEN is set, otherwise free.
@@ -238,19 +248,37 @@ runs:
           SFW_FLAVOR="free"
           SFW_REPO="SocketDev/sfw-free"
         fi
-        SFW_VERSION="$(node "$JQ" "$TOOLS_FILE" sfw version)"
+        # Shape probe: canonical entries are `sfw-free`/`sfw-enterprise`
+        # (external-tools-schema.mts — ToolEntry rejects nested flavor
+        # objects); legacy flat files use `sfw.{version,free,enterprise}`.
+        # sfw_path echoes the entry path for the ACTIVE flavor — unquoted
+        # at the call sites (like $NS) so the legacy two-word path splits.
+        SFW_SHAPE="canonical"
+        node "$JQ" "$TOOLS_FILE" $NS sfw-free version >/dev/null 2>&1 || SFW_SHAPE="legacy"
+        sfw_path() {
+          if [ "$SFW_SHAPE" = "canonical" ]; then
+            echo "sfw-${SFW_FLAVOR}"
+          else
+            echo "sfw ${SFW_FLAVOR}"
+          fi
+        }
+        if [ "$SFW_SHAPE" = "canonical" ]; then
+          SFW_VERSION="$(node "$JQ" "$TOOLS_FILE" $NS "sfw-${SFW_FLAVOR}" version)"
+        else
+          SFW_VERSION="$(node "$JQ" "$TOOLS_FILE" $NS sfw version)"
+        fi
         PLATFORM="$(node "$PLATFORM_TOOL")"
         # Hard-fail with a clear message on unsupported platforms (eg
         # win-arm64) rather than silently skipping. SFW is a required
         # dependency of the install flow, unlike zizmor (audit-only).
-        if ! ASSET="$(node "$JQ" "$TOOLS_FILE" sfw "$SFW_FLAVOR" platforms "$PLATFORM" asset 2>/dev/null)"; then
+        if ! ASSET="$(node "$JQ" "$TOOLS_FILE" $NS $(sfw_path) platforms "$PLATFORM" asset 2>/dev/null)"; then
           echo "× SFW (${SFW_FLAVOR}) is not published for ${PLATFORM} at v${SFW_VERSION}." >&2
           echo "  Supported: linux-{x64,arm64}{,-musl}, darwin-{x64,arm64}, win-x64." >&2
           echo "  win-arm64 has no upstream binary — skip SFW-dependent steps on that runner or wait for upstream support." >&2
           exit 1
         fi
-        INTEGRITY="$(node "$JQ" "$TOOLS_FILE" sfw "$SFW_FLAVOR" platforms "$PLATFORM" integrity)"
-        SFW_BIN_NAME="$(node "$JQ" "$TOOLS_FILE" sfw "$SFW_FLAVOR" binaryName)"
+        INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS $(sfw_path) platforms "$PLATFORM" integrity)"
+        SFW_BIN_NAME="$(node "$JQ" "$TOOLS_FILE" $NS $(sfw_path) binaryName)"
         if [[ "$ASSET" == *.exe ]]; then
           SFW_BIN_NAME="${SFW_BIN_NAME}.exe"
         fi
@@ -345,12 +373,17 @@ runs:
             SFW_REPO="SocketDev/sfw-free"
           fi
           if [ "$SFW_FLAVOR" = "free" ]; then
-            if ! ASSET="$(node "$JQ" "$TOOLS_FILE" sfw "$SFW_FLAVOR" platforms "$PLATFORM" asset 2>/dev/null)"; then
+            # Canonical entries carry per-flavor versions — re-read for the
+            # flavor we just fell back to (legacy shares one version).
+            if [ "$SFW_SHAPE" = "canonical" ]; then
+              SFW_VERSION="$(node "$JQ" "$TOOLS_FILE" $NS sfw-free version)"
+            fi
+            if ! ASSET="$(node "$JQ" "$TOOLS_FILE" $NS $(sfw_path) platforms "$PLATFORM" asset 2>/dev/null)"; then
               echo "× SFW-free fallback: no asset for ${PLATFORM} at v${SFW_VERSION}." >&2
               exit 1
             fi
-            INTEGRITY="$(node "$JQ" "$TOOLS_FILE" sfw "$SFW_FLAVOR" platforms "$PLATFORM" integrity)"
-            SFW_BIN_NAME="$(node "$JQ" "$TOOLS_FILE" sfw "$SFW_FLAVOR" binaryName)"
+            INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS $(sfw_path) platforms "$PLATFORM" integrity)"
+            SFW_BIN_NAME="$(node "$JQ" "$TOOLS_FILE" $NS $(sfw_path) binaryName)"
             rm -rf "$SFW_DIR"
             mkdir -p "$SFW_DIR"
             node "$INSTALL_TOOL" \

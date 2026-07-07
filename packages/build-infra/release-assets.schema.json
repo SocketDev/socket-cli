@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/SocketDev/socket-wheelhouse/main/template/packages/build-infra/release-assets.schema.json",
   "title": "Release Assets Manifest",
-  "description": "Embedded SHA-256 manifest for release artifacts. One block per tool: identifies the upstream release tag and the SHA-256 of every asset that release published. Consumers verify downloads against these hashes before installing or republishing. Producers (e.g. socket-btm) update this file when cutting a new release.",
+  "description": "Embedded SRI-integrity manifest for release artifacts. One block per tool: identifies the upstream release tag and the SRI integrity string (sha256/384/512) of every asset that release published. Consumers verify downloads against these pins before installing or republishing. The release's checksums.txt asset stays sha256-hex (the ecosystem `shasum -c` convention) — this manifest is the internal pin, not the transport format. Producers (e.g. socket-btm) update this file when cutting a new release.",
   "type": "object",
   "additionalProperties": {
     "$ref": "#/$defs/toolConfig"
@@ -34,10 +34,10 @@
         },
         "checksums": {
           "type": "object",
-          "description": "Asset filename → SHA-256 hex digest. Keys are typically flat filenames; some manifests use relative paths (e.g. `./model/model.onnx`) when the producer ships nested artifacts.",
+          "description": "Asset filename → SRI integrity string (`sha256-<base64>`; sha384/sha512 accepted). Keys are typically flat filenames; some manifests use relative paths (e.g. `./model/model.onnx`) when the producer ships nested artifacts. The release's checksums.txt asset carries the sha256-hex form of the same digest — the two formats are re-derivable from each other, never hand-maintained separately.",
           "additionalProperties": {
             "type": "string",
-            "pattern": "^[a-f0-9]{64}$"
+            "pattern": "^sha(256|384|512)-[A-Za-z0-9+/]{20,}={0,2}$"
           },
           "minProperties": 1
         }

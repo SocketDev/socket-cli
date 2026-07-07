@@ -39,6 +39,16 @@ export type SourceAllowlistTargetScope = '@socketaddon' | '@socketbin'
 export type SourceAllowlistBinaryKind = 'cli' | 'napi'
 
 /**
+ * How a family's release tag encodes its version. `semver` (default) matches
+ * the trailing `\d+\.\d+\.\d+(-\S+)?` segment verbatim. `date-shortsha`
+ * matches a trailing `<yyyymmdd>-<shortsha>` segment (a build-date + git
+ * short-sha, no semver in sight) and maps it to the npm-legal CalVer
+ * `<yyyymmdd>.0.0-<shortsha>` — npm requires a semver `version`, and stamping
+ * the date as the major keeps releases both deterministic and sortable.
+ */
+export type SourceAllowlistVersionScheme = 'date-shortsha' | 'semver'
+
+/**
  * Workflow path under a source repo's `.github/workflows/` directory. Encoded
  * as a template literal so a typo at compile time hurts.
  */
@@ -151,6 +161,24 @@ export interface SourceAllowlistEntry {
    * GitHub handle or a team alias.
    */
   readonly maintainer?: string | undefined
+
+  /**
+   * How this family's release tag encodes its version. Defaults to `'semver'`
+   * — the common `<family>-<major>.<minor>.<patch>` tag shape. Set to
+   * `'date-shortsha'` for a family that tags builds as
+   * `<family>-<yyyymmdd>-<shortsha>` (a binary-suite CI cutting a release per
+   * commit, with no semver to extract).
+   */
+  readonly versionScheme?: SourceAllowlistVersionScheme | undefined
+
+  /**
+   * Name of the release asset carrying the per-file sha256 manifest. Defaults
+   * to `'SHA256SUMS'` (coreutils `sha256sum` convention). Set to
+   * `'checksums.txt'` (or any other name) for a family whose build workflow
+   * emits a differently-named manifest — the manifest's line format
+   * (`<64-hex-sha>  <filename>`) is unchanged regardless of the file name.
+   */
+  readonly checksumsAsset?: string | undefined
 }
 
 /**

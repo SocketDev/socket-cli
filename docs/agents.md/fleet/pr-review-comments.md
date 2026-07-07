@@ -24,10 +24,15 @@ the author.
 - **Numeric references carry their title.** "item 1" / "finding 3" is always
   followed by the item's short title in italics: `item 1 _(list-route
   threshold)_`. Never make the reader scroll to decode a number.
-- **Finding references hyperlink to their fold-outs.** Put
-  `<a name="finding-N"></a>` inside each `<summary>` (anchors in the summary
-  stay reachable while the block is collapsed) and link with
-  `#user-content-finding-N`.
+- **No intra-comment links or anchors.** GitHub cannot open (or scroll to) a
+  fragment inside a collapsed `<details>`, so fold-out links are dead on
+  arrival. Findings live in their `<details>` blocks; there is no intro
+  enumeration linking to them — the severity circles carry the map, and
+  numeric references stay plain `item N _(title)_`.
+- **Fold-out bodies are indented.** The body of every `<details>` block is
+  wrapped in `<blockquote>` (opened on the line after `</summary>`, closed on
+  the line before `</details>`) so the expanded content renders indented
+  under its summary instead of flush with it.
 - **Suggested remediations are labeled `Fix idea 💡:`** — always with the bulb.
 - **Smaller-items bullets carry their own circles.** Inside the trailing
   "Smaller items" fold, each bullet starts with its own `<abbr>`-wrapped
@@ -54,6 +59,14 @@ the author.
 - **Detect duplicate PRs first.** Search open PRs (title/body keywords + the
   Linear ref) for an already-open PR doing the same thing; report duplicates to
   the requester rather than reviewing both blind.
+- **Verify provenance before replying.** A reply quoting someone else's
+  comment or review belongs to THAT thread — engage only when the comment
+  addresses the user's own comments or asks the user directly.
+  `scan-pr-activity.mts` labels every surfaced reply with the author's role
+  (PR author / team / other) and attributes leading quoted text to its
+  original author, flagging anything that isn't a reply to the user.
+- **No naming bikesheds.** Never weigh in on naming/label/copy debates unless
+  the user explicitly asks for a naming opinion.
 - **Comment, never approve.** Reviews are flagged for a human to approve.
 
 ## Skeleton
@@ -62,19 +75,25 @@ the author.
 One-line intro: what was traced and the shape of the result.
 
 <details>
-<summary><a name="finding-1"></a><abbr title="Critical: fix before merge/run">🔴</abbr> <b>1. Title a junior dev understands</b></summary>
+<summary><abbr title="Critical: fix before merge/run">🔴</abbr> <b>1. Title a junior dev understands</b></summary>
+<blockquote>
 
 Mechanism first, then the step-by-step failure scenario, then
 Fix idea 💡: the concrete remediation.
+
+</blockquote>
 </details>
 
 <details>
 <summary><abbr title="Moderate/minor: worth addressing">🟡</abbr> <b>Smaller items</b></summary>
+<blockquote>
 
 - Bullet per nit, complete sentences.
+
+</blockquote>
 </details>
 
-Closing verdict referencing [item 1](#user-content-finding-1) _(short title)_.
+Closing verdict referencing item 1 _(short title)_.
 ```
 
 ## Why

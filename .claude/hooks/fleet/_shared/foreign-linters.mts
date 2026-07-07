@@ -110,6 +110,19 @@ export function isVendoredUpstream(filePath: string): boolean {
 }
 
 /**
+ * Test-fixture trees (`test/fixtures/`, `tests/fixtures/`, any nested
+ * `fixtures/` under a test dir) hold DATA — a fixture package.json that
+ * declares eslint/prettier deps is simulating a foreign host for parser or
+ * integration tests, not adopting the toolchain. Same doctrine as
+ * `isVendoredUpstream`: exempt from the foreign-linter surface checks.
+ */
+export function isTestFixture(filePath: string): boolean {
+  const p = normalizePath(filePath)
+  // A "fixtures" segment that sits anywhere under a "test"/"tests" segment.
+  return /(?:^|\/)tests?\/(?:[^/]+\/)*fixtures(?:\/|$)/.test(p)
+}
+
+/**
  * CLI binary a foreign package family runs as (eslint-plugin-* → eslint).
  */
 export function foreignToolBinary(name: string): string {

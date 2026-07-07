@@ -6,6 +6,12 @@
  * embedded-checksum loader from `core.mts` with a `checksums.txt` fetch that
  * falls back to the network when the embedded manifest is missing a tag.
  *
+ * The returned `checksums` map mixes two formats by design, keyed off
+ * `source`: `embedded` (from `release-assets.json`) is SRI, `network`/`cache`
+ * (parsed from the downloaded `checksums.txt`) is sha256-hex. Compare either
+ * form with `@socketsecurity/lib/integrity`'s `equalHashes`/`verifyHash`,
+ * which are encoding-agnostic — don't branch on `source` to reformat first.
+ *
  * Repos that _produce_ releases don't need this file — see `producer.mts`.
  *
  * Fleet-canonical: byte-identical across every repo that ships
@@ -28,6 +34,8 @@ import { getEmbeddedChecksums, parseChecksums } from './core.mts'
 const logger = getDefaultLogger()
 
 export interface ChecksumsResult {
+  // SRI when `source` is `embedded`; sha256-hex when `source` is
+  // `cache`/`network` (parsed from checksums.txt).
   checksums: Record<string, string>
   source: 'cache' | 'embedded' | 'network'
   tag: string

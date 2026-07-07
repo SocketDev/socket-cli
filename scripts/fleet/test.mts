@@ -47,7 +47,7 @@ import type { SpawnSyncOptions } from '@socketsecurity/lib-stable/process/spawn/
 
 import { resolveScopeMode } from './_shared/scope-flags.mts'
 import { isCheckByName, firstPartyImports } from './check/tests-are-mirror-named.mts'
-import { isGeneratedPath } from './constants/generated-globs.mts'
+import { GENERATED_GLOBS, isGeneratedPath } from './constants/generated-globs.mts'
 
 const logger = getDefaultLogger()
 
@@ -307,9 +307,50 @@ function isDelegatedWorkspace(): boolean {
   return !existsSync(ROOT_VITEST_CONFIG) && existsSync(ROOT_WORKSPACE_MANIFEST)
 }
 
+// The test-file glob patterns, one pattern each for .mts/.ts/.mjs/.cjs/.js/.tsx/.jsx.
+const TEST_EXTENSIONS = '{mts,ts,mjs,cjs,js,tsx,jsx}'
+
+// Filesystem-only test-file count (no vitest subprocess), matching the SAME
+// `**/`-anchored shape as the root vitest config's `include`. Lets `runAll()`
+// fail loud BEFORE spawning vitest, rather than trusting vitest's own
+// `passWithNoTests: true` to silently report "0 tests, all passed" — the
+// zero-package delegation failure mode `runWorkspaceTests()` already guards
+// for the no-root-config layout, extended to the root-config-present one.
+function totalTestFileCount(): number {
+  return globSync([`**/test/**/*.test.${TEST_EXTENSIONS}`], {
+    cwd: repoRoot,
+    absolute: false,
+    ignore: [
+      '**/node_modules/**',
+      ...GENERATED_GLOBS,
+      '.git-hooks/**',
+      '.config/fleet/oxlint-plugin/**',
+      'scripts/**/test/**',
+      '.claude/hooks/**/test/**',
+      'template/**',
+    ],
+  }).length
+}
+
 function runAll(): number {
   if (isDelegatedWorkspace()) {
     return runWorkspaceTests()
+  }
+  // A root-config-present monorepo (`packages:` in pnpm-workspace.yaml) that
+  // discovers zero test files anywhere is always a misconfiguration — never a
+  // legitimate "no tests yet" state, since establishing a `packages:` split
+  // implies the repo is past scaffolding. A single-package repo keeps the
+  // documented scaffolding-only allowance (vitest's own `passWithNoTests`).
+  if (existsSync(ROOT_WORKSPACE_MANIFEST) && totalTestFileCount() === 0) {
+    log(
+      [
+        'Tests failed: this is a monorepo workspace (pnpm-workspace.yaml declares `packages:`), but zero test files resolve under any `test/` tree.',
+        `Where: ${ROOT_VITEST_CONFIG} \`include\` (\`**/test/**/*.test.{...}\`) against ${repoRoot}.`,
+        'Saw: 0 matching test files; wanted: at least 1 — a full-suite run over a monorepo that discovers nothing proves nothing and would silently mask every package losing its tests.',
+        'Fix: confirm each package under packages/*/test/ still ships its test files, and that no exclude glob (GENERATED_GLOBS, template/**, …) newly swallows them.',
+      ].join('\n'),
+    )
+    return 1
   }
   return runVitest(['run'], 'all')
 }
@@ -322,18 +363,18 @@ function runChanged(): number {
   return runVitest(['run', '--changed', '--passWithNoTests'], 'changed')
 }
 
-// The test-file glob patterns, one pattern each for .mts/.ts/.mjs/.cjs/.js/.tsx/.jsx.
-const TEST_EXTENSIONS = '{mts,ts,mjs,cjs,js,tsx,jsx}'
-
 // Find a source file's mirror test files by the MIRROR resolver:
-//   (1) `test/**/<base>.test.*` — bare basename match
-//   (2) `test/**/<base>-*.test.*` — shard tests (e.g. cover-thresholds for cover.mts)
-//   (3) `test/**/check-<base>.test.*` — check-by-name tests, only when
+//   (1) `**/test/**/<base>.test.*` — bare basename match
+//   (2) `**/test/**/<base>-*.test.*` — shard tests (e.g. cover-thresholds for cover.mts)
+//   (3) `**/test/**/check-<base>.test.*` — check-by-name tests, only when
 //       a `scripts/.../check/<base>.mts` enforcer exists (isCheckByName)
-//   (4) any test file under `test/` whose first-party imports include this source
-//       (direct importers — the accurate catch for not-yet-renamed tests)
+//   (4) any test file under a `test/` tree whose first-party imports include this
+//       source (direct importers — the accurate catch for not-yet-renamed tests)
 //
-// Never uses `vitest related`; stays bounded to the test/ tree only.
+// Never uses `vitest related`; stays bounded to test/ trees only. `**/`-anchored
+// (not root-anchored `test/**`) so a monorepo's nested `packages/<name>/test/`
+// mirrors resolve the same as a single-package repo's root `test/` — the same
+// fix as the vitest config's `include` (see .config/repo/vitest.config.mts).
 export function findMirrorTests(sourcePath: string, root: string): string[] {
   const base = path.basename(sourcePath).replace(/\.[cm]?[jt]sx?$/, '')
   if (!base) {
@@ -341,8 +382,8 @@ export function findMirrorTests(sourcePath: string, root: string): string[] {
   }
   const out = new Set<string>()
 
-  // (1) Bare basename: test/**/<base>.test.*
-  const bare = globSync([`test/**/${base}.test.${TEST_EXTENSIONS}`], {
+  // (1) Bare basename: **/test/**/<base>.test.*
+  const bare = globSync([`**/test/**/${base}.test.${TEST_EXTENSIONS}`], {
     cwd: root,
     absolute: false,
     ignore: ['**/node_modules/**'],
@@ -351,8 +392,8 @@ export function findMirrorTests(sourcePath: string, root: string): string[] {
     out.add(f)
   }
 
-  // (2) Shards: test/**/<base>-*.test.*
-  const shards = globSync([`test/**/${base}-*.test.${TEST_EXTENSIONS}`], {
+  // (2) Shards: **/test/**/<base>-*.test.*
+  const shards = globSync([`**/test/**/${base}-*.test.${TEST_EXTENSIONS}`], {
     cwd: root,
     absolute: false,
     ignore: ['**/node_modules/**'],
@@ -361,10 +402,10 @@ export function findMirrorTests(sourcePath: string, root: string): string[] {
     out.add(f)
   }
 
-  // (3) Check-by-name: test/**/check-<base>.test.* only when the check exists.
+  // (3) Check-by-name: **/test/**/check-<base>.test.* only when the check exists.
   if (isCheckByName(`check-${base}`, root)) {
     const checkTests = globSync(
-      [`test/**/check-${base}.test.${TEST_EXTENSIONS}`],
+      [`**/test/**/check-${base}.test.${TEST_EXTENSIONS}`],
       {
         cwd: root,
         absolute: false,
@@ -380,7 +421,10 @@ export function findMirrorTests(sourcePath: string, root: string): string[] {
   // imports include this source. This is the accurate catch for test files that
   // haven't been renamed yet, or that test a source under a different basename.
   const allTests = globSync(
-    [`test/**/*.test.${TEST_EXTENSIONS}`, `test/**/*.spec.${TEST_EXTENSIONS}`],
+    [
+      `**/test/**/*.test.${TEST_EXTENSIONS}`,
+      `**/test/**/*.spec.${TEST_EXTENSIONS}`,
+    ],
     {
       cwd: root,
       absolute: false,

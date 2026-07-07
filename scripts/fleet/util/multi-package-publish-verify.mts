@@ -17,19 +17,38 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { MultiPackageStageError } from './multi-package-publish.mts'
 import { isPackAppTriplet, parseTripletSegment } from './pack-app-triplets.mts'
 import type { PackAppTriplet } from './pack-app-triplets.mts'
-import type { GitHubRepoSlug } from './source-allowlist.mts'
+import type {
+  GitHubRepoSlug,
+  SourceAllowlistVersionScheme,
+} from './source-allowlist.mts'
 
 /**
  * Extract the version segment from a release tag.
  *
- * Works for the common shape `<family>-<semver>` (the pattern's literal prefix
- * is everything before `\d`). For more exotic patterns the caller can override
- * by post-processing the result.
+ * `versionScheme` `'semver'` (default) works for the common shape
+ * `<family>-<semver>` (the pattern's literal prefix is everything before
+ * `\d`). `'date-shortsha'` works for a `<family>-<yyyymmdd>-<shortsha>` tag —
+ * a build-date + git short-sha with no semver in it — and maps the matched
+ * segment to the npm-legal CalVer `<yyyymmdd>.0.0-<shortsha>`. For more exotic
+ * patterns the caller can override by post-processing the result.
  */
 export function extractVersionFromTag(
   tag: string,
   pattern: RegExp,
+  versionScheme: SourceAllowlistVersionScheme = 'semver',
 ): string | undefined {
+  if (versionScheme === 'date-shortsha') {
+    // Try to find the date + short-sha sub-match, e.g. `binflate-20260507-f1e66a5`.
+    const dateShaMatch = tag.match(/(\d{8})-([0-9a-f]+)$/)
+    if (!dateShaMatch) {
+      return undefined
+    }
+    // Sanity check the full tag still matches the allowlist pattern.
+    if (!pattern.test(tag)) {
+      return undefined
+    }
+    return `${dateShaMatch[1]}.0.0-${dateShaMatch[2]}`
+  }
   // Try to find the version directly via a sub-match. Common patterns
   // use `\d+\.\d+\.\d+(?:-[\w.]+)?` for the version.
   const versionMatch = tag.match(/\d+\.\d+\.\d+(?:-[\w.]+)?$/)
@@ -84,6 +103,23 @@ export function findArchiveForTriplet(
     }
   }
   return undefined
+}
+
+/**
+ * Find the raw, extension-less per-triplet binary in `dir` matching
+ * `<binaryName>-<triplet>` (`.exe` appended for `win32-*` triplets). Used by
+ * `cli` families that ship a standalone binary per release asset instead of a
+ * tarball — no `package.json` to extract, so the asset itself is the staged
+ * artifact. Returns the basename or undefined.
+ */
+export function findRawBinaryForTriplet(
+  dir: string,
+  binaryName: string,
+  triplet: PackAppTriplet,
+): string | undefined {
+  const exe = triplet.startsWith('win32-') ? '.exe' : ''
+  const candidate = `${binaryName}-${triplet}${exe}`
+  return existsSync(path.join(dir, candidate)) ? candidate : undefined
 }
 
 /**

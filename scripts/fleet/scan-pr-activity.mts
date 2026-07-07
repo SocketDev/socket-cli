@@ -79,11 +79,18 @@ function makeGhRunner(repoDir: string): GhRunner {
   }
 }
 
+// Who a reply's author is relative to the watched conversation. The reply
+// handler engages ONLY when a comment addresses selfLogin's own comments —
+// a thread between the PR author and another reviewer is theirs, not ours.
+export type CommentAuthorRole = 'other' | 'pr-author' | 'team'
+
 export interface CommentActivity {
   readonly author: string
   readonly body: string
   readonly createdAt: string
   readonly pr: number
+  readonly quotedFrom: string | undefined
+  readonly role: CommentAuthorRole
 }
 
 export interface ScanReport {
@@ -92,6 +99,38 @@ export interface ScanReport {
   readonly newPrs: string[]
   readonly reactionChanges: string[]
   readonly replies: CommentActivity[]
+}
+
+// Attribute a reply's leading `>`-quoted text to whoever wrote it — the
+// difference between "this answers OUR comment" and "this is someone else's
+// thread". (Root cause: a reply quoting a teammate's review was mistaken for
+// a reply to our own comment and answered on the user's behalf.)
+export function attributeQuote(
+  reply: { a: string; body: string },
+  comments: Array<{ a: string; body: string }>,
+  reviews: Array<{ a: string; body: string }>,
+): string | undefined {
+  const quoted = reply.body
+    .split('\n')
+    .find(line => line.startsWith('> ') || line.startsWith('>'))
+  if (!quoted) {
+    return undefined
+  }
+  const needle = quoted.replace(/^>\s?/, '').trim().slice(0, 120)
+  if (needle.length < 12) {
+    return undefined
+  }
+  for (const c of comments) {
+    if (c.a !== reply.a && c.body.includes(needle)) {
+      return `${c.a}'s comment`
+    }
+  }
+  for (const r of reviews) {
+    if (r.a !== reply.a && r.body.includes(needle)) {
+      return `${r.a}'s review`
+    }
+  }
+  return undefined
 }
 
 export function scanChanged(report: ScanReport): boolean {
@@ -129,21 +168,26 @@ export function runScan(
       'view',
       String(pr),
       '--json',
-      'comments',
+      'author,comments,reviews',
       '--jq',
-      '[.comments[] | {a: .author.login, at: .createdAt, body: .body}]',
+      '{author: .author.login, comments: [.comments[] | {a: .author.login, at: .createdAt, body: .body}], reviews: [.reviews[] | {a: .author.login, body: .body}]}',
     ])
     if (out === undefined) {
       report.errors.push(`pr ${pr}: comment fetch failed`)
       continue
     }
-    let comments: Array<{ a: string; at: string; body: string }>
+    let payload: {
+      author: string
+      comments: Array<{ a: string; at: string; body: string }>
+      reviews: Array<{ a: string; body: string }>
+    }
     try {
-      comments = JSON.parse(out) as typeof comments
+      payload = JSON.parse(out) as typeof payload
     } catch {
       report.errors.push(`pr ${pr}: unparseable comment payload`)
       continue
     }
+    const { author: prAuthor, comments, reviews } = payload
     for (const c of comments) {
       if (c.at <= since) {
         continue
@@ -151,11 +195,19 @@ export function runScan(
       if (c.a === config.selfLogin || BOT_AUTHOR_PATTERN.test(c.a)) {
         continue
       }
+      const role: CommentAuthorRole =
+        c.a === prAuthor
+          ? 'pr-author'
+          : config.authors.includes(c.a)
+            ? 'team'
+            : 'other'
       report.replies.push({
         author: c.a,
         body: c.body.slice(0, 400),
         createdAt: c.at,
         pr,
+        quotedFrom: attributeQuote(c, comments, reviews),
+        role,
       })
     }
   }
@@ -207,6 +259,13 @@ export function runScan(
         if (!config.authors.includes(row.author.login)) {
           continue
         }
+        // A PR I've already commented on is handled — suppress it, or the
+        // scan re-detects it as "new/uncommented" every tick and the loop
+        // never converges (my own comment doesn't count as someone else
+        // engaging, but it DOES mean I've engaged).
+        if (row.comments.some(c => c.author.login === config.selfLogin)) {
+          continue
+        }
         const humanComments = row.comments.filter(
           c =>
             c.author.login !== config.selfLogin &&
@@ -252,8 +311,14 @@ export function renderReport(config: ScanConfig, report: ScanReport): string {
   }
   const lines = ['SCAN: CHANGES']
   for (const r of report.replies) {
+    const role = r.role === 'pr-author' ? 'PR author' : r.role
+    const quote = r.quotedFrom ? `, quotes ${r.quotedFrom}` : ''
+    const caution =
+      r.quotedFrom && !r.quotedFrom.startsWith(`${config.selfLogin}'`)
+        ? ` [NOT a reply to ${config.selfLogin} — engage only if it addresses ${config.selfLogin} directly]`
+        : ''
     lines.push(
-      `- reply on PR ${r.pr} by ${r.author} at ${r.createdAt}: ${r.body}`,
+      `- reply on PR ${r.pr} by ${r.author} (${role}${quote})${caution} at ${r.createdAt}: ${r.body}`,
     )
   }
   for (const line of report.reactionChanges) {

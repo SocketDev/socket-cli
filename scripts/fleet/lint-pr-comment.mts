@@ -227,25 +227,75 @@ function lintNumericRefs(lines: string[]): CommentViolation[] {
   return violations
 }
 
-function lintAnchorLinks(body: string, lines: string[]): CommentViolation[] {
+// Intra-comment anchor links don't work on GitHub: navigating to a fragment
+// inside a collapsed <details> neither opens nor scrolls to it. Findings stay
+// in their fold-outs — the severity circles are the map, and numeric
+// references use the plain `item N _(title)_` form.
+function lintNoAnchorLinks(lines: string[]): CommentViolation[] {
   const violations: CommentViolation[] = []
-  const anchors = new Set<string>()
-  for (const match of body.matchAll(/<a name="([a-z0-9-]+)"><\/a>/g)) {
-    anchors.add(match[1]!)
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    if (/\]\(#[a-z0-9-]+\)/.test(lines[i]!)) {
+      violations.push({
+        fix: 'drop the link — reference the finding as plain `item N _(short title)_`; the circles carry the map',
+        line: i + 1,
+        rule: 'no-anchor-links',
+        saw: 'an intra-comment fragment link',
+        wanted: 'no fragment links — GitHub cannot open a collapsed <details> from one',
+      })
+    }
+    if (/<a name="[a-z0-9-]+">/.test(lines[i]!)) {
+      violations.push({
+        fix: 'remove the <a name> anchor — nothing may link to it',
+        line: i + 1,
+        rule: 'no-anchor-links',
+        saw: 'an <a name> anchor',
+        wanted: 'no anchors — findings live in their <details> unlinked',
+      })
+    }
+  }
+  return violations
+}
+
+// Fold-out bodies read better indented under their summary; a <blockquote>
+// wrapper is GitHub's native way to indent a <details> body. Require the
+// first non-blank line after </summary> to open one and the last non-blank
+// line before </details> to close it.
+function lintDetailsIndent(lines: string[]): CommentViolation[] {
+  const violations: CommentViolation[] = []
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    if (!/^<\/summary>$|<\/summary>\s*$/.test(lines[i]!.trim())) {
+      continue
+    }
+    let j = i + 1
+    while (j < length && lines[j]!.trim() === '') {
+      j += 1
+    }
+    if (j < length && !lines[j]!.trim().startsWith('<blockquote>')) {
+      violations.push({
+        fix: 'open the fold-out body with <blockquote> on the line after </summary> and close it with </blockquote> before </details>',
+        line: j + 1,
+        rule: 'details-body-blockquote',
+        saw: `fold-out body starts with ${JSON.stringify(lines[j]!.trim().slice(0, 40))}`,
+        wanted: 'details body wrapped in <blockquote> so it renders indented',
+      })
+    }
   }
   for (let i = 0, { length } = lines; i < length; i += 1) {
-    for (const match of lines[i]!.matchAll(
-      /\(#user-content-([a-z0-9-]+)\)/g,
-    )) {
-      if (!anchors.has(match[1]!)) {
-        violations.push({
-          fix: `add <a name="${match[1]}"></a> inside the target <summary>`,
-          line: i + 1,
-          rule: 'anchor-resolves',
-          saw: `link to #user-content-${match[1]} with no matching anchor`,
-          wanted: 'every anchor link resolves inside the comment',
-        })
-      }
+    if (lines[i]!.trim() !== '</details>') {
+      continue
+    }
+    let j = i - 1
+    while (j >= 0 && lines[j]!.trim() === '') {
+      j -= 1
+    }
+    if (j >= 0 && !lines[j]!.trim().endsWith('</blockquote>')) {
+      violations.push({
+        fix: 'close the fold-out body with </blockquote> on the line before </details>',
+        line: i + 1,
+        rule: 'details-body-blockquote',
+        saw: `fold-out body ends with ${JSON.stringify(lines[j]!.trim().slice(-40))}`,
+        wanted: 'details body wrapped in <blockquote> so it renders indented',
+      })
     }
   }
   return violations
@@ -375,7 +425,8 @@ export function lintPrReviewComment(body: string): CommentViolation[] {
     ...lintFixIdeaLabels(lines),
     ...lintNumericRefs(lines),
     ...lintSmallerItems(lines),
-    ...lintAnchorLinks(stripped, lines),
+    ...lintNoAnchorLinks(lines),
+    ...lintDetailsIndent(lines),
     ...lintAiAttribution(lines),
   ].sort((a, b) => a.line - b.line)
 }

@@ -48,8 +48,13 @@ const SKIP_DIRS = new Set<string>([
   'build',
   'coverage',
   'dist',
+  // Vendored upstream trees (submodule corpora) are foreign content sized by
+  // their upstreams, not this repo's tracked surface.
+  'external',
   'node_modules',
+  'third_party',
   'tmp',
+  'upstream',
   'vendor',
 ])
 
