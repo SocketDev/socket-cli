@@ -14,7 +14,7 @@ import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
 import { handleFix } from './handle-fix.mts'
 import { FLAG_ID } from '../../constants/cli.mts'
 import { ERROR_UNABLE_RESOLVE_ORG } from '../../constants/errors.mts'
-import * as constants from '../../constants.mts'
+import { ENV } from '../../constants.mts'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
@@ -126,7 +126,7 @@ const generalFlags: MeowFlags = {
   },
   fixVersion: {
     type: 'string',
-    description: `Override the version of @coana-tech/cli used for fix analysis. Default: ${constants.ENV.INLINED_COANA_VERSION}.`,
+    description: `Override the version of @coana-tech/cli used for fix analysis. Default: ${ENV.INLINED_COANA_VERSION}.`,
   },
   id: {
     type: 'string',
