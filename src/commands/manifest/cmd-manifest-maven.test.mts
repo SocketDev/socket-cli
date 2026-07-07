@@ -22,10 +22,10 @@ describe('socket manifest maven', async () => {
             $ socket manifest maven [options] [CWD=.]
 
           Options
-            --bin               Location of the maven binary to use, default: mvn on PATH
+            --bin               Location of the maven binary to use, default: ./mvnw if present, else mvn on PATH
             --exclude-configs   Comma-separated glob patterns; Maven scopes matching any pattern are skipped (applied after --include-configs)
             --ignore-unresolved  Warn on unresolved dependencies instead of failing the run (unresolved deps are not emitted to the facts file)
-            --include-configs   Comma-separated glob patterns matched against Maven dependency scopes (case-sensitive, \`*\` and \`?\` wildcards). Only scopes matching at least one pattern are resolved. e.g. \`compile,runtime\`. Default: every scope
+            --include-configs   Comma-separated glob patterns matched against Maven dependency scopes (case-sensitive; \`*\`, \`?\`, and \`[...]\` wildcards). Only scopes matching at least one pattern are resolved. e.g. \`compile,runtime\`. Default: every scope
             --maven-opts        Additional options to pass on to maven, e.g. \`-P <profile> -s <settings.xml>\`
             --verbose           Print debug messages
 

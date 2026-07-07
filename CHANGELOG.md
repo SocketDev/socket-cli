@@ -4,6 +4,68 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.139](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.139) - 2026-07-07
+
+### Changed
+- Updated the Coana CLI to v `15.8.4`.
+
+## [1.1.138](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.138) - 2026-07-07
+
+### Changed
+- Updated the Coana CLI to v `15.8.2`.
+
+## [1.1.137](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.137) - 2026-07-03
+
+### Changed
+- Updated the Coana CLI to v `15.8.1`.
+
+## [1.1.136](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.136) - 2026-07-02
+
+### Changed
+- `socket manifest gradle --facts` now reports Gradle configurations it can't resolve instead of silently skipping them, failing the run unless you pass `--ignore-unresolved` so an incomplete scan can't slip by. Benign variant-selection ambiguity stays a one-line notice.
+- Config filters (`--include-configs` / `--exclude-configs`) for `socket manifest gradle`, `kotlin`, `scala`, and `maven` are now case-sensitive, as documented, and support `[...]` character classes — e.g. `*[Tt]est*` matches both `testCompileClasspath` and `androidTestCompileClasspath`.
+
+### Fixed
+- `socket manifest auto` and `socket scan create --auto-manifest` now detect a Gradle project by its build files (`build.gradle`/`.kts` or `settings.gradle`/`.kts`) instead of requiring a `gradlew` wrapper, so wrapper-less projects — including settings-only multi-module roots — are no longer skipped.
+
+## [1.1.135](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.135) - 2026-07-01
+
+### Changed
+- Updated the Coana CLI to v `15.6.7`.
+
+## [1.1.134](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.134) - 2026-07-01
+
+### Fixed
+- `--reach-use-only-pregenerated-sboms` now recognizes Socket facts files (`.socket.facts.json`) as pre-generated SBOMs, alongside CycloneDX and SPDX — matching what the reachability analyzer accepts. Previously a project whose only pre-generated SBOM was a `.socket.facts.json` was ignored by this flag.
+
+## [1.1.133](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.133) - 2026-07-01
+
+### Changed
+- Quieter `socket manifest gradle`, `sbt`, and `maven`: the build tool's output is now hidden behind a progress spinner and shown only if the build fails. Pass `--verbose` to stream it live.
+- `--auto-manifest` now fails fast: if a Gradle, sbt, or Maven build fails, the run stops instead of continuing with an incomplete SBOM.
+
+## [1.1.132](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.132) - 2026-06-30
+
+### Changed
+- More reliable reachability for Gradle, sbt, and Maven projects with dynamic versions (git versions, CI build numbers, timestamps): the build is resolved once and its artifact paths reused, avoiding spurious "failed to install" errors.
+- `socket manifest` and `--auto-manifest` now prefer your project's build-tool wrapper (`./gradlew`, `./mvnw`) when present, falling back to `gradle`/`mvn` on PATH.
+- Updated the Coana CLI to v `15.6.6`.
+
+## [1.1.131](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.131) - 2026-06-29
+
+### Changed
+- Updated the Coana CLI to v `15.6.2`.
+
+## [1.1.130](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.130) - 2026-06-29
+
+### Fixed
+- Reachability analysis no longer fails to start in pnpm workspaces that define a `.pnpmfile.cjs`. Socket now launches its bundled analysis tools without running the project's pnpm hooks, so a broken or environment-specific hook (for example, one that loads a file managed by Git LFS) can no longer stop a scan before it begins.
+
+## [1.1.129](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.129) - 2026-06-26
+
+### Changed
+- Updated the Coana CLI to v `15.6.1`.
+
 ## [1.1.128](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.128) - 2026-06-25
 
 ### Changed

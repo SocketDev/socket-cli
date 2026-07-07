@@ -204,6 +204,22 @@ jobs:
       - name: Install dependencies
         run: pnpm install --loglevel error
 
+      # Compile the Maven manifest extension jar so the dist build bundles it
+      # into dist/manifest-scripts (the jar is never committed; it ships only in
+      # the published package). Invoke build-jar.sh directly, NOT via `pnpm run`:
+      # Socket Firewall wraps the package managers (npm/pnpm/...) it shims, so a
+      # `pnpm run` would route the Maven wrapper's download through sfw, which
+      # fails on the non-package fetch. Running bash directly keeps the Maven
+      # download outside the shimmed process tree. The org action allowlist forbids
+      # actions/setup-java, so use a JDK pre-installed on the runner image
+      # (JAVA_HOME_17_X64), falling back to the runner's default `java`.
+      - name: Build Maven manifest extension jar
+        run: |
+          if [ -n "${JAVA_HOME_17_X64:-}" ]; then
+            export JAVA_HOME="$JAVA_HOME_17_X64"
+          fi
+          bash src/commands/manifest/scripts/maven-extension/build-jar.sh
+
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build:dist
       - name: Publish socket
         id: publish_socket

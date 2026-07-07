@@ -5,6 +5,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { convertMavenToFacts } from './convert-maven-to-facts.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
+import { resolveBuildToolBin } from './scripts/build-tool.mts'
 import constants, { SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
@@ -27,12 +28,13 @@ const config: CliCommandConfig = {
     ...commonFlags,
     bin: {
       type: 'string',
-      description: 'Location of the maven binary to use, default: mvn on PATH',
+      description:
+        'Location of the maven binary to use, default: ./mvnw if present, else mvn on PATH',
     },
     includeConfigs: {
       type: 'string',
       description:
-        'Comma-separated glob patterns matched against Maven dependency scopes (case-sensitive, `*` and `?` wildcards). Only scopes matching at least one pattern are resolved. e.g. `compile,runtime`. Default: every scope',
+        'Comma-separated glob patterns matched against Maven dependency scopes (case-sensitive; `*`, `?`, and `[...]` wildcards). Only scopes matching at least one pattern are resolved. e.g. `compile,runtime`. Default: every scope',
     },
     excludeConfigs: {
       type: 'string',
@@ -136,7 +138,8 @@ async function run(
       bin = sockJson.defaults?.manifest?.maven?.bin
       logger.info(`Using default --bin from ${SOCKET_JSON}:`, bin)
     } else {
-      bin = 'mvn'
+      // Prefer the project's ./mvnw wrapper, else `mvn` on PATH.
+      bin = resolveBuildToolBin('maven', cwd)
     }
   }
   if (!mavenOpts) {

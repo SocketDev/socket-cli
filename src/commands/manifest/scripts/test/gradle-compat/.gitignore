@@ -1,0 +1,8 @@
+# generated at test time
+project/localrepo/
+project/records.tsv
+project/.socket.facts.json
+project/.gradle/
+project/build/
+.gradle-home/
+.populate-for.txt
