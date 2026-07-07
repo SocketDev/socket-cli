@@ -20,6 +20,7 @@ export interface GeneratableManifests {
   count: number
   conda: boolean
   gradle: boolean
+  maven: boolean
   sbt: boolean
 }
 
@@ -35,6 +36,7 @@ export async function detectManifestActions(
     count: 0,
     conda: false,
     gradle: false,
+    maven: false,
     sbt: false,
   }
 
@@ -70,9 +72,27 @@ export async function detectManifestActions(
       'notice',
       `[DEBUG] - gradle auto-detection is disabled in ${SOCKET_JSON}`,
     )
-  } else if (existsSync(path.join(cwd, 'gradlew'))) {
+  } else if (
+    existsSync(path.join(cwd, 'build.gradle')) ||
+    existsSync(path.join(cwd, 'build.gradle.kts')) ||
+    existsSync(path.join(cwd, 'settings.gradle')) ||
+    existsSync(path.join(cwd, 'settings.gradle.kts'))
+  ) {
+    // Detect by build descriptor, not the `gradlew` wrapper (a project can build via
+    // `gradle` on PATH). `settings.gradle(.kts)` covers Kotlin-DSL roots with no root build script.
     debugLog('notice', '[DEBUG] - Detected a gradle build file')
     output.gradle = true
+    output.count += 1
+  }
+
+  if (sockJson?.defaults?.manifest?.maven?.disabled) {
+    debugLog(
+      'notice',
+      `[DEBUG] - maven auto-detection is disabled in ${SOCKET_JSON}`,
+    )
+  } else if (existsSync(path.join(cwd, 'pom.xml'))) {
+    debugLog('notice', '[DEBUG] - Detected a Maven pom.xml build file')
+    output.maven = true
     output.count += 1
   }
 

@@ -251,8 +251,8 @@ async function scanOneRepo(
     pullRequest: 0,
     reach: {
       excludePaths: [],
-      reachAnalysisMemoryLimit: 0,
-      reachAnalysisTimeout: 0,
+      reachAnalysisMemoryLimit: '',
+      reachAnalysisTimeout: '',
       reachConcurrency: 1,
       reachContinueOnAnalysisErrors: false,
       reachContinueOnInstallErrors: false,
@@ -266,6 +266,7 @@ async function scanOneRepo(
       reachEnableAnalysisSplitting: false,
       reachExcludePaths: [],
       reachLazyMode: false,
+      reachRetainFactsFile: false,
       reachSkipCache: false,
       reachUseOnlyPregeneratedSboms: false,
       reachVersion: undefined,

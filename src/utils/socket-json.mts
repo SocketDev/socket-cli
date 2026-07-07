@@ -47,6 +47,7 @@ export interface SocketJson {
         bin?: string | undefined
         disabled?: boolean | undefined
         out?: string | undefined
+        perRepoTimeout?: number | undefined
         verbose?: boolean | undefined
       }
       conda?: {
@@ -61,10 +62,20 @@ export interface SocketJson {
       gradle?: {
         disabled?: boolean | undefined
         bin?: string | undefined
-        configs?: string | undefined
+        excludeConfigs?: string | undefined
+        includeConfigs?: string | undefined
         facts?: boolean | undefined
         gradleOpts?: string | undefined
         ignoreUnresolved?: boolean | undefined
+        verbose?: boolean | undefined
+      }
+      maven?: {
+        disabled?: boolean | undefined
+        bin?: string | undefined
+        excludeConfigs?: string | undefined
+        includeConfigs?: string | undefined
+        ignoreUnresolved?: boolean | undefined
+        mavenOpts?: string | undefined
         verbose?: boolean | undefined
       }
       sbt?: {
@@ -72,7 +83,8 @@ export interface SocketJson {
         infile?: string | undefined
         stdin?: boolean | undefined
         bin?: string | undefined
-        configs?: string | undefined
+        excludeConfigs?: string | undefined
+        includeConfigs?: string | undefined
         facts?: boolean | undefined
         ignoreUnresolved?: boolean | undefined
         outfile?: string | undefined

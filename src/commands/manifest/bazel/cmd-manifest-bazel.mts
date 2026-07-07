@@ -10,25 +10,11 @@ import { commonFlags } from '../../../flags.mts'
 import { checkCommandInput } from '../../../utils/check-input.mts'
 import { InputError } from '../../../utils/errors.mts'
 import { getOutputKind } from '../../../utils/get-output-kind.mts'
-import { IGNORED_DIRS } from '../../../utils/glob.mts'
 import { meowOrExit } from '../../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../../utils/output-formatting.mts'
 import { readOrDefaultSocketJson } from '../../../utils/socket-json.mts'
 
-// Walker prune policy for `socket manifest bazel`. Combines the
-// codebase-wide ignore list with VCS/IDE dirs and the walker's own
-// output dir, and Bazel's `bazel-*` output_base symlinks (prefix).
-const BAZEL_WALKER_IGNORE_DIR_NAMES: ReadonlySet<string> = new Set([
-  ...IGNORED_DIRS,
-  '.hg',
-  '.idea',
-  '.pnpm-store',
-  '.socket-auto-manifest',
-  '.svn',
-  '.vscode',
-])
-const BAZEL_WALKER_IGNORE_DIR_PREFIXES: readonly string[] = ['bazel-']
-
+import type { ExtractBazelStatus } from './extract_bazel_to_maven.mts'
 import type {
   CliCommandConfig,
   CliCommandContext,
@@ -92,6 +78,11 @@ const config: CliCommandConfig = {
       description:
         'Output directory for generated manifests; default: ./.socket/bazel-manifests/',
     },
+    perRepoTimeout: {
+      type: 'number',
+      description:
+        'Per-hub bazel cquery timeout in milliseconds; default: 120000',
+    },
     verbose: {
       type: 'boolean',
       description:
@@ -117,6 +108,20 @@ const config: CliCommandConfig = {
     Note: this command generates dependency manifests for Bazel workspaces.
     It does not run reachability analysis.
 
+    Maven hub discovery: under Bzlmod, hubs are enumerated from
+    \`bazel mod show_extension\` and filtered to the root module's own hubs.
+    Under legacy WORKSPACE mode (no \`show_extension\`), only conventionally
+    named hubs are probed (\`maven\`, \`maven_install\`, \`maven_dev\`, …). A hub
+    with a non-conventional name that \`show_extension\` does not enumerate
+    can be named explicitly with \`--bazel-maven-repo\`.
+
+    \`--bazel-flag\` forwards a flag to every subcommand (cquery, query, mod
+    show_extension, mod dump_repo_mapping), after the orchestrator's own
+    flags. Use it for matrix-cell selectors like
+    \`--repo_env=SCALA_VERSION=2.13.18\` or \`--platforms=//tools:linux_x86_64\`.
+    \`--bazel-startup-flag\` is inserted before the subcommand instead, for
+    host-side knobs like \`--host_jvm_args=-Xmx2g\`.
+
     To generate AND upload in one step, use \`socket scan create --auto-manifest\`
     instead — it detects Bazel workspaces, generates Maven manifests by
     default, and uploads the result. This subcommand is for generation only.
@@ -126,8 +131,17 @@ const config: CliCommandConfig = {
       $ ${command} --ecosystem pypi .
       $ ${command} --ecosystem maven --ecosystem pypi .
       $ ${command} --bazel=/usr/local/bin/bazelisk .
+      $ ${command} --bazel-flag=--config=ci-scala-2-13 .
+      $ ${command} --bazel-startup-flag=--host_jvm_args=-Xmx2g .
+      $ ${command} --bazel-maven-repo=my_jars --bazel-maven-repo=test_maven .
   `,
 }
+
+// The explicit `socket manifest bazel` command gives each hub more time than
+// the auto-manifest path: a user running it directly is waiting on this one
+// extraction, whereas auto-manifest must not stall the wider scan. Auto's
+// shorter default lives in extract_bazel_to_maven.mts.
+const EXPLICIT_PER_REPO_TIMEOUT_MS = 120_000
 
 export const cmdManifestBazel = {
   description: config.description,
@@ -137,10 +151,13 @@ export const cmdManifestBazel = {
 
 export type EcosystemOutcome = {
   ecosystem: 'maven' | 'pypi'
-  ok: boolean
-  noEcosystemFound?: boolean | undefined
-  hardFailure?: boolean
-  manifestPath?: string | undefined
+  status: ExtractBazelStatus
+  manifestPaths: string[]
+  // Machine-readable completeness signal. True only when the ecosystem's
+  // extraction was complete; a `partial` upload sets this false so the CLI
+  // surfaces it honestly (exit 0 + prominent warning) rather than as plain
+  // success.
+  complete: boolean
 }
 
 // Pure outcome-matrix evaluator. Exported so dispatcher behavior can be
@@ -148,19 +165,44 @@ export type EcosystemOutcome = {
 // failures that must propagate to a non-zero CLI exit; returns void on
 // success.
 //
-// - Hard failure: ok === false && !noEcosystemFound. The ecosystem was
-//   detected (or the runner crashed), but extraction failed. Always a
-//   non-zero exit, even when another ecosystem succeeded.
-// - No-discovery: noEcosystemFound === true. Genuinely absent ecosystem.
-//   Auto-detect mode tolerates this when at least one other ecosystem
-//   succeeded; explicit mode treats it as an error.
+// - `complete`/`partial` both count as produced output (>=1 manifest).
+//   `partial` additionally warns — a known-incomplete SBOM is still emitted,
+//   not a hard error.
+// - `hardFailure`: the ecosystem was detected (or the runner crashed) but
+//   wrote zero manifests. Always a non-zero exit, even when another
+//   ecosystem succeeded.
+// - `noEcosystem`: genuinely absent ecosystem. Auto-detect mode tolerates it
+//   when at least one other ecosystem produced output; explicit mode treats
+//   it as an error (the user requested an ecosystem that isn't there).
 export function evaluateEcosystemOutcomes(
   outcomes: readonly EcosystemOutcome[],
   isExplicit: boolean,
 ): void {
-  const hardFailures = outcomes.filter(o => !o.ok && !o.noEcosystemFound)
-  const noDiscoveries = outcomes.filter(o => o.noEcosystemFound)
-  const successes = outcomes.filter(o => o.ok && o.manifestPath)
+  const produced = outcomes.filter(
+    o =>
+      (o.status === 'complete' || o.status === 'partial') &&
+      o.manifestPaths.length > 0,
+  )
+  const hardFailures = outcomes.filter(o => o.status === 'hardFailure')
+  const noDiscoveries = outcomes.filter(o => o.status === 'noEcosystem')
+
+  // Surface a machine-readable completeness signal for every produced
+  // ecosystem so a partial upload is never presented as a complete one. The
+  // per-workspace / per-hub detail is written to the manifest dir's
+  // completeness summary by the extractor; this is the human-facing echo.
+  for (const outcome of produced) {
+    logger.info(
+      `Bazel ${outcome.ecosystem} extraction status: ${outcome.status} (complete=${outcome.complete}).`,
+    )
+  }
+
+  for (const partial of outcomes) {
+    if (partial.status === 'partial') {
+      logger.warn(
+        `WARNING: Bazel ${partial.ecosystem} manifest generation was PARTIAL. The uploaded SBOM is known-incomplete and may under-report dependencies; review the completeness summary before relying on the results.`,
+      )
+    }
+  }
 
   if (!isExplicit) {
     if (hardFailures.length) {
@@ -168,7 +210,7 @@ export function evaluateEcosystemOutcomes(
         `Bazel auto-manifest generation hit hard failure(s) in ecosystem(s): ${hardFailures.map(f => f.ecosystem).join(', ')}.`,
       )
     }
-    if (successes.length) {
+    if (produced.length) {
       return
     }
     if (noDiscoveries.length === outcomes.length) {
@@ -179,7 +221,8 @@ export function evaluateEcosystemOutcomes(
     return
   }
 
-  // Explicit mode: every requested ecosystem must succeed.
+  // Explicit mode: every requested ecosystem must produce output. A partial
+  // run counts (it wrote manifests); absent or hard-failed ecosystems error.
   if (noDiscoveries.length) {
     throw new InputError(
       `No Bazel rules found for explicitly requested ecosystem(s): ${noDiscoveries.map(f => f.ecosystem).join(', ')}.`,
@@ -190,6 +233,31 @@ export function evaluateEcosystemOutcomes(
       `Bazel manifest generation failed for explicitly requested ecosystem(s): ${hardFailures.map(f => f.ecosystem).join(', ')}.`,
     )
   }
+}
+
+// Map the legacy PyPI result shape (single manifestPath + ok/noEcosystem
+// booleans) into the shared status vocabulary so both ecosystems flow through
+// one success gate. PyPI has no partial state. Only a `complete` outcome
+// carries a manifest path; `noEcosystem`/`hardFailure` carry none, preserving
+// the invariant that a non-success outcome produced no usable output (a
+// detected-but-empty PyPI run writes a stub file but is still a hard failure,
+// and that stub must not be surfaced as produced output).
+function pypiOutcome(result: {
+  manifestPath?: string | undefined
+  noEcosystemFound?: boolean | undefined
+  ok: boolean
+}): { complete: boolean; manifestPaths: string[]; status: ExtractBazelStatus } {
+  if (result.noEcosystemFound) {
+    return { complete: false, manifestPaths: [], status: 'noEcosystem' }
+  }
+  if (result.ok && result.manifestPath) {
+    return {
+      complete: true,
+      manifestPaths: [result.manifestPath],
+      status: 'complete',
+    }
+  }
+  return { complete: false, manifestPaths: [], status: 'hardFailure' }
 }
 
 async function run(
@@ -231,6 +299,7 @@ async function run(
   const bazelMavenRepo =
     (cli.flags['bazelMavenRepo'] as string[] | undefined) ?? []
   let { bazel, bazelFlags, bazelOutputBase, bazelRc, out, verbose } = cli.flags
+  let perRepoTimeout = cli.flags['perRepoTimeout'] as number | undefined
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (!bazel) {
@@ -284,6 +353,19 @@ async function run(
       logger.info(`Using default --verbose from ${SOCKET_JSON}:`, verbose)
     } else {
       verbose = false
+    }
+  }
+  if (perRepoTimeout === undefined) {
+    if (sockJson.defaults?.manifest?.bazel?.perRepoTimeout !== undefined) {
+      perRepoTimeout = sockJson.defaults?.manifest?.bazel?.perRepoTimeout
+      logger.info(
+        `Using default --per-repo-timeout from ${SOCKET_JSON}:`,
+        perRepoTimeout,
+      )
+    } else {
+      // Explicit invocation default; longer than the auto-manifest default
+      // because the user is waiting on this single extraction.
+      perRepoTimeout = EXPLICIT_PER_REPO_TIMEOUT_MS
     }
   }
 
@@ -352,16 +434,15 @@ async function run(
         ...(bazelMavenRepo.length
           ? { extraMavenRepoNames: bazelMavenRepo }
           : {}),
-        ignoreDirNames: BAZEL_WALKER_IGNORE_DIR_NAMES,
-        ignoreDirPrefixes: BAZEL_WALKER_IGNORE_DIR_PREFIXES,
         out: out as string,
+        perRepoTimeoutMs: perRepoTimeout,
         verbose: Boolean(verbose),
       })
       outcomes.push({
+        complete: mavenResult.complete,
         ecosystem: 'maven',
-        ok: mavenResult.ok,
-        noEcosystemFound: mavenResult.noEcosystemFound,
-        manifestPath: mavenResult.manifestPath,
+        manifestPaths: mavenResult.manifestPaths,
+        status: mavenResult.status,
       })
     } else if (eco === 'pypi') {
       // eslint-disable-next-line no-await-in-loop
@@ -377,9 +458,7 @@ async function run(
       })
       outcomes.push({
         ecosystem: 'pypi',
-        ok: pypiResult.ok,
-        noEcosystemFound: pypiResult.noEcosystemFound,
-        manifestPath: pypiResult.manifestPath,
+        ...pypiOutcome(pypiResult),
       })
     }
   }

@@ -1,5 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
+import { finalizeTier1Scan } from './finalize-tier1-scan.mts'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 
 import type { HandleCreateNewScanConfig } from './handle-create-new-scan.mts'
@@ -84,8 +87,8 @@ function createConfig(
     pullRequest: 0,
     reach: {
       excludePaths: [],
-      reachAnalysisMemoryLimit: 8192,
-      reachAnalysisTimeout: 0,
+      reachAnalysisMemoryLimit: '8192',
+      reachAnalysisTimeout: '',
       reachConcurrency: 1,
       reachContinueOnAnalysisErrors: false,
       reachContinueOnInstallErrors: false,
@@ -99,6 +102,7 @@ function createConfig(
       reachEnableAnalysisSplitting: false,
       reachExcludePaths: [],
       reachLazyMode: false,
+      reachRetainFactsFile: false,
       reachSkipCache: false,
       reachUseOnlyPregeneratedSboms: false,
       reachVersion: undefined,
@@ -195,8 +199,8 @@ describe('handleCreateNewScan excludePaths', () => {
       pullRequest: 0,
       reach: {
         excludePaths: ['tests', 'packages/*'],
-        reachAnalysisMemoryLimit: 8192,
-        reachAnalysisTimeout: 0,
+        reachAnalysisMemoryLimit: '8192',
+        reachAnalysisTimeout: '',
         reachConcurrency: 1,
         reachContinueOnAnalysisErrors: false,
         reachContinueOnInstallErrors: false,
@@ -210,6 +214,7 @@ describe('handleCreateNewScan excludePaths', () => {
         reachEnableAnalysisSplitting: false,
         reachExcludePaths: ['dist'],
         reachLazyMode: false,
+        reachRetainFactsFile: false,
         reachSkipCache: false,
         reachUseOnlyPregeneratedSboms: false,
         reachVersion: undefined,
@@ -257,8 +262,8 @@ describe('handleCreateNewScan excludePaths', () => {
       pullRequest: 0,
       reach: {
         excludePaths: ['apps/api/tests', '**/dist'],
-        reachAnalysisMemoryLimit: 8192,
-        reachAnalysisTimeout: 0,
+        reachAnalysisMemoryLimit: '8192',
+        reachAnalysisTimeout: '',
         reachConcurrency: 1,
         reachContinueOnAnalysisErrors: false,
         reachContinueOnInstallErrors: false,
@@ -272,6 +277,7 @@ describe('handleCreateNewScan excludePaths', () => {
         reachEnableAnalysisSplitting: false,
         reachExcludePaths: ['node_modules'],
         reachLazyMode: false,
+        reachRetainFactsFile: false,
         reachSkipCache: false,
         reachUseOnlyPregeneratedSboms: false,
         reachVersion: undefined,
@@ -325,8 +331,8 @@ describe('handleCreateNewScan excludePaths', () => {
       pullRequest: 0,
       reach: {
         excludePaths: ['tests'],
-        reachAnalysisMemoryLimit: 8192,
-        reachAnalysisTimeout: 0,
+        reachAnalysisMemoryLimit: '8192',
+        reachAnalysisTimeout: '',
         reachConcurrency: 1,
         reachContinueOnAnalysisErrors: false,
         reachContinueOnInstallErrors: false,
@@ -340,6 +346,7 @@ describe('handleCreateNewScan excludePaths', () => {
         reachEnableAnalysisSplitting: false,
         reachExcludePaths: [],
         reachLazyMode: false,
+        reachRetainFactsFile: false,
         reachSkipCache: false,
         reachUseOnlyPregeneratedSboms: false,
         reachVersion: undefined,
@@ -383,8 +390,8 @@ describe('handleCreateNewScan excludePaths', () => {
       pullRequest: 0,
       reach: {
         excludePaths: ['apps/api'],
-        reachAnalysisMemoryLimit: 8192,
-        reachAnalysisTimeout: 0,
+        reachAnalysisMemoryLimit: '8192',
+        reachAnalysisTimeout: '',
         reachConcurrency: 1,
         reachContinueOnAnalysisErrors: false,
         reachContinueOnInstallErrors: false,
@@ -398,6 +405,7 @@ describe('handleCreateNewScan excludePaths', () => {
         reachEnableAnalysisSplitting: false,
         reachExcludePaths: ['node_modules'],
         reachLazyMode: false,
+        reachRetainFactsFile: false,
         reachSkipCache: false,
         reachUseOnlyPregeneratedSboms: false,
         reachVersion: undefined,
@@ -441,8 +449,8 @@ describe('handleCreateNewScan excludePaths', () => {
       pullRequest: 0,
       reach: {
         excludePaths: ['tests'],
-        reachAnalysisMemoryLimit: 8192,
-        reachAnalysisTimeout: 0,
+        reachAnalysisMemoryLimit: '8192',
+        reachAnalysisTimeout: '',
         reachConcurrency: 1,
         reachContinueOnAnalysisErrors: false,
         reachContinueOnInstallErrors: false,
@@ -456,6 +464,7 @@ describe('handleCreateNewScan excludePaths', () => {
         reachEnableAnalysisSplitting: false,
         reachExcludePaths: [],
         reachLazyMode: false,
+        reachRetainFactsFile: false,
         reachSkipCache: false,
         reachUseOnlyPregeneratedSboms: false,
         reachVersion: undefined,
@@ -477,6 +486,68 @@ describe('handleCreateNewScan excludePaths', () => {
         config: undefined,
         cwd: '/repo',
       },
+    )
+  })
+})
+
+describe('handleCreateNewScan full application reachability finalize', () => {
+  let warnSpy: ReturnType<typeof vi.spyOn>
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
+    mockFetchSupportedScanFileNames.mockResolvedValue({
+      data: { size: 1 },
+      ok: true,
+    })
+    mockFindSocketYmlSync.mockReturnValue({ ok: false })
+    mockGetPackageFilesForScan.mockResolvedValue(['package.json'])
+    mockFetchCreateOrgFullScan.mockResolvedValue({
+      data: { id: 'scan-id' },
+      ok: true,
+    })
+  })
+
+  afterEach(() => {
+    warnSpy.mockRestore()
+  })
+
+  it('finalizes the full application reachability scan when a scan id and reachability scan id are present', async () => {
+    mockPerformReachabilityAnalysis.mockResolvedValue({
+      data: {
+        reachabilityReport: '.socket.facts.json',
+        tier1ReachabilityScanId: 'tier1-id',
+      },
+      ok: true,
+    })
+
+    const config = createConfig()
+    config.reach.runReachabilityAnalysis = true
+
+    await handleCreateNewScan(config)
+
+    expect(finalizeTier1Scan).toHaveBeenCalledWith('tier1-id', 'scan-id')
+    expect(warnSpy).not.toHaveBeenCalled()
+  })
+
+  it('warns instead of silently skipping finalize when no full application reachability scan id was extracted', async () => {
+    mockPerformReachabilityAnalysis.mockResolvedValue({
+      data: {
+        reachabilityReport: '.socket.facts.json',
+        tier1ReachabilityScanId: undefined,
+      },
+      ok: true,
+    })
+
+    const config = createConfig()
+    config.reach.runReachabilityAnalysis = true
+
+    await handleCreateNewScan(config)
+
+    expect(finalizeTier1Scan).not.toHaveBeenCalled()
+    expect(warnSpy).toHaveBeenCalledTimes(1)
+    expect(String(warnSpy.mock.calls[0]![0])).toMatch(
+      /reachability finalize|reachability report was not linked/i,
     )
   })
 })

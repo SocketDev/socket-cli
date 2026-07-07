@@ -1,0 +1,22 @@
+// Hermetic smoke-test project for ../../socket-facts.init.gradle.
+//
+// Resolves two artifacts from a generated local Maven repo (see ../make-localrepo.sh)
+// so it runs fully OFFLINE on every Gradle version — including pre-3.3, which the
+// script must still support (old Gradle can't negotiate modern Maven Central's TLS,
+// so a network repo would make the old-version matrix entries impossible to test).
+apply plugin: 'java'
+group = 'demo'
+version = '1.0.0'
+
+repositories {
+  maven { url file('localrepo').toURI() }
+}
+
+// `compile`/`testCompile` were removed in Gradle 7; `implementation`/`testImplementation`
+// arrived in 3.4. Pick the pair that exists on the running Gradle so this one build
+// script spans Gradle 1.x through 9.x.
+def modern = org.gradle.util.GradleVersion.current() >= org.gradle.util.GradleVersion.version('3.4')
+dependencies {
+  add(modern ? 'implementation'     : 'compile',     'demo.lib:foo:1.0')   // production dep
+  add(modern ? 'testImplementation' : 'testCompile', 'demo.test:bar:1.0')  // test (dev) dep
+}

@@ -321,6 +321,80 @@ describe('glob utilities', () => {
         }
       },
     )
+
+    it('excludes a Python virtual environment detected via pyvenv.cfg', async () => {
+      // A venv can use any directory name; the reliable signal is the
+      // pyvenv.cfg marker at its root. Manifests inside it must not surface.
+      mockTestFs({
+        [`${mockFixturePath}/requirements.txt`]: '',
+        [`${mockFixturePath}/myenv/pyvenv.cfg`]:
+          'home = /usr/bin\nversion = 3.11.0\n',
+        [`${mockFixturePath}/myenv/requirements.txt`]: '',
+        [`${mockFixturePath}/myenv/lib/python3.11/site-packages/foo/setup.py`]:
+          '',
+      })
+
+      const results = await globWithGitIgnore(
+        ['**/requirements.txt', '**/setup.py'],
+        { cwd: mockFixturePath },
+      )
+
+      expect(results.map(normalizePath).sort()).toEqual([
+        `${mockFixturePath}/requirements.txt`,
+      ])
+    })
+
+    it('excludes a `.venv` directory by name', async () => {
+      mockTestFs({
+        [`${mockFixturePath}/package.json`]: '{}',
+        [`${mockFixturePath}/.venv/lib/site-packages/foo/package.json`]: '{}',
+      })
+
+      const results = await globWithGitIgnore(['**/*.json'], {
+        cwd: mockFixturePath,
+      })
+
+      expect(results.map(normalizePath).sort()).toEqual([
+        `${mockFixturePath}/package.json`,
+      ])
+    })
+
+    it('keeps a non-venv directory named `venv` without a pyvenv.cfg', async () => {
+      // Guards against over-exclusion: a bare `venv` dir is only skipped when
+      // it actually contains a pyvenv.cfg, never by name alone.
+      mockTestFs({
+        [`${mockFixturePath}/package.json`]: '{}',
+        [`${mockFixturePath}/venv/package.json`]: '{}',
+      })
+
+      const results = await globWithGitIgnore(['**/*.json'], {
+        cwd: mockFixturePath,
+      })
+
+      expect(results.map(normalizePath).sort()).toEqual([
+        `${mockFixturePath}/package.json`,
+        `${mockFixturePath}/venv/package.json`,
+      ])
+    })
+
+    it('excludes a venv via pyvenv.cfg through the streaming filter path', async () => {
+      // The actual manifest-scan path always passes a filter, so verify the
+      // venv exclusion prunes there too.
+      mockTestFs({
+        [`${mockFixturePath}/package.json`]: '{}',
+        [`${mockFixturePath}/env/pyvenv.cfg`]: 'home = /usr/bin\n',
+        [`${mockFixturePath}/env/lib/site-packages/bar/package.json`]: '{}',
+      })
+
+      const results = await globWithGitIgnore(['**/*'], {
+        cwd: mockFixturePath,
+        filter: filterJsonFiles,
+      })
+
+      expect(results.map(normalizePath).sort()).toEqual([
+        `${mockFixturePath}/package.json`,
+      ])
+    })
   })
 
   describe('createSupportedFilesFilter()', () => {

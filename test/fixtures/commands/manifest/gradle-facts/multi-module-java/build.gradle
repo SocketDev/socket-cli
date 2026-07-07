@@ -1,8 +1,0 @@
-allprojects {
-    group = 'com.example.socket'
-    version = '1.0.0'
-
-    repositories {
-        mavenCentral()
-    }
-}

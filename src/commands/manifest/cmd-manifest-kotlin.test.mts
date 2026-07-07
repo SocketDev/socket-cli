@@ -17,34 +17,38 @@ describe('socket manifest kotlin', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "[beta] Use Gradle to generate a manifest file (\`pom.xml\`) for a Kotlin project
+        "[beta] Generate a Socket facts file (or \`pom.xml\` with --pom) for a Kotlin project
 
           Usage
             $ socket manifest kotlin [options] [CWD=.]
 
           Options
-            --bin               Location of gradlew binary to use, default: CWD/gradlew
-            --configs           With --facts: comma-separated glob patterns matched against Gradle configuration names (case-sensitive, \`*\` and \`?\` wildcards). e.g. \`*CompileClasspath,*RuntimeClasspath\` to skip tooling configs. Default: every resolvable configuration except AGP instrumented-test classpaths
-            --facts             Emit a Socket facts JSON file (\`.socket.facts.json\`) describing the resolved dependency graph instead of generating \`pom.xml\` files
+            --bin               Location of the gradle binary to use, default: ./gradlew if present, else gradle on PATH
+            --exclude-configs   When generating facts: comma-separated glob patterns; Gradle configurations matching any pattern are skipped (applied after --include-configs)
+            --facts             Emit a Socket facts JSON file (\`.socket.facts.json\`) describing the resolved dependency graph. This is the default; pass \`--pom\` to generate \`pom.xml\` files instead
             --gradle-opts       Additional options to pass on to ./gradlew, see \`./gradlew --help\`
-            --ignore-unresolved  With --facts: warn on unresolved dependencies instead of failing the run (unresolved deps are not emitted to the facts file)
+            --ignore-unresolved  When generating facts: warn on unresolved dependencies instead of failing the run (unresolved deps are not emitted to the facts file)
+            --include-configs   When generating facts: comma-separated glob patterns matched against Gradle configuration names (case-sensitive; \`*\`, \`?\`, and \`[...]\` wildcards). Only configurations matching at least one pattern are resolved. e.g. \`*CompileClasspath,*RuntimeClasspath\`. Default: every resolvable configuration
+            --pom               Generate \`pom.xml\` manifest file(s) instead of the default Socket facts file (\`.socket.facts.json\`)
             --verbose           Print debug messages
 
-          Uses gradle, preferably through your local project \`gradlew\`, to generate a
-          \`pom.xml\` file for each task. If you have no \`gradlew\` you can try the
-          global \`gradle\` binary but that may not work (hard to predict).
+          By default, emits a single \`.socket.facts.json\` describing the resolved
+          dependency graph of the whole build, using gradle (preferably your local
+          \`gradlew\`). An unresolved dependency is a fatal error. You can pass
+          --include-configs / --exclude-configs (comma-separated glob patterns) to
+          control which configurations are resolved (e.g.
+          --include-configs=\`*CompileClasspath,*RuntimeClasspath\`), and
+          --ignore-unresolved to warn on unresolved dependencies instead of failing.
 
-          The \`pom.xml\` is a manifest file similar to \`package.json\` for npm or
-          or requirements.txt for PyPi), but specifically for Maven, which is Java's
-          dependency repository. Languages like Kotlin and Scala piggy back on it too.
+          Pass --pom to instead generate \`pom.xml\` manifest files via gradle (one per
+          task). The \`pom.xml\` is a manifest file similar to \`package.json\` for npm
+          (or requirements.txt for PyPi), but specifically for Maven, which is
+          Java's dependency repository. Caveats of the \`pom.xml\` conversion:
 
-          There are some caveats with the gradle to \`pom.xml\` conversion:
+          - each task generates its own xml file (one per task by default)
 
-          - each task will generate its own xml file and by default it generates one xml
-            for every task. (This may be a good thing!)
-
-          - it's possible certain features don't translate well into the xml. If you
-            think something is missing that could be supported please reach out.
+          - certain features may not translate well into the xml; reach out if
+            something you need is missing
 
           - it works with your \`gradlew\` from your repo and local settings and config
 
@@ -53,6 +57,7 @@ describe('socket manifest kotlin', async () => {
           Examples
 
             $ socket manifest kotlin .
+            $ socket manifest kotlin --pom .
             $ socket manifest kotlin --bin=../gradlew ."
       `,
       )

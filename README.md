@@ -60,6 +60,14 @@ All aliases support the flags and arguments of the commands they alias.
 
 - `socket ci` - Alias for `socket scan create --report` (creates report and exits with error if unhealthy)
 
+## Reachability analysis
+
+Socket reachability analysis comes in three forms:
+
+- **Full application reachability** (formerly Tier 1): Analyzes your application together with its dependencies to determine whether vulnerable code is actually invoked from your code through the full dependency graph — the highest-precision reachability analysis. Run it with `socket scan create --reach`.
+- **Precomputed reachability** (formerly Tier 2): Determines whether vulnerable code in transitive dependencies is reachable through your direct dependencies, using precomputed static analysis of dependency chains (no access to your application code required). In the CLI this is the fallback used when full application reachability cannot complete (see the `--reach-continue-on-*` flags).
+- **Dependency reachability** (formerly Tier 3): Package-level filtering that detects which dependencies are actually used, so CVEs in unused/dead dependencies can be filtered out.
+
 ## Flags
 
 ### Output flags
@@ -110,6 +118,7 @@ npm exec socket
 - `SOCKET_CLI_API_BASE_URL` - API base URL (default: `https://api.socket.dev/v0/`)
 - `SOCKET_CLI_API_PROXY` - Proxy for API requests (aliases: `HTTPS_PROXY`, `https_proxy`, `HTTP_PROXY`, `http_proxy`)
 - `SOCKET_CLI_API_TIMEOUT` - API request timeout in milliseconds
+- `SOCKET_CLI_COANA_LAUNCHER` - How the reachability engine (`@coana-tech/cli`) is launched: `auto` (default; try `npx`, fall back to `npm install` + `node` if the launcher fails), `npx` (never fall back), or `npm-install` (skip `npx` entirely)
 - `SOCKET_CLI_DEBUG` - Enable debug logging
 - `DEBUG` - Enable [`debug`](https://socket.dev/npm/package/debug) package logging
 

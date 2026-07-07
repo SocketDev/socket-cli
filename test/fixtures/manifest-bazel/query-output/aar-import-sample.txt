@@ -1,8 +1,0 @@
-aar_import(
-  name = "androidx_annotation_annotation",
-  aar = "@maven//:v1/https/maven.google.com/androidx/annotation/annotation/1.7.0/annotation-1.7.0.aar",
-  maven_coordinates = "androidx.annotation:annotation:1.7.0",
-  maven_url = "https://maven.google.com/androidx/annotation/annotation/1.7.0/annotation-1.7.0.aar",
-  maven_sha256 = "0000000000000000000000000000000000000000000000000000000000000002",
-  deps = [],
-)

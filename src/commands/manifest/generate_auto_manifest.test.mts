@@ -4,8 +4,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 vi.mock('./bazel/extract_bazel_to_maven.mts', () => ({
   extractBazelToMaven: vi.fn(async () => ({
     artifactCount: 1,
-    manifestPath: '/tmp/repo/.socket-auto-manifest/maven_install.json',
-    ok: true,
+    complete: true,
+    manifestPaths: ['/tmp/repo/.socket-auto-manifest/maven_install.json'],
+    status: 'complete',
+    workspaceOutcomes: [],
   })),
 }))
 vi.mock('./convert_gradle_to_maven.mts', () => ({
@@ -14,6 +16,12 @@ vi.mock('./convert_gradle_to_maven.mts', () => ({
 vi.mock('./convert_sbt_to_maven.mts', () => ({
   convertSbtToMaven: vi.fn(async () => undefined),
 }))
+vi.mock('./convert-gradle-to-facts.mts', () => ({
+  convertGradleToFacts: vi.fn(async () => undefined),
+}))
+vi.mock('./convert-sbt-to-facts.mts', () => ({
+  convertSbtToFacts: vi.fn(async () => undefined),
+}))
 vi.mock('./handle-manifest-conda.mts', () => ({
   handleManifestConda: vi.fn(async () => undefined),
 }))
@@ -21,7 +29,10 @@ vi.mock('../../utils/socket-json.mts', () => ({
   readOrDefaultSocketJson: vi.fn(() => ({})),
 }))
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { extractBazelToMaven } from './bazel/extract_bazel_to_maven.mts'
+import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { generateAutoManifest } from './generate_auto_manifest.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
@@ -40,12 +51,15 @@ const baseDetected = {
 describe('generateAutoManifest — bazel branch', () => {
   beforeEach(() => {
     vi.mocked(extractBazelToMaven).mockClear()
+    vi.mocked(convertGradleToFacts).mockClear()
     vi.mocked(convertGradleToMaven).mockClear()
     vi.mocked(readOrDefaultSocketJson).mockReturnValue({} as SocketJson)
     vi.mocked(extractBazelToMaven).mockResolvedValue({
       artifactCount: 1,
-      manifestPath: '/tmp/repo/.socket-auto-manifest/maven_install.json',
-      ok: true,
+      complete: true,
+      manifestPaths: ['/tmp/repo/.socket-auto-manifest/maven_install.json'],
+      status: 'complete',
+      workspaceOutcomes: [],
     })
   })
 
@@ -143,8 +157,10 @@ describe('generateAutoManifest — bazel branch', () => {
   it('does not run PyPI by default when Maven has no discovery', async () => {
     vi.mocked(extractBazelToMaven).mockResolvedValueOnce({
       artifactCount: 0,
-      noEcosystemFound: true,
-      ok: false,
+      complete: false,
+      manifestPaths: [],
+      status: 'noEcosystem',
+      workspaceOutcomes: [],
     })
     const result = await generateAutoManifest({
       cwd: '/tmp/repo',
@@ -159,7 +175,10 @@ describe('generateAutoManifest — bazel branch', () => {
   it('throws when Maven hard-fails', async () => {
     vi.mocked(extractBazelToMaven).mockResolvedValueOnce({
       artifactCount: 0,
-      ok: false,
+      complete: false,
+      manifestPaths: [],
+      status: 'hardFailure',
+      workspaceOutcomes: [],
     })
     await expect(
       generateAutoManifest({
@@ -176,8 +195,10 @@ describe('generateAutoManifest — bazel branch', () => {
   it('does NOT throw when Maven has no discovery', async () => {
     vi.mocked(extractBazelToMaven).mockResolvedValueOnce({
       artifactCount: 0,
-      noEcosystemFound: true,
-      ok: false,
+      complete: false,
+      manifestPaths: [],
+      status: 'noEcosystem',
+      workspaceOutcomes: [],
     })
     const result = await generateAutoManifest({
       cwd: '/tmp/repo',
@@ -187,6 +208,46 @@ describe('generateAutoManifest — bazel branch', () => {
     })
 
     expect(result.generatedFiles).toEqual([])
+  })
+
+  it('pushes the partial manifests and warns loudly with the incompleteness detail', async () => {
+    vi.mocked(extractBazelToMaven).mockResolvedValueOnce({
+      artifactCount: 2,
+      complete: false,
+      manifestPaths: [
+        '/tmp/repo/.socket-auto-manifest/maven_install.json',
+        '/tmp/repo/.socket-auto-manifest/sub/maven_install.json',
+      ],
+      status: 'partial',
+      workspaceOutcomes: [
+        {
+          hubs: [{ hub: 'maven', reason: 'cquery-timeout', state: 'failed' }],
+          load: 'loaded',
+          relPath: 'sub',
+        },
+      ],
+    })
+    const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
+    try {
+      const result = await generateAutoManifest({
+        cwd: '/tmp/repo',
+        detected: { ...baseDetected, bazel: true, count: 1 },
+        outputKind: 'text',
+        verbose: false,
+      })
+      // Hybrid: the partial SBOM is still uploaded.
+      expect(result.generatedFiles).toEqual([
+        '/tmp/repo/.socket-auto-manifest/maven_install.json',
+        '/tmp/repo/.socket-auto-manifest/sub/maven_install.json',
+      ])
+      const warned = warnSpy.mock.calls.map(c => String(c[0])).join('\n')
+      expect(warned).toMatch(/PARTIAL/)
+      expect(warned).toMatch(/known-incomplete/)
+      // The structured outcome detail surfaces the failing hub.
+      expect(warned).toMatch(/sub@maven \(failed\)/)
+    } finally {
+      warnSpy.mockRestore()
+    }
   })
 
   it('runs BOTH bazel and gradle branches when both are detected', async () => {
@@ -202,7 +263,23 @@ describe('generateAutoManifest — bazel branch', () => {
       verbose: false,
     })
     expect(extractBazelToMaven).toHaveBeenCalledTimes(1)
+    // Socket facts is the default for the gradle branch.
+    expect(convertGradleToFacts).toHaveBeenCalledTimes(1)
+    expect(convertGradleToMaven).not.toHaveBeenCalled()
+  })
+
+  it('uses the gradle pom generator when defaults.manifest.gradle.facts is false', async () => {
+    vi.mocked(readOrDefaultSocketJson).mockReturnValue({
+      defaults: { manifest: { gradle: { facts: false } } },
+    } as SocketJson)
+    await generateAutoManifest({
+      cwd: '/tmp/repo',
+      detected: { ...baseDetected, gradle: true, count: 1 },
+      outputKind: 'text',
+      verbose: false,
+    })
     expect(convertGradleToMaven).toHaveBeenCalledTimes(1)
+    expect(convertGradleToFacts).not.toHaveBeenCalled()
   })
 
   it('honors socket.json out override (user-supplied .socket-auto-manifest dir)', async () => {

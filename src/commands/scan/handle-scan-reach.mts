@@ -3,6 +3,7 @@ import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { applyFullExcludePaths } from './exclude-paths.mts'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
+import { finalizeTier1Scan } from './finalize-tier1-scan.mts'
 import { outputScanReach } from './output-scan-reach.mts'
 import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
 import constants from '../../constants.mts'
@@ -38,6 +39,7 @@ export async function handleScanReach({
   const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
   if (!supportedFilesCResult.ok) {
     await outputScanReach(supportedFilesCResult, {
+      cwd,
       outputKind,
       outputPath,
     })
@@ -93,6 +95,7 @@ export async function handleScanReach({
   const result = await performReachabilityAnalysis({
     cwd,
     orgSlug,
+    outputKind,
     outputPath,
     packagePaths,
     reachabilityOptions: mergedReachabilityOptions,
@@ -103,5 +106,21 @@ export async function handleScanReach({
 
   spinner.stop()
 
-  await outputScanReach(result, { outputKind, outputPath })
+  // Standalone reachability has no full scan to bind to, but the full
+  // application reachability scan row still needs to transition to its DONE
+  // terminal state — otherwise it sits at the post-Coana intermediate state forever
+  // and looks indistinguishable from a stuck run. Pass `null` as the full
+  // scan id; the endpoint accepts it for this flow. Best-effort: never
+  // block the user-visible output on this.
+  const tier1Id = result.ok ? result.data?.tier1ReachabilityScanId : undefined
+  if (tier1Id) {
+    const finalizeResult = await finalizeTier1Scan(tier1Id, null)
+    if (!finalizeResult.ok) {
+      logger.warn(
+        `Failed to finalize full application reachability scan: ${finalizeResult.message}${finalizeResult.cause ? ` — ${finalizeResult.cause}` : ''}`,
+      )
+    }
+  }
+
+  await outputScanReach(result, { cwd, outputKind, outputPath })
 }

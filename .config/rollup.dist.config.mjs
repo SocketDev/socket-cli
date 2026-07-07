@@ -34,6 +34,7 @@ import {
 const {
   CONSTANTS,
   INLINED_SOCKET_CLI_LEGACY_BUILD,
+  INLINED_SOCKET_CLI_PUBLISHED_BUILD,
   INLINED_SOCKET_CLI_SENTRY_BUILD,
   INSTRUMENT_WITH_SENTRY,
   NODE_MODULES,
@@ -79,22 +80,46 @@ async function copyInitGradle() {
   await fs.copyFile(filepath, destPath)
 }
 
-async function copySocketFactsInitGradle() {
-  const filepath = path.join(
-    constants.srcPath,
-    'commands/manifest/socket-facts.init.gradle',
+// Copy the JVM build-tool resolution assets (Gradle init script, sbt plugin,
+// Maven extension jar) into dist/manifest-scripts, where run.mts resolves them
+// at runtime. The Maven jar is compiled by maven-extension/build-jar.sh (run in
+// CI / local dev) and is absent from a fresh checkout — copy it only if present;
+// run.mts surfaces a build hint when it's missing.
+async function copyManifestScripts() {
+  const srcDir = path.join(constants.srcPath, 'commands/manifest/scripts')
+  const destDir = path.join(constants.distPath, 'manifest-scripts')
+  await fs.mkdir(path.join(destDir, 'maven-extension'), { recursive: true })
+  await Promise.all([
+    fs.copyFile(
+      path.join(srcDir, 'socket-facts.init.gradle'),
+      path.join(destDir, 'socket-facts.init.gradle'),
+    ),
+    fs.copyFile(
+      path.join(srcDir, 'socket-facts.plugin.scala'),
+      path.join(destDir, 'socket-facts.plugin.scala'),
+    ),
+  ])
+  const jarPath = path.join(
+    srcDir,
+    'maven-extension',
+    'coana-maven-extension.jar',
   )
-  const destPath = path.join(constants.distPath, 'socket-facts.init.gradle')
-  await fs.copyFile(filepath, destPath)
-}
-
-async function copySocketFactsSbtPlugin() {
-  const filepath = path.join(
-    constants.srcPath,
-    'commands/manifest/socket-facts.plugin.scala',
-  )
-  const destPath = path.join(constants.distPath, 'socket-facts.plugin.scala')
-  await fs.copyFile(filepath, destPath)
+  if (existsSync(jarPath)) {
+    await fs.copyFile(
+      jarPath,
+      path.join(destDir, 'maven-extension', 'coana-maven-extension.jar'),
+    )
+  } else if (constants.ENV[INLINED_SOCKET_CLI_PUBLISHED_BUILD]) {
+    // Fail closed: a published build without the jar would ship a package whose
+    // `socket manifest maven` / Maven reachability silently produces an empty
+    // SBOM. Run `pnpm run build:maven-extension` before `build:dist`. (A local
+    // dev build tolerates a missing jar; run.mts surfaces a hint at runtime.)
+    throw new Error(
+      'Maven manifest extension jar not found at ' +
+        jarPath +
+        ' for a published build. Build it first: pnpm run build:maven-extension',
+    )
+  }
 }
 
 async function copyBashCompletion() {
@@ -139,7 +164,13 @@ async function copyExternalPackages() {
   // Cleanup package files.
   await Promise.all(
     [
-      [blessedPath, ['lib/**/*.js', 'usr/**/**', 'vendor/**/*.js']],
+      // Keep blessed's terminfo (the flat files in usr/, e.g. usr/xterm) but
+      // NOT usr/fonts/** — the OFL-1.1 Terminus bitmap font is only used by the
+      // unused BigText widget, and shipping it forces an OFL-1.1 license. The
+      // 'usr/*' glob matches one level deep, so usr/fonts/<file> is dropped.
+      // Re-verify usr/ contents on a blessed upgrade (a nested terminfo dir
+      // would be dropped too).
+      [blessedPath, ['lib/**/*.js', 'usr/*', 'vendor/**/*.js']],
       [blessedContribPath, ['lib/**/*.js', 'index.js']],
       [
         socketRegistryPath,
@@ -476,8 +507,7 @@ export default async () => {
           async writeBundle() {
             await Promise.all([
               copyInitGradle(),
-              copySocketFactsInitGradle(),
-              copySocketFactsSbtPlugin(),
+              copyManifestScripts(),
               copyBashCompletion(),
               updatePackageJson(),
               // Remove dist/vendor.js.map file.

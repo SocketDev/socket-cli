@@ -52,7 +52,7 @@ index 0b1e56fadcf60719ca2e5231447ad2f8ace44bda..1494b715fb8f2143505bb2b5cea053d8
  
  Program.prototype.bel =
 diff --git a/lib/tput.js b/lib/tput.js
-index 2a57f58b08e797e9751983eef917c127481770d5..aec81d28014cd7b9527d114dd0e9530acf1535ab 100644
+index 2a57f58b08e797e9751983eef917c127481770d5..ddfb9b88f64829ac0db9da4a200d874a7a88b0bc 100644
 --- a/lib/tput.js
 +++ b/lib/tput.js
 @@ -366,7 +366,7 @@ Tput.prototype.parseTerminfo = function(data, file) {
@@ -91,6 +91,15 @@ index 2a57f58b08e797e9751983eef917c127481770d5..aec81d28014cd7b9527d114dd0e9530a
        _strings.push(-1);
      } else {
        _strings.push((data[i + 1] << 8) | data[i]);
+@@ -884,7 +884,7 @@ Tput.prototype._compile = function(info, key, str) {
+           ch = ':';
+           break;
+         case '0':
+-          ch = '\200';
++          ch = '\x80';
+           break;
+         case 'a':
+           ch = '\x07';
 @@ -926,7 +926,7 @@ Tput.prototype._compile = function(info, key, str) {
          echo('sprintf("'+ cap[0].replace(':-', '-') + '", stack.pop())');
        } else if (cap[3] === 'c') {
@@ -100,6 +109,21 @@ index 2a57f58b08e797e9751983eef917c127481770d5..aec81d28014cd7b9527d114dd0e9530a
        } else {
          echo('stack.pop()');
        }
+@@ -2094,10 +2094,10 @@ Tput.prototype.detectBrokenACS = function(info) {
+       && process.env.TERMCAP
+       && ~process.env.TERMCAP.indexOf('screen')
+       && ~process.env.TERMCAP.indexOf('hhII00')) {
+-    if (~info.strings.enter_alt_charset_mode.indexOf('\016')
+-        || ~info.strings.enter_alt_charset_mode.indexOf('\017')
+-        || ~info.strings.set_attributes.indexOf('\016')
+-        || ~info.strings.set_attributes.indexOf('\017')) {
++    if (~info.strings.enter_alt_charset_mode.indexOf('\x0e')
++        || ~info.strings.enter_alt_charset_mode.indexOf('\x0f')
++        || ~info.strings.set_attributes.indexOf('\x0e')
++        || ~info.strings.set_attributes.indexOf('\x0f')) {
+       return true;
+     }
+   }
 @@ -2276,7 +2276,7 @@ function sprintf(src) {
          break;
        case 'c': // char

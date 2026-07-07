@@ -5,6 +5,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import {
   CONVENTIONAL_MAVEN_REPO_NAMES,
   classifyProbeResult,
+  classifyShowExtensionResult,
   parseShowExtensionOutput,
   probeCandidate,
 } from './bazel-repo-discovery.mts'
@@ -13,6 +14,7 @@ import type {
   ProbeResult,
   ProbeStatus,
   RepoProbe,
+  ShowExtensionStatus,
 } from './bazel-repo-discovery.mts'
 
 // Truncated text-format report Bazel 8.4.2 emits on tink-java for
@@ -62,16 +64,28 @@ const probeThrows: RepoProbe = async () => {
 
 describe('bazel-repo-discovery', () => {
   describe('parseShowExtensionOutput', () => {
-    it('extracts hub repos with (imported by ...) annotations only', () => {
+    it('extracts hub repos with (imported by ...) annotations and their importers', () => {
       // The 6 hub repos in the fixture are the ones with annotations;
       // generated per-artifact repos (no annotation) are skipped.
       expect(parseShowExtensionOutput(TINK_SHOW_EXTENSION_FIXTURE)).toEqual([
-        'android_ide_common_30_1_3',
-        'maven',
-        'rules_android_maven',
-        'rules_jvm_external_deps',
-        'stardoc_maven',
-        'unpinned_rules_jvm_external_deps',
+        {
+          importers: ['rules_android@0.6.6'],
+          name: 'android_ide_common_30_1_3',
+        },
+        {
+          importers: ['<root>', 'bazel_worker_java@0.0.4', 'protobuf@32.1'],
+          name: 'maven',
+        },
+        { importers: ['rules_android@0.6.6'], name: 'rules_android_maven' },
+        {
+          importers: ['rules_jvm_external@6.7'],
+          name: 'rules_jvm_external_deps',
+        },
+        { importers: ['stardoc@0.7.2'], name: 'stardoc_maven' },
+        {
+          importers: ['rules_jvm_external@6.7'],
+          name: 'unpinned_rules_jvm_external_deps',
+        },
       ])
     })
 
@@ -94,20 +108,35 @@ describe('bazel-repo-discovery', () => {
     it('stops at the next section header (multiple extensions in one report)', () => {
       const input =
         '## @@rules_jvm_external+//:extensions.bzl%maven:\n\nFetched repositories:\n  - maven (imported by <root>)\n  - other (imported by foo)\n\n## @@rules_python+//:extensions.bzl%pip:\n\nFetched repositories:\n  - pypi (imported by <root>)\n'
-      expect(parseShowExtensionOutput(input)).toEqual(['maven', 'other'])
+      expect(parseShowExtensionOutput(input)).toEqual([
+        { importers: ['<root>'], name: 'maven' },
+        { importers: ['foo'], name: 'other' },
+      ])
     })
 
     it('tolerates canonical-name separator variants (~ and +)', () => {
       for (const sep of ['+', '~']) {
         const input = `## @@rules_jvm_external${sep}//:extensions.bzl%maven:\n\nFetched repositories:\n  - maven (imported by <root>)\n`
-        expect(parseShowExtensionOutput(input)).toEqual(['maven'])
+        expect(parseShowExtensionOutput(input)).toEqual([
+          { importers: ['<root>'], name: 'maven' },
+        ])
       }
     })
 
-    it('deduplicates if the same hub appears twice (defensive)', () => {
+    it('merges importers when the same hub appears twice with different importers', () => {
       const input =
         '## @@rules_jvm_external+//:extensions.bzl%maven:\n\nFetched repositories:\n  - maven (imported by <root>)\n  - maven (imported by foo)\n'
-      expect(parseShowExtensionOutput(input)).toEqual(['maven'])
+      expect(parseShowExtensionOutput(input)).toEqual([
+        { importers: ['<root>', 'foo'], name: 'maven' },
+      ])
+    })
+
+    it('records a non-root-only importer (orchestrator drops it, importer retained for diagnostics)', () => {
+      const input =
+        '## @@rules_jvm_external+//:extensions.bzl%maven:\n\nFetched repositories:\n  - stardoc_maven (imported by stardoc@0.7.2)\n'
+      expect(parseShowExtensionOutput(input)).toEqual([
+        { importers: ['stardoc@0.7.2'], name: 'stardoc_maven' },
+      ])
     })
   })
 
@@ -150,12 +179,15 @@ describe('bazel-repo-discovery', () => {
       ).toBe<ProbeStatus>('not-defined')
     })
 
-    it('classifies code=1 + unrecognized stderr conservatively as not-defined', () => {
+    it('classifies code=1 + unrecognized stderr as indeterminate (not a silent skip)', () => {
+      // An unrecognized non-zero exit is NOT proof the repo is absent; it must
+      // surface as indeterminate so the orchestrator never reports complete on
+      // a workspace it could not actually analyze.
       expect(
         classifyProbeResult(
           probeResult({ code: 1, stderr: 'some other failure\n' }),
         ),
-      ).toBe<ProbeStatus>('not-defined')
+      ).toBe<ProbeStatus>('indeterminate')
     })
 
     it('classifies code=1 + "no such package" stderr as not-defined', () => {
@@ -168,6 +200,140 @@ describe('bazel-repo-discovery', () => {
         ),
       ).toBe<ProbeStatus>('not-defined')
     })
+
+    it('classifies a non-zero exit with no recognizable message as indeterminate', () => {
+      expect(
+        classifyProbeResult(probeResult({ code: 37, stderr: '' })),
+      ).toBe<ProbeStatus>('indeterminate')
+    })
+  })
+
+  describe('classifyShowExtensionResult', () => {
+    // NOTE: the exact bazel stderr wording for these error families should be
+    // confirmed against a live `bazel mod show_extension` run; the sandbox
+    // blocks bazel here, so the strings below are representative shapes.
+    it('classifies code=0 with parsed root hubs as defined', () => {
+      expect(
+        classifyShowExtensionResult(probeResult({ code: 0 }), 2),
+      ).toBe<ShowExtensionStatus>('defined')
+    })
+
+    it('classifies a clean code=0 run with zero kept hubs as not-defined', () => {
+      // Ran fine, no maven extension for the root: legitimate absence.
+      expect(
+        classifyShowExtensionResult(
+          probeResult({ code: 0, stdout: 'No extensions defined.\n' }),
+          0,
+        ),
+      ).toBe<ShowExtensionStatus>('not-defined')
+    })
+
+    it('classifies "module is not a dependency of the root module" (rules_jvm_external not in dep graph) as not-defined', () => {
+      // The COMMON no-Maven bzlmod repo: ModCommand resolves the extension
+      // argument up front and throws InvalidArgumentException before any
+      // Starlark runs. Non-zero exit, but authoritatively "no maven here".
+      expect(
+        classifyShowExtensionResult(
+          probeResult({
+            code: 1,
+            stderr:
+              "ERROR: In extension argument '@rules_jvm_external//:extensions.bzl%maven': module 'rules_jvm_external' is not a dependency of the root module\n",
+          }),
+          0,
+        ),
+      ).toBe<ShowExtensionStatus>('not-defined')
+    })
+
+    it('classifies the real Bazel "no module ... exists in the dependency graph" arg error (exit 2) as not-defined', () => {
+      // Verbatim stderr from `bazel mod show_extension` on a bzlmod repo
+      // without rules_jvm_external (verified on real Bazel against angular and
+      // buildbuddy: exit code 2). This is the dominant no-Maven case and must
+      // never be escalated to indeterminate / hardFailure.
+      expect(
+        classifyShowExtensionResult(
+          probeResult({
+            code: 2,
+            stderr:
+              "ERROR: In extension argument @rules_jvm_external//:extensions.bzl%maven: No module with the apparent repo name @rules_jvm_external exists in the dependency graph. Type 'bazel help mod' for syntax and help.\n",
+          }),
+          0,
+        ),
+      ).toBe<ShowExtensionStatus>('not-defined')
+    })
+
+    it('classifies the real Bazel unbound-name MODULE.bazel failure (exit 2) as indeterminate', () => {
+      // Verbatim stderr from `bazel mod show_extension --enable_bzlmod` on the
+      // envoy mobile/ fragment (verified on real Bazel: exit 2). A genuine
+      // eval failure: we cannot conclude maven is absent, so it is
+      // indeterminate even though the unbound-name text also trips the
+      // not-in-graph "not defined" branch (eval-failure is checked first).
+      expect(
+        classifyShowExtensionResult(
+          probeResult({
+            code: 2,
+            stderr:
+              "ERROR: /work/mobile/MODULE.bazel:26:1: name 'pip' is not defined (did you mean 'zip'?)\nERROR: syntax error in MODULE.bazel file for <root>.\n",
+          }),
+          0,
+        ),
+      ).toBe<ShowExtensionStatus>('indeterminate')
+    })
+
+    it('classifies a generic "extension not found / not resolvable" arg error as not-defined', () => {
+      expect(
+        classifyShowExtensionResult(
+          probeResult({
+            code: 1,
+            stderr:
+              'ERROR: extension argument: no such module @rules_jvm_external\n',
+          }),
+          0,
+        ),
+      ).toBe<ShowExtensionStatus>('not-defined')
+    })
+
+    it('classifies a genuine MODULE.bazel evaluation failure (unbound name) as indeterminate', () => {
+      expect(
+        classifyShowExtensionResult(
+          probeResult({
+            code: 1,
+            stderr:
+              "ERROR: Error evaluating MODULE.bazel: name 'PYTHON_VERSION' is not defined\n",
+          }),
+          0,
+        ),
+      ).toBe<ShowExtensionStatus>('indeterminate')
+    })
+
+    it('classifies a Starlark syntax error in the module graph as indeterminate', () => {
+      expect(
+        classifyShowExtensionResult(
+          probeResult({
+            code: 1,
+            stderr: 'ERROR: /work/MODULE.bazel:3:1: syntax error near pip\n',
+          }),
+          0,
+        ),
+      ).toBe<ShowExtensionStatus>('indeterminate')
+    })
+
+    it('classifies a spawn failure / missing binary (normalized code -1) as indeterminate', () => {
+      expect(
+        classifyShowExtensionResult(probeResult({ code: -1 }), 0),
+      ).toBe<ShowExtensionStatus>('indeterminate')
+    })
+
+    it('biases a truly unrecognized non-zero exit toward not-defined (extension-not-in-graph dominates; never abort the scan)', () => {
+      // We only escalate to indeterminate when stderr positively looks like an
+      // eval/load failure. An unrecognized arg-style error must not flip a
+      // no-Maven repo into a hard failure that aborts the whole scan.
+      expect(
+        classifyShowExtensionResult(
+          probeResult({ code: 7, stderr: 'ERROR: something unexpected\n' }),
+          0,
+        ),
+      ).toBe<ShowExtensionStatus>('not-defined')
+    })
   })
 
   describe('probeCandidate', () => {
@@ -177,9 +343,9 @@ describe('bazel-repo-discovery', () => {
       ).toBe<ProbeStatus>('populated')
     })
 
-    it('returns not-defined when the probe throws', async () => {
+    it('returns indeterminate when the probe throws (infra failure, not absence)', async () => {
       expect(await probeCandidate('crash', probeThrows)).toBe<ProbeStatus>(
-        'not-defined',
+        'indeterminate',
       )
     })
   })
@@ -226,7 +392,7 @@ describe('bazel-repo-discovery', () => {
     it('probeCandidate logs the throw reason under verbose', async () => {
       await probeCandidate('crash', probeThrows, true)
       expect(loggedLines()).toMatch(
-        /probe @crash:\s*not-defined \(probe threw: bazel exploded\)/,
+        /probe @crash:\s*indeterminate \(probe threw: bazel exploded\)/,
       )
     })
   })
