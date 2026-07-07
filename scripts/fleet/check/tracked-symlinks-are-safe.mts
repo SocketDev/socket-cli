@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * @file Assert no tracked symlink is self-referential or points at an absolute
  *   path inside this repo. A symlink committed as `node_modules → /Users/.../
  *   <repo>/node_modules` (a self-loop) bricks every fresh clone: `pnpm install`

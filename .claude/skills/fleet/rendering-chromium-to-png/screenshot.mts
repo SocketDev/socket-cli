@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * @file Render a page (or a real Chrome extension popup) to a PNG so an agent
  *   can SEE it — open the PNG with the Read tool and the rendered pixels go
  *   into context, catching layout / color / empty-state / render-throw bugs
@@ -45,6 +45,7 @@ const logger = getDefaultLogger()
 // Normalize a target into a navigable URL: pass http(s)/chrome-extension
 // through; treat anything else as a local path → file:// URL.
 export function toUrl(target: string): string {
+  // Matches http://, https://, file://, or chrome-extension:// URL schemes.
   if (/^(?:https?|file|chrome-extension):/.test(target)) {
     return target
   }
@@ -120,7 +121,10 @@ async function main(): Promise<void> {
   const target = positionals[0]
   if (!target) {
     logger.error(
-      'Usage: screenshot.mts <url|file> [--out p.png] [--width 580] [--theme dark|light] [--wait ms] [--full]\n   or: screenshot.mts --extension <unpacked-dir> [--page popup.html] [...]',
+      'Usage: screenshot.mts <url|file> [--out p.png] [--width 580] [--theme dark|light] [--wait ms] [--full]',
+    )
+    logger.error(
+      'or: screenshot.mts --extension <unpacked-dir> [--page popup.html] [...]',
     )
     process.exitCode = 1
     return

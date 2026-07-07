@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * @file Path-hygiene gate. Mantra: 1 path, 1 reference. A path is constructed
  *   exactly once; everywhere else references the constructed value. Whole-repo
  *   scan complementing the per-edit `.claude/hooks/path-guard` hook. The hook
@@ -54,12 +54,12 @@ import { walk } from './paths/walk.mts'
 // the gate is self-contained and works in socket-lib itself (which
 // would otherwise import itself).
 const logger = {
-  log: (msg: string) => process.stdout.write(msg + '\n'),
   error: (msg: string) => process.stderr.write(msg + '\n'),
+  log: (msg: string) => process.stdout.write(msg + '\n'),
   step: (msg: string) => process.stdout.write(`→ ${msg}\n`),
+  substep: (msg: string) => process.stdout.write(`  ${msg}\n`),
   // oxlint-disable-next-line socket/no-status-emoji -- local logger replica; can't import lib's logger because this gate runs in socket-lib itself.
   success: (msg: string) => process.stdout.write(`✔ ${msg}\n`),
-  substep: (msg: string) => process.stdout.write(`  ${msg}\n`),
 }
 
 const args = parseArgs({

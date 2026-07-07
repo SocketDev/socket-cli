@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * @file Lock-step header byte-equality gate. Mantra: the four impls of a
  *   quadruplet agree about WHAT THE FILE IS FOR. The `BEGIN LOCK-STEP HEADER` /
  *   `END LOCK-STEP HEADER` block names that contract; every member of the
@@ -34,7 +34,7 @@
  *     one quadruplet has a header diff 2 — gate itself crashed
  */
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { parseArgs } from 'node:util'
@@ -162,6 +162,10 @@ function extractHeader(file: string): HeaderBlock | undefined {
     const stripped = stripCommentPrefix(raw)
     bodyLines.push(stripped)
   }
+  // Match a "Lock-step with <lang>: <ref>" annotation inside a comment block.
+  // Capture group 1 is the language name (letter-started, allows +, #, -).
+  // Capture group 2 is the reference path, which must contain at least one dot
+  // or slash and must not contain whitespace, colons, or commas.
   const withRe =
     /Lock-step with ([A-Za-z][A-Za-z0-9+#-]*): ([^\s:,]*[./][^\s:,]*)/g
   const withRefs: Array<{ lang: string; refPath: string }> = []
@@ -269,7 +273,9 @@ function main(): void {
   try {
     config = loadConfig(repoRoot)
   } catch (e) {
-    process.stderr.write(`check-lock-step-headers-match: ${(e as Error).message}\n`)
+    process.stderr.write(
+      `check-lock-step-headers-match: ${(e as Error).message}\n`,
+    )
     process.exitCode = 2
     return
   }

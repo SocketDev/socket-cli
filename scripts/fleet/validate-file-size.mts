@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * @file Validates that no individual files exceed size threshold. Rules:
  *
  *   - No single file should exceed 2MB (2,097,152 bytes)
@@ -12,6 +12,7 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from './paths.mts'
@@ -24,17 +25,12 @@ const rootPath = REPO_ROOT
 const MAX_FILE_SIZE = 2 * 1024 * 1024
 
 // Allowlisted large files: fleet-canonical assets whose size is bounded by
-// the upstream they ship, not by repo authoring. acorn.wasm is the AST
-// parser shared by AST-based oxlint plugin rules + hooks; its ~3MB is the
-// upstream build artifact. Two paths because socket-lib vendors its own
-// copy at vendor/acorn/ (so the lib package's own AST helpers can
-// load without a node_modules round-trip). Adding a path here is
-// intentional — it should only happen for files the fleet jointly owns,
-// not per-repo binary leaks.
-const ALLOWED_LARGE_FILES = new Set<string>([
-  '.claude/hooks/fleet/_shared/acorn/acorn.wasm',
-  'vendor/acorn/acorn.wasm',
-])
+// the upstream they ship, not by repo authoring. Empty — the shared AST
+// parser ships as the @ultrathink/acorn.wasm dependency (resolved from
+// node_modules), not a tracked binary. Adding a path here is intentional —
+// it should only happen for files the fleet jointly owns, not per-repo
+// binary leaks.
+const ALLOWED_LARGE_FILES = new Set<string>()
 
 // Directories to skip
 const SKIP_DIRS = new Set([
@@ -176,9 +172,7 @@ async function main(): Promise<void> {
 
     process.exitCode = 1
   } catch (e) {
-    logger.fail(
-      `Validation failed: ${e instanceof Error ? e.message : String(e)}`,
-    )
+    logger.fail(`Validation failed: ${errorMessage(e)}`)
     process.exitCode = 1
   }
 }

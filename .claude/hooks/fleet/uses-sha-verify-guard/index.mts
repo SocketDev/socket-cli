@@ -42,15 +42,16 @@
 // with a 7-day TTL.
 //
 // Bypass: `Allow uses-sha-verify bypass`.
-//
-// Exits:
-//   0 — allowed (not a tracked file, all SHAs verify, OR bypass).
-//   2 — blocked (stderr explains which pin failed + how to fix).
-//   0 (with stderr log) — fail-open on hook bugs.
 
-import process from 'node:process'
-
-import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import { block, defineHook, runHook } from '../_shared/guard.mts'
+import type { GuardResult } from '../_shared/guard.mts'
+import {
+  readCommand,
+  readFilePath,
+  readWriteContent,
+} from '../_shared/payload.mts'
+import type { ToolCallPayload } from '../_shared/payload.mts'
 
 import { findBareUsesIssues, findLoneShaIssues } from './lib/bash.mts'
 import { loadCache, saveCache } from './lib/cache.mts'
@@ -60,33 +61,6 @@ import { BASH_TARGETS_WORKFLOW_RE } from './lib/regexes.mts'
 import { findUsesIssues } from './lib/workflow.mts'
 
 const BYPASS_PHRASE = 'Allow uses-sha-verify bypass'
-
-interface Hook {
-  tool_name?: string | undefined
-  tool_input?:
-    | {
-        file_path?: string | undefined
-        new_string?: string | undefined
-        content?: string | undefined
-        command?: string | undefined
-      }
-    | undefined
-  transcript_path?: string | undefined
-}
-
-function readBodyFromPayload(payload: Hook): string {
-  const ti = payload.tool_input
-  if (!ti) {
-    return ''
-  }
-  if (typeof ti.new_string === 'string') {
-    return ti.new_string
-  }
-  if (typeof ti.content === 'string') {
-    return ti.content
-  }
-  return ''
-}
 
 function isWorkflowOrActionPath(filePath: string): boolean {
   return (
@@ -106,10 +80,12 @@ function isPackageJsonPath(filePath: string): boolean {
   return filePath.endsWith('/package.json') || filePath === 'package.json'
 }
 
-async function handleBashSurface(payload: Hook): Promise<void> {
-  const command = payload.tool_input?.command ?? ''
-  if (!command || !BASH_TARGETS_WORKFLOW_RE.test(command)) {
-    process.exit(0)
+function checkBashSurface(
+  command: string,
+  payload: ToolCallPayload,
+): GuardResult {
+  if (!BASH_TARGETS_WORKFLOW_RE.test(command)) {
+    return undefined
   }
   const cache = loadCache()
   const bareResult = findBareUsesIssues(command, cache)
@@ -117,13 +93,13 @@ async function handleBashSurface(payload: Hook): Promise<void> {
   saveCache(cache)
   const issues = [...bareResult.issues, ...loneIssues]
   if (issues.length === 0) {
-    process.exit(0)
+    return undefined
   }
   if (
     payload.transcript_path &&
     bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
   ) {
-    process.exit(0)
+    return undefined
   }
   const out: string[] = [
     'uses-sha-verify-guard: SHA pin verification failed (Bash surface)',
@@ -132,31 +108,30 @@ async function handleBashSurface(payload: Hook): Promise<void> {
     '  SHA reference(s) are malformed or unreachable:',
     '',
   ]
-  for (const issue of issues) {
+  for (let i = 0, { length } = issues; i < length; i += 1) {
+    const issue = issues[i]!
     out.push(`  ${issue.raw}`)
     out.push(`    ↳ ${issue.problem}`)
     out.push('')
   }
   out.push(`  Bypass: "${BYPASS_PHRASE}" in a recent user message.`)
-  process.stderr.write(out.join('\n') + '\n')
-  process.exit(2)
+  return block(out.join('\n'))
 }
 
-async function handleEditWriteSurface(payload: Hook): Promise<void> {
-  const filePath = payload.tool_input?.file_path ?? ''
-  if (!filePath) {
-    process.exit(0)
-  }
+function checkEditWriteSurface(
+  filePath: string,
+  body: string | undefined,
+  payload: ToolCallPayload,
+): GuardResult {
   const isUses = isWorkflowOrActionPath(filePath)
   const isGitmodules = isGitmodulesPath(filePath)
   const isPackageJson = isPackageJsonPath(filePath)
   if (!isUses && !isGitmodules && !isPackageJson) {
-    process.exit(0)
+    return undefined
   }
 
-  const body = readBodyFromPayload(payload)
   if (!body) {
-    process.exit(0)
+    return undefined
   }
 
   const cache = loadCache()
@@ -172,17 +147,20 @@ async function handleEditWriteSurface(payload: Hook): Promise<void> {
     gitmodulesIssues.length === 0 &&
     packageJsonIssues.length === 0
   ) {
-    process.exit(0)
+    return undefined
   }
 
   if (
     payload.transcript_path &&
     bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
   ) {
-    process.exit(0)
+    return undefined
   }
 
-  const out: string[] = ['uses-sha-verify-guard: SHA pin verification failed', '']
+  const out: string[] = [
+    'uses-sha-verify-guard: SHA pin verification failed',
+    '',
+  ]
   for (const issue of usesIssues) {
     out.push(`  ${filePath}:${issue.line}`)
     out.push(`    ${issue.raw}`)
@@ -203,33 +181,32 @@ async function handleEditWriteSurface(payload: Hook): Promise<void> {
   }
   out.push('Fix the pin(s) above, or bypass with the canonical phrase:')
   out.push(`  ${BYPASS_PHRASE}`)
-  process.stderr.write(`${out.join('\n')}\n`)
-  process.exit(2)
+  return block(out.join('\n'))
 }
 
-async function main(): Promise<void> {
-  const raw = await readStdin()
-  let payload: Hook
-  try {
-    payload = raw ? JSON.parse(raw) : {}
-  } catch {
-    process.exit(0)
-  }
+export const check = (payload: ToolCallPayload): GuardResult => {
   const toolName = payload.tool_name
   if (toolName === 'Bash') {
-    await handleBashSurface(payload)
-    return
+    const command = readCommand(payload)
+    if (!command) {
+      return undefined
+    }
+    return checkBashSurface(command, payload)
   }
-  if (toolName !== 'Edit' && toolName !== 'Write' && toolName !== 'MultiEdit') {
-    process.exit(0)
+  if (toolName !== 'Edit' && toolName !== 'MultiEdit' && toolName !== 'Write') {
+    return undefined
   }
-  await handleEditWriteSurface(payload)
+  const filePath = readFilePath(payload)
+  if (!filePath) {
+    return undefined
+  }
+  return checkEditWriteSurface(filePath, readWriteContent(payload), payload)
 }
 
-main().catch(err => {
-  // Fail-open on hook bugs.
-  process.stderr.write(
-    `uses-sha-verify-guard: hook crashed, failing open: ${err instanceof Error ? err.message : String(err)}\n`,
-  )
-  process.exit(0)
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Bash'],
+  type: 'guard',
 })
+void runHook(hook, import.meta.url)

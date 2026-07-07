@@ -35,14 +35,16 @@
 // The hook fails OPEN on its own bugs (exit 0 + stderr log) so a bad
 // hook deploy can't brick the session.
 
-import process from 'node:process'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 const ALLOW_MARKER = '# socket-lint: allow uses-no-stamp'
 
 // Matches a YAML `uses:` line that pins a 40-char SHA, e.g.
 //   `        uses: actions/checkout@de0fac2e... # v6.0.2 (2026-05-15)`
 // Captures: (1) ref-name, (2) sha, (3) trailing-comment (may be empty).
-const USES_RE = /^\s*-?\s*uses:\s+([^\s@]+)@([0-9a-f]{40})(\s*#[^\n]*)?\s*$/
+const USES_RE =
+  /^\s*-?\s*uses:\s+(?:[^\s@]+)@(?:[0-9a-f]{40})(?<comment>\s*#[^\n]*)?\s*$/
 
 // Local actions (`./.github/...`) and Docker images (`docker://...`)
 // don't have SHAs and aren't matched by USES_RE — no special-casing
@@ -69,7 +71,7 @@ export function findBadUsesLines(text: string): BadLine[] {
     if (!m) {
       continue
     }
-    const comment = (m[3] ?? '').trim()
+    const comment = (m.groups?.comment ?? '').trim()
     if (!comment) {
       bad.push({ line: line.trim(), reason: 'no comment on uses:' })
       continue
@@ -84,25 +86,18 @@ export function findBadUsesLines(text: string): BadLine[] {
   return bad
 }
 
-interface Hook {
-  tool_name?: string | undefined
-  tool_input?:
-    | {
-        file_path?: string | undefined
-        new_string?: string | undefined
-        content?: string | undefined
-      }
-    | undefined
-}
-
 interface BadLine {
   line: string
   reason: string
 }
 
-export function isWorkflowYamlPath(p: string): boolean {
+export function isWorkflowYamlPath(rawPath: string): boolean {
   // Workflows: .github/workflows/*.{yml,yaml}
   // Local actions: .github/actions/<name>/action.{yml,yaml}
+  // Normalize Windows `\` separators to `/` first; the forward-slash-only
+  // checks below would never match a backslash path and would silently bypass
+  // the guard on Windows.
+  const p = normalizePath(rawPath)
   if (!p.includes('/.github/')) {
     return false
   }
@@ -122,62 +117,40 @@ export function isWorkflowYamlPath(p: string): boolean {
   )
 }
 
-function main() {
-  let stdin = ''
-  process.stdin.on('data', chunk => {
-    stdin += chunk
-  })
-  process.stdin.on('end', () => {
-    try {
-      let payload: Hook
-      try {
-        payload = JSON.parse(stdin) as Hook
-      } catch {
-        process.exit(0)
-      }
-      const tool = payload.tool_name
-      if (tool !== 'Edit' && tool !== 'Write') {
-        process.exit(0)
-      }
-      const filePath = payload.tool_input?.file_path
-      if (!filePath || !isWorkflowYamlPath(filePath)) {
-        process.exit(0)
-      }
-      const proposed =
-        payload.tool_input?.content ?? payload.tool_input?.new_string ?? ''
-      const bad = findBadUsesLines(proposed)
-      if (bad.length === 0) {
-        process.exit(0)
-      }
-      const today = new Date().toISOString().slice(0, 10)
-      process.stderr.write(
-        `[workflow-uses-comment-guard] refusing edit: ${bad.length} ` +
-          `\`uses:\` line(s) lack the canonical ` +
-          `\`# <tag-or-version-or-branch> (YYYY-MM-DD)\` comment:\n` +
-          bad.map(b => `    ${b.line}\n      ↳ ${b.reason}`).join('\n') +
-          '\n\nFix: append a comment like `# v6.4.0 (' +
-          today +
-          ')` or `# main (' +
-          today +
-          ')` to every SHA-pinned `uses:` line.\n' +
-          'The label is the upstream tag, branch, or short-SHA; the date is\n' +
-          'when you pinned/refreshed (today is fine for new pins). The\n' +
-          'date-stamp is the staleness signal — reviewers can see at-a-glance\n' +
-          'when a SHA was last touched without running a drift audit.\n' +
-          '\nOne-off override: append `# socket-lint: allow uses-no-stamp`\n' +
-          'to the `uses:` line.\n',
-      )
-      process.exit(2)
-    } catch (e) {
-      process.stderr.write(
-        `[workflow-uses-comment-guard] hook error (allowing): ${e}\n`,
-      )
-      process.exit(0)
-    }
-  })
-  if (process.stdin.readable === false) {
-    process.exit(0)
+export const check = editGuard((filePath, content) => {
+  if (!isWorkflowYamlPath(filePath)) {
+    return undefined
   }
-}
+  const proposed = content ?? ''
+  const bad = findBadUsesLines(proposed)
+  if (bad.length === 0) {
+    return undefined
+  }
+  const today = new Date().toISOString().slice(0, 10)
+  return block(
+    `[workflow-uses-comment-guard] refusing edit: ${bad.length} ` +
+      `\`uses:\` line(s) lack the canonical ` +
+      `\`# <tag-or-version-or-branch> (YYYY-MM-DD)\` comment:\n` +
+      bad.map(b => `    ${b.line}\n      ↳ ${b.reason}`).join('\n') +
+      '\n\nFix: append a comment like `# v6.4.0 (' +
+      today +
+      ')` or `# main (' +
+      today +
+      ')` to every SHA-pinned `uses:` line.\n' +
+      'The label is the upstream tag, branch, or short-SHA; the date is\n' +
+      'when you pinned/refreshed (today is fine for new pins). The\n' +
+      'date-stamp is the staleness signal — reviewers can see at-a-glance\n' +
+      'when a SHA was last touched without running a drift audit.\n' +
+      '\nOne-off override: append `# socket-lint: allow uses-no-stamp`\n' +
+      'to the `uses:` line.',
+  )
+})
 
-main()
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  scope: 'convention',
+  type: 'guard',
+})
+void runHook(hook, import.meta.url)

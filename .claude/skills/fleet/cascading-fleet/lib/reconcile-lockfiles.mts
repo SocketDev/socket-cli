@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * @file Reconcile + push `pnpm-lock.yaml` across the fleet after a cascade wave
  *   that landed catalog / dependency changes but committed WITHOUT the lockfile
  *   (the cascade excludes a stale lockfile when its `pnpm install` can't
@@ -63,12 +63,13 @@ type RunResult = { status: number; stdout: string; stderr: string }
 function run(
   cmd: string,
   args: string[],
-  opts: {
+  options: {
     cwd: string
     env?: NodeJS.ProcessEnv | undefined
     timeoutMs?: number | undefined
   },
 ): RunResult {
+  const opts = { __proto__: null, ...options } as typeof options
   const r = spawnSync(cmd, args, {
     cwd: opts.cwd,
     env: opts.env ?? process.env,

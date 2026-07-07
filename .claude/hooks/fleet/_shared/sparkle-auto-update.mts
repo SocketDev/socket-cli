@@ -1,20 +1,19 @@
 /**
  * @file Single source of truth for "is this macOS app's Sparkle auto-updater
  *   disabled on this machine?" — shared by the sparkle-auto-update-is-disabled
- *   check (drift report in `check --all`) and setup-security-tools (which writes
- *   the disable). Companion to package-manager-auto-update.mts: that module owns
- *   package managers (`brew`/`npm`/…) whose binary an agent runs from Bash; this
- *   one owns GUI apps that self-update via the Sparkle framework (e.g. OrbStack)
- *   with no Bash invocation to gate — so the enforcement surfaces are persist +
- *   audit, not a PreToolUse guard.
- *
- *   A Sparkle app that auto-updates can swap a tool version under a running
- *   build / scan (reproducibility + supply-chain hazard); the install also rides
- *   the app's own update channel, outside the fleet's soak gate. Sparkle reads
+ *   check (drift report in `check --all`) and setup-security-tools (which
+ *   writes the disable). Companion to package-manager-auto-update.mts: that
+ *   module owns package managers (`brew`/`npm`/…) whose binary an agent runs
+ *   from Bash; this one owns GUI apps that self-update via the Sparkle
+ *   framework (e.g. OrbStack) with no Bash invocation to gate — so the
+ *   enforcement surfaces are persist + audit, not a PreToolUse guard. A Sparkle
+ *   app that auto-updates can swap a tool version under a running build / scan
+ *   (reproducibility + supply-chain hazard); the install also rides the app's
+ *   own update channel, outside the fleet's soak gate. Sparkle reads
  *   `SUEnableAutomaticChecks` / `SUAutomaticallyUpdate` from the app's macOS
- *   defaults domain (the app bundle id); a user-level `defaults write` overrides
- *   the Info.plist default, so writing them `false` durably disables both the
- *   background check and silent install.
+ *   defaults domain (the app bundle id); a user-level `defaults write`
+ *   overrides the Info.plist default, so writing them `false` durably disables
+ *   both the background check and silent install.
  */
 
 // oxlint-disable-next-line socket/prefer-async-spawn -- detection + apply run in a sync audit script + sync installer; need typed string stdout, no async.

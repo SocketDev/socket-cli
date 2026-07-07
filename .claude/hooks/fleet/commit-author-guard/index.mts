@@ -25,11 +25,10 @@
 //
 // Bypass: type "Allow commit-author bypass" in a recent user message.
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import process from 'node:process'
 
-import { withBashGuard } from '../_shared/payload.mts'
+import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 // Cross-tree shared reader (canonical home: .git-hooks/_shared/). The DATA it
 // reads is the cascaded .config/fleet|repo/git-authors.json — the single
@@ -40,8 +39,6 @@ import {
   readIdentityPolicy,
 } from '../../../../.git-hooks/_shared/git-identity.mts'
 import type { GitAuthor } from '../../../../.git-hooks/_shared/git-identity.mts'
-
-const logger = getDefaultLogger()
 
 const BYPASS_PHRASES = [
   'Allow commit-author bypass',
@@ -68,22 +65,39 @@ export function isGitCommit(command: string): boolean {
 // Returns the override author if any, otherwise undefined.
 export function parseAuthorOverride(command: string): GitAuthor | undefined {
   // --author="Name <email>"  or  --author='Name <email>'
-  const authorEq = /--author=(['"]?)([^'"<>]+)\s*<([^>]+)>\1/i.exec(command)
+  const authorEq =
+    /--author=(?<q>['"]?)(?<name>[^'"<>]+)\s*<(?<email>[^>]+)>\k<q>/i.exec(
+      command,
+    )
   if (authorEq) {
-    return { name: authorEq[2]!.trim(), email: authorEq[3]!.trim() }
+    return {
+      name: authorEq.groups!.name!.trim(),
+      email: authorEq.groups!.email!.trim(),
+    }
   }
   // --author "Name <email>"
-  const authorSpace = /--author\s+(['"])([^'"<>]+)\s*<([^>]+)>\1/i.exec(command)
+  const authorSpace =
+    /--author\s+(?<q>['"])(?<name>[^'"<>]+)\s*<(?<email>[^>]+)>\k<q>/i.exec(
+      command,
+    )
   if (authorSpace) {
-    return { name: authorSpace[2]!.trim(), email: authorSpace[3]!.trim() }
+    return {
+      name: authorSpace.groups!.name!.trim(),
+      email: authorSpace.groups!.email!.trim(),
+    }
   }
   // -c user.email=...
-  const cEmail = /-c\s+user\.email=([^\s'"]+)/i.exec(command)
-  const cName = /-c\s+user\.name=(?:(['"])([^'"]+)\1|([^\s]+))/i.exec(command)
+  const cEmail = /-c\s+user\.email=(?<email>[^\s'"]+)/i.exec(command)
+  const cName =
+    /-c\s+user\.name=(?:(?<q>['"])(?<quotedName>[^'"]+)\k<q>|(?<bareName>[^\s]+))/i.exec(
+      command,
+    )
   if (cEmail || cName) {
     return {
-      email: cEmail?.[1],
-      name: cName ? (cName[2] ?? cName[3]) : undefined,
+      email: cEmail?.groups?.email,
+      name: cName
+        ? (cName.groups?.quotedName ?? cName.groups?.bareName)
+        : undefined,
     }
   }
   return undefined
@@ -107,11 +121,9 @@ export function readCheckoutAuthor(cwd: string | undefined): GitAuthor {
   return { name, email }
 }
 
-// withBashGuard handles the stdin drain, tool_name gate, command narrow,
-// and fail-open on any throw.
-await withBashGuard((command, payload) => {
+export const check = bashGuard((command, payload) => {
   if (!isGitCommit(command)) {
-    return
+    return undefined
   }
 
   // Policy comes from the cascaded config (.config/fleet|repo/git-authors.json),
@@ -126,13 +138,13 @@ await withBashGuard((command, payload) => {
   // allowlist-miss is blocked only when an allowlist is configured.
   const denied = isDeniedIdentity(effective, policy)
   if (!denied && isAllowedAuthor(effective, policy)) {
-    return
+    return undefined
   }
 
   // Transcript read is the expensive last gate — only reached once we
   // know the author would otherwise be blocked.
   if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)) {
-    return
+    return undefined
   }
 
   const who = `${effective.name ?? '(unset)'} <${effective.email ?? '(unset)'}>`
@@ -171,6 +183,14 @@ await withBashGuard((command, payload) => {
   lines.push('')
   lines.push('  Bypass: type "Allow commit-author bypass" in a recent message.')
   lines.push('')
-  logger.error(lines.join('\n') + '\n')
-  process.exitCode = 2
+  return block(lines.join('\n') + '\n')
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Bash'],
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

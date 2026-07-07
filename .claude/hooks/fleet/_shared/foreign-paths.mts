@@ -1,4 +1,4 @@
-/**
+/*
  * @file Shared heuristic for "which dirty paths in this checkout were authored
  *   by ANOTHER agent, not this session". Two responsibilities the
  *   parallel-agent hooks (and overeager-staging-guard) share:
@@ -21,7 +21,7 @@
  */
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-import { createHash } from 'node:crypto'
+import crypto from 'node:crypto'
 import { appendFileSync, mkdirSync, readFileSync, statSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -57,12 +57,21 @@ export interface ForeignPathsOptions {
 }
 
 export function isUntrackedByDefault(p: string): boolean {
-  for (const prefix of UNTRACKED_BY_DEFAULT_PREFIXES) {
+  for (
+    let i = 0, { length } = UNTRACKED_BY_DEFAULT_PREFIXES;
+    i < length;
+    i += 1
+  ) {
+    const prefix = UNTRACKED_BY_DEFAULT_PREFIXES[i]!
     if (p.startsWith(prefix)) {
       return true
     }
   }
-  return /(^|\/)[^/]+-(?:bundled|vendored)(\/|$)/.test(p)
+  // Match a path segment ending in `-bundled` or `-vendored`: optional leading
+  // slash or start-of-string, then one or more non-slash chars followed by
+  // the literal suffix, then a slash or end-of-string. Covers both top-level
+  // dirs (e.g. `node-bundled/`) and nested ones (`pkg/deps-vendored/file`).
+  return /(?:^|\/)[^/]+-(?:bundled|vendored)(?:\/|$)/.test(p)
 }
 
 // git's global options that sit BEFORE the subcommand. `-C <dir>` and
@@ -181,11 +190,11 @@ export function readTouchedPaths(
     if (!entry || typeof entry !== 'object') {
       continue
     }
-    const msg = (entry as { message?: unknown }).message
+    const msg = (entry as { message?: unknown | undefined }).message
     if (!msg || typeof msg !== 'object') {
       continue
     }
-    const content = (msg as { content?: unknown }).content
+    const content = (msg as { content?: unknown | undefined }).content
     if (!Array.isArray(content)) {
       continue
     }
@@ -194,8 +203,8 @@ export function readTouchedPaths(
       if (!part || typeof part !== 'object') {
         continue
       }
-      const toolName = (part as { name?: unknown }).name
-      const toolInput = (part as { input?: unknown }).input
+      const toolName = (part as { name?: unknown | undefined }).name
+      const toolInput = (part as { input?: unknown | undefined }).input
       if (
         typeof toolName !== 'string' ||
         !toolInput ||
@@ -203,17 +212,18 @@ export function readTouchedPaths(
       ) {
         continue
       }
-      const filePath = (toolInput as { file_path?: unknown }).file_path
+      const filePath = (toolInput as { file_path?: unknown | undefined })
+        .file_path
       if (
         typeof filePath === 'string' &&
         filePath &&
         (toolName === 'Edit' ||
-          toolName === 'Write' ||
-          toolName === 'NotebookEdit')
+          toolName === 'NotebookEdit' ||
+          toolName === 'Write')
       ) {
         touched.add(path.resolve(filePath))
       }
-      const command = (toolInput as { command?: unknown }).command
+      const command = (toolInput as { command?: unknown | undefined }).command
       if (toolName === 'Bash' && typeof command === 'string') {
         addTouchedFromBash(command, touched)
       }
@@ -246,7 +256,8 @@ export function touchedLedgerPath(
   if (!transcriptPath) {
     return undefined
   }
-  const key = createHash('sha256')
+  const key = crypto
+    .createHash('sha256')
     .update(transcriptPath)
     .digest('hex')
     .slice(0, 16)
@@ -384,13 +395,14 @@ export function parsePorcelain(out: string): DirtyEntry[] {
 export function listForeignDirtyPaths(
   repoDir: string,
   touched: ReadonlySet<string>,
-  opts?: ForeignPathsOptions | undefined,
+  options?: ForeignPathsOptions | undefined,
 ): string[] {
+  const opts = { __proto__: null, ...options } as typeof options
   const maxAgeMs = opts?.maxAgeMs ?? DEFAULT_MAX_AGE_MS
   const now = opts?.now ?? Date.now()
   const r = spawnSync('git', ['status', '--porcelain'], {
     cwd: repoDir,
-    timeout: 5_000,
+    timeout: 5000,
   })
   if (r.status !== 0) {
     return []

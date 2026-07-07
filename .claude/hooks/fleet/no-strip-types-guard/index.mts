@@ -23,12 +23,8 @@
 
 import process from 'node:process'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
-import { withBashGuard } from '../_shared/payload.mts'
 import { parseCommands } from '../_shared/shell-command.mts'
-
-const logger = getDefaultLogger()
+import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 
 const FLAG = '--experimental-strip-types'
 
@@ -59,13 +55,13 @@ function passesStripTypesFlag(command: string): boolean {
 
 // Fire only when the flag is a real argument to a parsed command, or lives
 // in a NODE_OPTIONS env assignment — never on a quoted mention inside an
-// `echo`/`-m` message body. withBashGuard handles the stdin drain, tool_name
-// gate, command narrow, and fail-open on any throw.
-await withBashGuard(command => {
+// `echo`/`-m` message body. bashGuard handles the tool_name gate, command
+// narrow, and fail-open on any throw.
+export const check = bashGuard(command => {
   if (!passesStripTypesFlag(command)) {
-    return
+    return undefined
   }
-  logger.error(
+  return block(
     [
       '[no-strip-types-guard] Blocked: --experimental-strip-types',
       '',
@@ -78,5 +74,14 @@ await withBashGuard(command => {
       '',
     ].join('\n'),
   )
-  process.exitCode = 2
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Bash'],
+  scope: 'convention',
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

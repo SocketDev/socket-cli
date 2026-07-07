@@ -32,10 +32,8 @@ WORKTREE_PATH="../${REPO_NAME}-${TASK_NAME}"
 BRANCH="${TASK_NAME}"
 
 # Default-branch fallback per CLAUDE.md: main → master → assume main.
-BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
-if [ -z "$BASE" ] && git show-ref --verify --quiet refs/remotes/origin/main;   then BASE=main;   fi
-if [ -z "$BASE" ] && git show-ref --verify --quiet refs/remotes/origin/master; then BASE=master; fi
-BASE="${BASE:-main}"
+# Resolved by the shared runner so the chain lives in exactly one place.
+BASE=$(node .claude/skills/fleet/_shared/scripts/git-default-branch.mts)
 
 git fetch origin "$BASE"
 git worktree add -b "$BRANCH" "$WORKTREE_PATH" "origin/$BASE"

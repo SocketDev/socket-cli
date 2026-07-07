@@ -34,9 +34,8 @@
 // 2 — block.
 
 import path from 'node:path'
-import process from 'node:process'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import {
   detectAuthEnvPlaceholderInNpmrc,
@@ -46,13 +45,13 @@ import {
 import {
   readCommand,
   readFilePath,
-  readPayload,
   readWriteContent,
 } from '../_shared/payload.mts'
+import { block, defineHook, runHook } from '../_shared/guard.mts'
 import { parseCommands } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const logger = getDefaultLogger()
+import type { ToolCallPayload } from '../_shared/payload.mts'
+import type { GuardResult } from '../_shared/guard.mts'
 
 const BYPASS_PHRASES = ['Allow npmrc-trust-optout bypass']
 
@@ -64,21 +63,27 @@ const COMMITTED_FILE_RE =
 const WORKFLOW_DIR_RE = /\.github\//
 
 function isCommittedConfigFile(filePath: string): boolean {
-  const normalized = filePath.replace(/\\/g, '/')
+  const normalized = normalizePath(filePath)
   return COMMITTED_FILE_RE.test(normalized) || WORKFLOW_DIR_RE.test(normalized)
 }
 
 function hasBypass(transcriptPath: string | undefined): boolean {
-  return (
-    !!transcriptPath && bypassPhrasePresent(transcriptPath, BYPASS_PHRASES)
-  )
+  return !!transcriptPath && bypassPhrasePresent(transcriptPath, BYPASS_PHRASES)
 }
 
-function blockBash(vars: string[], transcriptPath: string | undefined): void {
-  if (hasBypass(transcriptPath)) {
-    return
+function checkBash(
+  command: string,
+  transcriptPath: string | undefined,
+): GuardResult {
+  const found = detectOptoutInCommands(parseCommands(command))
+  if (found.size === 0) {
+    return undefined
   }
-  logger.error(
+  if (hasBypass(transcriptPath)) {
+    return undefined
+  }
+  const vars = [...found].toSorted()
+  return block(
     [
       '[npmrc-trust-optout-guard] Blocked: pnpm trust-aware expansion opt-out',
       '',
@@ -98,24 +103,15 @@ function blockBash(vars: string[], transcriptPath: string | undefined): void {
       '',
     ].join('\n'),
   )
-  process.exitCode = 2
-}
-
-function checkBash(command: string, transcriptPath: string | undefined): void {
-  const found = detectOptoutInCommands(parseCommands(command))
-  if (found.size === 0) {
-    return
-  }
-  blockBash([...found].toSorted(), transcriptPath)
 }
 
 function checkEdit(
   filePath: string,
   afterText: string,
   transcriptPath: string | undefined,
-): void {
+): GuardResult {
   if (!afterText) {
-    return
+    return undefined
   }
   const reasons: string[] = []
   if (isCommittedConfigFile(filePath)) {
@@ -131,9 +127,9 @@ function checkEdit(
     }
   }
   if (reasons.length === 0 || hasBypass(transcriptPath)) {
-    return
+    return undefined
   }
-  logger.error(
+  return block(
     [
       '[npmrc-trust-optout-guard] Blocked: committed trust-expansion opt-out',
       '',
@@ -154,38 +150,33 @@ function checkEdit(
       '',
     ].join('\n'),
   )
-  process.exitCode = 2
 }
 
-// Single stdin drain, then dispatch on tool_name — two sequential
-// `with*Guard` harnesses would each try to read stdin and the second would
-// get nothing. Fail open on any throw.
-export async function main(): Promise<void> {
-  try {
-    const payload = await readPayload()
-    if (!payload) {
-      return
+export async function check(payload: ToolCallPayload): Promise<GuardResult> {
+  const tool = payload.tool_name
+  const transcriptPath = payload.transcript_path
+  if (tool === 'Bash') {
+    const command = readCommand(payload)
+    if (command?.trim()) {
+      return checkBash(command, transcriptPath)
     }
-    const tool = payload.tool_name
-    const transcriptPath = payload.transcript_path
-    if (tool === 'Bash') {
-      const command = readCommand(payload)
-      if (command && command.trim()) {
-        checkBash(command, transcriptPath)
-      }
-      return
-    }
-    if (tool === 'Edit' || tool === 'Write' || tool === 'MultiEdit') {
-      const filePath = readFilePath(payload)
-      const afterText = readWriteContent(payload)
-      if (filePath && afterText !== undefined) {
-        checkEdit(filePath, afterText, transcriptPath)
-      }
-    }
-  } catch {
-    // Fail open: a guard error must not block the user's action.
-    process.exitCode = 0
+    return undefined
   }
+  if (tool === 'Edit' || tool === 'MultiEdit' || tool === 'Write') {
+    const filePath = readFilePath(payload)
+    const afterText = readWriteContent(payload)
+    if (filePath && afterText !== undefined) {
+      return checkEdit(filePath, afterText, transcriptPath)
+    }
+  }
+  return undefined
 }
 
-await main()
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Bash', 'Edit', 'Write', 'MultiEdit'],
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

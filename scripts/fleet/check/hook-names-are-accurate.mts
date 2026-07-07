@@ -1,36 +1,26 @@
-// Fleet check — hook name ⟷ blocking-behavior match.
+// Fleet check — hook name ⟷ declared type match.
 //
-// Fleet convention (CLAUDE.md hook naming): a `-guard` hook BLOCKS, a
-// `-reminder` hook NUDGES. A `-guard` that never blocks lies about its
-// behavior (it's really a reminder); a `-reminder` that blocks is a guard in
-// disguise. Either way the name misleads the reader about whether the hook
-// will stop their action. This check holds the name to the behavior.
+// Fleet convention (CLAUDE.md hook naming): a `-guard` hook BLOCKS, a `-nudge`
+// hook NUDGES. Every hook declares which it is via its typed `defineHook`
+// instance: `export const hook = defineHook({ type: 'guard' | 'nudge', … })`.
+// This check IMPORTS each hook and compares the DECLARED `.type` against the
+// directory-name suffix — it reads the typed export, never the source text
+// (see `socket/no-source-sniffing`). A mismatch means the name lies about
+// behavior, or the dir was renamed without updating the declaration.
 //
-// Complements `hooks-have-no-guard-reminder-overlap` (which forbids a `-guard`
-// AND `-reminder` for the SAME concern); this one checks each hook's own name
-// against what it does.
+// Complements `hooks-have-no-guard-nudge-overlap` (which forbids a `-guard` AND
+// `-nudge` for the SAME concern); this one holds each hook's own name to its
+// declared type.
 //
-// A hook BLOCKS when its index.mts uses any of the 4 block idioms:
-//   1. `process.exitCode = 2`   (the canonical with{Bash,Edit}Guard form)
-//   2. `process.exit(2)` / `process.exit(1)`
-//   3. `return 2` / `return 1`  (a main() returning a non-zero code the entry
-//      guard passes to process.exit)
-//   4. a `{ decision: 'block' }` stdout JSON  (Stop / PreToolUse decision)
-//
-// Detection strips comments + string/template literals FIRST, because the words
-// "block"/"decision"/"exit" appear constantly in hook prose and in variable
-// names (`const blocks = []`), which a raw grep false-matches. After stripping,
-// only real code tokens remain.
-//
-// ERROR (exit 1): a `-guard` with no block idiom (→ rename to `-reminder`), or a
-// `-reminder` with a block idiom (→ rename to `-guard`).
+// ERROR (exit 1): a `-guard`/`-nudge` hook that exports no `defineHook`
+// instance, or whose declared `.type` disagrees with its name suffix.
 //
 // Usage: node scripts/fleet/check/hook-names-are-accurate.mts [--quiet]
 
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
@@ -38,48 +28,10 @@ import { REPO_ROOT } from '../paths.mts'
 
 const logger = getDefaultLogger()
 
-export interface NameBehaviorMismatch {
+export interface NameTypeMismatch {
   name: string
-  kind: 'guard-never-blocks' | 'reminder-blocks'
-}
-
-/**
- * Drop whole-line comments from `.mts` source: a line whose first non-space
- * char starts a `//` line comment or is a `*` (a JSDoc/banner continuation
- * line). This is deliberately NOT a full lexer — a real tokenizer would have to
- * understand regex literals (which every guard has) and template strings, and
- * getting that subtly wrong is how the first version false-flagged 19 real
- * blockers. The block idioms we look for (`process.exitCode = 2`, etc.) are
- * always real CODE on a non-comment line, so dropping comment-only lines is
- * enough to keep the words "block"/"decision"/"exit" out of prose without
- * touching the code lines that carry the real signal. Trailing `// …` comments
- * on a code line are left in place — harmless, since we match specific code
- * shapes, not the bare words.
- */
-export function dropCommentLines(source: string): string {
-  return source
-    .split('\n')
-    .filter(line => {
-      const t = line.trimStart()
-      return !t.startsWith('//') && !t.startsWith('*') && !t.startsWith('/*')
-    })
-    .join('\n')
-}
-
-/**
- * True when hook source (comment-lines dropped) contains any of the 4 block
- * idioms.
- */
-export function sourceBlocks(source: string): boolean {
-  const code = dropCommentLines(source)
-  return (
-    /\bprocess\s*\.\s*exitCode\s*=\s*[12]\b/.test(code) ||
-    /\bprocess\s*\.\s*exit\s*\(\s*[12]\s*\)/.test(code) ||
-    /\breturn\s+[12]\b/.test(code) ||
-    // A Stop/PreToolUse block decision: `decision: 'block'` / `"block"` written
-    // to stdout. Match the literal key:value on a code line.
-    /\bdecision\b\s*:\s*['"]block['"]/.test(code)
-  )
+  kind: 'no-hook-export' | 'type-mismatch'
+  declaredType: string | undefined
 }
 
 export function listHookNames(hooksDir: string): string[] {
@@ -105,55 +57,94 @@ export function listHookNames(hooksDir: string): string[] {
 }
 
 /**
- * Classify every `-guard` / `-reminder` hook by whether its name matches its
- * blocking behavior. Hooks ending in neither suffix (setup-*, etc.) are
- * skipped.
+ * The `type` a hook's `defineHook` instance declares, read by IMPORTING the
+ * module (import is side-effect-free: a contract hook's top-level `runHook`
+ * no-ops unless it is the entrypoint/dispatcher). Returns undefined when the
+ * module exports no `hook` (or fails to import).
  */
-export function findMismatches(hooksDir: string): NameBehaviorMismatch[] {
-  const out: NameBehaviorMismatch[] = []
+export async function declaredType(
+  indexPath: string,
+): Promise<string | undefined> {
+  try {
+    const mod = (await import(pathToFileURL(indexPath).href)) as {
+      hook?: { type?: string | undefined } | undefined
+    }
+    return mod.hook?.type
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * Pure name⟷type rule. Returns a mismatch when a `-guard`/`-nudge`-named hook's
+ * declared `.type` disagrees with its suffix (or it declares none). A name
+ * ending in neither suffix is not a guard/nudge → no opinion (undefined).
+ */
+export function typeMismatch(
+  name: string,
+  declared: string | undefined,
+): NameTypeMismatch | undefined {
+  const isGuard = name.endsWith('-guard')
+  const isNudge = name.endsWith('-nudge')
+  if (!isGuard && !isNudge) {
+    return undefined
+  }
+  const expected = isGuard ? 'guard' : 'nudge'
+  if (declared === undefined) {
+    return { name, kind: 'no-hook-export', declaredType: undefined }
+  }
+  if (declared !== expected) {
+    return { name, kind: 'type-mismatch', declaredType: declared }
+  }
+  return undefined
+}
+
+/**
+ * Classify every `-guard` / `-nudge` hook by whether its declared `.type`
+ * matches its name suffix. Hooks ending in neither suffix (setup-*, sweepers,
+ * etc.) are skipped — they are side-effect scripts, not guards/nudges.
+ */
+export async function findMismatches(
+  hooksDir: string,
+): Promise<NameTypeMismatch[]> {
+  const out: NameTypeMismatch[] = []
   const names = listHookNames(hooksDir)
   for (let i = 0, { length } = names; i < length; i += 1) {
     const name = names[i]!
-    const isGuard = name.endsWith('-guard')
-    const isReminder = name.endsWith('-reminder')
-    if (!isGuard && !isReminder) {
+    if (!name.endsWith('-guard') && !name.endsWith('-nudge')) {
       continue
     }
-    let source: string
-    try {
-      source = readFileSync(path.join(hooksDir, name, 'index.mts'), 'utf8')
-    } catch {
-      continue
-    }
-    const blocks = sourceBlocks(source)
-    if (isGuard && !blocks) {
-      out.push({ name, kind: 'guard-never-blocks' })
-    } else if (isReminder && blocks) {
-      out.push({ name, kind: 'reminder-blocks' })
+    // eslint-disable-next-line no-await-in-loop -- import hooks in order; the set
+    // is small and parallel import would race module initialization.
+    const type = await declaredType(path.join(hooksDir, name, 'index.mts'))
+    const mism = typeMismatch(name, type)
+    if (mism) {
+      out.push(mism)
     }
   }
   out.sort((a, b) => a.name.localeCompare(b.name))
   return out
 }
 
-function main(): void {
+async function main(): Promise<void> {
   const quiet = process.argv.includes('--quiet')
   const hooksDir = path.join(REPO_ROOT, '.claude', 'hooks', 'fleet')
-  const mismatches = findMismatches(hooksDir)
+  const mismatches = await findMismatches(hooksDir)
 
   if (mismatches.length) {
     logger.fail(
-      '[check-hook-names-are-accurate] hook name does not match its blocking behavior:',
+      '[check-hook-names-are-accurate] hook name does not match its declared type:',
     )
     for (let i = 0, { length } = mismatches; i < length; i += 1) {
       const m = mismatches[i]!
-      if (m.kind === 'guard-never-blocks') {
+      if (m.kind === 'no-hook-export') {
         logger.error(
-          `  ✗ ${m.name} is a \`-guard\` but never blocks (no exitCode=2 / exit(2) / return 2 / decision:'block') — rename to \`-reminder\` (it nudges, it doesn't gate).`,
+          `  ✗ ${m.name} is named \`-${m.name.endsWith('-guard') ? 'guard' : 'nudge'}\` but exports no defineHook instance — add \`export const hook = defineHook({ type, event, … })\`.`,
         )
       } else {
+        const want = m.name.endsWith('-guard') ? 'guard' : 'nudge'
         logger.error(
-          `  ✗ ${m.name} is a \`-reminder\` but blocks (sets a non-zero exit / emits a block decision) — rename to \`-guard\` (it gates).`,
+          `  ✗ ${m.name} declares \`type: '${m.declaredType}'\` but its name says \`${want}\` — set \`type: '${want}'\` or rename the directory.`,
         )
       }
     }
@@ -163,11 +154,11 @@ function main(): void {
 
   if (!quiet) {
     logger.success(
-      '[check-hook-names-are-accurate] every -guard blocks and every -reminder nudges.',
+      '[check-hook-names-are-accurate] every -guard declares type:guard and every -nudge type:nudge.',
     )
   }
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  main()
+  await main()
 }

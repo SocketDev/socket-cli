@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * @file Detect + AI-restore JSDoc comments the formatter flattened.
  *
  *   1. PROBLEM — oxfmt's `jsdoc` formatter re-wraps description prose. Even in the
@@ -39,6 +39,8 @@ import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
+import { REPO_ROOT } from './paths.mts'
+
 const logger = getDefaultLogger()
 
 // The print width the fleet oxfmtrc wraps at; a description line at/over this
@@ -62,9 +64,9 @@ export interface FileResult {
 // with their absolute 1-based line numbers.
 export function blockCommentLines(
   source: string,
-): { line: number; text: string }[] {
+): Array<{ line: number; text: string }> {
   const lines = source.split('\n')
-  const out: { line: number; text: string }[] = []
+  const out: Array<{ line: number; text: string }> = []
   let inBlock = false
   for (let i = 0, { length } = lines; i < length; i += 1) {
     const trimmed = lines[i]!.trim()
@@ -159,9 +161,13 @@ export async function restoreFile(file: string): Promise<boolean> {
     'glued to the end of a prose line — each is the first word of a list item.',
     'Touch only the comment. Do not change any code. After editing, stop.',
   ].join('\n')
+  // Mechanical comment re-wrapping — the floor (cheapest model, lowest effort)
+  // is exactly right; no escalation needed.
   const { exitCode, stderr } = await spawnAiAgent({
     ...AI_PROFILE.edit,
+    cwd: REPO_ROOT,
     effort: 'low',
+    model: 'claude-haiku-4-5',
     prompt,
     timeoutMs: 3 * 60 * 1000,
   })
@@ -222,7 +228,8 @@ export async function main(): Promise<void> {
     logger.success('No mangled JSDoc detected.')
     return
   }
-  for (const r of results) {
+  for (let i = 0, { length } = results; i < length; i += 1) {
+    const r = results[i]!
     logger.warn(`${r.file}: ${r.findings.length} flattened comment line(s)`)
     for (const f of r.findings) {
       logger.log(`  ${r.file}:${f.line} — ${f.reason}`)
@@ -235,7 +242,8 @@ export async function main(): Promise<void> {
     process.exitCode = 1
     return
   }
-  for (const r of results) {
+  for (let i = 0, { length } = results; i < length; i += 1) {
+    const r = results[i]!
     // eslint-disable-next-line no-await-in-loop
     const ok = await restoreFile(r.file)
     if (ok) {

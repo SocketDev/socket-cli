@@ -22,27 +22,28 @@
 //
 // Bypass: `Allow corepack bypass` typed verbatim in a recent user turn.
 //
-// Fails open on parse / payload errors (exit 0) — a guard bug must not wedge
-// every Bash call.
+// Fails open on parse / payload errors — a guard bug must not wedge every Bash
+// call.
 
-import process from 'node:process'
-
-import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
+import { isFleetTarget } from '../_shared/fleet-context.mts'
+import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
 
 const BYPASS_PHRASE = 'Allow corepack bypass' as const
-
-interface Payload {
-  tool_name?: unknown | undefined
-  tool_input?: { command?: unknown | undefined } | undefined
-  transcript_path?: unknown | undefined
-}
 
 // corepack subcommands that fetch + activate a package manager. `enable`
 // shims the PMs onto PATH; `prepare`/`use`/`install` download a specific
 // version. Anything else (`--version`, `--help`, `disable`) provisions
 // nothing and is left alone.
 const ACTIVATING_SUBCOMMANDS = ['enable', 'install', 'prepare', 'use'] as const
+
+// Pre-flight skip hint for the dispatcher: detection only ever fires when the
+// `corepack` binary is invoked, so a command that lacks the substring
+// `corepack` can never block. The activating subcommands (enable/install/
+// prepare/use) are subordinate — they matter only once `corepack` is present —
+// so the binary name is the single necessary-and-sufficient trigger.
+export const triggers: readonly string[] = ['corepack']
 
 export interface CorepackDetection {
   readonly detected: boolean
@@ -92,50 +93,29 @@ export function formatBlock(d: CorepackDetection): string {
   )
 }
 
-async function main(): Promise<void> {
-  const raw = await readStdin()
-  let payload: Payload
-  try {
-    payload = JSON.parse(raw) as Payload
-  } catch {
-    process.exit(0)
-  }
-
-  if (payload.tool_name !== 'Bash') {
-    process.exit(0)
-  }
-
-  const command =
-    typeof payload.tool_input?.command === 'string'
-      ? payload.tool_input.command
-      : ''
-  if (!command.trim()) {
-    process.exit(0)
-  }
-
+export const check = bashGuard((command, payload) => {
   const detection = detectCorepack(command)
   if (!detection.detected) {
-    process.exit(0)
+    return undefined
   }
-
-  const transcriptPath =
-    typeof payload.transcript_path === 'string'
-      ? payload.transcript_path
-      : undefined
-  if (
-    transcriptPath &&
-    bypassPhrasePresent(transcriptPath, [BYPASS_PHRASE], 3)
-  ) {
-    process.exit(0)
+  // The corepack ban is a fleet tooling CONVENTION — the fleet pins its pnpm
+  // version (corepack would auto-update past the pin + soak). Outside a fleet
+  // repo, corepack is the standard Node way to manage the package-manager
+  // version and is the project's own choice. No supply-chain fetch-exec angle.
+  if (!isFleetTarget(payload)) {
+    return undefined
   }
+  if (bypassPhrasePresent(payload.transcript_path, [BYPASS_PHRASE], 3)) {
+    return undefined
+  }
+  return block(formatBlock(detection))
+})
 
-  process.stderr.write(formatBlock(detection))
-  process.exit(2)
-}
-
-// Entrypoint-guarded: run main() only when invoked directly, NOT when the test
-// imports this module for its pure helpers (else main() blocks on stdin at
-// import and the test file never terminates).
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
-  void main()
-}
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Bash'],
+  triggers,
+  type: 'guard',
+})
+void runHook(hook, import.meta.url)

@@ -8,7 +8,17 @@
  *
  * Cross-platform: shells out to git via @socketsecurity/lib/spawn, which works
  * the same on macOS / Linux / Windows.
+ *
+ * Also runnable as a one-line CLI so skill docs don't re-implement the fallback
+ * chain in shell: `BASE=$(node .../git-default-branch.mts)`. Pass a repo path
+ * as the first arg to resolve in a different working directory.
  */
+import path from 'node:path'
+import process from 'node:process'
+import { pathToFileURL } from 'node:url'
+
+import { errorMessage } from '@socketsecurity/lib/errors'
+import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 import { isSpawnError } from '@socketsecurity/lib/process/spawn/errors'
 import { spawn } from '@socketsecurity/lib/process/spawn/child'
 
@@ -92,4 +102,21 @@ async function runGit(args: readonly string[], cwd: string): Promise<string> {
     }
     throw e
   }
+}
+
+async function main(): Promise<void> {
+  const logger = getDefaultLogger()
+  const cwd = process.argv[2] ? path.resolve(process.argv[2]) : process.cwd()
+  try {
+    logger.log(await resolveDefaultBranch({ cwd }))
+  } catch (e) {
+    logger.error(errorMessage(e))
+    process.exitCode = 1
+  }
+}
+
+// Run as a CLI only when invoked directly, not when imported by a sibling
+// runner (reorder-bump.mts, squashing-history/run.mts, updating/lib/discover.mts).
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+  void main()
 }

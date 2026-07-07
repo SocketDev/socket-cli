@@ -1,11 +1,11 @@
 // Fleet check — rule citations are generic, not dated incident logs.
 //
-// Commit-time complement to the `dated-citation-reminder` PreToolUse hook. The
+// Commit-time complement to the `dated-citation-guard` PreToolUse hook. The
 // reminder nudges when an edit ADDS a dated citation this turn; this check
 // sweeps the same shape across the COMMITTED prose tree, so a dated citation
 // that slipped in before the hook existed (or in a turn it didn't see) still
-// gets caught. Same edit-reminder + commit-check twin pattern as
-// error-message-quality-reminder / error-messages-are-thorough.
+// gets caught. Same edit-nudge + commit-check twin pattern as
+// error-message-quality-nudge / error-messages-are-thorough.
 //
 // The fleet rule (CLAUDE.md "Compound lessons into rules"): when a rule / hook
 // / SKILL / doc cites the case that motivated it, write it GENERICALLY, framed
@@ -32,6 +32,7 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import {
   findDatedCitations,
@@ -74,7 +75,7 @@ export interface DatedCitationFinding {
 }
 
 export function isExempt(relFile: string): boolean {
-  const normalized = relFile.replace(/\\/g, '/')
+  const normalized = normalizePath(relFile)
   for (let i = 0, { length } = SELF_EXEMPT_FRAGMENTS; i < length; i += 1) {
     if (normalized.includes(SELF_EXEMPT_FRAGMENTS[i]!)) {
       return true

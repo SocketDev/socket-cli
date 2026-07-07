@@ -14,8 +14,7 @@ export const SMALLEST_FLAGS: ReadonlyArray<{
 }> = [
   {
     canonical: '--depth=1',
-    has: args =>
-      args.some(a => a === '--depth' || /^--depth=/.test(a)),
+    has: args => args.some(a => a === '--depth' || a.startsWith('--depth=')),
   },
   {
     canonical: '--single-branch',
@@ -23,7 +22,7 @@ export const SMALLEST_FLAGS: ReadonlyArray<{
   },
   {
     canonical: '--filter=blob:none',
-    has: args => args.some(a => /^--filter=/.test(a)),
+    has: args => args.some(a => a.startsWith('--filter=')),
   },
 ]
 
@@ -37,16 +36,16 @@ export function parseGithubSlug(
   value: string,
 ): { owner: string; repo: string } | undefined {
   const urlMatch = value.match(
-    /github\.com[/:]([^/\s]+)\/([^/\s]+?)(?:\.git)?\/?$/,
+    /github\.com[/:](?<owner>[^/\s]+)\/(?<repo>[^/\s]+?)(?:\.git)?\/?$/,
   )
   if (urlMatch) {
-    return { owner: urlMatch[1]!, repo: urlMatch[2]! }
+    return { owner: urlMatch.groups!.owner!, repo: urlMatch.groups!.repo! }
   }
   // Bare owner/repo slug (exactly one slash, no scheme, no host).
   if (!value.includes('://')) {
-    const slugMatch = value.match(/^([\w.-]+)\/([\w.-]+)$/)
+    const slugMatch = value.match(/^(?<owner>[\w.-]+)\/(?<repo>[\w.-]+)$/)
     if (slugMatch) {
-      return { owner: slugMatch[1]!, repo: slugMatch[2]! }
+      return { owner: slugMatch.groups!.owner!, repo: slugMatch.groups!.repo! }
     }
   }
   return undefined
@@ -121,9 +120,9 @@ export function externalGhRepo(
       continue
     }
     // `--repo=<slug>`.
-    const eq = a.match(/^--repo=(.+)$/)
+    const eq = a.match(/^--repo=(?<value>.+)$/)
     if (eq) {
-      const parsed = parseGithubSlug(eq[1]!)
+      const parsed = parseGithubSlug(eq.groups!.value!)
       if (parsed && !isFleetOrg(parsed.owner)) {
         return parsed
       }

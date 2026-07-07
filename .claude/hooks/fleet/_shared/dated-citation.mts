@@ -1,24 +1,22 @@
 /**
  * @file Shared "is this rule rationale a dated incident log?" matcher. The
- *   dated-citation-reminder (PreToolUse, nudges at edit time) and the
+ *   dated-citation-guard (PreToolUse, nudges at edit time) and the
  *   rule-citations-are-generic check (`check --all`, blocks committed prose)
  *   both gate on the same definition, so the two surfaces never drift on what
- *   counts as a too-specific citation.
- *
- * The rule (CLAUDE.md "Compound lessons into rules"): when a rule / hook /
- * SKILL / doc cites the case that motivated it, write it GENERICALLY, framed
- * as an example ("e.g. a cascade that shipped without its reconciled
- * lockfile") — NOT as a dated incident log ("2026-06-07: pnpm 11.0.0 vs
- * 11.5.1 at SHA abc1234"). Dates, version deltas, percentages, and commit
- * SHAs age into a changelog and leak detail; the example shape is timeless.
- *
- * Scope: only RATIONALE prose is flagged — a line carrying a rationale marker
- * (`**Why:**`, "incident", "Past incident", "regression", "red-lined") that
- * ALSO carries a specificity token. A bare date elsewhere (a SHA-pin
- * `# <tag> (YYYY-MM-DD)` comment, a `# published: YYYY-MM-DD` soak annotation,
- * a `.gitmodules` `# name-version`, a CHANGELOG entry, a version constant in
- * code) is NOT rationale and is left alone — those dates are required by other
- * rules. Memory files are exempt at the path layer (see EXEMPT_PATH_RE).
+ *   counts as a too-specific citation. The rule (CLAUDE.md "Compound lessons
+ *   into rules"): when a rule / hook / SKILL / doc cites the case that
+ *   motivated it, write it GENERICALLY, framed as an example ("e.g. a cascade
+ *   that shipped without its reconciled lockfile") — NOT as a dated incident
+ *   log ("2026-06-07: pnpm 11.0.0 vs 11.5.1 at SHA abc1234"). Dates, version
+ *   deltas, percentages, and commit SHAs age into a changelog and leak detail;
+ *   the example shape is timeless. Scope: only RATIONALE prose is flagged — a
+ *   line carrying a rationale marker (`**Why:**`, "incident", "Past incident",
+ *   "regression", "red-lined") that ALSO carries a specificity token. A bare
+ *   date elsewhere (a SHA-pin `# <tag> (YYYY-MM-DD)` comment, a `# published:
+ *   YYYY-MM-DD` soak annotation, a `.gitmodules` `# name-version`, a CHANGELOG
+ *   entry, a version constant in code) is NOT rationale and is left alone —
+ *   those dates are required by other rules. Memory files are exempt at the
+ *   path layer (see EXEMPT_PATH_RE).
  */
 
 // A line is "rationale" if it carries one of these markers. Only rationale

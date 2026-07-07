@@ -36,7 +36,7 @@ source read fine; the pixels exposed it instantly.
 
 - **Before redesigning UI** — see the current state, don't redesign blind.
 - **Before committing a UI/render change** — the fleet rule + the
-  `verify-render-pre-commit-reminder` hook expect it.
+  `verify-render-pre-commit-nudge` hook expect it.
 - **To inspect an extension popup** with its live `chrome.*` context.
 - Iteratively: render → read → fix → render again, each state its own screenshot.
 

@@ -1,17 +1,18 @@
 #!/usr/bin/env node
 // Claude Code PreToolUse hook — inline-script-defer-guard.
 //
-// Blocks Edit/Write operations that add `<script defer>` or
-// `<script async>` to an HTML / template file when the same tag lacks a
+// Blocks Edit/Write operations that add a script tag with defer or
+// async attribute to an HTML / template file when the same tag lacks a
 // `src=` attribute. Per HTML spec, `defer` and `async` are no-ops on
-// inline (no-src) `<script>` tags — the script executes immediately,
+// inline (no-src) script tags — the script executes immediately,
 // even though the author intent is "wait for DOMContentLoaded." Browsers
 // don't warn; the failure mode is a silent broken page (e.g. unstyled
 // `<pre><code>` blocks when the script that styles them runs before its
 // targets exist).
 //
-// Detection: regex over the after-edit text. Find `<script [^>]*\b(defer|async)\b[^>]*>`,
-// check the same tag for `src=`. If absent → block.
+// Detection: regex over the after-edit text. Find script openers with
+// defer or async in their attrs, check the same tag for `src=`.
+// If absent → block.
 //
 // Fix: wrap the script body in
 //
@@ -28,27 +29,23 @@
 //
 // Bypass: `Allow inline-defer bypass` typed verbatim in a recent user turn.
 
-import { readFileSync } from 'node:fs'
-import process from 'node:process'
-
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
-import { withEditGuard } from '../_shared/payload.mts'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import { resolveEditedText } from '../_shared/payload.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const logger = getDefaultLogger()
 
 const BYPASS_PHRASE = 'Allow inline-defer bypass'
 
 // File extensions where we check the full text content. For other
 // extensions, only the new_string is checked (template strings embedded
 // in TS/JS source).
-const HTML_EXT_RE = /\.(astro|ejs|handlebars|hbs|htm|html|njk|svelte|vue)$/i
+const HTML_EXT_RE = /\.(?:astro|ejs|handlebars|hbs|htm|html|njk|svelte|vue)$/i
 
-const SOURCE_EXT_RE = /\.(m?[jt]sx?|cts|cjs)$/i
+// JS/TS source extensions: optional `m` or `c` prefix, then `js`/`ts`
+// with an optional `x` suffix (JSX/TSX), anchored to the end of the path.
+const SOURCE_EXT_RE = /\.(?:m?[jt]sx?|cts|cjs)$/i
 
 // Match each `<script ...>` opener and capture its attribute body.
-const SCRIPT_OPENER_RE = /<script\b([^>]*)>/gi
+const SCRIPT_OPENER_RE = /<script\b(?<attrs>[^>]*)>/gi
 
 export function findInlineDeferOrAsync(text: string):
   | {
@@ -59,8 +56,9 @@ export function findInlineDeferOrAsync(text: string):
   // Reset the regex's lastIndex for safety across multiple calls.
   SCRIPT_OPENER_RE.lastIndex = 0
   while ((m = SCRIPT_OPENER_RE.exec(text)) !== null) {
-    const attrs = m[1] ?? ''
-    if (!/\b(async|defer)\b/i.test(attrs)) {
+    /* c8 ignore next - named-group regex always populates m.groups when it matches */
+    const attrs = m.groups?.attrs ?? ''
+    if (!/\b(?:async|defer)\b/i.test(attrs)) {
       continue
     }
     // If src= is present (anywhere in the tag), the defer/async IS valid.
@@ -72,67 +70,50 @@ export function findInlineDeferOrAsync(text: string):
   return undefined
 }
 
-export function readFileSafe(p: string): string {
-  try {
-    return readFileSync(p, 'utf8')
-  } catch {
-    return ''
-  }
-}
-
-// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
-// content extraction (new_string / content), and fail-open on any throw.
-await withEditGuard((filePath, content, payload) => {
+export const check = editGuard((filePath, content, payload) => {
   const isHtml = HTML_EXT_RE.test(filePath)
   const isSource = SOURCE_EXT_RE.test(filePath)
   if (!isHtml && !isSource) {
-    return
+    return undefined
   }
 
-  // For HTML files, check the FULL after-edit text (the violation may
-  // already be present and we're touching neighboring lines).
-  // For source files, only check the new_string (avoid flagging existing
-  // template strings buried in unrelated source).
+  // HTML: scan the FULL post-edit text (the violation may already be present
+  // and we're only touching neighboring lines). Source: scan just the
+  // new_string / content (avoid flagging existing template strings buried in
+  // unrelated source).
   let textToScan: string
-  if (payload.tool_name === 'Write') {
-    textToScan = content ?? ''
-  } else {
-    const newStr = content ?? ''
-    if (isHtml) {
-      const currentText = readFileSafe(filePath)
-      textToScan = newStr
-        ? currentText.replace(
-            (payload.tool_input?.old_string as string | undefined) ?? '',
-            newStr,
-          )
-        : currentText
-    } else {
-      textToScan = newStr
+  if (isHtml) {
+    const afterText = resolveEditedText(payload)
+    if (afterText === undefined) {
+      return undefined
     }
+    textToScan = afterText
+  } else {
+    textToScan = content ?? ''
   }
 
   const found = findInlineDeferOrAsync(textToScan)
   if (!found) {
-    return
+    return undefined
   }
 
   if (
     payload.transcript_path &&
     bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
   ) {
-    return
+    return undefined
   }
 
-  logger.error(
+  const tag = `<script${found.attrs.slice(0, 80)}>`
+  return block(
     [
-      // socket-lint: allow inline-defer -- the hook's own diagnostic text names the banned shape; it isn't real inline-script markup.
-      '[inline-script-defer-guard] Blocked: <script defer/async> without src=',
+      '[inline-script-defer-guard] Blocked: inline script with defer/async but no src=',
       '',
       `  File: ${filePath}`,
-      `  Tag:  <script${found.attrs.slice(0, 80)}>`,
+      `  Tag:  ${tag}`,
       '',
       '  Per the HTML spec, `defer` and `async` are no-ops on inline',
-      '  (no-src) `<script>` tags. The script runs immediately — the',
+      '  (no-src) script tags. The script runs immediately — the',
       '  author intent (wait for DOMContentLoaded) is silently ignored.',
       '  Browsers do not warn; the failure mode is a broken page.',
       '',
@@ -152,5 +133,13 @@ await withEditGuard((filePath, content, payload) => {
       '',
     ].join('\n'),
   )
-  process.exitCode = 2
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

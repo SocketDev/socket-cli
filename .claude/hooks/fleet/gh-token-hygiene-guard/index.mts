@@ -59,9 +59,10 @@
 //   - 0: pass (not a gh command, or all checks satisfied)
 //   - 2: block (one of the invariants violated; stderr explains)
 //
-// Fail-open on hook bugs: main().catch() exits 0 so a bad deploy can't
-// brick every gh command. Fail-CLOSED on auth (unsupported/denied → 2)
-// because a missing physical-presence check must not silently pass.
+// Fail-open on hook bugs: runGuard swallows any throw and leaves exit 0
+// so a bad deploy can't brick every gh command. Fail-CLOSED on auth
+// (unsupported/denied → block) because a missing physical-presence check
+// must not silently pass.
 //
 // No test-only env override (removed 2026-05-26 as a supply-chain
 // hardening measure — an attacker who planted SOCKET_GH_HYGIENE_TEST_AUTH
@@ -85,8 +86,10 @@ import process from 'node:process'
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
+import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
+import type { GuardBlock, GuardResult } from '../_shared/guard.mts'
 import { findInvocation, parseCommands } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 // Absolute paths for OS-auth binaries. PATH-hijack defense — a
 // malicious npm postinstall that drops ~/.local/bin/sudo, ~/.local/bin/dscl,
@@ -113,12 +116,25 @@ const SUDO_CANDIDATES = [
 ] as const
 function resolveSudoBin(): string | undefined {
   for (let i = 0; i < SUDO_CANDIDATES.length; i += 1) {
+    /* c8 ignore start - false arm (candidate missing) unreachable on macOS where /usr/bin/sudo exists at index 0 */
     if (existsSync(SUDO_CANDIDATES[i]!)) {
+      /* c8 ignore stop */
       return SUDO_CANDIDATES[i]
     }
   }
+  /* c8 ignore next - reached only on systems with no sudo binary (e.g. bare containers) */
   return undefined
 }
+
+// Pre-flight trigger for the dispatcher: skip importing this guard unless the
+// raw command could invoke `gh`. The whole guard is gated on
+// containsGhInvocation(), which short-circuits to false when the command does
+// not contain the literal `gh` (findInvocation's substring pre-check), so a
+// command without `gh` can never reach any block/notify path. Complete because
+// every detection (storage / age / workflow dispatch / scope refresh / api
+// dispatch) requires a parsed `gh` binary segment, which in turn requires `gh`
+// verbatim in the command text.
+export const triggers: readonly string[] = ['gh']
 
 const BYPASS_PHRASE = 'Allow workflow-scope bypass'
 // One bypass phrase authorizes ONE workflow dispatch. The grant file's
@@ -138,48 +154,22 @@ const TOKEN_ISSUED_AT_FILE = path.join(
 )
 const TOKEN_TTL_MS = 8 * 60 * 60 * 1000 // 8 hours
 
-interface PreToolUsePayload {
-  tool_name?: string | undefined
-  tool_input?: { command?: string | undefined } | undefined
-  transcript_path?: string | undefined
-  session_id?: string | undefined
-}
-
 interface GhAuthStatus {
   storage: 'keyring' | 'file' | 'unknown'
   scopes: readonly string[]
 }
 
-async function main(): Promise<void> {
-  // CLI mode: `node index.mts --stamp` writes a fresh timestamp.
-  // Provides an explicit recovery path for users who ran `gh auth
-  // refresh` outside Claude's tool flow (so the PreToolUse-driven
-  // pre-stamp at line ~228 didn't fire) and got stuck on the >8h
-  // block. Documented in CLAUDE.md's `### gh token hygiene` section.
-  if (process.argv.includes('--stamp')) {
-    recordTokenIssuedAt()
-    process.stdout.write(
-      `gh-token-hygiene-guard: stamped ${TOKEN_ISSUED_AT_FILE}\n`,
-    )
-    process.exit(0)
-  }
-  const raw = await readStdin()
-  let payload: PreToolUsePayload
-  try {
-    payload = raw ? JSON.parse(raw) : {}
-  } catch {
-    process.exit(0)
-  }
-  if (payload.tool_name !== 'Bash') {
-    process.exit(0)
-  }
-  const command = payload.tool_input?.command ?? ''
-  if (!command) {
-    process.exit(0)
-  }
+// The PreToolUse payload carries a `session_id` the shared
+// ToolCallPayload type doesn't model. The workflow-grant flow binds a
+// grant to it, so narrow it off the payload here.
+interface SessionPayload {
+  session_id?: string | undefined
+}
+
+export const check = bashGuard((command, payload): GuardResult => {
   // Cheap pre-filter: only inspect commands that mention `gh`.
   if (!containsGhInvocation(command)) {
-    process.exit(0)
+    return undefined
   }
   // The auth-status read is the slow path (~50ms). Skip it when the
   // gh command is a known read-only shape that doesn't touch tokens.
@@ -187,14 +177,14 @@ async function main(): Promise<void> {
   let status: GhAuthStatus
   try {
     status = readGhAuthStatus()
-  } catch (e) {
+  } catch {
     // gh not installed, or no active auth — let the command run and
     // gh itself will report. Don't double-block.
-    process.exit(0)
+    return undefined
   }
   // Invariant 1: keyring storage.
   if (status.storage === 'file') {
-    fail(
+    return fail(
       'gh-token-hygiene-guard: gh token is stored on disk',
       [
         'Your gh CLI token lives at ~/.config/gh/hosts.yml. Any local',
@@ -216,7 +206,7 @@ async function main(): Promise<void> {
   // so reaching here means the token genuinely failed the live probe
   // (or hit the network timeout).
   if (!isAuthMaintenanceCommand(command) && !isTokenFresh()) {
-    fail(
+    return fail(
       'gh-token-hygiene-guard: gh token is >8h old (and live probe failed)',
       [
         'The fleet enforces an 8-hour cap on gh token age. The hook',
@@ -244,6 +234,7 @@ async function main(): Promise<void> {
   ) {
     recordTokenIssuedAt()
   }
+  const sessionId = (payload as SessionPayload).session_id
   // Invariant 2: workflow scope on-demand.
   const isWorkflowDispatch =
     isWorkflowDispatchCommand(command) || isWorkflowApiDispatch(command)
@@ -252,14 +243,14 @@ async function main(): Promise<void> {
   if (isWorkflowRefresh) {
     // Revoke is always allowed (no bypass needed).
     if (isWorkflowScopeRevoke(command)) {
-      process.exit(0)
+      return undefined
     }
     // Refresh-add: chat-bypass phrase + Touch ID sudo prompt both
     // required. The phrase alone isn't sufficient — an attacker who
     // exfiltrates the bypass-typed slot still can't proceed without
     // your physical presence.
     if (!bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-      fail(
+      return fail(
         'gh-token-hygiene-guard: adding workflow scope requires bypass',
         [
           `Type \`${BYPASS_PHRASE}\` in chat before running:`,
@@ -270,8 +261,9 @@ async function main(): Promise<void> {
       )
     }
     const authResult = requireUserAuthentication()
+    /* c8 ignore start - 'denied' only returned via osascript dialog, which MDM blocks on test host */
     if (authResult === 'denied') {
-      fail(
+      return fail(
         'gh-token-hygiene-guard: physical-presence check failed',
         [
           'Authentication was cancelled or password did not match.',
@@ -279,9 +271,10 @@ async function main(): Promise<void> {
         ].join('\n'),
       )
     }
+    /* c8 ignore stop */
     if (authResult === 'unsupported') {
       const platformGuidance = platformAuthGuidance()
-      fail(
+      return fail(
         'gh-token-hygiene-guard: no physical-presence auth available',
         [
           'The workflow-scope bypass requires biometric / hardware-key',
@@ -291,13 +284,13 @@ async function main(): Promise<void> {
         ].join('\n'),
       )
     }
-    recordWorkflowGrant(payload.session_id)
-    process.exit(0)
+    recordWorkflowGrant(sessionId)
+    return undefined
   }
   if (isWorkflowDispatch) {
     // Block if scope is absent — nothing to dispatch with.
     if (!hasWorkflowScope) {
-      fail(
+      return fail(
         'gh-token-hygiene-guard: workflow dispatch requires workflow scope',
         [
           'Token does not have the `workflow` scope. To dispatch:',
@@ -312,8 +305,8 @@ async function main(): Promise<void> {
     // bind to the current session_id. Pre-creation attack (attacker
     // touches the file from a different process) is rejected because
     // the recorded session_id won't match the dispatch session.
-    if (!verifyWorkflowGrant(payload.session_id)) {
-      fail(
+    if (!verifyWorkflowGrant(sessionId)) {
+      return fail(
         'gh-token-hygiene-guard: workflow dispatch grant is missing, expired, or session-mismatched',
         [
           'Token has `workflow` scope, but no valid dispatch grant for',
@@ -333,8 +326,8 @@ async function main(): Promise<void> {
     }
     consumeWorkflowGrant()
   }
-  process.exit(0)
-}
+  return undefined
+})
 
 // True when any command segment actually invokes the `gh` binary. Uses
 // the shell parser, not regex: a regex on `gh` over-matched (a path or a
@@ -405,6 +398,8 @@ function isWorkflowScopeRefresh(command: string): boolean {
 function isWorkflowScopeRevoke(command: string): boolean {
   return (
     /\bgh\s+auth\s+refresh\b/.test(command) &&
+    // A `-r`/`--remove-scopes` flag followed (within the same command segment,
+    // before any `| ; &`) by the `workflow` scope name.
     /(?:^|\s)(?:-r|--remove-scopes)\b[^|;&]*\bworkflow\b/.test(command)
   )
 }
@@ -449,8 +444,8 @@ function isTokenFresh(): boolean {
       return true
     }
     // Stamp says expired. Self-heal: the user may have refreshed in a
-    // side shell (without the hook's --stamp follow-up). Probe the
-    // token directly via a cheap unauthenticated-rate-limit API call.
+    // side shell (so the PreToolUse-driven pre-stamp never fired). Probe
+    // the token directly via a cheap unauthenticated-rate-limit API call.
     // If gh accepts it (exit 0), the token IS fresh; re-stamp and
     // proceed. If gh rejects it (exit non-zero / 401), the stamp was
     // right and the token really is dead.
@@ -504,6 +499,7 @@ function readGhAuthStatus(): GhAuthStatus {
   const githubComBlock = extractHostBlock(text, 'github.com')
   let storage: GhAuthStatus['storage'] = 'unknown'
   if (githubComBlock) {
+    // Keyring/keychain storage signal in the `gh auth status` github.com block.
     if (/\(keyring\)|stored in:\s*keychain/i.test(githubComBlock)) {
       storage = 'keyring'
     } else if (/Logged in to github\.com/i.test(githubComBlock)) {
@@ -512,9 +508,13 @@ function readGhAuthStatus(): GhAuthStatus {
   }
   // Scopes are still parsed from the github.com block.
   const scopesText = githubComBlock ?? text
-  const scopesMatch = scopesText.match(/Token scopes:\s*(.+)/i)
+  const scopesMatch = scopesText.match(/Token scopes:\s*(?<list>.+)/i)
   const scopes = scopesMatch
-    ? scopesMatch[1]!.split(',').map(s => s.trim().replace(/^['"]|['"]$/g, ''))
+    ? scopesMatch.groups!.list!.split(',').map(s =>
+        // Trim, then strip one leading or trailing quote char (a single- or
+        // double-quoted scope token in the `gh auth status` output).
+        s.trim().replace(/^['"]|['"]$/g, ''),
+      )
     : []
   return { storage, scopes }
 }
@@ -586,6 +586,7 @@ function verifyWorkflowGrant(sessionId: string | undefined): boolean {
   }
   try {
     const body = readFileSync(WORKFLOW_GRANT_FILE, 'utf8')
+    /* c8 ignore next - split('\n') always returns at least one element; [0] is never undefined */
     const recordedSessionId = body.split('\n')[0]?.trim() ?? ''
     return recordedSessionId === sessionId
   } catch {
@@ -626,10 +627,12 @@ function isOsascriptBlocked(): boolean {
     return mdmBlockerDetectedCache
   }
   // osascript missing entirely (non-darwin or stripped install).
+  /* c8 ignore start - true arm only reachable on non-macOS or stripped installs where osascript absent */
   if (!existsSync(OSASCRIPT_BIN)) {
     mdmBlockerDetectedCache = true
     return true
   }
+  /* c8 ignore stop */
   const mdmPaths = [
     '/Library/Application Support/iru',
     '/usr/local/jamf/bin/jamf',
@@ -639,13 +642,17 @@ function isOsascriptBlocked(): boolean {
     '/Library/Kandji',
   ]
   for (let i = 0; i < mdmPaths.length; i += 1) {
+    /* c8 ignore start - true arm only reachable when MDM software is installed (not present on test host) */
     if (existsSync(mdmPaths[i]!)) {
       mdmBlockerDetectedCache = true
       return true
     }
+    /* c8 ignore stop */
   }
+  /* c8 ignore start - reached only on macOS without any MDM software installed */
   mdmBlockerDetectedCache = false
   return false
+  /* c8 ignore stop */
 }
 
 // Platform-specific setup guidance for the 'no auth method' error.
@@ -656,6 +663,7 @@ function isOsascriptBlocked(): boolean {
 //     fingerprint reader) — both layered onto sudo via PAM.
 //   - Windows: no clean path. Run releases from a macOS / Linux host.
 function platformAuthGuidance(): readonly string[] {
+  /* c8 ignore start - win32 branch unreachable in fleet test environment (macOS host) */
   if (process.platform === 'win32') {
     return [
       'Windows has no equivalent to Touch ID / pam_u2f reachable from',
@@ -664,9 +672,14 @@ function platformAuthGuidance(): readonly string[] {
       '  * Use the GitHub web UI (Actions → Run workflow) instead.',
     ]
   }
+  /* c8 ignore stop */
+  /* c8 ignore start - false arm (non-darwin) unreachable in fleet test environment (macOS host) */
   if (process.platform === 'darwin') {
+    /* c8 ignore stop */
     const noTty = !process.stdin.isTTY
     const osBlocked = isOsascriptBlocked()
+    // noTty is always true in hook test env (no TTY); false arm (empty []) unreachable.
+    /* c8 ignore next - false arm (noTty=false, ttyNote=[]) only when stdin is a TTY; hooks run without TTY */
     const ttyNote = noTty
       ? [
           'This shell has no controlling TTY, so the Touch ID prompt',
@@ -685,6 +698,8 @@ function platformAuthGuidance(): readonly string[] {
           '',
         ]
       : []
+    // osBlocked depends on MDM presence; false arm (empty []) unreachable on clean test host.
+    /* c8 ignore next - false arm (osBlocked=false, mdmNote=[]) only when no MDM is installed */
     const mdmNote = osBlocked
       ? [
           'An MDM (iru / Jamf / Mosyle / Kandji) is intercepting',
@@ -709,6 +724,7 @@ function platformAuthGuidance(): readonly string[] {
     ]
   }
   // Linux / BSD / other POSIX.
+  /* c8 ignore start - linux/BSD path unreachable in fleet test environment (macOS host) */
   return [
     'Layer a biometric / hardware-key onto sudo via PAM. Two common',
     'options — pick the one matching your hardware:',
@@ -730,6 +746,7 @@ function platformAuthGuidance(): readonly string[] {
     'Test with `sudo -k && sudo -n true` — if it returns 0 silently,',
     'the hook will recognize it as a physical-presence success.',
   ]
+  /* c8 ignore stop */
 }
 
 type AuthResult = 'authenticated' | 'denied' | 'unsupported'
@@ -747,9 +764,11 @@ function requireUserAuthentication(): AuthResult {
   // Windows: no equivalent path. Windows Hello requires a UWP context
   // (UserConsentVerifier) not reachable from a regular Node child.
   // runas + UAC is a click, not physical presence.
+  /* c8 ignore start - win32 branch unreachable in fleet test environment (macOS host) */
   if (process.platform === 'win32') {
     return 'unsupported'
   }
+  /* c8 ignore stop */
   // Path 1: physical-presence via PAM-backed sudo.
   //   macOS: pam_tid.so (Touch ID).
   //   Linux: pam_u2f.so (YubiKey / FIDO2) OR pam_fprintd.so (fingerprint
@@ -764,7 +783,9 @@ function requireUserAuthentication(): AuthResult {
   //       the dialog appears in the user's foreground session. Cap at
   //       30s so a missing sensor / cancelled prompt doesn't hang.
   const sudoBin = resolveSudoBin()
+  /* c8 ignore start - false arm (no sudo binary) unreachable on macOS where /usr/bin/sudo exists */
   if (sudoBin) {
+    /* c8 ignore stop */
     // Invalidate any cached sudo timestamp so the user can't accidentally
     // skip the prompt. -k is silent and always exits 0.
     spawnSync(sudoBin, ['-k'], { stdio: 'ignore', timeout: 2000 })
@@ -786,6 +807,7 @@ function requireUserAuthentication(): AuthResult {
     // the right session). Surface 'unsupported' with a clearer message
     // (see formatPhysicalAuthError) so the caller knows to run the gh
     // refresh from their own terminal.
+    /* c8 ignore start - true arm (interactive sudo) only reachable when stdin is a TTY; hooks run without TTY */
     if (process.stdin.isTTY) {
       spawnSync(sudoBin, ['-k'], { stdio: 'ignore', timeout: 2000 })
       const interactiveResult = spawnSync(sudoBin, ['true'], {
@@ -796,6 +818,7 @@ function requireUserAuthentication(): AuthResult {
         return 'authenticated'
       }
     }
+    /* c8 ignore stop */
   }
   // Path 2: macOS-only — osascript password prompt + dscl validation.
   // Linux/BSD: no GUI-portable fallback that works across distros
@@ -803,12 +826,17 @@ function requireUserAuthentication(): AuthResult {
   // packaging caveats). Falls back to 'unsupported' on non-darwin.
   // macOS-with-MDM-blocker: skipped via isOsascriptBlocked() to avoid
   // surfacing the "Process Blocked" toast.
+  /* c8 ignore start - true arm (non-darwin) unreachable on macOS test host */
   if (process.platform !== 'darwin') {
     return 'unsupported'
   }
+  /* c8 ignore stop */
+  /* c8 ignore start - true arm only reachable when MDM blocks osascript; not present on test host */
   if (isOsascriptBlocked()) {
     return 'unsupported'
   }
+  /* c8 ignore stop */
+  /* c8 ignore start - osascript dialog path unreachable when MDM blocks osascript or in headless CI */
   // `display dialog` runs in osascript's own UI process — it does NOT
   // require Automation / System Events permissions (which Claude Code
   // typically doesn't have). Bare `display dialog` works without any
@@ -856,6 +884,7 @@ function requireUserAuthentication(): AuthResult {
     return 'authenticated'
   }
   return 'denied'
+  /* c8 ignore stop */
 }
 
 const TOUCH_ID_NUDGED_FILE = path.join(
@@ -864,6 +893,7 @@ const TOUCH_ID_NUDGED_FILE = path.join(
   'gh-touch-id-setup-nudged',
 )
 
+/* c8 ignore start - only reachable after osascript dscl auth success, which is MDM-gated */
 function maybePrintTouchIdSetupNudge(): void {
   // Already configured → no nudge needed.
   if (isTouchIdSudoConfigured()) {
@@ -930,14 +960,20 @@ function isTouchIdSudoConfigured(): boolean {
   }
   return false
 }
+/* c8 ignore stop */
 
-function fail(headline: string, body: string): never {
-  process.stderr.write(`\n${headline}\n\n${body}\n\n`)
-  process.exit(2)
+// Build a block verdict whose message is byte-identical to the old
+// `fail(headline, body)` stderr write (`\n${headline}\n\n${body}\n\n`),
+// so the blocking text the user reads is unchanged.
+function fail(headline: string, body: string): GuardBlock {
+  return block(`\n${headline}\n\n${body}\n\n`)
 }
 
-main().catch(() => {
-  // Fail open on internal errors — don't break Claude Code's tool
-  // pipeline if our hook itself crashes.
-  process.exit(0)
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Bash'],
+  triggers,
+  type: 'guard',
 })
+void runHook(hook, import.meta.url)

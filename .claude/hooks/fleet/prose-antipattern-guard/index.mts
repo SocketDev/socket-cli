@@ -7,19 +7,17 @@
 // chains, vague hedging adverbs. The fleet rule (CLAUDE.md "Prose authoring",
 // .claude/skills/fleet/prose/SKILL.md): run human-facing prose through the
 // prose skill before it lands. This is the hard gate — it supersedes the old
-// prose-antipattern-reminder Stop hook (a reminder fires after the write and
+// prose-antipattern-nudge Stop hook (a reminder fires after the write and
 // is ignorable; a PreToolUse block stops the bad prose from landing at all).
 //
 // Bypass: `Allow prose-antipattern bypass` typed verbatim in a recent user
 
 import path from 'node:path'
-import process from 'node:process'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { findChangelogImplDetail, findProseAntipatterns } from './patterns.mts'
-import { withEditGuard } from '../_shared/payload.mts'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 const BYPASS_PHRASE = 'Allow prose-antipattern bypass'
@@ -40,15 +38,14 @@ function isProseSurface(normalizedPath: string): boolean {
   )
 }
 
-await withEditGuard((filePath, content, payload) => {
+export const check = editGuard((filePath, content, payload) => {
   if (content === undefined) {
-    return
+    return undefined
   }
   const normalized = normalizePath(filePath)
   if (!isProseSurface(normalized)) {
-    return
+    return undefined
   }
-  const logger = getDefaultLogger()
   const rel = path.basename(filePath)
 
   // CHANGELOG-only: reject implementation detail (dep bumps, internal
@@ -64,55 +61,58 @@ await withEditGuard((filePath, content, payload) => {
         CHANGELOG_IMPL_BYPASS_PHRASE,
       )
     ) {
-      logger.error(
+      const lines: string[] = [
         `🚨 prose-antipattern-guard: blocked CHANGELOG write to ${rel} — implementation detail.`,
-      )
-      logger.error('')
+        '',
+      ]
       for (let i = 0, { length } = implHits; i < length; i += 1) {
         const hit = implHits[i]!
-        logger.error(`  ✗ ${hit.label}: ${hit.why}`)
+        lines.push(`  ✗ ${hit.label}: ${hit.why}`)
       }
-      logger.error('')
-      logger.error(
+      lines.push(
+        '',
         'A CHANGELOG entry states the user-visible behavior change only — the',
-      )
-      logger.error(
         'API or commands a reader can now use, or what stopped breaking. Drop',
-      )
-      logger.error(
         'dependency bumps, version deltas, and internal mechanism names.',
-      )
-      logger.error('')
-      logger.error(
+        '',
         `Bypass (rare): the user types "${CHANGELOG_IMPL_BYPASS_PHRASE}" verbatim.`,
       )
-      process.exitCode = 2
-      return
+      return block(lines.join('\n'))
     }
   }
 
   const hits = findProseAntipatterns(content)
   if (!hits.length) {
-    return
+    return undefined
   }
   if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    return
+    return undefined
   }
-  logger.error(`🚨 prose-antipattern-guard: blocked write to ${rel}.`)
-  logger.error('')
+  const lines: string[] = [
+    `🚨 prose-antipattern-guard: blocked write to ${rel}.`,
+    '',
+  ]
   for (let i = 0, { length } = hits; i < length; i += 1) {
     const hit = hits[i]!
-    logger.error(`  ✗ ${hit.label}: ${hit.why}`)
+    lines.push(`  ✗ ${hit.label}: ${hit.why}`)
   }
-  logger.error('')
-  logger.error(
+  lines.push(
+    '',
     'Per CLAUDE.md "Prose authoring": run human-facing prose through the `prose`',
-  )
-  logger.error(
     'skill (.claude/skills/fleet/prose/SKILL.md) before it lands. Rewrite the',
+    'flagged spans, then retry the edit.',
+    '',
+    `Bypass (rare): the user types "${BYPASS_PHRASE}" verbatim.`,
   )
-  logger.error('flagged spans, then retry the edit.')
-  logger.error('')
-  logger.error(`Bypass (rare): the user types "${BYPASS_PHRASE}" verbatim.`)
-  process.exitCode = 2
+  return block(lines.join('\n'))
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  scope: 'convention',
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

@@ -35,19 +35,15 @@
 // Fails open on parse errors (better to under-block than brick a non-JSON edit).
 
 import path from 'node:path'
-import process from 'node:process'
-
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import {
   auditForeignDeps,
   isForeignConfigFile,
   isVendoredUpstream,
 } from '../_shared/foreign-linters.mts'
-import { withEditGuard } from '../_shared/payload.mts'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import { isFleetTarget } from '../_shared/fleet-context.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const logger = getDefaultLogger()
 
 const BYPASS_PHRASE = 'Allow other-linter bypass'
 
@@ -58,20 +54,24 @@ function bypassed(payload: { transcript_path?: string | undefined }): boolean {
   )
 }
 
-// withEditGuard handles stdin drain, tool gate, file narrow, content extraction,
-// fail-open on throw.
-await withEditGuard((filePath, content, payload) => {
+export const check = editGuard((filePath, content, payload) => {
   if (isVendoredUpstream(filePath)) {
-    return
+    return undefined
+  }
+  // Fleet CONVENTION: outside a fleet repo the project may legitimately use
+  // eslint/prettier/biome — don't block its config files there. See
+  // _shared/fleet-context.mts.
+  if (!isFleetTarget(payload)) {
+    return undefined
   }
   const basename = path.basename(filePath)
 
   // (1) Foreign config FILE — unconditional block.
   if (isForeignConfigFile(basename)) {
     if (bypassed(payload)) {
-      return
+      return undefined
     }
-    logger.error(
+    return block(
       [
         `[no-other-linters-guard] Blocked: foreign linter/formatter config \`${basename}\`.`,
         '',
@@ -84,8 +84,6 @@ await withEditGuard((filePath, content, payload) => {
         '',
       ].join('\n'),
     )
-    process.exitCode = 2
-    return
   }
 
   // (2) Foreign tool PACKAGE in a package.json dep block (Write or Edit),
@@ -93,16 +91,16 @@ await withEditGuard((filePath, content, payload) => {
   if (basename === 'package.json') {
     const afterText = content ?? ''
     if (!afterText) {
-      return
+      return undefined
     }
     const { blocked } = auditForeignDeps(afterText)
     if (blocked.length === 0) {
-      return
+      return undefined
     }
     if (bypassed(payload)) {
-      return
+      return undefined
     }
-    logger.error(
+    return block(
       [
         '[no-other-linters-guard] Blocked: foreign linter/formatter package(s) in package.json.',
         '',
@@ -122,6 +120,16 @@ await withEditGuard((filePath, content, payload) => {
         '',
       ].join('\n'),
     )
-    process.exitCode = 2
   }
+
+  return undefined
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

@@ -1,5 +1,5 @@
 /**
- * @file sfw flavor + shim helpers for the dep-free setup-tools.mjs bootstrap.
+ * @file Sfw flavor + shim helpers for the dep-free setup-tools.mjs bootstrap.
  *   Split out to keep setup-tools.mjs under the file-size cap. Dep-free (system
  *   Node + `node:` builtins only) for the same reason as its caller: it runs
  *   before `@socketsecurity/lib` / node_modules exist.
@@ -48,7 +48,13 @@ export function hasSocketToken() {
   }
   if (process.platform === 'linux') {
     const lookup = account =>
-      ok('secret-tool', ['lookup', 'service', 'socketsecurity', 'user', account])
+      ok('secret-tool', [
+        'lookup',
+        'service',
+        'socketsecurity',
+        'user',
+        account,
+      ])
     return lookup(tokenAccount) || lookup(keyAccount)
   }
   return false
@@ -67,6 +73,64 @@ export function shimCommands(enterprise) {
     extra.push('go')
   }
   return [...base, ...extra]
+}
+
+// Env-var sentinel name for a shimmed command's own-recursion guard. The shim
+// exports it before handing off to sfw, so a re-entrant invocation — a child
+// process the wrapped tool spawns, or the tool re-invoking its OWN name via a
+// bare PATH lookup — skips straight to the real binary instead of stripping
+// the shared bin dir from PATH. Stripping the WHOLE bin dir (the pre-fix
+// shape) took every OTHER racked shim down with it for every child process:
+// a child `uv` invocation inside `pnpm run check` fell through to a stale
+// Homebrew copy instead of the racked pin, tripping
+// path-tools-are-at-pinned-version. Uppercase + non-alnum -> "_" keeps the
+// name a valid shell/batch identifier for any future ecosystem command.
+export function sentinelVarFor(cmd) {
+  return `SOCKET_SHIM_ACTIVE_${cmd.toUpperCase().replace(/[^A-Z0-9]/g, '_')}`
+}
+
+// POSIX (bash) body for a real-tool sfw shim: an env-sentinel recursion guard,
+// then the trap-and-reap sfw wrap. Mirrors the CI action's "Create sfw shims"
+// step (POSIX branch) — keep both in lockstep.
+export function posixRealShimLines(cmd, sfwBin, real) {
+  const sentinel = sentinelVarFor(cmd)
+  return [
+    '#!/bin/bash',
+    `if [ -n "\${${sentinel}:-}" ]; then`,
+    `  exec "${real}" "$@"`,
+    'fi',
+    `export ${sentinel}=1`,
+    'export SFW_UNKNOWN_HOST_ACTION=ignore',
+    'set -m',
+    `"${sfwBin}" "${real}" "$@" &`,
+    'sfw_pid=$!',
+    'trap "kill -TERM -$sfw_pid 2>/dev/null" EXIT',
+    'trap "kill -INT  -$sfw_pid 2>/dev/null" INT',
+    'trap "kill -TERM -$sfw_pid 2>/dev/null" TERM HUP',
+    'wait "$sfw_pid"',
+    'exit $?',
+  ]
+}
+
+// Windows (.cmd) body for a real-tool sfw shim: the same sentinel guard, no
+// trap-and-reap (batch has no POSIX process groups — see setup-tools.mjs).
+// goto/label instead of an `if defined (...)` block: cmd.exe substitutes
+// %errorlevel% once at PARSE time for everything inside a single parenthesized
+// block, so reading it there would capture the exit code from BEFORE the
+// guarded command ran.
+export function windowsRealShimLines(cmd, sfwBin, real) {
+  const sentinel = sentinelVarFor(cmd)
+  return [
+    '@echo off',
+    `if defined ${sentinel} goto :real`,
+    `set "${sentinel}=1"`,
+    'set "SFW_UNKNOWN_HOST_ACTION=ignore"',
+    `"${sfwBin}" "${real}" %*`,
+    'exit /b %errorlevel%',
+    ':real',
+    `"${real}" %*`,
+    'exit /b %errorlevel%',
+  ]
 }
 
 // Per-command install hint surfaced when a wrapped tool isn't on PATH (the shim

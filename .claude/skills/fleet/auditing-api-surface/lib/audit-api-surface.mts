@@ -38,6 +38,7 @@ import process from 'node:process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { isSpawnError } from '@socketsecurity/lib-stable/process/spawn/errors'
 import { naturalCompare } from '@socketsecurity/lib-stable/sorts/natural'
@@ -131,7 +132,7 @@ export function enumerateSubpaths(
     const value = exportsMap[key]
     let sourceFile: string | undefined
     if (value && typeof value === 'object' && 'source' in value) {
-      const src = (value as { source?: unknown }).source
+      const src = (value as { source?: unknown | undefined }).source
       if (typeof src === 'string') {
         sourceFile = src
       }
@@ -217,10 +218,12 @@ export async function harvestConsumerImports(
   const escapedPrefixes = importPrefixes.map(escapeForRg).join('|')
   const pattern = `(${escapedPrefixes})/[A-Za-z0-9._/-]+`
   const rgArgs = ['--only-matching', '--no-filename', '--no-line-number']
-  for (const dir of CONSUMER_IGNORE_DIRS) {
+  for (let i = 0, { length } = CONSUMER_IGNORE_DIRS; i < length; i += 1) {
+    const dir = CONSUMER_IGNORE_DIRS[i]!
     rgArgs.push('--glob', `!**/${dir}/**`)
   }
-  for (const glob of CONSUMER_GLOBS) {
+  for (let i = 0, { length } = CONSUMER_GLOBS; i < length; i += 1) {
+    const glob = CONSUMER_GLOBS[i]!
     rgArgs.push('--glob', glob)
   }
   rgArgs.push(pattern, consumerDir)
@@ -244,7 +247,7 @@ export async function harvestConsumerImports(
 export function classify(
   internalRefs: number,
   consumers: readonly string[],
-  anyUnscanned: boolean,
+  { anyUnscanned }: { anyUnscanned: boolean },
 ): SurfaceClass {
   if (consumers.length >= 2) {
     return 'consumed'
@@ -263,16 +266,17 @@ export function classify(
 }
 
 export async function audit(options: CliOptions): Promise<AuditResult> {
+  const opts = { __proto__: null, ...options } as typeof options
   const hostDir = resolveHostDir(options)
   const pkgPath = path.join(hostDir, 'package.json')
   if (!existsSync(pkgPath)) {
     throw new Error(
-      `no package.json at ${pkgPath}. Run audit-api-surface from a repo root, or pass --repo <name> for a checkout under ${options.projects}.`,
+      `no package.json at ${pkgPath}. Run audit-api-surface from a repo root, or pass --repo <name> for a checkout under ${opts.projects}.`,
     )
   }
   const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
-    name?: string
-    exports?: Record<string, unknown>
+    name?: string | undefined
+    exports?: Record<string, unknown> | undefined
   }
   const hostPackage = pkg.name ?? path.basename(hostDir)
   const exportsMap = pkg.exports ?? {}
@@ -290,7 +294,7 @@ export async function audit(options: CliOptions): Promise<AuditResult> {
     if (repoName === hostRepoName) {
       continue
     }
-    const consumerDir = path.join(options.projects, repoName)
+    const consumerDir = path.join(opts.projects, repoName)
     if (!existsSync(consumerDir)) {
       unscannedConsumers.push(repoName)
       continue
@@ -311,10 +315,12 @@ export async function audit(options: CliOptions): Promise<AuditResult> {
   const findings: SubpathFinding[] = []
   for (const { sourceFile, subpath } of subpaths) {
     const consumerSet = consumerMap.get(subpath)
-    const consumers = consumerSet ? [...consumerSet].sort(naturalCompare) : []
+    const consumers = consumerSet
+      ? [...consumerSet].toSorted(naturalCompare)
+      : []
     const internalRefs = await countInternalRefs(hostDir, sourceFile)
     findings.push({
-      classification: classify(internalRefs, consumers, anyUnscanned),
+      classification: classify(internalRefs, consumers, { anyUnscanned }),
       consumers,
       internalRefs,
       sourceFile,
@@ -327,15 +333,16 @@ export async function audit(options: CliOptions): Promise<AuditResult> {
     hostPackage,
     hostRepo: hostRepoName,
     importPrefixes,
-    scannedConsumers: scannedConsumers.sort(naturalCompare),
+    scannedConsumers: scannedConsumers.toSorted(naturalCompare),
     totalSubpaths: subpaths.length,
-    unscannedConsumers: unscannedConsumers.sort(naturalCompare),
+    unscannedConsumers: unscannedConsumers.toSorted(naturalCompare),
   }
 }
 
 export function resolveHostDir(options: CliOptions): string {
-  if (options.repo) {
-    return path.join(options.projects, options.repo)
+  const opts = { __proto__: null, ...options } as typeof options
+  if (opts.repo) {
+    return path.join(opts.projects, opts.repo)
   }
   return process.cwd()
 }
@@ -389,12 +396,14 @@ export function renderReport(result: AuditResult): string {
       'exactly one external consumer — candidate to inline there',
     unverifiable: 'no consumer found, but some repo was unscanned',
   }
-  for (const cls of order) {
+  for (let i = 0, { length } = order; i < length; i += 1) {
+    const cls = order[i]!
     const count = byClass.get(cls)?.length ?? 0
     lines.push(`| \`${cls}\` | ${count} | ${meaning[cls]} |`)
   }
   lines.push('')
-  for (const cls of order) {
+  for (let i = 0, { length } = order; i < length; i += 1) {
+    const cls = order[i]!
     const list = byClass.get(cls)
     if (!list || !list.length) {
       continue
@@ -438,11 +447,11 @@ async function runRg(args: readonly string[], cwd: string): Promise<string> {
     if (isSpawnError(e)) {
       // Exit code 1 == no matches. Anything else (2 = real error) we surface
       // as empty too, but log it so a broken pattern isn't silent.
-      const code = (e as { code?: unknown }).code
+      const code = (e as { code?: unknown | undefined }).code
       if (code !== 1) {
         logger.warn(`rg exited ${String(code)} in ${cwd}`)
       }
-      return String((e as { stdout?: unknown }).stdout ?? '')
+      return String((e as { stdout?: unknown | undefined }).stdout ?? '')
     }
     throw e
   }
@@ -472,6 +481,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((e: unknown) => {
-  logger.error(e instanceof Error ? e.message : String(e))
+  logger.error(errorMessage(e))
   process.exitCode = 1
 })

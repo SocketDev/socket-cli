@@ -13,17 +13,30 @@
 
 import { existsSync, readFileSync, statSync } from 'node:fs'
 
+import { SOCKET_PUBLIC_API_KEY } from '@socketsecurity/lib-stable/constants/socket'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
+
+// Canonical path normalization, re-exported so git-hooks share the one
+// implementation (backslash → slash, slash-collapse, `.`/`..` resolution, UNC /
+// namespace preservation) instead of a naive local `.replace`. Staged file lists
+// and `git rev-parse --show-toplevel` can carry Windows backslashes; downstream
+// `startsWith('.git-hooks/')` / `includes('/external/')` matching assumes
+// forward slashes.
+export { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 // Personal-path matcher lives in the gate-free _shared/personal-path.mts so the
 // edit-time personal-path-guard shares THIS code (was a lock-step inline copy).
 import {
-  PERSONAL_PATH_RE,
   isPurePlaceholder,
+  PERSONAL_PATH_RE,
   suggestPlaceholder,
 } from './personal-path.mts'
-// Cross-repo matcher likewise shared with the edit-time cross-repo-guard.
-import { CROSS_REPO_ANY_RE } from './cross-repo.mts'
+// Cross-repo matcher + helpers likewise shared with the edit-time cross-repo-guard.
+import {
+  CROSS_REPO_ANY_RE,
+  relativeTokenEscapesRepo,
+  repoNameForFile,
+} from './cross-repo.mts'
 // Logger-leak detector — AST-based, shared with the edit-time logger-guard.
 import { findLoggerLeaks } from './logger-leaks.mts'
 
@@ -43,9 +56,11 @@ if (nodeMajor < NODE_MIN_MAJOR) {
   // status-emoji glyph) so the no-status-emoji lint rule stays clean
   // — the lint rule's recommendation (use logger.fail()) doesn't
   // apply when the entire branch is the logger-unavailable bail.
+  // oxlint-disable-next-line socket/no-module-eval-side-effects -- Node-floor bail before any import resolves; raw stderr is the only channel here.
   process.stderr.write(
     `\x1b[0;31mHook requires Node >= ${NODE_MIN_MAJOR}.0.0 (have v${process.versions.node})\x1b[0m\n`,
   )
+  // oxlint-disable-next-line socket/no-module-eval-side-effects -- Node-floor bail before any import resolves; raw stderr is the only channel here.
   process.stderr.write(
     'Install Node 25+ — these hooks rely on stable .mts type stripping.\n',
   )
@@ -56,11 +71,6 @@ if (nodeMajor < NODE_MIN_MAJOR) {
 // These exempt known-safe matches from the API-key scanner. Each
 // allowlist entry is a substring; if the matched line contains it,
 // the line is dropped from the findings.
-
-// Real public API key shipped in socket-lib test fixtures. Safe to
-// appear anywhere in the fleet.
-export const ALLOWED_PUBLIC_KEY =
-  'sktsec_t_--RAN5U4ivauy4w37-6aoKyYPDt5ZbaT5JBVMqiwKo_api'
 
 // Substring marker used in test fixtures (see
 // socket-lib/test/unit/utils/fake-tokens.ts). Lines containing this
@@ -97,11 +107,18 @@ export const SOCKET_SECURITY_ENV = SOCKET_TOKEN_ENV_NAMES[0]!
 // `red()`/`green()`/`yellow()` wrappers are intentionally NOT exported
 // from this module; the logger owns the visual surface.
 
-// Posix-form path normalization for staged file lists. Git on Windows
-// can hand back backslash separators in some surfaces; the downstream
-// `startsWith('.git-hooks/')` / `includes('/external/')` pattern
-// matching assumes forward slashes. Cheap to convert once.
-export const normalizePath = (p: string): string => p.replace(/\\/g, '/')
+// Collapse a template archetype-layer path back to its flat repo-relative form:
+// `template/base/.git-hooks/x` → `template/.git-hooks/x`, same for `solo/` /
+// `mono/` / `overrides/<repo>/`. The archetype move (template/* →
+// template/{base,solo,mono,overrides/<repo>}/*) inserts a layer segment that
+// every `startsWith('template/.claude/hooks/')`-style exemption would otherwise
+// miss, re-flagging code that's intentionally raw where it actually runs. One
+// strip here lets all the prefix exemptions stay layer-agnostic (and keeps the
+// pre-move flat `template/` path matching for downstream repos not yet moved).
+export const stripTemplateLayer = (p: string): string =>
+  p
+    .replace(/^template\/(?:base|solo|mono)\//, 'template/')
+    .replace(/^template\/overrides\/[^/]+\//, 'template/')
 
 /**
  * Split text into lines, normalizing CRLF (`\r\n`) to LF (`\n`) first.
@@ -135,7 +152,7 @@ export const splitLines = (text: string): string[] =>
 // the canonical fixture filename pattern `.env.example`.
 const SOCKET_API_KEY_ALLOW_MARKER = 'socket-lint: allow socket-api-key'
 const isAllowedApiKey = (line: string): boolean =>
-  line.includes(ALLOWED_PUBLIC_KEY) ||
+  line.includes(SOCKET_PUBLIC_API_KEY) ||
   line.includes(FAKE_TOKEN_MARKER) ||
   line.includes(FAKE_TOKEN_LEGACY) ||
   SOCKET_TOKEN_ENV_NAMES.some(name => line.includes(name)) ||
@@ -242,6 +259,7 @@ export function lineIsSuppressed(line: string, rule?: string): boolean {
 //   - Lines whose entire interesting content sits inside a backtick span
 //     (markdown / template-literal example).
 const COMMENT_LINE_RE = /^\s*(\*|\/\/|#)/
+// Matches a JSDoc tag (@example, @param, @returns/@return, @see, @link) at a word boundary.
 const JSDOC_TAG_RE = /@(example|param|returns?|see|link)\b/
 
 export function isInsideBackticks(line: string, needleRe: RegExp): boolean {
@@ -388,6 +406,7 @@ export const scanPersonalPaths = (text: string): LineHit[] =>
 // surface a leak rather than wave it through. Unifying them would either
 // weaken this commit-time net or over-trigger the guards. Keep separate.
 const SOCKET_API_KEY_RE = /sktsec_[a-zA-Z0-9_-]+/
+// Matches AWS credential env-var names or a classic AKIA access-key ID (16 uppercase alphanumeric chars).
 const AWS_KEY_RE = /(aws_access_key|aws_secret|\bAKIA[0-9A-Z]{16}\b)/i
 // GitHub token formats — accepts both classic opaque and new JWT
 // formats per the 2026-05-15 token-format rollout:
@@ -449,10 +468,10 @@ export const scanPackageJsonPnpmOverrides = (text: string): LineHit[] => {
   } catch {
     return []
   }
-  const pnpm = (parsed as { pnpm?: unknown } | null)?.pnpm
+  const pnpm = (parsed as { pnpm?: unknown | undefined } | null)?.pnpm
   const overrides =
     pnpm && typeof pnpm === 'object'
-      ? (pnpm as { overrides?: unknown }).overrides
+      ? (pnpm as { overrides?: unknown | undefined }).overrides
       : undefined
   if (
     !overrides ||
@@ -516,8 +535,19 @@ export function suggestNpxReplacement(line: string): string {
     .replace(/node_modules\/\.bin\/ +/g, 'node_modules/.bin/')
 }
 
+// A bare npx / yarn-dlx token wrapped in quotes with NOTHING else inside is a
+// string-literal MENTION — detector code comparing `basename === "npx"`, a
+// rule's own pattern table — not an invocation. Real usage always carries an
+// argument (`npx <pkg>`) or sits inside a longer command string, which the
+// scan still flags. This cleared false blocks on the fleet's own
+// npx-detecting guard sources (foreign-linters.mts).
+const NPX_DLX_EXACT_QUOTED_RE = /(['"`])(?:npx|yarn dlx)\1/g
+
 export const scanNpxDlx = (text: string): LineHit[] =>
   scanLines(text, NPX_DLX_RE, {
+    // Skip when the line stops matching once exact-quoted bare tokens are
+    // stripped — anything that still matches is genuine usage.
+    filter: line => !NPX_DLX_RE.test(line.replace(NPX_DLX_EXACT_QUOTED_RE, '')),
     skipDocs: { rule: 'npx' },
     suggest: suggestNpxReplacement,
   })
@@ -543,6 +573,9 @@ export const scanNpxDlx = (text: string): LineHit[] =>
 // whitespace + `$` prompt). Captures the package manager so the
 // caller can tell which form was seen first.
 const PNPM_INSTALL_LINE_RE = /^\s*\$?\s*pnpm\s+(?:add|i|install)\b/
+// Same shape as above but for npm and yarn: matches `npm add|i|install` or
+// `yarn install|add` or a bare `yarn` invocation, capturing the package
+// manager name in group 1 so the caller can suggest the pnpm equivalent.
 const NPM_YARN_INSTALL_LINE_RE =
   /^\s*\$?\s*(?:(npm)\s+(?:add|i|install)|(?:yarn)\s+(?:install|add)|(?:yarn))\s/
 
@@ -610,6 +643,7 @@ export const scanDocsPnpmFirst = (text: string): LineHit[] => {
       fenceFirstNpmYarnHit = {
         lineNumber: i + 1,
         line,
+        // Replace the npm/yarn subcommand with pnpm, preserving the add|i|install verb.
         suggested: line.replace(/\b(npm|yarn)\s+(add|i|install)\b/, 'pnpm $2'),
       }
     }
@@ -686,7 +720,7 @@ export function scanLoggerLeaks(text: string): LineHit[] {
       suggested: suggestLoggerReplacement(sourceLine),
     })
   }
-  return [...byLine.values()].sort((a, b) => a.lineNumber - b.lineNumber)
+  return [...byLine.values()].toSorted((a, b) => a.lineNumber - b.lineNumber)
 }
 
 // ── Cross-repo path scanner ────────────────────────────────────────
@@ -714,8 +748,9 @@ export function scanLoggerLeaks(text: string): LineHit[] {
 
 export const scanCrossRepoPaths = (
   text: string,
-  currentRepoName?: string,
+  fileAbsPath: string,
 ): LineHit[] => {
+  const currentRepoName = repoNameForFile(fileAbsPath)
   const hits: LineHit[] = []
   const lines = splitLines(text)
   for (let i = 0; i < lines.length; i++) {
@@ -730,6 +765,16 @@ export const scanCrossRepoPaths = (
     if (currentRepoName && matched.includes(`/${currentRepoName}`)) {
       continue
     }
+    // A relative `..`-traversal that resolves back INSIDE this repo (e.g. an
+    // intra-repo `.claude/skills/` import, whose `skills` segment collides with
+    // the `skills` fleet-repo name) is not a cross-repo escape.
+    if (
+      fileAbsPath &&
+      matched.includes('..') &&
+      !relativeTokenEscapesRepo(matched, fileAbsPath)
+    ) {
+      continue
+    }
     if (looksLikeDocumentation(line, CROSS_REPO_ANY_RE, 'cross-repo')) {
       continue
     }
@@ -742,35 +787,378 @@ export const scanCrossRepoPaths = (
   return hits
 }
 
-// ── AI attribution scanner ─────────────────────────────────────────
+// ── PR-process / quest / step-N narrative comment scanner (HARD block) ──
 //
-// Matches BOILERPLATE attribution patterns ("Generated with Claude",
-// "Co-Authored-By: Claude", emoji prefixes, vendor email addresses) —
-// not legitimate product / directory references. Bare "Claude" /
-// "Claude Code" / ".claude/" are valid prose; only the
-// attribution-verb-anchored forms trigger the hook.
+// Blocks point-in-time PR-process references from landing in SOURCE-CODE
+// COMMENTS. The motivating defect: sub-agents wrote `//! Step 4 of the net
+// perf quest (#5419) …` and `// Step 2 ([#5638]) replaced the per-read Vec …`
+// into shipping source. These references are meaningless once the PR merges
+// (no reader of the file can resolve "step 4" or the PR thread), and they
+// leak internal process into PUBLIC repos. A comment must read as TIMELESS
+// design rationale — the WHY of the code as it stands — not a changelog of how
+// it got here. Process belongs in the PR description and git history, not the
+// source.
+//
+// SCOPE — comment text only. The scanner extracts the comment PORTION of each
+// line (`//`, `//!`, `/* … */`, JSDoc ` * `, `#`, `<!-- … -->`) and matches
+// the narrative patterns against that text alone, so a process word inside a
+// string literal or identifier (`stepCount`, `phaseShift`, a GraphQL body)
+// never trips it. Code is unaffected; only what a human wrote as prose.
+//
+// PATTERNS — two confidence tiers, CALIBRATED AGAINST THE FULL COMMITTED SOURCE
+// OF TWO REAL REPOS (a fleet-wide pre-commit block must not false-positive on a
+// legitimate existing comment). The QUEST idiom is the real discriminator and
+// the only shape that fired on zero legit lines; the `step N` and issue-ref arms
+// are narrowed to clear ~140 real false positives while still catching every
+// motivating defect.
+//
+//   Tier 1 — confident, block-on-sight process-narrative shapes:
+//     • `step <N>` on either of two genuine signals: (A) a bounded PAST-TENSE
+//       CHANGE-VERB (or the explicit `replaces`/`reuses`) directly after the
+//       ordinal (`step 2 replaced/switched/rewrote …`, tolerating an interposed
+//       PR-ref `Step 2 ([#5638]) replaced …`); or (B) `step N of [the] <STRICT
+//       effort noun>` — a step OF a named internal quest (`step 4 of the
+//       quest`). DELIBERATELY NOT Tier-1 (real source + ordinary algorithm prose
+//       use all of these for TIMELESS runbooks): a bare `^Step N`, a `Step N —`
+//       dash heading, `step N of <STABLE procedure>` (`step 1 of the migration`,
+//       `step 1 of every publish attempt` — construct/stable nouns, not the
+//       strict jargon set), a bare imperative `step N add/move/drop …`, and a
+//       pronoun-displaced `step N we added …`. The verb list is bounded
+//       inflections, NOT `\w*` stems (so `address`/`folder`/`changeset` never
+//       match). The cost is a tolerated false negative on a pronoun-rephrased
+//       defect — accepted (a fleet-wide block must favor a recoverable miss over
+//       a false positive that blocks an unrelated commit).
+//     • `quest` (+ the QUALIFIED effort-noun set) as the process idiom — `perf
+//       quest`, `the perf rework`, `net cleanup`, or `quest (#N)`. The bare noun
+//       "quest", `the <any-word> quest` (a "quests" table, a game's quest log,
+//       `the side quest`), and an UNqualified `the rework`/`optimization pass`
+//       are NOT Tier-1 — legitimate domain words. The construct-colliding nouns
+//       (`rework`/`cleanup`/`pass`/`migration`) block ONLY when perf/net/opt-
+//       qualified. "question" / "requested" / "conquest" never match.
+//     • GitHub-PR-process SYNTAX only — `resolves / closes / fixes #N`,
+//       `follow-up to #N`, `reverts #N`, `cherry-picked #N`, and the verb-framed
+//       `(added|fixed|resolved|introduced|landed|shipped|merged) in #N` (literal
+//       `#` required). The bare parenthesised/bracketed `(#N)` / `[#N]` and bare
+//       `PR #N` / `see PR #N` are NOT Tier-1 — real source proves those are
+//       ENUMERATION ordinals (`devEngines.runtime (#1)`), UPSTREAM provenance
+//       (`Flag added in Node 9.6.0 (#14253)`, `(PR #57038)`), and legitimate
+//       regression-guard / tracking cross-refs (`Regression guard … on PR #36`).
+//       The motivating `(#5419)` / `([#5638])` still block via QUEST_RE /
+//       STEP_SEQ_RE, which do not rely on the bracketed-ref arm.
+//
+//   Tier 2 — a LONE `#<N>` mention in a comment (`// see #123`). A single
+//   bare cross-ref is sometimes legitimate (citing a tracking issue for a
+//   workaround's rationale). It is blocked ONLY when it CO-OCCURS on the same
+//   line with a STRONG, unambiguous process word — `follow-up`, `merged`,
+//   `landed`, `shipped`, `revert`, `rebase`, `squash`, `cherry-pick`. The set
+//   deliberately EXCLUDES `commit` / `part` / `phase` / `step` / `PR`, which
+//   collide with ordinary prose alongside a coincidental `#N` ("commit #200 of
+//   the batch", "part 3 of the header"). And an UPSTREAM-Node citation (a `#N`
+//   on a line carrying a Node-provenance shape — `Node <ver>`, `nodejs/node`, or
+//   a two-digit `NN.x` Node release line — `#51575 … Landed on the 22.x line`)
+//   is exempted: it is provenance, not nub's PR history. The shape is Node-
+//   SPECIFIC, NOT a bare "node" mention, so a nub-internal `merged #88 into the
+//   node-resolver` still blocks.
+//
+// FALSE-POSITIVE MITIGATIONS, beyond comment-only scoping:
+//   • `shouldSkipFile` already exempts tests / fixtures / `.git-hooks/` — those
+//     files legitimately quote these shapes (this scanner's OWN tests do).
+//   • SPDX / license / copyright header lines are exempt (they carry years and
+//     boilerplate that can look like a `part N` / bare-`#` co-occurrence).
+//   • `phase`/`part <N>` are NOT bare-ordinal triggers — too common as plain
+//     words; they reach a block only via the Tier-2 co-occurrence path.
+//   • A standalone version / date token (`v2.3.1`, `2026-06-24`, `as of
+//     2026-…`, `fixed in 26`) is not a PR number — the verb-framed issue-ref
+//     arms require a LITERAL `#`, so a bare number/date never matches.
+//   • Per-line opt-out: `// socket-lint: allow pr-process-comment` (or the `#`
+//     form for shell/YAML) — the rare legitimate process reference. Default is
+//     BLOCK.
+//
+// Rewrite guidance the hook prints: state the design rationale timelessly —
+// "a process-wide freelist amortizes per-read allocation" — not the history —
+// "step 4 of the perf quest added a freelist".
 
-const AI_ATTRIBUTION_RE =
-  /(?:(?:Authored|Built|Crafted|Created|Generated|Made|Powered|Written)\s+(?:with|by)\s+(?:Claude|AI|GPT|ChatGPT|Copilot|Cursor|Bard|Gemini)|Co-Authored-By:\s+(?:Claude|AI|GPT|ChatGPT|Copilot|Cursor|Bard|Gemini)|🤖\s+Generated|AI[\s-]generated|Machine[\s-]generated|@(?:anthropic|openai)\.com|^Assistant:)/im
-
-export const containsAiAttribution = (text: string): boolean =>
-  AI_ATTRIBUTION_RE.test(text)
-
-export const stripAiAttribution = (
-  text: string,
-): { cleaned: string; removed: number } => {
-  const lines = splitLines(text)
-  const kept: string[] = []
-  let removed = 0
-  for (const line of lines) {
-    if (AI_ATTRIBUTION_RE.test(line)) {
-      removed++
-    } else {
-      kept.push(line)
+// Extract the comment text of a single line, or '' when the line has no
+// comment. `block` carries whether the previous line left an unterminated
+// `/* … */` (so a NO-leading-`*` block body — `/*\n  Step 4 …\n*/` — is still
+// scanned; the leak is just as real inside a C-style block as in a `//!` doc).
+// Returns the comment text plus the block state to thread into the next line.
+//
+// Conservative + cheap (no full tokenizer): we only need the prose a human
+// wrote, and we must not mistake a `//` / `<!--` that sits inside a string for
+// a comment opener. The rules:
+//   • Inside an open block (`block === true`) the WHOLE line is comment text up
+//     to a closing `*/`; a `*/` on the line clears the block state.
+//   • A WHOLE-LINE comment — `//…`, `//!…`, `///…` (Rust doc), `*…` (JSDoc
+//     continuation), `/*…`, `#…` (but NOT `#!` shebang), `<!--…` — returns its
+//     text after the opener. A `/*` with no `*/` on the same line OPENS a block.
+//   • A TRAILING `//` or `<!--` comment on a code line returns the text after
+//     the opener, but ONLY when the opener is not inside a quote span on that
+//     line (so `const u = 'http://x'` and `a = "#tag"` are NOT comments). A
+//     trailing `#` is deliberately NOT treated as a comment on a code line: `#`
+//     is too overloaded (CSS colors, fragment URLs, shell `$#`) to split safely
+//     mid-line, and the motivating leaks are all whole-line or `//`. A
+//     WHOLE-LINE `#` comment IS scanned, so a `# step 2 of the quest` heading is
+//     still caught.
+const COMMENT_OPENER_WHOLE_RE = /^\s*(?:\/\/+!?|\*|\/\*\*?|<!--|#(?!!))\s?/
+export function commentTextOf(
+  line: string,
+  { block }: { block: boolean },
+): { comment: string; block: boolean } {
+  if (block) {
+    // Inside an open `/* … */` — the whole line (to any `*/`) is prose.
+    const end = line.indexOf('*/')
+    if (end >= 0) {
+      return { comment: line.slice(0, end), block: false }
+    }
+    return { comment: line.replace(/^\s*\*?\s?/, ''), block: true }
+  }
+  const whole = COMMENT_OPENER_WHOLE_RE.exec(line)
+  if (whole) {
+    const opensBlock = /\/\*/.test(line) && !line.includes('*/')
+    const comment = line
+      .slice(whole.index + whole[0].length)
+      .replace(/\s*(?:\*\/|-->)\s*$/, '')
+    return { comment, block: opensBlock }
+  }
+  // Trailing `//` or `<!--` on a code line — only when outside a quote span.
+  for (const opener of ['//', '<!--'] as const) {
+    let from = 0
+    for (;;) {
+      const at = line.indexOf(opener, from)
+      if (at < 0) {
+        break
+      }
+      if (!indexInsideQuote(line, at)) {
+        return {
+          comment: line
+            .slice(at + opener.length)
+            .replace(/\s*-->\s*$/, '')
+            .trim(),
+          block: false,
+        }
+      }
+      from = at + opener.length
     }
   }
-  return { cleaned: kept.join('\n'), removed }
+  // A `/*` opened mid-code-line (a trailing block comment) — its body IS prose
+  // and must be scanned (`code(); /* step 4 of … */` is just as much a leak as
+  // a leading one). Slice from after the `/*`; if a `*/` closes it on the same
+  // line, that bounds the comment, else the block stays open for the next line.
+  const blockAt = line.indexOf('/*')
+  if (blockAt >= 0 && !indexInsideQuote(line, blockAt)) {
+    const bodyStart = blockAt + 2
+    const closeAt = line.indexOf('*/', bodyStart)
+    if (closeAt >= 0) {
+      return { comment: line.slice(bodyStart, closeAt).trim(), block: false }
+    }
+    return { comment: line.slice(bodyStart).trim(), block: true }
+  }
+  return { comment: '', block: false }
 }
+
+// True when byte offset `at` falls inside a '…' / "…" / `…` quote span earlier
+// on the same line. Used to reject a `//` that is really part of a URL or a
+// string ("http://", "a // b" in a template). Single-line scan; comments span
+// at most one physical line for our purposes.
+function indexInsideQuote(line: string, at: number): boolean {
+  let quote: string | undefined
+  for (let i = 0; i < at; i++) {
+    const ch = line[i]!
+    if (quote) {
+      if (ch === quote) {
+        quote = undefined
+      } else if (ch === '\\') {
+        i++
+      }
+    } else if (ch === "'" || ch === '"' || ch === '`') {
+      quote = ch
+    }
+  }
+  return quote !== undefined
+}
+
+// SPDX / license / copyright boilerplate — exempt from the process-narrative
+// scan. These header lines carry years and standardized phrasing that can
+// resemble a `part N` / bare-`#` co-occurrence, and they are never the leak
+// this guard targets.
+const LICENSE_HEADER_RE =
+  /\b(?:SPDX-License-Identifier|Copyright\b|\(c\)\s*\d{4}|Licensed under)\b/i
+
+// Tier-1 — confident, block-on-sight process-narrative shapes.
+//
+// A named CHANGE EFFORT — the noun a process narrative is "step N OF". TWO tiers
+// (a fleet-wide HARD block biases toward a false NEGATIVE — a missed rephrased
+// defect, recoverable in review — over a false POSITIVE that blocks an unrelated
+// commit; the noun sets are kept TIGHT for that reason):
+//   STRICT — pure PR-process jargon with NO software-construct meaning, usable
+//     BARE in the `step N of …` arm. EXCLUDES `pass` / `migration` / `cleanup` /
+//     `rework` / `refactor` — those name real code constructs (a render/GC/
+//     optimization PASS, a schema MIGRATION, the auth REFACTOR) and a legit
+//     algorithm step is genuinely a "step N of the migration".
+//   QUALIFIED — the strict set PLUS the construct-colliding words, matched ONLY
+//     when a `perf`/`net`/`opt` adjective precedes (the QUEST_RE idiom): `the
+//     perf rework` / `net cleanup` is unambiguous process narrative, while bare
+//     `the rework` / `the cleanup` / `optimization pass` is not.
+const EFFORT_NOUN = '(?:quest|crusade|odyssey)'
+const EFFORT_NOUN_QUALIFIED =
+  '(?:quest|crusade|odyssey|rework|refactor|effort|cleanup|sprint|overhaul)'
+
+// `step <N>` is the headline shape (the motivating `//! Step 4 of the net perf
+// quest` / `# … given step 2 already reuses …` defects). Two genuine signals,
+// BOTH absent from the legit procedural steps real source proves benign:
+//   (A) `step N <CHANGE-VERB>` — a past-tense change-verb (or the explicit
+//       `replaces`/`reuses` present) DIRECTLY after the ordinal (`step 2
+//       replaced`, `step 2 switched`), tolerating an interposed bracket-ref (the
+//       motivating `Step 2 ([#5638]) replaced …`). The verb list is bounded to
+//       real inflections — NOT open `\w*` stems (so `address`/`movie`/`folder`/
+//       `changeset` never match) — and excludes the bare imperative (`add`/
+//       `move`/`drop`), which is ordinary algorithm-step prose, not history.
+//   (B) `step N of [the] <STRICT effort noun>` — a step OF a named internal
+//       quest (`step 4 of the quest`). A legit `step 1 of the migration` /
+//       `step N of every publish attempt` uses a construct/stable noun, not the
+//       strict jargon set, so it passes.
+//
+// DELIBERATELY NOT Tier-1 (would false-positive fleet-wide; calibrated against
+// the full committed source of two real repos): a bare comment-LEADING `^Step
+// N`, a `Step N —` dash heading, `step N of <STABLE procedure>`, a bare
+// imperative `step N <verb>`, and a pronoun-displaced `step N we <verb>`. Real
+// source + ordinary algorithm narration use all of those for TIMELESS prose
+// (`## Step 1 — Build`, `// Step 1: ask the remote …`, `step 2 then move to the
+// next node`). A bare mid-sentence `step N` (`increment by step 2`) likewise
+// falls through to the Tier-2 co-occurrence path. The cost is a tolerated false
+// NEGATIVE on a pronoun-rephrased defect (`In step 4 we added …`) — accepted, by
+// the bias above; QUEST_RE still catches the `… perf <effort>` framing.
+const STEP_VERB =
+  '(?:replaced|replaces|reused|reuses|added|introduced|removed|changed|landed|switched|rewrote|refactored|moved|dropped|converted|eliminated|reworked|became|already)'
+const STEP_SEQ_RE = new RegExp(
+  `\\bstep\\s+\\d+(?:\\s*[([]+#\\d+[)\\]]+)?\\s+${STEP_VERB}\\b` +
+    `|\\bstep\\s+\\d+\\s+of\\s+(?:the\\s+)?(?:[\\w-]+\\s+){0,2}${EFFORT_NOUN}\\b`,
+  'i',
+)
+
+// `quest` (and its qualified effort-noun siblings) means PR-process only in the
+// idiom "<perf/net/opt> <effort-noun>" — the bare noun is a legitimate domain
+// word (a "quests" table, a game's quest log, `the side quest`). Require the
+// process qualifier (`perf rework`, `the net effort`) or an adjacent issue ref;
+// a bare `\bquest\b` or `the <any-word> quest` is too broad (it would block `the
+// daily quest reward system`).
+const QUEST_RE = new RegExp(
+  `\\b(?:\\w+\\s+)?(?:perf|performance|net|opt(?:imization)?)\\s+${EFFORT_NOUN_QUALIFIED}\\b` +
+    `|\\bquest\\b\\s*\\(?#?\\d` +
+    `|\\bthe\\s+(?:perf|performance|net|opt(?:imization)?)\\s+${EFFORT_NOUN_QUALIFIED}\\b`,
+  'i',
+)
+
+// `phase`/`part <N>` are common ordinary words ("phase shift", "for the most
+// part", "part 1 of the header"), so they are NOT bare-ordinal Tier-1. They
+// reach a block only via the Tier-2 co-occurrence path (a `#N` or a strong
+// process verb on the same line). Kept as a named constant for the word set.
+
+// Tier-1 process-framed PR/issue cross-references. Keeps ONLY the unambiguous
+// GitHub-PR-process SYNTAX — shapes that never appear in timeless rationale
+// (verified: zero false positives across two real repos' committed source):
+//   • GitHub closing keywords `resolves / closes / fixes #N` (pure PR boilerplate).
+//   • process verbs `follow-up to #N`, `reverts #N`, `cherry-picked #N`.
+//   • verb-framed `(added|fixed|resolved|introduced|landed|shipped|merged) in #N`,
+//     now requiring the LITERAL `#` (the old optional `#?` matched bare
+//     dates/versions — `fixed in 26`, `resolved in 14.15.1`, `as of 2026-…`).
+//     `as of` is dropped from the verb list entirely (a data-currency stamp).
+//
+// DELIBERATELY DROPPED from Tier-1 (now block only via the Tier-2 co-occurrence
+// path): the bare parenthesised/bracketed `(#N)` / `[#N]` and the bare `PR #N` /
+// `see PR #N` arms. Real source proves those are NOT process narrative — they
+// are ENUMERATION ordinals (`devEngines.runtime (#1) → .node-version (#2)`),
+// UPSTREAM provenance citations (`Flag added in Node 9.6.0 (#14253)`, `(PR
+// #57038)`), and legitimate regression-guard / tracking cross-refs (`Regression
+// guard for greptile feedback on PR #36`). The motivating defects still block:
+// `Step 4 of the net perf quest (#5419)` via QUEST_RE and `Step 2 ([#5638])
+// replaced …` via STEP_SEQ_RE — neither relies on the bracketed-ref arm.
+const PROCESS_ISSUE_REF_RE =
+  /\b(?:resolves|closes|fixes)\s+#\d+\b|\b(?:follow[- ]?up to|reverts?|cherry[- ]?picked)\s+#\d+\b|\b(?:added|fixed|resolved|introduced|landed|shipped|merged)\s+in\s+#\d+\b/i
+
+// Tier-2: a lone `#<N>` mention blocks ONLY when a STRONG, unambiguous process
+// word co-occurs on the same line. The word set is deliberately narrow — it
+// excludes `commit` / `part` / `phase` / `step` / `PR`, which collide with
+// ordinary prose ("commit #200 of the batch", "part 3 of the header", a `#N`
+// count) — keeping only verbs that are overwhelmingly git/PR-process:
+// merged / landed / shipped / revert / rebase / squash / cherry-pick /
+// follow-up, plus the perf-qualified `quest`.
+const LONE_ISSUE_REF_RE = /#\d+\b/
+// Match git/PR process verbs: follow-up, merged, landed, shipped, reverts,
+// rebased, squashed, cherry-picked — the words that signal a commit message
+// is talking about its own change history rather than general prose.
+const PROCESS_WORD_RE =
+  /\b(?:follow[- ]?up|merged|landed|shipped|reverts?|rebase[ds]?|squash(?:ed)?|cherry[- ]?pick(?:ed)?)\b/i
+
+// Upstream-provenance exemption for the Tier-2 lone-`#N` path: a `#N` whose line
+// cites an UPSTREAM Node fact is timeless evidence, not nub's own PR
+// change-history. The motivating real case: `#51575 ("add EventSource
+// Client"). Landed on the 22.x line at 22.3.0` (a Node issue + the Node release
+// line it landed on). Scoped to Tier-2 ONLY (the lone-`#N` path); the Tier-1
+// GitHub-keyword shapes (`resolves #N`, `landed in #N`) are PR-process syntax
+// regardless of any version mention.
+//
+// SHAPE-based + Node-SPECIFIC — NOT a bare `\bnode\b` (this is a Node tool;
+// "node" appears in most nub-internal comments, so a bare match would exempt
+// genuine process lines like `merged #88 into the node-resolver rewrite`). The
+// release-line arm requires a TWO-digit `\d\d.x` — Node's line is 18–26, so
+// `22.x` matches but a single-digit `2.x` (nub's own / another tool's release
+// line — `shipped #5 on the 2.x branch`) does NOT, and still blocks.
+const UPSTREAM_CONTEXT_RE = /\bnode\s+v?\d+\.\d+|\bnodejs\/node\b|\b\d\d\.x\b/i
+
+// Returns the comment lines that carry a PR-process / quest / step-N
+// narrative. One hit per offending line; the `line` field is the raw source
+// line (for the file:line report), matched against its extracted comment text.
+export const scanPrProcessComments = (text: string): LineHit[] => {
+  const hits: LineHit[] = []
+  const lines = splitLines(text)
+  let block = false
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!
+    const extracted = commentTextOf(line, { block })
+    block = extracted.block
+    const comment = extracted.comment.trim()
+    if (!comment) {
+      continue
+    }
+    // Per-line opt-out + license/header exemption.
+    if (
+      lineIsSuppressed(line, 'pr-process-comment') ||
+      LICENSE_HEADER_RE.test(comment)
+    ) {
+      continue
+    }
+    const tier1 =
+      STEP_SEQ_RE.test(comment) ||
+      QUEST_RE.test(comment) ||
+      PROCESS_ISSUE_REF_RE.test(comment)
+    // Tier-2: a lone `#N` blocks ONLY alongside a strong process word — unless
+    // the line is upstream-Node provenance (a `#N` + `Node`/`N.x` release-line
+    // context), which is a citation, not nub's PR change-history.
+    const tier2 =
+      LONE_ISSUE_REF_RE.test(comment) &&
+      PROCESS_WORD_RE.test(comment) &&
+      !UPSTREAM_CONTEXT_RE.test(comment)
+    if (tier1 || tier2) {
+      hits.push({ lineNumber: i + 1, line })
+    }
+  }
+  return hits
+}
+
+// ── AI attribution scanner ─────────────────────────────────────────
+//
+// The detector lives in the gate-free `ai-attribution.mts` so the
+// Claude-side no-github-ai-attribution-guard can import it on the
+// operator's Node (helpers.mts carries a Node-25 hard-exit gate). Re-export
+// here so the commit-msg / pre-push consumers + their tests keep their
+// existing import surface.
+export {
+  AI_ATTRIBUTION_RE,
+  containsAiAttribution,
+  stripAiAttribution,
+} from './ai-attribution.mts'
 
 // ── Scan-report-internal label scrubber ────────────────────────────
 //
@@ -1155,7 +1543,7 @@ export function runStagedTestsReminder(
   // spawnSync sets `signal` (and `error.code === 'ETIMEDOUT'`) on a timeout.
   if (
     r.signal === 'SIGKILL' ||
-    (r.error as { code?: string } | undefined)?.code === 'ETIMEDOUT'
+    (r.error as { code?: string | undefined } | undefined)?.code === 'ETIMEDOUT'
   ) {
     // Emit the promised note: this is a fail-open SKIP at the budget, not a
     // failure and not a hang. The reaching-the-ceiling case is exactly when an
@@ -1326,6 +1714,19 @@ export const scanAiConfigPoison = (text: string): LineHit[] => {
 // catastrophic-deletion check at pre-commit time — the index here IS the
 // about-to-commit tree, post-churn — so no commit path can land a wipe.
 //
+// Correctly scoped for a surgical `git commit --only <paths>` / `-o <paths>`
+// commit — VERIFIED, not assumed (see
+// test/repo/integration/git-hooks/pre-commit.test.mts): git builds a
+// TEMPORARY index containing only the named paths layered onto HEAD and
+// points `GIT_INDEX_FILE` at it before invoking this hook. `gitLines` (and
+// every other `git`/`gitOrThrow`/`spawnSync` call in this file) spawns with no
+// `env` override, so it inherits `process.env` — including `GIT_INDEX_FILE` —
+// unmodified. `git diff --cached` therefore reads foreign deletions staged
+// elsewhere in the working index as OUT OF SCOPE; they never reach this
+// count. Do not "fix" a reported over-block here without first reproducing it
+// with a real `git commit --only` — the temp-index scoping is git's own
+// mechanism, not something this hook implements or could break by itself.
+//
 // Thresholds kept in sync with .claude/hooks/fleet/mass-delete-guard/index.mts.
 const DELETE_FLOOR = 50
 const DELETE_RATIO = 0.75
@@ -1377,7 +1778,8 @@ const MERGE_STATE_MARKERS = ['MERGE_HEAD', 'CHERRY_PICK_HEAD', 'REVERT_HEAD']
  * stays armed — failing toward the stricter check.
  */
 export function mergeInProgress(): boolean {
-  for (const marker of MERGE_STATE_MARKERS) {
+  for (let i = 0, { length } = MERGE_STATE_MARKERS; i < length; i += 1) {
+    const marker = MERGE_STATE_MARKERS[i]!
     const markerPath = git('rev-parse', '--git-path', marker)
     if (markerPath && existsSync(markerPath)) {
       return true

@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SocketDev/github-settings.schema.json",
+  "title": "fleet GitHub repository settings posture",
+  "description": "Fleet-canonical desired posture for GitHub repository governance settings that aren't covered by lint-github-settings.mts (which owns the PATCH /repos/{owner}/{repo} surface: merge policy, features, branch protection). This file owns the governance surfaces reachable only via separate endpoints or only via the Settings UI — interaction limits and pull-request limits. The conform check reads this posture, compares each fleet repo's live settings, and re-asserts via `gh api` where a REST endpoint exists.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion"],
+  "properties": {
+    "$schema": {
+      "description": "JSON Schema reference for editor autocompletion. Conventionally `./github-settings.schema.json` — config and schema live side-by-side in `.config/fleet/`.",
+      "type": "string"
+    },
+    "description": {
+      "description": "Human-readable note about what this posture declares. Read by humans, not parsed.",
+      "type": "string"
+    },
+    "schemaVersion": {
+      "description": "Schema version. Bump on breaking changes; readers gate on it.",
+      "const": 1,
+      "type": "number"
+    },
+    "interactionLimit": {
+      "description": "Temporary interaction restriction posture (Settings → Moderation → Interaction limits). GitHub interaction limits are EXPIRY-BOUND — they auto-lapse after the chosen window. This declares the desired STANDING posture; the conform check re-asserts it (resetting the expiry clock) whenever the live limit is absent, lapsed, or weaker than declared. NOTE: interaction limits cannot be set on PRIVATE repositories (GitHub returns 405); the check skips private repos with a manual-verification note. Omit this block to declare 'no interaction limit desired'.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["limit", "expiry"],
+      "properties": {
+        "limit": {
+          "description": "Which accounts are temporarily blocked from interacting. `existing_users` blocks brand-new accounts; `contributors_only` limits to prior contributors; `collaborators_only` limits to repository collaborators. Maps to the `limit` field of PUT /repos/{owner}/{repo}/interaction-limits.",
+          "type": "string",
+          "enum": ["collaborators_only", "contributors_only", "existing_users"]
+        },
+        "expiry": {
+          "description": "How long the interaction limit stays active before GitHub auto-lifts it. Maps to the `expiry` field of PUT /repos/{owner}/{repo}/interaction-limits. The conform check re-asserts to reset this window when the live limit has lapsed.",
+          "type": "string",
+          "enum": [
+            "one_day",
+            "one_month",
+            "one_week",
+            "six_months",
+            "three_days"
+          ]
+        }
+      }
+    },
+    "pullRequestLimit": {
+      "description": "Pull-request limit posture (Settings → General → Pull Requests → 'Limit open pull requests from users without write access' + 'Maximum open pull requests per user'). As of this writing GitHub exposes NO stable REST endpoint for these fields — they are not present on GET /repos/{owner}/{repo} and have no dedicated endpoint. This block therefore captures INTENT only: the conform check reports the desired values and emits a manual-verification note pointing at the Settings UI; it never PUTs them. Re-probe `gh api repos/{owner}/{repo}` for a future field before wiring enforcement.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxOpenPerUser", "restrictToWriteAccess"],
+      "properties": {
+        "maxOpenPerUser": {
+          "description": "Maximum simultaneous open pull requests per user (GitHub UI range 1–1000, default 5). Intent-only — no REST endpoint to enforce.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "restrictToWriteAccess": {
+          "description": "Whether to limit open pull requests from users without write access. Intent-only — no REST endpoint to enforce.",
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

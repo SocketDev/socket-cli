@@ -5,6 +5,8 @@
 // reading stdin). The hook's index.mts and its unit test both import
 // PROSE_PATTERNS from here.
 
+import { HONESTY_FRAMING_RE } from '../_shared/honesty-framing.mts'
+
 export interface ProsePattern {
   readonly label: string
   readonly regex: RegExp
@@ -37,11 +39,11 @@ export const PROSE_PATTERNS: readonly ProsePattern[] = [
   },
   {
     label: 'self-congratulatory honesty framing',
-    // Meta-commentary on one's own candor ("to be honest", "the honest
-    // residual", "if I'm honest", "honestly,") and the "(not) papered over"
-    // self-defense. State the fact; the honesty is assumed, not announced.
-    regex:
-      /\b(?:to be honest|honest(?:ly)?\s+(?:residual|answer|truth|assessment)|the honest\b|if (?:I'm|we're|i am|we are) honest|papered over)\b/i,
+    // The honesty matcher is the shared _shared/honesty-framing.mts source —
+    // meta-commentary on one's own candor ("to be honest", "honestly", the
+    // framing phrases) plus the "papered over" self-defense. State the fact;
+    // the honesty is assumed, not announced.
+    regex: HONESTY_FRAMING_RE,
     why: 'Announcing your own honesty is throat-clearing. Drop "honest"/"papered over" framing and state the fact plainly.',
   },
 ]
@@ -77,12 +79,14 @@ export const CHANGELOG_IMPL_PATTERNS: readonly ProsePattern[] = [
   },
   {
     label: 'version-bump phrasing',
+    // Matches "bumped/upgraded/pinned … to v1.2" — implementation-detail version deltas.
     regex:
       /\b(?:bump(?:ed|s|ing)?|upgrad(?:e|ed|ing)|pin(?:ned)?)\b[^\n]*\bto\b\s*v?\d+\.\d+/i,
     why: 'Version-bump phrasing — implementation detail. State what the user can now do or what stopped breaking, not the version delta.',
   },
   {
     label: '"resolved by" / mechanism tail',
+    // Matches "resolved by", "fixed by upgrading/bumping/pinning", or "by upgrading/bumping/pinning".
     regex:
       /\bresolved by\b|\bfixed by (?:upgrad|bump|pin)|\bby (?:upgrad|bump|pin)/i,
     why: 'The "resolved by upgrading X" tail explains the how. Cut it — the reader cares what changed, not the mechanism.',

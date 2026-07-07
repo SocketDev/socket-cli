@@ -1,9 +1,0 @@
-{
-  "name": "socket-oxlint-plugin",
-  "private": true,
-  "type": "module",
-  "main": "./index.mts",
-  "exports": {
-    ".": "./index.mts"
-  }
-}

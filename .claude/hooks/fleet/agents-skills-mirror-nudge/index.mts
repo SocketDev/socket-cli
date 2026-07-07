@@ -1,39 +1,27 @@
-#!/usr/bin/env node
-// Claude Code Stop hook — agents-skills-mirror-nudge.
-//
-// The cross-tool `.agents/skills/` mirror is a DERIVED artifact: the generator
-// `scripts/fleet/gen-agents-skills-mirror.mts` hoists each segmented
-// `.claude/skills/{fleet,repo}/<name>/` skill into a flat `.agents/skills/`
-// view so Codex + OpenCode (which discover skills one level deep) find every
-// fleet/repo skill. The `agents-skills-mirror-is-current` CI check reds when
-// the committed mirror drifts from the source.
-//
-// A cascade regenerates the mirror in the same wave that copies a skill source
-// (sync-scaffolding's fix-agents-mirror.mts), so the cascade path can't strand
-// it. This hook is the backstop for the OTHER path: a hand-edited skill
-// (especially a repo-tier `.claude/skills/repo/<name>/` skill, which has no
-// template twin to trip dogfood-cascade-nudge). At turn-end, if this session
-// touched any `.claude/skills/**` file AND the mirror now drifts, it nudges to
-// regenerate — catching the stale mirror BEFORE it reaches CI.
-//
-// Exit codes:
-//   0 — always. Informational Stop nudge; never blocks (the turn is over).
+/**
+ * @file Claude Code Stop hook — agents-skills-mirror-nudge. The cross-tool
+ *   `.agents/skills/` mirror is a DERIVED artifact: the generator
+ *   `scripts/fleet/gen-agents-skills-mirror.mts` hoists each segmented
+ *   `.claude/skills/{fleet,repo}/<name>/` skill into a flat `.agents/skills/`
+ *   view so Codex + OpenCode (which discover skills one level deep) find every
+ *   fleet/repo skill. The `agents-skills-mirror-is-current` CI check reds when
+ *   the committed mirror drifts from the source. A cascade regenerates the
+ *   mirror in the same wave that copies a skill source (sync-scaffolding's
+ *   fix-agents-mirror.mts), so the cascade path can't strand it. This hook is
+ *   the backstop for the OTHER path: a hand-edited skill (especially a
+ *   repo-tier `.claude/skills/repo/<name>/` skill, which has no template twin
+ *   to trip dogfood-cascade-nudge). At turn-end, if this session touched any
+ *   `.claude/skills/**` file AND the mirror now drifts, it nudges to regenerate
+ *   — catching the stale mirror BEFORE it reaches CI.
+ */
 
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
-export async function drainStdin(): Promise<void> {
-  await new Promise<void>(resolve => {
-    process.stdin.on('data', () => {})
-    process.stdin.on('end', () => resolve())
-    process.stdin.on('error', () => resolve())
-    setTimeout(() => resolve(), 200)
-  })
-}
+import { defineHook, notify, runHook } from '../_shared/guard.mts'
 
 export function getProjectDir(): string {
   return process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
@@ -72,10 +60,10 @@ export function parseChangedPaths(
 // dir reports nothing (every git call fails, so the scan finds no match).
 export function touchedSkillSource(repoDir: string): boolean {
   for (const args of [
-    ['diff', '--name-only', 'origin/HEAD...HEAD'],
+    ['diff', '--name-only', 'origin/HEAD…HEAD'],
     ['status', '--porcelain'],
   ]) {
-    const r = spawnSync('git', args, { cwd: repoDir, timeout: 5_000 })
+    const r = spawnSync('git', args, { cwd: repoDir, timeout: 5000 })
     if (r.status !== 0) {
       continue
     }
@@ -108,29 +96,31 @@ export function mirrorIsStale(repoDir: string): boolean {
   return r.status === 1
 }
 
-async function main(): Promise<void> {
-  await drainStdin()
-  const repoDir = getProjectDir()
-  if (!touchedSkillSource(repoDir)) {
-    process.exit(0)
-  }
-  if (!mirrorIsStale(repoDir)) {
-    process.exit(0)
-  }
-  const lines = [
-    '[agents-skills-mirror-nudge] Edited a .claude/skills/ source but the',
-    '  derived .agents/skills/ mirror is stale (Codex + OpenCode read the',
-    '  mirror, not .claude/skills/). Regenerate it so CI stays green:',
-    '',
-    '    node scripts/fleet/gen-agents-skills-mirror.mts',
-    '',
-    '  Then commit the regenerated .agents/skills/ alongside the skill edit.',
-    '',
-  ]
-  process.stderr.write(lines.join('\n') + '\n')
-  process.exit(0)
-}
+export const hook = defineHook({
+  check: () => {
+    const repoDir = getProjectDir()
+    if (!touchedSkillSource(repoDir)) {
+      return undefined
+    }
+    if (!mirrorIsStale(repoDir)) {
+      return undefined
+    }
+    return notify(
+      [
+        '[agents-skills-mirror-nudge] Edited a .claude/skills/ source but the',
+        '  derived .agents/skills/ mirror is stale (Codex + OpenCode read the',
+        '  mirror, not .claude/skills/). Regenerate it so CI stays green:',
+        '',
+        '    node scripts/fleet/gen-agents-skills-mirror.mts',
+        '',
+        '  Then commit the regenerated .agents/skills/ alongside the skill edit.',
+        '',
+      ].join('\n'),
+    )
+  },
+  event: 'Stop',
+  scope: 'convention',
+  type: 'nudge',
+})
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  void main()
-}
+void runHook(hook, import.meta.url)

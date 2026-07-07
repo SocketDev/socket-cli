@@ -1,21 +1,21 @@
 /**
- * triaging-findings engine CLI — the deterministic ingest + output assembly the
- * skill drives between its agent phases. The interview, dedup judgment, verifier
- * votes, severity derivation, and rationale prose stay agent-driven; this owns
- * the field normalization, id assignment, the sort, the summary counts, and the
- * every-finding-once invariant so a count can't be fabricated and a finding
- * can't be silently dropped.
+ * Triaging-findings engine CLI — the deterministic ingest + output assembly the
+ * skill drives between its agent phases. The interview, dedup judgment,
+ * verifier votes, severity derivation, and rationale prose stay agent-driven;
+ * this owns the field normalization, id assignment, the sort, the summary
+ * counts, and the every-finding-once invariant so a count can't be fabricated
+ * and a finding can't be silently dropped.
  *
  * Subcommands:
- *   ingest --from <records.json> --source <label> [--out <f>]
- *       normalize raw records via the alias map, assign f001.. ids, compute
- *       missing_fields, wrap unlocatables in the fixed envelope. Reads a bare
- *       records[] array or { findings|results|issues|vulnerabilities: [...] }.
+ * ingest --from <records.json> --source <label> [--out <f>]
+ * normalize raw records via the alias map, assign f001.. ids, compute
+ * missing_fields, wrap unlocatables in the fixed envelope. Reads a bare
+ * records[] array or { findings|results|issues|vulnerabilities: [...] }.
  *
- *   report --from <triaged.json> [--out-json <f>]
- *       sort the triaged findings, compute the summary, assert every input id
- *       appears exactly once, emit the TRIAGE.json envelope + the terminal
- *       summary. --from carries { context, findings, input_ids }.
+ * Report --from <triaged.json> [--out-json <f>]
+ * sort the triaged findings, compute the summary, assert every input id
+ * appears exactly once, emit the TRIAGE.json envelope + the terminal
+ * summary. --from carries { context, findings, input_ids }.
  */
 
 import process from 'node:process'
@@ -46,12 +46,11 @@ function extractRecords(parsed: unknown): RawRecord[] {
   }
   if (parsed && typeof parsed === 'object') {
     for (let i = 0, { length } = CONTAINER_KEYS; i < length; i += 1) {
-      const key = CONTAINER_KEYS[i]!;
+      const key = CONTAINER_KEYS[i]!
       const v = (parsed as Record<string, unknown>)[key]
       if (Array.isArray(v)) {
         return v as RawRecord[]
       }
-    
     }
   }
   throw new Error(
@@ -91,8 +90,7 @@ export function cmdReport(argv: readonly string[]): number {
     input_ids?: string[] | undefined
   }
   const findings = parsed.findings ?? []
-  const inputIds =
-    parsed.input_ids ?? findings.map(f => f.id)
+  const inputIds = parsed.input_ids ?? findings.map(f => f.id)
   const env = buildTriageEnvelope({
     context: parsed.context ?? {},
     findings,

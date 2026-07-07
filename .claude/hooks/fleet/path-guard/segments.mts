@@ -17,12 +17,12 @@
 // some builders.
 export const STAGE_SEGMENTS = new Set([
   'Compressed',
+  'downloaded',
   'Final',
   'Optimized',
   'Release',
   'Stripped',
   'Synced',
-  'downloaded',
   'wasm',
 ])
 
@@ -46,6 +46,7 @@ export const MODE_SEGMENTS = new Set(['dev', 'prod', 'shared'])
 export const KNOWN_SIBLING_PACKAGES = new Set([
   'acorn',
   'bin-infra',
+  'bin-stub-builder',
   'binflate',
   'binject',
   'binpress',
@@ -66,7 +67,6 @@ export const KNOWN_SIBLING_PACKAGES = new Set([
   'package-builder',
   'react',
   'renderer',
-  'stubs-builder',
   'ultraviolet',
   'ultraviolet-builder',
   'yoga',

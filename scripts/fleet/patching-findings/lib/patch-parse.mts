@@ -100,15 +100,16 @@ export function parseReviewResult(text: string): ParsedReview {
   const outOfScopeHunks =
     hunksRaw === '' || hunksRaw.toLowerCase() === 'none'
       ? []
-      : hunksRaw.split(',').map(s => s.trim()).filter(Boolean)
+      : hunksRaw
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean)
   // `REASON:` then group 1 lazily captures everything up to the first blank
   // line (a `\n` + optional whitespace + `\n`) or end of input.
   const reasonMatch = /REASON:\s*([\s\S]+?)(?:\n\s*\n|$)/iu.exec(text)
   const reviewReason = reasonMatch ? reasonMatch[1]!.trim() : ''
   const contradiction =
-    review === 'ACCEPT' &&
-    styleScore !== undefined &&
-    styleScore < STYLE_FLOOR
+    review === 'ACCEPT' && styleScore !== undefined && styleScore < STYLE_FLOOR
   return {
     out_of_scope_hunks: outOfScopeHunks,
     review,
@@ -203,9 +204,7 @@ export function renderPatchesMd(input: {
   lines.push('## Skipped')
   for (const o of input.outcomes) {
     if (!o.applied && o.review !== 'REJECT') {
-      lines.push(
-        `- ${o.id} ${o.title ?? ''} — ${o.skip_reason ?? o.status}`,
-      )
+      lines.push(`- ${o.id} ${o.title ?? ''} — ${o.skip_reason ?? o.status}`)
     }
   }
   return `${lines.join('\n')}\n`

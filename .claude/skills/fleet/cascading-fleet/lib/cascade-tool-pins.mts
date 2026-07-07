@@ -1,9 +1,8 @@
 #!/usr/bin/env node
-/**
+/*
  * @file Tool-version layered-pin cascade orchestrator — the EXECUTABLE law for
  *   the "bump a core/security tool (pnpm, zizmor, sfw, …) and thread it through
- *   the fleet" procedure that the socket-registry `updating-workflows` SKILL
- *   describes in prose. Chains the existing pieces into one runnable command,
+ *   the fleet" procedure. Chains the existing pieces into one runnable command,
  *   with the CI-green gate enforced in code (not left to a human to remember).
  *   THE FLOW (and WHY this order — the dogfood-first-but-shared-CI nuance): the
  *   wheelhouse normally dogfoods itself first, but for CI it CONSUMES the
@@ -27,9 +26,7 @@
  *      propagate.
  *   4. Layer 4: the registry's `_local-not-for-reuse-*` pins (folded into the
  *      bump-until-stable convergence) point at the propagation SHA.
- *   5. Re-pin the wheelhouse template's `uses:` SHAs
- *      (`scripts/fleet/sync-registry-workflow-pins.mts --fix`).
- *   6. Cascade the repinned template fleet-wide (`cascade-template.mts`) +
+ *   5. Cascade the tool-version bump fleet-wide (`cascade-template.mts`) +
  *      reconcile lockfiles. DEFAULT = REPORT (read-only). The default run
  *      COPIES NOTHING and WRITES NOTHING — it inspects current-vs-latest tool
  *      versions, runs the registry bump in `--dry-run` (which lists stale pins
@@ -51,6 +48,7 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 const logger = getDefaultLogger()
@@ -101,7 +99,7 @@ type RunResult = { status: number; stdout: string; stderr: string }
 
 // git context vars a parent git invocation exports — strip them for any command
 // run against a DIFFERENT repo via `-C`, or it operates on the ambient repo's
-// git dir. (Same guard as sync-registry-workflow-pins.gitEnvForOtherRepo.)
+// git dir.
 const GIT_CONTEXT_VARS = [
   'GIT_DIR',
   'GIT_INDEX_FILE',
@@ -125,8 +123,9 @@ function otherRepoEnv(): NodeJS.ProcessEnv {
 function run(
   cmd: string,
   args: string[],
-  opts?: { cwd?: string | undefined; env?: NodeJS.ProcessEnv | undefined },
+  options?: { cwd?: string | undefined; env?: NodeJS.ProcessEnv | undefined },
 ): RunResult {
+  const opts = { __proto__: null, ...options } as typeof options
   const r = spawnSync(cmd, args, {
     cwd: opts?.cwd ?? REPO_ROOT,
     env: opts?.env ?? process.env,
@@ -233,9 +232,9 @@ function ciConclusionForSha(sha: string): string {
     return `unknown (gh: ${r.stderr.trim().slice(0, 120)})`
   }
   let runs: Array<{
-    workflowName?: string
-    status?: string
-    conclusion?: string
+    workflowName?: string | undefined
+    status?: string | undefined
+    conclusion?: string | undefined
   }>
   try {
     runs = JSON.parse(r.stdout || '[]')
@@ -376,7 +375,7 @@ function execute(): void {
     )
   }
 
-  logger.log('[1/6] bumping external-tools.json to soak-cleared latest…')
+  logger.log('[1/5] bumping external-tools.json to soak-cleared latest…')
   // --apply flushes the bump (default is dry-run).
   const bump = run('node', [
     path.join(REPO_ROOT, 'scripts/repo/update-external-tools.mts'),
@@ -390,7 +389,7 @@ function execute(): void {
   }
 
   logger.log(
-    '[2/6] running socket-registry layered bump (cascade-workflows.mts)…',
+    '[2/5] running socket-registry layered bump (cascade-workflows.mts)…',
   )
   const cascade = run(
     'node',
@@ -421,7 +420,7 @@ function execute(): void {
         'origin/main — aborting before any fleet propagation.',
     )
   }
-  logger.log(`[3/6] CI-green gate on propagation SHA ${prop.slice(0, 12)}…`)
+  logger.log(`[3/5] CI-green gate on propagation SHA ${prop.slice(0, 12)}…`)
   const conclusion = ciConclusionForSha(prop)
   if (conclusion !== 'success') {
     throw new Error(
@@ -437,28 +436,11 @@ function execute(): void {
   // convergence — it repins _local to the new reusable-workflow SHAs in the
   // same loop, so by here _local already points at the propagation SHA.
 
-  logger.log(
-    '[5/6] repinning template workflow SHAs (sync-registry-workflow-pins.mts --fix)…',
-  )
-  const repin = run('node', [
-    path.join(REPO_ROOT, 'scripts/fleet/sync-registry-workflow-pins.mts'),
-    '--fix',
-  ])
-  logger.log(repin.stdout.trimEnd())
-  // --fix exits 0 (clean/fixed) or 1 (drift found+fixed); a higher code is real.
-  if (repin.status !== 0 && repin.status !== 1) {
-    throw new Error(
-      `sync-registry-workflow-pins.mts failed:\n${repin.stderr.slice(-1500)}`,
-    )
-  }
-
   logger.log('')
   logger.log(
-    `[6/6] template repinned to ${prop.slice(0, 12)}. NEXT (manual, highest blast radius):`,
+    `[5/5] registry propagation SHA ${prop.slice(0, 12)} is CI-green. NEXT (manual, highest blast radius):`,
   )
-  logger.log(
-    '  - Commit the template workflow-pin + external-tools.json changes here.',
-  )
+  logger.log('  - Commit the external-tools.json changes here.')
   logger.log(
     '  - Cascade fleet-wide: node .claude/skills/fleet/cascading-fleet/lib/cascade-template.mts <sha>',
   )
@@ -467,7 +449,7 @@ function execute(): void {
   )
   logger.log('')
   logger.log(
-    'Stopped before the fleet-wide push — review the template diff, then cascade.',
+    'Stopped before the fleet-wide push — review the external-tools.json diff, then cascade.',
   )
 }
 
@@ -490,9 +472,7 @@ if (process.argv[1]?.endsWith('cascade-tool-pins.mts')) {
   try {
     main()
   } catch (e) {
-    logger.fail(
-      `cascade-tool-pins: ${e instanceof Error ? e.message : String(e)}`,
-    )
+    logger.fail(`cascade-tool-pins: ${errorMessage(e)}`)
     process.exitCode = 1
   }
 }

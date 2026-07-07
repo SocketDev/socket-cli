@@ -1,0 +1,24 @@
+#!/bin/sh
+# Git pre-commit dispatcher (Option A). core.hooksPath points at .git-hooks/;
+# fleet/ and repo/ are peers under it. Runs the fleet hook first, then the
+# repo hook if present. Either returning non-zero blocks the commit (escape
+# with --no-verify, gated by the `Allow no-verify bypass` phrase). No stdin.
+
+# HUSKY=0 skips the whole .git-hooks/ chain for this invocation — the
+# husky-compatible escape (`HUSKY=0 git commit …`; export it for a session).
+# Heavier than --no-verify: it covers every hook type, including ones git
+# gives no flag for (post-commit). Loud and all-or-nothing by design;
+# per-step env kill-switches stay banned. For Claude sessions the same
+# `Allow no-verify bypass` phrase gates it (no-revert-guard).
+if [ "${HUSKY-}" = "0" ]; then
+  echo "[git-hooks] HUSKY=0 — skipping pre-commit."
+  exit 0
+fi
+
+DIR=$(dirname "$0")
+if [ -x "$DIR/fleet/pre-commit" ]; then
+  "$DIR/fleet/pre-commit" "$@" || exit $?
+fi
+if [ -x "$DIR/repo/pre-commit" ]; then
+  "$DIR/repo/pre-commit" "$@" || exit $?
+fi

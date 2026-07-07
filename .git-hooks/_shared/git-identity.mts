@@ -34,7 +34,9 @@ export interface IdentityPolicy {
 }
 
 interface RawConfig {
-  denylist?: { emails?: string[]; names?: string[] } | undefined
+  denylist?:
+    | { emails?: string[] | undefined; names?: string[] | undefined }
+    | undefined
   canonical?: GitAuthor | undefined
   aliases?: GitAuthor[] | undefined
 }

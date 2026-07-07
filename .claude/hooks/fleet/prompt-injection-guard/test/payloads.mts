@@ -19,20 +19,20 @@ export function joinWords(parts: readonly string[]): string {
 // Swap Latin a/e for their Cyrillic homoglyphs (U+0430 / U+0435) so the
 // word reads identically to a human but trips the normalizer's fold.
 export function cyrillic(word: string): string {
-  const a = String.fromCodePoint(0x0430)
-  const e = String.fromCodePoint(0x0435)
+  const a = String.fromCodePoint(0x04_30)
+  const e = String.fromCodePoint(0x04_35)
   return word.replace(/a/g, a).replace(/e/g, e)
 }
 
 // A single zero-width space (U+200B).
 export function zeroWidthSpace(): string {
-  return String.fromCodePoint(0x200b)
+  return String.fromCodePoint(0x20_0b)
 }
 
 // A run of distinct zero-width characters (ZWSP, ZWNJ, ZWJ, word-joiner)
 // long enough to trip the zero-width-run detector.
 export function zeroWidthRun(): string {
-  return [0x200b, 0x200c, 0x200d, 0x2060]
+  return [0x20_0b, 0x20_0c, 0x20_0d, 0x20_60]
     .map(cp => String.fromCodePoint(cp))
     .join('')
 }
@@ -40,18 +40,18 @@ export function zeroWidthRun(): string {
 // A run of combining diacritical marks (U+0301) on its own — caller
 // prepends a base character.
 export function combiningRun(count: number): string {
-  return String.fromCodePoint(0x0301).repeat(count)
+  return String.fromCodePoint(0x03_01).repeat(count)
 }
 
 // A bidi RIGHT-TO-LEFT OVERRIDE (U+202E).
 export function bidiOverride(): string {
-  return String.fromCodePoint(0x202e)
+  return String.fromCodePoint(0x20_2e)
 }
 
 // A few Unicode Tag-block codepoints (U+E0041 etc.) — an invisible
 // text-smuggling channel.
 export function tagBlock(): string {
-  return [0xe0041, 0xe0049, 0xe0020]
+  return [0xe_00_41, 0xe_00_49, 0xe_00_20]
     .map(cp => String.fromCodePoint(cp))
     .join('')
 }

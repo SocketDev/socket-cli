@@ -1,26 +1,34 @@
 #!/usr/bin/env node
 // Claude Code PreToolUse hook — prefer-vitest-guard.
 //
-// Blocks `node --test <file>` Bash commands for SRC/REPO tests and steers to
-// the fleet-canonical runner (`node_modules/.bin/vitest run <file>` or
-// `pnpm test`).
+// Blocks raw test-runner invocations — `node --test <file>` for src/repo tests
+// AND any raw `vitest` binary call (bare `vitest` or `node_modules/.bin/vitest`)
+// — and steers to the fleet-canonical SCRIPT runner: `pnpm test` (whole suite)
+// or `pnpm test <file>` (fast, file-scoped). The bare binary is never run by
+// hand: the script owns --config, scope detection, and the single-worker
+// pre-commit setting; reaching past it loses all three.
 //
 // Two test runners by tier:
 //   - src / repo unit + integration tests → vitest. `node --test` here runs
 //     the Node.js built-in runner whose API surface (`describe`/`it` from
 //     `node:test`) differs from vitest's globals, so the files either don't
 //     register or silent-pass. This guard blocks that.
-//   - hook tests under `.claude/hooks/**/test/` → `node --test`. That IS the
-//     canonical hook runner (each hook's package.json declares
-//     `"test": "node --test test/*.test.mts"`, run via `pnpm run test:hooks`
-//     → scripts/repo/run-hook-tests.mts), because the fleet vitest config
-//     excludes `.claude/hooks/**/test/**`. So `node --test` whose targets are
-//     all hook-test paths is ALLOWED — blocking it would break the sanctioned
-//     hook runner.
+//   - the non-vitest tiers → `node --test`. The allow-set is the COMPLEMENT of
+//     vitest's discovery: every test dir the fleet vitest config EXCLUDES runs
+//     under the Node built-in runner instead, so `node --test` is the
+//     sanctioned runner there and blocking it would break the suite. Those
+//     dirs (kept in lock-step with .config/repo/vitest.config.mts `exclude`):
+//       - `.claude/hooks/**/test/**` — hook tests (run via
+//         scripts/repo/run-hook-tests.mts → `pnpm run test:hooks`).
+//       - `.config/fleet/oxlint-plugin/**/test/**` — socket/* lint-rule tests.
+//       - `scripts/**/test/**` — script-suite tests.
+//       - `.git-hooks/**` — git-hook tests.
+//       - repo-tunable `nodeTestExclude` globs (see below).
+//     A `node --test` whose targets are all in these tiers is ALLOWED.
 //
 // Also nudges toward targeting a specific file rather than the full suite —
-// `node_modules/.bin/vitest run path/to/foo.test.mts` is faster and scoped to
-// the change in flight.
+// `pnpm test path/to/foo.test.mts` is faster and scoped to the change in
+// flight (test.mts runs `vitest run <file>` for explicit positional paths).
 //
 // Detection: parses the command string for `node ... --test` (flag anywhere)
 // or `node --test` (shorthand). The `node --run` form (pnpm/npm built-in
@@ -34,26 +42,44 @@
 // Fails open on parse / payload errors.
 
 import { existsSync, readFileSync } from 'node:fs'
-import process from 'node:process'
+import path from 'node:path'
 
-import { isFleetManagedDir } from '../_shared/fleet-repo.mts'
-import { commandsFor, commandWorkingDir } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+
+import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
+import type { GuardResult } from '../_shared/guard.mts'
+import { commandsFor, parseCommands } from '../_shared/shell-command.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 const BYPASS_PHRASE = 'Allow node-test-runner bypass' as const
+
+// Pre-flight skip set. The dispatcher imports + runs this guard only when the
+// raw command contains one of these substrings. A block can ONLY arise from
+// path (a) `node --test` (always carries `--test`), path (b) a bare
+// `tsx`/`ts-node` test-file invocation (always carries the binary name), or
+// path (c) a raw `vitest` binary call (always carries `vitest`); so a command
+// lacking all of these can never block. `tsx` is NOT a substring of `ts-node`,
+// so both are listed. `pnpm test` does NOT contain `vitest`, so the sanctioned
+// script invocation never trips the pre-flight.
+export const triggers: readonly string[] = [
+  '--test',
+  'ts-node',
+  'tsx',
+  'vitest',
+]
 
 // Repo-tunable node:test homes from the `nodeTestExclude` key of
 // .config/{fleet,repo}/vitest.json — the SAME key the vitest config merges into
 // its `exclude`. A repo declaring e.g. `tools/**/test/**` there both keeps
 // vitest off those suites and lets this guard allow their `node --test` runner;
 // the two never drift because they read one key. Fleet + repo arrays concat.
-function readNodeTestExcludeTier(file: string): string[] {
+export function readNodeTestExcludeTier(file: string): string[] {
   if (!existsSync(file)) {
     return []
   }
   try {
     const parsed = JSON.parse(readFileSync(file, 'utf8')) as {
-      nodeTestExclude?: unknown
+      nodeTestExclude?: unknown | undefined
     }
     return Array.isArray(parsed?.nodeTestExclude)
       ? parsed.nodeTestExclude.filter(g => typeof g === 'string')
@@ -80,20 +106,13 @@ function repoExtraExcludeGlobs(): string[] {
 // path `p`? `**` matches any characters (incl. `/`), `*` matches within a
 // segment. `**` is expanded before `*` via a space placeholder so they don't
 // collide. Enough for the directory-tier globs this file carries.
-function globMatchesTestPath(glob: string, p: string): boolean {
-  const re = glob
-    .replace(/\\/g, '/')
+export function globMatchesTestPath(glob: string, p: string): boolean {
+  const re = normalizePath(glob)
     .replace(/[.+^${}()|[\]]/g, '\\$&')
     .replace(/\*\*/g, ' ')
     .replace(/\*/g, '[^/]*')
     .replace(/ /g, '.*')
   return new RegExp(`^${re}$`).test(p)
-}
-
-interface Payload {
-  tool_name?: unknown | undefined
-  tool_input?: { command?: unknown | undefined } | undefined
-  transcript_path?: unknown | undefined
 }
 
 // Matches a test-file path argument (`foo.test.mts`, `bar.spec.ts`, or a
@@ -111,8 +130,8 @@ function looksLikeTestFile(arg: string): boolean {
 //     scripts/repo/run-hook-tests.mts: `node --test test/*.test.mts`, cwd =
 //     the hook dir, so the target is the bare `test/*.test.mts` glob; a direct
 //     invocation may spell the full `.claude/hooks/.../test/...` path).
-//   - `.config/oxlint-plugin/<tier>/<rule>/test/` — the socket/* lint-rule
-//     tests (e.g. `.config/oxlint-plugin/fleet/options-null-proto/test/`).
+//   - `.config/fleet/oxlint-plugin/<tier>/<rule>/test/` — the socket/* lint-rule
+//     tests (e.g. `.config/fleet/oxlint-plugin/fleet/options-null-proto/test/`).
 //   - repo-tunable node:test homes from the `nodeTestExclude` key of
 //     .config/{fleet,repo}/vitest.json (e.g. socket-lib's `tools/prim/test/**`
 //     codemod corpus) — the SAME key vitest merges into its `exclude`, so the
@@ -121,19 +140,29 @@ function looksLikeTestFile(arg: string): boolean {
 // would break the sanctioned runners. Paths normalized to forward slashes so a
 // Windows-style target matches too.
 function isNodeTestTierTarget(arg: string): boolean {
-  const p = arg.replace(/\\/g, '/')
+  const p = normalizePath(arg)
   if (/(?:^|\/)\.claude\/hooks\/(?:[^/]+\/)+test\//.test(p)) {
     return true
   }
-  if (/(?:^|\/)\.config\/oxlint-plugin\/(?:[^/]+\/)+test\//.test(p)) {
+  if (/(?:^|\/)\.config\/fleet\/oxlint-plugin\/(?:[^/]+\/)+test\//.test(p)) {
+    return true
+  }
+  // scripts/**/test/** — script-suite tests (vitest-excluded, run via node --test).
+  if (/(?:^|\/)scripts\/(?:[^/]+\/)*test\//.test(p)) {
+    return true
+  }
+  // .git-hooks/** — git-hook tests (vitest-excluded).
+  if (/(?:^|\/)\.git-hooks\//.test(p)) {
     return true
   }
   // Repo-owned extra node:test homes (globs like `tools/**/test/**`).
+  /* c8 ignore start - module-level cache is [] when no nodeTestExclude config exists in cwd; loop body unreachable without resetting the non-exported cache */
   for (const glob of repoExtraExcludeGlobs()) {
     if (globMatchesTestPath(glob, p)) {
       return true
     }
   }
+  /* c8 ignore stop */
   // The cwd-relative canonical form run from inside a hook dir.
   return p === 'test/*.test.mts' || /^test\/[^/]*\.test\.[cm]?[jt]sx?$/.test(p)
 }
@@ -141,15 +170,56 @@ function isNodeTestTierTarget(arg: string): boolean {
 // The shell-command parser drops bare globs, so the parsed arg list can lose
 // the `test/*.test.mts` target. Scan the raw command string for a node-test-
 // tier token as a fallback: a `.claude/hooks/<name>/test/` path, a
-// `.config/oxlint-plugin/<tier>/<rule>/test/` path, or the cwd-relative
+// `.config/fleet/oxlint-plugin/<tier>/<rule>/test/` path, or the cwd-relative
 // `test/*.test.mts` glob. Normalized to forward slashes first.
 function commandHasNodeTestTierTarget(command: string): boolean {
-  const c = command.replace(/\\/g, '/')
+  const c = normalizePath(command)
   return (
     /(?:^|[\s'"/])\.claude\/hooks\/(?:[^/]+\/)+test\//.test(c) ||
-    /(?:^|[\s'"/])\.config\/oxlint-plugin\/(?:[^/]+\/)+test\//.test(c) ||
+    /(?:^|[\s'"/])\.config\/fleet\/oxlint-plugin\/(?:[^/]+\/)+test\//.test(c) ||
+    /(?:^|[\s'"/])scripts\/(?:[^/]+\/)*test\//.test(c) ||
+    /(?:^|[\s'"/])\.git-hooks\//.test(c) ||
     /(?:^|\s)test\/\*\.test\.[cm]?[jt]sx?(?:\s|$|['"])/.test(c)
   )
+}
+
+// Vitest subcommands — dropped when extracting file targets from a raw call.
+const VITEST_SUBCOMMANDS: ReadonlySet<string> = new Set([
+  'bench',
+  'list',
+  'related',
+  'run',
+  'watch',
+])
+
+// Raw `vitest` / `node_modules/.bin/vitest …` — the bare binary. NEVER a
+// sanctioned Claude Bash invocation: src / repo tests run through `pnpm test`
+// (whole suite) or `pnpm test <file>` (fast, file-scoped — scripts/fleet/
+// test.mts runs `vitest run <file>` for explicit paths), and the node:test
+// tiers use `node --test`. The test runner's OWN spawn of node_modules/.bin/
+// vitest is a child process, not a Bash tool call, so this never sees it.
+// Matched on binary basename via commandsFor, so a path arg merely CONTAINING
+// "vitest" (e.g. `--config .config/repo/vitest.config.mts`) does not trip it.
+function rawVitestInvocation(command: string): {
+  detected: boolean
+  testFiles: string[]
+} {
+  // Match on the BASENAME so the `node_modules/.bin/vitest` path form is caught
+  // alongside a bare `vitest` (commandsFor matches the name as-typed, which a
+  // path defeats). Same approach as no-direct-linter-guard.
+  for (const cmd of parseCommands(command)) {
+    if (!cmd.binary) {
+      continue
+    }
+    const base = path.basename(cmd.binary)
+    if (base === 'vitest' || base === 'vitest.cmd') {
+      const testFiles = cmd.args.filter(
+        a => !a.startsWith('-') && !VITEST_SUBCOMMANDS.has(a),
+      )
+      return { detected: true, testFiles }
+    }
+  }
+  return { detected: false, testFiles: [] }
 }
 
 function isNodeTestCommand(command: string): {
@@ -201,80 +271,91 @@ function isNodeTestCommand(command: string): {
   return { detected: false, testFiles: [], reason: 'node --test' }
 }
 
-async function main(): Promise<void> {
-  const raw = await readStdin()
-  let payload: Payload
-  try {
-    payload = JSON.parse(raw) as Payload
-  } catch {
-    process.exit(0)
-  }
+export const check = bashGuard(
+  (command, payload): GuardResult => {
+    const transcriptPath =
+      typeof payload.transcript_path === 'string'
+        ? payload.transcript_path
+        : undefined
+    const bypassed = !!(
+      transcriptPath && bypassPhrasePresent(transcriptPath, [BYPASS_PHRASE], 3)
+    )
 
-  if (payload.tool_name !== 'Bash') {
-    process.exit(0)
-  }
+    // Path (c): a raw `vitest` binary call — always blocked, steered to the
+    // repo script (no node:test-tier exception; raw vitest is never sanctioned).
+    const raw = rawVitestInvocation(command)
+    if (raw.detected) {
+      if (bypassed) {
+        return undefined
+      }
+      const suggestion =
+        raw.testFiles.length > 0
+          ? `pnpm test ${raw.testFiles.join(' ')}`
+          : 'pnpm test path/to/your.test.mts'
+      return block(
+        [
+          '[prefer-vitest-guard] Blocked: raw `vitest` binary invocation.',
+          '',
+          '  Never run vitest directly (bare `vitest` or node_modules/.bin/',
+          '  vitest). Src / repo tests go through the repo script, which owns',
+          '  the --config, scope, and single-worker pre-commit settings:',
+          `    ${suggestion}        (fast, file-scoped)`,
+          '    pnpm test                            (the whole suite)',
+          '',
+          `  Bypass: type "${BYPASS_PHRASE}" to allow it for this invocation.`,
+        ].join('\n'),
+      )
+    }
 
-  const command =
-    typeof payload.tool_input?.command === 'string'
-      ? payload.tool_input.command
-      : ''
-  if (!command.trim()) {
-    process.exit(0)
-  }
+    const { detected, testFiles, reason } = isNodeTestCommand(command)
+    if (!detected) {
+      return undefined
+    }
+    if (bypassed) {
+      return undefined
+    }
 
-  // Skip when the command's working dir is a non-fleet repo: it runs its own
-  // test runner, so the fleet vitest convention doesn't apply there.
-  if (!isFleetManagedDir(commandWorkingDir(command))) {
-    process.exit(0)
-  }
+    const suggestion =
+      testFiles.length > 0
+        ? `pnpm test ${testFiles.join(' ')}`
+        : 'pnpm test path/to/your.test.mts'
 
-  const { detected, testFiles, reason } = isNodeTestCommand(command)
-  if (!detected) {
-    process.exit(0)
-  }
+    const blocked =
+      reason === 'node --test'
+        ? '`node --test` is the Node.js built-in runner.'
+        : reason === 'tsx loader'
+          ? '`node --test --import tsx` runs the built-in runner under a TS loader.'
+          : '`tsx`/`ts-node` is running a test file directly.'
 
-  const transcriptPath =
-    typeof payload.transcript_path === 'string'
-      ? payload.transcript_path
-      : undefined
-  if (
-    transcriptPath &&
-    bypassPhrasePresent(transcriptPath, [BYPASS_PHRASE], 3)
-  ) {
-    process.exit(0)
-  }
+    return block(
+      [
+        `[prefer-vitest-guard] Blocked: ${blocked}`,
+        '',
+        '  Src / repo tests use vitest — never node --test, tsx, or ts-node as',
+        '  a test runner. The vitest-excluded tiers DO use node --test:',
+        '  .claude/hooks/**/test/, .config/fleet/oxlint-plugin/**/test/,',
+        '  scripts/**/test/, .git-hooks/** — those forms are allowed.',
+        '  Run the specific test file instead:',
+        `    ${suggestion}`,
+        '',
+        '  Or run the full suite:',
+        '    pnpm test',
+        '',
+        '  Targeting a specific file is faster and scopes coverage to your change.',
+        '',
+        `  Bypass: type "${BYPASS_PHRASE}" to allow it for this invocation.`,
+      ].join('\n'),
+    )
+  },
+  { fleetOnly: true },
+)
 
-  const suggestion =
-    testFiles.length > 0
-      ? `node_modules/.bin/vitest run ${testFiles.join(' ')}`
-      : 'node_modules/.bin/vitest run path/to/your.test.mts'
-
-  const blocked =
-    reason === 'node --test'
-      ? '`node --test` is the Node.js built-in runner.'
-      : reason === 'tsx loader'
-        ? '`node --test --import tsx` runs the built-in runner under a TS loader.'
-        : '`tsx`/`ts-node` is running a test file directly.'
-
-  process.stderr.write(
-    [
-      `[prefer-vitest-guard] Blocked: ${blocked}`,
-      '',
-      '  Src / repo tests use vitest — never node --test, tsx, or ts-node as',
-      '  a test runner. (Hook tests under .claude/hooks/**/test/ DO use',
-      '  node --test, via `pnpm run test:hooks` — that form is allowed.)',
-      '  Run the specific test file instead:',
-      `    ${suggestion}`,
-      '',
-      '  Or run the full suite:',
-      '    pnpm test',
-      '',
-      '  Targeting a specific file is faster and scopes coverage to your change.',
-      '',
-      `  Bypass: type "${BYPASS_PHRASE}" to allow it for this invocation.`,
-    ].join('\n') + '\n',
-  )
-  process.exit(2)
-}
-
-void main()
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Bash'],
+  triggers,
+  scope: 'convention',
+  type: 'guard',
+})
+void runHook(hook, import.meta.url)

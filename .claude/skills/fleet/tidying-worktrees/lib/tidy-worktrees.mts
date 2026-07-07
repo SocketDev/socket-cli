@@ -114,7 +114,8 @@ export function decideWorktree(facts: WorktreeFacts): {
 
 export async function git(cwd: string, args: string[]): Promise<string> {
   const result = await spawn('git', args, { cwd, stdioString: true }).catch(
-    (e: unknown) => e as { stdout?: string; stderr?: string },
+    (e: unknown) =>
+      e as { stdout?: string | undefined; stderr?: string | undefined },
   )
   return String(result?.stdout ?? '').trim()
 }
@@ -166,7 +167,7 @@ export interface ParsedWorktree {
 
 export function parseWorktreePorcelain(porcelain: string): ParsedWorktree[] {
   const out: ParsedWorktree[] = []
-  let current: { path?: string; branch?: string } = {}
+  let current: { path?: string | undefined; branch?: string | undefined } = {}
   const lines = porcelain.split('\n')
   for (let i = 0, { length } = lines; i < length; i += 1) {
     const line = lines[i]!
@@ -281,7 +282,8 @@ export async function tidyRepo(
   // --here path) overrides that with the current checkout's git toplevel, so
   // the single-repo managing-worktrees Mode 3 can run the SAME engine on the
   // checkout it is invoked from rather than only a $PROJECTS sibling.
-  const repoDir = options.repoDir ?? path.join(PROJECTS, repo)
+  const opts = { __proto__: null, ...options } as typeof options
+  const repoDir = opts.repoDir ?? path.join(PROJECTS, repo)
   if (!existsSync(path.join(repoDir, '.git'))) {
     return { repo, removed: [], kept: [], missing: true }
   }
@@ -291,7 +293,7 @@ export async function tidyRepo(
   for (let i = 0, { length } = entries; i < length; i += 1) {
     const entry = entries[i]!
     if (entry.decision === 'remove') {
-      if (options.fix) {
+      if (opts.fix) {
         const ok = await removeWorktree(repoDir, entry)
         if (ok) {
           removed.push(entry.path)
@@ -309,7 +311,7 @@ export async function tidyRepo(
       kept.push(entry)
     }
   }
-  if (options.fix && removed.length) {
+  if (opts.fix && removed.length) {
     await gitOk(repoDir, ['worktree', 'prune'])
   }
   return { repo, removed, kept, missing: false }

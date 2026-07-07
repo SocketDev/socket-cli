@@ -11,18 +11,18 @@
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { findApiToken } from '../../.claude/hooks/fleet/setup-security-tools/lib/api-token.mts'
+import { findApiToken } from '../../../.claude/hooks/fleet/setup-security-tools/lib/api-token.mts'
 import {
   offerTokenPrompt,
   parseArgs,
   promptAndPersist,
   wireBridgeIntoShellRc,
-} from '../../.claude/hooks/fleet/setup-security-tools/lib/operator-prompts.mts'
+} from '../../../.claude/hooks/fleet/setup-security-tools/lib/operator-prompts.mts'
 
 async function main(): Promise<void> {
   const logger = getDefaultLogger()
   const args = parseArgs(process.argv.slice(2))
-  const rotate = args.rotate ?? args['update-token'] ?? false
+  const rotate = args.rotate
 
   let apiToken: string | undefined
 
@@ -35,7 +35,7 @@ async function main(): Promise<void> {
         `SOCKET_API_TOKEN: found via ${lookup.source} — no prompt needed.`,
       )
       logger.log('Pass --rotate to overwrite.')
-      apiToken = lookup.value
+      apiToken = lookup.token
     } else {
       apiToken = await offerTokenPrompt(logger)
     }

@@ -31,61 +31,29 @@
 // something else). The block flips the workflow back to
 // "fix-in-template, cascade out" where it belongs.
 //
-// Reads a Claude Code PreToolUse JSON payload from stdin:
-//   { "tool_name": "Edit" | "Write" | "MultiEdit",
-//     "tool_input": { "file_path": "...", ... },
-//     "transcript_path": "/.../session.jsonl" }
-//
-// Exits:
-//   0 — allowed (not a fleet-canonical edit, OR target is the template,
-//       OR bypass phrase present).
-//   2 — blocked (with a stderr message that explains the rule + the
-//       canonical fix path + the bypass phrase).
-//   0 (with stderr log) — fail-open on hook bugs so a bad deploy can't
-//       brick the session.
+// Implemented against the uniform guard contract (_shared/guard.mts):
+// `editGuard` gates on tool_name ∈ {Edit, Write, MultiEdit} + narrows
+// the file_path / about-to-land content, then `check` returns a verdict:
+//   undefined — allowed (not a fleet-canonical edit, OR target is the
+//       template, OR a fleet-block marked file, OR bypass phrase present).
+//   block(MSG) — blocked (the runner prints MSG + sets exitCode 2); MSG
+//       explains the rule + the canonical fix path + the bypass phrase.
+// `runGuard` reads the payload, runs `check`, applies the verdict, and
+// fails open on any hook bug so a bad deploy can't brick the session.
 
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { isDirSync } from '@socketsecurity/lib-stable/fs/inspect'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
-import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
+import {
+  containsFleetBeginMarker,
+  textHasFleetBlockMarkers,
+} from '../_shared/fleet-markers.mts'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
 import { isWheelhouseRoot } from '../_shared/wheelhouse-root.mts'
-
-type ToolInput = {
-  tool_input?:
-    | {
-        file_path?: string | undefined
-        content?: string | undefined
-        new_string?: string | undefined
-      }
-    | undefined
-  tool_name?: string | undefined
-  transcript_path?: string | undefined
-}
-
-// True when a string carries both fleet-block markers. Two marker dialects are
-// recognized: the lowercase parenthetical form used by gitignore / gitattributes
-// / workflows (`BEGIN fleet-canonical (managed by socket-wheelhouse …)`), and
-// the uppercase form CLAUDE.md uses (`<!-- BEGIN FLEET-CANONICAL … -->`). Both
-// mark a HYBRID file: only the content between the markers is canonical, so the
-// preamble + `🏗️ Project-Specific` postamble are repo-owned and editing them is
-// not a fork. A fork INSIDE the block is still caught by the sync's
-// claude_md_fleet_drift / *-fleet-block checks at commit time.
-function textHasFleetBlockMarkers(text: string | undefined): boolean {
-  if (text === undefined) {
-    return false
-  }
-  const lowerForm =
-    text.includes('BEGIN fleet-canonical (managed by socket-wheelhouse') &&
-    text.includes('END fleet-canonical')
-  const upperForm =
-    text.includes('BEGIN FLEET-CANONICAL') &&
-    text.includes('END FLEET-CANONICAL')
-  return lowerForm || upperForm
-}
 
 const BYPASS_PHRASE = 'Allow fleet-fork bypass'
 
@@ -109,8 +77,8 @@ const TEMPLATE_PATH_TOKENS = [
 /**
  * Find the fleet repo root for an absolute file path by walking up until we hit
  * a directory that has package.json AND a CLAUDE.md containing the
- * FLEET-CANONICAL marker. Returns the repo root path or undefined if the file
- * is outside a fleet repo.
+ * `<fleet-canonical>` marker. Returns the repo root path or undefined if the
+ * file is outside a fleet repo.
  */
 export function findFleetRepoRoot(filePath: string): string | undefined {
   let cur = path.dirname(filePath)
@@ -121,7 +89,7 @@ export function findFleetRepoRoot(filePath: string): string | undefined {
     if (existsSync(pkgPath) && existsSync(claudePath)) {
       try {
         const claudeContent = readFileSync(claudePath, 'utf8')
-        if (claudeContent.includes('BEGIN FLEET-CANONICAL')) {
+        if (containsFleetBeginMarker(claudeContent)) {
           return cur
         }
       } catch {
@@ -129,16 +97,18 @@ export function findFleetRepoRoot(filePath: string): string | undefined {
       }
     }
     const parent = path.dirname(cur)
+    /* c8 ignore start - parent===cur only fires on relative paths or exotic FSes; unreachable with absolute paths on Unix */
     if (parent === cur) {
       break
     }
+    /* c8 ignore stop */
     cur = parent
   }
   return undefined
 }
 
-// True when the on-disk file carries the fleet-block BEGIN/END markers — i.e.
-// it's a hybrid file whose content outside the markers is repo-owned. The
+// True when the on-disk file carries the `<fleet-canonical>` block markers —
+// i.e. it's a hybrid file whose content outside the markers is repo-owned. The
 // markers are the same comment sentinels the sync's *-fleet-block checks use
 // (gitignore, gitattributes, workflows). Comment-prefix-agnostic: match the
 // marker text regardless of the leading `#`.
@@ -149,6 +119,7 @@ function hasFleetBlockMarkers(absPath: string): boolean {
   try {
     return textHasFleetBlockMarkers(readFileSync(absPath, 'utf8'))
   } catch {
+    /* c8 ignore next - file exists but is unreadable; untestable without OS-level permission tricks */
     return false
   }
 }
@@ -166,14 +137,14 @@ const PER_REPO_MARKER_PATHS: readonly string[] = [
 ]
 
 export function isPerRepoMarkerPath(rel: string): boolean {
-  return PER_REPO_MARKER_PATHS.includes(rel.replace(/\\/g, '/'))
+  return PER_REPO_MARKER_PATHS.includes(normalizePath(rel))
 }
 
 export function isCanonicalRelativePath(
   rel: string,
   repoRoot?: string | undefined,
 ): boolean {
-  const normalized = rel.replace(/\\/g, '/')
+  const normalized = normalizePath(rel)
   if (!repoRoot) {
     return false
   }
@@ -195,48 +166,23 @@ export function isCanonicalRelativePath(
 }
 
 export function isInsideTemplate(filePath: string): boolean {
-  const normalized = filePath.replace(/\\/g, '/')
+  const normalized = normalizePath(filePath)
   return TEMPLATE_PATH_TOKENS.some(token => normalized.includes(token))
 }
 
-async function main(): Promise<number> {
-  const raw = await readStdin()
-  if (!raw.trim()) {
-    return 0
-  }
-
-  let payload: ToolInput
-  try {
-    payload = JSON.parse(raw) as ToolInput
-  } catch {
-    process.stderr.write(
-      'no-fleet-fork-guard: failed to parse stdin payload — fail-open\n',
-    )
-    return 0
-  }
-
-  const tool = payload.tool_name
-  if (tool !== 'Edit' && tool !== 'MultiEdit' && tool !== 'Write') {
-    return 0
-  }
-
-  const filePath = payload.tool_input?.file_path
-  if (!filePath) {
-    return 0
-  }
-
+export const check = editGuard((filePath, content, payload) => {
   const absPath = path.resolve(filePath)
 
   // The canonical home is allowed.
   if (isInsideTemplate(absPath)) {
-    return 0
+    return undefined
   }
 
   // Walk up to find the fleet repo root. If the file isn't inside a
   // fleet repo at all, this hook doesn't apply — let it through.
   const repoRoot = findFleetRepoRoot(absPath)
   if (!repoRoot) {
-    return 0
+    return undefined
   }
 
   const relToRepo = path.relative(repoRoot, absPath)
@@ -244,11 +190,11 @@ async function main(): Promise<number> {
   // Per-repo marker files carry per-repo content (EXPECTED_FILES, not
   // IDENTICAL_FILES) — editing them downstream is expected, not a fork.
   if (isPerRepoMarkerPath(relToRepo)) {
-    return 0
+    return undefined
   }
 
   if (!isCanonicalRelativePath(relToRepo, repoRoot)) {
-    return 0
+    return undefined
   }
 
   // Wheelhouse-own-README allowance: the wheelhouse's OWN root README.md is
@@ -261,22 +207,20 @@ async function main(): Promise<number> {
   // legitimate authoring, not a downstream fork. Downstream repos still hit the
   // guard (they have no `template/`, so `isCanonicalRelativePath` already
   // returned false above for them anyway — this only matters in the wheelhouse).
-  const relNormalized = relToRepo.replace(/\\/g, '/')
+  const relNormalized = normalizePath(relToRepo)
   if (relNormalized === 'README.md' && isWheelhouseRoot(repoRoot)) {
-    return 0
+    return undefined
   }
 
-  // Fleet-block allowance: a canonical file that carries the
-  // `# ─── BEGIN/END fleet-canonical ───` markers is only PART fleet-managed —
-  // content outside the markers is repo-owned (e.g. a workflow's repo-specific
-  // jobs below the END marker). Allow edits when the markers are present
-  // either on disk OR in the incoming content (the bootstrap that first adds
-  // the markers). The sync's workflow-fleet-block check re-validates the marked
-  // block at commit time, so a fork INSIDE the block is still caught.
-  const incoming =
-    payload.tool_input?.content ?? payload.tool_input?.new_string
-  if (hasFleetBlockMarkers(absPath) || textHasFleetBlockMarkers(incoming)) {
-    return 0
+  // Fleet-block allowance: a canonical file that carries `<fleet-canonical>`
+  // open/close markers is only PART fleet-managed — content outside the markers
+  // is repo-owned (e.g. a workflow's repo-specific jobs below the close marker).
+  // Allow edits when the markers are present either on disk OR in the incoming
+  // content (the bootstrap that first adds the markers). The sync's
+  // workflow-fleet-block check re-validates the marked block at commit time, so
+  // a fork INSIDE the block is still caught.
+  if (hasFleetBlockMarkers(absPath) || textHasFleetBlockMarkers(content)) {
+    return undefined
   }
 
   // Bypass-phrase check.
@@ -287,10 +231,10 @@ async function main(): Promise<number> {
       BYPASS_LOOKBACK_USER_TURNS,
     )
   ) {
-    return 0
+    return undefined
   }
 
-  process.stderr.write(
+  return block(
     [
       `🚨 no-fleet-fork-guard: blocked Edit/Write to fleet-canonical path.`,
       ``,
@@ -311,19 +255,16 @@ async function main(): Promise<number> {
       `If you genuinely need to bypass (e.g. emergency hotfix that`,
       `can't wait for cascade), the user must type \`${BYPASS_PHRASE}\``,
       `verbatim in a recent user turn. Reference:`,
-      `docs/agents.md/fleet/no-local-fork-canonical.md`,
+      `docs/agents.md/fleet/no-local-fork.md`,
       ``,
     ].join('\n'),
   )
-  return 2
-}
+})
 
-main().then(
-  code => process.exit(code),
-  e => {
-    process.stderr.write(
-      `no-fleet-fork-guard: hook bug — fail-open. ${errorMessage(e)}\n`,
-    )
-    process.exit(0)
-  },
-)
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  type: 'guard',
+})
+void runHook(hook, import.meta.url)

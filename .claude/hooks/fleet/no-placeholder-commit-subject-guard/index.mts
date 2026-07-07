@@ -35,51 +35,43 @@
 // (allow) or 2 (block + stderr explanation). Fails open on any internal
 // error so the hook never wedges the operator's flow.
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
-import process from 'node:process'
-
 import {
   extractCommitMessage,
   isGitCommit,
 } from '../_shared/commit-command.mts'
-import { withBashGuard } from '../_shared/payload.mts'
+import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 import {
   commitSubject,
   isPlaceholderSubject,
 } from '../../../../.git-hooks/_shared/commit-subject.mts'
 
-const logger = getDefaultLogger()
-
 const BYPASS_PHRASE = 'Allow placeholder-subject bypass'
 
-// withBashGuard handles the stdin drain, tool_name gate, command narrow,
-// and fail-open on any throw.
-await withBashGuard((command, payload) => {
+export const check = bashGuard((command, payload) => {
   if (!isGitCommit(command)) {
-    return
+    return undefined
   }
 
   const message = extractCommitMessage(command)
   if (message === undefined) {
     // No inline `-m` / `--message`. The editor, `-F file`, or the
     // commit-msg git-stage backstop owns this form.
-    return
+    return undefined
   }
 
   const subject = commitSubject(message)
   if (!isPlaceholderSubject(subject)) {
-    return
+    return undefined
   }
 
   // Operator bypass — `Allow placeholder-subject bypass` in a recent turn.
   if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    return
+    return undefined
   }
 
   const saw = subject.trim() ? `"${subject}"` : 'an empty subject'
-  logger.error(
+  return block(
     [
       `[no-placeholder-commit-subject-guard] Blocked: commit subject is a placeholder (${saw}).`,
       '',
@@ -97,5 +89,14 @@ await withBashGuard((command, payload) => {
       '',
     ].join('\n'),
   )
-  process.exitCode = 2
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Bash'],
+  scope: 'convention',
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

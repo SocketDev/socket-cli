@@ -1,24 +1,35 @@
 #!/usr/bin/env node
-/**
+/*
  * @file Whole-file commit-time gate that mirrors the edit-time
  *   `.claude/hooks/fleet/soak-exclude-date-guard/`. Scans the repo's
- *   `pnpm-workspace.yaml` `minimumReleaseAgeExclude:` block and reports any
- *   per-package exact-pin entry missing the canonical `# published: YYYY-MM-DD
- *   | removable: YYYY-MM-DD` annotation. Why the second surface (hook +
- *   script): defense in depth. The hook blocks Edit/Write in-session; this
- *   script catches anything that lands via a non-Claude path (manual `git
- *   checkout`, external editor, etc.). Reports stale entries too — any line
- *   whose `removable:` date is in the past is a cleanup candidate. Reporting is
- *   informational by default (exit 0 on stale entries; exit 1 only on missing
- *   annotation). `--fix` flips stale-reporting into PROMOTE mode: it removes
- *   each soaked entry (the bullet + its annotation line) from
- *   `pnpm-workspace.yaml` and writes the file. The caller runs `pnpm install`
- *   after to reconcile the lockfile. This is what the daily `updating-daily`
- *   job runs. Exit codes:
+ *   `pnpm-workspace.yaml` `minimumReleaseAgeExclude:` AND `trustPolicyExclude:`
+ *   blocks and reports any per-package exact-pin entry missing the canonical `#
+ *   published: YYYY-MM-DD | removable: YYYY-MM-DD` annotation. Why the second
+ *   surface (hook + script): defense in depth. The hook blocks Edit/Write
+ *   in-session; this script catches anything that lands via a non-Claude path
+ *   (manual `git checkout`, external editor, etc.). Reports stale entries too —
+ *   any line whose `removable:` date is in the past is a cleanup candidate.
  *
- *   - 0 — clean (no missing annotations; stale entries logged or, with --fix,
- *     promoted)
- *   - 1 — at least one missing annotation
+ *   The two blocks differ in cleanup safety, so stale entries are handled
+ *   asymmetrically:
+ *   - `minimumReleaseAgeExclude` (soak bypass): a cleared soak is ALWAYS safe
+ *     to drop — the 7-day gate would admit the version anyway. Reporting is
+ *     informational (exit 0); `--fix` PROMOTE-mode removes each soaked entry
+ *     (the bullet + its annotation line) and writes the file. This is what the
+ *     daily `updating-daily` job runs.
+ *   - `trustPolicyExclude` (supply-chain waiver): removing a waiver re-arms the
+ *     `no-downgrade` trust gate, which can re-break `pnpm install` if the
+ *     waived version still resolves. So a stale trust waiver is a DEFECT
+ *     requiring a human re-audit (exit 1) — never auto-promoted, even under
+ *     `--fix`.
+ *
+ *   The caller runs `pnpm install` after a promote to reconcile the lockfile.
+ *   Exit codes:
+ *
+ *   - 0 — clean (no missing annotations; stale soak entries logged or, with
+ *     --fix, promoted)
+ *   - 1 — at least one missing annotation, unpinned entry, or stale trust
+ *     waiver
  */
 
 import { readFileSync, writeFileSync } from 'node:fs'
@@ -28,14 +39,21 @@ import { fileURLToPath } from 'node:url'
 import { isSocketSourcedPackage } from '../constants/socket-scopes.mts'
 import { PNPM_WORKSPACE_YAML } from '../paths.mts'
 
-const SECTION_HEADER = /^minimumReleaseAgeExclude:\s*$/
+// The two soak/waiver list blocks this gate scans. Both carry `name@version`
+// exact-pin bullets with `# published: … | removable: …` annotations; they
+// differ only in cleanup safety (see the @file note + handleStale in main).
+const SOAK_HEADER = /^minimumReleaseAgeExclude:\s*$/
+const TRUST_HEADER = /^trustPolicyExclude:\s*$/
 const ANY_TOP_LEVEL_KEY = /^[A-Za-z_][\w-]*:\s*(\S.*)?$/
+// Match a version-pinned exclude bullet: optional leading quote, then an
+// optional scoped-package prefix (`@scope/`), the bare name, a literal `@`,
+// and the version token — both captured. Trailing quote and whitespace allowed.
 const ENTRY_RE =
   /^\s*-\s*['"]?((?:@[^@/'"\s]+\/)?[^@'"\s]+)@([^'"\s]+)['"]?\s*$/
 const GLOB_ENTRY_RE = /^\s*-\s*['"]?[^'"\s]*\*[^'"\s]*['"]?\s*$/
 const BARE_NAME_ENTRY_RE = /^\s*-\s*['"]?[^@'"\s]+['"]?\s*$/
 // In-repo workspace-member PATH globs (`packages/*`, `.claude/hooks/**`,
-// `.config/oxlint-plugin/**`, `template/**`) aren't npm packages — they never
+// `.config/fleet/oxlint-plugin/**`, `template/**`) aren't npm packages — they never
 // soak, so they're always exempt. Everything ELSE that's exempt must be
 // Socket-OWNED (decided by the canonical SOCKET_PACKAGE_PATTERNS via
 // isSocketSourcedPackage), not hardcoded here. A third-party scope glob (e.g.
@@ -43,6 +61,8 @@ const BARE_NAME_ENTRY_RE = /^\s*-\s*['"]?[^@'"\s]+['"]?\s*$/
 // members, since a blanket scope-bypass would admit any future upstream publish.
 const WORKSPACE_PATH_GLOB_RE =
   /^(?:template\/)?(?:\.claude\/|\.config\/|packages\/|template\/)/
+// Match the canonical soak annotation comment: `# published: YYYY-MM-DD |
+// removable: YYYY-MM-DD`, capturing both ISO dates.
 const ANNOTATION_RE =
   /^\s*#\s+published:\s+(\d{4}-\d{2}-\d{2})\s+\|\s+removable:\s+(\d{4}-\d{2}-\d{2})\s*$/
 const ALLOW_MARKER = '# socket-lint: allow soak-exclude-no-date-annotation'
@@ -67,7 +87,12 @@ export function isSoakPinExempt(entryName: string): boolean {
   return isSocketSourcedPackage(probe)
 }
 
+export type SoakBlock = 'minimumReleaseAgeExclude' | 'trustPolicyExclude'
+
 export interface Finding {
+  // Which list block the entry lives in — drives the asymmetric stale handling
+  // (soak entries auto-promote; trust waivers require human re-audit).
+  block: SoakBlock
   kind: 'missing' | 'stale' | 'unpinned'
   line: number
   name: string
@@ -78,18 +103,22 @@ export interface Finding {
 export function scan(text: string, todayISO: string): Finding[] {
   const lines = text.split('\n')
   const findings: Finding[] = []
-  let inBlock = false
+  let block: SoakBlock | undefined
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i] ?? ''
-    if (SECTION_HEADER.test(line)) {
-      inBlock = true
+    if (SOAK_HEADER.test(line)) {
+      block = 'minimumReleaseAgeExclude'
       continue
     }
-    if (!inBlock) {
+    if (TRUST_HEADER.test(line)) {
+      block = 'trustPolicyExclude'
+      continue
+    }
+    if (!block) {
       continue
     }
     if (ANY_TOP_LEVEL_KEY.test(line) && !line.startsWith(' ')) {
-      inBlock = false
+      block = undefined
       continue
     }
     if (line.includes(ALLOW_MARKER)) {
@@ -106,6 +135,7 @@ export function scan(text: string, todayISO: string): Finding[] {
         continue
       }
       findings.push({
+        block,
         kind: 'unpinned',
         line: i + 1,
         name: globName,
@@ -127,6 +157,7 @@ export function scan(text: string, todayISO: string): Finding[] {
         continue
       }
       findings.push({
+        block,
         kind: 'unpinned',
         line: i + 1,
         name: bareName,
@@ -143,12 +174,13 @@ export function scan(text: string, todayISO: string): Finding[] {
     const prev = i > 0 ? (lines[i - 1] ?? '') : ''
     const annotationMatch = ANNOTATION_RE.exec(prev)
     if (!annotationMatch) {
-      findings.push({ kind: 'missing', line: i + 1, name, version })
+      findings.push({ block, kind: 'missing', line: i + 1, name, version })
       continue
     }
     const removable = annotationMatch[2]!
     if (removable < todayISO) {
       findings.push({
+        block,
         kind: 'stale',
         line: i + 1,
         name,
@@ -178,7 +210,7 @@ export function removeStaleEntries(content: string, stale: Finding[]): string {
   }
   const lines = content.split('\n')
   // 1-based line numbers, descending, so splices don't shift pending indices.
-  const byLineDesc = [...stale].sort((a, b) => b.line - a.line)
+  const byLineDesc = [...stale].toSorted((a, b) => b.line - a.line)
   for (let i = 0, { length } = byLineDesc; i < length; i += 1) {
     const idx = byLineDesc[i]!.line - 1
     // Remove a preceding annotation line if it's the canonical comment.
@@ -200,40 +232,79 @@ function main(): void {
   const fix = process.argv.includes('--fix')
   const todayISO = new Date().toISOString().slice(0, 10)
   const findings = scan(content, todayISO)
-  const missing = findings.filter(f => f.kind === 'missing')
-  const stale = findings.filter(f => f.kind === 'stale')
-  const unpinned = findings.filter(f => f.kind === 'unpinned')
+  // Missing-annotation + unpinned enforcement is soak-only: blocking on a trust
+  // entry would risk fleet-wide red, since the synth renderer emits trust
+  // bullets without annotations and there is no cascade reverse-prune to heal a
+  // member that already carries one. A malformed soak entry, by contrast, is
+  // always the author's own edit to fix.
+  const missing = findings.filter(
+    f => f.kind === 'missing' && f.block === 'minimumReleaseAgeExclude',
+  )
+  const unpinned = findings.filter(
+    f => f.kind === 'unpinned' && f.block === 'minimumReleaseAgeExclude',
+  )
+  const soakStale = findings.filter(
+    f => f.kind === 'stale' && f.block === 'minimumReleaseAgeExclude',
+  )
+  const trustStale = findings.filter(
+    f => f.kind === 'stale' && f.block === 'trustPolicyExclude',
+  )
 
-  if (stale.length > 0 && fix) {
+  if (soakStale.length > 0 && fix) {
     // Promote: the soak cleared, so the bypass is no longer needed.
-    const promoted = removeStaleEntries(content, stale)
+    const promoted = removeStaleEntries(content, soakStale)
     writeFileSync(PNPM_WORKSPACE_YAML, promoted)
     process.stdout.write(
-      `[check-soak-excludes-have-dates] promoted ${stale.length} soaked ` +
-        `entr${stale.length === 1 ? 'y' : 'ies'} out of minimumReleaseAgeExclude:\n`,
+      `[check-soak-excludes-have-dates] promoted ${soakStale.length} soaked ` +
+        `entr${soakStale.length === 1 ? 'y' : 'ies'} out of minimumReleaseAgeExclude:\n`,
     )
-    for (let i = 0, { length } = stale; i < length; i += 1) {
-      const f = stale[i]!
+    for (let i = 0, { length } = soakStale; i < length; i += 1) {
+      const f = soakStale[i]!
       process.stdout.write(`  - ${f.name}@${f.version}\n`)
     }
     process.stdout.write(`\nRun \`pnpm install\` to reconcile the lockfile.\n`)
-    // Promoting is the whole job in --fix mode; missing-annotation reporting
-    // still runs below so a fix run also surfaces malformed entries.
-  } else if (stale.length > 0) {
+    // Promoting is the whole job in --fix mode; the reporting below still runs
+    // so a fix run also surfaces malformed entries + stale trust waivers.
+  } else if (soakStale.length > 0) {
     process.stderr.write(
-      `[check-soak-excludes-have-dates] ${stale.length} stale soak-bypass ` +
-        `entr${stale.length === 1 ? 'y' : 'ies'} ` +
+      `[check-soak-excludes-have-dates] ${soakStale.length} stale soak-bypass ` +
+        `entr${soakStale.length === 1 ? 'y' : 'ies'} ` +
         `(removable: date in the past) — candidates for cleanup ` +
         `(run with --fix to promote):\n`,
     )
-    for (let i = 0, { length } = stale; i < length; i += 1) {
-      const f = stale[i]!
+    for (let i = 0, { length } = soakStale; i < length; i += 1) {
+      const f = soakStale[i]!
       process.stderr.write(
         `  line ${f.line}: ${f.name}@${f.version} (removable ${f.removable})\n`,
       )
     }
     process.stderr.write(
       `\nRun \`pnpm install\` after removing — the soak has cleared naturally.\n\n`,
+    )
+  }
+
+  // A stale trust-policy waiver is reported but NEVER auto-pruned: removing it
+  // re-arms the no-downgrade supply-chain gate, which can re-break `pnpm
+  // install` if the waived version still resolves. It needs a human re-audit,
+  // not a mechanical drop — so this is informational (exit 0), the same posture
+  // soak stale-reporting takes outside --fix.
+  if (trustStale.length > 0) {
+    process.stderr.write(
+      `[check-soak-excludes-have-dates] ${trustStale.length} stale trust-policy ` +
+        `waiver${trustStale.length === 1 ? '' : 's'} ` +
+        `(removable: date in the past) in trustPolicyExclude:\n`,
+    )
+    for (let i = 0, { length } = trustStale; i < length; i += 1) {
+      const f = trustStale[i]!
+      process.stderr.write(
+        `  line ${f.line}: ${f.name}@${f.version} (removable ${f.removable})\n`,
+      )
+    }
+    process.stderr.write(
+      `\nA trust waiver bypasses the no-downgrade gate; a stale one needs a human ` +
+        `re-audit, not an auto-prune. Re-confirm the version is safe (or has rolled ` +
+        `forward), then drop it from EXPECTED_TRUST_POLICY_EXCLUDE in the manifest ` +
+        `and the live YAML.\nReference: docs/agents.md/fleet/tooling.md.\n\n`,
     )
   }
 

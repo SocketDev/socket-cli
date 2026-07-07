@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 // Claude Code PreToolUse hook — no-blanket-file-exclusion-guard.
 //
-// Blocks Edit/Write tool calls that introduce a `max-file-lines:`
-// file-size exemption marker that does NOT name a real category. The
-// only valid marker is `max-file-lines: <category> — <reason>`: a single
-// hyphenated category word naming WHAT the file is (parser,
-// state-machine, table, cli, integration-test, vendored, …) plus a
-// separated reason for WHY it can't split.
+// Blocks Edit/Write tool calls that introduce a file-size exemption
+// marker that does NOT name a real category. The only valid marker is
+// `max-file-lines: <category> — <reason>`: a single hyphenated category
+// word naming WHAT the file is (parser, state-machine, table, cli,
+// integration-test, vendored, …) plus a separated reason for WHY it
+// can't split.
 //
 // Why: "no blanket file exclusions". A file may not wave itself past the
 // soft/hard line cap by asserting it deems itself acceptable — a marker
@@ -31,12 +31,12 @@
 // gate. Splitting is the soft-band answer in every case — the block
 // message says so.
 //
-// Recognized banned shapes (a `max-file-lines:` marker that fails the
+// Recognized banned shapes (a size-exemption marker that fails the
 // `<category> — <reason>` contract):
 //   max-file-lines: legitimate                       (self-judgment, no category)
 //   max-file-lines: legitimate — one cohesive module (self-judgment leads)
 //   max-file-lines: ok — it's fine                    (self-judgment word)
-//   max-file-lines: parser                            (category, no `— reason`)
+//   max-file-lines: parser                            (category, no reason)
 //
 // Allowed shapes (pass through):
 //   max-file-lines: parser — recursive-descent grammar
@@ -61,15 +61,9 @@
 //
 // Fails open on malformed payloads (exit 0 + stderr log).
 
-import process from 'node:process'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
-import { withEditGuard } from '../_shared/payload.mts'
-
-const logger = getDefaultLogger()
-
-// A `max-file-lines:` marker is present at all (any category text after it).
+// A size-exemption marker is present at all (any category text after it).
 const MARKER_RE = /max-file-lines:\s*\S/i
 
 // A VALID marker: `<category> — <reason>`. The category is one hyphenated
@@ -138,19 +132,18 @@ export function findBlanketExclusions(text: string): Finding[] {
   return findings
 }
 
-// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
-// content extraction (new_string / content), and fail-open on any throw.
-await withEditGuard((filePath, content) => {
+export const check = editGuard((filePath, content) => {
   const newContent = content ?? ''
   const findings = findBlanketExclusions(newContent)
   if (findings.length === 0) {
-    return
+    return undefined
   }
   const out: string[] = []
   out.push(
     '🚨 no-blanket-file-exclusion-guard: blocked Edit/Write — a `max-file-lines:` marker must name a real category.',
   )
   out.push('')
+  /* c8 ignore next - editGuard returns undefined for an empty filePath before this runs */
   out.push(`File:  ${filePath || '<unknown>'}`)
   out.push('')
   for (let i = 0, { length } = findings; i < length; i += 1) {
@@ -172,7 +165,9 @@ await withEditGuard((filePath, content) => {
   out.push(
     'state-machine, table, cli, integration-test, vendored, …) and <reason> says',
   )
-  out.push('WHY it cannot split. No blanket file exclusions — say what the file is,')
+  out.push(
+    'WHY it cannot split. No blanket file exclusions — say what the file is,',
+  )
   out.push('not that you deem it acceptable.')
   out.push('')
   out.push(
@@ -181,8 +176,21 @@ await withEditGuard((filePath, content) => {
   out.push(
     '(501–1000) gets NO exemption — it MUST split. So in almost every case the',
   )
-  out.push('answer is the same: SPLIT along a natural seam. Reach for the marker only')
-  out.push('for a genuine single cohesive unit past 1000 lines (or a generated file).')
-  logger.error(out.join('\n') + '\n')
-  process.exitCode = 2
+  out.push(
+    'answer is the same: SPLIT along a natural seam. Reach for the marker only',
+  )
+  out.push(
+    'for a genuine single cohesive unit past 1000 lines (or a generated file).',
+  )
+  return block(out.join('\n') + '\n')
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  scope: 'convention',
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

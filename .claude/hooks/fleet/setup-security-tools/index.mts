@@ -44,6 +44,13 @@ import process from 'node:process'
 
 import { getSocketAppDir } from '@socketsecurity/lib-stable/paths/socket'
 
+import {
+  CORE_SHIM_COMMANDS,
+  findBrokenShimTargets,
+  getShimsDir,
+  missingCoreShims,
+} from './lib/shims.mts'
+
 interface Finding {
   readonly kind:
     | 'broken-shim'
@@ -115,7 +122,7 @@ export function checkEdition(): Finding[] {
 }
 
 export async function checkShims(): Promise<Finding[]> {
-  const shimsDir = path.join(getSocketAppDir('wheelhouse'), 'shims')
+  const shimsDir = getShimsDir()
   if (!existsSync(shimsDir)) {
     return []
   }
@@ -135,11 +142,12 @@ export async function checkShims(): Promise<Finding[]> {
     } catch {
       continue
     }
-    const m = content.match(/"([^"]*\/_dlx\/[^"]+\/sfw-(?:enterprise|free))"/)
-    if (!m) {
+    // Only bash shim files carry exec targets; binaries/symlinks in the same
+    // bin dir (flat racked-tool handles) have no quoted paths and skip clean.
+    if (!content.startsWith('#!')) {
       continue
     }
-    if (!existsSync(m[1]!)) {
+    if (findBrokenShimTargets(content).length > 0) {
       broken.push(name)
     }
   }
@@ -150,13 +158,14 @@ export async function checkShims(): Promise<Finding[]> {
     {
       kind: 'broken-shim',
       message:
-        `SFW shim${broken.length === 1 ? '' : 's'} point to a missing dlx ` +
-        `target: ${broken.join(', ')}. The dlx cache evicted the binary ` +
-        `(manifest rebuild, manual delete, or cache rotation). Every ` +
-        `command through ${broken.length === 1 ? 'that shim' : 'those shims'} ` +
+        `SFW shim${broken.length === 1 ? '' : 's'} point to a missing ` +
+        `target: ${broken.join(', ')}. The wrapped binary moved or was ` +
+        `evicted (rack rotation, dlx cleanup, version-manager upgrade). ` +
+        `Every command through ${broken.length === 1 ? 'that shim' : 'those shims'} ` +
         `currently fails with "No such file or directory." Run ` +
-        `\`node .claude/hooks/fleet/setup-security-tools/install.mts\` to ` +
-        `re-download SFW and rewrite the shims.`,
+        `\`node scripts/fleet/setup/setup-tools.mjs\` (or the interactive ` +
+        `\`node .claude/hooks/fleet/setup-security-tools/install.mts\`) to ` +
+        `rewrite the shims.`,
     },
   ]
 }
@@ -245,35 +254,39 @@ export function repairShims(home: string): Finding[] {
   // ignored in favor of the lib-stable resolution.
   void home
   const sfwDir = getSocketAppDir('wheelhouse')
-  const shimsDir = path.join(sfwDir, 'shims')
+  const shimsDir = getShimsDir()
   const sfwBin = path.join(sfwDir, 'bin', 'sfw')
-  const regen = path.join(sfwDir, 'regenerate-shims.sh')
+  // The fleet shim generator is the repo's dep-0 bootstrap (cascaded into
+  // every member), not a per-machine bash script — regeneration IS that
+  // script (code-first: one generator owns the shims).
+  const generator = path.join(
+    process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd(),
+    'scripts',
+    'fleet',
+    'setup',
+    'setup-tools.mjs',
+  )
 
-  // Both the binary and the regen script must exist. If either is
+  // Both the sfw binary and the generator must exist. If either is
   // missing the repair can't run; the diagnostic path will surface
   // the install command instead.
-  if (!existsSync(sfwBin) || !existsSync(regen)) {
+  if (!existsSync(sfwBin) || !existsSync(generator)) {
     return []
   }
 
-  // Repair triggers when shims/ is missing OR empty. A populated
-  // shims/ dir is handled by checkShims() (which reports broken
-  // individual shims).
-  let isEmpty = true
-  if (existsSync(shimsDir)) {
-    try {
-      const entries = require('node:fs').readdirSync(shimsDir) as string[]
-      isEmpty = entries.length === 0
-    } catch {
-      // Unreadable dir — treat as broken; let regen recreate it.
-      isEmpty = true
-    }
-  }
-  if (!isEmpty) {
+  // Repair triggers when the shim dir is missing OR every core shim is
+  // absent (the "shims were wiped / never generated" shape). A partially
+  // populated dir is handled by checkShims() (per-shim broken reporting) —
+  // the bin dir also holds flat racked-tool handles, so plain emptiness is
+  // not a usable signal.
+  const wiped =
+    !existsSync(shimsDir) ||
+    missingCoreShims(shimsDir).length >= CORE_SHIM_COMMANDS.length
+  if (!wiped) {
     return []
   }
 
-  const r = spawnSync('bash', [regen], {})
+  const r = spawnSync('node', [generator], {})
   if (r.status !== 0) {
     // Failed — fall through to checkShims() which will report the
     // missing/broken state and the install command. Don't double-
@@ -285,12 +298,17 @@ export function repairShims(home: string): Finding[] {
     {
       kind: 'auto-repaired',
       message:
-        'SFW shims were missing/empty — auto-repaired via ' +
-        `${regen}. ${String(r.stdout).trim().split('\n').pop() ?? ''}`.trim(),
+        'SFW shims were missing/wiped — auto-repaired via ' +
+        /* c8 ignore start - split always yields ≥1 element so pop() never returns undefined */
+        `${generator}. ${String(r.stdout).trim().split('\n').pop() ?? ''}`.trim(),
+      /* c8 ignore stop */
     },
   ]
 }
 
+/* c8 ignore start - main() and its entrypoint guard only execute when the script is
+   invoked directly via process.argv; covered by integration tests that spawn a
+   subprocess, not by in-process import */
 async function main(): Promise<void> {
   // Read the Stop payload from stdin. We use `transcript_path` to
   // scan the most recent assistant turn for the 401 error signature.
@@ -348,8 +366,11 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch(e => {
-  process.stderr.write(
-    `[setup-security-tools] health-check error (allowing): ${e}\n`,
-  )
-})
+if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+  main().catch(e => {
+    process.stderr.write(
+      `[setup-security-tools] health-check error (allowing): ${e}\n`,
+    )
+  })
+}
+/* c8 ignore stop */

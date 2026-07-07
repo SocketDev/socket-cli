@@ -1,45 +1,48 @@
-#!/usr/bin/env node
-// Claude Code PreToolUse hook — claude-md-size-guard.
-//
-// Blocks Edit/Write tool calls that would push CLAUDE.md above the
-// 40KB whole-file size cap. The cap measures the ENTIRE post-edit
-// file, not just the fleet-canonical block — fleet content + per-repo
-// content both count.
-//
-// Why a whole-file cap: every byte in CLAUDE.md is load-bearing
-// in-context tokens for every Claude session opened in the repo, AND
-// fleet content is duplicated across ~12 socket-* repos. The 40KB
-// ceiling forces ruthless reference-deferral: each rule states the
-// invariant + a one-line "Why" + a link to docs/agents.md/fleet/<topic>.md
-// for the full pattern catalog. Detail goes in the linked doc.
-//
-// What the hook does:
-//   1. Fires only on Edit/Write tool calls targeting a CLAUDE.md.
-//   2. Computes the post-edit text (Write: content; Edit: splice).
-//   3. If the whole file exceeds the cap, exits 2 with a stderr message
-//      naming the size, the cap, and the canonical remediation.
-//
-// Cap policy:
-//   - Default: 40 KB (40_960 bytes). Override per-repo via env
-//     `CLAUDE_MD_BYTES`. Legacy `CLAUDE_MD_FLEET_BLOCK_BYTES` is read
-//     as a fallback so existing per-repo overrides don't break.
-//
-// Hook contract:
-//   - Reads Claude Code's PreToolUse JSON from stdin.
-//   - Operates on `tool_input.new_string` (Edit) or `tool_input.content`
-//     (Write). When an Edit is a partial replacement we read the on-
-//     disk file and apply the diff in-memory. If we can't reliably
-//     compute (ambiguous Edit), we fail open.
+/*
+ * @file Claude Code PreToolUse hook — claude-md-size-guard.
+ *
+ * Blocks Edit/Write tool calls that would push CLAUDE.md above the
+ * 40KB whole-file size cap. The cap measures the ENTIRE post-edit
+ * file, not just the fleet-canonical block — fleet content + per-repo
+ * content both count.
+ *
+ * Why a whole-file cap: every byte in CLAUDE.md is load-bearing
+ * in-context tokens for every Claude session opened in the repo, AND
+ * fleet content is duplicated across ~12 socket-* repos. The 40KB
+ * ceiling forces ruthless reference-deferral: each rule states the
+ * invariant + a one-line "Why" + a link to docs/agents.md/fleet/<topic>.md
+ * for the full pattern catalog. Detail goes in the linked doc.
+ *
+ * What the hook does:
+ *   1. Fires only on Edit/Write tool calls targeting a CLAUDE.md.
+ *   2. Computes the post-edit text (Write: content; Edit: splice).
+ *   3. If the whole file exceeds the cap, exits 2 with a stderr message
+ *      naming the size, the cap, and the canonical remediation.
+ *
+ * Cap policy:
+ *   - Default: 40 KB (40_960 bytes). Override per-repo via env
+ *     `CLAUDE_MD_BYTES`. Legacy `CLAUDE_MD_FLEET_BLOCK_BYTES` is read
+ *     as a fallback so existing per-repo overrides don't break.
+ *
+ * Hook contract:
+ *   - Reads Claude Code's PreToolUse JSON from stdin.
+ *   - Operates on `tool_input.new_string` (Edit) or `tool_input.content`
+ *     (Write). When an Edit is a partial replacement we read the on-
+ *     disk file and apply the diff in-memory. If we can't reliably
+ *     compute (ambiguous Edit), we fail open.
+ */
 
 import { existsSync, readFileSync } from 'node:fs'
 import process from 'node:process'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
-import { withEditGuard } from '../_shared/payload.mts'
+import {
+  block,
+  defineHook,
+  editGuard,
+  notify,
+  runHook,
+} from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const logger = getDefaultLogger()
 
 const BYPASS_PHRASE = 'Allow claude-md-size bypass'
 
@@ -85,11 +88,11 @@ export function computePostEditText(
   return raw.slice(0, idx) + newString + raw.slice(idx + oldString.length)
 }
 
-export function emitBlock(
+export function buildBlockMessage(
   filePath: string,
   fileBytes: number,
   capBytes: number,
-): void {
+): string {
   const lines: string[] = []
   lines.push('[claude-md-size-guard] Blocked: CLAUDE.md too large.')
   lines.push(`  File:        ${filePath}`)
@@ -108,7 +111,7 @@ export function emitBlock(
   lines.push(`  Genuinely can't trim now? Type \`${BYPASS_PHRASE}\` to`)
   lines.push('  land this edit over-cap (one edit per phrase). See')
   lines.push('  `docs/agents.md/fleet/bypass-phrases.md`.')
-  logger.error(lines.join('\n') + '\n')
+  return lines.join('\n') + '\n'
 }
 
 export function getCap(): number {
@@ -128,18 +131,17 @@ export function isClaudeMd(filePath: string | undefined): boolean {
   if (!filePath) {
     return false
   }
+  /* c8 ignore next */
   const base = filePath.split('/').pop() ?? ''
   return base === 'CLAUDE.md'
 }
 
-// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
-// content extraction (new_string / content), and fail-open on any throw.
-await withEditGuard((filePath, content, payload) => {
+export const check = editGuard((filePath, content, payload) => {
   if (!isClaudeMd(filePath)) {
-    return
+    return undefined
   }
   const toolName = payload.tool_name!
-  // withEditGuard's `content` arg already resolves to `content` (Write) or
+  // editGuard's `content` arg already resolves to `content` (Write) or
   // `new_string` (Edit). computePostEditText reads newString only on the
   // Edit branch and content only on the Write branch, so passing the same
   // resolved value to both slots is correct for each tool.
@@ -153,22 +155,30 @@ await withEditGuard((filePath, content, payload) => {
   )
   if (postEdit === undefined) {
     // Fail open — couldn't compute post-edit text reliably.
-    return
+    return undefined
   }
   const cap = getCap()
   const size = Buffer.byteLength(postEdit, 'utf8')
   if (size <= cap) {
-    return
+    return undefined
   }
   // Authorized over-cap edit: the user typed the bypass phrase this turn.
   // One phrase authorizes one over-cap edit; the message names the phrase.
   if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    logger.error(
+    return notify(
       `[claude-md-size-guard] Over-cap edit allowed by \`${BYPASS_PHRASE}\` ` +
         `(${size} bytes > ${cap} cap). Trim back under cap when you can.\n`,
     )
-    return
   }
-  emitBlock(filePath, size, cap)
-  process.exitCode = 2
+  return block(buildBlockMessage(filePath, size, cap))
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  scope: 'convention',
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

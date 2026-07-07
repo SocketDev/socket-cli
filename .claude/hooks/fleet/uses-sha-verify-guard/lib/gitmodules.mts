@@ -5,7 +5,8 @@
 //   - (when cache is provided) reachability of refSha in the
 //     submodule's GitHub url
 
-import { verifyCommitSha, type Cache } from './cache.mts'
+import { verifyCommitSha } from './cache.mts'
+import type { Cache } from './cache.mts'
 import type { SubmoduleIssue } from './issue-types.mts'
 import {
   GITMODULES_HEADER_RE,
@@ -36,7 +37,7 @@ export function findGitmodulesIssues(
     if (!open) {
       continue
     }
-    const name = open[1]!
+    const name = open.groups!.name!
     let headerSha: string | undefined
     for (let j = i - 1; j >= 0; j -= 1) {
       const prev = lines[j]!
@@ -45,7 +46,7 @@ export function findGitmodulesIssues(
       }
       const headerMatch = GITMODULES_HEADER_RE.exec(prev)
       if (headerMatch) {
-        headerSha = headerMatch[1]
+        headerSha = headerMatch.groups!.sha
         break
       }
     }
@@ -59,13 +60,13 @@ export function findGitmodulesIssues(
       if (!refSha) {
         const refMatch = GITMODULES_REF_RE.exec(next)
         if (refMatch) {
-          refSha = refMatch[1]
+          refSha = refMatch.groups!.ref
         }
       }
       if (!ownerRepo) {
         const urlMatch = GITMODULES_URL_RE.exec(next)
         if (urlMatch) {
-          ownerRepo = urlMatch[1]
+          ownerRepo = urlMatch.groups!.ownerRepo
         }
       }
     }
@@ -78,7 +79,8 @@ export function findGitmodulesIssues(
     })
   }
 
-  for (const block of blocks) {
+  for (let i = 0, { length } = blocks; i < length; i += 1) {
+    const block = blocks[i]!
     if (!block.headerCommentSha) {
       issues.push({
         submodule: block.name,

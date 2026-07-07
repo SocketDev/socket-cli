@@ -1,28 +1,28 @@
 /**
- * scanning-vulns engine CLI — the deterministic collate/score/render half of
+ * Scanning-vulns engine CLI — the deterministic collate/score/render half of
  * the skill, callable from SKILL.md after each Workflow returns. The review +
  * confidence-scoring agents stay prose; this owns the math + the two output
  * files so counts and line-handling can't be fabricated or drift by hand.
  *
  * Subcommands:
- *   collate  --from <raw-findings.json> --target <dir> [--out-json <f>]
- *       drop-empty + light-dedupe + assign F-NNN ids in (severity, file, line)
- *       order. Writes the interim findings[] JSON so the scoring agents read a
- *       stable id set, and prints the deduped count.
+ * collate  --from <raw-findings.json> --target <dir> [--out-json <f>]
+ * drop-empty + light-dedupe + assign F-NNN ids in (severity, file, line)
+ * order. Writes the interim findings[] JSON so the scoring agents read a
+ * stable id set, and prints the deduped count.
  *
- *   finalize --from <scored-findings.json> --target <dir>
- *       apply per-id scores, re-sort + re-id by (confidence, severity, file,
- *       line), build VULN-FINDINGS.json with the computed summary, render
- *       VULN-FINDINGS.md, write BOTH under <target-dir>, print the hand-back
- *       summary. --no-score-applied skips the score merge (the --no-score path)
- *       and just envelopes + renders.
+ * Finalize --from <scored-findings.json> --target <dir>
+ * apply per-id scores, re-sort + re-id by (confidence, severity, file,
+ * line), build VULN-FINDINGS.json with the computed summary, render
+ * VULN-FINDINGS.md, write BOTH under <target-dir>, print the hand-back
+ * summary. --no-score-applied skips the score merge (the --no-score path)
+ * and just envelopes + renders.
  *
  * Input is always read from a --from <file> (never stdin/heredoc). Output files
  * are confined under <target-dir>.
  *
- * Usage examples:
- *   node scripts/fleet/scanning-vulns/cli.mts collate --from /tmp/raw.json --target ./pkg
- *   node scripts/fleet/scanning-vulns/cli.mts finalize --from /tmp/scored.json --target ./pkg
+ * Usage examples: node scripts/fleet/scanning-vulns/cli.mts collate --from
+ * /tmp/raw.json --target ./pkg node scripts/fleet/scanning-vulns/cli.mts
+ * finalize --from /tmp/scored.json --target ./pkg.
  */
 
 import path from 'node:path'
@@ -33,7 +33,15 @@ import { fileURLToPath } from 'node:url'
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { applyScores, assignIds, buildEnvelope, dropEmpty, lightDedupe, renderMarkdown, summarizeHandback } from './lib/collate.mts'
+import {
+  applyScores,
+  assignIds,
+  buildEnvelope,
+  dropEmpty,
+  lightDedupe,
+  renderMarkdown,
+  summarizeHandback,
+} from './lib/collate.mts'
 import type { Finding, Score } from './lib/collate.mts'
 
 const logger = getDefaultLogger()
@@ -98,7 +106,10 @@ export function cmdCollate(argv: readonly string[]): number {
   const outPath =
     optValue(argv, '--out-json') ??
     confineUnderTarget(target, '.vuln-collated.json')
-  atomicWrite(outPath, `${JSON.stringify({ findings: withIds }, undefined, 2)}\n`)
+  atomicWrite(
+    outPath,
+    `${JSON.stringify({ findings: withIds }, undefined, 2)}\n`,
+  )
   logger.info(
     `collated ${withIds.length} finding(s) (${deduped.duplicates} duplicate(s) merged) → ${outPath}`,
   )
@@ -116,16 +127,21 @@ export function cmdFinalize(argv: readonly string[]): number {
   const findings = readFindings(fromPath)
   const scores =
     parsed && typeof parsed === 'object' && 'scores' in parsed
-      ? ((parsed as { scores?: unknown | undefined }).scores as Score[] | undefined)
+      ? ((parsed as { scores?: unknown | undefined }).scores as
+          | Score[]
+          | undefined)
       : undefined
   const focusAreas =
     parsed && typeof parsed === 'object' && 'focus_areas' in parsed
-      ? ((parsed as { focus_areas?: unknown | undefined }).focus_areas as string[]) ?? []
+      ? (((parsed as { focus_areas?: unknown | undefined })
+          .focus_areas as string[]) ?? [])
       : []
   const sourceFileCount =
     parsed && typeof parsed === 'object' && 'source_file_count' in parsed
-      ? Number((parsed as { source_file_count?: unknown | undefined }).source_file_count) ||
-        0
+      ? Number(
+          (parsed as { source_file_count?: unknown | undefined })
+            .source_file_count,
+        ) || 0
       : 0
   const scannedAt = optValue(argv, '--scanned-at') ?? '(unknown)'
 

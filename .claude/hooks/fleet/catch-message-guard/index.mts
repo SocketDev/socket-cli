@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // Claude Code PreToolUse hook — catch-message-guard.
 //
 // Blocks Edit/Write operations that introduce `${<binding>.message}`
@@ -22,15 +21,12 @@
 //
 // Fails open on regex / parse errors.
 
-import { readFileSync } from 'node:fs'
-import process from 'node:process'
+import { safeReadFileSync } from '@socketsecurity/lib-stable/fs/read-file'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
-import { withEditGuard } from '../_shared/payload.mts'
+import { resolveEditedText } from '../_shared/payload.mts'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const logger = getDefaultLogger()
 
 const BYPASS_PHRASE = 'Allow catch-message bypass'
 const BINDING_BYPASS_PHRASE = 'Allow catch-binding-name bypass'
@@ -49,7 +45,8 @@ const CATCH_WRONG_BINDING_RE =
 
 // Match the opening of a catch block. The binding is captured.
 // JS-syntax-only `catch {}` (no binding) is skipped.
-const CATCH_OPEN_RE = /\bcatch\s*\(\s*([A-Za-z_$][\w$]*)\s*(?::[^)]+)?\)\s*\{/g
+const CATCH_OPEN_RE =
+  /\bcatch\s*\(\s*(?<binding>[A-Za-z_$][\w$]*)\s*(?::[^)]+)?\)\s*\{/g
 
 interface Finding {
   readonly binding: string
@@ -70,6 +67,7 @@ export function findWrongBindings(after: string): BindingFinding[] {
   const lines = after.split('\n')
   const out: BindingFinding[] = []
   for (let i = 0; i < lines.length; i += 1) {
+    /* c8 ignore next - split() always yields strings, never undefined */
     const raw = lines[i] ?? ''
     if (PER_LINE_MARKER.test(raw)) {
       continue
@@ -93,7 +91,7 @@ export function isJsOrTs(filePath: string): boolean {
 }
 
 export function isTestTree(filePath: string): boolean {
-  return TEST_TREE_RE.test(filePath.replace(/\\/g, '/'))
+  return TEST_TREE_RE.test(normalizePath(filePath))
 }
 
 // Walk the after-text and find every `${<binding>.message}` inside an
@@ -110,6 +108,7 @@ export function findCatchMessageViolations(after: string): Finding[] {
   const stack: Array<{ binding: string; depth: number }> = []
   let braceDepth = 0
   for (let i = 0; i < lines.length; i += 1) {
+    /* c8 ignore next - split() always yields strings, never undefined */
     const raw = lines[i] ?? ''
     if (PER_LINE_MARKER.test(raw)) {
       braceDepth = adjustDepth(raw, braceDepth, stack)
@@ -126,13 +125,14 @@ export function findCatchMessageViolations(after: string): Finding[] {
     CATCH_OPEN_RE.lastIndex = 0
     const pending: string[] = []
     while ((m = CATCH_OPEN_RE.exec(code)) !== null) {
-      pending.push(m[1]!)
+      pending.push(m.groups!.binding!)
     }
     // Look for ${<binding>.message} for any currently-open binding
     // BEFORE updating depth, so the line that closes the catch
     // doesn't lose its frame mid-line.
     if (stack.length > 0) {
-      for (const frame of stack) {
+      for (let i = 0, { length } = stack; i < length; i += 1) {
+        const frame = stack[i]!
         const bind = frame.binding
         const bindMessageRe = new RegExp(
           `\\$\\{\\s*${escapeRegex(bind)}\\.message\\b`,
@@ -147,7 +147,8 @@ export function findCatchMessageViolations(after: string): Finding[] {
       }
     }
     braceDepth = adjustDepth(code, braceDepth, stack)
-    for (const binding of pending) {
+    for (let i = 0, { length } = pending; i < length; i += 1) {
+      const binding = pending[i]!
       stack.push({ binding, depth: braceDepth })
     }
   }
@@ -205,7 +206,7 @@ function adjustDepth(
       }
       continue
     }
-    if (ch === '"' || ch === "'") {
+    if (ch === "'" || ch === '"') {
       inString = true
       stringChar = ch
       continue
@@ -243,7 +244,7 @@ function stripLineComment(line: string): string {
       }
       continue
     }
-    if (ch === '"' || ch === "'" || ch === '`') {
+    if (ch === "'" || ch === '"' || ch === '`') {
       inString = true
       stringChar = ch
       continue
@@ -259,35 +260,15 @@ function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
-export function readFileSafe(p: string): string {
-  try {
-    return readFileSync(p, 'utf8')
-  } catch {
-    return ''
-  }
-}
-
-// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
-// content extraction (new_string / content), and fail-open on any throw.
-await withEditGuard((filePath, content, payload) => {
+export const check = editGuard((filePath, content, payload) => {
   if (!isJsOrTs(filePath) || isTestTree(filePath)) {
-    return
+    return undefined
   }
 
-  const currentText = readFileSafe(filePath)
-  let afterText: string
-  if (payload.tool_name === 'Write') {
-    afterText = content ?? ''
-  } else {
-    const oldStr = (payload.tool_input?.old_string as string | undefined) ?? ''
-    const newStr = content ?? ''
-    if (!oldStr) {
-      return
-    }
-    if (!currentText.includes(oldStr)) {
-      return
-    }
-    afterText = currentText.replace(oldStr, newStr)
+  const currentText = safeReadFileSync(filePath) ?? ''
+  const afterText = resolveEditedText(payload)
+  if (afterText === undefined) {
+    return undefined
   }
 
   // Message-quality check — only NEW violations.
@@ -313,7 +294,7 @@ await withEditGuard((filePath, content, payload) => {
   const hasMessage = newMessageFindings.length > 0
   const hasBinding = newBindingFindings.length > 0
   if (!hasMessage && !hasBinding) {
-    return
+    return undefined
   }
 
   const transcript = payload.transcript_path
@@ -326,7 +307,7 @@ await withEditGuard((filePath, content, payload) => {
       ? bypassPhrasePresent(transcript, BINDING_BYPASS_PHRASE)
       : false)
   if (messageBypassed && bindingBypassed) {
-    return
+    return undefined
   }
 
   const lines: string[] = []
@@ -395,6 +376,15 @@ await withEditGuard((filePath, content, payload) => {
       '',
     )
   }
-  logger.error(lines.join('\n'))
-  process.exitCode = 2
+  return block(lines.join('\n'))
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  scope: 'convention',
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

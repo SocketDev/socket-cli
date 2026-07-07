@@ -18,7 +18,7 @@ pnpm --filter <pkg> <script>
 
 **Deliberately narrow** so it doesn't fight legitimate `cd`:
 - Only fires on `cd <subpackage>` *immediately chained* to a package
-  manager. A bare `cd` (cwd drift) is `avoid-cd-reminder`'s concern.
+  manager. A bare `cd` (cwd drift) is `avoid-cd-nudge`'s concern.
 - Skips targets that aren't a subpackage of this repo: worktrees
   (`…worktree…`), absolute paths, `~`, `-` (cd back), `$VAR`, and
   `../sibling` escapes.

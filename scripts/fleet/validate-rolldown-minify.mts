@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * @file Validates that every rolldown build config keeps `output.minify` false
  *   by default. Minification breaks ESM/CJS interop and makes debugging harder,
  *   so the default (non-publish) build must emit readable output. Repos may
@@ -29,6 +29,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from './paths.mts'
@@ -124,7 +125,7 @@ export function readConfigManifest(): string[] | undefined {
     parsed = JSON.parse(readFileSync(manifestPath, 'utf8'))
   } catch (e) {
     logger.error(
-      `Failed to parse ${path.relative(rootPath, manifestPath)}: ${e instanceof Error ? e.message : String(e)}`,
+      `Failed to parse ${path.relative(rootPath, manifestPath)}: ${errorMessage(e)}`,
     )
     process.exitCode = 1
     return undefined
@@ -178,7 +179,7 @@ export async function validateRolldownMinify(): Promise<MinifyViolation[]> {
       }
     } catch (e) {
       logger.error(
-        `Failed to load rolldown config ${configPath}: ${e instanceof Error ? e.message : String(e)}`,
+        `Failed to load rolldown config ${configPath}: ${errorMessage(e)}`,
       )
       process.exitCode = 1
       return []

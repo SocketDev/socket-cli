@@ -1,0 +1,52 @@
+name: 🧹 Prune Workflow Runs
+
+# Deletes stale GitHub Actions run history on a weekly cadence:
+#   - runs older than the retention window for workflows still present on the
+#     default branch, and
+#   - ALL runs for workflows whose source is gone from the default branch.
+# See scripts/fleet/prune-workflow-runs.mts. Byte-identical across the fleet
+# (cascaded); edit template/base/.github/workflows/prune-workflow-runs.yml and
+# re-cascade via `pnpm run sync`.
+
+on:
+  schedule:
+    # Sundays at 04:00 UTC — off-peak, clear of the daily/weekly update runs.
+    - cron: '0 4 * * 0'
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'Retention window in days for present workflows'
+        required: false
+        type: string
+        default: '15'
+      dry-run:
+        description: 'Report what would be deleted without deleting'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@b3f42a5f19c0a3854a67a8387c97ed0bb77caa00 # main (2026-06-09)
+      - name: Prune workflow runs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DAYS: ${{ inputs.days || '15' }}
+          DRY_RUN: ${{ inputs.dry-run }}
+        run: |
+          ARGS=(--days "$DAYS")
+          if [ "$DRY_RUN" = "true" ]; then
+            ARGS+=(--dry-run)
+          fi
+          node scripts/fleet/prune-workflow-runs.mts "${ARGS[@]}"

@@ -1,10 +1,10 @@
 # minify-mcp-out
 
 A **Claude Code PostToolUse hook** that compresses MCP-tool output text
-losslessly before it enters Claude's context. Pairs with the wire-level
-proxy [`@socketsecurity/token-minifier`](../../packages/socket-token-minifier/)
-for built-in tools (Read, Bash, Edit, etc.) — those have no PostToolUse
-rewrite channel, so they only benefit from wire-level compression.
+losslessly before it enters Claude's context. Pairs with the wire-level headroom
+proxy (`headroom-proxy-start`) for built-in tools (Read, Bash, Edit, etc.), which
+have no PostToolUse rewrite channel and so only benefit from wire-level
+compression.
 
 ## Why this rule
 
@@ -17,7 +17,7 @@ Built-in tool results don't go through this hook — Claude Code's hook
 runtime accepts `updatedMCPToolOutput` only when `tool_name` starts
 with `mcp__`. For built-in tools, use the proxy instead.
 
-## Stages (identical to socket-token-minifier)
+## Stages
 
 | Stage         | What it does                                            |
 | ------------- | ------------------------------------------------------- |
@@ -78,8 +78,6 @@ This hook lives in
 and is required to be byte-identical across every fleet repo.
 `scripts/sync-scaffolding.mts` flags drift; `--fix` rewrites it.
 
-The compression-stage logic is intentionally **inlined** here rather
-than imported from `packages/socket-token-minifier/` — that package
-lives only in wheelhouse, while this hook cascades fleet-wide.
-Inlining keeps the dependency-resolution graph trivial for downstream
-repos.
+The compression-stage logic is **self-contained** here (no external
+dependency), so this hook cascades fleet-wide with nothing to install. It is the
+canonical copy of the stages.

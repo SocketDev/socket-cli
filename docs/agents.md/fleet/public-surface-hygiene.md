@@ -2,12 +2,27 @@
 
 The CLAUDE.md `### Public-surface hygiene` section gives the headline invariants. This file is the full ruleset with rationale, hook references, and bypass surface.
 
-The rules apply even when hooks are not installed. They're invariants, not enforcement-dependent. Enforced by `.claude/hooks/fleet/{private-name-reminder,public-surface-reminder,release-workflow-guard}/` and the rules below.
+The rules apply even when hooks are not installed. They're invariants, not enforcement-dependent. Enforced by `.claude/hooks/fleet/{private-name-nudge,public-surface-nudge,release-workflow-guard}/` and the rules below.
 
 ## Customer / company / internal names
 
 - **Real customer / company names**: never write one into a commit, PR, issue, comment, or release note. Replace with `Acme Inc` or rewrite the sentence to not need the reference. No enumerated denylist exists; a denylist is itself a leak.
 - **Private repos / internal project names**: never mention. Omit the reference entirely. Don't substitute "an internal tool"; the placeholder is a tell.
+
+## Private / internal paths in source comments
+
+A SOURCE-code comment must never carry an internal/private path. The incident that codified this: an agent leaked a scaffolding-repo `.claude/plans/<doc>.md` path into a public napi-rs source file's comment (`crates/.../src/lib.rs`). That single line discloses internal fleet repo layout, an operator-local working-notes location, and a dev-box checkout path to anyone reading the shipped source.
+
+Blocked inside comment syntax (string literals and real code are left alone):
+
+- **`.claude/plans/…` / `.claude/reports/…`** — untracked operator-local working notes; they never ship and a source file must not point at one.
+- **`socket-<repo>/.claude/…`** — another fleet repo's private `.claude/` tree (cross-repo internal layout).
+- **`/Users/<name>/…`** — an absolute home path (leaks the username + on-disk layout).
+- **`../socket-<repo>/…`** — a sibling fleet-repo relative path (presumes a parent dir that only exists on a dev box; see the no-cross-repo-relative-paths rule).
+
+Scope is SOURCE-code files only (`.rs`/`.ts`/`.mts`/`.js`/`.go`/`.py`/`.c`/`.h`/…). Markdown, docs, JSON/YAML, and the `.claude/` tree itself are out of scope — those surfaces reference these paths legitimately (a plan doc names a plan path).
+
+Three surfaces enforce one rule (code is law): the edit-time `.claude/hooks/fleet/no-private-path-in-source-guard/` (bypass: `Allow private-path-in-source bypass`), the `socket/no-private-path-in-source` lint rule, and the commit-time `scripts/fleet/check/private-paths-are-absent.mts` full scan. The fix is always to remove the path from the comment and describe the constraint instead — not where a plan doc lives.
 
 ## Neutral placeholders for test fixtures
 
@@ -54,3 +69,30 @@ GitHub auto-links `<owner>/<repo>#<num>` and `https://github.com/<owner>/<repo>/
 - For upstream maintainer issues, link them in _the PR description prose_ (which doesn't trigger backrefs from commits) or use the `[#1203](https://npmx.dev/...)` link form that omits the `owner/repo#` token.
 
 Bypass: `Allow external-issue-ref bypass` (enforced by `.claude/hooks/fleet/no-ext-issue-ref-guard/`).
+
+## Root README skeleton + `freeform-readme` opt-in
+
+Every fleet member's root `README.md` carries the canonical five level-2 sections
+in order — `Why this repo exists` / `Install` / `Usage` / `Development` /
+`License` — plus the universal social-follow badges (X / Twitter + Bluesky) under
+the title, no `socket-wheelhouse` leak, no sibling-relative script commands.
+Canonical skeleton: `template/README.md`.
+
+Some repos are not infra repos. The VS Code + browser extensions and the skills
+directory ship **public product / marketplace READMEs** whose structure is owned
+by the listing, not the fleet skeleton. Those repos declare
+`"optIns": ["freeform-readme"]` in the cascade roster
+(`.claude/skills/fleet/cascading-fleet/lib/fleet-repos.json`). The opt-in exempts
+them from the **five-section skeleton only** — the follow-badges, the
+`socket-wheelhouse`-leak check, and the sibling-relative-path check stay universal.
+
+The rule is enforced across four surfaces, all reading the one roster:
+
+- Edit-time: `.claude/hooks/fleet/readme-fleet-shape-guard/` (skips the section
+  check when the target repo is `freeform-readme`).
+- Lint-time: `.config/fleet/markdownlint-rules/socket-readme-required-sections`
+  (bails via `_shared/freeform-readme-optin`); `socket-readme-social-badges` always
+  runs.
+- Sync-time: `scripts/repo/sync-scaffolding/checks/readme-skeleton-drift.mts`
+  (skips the section finding for `FREEFORM_README_REPOS`).
+- Index: the `Root README.md` bullet in `CLAUDE.md`.

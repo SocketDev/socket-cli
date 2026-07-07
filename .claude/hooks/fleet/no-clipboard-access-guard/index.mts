@@ -1,85 +1,112 @@
 #!/usr/bin/env node
 // Claude Code PreToolUse hook — no-clipboard-access-guard.
 //
-// Blocks a script / hook / Bash command from reading or writing the system
-// clipboard. The clipboard is a cross-process exfil + overwrite surface: a
-// secret copied there leaks to any app, and an OSC-52 escape written to the
-// terminal can silently overwrite (or, on permissive terminals, read) it. The
-// fleet's own tooling never needs clipboard access, so any attempt is either a
-// mistake or a poisoning fingerprint.
+// Blocks a script / hook / Bash command from READING the system clipboard, and
+// blocks an OSC-52 escape emitted from source. Reading is a cross-process exfil
+// surface (a secret on the clipboard, or another app's copied data, pulled into
+// the agent's context), and a source-embedded OSC-52 escape is a silent
+// overwrite / poisoning fingerprint. Explicit WRITES (an operator's `pbcopy` to
+// hand a snippet to the clipboard) are allowed — putting data ONTO the clipboard
+// is a deliberate, visible operator action, not an exfil.
 //
-// Two surfaces, gated on tool_name (the payload is read once; stdin can't be
-// consumed twice, so this doesn't compose the withBashGuard/withEditGuard
-// harnesses — it reads the raw payload and branches):
+// Two surfaces, gated on tool_name:
 //
-//   1. Bash — a clipboard CLI in the command line. AST-parsed via the
-//      fleet shell parser (findInvocation), not a loose regex, so a path
-//      fragment like `pbcopyrc` or a quoted literal doesn't false-fire:
-//        macOS:   pbcopy, pbpaste
-//        Linux:   xclip, xsel, wl-copy, wl-paste
-//        Windows: clip, clip.exe
+//   1. Bash — a clipboard READ CLI in the command line. AST-parsed via the
+//      fleet shell parser (commandsFor), not a loose regex, so a path fragment
+//      like `pbpasterc` or a quoted literal doesn't false-fire:
+//        macOS:   pbpaste                          (read-only)
+//        Linux:   wl-paste                          (read-only)
+//                 xclip -o / -out / -output         (xclip writes by default)
+//                 xsel (default outputs) unless a write flag (-i/-a/-c/-k)
+//      Write-only tools (`pbcopy`, `wl-copy`, `clip`/`clip.exe`) and a writing
+//      `xclip` / `xsel -i` are NOT blocked — writing to the clipboard is fine.
 //
 //   2. Edit / Write — source that emits an OSC-52 clipboard escape
 //      (`ESC ] 52 ; ...`) in any of its literal spellings (\x1b / \033 /
-//       / the raw control byte). That's the sequence the earlier
-//      Terminal "attempted to access the clipboard" denial came from.
+//       / the raw control byte). That's the sequence the earlier
+//      Terminal "attempted to access the clipboard" denial came from — a silent
+//      escape in committed source is blocked regardless of read/write intent.
 //
 // Bypass: `Allow clipboard-access bypass` in a recent user turn — for a
-// genuine, operator-driven clipboard need (rare).
-//
-// Exit codes: 0 — pass; 2 — block. Fails open on a malformed payload
-// (exit 0 + stderr log), the fleet's hook contract.
+// genuine, operator-driven clipboard READ (rare).
 
-import process from 'node:process'
-
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
-import { findInvocation } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
-
-const logger = getDefaultLogger()
+import { block, defineHook, runHook } from '../_shared/guard.mts'
+import type { ToolCallPayload } from '../_shared/payload.mts'
+import { commandsFor } from '../_shared/shell-command.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 const BYPASS_PHRASE = 'Allow clipboard-access bypass'
 
-// Clipboard CLIs, by platform, with the label surfaced in the error.
-const CLIPBOARD_BINARIES: ReadonlyArray<{
+// Pre-flight skip set: the dispatcher only imports this guard when the raw
+// payload contains one of these. Every block path requires one — a clipboard
+// READ binary name for the Bash arm (write-only `pbcopy`/`wl-copy`/`clip` are
+// deliberately absent so a write never even imports the guard), or the `]52;`
+// OSC-52 prefix (present under every escape spelling) for the Edit/Write arm.
+export const triggers: readonly string[] = [
+  ']52;',
+  'pbpaste',
+  'wl-paste',
+  'xclip',
+  'xsel',
+]
+
+// xsel flags that mean the invocation WRITES (or clears/keeps) rather than
+// prints the selection. xsel with none of these prints the current selection —
+// i.e. it reads. Presence of any means it is not a read.
+const XSEL_WRITE_FLAGS = new Set([
+  '--append',
+  '--clear',
+  '--input',
+  '--keep',
+  '-a',
+  '-c',
+  '-i',
+  '-k',
+])
+
+// Clipboard READ CLIs, by platform, each with a predicate over the matched
+// command segment's args deciding whether THIS invocation reads the clipboard.
+const CLIPBOARD_READERS: ReadonlyArray<{
   readonly binary: string
   readonly platform: string
+  readonly reads: (args: readonly string[]) => boolean
 }> = [
-  { binary: 'clip', platform: 'Windows' },
-  { binary: 'clip.exe', platform: 'Windows' },
-  { binary: 'pbcopy', platform: 'macOS' },
-  { binary: 'pbpaste', platform: 'macOS' },
-  { binary: 'wl-copy', platform: 'Linux' },
-  { binary: 'wl-paste', platform: 'Linux' },
-  { binary: 'xclip', platform: 'Linux' },
-  { binary: 'xsel', platform: 'Linux' },
+  // pbpaste / wl-paste are read-only tools — every invocation reads.
+  { binary: 'pbpaste', platform: 'macOS', reads: () => true },
+  { binary: 'wl-paste', platform: 'Linux', reads: () => true },
+  // xclip writes from stdin by default (-i / -in); it READS only with an out
+  // flag (`-o` / `-out` / `-output`).
+  {
+    binary: 'xclip',
+    platform: 'Linux',
+    reads: args =>
+      args.some(a => a === '-o' || a === '-out' || a === '-output'),
+  },
+  // xsel prints the selection by default (a read); a write/clear/keep flag
+  // means it is not reading.
+  {
+    binary: 'xsel',
+    platform: 'Linux',
+    reads: args => !args.some(a => XSEL_WRITE_FLAGS.has(a)),
+  },
 ]
 
 // OSC-52 clipboard escape in any literal spelling a source file might carry:
-// the raw ESC byte, or an escaped \x1b / \033 / , immediately followed
+// the raw ESC byte, or an escaped \x1b / \033 / , immediately followed
 // by `]52;`. Matching the prefix is enough — the payload after `52;` is the
 // clipboard data and need not be parsed.
 const OSC52_RE = /(?:\x1b|\\x1b|\\u001b|\\033|\\e)\]52;/i
 
-export interface PayloadShape {
-  tool_name?: string | undefined
-  tool_input?:
-    | {
-        command?: string | undefined
-        content?: string | undefined
-        new_string?: string | undefined
+// The clipboard READ CLI invoked in a Bash command line, or undefined when none
+// (a write-only tool, or a writing xclip/xsel, is not a read → undefined).
+export function clipboardReadIn(command: string): string | undefined {
+  for (let i = 0, { length } = CLIPBOARD_READERS; i < length; i += 1) {
+    const reader = CLIPBOARD_READERS[i]!
+    const segments = commandsFor(command, reader.binary)
+    for (let j = 0, segLen = segments.length; j < segLen; j += 1) {
+      if (reader.reads(segments[j]!.args)) {
+        return reader.binary
       }
-    | undefined
-  transcript_path?: string | undefined
-}
-
-// The clipboard CLI invoked in a Bash command line, or undefined when none.
-export function clipboardBinaryIn(command: string): string | undefined {
-  for (let i = 0, { length } = CLIPBOARD_BINARIES; i < length; i += 1) {
-    const entry = CLIPBOARD_BINARIES[i]!
-    if (findInvocation(command, { binary: entry.binary })) {
-      return entry.binary
     }
   }
   return undefined
@@ -92,7 +119,9 @@ export function hasOsc52(text: string): boolean {
 
 // Decide what (if anything) to block for a payload. Returns the block reason,
 // or undefined to pass. Pure — the test drives it directly.
-export function clipboardViolation(payload: PayloadShape): string | undefined {
+export function clipboardViolation(
+  payload: ToolCallPayload,
+): string | undefined {
   const toolName = payload.tool_name
   const input = payload.tool_input
   if (!input) {
@@ -101,9 +130,9 @@ export function clipboardViolation(payload: PayloadShape): string | undefined {
   if (toolName === 'Bash') {
     const command = input.command
     if (typeof command === 'string') {
-      const binary = clipboardBinaryIn(command)
+      const binary = clipboardReadIn(command)
       if (binary) {
-        return `Bash command invokes the clipboard tool \`${binary}\``
+        return `Bash command READS the clipboard via \`${binary}\``
       }
     }
     return undefined
@@ -117,47 +146,39 @@ export function clipboardViolation(payload: PayloadShape): string | undefined {
   return undefined
 }
 
-async function main(): Promise<void> {
-  let payload: PayloadShape
-  try {
-    payload = JSON.parse(await readStdin()) as PayloadShape
-  } catch {
-    // Malformed payload: fail open.
-    return
-  }
+export const check = (payload: ToolCallPayload) => {
   const reason = clipboardViolation(payload)
   if (!reason) {
-    return
+    return undefined
   }
   if (
     payload.transcript_path &&
     bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
   ) {
-    return
+    return undefined
   }
-  logger.error(
+  return block(
     [
-      '[no-clipboard-access-guard] Blocked: clipboard access',
+      '[no-clipboard-access-guard] Blocked: clipboard read',
       '',
       `  ${reason}.`,
       '',
-      '  The system clipboard is a cross-process exfil + overwrite surface;',
-      '  fleet tooling never needs it. A secret copied there leaks to every',
-      '  app, and an OSC-52 escape can silently overwrite or read it.',
+      '  READING the clipboard is a cross-process exfil surface — it pulls a',
+      '  secret or another app’s copied data into the agent’s context; a',
+      '  source-embedded OSC-52 escape can silently overwrite/read it. Writing',
+      '  TO the clipboard (e.g. `pbcopy`) is allowed — that is not blocked.',
       '',
-      `  If you genuinely need clipboard access, type the phrase in a new`,
+      `  If you genuinely need a clipboard read, type the phrase in a new`,
       `  message: ${BYPASS_PHRASE}`,
     ].join('\n'),
   )
-  process.exitCode = 2
 }
 
-if (process.argv[1]?.endsWith('index.mts')) {
-  // Async IIFE: the await lives inside the function (no top-level await — the
-  // CJS bundle target forbids it), and main()'s promise is still awaited
-  // rather than floated. main() reads stdin + sets process.exitCode; a throw
-  // fails open per the hook contract.
-  void (async () => {
-    await main()
-  })()
-}
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Bash'],
+  triggers,
+  type: 'guard',
+})
+void runHook(hook, import.meta.url)

@@ -6,34 +6,34 @@
  *   with <Lang>: <path>:<lines>` comment in tracked source files, resolves each
  *   path against the per-lang impl root declared in the repo-owned config
  *   (`.config/repo/lock-step-refs.json`, with a legacy top-level
- *   `.config/lock-step-refs.json` fallback during the migration soak), and fails
- *   CI when the path no longer exists. Line ranges are advisory and can drift;
- *   path existence is enforceable and that is what we enforce. The gate is opt-in
- *   per repo: if neither config location resolves, it exits 0 immediately. Repos
- *   that don't ship cross-language ports pay nothing. Config shape: { "roots": { "Rust":
- *   ["packages/acorn/lang/rust/crates"], "Go": ["packages/acorn/lang/go/src"],
- *   "C++": ["packages/acorn/lang/cpp/src"], "TS":
- *   ["packages/acorn/lang/typescript/src"] }, "scan": ["packages/acorn/lang"],
- *   "extensions": [".rs", ".go", ".cpp", ".hpp", ".ts", ".py", ".zig"] }
- *   `roots` maps the `<Lang>` token in the comment to one or more directories
- *   the path is resolved against. The first root that contains the file wins.
- *   `scan` lists directories the gate walks looking for comments. `extensions`
- *   filters which files are inspected. Comment shapes recognized (all four are
- *   documented in `docs/agents.md/fleet/parser-comments.md` §5): //! Lock-step
- *   with Go: src/parser/class.go //! Lock-step from Rust:
- *   crates/parser/src/class.rs // Lock-step with Go: parser.go:6450-6457 //
- *   Lock-step note: <freeform — not validated, by design> Only forms that carry
- *   a `<path>` are validated; `Lock-step note:` is a rationale shape and
- *   intentionally has no enforced target. Usage: node
- *   scripts/fleet/check/lock-step-refs-resolve.mts # report + fail on rot node
- *   scripts/fleet/check/lock-step-refs-resolve.mts --json # machine-readable node
- *   scripts/fleet/check/lock-step-refs-resolve.mts --quiet # silent on clean Exit
- *   codes: 0 — clean, or repo has no lock-step-refs config (opt-in
- *   absent) 1 — at least one stale reference found 2 — gate itself crashed
- *   (malformed config, walker failure)
+ *   `.config/lock-step-refs.json` fallback during the migration soak), and
+ *   fails CI when the path no longer exists. Line ranges are advisory and can
+ *   drift; path existence is enforceable and that is what we enforce. The gate
+ *   is opt-in per repo: if neither config location resolves, it exits 0
+ *   immediately. Repos that don't ship cross-language ports pay nothing. Config
+ *   shape: { "roots": { "Rust": ["packages/acorn/lang/rust/crates"], "Go":
+ *   ["packages/acorn/lang/go/src"], "C++": ["packages/acorn/lang/cpp/src"],
+ *   "TS": ["packages/acorn/lang/typescript/src"] }, "scan":
+ *   ["packages/acorn/lang"], "extensions": [".rs", ".go", ".cpp", ".hpp",
+ *   ".ts", ".py", ".zig"] } `roots` maps the `<Lang>` token in the comment to
+ *   one or more directories the path is resolved against. The first root that
+ *   contains the file wins. `scan` lists directories the gate walks looking for
+ *   comments. `extensions` filters which files are inspected. Comment shapes
+ *   recognized (all four are documented in
+ *   `docs/agents.md/fleet/parser-comments.md` §5): //! Lock-step with Go:
+ *   src/parser/class.go //! Lock-step from Rust: crates/parser/src/class.rs //
+ *   Lock-step with Go: parser.go:6450-6457 // Lock-step note: <freeform — not
+ *   validated, by design> Only forms that carry a `<path>` are validated;
+ *   `Lock-step note:` is a rationale shape and intentionally has no enforced
+ *   target. Usage: node scripts/fleet/check/lock-step-refs-resolve.mts # report
+ *   \+ fail on rot node scripts/fleet/check/lock-step-refs-resolve.mts --json #
+ *   machine-readable node scripts/fleet/check/lock-step-refs-resolve.mts
+ *   --quiet # silent on clean Exit codes: 0 — clean, or repo has no
+ *   lock-step-refs config (opt-in absent) 1 — at least one stale reference
+ *   found 2 — gate itself crashed (malformed config, walker failure)
  */
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { parseArgs } from 'node:util'
@@ -71,14 +71,12 @@ type Finding = {
   readonly reason: 'unknown-lang' | 'path-not-found'
 }
 
-// Capture-group layout:
-//   1: form keyword — "with" or "from"
-//   2: lang token (letters, digits, +, #, hyphen — covers Rust/Go/C++/TS/Py/Zig)
-//   3: path (no whitespace, no colon; must contain `.` or `/` to avoid
-//      matching prose like "Lock-step with Go: JSON parser")
-//   4: optional `:start[-end]` line range (discarded for path resolution)
+// Matches `Lock-step with <Lang>: <path>` and `Lock-step from <Lang>: <path>` comments.
+// Named captures: `lang` = language token (letters/digits/+/#/-); `refPath` = file
+// path (must contain `.` or `/` to avoid matching prose like "Lock-step with Go: JSON
+// parser"). Trailing `:start[-end]` line range is advisory — matched but not captured.
 const LOCK_STEP_RE =
-  /Lock-step (from|with) ([A-Za-z][A-Za-z0-9+#-]*): ([^\s:,]*[./][^\s:,]*)(?::(?:\d+(?:-\d+)?))?/g
+  /Lock-step (?:from|with) (?<lang>[A-Za-z][A-Za-z0-9+#-]*): (?<refPath>[^\s:,]*[./][^\s:,]*)(?::(?:\d+(?:-\d+)?))?/g
 
 function loadConfig(repoRoot: string): Config | undefined {
   const configPath = CONFIG_PATHS.find(rel =>
@@ -192,7 +190,8 @@ function scanFile(
     LOCK_STEP_RE.lastIndex = 0
     let match: RegExpExecArray | null
     while ((match = LOCK_STEP_RE.exec(line)) !== null) {
-      const [, , lang, refPath] = match
+      const lang = match.groups!['lang']
+      const refPath = match.groups!['refPath']
       const { found, knownLang } = resolveRef(config, repoRoot, lang!, refPath!)
       if (!knownLang) {
         findings.push({
@@ -261,7 +260,9 @@ function main(): void {
   try {
     config = loadConfig(repoRoot)
   } catch (e) {
-    process.stderr.write(`check-lock-step-refs-resolve: ${(e as Error).message}\n`)
+    process.stderr.write(
+      `check-lock-step-refs-resolve: ${(e as Error).message}\n`,
+    )
     process.exitCode = 2
     return
   }

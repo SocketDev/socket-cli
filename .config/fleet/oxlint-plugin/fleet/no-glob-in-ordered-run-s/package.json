@@ -1,0 +1,12 @@
+{
+  "name": "socket-oxlint-rule-no-glob-in-ordered-run-s",
+  "private": true,
+  "type": "module",
+  "main": "./index.mts",
+  "exports": {
+    ".": "./index.mts"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mts"
+  }
+}

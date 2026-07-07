@@ -73,7 +73,7 @@ Wrong:
 }
 ```
 
-This silences the rule for the entire repo. Every future file becomes a potential offender. If the rule doesn't fit your codebase shape, the rule is wrong. Fix the rule (in `.config/oxlint-plugin/fleet/<name>/`), not the consumer.
+This silences the rule for the entire repo. Every future file becomes a potential offender. If the rule doesn't fit your codebase shape, the rule is wrong. Fix the rule (in `.config/fleet/oxlint-plugin/fleet/<name>/`), not the consumer.
 
 ## Bypass
 

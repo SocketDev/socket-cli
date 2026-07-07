@@ -20,29 +20,13 @@
 //
 // Bypass: `Allow disable-lint-rule bypass` typed verbatim in a
 // recent user message.
-//
-// Hook contract:
-//   - Reads PreToolUse JSON from stdin.
-//   - Exits 0 (allow) or 2 (block + stderr explanation).
-//   - Fails open on any internal error.
 
 import { existsSync, readFileSync } from 'node:fs'
-import process from 'node:process'
 
-import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
-
-interface PreToolUsePayload {
-  readonly tool_name?: string | undefined
-  readonly tool_input?:
-    | {
-        readonly file_path?: unknown | undefined
-        readonly old_string?: unknown | undefined
-        readonly new_string?: unknown | undefined
-        readonly content?: unknown | undefined
-      }
-    | undefined
-  readonly transcript_path?: string | undefined
-}
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import type { GuardResult } from '../_shared/guard.mts'
+import type { ToolCallPayload } from '../_shared/payload.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 const BYPASS_PHRASE = 'Allow disable-lint-rule bypass'
 
@@ -51,7 +35,7 @@ const CONFIG_FILE_RE =
   /(?:^|\/)(?:[^/]*oxlintrc[^/]*\.json|\.eslintrc(?:\.[a-z]+)?|eslint\.config\.[a-z]+)$/i
 
 // Matches a rule-off (or rule-warn) entry. Captures the rule name.
-const RULE_DISABLE_RE = /"([a-z][a-z0-9/-]+)":\s*"(?:off|warn)"/gi
+const RULE_DISABLE_RE = /"(?<rule>[a-z][a-z0-9/-]+)":\s*"(?:off|warn)"/gi
 
 /**
  * Returns true if `filePath` looks like an oxlint/.eslintrc config file.
@@ -67,7 +51,8 @@ export function isLintConfigPath(filePath: string): boolean {
 export function extractDisabledRules(content: string): Set<string> {
   const out = new Set<string>()
   for (const m of content.matchAll(RULE_DISABLE_RE)) {
-    const rule = m[1]
+    const rule = m.groups?.rule
+    /* c8 ignore next */
     if (rule) {
       out.add(rule)
     }
@@ -100,8 +85,12 @@ export function newlyDisabledRules(
   return added.toSorted()
 }
 
-function getOldNewContent(
-  payload: PreToolUsePayload,
+/**
+ * Resolve the old/new file content for an Edit (old_string + new_string) or a
+ * Write (on-disk file + content). Returns `undefined` for any other tool shape.
+ */
+export function getOldNewContent(
+  payload: ToolCallPayload,
 ): { readonly old: string; readonly next: string } | undefined {
   const input = payload.tool_input
   if (!input) {
@@ -130,7 +119,10 @@ function getOldNewContent(
   return undefined
 }
 
-function reportBlock(reason: BlockReason): void {
+/**
+ * Build the block message naming the file + the newly-disabled rules.
+ */
+export function reportBlock(reason: BlockReason): string {
   const ruleList = reason.addedRules.map(r => `  - ${r}`).join('\n')
   const lines = [
     '[no-disable-lint-rule-guard] Edit weakens lint policy.',
@@ -149,53 +141,39 @@ function reportBlock(reason: BlockReason): void {
     '',
     `  Bypass: type "${BYPASS_PHRASE}" in a recent message.`,
   ]
-  process.stderr.write(lines.join('\n') + '\n')
+  return lines.join('\n')
 }
 
-async function main(): Promise<void> {
-  let payload: PreToolUsePayload
-  try {
-    const raw = await readStdin()
-    payload = JSON.parse(raw) as PreToolUsePayload
-  } catch {
-    process.exit(0)
-  }
-
-  if (payload.tool_name !== 'Edit' && payload.tool_name !== 'Write') {
-    process.exit(0)
-  }
-
-  const input = payload.tool_input
-  if (!input) {
-    process.exit(0)
-  }
-  const filePath = typeof input.file_path === 'string' ? input.file_path : ''
-  if (!filePath || !isLintConfigPath(filePath)) {
-    process.exit(0)
+export const check = editGuard((filePath, _content, payload): GuardResult => {
+  if (!isLintConfigPath(filePath)) {
+    return undefined
   }
 
   const contents = getOldNewContent(payload)
   if (!contents) {
-    process.exit(0)
+    return undefined
   }
 
   const added = newlyDisabledRules(contents.old, contents.next)
   if (added.length === 0) {
-    process.exit(0)
+    return undefined
   }
 
   if (
     payload.transcript_path &&
     bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
   ) {
-    process.exit(0)
+    return undefined
   }
 
-  reportBlock({ addedRules: added, filePath })
-  process.exit(2)
-}
-
-main().catch(() => {
-  // Fail open — never wedge operator flow on internal hook errors.
-  process.exit(0)
+  return block(reportBlock({ addedRules: added, filePath }))
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  scope: 'convention',
+  type: 'guard',
+})
+void runHook(hook, import.meta.url)

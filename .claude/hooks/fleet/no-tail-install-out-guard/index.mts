@@ -34,15 +34,10 @@
 //
 // Fails open on malformed payloads (exit 0 + stderr log).
 
-import process from 'node:process'
-
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 // oxlint-disable-next-line no-explicit-any -- shell-quote ships no types; runtime contract is stable.
 import { parse as shellQuoteParse } from 'shell-quote'
 
-import { withBashGuard } from '../_shared/payload.mts'
-
-const logger = getDefaultLogger()
+import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 
 type ParseEntry = string | { op: string } | { comment: string }
 
@@ -58,22 +53,22 @@ function isOp(e: ParseEntry): e is { op: string } {
 // same SFW shim. `exec` is included because `pnpm exec vitest ...` and
 // similar route through the same wrapper.
 const PNPM_VERBS_FIRST = new Set([
+  'add',
+  'exec',
   'i',
   'install',
-  'add',
-  'update',
   'up',
-  'exec',
+  'update',
 ])
 const PNPM_RUN_SCRIPTS = new Set([
-  'check',
-  'fix',
-  'update',
-  'install',
-  'test',
-  'cover',
   'build',
+  'check',
+  'cover',
+  'fix',
+  'install',
   'release',
+  'test',
+  'update',
 ])
 
 // Walk shell-quote tokens to find a pipe `|` whose LEFT side is an
@@ -91,7 +86,9 @@ function findOffendingPipe(command: string):
   try {
     entries = parse(command)
   } catch {
+    /* c8 ignore start - shell-quote does not throw on string inputs; bashGuard guarantees a string */
     return undefined
+    /* c8 ignore stop */
   }
 
   // Collect command segments split by COMMAND_SEPARATORS, also tracking
@@ -108,18 +105,19 @@ function findOffendingPipe(command: string):
     lastOp = op
   }
 
-  for (const e of entries) {
+  for (let i = 0, { length } = entries; i < length; i += 1) {
+    const e = entries[i]!
     if (typeof e === 'object' && 'comment' in e) {
       continue
     }
     if (isOp(e)) {
       if (
-        e.op === '|' ||
-        e.op === '||' ||
-        e.op === '&&' ||
+        e.op === '\n' ||
         e.op === ';' ||
         e.op === '&' ||
-        e.op === '\n'
+        e.op === '&&' ||
+        e.op === '|' ||
+        e.op === '||'
       ) {
         flush(e.op)
         continue
@@ -149,7 +147,7 @@ function findOffendingPipe(command: string):
       continue
     }
     const firstTok = here.tokens.find(t => t !== '')
-    if (firstTok !== 'tail' && firstTok !== 'head') {
+    if (firstTok !== 'head' && firstTok !== 'tail') {
       continue
     }
     const prev = segments[i - 1]!
@@ -171,7 +169,7 @@ function describeInstallShape(tokens: string[]): string | undefined {
     i += 1
   }
   const bin = tokens[i]
-  if (bin !== 'pnpm' && bin !== 'npm' && bin !== 'yarn') {
+  if (bin !== 'npm' && bin !== 'pnpm' && bin !== 'yarn') {
     return undefined
   }
   // Find first non-flag token after the binary.
@@ -201,14 +199,14 @@ function describeInstallShape(tokens: string[]): string | undefined {
   return undefined
 }
 
-// withBashGuard handles the stdin drain, tool_name gate, command narrow,
-// and fail-open on any throw.
-await withBashGuard(command => {
+// bashGuard handles the tool_name gate, command narrow, and fail-open on any
+// throw.
+export const check = bashGuard(command => {
   const hit = findOffendingPipe(command)
   if (!hit) {
-    return
+    return undefined
   }
-  logger.error(
+  return block(
     [
       '[no-tail-install-out-guard] Blocked: install/check output piped to ' +
         `\`${hit.truncator}\`.`,
@@ -230,5 +228,14 @@ await withBashGuard(command => {
       '',
     ].join('\n'),
   )
-  process.exitCode = 2
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Bash'],
+  scope: 'convention',
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

@@ -31,11 +31,13 @@ import {
   scanPackageJsonPnpmOverrides,
   scanPersonalPaths,
   scanPrivateKeys,
+  scanPrProcessComments,
   scanSoakExcludeDateAnnotations,
   scanSocketApiKeys,
   shouldSkipFile,
   socketLintMarkerFor,
   stagedIndexIsEmpty,
+  stripTemplateLayer,
 } from '../_shared/helpers.mts'
 
 const logger = getDefaultLogger()
@@ -49,7 +51,11 @@ const main = (): number => {
   // the last line of defense against a wipe (a wedged pnpm test once staged the
   // whole .claude/ tree for deletion). Runs before the ACM-staged read because
   // a pure-deletion commit has zero ACM files. No bypass — a wipe is never
-  // intentional; finish/abort the operation that staged it.
+  // intentional; finish/abort the operation that staged it. A surgical
+  // `git commit --only <paths>` sees ONLY the named paths, never a foreign
+  // deletion staged elsewhere in the working index — see
+  // catastrophicDeletionReason's comment in _shared/helpers.mts for the
+  // verified GIT_INDEX_FILE scoping this relies on.
   const wipeReason = catastrophicDeletionReason()
   if (wipeReason) {
     logger.fail('Refusing to commit: catastrophic mass deletion staged.')
@@ -83,9 +89,7 @@ const main = (): number => {
     logger.info('  to anchor a release tag forward, tag the real content')
     logger.info('  commit instead: git tag -f vX.Y.Z <real-content-commit>.')
     logger.info('')
-    logger.info(
-      '  A genuine no-content waypoint needs git commit --no-verify.',
-    )
+    logger.info('  A genuine no-content waypoint needs git commit --no-verify.')
     return 1
   }
 
@@ -163,7 +167,9 @@ const main = (): number => {
   const dsStores = stagedFiles.filter(f => f.includes('.DS_Store'))
   if (dsStores.length > 0) {
     logger.fail('.DS_Store file detected!')
-    dsStores.forEach(f => logger.info(f))
+    for (let i = 0, { length } = dsStores; i < length; i += 1) {
+      logger.info(dsStores[i]!)
+    }
     errors++
   }
 
@@ -174,7 +180,9 @@ const main = (): number => {
   )
   if (logs.length > 0) {
     logger.fail('Log file detected!')
-    logs.forEach(f => logger.info(f))
+    for (let i = 0, { length } = logs; i < length; i += 1) {
+      logger.info(logs[i]!)
+    }
     errors++
   }
 
@@ -192,7 +200,9 @@ const main = (): number => {
   })
   if (envFiles.length > 0) {
     logger.fail('.env file detected!')
-    envFiles.forEach(f => logger.info(f))
+    for (let i = 0, { length } = envFiles; i < length; i += 1) {
+      logger.info(envFiles[i]!)
+    }
     logger.info(
       'These files should never be committed. Use .env.example for templates.',
     )
@@ -242,9 +252,11 @@ const main = (): number => {
     const hits = scanSocketApiKeys(text)
     if (hits.length > 0) {
       logger.warn(`Potential API key found in: ${file}`)
-      hits
-        .slice(0, 3)
-        .forEach(h => logger.info(`${h.lineNumber}:${h.line.trim()}`))
+      const topHits = hits.slice(0, 3)
+      for (let i = 0, { length } = topHits; i < length; i += 1) {
+        const h = topHits[i]!
+        logger.info(`${h.lineNumber}:${h.line.trim()}`)
+      }
       logger.info('If this is a real API key, DO NOT COMMIT IT.')
     }
   }
@@ -263,18 +275,22 @@ const main = (): number => {
     const aws = scanAwsKeys(text)
     if (aws.length > 0) {
       logger.fail(`Potential AWS credentials found in: ${file}`)
-      aws
-        .slice(0, 3)
-        .forEach(h => logger.info(`${h.lineNumber}:${h.line.trim()}`))
+      const topAws = aws.slice(0, 3)
+      for (let i = 0, { length } = topAws; i < length; i += 1) {
+        const h = topAws[i]!
+        logger.info(`${h.lineNumber}:${h.line.trim()}`)
+      }
       errors++
     }
 
     const gh = scanGitHubTokens(text)
     if (gh.length > 0) {
       logger.fail(`Potential GitHub token found in: ${file}`)
-      gh.slice(0, 3).forEach(h =>
-        logger.info(`${h.lineNumber}:${h.line.trim()}`),
-      )
+      const topGh = gh.slice(0, 3)
+      for (let i = 0, { length } = topGh; i < length; i += 1) {
+        const h = topGh[i]!
+        logger.info(`${h.lineNumber}:${h.line.trim()}`)
+      }
       errors++
     }
 
@@ -287,7 +303,7 @@ const main = (): number => {
 
   // package.json pnpm.overrides — overrides belong in
   // pnpm-workspace.yaml overrides:, not package.json.
-  logger.info('Checking for package.json pnpm.overrides...')
+  logger.info('Checking for package.json pnpm.overrides…')
   for (const file of stagedFiles) {
     if (path.basename(file) !== 'package.json' || shouldSkipFile(file)) {
       continue
@@ -351,7 +367,14 @@ const main = (): number => {
       // semantics, naming conventions) as historical documentation —
       // they're not commands. Skip the npx/dlx scan for changelogs.
       file === 'CHANGELOG.md' ||
-      file.endsWith('/CHANGELOG.md')
+      file.endsWith('/CHANGELOG.md') ||
+      // Generated dispatch bundles embed the npx-DETECTING guards
+      // themselves — pattern tables plus fix-guidance strings showing
+      // real `npx <pkg>` examples. Their SOURCES are scanned; the built
+      // artifact is exempt (flagging it blocks every cascade that ships
+      // a rebuilt bundle).
+      file.endsWith('/_dispatch/bundle.cjs') ||
+      file.endsWith('/_dispatch/snapshot-bundle.cjs')
     ) {
       continue
     }
@@ -430,12 +453,19 @@ const main = (): number => {
       file.startsWith('.claude/hooks/') ||
       file.startsWith('.git-hooks/') ||
       file.startsWith('scripts/') ||
+      // The dep-0 bootstrap runs before any dependency exists, so it never
+      // imports socket-lib's logger and must call console.* directly — same
+      // exemption as scripts/.
+      file.startsWith('bootstrap/') ||
       // template/ is the canonical source for code that cascades to
       // .claude/hooks/, .git-hooks/, and scripts/. Apply the same
-      // exemption at the source.
-      file.startsWith('template/.claude/hooks/') ||
-      file.startsWith('template/.git-hooks/') ||
-      file.startsWith('template/scripts/') ||
+      // exemption at the source. stripTemplateLayer collapses the
+      // archetype layer segment (template/base/... → template/...) so
+      // the move stays exempt.
+      stripTemplateLayer(file).startsWith('template/.claude/hooks/') ||
+      stripTemplateLayer(file).startsWith('template/.git-hooks/') ||
+      stripTemplateLayer(file).startsWith('template/scripts/') ||
+      stripTemplateLayer(file).startsWith('template/bootstrap/') ||
       file.includes('/external/') ||
       file.includes('/vendor/') ||
       file.includes('/upstream/') ||
@@ -446,6 +476,7 @@ const main = (): number => {
     ) {
       continue
     }
+    // Matches TypeScript source extensions: .mts, .ts, .tsx, .cts.
     if (!/\.(?:m?ts|tsx|cts)$/.test(file)) {
       continue
     }
@@ -476,10 +507,9 @@ const main = (): number => {
   // sibling-clone escape). Both forms hardcode someone's local layout
   // and break in CI / fresh clones / non-standard checkouts.
   logger.info('Checking for cross-repo path references…')
-  // Best-effort current repo name from the toplevel directory; if git
-  // isn't reachable we simply don't suppress own-repo matches.
+  // Repo toplevel — used below as the wiring root. The cross-repo scanner now
+  // derives the repo name per-file from each file's `.git` root.
   const repoTopline = gitLines('rev-parse', '--show-toplevel')[0] ?? ''
-  const currentRepoName = repoTopline ? path.basename(repoTopline) : undefined
   for (const file of stagedFiles) {
     if (shouldSkipFile(file)) {
       continue
@@ -504,7 +534,7 @@ const main = (): number => {
     if (!text) {
       continue
     }
-    const hits = scanCrossRepoPaths(text, currentRepoName)
+    const hits = scanCrossRepoPaths(text, path.resolve(file))
     if (hits.length > 0) {
       logger.fail(`cross-repo path reference found in: ${file}`)
       for (const h of hits.slice(0, 3)) {
@@ -516,6 +546,44 @@ const main = (): number => {
           'Import via the published npm package instead (`@socketsecurity/lib-stable/<subpath>`, ' +
           `\`@socketsecurity/registry-stable/<subpath>\`). For documentation lines that need the ` +
           `literal path, append the marker \`${socketLintMarkerFor(file, 'cross-repo')}\`.`,
+      )
+      errors++
+    }
+  }
+
+  // PR-process / quest / step-N narrative in source COMMENTS (HARD block).
+  // Sub-agents wrote point-in-time process references — `//! Step 4 of the net
+  // perf quest (#5419) …`, `// Step 2 ([#5638]) replaced …` — into shipping
+  // source. Those are meaningless once the PR merges and leak internal process
+  // into PUBLIC repos; a comment must read as timeless design rationale, not a
+  // changelog of how the code got here. The scanner is comment-text-only (a
+  // process word inside a string / identifier never trips it) and confidently
+  // blocks the sequence/quest/process-ref shapes; a lone `#N` cross-ref blocks
+  // only when it co-occurs with a process word. shouldSkipFile already exempts
+  // tests/fixtures (which legitimately quote these shapes). Per-line opt-out:
+  // `// socket-lint: allow pr-process-comment`.
+  logger.info('Checking comments for PR-process / step-N references…')
+  for (const file of stagedFiles) {
+    if (shouldSkipFile(file)) {
+      continue
+    }
+    const text = readFileForScan(file)
+    if (!text) {
+      continue
+    }
+    const hits = scanPrProcessComments(text)
+    if (hits.length > 0) {
+      logger.fail(`PR-process / step-N reference in comment(s) in: ${file}`)
+      for (const h of hits.slice(0, 3)) {
+        logger.info(`${h.lineNumber}: ${h.line.trim()}`)
+      }
+      logger.info(
+        'Rewrite the comment as timeless design rationale (the WHY of the code ' +
+          'as it stands), not a record of how it got here. Drop "step N of …" / ' +
+          'perf-"quest" sequence markers and process-framed PR/issue refs ' +
+          '(`(#1234)`, `[#5638]`, `PR #88`, `added in #41`) — process belongs in ' +
+          'the PR description and git history. For a rare legitimate reference, ' +
+          `append the marker \`${socketLintMarkerFor(file, 'pr-process-comment')}\`.`,
       )
       errors++
     }

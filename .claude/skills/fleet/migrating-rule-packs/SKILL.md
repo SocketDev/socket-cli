@@ -77,9 +77,7 @@ The skill author writes the rule pack first, lands a reference PR by hand, then 
 
 ### 2 + 3. The autonomous per-file loop: author a `Workflow`
 
-Run the per-file loop as a **`Workflow`** (not ad-hoc background `Task`/`Agent` spawns). This is the textbook `pipeline()` case: the target files are independent units that each stream through the same transform → verify stages with no barrier between files, and the per-file agents MUTATE files in parallel, so they need `isolation: 'worktree'`. The skill invoking `Workflow` is a sanctioned opt-in; pass the migration name + rule-pack path + survey of target files as `args`.
-
-Author the script inline (don't pre-Write it). Shape:
+The per-file loop is built as `lib/run-migration.mts` — a bounded-concurrency worker pool over the target files (each a fresh worktree off `origin/<default-branch>` on a `migration/<name>-<slug>` branch). The target files are independent units that each stream through the same transform → verify stages, and the per-file agents MUTATE files in parallel, so they run worktree-isolated. The intelligence is contained: the locked-down agent's ONLY job is "apply the rule pack to this one file"; everything else (survey, gate verdict, commit/push/PR) is deterministic code. This section is the architecture the runner implements:
 
 1. **Resolve the target set first (plain code, no agents).** Survey the target files (`rg` the before-pattern across the migration scope), load the rule-pack markdown, resolve the default branch per CLAUDE.md's _Default branch fallback_ recipe. Build the per-file work items.
 2. **`phase('Migrate')` — `pipeline(targetFiles, transform, buildFixCheckTest)`.** Each target file streams through two stages, both as `agent()` with `isolation: 'worktree'` (a fresh worktree off `origin/<default-branch>` on a `migration/<migration-name>-<target-slug>` branch, mirroring cascade's convention at `<repo>/.claude/worktrees/<migration-name>/<target-slug>/`):
@@ -104,23 +102,30 @@ The rule pack is wet cement until the migration completes; the last PR's rules a
 
 ## How to invoke
 
-This is currently a **design skill** — the operational runner (`lib/run-migration.mts`) hasn't been built yet. The first migration to test the pattern is **task #36 (socket-mcp zod → typebox)** per the agentic-engineering-next-steps plan. Operator runs the pattern manually for #36, records the actual speedup vs. estimated serial time, then promotes the manual steps to `lib/run-migration.mts` as a second cascade.
+The operational runner is `lib/run-migration.mts` — it owns the deterministic machinery (survey, worktree-per-file, the locked-down per-file transform, the build/fix/check/test gate, the per-file commit/push/PR, the report). The two pieces that need a human stay with you: writing the rule pack + reference PR (genuine judgment), and reviewing each PR + folding inline comments back into the rules (the feedback loop).
 
-For #36, the manual flow is:
+Per-migration flow:
 
-1. **Author rules**: write `socket-mcp/.claude/migrations/zod-to-typebox/rules/{object,union,refine,defaults}.md`. Each cites a reference PR.
-2. **Reference PR**: hand-port one schema in socket-mcp. Land it. Cite its SHA in every rule.
-3. **Survey targets**: `rg "z\.(object|union|literal|enum|tuple|array|string|number|boolean)" packages/` in socket-mcp. List each importing file.
-4. **Parallel worktrees**: author the `Workflow` from [§2 + 3](#2--3-the-autonomous-per-file-loop-author-a-workflow) — `pipeline(targetFiles, transform, buildFixCheckTest)` with `isolation: 'worktree'` on the per-file agents, capped at 5 in-flight. Each item runs the rule-pack transform + build/check/test loop and opens its own PR.
-5. **Collect PRs**: each Agent opens its own PR. Operator reviews and merges. Inline comments → rule-pack updates → in-flight Agents rebase against rule updates.
-6. **Measure**: estimated serial time vs. wall-clock. Report.
+1. **Author rules + reference PR (you).** Write `<repo>/.claude/migrations/<name>/rules/*.md` (one transformation per file, shape in [§1](#1-the-rule-pack)). Hand-port one file, land it, cite its SHA in every rule. The runner reads whatever `*.md` lives in `--rules`, so the rules ARE the ground truth.
+2. **Run the loop:**
+
+   ```sh
+   node .claude/skills/fleet/migrating-rule-packs/lib/run-migration.mts \
+     --name zod-to-typebox \
+     --rules .claude/migrations/zod-to-typebox/rules \
+     --survey 'z\.(object|union|literal|enum|tuple|array)' \
+     --scope packages \
+     --repo SocketDev/socket-mcp
+   ```
+
+   It surveys the target set, then for each file spawns a worktree-isolated, locked-down agent (`spawnAiAgent` + `AI_PROFILE.verify` — four-flag lockdown, `permissionMode: acceptEdits`, never the raw `claude` CLI) that applies the rule pack and self-runs the gate; the runner re-asserts `build → check → test` in plain code (the agent's self-report is a lead, not the verdict), then deterministically commits + pushes + opens the PR. `--dry-run` runs the transform + gate but never lands. `--concurrency` (default 5), `--attempts` (default 3), `--model`, `--effort` tune the run. Exits non-zero while any file is in `exception` status.
+3. **Review + fold feedback (you).** Review each PR, merge the clean ones. Inline review comments become new "When the rule does NOT apply" entries in the rule files (the [§4](#4-pr-review-feedback-as-rule-rewrites) loop); re-run the runner to pick up newly-matching files against the updated rules.
 
 ## Acceptance for the skill itself
 
 - This SKILL.md exists ✓ (you're reading it).
-- The first migration (#36) ran through this pattern end-to-end.
-- The actual speedup vs. estimated serial time is documented in `task-36-postmortem.md` (or wherever the operator records it).
-- The operational runner (`lib/run-migration.mts`) is scaffolded as a follow-up once the manual run reveals what the orchestrator needs.
+- The operational runner `lib/run-migration.mts` is built ✓ and the SKILL thin-wraps it.
+- The first real migration runs through it end-to-end; record the actual speedup vs. estimated serial time wherever the operator tracks it.
 
 ## Precedent
 

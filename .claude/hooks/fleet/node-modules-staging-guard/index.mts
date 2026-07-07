@@ -23,17 +23,21 @@
 // user turn. Use sparingly — legitimate force-stages of node_modules
 // are vanishingly rare.
 
-import process from 'node:process'
-
-import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
-
-interface ToolInput {
-  readonly tool_name?: string | undefined
-  readonly tool_input?: { readonly command?: string | undefined } | undefined
-  readonly transcript_path?: string | undefined
-}
+import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 const BYPASS_PHRASE = 'Allow node-modules-staging bypass'
+
+// Dispatcher pre-flight: a block requires a forbidden PATH arg, and every
+// forbidden path (per `isForbiddenPath`) contains one of these substrings —
+// a `node_modules` segment, or a hook/skill `package-lock.json` /
+// `pnpm-lock.yaml`. A command lacking all three can never block, so the
+// dispatcher skips importing this guard for it.
+export const triggers: readonly string[] = [
+  'node_modules',
+  'package-lock.json',
+  'pnpm-lock.yaml',
+]
 
 // Tokenize the command on whitespace; split on `&&`/`||`/`;`/`|` so we
 // don't merge chained commands. The git invocation may be wrapped by
@@ -92,33 +96,10 @@ export function isForbiddenPath(arg: string): boolean {
   return false
 }
 
-async function main(): Promise<void> {
-  let raw: string
-  try {
-    raw = await readStdin()
-  } catch {
-    process.exit(0)
-  }
-  if (!raw) {
-    process.exit(0)
-  }
-  let payload: ToolInput
-  try {
-    payload = JSON.parse(raw) as ToolInput
-  } catch {
-    process.exit(0)
-  }
-  if (payload.tool_name !== 'Bash') {
-    process.exit(0)
-  }
-  const command = payload.tool_input?.command ?? ''
-  if (!command) {
-    process.exit(0)
-  }
-
+export const check = bashGuard((command, payload) => {
   const forced = findGitAddForceInvocations(command)
   if (forced.length === 0) {
-    process.exit(0)
+    return undefined
   }
 
   const blockedArgs: string[] = []
@@ -132,17 +113,17 @@ async function main(): Promise<void> {
     }
   }
   if (blockedArgs.length === 0) {
-    process.exit(0)
+    return undefined
   }
 
   if (
     payload.transcript_path &&
     bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
   ) {
-    process.exit(0)
+    return undefined
   }
 
-  process.stderr.write(
+  return block(
     [
       '[node-modules-staging-guard] Blocked: `git add -f` of node_modules / hook lockfile',
       '',
@@ -161,11 +142,13 @@ async function main(): Promise<void> {
       '',
     ].join('\n'),
   )
-  process.exit(2)
-}
-
-main().catch(e => {
-  process.stderr.write(
-    `[node-modules-staging-guard] hook error (allowing): ${(e as Error).message}\n`,
-  )
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Bash'],
+  triggers,
+  type: 'guard',
+})
+void runHook(hook, import.meta.url)

@@ -37,7 +37,9 @@ const logger = getDefaultLogger()
 const HOOK_MARKER_FILES = ['index.mts', 'install.mts', 'README.md']
 
 // Directories under .claude/hooks/<seg>/ that are not hooks themselves.
-const NON_HOOK_DIRS = new Set(['_shared'])
+// `_shared` is the helper library; `_dispatch` is the rolldown hook-bundle
+// infra (the CJS loader + dispatcher + built bundle), not a hook entrypoint.
+const NON_HOOK_DIRS = new Set(['_dispatch', '_shared'])
 
 export interface HuskHit {
   // Repo-relative path of the husk directory.
@@ -103,9 +105,7 @@ function main(): void {
     return
   }
   if (!quiet) {
-    logger.success(
-      '[check-hook-dirs-are-not-husks] no husk hook directories.',
-    )
+    logger.success('[check-hook-dirs-are-not-husks] no husk hook directories.')
   }
 }
 

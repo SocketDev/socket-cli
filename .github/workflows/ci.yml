@@ -1,14 +1,11 @@
-# ─── BEGIN fleet-canonical (managed by socket-wheelhouse sync) ──
+# <fleet-canonical>
 # Managed by socket-wheelhouse. Don't edit this block locally — edit
-# template/.github/workflows/ci.yml upstream and re-cascade via `pnpm run sync`.
-# The `jobs:` section is BELOW the END marker: the `ci:` reusable-workflow call
-# (its `uses:` SHA is managed separately by the registry-pin cascade) plus any
-# repo-owned jobs. The sync preserves everything below the END marker.
-# See scripts/repo/sync-scaffolding/checks/workflow-fleet-block.mts.
+# template/base/.github/workflows/ci.yml upstream and re-cascade via
+# `pnpm run sync`. Fleet CI runs check + test using the LOCAL composite actions
+# under .github/actions/ (inlined — no cross-repo reusable, no `uses:@sha` for
+# first-party). Repo-owned jobs go BELOW the END marker (still under the
+# top-level `jobs:` key). See scripts/repo/sync-scaffolding/checks/workflow-fleet-block.mts.
 name: ⚡ CI
-
-# Dependencies:
-#   - SocketDev/socket-registry/.github/workflows/ci.yml
 
 on:
   push:
@@ -24,9 +21,61 @@ permissions:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-# ─── END fleet-canonical ────────────────────────────────────────
+
+# Fleet no-phone-home posture: CI runners don't source the shell-rc that dev
+# machines get from setup-security-tools, so set every FLEET_ENV knob
+# workflow-level or the telemetry-env-is-disabled +
+# package-manager-auto-update-is-disabled gates (under `check --all`) fail.
+# Lockstep source: .claude/hooks/fleet/_shared/fleet-env.mts (FLEET_ENV) —
+# the telemetry-env-is-disabled check asserts each knob at CI runtime.
+env:
+  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1'
+  COREPACK_ENABLE_PROJECT_SPEC: '0'
+  DISABLE_TELEMETRY: '1'
+  DO_NOT_TRACK: '1'
+  NO_UPDATE_NOTIFIER: '1'
 
 jobs:
-  ci:
-    name: Run CI Pipeline
-    uses: SocketDev/socket-registry/.github/workflows/ci.yml@1c633fb12cf27b12f06f9d685e89d34e302822c3 # main (2026-06-13)
+  # First step of every job is the third-party actions/checkout (GitHub fetches
+  # it independently) to populate the workspace so the LOCAL `./.github/actions/*`
+  # composites resolve. setup-and-install then re-checks-out at full depth and
+  # runs the zizmor Actions audit (its own `strategy.job-total < 2` skip runs it
+  # in the non-matrix check job, skips it in the test matrix).
+  check:
+    name: 🔎 Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-15)
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: ./.github/actions/setup-and-install
+        with:
+          socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+      - uses: ./.github/actions/run-script
+        with:
+          main-script: pnpm run check --all
+
+  test:
+    name: 🧪 Test
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-15)
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: ./.github/actions/setup-and-install
+        with:
+          socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+      - uses: ./.github/actions/run-script
+        with:
+          setup-script: pnpm run build
+          main-script: pnpm test
+  # </fleet-canonical>

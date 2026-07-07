@@ -1,0 +1,21 @@
+#!/bin/sh
+# Git commit-msg dispatcher (Option A). core.hooksPath points at .git-hooks/;
+# fleet/ and repo/ are peers under it. Runs the fleet hook first, then the
+# repo hook if present. Either returning non-zero blocks the commit. $1 is the
+# path to the commit-message file. The fleet/repo entry points source their
+# own _shared/resolve-node.sh, so this dispatcher stays pure POSIX sh.
+
+# HUSKY=0 skips this hook for the current invocation — the husky-compatible
+# whole-chain escape (details in the pre-commit dispatcher).
+if [ "${HUSKY-}" = "0" ]; then
+  echo "[git-hooks] HUSKY=0 — skipping commit-msg."
+  exit 0
+fi
+
+DIR=$(dirname "$0")
+if [ -x "$DIR/fleet/commit-msg" ]; then
+  "$DIR/fleet/commit-msg" "$@" || exit $?
+fi
+if [ -x "$DIR/repo/commit-msg" ]; then
+  "$DIR/repo/commit-msg" "$@" || exit $?
+fi

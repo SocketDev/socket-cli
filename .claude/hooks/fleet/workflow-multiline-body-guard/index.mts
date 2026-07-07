@@ -21,16 +21,11 @@
 // Bypass: `Allow workflow-yaml-multiline-body bypass` typed verbatim in a
 // recent user turn.
 
-import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
-import { withEditGuard } from '../_shared/payload.mts'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import { resolveEditedText } from '../_shared/payload.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const logger = getDefaultLogger()
 
 const BYPASS_PHRASE = 'Allow workflow-yaml-multiline-body bypass'
 
@@ -89,49 +84,30 @@ export function isWorkflowYaml(filePath: string): boolean {
   return /[\\/]\.github[\\/]workflows[\\/][^\\/]+\.ya?ml$/.test(filePath)
 }
 
-export function readFileSafe(p: string): string {
-  try {
-    return readFileSync(p, 'utf8')
-  } catch {
-    return ''
-  }
-}
-
-// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
-// content extraction (new_string / content), and fail-open on any throw.
-await withEditGuard((filePath, content, payload) => {
+export const check = editGuard((filePath, content, payload) => {
   if (!isWorkflowYaml(filePath)) {
-    return
+    return undefined
   }
 
-  // Determine the after-text.
-  let afterText: string
-  if (payload.tool_name === 'Write') {
-    afterText = content ?? ''
-  } else {
-    const currentText = readFileSafe(filePath)
-    const oldStr = (payload.tool_input?.old_string as string | undefined) ?? ''
-    const newStr = content ?? ''
-    if (!oldStr || !currentText.includes(oldStr)) {
-      return
-    }
-    afterText = currentText.replace(oldStr, newStr)
+  const afterText = resolveEditedText(payload)
+  if (afterText === undefined) {
+    return undefined
   }
 
   const unsafe = findUnsafeBody(afterText)
   if (!unsafe) {
-    return
+    return undefined
   }
 
   if (
     payload.transcript_path &&
     bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
   ) {
-    return
+    return undefined
   }
 
   const preview = unsafe.split('\n').slice(0, 3).join('\\n')
-  logger.error(
+  return block(
     [
       '[workflow-multiline-body-guard] Blocked: multi-line --body in workflow YAML',
       '',
@@ -164,5 +140,13 @@ await withEditGuard((filePath, content, payload) => {
       '',
     ].join('\n'),
   )
-  process.exitCode = 2
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

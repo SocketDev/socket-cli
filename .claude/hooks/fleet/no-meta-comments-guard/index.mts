@@ -3,31 +3,16 @@
 //
 // Blocks Edit/Write tool calls that introduce a comment which:
 //
-//   (a) References the current task / plan / user request rather
-//       than the code's runtime semantics:
-//         // Plan: use the cache here
-//         // Task: rename foo to bar
-//         // Per the task instructions, swap to async
-//         // As requested, add retry
-//         // TODO from the brief: handle Win32
+//   (a) References the current task / user request rather
+//       than the code's runtime semantics.
 //
 //   (b) Describes code that was removed rather than code that
-//       exists:
-//         // removed: old behavior used a Map here
-//         // previously called X; now Y
-//         // used to be sync, made async in 6.0
-//         // no longer using fetch — see commit abc1234
+//       exists.
 //
 // Per CLAUDE.md "Code style → Comments": comments default to none;
 // when written, audience is a junior dev — explain the CONSTRAINT
 // or the hidden invariant, not the development context (commit
 // messages and PR descriptions are where development context goes).
-//
-// On block, emits a stderr suggestion stripping the meta prefix so
-// the agent can keep the explanation if it's actually useful and
-// just drop the noise. Example transform:
-//
-//   // Plan: use the cache to avoid re-resolving  →  // Use the cache to avoid re-resolving
 //
 // Reads a Claude Code PreToolUse JSON payload from stdin:
 //   { "tool_name": "Edit"|"Write",
@@ -39,14 +24,8 @@
 //
 // Fails open on malformed payloads (exit 0 + stderr log).
 
-import process from 'node:process'
-
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
 import { splitLines, walkComments } from '../_shared/acorn/index.mts'
-import { withEditGuard } from '../_shared/payload.mts'
-
-const logger = getDefaultLogger()
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 
 interface MetaCommentFinding {
   readonly kind: 'task' | 'removed-code'
@@ -55,97 +34,96 @@ interface MetaCommentFinding {
   readonly suggestion: string
 }
 
-// Task / plan / user-request references.
+// Task / user-request references.
 //
 // Patterns are anchored on `// `, `/* `, `# `, ` * `, ` - ` (markdown
 // bullet inside comment) so we don't false-positive on identifiers
 // or string literals containing the words.
 //
-// `Plan:` / `Task:` are case-insensitive leading labels. The free-
-// form phrases (`per the task`, `as requested`) match anywhere in
-// the comment body — those are the dead-give-away tells, not the
-// rest of the sentence.
+// Leading labels (`Task:`) are case-insensitive. The free-form phrases
+// (`per the task`, `as requested`) match anywhere in the comment body.
 const TASK_PATTERNS: ReadonlyArray<{
   readonly re: RegExp
   readonly stripPrefix?: RegExp | undefined
 }> = [
-  // `// Plan: ...` / `// Task: ...` / `// Note from plan: ...`
   {
+    // Newline or line-start, comment marker, then a task/plan label keyword + colon.
     re: /(^|\n)\s*(?:\/\/|\/\*|\*|#|-)\s*(?:plan|task|note from (?:brief|plan|task))\s*:/i,
     stripPrefix:
-      /^(\s*(?:\/\/|\/\*|\*|#|-)\s*)(?:plan|task|note from (?:brief|plan|task))\s*:\s*/i,
+      /^(\s*(?:\/\/|\/\*|\*|#|-)\s*)(?:plan|task|note from (?:brief|plan|task))\s*:\s*/i, // socket-lint: allow uncommented-regex
   },
-  // `// Per the task ...` / `// Per the plan ...` / `// As requested ...`
   {
+    // Newline or line-start, comment marker, then "per the X" or "as requested" phrase.
     re: /(^|\n)\s*(?:\/\/|\/\*|\*|#|-)\s*(?:per the (?:brief|plan|request|spec|task|user)|as requested|per the user('s)? request)\b/i,
   },
-  // `// TODO from the brief` / `// FIXME per plan`
   {
+    // Newline or line-start, comment marker, then a FIXME/TODO/XXX + "from/per X" phrase.
     re: /(^|\n)\s*(?:\/\/|\/\*|\*|#|-)\s*(?:FIXME|TODO|XXX)\s+(?:from|per)\s+(?:the\s+)?(?:brief|plan|request|spec|task|user)\b/i,
   },
-  // Phase / tier / step markers — `// Tier 1 ...`, `// Phase 10a:
-  // ...`, `// Step 3 - ...`. These leak the roadmap shape into source
-  // and rot when the roadmap shifts. Catch as bare labels (followed
-  // by whitespace + number) OR as `Phase NNN:` / `Step NNN -` colon /
-  // dash labels.
   {
+    // Newline or line-start, comment marker, then a roadmap keyword + numeric/roman marker.
     re: /(^|\n)\s*(?:\/\/|\/\*|\*|#|-)\s*(?:iteration|milestone|phase|sprint|step|tier)\s+(?:[0-9]+[a-z]*|i{1,3}|iv|v|vi{0,3}|ix|x)\b/i,
     stripPrefix:
-      /^(\s*(?:\/\/|\/\*|\*|#|-)\s*)(?:iteration|milestone|phase|sprint|step|tier)\s+(?:[0-9]+[a-z]*|i{1,3}|iv|v|vi{0,3}|ix|x)\s*[:.-]?\s*/i,
+      /^(\s*(?:\/\/|\/\*|\*|#|-)\s*)(?:iteration|milestone|phase|sprint|step|tier)\s+(?:[0-9]+[a-z]*|i{1,3}|iv|v|vi{0,3}|ix|x)\s*[:.-]?\s*/i, // socket-lint: allow uncommented-regex
   },
 ]
 
-// Removed-code references.
+// Patterns that flag code-deletion phrases inside source comments.
 const REMOVED_CODE_PATTERNS: readonly RegExp[] = [
-  // `// removed X` / `// removed: X`
+  // Newline or line-start, comment marker, then the word 'removed' as a whole word.
   /(^|\n)\s*(?:\/\/|\/\*|\*|#)\s*removed\b/i,
-  // `// previously X` / `// previously called X`
+  // Newline or line-start, comment marker, then the word 'previously' as a whole word.
   /(^|\n)\s*(?:\/\/|\/\*|\*|#)\s*previously\b/i,
-  // `// used to X` / `// used to be X`
+  // Newline or line-start, comment marker, then the two-word phrase 'used to'.
   /(^|\n)\s*(?:\/\/|\/\*|\*|#)\s*used\s+to\b/i,
-  // `// no longer X` / `// no longer needed`
+  // Newline or line-start, comment marker, then the two-word phrase 'no longer'.
   /(^|\n)\s*(?:\/\/|\/\*|\*|#)\s*no\s+longer\b/i,
-  // `// formerly X`
+  // Newline or line-start, comment marker, then the word 'formerly' as a whole word.
   /(^|\n)\s*(?:\/\/|\/\*|\*|#)\s*formerly\b/i,
 ]
 
 /**
  * Uppercase the first alphabetic character that follows the comment marker, so
- * a stripped `// plan: use the cache` reads as `// Use the cache`. Skips the
- * comment marker tokens so they don't count as "first letter".
+ * a stripped label reads naturally. Skips the comment marker tokens so they
+ * don't count as "first letter".
  */
 export function uppercaseFirstLetterAfterMarker(line: string): string {
-  const m = line.match(/^(\s*(?:\/\/|\/\*|\*|#|-)\s*)([a-zA-Z])/)
+  const m = line.match(
+    /^(?<prefix>\s*(?:\/\/|\/\*|\*|#|-)\s*)(?<firstChar>[a-zA-Z])/,
+  )
   if (!m) {
     return line
   }
-  const prefix = m[1]!
-  const firstChar = m[2]!
+  const prefix = m.groups!.prefix!
+  const firstChar = m.groups!.firstChar!
   return prefix + firstChar.toUpperCase() + line.slice(prefix.length + 1)
 }
 
 // Body-only versions of the patterns (no comment-marker prefix —
-// the AST walker already gives us the body text). The same TASK_PATTERNS
-// and REMOVED_CODE_PATTERNS above retain the marker-prefixed form so the
-// non-JS lexical path below can still use them.
+// the AST walker already gives us the body text).
 const TASK_BODY_PATTERNS: ReadonlyArray<{
   readonly re: RegExp
   readonly stripBody?: RegExp | undefined
 }> = [
   {
+    // Body starts with "plan:", "task:", or "note from (brief|plan|task):" label.
     re: /^\s*(?:plan|task|note from (?:brief|plan|task))\s*:/i,
+    // Strips the leading label keyword + colon, leaving only the label's value text.
     stripBody: /^\s*(?:plan|task|note from (?:brief|plan|task))\s*:\s*/i,
   },
   {
+    // Body starts with "per the X" or "as requested" or "per the user('s) request".
     re: /^\s*(?:per the (?:brief|plan|request|spec|task|user)|as requested|per the user('s)? request)\b/i,
   },
   {
+    // Body starts with a FIXME/TODO/XXX marker followed by "from/per (the) X".
     re: /^\s*(?:FIXME|TODO|XXX)\s+(?:from|per)\s+(?:the\s+)?(?:brief|plan|request|spec|task|user)\b/i,
   },
   {
+    // Body starts with a roadmap keyword followed by a numeric or roman-numeral marker.
     re: /^\s*(?:iteration|milestone|phase|sprint|step|tier)\s+(?:[0-9]+[a-z]*|i{1,3}|iv|v|vi{0,3}|ix|x)\b/i,
     stripBody:
-      /^\s*(?:iteration|milestone|phase|sprint|step|tier)\s+(?:[0-9]+[a-z]*|i{1,3}|iv|v|vi{0,3}|ix|x)\s*[:.-]?\s*/i,
+      /^\s*(?:iteration|milestone|phase|sprint|step|tier)\s+(?:[0-9]+[a-z]*|i{1,3}|iv|v|vi{0,3}|ix|x)\s*[:.-]?\s*/i, // socket-lint: allow uncommented-regex
   },
 ]
 
@@ -160,21 +138,18 @@ const REMOVED_CODE_BODY_PATTERNS: readonly RegExp[] = [
 /**
  * AST-based detector for JS/TS/JSX/TSX source. Uses `walkComments` from the
  * shared acorn helper to walk just the comment tokens — string-literal mentions
- * of `Plan:` / `Task:` etc. don't trigger.
+ * don't trigger.
  */
 export function findMetaCommentsAst(text: string): MetaCommentFinding[] {
   const findings: MetaCommentFinding[] = []
   const lines = splitLines(text)
   for (const c of walkComments(text, { comments: true })) {
-    // Block comments may have multiple meaningful lines; check each
-    // line of the body individually so the suggestion can name the
-    // exact offending line.
     const bodyLines = splitLines(c.value)
     for (let li = 0; li < bodyLines.length; li += 1) {
       const body = bodyLines[li]!
-      // Strip leading ` *` / `*` decorators that JSDoc-style blocks use.
       const cleaned = body.replace(/^\s*\*\s?/, '')
       const lineNum = c.line + li
+      /* c8 ignore next - defensive fallback; comment lines are always within source bounds after a successful parse */
       const sourceLine = (lines[lineNum - 1] ?? '').trim()
       let matched = false
       for (const { re, stripBody } of TASK_BODY_PATTERNS) {
@@ -191,6 +166,7 @@ export function findMetaCommentsAst(text: string): MetaCommentFinding[] {
           kind: 'task',
           line: lineNum,
           snippet: sourceLine,
+          /* c8 ignore next - suggestion is always a non-empty string; the || arm is unreachable */
           suggestion:
             suggestion ||
             '(remove the comment entirely — it has no runtime content)',
@@ -227,9 +203,7 @@ export function findMetaCommentsAst(text: string): MetaCommentFinding[] {
 /**
  * Lexical-regex fallback for non-JS sources (C++, Rust, Go, Python, shell). The
  * acorn-wasm parser only understands JS/TS, so for those languages we keep the
- * marker-anchored regex scan. False-positives on string-literal mentions of `//
- * Plan:` etc. are possible but rare in practice for those language
- * conventions.
+ * marker-anchored regex scan.
  */
 export function findMetaCommentsLexical(text: string): MetaCommentFinding[] {
   const findings: MetaCommentFinding[] = []
@@ -252,6 +226,7 @@ export function findMetaCommentsLexical(text: string): MetaCommentFinding[] {
         kind: 'task',
         line: i + 1,
         snippet: line.trim(),
+        /* c8 ignore next - suggestion is always a non-empty string; the || arm is unreachable */
         suggestion:
           suggestion ||
           '(remove the comment entirely — it has no runtime content)',
@@ -287,43 +262,53 @@ export function findMetaComments(
     : findMetaCommentsLexical(text)
 }
 
-// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
-// content extraction (new_string / content), and fail-open on any throw.
-await withEditGuard((filePath, content) => {
-  // Only check source files. Markdown / json / yaml don't have
-  // "code comments" in the relevant sense — those file types use
-  // the same prefix tokens (`#`, `//`, `*`) as legitimate body
-  // content, not as comment markers.
-  if (!/\.(?:[cm]?[jt]sx?|cc|cpp|h|hpp|rs|go|py|sh)$/.test(filePath)) {
-    return
-  }
-  const text = content ?? ''
-  if (!text) {
-    return
-  }
+export const check = editGuard(
+  (filePath, content) => {
+    // Only check source files. Markdown / json / yaml don't have
+    // "code comments" in the relevant sense.
+    if (!/\.(?:[cm]?[jt]sx?|cc|cpp|h|hpp|rs|go|py|sh)$/.test(filePath)) {
+      return undefined
+    }
+    const text = content ?? ''
+    if (!text) {
+      return undefined
+    }
 
-  const findings = findMetaComments(text, filePath)
-  if (findings.length === 0) {
-    return
-  }
+    const findings = findMetaComments(text, filePath)
+    if (findings.length === 0) {
+      return undefined
+    }
 
-  const lines: string[] = []
-  lines.push('[no-meta-comments-guard] Blocked: meta-comment(s) in source.')
-  lines.push(`  File: ${filePath}`)
-  lines.push('')
-  for (let i = 0, { length } = findings; i < length; i += 1) {
-    const f = findings[i]!
-    lines.push(`  Line ${f.line} (${f.kind}):`)
-    lines.push(`    Saw:     ${f.snippet}`)
-    lines.push(`    Suggest: ${f.suggestion}`)
+    const lines: string[] = []
+    lines.push('[no-meta-comments-guard] Blocked: meta-comment(s) in source.')
+    lines.push(`  File: ${filePath}`)
     lines.push('')
-  }
-  lines.push('  Per CLAUDE.md "Code style → Comments": comments describe the')
-  lines.push('  CONSTRAINT or the hidden invariant. Development context')
-  lines.push('  (the plan, the task, the user request, removed code) lives in')
-  lines.push('  commit messages and PR descriptions, not source comments.')
-  lines.push('')
-  lines.push('  Rewrite or delete the comment, then retry the Edit/Write.')
-  logger.error(lines.join('\n') + '\n')
-  process.exitCode = 2
-}, { fleetOnly: true })
+    for (let i = 0, { length } = findings; i < length; i += 1) {
+      const f = findings[i]!
+      lines.push(`  Line ${f.line} (${f.kind}):`)
+      lines.push(`    Saw:     ${f.snippet}`)
+      lines.push(`    Suggest: ${f.suggestion}`)
+      lines.push('')
+    }
+    lines.push('  Per CLAUDE.md "Code style → Comments": comments describe the')
+    lines.push('  CONSTRAINT or the hidden invariant. Development context')
+    lines.push(
+      '  (the plan, the task, the user request, removed code) lives in',
+    )
+    lines.push('  commit messages and PR descriptions, not source comments.')
+    lines.push('')
+    lines.push('  Rewrite or delete the comment, then retry the Edit/Write.')
+    return block(lines.join('\n') + '\n')
+  },
+  { fleetOnly: true },
+)
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  scope: 'convention',
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

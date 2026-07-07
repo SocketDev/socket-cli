@@ -33,15 +33,17 @@
 //
 // Fails open on hook bugs (exit 0 + stderr log).
 
+import { existsSync } from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
-import { withEditGuard } from '../_shared/payload.mts'
+import { isEphemeralPath } from '../_shared/ephemeral-path.mts'
+import { isFleetTarget } from '../_shared/fleet-context.mts'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
-const logger = getDefaultLogger()
+const BYPASS_PHRASE = 'Allow markdown-filename bypass'
 
 // SCREAMING_CASE files allowed at root / docs/ / .claude/ (top level).
 const ALLOWED_SCREAMING_CASE: ReadonlySet<string> = new Set([
@@ -76,6 +78,12 @@ export function classifyMarkdownPath(absPath: string): Verdict {
     return { ok: true }
   }
 
+  // Scratchpad / temp-dir drafts are not repo docs — exempt them before any
+  // naming or location rule applies.
+  if (isEphemeralPath(absPath)) {
+    return { ok: true }
+  }
+
   // Anything under a `.claude/` segment is off-limits to doc-filename
   // rules: that tree is owned by Claude Code (auto-memory, skills,
   // hooks, settings) and each tool inside picks its own filename
@@ -101,6 +109,25 @@ export function classifyMarkdownPath(absPath: string): Verdict {
     if (normalized.includes('/.github/workflows/')) {
       return { ok: true }
     }
+    // GitHub Copilot reads `.github/copilot-instructions.md` as its repo
+    // instruction file (a host-dictated name, not a human doc).
+    if (normalized.endsWith('/.github/copilot-instructions.md')) {
+      return { ok: true }
+    }
+  }
+
+  // Cross-harness agent rule adapters: each AI host reads its rules from a
+  // host-named path (Cursor, Windsurf, Cline, Kiro). These are tool config the
+  // host dictates, not human docs, so the doc-filename convention does not
+  // apply.
+  const harnessNorm = normalizePath(absPath)
+  if (
+    harnessNorm.includes('/.cursor/rules/') ||
+    harnessNorm.includes('/.windsurf/rules/') ||
+    harnessNorm.includes('/.clinerules/') ||
+    harnessNorm.includes('/.kiro/steering/')
+  ) {
+    return { ok: true }
   }
 
   const relPath = normalizePath(toRepoRelative(absPath))
@@ -163,6 +190,7 @@ export function classifyMarkdownPath(absPath: string): Verdict {
   if (!isAtAllowedRegularLocation(relPath)) {
     return {
       ok: false,
+      /* c8 ignore next - path.posix.dirname never returns '' so the || '.' fallback is unreachable */
       message: `${filename}: per-repo docs live under docs/ or .claude/, not at ${path.posix.dirname(relPath) || '.'}.`,
       suggestion: `Move to docs/${filename} or .claude/${filename}.`,
     }
@@ -171,7 +199,7 @@ export function classifyMarkdownPath(absPath: string): Verdict {
   return { ok: true }
 }
 
-export function emitBlock(filePath: string, verdict: Verdict): void {
+export function emitBlock(filePath: string, verdict: Verdict): string {
   const lines: string[] = []
   lines.push('[markdown-filename-guard] Blocked: non-canonical doc filename.')
   lines.push(`  File:       ${filePath}`)
@@ -194,7 +222,9 @@ export function emitBlock(filePath: string, verdict: Verdict): void {
   lines.push(
     '    - Everything else: lowercase-with-hyphens, in docs/ or .claude/.',
   )
-  logger.error(lines.join('\n') + '\n')
+  lines.push('')
+  lines.push(`  Deliberate exception? Type "${BYPASS_PHRASE}".`)
+  return lines.join('\n') + '\n'
 }
 
 export function isAtAllowedRegularLocation(relPath: string): boolean {
@@ -224,6 +254,9 @@ export function isAtAllowedScreamingLocation(relPath: string): boolean {
     dir === 'docs' ||
     dir === 'template' ||
     dir === 'template/.claude' ||
+    dir === 'template/base' ||
+    dir === 'template/base/.claude' ||
+    dir === 'template/base/docs' ||
     dir === 'template/docs'
   )
 }
@@ -269,9 +302,15 @@ export function toRepoRelative(filePath: string): string {
   // the LAST `template/` segment so the carve-out holds for any checkout
   // location — `~/projects/<repo>`, a `/private/tmp` worktree, or CI's
   // `/home/runner/work/<repo>/<repo>/` — not only paths under `/projects/`.
+  // The fleet-canonical content now lives under the `base/` archetype layer
+  // (`template/base/...`), so peel that segment too: `template/base/CLAUDE.md`
+  // resolves to `CLAUDE.md`, exactly as the flat `template/CLAUDE.md` does.
   const templateIdx = normalized.lastIndexOf('/template/')
   if (templateIdx !== -1) {
-    return normalized.slice(templateIdx + '/template/'.length)
+    const afterTemplate = normalized.slice(templateIdx + '/template/'.length)
+    return afterTemplate.startsWith('base/')
+      ? afterTemplate.slice('base/'.length)
+      : afterTemplate
   }
   // Otherwise strip up through the recognizable repo-checkout prefix.
   // `~/projects/<repo>/` and CI's `.../work/<repo>/<repo>/` both collapse to
@@ -287,13 +326,36 @@ export function toRepoRelative(filePath: string): string {
   return filePath
 }
 
-// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
-// and fail-open on any throw.
-await withEditGuard(filePath => {
+export const check = editGuard((filePath, content, payload) => {
+  void content
   const verdict = classifyMarkdownPath(filePath)
   if (verdict.ok) {
-    return
+    return undefined
   }
-  emitBlock(filePath, verdict)
-  process.exitCode = 2
+  // The fleet doc-filename convention only governs fleet repos — an external /
+  // sibling clone (e.g. a GitHub wiki where `Home.md` is the page slug) owns
+  // its own naming.
+  if (!isFleetTarget(payload)) {
+    return undefined
+  }
+  // Only block CREATION of a new non-canonical name. Editing a file that
+  // already exists on disk — whose name predates this rule and which we are
+  // not renaming — must never be blocked.
+  if (existsSync(filePath)) {
+    return undefined
+  }
+  // Recoverable override for a deliberate exception.
+  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
+    return undefined
+  }
+  return block(emitBlock(filePath, verdict))
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

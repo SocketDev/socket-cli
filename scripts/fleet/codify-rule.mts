@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * @file Resolve a recorded MEMORY lesson into its two canonical code surfaces
  *   via the socket-lib AI helper — so nobody hand-juggles the 40KB CLAUDE.md
  *   byte budget or the defer-to-docs split again. The flow is: (1) record the
@@ -128,14 +128,14 @@ export function parseArgs(argv: readonly string[]): CodifyArgs {
 // The CLAUDE.md section to append the bullet under, by scope.
 function sectionAnchor(section: 'fleet' | 'repo'): string {
   return section === 'fleet'
-    ? 'the `## 📚 Wheelhouse Standards` fleet-canonical block (between the BEGIN/END FLEET-CANONICAL markers)'
-    : 'the `## 🏗️ …-Specific` project section (the repo-owned postamble, OUTSIDE the FLEET-CANONICAL markers)'
+    ? 'the `## 📚 Wheelhouse Standards` fleet-canonical block (between the `<fleet-canonical>` markers)'
+    : 'the `## 🏗️ …-Specific` project section (the repo-owned postamble, OUTSIDE the `<fleet-canonical>` markers)'
 }
 
 export function buildPrompt(args: CodifyArgs): string {
   const docRel = `docs/agents.md/${args.section}/${args.topic}.md`
   const claudeRel =
-    args.section === 'fleet' ? 'template/CLAUDE.md' : 'CLAUDE.md'
+    args.section === 'fleet' ? 'template/base/CLAUDE.md' : 'CLAUDE.md'
   return [
     'You are codifying ONE recorded lesson into its two canonical code surfaces. The MEMORY below is your source of truth — it captures the rule AND the *why*. Make exactly two edits and nothing else.',
     '',
@@ -155,7 +155,7 @@ export async function main(): Promise<void> {
   const prompt = buildPrompt(args)
   const docRel = `docs/agents.md/${args.section}/${args.topic}.md`
   const claudeRel =
-    args.section === 'fleet' ? 'template/CLAUDE.md' : 'CLAUDE.md'
+    args.section === 'fleet' ? 'template/base/CLAUDE.md' : 'CLAUDE.md'
 
   logger.log(`codify-rule: section=${args.section} topic=${args.topic}`)
   logger.log(`  CLAUDE.md:  ${claudeRel} (add/fold a terse bullet)`)

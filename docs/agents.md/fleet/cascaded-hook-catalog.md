@@ -3,7 +3,7 @@
 Reference catalog for the fleet hooks, `_shared` helpers, oxlint rules, and
 reminder family that cascade byte-identical to every fleet repo via the
 directory entries in `scripts/repo/sync-scaffolding/manifest/identical-files.mts`
-(`.claude/hooks/fleet`, `.config/oxlint-plugin/fleet`, `scripts/fleet`, …). These
+(`.claude/hooks/fleet`, `.config/fleet/oxlint-plugin/fleet`, `scripts/fleet`, …). These
 are NOT per-array-element annotations — each item below ships via its parent
 directory mirror, not its own `IDENTICAL_FILES` entry. This catalog lives here
 (not inline) so the manifest stays under the file-size cap; edit it when adding
@@ -34,7 +34,7 @@ or changing a cascaded hook/rule.
     scan. Before extraction the parser was copy-pasted across no-revert-guard /
     no-fleet-fork-guard / excuse-detector.
   - `foreign-paths.mts` — shared parallel-agent heuristic (`readTouchedPaths` +
-    `listForeignDirtyPaths`) used by parallel-agent-on-stop-reminder,
+    `listForeignDirtyPaths`) used by parallel-agent-on-stop-nudge,
     parallel-agent-staging-guard, and overeager-staging-guard.
   - `payload.mts` — canonical types for the PreToolUse JSON payload (`tool_name`,
     `tool_input`). Provides `ToolCallPayload`, `ToolInput`, and `readCommand` /
@@ -50,30 +50,30 @@ or changing a cascaded hook/rule.
     out per category; `ALL_TOKEN_KEY_PATTERNS` is the default union.
   - `wheelhouse-root.mts` — walks up from cwd to find the socket-wheelhouse
     checkout. Used by the user-global wheelhouse-dispatch hook so wheelhouse-only
-    hooks (new-hook-claude-md-guard, drift-check-reminder) can fire from any
+    hooks (new-hook-claude-md-guard, drift-check-nudge) can fire from any
     fleet-repo session. Must cascade since the dispatcher imports it via the
     resolved wheelhouse path.
-  - `stop-reminder.mts` — shared scaffold for the Stop-hook reminder family.
+  - `stop-nudge.mts` — shared scaffold for the Stop-hook reminder family.
     Provides a `runStopReminder(config)` that handles stdin parse, code-fence
     stripping, pattern sweep, and stderr emit. Must cascade alongside the
     reminder hooks or imports fail at hook startup.
   - `_shared/acorn/` — shared acorn-wasm parser for hooks that need structural
-    JS/TS parsing (error-message-quality-reminder relies on `findThrowNew`). The
+    JS/TS parsing (error-message-quality-nudge relies on `findThrowNew`). The
     `.wasm` blob + bindgen + sync wrapper must cascade as a unit.
 
 ## Reminder family (Stop hooks)
 
 Stop hooks that emit informational stderr (never block) when the most-recent
-assistant turn matches a pattern. All share `_shared/stop-reminder.mts`. Listed
+assistant turn matches a pattern. All share `_shared/stop-nudge.mts`. Listed
 in `.claude/settings.json` under the Stop block; missing any breaks every Stop
 hook in the repo. Members include comment-tone, perfectionist,
-parallel-agent-on-stop-reminder, squash-history-reminder,
-stale-process-sweeper, sweep-ds-store, auth-rotation-reminder, excuse-detector,
-dont-blame-user-reminder (BLOCKING), no-orphaned-staging, dirty-worktree-stop,
-dont-stop-mid-queue-reminder, drift-check-reminder, plan-review-reminder,
-commit-pr-reminder, pointer-comment-reminder, path-regex-normalize-reminder,
-prefer-rebase-over-revert-reminder, public-surface-reminder,
-enterprise-push-property-reminder.
+parallel-agent-on-stop-nudge, squash-history-nudge,
+stale-process-sweeper, sweep-ds-store, auth-rotation-nudge, excuse-detector,
+dont-blame-user-nudge (BLOCKING), no-orphaned-staging, dirty-worktree-stop,
+dont-stop-mid-queue-nudge, drift-check-nudge, plan-review-nudge,
+commit-pr-nudge, pointer-comment-nudge, path-regex-normalize-nudge,
+prefer-rebase-over-revert-nudge, public-surface-nudge,
+enterprise-push-property-nudge.
 
 ## Guards + blockers
 
@@ -113,8 +113,9 @@ phrase (where one exists):
 - **marketplace-comment-guard** — PreToolUse(Edit|Write) for edits to
   `.claude-plugin/marketplace.json` + sibling README that desync the SHA-pin pair.
 - **minify-mcp-out** — PostToolUse(mcp__.*) lossless MCP-output minifier.
-- **socket-token-minifier-start** — SessionStart auto-start of the wire-level
-  proxy (fail-closed: only sets `ANTHROPIC_BASE_URL` if the proxy is healthy on :7779).
+- **headroom-proxy-start** — SessionStart auto-start of the telemetry-locked
+  headroom wire-level proxy (fail-closed: only sets `ANTHROPIC_BASE_URL` if the
+  proxy is healthy on :8787).
 - **check-new-deps** — PreToolUse(Edit|Write) refusing new dependency additions
   without a Socket score check.
 - **cross-repo-guard** — PreToolUse(Edit|Write) refusing path references to another
@@ -122,28 +123,32 @@ phrase (where one exists):
   `@socketsecurity/lib/<subpath>` instead.
 - **gitmodules-comment-guard** — PreToolUse(Edit|Write) reminder ensuring each
   `[submodule]` has a `# name-version` annotation.
-- **lock-step-ref-reminder** — PreToolUse(Edit|Write) breadcrumb for malformed
+- **lock-step-ref-nudge** — PreToolUse(Edit|Write) breadcrumb for malformed
   `Lock-step` comment shapes + stale opted-in references. Spec:
   `docs/agents.md/fleet/parser-comments.md` §5–6.
 - **logger-guard** — PreToolUse(Edit|Write) refusing direct stream writes
   (`process.std{err,out}.write`, `console.*`) in source; suggests `getDefaultLogger()`.
 - **no-revert-guard** — PreToolUse(Bash) refusing destructive git
   (checkout/restore/reset/stash/clean) + hook bypasses (--no-verify,
-  DISABLE_PRECOMMIT_*, --no-gpg-sign, force-push) unless the canonical
+  DISABLE_PRECOMMIT_*, --no-gpg-sign) unless the canonical
   `Allow <X> bypass` phrase is in a recent user turn.
+- **no-force-push-guard** — PreToolUse(Bash) refusing a `git push` carrying
+  any force flag (--force, -f, --force-with-lease, --force-if-includes)
+  unless `Allow force-push bypass` (or a legacy alias) is in a recent user
+  turn; teaches the fleet default `--force-with-lease=<branch>:<expected-sha>`.
 - **no-ext-issue-ref-guard** — PreToolUse(Bash) refusing commit / `gh` message
   bodies that reference a non-SocketDev `<owner>/<repo>#<num>` (stops upstream spam).
 - **no-non-fleet-push-guard** — PreToolUse(Bash) refusing `git push` to a repo not
   in `FLEET_REPO_NAMES`.
 - **no-experimental-strip-types-guard** — PreToolUse(Bash) refusing
   `--experimental-strip-types` (stable since Node 22.6, default-on in 24+).
-- **prefer-rebase-over-revert-reminder** — PreToolUse(Bash) reminder nudging toward
+- **prefer-rebase-over-revert-nudge** — PreToolUse(Bash) reminder nudging toward
   `git reset --soft` / `git rebase -i` when `git revert` targets an unpushed commit.
 - **no-meta-comments-guard** — PreToolUse(Edit|Write) refusing task/plan/removed-code
   comments (`// Plan:`, `// As requested`, `// removed X`).
 - **no-disable-lint-rule-guard** — PreToolUse(Edit|Write) refusing `"rule": "off"`/`"warn"`.
   Bypass: `Allow disable-lint-rule bypass`.
-- **extension-build-current-reminder** — PreToolUse(Bash) reminder pairing
+- **extension-build-current-nudge** — PreToolUse(Bash) reminder pairing
   trusted-publisher-extension `src/**` commits with a build. Bypass:
   `Allow extension-build-current bypass`.
 - **no-file-scope-oxlint-disable-guard** — PreToolUse(Edit|Write) refusing
@@ -153,7 +158,7 @@ phrase (where one exists):
 - **no-orphaned-staging** — Stop reminder listing staged-uncommitted paths.
 - **overeager-staging-guard** — PreToolUse(Bash) refusing `git add` far from a
   commit step. Every repo MUST ship the dir (settings.json `Bash` matcher load contract).
-- **private-name-reminder** — PreToolUse(Bash) refusing literal personal identifiers
+- **private-name-nudge** — PreToolUse(Bash) refusing literal personal identifiers
   (canonical list at `.claude/private-names.json`).
 - **new-hook-claude-md-guard** — PreToolUse(Edit|Write) refusing a new
   `.claude/hooks/<name>/index.mts` unless CLAUDE.md cites `(enforced by …)`.
@@ -198,7 +203,7 @@ phrase (where one exists):
 Long-form expansions of the fleet-canonical CLAUDE.md rules live under
 `docs/agents.md/fleet/`, which cascades via the `docs/agents.md/fleet` directory
 entry (per-file entries redundant — the rm-and-copy dir mirror covers them).
-`no-local-fork-canonical.md` is among them (linked by both no-fleet-fork-guard
+`no-local-fork.md` is among them (linked by both no-fleet-fork-guard
 and the CLAUDE.md fleet block). The old `docs/agents.md/wheelhouse/` tier is
 retired (tombstoned in `REMOVED_FILES`); downstream repos may add their own
 `docs/agents.md/<repo>/` subdirectory for repo-specific docs.

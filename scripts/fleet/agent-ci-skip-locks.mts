@@ -1,4 +1,4 @@
-/**
+/*
  * @file Thin pass-through wrapper around the local Agent CI runner that guards
  *   the one input it cannot handle: a gh-aw compiled `*.lock.yml`. Agent CI
  *   parses workflows with GitHub's own `@actions/workflow-parser`, whose

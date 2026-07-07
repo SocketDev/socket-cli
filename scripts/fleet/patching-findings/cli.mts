@@ -1,15 +1,15 @@
 /**
- * patching-findings engine CLI — the deterministic parse + report half. The
+ * Patching-findings engine CLI — the deterministic parse + report half. The
  * patch generation, the reviewer's ACCEPT/REJECT call, and the apply/commit
  * stay agent-driven; this parses their tagged replies and renders PATCHES.md so
  * the tag extraction, the style-contradiction flag, and the counts don't drift
- * by hand. The style-contradiction is a FLAG only — it never alters the verdict.
+ * by hand. The style-contradiction is a FLAG only — it never alters the
+ * verdict.
  *
- * Subcommands:
- *   parse-patch  --from <reply.txt>            → ParsedPatch JSON (five tags + status)
- *   parse-review --from <reply.txt>            → ParsedReview JSON (verdict + style flag)
- *   report --from <outcomes.json> --findings <p> --repo <p> [--out <f>]
- *       → write PATCHES.md + print the terminal summary
+ * Subcommands: parse-patch --from <reply.txt> → ParsedPatch JSON (five tags +
+ * status) parse-review --from <reply.txt> → ParsedReview JSON (verdict + style
+ * flag) report --from <outcomes.json> --findings <p> --repo <p> [--out <f>] →
+ * write PATCHES.md + print the terminal summary.
  */
 
 import process from 'node:process'
@@ -19,7 +19,12 @@ import { fileURLToPath } from 'node:url'
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { parsePatchResult, parseReviewResult, renderPatchesMd, summarizeOutcomes } from './lib/patch-parse.mts'
+import {
+  parsePatchResult,
+  parseReviewResult,
+  renderPatchesMd,
+  summarizeOutcomes,
+} from './lib/patch-parse.mts'
 import type { PatchOutcome } from './lib/patch-parse.mts'
 
 const logger = getDefaultLogger()

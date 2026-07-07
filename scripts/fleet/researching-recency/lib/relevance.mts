@@ -6,19 +6,57 @@
  *   relevance filter threshold. The synonym table carries the programming
  *   aliases (js/javascript, ts/typescript, react/reactjs, …) that cause most
  *   token-overlap misses on a dev corpus.
- *
- * Lock-step with: last30days `relevance.py` (token-overlap math; keep scoring
- * coefficients identical so ranking parity holds against the reference).
+ *   Lock-step with: last30days `relevance.py` (token-overlap math; keep scoring
+ *   coefficients identical so ranking parity holds against the reference).
  */
 
 import type { PreparedQuery } from './types.mts'
 
 // Common English words that dilute token overlap; dropped before scoring.
 export const STOPWORDS: ReadonlySet<string> = new Set([
-  'a', 'about', 'all', 'an', 'and', 'are', 'at', 'be', 'but', 'by', 'can',
-  'do', 'for', 'from', 'get', 'has', 'have', 'how', 'i', 'if', 'in', 'is',
-  'it', 'its', 'just', 'me', 'my', 'no', 'not', 'of', 'on', 'or', 'so',
-  'that', 'the', 'this', 'to', 'was', 'we', 'what', 'will', 'with', 'you',
+  'a',
+  'about',
+  'all',
+  'an',
+  'and',
+  'are',
+  'at',
+  'be',
+  'but',
+  'by',
+  'can',
+  'do',
+  'for',
+  'from',
+  'get',
+  'has',
+  'have',
+  'how',
+  'i',
+  'if',
+  'in',
+  'is',
+  'it',
+  'its',
+  'just',
+  'me',
+  'my',
+  'no',
+  'not',
+  'of',
+  'on',
+  'or',
+  'so',
+  'that',
+  'the',
+  'this',
+  'to',
+  'was',
+  'we',
+  'what',
+  'will',
+  'with',
+  'you',
   'your',
 ])
 
@@ -43,10 +81,35 @@ export const SYNONYMS: Readonly<Record<string, readonly string[]>> = {
 // Generic query words that should not carry relevance on their own. They still
 // help when paired with a stronger entity/topic match.
 export const LOW_SIGNAL_QUERY_TOKENS: ReadonlySet<string> = new Set([
-  'advice', 'best', 'code', 'compare', 'comparison', 'differences', 'explain',
-  'guide', 'guides', 'how', 'latest', 'news', 'opinion', 'opinions', 'rate',
-  'review', 'reviews', 'thoughts', 'tip', 'tips', 'tutorial', 'tutorials',
-  'update', 'updates', 'use', 'using', 'versus', 'vs', 'worth',
+  'advice',
+  'best',
+  'code',
+  'compare',
+  'comparison',
+  'differences',
+  'explain',
+  'guide',
+  'guides',
+  'how',
+  'latest',
+  'news',
+  'opinion',
+  'opinions',
+  'rate',
+  'review',
+  'reviews',
+  'thoughts',
+  'tip',
+  'tips',
+  'tutorial',
+  'tutorials',
+  'update',
+  'updates',
+  'use',
+  'using',
+  'versus',
+  'vs',
+  'worth',
 ])
 
 // Replace every non-word, non-space char with a space, lowercase, and split on

@@ -121,6 +121,6 @@ If lint surfaces new `socket/export-top-level-functions` violations after a colo
 ## Cross-references
 
 - `feedback-export-top-level-functions.md` — memory entry capturing the rule's intent and the past colocate incident.
-- `socket/export-top-level-functions` — fleet oxlint rule in `template/.config/oxlint-plugin/`.
+- `socket/export-top-level-functions` — fleet oxlint rule in `template/.config/fleet/oxlint-plugin/`.
 - `socket/sort-source-methods` — companion rule for visibility-group ordering.
 - `feedback_repo_hygiene.md` — broader hygiene guidance ("No doc litter, pin deps, etc.").

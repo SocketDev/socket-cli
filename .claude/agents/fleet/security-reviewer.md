@@ -21,8 +21,10 @@ Apply these rules from CLAUDE.md exactly:
 2. **Injection**: Command injection via shell: true or string interpolation in spawn/exec. Path traversal in file operations.
 3. **Dependencies**: npx/dlx usage. Unpinned versions (^ or ~). Missing soak-time bypass justification (pnpm-workspace.yaml `minimumReleaseAgeExclude`). # zizmor: documentation-checklist
 4. **File operations**: fs.rm without safeDelete. process.chdir usage. fetch() usage (must use lib's httpRequest).
-5. **GitHub Actions**: Unpinned action versions (must use full SHA). Secrets outside env blocks. Template injection from untrusted inputs.
+5. **GitHub Actions**: Unpinned action versions (must use full SHA). Secrets outside env blocks. Template injection from untrusted inputs. GitHub App tokens (the in-house `mint-app-installation-token.mjs` minter) must carry a non-blank `PERMISSIONS` env (least-privilege), never mint blanket installation permissions. `pull_request_target` must never check out + execute the untrusted PR head.
 6. **Error handling**: Sensitive data in error messages. Stack traces exposed to users.
+
+**On zizmor findings**: fix the root cause (scope the token, pin the SHA, drop the dangerous trigger) — never suppress a finding to silence it. zizmor is a STANDING audit, not an issue tracker: in code comments + commit messages describe the security *intent* and you may note the fix is *for* the zizmor `<audit>` audit, but never phrase it as "Closes/fixes zizmor". The fleet mirrors these audits in its own checks (e.g. `app-tokens-are-scoped`) so the contract holds even where zizmor soft-skips (no upstream binary for a platform).
 
 For each finding, report:
 

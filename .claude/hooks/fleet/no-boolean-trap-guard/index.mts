@@ -30,14 +30,15 @@
 //
 // Exit codes: 0 pass, 2 block. Fails open on malformed payloads.
 
-import process from 'node:process'
-
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
-import { withEditGuard } from '../_shared/payload.mts'
+import {
+  block,
+  defineHook,
+  editGuard,
+  notify,
+  runHook,
+} from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const logger = getDefaultLogger()
+import { isRepoTestHome } from '../_shared/repo-test-home.mts'
 
 const BYPASS_PHRASE = 'Allow boolean-trap bypass'
 
@@ -65,6 +66,63 @@ const BOOL_PARAM_RE =
 const FUNC_HEADER_RE =
   /\b(?:async\s+)?(?:function\s*\*?\s*[A-Za-z_$][A-Za-z0-9_$]*|(?:export\s+(?:default\s+)?|private\s+|protected\s+|public\s+|static\s+|abstract\s+|override\s+)*(?:async\s+)?function|(?:export\s+(?:default\s+)?)?(?:async\s+)?\b[A-Za-z_$][A-Za-z0-9_$]*)\s*[<(]/
 
+/**
+ * The substring inside the first balanced `(...)` on a line — the parameter
+ * list, excluding the return-type annotation that follows `)`. Returns
+ * undefined when the line has no `(` or the parens don't close on this line
+ * (a multi-line signature). Balances `()[]{}` so a nested object-type param
+ * or default value doesn't end the list early. This is what stops a
+ * return-type field (`): { ok: boolean }`) from being read as a param.
+ */
+export function paramListSpan(line: string): string | undefined {
+  const open = line.indexOf('(')
+  if (open === -1) {
+    return undefined
+  }
+  let depth = 0
+  for (let i = open, { length } = line; i < length; i += 1) {
+    const ch = line[i]!
+    if (ch === '(' || ch === '[' || ch === '{') {
+      depth += 1
+    } else if (ch === ')' || ch === ']' || ch === '}') {
+      depth -= 1
+      if (depth === 0) {
+        return line.slice(open + 1, i)
+      }
+    }
+  }
+  return undefined
+}
+
+/**
+ * Blank out every character nested inside a `{...}`, `[...]`, or `(...)` group
+ * within a parameter-list span, preserving length and the top-level structure.
+ * A boolean that is a PROPERTY of an object-type literal
+ * (`props: { active?: boolean }`), an ELEMENT of a tuple type
+ * (`pair: [boolean, string]`), or a PARAMETER of a callback-type
+ * (`cb: (x: boolean) => void`) is not a top-level positional boolean trap of
+ * the function being declared — only a bare `name: boolean` at the param
+ * list's top level is. Blanking nested groups also drops their inner commas so
+ * the multi-param check counts only real param separators.
+ */
+export function stripNestedTypeGroups(paramList: string): string {
+  let depth = 0
+  let out = ''
+  for (let i = 0, { length } = paramList; i < length; i += 1) {
+    const ch = paramList[i]!
+    if (ch === '{' || ch === '[' || ch === '(') {
+      out += depth === 0 ? ch : ' '
+      depth += 1
+    } else if (ch === '}' || ch === ']' || ch === ')') {
+      depth = Math.max(0, depth - 1)
+      out += depth === 0 ? ch : ' '
+    } else {
+      out += depth === 0 ? ch : ' '
+    }
+  }
+  return out
+}
+
 export function findBooleanTrapParams(text: string): Finding[] {
   const findings: Finding[] = []
   const lines = text.split('\n')
@@ -74,15 +132,21 @@ export function findBooleanTrapParams(text: string): Finding[] {
     if (!FUNC_HEADER_RE.test(line) && !line.trim().startsWith('(')) {
       continue
     }
+    // Scan ONLY the parameter list, never the return-type annotation after
+    // `)` — a `{ ok: boolean }` return type is not a boolean-trap param.
+    // Then blank nested type groups so a boolean PROPERTY/element/callback-param
+    // inside a param's type (`opts: { active?: boolean }`) is never read as a
+    // top-level positional boolean.
+    const scanText = stripNestedTypeGroups(paramListSpan(line) ?? line)
     // Count commas to know whether there are multiple params. A boolean
     // as the ONLY param is a predicate pattern — leave it alone.
-    const commaCount = (line.match(/,/g) ?? []).length
+    const commaCount = (scanText.match(/,/g) ?? []).length
     if (commaCount === 0) {
       continue
     }
     BOOL_PARAM_RE.lastIndex = 0
     let m: RegExpExecArray | null
-    while ((m = BOOL_PARAM_RE.exec(line)) !== null) {
+    while ((m = BOOL_PARAM_RE.exec(scanText)) !== null) {
       const param = m[1]!
       findings.push({ line: i + 1, text: line.trim(), param })
     }
@@ -95,36 +159,37 @@ export function isExemptPath(filePath: string): boolean {
     filePath.includes('/dist/') ||
     filePath.includes('/build/') ||
     filePath.includes('/node_modules/') ||
-    filePath.includes('/.claude/hooks/fleet/no-boolean-trap-guard/')
+    filePath.includes('/.claude/hooks/fleet/no-boolean-trap-guard/') ||
+    isRepoTestHome(filePath)
   )
 }
 
-if (process.argv[1]?.endsWith('index.mts')) {
-  await withEditGuard((filePath, content, payload) => {
+export const check = editGuard(
+  (filePath, content, payload) => {
     if (isExemptPath(filePath)) {
-      return
+      return undefined
     }
+    // Match TypeScript file extensions: .ts, .mts, .cts, .tsx, .mtsx, .ctsx.
     if (!/\.(?:c|m)?tsx?$/.test(filePath)) {
-      return
+      return undefined
     }
     const text = content ?? ''
     if (!text) {
-      return
+      return undefined
     }
     const findings = findBooleanTrapParams(text)
     if (findings.length === 0) {
-      return
+      return undefined
     }
     if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-      logger.error(
+      return notify(
         `no-boolean-trap-guard: ${findings.length} boolean-trap param(s) — bypassed via "${BYPASS_PHRASE}"\n`,
       )
-      return
     }
     const lines = findings
       .map(f => `  ${filePath}:${f.line}  param \`${f.param}\`\n    ${f.text}`)
       .join('\n')
-    logger.error(
+    return block(
       `no-boolean-trap-guard: refusing to introduce a boolean positional parameter.\n` +
         `\n` +
         `${lines}\n` +
@@ -143,6 +208,16 @@ if (process.argv[1]?.endsWith('index.mts')) {
         `See docs/agents.md/fleet/options-object.md for the full recipe.\n` +
         `Bypass: type "${BYPASS_PHRASE}" in a recent message.\n`,
     )
-    process.exitCode = 2
-  }, { fleetOnly: true })
-}
+  },
+  { fleetOnly: true },
+)
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  scope: 'convention',
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

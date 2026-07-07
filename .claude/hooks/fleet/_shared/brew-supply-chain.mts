@@ -1,4 +1,4 @@
-/**
+/*
  * @file Single source of truth for "is this machine's Homebrew hardened to the
  *   6.0.0 supply-chain posture?" — shared by the brew-supply-chain-guard hook
  *   (point-of-use block), the brew-supply-chain-is-hardened.mts check (drift
@@ -88,7 +88,7 @@ export interface BrewSecurityStatus {
 // True when an env var is set to a truthy "on" value (1 / true / yes / on).
 export function brewEnvIsOn(name: string): boolean {
   const v = process.env[name]?.trim().toLowerCase()
-  return v === '1' || v === 'true' || v === 'yes' || v === 'on'
+  return v === '1' || v === 'on' || v === 'true' || v === 'yes'
 }
 
 // True when `brew` resolves on PATH. `command -v` is a shell builtin (not

@@ -20,6 +20,9 @@
  */
 
 import { readdirSync, readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+
+import type { Dirent } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -63,15 +66,16 @@ interface FileFacts {
   parsedBy: 'ast' | 'regex'
 }
 
-function listMtsFiles(dir: string): string[] {
+export function listMtsFiles(dir: string): string[] {
   const out: string[] = []
-  let entries: ReturnType<typeof readdirSync>
+  let entries: Dirent[]
   try {
-    entries = readdirSync(dir, { withFileTypes: true })
+    entries = readdirSync(dir, { encoding: 'utf8', withFileTypes: true })
   } catch {
     return out
   }
-  for (const e of entries) {
+  for (let i = 0, { length } = entries; i < length; i += 1) {
+    const e = entries[i]!
     const full = path.join(dir, e.name)
     if (e.isDirectory()) {
       if (e.name === 'node_modules' || e.name === 'test') {
@@ -87,7 +91,7 @@ function listMtsFiles(dir: string): string[] {
 
 // Resolve an import specifier to an absolute path, keeping only relative
 // imports of a `.mts` living under some `_shared/` dir (the shareable kind).
-function resolveSharedImport(
+export function resolveSharedImport(
   fromFile: string,
   spec: string,
 ): string | undefined {
@@ -107,7 +111,7 @@ function resolveSharedImport(
 // Top-level binding names introduced by a declaration node — a Function/Class
 // declaration's `id`, or each Identifier binding of a VariableDeclaration.
 // `undefined` (e.g. `export default …`, `export { … }`) yields nothing.
-function declaredNames(node: AcornNode | undefined): string[] {
+export function declaredNames(node: AcornNode | undefined): string[] {
   if (!node) {
     return []
   }
@@ -144,7 +148,7 @@ function declaredNames(node: AcornNode | undefined): string[] {
 // partial TS parser and still rejects assorted annotated forms (some generic
 // type-argument and arrow-parameter shapes). Those fall to the regex extractor
 // in readFacts — complete for the three facts we need, never silently skipped.
-function stripTypeSpace(src: string): string {
+export function stripTypeSpace(src: string): string {
   const n = src.length
   const out = src.split('')
   const blank = (a: number, b: number): void => {
@@ -281,7 +285,7 @@ function stripTypeSpace(src: string): string {
 
 // Parse one file ONCE; collect its shared imports + top-level declarations
 // (and which of those are exported — the module's fork-able public surface).
-function readFacts(file: string, tree: FileFacts['tree']): FileFacts {
+export function readFacts(file: string, tree: FileFacts['tree']): FileFacts {
   const facts: FileFacts = {
     file,
     tree,
@@ -398,9 +402,9 @@ function readFacts(file: string, tree: FileFacts['tree']): FileFacts {
   // the public surface even when the declaration matched without the keyword.
   const exportListRe = /^export\s*\{([^}]*)\}\s*;?\s*$/gm
   while ((m = exportListRe.exec(src)) !== null) {
-    for (const part of m[1].split(',')) {
-      const local = part
-        .trim()
+    const parts = m[1]!.split(',')
+    for (let i = 0, { length } = parts; i < length; i += 1) {
+      const local = parts[i]!.trim()
         .split(/\s+as\s+/)[0]
         ?.trim()
       if (local && /^[A-Za-z_$][\w$]*$/.test(local)) {
@@ -411,83 +415,89 @@ function readFacts(file: string, tree: FileFacts['tree']): FileFacts {
   return facts
 }
 
-// Parse every file in both trees once. A _shared module's fork-able surface is
-// its EXPORTED symbols (what a consumer can import); a re-fork is a consumer
-// re-declaring one of those exported names. A module's PRIVATE helper (e.g. a
-// local `splitLines`) coincidentally sharing a name with another file's private
-// helper is independent, not a fork — so private names never trigger the gate.
-const allFacts: FileFacts[] = [
-  ...listMtsFiles(GIT_HOOKS).map(f => readFacts(f, 'git-hooks')),
-  ...listMtsFiles(CLAUDE_HOOKS).map(f => readFacts(f, 'claude-hooks')),
-]
+function main(): void {
+  // Parse every file in both trees once. A _shared module's fork-able surface is
+  // its EXPORTED symbols (what a consumer can import); a re-fork is a consumer
+  // re-declaring one of those exported names. A module's PRIVATE helper (e.g. a
+  // local `splitLines`) coincidentally sharing a name with another file's private
+  // helper is independent, not a fork — so private names never trigger the gate.
+  const allFacts: FileFacts[] = [
+    ...listMtsFiles(GIT_HOOKS).map(f => readFacts(f, 'git-hooks')),
+    ...listMtsFiles(CLAUDE_HOOKS).map(f => readFacts(f, 'claude-hooks')),
+  ]
 
-const factsByFile = new Map(allFacts.map(f => [f.file, f]))
+  const factsByFile = new Map(allFacts.map(f => [f.file, f]))
 
-// A _shared module is "cross-tree shared" when files from BOTH trees import it.
-const importTrees = new Map<string, Set<FileFacts['tree']>>()
-for (let i = 0, { length } = allFacts; i < length; i += 1) {
-  const f = allFacts[i]!
-  for (const mod of f.sharedImports) {
-    let trees = importTrees.get(mod)
-    if (!trees) {
-      trees = new Set()
-      importTrees.set(mod, trees)
-    }
-    trees.add(f.tree)
-  }
-}
-
-const crossTreeModules = [...importTrees]
-  .filter(([, trees]) => trees.size >= 2)
-  .map(([mod]) => mod)
-
-let errors = 0
-
-// A re-fork is precise (no symbol-NAME-collision noise): a file that IMPORTS a
-// cross-tree-shared module AND ALSO top-level re-declares one of that module's
-// EXPORTED symbols. You imported it — re-declaring the same exported name
-// shadows the import and is the copy-instead-of-reuse the shared module exists
-// to prevent. Two signals must both hold, so neither a coincidental same-named
-// local in a file that does NOT import the module, nor a private helper name
-// the module never exported (e.g. a module-local `splitLines`), is flagged.
-for (const mod of crossTreeModules) {
-  const modFacts = factsByFile.get(mod)
-  if (!modFacts) {
-    // Imported from both trees but not in the walked dirs — can't verify.
-    continue
-  }
+  // A _shared module is "cross-tree shared" when files from BOTH trees import it.
+  const importTrees = new Map<string, Set<FileFacts['tree']>>()
   for (let i = 0, { length } = allFacts; i < length; i += 1) {
     const f = allFacts[i]!
-    if (f.file === mod || !f.sharedImports.has(mod)) {
+    for (const mod of f.sharedImports) {
+      let trees = importTrees.get(mod)
+      if (!trees) {
+        trees = new Set()
+        importTrees.set(mod, trees)
+      }
+      trees.add(f.tree)
+    }
+  }
+
+  const crossTreeModules = [...importTrees]
+    .filter(([, trees]) => trees.size >= 2)
+    .map(([mod]) => mod)
+
+  let errors = 0
+
+  // A re-fork is precise (no symbol-NAME-collision noise): a file that IMPORTS a
+  // cross-tree-shared module AND ALSO top-level re-declares one of that module's
+  // EXPORTED symbols. You imported it — re-declaring the same exported name
+  // shadows the import and is the copy-instead-of-reuse the shared module exists
+  // to prevent. Two signals must both hold, so neither a coincidental same-named
+  // local in a file that does NOT import the module, nor a private helper name
+  // the module never exported (e.g. a module-local `splitLines`), is flagged.
+  for (const mod of crossTreeModules) {
+    const modFacts = factsByFile.get(mod)
+    if (!modFacts) {
+      // Imported from both trees but not in the walked dirs — can't verify.
       continue
     }
-    for (const sym of f.declared) {
-      if (modFacts.exported.has(sym)) {
-        logger.fail(
-          `scanner-parity: ${path.relative(TEMPLATE, f.file)} imports ${path.relative(TEMPLATE, mod)} yet re-declares \`${sym}\` — use the import, don't re-fork it (both hook trees must run one matcher).`,
-        )
-        errors++
+    for (let i = 0, { length } = allFacts; i < length; i += 1) {
+      const f = allFacts[i]!
+      if (f.file === mod || !f.sharedImports.has(mod)) {
+        continue
+      }
+      for (const sym of f.declared) {
+        if (modFacts.exported.has(sym)) {
+          logger.fail(
+            `scanner-parity: ${path.relative(TEMPLATE, f.file)} imports ${path.relative(TEMPLATE, mod)} yet re-declares \`${sym}\` — use the import, don't re-fork it (both hook trees must run one matcher).`,
+          )
+          errors++
+        }
       }
     }
   }
+
+  const regexFallbacks = allFacts.filter(f => f.parsedBy === 'regex').length
+
+  if (errors === 0) {
+    const astParsed = allFacts.length - regexFallbacks
+    const coverage =
+      regexFallbacks === 0
+        ? 'all AST-parsed'
+        : `${astParsed} AST-parsed, ${regexFallbacks} via regex extractor (partial-TS wasm parser couldn't parse them even after type-stripping)`
+    logger.log(
+      `scanner-parity: ${crossTreeModules.length} cross-tree shared module(s); none re-forked (${coverage}).`,
+    )
+    process.exitCode = 0
+  } else {
+    logger.error('')
+    logger.fail(
+      `scanner-parity: ${errors} re-fork(s). A matcher imported by both hook trees must live in ONE _shared module; don't re-declare its symbols elsewhere.`,
+    )
+    process.exitCode = 1
+  }
 }
 
-const regexFallbacks = allFacts.filter(f => f.parsedBy === 'regex').length
-
-if (errors === 0) {
-  const astParsed = allFacts.length - regexFallbacks
-  const coverage =
-    regexFallbacks === 0
-      ? 'all AST-parsed'
-      : `${astParsed} AST-parsed, ${regexFallbacks} via regex extractor (partial-TS wasm parser couldn't parse them even after type-stripping)`
-  logger.log(
-    `scanner-parity: ${crossTreeModules.length} cross-tree shared module(s); none re-forked (${coverage}).`,
-  )
-  process.exitCode = 0
-} else {
-  logger.error('')
-  logger.fail(
-    `scanner-parity: ${errors} re-fork(s). A matcher imported by both hook trees must live in ONE _shared module; don't re-declare its symbols elsewhere.`,
-  )
-  process.exitCode = 1
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main()
 }

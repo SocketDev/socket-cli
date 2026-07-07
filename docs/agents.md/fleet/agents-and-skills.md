@@ -1,6 +1,6 @@
 # Agents & skills
 
-The CLAUDE.md `### Agents & skills` section names the entry-point skills. This file is the full taxonomy and the cross-fleet runner.
+The CLAUDE.md `### Agents & skills` section names the entry-point skills. This file is the full taxonomy and the cross-fleet runner. Before authoring a new skill, read [`writing-skills-well.md`](writing-skills-well.md) — the fleet skill-authoring doctrine (script-first/AI-residue steps, completion criteria, leading words, no-op pruning).
 
 ## Naming & namespace
 

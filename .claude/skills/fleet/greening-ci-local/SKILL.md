@@ -38,27 +38,49 @@ dispatched (or the failure only reproduces on real runners — Depot/macOS VMs).
 
 ## How it drives the fix-and-retry loop
 
-1. **Pick the entry.** Whole branch CI: `pnpm run ci:local` (carries
-   `--all --quiet --pause-on-failure --github-token`). A single workflow (the
-   common case for validating one release/build workflow):
-   `node_modules/.bin/agent-ci run --workflow .github/workflows/<wf>.yml
-   --github-token --quiet --pause-on-failure [--no-matrix]`. Use `--no-matrix` to
-   validate one representative leg fast before running the full fan-out.
-2. **Run it.** Pipe-safe: stdout-not-a-TTY → the launcher detaches and the
-   foreground process exits **77** the instant a step pauses. Capture output
-   (`> /tmp/agentci-<wf>.log` or `| tee`).
-3. **On pause (a failed step):** the `run.paused` event carries the runner name +
-   the exact `retry_cmd`. Read the failure log tail, classify it:
-   - **Code/config failure** → fix it locally in the checkout, then retry the
-     SAME paused runner: `node_modules/.bin/agent-ci retry --name <runner-name>`
-     (or `--from-step <N>` to skip earlier passing steps). Do NOT restart the
-     whole pipeline — retry resumes from the fix.
-   - **Env-gap failure** (Docker base image missing a lib the real runner has,
-     Depot/OIDC unavailable locally, a macOS leg skipped for no tart) → this is
-     the local boundary, not a defect. Record it, `agent-ci abort --name <runner>`
-     if needed, and report "green up to <step>; <leg> needs a real runner."
-4. **Loop** until the run lands green (all non-skipped legs pass) or the budget
-   expires.
+`run.mts` is **eyes-only**, the local twin of `greening-ci`'s runner: it launches
+Agent-CI with `--pause-on-failure`, watches for the launcher's exit-77 (a step
+paused) or a clean exit (green), dumps the paused-step log tail to a tmp file,
+**classifies** the failure as code-vs-env-gap deterministically, and prints a
+JSON verdict on its final line. The retry loop, the budget, and the env-gap
+classification are all in the script — the **fix-authoring** stays yours.
+
+1. **Invoke the runner.** A single workflow (the common case for validating one
+   release/build workflow):
+   `node .claude/skills/fleet/greening-ci-local/run.mts --workflow
+   .github/workflows/<wf>.yml [--no-matrix]`. Omit `--workflow` to run all
+   PR/push workflows for the branch. `--no-matrix` validates one representative
+   leg fast before the full fan-out; `--budget-sec N` raises the wall-clock cap
+   for a full local matrix.
+2. **Parse the last stdout line as JSON.** Shape:
+   ```json
+   {
+     "status": "green" | "paused" | "error",
+     "runnerName": "build-curl-linux-x64" | null,
+     "retryCmd": "agent-ci retry --name build-curl-linux-x64" | null,
+     "classification": "code" | "env-gap" | null,
+     "envGapReason": "Depot/OIDC is unavailable locally — needs a real runner" | null,
+     "logTailPath": "/tmp/greening-ci-local.../paused-step.log" | null,
+     "elapsedSec": 142
+   }
+   ```
+3. **Branch on `status`:**
+   - `"green"`: done. Every leg that can run locally passed. Report and exit.
+   - `"paused"` + `classification: "code"`: read `logTailPath`, author the fix
+     locally in the checkout (this is the genuine AI judgment — see the
+     classification table in the remote `greening-ci` SKILL.md for the common
+     patterns), then re-invoke the runner with `--retry <runnerName>` (add
+     `--from-step <N>` to skip earlier passing steps). This resumes the SAME
+     paused runner — never a full pipeline restart.
+   - `"paused"` + `classification: "env-gap"`: the local boundary, not a defect
+     (Docker base image missing a runner-only lib, Depot/OIDC unavailable, a
+     macOS leg skipped for no tart). Record `envGapReason`, abort the runner if
+     needed, and report "green up to <step>; <leg> needs a real runner."
+   - `"error"`: Agent-CI itself failed before a pausable step (bad args, daemon
+     down, workflow parse error). Read `logTailPath` for the real cause; a
+     `/var/run/docker.sock` error means the daemon, not a workflow failure.
+4. **Loop** the runner until `status: "green"` (all non-skipped legs pass) or the
+   budget expires.
 
 ## Budgets
 

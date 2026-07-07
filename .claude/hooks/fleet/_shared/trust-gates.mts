@@ -6,21 +6,25 @@
  *   commit-time `trust-gates-are-not-weakened.mts` check all agree) plus the
  *   npm `.npmrc` `min-release-age` reader that `trust-downgrade-guard` did not
  *   cover.
- *
  *   Pure: no file or process access. Callers pass text and get values back.
  */
 
-/** Minutes. pnpm `minimumReleaseAge` floor — 7 days. */
-export const MIN_RELEASE_AGE_MINUTES = 10080
+/**
+ * Minutes. pnpm `minimumReleaseAge` floor — 7 days.
+ */
+export const MIN_RELEASE_AGE_MINUTES = 10_080
 
-/** Days. npm `.npmrc` `min-release-age` floor — 7 days. */
+/**
+ * Days. npm `.npmrc` `min-release-age` floor — 7 days.
+ */
 export const MIN_RELEASE_AGE_DAYS = 7
 
 /**
  * Read the npm `min-release-age` value (in days) from a `.npmrc` text, or
  * undefined when the key is absent. `.npmrc` is `key=value`, one per line, with
  * `#` / `;` comments. A non-numeric value yields undefined (treated as absent —
- * fail-open, since a malformed line is not a deliberate downgrade we can score).
+ * fail-open, since a malformed line is not a deliberate downgrade we can
+ * score).
  */
 export function readNpmrcMinReleaseAge(npmrcText: string): number | undefined {
   const lines = npmrcText.split(/\r?\n/)
@@ -69,23 +73,31 @@ export function detectNpmrcMinReleaseAgeDowngrade(
 }
 
 export interface GateFloorViolation {
-  /** Which file the gate lives in. */
+  /**
+   * Which file the gate lives in.
+   */
   readonly file: 'pnpm-workspace.yaml' | '.npmrc'
-  /** Stable gate identifier. */
+  /**
+   * Stable gate identifier.
+   */
   readonly gate:
     | 'minimumReleaseAge'
     | 'min-release-age'
     | 'trustPolicy'
     | 'blockExoticSubdeps'
-  /** What the file currently has (a number, a value, or `absent`). */
+  /**
+   * What the file currently has (a number, a value, or `absent`).
+   */
   readonly saw: string
-  /** What the floor requires. */
+  /**
+   * What the floor requires.
+   */
   readonly wanted: string
 }
 
-const TRUST_POLICY_RE = /^trustPolicy\s*:\s*(\S+)/m
-const BLOCK_EXOTIC_RE = /^blockExoticSubdeps\s*:\s*(\S+)/m
-const MIN_RELEASE_AGE_YAML_RE = /^minimumReleaseAge\s*:\s*(\d+)/m
+const TRUST_POLICY_RE = /^trustPolicy\s*:\s*(?<value>\S+)/m
+const BLOCK_EXOTIC_RE = /^blockExoticSubdeps\s*:\s*(?<value>\S+)/m
+const MIN_RELEASE_AGE_YAML_RE = /^minimumReleaseAge\s*:\s*(?<value>\d+)/m
 
 /**
  * Whole-file floor check for a repo's policy files (no BEFORE — this is the
@@ -102,7 +114,7 @@ export function checkGateFloors(
   const out: GateFloorViolation[] = []
   if (pnpmWorkspaceText !== undefined) {
     const mraMatch = MIN_RELEASE_AGE_YAML_RE.exec(pnpmWorkspaceText)
-    const mra = mraMatch ? Number(mraMatch[1]) : undefined
+    const mra = mraMatch ? Number(mraMatch.groups!['value']) : undefined
     if (mra === undefined) {
       out.push({
         file: 'pnpm-workspace.yaml',
@@ -118,7 +130,7 @@ export function checkGateFloors(
         wanted: `>= ${MIN_RELEASE_AGE_MINUTES}`,
       })
     }
-    const tp = TRUST_POLICY_RE.exec(pnpmWorkspaceText)?.[1]
+    const tp = TRUST_POLICY_RE.exec(pnpmWorkspaceText)?.groups?.['value']
     if (tp !== 'no-downgrade') {
       out.push({
         file: 'pnpm-workspace.yaml',
@@ -127,7 +139,7 @@ export function checkGateFloors(
         wanted: 'no-downgrade',
       })
     }
-    const bes = BLOCK_EXOTIC_RE.exec(pnpmWorkspaceText)?.[1]
+    const bes = BLOCK_EXOTIC_RE.exec(pnpmWorkspaceText)?.groups?.['value']
     if (bes !== 'true') {
       out.push({
         file: 'pnpm-workspace.yaml',

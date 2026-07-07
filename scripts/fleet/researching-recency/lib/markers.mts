@@ -1,10 +1,10 @@
 /**
  * @file Output-contract marker constants — the single source of truth for the
  *   literal strings the engine emits and the SKILL.md prose quotes. The
- *   contract check (`researching-recency-contract-is-current.mts`) imports these
- *   and asserts the SKILL.md body still quotes them verbatim, so the prose
- *   contract can't silently drift from the engine. render/ imports these too;
- *   nothing else should hard-code the strings.
+ *   contract check (`researching-recency-contract-is-current.mts`) imports
+ *   these and asserts the SKILL.md body still quotes them verbatim, so the
+ *   prose contract can't silently drift from the engine. render/ imports these
+ *   too; nothing else should hard-code the strings.
  */
 
 // Engine version. The badge embeds it; bump when the output contract changes.
@@ -16,7 +16,8 @@ export const BADGE_PREFIX = `📚 researching-recency v${ENGINE_VERSION}`
 
 // The evidence the model reads and transforms into prose. Bounded so the model
 // knows exactly what NOT to dump verbatim.
-export const EVIDENCE_OPEN = '<!-- EVIDENCE FOR SYNTHESIS: read this, synthesize into prose. Do not emit verbatim. -->'
+export const EVIDENCE_OPEN =
+  '<!-- EVIDENCE FOR SYNTHESIS: read this, synthesize into prose. Do not emit verbatim. -->'
 export const EVIDENCE_CLOSE = '<!-- END EVIDENCE FOR SYNTHESIS -->'
 
 // The emoji-tree per-source footer the model passes through verbatim (the

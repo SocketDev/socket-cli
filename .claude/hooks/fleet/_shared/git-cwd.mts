@@ -1,41 +1,72 @@
 /**
  * @file Resolve the directory a `git` command in a Bash string would run in.
- *   Shared by the fleet-push / fleet-PR guards, which both need to know which
- *   repo a `git push` (or a `cd <dir> && git ...`) targets before deciding
- *   whether the destination is a fleet repo. Regex-based on purpose: we only
- *   need the `-C` / leading-`cd` directory, not full command structure (the
- *   command DETECTION that needs structure goes through the shell parser).
+ *   Shared by the fleet-push / fleet-PR / cascade-transient guards, which all
+ *   need to know which repo a `git push` / `git commit` (or a `cd <dir> &&
+ *   git ...`) targets before deciding. Parser-based (shell-command.mts): a
+ *   regex sees a `git -C` inside a `$(…)` substitution and mis-attributes the
+ *   whole command line to that repo — which false-blocked a legitimate
+ *   cascade commit whose only `-C` lived in an embedded `rev-parse`
+ *   substitution.
  */
 
-import path from 'node:path'
 import process from 'node:process'
 
-// `git -C <dir> ...` — explicit working directory. We only need the VALUE.
-export const GIT_DASH_C_RE = /\bgit\s+-C\s+("([^"]+)"|'([^']+)'|(\S+))/
+import { commandsFor, normalizeShellDir } from './shell-command.mts'
 
-// A leading `cd <dir>` before the git command, e.g. `cd /x/depot && git push`.
-// Only the FIRST cd in the chain matters for where git runs.
-export const LEADING_CD_RE = /(?:^|[;&|]|&&)\s*cd\s+("([^"]+)"|'([^']+)'|(\S+))/
+export { normalizeShellDir }
+
+export interface GitCwdOptions {
+  /**
+   * When set, scope the `-C` lookup to the git invocation carrying one of
+   * these subcommands (e.g. `commit`, or `['add', 'commit']` for a guard
+   * covering both). Another invocation's `-C` (a `rev-parse` inside a
+   * substitution) is NOT borrowed — for a scoped query the fallback is the
+   * leading `cd`, then the hook's cwd.
+   */
+  readonly subcommand?: string | readonly string[] | undefined
+}
+
+function dashCValue(args: readonly string[]): string | undefined {
+  const idx = args.indexOf('-C')
+  return idx === -1 ? undefined : args[idx + 1]
+}
 
 /**
- * Best-effort working directory for a `git` invocation inside `command`: `git
- * -C <dir>` wins, then a leading `cd <dir>` (resolved against the hook's own
- * cwd so a relative `cd ../foo` works), else the hook's cwd.
+ * Best-effort working directory for a `git` invocation inside `command`.
+ * Scoped (`options.subcommand`): that invocation's own `-C`, else a leading
+ * `cd`, else the hook's cwd. Unscoped: the first `-C` on any git invocation,
+ * else a leading `cd`, else the hook's cwd. Values are tilde-expanded +
+ * resolved — callers hand the result straight to filesystem probes.
  */
-export function extractGitCwd(command: string): string {
-  // Priority 1: explicit `git -C <dir>`.
-  const dashC = GIT_DASH_C_RE.exec(command)
-  if (dashC) {
-    return dashC[2] ?? dashC[3] ?? dashC[4] ?? process.cwd()
-  }
-  // Priority 2: a leading `cd <dir>` in the chain.
-  const cd = LEADING_CD_RE.exec(command)
-  if (cd) {
-    const dir = cd[2] ?? cd[3] ?? cd[4]
-    if (dir) {
-      return path.resolve(process.cwd(), dir)
+export function extractGitCwd(
+  command: string,
+  options?: GitCwdOptions | undefined,
+): string {
+  const opts = { __proto__: null, ...options } as GitCwdOptions
+  const { subcommand } = opts
+  const gitInvocations = commandsFor(command, 'git')
+  if (subcommand !== undefined) {
+    const wanted = typeof subcommand === 'string' ? [subcommand] : subcommand
+    for (const c of gitInvocations) {
+      if (wanted.some(s => c.args.includes(s))) {
+        const dir = dashCValue(c.args)
+        if (dir) {
+          return normalizeShellDir(dir)
+        }
+        break
+      }
+    }
+  } else {
+    for (const c of gitInvocations) {
+      const dir = dashCValue(c.args)
+      if (dir) {
+        return normalizeShellDir(dir)
+      }
     }
   }
-  // Priority 3: the hook's own cwd.
+  const cdDir = commandsFor(command, 'cd')[0]?.args[0]
+  if (cdDir) {
+    return normalizeShellDir(cdDir)
+  }
   return process.cwd()
 }

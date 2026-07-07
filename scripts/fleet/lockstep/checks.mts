@@ -238,6 +238,9 @@ export function checkFeatureParity(
 
   const codePatterns = row.code_patterns ?? []
   const testPatterns = row.test_patterns ?? []
+  // Match source file extensions: .mjs, .mts, .js, .ts, .jsx, .tsx, and .json.
+  // The second regex excludes test directories (__tests__, test, tests) and
+  // files whose name contains .test. or .spec. so only production code is counted.
   const codeFiles = walkDirFiles(localAreaPath, /\.(?:m?[jt]sx?|json)$/).filter(
     f => !/[/\\](?:__tests__|test|tests)[/\\]|\.test\.|\.spec\./.test(f),
   )
@@ -249,12 +252,18 @@ export function checkFeatureParity(
 
   // Test files: by default search local_area; if test_area is set, search
   // that directory instead (sdxgen-style where tests live outside the
-  // parser directory).
+  // parser directory). The extension regex matches the same source file types
+  // as above; the directory/name filter keeps only files inside __tests__,
+  // test, or tests folders or whose basename contains .test. or .spec.
   const testAreaPath = path.join(rootDir, row.test_area ?? row.local_area)
+  // Same source extensions as above (.mjs/.mts/.cjs/.cts/.js/.ts/.jsx/.tsx) plus
+  // .json fixtures.
   const testAreaFiles = walkDirFiles(testAreaPath, /\.(?:m?[jt]sx?|json)$/)
   const testFiles = row.test_area
     ? testAreaFiles
     : testAreaFiles.filter(f =>
+        // Keep only files inside an __tests__/test/tests folder, or whose
+        // basename contains `.test.` or `.spec.`.
         /[/\\](?:__tests__|test|tests)[/\\]|\.test\.|\.spec\./.test(f),
       )
   const testScore =

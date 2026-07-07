@@ -117,30 +117,33 @@ rg --no-heading "<candidate-name>" test/
 
 If any of these find a hit, the candidate is reachable; skip it. Only candidates with zero hits across all three queries proceed to Phase 4.
 
-### Phase 4: Stub one candidate
+### Phase 4: Run the deterministic trim loop
 
-Edit `.config/repo/rolldown.config.mts` to extend the `stubPattern` regex:
-
-```ts
-const stubPattern = /(?:globs|sorts|<new-candidate>)\.js$/
-```
-
-Pattern matches the absolute resolved path. Use the file's basename or a unique path fragment, whichever's stable across pnpm hoisting.
-
-Then:
+The stub → rebuild → test → keep-or-revert loop is **scripted** — it's
+mechanical and attribution-sensitive, so it's not the model's to run by hand.
+Hand the candidate tokens you graded in Phases 2–3 to `lib/trim-loop.mts`:
 
 ```bash
-pnpm build
-pnpm test
+node .claude/skills/fleet/trimming-bundle/lib/trim-loop.mts \
+  --repo <dir> --candidates globs,sorts,<new-candidate> --json
 ```
 
-Three outcomes:
+Run it `--dry-run` first to confirm the candidate list (it reports what it would
+stub without building). The loop, one candidate at a time:
 
-- **Tests pass + bundle smaller** → keep the stub. Move to next candidate.
-- **Tests pass + bundle same size** → the stub didn't trigger; the regex doesn't match the resolved path. Inspect the build output to see why (run with `--logLevel debug`), adjust the pattern, retry.
-- **Tests fail** → the candidate IS reached. Revert the stub. The Phase 3 verification missed an import path; investigate.
+1. Splices the candidate into the rolldown `stubPattern` alternation.
+2. `pnpm build` + `pnpm test`.
+3. **Keeps** the stub only if tests still pass AND the bundle shrank; otherwise
+   **reverts** it. The per-candidate `verdict` is one of: `kept`,
+   `reverted-tests` (candidate IS reached — Phase 3 missed an import path,
+   investigate), `reverted-no-shrink` (regex didn't match the resolved path —
+   adjust the basename/fragment, it's stable across pnpm hoisting), or
+   `reverted-grew` (stub overhead exceeded the saving).
 
-Iterate one candidate at a time. Multi-candidate stubs make failure attribution painful; keep the loop tight.
+The loop owns one-at-a-time discipline and the size-delta bookkeeping so failure
+attribution stays clean. The JSON result carries `keptCandidates`,
+`totalSavedBytes`, and a per-candidate `outcomes` array — read it to decide which
+kept stubs need a Phase 5 WHY comment.
 
 ### Phase 5: Document the kept stubs
 
@@ -175,6 +178,10 @@ The commit message states the count + size delta. If the trim is significant (sa
 ## Companion: scanning-quality
 
 The `bundle-trim` scan in `scanning-quality/scans/bundle-trim.md` runs the discovery half of this skill (Phase 1–3) and reports candidates. It does NOT mutate the repo. Use this skill for the actual trim loop.
+
+## Companion: deduping-dependencies
+
+Before stubbing, collapse duplicate majors with `/deduping-dependencies` — a bundle that pulls two copies of a utility (e.g. `string-width@4` + `@8`) ships both. For bundled outputs that skill prefers the ESM major (tree-shakes smaller) and forces it where the break is module-format-only; one deduped copy beats two stubbed ones.
 
 ## Failure modes
 

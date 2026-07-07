@@ -1,0 +1,18 @@
+{
+  "name": "hook-error-message-quality-nudge",
+  "private": true,
+  "type": "module",
+  "main": "./index.mts",
+  "exports": {
+    ".": "./index.mts"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mts"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:"
+  },
+  "dependencies": {
+    "@ultrathink/acorn.wasm": "catalog:"
+  }
+}

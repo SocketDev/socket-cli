@@ -19,30 +19,24 @@
 //
 // Exit codes: 0 — pass; 2 — block. Fails open on any throw.
 
-import process from 'node:process'
-
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
-import { withEditGuard } from '../_shared/payload.mts'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { scanSecretValues } from '../_shared/token-patterns.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
-const logger = getDefaultLogger()
-
 const BYPASS_PHRASE = 'Allow secret-content bypass'
 
-await withEditGuard((filePath, content, payload) => {
+export const check = editGuard((filePath, content, payload) => {
   if (content === undefined) {
-    return
+    return undefined
   }
   const hit = scanSecretValues(content)
   if (!hit) {
-    return
+    return undefined
   }
   if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    return
+    return undefined
   }
-  logger.error(
+  return block(
     [
       `[secret-content-guard] Blocked: ${hit.label} in content written to ${filePath}.`,
       '',
@@ -59,5 +53,13 @@ await withEditGuard((filePath, content, payload) => {
       '',
     ].join('\n'),
   )
-  process.exitCode = 2
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

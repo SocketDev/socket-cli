@@ -88,9 +88,11 @@ async function walk(
       }
       // Avoid following symlinks — keeps the walk to the working
       // tree, not whatever a symlink points at.
+      /* c8 ignore start - Dirent.isDirectory() and isSymbolicLink() are mutually exclusive in Node.js readdir */
       if (entry.isSymbolicLink()) {
         continue
       }
+      /* c8 ignore stop */
       await walk(root, full, depth + 1, swept, errors)
       continue
     }
@@ -105,6 +107,7 @@ async function walk(
   }
 }
 
+/* c8 ignore start - main() is the CLI entrypoint; not callable in-process from tests */
 async function main(): Promise<void> {
   // Drain stdin so the upstream pipe doesn't buffer-stall, but ignore
   // the body — Stop hooks pass a JSON payload that we don't need.
@@ -150,3 +153,4 @@ if (process.argv[1]?.endsWith('index.mts')) {
     )
   })
 }
+/* c8 ignore stop */

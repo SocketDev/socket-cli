@@ -61,10 +61,8 @@ Comments may describe path _structure_ with placeholders (`<mode>/<arch>` or `${
 Worktree setup uses the default-branch fallback from CLAUDE.md:
 
 ```bash
-BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
-if [ -z "$BASE" ] && git show-ref --verify --quiet refs/remotes/origin/main;   then BASE=main;   fi
-if [ -z "$BASE" ] && git show-ref --verify --quiet refs/remotes/origin/master; then BASE=master; fi
-BASE="${BASE:-main}"
+# Resolved by the shared runner so the chain lives in exactly one place.
+BASE=$(node .claude/skills/fleet/_shared/scripts/git-default-branch.mts)
 git worktree add -b paths-audit ../<repo>-paths-audit "$BASE"
 ```
 

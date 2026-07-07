@@ -4,7 +4,7 @@ PreToolUse hook that caps the body length of individual `### ` sections inside t
 
 ## What it does
 
-Complements `claude-md-size-guard` (40KB byte cap on the whole block) by enforcing two per-section caps inside the block — both metrics of one concern, "this section is too big". Each `### Section heading` inside the `<!-- BEGIN/END FLEET-CANONICAL -->` markers gets at most:
+Complements `claude-md-size-guard` (40KB byte cap on the whole block) by enforcing two per-section caps inside the block — both metrics of one concern, "this section is too big". Each `### Section heading` inside the `<!-- <fleet-canonical> -->` … `<!-- </fleet-canonical> -->` markers gets at most:
 
 - **1500 body bytes** (configurable via `CLAUDE_MD_FLEET_SECTION_MAX_BYTES`), and
 - **12 body lines** (configurable via `CLAUDE_MD_FLEET_SECTION_MAX_LINES`).

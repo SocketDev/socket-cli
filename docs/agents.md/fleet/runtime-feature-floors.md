@@ -67,6 +67,6 @@ The mapping was looked up from, and should be re-verified against:
 
 ## Where the rule lives
 
-- Rule: `.config/oxlint-plugin/fleet/no-runtime-features-below-engine-floor/index.mts`
+- Rule: `.config/fleet/oxlint-plugin/fleet/no-runtime-features-below-engine-floor/index.mts`
 - Test: same dir under `test/`
 - Activation: `.config/fleet/oxlintrc.json` (`"socket/no-runtime-features-below-engine-floor": "error"`)

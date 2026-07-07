@@ -1,4 +1,4 @@
-/**
+/*
  * Lint guardrails the fleet enforces beyond what oxlint covers natively.
  *
  * Five checks, one pass:
@@ -73,7 +73,7 @@ export type CheckLoggerGuardrailsOptions = {
   /**
    * Globs that ARE bundled. Dynamic `import()` is allowed inside these (the
    * bundler resolves the import statically at build time). Default is `src/**`
-   * + `.config/**` (bundler configs).
+   * \+ `.config/**` (bundler configs).
    */
   readonly bundledRoots?: readonly string[] | undefined
 }

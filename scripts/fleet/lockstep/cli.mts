@@ -1,4 +1,4 @@
-/**
+/*
  * @file Lockstep harness CLI entry — dispatcher + `main()`. Reads
  *   `lockstep.json` (+ any `includes[]` sub-manifests) and validates each row
  *   against its upstream or sibling ports. Every supported `kind` has a
@@ -23,7 +23,6 @@
  *     semantics: ultrathink/acorn/scripts/xlang-harness.mts.
  */
 
-import path from 'node:path'
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
@@ -37,7 +36,7 @@ import {
   checkSpecConformance,
   checkVersionPin,
 } from './checks.mts'
-import { loadManifestTree } from './manifest.mts'
+import { loadManifestTree, resolveManifestRoot } from './manifest.mts'
 import { emitHuman, summarize } from './report.mts'
 
 import type { Row } from './schema.mts'
@@ -95,7 +94,7 @@ function evaluate(
 }
 
 function main(): void {
-  const rootManifestPath = path.join(rootDir, 'lockstep.json')
+  const rootManifestPath = resolveManifestRoot(rootDir)
   const { areas, merged } = loadManifestTree(rootManifestPath)
 
   const rowsWithArea: Array<{ row: Row; area: string }> = []

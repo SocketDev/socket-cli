@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * @file AI-assisted lint fix step. Runs after `pnpm run lint --fix` (oxlint +
  *   oxfmt deterministic autofix) to handle the lint findings that aren't safely
  *   mechanically fixable. The CLAUDE.md "Lint rules" guidance is to autofix
@@ -37,15 +37,16 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { hasClaudeCli, runClaudeFix } from './ai-lint-fix/claude.mts'
 import { runLintJson } from './ai-lint-fix/oxlint-json.mts'
 import { bucketFindings, buildPrompt } from './ai-lint-fix/prompt.mts'
 import {
+  escalateTier,
   TIER_EFFORT,
   TIER_MODEL,
-  escalateTier,
 } from './ai-lint-fix/rule-guidance.mts'
 
 const logger = getDefaultLogger()
@@ -114,8 +115,15 @@ async function main(): Promise<void> {
 
   let totalEdits = 0
   let totalErrors = 0
+  // Per-file progress counter. A long residue (dozens of files) emits one
+  // `[i/N]` line per file so the run never reads as "nothing happening" — a
+  // long-running step must surface incremental progress as it goes, not only
+  // at the start and end.
+  let fileIndex = 0
+  const fileCount = byFile.size
 
   for (const [filePath, findings] of byFile) {
+    fileIndex += 1
     const rel = path.relative(cwd, filePath)
     // Pick the model AND effort from the highest-tier rule in this file's
     // batch. Pure-Haiku files (identifier renames, null→undefined, etc.) run
@@ -128,7 +136,9 @@ async function main(): Promise<void> {
     const tier = escalateTier(ruleIds)
     const model = TIER_MODEL[tier]
     const effort = TIER_EFFORT[tier]
-    logger.log(`AI-fix ${rel} (${findings.length} findings, ${tier}/${effort})…`)
+    logger.log(
+      `AI-fix [${fileIndex}/${fileCount}] ${rel} (${findings.length} findings, ${tier}/${effort})…`,
+    )
     const prompt = buildPrompt(filePath, findings)
     const { exitCode, stderr } = await runClaudeFix(prompt, cwd, model, effort)
     if (exitCode === 0) {
@@ -168,7 +178,7 @@ async function main(): Promise<void> {
 }
 
 main().catch((e: unknown) => {
-  const msg = e instanceof Error ? e.message : String(e)
+  const msg = errorMessage(e)
   logger.error(`ai-lint-fix: ${msg}`)
   process.exitCode = 1
 })

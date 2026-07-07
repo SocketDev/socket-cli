@@ -33,24 +33,24 @@
 // Reads a Claude Code PreToolUse JSON payload from stdin:
 //   { "tool_name": "Bash", "tool_input": { "command": "..." } }
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
-
 // Cross-tree shared matcher (canonical home: .git-hooks/_shared/). The
 // SAME source the commit-msg git-stage backstop scans, so the Bash-time
 // guard and the commit hook never diverge on what counts as a foreign
 // ref.
 import { scanExternalIssueRefs } from '../../../../.git-hooks/_shared/external-issue-ref.mts'
 import type { ExternalIssueRef } from '../../../../.git-hooks/_shared/external-issue-ref.mts'
-import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
-
-type ToolInput = {
-  tool_name?: string | undefined
-  tool_input?: { command?: string | undefined } | undefined
-  transcript_path?: string | undefined
-}
+import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 const BYPASS_PHRASE = 'Allow external-issue-ref bypass'
 const BYPASS_LOOKBACK_USER_TURNS = 8
+
+// Dispatcher pre-flight. The guard can only ever block a PUBLIC_MESSAGE_COMMANDS
+// shape: `git commit` (always contains `commit`) or `gh pr|issue|release`
+// (always contains `gh`). A payload with neither substring can't match, so the
+// dispatcher skips importing this guard. Complete: every PUBLIC_MESSAGE_COMMANDS
+// alternative contains one of these.
+export const triggers: readonly string[] = ['commit', 'gh']
 
 // Commands whose -m / --body / -F arguments end up on a public surface
 // where GitHub will auto-link an issue token.
@@ -145,41 +145,19 @@ export function unquoteShell(token: string): string {
   return token
 }
 
-async function main(): Promise<number> {
-  const raw = await readStdin()
-  if (!raw.trim()) {
-    return 0
-  }
-
-  let payload: ToolInput
-  try {
-    payload = JSON.parse(raw) as ToolInput
-  } catch {
-    process.stderr.write(
-      'no-ext-issue-ref-guard: failed to parse stdin payload — fail-open\n',
-    )
-    return 0
-  }
-
-  if (payload.tool_name !== 'Bash') {
-    return 0
-  }
-  const command = payload.tool_input?.command
-  if (!command || typeof command !== 'string') {
-    return 0
-  }
+export const check = bashGuard((command, payload) => {
   if (!isPublicMessageCommand(command)) {
-    return 0
+    return undefined
   }
 
   const body = extractMessageBodies(command)
   if (!body) {
-    return 0
+    return undefined
   }
 
   const refs = scanExternalIssueRefs(body)
   if (refs.length === 0) {
-    return 0
+    return undefined
   }
 
   if (
@@ -189,7 +167,7 @@ async function main(): Promise<number> {
       BYPASS_LOOKBACK_USER_TURNS,
     )
   ) {
-    return 0
+    return undefined
   }
 
   // Build the user-facing block message. Group by ref so a single
@@ -227,16 +205,15 @@ async function main(): Promise<number> {
   lines.push(
     `Bypass (the user must type verbatim in a recent turn): \`${BYPASS_PHRASE}\``,
   )
-  process.stderr.write(lines.join('\n') + '\n')
-  return 2
-}
+  return block(lines.join('\n'))
+})
 
-main().then(
-  code => process.exit(code),
-  e => {
-    process.stderr.write(
-      `no-ext-issue-ref-guard: hook bug — fail-open. ${errorMessage(e)}\n`,
-    )
-    process.exit(0)
-  },
-)
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Bash'],
+  triggers,
+  scope: 'convention',
+  type: 'guard',
+})
+void runHook(hook, import.meta.url)

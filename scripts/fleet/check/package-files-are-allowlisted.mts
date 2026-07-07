@@ -1,4 +1,4 @@
-/**
+/*
  * @file Enforce `package.json` `files:` allowlist hygiene for every publishable
  *   workspace package. Three failure modes the lint catches:
  *
@@ -76,6 +76,8 @@ export const FORBIDDEN_PUBLISHED_PATTERNS: readonly RegExp[] = [
   /(^|\/)\.claude\//,
   /(^|\/)\.git-hooks\//,
   /(^|\/)\.vscode\//,
+  // Product/dev hooks dir — tooling, not consumer-facing API.
+  /(^|\/)hooks\//,
   // Lockfiles + workspace metadata.
   /(^|\/)pnpm-lock\.yaml$/,
   /(^|\/)pnpm-workspace\.yaml$/,

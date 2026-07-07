@@ -1,14 +1,16 @@
 /**
  * Shared run/timestamp/header helpers for history-rewriting skill runners
- * (refreshing-history, and any sibling that wraps git in a worktree). These were
- * declared inline in refreshing-history/run.mts; squashing-history wanted the
- * same trio, so they live in one owner rather than a second copy.
+ * (refreshing-history, and any sibling that wraps git in a worktree). These
+ * were declared inline in refreshing-history/run.mts; squashing-history wanted
+ * the same trio, so they live in one owner rather than a second copy.
  *
  * `run` is a thin spawn wrapper returning trimmed stdout/stderr, with an
  * allowFailure escape hatch that surfaces a SpawnError's partial output instead
  * of throwing. `header` prints an aligned label line. `timestamp` is a
  * filesystem-safe `YYYYMMDD-HHMMSS` stamp for worktree/branch names.
  */
+
+import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 import { errorMessage } from '@socketsecurity/lib/errors'
@@ -30,13 +32,24 @@ export async function run(
   cmd: string,
   args: readonly string[],
   cwd: string,
-  options: { readonly allowFailure?: boolean | undefined } = {},
+  options: {
+    readonly allowFailure?: boolean | undefined
+    readonly env?: Readonly<Record<string, string>> | undefined
+  } = {},
 ): Promise<SpawnOutcome> {
   const opts = { __proto__: null, ...options } as {
     allowFailure?: boolean | undefined
+    env?: Readonly<Record<string, string>> | undefined
   }
+  // Merge any extra env (e.g. the SQUASH_HISTORY=1 hook-bypass sentinel) onto
+  // the inherited environment; an undefined env leaves the child's inherited.
+  const childEnv = opts.env ? { ...process.env, ...opts.env } : undefined
   try {
-    const result = await spawn(cmd, args, { cwd, stdioString: true })
+    const result = await spawn(cmd, args, {
+      cwd,
+      stdioString: true,
+      ...(childEnv ? { env: childEnv } : {}),
+    })
     return {
       stderr: String(result.stderr ?? ''),
       stdout: String(result.stdout ?? '').trim(),

@@ -10,6 +10,7 @@
 
 import process from 'node:process'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 const logger = getDefaultLogger()
@@ -39,7 +40,7 @@ async function main(): Promise<void> {
 }
 
 main().catch((e: unknown) => {
-  const msg = e instanceof Error ? e.message : String(e)
+  const msg = errorMessage(e)
   logger.error(`setup-claude-scanners install: ${msg}`)
   process.exitCode = 1
 })

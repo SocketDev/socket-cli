@@ -1,39 +1,42 @@
 # claude-md-rule-add-guard
 
-PreToolUse(Edit|Write|MultiEdit) hook that blocks **hand-adding a new rule** to a
-`CLAUDE.md` and routes it through `scripts/fleet/codify-rule.mts` instead.
-
-Adding a rule by hand means re-fighting the 40KB whole-file cap, the per-`###`
-section ≤8-line cap, and the defer-to-`docs/agents.md/<scope>/` split every time.
-`codify-rule.mts` owns that: given a recorded memory file it uses the socket-lib
-AI helper (`spawnAiAgent`) to write the terse CLAUDE.md bullet within budget AND
-author the matching detail doc. This guard makes the script the path.
+PreToolUse(Edit|Write|MultiEdit) hook that keeps a hand-added `CLAUDE.md`
+**rule** in the terse-index shape: CLAUDE.md is a list of one-liners that point
+to `docs/agents.md/{fleet,repo}/<topic>.md`, where the detail lives. A new rule
+must link its detail doc; the meat belongs in the doc, not inline.
 
 ## Fires when
 
-An Edit/Write to a `CLAUDE.md` whose added content introduces a new rule surface:
-
-- a new `### ` (or `#### `) section heading, or
-- a new `- ` bullet carrying a 🚨 hard-rule marker or an enforcer citation
-  (`.claude/hooks/`, `socket/<rule>`, `scripts/fleet/check/`).
+An Edit/Write to a `CLAUDE.md` adds a rule surface — a new `### ` (or `#### `)
+section, OR a marked `- ` bullet (carries 🚨 / `.claude/hooks/` / `socket/<rule>`
+/ `scripts/fleet/check/`) — whose added text does **not** link a
+`docs/agents.md/{fleet,repo}/<topic>.md` doc.
 
 ## Does NOT fire
 
-- Rewording an existing line (no new heading / marked bullet in the added text).
+- A new section, or a marked bullet, that **does** link a detail doc (the
+  canonical shape). A whole section pasted with its `Detail:` link passes; a
+  lone marked bullet must carry the link itself.
+- **Plain** (unmarked) `- ` bullets — prose list items, not rules. Runaway
+  section size is capped by `claude-md-section-size-guard`.
+- Rewording an existing line (no new rule surface).
 - Edits to non-`CLAUDE.md` files.
 - The sanctioned writers: `FLEET_SYNC=1` (the cascade copies CLAUDE.md verbatim)
   and `SOCKET_CODIFY_RULE=1` (the codify-rule agent's own write).
 
-## How to add a rule (the routed path)
+## How to land a new rule
 
-1. Record the lesson as a memory file (frontmatter + the *why*).
-2. `node scripts/fleet/codify-rule.mts --memory <path> --apply`
+Write it terse and link its doc — fleet-block rules link
+`docs/agents.md/fleet/<topic>.md`, per-repo rules (the `🏗️ …-Specific`
+postamble) link `docs/agents.md/repo/<topic>.md` — then put the detail in that
+doc. Or let `codify-rule.mts` author both from a recorded memory:
 
-It writes the terse CLAUDE.md bullet in the right section (fleet block for a
-fleet-wide invariant, the `🏗️ …-Specific` postamble for a repo rule) + the
-`docs/agents.md/{fleet,repo}/<topic>.md` detail doc, all within budget.
+```
+node scripts/fleet/codify-rule.mts --memory <path> --apply
+```
 
 ## Bypass
 
 `Allow claude-md-rule-add bypass` (verbatim, recent user turn) — for the rare
-genuine one-off manual edit. Fails open on a malformed payload.
+self-contained section that genuinely needs no detail doc. Fails open on a
+malformed payload.

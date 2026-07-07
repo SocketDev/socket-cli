@@ -32,14 +32,19 @@
 
 import process from 'node:process'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import { withBashGuard } from '../_shared/payload.mts'
+import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
-const logger = getDefaultLogger()
+// Pre-flight: the dispatcher imports + runs this guard only when the raw
+// command contains one of these substrings. `check` can return a block only
+// when `firstBranchOp` finds a `git checkout` / `git switch` segment whose args
+// include the literal `checkout` or `switch` token — so every blocking command
+// necessarily contains one of these. Complete set (no narrower trigger exists).
+export const triggers: readonly string[] = ['checkout', 'switch']
 
 const BYPASS_PHRASES = [
   'Allow primary-branch bypass',
@@ -98,13 +103,13 @@ export function branchOpKind(
 export function isPrimaryCheckout(cwd: string): boolean {
   const r = spawnSync('git', ['rev-parse', '--git-dir'], {
     cwd,
-    timeout: 5_000,
+    timeout: 5000,
   })
   if (r.status !== 0) {
     // Not a git repo (or git unavailable) — nothing to guard, fail open.
     return false
   }
-  const gitDir = String(r.stdout).trim().replace(/\\/g, '/')
+  const gitDir = normalizePath(String(r.stdout).trim())
   return !gitDir.includes('/.git/worktrees/')
 }
 
@@ -120,32 +125,38 @@ export function firstBranchOp(
   return undefined
 }
 
-if (process.argv[1]?.endsWith('index.mts')) {
-  await withBashGuard((command, payload) => {
-    const op = firstBranchOp(command)
-    if (!op) {
-      return
-    }
-    const cwd = payload.cwd ?? process.cwd()
-    if (!isPrimaryCheckout(cwd)) {
-      // Branch work in a linked worktree is exactly what the rule wants.
-      return
-    }
-    if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)) {
-      return
-    }
-    const verb = op.kind === 'create' ? 'Creating' : 'Switching'
-    logger.error(
-      `\n[primary-checkout-branch-guard] Blocked: ${verb} a branch in the ` +
-        `PRIMARY checkout.\n` +
-        `  Mantra: branch work goes in a git worktree.\n` +
-        `  Multiple sessions may share this \`.git/\`; moving HEAD here yanks ` +
-        `it out from under any sibling session.\n` +
-        `  Fix: cut a worktree instead —\n` +
-        `    git worktree add ../<repo>-<topic> -b <branch>\n` +
-        `    cd ../<repo>-<topic>\n` +
-        `  Bypass: type "Allow primary-branch bypass" in a recent message.\n`,
-    )
-    process.exitCode = 2
-  })
-}
+export const check = bashGuard((command, payload) => {
+  const op = firstBranchOp(command)
+  if (!op) {
+    return undefined
+  }
+  const cwd = payload.cwd ?? process.cwd()
+  if (!isPrimaryCheckout(cwd)) {
+    // Branch work in a linked worktree is exactly what the rule wants.
+    return undefined
+  }
+  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)) {
+    return undefined
+  }
+  const verb = op.kind === 'create' ? 'Creating' : 'Switching'
+  return block(
+    `\n[primary-checkout-branch-guard] Blocked: ${verb} a branch in the ` +
+      `PRIMARY checkout.\n` +
+      `  Mantra: branch work goes in a git worktree.\n` +
+      `  Multiple sessions may share this \`.git/\`; moving HEAD here yanks ` +
+      `it out from under any sibling session.\n` +
+      `  Fix: cut a worktree instead —\n` +
+      `    git worktree add ../<repo>-<topic> -b <branch>\n` +
+      `    cd ../<repo>-<topic>\n` +
+      `  Bypass: type "Allow primary-branch bypass" in a recent message.\n`,
+  )
+})
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Bash'],
+  triggers,
+  type: 'guard',
+})
+void runHook(hook, import.meta.url)

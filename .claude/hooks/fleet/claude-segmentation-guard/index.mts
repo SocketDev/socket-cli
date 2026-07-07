@@ -7,7 +7,7 @@
 // dangling entries shadow the canonical `fleet/<name>/` copy and break
 // skill resolution.
 //
-// Past incident: 2026-06-01 fleet-wide audit found ~200 dangling
+// Past incident: a fleet-wide audit found ~200 dangling
 // entries across 10 repos — every fleet repo had at least 18
 // duplicate top-level skill directories shadowing their `fleet/<name>/`
 // counterparts. The cleanup script
@@ -37,27 +37,9 @@
 // the same rule — the template ships canonical entries, and the
 // cascade keeps the layout consistent fleet-wide.
 //
-// Reads a Claude Code PreToolUse JSON payload from stdin:
-//   { "tool_name": "Edit" | "Write",
-//     "tool_input": { "file_path": "..." },
-//     ... }
-//
-// Exit codes:
-//   0 — pass (not Edit/Write, or path is in an allowed location).
-//   2 — block (path is a dangling top-level entry).
-//
-// Fails open on malformed payloads (exit 0 + stderr log).
+// Fails open on malformed payloads (allow, stderr log handled by the runner).
 
-import process from 'node:process'
-
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
-const logger = getDefaultLogger()
-
-interface ToolInput {
-  readonly tool_input?: { readonly file_path?: string | undefined } | undefined
-  readonly tool_name?: string | undefined
-}
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 
 const KINDS: readonly string[] = ['agents', 'commands', 'hooks', 'skills']
 
@@ -98,67 +80,46 @@ export function findDanglingSegment(
   return { kind, entry }
 }
 
-let payloadRaw = ''
-process.stdin.setEncoding('utf8')
-process.stdin.on('data', chunk => {
-  payloadRaw += chunk
-})
-process.stdin.on('end', () => {
-  // Fail OPEN on any internal bug. The JSON.parse below has its own
-  // try/catch (bad payloads exit 0), but unexpected throws elsewhere
-  // would otherwise crash the hook → exit 1 → block. Hooks must not
-  // brick the session on their own crash.
-  try {
-    let payload: ToolInput
-    try {
-      payload = JSON.parse(payloadRaw) as ToolInput
-    } catch {
-      process.exit(0)
-    }
-
-    if (payload.tool_name !== 'Edit' && payload.tool_name !== 'Write') {
-      process.exit(0)
-    }
-    const filePath = payload.tool_input?.file_path ?? ''
-    if (!filePath) {
-      process.exit(0)
-    }
-
-    const hit = findDanglingSegment(filePath)
-    if (!hit) {
-      process.exit(0)
-    }
-
-    const targetForCanonical = `.claude/${hit.kind}/fleet/${hit.entry}`
-    const targetForRepo = `.claude/${hit.kind}/repo/${hit.entry}`
-
-    logger.error(
-      [
-        '[claude-segmentation-guard] Blocked: dangling top-level entry.',
-        '',
-        `  Attempted path: \`.claude/${hit.kind}/${hit.entry}\``,
-        '',
-        '  `.claude/{agents,commands,hooks,skills}/<name>/` must segment as',
-        '  `fleet/<name>/` (wheelhouse-canonical) or `repo/<name>/` (everything',
-        '  else). Top-level entries shadow the canonical `fleet/<name>/`',
-        '  copy and break skill resolution.',
-        '',
-        `  Fix: pick the right subdir for \`${hit.entry}\`:`,
-        '',
-        `    Wheelhouse-canonical (look in socket-wheelhouse/template/.claude/${hit.kind}/fleet/ for the set):`,
-        `      ${targetForCanonical}`,
-        '',
-        '    Repo-only:',
-        `      ${targetForRepo}`,
-        '',
-        '  Or run `node scripts/fleet/check/claude-dirs-are-segmented.mts --fix` from the',
-        '  repo root to auto-resolve any dangling entries already on disk.',
-        '',
-      ].join('\n'),
-    )
-    process.exit(2)
-  } catch (e) {
-    logger.error(`[claude-segmentation-guard] hook error (allowing): ${e}`)
-    process.exit(0)
+export const check = editGuard(filePath => {
+  const hit = findDanglingSegment(filePath)
+  if (!hit) {
+    return undefined
   }
+
+  const targetForCanonical = `.claude/${hit.kind}/fleet/${hit.entry}`
+  const targetForRepo = `.claude/${hit.kind}/repo/${hit.entry}`
+
+  return block(
+    [
+      '[claude-segmentation-guard] Blocked: dangling top-level entry.',
+      '',
+      `  Attempted path: \`.claude/${hit.kind}/${hit.entry}\``,
+      '',
+      '  `.claude/{agents,commands,hooks,skills}/<name>/` must segment as',
+      '  `fleet/<name>/` (wheelhouse-canonical) or `repo/<name>/` (everything',
+      '  else). Top-level entries shadow the canonical `fleet/<name>/`',
+      '  copy and break skill resolution.',
+      '',
+      `  Fix: pick the right subdir for \`${hit.entry}\`:`,
+      '',
+      `    Wheelhouse-canonical (look in socket-wheelhouse/template/.claude/${hit.kind}/fleet/ for the set):`,
+      `      ${targetForCanonical}`,
+      '',
+      '    Repo-only:',
+      `      ${targetForRepo}`,
+      '',
+      '  Or run `node scripts/fleet/check/claude-dirs-are-segmented.mts --fix` from the',
+      '  repo root to auto-resolve any dangling entries already on disk.',
+      '',
+    ].join('\n'),
+  )
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  scope: 'convention',
+  type: 'guard',
+})
+void runHook(hook, import.meta.url)

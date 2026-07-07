@@ -10,17 +10,17 @@ Helper modules shared across multiple hooks under `.claude/hooks/`. **Not a depl
 
 - **`payload.mts`** — `ToolCallPayload` and `ToolInput` types for the PreToolUse JSON payload, plus `readCommand` / `readFilePath` / `readWriteContent` narrowing helpers. **Use this instead of re-declaring `tool_input` types per-hook** — the fleet had 7 hand-rolled variants before this module landed.
 
-- **`stop-reminder.mts`** — `runStopReminder(config)` scaffold for Stop hooks that are pure pattern-sweep over the last assistant turn. Reduces a typical pattern-only hook from 100-200 LOC to ~50. Pass `patterns: [{label, regex, why}, ...]` and `closingHint`; the scaffold handles stdin parse, transcript walk, code-fence strip, per-hit snippet extraction, and stderr emit.
+- **`stop-nudge.mts`** — `runStopReminder(config)` scaffold for Stop hooks that are pure pattern-sweep over the last assistant turn. Reduces a typical pattern-only hook from 100-200 LOC to ~50. Pass `patterns: [{label, regex, why}, ...]` and `closingHint`; the scaffold handles stdin parse, transcript walk, code-fence strip, per-hit snippet extraction, and stderr emit.
 
 - **`token-patterns.mts`** — Canonical catalog of secret-bearing env-var key names (Socket, LLM providers, GitHub, Linear, Notion, AWS, Stripe, …). Used by `token-guard` (Bash) and `no-token-in-dotenv-guard` (Edit/Write) for the same shape detection.
 
 - **`transcript.mts`** — `readStdin()` for hook payloads, plus `readLastAssistantText()` and `readLastAssistantToolUses()` for walking the Claude Code session transcript JSONL. Tolerates the harness's 3 historical schema variants in one place so a schema bump is a one-file fix.
 
-- **`wheelhouse-root.mts`** — Walks up from `cwd` to find the local `socket-wheelhouse` checkout (used by hooks that need wheelhouse-relative paths, e.g. `new-hook-claude-md-guard`, `drift-check-reminder`).
+- **`wheelhouse-root.mts`** — Walks up from `cwd` to find the local `socket-wheelhouse` checkout (used by hooks that need wheelhouse-relative paths, e.g. `new-hook-claude-md-guard`, `drift-check-nudge`).
 
 ## When to reach for what (new hook quick-reference)
 
-- Writing a **Stop hook** that just emits a reminder when patterns match? → `import { runStopReminder } from '../_shared/stop-reminder.mts'`. See `excuse-detector` for the single-group shape, or `yakback-reminder` (uses `runStopReminders`) for merging several pattern tables into one process while keeping per-group disable env vars.
+- Writing a **Stop hook** that just emits a reminder when patterns match? → `import { runStopReminder } from '../_shared/stop-nudge.mts'`. See `excuse-detector` for the single-group shape, or `yakback-nudge` (uses `runStopReminders`) for merging several pattern tables into one process while keeping per-group disable env vars.
 
 - Writing a **PreToolUse hook** that inspects a tool call's input? → `import { ToolCallPayload, readCommand, readFilePath } from '../_shared/payload.mts'`. Saves you the `typeof === 'string'` guard.
 

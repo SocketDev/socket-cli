@@ -1,4 +1,4 @@
-/**
+/*
  * @file Neutralize the inherited git environment so a test's `git` spawns can
  *   never touch the live repo. Importing this module runs the SAFE default
  *   (strip discovery vars) as a side effect; call `isolateGitEnv({ … })` for

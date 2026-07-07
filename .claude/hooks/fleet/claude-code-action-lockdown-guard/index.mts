@@ -31,14 +31,8 @@
 //
 // Exit codes: 0 — pass. 2 — block. Fails open on malformed payload.
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
-import process from 'node:process'
-
-import { withEditGuard } from '../_shared/payload.mts'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const logger = getDefaultLogger()
 
 const BYPASS_PHRASE = 'Allow claude-action-lockdown bypass'
 
@@ -96,8 +90,19 @@ export function findLockdownGaps(content: string): LockdownGap | undefined {
   return missing.length ? { missing } : undefined
 }
 
-function block(filePath: string, gap: LockdownGap): void {
-  logger.error(
+export const check = editGuard((filePath, content, payload) => {
+  if (!isWorkflowPath(filePath) || !content) {
+    return undefined
+  }
+  const gap = findLockdownGaps(content)
+  if (!gap) {
+    return undefined
+  }
+  const transcript = payload.transcript_path
+  if (transcript && bypassPhrasePresent(transcript, [BYPASS_PHRASE], 3)) {
+    return undefined
+  }
+  return block(
     [
       `[claude-code-action-lockdown-guard] Blocked: ${filePath}`,
       '',
@@ -114,22 +119,12 @@ function block(filePath: string, gap: LockdownGap): void {
       `  Bypass: type "${BYPASS_PHRASE}" in a recent message, then retry.`,
     ].join('\n'),
   )
-  process.exitCode = 2
-}
+})
 
-if (process.argv[1]?.endsWith('index.mts')) {
-  await withEditGuard((filePath, content, payload) => {
-    if (!isWorkflowPath(filePath) || !content) {
-      return
-    }
-    const gap = findLockdownGaps(content)
-    if (!gap) {
-      return
-    }
-    const transcript = payload.transcript_path
-    if (transcript && bypassPhrasePresent(transcript, [BYPASS_PHRASE], 3)) {
-      return
-    }
-    block(filePath, gap)
-  })
-}
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  type: 'guard',
+})
+void runHook(hook, import.meta.url)

@@ -34,18 +34,13 @@
 // dir, or the remote): better to under-block than to wedge a
 // legitimate fleet PR/issue when the shape is unfamiliar.
 
-import process from 'node:process'
-
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
+import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { isFleetRepo, slugFromRemoteUrl } from '../_shared/fleet-repos.mts'
 import { extractGitCwd } from '../_shared/git-cwd.mts'
-import { withBashGuard } from '../_shared/payload.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const logger = getDefaultLogger()
 
 // Bare, session-wide form (kept as a fallback). The scoped form is
 // preferred — it names the exact repo so authorization can't leak to an
@@ -53,15 +48,31 @@ const logger = getDefaultLogger()
 const BYPASS_PHRASE = 'Allow non-fleet-publish bypass'
 const BYPASS_PHRASE_PREFIX = 'Allow non-fleet-publish bypass:'
 
-// Phrases that authorize a publish to `slug`: the bare fallback plus the
-// scoped form against the full `owner/repo` slug and its bare basename.
-export function acceptedBypassPhrases(slug: string): string[] {
-  const basename = slug.includes('/') ? slug.slice(slug.indexOf('/') + 1) : slug
-  const targets = basename === slug ? [slug] : [slug, basename]
-  return [BYPASS_PHRASE, ...targets.map(t => `${BYPASS_PHRASE_PREFIX} ${t}`)]
+// Phrases that authorize a publish to this repo: the bare session-wide
+// fallback plus a scoped phrase for every identifier the operator might type
+// (case-preserved `owner/repo`, bare repo name), each in original AND
+// lowercased form — GitHub slugs are case-insensitive, so `PerryTS/perry` and
+// `perryts/perry` both authorize (#45).
+export function acceptedBypassPhrases(
+  targets: ReadonlyArray<string | undefined>,
+): string[] {
+  const forms = new Set<string>()
+  for (let i = 0, { length } = targets; i < length; i += 1) {
+    const t = targets[i]
+    if (t) {
+      forms.add(t)
+      forms.add(t.toLowerCase())
+    }
+  }
+  const out = [BYPASS_PHRASE]
+  for (const form of forms) {
+    out.push(`${BYPASS_PHRASE_PREFIX} ${form}`)
+  }
+  return out
 }
 
-const GH_DASH_REPO_RE = /--repo[\s=]+("([^"]+)"|'([^']+)'|(\S+))/
+const GH_DASH_REPO_RE =
+  /--repo[\s=]+(?:"(?<dq>[^"]+)"|'(?<sq>[^']+)'|(?<bare>\S+))/
 
 // gh subcommands that publish public-facing content. `release create`
 // is also in the harness deny list, but the hook layer here catches
@@ -76,7 +87,7 @@ const PUBLIC_SURFACE_SUBCOMMANDS = [
 export function extractGhTargetRepo(command: string): string | undefined {
   const m = GH_DASH_REPO_RE.exec(command)
   if (m) {
-    return m[2] ?? m[3] ?? m[4]
+    return m.groups?.dq ?? m.groups?.sq ?? m.groups?.bare
   }
   return undefined
 }
@@ -91,11 +102,14 @@ function originSlugFromCwd(dir: string): string | undefined {
     if (r.status !== 0) {
       return undefined
     }
+    /* c8 ignore next - spawnSync with encoding:'utf8' always returns a string stdout */
     const url = (r.stdout ?? '').trim()
     return slugFromRemoteUrl(url)
+    /* c8 ignore start - catch only reachable if spawnSync throws (e.g. git binary missing), not reproducible in the standard test env */
   } catch {
     return undefined
   }
+  /* c8 ignore stop */
 }
 
 // Identifies the gh subcommand. Returns the matching
@@ -115,15 +129,13 @@ export function findPublicGhInvocation(
   return undefined
 }
 
-// withBashGuard handles the stdin drain, tool_name gate, command narrow,
-// and fail-open on any throw.
-await withBashGuard((command, payload) => {
+export const check = bashGuard((command, payload) => {
   if (!/\bgh\b/.test(command)) {
-    return
+    return undefined
   }
   const subcommand = findPublicGhInvocation(command)
   if (!subcommand) {
-    return
+    return undefined
   }
 
   // Resolve target slug. `--repo` carries owner/repo (shown
@@ -140,7 +152,7 @@ await withBashGuard((command, payload) => {
   if (!slug) {
     // Fail open — can't determine target. The user gets the gh
     // command's own error if it's malformed.
-    return
+    return undefined
   }
   const slashIdx = slug.indexOf('/')
   const bareSlug = slashIdx === -1 ? slug : slug.slice(slashIdx + 1)
@@ -148,18 +160,21 @@ await withBashGuard((command, payload) => {
   if (isFleetRepo(bareSlug)) {
     // Fleet repo — fall through. The action is authorized by being
     // inside the fleet.
-    return
+    return undefined
   }
 
   // Non-fleet target. Check bypass phrase.
   if (
     payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, acceptedBypassPhrases(slug))
+    bypassPhrasePresent(
+      payload.transcript_path,
+      acceptedBypassPhrases([slug, bareSlug]),
+    )
   ) {
-    return
+    return undefined
   }
 
-  logger.error(
+  return block(
     [
       'non-fleet-pr-issue-ask-guard: blocked',
       '',
@@ -175,7 +190,7 @@ await withBashGuard((command, payload) => {
       `  repo in your next message, then re-run:`,
       `    ${BYPASS_PHRASE_PREFIX} ${slug}`,
       '',
-      `  The scoped form authorizes ${slug} only — it can’t leak to an`,
+      `  The scoped form authorizes ${slug} only — it can't leak to an`,
       `  unrelated non-fleet publish later. (The bare, session-wide`,
       `  "${BYPASS_PHRASE}" is still accepted as a fallback.)`,
       '',
@@ -183,5 +198,13 @@ await withBashGuard((command, payload) => {
       '  yes/no before re-attempting.',
     ].join('\n') + '\n',
   )
-  process.exitCode = 2
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Bash'],
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

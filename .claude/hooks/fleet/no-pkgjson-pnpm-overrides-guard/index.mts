@@ -19,13 +19,13 @@
 // Fails open on parse errors (better to under-block than to brick edits
 // when the file isn't parseable JSON).
 
-import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 
+import { safeReadFileSync } from '@socketsecurity/lib-stable/fs/read-file'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { withEditGuard } from '../_shared/payload.mts'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import { resolveEditedText } from '../_shared/payload.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 const logger = getDefaultLogger()
@@ -62,35 +62,15 @@ export function extractOverrideKeys(jsonText: string): Set<string> {
   return out
 }
 
-export function readFileSafe(p: string): string {
-  try {
-    return readFileSync(p, 'utf8')
-  } catch {
-    return ''
-  }
-}
-
-// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
-// content extraction (new_string / content), and fail-open on any throw.
-await withEditGuard((filePath, content, payload) => {
+export const check = editGuard((filePath, _content, payload) => {
   if (path.basename(filePath) !== 'package.json') {
-    return
+    return undefined
   }
 
-  const currentText = readFileSafe(filePath)
-  let afterText: string
-  if (payload.tool_name === 'Write') {
-    afterText = content ?? ''
-  } else {
-    const oldStr = (payload.tool_input?.old_string as string | undefined) ?? ''
-    const newStr = content ?? ''
-    if (!oldStr) {
-      return
-    }
-    if (!currentText.includes(oldStr)) {
-      return
-    }
-    afterText = currentText.replace(oldStr, newStr)
+  const currentText = safeReadFileSync(filePath) ?? ''
+  const afterText = resolveEditedText(payload)
+  if (afterText === undefined) {
+    return undefined
   }
 
   let beforeKeys: Set<string>
@@ -99,10 +79,13 @@ await withEditGuard((filePath, content, payload) => {
     beforeKeys = extractOverrideKeys(currentText)
     afterKeys = extractOverrideKeys(afterText)
   } catch (e) {
+    /* c8 ignore start - extractOverrideKeys catches its own JSON errors; this branch is structurally unreachable */
     logger.error(
-      `[no-pkgjson-pnpm-overrides-guard] parse error (allowing): ${e}\n`,
+      `[no-pkgjson-pnpm-overrides-guard] parse error (allowing): ${e}`,
     )
-    return
+    logger.error('')
+    return undefined
+    /* c8 ignore stop */
   }
 
   const added: string[] = []
@@ -112,18 +95,18 @@ await withEditGuard((filePath, content, payload) => {
     }
   }
   if (added.length === 0) {
-    return
+    return undefined
   }
 
   if (
     payload.transcript_path &&
     bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
   ) {
-    return
+    return undefined
   }
 
   added.sort()
-  logger.error(
+  return block(
     [
       '[no-pkgjson-pnpm-overrides-guard] Blocked: package.json pnpm.overrides additions',
       '',
@@ -133,7 +116,7 @@ await withEditGuard((filePath, content, payload) => {
       '  The fleet keeps dependency overrides in `pnpm-workspace.yaml`',
       '  `overrides:`, the single override surface. A `pnpm.overrides`',
       '  block in package.json splits the source of truth and sits',
-      '  outside the workspace file’s `trustPolicy: no-downgrade`.',
+      "  outside the workspace file's `trustPolicy: no-downgrade`.",
       '',
       '  Fix: move the override to the top-level `overrides:` map in',
       '  `pnpm-workspace.yaml`, then `pnpm install`.',
@@ -142,5 +125,14 @@ await withEditGuard((filePath, content, payload) => {
       '',
     ].join('\n'),
   )
-  process.exitCode = 2
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  scope: 'convention',
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

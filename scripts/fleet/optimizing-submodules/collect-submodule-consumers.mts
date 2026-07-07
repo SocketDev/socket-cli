@@ -1,4 +1,4 @@
-/**
+/*
  * Collect the consumer evidence the optimizing-submodules skill needs to
  * classify each `.gitmodules` submodule — WITHOUT rendering a verdict.
  *
@@ -38,6 +38,7 @@ import { fileURLToPath } from 'node:url'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { REPO_ROOT } from '../paths.mts'
@@ -87,7 +88,7 @@ export interface CollectResult {
 export function bucketForFile(relPath: string): ConsumerBucket {
   const base = path.basename(relPath)
   // Normalize to forward slashes so the path-shape tests are separator-agnostic.
-  const unix = relPath.replace(/\\/gu, '/')
+  const unix = normalizePath(relPath)
   if (base === 'build.rs' || base === 'Cargo.toml') {
     return 'rust'
   }
@@ -134,8 +135,8 @@ export function isInsideSubmodule(
   hitPath: string,
   submodulePath: string,
 ): boolean {
-  const hit = hitPath.replace(/\\/gu, '/')
-  const dir = submodulePath.replace(/\\/gu, '/').replace(/\/$/u, '')
+  const hit = normalizePath(hitPath)
+  const dir = normalizePath(submodulePath).replace(/\/$/u, '')
   return hit === dir || hit.startsWith(`${dir}/`)
 }
 
@@ -147,7 +148,10 @@ async function rgFiles(pattern: string, cwd: string): Promise<string[]> {
     'rg',
     ['--no-messages', '--files-with-matches', '--fixed-strings', pattern],
     { cwd, stdioString: true },
-  ).catch((e: unknown) => e as { code?: unknown | undefined; stdout?: unknown | undefined })
+  ).catch(
+    (e: unknown) =>
+      e as { code?: unknown | undefined; stdout?: unknown | undefined },
+  )
   const stdout = typeof result.stdout === 'string' ? result.stdout : ''
   return stdout
     .split('\n')
@@ -274,7 +278,9 @@ export async function main(): Promise<void> {
         renderPretty(rows)
       }
     } else {
-      process.stdout.write(`${JSON.stringify({ submodules: rows }, undefined, 2)}\n`)
+      process.stdout.write(
+        `${JSON.stringify({ submodules: rows }, undefined, 2)}\n`,
+      )
     }
   } catch (e) {
     logger.fail(`collect-submodule-consumers failed: ${errorMessage(e)}`)

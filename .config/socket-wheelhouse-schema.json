@@ -27,14 +27,14 @@
       "required": ["type"],
       "properties": {
         "type": {
-          "description": "Package layout. `single-package` = one `package.json` at root, no `packages/`. `monorepo` = pnpm workspaces under `packages/`.",
+          "description": "Package layout. `solo` = one `package.json` at root, no `packages/`. `mono` = pnpm workspaces under `packages/`.",
           "anyOf": [
             {
-              "const": "single-package",
+              "const": "solo",
               "type": "string"
             },
             {
-              "const": "monorepo",
+              "const": "mono",
               "type": "string"
             }
           ]
@@ -73,6 +73,44 @@
             },
             {
               "const": "binary",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    "bundle": {
+      "additionalProperties": false,
+      "description": "Lock-step release-cascade pin. Both fields are written TOGETHER by the cascade (cascadeSha) and the re-pin path (ref) — never hand-edited. The dep-0 fetcher's lock-step verify asserts `cascadeSha === templateSha of the release at ref` before applying.",
+      "type": "object",
+      "required": ["ref", "cascadeSha"],
+      "properties": {
+        "ref": {
+          "description": "The pinned fleet release tag the bundle is fetched from. An EXACT `fleet-<hex>` tag only — no semver, no range (`^`/`~`), no alias (`latest`/`lts`/`main`). Write-time validation rejects a fuzzy/ranged/aliased value.",
+          "pattern": "^fleet-[0-9a-f]{7,}$",
+          "type": "string"
+        },
+        "cascadeSha": {
+          "description": "The wheelhouse template commit SHA the last commit-cascade landed. A bare full-length git SHA (40 lowercase hex chars) — never a `v`-prefix, range, or alias. Must equal the `templateSha` of the release at `ref` (the lock-step invariant).",
+          "pattern": "^[0-9a-f]{40}$",
+          "type": "string"
+        }
+      }
+    },
+    "release": {
+      "additionalProperties": false,
+      "description": "Release / version-bump policy.",
+      "type": "object",
+      "properties": {
+        "versionPolicy": {
+          "description": "Version-bump policy enforced by bump.mts. `standard` (default): derive major/minor/patch from Conventional Commits. `patch-only`: reject any major/minor bump — only the patch may increment (e.g. socket-wheelhouse stays 1.0.x).",
+          "anyOf": [
+            {
+              "const": "standard",
+              "type": "string"
+            },
+            {
+              "const": "patch-only",
               "type": "string"
             }
           ]

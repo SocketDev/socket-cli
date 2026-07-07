@@ -36,4 +36,16 @@ export const AI_ATTRIBUTION_PATTERNS: readonly AiAttributionPattern[] = [
     regex: /<noreply@anthropic\.com>/i,
     why: 'Remove the noreply@anthropic.com attribution footer.',
   },
+  {
+    // The `Claude-Session:` trailer Claude Code auto-appends — a
+    // `Key: value` git-trailer line carrying a session permalink. Match
+    // the trailer key (anchored to its own line) OR the session-URL
+    // shape, so a partial form can't slip past one gate while failing
+    // another. The hyphenated `Claude-Session:` key never appears in
+    // legitimate prose, so this does not over-match a sentence that
+    // merely mentions a Claude session.
+    label: 'Claude-Session: trailer',
+    regex: /^[ \t]*Claude-Session:\s*\S|claude\.ai\/code\/session_/im,
+    why: 'Remove the auto-appended Claude-Session trailer.',
+  },
 ]

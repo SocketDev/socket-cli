@@ -1,0 +1,170 @@
+{
+  "$schema": "./docker-prebakes.schema.json",
+  "description": "Layered Depot prebaked base images, named by TOOLCHAIN — ELF/Mach-O/PE/wasm are build OUTPUTS, not bases. Each layer adds one toolchain family; a builder FROMs the thinnest base that has what it needs. OPERATING MODEL: each base is built from a VENDORED upstream recipe (untracked-by-default — see docs untracked-by-default), size-optimized (slim variant, multi-stage, stripped), then prebaked (built + pushed to the org registry) and optimized for pull (layer cache / eStargz). We do NOT FROM third-party published images; we replicate + control them. node comes from a vendored node-caged recipe (V8 pointer compression = lower memory) pinned in external-tools.json, NOT apt. base carries sfw (Socket Firewall) + shims so EVERY downstream registry install (npm/pip/cargo) is firewall-guarded. node/pnpm are NOT in the root base — a pure C/C++ toolchain doesn't need them; only .mts-driven builds do, and they COPY --from=node-base. Dockerfiles live in docker/fleet-bases/ (wheelhouse-owned, built centrally by scripts/repo/build-prebakes.mts, NOT cascaded). Build universe = socket-btm + ultrathink; socket-addon/socket-bin/stuie download+verify+republish (build nothing). Single-consumer combos add the extra tool in the leaf Dockerfile, not a shared base: boringssl=c-base+Go+perl, opentui=base+zig, acorn-rust(wasm)=rust-base+wasm32 target.",
+  "registry": "3ns040vbql.registry.depot.dev",
+  "prebakes": [
+    {
+      "name": "base",
+      "status": "planned",
+      "from": "ubuntu:24.04",
+      "dockerfile": "docker/fleet-bases/base.Dockerfile",
+      "installs": [
+        "git",
+        "ca-certificates",
+        "curl",
+        "xz-utils",
+        "pkg-config",
+        "ccache",
+        "sfw (Socket Firewall)",
+        "shims (for non-JS registry installs)"
+      ],
+      "libc": ["glibc"],
+      "platforms": ["linux/amd64", "linux/arm64"],
+      "tagFrom": "fleet-base-hash (apt manifest + sfw/shim versions)",
+      "consumers": ["node-base", "c-base", "rust-base", "go-base"],
+      "purpose": "Language/runtime-agnostic root. OS + git + curl + ccache + sfw + shims — NO node, NO pnpm (a pure C/C++ toolchain doesn't need them). sfw + shims live here so any registry install in ANY downstream layer (pip/cargo/npm) is firewall-guarded; a C-only build that never fetches from a registry simply doesn't exercise it."
+    },
+    {
+      "name": "node-base",
+      "status": "planned",
+      "from": "base",
+      "dockerfile": "docker/fleet-bases/node-base.Dockerfile",
+      "vendorSource": "platformatic/node-caged (vendor docker/slim recipe untracked; V8 pointer-compression = lower memory; build our own, do not pull the DockerHub image)",
+      "installs": [
+        "node (external-tools.json pin, node-caged pointer-compressed build)",
+        "pnpm (external-tools.json release-asset pin)"
+      ],
+      "libc": ["glibc"],
+      "platforms": ["linux/amd64", "linux/arm64"],
+      "tagFrom": "node+pnpm external-tools pins",
+      "consumers": [
+        "socket-lib",
+        "socket-mcp",
+        "socket-packageurl-js",
+        "socket-registry",
+        "socket-sdk-js",
+        "socket-wheelhouse",
+        "socket-btm:models",
+        "ultrathink:acorn-typescript",
+        "(every .mts-driven build via COPY --from=node-base)"
+      ],
+      "purpose": "The JS runtime layer: a size-optimized node (from the vendored node-caged pointer-compression recipe, pinned in external-tools.json) + pnpm. Doubles as the JS-CI base the 5 JS repos + wheelhouse pull (lint/test). Because node is needed wherever .mts build scripts run, compiler-base builds that orchestrate via .mts COPY the node binary from here instead of inheriting it — keeping the toolchain bases node-free."
+    },
+    {
+      "name": "c-base",
+      "status": "planned",
+      "from": "base",
+      "dockerfile": "docker/fleet-bases/c-base.Dockerfile",
+      "installs": [
+        "gcc",
+        "g++",
+        "clang",
+        "cmake",
+        "make",
+        "ninja",
+        "autoconf",
+        "automake",
+        "libtool",
+        "perl"
+      ],
+      "libc": ["glibc", "musl"],
+      "platforms": ["linux/amd64", "linux/arm64"],
+      "tagFrom": "c-toolchain-hash (apt + cmake/ninja pins)",
+      "consumers": [
+        "socket-btm:binboot-builder (was stubs-builder)",
+        "socket-btm:curl-builder",
+        "socket-btm:lief-builder",
+        "socket-btm:binflate",
+        "socket-btm:binject",
+        "socket-btm:binpress",
+        "socket-btm:libpq-builder",
+        "socket-btm:dawn-builder",
+        "socket-btm:proteus-builder",
+        "ultrathink:acorn-cpp",
+        "ultrathink:acorn-cpp-napi"
+      ],
+      "purpose": "C/C++ toolchain for the small native parts (launcher stub, curl, lief, libpq, the bin* utils, dawn, proteus). NODE-FREE — node/pnpm are not inherited; .mts-driven builds COPY --from=node-base. No Go, no wasm (that is what we cut from today's monolith). sfw (from base) guards it IF a build pulls python/rust/etc. musl variant feeds the static SEA pipeline. boringssl lands here but adds Go + perl in its own leaf layer (only C+Go combo)."
+    },
+    {
+      "name": "node-smol-base",
+      "status": "planned",
+      "from": "c-base",
+      "dockerfile": "docker/fleet-bases/node-smol-base.Dockerfile",
+      "installs": [
+        "python3.11 (V8 build)",
+        "ccache config",
+        "node-build prerequisites"
+      ],
+      "libc": ["glibc", "musl"],
+      "platforms": ["linux/amd64", "linux/arm64"],
+      "tagFrom": "node-smol-toolchain-hash",
+      "consumers": [
+        "socket-btm:node-smol-builder (+ COPY --from=node-base for the .mts driver)"
+      ],
+      "purpose": "The heavy Node.js/V8 compile, on top of c-base. Split into its own layer for CACHE LOCALITY: the toolchain rarely changes, the Node source changes every version bump. The .mts driver's node comes via COPY --from=node-base, not a baked runtime."
+    },
+    {
+      "name": "rust-base",
+      "status": "planned",
+      "from": "base",
+      "dockerfile": "docker/fleet-bases/rust-base.Dockerfile",
+      "installs": ["rustup", "rustc", "cargo", "cc + binutils (link only)"],
+      "libc": ["glibc"],
+      "platforms": ["linux/amd64", "linux/arm64"],
+      "tagFrom": "rust-toolchain-hash (rust-toolchain.toml pin)",
+      "consumers": [
+        "ultrathink:acorn-rust (native + wasm)",
+        "ultrathink:acorn-rust-napi"
+      ],
+      "purpose": "Rust/cargo only — the small/fast no-wasm Rust base. No cmake/clang, no node. sfw (from base) guards crates.io fetches. NAPI links via the bundled C linker; the napi build COPYs node from node-base. acorn-rust is the ONLY rust->wasm consumer, so it adds `rustup target add wasm32-unknown-unknown` + wasm-bindgen in its own build — same treatment as boringssl(+Go) and opentui(+zig); there is no distinct rust 'wasm SDK' to name a base after."
+    },
+    {
+      "name": "go-base",
+      "status": "planned",
+      "from": "base",
+      "dockerfile": "docker/fleet-bases/go-base.Dockerfile",
+      "installs": ["go (toolchain pin)", "gcc (cgo)"],
+      "libc": ["glibc"],
+      "platforms": ["linux/amd64", "linux/arm64"],
+      "tagFrom": "go-toolchain-hash (go.mod toolchain pin)",
+      "consumers": [
+        "ultrathink:acorn-go",
+        "ultrathink:acorn-go-napi",
+        "ultrathink:acorn-go-wasm",
+        "socket-btm:ultraviolet-builder (cgo + napi-go)"
+      ],
+      "purpose": "Go toolchain (+ a C compiler for cgo / napi-go). sfw (from base) guards the module proxy. Handles Go->wasm NATIVELY (GOOS=js,GOARCH=wasm — no emscripten), so there is no separate go-wasm base. napi-go builds COPY node from node-base."
+    },
+    {
+      "name": "emsdk-base",
+      "status": "planned",
+      "from": "c-base",
+      "dockerfile": "docker/fleet-bases/emsdk-base.Dockerfile",
+      "vendorSource": "emscripten/emsdk (vendor the pinned SDK install untracked; build + size-optimize our own, do not pull emscripten's published image)",
+      "installs": ["emscripten/emsdk (pinned)"],
+      "libc": ["glibc"],
+      "platforms": ["linux/amd64", "linux/arm64"],
+      "tagFrom": "emsdk-hash (emsdk version pin)",
+      "consumers": [
+        "socket-btm:onnxruntime-builder",
+        "socket-btm:yoga-layout-builder",
+        "ultrathink:acorn-cpp-wasm"
+      ],
+      "purpose": "C/C++ -> wasm via Emscripten, on top of c-base. Folds the standalone ubuntu:22.04 wasm Dockerfiles (onnxruntime/yoga today share nothing with the base) onto the shared C layer."
+    },
+    {
+      "name": "acorn-base",
+      "status": "planned",
+      "from": "emsdk-base",
+      "dockerfile": "docker/fleet-bases/acorn-base.Dockerfile",
+      "installs": ["rust + cargo + wasm32 target", "go"],
+      "libc": ["glibc"],
+      "platforms": ["linux/amd64", "linux/arm64"],
+      "tagFrom": "acorn-polyglot-hash (union of rust/go/emsdk pins)",
+      "consumers": [
+        "ultrathink:acorn cross-language parity job (rust + c++ + go + ts in one run)"
+      ],
+      "purpose": "Polyglot kitchen-sink for ultrathink/acorn's cross-language parity (blake3) job that runs all 4 backends together. Top of the DAG: emsdk-base already carries c++/cmake/emscripten; this adds rust + go, and COPYs node from node-base. Per-language CI uses the thin single-lang bases; only the all-langs parity job needs this."
+    }
+  ]
+}

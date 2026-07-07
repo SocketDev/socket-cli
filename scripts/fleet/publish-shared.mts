@@ -1,6 +1,6 @@
 /**
  * @file Shared helpers for fleet-canonical publish scripts. Used by
- *   `publish.mts` (npm + staged) and `publish-release.mts` (GitHub Release +
+ *   `publish.mts` (npm + staged) and `create-release.mts` (GitHub Release +
  *   checksums). Helpers below cover process spawning, git introspection, and
  *   npm-registry queries. Lives in `scripts/` (not `scripts/lib/`) because the
  *   fleet's convention puts thin helpers next to the scripts that consume them.
@@ -8,6 +8,7 @@
  *   directory (none exist today).
  */
 
+import { httpJson } from '@socketsecurity/lib-stable/http-request'
 // oxlint-disable-next-line socket/prefer-async-spawn -- streaming
 // stdio required to forward `pnpm stage approve` 2FA prompts +
 // `gh release create` upload progress. lib/spawn returns a Promise
@@ -15,6 +16,8 @@
 // stream.
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import process from 'node:process'
+
+import { NPM_REGISTRY_URL } from './constants/npm-registry.mts'
 
 const WIN32 = process.platform === 'win32'
 
@@ -162,12 +165,12 @@ export function extractFirstJson(text: string): string | undefined {
  */
 export interface RegistryVersionInfo {
   /**
-   * `_npmUser.trustedPublisher` — set when the version was uploaded via OIDC
-   * trusted publisher (GitHub Actions). Omit when classic token was used.
+   * `_npmUser.approver` — set when the version landed through pnpm's staged-
+   * publish flow (a human approver clicked through 2FA). Used by
+   * `publish.mts:isStagingExpected` to refuse a --direct downgrade when any
+   * prior version of the package chose the staged path.
    */
-  trustedPublisher?:
-    | { id: string; oidcConfigId?: string | undefined }
-    | undefined
+  approver?: string | undefined
   /**
    * `dist.attestations` — present when the upload included npm provenance
    * (`--provenance` flag). The URL fetches the SLSA provenance bundle.
@@ -179,12 +182,24 @@ export interface RegistryVersionInfo {
       }
     | undefined
   /**
-   * `_npmUser.approver` — set when the version landed through pnpm's staged-
-   * publish flow (a human approver clicked through 2FA). Used by
-   * `publish.mts:isStagingExpected` to refuse a --direct downgrade when any
-   * prior version of the package chose the staged path.
+   * `dist.integrity` — the SRI digest (`sha512-<base64>`) npm recorded for the
+   * published tarball. The strong axis of the three-way release hash gate
+   * (`lib/verify-release-hashes.mts`).
    */
-  approver?: string | undefined
+  integrity?: string | undefined
+  /**
+   * `dist.shasum` — the sha1 hex digest npm recorded for the published tarball.
+   * The fallback axis when `integrity` is unavailable (e.g. a staged version
+   * before it is approved).
+   */
+  shasum?: string | undefined
+  /**
+   * `_npmUser.trustedPublisher` — set when the version was uploaded via OIDC
+   * trusted publisher (GitHub Actions). Omit when classic token was used.
+   */
+  trustedPublisher?:
+    | { id: string; oidcConfigId?: string | undefined }
+    | undefined
 }
 
 /**
@@ -204,15 +219,15 @@ export interface RegistryVersionInfo {
  * approve-flow enrich), `'full'` for audits that need to confirm
  * trusted-publisher attribution (check/provenance-is-attested.mts).
  *
- * Use this from `check/provenance-is-attested.mts` (CLI audit), the approve flow (show
- * prior-version status), and the Stop-hook (verify a freshly- bumped version
- * landed with provenance).
+ * Use this from `check/provenance-is-attested.mts` (CLI audit), the approve
+ * flow (show prior-version status), and the Stop-hook (verify a freshly- bumped
+ * version landed with provenance).
  */
 export async function fetchVersionTrustInfo(
   name: string,
   variant: 'abbreviated' | 'full' = 'abbreviated',
 ): Promise<Record<string, RegistryVersionInfo>> {
-  const url = `https://registry.npmjs.org/${encodeURIComponent(name).replace('%40', '@')}`
+  const url = `${NPM_REGISTRY_URL}/${encodeURIComponent(name).replace('%40', '@')}`
   let json: {
     versions?:
       | Record<
@@ -226,6 +241,8 @@ export async function fetchVersionTrustInfo(
                         provenance: { predicateType: string }
                       }
                     | undefined
+                  integrity?: string | undefined
+                  shasum?: string | undefined
                 }
               | undefined
             _npmUser?:
@@ -245,12 +262,7 @@ export async function fetchVersionTrustInfo(
       variant === 'abbreviated'
         ? { accept: 'application/vnd.npm.install-v1+json' }
         : { accept: 'application/json' }
-    // socket-lint: allow global-fetch -- publish tooling probes the npm registry directly; the lib http-request helper isn't a dependency here.
-    const response = await fetch(url, { headers })
-    if (!response.ok) {
-      return {}
-    }
-    json = (await response.json()) as typeof json
+    json = await httpJson<typeof json>(url, { headers, timeout: 15_000 })
   } catch {
     return {}
   }
@@ -260,11 +272,15 @@ export async function fetchVersionTrustInfo(
       ...(info._npmUser?.approver !== undefined
         ? { approver: info._npmUser.approver }
         : {}),
-      ...(info._npmUser?.trustedPublisher
-        ? { trustedPublisher: info._npmUser.trustedPublisher }
-        : {}),
       ...(info.dist?.attestations
         ? { attestations: info.dist.attestations }
+        : {}),
+      ...(info.dist?.integrity !== undefined
+        ? { integrity: info.dist.integrity }
+        : {}),
+      ...(info.dist?.shasum !== undefined ? { shasum: info.dist.shasum } : {}),
+      ...(info._npmUser?.trustedPublisher
+        ? { trustedPublisher: info._npmUser.trustedPublisher }
         : {}),
     }
   }

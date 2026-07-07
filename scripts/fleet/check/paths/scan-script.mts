@@ -14,6 +14,12 @@ import path from 'node:path'
 
 import { pushFinding } from './state.mts'
 
+// Matches a hand-constructed multi-stage build output path in a script or
+// Dockerfile line: the literal `build/` segment, an optional `$` or `${`
+// before a mode token (BUILD_MODE, MODE, dev, or prod) with an optional
+// closing `}`, a slash, a platform-or-arch segment (word chars plus `${}.-`),
+// then `/out/` followed by one of the canonical output-tier names
+// (Compressed, Final, Optimized, Release, Stripped, or Synced).
 export const SCRIPT_HAND_BUILT_RE =
   /build\/\$?\{?(?:BUILD_MODE|MODE|dev|prod)\}?\/[\w${}.-]*\/out\/(?:Compressed|Final|Optimized|Release|Stripped|Synced)/g
 

@@ -7,7 +7,6 @@
  *   (or a cascade) can't tell which is canonical, and tooling that keys on the
  *   name silently splits. (Motivating churn: a make-/generate-/make- round-trip
  *   and a kind→repo.type schema migration that touched many files.)
- *
  *   The convention this enforces: when you rename a fleet name, record it with
  *   a `renamed-from: <old-name>` marker (in the renamed file's `@file` comment,
  *   or a doc, or the manifest) — a single hyphenated/scoped token naming the
@@ -15,15 +14,13 @@
  *   is fully gone — absent as a live fleet file (a `<old>.mts` script, a
  *   `<old>/index.mts` hook dir, a `<old>.mts` lint rule) AND absent from every
  *   reference in the fleet surfaces (so nothing still points at the prior
- *   name). It's the structural twin of the `plan-review-reminder` "settle the
+ *   name). It's the structural twin of the `plan-review-nudge` "settle the
  *   shape before the cascade" nudge: the reminder fires at plan time, this
  *   fails the gate if a rename lands half-finished.
- *
  *   Deterministic — file existence + a reference scan, no git history. Pairs
  *   with script-paths-resolve / doc-references-resolve (which catch a reference
  *   to a MISSING file); this catches the inverse — a recorded-renamed-from name
  *   whose prior form is still alive (the rename didn't finish).
- *
  *   Exit codes: 0 — every recorded rename is complete (or none recorded);
  *   1 — at least one `renamed-from: <old>` whose prior name still lives / is
  *   referenced.

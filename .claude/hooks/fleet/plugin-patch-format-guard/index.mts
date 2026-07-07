@@ -28,38 +28,29 @@
 // skipped (documented limitation; the commit-time path / the next Write
 // catch it). No bypass — this is a pure format gate, not a policy gate.
 //
-// Exit code 2 makes Claude Code refuse the tool call.
+// Blocks (exit 2) make Claude Code refuse the tool call.
 //
-// Reads a Claude Code PreToolUse JSON payload from stdin:
+// Reads a Claude Code PreToolUse JSON payload:
 //   { "tool_name": "Edit"|"Write",
 //     "tool_input": { "file_path": "...", "content"|"new_string": "..." } }
 //
-// Fails open on hook bugs (exit 0 + stderr log).
-
-import process from 'node:process'
+// Fails open on hook bugs.
 
 import {
   isAbsolute,
   normalizePath,
 } from '@socketsecurity/lib-stable/paths/normalize'
 
-import { readStdin } from '../_shared/transcript.mts'
+import { parsePatchFileName } from '../../../../scripts/fleet/constants/plugin-patch.mts'
 
-type ToolInput = {
-  tool_input?:
-    | {
-        content?: string | undefined
-        file_path?: string | undefined
-        new_string?: string | undefined
-      }
-    | undefined
-  tool_name?: string | undefined
-}
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import type { GuardResult } from '../_shared/guard.mts'
 
-// <plugin>-<version>-<slug>.patch — lowercase-kebab plugin, dotted
-// semver version, lowercase-kebab slug. Mirrors `PATCH_FILE_NAME` in
-// scripts/fleet/install-claude-plugins.mts so the hook and the consumer agree.
-const PATCH_FILE_NAME = /^[a-z0-9-]+-(\d+\.\d+\.\d+)-[a-z0-9-]+\.patch$/
+type Verdict = { ok: true } | { ok: false; reason: string }
+
+// The `<plugin>-<version>-<slug>.patch` filename grammar is defined once in
+// scripts/fleet/constants/plugin-patch.mts (shared with the installer) so the
+// hook and the consumer can't drift — parse via `parsePatchFileName`.
 
 // The four header keys the consumer's provenance block requires.
 const REQUIRED_HEADER_KEYS = [
@@ -71,9 +62,8 @@ const REQUIRED_HEADER_KEYS = [
 
 // Line-start `# @plugin-version: <semver>` — used to cross-check the
 // header version against the filename version.
-const HEADER_PLUGIN_VERSION = /^# @plugin-version:\s*(\d+\.\d+\.\d+)\s*$/m
-
-type Verdict = { ok: true } | { ok: false; reason: string }
+const HEADER_PLUGIN_VERSION =
+  /^# @plugin-version:\s*(?<version>\d+\.\d+\.\d+)\s*$/m
 
 /**
  * Is the target file path a plugin-cache patch under
@@ -107,8 +97,8 @@ export function classifyPluginPatch(
   content: string,
 ): Verdict {
   // (1) Filename shape.
-  const nameMatch = PATCH_FILE_NAME.exec(fileName)
-  if (!nameMatch) {
+  const parsed = parsePatchFileName(fileName)
+  if (!parsed) {
     return {
       ok: false,
       reason:
@@ -117,7 +107,7 @@ export function classifyPluginPatch(
         'slug). Example: codex-1.0.1-stdin-eagain.patch.',
     }
   }
-  const fileVersion = nameMatch[1]!
+  const fileVersion = parsed.version
 
   // (2) Required header keys, each as a line-start `# @key:` comment.
   const missing: string[] = []
@@ -185,7 +175,7 @@ export function classifyPluginPatch(
   // (4) Cross-check the header version against the filename version.
   const headerMatch = HEADER_PLUGIN_VERSION.exec(content)
   if (headerMatch) {
-    const headerVersion = headerMatch[1]!
+    const headerVersion = headerMatch.groups!.version!
     if (headerVersion !== fileVersion) {
       return {
         ok: false,
@@ -200,7 +190,7 @@ export function classifyPluginPatch(
   return { ok: true }
 }
 
-export function emitBlock(filePath: string, reason: string): void {
+export function blockMessage(filePath: string, reason: string): string {
   const lines: string[] = []
   lines.push('[plugin-patch-format-guard] Blocked: malformed plugin patch.')
   lines.push(`  File:  ${filePath}`)
@@ -215,65 +205,49 @@ export function emitBlock(filePath: string, reason: string): void {
     '    - a plain `diff -u` body (a/… b/…, NO `diff --git`/`index`/`mode`).',
   )
   lines.push('  Spec: docs/agents.md/fleet/plugin-cache-patches.md')
-  process.stderr.write(lines.join('\n') + '\n')
+  return lines.join('\n')
 }
 
-async function main(): Promise<void> {
-  const raw = await readStdin()
-  if (!raw) {
-    return
-  }
-  let payload: ToolInput
-  try {
-    payload = JSON.parse(raw) as ToolInput
-  } catch {
-    return
-  }
-  if (payload.tool_name !== 'Edit' && payload.tool_name !== 'Write') {
-    return
-  }
-  const filePath = payload.tool_input?.file_path ?? ''
-  if (!filePath || !isPluginPatchPath(filePath)) {
-    return
+export const check = editGuard((filePath, _content, payload): GuardResult => {
+  // Only `Edit` / `Write` route here; `MultiEdit` never carries a whole-file
+  // `content`, so it falls through the content gate below (skipped) exactly
+  // like a `new_string`-only Edit.
+  if (!isPluginPatchPath(filePath)) {
+    return undefined
   }
   // PreToolUse always hands hooks an absolute file_path. A relative one is
   // anomalous — the path-match + filename-derivation below assume an absolute
   // path, so flag it rather than silently mis-derive the cache mapping.
   if (!isAbsolute(filePath)) {
-    process.stderr.write(
+    return block(
       `[plugin-patch-format-guard] Blocked: file_path must be absolute.\n` +
         `  Where: tool_input.file_path = "${filePath}"\n` +
         `  Saw:   a relative path; wanted an absolute path (PreToolUse ` +
         `always passes one).\n` +
         `  Fix:   pass the absolute path to the patch under ` +
-        `scripts/fleet/plugin-patches/.\n`,
+        `scripts/fleet/plugin-patches/.`,
     )
-    process.exitCode = 2
-    return
   }
   // Validation needs the whole file. Write carries it in `content`; an
   // Edit only carries a `new_string` fragment, so we can't see the full
   // file — skip the Edit-without-content case rather than guess.
-  const content = payload.tool_input?.content
-  if (typeof content !== 'string') {
-    return
+  const fileContent = payload?.tool_input?.content
+  if (typeof fileContent !== 'string') {
+    return undefined
   }
+  /* c8 ignore next - split('/').pop() on a non-empty string always returns a string, never undefined */
   const fileName = normalizePath(filePath).split('/').pop() ?? ''
-  const verdict = classifyPluginPatch(fileName, content)
+  const verdict = classifyPluginPatch(fileName, fileContent)
   if (verdict.ok) {
-    return
+    return undefined
   }
-  emitBlock(filePath, verdict.reason)
-  process.exitCode = 2
-}
+  return block(blockMessage(filePath, verdict.reason))
+})
 
-// Entrypoint-guarded: run main() only when invoked directly, NOT when the test
-// imports this module for its pure helpers (else main() blocks on stdin at
-// import and the test file never terminates).
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
-  main().catch(e => {
-    process.stderr.write(
-      `[plugin-patch-format-guard] hook error (continuing): ${(e as Error).message}\n`,
-    )
-  })
-}
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  type: 'guard',
+})
+void runHook(hook, import.meta.url)

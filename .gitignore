@@ -176,3 +176,66 @@ npm-debug.log
 pnpm-debug.log
 *.tgz
 # ─── END fleet-canonical ────────────────────────────────────────
+
+# <fleet-canonical>
+# Managed by socket-wheelhouse. Don't edit locally — edit upstream
+# in scripts/sync-scaffolding/checks/gitignore-fleet-block.mts and
+# re-cascade via `pnpm run sync`. Project-specific ignores stay
+# OUTSIDE this block; the fixer preserves them.
+# Per-machine Claude Code permission config + log dirs stay ignored;
+# the cascaded subdirs (agents, commands, hooks, settings.json, skills,
+# workflows) are explicitly re-included so the wheelhouse cascade can
+# ship them.
+/.claude/*
+!/.claude/agents/
+!/.claude/commands/
+!/.claude/hooks/
+!/.claude/rules/
+!/.claude/settings.json
+!/.claude/skills/
+!/.claude/workflows/
+
+# Derived cross-harness rule adapters — generated per-repo, per-platform by
+# the multi-agent scaffolding (setup / init / sync) script from .claude/skills/
+# and CLAUDE.md, never committed. A tracked symlink checks out as a plain
+# pointer file on Windows, so each host gets a real symlink generated on its
+# own OS. Tracking them only produces churn + merge conflicts. Keep in sync
+# with ADAPTERS in scripts/fleet/gen-harness-adapters.mts + the .agents/ mirror.
+# Host dirs we own entirely are ignored wholesale; .github/ holds tracked
+# fleet files, so only its generated adapter file is named.
+/.agents/
+/.clinerules/
+/.cursor/
+/.github/copilot-instructions.md
+/.janus/
+/.kiro/
+/.windsurf/
+/AGENTS.md
+
+# VS Code: ignore the dir contents so a hidden tasks.json with a `folderOpen`
+# auto-run (a known npm supply-chain vector — runs on folder open, zero clicks)
+# cannot be committed. Re-include only the benign shared settings.json. Use the
+# `/.vscode/*` contents form (NOT `.vscode/`) so the re-include can take effect.
+# vscode-folder-open-task-guard backstops any explicitly-added auto-run task.
+/.vscode/*
+!/.vscode/settings.json
+
+# OS noise
+.DS_Store
+._.DS_Store
+Thumbs.db
+
+# Build outputs — universal across the fleet. Project-specific
+# variants (e.g. a non-standard dist path) go OUTSIDE this block.
+**/build/
+**/coverage/
+**/coverage-isolated/
+**/dist/
+**/.cache/
+
+# Node
+node_modules/
+npm-debug.log
+pnpm-debug.log
+*.tgz
+# </fleet-canonical>

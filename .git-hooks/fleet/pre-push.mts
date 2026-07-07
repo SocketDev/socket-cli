@@ -45,6 +45,7 @@ import {
   shouldSkipFile,
   socketLintMarkerFor,
   splitLines,
+  stripTemplateLayer,
 } from '../_shared/helpers.mts'
 
 const logger = getDefaultLogger()
@@ -361,16 +362,6 @@ const scanFilesInRange = (range: string): number => {
   if (changed.length === 0) {
     return 0
   }
-  // Best-effort current repo name — used by cross-repo scanner to
-  // avoid flagging a repo's own paths. Fails gracefully in linked
-  // worktrees backed by a bare repo (show-toplevel is undefined there).
-  let repoTopline = ''
-  try {
-    repoTopline = gitLines('rev-parse', '--show-toplevel')[0] ?? ''
-  } catch {
-    // bare repo / worktree context — proceed without a repo name filter
-  }
-  const currentRepoName = repoTopline ? path.basename(repoTopline) : undefined
 
   // .env files at any depth — match commit-msg.mts and pre-commit.mts.
   // Allow .env.example, .env.test, .env.precommit (templates / tracked
@@ -429,6 +420,12 @@ const scanFilesInRange = (range: string): number => {
       continue
     }
 
+    // Layer-agnostic form of the path for the `template/...` exemptions: the
+    // archetype move buries the canonical sources under template/<layer>/, so
+    // the prefix exemptions test this collapsed form (template/base/.git-hooks/x
+    // → template/.git-hooks/x) instead of the raw moved path.
+    const layerless = stripTemplateLayer(file)
+
     const pathHits = scanPersonalPaths(text)
     if (pathHits.length > 0) {
       logger.fail(`Hardcoded personal path found in: ${file}`)
@@ -451,27 +448,33 @@ const scanFilesInRange = (range: string): number => {
     const apiHits = scanSocketApiKeys(text)
     if (apiHits.length > 0) {
       logger.fail(`Real API key detected in: ${file}`)
-      apiHits
-        .slice(0, 3)
-        .forEach(h => logger.info(`${h.lineNumber}:${h.line.trim()}`))
+      const topApiHits = apiHits.slice(0, 3)
+      for (let i = 0, { length } = topApiHits; i < length; i += 1) {
+        const h = topApiHits[i]!
+        logger.info(`${h.lineNumber}:${h.line.trim()}`)
+      }
       errors++
     }
 
     const awsHits = scanAwsKeys(text)
     if (awsHits.length > 0) {
       logger.fail(`Potential AWS credentials found in: ${file}`)
-      awsHits
-        .slice(0, 3)
-        .forEach(h => logger.info(`${h.lineNumber}:${h.line.trim()}`))
+      const topAwsHits = awsHits.slice(0, 3)
+      for (let i = 0, { length } = topAwsHits; i < length; i += 1) {
+        const h = topAwsHits[i]!
+        logger.info(`${h.lineNumber}:${h.line.trim()}`)
+      }
       errors++
     }
 
     const ghHits = scanGitHubTokens(text)
     if (ghHits.length > 0) {
       logger.fail(`Potential GitHub token found in: ${file}`)
-      ghHits
-        .slice(0, 3)
-        .forEach(h => logger.info(`${h.lineNumber}:${h.line.trim()}`))
+      const topGhHits = ghHits.slice(0, 3)
+      for (let i = 0, { length } = topGhHits; i < length; i += 1) {
+        const h = topGhHits[i]!
+        logger.info(`${h.lineNumber}:${h.line.trim()}`)
+      }
       errors++
     }
 
@@ -485,21 +488,28 @@ const scanFilesInRange = (range: string): number => {
       !file.startsWith('.claude/hooks/') &&
       !file.startsWith('.git-hooks/') &&
       !file.startsWith('scripts/') &&
+      // The dep-0 bootstrap (bootstrap/fleet.mjs, bootstrap/prepare.mts) runs
+      // before any dependency exists, so it never imports socket-lib's logger
+      // and must call console.* directly — same exemption as scripts/.
+      !file.startsWith('bootstrap/') &&
       // template/ holds the canonical sources that cascade to
       // .claude/hooks/, .git-hooks/, and scripts/ in downstream
       // fleet repos. The same exemption that applies at the
       // destination has to apply at the source; otherwise wheelhouse
       // template edits get flagged for code that's intentionally raw
-      // where it actually runs.
-      !file.startsWith('template/.claude/hooks/') &&
-      !file.startsWith('template/.git-hooks/') &&
-      !file.startsWith('template/scripts/') &&
+      // where it actually runs. `layerless` collapses the archetype
+      // layer segment so the move (template/base/...) stays exempt.
+      !layerless.startsWith('template/.claude/hooks/') &&
+      !layerless.startsWith('template/.git-hooks/') &&
+      !layerless.startsWith('template/scripts/') &&
+      !layerless.startsWith('template/bootstrap/') &&
       !file.includes('/external/') &&
       !file.includes('/vendor/') &&
       !file.includes('/upstream/') &&
       // src/logger/ IS the logger — implementing the surface itself
       // requires direct console.* calls.
       !file.startsWith('src/logger/') &&
+      // Matches TypeScript source extensions: .mts, .ts, .tsx, .cts — the only file types that can log.
       /\.(m?ts|tsx|cts)$/.test(file)
     ) {
       const loggerHits = scanLoggerLeaks(text)
@@ -513,8 +523,10 @@ const scanFilesInRange = (range: string): number => {
         }
         logger.info(
           'Use `getDefaultLogger()` from `@socketsecurity/lib-stable/logger/default`. ' +
-            'For documentation lines that need the literal call, append ' +
-            `the marker \`${socketLintMarkerFor(file, 'logger')}\`.`,
+            'For a deliberate raw write, append the per-line marker: ' +
+            '`// socket-lint: allow console` for `console.*`, or ' +
+            '`// socket-lint: allow process-stdio` for `process.std{out,err}.write` ' +
+            '(the id must match the call kind — that is what `scanLoggerLeaks` keys on).',
         )
         errors++
       }
@@ -538,7 +550,7 @@ const scanFilesInRange = (range: string): number => {
       file !== 'pnpm-lock.yaml' &&
       file !== 'pnpm-workspace.yaml'
     ) {
-      const crossRepoHits = scanCrossRepoPaths(text, currentRepoName)
+      const crossRepoHits = scanCrossRepoPaths(text, path.resolve(file))
       if (crossRepoHits.length > 0) {
         logger.fail(`cross-repo path reference in: ${file}`)
         for (const h of crossRepoHits.slice(0, 3)) {
@@ -562,8 +574,8 @@ const scanFilesInRange = (range: string): number => {
       /\.(?:m?ts|cts)$/.test(file) &&
       !file.startsWith('.claude/hooks/') &&
       !file.startsWith('.git-hooks/') &&
-      !file.startsWith('template/.claude/hooks/') &&
-      !file.startsWith('template/.git-hooks/') &&
+      !layerless.startsWith('template/.claude/hooks/') &&
+      !layerless.startsWith('template/.git-hooks/') &&
       !file.includes('/external/') &&
       !file.includes('/vendor/') &&
       !file.includes('/upstream/')
@@ -671,8 +683,9 @@ const scanSoakAnnotations = (): number => {
 //   - the `lint` script isn't a `node <path>` invocation → skip (can't run it
 //     safely without pnpm; rely on CI).
 //   - lint script present but no oxlint config → the script self-skips.
-// Bypass: `git push --no-verify` (the universal hook escape; no env kill-switch
-// per CLAUDE.md). Returns 1 on lint failure, 0 on pass/skip.
+// Bypass: `git push --no-verify`, or whole-chain `HUSKY=0` (both phrase-gated
+// for Claude; no per-step env kill-switch per CLAUDE.md). Returns 1 on lint
+// failure, 0 on pass/skip.
 const scanFastChecks = (): number => {
   if (!existsSync('package.json')) {
     return 0
@@ -686,12 +699,11 @@ const scanFastChecks = (): number => {
   // clean checkout, so skipping here loses nothing.
   let toplevel = ''
   try {
-    toplevel = normalizePath(
-      gitLines('rev-parse', '--show-toplevel')[0] ?? '',
-    )
+    toplevel = normalizePath(gitLines('rev-parse', '--show-toplevel')[0] ?? '')
   } catch {
     // bare repo / detached context — proceed (no skip).
   }
+  // Matches `.claude` as a complete path segment anywhere in `toplevel` (start, middle, or end).
   if (/(?:^|\/)\.claude(?:\/|$)/.test(toplevel)) {
     logger.info(
       'Fast lint/format check skipped — checkout is under an ignored path (.claude/); CI re-lints from a clean tree.',
@@ -735,6 +747,35 @@ const scanFastChecks = (): number => {
     logger.info(
       '  Run `pnpm run fix` to autofix, then re-push. Bypass once with ' +
         '`git push --no-verify` (records the skip).',
+    )
+    return 1
+  }
+  return 0
+}
+
+// Dispatch-table drift — WHEELHOUSE-ONLY (gated on the canonical `template/base`
+// seed, which only the wheelhouse has). The rolldown bundle's static dispatch
+// table must match a fresh regen of the hooks present; a mismatch means a hook
+// was added/removed without rebuilding, or a byte-cascaded table references an
+// absent hook dir (the concurrent-cargo dangle). Caught at the push boundary so
+// it can't reach origin/main and cascade fleet-wide. Members are NOT gated here:
+// a member's byte-cascaded dispatch can legitimately differ from a fresh regen
+// until the cascade regenerates per-tree, so blocking their push would
+// false-fire — they rely on CI's `check --all` for the same check.
+const scanDispatchDrift = (): number => {
+  if (!existsSync('template/base')) {
+    return 0
+  }
+  const r = spawnSync(
+    'node',
+    ['scripts/fleet/check/dispatch-table-is-current.mts', '--quiet'],
+    { stdio: 'inherit' },
+  )
+  if (r.status !== 0) {
+    logger.fail('Hook dispatch table is stale — rebuild before pushing.')
+    logger.info(
+      '  Run `node scripts/fleet/build-hook-bundle.mts`, commit the ' +
+        'regenerated table + bundle, then re-push.',
     )
     return 1
   }
@@ -787,6 +828,10 @@ const main = async (): Promise<number> => {
   // Fast lint/format gate — the build-independent slice of the quality bar,
   // run at the push boundary so format/lint drift can't reach main.
   totalErrors += scanFastChecks()
+
+  // Dispatch-table drift (wheelhouse-only) — a stale/dangling hook dispatch
+  // can't reach origin/main and cascade fleet-wide.
+  totalErrors += scanDispatchDrift()
 
   if (totalErrors > 0) {
     logger.error('')

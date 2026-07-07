@@ -50,36 +50,13 @@
 // session writes a design doc into `docs/plans/` because that's the
 // historical convention (see the socket-btm migration that triggered
 // this rule — three parallel `docs/plans/` directories drifted).
-//
-// Reads a Claude Code PreToolUse JSON payload from stdin:
-//   { "tool_name": "Edit" | "Write" | "MultiEdit",
-//     "tool_input": { "file_path": "...",
-//                     "content"?: "...",
-//                     "new_string"?: "..." },
-//     "transcript_path": "/.../session.jsonl" }
-//
-// Exits:
-//   0 — allowed.
-//   2 — blocked (with stderr message that explains rule + fix +
-//       bypass phrase).
-//   0 (with stderr log) — fail-open on hook bugs.
 
 import path from 'node:path'
-import process from 'node:process'
 
-import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
-type ToolInput = {
-  tool_input?:
-    | {
-        content?: string | undefined
-        file_path?: string | undefined
-        new_string?: string | undefined
-      }
-    | undefined
-  tool_name?: string | undefined
-  transcript_path?: string | undefined
-}
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 const BYPASS_PHRASE = 'Allow plan-location bypass'
 const BYPASS_LOOKBACK_USER_TURNS = 8
@@ -126,7 +103,7 @@ export function basenameStem(filePath: string): string {
  * into a project tree.
  */
 export function classifyPath(filePath: string): string {
-  const normalized = filePath.replace(/\\/g, '/')
+  const normalized = normalizePath(filePath)
   const segs = normalized.split('/')
 
   // Find the FIRST `.claude/plans/` segment pair vs any DEEPER one.
@@ -199,35 +176,10 @@ export function filenameLooksLikePlan(filePath: string): boolean {
   return PLAN_FILENAME_TOKENS.some(token => stem.includes(token))
 }
 
-async function main(): Promise<number> {
-  const raw = await readStdin()
-  if (!raw.trim()) {
-    return 0
-  }
-
-  let payload: ToolInput
-  try {
-    payload = JSON.parse(raw) as ToolInput
-  } catch {
-    process.stderr.write(
-      'plan-location-guard: failed to parse stdin payload — fail-open\n',
-    )
-    return 0
-  }
-
-  const tool = payload.tool_name
-  if (tool !== 'Edit' && tool !== 'MultiEdit' && tool !== 'Write') {
-    return 0
-  }
-
-  const filePath = payload.tool_input?.file_path
-  if (!filePath) {
-    return 0
-  }
-
+export const check = editGuard((filePath, content, payload) => {
   // Only target markdown files.
   if (!filePath.toLowerCase().endsWith('.md')) {
-    return 0
+    return undefined
   }
 
   const classification = classifyPath(filePath)
@@ -235,7 +187,7 @@ async function main(): Promise<number> {
     classification !== 'blocked-docs-plans' &&
     classification !== 'blocked-sub-claude-plans'
   ) {
-    return 0
+    return undefined
   }
 
   // Apply the plan-shape heuristic. If the doc clearly looks like a
@@ -243,11 +195,10 @@ async function main(): Promise<number> {
   // is probably a coincidence (e.g. an unrelated doc that happened
   // to live under docs/plans/ for historical reasons) — let it through
   // and let the human decide.
-  const content = payload.tool_input?.new_string ?? payload.tool_input?.content
   const looksLikePlan =
     filenameLooksLikePlan(filePath) || contentLooksLikePlan(content)
   if (!looksLikePlan) {
-    return 0
+    return undefined
   }
 
   // Bypass-phrase check.
@@ -258,7 +209,7 @@ async function main(): Promise<number> {
       BYPASS_LOOKBACK_USER_TURNS,
     )
   ) {
-    return 0
+    return undefined
   }
 
   const suggestion =
@@ -266,7 +217,7 @@ async function main(): Promise<number> {
       ? 'Move the plan to <repo-root>/.claude/plans/<lowercase-hyphenated>.md (untracked by default).'
       : 'Move the plan to the REPO-ROOT .claude/plans/ — sub-package .claude/plans/ is not the canonical home.'
 
-  process.stderr.write(
+  return block(
     [
       `🚨 plan-location-guard: blocked plan-shaped .md write at a tracked location.`,
       ``,
@@ -290,15 +241,13 @@ async function main(): Promise<number> {
       ``,
     ].join('\n'),
   )
-  return 2
-}
+})
 
-main().then(
-  code => process.exit(code),
-  err => {
-    process.stderr.write(
-      `plan-location-guard: hook error — fail-open: ${String(err)}\n`,
-    )
-    process.exit(0)
-  },
-)
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  scope: 'convention',
+  type: 'guard',
+})
+void runHook(hook, import.meta.url)

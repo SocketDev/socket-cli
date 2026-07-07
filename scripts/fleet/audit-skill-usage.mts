@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * @file Aggregate skill-usage telemetry across fleet projects. Reads every
  *   `~/.claude/projects/* /.skill-usage.log` (the canonical path the
  *   `skill-usage-logger` hook writes to) and emits a histogram + per-skill

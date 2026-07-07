@@ -38,18 +38,17 @@
 // `.git-hooks/_helpers.mts` — same regex shape, same semantics. Keep
 // the two regexes in sync.
 
-import process from 'node:process'
-
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
-import { withEditGuard } from '../_shared/payload.mts'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import { lineIsSuppressed } from '../_shared/markers.mts'
 // CROSS_REPO_ANY_RE (built from the canonical FLEET_REPO_NAMES roster) is
 // imported from the gate-free cross-tree _shared/cross-repo.mts — the SAME
 // regex the commit-time scanCrossRepoPaths uses, so the two can't drift (was
 // a duplicated inline copy here).
-import { CROSS_REPO_ANY_RE } from '../../../../.git-hooks/_shared/cross-repo.mts'
-
-const logger = getDefaultLogger()
+import {
+  CROSS_REPO_ANY_RE,
+  relativeTokenEscapesRepo,
+  repoNameForFile,
+} from '../../../../.git-hooks/_shared/cross-repo.mts'
 
 // Files exempt from the rule. Comments explain why each is excluded.
 const EXEMPT_PATH_PATTERNS: RegExp[] = [
@@ -69,10 +68,7 @@ const EXEMPT_PATH_PATTERNS: RegExp[] = [
   /\.claude\/projects\/.*\/memory\//,
 ]
 
-const SOCKET_LINT_MARKER_RE =
-  /(?:#|\/\/|\/\*)\s*socket-lint:\s*allow(?:\s+([\w-]+))?/
-
-export function emitBlock(filePath: string, hits: Hit[]): void {
+export function emitBlock(filePath: string, hits: Hit[]): string {
   const lines: string[] = []
   lines.push('[cross-repo-guard] Blocked: cross-repo path reference found')
   lines.push(
@@ -92,7 +88,7 @@ export function emitBlock(filePath: string, hits: Hit[]): void {
   lines.push(
     '  Opt-out for one line (rare): append `// socket-lint: allow cross-repo`.',
   )
-  logger.error(lines.join('\n'))
+  return lines.join('\n')
 }
 
 export function isInScope(filePath: string): boolean {
@@ -108,28 +104,14 @@ export function isInScope(filePath: string): boolean {
   return true
 }
 
-export function isMarkerSuppressed(line: string): boolean {
-  const m = line.match(SOCKET_LINT_MARKER_RE)
-  if (!m) {
-    return false
-  }
-  return !m[1] || m[1] === 'cross-repo'
-}
-
-export function repoNameFromPath(filePath: string): string | undefined {
-  // `/Users/<user>/projects/socket-lib/src/foo.ts` → `socket-lib`.
-  // Best-effort: take the segment after `/projects/` if present.
-  const m = filePath.match(/\/projects\/([^/]+)/)
-  return m?.[1]
-}
-
 interface Hit {
   lineNumber: number
   line: string
   matched: string
 }
 
-export function scan(source: string, currentRepoName?: string): Hit[] {
+export function scan(source: string, fileAbsPath: string): Hit[] {
+  const currentRepoName = repoNameForFile(fileAbsPath)
   const hits: Hit[] = []
   const lines = source.split('\n')
   for (let i = 0; i < lines.length; i += 1) {
@@ -143,7 +125,17 @@ export function scan(source: string, currentRepoName?: string): Hit[] {
     if (currentRepoName && matched.includes(`/${currentRepoName}`)) {
       continue
     }
-    if (isMarkerSuppressed(line)) {
+    // A relative `..`-traversal that resolves back INSIDE this repo (e.g. an
+    // intra-repo `.claude/skills/` import, whose `skills` segment collides with
+    // the `skills` fleet-repo name) is not a cross-repo escape.
+    if (
+      fileAbsPath &&
+      matched.includes('..') &&
+      !relativeTokenEscapesRepo(matched, fileAbsPath)
+    ) {
+      continue
+    }
+    if (lineIsSuppressed(line, 'cross-repo')) {
       continue
     }
     hits.push({ lineNumber: i + 1, line, matched })
@@ -151,20 +143,27 @@ export function scan(source: string, currentRepoName?: string): Hit[] {
   return hits
 }
 
-// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
-// content extraction (new_string / content), and fail-open on any throw.
-await withEditGuard((filePath, content) => {
+export const check = editGuard((filePath, content) => {
   if (!isInScope(filePath)) {
-    return
+    return undefined
   }
   const source = content ?? ''
   if (!source) {
-    return
+    return undefined
   }
-  const hits = scan(source, repoNameFromPath(filePath))
+  const hits = scan(source, filePath)
   if (hits.length === 0) {
-    return
+    return undefined
   }
-  emitBlock(filePath, hits)
-  process.exitCode = 2
+  return block(emitBlock(filePath, hits))
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  scope: 'convention',
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

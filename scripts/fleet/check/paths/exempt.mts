@@ -23,6 +23,13 @@ export const EXEMPT_FILE_PATTERNS: RegExp[] = [
   /scripts\/fleet\/check\/paths\//,
   /scripts\/check-consistency\.mts$/,
   /\.claude\/hooks\/fleet\/path-guard\//,
+  // The path-guard hook's relocated test (now under test/repo/) feeds
+  // path-construction fixtures to the hook to verify detection, so it
+  // legitimately enumerates path segments too.
+  /(?:^|\/)path-guard\.test\.mts$/,
+  // The paths-are-canonical check's own test feeds path-shape fixtures to the
+  // check to verify detection — same reason as path-guard.test above.
+  /(?:^|\/)check-paths-are-canonical\.test\.mts$/,
 ]
 
 export function isExempt(filePath: string): boolean {

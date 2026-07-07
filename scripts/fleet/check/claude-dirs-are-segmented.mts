@@ -1,4 +1,4 @@
-/**
+/*
  * @file Enforce `.claude/{agents,commands,hooks,skills}/` segmentation. Every
  *   entry in those four directories must live under `fleet/<name>/` (when the
  *   wheelhouse template ships an entry with that name) or `repo/<name>/`
@@ -274,7 +274,9 @@ async function main(): Promise<void> {
     process.exitCode = 1
     return
   }
-  logger.log(`[check-claude-dirs-are-segmented] Applying ${entries.length} fix(es):`)
+  logger.log(
+    `[check-claude-dirs-are-segmented] Applying ${entries.length} fix(es):`,
+  )
   await applyFix(entries)
   logger.log('[check-claude-dirs-are-segmented] Done.')
 }

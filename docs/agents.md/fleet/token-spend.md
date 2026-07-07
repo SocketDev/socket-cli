@@ -13,3 +13,13 @@ So default to `high` for judgment work and reserve `max` as a rare exception for
 Bypass when the premium tier is genuinely warranted for something that only looks mechanical (e.g. a rename that's actually a risky refactor): type `Allow model bypass` or `Allow effort bypass` verbatim in a recent turn.
 
 Enforced by `.claude/hooks/fleet/token-spend-guard/`.
+
+## Programmatic spawns pin both dials at the floor
+
+The `token-spend-guard` hook governs the model and effort you pick interactively. Code that spawns an agent pins those dials in source, so the gate moves into a check. The two spawn shapes are `spawnAiAgent({…})` from `@socketsecurity/lib/ai/spawn` and a Workflow `agent({…})`.
+
+Every such call must name BOTH `model` and `effort`. A spread profile like `...AI_PROFILE.edit` carries neither, so the call itself has to set them. Leaving either off accepts whatever the CLI defaults to, which can be a premium model on high effort. That is the cost leak the dials exist to prevent.
+
+The default is the floor: the cheapest model (`claude-haiku-4-5`, per `scripts/fleet/constants/model-pricing.json`) and the lowest effort (`low`). Spending above the floor is a real cost decision. A pricier model literal, or an effort literal above `low`, must be justified by a comment adjacent to the call. The comment can sit inside the options object or on the line above the call. When the model or effort comes from a constant or an options field rather than a literal, the value cannot be floor-checked statically, so only the pin-both rule applies there.
+
+Enforced by `scripts/fleet/check/ai-spawns-have-paired-effort.mts` (run by `check --all`).

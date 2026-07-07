@@ -188,7 +188,9 @@ export function terminalSummary(env: TriageEnvelope): string {
       typeof topHigh['owner_hint'] === 'string'
         ? topHigh['owner_hint']
         : '(no owner)'
-    lines.push(`Top HIGH: ${String(topHigh['title'] ?? topHigh.id)} — ${owner}.`)
+    lines.push(
+      `Top HIGH: ${String(topHigh['title'] ?? topHigh.id)} — ${owner}.`,
+    )
   }
   lines.push(`${s.needs_manual_test} need manual test.`)
   return lines.join('\n')

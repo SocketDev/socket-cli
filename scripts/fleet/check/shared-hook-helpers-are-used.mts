@@ -2,7 +2,7 @@
 //
 // The fleet's hooks DRY their common logic into
 // `.claude/hooks/fleet/_shared/*.mts` (payload parsing, transcript reading,
-// shell-command AST, stop-reminder scaffold, …). The whole point is reuse: a
+// shell-command AST, stop-nudge scaffold, …). The whole point is reuse: a
 // helper that no hook imports is dead weight in the shared layer — it inflates
 // the cascade, invites copy-paste drift ("there are two normalizers now"), and
 // rots untested. This check REPORTS each `_shared/` export that NO in-repo
@@ -31,7 +31,12 @@ import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { REPO_ROOT } from '../paths.mts'
+import {
+  HOOK_TEST_DIRS,
+  LINT_RULE_TEST_DIRS,
+  REPO_ROOT,
+  TEST_REPO_DIR,
+} from '../paths.mts'
 
 const logger = getDefaultLogger()
 
@@ -80,9 +85,20 @@ function hookDirs(dir: string): string[] {
   return out
 }
 
-// Collect every consumer file's source text: each fleet hook's index.mts + test
-// files, and every _shared/*.mts EXCEPT the module under test (a helper using
-// its own export is not "another consumer"). Read once, concatenated per check.
+// The relocated test homes a _shared helper's test may live in. Hook tests
+// (incl. `hooks-shared/` for the `_shared/` helpers) cover unit + integration;
+// lint-rule tests cover unit + integration. A _shared export consumed ONLY by a
+// relocated test still counts as live, so these are scanned as consumers.
+const RELOCATED_TEST_DIRS: readonly string[] = [
+  ...HOOK_TEST_DIRS,
+  ...LINT_RULE_TEST_DIRS,
+]
+
+// Collect every consumer file's source text: each fleet hook's index.mts + any
+// co-located test files (member repos still carry these), the relocated
+// wheelhouse tests under `test/repo/`, and every _shared/*.mts EXCEPT the module
+// under test (a helper using its own export is not "another consumer"). Read
+// once, concatenated per check.
 export function collectConsumerText(excludeSharedModule: string): string {
   const parts: string[] = []
   // Other _shared modules.
@@ -96,7 +112,7 @@ export function collectConsumerText(excludeSharedModule: string): string {
       parts.push(readFileSync(path.join(SHARED_DIR, f), 'utf8'))
     }
   }
-  // Each hook's index.mts + its test files.
+  // Each hook's index.mts + any co-located test files.
   const dirs = hookDirs(FLEET_HOOKS_DIR)
   for (let i = 0, { length } = dirs; i < length; i += 1) {
     const hookPath = path.join(FLEET_HOOKS_DIR, dirs[i]!)
@@ -111,6 +127,23 @@ export function collectConsumerText(excludeSharedModule: string): string {
         const tf = testEntries[j]!
         if (tf.endsWith('.mts')) {
           parts.push(readFileSync(path.join(testDir, tf), 'utf8'))
+        }
+      }
+    }
+  }
+  // The relocated wheelhouse tests (test/repo/) — a member ships no test/repo,
+  // so guard on its presence and treat its absence as a no-op.
+  if (existsSync(TEST_REPO_DIR)) {
+    for (let i = 0, { length } = RELOCATED_TEST_DIRS; i < length; i += 1) {
+      const dir = RELOCATED_TEST_DIRS[i]!
+      if (!existsSync(dir)) {
+        continue
+      }
+      const entries = readdirSync(dir)
+      for (let j = 0, { length: elen } = entries; j < elen; j += 1) {
+        const f = entries[j]!
+        if (f.endsWith('.mts')) {
+          parts.push(readFileSync(path.join(dir, f), 'utf8'))
         }
       }
     }

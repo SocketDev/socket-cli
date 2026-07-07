@@ -14,15 +14,16 @@ public registry long enough for the ecosystem to flag bad code.
 Adding a third-party package (e.g. `defu`, `@anthropic-ai/*`) to
 the exclude list defeats the purpose of the gate for that package.
 
-The fix for a third-party version that needs to bypass soak is a
-**pnpm override**, not an exclude — overrides bypass the age check
-without weakening the policy.
+A common mistake is reaching for `overrides:` to get around the
+soak. Overrides pin a version but do NOT exempt it from
+`minimumReleaseAge`: pnpm still soak-checks the resolved version, so
+overriding to a too-new release stays blocked. The gate is doing
+its job — the right move is to wait for the 7-day window to pass.
 
 Example: an automated PR that drops a third-party scope like
 `@anthropic-ai/*` into `minimumReleaseAgeExclude` across sibling
-repos has to be reverted everywhere — the exclude weakens the soak
-gate, and the right tool is a `pnpm-workspace.yaml` `overrides:`
-entry instead.
+repos has to be reverted everywhere, since the exclude weakens the
+soak gate for every release of that scope.
 
 ## What it blocks
 
@@ -49,10 +50,11 @@ Type the canonical phrase in a new message:
 
     Allow soak-exclude-third-party bypass
 
-Legitimate case: a third-party transitive whose maintainer
-publishes irregularly enough that the soak window genuinely can't
-be relied on. Even then, prefer adding an `overrides:` entry over
-an exclude.
+Legitimate case: a third-party package genuinely needed before its
+soak clears, where waiting isn't an option. After the phrase, add
+it (and any `@scope/*` platform binaries) under a
+`# published: <date> | removable: <date + 7d>` annotation. This
+knowingly weakens the soak for those exact pins until they age out.
 
 ## Detection
 
@@ -64,15 +66,17 @@ Fails open on YAML parse errors.
 
 ## Fix
 
-Move the entry to `overrides:` instead:
+Default: wait for the 7-day soak to clear. The gate is protecting
+you, and `overrides:` will not bypass it.
+
+If the package is needed before then, type the bypass phrase and add
+it (with any platform binaries) under a dated annotation:
 
 ```yaml
 # pnpm-workspace.yaml
 
-overrides:
-  defu: '>=6.1.6'
-
 minimumReleaseAgeExclude:
-  - '@socketsecurity/*' # ← fleet-internal only
-  - '@socketregistry/*'
+  - '@socketsecurity/*' # fleet-internal scopes need no date
+  # published: <YYYY-MM-DD> | removable: <YYYY-MM-DD>
+  - 'somepkg@1.2.3'
 ```

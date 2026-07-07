@@ -1,8 +1,9 @@
 /**
- * @file The pass-through emoji-tree footer. Renders one line per source with its
- *   item count + status, bounded by the FOOTER_OPEN/FOOTER_CLOSE markers so the
- *   model can lift it into the brief verbatim (it's the citation surface — there
- *   is no separate Sources: block). Ported from the upstream last30days footer.
+ * @file The pass-through emoji-tree footer. Renders one line per source with
+ *   its item count + status, bounded by the FOOTER_OPEN/FOOTER_CLOSE markers so
+ *   the model can lift it into the brief verbatim (it's the citation surface —
+ *   there is no separate Sources: block). Ported from the upstream last30days
+ *   footer.
  */
 
 import { FOOTER_CLOSE, FOOTER_HEADLINE, FOOTER_OPEN } from '../markers.mts'

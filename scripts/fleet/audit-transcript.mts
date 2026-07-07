@@ -15,7 +15,7 @@
  *   script is invoked from.
  */
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
@@ -180,7 +180,7 @@ const PATTERNS: ReadonlyArray<{
         const args = invocations[i]!
         for (let j = 0, { length: al } = args; j < al; j += 1) {
           const a = args[j]
-          if (a !== '-s' && a !== '--scopes') {
+          if (a !== '--scopes' && a !== '-s') {
             continue
           }
           const value = args[j + 1] ?? ''
@@ -236,7 +236,10 @@ const PATTERNS: ReadonlyArray<{
     category: 'security add-/delete-generic-password (keychain write)',
     tool: 'Bash',
     matches: c =>
+      // macOS `security add|delete-(generic|internet)-password` — keychain
+      // write/delete ops.
       /\bsecurity\s+(?:add|delete)-(?:generic|internet)-password\b/.test(c) ||
+      // Linux libsecret equivalents: `secret-tool store` / `secret-tool clear`.
       /\bsecret-tool\s+(?:clear|store)\b/.test(c),
   },
   {

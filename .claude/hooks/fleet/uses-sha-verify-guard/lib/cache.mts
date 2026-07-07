@@ -7,7 +7,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { spawnSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 export const CACHE_FILE = path.join(
   os.homedir(),
@@ -15,6 +15,12 @@ export const CACHE_FILE = path.join(
   'uses-sha-verify-cache.json',
 )
 export const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
+// A NON-reachable result expires fast. A non-zero `gh` exit conflates a genuine
+// 404 with a transient failure (timeout, rate-limit, 5xx); caching `false` the
+// full 7 days would block a valid SHA pin for a week on one bad network moment.
+// Ten minutes is long enough to avoid re-spamming `gh` for a truly-bad pin,
+// short enough that a transient blip self-heals on the next invocation.
+export const NEGATIVE_CACHE_TTL_MS = 10 * 60 * 1000 // 10 minutes
 
 export interface CacheEntry {
   reachable: boolean
@@ -58,8 +64,14 @@ export function verifyCommitSha(
 ): boolean {
   const key = `${ownerRepo}@${sha}`
   const entry = cache.entries[key]
-  if (entry && Date.now() - entry.checkedAt < CACHE_TTL_MS) {
-    return entry.reachable
+  if (entry) {
+    // A reachable SHA is immutable, so it gets the full TTL; a non-reachable
+    // result expires fast (see NEGATIVE_CACHE_TTL_MS) so a transient `gh`
+    // failure can't block a valid pin for a week.
+    const ttl = entry.reachable ? CACHE_TTL_MS : NEGATIVE_CACHE_TTL_MS
+    if (Date.now() - entry.checkedAt < ttl) {
+      return entry.reachable
+    }
   }
   const result = spawnSync(
     'gh',

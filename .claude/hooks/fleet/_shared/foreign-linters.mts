@@ -1,4 +1,4 @@
-/**
+/*
  * @file Shared foreign-linter detection — the single classifier consumed by
  *   the `no-other-linters-guard` hook (edit-time) and the
  *   `linters-are-oxlint-oxfmt-only` check (committed state). The fleet lints +
@@ -26,6 +26,8 @@
 
 import path from 'node:path'
 
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+
 // One whole-basename pattern per foreign linter/formatter config file shape.
 // One regex per tool (rather than a single mega-alternation) keeps each
 // pattern simple to read and sidesteps alternation-ordering churn. Sorted by
@@ -46,9 +48,13 @@ export const CONFIG_FILE_PATTERNS: readonly RegExp[] = [
 ]
 
 export interface ForeignDepAudit {
-  /** Deps allowed under the `fleet.hostTestDeps` contract, sorted. */
+  /**
+   * Deps allowed under the `fleet.hostTestDeps` contract, sorted.
+   */
   allowed: string[]
-  /** Deps that violate the rule, sorted by name, each with the reason. */
+  /**
+   * Deps that violate the rule, sorted by name, each with the reason.
+   */
   blocked: ForeignDepFinding[]
 }
 
@@ -57,7 +63,9 @@ export interface ForeignDepFinding {
   reason: string
 }
 
-/** Foreign config file by basename (biome.json, .eslintrc*, …). */
+/**
+ * Foreign config file by basename (biome.json, .eslintrc*, …).
+ */
 export function isForeignConfigFile(basename: string): boolean {
   return CONFIG_FILE_PATTERNS.some(pattern => pattern.test(basename))
 }
@@ -91,7 +99,7 @@ export function isForeignToolPackage(name: string): boolean {
 }
 
 export function isVendoredUpstream(filePath: string): boolean {
-  const p = filePath.replace(/\\/g, '/')
+  const p = normalizePath(filePath)
   return (
     // A path segment that is exactly one of the vendored-tree dir names,
     // anchored at start or a "/" on the left and "/" or end on the right.
@@ -101,9 +109,13 @@ export function isVendoredUpstream(filePath: string): boolean {
   )
 }
 
-/** CLI binary a foreign package family runs as (eslint-plugin-* → eslint). */
+/**
+ * CLI binary a foreign package family runs as (eslint-plugin-* → eslint).
+ */
 export function foreignToolBinary(name: string): string {
+  // oxlint-disable-next-line socket/no-eslint-biome-config-ref -- detection data, not a config reference.
   if (name === '@biomejs/biome') {
+    // oxlint-disable-next-line socket/no-eslint-biome-config-ref -- detection data, not a config reference.
     return 'biome'
   }
   if (name === 'dprint') {
@@ -117,6 +129,7 @@ export function foreignToolBinary(name: string): string {
   }
   // Every remaining foreign family is ESLint-adjacent (@eslint/*,
   // @typescript-eslint/*, eslint-config-*, eslint-plugin-*, @<scope>/eslint-*).
+  // oxlint-disable-next-line socket/no-eslint-biome-config-ref -- detection data, not a config reference.
   return 'eslint'
 }
 
@@ -130,6 +143,7 @@ export function foreignToolBinary(name: string): string {
  */
 export function commandWords(script: string): string[] {
   const words: string[] = []
+  // Split on shell logical operators (&&, ||) and separators (; |) to isolate individual command segments.
   for (const segment of script.split(/&&|\|\||[;|]/)) {
     const tokens = segment.trim().split(/\s+/).filter(Boolean)
     let i = 0
@@ -144,7 +158,11 @@ export function commandWords(script: string): string[] {
     words.push(path.posix.basename(head))
     // Runner indirection — surface the executed tool as a command word too.
     const next = tokens[i + 1]
-    if ((head === 'bunx' || head === 'npx' || head === 'yarn') && next && !next.startsWith('-')) {
+    if (
+      (head === 'bunx' || head === 'npx' || head === 'yarn') &&
+      next &&
+      !next.startsWith('-')
+    ) {
       words.push(path.posix.basename(next))
     }
     const sub = tokens[i + 2]
@@ -221,7 +239,7 @@ export function auditForeignDeps(jsonText: string): ForeignDepAudit {
       : {}
 
   const audit: ForeignDepAudit = { allowed: [], blocked: [] }
-  for (const name of [...blocksByName.keys()].sort()) {
+  for (const name of [...blocksByName.keys()].toSorted()) {
     if (!hostTestDeps.has(name)) {
       audit.blocked.push({
         name,

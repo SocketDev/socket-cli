@@ -6,17 +6,16 @@
  *   version under a running build / scan and rides its own update channel
  *   outside the fleet soak gate — a reproducibility + supply-chain hazard. The
  *   knob lives in the app's macOS defaults domain (outside the repo), so it
- *   drifts per machine; this gate catches the drift.
- *
- *   Shares ALL detection with setup-security-tools (which writes the disable)
- *   via `_shared/sparkle-auto-update.mts` (code is law, DRY — the two never
- *   diverge). There is no PreToolUse guard twin: a Sparkle app self-updates with
- *   no Bash invocation to gate, so persist + audit are the enforcement surfaces.
- *
- *   An app not installed / never launched (`absent`) is informational, never a
- *   failure — CI runners + Linux lack these GUI apps. Exit codes: 0 — every
- *   detected app has auto-update disabled (or none present); 1 — at least one is
- *   still auto-updating. The fix is printed; setup-security-tools sets it.
+ *   drifts per machine; this gate catches the drift. Shares ALL detection with
+ *   setup-security-tools (which writes the disable) via
+ *   `_shared/sparkle-auto-update.mts` (code is law, DRY — the two never
+ *   diverge). There is no PreToolUse guard twin: a Sparkle app self-updates
+ *   with no Bash invocation to gate, so persist + audit are the enforcement
+ *   surfaces. An app not installed / never launched (`absent`) is
+ *   informational, never a failure — CI runners + Linux lack these GUI apps.
+ *   Exit codes: 0 — every detected app has auto-update disabled (or none
+ *   present); 1 — at least one is still auto-updating. The fix is printed;
+ *   setup-security-tools sets it.
  */
 
 import process from 'node:process'

@@ -18,6 +18,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { httpDownload } from '@socketsecurity/lib-stable/http-request/download'
 import { httpRequest } from '@socketsecurity/lib-stable/http-request/request'
@@ -30,7 +31,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const CONFIG_FILE = path.join(__dirname, 'external-tools.json')
 
 const MS_PER_MINUTE = 60_000
-const MINUTES_PER_DAY = 1_440
+const MINUTES_PER_DAY = 1440
 // 10080 minutes = 7 days. The fleet-wide soak default is 7 days; we
 // store it in minutes here because pnpm's `minimumReleaseAge` field
 // is in minutes too, so the conversion is one place.
@@ -66,9 +67,9 @@ export function readSoakWindowMs(): number {
     if (existsSync(candidate)) {
       try {
         const content = readFileSync(candidate, 'utf8')
-        const match = /^minimumReleaseAge:\s*(\d+)/m.exec(content)
+        const match = /^minimumReleaseAge:\s*(?<value>\d+)/m.exec(content)
         if (match) {
-          return Number(match[1]) * MS_PER_MINUTE
+          return Number(match.groups!.value) * MS_PER_MINUTE
         }
       } catch {
         // Read error.
@@ -217,7 +218,7 @@ export async function updateGithubReleaseTool(
   try {
     release = await ghApiLatestRelease(repo)
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e)
+    const msg = errorMessage(e)
     logger.warn(`Failed to fetch ${tool} releases: ${msg}`)
     return { tool, skipped: true, updated: false, reason: `API error: ${msg}` }
   }
@@ -270,9 +271,11 @@ export async function updateGithubReleaseTool(
       if (resp.ok) {
         checksumMap = { __proto__: null } as unknown as Record<string, string>
         for (const line of resp.text().split('\n')) {
-          const match = /^([a-f0-9]{64})\s+(.+)$/.exec(line.trim())
+          const match = /^(?<hash>[a-f0-9]{64})\s+(?<filename>.+)$/.exec(
+            line.trim(),
+          )
           if (match) {
-            checksumMap[match[2]!] = match[1]!
+            checksumMap[match.groups!.filename!] = match.groups!.hash!
           }
         }
       }
@@ -306,7 +309,7 @@ export async function updateGithubReleaseTool(
       try {
         newHash = await downloadAndHash(asset.browser_download_url)
       } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e)
+        const msg = errorMessage(e)
         logger.warn(`  Failed to download ${assetName}: ${msg}`)
         allFound = false
         continue
@@ -393,7 +396,7 @@ export async function updateSfwTool(
   try {
     release = await ghApiLatestRelease(repo)
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e)
+    const msg = errorMessage(e)
     logger.warn(`Failed to fetch ${toolName} releases: ${msg}`)
     return {
       tool: toolName,
@@ -434,7 +437,7 @@ export async function updateSfwTool(
         changed = true
       }
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e)
+      const msg = errorMessage(e)
       logger.warn(`    Failed to download ${assetName}: ${msg}`)
       allFound = false
     }
@@ -453,7 +456,7 @@ export async function updateSfwTool(
   }
 
   if (changed) {
-    toolConfig.version = release.tag_name
+    toolConfig.version = versionFromTag(release.tag_name)
     toolConfig.checksums = newChecksums
     return {
       tool: toolName,
@@ -534,6 +537,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((e: unknown) => {
-  logger.error(e instanceof Error ? e.message : String(e))
+  logger.error(errorMessage(e))
   process.exitCode = 1
 })

@@ -1,8 +1,8 @@
-/**
+/*
  * @file Locate socket-wheelhouse's source-of-truth tree from any fleet repo
  *   session. Hooks that enforce wheelhouse-level invariants (e.g.
  *   new-hook-claude-md-guard ensuring every fleet hook has a CLAUDE.md
- *   citation) need to read `template/CLAUDE.md` — the canonical fleet block —
+ *   citation) need to read `template/base/CLAUDE.md` — the canonical fleet block —
  *   regardless of which session the assistant is operating from.
  *   CLAUDE_PROJECT_DIR points at the _session's_ project; that's socket-cli
  *   most of the time, not socket-wheelhouse. Resolution order:
@@ -59,8 +59,8 @@ export function findWheelhouseRoot(
 }
 
 /**
- * Convenience: return the path to `template/CLAUDE.md` if the wheelhouse can be
- * located, else undefined.
+ * Convenience: return the path to `template/base/CLAUDE.md` (the canonical
+ * fleet block) if the wheelhouse can be located, else undefined.
  */
 export function findWheelhouseTemplateClaudeMd(
   options: { startDir?: string | undefined } = {},
@@ -69,17 +69,19 @@ export function findWheelhouseTemplateClaudeMd(
   if (!root) {
     return undefined
   }
-  return path.join(root, 'template', 'CLAUDE.md')
+  return path.join(root, 'template', 'base', 'CLAUDE.md')
 }
 
 /**
  * Test whether `dir` is a socket-wheelhouse checkout. Looks for the
- * `template/CLAUDE.md` byte-canonical marker — every wheelhouse has this file,
- * downstream repos don't.
+ * `template/base/CLAUDE.md` byte-canonical marker — every wheelhouse has this
+ * file, downstream repos don't. (The canonical seed moved from `template/` to
+ * `template/base/`; a stale `template/CLAUDE.md` probe here returned false for
+ * the real wheelhouse, silently disabling every guard that locates the source.)
  */
 export function isWheelhouseRoot(dir: string): boolean {
   if (!existsSync(dir)) {
     return false
   }
-  return existsSync(path.join(dir, 'template', 'CLAUDE.md'))
+  return existsSync(path.join(dir, 'template', 'base', 'CLAUDE.md'))
 }

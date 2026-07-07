@@ -1,0 +1,112 @@
+# Layer 2b — aggregator. References Layer 1 (checkout, install,
+# setup-go-toolchain) + Layer 2a (setup). When ANY of those bump,
+# THIS file bumps next, then Layer 3 (ci.yml / provenance.yml /
+# weekly-update.yml) bumps to ref this file's new SHA. See the
+# updating-workflows skill at .claude/skills/updating-workflows/.
+
+name: 'Setup and Install'
+description: 'Aggregate: checkout + setup environment + install dependencies'
+
+# Dependencies:
+#   - ./.github/actions/checkout
+#   - ./.github/actions/setup
+#     - ./.github/actions/debug
+#     - actions/setup-node@v6.2.0
+#   - ./.github/actions/cache-pnpm-store
+#     - actions/cache@v5.0.5
+#   - ./.github/actions/install
+#   - ./.github/actions/setup-go-toolchain (when setup-go: 'true')
+
+inputs:
+  checkout:
+    description: 'Whether to checkout code'
+    required: false
+    default: 'true'
+  checkout-fetch-depth:
+    description: 'Number of commits to fetch (0 = full history)'
+    required: false
+    default: '100'
+  checkout-ref:
+    description: 'Git ref to checkout'
+    required: false
+    default: ''
+  debug:
+    description: 'Enable debug output'
+    required: false
+    default: '0'
+  node-version:
+    description: 'Node.js version to use'
+    required: false
+    default: '26.3.0'
+  scope:
+    description: 'npm registry scope for package authentication'
+    required: false
+    default: ''
+  registry-url:
+    description: 'npm registry URL'
+    required: false
+    default: 'https://registry.npmjs.org'
+  setup-go:
+    description: |
+      "true" runs setup-go-toolchain after install — surfaces a usable
+      `go` on macOS/Windows runners (where the hosted toolcache version
+      isn't always on PATH after node + sfw setup) and on Linux for
+      consistency. "false" skips. Default "false" preserves existing
+      behavior for repos that don't need go.
+    required: false
+    default: 'false'
+  setup-go-version:
+    description: |
+      Major.minor Go version to ensure when setup-go is "true". Empty
+      picks the runner's default toolcache version.
+    required: false
+    default: ''
+  socket-api-token:
+    description: 'Socket API token — when provided, uses sfw-enterprise instead of sfw-free'
+    required: false
+    default: ''
+  socket-api-key:
+    description: 'DEPRECATED alias of socket-api-token. Pass `socket-api-token:` instead. Tracked for one cycle so existing callers keep working.'
+    required: false
+    default: ''
+  working-directory:
+    description: 'Working directory'
+    required: false
+    default: '.'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout
+      if: inputs.checkout == 'true'
+      uses: ./.github/actions/checkout
+      with:
+        fetch-depth: ${{ inputs.checkout-fetch-depth }}
+        ref: ${{ inputs.checkout-ref }}
+        working-directory: ${{ inputs.working-directory }}
+
+    - name: Setup environment
+      uses: ./.github/actions/setup
+      with:
+        debug: ${{ inputs.debug }}
+        node-version: ${{ inputs.node-version }}
+        scope: ${{ inputs.scope }}
+        registry-url: ${{ inputs.registry-url }}
+        socket-api-token: ${{ inputs.socket-api-token != '' && inputs.socket-api-token || inputs.socket-api-key }}
+        working-directory: ${{ inputs.working-directory }}
+
+    - name: Cache pnpm store
+      uses: ./.github/actions/cache-pnpm-store
+      with:
+        working-directory: ${{ inputs.working-directory }}
+
+    - name: Install dependencies
+      uses: ./.github/actions/install
+      with:
+        working-directory: ${{ inputs.working-directory }}
+
+    - name: Setup Go toolchain
+      if: inputs.setup-go == 'true'
+      uses: ./.github/actions/setup-go-toolchain
+      with:
+        version: ${{ inputs.setup-go-version }}

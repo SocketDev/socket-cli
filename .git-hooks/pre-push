@@ -1,0 +1,27 @@
+#!/bin/sh
+# Git pre-push dispatcher (Option A). core.hooksPath points at .git-hooks/;
+# fleet/ and repo/ are peers under it. git feeds the to-be-pushed refs on
+# stdin, so capture them ONCE to a temp file and feed BOTH hooks (a stream is
+# consumed once). $1 = remote name, $2 = remote URL. Either hook returning
+# non-zero blocks the push.
+
+# HUSKY=0 skips this hook for the current invocation — the husky-compatible
+# whole-chain escape (details in the pre-commit dispatcher). Exits before the
+# stdin capture; git doesn't require the refs stream to be consumed.
+if [ "${HUSKY-}" = "0" ]; then
+  echo "[git-hooks] HUSKY=0 — skipping pre-push."
+  exit 0
+fi
+
+DIR=$(dirname "$0")
+refs=$(mktemp -t pre-push-refs.XXXXXX) || refs=/tmp/pre-push-refs.$$
+cat >"$refs"
+status=0
+if [ -x "$DIR/fleet/pre-push" ]; then
+  "$DIR/fleet/pre-push" "$@" <"$refs" || status=$?
+fi
+if [ "$status" -eq 0 ] && [ -x "$DIR/repo/pre-push" ]; then
+  "$DIR/repo/pre-push" "$@" <"$refs" || status=$?
+fi
+rm -f "$refs"
+exit "$status"

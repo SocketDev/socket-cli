@@ -1,4 +1,4 @@
-/**
+/*
  * @file Surface allowlist + per-surface authoring guidance + capability tiers
  *   for the ai-codify orchestrator (sibling of ai-lint-fix/rule-guidance.mts).
  *   Kept separate from `cli.mts` for the same reasons rule-guidance.mts is:
@@ -33,14 +33,14 @@ export type CodifySurface =
   | 'agents-doc'
   | 'check'
   | 'hook-guard'
-  | 'hook-reminder'
+  | 'hook-nudge'
   | 'lint-rule'
 
 export const CODIFY_SURFACES: ReadonlySet<CodifySurface> = new Set([
   'agents-doc',
   'check',
   'hook-guard',
-  'hook-reminder',
+  'hook-nudge',
   'lint-rule',
 ] as const)
 
@@ -70,7 +70,7 @@ export const SURFACE_TIER: Readonly<
   check: 'sonnet',
   // New hook dir + full ceremony. Real authoring; Opus depth pays back.
   'hook-guard': 'opus',
-  'hook-reminder': 'opus',
+  'hook-nudge': 'opus',
   // New oxlint rule (AST visitor) + rule test + plugin registration. The
   // deepest authoring surface — reasoning over the AST shape to match.
   'lint-rule': 'opus',
@@ -135,9 +135,9 @@ export const SURFACE_GUIDANCE: Readonly<Record<CodifySurface, string>> = {
   - Mirror an existing check's shape (read scripts/fleet/check/hook-dirs-are-not-husks.mts as the canonical template): a header comment (what / why / what fails / usage), pure exported scan functions (\`scanForX(repoRoot): Hit[]\`), a \`main()\` that logs hits + sets \`process.exitCode = 1\` on findings, and the entrypoint guard \`if (process.argv[1] === fileURLToPath(import.meta.url)) { main() }\`.
   - Import REPO_ROOT from '../paths.mts'; logger from '@socketsecurity/lib-stable/logger/default'.
   - Register it in scripts/fleet/check.mts as \`() => run('node', ['scripts/fleet/check/<name>.mts'])\` with a 2-4 line comment naming the discipline + the motivating incident generically (no dates/SHAs — the dated-citation rule).
-  - Write a thorough test/ alongside if the check has non-trivial pure logic (a dead-export fixture that fails + a clean one that passes).
+  - If the check has non-trivial pure logic, write a vitest test at test/unit/fleet/check/<name>.test.mts (a dead-export fixture that fails + a clean one that passes) and run it with \`pnpm test test/unit/fleet/check/<name>.test.mts\`. Fleet-script tests cascade in lock-step; see docs/agents.md/fleet/test-layout.md.
 </conventions>`,
-  'hook-guard': `Author a new BLOCKING hook at .claude/hooks/{fleet,repo}/<name>-guard/ (a -guard BLOCKS; if it only nudges, use hook-reminder instead — never both for one concern).
+  'hook-guard': `Author a new BLOCKING hook at .claude/hooks/{fleet,repo}/<name>-guard/ (a -guard BLOCKS; if it only nudges, use hook-nudge instead — never both for one concern).
 
 <ceremony>
   1. BEFORE index.mts: add the \`(\`.claude/hooks/<name>-guard/\`)\` citation to the matching CLAUDE.md rule line — the new-hook-claude-md-guard requires the citation to exist first.
@@ -145,19 +145,19 @@ export const SURFACE_GUIDANCE: Readonly<Record<CodifySurface, string>> = {
   3. README.md: document the trigger + the bypass phrase (\`Allow <X> bypass\`).
   4. package.json + tsconfig.json: copy a sibling hook's (workspace package; \`pnpm install\` + commit the lockfile in the same change or CI's frozen-install fails).
   5. settings wiring: add the hook to .claude/settings.json under the right event (PreToolUse).
-  6. test/index.test.mts: node:test (NOT vitest) + node:assert/strict. Cover both arms (blocks on the bad shape, passes the good shape, honors the bypass phrase, fails open on a malformed payload). Run with \`node scripts/repo/run-hook-tests.mts <name>-guard\`.
+  6. test: a VITEST test at test/repo/{unit,integration}/hooks/<name>-guard.test.mts (NOT co-located — hook tests are wheelhouse-only and live under test/repo/) that imports the source by relative path ending in ../../../../template/base/.claude/hooks/{fleet,repo}/<name>-guard/index.mts. Cover both arms (blocks on the bad shape, passes the good shape, honors the bypass phrase, fails open on a malformed payload). Run with \`pnpm test test/repo/{unit,integration}/hooks/<name>-guard.test.mts\`. See docs/agents.md/fleet/test-layout.md.
   Block exit code 2; pass/fail-open exit 0.
 </ceremony>`,
-  'hook-reminder': `Author a new NON-BLOCKING hook at .claude/hooks/{fleet,repo}/<name>-reminder/ (a -reminder NUDGES, exit 0 always; if it should BLOCK, use hook-guard instead). Same ceremony as a guard (CLAUDE.md citation first, shared helpers, entrypoint guard, README, package.json/tsconfig, settings wiring, node:test test) with two differences:
+  'hook-nudge': `Author a new NON-BLOCKING hook at .claude/hooks/{fleet,repo}/<name>-nudge/ (a -nudge NUDGES, exit 0 always; if it should BLOCK, use hook-guard instead). Same ceremony as a guard (CLAUDE.md citation first, shared helpers, entrypoint guard, README, package.json/tsconfig, settings wiring, and a VITEST test at test/repo/{unit,integration}/hooks/<name>-nudge.test.mts importing the source via ../../../../template/base/... — run with \`pnpm test <path>\`; see docs/agents.md/fleet/test-layout.md) with two differences:
   - It writes its nudge to stderr and ALWAYS exits 0 — it never blocks the turn.
-  - A Stop-event reminder must exit DETERMINISTICALLY (no lingering stdin listeners / timers); end main() with an explicit resolve and run it behind the entrypoint guard. Reuse ../_shared/stop-reminder.mts (runStopReminder) when the nudge fires on Stop.`,
-  'lint-rule': `Author a new oxlint rule in the fleet plugin at .config/oxlint-plugin/fleet/<rule-name>/ plus its registration and test.
+  - A Stop-event reminder must exit DETERMINISTICALLY (no lingering stdin listeners / timers); end main() with an explicit resolve and run it behind the entrypoint guard. Reuse ../_shared/stop-nudge.mts (runStopReminder) when the nudge fires on Stop.`,
+  'lint-rule': `Author a new oxlint rule in the fleet plugin at .config/fleet/oxlint-plugin/fleet/<rule-name>/ plus its registration and test.
 
 <conventions>
   - Default the rule to \`"error"\`, never \`"warn"\` (CLAUDE.md "Lint rules: errors over warnings"). Ship a deterministic autofix (\`fixable: 'code'\`) when the rewrite is unambiguous.
-  - Mirror an existing rule's shape (an AST visitor with create(context) returning node-type handlers). Read a sibling rule under .config/oxlint-plugin/fleet/ as the template.
+  - Mirror an existing rule's shape (an AST visitor with create(context) returning node-type handlers). Read a sibling rule under .config/fleet/oxlint-plugin/fleet/ as the template.
   - Register the rule in the plugin's rule index AND add it to the fleet oxlintrc so it actually runs.
-  - Write the rule test under the oxlint-plugin's test/ dir — these run via \`node --test test/*.test.mts\` (the lint-rule-test tier), NOT vitest.
+  - Write a VITEST test at test/repo/{unit,integration}/lint-rules/<rule-name>.test.mts (NOT co-located — lint-rule tests are wheelhouse-only and live under test/repo/) that imports the rule by relative path ending in ../../../../template/base/.config/fleet/oxlint-plugin/fleet/<rule-name>/index.mts. Run with \`pnpm test test/repo/{unit,integration}/lint-rules/<rule-name>.test.mts\`. See docs/agents.md/fleet/test-layout.md.
   - The rule is defense-in-depth ALONGSIDE a hook/CLAUDE.md line when the discipline is also edit-time-visible — name the companion surfaces; do not assume the lint rule alone is enough.
 </conventions>`,
 } as unknown as Readonly<Record<CodifySurface, string>>

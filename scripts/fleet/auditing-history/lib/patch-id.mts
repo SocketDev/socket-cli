@@ -8,7 +8,7 @@
  *   `revert:`-tagged, that's an accidental/undocumented revert: history that
  *   undoes itself without saying so. `findUntaggedReverts` is PURE (operates on
  *   already-collected `WindowCommit[]`), so the same function backs both the
- *   auditing-history skill engine and the commit-thrash-reminder Stop hook —
+ *   auditing-history skill engine and the commit-thrash-nudge Stop hook —
  *   the two can't drift. Collecting the commits (running git) is the caller's
  *   job (`window.mts`).
  */

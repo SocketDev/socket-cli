@@ -14,13 +14,13 @@
 // caller does this) so full-width / ligature variants of `/Users` don't slip
 // past the ASCII-only class.
 export const PERSONAL_PATH_RE =
-  /(\/Users\/[^/\s]+\/|\/home\/[^/\s]+\/|C:\\Users\\[^\\]+\\)/
+  /(?:\/Users\/[^/\s]+\/|\/home\/[^/\s]+\/|C:\\Users\\[^\\]+\\)/
 
 // Placeholder forms we ALLOW (documentation, not leaks): `<...>` components and
 // `$VAR` / `${VAR}` under the platform user dir. Canonical fleet style:
 //   /Users/<user>/...   /home/<user>/...   C:\Users\<USERNAME>\...
 export const PERSONAL_PATH_PLACEHOLDER_RE =
-  /(\/Users\/<[^>]*>\/|\/home\/<[^>]*>\/|C:\\Users\\<[^>]*>\\|\/Users\/\$\{?[A-Z_]+\}?\/|\/home\/\$\{?[A-Z_]+\}?\/)/
+  /(?:\/Users\/<[^>]*>\/|\/home\/<[^>]*>\/|C:\\Users\\<[^>]*>\\|\/Users\/\$\{?[A-Z_]+\}?\/|\/home\/\$\{?[A-Z_]+\}?\/)/
 
 // Well-known CI / system home dirs whose "username" is a service account, not a
 // person — so `/home/runner/...` (GitHub Actions), `/home/ubuntu/...` etc. are
@@ -28,7 +28,7 @@ export const PERSONAL_PATH_PLACEHOLDER_RE =
 // tool-cache mounts; those are correct, not a leak. Matched as the path's
 // username segment only.
 export const KNOWN_NON_PERSONAL_PATH_RE =
-  /(\/Users\/(runner)\/|\/home\/(runner|ubuntu|circleci|vsts|vscode)\/)/
+  /(?:\/Users\/(?:runner)\/|\/home\/(?:runner|ubuntu|circleci|vsts|vscode)\/)/
 
 // True when a line is a PURE placeholder: it matches the placeholder shape AND
 // nothing real remains after stripping every placeholder. Such lines are

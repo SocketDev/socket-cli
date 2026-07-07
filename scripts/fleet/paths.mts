@@ -32,6 +32,7 @@
 
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
+import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 // ---------------------------------------------------------------------------
@@ -92,6 +93,59 @@ export const NODE_MODULES_DIR = path.join(REPO_ROOT, 'node_modules')
 // oxlint-disable-next-line socket/prefer-node-modules-dot-cache -- NODE_MODULES_DIR is the canonical node_modules root; the rule's per-arg check can't see through identifiers.
 export const NODE_MODULES_CACHE_DIR = path.join(NODE_MODULES_DIR, '.cache')
 
+// ---------------------------------------------------------------------------
+// Fleet hook dispatch bundle — sources + the rolldown output. Constructed here
+// (1 path, 1 reference) so make-hook-dispatch, build-hook-bundle, and the
+// rolldown hook-bundle config all REFERENCE these instead of reconstructing
+// them. paths.mts stays light (node: only) so the rolldown config loader can
+// import it.
+// ---------------------------------------------------------------------------
+
+/**
+ * Absolute path to the repo's `.claude/settings.json` (the fleet hook wiring:
+ * the dispatcher matcher entries + standalone per-hook entries).
+ */
+export const CLAUDE_SETTINGS_JSON = path.join(
+  REPO_ROOT,
+  '.claude',
+  'settings.json',
+)
+
+/**
+ * Absolute path to the fleet hooks directory.
+ */
+export const FLEET_HOOKS_DIR = path.join(REPO_ROOT, '.claude', 'hooks', 'fleet')
+
+/**
+ * Dispatcher directory holding the generated table, entry, and bundle.
+ */
+export const DISPATCH_DIR = path.join(FLEET_HOOKS_DIR, '_dispatch')
+
+/**
+ * The generated static dispatch table (make-hook-dispatch writes this).
+ */
+export const DISPATCH_TABLE_PATH = path.join(DISPATCH_DIR, 'dispatch-table.mts')
+
+/**
+ * The dispatcher entry that rolldown bundles.
+ */
+export const DISPATCH_ENTRY_PATH = path.join(DISPATCH_DIR, 'dispatch-entry.mts')
+
+/**
+ * The committed, minified CJS hook bundle (rolldown output).
+ */
+export const HOOK_BUNDLE_PATH = path.join(DISPATCH_DIR, 'bundle.cjs')
+
+/**
+ * Resolve the rolldown output path for the hook bundle. `FLEET_HOOK_BUNDLE_OUT`
+ * overrides it so the bundle-freshness test can build into an isolated
+ * `os.tmpdir` and diff against the committed artifact without touching it.
+ */
+export function resolveHookBundleOut(): string {
+  const override = process.env['FLEET_HOOK_BUNDLE_OUT']
+  return override ? path.resolve(override) : HOOK_BUNDLE_PATH
+}
+
 /**
  * Absolute path to the repo's `pnpm-workspace.yaml`.
  */
@@ -108,43 +162,50 @@ export const PACKAGE_JSON = path.join(REPO_ROOT, 'package.json')
 export const PNPM_LOCK = path.join(REPO_ROOT, 'pnpm-lock.yaml')
 
 /**
- * Wheelhouse-side vendored acorn-wasm directory. `refresh-vendored-acorn.mts`
- * copies the ultrathink build's output here; the cascade then ships it to every
- * fleet repo's `.claude/hooks/fleet/_shared/acorn/`.
+ * The repo-tier test tree. Wheelhouse-only hook / lint-rule / git-hook tests
+ * live under `test/repo/{unit,integration,e2e}/` (vitest), never co-located in
+ * the cascaded trees. See docs/agents.md/fleet/test-layout.md.
  */
-export const VENDORED_ACORN_DIR = path.join(
-  REPO_ROOT,
-  'template/.claude/hooks/fleet/_shared/acorn',
-)
+export const TEST_REPO_DIR = path.join(REPO_ROOT, 'test', 'repo')
 
 /**
- * Files copied from the ultrathink acorn build into VENDORED_ACORN_DIR. Only
- * the artifacts that change with a new parser build are refreshed: the wasm
- * binary and its wasm-bindgen glue. The hand-written `acorn-sync.mts` loader
- * and `index.mts` API wrapper live in the dir verbatim and are not build
- * outputs, so the refresh leaves them untouched. README.md is stamped by the
- * refresh script, not copied.
+ * Both relocated homes a lint-rule test may live in (unit for in-process,
+ * integration for spawn-based). The oxlint-rule triad check looks here.
  */
-export const VENDORED_ACORN_FILES: readonly string[] = [
-  'acorn-bindgen.cjs',
-  'acorn.wasm',
+export const LINT_RULE_TEST_DIRS: readonly string[] = [
+  path.join(TEST_REPO_DIR, 'unit', 'lint-rules'),
+  path.join(TEST_REPO_DIR, 'integration', 'lint-rules'),
 ]
 
 /**
- * Suffix from `$ULTRATHINK_ROOT` to the Rust → WASM prod build's Final output
- * dir (the source `refresh-vendored-acorn.mts` copies from).
+ * Both relocated homes a hook test may live in (unit for in-process,
+ * integration for spawn-based). `hooks-shared` holds the `_shared/` helper
+ * tests.
  */
-export const ULTRATHINK_ACORN_FINAL_SUFFIX = path.join(
-  'packages',
-  'acorn',
-  'lang',
-  'rust',
-  'build',
-  'prod',
-  'darwin-arm64',
-  'wasm',
-  'out',
-  'Final',
+export const HOOK_TEST_DIRS: readonly string[] = [
+  path.join(TEST_REPO_DIR, 'integration', 'hooks'),
+  path.join(TEST_REPO_DIR, 'integration', 'hooks-shared'),
+  path.join(TEST_REPO_DIR, 'unit', 'hooks'),
+  path.join(TEST_REPO_DIR, 'unit', 'hooks-shared'),
+]
+
+/**
+ * Both relocated homes a git-hook test may live in.
+ */
+export const GIT_HOOK_TEST_DIRS: readonly string[] = [
+  path.join(TEST_REPO_DIR, 'integration', 'git-hooks'),
+  path.join(TEST_REPO_DIR, 'unit', 'git-hooks'),
+]
+
+/**
+ * True only in the wheelhouse, which OWNS the relocated tests under
+ * `test/repo/`. A member repo ships the rule/hook SOURCES but not their tests
+ * (wheelhouse-only) — so test-presence assertions must gate on this and pass
+ * (return no gaps) in a member. The wheelhouse is the repo carrying
+ * `template/base/`.
+ */
+export const OWNS_RELOCATED_TESTS = existsSync(
+  path.join(REPO_ROOT, 'template', 'base'),
 )
 
 // ---------------------------------------------------------------------------

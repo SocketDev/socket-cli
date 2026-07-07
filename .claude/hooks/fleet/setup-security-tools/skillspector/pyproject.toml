@@ -1,0 +1,46 @@
+# SkillSpector install project — the locked source of truth for the fleet's
+# SkillSpector pin. SkillSpector (NVIDIA's third-party-skill security scanner)
+# has no PyPI release / no GH tags upstream, so the git SHA IS the pin. This uv
+# project wraps that SHA in a uv.lock that manifests EVERY transitive
+# dependency version — the most locked-down, most-version-pinned form the
+# install can take (vs. a bare `pipx install git+…@sha`, which re-resolves the
+# closure freshly on every machine).
+#
+# The pin lives in three places kept in lockstep by skillspector-pin-is-consistent.mts:
+#   1. tool.uv.sources.skillspector.rev  — the git SHA here
+#   2. uv.lock                            — the resolved closure at that SHA
+#   3. external-tools.json skillspector.version — the fleet-canonical SHA
+#
+# `exclude-newer` pins resolution to packages published on/before the SHA's
+# commit date (2026-05-18), so the lock can never silently pull a dependency
+# version that didn't exist when the pin was cut — reproducible across machines
+# and across time.
+[project]
+name = "socket-skillspector-pin"
+version = "0.0.0"
+description = "Fleet-pinned SkillSpector install (locked closure of the upstream git SHA)."
+requires-python = ">=3.12"
+dependencies = ["skillspector"]
+
+[tool.uv]
+# Resolve against the package index as it existed on the pin's commit date.
+exclude-newer = "2026-05-18T00:00:00Z"
+# Per-package soak exceptions (the uv analog of pnpm's minimumReleaseAgeExclude)
+# for emergency CVE patches whose only fixed releases postdate the pin's commit
+# date. Each scoped to one package + dated so a periodic pass drops it once the
+# global exclude-newer advances past the fix:
+#   - cryptography        < 48.0.1  → GHSA-537c-gmf6-5ccf (high);   48.0.1 @ 2026-06-09
+#   - langsmith           < 0.8.18  → GHSA-f4xh-w4cj-qxq8 (high);   0.8.18 @ 2026-06-19
+#     (user-authorized soak-bypass; drop once it clears the soak 2026-06-26)
+#   - langgraph-checkpoint < 4.1.1  → GHSA-fjqc-hq36-qh5p (medium); 4.1.1  @ 2026-05-22
+#   - langgraph-sdk        < 0.3.15 → GHSA-w39p-vh2g-g8g5 (medium); 0.3.15 @ 2026-05-22
+#   - pyjwt               < 2.13.0  → GHSA-xgmm-8j9v-c9wx (high);   2.13.0 @ 2026-05-21
+#   - starlette           < 1.3.1   → GHSA-82w8-qh3p-5jfq (high);   1.3.1  @ 2026-06-12
+exclude-newer-package = { cryptography = "2026-06-10T00:00:00Z", langsmith = "2026-06-20T00:00:00Z", "langgraph-checkpoint" = "2026-05-23T00:00:00Z", "langgraph-sdk" = "2026-05-23T00:00:00Z", pyjwt = "2026-05-22T00:00:00Z", starlette = "2026-06-13T00:00:00Z" }
+# Force the security-fixed floors past the closure resolved at the pin's date.
+override-dependencies = ["cryptography>=48.0.1", "langsmith>=0.8.18", "langgraph-checkpoint>=4.1.1", "langgraph-sdk>=0.3.15", "pyjwt>=2.13.0", "starlette>=1.3.1"]
+
+[tool.uv.sources]
+# The SHA IS the pin (no PyPI release / no tags upstream). Keep `rev` in
+# lockstep with external-tools.json skillspector.version.
+skillspector = { git = "https://github.com/NVIDIA/skillspector.git", rev = "2eb84478" }

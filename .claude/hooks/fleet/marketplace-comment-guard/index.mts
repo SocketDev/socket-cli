@@ -23,24 +23,16 @@
 //   - When README is being edited, the post-edit README is reconstructed
 //     and checked against the on-disk marketplace.json.
 //
-// The hook fails OPEN on its own bugs (exit 0 + stderr log) so a bad
+// The hook fails OPEN on its own bugs (allow + stderr log) so a bad
 // hook deploy can't brick the session.
 
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 
-interface Hook {
-  tool_name?: string | undefined
-  tool_input?:
-    | {
-        file_path?: string | undefined
-        new_string?: string | undefined
-        old_string?: string | undefined
-        content?: string | undefined
-      }
-    | undefined
-}
+import { resolveEditedText } from '../_shared/payload.mts'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import type { GuardResult } from '../_shared/guard.mts'
+import type { ToolCallPayload } from '../_shared/payload.mts'
 
 interface PluginPin {
   name: string
@@ -146,27 +138,11 @@ export function isGuardedPath(
 }
 
 export function reconstructAfterEdit(
-  filePath: string,
-  tool: 'Edit' | 'Write',
-  input: Hook['tool_input'],
+  payload: ToolCallPayload,
 ): string | undefined {
-  if (tool === 'Write') {
-    return input?.content ?? ''
-  }
-  // Edit: apply old_string → new_string to the current on-disk content.
-  const oldStr = input?.old_string ?? ''
-  const newStr = input?.new_string ?? ''
-  let current: string
-  try {
-    current = readFileSync(filePath, 'utf8')
-  } catch {
-    return undefined
-  }
-  const idx = current.indexOf(oldStr)
-  if (idx === -1) {
-    return undefined
-  }
-  return current.slice(0, idx) + newStr + current.slice(idx + oldStr.length)
+  // Write → `content` verbatim; Edit/MultiEdit → the on-disk content with the
+  // proposed change folded in (1 path, 1 reference for the Edit-replay idiom).
+  return resolveEditedText(payload)
 }
 
 export function siblingPath(filePath: string, kind: 'json' | 'readme'): string {
@@ -219,103 +195,74 @@ export function validate(pins: PluginPin[], rows: ReadmeRow[]): BadPin[] {
   return bad
 }
 
-function main() {
-  let stdin = ''
-  process.stdin.on('data', chunk => {
-    stdin += chunk
-  })
-  process.stdin.on('end', () => {
-    try {
-      let payload: Hook
-      try {
-        payload = JSON.parse(stdin) as Hook
-      } catch {
-        process.exit(0)
-      }
-      const tool = payload.tool_name
-      if (tool !== 'Edit' && tool !== 'Write') {
-        process.exit(0)
-      }
-      const filePath = payload.tool_input?.file_path
-      if (!filePath) {
-        process.exit(0)
-      }
-      const kind = isGuardedPath(filePath)
-      if (!kind) {
-        process.exit(0)
-      }
-
-      const reconstructed = reconstructAfterEdit(
-        filePath,
-        tool,
-        payload.tool_input,
-      )
-      if (reconstructed === undefined) {
-        process.exit(0)
-      }
-
-      const sibling = siblingPath(filePath, kind.kind)
-      let siblingContent: string
-      try {
-        siblingContent = readFileSync(sibling, 'utf8')
-      } catch {
-        // Sibling missing — block, the pair must exist together.
-        process.stderr.write(
-          `[marketplace-comment-guard] refusing edit: sibling file missing.\n` +
-            `  Edited:  ${filePath}\n` +
-            `  Missing: ${sibling}\n\n` +
-            `marketplace.json and its sibling README.md must exist together.\n` +
-            `Create the missing file before editing the other.\n`,
-        )
-        process.exit(2)
-      }
-
-      const marketplaceJson =
-        kind.kind === 'json' ? reconstructed : siblingContent
-      const readme = kind.kind === 'readme' ? reconstructed : siblingContent
-
-      const pins = extractPluginPins(marketplaceJson)
-      if (pins === undefined) {
-        process.stderr.write(
-          `[marketplace-comment-guard] refusing edit: marketplace.json is not parseable JSON.\n` +
-            `  File: ${kind.kind === 'json' ? filePath : sibling}\n\n` +
-            `Fix the JSON syntax before editing either side of the pair.\n`,
-        )
-        process.exit(2)
-      }
-
-      const rows = extractReadmeRows(readme)
-      const bad = validate(pins, rows)
-      if (bad.length === 0) {
-        process.exit(0)
-      }
-
-      process.stderr.write(
-        `[marketplace-comment-guard] refusing edit: ` +
-          `${bad.length} plugin pin(s) drift between marketplace.json and README.md.\n` +
-          bad
-            .map(
-              b =>
-                `    ${b.name}: ${b.reason}\n` +
-                `      expected row: | ${b.expected.name} | ${b.expected.ref} | ${b.expected.sha} | YYYY-MM-DD | ... |`,
-            )
-            .join('\n') +
-          '\n\nFix: update the README pin table so every plugin in marketplace.json\n' +
-          'has a row with matching version + sha + an ISO-8601 date.\n' +
-          'Bump the SHA → bump the row. Same discipline as the GHA `uses:`\n' +
-          'SHA-pin comments — the date column is the staleness signal.\n',
-      )
-      process.exit(2)
-    } catch (e) {
-      process.stderr.write(
-        `[marketplace-comment-guard] hook error (allowing): ${e}\n`,
-      )
-      process.exit(0)
-    }
-  })
-  if (process.stdin.readable === false) {
-    process.exit(0)
+export const check = editGuard((filePath, _content, payload): GuardResult => {
+  const kind = isGuardedPath(filePath)
+  if (!kind) {
+    return undefined
   }
-}
 
-main()
+  const reconstructed = reconstructAfterEdit(payload)
+  if (reconstructed === undefined) {
+    return undefined
+  }
+
+  const sibling = siblingPath(filePath, kind.kind)
+  let siblingContent: string
+  try {
+    siblingContent = readFileSync(sibling, 'utf8')
+  } catch {
+    // Sibling missing — block, the pair must exist together.
+    return block(
+      `[marketplace-comment-guard] refusing edit: sibling file missing.\n` +
+        `  Edited:  ${filePath}\n` +
+        `  Missing: ${sibling}\n\n` +
+        `marketplace.json and its sibling README.md must exist together.\n` +
+        `Create the missing file before editing the other.\n`,
+    )
+  }
+
+  const marketplaceJson = kind.kind === 'json' ? reconstructed : siblingContent
+  const readme = kind.kind === 'readme' ? reconstructed : siblingContent
+
+  const pins = extractPluginPins(marketplaceJson)
+  if (pins === undefined) {
+    return block(
+      `[marketplace-comment-guard] refusing edit: marketplace.json is not parseable JSON.\n` +
+        `  File: ${kind.kind === 'json' ? filePath : sibling}\n\n` +
+        `Fix the JSON syntax before editing either side of the pair.\n`,
+    )
+  }
+
+  const rows = extractReadmeRows(readme)
+  const bad = validate(pins, rows)
+  if (bad.length === 0) {
+    return undefined
+  }
+
+  return block(
+    `[marketplace-comment-guard] refusing edit: ` +
+      `${bad.length} plugin pin(s) drift between marketplace.json and README.md.\n` +
+      bad
+        .map(
+          b =>
+            `    ${b.name}: ${b.reason}\n` +
+            `      expected row: | ${b.expected.name} | ${b.expected.ref} | ${b.expected.sha} | YYYY-MM-DD | ... |`,
+        )
+        .join('\n') +
+      '\n\nFix: update the README pin table so every plugin in marketplace.json\n' +
+      'has a row with matching version + sha + an ISO-8601 date.\n' +
+      'Bump the SHA → bump the row. Same discipline as the GHA `uses:`\n' +
+      'SHA-pin comments — the date column is the staleness signal.\n',
+  )
+})
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  scope: 'convention',
+  type: 'guard',
+})
+/* c8 ignore start - standalone entrypoint only; in-process tests import the hook directly */
+void runHook(hook, import.meta.url)
+/* c8 ignore stop */

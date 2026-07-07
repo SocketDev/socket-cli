@@ -15,6 +15,7 @@
 import { existsSync, promises as fs, readFileSync } from 'node:fs'
 
 import { findApiToken as findApiTokenCanonical } from './api-token.mts'
+import { setupHeadroom } from './headroom.mts'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
@@ -25,7 +26,7 @@ import { Type } from '@sinclair/typebox'
 
 import { whichSync } from '@socketsecurity/lib-stable/bin/which'
 import { downloadBinary } from '@socketsecurity/lib-stable/dlx/binary'
-import { downloadPackage } from '@socketsecurity/lib-stable/dlx/package'
+import { downloadNpmPackage } from '@socketsecurity/lib-stable/dlx/package'
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
@@ -77,6 +78,7 @@ const configPath = (() => {
 const rawConfig = JSON.parse(readFileSync(configPath, 'utf8'))
 const config = parseSchema(configSchema, rawConfig)
 
+const ACTIONLINT = config.tools['actionlint']!
 const AGENTSHIELD = config.tools['agentshield']!
 const CDXGEN = config.tools['cdxgen']!
 const SYNP = config.tools['synp']!
@@ -89,14 +91,30 @@ const OPENGREP = config.tools['opengrep']!
 const UV = config.tools['uv']!
 const JANUS = config.tools['janus']!
 const SKILLSPECTOR = config.tools['skillspector']!
+const HEADROOM = config.tools['headroom']!
 
 // ── Shared helpers ──
+
+// GitHub release tag for a tool-config version: prepend `v` unless the
+// version already carries one. The manifest historically holds BOTH forms
+// (the updater once stored raw tag_names), so every release-URL site goes
+// through this instead of assuming one shape — a wrong assumption 404s the
+// download (the zizmor `vv1.26.1` incident).
+export function releaseTag(version: string): string {
+  return version.startsWith('v') ? version : `v${version}`
+}
+
+// The inverse boundary: bare semver for version-output comparisons and
+// display (`zizmor --version` prints `zizmor 1.26.1`, never `v1.26.1`).
+export function bareVersion(version: string): string {
+  return version.replace(/^v/, '')
+}
 
 export async function checkZizmorVersion(binPath: string): Promise<boolean> {
   try {
     const result = await spawn(binPath, ['--version'], { stdio: 'pipe' })
     const output = String(result.stdout).trim()
-    return ZIZMOR.version ? output.includes(ZIZMOR.version) : false
+    return ZIZMOR.version ? output.includes(bareVersion(ZIZMOR.version)) : false
   } catch {
     return false
   }
@@ -119,6 +137,44 @@ export function findApiToken(): string | undefined {
 }
 
 type ToolEntry = (typeof config.tools)[string]
+type PlatformEntry = NonNullable<ToolEntry['platforms']>[string]
+
+// The host platform-arch key used to index a tool's `platforms` map, e.g.
+// `darwin-arm64`, `linux-x64`, `win-arm64`. Single source of the key format so
+// every installer resolves the same way.
+export function hostPlatformKey(): string {
+  return `${process.platform === 'win32' ? 'win' : process.platform}-${process.arch}`
+}
+
+// Resolve a tool's asset entry for `hostKey`, applying the win-arm64→win-x64
+// fallback: Windows-on-ARM runs win-x64 binaries under emulation and upstreams
+// rarely ship a native win-arm64 asset, so an ARM-Windows host gets the win-x64
+// build rather than a spurious "unsupported platform". Pure (host key passed in)
+// so it's unit-testable; `resolvePlatformEntry` supplies the live host key.
+export function pickPlatformEntry(
+  platforms: ToolEntry['platforms'],
+  hostKey: string,
+): PlatformEntry | undefined {
+  const direct = platforms?.[hostKey]
+  if (direct) {
+    return direct
+  }
+  if (hostKey === 'win-arm64') {
+    return platforms?.['win-x64']
+  }
+  return undefined
+}
+
+// The host-key + resolved-entry pair. `platformKey` is the host key (for
+// messaging / install-dir paths); `entry` is resolved with the win-arm64
+// fallback via pickPlatformEntry.
+export function resolvePlatformEntry(platforms: ToolEntry['platforms']): {
+  entry: PlatformEntry | undefined
+  platformKey: string
+} {
+  const platformKey = hostPlatformKey()
+  return { entry: pickPlatformEntry(platforms, platformKey), platformKey }
+}
 
 interface InstallGitHubToolOptions {
   /**
@@ -181,8 +237,9 @@ export async function installGitHubReleaseTool(
     return true
   }
 
-  const platformKey = `${process.platform === 'win32' ? 'win' : process.platform}-${process.arch}`
-  const platformEntry = tool.platforms?.[platformKey]
+  const { entry: platformEntry, platformKey } = resolvePlatformEntry(
+    tool.platforms,
+  )
   if (!platformEntry) {
     logger.warn(`${displayName}: unsupported platform ${platformKey}`)
     return false
@@ -194,8 +251,7 @@ export async function installGitHubReleaseTool(
   // `version` field is the bare semver — prepend `v` unless it already
   // starts with one. astral-sh/uv is the lone exception and is handled
   // by setupUv() passing the literal tag.
-  const tagPrefix = tool.version?.startsWith('v') ? '' : 'v'
-  const tag = `${tagPrefix}${tool.version}`
+  const tag = releaseTag(tool.version ?? '')
   const url = `https://github.com/${repo}/releases/download/${tag}/${asset}`
 
   logger.log(`Downloading ${displayName} v${tool.version} (${asset})...`)
@@ -266,8 +322,9 @@ export async function installGitHubReleaseTool(
     await fs.chmod(finalBinPath, 0o755)
   } finally {
     await safeDelete(extractDir).catch(e => {
-      const msg = e instanceof Error ? e.message : String(e)
-      logger.warn(`cleanup of extract dir failed (${extractDir}): ${msg}`)
+      logger.warn(
+        `cleanup of extract dir failed (${extractDir}): ${errorMessage(e)}`,
+      )
     })
   }
 
@@ -296,8 +353,9 @@ export async function installGitHubReleaseToolWithTag(
     return true
   }
 
-  const platformKey = `${process.platform === 'win32' ? 'win' : process.platform}-${process.arch}`
-  const platformEntry = tool.platforms?.[platformKey]
+  const { entry: platformEntry, platformKey } = resolvePlatformEntry(
+    tool.platforms,
+  )
   if (!platformEntry) {
     logger.warn(`${displayName}: unsupported platform ${platformKey}`)
     return false
@@ -365,13 +423,24 @@ export async function installGitHubReleaseToolWithTag(
     await fs.chmod(finalBinPath, 0o755)
   } finally {
     await safeDelete(extractDir).catch(e => {
-      const msg = e instanceof Error ? e.message : String(e)
-      logger.warn(`cleanup of extract dir failed (${extractDir}): ${msg}`)
+      logger.warn(
+        `cleanup of extract dir failed (${extractDir}): ${errorMessage(e)}`,
+      )
     })
   }
 
   logger.log(`Installed to ${finalBinPath}`)
   return true
+}
+
+export async function setupActionlint(): Promise<boolean> {
+  return installGitHubReleaseTool({
+    name: 'actionlint',
+    displayName: 'actionlint',
+    tool: ACTIONLINT,
+    binaryNameInArchive: 'actionlint',
+    finalBinaryName: 'actionlint',
+  })
 }
 
 export async function setupAgentShield(): Promise<boolean> {
@@ -389,8 +458,8 @@ export async function setupAgentShield(): Promise<boolean> {
   const packageSpec = version ? `${npmPackage}@${version}` : npmPackage
 
   logger.log(`Installing ${packageSpec} via dlx…`)
-  const { binaryPath, installed } = await downloadPackage({
-    package: packageSpec,
+  const { binaryPath, installed } = await downloadNpmPackage({
+    spec: packageSpec,
     binaryName: 'agentshield',
   })
 
@@ -462,8 +531,10 @@ export async function setupJanus(): Promise<boolean> {
   // workflows opt into. Install lands in the shared
   // ~/.socket/_wheelhouse/janus/<version>/ dir so every fleet member's
   // hook reuses the same binary.
-  const platformKey = `${process.platform === 'win32' ? 'win' : process.platform}-${process.arch}`
-  if (!JANUS.platforms?.[platformKey]) {
+  const { entry: janusEntry, platformKey } = resolvePlatformEntry(
+    JANUS.platforms,
+  )
+  if (!janusEntry) {
     logger.log('=== janus ===')
     logger.log(`Skipped: no janus build for ${platformKey} (mac-arm64 only)`)
     return true
@@ -502,16 +573,19 @@ interface NpmToolInstallOptions {
 
 /**
  * Install an npm-only tool via dlx. Mirrors the upper half of
- * `setupAgentShield()` — purl → package spec → `downloadPackage`. No
+ * `setupAgentShield()` — purl → package spec → `downloadNpmPackage`. No
  * version-mismatch verification: the dlx layer SRI-verifies the tarball against
  * the `integrity` from external-tools.json, which is the authoritative answer
  * (binary --version self-reports can drift from package.json — see the
  * AgentShield comment for the documented case).
  */
 export async function setupNpmTool(
-  opts: NpmToolInstallOptions,
+  options: NpmToolInstallOptions,
 ): Promise<boolean> {
-  const { displayName, name, tool } = opts
+  const { displayName, name, tool } = {
+    __proto__: null,
+    ...options,
+  } as typeof options
   logger.log(`=== ${displayName} ===`)
   if (!tool.purl) {
     logger.warn(`${displayName}: missing purl in external-tools.json`)
@@ -529,8 +603,8 @@ export async function setupNpmTool(
   const version = tool.version ?? purl.version
   const packageSpec = version ? `${npmPackage}@${version}` : npmPackage
   logger.log(`Installing ${packageSpec} via dlx…`)
-  const { binaryPath, installed } = await downloadPackage({
-    package: packageSpec,
+  const { binaryPath, installed } = await downloadNpmPackage({
+    spec: packageSpec,
     binaryName: name,
   })
   logger.log(
@@ -565,8 +639,9 @@ export async function setupSfw(apiToken: string | undefined): Promise<boolean> {
   )
 
   // Platform.
-  const platformKey = `${process.platform === 'win32' ? 'win' : process.platform}-${process.arch}`
-  const platformEntry = sfwConfig.platforms?.[platformKey]
+  const { entry: platformEntry, platformKey } = resolvePlatformEntry(
+    sfwConfig.platforms,
+  )
   if (!platformEntry) {
     throw new Error(`Unsupported platform: ${platformKey}`)
   }
@@ -574,7 +649,7 @@ export async function setupSfw(apiToken: string | undefined): Promise<boolean> {
   // Integrity + asset.
   const { asset, integrity } = platformEntry
   const repo = sfwConfig.repository?.replace(/^[^:]+:/, '') ?? ''
-  const url = `https://github.com/${repo}/releases/download/${sfwConfig.version}/${asset}`
+  const url = `https://github.com/${repo}/releases/download/${releaseTag(sfwConfig.version)}/${asset}`
   const binaryName = isEnterprise ? 'sfw' : 'sfw-free'
 
   // Download (with cache + integrity check).
@@ -726,8 +801,7 @@ export async function setupUv(): Promise<boolean> {
   // tarball also wraps the binary one level deep: e.g.
   // `uv-x86_64-apple-darwin/uv`. Pin the tag literally and tell the
   // helper which subdirectory holds the binary.
-  const platformKey = `${process.platform === 'win32' ? 'win' : process.platform}-${process.arch}`
-  const platformEntry = UV.platforms?.[platformKey]
+  const { entry: platformEntry } = resolvePlatformEntry(UV.platforms)
   const pathInArchive = platformEntry?.asset.replace(/\.(tar\.gz|zip)$/, '')
   return installGitHubReleaseToolWithTag({
     name: 'uv',
@@ -747,23 +821,24 @@ export async function setupZizmor(): Promise<boolean> {
   const systemBin = whichSync('zizmor', { nothrow: true })
   if (systemBin && typeof systemBin === 'string') {
     if (await checkZizmorVersion(systemBin)) {
-      logger.log(`Found on PATH: ${systemBin} (v${ZIZMOR.version})`)
+      logger.log(`Found on PATH: ${systemBin} (${releaseTag(ZIZMOR.version)})`)
       return true
     }
-    logger.log(`Found on PATH but wrong version (need v${ZIZMOR.version})`)
+    logger.log(`Found on PATH but wrong version (need ${releaseTag(ZIZMOR.version)})`)
   }
 
   // Download archive via dlx (handles caching + checksum).
-  const platformKey = `${process.platform === 'win32' ? 'win' : process.platform}-${process.arch}`
-  const platformEntry = ZIZMOR.platforms?.[platformKey]
+  const { entry: platformEntry, platformKey } = resolvePlatformEntry(
+    ZIZMOR.platforms,
+  )
   if (!platformEntry) {
     throw new Error(`Unsupported platform: ${platformKey}`)
   }
   const { asset, integrity: expectedIntegrity } = platformEntry
   const repo = ZIZMOR.repository?.replace(/^[^:]+:/, '') ?? ''
-  const url = `https://github.com/${repo}/releases/download/v${ZIZMOR.version}/${asset}`
+  const url = `https://github.com/${repo}/releases/download/${releaseTag(ZIZMOR.version)}/${asset}`
 
-  logger.log(`Downloading zizmor v${ZIZMOR.version} (${asset})...`)
+  logger.log(`Downloading zizmor ${releaseTag(ZIZMOR.version)} (${asset})...`)
   const { binaryPath: archivePath, downloaded } = await downloadBinary({
     url,
     name: `zizmor-${ZIZMOR.version}-${asset}`,
@@ -779,7 +854,7 @@ export async function setupZizmor(): Promise<boolean> {
   const ext = process.platform === 'win32' ? '.exe' : ''
   const binPath = path.join(path.dirname(archivePath), `zizmor${ext}`)
   if (existsSync(binPath) && (await checkZizmorVersion(binPath))) {
-    logger.log(`Cached: ${binPath} (v${ZIZMOR.version})`)
+    logger.log(`Cached: ${binPath} (${releaseTag(ZIZMOR.version)})`)
     return true
   }
 
@@ -815,8 +890,9 @@ export async function setupZizmor(): Promise<boolean> {
     // and orphaned tempdirs accumulate on the user's machine. Log
     // and continue.
     await safeDelete(extractDir).catch(e => {
-      const msg = e instanceof Error ? e.message : String(e)
-      logger.warn(`cleanup of extract dir failed (${extractDir}): ${msg}`)
+      logger.warn(
+        `cleanup of extract dir failed (${extractDir}): ${errorMessage(e)}`,
+      )
     })
   }
 
@@ -844,22 +920,26 @@ export async function checkSkillSpectorVersion(
   }
 }
 
-// SkillSpector — pipx-from-git install. Upstream NVIDIA/skillspector has
-// no PyPI release / no GH releases / no tags as of 2026-06-01, so the SHA
-// IS the pin. pipx isolates the install in its own venv — no host Python
-// site-packages pollution.
+// SkillSpector — installed from a LOCKED uv project (no pipx). Upstream
+// NVIDIA/skillspector has no PyPI release / no GH releases / no tags, so a git
+// SHA IS the pin — but a bare `pipx install git+…@sha` re-resolves the whole
+// dependency closure freshly on every machine. Instead we ship a uv project
+// (`skillspector/pyproject.toml` + `skillspector/uv.lock`) that manifests every
+// transitive version; `uv sync --locked` installs that exact closure into the
+// project's own `.venv` and FAILS if the lock drifts from the manifest. The
+// fleet uv pin (0.11.21) + the lock's `exclude-newer` make the install
+// reproducible across machines and across time. The three-way pin (lock ⇔
+// pyproject rev ⇔ external-tools.json version) is enforced by
+// skillspector-pin-is-consistent.mts.
 //
 // Requirements:
-//   - pipx on PATH. If absent, log a clear error pointing at the install
-//     command (`uv tool install pipx` or `python3 -m pip install --user
-//     pipx`). We do not auto-bootstrap pipx because that's a separate
-//     security-relevant decision (touches the user's Python toolchain).
-//   - Python 3.12+ (upstream requirement). pipx will fail with a clear
-//     message if the host's Python is older.
+//   - uv on PATH (the bootstrap installs it). If absent, point at the bootstrap.
+//   - Python 3.12+ (upstream requirement) — uv provisions one if missing.
 export async function setupSkillSpector(): Promise<boolean> {
   logger.log('=== SkillSpector ===')
 
-  // Pinned SHA — see SKILLSPECTOR.version in external-tools.json.
+  // Pinned SHA — see SKILLSPECTOR.version in external-tools.json. Surfaced in
+  // logs + asserted against the lock by skillspector-pin-is-consistent.mts.
   const sha = SKILLSPECTOR.version
   if (!sha) {
     logger.error(
@@ -867,62 +947,68 @@ export async function setupSkillSpector(): Promise<boolean> {
     )
     return false
   }
-  const repo = SKILLSPECTOR.repository?.replace(/^[^:]+:/, '') ?? ''
-  if (!repo) {
+
+  // The locked uv project sits beside this lib dir's parent (the hook root),
+  // next to external-tools.json: setup-security-tools/skillspector/.
+  const projectDir = path.join(__dirname, '..', 'skillspector')
+  const pyproject = path.join(projectDir, 'pyproject.toml')
+  const uvLock = path.join(projectDir, 'uv.lock')
+  if (!existsSync(pyproject) || !existsSync(uvLock)) {
     logger.error(
-      'skillspector entry in external-tools.json is missing `repository`',
+      'SkillSpector uv project is missing its pyproject.toml/uv.lock',
+    )
+    logger.error(`  where: ${projectDir}`)
+    logger.error(
+      '  fix:   restore the project files (run `uv lock` to rebuild)',
     )
     return false
   }
 
-  // Check PATH first — a system install via `pipx install skillspector`
-  // or a venv-pinned install on PATH would already satisfy this.
-  const systemBin = whichSync('skillspector', { nothrow: true })
-  if (systemBin && typeof systemBin === 'string') {
-    if (await checkSkillSpectorVersion(systemBin)) {
-      logger.log(`Found on PATH: ${systemBin}`)
-      return true
-    }
-    logger.log('Found on PATH but --version check failed; reinstalling')
-  }
-
-  // Verify pipx is available before attempting install.
-  const pipxBin = whichSync('pipx', { nothrow: true })
-  if (!pipxBin || typeof pipxBin !== 'string') {
-    logger.error('pipx not on PATH. Install pipx first:')
-    logger.error('  uv tool install pipx                  # if uv present')
-    logger.error('  python3 -m pip install --user pipx    # vanilla path')
-    logger.error('Then re-run this installer.')
+  // Resolve uv (the bootstrap installs it to PATH). No auto-bootstrap here —
+  // uv provisioning is the from-scratch setup's job, not a security-tool step.
+  const uvBin = whichSync('uv', { nothrow: true })
+  if (!uvBin || typeof uvBin !== 'string') {
+    logger.error('uv not on PATH. Run the from-scratch bootstrap first:')
+    logger.error('  pnpm run setup    # installs uv (+ node, pnpm, sfw, …)')
     return false
   }
 
-  const gitUrl = `git+https://github.com/${repo}.git@${sha}`
-  logger.log(`Installing via pipx: ${gitUrl}`)
+  // `uv sync --locked` installs the lock's exact closure into the project venv
+  // and hard-fails on lock drift — the verification-grade, reproducible path.
+  logger.log(`Syncing locked uv project (skillspector@${sha})`)
   try {
-    const result = await spawn(pipxBin, ['install', '--force', gitUrl], {
-      stdio: 'pipe',
-    })
+    const result = await spawn(
+      uvBin,
+      ['sync', '--locked', '--project', projectDir],
+      { stdio: 'pipe' },
+    )
     const stdout = String(result.stdout).trim()
     if (stdout) {
       logger.log(stdout)
     }
   } catch (e) {
-    logger.error(`pipx install failed: ${errorMessage(e)}`)
+    logger.error(`uv sync --locked failed: ${errorMessage(e)}`)
     return false
   }
 
-  // Confirm by re-running --version.
-  const installedBin = whichSync('skillspector', { nothrow: true })
-  if (!installedBin || typeof installedBin !== 'string') {
-    logger.error('pipx install succeeded but `skillspector` is not on PATH.')
-    logger.error('Try `pipx ensurepath` and reopen your shell.')
+  // The entry point lands in the project's venv. POSIX: .venv/bin/skillspector;
+  // Windows: .venv/Scripts/skillspector.exe.
+  const venvBin =
+    process.platform === 'win32'
+      ? path.join(projectDir, '.venv', 'Scripts', 'skillspector.exe')
+      : path.join(projectDir, '.venv', 'bin', 'skillspector')
+  if (!existsSync(venvBin)) {
+    logger.error(
+      'uv sync succeeded but the skillspector entry point is absent.',
+    )
+    logger.error(`  expected: ${venvBin}`)
     return false
   }
-  if (!(await checkSkillSpectorVersion(installedBin))) {
-    logger.error(`Installed but --version check failed: ${installedBin}`)
+  if (!(await checkSkillSpectorVersion(venvBin))) {
+    logger.error(`Installed but --version check failed: ${venvBin}`)
     return false
   }
-  logger.log(`Installed at: ${installedBin}`)
+  logger.log(`Installed at: ${venvBin}`)
   return true
 }
 
@@ -945,7 +1031,9 @@ async function main(): Promise<void> {
   // by socket-cli scan/lockfile codepaths). Install in parallel since
   // they don't share state.
   const [
+    actionlintOk,
     cdxgenOk,
+    headroomOk,
     janusOk,
     opengrepOk,
     skillspectorOk,
@@ -954,7 +1042,9 @@ async function main(): Promise<void> {
     trufflehogOk,
     uvOk,
   ] = await Promise.all([
+    setupActionlint(),
     setupCdxgen(),
+    setupHeadroom(HEADROOM.version!),
     setupJanus(),
     setupOpengrep(),
     setupSkillSpector(),
@@ -966,16 +1056,20 @@ async function main(): Promise<void> {
   logger.log('')
 
   logger.log('=== Summary ===')
+  logger.log(`actionlint:   ${actionlintOk ? 'ready' : 'FAILED'}`)
   logger.log(`AgentShield:  ${agentshieldOk ? 'ready' : 'NOT AVAILABLE'}`)
   logger.log(`cdxgen:       ${cdxgenOk ? 'ready' : 'FAILED'}`)
+  // headroom-ai is opt-in like SkillSpector — installs from a locked uv project
+  // into the _dlx store (needs uv on PATH). OPTIONAL, not part of allOk.
+  logger.log(`headroom-ai:  ${headroomOk ? 'ready' : 'OPTIONAL (uv required)'}`)
   logger.log(`janus:        ${janusOk ? 'ready' : 'FAILED'}`)
   logger.log(`OpenGrep:     ${opengrepOk ? 'ready' : 'FAILED'}`)
   logger.log(`SFW:          ${sfwOk ? 'ready' : 'FAILED'}`)
-  // SkillSpector is opt-in — pipx-dependent. Don't fail the umbrella
-  // run if it isn't installed; surface it as "OPTIONAL" so the
-  // operator knows it's an extra they can enable.
+  // SkillSpector is opt-in — installs from a locked uv project (needs uv on
+  // PATH). Don't fail the umbrella run if it isn't installed; surface it as
+  // "OPTIONAL" so the operator knows it's an extra they can enable.
   logger.log(
-    `SkillSpector: ${skillspectorOk ? 'ready' : 'OPTIONAL (pipx required)'}`,
+    `SkillSpector: ${skillspectorOk ? 'ready' : 'OPTIONAL (uv required)'}`,
   )
   logger.log(`synp:         ${synpOk ? 'ready' : 'FAILED'}`)
   logger.log(`Trivy:        ${trivyOk ? 'ready' : 'FAILED'}`)
@@ -984,6 +1078,7 @@ async function main(): Promise<void> {
   logger.log(`Zizmor:       ${zizmorOk ? 'ready' : 'FAILED'}`)
 
   const allOk =
+    actionlintOk &&
     agentshieldOk &&
     cdxgenOk &&
     janusOk &&

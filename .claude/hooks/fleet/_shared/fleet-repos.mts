@@ -1,41 +1,32 @@
-/**
- * @file Single source of truth for fleet-repo membership, shared by the hooks
- *   that need to know "is this one of ours?":
+/*
+ * @file Fleet-repo membership, shared by the hooks that need to know "is this
+ *   one of ours?":
  *
  *   - `cross-repo-guard` — blocks `../<fleet-repo>/…` sibling-path imports.
- *   - `no-non-fleet-push-guard` — blocks `git push` to a repo not in the fleet (a
- *     non-fleet repo never has the fleet hook chain installed, so the guard has
- *     to live agent-side and know the roster itself). This is the BROAD
- *     membership set, intentionally wider than the cascade roster in
- *     `cascading-fleet/lib/fleet-repos.json` (which lists only template-cascade
- *     targets and omits e.g. `ultrathink`). Membership here answers "may fleet
- *     tooling act on this repo at all", not "does the wheelhouse cascade into
- *     it". Keep the two distinct: a repo can be a fleet member (pushable,
- *     importable) without being a cascade target.
+ *   - `no-non-fleet-push-guard` — blocks `git push` to a repo not in the fleet
+ *     (a non-fleet repo never has the fleet hook chain installed, so the guard
+ *     lives agent-side and must know the roster itself).
+ *
+ *   Membership DERIVES from the canonical roster
+ *   (`cascading-fleet/lib/fleet-repos.json`) — the single source of truth for
+ *   the fleet. Do NOT hand-maintain a second list here: add/remove repos in that
+ *   JSON. The consumers (cross-repo-guard, no-non-fleet-push-guard, …) run as
+ *   per-hook `.mts` — NOT in the dispatch bundle — so Node resolves this JSON
+ *   import at load. (Were a consumer ever bundled, rolldown would inline the JSON
+ *   so bundle code still never reads the file at runtime.) See
+ *   docs/agents.md/fleet/single-source-of-truth.md. A repo that should be a fleet
+ *   member WITHOUT being a cascade target is expressed as a field in that JSON,
+ *   never as a divergent array here.
  */
 
-// All under the SocketDev org. Names match the GitHub repo slug
-// (`github.com:SocketDev/<name>`). Sorted; add new fleet repos here and
-// both consuming guards pick them up.
-export const FLEET_REPO_NAMES = [
-  'claude-code',
-  'skills',
-  'socket-addon',
-  'socket-bin',
-  'socket-btm',
-  'socket-cli',
-  'socket-lib',
-  'socket-mcp',
-  'socket-packageurl-js',
-  'socket-registry',
-  'socket-sdk-js',
-  'socket-sdxgen',
-  'socket-stuie',
-  'socket-vscode',
-  'socket-webext',
-  'socket-wheelhouse',
-  'ultrathink',
-] as const
+import fleetRosterJson from '../../../skills/fleet/cascading-fleet/lib/fleet-repos.json' with { type: 'json' }
+
+// All under the SocketDev org; names match the GitHub repo slug
+// (`github.com:SocketDev/<name>`). Sorted for stable diffs — membership lookups
+// are order-independent (see FLEET_REPO_SET).
+export const FLEET_REPO_NAMES: readonly string[] = fleetRosterJson.repos
+  .map(repo => repo.name)
+  .toSorted()
 
 const FLEET_REPO_SET: ReadonlySet<string> = new Set(FLEET_REPO_NAMES)
 
@@ -73,4 +64,25 @@ export function slugFromRemoteUrl(url: string): string | undefined {
     return undefined
   }
   return match[2]!.toLowerCase()
+}
+
+/**
+ * Like {@link slugFromRemoteUrl}, but returns the case-preserved `owner/repo`
+ * (e.g. `PerryTS/perry`), or `undefined` when the URL isn't a recognizable
+ * GitHub remote. Owner is KEPT (unlike the membership slug, which drops it) so
+ * a scoped bypass can be matched against the exact `owner/repo` the user sees.
+ */
+export function ownerRepoFromRemoteUrl(url: string): string | undefined {
+  const trimmed = url.trim()
+  if (!trimmed) {
+    return undefined
+  }
+  // Same URL pattern as slugFromRemoteUrl: match the owner and repo segments
+  // separated by `/` after a `:` or `/` host delimiter, with an optional
+  // `.git` suffix consumed at the end. Both captures are returned joined.
+  const match = /[:/]([^/:]+)\/([^/]+?)(?:\.git)?\/?$/.exec(trimmed)
+  if (!match) {
+    return undefined
+  }
+  return `${match[1]!}/${match[2]!}`
 }

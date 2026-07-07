@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * @file Commit-time gate mirroring two edit-time hooks for the non-Claude edit
  *   path (manual `git checkout`, external editor, a merge):
  *
@@ -28,6 +28,7 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import {
   detectAuthEnvPlaceholderInNpmrc,
@@ -71,7 +72,24 @@ function trackedFiles(): string[] {
     stdio: 'pipe',
   })
   if (result.status !== 0) {
-    return []
+    // Fail LOUD. A non-zero `git ls-files` means git ITSELF errored — not "0
+    // matches" (that is exit 0 with empty stdout). Returning [] here would scan
+    // zero files and let `main()` report green: a vacuous pass that hides a
+    // committed trust-gate opt-out. A check that could not read its inputs must
+    // never report success.
+    const stderr =
+      typeof result.stderr === 'string'
+        ? result.stderr
+        : String(result.stderr ?? '')
+    logger.fail(
+      '[trust-gates-are-not-weakened] could not enumerate tracked files; the ' +
+        'opt-out scan did not run.\n' +
+        `  Where: ${process.cwd()}\n` +
+        `  Saw: git ls-files exited ${String(result.status)}${stderr ? ` — ${stderr.trim()}` : ''}\n` +
+        '  Fix: run the check inside a git work tree (a scan that reads zero ' +
+        'files must not report green).',
+    )
+    process.exit(1)
   }
   const out =
     typeof result.stdout === 'string' ? result.stdout : String(result.stdout)
@@ -94,7 +112,7 @@ const SELF_EXEMPT_PATH_RE =
 // the detector source itself names them — both would self-flag this gate. Skip
 // them, same exemption env-kill-switches-are-absent applies to its own.
 function isTestFile(relPath: string): boolean {
-  const p = relPath.replace(/\\/g, '/')
+  const p = normalizePath(relPath)
   const base = p.split('/').pop() ?? ''
   return (
     base.endsWith('.test.mts') ||

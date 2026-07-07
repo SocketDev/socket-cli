@@ -2,7 +2,7 @@
 name: driving-cursor-bugbot
 description: Drives the Cursor Bugbot review-and-fix loop on a PR. Inventories open Bugbot threads, classifies each (real bug / false positive / already fixed), fixes the real ones, replies on the inline thread (never as a detached PR comment), updates the PR title/body if scope shifted, and pushes. Use when reviewing a PR you just authored, after `gh pr create`, or after a new Bugbot pass on an existing PR.
 user-invocable: true
-allowed-tools: Read, Edit, Write, Grep, Glob, AskUserQuestion, Bash(gh:*), Bash(git:*), Bash(pnpm run:*), Bash(rg:*), Bash(grep:*)
+allowed-tools: Read, Edit, Write, Grep, Glob, AskUserQuestion, Bash(node:*), Bash(gh:*), Bash(git:*), Bash(pnpm run:*), Bash(rg:*), Bash(grep:*)
 model: claude-sonnet-4-6
 context: fork
 ---
@@ -20,7 +20,26 @@ Cursor Bugbot's review surface is easy to mis-handle:
 - **Stale findings vs. live bugs vs. false positives** all read the same on the API surface. Triaging needs a process, not vibes.
 - **Scope creep on PRs**. CLAUDE.md mandates "When adding commits to an OPEN PR, update the PR title and description to match the new scope." Easy to forget when you're heads-down fixing Bugbot findings.
 
-This skill makes all of the above mechanical.
+This skill makes all of the above mechanical. The gh/GraphQL plumbing (inventory, threaded reply, conditional `resolveReviewThread`, the `already-fixed` git-log scan) lives in [`lib/bugbot.mts`](lib/bugbot.mts); the skill keeps only the AI judgment (classify each finding) and the human-stop inline.
+
+## Script
+
+```bash
+# List Bugbot findings as JSON ({ id, path, line, body, commitId }).
+node .claude/skills/fleet/driving-cursor-bugbot/lib/bugbot.mts inventory <PR#>
+
+# Candidate "already fixed" findings: each finding + later commits touching its file.
+node .claude/skills/fleet/driving-cursor-bugbot/lib/bugbot.mts already-fixed <PR#>
+
+# Threaded reply on one inline comment; auto-resolves on fixed/already-fixed/false-positive,
+# leaves wont-fix open. State ∈ {fixed, already-fixed, false-positive, wont-fix}.
+node .claude/skills/fleet/driving-cursor-bugbot/lib/bugbot.mts reply <comment-id> <state> "<body>"
+
+# Sweep a PR's Bugbot threads and resolve every one that already has an author reply.
+node .claude/skills/fleet/driving-cursor-bugbot/lib/bugbot.mts resolve <PR#>
+```
+
+The script resolves owner/repo from `gh repo view`, so it works in any fleet checkout. `gh` is the only auth surface (keychain token, never in argv). Use it for the plumbing; do the classification (real / already-fixed / false-positive / wont-fix) and write each reply body yourself.
 
 ## Modes
 

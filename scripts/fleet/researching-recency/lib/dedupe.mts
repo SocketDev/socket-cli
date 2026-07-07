@@ -4,9 +4,8 @@
  *   text is highly similar (character-trigram OR token Jaccard above a
  *   threshold), keeping the earlier — already better-ranked — item. Runs after
  *   `annotateStream` sorts a stream, before fusion.
- *
- * Lock-step with: last30days `dedupe.py` (similarity math + 0.7 default
- * threshold; keep identical so dedup behavior matches the reference).
+ *   Lock-step with: last30days `dedupe.py` (similarity math + 0.7 default
+ *   threshold; keep identical so dedup behavior matches the reference).
  */
 
 import type { SourceItem } from './types.mts'
@@ -14,8 +13,28 @@ import type { SourceItem } from './types.mts'
 // Common English words dropped before token-Jaccard so shared filler doesn't
 // inflate similarity. Matches the upstream dedupe stopword set.
 const STOPWORDS: ReadonlySet<string> = new Set([
-  'a', 'an', 'and', 'are', 'at', 'by', 'can', 'do', 'for', 'from', 'how',
-  'in', 'is', 'it', 'of', 'on', 'that', 'the', 'this', 'to', 'what', 'with',
+  'a',
+  'an',
+  'and',
+  'are',
+  'at',
+  'by',
+  'can',
+  'do',
+  'for',
+  'from',
+  'how',
+  'in',
+  'is',
+  'it',
+  'of',
+  'on',
+  'that',
+  'the',
+  'this',
+  'to',
+  'what',
+  'with',
 ])
 
 // Lowercase, replace non-word/non-space chars with spaces, squeeze whitespace.
@@ -135,7 +154,11 @@ export function dedupeItems(
     }
     const prepared = prepareText(text)
     let isDuplicate = false
-    for (let j = 0, { length: keptLength } = keptPrepared; j < keptLength; j += 1) {
+    for (
+      let j = 0, { length: keptLength } = keptPrepared;
+      j < keptLength;
+      j += 1
+    ) {
       if (preparedSimilarity(prepared, keptPrepared[j]!) >= threshold) {
         isDuplicate = true
         break

@@ -177,7 +177,9 @@ export function validatePlan(raw: unknown, rawTopic: string): QueryPlan {
 
   const validatedSubqueries: SubQuery[] = []
   for (let i = 0, { length } = subqueries; i < length; i += 1) {
-    validatedSubqueries.push(validateSubQuery(subqueries[i], `subqueries[${i}]`))
+    validatedSubqueries.push(
+      validateSubQuery(subqueries[i], `subqueries[${i}]`),
+    )
   }
 
   const labels = validatedSubqueries.map(subquery => subquery.label)

@@ -37,9 +37,10 @@ the fleet's segmented `.claude/skills/{fleet,repo}/<name>/` is invisible to them
 `.agents/skills/<tier>-<name>/` (e.g. `fleet-codifying-disciplines`) with the
 frontmatter `name:` rewritten to match the dir. OpenCode validates name === dir,
 so the mirror is a generated COPY rather than a symlink. Claude keeps reading
-`.claude/skills/`; Codex + OpenCode read the mirror. The
-`agents-skills-mirror-is-current` check fails `check --all` on drift, since the
-mirror is generated and never hand-edited.
+`.claude/skills/`; Codex + OpenCode read the mirror. The mirror is generated and
+git-untracked: the cascade regenerates it (`sync-scaffolding/fix-agents-mirror.mts`)
+and the `agents-skills-mirror-nudge` hook flags a hand-edited skill source, so
+no `check --all` gate verifies it.
 
 **Tool-restriction caveat:** Claude's per-skill `allowed-tools` does not port.
 Codex/OpenCode gate tools at the agent/config level, not per-skill, so a mirrored
@@ -50,7 +51,7 @@ is the chosen policy; tool-gating is the operator's agent config.
 
 Claude Code maintains an **agent-written** memory store at
 `~/.claude/projects/<cwd-slug>/memory/*.md` (plus a `MEMORY.md` index), discovered
-by the `memory-discovery-reminder` hook and promoted into rules by
+by the `memory-discovery-nudge` hook and promoted into rules by
 `codifying-disciplines` / `codify-rule.mts`. **Codex and OpenCode have no
 self-written memory**: each session starts fresh from the human-authored
 `AGENTS.md`. So the **shared, cross-tool "memory" is the committed AGENTS.md**

@@ -15,14 +15,10 @@ import crypto from 'node:crypto'
 import { createReadStream, readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { fileURLToPath } from 'node:url'
-
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
+import { findUpPackageJson } from '@socketsecurity/lib/packages/find'
 
 const logger = getDefaultLogger()
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
 
 // ---------------------------------------------------------------------------
 // Public types — match the JSON Schema at packages/build-infra/release-assets.schema.json.
@@ -93,9 +89,7 @@ export function getEmbeddedChecksums(): EmbeddedChecksums | undefined {
   if (embeddedChecksums === undefined) {
     try {
       const checksumPath = path.join(
-        __dirname,
-        '..',
-        '..',
+        path.dirname(findUpPackageJson(import.meta)),
         'release-assets.json',
       )
       embeddedChecksums = JSON.parse(
@@ -124,6 +118,8 @@ export function parseChecksums(content: string): Record<string, string> {
     if (!trimmed) {
       continue
     }
+    // Match a SHA-256 checksum line: 64 lowercase hex digits, one or more
+    // whitespace characters, then the filename extending to end of line.
     const match = trimmed.match(/^([a-f0-9]{64})\s+(.+)$/)
     if (match) {
       checksums[match[2]!] = match[1]!
@@ -132,7 +128,7 @@ export function parseChecksums(content: string): Record<string, string> {
   return checksums
 }
 
-interface VerifyOptions {
+export interface VerifyOptions {
   filePath: string
   assetName: string
   tool: string
@@ -168,7 +164,12 @@ interface VerifyOptions {
 export async function verifyReleaseChecksum(
   options: VerifyOptions,
 ): Promise<VerifyResult> {
-  const { assetName, filePath, quiet = false, tool } = options
+  const {
+    assetName,
+    filePath,
+    quiet = false,
+    tool,
+  } = { __proto__: null, ...options } as typeof options
 
   const embedded = getEmbeddedChecksum(tool, assetName)
   if (embedded) {

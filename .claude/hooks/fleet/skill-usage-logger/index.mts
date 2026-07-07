@@ -30,6 +30,7 @@ interface ToolInput {
   readonly transcript_path?: string | undefined
 }
 
+/* c8 ignore start - subprocess-only: reads process.stdin piped from Claude Code */
 async function readStdin(): Promise<string> {
   return new Promise((resolve, reject) => {
     let data = ''
@@ -41,6 +42,7 @@ async function readStdin(): Promise<string> {
     process.stdin.on('error', reject)
   })
 }
+/* c8 ignore stop */
 
 // Resolve the per-project log path. Caller may override via env. The
 // canonical path lives next to Claude Code's per-project state at
@@ -83,6 +85,7 @@ export function buildLine(
   return `${timestamp}\t${safeSkill}\t${safeCwd}\n`
 }
 
+/* c8 ignore start - subprocess-only: calls process.exit() and reads stdin, runs only when spawned by Claude Code */
 async function main(): Promise<void> {
   let raw: string
   try {
@@ -151,7 +154,10 @@ async function main(): Promise<void> {
   process.exit(0)
 }
 
-main().catch(() => {
-  // Last-resort fall-open. Telemetry must never cost the user a tool call.
-  process.exit(0)
-})
+if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+  main().catch(() => {
+    // Last-resort fall-open. Telemetry must never cost the user a tool call.
+    process.exit(0)
+  })
+}
+/* c8 ignore stop */

@@ -1,6 +1,6 @@
 /**
  * @file Shared "is this command a public-facing publish?" check. The
- *   public-surface-reminder (Stop, nudges) and private-name-reminder (PreToolUse,
+ *   public-surface-nudge (Stop, nudges) and private-name-nudge (PreToolUse,
  *   blocks a private name reaching a public surface) both gate on the same set
  *   of outward-facing commands — commit, push, gh pr/issue/release, mutating gh
  *   api. One source keeps the two gates from drifting.

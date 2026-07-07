@@ -19,8 +19,8 @@ export function findPackageJsonIssues(
   PACKAGE_JSON_GITHUB_RE.lastIndex = 0
   let match: RegExpExecArray | null = PACKAGE_JSON_GITHUB_RE.exec(content)
   while (match) {
-    const ownerRepo = match[1]!
-    const ref = match[2]!
+    const ownerRepo = match.groups!.ownerRepo!
+    const ref = match.groups!.ref!
     const shape = validateRefShape(ref)
     if (!shape.ok) {
       issues.push({ ownerRepo, ref, problem: shape.problem })

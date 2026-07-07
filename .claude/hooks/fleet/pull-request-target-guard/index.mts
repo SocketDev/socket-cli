@@ -43,20 +43,18 @@
 // Fails open on parse errors (exit 0 + stderr log).
 
 import path from 'node:path'
-import process from 'node:process'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
-import { withEditGuard } from '../_shared/payload.mts'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const logger = getDefaultLogger()
 
 const BYPASS_PHRASE = 'Allow pr-target-execution bypass'
 
 // Workflow-file shape.
 export function isWorkflowPath(filePath: string): boolean {
-  return /\/\.github\/workflows\/[^/]+\.ya?ml$/.test(filePath)
+  const normalized = normalizePath(filePath)
+  return /\/\.github\/workflows\/[^/]+\.ya?ml$/.test(normalized)
 }
 
 // 1. `on:` block declares `pull_request_target`. Match in three
@@ -98,6 +96,7 @@ const EXECUTE_PATTERNS: ReadonlyArray<{
   // default. --ignore-scripts neutralizes the install-script vector
   // but a build step on the next line can still execute fork code.
   {
+    // Matches "bun/npm/pnpm/yarn add|ci|i|install" — package install commands that run lifecycle scripts.
     re: /\b(?:bun|npm|pnpm|yarn)\s+(?:add|ci|i|install)\b/,
     cmd: 'package-manager install',
     safeIf: /--ignore-scripts\b/,
@@ -105,11 +104,13 @@ const EXECUTE_PATTERNS: ReadonlyArray<{
   // Node build steps (no install-script bypass; the build itself
   // runs fork-controlled code).
   {
+    // Matches "bun/npm/pnpm/yarn [run] build" — build commands that execute fork-controlled code.
     re: /\b(?:bun|npm|pnpm|yarn)\s+(?:run\s+)?build\b/,
     cmd: 'node build',
   },
   // Generic `npm test` / `pnpm test` etc.
   {
+    // Matches "bun/npm/pnpm/yarn [run] test" — test commands that execute fork-controlled code.
     re: /\b(?:bun|npm|pnpm|yarn)\s+(?:run\s+)?test\b/,
     cmd: 'node test',
   },
@@ -192,8 +193,8 @@ export function findUnsafeForkExecution(content: string): Finding[] {
     // count it as an execute. Multi-line `run: |` blocks with the
     // pattern on a later line also hit because we're scanning every
     // line.
-    const runHit = /^\s*-?\s*run\s*:\s*(.*)/.exec(line)
-    const bodyLine = runHit ? runHit[1]! : line
+    const runHit = /^\s*-?\s*run\s*:\s*(?<body>.*)/.exec(line)
+    const bodyLine = runHit ? runHit.groups!.body! : line
     for (let i = 0, { length } = EXECUTE_PATTERNS; i < length; i += 1) {
       const ep = EXECUTE_PATTERNS[i]!
       if (!ep.re.test(bodyLine)) {
@@ -217,22 +218,20 @@ export function findUnsafeForkExecution(content: string): Finding[] {
   return findings
 }
 
-// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
-// content extraction (new_string / content), and fail-open on any throw.
-await withEditGuard((filePath, content, payload) => {
+export const check = editGuard((filePath, content, payload) => {
   if (!isWorkflowPath(filePath)) {
-    return
+    return undefined
   }
   const text = content ?? ''
   if (!text) {
-    return
+    return undefined
   }
   const findings = findUnsafeForkExecution(text)
   if (findings.length === 0) {
-    return
+    return undefined
   }
   if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    return
+    return undefined
   }
   const lines: string[] = []
   lines.push(
@@ -286,6 +285,14 @@ await withEditGuard((filePath, content, payload) => {
   lines.push(
     `  Bypass (rare; requires a deliberate review trade-off): type "${BYPASS_PHRASE}".`,
   )
-  logger.error(lines.join('\n') + '\n')
-  process.exitCode = 2
+  return block(lines.join('\n') + '\n')
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

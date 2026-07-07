@@ -34,6 +34,8 @@ import { defineConfig } from 'oxlint'
 
 import base from './oxlintrc.json' with { type: 'json' }
 
+import { GENERATED_GLOBS } from '../../scripts/fleet/constants/generated-globs.mts'
+
 export interface OxlintConfigOptions {
   /**
    * Extra `jsPlugins` entries (repo-local oxlint plugins). Relative paths are
@@ -86,6 +88,9 @@ export function config(options?: OxlintConfigOptions): Record<string, unknown> {
     ],
     ignorePatterns: [
       ...((baseIgnorePatterns as string[] | undefined) ?? []),
+      // Generated/vendored trees — shared with test + format from one source
+      // so the ignore surfaces can't drift. See constants/generated-globs.mts.
+      ...GENERATED_GLOBS,
       ...(opts.ignorePatterns ?? []),
     ],
     overrides: [

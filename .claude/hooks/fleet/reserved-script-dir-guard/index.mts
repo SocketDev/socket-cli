@@ -25,16 +25,10 @@
 //
 // Exit codes: 0 — pass; 2 — block. Fails open on any throw.
 
-import process from 'node:process'
-
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
-import { withEditGuard } from '../_shared/payload.mts'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const logger = getDefaultLogger()
 
 const BYPASS_PHRASE = 'Allow reserved-script-dir bypass'
 
@@ -60,37 +54,41 @@ export function reservedScriptDir(filePath: string): string | undefined {
   return m?.groups?.['entry']
 }
 
-// Async IIFE rather than top-level await: directly-run `.mts` hooks aren't
-// CJS-bundled, but the fleet `no-top-level-await` rule is on for this path, and
-// weakening it globally is the wrong fix (no-disable-lint-rule).
-void (async () => {
-  await withEditGuard((filePath, _content, payload) => {
-    const entry = reservedScriptDir(filePath)
-    if (!entry) {
-      return
-    }
-    if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-      return
-    }
-    const suggestion = entry === 'build' ? 'bundle' : '<what-it-does>'
-    logger.error(
-      [
-        '[reserved-script-dir-guard] Blocked: reserved `scripts/` dir name.',
-        '',
-        `  Path: scripts/${entry}/…`,
-        '',
-        `  \`scripts/${entry}/\` overloads a build/output/tooling concept.`,
-        '  scripts/ has two canonical tiers — `scripts/fleet/` (wheelhouse) and',
-        '  `scripts/repo/` (repo-owned) — plus feature dirs named for what they',
-        '  do. Pick a descriptive name instead:',
-        '',
-        `    scripts/${suggestion}/  not  scripts/${entry}/`,
-        '',
-        `  Reserved (blocked): ${RESERVED_DIRS.join(', ')}.`,
-        `  Bypass: type \`${BYPASS_PHRASE}\` if this is genuinely intended.`,
-        '',
-      ].join('\n'),
-    )
-    process.exitCode = 2
-  })
-})()
+export const check = editGuard((filePath, _content, payload) => {
+  const entry = reservedScriptDir(filePath)
+  if (!entry) {
+    return undefined
+  }
+  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
+    return undefined
+  }
+  const suggestion = entry === 'build' ? 'bundle' : '<what-it-does>'
+  return block(
+    [
+      '[reserved-script-dir-guard] Blocked: reserved `scripts/` dir name.',
+      '',
+      `  Path: scripts/${entry}/…`,
+      '',
+      `  \`scripts/${entry}/\` overloads a build/output/tooling concept.`,
+      '  scripts/ has two canonical tiers — `scripts/fleet/` (wheelhouse) and',
+      '  `scripts/repo/` (repo-owned) — plus feature dirs named for what they',
+      '  do. Pick a descriptive name instead:',
+      '',
+      `    scripts/${suggestion}/  not  scripts/${entry}/`,
+      '',
+      `  Reserved (blocked): ${RESERVED_DIRS.join(', ')}.`,
+      `  Bypass: type \`${BYPASS_PHRASE}\` if this is genuinely intended.`,
+      '',
+    ].join('\n'),
+  )
+})
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  scope: 'convention',
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

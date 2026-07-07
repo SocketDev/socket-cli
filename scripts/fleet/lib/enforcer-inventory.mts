@@ -46,7 +46,7 @@ export function collectHookEnforcers(repoRoot: string): Set<string> {
 }
 
 export interface LintRuleInventory {
-  // socket/<rule> names — the rule directories under .config/oxlint-plugin/fleet/.
+  // socket/<rule> names — the rule directories under .config/fleet/oxlint-plugin/fleet/.
   // Empty in a repo that doesn't ship the plugin (the gate's socket arm then
   // fails open).
   readonly socketRules: Set<string>
@@ -60,7 +60,7 @@ export function collectLintRules(repoRoot: string): LintRuleInventory {
   // CLAUDE.md "Lint rules"), so a rule name is the DIRECTORY name — not a `.mts`
   // file stem. (`socket/<id>` is the citation form; the `socket/` prefix is
   // implicit.)
-  const rulesDir = path.join(repoRoot, '.config/oxlint-plugin/fleet')
+  const rulesDir = path.join(repoRoot, '.config/fleet/oxlint-plugin/fleet')
   try {
     for (const entry of readdirSync(rulesDir, { withFileTypes: true })) {
       if (entry.isDirectory() && !entry.name.startsWith('.')) {

@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://socket.dev/schemas/fleet-docker-prebakes.json",
+  "title": "Fleet Docker prebakes",
+  "description": "Declarative, LAYERED set of Depot-built prebaked base images the fleet maintains. Bases are named by TOOLCHAIN (gcc -> c-base, cargo -> rust-base, ...), NEVER by output: ELF / Mach-O / PE / wasm are build outputs, not bases. Each layer adds exactly one toolchain family on top of a parent (`from`), and a builder FROMs the thinnest base that has what it needs. Drives the prebake build (build each layer + push to the org registry) and the downstream `FROM` references. Reviewed as data, not scattered across workflows.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["registry", "prebakes"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "description": { "type": "string" },
+    "registry": {
+      "type": "string",
+      "description": "Depot org registry images are pushed to / pulled from. Runners are pre-authed (org config).",
+      "examples": ["3ns040vbql.registry.depot.dev"]
+    },
+    "prebakes": {
+      "type": "array",
+      "description": "Each prebaked base image, ordered bottom-up (a `from` always points at an earlier entry or an external image).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "status", "from", "installs", "purpose"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Image name (registry path is `<registry>/<name>`). Toolchain-named, not output-named.",
+            "pattern": "^[a-z0-9][a-z0-9._/-]*$"
+          },
+          "status": {
+            "type": "string",
+            "description": "`active` = built + pushed today; `planned` = designed, not yet built.",
+            "enum": ["active", "planned"]
+          },
+          "from": {
+            "type": "string",
+            "description": "Parent image this layer builds on: another prebake `name`, or an external base (e.g. `ubuntu:24.04`)."
+          },
+          "vendorSource": {
+            "type": "string",
+            "description": "When this layer is built from a VENDORED upstream recipe (untracked-by-default) instead of FROM-ing a third-party published image — supply-chain policy: we build + size-optimize our own. Names the upstream (e.g. `platformatic/node-caged`, `emscripten/emsdk`) and the vendored path."
+          },
+          "dockerfile": {
+            "type": "string",
+            "description": "Wheelhouse-relative path to the Dockerfile that builds this layer. Built centrally (wheelhouse-owned infra), not cascaded to members.",
+            "pattern": "^docker/fleet-bases/[a-z0-9-]+\\.Dockerfile$"
+          },
+          "installs": {
+            "type": "array",
+            "description": "Toolchains/packages THIS layer adds on top of `from` (not the inherited set). Empty array = a pure cache-isolation layer.",
+            "items": { "type": "string" }
+          },
+          "libc": {
+            "type": "array",
+            "description": "libc variants built (`glibc`, `musl`). musl is for the static SEA pipeline; most language bases are glibc-only.",
+            "items": { "type": "string", "enum": ["glibc", "musl"] }
+          },
+          "platforms": {
+            "type": "array",
+            "description": "Target platforms (Docker `os/arch`). macOS/native builds use Depot macOS runners + a setup-action toolchain, NOT an image.",
+            "items": {
+              "type": "string",
+              "examples": ["linux/amd64", "linux/arm64"]
+            }
+          },
+          "tagFrom": {
+            "type": "string",
+            "description": "Source of the content hash that decides when to rebuild this layer (a pin set / apt manifest / workflow output)."
+          },
+          "project": {
+            "type": "string",
+            "description": "Depot build-cache project id, if this layer is built under a specific project. Shared bases may be unset (project TBD)."
+          },
+          "consumers": {
+            "type": "array",
+            "description": "Repos / builders that FROM this base, in `repo:builder` form (or a repo name for whole-repo CI).",
+            "items": { "type": "string" }
+          },
+          "purpose": {
+            "type": "string",
+            "description": "Why this layer exists and what lands on it.",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

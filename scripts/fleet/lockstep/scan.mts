@@ -7,7 +7,7 @@
  *   so one bad pattern doesn't sink an otherwise-clean lockstep run.
  */
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors'

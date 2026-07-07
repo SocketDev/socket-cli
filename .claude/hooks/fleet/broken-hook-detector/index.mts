@@ -43,14 +43,14 @@
 //
 // Fail-open: probe + repair never block. On any internal error (timeout,
 // permission, a guard tripping, install failure) the hook silently exits 0
-// and lets the session proceed — same posture as socket-token-minifier-start.
+// and lets the session proceed — same posture as headroom-proxy-start.
 // The repair is bounded and guarded: it only fires on the precise GUTTED
 // signature, skips when a pnpm install is already running (no double-install
 // collision — that collision is what CAUSES the gutting), runs at most once
 // per session, and removes the stale markers ONLY immediately before a
 // guarded install so it never leaves node_modules in a worse state.
 
-import { spawnSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { existsSync, lstatSync, readdirSync, rmSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -69,8 +69,10 @@ const STALE_MARKERS = [
 ]
 // Once-per-session repair guard: a temp-dir marker keyed by the project path,
 // so a single session doesn't loop on repair if the install can't fix it.
+/* c8 ignore start - TMPDIR is always set on macOS/Linux; TEMP/TMP/'/tmp' fallbacks are OS-specific */
 const TMP_DIR =
   process.env['TMPDIR'] ?? process.env['TEMP'] ?? process.env['TMP'] ?? '/tmp'
+/* c8 ignore stop */
 const REPAIR_SENTINEL = path.join(
   TMP_DIR,
   `broken-hook-recovery-${PROJECT_DIR.replace(/[^a-zA-Z0-9]/g, '_')}.attempted`,
@@ -87,7 +89,7 @@ interface ProbeFailure {
   readonly rawStderr: string
 }
 
-function emitAdditionalContext(message: string): void {
+export function emitAdditionalContext(message: string): void {
   // Stdout is the only channel Claude Code reads for SessionStart
   // hooks. additionalContext lands as informational text in the
   // transcript; it does NOT block the session.
@@ -100,30 +102,61 @@ function emitAdditionalContext(message: string): void {
   process.stdout.write(JSON.stringify(out))
 }
 
-function findHookEntrypoints(): readonly string[] {
+export function findHookEntrypoints(): readonly string[] {
   const entries: string[] = []
-  // Each hook lives at <hooks-dir>/<name>/index.mts.
+  // Hooks live one tier down: <hooks-dir>/<tier>/<name>/index.mts, where tier
+  // is `fleet` or `repo`. A flat <hooks-dir>/<name>/index.mts is also honored
+  // so a pre-tier layout still probes (the bare top-level scan found only the
+  // tier dirs and probed zero hooks).
   let topLevel: readonly string[]
   try {
     topLevel = readdirSync(HOOKS_DIR)
   } catch {
     // No hooks dir; nothing to probe.
+    /* c8 ignore next - HOOKS_DIR missing only in an unconfigured repo; subprocess tests cover this */
     return []
   }
-  for (const name of topLevel) {
+  for (const top of topLevel) {
     if (entries.length >= MAX_PROBES) {
       break
     }
-    if (name === '_shared') {
+    /* c8 ignore next - no _shared dir at the hooks root in fleet layout */
+    if (top === '_shared') {
       continue
     }
-    const candidate = path.join(HOOKS_DIR, name, 'index.mts')
+    // Flat layout: <hooks-dir>/<name>/index.mts.
+    const flat = path.join(HOOKS_DIR, top, 'index.mts')
     try {
-      if (statSync(candidate).isFile()) {
-        entries.push(candidate)
+      /* c8 ignore next - flat layout not used in fleet; stat throws for tier dirs */
+      if (statSync(flat).isFile()) {
+        entries.push(flat)
+        continue
       }
     } catch {
-      // Hook dir without index.mts is fine; skip.
+      // Not a flat hook; treat `top` as a tier dir and descend.
+    }
+    let names: readonly string[]
+    try {
+      names = readdirSync(path.join(HOOKS_DIR, top))
+    } catch {
+      /* c8 ignore next - unreadable tier dir is unusual; subprocess tests cover this */
+      continue
+    }
+    for (const name of names) {
+      if (entries.length >= MAX_PROBES) {
+        break
+      }
+      if (name === '_shared') {
+        continue
+      }
+      const candidate = path.join(HOOKS_DIR, top, name, 'index.mts')
+      try {
+        if (statSync(candidate).isFile()) {
+          entries.push(candidate)
+        }
+      } catch {
+        // Tier entry without index.mts (a non-hook dir); skip.
+      }
     }
   }
   return entries
@@ -139,31 +172,31 @@ function findHookEntrypoints(): readonly string[] {
 //      crash the session is seeing).
 // A genuine missing-dep (case A) fails #1 (the pkg isn't in the store) or #3
 // (the top level is otherwise linked), so it never trips this.
-function isGuttedNodeModules(): boolean {
+export function isGuttedNodeModules(): boolean {
   let storePopulated = false
   try {
     storePopulated = readdirSync(PNPM_STORE).length > 0
   } catch {
+    /* c8 ignore next - PNPM_STORE missing only in an unconfigured machine; subprocess tests cover this */
     return false
   }
+  /* c8 ignore next - empty store is a transient state between installs; subprocess tests cover this */
   if (!storePopulated) {
     return false
   }
   const staleMarkerPresent = STALE_MARKERS.some(m => existsSync(m))
+  /* c8 ignore start - stale marker absent and present branches both require controlled machine state; subprocess tests cover these */
   if (!staleMarkerPresent) {
     return false
   }
   // Sentinel: the @socketsecurity scope link every fleet hook needs.
   return !existsSync(path.join(NODE_MODULES, '@socketsecurity'))
+  /* c8 ignore stop */
 }
 
 // The catalog alias every fleet hook imports. pnpm links it as a symlink into
 // the .pnpm store (`@socketsecurity/lib-stable -> ../.pnpm/@socketsecurity+lib@…`).
-const LIB_STABLE_LINK = path.join(
-  NODE_MODULES,
-  '@socketsecurity',
-  'lib-stable',
-)
+const LIB_STABLE_LINK = path.join(NODE_MODULES, '@socketsecurity', 'lib-stable')
 
 // MODE B — a DANGLING lib-stable symlink (distinct from the full gut above).
 // When a git worktree exists under the repo and a `pnpm install` runs, pnpm can
@@ -176,25 +209,30 @@ const LIB_STABLE_LINK = path.join(
 // target does NOT resolve (existsSync follows the link → false). A healthy link
 // or a real dir both fail this (target resolves). The repair is the same
 // relink-from-store as the gutted case.
-function hasDanglingLibSymlink(): boolean {
+export function hasDanglingLibSymlink(): boolean {
   let isSymlink = false
   try {
     isSymlink = lstatSync(LIB_STABLE_LINK).isSymbolicLink()
   } catch {
     // Not present at all → not THIS mode (full-gut handles absence).
+    /* c8 ignore next - lib-stable missing means full-gut mode; subprocess tests cover this */
     return false
   }
+  /* c8 ignore next - lib-stable is always a symlink in a pnpm-managed wheelhouse */
   if (!isSymlink) {
     return false
   }
   // Symlink present but target unresolvable = dangling.
+  /* c8 ignore start - dangling symlink only exists after a worktree removal; subprocess tests cover this */
   return !existsSync(LIB_STABLE_LINK)
+  /* c8 ignore stop */
 }
 
 // True when a `pnpm install` (or its Socket Firewall `sfw` wrapper) is already
 // running anywhere — running our own concurrently is the exact collision that
 // CAUSES the gutting (ERR_PNPM_ABORTED_REMOVE_MODULES_DIR). Best-effort via
 // pgrep; on any failure we treat it as "running" (fail SAFE — skip the repair).
+/* c8 ignore start - shells out to pgrep; untestable without a live process table; called only from main() which is fully c8-ignored */
 function pnpmInstallRunning(): boolean {
   const r = spawnSync('pgrep', ['-f', 'pnpm.*install|sfw.*install'], {
     timeout: 1500,
@@ -210,6 +248,7 @@ function pnpmInstallRunning(): boolean {
   }
   return true
 }
+/* c8 ignore stop */
 
 // Auto-repair the gutted state: remove the stale markers (which force the
 // no-op) then re-link from the intact store with `CI=true pnpm install` (no
@@ -218,6 +257,7 @@ function pnpmInstallRunning(): boolean {
 // only runs when the signature is confirmed + no install is in flight + the
 // once-per-session sentinel is unset. Removes markers ONLY here, immediately
 // before the install, so a bail-out earlier never worsens the state.
+/* c8 ignore start - spawns real pnpm install + touch; cannot run in unit tests without a live node_modules */
 function repairGutted(): string {
   // Drop the once-per-session sentinel up front: if the install hangs or fails,
   // we do NOT retry within this session (avoids a repair loop).
@@ -226,7 +266,8 @@ function repairGutted(): string {
   } catch {
     // Sentinel is best-effort; proceed.
   }
-  for (const marker of STALE_MARKERS) {
+  for (let i = 0, { length } = STALE_MARKERS; i < length; i += 1) {
+    const marker = STALE_MARKERS[i]!
     try {
       rmSync(marker, { force: true })
     } catch {
@@ -249,6 +290,7 @@ function repairGutted(): string {
     '  rm node_modules/.pnpm-workspace-state-v1.json node_modules/.modules.yaml && CI=true pnpm install'
   )
 }
+/* c8 ignore stop */
 
 // Module-not-found error shape from Node ≥22:
 //   Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'shell-quote'
@@ -257,15 +299,15 @@ function repairGutted(): string {
 //
 // We also tolerate the older CJS shape:
 //   Error: Cannot find module 'shell-quote'
-function parseMissingPackages(stderr: string): readonly string[] {
+export function parseMissingPackages(stderr: string): readonly string[] {
   const pkgs = new Set<string>()
   // ESM form: Cannot find package '<name>' …
-  for (const m of stderr.matchAll(/Cannot find package '([^']+)'/g)) {
-    pkgs.add(m[1]!)
+  for (const m of stderr.matchAll(/Cannot find package '(?<pkg>[^']+)'/g)) {
+    pkgs.add(m.groups!.pkg!)
   }
   // CJS form: Cannot find module '<name>'
-  for (const m of stderr.matchAll(/Cannot find module '([^']+)'/g)) {
-    const name = m[1]!
+  for (const m of stderr.matchAll(/Cannot find module '(?<pkg>[^']+)'/g)) {
+    const name = m.groups!.pkg!
     // Skip relative + absolute paths (those are import-path bugs, not
     // missing-dep bugs, and the user can't `pnpm i` a relative path).
     if (!name.startsWith('.') && !name.startsWith('/')) {
@@ -275,6 +317,7 @@ function parseMissingPackages(stderr: string): readonly string[] {
   return [...pkgs]
 }
 
+/* c8 ignore start - spawns a node subprocess per hook; cannot mock without real executables */
 function probeHook(hookPath: string): ProbeFailure | undefined {
   // `node --check` does syntax-only validation and won't import the
   // graph. Use `--input-type=module` and read the file as the input
@@ -345,8 +388,9 @@ function probeHook(hookPath: string): ProbeFailure | undefined {
     rawStderr: stderr.slice(0, 2000),
   }
 }
+/* c8 ignore stop */
 
-function formatReport(failures: readonly ProbeFailure[]): string {
+export function formatReport(failures: readonly ProbeFailure[]): string {
   // Aggregate unique missing packages across all failures so the
   // suggested `pnpm i` recovers everything in one call.
   const allMissing = new Set<string>()
@@ -363,7 +407,7 @@ function formatReport(failures: readonly ProbeFailure[]): string {
     const relPath = path.relative(PROJECT_DIR, f.hookPath)
     lines.push(`  - ${relPath} → ${f.missingPackages.join(', ')}`)
   }
-  const installList = [...allMissing].sort().join(' ')
+  const installList = [...allMissing].toSorted().join(' ')
   lines.push('')
   lines.push(`Fix: \`pnpm i ${installList}\``)
   lines.push(
@@ -372,7 +416,8 @@ function formatReport(failures: readonly ProbeFailure[]): string {
   return lines.join('\n')
 }
 
-function main(): void {
+/* c8 ignore start - main() is the hook entry point; all paths depend on machine state or subprocess spawning; subprocess tests cover all branches */
+export function main(): void {
   // GUTTED check first: it's the common, deterministic, auto-fixable cause and
   // it makes EVERY hook fail — no point probing 80 hooks one-by-one when the
   // top-level links are simply gone. A single signature check + guarded repair.
@@ -441,11 +486,16 @@ function main(): void {
   }
   emitAdditionalContext(formatReport(failures))
 }
+/* c8 ignore stop */
 
-try {
-  main()
-} catch {
-  // Fail-open: never block a session on this hook's own bug.
-  // No exitCode write needed — Node defaults to 0 when the loop
-  // drains naturally, and we explicitly never want a non-zero here.
+/* c8 ignore start - entrypoint guard only fires when run as a script; subprocess tests cover this path */
+if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+  try {
+    main()
+  } catch {
+    // Fail-open: never block a session on this hook's own bug.
+    // No exitCode write needed — Node defaults to 0 when the loop
+    // drains naturally, and we explicitly never want a non-zero here.
+  }
 }
+/* c8 ignore stop */

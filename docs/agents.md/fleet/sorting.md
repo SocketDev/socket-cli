@@ -9,7 +9,7 @@ block, **fully re-sort it**. Don't append the new entry and leave the rest unsor
 
 The one canonical comparator is `naturalCompare` from
 `@socketsecurity/lib/sorts/natural`. Every `socket/sort-*` rule and the
-`alpha-sort-reminder` hook delegate to it, so all surfaces agree.
+`alpha-sort-nudge` hook delegate to it, so all surfaces agree.
 
 1. **Natural numeric order.** `'name-2'` sorts **before** `'name-10'` (the
    embedded number is compared as a number, not character by character).
@@ -67,7 +67,7 @@ These are the exact semantics every `socket/sort-*` lint rule uses.
 
 ## Where to sort: non-code surfaces (hook-reminded, manual)
 
-oxlint only sees JS/TS, so these are caught by the `alpha-sort-reminder` hook on
+oxlint only sees JS/TS, so these are caught by the `alpha-sort-nudge` hook on
 edit and by review, not by a lint rule.
 
 - **JSON / JSONC** (`tsconfig.json`, `package.json`, `.oxlintrc.json`,

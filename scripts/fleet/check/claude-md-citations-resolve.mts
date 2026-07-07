@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * @file Doc-integrity gate: every hook + socket/ rule CITED in CLAUDE.md must
  *   actually exist. CLAUDE.md documents the fleet's guardrails by naming the
  *   enforcing hook (a backticked `.claude/hooks/fleet/<name>/` citation — the
@@ -114,7 +114,7 @@ async function main(): Promise<void> {
   const repoHooks = listDirNames(path.join(REPO_ROOT, '.claude/hooks/repo'))
   // Each rule is a dir under the plugin's fleet/ tier; the dir name is the id.
   const rules = listDirNames(
-    path.join(REPO_ROOT, '.config/oxlint-plugin/fleet'),
+    path.join(REPO_ROOT, '.config/fleet/oxlint-plugin/fleet'),
   )
   // A skill resolves when .claude/skills/fleet/<name>/SKILL.md exists.
   const fleetSkills = new Set(

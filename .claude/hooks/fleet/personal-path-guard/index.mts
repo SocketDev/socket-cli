@@ -26,22 +26,16 @@
 // Fails OPEN on any internal error (exit 0 + stderr log) so a bad hook
 // deploy can't wedge the session.
 
-import process from 'node:process'
-
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { lineIsSuppressed } from '../_shared/markers.mts'
-import { withEditGuard } from '../_shared/payload.mts'
 // Personal-path matcher imported from the gate-free cross-tree shared module —
 // the SAME regexes + filter + rewrite the commit-time scanPersonalPaths uses,
 // so the two surfaces can't drift (was a lock-step inline copy).
 import {
-  PERSONAL_PATH_RE,
   isPurePlaceholder,
+  PERSONAL_PATH_RE,
   suggestPlaceholder,
 } from '../../../../.git-hooks/_shared/personal-path.mts'
-
-const logger = getDefaultLogger()
 
 // Only inspect text files where a hardcoded local path is a real leak.
 // Lockfiles, vendored, and node_modules trees legitimately carry
@@ -103,7 +97,10 @@ export function scanPersonalPaths(content: string): PersonalPathHit[] {
   return hits
 }
 
-export function emitBlock(filePath: string, hits: PersonalPathHit[]): void {
+export function formatBlockMessage(
+  filePath: string,
+  hits: PersonalPathHit[],
+): string {
   const out: string[] = []
   out.push('')
   out.push('[personal-path-guard] Blocked: hardcoded personal path found')
@@ -117,9 +114,7 @@ export function emitBlock(filePath: string, hits: PersonalPathHit[]): void {
   if (hits.length > 3) {
     out.push(`  …and ${hits.length - 3} more.`)
   }
-  out.push(
-    '  Replace with the canonical placeholder for the path platform:',
-  )
+  out.push('  Replace with the canonical placeholder for the path platform:')
   out.push(
     '    /Users/<user>/...  (macOS)   /home/<user>/...  (Linux)   C:\\Users\\<USERNAME>\\...  (Windows)',
   )
@@ -128,23 +123,26 @@ export function emitBlock(filePath: string, hits: PersonalPathHit[]): void {
     '  For a line that must keep the literal form, append `// socket-lint: allow personal-path`.',
   )
   out.push('')
-  logger.error(out.join('\n'))
+  return out.join('\n')
 }
 
-// withEditGuard handles the stdin drain, tool_name gate, file_path
-// narrow, content extraction, and fail-open on any throw.
-await withEditGuard((filePath, content) => {
-  if (!isInScope(filePath)) {
-    return
-  }
-  const source = content ?? ''
-  if (!source) {
-    return
-  }
-  const hits = scanPersonalPaths(source)
-  if (hits.length === 0) {
-    return
-  }
-  emitBlock(filePath, hits)
-  process.exitCode = 2
+export const hook = defineHook({
+  check: editGuard((filePath, content) => {
+    if (!isInScope(filePath)) {
+      return undefined
+    }
+    const source = content ?? ''
+    if (!source) {
+      return undefined
+    }
+    const hits = scanPersonalPaths(source)
+    if (hits.length === 0) {
+      return undefined
+    }
+    return block(formatBlockMessage(filePath, hits))
+  }),
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  type: 'guard',
 })
+void runHook(hook, import.meta.url)

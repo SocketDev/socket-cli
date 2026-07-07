@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * @file Reconcile the local machine's Claude Code plugin state to the
  *   wheelhouse-canonical SHA-pinned set. What the reconciler does:
  *
@@ -27,13 +27,15 @@
  */
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-import { cpSync, existsSync, readFileSync, readdirSync } from 'node:fs'
+import { cpSync, existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+
+import { parsePatchFileName } from './constants/plugin-patch.mts'
 
 const logger = getDefaultLogger()
 
@@ -46,28 +48,11 @@ const logger = getDefaultLogger()
 // to the cache dir ~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/.
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url))
 const PLUGIN_PATCHES_DIR = path.join(SCRIPT_DIR, 'plugin-patches')
-// <plugin>-<version>-<slug>.patch — version is dotted (e.g. 1.0.1); slug is
-// freeform after it. Capture plugin + version to locate the cache dir.
-const PATCH_FILE_NAME = /^([a-z0-9-]+)-(\d+\.\d+\.\d+)-[a-z0-9-]+\.patch$/
-
-/**
- * Parse a plugin-patch filename of the form `<plugin>-<version>-<slug>.patch`
- * into its `{ plugin, version }`. The plugin + version map to the cache dir
- * `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/`. Returns
- * `undefined` for any name that doesn't match the shape (dotted semver version
- * sandwiched between a plugin name and a freeform slug). Greedy `<plugin>` is
- * disambiguated by the `\d+\.\d+\.\d+` version anchor, so a hyphenated plugin
- * name (`socket-foo`) still parses.
- */
-export function parsePatchFileName(
-  fileName: string,
-): { plugin: string; version: string } | undefined {
-  const m = PATCH_FILE_NAME.exec(fileName)
-  if (!m) {
-    return undefined
-  }
-  return { plugin: m[1]!, version: m[2]! }
-}
+// The patch filename grammar + parser live in one shared module so the
+// installer and the edit-time `plugin-patch-format-guard` hook can't drift.
+// Re-exported so this module's existing surface (the unit test imports
+// `parsePatchFileName` from here) keeps working.
+export { parsePatchFileName }
 
 // Canonical marketplace identity. The repo URL is what `claude plugin
 // marketplace add` resolves; the name is what Claude Code records in

@@ -7,9 +7,9 @@ PreToolUse hook that blocks `git commit -m <msg>` invocations whose message does
 A `git log` is the canonical history of a repo. Two failure modes pollute it:
 
 1. **Format drift** — free-form titles ("update stuff", "fix typo", "WIP") make CHANGELOG generation impossible and obscure intent.
-2. **AI attribution** — "Generated with Claude", `Co-Authored-By: Claude`, robot-emoji tag lines, and `<noreply@anthropic.com>` footers leak the authorship model into history.
+2. **AI attribution** — "Generated with Claude", `Co-Authored-By: Claude`, robot-emoji tag lines, `<noreply@anthropic.com>` footers, and the auto-appended `Claude-Session:` trailer leak the authorship model into history.
 
-The fleet bans both. This hook is the commit-time gate; `commit-pr-reminder` is the Stop-time draft check (defense in depth).
+The fleet bans both. This hook is the commit-time gate; `commit-pr-nudge` is the Stop-time draft check (defense in depth).
 
 ## What it catches
 

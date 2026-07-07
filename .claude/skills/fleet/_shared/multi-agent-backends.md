@@ -37,13 +37,13 @@ Document skips inline in whatever output the skill produces (`> Skipped pass: <r
 
 ## Env-var conventions
 
-| Var               | Default       | Purpose                                          |
-| ----------------- | ------------- | ------------------------------------------------ |
-| `CLAUDE_EFFORT`   | `high`        | Claude reasoning effort (claude `--effort`)      |
-| `CLAUDE_MODEL`    | `opus`        | Claude model when claude is the active backend   |
-| `CODEX_MODEL`     | `gpt-5.5`     | Codex model when codex is the active backend     |
-| `CODEX_REASONING` | `xhigh`       | Codex reasoning effort                           |
-| `KIMI_MODEL`      | `kimi-latest` | Kimi model when kimi is the active backend       |
+| Var               | Default           | Purpose                                                              |
+| ----------------- | ----------------- | -------------------------------------------------------------------- |
+| `CLAUDE_EFFORT`   | `high`            | Claude reasoning effort (claude `--effort`)                          |
+| `CLAUDE_MODEL`    | `opus`            | Claude model when claude is the active backend                       |
+| `CODEX_MODEL`     | `gpt-5.5`         | Codex model when codex is the active backend                         |
+| `CODEX_REASONING` | `xhigh`           | Codex reasoning effort                                               |
+| `KIMI_MODEL`      | `kimi-latest`     | Kimi model when kimi is the active backend                           |
 | `OPENCODE_MODEL`  | (opencode config) | `provider/model` slug opencode routes to (Fireworks / Synthetic / …) |
 
 Pair model with effort, never just model: a cheap model left on the session's default effort still burns reasoning tokens, and a premium model on `low` underthinks. Both codex (`CODEX_REASONING`) and claude (`CLAUDE_EFFORT`) carry an effort knob — set both axes when a backend supports it. Kimi has no effort flag, so it inherits its CLI default.
@@ -54,13 +54,13 @@ Don't invent per-skill env var names — reuse these. Skills that need a non-def
 
 Reasoning effort is NOT one flat vocabulary across backends — only map an effort onto a backend that actually accepts that level, or you'll pass an invalid value. The lib's `spawnAiAgent` translates the shared `AiEffort` (`@socketsecurity/lib/ai/types`) per-agent; this table is the source of truth for what each accepts.
 
-| Backend  | Effort flag                        | Accepted levels                       | `max` handling          |
-| -------- | ---------------------------------- | ------------------------------------- | ----------------------- |
-| claude   | `--effort <level>`                 | low / medium / high / xhigh / max     | passes through          |
-| codex    | `-c model_reasoning_effort=<level>`| minimal / low / medium / high / xhigh | clamped to `xhigh`      |
-| gemini   | (none)                             | —                                     | ignored                 |
-| kimi     | (none)                             | —                                     | ignored                 |
-| opencode | (none — provider-internal)         | —                                     | ignored                 |
+| Backend  | Effort flag                         | Accepted levels                       | `max` handling     |
+| -------- | ----------------------------------- | ------------------------------------- | ------------------ |
+| claude   | `--effort <level>`                  | low / medium / high / xhigh / max     | passes through     |
+| codex    | `-c model_reasoning_effort=<level>` | minimal / low / medium / high / xhigh | clamped to `xhigh` |
+| gemini   | (none)                              | —                                     | ignored            |
+| kimi     | (none)                              | —                                     | ignored            |
+| opencode | (none — provider-internal)          | —                                     | ignored            |
 
 `AiEffort` = `low | medium | high | xhigh | max`. `minimal` is codex-only and outside `AiEffort`; `max` is claude-only, so `buildArgs` clamps it to codex's `xhigh` ceiling. A backend with no effort flag silently ignores the value — never gate behavior on a backend honoring effort it doesn't support. When you hand-roll a backend runner (not via `spawnAiAgent`), pick the effort default from this table's vocab for that backend, not a flat constant.
 
@@ -73,16 +73,26 @@ Fireworks (`api.fireworks.ai/inference/v1`) and Synthetic (`api.synthetic.new/op
 
 **Provider/model slug catalog** (the shapes opencode + the lib accept):
 
-| Provider     | Slug shape                                              | Notable models                                  |
-| ------------ | ------------------------------------------------------- | ----------------------------------------------- |
-| anthropic    | `anthropic/<model>`                                     | `claude-opus-4-8`, `claude-haiku-4-5`           |
-| fireworks-ai | `fireworks-ai/accounts/fireworks/models/<id>`           | `glm-5p1` (Opus/Sonnet stand-in), `deepseek-v3p2` |
-| synthetic    | `synthetic/hf:<org>/<model>`                            | `hf:moonshotai/Kimi-K2.5` (text/vision/UI), `hf:zai-org/GLM-5.1` |
-| moonshotai   | `moonshotai/<model>` (or the `kimi` direct CLI)         | `Kimi-K2.5`, `Kimi-K2-Thinking`                 |
+| Provider     | Slug shape                                      | Notable models                                                                            |
+| ------------ | ----------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| anthropic    | `anthropic/<model>`                             | `claude-opus-4-8`, `claude-haiku-4-5`                                                     |
+| fireworks-ai | `fireworks-ai/accounts/fireworks/models/<id>`   | `glm-5p2` (quality leader), `kimi-k2p7-code` (code specialist), `deepseek-v4-pro`         |
+| synthetic    | `synthetic/hf:<org>/<model>`                    | `hf:moonshotai/Kimi-K2.7-Code`, `hf:zai-org/GLM-5.2`, `hf:Qwen/Qwen3-Coder-480B-A35B-Instruct` |
+| moonshotai   | `moonshotai/<model>` (or the `kimi` direct CLI) | `Kimi-K2.6`, `Kimi-K2-Thinking`                                                           |
 
-Model choice by job (the local convention): GLM-5.1 is a fast Opus/Sonnet stand-in for plan execution; Kimi K2.5 fits text/vision, UI work, and lower-complexity tasks; reserve Anthropic for planning + deep reasoning. Reasoning effort on the HTTP providers is per-model (the OpenAI `reasoning_effort` field where the model supports it) — only set it for a model that accepts it.
+Model choice by job (research-backed, as of 2026-06):
+
+- **Quality code + reasoning fall-over → `glm-5p2`** (GLM-5.2, Fireworks). The strongest open-weight on the one shared independent benchmark — Artificial Analysis Intelligence Index 51 vs Kimi-K2.7's 42 — and ahead on published SWE-bench Pro / Terminal-Bench. This is the default stand-in when Anthropic is unavailable for plan execution or quality code.
+- **Cost-sensitive / long-autonomous code → `kimi-k2p7-code`** (Kimi-K2.7-Code, Fireworks). A code SPECIALIST, not a generalist: ~$0.95/Mtok input + ~30% fewer reasoning tokens per accepted change, and the week-one edge on multi-hour autonomous bug-fix loops. Reach for it when cost or a long agent run dominates, not for general reasoning.
+- **Cheap bulk / mechanical → `deepseek-v4-flash` or `gpt-oss-20b`** (Fireworks). Classification, summarization, drafting — don't spend a flagship on grunt work (token-spend floor).
+- **Cross-provider backup (Fireworks itself down) → Synthetic**, flat-rate: `hf:moonshotai/Kimi-K2.7-Code` + `hf:zai-org/GLM-5.2`, or `hf:Qwen/Qwen3-Coder-480B-A35B-Instruct` for code.
+- **Reserve Anthropic for planning + deep reasoning.** The live roster is `opencode models` — it drifts; re-run it rather than trusting this list.
+
+Reasoning effort on the HTTP providers is per-model (the OpenAI `reasoning_effort` field where the model supports it) — only set it for a model that accepts it.
 
 Tokens for these providers live in env / the keychain (`FIREWORKS_API_KEY`, `SYNTHETIC_API_KEY`), never inline — same token-hygiene rule as `SOCKET_API_KEY`.
+
+To see which fallback backends are authed + reachable on your machine — and get the exact `codex login` / `opencode auth login` fix for any that aren't — run `node scripts/fleet/ai-backends-status.mts`. It dogfoods `detectAvailableBackends` + reads each backend's auth home without triggering a keychain prompt; informational by default (these backends are dev-only), and `--require <codex|fireworks|synthetic|anthropic>` fails loud when a backend you depend on isn't ready.
 
 ## Giving the opencode backend read-access to another repo (references)
 
@@ -94,8 +104,8 @@ When a delegated `opencode` run needs to read a _sibling_ codebase — porting a
     // Local sibling directory (relative to opencode.json, absolute, or ~-relative).
     "lib": { "path": "../socket-lib" },
     // Git repo — `owner/repo` shorthand, a host/path ref, or a full Git URL; optional branch.
-    "effect": { "repository": "Effect-TS/effect-smol", "branch": "main" }
-  }
+    "effect": { "repository": "Effect-TS/effect-smol", "branch": "main" },
+  },
 }
 ```
 

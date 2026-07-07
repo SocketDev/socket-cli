@@ -33,21 +33,17 @@
 // Fails open on non-test files / parse problems — under-blocking beats
 // blocking on infrastructure noise.
 
-import process from 'node:process'
-
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
-import { withEditGuard } from '../_shared/payload.mts'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+import { materializePostEditContent } from '../_shared/edit-content.mts'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const logger = getDefaultLogger()
 
 const BYPASS_PHRASE = 'Allow unisolated-git-fixture bypass'
 
 // A path is a test file if its basename matches `*.test.*` / `*.spec.*` or it
 // lives under a `test/` / `__tests__/` directory.
 export function isTestFilePath(filePath: string): boolean {
-  const normalized = filePath.replace(/\\/g, '/')
+  const normalized = normalizePath(filePath)
   if (/\.(?:test|spec)\.[cm]?[jt]sx?$/.test(normalized)) {
     return true
   }
@@ -87,7 +83,10 @@ export function isIsolated(text: string): boolean {
   }
   // Strips the inherited repo-pointing context (delete env['GIT_DIR'], a
   // LEAKY_GIT_VARS scrub list, etc.).
-  if (/\bGIT_DIR\b/.test(text) && /\bdelete\b|LEAKY_GIT|GIT_WORK_TREE/.test(text)) {
+  if (
+    /\bGIT_DIR\b/.test(text) &&
+    /\bdelete\b|LEAKY_GIT|GIT_WORK_TREE/.test(text)
+  ) {
     return true
   }
   return false
@@ -106,45 +105,48 @@ export function shouldBlock(filePath: string, content: string): boolean {
   return true
 }
 
-async function main(): Promise<void> {
-  await withEditGuard((filePath, content, payload) => {
-    if (!shouldBlock(filePath, content ?? '')) {
-      return
-    }
-    if (
-      payload.transcript_path &&
-      bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
-    ) {
-      return
-    }
-    logger.error(
-      [
-        '[no-unisolated-git-fixture-guard] Blocked: git fixture is not isolated from the live repo',
-        '',
-        `  File: ${filePath}`,
-        '',
-        '  This test spawns `git` against a temp-dir fixture but never strips the',
-        '  inherited GIT_DIR / GIT_WORK_TREE env or pins GIT_CONFIG_GLOBAL. Under',
-        '  the pre-commit hook those vars point at the LIVE repo, so the fixture',
-        '  writes onto the real .git/config (core.bare, junk identity) and HEAD.',
-        '',
-        '  Fix (preferred): side-effect import the shared isolation helper as',
-        '  the FIRST import — it strips the GIT_* discovery vars on load:',
-        "    import '<…>/.git-hooks/_shared/isolate-git-env.mts'",
-        '  (vitest already does this via test/scripts/fleet/setup.mts; only',
-        '  node:test git-fixture suites need the explicit import.) For the',
-        '  stronger config-pin form, call isolateGitEnv({ pinConfigToNull: true }).',
-        '',
-        `  Bypass: type "${BYPASS_PHRASE}" in a new message, then retry.`,
-        '',
-      ].join('\n'),
-    )
-    process.exitCode = 2
-  })
-}
+export const check = editGuard((filePath, content, payload) => {
+  // Reason about the WHOLE post-edit file, not the Edit fragment: the isolation
+  // import lives at the top of the file, so an Edit appending a git fixture
+  // would false-positive if we only saw `new_string`.
+  const full = materializePostEditContent(filePath, content, payload) ?? content
+  if (!shouldBlock(filePath, full ?? '')) {
+    return undefined
+  }
+  if (
+    payload.transcript_path &&
+    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
+  ) {
+    return undefined
+  }
+  return block(
+    [
+      '[no-unisolated-git-fixture-guard] Blocked: git fixture is not isolated from the live repo',
+      '',
+      `  File: ${filePath}`,
+      '',
+      '  This test spawns `git` against a temp-dir fixture but never strips the',
+      '  inherited GIT_DIR / GIT_WORK_TREE env or pins GIT_CONFIG_GLOBAL. Under',
+      '  the pre-commit hook those vars point at the LIVE repo, so the fixture',
+      '  writes onto the real .git/config (core.bare, junk identity) and HEAD.',
+      '',
+      '  Fix (preferred): side-effect import the shared isolation helper as',
+      '  the FIRST import — it strips the GIT_* discovery vars on load:',
+      "    import '<…>/.git-hooks/_shared/isolate-git-env.mts'",
+      '  (vitest already does this via test/scripts/fleet/setup.mts; only',
+      '  node:test git-fixture suites need the explicit import.) For the',
+      '  stronger config-pin form, call isolateGitEnv({ pinConfigToNull: true }).',
+      '',
+      `  Bypass: type "${BYPASS_PHRASE}" in a new message, then retry.`,
+      '',
+    ].join('\n'),
+  )
+})
 
-// Only run the guard when invoked as the hook entrypoint; the test suite
-// imports the exported helpers directly.
-if (process.argv[1]?.endsWith('index.mts')) {
-  await main()
-}
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  type: 'guard',
+})
+void runHook(hook, import.meta.url)

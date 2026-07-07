@@ -1,4 +1,4 @@
-/**
+/*
  * @file Rule allowlist + per-rule prompt guidance for the AI-fix orchestrator.
  *   Kept separate from `cli.mts` because:
  *
@@ -27,11 +27,16 @@ export const AI_HANDLED_RULES: ReadonlySet<string> = new Set([
   'socket/inclusive-language',
   'socket/max-file-lines',
   'socket/no-fetch-prefer-http-request',
+  'socket/no-malformed-bypass-marker',
+  'socket/no-namespace-import',
   'socket/no-placeholders',
+  'socket/no-source-sniffing',
   'socket/personal-path-placeholders',
   'socket/prefer-async-spawn',
   'socket/prefer-exists-sync',
   'socket/prefer-node-builtin-imports',
+  'socket/prefer-non-capturing-group',
+  'socket/prefer-normalize-path',
   'socket/prefer-undefined-over-null',
   'socket/require-regex-comment',
 ])
@@ -59,8 +64,11 @@ export const RULE_MODEL_TIER: Readonly<
 > = {
   __proto__: null,
   // Identifier renames, single-token substitutions, namespace rewrites.
-  // The right rewrite is fully determined by the pattern that fired.
+  // The right rewrite is fully determined by the pattern that fired
+  // (appending a `-- reason` to a marker, `import * as` → named imports).
   'socket/inclusive-language': 'haiku',
+  'socket/no-malformed-bypass-marker': 'haiku',
+  'socket/no-namespace-import': 'haiku',
   'socket/no-placeholders': 'haiku',
   'socket/personal-path-placeholders': 'haiku',
   'socket/prefer-node-builtin-imports': 'haiku',
@@ -70,8 +78,17 @@ export const RULE_MODEL_TIER: Readonly<
   // the sync→async caller chain, the fetch → httpJson error-handling
   // shape). Sonnet's reasoning is the right depth.
   'socket/no-fetch-prefer-http-request': 'sonnet',
+  // Source-sniffing: rewrite a text-scan into a typed-export read or AST parse
+  // (or justify-disable when the scan is genuinely necessary) — reads + reasons
+  // about surrounding code, not a mechanical substitution.
+  'socket/no-source-sniffing': 'sonnet',
   'socket/prefer-async-spawn': 'sonnet',
   'socket/prefer-exists-sync': 'sonnet',
+  // Capture group: decide used→named vs unused→non-capturing by reading how the
+  // match is consumed; normalize-path: pick the right import for a self-aliasing
+  // lib. Both read surrounding code, so Sonnet's depth over Haiku's.
+  'socket/prefer-non-capturing-group': 'sonnet',
+  'socket/prefer-normalize-path': 'sonnet',
   // Reading a regex and writing a part-by-part breakdown comment is reasoning
   // about pattern semantics — Sonnet's the right depth (Haiku tends to write a
   // shallow restatement; Opus is overkill).
@@ -215,6 +232,16 @@ export const RULE_GUIDANCE: Readonly<Record<string, string>> = {
     'Implement the placeholder. If the work is too large, do NOT delete the marker — leave the file unchanged and explain in your final reply.',
   'socket/no-fetch-prefer-http-request':
     'Replace `fetch(url, opts)` with the right helper from `@socketsecurity/lib-stable/http-request`: `httpJson` when the caller calls `.json()` on the response, `httpText` when it calls `.text()`, `httpRequest` for raw access. Add the named import.',
+  'socket/no-malformed-bypass-marker':
+    'A disable marker (`oxlint-disable-next-line <rule>` or `socket-lint: allow <rule>`) is missing its required `-- <reason>`. Append ` -- <reason>` where the reason states WHY the waiver is correct, read from the disabled line plus any comment directly above it (for example `// oxlint-disable-next-line socket/prefer-undefined-over-null -- spec returns null here`). Keep the marker AND the code it guards exactly as-is; only add the reason. If multiple rules are listed, justify them all. Never delete the marker or change the guarded line.',
+  'socket/no-namespace-import':
+    'Rewrite a namespace import (`import * as X from "..."`) to named imports with the names actually used: inspect every `X.foo` reference in the file, import exactly those (`import { foo, bar } from "..."`), and change each `X.foo` to bare `foo`. If `X` is passed as a value (for example `someApi(X)`), or the import is a test module-mock or a bare Node builtin, keep the namespace form and add a `// no-namespace-import: passed-as-value` comment instead.',
+  'socket/no-source-sniffing':
+    'Code that scans source/file TEXT with a regex to infer behavior (for example, regex-testing a file string for a `module.exports =` assignment or an export keyword). Prefer rewriting to import the module and read its typed export (e.g. a `defineHook` instance), or parse the AST, instead of matching raw text. If a behavior-preserving rewrite is not safely possible because the text-scan is genuinely necessary (e.g. it lints raw source that cannot be imported), append `// oxlint-disable-next-line socket/no-source-sniffing -- <reason>` with a concrete justification. Never silently weaken behavior to satisfy the rule.',
+  'socket/prefer-non-capturing-group':
+    'A bare `(...)` capture group fired. If its captured text IS used (referenced by group index or name, or consumed by `String.prototype.split` / `matchAll` / `replace` group references), convert it to a NAMED group `(?<name>...)` with a descriptive name. If the group exists only for precedence or quantification and its capture is never read, convert it to non-capturing `(?:...)`. Read how the regex matches are consumed to decide. Do not change what the pattern matches.',
+  'socket/prefer-normalize-path':
+    'A manual path-separator rewrite fired (replacing backslashes with forward slashes on a path string). Replace the hand-rolled rewrite with `normalizePath(p)` and add the import, matching the import style the file already uses for sibling lib modules: the canonical `@socketsecurity/lib/paths/normalize` in `src/`/`test/` (vitest aliases it to local source), a relative path to `paths/normalize` when the module is nearby, or the `-stable` alias `@socketsecurity/lib-stable/paths/normalize` in scripts/hooks/config. Verify the rewrite is semantically identical (normalizePath yields one forward-slash-separated representation across platforms).',
   'socket/require-regex-comment': `Add a \`//\` comment that explains the flagged regex for a junior reader who won't mentally execute it. Put it on the line directly ABOVE the regex (preferred) or trailing the same line. Break the pattern into its parts and say what each MATCHES, not just what the variable is for.
 
 <process>

@@ -26,7 +26,7 @@
     "separateTagGroups": true
   },
   "ignorePatterns": [
-    "**/.agents",
+    "**/.agents/**",
     "**/.cache",
     "**/.claude",
     "**/.DS_Store",
@@ -44,8 +44,8 @@
     "**/package.json",
     "**/plugin-patches/**",
     "**/pnpm-lock.yaml",
-    "**/test/fixtures",
-    "**/test/packages",
+    "**/test/fixtures/**",
+    "**/test/packages/**",
     "**/lockstep.schema.json",
     "**/socket-wheelhouse-schema.json",
     "**/vendor/**",

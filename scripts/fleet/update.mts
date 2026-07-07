@@ -12,37 +12,76 @@
  * Pass 3: pnpm install to refresh the lockfile against the updated
  * package.json.
  *
- * SOCKET_SCOPES below MUST match the `exclude` list in
- * .config/fleet/taze.config.mts — drift causes double-bumps or misses.
+ * SOCKET_SCOPES is the single shared constant (scripts/fleet/constants/
+ * socket-scopes.mts) — the same one .config/fleet/taze.config.mts imports, so
+ * the two can't drift (was previously hand-copied in both, "MUST match").
  *
  * This is a reference script. Consuming repos can drop it into their own
  * scripts/ dir and wire it in via a `"update": "node scripts/fleet/update.mts"`
  * package.json entry.
  */
+import path from 'node:path'
+import process from 'node:process'
+
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
-async function run(cmd: string, args: string[]): Promise<boolean> {
+import { SOCKET_SCOPES } from './constants/socket-scopes.mts'
+import { REPO_ROOT } from './paths.mts'
+import { collectPackumentFailures } from './lib/taze-output.mts'
+import { scanRepoForTelemetry } from './lib/telemetry-scan.mts'
+
+const logger = getDefaultLogger()
+
+export interface RunResult {
+  readonly ok: boolean
+  readonly output: string
+}
+
+// taze's version lookups use Node's fetch, which ignores the HTTP(S)_PROXY
+// env the Socket Firewall wrapper injects — while the firewall blocks direct
+// egress, so every lookup dies. NODE_USE_ENV_PROXY routes fetch through the
+// proxy (Node >= 24) and NODE_EXTRA_CA_CERTS trusts the firewall's CA (sfw
+// already exports it for git). No-ops when no firewall is active.
+function tazeEnv(): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = { ...process.env, NODE_USE_ENV_PROXY: '1' }
+  const firewallCa = process.env['GIT_PROXY_SSL_CAINFO']
+  if (firewallCa && !env['NODE_EXTRA_CA_CERTS']) {
+    env['NODE_EXTRA_CA_CERTS'] = firewallCa
+  }
+  return env
+}
+
+async function run(cmd: string, args: string[]): Promise<RunResult> {
   try {
-    await spawn(cmd, args, { stdio: 'inherit' })
-    return true
+    const result = await spawn(cmd, args, {
+      env: tazeEnv(),
+      stdio: ['inherit', 'pipe', 'pipe'],
+      stdioString: true,
+    })
+    process.stdout.write(String(result.stdout ?? ''))
+    process.stderr.write(String(result.stderr ?? ''))
+    return { ok: true, output: `${result.stdout ?? ''}\n${result.stderr ?? ''}` }
   } catch (e) {
-    process.exitCode = (e as { code?: number | undefined }).code ?? 1
-    return false
+    const err = e as {
+      code?: number | undefined
+      stderr?: string | undefined
+      stdout?: string | undefined
+    }
+    process.stdout.write(String(err.stdout ?? ''))
+    process.stderr.write(String(err.stderr ?? ''))
+    process.exitCode = err.code ?? 1
+    return { ok: false, output: `${err.stdout ?? ''}\n${err.stderr ?? ''}` }
   }
 }
 
-/* Socket-owned scopes — keep in lockstep with the exclude list
- * in .config/fleet/taze.config.mts. */
-const SOCKET_SCOPES = [
-  '@socketregistry/*',
-  '@socketsecurity/*',
-  '@socketdev/*',
-  'socket-*',
-  'ecc-agentshield',
-  'sfw',
-]
+interface Step {
+  readonly args: string[]
+  readonly cmd: string
+  readonly tazePass: boolean
+}
 
-const steps: Array<[string, string[]]> = [
+const steps: Step[] = [
   /* Pass 1 — third-party deps, respects the 7-day cooldown.
    *
    * `--maturity-period 7` MUST be passed on the CLI even though
@@ -50,26 +89,94 @@ const steps: Array<[string, string[]]> = [
    * value. Taze's CLI default for this flag is 0, and CLI
    * defaults override config — without this flag, the cooldown
    * is silently disabled. */
-  ['pnpm', ['exec', 'taze', '--maturity-period', '7', '--write']],
+  {
+    args: ['--maturity-period', '7', '--write'],
+    cmd: path.join(REPO_ROOT, 'node_modules', '.bin', 'taze'),
+    tazePass: true,
+  },
   /* Pass 2 — Socket deps, no cooldown. --include is comma-separated. */
-  [
-    'pnpm',
-    [
-      'exec',
-      'taze',
+  {
+    args: [
       '--include',
       SOCKET_SCOPES.join(','),
       '--maturity-period',
       '0',
       '--write',
     ],
-  ],
+    cmd: path.join(REPO_ROOT, 'node_modules', '.bin', 'taze'),
+    tazePass: true,
+  },
   /* Pass 3 — resync lockfile against the updated package.json. */
-  ['pnpm', ['install']],
+  { args: ['install'], cmd: 'pnpm', tazePass: false },
 ]
 
-for (const [cmd, args] of steps) {
-  if (!(await run(cmd, args))) {
+const uncheckedPackages = new Set<string>()
+for (const step of steps) {
+  let { ok, output } = await run(step.cmd, step.args)
+  if (ok && step.tazePass && collectPackumentFailures(output).length > 0) {
+    // One retry absorbs a transient blip; a persistent failure set is a real
+    // outage (or a blocked endpoint) and must not pass silently.
+    logger.warn(
+      'update: taze reported version-lookup failures; retrying the pass once…',
+    )
+    ;({ ok, output } = await run(step.cmd, step.args))
+  }
+  if (!ok) {
     break
+  }
+  if (step.tazePass) {
+    for (const pkg of collectPackumentFailures(output)) {
+      uncheckedPackages.add(pkg)
+    }
+  }
+}
+
+// Fail-loud gate: taze exits 0 even when version lookups fail, which reads as
+// "everything is current" while those packages were never checked at all.
+if (process.exitCode !== 1 && uncheckedPackages.size > 0) {
+  const list = [...uncheckedPackages].sort()
+  logger.fail(
+    `update: taze could not check ${list.length} package(s) for updates ` +
+      '(version lookups failed after a retry).',
+  )
+  logger.error(
+    '  Where: taze version resolution (fast-npm-meta endpoint npm.antfu.dev, 5s hard timeout).',
+  )
+  logger.error(
+    '  Saw: lookup timeouts/failures; wanted: every dependency checked against its latest soaked version.',
+  )
+  logger.error(
+    '  Fix: check egress to npm.antfu.dev (or the network), then re-run `pnpm run update`.',
+  )
+  for (let i = 0, { length } = list; i < length; i += 1) {
+    logger.error(`  ✗ ${list[i]!}`)
+  }
+  process.exitCode = 1
+}
+
+// Pass 4 — fail-closed telemetry scan. An update may have pulled a telemetry /
+// analytics SDK (Sentry/PostHog/Segment/Datadog/OTEL-SDK/langfuse/…) into the
+// refreshed lockfile. Scan the post-update dep surface; if anything unreviewed
+// appears, FAIL loudly so it can't land silently — the operator's "never
+// silently phone home; run the check on every software update" rule, as law.
+// (Same scan as check/telemetry-deps-are-reviewed.mts.)
+if (process.exitCode !== 1) {
+  const unreviewed = scanRepoForTelemetry(REPO_ROOT)
+  if (unreviewed.length) {
+    logger.fail(
+      'update: NEW telemetry / analytics SDK(s) pulled in by this update:',
+    )
+    for (let i = 0, { length } = unreviewed; i < length; i += 1) {
+      logger.error(`  ✗ ${unreviewed[i]!}`)
+    }
+    logger.error(
+      '  Audit + neutralize (pnpm override / env opt-out / drop the dep), or add',
+    )
+    logger.error(
+      '  to REVIEWED_TELEMETRY in scripts/fleet/lib/telemetry-scan.mts with a reason.',
+    )
+    process.exitCode = 1
+  } else {
+    logger.success('update: telemetry scan clean (no unreviewed phone-home).')
   }
 }

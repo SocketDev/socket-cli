@@ -11,7 +11,7 @@
  * the scan's overlap check keys on that distinction.
  *
  * Usage:
- *   node scripts/fleet/codify-scan/inventory.mts [--repo-root <path>]
+ * node scripts/fleet/codify-scan/inventory.mts [--repo-root <path>]
  */
 
 import path from 'node:path'
@@ -43,7 +43,7 @@ export interface EnforcementInventory {
 }
 
 // Split the flat hook-enforcer set by the fleet naming convention: a `-guard`
-// BLOCKS, a `-reminder` NUDGES, anything else (an installer hook with an
+// BLOCKS, a `-nudge` NUDGES, anything else (an installer hook with an
 // install.mts, e.g. setup-signing) is an installer. The split is what the
 // scan's overlap check ("does a guard/reminder for this already exist?") reads.
 export function splitHooks(names: Iterable<string>): {
@@ -57,7 +57,7 @@ export function splitHooks(names: Iterable<string>): {
   for (const name of names) {
     if (name.endsWith('-guard')) {
       guards.push(name)
-    } else if (name.endsWith('-reminder')) {
+    } else if (name.endsWith('-nudge')) {
       reminders.push(name)
     } else {
       installers.push(name)

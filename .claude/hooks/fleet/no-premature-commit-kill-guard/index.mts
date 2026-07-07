@@ -48,22 +48,24 @@
 //
 // Fails open on parse / payload errors.
 
-import process from 'node:process'
-
+import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { commandsFor, findInvocation } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 const BYPASS_PHRASE = 'Allow background-git bypass'
 
-const GIT_PRE_COMMIT_SUBCOMMANDS = ['commit', 'rebase', 'merge', 'cherry-pick']
+// Dispatcher pre-flight: the guard can only ever block when the command
+// contains one of these substrings, so the dispatcher skips importing it
+// otherwise. Complete because every block path requires one verbatim:
+//   - `git` — the bg-git path matches `git <commit|rebase|merge|cherry-pick>`.
+//   - `pause-on-failure` — the pausing-CI path always requires the literal
+//     `--pause-on-failure` flag in the command.
+//   - `kill` — the teardown path runs `pkill`/`killall`/`kill`, all of which
+//     contain `kill` as a substring (and `commandsFor` requires the binary
+//     name verbatim before any block).
+export const triggers: readonly string[] = ['git', 'kill', 'pause-on-failure']
 
-interface Payload {
-  tool_name?: unknown | undefined
-  tool_input?:
-    | { command?: unknown | undefined; run_in_background?: unknown | undefined }
-    | undefined
-  transcript_path?: unknown | undefined
-}
+const GIT_PRE_COMMIT_SUBCOMMANDS = ['commit', 'rebase', 'merge', 'cherry-pick']
 
 // True when the command invokes a git subcommand that triggers the pre-commit
 // chain (and thus the bounded staged-test reminder).
@@ -161,86 +163,60 @@ export function killsGitOpOrTestRun(command: string): string | undefined {
   return undefined
 }
 
-function emitBackgroundBlock(label: string): void {
-  process.stderr.write(
-    [
-      `[no-premature-commit-kill-guard] Blocked: backgrounding \`${label}\`.`,
-      '',
-      `  A ${label} fires the pre-commit chain, whose staged-test reminder is`,
-      '  BOUNDED to ~60s (STAGED_TEST_TIMEOUT_MS) but still takes real time. Run',
-      '  in the FOREGROUND and wait — a still-running commit is not a hang.',
-      '  Backgrounding hides its completion and invites a premature kill that',
-      '  corrupts the index + leaks vitest workers.',
-      '',
-      `  Bypass (rare; you'll babysit it): type "${BYPASS_PHRASE}".`,
-    ].join('\n') + '\n',
-  )
+export function backgroundBlockMessage(label: string): string {
+  return [
+    `[no-premature-commit-kill-guard] Blocked: backgrounding \`${label}\`.`,
+    '',
+    `  A ${label} fires the pre-commit chain, whose staged-test reminder is`,
+    '  BOUNDED to ~60s (STAGED_TEST_TIMEOUT_MS) but still takes real time. Run',
+    '  in the FOREGROUND and wait — a still-running commit is not a hang.',
+    '  Backgrounding hides its completion and invites a premature kill that',
+    '  corrupts the index + leaks vitest workers.',
+    '',
+    `  Bypass (rare; you'll babysit it): type "${BYPASS_PHRASE}".`,
+  ].join('\n')
 }
 
-function emitKillBlock(label: string): void {
-  process.stderr.write(
-    [
-      `[no-premature-commit-kill-guard] Blocked: \`${label}\`.`,
-      '',
-      '  Killing a git commit/push or its vitest mid-hook corrupts the index',
-      '  (stale .git/index.lock) and leaks vitest worker processes. The',
-      '  pre-commit/pre-push staged-test reminder is bounded to ~60s — WAIT.',
-      '',
-      '  A broad pattern (bare `git push` / `pre-push`) also matches the SAME op',
-      "  in every sibling checkout — so this can reap a PARALLEL session's git",
-      '  op in another repo. If you must stop one, scope the pattern to a full',
-      '  repo path (`pkill -f "<repo>/.git-hooks/.../pre-push"`) and verify the',
-      "  PID's cwd first (`lsof -a -p <pid> -d cwd -Fn`).",
-      '',
-      '  If a run is genuinely dead (confirmed, not just slow), reap the orphan',
-      '  with `pkill -f "vitest/dist/workers"` after the op has exited (that',
-      `  worker-scoped pattern is allowed), or type "${BYPASS_PHRASE}".`,
-    ].join('\n') + '\n',
-  )
+export function killBlockMessage(label: string): string {
+  return [
+    `[no-premature-commit-kill-guard] Blocked: \`${label}\`.`,
+    '',
+    '  Killing a git commit/push or its vitest mid-hook corrupts the index',
+    '  (stale .git/index.lock) and leaks vitest worker processes. The',
+    '  pre-commit/pre-push staged-test reminder is bounded to ~60s — WAIT.',
+    '',
+    '  A broad pattern (bare `git push` / `pre-push`) also matches the SAME op',
+    "  in every sibling checkout — so this can reap a PARALLEL session's git",
+    '  op in another repo. If you must stop one, scope the pattern to a full',
+    '  repo path (`pkill -f "<repo>/.git-hooks/.../pre-push"`) and verify the',
+    "  PID's cwd first (`lsof -a -p <pid> -d cwd -Fn`).",
+    '',
+    '  If a run is genuinely dead (confirmed, not just slow), reap the orphan',
+    '  with `pkill -f "vitest/dist/workers"` after the op has exited (that',
+    `  worker-scoped pattern is allowed), or type "${BYPASS_PHRASE}".`,
+  ].join('\n')
 }
 
-function emitPausingCiBlock(label: string): void {
-  process.stderr.write(
-    [
-      `[no-premature-commit-kill-guard] Blocked: \`${label}\`.`,
-      '',
-      '  `--pause-on-failure` holds agent-ci at the first failing step waiting',
-      '  for an interactive keypress. This session is non-interactive — it can',
-      '  never answer the pause, so the run parks forever. Worse, agent-ci stages',
-      '  into the worktree and pins `.git/index.lock`, so every concurrent',
-      '  `git commit` in this checkout wedges behind it.',
-      '',
-      '  Run the non-pausing CI path instead: drop `--pause-on-failure` (plain',
-      '  `agent-ci run --all --quiet` exits on failure and prints the log), or',
-      '  use the `/fleet:green-ci-local` skill which drives agent-ci and fixes',
-      '  the first failure programmatically.',
-      '',
-      `  Bypass (only if a human is at this terminal): type "${BYPASS_PHRASE}".`,
-    ].join('\n') + '\n',
-  )
+export function pausingCiBlockMessage(label: string): string {
+  return [
+    `[no-premature-commit-kill-guard] Blocked: \`${label}\`.`,
+    '',
+    '  `--pause-on-failure` holds agent-ci at the first failing step waiting',
+    '  for an interactive keypress. This session is non-interactive — it can',
+    '  never answer the pause, so the run parks forever. Worse, agent-ci stages',
+    '  into the worktree and pins `.git/index.lock`, so every concurrent',
+    '  `git commit` in this checkout wedges behind it.',
+    '',
+    '  Run the non-pausing CI path instead: drop `--pause-on-failure` (plain',
+    '  `agent-ci run --all --quiet` exits on failure and prints the log), or',
+    '  use the `/fleet:green-ci-local` skill which drives agent-ci and fixes',
+    '  the first failure programmatically.',
+    '',
+    `  Bypass (only if a human is at this terminal): type "${BYPASS_PHRASE}".`,
+  ].join('\n')
 }
 
-async function main(): Promise<void> {
-  const raw = await readStdin()
-  let payload: Payload
-  try {
-    payload = JSON.parse(raw) as Payload
-  } catch {
-    process.exit(0)
-  }
-
-  if (payload.tool_name !== 'Bash') {
-    process.exit(0)
-  }
-
-  const command =
-    typeof payload.tool_input?.command === 'string'
-      ? payload.tool_input.command
-      : ''
-  if (!command.trim()) {
-    process.exit(0)
-  }
-
+export const check = bashGuard((command, payload) => {
   const backgrounded = payload.tool_input?.run_in_background === true
   const bgGit = backgrounded ? invokesPreCommitGit(command) : undefined
   const killTarget = killsGitOpOrTestRun(command)
@@ -250,38 +226,33 @@ async function main(): Promise<void> {
   const pausingCi = invokesPausingCi(command)
 
   if (!bgGit && !killTarget && !pausingCi) {
-    process.exit(0)
+    return undefined
   }
 
-  const transcriptPath =
-    typeof payload.transcript_path === 'string'
-      ? payload.transcript_path
-      : undefined
+  const transcriptPath = payload.transcript_path
   // Wider lookback than the fleet default (3): unsticking a hung/dead commit is
   // inherently a multi-turn diagnosis (confirm the proc is dead, check the lock,
   // try a reap), so the user's bypass phrase routinely ages past a 3-turn window
   // before the kill command re-fires. 8 turns keeps the granted bypass live
   // through that back-and-forth.
-  if (
-    transcriptPath &&
-    bypassPhrasePresent(transcriptPath, [BYPASS_PHRASE], 8)
-  ) {
-    process.exit(0)
+  if (bypassPhrasePresent(transcriptPath, [BYPASS_PHRASE], 8)) {
+    return undefined
   }
 
   if (bgGit) {
-    emitBackgroundBlock(bgGit)
-  } else if (killTarget) {
-    emitKillBlock(killTarget)
-  } else if (pausingCi) {
-    emitPausingCiBlock(pausingCi)
+    return block(backgroundBlockMessage(bgGit))
   }
-  process.exit(2)
-}
+  if (killTarget) {
+    return block(killBlockMessage(killTarget))
+  }
+  return block(pausingCiBlockMessage(pausingCi!))
+})
 
-// Entrypoint-guarded: run main() only when invoked directly, NOT when the test
-// imports this module for its pure helpers (else main() blocks on stdin at
-// import and the test file never terminates).
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
-  void main()
-}
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Bash'],
+  triggers,
+  type: 'guard',
+})
+void runHook(hook, import.meta.url)

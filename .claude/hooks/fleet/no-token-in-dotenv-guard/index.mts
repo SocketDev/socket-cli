@@ -39,18 +39,13 @@
 // Fails open on malformed payloads (exit 0 + stderr log).
 
 import path from 'node:path'
-import process from 'node:process'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
-import { withEditGuard } from '../_shared/payload.mts'
 import {
   GENERIC_TOKEN_SUFFIX_RE,
   isTokenKey,
 } from '../_shared/token-patterns.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const logger = getDefaultLogger()
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 
 // Dotfile shapes that carry env-style KEY=VALUE content.
 const DOTENV_BASENAME_RE = /^\.env(?:\..+)?$|^\.envrc$/
@@ -129,27 +124,29 @@ export function isLeakyTokenKey(key: string): boolean {
 }
 
 export function isPlaceholder(value: string): boolean {
+  // Strip a leading or trailing single/double quote so a quoted dotenv value
+  // like `"changeme"` is tested bare, without the surrounding delimiters.
   const stripped = value.replace(/^["']|["']$/g, '').trim()
   return PLACEHOLDER_RE.test(stripped)
 }
 
-// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
-// content extraction (new_string / content), and fail-open on any throw.
-await withEditGuard((filePath, content, payload) => {
+// editGuard handles the tool_name gate, file_path narrow, content extraction
+// (new_string / content), and fail-open on any throw.
+export const check = editGuard((filePath, content, payload) => {
   if (!isDotenvPath(filePath)) {
-    return
+    return undefined
   }
   const text = content ?? ''
   if (!text) {
-    return
+    return undefined
   }
   const hits = findTokenLeaks(text)
   if (hits.length === 0) {
-    return
+    return undefined
   }
   // Bypass check.
   if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    return
+    return undefined
   }
   const lines: string[] = []
   lines.push('[no-token-in-dotenv-guard] Blocked: token-bearing key in dotenv.')
@@ -180,6 +177,14 @@ await withEditGuard((filePath, content, payload) => {
   lines.push('')
   lines.push('  Bypass (e.g. seeding a test fixture with a known-junk value):')
   lines.push(`    Type "${BYPASS_PHRASE}" in your next message.`)
-  logger.error(lines.join('\n') + '\n')
-  process.exitCode = 2
+  return block(lines.join('\n') + '\n')
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

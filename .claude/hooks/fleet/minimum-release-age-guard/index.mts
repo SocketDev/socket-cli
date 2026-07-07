@@ -24,16 +24,13 @@
 // Fails open on parse errors (better to under-block than to brick edits
 // when the file isn't parseable YAML).
 
-import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { safeReadFileSync } from '@socketsecurity/lib-stable/fs/read-file'
 
-import { withEditGuard } from '../_shared/payload.mts'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import { resolveEditedText } from '../_shared/payload.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const logger = getDefaultLogger()
 
 // `soak-time` is the canonical phrase; `minimumReleaseAge` is kept as an alias
 // so older transcripts / muscle memory still authorize the bypass. Both fold
@@ -96,11 +93,12 @@ export function extractExcludeNames(yamlText: string): Set<string> {
       continue
     }
 
-    const itemMatch = /^-\s+(.+)$/.exec(trimmed)
+    const itemMatch = /^-\s+(?<item>.+)$/.exec(trimmed)
     if (!itemMatch) {
       continue
     }
-    let name = itemMatch[1]!.trim()
+    let name = itemMatch.groups!.item!.trim()
+    // Strip a surrounding pair of single or double quotes from a YAML scalar value.
     name = name.replace(/^["']|["']$/g, '')
     if (name) {
       out.add(name)
@@ -109,36 +107,14 @@ export function extractExcludeNames(yamlText: string): Set<string> {
   return out
 }
 
-export function readFileSafe(p: string): string {
-  try {
-    return readFileSync(p, 'utf8')
-  } catch {
-    return ''
-  }
-}
-
-// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
-// and fail-open on any throw.
-await withEditGuard((filePath, content, payload) => {
+export const check = editGuard((filePath, _content, payload) => {
   if (path.basename(filePath) !== 'pnpm-workspace.yaml') {
-    return
+    return undefined
   }
-  const input = payload.tool_input
-
-  const currentText = readFileSafe(filePath)
-  let afterText: string
-  if (payload.tool_name === 'Write') {
-    afterText = content ?? ''
-  } else {
-    const oldStr = typeof input?.old_string === 'string' ? input.old_string : ''
-    const newStr = typeof input?.new_string === 'string' ? input.new_string : ''
-    if (!oldStr) {
-      return
-    }
-    if (!currentText.includes(oldStr)) {
-      return
-    }
-    afterText = currentText.replace(oldStr, newStr)
+  const currentText = safeReadFileSync(filePath) ?? ''
+  const afterText = resolveEditedText(payload)
+  if (afterText === undefined) {
+    return undefined
   }
 
   const beforeNames = extractExcludeNames(currentText)
@@ -151,18 +127,18 @@ await withEditGuard((filePath, content, payload) => {
     }
   }
   if (added.length === 0) {
-    return
+    return undefined
   }
 
   if (
     payload.transcript_path &&
     bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)
   ) {
-    return
+    return undefined
   }
 
   added.sort()
-  logger.error(
+  return block(
     [
       '[minimum-release-age-guard] Blocked: minimumReleaseAge.exclude additions',
       '',
@@ -187,5 +163,13 @@ await withEditGuard((filePath, content, payload) => {
       '',
     ].join('\n'),
   )
-  process.exitCode = 2
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

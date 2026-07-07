@@ -45,7 +45,7 @@ export async function mergeCoverageFinal(options: {
   rootPath: string
   logger: CoverageMergeLogger
 }): Promise<AggregateCoverage | undefined> {
-  const { logger, rootPath } = { __proto__: null, ...options }
+  const { logger, rootPath } = { __proto__: null, ...options } as typeof options
   const mainFinalPath = path.join(rootPath, 'coverage/coverage-final.json')
   const isolatedFinalPath = path.join(
     rootPath,
@@ -117,10 +117,14 @@ export async function mergeCoverageFinal(options: {
       const id = allBranchKeys[i]!
       const mainArr = main?.b?.[id] ?? []
       const isoArr = iso?.b?.[id] ?? []
-      const len = Math.max(mainArr.length, isoArr.length)
-      mergedB[id] = Array.from({ length: len }, (value, j) =>
-        Math.max(mainArr[j] ?? 0, isoArr[j] ?? 0),
-      )
+      // Merge element-wise up to the longer array; iterate over it so the
+      // cached-length `{ length }` form applies (the bound is its length).
+      const longer = mainArr.length >= isoArr.length ? mainArr : isoArr
+      const branchCounts: number[] = []
+      for (let j = 0, { length } = longer; j < length; j += 1) {
+        branchCounts[j] = Math.max(mainArr[j] ?? 0, isoArr[j] ?? 0)
+      }
+      mergedB[id] = branchCounts
     }
     for (let i = 0, { length } = allBranchKeys; i < length; i += 1) {
       const id = allBranchKeys[i]!

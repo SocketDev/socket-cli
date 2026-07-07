@@ -1,11 +1,12 @@
 /**
  * The pure finding-algebra for the scanning-quality skill: dedupe by
- * file:line:issue, merge variant findings, drop findings the skeptics refuted by
- * majority, count by severity, and grade A-F. These were "in plain code" /
- * "merge in" / "majority refute" / grade-table steps in the skill prose; pulling
- * them into one tested module makes the dedupe key, the refute threshold, and
- * the grade rubric stable. The finder analysis, the skeptic votes, and the A-F
- * narrative synthesis stay agent-driven — this only operates on their output.
+ * file:line:issue, merge variant findings, drop findings the skeptics refuted
+ * by majority, count by severity, and grade A-F. These were "in plain code" /
+ * "merge in" / "majority refute" / grade-table steps in the skill prose;
+ * pulling them into one tested module makes the dedupe key, the refute
+ * threshold, and the grade rubric stable. The finder analysis, the skeptic
+ * votes, and the A-F narrative synthesis stay agent-driven — this only operates
+ * on their output.
  *
  * The grade table is the fleet's one A-F rubric (report-format.md); reuse the
  * security-report owner rather than re-encoding it.

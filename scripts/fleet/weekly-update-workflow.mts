@@ -1,26 +1,21 @@
 #!/usr/bin/env node
 /**
  * @file Enable / disable / run the non-gh-aw weekly-update fallback WORKFLOW.
- *
- *   The workflow ships as `.github/workflows/weekly-update-non-gh-aw.yml.disabled`.
- *   GitHub only loads `*.yml`/`*.yaml` in `.github/workflows/`, so the
- *   `.yml.disabled` extension keeps it invisible in every repo's Actions list
- *   and unrunnable — it cascades fleet-wide but stays dormant. This script is
- *   the toggle:
- *
- *     enable  — copy `…non-gh-aw.yml.disabled` → `…non-gh-aw.yml` (now live +
- *               listed). The enabled copy is gitignored, so it's transient and
- *               never re-committed (the `.disabled` file stays the source of
- *               truth).
- *     disable — remove the enabled `…non-gh-aw.yml` (back to dormant). Idempotent.
- *     run     — enable → run it locally via Agent CI → disable, even on failure.
- *               This is the supported way to exercise the fallback: Agent CI
- *               can't see a `.disabled` file, so it must be enabled for the run
- *               and re-hidden after. (Agent CI also can't simulate the gh-aw
- *               `.lock.yml` — see agent-ci-skip-locks.mts; this fallback is the
- *               plain workflow it CAN run.)
- *
- *   Usage: node scripts/fleet/weekly-update-workflow.mts <enable|disable|run|status>
+ *   The workflow ships as
+ *   `.github/workflows/weekly-update-non-gh-aw.yml.disabled`. GitHub only loads
+ *   `*.yml`/`*.yaml` in `.github/workflows/`, so the `.yml.disabled` extension
+ *   keeps it invisible in every repo's Actions list and unrunnable — it
+ *   cascades fleet-wide but stays dormant. This script is the toggle: enable —
+ *   copy `…non-gh-aw.yml.disabled` → `…non-gh-aw.yml` (now live + listed). The
+ *   enabled copy is gitignored, so it's transient and never re-committed (the
+ *   `.disabled` file stays the source of truth). disable — remove the enabled
+ *   `…non-gh-aw.yml` (back to dormant). Idempotent. run — enable → run it
+ *   locally via Agent CI → disable, even on failure. This is the supported way
+ *   to exercise the fallback: Agent CI can't see a `.disabled` file, so it must
+ *   be enabled for the run and re-hidden after. (Agent CI also can't simulate
+ *   the gh-aw `.lock.yml` — see agent-ci-skip-locks.mts; this fallback is the
+ *   plain workflow it CAN run.) Usage: node
+ *   scripts/fleet/weekly-update-workflow.mts <enable|disable|run|status>
  */
 
 import { copyFileSync, existsSync } from 'node:fs'
@@ -49,7 +44,12 @@ export type WorkflowMode = 'enable' | 'disable' | 'run' | 'status'
 
 export function parseMode(argv: readonly string[]): WorkflowMode | undefined {
   const arg = argv[0]
-  if (arg === 'disable' || arg === 'enable' || arg === 'run' || arg === 'status') {
+  if (
+    arg === 'disable' ||
+    arg === 'enable' ||
+    arg === 'run' ||
+    arg === 'status'
+  ) {
     return arg
   }
   return undefined
@@ -78,7 +78,9 @@ export function enableWorkflow(): boolean {
 export function disableWorkflow(): void {
   if (existsSync(ENABLED_PATH)) {
     safeDeleteSync(ENABLED_PATH)
-    logger.success(`[weekly-update-workflow] disabled (removed live ${WORKFLOW_NAME}).`)
+    logger.success(
+      `[weekly-update-workflow] disabled (removed live ${WORKFLOW_NAME}).`,
+    )
   } else {
     logger.info('[weekly-update-workflow] already disabled (no live copy).')
   }
@@ -124,7 +126,9 @@ async function main(): Promise<void> {
   }
   let runOk = false
   try {
-    logger.info(`[weekly-update-workflow] running ${WORKFLOW_NAME} via Agent CI…`)
+    logger.info(
+      `[weekly-update-workflow] running ${WORKFLOW_NAME} via Agent CI…`,
+    )
     await spawn(
       process.execPath,
       [
@@ -137,7 +141,9 @@ async function main(): Promise<void> {
     )
     runOk = true
   } catch {
-    logger.fail('[weekly-update-workflow] Agent CI run failed — see output above.')
+    logger.fail(
+      '[weekly-update-workflow] Agent CI run failed — see output above.',
+    )
   } finally {
     // Always re-hide so a forgotten enable doesn't leave a live workflow.
     disableWorkflow()

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * @file Build-integrity gate: assert the fleet `socket/` oxlint plugin actually
  *   LOADS at runtime and registers every rule. If `oxlint-plugin/index.mts`
  *   throws on import (a bad transitive import, a syntax error in a `lib/`
@@ -23,7 +23,7 @@
  *      plugin happily and lints green; this is the only gate that notices. No
  *      magic number — the expected count is derived from the file listing.
  *      Pairs with the edit-time
- *      `.claude/hooks/fleet/oxlint-plugin-load-reminder/` (defense in depth).
+ *      `.claude/hooks/fleet/oxlint-plugin-load-nudge/` (defense in depth).
  *      Exit codes: 0 — plugin loads + count matches; 1 — load threw, empty
  *      rules, or count mismatch. **Why:** memory
  *      `project_oxlint_plugin_load_silent_fail` — a bad import in any rule
@@ -56,7 +56,7 @@ async function main(): Promise<void> {
   }
   if (result.status === 'load-threw') {
     logger.error(
-      'socket oxlint plugin FAILED TO LOAD — every socket/ rule is silently disabled. Fix the import/syntax error (or run `pnpm i` for a missing rule dep) in .config/oxlint-plugin/ and re-run.',
+      'socket oxlint plugin FAILED TO LOAD — every socket/ rule is silently disabled. Fix the import/syntax error (or run `pnpm i` for a missing rule dep) in .config/fleet/oxlint-plugin/ and re-run.',
     )
     logger.error(`  ${result.error}`)
     process.exitCode = 1

@@ -1,4 +1,4 @@
-/**
+/*
  * @file Shared catalog of secret-bearing env-var key names. Used by every hook
  *   that scans for accidentally-checked-in or accidentally-printed
  *   credentials:
@@ -279,7 +279,7 @@ export const SECRET_VALUE_PATTERNS: readonly SecretValuePattern[] = [
     label: 'JWT',
   },
   {
-    re: /-----BEGIN [A-Z ]*PRIVATE KEY( BLOCK)?-----/,
+    re: /-----BEGIN [A-Z ]*PRIVATE KEY(?: BLOCK)?-----/,
     label: 'private key (PEM block)',
   },
 ]

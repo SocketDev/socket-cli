@@ -71,7 +71,7 @@ export function renderCompact(options: {
   const { candidates, fromDate, results, savedPath, syncedDate, topic } = {
     __proto__: null,
     ...options,
-  }
+  } as typeof options
   const activeSources = results
     .filter(result => result.status === 'ok')
     .map(result => result.source)

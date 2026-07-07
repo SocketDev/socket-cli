@@ -13,6 +13,8 @@ Eliminate AI writing patterns from prose.
 
 Hardik Pandya wrote the upstream version (`stop-slop`). MIT-licensed. Source: https://github.com/hardikpandya/stop-slop. Core rules + references run verbatim. Edit only in `socket-wheelhouse/template/`; the cascade refreshes downstream copies.
 
+Fleet doctrine (voice, evidence standard, anti-patterns, surface routing) is codified in `.claude/rules/fleet/prose-style-and-doctrine.md` and `docs/agents.md/fleet/prose-style-and-doctrine.md`. Both are loaded by the skill; future skills (to-pr, to-tickets, to-spec) reuse the same reference.
+
 ## Fleet surfaces — two modes
 
 This skill runs in two modes. Both strip the AI-slop the Core Rules target; the conversational mode adds brevity + voice on top.
@@ -25,6 +27,7 @@ This skill runs in two modes. Both strip the AI-slop the Core Rules target; the 
 **Documentation mode applies to:**
 
 - CHANGELOG entries, README sections, `docs/` markdown, GitHub Release notes, API-reference prose. Complete + precise + durable; length serves correctness.
+- Code-format bare library/tool names in prose (e.g. `rustls`, `rolldown`, `reqwest`) — they read as code, not prose. The `prose-code-format-nudge` hook flags them on `*.md` edits, off a shared dictionary (`.claude/hooks/fleet/_shared/known-names.mts`) derived from the repo's own manifests; that lib is the single source of truth for this check.
 
 **Conversational mode applies to:**
 

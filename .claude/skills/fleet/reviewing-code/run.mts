@@ -18,6 +18,7 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { which } from '@socketsecurity/lib/bin/which'
 import { safeDelete } from '@socketsecurity/lib/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
@@ -697,7 +698,7 @@ export async function runBackend(
       stdioString: true,
       timeout: timeoutMs,
     })
-    child.stdin?.end(promptText)
+    child.process.stdin?.end(promptText)
     const result = await child
     stdout = String(result.stdout ?? '')
     stderrParts.push(String(result.stderr ?? ''))
@@ -706,7 +707,7 @@ export async function runBackend(
       stdout = String(e.stdout ?? '')
       stderrParts.push(String(e.stderr ?? ''))
     } else {
-      stderrParts.push(e instanceof Error ? e.message : String(e))
+      stderrParts.push(errorMessage(e))
     }
     await fs.writeFile(
       logFile,
@@ -731,10 +732,13 @@ export async function runBackend(
 }
 
 export function slugify(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/[^a-z0-9._-]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+  return (
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9._-]+/g, '-')
+      // Strip leading and trailing hyphens produced by the previous replace.
+      .replace(/^-+|-+$/g, '')
+  )
 }
 
 async function main(): Promise<void> {
@@ -811,7 +815,7 @@ async function main(): Promise<void> {
     }
     const roleSpec = ROLES[role]
     logger.info(
-      `${passLabel}: running on ${backend} (timeout ${Math.round(roleSpec.timeoutMs / 60000)}m)`,
+      `${passLabel}: running on ${backend} (timeout ${Math.round(roleSpec.timeoutMs / 60_000)}m)`,
     )
     const promptText = roleSpec.buildPrompt(ctx)
     const result = await runBackend(
@@ -876,6 +880,6 @@ async function main(): Promise<void> {
 }
 
 main().catch(e => {
-  logger.error(e instanceof Error ? e.message : String(e))
+  logger.error(errorMessage(e))
   process.exit(1)
 })

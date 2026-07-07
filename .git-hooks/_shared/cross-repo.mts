@@ -10,6 +10,11 @@
 // `…/projects/<repo>/…` absolute path into a sibling fleet repo. The fix is
 // always an `@socketsecurity/<pkg>` package import, never a path.
 
+import { existsSync } from 'node:fs'
+import path from 'node:path'
+
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+
 import { FLEET_REPO_NAMES } from '../../.claude/hooks/fleet/_shared/fleet-repos.mts'
 
 const FLEET_RE_FRAGMENT = FLEET_REPO_NAMES.join('|')
@@ -30,3 +35,53 @@ export const CROSS_REPO_ABSOLUTE_RE = new RegExp(
 export const CROSS_REPO_ANY_RE = new RegExp(
   `${CROSS_REPO_RELATIVE_RE.source}|${CROSS_REPO_ABSOLUTE_RE.source}`,
 )
+
+// Repo root for a file: nearest ancestor of its directory containing a `.git`
+// entry — a directory in a normal clone, a file in a git worktree (existsSync
+// matches both). Layout-independent: makes NO assumption about where the repo
+// lives on disk (CI runners, fresh clones, and dev checkouts all differ),
+// unlike a hardcoded `projects/<repo>` guess. Undefined when outside any repo.
+function findRepoRoot(fileAbsPath: string): string | undefined {
+  let dir = path.dirname(path.resolve(fileAbsPath))
+  for (let prev = ''; dir !== prev; prev = dir, dir = path.dirname(dir)) {
+    if (existsSync(path.join(dir, '.git'))) {
+      return dir
+    }
+  }
+  return undefined
+}
+
+// The bare name of the repo a file belongs to — its `.git` root's basename, or
+// undefined when the file is outside any repo. DERIVED from the path so callers
+// never have to pass (and keep in sync) a separate repo-name argument, and with
+// no `projects/<repo>` layout assumption.
+export function repoNameForFile(fileAbsPath: string): string | undefined {
+  const repoRoot = findRepoRoot(fileAbsPath)
+  return repoRoot ? path.basename(repoRoot) : undefined
+}
+
+// A matched RELATIVE token (a `..`-traversal ending in a repo name) is a genuine
+// cross-repo escape only when it resolves to a path OUTSIDE the file's own repo.
+// A token that normalizes back INSIDE the repo — e.g. one resolving to
+// `.claude/skills/`, whose `skills` segment collides with the `skills` fleet-repo
+// name — is intra-repo and must not be flagged.
+//
+// The repo root is found by walking up to `.git` from the file (layout-agnostic
+// — no `projects/<repo>` assumption). Resolution is normalized to `/`. Returns
+// true (escape) when no enclosing repo is found, keeping the guard fail-closed.
+export function relativeTokenEscapesRepo(
+  matchedToken: string,
+  fileAbsPath: string,
+): boolean {
+  const repoRoot = findRepoRoot(fileAbsPath)
+  if (!repoRoot) {
+    return true
+  }
+  const fileDir = path.dirname(path.resolve(fileAbsPath))
+  // Strip the regex's leading boundary char + trailing slash, leaving the
+  // traversal core to resolve against the file's directory.
+  const core = matchedToken.replace(/^[^.]*/, '').replace(/\/+$/, '')
+  const resolved = normalizePath(path.resolve(fileDir, core))
+  const root = normalizePath(repoRoot)
+  return resolved !== root && !resolved.startsWith(`${root}/`)
+}

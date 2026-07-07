@@ -1,4 +1,4 @@
-/**
+/*
  * @file Operator-prompt helpers shared between the setup-security-tools
  *   umbrella's install.mts and the scoped leaves (setup-firewall, etc.). Each
  *   helper here is library-shaped: no top-level side effects, no process.exit,
@@ -54,7 +54,10 @@ export async function promptSecret(prompt: string): Promise<string> {
   // during the prompt — that's how readline echoes typed characters,
   // and we want them invisible.
   const muted = new (class extends (await import('node:stream')).Writable {
-    override _write(_chunk: unknown, _enc: unknown, cb: () => void): void {
+    // oxlint-disable-next-line socket/no-underscore-identifier -- `_write` is Node's Writable internal-write method; the leading underscore is the stream API contract, not a privacy marker.
+    override _write(chunk: unknown, enc: unknown, cb: () => void): void {
+      void chunk
+      void enc
       cb()
     }
   })()
@@ -227,11 +230,11 @@ export function wireBridgeIntoShellRc(logger: Logger, token: string): void {
 
 /**
  * Disable Sparkle auto-update for every fleet-tooling macOS GUI app that ships
- * a Sparkle updater (e.g. OrbStack). A Sparkle app can swap a tool version under
- * a running build / scan and rides its own update channel outside the soak gate.
- * Writes the disable defaults via `_shared/sparkle-auto-update.mts` (shared with
- * the `check --all` audit). No-op off macOS. Idempotent — `defaults write` of
- * the same value is a no-op.
+ * a Sparkle updater (e.g. OrbStack). A Sparkle app can swap a tool version
+ * under a running build / scan and rides its own update channel outside the
+ * soak gate. Writes the disable defaults via `_shared/sparkle-auto-update.mts`
+ * (shared with the `check --all` audit). No-op off macOS. Idempotent —
+ * `defaults write` of the same value is a no-op.
  */
 export function disableSparkleAutoUpdate(logger: Logger): void {
   if (os.platform() !== 'darwin') {

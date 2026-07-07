@@ -1,6 +1,6 @@
 ---
 name: updating-pricing
-description: Refresh the fleet's model-pricing data by reading current per-model prices off the vendor pricing page and rewriting `scripts/fleet/constants/model-pricing.json` (and the routing-doc snapshot marker) with today's date. Sibling of `updating-coverage` / `updating-security` / `updating-lockstep` under the `updating` umbrella; the source of the numbers the AI cost estimator computes against.
+description: Refresh the fleet's model-pricing data by reading current per-model prices off each provider's vendor pricing page (or, when a number isn't directly available, the researching-recency feed) and rewriting one service in `scripts/fleet/constants/model-pricing.json` (and the routing-doc snapshot marker) with today's date. Sibling of `updating-coverage` / `updating-security` / `updating-lockstep` under the `updating` umbrella; the source of the numbers the AI cost estimator computes against.
 user-invocable: true
 allowed-tools: Skill, Read, Edit, WebFetch, Bash(node:*), Bash(git:*)
 model: claude-haiku-4-5
@@ -19,21 +19,22 @@ Re-sources the per-model token prices the fleet routes spend on, so the figure `
 
 ## What it does NOT do
 
-- **Invent prices.** The numbers come off the vendor pricing page, read this run. If the page can't be reached, the skill reports that and exits without writing — a stale-but-real snapshot beats a guessed one.
-- **Re-derive the JSON shape in shell.** The write is owned by `scripts/fleet/update-model-pricing.mts` (the same owner pattern as `make-coverage-badge.mts`): the skill hands it sourced prices, the script stamps the date and writes canonically. The skill never hand-edits the JSON.
-- **Change the multipliers or the model set.** A routine refresh touches per-model rates only. Adding a model or changing a discount multiplier (batch / cache) is a deliberate edit to the data file, not a price refresh.
+- **Invent prices.** The numbers come off the vendor pricing page (or the researching-recency feed), read this run. If neither yields a price, the skill reports that and exits without writing — a stale-but-real snapshot beats a guessed one.
+- **Commit private budgets.** `model-pricing.json` is GENERIC + PUBLIC: vendor list prices + the generic plan STRUCTURE (kind / constraint / public list price) only. An org's real budgets, usage, or subscription specifics live solely in private runtime config — never in this committed, cascaded file.
+- **Re-derive the JSON shape in shell.** The write is owned by `scripts/fleet/update-model-pricing.mts` (the same owner pattern as `make-coverage-badge.mts`): the skill hands it sourced prices for one `--service`, the script stamps that service's date and writes canonically. The skill never hand-edits the JSON.
+- **Change the multipliers or the model set.** A routine refresh touches per-model rates only. Adding a model/service or changing a discount multiplier (batch / cache) is a deliberate edit to the data file, not a price refresh.
 - **Touch the cost model.** `estimate-ai-cost.mts`'s math is fixed; this skill only refreshes its input data.
 
 ## Phases
 
 | #   | Phase     | Outcome                                                                                              |
 | --- | --------- | ---------------------------------------------------------------------------------------------------- |
-| 1   | Read current | `node scripts/fleet/update-model-pricing.mts --check` — print the on-disk snapshot + the priced models. |
-| 2   | Source    | WebFetch the vendor pricing page; read off per-model input/output USD-per-MTok for the fleet's models. |
-| 3   | Write     | `node scripts/fleet/update-model-pricing.mts --prices '<json>'` — restamps the snapshot + the doc marker. |
-| 4   | Commit    | `chore(pricing): refresh model-pricing snapshot to <date>`. Direct-push per fleet norm.              |
+| 1   | Read current | `node scripts/fleet/update-model-pricing.mts --check` — print each service's snapshot + priced models. |
+| 2   | Source    | Per service: WebFetch its `pricingSource`; if a number isn't directly available, mine the feed with `node scripts/fleet/source-pricing-feed.mts --service <id>` and read it off the evidence envelope. |
+| 3   | Write     | `node scripts/fleet/update-model-pricing.mts --service <id> --prices '<json>'` — restamps that service's snapshot + the doc marker. |
+| 4   | Commit    | `chore(pricing): refresh <service> pricing snapshot to <date>`. Direct-push per fleet norm.          |
 
-The snapshot/date/shape logic is owned by `scripts/fleet/update-model-pricing.mts` and reads the current data via `loadPricing()` from `scripts/fleet/estimate-ai-cost.mts` — the same loader the estimator and the `pricing-data-is-current` gate share. This skill is orchestration over that script; the judgment it keeps is reading the vendor page correctly and surfacing a fetch failure rather than writing a guess.
+The snapshot/date/shape logic is owned by `scripts/fleet/update-model-pricing.mts` and reads the current data via `loadPricing()` from `scripts/fleet/estimate-ai-cost.mts` — the same loader the estimator and the `pricing-data-is-current` gate share. Pricing is per-service: each service stamps its own snapshot, so a refresh targets one `--service`. This skill is orchestration over those scripts; the judgment it keeps is reading the prices correctly and surfacing a fetch failure rather than writing a guess.
 
 ## Phase 1: read current
 
@@ -41,39 +42,48 @@ The snapshot/date/shape logic is owned by `scripts/fleet/update-model-pricing.mt
 node scripts/fleet/update-model-pricing.mts --check
 ```
 
-Prints the current `snapshot` date, `source` URL, and the list of priced model ids. No write. Use this to see the before-state and confirm which models need a price read.
+Prints each service's `snapshot` date, `pricingSource` URL, and priced model ids. No write. Use this to see the before-state and confirm which service + models need a price read.
 
 ## Phase 2: source
 
-WebFetch the `source` URL the `--check` run printed (the vendor pricing page). Read off, for each model id already in the data, the input and output price in USD per million tokens (MTok). The fleet's models are Claude tiers (haiku / sonnet / opus / fable / mythos); price only the ids that exist in the data — a new tier is a deliberate add, not part of a refresh.
+For the service you're refreshing, WebFetch its `pricingSource` URL (the `--check` run printed it). Read off, for each model id already in that service, the input and output price in USD per million tokens (MTok). Price only the ids that exist — a new model/service is a deliberate add, not part of a refresh.
 
-If the page can't be fetched (network blocked, page moved), STOP: report the failure and the last-known snapshot, and do not write. A stale real snapshot is safer than a hallucinated price.
+When a number isn't directly available (the page moved, is gated, or a price just changed and the doc lags), mine the multi-source feed:
+
+```sh
+node scripts/fleet/source-pricing-feed.mts --service <id>
+```
+
+It runs the `researching-recency` engine with a pricing-tuned plan and prints a compact evidence envelope (recent pricing announcements across web / hackernews / lobsters / reddit). Read the current prices off the envelope, cross-checking against the service's `pricingSource`.
+
+If neither the page nor the feed yields a price, STOP: report the failure and the last-known snapshot, and do not write. A stale real snapshot is safer than a hallucinated price.
 
 ## Phase 3: write
 
 ```sh
-node scripts/fleet/update-model-pricing.mts --prices '{"claude-haiku-4-5":{"inputPerMtok":1.0,"outputPerMtok":5.0},"claude-sonnet-4-6":{"inputPerMtok":3.0,"outputPerMtok":15.0}}'
+node scripts/fleet/update-model-pricing.mts --service anthropic --prices '{"claude-haiku-4-5":{"inputPerMtok":1.0,"outputPerMtok":5.0},"claude-sonnet-4-6":{"inputPerMtok":3.0,"outputPerMtok":15.0}}'
 ```
 
-Pass the prices read in Phase 2 as a JSON object keyed by model id. The script stamps the `snapshot` to today, writes `scripts/fleet/constants/model-pricing.json` canonically, and restamps the `MODEL-PRICING-SNAPSHOT` marker in `docs/agents.md/fleet/skill-model-routing.md` to match. Models you omit keep their current rates (a partial refresh never drops a model). Override the recorded source with `--source <url>` if the vendor URL changed.
+Pass the prices read in Phase 2 as a JSON object keyed by model id, with `--service <id>` (default `anthropic`) naming which service they belong to. The script stamps that service's `snapshot` to today, writes `scripts/fleet/constants/model-pricing.json` canonically (preserving each model's other fields — contextWindow / billing / suspended), and restamps the combined `MODEL-PRICING-SNAPSHOT` marker in `docs/agents.md/fleet/skill-model-routing.md`. Models you omit keep their current rates (a partial refresh never drops a model). Override that service's recorded `pricingSource` with `--source <url>` if the vendor URL changed.
 
 ## Phase 4: commit
 
 ```sh
 git add scripts/fleet/constants/model-pricing.json docs/agents.md/fleet/skill-model-routing.md
-git commit -m "chore(pricing): refresh model-pricing snapshot to <date>"
+git commit -m "chore(pricing): refresh <service> pricing snapshot to <date>"
 git push origin <default-branch>
 ```
 
-Direct-push per the fleet's `Commits & PRs → Push policy` rule; fall back to PR if the remote rejects. In the wheelhouse, edit `template/` and cascade — the live `scripts/fleet/` + `docs/` copies are cascade-derived.
+Direct-push per the fleet's `Commits & PRs → Push policy` rule; fall back to PR if the remote rejects. In the wheelhouse, edit `template/base/` and cascade — the live `scripts/fleet/` + `docs/` copies are cascade-derived.
 
 ## Output
 
-When called via `/update-pricing`, emit a one-line summary: the snapshot date before → after and which models were re-priced. When the page can't be fetched or no price moved, say so and exit without committing.
+When called via `/update-pricing`, emit a one-line summary: the service refreshed, its snapshot date before → after, and which models were re-priced. When neither the page nor the feed yields a price (or nothing moved), say so and exit without committing.
 
 ## Related
 
 - `.claude/skills/updating/SKILL.md`: umbrella that calls this skill as its pricing phase.
-- `.claude/skills/researching-recency/SKILL.md`: the broader recency-research skill; use it when a refresh needs more than the vendor page (subscription limits, competitor rates, the cost-ladder report).
+- `.claude/skills/researching-recency/SKILL.md`: the broader recency-research skill `source-pricing-feed.mts` builds on; use it directly when a refresh needs more than a single provider page.
+- `scripts/fleet/source-pricing-feed.mts`: the feed-sourcing fallback — runs the recency engine with a per-service pricing plan when a vendor number isn't directly fetchable.
 - `scripts/fleet/estimate-ai-cost.mts`: consumes `model-pricing.json` to compute run costs.
-- `scripts/fleet/check/pricing-data-is-current.mts`: the staleness gate that points here.
+- `scripts/fleet/check/pricing-data-is-current.mts`: the per-service staleness gate that points here.

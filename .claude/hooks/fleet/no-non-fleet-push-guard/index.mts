@@ -29,18 +29,19 @@
 // `Allow … bypass`-free push the operator can revert; the cost of a
 // false block is a bricked workflow.
 
-import process from 'node:process'
+import path from 'node:path'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import { isFleetRepo, slugFromRemoteUrl } from '../_shared/fleet-repos.mts'
+import {
+  isFleetRepo,
+  ownerRepoFromRemoteUrl,
+  slugFromRemoteUrl,
+} from '../_shared/fleet-repos.mts'
 import { extractGitCwd } from '../_shared/git-cwd.mts'
-import { withBashGuard } from '../_shared/payload.mts'
+import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { findInvocation } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const logger = getDefaultLogger()
 
 // Bare, session-wide form (kept as a fallback). The scoped form below
 // is preferred — it names the exact repo so the authorization can't
@@ -48,14 +49,29 @@ const logger = getDefaultLogger()
 const BYPASS_PHRASE = 'Allow non-fleet-push bypass'
 const BYPASS_PHRASE_PREFIX = 'Allow non-fleet-push bypass:'
 
-// Build the phrases that authorize a push to `slug`. Accept the full
-// `owner/repo` slug and its bare repo basename, so the user can write
-// whichever feels natural (e.g. `SocketDev/socket-bin` or `socket-bin`).
-// The bare session-wide phrase stays accepted for back-compat.
-export function acceptedBypassPhrases(slug: string): string[] {
-  const basename = slug.includes('/') ? slug.slice(slug.indexOf('/') + 1) : slug
-  const targets = basename === slug ? [slug] : [slug, basename]
-  return [BYPASS_PHRASE, ...targets.map(t => `${BYPASS_PHRASE_PREFIX} ${t}`)]
+// Build the phrases that authorize a push to this repo. Accept every
+// identifier the user might reasonably type — the case-preserved `owner/repo`
+// (`PerryTS/perry`), the bare repo name (`perry`), and the local checkout dir
+// basename — each in original AND lowercased form (GitHub slugs are
+// case-insensitive). The bare session-wide phrase stays accepted for
+// back-compat. So `Allow non-fleet-push bypass: perry` and
+// `… bypass: PerryTS/perry` both authorize the same push.
+export function acceptedBypassPhrases(
+  targets: ReadonlyArray<string | undefined>,
+): string[] {
+  const forms = new Set<string>()
+  for (let i = 0, { length } = targets; i < length; i += 1) {
+    const t = targets[i]
+    if (t) {
+      forms.add(t)
+      forms.add(t.toLowerCase())
+    }
+  }
+  const out = [BYPASS_PHRASE]
+  for (const form of forms) {
+    out.push(`${BYPASS_PHRASE_PREFIX} ${form}`)
+  }
+  return out
 }
 
 export function originSlug(dir: string): string | undefined {
@@ -67,44 +83,67 @@ export function originSlug(dir: string): string | undefined {
     if (r.status !== 0) {
       return undefined
     }
+    /* c8 ignore next - spawnSync with encoding:'utf8' always returns a string stdout */
     out = String(r.stdout ?? '').trim()
   } catch {
+    /* c8 ignore start - lib-stable spawnSync never throws; defensive only */
     return undefined
+    /* c8 ignore stop */
   }
   return slugFromRemoteUrl(out)
 }
 
-// withBashGuard handles the stdin drain, tool_name gate, command narrow,
-// and fail-open on any throw.
-await withBashGuard((command, payload) => {
+// Case-preserved `owner/repo` of the dir's origin remote (for the scoped
+// bypass), or undefined when unresolvable.
+export function originOwnerRepo(dir: string): string | undefined {
+  try {
+    const r = spawnSync('git', ['-C', dir, 'remote', 'get-url', 'origin'], {
+      encoding: 'utf8',
+    })
+    if (r.status !== 0) {
+      return undefined
+    }
+    /* c8 ignore next - spawnSync with encoding:'utf8' always returns a string stdout */
+    return ownerRepoFromRemoteUrl(String(r.stdout ?? '').trim())
+  } catch {
+    /* c8 ignore start - lib-stable spawnSync never throws; defensive only */
+    return undefined
+    /* c8 ignore stop */
+  }
+}
+
+export const check = bashGuard((command, payload) => {
   // Detect `git push` via the shell parser (not regex): it splits the
   // command line into segments, sees through `&&`/`|`/`;` chains and
   // `$(…)` substitution, and ignores `push` inside a quoted commit
   // message — so `git commit -m "git push later"` is correctly NOT a
   // push, while `cd /x && git push` and `git -C /x push` are.
   if (!findInvocation(command, { binary: 'git', subcommand: 'push' })) {
-    return
+    return undefined
   }
 
-  const dir = extractGitCwd(command)
+  const dir = extractGitCwd(command, { subcommand: 'push' })
   const slug = originSlug(dir)
 
   // Fail open: no resolvable origin slug → can't classify, allow.
   if (!slug) {
-    return
+    return undefined
   }
   if (isFleetRepo(slug)) {
-    return
+    return undefined
   }
 
+  // Accept a scoped bypass naming the repo by any identifier the operator
+  // sees: bare slug, case-preserved owner/repo, or the local dir basename.
+  const targets = [slug, originOwnerRepo(dir), path.basename(dir)]
   if (
     payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, acceptedBypassPhrases(slug))
+    bypassPhrasePresent(payload.transcript_path, acceptedBypassPhrases(targets))
   ) {
-    return
+    return undefined
   }
 
-  logger.error(
+  return block(
     [
       '[no-non-fleet-push-guard] Blocked: push to a non-fleet repository',
       '',
@@ -131,5 +170,13 @@ await withBashGuard((command, payload) => {
       '',
     ].join('\n'),
   )
-  process.exitCode = 2
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Bash'],
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

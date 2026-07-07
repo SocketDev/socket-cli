@@ -21,20 +21,17 @@
 // Bypass: "Allow model bypass" (keep the premium model) or "Allow effort
 // bypass" (keep high effort) in a recent user turn, or
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import process from 'node:process'
 
-import { withBashGuard } from '../_shared/payload.mts'
+import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { bypassPhrasePresent, readLines } from '../_shared/transcript.mts'
-
-const logger = getDefaultLogger()
 
 const MODEL_BYPASS = ['Allow model bypass', 'Allow model-spend bypass'] as const
 const EFFORT_BYPASS = ['Allow effort bypass'] as const
 
 // Effort levels that count as "premium" — the tiers worth conserving on
 // mechanical work. low/medium are already cheap, so they never trigger.
-const PREMIUM_EFFORT = new Set(['high', 'xhigh', 'max'])
+const PREMIUM_EFFORT = new Set(['high', 'max', 'xhigh'])
 
 // A model id is "premium" when it's an Opus OR a Fable/Mythos (the apex tier,
 // ~2× the cost of Opus). Sonnet/Haiku are the cheap/fast tier the guard nudges
@@ -75,7 +72,10 @@ function readCurrentModel(transcriptPath: string | undefined): string {
       continue
     }
     try {
-      const evt = JSON.parse(line) as { model?: unknown; type?: unknown }
+      const evt = JSON.parse(line) as {
+        model?: unknown | undefined
+        type?: unknown | undefined
+      }
       if (typeof evt.model === 'string' && evt.model) {
         return evt.model
       }
@@ -86,9 +86,9 @@ function readCurrentModel(transcriptPath: string | undefined): string {
   return ''
 }
 
-await withBashGuard((command, payload) => {
+export const check = bashGuard((command, payload) => {
   if (!isMechanical(command)) {
-    return
+    return undefined
   }
 
   const effort = String(process.env['CLAUDE_EFFORT'] ?? '').toLowerCase()
@@ -107,7 +107,7 @@ await withBashGuard((command, payload) => {
     !bypassPhrasePresent(payload.transcript_path, EFFORT_BYPASS)
 
   if (!flagModel && !flagEffort) {
-    return
+    return undefined
   }
 
   const lines = [
@@ -133,7 +133,21 @@ await withBashGuard((command, payload) => {
     '  Reserve premium model + high effort for design, hard debugging,',
     '  security review.',
     '',
+    '  Cheapest path — DELEGATE the mechanical step to a cheaper tier instead',
+    '  of downgrading your whole session: spawn a subagent at a low tier to run',
+    "  it (the Agent tool with model: 'haiku', or `spawnAiAgent` from",
+    '  @socketsecurity/lib with a low AI_PROFILE). The subagent runs the command',
+    '  cheap + returns; your premium session keeps its context for the real work.',
+    '',
   )
-  logger.error(lines.join('\n') + '\n')
-  process.exitCode = 2
+  return block(lines.join('\n') + '\n')
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Bash'],
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

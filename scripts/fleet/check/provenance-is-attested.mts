@@ -29,6 +29,7 @@
  *   didn't.
  */
 
+import { fileURLToPath } from 'node:url'
 import process from 'node:process'
 
 import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
@@ -111,12 +112,12 @@ async function main(): Promise<void> {
   renderTable(name, target, versions)
 }
 
-interface ReportRow {
+export interface ReportRow {
   attestation: string | undefined
   trustedPublisher: string | undefined
 }
 
-function toReportRow(info: RegistryVersionInfo | undefined): ReportRow {
+export function toReportRow(info: RegistryVersionInfo | undefined): ReportRow {
   return {
     attestation: info?.attestations?.url ?? undefined,
     trustedPublisher: info?.trustedPublisher
@@ -125,7 +126,7 @@ function toReportRow(info: RegistryVersionInfo | undefined): ReportRow {
   }
 }
 
-function renderTable(
+export function renderTable(
   name: string,
   versions: string[],
   data: Record<string, RegistryVersionInfo>,
@@ -172,7 +173,7 @@ function renderTable(
  * lexicographic when the strings aren't proper semver — good enough for sorting
  * registry packument versions, which are guaranteed semver-shaped by npm.
  */
-function compareSemverDesc(a: string, b: string): number {
+export function compareSemverDesc(a: string, b: string): number {
   const pa = a.split('.').map(n => Number.parseInt(n, 10))
   const pb = b.split('.').map(n => Number.parseInt(n, 10))
   for (let i = 0; i < Math.max(pa.length, pb.length); i += 1) {
@@ -188,7 +189,9 @@ function compareSemverDesc(a: string, b: string): number {
   return 0
 }
 
-main().catch((e: unknown) => {
-  logger.error(e)
-  process.exitCode = 1
-})
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().catch((e: unknown) => {
+    logger.error(e)
+    process.exitCode = 1
+  })
+}

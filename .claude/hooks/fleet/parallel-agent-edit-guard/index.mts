@@ -11,7 +11,7 @@
 // Relationship to the sibling parallel-agent hooks:
 //   • parallel-agent-staging-guard — refuses git ops (add -A / stash /
 //     reset --hard / …) that sweep up or destroy foreign work.
-//   • parallel-agent-on-stop-reminder — surfaces the foreign-path signal
+//   • parallel-agent-on-stop-nudge — surfaces the foreign-path signal
 //     at turn end (informational).
 //   • THIS hook — refuses the direct file write that clobbers a foreign
 //     file before it lands. Same "foreign" heuristic
@@ -47,13 +47,10 @@ import {
   readSessionTouchedPaths,
   recordTouchedPath,
 } from '../_shared/foreign-paths.mts'
-import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
-
-interface ToolPayload {
-  readonly tool_name?: string | undefined
-  readonly tool_input?: { readonly file_path?: unknown | undefined } | undefined
-  readonly transcript_path?: string | undefined
-}
+import { block, defineHook, runHook } from '../_shared/guard.mts'
+import type { GuardResult } from '../_shared/guard.mts'
+import type { ToolCallPayload } from '../_shared/payload.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 const BYPASS_PHRASES = ['Allow parallel-agent-edit bypass'] as const
 const EDIT_TOOLS = new Set(['Edit', 'NotebookEdit', 'Write'])
@@ -62,25 +59,18 @@ function getProjectDir(): string {
   return process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
 }
 
-async function main(): Promise<void> {
+export const check = (payload: ToolCallPayload): GuardResult => {
   if (process.env['FLEET_SYNC'] === '1') {
-    process.exit(0)
-  }
-  const raw = await readStdin()
-  let payload: ToolPayload
-  try {
-    payload = JSON.parse(raw) as ToolPayload
-  } catch {
-    process.exit(0)
+    return undefined
   }
   if (!payload.tool_name || !EDIT_TOOLS.has(payload.tool_name)) {
-    process.exit(0)
+    return undefined
   }
   const filePath = (
     payload.tool_input as { file_path?: unknown | undefined } | undefined
   )?.file_path
   if (typeof filePath !== 'string' || !filePath.trim()) {
-    process.exit(0)
+    return undefined
   }
 
   const repoDir = getProjectDir()
@@ -92,7 +82,7 @@ async function main(): Promise<void> {
     // Re-record so a third+ edit this turn keeps recognizing it (the
     // transcript still lags; the ledger is what carries the memory).
     recordTouchedPath(payload.transcript_path, targetAbs)
-    process.exit(0)
+    return undefined
   }
 
   const foreign = listForeignDirtyPaths(repoDir, touched)
@@ -100,7 +90,7 @@ async function main(): Promise<void> {
     // Not a parallel-agent hazard — allow, and remember we touched it so a
     // follow-up edit this turn doesn't read the now-dirty file as foreign.
     recordTouchedPath(payload.transcript_path, targetAbs)
-    process.exit(0)
+    return undefined
   }
   // The target is foreign only if it's in the foreign-dirty set.
   const targetIsForeign = foreign.some(
@@ -108,7 +98,7 @@ async function main(): Promise<void> {
   )
   if (!targetIsForeign) {
     recordTouchedPath(payload.transcript_path, targetAbs)
-    process.exit(0)
+    return undefined
   }
 
   if (
@@ -116,31 +106,35 @@ async function main(): Promise<void> {
     bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES, 3)
   ) {
     recordTouchedPath(payload.transcript_path, targetAbs)
-    process.exit(0)
+    return undefined
   }
 
-  process.stderr.write(
+  return block(
     [
       `[parallel-agent-edit-guard] Blocked: ${payload.tool_name} ${filePath}`,
       '',
-      '  This file is dirty in the checkout, was NOT authored by this',
-      '  session, and changed recently — another agent on the same `.git/`',
-      '  is editing it. Writing now would silently clobber their',
-      '  uncommitted work (and they may clobber yours right back).',
+      "  This file is dirty and NOT from this session's edits. Most likely",
+      "  it's your OWN earlier work (recall resets across compaction) or an",
+      '  aligned session heading the same way — overwriting it now would',
+      '  lose those uncommitted changes.',
       '',
-      '  Fix: coordinate — let the other session commit first, or work on',
-      '  a different file. For an isolated edit, use a `git worktree`.',
+      '  Do this instead:',
+      '  • Confirm it is yours — `node scripts/fleet/whose-work.mts` + git diff.',
+      '  • LAND the current state first — `git commit -o <file>` or',
+      '    `node scripts/fleet/land-work.mts --commit` — then edit it clean.',
+      '  • A genuine concurrent editor on this `.git/` is the rare case; if',
+      '    so, let it land or take the edit into a `git worktree`.',
       '',
-      '  Bypass (only if you are certain the other edit is abandoned):',
+      '  Bypass (the dirty edit is truly abandoned):',
       '  user types "Allow parallel-agent-edit bypass" in chat, then retry.',
-    ].join('\n') + '\n',
+    ].join('\n'),
   )
-  process.exit(2)
 }
 
-main().catch(e => {
-  process.stderr.write(
-    `[parallel-agent-edit-guard] hook bug — fail-open. ${e instanceof Error ? e.message : String(e)}\n`,
-  )
-  process.exit(0)
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  type: 'guard',
 })
+void runHook(hook, import.meta.url)

@@ -16,12 +16,22 @@
 export const FIELD_ALIASES: Record<string, string[]> = {
   category: ['category', 'type', 'cwe', 'rule_id', 'crash_type', 'vuln_class'],
   description: ['description', 'details', 'report', 'body', 'evidence'],
-  exploit_scenario: ['exploit_scenario', 'attack_scenario', 'poc', 'reproduction'],
+  exploit_scenario: [
+    'exploit_scenario',
+    'attack_scenario',
+    'poc',
+    'reproduction',
+  ],
   file: ['file', 'path', 'filename'],
   line: ['line', 'line_number', 'lineno'],
   preconditions: ['preconditions', 'requirements', 'assumptions'],
   recommendation: ['recommendation', 'fix', 'remediation', 'mitigation'],
-  scanner_confidence: ['scanner_confidence', 'confidence', 'score', 'certainty'],
+  scanner_confidence: [
+    'scanner_confidence',
+    'confidence',
+    'score',
+    'certainty',
+  ],
   severity: ['severity', 'severity_rating', 'level', 'priority', 'risk'],
   title: ['title', 'name', 'summary', 'message'],
 }
@@ -74,10 +84,7 @@ function getNested(record: RawRecord, dotted: string): unknown {
 }
 
 // The first present alias value for a canonical field, or undefined.
-export function pullField(
-  record: RawRecord,
-  canonical: string,
-): unknown {
+export function pullField(record: RawRecord, canonical: string): unknown {
   const aliases = FIELD_ALIASES[canonical] ?? [canonical]
   for (let i = 0, { length } = aliases; i < length; i += 1) {
     const v = record[aliases[i]!]

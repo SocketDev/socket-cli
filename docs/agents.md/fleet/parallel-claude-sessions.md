@@ -6,6 +6,8 @@ Companion to the `### Parallel Claude sessions` rule in `template/CLAUDE.md`. Th
 
 A single socket-\* checkout often has multiple Claude sessions running concurrently: parallel agents, parallel terminals, or git worktrees mapped onto the same `.git/`. Your session is not the only writer. Several common git operations assume otherwise.
 
+But the failure that recurs is the opposite one: attributing your OWN earlier work to a phantom parallel session. Recall resets across context compaction, and every fleet commit shares one git identity, so a recent commit or dirty path you don't remember creating reads as another agent's. You then pause, defer, or investigate instead of proceeding. Default the other way: unfamiliar recent commits and dirty paths by your own git identity are your own earlier work. Landing to local main is the shared goal, so aligned concurrent work (yours, an auto-lander's, or another session heading the same way) is collaboration toward it. Verify with the own-work check below before concluding a parallel session is at play. Reserve the prohibitions in this file for a genuine live conflict: a file mutating between two of your own reads this turn.
+
 ## Forbidden in the primary checkout
 
 These commands mutate state that belongs to other sessions:
@@ -44,23 +46,55 @@ Both halves matter: surgical `git add` keeps your index clean, surgical `git com
 
 The wheelhouse cascade is the documented exception: it commits the whole index in a fresh worktree off `origin/main`, opted in via the `FLEET_SYNC=1` sentinel.
 
-## Never revert files you didn't touch
+## Whose work is this? Own-work-first check
 
-`git status` shows unfamiliar changes? Leave them. They belong to:
+`git status` or `git log` shows unfamiliar changes? Before treating them as another session's, run the own-work check:
 
-- Another concurrent session
-- An upstream pull that's still settling
-- A hook side-effect (formatter, linter, sync-scaffolding)
+```bash
+node scripts/fleet/whose-work.mts
+```
 
-`git checkout -- <file>` against work you didn't produce destroys the other session's progress.
+It lists local-ahead commits (unpushed work toward local main) and classifies them by git identity. Commits by your own identity are your own earlier work: land them, don't investigate. In descending order of likelihood, unfamiliar changes are:
+
+1. **Your own earlier work** you no longer recall, because compaction reset your memory. This is the common case on a single-user checkout.
+2. A hook side-effect (formatter, linter, sync-scaffolding).
+3. An auto-lander grouping the dirty tree into logical commits (see [Auto-landed commits are expected](#auto-landed-commits-are-expected)).
+4. An upstream pull that is still settling.
+5. A genuine concurrent session. This one holds only when a file mutates between two of your own reads *this turn*.
+
+Whatever the source, `git checkout -- <file>` / `git reset --hard` against work you did not author destroys it. Leave it, or land it.
+
+## Auto-landed commits are expected
+
+Every session runs the same hooks, and the fleet biases toward landing to local main often. So a commit can appear that you did not personally issue: an auto-lander (or an aligned session) grouped the dirty tree into a logical commit and landed it. That is the system working. Do not spend cycles reverse-engineering why a commit exists that you don't remember making. Run `whose-work` if you need to confirm it is local plus your identity, then keep going. Landing is recoverable (a local commit can be amended or reset to `HEAD~`); a phantom-collision stall is wasted work.
 
 ## Never reach into a sibling fleet repo's path
 
 Cross-repo imports go through `@socketsecurity/lib/...` and `@socketregistry/...` (workspace exports). Path-based imports (`../<sibling-repo>/...`) break in CI, in fresh clones, and on CI agents without the sibling checked out. The `cross-repo-guard` hook blocks these at edit time.
 
+## Active-edits ledger — coordinating concurrent actors
+
+The ledger is a per-actor JSON file under `node_modules/.cache/socket-active-edits/<actorId>.json` (dep-0, never tracked). Actor ID = `sha256(transcript_path).slice(0,16)` — the transcript path discriminates actors because each subagent / workflow-agent gets its own JSONL while the main session has a different one.
+
+Three hooks build on it:
+
+- **`active-edits-ledger`** (PostToolUse, Edit|Write|NotebookEdit): records the written path into the current actor's ledger file. Never blocks; exit 0 on every code path.
+- **`live-edit-collision-guard`** (PreToolUse, Edit|Write|NotebookEdit): blocks when the target path appears in a DIFFERENT live actor's ledger with a write within the 5-minute collision window. The block message names the other actor, states the seconds since its last write, and lists the three sanctioned moves below.
+- **`dirty-worktree-stop-guard`** (Stop): paths owned by a live foreign actor are SANCTIONED — listed separately and excluded from the blocking set (slice 3). If every dirty path is sanctioned, the guard exits clean.
+
+### Stop-edit-resume protocol
+
+When `live-edit-collision-guard` fires, the three moves in priority order:
+
+1. **Stop the other run.** Use `TaskStop` on the blocking actor. Once it lands its changes, resume your edit.
+2. **Queue the edit.** Work on a different file now; revisit this one after the other run completes. The completion notification re-invokes your session — no open-ended "I'll wait and monitor" promise needed.
+3. **Bypass.** If the other run is already finished or abandoned and the ledger is stale, the user types `Allow live-edit-collision bypass` verbatim.
+
+The excuse-detector (slice 4) gates on ledger presence: when a live foreign actor exists, open-ended wait promises ("I'll watch to completion", "wait and see", "land whatever it leaves") are converted into a protocol reminder — converge now, arm a Monitor, or hand off via a `.claude/plans/` doc.
+
 ## Never overwrite a file another session is editing
 
-A plain `Edit` / `Write` to a file another session has dirty silently clobbers their uncommitted work — and they may clobber yours right back, edit-for-edit, until one of you stops. (When two sessions share one checkout and both keep re-writing the same source + test files, each pass reverts the other's fixes and neither change ever lands.) The `parallel-agent-edit-guard` hook blocks an Edit/Write/NotebookEdit whose target is **foreign** — dirty, not authored by this session, changed within 30 min — so the clobber is refused before it lands. Companion to `parallel-agent-staging-guard` (git-op version) + `parallel-agent-on-stop-reminder` (turn-end signal); all share `_shared/foreign-paths.mts`. When it fires: let the other session commit first, work on a different file, or use a `git worktree` for an isolated edit. Bypass (only if the other edit is abandoned): `Allow parallel-agent-edit bypass`.
+A plain `Edit` / `Write` to a file another session has dirty silently clobbers their uncommitted work — and they may clobber yours right back, edit-for-edit, until one of you stops. (When two sessions share one checkout and both keep re-writing the same source + test files, each pass reverts the other's fixes and neither change ever lands.) The `parallel-agent-edit-guard` hook blocks an Edit/Write/NotebookEdit whose target is **foreign** — dirty, not authored by this session, changed within 30 min — so the clobber is refused before it lands. Companion to `parallel-agent-staging-guard` (git-op version) + `parallel-agent-on-stop-nudge` (turn-end signal); all share `_shared/foreign-paths.mts`. When it fires: let the other session commit first, work on a different file, or use a `git worktree` for an isolated edit. Bypass (only if the other edit is abandoned): `Allow parallel-agent-edit bypass`.
 
 ## The umbrella rule
 
@@ -90,4 +124,59 @@ The right recovery, in order:
    ```
 3. **Only then**, if pre-commit is genuinely broken (not racing) AND you've verified the tree green independently (`git write-tree` clean, tests pass, oxfmt clean), `--no-verify` is the last resort — and it still needs the `Allow no-verify bypass` phrase.
 
-Nudged by `.claude/hooks/fleet/pre-commit-race-reminder/` on any `git commit --no-verify` (cascade `FLEET_SYNC=1` commits exempt).
+Nudged by `.claude/hooks/fleet/pre-commit-race-nudge/` on any `git commit --no-verify` (cascade `FLEET_SYNC=1` commits exempt).
+
+## origin/main is never authoritative over local main
+
+The flow is one-directional: local `main`, then push, then origin. Local main is
+the source of truth; origin is where landed work is published. So `origin/main`
+being ahead of (or diverged from) local main is almost never a reason to touch
+local main.
+
+**The banned reflex.** Seeing `origin/main` ahead and concluding "origin is
+ahead, I'll sync / reset / revert / drop local to match it" is wrong. The
+capitulation that follows is the exact failure this rule exists to stop:
+
+> "I won't touch local main… dropping it entirely… local main stays as it is,
+> I'll leave origin alone since it's being squashed."
+
+It treats a routine consolidation as a divergence to surrender to, and it either
+strands local work or invites a lossy reset.
+
+**Why origin looks ahead.** Some fleet repos squash or consolidate the default
+branch on a cadence (`squashing-history`), and the cascade bot plus
+`auto-land-on-stop` also land commits. So origin "ahead" is normally a squash or
+consolidation of your OWN (or a bot's) commits: the same work, re-shaped.
+Classify before reasoning with `node scripts/fleet/whose-work.mts`, and read the
+commit timestamps (a newer origin commit that consolidates your older locals is
+a squash, not a rival's landing).
+
+**Reconcile FORWARD, never rewind:**
+
+- **Origin is a 1-commit squash of your local set:** `git commit --amend` your
+  local tip onto it (or re-apply), keeping local canonical.
+- **Otherwise:** lease-force-push local over origin (`--force-with-lease`, behind
+  the `no-force-push-guard` phrase). Local main wins because it holds the real
+  work.
+- **NEVER** `git reset --hard origin/main`, `git checkout origin/main -- .`, or
+  "revert local to origin". `no-revert-guard` blocks it, and it discards unpushed
+  local commits.
+
+**When it IS a real divergence.** If the origin-ahead commits are by a real
+other user (not the current git identity, not a bot such as `*[bot]`,
+`github-actions`, or `dependabot`), that is genuine divergence. Coordinate (a
+`managing-worktrees land`), do NOT force-push over them, and do NOT warn about
+"origin ahead" as if it were the squash case. `whose-work` makes the
+own-vs-bot-vs-other call.
+
+**Every reset stays additive / recoverable.** A reset must never lose code from
+local main or the current state. Before any reset, make it reversible: tag or
+branch the pre-reset HEAD (`git tag backup/pre-reset-<date> HEAD`) so the work is
+re-addable, or rely on the reflog. `git stash` is banned (the stash store is
+shared across sessions, so another agent can pop or drop yours), so it is NOT the
+recovery mechanism; a backup ref is. `no-revert-guard` blocks a bare
+primary-checkout reset for exactly this reason.
+
+Enforced by `no-revert-guard` (blocks the rewind), `no-force-push-guard` (gates
+the forward reconcile), and `whose-work` (classifies author). A dedicated
+origin-ahead Stop nudge is tracked to surface this proactively.

@@ -18,19 +18,23 @@
 //     path, `/tmp`, `-` (cd back), `~`, `$VAR`, or `..`-escapes (leaving
 //     the repo). Those aren't "cd into a subpackage to run pnpm".
 // Cwd drift from a bare `cd` (without a chained pm) is the
-// avoid-cd-reminder's concern, not this guard's.
+// avoid-cd-nudge's concern, not this guard's.
 //
 // Bypass: `Allow repo-root bypass`. Fail-open on hook bugs.
 
-import process from 'node:process'
-
-import { withBashGuard } from '../_shared/payload.mts'
+import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { parseCommands } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 const BYPASS_PHRASE = 'Allow repo-root bypass'
 
-const PACKAGE_MANAGERS = new Set(['pnpm', 'npm', 'yarn'])
+// Pre-flight gate: the guard can only block a `cd <subpackage> && <pm> …`
+// chain, which requires a package-manager binary segment — so the literal pm
+// name must appear in the command. `npm` is a substring of `pnpm`, so these
+// two cover all of {pnpm, npm, yarn}. Absent both, `check` can never block.
+export const triggers: readonly string[] = ['npm', 'yarn']
+
+const PACKAGE_MANAGERS = new Set(['npm', 'pnpm', 'yarn'])
 
 // A `cd` target that is NOT "into a subpackage of this repo": absolute
 // paths, home, previous-dir, variables, /tmp, and anything mentioning a
@@ -39,6 +43,7 @@ export function isSubpackageCdTarget(target: string | undefined): boolean {
   if (!target) {
     return false
   }
+  // Strip a leading or trailing single/double quote that the shell may wrap around the path.
   const t = target.replace(/^['"]|['"]$/g, '')
   if (t === '' || t === '-' || t === '..') {
     return false
@@ -75,47 +80,47 @@ export function findCdThenPm(
     }
     const next = cmds[i + 1]!
     if (PACKAGE_MANAGERS.has(next.binary)) {
+      // Strip surrounding quotes from the target before returning, same as above.
       return { target: target!.replace(/^['"]|['"]$/g, ''), pm: next.binary }
     }
   }
   return undefined
 }
 
-async function main(): Promise<void> {
-  await withBashGuard((command, payload) => {
-    const hit = findCdThenPm(command)
-    if (!hit) {
-      return
-    }
-    if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-      return
-    }
-    process.stderr.write(
-      [
-        '[operate-from-repo-root-guard] Blocked: `cd ' +
-          hit.target +
-          ' && ' +
-          hit.pm +
-          ' …`',
-        '',
-        '  Run pnpm from the repo root, not a subpackage. To target one',
-        '  workspace project:',
-        `    pnpm --filter <pkg> <script>`,
-        '',
-        `  (\`cd ${hit.target}\` parks the Bash cwd there for later commands`,
-        '  and runs against the subpackage\'s local resolution, not the',
-        '  workspace root.)',
-        '',
-        `  Bypass: type \`${BYPASS_PHRASE}\` if this is genuinely intended.`,
-      ].join('\n') + '\n',
-    )
-    process.exitCode = 2
-  })
-}
+export const check = bashGuard((command, payload) => {
+  const hit = findCdThenPm(command)
+  if (!hit) {
+    return undefined
+  }
+  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
+    return undefined
+  }
+  return block(
+    [
+      '[operate-from-repo-root-guard] Blocked: `cd ' +
+        hit.target +
+        ' && ' +
+        hit.pm +
+        ' …`',
+      '',
+      '  Run pnpm from the repo root, not a subpackage. To target one',
+      '  workspace project:',
+      `    pnpm --filter <pkg> <script>`,
+      '',
+      `  (\`cd ${hit.target}\` parks the Bash cwd there for later commands`,
+      "  and runs against the subpackage's local resolution, not the",
+      '  workspace root.)',
+      '',
+      `  Bypass: type \`${BYPASS_PHRASE}\` if this is genuinely intended.`,
+    ].join('\n'),
+  )
+})
 
-// Entrypoint-guarded: run main() only when invoked directly, NOT when the test
-// imports this module for its pure helpers (else main() blocks on stdin at
-// import and the test file never terminates).
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
-  main()
-}
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Bash'],
+  triggers,
+  type: 'guard',
+})
+void runHook(hook, import.meta.url)

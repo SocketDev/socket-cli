@@ -10,9 +10,8 @@
  * under the skill's per-repo confirmation gate. The engine reports counts +
  * candidate ids + the proposed commands; it never performs them.
  *
- * Usage:
- *   node clean-ci.mts <owner/repo> [<owner/repo> …]   # one or more explicit repos
- *   node clean-ci.mts --pretty <owner/repo>           # + a human table
+ * Usage: node clean-ci.mts <owner/repo> [<owner/repo> …] # one or more explicit
+ * repos node clean-ci.mts --pretty <owner/repo> # + a human table.
  *
  * Repos are explicit args (mirrors auditing-gha — no implicit fleet-wide
  * default; the orchestrator skill expands the roster at call time).
@@ -57,7 +56,7 @@ async function gh(args: readonly string[]): Promise<string> {
     stdio: 'pipe',
     stdioString: true,
     timeout: 30_000,
-  }).catch((e: unknown) => e as { stdout?: unknown })
+  }).catch((e: unknown) => e as { stdout?: unknown | undefined })
   return String(r.stdout ?? '').trim()
 }
 
@@ -69,7 +68,7 @@ export function findOrphanFiles(repoDir: string): string[] {
   }
   return readdirSync(dir)
     .filter(name => ORPHAN_RE.test(name))
-    .sort()
+    .toSorted()
 }
 
 // A workflow record is a delete-record CANDIDATE when its name matches the
@@ -156,7 +155,9 @@ function renderPretty(inv: RepoInventory): void {
   logger.info(
     `   stale records: ${inv.staleRecords.length ? inv.staleRecords.map(r => `${r.name}#${r.id}`).join(', ') : '(none)'}`,
   )
-  logger.info(`   automated-security-fixes: ${String(inv.securityFixesEnabled)}`)
+  logger.info(
+    `   automated-security-fixes: ${String(inv.securityFixesEnabled)}`,
+  )
   logger.info(
     '   (proposed actions are DATA — review, then issue the deletes yourself under the per-repo gate)',
   )

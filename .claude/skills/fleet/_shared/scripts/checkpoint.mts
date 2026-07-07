@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * @file Checkpoint helper for the security runbook skills (scanning-vulns,
  *   triaging-findings, threat-modeling, patching-findings).
  *
@@ -96,7 +96,9 @@ export function confinePath(p: string, mustEnd?: string | undefined): string {
  */
 export function safeToken(s: string, what: string): string {
   if (s.includes('/') || s.includes(path.sep) || s.includes('..')) {
-    fail(`checkpoint: refusing ${what} with path separators: ${JSON.stringify(s)}`)
+    fail(
+      `checkpoint: refusing ${what} with path separators: ${JSON.stringify(s)}`,
+    )
   }
   return s
 }
@@ -121,7 +123,10 @@ export function popOpt(
   if (i === -1) {
     return { rest: [...argv], value: fallback }
   }
-  return { rest: [...argv.slice(0, i), ...argv.slice(i + 2)], value: argv[i + 1] }
+  return {
+    rest: [...argv.slice(0, i), ...argv.slice(i + 2)],
+    value: argv[i + 1],
+  }
 }
 
 export function readPayload(src: string | undefined): string {
@@ -139,7 +144,10 @@ export function readJsonPayload(src: string | undefined): string {
   try {
     JSON.parse(raw)
   } catch (e) {
-    fail(`checkpoint: --from ${src} is not valid JSON: ${(e as Error).message}`, 1)
+    fail(
+      `checkpoint: --from ${src} is not valid JSON: ${(e as Error).message}`,
+      1,
+    )
   }
   return raw
 }
@@ -153,7 +161,10 @@ export function writeProgress(
     readonly shards: readonly string[]
   },
 ): void {
-  const { key, n, shards, status } = options
+  const { key, n, shards, status } = {
+    __proto__: null,
+    ...options,
+  } as typeof options
   atomicWrite(
     path.join(stateDir, 'progress.json'),
     JSON.stringify({
@@ -170,9 +181,7 @@ export function cmdSave(argv: readonly string[]): number {
   const fromPop = popOpt(keyPop.rest, '--from')
   const rest = fromPop.rest
   if (rest.length < 2) {
-    return usage(
-      'save <state_dir> <N> [<name>] --from <file> [--key K]',
-    )
+    return usage('save <state_dir> <N> [<name>] --from <file> [--key K]')
   }
   const stateDir = confinePath(rest[0]!, '-state')
   const n = Number.parseInt(rest[1]!, 10)
@@ -197,7 +206,10 @@ export function cmdShard(argv: readonly string[]): number {
   atomicWrite(path.join(stateDir, `shard_${shardId}.json`), raw)
   const progressPath = path.join(stateDir, 'progress.json')
   const prog: Record<string, unknown> = existsSync(progressPath)
-    ? (JSON.parse(readFileSync(progressPath, 'utf8')) as Record<string, unknown>)
+    ? (JSON.parse(readFileSync(progressPath, 'utf8')) as Record<
+        string,
+        unknown
+      >)
     : { status: 'running' }
   const shards = Array.isArray(prog['shards_done'])
     ? (prog['shards_done'] as string[])
@@ -232,7 +244,10 @@ export function cmdLoad(argv: readonly string[]): number {
   if (argv.length !== 1) {
     return usage('load <state_dir>')
   }
-  const progressPath = path.join(confinePath(argv[0]!, '-state'), 'progress.json')
+  const progressPath = path.join(
+    confinePath(argv[0]!, '-state'),
+    'progress.json',
+  )
   const progressJson = existsSync(progressPath)
     ? readFileSync(progressPath, 'utf8')
     : '{"status": "absent"}'
@@ -295,7 +310,9 @@ export function main(argv: readonly string[]): number {
     case 'reset':
       return cmdReset(rest)
     default:
-      logger.error('usage: checkpoint.mts {save|shard|done|load|append|reset} ...')
+      logger.error(
+        'usage: checkpoint.mts {save|shard|done|load|append|reset} ...',
+      )
       return 2
   }
 }

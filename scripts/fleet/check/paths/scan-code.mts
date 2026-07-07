@@ -27,6 +27,9 @@ import { pushFinding } from './state.mts'
 // nesting depth (the previous regex-only approach silently missed any
 // argument containing 2+ levels of nested function calls).
 export const PATH_CALL_RE = /\bpath\.(?:join|resolve)\s*\(/g
+// Match a single- or double-quoted string literal, handling backslash escapes.
+// Capture group 1 is the opening quote character; group 2 is the string body
+// (escape sequences or any character that is not the matching closing quote).
 export const STRING_LITERAL_RE = /(['"])((?:\\.|(?!\1)[^\\])*)\1/g
 
 // Template literal scanner. Captures backtick-delimited strings
@@ -80,7 +83,7 @@ export const extractPathCalls = (
           inString = undefined
         }
       } else {
-        if (ch === '"' || ch === "'" || ch === '`') {
+        if (ch === "'" || ch === '"' || ch === '`') {
           inString = ch
         } else if (ch === '(') {
           depth += 1

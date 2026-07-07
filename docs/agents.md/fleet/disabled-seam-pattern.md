@@ -26,6 +26,6 @@ Gating the behavior off by default removes it as active surface while keeping th
 
 ## Enforcement
 
-No automated enforcer today — this is a design-time discipline. Apply during code review, plan review (see `.claude/hooks/fleet/plan-review-reminder/`), and threat modeling.
+No automated enforcer today — this is a design-time discipline. Apply during code review, plan review (see `.claude/hooks/fleet/plan-review-nudge/`), and threat modeling.
 
 Related: [`code-style.md`](code-style.md), [`prompt-injection.md`](prompt-injection.md), [`token-hygiene.md`](token-hygiene.md).

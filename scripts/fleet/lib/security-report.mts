@@ -1,11 +1,11 @@
 /**
- * @file The deterministic grade + HANDOFF owner for the scanning-security skill.
- *   The A-F rubric and the === HANDOFF === envelope shape are documented in
- *   _shared/report-format.md; encoding them once here (not in skill prose) means
- *   the count→letter mapping and the parser-facing envelope can never drift from
- *   the doc, and a check can assert computeGrade against the table. The agent
- *   assigns severities (judgment); this turns the resulting counts into the
- *   grade + envelope (arithmetic + templating).
+ * @file The deterministic grade + HANDOFF owner for the scanning-security
+ *   skill. The A-F rubric and the === HANDOFF === envelope shape are documented
+ *   in _shared/report-format.md; encoding them once here (not in skill prose)
+ *   means the count→letter mapping and the parser-facing envelope can never
+ *   drift from the doc, and a check can assert computeGrade against the table.
+ *   The agent assigns severities (judgment); this turns the resulting counts
+ *   into the grade + envelope (arithmetic + templating).
  */
 
 import process from 'node:process'

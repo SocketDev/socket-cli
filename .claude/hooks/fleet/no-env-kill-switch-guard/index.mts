@@ -24,14 +24,14 @@
 //
 // Exit codes: 0 — pass; 2 — block. Fails open on malformed payloads.
 
-import process from 'node:process'
-
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
-import { withEditGuard } from '../_shared/payload.mts'
+import {
+  block,
+  defineHook,
+  editGuard,
+  notify,
+  runHook,
+} from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const logger = getDefaultLogger()
 
 const BYPASS_PHRASE = 'Allow env-kill-switch bypass'
 
@@ -76,28 +76,27 @@ export function isOwnTestPath(filePath: string): boolean {
   return filePath.includes('/.claude/hooks/fleet/no-env-kill-switch-guard/')
 }
 
-await withEditGuard((filePath, content, payload) => {
+export const check = editGuard((filePath, content, payload) => {
   if (!isHookIndexPath(filePath) || isOwnTestPath(filePath)) {
-    return
+    return undefined
   }
   const text = content ?? ''
   if (!text) {
-    return
+    return undefined
   }
   const findings = findKillSwitches(text)
   if (findings.length === 0) {
-    return
+    return undefined
   }
   if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    logger.error(
+    return notify(
       `no-env-kill-switch-guard: ${findings.length} env kill switch(es) — bypassed via "${BYPASS_PHRASE}"\n`,
     )
-    return
   }
   const detail = findings
     .map(f => `  ${filePath}:${f.line}\n    ${f.text}`)
     .join('\n')
-  logger.error(
+  return block(
     `no-env-kill-switch-guard: refusing to add an env-var kill switch to a hook.\n` +
       `\n` +
       `${detail}\n` +
@@ -108,5 +107,14 @@ await withEditGuard((filePath, content, payload) => {
       `\n` +
       `Bypass: type "${BYPASS_PHRASE}" in a recent message.\n`,
   )
-  process.exitCode = 2
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  scope: 'convention',
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

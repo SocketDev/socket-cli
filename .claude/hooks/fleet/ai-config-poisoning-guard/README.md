@@ -34,7 +34,7 @@ channels, so an obfuscated directive can't slip past the literal patterns.
 - Fires only on writes whose path has a `.claude`/`.cursor`/`.gemini`/`.vscode`
   segment.
 - Out-of-band poisoning (a dep's postinstall WRITES these files without a Claude
-  edit) is the companion `ai-config-drift-reminder`'s job — this hook only sees
+  edit) is the companion `ai-config-drift-nudge`'s job — this hook only sees
   Claude's own tool calls.
 
 ## Action

@@ -23,6 +23,7 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { glob } from '@socketsecurity/lib-stable/globs/match'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { toSortedObject } from '@socketsecurity/lib-stable/objects/sort'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
@@ -341,8 +342,10 @@ export function applyAliases(
 
 // The Node builtin set the engine stubs in the browser field. Sourced from the
 // running Node's `builtinModules` (authoritative + dependency-free) rather than
-// a vendored list. Deprecated `_stream_*` ghosts that aren't importable in
-// modern Node are correctly absent.
+// a vendored list, so it tracks whatever the running Node actually reports —
+// including legacy `_stream_*` / `_http_*` internals that `builtinModules`
+// still lists; `buildBrowserField` stubs those bare-only (no `node:` twin,
+// since they have no real `node:`-prefixed form).
 export const NODE_BUILTINS: readonly string[] = builtinModules
 
 // Build the top-level package.json `browser` field (each entry → false =
@@ -423,7 +426,6 @@ async function runGenerator(): Promise<void> {
   // (resolved relative to REPO_ROOT, not process.cwd() — scripts may be invoked
   // from any directory) with a default export of `{ config, packageDir? }`.
   // Absent config = this package does not generate exports (the no-op opt-out).
-  const fastGlob = (await import('fast-glob')).default
   const configPath = path.join(
     REPO_ROOT,
     'scripts/repo/package-exports.config.mts',
@@ -446,18 +448,16 @@ async function runGenerator(): Promise<void> {
     `${config.outDir ? `${config.outDir}/` : ''}**/*.{cjs,js,mjs,json,d.ts,d.mts,d.cts}`,
   ]
   const ignore = [...DEFAULT_IGNORE_GLOBS, ...(config.ignore ?? [])]
-  const publicFiles = await fastGlob.glob([...fileGlobs], {
+  const publicFiles = await glob([...fileGlobs], {
     cwd: packageDir,
     ignore,
-    gitignore: false,
   })
 
   const srcRoot = path.join(packageDir, 'src')
   const srcFiles = new Set<string>(
-    await fastGlob.glob(['**/*.{ts,mts,cts}'], {
+    await glob(['**/*.{ts,mts,cts}'], {
       cwd: srcRoot,
       ignore: ['**/*.d.ts', 'external/**'],
-      gitignore: false,
     }),
   )
 

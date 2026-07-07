@@ -215,7 +215,12 @@ export async function applySparsePatterns(
   submoduleWorktreeRoot: string,
   patterns: string,
 ): Promise<void> {
-  await runGit(options, ['-C', submoduleWorktreeRoot, 'sparse-checkout', 'init'])
+  await runGit(options, [
+    '-C',
+    submoduleWorktreeRoot,
+    'sparse-checkout',
+    'init',
+  ])
   await runGit(options, [
     '-C',
     submoduleWorktreeRoot,

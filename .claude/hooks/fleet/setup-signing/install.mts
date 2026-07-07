@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * @file Install-only entry point for commit-signing setup. Detects which
  *   signing method is locally available (SSH keys via 1Password / agent /
  *   ~/.ssh, GPG via gpg-agent, plain GPG key), and walks the user through `git
@@ -100,7 +100,7 @@ function detect1PasswordSshAgent(): DetectedSigner | undefined {
     stdio: 'pipe',
     stdioString: true,
     env: { ...process.env, SSH_AUTH_SOCK: sock },
-    timeout: 5_000,
+    timeout: 5000,
   })
   if (r.status !== 0) {
     return undefined
@@ -148,7 +148,7 @@ function detectGpgKey(): DetectedSigner | undefined {
     {
       stdio: 'pipe',
       stdioString: true,
-      timeout: 5_000,
+      timeout: 5000,
     },
   )
   if (r.status !== 0) {

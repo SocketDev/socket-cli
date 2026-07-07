@@ -51,11 +51,11 @@ export interface ParseOptions {
 }
 
 const DEFAULT_PARSE_OPTIONS: Required<ParseOptions> = {
+  comments: false,
   ecmaVersion: 2026,
+  jsx: false,
   sourceType: 'module',
   typescript: true,
-  jsx: false,
-  comments: false,
 }
 
 /**
@@ -308,10 +308,11 @@ export function findBareCallsTo(
       })
     | undefined,
 ): CallSite[] {
+  const opts = { __proto__: null, ...options } as typeof options
   const matches: CallSite[] = []
   const lines = splitLines(source)
-  const disableMarker = options?.oxlintRuleName
-    ? `oxlint-disable-next-line ${options.oxlintRuleName}`
+  const disableMarker = opts?.oxlintRuleName
+    ? `oxlint-disable-next-line ${opts.oxlintRuleName}`
     : undefined
 
   walkSimple(
@@ -353,6 +354,14 @@ export interface MemberCallSite extends CallSite {
    * First-argument source text if a string literal, else undefined.
    */
   firstStringArg: string | undefined
+  /**
+   * Leading STATIC text of the first argument — the string value when it is a
+   * string literal, or the cooked text of the FIRST quasi when it is a template
+   * literal (`\`  ✗ ${x}\`` → `'  ✗ '`). Undefined for any other first-arg
+   * shape. Lets callers inspect a prefix (status glyph, indent) regardless of
+   * whether the author wrote a plain string or a template.
+   */
+  firstArgLeadingText: string | undefined
   /**
    * Number of arguments (positional + spreads).
    */
@@ -439,6 +448,7 @@ export function findMemberCalls(
         }
         const args = (node['arguments'] as AcornNode[] | undefined) ?? []
         let firstStringArg: string | undefined
+        let firstArgLeadingText: string | undefined
         let allStringLiteralArgs = args.length > 0
         for (let i = 0; i < args.length; i += 1) {
           const arg = args[i]!
@@ -447,8 +457,21 @@ export function findMemberCalls(
           if (!isStringLit) {
             allStringLiteralArgs = false
           }
-          if (i === 0 && isStringLit) {
-            firstStringArg = arg['value'] as string
+          if (i === 0) {
+            if (isStringLit) {
+              firstStringArg = arg['value'] as string
+              firstArgLeadingText = firstStringArg
+            } else if (arg.type === 'TemplateLiteral') {
+              const quasis = arg['quasis'] as AcornNode[] | undefined
+              const cooked = (
+                quasis?.[0]?.['value'] as
+                  | { cooked?: string | undefined }
+                  | undefined
+              )?.cooked
+              if (typeof cooked === 'string') {
+                firstArgLeadingText = cooked
+              }
+            }
           }
         }
         const { line, column } = offsetToLineCol(source, start)
@@ -457,6 +480,7 @@ export function findMemberCalls(
           column,
           text: (lines[line - 1] ?? '').trim(),
           firstStringArg,
+          firstArgLeadingText,
           argCount: args.length,
           allStringLiteralArgs,
         })
@@ -480,7 +504,7 @@ export interface RegexLiteralSite extends CallSite {
 
 /**
  * Find every regex literal (`/pattern/flags`) in `source`. Used by the
- * path-regex-normalize-reminder rule to flag patterns that try to match both
+ * path-regex-normalize-nudge rule to flag patterns that try to match both
  * path separators inline (`[/\\]`, `[\\\\/]`). Pure regex literals only;
  * doesn't reach into `new RegExp('…')` constructor calls.
  *
@@ -935,7 +959,7 @@ export function walkComments(
       i += 1
       continue
     }
-    if (c === '"' || c === "'") {
+    if (c === "'" || c === '"') {
       stringQuote = c
       i += 1
       continue

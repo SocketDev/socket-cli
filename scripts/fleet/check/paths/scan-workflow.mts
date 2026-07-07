@@ -128,6 +128,11 @@ export const scanWorkflowFile = (repoRoot: string, relPath: string): void => {
     if (!/^\s*#/.test(line)) {
       continue
     }
+    // Matches a fully-qualified build output path of the form
+    // build/<mode>/<platform-arch>/[wasm/]out/<stage>, where mode is dev/prod/shared,
+    // platform-arch is a lowercase alphanumeric-and-hyphen slug, and stage is one
+    // of the canonical output directory names (Compressed, Final, Optimized, Release,
+    // Stripped, Synced). Case-insensitive to catch mixed-case typos.
     const literalShape =
       /build\/(?:dev|prod|shared)\/[a-z0-9-]+\/(?:wasm\/)?out\/(?:Compressed|Final|Optimized|Release|Stripped|Synced)/i
     if (literalShape.test(line)) {

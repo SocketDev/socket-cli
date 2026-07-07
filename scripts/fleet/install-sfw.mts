@@ -35,7 +35,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { parseArgs } from 'node:util'
 
-import { WIN32, getArch } from '@socketsecurity/lib-stable/constants/platform'
+import { getArch, WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 import { downloadBinary } from '@socketsecurity/lib-stable/dlx/binary'
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { safeDelete, safeMkdirSync } from '@socketsecurity/lib-stable/fs/safe'

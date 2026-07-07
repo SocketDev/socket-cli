@@ -11,8 +11,10 @@
 # - Emergency hotfixes
 # - When tests require binaries that haven't been built yet
 #
-# There is NO per-step env kill-switch — `--no-verify` is the only
-# disable, so the choice to skip checks is always explicit and gated.
+# There is NO per-step env kill-switch — the disables are `--no-verify`
+# and the whole-chain `HUSKY=0` escape (handled by the root dispatcher,
+# same bypass phrase), so skipping checks is always explicit and
+# all-or-nothing.
 
 # Skip guards during rebase — commits are being replayed; lint/test on
 # each pick is noisy and slow. Signing is unaffected: git signs via

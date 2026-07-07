@@ -1,4 +1,5 @@
 {
+  "$schema": "https://raw.githubusercontent.com/SocketDev/socket-wheelhouse/main/packages/build-infra/lib/external-tools-schema.json",
   "description": "Build/release tools the from-scratch bootstrap (setup-tools.mjs) installs before pnpm: pnpm itself, Socket Firewall (free + enterprise SKUs), and codedb. Shape is the shared { tools: { <name>: ToolEntry } } container validated by scripts/fleet/lib/external-tools-schema.mts.",
   "tools": {
     "codedb": {
@@ -36,52 +37,185 @@
     },
     "pnpm": {
       "notes": [
-        "pnpm publishes 7 platform-native binaries: linux-{x64,arm64}{,-musl}, darwin-arm64, win-{x64,arm64}. Verified against v11.6.0 (2026-06-13).",
+        "pnpm publishes 7 platform-native binaries: linux-{x64,arm64}{,-musl}, darwin-arm64, win-{x64,arm64}. Verified against v11.8.0 (2026-06-18).",
         "linux-*-musl tarballs are first-class assets with distinct integrity from the glibc tarballs — the binaries are linked against different libcs and only the matching one runs on its target. Don't 'simplify' by pointing musl keys at the glibc asset.",
         "darwin-x64 is the odd one out: upstream dropped the SEA binary in 11.0.5 because of nodejs/node#62893 (upstream LIEF/Mach-O bug that the Node team has declined to fix). Intel Mac instead installs the npm-registry JS tarball (`pnpm-<version>.tgz`) + runs it through system Node. update-external-tools.mts recognizes the `<pkg>-<version>.tgz` asset shape and fetches its integrity from the npm registry rather than the GitHub release.",
-        "v11.6.0 was bumped via update-external-tools.mts (all 8 platforms re-hashed: GitHub assets + darwin-x64 from the npm registry). It published 2026-06-11, inside the 7-day minimumReleaseAge soak, so the bump rode a dated `soakBypass` entry (auto-disarms at `removable`) — pnpm releases are GitHub-asset distributions from a known publisher; the soak targets npm typosquats / malicious freshpubs. Drop the cleared soakBypass on the next routine bump."
+        "v11.8.0 had all 8 platforms re-hashed (GitHub assets as sha512 SRIs + darwin-x64 from the npm registry's dist.integrity). It published 2026-06-18, inside the 7-day minimumReleaseAge soak, so the bump rode a dated `soakBypass` entry (auto-disarms at `removable`) — pnpm releases are GitHub-asset distributions from a known publisher; the soak targets npm typosquats / malicious freshpubs. update-external-tools.mts won't auto-pick a still-soaking release, so this was a hand-bump; drop the cleared soakBypass on the next routine bump."
       ],
       "description": "Fast, disk space efficient package manager",
       "repository": "github:pnpm/pnpm",
-      "version": "11.6.0",
+      "version": "11.9.0",
       "soakBypass": {
-        "version": "11.6.0",
-        "published": "2026-06-11",
-        "removable": "2026-06-18"
+        "version": "11.9.0",
+        "published": "2026-06-23",
+        "removable": "2026-06-30"
       },
       "release": "asset",
       "platforms": {
         "darwin-arm64": {
           "asset": "pnpm-darwin-arm64.tar.gz",
-          "integrity": "sha512-DHKwseQ/HKcfXLOrzwLGFAd4SWOyo3jW+PileiHwQaI8/ZDpg0IR1vVz0SzBWWv7O7HinYUjbm1elENkR8EG9w=="
+          "integrity": "sha512-2oKRHhd6077lct+K79KtZrbDCmaatfF7iokN5weczExGPBd+V2CGaYUyZ/xL5RA8eNnwUAl462TsoTnyRL1sSg=="
         },
         "darwin-x64": {
-          "asset": "pnpm-11.6.0.tgz",
-          "integrity": "sha512-mjZRgiQIDG/lFlr9z+eb+hGMKb5wPz9GKx4y7+HpjkfodQsUjggoYlCq1BE8x5k8pBPE4s1Ed1JwjC7ldRvJXw=="
+          "asset": "pnpm-11.9.0.tgz",
+          "integrity": "sha512-vWgtXQP+Ul73yf1ngMaITR51asTJyf4AxTh4KCQxDc+Q493E9Tg18G3669UIXkGFXgvLs7YN4qxburieUDbwOw=="
         },
         "linux-arm64": {
           "asset": "pnpm-linux-arm64.tar.gz",
-          "integrity": "sha512-x1bEpvzYu6CLlxc78cfNl4pDTa2sITFCaictgW/TK+QFL1uD1IJe9ssV3tAfclD+RhsIaSrxanPajHzJjGyrlg=="
+          "integrity": "sha512-/CNKv0ix/plZl3lZO2+CS5KZGTMt4y+wOdlHNC03Fz/3EJNn+INTTdOMeNRlw2TpwdAj5AlQm8D/4+5TW1Mjcg=="
         },
         "linux-arm64-musl": {
           "asset": "pnpm-linux-arm64-musl.tar.gz",
-          "integrity": "sha512-gpdSD/YT0eAm3jmS6dWdWwzDuW0gaRuWVQ4qjsWBDX9/KcYCWW1PLZ3JLZ6tiXkkT2a1GSKQUaHuKul57wbqlQ=="
+          "integrity": "sha512-LPVoWmKzpJLNoOFi4O5pB54RPhFhsAaWC3GpluhXxHcIW6BVxB71DUZ6wu3SKzsNLW5H4Ulktm2jhB9AGVcJHw=="
         },
         "linux-x64": {
           "asset": "pnpm-linux-x64.tar.gz",
-          "integrity": "sha512-uj1Zz76+lcHATLkCrM/JUIIUaIYgXEEXOXNvSO+g3cYd5RXpS6MacuII9TRBAknr2n5XTIi/bAbOLfxF3hk4nw=="
+          "integrity": "sha512-vbSjiANYEMh//q1Rnam/BQeYQlcN/nZsikpNXqml7+OvMNM0hAFBYahzpeebU/w21Ev8HeiVZPAhbjSwFxfKfQ=="
         },
         "linux-x64-musl": {
           "asset": "pnpm-linux-x64-musl.tar.gz",
-          "integrity": "sha512-4IC9DBZbiJVXz2/VtrZFtXc+OVXUIOhGv6WfN/p27k/rFJOj/57iNNC+MzZDRzlCZsZIAb3WAJUe2B4AAPLsnQ=="
+          "integrity": "sha512-7Q+AQ64rX6CKrATbwDNR1VOu6lbVRDfCODolIxRcytvygl3UAm9FVCxOTBRSf4J8F5AjywHF7gLc5XhgKDdu9A=="
         },
         "win-arm64": {
           "asset": "pnpm-win32-arm64.zip",
-          "integrity": "sha512-VITunLEwYnoEeVF/UP5QD1qOCDhDy+C+BVhBKq5IT4UTiP3X2wanWCtL1nk5OTHg+oPB7NHaWah0SkLqtMcqTA=="
+          "integrity": "sha512-EvMhaunY3IR8TOBVisUyOSc+M8kgueEwRalC4n86DvtGPp6LhrT9+tVm5v6yIAIFptZ2Glky20Wn9RgJQQJ03g=="
         },
         "win-x64": {
           "asset": "pnpm-win32-x64.zip",
-          "integrity": "sha512-oX2y8mihTVM6QEDA8MdXyBGOQ8xxGjqhX1I9+jLfrFY5vCrwpkArhu8bTMq//vMPaS2Rl/nQ7cSgOySnhsvFog=="
+          "integrity": "sha512-/J0vN8GUzKDcg6Gp7hyHPG79R1vE34VnaXZmRpkwE3PM+kQoj/9hM1TO9c77CD4HeZ65NFXNmmj0RwedFf4/EA=="
+        }
+      }
+    },
+    "npm": {
+      "notes": [
+        "npm is platform-agnostic — ONE registry tarball (npm-<version>.tgz, pure JS run through node), so a single top-level integrity rather than a per-platform map. install-npm.mts downloads it via the socket-lib download helper, verifies `integrity` (the stored sha512, captured once at pin time + checked against the registry dist.integrity), then drives the DOWNLOADED `node bin/npm-cli.js install -gf` — never `npm install -g npm`, so there's no self-update path. Models npmjs.com/install.sh + the fleet supply-chain gate.",
+        "Bootstrap order: node first (.node-version), then npm (this entry), then the Socket packages — all downloaded + installed through the socket-lib helpers.",
+        "11.17.0 published 2026-06-11, inside the 7-day minimumReleaseAge soak, so the bump rides a dated soakBypass (auto-disarms at `removable`). update-external-tools.mts recognizes the `<pkg>-<version>.tgz` asset shape and re-fetches integrity from the npm registry on a bump.",
+        "11.17.0 adds the `min-release-age-exclude` .npmrc config — kept in lockstep with pnpm-workspace.yaml minimumReleaseAgeExclude."
+      ],
+      "description": "npm — pinned, SRI-verified registry tarball; installed without self-update",
+      "repository": "npm:npm",
+      "version": "11.17.0",
+      "soakBypass": {
+        "version": "11.17.0",
+        "published": "2026-06-11",
+        "removable": "2026-06-18"
+      },
+      "integrity": "sha512-PurxiZexEHDTE4SSaLI3ZrnbAGiZfeyUcQcxcP5D+hfytNAze/D1IzDuInTn9XVLIbAQUnQuSPXJx02LHjLvQw=="
+    },
+    "smithers": {
+      "notes": [
+        "smithers-orchestrator — AI orchestration framework (durable long-horizon coding-agent workflows). npm registry tarball (pure JS run via node), so a single top-level integrity (npm-shape, like npm itself); install-smithers.mjs downloads + SRI-verifies + racks it, with a bin/smithers shim that runs src/bin/smithers.js through system node.",
+        "0.23.0 published 2026-06-08, inside the 7-day soak — rides a dated soakBypass (auto-disarms 2026-06-15)."
+      ],
+      "description": "smithers-orchestrator — AI agent-workflow orchestrator (pinned, SRI-verified)",
+      "repository": "npm:smithers-orchestrator",
+      "version": "0.23.0",
+      "binaryName": "smithers",
+      "soakBypass": {
+        "version": "0.23.0",
+        "published": "2026-06-08",
+        "removable": "2026-06-15"
+      },
+      "integrity": "sha512-P7u1sr5IwPhL3ywKnK/n03R9vt1XvuKJ1pL8qhOH62+D1s3+A8m2OCig59ywx7m5DczwfGM1uFMZsD6HyXd3hQ=="
+    },
+    "fff": {
+      "notes": [
+        "fff (dmtrKovalenko/fff) — fast typo-resistant file-search MCP server (Rust). The installable artifact is the per-platform fff-mcp-<target> binary (the asset IS the executable, codedb-shape). Each integrity was captured download-first then cross-checked against the publisher .sha256 sidecar (computed == sidecar for all 8). install-fff.mjs downloads + SRI-verifies + racks it with a bin/fff-mcp shim.",
+        "0.9.4 published 2026-06-09, inside the 7-day soak — rides a dated soakBypass (auto-disarms 2026-06-16)."
+      ],
+      "description": "fff-mcp — file-search MCP server (pinned, SRI-verified per platform)",
+      "repository": "github:dmtrKovalenko/fff",
+      "version": "0.9.4",
+      "release": "asset",
+      "binaryName": "fff-mcp",
+      "soakBypass": {
+        "version": "0.9.4",
+        "published": "2026-06-09",
+        "removable": "2026-06-16"
+      },
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "fff-mcp-aarch64-apple-darwin",
+          "integrity": "sha512-VE6VZCqsNeIptGr7poFEG70xXv6M51Geriassx98iK1X0yxQLgJtT/VGqWh1OeKoOEP2CKiKnsE8SiYpC5f0ZA=="
+        },
+        "darwin-x64": {
+          "asset": "fff-mcp-x86_64-apple-darwin",
+          "integrity": "sha512-IXgZRo3p2hFGLCblaUkCLPSGizsbHpwUOftK0icOUQN7HA3Q/uE1NDQ99ZvwqN2GLkf/Z7zxlCR3w3fikUAVdg=="
+        },
+        "linux-arm64": {
+          "asset": "fff-mcp-aarch64-unknown-linux-gnu",
+          "integrity": "sha512-tM1dvuuCpeBtbWQkhNeCVzGRjyqAQjdnl24VrUe8Kr5o/pz6nxkpFFWbqB1+BNReFHGYsdCrqYunyCyV0FWYrQ=="
+        },
+        "linux-arm64-musl": {
+          "asset": "fff-mcp-aarch64-unknown-linux-musl",
+          "integrity": "sha512-cWlABwU9RvQNQhbUThZMkB4m5f6Vvx/qcGE2d/Nzpz9ODktQCbp7iyuGMwsup4Mx5HOIUh4wIrEJiTubz2YZyQ=="
+        },
+        "linux-x64": {
+          "asset": "fff-mcp-x86_64-unknown-linux-gnu",
+          "integrity": "sha512-bs5gbdTGLqdTSiTT5KcHvl+hEo9FNT2uQzRRqlza0eu6Yui8zZvt02FCxy4vKgUfeTwCUeW8PDgi6Us/eob2vw=="
+        },
+        "linux-x64-musl": {
+          "asset": "fff-mcp-x86_64-unknown-linux-musl",
+          "integrity": "sha512-iZdFoGiex8uXUjXuQQocBylCbhapTPxIq+mn3dKIAq43iE4LWziCjw3SAvUinCQHbFTSFleOFik0l9T2vOYdZw=="
+        },
+        "win-arm64": {
+          "asset": "fff-mcp-aarch64-pc-windows-msvc.exe",
+          "integrity": "sha512-XJ41H3iA63of1hfVQ6Mz9BRYYsXzY9jYFhd0iMDsUMTDqrMdpNSnzsueE2V0uW4LN9icGtEQYDLIakrDg1vJCg=="
+        },
+        "win-x64": {
+          "asset": "fff-mcp-x86_64-pc-windows-msvc.exe",
+          "integrity": "sha512-1uaBo7+DTmaIUxrl25bNT1QkTvPW4ji3Cvn9DD1FQbU+kJFbw+GIfM+GCI7ETn4arly4cSl9YL3EiXfLfFLY3g=="
+        }
+      }
+    },
+    "janus": {
+      "notes": [
+        "janus (divmain/janus) — single-binary utility some Socket workflows opt into (NOT a security tool). PROMOTED here from the setup-security-tools external-tools.json so the bootstrap reads ONE canonical tool list (the security-tools installer + the `janus` launcher both read this entry — 1 path 1 reference). GitHub release tarball; install-janus.mjs SRI-verifies + racks it with a bin/janus shim. darwin-arm64 only for now (other platforms as upstream ships builds). Past soak (1.23.1 long-established) — no soakBypass.",
+        "Version is stored bare (1.23.1); the installer prepends the `v` tag prefix, matching sfw/codedb/fff."
+      ],
+      "description": "janus — divmain/janus single-binary utility (pinned, SRI-verified)",
+      "repository": "github:divmain/janus",
+      "version": "1.23.1",
+      "release": "asset",
+      "binaryName": "janus",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "janus-aarch64-apple-darwin.tar.gz",
+          "integrity": "sha512-GkFaJcv3BkVAsOhEiijIDPbHNNo5d3mOwTfDMeuMAIt0ZaA7s5m/NDeWHTffCOhCwrJwJXWQK8RhbpkYmmI3xQ=="
+        }
+      }
+    },
+    "uv": {
+      "notes": [
+        "uv (Astral) — the fleet's Python project tool. Installed in the bootstrap (release-asset, SRI-verified per platform, like janus/codedb) so a hash-locked uv install is available BEFORE the security-tools step that needs it (SkillSpector installs via a uv project + uv.lock, no pipx — the fleet 'uv for projects' rule). update-external-tools.mts re-hashes the GitHub release assets on a bump.",
+        "0.11.21 published 2026-06-11; the GitHub release is a known-publisher binary distribution (the soak targets npm freshpub typosquats), past its 7-day window now — no soakBypass needed. Pinned bare; the installer prepends no v (uv tags have no v prefix)."
+      ],
+      "description": "uv — Astral Python package/project manager (pinned, SRI-verified)",
+      "repository": "github:astral-sh/uv",
+      "version": "0.11.21",
+      "release": "asset",
+      "binaryName": "uv",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "uv-aarch64-apple-darwin.tar.gz",
+          "integrity": "sha512-HVEGTGGzjKNRCbzhhhP5+fDMGPyHW/qsG7Oa4cL0YGfdDOMyas1pAi/q/Q4dPE5/uoqNSbk+1qqfzlI1Ryfveg=="
+        },
+        "darwin-x64": {
+          "asset": "uv-x86_64-apple-darwin.tar.gz",
+          "integrity": "sha512-F6G/11wlZ54uhhDN6gO63jaLE6R5RU7ULf601Zf3sOef43rcf/nQ0+8vWGKW+MtH7tQAr9HFCmt5CmeIaiSVFw=="
+        },
+        "linux-arm64": {
+          "asset": "uv-aarch64-unknown-linux-gnu.tar.gz",
+          "integrity": "sha512-kLYDGEDldFPEgMRSc1Gvn+uusu0MDH6cWddYtzlCx8Oy/zsKUFU8D/HVmTb+YwJ05H8CPFrqdXlRq8KC/Jj4uA=="
+        },
+        "linux-x64": {
+          "asset": "uv-x86_64-unknown-linux-gnu.tar.gz",
+          "integrity": "sha512-d0in3UgzEbgDxRtI53DE/ZCnE/n7Uy90vB3G4H7cV0ZjSbpxgbEP/UVPSKzdWHnD8qjIt3+liZ/PSlI30uiQyw=="
+        },
+        "win-x64": {
+          "asset": "uv-x86_64-pc-windows-msvc.zip",
+          "integrity": "sha512-FZDwC81ha5JsP3KCnuLYMooSaLaSmFCe3Oky/ctYX0DV/pe4YI5vSvDxHqI+z46UgN0ctGYhZxK3/hKbei9sXA=="
         }
       }
     },

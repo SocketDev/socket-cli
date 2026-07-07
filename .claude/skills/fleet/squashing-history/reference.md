@@ -53,7 +53,7 @@ git branch | grep backup-
 ### Phase 8: Force Push with Retry
 
 `$BASE` is the default branch resolved in Phase 1 (never hard-code `main`). The
-`SQUASH_HISTORY=1` sentinel clears the `no-revert-guard` force-push block, and
+`SQUASH_HISTORY=1` sentinel clears the `no-force-push-guard` block, and
 `--force-with-lease` aborts if the remote moved since the last fetch.
 
 ```bash

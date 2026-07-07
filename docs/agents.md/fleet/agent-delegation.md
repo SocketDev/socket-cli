@@ -22,6 +22,18 @@ Agent calls run on someone else's clock. A model that decides to "think harder" 
 - **Picking the budget:** sanity checks should answer in ~2 minutes; second-implementation passes in ~5; deep rescue work in ~15. Pick the smallest budget that's likely to succeed and let the orchestrator surface a "timed out" failure cleanly. A skipped verdict (with the agent's name and the timeout you used) is more useful than a 20-minute wait that ends in a long, unstructured answer.
 - **Failure handling:** treat a timeout as a no-op signal, not an error. The main session continues with its own judgment and reports "asked Codex, no response within budget". The user can re-invoke with a longer budget if the question needs it.
 
+## Don't chain long agents back-to-back — the blocked wall-clock compounds
+
+Each `Agent(...)` call BLOCKS the main session until that sub-agent finishes. A per-agent timeout caps one agent; it does nothing about serializing several. Five back-to-back agents at 10–14 minutes each park the conversation for an hour, even though every one of them was "bounded." To the operator that hour is dead wall-clock on a turn that looks stuck.
+
+Before spawning a sub-agent inside a sequence, pick by the work:
+
+- **Inline it** when the piece is small or mechanical: a few edits, a focused read, a verification you can do in two tool calls. The round-trip overhead is not worth it, and inline gives the operator immediate feedback. A relocation that broke two test specs is an inline fix, not a fresh agent.
+- **Background or fan out** when the work is heavy AND independent. Pass `run_in_background: true` so it runs while you do other work, or launch one fan-out (`parallel()` / several `Agent` calls in one message) instead of N sequential blocking calls. A read-heavy ingest is a background `Explore`, not a foreground block.
+- **Check in between** long agents. After a substantial one returns, report and let the operator redirect before chaining the next. Do not queue three more heavyweight agents on the assumption the plan will not change; it often does.
+
+Rule of thumb: about to spawn your second or third blocking agent in a row? Stop and ask whether the next piece is inline-able, backgroundable, or worth a check-in first. Serial heavyweight delegation is the slowest path to a result, and the one most likely to produce work the operator did not want. Companion hook: `parallel-agent-spawn-nudge`.
+
 ## Sanity checks (second-opinion verification)
 
 The highest-value use of mid-conversation delegation is a small, fast _sanity check_ on work the main session just did: a prompt rewrite, a refactor of a sensitive area, a CHANGELOG entry before release, a tricky regex. The companion agent's job is to spot the obvious thing the main session missed, not to redo the work.
@@ -110,6 +122,7 @@ When the _current_ Claude session wants to hand off a single task to another mod
 - **About to do 20+ similar small operations** → `delegate` with a cheap model. Keep the main context clean.
 - **Want a sanity check on a non-trivial design or diff** → `/codex:adversarial-review` (slash command) _or_ `delegate` to a different family, depending on which perspective is more useful.
 - **Big codebase question that'll burn context** → `Explore`.
+- **Have a findings report to apply** → `fix` (fleet agent): runs the deterministic fixers (`pnpm run fix`/`format`/the finding's named script) first, then AI-patches the residue one finding at a time, verifying + committing each. The mutating counterpart to the read-only `code-reviewer` — review finds, `fix` applies. Kept separate so a wrong fix for a misdiagnosed finding can't ride in on a review pass.
 - **Building a multi-pass workflow** → don't use `Agent(...)` ad hoc; write a skill that uses Surface 1.
 
 ## Subagent return contract
@@ -125,9 +138,93 @@ A delegated subagent ends in one of four terminal states. Orchestrators route on
 
 Two rules fall out of the contract. Never force the same model to retry an unchanged prompt on a non-`done` state: `needs-context` means change the input, `blocked` means hand off. And never silently swallow a `done-with-concerns` — the concern is the point of having a distinct state from `done`.
 
+## A hook block inside a subagent is a lead, not a diagnosis
+
+When a spawned subagent trips a PreToolUse hook, it reports the block **verbatim** — quotes the `[<guard-name>] …` line the hook emitted, sets `blocked` (or `needs-context` when the cause is a missing env knob), and stops. It does not diagnose the block, attribute it to a "bug" or "incomplete fix", or guess which guard fired and why. Every block message already names its own guard; the interpretation is the orchestrator's job, and the orchestrator owes it the same verify-before-trust it owes any subagent claim: reproduce the block itself before acting on it.
+
+A subagent's confident-but-wrong block diagnosis is expensive. It costs the orchestrator a full verify cycle and can send it editing a guard that was never broken. In one case a subagent reported `node --test … blocked` and invented a shell-quote `2>&1` tokenizer bug; neither reproduced. The only real block was an unrelated package-manager auto-update guard firing because the off-knob was absent from the subagent's env. So every spawn prompt carries the rule explicitly: on a hook block, quote it verbatim and stop — do not diagnose.
+
+## Transformation subagents preserve source verbatim; verify content, not counts
+
+When you delegate a content TRANSFORM (rewrite, reformat, thin, migrate, or anything carrying citations, names, or links, above all the CLAUDE.md law file and the docs), the subagent copies the structured tokens VERBATIM from the source: hook citations, file and symbol names, doc links, version pins. It may compress the prose. It must never regenerate a token from memory. A model paraphrasing "the token-minifier hook" from its training, when the source says `headroom-proxy-start`, silently substitutes a wrong or removed reference that reads plausibly.
+
+The orchestrator's verify-before-trust here is content, not counts. A tally match ("54 bullets, 52 links, all preserved") proves nothing about whether each token is the RIGHT one. A single citation can be silently rewritten to a removed hook while every count still matches. Run the resolving gate (`claude-md-citations-resolve` checks every cited hook and doc exists on disk) and diff preserved tokens against the source. Never sign off on tallies alone. In one case a thin-CLAUDE.md transform subagent rewrote a rule's hook citation from memory to a removed hook name. The counts matched exactly, and only the citation-resolve gate caught the stale token.
+
+Encode both in the spawn prompt: preserve every citation, name, and link verbatim from the source, and do not regenerate from memory. On return, run the resolve gate before landing the subagent's output.
+
+## Fanning out EDITING subagents: isolate, scope to one unit, collect deliberately
+
+Fanning out subagents to READ is low-risk; fanning them out to EDIT shared
+files is where a sweep goes off the rails. A broad edit fan-out — several files
+per agent, all working the live tree — fails two ways at once: an agent reaches
+for a tree-wide `--fix`/formatter to "just clear the lint" and rewrites files it
+was never assigned, and concurrent agents race on the same working tree. In one
+sweep over fleet-canonical `template/` files, agents told to "edit only your
+assigned files" produced an 84-file, ~2,800-line diff (assigned: 30) — a broad
+`oxlint --fix` had blown every scope boundary. The whole run was unreviewable
+and had to be reverted.
+
+The shape that works for editing fan-outs:
+
+- **One unit per agent.** Scope each agent to a single file (or a small disjoint
+  set). One file makes "did it stay in scope?" trivially checkable.
+- **`isolation: 'worktree'`.** Each agent edits in its own git worktree, so its
+  writes cannot touch the main tree or another agent's files. A stray edit (even
+  a broad `--fix`) is confined to that agent's throwaway checkout. This is the
+  one case worth the worktree cost.
+- **Hard-forbid broad autofixers in the prompt.** No `--fix`/`--write`/formatter,
+  no `pnpm run lint/fix/format` — only read-only inspection. That single command
+  is what blows scope; ban it explicitly.
+- **Collect deliberately — worktree edits do NOT auto-merge.** After the run, copy
+  each agent's assigned file(s) out of its worktree into the main tree yourself,
+  verifying the worktree changed ONLY those files (strays stay isolated and are
+  simply not collected). This collection step IS the scope gate.
+- **Verify authoritatively before committing.** The agent's "clean" self-report is
+  a lead, not proof (see above). Re-run the real lint over the collected files +
+  the full test suite in the main tree; only then commit. A per-rule baseline
+  gate (e.g. the dogfood-lint ratchet) guarantees the worst case is "fewer fixed",
+  never a regression.
+
+The validated version of the failed sweep above: one worktree-isolated agent per
+file, broad fixers banned, collect-and-verify in main — scope held (0 strays),
+quality held (named-capture conversions, options-object refactors with in-file
+call-site updates), full suite green. Companion hook: `parallel-agent-spawn-nudge`.
+
 ## When the surfaces overlap
 
 A skill that wants `codex` output should call the CLI (Surface 1) so the result lands in a structured report. A live conversation that wants Codex's opinion on the _current_ problem should use the subagent (Surface 2) so the result flows back into the conversation. Same model, different orchestration.
+
+## Workflow agents have no Task tools — inline the spec
+
+A `Workflow` script's `agent()` subagents (and the workflow script body itself)
+reach **none** of the session task tools — `TaskGet`, `TaskUpdate`, `TaskList`,
+`TaskCreate`, `TaskOutput`, `TaskStop`. The task store belongs to the main
+session harness; a workflow subagent only gets the standard tools plus MCP via
+`ToolSearch`. A prompt that tells an agent to "`TaskGet` your spec" sends it in
+blind — it can't read the task, so it either guesses or burns its turn searching
+for a tool that isn't there.
+
+This is not hypothetical: on the 2026-07-04 overnight run, 3 of 5 socket-lib
+workflow steps were skipped because their agents were told to fetch their own
+spec from the task store and had no way to.
+
+The pattern that works:
+
+- **`TaskGet` the FULL description in the main loop first**, then inline it
+  verbatim into the `agent()` prompt. The agent needs the whole spec in the
+  prompt — it has no other way to see it.
+- **Agents report via structured output** (`schema:`), never by calling
+  `TaskUpdate`.
+- **The orchestrator does all task bookkeeping** — `TaskUpdate` status after the
+  harvest, in the main session, from the agent's returned result.
+- **Tell the agent explicitly it has no task tools** so it doesn't waste a turn
+  hunting for `TaskGet` via `ToolSearch`.
+
+Enforcement: `workflow-agent-task-tools-nudge` (PreToolUse on the `Workflow`
+tool) flags any Task-tool identifier in the script — a reminder, because a
+descriptive comment about the orchestrator's own bookkeeping is a legitimate
+(if rare) reason for the name to appear. The workflow author dismisses it or
+reworks the prompt.
 
 ## Compatibility note
 

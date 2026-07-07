@@ -7,13 +7,11 @@
  *   (a setup script, a CI step, a Dockerfile RUN). Both read the same
  *   `_shared/cdn-allowlist.mts` so the allowlist never drifts (code is law,
  *   DRY).
- *
  *   Scans tracked text files for `http(s)://` URLs sitting on a fetch tool
  *   (`curl`/`wget`/`fetch`) and flags any whose host isn't allowlisted. The
  *   allowlist holds PUBLIC registries / CDNs only — an internal
  *   `*.svc.cluster.local` host is never on it, so a committed fetch to one is
  *   flagged (route it through the service client, don't allowlist it).
- *
  *   Exit codes: 0 — every committed fetch targets an allowlisted host (or none
  *   found); 1 — at least one off-allowlist fetch is committed.
  */
@@ -76,7 +74,9 @@ for (let i = 0, { length } = files; i < length; i += 1) {
 }
 
 if (offenders.length === 0) {
-  logger.log('cdn-allowlist: every committed fetch targets an allowlisted host.')
+  logger.log(
+    'cdn-allowlist: every committed fetch targets an allowlisted host.',
+  )
   process.exitCode = 0
 } else {
   logger.error('')

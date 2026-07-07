@@ -30,18 +30,18 @@
 // Fails open on parse / payload errors (exit 0) — a guard bug must not
 // wedge every Bash call.
 
-import process from 'node:process'
-
-import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
+import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
 
 const BYPASS_PHRASE = 'Allow tsx bypass' as const
 
-interface Payload {
-  tool_name?: unknown | undefined
-  tool_input?: { command?: unknown | undefined } | undefined
-  transcript_path?: unknown | undefined
-}
+// Pre-flight triggers: the dispatcher skips importing this guard unless
+// the raw payload contains one of these substrings. Every blocking path
+// requires the literal binary name (`tsx`/`ts-node` as the command) OR a
+// loader value naming one (`--import tsx`, `--require ts-node/register`),
+// so a command with neither substring can never block — safe to skip.
+export const triggers: readonly string[] = ['tsx', 'ts-node']
 
 // The verboten TS-execution binaries.
 const TS_RUNNERS = ['tsx', 'ts-node'] as const
@@ -140,50 +140,29 @@ export function formatBlock(d: TsxDetection): string {
   )
 }
 
-async function main(): Promise<void> {
-  const raw = await readStdin()
-  let payload: Payload
-  try {
-    payload = JSON.parse(raw) as Payload
-  } catch {
-    process.exit(0)
-  }
-
-  if (payload.tool_name !== 'Bash') {
-    process.exit(0)
-  }
-
-  const command =
-    typeof payload.tool_input?.command === 'string'
-      ? payload.tool_input.command
-      : ''
+export const check = bashGuard((command, payload) => {
   if (!command.trim()) {
-    process.exit(0)
+    return undefined
   }
-
   const detection = detectTsx(command)
   if (!detection.detected) {
-    process.exit(0)
+    return undefined
   }
-
-  const transcriptPath =
-    typeof payload.transcript_path === 'string'
-      ? payload.transcript_path
-      : undefined
   if (
-    transcriptPath &&
-    bypassPhrasePresent(transcriptPath, [BYPASS_PHRASE], 3)
+    payload.transcript_path &&
+    bypassPhrasePresent(payload.transcript_path, [BYPASS_PHRASE], 3)
   ) {
-    process.exit(0)
+    return undefined
   }
+  return block(formatBlock(detection))
+})
 
-  process.stderr.write(formatBlock(detection))
-  process.exit(2)
-}
-
-// Entrypoint-guarded: run main() only when invoked directly, NOT when the test
-// imports this module for its pure helpers (else main() blocks on stdin at
-// import and the test file never terminates).
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
-  void main()
-}
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Bash'],
+  triggers,
+  scope: 'convention',
+  type: 'guard',
+})
+void runHook(hook, import.meta.url)

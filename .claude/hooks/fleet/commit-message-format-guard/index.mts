@@ -12,9 +12,9 @@
 //
 //   2. No AI-attribution markers anywhere in the message body
 //      ("Generated with Claude", "Co-Authored-By: Claude", 🤖 tag
-//      lines, <noreply@anthropic.com>). The Stop-hook companion
-//      commit-pr-reminder catches these at draft time; this is the
-//      commit-time defense in depth.
+//      lines, <noreply@anthropic.com>, the "Claude-Session:" trailer).
+//      The Stop-hook companion commit-pr-nudge catches these at draft
+//      time; this is the commit-time defense in depth.
 //
 // Spec: https://www.conventionalcommits.org/en/v1.0.0/
 //
@@ -26,19 +26,18 @@
 //     examples).
 //
 // Hook contract:
-//   - Reads PreToolUse JSON from stdin.
-//   - Exits 0 (allow) or 2 (block + stderr explanation).
+//   - Returns a `block(message)` verdict (the runner prints message +
+//     sets exitCode 2) or `undefined` (allow).
 //   - Fails open on any internal error so the hook never wedges the
 //     operator's flow.
-
-import process from 'node:process'
 
 import { AI_ATTRIBUTION_PATTERNS } from '../_shared/ai-attribution.mts'
 import {
   extractCommitMessage,
   isGitCommit,
 } from '../_shared/commit-command.mts'
-import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
+import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
 // Conventional Commits header validation lives in the cross-tree canonical home
 // .git-hooks/_shared/commit-format.mts so the commit-msg git-stage backstop
 // shares THIS code (the shared thing is the validation). That module is
@@ -58,12 +57,12 @@ export { extractCommitMessage, isGitCommit }
 export { HEADER_RE, suggestReplacement, validateHeader }
 export type { HeaderCheck }
 
-interface PreToolUsePayload {
-  readonly tool_name?: string | undefined
-  readonly tool_input?: { readonly command?: unknown | undefined } | undefined
-  readonly transcript_path?: string | undefined
-  readonly cwd?: string | undefined
-}
+// Pre-flight triggers: the dispatcher skips importing this guard unless the raw
+// payload contains one of these substrings. The guard can only ever block when
+// `isGitCommit(command)` is true, and that detection requires the literal
+// `commit` token (the regex `\bgit\b…\s+commit(?:\s|$)`). So `commit` is a
+// necessary substring of every blocking command — safe to gate on.
+export const triggers: readonly string[] = ['commit']
 
 const BYPASS_FORMAT = 'Allow commit-format bypass'
 const BYPASS_AI = 'Allow ai-attribution bypass'
@@ -82,44 +81,27 @@ export function findAiAttribution(message: string): string | undefined {
   return undefined
 }
 
-function emitBlock(reason: string, body: string): never {
-  process.stderr.write(`[commit-message-format-guard] ${reason}\n\n${body}\n`)
-  process.exit(2)
+function blockMessage(reason: string, body: string): string {
+  return `[commit-message-format-guard] ${reason}\n\n${body}\n`
 }
 
-async function main(): Promise<void> {
-  const raw = await readStdin()
-  let payload: PreToolUsePayload
-  try {
-    payload = JSON.parse(raw) as PreToolUsePayload
-  } catch {
-    process.exit(0)
-  }
-  if (payload.tool_name !== 'Bash') {
-    process.exit(0)
-  }
-  const command = payload.tool_input?.['command']
-  if (typeof command !== 'string') {
-    process.exit(0)
-  }
+export const check = bashGuard((command, payload) => {
   if (!isGitCommit(command)) {
-    process.exit(0)
+    return undefined
   }
   const message = extractCommitMessage(command)
   if (message === undefined) {
     // No inline message — operator may be using -F file or editor; not our
     // call to enforce here.
-    process.exit(0)
+    return undefined
   }
 
   // Header check first.
+  /* c8 ignore next - split always returns ≥1 element; ?? '' fallback is unreachable */
   const firstLine = message.split('\n')[0] ?? ''
   const header = validateHeader(firstLine)
   if (header.kind !== 'ok') {
-    if (bypassPhrasePresent(payload.transcript_path, BYPASS_FORMAT)) {
-      // Operator authorized this commit. Still fall through to AI check
-      // separately — bypass-format does not authorize AI attribution.
-    } else {
+    if (!bypassPhrasePresent(payload.transcript_path, BYPASS_FORMAT)) {
       const suggestion = suggestReplacement(header)
       const lines: string[] = []
       if (header.kind === 'no-type') {
@@ -133,9 +115,11 @@ async function main(): Promise<void> {
         lines.push(
           `  Type must be lowercase. Got "${header.type}" in: "${header.line}"`,
         )
+        /* c8 ignore start - HeaderCheck union is exhausted by prior arms; false branch of this else-if is unreachable */
       } else if (header.kind === 'empty-description') {
         lines.push(`  Empty description after "${header.type}:" header.`)
       }
+      /* c8 ignore stop */
       lines.push('')
       lines.push(`  Required format: <type>[(scope)][!]: <description>`)
       lines.push(`  Allowed types  : ${ALLOWED_TYPES.join(', ')}`)
@@ -146,18 +130,22 @@ async function main(): Promise<void> {
       lines.push(`  Suggested fix  : ${suggestion}`)
       lines.push('')
       lines.push(`  Bypass: type "${BYPASS_FORMAT}" in a recent message.`)
-      emitBlock(
-        'Commit message does not match Conventional Commits 1.0.',
-        lines.join('\n'),
+      return block(
+        blockMessage(
+          'Commit message does not match Conventional Commits 1.0.',
+          lines.join('\n'),
+        ),
       )
     }
+    // Operator authorized this commit. Still fall through to AI check
+    // separately — bypass-format does not authorize AI attribution.
   }
 
   // AI-attribution check (independent of the format bypass).
   const aiLabel = findAiAttribution(message)
   if (aiLabel) {
     if (bypassPhrasePresent(payload.transcript_path, BYPASS_AI)) {
-      process.exit(0)
+      return undefined
     }
     const lines: string[] = []
     lines.push(`  AI-attribution marker found: ${aiLabel}`)
@@ -170,19 +158,28 @@ async function main(): Promise<void> {
     lines.push('    - "Co-Authored-By: Claude"')
     lines.push('    - Robot emoji (🤖) tag lines')
     lines.push('    - <noreply@anthropic.com> footer')
+    lines.push('    - "Claude-Session:" trailer / claude.ai/code/session_ URL')
     lines.push('')
     lines.push(`  Bypass (rare): type "${BYPASS_AI}" in a recent message.`)
     lines.push('  Use only when a commit legitimately documents the strings')
     lines.push('  (e.g. CLAUDE.md edits that quote them as examples).')
-    emitBlock(
-      'AI-attribution markers are forbidden in commit messages.',
-      lines.join('\n'),
+    return block(
+      blockMessage(
+        'AI-attribution markers are forbidden in commit messages.',
+        lines.join('\n'),
+      ),
     )
   }
 
-  process.exit(0)
-}
-
-main().catch(() => {
-  process.exit(0)
+  return undefined
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Bash'],
+  triggers,
+  scope: 'convention',
+  type: 'guard',
+})
+void runHook(hook, import.meta.url)

@@ -162,8 +162,9 @@ export function resolveFormatter(
 }
 
 /**
- * Resolve the fleet's type checker (currently `tsgo`, the
- * `@typescript/native-preview` binary).
+ * Resolve the fleet's type checker (currently `tsc`, the `typescript` 7.x
+ * native binary — the renamed successor to the `@typescript/native-preview`
+ * `tsgo` preview).
  *
  * Always emits `--noEmit` because the fleet's `type` script is for checking
  * only — emitting goes through the bundler.
@@ -171,9 +172,9 @@ export function resolveFormatter(
 export function resolveTypeChecker(
   options: ResolveTypeCheckerOptions,
 ): ResolvedTool {
-  const { project } = options
+  const { project } = { __proto__: null, ...options } as typeof options
   return {
-    args: ['tsgo', '--noEmit', '-p', project],
+    args: ['tsc', '--noEmit', '-p', project],
     envs: {},
   }
 }

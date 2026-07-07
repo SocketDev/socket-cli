@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * @file Whole-file commit-time gate that audits CLAUDE.md `###` section bodies
  *   for informativeness. Every section between two `### ` headings must contain
  *   at least one of:
@@ -24,12 +24,17 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
+import {
+  isFleetMarkerBeginLine,
+  isFleetMarkerEndLine,
+} from '../../../.claude/hooks/fleet/_shared/fleet-markers.mts'
 import { REPO_ROOT } from '../paths.mts'
 
-// Match a `### ` heading line (level-3 heading). Levels 1+2 are
-// document chrome (h1 = doc title, h2 = top-level fleet/repo block);
-// the audit targets level-3 sections which are the actual rule units.
-const SECTION_HEADER_RE = /^###\s+(.+?)\s*$/
+// A top-level `- ` bullet is a rule. The thin CLAUDE.md is a flat list — one
+// bullet per rule, each carrying its own enforcer citation / detail-doc link.
+// `## ` headings are chrome; indented sub-bullets are detail under a rule, not
+// rules themselves — only column-0 `- ` lines are audited.
+const RULE_BULLET_RE = /^- (.+)$/
 
 // Hook citation in any inline form. Sections may use either:
 //   (enforced by `.claude/hooks/fleet/<name>/`)
@@ -66,8 +71,6 @@ const ADVISORY_OPTOUT_RE =
 // FLEET-CANONICAL -->` marker. Audit only the fleet block — the
 // repo-specific block is per-repo and may legitimately be more
 // prose-heavy.
-const FLEET_BEGIN_RE = /<!--\s*BEGIN FLEET-CANONICAL/
-const FLEET_END_RE = /<!--\s*END FLEET-CANONICAL/
 
 export interface Finding {
   line: number
@@ -80,66 +83,45 @@ export interface AuditResult {
   enforcedSections: number
 }
 
-// Parse the CLAUDE.md text and emit one Finding per `###` section
-// whose body has none of: hook citation, docs link, advisory opt-out.
-// Sections OUTSIDE the fleet block are ignored.
+// Parse CLAUDE.md and emit one Finding per top-level `- ` rule bullet in the
+// fleet block whose line carries none of: hook citation, docs link, skill
+// reference, advisory opt-out. Bullets OUTSIDE the fleet block are ignored.
+// (totalSections/enforcedSections keep their names but now count rule bullets.)
 export function audit(text: string): AuditResult {
   const lines = text.split('\n')
   const findings: Finding[] = []
   let inFleetBlock = false
   let totalSections = 0
   let enforcedSections = 0
-  let currentHeading: string | undefined
-  let currentHeadingLine = 0
-  let currentBody = ''
-  function flushCurrent(): void {
-    if (currentHeading === undefined) {
-      return
-    }
-    totalSections += 1
-    if (
-      HOOK_CITATION_RE.test(currentBody) ||
-      DOCS_LINK_RE.test(currentBody) ||
-      SKILL_REFERENCE_RE.test(currentBody) ||
-      ADVISORY_OPTOUT_RE.test(currentBody)
-    ) {
-      enforcedSections += 1
-    } else {
-      findings.push({ line: currentHeadingLine, heading: currentHeading })
-    }
-  }
-  for (let i = 0; i < lines.length; i += 1) {
+  for (let i = 0, { length } = lines; i < length; i += 1) {
     const line = lines[i] ?? ''
-    if (FLEET_BEGIN_RE.test(line)) {
+    if (isFleetMarkerBeginLine(line)) {
       inFleetBlock = true
       continue
     }
-    if (FLEET_END_RE.test(line)) {
-      flushCurrent()
-      currentHeading = undefined
-      currentBody = ''
+    if (isFleetMarkerEndLine(line)) {
       inFleetBlock = false
       continue
     }
     if (!inFleetBlock) {
       continue
     }
-    const m = SECTION_HEADER_RE.exec(line)
-    if (m) {
-      // Close the previous section before opening a new one.
-      flushCurrent()
-      currentHeading = m[1]!
-      currentHeadingLine = i + 1
-      currentBody = ''
+    const m = RULE_BULLET_RE.exec(line)
+    if (!m) {
       continue
     }
-    if (currentHeading !== undefined) {
-      currentBody += line + '\n'
+    totalSections += 1
+    if (
+      HOOK_CITATION_RE.test(line) ||
+      DOCS_LINK_RE.test(line) ||
+      SKILL_REFERENCE_RE.test(line) ||
+      ADVISORY_OPTOUT_RE.test(line)
+    ) {
+      enforcedSections += 1
+    } else {
+      findings.push({ line: i + 1, heading: m[1]!.slice(0, 60) })
     }
   }
-  // Flush at EOF in case the fleet block isn't terminated by a marker
-  // (e.g. when the END marker is missing from the file we're auditing).
-  flushCurrent()
   return { findings, totalSections, enforcedSections }
 }
 
@@ -178,7 +160,7 @@ function main(): void {
     )
     for (let i = 0, { length } = result.findings; i < length; i += 1) {
       const f = result.findings[i]!
-      process.stderr.write(`  line ${f.line}: ### ${f.heading}\n`)
+      process.stderr.write(`  line ${f.line}: - ${f.heading}\n`)
     }
     process.stderr.write(
       `\nFix: add an enforcer or link to a detail page. CLAUDE.md is ` +

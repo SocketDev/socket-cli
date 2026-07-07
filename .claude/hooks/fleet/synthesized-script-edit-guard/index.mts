@@ -24,9 +24,8 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
-import { withEditGuard } from '../_shared/payload.mts'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 const BYPASS_PHRASE = 'Allow synthesized-script-edit bypass'
@@ -66,10 +65,12 @@ export function synthesizedScriptKeys(manifestText: string): Set<string> {
   }
   const body = manifestText.slice(braceStart + 1, end)
   // Match `key:` and `'key:sub':` at the start of a (possibly indented) line.
-  const re = /^[ \t]*(?:'([^']+)'|"([^"]+)"|([A-Za-z_][\w-]*))\s*:/gm
+  const re =
+    /^[ \t]*(?:'(?<sq>[^']+)'|"(?<dq>[^"]+)"|(?<bare>[A-Za-z_][\w-]*))\s*:/gm
   let m: RegExpExecArray | null
   while ((m = re.exec(body)) !== null) {
-    const key = m[1] ?? m[2] ?? m[3]
+    const key = m.groups?.sq ?? m.groups?.dq ?? m.groups?.bare
+    /* c8 ignore next - regex alternation guarantees one named group is always set */
     if (key) {
       keys.add(key)
     }
@@ -87,7 +88,9 @@ export function touchedSynthesizedKeys(
   const hit: string[] = []
   for (const key of synthesized) {
     // JSON property form: "key": (the key may contain a colon, e.g. doctor:auth)
-    const re = new RegExp(`"${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"\\s*:`)
+    const re = new RegExp(
+      `"${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"\\s*:`,
+    )
     if (re.test(content)) {
       hit.push(key)
     }
@@ -95,62 +98,62 @@ export function touchedSynthesizedKeys(
   return hit
 }
 
-export async function main(): Promise<void> {
-  await withEditGuard((filePath, content, payload) => {
-    if (path.basename(filePath) !== 'package.json') {
-      return
-    }
-    if (content === undefined) {
-      return
-    }
-    const repoDir = getProjectDir()
-    const manifest = path.join(
-      repoDir,
-      'scripts/repo/sync-scaffolding/manifest.mts',
-    )
-    // Wheelhouse-only: no manifest downstream → nothing is synthesized here.
-    if (!existsSync(manifest)) {
-      return
-    }
-    let manifestText: string
-    try {
-      manifestText = readFileSync(manifest, 'utf8')
-    } catch {
-      return
-    }
-    const synthesized = synthesizedScriptKeys(manifestText)
-    if (synthesized.size === 0) {
-      return
-    }
-    const touched = touchedSynthesizedKeys(content, synthesized)
-    if (touched.length === 0) {
-      return
-    }
-    if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-      return
-    }
-    process.stderr.write(
-      [
-        `[synthesized-script-edit-guard] Blocked: this package.json edit touches a cascade-synthesized script:`,
-        '',
-        ...touched.slice(0, 8).map(k => `  • "${k}"`),
-        '',
-        '  Root package.json `scripts` are generated from CANONICAL_SCRIPT_BODIES',
-        '  in scripts/repo/sync-scaffolding/manifest.mts. A hand-edit here is',
-        '  reverted by the next cascade. Edit the manifest, then run:',
-        '',
-        '    node scripts/repo/sync-scaffolding/cli.mts --target . --fix',
-        '',
-        `  Bypass: type "${BYPASS_PHRASE}" in a recent message.`,
-        '',
-      ].join('\n') + '\n',
-    )
-    process.exitCode = 2
-  })
-}
+export const check = editGuard((filePath, content, payload) => {
+  if (path.basename(filePath) !== 'package.json') {
+    return undefined
+  }
+  if (content === undefined) {
+    return undefined
+  }
+  const repoDir = getProjectDir()
+  const manifest = path.join(
+    repoDir,
+    'scripts/repo/sync-scaffolding/manifest.mts',
+  )
+  // Wheelhouse-only: no manifest downstream → nothing is synthesized here.
+  if (!existsSync(manifest)) {
+    return undefined
+  }
+  let manifestText: string
+  try {
+    manifestText = readFileSync(manifest, 'utf8')
+  } catch {
+    return undefined
+  }
+  const synthesized = synthesizedScriptKeys(manifestText)
+  if (synthesized.size === 0) {
+    return undefined
+  }
+  const touched = touchedSynthesizedKeys(content, synthesized)
+  if (touched.length === 0) {
+    return undefined
+  }
+  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
+    return undefined
+  }
+  return block(
+    [
+      `[synthesized-script-edit-guard] Blocked: this package.json edit touches a cascade-synthesized script:`,
+      '',
+      ...touched.slice(0, 8).map(k => `  • "${k}"`),
+      '',
+      '  Root package.json `scripts` are generated from CANONICAL_SCRIPT_BODIES',
+      '  in scripts/repo/sync-scaffolding/manifest.mts. A hand-edit here is',
+      '  reverted by the next cascade. Edit the manifest, then run:',
+      '',
+      '    node scripts/repo/sync-scaffolding/cli.mts --target . --fix',
+      '',
+      `  Bypass: type "${BYPASS_PHRASE}" in a recent message.`,
+      '',
+    ].join('\n'),
+  )
+})
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  main().catch(() => {
-    process.exit(0)
-  })
-}
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  scope: 'convention',
+  type: 'guard',
+})
+void runHook(hook, import.meta.url)

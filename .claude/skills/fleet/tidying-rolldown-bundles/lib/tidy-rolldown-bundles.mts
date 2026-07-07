@@ -29,7 +29,7 @@
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
@@ -106,7 +106,7 @@ export function findFatShims(repoDir: string): string[] {
       continue
     }
     // The consolidation bundles themselves (`*-pack.js`) are legitimately large.
-    if (/-pack\.js$/.test(name)) {
+    if (name.endsWith('-pack.js')) {
       continue
     }
     if (size > SHIM_MAX_BYTES) {
@@ -167,7 +167,11 @@ export async function dedupeCheck(
   }).then(
     () => ({ code: 0, stdout: '', stderr: '' }),
     (e: unknown) => {
-      const err = e as { code?: number; stdout?: string; stderr?: string }
+      const err = e as {
+        code?: number | undefined
+        stdout?: string | undefined
+        stderr?: string | undefined
+      }
       return {
         code: typeof err?.code === 'number' ? err.code : 1,
         stdout: String(err?.stdout ?? ''),
@@ -204,6 +208,7 @@ export async function sweepRepo(
   repo: string,
   options: { fix: boolean },
 ): Promise<RepoFinding[]> {
+  const opts = { __proto__: null, ...options } as typeof options
   const repoDir = path.join(PROJECTS, repo)
   if (!existsSync(path.join(repoDir, '.git'))) {
     return []
@@ -233,7 +238,7 @@ export async function sweepRepo(
 
   const dedupe = await dedupeCheck(repoDir)
   if (dedupe.hasChanges) {
-    if (options.fix) {
+    if (opts.fix) {
       const ok = await dedupeFix(repoDir)
       findings.push({
         repo,
@@ -271,7 +276,7 @@ export async function main(): Promise<void> {
     const repo = roster[i]!
     const findings = await sweepRepo(repo, { fix })
     const notable = findings.filter(
-      f => f.kind !== 'no-bundle' && f.kind !== 'clean',
+      f => f.kind !== 'clean' && f.kind !== 'no-bundle',
     )
     if (!notable.length) {
       continue

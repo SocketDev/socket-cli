@@ -15,6 +15,7 @@
 
 import process from 'node:process'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { findApiToken } from '../setup-security-tools/lib/api-token.mts'
@@ -73,7 +74,7 @@ async function main(): Promise<void> {
 }
 
 main().catch((e: unknown) => {
-  const msg = e instanceof Error ? e.message : String(e)
+  const msg = errorMessage(e)
   logger.error(`setup-firewall install: ${msg}`)
   process.exitCode = 1
 })

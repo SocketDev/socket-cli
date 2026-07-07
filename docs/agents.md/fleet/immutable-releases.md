@@ -23,6 +23,10 @@ Org-level (recommended; applies to all repos by default):
 
 The fleet baseline is **org-level on, no per-repo opt-out**. Run `auditing-gha` periodically to flag drift once the GH API surfaces the toggle.
 
+## Pre-approve integrity gate
+
+`publish.mts --approve` runs a **local pack-vs-staged-shasum gate before the 2FA / OAuth promote** (`pnpm stage approve`): for each selected staged package it packs the tarball locally and asserts its sha1 equals the shasum npm recorded at stage time (`verifyStagedEntry` → `compareHashSources`, `scripts/fleet/lib/verify-release-hashes.mts`). A mismatch — or an unresolvable staged shasum — drops that package from the promote set and exits non-zero; the operator is pointed at `pnpm stage reject <id>`. The gate is **fail-closed**: it never promotes a package it couldn't verify. GitHub-asset + `gh attestation verify` checks belong to the post-approve release step below (no GitHub release exists pre-approve — `ensureTagAndRelease` runs after the promote).
+
 ## Workflow pattern: draft → upload → publish
 
 The `gh release create` direct-publish pattern (single call that creates the release + uploads assets + publishes immediately) **does not produce an attestation reliably** because the attestation hash is computed at publish-time over the locked asset set, and direct-publish can race with asset uploads.
@@ -66,7 +70,7 @@ These work for anyone outside the org with `gh` installed. The attestation is al
 
 ## Post-publish provenance check
 
-A Stop-hook reminder (`provenance-publish-reminder`) already checks that npm-published artifacts carry `dist.attestations` and `_npmUser.trustedPublisher`. The same hook is extended to verify GH-release-published artifacts carry a release attestation: after `chore: bump version to vX.Y.Z` + `vX.Y.Z` tag, the hook runs `gh release view <tag> --json isImmutable,...` and warns if the release isn't immutable.
+A Stop-hook reminder (`provenance-publish-nudge`) already checks that npm-published artifacts carry `dist.attestations` and `_npmUser.trustedPublisher`. The same hook is extended to verify GH-release-published artifacts carry a release attestation: after `chore: bump version to vX.Y.Z` + `vX.Y.Z` tag, the hook runs `gh release view <tag> --json isImmutable,...` and warns if the release isn't immutable.
 
 ## When the repo doesn't qualify
 

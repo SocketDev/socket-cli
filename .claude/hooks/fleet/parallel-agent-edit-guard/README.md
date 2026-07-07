@@ -35,7 +35,7 @@ that overwrites a file. This hook closes that gap at the write itself.
 
 - `parallel-agent-staging-guard` — refuses git ops that sweep/destroy
   foreign work.
-- `parallel-agent-on-stop-reminder` — surfaces the foreign-path signal at
+- `parallel-agent-on-stop-nudge` — surfaces the foreign-path signal at
   turn end (informational).
 
 All three share the `_shared/foreign-paths.mts` heuristic.

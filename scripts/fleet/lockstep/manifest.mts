@@ -51,6 +51,40 @@ export function readManifest(manifestPath: string): Manifest {
 }
 
 /**
+ * Resolve the manifest tree's ROOT file for a repo: `<root>/lockstep.json`
+ * when present (the shim-plus-includes layout), else
+ * `<root>/.config/lockstep.json` (repos that moved root configs under
+ * .config/ without a shim — socket-btm). The harness and auto-bump both
+ * resolve through this so a config-dir migration can't strand them on a
+ * hardcoded path.
+ */
+export function resolveManifestRoot(repoRoot: string): string {
+  const atRoot = path.join(repoRoot, 'lockstep.json')
+  if (existsSync(atRoot)) {
+    return atRoot
+  }
+  return path.join(repoRoot, '.config', 'lockstep.json')
+}
+
+/**
+ * List every manifest file in the tree: the root, then each `includes[]`
+ * sub-manifest (resolved relative to the root's directory — the same
+ * resolution `loadManifestTree` uses). Consumers that must WRITE a row need
+ * the owning file, not the merged view; `auto-bump --apply` walks this list
+ * to find which file physically holds a row before rewriting it.
+ */
+export function listManifestFiles(rootManifestPath: string): string[] {
+  const rootManifest = readManifest(rootManifestPath)
+  const files = [rootManifestPath]
+  const includes = rootManifest.includes ?? []
+  const baseDir = path.dirname(rootManifestPath)
+  for (let i = 0, { length } = includes; i < length; i += 1) {
+    files.push(path.resolve(baseDir, includes[i]!))
+  }
+  return files
+}
+
+/**
  * Resolve a manifest + all its `includes[]` sub-manifests into a single
  * flattened view. Each sub-manifest contributes its rows; the top-level
  * upstreams/sites maps are merged (top-level wins on conflict).

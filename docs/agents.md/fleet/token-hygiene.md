@@ -57,9 +57,12 @@ Don't confuse any of these with `SOCKET_CLI_API_TOKEN` (socket-cli's separate se
 The system clipboard and the screen are exfiltration surfaces. Two separate
 concerns:
 
-**Our code.** A script or hook must never read or write the clipboard (a
-`pbcopy` / `pbpaste` / `xclip` / `wl-copy` CLI, or an OSC-52 escape) or capture
-the screen (`screencapture` / `scrot` / `grim` / `import` / `snippingtool`). The
+**Our code.** A script or hook must never READ the clipboard (a `pbpaste` /
+`wl-paste` / `xclip -o` / `xsel` CLI) or emit an OSC-52 escape from source, or
+capture the screen (`screencapture` / `scrot` / `grim` / `import` /
+`snippingtool`). Reading pulls a secret or another app's copied data into the
+agent's context; writing TO the clipboard (e.g. `pbcopy` to hand the operator a
+snippet) is a deliberate, visible action and is allowed. The
 `no-clipboard-access-guard` and `no-screenshot-guard` PreToolUse hooks block
 these at edit/run time; bypass with `Allow clipboard-access bypass` /
 `Allow screenshot bypass` for a genuine operator-driven need.
@@ -74,6 +77,28 @@ key, read via `getGlobalConfig()`; a project-scoped or `settings.json` value is
 ignored). The `setup-claude-config` install step writes it and the
 `claude-config-is-hardened` check verifies it stays set. With it off, `ctrl+c`
 and `/copy` still copy; only auto-copy-on-select stops.
+
+## npm-family 2FA: browser auth, never `--otp`
+
+npm-family auth commands (`npm` / `pnpm` / `yarn` publish, login, access, dist-tag, unpublish, deprecate, owner) prompt for the 2FA one-time code. **Never pass it as a flag** — `npm publish --otp=123456` (or `--otp 123456`) writes the one-time code into:
+
+- **shell history** (`~/.zsh_history`, `~/.bash_history`),
+- **the process list** — `ps` shows full argv to any local user,
+- **CI logs** — the command line is echoed.
+
+A one-time code in any of those is a leaked secret. It is also a worse UX than the browser flow.
+
+**Local (interactive): browser auth.** Re-run with `--auth-type=web`:
+
+```
+npm publish --access public --auth-type=web
+```
+
+npm opens the browser to approve the publish + 2FA — no code touches the command line.
+
+**CI (non-interactive): a granular automation token.** Authenticate with a granular npm automation token exposed via the `NODE_AUTH_TOKEN` env var (set from a secret), never `--otp`.
+
+The `no-npm-otp-flag-guard` PreToolUse hook blocks any `npm`/`pnpm`/`yarn` command carrying an `--otp` flag (in either `--otp=<code>` or `--otp <code>` form); bypass with `Allow npm-otp-flag bypass` for a genuine operator-driven need (effectively never). The CLAUDE.md bullet is also doctrine: the assistant must never *suggest* `--otp` in prose — recommend `--auth-type=web` instead.
 
 ## Cross-repo path references
 

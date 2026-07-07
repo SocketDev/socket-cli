@@ -10,6 +10,7 @@
  *   centralizes the knob + how to read it so the three consumers never diverge.
  */
 
+import { getHome } from '@socketsecurity/lib-stable/env/home'
 // oxlint-disable-next-line socket/prefer-async-spawn -- detection runs in a sync hook + sync audit script; needs typed string stdout, no async.
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { existsSync, readFileSync } from 'node:fs'
@@ -57,7 +58,60 @@ export function envValue(name: string): string | undefined {
 // True when an env var is set to a truthy "on" value (1 / true / yes).
 export function envIsOn(name: string): boolean {
   const v = envValue(name)?.toLowerCase()
-  return v === '1' || v === 'true' || v === 'yes' || v === 'on'
+  return v === '1' || v === 'on' || v === 'true' || v === 'yes'
+}
+
+// Shell startup files any zsh/bash invocation may export from. A var exported in
+// one of these is present in EVERY shell that runs the package manager, even when
+// this hook's own process env (inherited from the editor that launched it) lacks
+// it. ASCII-sorted.
+const SHELL_RC_FILES: readonly string[] = [
+  '.bash_profile',
+  '.bashrc',
+  '.profile',
+  '.zprofile',
+  '.zshenv',
+  '.zshrc',
+]
+
+// True when `export <name>=<truthy>` appears in any shell rc under `home`.
+function shellRcExportsOn(name: string, home: string): boolean {
+  // Match an `export NAME=value` line, capturing the (optionally quoted) value.
+  const re = new RegExp(`^\\s*export\\s+${name}=(.+)$`, 'mu')
+  for (let i = 0, { length } = SHELL_RC_FILES; i < length; i += 1) {
+    let content: string
+    try {
+      content = readFileSync(path.join(home, SHELL_RC_FILES[i]!), 'utf8')
+    } catch {
+      continue
+    }
+    // Strip a single surrounding quote pair, then test truthiness.
+    const v = re
+      .exec(content)?.[1]
+      ?.trim()
+      // (['"]) opening quote, (.*) the content, \1 the matching closing quote
+      // of the same kind; keep $2 to drop a balanced surrounding quote pair.
+      .replace(/^(['"])(.*)\1$/u, '$2')
+      .toLowerCase()
+    if (v === '1' || v === 'on' || v === 'true' || v === 'yes') {
+      return true
+    }
+  }
+  return false
+}
+
+// True when the var is "on" in this process's env OR persistently exported in the
+// user's shell rc. The shell that actually runs the package manager sources these
+// rc files, so a var set there means auto-update is off even when THIS hook's
+// inherited env (the editor that launched it) never had it.
+export function envOrShellRcIsOn(
+  name: string,
+  // getHome() (fleet-canonical, honors HOME / USERPROFILE) with an os.homedir()
+  // fallback for the undefined case; tests inject an isolated HOME so this never
+  // reads the operator's real shell-rc.
+  home: string = getHome() ?? os.homedir(),
+): boolean {
+  return envIsOn(name) || shellRcExportsOn(name, home)
 }
 
 // Run a binary with args and return trimmed stdout, or undefined when the
@@ -170,7 +224,9 @@ export const AUTO_UPDATE_CHECKS: readonly AutoUpdateCheck[] = [
       if (localAppData && existsSync(settingsPath)) {
         try {
           const parsed = JSON.parse(readFileSync(settingsPath, 'utf8')) as {
-            source?: { autoUpdateIntervalInMinutes?: number } | undefined
+            source?:
+              | { autoUpdateIntervalInMinutes?: number | undefined }
+              | undefined
           }
           interval = parsed.source?.autoUpdateIntervalInMinutes
         } catch {}
@@ -221,9 +277,14 @@ export const AUTO_UPDATE_CHECKS: readonly AutoUpdateCheck[] = [
     fix: 'npm config set update-notifier false (or export NO_UPDATE_NOTIFIER=1)',
     detect(): AutoUpdateStatus {
       if (!hasBinary('npm')) {
-        return { id: 'npm', state: 'absent', reason: 'npm not on PATH', fix: this.fix }
+        return {
+          id: 'npm',
+          state: 'absent',
+          reason: 'npm not on PATH',
+          fix: this.fix,
+        }
       }
-      if (envIsOn('NO_UPDATE_NOTIFIER')) {
+      if (envOrShellRcIsOn('NO_UPDATE_NOTIFIER')) {
         return {
           id: 'npm',
           state: 'disabled',
@@ -250,9 +311,14 @@ export const AUTO_UPDATE_CHECKS: readonly AutoUpdateCheck[] = [
     fix: 'export NO_UPDATE_NOTIFIER=1 (pnpm honors it)',
     detect(): AutoUpdateStatus {
       if (!hasBinary('pnpm')) {
-        return { id: 'pnpm', state: 'absent', reason: 'pnpm not on PATH', fix: this.fix }
+        return {
+          id: 'pnpm',
+          state: 'absent',
+          reason: 'pnpm not on PATH',
+          fix: this.fix,
+        }
       }
-      const disabled = envIsOn('NO_UPDATE_NOTIFIER')
+      const disabled = envOrShellRcIsOn('NO_UPDATE_NOTIFIER')
       return {
         id: 'pnpm',
         state: disabled ? 'disabled' : 'enabled',
@@ -275,23 +341,21 @@ export interface MacosPkgAutoUpdateEnv {
   managerIds: readonly string[]
 }
 
-// The env knobs setup-security-tools persists into the managed shell-rc block on
-// macOS so a mid-task `brew` / `npm` / `pnpm` run can't auto-update a tool under
-// a build/scan. Single source of truth shared with the detectors above — the
+// The macOS-only env knobs setup-security-tools persists into the managed
+// shell-rc block so a mid-task `brew` run can't auto-update a tool under a
+// build/scan. Single source of truth shared with the detectors above — the
 // shell-rc bridge imports this list instead of hardcoding a divergent copy, so
 // adding a future macOS knob here flows into the persisted block automatically.
-// HOMEBREW_NO_AUTO_UPDATE maps to the 'homebrew' check; NO_UPDATE_NOTIFIER is
-// honored by both 'npm' and 'pnpm'. Listed alphabetically by env name.
+// HOMEBREW_NO_AUTO_UPDATE maps to the 'homebrew' check. NO_UPDATE_NOTIFIER is
+// NOT here — it's cross-platform (npm/pnpm on every OS), so it lives in the
+// universal FLEET_ENV (_shared/fleet-env.mts); scoping it to macOS is what left
+// CI runners without it. The npm/pnpm detectors above still read the env var
+// directly. Listed alphabetically by env name.
 export const MACOS_PKG_AUTO_UPDATE_ENV: readonly MacosPkgAutoUpdateEnv[] = [
   {
     name: 'HOMEBREW_NO_AUTO_UPDATE',
     value: '1',
     managerIds: ['homebrew'],
-  },
-  {
-    name: 'NO_UPDATE_NOTIFIER',
-    value: '1',
-    managerIds: ['npm', 'pnpm'],
   },
 ]
 

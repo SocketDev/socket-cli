@@ -1,0 +1,98 @@
+# Layer 1 — leaf action (no internal SocketDev refs). Consumed by
+# `setup-and-install` (Layer 2b) between `setup` and `install`. When this
+# file bumps, cascade is: 2b → 3 → 4 → external repos. See updating-workflows
+# skill at .claude/skills/updating-workflows/.
+
+name: 'Cache pnpm Store'
+description: 'Restore + save the pnpm content-addressable store to skip cold downloads on every CI job and matrix cell'
+
+# WHY THIS EXISTS:
+#   The reusable ci.yml runs four jobs (check, lint, type-check, test) and
+#   the test job fans out across an OS × Node matrix. `install` runs a bare
+#   `pnpm install` in each — without a warm store that is a full cold fetch
+#   of the dependency closure 4–10× per CI run, repeated across every fleet
+#   repo. Caching the pnpm store collapses those to a single populate +
+#   restores everywhere else.
+#
+# WHAT GETS CACHED:
+#   The pnpm content-addressable store (`pnpm store path`), NOT node_modules.
+#   The store is the global package cache; node_modules is linked from it on
+#   each install. Caching the store (not node_modules) keeps the cache
+#   lockfile-shaped and platform-portable, and lets `pnpm install` still run
+#   its own integrity + link pass — it just skips the network fetch.
+#
+# CACHE INVALIDATION:
+#   - Key includes `hashFiles('**/pnpm-lock.yaml')` — a lockfile change (new
+#     or bumped dep) produces a fresh key; the previous store restores via
+#     restore-keys so only the delta downloads.
+#   - Keyed per `runner.os` (store layout differs by platform) and per Node
+#     major (some packages ship prebuilt binaries per ABI).
+#   - `cache-version` (v1) is a manual global bust knob.
+
+inputs:
+  cache-version:
+    description: 'Cache version for manual global busting'
+    required: false
+    default: 'v1'
+  key-prefix:
+    description: 'Cache key prefix'
+    required: false
+    default: 'pnpm-store'
+  working-directory:
+    description: 'Working directory (where pnpm + the lockfile live)'
+    required: false
+    default: '.'
+
+outputs:
+  cache-hit:
+    description: 'Whether an exact-key cache was restored'
+    value: ${{ steps.cache.outputs.cache-hit }}
+  store-path:
+    description: 'Resolved pnpm store path'
+    value: ${{ steps.store.outputs.path }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Resolve pnpm store path
+      id: store
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        # `pnpm store path` is authoritative — it honors store-dir config,
+        # PNPM_HOME, and the platform default. Fall back to the documented
+        # per-OS default only if the query fails (pnpm absent would already
+        # have failed `setup`, so this is belt-and-suspenders).
+        STORE_PATH="$(pnpm store path 2>/dev/null || true)"
+        if [ -z "$STORE_PATH" ]; then
+          if [ "${RUNNER_OS}" = "Windows" ]; then
+            STORE_PATH="${LOCALAPPDATA}/pnpm/store/v3"
+            STORE_PATH="$(echo "$STORE_PATH" | sed 's|\\|/|g')"
+          else
+            STORE_PATH="${HOME}/.local/share/pnpm/store/v3"
+          fi
+          echo "ⓘ pnpm store path query failed; using default ${STORE_PATH}"
+        fi
+        echo "path=${STORE_PATH}" >> "$GITHUB_OUTPUT"
+        echo "pnpm store path: ${STORE_PATH}"
+
+    - name: Read Node major for cache key
+      id: node
+      shell: bash
+      run: |
+        # The Node ABI (major version) partitions the store key — packages
+        # with prebuilt native binaries cache a different artifact per major.
+        NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 'x')"
+        echo "major=${NODE_MAJOR}" >> "$GITHUB_OUTPUT"
+
+    - name: Cache pnpm store
+      id: cache
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5 (2026-05-15)
+      with:
+        path: ${{ steps.store.outputs.path }}
+        # Lockfile hash makes the exact key; OS + Node major partition by
+        # platform/ABI; cache-version is the manual bust knob.
+        key: ${{ inputs.key-prefix }}-${{ inputs.cache-version }}-${{ runner.os }}-node${{ steps.node.outputs.major }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ inputs.key-prefix }}-${{ inputs.cache-version }}-${{ runner.os }}-node${{ steps.node.outputs.major }}-
+          ${{ inputs.key-prefix }}-${{ inputs.cache-version }}-${{ runner.os }}-

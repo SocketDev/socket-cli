@@ -31,7 +31,6 @@
  */
 
 import { existsSync, readFileSync } from 'node:fs'
-import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
@@ -166,11 +165,13 @@ export function buildCodifyPrompt(args: CodifyGapArgs): string {
     '</surface>',
     '',
     '<verify-before-stop>',
-    "Before you finish: run the surface's own check. For a hook, run its test",
-    'via `node scripts/repo/run-hook-tests.mts <name>` and confirm it passes',
-    'both arms. For a check, run `node scripts/fleet/check/<name>.mts` and',
-    'confirm it exits 0 on a clean tree. For a lint rule, run the plugin-load',
-    'check. Do not declare done on an unverified surface.',
+    "Before you finish: run the surface's own check. For a hook, run its",
+    'vitest test via `pnpm test test/repo/{unit,integration}/hooks/<name>.test.mts`',
+    'and confirm it passes both arms. For a check, run',
+    '`node scripts/fleet/check/<name>.mts` and confirm it exits 0 on a clean',
+    'tree (plus its vitest test if it has one). For a lint rule, run its vitest',
+    'test via `pnpm test test/repo/{unit,integration}/lint-rules/<id>.test.mts`',
+    'and the plugin-load check. Do not declare done on an unverified surface.',
     '</verify-before-stop>',
   )
   return sections.join('\n')

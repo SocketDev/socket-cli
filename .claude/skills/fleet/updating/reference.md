@@ -77,17 +77,15 @@ If no `.gitmodules` exists, skip 4b.
 Resolve the default branch (per CLAUDE.md _Default branch fallback_), then compare:
 
 ```bash
-BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
-if [ -z "$BASE" ] && git show-ref --verify --quiet refs/remotes/origin/main;   then BASE=main;   fi
-if [ -z "$BASE" ] && git show-ref --verify --quiet refs/remotes/origin/master; then BASE=master; fi
-BASE="${BASE:-main}"
+# Resolved by the shared runner so the chain lives in exactly one place.
+BASE=$(node .claude/skills/fleet/_shared/scripts/git-default-branch.mts)
 
 PINNED_SHA=$(grep -ohP '(?<=@)[0-9a-f]{40}' .github/workflows/_local-not-for-reuse-ci.yml 2>/dev/null | head -1)
 DEFAULT_SHA=$(git rev-parse "origin/$BASE" 2>/dev/null || echo "")
 
 if [ -n "$PINNED_SHA" ] && [ -n "$DEFAULT_SHA" ] && [ "$PINNED_SHA" != "$DEFAULT_SHA" ]; then
   echo "Workflow SHA pins are stale: $PINNED_SHA → $DEFAULT_SHA (origin/$BASE)"
-  echo "Run the updating-workflows skill to cascade."
+  echo "Repin .github/workflows/_local-not-for-reuse-*.yml manually before merging."
 else
   echo "Workflow SHA pins are up to date (or no _local-not-for-reuse-*.yml pins in this repo)"
 fi
@@ -182,4 +180,4 @@ fi
 
 - **Phase 3 exit 1 (schema error):** stop. Read `scripts/lockstep-schema.mts` output and the offending row's `local_*` / `upstream` fields. Fix the manifest, then re-run.
 - **Phase 4a (lockstep drift) commits but Phase 6 tests fail:** the per-row commits are atomic — `git revert <sha>` for the offending row, leave the others, file an advisory.
-- **Phase 5 stale SHA pin:** run `/updating-workflows` to cascade the bump.
+- **Phase 5 stale SHA pin:** repin `.github/workflows/_local-not-for-reuse-*.yml` manually against `origin/$BASE`, then re-run the check.

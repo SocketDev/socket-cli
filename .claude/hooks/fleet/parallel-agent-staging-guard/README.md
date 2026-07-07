@@ -30,7 +30,7 @@ fire; messages complement (this one names the foreign paths).
 
 ## Foreign-path heuristic
 
-Same as `parallel-agent-on-stop-reminder` — see `_shared/foreign-paths.mts`.
+Same as `parallel-agent-on-stop-nudge` — see `_shared/foreign-paths.mts`.
 
 ## Config / bypass
 
@@ -43,5 +43,5 @@ Fails open on hook bugs (exit 0 + stderr log).
 ## Why
 
 When two sessions share one `.git/` checkout, a broad-stage or destructive git
-op sweeps up the other's in-flight work — see `parallel-agent-on-stop-reminder`.
+op sweeps up the other's in-flight work — see `parallel-agent-on-stop-nudge`.
 The reminder surfaces the signal; this guard refuses the destructive action.

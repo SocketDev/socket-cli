@@ -15,6 +15,7 @@ import { builtinModules } from 'node:module'
 import path from 'node:path'
 import process from 'node:process'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from './paths.mts'
@@ -460,10 +461,7 @@ async function main(): Promise<void> {
     // Only fail on violations, not warnings
     process.exitCode = violations.length > 0 ? 1 : 0
   } catch (e) {
-    logger.error(
-      'Validation failed:',
-      e instanceof Error ? e.message : String(e),
-    )
+    logger.error('Validation failed:', errorMessage(e))
     process.exitCode = 1
   }
 }

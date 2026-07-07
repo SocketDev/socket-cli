@@ -50,13 +50,15 @@
 //
 // The hook fails OPEN on its own bugs (exit 0 + stderr log).
 
-import process from 'node:process'
-
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
 import { findTemplateLiterals, walkSimple } from '../_shared/acorn/index.mts'
 import type { AcornNode, TemplateLiteralSite } from '../_shared/acorn/index.mts'
-import { withEditGuard } from '../_shared/payload.mts'
+import {
+  block,
+  defineHook,
+  editGuard,
+  notify,
+  runHook,
+} from '../_shared/guard.mts'
 import {
   BUILD_ROOT_SEGMENTS,
   KNOWN_SIBLING_PACKAGES,
@@ -64,8 +66,12 @@ import {
   STAGE_SEGMENTS,
 } from './segments.mts'
 
-const logger = getDefaultLogger()
-
+// Files that are allowed to construct paths directly rather than importing from
+// the canonical paths module. The first pattern matches any file named paths.cts
+// or paths.mts (at the root or after a slash) — that is, the canonical owner
+// itself and any sub-package that inherits it. Remaining entries cover the
+// check script that audits canonicality, the path-guard hook's own source, and
+// the consistency checker, all of which must reference raw path strings by necessity.
 const EXEMPT_FILE_PATTERNS: RegExp[] = [
   /(?:^|\/)paths\.(?:cts|mts)$/,
   /scripts\/fleet\/check\/paths-are-canonical\.mts$/,
@@ -145,6 +151,7 @@ export function collectPathCalls(source: string): PathCall[] {
         ) {
           return
         }
+        /* c8 ignore next - acorn always populates arguments on CallExpression nodes */
         const args = (node['arguments'] as AcornNode[] | undefined) ?? []
         const literals: string[] = []
         let hasComputedArg = false
@@ -158,11 +165,14 @@ export function collectPathCalls(source: string): PathCall[] {
         }
         const start = node['start'] as number | undefined
         const end = node['end'] as number | undefined
+        /* c8 ignore start - acorn always sets start/end on parsed nodes */
         if (typeof start !== 'number' || typeof end !== 'number') {
           return
         }
+        /* c8 ignore stop */
         const line = source.slice(0, start).split('\n').length /* 1-based */
         const snippet = source.slice(start, end)
+        /* c8 ignore next - line index always resolves since both derive from source.split('\n') */
         const trimmedLine = lines[line - 1]?.trim() ?? ''
         out.push({
           literals,
@@ -268,34 +278,51 @@ export function check(source: string) {
   }
 }
 
-export function emitBlock(filePath: string, err: BlockError) {
-  logger.error(
+export function formatBlockMessage(filePath: string, err: BlockError): string {
+  return (
     `\n[path-guard] Blocked: ${err.rule}\n` +
-      `  Mantra: 1 path, 1 reference\n` +
-      `  File:    ${filePath}\n` +
-      `  Snippet: ${err.snippet}\n` +
-      `  Fix:     ${err.suggestion}\n\n`,
+    `  Mantra: 1 path, 1 reference\n` +
+    `  File:    ${filePath}\n` +
+    `  Snippet: ${err.snippet}\n` +
+    `  Fix:     ${err.suggestion}\n\n`
   )
 }
 
-// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
-// content extraction (new_string / content), and fail-open on any throw.
-await withEditGuard((filePath, content) => {
-  if (!isInScope(filePath)) {
-    return
-  }
-  const source = content ?? ''
-  if (!source) {
-    return
-  }
-  try {
-    check(source)
-  } catch (e) {
-    if (e instanceof BlockError) {
-      emitBlock(filePath, e)
-      process.exitCode = 2
-      return
+export const hook = defineHook({
+  check: editGuard((filePath, content) => {
+    if (!isInScope(filePath)) {
+      return undefined
     }
-    throw e
-  }
+    const source = content ?? ''
+    if (!source) {
+      return undefined
+    }
+    try {
+      check(source)
+    } catch (e) {
+      // A non-BlockError means the AST analysis itself crashed (malformed
+      // source, parser edge case). Do NOT rethrow: runGuard's catch resets
+      // exitCode to 0, so a throw fails OPEN *silently* — the edit lands with no
+      // trace. Surface the error via notify (stderr, exit 0) so the fail-open is
+      // at least loud. A hook must never crash (see _shared/guard.mts).
+      //
+      // walkSimple swallows parse errors and check() only ever throws BlockError,
+      // so the non-BlockError branch is unreachable in practice — c8-ignored
+      // together with the instanceof guard to suppress the uncoverable false arm.
+      /* c8 ignore start - walkSimple swallows parse errors; only BlockError can escape check() */
+      if (!(e instanceof BlockError)) {
+        return notify(
+          `[path-guard] skipped ${filePath} — unexpected error during analysis: ${String(e)}`,
+        )
+      }
+      /* c8 ignore stop */
+      return block(formatBlockMessage(filePath, e))
+    }
+    return undefined
+  }),
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  scope: 'convention',
+  type: 'guard',
 })
+void runHook(hook, import.meta.url)

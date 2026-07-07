@@ -24,14 +24,8 @@
 //
 // Bypass: "Allow default-branch bypass" in a recent user turn, or set
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
-import process from 'node:process'
-
-import { withBashGuard } from '../_shared/payload.mts'
+import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const logger = getDefaultLogger()
 
 const BYPASS_PHRASES = [
   'Allow default-branch bypass',
@@ -73,10 +67,7 @@ const SCRIPT_WRITE_RE =
 
 const TRIPLE_DOT_BRANCH_RE = /\b(?:main|master)\.{2,3}HEAD\b/
 
-// withBashGuard handles the stdin drain, tool_name gate, command narrow,
-// and fail-open on any throw.
-await withBashGuard((command, payload) => {
-
+export const check = bashGuard((command, payload) => {
   const hits: string[] = []
   for (let i = 0, { length } = SCRIPT_CONTEXT_PATTERNS; i < length; i += 1) {
     const pattern = SCRIPT_CONTEXT_PATTERNS[i]!
@@ -91,13 +82,13 @@ await withBashGuard((command, payload) => {
     )
   }
   if (hits.length === 0) {
-    return
+    return undefined
   }
 
   // Transcript read is the expensive last gate — only reached once a
   // hard-coded default-branch pattern matched and we would otherwise block.
   if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)) {
-    return
+    return undefined
   }
 
   const lines = [
@@ -128,6 +119,15 @@ await withBashGuard((command, payload) => {
     '  Bypass: type "Allow default-branch bypass" in a recent message.',
   )
   lines.push('')
-  logger.error(lines.join('\n') + '\n')
-  process.exitCode = 2
+  return block(lines.join('\n') + '\n')
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Bash'],
+  scope: 'convention',
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

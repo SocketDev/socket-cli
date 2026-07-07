@@ -21,22 +21,11 @@
 // wired into `.claude/settings.json` only in opt-in repos. Where unwired,
 // it has zero effect.
 
-import process from 'node:process'
-
+import { block, defineHook, runHook } from '../_shared/guard.mts'
+import type { GuardResult } from '../_shared/guard.mts'
+import type { ToolCallPayload } from '../_shared/payload.mts'
 import { commandsFor, invocationHasFlag } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
-
-interface ToolInput {
-  readonly tool_name?: string | undefined
-  readonly tool_input?:
-    | {
-        readonly command?: string | undefined
-        readonly subagent_type?: string | undefined
-        readonly prompt?: string | undefined
-      }
-    | undefined
-  readonly transcript_path?: string | undefined
-}
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 const BYPASS_PHRASE = 'Allow codex-write bypass'
 
@@ -111,32 +100,47 @@ export function isCodexBashCommand(command: string): boolean {
   return commandsFor(command, 'codex').length > 0
 }
 
-async function main(): Promise<void> {
-  let raw: string
-  try {
-    raw = await readStdin()
-  } catch {
-    process.exit(0)
-  }
-  if (!raw) {
-    process.exit(0)
-  }
-  let payload: ToolInput
-  try {
-    payload = JSON.parse(raw) as ToolInput
-  } catch {
-    process.exit(0)
-  }
+export function blockMessage(blocked: {
+  kind: 'bash' | 'agent'
+  reason: string
+}): string {
+  return [
+    '[codex-no-write-guard] Blocked: Codex used for code changes',
+    '',
+    `  Mode:   ${blocked.kind} (${blocked.reason})`,
+    '',
+    '  Per "Codex Usage" rule: Codex is for advice and assessment ONLY,',
+    '  never code changes. Prior incident: Codex added inline asm prefetch',
+    '  causing a 5ms perf regression — subtle perf bugs that human review',
+    '  catches but Codex misses.',
+    '',
+    '  Use Codex for:',
+    '    - Diagnosis ("why is X slow / failing?")',
+    '    - Review ("is this design sound?")',
+    '    - Explanation ("walk me through this code")',
+    '',
+    '  Do NOT use Codex for:',
+    '    - "Implement / write / add / fix / patch / refactor X"',
+    '    - Anything with `--write` or `-w` flags',
+    '',
+    `  Bypass: type "${BYPASS_PHRASE}" in a new message, then retry.`,
+    '',
+  ].join('\n')
+}
 
+// Handles both the Bash (`codex` CLI) and Agent (`codex:*` subagent) tool
+// paths, so it can't use the single-tool bashGuard/editGuard adapters — it
+// inspects `tool_name` directly.
+export function check(payload: ToolCallPayload): GuardResult {
   const input = payload.tool_input
   if (!input) {
-    process.exit(0)
+    return undefined
   }
 
   let blocked: { kind: 'bash' | 'agent'; reason: string } | undefined
 
   if (payload.tool_name === 'Bash') {
-    const command = input.command ?? ''
+    const command = typeof input.command === 'string' ? input.command : ''
     const codexCommands = commandsFor(command, 'codex')
     if (codexCommands.length > 0) {
       if (invocationHasFlag(command, 'codex', ['--write', '-w'])) {
@@ -153,9 +157,19 @@ async function main(): Promise<void> {
       }
     }
   } else if (payload.tool_name === 'Agent') {
-    const subagent = input.subagent_type ?? ''
+    // `subagent_type` / `prompt` are Agent-tool fields not on the shared
+    // ToolInput shape — read them through an unknown-typed narrow.
+    const agentInput = input as {
+      readonly subagent_type?: unknown | undefined
+      readonly prompt?: unknown | undefined
+    }
+    const subagent =
+      typeof agentInput.subagent_type === 'string'
+        ? agentInput.subagent_type
+        : ''
     if (/^codex(?::|$)/.test(subagent)) {
-      const prompt = input.prompt ?? ''
+      const prompt =
+        typeof agentInput.prompt === 'string' ? agentInput.prompt : ''
       const verb = hasWriteIntent(prompt)
       if (verb) {
         blocked = { kind: 'agent', reason: `write-intent verb "${verb}"` }
@@ -164,45 +178,23 @@ async function main(): Promise<void> {
   }
 
   if (!blocked) {
-    process.exit(0)
+    return undefined
   }
 
   if (
     payload.transcript_path &&
     bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
   ) {
-    process.exit(0)
+    return undefined
   }
 
-  process.stderr.write(
-    [
-      '[codex-no-write-guard] Blocked: Codex used for code changes',
-      '',
-      `  Mode:   ${blocked.kind} (${blocked.reason})`,
-      '',
-      '  Per "Codex Usage" rule: Codex is for advice and assessment ONLY,',
-      '  never code changes. Prior incident: Codex added inline asm prefetch',
-      '  causing a 5ms perf regression — subtle perf bugs that human review',
-      '  catches but Codex misses.',
-      '',
-      '  Use Codex for:',
-      '    - Diagnosis ("why is X slow / failing?")',
-      '    - Review ("is this design sound?")',
-      '    - Explanation ("walk me through this code")',
-      '',
-      '  Do NOT use Codex for:',
-      '    - "Implement / write / add / fix / patch / refactor X"',
-      '    - Anything with `--write` or `-w` flags',
-      '',
-      `  Bypass: type "${BYPASS_PHRASE}" in a new message, then retry.`,
-      '',
-    ].join('\n'),
-  )
-  process.exit(2)
+  return block(blockMessage(blocked))
 }
 
-main().catch(e => {
-  process.stderr.write(
-    `[codex-no-write-guard] hook error (allowing): ${(e as Error).message}\n`,
-  )
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Bash'],
+  type: 'guard',
 })
+void runHook(hook, import.meta.url)

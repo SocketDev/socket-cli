@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * @file Watch a repo's GitHub Actions CI run, surface the first failure log,
  *   and exit. The fix-and-push loop is driven by the human (or the agent
  *   invoking this skill) — this runner is the eyes. Three modes the skill
@@ -32,6 +32,7 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 import { spawn } from '@socketsecurity/lib/process/spawn/child'
 
@@ -390,6 +391,6 @@ async function main(): Promise<void> {
 }
 
 main().catch(e => {
-  logger.error(e instanceof Error ? e.message : String(e))
+  logger.error(errorMessage(e))
   process.exit(1)
 })

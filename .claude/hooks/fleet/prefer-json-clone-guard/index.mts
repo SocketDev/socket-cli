@@ -35,12 +35,12 @@
 // `findBareCallsTo` returns an empty array. Hook stays fail-open on
 // any parser issue.
 //
-// The hook fails OPEN on its own bugs (exit 0 + stderr log) so a bad
-// hook deploy can't brick the session.
-
-import process from 'node:process'
+// The hook fails OPEN on its own bugs (the runner logs + exit 0) so a
+// bad hook deploy can't brick the session.
 
 import { findBareCallsTo } from '../_shared/acorn/index.mts'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import type { GuardResult } from '../_shared/guard.mts'
 
 const ALLOW_MARKER = '// socket-lint: allow structured-clone'
 
@@ -75,17 +75,6 @@ export function applyAllowMarkerFilter(
   return out
 }
 
-interface Hook {
-  tool_name?: string | undefined
-  tool_input?:
-    | {
-        file_path?: string | undefined
-        new_string?: string | undefined
-        content?: string | undefined
-      }
-    | undefined
-}
-
 interface Offense {
   line: number
   text: string
@@ -103,71 +92,49 @@ export function isApplicable(filePath: string): boolean {
   return APPLICABLE_EXTS.has(ext)
 }
 
-function main(): void {
-  let stdin = ''
-  process.stdin.on('data', (chunk: Buffer) => {
-    stdin += chunk.toString()
-  })
-  process.stdin.on('end', () => {
-    try {
-      let payload: Hook
-      try {
-        payload = JSON.parse(stdin) as Hook
-      } catch {
-        process.exit(0)
-      }
-      const tool = payload.tool_name
-      if (tool !== 'Edit' && tool !== 'Write') {
-        process.exit(0)
-      }
-      const filePath = payload.tool_input?.file_path
-      if (!filePath || !isApplicable(filePath)) {
-        process.exit(0)
-      }
-      const proposed =
-        payload.tool_input?.content ?? payload.tool_input?.new_string ?? ''
-      const candidates = findBareCallsTo(proposed, 'structuredClone', {
-        oxlintRuleName: 'socket/no-structured-clone-prefer-json',
-      })
-      const offenses = applyAllowMarkerFilter(proposed, candidates)
-      if (offenses.length === 0) {
-        process.exit(0)
-      }
-      process.stderr.write(
-        `[prefer-json-clone-guard] refusing edit: ` +
-          `${offenses.length} bare \`structuredClone(\` call${offenses.length === 1 ? '' : 's'} ` +
-          `without the canonical per-line opt-out comment:\n` +
-          offenses.map(o => `    line ${o.line}: ${o.text}`).join('\n') +
-          '\n\n' +
-          'For JSON-roundtrippable data (anything from `JSON.parse`), use\n' +
-          '`JSON.parse(JSON.stringify(x))` or `JSONParse(JSONStringify(x))` from\n' +
-          '`@socketsecurity/lib/primordials/json`. It is 3-5x faster than\n' +
-          '`structuredClone(...)` because it skips the full HTML structured-clone\n' +
-          'algorithm (type tagging, transferable handling, prototype preservation,\n' +
-          'cycle detection — none of which the JSON subset needs).\n' +
-          '\n' +
-          'When the value genuinely contains Date / Map / Set / RegExp /\n' +
-          'ArrayBuffer / typed-array shapes that JSON would corrupt, opt back\n' +
-          'in with a per-line disable + rationale:\n' +
-          '\n' +
-          '  // oxlint-disable-next-line socket/no-structured-clone-prefer-json -- <reason>\n' +
-          '  const copy = structuredClone(value)\n' +
-          '\n' +
-          'One-off override: append `// socket-lint: allow structured-clone`\n' +
-          'to the line. Whole-session bypass requires the user to type\n' +
-          '`Allow no-structured-clone-prefer-json bypass` verbatim.\n',
-      )
-      process.exit(2)
-    } catch (e) {
-      process.stderr.write(
-        `[prefer-json-clone-guard] hook error (allowing): ${e}\n`,
-      )
-      process.exit(0)
-    }
-  })
-  if (process.stdin.readable === false) {
-    process.exit(0)
+export const check = editGuard((filePath, content): GuardResult => {
+  if (!isApplicable(filePath)) {
+    return undefined
   }
-}
+  const proposed = content ?? ''
+  const candidates = findBareCallsTo(proposed, 'structuredClone', {
+    oxlintRuleName: 'socket/no-structured-clone-prefer-json',
+  })
+  const offenses = applyAllowMarkerFilter(proposed, candidates)
+  if (offenses.length === 0) {
+    return undefined
+  }
+  return block(
+    `[prefer-json-clone-guard] refusing edit: ` +
+      `${offenses.length} bare \`structuredClone(\` call${offenses.length === 1 ? '' : 's'} ` +
+      `without the canonical per-line opt-out comment:\n` +
+      offenses.map(o => `    line ${o.line}: ${o.text}`).join('\n') +
+      '\n\n' +
+      'For JSON-roundtrippable data (anything from `JSON.parse`), use\n' +
+      '`JSON.parse(JSON.stringify(x))` or `JSONParse(JSONStringify(x))` from\n' +
+      '`@socketsecurity/lib/primordials/json`. It is 3-5x faster than\n' +
+      '`structuredClone(...)` because it skips the full HTML structured-clone\n' +
+      'algorithm (type tagging, transferable handling, prototype preservation,\n' +
+      'cycle detection — none of which the JSON subset needs).\n' +
+      '\n' +
+      'When the value genuinely contains Date / Map / Set / RegExp /\n' +
+      'ArrayBuffer / typed-array shapes that JSON would corrupt, opt back\n' +
+      'in with a per-line disable + rationale:\n' +
+      '\n' +
+      '  // oxlint-disable-next-line socket/no-structured-clone-prefer-json -- <reason>\n' +
+      '  const copy = structuredClone(value)\n' +
+      '\n' +
+      'One-off override: append `// socket-lint: allow structured-clone`\n' +
+      'to the line. Whole-session bypass requires the user to type\n' +
+      '`Allow no-structured-clone-prefer-json bypass` verbatim.\n',
+  )
+})
 
-main()
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  scope: 'convention',
+  type: 'guard',
+})
+void runHook(hook, import.meta.url)

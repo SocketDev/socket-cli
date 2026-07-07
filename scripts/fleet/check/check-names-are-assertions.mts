@@ -42,16 +42,23 @@ const logger = getDefaultLogger()
 //   -is-<state>    setup-IS-prompt-less, provenance-IS-attested
 //   -have-<state>  enforcers-HAVE-thorough-tests, soak-excludes-HAVE-dates
 //   -resolve(s)    citations-RESOLVE, script-paths-RESOLVE
-//   -match(es)     lock-step-headers-MATCH
 //   -loads         oxlint-plugin-LOADS
 //   -parity        fleet-soak-exclude-PARITY
-// Two alternatives anchored at end-of-string ($):
+//   -match(es)[-<object>]  headers-MATCH, tails-MATCH-naming-domain
+//   -cover(s)[-<object>]   matchers-COVER-hook-tools
+// Three alternatives anchored at end-of-string ($):
 //   alt 1: hyphen + non-capturing group (are|have|is) + hyphen + [a-z] (state initial)
 //          + [a-z0-9-]* (rest of state word) + $ — matches -are-canonical, -is-absent, …
-//   alt 2: hyphen + non-capturing group of fixed verb tails + $ — matches -resolve, -loads, …
+//   alt 2: hyphen + non-capturing group of fixed bare verb tails + $ — matches -resolve, -loads, …
+//   alt 3: hyphen + non-capturing group (match|matches|cover|covers), with an OPTIONAL
+//          trailing object phrase (same shape as alt 1's state word) — these verbs take
+//          a direct object, so subject-verb-object ("tails MATCH naming domain") is as
+//          valid as bare subject-verb ("headers MATCH").
 const ASSERTION_TAIL =
-  // alt1: -(?:are|have|is)-[a-z][a-z0-9-]*$  |  alt2: -(?:resolve|resolves|match|matches|loads|parity)$
-  /-(?:are|have|is)-[a-z][a-z0-9-]*$|-(?:resolve|resolves|match|matches|loads|parity)$/
+  // alt1: -(?:are|have|is)-[a-z][a-z0-9-]*$
+  // alt2: -(?:resolve|resolves|loads|parity)$
+  // alt3: -(?:match|matches|cover|covers)(?:-[a-z][a-z0-9-]*)?$
+  /-(?:are|have|is)-[a-z][a-z0-9-]*$|-(?:resolve|resolves|loads|parity)$|-(?:match|matches|cover|covers)(?:-[a-z][a-z0-9-]*)?$/
 
 // Names that read as assertions but are exempt from the tail pattern (their
 // shape is blessed). Keep this short + justified — it is the exact set, not an
@@ -60,6 +67,12 @@ const ALLOWLIST = new Set<string>([
   // Self: this gate's own name reads as an assertion ("names ARE assertions")
   // but `assertions` is a noun tail, not in the verb set.
   'check-names-are-assertions',
+  // Verb-assertion: "convention guards CONSULT the fleet-context detector" — a
+  // declarative statement, just verb-tailed (consult) rather than -are-/-resolve.
+  'convention-guards-consult-fleet-context',
+  // Verb-assertion: "lint configs PROTECT vendored paths" — declarative,
+  // verb-tailed (protect).
+  'lint-configs-protect-vendored',
 ])
 
 export function isAssertionName(basename: string): boolean {
@@ -95,7 +108,7 @@ export function scanCheckNames(repoRoot: string): NameViolation[] {
     if (!isAssertionName(base)) {
       violations.push({
         name: file,
-        suggestion: `rename so the basename asserts the invariant (e.g. <subject>-are-<state> / -resolve / -match / -have-<state>); "${base}" reads as a topic, not an assertion`,
+        suggestion: `rename so the basename asserts the invariant (e.g. <subject>-are-<state> / -resolve / -match[-<object>] / -cover[-<object>] / -have-<state>); "${base}" reads as a topic, not an assertion`,
       })
     }
   }

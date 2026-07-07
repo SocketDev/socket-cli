@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * @file One-shot soak-bypass: add a dated `minimumReleaseAgeExclude` entry for
  *   a package whose 7-day soak hasn't cleared yet, so an install can proceed
  *   now. Bakes in the manual dance the user would otherwise repeat:
@@ -24,6 +24,7 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 import { PNPM_WORKSPACE_YAML } from './paths.mts'
+import { fetchPackagePublishDate } from './registry-publish-date.mts'
 
 const SOAK_DAYS = 7
 
@@ -117,31 +118,6 @@ export function spliceSoakEntry(
   return lines.join('\n')
 }
 
-/**
- * Fetch a package's npm publish date for `version` from the full packument.
- */
-async function fetchPublishDate(
-  name: string,
-  version: string,
-): Promise<string | undefined> {
-  const url = `https://registry.npmjs.org/${encodeURIComponent(name).replace('%40', '@')}`
-  try {
-    // socket-lint: allow global-fetch -- soak tooling probes the npm registry directly; the lib http-request helper isn't a dependency in scripts/.
-    const response = await fetch(url, {
-      headers: { accept: 'application/json' },
-    })
-    if (!response.ok) {
-      return undefined
-    }
-    const json = (await response.json()) as {
-      time?: Record<string, string> | undefined
-    }
-    return json.time?.[version]
-  } catch {
-    return undefined
-  }
-}
-
 async function main(): Promise<void> {
   const spec = parseSpec(process.argv[2] ?? '')
   if (!spec) {
@@ -152,16 +128,19 @@ async function main(): Promise<void> {
     process.exit(1)
   }
 
-  const published = await fetchPublishDate(spec.name, spec.version)
-  if (!published) {
+  // The lean registry helper returns the already-sliced `YYYY-MM-DD` publish
+  // date (or undefined when the version is unknown / the registry is
+  // unreachable). soak-bypass is interactive (run by hand to bypass a soak), so
+  // an undefined here is a hard stop, not the fail-open a CI check wants.
+  const publishedISO = await fetchPackagePublishDate(spec.name, spec.version)
+  if (!publishedISO) {
     process.stderr.write(
       `soak-bypass: ${spec.name}@${spec.version} not found on npm (no publish ` +
         `date). Check the name + version.\n`,
     )
     process.exit(1)
   }
-  const publishedISO = published.slice(0, 10)
-  const removableISO = addDaysISO(published, SOAK_DAYS)
+  const removableISO = addDaysISO(publishedISO, SOAK_DAYS)
 
   const content = readFileSync(PNPM_WORKSPACE_YAML, 'utf8')
   const next = spliceSoakEntry(content, spec, publishedISO, removableISO)

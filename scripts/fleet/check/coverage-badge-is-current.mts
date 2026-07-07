@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * @file Commit-time gate: the README coverage badge matches the latest coverage
  *   run. When `coverage/coverage-summary.json` exists (the vitest json-summary
  *   reporter) AND the README carries a POPULATED `![Coverage](…coverage-NN%…)`

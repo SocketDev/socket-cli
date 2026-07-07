@@ -11,18 +11,16 @@
 //   - tool_name starts with `mcp__` (Claude Code's MCP tool naming
 //     convention: mcp__<server>__<tool>).
 //   - Other tool names (built-in: Read/Bash/Edit/etc.) pass through
-//     untouched — those have no PostToolUse rewrite channel; use the
-//     wire-level proxy (socket-token-minifier) instead.
+//     untouched — those have no PostToolUse rewrite channel; the wire-level
+//     proxy (headroom) compresses them at the API boundary instead.
 //
 // The hook fails OPEN on its own errors (exit 0 with no output) so a
 // bad deploy can't break tool result delivery.
 //
-// Stages here are inlined (not imported from packages/socket-token-
-// minifier/) because this hook cascades into every fleet repo via
-// sync-scaffolding, while packages/socket-token-minifier/ lives only
-// in wheelhouse. The stage logic is small enough that inlining is
-// cleaner than orchestrating a workspace dependency that downstream
-// repos don't have.
+// The compression stages are self-contained here (inlined, no external
+// dependency) so this hook cascades into every fleet repo via sync-scaffolding
+// with nothing to install. It compresses the PostToolUse MCP channel; the
+// headroom proxy covers the API-request wire — the two are complementary.
 
 import process from 'node:process'
 
@@ -33,7 +31,7 @@ interface Payload {
   // Plus session_id, cwd, etc. — we don't care.
 }
 
-// ---------- Inlined stages (synced with packages/socket-token-minifier/src/stages/) ----------
+// ---------- Compression stages (self-contained; the canonical copy) ----------
 
 export function minify(text: string): string {
   const trimmed = text.trimStart()
@@ -109,6 +107,7 @@ export function isMCPToolName(name: string | undefined): boolean {
   return typeof name === 'string' && name.startsWith('mcp__')
 }
 
+/* c8 ignore start - main() is the stdin-driven hook entrypoint; in-process tests import the pure helpers above and never call main() */
 function main() {
   let stdin = ''
   process.stdin.on('data', chunk => {
@@ -157,3 +156,4 @@ function main() {
 if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
   main()
 }
+/* c8 ignore stop */

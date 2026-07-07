@@ -1,42 +1,30 @@
-#!/usr/bin/env node
-// Claude Code PreToolUse hook — c8-ignore-reason-guard.
-//
-// Blocks Edit/Write that introduces a c8 / v8 coverage-ignore directive
-// WITHOUT a reason. The fleet rule (CLAUDE.md "c8 / v8 coverage ignore
-// directives", docs/agents.md/fleet/c8-ignore-directives.md): a coverage
-// ignore is only for external-library paths + genuinely-unreachable
-// branches, and every directive must say WHY in the same comment so a
-// future reader can tell a principled ignore from a coverage dodge on
-// core logic.
-//
-// Also blocks multi-line `next N` (N >= 2) even WITH a reason: c8/v8 count
-// physical lines, not statements, so `next 3` silently drops covered lines.
-// The fix is a start/stop bracket; single-line `next` / `next 1` is fine.
-//
-// Required shapes (a reason is any non-empty text after `-` / `—`):
-//   c8 ignore next - external lib error shape
-//   c8 ignore start - third-party throw path  …  c8 ignore stop
-//   v8 ignore next - unreachable: exhaustive switch default
-//
-// Blocked shapes:
-//   c8 ignore next                  (no reason)
-//   v8 ignore start                 (no reason)
-//   c8 ignore next 3 - reason       (multi-line next N — use start/stop)
-//
-// `stop` markers need no reason (the paired `start` carries it).
-//
-// Exit codes: 0 pass, 2 block. Fails open on its own errors.
-//
-// Bypass: `Allow c8-ignore-reason bypass` in a recent user turn.
+/**
+ * @file Claude Code PreToolUse hook — c8-ignore-reason-guard.
+ *   Blocks Edit/Write that introduces a c8 / v8 coverage-ignore directive
+ *   WITHOUT a reason. The fleet rule (CLAUDE.md "c8 / v8 coverage ignore
+ *   directives", docs/agents.md/fleet/c8-ignore-directives.md): a coverage
+ *   ignore is only for external-library paths + genuinely-unreachable
+ *   branches, and every directive must say WHY in the same comment so a
+ *   future reader can tell a principled ignore from a coverage dodge on
+ *   core logic.
+ *   Also blocks multi-line `next N` (N >= 2) even WITH a reason: c8/v8 count
+ *   physical lines, not statements, so `next 3` silently drops covered lines.
+ *   The fix is a start/stop bracket; single-line `next` / `next 1` is fine.
+ *   Required shapes (a reason is any non-empty text after `-` / `—`):
+ *   c8 ignore next - external lib error shape
+ *   c8 ignore start - third-party throw path  …  c8 ignore stop
+ *   v8 ignore next - unreachable: exhaustive switch default
+ *   Blocked shapes:
+ *   c8 ignore next                  (no reason)
+ *   v8 ignore start                 (no reason)
+ *   c8 ignore next 3 - reason       (multi-line next N — use start/stop)
+ *   `stop` markers need no reason (the paired `start` carries it).
+ *   Exit codes: 0 pass, 2 block. Fails open on its own errors.
+ *   Bypass: `Allow c8-ignore-reason bypass` in a recent user turn.
+ */
 
-import process from 'node:process'
-
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
-import { withEditGuard } from '../_shared/payload.mts'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const logger = getDefaultLogger()
 
 const BYPASS_PHRASE = 'Allow c8-ignore-reason bypass'
 
@@ -45,7 +33,7 @@ const BYPASS_PHRASE = 'Allow c8-ignore-reason bypass'
 // left. `stop` is matched but exempted (its paired `start` carries the
 // reason).
 const IGNORE_DIRECTIVE_RE =
-  /\/\*\s*(?:c8|v8)\s+ignore\s+(next|start|stop)\b([^*]*)\*\//g
+  /\/\*\s*(?:c8|v8)\s+ignore\s+(?<kind>next|start|stop)\b(?<tail>[^*]*)\*\//g
 
 // Only police source we'd actually cover. Skip non-TS/JS + the usual
 // non-source trees.
@@ -72,17 +60,21 @@ export function findUnexplainedIgnores(source: string): Finding[] {
     IGNORE_DIRECTIVE_RE.lastIndex = 0
     let match: RegExpExecArray | null
     while ((match = IGNORE_DIRECTIVE_RE.exec(line)) !== null) {
-      const kind = match[1]!
+      const kind = match.groups!.kind!
       if (kind === 'stop') {
         continue
       }
-      const rawTail = match[2]!
+      const rawTail = match.groups!.tail!
       // A multi-line `next N` (N >= 2) is broken even WITH a reason: c8/v8
       // count physical lines, not statements, so `next 3` silently drops
       // covered lines. Require a start/stop bracket instead. Bare `next`
       // and `next 1` (a single physical line) stay allowed.
-      const countMatch = /^\s*(\d+)/.exec(rawTail)
-      if (kind === 'next' && countMatch && Number(countMatch[1]) >= 2) {
+      const countMatch = /^\s*(?<count>\d+)/.exec(rawTail)
+      if (
+        kind === 'next' &&
+        countMatch &&
+        Number(countMatch.groups!.count) >= 2
+      ) {
         findings.push({ line: i + 1, text: line.trim(), kind: 'next-n' })
         continue
       }
@@ -102,67 +94,74 @@ export function isInScope(filePath: string): boolean {
   return SOURCE_EXT_RE.test(filePath) && !EXEMPT_PATH_RE.test(filePath)
 }
 
-await withEditGuard((filePath, content, payload) => {
-  if (!isInScope(filePath)) {
-    return
-  }
-  const source = content ?? ''
-  if (!source) {
-    return
-  }
-  const findings = findUnexplainedIgnores(source)
-  if (findings.length === 0) {
-    return
-  }
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    return
-  }
-  const lines = findings
-    .map(f => {
-      const why =
-        f.kind === 'next-n'
-          ? 'multi-line `next N` miscounts; use start/stop'
-          : 'no reason'
-      return `  line ${f.line} (${why}): ${f.text}`
-    })
-    .join('\n')
-  const hasNextN = findings.some(f => f.kind === 'next-n')
-  const hasNoReason = findings.some(f => f.kind === 'no-reason')
-  const guidance: string[] = []
-  if (hasNoReason) {
-    guidance.push(
-      '  Every `c8 ignore` / `v8 ignore` needs a reason in the same comment:',
-      '    /* c8 ignore next - external lib error shape */',
-      '  A reason lets a reader tell a principled ignore (external lib,',
-      '  unreachable branch) from a coverage dodge on core logic — which the',
-      '  fleet forbids (write a test instead).',
-    )
-  }
-  if (hasNextN) {
-    if (guidance.length) {
-      guidance.push('')
+export const hook = defineHook({
+  check: editGuard((filePath, content, payload) => {
+    if (!isInScope(filePath)) {
+      return undefined
     }
-    guidance.push(
-      '  `c8/v8 ignore next N` (N >= 2) is broken for multi-line bodies — the',
-      '  reporter counts physical lines, not statements, so it silently drops',
-      '  covered lines. Bracket the construct instead:',
-      '    /* c8 ignore start - <reason> */ … /* c8 ignore stop */',
-      '  Single-line `next` (or `next 1`) is fine.',
+    const source = content ?? ''
+    if (!source) {
+      return undefined
+    }
+    const findings = findUnexplainedIgnores(source)
+    if (findings.length === 0) {
+      return undefined
+    }
+    if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
+      return undefined
+    }
+    const lines = findings
+      .map(f => {
+        const why =
+          f.kind === 'next-n'
+            ? 'multi-line `next N` miscounts; use start/stop'
+            : 'no reason'
+        return `  line ${f.line} (${why}): ${f.text}`
+      })
+      .join('\n')
+    const hasNextN = findings.some(f => f.kind === 'next-n')
+    const hasNoReason = findings.some(f => f.kind === 'no-reason')
+    const guidance: string[] = []
+    if (hasNoReason) {
+      guidance.push(
+        '  Every `c8 ignore` / `v8 ignore` needs a reason in the same comment:',
+        '    /* c8 ignore next - external lib error shape */',
+        '  A reason lets a reader tell a principled ignore (external lib,',
+        '  unreachable branch) from a coverage dodge on core logic — which the',
+        '  fleet forbids (write a test instead).',
+      )
+    }
+    if (hasNextN) {
+      if (guidance.length) {
+        guidance.push('')
+      }
+      guidance.push(
+        '  `c8/v8 ignore next N` (N >= 2) is broken for multi-line bodies — the',
+        '  reporter counts physical lines, not statements, so it silently drops',
+        '  covered lines. Bracket the construct instead:',
+        '    /* c8 ignore start - <reason> */ … /* c8 ignore stop */',
+        '  Single-line `next` (or `next 1`) is fine.',
+      )
+    }
+    return block(
+      [
+        '[c8-ignore-reason-guard] Blocked: invalid coverage-ignore directive.',
+        '',
+        lines,
+        '',
+        ...guidance,
+        '',
+        '  See docs/agents.md/fleet/c8-ignore-directives.md.',
+        '',
+        `  Bypass: type "${BYPASS_PHRASE}" in a recent message.`,
+        '',
+      ].join('\n'),
     )
-  }
-  logger.error(
-    [
-      '[c8-ignore-reason-guard] Blocked: invalid coverage-ignore directive.',
-      '',
-      lines,
-      '',
-      ...guidance,
-      '',
-      '  See docs/agents.md/fleet/c8-ignore-directives.md.',
-      '',
-      `  Bypass: type "${BYPASS_PHRASE}" in a recent message.`,
-      '',
-    ].join('\n'),
-  )
-  process.exitCode = 2
+  }),
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  scope: 'convention',
+  type: 'guard',
 })
+
+void runHook(hook, import.meta.url)

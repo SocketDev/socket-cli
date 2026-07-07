@@ -54,5 +54,6 @@
     "./markdownlint-rules/socket-no-private-wheelhouse-leak.mts",
     "./markdownlint-rules/socket-no-relative-sibling-script.mts",
     "./markdownlint-rules/socket-readme-required-sections.mts",
+    "./markdownlint-rules/socket-readme-social-badges.mts",
   ],
 }

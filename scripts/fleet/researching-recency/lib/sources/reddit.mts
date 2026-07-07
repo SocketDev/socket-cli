@@ -3,8 +3,8 @@
  *   most non-residential IPs, so this adapter uses the keyless Atom RSS search
  *   feed (`reddit.com/r/<sub>/search.rss`) — the load-bearing free path in the
  *   upstream last30days `reddit_keyless.py`. It parses the Atom entries (no XML
- *   dep — the feed shape is fixed) into SourceItems. Best-effort: a 403 or empty
- *   feed yields `[]`, never throws past the adapter boundary.
+ *   dep — the feed shape is fixed) into SourceItems. Best-effort: a 403 or
+ *   empty feed yields `[]`, never throws past the adapter boundary.
  */
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
@@ -32,7 +32,8 @@ export function searchFeedUrl(
   searchQuery: string,
   context: FetchContext,
 ): string {
-  const window = context.days <= 7 ? 'week' : context.days <= 31 ? 'month' : 'year'
+  const window =
+    context.days <= 7 ? 'week' : context.days <= 31 ? 'month' : 'year'
   const params = new URLSearchParams({
     q: searchQuery,
     restrict_sr: '1',
@@ -71,7 +72,10 @@ export function parseFeed(xml: string, subreddit: string): SourceItem[] {
     const url = linkMatch ? decodeXmlEntities(linkMatch[1]!) : ''
     // The Atom <content> is escaped HTML; strip tags for a plain snippet.
     const contentHtml = tagText(entry, 'content')
-    const body = contentHtml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+    const body = contentHtml
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
     return {
       itemId: id,
       source: 'reddit',
@@ -99,11 +103,7 @@ export const redditAdapter: SourceAdapter = {
     try {
       const collected: SourceItem[] = []
       const seen = new Set<string>()
-      for (
-        let i = 0, { length } = DEFAULT_SUBREDDITS;
-        i < length;
-        i += 1
-      ) {
+      for (let i = 0, { length } = DEFAULT_SUBREDDITS; i < length; i += 1) {
         const subreddit = DEFAULT_SUBREDDITS[i]!
         const xml = await httpText(
           searchFeedUrl(subreddit, searchQuery, context),

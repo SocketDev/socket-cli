@@ -1,0 +1,132 @@
+# Layer 1 — leaf action (no internal SocketDev refs). Consumed by
+# `setup-and-install` (Layer 2b, conditional on `setup-go: 'true'`).
+# When this file bumps, cascade is: 2b → 3 → 4 → external repos.
+
+name: 'Setup Go Toolchain'
+description: |
+  Locate or install the Go toolchain and add it to GITHUB_PATH. Inspired by
+  actions/setup-go but written inline so we don't depend on a third-party
+  action — same fallback chain (hosted toolcache → system PATH → install
+  via the platform package manager → bail with a clear error).
+
+  Use BEFORE setup-and-install in any workflow whose downstream build steps
+  invoke `go` (acorn-go, cdxgen go fixtures, etc.). On runners that already
+  have go on PATH this is a no-op except for an environment summary.
+
+inputs:
+  version:
+    description: |
+      Major.minor Go version to ensure (e.g. "1.23"). Default "" picks
+      whatever the runner's hosted toolcache provides; on CI this matches
+      the runner image's default Go.
+    required: false
+    default: ''
+  required:
+    description: |
+      "true" exits non-zero when go cannot be located or installed.
+      "false" prints a warning and continues — useful for jobs where
+      the go build is optional.
+    required: false
+    default: 'true'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Locate or install Go
+      shell: bash
+      env:
+        # Route inputs through env to avoid zizmor template-injection
+        # findings — the values still come from the caller but are never
+        # expanded directly into the shell source.
+        VERSION_INPUT: ${{ inputs.version }}
+        REQUIRED: ${{ inputs.required }}
+      run: | # zizmor: ignore[github-env]
+        set -uo pipefail
+
+        # Step 1: already on PATH?
+        if command -v go >/dev/null 2>&1; then
+          GO_BIN="$(command -v go)"
+          GO_VERSION="$(go version 2>/dev/null | awk '{print $3}')"
+          echo "go found on PATH: $GO_BIN ($GO_VERSION)"
+          exit 0
+        fi
+
+        # Step 2: GitHub-hosted toolcache. Layout is platform-specific.
+        # Linux:   /opt/hostedtoolcache/go/<version>/<arch>/bin/go
+        # macOS:   /Users/runner/hostedtoolcache/go/<version>/<arch>/bin/go
+        # Windows: C:/hostedtoolcache/windows/go/<version>/<arch>/bin/go.exe
+        case "${RUNNER_OS:-}" in
+          Linux)   TOOLCACHE_ROOT="${RUNNER_TOOL_CACHE:-/opt/hostedtoolcache}/go" ;;
+          macOS)   TOOLCACHE_ROOT="${RUNNER_TOOL_CACHE:-/Users/runner/hostedtoolcache}/go" ;; # zizmor: documentation-placeholder
+          Windows) TOOLCACHE_ROOT="${RUNNER_TOOL_CACHE:-C:/hostedtoolcache/windows}/go" ;;
+          *)       TOOLCACHE_ROOT="" ;;
+        esac
+
+        if [ -n "$TOOLCACHE_ROOT" ] && [ -d "$TOOLCACHE_ROOT" ]; then
+          # Pick the requested version, or the highest available default.
+          if [ -n "$VERSION_INPUT" ]; then
+            CANDIDATE="$(ls -1 "$TOOLCACHE_ROOT" 2>/dev/null | grep -E "^${VERSION_INPUT//./\\.}\\." | sort -V | tail -1)"
+          else
+            CANDIDATE="$(ls -1 "$TOOLCACHE_ROOT" 2>/dev/null | sort -V | tail -1)"
+          fi
+          if [ -n "$CANDIDATE" ]; then
+            ARCH_DIR="$(ls -1 "$TOOLCACHE_ROOT/$CANDIDATE" 2>/dev/null | head -1)"
+            BIN_DIR="$TOOLCACHE_ROOT/$CANDIDATE/$ARCH_DIR/bin"
+            GO_EXE="$BIN_DIR/go"
+            [ "${RUNNER_OS:-}" = "Windows" ] && GO_EXE="$BIN_DIR/go.exe"
+            if [ -x "$GO_EXE" ] || [ -f "$GO_EXE" ]; then
+              echo "go found in toolcache: $GO_EXE ($CANDIDATE)"
+              echo "$BIN_DIR" >> "${GITHUB_PATH:-/dev/null}"
+              exit 0
+            fi
+          fi
+        fi
+
+        # Step 3: try a platform package manager install. Last-resort path
+        # — runner images normally hit the toolcache branch above.
+        case "${RUNNER_OS:-}" in
+          Linux)
+            if command -v apt-get >/dev/null 2>&1; then
+              echo "go not on PATH or in toolcache — installing via apt-get"
+              sudo apt-get update -qq >/dev/null 2>&1 || true
+              if sudo apt-get install -y -qq golang-go >/dev/null 2>&1; then
+                command -v go >/dev/null 2>&1 && { go version; exit 0; }
+              fi
+            fi
+            ;;
+          macOS)
+            if command -v brew >/dev/null 2>&1; then
+              echo "go not on PATH or in toolcache — installing via brew"
+              if brew install go >/dev/null 2>&1; then
+                command -v go >/dev/null 2>&1 && { go version; exit 0; }
+              fi
+            fi
+            ;;
+          Windows)
+            if command -v choco >/dev/null 2>&1; then
+              echo "go not on PATH or in toolcache — installing via choco"
+              if choco install golang -y --no-progress >/dev/null 2>&1; then
+                command -v go >/dev/null 2>&1 && { go version; exit 0; }
+              fi
+            fi
+            ;;
+        esac
+
+        # Step 4: bail. Diagnostic block surfaces the search paths so the
+        # next person knows which assumptions to re-check.
+        {
+          echo "× setup-go-toolchain: could not locate or install go."
+          echo "  RUNNER_OS=${RUNNER_OS:-unknown}"
+          echo "  RUNNER_TOOL_CACHE=${RUNNER_TOOL_CACHE:-<unset>}"
+          echo "  Toolcache search root: ${TOOLCACHE_ROOT:-<unset>}"
+          if [ -n "$TOOLCACHE_ROOT" ] && [ -d "$TOOLCACHE_ROOT" ]; then
+            echo "  Toolcache contents:"
+            ls -1 "$TOOLCACHE_ROOT" 2>&1 | sed 's/^/    /'
+          fi
+          echo "  PATH=$PATH"
+        } >&2
+
+        if [ "$REQUIRED" = "true" ]; then
+          exit 1
+        fi
+        echo "Continuing without go (required=false)." >&2

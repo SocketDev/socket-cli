@@ -6,6 +6,14 @@
 #
 # Non-blocking: hook failure warns but never prevents the commit from landing.
 
+# HUSKY=0 skips this hook for the current invocation — the husky-compatible
+# whole-chain escape (details in the pre-commit dispatcher). Checked before
+# node resolution so the skip works even without a usable Node on PATH.
+if [ "${HUSKY-}" = "0" ]; then
+  echo "[git-hooks] HUSKY=0 — skipping post-commit."
+  exit 0
+fi
+
 . "$(dirname "$0")/_shared/resolve-node.sh"
 
 # Skip during rebase — commits are being replayed, HEAD~1 diffs are

@@ -32,6 +32,9 @@
 // shape is irrelevant to our work) and exit code is advisory.
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
+import { readdirSync } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import process from 'node:process'
 
 // Process-name patterns that indicate a stale test/build worker.
@@ -162,21 +165,22 @@ const AGENT_PATTERNS: Array<{ name: string; rx: RegExp }> = [
 ]
 
 // Processes the sweep must NEVER kill, in ANY mode (not even --all),
-// checked before classify(). The token-minifier proxy is the live
+// checked before classify(). The headroom proxy is the live
 // ANTHROPIC_BASE_URL backend the current session routes through; it runs
 // detached (PPID 1) ON PURPOSE as a persistent daemon, so the orphan
 // heuristic would otherwise make it a prime --all target. Killing it
 // breaks the session that's running the sweep. Add any other
 // session-critical daemon here.
 const SESSION_CRITICAL_PATTERNS: RegExp[] = [
-  // socket-token-minifier proxy: `node …/socket-token-minifier/bin/socket-token-minifier.mts`
-  // (or a built .js). Match the package path so a rename of the entry
-  // file still protects it.
-  /socket-token-minifier\//,
+  // headroom proxy: `…/_dlx/<hash>/.venv/bin/headroom proxy --port …`. Match
+  // the `headroom` binary so a venv/hash/port change still protects it
+  // (over-matching only ever SKIPS a kill, the safe direction).
+  /headroom/,
 ]
 
 export function isSessionCriticalDaemon(command: string): boolean {
-  for (const rx of SESSION_CRITICAL_PATTERNS) {
+  for (let i = 0, { length } = SESSION_CRITICAL_PATTERNS; i < length; i += 1) {
+    const rx = SESSION_CRITICAL_PATTERNS[i]!
     if (rx.test(command)) {
       return true
     }
@@ -213,9 +217,10 @@ export function parseEtime(etime: string): number {
   } else if (parts.length === 2) {
     ;[mins, secs] = parts as [number, number]
   } else if (parts.length === 1) {
+    /* c8 ignore next - parts[0] is always a number from the .map(); the ?? 0 fallback is unreachable */
     secs = parts[0] ?? 0
   }
-  return days * 86400 + hours * 3600 + mins * 60 + secs
+  return days * 86_400 + hours * 3600 + mins * 60 + secs
 }
 
 export function listProcesses(): ProcRow[] {
@@ -289,6 +294,61 @@ export function isAlive(pid: number): boolean {
   }
 }
 
+// Active-run markers — pidfiles under
+// ~/.claude/hooks/stale-process-sweeper/active-runs/, one `<pid>` file per
+// long-running fleet command (coverage, full builds) that declares its
+// worker tree healthy-on-purpose. Writer + contract:
+// scripts/fleet/_shared/active-run-marker.mts (keep in lockstep). Only the
+// STUCK branch consults this — orphan reaping is unaffected.
+export function readActiveRunPids(homeDir?: string | undefined): Set<number> {
+  const dir = path.join(
+    homeDir ?? os.homedir(),
+    '.claude',
+    'hooks',
+    'stale-process-sweeper',
+    'active-runs',
+  )
+  const pids = new Set<number>()
+  let entries: string[]
+  try {
+    entries = readdirSync(dir)
+  } catch {
+    return pids
+  }
+  for (const entry of entries) {
+    const pid = Number(entry)
+    if (Number.isFinite(pid) && isAlive(pid)) {
+      pids.add(pid)
+    }
+  }
+  return pids
+}
+
+// True when `pid`'s ancestor chain (via the captured ps snapshot) reaches
+// any of `ancestors`. Bounded hops guard against ppid cycles in a torn
+// snapshot.
+export function isDescendantOf(
+  rows: ProcRow[],
+  pid: number,
+  ancestors: Set<number>,
+): boolean {
+  if (ancestors.size === 0) {
+    return false
+  }
+  const parentOf = new Map<number, number>()
+  for (const row of rows) {
+    parentOf.set(row.pid, row.ppid)
+  }
+  let current: number | undefined = pid
+  for (let hops = 0; hops < 25 && current !== undefined; hops += 1) {
+    if (ancestors.has(current)) {
+      return true
+    }
+    current = parentOf.get(current)
+  }
+  return false
+}
+
 export function classify(row: ProcRow): string | undefined {
   for (const { name, rx } of STALE_PATTERNS) {
     if (rx.test(row.command)) {
@@ -350,8 +410,14 @@ export function sweep(options?: SweepOptions): {
   }>
   skipped: number
 } {
-  const all = options?.all === true
+  const opts = { __proto__: null, ...options } as typeof options
+  const all = opts?.all === true
   const rows = listProcesses()
+  // Healthy long-running work (coverage) registers itself; its descendants
+  // are exempt from the STUCK heuristic only. Incident: three cover runs
+  // SIGKILLed at ~15min with flat RSS because hot coverage workers matched
+  // the stuck signature exactly.
+  const activeRunPids = readActiveRunPids()
   const myPid = process.pid
   const myPpid = process.ppid
   const killed: Array<{
@@ -368,7 +434,7 @@ export function sweep(options?: SweepOptions): {
     if (row.pid === myPid || row.pid === myPpid) {
       continue
     }
-    // Never touch a session-critical daemon (e.g. the token-minifier
+    // Never touch a session-critical daemon (e.g. the headroom
     // proxy), even in --all — see SESSION_CRITICAL_PATTERNS.
     if (isSessionCriticalDaemon(row.command)) {
       continue
@@ -398,7 +464,8 @@ export function sweep(options?: SweepOptions): {
     } else if (
       row.elapsedSec >= STUCK_MIN_ELAPSED_SEC &&
       row.pcpu >= STUCK_MIN_PCPU &&
-      row.rss >= STUCK_MIN_RSS_KB
+      row.rss >= STUCK_MIN_RSS_KB &&
+      !isDescendantOf(rows, row.pid, activeRunPids)
     ) {
       // Worker is matched, has a live parent, but is wedged: long
       // elapsed time + spinning CPU + heavy memory. This is the
@@ -429,6 +496,7 @@ export function sweep(options?: SweepOptions): {
   return { killed, skipped }
 }
 
+/* c8 ignore start - main() is only called when this file is run as a script, not when imported; subprocess tests cover this path */
 function main() {
   // `--all` / `--force`: explicit "kill all background processing + reap
   // orphans" mode. Invoked directly (the `kill` run target), not as a
@@ -450,8 +518,10 @@ function main() {
     runSweep()
   }
 }
+/* c8 ignore stop */
 
 export function runSweep(options?: SweepOptions) {
+  const opts = { __proto__: null, ...options } as typeof options
   let result: ReturnType<typeof sweep>
   try {
     result = sweep(options)
@@ -471,7 +541,7 @@ export function runSweep(options?: SweepOptions) {
       `[stale-process-sweeper] reaped ${result.killed.length} stale ` +
         `worker(s), ~${totalMb}MB freed: ${breakdown}\n`,
     )
-  } else if (options?.all) {
+  } else if (opts?.all) {
     // In explicit kill mode, confirm the no-op so the user isn't left
     // wondering whether anything ran.
     process.stderr.write('[stale-process-sweeper] nothing to reap\n')
@@ -482,6 +552,7 @@ export function runSweep(options?: SweepOptions) {
 // Entrypoint-guarded: run main() only when invoked directly, NOT when the test
 // imports this module for its pure helpers (else main() blocks on stdin at
 // import and the test file never terminates).
+/* c8 ignore next - condition is always false when imported; true only when run as a script */
 if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
   main()
 }

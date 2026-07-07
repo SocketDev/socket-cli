@@ -1,0 +1,68 @@
+# Layer 1 — leaf action (no internal SocketDev refs). Consumed by
+# `ci.yml` (Layer 3 reusable workflow). When this file bumps,
+# cascade is: 3 → 4 → external repos. See updating-workflows skill
+# at .claude/skills/updating-workflows/.
+
+name: 'Run Script'
+description: 'Run setup and main scripts with proper working directory handling'
+
+# This action intentionally executes user-provided scripts via template expansion.
+# The inputs (setup-script, main-script) must come from trusted workflow definitions only,
+# never from untrusted sources like issue comments, PR titles, or external inputs.
+
+inputs:
+  continue-on-error:
+    description: 'Continue on error'
+    required: false
+    default: false
+  main-script:
+    description: 'Main script to run'
+    required: true
+  setup-script:
+    description: 'Optional setup script to run first'
+    required: false
+    default: ''
+  shell:
+    description: 'Shell to use'
+    required: false
+    default: 'bash'
+  working-directory:
+    description: 'Working directory'
+    required: false
+    default: '.'
+
+outputs:
+  exit-code:
+    description: 'Exit code from the main script'
+    value: ${{ steps.main.outputs.exit-code }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Verify sfw is installed
+      shell: bash
+      run: |
+        if [ -z "$SFW_BIN" ] || [ ! -x "$SFW_BIN" ]; then
+          echo "Error: sfw is not installed — run the setup-and-install action first" >&2
+          exit 1
+        fi
+
+    - name: Run setup script
+      if: inputs.setup-script != ''
+      shell: ${{ inputs.shell }}
+      working-directory: ${{ inputs.working-directory }}
+      # zizmor: ignore[template-injection]
+      run: ${{ inputs.setup-script }}
+
+    - name: Run main script
+      id: main
+      shell: ${{ inputs.shell }}
+      working-directory: ${{ inputs.working-directory }}
+      continue-on-error: ${{ fromJSON(inputs.continue-on-error) }}
+      # zizmor: ignore[template-injection]
+      run: |
+        set +e
+        ${{ inputs.main-script }}
+        exit_code=$?
+        echo "exit-code=$exit_code" >> $GITHUB_OUTPUT
+        exit $exit_code

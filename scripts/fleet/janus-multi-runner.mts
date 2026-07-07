@@ -26,7 +26,10 @@ export interface RunResult {
 // Run one `janus` subcommand against a workspace's `.janus/` root. Never throws
 // — a non-zero exit / spawn error is reported via `ok:false` + stderr so the
 // MCP layer turns it into a tool error rather than crashing the server.
-export function runJanus(workspace: Workspace, args: readonly string[]): RunResult {
+export function runJanus(
+  workspace: Workspace,
+  args: readonly string[],
+): RunResult {
   const r = spawnSync(JANUS_BIN, [...args], {
     cwd: workspace.repoPath,
     env: { ...process.env, JANUS_ROOT: workspace.janusRoot },

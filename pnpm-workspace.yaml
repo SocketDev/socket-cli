@@ -18,7 +18,7 @@ allowBuilds:
 # field in package.json. Our setup action pins pnpm via external-tools.json;
 # any drift should fail fast, not silently auto-download via @pnpm/exe
 # (which in rc.5 leaves a placeholder launcher that errors at runtime).
-pmOnFail: error
+pmOnFail: warn
 
 catalog:
   '@anthropic-ai/claude-code': 2.1.197
@@ -54,8 +54,9 @@ catalog:
   '@socketregistry/indent-string': 1.0.14
   '@socketregistry/is-interactive': 1.0.6
   '@socketregistry/packageurl-js': 'npm:@socketregistry/packageurl-js@1.4.2'
-  '@socketsecurity/lib': 6.0.8
+  '@socketsecurity/lib': 6.0.9
   '@types/shell-quote': 1.7.5
+  '@ultrathink/acorn.wasm': npm:@ultrathink/acorn-wasm@0.0.1
   # -stable aliases: pnpm `overrides:` can't redirect a package's own
   # name from inside the same package — Node ESM resolves it as a
   # self-reference. The 4 Socket-published packages each need a
@@ -65,7 +66,7 @@ catalog:
   # full rationale.
   '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.4.2'
   '@socketregistry/yocto-spinner': 1.0.25
-  '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@6.0.8'
+  '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@6.0.9'
   '@socketsecurity/registry': 'npm:@socketsecurity/registry@2.0.2'
   '@socketsecurity/registry-stable': 'npm:@socketsecurity/registry@2.0.2'
   '@socketsecurity/sdk': 'npm:@socketsecurity/sdk@4.0.1'
@@ -76,7 +77,7 @@ catalog:
   '@types/mdast': 4.0.4
   '@types/micromatch': 4.0.9
   '@types/mock-fs': 4.13.4
-  '@types/node': 24.9.2
+  '@types/node': 26.0.1
   '@types/npm-package-arg': 6.1.4
   '@types/npmcli__arborist': 6.3.1
   '@types/npmcli__config': 6.0.3
@@ -86,8 +87,8 @@ catalog:
   '@types/which': 3.0.4
   '@types/yargs-parser': 21.0.3
   '@typescript/native-preview': 7.0.0-dev.20260510.1
-  '@vitest/coverage-v8': 4.1.8
-  '@vitest/ui': 4.1.8
+  '@vitest/coverage-v8': 4.1.9
+  '@vitest/ui': 4.1.9
   '@yao-pkg/pkg': 6.8.0
   '@yarnpkg/parsers': 3.0.3
   adm-zip: 0.5.16
@@ -127,23 +128,25 @@ catalog:
   js-yaml: npm:@zkochan/js-yaml@0.0.10
   lint-staged: 16.1.6
   lodash: 4.17.21
-  magic-string: 0.30.19
+  magic-string: 0.30.21
+  'markdownlint-cli2': 0.23.0
   'mdast-util-from-markdown': 2.0.3
   'micromark': 4.0.2
   micromatch: 4.0.8
   mock-fs: 5.5.0
   nanotar: 0.2.1
-  nock: 14.0.10
+  'neosanitize': 0.3.0
+  nock: 14.0.16
   npm-package-arg: 13.0.0
-  npm-run-all2: 9.0.1
+  npm-run-all2: 9.0.2
   octokit: 5.0.5
   onnxruntime-web: 1.23.0
   open: 10.2.0
   oxfmt: 0.48.0
-  oxlint: 1.63.0
+  oxlint: 1.72.0
   packageurl-js: npm:@socketregistry/packageurl-js@^1.4.2
   path-parse: npm:@socketregistry/path-parse@^1.0.8
-  'playwright-core': 1.60.0
+  'playwright-core': 1.61.1
   postject: 1.0.0-alpha.6
   react: 19.2.0
   react-reconciler: 0.33.0
@@ -151,13 +154,13 @@ catalog:
   registry-url: 7.2.0
   # Fleet bundler (replaces esbuild) for the CLI bundle. Fleet-latest,
   # single-sourced; the override forces vite's bundled rolldown to match.
-  'regjsparser': 0.13.1
-  rolldown: 1.1.0
+  'regjsparser': 0.13.2
+  rolldown: 1.1.4
   safe-buffer: npm:@socketregistry/safe-buffer@^1.0.9
   safer-buffer: npm:@socketregistry/safer-buffer@^1.0.10
-  semver: 7.7.2
+  semver: 7.8.5
   set-function-length: npm:@socketregistry/set-function-length@^1.0.10
-  shell-quote: 1.8.4
+  shell-quote: 1.9.0
   side-channel: npm:@socketregistry/side-channel@^1.0.10
   ssri: 12.0.0
   string-width: 8.1.0
@@ -170,13 +173,13 @@ catalog:
   trash: 10.0.0
   type-coverage: 2.29.7
   typedarray: npm:@socketregistry/typedarray@^1.0.8
-  typescript: 5.9.3
+  typescript: 6.0.3
   undici: 6.21.3
   unplugin-purge-polyfills: 0.1.0
   # vite 8.0.14 swaps esbuild → rolldown natively; the override forces its
   # bundled rolldown up to the catalog's 1.0.3.
-  vite: 8.1.2
-  vitest: 4.1.8
+  vite: 8.1.0
+  vitest: 4.1.9
   wrap-ansi: 9.0.2
   xml2js: 0.6.2
   yaml: 2.8.1
@@ -203,68 +206,45 @@ minimumReleaseAgeExclude:
   - '@yuku-parser/*'
   - '@socketoverride/*'
   - 'socket'
-  # published: 2026-06-09 | removable: 2026-06-16
-  - '@yuku-parser/binding-darwin-arm64@0.5.31'
-  # published: 2026-06-09 | removable: 2026-06-16
-  - '@yuku-parser/binding-darwin-x64@0.5.31'
-  # published: 2026-06-09 | removable: 2026-06-16
-  - '@yuku-parser/binding-freebsd-x64@0.5.31'
-  # published: 2026-06-09 | removable: 2026-06-16
-  - '@yuku-parser/binding-linux-arm-gnu@0.5.31'
-  # published: 2026-06-09 | removable: 2026-06-16
-  - '@yuku-parser/binding-linux-arm-musl@0.5.31'
-  # published: 2026-06-09 | removable: 2026-06-16
-  - '@yuku-parser/binding-linux-arm64-gnu@0.5.31'
-  # published: 2026-06-09 | removable: 2026-06-16
-  - '@yuku-parser/binding-linux-arm64-musl@0.5.31'
-  # published: 2026-06-09 | removable: 2026-06-16
-  - '@yuku-parser/binding-linux-x64-gnu@0.5.31'
-  # published: 2026-06-09 | removable: 2026-06-16
-  - '@yuku-parser/binding-linux-x64-musl@0.5.31'
-  # published: 2026-06-09 | removable: 2026-06-16
-  - '@yuku-parser/binding-win32-arm64@0.5.31'
-  # published: 2026-06-09 | removable: 2026-06-16
-  - '@yuku-parser/binding-win32-x64@0.5.31'
-  # published: 2026-06-08 | removable: 2026-06-15
-  - 'oxfmt@0.54.0'
-  # published: 2026-06-08 | removable: 2026-06-15
-  - '@oxfmt/binding-android-arm-eabi@0.54.0'
-  # published: 2026-06-08 | removable: 2026-06-15
-  - '@oxfmt/binding-android-arm64@0.54.0'
-  # published: 2026-06-08 | removable: 2026-06-15
-  - '@oxfmt/binding-darwin-arm64@0.54.0'
-  # published: 2026-06-08 | removable: 2026-06-15
-  - '@oxfmt/binding-darwin-x64@0.54.0'
-  # published: 2026-06-08 | removable: 2026-06-15
-  - '@oxfmt/binding-freebsd-x64@0.54.0'
-  # published: 2026-06-08 | removable: 2026-06-15
-  - '@oxfmt/binding-linux-arm-gnueabihf@0.54.0'
-  # published: 2026-06-08 | removable: 2026-06-15
-  - '@oxfmt/binding-linux-arm-musleabihf@0.54.0'
-  # published: 2026-06-08 | removable: 2026-06-15
-  - '@oxfmt/binding-linux-arm64-gnu@0.54.0'
-  # published: 2026-06-08 | removable: 2026-06-15
-  - '@oxfmt/binding-linux-arm64-musl@0.54.0'
-  # published: 2026-06-08 | removable: 2026-06-15
-  - '@oxfmt/binding-linux-ppc64-gnu@0.54.0'
-  # published: 2026-06-08 | removable: 2026-06-15
-  - '@oxfmt/binding-linux-riscv64-gnu@0.54.0'
-  # published: 2026-06-08 | removable: 2026-06-15
-  - '@oxfmt/binding-linux-riscv64-musl@0.54.0'
-  # published: 2026-06-08 | removable: 2026-06-15
-  - '@oxfmt/binding-linux-s390x-gnu@0.54.0'
-  # published: 2026-06-08 | removable: 2026-06-15
-  - '@oxfmt/binding-linux-x64-gnu@0.54.0'
-  # published: 2026-06-08 | removable: 2026-06-15
-  - '@oxfmt/binding-linux-x64-musl@0.54.0'
-  # published: 2026-06-08 | removable: 2026-06-15
-  - '@oxfmt/binding-openharmony-arm64@0.54.0'
-  # published: 2026-06-08 | removable: 2026-06-15
-  - '@oxfmt/binding-win32-arm64-msvc@0.54.0'
-  # published: 2026-06-08 | removable: 2026-06-15
-  - '@oxfmt/binding-win32-ia32-msvc@0.54.0'
-  # published: 2026-06-08 | removable: 2026-06-15
-  - '@oxfmt/binding-win32-x64-msvc@0.54.0'
+  - '@sdxgen/*'
+  - 'sdxgen'
+  - 'stuie'
+  # published: 2026-06-30 | removable: 2026-07-07
+  - '@anthropic-ai/claude-code@2.1.197'
+  # published: 2026-07-01 | removable: 2026-07-08
+  - '@rolldown/binding-android-arm64@1.1.4'
+  # published: 2026-07-01 | removable: 2026-07-08
+  - '@rolldown/binding-darwin-arm64@1.1.4'
+  # published: 2026-07-01 | removable: 2026-07-08
+  - '@rolldown/binding-darwin-x64@1.1.4'
+  # published: 2026-07-01 | removable: 2026-07-08
+  - '@rolldown/binding-freebsd-x64@1.1.4'
+  # published: 2026-07-01 | removable: 2026-07-08
+  - '@rolldown/binding-linux-arm-gnueabihf@1.1.4'
+  # published: 2026-07-01 | removable: 2026-07-08
+  - '@rolldown/binding-linux-arm64-gnu@1.1.4'
+  # published: 2026-07-01 | removable: 2026-07-08
+  - '@rolldown/binding-linux-arm64-musl@1.1.4'
+  # published: 2026-07-01 | removable: 2026-07-08
+  - '@rolldown/binding-linux-ppc64-gnu@1.1.4'
+  # published: 2026-07-01 | removable: 2026-07-08
+  - '@rolldown/binding-linux-s390x-gnu@1.1.4'
+  # published: 2026-07-01 | removable: 2026-07-08
+  - '@rolldown/binding-linux-x64-gnu@1.1.4'
+  # published: 2026-07-01 | removable: 2026-07-08
+  - '@rolldown/binding-linux-x64-musl@1.1.4'
+  # published: 2026-07-01 | removable: 2026-07-08
+  - '@rolldown/binding-openharmony-arm64@1.1.4'
+  # published: 2026-07-01 | removable: 2026-07-08
+  - '@rolldown/binding-wasm32-wasi@1.1.4'
+  # published: 2026-07-01 | removable: 2026-07-08
+  - '@rolldown/binding-win32-arm64-msvc@1.1.4'
+  # published: 2026-07-01 | removable: 2026-07-08
+  - '@rolldown/binding-win32-x64-msvc@1.1.4'
+  # published: 2026-07-01 | removable: 2026-07-08
+  - 'markdownlint-cli2@0.23.0'
+  # published: 2026-07-01 | removable: 2026-07-08
+  - 'rolldown@1.1.4'
 
 # Refuse transitive dependencies declared via git/tarball/local-tarball
 # specs — an npm package shouldn't be allowed to drag in a git URL we
@@ -274,6 +254,8 @@ minimumReleaseAgeExclude:
 # this). pnpm's current default is `false`; declared explicitly so a
 # future flip can't silently change install behavior.
 blockExoticSubdeps: true
+confirmModulesPurge: false
+managePackageManagerVersions: false
 
 # Dependency overrides (migrated from package.json pnpm.overrides).
 # Force every consumer of Socket's own packages to resolve through the
@@ -311,7 +293,7 @@ overrides:
   'string-width@>=5': '8.1.0'
   'update-notifier@>=4.0.0': '7.3.1'
   'uuid': '11.1.1'
-  'which@>=4': '7.0.0'
+  'which': '7.0.0'
   'wrap-ansi@>=8': '9.0.2'
   'yaml@2': '2.9.0'
 
@@ -363,6 +345,7 @@ overrides:
   'typedarray': 'catalog:'
   'undici': 'catalog:'
   'vite': 'catalog:'
+  'which@>=4': '7.0.0'
   'wrap-ansi': 'catalog:'
   'xml2js': 'catalog:'
   'yaml': 'catalog:'

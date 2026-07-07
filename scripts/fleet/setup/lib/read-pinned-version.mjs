@@ -18,6 +18,7 @@ import { argv, exit, stdout } from 'node:process'
 
 const pkgName = argv[2]
 if (!pkgName) {
+  // oxlint-disable-next-line socket/no-module-eval-side-effects -- arg-missing usage bail in a standalone composite-action helper; never bundled into the snapshot.
   process.stderr.write('Usage: node read-pinned-version.mjs <package-name>\n') // socket-hook: allow logger -- composite action helper, raw stderr for usage
   exit(2)
 }

@@ -1,10 +1,20 @@
 {
+  "$schema": "https://raw.githubusercontent.com/SocketDev/socket-wheelhouse/main/packages/build-infra/lib/external-tools-schema.json",
   "description": "Security tools for Claude Code hooks (self-contained, no external deps)",
   "tools": {
     "agentshield": {
       "description": "Claude AI config security scanner (prompt injection, secrets)",
       "purl": "pkg:npm/ecc-agentshield@1.4.0",
       "integrity": "sha512-R98OO1Ujyk2lezDLb+iQmMhF6FwTJCHajy3G4FCB6x7wkSTqR9f8+eAelC5KDzYDsGSbc0sOZvjXOOPRBtMpDg=="
+    },
+    "headroom": {
+      "description": "headroom-ai — AI context-compression proxy (Anthropic backend; 60-95% token reduction on tool outputs/RAG/files/history before they reach the model). Replaces the legacy socket-token-minifier proxy. Pinned via a committed pyproject.toml + uv.lock (the [proxy] extra, no pytorch) and installed with `uv sync --locked` into the _dlx/<hash>/ store — see scripts/fleet/install-headroom.mts. Pre-1.0/Beta (the noted uv-style exception); pinned + hash-locked + soaked.",
+      "release": "uv-project",
+      "repository": "github:headroomlabs-ai/headroom",
+      "purl": "pkg:pypi/headroom-ai@0.27.0",
+      "version": "0.27.0",
+      "versionDate": "2026-06-22",
+      "notes": "Third-party (github:headroomlabs-ai/headroom)."
     },
     "cdxgen": {
       "description": "CycloneDX SBOM generator — slim SEA binary (no bundled bun/deno; smaller + faster than the npm flavor). Consumed by `socket scan sbom`.",
@@ -53,29 +63,29 @@
     },
     "zizmor": {
       "description": "GitHub Actions security scanner",
-      "version": "v1.25.2",
+      "version": "v1.26.1",
       "repository": "github:zizmorcore/zizmor",
       "release": "asset",
       "platforms": {
         "darwin-arm64": {
           "asset": "zizmor-aarch64-apple-darwin.tar.gz",
-          "integrity": "sha512-LUPNdfltqkBiFfPSUAWJovrH4kaqOoFQgn1ISEKc6yOmsUD1cYmKvnnsYfDP/Y1KsMua+BKNWJ3B9IMb0D1lpg=="
+          "integrity": "sha512-UfLPPdYejR8fvrFwr9Tos7LKFvqr7YcAHWZlAmeo7imYI/fIucYnCY6HeDyk2cbFUvDpQTdps6WQS1QpqCtTfQ=="
         },
         "darwin-x64": {
           "asset": "zizmor-x86_64-apple-darwin.tar.gz",
-          "integrity": "sha512-M/T9PX+FRG1VvfS34T3aXXJ95DjpnsxcJV767BHYfKhmy/oUecI4v3jIwDBGnDt52oDtZTHx9H0uMVKg9NaNOA=="
+          "integrity": "sha512-SCbcEzF/zy2qNuNaocLPIUC4Wuq5GnHt0iUFve3qx6bJyFdzU6pDFZkF64dojGC7M5gAcK/4acXGPx3YnMDy/g=="
         },
         "linux-arm64": {
           "asset": "zizmor-aarch64-unknown-linux-gnu.tar.gz",
-          "integrity": "sha512-SBFp8h++QWZEZ5SfkmPxElDUYy5u0JUkgbzlz90gmB3UPbKgOcYqKOn6mY1tha5+RriMmuNtZxtrAiihECMOFA=="
+          "integrity": "sha512-TkGvwt0zYdmiJ7LZmy6Bz9CdkqcuEpFKhXUK9m0MhSPxBx2gYBsrw6OxGSttMEQ3bvxdvyG6rqbnMgjyDZB1zA=="
         },
         "linux-x64": {
           "asset": "zizmor-x86_64-unknown-linux-gnu.tar.gz",
-          "integrity": "sha512-FSmYWvlOzySHwlI2IkoEQNHfRU/UitumuQJc+umYyYcDr50colg0Bzio74YS19sGH41leMdXu4KJtB5XM45eUg=="
+          "integrity": "sha512-zTMERMDd3JfaRX12klj2fhZGDyrXeLkVUY1QJkCv8RRmAa9uVuH88gHOnv4CQtC5hXS7FPRJzvCVOnw38gV83g=="
         },
         "win-x64": {
           "asset": "zizmor-x86_64-pc-windows-msvc.zip",
-          "integrity": "sha512-OhgPngI8gKygJFKa3VGk5y4S7KUuW5CPyBiI1WvfM58OHd5rUbdillfJeLsLhRbOMFAdigdUeZtNDyR6VPIs1A=="
+          "integrity": "sha512-Pijh/CrrOAkZzLiTr2LTHdI8d6+5Ql6B+suY6fXVmL8UVa+4Q36hHL5K67iRFz03v/V/UcrY6+dfhnmot/xfww=="
         }
       }
     },
@@ -157,15 +167,16 @@
       ]
     },
     "skillspector": {
-      "description": "NVIDIA's third-party-skill security scanner (LangGraph-based; YARA + AST + OSV.dev CVE lookups + optional LLM analysis). No PyPI release / no GH tags upstream — pinned to a git SHA on main + installed via pipx. Sibling to AgentShield: AgentShield audits the operator's .claude/ config; SkillSpector audits untrusted upstream skills before install.",
-      "release": "pipx-git",
+      "description": "NVIDIA's third-party-skill security scanner (LangGraph-based; YARA + AST + OSV.dev CVE lookups + optional LLM analysis). No PyPI release / no GH tags upstream — pinned to a git SHA on main + installed via a locked uv project (pyproject.toml + uv.lock, `uv sync --locked`; the fleet uv pin + exclude-newer make it reproducible). Sibling to AgentShield: AgentShield audits the operator's .claude/ config; SkillSpector audits untrusted upstream skills before install.",
+      "release": "uv-project",
       "repository": "github:NVIDIA/skillspector",
       "version": "2eb84478",
       "versionDate": "2026-05-18"
     },
     "trufflehog": {
-      "description": "TruffleHog — secrets scanner used by socket-basics SAST workflow.",
+      "description": "TruffleHog — secrets scanner used by socket-basics SAST workflow. Per-platform SHA-verified; version-pinned + soaked (versionDate below) because trufflesecurity has a history of supply-chain incidents, so the pin + soak window are load-bearing.",
       "version": "3.93.8",
+      "versionDate": "2026-03-09",
       "repository": "github:trufflesecurity/trufflehog",
       "release": "asset",
       "platforms": {
@@ -248,30 +259,30 @@
       }
     },
     "uv": {
-      "description": "uv — Python package manager (Astral). Used by socket-basics for Python project bootstrap.",
-      "version": "0.10.11",
+      "description": "uv — Python package manager (Astral). Used by socket-basics for Python project bootstrap + the SkillSpector locked uv project. Pinned to the fleet-canonical 0.11.21 (matches scripts/fleet/setup/external-tools.json + _shared/uv-config.mts UV_PINNED_VERSION).",
+      "version": "0.11.21",
       "repository": "github:astral-sh/uv",
       "release": "asset",
       "platforms": {
         "darwin-arm64": {
           "asset": "uv-aarch64-apple-darwin.tar.gz",
-          "integrity": "sha512-PMc914k3+ke0GiQ8nEa8b0KBfwis75n3dHFFYhhiCt/oVbeEJBAZqGYI9E5ihvrgtGqY/+DOOMcJviuLJGPgJg=="
+          "integrity": "sha512-HVEGTGGzjKNRCbzhhhP5+fDMGPyHW/qsG7Oa4cL0YGfdDOMyas1pAi/q/Q4dPE5/uoqNSbk+1qqfzlI1Ryfveg=="
         },
         "darwin-x64": {
           "asset": "uv-x86_64-apple-darwin.tar.gz",
-          "integrity": "sha512-xKQ/6Z/mrMZUMnwSpSzx3ROkLNHC+viNZKf0C7m1NiRy/F8hl+9rLaJ/7//8VgCPg2L5gdpxqtrV39xtrgZa/g=="
+          "integrity": "sha512-F6G/11wlZ54uhhDN6gO63jaLE6R5RU7ULf601Zf3sOef43rcf/nQ0+8vWGKW+MtH7tQAr9HFCmt5CmeIaiSVFw=="
         },
         "linux-arm64": {
           "asset": "uv-aarch64-unknown-linux-gnu.tar.gz",
-          "integrity": "sha512-hHxhwXD0GA1leTq5zHcuqyO9YpuRnYI94jz/p51oFlUI+CJZrhJzya7aLf7lcQIsTbe3PCDfh3C23Dt8JfF26Q=="
+          "integrity": "sha512-kLYDGEDldFPEgMRSc1Gvn+uusu0MDH6cWddYtzlCx8Oy/zsKUFU8D/HVmTb+YwJ05H8CPFrqdXlRq8KC/Jj4uA=="
         },
         "linux-x64": {
           "asset": "uv-x86_64-unknown-linux-gnu.tar.gz",
-          "integrity": "sha512-03h8yKykGXwBJBj893mQSre6J3D5WqIbylWgvv7W9EEnmE1ExiMb3SZItUwk/qrBZy5rvsoBuYYW8oyU6Jyayg=="
+          "integrity": "sha512-d0in3UgzEbgDxRtI53DE/ZCnE/n7Uy90vB3G4H7cV0ZjSbpxgbEP/UVPSKzdWHnD8qjIt3+liZ/PSlI30uiQyw=="
         },
         "win-x64": {
           "asset": "uv-x86_64-pc-windows-msvc.zip",
-          "integrity": "sha512-XzcS4HF+W1hogkVvp5ZC3yu0vmqY+mPLCTXPeHHDl3m31MpCcxq33iTBn72zD2xRRlQSn3NJYbWdQJM/r+B8AA=="
+          "integrity": "sha512-FZDwC81ha5JsP3KCnuLYMooSaLaSmFCe3Oky/ctYX0DV/pe4YI5vSvDxHqI+z46UgN0ctGYhZxK3/hKbei9sXA=="
         }
       }
     },
@@ -305,28 +316,31 @@
         }
       }
     },
-    "h5i": {
-      "description": "h5i — h5i-dev/h5i provenance/handoff tool. Version-templated tarballs; arm64-only darwin (no darwin-x64), like janus. Binary is telemetry-free. Integrity verified against the upstream .sha256 sidecars.",
-      "version": "v0.1.7",
-      "repository": "github:h5i-dev/h5i",
+    "actionlint": {
+      "description": "actionlint — rhysd/actionlint static linter for GitHub Actions workflow YAML. Validates action syntax, shell scripts in run: steps, expression types, and SHA-pin coverage. Used by the actionlint-on-workflow-edit hook (PostToolUse nudge) and the lint:actions CI gate.",
+      "version": "v1.7.12",
+      "repository": "github:rhysd/actionlint",
       "release": "asset",
-      "installDir": "wheelhouse",
       "platforms": {
         "darwin-arm64": {
-          "asset": "h5i-v0.1.7-aarch64-apple-darwin.tar.gz",
-          "integrity": "sha512-idolWWCucz/Yp4sy5lpKSa1ePlSJGPSoUW9WYFWVnWCOE6yxMSm/Kg+W2zXnE9o4RwBtUIPihNvUDTL4OelSRQ=="
+          "asset": "actionlint_1.7.12_darwin_arm64.tar.gz",
+          "integrity": "sha512-JcjNckK6f2k4XiRij3CCrU3IhT0gwrmhycfb5VPphAA9+OWIuXrZBFVipDg4nOF+wOLWNbmTMeWYutbarzJyUw=="
+        },
+        "darwin-x64": {
+          "asset": "actionlint_1.7.12_darwin_amd64.tar.gz",
+          "integrity": "sha512-O31uSGqPSkyAnEFPvVAH+nVnZGXsnsiFr7PxvwBnYaIsPdxtyngc9sX1QbvHvI606cn27HAejgmXHwHTpqhlNg=="
         },
         "linux-arm64": {
-          "asset": "h5i-v0.1.7-aarch64-unknown-linux-musl.tar.gz",
-          "integrity": "sha512-RxhG5vZvcvArliOqUoSChlUiSZyr0pyMdZndzfXrGFesb5XJBVj3CBoszNWzJmVPCOxJ3KSogeSkNHmwJK8qZQ=="
+          "asset": "actionlint_1.7.12_linux_arm64.tar.gz",
+          "integrity": "sha512-aGKynUObYrl9Op2V4VCJDuX1oZ5hXCxHw6P6g2fDHGVShXOAEwy6mdERxFzdTBV2dlBGbHemsvi6H3TKr58uMw=="
         },
         "linux-x64": {
-          "asset": "h5i-v0.1.7-x86_64-unknown-linux-musl.tar.gz",
-          "integrity": "sha512-2/zreb6+haTjXcMbxeX2ZGnfRFYKoA2nT03ylklZkSmcEgwXnRTZ52pxLW16ZggQat9wj0FgNOc3XiM4di3tLA=="
+          "asset": "actionlint_1.7.12_linux_amd64.tar.gz",
+          "integrity": "sha512-xHa4UKU6d3eRHqKf2J4rTKqJ8i81/7HBHFquM9VEqJ4rlQULSR723PBXLYoKFaAfYdyiKHnqqlin2W8vwO9hHw=="
         },
         "win-x64": {
-          "asset": "h5i-v0.1.7-x86_64-pc-windows-msvc.zip",
-          "integrity": "sha512-JUG6GXWnUfgfRawGltA97MXO4oy/xjKctwl2EKA0ICS/1fwslKkkgs2cZs8jyjKffXEZWJIhcLqJ0aKxzBVZfQ=="
+          "asset": "actionlint_1.7.12_windows_amd64.zip",
+          "integrity": "sha512-uODDGiHpqlIkrP+JYYuCe6CSG9q0s4VlGGDmizpXDTAH6AVcTjX04Cj1Ktw/DOfwHTw4viKDjR7VZvl4GD+cRg=="
         }
       }
     },

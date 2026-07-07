@@ -61,15 +61,16 @@ export function countRuleDirs(dir: string): number {
 }
 
 /**
- * Import the plugin at `<repoRoot>/.config/oxlint-plugin/index.mts` and verify
- * it loads + registers exactly the number of rules present under `fleet/`.
- * Returns a structured verdict; never throws (a load failure is `load-threw`).
- * A repo with no plugin returns `no-plugin` (status quo, not a failure).
+ * Import the plugin at `<repoRoot>/.config/fleet/oxlint-plugin/index.mts` and
+ * verify it loads + registers exactly the number of rules present under
+ * `fleet/`. Returns a structured verdict; never throws (a load failure is
+ * `load-threw`). A repo with no plugin returns `no-plugin` (status quo, not a
+ * failure).
  */
 export async function assertPluginLoads(
   repoRoot: string,
 ): Promise<PluginLoadResult> {
-  const pluginDir = path.join(repoRoot, '.config', 'oxlint-plugin')
+  const pluginDir = path.join(repoRoot, '.config', 'fleet', 'oxlint-plugin')
   const indexPath = path.join(pluginDir, 'index.mts')
   const fleetDir = path.join(pluginDir, 'fleet')
   const expected = countRuleDirs(fleetDir)

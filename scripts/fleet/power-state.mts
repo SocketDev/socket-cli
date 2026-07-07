@@ -1,4 +1,4 @@
-/**
+/*
  * @file Detect whether the host is currently on AC power (vs battery). Used by
  *   long-running build/test scripts to size timeouts adaptively — laptops on
  *   battery throttle CPU hard (especially macOS), and a static timeout that

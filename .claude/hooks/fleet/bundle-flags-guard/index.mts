@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // Claude Code PreToolUse hook — bundle-flags-guard.
 //
 // Blocks Edit/Write operations that flip `sourceMap`, `declarationMap`,
@@ -19,24 +18,20 @@
 // can't be touched without first writing the bad state, so the
 // bypass exists for that case.
 //
-// Test-only configs under `**/test/**` or `**/__tests__/**` are
-// skipped — those don't ship.
+// Test-only configs under test/ or __tests__/ are skipped — those don't ship.
 //
-// Bypass: `Allow bundle-flags bypass` typed verbatim in a recent
-// user turn.
+// Bypass: `Allow bundle-flags bypass` typed verbatim in a recent user turn.
 //
 // Fails open on parse / regex errors.
 
-import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { safeReadFileSync } from '@socketsecurity/lib-stable/fs/read-file'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
-import { withEditGuard } from '../_shared/payload.mts'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import { resolveEditedText } from '../_shared/payload.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const logger = getDefaultLogger()
 
 const BYPASS_PHRASE = 'Allow bundle-flags bypass'
 
@@ -61,8 +56,8 @@ const TEST_TREE_RE = /(?:^|\/)(?:test|tests|__tests__)\//
 // `sourcemap: false` (the desired state) or `// sourcemap: true` (a
 // comment) or `*sourcemap: true*` (markdown).
 const BAD_SOURCEMAP_RE =
-  /(?<![\w/])(['"]?sourcemap['"]?)\s*:\s*(?:true|['"](?:inline|external|linked|both)['"])/i
-const BAD_MINIFY_RE = /(?<![\w/])(['"]?minify['"]?)\s*:\s*true(?!\w)/i
+  /(?<![\w/])(?:['"]?sourcemap['"]?)\s*:\s*(?:true|['"](?:inline|external|linked|both)['"])/i
+const BAD_MINIFY_RE = /(?<![\w/])(?:['"]?minify['"]?)\s*:\s*true(?!\w)/i
 
 interface FindingDetail {
   readonly key: string
@@ -79,7 +74,7 @@ export function isTsconfig(filePath: string): boolean {
 }
 
 export function isTestTree(filePath: string): boolean {
-  return TEST_TREE_RE.test(filePath.replace(/\\/g, '/'))
+  return TEST_TREE_RE.test(normalizePath(filePath))
 }
 
 // Read a top-level boolean from `compilerOptions` in a tsconfig.json
@@ -101,7 +96,8 @@ export function readTsconfigFlag(
   if (!parsed || typeof parsed !== 'object') {
     return undefined
   }
-  const co = (parsed as { compilerOptions?: unknown }).compilerOptions
+  const co = (parsed as { compilerOptions?: unknown | undefined })
+    .compilerOptions
   if (!co || typeof co !== 'object') {
     return undefined
   }
@@ -134,7 +130,7 @@ export function stripJsonComments(text: string): string {
       i += 1
       continue
     }
-    if (ch === '"' || ch === "'") {
+    if (ch === "'" || ch === '"') {
       inString = true
       stringChar = ch
       out += ch
@@ -169,7 +165,7 @@ export function findBundlerViolations(
   const afterLines = after.split('\n')
   const out: FindingDetail[] = []
   for (let i = 0; i < afterLines.length; i += 1) {
-    const raw = afterLines[i] ?? ''
+    /* c8 ignore next */ const raw = afterLines[i] ?? ''
     const line = stripLineComment(raw)
     if (beforeLines.has(line)) {
       continue
@@ -200,7 +196,7 @@ function stripLineComment(line: string): string {
       }
       continue
     }
-    if (ch === '"' || ch === "'" || ch === '`') {
+    if (ch === "'" || ch === '"' || ch === '`') {
       inString = true
       stringChar = ch
       continue
@@ -212,87 +208,75 @@ function stripLineComment(line: string): string {
   return line
 }
 
-export function readFileSafe(p: string): string {
-  try {
-    return readFileSync(p, 'utf8')
-  } catch {
-    return ''
-  }
-}
-
-// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
-// content extraction (new_string / content), and fail-open on any throw.
-await withEditGuard((filePath, content, payload) => {
-  if (isTestTree(filePath)) {
-    return
-  }
-  const tsconfig = isTsconfig(filePath)
-  const bundler = isBundlerConfig(filePath)
-  if (!tsconfig && !bundler) {
-    return
-  }
-
-  const currentText = readFileSafe(filePath)
-  let afterText: string
-  if (payload.tool_name === 'Write') {
-    afterText = content ?? ''
-  } else {
-    const oldStr = (payload.tool_input?.old_string as string | undefined) ?? ''
-    const newStr = content ?? ''
-    if (!oldStr) {
-      return
+export const hook = defineHook({
+  check: editGuard((filePath, _content, payload) => {
+    if (isTestTree(filePath)) {
+      return undefined
     }
-    if (!currentText.includes(oldStr)) {
-      return
+    const tsconfig = isTsconfig(filePath)
+    const bundler = isBundlerConfig(filePath)
+    if (!tsconfig && !bundler) {
+      return undefined
     }
-    afterText = currentText.replace(oldStr, newStr)
-  }
 
-  const findings: FindingDetail[] = []
-  if (tsconfig) {
-    for (const key of ['sourceMap', 'declarationMap'] as const) {
-      const before = readTsconfigFlag(currentText, key)
-      const after = readTsconfigFlag(afterText, key)
-      if (after === true && before !== true) {
-        findings.push({ key, line: 0, source: `"${key}": true` })
+    const currentText = safeReadFileSync(filePath) ?? ''
+    const afterText = resolveEditedText(payload)
+    if (afterText === undefined) {
+      return undefined
+    }
+
+    const findings: FindingDetail[] = []
+    if (tsconfig) {
+      for (const key of ['sourceMap', 'declarationMap'] as const) {
+        const before = readTsconfigFlag(currentText, key)
+        const after = readTsconfigFlag(afterText, key)
+        if (after === true && before !== true) {
+          findings.push({ key, line: 0, source: `"${key}": true` })
+        }
       }
+    } else {
+      findings.push(...findBundlerViolations(currentText, afterText))
     }
-  } else if (bundler) {
-    findings.push(...findBundlerViolations(currentText, afterText))
-  }
 
-  if (findings.length === 0) {
-    return
-  }
-  if (
-    payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
-  ) {
-    return
-  }
+    if (findings.length === 0) {
+      return undefined
+    }
+    if (
+      payload.transcript_path &&
+      bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
+    ) {
+      return undefined
+    }
 
-  const lines: string[] = [
-    '[bundle-flags-guard] Blocked: shipped-build flag flipped to true',
-    '',
-    `  File: ${filePath}`,
-    '',
-  ]
-  for (const f of findings) {
-    const loc = f.line > 0 ? ` (line ${f.line})` : ''
-    lines.push(`  • \`${f.key}\`${loc}: ${f.source}`)
-  }
-  lines.push(
-    '',
-    '  Shipped bundles must not emit source maps, declaration maps,',
-    '  or minified output. Maps leak source paths and bloat artifacts;',
-    '  minification obscures stack traces and complicates security review.',
-    '',
-    '  Fix: set the flag to `false` (or remove it — `false` is the default',
-    '  for fleet packages).',
-    '',
-    `  Bypass: type "${BYPASS_PHRASE}" in a new message, then retry.`,
-    '',
-  )
-  logger.error(lines.join('\n'))
-  process.exitCode = 2
+    const lines: string[] = [
+      '[bundle-flags-guard] Blocked: shipped-build flag flipped to true',
+      '',
+      `  File: ${filePath}`,
+      '',
+    ]
+    for (let i = 0, { length } = findings; i < length; i += 1) {
+      const f = findings[i]!
+      const loc = f.line > 0 ? ` (line ${f.line})` : ''
+      lines.push(`  • \`${f.key}\`${loc}: ${f.source}`)
+    }
+    lines.push(
+      '',
+      '  Shipped bundles must not emit source maps, declaration maps,',
+      '  or minified output. Maps leak source paths and bloat artifacts;',
+      '  minification obscures stack traces and complicates security review.',
+      '',
+      '  Fix: set the flag to `false` (or remove it — `false` is the default',
+      '  for fleet packages).',
+      '',
+      `  Bypass: type "${BYPASS_PHRASE}" in a new message, then retry.`,
+      '',
+    )
+    return block(lines.join('\n'))
+  }),
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  scope: 'convention',
+  type: 'guard',
 })
+
+void runHook(hook, import.meta.url)

@@ -1,0 +1,481 @@
+{
+  "PostToolUse": [
+    {
+      "matcher": "Bash",
+      "hooks": [
+        "fleet/dirty-lockfile-nudge/index.mts",
+        "fleet/enterprise-push-nudge/index.mts",
+        "fleet/stale-node-modules-nudge/index.mts",
+        "fleet/worktree-remove-relink-nudge/index.mts"
+      ]
+    },
+    {
+      "matcher": "Edit|NotebookEdit|Write",
+      "hooks": [
+        "fleet/active-edits-ledger/index.mts"
+      ]
+    },
+    {
+      "matcher": "Edit|Write",
+      "hooks": [
+        "fleet/actionlint-on-workflow-edit/index.mts",
+        "fleet/extension-build-current-nudge/index.mts",
+        "fleet/oxlint-plugin-load-nudge/index.mts",
+        "fleet/prose-code-format-nudge/index.mts"
+      ]
+    }
+  ],
+  "PreToolUse": [
+    {
+      "matcher": "AskUserQuestion",
+      "hooks": [
+        "fleet/ask-suppression-nudge/index.mts"
+      ]
+    },
+    {
+      "matcher": "Task",
+      "hooks": [
+        "fleet/parallel-agent-spawn-nudge/index.mts"
+      ]
+    },
+    {
+      "matcher": "Bash",
+      "hooks": [
+        "fleet/brew-supply-chain-guard/index.mts",
+        "fleet/cdn-allowlist-guard/index.mts",
+        "fleet/claude-lockdown-guard/index.mts",
+        "fleet/codex-no-write-guard/index.mts",
+        "fleet/commit-author-guard/index.mts",
+        {
+          "path": "fleet/commit-message-format-guard/index.mts",
+          "triggers": [
+            "commit"
+          ]
+        },
+        "fleet/concurrent-cargo-build-guard/index.mts",
+        "fleet/default-branch-guard/index.mts",
+        {
+          "path": "fleet/gh-token-hygiene-guard/index.mts",
+          "triggers": [
+            "gh"
+          ]
+        },
+        {
+          "path": "fleet/mass-delete-guard/index.mts",
+          "triggers": [
+            "commit"
+          ]
+        },
+        {
+          "path": "fleet/no-amend-foreign-commit-guard/index.mts",
+          "triggers": [
+            "--amend"
+          ]
+        },
+        {
+          "path": "fleet/no-blind-keychain-read-guard/index.mts",
+          "triggers": [
+            "ConvertFrom-SecureString",
+            "Get-StoredCredential",
+            "find-generic-password",
+            "find-internet-password",
+            "keyring",
+            "secret-tool"
+          ]
+        },
+        "fleet/no-cascade-transient-git-guard/index.mts",
+        {
+          "path": "fleet/no-clipboard-access-guard/index.mts",
+          "triggers": [
+            "]52;",
+            "clip",
+            "pbcopy",
+            "pbpaste",
+            "wl-copy",
+            "wl-paste",
+            "xclip",
+            "xsel"
+          ]
+        },
+        {
+          "path": "fleet/no-corepack-guard/index.mts",
+          "triggers": [
+            "corepack"
+          ]
+        },
+        "fleet/no-direct-linter-guard/index.mts",
+        "fleet/no-empty-commit-guard/index.mts",
+        {
+          "path": "fleet/no-ext-issue-ref-guard/index.mts",
+          "triggers": [
+            "commit",
+            "gh"
+          ]
+        },
+        {
+          "path": "fleet/no-github-ai-attribution-guard/index.mts",
+          "triggers": [
+            "gh"
+          ]
+        },
+        "fleet/no-non-fleet-push-guard/index.mts",
+        "fleet/no-placeholder-commit-subject-guard/index.mts",
+        "fleet/no-pm-exec-guard/index.mts",
+        {
+          "path": "fleet/no-premature-commit-kill-guard/index.mts",
+          "triggers": [
+            "git",
+            "kill",
+            "pause-on-failure"
+          ]
+        },
+        {
+          "path": "fleet/no-revert-guard/index.mts",
+          "triggers": [
+            "--no-gpg-sign",
+            "--no-verify",
+            "SKIP_ASSET_DOWNLOAD",
+            "cat",
+            "commit.gpgsign",
+            "dd",
+            "git",
+            "python",
+            "sed",
+            "tee"
+          ]
+        },
+        {
+          "path": "fleet/no-screenshot-guard/index.mts",
+          "triggers": [
+            "SnippingTool.exe",
+            "flameshot",
+            "gnome-screenshot",
+            "grim",
+            "import",
+            "maim",
+            "screencapture",
+            "scrot",
+            "snippingtool",
+            "spectacle"
+          ]
+        },
+        {
+          "path": "fleet/no-shell-injection-bypass-guard/index.mts",
+          "triggers": [
+            "(",
+            "=",
+            "emulate",
+            "sysopen",
+            "sysread",
+            "sysseek",
+            "syswrite",
+            "zmodload",
+            "zpty",
+            "ztcp"
+          ]
+        },
+        "fleet/no-strip-types-guard/index.mts",
+        "fleet/no-tail-install-out-guard/index.mts",
+        {
+          "path": "fleet/no-tsx-guard/index.mts",
+          "triggers": [
+            "tsx",
+            "ts-node"
+          ]
+        },
+        {
+          "path": "fleet/no-vitest-double-dash-guard/index.mts",
+          "triggers": [
+            "npm",
+            "pnpm",
+            "vitest",
+            "yarn"
+          ]
+        },
+        {
+          "path": "fleet/node-modules-staging-guard/index.mts",
+          "triggers": [
+            "node_modules",
+            "package-lock.json",
+            "pnpm-lock.yaml"
+          ]
+        },
+        "fleet/non-fleet-pr-issue-ask-guard/index.mts",
+        {
+          "path": "fleet/operate-from-repo-root-guard/index.mts",
+          "triggers": [
+            "npm",
+            "yarn"
+          ]
+        },
+        {
+          "path": "fleet/overeager-staging-guard/index.mts",
+          "triggers": [
+            "git"
+          ]
+        },
+        "fleet/package-manager-auto-update-guard/index.mts",
+        {
+          "path": "fleet/parallel-agent-staging-guard/index.mts",
+          "triggers": [
+            "git"
+          ]
+        },
+        {
+          "path": "fleet/prefer-vitest-guard/index.mts",
+          "triggers": [
+            "--test",
+            "ts-node",
+            "tsx"
+          ]
+        },
+        {
+          "path": "fleet/primary-checkout-branch-guard/index.mts",
+          "triggers": [
+            "checkout",
+            "switch"
+          ]
+        },
+        "fleet/proc-environ-exfil-guard/index.mts",
+        {
+          "path": "fleet/push-protected-branch-guard/index.mts",
+          "triggers": [
+            "push"
+          ]
+        },
+        {
+          "path": "fleet/release-tag-tied-guard/index.mts",
+          "triggers": [
+            "release"
+          ]
+        },
+        {
+          "path": "fleet/release-workflow-guard/index.mts",
+          "triggers": [
+            "dispatches",
+            "workflow"
+          ]
+        },
+        {
+          "path": "fleet/scan-label-in-commit-guard/index.mts",
+          "triggers": [
+            "commit"
+          ]
+        },
+        "fleet/token-guard/index.mts",
+        "fleet/token-spend-guard/index.mts",
+        "fleet/trust-downgrade-guard/index.mts",
+        {
+          "path": "fleet/unbacked-claim-commit-guard/index.mts",
+          "triggers": [
+            "git"
+          ]
+        },
+        "fleet/untrusted-coauthor-guard/index.mts",
+        "fleet/uses-sha-verify-guard/index.mts",
+        "fleet/version-bump-order-guard/index.mts",
+        "fleet/avoid-cd-nudge/index.mts",
+        "fleet/clone-reviewed-repo-nudge/index.mts",
+        {
+          "path": "fleet/conversational-prose-nudge/index.mts",
+          "triggers": [
+            "gh issue",
+            "gh pr"
+          ]
+        },
+        {
+          "path": "fleet/issue-autolink-nudge/index.mts",
+          "triggers": [
+            "gh",
+            "git"
+          ]
+        },
+        "fleet/no-branch-reuse-nudge/index.mts",
+        "fleet/no-verify-format-nudge/index.mts",
+        "fleet/npm-otp-flow-nudge/index.mts",
+        "fleet/pr-vs-push-default-nudge/index.mts",
+        "fleet/pre-commit-race-nudge/index.mts",
+        "fleet/prefer-rebase-over-revert-nudge/index.mts",
+        {
+          "path": "fleet/private-name-nudge/index.mts",
+          "triggers": [
+            "gh",
+            "git"
+          ]
+        },
+        {
+          "path": "fleet/public-surface-nudge/index.mts",
+          "triggers": [
+            "gh",
+            "git"
+          ]
+        },
+        "fleet/verify-render-pre-commit-nudge/index.mts"
+      ]
+    },
+    {
+      "matcher": "Bash|Edit|Write",
+      "hooks": [
+        "fleet/prefer-pipx-over-pip-guard/index.mts"
+      ]
+    },
+    {
+      "matcher": "Bash|Edit|Write|MultiEdit",
+      "hooks": [
+        "fleet/npmrc-trust-optout-guard/index.mts"
+      ]
+    },
+    {
+      "matcher": "Edit|MultiEdit|Write",
+      "hooks": [
+        {
+          "path": "fleet/no-unmocked-ai-guard/index.mts",
+          "triggers": [
+            "spawnAiAgent"
+          ]
+        },
+        {
+          "path": "fleet/defer-to-script-nudge/index.mts",
+          "triggers": [
+            "SKILL.md",
+            "/commands/"
+          ]
+        }
+      ]
+    },
+    {
+      "matcher": "Edit|Write|MultiEdit",
+      "hooks": [
+        "fleet/ai-config-poisoning-guard/index.mts",
+        "fleet/live-edit-collision-guard/index.mts",
+        "fleet/bundle-flags-guard/index.mts",
+        "fleet/c8-ignore-reason-guard/index.mts",
+        "fleet/catch-message-guard/index.mts",
+        "fleet/changelog-no-empty-guard/index.mts",
+        "fleet/check-new-deps/index.mts",
+        "fleet/claude-code-action-lockdown-guard/index.mts",
+        "fleet/claude-md-rule-add-guard/index.mts",
+        "fleet/claude-md-section-size-guard/index.mts",
+        "fleet/claude-md-size-guard/index.mts",
+        "fleet/claude-segmentation-guard/index.mts",
+        "fleet/cross-repo-guard/index.mts",
+        "fleet/dated-citation-guard/index.mts",
+        "fleet/gitmodules-comment-guard/index.mts",
+        "fleet/immutable-release-guard/index.mts",
+        "fleet/inline-script-defer-guard/index.mts",
+        "fleet/logger-guard/index.mts",
+        "fleet/markdown-filename-guard/index.mts",
+        "fleet/marketplace-comment-guard/index.mts",
+        "fleet/minimum-release-age-guard/index.mts",
+        "fleet/module-noun-name-guard/index.mts",
+        "fleet/new-hook-claude-md-guard/index.mts",
+        "fleet/no-blanket-file-exclusion-guard/index.mts",
+        "fleet/no-boolean-trap-guard/index.mts",
+        "fleet/no-disable-lint-rule-guard/index.mts",
+        "fleet/no-env-kill-switch-guard/index.mts",
+        "fleet/no-file-oxlint-disable-guard/index.mts",
+        "fleet/no-fleet-fork-guard/index.mts",
+        "fleet/no-glob-run-s-guard/index.mts",
+        "fleet/no-hand-edit-registry-pin-guard/index.mts",
+        "fleet/no-hook-cmd-regex-guard/index.mts",
+        "fleet/no-meta-comments-guard/index.mts",
+        "fleet/no-other-linters-guard/index.mts",
+        "fleet/no-pkgjson-pnpm-overrides-guard/index.mts",
+        "fleet/no-platform-import-guard/index.mts",
+        "fleet/no-repo-scope-in-fleet-config-guard/index.mts",
+        "fleet/no-test-in-scripts-guard/index.mts",
+        "fleet/no-token-in-dotenv-guard/index.mts",
+        "fleet/no-underscore-ident-guard/index.mts",
+        "fleet/no-unisolated-git-fixture-guard/index.mts",
+        "fleet/no-unmocked-net-guard/index.mts",
+        "fleet/options-param-naming-guard/index.mts",
+        "fleet/parallel-agent-edit-guard/index.mts",
+        "fleet/path-guard/index.mts",
+        "fleet/paths-mts-inherit-guard/index.mts",
+        "fleet/personal-path-guard/index.mts",
+        "fleet/plan-location-guard/index.mts",
+        "fleet/plugin-patch-format-guard/index.mts",
+        "fleet/prefer-async-spawn-guard/index.mts",
+        "fleet/prefer-fn-decl-guard/index.mts",
+        "fleet/prefer-json-clone-guard/index.mts",
+        "fleet/prefer-type-import-guard/index.mts",
+        "fleet/prompt-injection-guard/index.mts",
+        "fleet/prose-antipattern-guard/index.mts",
+        "fleet/pull-request-target-guard/index.mts",
+        "fleet/readme-fleet-shape-guard/index.mts",
+        "fleet/report-location-guard/index.mts",
+        "fleet/reserved-script-dir-guard/index.mts",
+        "fleet/secret-content-guard/index.mts",
+        "fleet/soak-exclude-date-guard/index.mts",
+        "fleet/soak-exclude-scope-guard/index.mts",
+        "fleet/soak-pin-needs-annotation-guard/index.mts",
+        "fleet/synthesized-script-edit-guard/index.mts",
+        "fleet/target-arch-env-guard/index.mts",
+        "fleet/vitest-vs-node-test-guard/index.mts",
+        "fleet/vscode-folder-open-task-guard/index.mts",
+        "fleet/workflow-multiline-body-guard/index.mts",
+        "fleet/workflow-uses-comment-guard/index.mts",
+        "fleet/alpha-sort-nudge/index.mts",
+        "fleet/changelog-entry-shape-nudge/index.mts",
+        "fleet/claude-md-defer-detail-nudge/index.mts",
+        "fleet/consumer-grep-nudge/index.mts",
+        "fleet/lock-step-ref-nudge/index.mts",
+        "fleet/no-removal-comment-nudge/index.mts",
+        "fleet/pointer-comment-nudge/index.mts",
+        "fleet/test-platform-coverage-nudge/index.mts"
+      ]
+    }
+  ],
+  "SessionStart": [
+    {
+      "matcher": "",
+      "hooks": [
+        "fleet/git-config-write-guard/index.mts",
+        "fleet/copy-on-select-hint-nudge/index.mts",
+        "fleet/memory-discovery-nudge/index.mts"
+      ]
+    }
+  ],
+  "Stop": [
+    {
+      "matcher": "",
+      "hooks": [
+        "fleet/dirty-worktree-stop-guard/index.mts",
+        "fleet/excuse-detector/index.mts",
+        "fleet/agents-skills-mirror-nudge/index.mts",
+        "fleet/ai-config-drift-nudge/index.mts",
+        "fleet/answer-questions-nudge/index.mts",
+        "fleet/answer-status-requests-nudge/index.mts",
+        "fleet/auth-rotation-nudge/index.mts",
+        "fleet/cascade-first-triage-nudge/index.mts",
+        "fleet/commit-cadence-nudge/index.mts",
+        "fleet/commit-pr-nudge/index.mts",
+        "fleet/compound-lessons-nudge/index.mts",
+        "fleet/dogfood-cascade-nudge/index.mts",
+        "fleet/dont-blame-nudge/index.mts",
+        "fleet/dont-stop-mid-queue-nudge/index.mts",
+        "fleet/drift-check-nudge/index.mts",
+        "fleet/enqueue-dont-pivot-nudge/index.mts",
+        "fleet/error-message-quality-nudge/index.mts",
+        "fleet/file-size-nudge/index.mts",
+        "fleet/follow-direct-imperative-nudge/index.mts",
+        "fleet/git-identity-drift-nudge/index.mts",
+        "fleet/judgment-nudge/index.mts",
+        "fleet/land-fast-nudge/index.mts",
+        "fleet/no-orphaned-staging/index.mts",
+        "fleet/parallel-agent-on-stop-nudge/index.mts",
+        "fleet/parallel-agent-removal-nudge/index.mts",
+        "fleet/path-regex-normalize-nudge/index.mts",
+        "fleet/plan-review-nudge/index.mts",
+        "fleet/prefer-evergreen-target-nudge/index.mts",
+        "fleet/provenance-publish-nudge/index.mts",
+        "fleet/squash-history-nudge/index.mts",
+        "fleet/stop-claim-verify-nudge/index.mts",
+        "fleet/uncodified-lesson-nudge/index.mts",
+        "fleet/unpushed-main-nudge/index.mts",
+        "fleet/variant-analysis-nudge/index.mts",
+        "fleet/yakback-nudge/index.mts"
+      ]
+    }
+  ]
+}

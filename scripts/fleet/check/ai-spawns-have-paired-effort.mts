@@ -1,30 +1,45 @@
-// Fleet check — every programmatic AI spawn that pins a model also pins effort.
+// Fleet check — every programmatic AI spawn pins BOTH model and effort, and any
+// escalation above the floor (cheapest model / lowest effort) carries a comment.
 //
 // CLAUDE.md token-spend rule: "match model AND effort to the job." A spawn that
-// sets a model but leaves reasoning effort at the session default is a cost
-// leak in both directions — a cheap model on the session's default (often high)
-// burns reasoning a mechanical rewrite never needs, and a premium model on the
-// default low underthinks. The lib's `spawnAiAgent` accepts an `effort` field
-// (`@socketsecurity/lib/ai/types` `AiEffort`) and translates it per-agent
-// (claude `--effort`, codex `-c model_reasoning_effort=`); leaving it off is
-// silently accepting whatever the CLI defaults to.
+// leaves either field at the session default is a cost leak in both directions —
+// a cheap model on the session's default (often high) burns reasoning a
+// mechanical rewrite never needs, and a premium model on the default low
+// underthinks. The lib's `spawnAiAgent` makes both `model` and `effort` OPTIONAL
+// (`@socketsecurity/lib/ai/types`) and translates effort per-agent (claude
+// `--effort`, codex `-c model_reasoning_effort=`); leaving either off silently
+// accepts whatever the CLI defaults to. So the gate is: name both, every time.
 //
-// Two shapes are scanned across the source tree (scripts + skills + hooks):
-//   1. spawnAiAgent({ ... }) calls — the argument object names `model` but not
-//      `effort`. (A spread profile like AI_PROFILE.edit never carries effort, so
-//      the spread doesn't satisfy the pairing — the call must name effort.)
+// The floor is the cheapest model (`claude-haiku-4-5`, per
+// scripts/fleet/constants/model-pricing.json) and the lowest effort (`low`).
+// That floor is the DEFAULT a spawn should pick. Spending above it — a pricier
+// model literal or an effort literal above `low` — is a real cost decision, so
+// it must be justified by an adjacent comment (inside the call's object literal
+// or on the lines immediately preceding the call). A spawn whose model/effort
+// come from a constant or an options field (`opts.updateModel`, `EFFORT`) can't
+// be floor-checked statically, so only the pin-both rule applies there — the
+// justification rule fires only on a literal escalation we can see.
+//
+// Shapes scanned across the source tree (scripts + skills + hooks + workflows):
+//   1. spawnAiAgent({ ... }) / Workflow agent(prompt, { ... }) calls — the
+//      argument object must name BOTH `model` and `effort`. (A spread profile
+//      like AI_PROFILE.edit never carries either, so the spread doesn't satisfy
+//      the pairing — the call must name both keys.) When the call names a
+//      literal model above the cheapest, or a literal effort above `low`, an
+//      adjacent justifying comment is required.
 //   2. A hand-rolled backend runner argv that pushes a `--model` flag must also
 //      push an effort flag (`--effort` for claude, `model_reasoning_effort=` for
 //      codex). Backends with no effort flag (gemini / kimi / opencode — see
 //      _shared/multi-agent-backends.md) are exempt.
 //
-// Why a check on top of the doc + the lib type: the lib makes effort OPTIONAL
-// (correct — gemini/kimi ignore it), so the type system can't force the pairing
-// at a claude/codex callsite. This gate is the enforcement layer the optional
-// field can't provide.
+// Why a check on top of the doc + the lib type: the lib makes both model and
+// effort OPTIONAL (correct — gemini/kimi ignore effort), so the type system
+// can't force the pairing or the floor at a callsite. This gate is the
+// enforcement layer the optional fields can't provide.
 //
-// This check fails `check --all` when a scanned callsite pins a model without a
-// paired effort. Exit codes: 0 — every model-pinning AI spawn pairs an effort;
+// This check fails `check --all` when a scanned callsite (a) omits model or
+// effort, or (b) escalates a literal above the floor with no adjacent comment.
+// Exit codes: 0 — every AI spawn pins both and justifies any escalation;
 // 1 — at least one does not.
 //
 // Usage: node scripts/fleet/check/ai-spawns-have-paired-effort.mts [--quiet]
@@ -41,12 +56,14 @@ import { REPO_ROOT } from '../paths.mts'
 
 const logger = getDefaultLogger()
 
-// Source roots that may hold an AI-spawn callsite. Skill/script/hook code only;
-// dist, node_modules, and fixtures are excluded by the glob ignore.
+// Source roots that may hold an AI-spawn callsite. Skill/script/hook/workflow
+// code only; dist, node_modules, and fixtures are excluded by the glob ignore.
 const SCAN_GLOBS = [
   'scripts/**/*.mts',
   '.claude/skills/**/*.mts',
   '.claude/hooks/**/*.mts',
+  '.claude/workflows/**/*.js',
+  '.claude/workflows/**/*.mts',
 ] as const
 
 const IGNORE_GLOBS = [
@@ -55,8 +72,10 @@ const IGNORE_GLOBS = [
   '**/build/**',
   '**/*.test.mts',
   '**/test/**',
-  // The check itself names the field strings it scans for.
+  // These checks name the field strings they scan for — exclude to avoid
+  // false positives from comment/regex text that contains the scan patterns.
   '**/check/ai-spawns-have-paired-effort.mts',
+  '**/check/fable-spawns-have-opus-fallback.mts',
 ] as const
 
 export interface EffortViolation {
@@ -84,15 +103,107 @@ export function objectSpan(text: string, start: number): string {
   return ''
 }
 
-// A spawnAiAgent({...}) call pins a model without pairing effort.
+// The floor a spawn defaults to: the cheapest model and the lowest effort.
+// `claude-haiku-4-5` is the cheapest entry in
+// scripts/fleet/constants/model-pricing.json; `low` is the lowest AiEffort.
+// A literal above either is an escalation that must carry a justifying comment.
+export const FLOOR_MODEL = 'claude-haiku-4-5'
+export const FLOOR_EFFORT = 'low'
+
+// Match the value of a property KEY inside an object-literal span. Returns the
+// raw value text up to the next top-level `,` or the closing `}`, trimmed; or
+// undefined when the key is shorthand (`model,`) or absent. The key-boundary
+// shape mirrors the probes below: a boundary BEFORE the name (whitespace,
+// comma, brace, start) so `model` doesn't match `customModel`.
+export function propValue(span: string, key: string): string | undefined {
+  // (?:[\s,{]|^) boundary; KEY; \s*: only the explicit key:value form carries a
+  // value to inspect — shorthand has none, so it isn't matched here.
+  const re = new RegExp(`(?:[\\s,{]|^)${key}\\s*:\\s*`)
+  const m = re.exec(span)
+  if (!m) {
+    return undefined
+  }
+  const start = m.index + m[0].length
+  let depth = 0
+  for (let i = start, { length } = span; i < length; i += 1) {
+    const ch = span[i]
+    if (ch === '(' || ch === '[' || ch === '{') {
+      depth += 1
+    } else if (ch === ')' || ch === ']' || ch === '}') {
+      if (depth === 0) {
+        return span.slice(start, i).trim()
+      }
+      depth -= 1
+    } else if (ch === ',' && depth === 0) {
+      return span.slice(start, i).trim()
+    }
+  }
+  return span.slice(start).trim()
+}
+
+// A quoted string literal value (`'claude-opus-4-8'` / `"high"`). Returns the
+// inner text, or undefined when the value is not a plain string literal (an
+// identifier, a member access, a template with interpolation, etc.) — those
+// can't be floor-checked statically, so they're left to the pin-both rule.
+export function stringLiteral(value: string | undefined): string | undefined {
+  if (value === undefined) {
+    return undefined
+  }
+  // ^['"`] … matching close at end, with no other quote of that kind inside.
+  const m = /^(['"`])([^'"`]*)\1$/.exec(value)
+  return m ? m[2] : undefined
+}
+
+// Is there a justifying comment adjacent to the call? "Adjacent" = a `//` or
+// `/* */` comment inside the call's object-literal span, OR on one of the lines
+// immediately preceding the call (we look back a few lines from the call start).
+export function hasAdjacentComment(
+  text: string,
+  callStart: number,
+  span: string,
+): boolean {
+  if (/\/\/|\/\*/.test(span)) {
+    return true
+  }
+  // Look back at the lines just before the call for a comment line.
+  const before = text.slice(0, callStart)
+  const lines = before.split('\n')
+  for (let i = lines.length - 1, seen = 0; i >= 0 && seen < 4; i -= 1) {
+    const line = lines[i]!.trim()
+    if (line === '') {
+      continue
+    }
+    seen += 1
+    if (
+      line.startsWith('//') ||
+      line.startsWith('*') ||
+      line.startsWith('/*')
+    ) {
+      return true
+    }
+  }
+  return false
+}
+
+// A spawnAiAgent({...}) / Workflow agent({...}) call must pin BOTH model and
+// effort, and any literal above the floor must carry an adjacent comment.
 export function scanSpawnCalls(
   text: string,
 ): Array<{ index: number; detail: string }> {
   const hits: Array<{ index: number; detail: string }> = []
-  const callRe = /spawnAiAgent\s*\(\s*\{/g
+  // spawnAiAgent({…}) is the lib helper; agent({…}) is the Workflow driver's
+  // per-agent spawn in two forms:
+  //   - agent({…})           — object-first (single-arg)
+  //   - agent(prompt, {…})   — two-arg form used in saved workflows
+  // The relaxed regex matches an optional identifier first-arg before the {,
+  // so the object literal that begins the options bag is always what braceAt
+  // (and thus objectSpan) lands on.
+  const callRe =
+    /(?:spawnAiAgent|\bagent)\s*\(\s*(?:[A-Za-z_$][\w$]*\s*,\s*)?\{/g
   let m: RegExpExecArray | null
   while ((m = callRe.exec(text))) {
-    const braceAt = text.indexOf('{', m.index)
+    const callStart = m.index
+    const braceAt = text.indexOf('{', callStart)
     if (braceAt < 0) {
       continue
     }
@@ -113,15 +224,65 @@ export function scanSpawnCalls(
     const hasModel = /(?:[\s,{]|^)model\s*[:,}]/.test(span)
     // Same key-boundary shape as the `model` probe above, for the `effort` key.
     const hasEffort = /(?:[\s,{]|^)effort\s*[:,}]/.test(span)
-    if (hasModel && !hasEffort) {
+    // A Workflow `agent(` body that isn't an AI-spawn options object (no model
+    // AND no effort key, no prompt) is a false positive — skip it. spawnAiAgent
+    // is always an AI spawn; agent() is only when it carries the spawn shape.
+    const isSpawnHelper = /spawnAiAgent\s*\(\s*\{$/.test(
+      text.slice(callStart, braceAt + 1),
+    )
+    const looksLikeSpawn =
+      isSpawnHelper ||
+      hasModel ||
+      hasEffort ||
+      // A `prompt` object-key: `prompt` preceded by whitespace / `,` / `{` / line
+      // start, then `:` / `,` / `}` — i.e. an options-bag shaped like an AI spawn.
+      /(?:[\s,{]|^)prompt\s*[:,}]/.test(span)
+    if (!looksLikeSpawn) {
+      continue
+    }
+    if (!hasModel || !hasEffort) {
+      const missing =
+        !hasModel && !hasEffort
+          ? '`model` and `effort`'
+          : !hasModel
+            ? '`model`'
+            : '`effort`'
       hits.push({
-        index: m.index,
-        detail:
-          'spawnAiAgent({…}) sets `model` but not `effort`. Pair them — add `effort` (AiEffort) so the spawn pins reasoning level, not just the model.',
+        index: callStart,
+        detail: `${callKind(isSpawnHelper)} omits ${missing}. Pin BOTH — default to the floor (model '${FLOOR_MODEL}', effort '${FLOOR_EFFORT}'); a spread profile never carries either.`,
+      })
+      continue
+    }
+    // Both pinned — flag a literal escalation above the floor with no comment.
+    const modelLit = stringLiteral(propValue(span, 'model'))
+    const effortLit = stringLiteral(propValue(span, 'effort'))
+    const modelEscalates = modelLit !== undefined && modelLit !== FLOOR_MODEL
+    const effortEscalates =
+      effortLit !== undefined && effortLit !== FLOOR_EFFORT
+    if (
+      (modelEscalates || effortEscalates) &&
+      !hasAdjacentComment(text, callStart, span)
+    ) {
+      const what = [
+        modelEscalates ? `model '${modelLit}' (floor '${FLOOR_MODEL}')` : '',
+        effortEscalates
+          ? `effort '${effortLit}' (floor '${FLOOR_EFFORT}')`
+          : '',
+      ]
+        .filter(Boolean)
+        .join(' and ')
+      hits.push({
+        index: callStart,
+        detail: `${callKind(isSpawnHelper)} escalates above the floor (${what}) with no adjacent justifying comment. Explain the spend in a comment on or above the call.`,
       })
     }
   }
   return hits
+}
+
+// Human-readable name for the call shape, for the violation message.
+export function callKind(isSpawnHelper: boolean): string {
+  return isSpawnHelper ? 'spawnAiAgent({…})' : 'agent({…})'
 }
 
 // A hand-rolled backend runner argv that pushes `--model` must also push an

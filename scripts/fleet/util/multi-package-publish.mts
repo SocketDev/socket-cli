@@ -1,4 +1,4 @@
-/**
+/*
  * @file Stager + verifier for cross-org binary-tail publishes. Consumed by
  *   socket-bin (standalone CLI tails) and socket-addon (.node NAPI tails) to
  *   download, verify, and stage tails built in a different repo before

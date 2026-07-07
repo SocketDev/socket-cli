@@ -1,4 +1,4 @@
-/**
+/*
  * @file Shell-command parsing for Bash-allowlist hooks. Wraps `shell-quote` (a
  *   maintained, zero-dep JS tokenizer) so structure-sensitive guards can reason
  *   about "what binary actually runs, at each command position" instead of
@@ -33,6 +33,8 @@
 // so this avoids a separate per-hook `shell-quote` dependency that
 // package.json regeneration tends to drop, and `parseShell` is already
 // typed as `ParseEntry[]` (no `as unknown` cast needed).
+import os from 'node:os'
+import path from 'node:path'
 import process from 'node:process'
 
 import { parseShell } from '@socketsecurity/lib-stable/shell/parse'
@@ -41,7 +43,27 @@ import type { ParseEntry } from '@socketsecurity/lib-stable/shell/parse'
 
 // shell-quote emits operator objects ({ op }), comment objects ({ comment }),
 // and bare strings. These ops separate one command from the next.
-const COMMAND_SEPARATORS = new Set(['\n', '&', '&&', ';', '|', '||'])
+const COMMAND_SEPARATORS = new Set(['\n', ';', '&', '&&', '|', '||'])
+
+// Redirect operators shell-quote emits as `{ op }`. The fd/target around them
+// (`2>&1` → bare `'2'`, {op:'>&'}, bare `'1'`; `> /dev/null` → {op:'>'}, bare
+// `'/dev/null'`) are NOT command args — they must not leak into the parsed arg
+// list (a leaked `'2'`/`'1'`/`'/dev/null'` trips arg-shape guards). Excludes the
+// `$` substitution sigil (handled as plain indirection, not a redirect).
+const REDIRECT_OPS = new Set([
+  '&>',
+  '&>>',
+  '<',
+  '<&',
+  '<<',
+  '<<<',
+  '<>',
+  '>',
+  '>&',
+  '>>',
+])
+
+const FD_DIGIT_RE = /^\d+$/
 
 export interface Command {
   /**
@@ -148,13 +170,21 @@ export function parseCommands(command: string): Command[] {
     if (isOp(e)) {
       if (COMMAND_SEPARATORS.has(e.op) || e.op === '(' || e.op === ')') {
         flush()
+      } else if (REDIRECT_OPS.has(e.op)) {
+        // A redirect is not a command arg. shell-quote emits the fd/target as
+        // bare tokens AROUND the op (`2>&1` → `'2'`, {op:'>&'}, `'1'`; `> file`
+        // → {op:'>'}, `'file'`). Drop a preceding bare fd digit (the source fd)
+        // and skip the operand entry that follows (target file or fd) so
+        // neither leaks into args.
+        if (tokens.length > 0 && FD_DIGIT_RE.test(tokens[tokens.length - 1]!)) {
+          tokens.pop()
+        }
+        const next = entries[i + 1]
+        if (next !== undefined && !isOp(next) && !isComment(next)) {
+          i += 1
+        }
       }
-      // Redirect ops (`>`, `>>`, `<`, etc.) and the `$` substitution sigil
-      // are not separators; the redirect TARGET that follows is dropped by
-      // not being a command token we care about. Simplest correct behavior:
-      // treat a redirect op as ending the meaningful args (skip the rest of
-      // this segment's tokens until a separator). We keep it lenient — args
-      // after a redirect aren't binaries.
+      // Other ops (the `$` substitution sigil) are plain indirection — ignore.
       continue
     }
     // Bare string token.
@@ -265,8 +295,8 @@ export function detectBroadGitAdd(command: string): string | undefined {
       const arg = c.args[k]!
       if (
         arg === '--all' ||
-        arg === '-A' ||
         arg === '--update' ||
+        arg === '-A' ||
         arg === '-u'
       ) {
         return `git add ${arg}`
@@ -313,6 +343,22 @@ export function hasOpaqueInvocation(command: string): boolean {
 }
 
 /**
+ * Expand a leading `~` the way the shell would have BEFORE the hook saw the
+ * string, then resolve against the hook's cwd. A raw `~/x` handed to
+ * `existsSync` silently misses (`./~/x`), which flipped a downstream
+ * transient-state probe into a false "missing .git" verdict.
+ */
+export function normalizeShellDir(dir: string): string {
+  const expanded =
+    dir === '~'
+      ? os.homedir()
+      : dir.startsWith('~/')
+        ? path.join(os.homedir(), dir.slice(2))
+        : dir
+  return path.resolve(process.cwd(), expanded)
+}
+
+/**
  * The directory a command effectively runs in. The fleet's cross-repo pattern
  * is `cd <abs-path> && <cmd>`, so a leading `cd` target wins; failing that a
  * `git -C <dir>` target; otherwise the session repo (`CLAUDE_PROJECT_DIR`).
@@ -322,13 +368,13 @@ export function hasOpaqueInvocation(command: string): boolean {
 export function commandWorkingDir(command: string): string {
   const cdDir = commandsFor(command, 'cd')[0]?.args[0]
   if (cdDir) {
-    return cdDir
+    return normalizeShellDir(cdDir)
   }
   for (const git of commandsFor(command, 'git')) {
     const flagIdx = git.args.indexOf('-C')
     const target = flagIdx === -1 ? undefined : git.args[flagIdx + 1]
     if (target) {
-      return target
+      return normalizeShellDir(target)
     }
   }
   return process.env['CLAUDE_PROJECT_DIR'] ?? '.'

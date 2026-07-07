@@ -6,7 +6,7 @@ instruction the moment the phrase appears — no clarifying question needed.
 ## Command phrases
 
 - **"commit as you go"** — make **surgical commits as you go**: `git commit -o <named-paths>` (or `git add <file>` then commit named paths), never `git add -A` / `.` / a broad sweep. Commit each logical chunk as it completes; don't batch.
-- **"land it"** — commit **and push to the default branch** (`main`, falling back to `master`). Not a side branch, not commit-only-locally. "Landed" means on origin's default branch.
+- **"land it"** — commit to the **LOCAL** default branch (`main`, falling back to `master`). Land = a local commit on main; it does NOT push to origin. Pushing to a shared trunk is a separate, explicitly-authorized step (gated by `push-protected-branch-guard`), never implied by "land". Not a side branch.
 - **"update <socket-pkg>" / "use <socket-pkg>"** — for any socket package (`socket-lib`, `socket-registry`, `socket-sdk-js`, …), this **includes the `-stable` alias form** (`@socketsecurity/lib-stable`, `@socketsecurity/registry-stable`, …). The bare name is shorthand for the package in all its consumed forms.
 
 ## Writing

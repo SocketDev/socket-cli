@@ -93,8 +93,8 @@ The "blocking, not priming" pattern is shared across three hooks:
   build inline multi-stage paths.
 - `release-workflow-guard` (this one).
 
-The other public-surface hooks ([`private-name-reminder`](../private-name-reminder/),
-[`public-surface-reminder`](../public-surface-reminder/)) only
+The other public-surface hooks ([`private-name-nudge`](../private-name-nudge/),
+[`public-surface-nudge`](../public-surface-nudge/)) only
 **prime** — they exit 0 after writing a reminder. The shared rule
 for which side of the fence a hook lands on: block when the harm of
 a wrong fire is irreversible; prime when it's recoverable.

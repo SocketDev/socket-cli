@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * @file Validates that commits don't contain too many files. Rules:
  *
  *   - No single commit should contain 50+ files

@@ -24,32 +24,16 @@
 // reminder makes the dangling state visible at the very turn that
 // created it.
 //
-// Why a reminder, not a block: Stop hooks fire AFTER the turn ended;
-// there's no tool call to refuse. The signal goes to stderr so the
-// next message includes the warning. The agent can then either
+// Verdict: notify (never blocks). Stop hooks fire AFTER the turn
+// ended; there's no tool call to refuse. The signal goes to stderr so
+// the next message includes the warning. The agent can then either
 // commit or explicitly explain why the staged state is intentional.
-//
-// Exit codes:
-//   0 — always. This is informational; never blocks.
-//
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import process from 'node:process'
 
-export async function drainStdin(): Promise<void> {
-  // Stop payloads carry transcript_path; this hook doesn't need it,
-  // but the stdin must be drained so the harness doesn't pipe-stall.
-  await new Promise<void>(resolve => {
-    let chunks = ''
-    process.stdin.on('data', d => {
-      chunks += d.toString('utf8')
-    })
-    process.stdin.on('end', () => resolve())
-    process.stdin.on('error', () => resolve())
-    setTimeout(() => resolve(), 200)
-    void chunks
-  })
-}
+import { defineHook, notify, runHook } from '../_shared/guard.mts'
+import type { GuardResult } from '../_shared/guard.mts'
 
 export function getProjectDir(): string | undefined {
   // Prefer the harness-supplied env (correct even when cwd has been
@@ -60,7 +44,7 @@ export function getProjectDir(): string | undefined {
 export function listStagedFiles(repoDir: string): string[] {
   const r = spawnSync('git', ['diff', '--cached', '--name-only'], {
     cwd: repoDir,
-    timeout: 5_000,
+    timeout: 5000,
   })
   if (r.status !== 0) {
     return []
@@ -71,39 +55,40 @@ export function listStagedFiles(repoDir: string): string[] {
     .filter(Boolean)
 }
 
-async function main(): Promise<void> {
-  await drainStdin()
-
+export const check = (): GuardResult => {
   const repoDir = getProjectDir()
+  /* c8 ignore start - getProjectDir() always falls back to process.cwd(), which is never empty */
   if (!repoDir) {
-    return
+    return undefined
   }
+  /* c8 ignore stop */
 
   const staged = listStagedFiles(repoDir)
   if (staged.length === 0) {
-    return
+    return undefined
   }
 
-  process.stderr.write(
-    '[no-orphaned-staging] Turn ended with staged-but-uncommitted files:\n',
-  )
+  let message =
+    '[no-orphaned-staging] Turn ended with staged-but-uncommitted files:\n'
   for (const f of staged.slice(0, 10)) {
-    process.stderr.write(`  - ${f}\n`)
+    message += `  - ${f}\n`
   }
   if (staged.length > 10) {
-    process.stderr.write(`  ... and ${staged.length - 10} more\n`)
+    message += `  ... and ${staged.length - 10} more\n`
   }
-  process.stderr.write(
+  message +=
     '\nFleet rule: stage only when about to commit. Either:\n' +
-      '  • Run `git commit` to finish the work, OR\n' +
-      '  • Run `git reset` to unstage (keep changes in working tree).\n' +
-      '\nCLAUDE.md → "Don\'t leave the worktree dirty" → "Stage only when ' +
-      'you\'re about to commit".\n',
-  )
+    '  • Run `git commit` to finish the work, OR\n' +
+    '  • Run `git reset` to unstage (keep changes in working tree).\n' +
+    '\nCLAUDE.md → "Don\'t leave the worktree dirty" → "Stage only when ' +
+    'you\'re about to commit".\n'
+
+  return notify(message)
 }
 
-main().catch(e => {
-  process.stderr.write(
-    `[no-orphaned-staging] hook bug — fail-open. ${e instanceof Error ? e.message : String(e)}\n`,
-  )
+export const hook = defineHook({
+  check,
+  event: 'Stop',
+  type: 'nudge',
 })
+void runHook(hook, import.meta.url)

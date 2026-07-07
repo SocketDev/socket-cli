@@ -16,7 +16,7 @@ used the token against the GitHub API within 74 seconds of install).
    `gh auth login` / `gh auth refresh` and blocks every non-auth `gh`
    command after 8 hours. Self-recovery: `gh auth refresh -h
 github.com` is always allowed (re-stamps the file). This cap lives
-   in THIS hook, not `auth-rotation-reminder` (which handles non-gh
+   in THIS hook, not `auth-rotation-nudge` (which handles non-gh
    CLIs like npm / pnpm / gcloud / docker / vault).
 3. **`workflow` scope is on-demand, single-use, physical-presence-gated.**
    Recommended default scopes: `read:org, repo` (the hook does not

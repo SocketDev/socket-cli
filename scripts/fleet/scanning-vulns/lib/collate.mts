@@ -100,7 +100,10 @@ export function assignIds(findings: readonly Finding[]): Finding[] {
     }
     return (a.line ?? 0) - (b.line ?? 0)
   })
-  return sorted.map((f, i) => ({ ...f, id: `F-${String(i + 1).padStart(3, '0')}` }))
+  return sorted.map((f, i) => ({
+    ...f,
+    id: `F-${String(i + 1).padStart(3, '0')}`,
+  }))
 }
 
 // Normalize a 1-10 confidence score to 0.0-1.0 (Step 3b-Resolve). Clamps out of
@@ -144,7 +147,10 @@ export function applyScores(
     }
     return (a.line ?? 0) - (b.line ?? 0)
   })
-  return sorted.map((f, i) => ({ ...f, id: `F-${String(i + 1).padStart(3, '0')}` }))
+  return sorted.map((f, i) => ({
+    ...f,
+    id: `F-${String(i + 1).padStart(3, '0')}`,
+  }))
 }
 
 // Count findings below the low-confidence threshold (Step 3b-Resolve).

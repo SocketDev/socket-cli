@@ -1,4 +1,4 @@
-/**
+/*
  * @file TypeBox schema for lockstep.json — single source of truth. Everything
  *   else is derived:
  *

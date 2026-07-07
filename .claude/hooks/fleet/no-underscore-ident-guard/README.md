@@ -34,5 +34,5 @@ adds noise to `git blame` and IDE autocomplete.
 ## See also
 
 - CLAUDE.md → "No underscore-prefixed identifiers"
-- `.config/oxlint-plugin/fleet/no-underscore-identifier/index.mts` (commit-time
+- `.config/fleet/oxlint-plugin/fleet/no-underscore-identifier/index.mts` (commit-time
   partner of this edit-time hook)

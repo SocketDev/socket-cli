@@ -12,6 +12,8 @@
 
 import path from 'node:path'
 
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+
 export interface BadSymlink {
   readonly linkPath: string
   readonly target: string
@@ -29,9 +31,8 @@ export function classifyTrackedSymlink(
   target: string,
   repoRoot: string,
 ): BadSymlink | undefined {
-  const norm = (p: string): string => p.replace(/\\/g, '/')
-  const link = norm(linkPath)
-  const tgt = norm(target)
+  const link = normalizePath(linkPath)
+  const tgt = normalizePath(target)
 
   // A tracked node_modules is always wrong (it is gitignored; tracking it at
   // all — symlink or real — is the defect), and was the exact incident.
@@ -50,11 +51,14 @@ export function classifyTrackedSymlink(
   // Resolve the link target the way the OS would: relative to the link's dir.
   const linkAbs = path.posix.resolve('/', link)
   const targetAbs = path.posix.isAbsolute(tgt)
-    ? norm(tgt)
+    ? normalizePath(tgt)
     : path.posix.resolve(path.posix.dirname(linkAbs), tgt)
 
   // Self-referential: the target resolves to the link's own path.
-  if (targetAbs === linkAbs || norm(tgt) === norm(repoRoot) + '/' + link) {
+  if (
+    targetAbs === linkAbs ||
+    normalizePath(tgt) === normalizePath(repoRoot) + '/' + link
+  ) {
     return {
       linkPath: link,
       target: tgt,
@@ -64,7 +68,7 @@ export function classifyTrackedSymlink(
 
   // Absolute path INSIDE this repo: machine-specific + loop-prone. A real
   // intra-repo symlink should be relative.
-  const repoAbs = norm(repoRoot)
+  const repoAbs = normalizePath(repoRoot)
   if (
     path.posix.isAbsolute(tgt) &&
     (tgt === repoAbs || tgt.startsWith(repoAbs + '/'))

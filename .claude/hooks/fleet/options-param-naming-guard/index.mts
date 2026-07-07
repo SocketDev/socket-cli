@@ -32,10 +32,9 @@
 // fail-open. The hook fails OPEN on its own bugs (exit 0 + stderr log) so a
 // bad deploy can't brick the session.
 
-import process from 'node:process'
-
 import { offsetToLineCol, tryParse } from '../_shared/acorn/index.mts'
 import type { AcornNode } from '../_shared/acorn/index.mts'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 const ALLOW_MARKER = '// socket-lint: allow options-param-naming'
@@ -54,18 +53,6 @@ const FUNCTION_NODE_TYPES = new Set([
 
 export interface Offense {
   line: number
-}
-
-interface Hook {
-  tool_name?: string | undefined
-  tool_input?:
-    | {
-        file_path?: string | undefined
-        new_string?: string | undefined
-        content?: string | undefined
-      }
-    | undefined
-  transcript_path?: string | undefined
 }
 
 export function isApplicable(filePath: string): boolean {
@@ -102,24 +89,32 @@ export function findOptsParams(source: string): number[] {
     if (!node || typeof node !== 'object') {
       return
     }
-    const type = (node as { type?: string }).type
+    const type = (node as { type?: string | undefined }).type
     if (typeof type === 'string' && FUNCTION_NODE_TYPES.has(type)) {
-      const params = (node as { params?: AcornNode[] }).params
+      const params = (node as { params?: AcornNode[] | undefined }).params
+      /* c8 ignore next - acorn always emits params as an array on function nodes; defensive type-guard */
       if (Array.isArray(params)) {
         for (let i = 0, { length } = params; i < length; i += 1) {
           const p = params[i] as
-            | { type?: string; name?: string; start?: number }
+            | {
+                type?: string | undefined
+                name?: string | undefined
+                start?: number | undefined
+              }
             | undefined
           if (p?.type === 'Identifier' && p.name === BANNED_PARAM_NAME) {
+            /* c8 ignore next - acorn always sets start on Identifier nodes; defensive fallback */
             offsets.push(p.start ?? 0)
           }
         }
       }
     }
     for (const key of Object.keys(node)) {
+      /* c8 ignore start - acorn never emits a parent back-reference; defensive guard for enriched ASTs */
       if (key === 'parent') {
         continue
       }
+      /* c8 ignore stop */
       const child = (node as Record<string, unknown>)[key]
       if (Array.isArray(child)) {
         for (let i = 0, { length } = child; i < length; i += 1) {
@@ -144,7 +139,9 @@ export function applyAllowMarkerFilter(
   const out: Offense[] = []
   for (let i = 0, { length } = offsets; i < length; i += 1) {
     const { line } = offsetToLineCol(source, offsets[i]!)
+    /* c8 ignore next - offsetToLineCol always maps to an existing line; defensive fallback */
     const onLine = lines[line - 1] ?? ''
+    /* c8 ignore next - lines[line-2] is always present when line>=2 for valid source; defensive fallback */
     const prev = line >= 2 ? (lines[line - 2] ?? '') : ''
     if (onLine.includes(ALLOW_MARKER) || prev.includes(ALLOW_MARKER)) {
       continue
@@ -154,75 +151,49 @@ export function applyAllowMarkerFilter(
   return out
 }
 
-function main(): void {
-  let stdin = ''
-  process.stdin.on('data', (chunk: Buffer) => {
-    stdin += chunk.toString()
-  })
-  process.stdin.on('end', () => {
-    try {
-      let payload: Hook
-      try {
-        payload = JSON.parse(stdin) as Hook
-      } catch {
-        process.exit(0)
-      }
-      const tool = payload.tool_name
-      if (tool !== 'Edit' && tool !== 'Write') {
-        process.exit(0)
-      }
-      const filePath = payload.tool_input?.file_path
-      if (!filePath || !isApplicable(filePath)) {
-        process.exit(0)
-      }
-      const proposed =
-        payload.tool_input?.content ?? payload.tool_input?.new_string ?? ''
-      const offenses = applyAllowMarkerFilter(
-        proposed,
-        findOptsParams(proposed),
-      )
-      if (offenses.length === 0) {
-        process.exit(0)
-      }
-      if (bypassPhrasePresent(payload.transcript_path, [BYPASS_PHRASE], 3)) {
-        process.exit(0)
-      }
-      const where = offenses
-        .map(o => `    line ${o.line}: a param named \`opts\``)
-        .join('\n')
-      process.stderr.write(
-        `[options-param-naming-guard] refusing edit: ` +
-          `${offenses.length} function param${offenses.length === 1 ? '' : 's'} ` +
-          `named \`opts\`:\n` +
-          where +
-          '\n\n' +
-          'The options-bag param is named `options`; `opts` is reserved for the\n' +
-          'normalized local it produces:\n' +
-          '\n' +
-          '  function f(options?: Opts) {\n' +
-          '    const opts = { __proto__: null, ...options } as Opts\n' +
-          '    return opts.cwd\n' +
-          '  }\n' +
-          '\n' +
-          'A param named `opts` conflates the raw input with its null-proto-safe\n' +
-          'form. Rename the param to `options` (the `socket/options-param-naming`\n' +
-          'lint rule autofixes this).\n' +
-          '\n' +
-          `One-off override: add \`${ALLOW_MARKER}\` on the param line or the\n` +
-          'line above the function. Whole-session bypass requires the user to\n' +
-          `type \`${BYPASS_PHRASE}\` verbatim.\n`,
-      )
-      process.exit(2)
-    } catch (e) {
-      process.stderr.write(
-        `[options-param-naming-guard] hook error (allowing): ${e}\n`,
-      )
-      process.exit(0)
-    }
-  })
-  if (process.stdin.readable === false) {
-    process.exit(0)
+export const check = editGuard((filePath, content, payload) => {
+  if (!isApplicable(filePath)) {
+    return undefined
   }
-}
+  const proposed = content ?? ''
+  const offenses = applyAllowMarkerFilter(proposed, findOptsParams(proposed))
+  if (offenses.length === 0) {
+    return undefined
+  }
+  if (bypassPhrasePresent(payload.transcript_path, [BYPASS_PHRASE], 3)) {
+    return undefined
+  }
+  const where = offenses
+    .map(o => `    line ${o.line}: a param named \`opts\``)
+    .join('\n')
+  return block(
+    `[options-param-naming-guard] refusing edit: ` +
+      `${offenses.length} function param${offenses.length === 1 ? '' : 's'} ` +
+      `named \`opts\`:\n` +
+      where +
+      '\n\n' +
+      'The options-bag param is named `options`; `opts` is reserved for the\n' +
+      'normalized local it produces:\n' +
+      '\n' +
+      '  function f(options?: Opts) {\n' +
+      '    const opts = { __proto__: null, ...options } as Opts\n' +
+      '    return opts.cwd\n' +
+      '  }\n' +
+      '\n' +
+      'A param named `opts` conflates the raw input with its null-proto-safe\n' +
+      'form. Rename the param to `options` (the `socket/options-param-naming`\n' +
+      'lint rule autofixes this).\n' +
+      '\n' +
+      `One-off override: add \`${ALLOW_MARKER}\` on the param line or the\n` +
+      'line above the function. Whole-session bypass requires the user to\n' +
+      `type \`${BYPASS_PHRASE}\` verbatim.\n`,
+  )
+})
 
-main()
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  type: 'guard',
+})
+void runHook(hook, import.meta.url)

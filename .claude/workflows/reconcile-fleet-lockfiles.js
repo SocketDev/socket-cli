@@ -1,9 +1,7 @@
 export const meta = {
-  name: 'reconcile-fleet-lockfiles',
   description:
     'Reconcile pnpm-lock.yaml in parallel across fleet repos after a catalog/dependency cascade (one agent per repo; idempotent).',
-  whenToUse:
-    'After a template/tool cascade that changed catalog / packageManager / overrides but left repos with a lockfile-less commit (downstream CI --frozen-lockfile then fails). Run this to regenerate + push each repo lockfile in parallel.',
+  name: 'reconcile-fleet-lockfiles',
   phases: [
     {
       title: 'Reconcile',
@@ -11,6 +9,8 @@ export const meta = {
         'one agent per repo: worktree off origin/main → pnpm install (pinned pnpm) → commit+push pnpm-lock.yaml if changed → force-clean worktree',
     },
   ],
+  whenToUse:
+    'After a template/tool cascade that changed catalog / packageManager / overrides but left repos with a lockfile-less commit (downstream CI --frozen-lockfile then fails). Run this to regenerate + push each repo lockfile in parallel.',
 }
 
 // WHY THIS IS A WORKFLOW, NOT A SHELL LOOP:
@@ -59,7 +59,7 @@ function resolveTargets() {
   if (args && typeof args === 'object') {
     const only = Array.isArray(args.only) ? args.only : undefined
     const skip = Array.isArray(args.skip) ? args.skip : []
-    const base = only && only.length ? only : ROSTER
+    const base = only?.length ? only : ROSTER
     return base.filter(r => ROSTER.includes(r) && !skip.includes(r))
   }
   return ROSTER
@@ -68,9 +68,7 @@ function resolveTargets() {
 const TARGETS = resolveTargets()
 
 const RESULT_SCHEMA = {
-  type: 'object',
   additionalProperties: false,
-  required: ['repo', 'outcome'],
   properties: {
     repo: { type: 'string' },
     outcome: {
@@ -85,13 +83,17 @@ const RESULT_SCHEMA = {
         'fail-worktree',
         'other',
       ],
-      description: 'The single RESULTS token reconcile-lockfiles emitted for this repo.',
+      description:
+        'The single RESULTS token reconcile-lockfiles emitted for this repo.',
     },
     detail: {
       type: 'string',
-      description: 'Short evidence: the RESULTS line + that no reconcile worktree leaked.',
+      description:
+        'Short evidence: the RESULTS line + that no reconcile worktree leaked.',
     },
   },
+  required: ['repo', 'outcome'],
+  type: 'object',
 }
 
 phase('Reconcile')
@@ -129,7 +131,14 @@ const results = await parallel(
         '"fail:worktree" → the matching fail-*; anything else → "other".',
         `Finally verify no leftover worktree remains: \`git -C "$PROJECTS/${repo}" worktree list | grep reconcile\` must be empty (report it in detail).`,
       ].join('\n'),
-      { label: `reconcile:${repo}`, phase: 'Reconcile', schema: RESULT_SCHEMA },
+      {
+        effort: 'low',
+        label: `reconcile:${repo}`,
+        // haiku: mechanical shell-one-command-and-report task, no reasoning needed
+        model: 'claude-haiku-4-5',
+        phase: 'Reconcile',
+        schema: RESULT_SCHEMA,
+      },
     )
   }),
 )
@@ -137,6 +146,10 @@ const results = await parallel(
 const clean = results.filter(Boolean)
 const pushed = clean.filter(r => r.outcome === 'push').map(r => r.repo)
 const noop = clean.filter(r => r.outcome === 'noop').map(r => r.repo)
-const failed = clean.filter(r => r.outcome.startsWith('fail')).map(r => `${r.repo}(${r.outcome})`)
-log(`reconciled: pushed=[${pushed.join(', ')}] noop=[${noop.join(', ')}] failed=[${failed.join(', ')}]`)
+const failed = clean
+  .filter(r => r.outcome.startsWith('fail'))
+  .map(r => `${r.repo}(${r.outcome})`)
+log(
+  `reconciled: pushed=[${pushed.join(', ')}] noop=[${noop.join(', ')}] failed=[${failed.join(', ')}]`,
+)
 return { pushed, noop, failed, all: clean }

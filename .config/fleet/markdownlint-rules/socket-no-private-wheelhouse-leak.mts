@@ -1,4 +1,4 @@
-/**
+/*
  * @file Flag mentions of `socket-wheelhouse` in public-facing markdown.
  *   socket-wheelhouse is a private repo. Public READMEs / docs / release notes
  *   that link to it leak the internal tooling layout to users who can't access
@@ -15,13 +15,12 @@
 
 import { isInsideWheelhouse } from './_shared/wheelhouse-self-skip.mts'
 
+import type { MarkdownlintRule } from './_shared/rule-types.mts'
+
 const RULE_NAME = 'socket-no-private-wheelhouse-leak'
 const FORBIDDEN_TOKEN_RE = /socket-wheelhouse/i
 
-/**
- * @type {import('markdownlint').Rule}
- */
-const rule = {
+const rule: MarkdownlintRule = {
   description:
     'socket-wheelhouse is a private repo — never reference it in public markdown',
   function(params, onError) {

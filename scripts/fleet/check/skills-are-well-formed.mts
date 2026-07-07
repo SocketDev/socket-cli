@@ -16,9 +16,9 @@
 //   4. The frontmatter declares a non-empty `description:` (the trigger text the
 //      model uses to decide relevance — a skill with none is undiscoverable).
 //
-// Complements: mutating-skills-have-model (model: gate), claude-md-citations-
-// resolve (every /fleet:<name> bullet resolves), agents-skills-mirror-is-current
-// (the .agents mirror). Those assume a well-formed SKILL.md; this asserts it.
+// Complements: mutating-skills-have-model (model: gate) and claude-md-citations-
+// resolve (every /fleet:<name> bullet resolves). Those assume a well-formed
+// SKILL.md; this asserts it.
 //
 // `_shared` is not a skill (shared subskill libs) — skipped.
 //

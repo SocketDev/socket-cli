@@ -1,75 +1,56 @@
-# Format-ignore (but track) — files we keep byte-identical with their
-# upstream / vendored source. oxfmt reads this file when pointed at it
-# via `--ignore-path .config/.prettierignore` (default is the CWD's
-# .gitignore + .prettierignore). The lint runner threads the flag in
+# Format-ignore (but track) — files we keep byte-identical with their upstream /
+# vendored / generated source. oxfmt reads this file via
+# `--ignore-path .config/fleet/.prettierignore`; the lint runner threads the flag
 # so the convention works from any working directory.
 #
-# `.claude/` is treated like node_modules — never formatted, never
-# linted, no matter whether the files are git-tracked. Hooks, skills,
-# vendored AST tooling, settings — all opaque to the formatter.
+# EVERY pattern here is `**/`-anchored. oxfmt builds the matcher with
+# `Gitignore::new(path)` (oxc apps/oxfmt/src/cli/resolve.rs), which roots it at
+# THIS file's directory (.config/fleet/) — so a bare slashed pattern like
+# `vendor/**` anchors to `.config/fleet/vendor/**` and silently matches nothing.
+# A leading `**/` matches at any depth. Enforced by
+# scripts/fleet/check/prettierignore-globs-are-anchored.mts.
+#
+# `.claude/` is treated like node_modules — never formatted, never linted, no
+# matter whether the files are git-tracked. Hooks, skills, settings, and the
+# vendored AST tooling (the acorn wasm blob + its wasm-bindgen `acorn-bindgen.cjs`
+# glue — which the `socket/export-top-level-functions` autofix would rewrite into
+# syntactically-invalid ESM, breaking the first `require()`) are all opaque to
+# the formatter under this single exclusion.
 **/.claude/**
-.claude/**
 
 # `.agents/skills/` is the GENERATED cross-tool skill mirror
-# (gen-agents-skills-mirror.mts copies .claude/skills/{fleet,repo}/<name>/ to a
-# flat .agents/skills/<tier>-<name>/ for Codex + OpenCode). It's generated
-# output, never hand-edited — and its source (.claude/) is itself unformatted-
-# by-design above, so the byte-identical mirror must be ignored too, or the
-# format gate flags copies of already-exempt content. The
-# agents-skills-mirror-is-current check enforces it stays in sync with source.
+# (gen-agents-skills-mirror.mts flattens .claude/skills/{fleet,repo}/<name>/ to
+# .agents/skills/<tier>-<name>/ for Codex + OpenCode). Generated output whose
+# source (.claude/, above) is itself unformatted-by-design, so the byte-identical
+# mirror is ignored too. agents-skills-mirror-is-current keeps it in sync.
 **/.agents/**
-.agents/**
 
-# Everything under a `fleet/` segment is fleet-canonical: the wheelhouse
-# authors it under `template/`, every other repo gets a cascaded copy
-# (`.config/fleet/`, `scripts/fleet/`, `docs/agents.md/fleet/`, …). A
-# downstream repo must NOT format-gate its cascaded copy — it can't fix it
-# without forking; the fix lands in the wheelhouse's `template/` and
-# cascades. So ignore every `fleet/` segment, then re-include the
-# `template/` source the wheelhouse owns and formats. `.claude/` (above) is
-# excluded outright — its cascaded copy is never formatted on either side.
+# Every `fleet/` segment is fleet-canonical (`.config/fleet/`, `scripts/fleet/`,
+# `docs/agents.md/fleet/`, …): a downstream repo can't fix its cascaded copy
+# without forking, so the normal walk never format-gates it. The wheelhouse's own
+# `template/` fleet sources are formatted by template-is-format-clean.mts (the
+# git-ls-files template gate), not this walk.
 **/fleet/**
-!template/**/fleet/**
 
-# Vendored acorn.wasm binary blob + the wasm-bindgen CJS glue. The
-# glue (`acorn-bindgen.cjs`) is wasm-bindgen output we ship verbatim
-# (after a single string rewrite of the wasm filename). It must NOT
-# be touched by oxfmt or oxlint --fix: the
-# `socket/export-top-level-functions` autofix rewrites internal
-# helpers like `function getObject(idx) { ... }` into
-# `export function getObject(idx) { ... }`, turning the CJS module
-# into syntactically-ESM. The first `require()` then fails with
-# `SyntaxError: Unexpected token 'export'`. Past incident: cascaded
-# to two fleet repos before the break surfaced.
-#
-# The generators we DO own (`acorn-sync.{mts,cts}`,
-# `acorn-embed.{mts,cts}`) are not listed here on purpose —
-# the ultrathink build emits them already formatted+linted per fleet
-# rules so they participate in the regular lint pass like any other
-# JS source. Only the raw wasm blob + the bindgen glue skip the
-# formatter. Marked `binary` in .gitattributes for the wasm blob too
-# so PR diffs collapse.
-template/.claude/hooks/fleet/_shared/acorn/acorn.wasm
-template/.claude/hooks/fleet/_shared/acorn/acorn-bindgen.cjs
-.claude/hooks/fleet/_shared/acorn/acorn-bindgen.cjs
+# The rolldown-inlined dep-0 fetcher — a build artifact (from bootstrap/src/* via
+# scripts/repo/build-bootstrap-fetcher.mts), not hand-written source; oxfmt would
+# fight the bundler output. The bootstrap/src/* modules ARE formatted.
+**/bootstrap/fleet.mjs
 
-# Vendored / upstream trees — kept byte-identical with their source
-# of truth. Per CLAUDE.md "Untracked-by-default for vendored / build-
-# copied trees": these are someone else's source, not ours, and the
-# formatter would happily rewrite (e.g.) an upstream HTML test
-# fixture or shipped third-party JS into our local style.
+# Vendored / upstream trees — kept byte-identical with their source of truth. Per
+# CLAUDE.md "untracked-by-default for vendored / build-copied trees": someone
+# else's source, not ours; the formatter would rewrite it into our local style.
+# `test/fixtures/` is the conformance-corpus flavor of the same contract (see
+# docs/agents.md/fleet/conformance-runners.md): spec suites vendored there must
+# stay byte-identical to their pinned upstream or the owning sync's drift check
+# fires on every formatter pass.
+**/test/fixtures/**
 **/upstream/**
-upstream/**
 **/vendor/**
-vendor/**
 **/third_party/**
-third_party/**
 **/external/**
-external/**
 
-# gh-aw generated workflows. `gh aw compile` turns a `<name>.md` agentic
-# workflow into a hardened `<name>.lock.yml`; that artifact is tool-owned and
-# must stay byte-identical to the compiler output (the .md is the source of
-# truth). Formatting it would drift it from `gh aw compile`.
+# gh-aw generated workflows. `gh aw compile` turns a `<name>.md` agentic workflow
+# into a hardened `<name>.lock.yml`; that artifact is tool-owned and must stay
+# byte-identical to the compiler output (the .md is the source of truth).
 **/.github/workflows/*.lock.yml
-.github/workflows/*.lock.yml

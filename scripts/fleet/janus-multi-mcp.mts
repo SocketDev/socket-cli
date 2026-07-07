@@ -9,17 +9,14 @@
  *   changes). So a socket-lib agent that needs a socket-wheelhouse change files
  *   it into the wheelhouse queue and keeps draining its own — no cross-checkout
  *   commit, which is what wedged the shared `.git/index` before.
- *
  *   STOPGAP: when upstream `janus mcp --workspace name=path` (the PR stack)
  *   lands, the tool shape here matches it, so callers swap shim→native with no
  *   change and this file is deleted. See
  *   docs/agents.md/fleet/multi-agent-operating-procedure.md.
- *
  *   Protocol: JSON-RPC 2.0 over newline-delimited stdio (`initialize` →
  *   `notifications/initialized` → `tools/list` / `tools/call`). Implemented
  *   directly (no SDK dep — a throwaway shim shouldn't pull a soak-gated
  *   dependency).
- *
  *   Usage: `node scripts/fleet/janus-multi-mcp.mts` (wired via `.mcp.json`).
  */
 
@@ -37,7 +34,10 @@ import {
   showTicketArgs,
   updateStatusArgs,
 } from './janus-multi-runner.mts'
-import { discoverWorkspaces, resolveWorkspace } from './janus-multi-workspace.mts'
+import {
+  discoverWorkspaces,
+  resolveWorkspace,
+} from './janus-multi-workspace.mts'
 
 const logger = getDefaultLogger()
 
@@ -79,7 +79,8 @@ export const TOOLS: ToolDef[] = [
       properties: {
         description: { description: 'Ticket description', type: 'string' },
         externalRef: {
-          description: 'External reference (e.g. gh-123) for cross-repo linking',
+          description:
+            'External reference (e.g. gh-123) for cross-repo linking',
           type: 'string',
         },
         priority: { description: 'Priority 0-4 (default 2)', type: 'number' },
@@ -101,7 +102,10 @@ export const TOOLS: ToolDef[] = [
       "Get the next available ticket(s) to work on in a workspace (dependency-aware). The runner loop's 'what's next'.",
     inputSchema: {
       properties: {
-        limit: { description: 'Max tickets to return (default 5)', type: 'number' },
+        limit: {
+          description: 'Max tickets to return (default 5)',
+          type: 'number',
+        },
         workspace: WORKSPACE_PROP,
       },
       required: ['workspace'],
@@ -133,14 +137,19 @@ export const TOOLS: ToolDef[] = [
     name: 'show_ticket',
   },
   {
-    annotations: { destructiveHint: false, idempotentHint: true, readOnlyHint: false },
+    annotations: {
+      destructiveHint: false,
+      idempotentHint: true,
+      readOnlyHint: false,
+    },
     description:
       'Change a ticket status in a workspace. Statuses: new, next, in_progress, complete, cancelled, archived.',
     inputSchema: {
       properties: {
         id: { description: 'Ticket ID', type: 'string' },
         status: {
-          description: 'new | next | in_progress | complete | cancelled | archived',
+          description:
+            'new | next | in_progress | complete | cancelled | archived',
           type: 'string',
         },
         workspace: WORKSPACE_PROP,
@@ -167,10 +176,14 @@ function unknownWorkspaceError(name: string): string {
 // string) or throws a string the caller wraps as an MCP tool error.
 export function callTool(name: string, args: Record<string, unknown>): string {
   if (name === 'list_workspaces') {
-    const ws = discoverWorkspaces().map(w => ({ name: w.name, repoPath: w.repoPath }))
+    const ws = discoverWorkspaces().map(w => ({
+      name: w.name,
+      repoPath: w.repoPath,
+    }))
     return JSON.stringify(ws, undefined, 2)
   }
-  const workspaceName = typeof args['workspace'] === 'string' ? args['workspace'] : ''
+  const workspaceName =
+    typeof args['workspace'] === 'string' ? args['workspace'] : ''
   const workspace = resolveWorkspace(workspaceName)
   if (!workspace) {
     throw unknownWorkspaceError(workspaceName)
@@ -196,7 +209,10 @@ export function callTool(name: string, args: Record<string, unknown>): string {
       janusArgs = showTicketArgs(String(args['id'] ?? ''))
       break
     case 'update_status':
-      janusArgs = updateStatusArgs(String(args['id'] ?? ''), String(args['status'] ?? ''))
+      janusArgs = updateStatusArgs(
+        String(args['id'] ?? ''),
+        String(args['status'] ?? ''),
+      )
       break
     default:
       throw `unknown tool "${name}".`
@@ -219,7 +235,9 @@ export interface JsonRpcRequest {
 
 // Build the JSON-RPC response object for one request. Notifications (no `id`)
 // return undefined → nothing is written. Pure, so it unit-tests without stdio.
-export function handleRequest(req: JsonRpcRequest): Record<string, unknown> | undefined {
+export function handleRequest(
+  req: JsonRpcRequest,
+): Record<string, unknown> | undefined {
   const { id, method } = req
   if (method === 'initialize') {
     return {

@@ -1,0 +1,314 @@
+#!/usr/bin/env node
+// Claude Code PreToolUse hook — claude-md-defer-detail-nudge.
+//
+// Sibling of claude-md-section-size-guard. That one caps section length
+// after the fact (8 lines per `###`). This one fires earlier with a
+// softer signal: when an Edit/Write adds a NEW `###` section to the
+// fleet block whose body looks like detail (multi-line prose, lists,
+// tables, `**Why:**` blocks, code fences) but contains NO link to a
+// `docs/agents.md/{fleet,repo,wheelhouse}/<topic>.md` companion file,
+// nudge the author to move the detail externally before the section
+// hits the line cap.
+//
+// Heuristic — fires when ALL of:
+//
+//   1. The Edit/Write targets a CLAUDE.md (root or repo-specific).
+//   2. The new content adds at least one NEW `### ` heading inside the
+//      fleet block (the `<fleet-canonical>` markers).
+//   3. The new section's body contains ≥3 non-blank lines.
+//   4. The new section has NO `docs/agents.md/{fleet,repo,wheelhouse}/`
+//      link in its body.
+//
+// Why all four conditions:
+//
+//   - Per-section gate (not whole-file): a 2-line one-liner rule
+//     doesn't need an external doc.
+//   - "NEW section only": existing sections can grow without re-firing
+//     the same reminder every edit. Triggered by a section heading the
+//     pre-edit content didn't have.
+//   - "≥3 body lines": cheap, robust. A rule that fits in 1-2 lines
+//     IS the canonical inline form; only longer ones owe a link.
+//   - "no docs/ link": the absence of a link is the actual signal —
+//     the author has detail but hasn't externalized it.
+//
+// Never blocks (notify, exit 0). Stop hooks can't refuse; PreToolUse
+// CAN, but for "prefer to do X" guidance the right shape is a
+// non-blocking stderr reminder. The companion claude-md-section-size-guard
+// catches the hard-cap failure mode (8+ lines) with exit 2.
+//
+
+import { existsSync, readFileSync } from 'node:fs'
+
+import { defineHook, notify, runHook } from '../_shared/guard.mts'
+import type { GuardResult } from '../_shared/guard.mts'
+import type { ToolCallPayload } from '../_shared/payload.mts'
+
+import { extractFleetBlock } from '../_shared/fleet-markers.mts'
+
+export { extractFleetBlock }
+
+const MIN_BODY_LINES_FOR_REMINDER = 3
+const DOCS_LINK_RE = /docs[/\\]agents\.md[/\\](?:fleet|repo|wheelhouse)[/\\]/
+
+// ---------------------------------------------------------------------------
+// Shared helpers (intentionally duplicated from claude-md-section-size-guard
+// rather than imported — keeping each hook self-contained means a fleet
+// repo missing one hook doesn't break the other at startup).
+// ---------------------------------------------------------------------------
+
+export function isClaudeMd(filePath: string | undefined): boolean {
+  if (!filePath) {
+    return false
+  }
+  /* c8 ignore next - split() on a non-empty string always returns at least one element; pop() never returns undefined */
+  const base = filePath.split(/[/\\]/).pop() ?? ''
+  return base === 'CLAUDE.md'
+}
+
+export function applyEditToFile(
+  filePath: string,
+  oldString: string | undefined,
+  newString: string | undefined,
+): string | undefined {
+  if (
+    !existsSync(filePath) ||
+    oldString === undefined ||
+    newString === undefined
+  ) {
+    return undefined
+  }
+  let onDisk: string
+  try {
+    onDisk = readFileSync(filePath, 'utf8')
+  } catch {
+    return undefined
+  }
+  const idx = onDisk.indexOf(oldString)
+  if (idx === -1) {
+    return undefined
+  }
+  if (onDisk.indexOf(oldString, idx + 1) !== -1) {
+    return undefined
+  }
+  return onDisk.slice(0, idx) + newString + onDisk.slice(idx + oldString.length)
+}
+
+// ---------------------------------------------------------------------------
+// Section diffing
+// ---------------------------------------------------------------------------
+
+interface Section {
+  readonly heading: string
+  readonly body: string
+  readonly bodyLineCount: number
+}
+
+/**
+ * Split a fleet block string into `### `-delimited sections. Each section
+ * carries its heading text (without the leading `### `), body (everything
+ * between the heading and the next `### ` or block end), and a count of
+ * non-blank body lines.
+ */
+export function parseSections(fleetBlock: string): Section[] {
+  const lines = fleetBlock.split('\n')
+  const sections: Section[] = []
+  let currentHeading: string | undefined
+  let currentBodyLines: string[] = []
+  let currentBodyLineCount = 0
+  function flush(): void {
+    if (currentHeading !== undefined) {
+      sections.push({
+        heading: currentHeading,
+        body: currentBodyLines.join('\n'),
+        bodyLineCount: currentBodyLineCount,
+      })
+    }
+  }
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
+    if (line.startsWith('### ')) {
+      flush()
+      currentHeading = line.slice(4).trim()
+      currentBodyLines = []
+      currentBodyLineCount = 0
+    } else if (currentHeading !== undefined) {
+      currentBodyLines.push(line)
+      if (line.trim() !== '') {
+        currentBodyLineCount += 1
+      }
+    }
+  }
+  flush()
+  return sections
+}
+
+interface AddedSection {
+  readonly heading: string
+  readonly bodyLineCount: number
+  readonly hasDocsLink: boolean
+}
+
+/**
+ * Diff pre-edit vs post-edit fleet blocks and return sections whose heading is
+ * NEW (didn't exist before this edit) AND whose body is long enough + lacks a
+ * docs/agents.md/ link to merit the reminder.
+ */
+export function findAddedSectionsLackingLink(
+  preContent: string | undefined,
+  postContent: string,
+): AddedSection[] {
+  const postBlock = extractFleetBlock(postContent)
+  if (!postBlock) {
+    return []
+  }
+  const postSections = parseSections(postBlock)
+  const preSections = preContent
+    ? parseSections(extractFleetBlock(preContent) ?? '')
+    : []
+  const preHeadings = new Set(preSections.map(s => s.heading))
+  const results: AddedSection[] = []
+  for (let i = 0, { length } = postSections; i < length; i += 1) {
+    const section = postSections[i]!
+    if (preHeadings.has(section.heading)) {
+      continue
+    }
+    if (section.bodyLineCount < MIN_BODY_LINES_FOR_REMINDER) {
+      continue
+    }
+    const hasDocsLink = DOCS_LINK_RE.test(section.body)
+    if (hasDocsLink) {
+      continue
+    }
+    results.push({
+      heading: section.heading,
+      bodyLineCount: section.bodyLineCount,
+      hasDocsLink,
+    })
+  }
+  return results
+}
+
+// ---------------------------------------------------------------------------
+// CLI / payload glue
+// ---------------------------------------------------------------------------
+
+function materializePostContent(payload: ToolCallPayload): {
+  pre: string | undefined
+  post: string | undefined
+  filePath: string | undefined
+} {
+  const input = payload.tool_input ?? {}
+  const filePath =
+    typeof input.file_path === 'string' ? input.file_path : undefined
+  if (!filePath || !isClaudeMd(filePath)) {
+    return { pre: undefined, post: undefined, filePath }
+  }
+  const tool = payload.tool_name
+  if (tool === 'Write') {
+    const pre = existsSync(filePath)
+      ? (() => {
+          try {
+            return readFileSync(filePath, 'utf8')
+          } catch {
+            return undefined
+          }
+        })()
+      : undefined
+    const content =
+      typeof input.content === 'string' ? input.content : undefined
+    return { pre, post: content, filePath }
+  }
+  /* c8 ignore start - check() filters tool_name to Edit/Write/MultiEdit; the false branch of this if and the fallthrough return are unreachable from the public API */
+  if (tool === 'Edit' || tool === 'MultiEdit') {
+    /* c8 ignore stop */
+    const pre = (() => {
+      if (!existsSync(filePath)) {
+        return undefined
+      }
+      try {
+        return readFileSync(filePath, 'utf8')
+      } catch {
+        return undefined
+      }
+    })()
+    const oldString =
+      typeof input.old_string === 'string' ? input.old_string : undefined
+    const newString =
+      typeof input.new_string === 'string' ? input.new_string : undefined
+    const post = applyEditToFile(filePath, oldString, newString)
+    return { pre, post, filePath }
+  }
+  /* c8 ignore start - defensive fallthrough: unreachable from the public API */
+  return { pre: undefined, post: undefined, filePath }
+  /* c8 ignore stop */
+}
+
+export function reminderMessage(
+  filePath: string,
+  added: readonly AddedSection[],
+): string {
+  const lines: string[] = []
+  lines.push(
+    '[claude-md-defer-detail-nudge] CLAUDE.md is gaining detail without an external doc:',
+  )
+  lines.push('')
+  lines.push(`  File: ${filePath}`)
+  lines.push('')
+  for (let i = 0, { length } = added; i < length; i += 1) {
+    const s = added[i]!
+    lines.push(
+      `  ### ${s.heading} — ${s.bodyLineCount} body lines, no docs/ link`,
+    )
+  }
+  lines.push('')
+  lines.push('  CLAUDE.md is the fleet rulebook; long-form expansion goes in')
+  lines.push(
+    '  `docs/agents.md/fleet/<topic>.md` (or `docs/agents.md/repo/<topic>.md`',
+  )
+  lines.push(
+    '  for repo-specific detail). Keep the rule + one-line "Why:" inline,',
+  )
+  lines.push('  link to the expansion. Example:')
+  lines.push('')
+  lines.push(
+    '    🚨 Rule statement. **Why:** one-line incident. Bypass: `Allow X bypass`.',
+  )
+  lines.push(
+    '    Spec: [`docs/agents.md/fleet/<topic>.md`](docs/agents.md/fleet/<topic>.md)',
+  )
+  lines.push('    (`.claude/hooks/fleet/<name>/`).')
+  lines.push('')
+  lines.push(
+    '  This is a soft reminder — the edit proceeds. (The hard 8-line cap',
+  )
+  lines.push('  per section is enforced by `claude-md-section-size-guard`.)')
+  return lines.join('\n')
+}
+
+export const check = (payload: ToolCallPayload): GuardResult => {
+  if (
+    payload.tool_name !== 'Edit' &&
+    payload.tool_name !== 'MultiEdit' &&
+    payload.tool_name !== 'Write'
+  ) {
+    return undefined
+  }
+  const { pre, post, filePath } = materializePostContent(payload)
+  if (!post || !filePath) {
+    return undefined
+  }
+  const added = findAddedSectionsLackingLink(pre, post)
+  if (added.length === 0) {
+    return undefined
+  }
+  return notify(reminderMessage(filePath, added))
+}
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  scope: 'convention',
+  type: 'nudge',
+})
+void runHook(hook, import.meta.url)

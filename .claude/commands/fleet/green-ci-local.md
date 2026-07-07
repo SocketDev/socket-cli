@@ -12,12 +12,21 @@ validate one (e.g. a release/build workflow before dispatching it remotely);
 
 Requires Docker running (OrbStack on macOS — `open -a OrbStack`, confirm
 `docker info`). On a paused step the model reads the failure log, fixes the code
-locally, and `agent-ci retry`s the SAME runner — it does not restart the
-pipeline. Env-gap failures (Depot/OIDC, runner-only libs, skipped macOS legs) are
-reported as the local boundary, not code defects, and still need the remote run.
+locally, and re-invokes the runner with `--retry <runner-name>` to resume the
+SAME runner — it does not restart the pipeline. Env-gap failures (Depot/OIDC,
+runner-only libs, skipped macOS legs) are classified and reported as the local
+boundary, not code defects, and still need the remote run.
 
 The local twin of `/green-ci` (which watches GitHub Actions remotely + pushes
 fixes). Use this first to catch breaks in containers; use `/green-ci` for the
 remote run that produces real release artifacts.
 
-Invokes the `greening-ci-local` skill.
+This command **defers to the `greening-ci-local` skill** — that skill's `run.mts`
+is the eyes-only driver (launch Agent-CI `--pause-on-failure`, classify the
+pause, print a JSON verdict); the skill body documents the fix-and-retry loop the
+model runs over it. Invoke the skill and follow its loop:
+
+    node .claude/skills/fleet/greening-ci-local/run.mts [--workflow .github/workflows/<wf>.yml] [--no-matrix]
+
+Parse the final stdout line as JSON; branch on `status` (`green` / `paused` /
+`error`) per the skill.

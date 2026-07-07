@@ -1,4 +1,4 @@
-/**
+/*
  * @file Code-is-law gate for the Agent-CI gh-aw-lock boundary
  *   (`agent-ci-skip-locks.mts`). Agent CI's `@actions/workflow-parser` crashes
  *   on a gh-aw compiled `*.lock.yml` (it returns no `.jobs`, so Agent CI aborts

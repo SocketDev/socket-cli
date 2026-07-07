@@ -103,14 +103,16 @@ FORBIDDEN to maintain. Remove when encountered.
 
 ## `packageManager` field
 
-Bare `pnpm@<version>` is correct for pnpm 11+. pnpm 11 stores the integrity hash in `pnpm-lock.yaml` (separate YAML document) instead of inlining it in `packageManager`. On install pnpm rewrites the field to its bare form and migrates legacy inline hashes automatically. Don't fight the strip. Older repos may still ship `pnpm@<version>+sha512.<hex>`. Leave it; pnpm migrates on first install. The lockfile is the integrity source of truth.
+The fleet pins `packageManager` to a **forgiving floor**, `pnpm@>=<floor>` (currently `pnpm@>=11.0.5`), matching the `engines.pnpm` floor. `pnpm-workspace.yaml` sets `managePackageManagerVersions: false` plus `pmOnFail: warn`, so pnpm treats the field as a minimum hint rather than a version lock: it never switches pnpm versions and only warns on a mismatch. The exact pnpm for CI comes from the setup action (`external-tools.json`), not this field. `derivePins` (`sync-package-manager-pins.mts`) emits the floor from root `engines.pnpm`, and the cascade propagates both pins via `sync.mts package-manager --fleet`. A `packageManager` drift is always benign (`isBehindSource`) because the field is only a hint; the enforced gate is `engines.pnpm`.
+
+pnpm 11 stores the integrity hash in `pnpm-lock.yaml` (a separate YAML document) rather than inline. The lockfile is the integrity source of truth, and a legacy `pnpm@<version>+sha512.<hex>` migrates on first install.
 
 ## Bumping a versioned tool fleet-wide (pnpm, zizmor, sfw)
 
-🚨 **Single entry point: `socket-wheelhouse/scripts/fleet/cascade-fleet.mts`.** Run from the wheelhouse repo:
+🚨 **Single entry point: `socket-wheelhouse/scripts/repo/cascade-fleet.mts`.** Run from the wheelhouse repo:
 
 ```bash
-node socket-wheelhouse/scripts/fleet/cascade-fleet.mts \
+node socket-wheelhouse/scripts/repo/cascade-fleet.mts \
   --pnpm 11.3.0 \
   [--skip-ci-wait] \
   [--dry-run]
@@ -257,4 +259,4 @@ it on an **interactive TTY**. The `!` / headless channel has no TTY, so the
 prompt is swallowed and the command dies with `EOTP`. Tell the user to run
 the op in a **real terminal** where the prompt can appear; fall back to
 `--otp=<code>` only when no TTY is available and the user supplies a fresh
-code. Reminder hook: `.claude/hooks/fleet/npm-otp-flow-reminder/`.
+code. Reminder hook: `.claude/hooks/fleet/npm-otp-flow-nudge/`.

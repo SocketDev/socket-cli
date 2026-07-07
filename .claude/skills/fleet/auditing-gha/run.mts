@@ -27,6 +27,7 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 import { spawn } from '@socketsecurity/lib/process/spawn/child'
 
@@ -79,9 +80,7 @@ export async function auditOne(repo: string): Promise<RepoFinding> {
       ok: false,
       details: [
         `Could not read Actions permissions (admin scope needed, or org ` +
-          `policy supersedes per-repo settings): ${
-            e instanceof Error ? e.message : String(e)
-          }`,
+          `policy supersedes per-repo settings): ${errorMessage(e)}`,
       ],
     }
   }
@@ -119,11 +118,7 @@ export async function auditOne(repo: string): Promise<RepoFinding> {
   try {
     selected = await fetchSelectedActions(repo)
   } catch (e) {
-    details.push(
-      `Could not read selected-actions list: ${
-        e instanceof Error ? e.message : String(e)
-      }`,
-    )
+    details.push(`Could not read selected-actions list: ${errorMessage(e)}`)
     return { repo, ok: false, details }
   }
 
@@ -209,9 +204,7 @@ export async function conformOne(repo: string): Promise<ConformResult> {
       repo,
       changed: false,
       added: [],
-      error: `could not read permissions (admin scope needed): ${
-        e instanceof Error ? e.message : String(e)
-      }`,
+      error: `could not read permissions (admin scope needed): ${errorMessage(e)}`,
     }
   }
   if (!perms.enabled) {
@@ -271,7 +264,7 @@ export async function conformOne(repo: string): Promise<ConformResult> {
     return { repo, changed: false, added: [] }
   }
 
-  const merged = [...union].sort()
+  const merged = [...union].toSorted()
   const body = JSON.stringify({
     github_owned_allowed: false,
     verified_allowed: false,
@@ -424,14 +417,15 @@ Examples:
 
 async function runConform(
   repos: readonly string[],
-  json: boolean,
+  options: { json: boolean },
 ): Promise<void> {
+  const opts = { __proto__: null, ...options } as { json: boolean }
   const results: ConformResult[] = []
   for (let i = 0, { length } = repos; i < length; i += 1) {
     // eslint-disable-next-line no-await-in-loop -- serial GH API writes
     results.push(await conformOne(repos[i]!))
   }
-  if (json) {
+  if (opts.json) {
     logger.info(JSON.stringify(results, null, 2))
   } else {
     for (let i = 0, { length } = results; i < length; i += 1) {
@@ -464,14 +458,15 @@ async function runConform(
 
 async function runAudit(
   repos: readonly string[],
-  json: boolean,
+  options: { json: boolean },
 ): Promise<void> {
+  const opts = { __proto__: null, ...options } as { json: boolean }
   const findings: RepoFinding[] = []
   for (let i = 0, { length } = repos; i < length; i += 1) {
     // eslint-disable-next-line no-await-in-loop -- serial GH API calls
     findings.push(await auditOne(repos[i]!))
   }
-  if (json) {
+  if (opts.json) {
     logger.info(JSON.stringify(findings, null, 2))
   } else {
     let okCount = 0
@@ -498,13 +493,13 @@ async function runAudit(
 async function main(): Promise<void> {
   const { repos, json, conform } = parseArgs(process.argv.slice(2))
   if (conform) {
-    await runConform(repos, json)
+    await runConform(repos, { json })
   } else {
-    await runAudit(repos, json)
+    await runAudit(repos, { json })
   }
 }
 
 main().catch(e => {
-  logger.error(e instanceof Error ? e.message : String(e))
+  logger.error(errorMessage(e))
   process.exit(1)
 })

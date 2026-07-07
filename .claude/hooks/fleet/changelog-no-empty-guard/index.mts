@@ -22,9 +22,9 @@
 
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 
-import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 const BYPASS_PHRASE = 'Allow changelog-empty-section bypass'
 const BYPASS_LOOKBACK_USER_TURNS = 8
@@ -119,7 +119,9 @@ export function computePostEditText(
   try {
     raw = readFileSync(filePath, 'utf8')
   } catch {
+    /* c8 ignore start - existsSync passed; only fails under race/permission conditions */
     return undefined
+    /* c8 ignore stop */
   }
   const idx = raw.indexOf(oldString)
   if (idx === -1) {
@@ -128,14 +130,16 @@ export function computePostEditText(
   return raw.slice(0, idx) + newString + raw.slice(idx + oldString.length)
 }
 
-export function emitBlock(
+/**
+ * Build the block message naming each empty section + the bypass phrase. Same
+ * text the hook previously wrote to stderr (the runner appends the newline).
+ */
+export function buildBlockMessage(
   filePath: string,
   empty: Array<{ line: number; name: string }>,
-): void {
+): string {
   const lines: string[] = []
-  lines.push(
-    '[changelog-no-empty-guard] Blocked: empty CHANGELOG section(s).',
-  )
+  lines.push('[changelog-no-empty-guard] Blocked: empty CHANGELOG section(s).')
   lines.push(`  File: ${filePath}`)
   lines.push('')
   for (const { line, name } of empty) {
@@ -151,20 +155,7 @@ export function emitBlock(
   )
   lines.push('')
   lines.push(`  Bypass: type \`${BYPASS_PHRASE}\` in a recent message.`)
-  process.stderr.write(lines.join('\n') + '\n')
-}
-
-type ToolInput = {
-  tool_input?:
-    | {
-        content?: string | undefined
-        file_path?: string | undefined
-        new_string?: string | undefined
-        old_string?: string | undefined
-      }
-    | undefined
-  tool_name?: string | undefined
-  transcript_path?: string | undefined
+  return lines.join('\n')
 }
 
 export function isChangelog(filePath: string | undefined): boolean {
@@ -175,37 +166,32 @@ export function isChangelog(filePath: string | undefined): boolean {
   return base === 'CHANGELOG.md'
 }
 
-async function main(): Promise<void> {
-  const raw = await readStdin()
-  if (!raw) {
-    return
+export const check = editGuard((filePath, content, payload) => {
+  const toolName = payload.tool_name
+  if (toolName !== 'Edit' && toolName !== 'Write') {
+    return undefined
   }
-  let payload: ToolInput
-  try {
-    payload = JSON.parse(raw) as ToolInput
-  } catch {
-    return
-  }
-  if (payload.tool_name !== 'Edit' && payload.tool_name !== 'Write') {
-    return
-  }
-  const filePath = payload.tool_input?.file_path ?? ''
   if (!isChangelog(filePath)) {
-    return
+    return undefined
   }
+  const input = payload.tool_input
+  const newString =
+    typeof input?.new_string === 'string' ? input.new_string : undefined
+  const oldString =
+    typeof input?.old_string === 'string' ? input.old_string : undefined
   const postEdit = computePostEditText(
-    payload.tool_name,
+    toolName,
     filePath,
-    payload.tool_input?.new_string,
-    payload.tool_input?.old_string,
-    payload.tool_input?.content,
+    newString,
+    oldString,
+    content,
   )
   if (postEdit === undefined) {
-    return
+    return undefined
   }
   const empty = findEmptySections(postEdit)
   if (empty.length === 0) {
-    return
+    return undefined
   }
   if (
     bypassPhrasePresent(
@@ -214,22 +200,16 @@ async function main(): Promise<void> {
       BYPASS_LOOKBACK_USER_TURNS,
     )
   ) {
-    return
+    return undefined
   }
-  emitBlock(filePath, empty)
-  // Hard-exit on the block path so no later microtask / catch handler can
-  // reset the code. The .catch below fails open (exit 0) on a genuine
-  // hook error — that path must stay distinct from a real block.
-  process.exit(2)
-}
+  return block(buildBlockMessage(filePath, empty))
+})
 
-// Entrypoint-guarded: run main() only when invoked directly, NOT when the test
-// imports this module for its pure helpers (else main() blocks on stdin at
-// import and the test file never terminates).
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
-  main().catch(e => {
-    process.stderr.write(
-      `[changelog-no-empty-guard] hook error (continuing): ${(e as Error).message}\n`,
-    )
-  })
-}
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  scope: 'convention',
+  type: 'guard',
+})
+void runHook(hook, import.meta.url)

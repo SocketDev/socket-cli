@@ -42,15 +42,67 @@ const PRICING_PATH = path.join(
 )
 
 export interface ModelPrice {
-  inputPerMtok: number
-  outputPerMtok: number
+  // Per-token list prices. Absent on a plan-billed model (billing: 'plan'),
+  // which has no marginal per-token cost — estimate it via its plan instead.
+  inputPerMtok?: number | undefined
+  outputPerMtok?: number | undefined
+  contextWindow?: number | undefined
+  // 'plan' = billed under a flat-rate/subscription plan, not per token.
+  billing?: string | undefined
+  // DATA, not a code branch: the router reads this to skip a model.
+  suspended?: boolean | undefined
+}
+
+// Per-service discount multipliers. All optional: a metered/flat-rate provider
+// may carry none (absent → no discount, i.e. 1x).
+export interface Multipliers {
+  batch?: number | undefined
+  cacheRead?: number | undefined
+  cacheWrite5m?: number | undefined
+  cacheWrite1h?: number | undefined
+}
+
+// The GENERIC, PUBLIC structure of a billing plan — list price + the kind of
+// constraint the routing heuristic reads to decide dollars vs headroom. Never
+// an org's private budget numbers, which live solely in private runtime config.
+export interface PlanEntry {
+  displayName: string
+  pricePerMonth?: number | undefined
+  billingModel: string
+  marginalTokenCost?: number | undefined
+  constraint?: string | undefined
+  limits?: Record<string, number> | undefined
+}
+
+// One provider: its public list prices, generic plan structure, and the
+// metadata the router + the feed-sourcing updater read. Each service stamps its
+// own `snapshot` so staleness is per-provider.
+export interface ServiceEntry {
+  displayName: string
+  kind: string
+  apiBase?: string | undefined
+  pricingSource: string
+  snapshot: string
+  notes?: string[] | undefined
+  multipliers?: Multipliers | undefined
+  models: Record<string, ModelPrice>
+  plans?: Record<string, PlanEntry> | undefined
+  aliases?: Record<string, string> | undefined
 }
 
 export interface PricingData {
-  snapshot: string
-  source: string
-  multipliers: { batch: number; cacheRead: number }
-  models: Record<string, ModelPrice>
+  schemaVersion: number
+  currency: string
+  unit: string
+  services: Record<string, ServiceEntry>
+}
+
+// A resolved model: the price entry plus which service carries it (so the caller
+// can read that service's multipliers + snapshot).
+export interface FoundModel {
+  model: ModelPrice
+  service: string
+  serviceEntry: ServiceEntry
 }
 
 // Rough per-workload token profiles. These are ESTIMATES (flagged as such):
@@ -88,6 +140,7 @@ export interface EstimateResult {
   inputUsd: number
   outputUsd: number
   model: string
+  service: string
   inputTokens: number
   outputTokens: number
 }
@@ -108,36 +161,99 @@ export function daysOld(snapshotIso: string, now: Date): number {
   return Math.floor((now.getTime() - then) / 86_400_000)
 }
 
+// Every model id known across every service (for an "unknown model" message).
+function knownModelIds(pricing: PricingData): string[] {
+  const ids: string[] = []
+  const services = pricing.services ?? {}
+  for (const serviceId of Object.keys(services)) {
+    ids.push(...Object.keys(services[serviceId]?.models ?? {}))
+  }
+  return ids
+}
+
+// Resolve a model id to its price + owning service, searching every service.
+// Resolution order per service: exact model id, then an alias entry. Falls back
+// to a `<service>/<model>` prefix form (e.g. `anthropic/claude-opus-4-8`).
+// Returns undefined when no service carries the id.
+export function findModelPricing(
+  pricing: PricingData,
+  modelId: string,
+): FoundModel | undefined {
+  const services = pricing.services ?? {}
+  for (const serviceId of Object.keys(services)) {
+    const serviceEntry = services[serviceId]
+    if (!serviceEntry) {
+      continue
+    }
+    const direct = serviceEntry.models?.[modelId]
+    if (direct) {
+      return { model: direct, service: serviceId, serviceEntry }
+    }
+    const aliasTarget = serviceEntry.aliases?.[modelId]
+    const aliased = aliasTarget ? serviceEntry.models?.[aliasTarget] : undefined
+    if (aliased) {
+      return { model: aliased, service: serviceId, serviceEntry }
+    }
+  }
+  const slash = modelId.indexOf('/')
+  if (slash !== -1) {
+    const serviceEntry = services[modelId.slice(0, slash)]
+    const bare = serviceEntry?.models?.[modelId.slice(slash + 1)]
+    if (serviceEntry && bare) {
+      return {
+        model: bare,
+        service: modelId.slice(0, slash),
+        serviceEntry,
+      }
+    }
+  }
+  return undefined
+}
+
 // Compute the USD cost for a model + token counts against the pricing data.
+// Resolves the model across services (see findModelPricing) and applies that
+// service's multipliers; a service without a multiplier means no discount (1x).
 export function estimateCost(
   pricing: PricingData,
   input: EstimateInput,
 ): EstimateResult {
-  const price = pricing.models[input.model]
-  if (!price) {
-    const known = Object.keys(pricing.models).join(', ')
+  const found = findModelPricing(pricing, input.model)
+  if (!found) {
+    const known = knownModelIds(pricing).join(', ')
     throw new Error(
       `unknown model "${input.model}". Known: ${known}. ` +
         'Add it to model-pricing.json (re-sourced from the vendor page).',
     )
   }
-  const batchMult = input.batch ? pricing.multipliers.batch : 1
+  const { model: price, service, serviceEntry } = found
+  if (price.inputPerMtok === undefined && price.outputPerMtok === undefined) {
+    throw new Error(
+      `model "${input.model}" is plan-billed (service "${service}", ` +
+        `billing "${price.billing ?? 'plan'}") — it has no per-token price. ` +
+        'Estimate it via its plan, not per token.',
+    )
+  }
+  const mult = serviceEntry.multipliers ?? {}
+  const batchMult = input.batch ? (mult.batch ?? 1) : 1
+  const cacheReadMult = mult.cacheRead ?? 1
+  const inputPerMtok = price.inputPerMtok ?? 0
+  const outputPerMtok = price.outputPerMtok ?? 0
   const cacheRead = input.cacheReadTokens ?? 0
   // Cached input tokens bill at the cache-read fraction; the rest at full input.
   const fullInput = Math.max(0, input.inputTokens - cacheRead)
   const inputUsd =
-    ((fullInput * price.inputPerMtok +
-      cacheRead * price.inputPerMtok * pricing.multipliers.cacheRead) /
+    ((fullInput * inputPerMtok + cacheRead * inputPerMtok * cacheReadMult) /
       1_000_000) *
     batchMult
   const outputUsd =
-    ((input.outputTokens * price.outputPerMtok) / 1_000_000) * batchMult
+    ((input.outputTokens * outputPerMtok) / 1_000_000) * batchMult
   return {
     inputTokens: input.inputTokens,
     inputUsd,
     model: input.model,
     outputTokens: input.outputTokens,
     outputUsd,
+    service,
     usd: inputUsd + outputUsd,
   }
 }
@@ -180,16 +296,20 @@ async function main(): Promise<void> {
     model,
     outputTokens,
   })
-  const age = daysOld(pricing.snapshot, new Date())
+  // Snapshot + source are per-service in v2 — read the owning service's.
+  const svc = pricing.services[result.service]!
+  const age = daysOld(svc.snapshot, new Date())
 
   if (argv.includes('--json')) {
     process.stdout.write(
-      `${JSON.stringify({ ...result, pricingSnapshot: pricing.snapshot, pricingAgeDays: age, source: pricing.source }, undefined, 2)}\n`,
+      `${JSON.stringify({ ...result, pricingSnapshot: svc.snapshot, pricingAgeDays: age, source: svc.pricingSource }, undefined, 2)}\n`,
     )
     return
   }
 
-  logger.info(`[estimate-ai-cost] model: ${result.model}`)
+  logger.info(
+    `[estimate-ai-cost] model: ${result.model} (service ${result.service})`,
+  )
   logger.info(
     `  tokens: ${result.inputTokens.toLocaleString()} in / ${result.outputTokens.toLocaleString()} out`,
   )
@@ -197,7 +317,7 @@ async function main(): Promise<void> {
     `  cost:   $${result.usd.toFixed(4)} ($${result.inputUsd.toFixed(4)} in + $${result.outputUsd.toFixed(4)} out)`,
   )
   logger.info(
-    `  pricing: snapshot ${pricing.snapshot} (${age}d old), source ${pricing.source}`,
+    `  pricing: snapshot ${svc.snapshot} (${age}d old), source ${svc.pricingSource}`,
   )
   if (workload) {
     logger.info(

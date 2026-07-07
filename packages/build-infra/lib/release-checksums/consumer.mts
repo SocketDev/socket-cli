@@ -42,7 +42,7 @@ export function clearChecksumCache(): void {
   checksumCache.clear()
 }
 
-interface GetChecksumsOptions {
+export interface GetChecksumsOptions {
   /**
    * The producing repo whose releases we're verifying against.
    */
@@ -91,7 +91,7 @@ export async function getReleaseChecksums(
     repoConfig,
     tempDir,
     tool,
-  } = options
+  } = { __proto__: null, ...options } as typeof options
   const toolPrefix = `${tool}-`
 
   const cacheKey = `${tool}:${releaseTag ?? 'latest'}`

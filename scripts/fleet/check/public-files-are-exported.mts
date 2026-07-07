@@ -1,4 +1,4 @@
-/**
+/*
  * @file Fleet check — a package's `exports` map and its public file surface
  *   agree. Two failure modes, for every non-private workspace package that
  *   declares `exports`:

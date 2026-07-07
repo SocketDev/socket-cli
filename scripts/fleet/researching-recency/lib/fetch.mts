@@ -79,9 +79,8 @@ async function runPooled<T, R>(
       results[index] = await worker(jobs[index]!)
     }
   }
-  const runners = Array.from(
-    { length: Math.min(limit, jobs.length) },
-    () => pump(),
+  const runners = Array.from({ length: Math.min(limit, jobs.length) }, () =>
+    pump(),
   )
   await Promise.all(runners)
   return results
@@ -93,7 +92,11 @@ function jobsFromPlan(plan: QueryPlan): FetchJob[] {
   const jobs: FetchJob[] = []
   for (let i = 0, { length } = plan.subqueries; i < length; i += 1) {
     const subquery = plan.subqueries[i]!
-    for (let j = 0, { length: srcCount } = subquery.sources; j < srcCount; j += 1) {
+    for (
+      let j = 0, { length: srcCount } = subquery.sources;
+      j < srcCount;
+      j += 1
+    ) {
       const source = subquery.sources[j]!
       if (ADAPTERS[source]) {
         jobs.push({

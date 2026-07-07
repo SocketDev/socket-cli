@@ -1,4 +1,4 @@
-/**
+/*
  * @file Canonical opt-out marker handling shared across hooks. The fleet `//
  *   socket-lint: allow <rule>` marker has two surfaces:
  *

@@ -5,17 +5,17 @@
  * Emits {bundleSizeBytes, perFileSizes (heaviest-first), preconditions,
  * rawDistImportSurvey}. The reachability-from-entry walk, the set-delta
  * candidate computation, and the HIGH/MEDIUM/LOW confidence grading stay in the
- * model's hands — bundle-trim grades them precisely because the static signal is
- * ambiguous (barrel files, re-exports, dynamic import, conditional exports), and
- * scripting a confidence label would hard-code the heuristic boundary the model
- * is meant to exercise. This helper only measures.
+ * model's hands — bundle-trim grades them precisely because the static signal
+ * is ambiguous (barrel files, re-exports, dynamic import, conditional exports),
+ * and scripting a confidence label would hard-code the heuristic boundary the
+ * model is meant to exercise. This helper only measures.
  *
  * The import survey preserves FULL specifiers (`@socketsecurity/lib/globs`, not
  * just `@socketsecurity/lib`) — the trim discovery keys on lib SUBPATHS, so the
  * survey must keep the subpath, unlike validate-bundle-deps' getPackageName.
  *
  * Usage:
- *   node measure-bundle.mts [--repo <dir>] [--json]
+ * node measure-bundle.mts [--repo <dir>] [--json]
  */
 
 import process from 'node:process'
@@ -65,7 +65,12 @@ export function extractSpecifiers(source: string): string[] {
 
 export function checkPreconditions(repoDir: string): Preconditions {
   const distExists = existsSync(path.join(repoDir, 'dist'))
-  const configPath = path.join(repoDir, '.config', 'repo', 'rolldown.config.mts')
+  const configPath = path.join(
+    repoDir,
+    '.config',
+    'repo',
+    'rolldown.config.mts',
+  )
   let rolldownConfigImportsStub = false
   if (existsSync(configPath)) {
     rolldownConfigImportsStub = readFileSync(configPath, 'utf8').includes(
@@ -118,7 +123,9 @@ export async function main(argv: readonly string[]): Promise<number> {
       const json = `${JSON.stringify(m, undefined, 2)}\n`
       process.stdout.write(json) // socket-lint: allow console -- machine JSON; logger would corrupt it
     } else {
-      logger.info(`bundle size: ${m.bundleSizeBytes} bytes across ${m.perFileSizes.length} file(s)`)
+      logger.info(
+        `bundle size: ${m.bundleSizeBytes} bytes across ${m.perFileSizes.length} file(s)`,
+      )
       logger.info(
         `preconditions: dist=${m.preconditions.distExists} stub-import=${m.preconditions.rolldownConfigImportsStub} lib-stub=${m.preconditions.libStubPresent}`,
       )

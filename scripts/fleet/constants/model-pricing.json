@@ -1,27 +1,141 @@
 {
-  "$comment": "Structured model-pricing data for scripts/fleet/estimate-ai-cost.mts. Sourced + timestamped: snapshot is the capture date, source is the vendor page. Refreshed by the updating-pricing sub-skill (weekly, via the /updating umbrella) or on demand (/update-pricing). Prices are USD per million tokens (MTok). Do not hand-edit numbers — re-source from the vendor page so the snapshot date stays honest. Edit in socket-wheelhouse/template/ then cascade.",
-  "snapshot": "2026-06-14",
-  "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+  "$comment": "Structured, dated AI model-pricing data for scripts/fleet/estimate-ai-cost.mts and the routing heuristic. GENERIC + PUBLIC ONLY: per-service vendor list prices (USD per million tokens) and the generic plan STRUCTURE (kind / constraint / public list price) — never an org's private budgets, usage, or subscription specifics, which live solely in private runtime config, never in git. Each service carries its own `snapshot` (capture date) + `pricingSource` (the vendor page) so staleness is per-provider and honest. Refreshed by the updating-pricing sub-skill (weekly via /updating, or on demand via /update-pricing): it reads the vendor page (or, when a number isn't directly available, mines the researching-recency feed via scripts/fleet/source-pricing-feed.mts) then hands sourced prices to scripts/fleet/update-model-pricing.mts, which owns the write so the shape + sort order + snapshot date stay canonical. Do not hand-edit numbers — re-source so the snapshot stays honest. Edit in socket-wheelhouse/template/base/ then cascade.",
+  "schemaVersion": 2,
   "currency": "USD",
   "unit": "per-Mtok",
-  "notes": [
-    "batchMultiplier 0.5 = the Batch API's 50%-off on input + output.",
-    "cacheReadMultiplier 0.1 = a prompt-cache hit costs 0.1x base input.",
-    "cacheWrite5mMultiplier 1.25 / cacheWrite1hMultiplier 2.0 are write-time input multipliers.",
-    "Opus 4.7 and later use a new tokenizer that can emit up to ~35% more tokens for the same text — fold this into token-profile estimates for Opus/Fable, not into the per-token price.",
-    "Fast mode (Opus only, research preview) bills at a premium and is not used by the fleet — omitted here."
-  ],
-  "multipliers": {
-    "batch": 0.5,
-    "cacheRead": 0.1,
-    "cacheWrite5m": 1.25,
-    "cacheWrite1h": 2.0
-  },
-  "models": {
-    "claude-haiku-4-5": { "inputPerMtok": 1.0, "outputPerMtok": 5.0 },
-    "claude-sonnet-4-6": { "inputPerMtok": 3.0, "outputPerMtok": 15.0 },
-    "claude-opus-4-8": { "inputPerMtok": 5.0, "outputPerMtok": 25.0 },
-    "claude-fable-5": { "inputPerMtok": 10.0, "outputPerMtok": 50.0 },
-    "claude-mythos-5": { "inputPerMtok": 10.0, "outputPerMtok": 50.0 }
+  "services": {
+    "anthropic": {
+      "displayName": "Anthropic / Claude",
+      "kind": "first-party",
+      "apiBase": "https://api.anthropic.com",
+      "pricingSource": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "snapshot": "2026-06-30",
+      "notes": [
+        "multipliers.batch 0.5 = the Batch API's 50%-off on input + output.",
+        "multipliers.cacheRead 0.1 = a prompt-cache hit costs 0.1x base input.",
+        "multipliers.cacheWrite5m 1.25 / cacheWrite1h 2.0 are write-time input multipliers.",
+        "Opus 4.7 and later use a new tokenizer that can emit up to ~35% more tokens for the same text — fold this into token-profile estimates for Opus/Fable, not into the per-token price.",
+        "Fast mode (Opus only, research preview) bills at a premium and is not used by the fleet — omitted here.",
+        "suspended:true is DATA, not a code branch: the router reads it to skip a model (Fable 5 + Mythos 5 suspended 2026-06-12, 'use Opus 4.8'); it self-heals when the flag clears."
+      ],
+      "multipliers": {
+        "batch": 0.5,
+        "cacheRead": 0.1,
+        "cacheWrite5m": 1.25,
+        "cacheWrite1h": 2
+      },
+      "models": {
+        "claude-haiku-4-5": {
+          "inputPerMtok": 1,
+          "outputPerMtok": 5,
+          "contextWindow": 200000
+        },
+        "claude-sonnet-4-6": {
+          "inputPerMtok": 3,
+          "outputPerMtok": 15,
+          "contextWindow": 1000000
+        },
+        "claude-opus-4-8": {
+          "inputPerMtok": 5,
+          "outputPerMtok": 25,
+          "contextWindow": 1000000
+        },
+        "claude-fable-5": {
+          "inputPerMtok": 10,
+          "outputPerMtok": 50,
+          "contextWindow": 1000000,
+          "suspended": true
+        },
+        "claude-mythos-5": {
+          "inputPerMtok": 10,
+          "outputPerMtok": 50,
+          "contextWindow": 1000000,
+          "suspended": true
+        }
+      },
+      "plans": {
+        "max-20x": {
+          "displayName": "Claude Max 20x",
+          "pricePerMonth": 200,
+          "billingModel": "subscription",
+          "marginalTokenCost": 0,
+          "constraint": "weekly-quota"
+        }
+      }
+    },
+    "fireworks": {
+      "displayName": "Fireworks AI",
+      "kind": "metered-openai-compatible",
+      "apiBase": "https://api.fireworks.ai/inference/v1",
+      "pricingSource": "https://docs.fireworks.ai/serverless/pricing",
+      "snapshot": "2026-07-05",
+      "notes": [
+        "Metered per-token list prices from the serverless pricing page; re-source per snapshot. No org budget here — that is private runtime config."
+      ],
+      "models": {
+        "accounts/fireworks/models/deepseek-v4-pro": {
+          "inputPerMtok": 1.74,
+          "outputPerMtok": 3.48,
+          "contextWindow": 1000000
+        },
+        "accounts/fireworks/models/glm-5p2": {
+          "inputPerMtok": 1.4,
+          "outputPerMtok": 4.4,
+          "contextWindow": 1000000
+        },
+        "accounts/fireworks/models/kimi-k2p6": {
+          "inputPerMtok": 0.95,
+          "outputPerMtok": 4,
+          "contextWindow": 262144
+        },
+        "accounts/fireworks/models/kimi-k2p7-code": {
+          "inputPerMtok": 0.95,
+          "outputPerMtok": 4,
+          "contextWindow": 262144
+        }
+      },
+      "plans": {}
+    },
+    "synthetic": {
+      "displayName": "Synthetic",
+      "kind": "flat-rate-openai-compatible",
+      "apiBase": "https://api.synthetic.new/openai/v1",
+      "pricingSource": "https://synthetic.new/pricing",
+      "snapshot": "2026-07-05",
+      "notes": [
+        "Flat-rate plan: models bill under the plan (billing:'plan'), not per token. The generic plan STRUCTURE (price + public rate limits) is here; private usage is not."
+      ],
+      "aliases": {
+        "syn:large:text": "hf:zai-org/GLM-5.2",
+        "syn:small:text": "hf:zai-org/GLM-4.7-Flash"
+      },
+      "models": {
+        "hf:moonshotai/Kimi-K2.7-Code": {
+          "billing": "plan",
+          "contextWindow": 262144
+        },
+        "hf:openai/gpt-oss-120b": {
+          "billing": "plan",
+          "contextWindow": 128000
+        },
+        "hf:zai-org/GLM-5.2": {
+          "billing": "plan",
+          "contextWindow": 512000
+        }
+      },
+      "plans": {
+        "pack": {
+          "displayName": "Synthetic Pack",
+          "pricePerMonth": 30,
+          "billingModel": "flat-rate",
+          "marginalTokenCost": 0,
+          "constraint": "rate-limit",
+          "limits": {
+            "requestsPer5h": 500,
+            "concurrentPerModel": 1
+          }
+        }
+      }
+    }
   }
 }

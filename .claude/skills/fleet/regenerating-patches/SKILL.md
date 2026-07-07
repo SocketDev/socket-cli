@@ -2,7 +2,7 @@
 name: regenerating-patches
 description: Regenerates plugin-cache patches in scripts/fleet/plugin-patches/ against the pinned upstream plugin source when they go stale after a plugin SHA bump. Use when install-claude-plugins.mts warns that a patch no longer applies, or after bumping a plugin's source.sha in marketplace.json.
 user-invocable: true
-allowed-tools: Read, Edit, Write, Glob, Grep, Bash(curl:*), Bash(patch:*), Bash(diff:*), Bash(git:*), Bash(mkdir:*), Bash(rm:*), Bash(cat:*), Bash(ls:*), AskUserQuestion
+allowed-tools: Read, Edit, Write, Glob, Grep, Bash(node:*), Bash(patch:*), Bash(diff:*), Bash(git:*), Bash(mkdir:*), Bash(rm:*), Bash(cat:*), Bash(ls:*), AskUserQuestion
 model: claude-haiku-4-5
 context: fork
 ---
@@ -13,35 +13,39 @@ Regenerate the wheelhouse-owned plugin-cache patches in `scripts/fleet/plugin-pa
 
 Patches are reapplied over the plugin cache by `scripts/install-claude-plugins.mts` (`reapplyPluginPatches()` → `patch -p1`). The cache is regenerated from the pinned source on every install, so a stale patch warns and no-ops — it never wedges the reconcile, but the bug it fixed reappears until the patch is regenerated.
 
-The authority on the patch format is [`docs/agents.md/fleet/plugin-cache-patches.md`](../../../docs/agents.md/fleet/plugin-cache-patches.md). The edit-time gate is `.claude/hooks/fleet/plugin-patch-format-guard/`.
+The authority on the patch format is [`docs/agents.md/fleet/plugin-cache-patches.md`](../../../docs/agents.md/fleet/plugin-cache-patches.md). The edit-time gate is `.claude/hooks/fleet/plugin-patch-format-guard/`. The pin-reading, fetch (`httpText`), classify (`patch --dry-run` forward + reverse), diff-rebuild (timestamp strip + path rewrite), header restamp, and final validate plumbing all live in [`lib/regen-patches.mts`](lib/regen-patches.mts). The skill keeps only the AI judgment — re-applying each stale patch's **intent** to the new pristine source with the Edit tool.
 
-## Phase 1 — validate
+## Phase 1 — classify
 
-1. Read `.claude-plugin/marketplace.json`. For each plugin collect `source.url` (the GitHub repo), the pinned `source.sha`, and `source.path` (the in-repo subdir, if any). These map a plugin name to `https://raw.githubusercontent.com/<owner>/<repo>/<sha>/<path>/<file>`.
-2. List `scripts/fleet/plugin-patches/*.patch`. Each filename is `<plugin>-<version>-<slug>.patch`.
-3. For each patch, find the failing ones:
-   - Strip the `# @…` header — everything before the first `--- ` line — into a temp file.
-   - Fetch a pristine copy of every file the diff touches from the pinned-SHA raw URL into a temp `a/` tree (path relative to the plugin root, matching the `a/…` prefix).
-   - Dry-run: `patch -p1 --dry-run --forward` against that pristine tree.
-   - A forward dry-run that FAILS while a `--reverse --dry-run` SUCCEEDS means the fix is already upstream — flag for deletion, not regeneration. A patch that applies neither way is **stale** and needs regenerating.
+```bash
+# Print {current|upstreamed|stale} per patch, against the currently pinned SHA.
+node .claude/skills/fleet/regenerating-patches/lib/regen-patches.mts classify
+```
 
-Surface any fetch / parse error and stop rather than guessing.
+- `current` — applies cleanly; leave it.
+- `upstreamed` — the fix is already in the pinned source (forward fails, reverse applies); flag for `rm` + manifest-entry removal, not regeneration.
+- `stale` — applies neither way; regenerate it (Phase 2).
+
+The script reads `.claude-plugin/marketplace.json` itself and fetches pristine sources via the lib `httpText` from the pinned-SHA raw URL. Surface any fetch / parse error and stop rather than guessing.
 
 ## Phase 2 — regenerate the stale patches
 
-For each stale patch:
+For each `stale` patch:
 
-1. Fetch the pristine target file(s) from `https://raw.githubusercontent.com/<owner>/<repo>/<sha>/<path>/<file>` into `/tmp/plugin-patch-rebuild/a/<file>`. Copy each to a parallel `/tmp/plugin-patch-rebuild/b/<file>`.
-2. Read the stale patch to recover its **intent** (the `+`/`−` lines and which files they touch) and its `# @…` header verbatim.
-3. Re-apply that intent to the `b/` copy with the **Edit tool** — exact-match editing forces byte-for-byte context against the new pristine source.
-4. Generate the diff:
+1. Stage the pristine target file(s) at the pinned SHA into a temp `a/` tree:
    ```bash
-   diff -u /tmp/plugin-patch-rebuild/a/<file> /tmp/plugin-patch-rebuild/b/<file> \
-     | sed -E 's@/tmp/plugin-patch-rebuild/a/@a/@; s@/tmp/plugin-patch-rebuild/b/@b/@' \
-     | grep -v $'^[-+]\{3\}.*\t'   # strip timestamps from ---/+++ lines
+   node .claude/skills/fleet/regenerating-patches/lib/regen-patches.mts pristine <name>.patch
+   # prints the staging dir; copy a/ → b/:
+   cp -R <dir>/a <dir>/b
    ```
-5. Prepend the original `# @plugin:` / `# @plugin-version:` / `# @sha:` / `# @description:` header verbatim, bumping `# @sha:` (and `# @plugin-version:` + the filename, if the version changed) to the new pin.
-6. Validate: `patch -p1 --dry-run` against the pristine `a/` tree must exit 0. Write the regenerated patch back to `scripts/fleet/plugin-patches/<name>.patch`.
+2. Read the stale patch to recover its **intent** (the `+`/`−` lines and which files they touch).
+3. Re-apply that intent to the `b/<file>` copy with the **Edit tool** — exact-match editing forces byte-for-byte context against the new pristine source. (This step is yours; the script does the plumbing around it.)
+4. Rebuild + restamp + validate in one call — emits the clean `diff -u` body (timestamps stripped, paths rewritten to `a/`-`b/`) under the restamped `# @` header, and fails non-zero unless `patch -p1 --dry-run` exits 0:
+   ```bash
+   node .claude/skills/fleet/regenerating-patches/lib/regen-patches.mts rebuild <name>.patch <dir> \
+     > scripts/fleet/plugin-patches/<name>.patch
+   ```
+   If the version changed, rename the file and bump `# @plugin-version:` in the header after writing.
 
 ## Phase 3 — report
 

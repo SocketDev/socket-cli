@@ -22,7 +22,7 @@
 //   /* oxlint-enable <rule> */               (re-enables; pairs with disables)
 //
 // Exemption: files under the plugin's rule subtree
-// (`.config/oxlint-plugin/{fleet,repo}/<id>/`, holding each rule's index.mts +
+// (`.config/fleet/oxlint-plugin/{fleet,repo}/<id>/`, holding each rule's index.mts +
 // its test/) are allowed to file-scope-disable their own rule (the banned
 // shape is lookup-table data in the rule definition or in test fixtures).
 //
@@ -36,24 +36,22 @@
 //
 // Fails open on malformed payloads (exit 0 + stderr log).
 
-import process from 'node:process'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
-import { withEditGuard } from '../_shared/payload.mts'
-
-const logger = getDefaultLogger()
-
+// Match a file-scope oxlint disable opener: optional leading whitespace, then
+// either a block-comment opener `/*` or a line-comment `//`, optional
+// whitespace, then `oxlint-disable` NOT followed by `-next-line` (negative
+// lookahead), then at least one space or tab before the rule name.
 const FILE_SCOPE_DISABLE_RE =
   /^[ \t]*(?:\/\*|\/\/)[ \t]*oxlint-disable(?!-next-line)[ \t]+/
 
 // Plugin-internal rule + test files are exempt — the banned shape is
 // lookup-table data in the rule definition or test fixture. Each rule lives at
-// `.config/oxlint-plugin/{fleet,repo}/<id>/` with its index.mts + test/, so the
+// `.config/fleet/oxlint-plugin/{fleet,repo}/<id>/` with its index.mts + test/, so the
 // tier prefix covers both.
 const EXEMPT_PATH_SUFFIXES: readonly string[] = [
-  '.config/oxlint-plugin/fleet/',
-  '.config/oxlint-plugin/repo/',
+  '.config/fleet/oxlint-plugin/fleet/',
+  '.config/repo/oxlint-plugin/',
 ]
 
 interface Finding {
@@ -82,23 +80,21 @@ export function isExemptPath(filePath: string): boolean {
   return false
 }
 
-
-// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
-// content extraction (new_string / content), and fail-open on any throw.
-await withEditGuard((filePath, content) => {
+export const check = editGuard((filePath, content) => {
   if (isExemptPath(filePath)) {
-    return
+    return undefined
   }
   const newContent = content ?? ''
   const findings = findFileScopeDisables(newContent)
   if (findings.length === 0) {
-    return
+    return undefined
   }
   const lines: string[] = []
   lines.push(
     '🚨 no-file-oxlint-disable-guard: blocked Edit/Write — file-scope `oxlint-disable` is forbidden.',
   )
   lines.push('')
+  /* c8 ignore next - editGuard guarantees filePath is non-empty before calling here */
   lines.push(`File:  ${filePath || '<unknown>'}`)
   lines.push('')
   for (let i = 0, { length } = findings; i < length; i += 1) {
@@ -118,6 +114,15 @@ await withEditGuard((filePath, content) => {
     "If the entire file legitimately can't comply, the file needs a refactor",
   )
   lines.push('— not a blanket exemption.')
-  logger.error(lines.join('\n') + '\n')
-  process.exitCode = 2
+  return block(lines.join('\n') + '\n')
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Edit', 'Write', 'MultiEdit'],
+  scope: 'convention',
+  type: 'guard',
+})
+
+void runHook(hook, import.meta.url)

@@ -1,6 +1,6 @@
 # gh token hygiene
 
-GitHub CLI auth tokens are the highest-blast-radius credential most developers carry. The Nx Console supply-chain compromise (May 2026) exfiltrated `~/.config/gh/hosts.yml` and used the token against the GitHub API within 74 seconds of malware execution. Three layered defenses, all enforced by `.claude/hooks/fleet/gh-token-hygiene-guard/` (the 8h age cap, keychain check, and workflow-scope gate all live in this hook — `auth-rotation-reminder` handles non-gh CLIs like npm/pnpm/gcloud/docker/vault).
+GitHub CLI auth tokens are the highest-blast-radius credential most developers carry. The Nx Console supply-chain compromise (May 2026) exfiltrated `~/.config/gh/hosts.yml` and used the token against the GitHub API within 74 seconds of malware execution. Three layered defenses, all enforced by `.claude/hooks/fleet/gh-token-hygiene-guard/` (the 8h age cap, keychain check, and workflow-scope gate all live in this hook — `auth-rotation-nudge` handles non-gh CLIs like npm/pnpm/gcloud/docker/vault).
 
 ## 1. Keychain storage only
 
@@ -105,7 +105,7 @@ After this, sudo is back to its default (password only). The hook's auth flow wi
 
 ## 3. 8-hour token age cap
 
-`auth-rotation-reminder` Stop-hook tracks the gh token's issued-at timestamp (stored at `~/.claude/gh-token-issued-at`). When the token is >8 hours old, the next Stop event exits non-zero with instructions:
+`auth-rotation-nudge` Stop-hook tracks the gh token's issued-at timestamp (stored at `~/.claude/gh-token-issued-at`). When the token is >8 hours old, the next Stop event exits non-zero with instructions:
 
 ```
 gh auth refresh -h github.com
@@ -152,3 +152,20 @@ Three recovery paths, ordered from cleanest to most surgical:
 The stamp file is purely an in-process record of "when did the hook last see a refresh"; the actual token security lives in the OS keychain. A wrong stamp value can't escalate access — at worst it temporarily locks the user out of gh tool calls until they reauth or re-stamp.
 
 No escape hatches. The hook is failsafe-deny on all invariants. The OS-auth path (Touch ID + osascript + dscl, called via absolute `/usr/bin/` paths to defeat PATH-hijack) is intentionally unreachable in unit tests; the auth path is exercised by manual smoke-testing when the hook ships.
+
+## Heartbeat and recurring loops
+
+Token freshness is tracked by a heartbeat stamp (`~/.claude/gh-token-issued-at`).
+A recurring gh loop — PR scanning on a cron tick, CI watching — can outlive the
+8-hour window even though it is actively and successfully using the token, and
+the rotation then strands the loop mid-cycle. Active use is proof of liveness,
+so every loop tick re-stamps the heartbeat FIRST:
+
+```bash
+node scripts/fleet/gh-heartbeat.mts --quiet
+```
+
+The refresh is probe-gated: it runs `gh api user` and only stamps on a
+successful authenticated response. A dead token is never stamped fresh — the
+script exits 1 with the re-auth instruction instead, so the loop's failure mode
+is a loud early exit rather than a masked expiry.

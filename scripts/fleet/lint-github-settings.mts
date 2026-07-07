@@ -444,7 +444,7 @@ interface WorkflowsPayload {
  *    shape.
  * 2. `# socket-wheelhouse-shadow-allow: <reason>` header line — maintainer's
  *    explicit, audit-able commitment that the local workflow inlines logic by
- *    design (e.g. socket-cli's provenance.yml does CLI-specific multi-package
+ *    design (e.g. socket-cli's publish-npm.yml does CLI-specific multi-package
  *    release orchestration that doesn't fit the generic shared shape). The
  *    comment text serves as the documented reason.
  */
@@ -452,7 +452,7 @@ const SHARED_WORKFLOW_BASENAMES = [
   'build.yml',
   'install.yml',
   'lint.yml',
-  'provenance.yml',
+  'publish-npm.yml',
   'release.yml',
   'setup.yml',
   'test.yml',
@@ -902,7 +902,7 @@ function applyFixes(repo: string, findings: readonly Finding[]): number {
 function printReport(
   findings: readonly Finding[],
   repo: string,
-  json: boolean,
+  { json }: { json: boolean },
 ): void {
   if (json) {
     process.stdout.write(JSON.stringify({ repo, findings }, null, 2) + '\n')
@@ -935,6 +935,9 @@ function printReport(
   process.stdout.write('Manual-verify (no REST API; check via UI):\n')
   process.stdout.write(
     `  • Commit comments must be disabled: ${settingsUrl} → General → Commits\n`,
+  )
+  process.stdout.write(
+    `  • Copilot Memory (store/retrieve repository facts) disabled: ${settingsUrl} → Copilot → Memory\n`,
   )
   process.stdout.write(
     `  • Release immutability enabled: ${settingsUrl} → General → Releases\n`,
@@ -976,7 +979,7 @@ function main(): number {
     const cached = readCache(repo)
     if (cached?.pass) {
       const ageHours = Math.round(
-        (Date.now() - Date.parse(cached.verifiedAt)) / 3600_000,
+        (Date.now() - Date.parse(cached.verifiedAt)) / 3_600_000,
       )
       process.stdout.write(
         `✓ Cache fresh (${ageHours}h old, < 7d TTL). Use --force to re-check.\n`,
@@ -1039,7 +1042,7 @@ function main(): number {
     }
   }
 
-  printReport(findings, repo, flags.json)
+  printReport(findings, repo, { json: flags.json })
 
   // Exit-status policy: only error-severity findings fail the run.
   // Warnings (custom-property downgrades, mid-remediation flags) are

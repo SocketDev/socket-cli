@@ -118,5 +118,6 @@ The four-flag lockdown is enforced at edit time by `.claude/hooks/fleet/claude-l
 
 ## Existing fleet callsites
 
-- `socket-registry/.github/workflows/weekly-update.yml`: two `claude --print` invocations (run `/updating` skill, fix test failures). Bash recipe above.
+- `scripts/fleet/weekly-update.mts`: the plain (non-gh-aw) weekly runner — drives the deterministic chain, then the optional advisory pass via `spawnAiAgent({ ...AI_PROFILE.full })` (the locked-down four-flag wrapper). The escape-hatch + local-dev entry; gh-aw stays the primary scheduled path.
+- `socket-registry/.github/workflows/weekly-update.md`: the gh-aw reusable workflow (`engine: claude`, `max-ai-credits`, network allowlist, safe-output PR). Replaced the legacy `claude --print` reusable; its deterministic check-updates gate calls `weekly-update.mts --check-updates`.
 - `socket-lib/tools/prim/src/disambiguate.mts`: read-only recipe above (`query()` SDK form).

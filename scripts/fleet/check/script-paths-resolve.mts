@@ -77,7 +77,14 @@ export function extractNodeScriptPath(command: string): string | undefined {
     if (tok.startsWith('-')) {
       continue
     }
-    // The path token. Only treat it as a local script if it has a script ext.
+    // The path token. A `<placeholder>` segment (literal angle brackets) marks a
+    // doc/template stand-in like `node scripts/foo/<name>.mts` — it can never be
+    // a real on-disk file, so it's a documentation placeholder, not a broken
+    // reference. Skip it rather than flag a phantom "file not found".
+    if (tok.includes('<') || tok.includes('>')) {
+      return undefined
+    }
+    // Only treat it as a local script if it has a script ext.
     const hasExt = SCRIPT_EXTS.some(ext => tok.endsWith(ext))
     return hasExt ? tok : undefined
   }

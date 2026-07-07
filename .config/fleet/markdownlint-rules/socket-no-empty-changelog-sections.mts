@@ -15,6 +15,8 @@
  *   on the same rule.
  */
 
+import type { MarkdownlintRule } from './_shared/rule-types.mts'
+
 const RULE_NAME = 'socket-no-empty-changelog-sections'
 
 /**
@@ -35,10 +37,7 @@ const SECTION_NAMES = new Set([
   'Security',
 ])
 
-/**
- * @type {import('markdownlint').Rule}
- */
-const rule = {
+const rule: MarkdownlintRule = {
   description:
     'CHANGELOG.md Keep-a-Changelog section headings must have at least one bullet',
   function(params, onError) {

@@ -1,27 +1,14 @@
 import { defineConfig } from 'taze'
 
-/* Socket-owned scopes bypass the 7-day maturity cooldown.
- *
- * The cooldown (maturityPeriod: 7) exists to catch compromised
- * upstream packages before we adopt them — but Socket-published
- * packages go through our own provenance + publish pipeline, so
- * we trust them to ship fresh.
- *
- * The scopes listed here are EXCLUDED from pass 1 (the
- * cooldown-respecting pass) and INCLUDED in pass 2 (the
- * immediate-bump pass). Keep this list in sync with
- * scripts/fleet/update.mts if the repo ships one, or with whatever
- * second-pass mechanism the consuming repo's update script
- * uses.
- */
-const SOCKET_SCOPES = [
-  '@socketregistry/*',
-  '@socketsecurity/*',
-  '@socketdev/*',
-  'socket-*',
-  'ecc-agentshield',
-  'sfw',
-]
+// Socket-owned scopes bypass the 7-day maturity cooldown (the cooldown catches
+// compromised upstreams before adoption; Socket-published packages go through
+// our own provenance + publish pipeline). EXCLUDED from pass 1 (cooldown) and
+// INCLUDED in pass 2 (immediate bump). SOCKET_SCOPES is the single shared
+// constant — scripts/fleet/update.mts imports the same one, so they can't drift.
+import {
+  SOCKET_SCOPES,
+  UPDATE_PINNED_TOOLCHAIN,
+} from '../../scripts/fleet/constants/socket-scopes.mts'
 
 // oxlint-disable-next-line socket/no-default-export -- taze loads its config via default export per the documented API.
 export default defineConfig({
@@ -29,8 +16,11 @@ export default defineConfig({
   interactive: false,
   // Minimal logging.
   loglevel: 'warn',
-  // Socket scopes handled by a second pass with maturityPeriod 0.
-  exclude: SOCKET_SCOPES,
+  // Socket scopes are excluded here (pass 1) and re-included in pass 2 with
+  // maturityPeriod 0. The pinned dev toolchain (oxlint/oxfmt/rolldown/typescript
+  // + bindings) is excluded from BOTH passes — bumped deliberately, never on the
+  // automatic cadence.
+  exclude: [...SOCKET_SCOPES, ...UPDATE_PINNED_TOOLCHAIN],
   // 7-day cooldown on third-party deps — matches `.npmrc`'s
   // min-release-age setting for install-time enforcement.
   maturityPeriod: 7,

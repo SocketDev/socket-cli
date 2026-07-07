@@ -1,4 +1,4 @@
-/**
+/*
  * @file Shared detector for the pnpm "trust-aware env expansion" opt-out — the
  *   escape hatch pnpm 10.34.2 / 11.5.3 added when it stopped expanding
  *   `${ENV_VAR}` in repo-controlled credential settings. Consumed by BOTH the
@@ -25,7 +25,9 @@
  *   process access.
  */
 
-/** The two env vars whose presence disables pnpm's trust-aware expansion. */
+/**
+ * The two env vars whose presence disables pnpm's trust-aware expansion.
+ */
 export const TRUST_OPTOUT_ENV_VARS = [
   'PNPM_CONFIG_NPMRC_AUTH_FILE',
   'NPM_CONFIG_USERCONFIG',
@@ -76,9 +78,9 @@ function classifyAssignment(name: string, value: string | undefined): boolean {
  * Pass the `Command[]` from `_shared/shell-command.mts` `parseCommands()`. We
  * inspect three shapes:
  *
- *   - `NAME=value pnpm i`         → surfaces in `cmd.assignments`
- *   - `export NAME=value`         → `cmd.binary === 'export'`, arg `NAME=value`
- *   - bare `NAME=value`           → `cmd.assignments` on an empty-binary segment
+ * - `NAME=value pnpm i` → surfaces in `cmd.assignments`
+ * - `export NAME=value` → `cmd.binary === 'export'`, arg `NAME=value`
+ * - Bare `NAME=value` → `cmd.assignments` on an empty-binary segment
  *
  * Returns the set of offending env-var names found.
  */
@@ -98,7 +100,8 @@ export function detectOptoutInCommands(
       found.add(name as TrustOptoutEnvVar)
     }
   }
-  for (const cmd of commands) {
+  for (let i = 0, { length } = commands; i < length; i += 1) {
+    const cmd = commands[i]!
     for (const a of cmd.assignments) {
       consider(a)
     }
@@ -139,7 +142,9 @@ export function detectOptoutInFileText(
       const assignRe = new RegExp(`(^|[\\s'"])${name}\\s*[:=]`)
       const dockerfileEnvRe = new RegExp(`(^|\\s)ENV\\s+${name}\\s`)
       if (assignRe.test(line) || dockerfileEnvRe.test(line)) {
-        const value = line.slice(line.indexOf(name) + name.length).replace(/^\s*[:=]\s*/, '')
+        const value = line
+          .slice(line.indexOf(name) + name.length)
+          .replace(/^\s*[:=]\s*/, '')
         if (classifyAssignment(name, value || undefined)) {
           out.push({ line: i + 1, name })
         }

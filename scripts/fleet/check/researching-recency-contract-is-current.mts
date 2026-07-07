@@ -61,7 +61,9 @@ function main(): void {
   const quiet = process.argv.includes('--quiet')
   if (!existsSync(SKILL_PATH)) {
     if (!quiet) {
-      logger.log('researching-recency SKILL.md absent — contract check skipped.')
+      logger.log(
+        'researching-recency SKILL.md absent — contract check skipped.',
+      )
     }
     return
   }

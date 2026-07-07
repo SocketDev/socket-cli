@@ -29,8 +29,8 @@
 // paths). The bare-commit sweep is left to overeager-staging-guard so a
 // single shape never double-blocks with two different bypass phrases.
 //
-// Why this exists (incident 2026-05-27, socket-lib): see
-// parallel-agent-on-stop-reminder. The Stop reminder surfaces the
+// Why this exists (incident, socket-lib): see
+// parallel-agent-on-stop-nudge. The Stop reminder surfaces the
 // signal; this guard refuses the destructive action before it lands.
 //
 // Reuses the shared shell AST parser (`_shared/shell-command.mts`) so
@@ -43,7 +43,7 @@
 //   • `Allow parallel-agent-staging bypass` in a recent user turn
 //     (case-sensitive) — one action.
 //
-// Fails open on hook bugs (exit 0 + stderr log). Reads a PreToolUse JSON
+// Fails open on hook bugs (handled by runGuard). Reads a PreToolUse JSON
 // payload from stdin:
 //   { "tool_name": "Bash",
 //     "tool_input": { "command": "..." },
@@ -56,22 +56,27 @@ import {
   readSessionTouchedPaths,
   recordTouchedFromBash,
 } from '../_shared/foreign-paths.mts'
+import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import {
   detectBroadGitAdd,
   findInvocation,
   invocationHasFlag,
 } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
-
-interface ToolPayload {
-  readonly tool_name?: string | undefined
-  readonly tool_input?: { readonly command?: unknown | undefined } | undefined
-  readonly transcript_path?: string | undefined
-}
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 const BYPASS_PHRASES = ['Allow parallel-agent-staging bypass'] as const
 
+// Pre-flight trigger for the dispatcher: it imports + runs this guard only when
+// the raw payload contains at least one of these substrings. Every gated op
+// detected by `detectGatedGitOp` runs through `findInvocation`/`commandsFor`
+// with `binary: 'git'`, which can match only when the literal `git` token is
+// present (a `$VAR`-sourced binary collapses to '' and never equals 'git'). So
+// `check` can only ever block when the command contains `git` — making this the
+// complete, minimal trigger set.
+export const triggers: readonly string[] = ['git']
+
 function getProjectDir(): string {
+  // c8 ignore next
   return process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
 }
 
@@ -116,26 +121,10 @@ export function detectGatedGitOp(command: string): string | undefined {
   return undefined
 }
 
-async function main(): Promise<void> {
-  const raw = await readStdin()
-  let payload: ToolPayload
-  try {
-    payload = JSON.parse(raw) as ToolPayload
-  } catch {
-    process.exit(0)
-  }
-  if (payload.tool_name !== 'Bash') {
-    process.exit(0)
-  }
-  const command = (payload.tool_input as { command?: unknown } | undefined)
-    ?.command
-  if (typeof command !== 'string' || !command.trim()) {
-    process.exit(0)
-  }
-
+export const check = bashGuard((command, payload) => {
   // Record any `git add|mv|rm <path>` targets into the session ledger BEFORE
-  // any exit. The transcript lags within a turn, so without this a `git mv old
-  // new` here followed by an Edit to `new` next would read `new` as foreign
+  // any return. The transcript lags within a turn, so without this a `git mv
+  // old new` here followed by an Edit to `new` next would read `new` as foreign
   // (a parallel agent's file) and block the session's own rename. This is the
   // only PreToolUse hook that sees every Bash command, so it owns the recording.
   recordTouchedFromBash(payload.transcript_path, command)
@@ -143,12 +132,12 @@ async function main(): Promise<void> {
   // Fleet-sync cascade sentinel: no parallel-session hazard in a fresh
   // cascade worktree off origin/main.
   if (/(?:^|\s)FLEET_SYNC\s*=\s*1\b/.test(command)) {
-    process.exit(0)
+    return undefined
   }
 
   const gatedOp = detectGatedGitOp(command)
   if (!gatedOp) {
-    process.exit(0)
+    return undefined
   }
 
   const repoDir = getProjectDir()
@@ -157,43 +146,46 @@ async function main(): Promise<void> {
   if (foreign.length === 0) {
     // No parallel-agent signal — let the op through (overeager-staging-
     // guard still owns the general broad-add rule independently).
-    process.exit(0)
+    return undefined
   }
 
   if (
     payload.transcript_path &&
     bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES, 3)
   ) {
-    process.exit(0)
+    return undefined
   }
 
-  process.stderr.write(
+  return block(
     [
       `[parallel-agent-staging-guard] Blocked: ${gatedOp}`,
       '',
-      `  ${foreign.length} dirty path(s) here were NOT authored by this`,
-      '  session and changed recently — likely another agent on the',
-      '  same checkout. This operation would sweep up, hide, or destroy',
-      '  their in-flight work:',
+      `  ${foreign.length} dirty path(s) here are NOT from this session's edits`,
+      '  and changed recently — most likely your OWN earlier work or an',
+      '  aligned session. This operation would sweep up, hide, or destroy',
+      '  those uncommitted changes:',
       ...foreign.slice(0, 10).map(p => `    ${p}`),
       ...(foreign.length > 10
         ? [`    ... and ${foreign.length - 10} more`]
         : []),
       '',
-      '  Fix: stage only YOUR files by explicit path, and avoid stash /',
-      '  reset --hard / checkout while the other agent is active.',
-      '    git add path/to/your-file.ts',
+      "  Do this instead — land, don't sweep:",
+      '  • Stage only YOUR files by explicit path: git add path/to/your-file.ts',
+      '  • Land what is ready — `node scripts/fleet/land-work.mts --commit` or',
+      '    `git commit -o <file>` — instead of stash / reset --hard / checkout.',
+      '  • Unsure whose it is? `node scripts/fleet/whose-work.mts`.',
       '',
-      '  Bypass (only if you are certain): user types',
+      '  Bypass (you are certain): user types',
       '    "Allow parallel-agent-staging bypass" in chat, then retry.',
-    ].join('\n') + '\n',
+    ].join('\n'),
   )
-  process.exit(2)
-}
-
-main().catch(e => {
-  process.stderr.write(
-    `[parallel-agent-staging-guard] hook bug — fail-open. ${e instanceof Error ? e.message : String(e)}\n`,
-  )
-  process.exit(0)
 })
+
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Bash'],
+  triggers,
+  type: 'guard',
+})
+void runHook(hook, import.meta.url)

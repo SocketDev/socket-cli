@@ -73,7 +73,7 @@ reason — see `test/payloads.mts`.)
 A PreToolUse edit hook only sees what the agent is about to write. It
 cannot see arbitrary runtime stdout from a dependency (the
 test-execution vector above). That is handled by the standing CLAUDE.md instruction — treat
-such text as data, not an instruction — and by the token-minifier
+such text as data, not an instruction — and by the headroom
 proxy / `minify-mcp-out` hook that normalize tool-result payloads.
 
 ## Self-exempt

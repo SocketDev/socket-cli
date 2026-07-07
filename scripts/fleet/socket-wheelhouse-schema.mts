@@ -1,4 +1,4 @@
-/**
+/*
  * @file TypeBox schema for the per-fleet-repo socket-wheelhouse config consumed
  *   by `sync-scaffolding`. Two valid locations:
  *   `.config/socket-wheelhouse.json` (primary) or `.socket-wheelhouse.json` at
@@ -25,7 +25,7 @@ import type { Static } from '@sinclair/typebox'
 // ---------------------------------------------------------------------------
 // Two orthogonal axes describe a fleet repo:
 //
-//   layout  — package shape: single-package vs monorepo.
+//   layout  — package shape: solo vs mono.
 //   native  — native-binary supply-chain role: none / consumer /
 //             producer / both.
 //
@@ -36,13 +36,10 @@ import type { Static } from '@sinclair/typebox'
 
 const RepoSchema = Type.Object(
   {
-    type: Type.Union(
-      [Type.Literal('single-package'), Type.Literal('monorepo')],
-      {
-        description:
-          'Package layout. `single-package` = one `package.json` at root, no `packages/`. `monorepo` = pnpm workspaces under `packages/`.',
-      },
-    ),
+    type: Type.Union([Type.Literal('solo'), Type.Literal('mono')], {
+      description:
+        'Package layout. `solo` = one `package.json` at root, no `packages/`. `mono` = pnpm workspaces under `packages/`.',
+    }),
   },
   {
     description: 'Repo shape.',
@@ -319,6 +316,21 @@ const PathsAllowlistEntrySchema = Type.Object(
   },
 )
 
+const ReleaseSchema = Type.Object(
+  {
+    versionPolicy: Type.Optional(
+      Type.Union([Type.Literal('standard'), Type.Literal('patch-only')], {
+        description:
+          'Version-bump policy enforced by bump.mts. `standard` (default): derive major/minor/patch from Conventional Commits. `patch-only`: reject any major/minor bump — only the patch may increment (e.g. socket-wheelhouse stays 1.0.x).',
+      }),
+    ),
+  },
+  {
+    additionalProperties: false,
+    description: 'Release / version-bump policy.',
+  },
+)
+
 // ---------------------------------------------------------------------------
 // Top-level config.
 // ---------------------------------------------------------------------------
@@ -342,6 +354,7 @@ export const SocketWheelhouseConfigSchema = Type.Object(
     }),
     repo: RepoSchema,
     build: BuildSchema,
+    release: Type.Optional(ReleaseSchema),
     hooks: Type.Optional(HooksSchema),
     scripts: Type.Optional(ScriptsSchema),
     lint: Type.Optional(LintSchema),

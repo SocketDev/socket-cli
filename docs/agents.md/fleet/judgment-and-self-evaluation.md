@@ -4,7 +4,7 @@ The CLAUDE.md `### Judgment & self-evaluation` section is the headline. This fil
 
 ## Default to perfectionist
 
-When you have latitude (no explicit pragmatism signal from the user), default to perfectionist. "Works now" is not the same as "right." Don't offer "do it right" vs "ship fast" as a binary choice menu in your response — pick perfectionist and execute. The hook that nudges you back if you start drafting a tradeoff menu is `.claude/hooks/fleet/yakback-reminder/`.
+When you have latitude (no explicit pragmatism signal from the user), default to perfectionist. "Works now" is not the same as "right." Don't offer "do it right" vs "ship fast" as a binary choice menu in your response — pick perfectionist and execute. The hook that nudges you back if you start drafting a tradeoff menu is `.claude/hooks/fleet/yakback-nudge/`.
 
 Exceptions where pragmatism wins:
 
@@ -18,13 +18,13 @@ In all three cases, name the exception in the turn summary so the user can redir
 
 When the user issues a bare command — `use nvm 26.2.0`, `cancel the build`, `do it`, `kill it`, `proceed` — the correct response is the tool call. Not a paragraph weighing trade-offs. Not "Before I do that, let me explain why…" Not analysis-first when the command was unambiguous.
 
-The failure mode is hedge openers ("That won't help because…", "Let me first…") that delay the action the user already authorized. State the intent in one short sentence at most (`Switching to nvm 26.2.0.`), then run the command. Enforced by `.claude/hooks/fleet/follow-direct-imperative-reminder/`.
+The failure mode is hedge openers ("That won't help because…", "Let me first…") that delay the action the user already authorized. State the intent in one short sentence at most (`Switching to nvm 26.2.0.`), then run the command. Enforced by `.claude/hooks/fleet/follow-direct-imperative-nudge/`.
 
 If you genuinely think the command is wrong, say so in one sentence, run it anyway if it's local + reversible, and let the user redirect — don't refuse based on your judgment of their intent.
 
 ## Voice & brevity
 
-Be pithy. Lead with the point, then support it. Brief over complete. Pleasant but not sugary — no "great question," "perfect!," "happy to," enthusiasm performance, or apology padding. Cut warm-up and self-narration. The `yakback-reminder` hook flags the common tics (sugary filler, "honest"/"honestly"/"honesty," self-narrating tool use); treat a match as a prompt to tighten the sentence.
+Be pithy. Lead with the point, then support it. Brief over complete. Pleasant but not sugary — no "great question," "perfect!," "happy to," enthusiasm performance, or apology padding. Cut warm-up and self-narration. The `yakback-nudge` hook flags the common tics (sugary filler, "honest"/"honestly"/"honesty," self-narrating tool use); treat a match as a prompt to tighten the sentence.
 
 When discussing code or an abstraction, **lead with a small snippet or a concrete reference** so the reader anchors on the actual thing, not a description of it:
 
@@ -45,9 +45,15 @@ When the user authorizes a queue with phrases like "complete each one," "100%," 
 - "Session totals so far…"
 - "Should I continue?"
 
-Those re-litigate intent already given. Continue until the queue is empty or you hit a genuine blocker (a dependency that hasn't published, a credential the agent doesn't hold, a destructive operation that needs explicit confirmation). Enforced by `.claude/hooks/fleet/dont-stop-mid-queue-reminder/`.
+Those re-litigate intent already given. Continue until the queue is empty or you hit a genuine blocker (a dependency that hasn't published, a credential the agent doesn't hold, a destructive operation that needs explicit confirmation). Enforced by `.claude/hooks/fleet/dont-stop-mid-queue-nudge/`.
 
-When the user has clearly said "do it" / "yes" / "proceed" in the recent transcript, skip the AskUserQuestion confirmation step — pick the obvious default and execute. Enforced by `.claude/hooks/fleet/ask-suppression-reminder/`.
+When the user has clearly said "do it" / "yes" / "proceed" in the recent transcript, skip the AskUserQuestion confirmation step — pick the obvious default and execute. Enforced by `.claude/hooks/fleet/ask-suppression-nudge/`.
+
+## Enqueue, don't pivot
+
+A new instruction that arrives while a task is in flight is an **add**, not a redirect. The default response is `TaskCreate` the new ask, finish the current in-progress task, then pick up the new one in queue order. Dropping half-done work to chase the latest mention is the antipattern — it leaves the queue littered with abandoned tasks and re-litigates work already underway. The user has stated this directly: "a lot of the time when I am telling you something I want you to put it on the todos, but you need to prioritize finishing your todos … add as I tell you, not constantly redirect and refocus."
+
+Pivot immediately **only** when the user explicitly signals it: "stop," "drop that," "do this now/first," "urgent," "before you continue," "switch to X," "interrupt your todos," "new priority." Or when the new ask genuinely **blocks** the current task — in which case name why it blocks before switching. Absent one of those, enqueue and keep going. Enforced by `.claude/hooks/fleet/enqueue-dont-pivot-nudge/` (the inverse of `dont-stop-mid-queue-nudge`: that hook catches stopping mid-queue, this one catches pivoting mid-queue).
 
 ## Fix-failed-twice reset
 
@@ -77,7 +83,7 @@ For UI / frontend / render-shape changes (`*.html`, `*.css`, `scripts/tour.mts`,
 3. Open / render / preview the output.
 4. THEN commit.
 
-Past pattern: multiple wasted commits per session, each one a "fix" that broke the next rebuild because the previous "fix" was never visually verified. Enforced by `.claude/hooks/fleet/verify-render-pre-commit-reminder/`.
+Past pattern: multiple wasted commits per session, each one a "fix" that broke the next rebuild because the previous "fix" was never visually verified. Enforced by `.claude/hooks/fleet/verify-render-pre-commit-nudge/`.
 
 Type-checking and test suites verify code correctness, not feature correctness. If you can't render-test (no browser available, headless environment), say so explicitly in the turn summary rather than claiming success.
 

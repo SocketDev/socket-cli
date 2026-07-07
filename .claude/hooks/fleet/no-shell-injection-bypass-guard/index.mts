@@ -30,25 +30,40 @@
 //
 // Exit codes: 0 — pass; 2 — block. Fails open on a malformed payload.
 
-import process from 'node:process'
-
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { parseShell } from '@socketsecurity/lib-stable/shell/parse'
 
-import { withBashGuard } from '../_shared/payload.mts'
+import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
+import type { GuardResult } from '../_shared/guard.mts'
 import { parseCommands } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
-const logger = getDefaultLogger()
-
 const BYPASS_PHRASE = 'Allow shell-injection bypass'
+
+// Pre-flight skip set: the dispatcher imports this guard only when the raw
+// command contains at least one of these substrings. Every block path requires
+// one — `=` (EQUALS expansion `=cmd` whose binary starts with `=`, and the
+// zsh `=(` proc-sub), `(` (all process-substitution forms `<(` / `>(` / `=(`
+// place a `(` in the stream), and each zsh-module builtin name appears verbatim
+// as the base command. A command containing none of these can never block.
+export const triggers: readonly string[] = [
+  '(',
+  '=',
+  'emulate',
+  'sysopen',
+  'sysread',
+  'sysseek',
+  'syswrite',
+  'zmodload',
+  'zpty',
+  'ztcp',
+]
 
 // Single-token process-substitution op markers the parser collapses into one
 // op entry (e.g. `<(` from `diff <(cat a) b`). The `>(` and `=(` forms do NOT
 // collapse — the parser splits them (`> >(` → `>` `>` `(`; `=(` → word `=`
 // then `(`), so those are detected by the adjacency scan in
 // processSubstitutionBypass, not from this set.
-const SUBSTITUTION_OPS = new Set(['<(', '>(', '=('])
+const SUBSTITUTION_OPS = new Set(['<(', '=(', '>('])
 
 // Zsh module loader + the builtins it enables — network exfil, command exec,
 // raw file IO that bypass binary checks.
@@ -81,7 +96,9 @@ export function shellInjectionBypass(command: string): string | undefined {
   try {
     commands = parseCommands(command)
   } catch {
+    /* c8 ignore start - parseCommands wraps parseShell in its own try/catch and returns [] on error; this branch is structurally unreachable */
     return undefined
+    /* c8 ignore stop */
   }
   for (let i = 0, { length } = commands; i < length; i += 1) {
     const cmd = commands[i]!
@@ -109,7 +126,9 @@ function processSubstitutionBypass(command: string): string | undefined {
   try {
     entries = parseShell(command) as unknown[]
   } catch {
+    /* c8 ignore start - parseShell (shell-quote) does not throw on any observed input; this catch is a defensive backstop */
     return undefined
+    /* c8 ignore stop */
   }
   for (let i = 0, { length } = entries; i < length; i += 1) {
     const entry = entries[i]
@@ -138,21 +157,18 @@ function processSubstitutionBypass(command: string): string | undefined {
   return undefined
 }
 
-function checkCommand(
-  command: string,
-  payload: { transcript_path?: string | undefined },
-): void {
+export const check = bashGuard((command, payload): GuardResult => {
   const bypass = shellInjectionBypass(command)
   if (!bypass) {
-    return
+    return undefined
   }
   if (
     payload.transcript_path &&
     bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
   ) {
-    return
+    return undefined
   }
-  logger.error(
+  return block(
     [
       '[no-shell-injection-bypass-guard] Blocked: command-allowlist bypass',
       '',
@@ -166,14 +182,13 @@ function checkCommand(
       `  ${BYPASS_PHRASE}`,
     ].join('\n'),
   )
-  process.exitCode = 2
-}
+})
 
-if (process.argv[1]?.endsWith('index.mts')) {
-  // Async IIFE: await inside the function (no top-level await — CJS bundle
-  // target), promise still awaited. withBashGuard drains stdin, gates Bash,
-  // narrows the command, fails open on throw.
-  void (async () => {
-    await withBashGuard(checkCommand)
-  })()
-}
+export const hook = defineHook({
+  check,
+  event: 'PreToolUse',
+  matcher: ['Bash'],
+  triggers,
+  type: 'guard',
+})
+void runHook(hook, import.meta.url)
