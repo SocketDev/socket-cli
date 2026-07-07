@@ -21,8 +21,8 @@ allowBuilds:
 pmOnFail: error
 
 catalog:
-  '@anthropic-ai/claude-code': 2.1.98
-  '@babel/core': 7.28.4
+  '@anthropic-ai/claude-code': 2.1.197
+  '@babel/core': 7.29.7
   '@babel/generator': 7.28.5
   '@babel/parser': 7.28.4
   '@babel/plugin-proposal-export-default-from': 7.27.1
@@ -175,7 +175,7 @@ catalog:
   unplugin-purge-polyfills: 0.1.0
   # vite 8.0.14 swaps esbuild → rolldown natively; the override forces its
   # bundled rolldown up to the catalog's 1.0.3.
-  vite: 8.0.14
+  vite: 8.1.2
   vitest: 4.1.8
   wrap-ansi: 9.0.2
   xml2js: 0.6.2
@@ -318,7 +318,9 @@ overrides:
   # Repo-specific overrides below.
   '@octokit/graphql': 'catalog:'
   '@octokit/request-error': 'catalog:'
+  '@sigstore/core': '3.2.1'
   '@sigstore/sign': '4.1.0'
+  '@sigstore/verify': '3.1.1'
   '@socketregistry/packageurl-js-stable': 'catalog:'
   '@socketsecurity/lib-stable': 'catalog:'
   '@socketsecurity/registry-stable': 'catalog:'
@@ -329,11 +331,12 @@ overrides:
   'defu': '>=6.1.7'
   'emoji-regex': 'catalog:'
   'fast-uri': '>=3.1.2'
+  'form-data': '>=4.0.6'
   'globalthis': 'catalog:'
   'graceful-fs': 'catalog:'
   'has-property-descriptors': 'catalog:'
   'has-proto': 'catalog:'
-  'hono': '>=4.12.23'
+  'hono': '>=4.12.25'
   'https-proxy-agent': 'catalog:'
   'indent-string': 'catalog:'
   'ip-address': '>=10.2.0'
@@ -351,9 +354,11 @@ overrides:
   'set-function-length': 'catalog:'
   'shell-quote': 'catalog:'
   'signal-exit': '4.1.0'
+  'sigstore': '4.1.1'
   'string-width': 'catalog:'
   'string_decoder': 'catalog:'
   'strip-ansi': 'catalog:'
+  'tar': '>=7.5.16'
   'tiny-colors': 'catalog:'
   'typedarray': 'catalog:'
   'undici': 'catalog:'
