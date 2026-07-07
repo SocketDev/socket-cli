@@ -125,6 +125,11 @@ function resolveSocketLibInternalsPlugin(): Plugin {
         const p = resolveSocketLibExternal(socketLibPath, externalPath)
         return p ? { id: p } : undefined
       }
+      // Source is a bare-package or scoped-package specifier:
+      // ^               anchors to start of string
+      // @[^/]+\/[^/]+   scoped name like `@scope/pkg` — `@` + non-slash chars + `/` + non-slash chars
+      // |               or
+      // [^./][^/]*      bare name — starts with a non-dot non-slash char, then any non-slash chars
       if (/^(?:@[^/]+\/[^/]+|[^./][^/]*)/.test(source)) {
         if (!isSocketLibDistImporter(importer)) {
           return undefined
@@ -154,6 +159,10 @@ function stubProblematicPackagesPlugin(): Plugin {
   return {
     name: 'stub-problematic-packages',
     resolveId(source) {
+      // Source is the `encoding` or `iconv-lite` package, or a subpath of either:
+      // ^                       anchors to start of string
+      // (?:encoding|iconv-lite) matches exactly one of the two package names
+      // (?:$|\/)                end of string (bare name) or `/` (subpath like `iconv-lite/stream`)
       if (/^(?:encoding|iconv-lite)(?:$|\/)/.test(source)) {
         return { id: `${prefix}${source}` }
       }
