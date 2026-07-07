@@ -29,7 +29,11 @@ import type { EventEmitter } from 'node:events'
 // Mock getExtraCaCerts from sdk.mts.
 const mockGetExtraCaCerts = vi.hoisted(() => vi.fn(() => undefined))
 const mockGetDefaultApiToken = vi.hoisted(() => vi.fn(() => 'test-api-token'))
+const mockGetCliUserAgent = vi.hoisted(() =>
+  vi.fn(() => 'socket-cli/1.0.0 node/v20.0.0 test/x64'),
+)
 vi.mock('./sdk.mts', () => ({
+  getCliUserAgent: mockGetCliUserAgent,
   getDefaultApiToken: mockGetDefaultApiToken,
   getDefaultApiBaseUrl: vi.fn(() => undefined),
   getDefaultProxyUrl: vi.fn(() => undefined),
@@ -157,6 +161,8 @@ describe('apiFetch with extra CA certificates', () => {
     // The request is made with that explicit agent.
     const callArgs = mockHttpsRequest.mock.calls[0]
     expect(callArgs[1].agent).toMatchObject({ _isHttpsAgent: true })
+    // The outgoing request carries the CLI's User-Agent header.
+    expect(callArgs[1].headers['User-Agent']).toBe(mockGetCliUserAgent())
     expect(result.ok).toBe(true)
   })
 

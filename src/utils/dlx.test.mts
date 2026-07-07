@@ -19,6 +19,7 @@ vi.mock('@socketsecurity/registry/lib/spawn', () => ({
 }))
 
 vi.mock('./sdk.mts', () => ({
+  getCliUserAgent: () => 'socket-cli/1.0.0 node/v20.0.0 test/x64',
   getDefaultApiToken: () => undefined,
   getDefaultProxyUrl: () => undefined,
 }))
@@ -677,6 +678,39 @@ describe('utils/dlx', () => {
         delete process.env['npm_package_devDependencies_typescript']
         delete process.env['npm_config_registry']
       }
+    })
+
+    it('injects SOCKET_CALLER_USER_AGENT from getCliUserAgent into the spawn env', async () => {
+      const result = await spawnCoanaDlx(['run', '.'], 'acme', {
+        coanaVersion: nextVersion(),
+      })
+      expect(result.ok).toBe(true)
+
+      const nodeCall = mockSpawn.mock.calls.find(([cmd]) => cmd === 'node')!
+      const nodeEnv = (nodeCall[2] as { env: NodeJS.ProcessEnv }).env
+
+      expect(nodeEnv['SOCKET_CALLER_USER_AGENT']).toBe(
+        'socket-cli/1.0.0 node/v20.0.0 test/x64',
+      )
+    })
+
+    it('lets a caller-supplied env.SOCKET_CALLER_USER_AGENT override the injected default', async () => {
+      // spawnCoanaDlx builds finalEnv as
+      // { ...process.env, ...constants.processEnv, ...mixinsEnv, ...spawnEnv }
+      // — spawnEnv (the caller's options.env) is spread last, so it wins.
+      const result = await spawnCoanaDlx(['run', '.'], 'acme', {
+        coanaVersion: nextVersion(),
+        env: { SOCKET_CALLER_USER_AGENT: 'custom-caller-agent/1.0.0' },
+      })
+      expect(result.ok).toBe(true)
+
+      const nodeCall = mockSpawn.mock.calls.find(([cmd]) => cmd === 'node')!
+      const nodeEnv = (nodeCall[2] as { env: NodeJS.ProcessEnv }).env
+
+      // caller-supplied env in options.env takes precedence over the injected default.
+      expect(nodeEnv['SOCKET_CALLER_USER_AGENT']).toBe(
+        'custom-caller-agent/1.0.0',
+      )
     })
   })
 
