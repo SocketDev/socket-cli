@@ -59,6 +59,15 @@ export interface SocketJson {
         target?: string | undefined
         verbose?: boolean | undefined
       }
+      dotnet?: {
+        disabled?: boolean | undefined
+        bin?: string | undefined
+        dotnetOpts?: string | undefined
+        excludeTargetFrameworks?: string | undefined
+        ignoreUnresolved?: boolean | undefined
+        targetFrameworks?: string | undefined
+        verbose?: boolean | undefined
+      }
       gradle?: {
         disabled?: boolean | undefined
         bin?: string | undefined

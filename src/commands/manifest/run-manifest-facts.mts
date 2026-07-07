@@ -175,6 +175,34 @@ export async function runManifestFacts({
     return
   }
 
+  // On failure the report already lists succeeded/failed configs; on success
+  // say what was scanned so users know what --exclude-configs (or, for dotnet,
+  // --exclude-target-frameworks) could trim.
+  if (!rendered.hasBlockingFailures && report.scannedConfigs.length) {
+    const noun =
+      ecosystem === 'dotnet' ? 'target framework(s)' : 'configuration(s)'
+    const limit = 20
+    const shown = report.scannedConfigs.slice(0, limit).join(', ')
+    const more =
+      report.scannedConfigs.length > limit
+        ? ` (+${report.scannedConfigs.length - limit} more)`
+        : ''
+    // The list is a union across projects, so name the project count to avoid
+    // reading as one project using every config; --verbose attributes each.
+    const projectCount = report.configsByProject.length
+    const across = projectCount > 1 ? ` across ${projectCount} project(s)` : ''
+    logger.info(
+      `Resolved ${report.scannedConfigs.length} ${noun}${across}: ${shown}${more}`,
+    )
+    if (verbose && projectCount > 1) {
+      logger.group()
+      for (const { configs, project } of report.configsByProject) {
+        logger.info(`- ${project}: ${configs.join(', ')}`)
+      }
+      logger.groupEnd()
+    }
+  }
+
   await fs.writeFile(factsPath, JSON.stringify(facts, null, 2), 'utf8')
 
   if (withFiles && sidecarAcc) {

@@ -220,6 +220,13 @@ jobs:
           fi
           bash src/commands/manifest/scripts/maven-extension/build-jar.sh
 
+      # Same bundling contract as the Maven jar: the socket-facts-dotnet tool is
+      # never committed and ships only in the published package. Invoked via bash
+      # directly for the same Socket Firewall shim reason as above; uses the .NET
+      # SDK pre-installed on the runner image.
+      - name: Build dotnet manifest tool
+        run: bash src/commands/manifest/scripts/dotnet-tool/build-tool.sh
+
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build:dist
       - name: Publish socket
         id: publish_socket

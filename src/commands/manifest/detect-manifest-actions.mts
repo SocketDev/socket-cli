@@ -1,7 +1,7 @@
 // The point here is to attempt to detect the various supported manifest files
 // the CLI can generate. This would be environments that we can't do server side
 
-import { existsSync } from 'node:fs'
+import { existsSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 
 import { debugLog } from '@socketsecurity/registry/lib/debug'
@@ -19,9 +19,26 @@ export interface GeneratableManifests {
   cdxgen: boolean
   count: number
   conda: boolean
+  dotnet: boolean
   gradle: boolean
   maven: boolean
   sbt: boolean
+}
+
+// A solution or project file at the top level marks a .NET root (matching the
+// root-level convention of the other detectors).
+const DOTNET_ROOT_FILE_RE = /\.(?:sln|slnx|csproj|fsproj|vbproj)$/i
+
+function hasDotnetRootFile(cwd: string): boolean {
+  try {
+    // Files only: a directory named e.g. `templates.csproj` must not trigger
+    // the dotnet pipeline (which aborts scans when the SDK is absent).
+    return readdirSync(cwd, { withFileTypes: true }).some(
+      entry => entry.isFile() && DOTNET_ROOT_FILE_RE.test(entry.name),
+    )
+  } catch {
+    return false
+  }
 }
 
 export async function detectManifestActions(
@@ -35,9 +52,21 @@ export async function detectManifestActions(
     cdxgen: false, // TODO
     count: 0,
     conda: false,
+    dotnet: false,
     gradle: false,
     maven: false,
     sbt: false,
+  }
+
+  if (sockJson?.defaults?.manifest?.dotnet?.disabled) {
+    debugLog(
+      'notice',
+      `[DEBUG] - dotnet auto-detection is disabled in ${SOCKET_JSON}`,
+    )
+  } else if (hasDotnetRootFile(cwd)) {
+    debugLog('notice', '[DEBUG] - Detected a .NET solution or project file')
+    output.dotnet = true
+    output.count += 1
   }
 
   if (sockJson?.defaults?.manifest?.bazel?.disabled) {

@@ -15,5 +15,9 @@ export type UnscannableConfig = {
 export type ResolutionReport = {
   failures: ResolutionFailure[]
   scannedConfigs: string[]
+  // Which configs each first-party project resolved, for attribution when the
+  // flat scannedConfigs union spans projects with different configs (common
+  // for dotnet, where every project picks its own target frameworks).
+  configsByProject: Array<{ project: string; configs: string[] }>
   unscannable: UnscannableConfig[]
 }

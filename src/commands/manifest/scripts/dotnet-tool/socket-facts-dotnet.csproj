@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- net6 floor so SDK 6/7 machines can run the tool; RollForward covers
+         every newer runtime. Built in CI with SDK 8+, hence the explicit
+         LangVersion. -->
+    <TargetFramework>net6.0</TargetFramework>
+    <RollForward>LatestMajor</RollForward>
+    <LangVersion>12</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>socket-facts-dotnet</AssemblyName>
+    <RootNamespace>Socket.Facts.Dotnet</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- MSBuild AND NuGet assemblies come from the locator-selected SDK at
+         runtime (the locator's resolver serves any assembly in the SDK dir);
+         these references are compile-time API surface only. Bundling our own
+         NuGet.* runtime copies is NOT an option: the in-process Restore loads
+         the SDK's NuGet.Build.Tasks, whose NuGet.* references then ref/def-
+         clash (0x80131040) with ours on any SDK whose NuGet version differs
+         from the bundled one. Versions are the OLDEST supported surface:
+         compile-low/run-high binds on every SDK >= 6, and the SDK's own NuGet
+         can always read its own restore output. Microsoft.Build 17.3.2 is the
+         newest with net6.0 assets. -->
+    <PackageReference Include="Microsoft.Build" Version="17.3.2" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Build.Locator" Version="1.7.8" />
+    <!-- Newtonsoft.Json is a NuGet.* dependency also shipped in the SDK dir. -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" ExcludeAssets="runtime" />
+    <!-- ExcludeAssets is not transitive, so every NuGet.* package in the
+         closure is listed explicitly to keep its runtime assets out of the
+         publish output. Credentials enables plugin credential providers
+         (e.g. Azure Artifacts) for the packages.config artifact downloads. -->
+    <PackageReference Include="NuGet.Common" Version="6.0.0" ExcludeAssets="runtime" />
+    <PackageReference Include="NuGet.Configuration" Version="6.0.0" ExcludeAssets="runtime" />
+    <PackageReference Include="NuGet.Credentials" Version="6.0.0" ExcludeAssets="runtime" />
+    <PackageReference Include="NuGet.DependencyResolver.Core" Version="6.0.0" ExcludeAssets="runtime" />
+    <PackageReference Include="NuGet.Frameworks" Version="6.0.0" ExcludeAssets="runtime" />
+    <PackageReference Include="NuGet.LibraryModel" Version="6.0.0" ExcludeAssets="runtime" />
+    <PackageReference Include="NuGet.Packaging" Version="6.0.0" ExcludeAssets="runtime" />
+    <PackageReference Include="NuGet.ProjectModel" Version="6.0.0" ExcludeAssets="runtime" />
+    <PackageReference Include="NuGet.Protocol" Version="6.0.0" ExcludeAssets="runtime" />
+    <PackageReference Include="NuGet.Versioning" Version="6.0.0" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+</Project>

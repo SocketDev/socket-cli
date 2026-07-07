@@ -286,49 +286,21 @@ allprojects { project ->
         n.contains('classpath') || n == 'compile' || n == 'runtime'
       }
 
-      // Config-name glob to a case-SENSITIVE regex (matching is documented as case-sensitive).
-      // Supports `*`, `?`, and `[...]` character classes: enumerations (`[cC]`), ranges (`[a-z]`),
-      // and `[!..]`/`[^..]` negation. A malformed glob falls back to a literal match, never throws.
-      def globToRegex = { String glob ->
-        def sb = new StringBuilder()
-        int i = 0
-        int n = glob.length()
-        while (i < n) {
-          def ch = glob[i]
-          if (ch == '*') { sb << '.*'; i++ }
-          else if (ch == '?') { sb << '.'; i++ }
-          else if (ch == '[') {
-            int j = glob.indexOf(']', i + 1)
-            // Treat as a class only with a non-empty body; else a literal `[`.
-            if (j <= i + 1) { sb << '\\['; i++ }
-            else {
-              def body = glob.substring(i + 1, j)
-              boolean neg = body.startsWith('!')
-              if (neg) { body = body.substring(1) }
-              // Only literal chars and `-` ranges are meaningful; neutralize regex-class tricks.
-              body = body.replace('\\', '\\\\').replace('[', '\\[').replace('&', '\\&')
-              sb << '[' << (neg ? '^' : '') << body << ']'
-              i = j + 1
-            }
-          }
-          else if ('.\\^$|+(){}]'.contains(ch)) { sb << '\\' << ch; i++ }
-          else { sb << ch; i++ }
-        }
-        try {
-          java.util.regex.Pattern.compile(sb.toString())
-        } catch (java.util.regex.PatternSyntaxException e) {
-          java.util.regex.Pattern.compile(java.util.regex.Pattern.quote(glob))
-        }
-      }
-
-      // `-Psocket.includeConfigs`/`-Psocket.excludeConfigs`: comma-separated config-name globs. A
-      // config is walked when it matches some include (or there are none) AND matches no exclude.
+      // `-Psocket.includeConfigs`/`-Psocket.excludeConfigs`: comma-separated, PRE-COMPILED anchored
+      // regex pattern sources. The CLI compiles the user-facing globs in config-glob.mts (the single
+      // glob implementation, tested in CI); this script only Pattern.compile()s what it receives.
+      // A config is walked when it matches some include (or there are none) AND matches no exclude.
       def parsePatterns = { String s ->
         def out = []
         if (s != null && !s.trim().isEmpty()) {
           s.split(',').each { raw ->
             def p = raw.trim()
-            if (!p.isEmpty()) out << globToRegex(p)
+            if (!p.isEmpty()) {
+              // A pattern that doesn't compile is dropped, never thrown: the CLI emits a
+              // dialect-portable subset, so this only guards against a broken transport.
+              try { out << java.util.regex.Pattern.compile(p) }
+              catch (java.util.regex.PatternSyntaxException ignored) { }
+            }
           }
         }
         out

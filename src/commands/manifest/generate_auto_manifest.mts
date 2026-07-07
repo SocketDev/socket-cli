@@ -3,6 +3,7 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { extractBazelToMaven } from './bazel/extract_bazel_to_maven.mts'
+import { convertDotnetToFacts } from './convert-dotnet-to-facts.mts'
 import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
 import { convertMavenToFacts } from './convert-maven-to-facts.mts'
 import { convertSbtToFacts } from './convert-sbt-to-facts.mts'
@@ -150,6 +151,29 @@ export async function generateAutoManifest({
       await convertGradleToMaven(gradleArgs)
       abortManifestRunIfFailed('gradle', beforeExitCode)
     }
+  }
+
+  if (!sockJson?.defaults?.manifest?.dotnet?.disabled && detected.dotnet) {
+    logger.log('Detected a .NET solution/project, generating Socket facts...')
+    const beforeExitCode = process.exitCode
+    await convertDotnetToFacts({
+      bin: sockJson.defaults?.manifest?.dotnet?.bin ?? 'dotnet',
+      cwd,
+      dotnetOpts: parseBuildToolOpts(
+        sockJson.defaults?.manifest?.dotnet?.dotnetOpts,
+      ),
+      excludeConfigs:
+        sockJson.defaults?.manifest?.dotnet?.excludeTargetFrameworks ?? '',
+      ignoreUnresolved: Boolean(
+        sockJson.defaults?.manifest?.dotnet?.ignoreUnresolved,
+      ),
+      includeConfigs:
+        sockJson.defaults?.manifest?.dotnet?.targetFrameworks ?? '',
+      sidecarAcc,
+      verbose: Boolean(sockJson.defaults?.manifest?.dotnet?.verbose),
+      withFiles: computeArtifactsSidecar,
+    })
+    abortManifestRunIfFailed('dotnet', beforeExitCode)
   }
 
   if (!sockJson?.defaults?.manifest?.maven?.disabled && detected.maven) {

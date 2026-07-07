@@ -120,6 +120,20 @@ async function copyManifestScripts() {
         ' for a published build. Build it first: pnpm run build:maven-extension',
     )
   }
+  // Same contract for the dotnet tool: compiled by dotnet-tool/build-tool.sh,
+  // tolerated when absent in local dev, required for published builds.
+  const dotnetPublishDir = path.join(srcDir, 'dotnet-tool', 'publish')
+  if (existsSync(path.join(dotnetPublishDir, 'socket-facts-dotnet.dll'))) {
+    await fs.cp(dotnetPublishDir, path.join(destDir, 'dotnet-tool'), {
+      recursive: true,
+    })
+  } else if (constants.ENV[INLINED_SOCKET_CLI_PUBLISHED_BUILD]) {
+    throw new Error(
+      'socket-facts-dotnet tool not found at ' +
+        dotnetPublishDir +
+        ' for a published build. Build it first: pnpm run build:dotnet-tool',
+    )
+  }
 }
 
 async function copyBashCompletion() {

@@ -16,6 +16,9 @@ vi.mock('./convert_gradle_to_maven.mts', () => ({
 vi.mock('./convert_sbt_to_maven.mts', () => ({
   convertSbtToMaven: vi.fn(async () => undefined),
 }))
+vi.mock('./convert-dotnet-to-facts.mts', () => ({
+  convertDotnetToFacts: vi.fn(async () => undefined),
+}))
 vi.mock('./convert-gradle-to-facts.mts', () => ({
   convertGradleToFacts: vi.fn(async () => undefined),
 }))
@@ -32,6 +35,7 @@ vi.mock('../../utils/socket-json.mts', () => ({
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { extractBazelToMaven } from './bazel/extract_bazel_to_maven.mts'
+import { convertDotnetToFacts } from './convert-dotnet-to-facts.mts'
 import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { generateAutoManifest } from './generate_auto_manifest.mts'
@@ -44,7 +48,9 @@ const baseDetected = {
   cdxgen: false,
   conda: false,
   count: 0,
+  dotnet: false,
   gradle: false,
+  maven: false,
   sbt: false,
 }
 
@@ -298,6 +304,71 @@ describe('generateAutoManifest — bazel branch', () => {
       expect.objectContaining({
         out: './.socket-auto-manifest',
         outLayout: 'flat',
+      }),
+    )
+  })
+})
+
+describe('generateAutoManifest — dotnet branch', () => {
+  beforeEach(() => {
+    vi.mocked(convertDotnetToFacts).mockClear()
+    vi.mocked(readOrDefaultSocketJson).mockReturnValue({} as SocketJson)
+  })
+
+  it('generates dotnet facts when detected and not disabled', async () => {
+    await generateAutoManifest({
+      cwd: '/tmp/repo',
+      detected: { ...baseDetected, count: 1, dotnet: true },
+      outputKind: 'text',
+      verbose: false,
+    })
+    expect(convertDotnetToFacts).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bin: 'dotnet',
+        cwd: '/tmp/repo',
+        ignoreUnresolved: false,
+      }),
+    )
+  })
+
+  it('skips dotnet when defaults.manifest.dotnet.disabled is true', async () => {
+    vi.mocked(readOrDefaultSocketJson).mockReturnValue({
+      defaults: { manifest: { dotnet: { disabled: true } } },
+    } as SocketJson)
+    await generateAutoManifest({
+      cwd: '/tmp/repo',
+      detected: { ...baseDetected, count: 1, dotnet: true },
+      outputKind: 'text',
+      verbose: false,
+    })
+    expect(convertDotnetToFacts).not.toHaveBeenCalled()
+  })
+
+  it('honors socket.json dotnet defaults (bin, target frameworks, ignoreUnresolved)', async () => {
+    vi.mocked(readOrDefaultSocketJson).mockReturnValue({
+      defaults: {
+        manifest: {
+          dotnet: {
+            bin: '/opt/dotnet/dotnet',
+            excludeTargetFrameworks: 'netstandard*',
+            ignoreUnresolved: true,
+            targetFrameworks: 'net8.0',
+          },
+        },
+      },
+    } as SocketJson)
+    await generateAutoManifest({
+      cwd: '/tmp/repo',
+      detected: { ...baseDetected, count: 1, dotnet: true },
+      outputKind: 'text',
+      verbose: false,
+    })
+    expect(convertDotnetToFacts).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bin: '/opt/dotnet/dotnet',
+        excludeConfigs: 'netstandard*',
+        ignoreUnresolved: true,
+        includeConfigs: 'net8.0',
       }),
     )
   })

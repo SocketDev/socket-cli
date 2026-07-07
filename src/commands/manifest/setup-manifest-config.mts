@@ -59,6 +59,11 @@ export async function setupManifestConfig(
       description: `Generate ${REQUIREMENTS_TXT} from a Conda environment.yml`,
     },
     {
+      name: '.NET (dotnet)'.padEnd(30, ' '),
+      value: 'dotnet',
+      description: 'Generate a Socket facts file through the dotnet SDK',
+    },
+    {
       name: 'Gradle'.padEnd(30, ' '),
       value: 'gradle',
       description: 'Generate a Socket facts file or pom.xml through gradle',
@@ -143,6 +148,13 @@ export async function setupManifestConfig(
         sockJson.defaults.manifest.conda = {}
       }
       result = await setupConda(sockJson.defaults.manifest.conda)
+      break
+    }
+    case 'dotnet': {
+      if (!sockJson.defaults.manifest.dotnet) {
+        sockJson.defaults.manifest.dotnet = {}
+      }
+      result = await setupDotnet(sockJson.defaults.manifest.dotnet)
       break
     }
     case 'gradle': {
@@ -255,6 +267,85 @@ async function setupConda(
         delete config.outfile
       }
     }
+  }
+
+  const verbose = await askForVerboseFlag(config.verbose)
+  if (verbose === undefined) {
+    return canceledByUser()
+  } else if (verbose === 'yes' || verbose === 'no') {
+    config.verbose = verbose === 'yes'
+  } else {
+    delete config.verbose
+  }
+
+  return notCanceled()
+}
+
+async function setupDotnet(
+  config: NonNullable<
+    NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['dotnet']
+  >,
+): Promise<CResult<{ canceled: boolean }>> {
+  const bin = await askForBin(config.bin || 'dotnet')
+  if (bin === undefined) {
+    return canceledByUser()
+  } else if (bin) {
+    config.bin = bin
+  } else {
+    delete config.bin
+  }
+
+  const opts = await input({
+    message:
+      '(--dotnet-opts) Enter MSBuild property tokens to apply to the whole facts session (e.g. -p:Configuration=Release)',
+    default: config.dotnetOpts || '',
+    required: false,
+  })
+  if (opts === undefined) {
+    return canceledByUser()
+  } else if (opts) {
+    config.dotnetOpts = opts
+  } else {
+    delete config.dotnetOpts
+  }
+
+  const targetFrameworks = await input({
+    message:
+      '(--target-frameworks) Comma-separated target-framework globs to resolve, e.g. net8.0 or net* (blank = all restored target frameworks)',
+    default: config.targetFrameworks || '',
+    required: false,
+  })
+  if (targetFrameworks === undefined) {
+    return canceledByUser()
+  } else if (targetFrameworks) {
+    config.targetFrameworks = targetFrameworks
+  } else {
+    delete config.targetFrameworks
+  }
+
+  const excludeTargetFrameworks = await input({
+    message:
+      '(--exclude-target-frameworks) Comma-separated target-framework globs to skip (blank = none)',
+    default: config.excludeTargetFrameworks || '',
+    required: false,
+  })
+  if (excludeTargetFrameworks === undefined) {
+    return canceledByUser()
+  } else if (excludeTargetFrameworks) {
+    config.excludeTargetFrameworks = excludeTargetFrameworks
+  } else {
+    delete config.excludeTargetFrameworks
+  }
+
+  const ignoreUnresolved = await askForIgnoreUnresolvedFlag(
+    config.ignoreUnresolved,
+  )
+  if (ignoreUnresolved === undefined) {
+    return canceledByUser()
+  } else if (ignoreUnresolved === 'yes' || ignoreUnresolved === 'no') {
+    config.ignoreUnresolved = ignoreUnresolved === 'yes'
+  } else {
+    delete config.ignoreUnresolved
   }
 
   const verbose = await askForVerboseFlag(config.verbose)

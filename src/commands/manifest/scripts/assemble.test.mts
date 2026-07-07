@@ -60,3 +60,66 @@ describe('records → assemble → sidecar', () => {
     expect(byName.get('bom')).toMatchObject({ targets: [], sources: [] })
   })
 })
+
+// Records as emitted by the socket-facts-dotnet tool: groupless nuget
+// coordinates, one prod + one dev root per (project, target framework).
+const DOTNET_RECORDS = [
+  'meta\tdotnet\t8.0.414\t',
+  'project\t/abs/MyApp/MyApp.csproj\t\tMyApp\t1.0.0\tMyApp',
+  'projectSrc\t/abs/MyApp/MyApp.csproj\t/abs/MyApp',
+  'root\t/abs/MyApp/MyApp.csproj|net8.0|prod\t/abs/MyApp/MyApp.csproj\tnet8.0\t1',
+  'node\t/abs/MyApp/MyApp.csproj|net8.0|prod\tNewtonsoft.Json:13.0.3\t\tNewtonsoft.Json\t13.0.3\t\t\t1',
+  'file\t/abs/MyApp/MyApp.csproj|net8.0|prod\tNewtonsoft.Json:13.0.3\t/abs/nuget/newtonsoft.json/13.0.3/lib/net6.0/Newtonsoft.Json.dll',
+  'root\t/abs/MyApp/MyApp.csproj|net8.0|dev\t/abs/MyApp/MyApp.csproj\tnet8.0\t0',
+  'node\t/abs/MyApp/MyApp.csproj|net8.0|dev\tNuGet.Versioning:6.12.1\t\tNuGet.Versioning\t6.12.1\t\t\t1',
+  'scanned\tnet8.0',
+].join('\n')
+
+describe('dotnet records → assemble', () => {
+  it('emits groupless nuget components with prod/dev split flags', () => {
+    const { artifactPaths, facts } = assembleFacts(
+      parseRecords(DOTNET_RECORDS),
+      {
+        fileExists: () => true,
+      },
+    )
+
+    expect(facts.metadata).toEqual({
+      format: 'socket-facts-sbom',
+      tool: 'dotnet',
+      toolVersion: '8.0.414',
+    })
+
+    const newtonsoft = facts.components.find(c => c.name === 'Newtonsoft.Json')
+    expect(newtonsoft).toMatchObject({
+      type: 'nuget',
+      id: 'Newtonsoft.Json:13.0.3',
+      version: '13.0.3',
+      direct: true,
+    })
+    // Groupless: no namespace key at all, and no empty qualifiers.
+    expect(newtonsoft).not.toHaveProperty('namespace')
+    expect(newtonsoft).not.toHaveProperty('qualifiers')
+    expect(newtonsoft?.dev).toBeUndefined()
+
+    const versioning = facts.components.find(c => c.name === 'NuGet.Versioning')
+    expect(versioning).toMatchObject({ type: 'nuget', dev: true, direct: true })
+
+    const project = facts.projects?.find(p => p.name === 'MyApp')
+    expect(project).toMatchObject({
+      type: 'nuget',
+      subprojectDir: 'MyApp',
+      dependencies: [
+        'NuGet.Versioning:6.12.1',
+        'Newtonsoft.Json:13.0.3',
+      ].sort(),
+    })
+
+    expect(artifactPaths.targetsByCoord.get('Newtonsoft.Json:13.0.3')).toEqual([
+      '/abs/nuget/newtonsoft.json/13.0.3/lib/net6.0/Newtonsoft.Json.dll',
+    ])
+    expect(artifactPaths.sourcesByCoord.get('MyApp:1.0.0')).toEqual([
+      '/abs/MyApp',
+    ])
+  })
+})
