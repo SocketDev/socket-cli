@@ -10,6 +10,7 @@ import { safeReadFile } from '@socketsecurity/lib-stable/fs/read-file'
 import { defaultIgnore } from '@socketsecurity/lib-stable/globs/defaults'
 import { readPackageJson } from '@socketsecurity/lib-stable/packages/read'
 import { transform } from '@socketsecurity/lib-stable/streams/transform'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { isNonEmptyString } from '@socketsecurity/lib-stable/strings/predicates'
 
 import { homePath } from '../../constants/paths.mts'
@@ -216,7 +217,7 @@ export function ignoreFileLinesToGlobPatterns(
   filepath: string,
   cwd: string,
 ): string[] {
-  const base = path.relative(cwd, path.dirname(filepath)).replace(/\\/g, '/')
+  const base = normalizePath(path.relative(cwd, path.dirname(filepath)))
   const patterns = []
   for (let i = 0, { length } = lines; i < length; i += 1) {
     const pattern = lines[i]!.trim()
