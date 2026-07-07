@@ -71,7 +71,6 @@ describe('globWithGitIgnore() large-monorepo gitignore memory', () => {
       // Memory: 300k nominal patterns collapse to one compiled matcher, so the
       // walk stays far below the ~250MB code-space cliff that aborted the scan.
       const grew = after - before
-      // eslint-disable-next-line no-console
       console.log(
         `code_space: ${before.toFixed(1)} -> ${after.toFixed(1)} MB (grew ${grew.toFixed(1)})`,
       )
