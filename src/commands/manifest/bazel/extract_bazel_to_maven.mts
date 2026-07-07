@@ -2,37 +2,43 @@ import {
   existsSync,
   promises as fs,
   mkdirSync,
-  readFileSync,
-  realpathSync,
+  mkdtempSync,
+  readdirSync,
 } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { resolveBazelBinary } from './bazel-bin-detect.mts'
-import {
-  parseBazelBuildOutput,
-  parseUnsortedDepsJson,
-} from './bazel-build-parser.mts'
+import { runMetadataCqueryForRepo } from './bazel-cquery.mts'
 import { ensureJavaOnPath } from './bazel-java-shim.mts'
 import { validateOutputBase } from './bazel-output-base-check.mts'
 import { provisionPythonShim } from './bazel-python-shim.mts'
 import {
-  buildProbeFor,
-  runBazelModShowVisibleRepos,
+  buildMavenProbeFor,
+  runBazelModShowMavenExtension,
 } from './bazel-query-runner.mts'
 import {
-  discoverMavenRepos,
-  parseVisibleRepoCandidates,
+  CONVENTIONAL_MAVEN_REPO_NAMES,
+  ROOT_MODULE_IMPORTER,
+  classifyShowExtensionResult,
+  parseShowExtensionOutput,
+  probeCandidate,
 } from './bazel-repo-discovery.mts'
 import {
   detectWorkspaceMode,
   getBazelInvocationFlags,
 } from './bazel-workspace-detect.mts'
+import { findWorkspaceRoots } from './bazel-workspace-walk.mts'
 import { getErrorCause } from '../../../utils/errors.mts'
+import { IGNORED_DIRS } from '../../../utils/glob.mts'
 
-import type { ExtractedArtifact } from './bazel-build-parser.mts'
+import type { CqueryRepoResult, ExtractedArtifact } from './bazel-cquery.mts'
 import type { BazelQueryOptions } from './bazel-query-runner.mts'
+import type { WorkspaceMode } from './bazel-workspace-detect.mts'
+import type { Dirent } from 'node:fs'
 
 export type ExtractBazelOptions = {
   bazelFlags: string | undefined
@@ -42,17 +48,128 @@ export type ExtractBazelOptions = {
   cwd: string
   // Optional env override used for python-shim PATH augmentation.
   env?: NodeJS.ProcessEnv
+  // Directory basenames the workspace walker must not descend into.
+  // Caller-supplied so the orchestrator stays generic; the CLI command
+  // composes the codebase-wide `IGNORED_DIRS` with Bazel-specific dirs
+  // like `.socket-auto-manifest`.
+  ignoreDirNames?: ReadonlySet<string> | undefined
+  // Directory basename prefixes the workspace walker must not descend
+  // into. Caller-supplied so the orchestrator stays generic; the CLI
+  // command supplies `bazel-` for Bazel's output_base symlinks.
+  ignoreDirPrefixes?: readonly string[] | undefined
   out: string
   // Use the auto-manifest sibling directory instead of writing directly to `out`.
   outLayout?: 'flat'
+  // Per-repo cquery timeout in milliseconds. When the caller leaves this
+  // unset the orchestrator falls back to DEFAULT_PER_REPO_TIMEOUT_MS (the
+  // auto-manifest default, kept short so the wider scan is not stalled). The
+  // explicit `socket manifest bazel` command wires this to a CLI flag with a
+  // longer default.
+  perRepoTimeoutMs?: number | undefined
   verbose: boolean
+}
+
+// Best-effort-per-hub produces four distinct run outcomes a single `ok`
+// boolean would conflate:
+//  - `complete`    — every discovered hub extracted cleanly; >=1 manifest.
+//  - `partial`     — >=1 manifest written, but at least one hub failed,
+//                    timed out, or dropped edges. Worth uploading, but the
+//                    graph is known-incomplete.
+//  - `noEcosystem` — no Bazel/Maven found. Whether that's an error is
+//                    caller-dependent (tolerated in auto mode, error in
+//                    explicit mode), so it must NOT be flattened into the
+//                    failure states.
+//  - `hardFailure` — zero manifests written and it wasn't `noEcosystem`
+//                    (discovery threw, or every discovered hub failed).
+//                    Always an error for every caller.
+export type ExtractBazelStatus =
+  | 'complete'
+  | 'hardFailure'
+  | 'noEcosystem'
+  | 'partial'
+
+// Per-hub extraction state inside one workspace. Recorded so the CLI can emit
+// a machine-readable completeness signal instead of presenting a partial
+// extraction as complete.
+//  - `populated`     — the hub yielded >=1 artifact and a manifest was written.
+//  - `empty`         — the hub is defined but has no Maven targets.
+//  - `not-defined`   — the probed conventional name does not exist here.
+//  - `skipped-lockfile` — a committed maven_install.json already covers this
+//                    hub, so the CLI deliberately did not re-emit it.
+//  - `failed`        — the hub's cquery errored, timed out, or its graph was
+//                    known-incomplete (dropped/pruned edges, --keep_going).
+//  - `indeterminate` — discovery could not classify the hub (probe threw or
+//                    returned an unrecognized error); NOT evidence of absence.
+export type HubState =
+  | 'populated'
+  | 'empty'
+  | 'not-defined'
+  | 'skipped-lockfile'
+  | 'failed'
+  | 'indeterminate'
+
+export type HubOutcome = {
+  hub: string
+  state: HubState
+  // Short, machine-stable reason when the hub is `failed`/`indeterminate`.
+  reason?: string | undefined
+}
+
+// Per-workspace outcome. `load` distinguishes a workspace we could not even
+// read (`failed` — e.g. an unbound-var MODULE.bazel fragment) from one we
+// analyzed (`loaded`). A workspace that failed to load contributes to a
+// hard failure when nothing else was analyzable, and to a partial otherwise.
+export type WorkspaceOutcome = {
+  relPath: string
+  load: 'loaded' | 'failed'
+  hubs: HubOutcome[]
+  // Set when the workspace itself could not be analyzed.
+  reason?: string | undefined
 }
 
 export type ExtractBazelResult = {
   artifactCount: number
-  manifestPath?: string | undefined
-  ok: boolean
+  manifestPaths: string[]
+  status: ExtractBazelStatus
+  // True only when `status === 'complete'`. Surfaced so downstream consumers
+  // (and the CLI's emitted summary) get a single machine-readable
+  // completeness flag without re-deriving it from `status`.
+  complete: boolean
+  // Per-workspace / per-hub analyzability breakdown backing the completeness
+  // signal. Empty for `noEcosystem` and early `hardFailure` (toolchain setup
+  // failed before any workspace was inspected).
+  workspaceOutcomes: WorkspaceOutcome[]
 }
+
+const DEFAULT_PER_REPO_TIMEOUT_MS = 60_000
+const REAP_TIMEOUT_MS = 10_000
+
+// Machine-readable completeness signal emitted alongside the synthetic
+// manifests. A `complete: false` summary tells a downstream consumer (e.g.
+// depscan) that the uploaded SBOM is known-incomplete so it must not be
+// treated as an authoritative full closure. Enforcement of this signal is a
+// separate downstream follow-up; the CLI only emits it.
+const COMPLETENESS_SUMMARY_FILE_NAME = 'socket-bazel-manifest-summary.json'
+
+// Default directory-prune policy for the Bazel workspace walk. The
+// orchestrator applies this unconditionally so neither caller (the explicit
+// `socket manifest bazel` command nor `--auto-manifest`) can omit it and let
+// the walk descend `node_modules`/VCS/vendored trees. Callers may
+// pass extra names/prefixes to EXTEND, not replace, this set.
+export const DEFAULT_BAZEL_WALKER_IGNORE_DIR_NAMES: ReadonlySet<string> =
+  new Set([
+    ...IGNORED_DIRS,
+    '.hg',
+    '.idea',
+    '.pnpm-store',
+    '.socket-auto-manifest',
+    '.svn',
+    '.vscode',
+  ])
+// Bazel's `bazel-*` output_base symlinks.
+export const DEFAULT_BAZEL_WALKER_IGNORE_DIR_PREFIXES: readonly string[] = [
+  'bazel-',
+]
 
 type CoordPair = { groupArtifact: string; version: string }
 
@@ -70,262 +187,501 @@ function splitCoord(c: string): CoordPair | null {
 }
 
 type MavenInstallJsonCurrent = {
-  artifacts: Record<string, { shasums: { jar?: string }; version: string }>
+  artifacts: Record<string, { version: string }>
   dependencies: Record<string, string[]>
   repositories?: Record<string, string[]>
 }
 
-type LabelCoordIndex = {
-  fullLabels: Map<string, string>
-  suffixToCoords: Map<string, Set<string>>
+export type NormalizeResult = {
+  json: MavenInstallJsonCurrent
+  // Versionless keys skipped because the coordinate was malformed (key shape
+  // outside 2-4 non-empty segments, or an empty version). Known data loss.
+  droppedArtifacts: string[]
+  // `source -> target` edges pruned because one endpoint wasn't an emitted
+  // artifact. Known data loss.
+  prunedEdges: string[]
 }
 
-// Builds a lookup from rule label suffix (e.g. ":com_google_guava_guava") to canonical coord.
-function buildLabelToCoordMap(artifacts: ExtractedArtifact[]): LabelCoordIndex {
-  const fullLabels = new Map<string, string>()
-  const suffixToCoords = new Map<string, Set<string>>()
-  for (const a of artifacts) {
-    // The rule name (e.g. "com_google_guava_guava") becomes the path under @<repo>//:<name>.
-    // We record by ":<name>" suffix so we can look up regardless of repo name.
-    const suffix = `:${a.ruleName}`
-    const coords = suffixToCoords.get(suffix) ?? new Set<string>()
-    coords.add(a.mavenCoordinates)
-    suffixToCoords.set(suffix, coords)
-    if (a.sourceRepo) {
-      fullLabels.set(`@${a.sourceRepo}//${suffix}`, a.mavenCoordinates)
-    }
+// A versionless `maven_install.json` key must have 2-4 non-empty
+// colon-separated segments (`g:a`, `g:a:ext`, `g:a:ext:classifier`) — exactly
+// the range depscan's `coordinateToParts` accepts. A key outside that range,
+// or with an empty segment, is rejected after upload, so reject it locally.
+function isValidVersionlessKey(key: string): boolean {
+  const parts = key.split(':')
+  if (parts.length < 2 || parts.length > 4) {
+    return false
   }
-  return { fullLabels, suffixToCoords }
+  return parts.every(p => p.length > 0)
 }
 
-// Converts a Bazel dep label to a Maven coordinate, using the label-to-coord map.
-// Returns null when the label is not recognised.
-function depLabelToCoord(
-  label: string,
-  labelToCoord: LabelCoordIndex,
-): string | null {
-  // label may be "@maven//:com_google_guava_failureaccess".
-  const colon = label.lastIndexOf(':')
-  if (colon < 0) {
-    return null
-  }
-  const fullMatch = labelToCoord.fullLabels.get(label)
-  if (fullMatch) {
-    return fullMatch
-  }
-  const key = label.slice(colon)
-  const suffixMatches = labelToCoord.suffixToCoords.get(key)
-  if (!suffixMatches) {
-    return null
-  }
-  if (suffixMatches.size > 1) {
-    throw new Error(
-      `Ambiguous Bazel dependency label ${label} maps rule suffix ${key} to multiple Maven coordinates: ${Array.from(
-        suffixMatches,
-      )
-        .sort()
-        .join(
-          ', ',
-        )}. The generated maven_install.json cannot resolve this dependency label losslessly.`,
-    )
-  }
-  return Array.from(suffixMatches)[0] ?? null
-}
-
+// Builds a modern `maven_install.json` from artifacts whose `deps` already
+// hold resolved versionless coordinates (the cquery parser resolves edge
+// labels against each repo's own targets while `repoName` is in scope, so no
+// label-to-coordinate resolution happens here). Keys are versionless `g:a`
+// (preserving any packaging/classifier segments); dependency values are the
+// resolved coordinate sets.
+//
+// Two-phase so the emitted graph is internally closed and survives the server
+// parser, which rejects malformed coordinates and edges referencing unlisted
+// artifacts (and can abort after enough errors). Phase 1 builds (and
+// validates) the artifact keys; phase 2 emits only edges whose source AND
+// target are valid emitted keys. Anything dropped is reported so the caller
+// can flip the hub partial — never silently lost post-upload.
 export function normalizeToMavenInstallJson(
   artifacts: ExtractedArtifact[],
-): MavenInstallJsonCurrent {
-  const labelToCoord = buildLabelToCoordMap(artifacts)
+): NormalizeResult {
   const out: MavenInstallJsonCurrent = {
     artifacts: {},
     dependencies: {},
   }
+  const droppedArtifacts: string[] = []
+  const prunedEdges: string[] = []
   const versionsByGroupArtifact = new Map<string, string>()
-  const dependencySets = new Map<string, Set<string>>()
+  // Phase 1: artifacts. Validate each key (shape + non-empty version) before
+  // accepting it; record the set of valid emitted keys.
+  const depsByKey = new Map<string, Set<string>>()
   for (const a of artifacts) {
     const split = splitCoord(a.mavenCoordinates)
     if (!split) {
+      droppedArtifacts.push(a.mavenCoordinates)
       continue
     }
-    const existingVersion = versionsByGroupArtifact.get(split.groupArtifact)
+    const key = split.groupArtifact
+    // A `g:a:` coordinate strips to the valid-shaped key `g:a` but an empty
+    // version, which the server rejects — require both.
+    if (!isValidVersionlessKey(key) || !split.version) {
+      droppedArtifacts.push(a.mavenCoordinates)
+      continue
+    }
+    const existingVersion = versionsByGroupArtifact.get(key)
     if (existingVersion && existingVersion !== split.version) {
       throw new Error(
-        `Conflicting versions for ${split.groupArtifact}: ${existingVersion}, ${split.version}. The generated maven_install.json cannot represent multiple versions for the same group:artifact losslessly.`,
+        `Conflicting versions for ${key}: ${existingVersion}, ${split.version}. The generated maven_install.json cannot represent multiple versions for the same group:artifact losslessly.`,
       )
     }
     if (!existingVersion) {
-      versionsByGroupArtifact.set(split.groupArtifact, split.version)
-      out.artifacts[split.groupArtifact] = {
-        shasums: a.mavenSha256 ? { jar: a.mavenSha256 } : {},
-        version: split.version,
-      }
-    } else if (
-      a.mavenSha256 &&
-      !out.artifacts[split.groupArtifact]?.shasums.jar
-    ) {
-      out.artifacts[split.groupArtifact] = {
-        shasums: { jar: a.mavenSha256 },
-        version: split.version,
-      }
+      versionsByGroupArtifact.set(key, split.version)
+      out.artifacts[key] = { version: split.version }
     }
-    // Dependency keys in maven_install.json use "g:a" (no version),
-    // matching the canonical rules_jvm_external lockfile shape.
-    // Only emit an entry when there are actual dependencies (lockfile omits
-    // artifacts with an empty dep list).
-    const depKey = split.groupArtifact
-    const depCoords = dependencySets.get(depKey) ?? new Set<string>()
-    for (const depLabel of a.deps) {
-      // First try our rule-label lookup (the common case for --output=build text).
-      const c = depLabelToCoord(depLabel, labelToCoord)
-      if (c) {
-        // c is "g:a:v"; strip the version to produce "g:a" per lockfile shape.
-        const cs = splitCoord(c)
-        depCoords.add(cs ? cs.groupArtifact : c)
-      } else if (
-        depLabel.includes(':') &&
-        !depLabel.startsWith('@') &&
-        !depLabel.startsWith(':')
-      ) {
-        // unsorted_deps.json deps may be "g:a:v" in older files or
-        // "g:a" in v2 lock-file-shaped maps. Strip only when a version is
-        // present.
-        const parts = depLabel.split(':')
-        depCoords.add(
-          parts.length >= 3 ? parts.slice(0, -1).join(':') : depLabel,
-        )
-      }
+    // Accumulate the candidate edge set keyed by "g:a" (no version), matching
+    // the canonical rules_jvm_external lockfile shape. Pruned against valid
+    // keys in phase 2.
+    const depCoords = depsByKey.get(key) ?? new Set<string>()
+    for (const depCoord of a.deps) {
+      depCoords.add(depCoord)
     }
     if (depCoords.size) {
-      dependencySets.set(depKey, depCoords)
+      depsByKey.set(key, depCoords)
     }
   }
-  for (const [depKey, depCoords] of dependencySets) {
-    out.dependencies[depKey] = Array.from(depCoords)
+  // Phase 2: edges. Emit only where both source and target are emitted keys.
+  const validKeys = new Set(Object.keys(out.artifacts))
+  for (const [key, depCoords] of depsByKey) {
+    if (!validKeys.has(key)) {
+      for (const target of depCoords) {
+        prunedEdges.push(`${key} -> ${target}`)
+      }
+      continue
+    }
+    const kept: string[] = []
+    for (const target of depCoords) {
+      if (validKeys.has(target)) {
+        kept.push(target)
+      } else {
+        prunedEdges.push(`${key} -> ${target}`)
+      }
+    }
+    if (kept.length) {
+      out.dependencies[key] = kept
+    }
   }
-  return out
+  return { droppedArtifacts, json: out, prunedEdges }
 }
 
-// Resolves the bazel `external/` dir for the given workspace.
-//
-// Bazel's `bazel-out/` convenience symlink points at
-// `<output_base>/execroot/<workspace>/bazel-out/`; the `external/` dir we
-// want is at `<output_base>/external/`. `path.join` is purely lexical and
-// would collapse `bazel-out/..` to the cwd itself, which is the wrong place
-// Resolve the symlink at the filesystem level and walk up to
-// `<output_base>` instead.
-function bazelExternalDir(
-  cwd: string,
-  outputBase: string | undefined,
-): string | null {
-  if (outputBase) {
-    return path.join(outputBase, 'external')
+// Cross-workspace dedup keyed on the full Maven coordinate string
+// (`g:a:v[:classifier]`). The metadata cquery emits one entry per rule,
+// so the same `androidx.annotation:annotation:1.8.2` can show up in
+// `examples/dagger/@maven` and `examples/ksp/@maven` in rules_kotlin —
+// downstream only needs it once. Each occurrence resolves its edges against
+// its own repo's targets, so the resolved `deps` can legitimately differ
+// between occurrences; union them rather than keeping only the first, or
+// real graph edges would be silently dropped.
+export function dedupArtifactsByCoord(
+  artifacts: ExtractedArtifact[],
+): ExtractedArtifact[] {
+  const byCoord = new Map<string, ExtractedArtifact>()
+  for (const a of artifacts) {
+    const existing = byCoord.get(a.mavenCoordinates)
+    if (!existing) {
+      byCoord.set(a.mavenCoordinates, { ...a, deps: [...a.deps] })
+      continue
+    }
+    const merged = new Set(existing.deps)
+    for (const dep of a.deps) {
+      merged.add(dep)
+    }
+    existing.deps = [...merged]
   }
-  const bazelOutLink = path.join(cwd, 'bazel-out')
-  if (!existsSync(bazelOutLink)) {
-    return null
+  return [...byCoord.values()]
+}
+
+// The committed lockfile name the server-side walker already ingests for a
+// hub: `maven_install.json` for a hub literally named `maven`, else
+// `<hub>_maven_install.json`. Centralised so the gate and the synthetic
+// writer agree on the name.
+function hubManifestFileName(repoName: string): string {
+  return repoName === 'maven'
+    ? 'maven_install.json'
+    : `${repoName}_maven_install.json`
+}
+
+// Directory basenames the CLI itself writes synthetic manifests into. A file
+// living inside one of these is our own output, NOT a committed lockfile, no
+// matter which run wrote it: the auto-manifest sibling dir (flat layout) and
+// the explicit-command default output dir. The gate must never read a file in
+// one of these as evidence of committed coverage, or a stale prior-run
+// synthetic file would let a later run wrongly skip a hub.
+const CLI_SYNTHETIC_OUTPUT_DIR_NAMES: ReadonlySet<string> = new Set([
+  '.socket-auto-manifest',
+  'bazel-manifests',
+])
+
+// Does a committed lockfile already cover THIS hub at THIS hub's own workspace
+// root? Each workspace is processed independently by the caller, and a
+// committed lockfile covers the workspace it lives IN — a nested workspace's
+// `maven_install.json` covers that nested hub, not this one. The server-side
+// walker ingests every committed `**/*_maven_install.json`, but each one only
+// covers its own workspace. So the gate checks DEPTH-0 only: a lockfile named
+// for this hub sitting directly in `workspaceRoot`. A recursive descent would
+// let an unrelated nested/fixture lockfile mask an uncovered root hub —
+// silently dropping its distinct coordinates.
+//
+// The CLI's own synthetic output is never a committed lockfile: we skip the
+// current run's `manifestDir` and any known synthetic output dir basename so a
+// stale prior-run file can't be misread as committed.
+function committedLockfileCovers(args: {
+  fileName: string
+  manifestDir: string
+  workspaceRoot: string
+}): string | undefined {
+  const { fileName, manifestDir, workspaceRoot } = args
+  // The current run's synthetic output dir, resolved for an exact compare.
+  const manifestDirResolved = path.resolve(manifestDir)
+  const workspaceRootResolved = path.resolve(workspaceRoot)
+  // The committed lockfile, if any, lives directly in the hub's own workspace
+  // root — not in a nested workspace and not in the CLI's output dir.
+  if (
+    workspaceRootResolved === manifestDirResolved ||
+    CLI_SYNTHETIC_OUTPUT_DIR_NAMES.has(path.basename(workspaceRootResolved))
+  ) {
+    // The workspace root IS an output location; nothing here is committed.
+    return undefined
+  }
+  let entries: Dirent[]
+  try {
+    entries = readdirSync(workspaceRootResolved, { withFileTypes: true })
+  } catch {
+    return undefined
+  }
+  for (const entry of entries) {
+    if (entry.isFile() && entry.name === fileName) {
+      return path.join(workspaceRootResolved, entry.name)
+    }
+  }
+  return undefined
+}
+
+// Emit the machine-readable completeness summary next to the manifests. This
+// is the CLI's honest "is this SBOM complete?" signal in the emitted output;
+// it carries the run status plus the per-workspace / per-hub breakdown so a
+// downstream consumer can detect a known-incomplete upload. Best-effort: a
+// failure to write the summary must never sink an otherwise-usable run, so it
+// is logged (under verbose) and swallowed.
+async function writeCompletenessSummary(args: {
+  artifactCount: number
+  complete: boolean
+  manifestDir: string
+  manifestPaths: string[]
+  status: ExtractBazelStatus
+  verbose: boolean
+  workspaceOutcomes: WorkspaceOutcome[]
+}): Promise<void> {
+  const {
+    artifactCount,
+    complete,
+    manifestDir,
+    manifestPaths,
+    status,
+    verbose,
+    workspaceOutcomes,
+  } = args
+  const summary = {
+    artifactCount,
+    complete,
+    ecosystem: 'maven',
+    manifestCount: manifestPaths.length,
+    status,
+    workspaces: workspaceOutcomes,
   }
   try {
-    // realpath follows symlinks: .../<output_base>/execroot/<workspace>/bazel-out
-    const real = realpathSync(bazelOutLink)
-    // Walk up bazel-out -> <workspace> -> execroot -> <output_base>, then into external/.
-    return path.join(real, '..', '..', '..', 'external')
-  } catch {
-    return null
-  }
-}
-
-// Internal diagnostic: when truthy, skip the unsorted_deps.json fast path
-// and force the bazel-query regex fallback. Used by bazel-bench to
-// deterministically exercise parseBazelBuildOutput on every CI run. Truthy
-// values are '1', 'true', 'yes' (case-insensitive); anything else (unset,
-// '', '0', 'false') is treated as off. Not exposed as a user-facing CLI
-// flag, so it is read here rather than added to constants.mts.
-function isForceQueryFallbackEnabled(): boolean {
-  const raw = process.env['SOCKET_BAZEL_FORCE_QUERY_FALLBACK']
-  if (!raw) {
-    return false
-  }
-  const normalized = raw.toLowerCase()
-  return normalized === '1' || normalized === 'true' || normalized === 'yes'
-}
-
-// Tries `external/<repo>/unsorted_deps.json` first; falls back to parsing the
-// probe stdout the caller already captured during discovery. Discovery runs
-// the same `kind("jvm_import rule|aar_import rule", @<repo>//:*)` query that
-// extraction needs, so reusing its stdout skips one bazel-query invocation
-// per repo on the unpinned path (where unsorted_deps.json isn't on disk).
-async function extractFromOneRepo(
-  repoName: string,
-  queryOpts: BazelQueryOptions,
-  cachedProbeStdout: string,
-): Promise<ExtractedArtifact[]> {
-  const verbose = queryOpts.verbose
-  // unsorted_deps.json lives under the bazel external dir.
-  // When --output_base is set, it's under that; otherwise under the workspace's
-  // bazel-out symlink (resolved via realpath, NOT lexical path.join — the
-  // lexical form would collapse `bazel-out/..` to cwd and miss the file).
-  const externalDir = bazelExternalDir(queryOpts.cwd, queryOpts.bazelOutputBase)
-  if (verbose) {
-    logger.log(
-      `[VERBOSE] @${repoName}: external dir:`,
-      externalDir ?? '(unresolved — bazel-out symlink absent)',
+    mkdirSync(manifestDir, { recursive: true })
+    await fs.writeFile(
+      path.join(manifestDir, COMPLETENESS_SUMMARY_FILE_NAME),
+      JSON.stringify(summary, null, 2),
+      'utf8',
     )
-  }
-  const forceFallback = isForceQueryFallbackEnabled()
-  if (forceFallback && verbose) {
-    logger.log(
-      `[VERBOSE] @${repoName}: SOCKET_BAZEL_FORCE_QUERY_FALLBACK set; skipping unsorted_deps.json fast path.`,
-    )
-  }
-  const candidates = forceFallback
-    ? []
-    : externalDir
-      ? [path.join(externalDir, repoName, 'unsorted_deps.json')]
-      : []
-  for (const c of candidates) {
-    if (existsSync(c)) {
-      // Bound the read to 1GB to prevent OOM on hostile content while allowing large real-world lockfiles.
-      // eslint-disable-next-line no-await-in-loop
-      const stat = await fs.stat(c)
-      if (stat.size > 1024 * 1024 * 1024) {
-        logger.warn(
-          `Skipping oversized ${c} (${stat.size} bytes); falling back to cached probe stdout.`,
-        )
-        break
-      }
-      const json = readFileSync(c, 'utf8')
-      const parsed = parseUnsortedDepsJson(json)
-      if (parsed.length) {
-        if (verbose) {
-          logger.log(
-            `[VERBOSE] @${repoName}: source=unsorted_deps.json (${c}, ${parsed.length} artifact(s))`,
-          )
-        }
-        return parsed.map(a => ({ ...a, sourceRepo: repoName }))
-      }
-    } else if (verbose) {
-      logger.log(`[VERBOSE] @${repoName}: unsorted_deps.json miss at`, c)
+  } catch (e) {
+    if (verbose) {
+      logger.log(
+        `[VERBOSE] completeness summary not written (${getErrorCause(e)}); the run result still carries the signal`,
+      )
     }
   }
-  // Reuse the probe stdout that discovery already captured for this repo.
-  // The probe ran exactly this query during validation and only validated
-  // repos with code === 0 make it into the cache, so retry is unnecessary
-  // — if the probe was flaky, the repo wouldn't be in the map.
-  if (!cachedProbeStdout) {
-    logger.warn(
-      `No cached probe stdout for @${repoName}; skipping. (This shouldn't happen — discovery should have populated it.)`,
-    )
-    return []
+}
+
+type WriteHubManifestResult = {
+  artifactCount: number
+  droppedArtifacts: string[]
+  manifestPath: string | undefined
+  prunedEdges: string[]
+}
+
+// Dedup, normalize, and write one hub's manifest. The path mirrors the
+// workspace tree: `<manifestDir>/<relPath>/<name>.json`, where `<name>` is
+// `maven_install.json` for a hub literally named `maven`, else
+// `<hub>_maven_install.json` (matching the server walker's
+// `**/*_maven_install.json` glob). The root workspace (`relPath===''`) writes
+// at `<manifestDir>/<name>.json`. Returns `manifestPath: undefined` (no file
+// written) when the hub yields zero valid artifacts, plus the dropped/pruned
+// accounting so the caller can flip the hub partial.
+async function writeHubManifest(args: {
+  artifacts: ExtractedArtifact[]
+  cwd: string
+  manifestDir: string
+  relPath: string
+  repoName: string
+  verbose: boolean
+}): Promise<WriteHubManifestResult> {
+  const { artifacts, manifestDir, relPath, repoName } = args
+  const deduped = dedupArtifactsByCoord(artifacts)
+  const { droppedArtifacts, json, prunedEdges } =
+    normalizeToMavenInstallJson(deduped)
+  const artifactCount = Object.keys(json.artifacts).length
+  if (!artifactCount) {
+    return {
+      artifactCount: 0,
+      droppedArtifacts,
+      manifestPath: undefined,
+      prunedEdges,
+    }
   }
-  if (verbose) {
-    logger.log(
-      `[VERBOSE] @${repoName}: source=cached probe stdout (${cachedProbeStdout.length} bytes)`,
-    )
+  const fileName = hubManifestFileName(repoName)
+  const hubDir = relPath ? path.join(manifestDir, relPath) : manifestDir
+  mkdirSync(hubDir, { recursive: true })
+  const manifestPath = path.join(hubDir, fileName)
+  await fs.writeFile(manifestPath, JSON.stringify(json, null, 2), 'utf8')
+  return { artifactCount, droppedArtifacts, manifestPath, prunedEdges }
+}
+
+// Build the per-workspace candidate Maven hub list.
+//
+// Bzlmod mode: trust `bazel mod show_extension` as the authoritative hub
+// list, keeping only hubs imported by <root>.
+//
+// WORKSPACE mode: no equivalent of `show_extension`, so probe the
+// conventional hub names.
+//
+// On `show_extension` failure (or a parse that yields zero root hubs) under
+// Bzlmod, fall through to the conventional-name probe so partial discovery
+// is still possible.
+type DiscoverResult = {
+  candidates: string[]
+  // Conventional names whose probe could not be classified (threw or returned
+  // an unrecognized error). A non-empty list means discovery may have missed
+  // a hub, so the run can never be reported complete.
+  indeterminateProbes: string[]
+  // True when authoritative hub enumeration could not be performed: under
+  // Bzlmod, `bazel mod show_extension` failed in a way that signals the module
+  // graph itself could not be evaluated (Starlark eval error, unbound name,
+  // syntax error, or the binary being missing). That is distinct from BOTH a
+  // clean code-0 run with zero kept hubs AND a non-zero exit that merely means
+  // rules_jvm_external isn't in the dependency graph — those are legitimate
+  // "no maven extension here" outcomes (the common no-Maven bzlmod repo) and
+  // must NOT flip the run to indeterminate. Only a genuine evaluation failure
+  // means we may have missed custom-named hubs, so the run can never be
+  // reported complete. See `classifyShowExtensionResult`.
+  discoveryIndeterminate: boolean
+}
+
+async function discoverCandidatesForWorkspace(
+  workspaceRoot: string,
+  mode: WorkspaceMode,
+  queryOpts: BazelQueryOptions,
+  verbose: boolean,
+): Promise<DiscoverResult> {
+  const candidates: string[] = []
+  const indeterminateProbes: string[] = []
+  let showExtensionSucceeded = false
+  let discoveryIndeterminate = false
+  if (mode.bzlmod) {
+    const extResult = await runBazelModShowMavenExtension(queryOpts)
+    // The maven extension generates a hub for EVERY module that uses it — the
+    // root's own `maven.install` hub(s) plus the rulesets' internal hubs
+    // (rules_jvm_external_deps, stardoc_maven, …). Keep only hubs imported by
+    // <root>; the rest are build-tooling, not the user's SBOM. On a non-zero
+    // exit the output is empty, so `kept` is naturally empty too.
+    const entries = parseShowExtensionOutput(extResult.stdout)
+    const kept = entries.filter(e => e.importers.includes(ROOT_MODULE_IMPORTER))
+    // Classify the run rather than treating ANY non-zero exit as a failure:
+    // `bazel mod show_extension` exits non-zero on every bzlmod repo that
+    // doesn't depend on rules_jvm_external (its argument resolution throws
+    // before any Starlark runs), so a blanket non-zero=indeterminate would
+    // wrongly flag the common no-Maven repo and abort the user's whole scan.
+    const showExtStatus = classifyShowExtensionResult(extResult, kept.length)
+    if (showExtStatus === 'defined') {
+      candidates.push(...kept.map(e => e.name))
+      // Gate the probe fallback on the KEPT count, not the raw parse: a
+      // report listing only transitive ruleset hubs (all filtered out) must
+      // still fall through to conventional probing so a root @maven isn't
+      // missed.
+      showExtensionSucceeded = kept.length > 0
+      if (verbose) {
+        logger.log(
+          `[VERBOSE] workspace ${workspaceRoot}: show_extension kept root hub(s)`,
+          kept.map(e => e.name),
+        )
+        for (const dropped of entries) {
+          if (!dropped.importers.includes(ROOT_MODULE_IMPORTER)) {
+            logger.log(
+              `[VERBOSE] workspace ${workspaceRoot}: dropped ${dropped.name} — imported by ${dropped.importers.join(', ')}, not ${ROOT_MODULE_IMPORTER}`,
+            )
+          }
+        }
+      }
+    } else if (showExtStatus === 'indeterminate') {
+      // The module graph itself could not be evaluated (Starlark eval error,
+      // unbound name, syntax error, or a missing binary normalized to code
+      // -1). We have NO evidence about whether custom-named maven hubs exist,
+      // so mark discovery indeterminate — the run can never be reported
+      // complete — while still falling through to the conventional probe for
+      // best-effort coverage.
+      discoveryIndeterminate = true
+      if (verbose) {
+        logger.log(
+          `[VERBOSE] workspace ${workspaceRoot}: show_extension failed to evaluate the module graph (code=${extResult.code}); hub enumeration is indeterminate — falling back to conventional probe`,
+        )
+      }
+    } else if (verbose) {
+      // `not-defined`: either a clean run with no root maven extension, or a
+      // non-zero exit that merely means rules_jvm_external isn't in the
+      // dependency graph. Both are authoritative "no maven here"; we still
+      // probe conventional names for a hybrid WORKSPACE-maven repo.
+      logger.log(
+        `[VERBOSE] workspace ${workspaceRoot}: show_extension reports no root maven extension (code=${extResult.code}); treating as not-defined — probing conventional hub names`,
+      )
+    }
   }
-  return parseBazelBuildOutput(cachedProbeStdout).map(a => ({
-    ...a,
-    sourceRepo: repoName,
-  }))
+  // Probe candidates the show_extension path could not authoritatively
+  // enumerate: when it produced root hubs, probe nothing extra; otherwise
+  // (WORKSPACE mode, a failed show_extension, or a parse with zero root
+  // hubs) probe the conventional hub names.
+  const seen = new Set(candidates)
+  const toProbe = (
+    showExtensionSucceeded ? [] : [...CONVENTIONAL_MAVEN_REPO_NAMES]
+  ).filter(name => !seen.has(name))
+  if (!toProbe.length) {
+    return { candidates, discoveryIndeterminate, indeterminateProbes }
+  }
+  const probe = buildMavenProbeFor(queryOpts)
+  for (const name of toProbe) {
+    // eslint-disable-next-line no-await-in-loop
+    const status = await probeCandidate(name, probe, verbose)
+    if (status === 'populated') {
+      candidates.push(name)
+      seen.add(name)
+    } else if (status === 'indeterminate') {
+      // The probe failed for a reason we can't classify; we have no proof the
+      // hub is absent. Record it so the run is flagged not-complete rather
+      // than silently treating the hub as "no Maven here".
+      indeterminateProbes.push(name)
+    }
+  }
+  return { candidates, discoveryIndeterminate, indeterminateProbes }
+}
+
+// Best-effort reap of a Bazel server. Spawned with a short timeout so
+// a wedged server can't itself hang the cleanup; failures are swallowed
+// because the caller will `rm -rf` the output_user_root regardless.
+async function reapBazelServer(
+  bin: string,
+  outputUserRoot: string,
+  verbose: boolean,
+): Promise<void> {
+  try {
+    await spawn(bin, [`--output_user_root=${outputUserRoot}`, 'shutdown'], {
+      timeout: REAP_TIMEOUT_MS,
+    })
+  } catch (e) {
+    // Server may already be dead, or shutdown itself timed out — the
+    // tempdir removal below is sufficient cleanup.
+    if (verbose) {
+      logger.log(
+        `[VERBOSE] reapBazelServer: shutdown failed for ${outputUserRoot} (${getErrorCause(e)}); tempdir removal will still run`,
+      )
+    }
+  }
+}
+
+async function removeTempdir(dir: string, verbose: boolean): Promise<void> {
+  try {
+    await fs.rm(dir, { recursive: true, force: true })
+  } catch (e) {
+    // Best effort. The next CLI invocation lands a fresh tempdir.
+    if (verbose) {
+      logger.log(
+        `[VERBOSE] removeTempdir: ${dir} not fully removed (${getErrorCause(e)}); a stale dir may linger until the next OS tempdir sweep`,
+      )
+    }
+  }
+}
+
+function makeOutputUserRoot(): string {
+  return mkdtempSync(path.join(os.tmpdir(), 'socket-bazel-'))
+}
+
+// Construct the BazelQueryOptions shape used for a single workspace's
+// queries. Lifted to module scope (out of the per-workspace loop) so
+// ESLint's consistent-function-scoping is happy; takes everything it
+// previously closed over as explicit params.
+function buildQueryOpts(args: {
+  baseEnv: NodeJS.ProcessEnv | undefined
+  bin: string
+  invocationFlags: string[]
+  opts: ExtractBazelOptions
+  outputUserRoot: string
+  spawnCwd: string
+  verbose: boolean
+}): BazelQueryOptions {
+  const {
+    baseEnv,
+    bin,
+    invocationFlags,
+    opts,
+    outputUserRoot,
+    spawnCwd,
+    verbose,
+  } = args
+  return {
+    bin,
+    cwd: spawnCwd,
+    invocationFlags,
+    outputUserRoot,
+    ...(opts.bazelRc ? { bazelRc: opts.bazelRc } : {}),
+    ...(opts.bazelFlags ? { bazelFlags: opts.bazelFlags } : {}),
+    ...(opts.bazelOutputBase ? { bazelOutputBase: opts.bazelOutputBase } : {}),
+    ...(baseEnv ? { env: baseEnv } : {}),
+    verbose,
+  }
 }
 
 export async function extractBazelToMaven(
@@ -340,143 +696,497 @@ export async function extractBazelToMaven(
   }
   logger.groupEnd()
 
+  const perRepoTimeoutMs = opts.perRepoTimeoutMs ?? DEFAULT_PER_REPO_TIMEOUT_MS
+
+  // Validate config + ensure toolchains BEFORE we mint a tempdir.
+  let bin: string
+  let baseEnv: NodeJS.ProcessEnv | undefined
   try {
-    // Validate caller-provided Bazel filesystem settings before invoking Bazel.
     if (opts.bazelOutputBase) {
       validateOutputBase(opts.bazelOutputBase, opts.cwd)
     }
-    // Java must be available before rules_jvm_external/Coursier runs;
-    // python shim follows so its augmented PATH inherits the JDK prefix.
     ensureJavaOnPath()
     const shim = await provisionPythonShim()
-    const baseEnv = shim.augmentedEnv ?? opts.env
-
-    // Step 1: workspace detection.
-    const mode = detectWorkspaceMode(cwd)
-    logger.info(
-      `Workspace mode: bzlmod=${mode.bzlmod} workspace=${mode.workspace}`,
-    )
-    const invocationFlags = getBazelInvocationFlags(mode)
-
-    // Step 2: bazel binary resolution.
-    const bin = await resolveBazelBinary(opts.bin)
-    logger.info(`Using bazel: ${bin}`)
+    baseEnv = shim.augmentedEnv ?? opts.env
+    bin = await resolveBazelBinary(opts.bin)
+  } catch (e) {
+    logger.fail(`Unexpected error in bazel2maven: ${getErrorCause(e)}`)
     if (verbose) {
-      logger.log('[VERBOSE] resolved options:', {
-        bin,
-        bazelRc: opts.bazelRc ?? '(unset)',
-        bazelOutputBase: opts.bazelOutputBase ?? '(unset)',
-        bazelFlags: opts.bazelFlags ?? '(unset)',
-        invocationFlags,
-      })
+      logger.group('[VERBOSE] error:')
+      logger.log(e)
+      logger.groupEnd()
     }
+    return {
+      artifactCount: 0,
+      complete: false,
+      manifestPaths: [],
+      status: 'hardFailure',
+      workspaceOutcomes: [],
+    }
+  }
+  logger.info(`Using bazel: ${bin}`)
 
-    // Step 3: build the shared query options object.
-    const queryOpts: BazelQueryOptions = {
-      bin,
+  // Track every output_user_root we mint so we can reap them all in
+  // the cleanup pass, even if a per-repo timeout forced a re-mint.
+  let outputUserRoot = makeOutputUserRoot()
+  const mintedRoots: string[] = [outputUserRoot]
+  if (verbose) {
+    logger.log(
+      `[VERBOSE] initial --output_user_root=${outputUserRoot} (will be reaped on completion)`,
+    )
+  }
+
+  const layout = opts.outLayout ?? 'standalone'
+  const manifestDir =
+    layout === 'flat' ? path.join(out, '.socket-auto-manifest') : out
+  // One manifest per (workspace, hub), written best-effort: a single wedged
+  // hub must not discard the manifests every other hub produced.
+  const manifestPaths: string[] = []
+  let totalArtifacts = 0
+  let anyRepos = false
+  let hubsSucceeded = 0
+  let hubsFailed = 0
+  // Per-workspace / per-hub analyzability breakdown backing the completeness
+  // signal the CLI emits. A run is only `complete` when no workspace failed to
+  // load, no probe was indeterminate, and every queried hub succeeded cleanly.
+  const workspaceOutcomes: WorkspaceOutcome[] = []
+  let anyIndeterminate = false
+  let anyWorkspaceLoadFailed = false
+  // A hub we deliberately skipped because a committed lockfile already covers
+  // it. This is a SUCCESSFUL no-op (the server already ingests that lockfile),
+  // so it must not be conflated with "discovered a hub we failed to extract".
+  let anyHubCoveredByLockfile = false
+
+  try {
+    // Always apply the default prune policy so no caller can forget it;
+    // callers EXTEND it via ignoreDirNames/ignoreDirPrefixes.
+    const ignoreDirNames = new Set([
+      ...DEFAULT_BAZEL_WALKER_IGNORE_DIR_NAMES,
+      ...(opts.ignoreDirNames ?? []),
+    ])
+    const ignoreDirPrefixes = [
+      ...DEFAULT_BAZEL_WALKER_IGNORE_DIR_PREFIXES,
+      ...(opts.ignoreDirPrefixes ?? []),
+    ]
+    const workspaceRoots = findWorkspaceRoots({
       cwd,
-      invocationFlags,
-      ...(opts.bazelRc ? { bazelRc: opts.bazelRc } : {}),
-      ...(opts.bazelFlags ? { bazelFlags: opts.bazelFlags } : {}),
-      ...(opts.bazelOutputBase
-        ? { bazelOutputBase: opts.bazelOutputBase }
-        : {}),
-      ...(baseEnv ? { env: baseEnv } : {}),
+      ignoreDirNames,
+      ignoreDirPrefixes,
       verbose,
-    }
-
-    // Step 4: discover validated Maven repos via the two-step recipe.
-    // Bzlmod has a native visible-repository surface; prefer that over static
-    // MODULE.bazel parsing and keep bounded parsing as the legacy/fallback path.
-    let nativeCandidates: string[] | undefined
-    if (mode.bzlmod) {
-      const visibleRepos = await runBazelModShowVisibleRepos(queryOpts)
-      if (visibleRepos.code === 0) {
-        nativeCandidates = parseVisibleRepoCandidates(visibleRepos.stdout)
-        if (verbose) {
-          logger.log(
-            '[VERBOSE] Bzlmod visible repo candidates:',
-            nativeCandidates,
-          )
-        }
-      } else if (verbose) {
-        logger.log(
-          '[VERBOSE] bazel mod show_repo failed; falling back to static candidate parsing:',
-          visibleRepos.stderr,
-        )
+    })
+    if (!workspaceRoots.length) {
+      logger.warn(
+        `No Bazel workspace found at ${cwd} or beneath (looked for MODULE.bazel / WORKSPACE / WORKSPACE.bazel).`,
+      )
+      return {
+        artifactCount: 0,
+        complete: false,
+        manifestPaths: [],
+        status: 'noEcosystem',
+        workspaceOutcomes: [],
       }
     }
-    // Returns Map<repoName, probeStdout> so extraction can reuse the probe
-    // output and skip running an identical bazel-query a second time.
-    const probe = buildProbeFor(queryOpts)
-    const repos = await discoverMavenRepos(
-      cwd,
-      probe,
-      nativeCandidates,
-      verbose,
-    )
-    const repoNames = Array.from(repos.keys())
-    logger.info(
-      `Discovered ${repos.size} Maven repo(s): ${repoNames.join(', ') || '(none)'}`,
-    )
-
-    // Step 5: extract artifacts from each repo (preferring unsorted_deps.json).
-    const allArtifacts: ExtractedArtifact[] = []
-    for (const [repo, probeStdout] of repos) {
-      // eslint-disable-next-line no-await-in-loop
-      const artifacts = await extractFromOneRepo(repo, queryOpts, probeStdout)
-      allArtifacts.push(...artifacts)
-      logger.info(`@${repo}: ${artifacts.length} artifact(s)`)
+    if (verbose) {
+      logger.log(
+        `[VERBOSE] discovered ${workspaceRoots.length} workspace root(s):`,
+        workspaceRoots,
+      )
     }
 
-    // Step 6: normalize to maven_install.json shape.
-    const normalized = normalizeToMavenInstallJson(allArtifacts)
+    for (const workspaceRoot of workspaceRoots) {
+      const relPath = path.relative(cwd, workspaceRoot)
+      const hubOutcomes: HubOutcome[] = []
+      let mode: WorkspaceMode
+      try {
+        mode = detectWorkspaceMode(workspaceRoot)
+      } catch (e) {
+        // A workspace we cannot even read is a load failure, NOT "no Maven
+        // here": record it so the run is flagged not-complete (a hard failure
+        // when nothing else was analyzable, partial otherwise) rather than
+        // silently skipped.
+        const reason = getErrorCause(e)
+        if (verbose) {
+          logger.log(
+            `[VERBOSE] workspace ${workspaceRoot}: load failed (${reason})`,
+          )
+        }
+        logger.warn(
+          `Workspace ${relPath || '.'}: failed to load (${reason}); it could not be analyzed.`,
+        )
+        anyWorkspaceLoadFailed = true
+        workspaceOutcomes.push({
+          hubs: [],
+          load: 'failed',
+          reason,
+          relPath,
+        })
+        continue
+      }
+      logger.info(
+        `Workspace ${relPath || '.'}: bzlmod=${mode.bzlmod} workspace=${mode.workspace}`,
+      )
+      const invocationFlags = getBazelInvocationFlags(mode)
+      const queryOptsFor = (userRoot: string): BazelQueryOptions =>
+        buildQueryOpts({
+          baseEnv,
+          bin,
+          invocationFlags,
+          opts,
+          outputUserRoot: userRoot,
+          spawnCwd: workspaceRoot,
+          verbose,
+        })
 
-    // Step 7: write outputs.
-    // Standalone output writes directly to `out`; auto-manifest uses a sibling directory
-    // to avoid colliding with a repo's checked-in rules_jvm_external lockfile and
-    // to avoid repo-root gitignore patterns such as `/maven_install.json`.
-    const layout = opts.outLayout ?? 'standalone'
-    const manifestDir =
-      layout === 'flat' ? path.join(out, '.socket-auto-manifest') : out
-    mkdirSync(manifestDir, { recursive: true })
-    const manifestPath = path.join(manifestDir, 'maven_install.json')
-    await fs.writeFile(
-      manifestPath,
-      JSON.stringify(normalized, null, 2),
-      'utf8',
-    )
+      const { candidates, discoveryIndeterminate, indeterminateProbes } =
+        // eslint-disable-next-line no-await-in-loop
+        await discoverCandidatesForWorkspace(
+          workspaceRoot,
+          mode,
+          queryOptsFor(outputUserRoot),
+          verbose,
+        )
+      // Authoritative hub enumeration failed to execute (e.g. `bazel mod
+      // show_extension` errored under Bzlmod): custom-named hubs may have been
+      // missed, so the run can never be complete. Record it as an
+      // indeterminate hub outcome under a synthetic name so the completeness
+      // signal carries the gap.
+      if (discoveryIndeterminate) {
+        anyIndeterminate = true
+        hubOutcomes.push({
+          hub: '(enumeration)',
+          reason: 'show-extension-failed',
+          state: 'indeterminate',
+        })
+        logger.warn(
+          `Workspace ${relPath || '.'}: Maven hub enumeration failed; custom-named hubs may be missing. The run is reported known-incomplete.`,
+        )
+      }
+      for (const indeterminate of indeterminateProbes) {
+        anyIndeterminate = true
+        hubOutcomes.push({
+          hub: indeterminate,
+          reason: 'probe-indeterminate',
+          state: 'indeterminate',
+        })
+      }
+      logger.info(
+        `Workspace ${relPath || '.'}: discovered ${candidates.length} Maven repo(s): ${
+          candidates.join(', ') || '(none)'
+        }`,
+      )
+      for (const repoName of candidates) {
+        // Committed-lockfile gate: the server-side walker already ingests any
+        // committed maven_install.json / <hub>_maven_install.json under the
+        // workspace; the CLI's synthetic manifest is the COMPLEMENT, not a
+        // duplicate. Skip emitting when a committed lockfile already covers
+        // this hub. A skip is a successful no-op, so it runs BEFORE
+        // `anyRepos` is flipped (which marks "a hub we needed to extract").
+        const committed = committedLockfileCovers({
+          fileName: hubManifestFileName(repoName),
+          manifestDir,
+          workspaceRoot,
+        })
+        if (committed) {
+          anyHubCoveredByLockfile = true
+          logger.info(
+            `@${repoName}: committed lockfile already covers this hub (${path.relative(cwd, committed) || committed}); skipping synthetic manifest.`,
+          )
+          hubOutcomes.push({
+            hub: repoName,
+            reason: 'committed-lockfile',
+            state: 'skipped-lockfile',
+          })
+          if (verbose) {
+            logger.log(
+              `[VERBOSE] @${repoName}: skipped (committed lockfile at ${committed})`,
+            )
+          }
+          continue
+        }
+        // We are about to extract this hub: it is a real candidate we must
+        // analyze, so mark the ecosystem present.
+        anyRepos = true
+        if (verbose) {
+          logger.log(
+            `[VERBOSE] workspace ${relPath || '.'}: running metadata cquery for @${repoName} (timeout ${perRepoTimeoutMs}ms)`,
+          )
+        }
+        // eslint-disable-next-line no-await-in-loop
+        const result: CqueryRepoResult = await runMetadataCqueryForRepo({
+          opts: queryOptsFor(outputUserRoot),
+          repoName,
+          timeoutMs: perRepoTimeoutMs,
+          workspaceRelPath: relPath,
+          workspaceRoot,
+        })
+        if (result.status === 'timeout') {
+          logger.warn(
+            `@${repoName}: cquery timed out after ${perRepoTimeoutMs}ms; reaping server`,
+          )
+          hubsFailed += 1
+          hubOutcomes.push({
+            hub: repoName,
+            reason: 'cquery-timeout',
+            state: 'failed',
+          })
+          // eslint-disable-next-line no-await-in-loop
+          await reapBazelServer(bin, outputUserRoot, verbose)
+          // eslint-disable-next-line no-await-in-loop
+          await removeTempdir(outputUserRoot, verbose)
+          outputUserRoot = makeOutputUserRoot()
+          mintedRoots.push(outputUserRoot)
+          if (verbose) {
+            logger.log(
+              `[VERBOSE] minted fresh --output_user_root=${outputUserRoot} after timeout`,
+            )
+          }
+          continue
+        }
+        if (result.status === 'error') {
+          logger.warn(`@${repoName}: cquery failed; skipping this hub`)
+          hubsFailed += 1
+          hubOutcomes.push({
+            hub: repoName,
+            reason: 'cquery-error',
+            state: 'failed',
+          })
+          continue
+        }
+        // A scan must never silently upload a graph missing edges it knows
+        // it dropped: warn unconditionally and treat the hub as partial.
+        let hubPartial = result.unresolvedLabels.length > 0
+        if (hubPartial) {
+          logger.warn(
+            `@${repoName}: dropped ${result.unresolvedLabels.length} unresolved dependency edge(s): ${result.unresolvedLabels.join(', ')}`,
+          )
+        }
+        // A non-zero cquery exit that still yielded a usable subset
+        // (--keep_going) is reported as `partial` even with no unresolved
+        // labels — the graph is known-incomplete, so flip the hub partial.
+        if (result.status === 'partial' && !result.unresolvedLabels.length) {
+          hubPartial = true
+          logger.warn(
+            `@${repoName}: cquery partially failed (--keep_going); the dependency graph may be incomplete`,
+          )
+        }
+        let written: WriteHubManifestResult
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          written = await writeHubManifest({
+            artifacts: result.artifacts,
+            cwd,
+            manifestDir,
+            relPath,
+            repoName,
+            verbose,
+          })
+        } catch (e) {
+          // Best-effort per hub: a write failure must not abort the walk and
+          // discard the manifests other hubs already produced.
+          logger.warn(
+            `@${repoName}: failed to write manifest (${getErrorCause(e)}); skipping this hub`,
+          )
+          hubsFailed += 1
+          hubOutcomes.push({
+            hub: repoName,
+            reason: 'manifest-write-failed',
+            state: 'failed',
+          })
+          continue
+        }
+        if (written.droppedArtifacts.length) {
+          hubPartial = true
+          logger.warn(
+            `@${repoName}: dropped ${written.droppedArtifacts.length} malformed Maven coordinate(s): ${written.droppedArtifacts.join(', ')}`,
+          )
+        }
+        if (written.prunedEdges.length) {
+          hubPartial = true
+          logger.warn(
+            `@${repoName}: pruned ${written.prunedEdges.length} dependency edge(s) referencing unlisted artifacts: ${written.prunedEdges.join(', ')}`,
+          )
+        }
+        if (written.manifestPath) {
+          manifestPaths.push(written.manifestPath)
+          totalArtifacts += written.artifactCount
+          if (hubPartial) {
+            hubsFailed += 1
+            hubOutcomes.push({
+              hub: repoName,
+              reason: 'incomplete-graph',
+              state: 'failed',
+            })
+          } else {
+            hubsSucceeded += 1
+            hubOutcomes.push({ hub: repoName, state: 'populated' })
+          }
+          if (verbose) {
+            logger.log(
+              `[VERBOSE] @${repoName}: status=${result.status}, ${written.artifactCount} artifact(s) -> ${written.manifestPath}`,
+            )
+          }
+        } else {
+          // No artifacts to write (empty hub). Not itself a failure, but if
+          // edges were dropped the partial signal still applies.
+          if (hubPartial) {
+            hubsFailed += 1
+            hubOutcomes.push({
+              hub: repoName,
+              reason: 'incomplete-graph',
+              state: 'failed',
+            })
+          } else {
+            hubOutcomes.push({ hub: repoName, state: 'empty' })
+          }
+          if (verbose) {
+            logger.log(
+              `[VERBOSE] @${repoName}: status=${result.status} (no manifest written)`,
+            )
+          }
+        }
+      }
+      workspaceOutcomes.push({
+        hubs: hubOutcomes,
+        load: 'loaded',
+        relPath,
+      })
+      if (verbose) {
+        for (const outcome of hubOutcomes) {
+          logger.log(
+            `[VERBOSE] workspace ${relPath || '.'} hub @${outcome.hub}: ${outcome.state}${
+              outcome.reason ? ` (${outcome.reason})` : ''
+            }`,
+          )
+        }
+      }
+    }
 
+    if (!manifestPaths.length) {
+      // Every discovered hub was already covered by a committed lockfile and
+      // nothing else needed extraction: writing zero synthetic manifests is
+      // the CORRECT complement, not a failure. The run is complete only when
+      // no workspace failed to load and no probe was indeterminate.
+      if (
+        anyHubCoveredByLockfile &&
+        !anyRepos &&
+        !anyWorkspaceLoadFailed &&
+        !anyIndeterminate
+      ) {
+        logger.success(
+          'All discovered Maven hub(s) are already covered by committed lockfiles; nothing to generate.',
+        )
+        await writeCompletenessSummary({
+          artifactCount: 0,
+          complete: true,
+          manifestDir,
+          manifestPaths: [],
+          status: 'complete',
+          verbose,
+          workspaceOutcomes,
+        })
+        return {
+          artifactCount: 0,
+          complete: true,
+          manifestPaths: [],
+          status: 'complete',
+          workspaceOutcomes,
+        }
+      }
+      // Nothing was emitted. If nothing was analyzable at all (no repos to
+      // extract, no committed-lockfile coverage, no workspace load failure, no
+      // indeterminate probe) this is a genuine absence; otherwise it's a hard
+      // failure — something was present but we could not extract it.
+      if (
+        !anyRepos &&
+        !anyWorkspaceLoadFailed &&
+        !anyIndeterminate &&
+        !anyHubCoveredByLockfile
+      ) {
+        if (verbose) {
+          logger.info(
+            'No Maven artifacts extracted. failureCategory=no-supported-ecosystem',
+          )
+        }
+        return {
+          artifactCount: 0,
+          complete: false,
+          manifestPaths: [],
+          status: 'noEcosystem',
+          workspaceOutcomes,
+        }
+      }
+      logger.fail(
+        'Discovered or partially analyzed Maven workspace(s) but wrote zero manifests. failureCategory=ecosystem-detected-but-empty',
+      )
+      await writeCompletenessSummary({
+        artifactCount: 0,
+        complete: false,
+        manifestDir,
+        manifestPaths: [],
+        status: 'hardFailure',
+        verbose,
+        workspaceOutcomes,
+      })
+      return {
+        artifactCount: 0,
+        complete: false,
+        manifestPaths: [],
+        status: 'hardFailure',
+        workspaceOutcomes,
+      }
+    }
+
+    // Manifests were written, so the run is not a hard failure. It is only
+    // `complete` when every queried hub succeeded cleanly AND no workspace
+    // failed to load AND no probe was indeterminate; any of those means the
+    // emitted SBOM is known-incomplete (partial under the hybrid rule).
+    const knownIncomplete =
+      hubsFailed > 0 || anyWorkspaceLoadFailed || anyIndeterminate
+    const status: ExtractBazelStatus = knownIncomplete ? 'partial' : 'complete'
+    if (status === 'complete') {
+      logger.success(
+        `Wrote ${manifestPaths.length} manifest(s), ${totalArtifacts} artifact(s) total.`,
+      )
+    } else {
+      const loadNote = anyWorkspaceLoadFailed
+        ? ', at least one workspace failed to load'
+        : ''
+      const indetNote = anyIndeterminate
+        ? ', at least one hub could not be classified'
+        : ''
+      logger.warn(
+        `Wrote ${manifestPaths.length} manifest(s), ${totalArtifacts} artifact(s) total — partial run: ${hubsSucceeded} hub(s) succeeded, ${hubsFailed} failed or incomplete${loadNote}${indetNote}. The uploaded SBOM is known-incomplete.`,
+      )
+    }
     if (verbose) {
       logger.log('[VERBOSE] outputs:', {
-        artifactCount: allArtifacts.length,
-        generatedManifest: path.relative(out, manifestPath),
+        anyIndeterminate,
+        anyWorkspaceLoadFailed,
+        artifactCount: totalArtifacts,
+        hubsFailed,
+        hubsSucceeded,
         layout,
-        manifest: manifestPath,
-        mavenRepos: repoNames,
-        tool: 'socket manifest bazel',
-        workspace: { bzlmod: mode.bzlmod, legacyWorkspace: mode.workspace },
+        manifestPaths,
+        status,
       })
     }
-
-    if (!allArtifacts.length) {
-      process.exitCode = 1
-      logger.fail('No Maven artifacts extracted. See warnings above.')
-      return { artifactCount: 0, manifestPath, ok: false }
-    }
-    logger.success(
-      `Wrote ${allArtifacts.length} artifact(s) to ${path.relative(cwd, manifestPath)}.`,
-    )
+    await writeCompletenessSummary({
+      artifactCount: totalArtifacts,
+      complete: status === 'complete',
+      manifestDir,
+      manifestPaths,
+      status,
+      verbose,
+      workspaceOutcomes,
+    })
     return {
-      artifactCount: allArtifacts.length,
-      manifestPath,
-      ok: true,
+      artifactCount: totalArtifacts,
+      complete: status === 'complete',
+      manifestPaths,
+      status,
+      workspaceOutcomes,
     }
   } catch (e) {
-    process.exitCode = 1
-    // Always surface the error message; users should not have to
-    // re-run a multi-minute bazel build with --verbose just to see whether
-    // the failure was a missing dependency, permission error, or network blip.
     logger.fail(`Unexpected error in bazel2maven: ${getErrorCause(e)}`)
     if (verbose) {
       logger.group('[VERBOSE] error:')
@@ -485,6 +1195,19 @@ export async function extractBazelToMaven(
     } else {
       logger.info('Re-run with --verbose for the full stack.')
     }
-    return { artifactCount: 0, ok: false }
+    return {
+      artifactCount: 0,
+      complete: false,
+      manifestPaths: [],
+      status: 'hardFailure',
+      workspaceOutcomes,
+    }
+  } finally {
+    for (const dir of mintedRoots) {
+      // eslint-disable-next-line no-await-in-loop
+      await reapBazelServer(bin, dir, verbose)
+      // eslint-disable-next-line no-await-in-loop
+      await removeTempdir(dir, verbose)
+    }
   }
 }

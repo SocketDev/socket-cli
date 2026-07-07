@@ -3,7 +3,10 @@ import path from 'node:path'
 import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
+import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
+import { resolveBuildToolBin } from './scripts/build-tool.mts'
 import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
@@ -25,13 +28,39 @@ import type {
 const config: CliCommandConfig = {
   commandName: 'kotlin',
   description:
-    '[beta] Use Gradle to generate a manifest file (`pom.xml`) for a Kotlin project',
+    '[beta] Generate a Socket facts file (or `pom.xml` with --pom) for a Kotlin project',
   hidden: false,
   flags: {
     ...commonFlags,
     bin: {
       type: 'string',
-      description: 'Location of gradlew binary to use, default: CWD/gradlew',
+      description:
+        'Location of the gradle binary to use, default: ./gradlew if present, else gradle on PATH',
+    },
+    facts: {
+      type: 'boolean',
+      description:
+        'Emit a Socket facts JSON file (`.socket.facts.json`) describing the resolved dependency graph. This is the default; pass `--pom` to generate `pom.xml` files instead',
+    },
+    pom: {
+      type: 'boolean',
+      description:
+        'Generate `pom.xml` manifest file(s) instead of the default Socket facts file (`.socket.facts.json`)',
+    },
+    includeConfigs: {
+      type: 'string',
+      description:
+        'When generating facts: comma-separated glob patterns matched against Gradle configuration names (case-sensitive; `*`, `?`, and `[...]` wildcards). Only configurations matching at least one pattern are resolved. e.g. `*CompileClasspath,*RuntimeClasspath`. Default: every resolvable configuration',
+    },
+    excludeConfigs: {
+      type: 'string',
+      description:
+        'When generating facts: comma-separated glob patterns; Gradle configurations matching any pattern are skipped (applied after --include-configs)',
+    },
+    ignoreUnresolved: {
+      type: 'boolean',
+      description:
+        'When generating facts: warn on unresolved dependencies instead of failing the run (unresolved deps are not emitted to the facts file)',
     },
     gradleOpts: {
       type: 'string',
@@ -50,21 +79,23 @@ const config: CliCommandConfig = {
     Options
       ${getFlagListOutput(config.flags)}
 
-    Uses gradle, preferably through your local project \`gradlew\`, to generate a
-    \`pom.xml\` file for each task. If you have no \`gradlew\` you can try the
-    global \`gradle\` binary but that may not work (hard to predict).
+    By default, emits a single \`.socket.facts.json\` describing the resolved
+    dependency graph of the whole build, using gradle (preferably your local
+    \`gradlew\`). An unresolved dependency is a fatal error. You can pass
+    --include-configs / --exclude-configs (comma-separated glob patterns) to
+    control which configurations are resolved (e.g.
+    --include-configs=\`*CompileClasspath,*RuntimeClasspath\`), and
+    --ignore-unresolved to warn on unresolved dependencies instead of failing.
 
-    The \`pom.xml\` is a manifest file similar to \`package.json\` for npm or
-    or ${REQUIREMENTS_TXT} for PyPi), but specifically for Maven, which is Java's
-    dependency repository. Languages like Kotlin and Scala piggy back on it too.
+    Pass --pom to instead generate \`pom.xml\` manifest files via gradle (one per
+    task). The \`pom.xml\` is a manifest file similar to \`package.json\` for npm
+    (or ${REQUIREMENTS_TXT} for PyPi), but specifically for Maven, which is
+    Java's dependency repository. Caveats of the \`pom.xml\` conversion:
 
-    There are some caveats with the gradle to \`pom.xml\` conversion:
+    - each task generates its own xml file (one per task by default)
 
-    - each task will generate its own xml file and by default it generates one xml
-      for every task. (This may be a good thing!)
-
-    - it's possible certain features don't translate well into the xml. If you
-      think something is missing that could be supported please reach out.
+    - certain features may not translate well into the xml; reach out if
+      something you need is missing
 
     - it works with your \`gradlew\` from your repo and local settings and config
 
@@ -73,6 +104,7 @@ const config: CliCommandConfig = {
     Examples
 
       $ ${command} .
+      $ ${command} --pom .
       $ ${command} --bin=../gradlew .
   `,
 }
@@ -115,7 +147,15 @@ async function run(
     sockJson?.defaults?.manifest?.gradle,
   )
 
-  let { bin, gradleOpts, verbose } = cli.flags
+  let {
+    bin,
+    excludeConfigs,
+    facts,
+    gradleOpts,
+    ignoreUnresolved,
+    includeConfigs,
+    verbose,
+  } = cli.flags
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (!bin) {
@@ -123,7 +163,8 @@ async function run(
       bin = sockJson.defaults?.manifest?.gradle?.bin
       logger.info(`Using default --bin from ${SOCKET_JSON}:`, bin)
     } else {
-      bin = path.join(cwd, 'gradlew')
+      // Prefer the project's ./gradlew wrapper, else `gradle` on PATH.
+      bin = resolveBuildToolBin('gradle', cwd)
     }
   }
   if (!gradleOpts) {
@@ -144,6 +185,72 @@ async function run(
     } else {
       verbose = false
     }
+  }
+  if (facts === undefined) {
+    if (sockJson.defaults?.manifest?.gradle?.facts !== undefined) {
+      facts = sockJson.defaults?.manifest?.gradle?.facts
+      logger.info(`Using default --facts from ${SOCKET_JSON}:`, facts)
+    } else {
+      // Socket facts generation is the default; pass --pom to generate poms.
+      facts = true
+    }
+  }
+  // --pom opts into legacy pom.xml generation. It overrides the facts default
+  // (and the socket.json default) but conflicts with an explicit --facts.
+  if (cli.flags['pom']) {
+    if (cli.flags['facts'] !== undefined) {
+      logger.warn(
+        'The `--facts` and `--pom` options are mutually exclusive; generating Socket facts.',
+      )
+    } else {
+      facts = false
+    }
+  }
+  if (includeConfigs === undefined) {
+    if (sockJson.defaults?.manifest?.gradle?.includeConfigs !== undefined) {
+      includeConfigs = sockJson.defaults?.manifest?.gradle?.includeConfigs
+      logger.info(
+        `Using default --include-configs from ${SOCKET_JSON}:`,
+        includeConfigs,
+      )
+    } else {
+      includeConfigs = ''
+    }
+  }
+  if (excludeConfigs === undefined) {
+    if (sockJson.defaults?.manifest?.gradle?.excludeConfigs !== undefined) {
+      excludeConfigs = sockJson.defaults?.manifest?.gradle?.excludeConfigs
+      logger.info(
+        `Using default --exclude-configs from ${SOCKET_JSON}:`,
+        excludeConfigs,
+      )
+    } else {
+      excludeConfigs = ''
+    }
+  }
+  if (ignoreUnresolved === undefined) {
+    if (sockJson.defaults?.manifest?.gradle?.ignoreUnresolved !== undefined) {
+      ignoreUnresolved = sockJson.defaults?.manifest?.gradle?.ignoreUnresolved
+      logger.info(
+        `Using default --ignore-unresolved from ${SOCKET_JSON}:`,
+        ignoreUnresolved,
+      )
+    } else {
+      ignoreUnresolved = false
+    }
+  }
+
+  // `--include-configs`, `--exclude-configs`, and `--ignore-unresolved` only
+  // affect facts generation; the pom path has no equivalent knobs.
+  if (
+    !facts &&
+    (cli.flags['includeConfigs'] !== undefined ||
+      cli.flags['excludeConfigs'] !== undefined ||
+      cli.flags['ignoreUnresolved'] !== undefined)
+  ) {
+    logger.warn(
+      'The `--include-configs`, `--exclude-configs`, and `--ignore-unresolved` options only apply when generating Socket facts (not with `--pom`); ignoring them.',
+    )
   }
 
   if (verbose) {
@@ -180,13 +287,25 @@ async function run(
     return
   }
 
+  const parsedGradleOpts = parseBuildToolOpts(String(gradleOpts || ''))
+
+  if (facts) {
+    await convertGradleToFacts({
+      bin: String(bin),
+      cwd,
+      excludeConfigs: String(excludeConfigs || ''),
+      gradleOpts: parsedGradleOpts,
+      ignoreUnresolved: Boolean(ignoreUnresolved),
+      includeConfigs: String(includeConfigs || ''),
+      verbose: Boolean(verbose),
+    })
+    return
+  }
+
   await convertGradleToMaven({
     bin: String(bin),
     cwd,
-    gradleOpts: String(gradleOpts || '')
-      .split(' ')
-      .map(s => s.trim())
-      .filter(Boolean),
+    gradleOpts: parsedGradleOpts,
     verbose: Boolean(verbose),
   })
 }

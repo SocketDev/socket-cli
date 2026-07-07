@@ -1,4 +1,13 @@
-import { existsSync, readdirSync, rmSync } from 'node:fs'
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -266,6 +275,123 @@ describe('glob utilities', () => {
       // Should include package.json and the negated build/manifest.json, but not build/output.js.
       expect(results.map(normalizePath).sort()).toEqual([
         `${mockFixturePath}/build/manifest.json`,
+        `${mockFixturePath}/package.json`,
+      ])
+    })
+
+    // Reproduces the reported `socket fix` crash: a project containing a
+    // directory the running user cannot enter (e.g. a postgres `pgdata` dir
+    // owned by another uid, mode drwx------) made fast-glob throw
+    // `EACCES: permission denied, scandir` during manifest discovery. Uses the
+    // real filesystem because mock-fs only enforces permissions for non-root
+    // uids; skipped under root (perm checks bypassed) and on Windows (no POSIX
+    // directory perms).
+    const skipUnreadableDirTest =
+      process.platform === 'win32' ||
+      (typeof process.getuid === 'function' && process.getuid() === 0)
+    it.skipIf(skipUnreadableDirTest)(
+      'skips an unreadable directory instead of throwing EACCES',
+      async () => {
+        const realTmp = mkdtempSync(path.join(tmpdir(), 'socket-glob-perm-'))
+        const unreadable = path.join(realTmp, 'data/postgres/pgdata')
+        try {
+          mkdirSync(unreadable, { recursive: true })
+          writeFileSync(path.join(realTmp, 'package.json'), '{}')
+          // Files inside the directory must never surface — the user cannot
+          // read them, so they cannot be scanned.
+          writeFileSync(path.join(unreadable, 'PG_VERSION'), '17')
+          // drwx------ : owner-only, and the running test user is not the owner
+          // in the field report; locally dropping all bits has the same effect
+          // of making scandir fail for the current user.
+          chmodSync(unreadable, 0o000)
+
+          const results = await globWithGitIgnore(['**/*'], {
+            cwd: realTmp,
+          })
+
+          expect(results.map(normalizePath)).toEqual([
+            normalizePath(path.join(realTmp, 'package.json')),
+          ])
+        } finally {
+          // Restore perms so recursive cleanup can descend into the locked dir.
+          try {
+            chmodSync(unreadable, 0o755)
+          } catch {}
+          rmSync(realTmp, { force: true, recursive: true })
+        }
+      },
+    )
+
+    it('excludes a Python virtual environment detected via pyvenv.cfg', async () => {
+      // A venv can use any directory name; the reliable signal is the
+      // pyvenv.cfg marker at its root. Manifests inside it must not surface.
+      mockTestFs({
+        [`${mockFixturePath}/requirements.txt`]: '',
+        [`${mockFixturePath}/myenv/pyvenv.cfg`]:
+          'home = /usr/bin\nversion = 3.11.0\n',
+        [`${mockFixturePath}/myenv/requirements.txt`]: '',
+        [`${mockFixturePath}/myenv/lib/python3.11/site-packages/foo/setup.py`]:
+          '',
+      })
+
+      const results = await globWithGitIgnore(
+        ['**/requirements.txt', '**/setup.py'],
+        { cwd: mockFixturePath },
+      )
+
+      expect(results.map(normalizePath).sort()).toEqual([
+        `${mockFixturePath}/requirements.txt`,
+      ])
+    })
+
+    it('excludes a `.venv` directory by name', async () => {
+      mockTestFs({
+        [`${mockFixturePath}/package.json`]: '{}',
+        [`${mockFixturePath}/.venv/lib/site-packages/foo/package.json`]: '{}',
+      })
+
+      const results = await globWithGitIgnore(['**/*.json'], {
+        cwd: mockFixturePath,
+      })
+
+      expect(results.map(normalizePath).sort()).toEqual([
+        `${mockFixturePath}/package.json`,
+      ])
+    })
+
+    it('keeps a non-venv directory named `venv` without a pyvenv.cfg', async () => {
+      // Guards against over-exclusion: a bare `venv` dir is only skipped when
+      // it actually contains a pyvenv.cfg, never by name alone.
+      mockTestFs({
+        [`${mockFixturePath}/package.json`]: '{}',
+        [`${mockFixturePath}/venv/package.json`]: '{}',
+      })
+
+      const results = await globWithGitIgnore(['**/*.json'], {
+        cwd: mockFixturePath,
+      })
+
+      expect(results.map(normalizePath).sort()).toEqual([
+        `${mockFixturePath}/package.json`,
+        `${mockFixturePath}/venv/package.json`,
+      ])
+    })
+
+    it('excludes a venv via pyvenv.cfg through the streaming filter path', async () => {
+      // The actual manifest-scan path always passes a filter, so verify the
+      // venv exclusion prunes there too.
+      mockTestFs({
+        [`${mockFixturePath}/package.json`]: '{}',
+        [`${mockFixturePath}/env/pyvenv.cfg`]: 'home = /usr/bin\n',
+        [`${mockFixturePath}/env/lib/site-packages/bar/package.json`]: '{}',
+      })
+
+      const results = await globWithGitIgnore(['**/*'], {
+        cwd: mockFixturePath,
+        filter: filterJsonFiles,
+      })
+
+      expect(results.map(normalizePath).sort()).toEqual([
         `${mockFixturePath}/package.json`,
       ])
     })

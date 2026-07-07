@@ -24,12 +24,13 @@ describe('socket manifest', async () => {
 
           Commands
             auto                        Auto-detect build and attempt to generate manifest file
-            bazel                       [beta] Bazel JVM SBOM support \\u2014 generate manifest files (\`maven_install.json\`) for a Bazel/Maven project
+            bazel                       [beta] Bazel SBOM support \\u2014 generate manifest files for a Bazel project (Maven, PyPI)
             cdxgen                      Run cdxgen for SBOM generation
             conda                       [beta] Convert a Conda environment.yml file to a python requirements.txt
-            gradle                      [beta] Use Gradle to generate a manifest file (\`pom.xml\`) for a Gradle/Java/Kotlin/etc project
-            kotlin                      [beta] Use Gradle to generate a manifest file (\`pom.xml\`) for a Kotlin project
-            scala                       [beta] Generate a manifest file (\`pom.xml\`) from Scala's \`build.sbt\` file
+            gradle                      [beta] Generate a Socket facts file (or \`pom.xml\` with --pom) for a Gradle/Java/Kotlin/etc project
+            kotlin                      [beta] Generate a Socket facts file (or \`pom.xml\` with --pom) for a Kotlin project
+            maven                       [beta] Generate a Socket facts file from a Maven \`pom.xml\` project
+            scala                       [beta] Generate a Socket facts file (or \`pom.xml\` with --pom) from a Scala \`build.sbt\` project
             setup                       Start interactive configurator to customize default flag values for \`socket manifest\` in this dir
 
           Options

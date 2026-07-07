@@ -2,3 +2,8 @@ version: 2
 
 projectIgnorePaths:
   - "test/fixtures/"
+  # Build-tooling and test fixtures for the JVM manifest scripts, not socket-cli's
+  # own supply chain: the Maven extension's build pom and the compat-test
+  # projects' pom.xml / build.gradle / build.sbt.
+  - "src/commands/manifest/scripts/maven-extension/"
+  - "src/commands/manifest/scripts/test/"

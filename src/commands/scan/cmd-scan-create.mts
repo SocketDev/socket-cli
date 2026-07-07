@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
@@ -7,6 +8,10 @@ import { assertValidExcludePaths } from './exclude-paths.mts'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { excludePathsFlag, reachabilityFlags } from './reachability-flags.mts'
+import {
+  isOmittedReachValue,
+  reachMemoryLimitToMb,
+} from './reachability-units.mts'
 import { suggestOrgSlug } from './suggest-org-slug.mts'
 import { suggestTarget } from './suggest_target.mts'
 import { validateReachabilityTarget } from './validate-reachability-target.mts'
@@ -110,7 +115,7 @@ const generalFlags: MeowFlags = {
   reach: {
     type: 'boolean',
     default: false,
-    description: 'Run tier 1 full application reachability analysis',
+    description: 'Run full application reachability analysis',
   },
   readOnly: {
     type: 'boolean',
@@ -258,6 +263,7 @@ async function run(
     reachDisableExternalToolChecks,
     reachEnableAnalysisSplitting,
     reachLazyMode,
+    reachRetainFactsFile,
     reachSkipCache,
     reachUseOnlyPregeneratedSboms,
     reachVersion,
@@ -282,8 +288,8 @@ async function run(
     tmp: boolean
     // Reachability flags.
     reach: boolean
-    reachAnalysisMemoryLimit: number
-    reachAnalysisTimeout: number
+    reachAnalysisMemoryLimit: string
+    reachAnalysisTimeout: string
     reachConcurrency: number
     reachContinueOnAnalysisErrors: boolean
     reachContinueOnInstallErrors: boolean
@@ -296,6 +302,7 @@ async function run(
     reachDisableExternalToolChecks: boolean
     reachEnableAnalysisSplitting: boolean
     reachLazyMode: boolean
+    reachRetainFactsFile: boolean
     reachSkipCache: boolean
     reachUseOnlyPregeneratedSboms: boolean
     reachVersion: string | undefined
@@ -443,7 +450,15 @@ async function run(
   }
 
   const detected = await detectManifestActions(sockJson, cwd)
-  if (detected.count > 0 && !autoManifest) {
+  // Suppress the --auto-manifest suggestion when a `.socket.facts.json` is
+  // already present at cwd. That file is the output of `socket manifest auto`
+  // (and `--facts` mode of the per-ecosystem manifest commands), so suggesting
+  // to regenerate it would be misleading; the manifest data is already there
+  // and will be picked up by the scan.
+  const hasFactsFile = existsSync(
+    path.join(cwd, constants.DOT_SOCKET_DOT_FACTS_JSON),
+  )
+  if (detected.count > 0 && !autoManifest && !hasFactsFile) {
     logger.info(
       `Detected ${detected.count} manifest targets we could try to generate. Please set the --auto-manifest flag if you want to include languages covered by \`socket manifest auto\` in the Scan.`,
     )
@@ -475,12 +490,19 @@ async function run(
 
   const hasReachExcludePaths = reachExcludePaths.length > 0
 
+  // Compare by resolved magnitude, not string identity: 8192, 8192MB and 8GB
+  // all mean the default, and an omitted/zero timeout means "use the default".
+  // A naive string compare would flag those equivalents as non-default and
+  // wrongly require --reach.
+  const memoryLimitMb = reachMemoryLimitToMb(reachAnalysisMemoryLimit)
   const isUsingNonDefaultMemoryLimit =
-    reachAnalysisMemoryLimit !==
-    reachabilityFlags['reachAnalysisMemoryLimit']?.default
+    memoryLimitMb !== null &&
+    memoryLimitMb !==
+      reachMemoryLimitToMb(
+        String(reachabilityFlags['reachAnalysisMemoryLimit']?.default ?? ''),
+      )
 
-  const isUsingNonDefaultTimeout =
-    reachAnalysisTimeout !== reachabilityFlags['reachAnalysisTimeout']?.default
+  const isUsingNonDefaultTimeout = !isOmittedReachValue(reachAnalysisTimeout)
 
   const isUsingNonDefaultConcurrency =
     reachConcurrency !== reachabilityFlags['reachConcurrency']?.default
@@ -614,8 +636,8 @@ async function run(
     pullRequest: Number(pullRequest),
     reach: {
       excludePaths,
-      reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
-      reachAnalysisTimeout: Number(reachAnalysisTimeout),
+      reachAnalysisMemoryLimit,
+      reachAnalysisTimeout,
       reachConcurrency: Number(reachConcurrency),
       reachContinueOnAnalysisErrors: Boolean(reachContinueOnAnalysisErrors),
       reachContinueOnInstallErrors: Boolean(reachContinueOnInstallErrors),
@@ -629,6 +651,7 @@ async function run(
       reachEnableAnalysisSplitting: Boolean(reachEnableAnalysisSplitting),
       reachExcludePaths,
       reachLazyMode: Boolean(reachLazyMode),
+      reachRetainFactsFile: Boolean(reachRetainFactsFile),
       reachSkipCache: Boolean(reachSkipCache),
       reachUseOnlyPregeneratedSboms: Boolean(reachUseOnlyPregeneratedSboms),
       reachVersion,

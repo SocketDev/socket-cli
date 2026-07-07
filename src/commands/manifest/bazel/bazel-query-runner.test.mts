@@ -15,9 +15,17 @@ vi.mock('../../../constants.mts', () => ({
   },
 }))
 
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import { buildProbeFor, runBazelQuery } from './bazel-query-runner.mts'
+import {
+  buildMavenProbeFor,
+  buildPypiProbeFor,
+  runBazelModShowMavenExtension,
+  runBazelModShowPipExtension,
+  runBazelModShowVisibleRepos,
+  runBazelQuery,
+} from './bazel-query-runner.mts'
 import constants from '../../../constants.mts'
 
 describe('runBazelQuery', () => {
@@ -33,7 +41,7 @@ describe('runBazelQuery', () => {
   })
 
   it('builds the standard query argv shape', async () => {
-    await runBazelQuery('kind(jvm_import, @maven//:*)', {
+    await runBazelQuery('attr("tags", ".+", @maven//:*)', {
       bin: '/usr/local/bin/bazel',
       cwd: '/repo',
       invocationFlags: [],
@@ -44,7 +52,7 @@ describe('runBazelQuery', () => {
     expect(argv[0]).toBe('query')
     expect(argv).toContain('--lockfile_mode=off')
     expect(argv).toContain('--noshow_progress')
-    expect(argv).toContain('kind(jvm_import, @maven//:*)')
+    expect(argv).toContain('attr("tags", ".+", @maven//:*)')
     expect(argv).toContain('--output=build')
   })
 
@@ -60,6 +68,20 @@ describe('runBazelQuery', () => {
     expect(argv.indexOf('--bazelrc=/path/to/.bazelrc')).toBeLessThan(
       argv.indexOf('query'),
     )
+  })
+
+  it('forwards outputUserRoot as a startup flag BEFORE the subcommand', async () => {
+    await runBazelQuery('q', {
+      bin: 'bazel',
+      cwd: '/r',
+      invocationFlags: [],
+      outputUserRoot: '/tmp/socket-bazel-xyz',
+    })
+    const argv = mocked.mock.calls[0]![1] as string[]
+    expect(argv).toContain('--output_user_root=/tmp/socket-bazel-xyz')
+    expect(
+      argv.indexOf('--output_user_root=/tmp/socket-bazel-xyz'),
+    ).toBeLessThan(argv.indexOf('query'))
   })
 
   it('forwards bazelOutputBase as a startup flag BEFORE query', async () => {
@@ -186,9 +208,31 @@ describe('runBazelQuery', () => {
     })
     expect(r).toEqual({ code: -1, stdout: '', stderr: 'missing bazel' })
   })
+
+  it('emits bounded subprocess trace when verbose is true', async () => {
+    const logSpy = vi.spyOn(logger, 'log').mockImplementation(() => logger)
+    try {
+      // @ts-ignore — narrow return shape for the test's purposes.
+      mocked.mockResolvedValueOnce({ code: 7, stdout: 'OUT', stderr: 'ERR' })
+      await runBazelQuery('q', {
+        bin: 'bazel',
+        cwd: '/r',
+        invocationFlags: [],
+        verbose: true,
+      })
+      const text = logSpy.mock.calls
+        .map(args => args.map(a => String(a)).join(' '))
+        .join('\n')
+      expect(text).toContain('bazel subprocess trace')
+      expect(text).toContain('bazel stderr tail')
+      expect(text).toContain('bazel-query-failed')
+    } finally {
+      logSpy.mockRestore()
+    }
+  })
 })
 
-describe('buildProbeFor', () => {
+describe('runBazelModShowMavenExtension', () => {
   const mocked = vi.mocked(spawn)
 
   beforeEach(() => {
@@ -196,25 +240,213 @@ describe('buildProbeFor', () => {
     // @ts-ignore — narrow return shape for the test's purposes.
     mocked.mockResolvedValue({
       code: 0,
-      stdout: 'jvm_import(\n  maven_coordinates="g:a:1",\n)',
+      stdout: '## @@rules_jvm_external+//:extensions.bzl%maven:\n',
       stderr: '',
     })
   })
 
-  it('builds the probe query for a repo name', async () => {
-    const probe = buildProbeFor({
+  it('uses the rules_jvm_external maven extension target', async () => {
+    await runBazelModShowMavenExtension({
+      bin: 'bazel',
+      cwd: '/repo',
+      invocationFlags: [],
+    })
+    const argv = mocked.mock.calls[0]![1] as string[]
+    expect(argv).toEqual([
+      'mod',
+      'show_extension',
+      '@rules_jvm_external//:extensions.bzl%maven',
+      '--lockfile_mode=off',
+      '--extension_usages=<root>',
+    ])
+  })
+
+  it('pins the lockfile read-only so the scan never rewrites MODULE.bazel.lock', async () => {
+    await runBazelModShowMavenExtension({
+      bin: 'bazel',
+      cwd: '/repo',
+      invocationFlags: [],
+    })
+    const argv = mocked.mock.calls[0]![1] as string[]
+    expect(argv).toContain('--lockfile_mode=off')
+  })
+
+  it('threads outputUserRoot ahead of the subcommand', async () => {
+    await runBazelModShowMavenExtension({
+      bin: 'bazel',
+      cwd: '/repo',
+      invocationFlags: [],
+      outputUserRoot: '/tmp/socket-bazel-abc',
+    })
+    const argv = mocked.mock.calls[0]![1] as string[]
+    expect(argv).toEqual([
+      '--output_user_root=/tmp/socket-bazel-abc',
+      'mod',
+      'show_extension',
+      '@rules_jvm_external//:extensions.bzl%maven',
+      '--lockfile_mode=off',
+      '--extension_usages=<root>',
+    ])
+  })
+})
+
+describe('runBazelModShowVisibleRepos', () => {
+  const mocked = vi.mocked(spawn)
+
+  beforeEach(() => {
+    mocked.mockReset()
+    // @ts-ignore — narrow return shape for the test's purposes.
+    mocked.mockResolvedValue({ code: 0, stdout: '{}', stderr: '' })
+  })
+
+  it('uses the Bazel 7-compatible root repo mapping command', async () => {
+    await runBazelModShowVisibleRepos({
+      bin: 'bazel',
+      cwd: '/repo',
+      invocationFlags: [],
+    })
+    const argv = mocked.mock.calls[0]![1] as string[]
+    expect(argv).toEqual(['mod', 'dump_repo_mapping', '', '--output=json'])
+    expect(argv).not.toContain('--all_visible_repos')
+    expect(argv).not.toContain('--output=streamed_jsonproto')
+  })
+})
+
+describe('runBazelModShowPipExtension', () => {
+  const mocked = vi.mocked(spawn)
+
+  beforeEach(() => {
+    mocked.mockReset()
+    // @ts-ignore — narrow return shape for the test's purposes.
+    mocked.mockResolvedValue({ code: 0, stdout: 'pip.parse()', stderr: '' })
+  })
+
+  it('uses the rules_python pip extension usage command', async () => {
+    await runBazelModShowPipExtension({
+      bin: 'bazel',
+      cwd: '/repo',
+      invocationFlags: [],
+    })
+    const argv = mocked.mock.calls[0]![1] as string[]
+    expect(argv).toEqual([
+      'mod',
+      'show_extension',
+      '@rules_python//python/extensions:pip.bzl%pip',
+      '--lockfile_mode=off',
+      '--extension_usages=<root>',
+    ])
+  })
+})
+
+describe('buildMavenProbeFor', () => {
+  const mocked = vi.mocked(spawn)
+
+  beforeEach(() => {
+    mocked.mockReset()
+    // @ts-ignore — narrow return shape for the test's purposes.
+    mocked.mockResolvedValue({
+      code: 0,
+      stdout: '@maven//:foo\n@maven//:bar\n',
+      stderr: '',
+    })
+  })
+
+  it('builds the lightweight presence-check cquery for a repo name', async () => {
+    const probe = buildMavenProbeFor({
       bin: 'bazel',
       cwd: '/r',
       invocationFlags: [],
     })
     const result = await probe('my_maven_repo')
     const argv = mocked.mock.calls[0]![1] as string[]
-    expect(argv).toContain(
-      'kind("jvm_import rule|aar_import rule", @my_maven_repo//:*)',
-    )
+    expect(argv).toContain('cquery')
+    expect(argv).toContain('@my_maven_repo//...')
+    expect(argv).toContain('--output=label')
+    expect(argv).toContain('--keep_going')
     expect(result).toEqual({
-      stdout: expect.stringContaining('maven_coordinates'),
       code: 0,
+      stdout: '@maven//:foo\n@maven//:bar\n',
+      stderr: '',
     })
+  })
+
+  it('threads outputUserRoot into the probe argv', async () => {
+    const probe = buildMavenProbeFor({
+      bin: 'bazel',
+      cwd: '/r',
+      invocationFlags: [],
+      outputUserRoot: '/tmp/x',
+    })
+    await probe('maven')
+    const argv = mocked.mock.calls[0]![1] as string[]
+    expect(argv[0]).toBe('--output_user_root=/tmp/x')
+    expect(argv).toContain('@maven//...')
+  })
+
+  it('returns the full result triple including stderr (tri-state classifier needs it)', async () => {
+    // @ts-ignore — narrow return shape for the test's purposes.
+    mocked.mockResolvedValueOnce({
+      code: 1,
+      stdout: '',
+      stderr: "ERROR: No repository visible as '@nope' from main repository\n",
+    })
+    const probe = buildMavenProbeFor({
+      bin: 'bazel',
+      cwd: '/r',
+      invocationFlags: [],
+    })
+    const result = await probe('nope')
+    expect(result).toEqual({
+      code: 1,
+      stdout: '',
+      stderr: "ERROR: No repository visible as '@nope' from main repository\n",
+    })
+  })
+})
+
+describe('buildPypiProbeFor', () => {
+  const mocked = vi.mocked(spawn)
+
+  beforeEach(() => {
+    mocked.mockReset()
+    // @ts-ignore — narrow return shape for the test's purposes.
+    mocked.mockResolvedValue({
+      code: 0,
+      stdout: '@pypi//requests:pkg\n@pypi//flask:pkg\n',
+      stderr: '',
+    })
+  })
+
+  it('builds a hub-wide query for a pip hub name', async () => {
+    const probe = buildPypiProbeFor({
+      bin: 'bazel',
+      cwd: '/r',
+      invocationFlags: [],
+    })
+    const result = await probe('pypi')
+    const argv = mocked.mock.calls[0]![1] as string[]
+    expect(argv).toContain('@pypi//...')
+    expect(result).toEqual({
+      code: 0,
+      stdout: expect.stringContaining('@pypi//requests:pkg'),
+      stderr: '',
+    })
+  })
+
+  it('returns the full triple when the hub has no :pkg targets', async () => {
+    mocked.mockReset()
+    // @ts-ignore — narrow return shape for the test's purposes.
+    mocked.mockResolvedValue({
+      code: 0,
+      stdout: '',
+      stderr: '',
+    })
+    const probe = buildPypiProbeFor({
+      bin: 'bazel',
+      cwd: '/r',
+      invocationFlags: [],
+    })
+    const result = await probe('empty_hub')
+    expect(result).toEqual({ code: 0, stdout: '', stderr: '' })
   })
 })

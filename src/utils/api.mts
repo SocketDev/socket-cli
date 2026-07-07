@@ -20,6 +20,7 @@
  */
 
 import { Agent as HttpsAgent, request as httpsRequest } from 'node:https'
+import { ReadableStream } from 'node:stream/web'
 
 import { messageWithCauses } from 'pony-cause'
 
@@ -53,28 +54,34 @@ import type {
 const MAX_REDIRECTS = 20
 const NO_ERROR_MESSAGE = 'No error message returned'
 
-// Cached HTTPS agent for extra CA certificate support in direct API calls.
+// Cached HTTPS agent for direct API calls. Undefined only until the first
+// getHttpsAgent() call lazily creates it.
 let _httpsAgent: HttpsAgent | undefined
-let _httpsAgentResolved = false
 
-// Returns an HTTPS agent configured with extra CA certificates when
-// SSL_CERT_FILE is set but NODE_EXTRA_CA_CERTS is not.
-function getHttpsAgent(): HttpsAgent | undefined {
-  if (_httpsAgentResolved) {
+// Returns an explicit HTTPS agent for direct API calls, carrying extra CA
+// certificates when SSL_CERT_FILE is set but NODE_EXTRA_CA_CERTS is not. An
+// explicit agent is always returned. Node >=19's global agent enables keepAlive
+// with a 5s socket timeout that Node applies as a per-socket inactivity
+// timeout. A request made without an explicit agent inherits it and is torn
+// down after 5s of socket inactivity, prematurely dropping slow or idle-gapped
+// requests (e.g. streaming full-scan responses, large downloads) even when no
+// timeout was requested. A fresh Agent carries no timeout.
+function getHttpsAgent(): HttpsAgent {
+  if (_httpsAgent) {
     return _httpsAgent
   }
-  _httpsAgentResolved = true
   const ca = getExtraCaCerts()
-  if (!ca) {
-    return undefined
-  }
-  _httpsAgent = new HttpsAgent({ ca })
-  return _httpsAgent
+  const agent = ca ? new HttpsAgent({ ca }) : new HttpsAgent()
+  _httpsAgent = agent
+  return agent
 }
 
-// Wrapper around fetch that supports extra CA certificates via SSL_CERT_FILE.
-// Uses node:https.request with a custom agent when extra CA certs are needed,
-// falling back to regular fetch() otherwise. Follows redirects like fetch().
+// All outbound API requests use node:https.request rather than global fetch.
+// This ensures no body timeout is applied — large streaming ND-JSON responses
+// (e.g. full scan results) can transfer without a hard deadline. An explicit
+// HttpsAgent is always passed (carrying extra CA certificates when
+// SSL_CERT_FILE is configured) so requests do not inherit Node's global-agent
+// keepAlive socket timeout.
 export type ApiFetchInit = {
   body?: string | undefined
   headers?: Record<string, string> | undefined
@@ -149,29 +156,44 @@ function _httpsRequestFetch(
           )
           return
         }
-        const chunks: Buffer[] = []
-        res.on('data', (chunk: Buffer) => chunks.push(chunk))
-        res.on('end', () => {
-          const body = Buffer.concat(chunks)
-          const responseHeaders = new Headers()
-          for (const [key, value] of Object.entries(res.headers)) {
-            if (typeof value === 'string') {
-              responseHeaders.set(key, value)
-            } else if (Array.isArray(value)) {
-              for (const v of value) {
-                responseHeaders.append(key, v)
-              }
+        // Build response headers immediately on receipt.
+        const responseHeaders = new Headers()
+        for (const [key, value] of Object.entries(res.headers)) {
+          if (typeof value === 'string') {
+            responseHeaders.set(key, value)
+          } else if (Array.isArray(value)) {
+            for (const v of value) {
+              responseHeaders.append(key, v)
             }
           }
-          resolve(
-            new Response(body, {
-              status: statusCode ?? 0,
-              statusText: res.statusMessage ?? '',
-              headers: responseHeaders,
-            }),
-          )
+        }
+        // Resolve with a streaming body as soon as headers are available,
+        // matching fetch() semantics. Callers that pipe response.body (e.g.
+        // streamDownloadWithFetch) receive a live ReadableStream rather than
+        // a fully-buffered Buffer.
+        const body = new ReadableStream<Uint8Array>({
+          start(controller) {
+            res.on('data', (chunk: Buffer) => {
+              controller.enqueue(chunk)
+            })
+            res.on('end', () => {
+              controller.close()
+            })
+            res.on('error', (err: Error) => {
+              controller.error(err)
+            })
+          },
+          cancel() {
+            res.destroy()
+          },
         })
-        res.on('error', reject)
+        resolve(
+          new Response(body, {
+            status: statusCode ?? 0,
+            statusText: res.statusMessage ?? '',
+            headers: responseHeaders,
+          }),
+        )
       },
     )
     if (init.body) {
@@ -186,11 +208,7 @@ export async function apiFetch(
   url: string,
   init: ApiFetchInit = {},
 ): Promise<Response> {
-  const agent = getHttpsAgent()
-  if (!agent) {
-    return await fetch(url, init as globalThis.RequestInit)
-  }
-  return await _httpsRequestFetch(url, init, agent, 0)
+  return await _httpsRequestFetch(url, init, getHttpsAgent(), 0)
 }
 
 export type CommandRequirements = {

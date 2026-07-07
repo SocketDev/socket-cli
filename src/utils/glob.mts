@@ -22,7 +22,7 @@ const DEFAULT_IGNORE_FOR_GIT_IGNORE = defaultIgnore.filter(
   p => !p.endsWith('.gitignore'),
 )
 
-const IGNORED_DIRS = [
+export const IGNORED_DIRS = [
   // Taken from ignore-by-default:
   // https://github.com/novemberborn/ignore-by-default/blob/v2.1.0/index.js
   '.git', // Git repository files, see <https://git-scm.com/>
@@ -36,9 +36,17 @@ const IGNORED_DIRS = [
   // Taken from globby:
   // https://github.com/sindresorhus/globby/blob/v14.0.2/ignore.js#L11-L16
   'flow-typed',
+  // Conventional Python virtual environment dir. Arbitrarily-named venvs are
+  // detected via their pyvenv.cfg marker during the discovery walk below.
+  '.venv',
 ] as const
 
 const IGNORED_DIR_PATTERNS = IGNORED_DIRS.map(i => `**/${i}`)
+
+// Marker file at the root of every Python virtual environment (stdlib `venv`
+// per PEP 405, and virtualenv >= 20). Lets us detect venvs that don't use a
+// conventional directory name.
+const PYVENV_CFG = 'pyvenv.cfg'
 
 async function getWorkspaceGlobs(
   agent: Agent,
@@ -232,32 +240,72 @@ export async function globWithGitIgnore(
 
   const ignores = new Set<string>(IGNORED_DIR_PATTERNS)
 
+  // CLI-supplied `additionalIgnores` are already anchored minimatch — they
+  // must not pass through the `ignore` package (whose gitignore "match
+  // anywhere" semantics would re-interpret a bare `tests` to match
+  // `subdir/tests/foo.json`). Keep them in fast-glob's ignore list across
+  // both paths; only gitignore-translated entries go into the `ig` matcher.
+  const cliMinimatchIgnores = additionalIgnores ?? []
+
   const projectIgnorePaths = socketConfig?.projectIgnorePaths
-  if (Array.isArray(projectIgnorePaths)) {
-    const ignorePatterns = ignoreFileLinesToGlobPatterns(
-      projectIgnorePaths,
-      path.join(cwd, '.gitignore'),
-      cwd,
-    )
-    for (const pattern of ignorePatterns) {
-      ignores.add(pattern)
-    }
+  const projectIgnoreGlobs = Array.isArray(projectIgnorePaths)
+    ? ignoreFileLinesToGlobPatterns(
+        projectIgnorePaths,
+        path.join(cwd, '.gitignore'),
+        cwd,
+      )
+    : []
+  for (const pattern of projectIgnoreGlobs) {
+    ignores.add(pattern)
   }
 
-  const gitIgnoreStream = fastGlob.globStream(['**/.gitignore'], {
-    absolute: true,
-    cwd,
-    dot: true,
-    ignore: DEFAULT_IGNORE_FOR_GIT_IGNORE,
-  })
+  // The discovery walk (`.gitignore` files plus `pyvenv.cfg` venv markers) has
+  // to honor the same directory exclusions as the package walk below. Otherwise
+  // an unreadable subtree (e.g. a postgres `pgdata` dir owned by another uid, or
+  // a Docker volume mount) makes fast-glob throw `EACCES: permission denied,
+  // scandir` *here* — before --exclude-paths (`cliMinimatchIgnores`) or
+  // projectIgnorePaths are ever applied to the main walk, which is why excluding
+  // the path did not help. `suppressErrors` is the backstop: a directory the
+  // user simply cannot read cannot contain manifests they could scan anyway, so
+  // skip it instead of aborting the whole `socket fix` / `socket scan` run.
+  // Negated patterns are dropped — for a discovery walk they could only
+  // re-include a subtree (never prevent a crash), and fast-glob treats `!`
+  // ignore entries inconsistently. Folding pyvenv.cfg discovery into this same
+  // walk avoids a second full-tree traversal.
+  const discoveryStream = fastGlob.globStream(
+    ['**/.gitignore', `**/${PYVENV_CFG}`],
+    {
+      absolute: true,
+      cwd,
+      dot: true,
+      ignore: [
+        ...DEFAULT_IGNORE_FOR_GIT_IGNORE,
+        ...projectIgnoreGlobs,
+        ...cliMinimatchIgnores,
+      ]
+        .filter(p => p.charCodeAt(0) !== 33 /*'!'*/)
+        .map(stripTrailingSlash),
+      suppressErrors: true,
+    },
+  )
   for await (const ignorePatterns of transform(
-    gitIgnoreStream,
-    async (filepath: string) =>
-      ignoreFileToGlobPatterns(
+    discoveryStream,
+    async (filepath: string) => {
+      if (path.basename(filepath) === PYVENV_CFG) {
+        // A pyvenv.cfg sits at the venv root, so exclude the whole directory.
+        const relDir = path
+          .relative(cwd, path.dirname(filepath))
+          .replace(/\\/g, '/')
+        // An empty relDir means the scan target itself is a venv root; don't
+        // emit `/**`, which would exclude everything the user explicitly targeted.
+        return relDir ? [`${relDir}/**`] : []
+      }
+      return ignoreFileToGlobPatterns(
         (await safeReadFile(filepath)) ?? '',
         filepath,
         cwd,
-      ),
+      )
+    },
     { concurrency: 8 },
   )) {
     for (const p of ignorePatterns) {
@@ -273,13 +321,6 @@ export async function globWithGitIgnore(
     }
   }
 
-  // CLI-supplied `additionalIgnores` are already anchored minimatch — they
-  // must not pass through the `ignore` package (whose gitignore "match
-  // anywhere" semantics would re-interpret a bare `tests` to match
-  // `subdir/tests/foo.json`). Keep them in fast-glob's ignore list across
-  // both paths; only gitignore-translated entries go into the `ig` matcher.
-  const cliMinimatchIgnores = additionalIgnores ?? []
-
   const globOptions = {
     __proto__: null,
     absolute: true,
@@ -289,6 +330,13 @@ export async function globWithGitIgnore(
       ? [...defaultIgnore, ...cliMinimatchIgnores]
       : [...ignores, ...cliMinimatchIgnores].map(stripTrailingSlash),
     ...additionalOptions,
+    // Skip directories the running user cannot read rather than aborting the
+    // whole walk on the first `EACCES` (see the .gitignore discovery walk
+    // above for the full rationale). Pinned after `...additionalOptions` so a
+    // caller's options bag cannot accidentally flip it back to `false` and
+    // re-introduce the crash — `suppressErrors` is a safety invariant here, not
+    // a tunable.
+    suppressErrors: true,
   } as GlobOptions
 
   // When no filter is provided and no negated patterns exist, use the fast path.

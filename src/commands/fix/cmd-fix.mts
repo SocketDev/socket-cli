@@ -31,6 +31,7 @@ import {
 } from '../../utils/package-manager.mts'
 import { RangeStyles } from '../../utils/semver.mts'
 import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mts'
+import { assertValidExcludePaths } from '../scan/exclude-paths.mts'
 
 import type { MeowFlag, MeowFlags } from '../../flags.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
@@ -81,6 +82,18 @@ const generalFlags: MeowFlags = {
     default: [],
     description:
       'Exclude workspaces matching these glob patterns. Can be provided as comma separated values or as multiple flags',
+    isMultiple: true,
+    // Hidden in favor of --exclude-paths, which covers both manifest
+    // discovery and workspace filtering. --exclude is preserved for
+    // backwards compatibility with the narrower (fix-application only)
+    // semantic.
+    hidden: true,
+  },
+  excludePaths: {
+    type: 'string',
+    default: [],
+    description:
+      'Skip matching paths from the scan entirely: manifests under these paths are not uploaded, and fixes are not applied to workspaces under them. Patterns are anchored micromatch globs matched relative to the target directory (CWD); `data/postgres/pgdata` matches that exact path, `**/pgdata` matches at any depth. Use this to skip directories the current user cannot read so they do not abort manifest collection. Negation patterns (`!path`) are not supported. Accepts a comma-separated value or multiple flags.',
     isMultiple: true,
     hidden: false,
   },
@@ -314,6 +327,7 @@ async function run(
     disableExternalToolChecks,
     ecosystems,
     exclude,
+    excludePaths,
     fixVersion,
     include,
     json,
@@ -339,6 +353,7 @@ async function run(
     disableExternalToolChecks: boolean
     ecosystems: string[]
     exclude: string[]
+    excludePaths: string[]
     fixVersion: string | undefined
     include: string[]
     json: boolean
@@ -464,6 +479,19 @@ async function run(
     return
   }
 
+  const includePatterns = cmdFlagValueToArray(include)
+  const excludePatterns = cmdFlagValueToArray(exclude)
+  const excludePathsPatterns = cmdFlagValueToArray(excludePaths)
+  // Validate before the network round-trip so a bad pattern doesn't waste
+  // an org-slug API call.
+  try {
+    assertValidExcludePaths(excludePathsPatterns)
+  } catch (e) {
+    logger.fail((e as Error).message)
+    process.exitCode = 1
+    return
+  }
+
   if (dryRun) {
     logger.log(constants.DRY_RUN_NOT_SAVING)
     return
@@ -482,9 +510,6 @@ async function run(
 
   const { spinner } = constants
 
-  const includePatterns = cmdFlagValueToArray(include)
-  const excludePatterns = cmdFlagValueToArray(exclude)
-
   await handleFix({
     all,
     applyFixes,
@@ -496,6 +521,7 @@ async function run(
     disableMajorUpdates,
     ecosystems: validatedEcosystems,
     exclude: excludePatterns,
+    excludePaths: excludePathsPatterns,
     ghsas,
     include: includePatterns,
     minimumReleaseAge,

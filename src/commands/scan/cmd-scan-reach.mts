@@ -31,7 +31,7 @@ import type {
 
 export const CMD_NAME = 'reach'
 
-const description = 'Compute tier 1 reachability'
+const description = 'Compute full application reachability'
 
 const hidden = true
 
@@ -137,6 +137,7 @@ async function run(
     reachDisableExternalToolChecks,
     reachEnableAnalysisSplitting,
     reachLazyMode,
+    reachRetainFactsFile,
     reachSkipCache,
     reachUseOnlyPregeneratedSboms,
     reachVersion,
@@ -147,8 +148,8 @@ async function run(
     markdown: boolean
     org: string
     output: string
-    reachAnalysisMemoryLimit: number
-    reachAnalysisTimeout: number
+    reachAnalysisMemoryLimit: string
+    reachAnalysisTimeout: string
     reachConcurrency: number
     reachContinueOnAnalysisErrors: boolean
     reachContinueOnInstallErrors: boolean
@@ -161,6 +162,7 @@ async function run(
     reachDisableExternalToolChecks: boolean
     reachEnableAnalysisSplitting: boolean
     reachLazyMode: boolean
+    reachRetainFactsFile: boolean
     reachSkipCache: boolean
     reachUseOnlyPregeneratedSboms: boolean
     reachVersion: string | undefined
@@ -277,8 +279,8 @@ async function run(
     outputPath: outputPath || '',
     reachabilityOptions: {
       excludePaths,
-      reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
-      reachAnalysisTimeout: Number(reachAnalysisTimeout),
+      reachAnalysisMemoryLimit,
+      reachAnalysisTimeout,
       reachConcurrency: Number(reachConcurrency),
       reachContinueOnAnalysisErrors: Boolean(reachContinueOnAnalysisErrors),
       reachContinueOnInstallErrors: Boolean(reachContinueOnInstallErrors),
@@ -292,6 +294,7 @@ async function run(
       reachEnableAnalysisSplitting: Boolean(reachEnableAnalysisSplitting),
       reachExcludePaths,
       reachLazyMode: Boolean(reachLazyMode),
+      reachRetainFactsFile: Boolean(reachRetainFactsFile),
       reachSkipCache: Boolean(reachSkipCache),
       reachUseOnlyPregeneratedSboms: Boolean(reachUseOnlyPregeneratedSboms),
       reachVersion,

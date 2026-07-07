@@ -25,6 +25,7 @@
  */
 
 import { readFileSync } from 'node:fs'
+import { Agent as HttpAgent } from 'node:http'
 import { Agent as HttpsAgent } from 'node:https'
 import { rootCertificates } from 'node:tls'
 
@@ -202,25 +203,31 @@ export async function setupSdk(
 
   // Usage of HttpProxyAgent vs. HttpsProxyAgent based on the chart at:
   // https://github.com/delvedor/hpagent?tab=readme-ov-file#usage
-  const ProxyAgent = apiBaseUrl?.startsWith('http:')
-    ? HttpProxyAgent
-    : HttpsProxyAgent
+  const isHttp = apiBaseUrl?.startsWith('http:')
+  const ProxyAgent = isHttp ? HttpProxyAgent : HttpsProxyAgent
 
   // Load extra CA certificates for SSL_CERT_FILE support when
   // NODE_EXTRA_CA_CERTS was not set at process startup.
   const ca = getExtraCaCerts()
 
+  // Always pass an explicit agent. Node >=19's global agent enables keepAlive
+  // with a 5s socket timeout that Node applies as a per-socket inactivity
+  // timeout. A request made without an explicit agent inherits it and is torn
+  // down after 5s of socket inactivity, even when SOCKET_CLI_API_TIMEOUT is
+  // unset. This breaks slow endpoints like upload-manifest-files, which streams
+  // a chunked multipart body while the server parses auth/multipart before
+  // sending any response byte. A fresh Agent carries no timeout, so a request
+  // is bounded only by a real SOCKET_CLI_API_TIMEOUT (applied below via the
+  // SDK's timeout option) or until interrupted.
   const sdkOptions = {
-    ...(apiProxy
-      ? {
-          agent: new ProxyAgent({
-            proxy: apiProxy,
-            ...(ca ? { ca, proxyConnectOptions: { ca } } : {}),
-          }),
-        }
-      : ca
-        ? { agent: new HttpsAgent({ ca }) }
-        : {}),
+    agent: apiProxy
+      ? new ProxyAgent({
+          proxy: apiProxy,
+          ...(ca ? { ca, proxyConnectOptions: { ca } } : {}),
+        })
+      : isHttp
+        ? new HttpAgent()
+        : new HttpsAgent(ca ? { ca } : undefined),
     ...(apiBaseUrl ? { baseUrl: apiBaseUrl } : {}),
     timeout: constants.ENV.SOCKET_CLI_API_TIMEOUT,
     userAgent: createUserAgentFromPkgJson({

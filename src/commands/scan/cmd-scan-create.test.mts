@@ -40,13 +40,13 @@ describe('socket scan create', async () => {
             --committers        Committers
             --cwd               working directory, defaults to process.cwd()
             --default-branch    Set the default branch of the repository to the branch of this full-scan. Should only need to be done once, for example for the "main" or "master" branch.
-            --exclude-paths     List of glob patterns to exclude from the scan, including SCA/SBOM manifest discovery and (when --reach is enabled) Tier 1 reachability analysis. Patterns are anchored micromatch globs matched relative to the Socket scan root, which is the command working directory (\`--cwd\` if set), not the reachability target: \`tests\` matches only \`<cwd>/tests\`; use \`**/tests\` to match at any depth. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags.
+            --exclude-paths     List of glob patterns to exclude from the scan, including SCA/SBOM manifest discovery and (when --reach is enabled) full application reachability analysis. Patterns are anchored micromatch globs matched relative to the Socket scan root, which is the command working directory (\`--cwd\` if set), not the reachability target: \`tests\` matches only \`<cwd>/tests\`; use \`**/tests\` to match at any depth. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags.
             --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
             --json              Output as JSON
             --markdown          Output as Markdown
             --org               Force override the organization slug, overrides the default org from config
             --pull-request      Pull request number
-            --reach             Run tier 1 full application reachability analysis
+            --reach             Run full application reachability analysis
             --read-only         Similar to --dry-run except it can read from remote, stops before it would create an actual report
             --repo              Repository name
             --report            Wait for the scan creation to complete, then basically run \`socket scan report\` on it
@@ -56,11 +56,11 @@ describe('socket scan create', async () => {
             --workspace         The workspace in the Socket Organization that the repository is in to associate with the full scan.
 
           Reachability Options (when --reach is used)
-            --reach-analysis-memory-limit  The maximum memory in MB to use for the reachability analysis. The default is 8192MB.
-            --reach-analysis-timeout  Set timeout for the reachability analysis. Split analysis runs may cause the total scan time to exceed this timeout significantly.
-            --reach-concurrency  Set the maximum number of concurrent reachability analysis runs. It is recommended to choose a concurrency level that ensures each analysis run has at least the --reach-analysis-memory-limit amount of memory available. NPM reachability analysis does not support concurrent execution, so the concurrency level is ignored for NPM.
-            --reach-continue-on-analysis-errors  Continue reachability analysis when errors occur (timeouts, OOM, parse errors, etc.), falling back to precomputed (Tier 2) results. By default, the CLI halts on analysis errors.
-            --reach-continue-on-install-errors  Continue reachability analysis when package installation fails, falling back to precomputed (Tier 2) results. By default, the CLI halts on installation errors.
+            --reach-analysis-memory-limit  The maximum memory for the reachability analysis as a whole number optionally followed by MB or GB (e.g. 512MB, 8GB). The default is 8GB.
+            --reach-analysis-timeout  Set the timeout for the reachability analysis as a whole number optionally followed by s, m or h (e.g. 90s, 10m, 1h). Defaults to 10m. Split analysis runs may cause the total scan time to exceed this timeout significantly.
+            --reach-concurrency  Set the maximum number of concurrent reachability analysis runs. It is recommended to choose a concurrency level that ensures each analysis run has at least the --reach-analysis-memory-limit amount of memory available.
+            --reach-continue-on-analysis-errors  Continue reachability analysis when errors occur (timeouts, OOM, parse errors, etc.), falling back to precomputed reachability results. By default, the CLI halts on analysis errors.
+            --reach-continue-on-install-errors  Continue reachability analysis when package installation fails, falling back to precomputed reachability results. By default, the CLI halts on installation errors.
             --reach-continue-on-missing-lock-files  Continue reachability analysis when a Gradle or SBT project is missing its lock file (or version catalog / pre-generated SBOM). By default, the CLI halts.
             --reach-continue-on-no-source-files  Continue reachability analysis when a workspace contains no source files for its ecosystem. By default, the CLI halts.
             --reach-debug       Enable debug mode for reachability analysis. Provides verbose logging from the reachability CLI.
@@ -69,6 +69,7 @@ describe('socket scan create', async () => {
             --reach-disable-external-tool-checks  Disable external tool checks during reachability analysis.
             --reach-ecosystems  List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Defaults to all ecosystems.
             --reach-enable-analysis-splitting  Allow the reachability analysis to partition CVEs into buckets that are processed in separate analysis runs. May improve accuracy, but not recommended by default.
+            --reach-retain-facts-file  Keep the \`.socket.facts.json\` reachability report that the analysis writes to the scan directory instead of deleting it after a successful scan. IMPORTANT: you must delete this file before running a fresh full application reachability scan. A stale \`.socket.facts.json\` left in place is picked up as a pre-generated input and silently overrides fresh analysis, so the new scan results will not be reliable.
             --reach-skip-cache  Skip caching-based optimizations. By default, the reachability analysis will use cached configurations from previous runs to speed up the analysis.
             --reach-use-only-pregenerated-sboms  When using this option, the scan is created based only on pre-generated CDX and SPDX files in your project.
             --reach-version     Override the version of @coana-tech/cli used for reachability analysis. Default: <coana-version>.
@@ -263,6 +264,56 @@ describe('socket scan create', async () => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0 when using default value').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      FLAG_ORG,
+      'fakeOrg',
+      'target',
+      FLAG_DRY_RUN,
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach-analysis-memory-limit',
+      '8GB',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should succeed when --reach-analysis-memory-limit equals the default in a different unit (8GB) without --reach',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(code, 'should treat 8GB as the default 8192MB').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      FLAG_ORG,
+      'fakeOrg',
+      'target',
+      FLAG_DRY_RUN,
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach-analysis-timeout',
+      '0',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should succeed when --reach-analysis-timeout is the zero/omit sentinel without --reach',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(code, 'should treat 0 as the default (omit) timeout').toBe(0)
     },
   )
 

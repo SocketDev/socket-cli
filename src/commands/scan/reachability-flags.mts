@@ -8,34 +8,34 @@ export const reachabilityFlags: MeowFlags = {
     description: `Override the version of @coana-tech/cli used for reachability analysis. Default: ${constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION}.`,
   },
   reachAnalysisMemoryLimit: {
-    type: 'number',
-    default: 8192,
+    type: 'string',
+    default: '8192',
     description:
-      'The maximum memory in MB to use for the reachability analysis. The default is 8192MB.',
+      'The maximum memory for the reachability analysis as a whole number optionally followed by MB or GB (e.g. 512MB, 8GB). The default is 8GB.',
   },
   reachAnalysisTimeout: {
-    type: 'number',
-    default: 0,
+    type: 'string',
+    default: '',
     description:
-      'Set timeout for the reachability analysis. Split analysis runs may cause the total scan time to exceed this timeout significantly.',
+      'Set the timeout for the reachability analysis as a whole number optionally followed by s, m or h (e.g. 90s, 10m, 1h). Defaults to 10m. Split analysis runs may cause the total scan time to exceed this timeout significantly.',
   },
   reachConcurrency: {
     type: 'number',
     default: 1,
     description:
-      'Set the maximum number of concurrent reachability analysis runs. It is recommended to choose a concurrency level that ensures each analysis run has at least the --reach-analysis-memory-limit amount of memory available. NPM reachability analysis does not support concurrent execution, so the concurrency level is ignored for NPM.',
+      'Set the maximum number of concurrent reachability analysis runs. It is recommended to choose a concurrency level that ensures each analysis run has at least the --reach-analysis-memory-limit amount of memory available.',
   },
   reachContinueOnAnalysisErrors: {
     type: 'boolean',
     default: false,
     description:
-      'Continue reachability analysis when errors occur (timeouts, OOM, parse errors, etc.), falling back to precomputed (Tier 2) results. By default, the CLI halts on analysis errors.',
+      'Continue reachability analysis when errors occur (timeouts, OOM, parse errors, etc.), falling back to precomputed reachability results. By default, the CLI halts on analysis errors.',
   },
   reachContinueOnInstallErrors: {
     type: 'boolean',
     default: false,
     description:
-      'Continue reachability analysis when package installation fails, falling back to precomputed (Tier 2) results. By default, the CLI halts on installation errors.',
+      'Continue reachability analysis when package installation fails, falling back to precomputed reachability results. By default, the CLI halts on installation errors.',
   },
   reachContinueOnMissingLockFiles: {
     type: 'boolean',
@@ -104,6 +104,12 @@ export const reachabilityFlags: MeowFlags = {
     description: 'Enable lazy mode for reachability analysis.',
     hidden: true,
   },
+  reachRetainFactsFile: {
+    type: 'boolean',
+    default: false,
+    description:
+      'Keep the `.socket.facts.json` reachability report that the analysis writes to the scan directory instead of deleting it after a successful scan. IMPORTANT: you must delete this file before running a fresh full application reachability scan. A stale `.socket.facts.json` left in place is picked up as a pre-generated input and silently overrides fresh analysis, so the new scan results will not be reliable.',
+  },
   reachSkipCache: {
     type: 'boolean',
     default: false,
@@ -123,6 +129,6 @@ export const excludePathsFlag: MeowFlags = {
     type: 'string',
     isMultiple: true,
     description:
-      'List of glob patterns to exclude from the scan, including SCA/SBOM manifest discovery and (when --reach is enabled) Tier 1 reachability analysis. Patterns are anchored micromatch globs matched relative to the Socket scan root, which is the command working directory (`--cwd` if set), not the reachability target: `tests` matches only `<cwd>/tests`; use `**/tests` to match at any depth. Negation patterns (`!path`) are not supported. Accepts a comma-separated value or multiple flags.',
+      'List of glob patterns to exclude from the scan, including SCA/SBOM manifest discovery and (when --reach is enabled) full application reachability analysis. Patterns are anchored micromatch globs matched relative to the Socket scan root, which is the command working directory (`--cwd` if set), not the reachability target: `tests` matches only `<cwd>/tests`; use `**/tests` to match at any depth. Negation patterns (`!path`) are not supported. Accepts a comma-separated value or multiple flags.',
   },
 }
