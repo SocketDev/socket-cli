@@ -24,7 +24,7 @@ import type { SocketArtifact } from '../../util/alert/artifact.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 const logger = getDefaultLogger()
 
-type OutputScanReportConfig = {
+export type OutputScanReportConfig = {
   orgSlug: string
   scanId: string
   includeLicensePolicy: boolean

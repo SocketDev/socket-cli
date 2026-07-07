@@ -40,8 +40,8 @@ import { API_V0_URL } from '../../constants/socket.mts'
 import { getConfigValueOrUndef } from '../config.mts'
 import { debugApiResponse } from '../debug.mts'
 import {
-  ConfigError,
   buildErrorCause,
+  ConfigError,
   getNetworkErrorDiagnostics,
 } from '../error/errors.mts'
 
@@ -83,13 +83,13 @@ export function getDefaultApiBaseUrl(): string | undefined {
   return API_V0_URL
 }
 
-type HandleApiCallOptions = {
+export type HandleApiCallOptions = {
   description?: string | undefined
   spinner?: SpinnerInstance | undefined
   commandPath?: string | undefined
 }
 
-type ApiCallResult<T extends SocketSdkOperations> = CResult<
+export type ApiCallResult<T extends SocketSdkOperations> = CResult<
   SocketSdkSuccessResult<T>['data']
 >
 
@@ -420,7 +420,7 @@ export async function queryApiSafeText(
   }
 }
 
-type SendApiRequestOptions = {
+export type SendApiRequestOptions = {
   method: 'POST' | 'PUT'
   body?: unknown | undefined
   description?: string | undefined

@@ -7,7 +7,7 @@ import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
 
 const logger = getDefaultLogger()
 
-type StreamScanOptions = {
+export type StreamScanOptions = {
   commandPath?: string | undefined
   file?: string | undefined
   sdkOpts?: SetupSdkOptions | undefined

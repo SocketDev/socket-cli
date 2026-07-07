@@ -13,10 +13,10 @@ import { PLATFORM_CONFIGS } from 'build-infra/lib/platform-targets'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import {
-  SOCKETADDON_MAIN_TEMPLATE_DIR,
-  SOCKETADDON_TEMPLATE_DIR,
   getBuildOutDir,
   getSocketaddonPackageDir,
+  SOCKETADDON_MAIN_TEMPLATE_DIR,
+  SOCKETADDON_TEMPLATE_DIR,
 } from './paths.mts'
 import { processTemplate } from './utils.mts'
 

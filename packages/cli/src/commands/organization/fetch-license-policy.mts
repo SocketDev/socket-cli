@@ -5,7 +5,7 @@ import type { CResult } from '../../types.mts'
 import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
-type FetchLicensePolicyOptions = {
+export type FetchLicensePolicyOptions = {
   commandPath?: string | undefined
   sdkOpts?: SetupSdkOptions | undefined
 }

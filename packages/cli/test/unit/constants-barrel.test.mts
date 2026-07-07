@@ -12,9 +12,11 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  constants,
   FLAG_DRY_RUN,
   FLAG_JSON,
   FLAG_ORG,
+  getCliVersion,
   LOOP_SENTINEL,
   NPM,
   OUTPUT_JSON,
@@ -25,8 +27,6 @@ import {
   SOCKET_CLI_PACKAGE_NAME,
   VITEST,
   YARN,
-  constants,
-  getCliVersion,
 } from '../../src/constants.mts'
 
 describe('constants barrel exports', () => {

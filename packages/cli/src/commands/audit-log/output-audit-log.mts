@@ -11,7 +11,7 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 const logger = getDefaultLogger()
 
-type AuditLogEvent =
+export type AuditLogEvent =
   SocketSdkSuccessResult<'getAuditLogEvents'>['data']['results'][number]
 
 export async function outputAsJson(

@@ -97,7 +97,7 @@ export interface DryRunAction {
   details?: Record<string, unknown> | undefined
 }
 
-interface DryRunPreview {
+export interface DryRunPreview {
   summary: string
   actions: DryRunAction[]
   wouldSucceed?: boolean | undefined

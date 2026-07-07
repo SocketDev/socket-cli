@@ -29,7 +29,7 @@ import type { CliCommandContext } from '../../util/cli/with-subcommands.mts'
 const logger = getDefaultLogger()
 
 // Flags interface for type safety.
-interface PycliFlags {
+export interface PycliFlags {
   dryRun: boolean
 }
 

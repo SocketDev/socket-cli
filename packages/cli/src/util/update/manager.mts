@@ -43,7 +43,7 @@ const logger = getDefaultLogger()
 // Notification TTL: Show notification at most once per 7 days (604800000 ms).
 const NOTIFICATION_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
-interface UpdateManagerOptions {
+export interface UpdateManagerOptions {
   authInfo?: AuthInfo | undefined
   name: string
   version: string
@@ -176,10 +176,9 @@ export async function checkForUpdates(
   }
 
   // Check freshness inline to avoid potential double-read.
-  const isFresh =
-    record && record.timestampFetch
-      ? timestamp - record.timestampFetch < ttl
-      : false
+  const isFresh = record?.timestampFetch
+    ? timestamp - record.timestampFetch < ttl
+    : false
   let updateResult: UpdateCheckResult
 
   if (!isFresh) {

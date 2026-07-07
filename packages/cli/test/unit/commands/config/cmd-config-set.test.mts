@@ -48,13 +48,16 @@ const mockLogger = vi.hoisted(() => ({
   warn: vi.fn(),
 }))
 
-vi.mock(import('@socketsecurity/lib-stable/logger/default'), async importOriginal => {
-  const actual = await importOriginal<typeof LoggerModule>()
-  return {
-    ...actual,
-    getDefaultLogger: () => mockLogger,
-  }
-})
+vi.mock(
+  import('@socketsecurity/lib-stable/logger/default'),
+  async importOriginal => {
+    const actual = await importOriginal<typeof LoggerModule>()
+    return {
+      ...actual,
+      getDefaultLogger: () => mockLogger,
+    }
+  },
+)
 
 // Mock handler.
 const mockHandleConfigSet = vi.hoisted(() => vi.fn())
@@ -491,9 +494,7 @@ describe('cmd-config-set', () => {
         const validations = call.slice(1)
         const conflictCheck = validations.find(
           (v: unknown) =>
-            v.message &&
-            v.message.includes('--json') &&
-            v.message.includes('--markdown'),
+            v.message?.includes('--json') && v.message.includes('--markdown'),
         )
         expect(conflictCheck).toBeDefined()
         expect(conflictCheck.nook).toBe(true)

@@ -21,11 +21,11 @@ import { isPlainObject } from '@socketsecurity/lib-stable/objects/predicates'
 import type { SocketArtifact } from '../alert/artifact.mjs'
 import type { PURL_Type } from '../ecosystem/types.mjs'
 
-type PurlObject<T> = T & { type: PURL_Type }
+export type PurlObject<T> = T & { type: PURL_Type }
 
-type PurlLike = string | PackageURL | SocketArtifact
+export type PurlLike = string | PackageURL | SocketArtifact
 
-type CreatePurlObjectOptions = {
+export type CreatePurlObjectOptions = {
   type?: string | undefined
   namespace?: string | undefined
   name?: string | undefined
@@ -35,11 +35,11 @@ type CreatePurlObjectOptions = {
   throws?: boolean | undefined
 }
 
-type CreatePurlOptionsWithThrows = CreatePurlObjectOptions & {
+export type CreatePurlOptionsWithThrows = CreatePurlObjectOptions & {
   throws?: true | undefined
 }
 
-type CreatePurlOptionsNoThrows = CreatePurlObjectOptions & {
+export type CreatePurlOptionsNoThrows = CreatePurlObjectOptions & {
   throws: false
 }
 
@@ -109,15 +109,15 @@ export function createPurlObject(
   return undefined
 }
 
-type PurlObjectOptions = {
+export type PurlObjectOptions = {
   throws?: boolean | undefined
 }
 
-type PurlOptionsWithThrows = PurlObjectOptions & {
+export type PurlOptionsWithThrows = PurlObjectOptions & {
   throws?: true | undefined
 }
 
-type PurlOptionsNoThrows = PurlObjectOptions & { throws: false }
+export type PurlOptionsNoThrows = PurlObjectOptions & { throws: false }
 
 export function getPurlObject(
   purl: string,

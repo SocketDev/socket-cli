@@ -28,7 +28,7 @@ const hidden = false
 
 // Types.
 
-interface WhoamiStatus {
+export interface WhoamiStatus {
   authenticated: boolean
   location: string | undefined
   token: string | undefined

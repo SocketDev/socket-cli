@@ -121,7 +121,7 @@ export async function parseSocketFacts(factsPath: string): Promise<{
   }
 }
 
-type SocketBasicsOptions = {
+export type SocketBasicsOptions = {
   cacheDir?: string | undefined
   cwd: string
   languages?: string[] | undefined
@@ -134,7 +134,7 @@ type SocketBasicsOptions = {
   timeout?: number | undefined
 }
 
-type SocketBasicsResult = {
+export type SocketBasicsResult = {
   factsPath: string | null
   findings: {
     containers?: number | undefined
@@ -191,7 +191,7 @@ export async function runSocketBasics(
     scanSecrets = true,
     spinner,
     timeout = 600_000, // 10 minutes default.
-  } = options
+  } = { __proto__: null, ...options } as typeof options
 
   // Check if basics tools are available.
   const toolsAvailable = areBasicsToolsAvailable()

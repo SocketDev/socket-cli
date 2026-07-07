@@ -33,8 +33,8 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import {
-  GraphqlResponseError,
   graphql as OctokitGraphql,
+  GraphqlResponseError,
 } from '@octokit/graphql'
 import { RequestError } from '@octokit/request-error'
 import { Octokit } from '@octokit/rest'
@@ -73,7 +73,7 @@ export const GITHUB_ERR_GRAPHQL_RATE_LIMIT =
   'GitHub GraphQL rate limit exceeded'
 export const GITHUB_ERR_RATE_LIMIT = 'GitHub rate limit exceeded'
 
-interface CacheEntry {
+export interface CacheEntry {
   timestamp: number
   data: JsonContent
 }

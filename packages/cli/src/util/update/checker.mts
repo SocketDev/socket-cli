@@ -16,7 +16,7 @@
 
 import https from 'node:https'
 
-import semver from 'semver'
+import semver from '@socketsecurity/lib-stable/external/semver'
 
 import { NPM_REGISTRY_URL } from '@socketsecurity/lib-stable/constants/agents'
 import { debug } from '@socketsecurity/lib-stable/debug/output'
@@ -35,12 +35,12 @@ export interface AuthInfo {
 }
 
 // Type compatibility with registry-auth-token.
-interface NpmCredentials {
+export interface NpmCredentials {
   token: string
   type: string
 }
 
-interface UpdateCheckOptions {
+export interface UpdateCheckOptions {
   authInfo?: AuthInfo | NpmCredentials | undefined
   name: string
   registryUrl?: string | undefined
@@ -53,11 +53,11 @@ export interface UpdateCheckResult {
   updateAvailable: boolean
 }
 
-interface FetchOptions {
+export interface FetchOptions {
   authInfo?: AuthInfo | NpmCredentials | undefined
 }
 
-interface GetLatestVersionOptions {
+export interface GetLatestVersionOptions {
   authInfo?: AuthInfo | NpmCredentials | undefined
   registryUrl?: string | undefined
 }

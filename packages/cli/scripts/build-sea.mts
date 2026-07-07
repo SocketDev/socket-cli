@@ -36,22 +36,23 @@ const logger = getDefaultLogger()
  * Filter targets based on CLI arguments.
  */
 function filterTargets(targets, options) {
-  if (options.all) {
+  const opts = { __proto__: null, ...options } as typeof options
+  if (opts.all) {
     return targets
   }
 
   return targets.filter(target => {
-    if (options.platform && target.platform !== options.platform) {
+    if (opts.platform && target.platform !== opts.platform) {
       return false
     }
-    if (options.arch && target.arch !== options.arch) {
+    if (opts.arch && target.arch !== opts.arch) {
       return false
     }
-    if (options.libc) {
+    if (opts.libc) {
       // Normalize: undefined/null → 'glibc' (default for Linux)
       const targetLibc =
         target.platform === 'linux' && !target.libc ? 'glibc' : target.libc
-      if (targetLibc !== options.libc) {
+      if (targetLibc !== opts.libc) {
         return false
       }
     }

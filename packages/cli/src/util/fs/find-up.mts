@@ -18,7 +18,7 @@ import path from 'node:path'
 
 import { getAbortSignal } from '@socketsecurity/lib-stable/process/abort'
 
-type FindUpOptions = {
+export type FindUpOptions = {
   cwd?: string | undefined
   onlyDirectories?: boolean | undefined
   onlyFiles?: boolean | undefined

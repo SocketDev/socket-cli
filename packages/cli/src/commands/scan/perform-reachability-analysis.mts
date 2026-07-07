@@ -41,7 +41,7 @@ export type ReachabilityOptions = {
   reachVersion: string | undefined
 }
 
-type ReachabilityAnalysisOptions = {
+export type ReachabilityAnalysisOptions = {
   branchName?: string | undefined
   cwd?: string | undefined
   orgSlug?: string | undefined

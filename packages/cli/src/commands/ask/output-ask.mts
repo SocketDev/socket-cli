@@ -6,7 +6,7 @@ import colors from 'yoctocolors-cjs'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 const logger = getDefaultLogger()
 
-interface OutputAskCommandOptions {
+export interface OutputAskCommandOptions {
   query: string
   intent: {
     action: string
@@ -121,7 +121,10 @@ export function explainCommand(intent: {
  * Format the ask command output.
  */
 export function outputAskCommand(options: OutputAskCommandOptions): void {
-  const { context, explain, intent, query } = options
+  const { context, explain, intent, query } = {
+    __proto__: null,
+    ...options,
+  } as typeof options
 
   // Show the query.
   logger.log('')

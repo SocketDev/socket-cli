@@ -13,10 +13,10 @@
  * Related Files: - util/semver.mts (implementation)
  */
 
-import semver from 'semver'
+import semver from '@socketsecurity/lib-stable/external/semver'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { RangeStyles, getMajor } from '../../../src/util/semver.mts'
+import { getMajor, RangeStyles } from '../../../src/util/semver.mts'
 
 // Mock semver.
 vi.mock(import('semver'), () => ({

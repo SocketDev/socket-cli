@@ -35,7 +35,7 @@ const NPM = 'npm'
 const SOCKET_CLI_GITHUB_REPO = 'socket-cli'
 const SOCKET_GITHUB_ORG = 'SocketDev'
 
-interface UpdateNotificationOptions {
+export interface UpdateNotificationOptions {
   name: string
   current: string
   latest: string
@@ -49,7 +49,10 @@ export function formatUpdateMessage(options: UpdateNotificationOptions): {
   command?: string | undefined
   changelog: string
 } {
-  const { current, latest, name } = options
+  const { current, latest, name } = {
+    __proto__: null,
+    ...options,
+  } as typeof options
   const seaBinPath = getSeaBinaryPath()
 
   const message = `📦 Update available for ${colors.cyan(name)}: ${colors.gray(current)} → ${colors.green(latest)}`
@@ -120,7 +123,10 @@ export function showUpdateNotification(
   } catch {
     // If formatting or logging fails, show a simpler message.
     const loggerLocal = getDefaultLogger()
-    const { current, latest, name } = options
+    const { current, latest, name } = {
+      __proto__: null,
+      ...options,
+    } as typeof options
     const seaBinPath = getSeaBinaryPath()
 
     loggerLocal.log(

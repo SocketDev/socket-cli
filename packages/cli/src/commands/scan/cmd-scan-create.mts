@@ -42,7 +42,7 @@ import type { CliCommandContext } from '../../util/cli/with-subcommands.mts'
 import type { PURL_Type } from '../../util/ecosystem/types.mts'
 
 // Flags interface for type safety.
-interface ScanCreateFlags {
+export interface ScanCreateFlags {
   autoManifest?: boolean | undefined
   basics?: boolean | undefined
   branch: string

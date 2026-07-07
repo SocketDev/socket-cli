@@ -35,7 +35,7 @@ export function findBinPathDetailsSync(binName: string): {
   return { name: binName, path: theBinPath }
 }
 
-type PackageFilesForScanOptions = {
+export type PackageFilesForScanOptions = {
   cwd?: string | undefined
   config?: SocketYml | undefined
 }

@@ -39,13 +39,16 @@ const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
 }))
 
-vi.mock(import('@socketsecurity/lib-stable/logger/default'), async importOriginal => {
-  const actual = await importOriginal<typeof LoggerModule>()
-  return {
-    ...actual,
-    getDefaultLogger: () => mockLogger,
-  }
-})
+vi.mock(
+  import('@socketsecurity/lib-stable/logger/default'),
+  async importOriginal => {
+    const actual = await importOriginal<typeof LoggerModule>()
+    return {
+      ...actual,
+      getDefaultLogger: () => mockLogger,
+    }
+  },
+)
 
 const { mockGetDefaultApiToken } = vi.hoisted(() => ({
   mockGetDefaultApiToken: vi.fn(),

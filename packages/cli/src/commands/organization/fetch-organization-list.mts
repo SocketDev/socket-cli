@@ -8,14 +8,14 @@ import type {
   SocketSdkSuccessResult,
 } from '@socketsecurity/sdk-stable'
 
-type FetchOrganizationOptions = {
+export type FetchOrganizationOptions = {
   commandPath?: string | undefined
   description?: string | undefined
   sdk?: SocketSdk | undefined
   sdkOpts?: SetupSdkOptions | undefined
 }
 
-type EnterpriseOrganization = Omit<Organization, 'plan'> & {
+export type EnterpriseOrganization = Omit<Organization, 'plan'> & {
   plan: `enterprise${string}`
 }
 
@@ -26,7 +26,7 @@ export type Organization =
 
 export type Organizations = Organization[]
 
-type OrganizationsData = { organizations: Organizations }
+export type OrganizationsData = { organizations: Organizations }
 
 export type OrganizationsCResult = CResult<OrganizationsData>
 

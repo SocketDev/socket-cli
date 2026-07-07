@@ -25,7 +25,7 @@ import type { MeowFlags } from '../../flags.mts'
 const logger = getDefaultLogger()
 
 // Flags interface for type safety.
-interface CondaFlags {
+export interface CondaFlags {
   dryRun: boolean
   file: string
   json: boolean

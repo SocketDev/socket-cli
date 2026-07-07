@@ -49,8 +49,8 @@ import { isNonEmptyString } from '@socketsecurity/lib-stable/strings/predicates'
 import { isUrl } from '@socketsecurity/lib-stable/url/predicates'
 import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
 import {
-  SocketSdk,
   createUserAgentFromPkgJson,
+  SocketSdk,
 } from '@socketsecurity/sdk-stable'
 
 import {

@@ -19,7 +19,7 @@ import { checkCommandInput } from '../../util/validation/check-input.mts'
 import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 
 // Flags interface for type safety.
-interface AnalyticsFlags {
+export interface AnalyticsFlags {
   file: string
   json: boolean
   markdown: boolean
@@ -147,12 +147,12 @@ export async function run(
       nook: true,
       test:
         scope === 'org' ||
-        (repoName !== '30' && repoName !== '7' && repoName !== '90'),
+        (repoName !== '7' && repoName !== '30' && repoName !== '90'),
       message: 'When scope is repo, the second arg should be repo, not time',
       fail: 'missing',
     },
     {
-      test: time === '30' || time === '7' || time === '90',
+      test: time === '7' || time === '30' || time === '90',
       message: 'The time filter must either be 7, 30 or 90',
       fail: 'invalid range set, see --help for command arg details.',
     },

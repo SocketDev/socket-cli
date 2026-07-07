@@ -6,7 +6,8 @@
  * for embedding version info into the binary.
  *
  * Sfw ships as a GitHub binary (SocketDev/sfw-free), version like "v1.12.0",
- * used for both SEA builds and CLI dlx (the bundled binary, not an npm install).
+ * used for both SEA builds and CLI dlx (the bundled binary, not an npm
+ * install).
  */
 
 import process from 'node:process'

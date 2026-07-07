@@ -27,7 +27,7 @@ import type {
   UpdatePrOptions,
 } from './provider.mts'
 
-type GqlPrNode = {
+export type GqlPrNode = {
   author?:
     | {
         login: string
@@ -49,7 +49,7 @@ type GqlPrNode = {
   title: string
 }
 
-type GqlPullRequestsResponse = {
+export type GqlPullRequestsResponse = {
   repository: {
     pullRequests: {
       pageInfo: {
@@ -69,7 +69,15 @@ type GqlPullRequestsResponse = {
  */
 export class GitHubProvider implements PrProvider {
   async createPr(options: CreatePrOptions): Promise<PrResponse> {
-    const { base, body, head, owner, repo, retries = 3, title } = options
+    const {
+      base,
+      body,
+      head,
+      owner,
+      repo,
+      retries = 3,
+      title,
+    } = { __proto__: null, ...options } as typeof options
 
     const octokit = getOctokit()
     const octokitPullsCreateParams = { base, body, head, owner, repo, title }
@@ -101,7 +109,10 @@ export class GitHubProvider implements PrProvider {
   }
 
   async updatePr(options: UpdatePrOptions): Promise<void> {
-    const { base, head, owner, prNumber, repo } = options
+    const { base, head, owner, prNumber, repo } = {
+      __proto__: null,
+      ...options,
+    } as typeof options
 
     const octokit = getOctokit()
 
@@ -165,7 +176,13 @@ export class GitHubProvider implements PrProvider {
   }
 
   async listPrs(options: ListPrsOptions): Promise<PrMatch[]> {
-    const { author, ghsaId, owner, repo, states: statesValue = 'all' } = options
+    const {
+      author,
+      ghsaId,
+      owner,
+      repo,
+      states: statesValue = 'all',
+    } = { __proto__: null, ...options } as typeof options
     const checkAuthor = isNonEmptyString(author)
     const octokitGraphql = getOctokitGraphql()
     const matches: PrMatch[] = []
@@ -286,7 +303,10 @@ export class GitHubProvider implements PrProvider {
   }
 
   async addComment(options: AddCommentOptions): Promise<void> {
-    const { body, owner, prNumber, repo } = options
+    const { body, owner, prNumber, repo } = {
+      __proto__: null,
+      ...options,
+    } as typeof options
     const octokit = getOctokit()
 
     const result = await withGitHubRetry(

@@ -31,7 +31,7 @@ import type { SpawnExtra } from '@socketsecurity/lib-stable/process/spawn/types'
 /**
  * Argument shape for every spawn function the factory emits.
  */
-type ToolSpawnFn = (
+export type ToolSpawnFn = (
   args: string[] | readonly string[],
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
@@ -50,7 +50,7 @@ export function defineAutoDispatch(opts: {
   vfs: ToolSpawnFn
   dlx: ToolSpawnFn
 }): ToolSpawnFn {
-  const { dlx, vfs } = opts
+  const { dlx, vfs } = { __proto__: null, ...opts } as typeof opts
   return async (args, options, spawnExtra) => {
     if (isSeaBinary() && areExternalToolsAvailable()) {
       return await vfs(args, options, spawnExtra)
@@ -68,7 +68,7 @@ export function defineGitHubReleaseSpawn(opts: {
   toolName: string
   resolve: () => BinaryResolution
 }): ToolSpawnFn {
-  const { resolve, toolName } = opts
+  const { resolve, toolName } = { __proto__: null, ...opts } as typeof opts
   return async (args, options, spawnExtra) => {
     const resolution = resolve()
 

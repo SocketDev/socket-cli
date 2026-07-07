@@ -47,7 +47,7 @@ import type { REPORT_LEVEL } from './types.mts'
 import type { OutputKind } from '../../types.mts'
 import type { Remap } from '@socketsecurity/lib-stable/objects/types'
 
-type HandleCreateNewScanConfig = {
+export type HandleCreateNewScanConfig = {
   autoManifest: boolean
   basics: boolean
   branchName: string

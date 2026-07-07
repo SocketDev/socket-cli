@@ -22,7 +22,7 @@ import type { MeowFlags } from '../../flags.mts'
 const logger = getDefaultLogger()
 
 // Flags interface for type safety.
-interface ScalaFlags {
+export interface ScalaFlags {
   bin: string | undefined
   out: string | undefined
   sbtOpts: string | undefined

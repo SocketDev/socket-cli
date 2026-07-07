@@ -20,13 +20,16 @@ import type { SocketArtifact } from '../../util/alert/artifact.mts'
 import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
-type AlertKey = string
-type EcoMap = Map<string, ReportLeafNode | PackageMap>
-type FileMap = Map<string, ReportLeafNode | Map<AlertKey, ReportLeafNode>>
-type PackageMap = Map<string, ReportLeafNode | VersionMap>
-type VersionMap = Map<string, ReportLeafNode | FileMap>
+export type AlertKey = string
+export type EcoMap = Map<string, ReportLeafNode | PackageMap>
+export type FileMap = Map<
+  string,
+  ReportLeafNode | Map<AlertKey, ReportLeafNode>
+>
+export type PackageMap = Map<string, ReportLeafNode | VersionMap>
+export type VersionMap = Map<string, ReportLeafNode | FileMap>
 
-type ViolationsMap = Map<string, EcoMap>
+export type ViolationsMap = Map<string, EcoMap>
 
 export interface ScanReport {
   orgSlug: string

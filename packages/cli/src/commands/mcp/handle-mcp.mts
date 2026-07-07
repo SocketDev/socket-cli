@@ -9,7 +9,7 @@ import type { ServerConfig } from './server.mts'
 
 const logger = getDefaultLogger()
 
-interface HandleMcpOptions {
+export interface HandleMcpOptions {
   http: boolean
   oauthClientId?: string | undefined
   oauthClientSecret?: string | undefined

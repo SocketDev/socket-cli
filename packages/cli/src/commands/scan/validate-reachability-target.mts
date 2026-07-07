@@ -1,7 +1,7 @@
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
-type ReachabilityTargetValidation = {
+export type ReachabilityTargetValidation = {
   isDirectory: boolean
   isInsideCwd: boolean
   isValid: boolean

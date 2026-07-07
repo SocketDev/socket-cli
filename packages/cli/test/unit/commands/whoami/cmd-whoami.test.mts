@@ -45,13 +45,16 @@ const mockLogger = vi.hoisted(() => ({
   warn: vi.fn(),
 }))
 
-vi.mock(import('@socketsecurity/lib-stable/logger/default'), async importOriginal => {
-  const actual = await importOriginal<typeof LoggerModule>()
-  return {
-    ...actual,
-    getDefaultLogger: () => mockLogger,
-  }
-})
+vi.mock(
+  import('@socketsecurity/lib-stable/logger/default'),
+  async importOriginal => {
+    const actual = await importOriginal<typeof LoggerModule>()
+    return {
+      ...actual,
+      getDefaultLogger: () => mockLogger,
+    }
+  },
+)
 
 // Create mock functions with hoisting.
 const {

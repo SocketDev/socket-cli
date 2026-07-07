@@ -20,7 +20,7 @@ import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 import type { MeowFlags } from '../../flags.mts'
 
 // Flags interface for type safety.
-interface AuditLogFlags {
+export interface AuditLogFlags {
   interactive: boolean
   json: boolean
   markdown: boolean

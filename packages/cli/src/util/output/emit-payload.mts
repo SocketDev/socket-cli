@@ -16,13 +16,13 @@
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { SENTINEL_BEGIN, SENTINEL_END, isMachineOutputMode } from './mode.mts'
+import { isMachineOutputMode, SENTINEL_BEGIN, SENTINEL_END } from './mode.mts'
 
 import type { MachineModeFlags } from './mode.mts'
 
 const logger = getDefaultLogger()
 
-interface EmitPayloadOptions {
+export interface EmitPayloadOptions {
   flags: MachineModeFlags
 }
 
@@ -44,8 +44,9 @@ export function emitPayload(
   // logger.log appends its own \n, so strip ONE trailing newline from
   // the payload to avoid a doubled \n. Applied in both modes so the
   // output is consistent regardless of mode.
+  const opts = { __proto__: null, ...options } as typeof options
   const normalized = payload.endsWith('\n') ? payload.slice(0, -1) : payload
-  if (isMachineOutputMode(options.flags)) {
+  if (isMachineOutputMode(opts.flags)) {
     logger.log(SENTINEL_BEGIN)
     logger.log(normalized)
     logger.log(SENTINEL_END)

@@ -17,7 +17,7 @@ import type { LocalConfig } from '../../util/config.mts'
 import type { MeowFlags } from '../../flags.mts'
 
 // Flags interface for type safety.
-interface ConfigAutoFlags {
+export interface ConfigAutoFlags {
   json: boolean
   markdown: boolean
 }

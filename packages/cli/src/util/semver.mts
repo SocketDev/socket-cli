@@ -1,4 +1,4 @@
-import semver from 'semver'
+import semver from '@socketsecurity/lib-stable/external/semver'
 
 import type { SemVer } from 'semver'
 

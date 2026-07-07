@@ -4,7 +4,7 @@ import { outputScanReport } from './output-scan-report.mts'
 import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
 import type { OutputKind } from '../../types.mts'
 
-type HandleScanReportConfig = {
+export type HandleScanReportConfig = {
   orgSlug: string
   scanId: string
   includeLicensePolicy: boolean

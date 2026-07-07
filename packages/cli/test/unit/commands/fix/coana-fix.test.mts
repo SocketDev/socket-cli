@@ -191,8 +191,8 @@ const baseConfig: FixConfig = {
 const ciFixEnv = {
   baseBranch: 'main',
   gitEmail: 'bot@example.com',
-  gitUser: 'socket-bot',
   githubToken: 'gh-token',
+  gitUser: 'socket-bot',
   isCi: true,
   repoInfo: { owner: 'org', repo: 'repo' },
 }

@@ -58,8 +58,8 @@ vi.mock(import('@socketsecurity/lib-stable/fs/safe'), () => ({
 }))
 
 import {
-  EXTERNAL_TOOLS,
   areExternalToolsAvailable,
+  EXTERNAL_TOOLS,
   extractExternalTools,
   extractTool,
   getNodeSmolBasePath,

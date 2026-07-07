@@ -48,7 +48,7 @@ export function formatReportCard(
   ].join('\n')
 }
 
-type FormatScoreOptions = {
+export type FormatScoreOptions = {
   colorize?: boolean | undefined
   padding?: number | undefined
 }
@@ -134,7 +134,7 @@ export function generateTextReport(
   return o.join('\n')
 }
 
-type AlertStringOptions = {
+export type AlertStringOptions = {
   colorize?: boolean | undefined
 }
 
@@ -186,7 +186,7 @@ export function getAlertString(
 }
 
 // This is a simplified view of an artifact. Potentially merged with other artifacts.
-interface DedupedArtifact {
+export interface DedupedArtifact {
   ecosystem: string // artifact.type
   namespace: string
   name: string

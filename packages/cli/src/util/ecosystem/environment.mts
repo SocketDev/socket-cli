@@ -22,7 +22,7 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import browserslist from 'browserslist'
-import semver from 'semver'
+import semver from '@socketsecurity/lib-stable/external/semver'
 
 import { whichReal } from '@socketsecurity/lib-stable/bin/which'
 import {
@@ -79,7 +79,7 @@ const binByAgent = new Map<Agent, string>([
 
 export type Agent = (typeof AGENTS)[number]
 
-type EnvBase = {
+export type EnvBase = {
   agent: Agent
   agentExecPath: string
   agentSupported: boolean
@@ -114,18 +114,18 @@ export type EnvDetails = Readonly<
   >
 >
 
-type DetectAndValidateOptions = {
+export type DetectAndValidateOptions = {
   cmdName?: string | undefined
   logger?: Logger | undefined
   prod?: boolean | undefined
 }
 
-type DetectOptions = {
+export type DetectOptions = {
   cwd?: string | undefined
   onUnknown?: ((pkgManager: string | undefined) => void) | undefined
 }
 
-type PartialEnvDetails = Readonly<
+export type PartialEnvDetails = Readonly<
   Remap<
     EnvBase & {
       agentVersion: SemVer | undefined

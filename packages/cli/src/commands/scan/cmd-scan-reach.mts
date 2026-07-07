@@ -28,7 +28,7 @@ import type { CliCommandContext } from '../../util/cli/with-subcommands.mts'
 import type { PURL_Type } from '../../util/ecosystem/types.mts'
 
 // Flags interface for type safety.
-interface ScanReachFlags {
+export interface ScanReachFlags {
   cwd: string
   interactive: boolean
   json: boolean

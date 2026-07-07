@@ -6,7 +6,7 @@
 /**
  * Error details for telemetry events.
  */
-interface TelemetryEventError {
+export interface TelemetryEventError {
   /**
    * Error class/type name.
    */

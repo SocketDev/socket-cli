@@ -29,8 +29,8 @@ import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 import type { Choice } from '@socketsecurity/lib-stable/stdio/prompts'
 const logger = getDefaultLogger()
 
-type OrgChoice = Choice<string>
-type OrgChoices = OrgChoice[]
+export type OrgChoice = Choice<string>
+export type OrgChoices = OrgChoice[]
 
 export async function attemptLogin(
   apiBaseUrl: string | undefined,

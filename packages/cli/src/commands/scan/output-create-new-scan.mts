@@ -14,7 +14,7 @@ import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 const logger = getDefaultLogger()
 
-type CreateNewScanOptions = {
+export type CreateNewScanOptions = {
   interactive?: boolean | undefined
   outputKind?: OutputKind | undefined
   spinner?: SpinnerInstance | undefined

@@ -22,7 +22,7 @@ import type {
 import type { MeowFlags } from '../../flags.mts'
 
 // Flags interface for type safety.
-interface ScanReportFlags {
+export interface ScanReportFlags {
   fold: FOLD_SETTING
   json: boolean
   markdown: boolean

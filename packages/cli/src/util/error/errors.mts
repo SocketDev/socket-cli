@@ -25,8 +25,8 @@
 import { setTimeout as sleep } from 'node:timers/promises'
 
 import {
-  UNKNOWN_ERROR,
   kInternalsSymbol,
+  UNKNOWN_ERROR,
 } from '@socketsecurity/lib-stable/constants/sentinels'
 import { debugNs } from '@socketsecurity/lib-stable/debug/output'
 
@@ -42,7 +42,7 @@ import {
 } from '../../constants/socket.mts'
 
 // Access internals via kInternalsSymbol.
-type SentryClient = {
+export type SentryClient = {
   captureException(exception: unknown, hint?: unknown): string
 }
 const constants = {
@@ -51,7 +51,7 @@ const constants = {
 const internals = constants[kInternalsSymbol]
 const getSentry = internals?.getSentry
 
-type EventHintOrCaptureContext = { [key: string]: unknown } | Function
+export type EventHintOrCaptureContext = { [key: string]: unknown } | Function
 
 /**
  * Authentication error with recovery suggestions. Thrown when API

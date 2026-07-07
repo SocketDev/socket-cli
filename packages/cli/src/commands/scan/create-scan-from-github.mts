@@ -13,11 +13,11 @@ import { formatErrorWithDetail } from '../../util/error/errors.mjs'
 import { socketHttpRequest } from '../../util/socket/api.mjs'
 import { isReportSupportedFile } from '../../util/fs/glob.mts'
 import {
+  getOctokit,
   GITHUB_ERR_ABUSE_DETECTION,
   GITHUB_ERR_AUTH_FAILED,
   GITHUB_ERR_GRAPHQL_RATE_LIMIT,
   GITHUB_ERR_RATE_LIMIT,
-  getOctokit,
   withGitHubRetry,
 } from '../../util/git/github.mts'
 import { fetchListAllRepos } from '../repository/fetch-list-all-repos.mts'
@@ -26,7 +26,7 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 const logger = getDefaultLogger()
 
-type RepoListItem =
+export type RepoListItem =
   SocketSdkSuccessResult<'listRepositories'>['data']['results'][number]
 
 export async function createScanFromGithub({

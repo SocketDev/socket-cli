@@ -6,7 +6,7 @@ import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
 import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
-type FetchCreateOrgFullScanConfigs = {
+export type FetchCreateOrgFullScanConfigs = {
   branchName: string
   commitHash: string
   commitMessage: string
@@ -17,7 +17,7 @@ type FetchCreateOrgFullScanConfigs = {
   workspace?: string | undefined
 }
 
-type FetchCreateOrgFullScanOptions = {
+export type FetchCreateOrgFullScanOptions = {
   commandPath?: string | undefined
   cwd?: string | undefined
   defaultBranch?: boolean | undefined

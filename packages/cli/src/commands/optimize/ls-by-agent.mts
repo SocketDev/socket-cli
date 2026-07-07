@@ -45,7 +45,7 @@ export function cleanupQueryStdout(stdout: string): string {
   return JSON.stringify(Array.from(names), null, 2)
 }
 
-type AgentListDepsOptions = {
+export type AgentListDepsOptions = {
   cwd?: string | undefined
   npmExecPath?: string | undefined
 }

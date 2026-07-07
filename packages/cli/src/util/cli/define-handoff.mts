@@ -34,7 +34,7 @@ import {
 import type { CliCommandContext } from './with-subcommands.mts'
 import type { CliSubcommand } from './with-subcommands-shared.mts'
 
-interface DefineHandoffCommandOptions {
+export interface DefineHandoffCommandOptions {
   /**
    * Command name as it appears under `socket`. Forwarded to sfw as the first
    * arg unless `binaryPicker` overrides it.
@@ -106,7 +106,10 @@ export function buildHelp(
   opts: DefineHandoffCommandOptions,
   parentName: string,
 ): (command: string) => string {
-  const { examples, helpNotes, name, showApiRequirements, wrapperHint } = opts
+  const { examples, helpNotes, name, showApiRequirements, wrapperHint } = {
+    __proto__: null,
+    ...opts,
+  } as typeof opts
 
   return (command: string) => {
     const lines: string[] = []
@@ -126,7 +129,7 @@ export function buildHelp(
       `          Socket Firewall provides real-time security scanning for ${name} packages.`,
     )
 
-    if (helpNotes && helpNotes.length) {
+    if (helpNotes?.length) {
       for (let i = 0, { length } = helpNotes; i < length; i += 1) {
         const note = helpNotes[i]
         lines.push(`          ${note}`)
@@ -170,7 +173,7 @@ export function defineHandoffCommand(
     spawnMode,
     supportDryRun = DEFAULT_SUPPORT_DRY_RUN,
     trackTelemetry = DEFAULT_TRACK_TELEMETRY,
-  } = opts
+  } = { __proto__: null, ...opts } as typeof opts
 
   async function run(
     argv: string[] | readonly string[],
@@ -253,7 +256,10 @@ export function wireChildExit(
     subprocessStartTime: number | undefined
   },
 ): void {
-  const { name, subprocessStartTime, trackTelemetry } = options
+  const { name, subprocessStartTime, trackTelemetry } = {
+    __proto__: null,
+    ...options,
+  } as typeof options
   childProcess.on(
     'exit',
     (code: number | null, signalName: NodeJS.Signals | null) => {

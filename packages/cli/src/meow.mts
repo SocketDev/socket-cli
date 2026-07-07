@@ -61,24 +61,27 @@ export function defineFlags<const F extends MeowFlags>(flags: F): F {
 // `cli.flags.someFlag` from a wide-typed result don't get the wrong
 // runtime shape narrowed away. Concrete schemas with literal `type`
 // strings still resolve to the precise primitive.
-type ValueOfFlagType<F extends MeowFlag> = F['type'] extends 'string'
+export type ValueOfFlagType<F extends MeowFlag> = F['type'] extends 'string'
   ? string
   : F['type'] extends 'number'
     ? number
     : F['type'] extends 'boolean'
       ? boolean
       : unknown
-type ValueOrArray<F extends MeowFlag, V> = F['isMultiple'] extends true
+export type ValueOrArray<F extends MeowFlag, V> = F['isMultiple'] extends true
   ? V[]
   : V
-type ValueOrUndefined<F extends MeowFlag, V> = F['default'] extends undefined
+export type ValueOrUndefined<
+  F extends MeowFlag,
+  V,
+> = F['default'] extends undefined
   ? V | undefined
   : F extends { default: infer D }
     ? D extends undefined
       ? V | undefined
       : V
     : V | undefined
-type InferFlagValue<F extends MeowFlag> = ValueOrUndefined<
+export type InferFlagValue<F extends MeowFlag> = ValueOrUndefined<
   F,
   ValueOrArray<F, ValueOfFlagType<F>>
 >
@@ -87,7 +90,7 @@ type InferFlagValue<F extends MeowFlag> = ValueOrUndefined<
 // schema (e.g. `cli.flags['json']` on a command whose schema only spreads
 // `commonFlags`). The index signature returns `unknown`, preserving the
 // old runtime behavior; the known-key entries get the precise primitive.
-type InferFlagValues<F extends MeowFlags> = {
+export type InferFlagValues<F extends MeowFlags> = {
   [K in keyof F]: InferFlagValue<F[K]>
 } & {
   [extraKey: string]: unknown
@@ -108,7 +111,7 @@ export interface MeowOptions<F extends MeowFlags = MeowFlags> {
   readonly helpIndent?: number | undefined
 }
 
-interface MeowResult<F extends MeowFlags = MeowFlags> {
+export interface MeowResult<F extends MeowFlags = MeowFlags> {
   readonly input: readonly string[]
   readonly flags: InferFlagValues<F>
   readonly unknownFlags: readonly string[]

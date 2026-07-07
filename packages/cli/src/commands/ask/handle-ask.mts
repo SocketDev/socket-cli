@@ -30,13 +30,13 @@ const logger = getDefaultLogger()
 // semantic-match fallback (currently a no-op; see onnx-match.mts).
 const PATTERN_MATCH_THRESHOLD = 0.6
 
-interface HandleAskOptions {
+export interface HandleAskOptions {
   query: string
   execute: boolean
   explain: boolean
 }
 
-interface ParsedIntent {
+export interface ParsedIntent {
   action: string
   command: string[]
   confidence: number
@@ -165,7 +165,10 @@ export async function getProjectContext(cwd: string): Promise<{
  * Main handler for ask command.
  */
 export async function handleAsk(options: HandleAskOptions): Promise<void> {
-  const { execute, explain, query } = options
+  const { execute, explain, query } = {
+    __proto__: null,
+    ...options,
+  } as typeof options
 
   // Parse the intent.
   const intent = await parseIntent(query)

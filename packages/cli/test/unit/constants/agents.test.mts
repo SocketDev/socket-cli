@@ -28,6 +28,9 @@ vi.mock(import('@socketsecurity/lib-stable/bin/which'), () => ({
 
 import {
   BUN,
+  getMinimumVersionByAgent,
+  getNpmExecPath,
+  getPnpmExecPath,
   NPM,
   NPX,
   PNPM,
@@ -35,9 +38,6 @@ import {
   YARN,
   YARN_BERRY,
   YARN_CLASSIC,
-  getMinimumVersionByAgent,
-  getNpmExecPath,
-  getPnpmExecPath,
 } from '../../../src/constants/agents.mts'
 
 describe('agents constants', () => {

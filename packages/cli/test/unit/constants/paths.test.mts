@@ -19,17 +19,11 @@ vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
 }))
 
 import {
+  configPath,
+  distPath,
   DOT_SOCKET_DOT_FACTS_JSON,
   ENVIRONMENT_YAML,
   ENVIRONMENT_YML,
-  PACKAGE_LOCK_JSON,
-  PNPM_LOCK_YAML,
-  REQUIREMENTS_TXT,
-  UPDATE_STORE_DIR,
-  UPDATE_STORE_FILE_NAME,
-  YARN_LOCK,
-  configPath,
-  distPath,
   externalPath,
   getBashRcPath,
   getBinCliPath,
@@ -45,8 +39,14 @@ import {
   getSocketCachePath,
   getZshRcPath,
   homePath,
+  PACKAGE_LOCK_JSON,
+  PNPM_LOCK_YAML,
+  REQUIREMENTS_TXT,
   rootPath,
   srcPath,
+  UPDATE_STORE_DIR,
+  UPDATE_STORE_FILE_NAME,
+  YARN_LOCK,
 } from '../../../src/constants/paths.mts'
 
 describe('paths constants', () => {

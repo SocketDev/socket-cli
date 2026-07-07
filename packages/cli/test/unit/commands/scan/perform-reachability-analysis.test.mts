@@ -105,13 +105,16 @@ const mockLogger = vi.hoisted(() => ({
   info: vi.fn(),
 }))
 
-vi.mock(import('@socketsecurity/lib-stable/logger/default'), async importOriginal => {
-  const actual = await importOriginal<typeof LoggerModule>()
-  return {
-    ...actual,
-    getDefaultLogger: () => mockLogger,
-  }
-})
+vi.mock(
+  import('@socketsecurity/lib-stable/logger/default'),
+  async importOriginal => {
+    const actual = await importOriginal<typeof LoggerModule>()
+    return {
+      ...actual,
+      getDefaultLogger: () => mockLogger,
+    }
+  },
+)
 
 const { performReachabilityAnalysis } =
   await import('../../../../src/commands/scan/perform-reachability-analysis.mts')

@@ -5,7 +5,7 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
-type FetchAuditLogsConfig = {
+export type FetchAuditLogsConfig = {
   logType: string
   orgSlug: string
   outputKind: OutputKind
@@ -13,7 +13,7 @@ type FetchAuditLogsConfig = {
   perPage: number
 }
 
-type FetchAuditLogOptions = {
+export type FetchAuditLogOptions = {
   commandPath?: string | undefined
   sdkOpts?: SetupSdkOptions | undefined
 }

@@ -27,7 +27,7 @@ import type { CliCommandContext } from '../../util/cli/with-subcommands.mts'
 const logger = getDefaultLogger()
 
 // Flags interface for type safety.
-interface SfwFlags {
+export interface SfwFlags {
   dryRun: boolean
 }
 

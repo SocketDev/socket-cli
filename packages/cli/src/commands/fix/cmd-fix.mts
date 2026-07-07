@@ -39,7 +39,7 @@ import type { RangeStyle } from '../../util/semver.mts'
 const logger = getDefaultLogger()
 
 // Flags interface for type safety.
-interface FixFlags {
+export interface FixFlags {
   all: boolean
   applyFixes: boolean
   autopilot: boolean

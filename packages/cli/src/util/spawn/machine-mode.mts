@@ -40,7 +40,7 @@ const UNIVERSAL_ENV: NodeJS.ProcessEnv = {
   NO_COLOR: '1',
 }
 
-interface ToolRules {
+export interface ToolRules {
   /**
    * Env vars specific to this tool. Merged on top of UNIVERSAL_ENV.
    */

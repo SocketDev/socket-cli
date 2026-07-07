@@ -6,13 +6,13 @@ import { defineFlags, meow } from './meow.mts'
 import type { MeowFlag as Flag } from './meow.mts'
 
 // Meow doesn't expose this.
-type AnyFlag = StringFlag | BooleanFlag | NumberFlag
+export type AnyFlag = StringFlag | BooleanFlag | NumberFlag
 
-type BooleanFlag = Flag & { type: 'boolean' }
+export type BooleanFlag = Flag & { type: 'boolean' }
 
-type NumberFlag = Flag & { type: 'number' }
+export type NumberFlag = Flag & { type: 'number' }
 
-type StringFlag = Flag & { type: 'string' }
+export type StringFlag = Flag & { type: 'string' }
 
 export type MeowFlag = AnyFlag & {
   description: string
@@ -22,7 +22,7 @@ export type MeowFlag = AnyFlag & {
 // We use this description in getFlagListOutput, meow doesn't care.
 export type MeowFlags = Record<string, MeowFlag>
 
-type RawSpaceSizeFlags = {
+export type RawSpaceSizeFlags = {
   maxOldSpaceSize: number
   maxSemiSpaceSize: number
 }

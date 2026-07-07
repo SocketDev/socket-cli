@@ -60,7 +60,7 @@ import type { FixConfig } from './types.mts'
 import type { CResult } from '../../types.mts'
 const logger = getDefaultLogger()
 
-type GhsaFixResult = {
+export type GhsaFixResult = {
   ghsaId: string
   fixed: boolean
   pullRequestLink?: string | undefined
@@ -332,7 +332,7 @@ export async function coanaFix(
             .split('\n')
             .filter(line => line.trim())
           const ghsaIdsRaw = lines.length > 0 ? lines[lines.length - 1] : ''
-          if (ghsaIdsRaw && ghsaIdsRaw.trim()) {
+          if (ghsaIdsRaw?.trim()) {
             const parsed = JSON.parse(ghsaIdsRaw)
             if (!Array.isArray(parsed)) {
               throw new Error(

@@ -39,7 +39,15 @@ export class GitLabProvider implements PrProvider {
   }
 
   async createPr(options: CreatePrOptions): Promise<PrResponse> {
-    const { base, body, head, owner, repo, retries = 3, title } = options
+    const {
+      base,
+      body,
+      head,
+      owner,
+      repo,
+      retries = 3,
+      title,
+    } = { __proto__: null, ...options } as typeof options
 
     // Get project ID from owner/repo.
     const projectId = `${owner}/${repo}`
@@ -107,7 +115,10 @@ export class GitLabProvider implements PrProvider {
   }
 
   async updatePr(options: UpdatePrOptions): Promise<void> {
-    const { owner, prNumber, repo } = options
+    const { owner, prNumber, repo } = {
+      __proto__: null,
+      ...options,
+    } as typeof options
 
     const projectId = `${owner}/${repo}`
 
@@ -145,7 +156,13 @@ export class GitLabProvider implements PrProvider {
   }
 
   async listPrs(options: ListPrsOptions): Promise<PrMatch[]> {
-    const { author, ghsaId, owner, repo, states: statesValue = 'all' } = options
+    const {
+      author,
+      ghsaId,
+      owner,
+      repo,
+      states: statesValue = 'all',
+    } = { __proto__: null, ...options } as typeof options
     const checkAuthor = isNonEmptyString(author)
     const matches: PrMatch[] = []
     const projectId = `${owner}/${repo}`
@@ -229,7 +246,10 @@ export class GitLabProvider implements PrProvider {
   }
 
   async addComment(options: AddCommentOptions): Promise<void> {
-    const { body, owner, prNumber, repo } = options
+    const { body, owner, prNumber, repo } = {
+      __proto__: null,
+      ...options,
+    } as typeof options
     const projectId = `${owner}/${repo}`
 
     try {

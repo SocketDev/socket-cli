@@ -22,7 +22,7 @@ import { getHome } from '@socketsecurity/lib-stable/env/home'
 const WORD_OVERLAP_THRESHOLD = 0.3
 
 // Lazy-loaded ~3KB semantic index. `null` until loadSemanticIndex resolves.
-type SemanticIndex = {
+export type SemanticIndex = {
   commands?: Record<string, unknown> | undefined
 }
 let semanticIndex: SemanticIndex | undefined = undefined

@@ -17,7 +17,7 @@ import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 const logger = getDefaultLogger()
 const spinner = getDefaultSpinner()
 
-type FetchScanData = {
+export type FetchScanData = {
   includeLicensePolicy?: boolean | undefined
   sdkOpts?: SetupSdkOptions | undefined
 }

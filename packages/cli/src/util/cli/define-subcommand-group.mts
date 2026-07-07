@@ -21,7 +21,7 @@ import { meowWithSubcommands } from './with-subcommands.mts'
 import type { MeowFlags } from '../../flags.mts'
 import type { CliAliases, CliSubcommand } from './with-subcommands-shared.mts'
 
-interface DefineSubcommandGroupOptions {
+export interface DefineSubcommandGroupOptions {
   /**
    * Group name as it appears under `socket`. Used as the second token of the
    * usage string (`socket <name> <subcommand>`).
@@ -86,7 +86,7 @@ export function defineSubcommandGroup(
     name,
     passCommonFlags,
     subcommands,
-  } = opts
+  } = { __proto__: null, ...opts } as typeof opts
 
   const effectiveFlags =
     flags ?? (passCommonFlags ? defineFlags({ ...commonFlags }) : undefined)

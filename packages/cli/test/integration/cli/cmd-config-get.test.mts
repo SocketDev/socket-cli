@@ -44,7 +44,7 @@
  * - Src/util/config.mts - Config management utilities
  */
 
-import semver from 'semver'
+import semver from '@socketsecurity/lib-stable/external/semver'
 import { describe, expect } from 'vitest'
 
 import { getNodeVersion } from '@socketsecurity/lib-stable/constants/node'

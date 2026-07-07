@@ -22,7 +22,7 @@ import type { MeowFlags } from '../../flags.mts'
 const logger = getDefaultLogger()
 
 // Flags interface for type safety.
-interface GradleFlags {
+export interface GradleFlags {
   bin: string | undefined
   gradleOpts: string | undefined
   verbose: boolean | undefined

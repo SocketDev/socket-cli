@@ -23,7 +23,7 @@ import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 import type { MeowFlags } from '../../flags.mts'
 
 // Flags interface for type safety.
-interface ScanGithubFlags {
+export interface ScanGithubFlags {
   all: boolean | undefined
   githubApiUrl: string
   githubToken: string

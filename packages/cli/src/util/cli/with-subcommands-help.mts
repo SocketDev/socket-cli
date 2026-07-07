@@ -46,7 +46,7 @@ import type { MeowFlag, MeowFlags } from '../../flags.mts'
 const HELP_INDENT = 2
 const HELP_PAD_NAME = 28
 
-interface BuildHelpLinesOptions {
+export interface BuildHelpLinesOptions {
   aliases: Record<string, CliAliases[string]>
   argv: readonly string[]
   /**
@@ -60,7 +60,7 @@ interface BuildHelpLinesOptions {
   subcommands: Record<string, CliSubcommand>
 }
 
-interface BucketSection {
+export interface BucketSection {
   readonly heading: string
   readonly bucket: CliBucket
 }
@@ -88,8 +88,10 @@ const BUCKET_SECTIONS: readonly BucketSection[] = [
  * list of the subcommand's own children + aliases.
  */
 export function buildHelpLines(opts: BuildHelpLinesOptions): string[] {
-  const { aliases, argv, buckets, flags, isRootCommand, name, subcommands } =
-    opts
+  const { aliases, argv, buckets, flags, isRootCommand, name, subcommands } = {
+    __proto__: null,
+    ...opts,
+  } as typeof opts
 
   const lines = ['', 'Usage', `  $ ${name} <command>`]
   if (isRootCommand) {

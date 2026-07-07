@@ -113,7 +113,7 @@ let configFromFlag = false
 
 let pendingSave = false
 
-type FoundSocketYml = {
+export type FoundSocketYml = {
   path: string
   parsed: SocketYml
 }

@@ -36,9 +36,9 @@ vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
 }))
 
 import {
-  NetworkUtils,
   checkForUpdates,
   isUpdateAvailable,
+  NetworkUtils,
 } from '../../../../src/util/update/checker.mts'
 
 // Helper types.

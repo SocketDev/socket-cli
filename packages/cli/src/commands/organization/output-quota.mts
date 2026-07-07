@@ -9,7 +9,7 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 const logger = getDefaultLogger()
 
-type QuotaData = SocketSdkSuccessResult<'getQuota'>['data']
+export type QuotaData = SocketSdkSuccessResult<'getQuota'>['data']
 
 export function formatRefresh(
   nextWindowRefresh: string | null | undefined,

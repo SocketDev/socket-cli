@@ -18,7 +18,7 @@ import type {
 } from '../../util/cli/with-subcommands.mjs'
 import type { LocalConfig } from '../../util/config.mts'
 
-type ConfigCommandSpec = {
+export type ConfigCommandSpec = {
   commandName: string
   description: string
   hidden?: boolean | undefined

@@ -26,7 +26,7 @@ import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 const logger = getDefaultLogger()
 
 // Flags interface for type safety.
-interface CdxgenFlags {
+export interface CdxgenFlags {
   dryRun: boolean
 }
 

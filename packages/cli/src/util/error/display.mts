@@ -14,15 +14,15 @@ import {
   AuthError,
   ConfigError,
   FileSystemError,
+  getRecoverySuggestions,
   InputError,
   NetworkError,
   RateLimitError,
-  getRecoverySuggestions,
 } from './errors.mts'
 
 import type { CResult } from '../../types.mjs'
 
-type ErrorDisplayOptions = {
+export type ErrorDisplayOptions = {
   cause?: string | undefined
   showStack?: boolean | undefined
   title?: string | undefined
@@ -192,6 +192,7 @@ export function formatErrorForTerminal(
   error: unknown,
   options?: ErrorDisplayOptions | undefined,
 ): string {
+  const opts = { __proto__: null, ...options } as typeof options
   const { body, message, title } = formatErrorForDisplay(error, options)
 
   const lines = [
@@ -210,7 +211,7 @@ export function formatErrorForTerminal(
   }
 
   if (body) {
-    const verbose = options?.verbose ?? isDebugNs('error')
+    const verbose = opts?.verbose ?? isDebugNs('error')
     if (verbose) {
       lines.push('', colors.dim('Stack trace:'), body)
     } else {

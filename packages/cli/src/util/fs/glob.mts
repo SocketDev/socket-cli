@@ -88,7 +88,7 @@ export async function getWorkspaceGlobs(
     : []
 }
 
-type GlobWithGitIgnoreOptions = GlobOptions & {
+export type GlobWithGitIgnoreOptions = GlobOptions & {
   // Optional filter function to apply during streaming.
   // When provided, only files passing this filter are accumulated.
   // This is critical for memory efficiency when scanning large monorepos.

@@ -27,17 +27,17 @@ import {
 
 import type { MeowFlags } from '../../flags.mts'
 
-type ApiRequirementsOptions = {
+export type ApiRequirementsOptions = {
   indent?: number | undefined
 }
 
-type HelpListOptions = {
+export type HelpListOptions = {
   indent?: number | undefined
   keyPrefix?: string | undefined
   padName?: number | undefined
 }
 
-type ListDescription =
+export type ListDescription =
   | { description: string }
   | { description: string; hidden: boolean }
 

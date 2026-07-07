@@ -31,7 +31,7 @@ import { createPrProvider } from '../../util/git/provider-factory.mts'
 import type { OctokitResponse } from '@octokit/types'
 import type { JsonContent } from '@socketsecurity/lib-stable/fs/types'
 
-type GQL_MERGE_STATE_STATUS =
+export type GQL_MERGE_STATE_STATUS =
   | 'BEHIND'
   | 'BLOCKED'
   | 'CLEAN'
@@ -41,7 +41,7 @@ type GQL_MERGE_STATE_STATUS =
   | 'UNKNOWN'
   | 'UNSTABLE'
 
-type GQL_PR_STATE = 'OPEN' | 'CLOSED' | 'MERGED'
+export type GQL_PR_STATE = 'OPEN' | 'CLOSED' | 'MERGED'
 
 export type PrMatch = {
   author: string
@@ -151,7 +151,7 @@ export type PrAutoMergeState = {
   details?: string[] | undefined
 }
 
-type SocketPrsOptions = {
+export type SocketPrsOptions = {
   author?: string | undefined
   ghsaId?: string | undefined
   states?: 'all' | GQL_PR_STATE | GQL_PR_STATE[] | undefined
@@ -167,7 +167,7 @@ export async function getSocketFixPrs(
   )
 }
 
-type GqlPrNode = {
+export type GqlPrNode = {
   author?:
     | {
         login: string
@@ -181,7 +181,7 @@ type GqlPrNode = {
   title: string
 }
 
-type GqlPullRequestsResponse = {
+export type GqlPullRequestsResponse = {
   repository: {
     pullRequests: {
       pageInfo: {
@@ -193,7 +193,7 @@ type GqlPullRequestsResponse = {
   }
 }
 
-type ContextualPrMatch = {
+export type ContextualPrMatch = {
   context: {
     apiType: 'graphql' | 'rest'
     cacheKey: string
@@ -338,14 +338,14 @@ export async function getSocketFixPrsWithContext(
   return contextualMatches
 }
 
-type OpenSocketFixPrOptions = {
+export type OpenSocketFixPrOptions = {
   baseBranch?: string | undefined
   cwd?: string | undefined
   ghsaDetails?: Map<string, GhsaDetails> | undefined
   retries?: number | undefined
 }
 
-type OpenPrResult =
+export type OpenPrResult =
   | { ok: true; pr: OctokitResponse<Pr> }
   | { ok: false; reason: 'already_exists'; error: RequestError }
   | {

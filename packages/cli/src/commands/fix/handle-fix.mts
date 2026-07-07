@@ -17,7 +17,7 @@ const logger = getDefaultLogger()
 const GHSA_FORMAT_REGEXP = /^GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/
 const CVE_FORMAT_REGEXP = /^CVE-\d{4}-\d{4,}$/
 
-type HandleFixConfig = Remap<
+export type HandleFixConfig = Remap<
   FixConfig & {
     applyFixes: boolean
     ghsas: string[]

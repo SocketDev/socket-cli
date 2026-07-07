@@ -51,7 +51,8 @@ import type { InspectOptions } from '@socketsecurity/lib-stable/debug/types'
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
-type TelemetryConfig = SocketSdkSuccessResult<'getOrgTelemetryConfig'>['data']
+export type TelemetryConfig =
+  SocketSdkSuccessResult<'getOrgTelemetryConfig'>['data']
 
 /**
  * Debug wrapper for telemetry service. Wraps debugNs to provide a simpler API.
@@ -96,7 +97,7 @@ const TELEMETRY_SERVICE_CONFIG = {
 /**
  * Singleton instance holder.
  */
-interface TelemetryServiceInstance {
+export interface TelemetryServiceInstance {
   current: TelemetryService | undefined
 }
 

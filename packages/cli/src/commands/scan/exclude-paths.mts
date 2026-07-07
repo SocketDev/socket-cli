@@ -5,14 +5,14 @@ import { InputError } from '../../util/error/errors.mts'
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 import type { SocketYml } from '../../util/socket-yaml.mts'
 
-type ApplyFullExcludePathsOptions = {
+export type ApplyFullExcludePathsOptions = {
   cwd: string
   reachabilityOptions: ReachabilityOptions
   socketConfig: SocketYml | undefined
   target: string
 }
 
-type ApplyFullExcludePathsResult = {
+export type ApplyFullExcludePathsResult = {
   effectiveSocketConfig: SocketYml | undefined
   mergedReachabilityOptions: ReachabilityOptions
 }
@@ -166,15 +166,16 @@ export function projectIgnorePathsToReachExcludePaths(
   // GitHub App-style projectIgnorePaths support negation. Coana's
   // --exclude-dirs does not, so keep the existing Coana behavior and let it
   // infer config ignores itself when any negation is present.
+  const opts = { __proto__: null, ...options } as typeof options
   if (!Array.isArray(paths) || paths.some(path => path.includes('!'))) {
     return []
   }
 
   // projectIgnorePaths are rooted at the project cwd. Coana receives excludes
   // relative to its analysis target, so nested target scans need translation.
-  const targetPath = path.isAbsolute(options.target)
-    ? path.relative(options.cwd, options.target)
-    : options.target
+  const targetPath = path.isAbsolute(opts.target)
+    ? path.relative(opts.cwd, opts.target)
+    : opts.target
   const targetPattern = toPosixPath(stripTrailingSlash(targetPath))
   return paths.flatMap(path =>
     projectIgnorePathToReachExcludePaths(path, targetPattern),

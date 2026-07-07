@@ -10,8 +10,8 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import {
   CLI_SENTRY_TEMPLATE_DIR,
   CLI_TEMPLATE_DIR,
-  SOCKET_TEMPLATE_DIR,
   getPackageOutDir,
+  SOCKET_TEMPLATE_DIR,
 } from './paths.mts'
 import { copyDirectory } from './utils.mts'
 

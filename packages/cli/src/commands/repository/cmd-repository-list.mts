@@ -18,7 +18,7 @@ import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 import type { MeowFlags } from '../../flags.mts'
 
 // Flags interface for type safety.
-interface RepositoryListFlags {
+export interface RepositoryListFlags {
   all: boolean
   direction: Direction
   dryRun: boolean

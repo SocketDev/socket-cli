@@ -1,4 +1,4 @@
-type NestedMap<T> = Map<string, T | NestedMap<T>>
+export type NestedMap<T> = Map<string, T | NestedMap<T>>
 
 export function* walkNestedMap<T>(
   map: NestedMap<T>,

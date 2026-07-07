@@ -38,9 +38,9 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { CHECKPOINTS } from '../packages/build-infra/lib/constants.mts'
 import {
-  PLATFORM_TARGETS,
   formatPlatformTarget,
   parsePlatformTarget,
+  PLATFORM_TARGETS,
 } from '../packages/build-infra/lib/platform-targets.mts'
 import { runPipelineCli } from '../packages/build-infra/lib/build-pipeline.mts'
 

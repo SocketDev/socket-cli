@@ -36,7 +36,7 @@ const nodejsPlatformTypes = new Set([
   'typescript',
 ])
 
-type ArgvObject = {
+export type ArgvObject = {
   [key: string]: boolean | null | number | string | Array<string | number>
 }
 
@@ -46,7 +46,7 @@ export function argvObjectToArray(argvObj: ArgvObject): string[] {
   }
   const result = []
   for (const { 0: key, 1: value } of Object.entries(argvObj)) {
-    if (key === '--' || key === '_') {
+    if (key === '_' || key === '--') {
       continue
     }
     if (key === 'babel' || key === 'install-deps' || key === 'validate') {
@@ -76,7 +76,7 @@ export function argvObjectToArray(argvObj: ArgvObject): string[] {
  * Result of probing a cwd for Node.js SBOM inputs that cdxgen needs in the
  * default `pre-build` + `install-deps: false` mode.
  */
-type NodejsCdxgenSources = {
+export type NodejsCdxgenSources = {
   hasLockfile: boolean
   hasNodeModules: boolean
 }

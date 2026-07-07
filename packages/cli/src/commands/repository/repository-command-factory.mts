@@ -28,7 +28,7 @@ import type {
 
 const logger = getDefaultLogger()
 
-type RepositoryCommandSpec = {
+export type RepositoryCommandSpec = {
   commandName: string
   description: string
   extraFlags?: MeowFlags | undefined

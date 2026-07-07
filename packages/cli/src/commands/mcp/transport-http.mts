@@ -8,8 +8,6 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { createConfiguredServer } from './server.mts'
 import {
-  OAUTH_PROTECTED_RESOURCE_METADATA_PATH,
-  OAuthIntrospector,
   buildProtectedResourceMetadata,
   destroySessionEntry,
   getProtectedResourceMetadataUrl,
@@ -18,6 +16,8 @@ import {
   handleRequestSafely,
   isLocalhostOrigin,
   makeOnTransportClose,
+  OAUTH_PROTECTED_RESOURCE_METADATA_PATH,
+  OAuthIntrospector,
   reapIdleSessions,
   writeJson,
 } from './transport-http-helpers.mts'
@@ -39,7 +39,9 @@ const MAX_MCP_REQUEST_BODY_BYTES = 4 * 1024 * 1024
 // Our internal type accepts `auth: undefined` explicitly so callers can
 // pass an undefined-stamped request without ceremony (spread, conditional
 // assignment, etc.).
-type AuthenticatedRequest = IncomingMessage & { auth?: AuthInfo | undefined }
+export type AuthenticatedRequest = IncomingMessage & {
+  auth?: AuthInfo | undefined
+}
 
 // MCP's `transport.handleRequest()` parameter is the stricter
 // `auth?: AuthInfo` (no `| undefined`) under our
@@ -47,15 +49,15 @@ type AuthenticatedRequest = IncomingMessage & { auth?: AuthInfo | undefined }
 // call boundary when handing off; that's the narrow constraint, not
 // our internal shape.
 // oxlint-disable-next-line socket/optional-explicit-undefined -- SDK target type uses `auth?: AuthInfo` (no `| undefined`); under exactOptionalPropertyTypes the bare-undefined form rejects this assignment. Pair to the SDK shape, not the local AuthenticatedRequest.
-type McpHandleRequest = IncomingMessage & { auth?: AuthInfo }
+export type McpHandleRequest = IncomingMessage & { auth?: AuthInfo }
 
-interface Session {
+export interface Session {
   lastActivity: number
   server: Server
   transport: StreamableHTTPServerTransport
 }
 
-interface HttpTransportConfig extends ServerConfig {
+export interface HttpTransportConfig extends ServerConfig {
   oauthClientId: string
   oauthClientSecret: string
   oauthIssuer: string

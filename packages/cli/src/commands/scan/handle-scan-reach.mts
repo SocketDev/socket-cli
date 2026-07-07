@@ -15,7 +15,7 @@ import { checkCommandInput } from '../../util/validation/check-input.mts'
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 import type { OutputKind } from '../../types.mts'
 
-type HandleScanReachConfig = {
+export type HandleScanReachConfig = {
   cwd: string
   interactive: boolean
   orgSlug: string

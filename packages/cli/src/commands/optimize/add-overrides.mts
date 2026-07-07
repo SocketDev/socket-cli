@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import semver from 'semver'
+import semver from '@socketsecurity/lib-stable/external/semver'
 
 import { NPM, PNPM } from '@socketsecurity/lib-stable/constants/agents'
 import { hasOwn } from '@socketsecurity/lib-stable/objects/predicates'
@@ -32,14 +32,14 @@ import type { Logger } from '@socketsecurity/lib-stable/logger/logger'
 import type { PackageJson } from '@socketsecurity/lib-stable/packages/types'
 import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 
-type AddOverridesOptions = {
+export type AddOverridesOptions = {
   logger?: Logger | undefined
   pin?: boolean | undefined
   prod?: boolean | undefined
   spinner?: SpinnerInstance | undefined
   state?: AddOverridesState | undefined
 }
-type AddOverridesState = {
+export type AddOverridesState = {
   added: Set<string>
   addedInWorkspaces: Set<string>
   updated: Set<string>

@@ -23,13 +23,9 @@ import { UNKNOWN_ERROR } from '@socketsecurity/lib-stable/constants/sentinels'
 
 import {
   AuthError,
+  buildErrorCause,
   ConfigError,
   FileSystemError,
-  InputError,
-  NetworkError,
-  RateLimitError,
-  TimeoutError,
-  buildErrorCause,
   formatErrorWithDetail,
   getErrorCause,
   getErrorMessage,
@@ -38,7 +34,11 @@ import {
   getNetworkErrorDiagnostics,
   getRecoverySuggestions,
   hasRecoverySuggestions,
+  InputError,
   isErrnoException,
+  NetworkError,
+  RateLimitError,
+  TimeoutError,
 } from '../../../../src/util/error/errors.mts'
 
 const __filename = fileURLToPath(import.meta.url)

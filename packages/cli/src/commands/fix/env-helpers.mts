@@ -58,7 +58,7 @@ export function ciRepoInfo(): RepoInfo | undefined {
   }
 }
 
-interface FixEnv {
+export interface FixEnv {
   baseBranch: string
   gitEmail: string | undefined
   githubToken: string | undefined
@@ -68,7 +68,7 @@ interface FixEnv {
   repoInfo: RepoInfo | undefined
 }
 
-interface MissingEnvVars {
+export interface MissingEnvVars {
   missing: string[]
   present: string[]
 }

@@ -241,7 +241,7 @@ export async function gitCheckoutBranch(
   return false
 }
 
-type GitCreateAndPushBranchOptions = {
+export type GitCreateAndPushBranchOptions = {
   cwd?: string | undefined
   email?: string | undefined
   user?: string | undefined

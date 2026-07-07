@@ -11,7 +11,7 @@
 
 import { parse as yamlParse } from 'yaml'
 
-type SocketYmlGitHub = {
+export type SocketYmlGitHub = {
   authenticatedProjectReports?: boolean | undefined
   dependencyOverviewEnabled?: boolean | undefined
   enabled?: boolean | undefined
@@ -27,7 +27,7 @@ export type SocketYml = {
   version: 2
 }
 
-type SocketYmlV1Shape = {
+export type SocketYmlV1Shape = {
   beta?: boolean | undefined
   enabled?: boolean | undefined
   ignore?: string[] | undefined
@@ -36,7 +36,7 @@ type SocketYmlV1Shape = {
   pullRequestAlertsEnabled?: boolean | undefined
 }
 
-class SocketValidationError extends Error {
+export class SocketValidationError extends Error {
   data: unknown
   validationErrors: string[]
 
