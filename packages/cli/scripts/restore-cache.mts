@@ -332,6 +332,9 @@ async function main() {
   }
 
   const repoUrl = repoResult.stdout.trim()
+  // Extract owner/repo from a GitHub remote URL — matches `github.com/` (HTTPS)
+  // or `github.com:` (SSH), captures everything after as `(.+?)` (non-greedy),
+  // strips an optional `.git` suffix via `(?:\.git)?`, anchored at end `$`.
   const repoMatch = repoUrl.match(/github\.com[/:](.+?)(?:\.git)?$/)
   if (!repoMatch) {
     if (!isQuiet()) {
