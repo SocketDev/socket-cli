@@ -21,6 +21,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { normalizePath } from '@socketsecurity/lib/paths/normalize'
+
 import type * as ModuleModule from 'node:module'
 import type * as PathsModule from '../../../../src/util/npm/paths.mts'
 
@@ -117,7 +119,7 @@ describe('npm-paths utilities', () => {
       const result = getNpmBinPath()
 
       // Normalize path separators for cross-platform compatibility.
-      expect(result?.replace(/\\/g, '/')).toBe('/usr/local/bin/npm')
+      expect(normalizePath(result ?? '')).toBe('/usr/local/bin/npm')
       expect(findBinPathDetailsSync).toHaveBeenCalledWith('npm')
     })
 
@@ -165,7 +167,7 @@ describe('npm-paths utilities', () => {
       const result = getNpxBinPath()
 
       // Normalize path separators for cross-platform compatibility.
-      expect(result?.replace(/\\/g, '/')).toBe('/usr/local/bin/npx')
+      expect(normalizePath(result ?? '')).toBe('/usr/local/bin/npx')
       expect(findBinPathDetailsSync).toHaveBeenCalledWith('npx')
     })
 
