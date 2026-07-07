@@ -166,6 +166,14 @@ const readPinnedVersion = (pkgName: string): string => {
           inCatalog = false
           continue
         }
+        // Catalog entry: `  'pkg-name': 'version'`
+        // \s+                — leading indentation (catalog entries are indented)
+        // ['"]?              — optional quote wrapping the package name
+        // ([@A-Za-z0-9_/-]+) — group 1: package name, including `@scope/` prefix
+        // \s*:\s*            — colon separator with optional surrounding whitespace
+        // ['"]?              — optional quote wrapping the version value
+        // ([^'"\s]+)         — group 2: version string (no quotes, no whitespace)
+        // \s*$               — optional trailing whitespace before end of line
         const m = line.match(
           /^\s+['"]?([@A-Za-z0-9_/-]+)['"]?\s*:\s*['"]?([^'"\s]+)['"]?\s*$/,
         )
