@@ -6,7 +6,9 @@
  *   survey found zero today; this guard keeps it that way. An `expect` inside a
  *   hook (`beforeEach`) is allowed (a common setup-assertion pattern). Scope:
  *   `*.test.*`. Report-only. Ported from `@vitest/eslint-plugin`'s
- *   `no-standalone-expect`, on lib/vitest-fn-call.mts.
+ *   `no-standalone-expect`, on lib/vitest-fn-call.mts. Like upstream, the
+ *   `additionalTestBlockFunctions` option names custom test-registering
+ *   wrappers (socket-cli's `cmdit`) whose callbacks count as test scope.
  */
 
 import { TEST_FILE_RE } from '../../lib/test-file.mts'
@@ -30,7 +32,18 @@ const rule = {
       standalone:
         '`expect(...)` here is not inside an `it()` / `test()` (or hook) — it runs at collection time, not as a test assertion. Move it into a test case.',
     },
-    schema: [],
+    schema: [
+      {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          additionalTestBlockFunctions: {
+            type: 'array',
+            items: { type: 'string' },
+          },
+        },
+      },
+    ],
   },
 
   create(context: RuleContext) {
@@ -38,6 +51,13 @@ const rule = {
     if (!TEST_FILE_RE.test(filename)) {
       return {}
     }
+    const extraTestFns = new Set<string>(
+      (
+        context.options?.[0] as
+          | { additionalTestBlockFunctions?: string[] }
+          | undefined
+      )?.additionalTestBlockFunctions ?? [],
+    )
     let names: Map<string, string> | undefined
     // Depth of enclosing test/hook callback function scopes. expect() is valid
     // when > 0.
@@ -52,7 +72,20 @@ const rule = {
         return false
       }
       const call = classifyVitestCall(parent, names)
-      return !!call && (call.kind === 'hook' || call.kind === 'test')
+      if (call && (call.kind === 'hook' || call.kind === 'test')) {
+        return true
+      }
+      // A configured custom wrapper (`cmdit(...)`, `cmdit.skip(...)`) registers
+      // a test case, so its callback is test scope.
+      const callee: AstNode | undefined = parent.callee
+      const wrapperName =
+        callee?.type === 'Identifier'
+          ? callee.name
+          : callee?.type === 'MemberExpression' &&
+              callee.object?.type === 'Identifier'
+            ? callee.object.name
+            : undefined
+      return wrapperName !== undefined && extraTestFns.has(wrapperName)
     }
 
     function enterFn(fn: AstNode): void {

@@ -2,9 +2,8 @@ packages:
   - packages/*
   - '!packages/package-builder/build'
   - .claude/hooks/*
-  - '.config/oxlint-plugin'
-  - '.config/oxlint-plugin/fleet/*'
-  - '.config/oxlint-plugin/repo/*'
+  - '.config/fleet/oxlint-plugin'
+  - '.config/fleet/oxlint-plugin/fleet/*'
 
 # Packages allowed to run build scripts (pnpm v11 strictDepBuilds default).
 allowBuilds:
@@ -142,7 +141,7 @@ catalog:
   octokit: 5.0.5
   onnxruntime-web: 1.23.0
   open: 10.2.0
-  oxfmt: 0.48.0
+  oxfmt: 0.57.0
   oxlint: 1.72.0
   packageurl-js: npm:@socketregistry/packageurl-js@^1.4.2
   path-parse: npm:@socketregistry/path-parse@^1.0.8

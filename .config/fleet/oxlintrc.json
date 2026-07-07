@@ -55,7 +55,10 @@
     "socket/no-vitest-focused-tests": "error",
     "socket/no-vitest-identical-title": "error",
     "socket/no-vitest-skipped-tests": "error",
-    "socket/no-vitest-standalone-expect": "error",
+    "socket/no-vitest-standalone-expect": [
+      "error",
+      { "additionalTestBlockFunctions": ["cmdit"] }
+    ],
     "socket/no-which-for-local-bin": "error",
     "socket/normalize-path-before-match": "error",
     "socket/optional-explicit-undefined": "error",

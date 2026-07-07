@@ -58,12 +58,13 @@ const PLUGIN_INDEX = path.resolve(
  * Build the minimal .oxlintrc.json that enables ONE socket plugin rule plus the
  * plugin's JS entry point.
  */
-function buildConfig(ruleName: string): string {
+function buildConfig(ruleName: string, ruleOptions?: unknown): string {
   return JSON.stringify(
     {
       jsPlugins: [PLUGIN_INDEX],
       rules: {
-        [`socket/${ruleName}`]: 'error',
+        [`socket/${ruleName}`]:
+          ruleOptions === undefined ? 'error' : ['error', ruleOptions],
       },
     },
     null,
@@ -163,6 +164,10 @@ export interface InvalidTestCase extends ValidTestCase {
 export interface RunOpts {
   readonly valid: readonly ValidTestCase[]
   readonly invalid: readonly InvalidTestCase[]
+  // Options object passed to the rule for EVERY case in this run, emitted into
+  // the fixture config as `['error', ruleOptions]`. Rules with per-case option
+  // needs should call run() once per option set.
+  readonly ruleOptions?: unknown
 }
 
 /**
@@ -356,7 +361,7 @@ export class RuleTester {
     }
     try {
       const configPath = path.join(tmpdir, '.oxlintrc.json')
-      writeFileSync(configPath, buildConfig(ruleName))
+      writeFileSync(configPath, buildConfig(ruleName, opts.ruleOptions))
 
       // Valid cases: no findings expected.
       for (const tc of opts.valid) {
