@@ -82,8 +82,8 @@ test('allows short sections under the default cap', async () => {
   assert.strictEqual(result.code, 0)
 })
 
-test('blocks a section that exceeds the default 8-line cap', async () => {
-  const longBody = Array(12).fill('one detail line').join('\n')
+test('blocks a section that exceeds the default 12-line cap', async () => {
+  const longBody = Array(16).fill('one detail line').join('\n')
   const content = buildClaudeMd([{ heading: 'Long rule', body: longBody }])
   const result = await runHook({
     tool_input: { file_path: '/x/CLAUDE.md', content },
@@ -91,13 +91,28 @@ test('blocks a section that exceeds the default 8-line cap', async () => {
   })
   assert.strictEqual(result.code, 2)
   assert.match(result.stderr, /Long rule/)
-  assert.match(result.stderr, /12 body lines/)
+  assert.match(result.stderr, /16 lines/)
 })
 
-test('blank lines do not count toward the cap', async () => {
-  // 8 non-blank lines with blanks between — exactly at cap, should pass.
+test('blocks a section that exceeds the default 1500-byte cap on few lines', async () => {
+  // 3 lines, each ~600 bytes = ~1800 bytes > 1500-byte cap, but only 3
+  // lines (well under the 12-line cap). The byte cap is the binding one.
+  const longLine = 'x'.repeat(600)
+  const body = [longLine, longLine, longLine].join('\n')
+  const content = buildClaudeMd([{ heading: 'Dense one-liner rule', body }])
+  const result = await runHook({
+    tool_input: { file_path: '/x/CLAUDE.md', content },
+    tool_name: 'Write',
+  })
+  assert.strictEqual(result.code, 2)
+  assert.match(result.stderr, /Dense one-liner rule/)
+  assert.match(result.stderr, /bytes/)
+})
+
+test('blank lines do not count toward the line cap', async () => {
+  // 12 non-blank lines with blanks between — exactly at cap, should pass.
   const lines: string[] = []
-  for (let i = 1; i <= 8; i++) {
+  for (let i = 1; i <= 12; i++) {
     lines.push(`line ${i}`)
     lines.push('')
   }
@@ -110,11 +125,11 @@ test('blank lines do not count toward the cap', async () => {
   assert.strictEqual(result.code, 0)
 })
 
-test('code-fence lines do count toward the cap', async () => {
-  // 1 prose + 9 code lines = 10 non-blank > 8 cap. Should block.
+test('code-fence lines do count toward the line cap', async () => {
+  // 1 prose + 14 code lines = 15 non-blank > 12-line cap. Should block.
   const codeLines: string[] = []
   codeLines.push('```ts')
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 12; i++) {
     codeLines.push(`const v${i} = ${i}`)
   }
   codeLines.push('```')
@@ -125,6 +140,21 @@ test('code-fence lines do count toward the cap', async () => {
     tool_name: 'Write',
   })
   assert.strictEqual(result.code, 2)
+})
+
+test('respects CLAUDE_MD_FLEET_SECTION_MAX_BYTES env override', async () => {
+  // A dense section that exceeds the default 1500-byte cap (~1800 bytes)
+  // passes when the byte cap is raised, as long as it stays under the line cap.
+  const body = ['y'.repeat(900), 'y'.repeat(900)].join('\n')
+  const content = buildClaudeMd([{ heading: 'Raised byte cap', body }])
+  const result = await runHook(
+    {
+      tool_input: { file_path: '/x/CLAUDE.md', content },
+      tool_name: 'Write',
+    },
+    { CLAUDE_MD_FLEET_SECTION_MAX_BYTES: '5000' },
+  )
+  assert.strictEqual(result.code, 0)
 })
 
 test('reports MULTIPLE too-long sections in one error message', async () => {

@@ -3,9 +3,9 @@
  *   (claude-md-rules-are-enforced.mts). One place that knows how to enumerate
  *   the repo's executable enforcers — hooks, lint rules, and scripts — plus the
  *   fleet-canonical doc surface, so the gate's "does an enforcer for this rule
- *   exist?" question has a single source of truth. Kept here (not inlined in the
- *   check) so a sibling check or a future audit can reuse the same inventory
- *   rather than re-deriving the directory conventions.
+ *   exist?" question has a single source of truth. Kept here (not inlined in
+ *   the check) so a sibling check or a future audit can reuse the same
+ *   inventory rather than re-deriving the directory conventions.
  */
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
@@ -46,8 +46,9 @@ export function collectHookEnforcers(repoRoot: string): Set<string> {
 }
 
 export interface LintRuleInventory {
-  // socket/<rule> names registered in the oxlint plugin's rules/ dir. Empty in a
-  // repo that doesn't ship the plugin (the gate's socket arm then fails open).
+  // socket/<rule> names — the rule directories under .config/oxlint-plugin/fleet/.
+  // Empty in a repo that doesn't ship the plugin (the gate's socket arm then
+  // fails open).
   readonly socketRules: Set<string>
   // typescript/<rule> names that appear as keys in the oxlint config.
   readonly tsRules: Set<string>
@@ -55,11 +56,15 @@ export interface LintRuleInventory {
 
 export function collectLintRules(repoRoot: string): LintRuleInventory {
   const socketRules = new Set<string>()
-  const rulesDir = path.join(repoRoot, '.config/fleet/oxlint-plugin/rules')
+  // The plugin's layout is one `fleet/<rule-id>/` directory per rule (per
+  // CLAUDE.md "Lint rules"), so a rule name is the DIRECTORY name — not a `.mts`
+  // file stem. (`socket/<id>` is the citation form; the `socket/` prefix is
+  // implicit.)
+  const rulesDir = path.join(repoRoot, '.config/oxlint-plugin/fleet')
   try {
-    for (const f of readdirSync(rulesDir)) {
-      if (f.endsWith('.mts') && !f.endsWith('.test.mts')) {
-        socketRules.add(f.slice(0, -'.mts'.length))
+    for (const entry of readdirSync(rulesDir, { withFileTypes: true })) {
+      if (entry.isDirectory() && !entry.name.startsWith('.')) {
+        socketRules.add(entry.name)
       }
     }
   } catch {

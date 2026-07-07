@@ -86,10 +86,12 @@ export function isPluginPatchPath(filePath: string): boolean {
   // Match the dir segment with or without a leading slash so a (malformed)
   // relative path is still recognized as a plugin patch — the caller then
   // flags the non-absolute path rather than letting it slip past as "not a
-  // patch". `/scripts/plugin-patches/` (mid-path) and `scripts/fleet/plugin-patches/`
-  // (path start) both count.
+  // patch". The canonical fleet location is `scripts/fleet/plugin-patches/`;
+  // the older `scripts/plugin-patches/` (no `fleet/`) is matched too so a
+  // legacy path still routes through validation. Both anchored at a path
+  // boundary (start-of-string or `/`).
   return (
-    /(?:^|\/)scripts\/plugin-patches\//.test(normalized) &&
+    /(?:^|\/)scripts\/(?:fleet\/)?plugin-patches\//.test(normalized) &&
     normalized.endsWith('.patch')
   )
 }
@@ -265,8 +267,13 @@ async function main(): Promise<void> {
   process.exitCode = 2
 }
 
-main().catch(e => {
-  process.stderr.write(
-    `[plugin-patch-format-guard] hook error (continuing): ${(e as Error).message}\n`,
-  )
-})
+// Entrypoint-guarded: run main() only when invoked directly, NOT when the test
+// imports this module for its pure helpers (else main() blocks on stdin at
+// import and the test file never terminates).
+if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+  main().catch(e => {
+    process.stderr.write(
+      `[plugin-patch-format-guard] hook error (continuing): ${(e as Error).message}\n`,
+    )
+  })
+}

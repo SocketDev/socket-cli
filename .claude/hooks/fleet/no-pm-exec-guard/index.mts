@@ -119,5 +119,5 @@ void (async () => {
       )
     }
     process.exitCode = 2
-  })
+  }, { fleetOnly: true })
 })()

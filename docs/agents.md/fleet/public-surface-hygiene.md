@@ -2,7 +2,7 @@
 
 The CLAUDE.md `### Public-surface hygiene` section gives the headline invariants. This file is the full ruleset with rationale, hook references, and bypass surface.
 
-The rules apply even when hooks are not installed. They're invariants, not enforcement-dependent. Enforced by `.claude/hooks/fleet/{private-name-guard,public-surface-reminder,release-workflow-guard}/` and the rules below.
+The rules apply even when hooks are not installed. They're invariants, not enforcement-dependent. Enforced by `.claude/hooks/fleet/{private-name-reminder,public-surface-reminder,release-workflow-guard}/` and the rules below.
 
 ## Customer / company / internal names
 

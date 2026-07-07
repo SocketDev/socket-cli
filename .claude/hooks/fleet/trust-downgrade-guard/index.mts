@@ -22,6 +22,14 @@
 //        pnpm-workspace.yaml (to `trust-all` / `trust` / deleting it).
 //      - deleting `blockExoticSubdeps: true`.
 //      - lowering `minimumReleaseAge` below the fleet floor (10080).
+//      - lowering the npm `.npmrc` `min-release-age` (days) below its floor —
+//        the npm-side parallel of the pnpm `minimumReleaseAge` soak.
+//
+// The Bash surface AST-parses the command via _shared/shell-command.mts
+// (per the no-command-regex-in-hooks rule) and inspects the pnpm/npm
+// segment args, so a downgrade flag can't be smuggled behind a `&&`
+// chain, quoting, or `$(…)` substitution, and a flag mentioned inside an
+// unrelated quoted string never false-fires.
 //
 // Why this exists (incident 2026-05-27): an agent ran
 // `pnpm install --config.trustPolicy=trust-all` to force a lockfile
@@ -49,6 +57,11 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
+import { commandsFor, parseCommands } from '../_shared/shell-command.mts'
+import {
+  detectNpmrcMinReleaseAgeDowngrade,
+  MIN_RELEASE_AGE_MINUTES,
+} from '../_shared/trust-gates.mts'
 import { bypassPhraseRemaining, readStdin } from '../_shared/transcript.mts'
 
 interface Payload {
@@ -67,46 +80,117 @@ interface Payload {
 const BYPASS_PHRASE = 'Allow trust-downgrade bypass'
 
 // Fleet minimumReleaseAge floor (minutes) — 7 days. A lower value is a
-// downgrade.
-const MIN_RELEASE_AGE_FLOOR = 10080
+// downgrade. Owned by _shared/trust-gates.mts so the hook, the npm-key
+// detector, and the commit-time check never disagree on the number.
+const MIN_RELEASE_AGE_FLOOR = MIN_RELEASE_AGE_MINUTES
 
-// Bash-command patterns that relax a trust gate at invocation time.
-// Matched against the raw command; these are flag shapes, not command
-// structure, so a regex match is the right tool (a flag can't be
-// "hidden" behind shell indirection the way a binary name can — the
-// flag string has to appear literally for pnpm/npm to parse it).
-const BASH_DOWNGRADE_PATTERNS: ReadonlyArray<{ re: RegExp; label: string }> = [
-  {
-    re: /--config\.trustPolicy[=\s]+(?!no-downgrade\b)\S+/i,
-    label: 'trustPolicy override to a value other than no-downgrade',
-  },
-  {
-    re: /--config\.minimumReleaseAge[=\s]+0\b/i,
-    label: 'minimumReleaseAge override to 0',
-  },
-  {
-    re: /--no-verify-store-integrity\b/i,
-    label: '--no-verify-store-integrity',
-  },
-  {
-    re: /--dangerously-allow-all-(?:scripts|builds)\b/i,
-    label: '--dangerously-allow-all-* escape hatch',
-  },
-  {
-    re: /--config\.dangerously\S*=\s*true\b/i,
-    label: '--config.dangerously* = true',
-  },
-  {
-    re: /(?:^|\s)--?ignore-scripts[=\s]+false\b/i,
-    label: 'ignore-scripts=false',
-  },
-]
+// Package managers whose flags can relax a trust gate at invocation time.
+const TRUST_GATE_MANAGERS = ['pnpm', 'npm'] as const
+
+// Split an arg token into its flag name and inline value. `--config.x=y`
+// → ['--config.x', 'y']; `--no-verify-store-integrity` → [that, undefined].
+function splitFlag(arg: string): { name: string; value: string | undefined } {
+  const eq = arg.indexOf('=')
+  return eq > 0
+    ? { name: arg.slice(0, eq), value: arg.slice(eq + 1) }
+    : { name: arg, value: undefined }
+}
+
+// The value for a flag, whether inline (`--flag=v`) or the next arg token
+// (`--flag v`). Returns undefined when no value follows.
+function valueOf(
+  args: readonly string[],
+  index: number,
+  inlineValue: string | undefined,
+): string | undefined {
+  if (inlineValue !== undefined) {
+    return inlineValue
+  }
+  const next = args[index + 1]
+  return next !== undefined && !next.startsWith('-') ? next : undefined
+}
+
+// Inspect ONE parsed pnpm/npm command segment's args for a downgrade flag.
+// AST-based (per the no-command-regex-in-hooks rule): the command line is
+// tokenized by _shared/shell-command.mts first, so `&&` chains, quoting, and
+// `$(…)` substitution can't smuggle a flag past us, and a flag mentioned
+// inside an unrelated quoted string (a commit message, a grep arg) is not a
+// segment arg and never matches.
+function downgradeFlagInArgs(args: readonly string[]): string | undefined {
+  // `pnpm config set <key> <value>` is the persisted-config form of a flag.
+  if (args[0] === 'config' && args[1] === 'set') {
+    const key = args[2]
+    const value = args[3]
+    if (key === 'trustPolicy' && value !== undefined && value !== 'no-downgrade') {
+      return 'trustPolicy override to a value other than no-downgrade'
+    }
+    if (key === 'minimumReleaseAge' && Number(value) === 0) {
+      return 'minimumReleaseAge override to 0'
+    }
+  }
+  for (let i = 0, { length } = args; i < length; i += 1) {
+    const { name, value: inline } = splitFlag(args[i]!)
+    switch (name) {
+      case '--config.trustPolicy': {
+        const v = valueOf(args, i, inline)
+        if (v !== undefined && v !== 'no-downgrade') {
+          return 'trustPolicy override to a value other than no-downgrade'
+        }
+        break
+      }
+      case '--config.minimumReleaseAge': {
+        if (Number(valueOf(args, i, inline)) === 0) {
+          return 'minimumReleaseAge override to 0'
+        }
+        break
+      }
+      case '--no-verify-store-integrity':
+        return '--no-verify-store-integrity'
+      case '--dangerously-allow-all-scripts':
+      case '--dangerously-allow-all-builds':
+        return '--dangerously-allow-all-* escape hatch'
+      case '--ignore-scripts':
+      case '-ignore-scripts': {
+        if (valueOf(args, i, inline) === 'false') {
+          return 'ignore-scripts=false'
+        }
+        break
+      }
+      default:
+        if (name.startsWith('--config.dangerously') && inline === 'true') {
+          return '--config.dangerously* = true'
+        }
+    }
+  }
+  return undefined
+}
 
 export function detectBashDowngrade(command: string): string | undefined {
-  for (let i = 0, { length } = BASH_DOWNGRADE_PATTERNS; i < length; i += 1) {
-    const { re, label } = BASH_DOWNGRADE_PATTERNS[i]!
-    if (re.test(command)) {
-      return label
+  // Cheap gate: if the command names no trust-gate manager AND no bare
+  // downgrade flag, skip the tokenize. `parseCommands` returns segments whose
+  // binary is the resolved manager; a `$VAR`-sourced binary collapses to ''
+  // and is handled by also scanning every segment's args below.
+  const commands = parseCommands(command)
+  for (const manager of TRUST_GATE_MANAGERS) {
+    for (const cmd of commandsFor(command, manager)) {
+      const hit = downgradeFlagInArgs(cmd.args)
+      if (hit) {
+        return hit
+      }
+    }
+  }
+  // A downgrade flag on a variable-sourced or unrecognized binary (e.g.
+  // `$PM install --no-verify-store-integrity`) still disables the gate —
+  // scan args of any segment whose binary we could not resolve.
+  for (const cmd of commands) {
+    if (cmd.binary === 'pnpm' || cmd.binary === 'npm') {
+      continue
+    }
+    if (cmd.binary === '' || cmd.viaVariable) {
+      const hit = downgradeFlagInArgs(cmd.args)
+      if (hit) {
+        return hit
+      }
     }
   }
   return undefined
@@ -140,6 +224,17 @@ export function detectEditDowngrade(
   const m = /minimumReleaseAge\s*:\s*(\d+)/i.exec(newText)
   if (m && Number(m[1]) < MIN_RELEASE_AGE_FLOOR) {
     return `minimumReleaseAge lowered below the ${MIN_RELEASE_AGE_FLOOR} floor`
+  }
+  // npm's `.npmrc` `min-release-age` (days) is the npm-side soak — a parallel
+  // gate to pnpm's `minimumReleaseAge`. A fragment that sets it below the day
+  // floor is the npm equivalent downgrade. (Whole-file removal/lowering is
+  // caught by the commit-time `trust-gates-are-not-weakened.mts` check, which
+  // sees before+after; a fragment alone can't see a deletion.)
+  if (path.basename(filePath) === '.npmrc') {
+    const npmHit = detectNpmrcMinReleaseAgeDowngrade('', newText)
+    if (npmHit) {
+      return npmHit
+    }
   }
   // A wholesale Write of pnpm-workspace.yaml that drops the
   // no-downgrade line entirely is a downgrade (the gate vanishes).

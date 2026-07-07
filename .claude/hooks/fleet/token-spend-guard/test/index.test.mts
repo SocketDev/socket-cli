@@ -51,6 +51,14 @@ test('REMINDS on mechanical command + premium model (opus)', () => {
   assert.match(stderr, /opus/)
 })
 
+test('REMINDS on mechanical command + premium model (fable)', () => {
+  // Fable is the apex tier (~2× opus) — mechanical work on it must flag too.
+  const t = makeTranscript('claude-fable-5')
+  const { stderr, exitCode } = runHook(CASCADE, t, 'low')
+  assert.equal(exitCode, 2)
+  assert.match(stderr, /premium/)
+})
+
 test('REMINDS on mechanical command + premium effort (high)', () => {
   const t = makeTranscript('claude-sonnet-4-6')
   const { stderr, exitCode } = runHook(CASCADE, t, 'high')

@@ -4,17 +4,15 @@
  *   guiding question is "when we publish to npm, what do we want a consumer to
  *   import?". One generator handles both dist-based packages (output under
  *   `dist/`) and packages whose published files sit at the package root.
- *
  *   Privacy taxonomy (applied regardless of `dist/`): a file is PRIVATE — never
  *   exported — when its path contains an `external/` segment, an underscore-
- *   prefixed leaf (`_foo.js`) or directory (`_internal/`), or matches a
- *   config `ignore` glob (src/scripts/test/tools/vendor by default). Everything
- *   else is the public surface and earns an `exports` entry.
- *
- *   The deterministic core (`buildExportsMap`) is a pure function over a file
- *   list so it is unit-testable without a real build. The CLI wrapper globs the
- *   package, calls the engine, and writes package.json. Validation that the map
- *   and the on-disk public files agree lives in the companion check
+ *   prefixed leaf (`_foo.js`) or directory (`_internal/`), or matches a config
+ *   `ignore` glob (src/scripts/test/tools/vendor by default). Everything else
+ *   is the public surface and earns an `exports` entry. The deterministic core
+ *   (`buildExportsMap`) is a pure function over a file list so it is
+ *   unit-testable without a real build. The CLI wrapper globs the package,
+ *   calls the engine, and writes package.json. Validation that the map and the
+ *   on-disk public files agree lives in the companion check
  *   `scripts/fleet/check/public-files-are-exported.mts`.
  */
 
@@ -105,7 +103,8 @@ export function privatePathMatcher(
   // Sort the configured segments (ASCII) so the alternation is stable +
   // satisfies sort-regex-alternations, then OR them with the defaults.
   const extra = [...privateSegments]
-    .toSorted()
+    // oxlint-disable-next-line unicorn/no-array-sort -- the spread already copies `privateSegments` (no shared mutation); .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
+    .sort()
     .map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
     .join('|')
   return new RegExp(String.raw`(\/|^)(_[^/]*|${extra}|external)($|\/)`)
@@ -173,11 +172,11 @@ export function publicPathFor(relPath: string, outDir: string): string {
 /**
  * Pure engine: build the `exports` map from a package's public file list.
  *
- * @param config     export-generation policy for this package.
- * @param publicFiles published file paths relative to the package root
- *   (already filtered of private/ignored paths by the caller, OR filtered here
+ * @param config Export-generation policy for this package.
+ * @param publicFiles Published file paths relative to the package root (already
+ *   filtered of private/ignored paths by the caller, OR filtered here
  *   defensively via {@link isPrivatePath}).
- * @param srcFiles   set of source files relative to `src/` (sans extension is
+ * @param srcFiles Set of source files relative to `src/` (sans extension is
  *   resolved internally) used to emit the dev-only `source` condition.
  */
 export function buildExportsMap(
@@ -239,7 +238,11 @@ export function resolveSourcePath(
   }
   const ext = detectExt(rel)
   const distRel = rel.slice(outDir.length + 1).slice(0, -ext.length)
-  for (const candidate of [`${distRel}.ts`, `${distRel}.mts`, `${distRel}.cts`]) {
+  for (const candidate of [
+    `${distRel}.ts`,
+    `${distRel}.mts`,
+    `${distRel}.cts`,
+  ]) {
     if (srcFiles.has(candidate)) {
       return `./src/${candidate}`
     }
@@ -394,8 +397,13 @@ export function sortExportsMap(
 
 // ── CLI ───────────────────────────────────────────────────────────────────
 
-export async function readJson(filePath: string): Promise<Record<string, unknown>> {
-  return JSON.parse(await fs.readFile(filePath, 'utf8')) as Record<string, unknown>
+export async function readJson(
+  filePath: string,
+): Promise<Record<string, unknown>> {
+  return JSON.parse(await fs.readFile(filePath, 'utf8')) as Record<
+    string,
+    unknown
+  >
 }
 
 export async function writePackageJson(

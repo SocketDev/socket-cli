@@ -34,6 +34,7 @@
 .git-hooks linguist-generated=true
 .github/agent-ci.Dockerfile linguist-generated=true
 .github/dependabot.yml linguist-generated=true
+.github/workflows/weekly-update-non-gh-aw.yml.disabled linguist-generated=true
 .npmrc linguist-generated=true
 assets/README.md linguist-generated=true
 assets/socket-icon-brand-128.png linguist-generated=true
@@ -57,7 +58,6 @@ assets/socket-logo-light-420.png linguist-generated=true
 assets/socket-logo-light-840.png linguist-generated=true
 assets/socket-logo-light.svg linguist-generated=true
 docs/agents.md/fleet linguist-generated=true
-docs/agents.md/wheelhouse/no-local-fork-canonical.md linguist-generated=true
 packages/build-infra/lib/release-checksums/consumer.mts linguist-generated=true
 packages/build-infra/lib/release-checksums/core.mts linguist-generated=true
 packages/build-infra/lib/release-checksums/producer.mts linguist-generated=true

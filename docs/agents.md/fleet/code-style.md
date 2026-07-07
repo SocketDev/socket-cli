@@ -92,11 +92,11 @@ Don't shell out to `which` / `command -v` / `where` to locate a project binary �
 
 ## Comments: cross-port Lock-step
 
-See [`parser-comments.md`](parser-comments.md) §5–7 for the full Lock-step comment spec (port provenance, byte-identical header block, deviation paragraphs). Enforced edit-time by `.claude/hooks/fleet/lock-step-ref-guard/` and CI-gate-time by `scripts/fleet/check/lock-step-refs-resolve.mts` + `scripts/fleet/check/lock-step-headers-match.mts`. Bypass: `Allow lock-step bypass`.
+See [`parser-comments.md`](parser-comments.md) §5–7 for the full Lock-step comment spec (port provenance, byte-identical header block, deviation paragraphs). Enforced edit-time by `.claude/hooks/fleet/lock-step-ref-reminder/` and CI-gate-time by `scripts/fleet/check/lock-step-refs-resolve.mts` + `scripts/fleet/check/lock-step-headers-match.mts`. Bypass: `Allow lock-step bypass`.
 
 ## Pointer comments
 
-`// see X` comments need both a destination and an inline one-line claim of what's at the destination (enforced by `.claude/hooks/fleet/pointer-comment-guard/`). "see X" alone forces the reader to chase the link to learn anything; "see X: it does Y" gives the reader Y up front and X for verification.
+`// see X` comments need both a destination and an inline one-line claim of what's at the destination (enforced by `.claude/hooks/fleet/pointer-comment-reminder/`). "see X" alone forces the reader to chase the link to learn anything; "see X: it does Y" gives the reader Y up front and X for verification.
 
 ## `Promise.race` / `Promise.any` in loops
 

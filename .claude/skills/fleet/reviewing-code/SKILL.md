@@ -22,12 +22,17 @@ Four-pass multi-agent code review of the current branch against a base ref via a
 
 | Pass | Role                | Default backend | Output                                                      |
 | ---- | ------------------- | --------------- | ----------------------------------------------------------- |
-| 1    | discovery           | `codex`         | overwrites report                                           |
-| 2    | discovery-secondary | `codex`         | merges into report (skipped if no new findings)             |
-| 3    | remediation         | `codex`         | adds Suggested Fix + Suggested Regression Tests per finding |
-| 4    | verify              | `claude`        | appends `## <Backend> Verification` section                 |
+| 1    | spec-compliance     | `codex`         | creates report with `## Stated Intent` + `## Spec Compliance` |
+| 2    | discovery           | `codex`         | adds findings below the spec section                        |
+| 3    | discovery-secondary | `codex`         | merges into report (skipped if no new findings)             |
+| 4    | remediation         | `codex`         | adds Suggested Fix + Suggested Regression Tests per finding |
+| 5    | verify              | `claude`        | appends `## <Backend> Verification` section                 |
 
 Per-role fallback order, hybrid-backend handling (`opencode`), and the graceful-detect / skip-with-note policy live in [`_shared/multi-agent-backends.md`](../_shared/multi-agent-backends.md). This skill is the canonical implementation of that contract.
+
+## Spec compliance gates the quality passes
+
+The ordering is a contract, not a preference: the **spec-compliance pass runs first and gates the quality passes** (discovery / remediation). It checks the change against its _stated intent_ for over-building, scope creep, and under-building — failure modes that are cheaper to catch before quality review than after, and that make a quality pass on out-of-scope code a wasted round-trip. The pass ends with an explicit `Spec compliance: PASS` / `CONCERNS` verdict line, and its `## Stated Intent` + `## Spec Compliance` sections are preserved through every later pass by a code-level guarantee in `run.mts` (`ensureSpecSection`), not by trusting each agent to keep them. The ordering is enforced by [`scripts/fleet/check/review-stages-are-ordered.mts`](../../../../scripts/fleet/check/review-stages-are-ordered.mts), so spec-compliance can't be reordered after a quality pass without failing `check --all`.
 
 ## Variant analysis on confirmed findings
 

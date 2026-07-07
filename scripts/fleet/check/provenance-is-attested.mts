@@ -76,7 +76,8 @@ async function main(): Promise<void> {
   // Use the full packument so we can report trustedPublisher status
   // alongside attestations. The abbreviated packument drops _npmUser.
   const versions = await fetchVersionTrustInfo(name, 'full')
-  const allVersions = Object.keys(versions).toSorted(compareSemverDesc)
+  // oxlint-disable-next-line unicorn/no-array-sort -- Object.keys() already returns a fresh array (no shared mutation); .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
+  const allVersions = Object.keys(versions).sort(compareSemverDesc)
   if (allVersions.length === 0) {
     logger.fail(`No versions found for ${name} (or registry fetch failed).`)
     process.exitCode = 1

@@ -38,9 +38,12 @@ const logger = getDefaultLogger()
 
 const BYPASS_PHRASE = 'Allow node-test-in-vitest-include bypass'
 
-// Standard fleet vitest config locations, checked in order.
+// Standard fleet vitest config locations, checked in order. `.mts` is the
+// fleet's default extension, so every `.config/`-rooted location lists it
+// first (the older `.mjs`/`.ts`/`.js` forms follow for non-fleet repos).
 const VITEST_CONFIG_CANDIDATES = [
   '.config/repo/vitest.config.mts',
+  '.config/vitest.config.mts',
   '.config/vitest.config.mjs',
   '.config/vitest.config.ts',
   '.config/vitest.config.js',

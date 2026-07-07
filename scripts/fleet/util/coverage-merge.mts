@@ -45,7 +45,7 @@ export async function mergeCoverageFinal(options: {
   rootPath: string
   logger: CoverageMergeLogger
 }): Promise<AggregateCoverage | undefined> {
-  const { logger, rootPath } = options
+  const { logger, rootPath } = { __proto__: null, ...options }
   const mainFinalPath = path.join(rootPath, 'coverage/coverage-final.json')
   const isolatedFinalPath = path.join(
     rootPath,

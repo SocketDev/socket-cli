@@ -2,11 +2,11 @@
  * @file Unit tests for memory-discovery-reminder.
  */
 
+import assert from 'node:assert/strict'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import {
   memoryDirFor,
@@ -29,7 +29,8 @@ describe('memory-discovery-reminder', () => {
 
   describe('projectSlug', () => {
     it('replaces every slash (including leading) with a dash', () => {
-      expect(projectSlug('/Users/x/projects/socket-btm')).toBe(
+      assert.strictEqual(
+        projectSlug('/Users/x/projects/socket-btm'),
         '-Users-x-projects-socket-btm',
       )
     })
@@ -38,32 +39,35 @@ describe('memory-discovery-reminder', () => {
   describe('memoryDirFor', () => {
     it('builds ~/.claude/projects/<slug>/memory for an absolute path', () => {
       const dir = memoryDirFor('/Users/x/projects/socket-btm')
-      expect(dir).toBeDefined()
-      expect(dir).toContain(
-        path.join(
-          '.claude',
-          'projects',
-          '-Users-x-projects-socket-btm',
-          'memory',
+      assert.notStrictEqual(dir, undefined)
+      assert.ok(
+        dir!.includes(
+          path.join(
+            '.claude',
+            'projects',
+            '-Users-x-projects-socket-btm',
+            'memory',
+          ),
         ),
       )
     })
 
     it('returns undefined for a non-absolute path', () => {
-      expect(memoryDirFor('relative/path')).toBeUndefined()
-      expect(memoryDirFor('')).toBeUndefined()
+      assert.strictEqual(memoryDirFor('relative/path'), undefined)
+      assert.strictEqual(memoryDirFor(''), undefined)
     })
   })
 
   describe('wheelhousePathFrom', () => {
     it('resolves the sibling socket-wheelhouse checkout', () => {
-      expect(wheelhousePathFrom('/Users/x/projects/socket-btm')).toBe(
+      assert.strictEqual(
+        wheelhousePathFrom('/Users/x/projects/socket-btm'),
         '/Users/x/projects/socket-wheelhouse',
       )
     })
 
     it('returns undefined for a non-absolute cwd', () => {
-      expect(wheelhousePathFrom('rel')).toBeUndefined()
+      assert.strictEqual(wheelhousePathFrom('rel'), undefined)
     })
   })
 
@@ -71,13 +75,13 @@ describe('memory-discovery-reminder', () => {
     it('is true only when MEMORY.md exists in the dir', () => {
       const dir = path.join(tmpHome, 'memory')
       mkdirSync(dir, { recursive: true })
-      expect(storeHasIndex(dir)).toBe(false)
+      assert.strictEqual(storeHasIndex(dir), false)
       writeFileSync(path.join(dir, 'MEMORY.md'), '# index\n')
-      expect(storeHasIndex(dir)).toBe(true)
+      assert.strictEqual(storeHasIndex(dir), true)
     })
 
     it('is false for undefined', () => {
-      expect(storeHasIndex(undefined)).toBe(false)
+      assert.strictEqual(storeHasIndex(undefined), false)
     })
   })
 
@@ -85,7 +89,7 @@ describe('memory-discovery-reminder', () => {
     it('returns undefined when no store has an index', () => {
       // A cwd under a tmp home with no memory dirs created.
       const cwd = path.join(tmpHome, 'projects', 'some-repo')
-      expect(memoryHint(cwd)).toBeUndefined()
+      assert.strictEqual(memoryHint(cwd), undefined)
     })
 
     it('mentions the convention and resolves a path when discoverable', () => {
@@ -93,13 +97,13 @@ describe('memory-discovery-reminder', () => {
       // memoryDirFor(cwd) finds it. Use the actual home dir the hook reads.
       const cwd = process.cwd()
       const dir = memoryDirFor(cwd)
-      expect(dir).toBeDefined()
+      assert.notStrictEqual(dir, undefined)
       // Only assert the hint shape if a real store happens to exist; otherwise
       // confirm the silent path. (Behavioral, no source-scanning.)
       const hint = memoryHint(cwd)
       if (hint !== undefined) {
-        expect(hint).toContain('OWNS')
-        expect(hint).toContain('memory/')
+        assert.ok(hint.includes('OWNS'))
+        assert.ok(hint.includes('memory/'))
       }
     })
   })

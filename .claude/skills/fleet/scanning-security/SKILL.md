@@ -2,7 +2,7 @@
 name: scanning-security
 description: Runs a multi-tool security scan: AgentShield for Claude config, zizmor for GitHub Actions, and optionally Socket CLI for dependency scanning. Produces an A-F graded security report. Use after modifying `.claude/` config, hooks, agents, or GitHub Actions workflows, and before releases.
 user-invocable: true
-allowed-tools: Task, Read, Bash(pnpm exec agentshield:*), Bash(zizmor:*), Bash(command -v:*), Bash(find .cache/external-tools/zizmor:*)
+allowed-tools: Task, Read, Write, Bash(node scripts/fleet/security.mts:*), Bash(node scripts/fleet/lib/security-report.mts:*), Bash(node .claude/skills/fleet/_shared/scripts/checkpoint.mts:*)
 model: claude-opus-4-8
 context: fork
 ---
@@ -26,68 +26,34 @@ See `_shared/security-tools.md` for tool detection and installation.
 
 ### Phase 1: Environment Check
 
-Follow `_shared/env-check.md`. Initialize a queue run entry for `scanning-security`.
+Follow `_shared/env-check.md`. Initialize a queue run entry for `scanning-security` with the existing atomic phased-state writer (the runbook skills use it too): `node .claude/skills/fleet/_shared/scripts/checkpoint.mts save <state> 1`. Advance it the same way as each phase completes, rather than prose-editing `queue.yaml` by hand.
 
 ---
 
-### Phase 2: AgentShield Scan
+### Phase 2 + 3: Run both scans
 
-Scan Claude Code configuration for security issues:
-
-```bash
-pnpm exec agentshield scan
-```
-
-Checks `.claude/` for:
-
-- Hardcoded secrets in CLAUDE.md and settings
-- Overly permissive tool allow lists (e.g. `Bash(*)`)
-- Prompt injection patterns in agent definitions
-- Command injection risks in hooks
-- Risky MCP server configurations
-
-Capture the grade and findings count.
-
-Update queue: `current_phase: agentshield` → `completed_phases: [env-check, agentshield]`
-
----
-
-### Phase 3: Zizmor Scan
-
-Scan GitHub Actions workflows for security issues.
-
-See `_shared/security-tools.md` for zizmor detection. If not installed, skip with a warning.
+The two static scans (AgentShield over `.claude/`, zizmor over `.github/`) are run by the canonical runner, which captures each tool's output and the skip list:
 
 ```bash
-zizmor .github/
+node scripts/fleet/security.mts --json > <state>/scan.json
 ```
 
-Checks for:
-
-- Unpinned actions (must use full SHA, not tags)
-- Secrets used outside `env:` blocks
-- Injection risks from untrusted inputs (template injection)
-- Overly permissive permissions
-
-Capture findings. Update queue phase.
+The `--json` envelope is `{ agentshield: { code, output }, zizmor: { code, output }, skipped: [...] }`. A tool not installed lands in `skipped` (the runner prints the `setup-security-tools` hint in non-JSON mode); the scan continues rather than failing. AgentShield checks `.claude/` for hardcoded secrets, overly-permissive allow lists, prompt-injection patterns, command-injection in hooks, risky MCP config. zizmor checks `.github/` for unpinned actions, secret exposure, template injection, permission issues. Advance the checkpoint after the run.
 
 ---
 
 ### Phase 4: Grade + Report
 
-Spawn the `security-reviewer` agent (see `agents/security-reviewer.md`) with the combined output from AgentShield and zizmor.
+Spawn the `security-reviewer` agent (see `agents/security-reviewer.md`) with the captured scan output. The agent applies CLAUDE.md security rules, assigns each finding a severity, writes the prioritized report (CRITICAL first) with fixes for HIGH/CRITICAL, and runs variant analysis per [`_shared/variant-analysis.md`](../_shared/variant-analysis.md) on every Critical/High (the same misconfiguration likely repeats across sibling workflows, Claude config blocks, or repos). That is the judgment.
 
-The agent:
+Then the deterministic grade + envelope: the agent writes the assigned `{critical, high, medium, low}` counts to a JSON file, and the skill computes the grade + HANDOFF block from it so the rubric can never drift from `_shared/report-format.md`:
 
-1. Applies CLAUDE.md security rules to evaluate the findings
-2. Calculates an A-F grade per `_shared/report-format.md`
-3. Generates a prioritized report (CRITICAL first)
-4. Suggests fixes for HIGH and CRITICAL findings
-5. For every Critical / High finding, runs variant analysis per [`_shared/variant-analysis.md`](../_shared/variant-analysis.md). The same misconfiguration likely exists in sibling workflow files, sibling Claude config blocks, or other repos.
+```bash
+node scripts/fleet/lib/security-report.mts grade --from <state>/counts.json     # → the A-F letter
+node scripts/fleet/lib/security-report.mts handoff --from <state>/handoff.json   # → the === HANDOFF === block
+```
 
-Output a HANDOFF block per `_shared/report-format.md` for pipeline chaining.
-
-Update queue: `status: done`, write `findings_count` and final grade.
+`handoff.json` is `{ skill, status, counts, summary }` (the grade is computed from counts when omitted). Close the checkpoint: `node .claude/skills/fleet/_shared/scripts/checkpoint.mts done <state> <N>`.
 
 ## Adjacent scans
 
@@ -102,6 +68,6 @@ This skill stays focused on **config security** (Claude config + GitHub Actions)
 
 This skill is read-only: scan + grade + report, no fixes. Cadence rules apply to handing the report off:
 
-- **Save the report before acting.** Commit the report file in its own commit (`docs(reports): scanning-security YYYY-MM-DD: grade <A-F>`). The grade in the message makes the trend visible without opening the file.
+- **Save the report to the untracked location.** Write it to `.claude/reports/scanning-security-YYYY-MM-DD.md` (the report location the fleet `.gitignore` excludes per the _Plan & report storage_ rule — never a committable `reports/` or `docs/reports/` path, never committed). It is a local reference for the grade trend, not an artifact.
 - **Don't fix in-skill.** Security findings need careful per-finding triage; they're not safe to batch-fix mechanically. Open per-finding fixes as separate commits driven by the appropriate skill (or hand-edit when the fix is a one-liner like a workflow SHA bump).
 - **One report per scan run.** Re-running produces a new report; commit each so the security trend line is auditable.

@@ -28,6 +28,8 @@
 
 import process from 'node:process'
 
+import { isFleetManagedDir, isFleetManagedPath } from './fleet-repo.mts'
+import { commandWorkingDir } from './shell-command.mts'
 import { readStdin } from './transcript.mts'
 
 /**
@@ -61,6 +63,10 @@ export interface ToolInput {
   readonly old_string?: unknown | undefined
   // Bash
   readonly command?: unknown | undefined
+  // Bash: true when the call requested `run_in_background`. Hooks that gate
+  // backgrounding (a backgrounded git commit hides its bounded pre-commit's
+  // completion) read it. Optional + unknown so a shape surprise can't crash.
+  readonly run_in_background?: unknown | undefined
 }
 
 /**
@@ -137,7 +143,9 @@ export async function readPayload(): Promise<ToolCallPayload | undefined> {
  */
 export async function withBashGuard(
   fn: (command: string, payload: ToolCallPayload) => void | Promise<void>,
+  options?: { fleetOnly?: boolean | undefined } | undefined,
 ): Promise<void> {
+  const opts = { __proto__: null, ...options } as { fleetOnly?: boolean }
   try {
     const payload = await readPayload()
     if (!payload || payload.tool_name !== 'Bash') {
@@ -145,6 +153,14 @@ export async function withBashGuard(
     }
     const command = readCommand(payload)
     if (!command) {
+      return
+    }
+    // Lint/tooling guards pass `fleetOnly` so they skip a command whose working
+    // directory is a non-fleet repo (a `cd <non-fleet> && …` cross-repo run):
+    // that repo has its own toolchain and the fleet convention (vitest over
+    // node --test, no `pnpm exec`, …) doesn't apply. Security / git-state
+    // guards omit it and keep firing everywhere.
+    if (opts.fleetOnly && !isFleetManagedDir(commandWorkingDir(command))) {
       return
     }
     await fn(command, payload)
@@ -168,7 +184,9 @@ export async function withEditGuard(
     content: string | undefined,
     payload: ToolCallPayload,
   ) => void | Promise<void>,
+  options?: { fleetOnly?: boolean | undefined } | undefined,
 ): Promise<void> {
+  const opts = { __proto__: null, ...options } as { fleetOnly?: boolean }
   try {
     const payload = await readPayload()
     const tool = payload?.tool_name
@@ -177,6 +195,14 @@ export async function withEditGuard(
     }
     const filePath = readFilePath(payload!)
     if (!filePath) {
+      return
+    }
+    // Lint-parity guards pass `fleetOnly` so they skip files in a non-fleet
+    // repo: those repos run their own toolchain and aren't fleet-linted, so a
+    // fleet convention (logger over console, function declarations, …) doesn't
+    // apply and must not demand a `socket-lint` opt-out in their code. Security
+    // / git-state guards omit it and keep firing everywhere.
+    if (opts.fleetOnly && !isFleetManagedPath(filePath)) {
       return
     }
     await fn(filePath, readWriteContent(payload!), payload!)

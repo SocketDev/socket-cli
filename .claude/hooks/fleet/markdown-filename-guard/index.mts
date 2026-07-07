@@ -92,6 +92,17 @@ export function classifyMarkdownPath(absPath: string): Verdict {
     }
   }
 
+  // A `.md` under `.github/workflows/` is a GitHub Agentic Workflows (gh-aw)
+  // source, not a doc — `gh aw compile` turns it into a sibling `.lock.yml`.
+  // It owns its own naming (lowercase-hyphenated, matching the workflow), so
+  // the human-docs filename convention doesn't apply.
+  if (absPath.includes('.github')) {
+    const normalized = normalizePath(absPath)
+    if (normalized.includes('/.github/workflows/')) {
+      return { ok: true }
+    }
+  }
+
   const relPath = normalizePath(toRepoRelative(absPath))
   // For docs that describe a specific code file (e.g. `smol-ffi.js.md`),
   // strip the source-file hint before validating the stem.
@@ -253,17 +264,27 @@ export function stripCodeFileHintExt(stem: string): string {
  * would trip the SCREAMING_CASE-only-at-repo-root rule.
  */
 export function toRepoRelative(filePath: string): string {
-  // PreToolUse passes absolute paths. Strip up through `/projects/<repo>/`.
-  const m = filePath.match(/\/projects\/[^/]+\/(.+)$/)
-  if (!m) {
-    return filePath
+  const normalized = normalizePath(filePath)
+  // socket-wheelhouse treats template/ as the effective repo root. Anchor on
+  // the LAST `template/` segment so the carve-out holds for any checkout
+  // location — `~/projects/<repo>`, a `/private/tmp` worktree, or CI's
+  // `/home/runner/work/<repo>/<repo>/` — not only paths under `/projects/`.
+  const templateIdx = normalized.lastIndexOf('/template/')
+  if (templateIdx !== -1) {
+    return normalized.slice(templateIdx + '/template/'.length)
   }
-  let rel = m[1]!
-  // socket-wheelhouse: treat template/ as the effective repo root.
-  if (rel.startsWith('template/')) {
-    rel = rel.slice('template/'.length)
+  // Otherwise strip up through the recognizable repo-checkout prefix.
+  // `~/projects/<repo>/` and CI's `.../work/<repo>/<repo>/` both collapse to
+  // the in-repo relative path; fall back to the input when neither matches.
+  const projectsMatch = normalized.match(/\/projects\/[^/]+\/(.+)$/)
+  if (projectsMatch) {
+    return projectsMatch[1]!
   }
-  return rel
+  const ciMatch = normalized.match(/\/work\/[^/]+\/[^/]+\/(.+)$/)
+  if (ciMatch) {
+    return ciMatch[1]!
+  }
+  return filePath
 }
 
 // withEditGuard handles the stdin drain, tool_name gate, file_path narrow,

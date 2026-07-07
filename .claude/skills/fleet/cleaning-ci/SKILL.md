@@ -2,7 +2,7 @@
 name: cleaning-ci
 description: Sweeps a fleet repo (or every fleet repo) for redundant CI surface. Three classes: orphan workflow YAML files (lint.yml / check.yml / type.yml / test.yml that the unified ci.yml replaced), GitHub-Dependabot auto-fix PRs that the fleet handles via /updating-security, and stale workflow run history in the Actions sidebar. Deletes the YAML files, disables Dependabot automated-security-fixes via gh api, and reports anything that needs a manual UI toggle. Once-and-never-again sweep meant to leave a repo clean.
 user-invocable: true
-allowed-tools: Read, Edit, Write, Glob, Grep, Bash(gh:*), Bash(git:*), Bash(ls:*), Bash(rm:*), Bash(find:*), Bash(jq:*)
+allowed-tools: Read, Edit, Write, Glob, Grep, Bash(node .claude/skills/fleet/cleaning-ci/lib/clean-ci.mts:*), Bash(gh:*), Bash(git:*), Bash(ls:*), Bash(rm:*), Bash(find:*), Bash(jq:*)
 model: claude-haiku-4-5
 context: fork
 ---
@@ -36,25 +36,31 @@ target classes:
 
 ## Phases
 
-### Phase 1: inventory
+### Phase 1: inventory (read-only engine)
+
+Run the three probes + categorization in one read-only pass:
 
 ```sh
-# Orphan YAML files
-ls .github/workflows/ | grep -E '^(lint|check|type|test)\.ya?ml$'
-
-# Workflow records (live + stale)
-gh api "repos/{owner}/{repo}/actions/workflows" --paginate \
-  --jq '.workflows[] | "\(.id)\t\(.state)\t\(.name)\t\(.path)"'
-
-# Dependabot automated-security-fixes state
-gh api "repos/{owner}/{repo}/automated-security-fixes" --jq .enabled
+node .claude/skills/fleet/cleaning-ci/lib/clean-ci.mts --pretty {owner}/{repo}
 ```
 
-Categorise each finding:
+It emits, per repo, `{ orphanFiles, staleRecords, securityFixesEnabled }` plus a
+`proposed` action plan as DATA (the orphan files to `git rm`, the workflow-record
+ids to delete, whether to toggle off automated-security-fixes). Plain (no
+`--pretty`) emits the JSON envelope. The categorization is:
 
-- **delete-file**: orphan YAML on disk
-- **delete-record**: workflow record whose `.path` no longer exists in the repo OR whose name matches the orphan pattern
-- **toggle-off**: `automated-security-fixes: true`
+- **delete-file**: an orphan YAML on disk (one of the four canonical names).
+- **delete-record**: a workflow record whose `.path` no longer exists OR whose
+  name matches the orphan pattern (GitHub-managed `dynamic/` records are
+  excluded — they can't be API-deleted).
+- **toggle-off**: `automated-security-fixes: true`.
+
+The engine performs NOTHING — it only inventories + proposes. It is the FIRST
+class of fleet operation that would do irreversible server-side GitHub deletes,
+so the deletes stay model-driven: read the `proposed` plan, apply the
+legitimate-retired-workflow judgment (a `path-missing` record may be a
+deliberately-kept renamed workflow per the carve-outs above), and issue each
+delete yourself in Phases 2-4 under the per-repo confirmation gate.
 
 ### Phase 2: file deletions (commit + push)
 

@@ -12,7 +12,7 @@ Finish a code change → **commit it**. Don't end a turn with uncommitted edits,
 
 ## Branch discipline (and the checkout trap)
 
-"Smallest chunks" governs the *commit*, not the *branch*. A fresh branch holds a whole queue of related commits — **one logical change does not mean one commit, and one branch is not one commit.** The `no-branch-reuse-guard` enforces this: it fires only when you commit onto a branch that already has a **remote upstream** (a shared branch others may have pushed to). It stays silent on the default branch and on a fresh local branch with no upstream. So:
+"Smallest chunks" governs the *commit*, not the *branch*. A fresh branch holds a whole queue of related commits — **one logical change does not mean one commit, and one branch is not one commit.** The `no-branch-reuse-reminder` enforces this: it fires only when you commit onto a branch that already has a **remote upstream** (a shared branch others may have pushed to). It stays silent on the default branch and on a fresh local branch with no upstream. So:
 
 - **Stack related commits on one fresh local branch.** Building a multi-fix queue? Commit each fix onto the same branch, in order. That is correct and expected, not "branch reuse."
 - **"Shared" = has a remote upstream.** Only then cut a new branch. A local-only branch is yours to keep committing to.
@@ -70,3 +70,29 @@ A common safe pattern is a throwaway worktree off `origin/<default>` to
 cherry-pick + push a single commit (when local `main` has diverged). After
 `git worktree remove`-ing it, run `pnpm i` in the main checkout to relink — the
 cherry-pick worktree's pnpm install is what stole the link.
+
+### Periodic fleet-wide tidy
+
+`managing-worktrees` Mode 3 prunes spent worktrees in the *current* repo. The
+`tidying-worktrees` skill is the fleet-wide, no-prompt sweep — it iterates the
+canonical roster (`cascading-fleet/lib/fleet-repos.txt`) and removes only
+provably-spent worktrees across every repo. Engine:
+`.claude/skills/fleet/tidying-worktrees/lib/tidy-worktrees.mts`.
+
+Both share one removability predicate (`decideWorktree`): remove ONLY when the
+tree is clean AND either (a) the branch is fully merged into `origin/<base>`, or
+(b) the branch is gone from the remote AND the worktree is **not ahead** of the
+base. The ahead-of-base guard is load-bearing — a workflow's local-only
+isolation worktree (`.claude/worktrees/wf_*`) reads as "branch gone from remote"
+yet may carry unpushed commits, so pruning on remote-state alone would lose
+work. Dirty or ahead-of-base worktrees are always kept.
+
+Two operational notes the engine handles: a worktree containing **submodules**
+needs `git worktree remove --force` even when clean (the plain form errors
+`working trees containing submodules cannot be moved or removed`); the engine
+passes `--force` only after a clean-tree check, so it never discards work. And
+after any removal, `pnpm i` in each affected repo's primary checkout relinks the
+dangled `node_modules` symlinks.
+
+For background care, drive it on a loop: `/loop 6h /fleet:tidying-worktrees
+--fix`. Default invocation is dry-run; `--fix` acts.

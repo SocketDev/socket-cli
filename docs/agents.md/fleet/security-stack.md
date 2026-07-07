@@ -55,8 +55,8 @@ Layered enforcement, with each layer catching what the previous one missed.
 
 | Mistake                                | Hook                                                           | What it catches                                                        |
 | -------------------------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Pushing a real customer / company name | `.claude/hooks/fleet/private-name-guard/`                      | Real names in commits / PR text / release notes                        |
-| Linear ticket refs                     | `.claude/hooks/fleet/private-name-guard/`                      | `SOC-123`, `ENG-456`, Linear URLs in code or PR text                   |
+| Pushing a real customer / company name | `.claude/hooks/fleet/private-name-reminder/`                      | Real names in commits / PR text / release notes                        |
+| Linear ticket refs                     | `.claude/hooks/fleet/private-name-reminder/`                      | `SOC-123`, `ENG-456`, Linear URLs in code or PR text                   |
 | External issue refs (auto-link spam)   | `.claude/hooks/fleet/no-ext-issue-ref-guard/`             | `<owner>/<repo>#<num>` in commits or PR bodies for non-SocketDev repos |
 | Empty commits                          | `.claude/hooks/fleet/no-empty-commit-guard/`                   | `git commit --allow-empty`, `cherry-pick --allow-empty`                |
 | `--no-verify` use                      | `.claude/hooks/fleet/no-revert-guard/`                         | Hook bypass via `--no-verify` without typed bypass phrase              |

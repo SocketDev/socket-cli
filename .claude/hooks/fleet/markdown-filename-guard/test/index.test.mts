@@ -120,6 +120,41 @@ test('CLAUDE.md deeper under template/ (template/packages/foo/) is still blocked
   assert.match(result.stderr, /SCREAMING_CASE/)
 })
 
+test('template/CLAUDE.md is allowed from a /private/tmp worktree (not under /projects/)', async () => {
+  const result = await runHook({
+    tool_input: {
+      content: '# CLAUDE.md',
+      file_path: '/private/tmp/wh-clonehook/template/CLAUDE.md',
+    },
+    tool_name: 'Edit',
+  })
+  assert.strictEqual(result.code, 0)
+})
+
+test('template/CLAUDE.md is allowed from a CI /work/ checkout', async () => {
+  const result = await runHook({
+    tool_input: {
+      content: '# CLAUDE.md',
+      file_path:
+        '/home/runner/work/socket-wheelhouse/socket-wheelhouse/template/CLAUDE.md',
+    },
+    tool_name: 'Edit',
+  })
+  assert.strictEqual(result.code, 0)
+})
+
+test('deeper-under-template/ stays blocked from a /private/tmp worktree', async () => {
+  const result = await runHook({
+    tool_input: {
+      content: '# CLAUDE.md',
+      file_path: '/private/tmp/wh-clonehook/template/packages/foo/CLAUDE.md',
+    },
+    tool_name: 'Edit',
+  })
+  assert.strictEqual(result.code, 2)
+  assert.match(result.stderr, /SCREAMING_CASE/)
+})
+
 test('CONTRIBUTING.md at root is allowed', async () => {
   const result = await runHook({
     tool_input: {
@@ -333,6 +368,23 @@ test('anything under .claude/ at any depth bypasses the rules', async () => {
       result.code,
       0,
       `${filename} should be allowed under .claude/ (got code ${result.code}: ${result.stderr})`,
+    )
+  }
+})
+
+test('a .md under .github/workflows/ is a gh-aw source, not a doc — allowed', async () => {
+  for (const filename of [
+    '/Users/x/projects/foo/.github/workflows/audit-api-surface.md',
+    '/Users/x/projects/foo/template/.github/workflows/weekly-update.md',
+  ]) {
+    const result = await runHook({
+      tool_input: { content: '---\non: {}\n---\n# wf', file_path: filename },
+      tool_name: 'Write',
+    })
+    assert.strictEqual(
+      result.code,
+      0,
+      `${filename} should be allowed as a gh-aw workflow source (got code ${result.code}: ${result.stderr})`,
     )
   }
 })

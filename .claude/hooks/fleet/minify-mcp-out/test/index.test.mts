@@ -83,7 +83,13 @@ test('compressMCPOutput: passes through non-text blocks', () => {
 test('compressMCPOutput: passes through primitives that aren’t strings', () => {
   assert.equal(compressMCPOutput(42), 42)
   assert.equal(compressMCPOutput(true), true)
-  assert.equal(compressMCPOutput(undefined), null)
+  // Passthrough is identity: a non-string primitive comes back unchanged. The
+  // walker only rewrites strings / arrays / objects; everything else (incl.
+  // null and undefined) returns as-is. (main() short-circuits an undefined
+  // tool_response before it ever reaches the walker, so this is a contract
+  // test, not a production path.)
+  assert.equal(compressMCPOutput(undefined), undefined)
+  assert.equal(compressMCPOutput(null), null)
 })
 
 test('compressMCPOutput: minifies JSON-shaped strings', () => {

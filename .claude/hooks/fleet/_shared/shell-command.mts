@@ -33,6 +33,8 @@
 // so this avoids a separate per-hook `shell-quote` dependency that
 // package.json regeneration tends to drop, and `parseShell` is already
 // typed as `ParseEntry[]` (no `as unknown` cast needed).
+import process from 'node:process'
+
 import { parseShell } from '@socketsecurity/lib-stable/shell/parse'
 
 import type { ParseEntry } from '@socketsecurity/lib-stable/shell/parse'
@@ -308,4 +310,26 @@ export function invocationHasFlag(
  */
 export function hasOpaqueInvocation(command: string): boolean {
   return parseCommands(command).some(c => c.viaVariable || c.viaEval)
+}
+
+/**
+ * The directory a command effectively runs in. The fleet's cross-repo pattern
+ * is `cd <abs-path> && <cmd>`, so a leading `cd` target wins; failing that a
+ * `git -C <dir>` target; otherwise the session repo (`CLAUDE_PROJECT_DIR`).
+ * Used by lint/tooling Bash guards (via `withBashGuard`'s `fleetOnly`) to skip
+ * commands whose working directory is a non-fleet repo.
+ */
+export function commandWorkingDir(command: string): string {
+  const cdDir = commandsFor(command, 'cd')[0]?.args[0]
+  if (cdDir) {
+    return cdDir
+  }
+  for (const git of commandsFor(command, 'git')) {
+    const flagIdx = git.args.indexOf('-C')
+    const target = flagIdx === -1 ? undefined : git.args[flagIdx + 1]
+    if (target) {
+      return target
+    }
+  }
+  return process.env['CLAUDE_PROJECT_DIR'] ?? '.'
 }

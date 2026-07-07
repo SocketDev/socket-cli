@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /**
  * @file Install socket-token-minifier as a self-contained CLI at
- *   ~/.socket/_wheelhouse/socket-token-minifier/ with its own node_modules/.
- *   Writes a thin bin shim at ~/.socket/_wheelhouse/bin/socket-token-minifier
- *   that execs the installed entry-point. **Install model (post-rev)**: the
- *   source files (`.mts`) are COPIED to the install dest as top-level files —
- *   NOT installed under `node_modules/@socketsecurity/token-minifier/`. Reason:
- *   Node 22+ refuses to strip TS types from files under `node_modules/`
+ *   ~/.socket/_wheelhouse/rack/socket-token-minifier/ with its own
+ *   node_modules/. Writes a thin handle at
+ *   ~/.socket/_wheelhouse/bin/socket-token-minifier that execs the installed
+ *   entry-point. **Install model (post-rev)**: the source files (`.mts`) are
+ *   COPIED to the install dest as top-level files — NOT installed under
+ *   `node_modules/@socketsecurity/token-minifier/`. Reason: Node 22+ refuses to
+ *   strip TS types from files under `node_modules/`
  *   (`ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`). The fleet convention is
  *   `.mts` source everywhere, so the install model adapts: source lives at the
  *   dest root, only `dependencies/` end up under `node_modules/`. The proxy
@@ -76,7 +77,14 @@ const PKG_SOURCE_DIR = path.join(
   'socket-token-minifier',
 )
 const WHEELHOUSE_INSTALL_DIR = getSocketAppDir('wheelhouse')
-const INSTALL_DIR = path.join(WHEELHOUSE_INSTALL_DIR, 'socket-token-minifier')
+// Racked under rack/<tool>/ (the readable tool store; Lock-step with
+// @socketsecurity/lib src/paths/socket.ts getSocketRackDir). bin/ holds only
+// the flat handle that execs the racked entry-point.
+const INSTALL_DIR = path.join(
+  WHEELHOUSE_INSTALL_DIR,
+  'rack',
+  'socket-token-minifier',
+)
 const BIN_DIR = path.join(WHEELHOUSE_INSTALL_DIR, 'bin')
 const SHIM_PATH = path.join(BIN_DIR, 'socket-token-minifier')
 

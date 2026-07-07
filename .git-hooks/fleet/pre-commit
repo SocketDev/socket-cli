@@ -79,6 +79,63 @@ run_step() {
   return "$status"
 }
 
+# Like run_step, but bounds the command to STAGED_TEST_BUDGET_S and, on
+# timeout, KILLS THE WHOLE PROCESS GROUP (the `sfw` pnpm-shim wrapper +
+# every vitest worker it spawned) — then fails OPEN (returns 0). This is
+# the automatic form of the manual "kill the sfw test wrapper, not the
+# worker" recovery: under Socket Firewall the staged `pnpm test` can
+# deadlock (the sfw proxy and a vitest worker block on each other), and a
+# bare blocking run hangs the commit forever. The matching helper
+# `runStagedTestsReminder` (_shared/helpers.mts) already bounds the
+# NON-blocking reminder path at STAGED_TEST_TIMEOUT_MS=60s; this gives the
+# BLOCKING step the same ceiling so the no-premature-commit-kill-guard's
+# "bounded ~60s" promise is actually true for both paths. A real test
+# failure (clean non-zero before the budget) still blocks — only a
+# budget-exceeding hang is skipped (the merge gate runs the full suite).
+#
+# Portable: no `timeout`/`gtimeout`/`setsid` dependency. `set -m` puts the
+# backgrounded job in its own process group so `kill -- -$pgid` reaps the
+# whole tree; poll in 1s ticks (sh has no `wait -t`).
+STAGED_TEST_BUDGET_S=60
+run_step_bounded() {
+  step_name=$1
+  shift
+  step_log=$(mktemp -t "pre-commit-${step_name}.XXXXXX") || step_log=/tmp/pre-commit-step.log
+  set -m
+  { "$@" >"$step_log" 2>&1; } &
+  job=$!
+  set +m
+  elapsed=0
+  while kill -0 "$job" 2>/dev/null; do
+    if [ "$elapsed" -ge "$STAGED_TEST_BUDGET_S" ]; then
+      # Budget blown — a deadlock or an over-broad related-set. Take out the
+      # whole group (sfw wrapper + workers), TERM then KILL, and fail open.
+      # The kills run in an stderr-discarded subshell so the shell's
+      # "Terminated" job-control notice doesn't leak into the commit output.
+      { kill -- -"$job"; sleep 1; kill -9 -- -"$job"; } 2>/dev/null
+      wait "$job" 2>/dev/null
+      cat "$step_log" 2>/dev/null
+      rm -f "$step_log"
+      printf '\n[pre-commit] %s exceeded %ss budget — process group killed; ' \
+        "$step_name" "$STAGED_TEST_BUDGET_S"
+      printf 'skipped (non-blocking). The merge gate runs the full suite.\n'
+      return 0
+    fi
+    sleep 1
+    elapsed=$((elapsed + 1))
+  done
+  wait "$job"
+  status=$?
+  cat "$step_log" 2>/dev/null
+  if [ "$status" -ne 0 ]; then
+    printf '\n========== pre-commit: %s FAILED (exit %s) ==========\n' "$step_name" "$status"
+    printf '\n========== full log: %s ==========\n' "$step_log"
+  else
+    rm -f "$step_log"
+  fi
+  return "$status"
+}
+
 run_step lint pnpm lint --staged || exit $?
 
 # Each repo's `pnpm test` script wraps a runner that understands
@@ -86,5 +143,5 @@ run_step lint pnpm lint --staged || exit $?
 # vitest, or filters the staged set in a pre-pass). Repos whose
 # `pnpm test` is bare vitest without a wrapper need a local override
 # that pre-filters with `git diff --cached --name-only` then runs
-# `pnpm test`.
-run_step test pnpm test --staged || exit $?
+# `pnpm test`. Bounded so an sfw-proxy deadlock can't hang the commit.
+run_step_bounded test pnpm test --staged || exit $?

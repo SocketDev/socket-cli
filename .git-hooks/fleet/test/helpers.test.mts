@@ -481,6 +481,19 @@ test('scanPersonalPaths: ignores Linux placeholder /home/<user>/', () => {
   assert.strictEqual(hits.length, 0)
 })
 
+test('scanPersonalPaths: does NOT flag /home/runner/ + other CI/system homes', () => {
+  // The "username" of a CI/system home is a service account, not a person.
+  // gh-aw's compiled .lock.yml emits /home/runner/work/... tool-cache mounts;
+  // those are correct CI paths, not personal leaks.
+  for (const p of [
+    'GH_AW_TOOL_CACHE_MOUNT="/home/runner/work/_tool:/home/runner/work/_tool:ro"',
+    'find /opt/hostedtoolcache /home/runner/work/_tool -maxdepth 5',
+    'WORKDIR /home/ubuntu/app',
+  ]) {
+    assert.strictEqual(scanPersonalPaths(p).length, 0, `should not flag: ${p}`)
+  }
+})
+
 test('scanPersonalPaths: does NOT flag ~/ or $HOME/ (username-free forms)', () => {
   // ~/ and $HOME/ are the RECOMMENDED replacements for a hardcoded
   // username — they must never be flagged. Regression: an earlier

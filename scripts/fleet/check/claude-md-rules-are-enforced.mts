@@ -1,44 +1,44 @@
 #!/usr/bin/env node
 /**
- * @file Code-is-law coverage gate: every HARD rule (a 🚨-marked paragraph) in the
- *   fleet block of CLAUDE.md and in docs/agents.md/fleet/*.md must resolve to an
- *   EXECUTABLE enforcer — a hook, a `socket/`+`typescript/` lint rule, or a
- *   scripts/fleet/*.mts script — not merely to a prose detail page.
+ * @file Code-is-law coverage gate: every HARD rule (a 🚨-marked paragraph) in
+ *   the fleet block of CLAUDE.md and in docs/agents.md/fleet/_.md must resolve
+ *   to an EXECUTABLE enforcer — a hook, a `socket/`+`typescript/` lint rule, or
+ *   a scripts/fleet/_.mts script — not merely to a prose detail page. This is
+ *   the inverse of the two existing CLAUDE.md gates:
  *
- *   This is the inverse of the two existing CLAUDE.md gates:
- *     - claude-md-citations-resolve.mts asserts a CITED thing EXISTS (no dangling
- *       citation), but says nothing about a rule that cites nothing.
- *     - claude-md-rules-are-informative.mts asserts each `###` SECTION anchors to
- *       one of {hook cite, docs link, skill ref, advisory}, accepting a docs link
- *       ALONE as sufficient — so a hard 🚨 rule can anchor to only prose and pass.
- *   Neither fails when a declared discipline has no code behind it. The Code-is-law
- *   rule (CLAUDE.md) forbids exactly that "policy-on-paper" state; this gate makes
- *   it fail. Granularity is the 🚨 PARAGRAPH, not the `###` section: a multi-rule
- *   section (e.g. Tooling carries several 🚨) passes only when EVERY one of its
- *   hard rules resolves to an enforcer, which is what "enforce every rule" means.
+ *   - claude-md-citations-resolve.mts asserts a CITED thing EXISTS (no dangling
+ *     citation), but says nothing about a rule that cites nothing.
+ *   - claude-md-rules-are-informative.mts asserts each `###` SECTION anchors to
+ *     one of {hook cite, docs link, skill ref, advisory}, accepting a docs link
+ *     ALONE as sufficient — so a hard 🚨 rule can anchor to only prose and
+ *     pass. Neither fails when a declared discipline has no code behind it. The
+ *     Code-is-law rule (CLAUDE.md) forbids exactly that "policy-on-paper"
+ *     state; this gate makes it fail. Granularity is the 🚨 PARAGRAPH, not the
+ *     `###` section: a multi-rule section (e.g. Tooling carries several 🚨)
+ *     passes only when EVERY one of its hard rules resolves to an enforcer,
+ *     which is what "enforce every rule" means. A 🚨 paragraph passes when its
+ *     text cites at least one of:
  *
- *   A 🚨 paragraph passes when its text cites at least one of:
- *     1. a hook — `.claude/hooks/{fleet,repo}/<name>/` that exists on disk with an
- *        index.mts OR install.mts (installer hooks enforce off the host machine);
- *     2. a lint rule — backticked `socket/<rule>` (registered in the plugin) or
- *        `typescript/<rule>` (a key in .config/fleet/oxlintrc.json);
- *     3. a script — any `scripts/fleet/<path>.mts` that resolves on disk (a
- *        check/ invariant OR build-step automation — both are executable law).
- *
- *   Off-machine / human-judgment rules that genuinely cannot be coded carry an
- *   inline opt-out comment `<!-- enforcement: <category> — <reason> -->` with
- *   <category> in {human-review, off-machine, installer}; those pass and are
- *   listed in the report so the opt-out set stays visible and small.
- *
- *   Gated surfaces (a finding fails the gate): the CLAUDE.md fleet block and
- *   docs/agents.md/fleet/*.md. Advisory surfaces (reported, never fail): docs/**
- *   outside fleet, README.md, hook READMEs, SKILL.md — prose there is not a
- *   structured rule surface, so a 🚨 with no enforcer is surfaced, not enforced.
- *
- *   Exit codes: 0 — every gated 🚨 rule resolves to an executable enforcer (or a
- *   declared opt-out); 1 — at least one gated 🚨 rule is policy-on-paper.
- *   Fail-open: no CLAUDE.md → success; plugin-absent repo → arm 2's socket/ half
- *   is skipped (matches claude-md-citations-resolve).
+ *   1. a hook — `.claude/hooks/{fleet,repo}/<name>/` that exists on disk with an
+ *      index.mts OR install.mts (installer hooks enforce off the host
+ *      machine);
+ *   2. a lint rule — backticked `socket/<rule>` (registered in the plugin) or
+ *      `typescript/<rule>` (a key in .config/fleet/oxlintrc.json);
+ *   3. a script — any `scripts/fleet/<path>.mts` that resolves on disk (a check/
+ *      invariant OR build-step automation — both are executable law).
+ *      Off-machine / human-judgment rules that genuinely cannot be coded carry
+ *      an inline opt-out comment `<!-- enforcement: <category> — <reason> -->`
+ *      with <category> in {human-review, off-machine, installer}; those pass
+ *      and are listed in the report so the opt-out set stays visible and small.
+ *      Gated surfaces (a finding fails the gate): the CLAUDE.md fleet block and
+ *      docs/agents.md/fleet/*.md. Advisory surfaces (reported, never fail):
+ *      docs/** outside fleet, README.md, hook READMEs, SKILL.md — prose there
+ *      is not a structured rule surface, so a 🚨 with no enforcer is surfaced,
+ *      not enforced. Exit codes: 0 — every gated 🚨 rule resolves to an
+ *      executable enforcer (or a declared opt-out); 1 — at least one gated 🚨
+ *      rule is policy-on-paper. Fail-open: no CLAUDE.md → success;
+ *      plugin-absent repo → arm 2's socket/ half is skipped (matches
+ *      claude-md-citations-resolve).
  */
 
 import { existsSync, readFileSync } from 'node:fs'
@@ -176,7 +176,7 @@ export function sirenParagraphs(
   body: string,
   options: ParagraphScanOptions,
 ): RuleParagraph[] {
-  const { fleetOnly } = options
+  const { fleetOnly } = { __proto__: null, ...options }
   const lines = body.split('\n')
   const out: RuleParagraph[] = []
   let inFleet = !fleetOnly
@@ -328,7 +328,7 @@ export function auditFile(
   inv: EnforcerInventory,
   options: AuditOptions,
 ): AuditResult {
-  const { fleetOnly, readDoc } = options
+  const { fleetOnly, readDoc } = { __proto__: null, ...options }
   const findings: Finding[] = []
   const optOuts: OptOut[] = []
   const paras = sirenParagraphs(file, body, { fleetOnly })
@@ -446,7 +446,9 @@ async function main(): Promise<void> {
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   main().catch((e: unknown) => {
-    logger.error(`check-claude-md-rules-are-enforced failed: ${errorMessage(e)}`)
+    logger.error(
+      `check-claude-md-rules-are-enforced failed: ${errorMessage(e)}`,
+    )
     process.exitCode = 1
   })
 }

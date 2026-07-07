@@ -16,16 +16,19 @@ Source files have a **soft cap of 500 lines** and a **hard cap of 1000 lines**. 
 
 ## When NOT to split
 
-- A single function legitimately needs 500 lines (a parser, a state machine, a configuration table). State this in a one-line comment at the top of the function.
-- The file is a generated artifact (lockfile-style data, schema dump). Generated files don't count toward the cap.
+There is exactly one case, and it lives **past the hard cap (>1000 lines)**:
 
-## Exemption markers: no blanket exclusions
+- A single function legitimately needs the space (a parser, a state machine, a configuration table), or the file is a generated artifact (lockfile-style data, schema dump). Generated files the lint config already ignores don't count toward the cap.
 
-When a file genuinely can't split (generated artifact, a single cohesive parser/state-machine/table, a one-flow CLI), mark it with `max-file-lines: <category> — <reason>`. The `<category>` is a single hyphenated word naming WHAT the file is (`parser`, `state-machine`, `table`, `cli`, `integration-test`, `vendored`, and the like); the `<reason>` after the separator says WHY it can't split.
+A file in the **soft band (501–1000) always splits.** There is no "when NOT to split" in the soft band — the cap forces the seam. If a 600-line file feels cohesive, that is the signal it has two concerns sharing a scope, not an exception.
 
-A bare self-judgment marker (`legitimate`, `ok`, `exempt`, `acceptable`) is NOT a category and does not exempt. A file may not wave itself through by asserting it deems itself fine; it must name what it is.
+## Exemption markers: hard-cap-only, no blanket exclusions
 
-Enforced three ways: the `socket/max-file-lines` oxlint rule at lint time, `.claude/hooks/fleet/no-blanket-file-exclusion-guard/` at edit time, and the soft/hard caps at every commit.
+The exemption marker is **hard-cap-only**. A file past 1000 lines that is one genuine cohesive unit (generated artifact, a single parser/state-machine/table, a one-flow CLI) marks itself `max-file-lines: <category> — <reason>`. The `<category>` is a single hyphenated word naming WHAT the file is (`parser`, `state-machine`, `table`, `cli`, `integration-test`, `vendored`, and the like); the `<reason>` after the separator says WHY it can't split.
+
+**A soft-band (501–1000) marker is ignored** — the `socket/max-file-lines` rule reports the warning anyway. You cannot mark a soft-band file exempt; you split it. A bare self-judgment marker (`legitimate`, `ok`, `exempt`, `acceptable`) is NOT a category and never exempts, at any size. A file may not wave itself through by asserting it deems itself fine; it must name what it is, and be past the hard cap.
+
+Enforced three ways: the `socket/max-file-lines` oxlint rule (which gates the marker to >1000) at lint time, `.claude/hooks/fleet/no-blanket-file-exclusion-guard/` (which blocks a bad-shape marker) at edit time, and the soft/hard caps at every commit.
 
 ## Principle
 

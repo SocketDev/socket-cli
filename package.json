@@ -50,7 +50,9 @@
     "prepare": "node scripts/fleet/install-git-hooks.mts && node scripts/fleet/install-git-hooks.mts",
     "pretest": "pnpm run build:cli",
     "setup-security-tools": "node .claude/hooks/fleet/setup-security-tools/install.mts",
-    "ci:local": "agent-ci run --all --quiet --pause-on-failure --github-token"
+    "ci:local": "node scripts/fleet/agent-ci-skip-locks.mts run --all --quiet --pause-on-failure --github-token",
+    "weekly-update": "node scripts/fleet/weekly-update.mts",
+    "weekly-update:ci": "node scripts/fleet/weekly-update-workflow.mts run"
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "catalog:",
@@ -161,9 +163,9 @@
   },
   "engines": {
     "node": ">=26.0.0",
-    "pnpm": ">=11.5.1"
+    "pnpm": ">=11.6.0"
   },
-  "packageManager": "pnpm@11.5.1",
+  "packageManager": "pnpm@11.6.0",
   "allowScripts": {
     "cpu-features": false,
     "protobufjs": false,

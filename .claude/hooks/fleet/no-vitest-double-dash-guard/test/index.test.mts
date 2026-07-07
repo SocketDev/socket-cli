@@ -2,64 +2,81 @@
  * @file Unit tests for no-vitest-double-dash-guard.
  */
 
-import { describe, expect, it } from 'vitest'
+import assert from 'node:assert/strict'
+import { describe, it } from 'node:test'
 
 import { vitestDoubleDash } from '../index.mts'
 
 describe('no-vitest-double-dash-guard', () => {
   describe('blocks -- before a path', () => {
     it('pnpm test -- <path>', () => {
-      expect(vitestDoubleDash('pnpm test -- test/foo.test.mts')).toBeDefined()
+      assert.notStrictEqual(
+        vitestDoubleDash('pnpm test -- test/foo.test.mts'),
+        undefined,
+      )
     })
 
     it('pnpm run test -- <path>', () => {
-      expect(
+      assert.notStrictEqual(
         vitestDoubleDash('pnpm run test -- path/to/foo.test.mts'),
-      ).toBeDefined()
+        undefined,
+      )
     })
 
     it('node_modules/.bin/vitest run -- <path>', () => {
-      expect(
+      assert.notStrictEqual(
         vitestDoubleDash('node_modules/.bin/vitest run -- foo.test.mts'),
-      ).toBeDefined()
+        undefined,
+      )
     })
 
     it('bare vitest run -- <path>', () => {
-      expect(vitestDoubleDash('vitest run -- foo.test.mts')).toBeDefined()
+      assert.notStrictEqual(
+        vitestDoubleDash('vitest run -- foo.test.mts'),
+        undefined,
+      )
     })
 
     it('flags it inside a chained command', () => {
-      expect(
+      assert.notStrictEqual(
         vitestDoubleDash('pnpm build && pnpm test -- foo.test.mts'),
-      ).toBeDefined()
+        undefined,
+      )
     })
   })
 
   describe('allows clean invocations', () => {
     it('pnpm test <path> (no --)', () => {
-      expect(vitestDoubleDash('pnpm test test/foo.test.mts')).toBeUndefined()
+      assert.strictEqual(
+        vitestDoubleDash('pnpm test test/foo.test.mts'),
+        undefined,
+      )
     })
 
     it('node_modules/.bin/vitest run <path> (no --)', () => {
-      expect(
+      assert.strictEqual(
         vitestDoubleDash('node_modules/.bin/vitest run test/foo.test.mts'),
-      ).toBeUndefined()
+        undefined,
+      )
     })
 
     it('a -- with only flags after it is not the path-dropping shape', () => {
-      expect(vitestDoubleDash('pnpm test -- --reporter=dot')).toBeUndefined()
+      assert.strictEqual(
+        vitestDoubleDash('pnpm test -- --reporter=dot'),
+        undefined,
+      )
     })
 
     it('does not touch a non-test command with --', () => {
-      expect(vitestDoubleDash('pnpm run build -- --watch')).toBeUndefined()
+      assert.strictEqual(vitestDoubleDash('pnpm run build -- --watch'), undefined)
     })
 
     it('does not touch a non-vitest binary', () => {
-      expect(vitestDoubleDash('git log -- path/to/file')).toBeUndefined()
+      assert.strictEqual(vitestDoubleDash('git log -- path/to/file'), undefined)
     })
 
     it('tolerates an unparseable command (fail-open)', () => {
-      expect(() => vitestDoubleDash('pnpm test -- "broken')).not.toThrow()
+      assert.doesNotThrow(() => vitestDoubleDash('pnpm test -- "broken'))
     })
   })
 })

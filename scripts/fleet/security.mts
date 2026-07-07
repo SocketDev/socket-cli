@@ -33,45 +33,90 @@ async function hasExecutable(name: string): Promise<boolean> {
   return Boolean(await which(name))
 }
 
-async function runTool(command: string, args: string[]): Promise<number> {
+export interface ToolRun {
+  code: number
+  stdout: string
+}
+
+// Run a tool, returning its exit code (default) — or, in capture mode, its exit
+// code AND stdout/stderr text (for the --json envelope). Default mode inherits
+// stdio so the byte-identical non-JSON behavior is unchanged across the fleet.
+async function runTool(
+  command: string,
+  args: string[],
+  capture: boolean,
+): Promise<ToolRun> {
   try {
     const result = await spawn(command, args, {
-      stdio: 'inherit',
       shell: WIN32,
+      ...(capture ? { stdioString: true } : { stdio: 'inherit' }),
     })
-    return result.code ?? 1
+    return {
+      code: result.code ?? 1,
+      stdout: capture ? `${result.stdout ?? ''}${result.stderr ?? ''}` : '',
+    }
   } catch (e) {
     if (e && typeof e === 'object' && 'code' in e) {
       const code = (e as { code: unknown }).code
-      return typeof code === 'number' ? code : 1
+      const out = e as { stdout?: unknown; stderr?: unknown }
+      return {
+        code: typeof code === 'number' ? code : 1,
+        stdout: capture
+          ? `${typeof out.stdout === 'string' ? out.stdout : ''}${typeof out.stderr === 'string' ? out.stderr : ''}`
+          : '',
+      }
     }
     throw e
   }
 }
 
+export interface SecurityScanResult {
+  agentshield: { code: number; output: string } | undefined
+  zizmor: { code: number; output: string } | undefined
+  skipped: string[]
+}
+
 async function main(): Promise<void> {
+  const json = process.argv.includes('--json')
+  const result: SecurityScanResult = {
+    agentshield: undefined,
+    skipped: [],
+    zizmor: undefined,
+  }
+
   if (!(await hasExecutable('agentshield'))) {
-    logger.info(
-      'agentshield not installed; run "pnpm run setup-security-tools" to install',
-    )
+    result.skipped.push('agentshield')
+    if (!json) {
+      logger.info(
+        'agentshield not installed; run "pnpm run setup-security-tools" to install',
+      )
+    }
   } else {
-    const agentshieldCode = await runTool('agentshield', ['scan'])
-    if (agentshieldCode !== 0) {
-      process.exitCode = agentshieldCode
+    const run = await runTool('agentshield', ['scan'], json)
+    result.agentshield = { code: run.code, output: run.stdout }
+    if (!json && run.code !== 0) {
+      process.exitCode = run.code
       return
     }
   }
 
   if (!(await hasExecutable('zizmor'))) {
-    logger.info(
-      'zizmor not installed; run "pnpm run setup-security-tools" to install',
-    )
-    return
+    result.skipped.push('zizmor')
+    if (!json) {
+      logger.info(
+        'zizmor not installed; run "pnpm run setup-security-tools" to install',
+      )
+    }
+  } else {
+    const run = await runTool('zizmor', ['.github/'], json)
+    result.zizmor = { code: run.code, output: run.stdout }
+    if (!json && run.code !== 0) {
+      process.exitCode = run.code
+    }
   }
 
-  const zizmorCode = await runTool('zizmor', ['.github/'])
-  if (zizmorCode !== 0) {
-    process.exitCode = zizmorCode
+  if (json) {
+    process.stdout.write(`${JSON.stringify(result, undefined, 2)}\n`)
   }
 }
 

@@ -20,7 +20,7 @@ The **code-security loop** is four chained skills, each leg resumable (see [`sec
 - `/fleet:patching-findings`: per true-positive, patch agent + blind reviewer → applied commits (mutating; `--dry-run` previews)
 
 - Shared subskills in `.claude/skills/_shared/`
-- **Handing off to another agent**: see [`agent-delegation.md`](agent-delegation.md) for when to reach for `codex:codex-rescue`, the `delegate` subagent (OpenCode → Fireworks/Synthetic/Kimi), `Explore`, `Plan`, vs. driving the skill CLIs directly. The CLI-subprocess contract used by skills lives in [`_shared/multi-agent-backends.md`](../../.claude/skills/_shared/multi-agent-backends.md).
+- **Handing off to another agent**: see [`agent-delegation.md`](agent-delegation.md) for when to reach for `codex:codex-rescue`, the `delegate` subagent (OpenCode → Fireworks/Synthetic/Kimi), `Explore`, `Plan`, vs. driving the skill CLIs directly. The CLI-subprocess contract used by skills lives in [`_shared/multi-agent-backends.md`](../../.claude/skills/fleet/_shared/multi-agent-backends.md).
 
 ## Skill scope: fleet vs partial vs unique
 

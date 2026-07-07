@@ -150,4 +150,4 @@ await withEditGuard((filePath, content) => {
   }
   emitBlock(filePath, hits)
   process.exitCode = 2
-})
+}, { fleetOnly: true })

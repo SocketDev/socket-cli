@@ -19,13 +19,16 @@ The fleet hooks each cite their own trigger + bypass surface in their `README.md
 - `avoid-cd-reminder` — keeps `cd` out of Bash, use `{ cwd }` instead
 - `broken-hook-detector` — SessionStart probe for sibling hooks with missing imports
 - `c8-ignore-reason-guard` — blocks a c8/v8 coverage-ignore directive with no reason
+- `changelog-entry-shape-nudge` — PreToolUse Edit/Write, non-blocking. Warns when a `CHANGELOG.md` edit adds a column-0 entry bullet that links no detail into `docs/agents.md/{fleet,repo}/<topic>.md`. A CHANGELOG entry is a one-line bullet with the rationale linked to an agents.md doc (same diet pattern as the CLAUDE.md card); inline prose drifts from the doc. Sub-bullets/headings ignored. No bypass (never blocks)
+- `claude-md-rule-add-guard` — blocks hand-adding a CLAUDE.md rule; routes it through `scripts/fleet/codify-rule.mts` (which writes the terse bullet within the 40KB cap + the `agents.md/{fleet,repo}/` detail doc via the AI helper)
+- `clone-reviewed-repo-nudge` — PreToolUse(Bash), non-blocking. Nudges when reviewing/cloning an external (non-SocketDev) GitHub repo toward the standard reference-clone dir (`~/.socket/_wheelhouse/repo-clones/<org>-<repo>/`, via `getSocketRepoClonesDir()`) and the smallest-practical clone flags (`--depth=1 --single-branch --filter=blob:none`). Two arms: a `gh repo view`/`--repo` of an external repo, and a `git clone` of an external repo missing those flags. No bypass (never blocks)
 - `codex-no-write-guard` — blocks `codex` invocations with write-intent flags
 - `commit-author-guard` — canonical-identity gate on git author email
 - `concurrent-cargo-build-guard` — blocks a second `cargo build --release` while one is in flight (an OOM guard). Capability-gated via the `@socket-capability cargo` header, so the cascade installs it only in repos declaring `claude.capabilities: ["cargo"]`.
 - `dirty-worktree-stop-guard` — Stop-time: BLOCKS ending a turn with a dirty PRIMARY checkout (uncommitted/untracked/staged-but-uncommitted). Escapes: clean tree, a linked git worktree (defer via `git commit --no-verify` there), or `Allow dirty-worktree bypass`. Once-per-turn (suppressed when `stop_hook_active`); fail-open.
 - `dogfood-cascade-reminder` — Stop-time: edited template/ but the dogfood copy is stale → cascade
 - `enterprise-push-reminder` — GitHub enterprise ruleset push-property reminders
-- `extension-build-current-guard` — pairs `tools/.../extension/src/**` edits with a build
+- `extension-build-current-reminder` — pairs `tools/.../extension/src/**` edits with a build
 - `file-size-reminder` — Stop-time scan for source files over the 500-line soft cap
 - `inline-script-defer-guard` — blocks `<script>` without `defer`/`async`/`module`
 - `judgment-reminder` — perfectionist / direct-imperative / queue-completion nudges
@@ -34,27 +37,32 @@ The fleet hooks each cite their own trigger + bypass surface in their `README.md
 - `no-blanket-file-exclusion-guard` — blocks a `max-file-lines:` exemption marker that names a self-judgment word (`legitimate`, `ok`, …) instead of a real category; no bypass
 - `no-blind-keychain-read-guard` — blocks Bash reads of platform keychain tokens
 - `no-cascade-transient-git-guard` — blocks cascade commits on a cherry-pick/detached/rebase HEAD
+- `no-direct-linter-guard` — PreToolUse Bash: blocks invoking a linter/formatter binary directly (`oxlint`/`oxfmt`/`eslint`/`prettier`/`biome`/`dprint`/`rustfmt`/`gofmt`, the `node_modules/.bin/` path form, and `cargo fmt`/`cargo clippy` subcommands), matched on basename via AST parse. The fleet runs lint/format only through the script wrappers (`pnpm run lint`/`fix`/`check`/`format`, `scripts/fleet/*`), which own the `-c .config/fleet/…` flag plus ignore set. A bare formatter is configless (corrupts files) and unscoped (reformats vendored `upstream/`). Bypass `Allow direct-linter bypass`
 - `no-empty-commit-guard` — blocks `--allow-empty` commits without bypass
 - `no-env-kill-switch-guard` — blocks adding a `disabledEnvVar` / `SOCKET_*_DISABLED` kill switch to a hook
 - `no-ext-issue-ref-guard` — blocks `<owner>/<repo>#<num>` from non-SocketDev orgs
 - `no-orphaned-staging` — blocks ending a turn with staged-but-uncommitted hunks
+- `no-other-linters-guard` — PreToolUse Edit/Write: fleet uses oxlint + oxfmt ONLY. Blocks creating a biome/eslint/prettier/dprint config file or adding `@biomejs/biome`/`eslint`/`@eslint/*`/`@typescript-eslint/*`/`prettier`/`dprint`/`rome` to a `package.json`. Vendored upstream (`upstream/`, `vendor/`, `*-upstream`) exempt. Committed-state gate: `scripts/fleet/check/only-oxlint-oxfmt.mts`. Bypass `Allow other-linter bypass`
 - `no-pkgjson-pnpm-overrides-guard` — keeps overrides in `pnpm-workspace.yaml`
 - `no-pm-exec-guard` — blocks `<pm> exec` (wrapper overhead) + `npx`/`pnpm dlx`/`yarn dlx` (fetch+exec) Bash invocations; bypass `Allow pm-exec bypass`
 - `no-platform-import-guard` — blocks direct `/node` or `/browser` imports of platform-split modules (http-request, logger); bypass `Allow platform-http-import bypass`
+- `no-premature-commit-kill-guard` — PreToolUse Bash: blocks `run_in_background:true` on a `git commit`/`rebase`/`merge`/`cherry-pick` (its bounded ~60s pre-commit looks like a hang when backgrounded), and blocks a `pkill`/`kill` targeting a `git commit`/`git push`, a `pre-commit`/`pre-push` hook process, or a `vitest` run (killing a mid-hook run corrupts the index + leaks workers; a broad bare-verb pattern also reaps a parallel session's op in a sibling checkout). The worker-scoped reap `vitest/dist/workers` is exempt. Bypass `Allow background-git bypass`
 - `no-test-in-scripts-guard` — blocks `node:test` suites under `scripts/` (they never run in CI; move to `test/unit/` vitest)
+- `options-param-naming-guard` — PreToolUse Edit/Write: blocks introducing a function options-bag param named `opts` into a code file (the param is `options`, the normalized local is `opts`). AST-parsed via `_shared/acorn` (no regex; the parser handles TS). Edit-time half of the pair with the `socket/options-param-naming` lint rule. Skips `.d.ts` + test files; per-line marker `// socket-lint: allow options-param-naming`; bypass `Allow options-param-naming bypass`
 - `prefer-json-clone-guard` — `JSON.parse(JSON.stringify(x))` over `structuredClone`
 - `no-token-in-dotenv-guard` — blocks raw token writes into `.env*` / `.envrc`
 - `no-unisolated-git-fixture-guard` — blocks a test that spawns `git` against a temp-dir fixture without isolation. Under pre-commit the inherited `GIT_DIR`/`GIT_WORK_TREE` leaks the fixture's writes onto the live `.git/config` (sets `core.bare`/junk identity, stacks junk commits). Satisfy it with the blessed one-liner `import '.git-hooks/_shared/isolate-git-env.mts'` (strips the discovery vars on load; vitest does this via its setup) or by pinning `GIT_CONFIG_GLOBAL` per-spawn. Bypass `Allow unisolated-git-fixture bypass`
+- `no-verify-format-reminder` — PreToolUse Bash, non-blocking. On a `git commit`/`push --no-verify` (the `Allow no-verify bypass` path) it runs `oxfmt --check` on the changed format-relevant files and warns about any that are unformatted. Rationale: `--no-verify` skips the format gate too, so the debt would otherwise ship and fail CI. The message names the files plus the `oxfmt -c .config/fleet/oxfmtrc.json <files>` fix. Silent for `FLEET_SYNC=1` cascade commits.
 - `node-modules-staging-guard` — blocks staging `node_modules/` into git
 - `parallel-agent-edit-guard` — blocks edits to files another agent owns this session
 - `path-guard` — blocks multi-stage paths constructed outside `paths.mts`
 - `paths-mts-inherit-guard` — sub-package `paths.mts` must `export *` from parent
 - `plugin-patch-format-guard` — `# @`-header + plain `diff -u` body for plugin patches
-- `pointer-comment-guard` — limits one-line "see X" pointer comments per file
+- `pointer-comment-reminder` — limits one-line "see X" pointer comments per file
 - `pr-vs-push-default-reminder` — direct-push-to-main vs. PR-only-on-rejection nudge
-- `prefer-rebase-over-revert-guard` — rebase unpushed commits, don't revert
+- `prefer-rebase-over-revert-reminder` — rebase unpushed commits, don't revert
 - `primary-checkout-branch-guard` — blocks `git checkout/switch <branch>` / `-b` / `-c` in the primary checkout (branch work goes in a worktree); bypass `Allow primary-branch bypass`
-- `private-name-guard` — blocks private repo / company names in public surface
+- `private-name-reminder` — blocks private repo / company names in public surface
 - `claude-lockdown-guard` — headless `claude`/`codex exec` must set the lockdown flags
 - `prose-antipattern-guard` — PreToolUse block on AI prose tells (em-dash chains, throat-clearing, "not X it's Y", hedging adverbs) in CHANGELOG.md / docs/**/*.md / README.md; bypass `Allow prose-antipattern bypass`
 - `yakback-reminder` — merged Stop scan: teacher-tone comments + "the user" naming + speed-vs-depth choice menus + self-narration (status-recap padding, "now let me" openers, hedges, apology-padding); per-group disable env vars preserved
@@ -69,9 +77,11 @@ The fleet hooks each cite their own trigger + bypass surface in their `README.md
 - `socket-token-minifier-start` — auto-starts the token-minifier proxy fail-closed
 - `stale-process-sweeper` — Stop-time reaper for orphaned vitest workers
 - `sweep-ds-store` — Stop-time `.DS_Store` removal (no bypass)
-- `synthesized-script-edit-reminder` — warns when you edit a cascade-synthesized `package.json` `scripts` entry (lives in `CANONICAL_SCRIPT_BODIES`) directly; edit the manifest + cascade instead
+- `synthesized-script-edit-guard` — blocks editing a cascade-synthesized `package.json` `scripts` entry (lives in `CANONICAL_SCRIPT_BODIES`) directly, since the next cascade reverts it; edit the manifest + cascade instead. Bypass: `Allow synthesized-script-edit bypass`
 - `test-platform-coverage-reminder` — nudges to gate POSIX-vs-Windows path assertions in test edits
 - `token-guard` — redacts tokens/keys/JWTs in tool output
+- `unbacked-claim-commit-guard` — blocks `git commit`/`push` when the last turn claimed "tests pass"/"builds"/"typechecks"/"lint passes"/"render verified" with no backing command this session (shares the matcher with `stop-claim-verify-reminder`). Bypass: `Allow unbacked-claim bypass`
+- `uncodified-lesson-reminder` — Stop-time: the turn wrote a `feedback`/`project` memory with an enforceable shape + no enforcer citation → nudge to codify it via `/codifying-disciplines` or `scripts/fleet/codify-rule.mts`. Scoped to the memory-write signal so it doesn't overlap `compound-lessons-reminder`. Non-blocking, no bypass.
 - `uses-sha-verify-guard` — full-SHA reachability check for `uses:` pins
 - `version-bump-order-guard` — version bump → CHANGELOG → tag ordering
 - `vitest-vs-node-test-guard` — vitest vs node-test runner separation
@@ -95,6 +105,7 @@ Supply-chain hygiene:
 - `no-pkgjson-pnpm-overrides-guard` — version-range pins go in `pnpm-workspace.yaml` `overrides:`, not `package.json`
 - `bundle-flags-guard` — guards bundler trust/exotic-subdep flags
 - `catch-message-guard` — keeps catch-block error messages thorough
+- `npmrc-trust-optout-guard` — blocks the pnpm trust-aware env-expansion opt-out (`PNPM_CONFIG_NPMRC_AUTH_FILE`/`NPM_CONFIG_USERCONFIG`) + `${ENV}`-beside-`_authToken` in a committed `.npmrc`
 - `target-arch-env-guard` — guards cross-arch build env vars
 - `trust-downgrade-guard` — blocks weakening a `trustPolicy`/`trust-all`/`blockExoticSubdeps` gate
 
@@ -106,5 +117,6 @@ Prompt-injection + agent-DoS:
 - `claude-code-action-lockdown-guard` — enforces Agents-Rule-of-Two on CI agent workflows
 - `no-shell-injection-bypass-guard` — blocks allowlist-evasion shell constructs (`=cmd`, `<()`/`>()`/`=()`, zsh-module builtins); bypass `Allow shell-injection bypass`
 - `proc-environ-exfil-guard` — blocks reads of `/proc/*/environ`-style secret exfil
+- `untrusted-coauthor-guard` — blocks a `Co-authored-by:` trailer crediting an identity not on the cascaded `git-authors.json` allowlist (a drive-by issue/PR from a new low-history account is untrusted input, not a contributor to auto-credit); bypass `Allow untrusted-coauthor bypass`
 
 The set drifts; the citation gate (`new-hook-claude-md-guard`) catches additions that ship without a CLAUDE.md reference.

@@ -35,6 +35,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { findApiToken } from './lib/api-token.mts'
 import {
+  disableSparkleAutoUpdate,
   offerTokenPrompt,
   parseArgs,
   promptAndPersist,
@@ -132,6 +133,10 @@ async function main(): Promise<void> {
   if (apiToken) {
     wireBridgeIntoShellRc(logger, apiToken)
   }
+
+  // Disable Sparkle auto-update for fleet-tooling GUI apps (e.g. OrbStack) so a
+  // self-update can't swap a tool version mid-task or pull off the soak gate.
+  disableSparkleAutoUpdate(logger)
 
   // Broken-shim detection. When the dlx cache rotates (cleanup, manifest
   // rebuild, manual deletion), shims keep pointing at the old hash and

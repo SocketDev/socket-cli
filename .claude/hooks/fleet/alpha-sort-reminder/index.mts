@@ -244,7 +244,12 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch(e => {
-  // Fail open — a reminder hook must never break a tool call.
-  process.stderr.write(`[alpha-sort-reminder] skipped: ${String(e)}\n`)
-})
+// Entrypoint-guarded: run main() only when invoked directly, NOT when the test
+// imports this module for its pure helpers (else main() blocks on stdin at
+// import and the test file never terminates).
+if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+  main().catch(e => {
+    // Fail open — a reminder hook must never break a tool call.
+    process.stderr.write(`[alpha-sort-reminder] skipped: ${String(e)}\n`)
+  })
+}

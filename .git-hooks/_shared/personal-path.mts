@@ -22,17 +22,27 @@ export const PERSONAL_PATH_RE =
 export const PERSONAL_PATH_PLACEHOLDER_RE =
   /(\/Users\/<[^>]*>\/|\/home\/<[^>]*>\/|C:\\Users\\<[^>]*>\\|\/Users\/\$\{?[A-Z_]+\}?\/|\/home\/\$\{?[A-Z_]+\}?\/)/
 
+// Well-known CI / system home dirs whose "username" is a service account, not a
+// person — so `/home/runner/...` (GitHub Actions), `/home/ubuntu/...` etc. are
+// not personal leaks. gh-aw's compiled `.lock.yml` emits `/home/runner/work/...`
+// tool-cache mounts; those are correct, not a leak. Matched as the path's
+// username segment only.
+export const KNOWN_NON_PERSONAL_PATH_RE =
+  /(\/Users\/(runner)\/|\/home\/(runner|ubuntu|circleci|vsts|vscode)\/)/
+
 // True when a line is a PURE placeholder: it matches the placeholder shape AND
 // nothing real remains after stripping every placeholder. Such lines are
-// documentation, so the scanners skip them.
+// documentation, so the scanners skip them. A line whose only "personal" paths
+// are well-known CI/system homes (e.g. /home/runner/) is also pure — those
+// usernames are service accounts, not people.
 export function isPurePlaceholder(line: string): boolean {
-  if (!PERSONAL_PATH_PLACEHOLDER_RE.test(line)) {
+  const hasPlaceholder = PERSONAL_PATH_PLACEHOLDER_RE.test(line)
+  const hasCiHome = KNOWN_NON_PERSONAL_PATH_RE.test(line)
+  if (!hasPlaceholder && !hasCiHome) {
     return false
   }
-  const stripped = line.replace(
-    new RegExp(PERSONAL_PATH_PLACEHOLDER_RE, 'g'),
-    '',
-  )
+  let stripped = line.replace(new RegExp(PERSONAL_PATH_PLACEHOLDER_RE, 'g'), '')
+  stripped = stripped.replace(new RegExp(KNOWN_NON_PERSONAL_PATH_RE, 'g'), '')
   return !PERSONAL_PATH_RE.test(stripped)
 }
 

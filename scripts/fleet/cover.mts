@@ -97,6 +97,7 @@ export async function runQuiet(
   args: string[],
   options: { cwd: string; env?: NodeJS.ProcessEnv | undefined },
 ): Promise<SuiteResult> {
+  options = { __proto__: null, ...options }
   try {
     const result = await spawn('pnpm', args, {
       cwd: options.cwd,

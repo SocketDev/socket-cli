@@ -116,6 +116,21 @@ test('blocks category with no reason', async () => {
   assert.match(result.stderr, /Line 1/)
 })
 
+// FIRES — and the block message steers to SPLIT and states the marker is
+// hard-cap-only (the soft band gets no exemption).
+test('block message states hard-cap-only and steers to split', async () => {
+  const result = await runHook({
+    tool_name: 'Write',
+    tool_input: {
+      file_path: SRC_FILE,
+      content: '/* max-file-lines: parser */\nexport const x = 1\n',
+    },
+  })
+  assert.strictEqual(result.code, 2)
+  assert.match(result.stderr, /HARD-CAP-ONLY/)
+  assert.match(result.stderr, /SPLIT/)
+})
+
 // FIRES — Edit tool path (content arrives via `new_string`).
 test('blocks via Edit new_string field', async () => {
   const result = await runHook({

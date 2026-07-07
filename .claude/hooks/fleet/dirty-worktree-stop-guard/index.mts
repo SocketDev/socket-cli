@@ -283,11 +283,16 @@ async function main(): Promise<void> {
 // node --test runner). All `return` paths above fall through to exit 0; a
 // block writes its stdout JSON then exits 0 too (the decision is in the JSON,
 // not the exit code).
-main()
-  .then(() => process.exit(0))
-  .catch(e => {
-    process.stderr.write(
-      `[dirty-worktree-stop-guard] hook bug — fail-open. ${e instanceof Error ? e.message : String(e)}\n`,
-    )
-    process.exit(0)
-  })
+// Entrypoint-guarded: run main() only when invoked directly, NOT when the test
+// imports this module for its pure helpers (else main() runs at import and its
+// deterministic process.exit(0) can abort the node --test runner mid-suite).
+if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+  main()
+    .then(() => process.exit(0))
+    .catch(e => {
+      process.stderr.write(
+        `[dirty-worktree-stop-guard] hook bug — fail-open. ${e instanceof Error ? e.message : String(e)}\n`,
+      )
+      process.exit(0)
+    })
+}

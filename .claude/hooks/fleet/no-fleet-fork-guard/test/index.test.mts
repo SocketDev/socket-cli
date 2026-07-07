@@ -151,9 +151,11 @@ test('Edit on .config/oxlint-plugin/fleet/* in a fleet repo is BLOCKED', async (
     })
     assert.strictEqual(result.code, 2)
     assert.match(result.stderr, /no-fleet-fork-guard/)
+    // The block message echoes the canonical template path for the edited
+    // file — the oxlint plugin lives under .config/oxlint-plugin/fleet/.
     assert.match(
       result.stderr,
-      /\.config\/fleet\/oxlint-plugin\/rules\/example\.mts/,
+      /\.config\/oxlint-plugin\/fleet\/example\/index\.mts/,
     )
     assert.match(result.stderr, /Allow fleet-fork bypass/)
   } finally {

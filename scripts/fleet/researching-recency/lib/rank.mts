@@ -5,11 +5,9 @@
  *   candidate it surfaced, candidates seen in multiple streams accumulate, and
  *   the pool is capped per author and diversified across sources before
  *   truncation. URL canonicalization keys the merge so the same link from two
- *   streams fuses into one candidate.
- *
- * Lock-step with: last30days `fusion.py` (RRF_K, the 0.25 diversity threshold,
- * the 3-per-author cap, and the primary-score tiebreak; keep identical for
- * ranking parity).
+ *   streams fuses into one candidate. Lock-step with: last30days `fusion.py`
+ *   (RRF_K, the 0.25 diversity threshold, the 3-per-author cap, and the
+ *   primary-score tiebreak; keep identical for ranking parity).
  */
 
 import type { Candidate, QueryPlan, SourceItem, SourceName } from './types.mts'
@@ -185,7 +183,8 @@ function diversifyPool(
       seen.add(candidate.candidateId)
     }
   }
-  return pool.toSorted(compareCandidates).slice(0, poolLimit)
+  // oxlint-disable-next-line unicorn/no-array-sort -- `pool` is a locally-built array (declared `const pool: Candidate[] = []` and filled via .push() above), so the in-place sort can't mutate a shared receiver; .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
+  return pool.sort(compareCandidates).slice(0, poolLimit)
 }
 
 function makeCandidate(
@@ -269,9 +268,15 @@ export function weightedRrf(
       if (existing.engagement === undefined) {
         existing.engagement = item.engagementScore
       } else if (item.engagementScore !== undefined) {
-        existing.engagement = Math.max(existing.engagement, item.engagementScore)
+        existing.engagement = Math.max(
+          existing.engagement,
+          item.engagementScore,
+        )
       }
-      existing.sourceQuality = Math.max(existing.sourceQuality, itemSourceQuality)
+      existing.sourceQuality = Math.max(
+        existing.sourceQuality,
+        itemSourceQuality,
+      )
       existing.nativeRanks[`${label}:${item.source}`] = rank
       if (!existing.subqueryLabels.includes(label)) {
         existing.subqueryLabels.push(label)
@@ -299,7 +304,8 @@ export function weightedRrf(
     }
   }
 
-  const fused = [...candidates.values()].toSorted(compareCandidates)
+  // oxlint-disable-next-line unicorn/no-array-sort -- the spread of candidates.values() already copies into a fresh array (no shared mutation); .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
+  const fused = [...candidates.values()].sort(compareCandidates)
   return diversifyPool(applyPerAuthorCap(fused), poolLimit)
 }
 

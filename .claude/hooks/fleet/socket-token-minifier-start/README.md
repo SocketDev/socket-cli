@@ -43,7 +43,7 @@ This hook is a no-op until the proxy binary exists at
 `~/.socket/_wheelhouse/bin/socket-token-minifier`. Install it via
 `pnpm run install-token-minifier` from any fleet repo. The install script
 sets up a self-contained pnpm workspace at
-`~/.socket/_wheelhouse/socket-token-minifier/` and writes the bin shim.
+`~/.socket/_wheelhouse/rack/socket-token-minifier/` and writes the bin handle.
 
 ## Wiring (template settings.json)
 

@@ -186,6 +186,55 @@ test('two phrases authorize two downgrades (one prior, one now)', () => {
   assert.equal(r.code, 0)
 })
 
+// ─── AST robustness (regex→AST rewrite) ───────────────────────────
+
+test('blocks a downgrade flag on the second command of an && chain', () => {
+  const r = run(bash('echo ok && pnpm install --config.trustPolicy=trust-all'))
+  assert.equal(r.code, 2)
+})
+
+test('blocks space-separated --config.trustPolicy trust-all', () => {
+  const r = run(bash('pnpm install --config.trustPolicy trust-all'))
+  assert.equal(r.code, 2)
+})
+
+test('blocks pnpm config set trustPolicy trust-all', () => {
+  const r = run(bash('pnpm config set trustPolicy trust-all'))
+  assert.equal(r.code, 2)
+})
+
+test('does NOT fire on the flag string inside an unrelated quoted arg', () => {
+  // The flag appears only inside a grep pattern, not as a pnpm/npm arg.
+  const r = run(bash('grep -- "--config.trustPolicy=trust-all" notes.txt'))
+  assert.equal(r.code, 0)
+})
+
+test('blocks a downgrade flag on a variable-sourced package manager', () => {
+  const r = run(bash('$PM install --no-verify-store-integrity'))
+  assert.equal(r.code, 2)
+})
+
+// ─── npm .npmrc min-release-age coverage ──────────────────────────
+
+test('blocks Edit lowering .npmrc min-release-age below the day floor', () => {
+  const f = path.join(tmp, '.npmrc')
+  const r = run(edit(f, 'min-release-age=0'))
+  assert.equal(r.code, 2)
+  assert.match(r.stderr, /min-release-age/)
+})
+
+test('allows Edit keeping .npmrc min-release-age at the floor', () => {
+  const f = path.join(tmp, '.npmrc')
+  const r = run(edit(f, 'min-release-age=7'))
+  assert.equal(r.code, 0)
+})
+
+test('allows Edit raising .npmrc min-release-age above the floor', () => {
+  const f = path.join(tmp, '.npmrc')
+  const r = run(edit(f, 'min-release-age=14'))
+  assert.equal(r.code, 0)
+})
+
 // ─── Fail-open ────────────────────────────────────────────────────
 
 test('fails open on malformed payload', () => {

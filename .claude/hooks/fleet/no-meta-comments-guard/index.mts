@@ -326,4 +326,4 @@ await withEditGuard((filePath, content) => {
   lines.push('  Rewrite or delete the comment, then retry the Edit/Write.')
   logger.error(lines.join('\n') + '\n')
   process.exitCode = 2
-})
+}, { fleetOnly: true })

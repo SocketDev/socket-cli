@@ -324,7 +324,8 @@ function findRecentTranscript(): string | undefined {
       }
     })
     .filter((x): x is { full: string; mtime: number } => x !== undefined)
-    .toSorted((a, b) => b.mtime - a.mtime)
+    // oxlint-disable-next-line unicorn/no-array-sort -- .filter() already returns a fresh array (no shared mutation); .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
+    .sort((a, b) => b.mtime - a.mtime)
   return entries[0]?.full
 }
 

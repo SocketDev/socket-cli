@@ -112,6 +112,34 @@ test('self-narration: flags a conversational hedge', () => {
   }
 })
 
+test('self-narration: flags a virtue-narration opener', () => {
+  for (const sample of [
+    'Let me be disciplined here and trace the path.',
+    'To be thorough, I checked every consumer.',
+    'Let me think hard about this before editing.',
+  ]) {
+    const { path: p, cleanup } = makeTranscript(sample)
+    try {
+      assert.match(runHook(p).stderr, /self-narration-reminder/, sample)
+    } finally {
+      cleanup()
+    }
+  }
+})
+
+test('self-narration: does NOT flag plain careful prose', () => {
+  // "careful" / "thorough" used as plain description, not a virtue-opener.
+  const { path: p, cleanup } = makeTranscript(
+    'The parser is careful about trailing commas and handles them.',
+  )
+  try {
+    const { stderr } = runHook(p)
+    assert.doesNotMatch(stderr, /self-narration-reminder/)
+  } finally {
+    cleanup()
+  }
+})
+
 test('fires all four groups in one turn', () => {
   // Newline-separated: the self-narration "Now let me" pattern anchors on
   // line-start (an opener tell), so each sample is its own line as in a turn.

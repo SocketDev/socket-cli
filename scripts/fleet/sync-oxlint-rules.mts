@@ -6,12 +6,12 @@
  *   `.claude/hooks/fleet/<name>/`); that dir inventory is canonical and
  *   everything that references a rule by id is derived from it:
  *
- *   1. `.config/oxlint-plugin/index.mts` — the plugin's import list +
- *      `rules: {}` registry. Every rule dir gets a camelCase default import
+ *   1. `.config/oxlint-plugin/index.mts` — the plugin's import list + `rules: {}`
+ *      registry. Every rule dir gets a camelCase default import
  *      (`./fleet/<id>/index.mts`) and a kebab-id registry entry; both blocks
- *      are sorted by rule id. Only those two regions are rewritten — the
- *      file's `@file` doc, the `@type` JSDoc, the `meta` block, and
- *      `export default plugin` are left byte-for-byte.
+ *      are sorted by rule id. Only those two regions are rewritten — the file's
+ *      `@file` doc, the `@type` JSDoc, the `meta` block, and `export default
+ *      plugin` are left byte-for-byte.
  *   2. `.config/fleet/oxlintrc.json` — the top-level `rules` block. Every rule
  *      gets a `socket/<id>: "error"` activation. Activations for rules no
  *      longer present are dropped. Non-socket rules, the `overrides` block
@@ -26,13 +26,13 @@
  *     this does NOT generate: per-rule test files. A rule without a
  *     `fleet/<id>/test/<id>.test.mts` is reported (it's a coverage gap the
  *     author must fill); the body can't be auto-written. `--check` treats a
- *     missing test as a failure so the triad (rule + registration + test)
- *     stays complete. Underscore-prefixed dirs are private helpers, not rules
- *     — excluded from every derivation. Why a generator instead of
- *     hand-editing three places: rules drifted — a rule was present +
- *     imported but never activated in oxlintrc, so it sat silently dormant
- *     fleet-wide. Deriving the wiring from the dir inventory makes "add a rule
- *     dir" the only manual step.
+ *     missing test as a failure so the triad (rule + registration + test) stays
+ *     complete. Underscore-prefixed dirs are private helpers, not rules —
+ *     excluded from every derivation. Why a generator instead of hand-editing
+ *     three places: rules drifted — a rule was present + imported but never
+ *     activated in oxlintrc, so it sat silently dormant fleet-wide. Deriving
+ *     the wiring from the dir inventory makes "add a rule dir" the only manual
+ *     step.
  */
 
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -108,15 +108,18 @@ function toCamel(id: string): string {
  * `_`-prefixed helper dirs), sorted.
  */
 function ruleIds(): string[] {
-  return readdirSync(FLEET_RULES_DIR, { withFileTypes: true })
-    .filter(
-      d =>
-        d.isDirectory() &&
-        !d.name.startsWith('_') &&
-        existsSync(path.join(FLEET_RULES_DIR, d.name, 'index.mts')),
-    )
-    .map(d => d.name)
-    .toSorted()
+  return (
+    readdirSync(FLEET_RULES_DIR, { withFileTypes: true })
+      .filter(
+        d =>
+          d.isDirectory() &&
+          !d.name.startsWith('_') &&
+          existsSync(path.join(FLEET_RULES_DIR, d.name, 'index.mts')),
+      )
+      .map(d => d.name)
+      // oxlint-disable-next-line unicorn/no-array-sort -- .map() already returns a fresh array (no shared mutation); .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
+      .sort()
+  )
 }
 
 /**
@@ -124,8 +127,7 @@ function ruleIds(): string[] {
  */
 function rulesMissingTests(ids: readonly string[]): string[] {
   return ids.filter(
-    id =>
-      !existsSync(path.join(FLEET_RULES_DIR, id, 'test', `${id}.test.mts`)),
+    id => !existsSync(path.join(FLEET_RULES_DIR, id, 'test', `${id}.test.mts`)),
   )
 }
 
@@ -195,7 +197,8 @@ function rewriteIndex(source: string, ids: readonly string[]): string {
  * or socket run can't be located (a structural assumption broke).
  */
 function rewriteOxlintrc(source: string, ids: readonly string[]): string {
-  const active = ids.filter(id => !(id in DORMANT_RULES)).toSorted()
+  // oxlint-disable-next-line unicorn/no-array-sort -- .filter() already returns a fresh array (no shared mutation); .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
+  const active = ids.filter(id => !(id in DORMANT_RULES)).sort()
   // Parse to recover any array-form (rule + options) configs we must preserve
   // verbatim rather than flatten to "error".
   const parsed = JSON.parse(source) as {

@@ -2,6 +2,9 @@ packages:
   - packages/*
   - '!packages/package-builder/build'
   - .claude/hooks/*
+  - '.config/oxlint-plugin'
+  - '.config/oxlint-plugin/fleet/*'
+  - '.config/oxlint-plugin/repo/*'
 
 # Packages allowed to run build scripts (pnpm v11 strictDepBuilds default).
 allowBuilds:
@@ -51,7 +54,7 @@ catalog:
   '@socketregistry/indent-string': 1.0.14
   '@socketregistry/is-interactive': 1.0.6
   '@socketregistry/packageurl-js': 'npm:@socketregistry/packageurl-js@1.4.2'
-  '@socketsecurity/lib': 6.0.7
+  '@socketsecurity/lib': 6.0.8
   '@types/shell-quote': 1.7.5
   # -stable aliases: pnpm `overrides:` can't redirect a package's own
   # name from inside the same package — Node ESM resolves it as a
@@ -62,7 +65,7 @@ catalog:
   # full rationale.
   '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.4.2'
   '@socketregistry/yocto-spinner': 1.0.25
-  '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@6.0.7'
+  '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@6.0.8'
   '@socketsecurity/registry': 'npm:@socketsecurity/registry@2.0.2'
   '@socketsecurity/registry-stable': 'npm:@socketsecurity/registry@2.0.2'
   '@socketsecurity/sdk': 'npm:@socketsecurity/sdk@4.0.1'
@@ -83,8 +86,8 @@ catalog:
   '@types/which': 3.0.4
   '@types/yargs-parser': 21.0.3
   '@typescript/native-preview': 7.0.0-dev.20260510.1
-  '@vitest/coverage-v8': 4.1.6
-  '@vitest/ui': 4.1.6
+  '@vitest/coverage-v8': 4.1.8
+  '@vitest/ui': 4.1.8
   '@yao-pkg/pkg': 6.8.0
   '@yarnpkg/parsers': 3.0.3
   adm-zip: 0.5.16
@@ -132,7 +135,7 @@ catalog:
   nanotar: 0.2.1
   nock: 14.0.10
   npm-package-arg: 13.0.0
-  npm-run-all2: 9.0.0
+  npm-run-all2: 9.0.1
   octokit: 5.0.5
   onnxruntime-web: 1.23.0
   open: 10.2.0
@@ -140,7 +143,7 @@ catalog:
   oxlint: 1.63.0
   packageurl-js: npm:@socketregistry/packageurl-js@^1.4.2
   path-parse: npm:@socketregistry/path-parse@^1.0.8
-  'playwright-core': 1.55.1
+  'playwright-core': 1.60.0
   postject: 1.0.0-alpha.6
   react: 19.2.0
   react-reconciler: 0.33.0
@@ -154,14 +157,14 @@ catalog:
   safer-buffer: npm:@socketregistry/safer-buffer@^1.0.10
   semver: 7.7.2
   set-function-length: npm:@socketregistry/set-function-length@^1.0.10
-  shell-quote: 1.8.3
+  shell-quote: 1.8.4
   side-channel: npm:@socketregistry/side-channel@^1.0.10
   ssri: 12.0.0
   string-width: 8.1.0
   string_decoder: 0.10.31
   strip-ansi: 7.1.2
   tar-stream: 3.1.7
-  taze: 19.11.0
+  taze: 19.14.1
   terminal-link: 2.1.1
   tiny-colors: 2.1.3
   trash: 10.0.0
@@ -173,7 +176,7 @@ catalog:
   # vite 8.0.14 swaps esbuild → rolldown natively; the override forces its
   # bundled rolldown up to the catalog's 1.0.3.
   vite: 8.0.14
-  vitest: 4.1.6
+  vitest: 4.1.8
   wrap-ansi: 9.0.2
   xml2js: 0.6.2
   yaml: 2.8.1
@@ -199,6 +202,69 @@ minimumReleaseAgeExclude:
   - '@ultrathink/*'
   - '@yuku-parser/*'
   - '@socketoverride/*'
+  - 'socket'
+  # published: 2026-06-09 | removable: 2026-06-16
+  - '@yuku-parser/binding-darwin-arm64@0.5.31'
+  # published: 2026-06-09 | removable: 2026-06-16
+  - '@yuku-parser/binding-darwin-x64@0.5.31'
+  # published: 2026-06-09 | removable: 2026-06-16
+  - '@yuku-parser/binding-freebsd-x64@0.5.31'
+  # published: 2026-06-09 | removable: 2026-06-16
+  - '@yuku-parser/binding-linux-arm-gnu@0.5.31'
+  # published: 2026-06-09 | removable: 2026-06-16
+  - '@yuku-parser/binding-linux-arm-musl@0.5.31'
+  # published: 2026-06-09 | removable: 2026-06-16
+  - '@yuku-parser/binding-linux-arm64-gnu@0.5.31'
+  # published: 2026-06-09 | removable: 2026-06-16
+  - '@yuku-parser/binding-linux-arm64-musl@0.5.31'
+  # published: 2026-06-09 | removable: 2026-06-16
+  - '@yuku-parser/binding-linux-x64-gnu@0.5.31'
+  # published: 2026-06-09 | removable: 2026-06-16
+  - '@yuku-parser/binding-linux-x64-musl@0.5.31'
+  # published: 2026-06-09 | removable: 2026-06-16
+  - '@yuku-parser/binding-win32-arm64@0.5.31'
+  # published: 2026-06-09 | removable: 2026-06-16
+  - '@yuku-parser/binding-win32-x64@0.5.31'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - 'oxfmt@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-android-arm-eabi@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-android-arm64@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-darwin-arm64@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-darwin-x64@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-freebsd-x64@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-linux-arm-gnueabihf@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-linux-arm-musleabihf@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-linux-arm64-gnu@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-linux-arm64-musl@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-linux-ppc64-gnu@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-linux-riscv64-gnu@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-linux-riscv64-musl@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-linux-s390x-gnu@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-linux-x64-gnu@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-linux-x64-musl@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-openharmony-arm64@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-win32-arm64-msvc@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-win32-ia32-msvc@0.54.0'
+  # published: 2026-06-08 | removable: 2026-06-15
+  - '@oxfmt/binding-win32-x64-msvc@0.54.0'
 
 # Refuse transitive dependencies declared via git/tarball/local-tarball
 # specs — an npm package shouldn't be allowed to drag in a git URL we
@@ -221,9 +287,33 @@ overrides:
   '@socketsecurity/lib': 'catalog:'
   '@socketsecurity/registry': 'catalog:'
   '@socketsecurity/sdk': 'catalog:'
+  'chalk@>=5': '5.6.2'
+  'es-define-property': 'npm:@socketregistry/es-define-property@1.0.7'
+  'es-set-tostringtag': 'npm:@socketregistry/es-set-tostringtag@1.0.10'
+  'function-bind': 'npm:@socketregistry/function-bind@1.0.7'
+  'glob': '13.0.6'
+  'gopd': 'npm:@socketregistry/gopd@1.0.7'
+  'has-symbols': 'npm:@socketregistry/has-symbols@1.0.7'
+  'has-tostringtag': 'npm:@socketregistry/has-tostringtag@1.0.7'
+  'hasown': 'npm:@socketregistry/hasown@1.0.7'
+  'iconv-lite': '0.7.2'
+  'isexe@>=3': '4.0.0'
+  'lru-cache@>=10': '11.3.6'
+  'magic-string': '0.30.21'
+  'mime-db': '1.54.0'
+  'mime-types@>=3': '3.0.2'
+  'minipass@>=4': '7.1.3'
+  'safe-buffer': 'npm:@socketregistry/safe-buffer@1.0.9'
+  'safer-buffer': 'npm:@socketregistry/safer-buffer@1.0.10'
   'semver@>=5.0.0 <7.6.0': '7.8.1'
+  'side-channel': 'npm:@socketregistry/side-channel@1.0.10'
+  'ssri@>=12': '13.0.1'
+  'string-width@>=5': '8.1.0'
   'update-notifier@>=4.0.0': '7.3.1'
   'uuid': '11.1.1'
+  'which@>=4': '7.0.0'
+  'wrap-ansi@>=8': '9.0.2'
+  'yaml@2': '2.9.0'
 
   # Repo-specific overrides below.
   '@octokit/graphql': 'catalog:'
@@ -238,19 +328,11 @@ overrides:
   'brace-expansion': 'catalog:'
   'defu': '>=6.1.7'
   'emoji-regex': 'catalog:'
-  'es-define-property': 'catalog:'
-  'es-set-tostringtag': 'catalog:'
   'fast-uri': '>=3.1.2'
-  'function-bind': 'catalog:'
-  'glob': '>=13.0.6'
   'globalthis': 'catalog:'
-  'gopd': 'catalog:'
   'graceful-fs': 'catalog:'
   'has-property-descriptors': 'catalog:'
   'has-proto': 'catalog:'
-  'has-symbols': 'catalog:'
-  'has-tostringtag': 'catalog:'
-  'hasown': 'catalog:'
   'hono': '>=4.12.23'
   'https-proxy-agent': 'catalog:'
   'indent-string': 'catalog:'
@@ -265,12 +347,9 @@ overrides:
   'qs': '>=6.15.2'
   # Force vite's bundled rolldown (1.0.2) up to the catalog's 1.0.3.
   'rolldown': 'catalog:'
-  'safe-buffer': 'catalog:'
-  'safer-buffer': 'catalog:'
   'semver': 'catalog:'
   'set-function-length': 'catalog:'
   'shell-quote': 'catalog:'
-  'side-channel': 'catalog:'
   'signal-exit': '4.1.0'
   'string-width': 'catalog:'
   'string_decoder': 'catalog:'

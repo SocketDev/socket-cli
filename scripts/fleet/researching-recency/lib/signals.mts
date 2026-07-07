@@ -5,9 +5,8 @@
  *   weight, and fuses them with token-overlap relevance into a single
  *   `localRankScore`. Tailored to the programming sources the fleet variant
  *   queries: GitHub / Hacker News / Reddit / Lobsters / dev.to / Bluesky / web.
- *
- * Lock-step with: last30days `signals.py` (scoring coefficients + the
- * 0.65/0.25/0.10 local-rank blend; keep identical for ranking parity).
+ *   Lock-step with: last30days `signals.py` (scoring coefficients + the
+ *   0.65/0.25/0.10 local-rank blend; keep identical for ranking parity).
  */
 
 import { prepareQuery, tokenOverlapRelevance } from './relevance.mts'
@@ -110,49 +109,51 @@ function topCommentScore(item: SourceItem): number {
 
 // Per-source engagement weights: [field, weight] pairs summed over log1p
 // counts. Reddit carves out a top-comment slot (handled in redditEngagement).
-const ENGAGEMENT_WEIGHTS: Readonly<Record<string, ReadonlyArray<[string, number]>>> =
-  {
-    bluesky: [
-      ['likes', 0.4],
-      ['reposts', 0.3],
-      ['replies', 0.2],
-      ['quotes', 0.1],
-    ],
-    // dev.to "reactions" + comments stand in for likes/discussion.
-    devto: [
-      ['reactions', 0.6],
-      ['comments', 0.4],
-    ],
-    // GitHub: star velocity dominates, then reactions + comment thread depth.
-    github: [
-      ['stars', 0.5],
-      ['reactions', 0.3],
-      ['comments', 0.2],
-    ],
-    hackernews: [
-      ['points', 0.55],
-      ['comments', 0.45],
-    ],
-    lobsters: [
-      ['score', 0.6],
-      ['comments', 0.4],
-    ],
-    // X: likes dominate, then reposts/replies; views are a weak signal.
-    x: [
-      ['likes', 0.5],
-      ['reposts', 0.25],
-      ['replies', 0.15],
-      ['views', 0.1],
-    ],
-  }
+const ENGAGEMENT_WEIGHTS: Readonly<
+  Record<string, ReadonlyArray<[string, number]>>
+> = {
+  bluesky: [
+    ['likes', 0.4],
+    ['reposts', 0.3],
+    ['replies', 0.2],
+    ['quotes', 0.1],
+  ],
+  // dev.to "reactions" + comments stand in for likes/discussion.
+  devto: [
+    ['reactions', 0.6],
+    ['comments', 0.4],
+  ],
+  // GitHub: star velocity dominates, then reactions + comment thread depth.
+  github: [
+    ['stars', 0.5],
+    ['reactions', 0.3],
+    ['comments', 0.2],
+  ],
+  hackernews: [
+    ['points', 0.55],
+    ['comments', 0.45],
+  ],
+  lobsters: [
+    ['score', 0.6],
+    ['comments', 0.4],
+  ],
+  // X: likes dominate, then reposts/replies; views are a weak signal.
+  x: [
+    ['likes', 0.5],
+    ['reposts', 0.25],
+    ['replies', 0.15],
+    ['views', 0.1],
+  ],
+}
 
 function weightedEngagement(
   item: SourceItem,
   weights: ReadonlyArray<[string, number]>,
 ): number | undefined {
-  const values = weights.map(
-    ([field, weight]): [number, number] => [engagementField(item, field), weight],
-  )
+  const values = weights.map(([field, weight]): [number, number] => [
+    engagementField(item, field),
+    weight,
+  ])
   if (!values.some(([value]) => value > 0)) {
     return undefined
   }
@@ -261,7 +262,8 @@ export function annotateStream(
       0.25 * (item.freshness / 100) +
       0.1 * ((engagementScore ?? 0) / 100)
   }
-  return items.toSorted(
+  // oxlint-disable-next-line unicorn/no-array-sort -- `items` is a caller-owned parameter, so the spread copies it first; an in-place sort would reorder the caller's array. .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
+  return [...items].sort(
     (left, right) => (right.localRankScore ?? 0) - (left.localRankScore ?? 0),
   )
 }

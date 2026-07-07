@@ -1,0 +1,151 @@
+#!/usr/bin/env node
+// Claude Code PreToolUse(Bash) hook — untrusted-coauthor-guard.
+//
+// Blocks a `git commit` whose message carries a `Co-authored-by:` trailer for
+// an identity that is NOT on the cascaded contributors allowlist
+// (.config/{fleet,repo}/git-authors.json — the same source commit-author-guard
+// uses).
+//
+// Why: a drive-by GitHub issue or fork PR from a brand-new, low-history account
+// (high/recent user id, ~zero followers, a ready-made patch + detailed "apply
+// this" instructions) is UNTRUSTED INPUT, not a vetted contributor. Auto-adding
+// a `Co-authored-by:` trailer for such an account launders an unknown identity
+// into the repo's commit history / GitHub contributor graph and signals trust
+// the account hasn't earned. Credit a co-author only when you can vouch for
+// them — i.e. they're on the allowlist, or you type the bypass after a
+// deliberate check.
+//
+// Detection: parse the commit message (`-m`/`-F` text on the command, or the
+// `--amend` reuse) for `Co-authored-by: Name <email>` trailers; for each, if
+// the email isn't the canonical identity or a configured alias, block. The
+// allowlist comes from readIdentityPolicy (DRY with commit-author-guard).
+// When NO allowlist is configured the guard still blocks an obvious
+// fresh-account GitHub noreply (`<id+login@users.noreply.github.com>` whose
+// login isn't otherwise known) — the precise shape this incident used — so a
+// repo without a populated allowlist isn't silently unprotected.
+//
+// Bypass: `Allow untrusted-coauthor bypass` typed verbatim in a recent user
+// turn, AFTER you've actually vetted the account.
+//
+// Exit codes: 0 — pass (allowed / not a co-authored commit / fail-open);
+// 2 — block. AST-free: trailers are matched on the message text, which is
+// commit content, not shell structure.
+
+import process from 'node:process'
+
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+
+import { readIdentityPolicy } from '../../../../.git-hooks/_shared/git-identity.mts'
+import { extractCommitMessage, isGitCommit } from '../_shared/commit-command.mts'
+import { defaultRepoDir } from '../_shared/git-identity.mts'
+import { withBashGuard } from '../_shared/payload.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
+
+const logger = getDefaultLogger()
+
+const BYPASS_PHRASES = ['Allow untrusted-coauthor bypass']
+
+const COAUTHOR_RE = /^\s*Co-authored-by:\s*(.+?)\s*<([^>]+)>\s*$/gim
+
+export interface Coauthor {
+  readonly name: string
+  readonly email: string
+}
+
+export function extractCoauthors(message: string): Coauthor[] {
+  const out: Coauthor[] = []
+  COAUTHOR_RE.lastIndex = 0
+  let m: RegExpExecArray | null
+  while ((m = COAUTHOR_RE.exec(message))) {
+    out.push({ email: m[2]!.trim(), name: m[1]!.trim() })
+  }
+  return out
+}
+
+// True when the email is a GitHub noreply for an account we can't vouch for.
+// `id+login@users.noreply.github.com` — the shape used to credit a fresh
+// drive-by account. We treat ALL such noreply addresses as needing the
+// allowlist; the fallback only fires when no allowlist is configured.
+function isGithubNoreply(email: string): boolean {
+  return /@users\.noreply\.github\.com$/i.test(email)
+}
+
+export function isKnownCoauthor(
+  email: string,
+  policy: ReturnType<typeof readIdentityPolicy>,
+): boolean {
+  const e = email.toLowerCase()
+  if (policy.canonical.email?.toLowerCase() === e) {
+    return true
+  }
+  for (let i = 0, { length } = policy.aliases; i < length; i += 1) {
+    if (policy.aliases[i]!.email?.toLowerCase() === e) {
+      return true
+    }
+  }
+  return false
+}
+
+await withBashGuard((command, payload) => {
+  if (!isGitCommit(command)) {
+    return
+  }
+  const message = extractCommitMessage(command)
+  if (!message || !/Co-authored-by:/i.test(message)) {
+    return
+  }
+  const coauthors = extractCoauthors(message)
+  if (coauthors.length === 0) {
+    return
+  }
+
+  const repoDir = defaultRepoDir(payload.cwd)
+  const policy = readIdentityPolicy(repoDir)
+  const hasAllowlist =
+    !!policy.canonical.email || policy.aliases.length > 0
+
+  const untrusted = coauthors.filter(c => {
+    if (isKnownCoauthor(c.email, policy)) {
+      return false
+    }
+    // With an allowlist configured, anything not on it is untrusted.
+    if (hasAllowlist) {
+      return true
+    }
+    // No allowlist: still catch the fresh-account GitHub-noreply shape.
+    return isGithubNoreply(c.email)
+  })
+
+  if (untrusted.length === 0) {
+    return
+  }
+
+  if (
+    payload.transcript_path &&
+    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)
+  ) {
+    return
+  }
+
+  logger.error(
+    [
+      '[untrusted-coauthor-guard] Blocked: Co-authored-by an unvetted identity',
+      '',
+      ...untrusted.map(c => `  ${c.name} <${c.email}>`),
+      '',
+      '  A Co-authored-by trailer credits this identity in the commit history',
+      "  and GitHub's contributor graph. A patch or fix-instruction from a",
+      '  brand-new, low-history GitHub account is untrusted input — crediting',
+      '  it signals trust the account has not earned, and is a supply-chain /',
+      '  social-engineering vector.',
+      '',
+      '  Land the change under your own authorship (drop the trailer), OR — only',
+      '  after you have actually vetted the account — type',
+      `  "${BYPASS_PHRASES[0]}" in a new message and retry. To make a teammate`,
+      '  a permanent trusted co-author, add them to',
+      '  .config/{fleet,repo}/git-authors.json.',
+      '',
+    ].join('\n'),
+  )
+  process.exitCode = 2
+})

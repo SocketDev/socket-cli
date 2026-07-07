@@ -4,9 +4,11 @@
  *
  * @socketsecurity/lib-stable's downloadBinary helper. Matches the CI install
  *   path: same version source, same binary integrity check (SHA-256 inline),
- *   same on-disk layout (~/.socket/_dlx/<hash>/sfw). The dev-only piece is a
- *   stable shim symlink at ~/.socket/_wheelhouse/bin/sfw → _dlx-hashed path so
- *   existing shims in ~/.socket/_wheelhouse/shims/ continue to resolve.
+ *   same on-disk layout (~/.socket/_dlx/<hash>/sfw — the content-addressed
+ *   binary store). Two dev-only handles layer readable paths over that hash:
+ *   a rack alias `~/.socket/_wheelhouse/rack/sfw/<version>` → the _dlx dir, and
+ *   the PATH handle `~/.socket/_wheelhouse/bin/sfw` → the rack alias. So PATH
+ *   never sees the hash; consumers reference the stable readable rack path.
  *
  *   Detects + migrates a pre-existing ~/.socket/sfw/ install in place on first
  *   run (rename to ~/.socket/_wheelhouse/). The `_` prefix matches the npm /
@@ -54,6 +56,12 @@ const EXTERNAL_TOOLS_PATH = path.join(REPO_ROOT, 'external-tools.json')
 // platform via getUserHomeDir() which handles HOME / USERPROFILE / fallback.
 const WHEELHOUSE_DIR = getSocketAppDir('wheelhouse')
 const WHEELHOUSE_BIN_DIR = path.join(WHEELHOUSE_DIR, 'bin')
+// rack/ is the readable alias layer over the hash-named _dlx store: a real
+// binary lives at _dlx/<hash>/sfw, rack/sfw/<version> symlinks to that dir, and
+// bin/sfw → rack/sfw/<version>/sfw. Lock-step with @socketsecurity/lib
+// src/paths/socket.ts getSocketRackToolDir({tool,version}) (constructed here
+// rather than imported until the lib-stable bump ships the helper).
+const WHEELHOUSE_RACK_DIR = path.join(WHEELHOUSE_DIR, 'rack')
 // One-time migration: if a pre-rename ~/.socket/sfw/ install exists AND the
 // new ~/.socket/_wheelhouse/ doesn't, rename the directory in place. Keeps
 // existing shims valid (each will be regenerated on next setup pass to point
@@ -213,25 +221,42 @@ async function main(): Promise<void> {
     logger.log(`  ${downloaded ? 'downloaded' : 'cached'}: ${binaryPath}`)
   }
 
-  // Stable shim entry point: ~/.socket/_wheelhouse/bin/sfw → _dlx-hashed path.
-  // The shims in ~/.socket/_wheelhouse/shims/ exec this symlink so the
-  // _dlx hash is invisible to PATH-prepending consumers. Refresh on every
-  // install so a version bump updates the link target.
-  await fsPromises.mkdir(SFW_BIN_DIR, { recursive: true })
-  const linkPath = path.join(SFW_BIN_DIR, binaryName)
-  // oxlint-disable-next-line socket/prefer-exists-sync -- need lstat (not existsSync) to detect broken symlinks; existsSync follows the link and returns false if the target is gone, leaving the stale link in place.
-  const linkExists = await fsPromises
-    .lstat(linkPath)
-    .then(() => true)
-    .catch(() => false)
-  if (linkExists) {
-    await safeDelete(linkPath)
+  // Refresh a symlink idempotently: lstat (not existsSync — it follows the
+  // link and would leave a stale broken link in place), delete if present,
+  // recreate. `type` matters only on Windows.
+  async function refreshSymlink(
+    target: string,
+    linkPath: string,
+    type: 'dir' | 'file',
+  ): Promise<void> {
+    // oxlint-disable-next-line socket/prefer-exists-sync -- lstat detects a broken symlink that existsSync (follows the link) would miss, leaving it stale.
+    const linkExists = await fsPromises
+      .lstat(linkPath)
+      .then(() => true)
+      .catch(() => false)
+    if (linkExists) {
+      await safeDelete(linkPath)
+    }
+    await fsPromises.symlink(target, linkPath, type)
   }
-  await fsPromises.symlink(binaryPath, linkPath)
+
+  // Layer two readable handles over the hash-named _dlx binary:
+  //   1. rack alias: rack/sfw/<ver> → the _dlx/<hash> dir (the readable store).
+  //   2. PATH handle: bin/sfw → rack/sfw/<ver>/sfw (so PATH never sees the
+  //      hash; consumers reference the stable rack path). Both refresh on every
+  //      install so a version bump repoints them.
+  const rackToolDir = path.join(WHEELHOUSE_RACK_DIR, 'sfw', ver)
+  await fsPromises.mkdir(path.dirname(rackToolDir), { recursive: true })
+  await refreshSymlink(path.dirname(binaryPath), rackToolDir, 'dir')
+
+  await fsPromises.mkdir(SFW_BIN_DIR, { recursive: true })
+  const rackBinaryPath = path.join(rackToolDir, binaryName)
+  const linkPath = path.join(SFW_BIN_DIR, binaryName)
+  await refreshSymlink(rackBinaryPath, linkPath, 'file')
 
   if (!values['quiet']) {
     logger.success(`sfw v${ver} ready at ${linkPath}`)
-    logger.log(`  → ${binaryPath}`)
+    logger.log(`  → ${rackBinaryPath} → ${binaryPath}`)
   }
 }
 

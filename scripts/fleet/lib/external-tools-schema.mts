@@ -37,10 +37,32 @@ export const ReleaseKind = Type.Union([
 ])
 
 // One platform's downloadable artifact + its SRI integrity (sha256-…).
+// `source`/`binary` cover the odd case where a platform installs from an npm
+// tarball run through system Node rather than a native release asset (e.g.
+// pnpm's darwin-x64, which upstream stopped shipping as a SEA binary): `source`
+// names the registry the tarball is fetched from, `binary` the path to run
+// inside it.
 export const PlatformEntry = Type.Object(
   {
     asset: Type.String(),
     integrity: Type.String(),
+    source: Type.Optional(Type.String()),
+    binary: Type.Optional(Type.String()),
+  },
+  { additionalProperties: false },
+)
+
+// A dated soak-bypass: a freshly-published pin rides this until its 7-day
+// minimumReleaseAge window clears. `version` is the pinned release, `published`
+// the upstream release date, `removable` the date the soak clears (after which
+// the bypass auto-disarms and this block should be dropped on the next bump).
+// The bootstrap reads this to decide whether a just-cut release still needs the
+// soak waived — so the dep version + its release date are tracked here.
+export const SoakBypass = Type.Object(
+  {
+    version: Type.String(),
+    published: Type.String(),
+    removable: Type.String(),
   },
   { additionalProperties: false },
 )
@@ -98,6 +120,13 @@ export const ToolEntry = Type.Object(
     ecosystems: Type.Optional(Type.Array(Type.String())),
     // Custom install directory (e.g. janus → wheelhouse).
     installDir: Type.Optional(Type.String()),
+    // A dated soak-bypass for a freshly-published pin (see SoakBypass). The
+    // bootstrap reads this to know whether a just-cut release still needs the
+    // 7-day soak waived; it auto-disarms once `removable` passes.
+    soakBypass: Type.Optional(SoakBypass),
+    // The on-disk binary name a tool installs to, when it differs from the tool
+    // id (e.g. sfw-free / sfw-enterprise both install a `sfw` binary).
+    binaryName: Type.Optional(Type.String()),
     // Human-readable notes — a single line or a list.
     notes: Type.Optional(
       Type.Union([Type.String(), Type.Array(Type.String())]),

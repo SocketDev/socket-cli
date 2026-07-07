@@ -245,8 +245,23 @@ function runRelated(files: string[]): number {
   // `vitest related <files…>` defaults to watch mode; `--run` forces a
   // single non-watch execution. Pass the staged file list as positionals;
   // vitest walks the module graph from each.
+  //
+  // `--no-file-parallelism` forces a single worker for the pre-commit (staged)
+  // run only — the root config's local default is a 16-thread pool, which is
+  // both the worker-pool-deadlock surface (a hung worker the parent waits on
+  // forever, seen as workers frozen at 0% CPU holding .git/index.lock) and a
+  // CPU bomb when several Claude sessions share one checkout and each spawns 16
+  // threads. A single worker can't inter-worker-starve, and N sessions × 1
+  // thread is survivable. CI and `--all` keep full parallelism (this flag is
+  // scoped to the staged path); the staged set is small, so one worker is fine.
   return runVitest(
-    ['related', ...files, '--run', '--passWithNoTests'],
+    [
+      'related',
+      ...files,
+      '--run',
+      '--passWithNoTests',
+      '--no-file-parallelism',
+    ],
     `staged (${files.length} file(s))`,
   )
 }

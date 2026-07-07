@@ -20,12 +20,13 @@
     "descriptionTag": false,
     "descriptionWithDot": true,
     "keepUnparsableExampleIndent": false,
-    "lineWrappingStyle": "greedy",
+    "lineWrappingStyle": "balance",
     "preferCodeFences": false,
     "separateReturnsFromParam": false,
     "separateTagGroups": true
   },
   "ignorePatterns": [
+    "**/.agents",
     "**/.cache",
     "**/.claude",
     "**/.DS_Store",

@@ -4,7 +4,7 @@ PreToolUse Edit/Write hook that blocks edits to fleet-canonical files inside dow
 
 ## What it enforces
 
-The fleet rule "Never fork fleet-canonical files locally" (CLAUDE.md fleet block, full reference at [`docs/agents.md/no-local-fork-canonical.md`](../../../docs/agents.md/no-local-fork-canonical.md)).
+The fleet rule "Never fork fleet-canonical files locally" (CLAUDE.md fleet block, full reference at [`docs/agents.md/fleet/no-local-fork-canonical.md`](../../../docs/agents.md/fleet/no-local-fork-canonical.md)).
 
 Fleet-canonical surfaces (anything tracked by `socket-wheelhouse/scripts/sync-scaffolding/manifest.mts`):
 
@@ -66,5 +66,5 @@ When a new directory becomes fleet-canonical (cascades via sync-scaffolding):
 
 1. Add it to `CANONICAL_PREFIXES` in `index.mts`.
 2. Add it to the bullet list in this README.
-3. Add it to the bullet list in `docs/agents.md/no-local-fork-canonical.md`.
+3. Add it to the bullet list in `docs/agents.md/fleet/no-local-fork-canonical.md`.
 4. Add the surface to the sync manifest.

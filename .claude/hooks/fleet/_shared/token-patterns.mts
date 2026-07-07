@@ -49,6 +49,7 @@ export const LLM_TOKEN_PATTERNS: readonly RegExp[] = [
   /^GROQ_API_KEY$/,
   /^TOGETHER_API_KEY$/,
   /^FIREWORKS_API_KEY$/,
+  /^SYNTHETIC_API_KEY$/,
   /^PERPLEXITY_API_KEY$/,
   /^OPENROUTER_API_KEY$/,
   /^DEEPSEEK_API_KEY$/,
@@ -231,16 +232,37 @@ export const SECRET_VALUE_PATTERNS: readonly SecretValuePattern[] = [
   { re: /\bvtwn_[A-Za-z0-9_-]{8,}/, label: 'Val Town token (vtwn_)' },
   { re: /\blin_api_[A-Za-z0-9_-]{8,}/, label: 'Linear API token (lin_api_)' },
   { re: /\bsk-ant-[A-Za-z0-9_-]{20,}/, label: 'Anthropic API key (sk-ant-)' },
-  { re: /\bsk-proj-[A-Za-z0-9_-]{20,}/, label: 'OpenAI project key (sk-proj-)' },
+  {
+    re: /\bsk-proj-[A-Za-z0-9_-]{20,}/,
+    label: 'OpenAI project key (sk-proj-)',
+  },
   { re: /\bhf_[A-Za-z0-9]{30,}/, label: 'Hugging Face token (hf_)' },
   { re: /\bnpm_[A-Za-z0-9]{36}/, label: 'npm access token (npm_)' },
   { re: /\bdop_v1_[a-f0-9]{64}/, label: 'DigitalOcean PAT (dop_v1_)' },
-  { re: /\bsk-[A-Za-z0-9_-]{20,}/, label: 'OpenAI/Anthropic-style secret key (sk-)' },
-  { re: /\bsk_live_[A-Za-z0-9_-]{16,}/, label: 'Stripe live secret (sk_live_)' },
-  { re: /\bsk_test_[A-Za-z0-9_-]{16,}/, label: 'Stripe test secret (sk_test_)' },
-  { re: /\bpk_live_[A-Za-z0-9_-]{16,}/, label: 'Stripe live publishable (pk_live_)' },
-  { re: /\brk_live_[A-Za-z0-9_-]{16,}/, label: 'Stripe live restricted (rk_live_)' },
-  { re: /\bghp_[A-Za-z0-9]{30,}/, label: 'GitHub personal access token (ghp_)' },
+  {
+    re: /\bsk-[A-Za-z0-9_-]{20,}/,
+    label: 'OpenAI/Anthropic-style secret key (sk-)',
+  },
+  {
+    re: /\bsk_live_[A-Za-z0-9_-]{16,}/,
+    label: 'Stripe live secret (sk_live_)',
+  },
+  {
+    re: /\bsk_test_[A-Za-z0-9_-]{16,}/,
+    label: 'Stripe test secret (sk_test_)',
+  },
+  {
+    re: /\bpk_live_[A-Za-z0-9_-]{16,}/,
+    label: 'Stripe live publishable (pk_live_)',
+  },
+  {
+    re: /\brk_live_[A-Za-z0-9_-]{16,}/,
+    label: 'Stripe live restricted (rk_live_)',
+  },
+  {
+    re: /\bghp_[A-Za-z0-9]{30,}/,
+    label: 'GitHub personal access token (ghp_)',
+  },
   { re: /\bgho_[A-Za-z0-9]{30,}/, label: 'GitHub OAuth token (gho_)' },
   // ghs_ / ghu_ char classes include `.` and `_` to match both the classic
   // opaque format AND the stateless JWT format (≥36 is the min for both).

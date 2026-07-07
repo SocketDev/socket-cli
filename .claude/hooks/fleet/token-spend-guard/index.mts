@@ -36,11 +36,15 @@ const EFFORT_BYPASS = ['Allow effort bypass'] as const
 // mechanical work. low/medium are already cheap, so they never trigger.
 const PREMIUM_EFFORT = new Set(['high', 'xhigh', 'max'])
 
-// A model id is "premium" when it's an Opus. Sonnet/Haiku are the cheap/fast
-// tier the guard nudges toward. Matches both alias and full-id shapes
-// (`opus`, `claude-opus-4-8`, `claude-opus-4-8[1m]`).
+// A model id is "premium" when it's an Opus OR a Fable/Mythos (the apex tier,
+// ~2× the cost of Opus). Sonnet/Haiku are the cheap/fast tier the guard nudges
+// toward. Matches both alias and full-id shapes (`opus`, `claude-opus-4-8`,
+// `claude-opus-4-8[1m]`, `fable`, `claude-fable-5`, `claude-mythos-5`).
 function isPremiumModel(model: string): boolean {
-  return /\bopus\b/i.test(model) || /claude-opus/i.test(model)
+  return (
+    /\b(?:opus|fable|mythos)\b/i.test(model) ||
+    /claude-(?:opus|fable|mythos)/i.test(model)
+  )
 }
 
 // Command shapes that are unambiguously mechanical. Kept deliberately narrow:

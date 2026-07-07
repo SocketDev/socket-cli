@@ -187,8 +187,13 @@ async function main(): Promise<void> {
   process.exit(2)
 }
 
-main().catch((e: unknown) => {
-  // Fail open: a guard bug must never wedge commits.
-  process.stderr.write(`[mass-delete-guard] non-fatal: ${String(e)}\n`)
-  process.exit(0)
-})
+// Entrypoint-guarded: run main() only when invoked directly, NOT when the test
+// imports this module for its pure helpers (else main() blocks on stdin at
+// import and the test file never terminates).
+if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((e: unknown) => {
+    // Fail open: a guard bug must never wedge commits.
+    process.stderr.write(`[mass-delete-guard] non-fatal: ${String(e)}\n`)
+    process.exit(0)
+  })
+}

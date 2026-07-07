@@ -54,6 +54,12 @@ describe('socket/no-vitest-standalone-expect', () => {
           code: `${IMPORTS}describe('g', () => { expect(1).toBe(1) })\n`,
           errors: [{ messageId: 'standalone' }],
         },
+        {
+          name: 'expect inside a test<Upper>-named callback-taker that is NOT a titled test is still standalone',
+          filename: 'test/unit/a.test.mts',
+          code: `${IMPORTS}testHelper(() => { expect(1).toBe(1) })\n`,
+          errors: [{ messageId: 'standalone' }],
+        },
       ],
     })
   })

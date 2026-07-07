@@ -52,9 +52,14 @@ const CHILD_PROCESS_REQUIRE_RE =
 
 /**
  * Files where importing `node:child_process` is legitimate: this hook's own
- * files, the oxlint rules that match the banned shapes, and the markdownlint
+ * files, the oxlint rules that match the banned shapes, the markdownlint
  * self-skip shim (a `.mjs` rule loaded by markdownlint-cli2, which can't await
- * the async lib wrapper, so its documented fallback is the sync builtin).
+ * the async lib wrapper, so its documented fallback is the sync builtin), and
+ * the pre-pnpm bootstrap `.mjs` provisioners under `scripts/fleet/setup/`.
+ * Those install pnpm itself on a bare machine BEFORE node_modules exists, so
+ * `@socketsecurity/lib`'s async `spawn` wrapper isn't on disk to import — the
+ * sync builtin is the only option (same constraint as the markdownlint shim);
+ * each carries an `oxlint-disable socket/prefer-async-spawn` documenting it.
  */
 export function isExemptPath(filePath: string): boolean {
   return (
@@ -72,7 +77,11 @@ export function isExemptPath(filePath: string): boolean {
     ) ||
     filePath.includes(
       '/.config/fleet/markdownlint-rules/_shared/wheelhouse-self-skip.',
-    )
+    ) ||
+    // Pre-pnpm bootstrap .mjs provisioners (scripts/fleet/setup/{lib/,*}.mjs):
+    // run before node_modules exists, so the lib spawn wrapper isn't importable
+    // yet. Scoped to `.mjs` so the dir's `.mts` steps stay guarded.
+    (filePath.includes('/scripts/fleet/setup/') && filePath.endsWith('.mjs'))
   )
 }
 
@@ -136,5 +145,5 @@ if (process.argv[1]?.endsWith('index.mts')) {
         `Bypass: type "${BYPASS_PHRASE}".\n`,
     )
     process.exitCode = 2
-  })
+  }, { fleetOnly: true })
 }

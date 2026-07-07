@@ -129,32 +129,50 @@ export function scanSpawnCalls(
 // opencode have no reasoning-effort flag (see _shared/multi-agent-backends.md),
 // so their `--model` push is legitimately effort-free and must NOT be flagged.
 //
-// Scoping: each backend's `run()` body is a small block. We decide a `--model`
-// push belongs to claude/codex by the SAME-BLOCK presence of that backend's
-// model env var (`CLAUDE_MODEL` / `CODEX_MODEL`) or `bin: 'claude'|'codex'`
-// within a proximity window — not by a file-level claude/codex reference, which
-// would wrongly implicate a kimi block sitting in the same file.
+// Scoping: each backend's `run()` body is a small block keyed by the backend
+// name (`claude: { … }`, `codex: { … }`, `kimi: { … }`). We bind a `--model`
+// push to the NEAREST preceding backend key, then only require an effort flag
+// when that owning block is claude or codex. Binding to the nearest key (rather
+// than testing a proximity window for any claude/codex signal) is what keeps a
+// kimi block from being implicated by a claude block sitting above it in the
+// same registry — the kimi push's nearest key is `kimi:`, not `claude:`. A
+// block also counts as claude/codex when it carries that backend's model env
+// var (`CLAUDE_MODEL` / `CODEX_MODEL`) or a `bin: 'claude'|'codex'` literal.
 export function scanBackendArgv(
   text: string,
 ): Array<{ index: number; detail: string }> {
   const hits: Array<{ index: number; detail: string }> = []
-  // Match the property-key / env-var that identifies a claude or codex backend
-  // block: CLAUDE_MODEL / CODEX_MODEL, or a `bin: 'claude'|'codex'` literal.
+  // A backend block opens with its name as a property key: `claude: {`.
+  const backendKeyRe = /(\w+)\s*:\s*\{/g
+  // Env-var or bin literal marking a block as claude: `CLAUDE_MODEL` or `bin: 'claude'`.
   const CLAUDE_BLOCK_RE = /CLAUDE_MODEL|bin:\s*['"]claude['"]/
-  // Same shape for the codex backend: the CODEX_MODEL env var OR a quoted
-  // `bin: 'codex'` / `bin: "codex"` literal.
+  // Env-var or bin literal marking a block as codex: `CODEX_MODEL` or `bin: 'codex'`.
   const CODEX_BLOCK_RE = /CODEX_MODEL|bin:\s*['"]codex['"]/
   const modelFlagRe = /['"]--model['"]/g
   let m: RegExpExecArray | null
   while ((m = modelFlagRe.exec(text))) {
-    // One backend's run() body fits in ~400 chars around the --model push.
-    const around = text.slice(Math.max(0, m.index - 400), m.index + 400)
-    const isClaudeBlock = CLAUDE_BLOCK_RE.test(around)
-    const isCodexBlock = CODEX_BLOCK_RE.test(around)
+    // Find the nearest backend key opening before this --model push; that key
+    // names the block the push belongs to.
+    let ownerKey = ''
+    let ownerStart = 0
+    backendKeyRe.lastIndex = 0
+    let k: RegExpExecArray | null
+    while ((k = backendKeyRe.exec(text)) && k.index < m.index) {
+      ownerKey = k[1]!
+      ownerStart = k.index
+    }
+    // The block runs from its key to this push; both the key name and any
+    // env-var / bin literal inside it identify the backend.
+    const block = text.slice(ownerStart, m.index + 1)
+    const isClaudeBlock = ownerKey === 'claude' || CLAUDE_BLOCK_RE.test(block)
+    const isCodexBlock = ownerKey === 'codex' || CODEX_BLOCK_RE.test(block)
     // kimi / gemini / opencode block → no effort flag expected → skip.
     if (!isClaudeBlock && !isCodexBlock) {
       continue
     }
+    // The effort flag may trail the --model push, so look at the whole block
+    // plus a short tail.
+    const around = text.slice(ownerStart, m.index + 400)
     const pairedHere =
       (isClaudeBlock && /['"]--effort['"]/.test(around)) ||
       (isCodexBlock && /model_reasoning_effort=/.test(around))

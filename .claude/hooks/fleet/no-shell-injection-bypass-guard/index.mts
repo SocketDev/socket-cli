@@ -43,7 +43,11 @@ const logger = getDefaultLogger()
 
 const BYPASS_PHRASE = 'Allow shell-injection bypass'
 
-// Process-substitution / arithmetic-expansion op markers shell-quote emits.
+// Single-token process-substitution op markers the parser collapses into one
+// op entry (e.g. `<(` from `diff <(cat a) b`). The `>(` and `=(` forms do NOT
+// collapse — the parser splits them (`> >(` → `>` `>` `(`; `=(` → word `=`
+// then `(`), so those are detected by the adjacency scan in
+// processSubstitutionBypass, not from this set.
 const SUBSTITUTION_OPS = new Set(['<(', '>(', '=('])
 
 // Zsh module loader + the builtins it enables — network exfil, command exec,
@@ -62,6 +66,11 @@ const ZSH_MODULE_BUILTINS = new Set([
 // A shell-quote operator entry, `{ op: '<(' }`.
 function isOpEntry(entry: unknown): entry is { op: string } {
   return typeof entry === 'object' && entry !== null && 'op' in entry
+}
+
+// True when `entry` is the op `op`.
+function isOp(entry: unknown, op: string): boolean {
+  return isOpEntry(entry) && entry.op === op
 }
 
 // The bypass found in `command`, or undefined when clean. Pure — the test
@@ -104,8 +113,26 @@ function processSubstitutionBypass(command: string): string | undefined {
   }
   for (let i = 0, { length } = entries; i < length; i += 1) {
     const entry = entries[i]
+    // Single-token form: the parser collapsed `<(` into one op entry. (Only
+    // `<(` collapses this way; `>(`/`=(` arrive split — handled below.)
     if (isOpEntry(entry) && SUBSTITUTION_OPS.has(entry.op)) {
       return `process substitution \`${entry.op})\` (runs an inner command no allowlist inspects)`
+    }
+    // Split form: an opening `(` whose immediately-preceding token marks it as
+    // a process substitution rather than a subshell or command substitution.
+    //   - `>(tee …)`  → parser emits `{op:'>'}` then `{op:'('}` (output proc-sub)
+    //   - `=(sort …)` → parser emits the WORD `=` then `{op:'('}` (zsh proc-sub)
+    // We must NOT flag the lookalikes the parser tokenizes the same shape as:
+    //   - `$(…)` command substitution → `(` preceded by the WORD `$` (allowed)
+    //   - a bare subshell `(…)` → `(` at position 0 / not preceded by `>`|`=`
+    if (isOp(entry, '(') && i > 0) {
+      const prev = entries[i - 1]
+      const isOutputProcSub = isOp(prev, '>') || isOp(prev, '<')
+      const isZshEqualsProcSub = prev === '='
+      if (isOutputProcSub || isZshEqualsProcSub) {
+        const form = isZshEqualsProcSub ? '=(' : '>('
+        return `process substitution \`${form})\` (runs an inner command no allowlist inspects)`
+      }
     }
   }
   return undefined

@@ -97,3 +97,39 @@ export function readCoveragePct(repoRoot: string): number | undefined {
   const pct = (lines as Record<string, unknown>)['pct']
   return typeof pct === 'number' ? pct : undefined
 }
+
+// The coverage script names a fleet repo may declare, in preference order. The
+// first one present in package.json `scripts` is the repo's coverage entry.
+const COVERAGE_SCRIPT_NAMES = ['cover', 'coverage', 'test:cover'] as const
+
+// The name of the repo's coverage script (the first of `cover` / `coverage` /
+// `test:cover` declared in package.json), or undefined when the repo tracks no
+// coverage. One owner for "does this repo track coverage, and under what
+// script name" — the updating-coverage skill and any check call this instead of
+// re-deriving it with a `node -e` snippet.
+export function coverageScriptName(repoRoot: string): string | undefined {
+  const pkgPath = path.join(repoRoot, 'package.json')
+  if (!existsSync(pkgPath)) {
+    return undefined
+  }
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(readFileSync(pkgPath, 'utf8'))
+  } catch {
+    return undefined
+  }
+  if (typeof parsed !== 'object' || parsed === null) {
+    return undefined
+  }
+  const scripts = (parsed as Record<string, unknown>)['scripts']
+  if (typeof scripts !== 'object' || scripts === null) {
+    return undefined
+  }
+  for (let i = 0, { length } = COVERAGE_SCRIPT_NAMES; i < length; i += 1) {
+    const name = COVERAGE_SCRIPT_NAMES[i]!
+    if (typeof (scripts as Record<string, unknown>)[name] === 'string') {
+      return name
+    }
+  }
+  return undefined
+}

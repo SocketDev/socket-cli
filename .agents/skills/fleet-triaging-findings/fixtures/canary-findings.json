@@ -1,0 +1,68 @@
+{
+  "target": "fixtures",
+  "scanned_at": "2026-01-01T00:00:00Z",
+  "focus_areas": ["input parsing", "query building"],
+  "findings": [
+    {
+      "id": "F-001",
+      "file": "vulnerable.js",
+      "line": 16,
+      "category": "command-injection",
+      "severity": "HIGH",
+      "confidence": 0.9,
+      "title": "User-controlled host concatenated into shell command",
+      "description": "runPing concatenates the untrusted `host` argument directly into a shell string passed to a shell-exec call. An attacker who controls `host` can inject arbitrary shell metacharacters (e.g. `8.8.8.8; rm -rf /`) and run commands.",
+      "exploit_scenario": "An HTTP handler calls runPing(req.query.host); attacker sends ?host=8.8.8.8;id and the injected `id` runs.",
+      "recommendation": "Use execFile with an argv array, or validate host against a strict IP/hostname allowlist before interpolation."
+    },
+    {
+      "id": "F-002",
+      "file": "vulnerable.js",
+      "line": 16,
+      "category": "os-command-injection",
+      "severity": "HIGH",
+      "confidence": 0.7,
+      "title": "Shell injection in ping helper",
+      "description": "The ping helper builds a command string from caller input and runs it via a shell. Same root cause as the command-injection finding above; reported by a second scanner with different wording.",
+      "exploit_scenario": "Attacker-controlled host reaches exec() unescaped.",
+      "recommendation": "Avoid the shell; pass arguments as an array."
+    },
+    {
+      "id": "F-003",
+      "file": "vulnerable.js",
+      "line": 24,
+      "category": "sql-injection",
+      "severity": "HIGH",
+      "confidence": 0.85,
+      "title": "Username concatenated into SQL query",
+      "description": "lookupUser builds a SQL string by concatenating the untrusted `username` argument directly into the WHERE clause, with no parameterization or escaping. Classic SQL injection.",
+      "exploit_scenario": "username = \"' OR '1'='1\" returns every row; a UNION payload exfiltrates other tables.",
+      "recommendation": "Use a parameterized query / prepared statement with bound parameters."
+    },
+    {
+      "id": "F-004",
+      "file": "vulnerable.js",
+      "line": 32,
+      "category": "weak-randomness",
+      "severity": "MEDIUM",
+      "confidence": 0.5,
+      "title": "Math.random used for a value flagged as a security token",
+      "description": "The scanner flagged the buffer index computed with Math.random at line 33 as a predictable security token. Re-reading the code shows the value is only an index into a read-only sample buffer for a demo animation; it is never used as a token, secret, or identifier.",
+      "exploit_scenario": "(scanner-asserted) attacker predicts the token.",
+      "recommendation": "Use a CSPRNG for security tokens."
+    },
+    {
+      "id": "F-005",
+      "file": "vulnerable.js",
+      "line": 41,
+      "category": "null-pointer-dereference",
+      "severity": "LOW",
+      "confidence": 0.4,
+      "title": "Possible null dereference on config object",
+      "description": "The scanner claims getConfigValue dereferences `config.value` without a null check. Re-reading shows an explicit `if (!config) return undefined` guard at line 44 immediately before the dereference, so the path the scanner traced is already handled.",
+      "exploit_scenario": "(scanner-asserted) null config crashes the process.",
+      "recommendation": "Add a null check."
+    }
+  ],
+  "summary": {"total": 5, "high": 3, "medium": 1, "low": 1, "low_confidence": 2}
+}

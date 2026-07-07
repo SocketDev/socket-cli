@@ -2,7 +2,7 @@
 name: managing-worktrees
 description: Manages git worktrees per the fleet's parallel-Claude-sessions rule. Creates new task-worktrees, fans out one worktree per open PR for parallel review, and prunes spent worktrees that have nothing left to land — clean trees whose branch was deleted upstream OR is fully merged into the remote default branch. Use when starting a task that needs an isolated working tree, when reviewing every open PR locally without disturbing the primary checkout, or when cleaning up after merges.
 user-invocable: true
-allowed-tools: Bash(git worktree:*), Bash(git branch:*), Bash(git fetch:*), Bash(gh pr list:*), Bash(gh auth status), Bash(ls:*), Read
+allowed-tools: Bash(node:*), Bash(git worktree:*), Bash(git branch:*), Bash(git fetch:*), Bash(gh pr list:*), Bash(gh auth status), Bash(ls:*), Read
 model: claude-haiku-4-5
 context: fork
 ---
@@ -75,60 +75,45 @@ This is the multi-Claude review setup: each open PR gets its own checkout so a p
 
 ### Mode 3: `prune`
 
-Remove a worktree when its **working tree is clean** AND it has **nothing left to land** — meaning either its **branch no longer exists** on the remote OR its branch is **fully merged into the remote's default branch** (every commit is already an ancestor of `origin/<base>`, so the worktree is spent). Never auto-remove a dirty tree. That may be active work.
+Remove a worktree when its **working tree is clean** AND it has **nothing left to land**. "Nothing to land" means EITHER the branch is **fully merged into the remote's default branch** (every commit is already an ancestor of `origin/<base>`) OR the **branch no longer exists on the remote AND the worktree is not ahead of the base**. A worktree that is **ahead of the base** is ALWAYS kept — even when its branch is gone from the remote — because a local-only branch never pushed (e.g. an isolation worktree) reads as "branch gone from remote" yet carries unpushed commits that pruning would destroy.
 
-**Cleanup if nothing to land.** A merged-but-not-deleted branch is the common leftover after a fast-forward / squash merge: the ref lingers locally, `git ls-remote` still finds nothing newer, and the old "branch gone from remote" check alone would keep it forever. The `--is-ancestor` test catches that case — if the branch tip is already in `origin/<base>`, there is nothing to land, so prune it.
+This is the same removability predicate (`decideWorktree`) the fleet-wide `tidying-worktrees` sweep applies — Mode 3 is the single-repo entry to that one engine, so it inherits the load-bearing `aheadOfBase` guard rather than re-deriving a weaker check in shell.
 
 ```bash
-# Default-branch fallback per CLAUDE.md: main → master → assume main.
-BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
-if [ -z "$BASE" ] && git show-ref --verify --quiet refs/remotes/origin/main;   then BASE=main;   fi
-if [ -z "$BASE" ] && git show-ref --verify --quiet refs/remotes/origin/master; then BASE=master; fi
-BASE="${BASE:-main}"
-git fetch origin "$BASE" >/dev/null 2>&1
+# Dry-run (default): report what WOULD be pruned in the CURRENT checkout.
+node .claude/skills/fleet/tidying-worktrees/lib/tidy-worktrees.mts --here
 
-git worktree list --porcelain | awk '/^worktree /{path=$2} /^branch /{branch=$2; print path"\t"branch}' | while IFS=$'\t' read -r path branch; do
-  # Skip the primary checkout
-  if [ "$path" = "$(git rev-parse --show-toplevel)" ]; then continue; fi
-
-  branch_short="${branch#refs/heads/}"
-
-  # Skip if working tree is dirty — uncommitted work, never auto-remove.
-  if [ -n "$(git -C "$path" status --porcelain 2>/dev/null)" ]; then
-    echo "! skip $path (dirty; has uncommitted changes; commit first per 'Don't leave the worktree dirty' rule)"
-    continue
-  fi
-
-  # Prunable reason 1: branch no longer on the remote.
-  if ! git ls-remote --exit-code --heads origin "$branch_short" >/dev/null 2>&1; then
-    echo "- prune $path (branch $branch_short gone from remote, tree clean)"
-    git worktree remove "$path"
-    git branch -D "$branch_short" 2>/dev/null
-    continue
-  fi
-
-  # Prunable reason 2: branch is fully merged into origin/$BASE — nothing to
-  # land. The ref still exists on the remote, but every commit is already an
-  # ancestor of the base, so the worktree is spent.
-  if git merge-base --is-ancestor "$branch_short" "origin/$BASE" 2>/dev/null; then
-    echo "- prune $path (branch $branch_short fully merged into origin/$BASE, tree clean)"
-    git worktree remove "$path"
-    git branch -D "$branch_short" 2>/dev/null
-    continue
-  fi
-
-  echo "= keep $path (branch $branch_short still on remote with unlanded commits)"
-done
+# Act: prune the spent worktrees of the current checkout.
+node .claude/skills/fleet/tidying-worktrees/lib/tidy-worktrees.mts --here --fix
 ```
 
-The `prune` mode never passes `--force`. If the user wants to discard dirty work, they do it deliberately, outside this skill. After pruning, `pnpm i` in the primary checkout — a `git worktree remove` can dangle the main checkout's `node_modules` symlinks (per the _Don't leave the worktree dirty_ rule).
+`--here` resolves the current checkout's git toplevel (not a `$PROJECTS` sibling) and runs the engine against only that repo. The engine never discards work: a dirty tree is kept, a worktree ahead of the base is kept, and removal uses the clean-tree-gated `--force` only to clear the submodule-worktree guard. After pruning, `pnpm i` in the primary checkout — a `git worktree remove` can dangle the main checkout's `node_modules` symlinks (per the _Don't leave the worktree dirty_ rule); the engine prints that reminder.
+
+### Mode 4: `land`
+
+Move already-verified commits onto `origin/<default>` with the least ceremony that's still safe — the fast path for when the primary checkout's branch has **diverged** from origin (a parallel session squashed your commits onto origin via PR, leaving your local with unsquashable duplicates) or is **actively churned** by another session, so a direct `git push` would be rejected and a `reset --hard` would discard that session's work.
+
+The fleet **lints as it edits**, so a commit's diff already passed the gates the pre-commit / pre-push hooks re-run. Re-running them on land is ceremony that can wedge (a pre-commit staged-test run hung 55 min in practice) or crash (a fresh worktree has no `node_modules`, so the lib-importing pre-push hooks throw `ERR_MODULE_NOT_FOUND`). Mode 4 replaces the manual cherry-pick → fast-forward dance with one command: it re-asserts the lint gate on the landing diff (fast, deterministic — NOT a heavy test re-run), cherry-picks the commits onto a throwaway worktree branched off `origin/<base>` (a clean tree), confirms a clean fast-forward, then fast-forwards `origin/<base>`. NEVER force-pushes; if origin moved since, it aborts and tells you to re-run.
+
+```bash
+# Dry-run (default): plan + re-assert the lint gate, don't push.
+node .claude/skills/fleet/managing-worktrees/lib/land.mts --last 2
+
+# Act: fast-forward origin/<base> to the last 2 commits of HEAD.
+node .claude/skills/fleet/managing-worktrees/lib/land.mts --last 2 --push
+
+# Land explicit SHAs (oldest-first cherry-pick order).
+node .claude/skills/fleet/managing-worktrees/lib/land.mts <sha-a> <sha-b> --push
+```
+
+The lint re-assert is the contract: a clean diff lands instantly; a lint failure ABORTS (the lint-as-edit contract was bypassed → `pnpm run fix` + re-commit). Only pass `--no-verify-lint` when the checkout genuinely can't run oxlint (no `node_modules`) AND you know the diff was lint-clean at edit time. The throwaway worktree + branch are cleaned up automatically; the `git push --no-verify` is deliberate (the diff is lint-verified above, and a fresh worktree's hooks can't load the lib).
 
 ## Safety contract
 
 This skill respects four CLAUDE.md rules:
 
 1. **Parallel Claude sessions**: only ever creates new worktrees; never `checkout`-s an existing one.
-2. **Don't leave the worktree dirty**: refuses to `prune` a dirty tree.
+2. **Don't leave the worktree dirty**: refuses to `prune` a dirty tree OR one ahead of the base with unpushed commits — Mode 3 delegates the decision to the shared `decideWorktree` predicate, so the guard can't drift.
 3. **Public-surface hygiene**: task names must not contain customer / company / internal-tool names. The skill does no redaction; the user picks a clean name.
 4. **Default branch fallback**: every base-branch lookup follows the `main → master → assume main` chain via `git symbolic-ref refs/remotes/origin/HEAD`. Never hard-code one or the other.
 
