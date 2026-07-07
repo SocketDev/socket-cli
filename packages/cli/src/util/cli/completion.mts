@@ -1,6 +1,8 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
+import { normalizePath } from '@socketsecurity/lib/paths/normalize'
+
 import { getSocketAppDataPath, rootPath } from '../../constants/paths.mts'
 
 import type { CResult } from '../../types.mjs'
@@ -39,7 +41,7 @@ export function getBashrcDetails(targetCommandName: string): CResult<{
   )
 
   // Bash scripts always use forward slashes, even on Windows.
-  const bashCompletionPath = completionScriptPath.replace(/\\/g, '/')
+  const bashCompletionPath = normalizePath(completionScriptPath)
 
   const bashrcContent = `# Socket CLI completion for "${targetCommandName}"
 if [ -f "${bashCompletionPath}" ]; then
@@ -74,13 +76,13 @@ export function getCompletionSourcingCommand(): CResult<string> {
     return {
       ok: false,
       message: 'Tab Completion script not found',
-      cause: `Expected to find completion script at \`${completionScriptPath.replace(/\\/g, '/')}\` but it was not there`,
+      cause: `Expected to find completion script at \`${normalizePath(completionScriptPath)}\` but it was not there`,
     }
   }
 
   // Bash scripts always use forward slashes, even on Windows.
   return {
     ok: true,
-    data: `source ${completionScriptPath.replace(/\\/g, '/')}`,
+    data: `source ${normalizePath(completionScriptPath)}`,
   }
 }
