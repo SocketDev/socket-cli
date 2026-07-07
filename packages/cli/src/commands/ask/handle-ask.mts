@@ -231,6 +231,9 @@ export async function parseIntent(query: string): Promise<ParsedIntent> {
   } else {
     // Try to find package name after "is", "check", "about", "with".
     // Must look like a real package (has @, /, or contains common package patterns).
+    // (?:about|check|is|with) — one of four trigger verbs (non-capturing)
+    // \s+                     — one or more whitespace chars after the verb
+    // ([a-z0-9-@/]+)          — capture: package-name chars (letters, digits, dash, @, slash)
     const pkgMatch = query
       .toLowerCase()
       .match(/(?:about|check|is|with)\s+([a-z0-9-@/]+)/i)
