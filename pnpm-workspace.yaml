@@ -254,6 +254,13 @@ minimumReleaseAgeExclude:
 # this). pnpm's current default is `false`; declared explicitly so a
 # future flip can't silently change install behavior.
 blockExoticSubdeps: true
+
+# type-coverage-core 2.29.7 declares a typescript peer of "2 || 3 || 4 || 5";
+# it drives the compiler API fine on 6.x — the range is just stale upstream.
+# Drop this allowance when type-coverage-core widens its peer range.
+peerDependencyRules:
+  allowedVersions:
+    'type-coverage-core>typescript': '6'
 confirmModulesPurge: false
 managePackageManagerVersions: false
 
