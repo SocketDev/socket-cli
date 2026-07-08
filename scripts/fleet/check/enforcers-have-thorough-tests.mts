@@ -97,6 +97,12 @@ export interface TestGap {
   readonly reason: string
 }
 
+// Fixture tests force ownership so the scanners run outside the wheelhouse
+// (a member's live run keeps the OWNS_RELOCATED_TESTS default).
+export interface ScanOptions {
+  readonly ownsRelocatedTests?: boolean | undefined
+}
+
 function listDirs(dir: string): string[] {
   try {
     return readdirSync(dir).filter(n => {
@@ -147,10 +153,14 @@ function findHookTest(repoRoot: string, name: string): string | undefined {
   return undefined
 }
 
-export function scanHooks(repoRoot: string): TestGap[] {
+export function scanHooks(
+  repoRoot: string,
+  options?: ScanOptions | undefined,
+): TestGap[] {
+  const opts = { __proto__: null, ...options }
   // Hook tests are wheelhouse-only (relocated under test/repo/, never cascaded).
   // A member ships the hook sources but not their tests, so it has no gaps.
-  if (!OWNS_RELOCATED_TESTS) {
+  if (!(opts.ownsRelocatedTests ?? OWNS_RELOCATED_TESTS)) {
     return []
   }
   const gaps: TestGap[] = []
@@ -200,11 +210,15 @@ function findRuleTest(repoRoot: string, id: string): string | undefined {
   return undefined
 }
 
-export function scanRules(repoRoot: string): TestGap[] {
+export function scanRules(
+  repoRoot: string,
+  options?: ScanOptions | undefined,
+): TestGap[] {
+  const opts = { __proto__: null, ...options }
   // Lint-rule tests are wheelhouse-only (relocated under test/repo/, never
   // cascaded). A member ships the rule sources but not their tests, so it has
   // no gaps.
-  if (!OWNS_RELOCATED_TESTS) {
+  if (!(opts.ownsRelocatedTests ?? OWNS_RELOCATED_TESTS)) {
     return []
   }
   // Each rule is a dir under the cascaded fleet/ tier:
@@ -267,10 +281,14 @@ function findCheckTest(repoRoot: string, name: string): string | undefined {
   return undefined
 }
 
-export function scanCheckScripts(repoRoot: string): TestGap[] {
+export function scanCheckScripts(
+  repoRoot: string,
+  options?: ScanOptions | undefined,
+): TestGap[] {
+  const opts = { __proto__: null, ...options }
   // Check-script tests are wheelhouse-only (under test/unit/fleet/, cascade-
   // excluded). A member ships the check sources but not their tests.
-  if (!OWNS_RELOCATED_TESTS) {
+  if (!(opts.ownsRelocatedTests ?? OWNS_RELOCATED_TESTS)) {
     return []
   }
   const gaps: TestGap[] = []
