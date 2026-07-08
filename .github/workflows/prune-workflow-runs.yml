@@ -38,7 +38,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@b3f42a5f19c0a3854a67a8387c97ed0bb77caa00 # main (2026-06-09)
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-15)
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: ./.github/actions/fleet/setup-and-install
       - name: Prune workflow runs
         env:
           GH_TOKEN: ${{ github.token }}

@@ -38,7 +38,8 @@ env:
 jobs:
   # First step of every job is the third-party actions/checkout (GitHub fetches
   # it independently) to populate the workspace so the LOCAL `./.github/actions/*`
-  # composites resolve. setup-and-install then re-checks-out at full depth and
+  # composites resolve. setup-and-install then re-checks-out at its deeper
+  # default (fetch-depth 25 — covers CI's git operations) and
   # runs the zizmor Actions audit (its own `strategy.job-total < 2` skip runs it
   # in the non-matrix check job, skips it in the test matrix).
   check:

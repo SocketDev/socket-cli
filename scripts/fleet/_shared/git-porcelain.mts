@@ -57,12 +57,12 @@ export function gitPorcelain(
     stdioString: false,
     timeout: 60_000,
   })
-  const raw = `${String(r.stdout ?? '')}${String(r.stderr ?? '')}`
   const ok = r.status === 0
+  const stdout = String(r.stdout ?? '')
   return {
     ok,
-    raw: ok ? String(r.stdout ?? '') : '',
-    entries: ok ? parsePorcelain(String(r.stdout ?? '')) : [],
+    raw: ok ? stdout : '',
+    entries: ok ? parsePorcelain(stdout) : [],
   }
 }
 

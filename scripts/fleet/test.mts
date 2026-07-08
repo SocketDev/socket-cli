@@ -9,19 +9,19 @@
  *     compare-vs-HEAD-with-uncommitted mode. Walks the actual import graph so a
  *     change to a util shared by many tests runs every affected test file, not
  *     the union of two guesses.
- *   - `--staged` — pre-commit hook scope. NARROW by design: runs (a) staged
- *     test files directly, plus (b) for each staged SOURCE file, the test files
- *     that mirror it via the MIRROR resolver — never `vitest related` (that
- *     broad walk blew the pre-commit budget on a widely-imported util). The
- *     mirror resolver finds: bare basename tests, shard tests (basename-hyphen
+ *   - `--staged` — pre-commit hook scope. NARROW by design: runs (a) staged test
+ *     files directly, plus (b) for each staged SOURCE file, the test files that
+ *     mirror it via the MIRROR resolver — never `vitest related` (that broad
+ *     walk blew the pre-commit budget on a widely-imported util). The mirror
+ *     resolver finds: bare basename tests, shard tests (basename-hyphen
  *     prefix), check-by-name tests for check scripts, and any test file whose
  *     first-party imports include the staged source (direct importers, the
- *     accurate catch for not-yet-renamed tests). Untracked paths are dropped
- *     so a foreign, mid-write test another live actor hasn't committed can't
- *     gate a commit. The staged lane stays tight to what is being committed;
- *     the full suite at pre-push + CI covers cross-cutting impact. A staged
- *     source file with no committed mirror test simply runs nothing at commit
- *     time (its impact is caught at the gate).
+ *     accurate catch for not-yet-renamed tests). Untracked paths are dropped so
+ *     a foreign, mid-write test another live actor hasn't committed can't gate
+ *     a commit. The staged lane stays tight to what is being committed; the
+ *     full suite at pre-push + CI covers cross-cutting impact. A staged source
+ *     file with no committed mirror test simply runs nothing at commit time
+ *     (its impact is caught at the gate).
  *   - `--all` — run the full suite (`vitest run`). Used in CI and on explicit
  *     opt-in. Flags: `--quiet` / `--silent` suppress progress output. Config /
  *     infrastructure changes (`vitest.config*`, `tsconfig*`, `.oxlintrc.json`,
@@ -46,8 +46,14 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import type { SpawnSyncOptions } from '@socketsecurity/lib-stable/process/spawn/types'
 
 import { resolveScopeMode } from './_shared/scope-flags.mts'
-import { firstPartyImports, isCheckByName } from './check/tests-are-mirror-named.mts'
-import { GENERATED_GLOBS, isGeneratedPath } from './constants/generated-globs.mts'
+import {
+  firstPartyImports,
+  isCheckByName,
+} from './check/tests-are-mirror-named.mts'
+import {
+  GENERATED_GLOBS,
+  isGeneratedPath,
+} from './constants/generated-globs.mts'
 
 const logger = getDefaultLogger()
 
@@ -316,20 +322,28 @@ const TEST_EXTENSIONS = '{mts,ts,mjs,cjs,js,tsx,jsx}'
 // `passWithNoTests: true` to silently report "0 tests, all passed" — the
 // zero-package delegation failure mode `runWorkspaceTests()` already guards
 // for the no-root-config layout, extended to the root-config-present one.
+// Counts co-located `src/**` specs too (socket-webext's layout) so a repo
+// whose config includes them isn't misread as test-less.
 function totalTestFileCount(): number {
-  return globSync([`**/test/**/*.test.${TEST_EXTENSIONS}`], {
-    cwd: repoRoot,
-    absolute: false,
-    ignore: [
-      '**/node_modules/**',
-      ...GENERATED_GLOBS,
-      '.git-hooks/**',
-      '.config/fleet/oxlint-plugin/**',
-      'scripts/**/test/**',
-      '.claude/hooks/**/test/**',
-      'template/**',
+  return globSync(
+    [
+      `**/src/**/*.test.${TEST_EXTENSIONS}`,
+      `**/test/**/*.test.${TEST_EXTENSIONS}`,
     ],
-  }).length
+    {
+      cwd: repoRoot,
+      absolute: false,
+      ignore: [
+        '**/node_modules/**',
+        ...GENERATED_GLOBS,
+        '.git-hooks/**',
+        '.config/fleet/oxlint-plugin/**',
+        'scripts/**/test/**',
+        '.claude/hooks/**/test/**',
+        'template/**',
+      ],
+    },
+  ).length
 }
 
 function runAll(): number {
@@ -344,8 +358,8 @@ function runAll(): number {
   if (existsSync(ROOT_WORKSPACE_MANIFEST) && totalTestFileCount() === 0) {
     log(
       [
-        'Tests failed: this is a monorepo workspace (pnpm-workspace.yaml declares `packages:`), but zero test files resolve under any `test/` tree.',
-        `Where: ${ROOT_VITEST_CONFIG} \`include\` (\`**/test/**/*.test.{...}\`) against ${repoRoot}.`,
+        'Tests failed: this is a monorepo workspace (pnpm-workspace.yaml declares `packages:`), but zero test files resolve under any `test/` or `src/` tree.',
+        `Where: ${ROOT_VITEST_CONFIG} \`include\` (\`**/{test,src}/**/*.test.{...}\`) against ${repoRoot}.`,
         'Saw: 0 matching test files; wanted: at least 1 — a full-suite run over a monorepo that discovers nothing proves nothing and would silently mask every package losing its tests.',
         'Fix: confirm each package under packages/*/test/ still ships its test files, and that no exclude glob (GENERATED_GLOBS, template/**, …) newly swallows them.',
       ].join('\n'),

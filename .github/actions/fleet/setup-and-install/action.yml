@@ -23,9 +23,11 @@ inputs:
     required: false
     default: 'true'
   checkout-fetch-depth:
+    # Mirrors the fleet checkout action's default — 25 covers every git
+    # operation fleet CI performs at a fraction of a full-history clone.
     description: 'Number of commits to fetch (0 = full history)'
     required: false
-    default: '100'
+    default: '25'
   checkout-ref:
     description: 'Git ref to checkout'
     required: false

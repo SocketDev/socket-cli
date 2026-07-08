@@ -31,7 +31,6 @@ import {
   walkFiles,
 } from './helpers.mts'
 import type { BundleManifest, ThinOptions } from './helpers.mts'
-import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 const logger = getDefaultLogger()
 

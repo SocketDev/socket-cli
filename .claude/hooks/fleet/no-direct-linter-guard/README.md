@@ -34,7 +34,7 @@ scoping and will reformat vendored `upstream/` trees the fleet must never touch
 `dprint` are not fleet tools at all (see `no-other-linters-guard`); `cargo fmt`
 / `rustfmt` / `gofmt` reflow hand-formatted code. Reaching past the scripts
 re-introduces every one of these. The committed-state companion is
-`scripts/fleet/check/only-oxlint-oxfmt.mts`; the source-ref companion is
+`scripts/fleet/check/linters-are-oxlint-oxfmt-only.mts`; the source-ref companion is
 `socket/no-other-linters-guard`.
 
 The scripts' own internal `node_modules/.bin/oxlint` spawns are child processes,

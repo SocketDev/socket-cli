@@ -13,7 +13,7 @@ exclude-newer = "2026-06-10T00:00:00Z"
 
 [options.exclude-newer-package]
 starlette = "2026-06-13T00:00:00Z"
-headroom-ai = "2026-06-23T00:00:00Z"
+headroom-ai = "2026-07-04T00:00:00Z"
 pydantic-settings = "2026-06-20T00:00:00Z"
 
 [manifest]
@@ -807,7 +807,7 @@ wheels = [
 
 [[package]]
 name = "headroom-ai"
-version = "0.27.0"
+version = "0.30.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "ast-grep-cli" },
@@ -819,11 +819,12 @@ dependencies = [
     { name = "tiktoken" },
     { name = "tomli", marker = "python_full_version < '3.11'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/30/af/4ad9124319a0d3d8fba6c6d9bcc7cf45b8ce810e6a5c54f457ed79aa5b02/headroom_ai-0.27.0.tar.gz", hash = "sha256:1b133c7f9de9fbebd266df2d407fc4529d4d0f4276faedad838d39ed2bdc0af0", size = 1859481, upload-time = "2026-06-22T06:04:38.578Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/fa/cf/61bc24c72c7c64a32f3d82a1193d1bd96892564160acfeb380ad381b34a0/headroom_ai-0.30.0.tar.gz", hash = "sha256:ede80f5a81f4d438301048a2123b266f1b2705d361018b172ad9f2487aca6c95", size = 1993582, upload-time = "2026-07-03T19:49:10.717Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/10/95/928bfb645df23025fb375de19c7d57ec21a0991712236d7748ce456139e3/headroom_ai-0.27.0-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:00b54b70533c841f4702fffaf215eff84bafed7612c07a56d675ef8a1ffab543", size = 16336560, upload-time = "2026-06-22T06:04:30.934Z" },
-    { url = "https://files.pythonhosted.org/packages/0e/b4/e5e32e7042f7bb7bdb3aaec1dd9b31926e38612f61b5a3d5f31253f2b646/headroom_ai-0.27.0-cp310-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:f8fa150061db2513e8584d2e4b50af930131bcfe301080f297464b351a03f577", size = 18400667, upload-time = "2026-06-22T06:04:33.721Z" },
-    { url = "https://files.pythonhosted.org/packages/8f/70/2e287f4f4bc8306c8c51bb40e753cfdfa05c568d026be633c78d9f4f2995/headroom_ai-0.27.0-cp310-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:640e67a41743265376582a92691a192a8c2448ef0b2167a0e14a2a458adbe2dd", size = 17521574, upload-time = "2026-06-22T06:04:36.016Z" },
+    { url = "https://files.pythonhosted.org/packages/d1/61/bd6495a33d1cb098da61c651f803fe309acaa5331e4b92381b825cf868b9/headroom_ai-0.30.0-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:9b10f4dec6451fce652fdb775e7dc7a999e98d3ee853d1eb569a7e2e550d79c5", size = 16512859, upload-time = "2026-07-03T19:49:00.816Z" },
+    { url = "https://files.pythonhosted.org/packages/67/d5/208f79315c1c83894ee226a42c2651ed2c7ab53fe7de4398e68023a02d33/headroom_ai-0.30.0-cp310-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:bd067a43485b65fd8d71956efbe43e2af2a8ce72dd68e4b48ee5cbfad03b2b91", size = 18571233, upload-time = "2026-07-03T19:49:03.674Z" },
+    { url = "https://files.pythonhosted.org/packages/1d/ea/b240a1ed4c0e2c92a39dc92db0b4038df41cd4e45600130084611ffbad27/headroom_ai-0.30.0-cp310-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:0e66a3241901ab62606ab0cf2b241f32d3a5ac9cf0cbda099fcc86519dd1700d", size = 17691948, upload-time = "2026-07-03T19:49:06.189Z" },
+    { url = "https://files.pythonhosted.org/packages/78/1b/560b313a45705fce7d39bd73175d50c1fd4e8dcf56236b6f3bf690677f85/headroom_ai-0.30.0-cp310-abi3-win_amd64.whl", hash = "sha256:88b8a7023163d7986fc25e175e026b68d7d84c61c6df1b488aa14a3e7981663e", size = 10340686, upload-time = "2026-07-03T19:49:08.541Z" },
 ]
 
 [package.optional-dependencies]
@@ -2642,7 +2643,7 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "headroom-ai", extras = ["proxy"], specifier = "==0.27.0" }]
+requires-dist = [{ name = "headroom-ai", extras = ["proxy"], specifier = "==0.30.0" }]
 
 [[package]]
 name = "sqlite-vec"

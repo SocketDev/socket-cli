@@ -15,7 +15,7 @@
  *   codes: 0 — the doc lists exactly the canonical statuses (or the doc /
  *   section is absent, fail-open: a repo without the delegation doc has no
  *   contract to keep in sync); 1 — the documented set diverged. Usage: node
- *   scripts/fleet/check/subagent-status-doc-matches-code.mts [--quiet]
+ *   scripts/fleet/check/subagent-status-doc-is-current.mts [--quiet]
  */
 
 import { existsSync, readFileSync } from 'node:fs'

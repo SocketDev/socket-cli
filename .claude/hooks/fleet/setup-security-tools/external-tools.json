@@ -11,9 +11,9 @@
       "description": "headroom-ai — AI context-compression proxy (Anthropic backend; 60-95% token reduction on tool outputs/RAG/files/history before they reach the model). Replaces the legacy socket-token-minifier proxy. Pinned via a committed pyproject.toml + uv.lock (the [proxy] extra, no pytorch) and installed with `uv sync --locked` into the _dlx/<hash>/ store — see scripts/fleet/install-headroom.mts. Pre-1.0/Beta (the noted uv-style exception); pinned + hash-locked + soaked.",
       "release": "uv-project",
       "repository": "github:headroomlabs-ai/headroom",
-      "purl": "pkg:pypi/headroom-ai@0.27.0",
-      "version": "0.27.0",
-      "versionDate": "2026-06-22",
+      "purl": "pkg:pypi/headroom-ai@0.30.0",
+      "version": "0.30.0",
+      "versionDate": "2026-07-03",
       "notes": "Third-party (github:headroomlabs-ai/headroom)."
     },
     "cdxgen": {

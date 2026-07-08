@@ -117,6 +117,7 @@ template/.claude/hooks/fleet/_shared/acorn/acorn.wasm binary
 .git-hooks/pre-push linguist-generated=true
 .github/actions/fleet/cache-pnpm-store linguist-generated=true
 .github/actions/fleet/checkout linguist-generated=true
+.github/actions/fleet/cleanup-git-signing linguist-generated=true
 .github/actions/fleet/debug linguist-generated=true
 .github/actions/fleet/github-pr-app-token linguist-generated=true
 .github/actions/fleet/github-release linguist-generated=true
@@ -127,6 +128,7 @@ template/.claude/hooks/fleet/_shared/acorn/acorn.wasm binary
 .github/actions/fleet/run-script linguist-generated=true
 .github/actions/fleet/setup linguist-generated=true
 .github/actions/fleet/setup-and-install linguist-generated=true
+.github/actions/fleet/setup-git-signing linguist-generated=true
 .github/actions/fleet/setup-go-toolchain linguist-generated=true
 .github/agent-ci.Dockerfile linguist-generated=true
 .github/dependabot.yml linguist-generated=true

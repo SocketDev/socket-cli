@@ -49,8 +49,22 @@ const HEALTH_URL = `http://localhost:${PROXY_PORT}/health`
 // the _dlx/<hash> venv). Running it forces telemetry + model fetch off.
 const BIN_PATH = path.join(getSocketAppDir('wheelhouse'), 'bin', 'headroom')
 // `headroom proxy` args. --no-telemetry is belt — the wrapper already exports
-// HEADROOM_TELEMETRY=off.
-const PROXY_ARGS = ['proxy', '--port', String(PROXY_PORT), '--no-telemetry']
+// HEADROOM_TELEMETRY=off. The default `token` mode is LOSSY via two layers that
+// abbreviate content and garble proper nouns (paths, package names, identifiers)
+// in large tool reads, which is actively wrong for a coding agent:
+//   --lossless          disables the CCR context-compression layer.
+//   --disable-kompress  disables the Kompress ML layer (the proper-noun
+//                       abbreviator — MEASURED: --lossless alone still garbled a
+//                       large grep; adding this made large reads verbatim).
+// Both together trade some token savings for verbatim output.
+const PROXY_ARGS = [
+  'proxy',
+  '--port',
+  String(PROXY_PORT),
+  '--no-telemetry',
+  '--lossless',
+  '--disable-kompress',
+]
 const ANTHROPIC_BASE_URL = `http://localhost:${PROXY_PORT}`
 // The substring that identifies OUR proxy in a port-holder's command line, so
 // reapWedgedProxy never kills an unrelated service.

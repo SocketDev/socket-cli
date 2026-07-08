@@ -495,6 +495,11 @@ const steps: Array<() => boolean> = [
   // also throws at import (fail-closed). Audit: .claude/reports/headroom-telemetry-audit.md. // socket-lint: allow private-path -- names this repo's own audit-report doc, not a leak.
   () =>
     run('node', ['scripts/fleet/check/headroom-is-telemetry-locked-down.mts']),
+  // The headroom proxy MUST start with --lossless. Its default `token` mode is
+  // LOSSY (CCR + Kompress ML abbreviate content, garbling proper nouns like
+  // paths / package names in large tool reads — silently wrong for a coding
+  // agent). Fails if PROXY_ARGS in headroom-proxy-start drops the flag.
+  () => run('node', ['scripts/fleet/check/headroom-proxy-is-lossless.mts']),
   // pnpm-lock.yaml resolves vite rolldown-native (8.x) with no esbuild —
   // the fleet bundler is rolldown, esbuild is banned. A vitest repo whose
   // transitive vite floats to 7.x drags esbuild in (noisy Dependabot

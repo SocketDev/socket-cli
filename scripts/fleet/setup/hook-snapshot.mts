@@ -70,7 +70,7 @@ const INDEX_REL = '.claude/hooks/fleet/_dispatch/index.cjs'
 // The four hook events the fleet dispatcher fans out (the entries the cascaded
 // settings.json points at the compile-cache `index.cjs`). These are the ONLY
 // commands this step rewrites — the standalone single-hook entries
-// (minify-mcp-out, skill-usage-logger, …) are left untouched.
+// (skill-usage-logger, …) are left untouched.
 const DISPATCH_EVENTS = ['PreToolUse', 'PostToolUse', 'SessionStart', 'Stop']
 
 /**

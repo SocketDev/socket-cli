@@ -19,15 +19,6 @@
             "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/_dispatch/index.cjs PostToolUse"
           }
         ]
-      },
-      {
-        "matcher": "mcp__.*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/minify-mcp-out/index.mts"
-          }
-        ]
       }
     ],
     "PreToolUse": [

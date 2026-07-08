@@ -20,9 +20,9 @@
 // the set GitHub renders specially — adding more would dilute the
 // signal.
 //
-// The fleet's `scripts/validate/markdown-filenames.mts` does the
-// same check at commit time; this hook catches it earlier, at edit
-// time, so the model gets immediate feedback when it picks a wrong
+// The fleet's `scripts/fleet/check/markdown-filenames-are-canonical.mts`
+// does the same check at commit time; this hook catches it earlier, at
+// edit time, so the model gets immediate feedback when it picks a wrong
 // name.
 //
 // Exit code 2 makes Claude Code refuse the tool call.

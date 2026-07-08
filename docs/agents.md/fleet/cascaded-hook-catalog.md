@@ -112,7 +112,6 @@ phrase (where one exists):
   lines lacking the `# <tag-or-branch> (YYYY-MM-DD)` staleness comment.
 - **marketplace-comment-guard** — PreToolUse(Edit|Write) for edits to
   `.claude-plugin/marketplace.json` + sibling README that desync the SHA-pin pair.
-- **minify-mcp-out** — PostToolUse(mcp__.*) lossless MCP-output minifier.
 - **headroom-proxy-start** — SessionStart auto-start of the telemetry-locked
   headroom wire-level proxy (fail-closed: only sets `ANTHROPIC_BASE_URL` if the
   proxy is healthy on :8787).

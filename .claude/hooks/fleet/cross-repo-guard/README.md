@@ -16,7 +16,7 @@ Two forbidden shapes — both name another fleet repo by path:
 
 | Form                | Example                                                               | Why it's bad                                                                                                                      |
 | ------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Cross-repo relative | `require('../../socket-lib/dist/effects/text-shimmer.js')`            | Assumes `ultrathink/` and `socket-lib/` are sibling clones. Breaks in CI sandboxes, fresh checkouts, and any non-standard layout. |
+| Cross-repo relative | `require('../../socket-lib/dist/spinner/spinner-internals.js')`            | Assumes `ultrathink/` and `socket-lib/` are sibling clones. Breaks in CI sandboxes, fresh checkouts, and any non-standard layout. |
 | Cross-repo absolute | `require('/Users/jdalton/projects/socket-lib/dist/effects/ultra.js')` | Leaks the author's local directory layout into the committed tree. Same brittleness.                                              |
 
 ## What to do instead
@@ -26,13 +26,13 @@ workspace dep:
 
 ```ts
 // ✗ WRONG (cross-repo relative)
-import { applyShimmer } from '../../socket-lib/dist/effects/text-shimmer.js'
+import { applyShimmer } from '../../socket-lib/dist/spinner/spinner-internals.js'
 
 // ✗ WRONG (cross-repo absolute)
-import { applyShimmer } from '/Users/<user>/projects/socket-lib/dist/effects/text-shimmer.js'
+import { applyShimmer } from '/Users/<user>/projects/socket-lib/dist/spinner/spinner-internals.js'
 
 // ✓ RIGHT
-import { applyShimmer } from '@socketsecurity/lib-stable/effects/text-shimmer'
+import { applyShimmer } from '@socketsecurity/lib-stable/spinner/spinner-internals'
 ```
 
 If the package isn't published or the version mismatches, vendor the

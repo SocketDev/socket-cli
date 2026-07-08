@@ -7,13 +7,17 @@
 # `uses:` line; action-pins-are-current.mts tracks them for staleness.)
 
 name: 'Checkout'
-description: 'Checkout repository with sensible defaults (fetch-depth 100, persist-credentials false)'
+description: 'Checkout repository with sensible defaults (fetch-depth 25, persist-credentials false)'
 
 inputs:
   fetch-depth:
+    # 25 is a CI-speed heuristic: deeper than any git operation fleet CI
+    # performs (version-bump scans, changed-file walks, PR base-ref diffs)
+    # while staying a small fraction of a full-history clone. Pass 0 for
+    # jobs that genuinely need full history.
     description: 'Number of commits to fetch (0 = full history)'
     required: false
-    default: '100'
+    default: '25'
   ref:
     description: 'Git ref to checkout'
     required: false

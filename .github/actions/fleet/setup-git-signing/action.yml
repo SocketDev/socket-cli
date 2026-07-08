@@ -1,0 +1,55 @@
+# Layer 1 — leaf action (no internal SocketDev refs). Fleet-inlined so
+# member workflows reference it locally (./.github/actions/fleet/...)
+# instead of a cross-repo pin. Paired with `cleanup-git-signing`
+# (use both, always() the cleanup).
+
+name: 'Setup GPG commit signing'
+description: 'Import a GPG key and configure git for signed commits. Pair with cleanup-git-signing (if: always()) after all commits.'
+
+inputs:
+  gpg-private-key:
+    description: 'GPG private key (no passphrase) — pass secrets.BOT_GPG_PRIVATE_KEY'
+    required: true
+  user-name:
+    description: 'git user.name for signed commits'
+    required: false
+    default: 'socket-bot'
+  user-email:
+    description: 'git user.email for signed commits'
+    required: false
+    default: 'socket-bot@users.noreply.github.com'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up GPG commit signing
+      shell: bash
+      env:
+        GPG_PRIVATE_KEY: ${{ inputs.gpg-private-key }}
+        GIT_USER_NAME: ${{ inputs.user-name }}
+        GIT_USER_EMAIL: ${{ inputs.user-email }}
+      run: |
+        # Ensure gpg is available
+        if ! command -v gpg &>/dev/null; then
+          sudo apt-get update -qq && sudo apt-get install -yqq gnupg
+        fi
+
+        # Import GPG key - printenv avoids shell interpolation of the secret
+        if [ -z "${GPG_PRIVATE_KEY:-}" ]; then
+          echo "::error::gpg-private-key input is not set"
+          exit 1
+        fi
+        printenv GPG_PRIVATE_KEY | gpg --batch --import
+
+        # Extract the key ID (machine-parseable colon format)
+        GPG_KEY_ID=$(gpg --list-secret-keys --keyid-format long --with-colons | grep '^sec' | cut -d':' -f5 | head -1)
+        if [ -z "$GPG_KEY_ID" ]; then
+          echo "::error::Failed to extract GPG key ID after import"
+          exit 1
+        fi
+
+        # Configure git for signed commits
+        git config --local user.name "$GIT_USER_NAME"
+        git config --local user.email "$GIT_USER_EMAIL"
+        git config --local user.signingkey "$GPG_KEY_ID"
+        git config --local commit.gpgsign true

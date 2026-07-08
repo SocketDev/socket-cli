@@ -59,7 +59,7 @@ catalog:
   # it. Bump only to a newer `7.x-rc`/`7.x` (7 > 6, and a real 7.x release when
   # it ships outranks the rc). Pinned-toolchain, excluded from taze
   # (UPDATE_PINNED_TOOLCHAIN) so it is never auto-bumped — always a deliberate bump.
-  'typescript': 7.0.1-rc
+  'typescript': 7.0.2
   'vitest': 4.1.9
   '@vitest/coverage-v8': 4.1.9
   '@vitest/ui': 4.1.9
