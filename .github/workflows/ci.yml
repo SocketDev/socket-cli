@@ -50,10 +50,10 @@ jobs:
         with:
           fetch-depth: 1
           persist-credentials: false
-      - uses: ./.github/actions/setup-and-install
+      - uses: ./.github/actions/fleet/setup-and-install
         with:
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
-      - uses: ./.github/actions/run-script
+      - uses: ./.github/actions/fleet/run-script
         with:
           main-script: pnpm run check --all
 
@@ -71,10 +71,10 @@ jobs:
         with:
           fetch-depth: 1
           persist-credentials: false
-      - uses: ./.github/actions/setup-and-install
+      - uses: ./.github/actions/fleet/setup-and-install
         with:
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
-      - uses: ./.github/actions/run-script
+      - uses: ./.github/actions/fleet/run-script
         with:
           setup-script: pnpm run build
           main-script: pnpm test

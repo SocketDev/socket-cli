@@ -39,6 +39,7 @@ import {
 } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 import { isRepoTestHome } from '../_shared/repo-test-home.mts'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 const BYPASS_PHRASE = 'Allow boolean-trap bypass'
 
@@ -110,10 +111,10 @@ export function stripNestedTypeGroups(paramList: string): string {
   let out = ''
   for (let i = 0, { length } = paramList; i < length; i += 1) {
     const ch = paramList[i]!
-    if (ch === '{' || ch === '[' || ch === '(') {
+    if (ch === '(' || ch === '[' || ch === '{') {
       out += depth === 0 ? ch : ' '
       depth += 1
-    } else if (ch === '}' || ch === ']' || ch === ')') {
+    } else if (ch === ')' || ch === ']' || ch === '}') {
       depth = Math.max(0, depth - 1)
       out += depth === 0 ? ch : ' '
     } else {
@@ -156,10 +157,10 @@ export function findBooleanTrapParams(text: string): Finding[] {
 
 export function isExemptPath(filePath: string): boolean {
   return (
-    filePath.includes('/dist/') ||
-    filePath.includes('/build/') ||
-    filePath.includes('/node_modules/') ||
-    filePath.includes('/.claude/hooks/fleet/no-boolean-trap-guard/') ||
+    normalizePath(filePath).includes('/dist/') ||
+    normalizePath(filePath).includes('/build/') ||
+    normalizePath(filePath).includes('/node_modules/') ||
+    normalizePath(filePath).includes('/.claude/hooks/fleet/no-boolean-trap-guard/') ||
     isRepoTestHome(filePath)
   )
 }

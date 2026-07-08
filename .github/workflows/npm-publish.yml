@@ -1,0 +1,44 @@
+name: 📦 npm publish
+
+# PRESET — seeded once from template/presets/ (onboarding or first cascade),
+# then repo-owned: customize what + how THIS repo publishes. The inlined
+# per-repo replacement for the socket-registry reusable publish workflow.
+#
+# Default flow: manual dispatch, DRY-RUN unless `publish: true`; publishes the
+# workspace's publishable packages via the fleet staged-publish script with
+# npm provenance (OIDC trusted publishing — id-token: write, no long-lived
+# npm token).
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish for real (false = dry-run, the default).'
+        type: boolean
+        default: false
+      dist-tag:
+        description: 'npm dist-tag to publish under.'
+        type: string
+        default: 'latest'
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # npm provenance / trusted publishing mints its OIDC token here.
+      id-token: write
+    env:
+      # Socket Firewall + CLI auth for the sfw-wrapped setup + pnpm install —
+      # sfw and socket-cli read SOCKET_API_KEY from the org-wide secret.
+      SOCKET_API_KEY: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+    steps:
+      - name: Setup + install
+        uses: ./.github/actions/fleet/setup-and-install
+      - name: Publish
+        env:
+          DIST_TAG: ${{ inputs.dist-tag }}
+        run: node scripts/fleet/npm-publish.mts --staged --tag "$DIST_TAG" ${{ inputs.publish != true && '--dry-run' || '' }}

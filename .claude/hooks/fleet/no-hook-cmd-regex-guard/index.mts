@@ -33,6 +33,7 @@ import {
   runHook,
 } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 const BYPASS_PHRASE = 'Allow command-regex bypass'
 
@@ -118,10 +119,10 @@ export function findCommandRegexes(text: string): Finding[] {
 
 export function isHookFile(filePath: string): boolean {
   return (
-    filePath.includes('/.claude/hooks/') &&
-    !filePath.includes('/node_modules/') &&
+    normalizePath(filePath).includes('/.claude/hooks/') &&
+    !normalizePath(filePath).includes('/node_modules/') &&
     // This guard's own source + tests discuss the banned shape.
-    !filePath.includes('/no-hook-cmd-regex-guard/') &&
+    !normalizePath(filePath).includes('/no-hook-cmd-regex-guard/') &&
     /\.(?:c|m)?ts$/.test(filePath)
   )
 }

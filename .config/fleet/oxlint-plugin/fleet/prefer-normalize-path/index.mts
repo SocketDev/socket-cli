@@ -96,7 +96,7 @@ const rule = {
         // `/regex/.test(path)` / `/regex/.exec(path)` — a manual match; the
         // separator regex is the RECEIVER (`callee.object`), not an argument.
         if (
-          (method === 'test' || method === 'exec') &&
+          (method === 'exec' || method === 'test') &&
           isSeparatorRewriteRegex(callee.object)
         ) {
           context.report({ node, messageId: 'preferNormalizePathMatch' })

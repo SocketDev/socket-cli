@@ -5,6 +5,7 @@ import type { Cache } from './cache.mts'
 import type { UsesIssue } from './issue-types.mts'
 import { USES_RE } from './regexes.mts'
 import { validateRefReachable, validateRefShape } from './validate-ref.mts'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 export function findUsesIssues(content: string, cache: Cache): UsesIssue[] {
   const issues: UsesIssue[] = []
@@ -17,7 +18,7 @@ export function findUsesIssues(content: string, cache: Cache): UsesIssue[] {
     }
     const ownerRepoPath = m.groups!.ownerRepoPath!
     const ref = m.groups!.ref!
-    const ownerRepo = ownerRepoPath.split('/').slice(0, 2).join('/')
+    const ownerRepo = normalizePath(ownerRepoPath).split('/').slice(0, 2).join('/')
     const shape = validateRefShape(ref)
     if (!shape.ok) {
       issues.push({ line: i + 1, raw: line.trim(), problem: shape.problem })

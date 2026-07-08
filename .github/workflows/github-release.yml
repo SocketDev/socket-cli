@@ -1,0 +1,71 @@
+name: 🚀 GitHub release
+
+# PRESET — seeded once from template/presets/ (onboarding or first cascade),
+# then repo-owned: customize what THIS repo releases. The fleet base actions
+# do the heavy lifting — github-release-app-token mints the release App token,
+# github-release cuts the immutable 3-step release tied to the pushed tag
+# (create --draft → upload assets → edit --draft=false).
+#
+# Default flow: push a signed v* tag → this workflow cuts a GitHub Release for
+# it. A manual dispatch is a DRY-RUN (prints the cut plan) unless
+# `release: true`. Add build steps + assets for whatever this repo ships.
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Cut the release for real (false = dry-run plan, the default).'
+        type: boolean
+        default: false
+      tag:
+        description: 'Tag to release. Required on dispatch (tag pushes use the pushed tag).'
+        type: string
+        default: ''
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: ./.github/actions/fleet/checkout
+      - name: Resolve tag
+        id: tag
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [ "${EVENT_NAME}" = "push" ]; then
+            TAG="${REF_NAME}"
+          elif [ -n "${INPUT_TAG}" ]; then
+            TAG="${INPUT_TAG}"
+          else
+            echo "× a manual dispatch needs the tag input (tag pushes resolve it from the ref)." >&2
+            echo "  Fix: re-dispatch with tag: v<version> (the tag must already be pushed)." >&2
+            exit 1
+          fi
+          echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
+      - name: Mint release-app token
+        id: app-token
+        uses: ./.github/actions/fleet/github-release-app-token
+        with:
+          client-id: ${{ vars.SOCKET_RELEASE_CLIENT_ID }}
+          private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+      # Build this repo's release assets here, then list them under the cut
+      # step's `assets:` (newline-separated paths; each must exist).
+      - name: Cut immutable GitHub release
+        uses: ./.github/actions/fleet/github-release
+        with:
+          tag: ${{ steps.tag.outputs.tag }}
+          dry-run: ${{ (github.event_name == 'push' || inputs.release) && 'false' || 'true' }}
+          token: ${{ steps.app-token.outputs.token }}

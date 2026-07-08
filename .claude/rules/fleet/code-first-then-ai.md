@@ -35,7 +35,10 @@ substitute for running (or fixing) the script.
   repair the generator's format call — point it at the local binary, tolerate the
   shim — not to format by hand. `no-direct-linter-guard` blocks a direct
   `prettier` / `eslint` / `cargo fmt` (and runner-wrapped `yarn prettier` /
-  `pnpm exec prettier`) in ANY repo, fleet or external, for exactly this reason.
+  `pnpm exec prettier`) inside a fleet repo, where the pnpm/script wrappers own
+  formatting. It is a CONVENTION guard, so it no-ops in a non-fleet repo — there
+  the native binary (or the project's own script) is the sanctioned path, and the
+  repo's own CI, not a fleet hook, owns the format gate.
 
 - **Don't hand-edit a script-owned artifact** to dodge a wrong script. Registry
   pins, `CHANGELOG.md`, the lockfile, and generated output are owned by their

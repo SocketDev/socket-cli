@@ -130,7 +130,7 @@ export function foreignReadmeOptIn(
     try {
       const parsed = JSON.parse(
         readFileSync(path.join(repoRoot, OPT_IN_MARKER), 'utf8'),
-      ) as { optIn?: unknown } | undefined
+      ) as { optIn?: unknown | undefined } | undefined
       if (parsed?.optIn === true) {
         return true
       }

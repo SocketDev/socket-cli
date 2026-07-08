@@ -7,7 +7,7 @@
  *   empty feed yields `[]`, never throws past the adapter boundary.
  */
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { httpText } from '@socketsecurity/lib-stable/http-request'
 
 import type {

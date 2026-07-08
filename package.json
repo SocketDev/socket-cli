@@ -176,9 +176,9 @@
   },
   "engines": {
     "node": ">=26.0.0",
-    "pnpm": ">=11.6.0"
+    "pnpm": ">=11.0.5"
   },
-  "packageManager": "pnpm@11.9.0",
+  "packageManager": "pnpm@>=11.0.5",
   "allowScripts": {
     "cpu-features": false,
     "protobufjs": false,

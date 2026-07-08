@@ -23,7 +23,7 @@
  *   "skipped (no memory store)" and exits 0.
  */
 
-import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
@@ -95,7 +95,8 @@ export function findUncodifiedMemories(dir: string): MemoryCodifyResult {
   }
   const uncodified: string[] = []
   let candidates = 0
-  for (const name of entries) {
+  for (let i = 0, { length } = entries; i < length; i += 1) {
+    const name = entries[i]!;
     if (!name.endsWith('.md') || name === 'MEMORY.md') {
       continue
     }
@@ -113,6 +114,7 @@ export function findUncodifiedMemories(dir: string): MemoryCodifyResult {
     if (!isCodified(content)) {
       uncodified.push(name)
     }
+  
   }
   uncodified.sort()
   return { candidates, uncodified }

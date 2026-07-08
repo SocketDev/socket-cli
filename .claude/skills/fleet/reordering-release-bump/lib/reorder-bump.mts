@@ -31,7 +31,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 
-import { errorMessage } from '@socketsecurity/lib/errors'
+import { errorMessage } from '@socketsecurity/lib/errors/message'
 import { isError } from '@socketsecurity/lib/errors/predicates'
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 

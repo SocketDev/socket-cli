@@ -32,6 +32,7 @@ import {
   runHook,
 } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 const BYPASS_PHRASE = 'Allow env-kill-switch bypass'
 
@@ -68,12 +69,12 @@ export function findKillSwitches(text: string): Finding[] {
 export function isHookIndexPath(filePath: string): boolean {
   return (
     /\/\.claude\/hooks\/(?:fleet|repo)\/[^/]+\/index\.mts$/.test(filePath) &&
-    !filePath.includes('/node_modules/')
+    !normalizePath(filePath).includes('/node_modules/')
   )
 }
 
 export function isOwnTestPath(filePath: string): boolean {
-  return filePath.includes('/.claude/hooks/fleet/no-env-kill-switch-guard/')
+  return normalizePath(filePath).includes('/.claude/hooks/fleet/no-env-kill-switch-guard/')
 }
 
 export const check = editGuard((filePath, content, payload) => {

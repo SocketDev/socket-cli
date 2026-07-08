@@ -46,6 +46,7 @@ import {
   runHook,
 } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 interface Finding {
   readonly line: number
@@ -77,15 +78,15 @@ const BYPASS_PHRASE = 'Allow function-declaration bypass'
 // files (which discuss the banned shapes in comments + matchers).
 export function isExemptPath(filePath: string): boolean {
   return (
-    filePath.includes('/_internal/') ||
-    filePath.includes('/dist/') ||
-    filePath.includes('/build/') ||
-    filePath.includes('/node_modules/') ||
-    filePath.includes('/.claude/hooks/fleet/prefer-fn-decl-guard/') ||
+    normalizePath(filePath).includes('/_internal/') ||
+    normalizePath(filePath).includes('/dist/') ||
+    normalizePath(filePath).includes('/build/') ||
+    normalizePath(filePath).includes('/node_modules/') ||
+    normalizePath(filePath).includes('/.claude/hooks/fleet/prefer-fn-decl-guard/') ||
     // The rule lives at .config/fleet/oxlint-plugin/fleet/prefer-function-declaration/
     // (index.mts + test/), embedding the const-arrow shape it bans as rule data;
     // the per-rule dir prefix exempts both files.
-    filePath.includes(
+    normalizePath(filePath).includes(
       '/.config/fleet/oxlint-plugin/fleet/prefer-function-declaration/',
     )
   )

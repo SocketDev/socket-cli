@@ -164,7 +164,7 @@ function isReassignedInBody(body: AstNode, name: string): boolean {
       return
     }
     if (
-      (n.type === 'ForOfStatement' || n.type === 'ForInStatement') &&
+      (n.type === 'ForInStatement' || n.type === 'ForOfStatement') &&
       n.left?.type !== 'VariableDeclaration' &&
       patternWrites(n.left, name)
     ) {

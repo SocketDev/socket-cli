@@ -59,6 +59,7 @@ import { findGitmodulesIssues } from './lib/gitmodules.mts'
 import { findPackageJsonIssues } from './lib/package-json.mts'
 import { BASH_TARGETS_WORKFLOW_RE } from './lib/regexes.mts'
 import { findUsesIssues } from './lib/workflow.mts'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 const BYPASS_PHRASE = 'Allow uses-sha-verify bypass'
 
@@ -70,14 +71,14 @@ function isWorkflowOrActionPath(filePath: string): boolean {
 }
 
 function isGitmodulesPath(filePath: string): boolean {
-  return filePath.endsWith('/.gitmodules') || filePath === '.gitmodules'
+  return normalizePath(filePath).endsWith('/.gitmodules') || filePath === '.gitmodules'
 }
 
 function isPackageJsonPath(filePath: string): boolean {
-  if (filePath.includes('/node_modules/')) {
+  if (normalizePath(filePath).includes('/node_modules/')) {
     return false
   }
-  return filePath.endsWith('/package.json') || filePath === 'package.json'
+  return normalizePath(filePath).endsWith('/package.json') || filePath === 'package.json'
 }
 
 function checkBashSurface(

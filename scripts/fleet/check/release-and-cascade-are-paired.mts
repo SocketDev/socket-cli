@@ -85,7 +85,7 @@ export function resolveReleaseTemplateSha(
       return undefined
     }
     const json = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
-      templateSha?: unknown
+      templateSha?: unknown | undefined
     }
     return typeof json.templateSha === 'string' ? json.templateSha : undefined
   } catch {
@@ -110,7 +110,7 @@ export function readBundlePin(): BundlePin | undefined {
   }
   try {
     const json = JSON.parse(readFileSync(CONFIG_PATH, 'utf8')) as {
-      bundle?: { ref?: unknown; cascadeSha?: unknown } | undefined
+      bundle?: { ref?: unknown | undefined; cascadeSha?: unknown | undefined } | undefined
     }
     const ref = json.bundle?.ref
     const cascadeSha = json.bundle?.cascadeSha

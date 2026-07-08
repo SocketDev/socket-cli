@@ -21,7 +21,7 @@ export interface InvocationSignal {
   // If set, the invocation backs the claim only when one of these appears in
   // its parsed args (a subcommand like `test`, or a flag like `--test`);
   // omitted means the binary alone backs it.
-  readonly args?: readonly string[]
+  readonly args?: readonly string[] | undefined
   // The command binary (e.g. `cargo`, `pnpm`, `node`).
   readonly binary: string
 }
@@ -34,7 +34,7 @@ export interface ClaimRule {
   readonly claim: RegExp
   // Parsed command invocations that back the claim — matched via the shell AST
   // parser (sees through `&&`/`|`/`;` and quoting), never a command-parsing regex.
-  readonly commands?: readonly InvocationSignal[]
+  readonly commands?: readonly InvocationSignal[] | undefined
   // One-line hint.
   readonly hint: string
   // Category label.

@@ -13,7 +13,7 @@ import type { DoctorFinding } from './catalog-gap.mts'
  * %G? signature codes from `git log --format=%H%x09%G?`:
  * G/U/X/Y/R = has a valid or untrusted sig; N/E/B = no valid sig.
  */
-const UNSIGNED_CODES = new Set(['N', 'E', 'B'])
+const UNSIGNED_CODES = new Set(['B', 'E', 'N'])
 
 /**
  * Detect unpushed default-branch commits that lack a GPG/SSH signature.

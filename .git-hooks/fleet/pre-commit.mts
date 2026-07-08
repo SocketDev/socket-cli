@@ -367,14 +367,14 @@ const main = (): number => {
       // semantics, naming conventions) as historical documentation —
       // they're not commands. Skip the npx/dlx scan for changelogs.
       file === 'CHANGELOG.md' ||
-      file.endsWith('/CHANGELOG.md') ||
+      normalizePath(file).endsWith('/CHANGELOG.md') ||
       // Generated dispatch bundles embed the npx-DETECTING guards
       // themselves — pattern tables plus fix-guidance strings showing
       // real `npx <pkg>` examples. Their SOURCES are scanned; the built
       // artifact is exempt (flagging it blocks every cascade that ships
       // a rebuilt bundle).
-      file.endsWith('/_dispatch/bundle.cjs') ||
-      file.endsWith('/_dispatch/snapshot-bundle.cjs')
+      normalizePath(file).endsWith('/_dispatch/bundle.cjs') ||
+      normalizePath(file).endsWith('/_dispatch/snapshot-bundle.cjs')
     ) {
       continue
     }
@@ -466,9 +466,9 @@ const main = (): number => {
       stripTemplateLayer(file).startsWith('template/.git-hooks/') ||
       stripTemplateLayer(file).startsWith('template/scripts/') ||
       stripTemplateLayer(file).startsWith('template/bootstrap/') ||
-      file.includes('/external/') ||
-      file.includes('/vendor/') ||
-      file.includes('/upstream/') ||
+      normalizePath(file).includes('/external/') ||
+      normalizePath(file).includes('/vendor/') ||
+      normalizePath(file).includes('/upstream/') ||
       // src/logger/ IS the logger — implementing the surface itself
       // requires direct console.* calls. Same exemption the
       // logger-guard PreToolUse hook applies.
@@ -522,9 +522,9 @@ const main = (): number => {
       file.startsWith('.git-hooks/') ||
       file.startsWith('.claude/hooks/') ||
       file.endsWith('.md') ||
-      file.includes('/external/') ||
-      file.includes('/vendor/') ||
-      file.includes('/upstream/') ||
+      normalizePath(file).includes('/external/') ||
+      normalizePath(file).includes('/vendor/') ||
+      normalizePath(file).includes('/upstream/') ||
       file === 'pnpm-lock.yaml' ||
       file === 'pnpm-workspace.yaml'
     ) {

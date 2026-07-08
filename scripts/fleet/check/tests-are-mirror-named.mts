@@ -35,6 +35,7 @@ import { globSync } from '@socketsecurity/lib-stable/globs/match'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from '../paths.mts'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 const logger = getDefaultLogger()
 
@@ -60,7 +61,7 @@ function testBasename(testPath: string): string {
 
 // True when the test lives under an exempt category segment.
 function isExemptLocation(relTestPath: string): boolean {
-  return relTestPath.split('/').some(seg => EXEMPT_SEGMENTS.has(seg))
+  return normalizePath(relTestPath).split('/').some(seg => EXEMPT_SEGMENTS.has(seg))
 }
 
 // True when the test's first line carries the inline-marker escape:
@@ -85,6 +86,8 @@ export function firstPartyImports(
   repoRoot: string,
 ): string[] {
   const out = new Set<string>()
+  // Static import/export-from: `import … from 'spec'` or `export … from 'spec'`.
+  // Dynamic import call: `import('spec')` with optional surrounding whitespace.
   const re = /(?:import|export)[^'"]*?from\s*['"]([^'"]+)['"]|import\s*\(\s*['"]([^'"]+)['"]\s*\)/g
   let m: RegExpExecArray | null
   // eslint-disable-next-line no-cond-assign
@@ -103,7 +106,7 @@ export function firstPartyImports(
     if (rel.startsWith('..')) {
       continue
     }
-    const first = rel.split('/')[0]
+    const first = normalizePath(rel).split('/')[0]
     if (!SOURCE_ROOTS.includes(first ?? '')) {
       continue
     }
@@ -119,14 +122,16 @@ export function firstPartyImports(
  * (they key off file existence / a prefix, not the import list).
  */
 export function isBlessedVariant(basename: string, sources: string[]): boolean {
-  for (const src of sources) {
-    const parts = src.split('/')
+  for (let i = 0, { length } = sources; i < length; i += 1) {
+    const src = sources[i]!;
+    const parts = normalizePath(src).split('/')
     const srcBase = path.basename(src).replace(/\.[cm]?[jt]sx?$/, '')
     const parent = parts[parts.length - 2] ?? ''
     const grandparent = parts[parts.length - 3] ?? ''
     if (srcBase === 'index' && (basename === parent || basename === grandparent)) {
       return true
     }
+  
   }
   return false
 }

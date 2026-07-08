@@ -16,7 +16,7 @@
 import { existsSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 
 import type { Dirent } from 'node:fs'
 

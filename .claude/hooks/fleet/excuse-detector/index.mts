@@ -15,9 +15,9 @@
 // `notify()`.
 
 import {
-  LEDGER_TTL_MS,
   computeActorId,
   isActorLive,
+  LEDGER_TTL_MS,
   listOtherActorLedgerPaths,
   readActorLedger,
   resolveStoreRoot,

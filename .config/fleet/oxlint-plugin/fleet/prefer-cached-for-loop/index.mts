@@ -142,6 +142,7 @@ const rule = {
     // valid-everywhere JS is never wrong, while emitting `!` into an unknown
     // file kind can be.
     const filename = context.filename ?? context.getFilename?.() ?? ''
+    // TypeScript file extension: `.cts`, `.mts`, `.ts`, or `.tsx`.
     const nonNullAssertion = /\.(?:cts|mts|tsx?)$/.test(filename) ? '!' : ''
 
     // Scope-aware kind resolver. Shared with no-cached-for-on-iterable

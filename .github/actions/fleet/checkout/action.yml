@@ -1,0 +1,173 @@
+# Layer 1 — leaf action (no internal SocketDev refs). Consumed by
+# `setup-and-install` (Layer 2b) + `_local-not-for-reuse-*.yml` (Layer 4).
+# When this file bumps, the cascade is: 2b → 3 → 4 → external repos.
+# See updating-workflows skill at .claude/skills/updating-workflows/.
+# cascade-data-deps: ., .github, .github/actions/fleet/lib, external-tools.json
+# (read at runtime via ${GITHUB_ACTION_PATH}/../… — implicit edges with no
+# `uses:` line; action-pins-are-current.mts tracks them for staleness.)
+
+name: 'Checkout'
+description: 'Checkout repository with sensible defaults (fetch-depth 100, persist-credentials false)'
+
+inputs:
+  fetch-depth:
+    description: 'Number of commits to fetch (0 = full history)'
+    required: false
+    default: '100'
+  ref:
+    description: 'Git ref to checkout'
+    required: false
+    default: ''
+  working-directory:
+    description: 'Subdirectory to check out into'
+    required: false
+    default: '.'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Clear git extraheader config
+      shell: bash
+      run: |
+        # Clear any extraheader config that may cause duplicate Authorization headers.
+        git config --global --unset-all "http.https://github.com/.extraheader" 2>/dev/null || true
+
+    - name: Checkout code
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-15)
+      with:
+        ref: ${{ inputs.ref }}
+        path: ${{ inputs.working-directory != '.' && inputs.working-directory || '' }}
+        fetch-depth: ${{ inputs.fetch-depth }}
+        persist-credentials: false
+
+    - name: Install zizmor
+      # Auto-skip in matrix cells: zizmor has its own per-platform
+      # binary support matrix (darwin-arm64, linux-x64, …), and its
+      # `.github` audit is Node-version-indifferent — running it in
+      # every (Node 22/24 × ubuntu/macos/windows) cell wastes runner
+      # minutes and breaks on unsupported cells. `strategy.job-total`
+      # is empty for non-matrix jobs and `1` for 1×1 matrices, so
+      # `< 2` keeps scan-style jobs running zizmor while matrix test
+      # cells silently skip. No user-facing input — preventing PR
+      # authors from disabling scans via workflow inputs.
+      if: strategy.job-total < 2
+      shell: bash
+      run: | # zizmor: ignore[github-env]
+        set -euo pipefail
+        # Single source of truth: external-tools.json at the repo root. Resolve
+        # from GITHUB_WORKSPACE (the full working-tree this action's checkout
+        # step just populated) FIRST — GITHUB_ACTION_PATH points into the
+        # workflow's INITIAL sparse checkout (cone mode fetches only .github/ to
+        # load this local action), where the repo-root external-tools.json is
+        # NOT materialized, so the old `${GITHUB_ACTION_PATH}/../../../../` path
+        # 404s under sparse-checkout even though the file is tracked. Fall back
+        # to the action-relative path for any context without GITHUB_WORKSPACE.
+        TOOLS_FILE="${GITHUB_WORKSPACE:-}/external-tools.json"
+        if [ -z "${GITHUB_WORKSPACE:-}" ] || [ ! -f "$TOOLS_FILE" ]; then
+          TOOLS_FILE="${GITHUB_ACTION_PATH}/../../../../external-tools.json"
+        fi
+        if [ ! -f "$TOOLS_FILE" ]; then
+          echo "× the fleet checkout action is broken: external-tools.json not found at ${TOOLS_FILE}." >&2
+          echo "  This is a packaging bug in the fleet scaffolding, not a consumer issue. File a bug." >&2
+          echo "" >&2
+          echo "  Diagnostics — what's actually present at runtime:" >&2
+          echo "    GITHUB_ACTION_PATH=${GITHUB_ACTION_PATH}" >&2
+          echo "    ls -la \"\${GITHUB_ACTION_PATH}\":" >&2
+          ls -la "${GITHUB_ACTION_PATH}" 2>&1 | sed 's/^/      /' >&2 || true
+          echo "    ls -la \"\${GITHUB_ACTION_PATH}/..\" (parent — should be .github/actions/fleet/):" >&2
+          ls -la "${GITHUB_ACTION_PATH}/.." 2>&1 | sed 's/^/      /' >&2 || true
+          echo "    ls -la \"\${GITHUB_ACTION_PATH}/../..\" (grandparent — should be .github/actions/):" >&2
+          ls -la "${GITHUB_ACTION_PATH}/../.." 2>&1 | sed 's/^/      /' >&2 || true
+          echo "    ls -la \"\${GITHUB_ACTION_PATH}/../../..\" (should be .github/):" >&2
+          ls -la "${GITHUB_ACTION_PATH}/../../.." 2>&1 | sed 's/^/      /' >&2 || true
+          echo "    ls -la \"\${GITHUB_ACTION_PATH}/../../../..\" (should be repo root):" >&2
+          ls -la "${GITHUB_ACTION_PATH}/../../../.." 2>&1 | sed 's/^/      /' >&2 || true
+          exit 1
+        fi
+        # Read JSON values via lib/jq.mjs. See setup/action.yml for
+        # the rationale (Node is universally preinstalled where jq is
+        # not). The reader exits non-zero on missing/empty values, so
+        # set -e turns a packaging bug here into a loud failure.
+        JQ="${GITHUB_ACTION_PATH}/../lib/jq.mjs"
+        # The tools file nests entries under `tools` (current schema) or at the
+        # top level (legacy flat). Probe once; an empty $NS splits away.
+        NS="tools"
+        node "$JQ" "$TOOLS_FILE" tools >/dev/null 2>&1 || NS=""
+        ZIZMOR_VERSION="$(node "$JQ" "$TOOLS_FILE" $NS zizmor version)"
+        ZIZMOR_DIR="${RUNNER_TEMP:-/tmp}/zizmor-bin"
+        # zizmor upstream does NOT publish musl or win-arm64 binaries
+        # — see external-tools.json zizmor._notes. On those platforms
+        # we gracefully skip the install (below) and stash a sentinel
+        # so the paired Audit step can detect "no zizmor available"
+        # without failing the job. Skipping is preferable to hard-
+        # failing because zizmor is a security audit, not a build
+        # dependency: losing the audit on win-arm64 is worse than
+        # failing the whole build there.
+        PLATFORM_TOOL="${GITHUB_ACTION_PATH}/../lib/platform.mjs"
+        PLATFORM="$(node "$PLATFORM_TOOL")"
+        # Soft-skip when zizmor upstream has no binary for this
+        # platform. SOCKET_TOOL_ZIZMOR_AVAILABLE=false signals the
+        # Audit step to skip cleanly. lib/jq.mjs exits non-zero when
+        # the key is missing — capture that without tripping set -e.
+        ASSET=""
+        if ASSET_TRY="$(node "$JQ" "$TOOLS_FILE" $NS zizmor platforms "$PLATFORM" asset 2>/dev/null)"; then
+          ASSET="$ASSET_TRY"
+        fi
+        if [ -z "$ASSET" ]; then
+          echo "ℹ zizmor is not published for ${PLATFORM} at v${ZIZMOR_VERSION} — skipping audit on this runner."
+          echo "  See external-tools.json zizmor._notes for the supported set."
+          echo "SOCKET_TOOL_ZIZMOR_AVAILABLE=false" >> "${GITHUB_ENV:-/dev/null}"
+          exit 0
+        fi
+        INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS zizmor platforms "$PLATFORM" integrity)"
+        ZIZMOR_BIN="$ZIZMOR_DIR/zizmor"
+        [[ "$ASSET" == *.zip ]] && ZIZMOR_BIN="$ZIZMOR_DIR/zizmor.exe"
+        # Shared installer: fetches, integrity-verifies (SRI), extracts.
+        INSTALL_TOOL="${GITHUB_ACTION_PATH}/../lib/install-tool.mjs"
+        if [ ! -x "$ZIZMOR_BIN" ]; then
+          node "$INSTALL_TOOL" \
+            "https://github.com/zizmorcore/zizmor/releases/download/v${ZIZMOR_VERSION}/${ASSET}" \
+            "$INTEGRITY" \
+            "$ZIZMOR_DIR"
+        fi
+        echo "$ZIZMOR_DIR" >> "${GITHUB_PATH:-/dev/null}"
+        # Export canonical zizmor provenance in the shared SOCKET_TOOL_*
+        # namespace so consumer jobs and Docker builds can reference a
+        # single SOT without re-parsing external-tools.json.
+        {
+          echo "SOCKET_TOOL_ZIZMOR_AVAILABLE=true"
+          echo "SOCKET_TOOL_ZIZMOR_VERSION=$ZIZMOR_VERSION"
+          echo "SOCKET_TOOL_ZIZMOR_PLATFORM=$PLATFORM"
+          echo "SOCKET_TOOL_ZIZMOR_ASSET=$ASSET"
+          echo "SOCKET_TOOL_ZIZMOR_INTEGRITY=$INTEGRITY"
+          echo "SOCKET_TOOL_ZIZMOR_BIN=$ZIZMOR_BIN"
+          echo "SOCKET_TOOL_ZIZMOR_DIR=$ZIZMOR_DIR"
+        } >> "${GITHUB_ENV:-/dev/null}"
+
+    - name: Audit GitHub Actions
+      # Paired with "Install zizmor" above; see that step's comment
+      # for the rationale behind the matrix-auto-skip.
+      # Also honors SOCKET_TOOL_ZIZMOR_AVAILABLE=false, which the
+      # install step sets when zizmor upstream has no binary for the
+      # current runner platform (linux-musl, win-arm64). Skipping
+      # silently is intentional: zizmor is a security audit, not a
+      # build dep, so losing audit coverage on an unsupported runner
+      # is preferable to failing every build there.
+      if: strategy.job-total < 2 && env.SOCKET_TOOL_ZIZMOR_AVAILABLE != 'false'
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        if [ -d .github ]; then
+          # Pass --gh-token only when a token is actually present. In a local
+          # agent-ci run github.token is empty, and zizmor 1.25+ treats an empty
+          # `--gh-token ""` as a real token, then fatally errors ("no audit was
+          # performed") when its online impostor-commit check can't reach the
+          # GitHub API. Omitting the flag makes zizmor skip its online audits
+          # cleanly; CI (with a real token) still runs the full online set.
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            zizmor .github --gh-token "${GITHUB_TOKEN}" --min-severity medium
+          else
+            zizmor .github --min-severity medium
+          fi
+        fi

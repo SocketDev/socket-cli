@@ -34,6 +34,7 @@
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 const ALLOW_MARKER = '# socket-lint: allow soak-exclude-no-date-annotation'
 const BYPASS_PHRASE = 'Allow soak-exclude-no-date-annotation bypass'
@@ -133,7 +134,7 @@ export function findOrphanEntries(text: string): OrphanReport[] {
 }
 
 export const check = editGuard((filePath, content, payload) => {
-  if (!filePath.endsWith('/pnpm-workspace.yaml')) {
+  if (!normalizePath(filePath).endsWith('/pnpm-workspace.yaml')) {
     return undefined
   }
   const proposed = content ?? ''

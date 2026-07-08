@@ -116,6 +116,7 @@ export const KNOWN_CATEGORIES: ReadonlySet<string> = new Set([
   'package_files_required_missing_on_disk',
   'package_manager_drift',
   'parse_error',
+  'preset_missing',
   'readme_skeleton_missing_section',
   'readme_skeleton_missing_social_badges',
   'readme_skeleton_relative_sibling',
@@ -132,6 +133,7 @@ export const KNOWN_CATEGORIES: ReadonlySet<string> = new Set([
   'tsconfig_extends_wrong_path',
   'unpinned_workflow',
   'uses_comment_drift',
+  'workflow_flat_action_ref',
   'workflow_fleet_drift',
   'workflow_fleet_missing',
   'workflow_npm_install',
@@ -205,6 +207,7 @@ export const SYNC_TARGETS: Readonly<Record<string, SyncTarget>> = {
       'fleet_mirror_orphan',
       'missing_required',
       'tombstone_orphan',
+      'workflow_flat_action_ref',
     ],
   },
   'git-meta': {
@@ -285,6 +288,14 @@ export const SYNC_TARGETS: Readonly<Record<string, SyncTarget>> = {
       'workspace_trust_exclude',
     ],
   },
+  presets: {
+    description:
+      'Seed-once starters (template/presets/) — github-release.yml + ' +
+      'npm-publish.yml workflow defaults, copied only where absent; an ' +
+      'existing target is repo-owned and never touched.',
+    scopes: ALL_SCOPES,
+    categories: ['preset_missing'],
+  },
   // --- Composite targets (expand into other targets) ---
   all: {
     description:
@@ -302,6 +313,7 @@ export const SYNC_TARGETS: Readonly<Record<string, SyncTarget>> = {
       'package-baseline',
       'package-manager',
       'pnpm-workspace',
+      'presets',
     ],
   },
   dogfood: {

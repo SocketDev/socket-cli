@@ -800,7 +800,8 @@ async function runApprove(options: {
   let approved = 0
   let failed = 0
   const approvedEntries: StageListEntry[] = []
-  for (const stageId of verified) {
+  for (let i = 0, { length } = verified; i < length; i += 1) {
+    const stageId = verified[i]!;
     const args = ['stage', 'approve', stageId]
     if (otp) {
       args.push('--otp', otp)
@@ -817,6 +818,7 @@ async function runApprove(options: {
       failed += 1
       logger.fail(`Approve ${stageId} exited ${code}`)
     }
+  
   }
   if (failed > 0) {
     logger.fail(`${failed}/${verified.length} failed; ${approved} approved`)
@@ -853,8 +855,8 @@ function readPackageJson(): { name: string; version: string } {
  * sha512 — a different axis — so it is not reduced to sha1 here.)
  */
 export function readStagedShasum(entry: {
-  dist?: { shasum?: unknown } | undefined
-  shasum?: unknown
+  dist?: { shasum?: unknown | undefined } | undefined
+  shasum?: unknown | undefined
 }): string | undefined {
   if (typeof entry.shasum === 'string' && entry.shasum) {
     return entry.shasum

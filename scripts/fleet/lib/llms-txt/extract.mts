@@ -14,7 +14,7 @@ import type { RepoFacts } from './types.mts'
  * error or missing file.
  */
 function readJson(filePath: string): Record<string, unknown> | undefined {
-  if (!existsSync(filePath)) return undefined
+  if (!existsSync(filePath)) {return undefined}
   try {
     return JSON.parse(readFileSync(filePath, 'utf8')) as Record<string, unknown>
   } catch {
@@ -28,7 +28,7 @@ function readJson(filePath: string): Record<string, unknown> | undefined {
  * up to 400 characters.
  */
 export function extractReadmeLead(readmePath: string): string | undefined {
-  if (!existsSync(readmePath)) return undefined
+  if (!existsSync(readmePath)) {return undefined}
   const text = readFileSync(readmePath, 'utf8')
   const lines = text.split('\n')
   let inParagraph = false
@@ -43,13 +43,13 @@ export function extractReadmeLead(readmePath: string): string | undefined {
         trimmed.startsWith('![') ||
         trimmed === ''
       )
-        continue
+        {continue}
       inParagraph = true
     }
-    if (trimmed === '') break
+    if (trimmed === '') {break}
     paragraphLines.push(trimmed)
   }
-  if (paragraphLines.length === 0) return undefined
+  if (paragraphLines.length === 0) {return undefined}
   const joined = paragraphLines.join(' ')
   return joined.length > 400 ? joined.slice(0, 400) : joined
 }
@@ -92,7 +92,7 @@ function resolveLayout(
     return config['layout'] as 'monorepo' | 'single-package'
   }
   // npm/yarn workspaces field.
-  if (pkg?.['workspaces'] !== undefined) return 'monorepo'
+  if (pkg?.['workspaces'] !== undefined) {return 'monorepo'}
   // pnpm workspaces file (no workspaces field in package.json).
   let stat
   try {
@@ -100,7 +100,7 @@ function resolveLayout(
   } catch {
     stat = undefined
   }
-  if (stat?.isFile()) return 'monorepo'
+  if (stat?.isFile()) {return 'monorepo'}
   return 'single-package'
 }
 

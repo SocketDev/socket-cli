@@ -16,7 +16,7 @@
 
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 
 import { checkGitVersion, logger } from './git-partial-submodule-internal.mts'
 import type { CommonOpts } from './git-partial-submodule-internal.mts'

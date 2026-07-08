@@ -37,7 +37,7 @@ import { parseArgs } from 'node:util'
 
 import { getArch, WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 import { downloadBinary } from '@socketsecurity/lib-stable/dlx/binary'
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { safeDelete, safeMkdirSync } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import {

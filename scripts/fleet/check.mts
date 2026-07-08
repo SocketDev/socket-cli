@@ -97,6 +97,11 @@ const steps: Array<() => boolean> = [
   // permissions. Fleet enforcement of the zizmor `github-app` audit so it holds
   // even where zizmor soft-skips (no upstream binary for the platform).
   () => run('node', ['scripts/fleet/check/app-tokens-are-scoped.mts']),
+  // .github/actions/ segmentation: only the fleet/ (cascade-owned) + repo/
+  // (host-owned) tiers — a flat action dir sits outside both ownership tiers
+  // (the cascade's tombstones prune the historical flat locations). Same
+  // fleet/repo split as .claude/hooks/ and the oxlint plugin.
+  () => run('node', ['scripts/fleet/check/actions-are-segmented.mts']),
   // Single-source for the co-located app-token minter: every action dir's
   // mint-app-installation-token.mjs copy must be byte-identical (the inlined
   // form of single-source-of-truth — a drifted copy mints with stale logic).
@@ -333,6 +338,15 @@ const steps: Array<() => boolean> = [
   // Path-hygiene check (1 path, 1 reference). Mantra-driven gate;
   // see .claude/skills/path-guard/ + .claude/hooks/fleet/path-guard/.
   () => run('node', ['scripts/fleet/check/paths-are-canonical.mts', '--quiet']),
+  // Separator-sensitive ops on un-normalized path vars — the commit-time
+  // belt for the trees oxlint doesn't reach (live hooks); the AST rule
+  // socket/normalize-path-before-match is the write-time twin. Backlog
+  // cleared to zero 2026-07-07; any finding here is a regression.
+  () =>
+    run('node', [
+      'scripts/fleet/check/paths-are-normalized-before-match.mts',
+      '--quiet',
+    ]),
   // Lock-step reference hygiene. Opt-in gate that exits clean when the
   // repo-owned .config/repo/lock-step-refs.json (legacy top-level
   // .config/lock-step-refs.json) is absent; for repos that ship

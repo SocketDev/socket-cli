@@ -36,11 +36,18 @@
 //           (~/.claude/gh-workflow-grant = `<session_id>\n<unix_ms>`).
 //        d. The next `gh workflow run` verifies the grant's session_id
 //           matches the dispatching session, then consumes it (deletes
-//           the file). A grant planted by another process / session is
-//           rejected. Any further dispatch needs a fresh phrase + auth.
-//        e. User manually re-revokes scope via
-//           `gh auth refresh -r workflow` when done (revoke needs no
-//           bypass).
+//           the file) AND marks the elevation SPENT. A grant planted by
+//           another process / session is rejected.
+//        e. SINGLE-USE ELEVATION (enforced, not just documented): the
+//           OAuth `workflow` scope can't be dropped from a hook (`gh auth
+//           refresh -r` re-runs the interactive OAuth flow), so it lingers
+//           on the token after its one dispatch. The SPENT marker
+//           (~/.claude/gh-workflow-spent) is how the guard enforces
+//           single-use anyway — while the scope is still live and spent,
+//           it BLOCKS a second dispatch and BLOCKS re-arming via `-s
+//           workflow`, forcing a real `gh auth refresh -r workflow` first.
+//           Revoking clears the marker (self-heal on next run: scope
+//           observed absent → marker cleared). Revoke needs no bypass.
 //
 //   4. KEYCHAIN-CLI READ DETECTION. Routing through the existing
 //      `no-blind-keychain-read-guard` handles `security
@@ -147,6 +154,20 @@ const WORKFLOW_GRANT_FILE = path.join(
   '.claude',
   'gh-workflow-grant',
 )
+// Marks an elevation as SPENT: written when the single dispatch consumes its
+// grant, cleared when the scope is next observed absent (the user de-elevated).
+// Presence = "this elevation was already used." The OAuth `workflow` scope
+// cannot be dropped from a hook (`gh auth refresh -r` re-runs the interactive
+// OAuth flow), so the elevation genuinely persists on the token after its one
+// use; this sentinel is how the guard ENFORCES single-use — it blocks a second
+// dispatch and blocks re-arming the scope until the token is actually
+// de-elevated. Presence-only (not session-bound): a planted sentinel only makes
+// the guard stricter (fail-safe), and the scope is global to the token anyway.
+const WORKFLOW_SPENT_FILE = path.join(
+  os.homedir(),
+  '.claude',
+  'gh-workflow-spent',
+)
 const TOKEN_ISSUED_AT_FILE = path.join(
   os.homedir(),
   '.claude',
@@ -240,10 +261,37 @@ export const check = bashGuard((command, payload): GuardResult => {
     isWorkflowDispatchCommand(command) || isWorkflowApiDispatch(command)
   const isWorkflowRefresh = isWorkflowScopeRefresh(command)
   const hasWorkflowScope = status.scopes.includes('workflow')
+  // Self-heal: scope absent means the token was de-elevated (revoked, or a
+  // fresh login), so any stale "spent" marker no longer applies — clear it so
+  // the next elevation starts clean.
+  if (!hasWorkflowScope) {
+    clearElevationSpent()
+  }
   if (isWorkflowRefresh) {
-    // Revoke is always allowed (no bypass needed).
+    // Revoke is always allowed (no bypass needed) — it's the de-elevation
+    // this guard pushes you toward.
     if (isWorkflowScopeRevoke(command)) {
       return undefined
+    }
+    // Single-use elevation: a spent elevation whose scope is STILL live can't
+    // be re-armed. The one dispatch it authorized is used up, and the OAuth
+    // scope can't be dropped from here, so the token must be really
+    // de-elevated (`gh auth refresh -r workflow`) before a new elevation. This
+    // is what makes "single-use" mean the elevation, not just the grant.
+    if (hasWorkflowScope && isElevationSpent()) {
+      return fail(
+        'gh-token-hygiene-guard: elevation already spent — de-elevate before re-arming',
+        [
+          'This `workflow` elevation already authorized its one dispatch. The',
+          'scope is still live on the token (a hook cannot silently drop it),',
+          'so re-arming without de-elevating would defeat single-use.',
+          '',
+          'To elevate again:',
+          '  1. Run: gh auth refresh -h github.com -r workflow',
+          `  2. Type \`${BYPASS_PHRASE}\` in chat (this session).`,
+          '  3. Run: gh auth refresh -h github.com -s workflow',
+        ].join('\n'),
+      )
     }
     // Refresh-add: chat-bypass phrase + Touch ID sudo prompt both
     // required. The phrase alone isn't sufficient — an attacker who
@@ -297,7 +345,26 @@ export const check = bashGuard((command, payload): GuardResult => {
           `  1. Type \`${BYPASS_PHRASE}\` in chat.`,
           '  2. Run: gh auth refresh -h github.com -s workflow',
           '  3. Re-run your dispatch command.',
-          '  4. Scope auto-revokes after one dispatch.',
+          '  4. When done, de-elevate: gh auth refresh -h github.com -r workflow',
+        ].join('\n'),
+      )
+    }
+    // Single-use elevation: the one dispatch this elevation authorized is
+    // already used, but the scope is still live. Force a real de-elevation
+    // before another dispatch rather than letting the hot scope be reused.
+    if (isElevationSpent()) {
+      return fail(
+        'gh-token-hygiene-guard: elevation already spent — de-elevate before another dispatch',
+        [
+          'This `workflow` elevation already authorized its one dispatch. The',
+          'scope lingers on the token (a hook cannot silently drop it), so a',
+          'second dispatch must start from a fresh, de-elevated token.',
+          '',
+          'To dispatch again:',
+          '  1. Run: gh auth refresh -h github.com -r workflow',
+          `  2. Type \`${BYPASS_PHRASE}\` in chat (this session).`,
+          '  3. Run: gh auth refresh -h github.com -s workflow',
+          '  4. Re-run your dispatch command in the SAME session.',
         ].join('\n'),
       )
     }
@@ -597,6 +664,32 @@ function verifyWorkflowGrant(sessionId: string | undefined): boolean {
 function consumeWorkflowGrant(): void {
   try {
     rmSync(WORKFLOW_GRANT_FILE, { force: true })
+  } catch {
+    // best-effort
+  }
+  // The grant is gone, but the OAuth scope is still live on the token (a hook
+  // can't silently revoke it). Mark the elevation SPENT so the guard forces a
+  // real de-elevation before the scope can be dispatched with or re-armed.
+  markElevationSpent()
+}
+
+function markElevationSpent(): void {
+  try {
+    mkdirSync(path.dirname(WORKFLOW_SPENT_FILE), { recursive: true })
+    writeFileSync(WORKFLOW_SPENT_FILE, String(Date.now()), 'utf8')
+  } catch {
+    // best-effort; a missing sentinel only relaxes to the pre-existing
+    // grant-only single-use, never opens a new dispatch path.
+  }
+}
+
+function isElevationSpent(): boolean {
+  return existsSync(WORKFLOW_SPENT_FILE)
+}
+
+function clearElevationSpent(): void {
+  try {
+    rmSync(WORKFLOW_SPENT_FILE, { force: true })
   } catch {
     // best-effort
   }

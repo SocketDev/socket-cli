@@ -110,6 +110,11 @@ export const ToolEntry = Type.Object(
     packageManager: Type.Optional(PackageManager),
     repository: Type.Optional(Type.String()),
     release: Type.Optional(ReleaseKind),
+    // Upstream source repo URL + its tag for a tool built from source rather
+    // than fetched as a release artifact (e.g. socket-btm's zig, built from
+    // the Codeberg mirror).
+    source: Type.Optional(Type.String()),
+    sourceTag: Type.Optional(Type.String()),
     // npm SRI (sha512-…) or single-artifact SRI (sha256-…).
     integrity: Type.Optional(Type.String()),
     // checksum map: key → hex sha256 (bundle-tools) or { asset, sha256 }

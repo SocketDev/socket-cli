@@ -30,7 +30,10 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+// prefer-async-spawn: sync-required - top-level CLI runner, single oxfmt reformat.
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
+import { buildOxfmtArgs } from './_shared/format-scope.mts'
 import { REPO_ROOT } from './paths.mts'
 
 const logger = getDefaultLogger()
@@ -209,15 +212,16 @@ export function compareSemver(a: string, b: string): number {
  * unrelated member PR during a rollout window. A pin AHEAD of the source, or an
  * invalid shape, is a hard drift.
  *
- * `packageManager` removal (corepack disabled) and any `devEngines.packageManager`
- * reshape are always benign — the devEngines range is major-bounded and
- * advisory, so a member on an older cascade still satisfies it and a later
- * cascade reconciles the exact bytes; neither is ever a hard fail.
+ * `packageManager` removal (corepack disabled) and any
+ * `devEngines.packageManager` reshape are always benign — the devEngines range
+ * is major-bounded and advisory, so a member on an older cascade still
+ * satisfies it and a later cascade reconciles the exact bytes; neither is ever
+ * a hard fail.
  */
 export function isBehindSource(drift: PinDrift): boolean {
   if (
-    drift.field === 'packageManager' ||
-    drift.field === 'devEngines.packageManager'
+    drift.field === 'devEngines.packageManager' ||
+    drift.field === 'packageManager'
   ) {
     return true
   }
@@ -333,6 +337,20 @@ function main(): number {
     return 1
   }
   writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`, 'utf8')
+  // Re-run the fleet formatter over the freshly-written file: inserting a new
+  // top-level key (devEngines) via plain object assignment appends it at the
+  // end of enumeration order, which oxfmt's alphabetical package.json sort
+  // then flags as a format violation on the very next `pnpm run format:check`.
+  // Reformat here so the write already matches what the format gate expects.
+  const formatResult = spawnSync('pnpm', buildOxfmtArgs({ files: [pkgPath] }), {
+    shell: process.platform === 'win32',
+    stdio: 'inherit',
+  })
+  if (formatResult.status !== 0) {
+    logger.warn(
+      `[sync-package-manager-pins] oxfmt reformat of package.json exited ${String(formatResult.status)} — run \`pnpm run format\` manually.`,
+    )
+  }
   logger.success(
     '[sync-package-manager-pins] synced package.json pins from external-tools.json:',
   )

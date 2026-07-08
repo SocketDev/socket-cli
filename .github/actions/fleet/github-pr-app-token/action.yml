@@ -1,0 +1,50 @@
+name: PR app token
+description: >-
+  Mint a short-lived GitHub App installation token for the Socket PR/comment app
+  (open + update PRs, push branches, post comments + labels). Commits made via
+  this token are auto-verified and trigger on:push / on:pull_request workflows
+  (unlike the default GITHUB_TOKEN). Caller passes the canonical secret/var refs.
+  Fleet-shared: authored in
+  socket-wheelhouse's socket-registry override, cascaded into socket-registry,
+  and consumed fleet-wide via
+  `uses: ./.github/actions/fleet/github-pr-app-token`.
+
+inputs:
+  client-id:
+    description: 'PR App Client ID — pass vars.SOCKET_PR_CLIENT_ID.'
+    required: true
+  private-key:
+    description: 'PR App private key — pass secrets.SOCKET_PR_APP_PRIVATE_KEY.'
+    required: true
+  owner:
+    description: 'Org/owner to scope the token to. Empty = the current repo owner.'
+    required: false
+    default: ''
+  repositories:
+    description: 'Newline/comma list of repos to scope the token to. Empty = all repos the app can access in owner.'
+    required: false
+    default: ''
+
+outputs:
+  token:
+    description: 'The minted installation token (pass as GH_TOKEN / checkout token).'
+    value: ${{ steps.app-token.outputs.token }}
+
+runs:
+  using: composite
+  steps:
+    # Socket-owned, dep-0 minter co-located with this action — runs via
+    # $GITHUB_ACTION_PATH so it travels when a member consumes the action
+    # cross-repo, and as plain .mjs it needs no recent runner Node. Least-
+    # privilege: PERMISSIONS is the exact scope this app needs; zizmor doesn't
+    # inspect a run-step mint, so app-tokens-are-scoped.mts is the sole gate that
+    # PERMISSIONS is present + non-blank.
+    - id: app-token
+      shell: bash
+      env:
+        APP_PRIVATE_KEY: ${{ inputs.private-key }}
+        CLIENT_ID: ${{ inputs.client-id }}
+        OWNER: ${{ inputs.owner || github.repository_owner }}
+        PERMISSIONS: '{"contents":"write","issues":"write","pull_requests":"write"}'
+        REPOSITORIES: ${{ inputs.repositories }}
+      run: node "${{ github.action_path }}/mint-app-installation-token.mjs"

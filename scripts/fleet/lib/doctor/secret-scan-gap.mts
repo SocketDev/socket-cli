@@ -46,7 +46,7 @@ export function readHitLocation(sourceMetadata: unknown): {
     sourceMetadata &&
     typeof sourceMetadata === 'object' &&
     'Data' in sourceMetadata
-      ? (sourceMetadata as { Data?: unknown }).Data
+      ? (sourceMetadata as { Data?: unknown | undefined }).Data
       : undefined
   if (!data || typeof data !== 'object') {
     return { file: undefined, line: undefined }
@@ -112,7 +112,7 @@ export function parseTruffleHogFindings(jsonlOutput: string): TruffleHogHit[] {
  * operator triages the confirmed leaks before the pattern matches.
  */
 export function sortHits(hits: readonly TruffleHogHit[]): TruffleHogHit[] {
-  return [...hits].sort((a, b) => {
+  return [...hits].toSorted((a, b) => {
     if (a.verified !== b.verified) {
       return a.verified ? -1 : 1
     }

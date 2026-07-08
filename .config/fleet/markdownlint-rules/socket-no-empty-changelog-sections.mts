@@ -15,6 +15,8 @@
  *   on the same rule.
  */
 
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+
 import type { MarkdownlintRule } from './_shared/rule-types.mts'
 
 const RULE_NAME = 'socket-no-empty-changelog-sections'
@@ -42,7 +44,7 @@ const rule: MarkdownlintRule = {
     'CHANGELOG.md Keep-a-Changelog section headings must have at least one bullet',
   function(params, onError) {
     const filePath = params.name ?? ''
-    const baseName = filePath.split('/').pop() ?? ''
+    const baseName = normalizePath(filePath).split('/').pop() ?? ''
     if (baseName !== 'CHANGELOG.md') {
       return
     }

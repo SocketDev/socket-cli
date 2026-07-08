@@ -11,12 +11,12 @@
  */
 
 import crypto from 'node:crypto'
-import { mkdtempSync, readFileSync, readdirSync } from 'node:fs'
+import { mkdtempSync, readdirSync, readFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { fetchVersionTrustInfo } from '../publish-shared.mts'
@@ -211,6 +211,7 @@ function buildMismatchMessage(
   sources: readonly HashSource[],
   comparison: HashComparison,
 ): string {
+  const opts = { __proto__: null, ...options } as typeof options
   const axis = comparison.algorithm ?? 'integrity/shasum'
   const rows = sources
     .map(
@@ -219,8 +220,8 @@ function buildMismatchMessage(
     )
     .join('\n')
   return (
-    `Release hash verification failed for ${options.name}@${options.version}.\n` +
-    `  Where: comparing local pack vs GitHub release ${options.tag} vs npm registry (${axis}).\n` +
+    `Release hash verification failed for ${opts.name}@${opts.version}.\n` +
+    `  Where: comparing local pack vs GitHub release ${opts.tag} vs npm registry (${axis}).\n` +
     `  Saw vs wanted: ${comparison.reason ?? 'sources disagree'}; sources:\n${rows}\n` +
     `  Fix: reject the staged publish (pnpm stage reject <stageId>) and re-run the release — never approve a divergent artifact.`
   )
@@ -268,7 +269,7 @@ async function defaultFetchGitHubAssetDigest(
       stdioString: true,
     },
   ).catch((e: unknown) => ({ code: 1, stderr: errorMessage(e) }))
-  const code = (result as { code?: number | null }).code ?? 1
+  const code = (result as { code?: number | null | undefined }).code ?? 1
   if (code !== 0) {
     throw new Error(
       `Could not download the GitHub release asset for hash verification.\n` +

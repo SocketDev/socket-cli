@@ -1,0 +1,128 @@
+# Layer 1 — leaf action (no internal SocketDev refs, no data deps).
+# Consumed by each repo's own release workflow (github-release.yml — seeded
+# from template/presets/, then repo-owned) and by the wheelhouse's bundle
+# release. When this file bumps, re-cascade so members pick it up.
+
+name: GitHub release
+description: >-
+  Cut an IMMUTABLE GitHub Release in the fleet-canonical 3 steps
+  (create --draft → upload assets → edit --draft=false; immutable-release-guard),
+  tied to an ALREADY-PUSHED tag (release-tag-tied-guard) — fails closed when the
+  tag is not on origin or a release for it already exists. Fleet-shared base
+  action consumed via `uses: ./.github/actions/fleet/github-release`.
+
+inputs:
+  tag:
+    description: 'The already-pushed tag to release (e.g. v1.2.3). Never invented here.'
+    required: true
+  title:
+    description: 'Release title. Empty = the tag.'
+    required: false
+    default: ''
+  notes:
+    description: 'Release notes body. Ignored when notes-file is set.'
+    required: false
+    default: ''
+  notes-file:
+    description: 'Path to a notes file (wins over notes). Empty = notes (or a minimal default).'
+    required: false
+    default: ''
+  assets:
+    description: 'Newline-separated file paths to upload as release assets. Each must exist.'
+    required: false
+    default: ''
+  dry-run:
+    description: 'Print the 3-step plan without mutating anything. Default true — pass "false" to cut for real.'
+    required: false
+    default: 'true'
+  token:
+    description: 'GitHub token with contents:write (pass the github-release-app-token output).'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    # Single bash step; every input is env-mapped so no ${{ inputs.* }} is
+    # interpolated into shell (zizmor template-injection).
+    - shell: bash
+      env:
+        ASSETS: ${{ inputs.assets }}
+        DRY_RUN: ${{ inputs.dry-run }}
+        GH_TOKEN: ${{ inputs.token }}
+        NOTES: ${{ inputs.notes }}
+        NOTES_FILE: ${{ inputs.notes-file }}
+        TAG: ${{ inputs.tag }}
+        TITLE: ${{ inputs.title }}
+      run: |
+        set -euo pipefail
+
+        # The release ties to an already-pushed tag — never an invented one.
+        # gh api exits non-zero (404) when the tag ref is absent on origin.
+        if ! gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${TAG}" >/dev/null 2>&1; then
+          echo "× tag \"${TAG}\" is not on origin ${GITHUB_REPOSITORY}." >&2
+          echo "  A release must tie to an already-pushed tag; this action never creates tags." >&2
+          echo "  Fix: create + push the signed tag first, then re-run:" >&2
+          echo "    git tag -s ${TAG} -m \"release ${TAG}\" && git push origin ${TAG}" >&2
+          exit 1
+        fi
+
+        # Releases are immutable — creating over an existing one is always a
+        # mistake (verify-state-before-acting). Read before create.
+        if gh release view "${TAG}" >/dev/null 2>&1; then
+          echo "× a GitHub Release for \"${TAG}\" already exists in ${GITHUB_REPOSITORY}." >&2
+          echo "  Releases are immutable: never re-cut an existing version." >&2
+          echo "  Fix: bump the version, push a new tag, and release that instead." >&2
+          exit 1
+        fi
+
+        TITLE="${TITLE:-${TAG}}"
+        NOTES_ARGS=()
+        if [ -n "${NOTES_FILE}" ]; then
+          if [ ! -f "${NOTES_FILE}" ]; then
+            echo "× notes-file \"${NOTES_FILE}\" does not exist." >&2
+            echo "  Fix: point notes-file at a real file, or pass notes instead." >&2
+            exit 1
+          fi
+          NOTES_ARGS=(--notes-file "${NOTES_FILE}")
+        elif [ -n "${NOTES}" ]; then
+          NOTES_ARGS=(--notes "${NOTES}")
+        else
+          NOTES_ARGS=(--notes "Release ${TAG}.")
+        fi
+
+        # Newline-separated asset list; every listed path must exist (a typo'd
+        # asset silently missing from a release is worse than a failed cut).
+        ASSET_PATHS=()
+        while IFS= read -r line; do
+          line="$(echo "${line}" | xargs)"
+          [ -z "${line}" ] && continue
+          if [ ! -f "${line}" ]; then
+            echo "× asset \"${line}\" does not exist." >&2
+            echo "  Fix: build the asset before cutting the release, or drop it from assets." >&2
+            exit 1
+          fi
+          ASSET_PATHS+=("${line}")
+        done <<< "${ASSETS}"
+
+        if [ "${DRY_RUN}" != "false" ]; then
+          echo "[dry-run] tag ${TAG} is on origin and unreleased. Would run, in order:"
+          echo "  gh release create ${TAG} --draft --title \"${TITLE}\" ${NOTES_ARGS[*]}"
+          if [ "${#ASSET_PATHS[@]}" -gt 0 ]; then
+            echo "  gh release upload ${TAG} ${ASSET_PATHS[*]} --clobber"
+          fi
+          echo "  gh release edit ${TAG} --draft=false"
+          echo "Pass dry-run: false to execute the 3-step immutable release."
+          exit 0
+        fi
+
+        # The immutable 3-step (immutable-release-guard): a draft assembles
+        # everything privately; publishing (un-drafting) happens exactly once.
+        echo "creating draft release ${TAG}…"
+        gh release create "${TAG}" --draft --title "${TITLE}" "${NOTES_ARGS[@]}"
+        if [ "${#ASSET_PATHS[@]}" -gt 0 ]; then
+          echo "uploading ${#ASSET_PATHS[@]} asset(s)…"
+          gh release upload "${TAG}" "${ASSET_PATHS[@]}" --clobber
+        fi
+        echo "publishing (un-drafting)…"
+        gh release edit "${TAG}" --draft=false
+        echo "Created release ${TAG}."

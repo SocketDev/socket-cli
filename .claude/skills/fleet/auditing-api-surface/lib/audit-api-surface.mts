@@ -38,7 +38,7 @@ import process from 'node:process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { isSpawnError } from '@socketsecurity/lib-stable/process/spawn/errors'
 import { naturalCompare } from '@socketsecurity/lib-stable/sorts/natural'

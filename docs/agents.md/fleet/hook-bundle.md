@@ -13,6 +13,23 @@ Faster warm dispatch for import-safe fleet hooks via a CJS rolldown bundle plus 
 
 V8's compile cache (`module.enableCompileCache`) reliably caches and auto-flushes plain CJS modules on normal process exit. A type-stripped `.mts` dispatcher did NOT auto-flush. A normal exit left ZERO cache files on disk, so every spawn recompiled from scratch. Emitting a plain CJS bundle is the core rationale. The loader stays CJS, the bundle is CJS, and the compile cache actually persists between spawns.
 
+## Edit pipeline (order is load-bearing)
+
+1. Edit the hook source in `template/` (never the cascaded copy).
+2. Rebuild the dispatch table + bundle (`make-hook-dispatch.mts`, then
+   `build-hook-bundle.mts`) so the built artifact matches the sources.
+3. Run the unit tests against the rebuilt state.
+4. Dogfood the BUNDLE into the wheelhouse's own live `.claude/` and verify
+   the dispatcher behavior end-to-end (a synthetic payload through
+   `_dispatch/index.cjs`).
+5. If the payload ships via a GitHub release, cut that first; THEN cascade
+   commits to fleet members for the files a release does not carry.
+
+Building before dogfooding is what keeps a stale `bundle.cjs` from being
+distributed: the sync ships whatever bundle exists, so a bundle built from
+pre-edit sources propagates silently and the sources-vs-bundle drift only
+surfaces when a member's dispatcher misbehaves.
+
 ## What the bundle does and does NOT speed up
 
 Most of a cold hook spawn (~1s) is Node STARTUP (process create plus runtime init), with an idle baseline near 100ms. That is fixed cost the bundle and cache cannot touch. The compile cache only removes module-COMPILE time on warm spawns. The real process-count win comes from collapsing many per-hook `node` spawns into one dispatcher spawn per event. The bundle plus cache is the secondary compile-time win on top. Do not overclaim a blanket "Nx faster hook" number.

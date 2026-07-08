@@ -18,7 +18,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { httpDownload } from '@socketsecurity/lib-stable/http-request/download'
 import { httpRequest } from '@socketsecurity/lib-stable/http-request/request'

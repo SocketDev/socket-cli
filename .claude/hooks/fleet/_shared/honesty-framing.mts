@@ -1,13 +1,13 @@
 // Canonical honesty-filler matcher — the single source for every hook that
-// flags "honest"/"honestly"/"honesty" framing. Consumed by yakback-nudge
-// (Stop, chat voice), conversational-prose-nudge (PreToolUse, gh pr/issue
-// bodies), and prose-antipattern-guard (PreToolUse, doc writes). Before this,
-// each carried its own divergent copy: yakback had the bare word ban, the
+// flags "honest"/"honestly"/"honesty" framing. Consumed by reply-prose-nudge
+// (Stop, chat voice), convo-prose-nudge (PreToolUse, gh pr/issue
+// bodies), and anti-prose-guard (PreToolUse, doc writes). Before this,
+// each carried its own divergent copy: reply-prose had the bare word ban, the
 // conversational nudge only "to be honest", and the prose guard only the
 // framing phrases — so the same concern fired inconsistently across surfaces.
 //
 // Coverage is the UNION of all three, deliberately categorical: the BARE word
-// (`honest`/`honestly`/`honesty`) is banned outright, matching yakback's
+// (`honest`/`honestly`/`honesty`) is banned outright, matching reply-prose's
 // "always wrong" stance. The maintainer decided the word is filler framing —
 // claiming honesty implies the rest is not — so a match is a verdict, not a
 // heuristic. Word boundaries keep it off compounds (e.g. "honestcode"), and

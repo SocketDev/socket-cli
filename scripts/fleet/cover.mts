@@ -17,7 +17,7 @@ import process from 'node:process'
 
 import { stripAnsi } from '@socketsecurity/lib-stable/ansi/strip'
 import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
@@ -162,6 +162,8 @@ export function extractSuiteFailureLines(
   const errorLines = [
     ...new Set(
       lines.filter(line =>
+        // `ERROR` keyword; vitest coverage threshold message ("does not meet"
+        // / "threshold"); vitest final summary line ("Tests N failed").
         /\bERROR\b|does not meet|threshold|Tests\s+\d+\s+failed/i.test(line),
       ),
     ),
@@ -430,8 +432,10 @@ export async function main(): Promise<void> {
             ? extractSuiteFailureLines('isolated', isolatedResult)
             : []),
         ]
-        for (const line of failureLines) {
+        for (let i = 0, { length } = failureLines; i < length; i += 1) {
+          const line = failureLines[i]!;
           logger.error(line)
+        
         }
       }
     }

@@ -8,7 +8,7 @@
  *   skipping.
  */
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { httpJson } from '@socketsecurity/lib-stable/http-request'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 

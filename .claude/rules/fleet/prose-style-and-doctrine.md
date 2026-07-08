@@ -21,6 +21,12 @@ CHANGELOG, and release notes. The prose skill enforces these rules at write time
   without a tool call that produced the result.
 - Subagent output counts and file lists are leads, not facts — grep/read before
   relaying them.
+- A self-reported detail — a PR author's "I ran X" / "my machine is on 1.15.7",
+  a bot's claim, a teammate's count — is a lead, not your finding. Verify it
+  from a source you can read (the repo, a tool call), or attribute it ("you
+  mentioned…"); never restate someone else's unverified claim as your own
+  verified fact. Half a claim being checkable (the repo pin) doesn't make the
+  other half (their local state) verified.
 
 ## Finishing
 
@@ -32,8 +38,8 @@ CHANGELOG, and release notes. The prose skill enforces these rules at write time
 
 ## Anti-patterns
 
-These patterns are blocked by `prose-antipattern-guard` on doc surfaces and flagged
-by `conversational-prose-nudge` on PR/issue bodies:
+These patterns are blocked by `anti-prose-guard` on doc surfaces and flagged
+by `convo-prose-nudge` on PR/issue bodies:
 
 - **Throat-clearers:** "I've gone ahead and…", "Let me…", "In this PR, I…",
   "I took a look and…"

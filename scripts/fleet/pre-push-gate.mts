@@ -55,7 +55,7 @@ async function defaultRunStep(
     await spawn(cmd, [...args], { stdio: 'inherit' })
     return 0
   } catch (e) {
-    const code = (e as { code?: unknown } | undefined)?.code
+    const code = (e as { code?: unknown | undefined } | undefined)?.code
     return typeof code === 'number' ? code : 1
   }
 }

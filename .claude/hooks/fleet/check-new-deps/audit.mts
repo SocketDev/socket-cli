@@ -28,7 +28,7 @@ import { stringify } from '@socketregistry/packageurl-js-stable'
 import type { PackageURL } from '@socketregistry/packageurl-js-stable'
 import { createTtlCache } from '@socketsecurity/lib-stable/cache/ttl/store'
 import type { TtlCache } from '@socketsecurity/lib-stable/cache/ttl/types'
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 
 import type {
   AuditRecord,

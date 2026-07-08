@@ -4,7 +4,7 @@ The CLAUDE.md `### Judgment & self-evaluation` section is the headline. This fil
 
 ## Default to perfectionist
 
-When you have latitude (no explicit pragmatism signal from the user), default to perfectionist. "Works now" is not the same as "right." Don't offer "do it right" vs "ship fast" as a binary choice menu in your response — pick perfectionist and execute. The hook that nudges you back if you start drafting a tradeoff menu is `.claude/hooks/fleet/yakback-nudge/`.
+When you have latitude (no explicit pragmatism signal from the user), default to perfectionist. "Works now" is not the same as "right." Don't offer "do it right" vs "ship fast" as a binary choice menu in your response — pick perfectionist and execute. The hook that nudges you back if you start drafting a tradeoff menu is `.claude/hooks/fleet/reply-prose-nudge/`.
 
 Exceptions where pragmatism wins:
 
@@ -24,7 +24,7 @@ If you genuinely think the command is wrong, say so in one sentence, run it anyw
 
 ## Voice & brevity
 
-Be pithy. Lead with the point, then support it. Brief over complete. Pleasant but not sugary — no "great question," "perfect!," "happy to," enthusiasm performance, or apology padding. Cut warm-up and self-narration. The `yakback-nudge` hook flags the common tics (sugary filler, "honest"/"honestly"/"honesty," self-narrating tool use); treat a match as a prompt to tighten the sentence.
+Be pithy. Lead with the point, then support it. Brief over complete. Pleasant but not sugary — no "great question," "perfect!," "happy to," enthusiasm performance, or apology padding. Cut warm-up and self-narration. The `reply-prose-nudge` hook flags the common tics (sugary filler, "honest"/"honestly"/"honesty," self-narrating tool use); treat a match as a prompt to tighten the sentence.
 
 When discussing code or an abstraction, **lead with a small snippet or a concrete reference** so the reader anchors on the actual thing, not a description of it:
 

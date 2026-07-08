@@ -3,9 +3,9 @@
  *   comment. Mirrors the `no-private-path-in-source-guard` edit-time hook and
  *   the `scripts/fleet/check/private-paths-are-absent.mts` commit-time check
  *   (three surfaces, one rule — code is law). The incident: an agent leaked a
- *   scaffolding-repo `.claude/plans/<doc>.md` path into a public napi-rs source
+ *   scaffolding-repo plans-directory path into a public napi-rs source
  *   comment, disclosing internal fleet layout. Patterns:
- *     - `.claude/plans/…` / `.claude/reports/…` (untracked operator notes)
+ *     - paths under the plans or reports directories (untracked operator notes)
  *     - `socket-<repo>/.claude/…` (another fleet repo's private tree)
  *     - `/Users/<name>/…` (absolute home path — username + local layout)
  *     - `../socket-<repo>/…` (sibling fleet-repo relative path — dev-box layout)

@@ -263,6 +263,8 @@ function lintNoAnchorLinks(lines: string[]): CommentViolation[] {
 function lintDetailsIndent(lines: string[]): CommentViolation[] {
   const violations: CommentViolation[] = []
   for (let i = 0, { length } = lines; i < length; i += 1) {
+    // A line whose trimmed content is exactly `</summary>`, or ends with
+    // `</summary>` optionally followed by whitespace (inline close).
     if (!/^<\/summary>$|<\/summary>\s*$/.test(lines[i]!.trim())) {
       continue
     }
@@ -301,6 +303,8 @@ function lintDetailsIndent(lines: string[]): CommentViolation[] {
   return violations
 }
 
+// A severity-circle bullet: `- ` then an `<abbr>` with hover text wrapping a
+// severity emoji (🔴/🟠/🟡/🟢) or any non-whitespace glyph, then a space.
 const BULLET_CIRCLE_SHAPE = /^- <abbr title="([^"]+)">(🔴|🟠|🟡|🟢|\S+)<\/abbr> /u
 
 // Inside a "Smaller items" fold, every bullet carries its OWN severity circle
@@ -428,7 +432,7 @@ export function lintPrReviewComment(body: string): CommentViolation[] {
     ...lintNoAnchorLinks(lines),
     ...lintDetailsIndent(lines),
     ...lintAiAttribution(lines),
-  ].sort((a, b) => a.line - b.line)
+  ].toSorted((a, b) => a.line - b.line)
 }
 
 function readInput(target: string): string {

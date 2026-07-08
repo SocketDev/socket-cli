@@ -21,9 +21,17 @@
  */
 
 import crypto from 'node:crypto'
-import fs from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs'
 import path from 'node:path'
 
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 // TTL after which a ledger file is considered stale (actor exited or idle).
@@ -123,7 +131,7 @@ export function pruneLedger(
   ledger: ActorLedger,
   options: { now: number; ttlMs: number },
 ): ActorLedger | undefined {
-  const { now, ttlMs } = options
+  const { now, ttlMs } = { __proto__: null, ...options } as typeof options
   if (now - ledger.updatedAt > ttlMs) {
     return undefined
   }
@@ -164,7 +172,7 @@ export function hasLiveChildMtime(
   mtimes: readonly number[],
   options: { now: number; windowMs: number },
 ): boolean {
-  const { now, windowMs } = options
+  const { now, windowMs } = { __proto__: null, ...options } as typeof options
   for (let i = 0, { length } = mtimes; i < length; i += 1) {
     if (now - mtimes[i]! <= windowMs) {
       return true
@@ -181,7 +189,8 @@ export function isActorLive(
   ledger: ActorLedger,
   options: { now: number; ttlMs: number },
 ): boolean {
-  return options.now - ledger.updatedAt <= options.ttlMs
+  const opts = { __proto__: null, ...options } as typeof options
+  return opts.now - ledger.updatedAt <= opts.ttlMs
 }
 
 /**
@@ -205,7 +214,7 @@ export function recordPath(
   normalizedPath: string,
   options: { now: number; ttlMs: number },
 ): ActorLedger {
-  const { now, ttlMs } = options
+  const { now, ttlMs } = { __proto__: null, ...options } as typeof options
   const base = existing ? pruneLedger(existing, { now, ttlMs }) : undefined
   const paths: Record<string, number> = { ...(base?.paths ?? {}) }
   paths[normalizedPath] = now
@@ -219,12 +228,12 @@ export function recordPath(
  * missing file, parse error, or malformed shape. Fail-open.
  */
 export function readActorLedger(filePath: string): ActorLedger | undefined {
-  if (!fs.existsSync(filePath)) {
+  if (!existsSync(filePath)) {
     return undefined
   }
   let raw: string
   try {
-    raw = fs.readFileSync(filePath, 'utf8')
+    raw = readFileSync(filePath, 'utf8')
   } catch {
     return undefined
   }
@@ -252,8 +261,8 @@ export function readActorLedger(filePath: string): ActorLedger | undefined {
  */
 export function writeActorLedger(filePath: string, ledger: ActorLedger): void {
   try {
-    fs.mkdirSync(path.dirname(filePath), { recursive: true })
-    fs.writeFileSync(filePath, JSON.stringify(ledger), 'utf8')
+    mkdirSync(path.dirname(filePath), { recursive: true })
+    writeFileSync(filePath, JSON.stringify(ledger), 'utf8')
   } catch {
     // Fail-open.
   }
@@ -269,10 +278,10 @@ export function listOtherActorLedgerPaths(
   ownActorId: string,
 ): string[] {
   try {
-    if (!fs.existsSync(storeRoot)) {
+    if (!existsSync(storeRoot)) {
       return []
     }
-    const entries = fs.readdirSync(storeRoot)
+    const entries = readdirSync(storeRoot)
     const out: string[] = []
     for (const entry of entries) {
       if (!entry.endsWith('.json')) {
@@ -299,23 +308,22 @@ export function sweepStaleLedgers(
   storeRoot: string,
   options: { now: number; ttlMs: number },
 ): void {
-  const { now, ttlMs } = options
+  const { now, ttlMs } = { __proto__: null, ...options } as typeof options
   try {
-    if (!fs.existsSync(storeRoot)) {
+    if (!existsSync(storeRoot)) {
       return
     }
-    const entries = fs.readdirSync(storeRoot)
+    const entries = readdirSync(storeRoot)
     for (const entry of entries) {
       if (!entry.endsWith('.json')) {
         continue
       }
       const fp = path.join(storeRoot, entry)
       try {
-        const stat = fs.statSync(fp)
+        // oxlint-disable-next-line socket/prefer-exists-sync -- statSync for mtime, not just existence; we need the modification timestamp
+        const stat = statSync(fp)
         if (now - stat.mtimeMs > ttlMs) {
-          fs.unlink(fp, () => {
-            /* fire-and-forget */
-          })
+          safeDeleteSync(fp)
         }
       } catch {
         // Fail-open per file.
@@ -337,17 +345,18 @@ export function sweepStaleLedgers(
  */
 export function listChildTranscriptMtimes(subagentsDir: string): number[] {
   try {
-    if (!fs.existsSync(subagentsDir)) {
+    if (!existsSync(subagentsDir)) {
       return []
     }
-    const entries = fs.readdirSync(subagentsDir)
+    const entries = readdirSync(subagentsDir)
     const out: number[] = []
     for (const entry of entries) {
       if (!entry.startsWith('agent-') || !entry.endsWith('.jsonl')) {
         continue
       }
       try {
-        out.push(fs.statSync(path.join(subagentsDir, entry)).mtimeMs)
+        // oxlint-disable-next-line socket/prefer-exists-sync -- statSync for mtime, not just existence; we need the modification timestamp
+        out.push(statSync(path.join(subagentsDir, entry)).mtimeMs)
       } catch {
         // Fail-open per file.
       }

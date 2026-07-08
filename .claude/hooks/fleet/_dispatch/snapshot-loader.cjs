@@ -45,6 +45,14 @@ function failOpenToIndex() {
   require('./index.cjs')
 }
 
+let blobExists
+function hasBlobFile(blobPath) {
+  if (blobExists === undefined) {
+    blobExists = fs.existsSync(blobPath)
+  }
+  return blobExists
+}
+
 if (!event) {
   process.exit(0)
 }
@@ -56,10 +64,10 @@ let blob
 try {
   blob = currentBlobPath()
 } catch {
-  blob = null
+  blob = undefined
 }
 
-if (!blob || !fs.existsSync(blob)) {
+if (!blob || !hasBlobFile(blob)) {
   failOpenToIndex()
 } else {
   // The snapshot-booted process reads the event from argv[1] (no script path in

@@ -38,7 +38,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { whichSync } from '@socketsecurity/lib-stable/bin/which'
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { globSync } from '@socketsecurity/lib-stable/globs/match'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { getSocketDlxDir } from '@socketsecurity/lib-stable/paths/socket'
@@ -79,16 +79,17 @@ const logger = getDefaultLogger()
 
 // Print a finding in the canonical four-ingredient format.
 function printFinding(f: DoctorFinding, idx: number): void {
-  logger.info(`\nFinding ${idx + 1}:`)
+  logger.error('')
+  logger.info(`Finding ${idx + 1}:`)
   logger.info(`  What:  ${f.what}`)
   logger.info(`  Where: ${f.where}`)
   logger.info(`  Saw:   ${f.saw}`)
-  logger.info(
-    `  Fix:\n${f.fix
-      .split('\n')
-      .map(l => `    ${l}`)
-      .join('\n')}`,
-  )
+  logger.info(`Fix:`)
+  logger.group()
+  for (const l of f.fix.split('\n')) {
+    logger.info(l)
+  }
+  logger.groupEnd()
 }
 
 // Discover workspace package.json paths via the packages: glob list.
@@ -147,7 +148,7 @@ function readPinnedTrufflehogVersion(cwd: string): string | undefined {
   }
   try {
     const cfg = JSON.parse(readFileSync(cfgPath, 'utf8')) as {
-      tools?: { trufflehog?: { version?: string } | undefined } | undefined
+      tools?: { trufflehog?: { version?: string | undefined } | undefined } | undefined
     }
     return cfg.tools?.trufflehog?.version
   } catch {
@@ -513,16 +514,14 @@ async function main(): Promise<void> {
 
   // Print all findings.
   if (allFindings.length > 0) {
-    logger.info(
-      `\nFleet doctor found ${allFindings.length} unfixed finding(s):`,
-    )
+    logger.error('')
+    logger.info(`Fleet doctor found ${allFindings.length} unfixed finding(s):`)
     for (let i = 0; i < allFindings.length; i += 1) {
       printFinding(allFindings[i]!, i)
     }
     if (!doFix && fixes.length > 0) {
-      logger.info(
-        '\nRun `node scripts/fleet/doctor.mts --fix` to apply the auto-fixable catalog fixes.',
-      )
+      logger.error('')
+      logger.info('Run `node scripts/fleet/doctor.mts --fix` to apply the auto-fixable catalog fixes.')
     }
     process.exitCode = 1
   } else {

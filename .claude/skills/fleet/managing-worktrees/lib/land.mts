@@ -135,11 +135,32 @@ export function pickOxlintConfig(repoDir: string): string {
 }
 
 /**
+ * Build the oxlint argv for a scoped file list, mirroring the invocation shape
+ * scripts/fleet/lint.mts uses in its runFiles() path. Source of truth: lint.mts
+ * runFiles() — same config picker, same --no-error-on-unmatched-pattern flag.
+ * Exported so unit tests can pin the argv and detect divergence from lint.mts.
+ */
+export function buildLintArgs(
+  repoDir: string,
+  files: string[],
+): string[] {
+  // Mirrors lint.mts runFiles():
+  //   pnpm exec oxlint -c <config> --no-error-on-unmatched-pattern <files>
+  // Running via the local binary (not pnpm exec) keeps land.mts dependency-free
+  // on the pnpm wrapper, but the config path and flags MUST match lint.mts.
+  return ['-c', pickOxlintConfig(repoDir), '--no-error-on-unmatched-pattern', ...files]
+}
+
+/**
  * Re-assert the edit-time lint gate on the landing commits' changed files. The
  * fleet lints as it edits, so this should pass instantly; a failure means the
  * contract was bypassed and the land is unsafe. Returns true when clean (or
  * when there are no lintable files). Skipped by the caller under
  * --no-verify-lint (e.g. a worktree without node_modules).
+ *
+ * Invocation shape matches scripts/fleet/lint.mts runFiles() exactly:
+ *   -c <config> --no-error-on-unmatched-pattern <files>
+ * See buildLintArgs() — lint.mts is the source of truth.
  */
 export async function lintLandsClean(
   repoDir: string,
@@ -172,7 +193,7 @@ export async function lintLandsClean(
   // caught error.
   const result = (await spawn(
     lintBin,
-    ['-c', pickOxlintConfig(repoDir), ...lintable],
+    buildLintArgs(repoDir, lintable),
     { cwd: repoDir, stdioString: true },
   ).catch((e: unknown) => e)) as {
     stdout?: string | undefined
@@ -182,10 +203,10 @@ export async function lintLandsClean(
   // Files outside this config's lint scope (e.g. `template/**`, which the
   // wheelhouse oxlint config ignores because the template is linted as its
   // cascaded LIVE copies, not the seed path) make oxlint report "No files
-  // found to lint". That's not a dirty diff — but it's also NOT a verification,
-  // so say so LOUDLY rather than silently passing. The edit-time gate covers
-  // those files at their real path; the land proceeds, but the reader knows
-  // the re-assert didn't actually run on them.
+  // found to lint". With --no-error-on-unmatched-pattern this still exits 0
+  // and produces no summary line. That's not a dirty diff; the edit-time gate
+  // covers those files at their real path. Say so LOUDLY so the reader knows
+  // the re-assert didn't run on them.
   if (/No files found to lint/.test(output)) {
     logger.warn(
       `land: ${lintable.length} file(s) are outside this checkout's lint scope ` +

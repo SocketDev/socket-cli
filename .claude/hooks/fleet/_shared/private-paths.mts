@@ -1,7 +1,7 @@
 /*
  * @file Shared detector for INTERNAL / PRIVATE path references that must never
  *   land in committed SOURCE-CODE comments. The incident that motivated it: an
- *   agent leaked `socket-wheelhouse/.claude/plans/<doc>.md` into a public
+ *   agent leaked a plans-directory path into a public
  *   napi-rs source file's comment. Public-surface-hygiene adjacent — pairs with
  *   `private-name-nudge` / `public-surface-nudge` / the no-cross-repo-relative
  *   path rule. See docs/agents.md/fleet/public-surface-hygiene.md.

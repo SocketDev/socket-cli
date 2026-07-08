@@ -30,14 +30,37 @@ import path from 'node:path'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 
-import { errorMessage } from '@socketsecurity/lib/errors'
+import { errorMessage } from '@socketsecurity/lib/errors/message'
 import { isError } from '@socketsecurity/lib/errors/predicates'
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 
+import { slugFromRemoteUrl } from '../../../hooks/fleet/_shared/fleet-repos.mts'
+import {
+  isOptedIn,
+  loadRosterFromRepo,
+} from '../../../hooks/fleet/_shared/fleet-roster.mts'
 import { resolveDefaultBranch } from '../_shared/scripts/git-default-branch.mts'
 import { header, run, timestamp } from '../_shared/scripts/run-helpers.mts'
 
 const logger = getDefaultLogger()
+
+/**
+ * The canonical fleet name of a checkout — its origin remote slug (so a
+ * differently-named local directory still resolves to the roster identity),
+ * falling back to the directory basename when there is no origin.
+ */
+export async function resolveFleetName(src: string): Promise<string> {
+  try {
+    const url = (
+      await run('git', ['remote', 'get-url', 'origin'], src)
+    ).stdout.trim()
+    const slug = slugFromRemoteUrl(url)
+    if (slug) {
+      return slug
+    }
+  } catch {}
+  return path.basename(src)
+}
 
 export { header, run, timestamp }
 
@@ -149,7 +172,36 @@ async function main(): Promise<number> {
     return 2
   }
 
-  const repoName = path.basename(src)
+  // Code-is-law opt-in gate. Squash is destructive history rewrite, so the
+  // ROSTER decides which repos it may touch — not a path arg a human (or a
+  // fuzzy name-match) points at. Resolve the checkout to its canonical fleet
+  // name (origin slug, EXACT — no fuzzy fallback to a look-alike), then refuse
+  // unless that name carries the `squash-history` opt-in. A non-fleet repo
+  // (no roster, or absent from it) is refused outright: this is the guard that
+  // stops a `cdxgen` from being squashed because it resembles `sdxgen`.
+  const fleetName = await resolveFleetName(src)
+  const roster = loadRosterFromRepo(src)
+  if (!roster) {
+    logger.error(
+      `error: ${src} carries no fleet roster (cascading-fleet/lib/` +
+        `fleet-repos.json) — it is not a fleet repo, so squash is refused. ` +
+        `Squash only opted-in fleet members.`,
+    )
+    return 2
+  }
+  if (!isOptedIn(roster, fleetName, 'squash-history')) {
+    logger.error(
+      `error: ${fleetName} is not opted into 'squash-history' in the fleet ` +
+        `roster — refusing to rewrite its history. ` +
+        `Saw: no 'squash-history' in its optIns; wanted the opt-in. ` +
+        `Fix: add "${fleetName}" with optIns:['squash-history'] to ` +
+        `cascading-fleet/lib/fleet-repos.json (then cascade), or squash a ` +
+        `repo that is already opted in.`,
+    )
+    return 2
+  }
+
+  const repoName = fleetName
   const worktree = `${src}-squash`
   const ts = timestamp()
   const backup = `backup-${ts}`
@@ -163,6 +215,25 @@ async function main(): Promise<number> {
   const base = await resolveDefaultBranch({ cwd: src })
   header('default branch', base)
   await run('git', ['fetch', 'origin', base], src)
+
+  // A shallow clone's commit graph is grafted, so `rev-list --count` reports
+  // the fetch depth, not the branch's true history — a depth-1 clone always
+  // reads as "already squashed" and the single-commit early-exit silently
+  // no-ops on a full-history remote. Refuse loudly; unshallow first (or
+  // squash via a tree snapshot, which needs no history).
+  const shallow = (
+    await run('git', ['rev-parse', '--is-shallow-repository'], src)
+  ).stdout
+  if (shallow === 'true') {
+    logger.error(
+      `error: ${src} is a SHALLOW clone — its local graph cannot answer ` +
+        `"how many commits does origin/${base} have". ` +
+        `Saw a grafted history; wanted the full graph. ` +
+        `Fix: git -C ${src} fetch --unshallow origin ${base}, then re-run.`,
+    )
+    return 2
+  }
+
   const origHead = (await run('git', ['rev-parse', `origin/${base}`], src))
     .stdout
   const origCount = (

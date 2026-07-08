@@ -122,35 +122,6 @@ export function log(message: string): void {
 }
 
 /**
- * Step 3: reconcile install so the now-present workspace packages link in.
- */
-export function reconcileInstall(): boolean {
-  // --ignore-scripts keeps this pass from re-entering `prepare` (a loop); fleet
-  // packages have no build step, so skipping lifecycle scripts loses nothing.
-  return tryRun('pnpm', ['install', '--ignore-scripts'], {
-    ...process.env,
-    NO_UPDATE_NOTIFIER: '1',
-  })
-}
-
-/**
- * Step 2: repair `pnpm-workspace.yaml` `packages:` to list the fleet dirs.
- */
-export function repairWorkspacePackages(): void {
-  const wsPath = path.join(REPO_ROOT, 'pnpm-workspace.yaml')
-  if (!existsSync(wsPath)) {
-    log('no pnpm-workspace.yaml — skipping workspace repair')
-    return
-  }
-  const before = readFileSync(wsPath, 'utf8')
-  const after = ensureWorkspacePackages(before, FLEET_WORKSPACE_PACKAGES)
-  if (after !== before) {
-    writeFileSync(wsPath, after)
-    log('repaired pnpm-workspace.yaml packages: (added missing fleet dirs)')
-  }
-}
-
-/**
  * Opportunistic passive update notice (update-notifier style). Runs the
  * read-only status verb capturing JSON; when it cheaply learns a newer release
  * exists it fires the throttled boxed notice on STDERR via the fetcher's own
@@ -165,6 +136,7 @@ export async function maybeNotifyUpdate(): Promise<void> {
   }
   try {
     const { maybeShowUpdateNotice, readBundleConfig, resolveNewestRef } =
+      // oxlint-disable-next-line socket/no-dynamic-import-outside-bundle -- dep-0 bootstrap resolves the fetcher lazily; a static import would execute it on every prepare run
       (await import(pathToFileURL(fleet).href)) as {
         maybeShowUpdateNotice: (o: {
           dest: string
@@ -195,6 +167,35 @@ export async function maybeNotifyUpdate(): Promise<void> {
     })
   } catch {
     // Best-effort: offline / no gh / a status hard-fail never breaks install.
+  }
+}
+
+/**
+ * Step 3: reconcile install so the now-present workspace packages link in.
+ */
+export function reconcileInstall(): boolean {
+  // --ignore-scripts keeps this pass from re-entering `prepare` (a loop); fleet
+  // packages have no build step, so skipping lifecycle scripts loses nothing.
+  return tryRun('pnpm', ['install', '--ignore-scripts'], {
+    ...process.env,
+    NO_UPDATE_NOTIFIER: '1',
+  })
+}
+
+/**
+ * Step 2: repair `pnpm-workspace.yaml` `packages:` to list the fleet dirs.
+ */
+export function repairWorkspacePackages(): void {
+  const wsPath = path.join(REPO_ROOT, 'pnpm-workspace.yaml')
+  if (!existsSync(wsPath)) {
+    log('no pnpm-workspace.yaml — skipping workspace repair')
+    return
+  }
+  const before = readFileSync(wsPath, 'utf8')
+  const after = ensureWorkspacePackages(before, FLEET_WORKSPACE_PACKAGES)
+  if (after !== before) {
+    writeFileSync(wsPath, after)
+    log('repaired pnpm-workspace.yaml packages: (added missing fleet dirs)')
   }
 }
 

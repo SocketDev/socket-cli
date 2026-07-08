@@ -18,7 +18,7 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { which } from '@socketsecurity/lib/bin/which'
 import { safeDelete } from '@socketsecurity/lib/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'

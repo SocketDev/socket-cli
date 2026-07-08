@@ -1,0 +1,221 @@
+# Layer 1 — leaf action (no internal SocketDev refs). Consumed by
+# `setup-and-install` (Layer 2b). When this file bumps, cascade is:
+# 2b → 3 → 4 → external repos. See updating-workflows skill at
+# .claude/skills/updating-workflows/.
+# cascade-data-deps: external-tools.json, .github/actions/fleet/lib
+# (read at runtime via ${GITHUB_ACTION_PATH}/../… — implicit edges with no
+# `uses:` line; action-pins-are-current.mts tracks them for staleness.)
+
+name: 'Install'
+description: 'Install pnpm dependencies and provision agentshield (sfw shims are set up by the setup action)'
+
+inputs:
+  frozen-lockfile:
+    description: 'Pass --frozen-lockfile to pnpm install'
+    required: false
+    default: 'false'
+  working-directory:
+    description: 'Working directory'
+    required: false
+    default: '.'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install dependencies
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        if [ -z "$SFW_BIN" ] || [ ! -x "$SFW_BIN" ]; then
+          echo "Error: sfw is not installed — run the setup-and-install action first" >&2
+          exit 1
+        fi
+        # Use the default reporter — `--loglevel error` swallowed the
+        # actual error message when install failed, leaving consumers
+        # staring at a bare `[ELIFECYCLE] Command failed with exit code
+        # 1` with no clue what broke. The default reporter is verbose
+        # but at least surfaces the cause; CI's `set -e` will still
+        # exit on non-zero.
+        pnpm install ${{ inputs.frozen-lockfile == 'true' && '--frozen-lockfile' || '' }}
+
+    - name: Verify @socketsecurity/lib resolvable and >= floor version
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        # @socketsecurity/lib is required for downloadNpmPackage (used below
+        # to provision agentshield) and for several downstream build
+        # scripts across the Socket fleet. We resolve it via Node's own
+        # resolver rather than a file check, so the guard fires the same
+        # way we'd actually fail at runtime.
+        #
+        # Floor version: the latest @socketsecurity/lib published to npm,
+        # queried at action runtime so the floor tracks reality without
+        # manual bumps in this action. If the npm query fails (offline,
+        # rate-limited, registry down), fall back to HARDCODED_FLOOR —
+        # the lowest version known to contain the un-stubbed pacote
+        # fetchers required by downloadNpmPackage (commit 320c757, shipped
+        # in 5.24.0). Older versions throw "this pacote fetcher is
+        # stubbed out" at runtime.
+        HARDCODED_FLOOR="5.24.0"
+        ACTUAL_VERSION="$(node -e "
+          try {
+            process.stdout.write(require('@socketsecurity/lib/package.json').version);
+          } catch {
+            process.stdout.write('');
+          }
+        ")"
+        if [ -z "$ACTUAL_VERSION" ]; then
+          CWD="$(pwd)"
+          cat >&2 <<EOF
+        × @socketsecurity/lib not resolvable from ${CWD}.
+          The the fleet install action requires it at runtime for
+          downloadNpmPackage (used to provision agentshield and related
+          tools). Expected Node's module resolver to find the package
+          after \`pnpm install\` completed, but
+          \`require('@socketsecurity/lib/package.json')\` failed.
+          Fix: add "@socketsecurity/lib" as a pinned exact version (e.g.
+          "${HARDCODED_FLOOR}", not "^${HARDCODED_FLOOR}" or "*") to your
+          package.json — prefer referencing a pnpm-workspace.yaml catalog
+          entry so every workspace package shares the same pin. Commit
+          the updated pnpm-lock.yaml, then push and re-run the workflow.
+        EOF
+          exit 1
+        fi
+        # Latest published version is the ideal floor. Bound the npm
+        # query to 10s so a slow registry doesn't stall the job.
+        # Validate the response matches plain semver via lib/semver.mjs
+        # — Socket Firewall and other npm proxies sometimes intercept
+        # queries and return a banner string, which would otherwise
+        # poison the comparison below.
+        SEMVER="${GITHUB_ACTION_PATH}/../lib/semver.mjs"
+        NPM_LATEST="$(timeout 10 npm view @socketsecurity/lib version 2>/dev/null || true)"
+        if [ -n "$NPM_LATEST" ] && node "$SEMVER" valid "$NPM_LATEST"; then
+          MIN_VERSION="$NPM_LATEST"
+          MIN_SOURCE="latest published on npm"
+        else
+          MIN_VERSION="$HARDCODED_FLOOR"
+          if [ -n "$NPM_LATEST" ]; then
+            MIN_SOURCE="hardcoded floor (npm view returned non-semver: ${NPM_LATEST:0:80})"
+          else
+            MIN_SOURCE="hardcoded floor (npm query failed)"
+          fi
+        fi
+        # Defensive: ACTUAL_VERSION should always be plain semver since
+        # it comes from package.json, but validate so a malformed pin
+        # produces a clear error rather than a cryptic bash failure.
+        if ! node "$SEMVER" valid "$ACTUAL_VERSION"; then
+          echo "× @socketsecurity/lib package.json reports non-semver version: ${ACTUAL_VERSION:0:200}" >&2
+          echo "  Expected MAJOR.MINOR.PATCH. Check the installed package's package.json." >&2
+          exit 1
+        fi
+        if node "$SEMVER" lt "$ACTUAL_VERSION" "$MIN_VERSION"; then
+          cat >&2 <<EOF
+        × @socketsecurity/lib ${ACTUAL_VERSION} is below the required
+          floor ${MIN_VERSION} (${MIN_SOURCE}).
+          The the fleet install action requires
+          @socketsecurity/lib >= ${MIN_VERSION}; older versions either
+          ship a stubbed pacote fetcher (< ${HARDCODED_FLOOR}) or are
+          missing fixes consumed by downloadNpmPackage and related fleet
+          tooling.
+          Fix: bump "@socketsecurity/lib" in package.json (or the
+          pnpm-workspace.yaml catalog entry) to "${MIN_VERSION}" — pin
+          exact, not "^" or "~". Run \`pnpm install\`, commit
+          pnpm-lock.yaml, then push and re-run the workflow.
+        EOF
+          exit 1
+        fi
+        echo "@socketsecurity/lib ${ACTUAL_VERSION} >= ${MIN_VERSION} (${MIN_SOURCE})"
+
+    - name: Install agentshield
+      # Auto-skip in matrix cells: AgentShield's scan is
+      # Node-version-indifferent and belongs in a single scan job
+      # (the check / lint / type-check jobs in the reusable ci.yml),
+      # not replicated across every Node × OS matrix cell.
+      # `strategy.job-total` is empty for non-matrix jobs and `1` for
+      # 1×1 matrices, so `< 2` keeps scan-style jobs installing
+      # AgentShield while matrix test cells silently skip. No user-
+      # facing input — preventing PR authors from disabling the scan
+      # via workflow inputs.
+      if: strategy.job-total < 2
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: | # zizmor: ignore[github-env]
+        # Version comes from external-tools.json agentshield.purl,
+        # which the cascade tool keeps up to date. Hard fallback if the file is
+        # absent or unparseable.
+        FALLBACK_VERSION="1.4.0"
+        JQ="${GITHUB_ACTION_PATH}/../lib/jq.mjs"
+        EXTERNAL_TOOLS="${GITHUB_ACTION_PATH}/../../../../external-tools.json"
+        resolve_version() {
+          if [ -f "$EXTERNAL_TOOLS" ]; then
+            local purl
+            purl="$(node "$JQ" "$EXTERNAL_TOOLS" agentshield purl 2>/dev/null || true)"
+            if [ -n "$purl" ]; then
+              echo "${purl##*@}"
+              return
+            fi
+          fi
+          echo "$FALLBACK_VERSION"
+        }
+        AGENTSHIELD_VERSION="$(resolve_version)"
+        echo "agentshield version: $AGENTSHIELD_VERSION"
+
+        # Strip leading range/comparison chars — downloadNpmPackage wants an
+        # exact version. Discouraged forms like "^1.4.0" or "~1.4.0"
+        # still work here but we prefer exact pins.
+        CLEAN_VERSION="${AGENTSHIELD_VERSION#[\^~>=<]}"
+        CLEAN_VERSION="${CLEAN_VERSION#=}"
+
+        # Invoke the npm-package downloader via Node. Node sees the consumer
+        # repo's node_modules (already installed above), so the dynamic import
+        # of @socketsecurity/lib/dlx/package resolves the workspace copy.
+        #
+        # Name + option compat across the @socketsecurity/lib rename boundary:
+        # <= 6.0.6 exports `downloadPackage({ package })`; >= 6.0.7 renamed it
+        # to `downloadNpmPackage({ spec })`. The action runs against whatever
+        # version the consumer has installed, so accept BOTH — pick whichever
+        # export the module provides and pass both option keys.
+        # `|| true` + a SKIP sentinel: the import can legitimately fail to
+        # RESOLVE when the consumer IS @socketsecurity/lib itself and its dist/
+        # isn't built yet at this setup-time step (chicken-and-egg). AgentShield
+        # is a scan convenience, not a build prerequisite — skip with a warning
+        # rather than failing the whole job. A genuine download failure (module
+        # resolved, download threw) still surfaces as an empty binaryPath below.
+        RESULT_JSON="$(AGENTSHIELD_SPEC="ecc-agentshield@${CLEAN_VERSION}" \
+          node --input-type=module -e "
+            let mod;
+            try {
+              mod = await import('@socketsecurity/lib/dlx/package');
+            } catch (e) {
+              process.stdout.write(JSON.stringify({ skip: 'import-failed', error: String(e && e.message || e) }));
+              process.exit(0);
+            }
+            const download = mod.downloadNpmPackage ?? mod.downloadPackage;
+            if (typeof download !== 'function') {
+              process.stdout.write(JSON.stringify({ skip: 'no-export' }));
+              process.exit(0);
+            }
+            const spec = process.env.AGENTSHIELD_SPEC;
+            const { binaryPath, installed } = await download({
+              spec,
+              package: spec,
+              binaryName: 'agentshield',
+            });
+            process.stdout.write(JSON.stringify({ binaryPath, installed }));
+          " 2>/dev/null || true)"
+        SKIP="$(echo "$RESULT_JSON" | node "$JQ" - skip 2>/dev/null || true)"
+        if [ -n "$SKIP" ]; then
+          echo "⚠ Skipping AgentShield install ($SKIP) — @socketsecurity/lib/dlx/package unavailable at setup time. Scan jobs will run without AgentShield."
+          exit 0
+        fi
+        BIN="$(echo "$RESULT_JSON" | node "$JQ" - binaryPath 2>/dev/null || true)"
+        if [ -z "$BIN" ] || [ ! -x "$BIN" ]; then
+          echo "× ecc-agentshield install failed — the npm-package downloader did not return an executable binary path" >&2
+          echo "  Got: $RESULT_JSON" >&2
+          exit 1
+        fi
+        {
+          echo "SOCKET_TOOL_AGENTSHIELD_VERSION=$CLEAN_VERSION"
+          echo "SOCKET_TOOL_AGENTSHIELD_BIN=$BIN"
+        } >> "${GITHUB_ENV:-/dev/null}"
+        echo "AgentShield ready: $BIN (v$CLEAN_VERSION)"

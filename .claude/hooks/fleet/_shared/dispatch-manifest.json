@@ -5,6 +5,12 @@
       "hooks": [
         "fleet/dirty-lockfile-nudge/index.mts",
         "fleet/enterprise-push-nudge/index.mts",
+        {
+          "path": "fleet/pnpm-filter-zero-match-nudge/index.mts",
+          "triggers": [
+            "--filter"
+          ]
+        },
         "fleet/stale-node-modules-nudge/index.mts",
         "fleet/worktree-remove-relink-nudge/index.mts"
       ]
@@ -277,7 +283,7 @@
         "fleet/avoid-cd-nudge/index.mts",
         "fleet/clone-reviewed-repo-nudge/index.mts",
         {
-          "path": "fleet/conversational-prose-nudge/index.mts",
+          "path": "fleet/convo-prose-nudge/index.mts",
           "triggers": [
             "gh issue",
             "gh pr"
@@ -400,7 +406,7 @@
         "fleet/prefer-json-clone-guard/index.mts",
         "fleet/prefer-type-import-guard/index.mts",
         "fleet/prompt-injection-guard/index.mts",
-        "fleet/prose-antipattern-guard/index.mts",
+        "fleet/anti-prose-guard/index.mts",
         "fleet/pull-request-target-guard/index.mts",
         "fleet/readme-fleet-shape-guard/index.mts",
         "fleet/report-location-guard/index.mts",
@@ -474,7 +480,7 @@
         "fleet/uncodified-lesson-nudge/index.mts",
         "fleet/unpushed-main-nudge/index.mts",
         "fleet/variant-analysis-nudge/index.mts",
-        "fleet/yakback-nudge/index.mts"
+        "fleet/reply-prose-nudge/index.mts"
       ]
     }
   ]

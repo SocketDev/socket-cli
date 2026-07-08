@@ -400,8 +400,13 @@ export function listForeignDirtyPaths(
   const opts = { __proto__: null, ...options } as typeof options
   const maxAgeMs = opts?.maxAgeMs ?? DEFAULT_MAX_AGE_MS
   const now = opts?.now ?? Date.now()
+  // stdioString:false → raw Buffer stdout. The lib-stable default trims the
+  // WHOLE output, eating the first line's leading status column (` M path`
+  // reads as staged with the path beheaded by one byte) — the same hazard
+  // scripts/fleet/_shared/git-porcelain.mts guards against.
   const r = spawnSync('git', ['status', '--porcelain'], {
     cwd: repoDir,
+    stdioString: false,
     timeout: 5000,
   })
   if (r.status !== 0) {

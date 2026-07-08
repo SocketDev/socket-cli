@@ -39,10 +39,13 @@ export const PROTECTED_BRANCHES: readonly string[] = ['main', 'master']
 // `git push` flags that take a SEPARATE-WORD value, so the following token is
 // that value (a count, a repo name, a refname) and must NOT be read as the
 // remote or a refspec. The `--flag=value` forms are self-contained and handled
-// by the generic flag skip.
+// by the generic flag skip. `--force-with-lease` is deliberately absent: git
+// only accepts its value ATTACHED (`--force-with-lease[=<ref>[:<expect>]]`),
+// never as a separate word — listing it made `git push --force-with-lease
+// origin main` consume `origin` and mis-read `main` as the remote, hiding the
+// destination from the protected-branch check.
 const VALUE_FLAGS: ReadonlySet<string> = new Set([
   '--exec',
-  '--force-with-lease',
   '--push-option',
   '--receive-pack',
   '--repo',

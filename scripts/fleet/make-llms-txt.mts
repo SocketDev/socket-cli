@@ -16,7 +16,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { fillSlots, hasClaudeCli } from './lib/llms-txt/ai.mts'
@@ -69,7 +69,7 @@ export async function main(): Promise<void> {
         process.exitCode = 1
         return
       }
-      if (!quiet) logger.info('llms.txt is current')
+      if (!quiet) {logger.info('llms.txt is current')}
       return
     }
 
@@ -83,7 +83,7 @@ export async function main(): Promise<void> {
       const newStruct = parseStructure(skeletonDoc)
       if (structuresMatch(existingStruct, newStruct)) {
         existingNotes = harvestProse(existing)
-        if (!quiet) logger.info('structure unchanged — reusing existing prose')
+        if (!quiet) {logger.info('structure unchanged — reusing existing prose')}
       }
     }
 
@@ -95,7 +95,7 @@ export async function main(): Promise<void> {
         const canUseAi = await hasClaudeCli(REPO_ROOT)
         if (!canUseAi) {
           if (!quiet)
-            logger.warn('claude CLI not found — rendering without AI fill')
+            {logger.warn('claude CLI not found — rendering without AI fill')}
         } else {
           const charBudgets: Record<string, number> = {}
           for (const slot of slots) {
@@ -115,7 +115,7 @@ export async function main(): Promise<void> {
           }
           filledNotes = result.slots
           if (!quiet)
-            logger.info(`AI filled ${Object.keys(filledNotes).length} slots`)
+            {logger.info(`AI filled ${Object.keys(filledNotes).length} slots`)}
         }
       }
     }
@@ -128,7 +128,7 @@ export async function main(): Promise<void> {
     writeFileSync(outPath, rendered, 'utf8')
 
     if (!quiet)
-      logger.info(`wrote ${outPath} (${Buffer.byteLength(rendered)} bytes)`)
+      {logger.info(`wrote ${outPath} (${Buffer.byteLength(rendered)} bytes)`)}
   } catch (e) {
     logger.error(`make-llms-txt failed: ${errorMessage(e)}`)
     process.exitCode = 1
@@ -160,6 +160,8 @@ function harvestProse(content: string): Record<string, string> {
     }
 
     if (currentSection !== undefined && trimmed.startsWith('- [')) {
+      // Markdown link bullet: `- [title](url): description` — captures the link
+      // label and the trailing description text after the colon.
       const match = /^- \[([^\]]+)\]\([^)]+\): (.+)$/.exec(trimmed)
       if (match !== null) {
         const linkName = match[1]!.toLowerCase().replace(/\s+/g, '-')

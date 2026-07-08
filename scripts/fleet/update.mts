@@ -111,7 +111,8 @@ const steps: Step[] = [
 ]
 
 const uncheckedPackages = new Set<string>()
-for (const step of steps) {
+for (let i = 0, { length } = steps; i < length; i += 1) {
+  const step = steps[i]!;
   let { ok, output } = await run(step.cmd, step.args)
   if (ok && step.tazePass && collectPackumentFailures(output).length > 0) {
     // One retry absorbs a transient blip; a persistent failure set is a real
@@ -129,12 +130,13 @@ for (const step of steps) {
       uncheckedPackages.add(pkg)
     }
   }
+
 }
 
 // Fail-loud gate: taze exits 0 even when version lookups fail, which reads as
 // "everything is current" while those packages were never checked at all.
 if (process.exitCode !== 1 && uncheckedPackages.size > 0) {
-  const list = [...uncheckedPackages].sort()
+  const list = [...uncheckedPackages].toSorted()
   logger.fail(
     `update: taze could not check ${list.length} package(s) for updates ` +
       '(version lookups failed after a retry).',

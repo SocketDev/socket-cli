@@ -30,7 +30,7 @@ import process from 'node:process'
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import {

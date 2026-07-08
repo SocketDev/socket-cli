@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
-import { execFileSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
 import crypto from "node:crypto";
+import { execFileSync } from "node:child_process";
 
 //#region template/base/bootstrap/src/helpers.mts
 function errorMessage(e) {
@@ -210,7 +210,7 @@ function verifySegments(segmentsDir, manifest) {
 
 //#endregion
 //#region template/base/bootstrap/src/install.mts
-const logger$1 = getDefaultLogger();
+const logger$3 = getDefaultLogger();
 /**
 * Copy every verified byte-identical file from `filesDir` into `dest`,
 * creating parent directories as needed.
@@ -254,7 +254,7 @@ function installWorkspaceSegment(segmentsDir, dest, manifest) {
 	if (ws === void 0) return 0;
 	const fleetFile = path.join(segmentsDir, "pnpm-workspace.yaml.fleet");
 	if (!existsSync(fleetFile)) {
-		logger$1.log(`install-fleet: workspace segment file missing at ${fleetFile} — skipping workspace merge`);
+		logger$3.log(`install-fleet: workspace segment file missing at ${fleetFile} — skipping workspace merge`);
 		return 0;
 	}
 	const bundleFleetSections = readFileSync(fleetFile, "utf8");
@@ -267,7 +267,7 @@ function installWorkspaceSegment(segmentsDir, dest, manifest) {
 			fleetKeys: ws.fleetKeys
 		}));
 	} catch (e) {
-		logger$1.log(`install-fleet: pnpm-workspace.yaml merge failed — ${errorMessage(e)}. Nothing written.`);
+		logger$3.log(`install-fleet: pnpm-workspace.yaml merge failed — ${errorMessage(e)}. Nothing written.`);
 		return 1;
 	}
 	return 0;
@@ -286,7 +286,7 @@ const FLEET_STATUS_SCRIPT = "node bootstrap/fleet.mjs --status";
 function wirePackageJson(dest) {
 	const pkgPath = path.join(dest, "package.json");
 	if (!existsSync(pkgPath)) {
-		logger$1.log(`install-fleet: --wire: no package.json at ${pkgPath} — skipping`);
+		logger$3.log(`install-fleet: --wire: no package.json at ${pkgPath} — skipping`);
 		return;
 	}
 	const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
@@ -377,7 +377,7 @@ function applyThinMode(options) {
 			stdio: "inherit"
 		});
 	} catch (e) {
-		logger$1.log(`install-fleet: --thin: git rm --cached failed (non-fatal) — ${errorMessage(e)}`);
+		logger$3.log(`install-fleet: --thin: git rm --cached failed (non-fatal) — ${errorMessage(e)}`);
 	}
 }
 const PRUNE_SKIP_NAMES = /* @__PURE__ */ new Set([
@@ -400,7 +400,7 @@ function pruneStaleFleetFiles(dest, manifest) {
 	for (const segment of manifest.segments ?? []) kept.add(segment.path);
 	let pruned = 0;
 	for (const root of thinIgnoreEntries(manifest)) {
-		if (!root.endsWith("/")) continue;
+		if (!/[/\\]$/.test(root)) continue;
 		const dirAbs = path.join(dest, root);
 		if (!existsSync(dirAbs)) continue;
 		for (const rel of walkFiles(dirAbs, dest)) {
@@ -568,8 +568,12 @@ function resolveLockStepState(inputs) {
 * 1  OUT-OF-SYNC — ALWAYS (broken invariant, fail loud regardless of flags).
 */
 function lockStepExitCode(state, options) {
+	const opts = {
+		__proto__: null,
+		...options
+	};
 	if (state.state === "out-of-sync") return 1;
-	if (state.state === "update-available") return options?.exitCode ? 10 : 0;
+	if (state.state === "update-available") return opts?.exitCode ? 10 : 0;
 	return 0;
 }
 const ERR_LOCKSTEP_MISMATCH = "ERR_WHEELHOUSE_LOCKSTEP_MISMATCH";
@@ -635,7 +639,10 @@ function shouldShowNotice(inputs) {
 * ASCII when `color` is false.
 */
 function formatUpdateNotice(options) {
-	const { color, newestRef } = options;
+	const { color, newestRef } = {
+		__proto__: null,
+		...options
+	};
 	const lines = [
 		"A newer fleet scaffolding release is available.",
 		`Re-cascade to ${newestRef}:`,
@@ -650,6 +657,195 @@ function formatUpdateNotice(options) {
 		...lines.map((l) => `│ ${l.padEnd(width)} │`),
 		bottom
 	].join("\n");
+}
+
+//#endregion
+//#region template/base/bootstrap/src/resolve.mts
+/**
+* @file GitHub release resolution and lock-step assertion helpers.
+*   Extracted from fleet.mts to keep that file under the 500-line soft cap.
+*   All functions here shell out to `gh` (dep-0: no socket-lib) or are pure
+*   logic; none do filesystem writes.
+*   Lock-step note: assertLockStep enforces the cascadeSha === templateSha
+*   invariant but does not resolve refs itself — see resolveReleaseTemplateSha.
+*/
+const logger$2 = getDefaultLogger();
+const MANIFEST_NAME$1 = "release-bundle-manifest.json";
+/**
+* Assert the lock-step invariant before applying a release: the member's pinned
+* `bundle.cascadeSha` MUST equal the release's `templateSha`.
+* `--frozen-lockfile` semantics — a hard fail (never apply a mismatched
+* release). Returns true when intact OR when the member declares no
+* `cascadeSha` (a non-lock-step member — the legacy ref-only pin still
+* fetches). Logs the parsed error + returns false on mismatch.
+*/
+function assertLockStep(options) {
+	const { cascadeSha, manifestTemplateSha, ref } = {
+		__proto__: null,
+		...options
+	};
+	if (cascadeSha === void 0) return true;
+	if (cascadeSha === manifestTemplateSha) return true;
+	logger$2.error(formatLockStepError({
+		cascadeSha,
+		pinnedTemplateSha: manifestTemplateSha,
+		ref
+	}));
+	return false;
+}
+/**
+* Resolve the NEWEST `fleet-*` release tag via `gh release list`. Returns the
+* latest tag, or undefined when none / offline. The list is newest-first.
+*/
+function resolveNewestRef(repo) {
+	try {
+		const out = execFileSync("gh", [
+			"release",
+			"list",
+			"--repo",
+			repo,
+			"--limit",
+			"30",
+			"--json",
+			"tagName,createdAt"
+		], {
+			encoding: "utf8",
+			stdio: [
+				"ignore",
+				"pipe",
+				"ignore"
+			]
+		});
+		const rows = JSON.parse(out);
+		for (const row of rows) if (typeof row.tagName === "string" && row.tagName.startsWith("fleet-")) return row.tagName;
+		return;
+	} catch {
+		return;
+	}
+}
+/**
+* Resolve a release's `templateSha` from its manifest asset via gh. Dep-0:
+* shells `gh release download <ref> --pattern release-bundle-manifest.json` and
+* reads the stamped field. Returns undefined when the release / asset / field
+* is absent (offline, no such tag) — the caller decides whether that's fatal.
+*/
+function resolveReleaseTemplateSha(ref, repo) {
+	if (!ref) return;
+	const tmp = mkdtempSync(path.join(os.tmpdir(), "fleet-status-"));
+	try {
+		execFileSync("gh", [
+			"release",
+			"download",
+			ref,
+			"--repo",
+			repo,
+			"--pattern",
+			MANIFEST_NAME$1,
+			"--dir",
+			tmp
+		], { stdio: [
+			"ignore",
+			"ignore",
+			"ignore"
+		] });
+		const manifestPath = path.join(tmp, MANIFEST_NAME$1);
+		if (!existsSync(manifestPath)) return;
+		const json = JSON.parse(readFileSync(manifestPath, "utf8"));
+		return typeof json.templateSha === "string" ? json.templateSha : void 0;
+	} catch {
+		return;
+	} finally {
+		rmSync(tmp, {
+			recursive: true,
+			force: true
+		});
+	}
+}
+
+//#endregion
+//#region template/base/bootstrap/src/status.mts
+/**
+* @file Status display helpers for `fleet:status` — the read-only status verb.
+*   Extracted from fleet.mts to keep that file under the 500-line soft cap.
+*   All functions here are pure display or throttle logic; none mutate the
+*   install state.
+*   Lock-step note: the sibling lockstep.mts module owns the lock-step state
+*   machine; this file only formats and renders it.
+*/
+const logger$1 = getDefaultLogger();
+/**
+* Fire the passive update notice opportunistically (update-notifier style). The
+* caller already resolved a newer release exists; this throttles to once/24h
+* via the out-of-tree store, suppresses in CI, honors the opt-out env +
+* NO_COLOR, and NAMES the re-cascade. NEVER weakens the fetch-path verify or
+* the status hard-fail — it only silences the box. Returns true when a notice
+* was printed.
+*/
+function maybeShowUpdateNotice(options) {
+	const { dest, newestRef, updateAvailable } = {
+		__proto__: null,
+		...options
+	};
+	const store = readNoticeStore(dest);
+	if (!shouldShowNotice({
+		ci: process.env["CI"] !== void 0 && process.env["CI"] !== "",
+		newestRef,
+		nowMs: Date.now(),
+		optedOut: process.env["WHEELHOUSE_NO_UPDATE_NOTIFIER"] === "1",
+		store,
+		updateAvailable
+	}) || newestRef === void 0) return false;
+	const color = process.env["NO_COLOR"] === void 0;
+	process.stderr.write(`${formatUpdateNotice({
+		color,
+		newestRef
+	})}\n`);
+	writeNoticeStore(dest, {
+		lastCheckMs: Date.now(),
+		lastSeenRef: newestRef
+	});
+	return true;
+}
+function printStatusReport(state, options) {
+	const opts = {
+		__proto__: null,
+		...options
+	};
+	const pinnedCell = `${state.config.ref} (${state.pinnedTemplateSha ?? "—"})`;
+	const landedCell = state.config.cascadeSha || "—";
+	const newestCell = state.newestRef === void 0 ? "—" : `${state.newestRef} (${state.newestTemplateSha ?? "—"})`;
+	if (state.state === "current") {
+		logger$1.log(`fleet:status: CURRENT — pinned ${pinnedCell}, in lock-step.`);
+		return;
+	}
+	if (!opts.noHeader) logger$1.log("  Pinned                         | Landed       | Newest");
+	const mismatchTag = state.state === "out-of-sync" ? "  [MISMATCH]" : "";
+	logger$1.log(`  ${pinnedCell} | ${landedCell} | ${newestCell}${mismatchTag}`);
+	if (state.state === "update-available" && state.newestRef !== void 0) {
+		logger$1.log(`re-cascade to ${state.newestRef}`);
+		return;
+	}
+	logger$1.error(formatLockStepError({
+		cascadeSha: state.config.cascadeSha,
+		pinnedTemplateSha: state.pinnedTemplateSha,
+		ref: state.config.ref
+	}));
+}
+/**
+* Stable-keyed JSON shape for `fleet:status --json`. Keys never change between
+* states so a script can read them unconditionally.
+*/
+function statusJson(state) {
+	return {
+		cascadeSha: state.config.cascadeSha,
+		inLockStep: state.inLockStep,
+		newestRef: state.newestRef ?? null,
+		newestTemplateSha: state.newestTemplateSha ?? null,
+		pinnedRef: state.config.ref,
+		pinnedTemplateSha: state.pinnedTemplateSha ?? null,
+		state: state.state,
+		updateAvailable: state.updateAvailable
+	};
 }
 
 //#endregion
@@ -697,93 +893,6 @@ function parseArgs(argv) {
 	return opts;
 }
 /**
-* Resolve a release's `templateSha` from its manifest asset via gh. Dep-0:
-* shells `gh release download <ref> --pattern release-bundle-manifest.json` and
-* reads the stamped field. Returns undefined when the release / asset / field
-* is absent (offline, no such tag) — the caller decides whether that's fatal.
-*/
-function resolveReleaseTemplateSha(ref, repo) {
-	if (!ref) return;
-	const tmp = mkdtempSync(path.join(os.tmpdir(), "fleet-status-"));
-	try {
-		execFileSync("gh", [
-			"release",
-			"download",
-			ref,
-			"--repo",
-			repo,
-			"--pattern",
-			MANIFEST_NAME,
-			"--dir",
-			tmp
-		], { stdio: [
-			"ignore",
-			"ignore",
-			"ignore"
-		] });
-		const manifestPath = path.join(tmp, MANIFEST_NAME);
-		if (!existsSync(manifestPath)) return;
-		const json = JSON.parse(readFileSync(manifestPath, "utf8"));
-		return typeof json.templateSha === "string" ? json.templateSha : void 0;
-	} catch {
-		return;
-	} finally {
-		rmSync(tmp, {
-			recursive: true,
-			force: true
-		});
-	}
-}
-/**
-* Resolve the NEWEST `fleet-*` release tag via `gh release list`. Returns the
-* latest tag, or undefined when none / offline. The list is newest-first.
-*/
-function resolveNewestRef(repo) {
-	try {
-		const out = execFileSync("gh", [
-			"release",
-			"list",
-			"--repo",
-			repo,
-			"--limit",
-			"30",
-			"--json",
-			"tagName,createdAt"
-		], {
-			encoding: "utf8",
-			stdio: [
-				"ignore",
-				"pipe",
-				"ignore"
-			]
-		});
-		const rows = JSON.parse(out);
-		for (const row of rows) if (typeof row.tagName === "string" && row.tagName.startsWith("fleet-")) return row.tagName;
-		return;
-	} catch {
-		return;
-	}
-}
-/**
-* Assert the lock-step invariant before applying a release: the member's pinned
-* `bundle.cascadeSha` MUST equal the release's `templateSha`.
-* `--frozen-lockfile` semantics — a hard fail (never apply a mismatched
-* release). Returns true when intact OR when the member declares no
-* `cascadeSha` (a non-lock-step member — the legacy ref-only pin still
-* fetches). Logs the parsed error + returns false on mismatch.
-*/
-function assertLockStep(options) {
-	const { cascadeSha, manifestTemplateSha, ref } = options;
-	if (cascadeSha === void 0) return true;
-	if (cascadeSha === manifestTemplateSha) return true;
-	logger.error(formatLockStepError({
-		cascadeSha,
-		pinnedTemplateSha: manifestTemplateSha,
-		ref
-	}));
-	return false;
-}
-/**
 * Render the `fleet:status` report. Read-only — NEVER mutates. Resolves the
 * pinned release's templateSha + the newest release, builds the lock-step
 * state, prints the table / JSON / line, and returns the terraform-style exit
@@ -818,73 +927,6 @@ function runStatus(options) {
 		if (!opts.quiet) logger.log(JSON.stringify(statusJson(state)));
 	} else if (!opts.quiet) printStatusReport(state, { noHeader: opts.noHeader ?? false });
 	return lockStepExitCode(state, { exitCode: opts.exitCode ?? false });
-}
-/**
-* Stable-keyed JSON shape for `fleet:status --json`. Keys never change between
-* states so a script can read them unconditionally.
-*/
-function statusJson(state) {
-	return {
-		cascadeSha: state.config.cascadeSha,
-		inLockStep: state.inLockStep,
-		newestRef: state.newestRef ?? null,
-		newestTemplateSha: state.newestTemplateSha ?? null,
-		pinnedRef: state.config.ref,
-		pinnedTemplateSha: state.pinnedTemplateSha ?? null,
-		state: state.state,
-		updateAvailable: state.updateAvailable
-	};
-}
-function printStatusReport(state, options) {
-	const pinnedCell = `${state.config.ref} (${state.pinnedTemplateSha ?? "—"})`;
-	const landedCell = state.config.cascadeSha || "—";
-	const newestCell = state.newestRef === void 0 ? "—" : `${state.newestRef} (${state.newestTemplateSha ?? "—"})`;
-	if (state.state === "current") {
-		logger.log(`fleet:status: CURRENT — pinned ${pinnedCell}, in lock-step.`);
-		return;
-	}
-	if (!options.noHeader) logger.log("  Pinned                         | Landed       | Newest");
-	const mismatchTag = state.state === "out-of-sync" ? "  [MISMATCH]" : "";
-	logger.log(`  ${pinnedCell} | ${landedCell} | ${newestCell}${mismatchTag}`);
-	if (state.state === "update-available" && state.newestRef !== void 0) {
-		logger.log(`re-cascade to ${state.newestRef}`);
-		return;
-	}
-	logger.error(formatLockStepError({
-		cascadeSha: state.config.cascadeSha,
-		pinnedTemplateSha: state.pinnedTemplateSha,
-		ref: state.config.ref
-	}));
-}
-/**
-* Fire the passive update notice opportunistically (update-notifier style). The
-* caller already resolved a newer release exists; this throttles to once/24h
-* via the out-of-tree store, suppresses in CI, honors the opt-out env +
-* NO_COLOR, and NAMES the re-cascade. NEVER weakens the fetch-path verify or
-* the status hard-fail — it only silences the box. Returns true when a notice
-* was printed.
-*/
-function maybeShowUpdateNotice(options) {
-	const { dest, newestRef, updateAvailable } = options;
-	const store = readNoticeStore(dest);
-	if (!shouldShowNotice({
-		ci: process.env["CI"] !== void 0 && process.env["CI"] !== "",
-		newestRef,
-		nowMs: Date.now(),
-		optedOut: process.env["WHEELHOUSE_NO_UPDATE_NOTIFIER"] === "1",
-		store,
-		updateAvailable
-	}) || newestRef === void 0) return false;
-	const color = process.env["NO_COLOR"] === void 0;
-	process.stderr.write(`${formatUpdateNotice({
-		color,
-		newestRef
-	})}\n`);
-	writeNoticeStore(dest, {
-		lastCheckMs: Date.now(),
-		lastSeenRef: newestRef
-	});
-	return true;
 }
 /**
 * Download, verify, and apply the fleet bundle identified by `options.ref`.
@@ -1025,4 +1067,4 @@ if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
 }
 
 //#endregion
-export { ERR_LOCKSTEP_MISMATCH, FLEET_STATUS_SCRIPT, PREPARE_FETCH, SYNC_FLEET_SCRIPT, UPDATE_NOTIFIER_OPT_OUT_ENV, applyThinMode, assertLockStep, beginMarker, computeSha256, endMarker, errorMessage, formatLockStepError, formatUpdateNotice, installFiles, installFleet, installSegments, installWorkspaceSegment, legacyBeginMarker, legacyEndMarker, lockStepExitCode, maybeShowUpdateNotice, mergeWorkspaceYaml, parseArgs, parseYamlKeyBlocks, pruneStaleFleetFiles, readAppliedRef, readBundleConfig, readBundleRef, readManifest, readNoticeStore, resolveLockStepState, resolveNewestRef, resolveReleaseTemplateSha, run, runStatus, shouldShowNotice, spliceFleetBlock, statusJson, thinIgnoreEntries, validateBundleBlock, validateCascadeSha, validateRef, verifyBundleFiles, verifySegments, walkFiles, wirePackageJson, writeAppliedRef, writeNoticeStore };
+export { ERR_LOCKSTEP_MISMATCH, FLEET_STATUS_SCRIPT, PREPARE_FETCH, SYNC_FLEET_SCRIPT, UPDATE_NOTIFIER_OPT_OUT_ENV, applyThinMode, assertLockStep, beginMarker, computeSha256, endMarker, errorMessage, formatLockStepError, formatUpdateNotice, installFiles, installFleet, installSegments, installWorkspaceSegment, legacyBeginMarker, legacyEndMarker, lockStepExitCode, maybeShowUpdateNotice, mergeWorkspaceYaml, parseArgs, parseYamlKeyBlocks, printStatusReport, pruneStaleFleetFiles, readAppliedRef, readBundleConfig, readBundleRef, readManifest, readNoticeStore, resolveLockStepState, resolveNewestRef, resolveReleaseTemplateSha, run, runStatus, shouldShowNotice, spliceFleetBlock, statusJson, thinIgnoreEntries, validateBundleBlock, validateCascadeSha, validateRef, verifyBundleFiles, verifySegments, walkFiles, wirePackageJson, writeAppliedRef, writeNoticeStore };

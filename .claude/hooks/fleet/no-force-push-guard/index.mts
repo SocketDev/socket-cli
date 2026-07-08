@@ -37,6 +37,7 @@
 
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
+import { pushDestinations } from '../_shared/push-refspec.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
 import { squashSentinelAllows } from '../_shared/squash-sentinel.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
@@ -151,6 +152,28 @@ export function blockMessage(command: string, match: ForcePushMatch): string {
   return lines.join('\n')
 }
 
+/**
+ * Branch-scoped combo phrases for this command's push destinations.
+ * `Allow force-with-lease <branch> bypass` authorizes BOTH the force flag
+ * (this guard) and the protected-branch push (`push-protected-branch-guard`)
+ * for exactly that branch — one phrase for the one operation a squash-repo
+ * reconciliation performs, and it cannot leak to a different branch later.
+ */
+export function scopedLeasePhrases(command: string): string[] {
+  const out: string[] = []
+  for (const c of commandsFor(command, 'git')) {
+    const pushIdx = c.args.indexOf('push')
+    if (pushIdx === -1) {
+      continue
+    }
+    const { destinations } = pushDestinations(c.args.slice(pushIdx + 1))
+    for (const destination of destinations) {
+      out.push(`Allow force-with-lease ${destination} bypass`)
+    }
+  }
+  return out
+}
+
 export const check = bashGuard((command, payload): GuardResult => {
   // Allowlist: the squashing-history skill's force-push is intrinsic to the
   // squash (byte-verified tree, backup branch already pushed) — see
@@ -164,7 +187,8 @@ export const check = bashGuard((command, payload): GuardResult => {
     return undefined
   }
 
-  if (bypassPhrasePresent(payload.transcript_path, ACCEPTED_PHRASES)) {
+  const phrases = [...ACCEPTED_PHRASES, ...scopedLeasePhrases(command)]
+  if (bypassPhrasePresent(payload.transcript_path, phrases)) {
     return undefined
   }
 

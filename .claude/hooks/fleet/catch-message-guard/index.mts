@@ -327,7 +327,7 @@ export const check = editGuard((filePath, content, payload) => {
       '  isn\'t an Error (e.g. `throw "string"`, `throw 42`, non-Error rejections).',
       '',
       '  Fix in workspace packages:',
-      '    import { errorMessage } from "@socketsecurity/lib/errors"',
+      '    import { errorMessage } from "@socketsecurity/lib/errors/message"',
       '    ...',
       '    } catch (e) {',
       '      logger.error(`Something failed: ${errorMessage(e)}`)',

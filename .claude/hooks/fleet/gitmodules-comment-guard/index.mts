@@ -30,6 +30,7 @@
 // hook deploy can't brick the session.
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 const ALLOW_MARKER = '# socket-lint: allow gitmodules-no-comment'
 
@@ -76,7 +77,7 @@ export function findOrphanSubmoduleSections(text: string): string[] {
 }
 
 export const check = editGuard((filePath, content) => {
-  if (!filePath.endsWith('/.gitmodules')) {
+  if (!normalizePath(filePath).endsWith('/.gitmodules')) {
     return undefined
   }
   // Edit gives us new_string (the replacement); Write gives us

@@ -27,13 +27,13 @@ const pkgJsonPath = path.join(REPO_ROOT, 'package.json')
 const llmsTxtPath = path.join(REPO_ROOT, 'llms.txt')
 
 if (!existsSync(pkgJsonPath)) {
-  if (!quiet) logger.info('no package.json — skipping llms.txt check')
+  if (!quiet) {logger.info('no package.json — skipping llms.txt check')}
   process.exit(0)
 }
 
 if (!existsSync(llmsTxtPath)) {
   if (!quiet)
-    logger.info('no llms.txt — skipping check (run make-llms-txt to generate)')
+    {logger.info('no llms.txt — skipping check (run make-llms-txt to generate)')}
   process.exit(0)
 }
 

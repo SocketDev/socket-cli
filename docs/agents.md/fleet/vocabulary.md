@@ -11,7 +11,7 @@ instruction the moment the phrase appears — no clarifying question needed.
 
 ## Writing
 
-- **No "honest" / "honestly" as a framing word** in plans, docs, commit bodies, or prose. State the claim directly; the framing adds nothing. (The `prose-antipattern-guard` flags hedging adverbs; this is the same discipline applied to a filler frame.)
+- **No "honest" / "honestly" as a framing word** in plans, docs, commit bodies, or prose. State the claim directly; the framing adds nothing. (The `anti-prose-guard` flags hedging adverbs; this is the same discipline applied to a filler frame.)
 
 ## Operational
 

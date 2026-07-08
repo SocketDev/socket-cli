@@ -53,6 +53,12 @@ catalog:
   'semver': 7.8.5
   'shell-quote': 1.9.0
   'taze': 19.14.1
+  # TypeScript 7 NATIVE (the Go `tsc`). Track the highest available 7.x
+  # PRE-RELEASE — the RC line is intentional. npm's `latest` dist-tag points at
+  # 6.x stable, so "latest" is a DOWNGRADE off the native compiler: never follow
+  # it. Bump only to a newer `7.x-rc`/`7.x` (7 > 6, and a real 7.x release when
+  # it ships outranks the rc). Pinned-toolchain, excluded from taze
+  # (UPDATE_PINNED_TOOLCHAIN) so it is never auto-bumped — always a deliberate bump.
   'typescript': 7.0.1-rc
   'vitest': 4.1.9
   '@vitest/coverage-v8': 4.1.9

@@ -22,7 +22,7 @@ diet pattern the CLAUDE.md reference card uses (detail defers to
 `docs/agents.md/`). Inline prose duplicates the doc and drifts from it.
 
 This is a NUDGE, not a guard: a short bullet without a doc yet is common
-mid-work. Prose quality (`prose-antipattern-guard`) and impl-detail
+mid-work. Prose quality (`anti-prose-guard`) and impl-detail
 (`Allow changelog-impl-detail bypass`) are the separate hard gates.
 
 ## Bypass

@@ -308,6 +308,9 @@ export function matchHuskySkip(command: string): string | undefined {
   if (!command.includes('HUSKY=')) {
     return undefined
   }
+  // `||` and `&&` — shell short-circuit operators; `;`, `|`, `&`, newline —
+  // statement/pipe terminators; `$(` and backtick — command substitution openers;
+  // `(` and `{` — subshell/compound-command starters.
   const segments = command.split(/\|\||&&|[;|&\n]|\$\(|`|[({]/)
   for (const segment of segments) {
     const words = segment.trim().split(/\s+/)

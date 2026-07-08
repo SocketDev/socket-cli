@@ -26,7 +26,7 @@ try {
 ```
 
 The fix is to route through `errorMessage()` from
-`@socketsecurity/lib/errors` (workspace) or
+`@socketsecurity/lib/errors/message` (workspace) or
 `build-infra/lib/error-utils` (fleet builders), which returns
 `e.message` for `Error` instances and `String(err)` otherwise.
 
@@ -65,7 +65,7 @@ Fails open on regex / parse errors.
 ## Fix
 
 ```ts
-import { errorMessage } from '@socketsecurity/lib/errors'
+import { errorMessage } from '@socketsecurity/lib/errors/message'
 
 try {
   await doWork()

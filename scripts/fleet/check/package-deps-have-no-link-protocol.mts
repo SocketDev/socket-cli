@@ -14,6 +14,7 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from '../paths.mts'
@@ -53,7 +54,7 @@ export async function checkPackageJson(
     // OWNING check reports; this gate only cares about link: deps, so name the
     // file loudly and move on rather than dying mid-scan with no path.
     logger.warn(
-      `link-protocol check: skipping unparseable ${filePath}: ${e instanceof Error ? e.message : String(e)}`,
+      `link-protocol check: skipping unparseable ${filePath}: ${errorMessage(e)}`,
     )
     return []
   }
@@ -81,11 +82,11 @@ export async function findPackageJsonFiles(dir: string): Promise<string[]> {
       entry.name === '.git' ||
       entry.name === 'build' ||
       entry.name === 'dist' ||
-      entry.name === 'node_modules' ||
       // Vendored upstream trees (submodule corpora) carry foreign — sometimes
       // deliberately malformed — fixture package.jsons that are data, not this
       // repo's dependency surface.
       entry.name === 'external' ||
+      entry.name === 'node_modules' ||
       entry.name === 'third_party' ||
       entry.name === 'upstream' ||
       entry.name === 'vendor'
@@ -117,11 +118,13 @@ async function main(): Promise<void> {
     'Use workspace: for in-repo packages or catalog: for centrally-pinned versions.',
   )
   logger.log('')
-  for (const violation of violations) {
+  for (let i = 0, { length } = violations; i < length; i += 1) {
+    const violation = violations[i]!;
     logger.log(`  ${path.relative(REPO_ROOT, violation.file)}`)
     logger.log(
       `    ${violation.field}.${violation.package}: "${violation.value}"`,
     )
+  
   }
   process.exitCode = 1
 }

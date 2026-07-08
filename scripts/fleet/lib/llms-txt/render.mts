@@ -16,12 +16,12 @@ const HARD_CAP_BYTES = 16 * 1024
  */
 function renderFacts(facts: RepoFacts): string {
   const rows: string[] = []
-  if (facts.version !== undefined) rows.push(`| version | ${facts.version} |`)
-  if (facts.nodeFloor !== undefined) rows.push(`| node | ${facts.nodeFloor} |`)
+  if (facts.version !== undefined) {rows.push(`| version | ${facts.version} |`)}
+  if (facts.nodeFloor !== undefined) {rows.push(`| node | ${facts.nodeFloor} |`)}
   rows.push(`| layout | ${facts.layout} |`)
-  if (facts.license !== undefined) rows.push(`| license | ${facts.license} |`)
+  if (facts.license !== undefined) {rows.push(`| license | ${facts.license} |`)}
   rows.push(`| package manager | pnpm (from repo root) |`)
-  if (rows.length === 0) return ''
+  if (rows.length === 0) {return ''}
   return `| key | value |\n| --- | --- |\n${rows.join('\n')}\n`
 }
 
@@ -64,8 +64,9 @@ export function renderDocument(
   }
 
   // Sections — omit empty.
-  for (const section of sections) {
-    if (section.links.length === 0) continue
+  for (let i = 0, { length } = sections; i < length; i += 1) {
+    const section = sections[i]!;
+    if (section.links.length === 0) {continue}
     parts.push(`## ${section.title}`)
     parts.push('')
     for (const link of section.links) {
@@ -75,6 +76,7 @@ export function renderDocument(
       parts.push(renderLink(link.name, link.url, note))
     }
     parts.push('')
+  
   }
 
   let rendered = parts.join('\n').trimEnd() + '\n'
@@ -132,16 +134,16 @@ export function parseStructure(content: string): LlmsStructure {
  * structures are equivalent (same H1, same sections + links in order).
  */
 export function structuresMatch(a: LlmsStructure, b: LlmsStructure): boolean {
-  if (a.h1 !== b.h1) return false
-  if (a.sectionTitles.length !== b.sectionTitles.length) return false
+  if (a.h1 !== b.h1) {return false}
+  if (a.sectionTitles.length !== b.sectionTitles.length) {return false}
   for (let i = 0; i < a.sectionTitles.length; i += 1) {
-    if (a.sectionTitles[i] !== b.sectionTitles[i]) return false
+    if (a.sectionTitles[i] !== b.sectionTitles[i]) {return false}
     const aLinks = a.sectionLinks[a.sectionTitles[i]!] ?? []
     const bLinks = b.sectionLinks[b.sectionTitles[i]!] ?? []
-    if (aLinks.length !== bLinks.length) return false
+    if (aLinks.length !== bLinks.length) {return false}
     for (let j = 0; j < aLinks.length; j += 1) {
       if (aLinks[j]![0] !== bLinks[j]![0] || aLinks[j]![1] !== bLinks[j]![1])
-        return false
+        {return false}
     }
   }
   return true

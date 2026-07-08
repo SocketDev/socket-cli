@@ -46,7 +46,7 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import type { SpawnSyncOptions } from '@socketsecurity/lib-stable/process/spawn/types'
 
 import { resolveScopeMode } from './_shared/scope-flags.mts'
-import { isCheckByName, firstPartyImports } from './check/tests-are-mirror-named.mts'
+import { firstPartyImports, isCheckByName } from './check/tests-are-mirror-named.mts'
 import { GENERATED_GLOBS, isGeneratedPath } from './constants/generated-globs.mts'
 
 const logger = getDefaultLogger()

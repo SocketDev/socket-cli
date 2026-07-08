@@ -101,6 +101,8 @@ export function looksLikeImperative(text: string): boolean {
 // fleet queue discipline, an explicit now/urgent IS the sanctioned redirect
 // signal — a NEW ask mid-queue is normally enqueued, but an urgent one pivots.
 const URGENCY_CAPS_RE = /\b(?:NOW|ASAP|URGENT)\b/
+// Urgency keywords: `urgent` or `urgently`, `immediately`, `right now`,
+// `drop everything`, or `this instant` — whole-word match, case-insensitive.
 const URGENCY_WORDS_RE =
   /\b(?:urgent(?:ly)?|immediately|right now|drop everything|this instant)\b/i
 const SHOUT_RUN_RE = /\b[A-Z]{3,}(?:\s+[A-Z]{3,})+\b/

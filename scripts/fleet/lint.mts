@@ -30,6 +30,8 @@ import {
   getModifiedFiles,
   getStagedFiles,
 } from './_shared/format-scope.mts'
+import { pathToFileURL } from 'node:url'
+
 import { resolveScopeMode } from './_shared/scope-flags.mts'
 
 const logger = getDefaultLogger()
@@ -371,6 +373,21 @@ function runFiles(files: string[]): number {
   return 0
 }
 
+/**
+ * The loud-scope contract for fix runs: a `--fix` outside `--all` only touches
+ * the files git already sees as changed, so a repo-wide autofix campaign run
+ * that way is a SILENT no-op on the whole backlog (two delegated wave runs
+ * reported success while fixing nothing, 2026-07-07). Every scoped fix run
+ * ends with this reminder so the operator can tell "fixed my edits" apart
+ * from "fixed the repo".
+ */
+export function fixScopeReminder(scopeMode: string): string {
+  return (
+    `fix applied to ${scopeMode.toUpperCase()} files only — the repo-wide backlog is untouched.\n` +
+    'For a wave: pnpm run lint --fix --all  (add LINT_DOGFOOD=1 to reach template/).'
+  )
+}
+
 function main(): void {
   if (mode === 'all') {
     log('Lint scope: all')
@@ -387,6 +404,9 @@ function main(): void {
 
   if (files.length === 0) {
     log(`No ${mode} files; skipping lint.`)
+    if (fix) {
+      log(fixScopeReminder(mode))
+    }
     return
   }
 
@@ -411,6 +431,14 @@ function main(): void {
   } else {
     log('Lint failed')
   }
+  if (fix) {
+    log(fixScopeReminder(mode))
+  }
 }
 
-main()
+const invokedDirectly =
+  process.argv[1] !== undefined &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+if (invokedDirectly) {
+  main()
+}

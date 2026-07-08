@@ -7,7 +7,7 @@
  */
 
 import { httpJson } from '@socketsecurity/lib-stable/http-request'
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 
 import type {
   FetchContext,

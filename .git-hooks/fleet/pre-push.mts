@@ -23,7 +23,7 @@ import process from 'node:process'
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import {
@@ -503,9 +503,9 @@ const scanFilesInRange = (range: string): number => {
       !layerless.startsWith('template/.git-hooks/') &&
       !layerless.startsWith('template/scripts/') &&
       !layerless.startsWith('template/bootstrap/') &&
-      !file.includes('/external/') &&
-      !file.includes('/vendor/') &&
-      !file.includes('/upstream/') &&
+      !normalizePath(file).includes('/external/') &&
+      !normalizePath(file).includes('/vendor/') &&
+      !normalizePath(file).includes('/upstream/') &&
       // src/logger/ IS the logger — implementing the surface itself
       // requires direct console.* calls.
       !file.startsWith('src/logger/') &&
@@ -544,9 +544,9 @@ const scanFilesInRange = (range: string): number => {
       !file.startsWith('.git-hooks/') &&
       !file.startsWith('.claude/hooks/') &&
       !file.endsWith('.md') &&
-      !file.includes('/external/') &&
-      !file.includes('/vendor/') &&
-      !file.includes('/upstream/') &&
+      !normalizePath(file).includes('/external/') &&
+      !normalizePath(file).includes('/vendor/') &&
+      !normalizePath(file).includes('/upstream/') &&
       file !== 'pnpm-lock.yaml' &&
       file !== 'pnpm-workspace.yaml'
     ) {
@@ -576,9 +576,9 @@ const scanFilesInRange = (range: string): number => {
       !file.startsWith('.git-hooks/') &&
       !layerless.startsWith('template/.claude/hooks/') &&
       !layerless.startsWith('template/.git-hooks/') &&
-      !file.includes('/external/') &&
-      !file.includes('/vendor/') &&
-      !file.includes('/upstream/')
+      !normalizePath(file).includes('/external/') &&
+      !normalizePath(file).includes('/vendor/') &&
+      !normalizePath(file).includes('/upstream/')
     ) {
       const lockdownHits = scanProgrammaticClaudeLockdown(text)
       if (lockdownHits.length > 0) {

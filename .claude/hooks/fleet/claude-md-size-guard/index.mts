@@ -43,6 +43,7 @@ import {
   runHook,
 } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 const BYPASS_PHRASE = 'Allow claude-md-size bypass'
 
@@ -132,7 +133,7 @@ export function isClaudeMd(filePath: string | undefined): boolean {
     return false
   }
   /* c8 ignore next */
-  const base = filePath.split('/').pop() ?? ''
+  const base = normalizePath(filePath).split('/').pop() ?? ''
   return base === 'CLAUDE.md'
 }
 

@@ -125,7 +125,10 @@ export function validateBundleBlock(bundle: unknown): RefValidation {
   if (typeof bundle !== 'object' || bundle === null || Array.isArray(bundle)) {
     return { ok: false, errors: ['`bundle` must be an object.'] }
   }
-  const b = bundle as { ref?: unknown; cascadeSha?: unknown }
+  const b = bundle as {
+    ref?: unknown | undefined
+    cascadeSha?: unknown | undefined
+  }
   const refResult = validateRef(b.ref)
   const shaResult = validateCascadeSha(b.cascadeSha)
   const errors = [...refResult.errors, ...shaResult.errors]
@@ -181,11 +184,12 @@ export function lockStepExitCode(
   state: LockStepState,
   options?: { exitCode?: boolean | undefined } | undefined,
 ): number {
+  const opts = { __proto__: null, ...options } as typeof options
   if (state.state === 'out-of-sync') {
     return 1
   }
   if (state.state === 'update-available') {
-    return options?.exitCode ? 10 : 0
+    return opts?.exitCode ? 10 : 0
   }
   return 0
 }
@@ -244,8 +248,8 @@ export function readNoticeStore(dest: string): NoticeStore | undefined {
   }
   try {
     const json = JSON.parse(readFileSync(p, 'utf8')) as {
-      lastCheckMs?: unknown
-      lastSeenRef?: unknown
+      lastCheckMs?: unknown | undefined
+      lastSeenRef?: unknown | undefined
     }
     return {
       lastCheckMs: typeof json.lastCheckMs === 'number' ? json.lastCheckMs : 0,
@@ -311,7 +315,7 @@ export function formatUpdateNotice(options: {
   readonly newestRef: string
   readonly color: boolean
 }): string {
-  const { color, newestRef } = options
+  const { color, newestRef } = { __proto__: null, ...options } as typeof options
   const lines = [
     'A newer fleet scaffolding release is available.',
     `Re-cascade to ${newestRef}:`,

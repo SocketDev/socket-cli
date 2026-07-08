@@ -13,11 +13,14 @@ const SQUASH_COMMIT_MESSAGE = 'chore: initial commit'
 
 // Push forms that are NEVER part of a squash and could weaponize the
 // sentinel into clobbering many refs at once or deleting a branch.
+// `--no-verify` is deliberately NOT here: the canonical squash push
+// (squashing-history run.mts) carries it by design — SQUASH_HISTORY=1 is the
+// documented whole-chain hook exception (CLAUDE.md bypass-phrases), and the
+// gated tree is byte-identical to the squashed one being pushed.
 const FORBIDDEN_PUSH_FLAGS = new Set([
   '--all',
   '--delete',
   '--mirror',
-  '--no-verify',
   '--prune',
   '--tags',
   '-d',
@@ -58,9 +61,11 @@ export function readCommitMessageArg(
  * `GIT_SSH_COMMAND=…`); and the git subcommand must be one of the two squash
  * shapes — a `commit --amend` whose `-m` message is EXACTLY `chore: initial
  * commit`, or a `push` carrying `--force` / `--force-with-lease` / `-f` to a
- * bare remote with at most one plain positional branch ref (no `src:dst`
- * refspec, no `HEAD:`) and none of the multi-ref / delete / verify-skipping
- * flags in FORBIDDEN_PUSH_FLAGS.
+ * bare remote with at most one ref — a plain branch name or the canonical
+ * squash refspec `HEAD:<branch>` (run.mts pushes the squashed detached HEAD
+ * onto the base branch that way) — and none of the multi-ref / delete flags
+ * in FORBIDDEN_PUSH_FLAGS. Arbitrary `src:dst` refspecs, `:branch` deletes,
+ * and globs stay rejected.
  *
  * Any deviation returns false → the command falls through to the normal
  * blocking checks, where it still needs a typed bypass phrase.
@@ -111,16 +116,31 @@ export function squashSentinelAllows(command: string): boolean {
       return false
     }
     // Positional (non-flag) args = remote + optional ref. Allow a bare
-    // remote with at most one plain branch ref; reject refspecs (`a:b`),
-    // `HEAD:`, and globs.
+    // remote with at most one ref: a plain branch name, or the canonical
+    // squash refspec `HEAD:<branch>`. Everything else stays rejected —
+    // `a:b` (arbitrary refspec), `:branch` (a DELETE: empty src), globs.
     const positionals = rest.filter(a => !a.startsWith('-'))
     if (positionals.length < 1 || positionals.length > 2) {
       return false
     }
-    if (positionals.some(a => a.includes(':') || a.includes('*'))) {
+    const remote = positionals[0]!
+    if (remote.includes(':') || remote.includes('*')) {
       return false
     }
-    return true
+    const ref = positionals[1]
+    if (ref === undefined) {
+      return true
+    }
+    if (ref.includes('*')) {
+      return false
+    }
+    if (!ref.includes(':')) {
+      return true
+    }
+    const colonAt = ref.indexOf(':')
+    const src = ref.slice(0, colonAt)
+    const dst = ref.slice(colonAt + 1)
+    return src === 'HEAD' && dst.length > 0 && !dst.includes(':')
   }
   return false
 }

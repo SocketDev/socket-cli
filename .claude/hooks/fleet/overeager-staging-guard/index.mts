@@ -163,6 +163,35 @@ export function listStagedFiles(repoDir: string): string[] {
     .filter(Boolean)
 }
 
+/**
+ * New-side paths of STAGED RENAMES (index status `R`). A staged rename is a
+ * deliberate `git mv` in THIS checkout — a parallel agent's loose edit never
+ * shows up pre-staged as a rename in our index (same reasoning as
+ * foreign-paths' listForeignDirtyPaths R-skip). The active-edits ledger only
+ * records Edit/Write tool paths, so a rename sweep's 40+ `git mv` targets all
+ * read as unfamiliar without this exemption.
+ */
+export function listStagedRenamedPaths(repoDir: string): Set<string> {
+  const r = spawnSync(
+    'git',
+    ['diff', '--cached', '--name-status', '-M', '--diff-filter=R'],
+    { cwd: repoDir, timeout: 5000 },
+  )
+  const renamed = new Set<string>()
+  if (r.status !== 0) {
+    return renamed
+  }
+  for (const line of String(r.stdout).split('\n')) {
+    // `R<score>\t<old>\t<new>` — both sides are session-deliberate.
+    const parts = line.split('\t')
+    if (parts.length === 3 && parts[0]!.startsWith('R')) {
+      renamed.add(parts[1]!.trim())
+      renamed.add(parts[2]!.trim())
+    }
+  }
+  return renamed
+}
+
 export const check = bashGuard((command, payload) => {
   const repoDir = getRepoDir(command)
   const transcriptPath = payload.transcript_path
@@ -237,9 +266,13 @@ export const check = bashGuard((command, payload) => {
       return undefined
     }
     const touched = readSessionTouchedPaths(transcriptPath)
+    const renamed = listStagedRenamedPaths(repoDir)
     const unfamiliar: string[] = []
     for (let i = 0, { length } = staged; i < length; i += 1) {
       const f = staged[i]!
+      if (renamed.has(f)) {
+        continue
+      }
       const abs = path.resolve(repoDir, f)
       if (!touched.has(abs)) {
         unfamiliar.push(f)

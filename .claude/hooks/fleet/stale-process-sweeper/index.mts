@@ -315,11 +315,13 @@ export function readActiveRunPids(homeDir?: string | undefined): Set<number> {
   } catch {
     return pids
   }
-  for (const entry of entries) {
+  for (let i = 0, { length } = entries; i < length; i += 1) {
+    const entry = entries[i]!;
     const pid = Number(entry)
     if (Number.isFinite(pid) && isAlive(pid)) {
       pids.add(pid)
     }
+  
   }
   return pids
 }
@@ -336,8 +338,10 @@ export function isDescendantOf(
     return false
   }
   const parentOf = new Map<number, number>()
-  for (const row of rows) {
+  for (let i = 0, { length } = rows; i < length; i += 1) {
+    const row = rows[i]!;
     parentOf.set(row.pid, row.ppid)
+  
   }
   let current: number | undefined = pid
   for (let hops = 0; hops < 25 && current !== undefined; hops += 1) {

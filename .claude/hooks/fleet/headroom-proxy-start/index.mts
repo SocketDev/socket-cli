@@ -12,8 +12,8 @@
 // lib/headroom.mts): it exports HEADROOM_TELEMETRY=off + HEADROOM_TELEMETRY_WARN
 // =off + HF_HUB_OFFLINE=1 before exec, so the telemetry beacon + the HuggingFace
 // model fetch are off. `--no-telemetry` is passed too (belt). Enforced by
-// scripts/fleet/check/headroom-is-telemetry-locked-down.mts. Audit:
-// .claude/reports/headroom-telemetry-audit.md.
+// scripts/fleet/check/headroom-is-telemetry-locked-down.mts. The audit
+// findings are stored in the reports directory (uncommittable).
 //
 // **Fail-closed**: if the binary isn't installed, the port is taken by something
 // else, or the spawn doesn't come up healthy in the budget, the hook exits 0

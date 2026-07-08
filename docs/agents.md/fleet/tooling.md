@@ -71,6 +71,20 @@ defaults write dev.kdrag0n.MacVirt SUEnableAutomaticChecks -bool false
 
 `SUEnableAutomaticChecks=false` stops the background update check; `SUAutomaticallyUpdate=false` stops silent install of a found update. Add a new Sparkle app by appending to `SPARKLE_APPS` in `_shared/sparkle-auto-update.mts` (id, name, bundle-id domain); the persist and audit pick it up automatically.
 
+## Lint/fix scope: modified by default, `--all` for waves
+
+`pnpm run lint` and `pnpm run fix` default to **modified scope** — only files
+git sees as changed (plus `--staged` in pre-commit). A repo-wide autofix
+campaign run that way is a **silent no-op on the whole backlog**: the run exits
+green having fixed nothing outside your edits (two delegated wave runs reported
+success while fixing zero backlog files, 2026-07-07). For a wave, pass `--all`:
+`pnpm run lint --fix --all` (`pnpm run fix --all` forwards it and adds the
+doctor). The `template/` tree is OFF the default lint surface everywhere —
+in the wheelhouse it only lints under `LINT_DOGFOOD=1`, so a wave that must
+reach canonical sources is `LINT_DOGFOOD=1 pnpm run lint --fix --all`. Every
+scoped `--fix` run now ends with a loud reminder naming the wave form
+(`fixScopeReminder` in `scripts/fleet/lint.mts`).
+
 ## Docs lead with pnpm
 
 User-facing install commands in fenced code blocks must show the pnpm form first (`pnpm install <pkg>`, `pnpm add <pkg>`). npm / yarn fallbacks are fine but come after, or in a separate block introduced as a fallback. The pre-commit `scanDocsPnpmFirst` scanner emits a warning (not a hard fail) for `.md` / `.mdx` blocks that lead with npm or yarn without a pnpm leader. Suppress per-block with `socket-lint: allow pnpm-first` (HTML comment above the fence or any line inside it).

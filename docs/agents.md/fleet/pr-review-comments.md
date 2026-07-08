@@ -53,6 +53,12 @@ the author.
   em-dash per sentence.
 - **Verified findings only.** Adversarially verify candidates first; refuted
   candidates never get posted. Cite file/function names as receipts.
+- **Attribute or verify a self-report; don't restate it as fact.** When a PR
+  author or bot says "I ran X" / "my machine is on 1.15.7" / "N tests pass",
+  that's their claim, not your finding. Verify the part you can read (the repo
+  pin, the diff, a tool call) and attribute the part you can't ("you mentioned
+  your local is 1.15.7") — a checkable half doesn't verify the unverifiable
+  half. Applies especially to "check his work" replies.
 - **Never repeat a bot's feedback.** Before posting, fetch the PR's existing
   reviews and inline comments (Cursor Bugbot, Copilot, github-actions) and drop
   any finding they already made; say so when skipping one.

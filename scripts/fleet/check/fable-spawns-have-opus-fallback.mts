@@ -46,6 +46,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { globSync } from '@socketsecurity/lib-stable/globs/match'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
@@ -242,6 +243,8 @@ export function scanHandrolledArgv(
   while ((m = modelFlagRe.exec(text))) {
     const flagAt = m.index
     const lookahead = text.slice(flagAt, flagAt + 300)
+    // A single-quoted or double-quoted string literal whose content contains
+    // "fable" or "mythos" — the Fable/mythos model-id sub-string within the argv.
     const fableModelMatch = /['"]([^'"]*(?:fable|mythos)[^'"]*)['"]/.exec(
       lookahead,
     )
@@ -339,7 +342,7 @@ void (async () => {
   await main()
 })().catch((err: unknown) => {
   logger.error(
-    `fable-spawns-have-opus-fallback: unexpected error — ${err instanceof Error ? err.message : String(err)}`,
+    `fable-spawns-have-opus-fallback: unexpected error — ${errorMessage(err)}`,
   )
   process.exitCode = 1
 })

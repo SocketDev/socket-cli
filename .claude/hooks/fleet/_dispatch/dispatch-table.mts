@@ -43,7 +43,7 @@ import { hook as hook34 } from '../commit-pr-nudge/index.mts'
 import { hook as hook35 } from '../commit-size-nudge/index.mts'
 import { hook as hook36 } from '../compound-lessons-nudge/index.mts'
 import { hook as hook37 } from '../consumer-grep-nudge/index.mts'
-import { hook as hook38 } from '../conversational-prose-nudge/index.mts'
+import { hook as hook38 } from '../conversational-style-nudge/index.mts'
 import { hook as hook39 } from '../copy-on-select-hint-nudge/index.mts'
 import { hook as hook40 } from '../cross-repo-guard/index.mts'
 import { hook as hook41 } from '../dated-citation-guard/index.mts'
@@ -166,51 +166,51 @@ import { hook as hook157 } from '../primary-checkout-branch-guard/index.mts'
 import { hook as hook158 } from '../private-name-nudge/index.mts'
 import { hook as hook159 } from '../proc-environ-exfil-guard/index.mts'
 import { hook as hook160 } from '../prompt-injection-guard/index.mts'
-import { hook as hook161 } from '../prose-antipattern-guard/index.mts'
-import { hook as hook162 } from '../prose-code-format-nudge/index.mts'
-import { hook as hook163 } from '../provenance-publish-nudge/index.mts'
-import { hook as hook164 } from '../public-surface-nudge/index.mts'
-import { hook as hook165 } from '../pull-request-target-guard/index.mts'
-import { hook as hook166 } from '../push-protected-branch-guard/index.mts'
-import { hook as hook167 } from '../readme-fleet-shape-guard/index.mts'
-import { hook as hook168 } from '../release-tag-tied-guard/index.mts'
-import { hook as hook169 } from '../release-workflow-guard/index.mts'
-import { hook as hook170 } from '../report-location-guard/index.mts'
-import { hook as hook171 } from '../reserved-script-dir-guard/index.mts'
-import { hook as hook172 } from '../scan-label-in-commit-guard/index.mts'
-import { hook as hook173 } from '../secret-content-guard/index.mts'
-import { hook as hook174 } from '../session-handoff-nudge/index.mts'
-import { hook as hook175 } from '../shallow-clone-guard/index.mts'
-import { hook as hook176 } from '../small-pr-nudge/index.mts'
-import { hook as hook177 } from '../soak-exclude-date-guard/index.mts'
-import { hook as hook178 } from '../soak-exclude-scope-guard/index.mts'
-import { hook as hook179 } from '../soak-pin-needs-annotation-guard/index.mts'
-import { hook as hook180 } from '../squash-history-nudge/index.mts'
-import { hook as hook181 } from '../stale-node-modules-nudge/index.mts'
-import { hook as hook182 } from '../stop-claim-verify-nudge/index.mts'
-import { hook as hook183 } from '../synthesized-script-edit-guard/index.mts'
-import { hook as hook184 } from '../target-arch-env-guard/index.mts'
-import { hook as hook185 } from '../test-platform-coverage-nudge/index.mts'
-import { hook as hook186 } from '../test-script-defers-guard/index.mts'
-import { hook as hook187 } from '../token-guard/index.mts'
-import { hook as hook188 } from '../token-spend-guard/index.mts'
-import { hook as hook189 } from '../trust-downgrade-guard/index.mts'
-import { hook as hook190 } from '../unbacked-claim-commit-guard/index.mts'
-import { hook as hook191 } from '../uncodified-lesson-nudge/index.mts'
-import { hook as hook192 } from '../unpushed-main-nudge/index.mts'
-import { hook as hook193 } from '../untrusted-coauthor-guard/index.mts'
-import { hook as hook194 } from '../uses-sha-verify-guard/index.mts'
-import { hook as hook195 } from '../variant-analysis-nudge/index.mts'
-import { hook as hook196 } from '../verify-before-publish-guard/index.mts'
-import { hook as hook197 } from '../verify-render-pre-commit-nudge/index.mts'
-import { hook as hook198 } from '../version-bump-order-guard/index.mts'
-import { hook as hook199 } from '../vitest-vs-node-test-guard/index.mts'
-import { hook as hook200 } from '../vscode-folder-open-task-guard/index.mts'
-import { hook as hook201 } from '../workflow-agent-task-tools-nudge/index.mts'
-import { hook as hook202 } from '../workflow-multiline-body-guard/index.mts'
-import { hook as hook203 } from '../workflow-uses-comment-guard/index.mts'
-import { hook as hook204 } from '../worktree-remove-relink-nudge/index.mts'
-import { hook as hook205 } from '../yakback-nudge/index.mts'
+import { hook as hook161 } from '../provenance-publish-nudge/index.mts'
+import { hook as hook162 } from '../public-surface-nudge/index.mts'
+import { hook as hook163 } from '../pull-request-target-guard/index.mts'
+import { hook as hook164 } from '../push-protected-branch-guard/index.mts'
+import { hook as hook165 } from '../readme-fleet-shape-guard/index.mts'
+import { hook as hook166 } from '../release-tag-tied-guard/index.mts'
+import { hook as hook167 } from '../release-workflow-guard/index.mts'
+import { hook as hook168 } from '../reply-style-nudge/index.mts'
+import { hook as hook169 } from '../report-location-guard/index.mts'
+import { hook as hook170 } from '../reserved-script-dir-guard/index.mts'
+import { hook as hook171 } from '../scan-label-in-commit-guard/index.mts'
+import { hook as hook172 } from '../secret-content-guard/index.mts'
+import { hook as hook173 } from '../session-handoff-nudge/index.mts'
+import { hook as hook174 } from '../shallow-clone-guard/index.mts'
+import { hook as hook175 } from '../small-pr-nudge/index.mts'
+import { hook as hook176 } from '../soak-exclude-date-guard/index.mts'
+import { hook as hook177 } from '../soak-exclude-scope-guard/index.mts'
+import { hook as hook178 } from '../soak-pin-needs-annotation-guard/index.mts'
+import { hook as hook179 } from '../squash-history-nudge/index.mts'
+import { hook as hook180 } from '../stale-node-modules-nudge/index.mts'
+import { hook as hook181 } from '../stop-claim-verify-nudge/index.mts'
+import { hook as hook182 } from '../style-antipattern-guard/index.mts'
+import { hook as hook183 } from '../style-code-format-nudge/index.mts'
+import { hook as hook184 } from '../synthesized-script-edit-guard/index.mts'
+import { hook as hook185 } from '../target-arch-env-guard/index.mts'
+import { hook as hook186 } from '../test-platform-coverage-nudge/index.mts'
+import { hook as hook187 } from '../test-script-defers-guard/index.mts'
+import { hook as hook188 } from '../token-guard/index.mts'
+import { hook as hook189 } from '../token-spend-guard/index.mts'
+import { hook as hook190 } from '../trust-downgrade-guard/index.mts'
+import { hook as hook191 } from '../unbacked-claim-commit-guard/index.mts'
+import { hook as hook192 } from '../uncodified-lesson-nudge/index.mts'
+import { hook as hook193 } from '../unpushed-main-nudge/index.mts'
+import { hook as hook194 } from '../untrusted-coauthor-guard/index.mts'
+import { hook as hook195 } from '../uses-sha-verify-guard/index.mts'
+import { hook as hook196 } from '../variant-analysis-nudge/index.mts'
+import { hook as hook197 } from '../verify-before-publish-guard/index.mts'
+import { hook as hook198 } from '../verify-render-pre-commit-nudge/index.mts'
+import { hook as hook199 } from '../version-bump-order-guard/index.mts'
+import { hook as hook200 } from '../vitest-vs-node-test-guard/index.mts'
+import { hook as hook201 } from '../vscode-folder-open-task-guard/index.mts'
+import { hook as hook202 } from '../workflow-agent-task-tools-nudge/index.mts'
+import { hook as hook203 } from '../workflow-multiline-body-guard/index.mts'
+import { hook as hook204 } from '../workflow-uses-comment-guard/index.mts'
+import { hook as hook205 } from '../worktree-remove-relink-nudge/index.mts'
 
 export const DISPATCH_TABLE: Record<string, readonly DispatchHookEntry[]> = {
   __proto__: null,
@@ -224,9 +224,9 @@ export const DISPATCH_TABLE: Record<string, readonly DispatchHookEntry[]> = {
     { name: 'extension-build-current-nudge', check: hook55.check, tools: ['Edit', 'Write'] },
     { name: 'oxlint-plugin-load-nudge', check: hook131.check, tools: ['Edit', 'Write'] },
     { name: 'post-push-ci-monitor-nudge', check: hook146.check, tools: ['Bash'] },
-    { name: 'prose-code-format-nudge', check: hook162.check, tools: ['Edit', 'Write', 'MultiEdit'] },
-    { name: 'stale-node-modules-nudge', check: hook181.check, tools: ['Bash'] },
-    { name: 'worktree-remove-relink-nudge', check: hook204.check, tools: ['Bash'] },
+    { name: 'stale-node-modules-nudge', check: hook180.check, tools: ['Bash'] },
+    { name: 'style-code-format-nudge', check: hook183.check, tools: ['Edit', 'Write', 'MultiEdit'] },
+    { name: 'worktree-remove-relink-nudge', check: hook205.check, tools: ['Bash'] },
   ],
   'PreToolUse': [
     { name: 'ai-config-poisoning-guard', check: hook4.check, tools: ['Edit', 'Write', 'MultiEdit'] },
@@ -254,7 +254,7 @@ export const DISPATCH_TABLE: Record<string, readonly DispatchHookEntry[]> = {
     { name: 'commit-message-format-guard', check: hook33.check, tools: ['Bash'] },
     { name: 'commit-size-nudge', check: hook35.check, tools: ['Bash'] },
     { name: 'consumer-grep-nudge', check: hook37.check, tools: ['Edit', 'Write', 'MultiEdit'] },
-    { name: 'conversational-prose-nudge', check: hook38.check, tools: ['Bash'] },
+    { name: 'conversational-style-nudge', check: hook38.check, tools: ['Bash'] },
     { name: 'cross-repo-guard', check: hook40.check, tools: ['Edit', 'Write', 'MultiEdit'] },
     { name: 'dated-citation-guard', check: hook41.check, tools: ['Edit', 'Write', 'MultiEdit'] },
     { name: 'default-branch-guard', check: hook42.check, tools: ['Bash'] },
@@ -349,40 +349,40 @@ export const DISPATCH_TABLE: Record<string, readonly DispatchHookEntry[]> = {
     { name: 'private-name-nudge', check: hook158.check, tools: ['Bash'] },
     { name: 'proc-environ-exfil-guard', check: hook159.check, tools: ['Bash'] },
     { name: 'prompt-injection-guard', check: hook160.check, tools: ['Edit', 'Write', 'MultiEdit'] },
-    { name: 'prose-antipattern-guard', check: hook161.check, tools: ['Edit', 'Write', 'MultiEdit'] },
-    { name: 'public-surface-nudge', check: hook164.check, tools: ['Bash'] },
-    { name: 'pull-request-target-guard', check: hook165.check, tools: ['Edit', 'Write', 'MultiEdit'] },
-    { name: 'push-protected-branch-guard', check: hook166.check, tools: ['Bash'] },
-    { name: 'readme-fleet-shape-guard', check: hook167.check, tools: ['Edit', 'Write', 'MultiEdit'] },
-    { name: 'release-tag-tied-guard', check: hook168.check, tools: ['Bash'] },
-    { name: 'release-workflow-guard', check: hook169.check, tools: ['Bash'] },
-    { name: 'report-location-guard', check: hook170.check, tools: ['Edit', 'Write', 'MultiEdit'] },
-    { name: 'reserved-script-dir-guard', check: hook171.check, tools: ['Edit', 'Write', 'MultiEdit'] },
-    { name: 'scan-label-in-commit-guard', check: hook172.check, tools: ['Bash'] },
-    { name: 'secret-content-guard', check: hook173.check, tools: ['Edit', 'Write', 'MultiEdit'] },
-    { name: 'shallow-clone-guard', check: hook175.check, tools: ['Bash'] },
-    { name: 'small-pr-nudge', check: hook176.check, tools: ['Bash'] },
-    { name: 'soak-exclude-date-guard', check: hook177.check, tools: ['Edit', 'Write', 'MultiEdit'] },
-    { name: 'soak-exclude-scope-guard', check: hook178.check, tools: ['Edit', 'Write', 'MultiEdit'] },
-    { name: 'soak-pin-needs-annotation-guard', check: hook179.check, tools: ['Edit', 'Write', 'MultiEdit'] },
-    { name: 'synthesized-script-edit-guard', check: hook183.check, tools: ['Edit', 'Write', 'MultiEdit'] },
-    { name: 'target-arch-env-guard', check: hook184.check, tools: ['Edit', 'Write', 'MultiEdit'] },
-    { name: 'test-platform-coverage-nudge', check: hook185.check, tools: ['Edit', 'Write', 'MultiEdit'] },
-    { name: 'test-script-defers-guard', check: hook186.check, tools: ['Edit', 'Write', 'MultiEdit'] },
-    { name: 'token-guard', check: hook187.check, tools: ['Bash'] },
-    { name: 'token-spend-guard', check: hook188.check, tools: ['Bash'] },
-    { name: 'trust-downgrade-guard', check: hook189.check, tools: ['Bash'] },
-    { name: 'unbacked-claim-commit-guard', check: hook190.check, tools: ['Bash'] },
-    { name: 'untrusted-coauthor-guard', check: hook193.check, tools: ['Bash'] },
-    { name: 'uses-sha-verify-guard', check: hook194.check, tools: ['Bash'] },
-    { name: 'verify-before-publish-guard', check: hook196.check, tools: ['Bash'] },
-    { name: 'verify-render-pre-commit-nudge', check: hook197.check, tools: ['Bash'] },
-    { name: 'version-bump-order-guard', check: hook198.check, tools: ['Bash'] },
-    { name: 'vitest-vs-node-test-guard', check: hook199.check, tools: ['Edit', 'Write', 'MultiEdit'] },
-    { name: 'vscode-folder-open-task-guard', check: hook200.check, tools: ['Edit', 'Write', 'MultiEdit'] },
-    { name: 'workflow-agent-task-tools-nudge', check: hook201.check, tools: ['Workflow'] },
-    { name: 'workflow-multiline-body-guard', check: hook202.check, tools: ['Edit', 'Write', 'MultiEdit'] },
-    { name: 'workflow-uses-comment-guard', check: hook203.check, tools: ['Edit', 'Write', 'MultiEdit'] },
+    { name: 'public-surface-nudge', check: hook162.check, tools: ['Bash'] },
+    { name: 'pull-request-target-guard', check: hook163.check, tools: ['Edit', 'Write', 'MultiEdit'] },
+    { name: 'push-protected-branch-guard', check: hook164.check, tools: ['Bash'] },
+    { name: 'readme-fleet-shape-guard', check: hook165.check, tools: ['Edit', 'Write', 'MultiEdit'] },
+    { name: 'release-tag-tied-guard', check: hook166.check, tools: ['Bash'] },
+    { name: 'release-workflow-guard', check: hook167.check, tools: ['Bash'] },
+    { name: 'report-location-guard', check: hook169.check, tools: ['Edit', 'Write', 'MultiEdit'] },
+    { name: 'reserved-script-dir-guard', check: hook170.check, tools: ['Edit', 'Write', 'MultiEdit'] },
+    { name: 'scan-label-in-commit-guard', check: hook171.check, tools: ['Bash'] },
+    { name: 'secret-content-guard', check: hook172.check, tools: ['Edit', 'Write', 'MultiEdit'] },
+    { name: 'shallow-clone-guard', check: hook174.check, tools: ['Bash'] },
+    { name: 'small-pr-nudge', check: hook175.check, tools: ['Bash'] },
+    { name: 'soak-exclude-date-guard', check: hook176.check, tools: ['Edit', 'Write', 'MultiEdit'] },
+    { name: 'soak-exclude-scope-guard', check: hook177.check, tools: ['Edit', 'Write', 'MultiEdit'] },
+    { name: 'soak-pin-needs-annotation-guard', check: hook178.check, tools: ['Edit', 'Write', 'MultiEdit'] },
+    { name: 'style-antipattern-guard', check: hook182.check, tools: ['Edit', 'Write', 'MultiEdit'] },
+    { name: 'synthesized-script-edit-guard', check: hook184.check, tools: ['Edit', 'Write', 'MultiEdit'] },
+    { name: 'target-arch-env-guard', check: hook185.check, tools: ['Edit', 'Write', 'MultiEdit'] },
+    { name: 'test-platform-coverage-nudge', check: hook186.check, tools: ['Edit', 'Write', 'MultiEdit'] },
+    { name: 'test-script-defers-guard', check: hook187.check, tools: ['Edit', 'Write', 'MultiEdit'] },
+    { name: 'token-guard', check: hook188.check, tools: ['Bash'] },
+    { name: 'token-spend-guard', check: hook189.check, tools: ['Bash'] },
+    { name: 'trust-downgrade-guard', check: hook190.check, tools: ['Bash'] },
+    { name: 'unbacked-claim-commit-guard', check: hook191.check, tools: ['Bash'] },
+    { name: 'untrusted-coauthor-guard', check: hook194.check, tools: ['Bash'] },
+    { name: 'uses-sha-verify-guard', check: hook195.check, tools: ['Bash'] },
+    { name: 'verify-before-publish-guard', check: hook197.check, tools: ['Bash'] },
+    { name: 'verify-render-pre-commit-nudge', check: hook198.check, tools: ['Bash'] },
+    { name: 'version-bump-order-guard', check: hook199.check, tools: ['Bash'] },
+    { name: 'vitest-vs-node-test-guard', check: hook200.check, tools: ['Edit', 'Write', 'MultiEdit'] },
+    { name: 'vscode-folder-open-task-guard', check: hook201.check, tools: ['Edit', 'Write', 'MultiEdit'] },
+    { name: 'workflow-agent-task-tools-nudge', check: hook202.check, tools: ['Workflow'] },
+    { name: 'workflow-multiline-body-guard', check: hook203.check, tools: ['Edit', 'Write', 'MultiEdit'] },
+    { name: 'workflow-uses-comment-guard', check: hook204.check, tools: ['Edit', 'Write', 'MultiEdit'] },
   ],
   'SessionStart': [
     { name: 'copy-on-select-hint-nudge', check: hook39.check, tools: undefined },
@@ -419,13 +419,13 @@ export const DISPATCH_TABLE: Record<string, readonly DispatchHookEntry[]> = {
     { name: 'path-regex-normalize-nudge', check: hook139.check, tools: undefined },
     { name: 'plan-review-nudge', check: hook143.check, tools: undefined },
     { name: 'prefer-evergreen-target-nudge', check: hook150.check, tools: undefined },
-    { name: 'provenance-publish-nudge', check: hook163.check, tools: undefined },
-    { name: 'session-handoff-nudge', check: hook174.check, tools: undefined },
-    { name: 'squash-history-nudge', check: hook180.check, tools: undefined },
-    { name: 'stop-claim-verify-nudge', check: hook182.check, tools: undefined },
-    { name: 'uncodified-lesson-nudge', check: hook191.check, tools: undefined },
-    { name: 'unpushed-main-nudge', check: hook192.check, tools: undefined },
-    { name: 'variant-analysis-nudge', check: hook195.check, tools: undefined },
-    { name: 'yakback-nudge', check: hook205.check, tools: undefined },
+    { name: 'provenance-publish-nudge', check: hook161.check, tools: undefined },
+    { name: 'reply-style-nudge', check: hook168.check, tools: undefined },
+    { name: 'session-handoff-nudge', check: hook173.check, tools: undefined },
+    { name: 'squash-history-nudge', check: hook179.check, tools: undefined },
+    { name: 'stop-claim-verify-nudge', check: hook181.check, tools: undefined },
+    { name: 'uncodified-lesson-nudge', check: hook192.check, tools: undefined },
+    { name: 'unpushed-main-nudge', check: hook193.check, tools: undefined },
+    { name: 'variant-analysis-nudge', check: hook196.check, tools: undefined },
   ],
 } as Record<string, readonly DispatchHookEntry[]>

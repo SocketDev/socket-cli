@@ -25,6 +25,7 @@
 import { isFleetTarget } from '../_shared/fleet-context.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 const BYPASS_PHRASE = 'Allow run-s glob bypass' as const
 
@@ -40,8 +41,8 @@ export interface GlobDetection {
 
 export function isPackageJson(filePath: string): boolean {
   return (
-    (filePath.endsWith('/package.json') || filePath === 'package.json') &&
-    !filePath.includes('/node_modules/')
+    (normalizePath(filePath).endsWith('/package.json') || filePath === 'package.json') &&
+    !normalizePath(filePath).includes('/node_modules/')
   )
 }
 

@@ -24,6 +24,8 @@
  * `**​/`-anchored globs for the config consumers (oxlint ignorePatterns, vitest
  * exclude). Anchored at any depth so they match in a monorepo's sub-packages.
  */
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+
 export const GENERATED_GLOBS: readonly string[] = [
   '**/build/**',
   '**/coverage/**',
@@ -59,7 +61,7 @@ const GENERATED_SEGMENTS: ReadonlySet<string> = new Set([
  * couple of always-generated file kinds.
  */
 export function isGeneratedPath(filePath: string): boolean {
-  const normalized = filePath.replace(/\\/g, '/')
+  const normalized = normalizePath(filePath)
   if (
     normalized.includes('/test/fixtures/') ||
     normalized.startsWith('test/fixtures/')

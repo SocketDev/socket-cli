@@ -11,6 +11,8 @@
  * uses this parser to fail LOUD instead.
  */
 
+// taze prints one of two failure prefixes followed by a double-quoted package
+// name when it can't reach npm.antfu.dev; the capture group extracts that name.
 const PACKUMENT_FAILURE_PATTERN =
   /(?:Timeout requesting|Failed to fetch package) "([^"\n]+)"/g
 
@@ -20,5 +22,5 @@ export function collectPackumentFailures(output: string): string[] {
   for (const match of output.matchAll(PACKUMENT_FAILURE_PATTERN)) {
     failed.add(match[1]!)
   }
-  return [...failed].sort()
+  return [...failed].toSorted()
 }

@@ -49,7 +49,7 @@ export function parseSlotResponse(
   const slots = (parsed as { slots: Record<string, unknown> }).slots
   // Validate all expected ids are present with string values.
   for (const id of expectedIds) {
-    if (typeof slots[id] !== 'string') return undefined
+    if (typeof slots[id] !== 'string') {return undefined}
   }
   // Strip unknown keys — never pass through unexpected content.
   const cleaned: Record<string, string> = {}
@@ -76,10 +76,12 @@ export function validateSlotContent(
     if (budget !== undefined && text.length > budget) {
       errors.push(`${id}: ${text.length} chars exceeds budget of ${budget}`)
     }
-    for (const pat of FORBIDDEN) {
+    for (let i = 0, { length } = FORBIDDEN; i < length; i += 1) {
+      const pat = FORBIDDEN[i]!;
       if (text.includes(pat)) {
         errors.push(`${id}: contains forbidden pattern "${pat}"`)
       }
+    
     }
   }
   return errors
@@ -140,14 +142,14 @@ export async function fillSlots(
 
   // First attempt: floor tier.
   const first = await attempt(FLOOR_MODEL, FLOOR_EFFORT)
-  if ('slots' in first) return first
+  if ('slots' in first) {return first}
   const firstError =
     'parseError' in first ? first.parseError : first.validationErrors.join('; ')
 
   // Single escalation: sonnet/medium on validation failures or parse errors.
   // Justification: stronger reasoning improves structural and content quality.
   const second = await attempt(ESCALATE_MODEL, ESCALATE_EFFORT)
-  if ('slots' in second) return second
+  if ('slots' in second) {return second}
   const secondError =
     'parseError' in second
       ? second.parseError

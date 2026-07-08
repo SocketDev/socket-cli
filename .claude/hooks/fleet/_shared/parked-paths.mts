@@ -61,7 +61,7 @@ export function readParked(
   if (
     !raw ||
     typeof raw !== 'object' ||
-    !Array.isArray((raw as { entries?: unknown }).entries)
+    !Array.isArray((raw as { entries?: unknown | undefined }).entries)
   ) {
     return []
   }

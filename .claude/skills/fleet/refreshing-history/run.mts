@@ -28,7 +28,7 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 const logger = getDefaultLogger()
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib/errors'
+import { errorMessage } from '@socketsecurity/lib/errors/message'
 import { isError } from '@socketsecurity/lib/errors/predicates'
 
 import { resolveDefaultBranch } from '../_shared/scripts/git-default-branch.mts'

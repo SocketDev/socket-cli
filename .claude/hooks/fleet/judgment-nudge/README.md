@@ -42,7 +42,7 @@ Stop hooks fire after the assistant has produced its response. Blocking would tr
 ## Relationship to other reminders
 
 - `excuse-detector` — catches fix-vs-defer choice menus
-- `yakback-nudge` (perfectionist group) — catches speed-vs-depth choice menus
+- `reply-prose-nudge` (perfectionist group) — catches speed-vs-depth choice menus
 - `judgment-nudge` (this) — catches hedging within a single position
 
 All three address the same underlying anti-pattern: offloading judgment the assistant should have made.

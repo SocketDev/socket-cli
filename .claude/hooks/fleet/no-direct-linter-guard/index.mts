@@ -14,14 +14,20 @@
 //
 // Foreign tools (`eslint`/`prettier`/`biome`/`dprint`) are not fleet tools at
 // all (see no-other-linters-guard); `cargo fmt` / `rustfmt` / `gofmt` reflow
-// hand-formatted code. All are blocked — and the foreign formatters block in
-// ANY repo (fleet OR external): hand-running a formatter binary, instead of the
-// repo's own script / pre-commit / codegen, is the anti-pattern everywhere
-// (a `yarn prettier -w` to paper over a failing codegen format step is the
-// incident this guard's universal scope closes). Runner-wrapped forms
-// (`yarn prettier`, `npx prettier`, `pnpm exec prettier`, `bunx prettier`) are
-// caught too; only `<runner> run <script>` (a package.json script) passes.
-// oxfmt/oxlint stay gated to fleet repos, where their `-c` wrappers live.
+// hand-formatted code. Runner-wrapped forms (`yarn prettier`, `npx prettier`,
+// `pnpm exec prettier`, `bunx prettier`) are caught too; only
+// `<runner> run <script>` (a package.json script) passes.
+//
+// This is a CONVENTION guard, not a universal-safety one: "run the repo's
+// wrapper, not a bare binary" is a FLEET doctrine that only holds where the
+// fleet toolchain lives (the `-c .config/fleet/…` script wrappers, the repo's
+// own scripts). Outside a fleet repo — a sibling clone, an external checkout,
+// a Rust project that formats with native `cargo fmt` — the native binary IS
+// the sanctioned path, and the operator can't even self-authorize a bypass
+// because the fleet tooling isn't installed there. So the whole guard gates on
+// `isFleetTarget` and no-ops outside a fleet repo (see fleet-context.mts). A
+// fleet-rooted session acting on a non-fleet repo via a leading
+// `cd <non-fleet-repo> && <formatter>` is judged against that repo.
 //
 // The binary is matched on its BASENAME (so `node_modules/.bin/oxlint` and a
 // bare `oxlint` both match) via shell-command.mts/parseCommands — AST parse,
@@ -62,14 +68,6 @@ const BANNED_BINARIES: ReadonlySet<string> = new Set([
 const BANNED_SUBCOMMANDS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
   ['cargo', new Set(['clippy', 'fmt'])],
 ])
-
-// Fleet-OWNED tools. Direct invocation is blocked only INSIDE a fleet repo
-// (where the `-c .config/fleet/…` script wrappers + ignore sets exist); outside,
-// oxfmt / oxlint aren't the repo's tools anyway. Every OTHER banned binary is a
-// foreign formatter, blocked in ANY repo — hand-running a formatter binary is
-// the anti-pattern everywhere, fleet or not (let the repo's own script,
-// pre-commit, or codegen own it).
-const FLEET_LINTERS: ReadonlySet<string> = new Set(['oxfmt', 'oxlint'])
 
 // Package runners that execute a BIN by name. The forms `npx <bin>`, `bunx
 // <bin>`, classic `yarn <bin>`, and the exec / dlx / x subcommands of pnpm,
@@ -149,39 +147,25 @@ export const check = bashGuard((command, payload) => {
   if (!tool) {
     return undefined
   }
-  const fleetRepo = isFleetTarget(payload)
-  // oxfmt / oxlint are FLEET tools: only meaningful — and only blocked — inside
-  // a fleet repo, where the `-c .config/fleet/…` script wrappers exist. Every
-  // foreign formatter (prettier / eslint / biome / cargo fmt / …) is blocked in
-  // ANY repo: hand-running a formatter binary is the anti-pattern everywhere,
-  // fleet or not. (A `yarn prettier -w` in an external repo, run to paper over a
-  // generator's failing self-format step, is the incident this closes.)
-  if (FLEET_LINTERS.has(tool) && !fleetRepo) {
+  // Convention guard: the "use the repo's wrapper, not a bare binary" rule is a
+  // FLEET doctrine that only holds where the fleet toolchain exists. In a
+  // non-fleet repo the native binary (`cargo fmt`, the project's own script) IS
+  // the sanctioned path, so no-op there.
+  if (!isFleetTarget(payload)) {
     return undefined
   }
   if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
     return undefined
   }
-  const fix = fleetRepo
-    ? [
-        '  The fleet runs lint/format ONLY through the repo scripts, which own',
-        '  the `-c .config/fleet/…` flag + ignore set. Use a wrapper instead:',
-        '    pnpm run lint        pnpm run fix --all',
-        '    pnpm run check       pnpm run format',
-        `    not  ${tool} …`,
-      ]
-    : [
-        "  Don't hand-run a formatter/linter binary — let the repo's own tooling",
-        '  own it: run its package.json script (e.g. `npm run format` / `lint`),',
-        "  or let its pre-commit / codegen format. If a generator's own format",
-        '  step is failing, surface or fix THAT — never hand-format around it.',
-        `    not  ${tool} …`,
-      ]
   return block(
     [
       `[no-direct-linter-guard] Blocked: direct \`${tool}\` invocation.`,
       '',
-      ...fix,
+      '  The fleet runs lint/format ONLY through the repo scripts, which own',
+      '  the `-c .config/fleet/…` flag + ignore set. Use a wrapper instead:',
+      '    pnpm run lint        pnpm run fix --all',
+      '    pnpm run check       pnpm run format',
+      `    not  ${tool} …`,
       '',
       `  Bypass: type \`${BYPASS_PHRASE}\` if this is genuinely intended.`,
       '',

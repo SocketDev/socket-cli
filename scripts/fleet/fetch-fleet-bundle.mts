@@ -28,7 +28,7 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 import { hash } from '@socketsecurity/lib/crypto/hash'
-import { errorMessage } from '@socketsecurity/lib/errors'
+import { errorMessage } from '@socketsecurity/lib/errors/message'
 import { safeDeleteSync } from '@socketsecurity/lib/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 import { spawn } from '@socketsecurity/lib/process/spawn/child'

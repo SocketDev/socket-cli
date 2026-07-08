@@ -50,6 +50,7 @@ import { currentBranch } from '../_shared/git-branch.mts'
 import { extractGitCwd } from '../_shared/git-cwd.mts'
 import { findProtectedBranchPush } from '../_shared/push-refspec.mts'
 import { findInvocation } from '../_shared/shell-command.mts'
+import { squashSentinelAllows } from '../_shared/squash-sentinel.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 // Pre-flight trigger: the dispatcher skips importing this guard unless the raw
@@ -83,8 +84,23 @@ export const check = bashGuard((command, payload) => {
     return undefined
   }
 
+  // The squashing-history skill's own force-push (SQUASH_HISTORY=1 sentinel,
+  // hardened single-segment `git push … HEAD:<base>` shape) is the ONE
+  // self-authorized protected push — the skill runs only after the user
+  // invoked it, and the sentinel check rejects every weaponized variant.
+  if (squashSentinelAllows(command)) {
+    return undefined
+  }
+
   // A protected-branch push. Allow ONLY if the user explicitly authorized it.
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)) {
+  // The branch-scoped combo `Allow force-with-lease <branch> bypass` counts
+  // too: one phrase covering BOTH this guard and no-force-push-guard for a
+  // squash-repo lease-force reconciliation, scoped to exactly this branch.
+  const phrases = [
+    ...BYPASS_PHRASES,
+    `Allow force-with-lease ${offending.branch} bypass`,
+  ]
+  if (bypassPhrasePresent(payload.transcript_path, phrases)) {
     return undefined
   }
 
@@ -108,6 +124,10 @@ export const check = bashGuard((command, payload) => {
       '  with an explicit "push" instruction from the user — type the phrase',
       '  verbatim in a new message, then retry:',
       `    Allow push to ${offending.branch}`,
+      '',
+      '  For a lease-force push (squash-repo reconcile), ONE phrase covers',
+      '  both this guard and no-force-push-guard, scoped to this branch:',
+      `    Allow force-with-lease ${offending.branch} bypass`,
       '',
       '  To open a PR instead (the normal flow), push a FEATURE branch — that',
       '  is always allowed:',

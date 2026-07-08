@@ -54,7 +54,7 @@ const rule = {
     const extraTestFns = new Set<string>(
       (
         context.options?.[0] as
-          | { additionalTestBlockFunctions?: string[] }
+          | { additionalTestBlockFunctions?: string[] | undefined }
           | undefined
       )?.additionalTestBlockFunctions ?? [],
     )

@@ -31,11 +31,8 @@ import {
   mkdirSync,
   mkdtempSync,
   readdirSync,
-  readFileSync,
   rmSync,
 } from 'node:fs'
-// oxlint-disable-next-line socket/prefer-spawn-over-execsync -- dep-0 bare-node fetcher (documented invariant: never imports in-repo socket-lib): gh resolution (release list / view) runs via node:child_process and is read with a captured-output execFileSync — the lib spawn wrapper would re-plumb the dep-0 fetcher's error handling.
-import { execFileSync } from 'node:child_process'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
@@ -65,16 +62,16 @@ import {
 } from './install.mts'
 import {
   ERR_LOCKSTEP_MISMATCH,
-  formatLockStepError,
-  formatUpdateNotice,
   lockStepExitCode,
-  readNoticeStore,
   resolveLockStepState,
-  shouldShowNotice,
-  UPDATE_NOTIFIER_OPT_OUT_ENV,
-  writeNoticeStore,
 } from './lockstep.mts'
-import type { LockStepConfig, LockStepState } from './lockstep.mts'
+import type { LockStepConfig } from './lockstep.mts'
+import {
+  assertLockStep,
+  resolveNewestRef,
+  resolveReleaseTemplateSha,
+} from './resolve.mts'
+import { printStatusReport, statusJson } from './status.mts'
 
 // Re-export the helper + install surface so the BUILT single file keeps the
 // full public API that tests + the thin-consumer-wiring check import from
@@ -82,6 +79,8 @@ import type { LockStepConfig, LockStepState } from './lockstep.mts'
 export * from './helpers.mts'
 export * from './install.mts'
 export * from './lockstep.mts'
+export * from './resolve.mts'
+export * from './status.mts'
 
 const logger = getDefaultLogger()
 
@@ -166,117 +165,8 @@ export function parseArgs(argv: readonly string[]): InstallOptions {
   return opts as InstallOptions
 }
 
-/**
- * Resolve a release's `templateSha` from its manifest asset via gh. Dep-0:
- * shells `gh release download <ref> --pattern release-bundle-manifest.json` and
- * reads the stamped field. Returns undefined when the release / asset / field
- * is absent (offline, no such tag) — the caller decides whether that's fatal.
- */
-export function resolveReleaseTemplateSha(
-  ref: string,
-  repo: string,
-): string | undefined {
-  if (!ref) {
-    return undefined
-  }
-  const tmp = mkdtempSync(path.join(os.tmpdir(), 'fleet-status-'))
-  try {
-    execFileSync(
-      'gh',
-      [
-        'release',
-        'download',
-        ref,
-        '--repo',
-        repo,
-        '--pattern',
-        MANIFEST_NAME,
-        '--dir',
-        tmp,
-      ],
-      { stdio: ['ignore', 'ignore', 'ignore'] },
-    )
-    const manifestPath = path.join(tmp, MANIFEST_NAME)
-    if (!existsSync(manifestPath)) {
-      return undefined
-    }
-    const json = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
-      templateSha?: unknown
-    }
-    return typeof json.templateSha === 'string' ? json.templateSha : undefined
-  } catch {
-    return undefined
-  } finally {
-    rmSync(tmp, { recursive: true, force: true })
-  }
-}
-
-/**
- * Resolve the NEWEST `fleet-*` release tag via `gh release list`. Returns the
- * latest tag, or undefined when none / offline. The list is newest-first.
- */
-export function resolveNewestRef(repo: string): string | undefined {
-  try {
-    const out = execFileSync(
-      'gh',
-      [
-        'release',
-        'list',
-        '--repo',
-        repo,
-        '--limit',
-        '30',
-        '--json',
-        'tagName,createdAt',
-      ],
-      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
-    )
-    const rows = JSON.parse(out) as Array<{
-      tagName?: unknown
-      createdAt?: unknown
-    }>
-    for (const row of rows) {
-      if (typeof row.tagName === 'string' && row.tagName.startsWith('fleet-')) {
-        return row.tagName
-      }
-    }
-    return undefined
-  } catch {
-    return undefined
-  }
-}
-
-/**
- * Assert the lock-step invariant before applying a release: the member's pinned
- * `bundle.cascadeSha` MUST equal the release's `templateSha`.
- * `--frozen-lockfile` semantics — a hard fail (never apply a mismatched
- * release). Returns true when intact OR when the member declares no
- * `cascadeSha` (a non-lock-step member — the legacy ref-only pin still
- * fetches). Logs the parsed error + returns false on mismatch.
- */
-export function assertLockStep(options: {
-  readonly cascadeSha: string | undefined
-  readonly manifestTemplateSha: string
-  readonly ref: string
-}): boolean {
-  const { cascadeSha, manifestTemplateSha, ref } = options
-  // A member that hasn't adopted the lock-step pin (no cascadeSha) keeps the
-  // legacy ref-only fetch — the invariant only binds once both halves exist.
-  if (cascadeSha === undefined) {
-    return true
-  }
-  if (cascadeSha === manifestTemplateSha) {
-    return true
-  }
-  logger.error(
-    formatLockStepError({
-      cascadeSha,
-      pinnedTemplateSha: manifestTemplateSha,
-      ref,
-    }),
-  )
-  return false
-}
+// resolveReleaseTemplateSha, resolveNewestRef, and assertLockStep live in
+// ./resolve.mts (extracted to keep this file under the 500-line soft cap).
 
 /**
  * Render the `fleet:status` report. Read-only — NEVER mutates. Resolves the
@@ -324,88 +214,6 @@ export function runStatus(options: InstallOptions): number {
     printStatusReport(state, { noHeader: opts.noHeader ?? false })
   }
   return lockStepExitCode(state, { exitCode: opts.exitCode ?? false })
-}
-
-/**
- * Stable-keyed JSON shape for `fleet:status --json`. Keys never change between
- * states so a script can read them unconditionally.
- */
-export function statusJson(state: LockStepState): Record<string, unknown> {
-  return {
-    cascadeSha: state.config.cascadeSha,
-    inLockStep: state.inLockStep,
-    newestRef: state.newestRef ?? null,
-    newestTemplateSha: state.newestTemplateSha ?? null,
-    pinnedRef: state.config.ref,
-    pinnedTemplateSha: state.pinnedTemplateSha ?? null,
-    state: state.state,
-    updateAvailable: state.updateAvailable,
-  }
-}
-
-function printStatusReport(
-  state: LockStepState,
-  options: { noHeader: boolean },
-): void {
-  const pinnedCell = `${state.config.ref} (${state.pinnedTemplateSha ?? '—'})`
-  const landedCell = state.config.cascadeSha || '—'
-  const newestCell =
-    state.newestRef === undefined
-      ? '—'
-      : `${state.newestRef} (${state.newestTemplateSha ?? '—'})`
-  if (state.state === 'current') {
-    logger.log(`fleet:status: CURRENT — pinned ${pinnedCell}, in lock-step.`)
-    return
-  }
-  if (!options.noHeader) {
-    logger.log('  Pinned                         | Landed       | Newest')
-  }
-  const mismatchTag = state.state === 'out-of-sync' ? '  [MISMATCH]' : ''
-  logger.log(`  ${pinnedCell} | ${landedCell} | ${newestCell}${mismatchTag}`)
-  if (state.state === 'update-available' && state.newestRef !== undefined) {
-    logger.log(`re-cascade to ${state.newestRef}`)
-    return
-  }
-  // OUT-OF-SYNC: print the parsed lock-step error + fail loud.
-  logger.error(
-    formatLockStepError({
-      cascadeSha: state.config.cascadeSha,
-      pinnedTemplateSha: state.pinnedTemplateSha,
-      ref: state.config.ref,
-    }),
-  )
-}
-
-/**
- * Fire the passive update notice opportunistically (update-notifier style). The
- * caller already resolved a newer release exists; this throttles to once/24h
- * via the out-of-tree store, suppresses in CI, honors the opt-out env +
- * NO_COLOR, and NAMES the re-cascade. NEVER weakens the fetch-path verify or
- * the status hard-fail — it only silences the box. Returns true when a notice
- * was printed.
- */
-export function maybeShowUpdateNotice(options: {
-  readonly dest: string
-  readonly updateAvailable: boolean
-  readonly newestRef: string | undefined
-}): boolean {
-  const { dest, newestRef, updateAvailable } = options
-  const store = readNoticeStore(dest)
-  const show = shouldShowNotice({
-    ci: process.env['CI'] !== undefined && process.env['CI'] !== '',
-    newestRef,
-    nowMs: Date.now(),
-    optedOut: process.env[UPDATE_NOTIFIER_OPT_OUT_ENV] === '1',
-    store,
-    updateAvailable,
-  })
-  if (!show || newestRef === undefined) {
-    return false
-  }
-  const color = process.env['NO_COLOR'] === undefined
-  process.stderr.write(`${formatUpdateNotice({ color, newestRef })}\n`)
-  writeNoticeStore(dest, { lastCheckMs: Date.now(), lastSeenRef: newestRef })
-  return true
 }
 
 /**

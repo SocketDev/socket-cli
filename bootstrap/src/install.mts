@@ -31,6 +31,7 @@ import {
   walkFiles,
 } from './helpers.mts'
 import type { BundleManifest, ThinOptions } from './helpers.mts'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 const logger = getDefaultLogger()
 
@@ -306,8 +307,12 @@ export function pruneStaleFleetFiles(
   let pruned = 0
   for (const root of thinIgnoreEntries(manifest)) {
     // Exact-file entries are themselves manifest files → never stale. Only DIR
-    // roots (trailing '/') can hold on-disk files the current bundle dropped.
-    if (!root.endsWith('/')) {
+    // roots (trailing separator) can hold on-disk files the current bundle
+    // dropped. The trailing separator IS the dir marker (thinIgnoreEntries
+    // convention, '/'-joined; tolerate '\' from a Windows-authored manifest) —
+    // test the RAW string end; normalizePath strips the very marker tested.
+    // require-regex-comment: a path ending in '/' or '\'.
+    if (!/[/\\]$/.test(root)) {
       continue
     }
     const dirAbs = path.join(dest, root)

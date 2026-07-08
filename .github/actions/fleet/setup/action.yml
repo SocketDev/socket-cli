@@ -1,0 +1,731 @@
+# Layer 2a — references Layer 1 (debug). Consumed by `setup-and-install`
+# (Layer 2b). When this file bumps, cascade is: 2b → 3 → 4 → external
+# repos. See updating-workflows skill at .claude/skills/updating-workflows/.
+# cascade-data-deps: ., .github, .github/actions/fleet/lib, external-tools.json
+# (read at runtime via ${GITHUB_ACTION_PATH}/../… — implicit edges with no
+# `uses:` line; action-pins-are-current.mts tracks them for staleness.)
+
+name: 'Setup'
+description: 'Setup debug, Node.js, pnpm, Socket firewall shims, and bootstrap zero-dep Socket packages (@socketsecurity/lib, @socketregistry/packageurl-js, @sinclair/typebox)'
+
+# Dependencies:
+#   - actions/setup-node@v6.2.0
+#   - ./.github/actions/debug
+
+inputs:
+  debug:
+    description: 'Enable debug output'
+    required: false
+    default: '0'
+  extended-env:
+    description: 'Export the optional SOCKET_TOOL_* tool-provenance vars (pnpm/sfw version, asset, integrity, dir) to $GITHUB_ENV. Off by default — these have no load-bearing consumer, so emitting them is pure manipulation surface. Set to "true" only for a workflow that genuinely reads a SOCKET_TOOL_* var (e.g. a Dockerfile build-arg). SFW_BIN and SFW_IS_ENTERPRISE export unconditionally regardless; they are load-bearing.'
+    required: false
+    default: 'false'
+  node-version:
+    description: 'Node.js version'
+    required: false
+    default: '26.3.0'
+  scope:
+    description: 'npm registry scope for package authentication'
+    required: false
+    default: ''
+  registry-url:
+    description: 'npm registry URL'
+    required: false
+    default: 'https://registry.npmjs.org'
+  socket-api-token:
+    description: 'Socket API token — when provided, uses sfw-enterprise instead of sfw-free'
+    required: false
+    default: ''
+  socket-api-key:
+    description: 'DEPRECATED alias of socket-api-token. Pass `socket-api-token:` instead. Tracked for one cycle so existing callers keep working.'
+    required: false
+    default: ''
+  working-directory:
+    description: 'Working directory'
+    required: false
+    default: '.'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Check GitHub platform health
+      uses: ./.github/actions/fleet/github-status-check
+
+    - name: Setup debug
+      uses: ./.github/actions/fleet/debug
+      with:
+        debug: ${{ inputs.debug }}
+
+    - name: Install pnpm
+      shell: bash
+      env:
+        # Map the input to env so the run block reads $EXTENDED_ENV instead of
+        # interpolating ${{ inputs.* }} into shell (zizmor template-injection).
+        EXTENDED_ENV: ${{ inputs.extended-env }}
+      run: | # zizmor: ignore[github-env]
+        set -euo pipefail
+        # Single source of truth: external-tools.json at the repo root of this action's checkout.
+        TOOLS_FILE="${GITHUB_ACTION_PATH}/../../../../external-tools.json"
+        if [ ! -f "$TOOLS_FILE" ]; then
+          echo "× the fleet setup action is broken: external-tools.json not found at ${TOOLS_FILE}." >&2
+          echo "  This is a packaging bug in the fleet scaffolding, not a consumer issue. File a bug." >&2
+          echo "" >&2
+          echo "  Diagnostics — what's actually present at runtime:" >&2
+          echo "    GITHUB_ACTION_PATH=${GITHUB_ACTION_PATH}" >&2
+          echo "    ls -la \"\${GITHUB_ACTION_PATH}\":" >&2
+          ls -la "${GITHUB_ACTION_PATH}" 2>&1 | sed 's/^/      /' >&2 || true
+          echo "    ls -la \"\${GITHUB_ACTION_PATH}/..\" (parent — should be .github/actions/fleet/):" >&2
+          ls -la "${GITHUB_ACTION_PATH}/.." 2>&1 | sed 's/^/      /' >&2 || true
+          echo "    ls -la \"\${GITHUB_ACTION_PATH}/../..\" (grandparent — should be .github/actions/):" >&2
+          ls -la "${GITHUB_ACTION_PATH}/../.." 2>&1 | sed 's/^/      /' >&2 || true
+          echo "    ls -la \"\${GITHUB_ACTION_PATH}/../../..\" (should be .github/):" >&2
+          ls -la "${GITHUB_ACTION_PATH}/../../.." 2>&1 | sed 's/^/      /' >&2 || true
+          echo "    ls -la \"\${GITHUB_ACTION_PATH}/../../../..\" (should be repo root):" >&2
+          ls -la "${GITHUB_ACTION_PATH}/../../../.." 2>&1 | sed 's/^/      /' >&2 || true
+          exit 1
+        fi
+        # Copy the tools file to RUNNER_TEMP so consumer workflows and
+        # Docker builds can reach it after `setup` finishes. Actions
+        # lose their $GITHUB_ACTION_PATH scope between steps, so we
+        # stash the file at a stable location and export the path via
+        # SOCKET_TOOL_CHECKSUMS_FILE. Dockerfiles that verify any
+        # registry-published tool (pnpm, zizmor, …) can `COPY` this
+        # into their build context without duplicating per-platform
+        # SHAs across each Dockerfile.
+        TOOLS_DEST="${RUNNER_TEMP:-/tmp}/fleet-external-tools.json"
+        cp "$TOOLS_FILE" "$TOOLS_DEST"
+        if [ ! -s "$TOOLS_DEST" ]; then
+          echo "× failed to stage external-tools.json at ${TOOLS_DEST} (missing or empty after copy)." >&2
+          exit 1
+        fi
+        # The staged file always exists at $TOOLS_DEST; only the env-var
+        # pointer to it is gated. Disabled-seam: the cp above stays
+        # unconditional (the wire-in point), but the SOCKET_TOOL_CHECKSUMS_FILE
+        # export — which no load-bearing step reads — is off unless a consumer
+        # opts in via extended-env. See disabled-seam-pattern (fleet docs).
+        if [ "$EXTENDED_ENV" = "true" ]; then
+          echo "SOCKET_TOOL_CHECKSUMS_FILE=$TOOLS_DEST" >> "${GITHUB_ENV:-/dev/null}"
+        fi
+        # Read JSON values via lib/jq.mjs. Node is preinstalled on
+        # every GitHub-hosted runner image and in node:* Docker base
+        # images, so this avoids depending on jq (absent from
+        # node:*-alpine and distroless). The reader exits non-zero on
+        # missing/empty values, so set -e turns a packaging bug here
+        # into a loud failure rather than a silent empty env export
+        # that surfaces later as `cp: cannot stat ''`.
+        JQ="${GITHUB_ACTION_PATH}/../lib/jq.mjs"
+        # The tools file nests entries under `tools` (current schema) or at the
+        # top level (legacy flat). Probe once; an empty $NS splits away.
+        NS="tools"
+        node "$JQ" "$TOOLS_FILE" tools >/dev/null 2>&1 || NS=""
+        PNPM_VERSION="$(node "$JQ" "$TOOLS_FILE" $NS pnpm version)"
+        PNPM_DIR="${RUNNER_TEMP:-/tmp}/pnpm-bin"
+        # Canonical platform string (linux-x64, linux-arm64-musl,
+        # darwin-arm64, win-x64, …). Detects musl via Node's own
+        # process.report so we don't shell out to ldd.
+        PLATFORM_TOOL="${GITHUB_ACTION_PATH}/../lib/platform.mjs"
+        PLATFORM="$(node "$PLATFORM_TOOL")"
+        ASSET="$(node "$JQ" "$TOOLS_FILE" $NS pnpm platforms "$PLATFORM" asset)"
+        INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS pnpm platforms "$PLATFORM" integrity)"
+        # Optional `source` field. When set to `npm-registry`, the asset
+        # is a JS-only npm tarball (e.g. pnpm-11.0.8.tgz) — runs through
+        # the system Node instead of being a SEA binary. Currently used
+        # only for darwin-x64 because upstream pnpm dropped the SEA
+        # binary in 11.0.5 due to nodejs/node#62893.
+        SOURCE="$(node "$JQ" "$TOOLS_FILE" $NS pnpm platforms "$PLATFORM" source 2>/dev/null || echo "")"
+        BINARY_REL="$(node "$JQ" "$TOOLS_FILE" $NS pnpm platforms "$PLATFORM" binary 2>/dev/null || echo "")"
+        PNPM_BIN="$PNPM_DIR/pnpm"
+        [[ "$ASSET" == *.zip ]] && PNPM_BIN="$PNPM_DIR/pnpm.exe"
+        # Shared installer: fetches, integrity-verifies (SRI), extracts.
+        INSTALL_TOOL="${GITHUB_ACTION_PATH}/../lib/install-tool.mjs"
+        if [ ! -x "$PNPM_BIN" ]; then
+          if [ "$SOURCE" = "npm-registry" ]; then
+            URL="https://registry.npmjs.org/pnpm/-/${ASSET}"
+          else
+            URL="https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/${ASSET}"
+          fi
+          node "$INSTALL_TOOL" "$URL" "$INTEGRITY" "$PNPM_DIR"
+        fi
+        # If the platform uses the npm-registry shape, the extracted
+        # tarball is a JS package — no native binary. Write a wrapper
+        # that runs it through the system Node.
+        if [ "$SOURCE" = "npm-registry" ]; then
+          BINARY_PATH="$PNPM_DIR/$BINARY_REL"
+          if [ ! -f "$BINARY_PATH" ]; then
+            echo "× pnpm npm-registry tarball missing $BINARY_REL after extract" >&2
+            exit 1
+          fi
+          printf '#!/bin/bash\nexec node "%s" "$@"\n' "$BINARY_PATH" > "$PNPM_BIN"
+          chmod +x "$PNPM_BIN"
+        fi
+        echo "$PNPM_DIR" >> "${GITHUB_PATH:-/dev/null}"
+        # The pnpm installed above is pinned + SRI-verified from
+        # external-tools.json — it IS the source of truth for the pnpm
+        # version in CI. A consumer repo's package.json `packageManager`
+        # field is an exact Corepack pin (it cannot be a range) meant for
+        # dev machines, and it routinely drifts ahead of the action SHA a
+        # consumer pins. With pnpm managing package-manager versions (the
+        # default), that skew makes every `pnpm install` hard-fail with
+        # "configured to use X, your current pnpm is Y" — even a one-patch
+        # gap. Turn the management off so the action-pinned binary always
+        # wins; the floor a repo actually cares about is its `engines.pnpm`
+        # range, and pnpm versions are reconciled by cascade, not by
+        # failing CI on a stale SHA.
+        echo "npm_config_manage_package_manager_versions=false" >> "${GITHUB_ENV:-/dev/null}"
+        # Optional pnpm provenance for downstream steps and Docker builds —
+        # lets a consumer pass `--build-arg PNPM_VERSION` sourced from the
+        # SOCKET_TOOL_PNPM_VERSION env var instead of a drift-prone ARG
+        # default. Disabled-seam: pnpm is already on $GITHUB_PATH above (the
+        # load-bearing wire-in), so these provenance vars have no required
+        # consumer — gated off unless extended-env opts in. See
+        # disabled-seam-pattern (fleet docs).
+        if [ "$EXTENDED_ENV" = "true" ]; then
+          {
+            echo "SOCKET_TOOL_PNPM_VERSION=$PNPM_VERSION"
+            echo "SOCKET_TOOL_PNPM_PLATFORM=$PLATFORM"
+            echo "SOCKET_TOOL_PNPM_ASSET=$ASSET"
+            echo "SOCKET_TOOL_PNPM_INTEGRITY=$INTEGRITY"
+            echo "SOCKET_TOOL_PNPM_BIN=$PNPM_BIN"
+            echo "SOCKET_TOOL_PNPM_DIR=$PNPM_DIR"
+          } >> "${GITHUB_ENV:-/dev/null}"
+        fi
+
+    - name: Setup Node.js
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0 (2026-05-15)
+      with:
+        node-version: ${{ inputs.node-version }}
+        registry-url: ${{ inputs.registry-url }}
+        scope: ${{ inputs.scope }}
+
+    - name: Export Node.js version
+      shell: bash
+      env:
+        # Route through env to avoid zizmor template-injection findings —
+        # the input is still plumbed from the caller but never expanded
+        # directly into the shell source.
+        NODE_VERSION: ${{ inputs.node-version }}
+      run: | # zizmor: ignore[github-env]
+        # Mirror the node version that setup-node resolved so Docker
+        # builds COPY'd from CI can pin to the same Node major.
+        echo "SOCKET_TOOL_NODE_VERSION=$NODE_VERSION" >> "${GITHUB_ENV:-/dev/null}"
+
+    - name: Download sfw
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        # `socket-api-token` is the canonical input; `socket-api-key`
+        # is a deprecated alias kept for one cycle. Coalesce here so
+        # downstream `SOCKET_API_TOKEN` checks see the value regardless
+        # of which input the caller used.
+        SOCKET_API_TOKEN: ${{ inputs.socket-api-token != '' && inputs.socket-api-token || inputs.socket-api-key }}
+        # Gate for the optional SOCKET_TOOL_SFW_* provenance exports below —
+        # read as $EXTENDED_ENV in the run block, never interpolated into shell.
+        EXTENDED_ENV: ${{ inputs.extended-env }}
+      run: | # zizmor: ignore[github-env]
+        set -euo pipefail
+        # SFW (Socket Firewall) version + per-platform asset/integrity
+        # live in external-tools.json — canonical schema keeps each flavor
+        # as its own `sfw-<flavor>` entry; legacy flat files nest both
+        # flavors under one `sfw` key.
+        # Bumping a tool requires updating the version AND every
+        # platform's integrity (SRI string) there in the same commit.
+        # The lib/ scripts below resolve platform → asset → URL →
+        # install at the currently-detected runner.
+        TOOLS_FILE="${GITHUB_ACTION_PATH}/../../../../external-tools.json"
+        JQ="${GITHUB_ACTION_PATH}/../lib/jq.mjs"
+        # The tools file nests entries under `tools` (current schema) or at the
+        # top level (legacy flat). Probe once; an empty $NS splits away.
+        NS="tools"
+        node "$JQ" "$TOOLS_FILE" tools >/dev/null 2>&1 || NS=""
+        PLATFORM_TOOL="${GITHUB_ACTION_PATH}/../lib/platform.mjs"
+        INSTALL_TOOL="${GITHUB_ACTION_PATH}/../lib/install-tool.mjs"
+        # Enterprise flavor when SOCKET_API_TOKEN is set, otherwise free.
+        # Enterprise downloads from the private firewall-release repo
+        # are auth'd via GITHUB_TOKEN inside install-tool.mjs.
+        if [ -n "$SOCKET_API_TOKEN" ]; then
+          SFW_FLAVOR="enterprise"
+          SFW_REPO="SocketDev/firewall-release"
+        else
+          SFW_FLAVOR="free"
+          SFW_REPO="SocketDev/sfw-free"
+        fi
+        # Shape probe: canonical entries are `sfw-free`/`sfw-enterprise`
+        # (external-tools-schema.mts — ToolEntry rejects nested flavor
+        # objects); legacy flat files use `sfw.{version,free,enterprise}`.
+        # sfw_path echoes the entry path for the ACTIVE flavor — unquoted
+        # at the call sites (like $NS) so the legacy two-word path splits.
+        SFW_SHAPE="canonical"
+        node "$JQ" "$TOOLS_FILE" $NS sfw-free version >/dev/null 2>&1 || SFW_SHAPE="legacy"
+        sfw_path() {
+          if [ "$SFW_SHAPE" = "canonical" ]; then
+            echo "sfw-${SFW_FLAVOR}"
+          else
+            echo "sfw ${SFW_FLAVOR}"
+          fi
+        }
+        if [ "$SFW_SHAPE" = "canonical" ]; then
+          SFW_VERSION="$(node "$JQ" "$TOOLS_FILE" $NS "sfw-${SFW_FLAVOR}" version)"
+        else
+          SFW_VERSION="$(node "$JQ" "$TOOLS_FILE" $NS sfw version)"
+        fi
+        PLATFORM="$(node "$PLATFORM_TOOL")"
+        # Hard-fail with a clear message on unsupported platforms (eg
+        # win-arm64) rather than silently skipping. SFW is a required
+        # dependency of the install flow, unlike zizmor (audit-only).
+        if ! ASSET="$(node "$JQ" "$TOOLS_FILE" $NS $(sfw_path) platforms "$PLATFORM" asset 2>/dev/null)"; then
+          echo "× SFW (${SFW_FLAVOR}) is not published for ${PLATFORM} at v${SFW_VERSION}." >&2
+          echo "  Supported: linux-{x64,arm64}{,-musl}, darwin-{x64,arm64}, win-x64." >&2
+          echo "  win-arm64 has no upstream binary — skip SFW-dependent steps on that runner or wait for upstream support." >&2
+          exit 1
+        fi
+        INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS $(sfw_path) platforms "$PLATFORM" integrity)"
+        SFW_BIN_NAME="$(node "$JQ" "$TOOLS_FILE" $NS $(sfw_path) binaryName)"
+        if [[ "$ASSET" == *.exe ]]; then
+          SFW_BIN_NAME="${SFW_BIN_NAME}.exe"
+        fi
+        SFW_DIR="${RUNNER_TEMP:-/tmp}/sfw-bin"
+        SFW_BIN="$SFW_DIR/$SFW_BIN_NAME"
+        # `install-tool.mjs` exits non-zero on download failure or
+        # integrity mismatch and bails the step via `set -e`. Wrap the
+        # invocation in an explicit branch so we can echo before/after
+        # — silent SFW provisioning broke install-action downstream in
+        # the past (binary path exported via $GITHUB_ENV but file
+        # missing on disk). Recover gracefully if a prior partial step
+        # left a non-executable file at the target path.
+        if [ -x "$SFW_BIN" ]; then
+          echo "sfw binary already present: $SFW_BIN"
+        else
+          echo "Installing sfw → $SFW_BIN (asset: $ASSET)"
+          if [ -e "$SFW_BIN" ]; then
+            # Non-executable artifact from an interrupted prior run.
+            echo "Removing stale non-executable artifact at $SFW_BIN"
+            rm -f "$SFW_BIN"
+          fi
+          node "$INSTALL_TOOL" \
+            "https://github.com/${SFW_REPO}/releases/download/v${SFW_VERSION}/${ASSET}" \
+            "$INTEGRITY" \
+            "$SFW_DIR" \
+            "$SFW_BIN_NAME"
+          # `install-tool.mjs` should produce an executable; surface
+          # the failure here with diagnostics if it didn't, instead of
+          # letting downstream steps fail with the opaque
+          # "sfw is not installed" message.
+          if [ ! -x "$SFW_BIN" ]; then
+            echo "× SFW install reported success but $SFW_BIN is missing or not executable." >&2
+            echo "  Contents of $SFW_DIR:" >&2
+            ls -la "$SFW_DIR" >&2 || true
+            exit 1
+          fi
+          echo "sfw installed: $(ls -la "$SFW_BIN")"
+        fi
+        # Enterprise-flavor liveness probe. The enterprise binary reads
+        # SOCKET_API_TOKEN at startup and calls Socket API to identify
+        # the account's active SKUs — if the token is valid but the
+        # account doesn't have firewall-enterprise enabled, every
+        # subsequent invocation 403s with "Error while identifying
+        # active SKUs". Detect that ONCE here and silently downgrade
+        # to sfw-free so CI keeps working with whatever token the repo
+        # has, rather than every downstream pnpm/npm call failing.
+        #
+        # Two failure modes are handled here:
+        #
+        #   1. 403 / "identifying active SKUs" — terminal: the token
+        #      lacks the enterprise SKU. Fall back to sfw-free.
+        #   2. 5xx (e.g. 503 Service Unavailable) — transient: Socket
+        #      API is having a moment. Retry the probe with backoff
+        #      (1s, 3s, 9s). If still 5xx after 3 attempts, fall back
+        #      to sfw-free so CI doesn't block on a Socket-side
+        #      outage. **Why:** 2026-06-02 a 503 during v6.0.7 CI
+        #      blocked release on two consecutive runs.
+        if [ "$SFW_FLAVOR" = "enterprise" ]; then
+          PROBE_DELAYS=(1 3 9)
+          PROBE_ATTEMPT=0
+          PROBE_SUCCESS=false
+          SFW_PROBE_OUT=""
+          for delay in "${PROBE_DELAYS[@]}"; do
+            PROBE_ATTEMPT=$((PROBE_ATTEMPT + 1))
+            SFW_PROBE_OUT="$("$SFW_BIN" --version 2>&1 || true)"
+            # Success = probe didn't surface a 5xx response. Anything
+            # else (clean version output, 403/SKU error, hostname
+            # resolution failure) takes us to the post-probe branches.
+            #
+            # 5xx shapes seen in the wild:
+            #   "Socket API returned status code 503"   (sfw stdout)
+            #   "validation got status of 503"          (setup-and-install)
+            if ! echo "$SFW_PROBE_OUT" | grep -qE "status (code|of) 5[0-9][0-9]"; then
+              PROBE_SUCCESS=true
+              break
+            fi
+            echo "Note: sfw-enterprise probe attempt $PROBE_ATTEMPT/${#PROBE_DELAYS[@]} got 5xx from Socket API; retrying in ${delay}s…" >&2
+            sleep "$delay"
+          done
+          if ! "$PROBE_SUCCESS"; then
+            echo "Note: sfw-enterprise probe still 5xx after ${#PROBE_DELAYS[@]} attempts — Socket API likely having an outage." >&2
+            echo "  Last probe output:" >&2
+            echo "$SFW_PROBE_OUT" | head -3 | sed 's/^/    /' >&2
+            echo "  Falling back to sfw-free for the rest of the workflow." >&2
+            SFW_FLAVOR="free"
+            SFW_REPO="SocketDev/sfw-free"
+          elif echo "$SFW_PROBE_OUT" | grep -q "identifying active SKUs"; then
+            echo "Note: sfw-enterprise SKU probe returned 403 — the SOCKET_API_TOKEN" >&2
+            echo "  in this CI is valid but lacks the firewall-enterprise SKU." >&2
+            echo "  Falling back to sfw-free for the rest of the workflow." >&2
+            SFW_FLAVOR="free"
+            SFW_REPO="SocketDev/sfw-free"
+          fi
+          if [ "$SFW_FLAVOR" = "free" ]; then
+            # Canonical entries carry per-flavor versions — re-read for the
+            # flavor we just fell back to (legacy shares one version).
+            if [ "$SFW_SHAPE" = "canonical" ]; then
+              SFW_VERSION="$(node "$JQ" "$TOOLS_FILE" $NS sfw-free version)"
+            fi
+            if ! ASSET="$(node "$JQ" "$TOOLS_FILE" $NS $(sfw_path) platforms "$PLATFORM" asset 2>/dev/null)"; then
+              echo "× SFW-free fallback: no asset for ${PLATFORM} at v${SFW_VERSION}." >&2
+              exit 1
+            fi
+            INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS $(sfw_path) platforms "$PLATFORM" integrity)"
+            SFW_BIN_NAME="$(node "$JQ" "$TOOLS_FILE" $NS $(sfw_path) binaryName)"
+            rm -rf "$SFW_DIR"
+            mkdir -p "$SFW_DIR"
+            node "$INSTALL_TOOL" \
+              "$SFW_REPO" \
+              "v${SFW_VERSION}" \
+              "$ASSET" \
+              "$INTEGRITY" \
+              "$SFW_DIR" \
+              "$SFW_BIN_NAME"
+            SFW_BIN="${SFW_DIR}/${SFW_BIN_NAME}"
+            if [ ! -x "$SFW_BIN" ]; then
+              echo "× SFW-free fallback install failed: $SFW_BIN missing." >&2
+              exit 1
+            fi
+            echo "sfw-free (fallback) installed: $(ls -la "$SFW_BIN")"
+          fi
+        fi
+        SFW_IS_ENTERPRISE=false
+        if [ "$SFW_FLAVOR" = "enterprise" ]; then
+          SFW_IS_ENTERPRISE=true
+        fi
+        # Export the API token under BOTH names whenever it is present —
+        # not only in the enterprise branch. SOCKET_API_TOKEN is canonical;
+        # SOCKET_API_KEY is the same value under the name the dev-machine OS
+        # keychain stores, so CI and local expose the identical var name (the
+        # only sanctioned CI-vs-local difference is the transport: secret-env
+        # in CI, keychain locally — the value and the name match). Downstream
+        # consumers (sfw, scripts, tests) that read either name work in both.
+        if [ -n "$SOCKET_API_TOKEN" ]; then
+          {
+            echo "SOCKET_API_TOKEN=$SOCKET_API_TOKEN"
+            echo "SOCKET_API_KEY=$SOCKET_API_TOKEN"
+          } >> "${GITHUB_ENV:-/dev/null}"
+        fi
+        # SFW_BIN + SFW_IS_ENTERPRISE are load-bearing (external steps run
+        # `[ -x "$SFW_BIN" ]`; the Create-shims step reads SFW_IS_ENTERPRISE
+        # cross-step) — always exported. The SOCKET_TOOL_SFW_* provenance has
+        # no required consumer; disabled-seam-gated off unless extended-env
+        # opts in. See disabled-seam-pattern (fleet docs).
+        {
+          echo "SFW_BIN=$SFW_BIN"
+          echo "SFW_IS_ENTERPRISE=$SFW_IS_ENTERPRISE"
+        } >> "${GITHUB_ENV:-/dev/null}"
+        if [ "$EXTENDED_ENV" = "true" ]; then
+          {
+            echo "SOCKET_TOOL_SFW_FLAVOR=$SFW_FLAVOR"
+            echo "SOCKET_TOOL_SFW_VERSION=$SFW_VERSION"
+            echo "SOCKET_TOOL_SFW_PLATFORM=$PLATFORM"
+            echo "SOCKET_TOOL_SFW_ASSET=$ASSET"
+            echo "SOCKET_TOOL_SFW_INTEGRITY=$INTEGRITY"
+          } >> "${GITHUB_ENV:-/dev/null}"
+        fi
+
+    - name: Create sfw shims
+      shell: bash
+      run: | # zizmor: ignore[github-env]
+        # Shim supported package managers so their commands route through sfw.
+        #
+        # Wrapper mode ecosystems (sfw-free):
+        #   JavaScript/TypeScript: npm, yarn, pnpm
+        #   Python: pip, uv
+        #   Rust: cargo
+        # https://github.com/SocketDev/sfw-free?tab=readme-ov-file#supported-package-managers
+        #
+        # Additional wrapper mode ecosystems (sfw-enterprise):
+        #   Ruby: gem, bundler
+        #   .NET: nuget
+        #   Go: go (Linux only)
+        # https://github.com/SocketDev/firewall-release/wiki#support-matrix
+        SHIM_DIR="${RUNNER_TEMP:-/tmp}/sfw-shim"
+        rm -rf "$SHIM_DIR"
+        mkdir -p "$SHIM_DIR"
+        IS_WINDOWS=false
+        [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* ]] && IS_WINDOWS=true
+        msys_to_win_path() {
+          if $IS_WINDOWS && [[ "$1" =~ ^/([a-zA-Z])/(.*) ]]; then
+            echo "${BASH_REMATCH[1]^^}:\\${BASH_REMATCH[2]//\//\\}"
+          else
+            echo "$1"
+          fi
+        }
+        strip_shim_dir() { echo "$PATH" | tr ':' '\n' | grep -vxF "$SHIM_DIR" | paste -sd: -; }
+        CLEAN_PATH="$(strip_shim_dir)"
+        SHIM_CMDS="npm yarn pnpm pip pip3 uv cargo"
+        if [ "$SFW_IS_ENTERPRISE" = "true" ]; then
+          SHIM_CMDS="npm yarn pnpm pip pip3 uv cargo gem bundler nuget"
+          # Go wrapper mode is only supported on Linux.
+          [[ "$OSTYPE" == linux* ]] && SHIM_CMDS="$SHIM_CMDS go"
+        fi
+        # Env-var sentinel name for a shimmed command's own-recursion guard —
+        # keep in lockstep with setup-tools-sfw.mjs's sentinelVarFor(). Set by
+        # the shim itself before handing off to sfw, so a re-entrant
+        # invocation (a child process the wrapped tool spawns, or the tool
+        # re-invoking its OWN name via a bare PATH lookup) skips straight to
+        # the real binary instead of stripping the shared shim dir from PATH.
+        # Stripping the WHOLE shim dir (the pre-fix shape) took every OTHER
+        # shimmed command down with it for every child process.
+        sentinel_for() { printf 'SOCKET_SHIM_ACTIVE_%s' "$(printf '%s' "$1" | tr '[:lower:]' '[:upper:]' | tr -c '[:alnum:]' '_')"; }
+        # Per-command install hint surfaced when a tool isn't on PATH.
+        # Mirrors the local-install setup-tools-sfw.mjs hintFor() — keep these
+        # in sync when adding new ecosystems.
+        hint_for() {
+          case "$1" in
+            npm)         echo "Install Node.js (which provides npm) from https://nodejs.org or via nvm: https://github.com/nvm-sh/nvm" ;;
+            yarn)        echo "Install Yarn via Corepack (run: corepack enable) or brew: brew install yarn" ;;
+            pnpm)        echo "Install pnpm via Corepack (run: corepack enable && corepack prepare pnpm@latest --activate) or brew: brew install pnpm" ;;
+            pip|pip3)    echo "Install Python (which provides $1) from https://www.python.org or via brew: brew install python" ;;
+            uv)          echo "Install uv from https://docs.astral.sh/uv/getting-started/installation/" ;;
+            cargo)       echo "Install Rust (which provides cargo) from https://rustup.rs" ;;
+            gem)         echo "Install Ruby (which provides gem) via brew: brew install ruby" ;;
+            bundler)     echo "Install bundler via gem: gem install bundler" ;;
+            nuget)       echo "Install NuGet from https://www.nuget.org/downloads or via brew: brew install nuget" ;;
+            go)          echo "Install Go from https://go.dev/dl or via brew: brew install go" ;;
+            *)           echo "Install $1 from your package manager" ;;
+          esac
+        }
+        for CMD in $SHIM_CMDS; do
+          REAL="$(PATH="$CLEAN_PATH" command -v "$CMD" 2>/dev/null || true)"
+          if [ -n "$REAL" ]; then
+            REAL="$(msys_to_win_path "$REAL")"
+            # SFW_UNKNOWN_HOST_ACTION=ignore: only sfw-enterprise reads this
+            # env var (sfw-free hardcodes 'ignore' internally). Enterprise's
+            # built-in default is 'block', which fails dev workflows that hit
+            # hosts outside the registries[] allowlist (Anthropic API, GitHub
+            # clones, telemetry, etc.). Setting 'ignore' lets non-allowlisted
+            # traffic pass unscored while still scanning the registries we
+            # care about. Free mode ignores the var, so we set it
+            # unconditionally — no branching needed. See
+            # firewall/src/lib/firewall/connect.ts.
+            SENTINEL="$(sentinel_for "$CMD")"
+            SHIM_LINES=('#!/bin/bash' "if [ -n \"\${${SENTINEL}:-}\" ]; then" "  exec \"${REAL}\" \"\$@\"" 'fi' "export ${SENTINEL}=1")
+            SHIM_LINES+=('export SFW_UNKNOWN_HOST_ACTION=ignore')
+            # Run sfw in its OWN process group and reap the whole group on
+            # exit, instead of `exec`-ing it. sfw spawns the real package
+            # manager, which spawns probe children (--version, list, install
+            # workers); if the shim's caller (a CI step, a shell ^C, an
+            # interrupted agent Bash call) dies, an `exec`-ed sfw + its
+            # descendants reparent to init and leak. `set -m` puts the
+            # backgrounded sfw in a fresh process group ($! == its pgid); the
+            # trap kills that whole group (negative pid) on any exit path, so
+            # nothing is orphaned. We forward the same SIGTERM/SIGINT we
+            # receive, then wait and propagate sfw's exit code. This is a
+            # safety net independent of the sfw binary's own signal handling.
+            SHIM_LINES+=('set -m')
+            SHIM_LINES+=("\"${SFW_BIN}\" \"${REAL}\" \"\$@\" &")
+            SHIM_LINES+=('sfw_pid=$!')
+            SHIM_LINES+=('trap "kill -TERM -$sfw_pid 2>/dev/null" EXIT')
+            SHIM_LINES+=('trap "kill -INT  -$sfw_pid 2>/dev/null" INT')
+            SHIM_LINES+=('trap "kill -TERM -$sfw_pid 2>/dev/null" TERM HUP')
+            SHIM_LINES+=('wait "$sfw_pid"')
+            SHIM_LINES+=('exit $?')
+            printf '%s\n' "${SHIM_LINES[@]}" > "$SHIM_DIR/$CMD"
+            chmod +x "$SHIM_DIR/$CMD"
+            if $IS_WINDOWS; then
+              # No trap-and-reap on the .cmd path: Windows has no POSIX
+              # process groups, and the GitHub runner tears down the whole
+              # job object when a step ends, so a killed step's descendants
+              # don't survive the way a POSIX orphan reparents to init. The
+              # sfw binary's own signal handling covers the rest. goto/label
+              # instead of an `if defined (...)` block: cmd.exe substitutes
+              # %errorlevel% once at PARSE time for everything inside a single
+              # parenthesized block, so reading it there would capture the
+              # exit code from BEFORE the guarded command ran.
+              printf '@echo off\r\nif defined %s goto :real\r\nset "%s=1"\r\nset "SFW_UNKNOWN_HOST_ACTION=ignore"\r\n"%s" "%s" %%*\r\nexit /b %%errorlevel%%\r\n:real\r\n"%s" %%*\r\nexit /b %%errorlevel%%\r\n' \
+                "$SENTINEL" "$SENTINEL" "$SFW_BIN" "$REAL" "$REAL" > "$SHIM_DIR/$CMD.cmd"
+            fi
+          else
+            # Helpful-error stub. Without this, a workflow that calls a
+            # missing tool (`gem install foo` on a runner without Ruby)
+            # fails with a generic "command not found" — the stub makes
+            # the error self-explanatory and points at the install path.
+            #
+            # We emit each `echo` line as a single-quoted argument so
+            # the message renders verbatim at run time (no expansion of
+            # $foo / backticks / inner double quotes). The sed pass on
+            # each value escapes any embedded single quote via the
+            # `'\''` idiom. Mirrors the local-install regenerator at
+            # scripts/fleet/setup/setup-tools.mjs — keep both in sync when
+            # adjusting wording.
+            HINT="$(hint_for "$CMD")"
+            sq_escape() { printf "%s" "$1" | sed "s/'/'\\\\''/g"; }
+            MSG_HINT="$(sq_escape "  $HINT")"
+            MSG_TITLE="$(sq_escape "× sfw: \"$CMD\" is not installed on this runner.")"
+            {
+              printf '%s\n' '#!/bin/bash'
+              printf '%s\n' "# Socket Firewall shim — placeholder for $CMD (not installed at setup time)."
+              printf '%s\n' 'exec >&2'
+              printf "echo '%s'\n" "$MSG_TITLE"
+              printf '%s\n' 'echo'
+              printf "echo '%s'\n" "$MSG_HINT"
+              printf '%s\n' 'echo'
+              printf '%s\n' 'echo "  Add a setup step that installs the tool BEFORE the step that"'
+              printf '%s\n' 'echo "  uses it; the shim is regenerated on the next setup-and-install run."'
+              printf '%s\n' 'echo'
+              printf '%s\n' 'exit 127'
+            } > "$SHIM_DIR/$CMD"
+            chmod +x "$SHIM_DIR/$CMD"
+            if $IS_WINDOWS; then
+              {
+                printf '@echo off\r\n'
+                printf 'echo. 1^>^&2\r\n'
+                printf 'echo %s 1^>^&2\r\n' "x sfw: \"$CMD\" is not installed on this runner."
+                printf 'echo   %s 1^>^&2\r\n' "$HINT"
+                printf 'echo   Add a setup step that installs the tool BEFORE the step that 1^>^&2\r\n'
+                printf 'echo   uses it; the shim is regenerated on the next setup-and-install run. 1^>^&2\r\n'
+                printf 'exit /b 127\r\n'
+              } > "$SHIM_DIR/$CMD.cmd"
+            fi
+          fi
+        done
+        echo "$SHIM_DIR" >> "${GITHUB_PATH:-/dev/null}"
+        echo "SFW_SHIM_DIR=$SHIM_DIR" >> "${GITHUB_ENV:-/dev/null}"
+
+    - name: Export SFW_CUSTOM_REGISTRIES bypass list
+      shell: bash
+      run: | # zizmor: ignore[github-env]
+        # Ship an up-to-date host bypass list to both sfw-free and
+        # sfw-enterprise via SFW_CUSTOM_REGISTRIES, so consumers pick up
+        # new hosts without waiting for a binary release.
+        # Kinds accepted: npm, pypi, golang, maven, gem, cargo, nuget,
+        # block, wrap, bypass.
+        # Format: comma- or newline-separated kind:fqdn entries.
+        # Source of truth (baked into the binary) lives at
+        # SocketDev/firewall:src/lib/registries/default.ts.
+        #
+        # The bypass list itself lives in the wheelhouse-canonical
+        # location `.config/fleet/sfw-bypass-list.txt` (action_path is
+        # the running repo checkout (inlined local action);
+        # `../../../../.config/fleet/` walks up out of
+        # `.github/actions/fleet/setup/` to repo root). Every fleet repo gets
+        # a byte-identical copy via sync-scaffolding, so socket-btm's
+        # install-sfw.mts can read its own local copy at the same path.
+        BYPASS_FILE="${{ github.action_path }}/../../../../.config/fleet/sfw-bypass-list.txt"
+        {
+          echo 'SFW_CUSTOM_REGISTRIES<<EOF'
+          # Strip comments + blank lines so the env var holds only real entries.
+          grep -vE '^\s*(#|$)' "$BYPASS_FILE"
+          echo 'EOF'
+        } >> "${GITHUB_ENV:-/dev/null}"
+        # Opt out of gh CLI telemetry (on-by-default as of late 2025).
+        # DO_NOT_TRACK covers tools honoring consoledonottrack.com;
+        # GH_TELEMETRY is gh-specific and takes precedence.
+        echo "DO_NOT_TRACK=1" >> "${GITHUB_ENV:-/dev/null}"
+        echo "GH_TELEMETRY=0" >> "${GITHUB_ENV:-/dev/null}"
+
+    - name: Bootstrap zero-dep packages from npm registry
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        ACTION_DIR: ${{ github.action_path }}
+      run: |
+        # Bootstrap a small set of zero-dep packages into node_modules/
+        # BEFORE pnpm install runs. Several Socket repos have root
+        # scripts (setup.mts, postinstall hooks, .claude/hooks/*) that
+        # import these packages at module-load time. On a fresh
+        # checkout, pnpm install itself runs scripts that import them —
+        # but pnpm install hasn't completed yet, so the imports fail
+        # with ERR_MODULE_NOT_FOUND. Pre-seeding each package's tarball
+        # directly into node_modules/<scope>/<name>/ solves the
+        # chicken-and-egg.
+        #
+        # Restricted to ZERO-DEP packages so a tarball extract is the
+        # whole install — no transitive resolution needed. Any package
+        # we add here must `npm view <pkg> dependencies` empty; if it
+        # picks up a dep later, drop it from this list.
+        #
+        # Lives in `setup` (alongside zizmor + sfw provisioning) rather
+        # than `install` so consumers calling only `setup` also benefit,
+        # not just consumers of `setup-and-install` or `install`
+        # directly.
+        #
+        # Per-package skip rules:
+        #   - the repo has its own scripts/bootstrap-from-registry.mts
+        #     (the preinstall hook handles all packages; no duplicate)
+        #   - <pkg> is already resolvable from the working directory
+        #   - <pkg> isn't pinned in this repo's package.json /
+        #     pnpm-workspace.yaml catalog (skip silently)
+        #
+        # Before each download, the version is checked against the
+        # Socket Firewall API (firewall-api.socket.dev/purl). Critical/
+        # high severity alerts block the bootstrap; firewall errors
+        # are non-fatal so a network blip doesn't break a fresh clone.
+        set -euo pipefail
+        if [ -f scripts/bootstrap-from-registry.mts ]; then
+          echo "Repo has its own bootstrap-from-registry.mts; skipping action-level bootstrap."
+          exit 0
+        fi
+        # Zero-dep packages worth pre-seeding so .claude/hooks/* and
+        # root scripts can import them at module-load time. Order
+        # matters only for log readability.
+        PACKAGES=(
+          '@socketregistry/packageurl-js'
+          '@sinclair/typebox'
+          '@socketsecurity/lib'
+          '@socketsecurity/lib-stable'
+        )
+        for PKG in "${PACKAGES[@]}"; do
+          # Already resolvable? Skip.
+          if node -e "require.resolve('${PKG}/package.json')" 2>/dev/null; then
+            echo "${PKG} already resolvable; skipping."
+            continue
+          fi
+          # Pinned somewhere in the consumer repo?
+          # Script emits `<real-pkg>\t<version>` when the pin uses
+          # pnpm's `npm:` alias form (e.g.
+          # `@socketsecurity/lib-stable: npm:@socketsecurity/lib@5.28.0`),
+          # so the tarball URL points at the alias TARGET (which has a
+          # published tarball) rather than the alias name (which doesnt).
+          # Plain pins emit just `<version>`.
+          PINNED="$(node "${ACTION_DIR}/../lib/read-pinned-version.mts" "${PKG}")"
+          if [ -z "$PINNED" ]; then
+            echo "${PKG} not pinned in this repo; skipping."
+            continue
+          fi
+          if [[ "$PINNED" == *$'\t'* ]]; then
+            FETCH_PKG="${PINNED%$'\t'*}"
+            VERSION="${PINNED#*$'\t'}"
+          else
+            FETCH_PKG="$PKG"
+            VERSION="$PINNED"
+          fi
+          # Firewall check — bail loudly on critical/high alerts.
+          if ! node "${ACTION_DIR}/../lib/check-firewall.mts" "${FETCH_PKG}" "$VERSION"; then
+            exit 1
+          fi
+          # Strip leading scope from package name for tarball path.
+          # `@scope/name` → `name`; `name` → `name`.
+          BASE="${FETCH_PKG##*/}"
+          echo "Bootstrapping ${PKG}@${VERSION} from npm registry..."
+          TARBALL_URL="https://registry.npmjs.org/${FETCH_PKG}/-/${BASE}-${VERSION}.tgz"
+          TARBALL="$(mktemp -t bootstrap-XXXXXX.tgz)"
+          if ! curl -fsSL "$TARBALL_URL" -o "$TARBALL"; then
+            echo "Warning: failed to fetch ${TARBALL_URL}; pnpm install will resolve it." >&2
+            rm -f "$TARBALL"
+            continue
+          fi
+          DEST="node_modules/${PKG}"
+          rm -rf "$DEST"
+          mkdir -p "$DEST"
+          tar -xzf "$TARBALL" --strip-components=1 -C "$DEST"
+          rm -f "$TARBALL"
+          echo "✓ ${PKG}@${VERSION} → ${DEST}"
+        done

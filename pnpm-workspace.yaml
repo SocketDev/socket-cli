@@ -208,8 +208,6 @@ minimumReleaseAgeExclude:
   - '@sdxgen/*'
   - 'sdxgen'
   - 'stuie'
-  # published: 2026-06-30 | removable: 2026-07-07
-  - '@anthropic-ai/claude-code@2.1.197'
   # published: 2026-07-01 | removable: 2026-07-08
   - '@rolldown/binding-android-arm64@1.1.4'
   # published: 2026-07-01 | removable: 2026-07-08

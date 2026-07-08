@@ -70,6 +70,7 @@ import process from 'node:process'
 
 import { extractFleetBlock, extractPerRepo } from '../_shared/fleet-markers.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 export { extractFleetBlock, extractPerRepo }
 
@@ -233,7 +234,7 @@ export function isClaudeMd(filePath: string | undefined): boolean {
     return false
   }
   /* c8 ignore next - split('/') on a non-empty string always yields a non-empty array; pop() never returns undefined */
-  const base = filePath.split('/').pop() ?? ''
+  const base = normalizePath(filePath).split('/').pop() ?? ''
   return base === 'CLAUDE.md'
 }
 

@@ -6,7 +6,7 @@
  *   sources still carry the run.
  */
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { httpJson } from '@socketsecurity/lib-stable/http-request'
 
 import type {

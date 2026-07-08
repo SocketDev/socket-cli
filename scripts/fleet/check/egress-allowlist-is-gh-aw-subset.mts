@@ -43,6 +43,8 @@ export function collectGhAwAllowDomains(lockText: string): string[] {
   let m: RegExpExecArray | null = re.exec(lockText)
   while (m) {
     const body = m[1]!
+    // A JSON double-quoted string: opening `"`, then any mix of non-`"\`
+    // characters or backslash-escaped pairs `\.`, then closing `"`.
     const strRe = /"((?:[^"\\]|\\.)*)"/gu
     let s: RegExpExecArray | null = strRe.exec(body)
     while (s) {
@@ -106,8 +108,8 @@ if (!existsSync(allowlistPath)) {
   let parsedOk = false
   try {
     const parsed = JSON.parse(readFileSync(allowlistPath, 'utf8')) as {
-      allowDomains?: unknown
-      mode?: unknown
+      allowDomains?: unknown | undefined
+      mode?: unknown | undefined
     }
     mode = parsed.mode
     if (

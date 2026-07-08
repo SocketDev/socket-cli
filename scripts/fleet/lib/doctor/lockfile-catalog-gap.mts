@@ -129,7 +129,7 @@ export function diagnoseLockfileCatalogDrift(options: {
     workspaceEntries: Record<string, string>,
   ): void => {
     const lockEntries = lockCatalogs[catalogName] ?? {}
-    for (const dep of Object.keys(workspaceEntries).sort()) {
+    for (const dep of Object.keys(workspaceEntries).toSorted()) {
       const workspaceValue = workspaceEntries[dep]!
       // A `catalog:`-forwarded entry (rare in the catalog block itself) has no
       // concrete version to compare — skip it.
@@ -152,7 +152,7 @@ export function diagnoseLockfileCatalogDrift(options: {
 
   compare('default', parseCatalogBlock(opts.workspaceYaml))
   const named = parseNamedCatalogs(opts.workspaceYaml)
-  for (const name of Object.keys(named).sort()) {
+  for (const name of Object.keys(named).toSorted()) {
     compare(name, named[name]!)
   }
   return findings

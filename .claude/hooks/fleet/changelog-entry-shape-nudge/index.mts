@@ -9,7 +9,7 @@
  *   as the CLAUDE.md reference card. A NUDGE, not a guard: short bullets
  *   without a doc yet are common mid-work, so this reminds rather than blocks.
  *   The shape is a preference; prose quality is the separate hard gate
- *   (prose-antipattern-guard) and impl-detail another. Only the ADDED content
+ *   (anti-prose-guard) and impl-detail another. Only the ADDED content
  *   matters: a Write's full content, or an Edit's new_string. We flag a `- `
  *   entry bullet that has no `docs/agents.md/` link and isn't a sub-bullet /
  *   heading / blank. No bypass phrase (it never blocks). Exit 0 always.

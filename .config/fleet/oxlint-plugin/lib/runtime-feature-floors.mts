@@ -20,7 +20,7 @@ export interface RuntimeFeatureFloor {
   // matched as `<object>.<name>(...)`.
   readonly kind: RuntimeFeatureKind
   // Required when kind is `static`: the global the method hangs off.
-  readonly object?: string
+  readonly object?: string | undefined
   // Copy-pasteable Node-floor-safe rewrite, shown in the lint message.
   readonly fix: string
 }
@@ -113,7 +113,8 @@ export const EXPECTED_POLYFILL_FEATURES: readonly string[] = (() => {
   const names = new Set<string>()
   const typedArrayCopyMembers = new Set(['toReversed', 'toSorted', 'with'])
   const stringMembers = new Set(['isWellFormed', 'toWellFormed'])
-  for (const feature of RUNTIME_FEATURE_FLOORS) {
+  for (let i = 0, { length } = RUNTIME_FEATURE_FLOORS; i < length; i += 1) {
+    const feature = RUNTIME_FEATURE_FLOORS[i]!
     if (feature.kind === 'static') {
       names.add(`${feature.object}.${feature.name}`)
       continue
@@ -127,5 +128,5 @@ export const EXPECTED_POLYFILL_FEATURES: readonly string[] = (() => {
       names.add(`TypedArray.prototype.${feature.name}`)
     }
   }
-  return [...names].sort()
+  return [...names].toSorted()
 })()

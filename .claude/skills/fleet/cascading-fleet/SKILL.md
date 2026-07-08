@@ -1,6 +1,6 @@
 ---
 name: cascading-fleet
-description: Propagate a wheelhouse template change to every fleet repo (or a registry-pin chain to every dependent repo). Packages the canonical fleet-repo list, the FLEET_SYNC=1 sentinel pattern, the worktree-per-repo loop, push-direct + PR-fallback, and worktree-cleanup that survives mid-loop crashes. Use when a wheelhouse template SHA needs to land in every fleet repo, when a registry pin chain needs propagation, or when batching multiple template SHAs into one cascade wave.
+description: Propagate a wheelhouse template change to every fleet repo. Packages the canonical fleet-repo list, the FLEET_SYNC=1 sentinel pattern, the worktree-per-repo loop, push-direct + PR-fallback, and worktree-cleanup that survives mid-loop crashes. Use when a wheelhouse template SHA needs to land in every fleet repo, or when batching multiple template SHAs into one cascade wave. Tool-version pin propagation is the wheelhouse pipeline's job (scripts/repo/pipeline.mts), not this skill's.
 user-invocable: true
 allowed-tools: Bash(git fetch:*), Bash(git worktree:*), Bash(git branch:*), Bash(git status:*), Bash(git rev-list:*), Bash(git symbolic-ref:*), Bash(git show-ref:*), Bash(git push:*), Bash(git commit:*), Bash(git add:*), Bash(git log:*), Bash(node:*), Bash(gh pr create:*), Bash(gh repo view:*), Read, Bash(bash:*), Bash(chmod:*), Bash(cd:*), Bash(printf:*), Bash(echo:*), Bash(tee:*), Bash(tail:*), Bash(ls:*)
 model: claude-haiku-4-5
@@ -16,14 +16,16 @@ The fleet runs on `chore(wheelhouse): cascade template@<sha>` commits. Every whe
 ## When to use
 
 - A wheelhouse `template/` SHA needs to propagate to every fleet repo.
-- A `socket-registry` pin chain (the multi-layer setup-and-install → setup → checkout pin graph) needs propagation.
 - Batching multiple template SHAs into one wave.
+
+Tool-version bumps (pnpm, zizmor, sfw, …) route through the wheelhouse-owned
+pipeline (`node scripts/repo/pipeline.mts`, run FROM the wheelhouse: bump →
+reconcile → CI-green gate → propagate); this skill then carries the resulting
+template change fleet-wide like any other.
 
 Never use this skill while another cascade is in flight (each cascade creates a `chore/wheelhouse-<sha>` branch per repo; concurrent runs collide).
 
-## Two modes
-
-### Mode 1: `template` (outer cascade, default)
+## The cascade
 
 Propagates a `socket-wheelhouse/template/` SHA to every fleet repo. The flow:
 
@@ -36,27 +38,12 @@ Propagates a `socket-wheelhouse/template/` SHA to every fleet repo. The flow:
 
 The `FLEET_SYNC=1` sentinel is recognized by the wheelhouse `no-revert-guard` + `overeager-staging-guard` hooks. It allowlists exactly: `git commit --no-verify` whose message starts with `chore(wheelhouse): cascade template@`, `git push --no-verify`, and `git add -A`/`-u`/`.`. Nothing else.
 
-### Mode 2: `registry-pins` (tool-version layered-pin cascade)
-
-> **Migration-terminal.** Mode 2's registry leg exists only while fleet CI consumes socket-registry's reusable workflows. The workflow-inlining migration (D1/D2, 2026-07-04) removes that consumption; when the last reusable reference is inlined, delete this mode and `lib/cascade-tool-pins.mts`, and route tool-pin propagation solely through `scripts/repo/pipeline.mts` (decision 2026-07-05, tracked as the pin-cascade arbitration task).
-
-Bumping a core / security tool (pnpm, zizmor, sfw, …) threads through the fleet differently from a template cascade: socket-registry is the workspace + CI authority, so the bump flows **wheelhouse → socket-registry → fleet**. The wheelhouse normally dogfoods itself first, but for CI it _consumes_ the registry's reusable workflows — so the registry's shared-workflow pin must land (and go CI-green) before the wheelhouse can validate the CI side.
-
 🚨 **Dogfood from a place of passing locally.** Before any dogfood cascade run the local-green gate IN ORDER: `pnpm run update` → `pnpm i` → `pnpm run fix --all` → `pnpm run check --all` → `pnpm run test` (or `pnpm run cover`); if green, commit (and fix + commit), THEN dogfood. `pnpm run update` runs FIRST so pending catalog / tool drift resolves in its own commit and does not ride the feature dogfood. Canonical reference + rationale: `docs/agents.md/repo/fleet-sync-and-release-flow.md` (stage b, DOGFOOD).
-
-The executable law is **`lib/cascade-tool-pins.mts`** (the orchestrator that chains the existing pieces with the CI-green gate enforced in code):
-
-```bash
-node .claude/skills/fleet/cascading-fleet/lib/cascade-tool-pins.mts            # REPORT (read-only — copies nothing, writes nothing)
-node .claude/skills/fleet/cascading-fleet/lib/cascade-tool-pins.mts --execute  # run the chain (pushes to registry main, gates on CI, repins template)
-```
-
-It runs: (1) bump `external-tools.json` (+ catalog), reconcile the wheelhouse lockfile; (2) `socket-registry/scripts/cascade-workflows.mts` — intra-registry bump-until-stable across the action pins (Layer 1 → setup → setup-and-install → reusable workflows), push registry `main`; (3) 🛑 **CI-green gate** — the propagation SHA's own CI must be `completed`+`success` or it throws (a merged-but-red SHA blasted fleet-wide breaks every consumer at once — no bypass); (4) `_local` Layer-4 pins (folded into convergence) point at the propagation SHA. It then STOPS before the fleet-wide push — commit the `external-tools.json` bump, then run Mode 1 (`cascade-template.mts`) + `reconcile-fleet-lockfiles` to propagate it. Full layer definitions + propagation-SHA semantics live in `lib/cascade-tool-pins.mts`'s own doc comment.
 
 ## How to invoke
 
 ```bash
-# Mode 1: propagate wheelhouse template SHA
+# Propagate a wheelhouse template SHA fleet-wide
 node .claude/skills/fleet/cascading-fleet/lib/cascade-template.mts <template-sha>
 ```
 
@@ -103,11 +90,11 @@ The cascade script (`lib/cascade-template.mts`) is deterministic — it `--no-ve
 
 2. **Stranded local commits** (local `main` diverged with un-pushed `chore(wheelhouse): cascade …` commits that origin already superseded). Confirm with `git branch -r --contains <sha>` (empty = local-only) and `git log --oneline HEAD..origin/main` (origin has newer cascades). If origin already has the work in canonical form, `git reset --hard origin/main` (needs `Allow reset bypass`) — nothing real is lost. Otherwise rebase the genuine local-unique commits on top.
 
-3. **Soak-bypassing a tool bump** (pnpm/zizmor/sfw newer than the 7-day `minimumReleaseAge`). The auto-updater (`scripts/repo/update-external-tools.mts`, dry-run by default; `--apply` flushes) skips fresh releases. To bump anyway: hand-pin `external-tools.json` (version + every platform asset + recomputed sha256 integrity from the upstream GitHub release; npm-tarball platforms use npm `dist.integrity`), needs `Allow soak-time bypass` (alias: `Allow minimumReleaseAge bypass`). Then run the Mode 2 orchestrator (`lib/cascade-tool-pins.mts --execute`) to bump-until-stable the registry action pins and gate on CI-green, then commit the `external-tools.json` bump and cascade it fleet-wide via Mode 1. **Why:** a `packageManager` pin that drifts from the CI runner's pnpm red-lines fleet CI, and a pnpm bump can surface a previously-dormant `allowBuilds` placeholder that then trips `ERR_PNPM_IGNORED_BUILDS` — bump the tool and reconcile the build allowlist in the same wave.
+3. **Soak-bypassing a tool bump** (pnpm/zizmor/sfw newer than the 7-day `minimumReleaseAge`). The auto-updater (`scripts/repo/update-external-tools.mts`, dry-run by default; `--apply` flushes) skips fresh releases. To bump anyway: hand-pin `external-tools.json` (version + every platform asset + recomputed sha256 integrity from the upstream GitHub release; npm-tarball platforms use npm `dist.integrity`), needs `Allow soak-time bypass` (alias: `Allow minimumReleaseAge bypass`). Then run the wheelhouse tool-pin pipeline (`node scripts/repo/pipeline.mts`, from the wheelhouse) to bump, reconcile, and gate on CI-green, then commit the `external-tools.json` bump and cascade it fleet-wide with this skill. **Why:** a `packageManager` pin that drifts from the CI runner's pnpm red-lines fleet CI, and a pnpm bump can surface a previously-dormant `allowBuilds` placeholder that then trips `ERR_PNPM_IGNORED_BUILDS` — bump the tool and reconcile the build allowlist in the same wave.
 
 ## Reference
 
 - FLEET_SYNC sentinel: `template/.claude/hooks/fleet/no-revert-guard/` + `template/.claude/hooks/fleet/overeager-staging-guard/`.
 - Wheelhouse sync-scaffolding: `socket-wheelhouse/scripts/repo/sync-scaffolding/cli.mts`.
 - Fleet-repo manifest: `lib/fleet-repos.txt`.
-- Registry-pin cascade (Mode 2): `lib/cascade-tool-pins.mts` (the orchestrator) chains `socket-registry/scripts/cascade-workflows.mts` (intra-registry bump-until-stable) → CI-green gate → the `external-tools.json` bump; Mode 1 then propagates it fleet-wide.
+- Tool-pin propagation: the wheelhouse pipeline (`socket-wheelhouse/scripts/repo/pipeline.mts` — bump → reconcile → CI-green gate → propagate); this skill then carries the template change fleet-wide.

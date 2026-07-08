@@ -255,7 +255,7 @@ async function runTool(
   args: string[],
   options: { capture: boolean },
 ): Promise<ToolRun> {
-  const { capture } = options
+  const { capture } = { __proto__: null, ...options } as typeof options
   try {
     const result = await spawn(command, args, {
       shell: WIN32,
@@ -295,7 +295,8 @@ async function runZizmor(options: { capture: boolean }): Promise<ToolRun> {
   // zizmor supports --format json (verified: v1.25.2); capture mode uses it
   // so parseZizmorJson gets the native array. Default mode omits the flag so
   // colored human output streams live.
-  const args = options.capture ? ['--format', 'json', '.github/'] : ['.github/']
+  const opts = { __proto__: null, ...options } as typeof options
+  const args = opts.capture ? ['--format', 'json', '.github/'] : ['.github/']
   return runTool('zizmor', args, options)
 }
 
@@ -315,13 +316,16 @@ function printSummary(findings: Finding[]): void {
     return
   }
   const byTool = new Map<string, Finding[]>()
-  for (const f of findings) {
+  for (let i = 0, { length } = findings; i < length; i += 1) {
+    const f = findings[i]!;
     const bucket = byTool.get(f.tool) ?? []
     bucket.push(f)
     byTool.set(f.tool, bucket)
+  
   }
   for (const [tool, fs] of byTool) {
-    logger.info(`\n${tool} findings (${fs.length}):`)
+    logger.error('')
+    logger.info(`${tool} findings (${fs.length}):`)
     for (const f of fs) {
       const loc = [f.file, f.line].filter(Boolean).join(':')
       const rule = f.rule ? ` ${f.rule}` : ''

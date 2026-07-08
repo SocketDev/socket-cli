@@ -277,6 +277,6 @@ if (review && review.verdict === 'approve' && findings.length === 0) {
 }
 
 log(
-  `delegating-execution complete. sensitivity=${sensitivity} plan=${plan.planDocPath} execute.outcome=${exec && exec.outcome} review.verdict=${review && review.verdict} followup.outcome=${followup && followup.outcome}`,
+  `delegating-execution complete. sensitivity=${sensitivity} plan=${plan.planDocPath} execute.outcome=${exec?.outcome} review.verdict=${review?.verdict} followup.outcome=${followup?.outcome}`,
 )
 return { execute: exec, followup, plan, review, sensitivity }

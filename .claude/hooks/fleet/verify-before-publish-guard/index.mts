@@ -37,6 +37,7 @@ import {
   readLastAssistantToolUses,
   readPriorAssistantToolUses,
 } from '../_shared/transcript.mts'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 const BYPASS_PHRASE = 'Allow verify-before-publish bypass' as const
 
@@ -61,10 +62,10 @@ export interface PublishHit {
  */
 export function isMisparsedTarget(target: string): boolean {
   return (
-    target.includes('/') &&
+    normalizePath(target).includes('/') &&
     !target.startsWith('./') &&
     !target.startsWith('../') &&
-    !target.startsWith('/') &&
+    !normalizePath(target).startsWith('/') &&
     !target.startsWith('~') &&
     !target.startsWith('@') &&
     !target.startsWith('$')
@@ -163,7 +164,8 @@ export function hasRegistryReadReceipt(
     ...readLastAssistantToolUses(transcriptPath),
     ...readPriorAssistantToolUses(transcriptPath, RECEIPT_LOOKBACK_TURNS),
   ]
-  for (const event of events) {
+  for (let i = 0, { length } = events; i < length; i += 1) {
+    const event = events[i]!;
     if (event.name !== 'Bash') {
       continue
     }
@@ -174,6 +176,7 @@ export function hasRegistryReadReceipt(
     if (isRegistryRead(cmd)) {
       return true
     }
+  
   }
   return false
 }
@@ -185,7 +188,7 @@ export function isRegistryRead(command: string): boolean {
         segment.args.some(
           a =>
             !a.startsWith('-') &&
-            (a === 'view' || a === 'info' || a === 'show'),
+            (a === 'info' || a === 'show' || a === 'view'),
         )
       ) {
         return true

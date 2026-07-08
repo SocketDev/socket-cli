@@ -73,10 +73,10 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import {
   CHILD_LIVE_WINDOW_MS,
-  LEDGER_TTL_MS,
   computeActorId,
   hasLiveBackgroundChild,
   isActorLive,
+  LEDGER_TTL_MS,
   ledgerFilePath,
   listOtherActorLedgerPaths,
   lookupPath,

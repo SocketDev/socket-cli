@@ -167,7 +167,7 @@ export interface RunOpts {
   // Options object passed to the rule for EVERY case in this run, emitted into
   // the fixture config as `['error', ruleOptions]`. Rules with per-case option
   // needs should call run() once per option set.
-  readonly ruleOptions?: unknown
+  readonly ruleOptions?: unknown | undefined
 }
 
 /**

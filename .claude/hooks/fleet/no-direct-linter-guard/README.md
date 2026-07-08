@@ -16,6 +16,13 @@ and leading env vars and never false-matches a substring. `pnpm run …` and a
 `node scripts/fleet/…` invocation pass; non-format `cargo` subcommands
 (`cargo build`, `cargo test`) pass.
 
+This is a CONVENTION guard: it consults `isFleetTarget` and fires ONLY inside a
+fleet repo. In a non-fleet repo (a sibling clone, an external checkout, a Rust
+project formatted with native `cargo fmt`) the native binary or the project's
+own script is the sanctioned path, so the guard no-ops. A fleet-rooted session
+acting on a non-fleet repo via a leading `cd <non-fleet-repo> && <formatter>` is
+judged against that repo.
+
 ## Why
 
 A bare formatter run is a double hazard. Configless `oxfmt`/`oxlint` falls back

@@ -86,8 +86,13 @@ export function toSorted(
   if (comparator !== undefined && typeof comparator !== 'function') {
     throw new TypeError('The comparator argument must be a function')
   }
+  // oxlint-disable-next-line oxc/no-this-in-exported-function -- spec polyfill: `this` is the receiver per the ES spec call-site binding
   const obj = Object(this) as ArrayLike<unknown>
   const len = lengthOfArrayLike(obj)
+  // ArrayCreate(len) throws RangeError past the 2^32 - 1 array cap.
+  if (len > 4_294_967_295) {
+    throw new RangeError('Invalid array length')
+  }
   const items: unknown[] = []
   for (let k = 0; k < len; k += 1) {
     items[k] = obj[k]
@@ -98,8 +103,10 @@ export function toSorted(
 
 // 23.1.3.33 Array.prototype.toReversed.
 export function toReversed(this: unknown): unknown[] {
+  // oxlint-disable-next-line oxc/no-this-in-exported-function -- spec polyfill: `this` is the receiver per the ES spec call-site binding
   const obj = Object(this) as ArrayLike<unknown>
   const len = lengthOfArrayLike(obj)
+  // oxlint-disable-next-line unicorn/no-new-array -- spec polyfill: Array(len) constructs a sparse array of exact length, matching the spec step exactly
   const out: unknown[] = new Array(len)
   for (let k = 0; k < len; k += 1) {
     out[k] = obj[len - k - 1]
@@ -115,6 +122,7 @@ export function toSpliced(
   ...items: unknown[]
 ): unknown[] {
   const argCount = arguments.length
+  // oxlint-disable-next-line oxc/no-this-in-exported-function -- spec polyfill: `this` is the receiver per the ES spec call-site binding
   const obj = Object(this) as ArrayLike<unknown>
   const len = lengthOfArrayLike(obj)
   const relativeStart = toIntegerOrInfinity(start)
@@ -139,6 +147,7 @@ export function toSpliced(
   if (newLen > 2 ** 53 - 1) {
     throw new TypeError('Array length exceeded')
   }
+  // oxlint-disable-next-line unicorn/no-new-array -- spec polyfill: Array(len) constructs a sparse array of exact length, matching the spec step exactly
   const out: unknown[] = new Array(newLen)
   let writeIndex = 0
   let readIndex = actualStart + actualSkipCount
@@ -164,6 +173,7 @@ export function arrayWith(
   index: unknown,
   value: unknown,
 ): unknown[] {
+  // oxlint-disable-next-line oxc/no-this-in-exported-function -- spec polyfill: `this` is the receiver per the ES spec call-site binding
   const obj = Object(this) as ArrayLike<unknown>
   const len = lengthOfArrayLike(obj)
   const relativeIndex = toIntegerOrInfinity(index)
@@ -171,6 +181,7 @@ export function arrayWith(
   if (actualIndex >= len || actualIndex < 0) {
     throw new RangeError('Invalid index')
   }
+  // oxlint-disable-next-line unicorn/no-new-array -- spec polyfill: Array(len) constructs a sparse array of exact length, matching the spec step exactly
   const out: unknown[] = new Array(len)
   for (let k = 0; k < len; k += 1) {
     out[k] = k === actualIndex ? value : obj[k]
@@ -191,6 +202,7 @@ export function findLast(
   if (typeof predicate !== 'function') {
     throw new TypeError('predicate must be a function')
   }
+  // oxlint-disable-next-line oxc/no-this-in-exported-function -- spec polyfill: `this` is the receiver per the ES spec call-site binding
   const obj = Object(this) as ArrayLike<unknown>
   const len = lengthOfArrayLike(obj)
   for (let k = len - 1; k >= 0; k -= 1) {
@@ -215,6 +227,7 @@ export function findLastIndex(
   if (typeof predicate !== 'function') {
     throw new TypeError('predicate must be a function')
   }
+  // oxlint-disable-next-line oxc/no-this-in-exported-function -- spec polyfill: `this` is the receiver per the ES spec call-site binding
   const obj = Object(this) as ArrayLike<unknown>
   const len = lengthOfArrayLike(obj)
   for (let k = len - 1; k >= 0; k -= 1) {
@@ -346,6 +359,7 @@ export async function fromAsync(
   // Array-like fallback.
   const arrayLike = Object(items) as ArrayLike<unknown>
   const len = lengthOfArrayLike(arrayLike)
+  // oxlint-disable-next-line unicorn/no-new-array -- spec polyfill: Array(len) constructs a sparse array of exact length, matching the spec step exactly
   const result: unknown[] = new Array(len)
   for (let i = 0; i < len; i += 1) {
     const kValue = await arrayLike[i]
@@ -356,16 +370,17 @@ export async function fromAsync(
 
 // 22.1.3.9 String.prototype.isWellFormed.
 export function isWellFormed(this: unknown): boolean {
+  // oxlint-disable-next-line oxc/no-this-in-exported-function -- spec polyfill: `this` is the receiver per the ES spec call-site binding
   const str = String(this)
   for (let i = 0; i < str.length; i += 1) {
     const code = str.charCodeAt(i)
-    if (code >= 0xd800 && code <= 0xdbff) {
+    if (code >= 0xd8_00 && code <= 0xdb_ff) {
       const next = i + 1 < str.length ? str.charCodeAt(i + 1) : 0
-      if (next < 0xdc00 || next > 0xdfff) {
+      if (next < 0xdc_00 || next > 0xdf_ff) {
         return false
       }
       i += 1
-    } else if (code >= 0xdc00 && code <= 0xdfff) {
+    } else if (code >= 0xdc_00 && code <= 0xdf_ff) {
       return false
     }
   }
@@ -374,19 +389,20 @@ export function isWellFormed(this: unknown): boolean {
 
 // 22.1.3.29 String.prototype.toWellFormed (lone surrogates → U+FFFD).
 export function toWellFormed(this: unknown): string {
+  // oxlint-disable-next-line oxc/no-this-in-exported-function -- spec polyfill: `this` is the receiver per the ES spec call-site binding
   const str = String(this)
   let result = ''
   for (let i = 0; i < str.length; i += 1) {
     const code = str.charCodeAt(i)
-    if (code >= 0xd800 && code <= 0xdbff) {
+    if (code >= 0xd8_00 && code <= 0xdb_ff) {
       const next = i + 1 < str.length ? str.charCodeAt(i + 1) : 0
-      if (next < 0xdc00 || next > 0xdfff) {
+      if (next < 0xdc_00 || next > 0xdf_ff) {
         result += '�'
       } else {
         result += str[i]! + str[i + 1]!
         i += 1
       }
-    } else if (code >= 0xdc00 && code <= 0xdfff) {
+    } else if (code >= 0xdc_00 && code <= 0xdf_ff) {
       result += '�'
     } else {
       result += str[i]!
@@ -402,13 +418,27 @@ function typedArraySameType(
   return new ta.constructor(len)
 }
 
+// ValidateTypedArray (spec 23.2.4.4, first half): the receiver must be a real
+// typed array — DataView is an ArrayBuffer view but not a %TypedArray%. The
+// detached-buffer half is covered by the length read (a detached TA reports
+// length 0 on the Node majors the polyfill targets).
+function validateTypedArrayReceiver(receiver: unknown): TypedArrayInstance {
+  if (!ArrayBuffer.isView(receiver) || receiver instanceof DataView) {
+    throw new TypeError('Receiver must be a TypedArray')
+  }
+  return receiver as TypedArrayInstance
+}
+
 // 23.2.3.32 %TypedArray%.prototype.toReversed.
 export function typedArrayToReversed(
   this: TypedArrayInstance,
 ): TypedArrayInstance {
+  // oxlint-disable-next-line oxc/no-this-in-exported-function -- spec polyfill: `this` is the typed-array receiver per the ES spec call-site binding
   const len = this.length
+  // oxlint-disable-next-line oxc/no-this-in-exported-function -- spec polyfill: `this` is the typed-array receiver per the ES spec call-site binding
   const out = typedArraySameType(this, len)
   for (let k = 0; k < len; k += 1) {
+    // oxlint-disable-next-line oxc/no-this-in-exported-function -- spec polyfill: `this` is the typed-array receiver per the ES spec call-site binding
     out[k] = this[len - k - 1]!
   }
   return out
@@ -422,11 +452,21 @@ export function typedArrayToSorted(
   if (comparator !== undefined && typeof comparator !== 'function') {
     throw new TypeError('The comparator argument must be a function')
   }
-  const len = this.length
-  const out = typedArraySameType(this, len)
+  // ValidateTypedArray: a plain-object receiver must TypeError here, not
+  // stumble into `new this.constructor(undefined)`.
+  // oxlint-disable-next-line oxc/no-this-in-exported-function -- spec polyfill: `this` is the typed-array receiver per the ES spec call-site binding
+  const ta = validateTypedArrayReceiver(this)
+  const len = ta.length
+  const out = typedArraySameType(ta, len)
   for (let k = 0; k < len; k += 1) {
-    out[k] = this[k]!
+    out[k] = ta[k]!
   }
+  // Sort the fresh copy IN PLACE with %TypedArray%.prototype.sort (ES2015,
+  // present on every targeted Node) — its default SortCompare is the same
+  // CompareTypedArrayElements toSorted specifies, so numeric ordering and
+  // NaN placement match; toSorted here would call the just-installed
+  // polyfill (self-recursion) or be absent on the runtimes targeted.
+  // oxlint-disable-next-line unicorn/no-array-sort -- polyfill for toSorted: out is a fresh copy, .toSorted() would recurse
   return comparator === undefined ? out.sort() : out.sort(comparator)
 }
 
@@ -436,14 +476,17 @@ export function typedArrayWith(
   index: unknown,
   value: number | bigint,
 ): TypedArrayInstance {
+  // oxlint-disable-next-line oxc/no-this-in-exported-function -- spec polyfill: `this` is the typed-array receiver per the ES spec call-site binding
   const len = this.length
   const relativeIndex = toIntegerOrInfinity(index)
   const actualIndex = relativeIndex >= 0 ? relativeIndex : len + relativeIndex
   if (actualIndex >= len || actualIndex < 0) {
     throw new RangeError('Invalid index')
   }
+  // oxlint-disable-next-line oxc/no-this-in-exported-function -- spec polyfill: `this` is the typed-array receiver per the ES spec call-site binding
   const out = typedArraySameType(this, len)
   for (let k = 0; k < len; k += 1) {
+    // oxlint-disable-next-line oxc/no-this-in-exported-function -- spec polyfill: `this` is the typed-array receiver per the ES spec call-site binding
     out[k] = this[k]!
   }
   // Element assignment applies ToNumber / ToBigInt coercion (throws on mismatch).

@@ -151,12 +151,20 @@ export function floorMajorFor(filename: string): number | undefined {
   return floor
 }
 
+// Feature names whose suggested fix string contains `.sort(` and would
+// therefore be autofixed back by unicorn/no-array-sort on the next --fix pass,
+// causing repeated autofix oscillation. For these, the rule emits
+// belowEngineFloorOscillates to name the convergent manual form that breaks
+// the oscillation cycle. Derived from MEMBER_METHOD_MAJORS entries whose `fix`
+// string contains `.sort(`.
+export const OSCILLATING_FEATURES = new Set<string>(['toSorted'])
+
 const rule = {
   meta: {
     type: 'problem',
     docs: {
       description:
-        'Forbid modern runtime built-ins (ES2023–2026 array copy/find methods, Object/Map.groupBy, Promise.withResolvers, Array.fromAsync) in repos whose engines.node floor is below the feature’s Node major.',
+        "Forbid modern runtime built-ins (ES2023–2026 array copy/find methods, Object/Map.groupBy, Promise.withResolvers, Array.fromAsync) in repos whose engines.node floor is below the feature's Node major.",
       category: 'Best Practices',
       recommended: true,
     },
@@ -164,6 +172,11 @@ const rule = {
     messages: {
       belowEngineFloor:
         '`{{name}}` requires Node {{major}}+, but this package declares `engines.node` below {{major}} — it throws at runtime on the supported floor. Rewrite as {{fix}} (no shim needed).',
+      // Used instead of belowEngineFloor when the suggested fix contains .sort()
+      // and would be autofixed back by unicorn/no-array-sort, causing oscillation.
+      // Names the convergent manual form to break the cycle.
+      belowEngineFloorOscillates:
+        '`{{name}}` requires Node {{major}}+, but this package declares `engines.node` below {{major}} — it throws at runtime on the supported floor. Do NOT use `{{fix}}` — that triggers unicorn/no-array-sort and causes autofix oscillation. Convergent form: `arr.slice().sort(cmp)` with `// oxlint-disable-next-line unicorn/no-array-sort -- fresh copy`, or raise `engines.node` to `>=20`.',
     },
     schema: [],
   },
@@ -193,9 +206,15 @@ const rule = {
         const member = MEMBER_METHOD_MAJORS.get(name)
         if (member !== undefined) {
           if (floor < member.major) {
+            // Features whose fix string contains .sort() would be autofixed
+            // back by unicorn/no-array-sort, causing oscillation. Use the
+            // oscillation-aware message that names the convergent manual form.
+            const messageId = OSCILLATING_FEATURES.has(name)
+              ? 'belowEngineFloorOscillates'
+              : 'belowEngineFloor'
             context.report({
               node,
-              messageId: 'belowEngineFloor',
+              messageId,
               data: { name, major: String(member.major), fix: member.fix },
             })
           }

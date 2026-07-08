@@ -1,6 +1,6 @@
 /**
  * @file Flag the `<id> instanceof Error ? <id>.message : String(<id>)` ternary
- *   and prefer the `errorMessage` helper from `@socketsecurity/lib/errors`. The
+ *   and prefer the `errorMessage` helper from `@socketsecurity/lib/errors/message`. The
  *   helper short-circuits the same shape, handles `aggregate` / cause chaining
  *   the bare ternary doesn't, and keeps every call site identical so a future
  *   change (adding cause chains, redacting tokens, etc.) lands in one place.
@@ -8,8 +8,8 @@
  *   the linter is the right surface to catch it. Report-only — no autofix. The
  *   rewrite to `errorMessage(<id>)` looks mechanical but the right import path
  *   depends on the file's context: a runtime source file in a downstream repo
- *   wants `@socketsecurity/lib/errors` (catalog), a script / test / hook in the
- *   same repo wants `@socketsecurity/lib-stable/errors` (devDep), and a repo
+ *   wants `@socketsecurity/lib/errors/message` (catalog), a script / test / hook in the
+ *   same repo wants `@socketsecurity/lib-stable/errors/message` (devDep), and a repo
  *   that doesn't depend on `@socketsecurity/lib` at all can't apply the rewrite
  *   without first adding the dep. None of those choices belong to the linter.
  *   Surface the smell, let the human pick the import line. The rule
@@ -82,14 +82,14 @@ const rule = {
     type: 'suggestion',
     docs: {
       description:
-        'Prefer `errorMessage(e)` from `@socketsecurity/lib/errors` over the `e instanceof Error ? e.message : String(e)` ternary.',
+        'Prefer `errorMessage(e)` from `@socketsecurity/lib/errors/message` over the `e instanceof Error ? e.message : String(e)` ternary.',
       category: 'Stylistic Issues',
       recommended: true,
     },
     fixable: undefined,
     messages: {
       preferErrorMessage:
-        '`{{name}} instanceof Error ? {{name}}.message : String({{name}})` reinvents `errorMessage({{name}})` from `@socketsecurity/lib/errors`. Replace with `errorMessage({{name}})` and add the import — `@socketsecurity/lib/errors` for runtime source, `@socketsecurity/lib-stable/errors` for scripts / tests / hooks.',
+        '`{{name}} instanceof Error ? {{name}}.message : String({{name}})` reinvents `errorMessage({{name}})` from `@socketsecurity/lib/errors/message`. Replace with `errorMessage({{name}})` and add the import — `@socketsecurity/lib/errors/message` for runtime source, `@socketsecurity/lib-stable/errors/message` for scripts / tests / hooks.',
     },
     schema: [],
   },

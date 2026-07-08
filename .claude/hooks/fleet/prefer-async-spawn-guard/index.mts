@@ -29,6 +29,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 import { isRepoTestHome } from '../_shared/repo-test-home.mts'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 const logger = getDefaultLogger()
 
@@ -60,27 +61,27 @@ const CHILD_PROCESS_REQUIRE_RE =
  */
 export function isExemptPath(filePath: string): boolean {
   return (
-    filePath.includes('/_internal/') ||
-    filePath.includes('/dist/') ||
-    filePath.includes('/build/') ||
-    filePath.includes('/node_modules/') ||
-    filePath.includes('/.claude/hooks/fleet/prefer-async-spawn-guard/') ||
+    normalizePath(filePath).includes('/_internal/') ||
+    normalizePath(filePath).includes('/dist/') ||
+    normalizePath(filePath).includes('/build/') ||
+    normalizePath(filePath).includes('/node_modules/') ||
+    normalizePath(filePath).includes('/.claude/hooks/fleet/prefer-async-spawn-guard/') ||
     // The two spawn rules live at .config/fleet/oxlint-plugin/fleet/<id>/ (index.mts +
     // test/), embedding the banned execSync/spawnSync shape as rule data; the
     // per-rule dir prefix exempts both files at once.
-    filePath.includes(
+    normalizePath(filePath).includes(
       '/.config/fleet/oxlint-plugin/fleet/prefer-async-spawn/',
     ) ||
-    filePath.includes(
+    normalizePath(filePath).includes(
       '/.config/fleet/oxlint-plugin/fleet/prefer-spawn-over-execsync/',
     ) ||
-    filePath.includes(
+    normalizePath(filePath).includes(
       '/.config/fleet/markdownlint-rules/_shared/wheelhouse-self-skip.',
     ) ||
     // Pre-pnpm bootstrap .mjs provisioners (scripts/fleet/setup/{lib/,*}.mjs):
     // run before node_modules exists, so the lib spawn wrapper isn't importable
     // yet. Scoped to `.mjs` so the dir's `.mts` steps stay guarded.
-    (filePath.includes('/scripts/fleet/setup/') && filePath.endsWith('.mjs')) ||
+    (normalizePath(filePath).includes('/scripts/fleet/setup/') && filePath.endsWith('.mjs')) ||
     // The dep-0 bootstrap (bootstrap/fleet.mjs, bootstrap/prepare.mts) is the
     // fetcher that runs before any dependency exists — same constraint as the
     // setup provisioners above, so the sync builtin is its only spawn option.

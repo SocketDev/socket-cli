@@ -17,8 +17,8 @@ import {
   chmodSync,
   existsSync,
   mkdirSync,
-  readFileSync,
   readdirSync,
+  readFileSync,
   statSync,
   writeFileSync,
 } from 'node:fs'
@@ -215,7 +215,7 @@ export function writeShim(binDir, name, options) {
   const opts = { __proto__: null, ...options }
   mkdirSync(binDir, { recursive: true })
   const env = opts.env ?? {}
-  const keys = Object.keys(env).sort()
+  const keys = Object.keys(env).toSorted()
   const argv0 = opts.node ? `node "${opts.node}"` : `"${opts.exec}"`
   const shPath = path.join(binDir, name)
   const exports = keys.map(k => `export ${k}="${env[k]}"\n`).join('')

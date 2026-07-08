@@ -34,7 +34,7 @@ import {
 } from '@socketregistry/packageurl-js-stable'
 import type { PackageURL } from '@socketregistry/packageurl-js-stable'
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib-stable/constants/socket'
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { SocketSdk } from '@socketsecurity/sdk-stable'

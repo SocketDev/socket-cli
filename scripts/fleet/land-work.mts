@@ -26,6 +26,8 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
+import { parsePorcelain } from './_shared/git-porcelain.mts'
+
 const logger = getDefaultLogger()
 
 // Path prefixes that are expected to be dirty and are never landed here (kept
@@ -72,42 +74,34 @@ interface GitRun {
 
 function isUntrackedByDefault(p: string): boolean {
   const np = normalizePath(p)
-  for (const prefix of UNTRACKED_BY_DEFAULT_PREFIXES) {
+  for (let i = 0, { length } = UNTRACKED_BY_DEFAULT_PREFIXES; i < length; i += 1) {
+    const prefix = UNTRACKED_BY_DEFAULT_PREFIXES[i]!;
     if (np.startsWith(prefix)) {
       return true
     }
+  
   }
+  // A path segment (anchored at start or after `/`) ending in `-bundled` or
+  // `-vendored`, followed by `/` or end-of-string.
   return /(?:^|\/)[^/]+-(?:bundled|vendored)(?:\/|$)/.test(np)
 }
 
 export function isSourceArea(p: string): boolean {
   const np = normalizePath(p)
-  for (const prefix of SOURCE_AREA_PREFIXES) {
+  for (let i = 0, { length } = SOURCE_AREA_PREFIXES; i < length; i += 1) {
+    const prefix = SOURCE_AREA_PREFIXES[i]!;
     if (np.startsWith(prefix)) {
       return true
     }
+  
   }
   return false
 }
 
-/**
- * Parse `git status --porcelain` into dirty entries. Rename entries
- * (`R old -> new`) resolve to the new path. Pure.
- */
-export function parsePorcelain(out: string): DirtyPath[] {
-  const entries: DirtyPath[] = []
-  for (const line of out.split('\n')) {
-    if (!line) {
-      continue
-    }
-    const status = line.slice(0, 2)
-    const rest = line.slice(3)
-    const arrow = rest.indexOf(' -> ')
-    const path = arrow === -1 ? rest : rest.slice(arrow + 4)
-    entries.push({ path, status })
-  }
-  return entries
-}
+// Porcelain parsing lives in _shared/git-porcelain.mts (parsePorcelain) —
+// re-exported here so land-work's tests and the Stop hook keep one import
+// site while the parse logic stays single-sourced.
+export { parsePorcelain } from './_shared/git-porcelain.mts'
 
 /**
  * Derive a commit scope from a path. `template/base/<rest>` mirrors the live
@@ -190,8 +184,8 @@ export function groupPaths(paths: readonly string[]): CommitGroup[] {
     }
   }
   const groups: CommitGroup[] = []
-  for (const scope of [...byScope.keys()].sort()) {
-    const sorted = byScope.get(scope)!.slice().sort()
+  for (const scope of [...byScope.keys()].toSorted()) {
+    const sorted = byScope.get(scope)!.slice().toSorted()
     groups.push({ paths: sorted, scope, type: deriveType(sorted) })
   }
   return groups
@@ -300,10 +294,12 @@ const GENERATED_PATTERNS = [
  */
 export function isGenerated(p: string): boolean {
   const np = normalizePath(p)
-  for (const re of GENERATED_PATTERNS) {
+  for (let i = 0, { length } = GENERATED_PATTERNS; i < length; i += 1) {
+    const re = GENERATED_PATTERNS[i]!;
     if (re.test(np)) {
       return true
     }
+  
   }
   return false
 }

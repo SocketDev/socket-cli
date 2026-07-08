@@ -37,8 +37,8 @@ adds brevity and directness on top.
 
 ## Anti-patterns (both modes)
 
-Blocked by `prose-antipattern-guard` on doc writes; flagged by
-`conversational-prose-nudge` on `gh pr/issue` commands:
+Blocked by `anti-prose-guard` on doc writes; flagged by
+`convo-prose-nudge` on `gh pr/issue` commands:
 
 - Throat-clearers: "I've gone ahead and…", "Let me…", "In this PR, I…",
   "I took a look and…"
@@ -70,8 +70,8 @@ Blocked by `prose-antipattern-guard` on doc writes; flagged by
 
 | Layer | What |
 | --- | --- |
-| `prose-antipattern-guard` | Blocks doc/CHANGELOG/README writes with AI tells |
-| `conversational-prose-nudge` | Nudges `gh pr/issue` body commands with AI scaffolding |
+| `anti-prose-guard` | Blocks doc/CHANGELOG/README writes with AI tells |
+| `convo-prose-nudge` | Nudges `gh pr/issue` body commands with AI scaffolding |
 | `prose` skill | Applies both modes when drafting/editing any human-facing text |
 | `.claude/rules/fleet/prose-style-and-doctrine.md` | Compact reference for the skill + rule docs |
 

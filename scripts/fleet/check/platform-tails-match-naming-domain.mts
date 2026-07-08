@@ -46,14 +46,14 @@ export interface DomainFinding {
 }
 
 interface ManifestShape {
-  bin?: unknown
-  cpu?: unknown
-  files?: unknown
-  libc?: unknown
-  main?: unknown
-  name?: unknown
-  os?: unknown
-  private?: unknown
+  bin?: unknown | undefined
+  cpu?: unknown | undefined
+  files?: unknown | undefined
+  libc?: unknown | undefined
+  main?: unknown | undefined
+  name?: unknown | undefined
+  os?: unknown | undefined
+  private?: unknown | undefined
 }
 
 /**

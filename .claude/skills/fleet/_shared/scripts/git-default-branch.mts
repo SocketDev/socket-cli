@@ -17,7 +17,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 
-import { errorMessage } from '@socketsecurity/lib/errors'
+import { errorMessage } from '@socketsecurity/lib/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 import { isSpawnError } from '@socketsecurity/lib/process/spawn/errors'
 import { spawn } from '@socketsecurity/lib/process/spawn/child'

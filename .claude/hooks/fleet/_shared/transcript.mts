@@ -401,7 +401,72 @@ export function extractTurnPieces(content: unknown): string[] {
 export function readLastAssistantText(
   transcriptPath: string | undefined,
 ): string {
-  return readRoleText(transcriptPath, 'assistant', 1)
+  // Delegates to the turn-scoped reader: the documented contract was always
+  // "the most-recent assistant TURN", but the old lookback=1 readRoleText
+  // returned only the newest transcript ENTRY — a streamed reply spans many
+  // entries, so mid-reply prose escaped every Stop scan built on this helper
+  // (reply-prose-nudge's honesty verdict included).
+  return readLastAssistantTurnText(transcriptPath)
+}
+
+// Entry cap for the turn-scoped reader below: bounds the backward scan so a
+// megatranscript can't make every Stop event pay a full-file parse. A turn
+// with 400+ trailing assistant/tool entries is far beyond any real reply.
+const TURN_SCAN_CAP = 400
+
+/**
+ * Read the text of the entire most-recent assistant TURN — every trailing
+ * assistant entry back to (but excluding) the last human message.
+ *
+ * A long streamed reply lands in the transcript as MULTIPLE assistant
+ * entries (per content block / API response, interleaved with tool events),
+ * so the lookback=1 entry read (`readLastAssistantText`) sees only the final
+ * block. That let mid-message prose escape Stop-hook scans entirely: a
+ * banned honesty-framing word in a reply's middle section sailed past
+ * reply-prose for a whole session because the closing paragraph was clean.
+ *
+ * Turn boundary: a user entry whose content carries real text (a human
+ * message). Tool-result user entries contribute no pieces — extractTurnPieces
+ * skips tool_result blocks — so tool traffic inside the turn does not end it.
+ * Sidechain scoping matches readLastAssistantTextSameActor: the newest
+ * assistant entry fixes the scope, and entries of the other scope are
+ * skipped, so a parent Stop never scans subagent prose (or vice versa).
+ */
+export function readLastAssistantTurnText(
+  transcriptPath: string | undefined,
+): string {
+  const lines = readLines(transcriptPath)
+  const out: string[] = []
+  let scope: boolean | undefined
+  const stop = Math.max(0, lines.length - TURN_SCAN_CAP)
+  for (let i = lines.length - 1; i >= stop; i -= 1) {
+    let evt: unknown
+    try {
+      evt = JSON.parse(lines[i]!)
+    } catch {
+      continue
+    }
+    const r = resolveRoleAndContent(evt)
+    if (!r) {
+      continue
+    }
+    if (r.role === 'assistant') {
+      if (scope === undefined) {
+        scope = r.isSidechain
+      } else if (r.isSidechain !== scope) {
+        continue
+      }
+      const pieces = extractTurnPieces(r.content)
+      if (pieces.length) {
+        out.push(pieces.join('\n'))
+      }
+      continue
+    }
+    if (r.role === 'user' && extractTurnPieces(r.content).length > 0) {
+      break
+    }
+  }
+  return out.toReversed().join('\n')
 }
 
 /**

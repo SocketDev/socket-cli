@@ -101,15 +101,12 @@ Use `joinOr` whenever the error is "must be one of X", `joinAnd` whenever it's "
 
 ## Working with caught values
 
-`catch (e)` binds `unknown`. The helpers in `@socketsecurity/lib/errors` cover the four patterns that recur:
+`catch (e)` binds `unknown`. The helpers under `@socketsecurity/lib/errors/*` cover the four patterns that recur:
 
 ```ts
-import {
-  errorMessage,
-  errorStack,
-  isError,
-  isErrnoException,
-} from '@socketsecurity/lib/errors'
+import { errorMessage } from '@socketsecurity/lib/errors/message'
+import { isError, isErrnoException } from '@socketsecurity/lib/errors/predicates'
+import { errorStack } from '@socketsecurity/lib/errors/stack'
 ```
 
 ### `isError(value)`: replaces `value instanceof Error`

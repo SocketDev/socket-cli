@@ -36,7 +36,7 @@ import path from 'node:path'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 
 import {
   extractVersionFromTag,

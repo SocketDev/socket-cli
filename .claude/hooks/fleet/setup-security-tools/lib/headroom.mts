@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url'
 import { whichSync } from '@socketsecurity/lib-stable/bin/which'
 import { generateCacheKey } from '@socketsecurity/lib-stable/dlx/cache'
 import { ensureDlxDirSync } from '@socketsecurity/lib-stable/dlx/dir'
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { safeMkdirSync } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
@@ -39,8 +39,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // next to external-tools.json: setup-security-tools then headroom.
 export const HEADROOM_PROJECT_DIR = path.join(__dirname, '..', 'headroom')
 
-// 🔒 TELEMETRY + MODEL-DOWNLOAD LOCKDOWN (audit:
-// .claude/reports/headroom-telemetry-audit.md). headroom ships an anonymous
+// 🔒 TELEMETRY + MODEL-DOWNLOAD LOCKDOWN (see the telemetry audit report in
+// the reports directory). headroom ships an anonymous
 // telemetry beacon ENABLED BY DEFAULT (POSTs aggregate stats to a headroom
 // Supabase) and fetches a compression model from HuggingFace on first use.
 // These env settings disable BOTH at the source. The installed `bin/headroom`

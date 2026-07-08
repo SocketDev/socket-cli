@@ -67,7 +67,7 @@ export function parseSoakViolations(output: string): string[] {
     }
   }
 
-  return [...specs].sort()
+  return [...specs].toSorted()
 }
 
 /**

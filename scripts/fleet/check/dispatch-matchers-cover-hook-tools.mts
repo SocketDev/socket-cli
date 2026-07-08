@@ -34,8 +34,8 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import type { EligibleHook } from '../make-hook-dispatch.mts'
 import {
-  FLEET_HOOKS_DIR,
   collectEligibleHooks,
+  FLEET_HOOKS_DIR,
 } from '../make-hook-dispatch.mts'
 import { CLAUDE_SETTINGS_JSON, REPO_ROOT } from '../paths.mts'
 
@@ -150,7 +150,7 @@ export function diagnoseDispatcherCoverage(
     byEvent.set(h.event, bucket)
   }
   const findings: CoverageFinding[] = []
-  const events = [...byEvent.keys()].sort()
+  const events = [...byEvent.keys()].toSorted()
   for (let i = 0, { length } = events; i < length; i += 1) {
     const event = events[i]!
     const { hasMatchAll, tools } = byEvent.get(event)!
@@ -161,7 +161,7 @@ export function diagnoseDispatcherCoverage(
         event,
         kind: 'not-wired',
         matcher: undefined,
-        missing: hasMatchAll ? ['<all tools>'] : [...tools].sort(),
+        missing: hasMatchAll ? ['<all tools>'] : [...tools].toSorted(),
       } as CoverageFinding)
       continue
     }
@@ -186,7 +186,7 @@ export function diagnoseDispatcherCoverage(
         .map(s => s.trim())
         .filter(Boolean),
     )
-    const missing = [...tools].filter(t => !tokens.has(t)).sort()
+    const missing = [...tools].filter(t => !tokens.has(t)).toSorted()
     if (missing.length) {
       findings.push({
         __proto__: null,

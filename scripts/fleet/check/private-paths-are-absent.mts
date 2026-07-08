@@ -3,12 +3,12 @@
 // The commit-time complement to the `no-private-path-in-source-guard` edit-time
 // hook and the `socket/no-private-path-in-source` lint rule (three surfaces,
 // one rule — code is law). The incident: an agent leaked a scaffolding-repo
-// `.claude/plans/<doc>.md` path into a public napi-rs source comment, disclosing
+// plans-directory path into a public napi-rs source comment, disclosing
 // internal fleet layout. The guard blocks NEW writes; this gate fails
 // `check --all` if ANY tracked SOURCE file already carries one in a comment.
 //
 // Detected inside comment syntax (NOT inside strings or real code):
-//   - `.claude/plans/…` / `.claude/reports/…`  — untracked operator notes.
+//   - paths under the plans or reports directories — untracked operator notes.
 //   - `socket-<repo>/.claude/…`                 — another fleet repo's tree.
 //   - `/Users/<name>/…`                          — absolute home path.
 //   - `../socket-<repo>/…`                       — sibling fleet-repo path.

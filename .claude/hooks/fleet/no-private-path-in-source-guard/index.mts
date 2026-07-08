@@ -3,13 +3,12 @@
 //
 // Blocks an Edit/Write/MultiEdit that introduces an INTERNAL / PRIVATE path
 // reference into a SOURCE file's COMMENT. The incident: an agent leaked a
-// scaffolding-repo `.claude/plans/<doc>.md` path into a public napi-rs source
-// file (`crates/.../src/lib.rs`). That discloses internal fleet repo layout, an
-// operator-local working-notes path, and a dev-box checkout location to anyone
-// reading the shipped source.
+// plans-directory path into a public napi-rs source file (`crates/.../src/lib.rs`).
+// That discloses internal fleet repo layout, an operator-local working-notes path,
+// and a dev-box checkout location to anyone reading the shipped source.
 //
 // Detected inside comment syntax (NOT inside strings or real code):
-//   - `.claude/plans/…` / `.claude/reports/…` — untracked operator notes.
+//   - untracked plans/reports directory paths — untracked operator notes.
 //   - `socket-<repo>/.claude/…` — another fleet repo's private tree.
 //   - `/Users/<name>/…` — an absolute home path (username + local layout).
 //   - `../socket-<repo>/…` — a sibling fleet-repo relative path (dev-box layout).

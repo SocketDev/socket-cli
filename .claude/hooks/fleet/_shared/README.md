@@ -20,7 +20,7 @@ Helper modules shared across multiple hooks under `.claude/hooks/`. **Not a depl
 
 ## When to reach for what (new hook quick-reference)
 
-- Writing a **Stop hook** that just emits a reminder when patterns match? → `import { runStopReminder } from '../_shared/stop-nudge.mts'`. See `excuse-detector` for the single-group shape, or `yakback-nudge` (uses `runStopReminders`) for merging several pattern tables into one process while keeping per-group disable env vars.
+- Writing a **Stop hook** that just emits a reminder when patterns match? → `import { runStopReminder } from '../_shared/stop-nudge.mts'`. See `excuse-detector` for the single-group shape, or `reply-prose-nudge` (uses `runStopReminders`) for merging several pattern tables into one process while keeping per-group disable env vars.
 
 - Writing a **PreToolUse hook** that inspects a tool call's input? → `import { ToolCallPayload, readCommand, readFilePath } from '../_shared/payload.mts'`. Saves you the `typeof === 'string'` guard.
 

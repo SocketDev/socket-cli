@@ -13,7 +13,7 @@
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
-import { errorMessage } from '@socketsecurity/lib/errors'
+import { errorMessage } from '@socketsecurity/lib/errors/message'
 import { isSpawnError } from '@socketsecurity/lib/process/spawn/errors'
 import { spawn } from '@socketsecurity/lib/process/spawn/child'
 

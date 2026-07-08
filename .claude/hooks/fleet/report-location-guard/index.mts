@@ -35,9 +35,8 @@
 //
 // Why a hook on top of the CLAUDE.md rule: the rule documents the
 // convention; the hook enforces it at edit time. Incident (2026-06-05):
-// the scanning-quality skill defaulted to reports/scanning-quality-*.md
-// (a tracked path); the operator wants reports under .claude/reports/,
-// uncommittable.
+// the scanning-quality skill defaulted to a tracked reports path;
+// the operator wants reports in the plans directory, uncommittable.
 //
 // Reads a Claude Code PreToolUse JSON payload from stdin:
 //   { "tool_name": "Edit" | "Write" | "MultiEdit",

@@ -32,9 +32,9 @@ import process from 'node:process'
 
 import {
   COLLISION_WINDOW_MS,
-  LEDGER_TTL_MS,
   computeActorId,
   isActorLive,
+  LEDGER_TTL_MS,
   ledgerFilePath,
   listOtherActorLedgerPaths,
   lookupPath,
@@ -82,7 +82,7 @@ export function detectCollision(
     ownWriteTs?: number | undefined
   },
 ): CollisionResult | undefined {
-  const { now, collisionWindowMs, ttlMs, ownWriteTs } = options
+  const { now, collisionWindowMs, ttlMs, ownWriteTs } = { __proto__: null, ...options } as typeof options
   for (let i = 0, { length } = otherLedgerPaths; i < length; i += 1) {
     const fp = otherLedgerPaths[i]!
     const raw = readActorLedger(fp)

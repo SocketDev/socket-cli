@@ -37,6 +37,7 @@ import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { parseCommands } from '../_shared/shell-command.mts'
 import type { Command } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 const BYPASS_PHRASE = 'Allow test-script-defers bypass' as const
 
@@ -88,8 +89,8 @@ function isRawRunnerValue(value: string): boolean {
 
 export function isPackageJson(filePath: string): boolean {
   return (
-    (filePath.endsWith('/package.json') || filePath === 'package.json') &&
-    !filePath.includes('/node_modules/')
+    (normalizePath(filePath).endsWith('/package.json') || filePath === 'package.json') &&
+    !normalizePath(filePath).includes('/node_modules/')
   )
 }
 

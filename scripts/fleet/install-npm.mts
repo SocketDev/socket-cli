@@ -29,7 +29,7 @@ import { parseArgs } from 'node:util'
 
 import { extractTarGz } from '@socketsecurity/lib-stable/archives/tar'
 import { downloadBinary } from '@socketsecurity/lib-stable/dlx/binary'
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'

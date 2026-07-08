@@ -45,6 +45,7 @@
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 // Match declarations that introduce a leading-underscore identifier.
 // We don't try to AST-parse; the regex set covers the surface forms
@@ -122,14 +123,14 @@ export function hasRecentBypass(transcriptPath: string | undefined): boolean {
 
 export function isGeneratedPath(filePath: string): boolean {
   return (
-    filePath.includes('/dist/') ||
-    filePath.includes('/build/') ||
-    filePath.includes('/node_modules/')
+    normalizePath(filePath).includes('/dist/') ||
+    normalizePath(filePath).includes('/build/') ||
+    normalizePath(filePath).includes('/node_modules/')
   )
 }
 
 export function isInternalDirPath(filePath: string): boolean {
-  return filePath.includes('/_internal/')
+  return normalizePath(filePath).includes('/_internal/')
 }
 
 // Hook/lint test files and oxlint-plugin rule files legitimately contain
@@ -137,11 +138,11 @@ export function isInternalDirPath(filePath: string): boolean {
 // can have its own tests without bypass phrases.
 export function isPluginOrHookTestPath(filePath: string): boolean {
   return (
-    filePath.includes('/.claude/hooks/fleet/no-underscore-ident-guard/') ||
+    normalizePath(filePath).includes('/.claude/hooks/fleet/no-underscore-ident-guard/') ||
     // The rule lives at .config/fleet/oxlint-plugin/fleet/no-underscore-identifier/
     // (index.mts + test/), carrying banned `_`-prefixed identifiers as fixture
     // data; the per-rule dir prefix exempts both files.
-    filePath.includes(
+    normalizePath(filePath).includes(
       '/.config/fleet/oxlint-plugin/fleet/no-underscore-identifier/',
     )
   )

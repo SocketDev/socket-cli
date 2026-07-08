@@ -237,7 +237,7 @@ export function isAtAllowedRegularLocation(relPath: string): boolean {
   // `packages/<pkg>/lang/<lang>/docs/<name>.md` resolve to the same "in
   // a docs/ directory" rule as repo-root docs/. Segment-equality (not
   // substring) so `foo-docs/`, `docs-old/`, `.docs/` don't match.
-  const segments = dir.split('/')
+  const segments = normalizePath(dir).split('/')
   return segments.includes('docs')
 }
 
