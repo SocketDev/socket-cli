@@ -196,7 +196,6 @@ minimumReleaseAgeExclude:
   - '@socketbin/*'
   - '@socketregistry/*'
   - '@socketsecurity/*'
-  - '@socketdev/*'
   - 'ecc-agentshield'
   - 'sfw'
   - 'socket-*'
