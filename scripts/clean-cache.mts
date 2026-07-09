@@ -11,6 +11,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
@@ -71,8 +72,7 @@ function analyzeCacheDir(cacheDir: string): CacheEntry[] {
       }
     }
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e)
-    logger.error(`Error analyzing ${cacheDir}: ${message}`)
+    logger.error(`Error analyzing ${cacheDir}: ${errorMessage(e)}`)
   }
 
   return entries.toSorted((a, b) => b.mtime.getTime() - a.mtime.getTime())
@@ -89,6 +89,7 @@ function findCacheDirs(): CacheDirInfo[] {
     const packages = readdirSync(packagesDir)
     for (let i = 0, { length } = packages; i < length; i += 1) {
       const pkg = packages[i]
+      // oxlint-disable-next-line socket/prefer-node-modules-dot-cache -- cleans each package's EXISTING packages/<pkg>/.cache dir.
       const cacheDir = path.join(packagesDir, pkg, '.cache')
       try {
         statSync(cacheDir)
@@ -98,8 +99,7 @@ function findCacheDirs(): CacheDirInfo[] {
       }
     }
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e)
-    logger.error(`Error scanning packages: ${message}`)
+    logger.error(`Error scanning packages: ${errorMessage(e)}`)
   }
 
   return cacheDirs
@@ -222,15 +222,15 @@ async function main(): Promise<void> {
 
     const globalCaches = getGlobalCacheDirs()
 
-    for (const { name, path } of globalCaches) {
+    for (const { name, path: cachePath } of globalCaches) {
       try {
-        const stats = statSync(path)
-        const size = stats.isDirectory() ? getDirSize(path) : stats.size
+        const stats = statSync(cachePath)
+        const size = stats.isDirectory() ? getDirSize(cachePath) : stats.size
         logger.log(
           `  ${dryRun ? '[DRY RUN]' : '✗'} ${name} (${formatSize(size)})`,
         )
         if (!dryRun) {
-          await safeDelete(path)
+          await safeDelete(cachePath)
         }
       } catch {
         // Cache doesn't exist, skip.
@@ -245,7 +245,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((e: unknown) => {
-  const message = e instanceof Error ? e.message : String(e)
-  logger.error(`Error: ${message}`)
+  logger.error(`Error: ${errorMessage(e)}`)
   process.exitCode = 1
 })

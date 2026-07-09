@@ -15,6 +15,7 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 const logger = getDefaultLogger()
@@ -96,8 +97,8 @@ async function checkFileForCdnRefs(filePath: string): Promise<CdnViolation[]> {
       const line = lines[i]
       const lineNumber = i + 1
 
-      for (let i = 0, { length } = CDN_PATTERNS; i < length; i += 1) {
-        const pattern = CDN_PATTERNS[i]
+      for (let j = 0, { length } = CDN_PATTERNS; j < length; j += 1) {
+        const pattern = CDN_PATTERNS[j]
         if (pattern.test(line)) {
           const match = line.match(pattern)
           violations.push({
@@ -217,14 +218,12 @@ async function main(): Promise<void> {
 
     process.exitCode = 1
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e)
-    logger.fail(`Validation failed: ${message}`)
+    logger.fail(`Validation failed: ${errorMessage(e)}`)
     process.exitCode = 1
   }
 }
 
 main().catch((e: unknown) => {
-  const message = e instanceof Error ? e.message : String(e)
-  logger.fail(`Unexpected error: ${message}`)
+  logger.fail(`Unexpected error: ${errorMessage(e)}`)
   process.exitCode = 1
 })
