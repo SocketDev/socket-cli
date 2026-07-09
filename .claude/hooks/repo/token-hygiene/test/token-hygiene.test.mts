@@ -12,10 +12,11 @@ import { whichSync } from "@socketsecurity/lib-stable/bin/which";
 import { spawnSync } from "@socketsecurity/lib-stable/process/spawn/child";
 
 const hookScript = new URL("../index.mts", import.meta.url).pathname;
-const nodeBin = whichSync("node");
-if (!nodeBin || Array.isArray(nodeBin)) {
+const whichNodeBin = whichSync("node");
+if (!whichNodeBin || Array.isArray(whichNodeBin)) {
   throw new Error('"node" not found on PATH');
 }
+const nodeBin: string = whichNodeBin;
 
 function runHook(
   command: string,
