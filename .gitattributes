@@ -83,8 +83,6 @@ template/.claude/hooks/fleet/_shared/acorn/acorn.wasm binary
 .claude/workflows linguist-generated=true
 .config/fleet/.markdownlint-cli2.jsonc linguist-generated=true
 .config/fleet/.prettierignore linguist-generated=true
-.config/fleet/docker-prebakes.json linguist-generated=true
-.config/fleet/docker-prebakes.schema.json linguist-generated=true
 .config/fleet/git-authors.json linguist-generated=true
 .config/fleet/github-settings.json linguist-generated=true
 .config/fleet/github-settings.schema.json linguist-generated=true
@@ -97,6 +95,7 @@ template/.claude/hooks/fleet/_shared/acorn/acorn.wasm binary
 .config/fleet/oxlint-plugin/package.json linguist-generated=true
 .config/fleet/oxlint.config.mts linguist-generated=true
 .config/fleet/oxlintrc.json linguist-generated=true
+.config/fleet/pnpm-workspace.fleet.yaml linguist-generated=true
 .config/fleet/rolldown/hook-bundle.config.mts linguist-generated=true
 .config/fleet/sfw-bypass-list.txt linguist-generated=true
 .config/fleet/taze.config.mts linguist-generated=true
@@ -107,7 +106,6 @@ template/.claude/hooks/fleet/_shared/acorn/acorn.wasm binary
 .config/repo/rolldown/define-guarded.mts linguist-generated=true
 .config/repo/rolldown/lib-stub.mts linguist-generated=true
 .config/repo/vitest.config.mts linguist-generated=true
-.config/socket-wheelhouse-schema.json linguist-generated=true
 .editorconfig linguist-generated=true
 .git-hooks/_shared linguist-generated=true
 .git-hooks/commit-msg linguist-generated=true
@@ -152,7 +150,6 @@ packages/build-infra/lib/release-checksums/consumer.mts linguist-generated=true
 packages/build-infra/lib/release-checksums/core.mts linguist-generated=true
 packages/build-infra/lib/release-checksums/producer.mts linguist-generated=true
 packages/build-infra/release-assets.schema.json linguist-generated=true
-pnpm-workspace.fleet.yaml linguist-generated=true
 scripts/fleet linguist-generated=true
 scripts/fleet/lib/registry-pin-cascade.mts linguist-generated=true
 test/_shared/fleet/lib linguist-generated=true
