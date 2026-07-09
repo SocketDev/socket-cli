@@ -56,7 +56,8 @@ export function computeCacheHash(sourcePaths, options) {
   if (!sourcesHash && !platformHash) {
     return ''
   }
-  return crypto.createHash('sha256')
+  return crypto
+    .createHash('sha256')
     .update(sourcesHash)
     .update('|')
     .update(platformHash)
@@ -211,7 +212,11 @@ export function platformCacheKey({
   if (!parts.length) {
     return ''
   }
-  return crypto.createHash('sha256').update(parts.join('|')).digest('hex').slice(0, 16)
+  return crypto
+    .createHash('sha256')
+    .update(parts.join('|'))
+    .digest('hex')
+    .slice(0, 16)
 }
 
 /**

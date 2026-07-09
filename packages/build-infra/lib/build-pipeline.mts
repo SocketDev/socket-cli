@@ -197,7 +197,8 @@ export async function loadExternalTools(packageRoot) {
   for (const [tool, meta] of Object.entries(data.tools ?? {})) {
     versions[tool] = meta?.version ?? ''
   }
-  const rawHash = crypto.createHash('sha256')
+  const rawHash = crypto
+    .createHash('sha256')
     .update(JSON.stringify(data))
     .digest('hex')
     .slice(0, 16)
