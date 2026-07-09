@@ -19,7 +19,7 @@ const require = createRequire(import.meta.url)
  *
  * @returns {string}
  */
-function toUnixPath(pathValue) {
+export function toUnixPath(pathValue) {
   return pathValue.replaceAll('\\', '/')
 }
 
