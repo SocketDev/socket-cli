@@ -56,6 +56,9 @@ function analyzeCacheDir(cacheDir: string): CacheEntry[] {
     const items = readdirSync(cacheDir)
     for (let i = 0, { length } = items; i < length; i += 1) {
       const item = items[i]
+      if (item === undefined) {
+        continue
+      }
       const itemPath = path.join(cacheDir, item)
       const stats = statSync(itemPath)
 
@@ -89,6 +92,9 @@ function findCacheDirs(): CacheDirInfo[] {
     const packages = readdirSync(packagesDir)
     for (let i = 0, { length } = packages; i < length; i += 1) {
       const pkg = packages[i]
+      if (pkg === undefined) {
+        continue
+      }
       // oxlint-disable-next-line socket/prefer-node-modules-dot-cache -- cleans each package's EXISTING packages/<pkg>/.cache dir.
       const cacheDir = path.join(packagesDir, pkg, '.cache')
       try {
@@ -130,6 +136,9 @@ function getDirSize(dir: string): number {
     const items = readdirSync(dir)
     for (let i = 0, { length } = items; i < length; i += 1) {
       const item = items[i]
+      if (item === undefined) {
+        continue
+      }
       const itemPath = path.join(dir, item)
       const stats = statSync(itemPath)
       if (stats.isDirectory()) {
@@ -174,6 +183,9 @@ async function main(): Promise<void> {
       // Delete everything.
       for (let i = 0, { length } = entries; i < length; i += 1) {
         const entry = entries[i]
+        if (!entry) {
+          continue
+        }
         logger.log(
           `  ${dryRun ? '[DRY RUN]' : '✗'} ${entry.name} (${formatSize(entry.size)}, ${entry.ageD}d old)`,
         )
@@ -187,12 +199,17 @@ async function main(): Promise<void> {
       // Keep most recent, delete older ones.
       const [latest, ...older] = entries
 
-      logger.log(
-        `  ✓ ${latest.name} (${formatSize(latest.size)}, ${latest.ageD}d old) - KEEP`,
-      )
+      if (latest) {
+        logger.log(
+          `  ✓ ${latest.name} (${formatSize(latest.size)}, ${latest.ageD}d old) - KEEP`,
+        )
+      }
 
       for (let i = 0, { length } = older; i < length; i += 1) {
         const entry = older[i]
+        if (!entry) {
+          continue
+        }
         logger.log(
           `  ${dryRun ? '[DRY RUN]' : '✗'} ${entry.name} (${formatSize(entry.size)}, ${entry.ageD}d old)`,
         )

@@ -5,20 +5,38 @@
  *   useful for post-processing compiled code or handling external modules.
  */
 
+import type {
+  BabelApi,
+  BabelMemberExpression,
+  BabelNode,
+  BabelPath,
+  BabelTypes,
+  BabelVariableDeclaration,
+} from './babel-plugin-types.mts'
+
+export type EnumValue = string | number | boolean | undefined
+
+export type EnumValueMap = Record<string, EnumValue>
+
+export interface InlineConstEnumOptions {
+  enums?: Record<string, EnumValueMap> | undefined
+  scanDeclarations?: boolean | undefined
+}
+
 /**
  * Get the value from a literal node.
  */
-function getLiteralValue(t, node) {
+function getLiteralValue(t: BabelTypes, node: BabelNode): EnumValue {
   if (t.isNullLiteral(node)) {
     return undefined
   }
-  return node.value
+  return (node as { value?: EnumValue | undefined }).value
 }
 
 /**
  * Check if a node is a literal value.
  */
-function isLiteralValue(t, node) {
+function isLiteralValue(t: BabelTypes, node: BabelNode): boolean {
   return (
     t.isNumericLiteral(node) ||
     t.isStringLiteral(node) ||
@@ -30,7 +48,7 @@ function isLiteralValue(t, node) {
 /**
  * Convert a value to a Babel AST literal node.
  */
-export function valueToLiteral(t, value) {
+export function valueToLiteral(t: BabelTypes, value: EnumValue): BabelNode {
   if (value === null) {
     return t.nullLiteral()
   }
@@ -68,7 +86,10 @@ export function valueToLiteral(t, value) {
  *
  * @returns {object} Babel plugin object
  */
-export default function inlineConstEnum(babel, options = {}) {
+export default function inlineConstEnum(
+  babel: BabelApi,
+  options: InlineConstEnumOptions = {},
+) {
   const { types: t } = babel
   const { enums = {}, scanDeclarations = false } = options
 
@@ -81,7 +102,7 @@ export default function inlineConstEnum(babel, options = {}) {
     visitor: {
       // Scan for enum declarations if enabled.
       // Note: This has limited support and may not catch all cases.
-      VariableDeclaration(path) {
+      VariableDeclaration(path: BabelPath<BabelVariableDeclaration>) {
         if (!scanDeclarations) {
           return
         }
@@ -100,7 +121,7 @@ export default function inlineConstEnum(babel, options = {}) {
           }
 
           const enumName = decl.id.name
-          const enumValues = {}
+          const enumValues: EnumValueMap = {}
 
           // Extract property values.
           for (const prop of decl.init.properties) {
@@ -122,7 +143,7 @@ export default function inlineConstEnum(babel, options = {}) {
       },
 
       // Inline enum member access: MyEnum.Value
-      MemberExpression(path) {
+      MemberExpression(path: BabelPath<BabelMemberExpression>) {
         const { object, property } = path.node
 
         // Match: EnumName.MemberName

@@ -1,4 +1,3 @@
-/* max-file-lines: cohesive-module — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 import process from 'node:process'
 
 /**
@@ -30,13 +29,19 @@ import process from 'node:process'
  *   scripts.
  */
 
-import { existsSync } from 'node:fs'
-import { mkdir } from 'node:fs/promises'
-
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+
+import { restoreCache } from './setup/cache.mts'
+import { ensureGhCli } from './setup/installers.mts'
+import {
+  generateCliSentryPackage,
+  generateSocketbinPackages,
+} from './setup/package-generation.mts'
+import { checkPrerequisite, hasCommand } from './setup/version-check.mts'
+
+export { compareVersions } from './setup/version-check.mts'
+export { restoreCache } from './setup/cache.mts'
 
 const logger = getDefaultLogger()
 
@@ -80,404 +85,6 @@ if (showHelp) {
   )
   logger.log('')
   process.exitCode = 0
-}
-
-interface VersionInfo {
-  major: number
-  minor: number
-  patch: number
-}
-
-interface PrerequisiteOptions {
-  command: string
-  minVersion?: VersionInfo | undefined
-  name: string
-  required?: boolean | undefined
-}
-
-/**
- * Check prerequisite.
- */
-async function checkPrerequisite({
-  command,
-  minVersion,
-  name,
-  required = true,
-}: PrerequisiteOptions): Promise<boolean> {
-  const version = await getVersion(command)
-
-  if (!version) {
-    logger.error(`${name} not found`)
-    return false
-  }
-
-  if (minVersion) {
-    const current = parseVersion(version)
-    if (!current) {
-      logger.warn(`Could not parse ${name} version: ${version}`)
-      return !required
-    }
-
-    if (compareVersions(current, minVersion) < 0) {
-      const minVersionStr = `${minVersion.major}.${minVersion.minor}.${minVersion.patch}`
-      logger.error(`${name} ${version} found, but >=${minVersionStr} required`)
-      return false
-    }
-  }
-
-  logger.log(`${name} ${version}`)
-  return true
-}
-
-/**
- * Compare two version objects. Returns: -1 if a < b, 0 if a === b, 1 if a > b.
- */
-export function compareVersions(a: VersionInfo, b: VersionInfo): number {
-  if (a.major !== b.major) {
-    return a.major < b.major ? -1 : 1
-  }
-  if (a.minor !== b.minor) {
-    return a.minor < b.minor ? -1 : 1
-  }
-  if (a.patch !== b.patch) {
-    return a.patch < b.patch ? -1 : 1
-  }
-  return 0
-}
-
-/**
- * Check and optionally install gh CLI.
- */
-async function ensureGhCli(): Promise<boolean> {
-  if (await hasCommand('gh')) {
-    const version = await getVersion('gh')
-    logger.log(`gh CLI ${version} (optional)`)
-    return true
-  }
-
-  if (!autoInstall) {
-    logger.info('gh CLI not found (optional - enables cache restoration)')
-    logger.info('Install from: https://cli.github.com/')
-    logger.info('Or run: pnpm run setup --install')
-    return false
-  }
-
-  // Auto-install mode.
-  if (WIN32) {
-    // Windows: Try Chocolatey.
-    if (!(await hasCommand('choco'))) {
-      logger.info('Chocolatey not found (needed for auto-install on Windows)')
-      logger.log('Attempting to install Chocolatey…')
-      const installed = await installChocolatey()
-      if (!installed) {
-        logger.warn('Could not install Chocolatey')
-        logger.info('Install gh CLI manually from: https://cli.github.com/')
-        logger.info(
-          'Or install Chocolatey from: https://chocolatey.org/install',
-        )
-        return false
-      }
-    }
-
-    // Install gh CLI with Chocolatey.
-    logger.log('Installing gh CLI with Chocolatey…')
-    const installed = await installWithChocolatey('gh')
-    if (installed) {
-      // Verify gh is actually available after installation.
-      if (await hasCommand('gh')) {
-        const version = await getVersion('gh')
-        logger.log(`gh CLI ${version} installed!`)
-        return true
-      }
-      logger.warn('gh CLI installed but not available in PATH')
-      logger.info('You may need to restart your shell or run: pnpm run setup')
-      return false
-    }
-
-    logger.warn('Could not install gh CLI')
-    logger.info('Install manually from: https://cli.github.com/')
-    return false
-  }
-
-  // macOS/Linux: Try Homebrew.
-  if (!(await hasCommand('brew'))) {
-    logger.info('Homebrew not found (needed for auto-install)')
-    logger.log('Attempting to install Homebrew…')
-    const installed = await installHomebrew()
-    if (!installed) {
-      logger.warn('Could not install Homebrew')
-      logger.info('Install gh CLI manually from: https://cli.github.com/')
-      return false
-    }
-  }
-
-  // Install gh CLI with Homebrew.
-  logger.log('Installing gh CLI with Homebrew…')
-  const installed = await installWithHomebrew('gh')
-  if (installed) {
-    // Verify gh is actually available after installation.
-    if (await hasCommand('gh')) {
-      const version = await getVersion('gh')
-      logger.log(`gh CLI ${version} installed!`)
-      return true
-    }
-    logger.warn('gh CLI installed but not available in PATH')
-    logger.info('You may need to restart your shell or run: pnpm run setup')
-    return false
-  }
-
-  logger.warn('Could not install gh CLI')
-  logger.info('Install manually from: https://cli.github.com/')
-  return false
-}
-
-/**
- * Generate cli-with-sentry package from template.
- */
-async function generateCliSentryPackage(): Promise<boolean> {
-  if (!quiet) {
-    logger.log('Generating cli-with-sentry package from template…')
-  }
-
-  const scriptPath = new URL(
-    '../packages/package-builder/scripts/generate-cli-sentry-package.mts',
-    import.meta.url,
-  )
-  const result = await spawn('node', [scriptPath.pathname], {
-    stdio: quiet ? 'pipe' : 'inherit',
-  })
-
-  if (result.code === 0) {
-    if (!quiet) {
-      logger.log('cli-with-sentry package generated!')
-    }
-    return true
-  }
-
-  logger.warn('Failed to generate cli-with-sentry package')
-  return false
-}
-
-/**
- * Generate socketbin packages from template.
- */
-async function generateSocketbinPackages(): Promise<boolean> {
-  if (!quiet) {
-    logger.log('Generating socketbin packages from template…')
-  }
-
-  const scriptPath = new URL(
-    '../packages/package-builder/scripts/generate-socketbin-packages.mts',
-    import.meta.url,
-  )
-  const result = await spawn('node', [scriptPath.pathname], {
-    stdio: quiet ? 'pipe' : 'inherit',
-  })
-
-  if (result.code === 0) {
-    if (!quiet) {
-      logger.log('Socketbin packages generated!')
-    }
-    return true
-  }
-
-  logger.warn('Failed to generate socketbin packages')
-  return false
-}
-
-/**
- * Get version of a command.
- */
-async function getVersion(
-  command: string,
-  args: string[] = ['--version'],
-): Promise<string | undefined> {
-  try {
-    const result = await spawn(command, args, {
-      stdio: 'pipe',
-    })
-    if (result.code === 0) {
-      return String(result.stdout).trim()
-    }
-  } catch {
-    // Ignore.
-  }
-  return undefined
-}
-
-/**
- * Check if a command is available.
- */
-async function hasCommand(command: string): Promise<boolean> {
-  try {
-    const result = await spawn(command, ['--version'], {
-      stdio: 'pipe',
-    })
-    return result.code === 0
-  } catch {
-    return false
-  }
-}
-
-/**
- * Install Chocolatey (Windows).
- */
-async function installChocolatey(): Promise<boolean> {
-  if (!WIN32) {
-    logger.warn('Chocolatey is only available on Windows')
-    return false
-  }
-
-  logger.step('Installing Chocolatey…')
-  logger.info('This requires admin access and may take a few minutes')
-
-  const installScript =
-    "Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))"
-
-  const result = await spawn('powershell', ['-Command', installScript], {
-    stdio: 'inherit',
-  })
-
-  if (result.code === 0) {
-    logger.success('Chocolatey installed successfully!')
-    return true
-  }
-
-  logger.error('Failed to install Chocolatey')
-  logger.info('You may need to run as Administrator')
-  return false
-}
-
-/**
- * Install Homebrew (macOS/Linux).
- */
-async function installHomebrew(): Promise<boolean> {
-  if (WIN32) {
-    logger.warn('Homebrew is not available on Windows')
-    return false
-  }
-
-  logger.step('Installing Homebrew…')
-  logger.info('This requires sudo access and may take a few minutes')
-
-  const installScript =
-    '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
-
-  const result = await spawn('bash', ['-c', installScript], {
-    stdio: 'inherit',
-  })
-
-  if (result.code === 0) {
-    logger.success('Homebrew installed successfully!')
-    return true
-  }
-
-  logger.error('Failed to install Homebrew')
-  return false
-}
-
-/**
- * Install a package using Chocolatey (Windows).
- */
-async function installWithChocolatey(packageName: string): Promise<boolean> {
-  if (!(await hasCommand('choco'))) {
-    logger.error('Chocolatey not available')
-    return false
-  }
-
-  logger.step(`Installing ${packageName} with Chocolatey…`)
-
-  const result = await spawn('choco', ['install', packageName, '-y'], {
-    stdio: 'inherit',
-  })
-
-  if (result.code === 0) {
-    logger.success(`${packageName} installed successfully!`)
-    return true
-  }
-
-  logger.error(`Failed to install ${packageName}`)
-  logger.info('You may need to run as Administrator')
-  return false
-}
-
-/**
- * Install a package using Homebrew (macOS/Linux).
- */
-async function installWithHomebrew(packageName: string): Promise<boolean> {
-  if (!(await hasCommand('brew'))) {
-    logger.error('Homebrew not available')
-    return false
-  }
-
-  logger.step(`Installing ${packageName} with Homebrew…`)
-
-  const result = await spawn('brew', ['install', packageName], {
-    stdio: 'inherit',
-  })
-
-  if (result.code === 0) {
-    logger.success(`${packageName} installed successfully!`)
-    return true
-  }
-
-  logger.error(`Failed to install ${packageName}`)
-  return false
-}
-
-/**
- * Parse version string to compare.
- */
-function parseVersion(versionString: string): VersionInfo | undefined {
-  const match = versionString.match(/(\d+)\.(\d+)\.(\d+)/)
-  if (!match) {
-    return undefined
-  }
-  return {
-    major: Number.parseInt(match[1], 10),
-    minor: Number.parseInt(match[2], 10),
-    patch: Number.parseInt(match[3], 10),
-  }
-}
-
-/**
- * Restore build cache if possible.
- */
-export async function restoreCache(hasGh: boolean): Promise<boolean> {
-  // Skip entirely if gh CLI not available.
-  if (!hasGh) {
-    logger.info('Skipping cache restoration (gh CLI not available)')
-    return false
-  }
-
-  // Check if already built.
-  if (existsSync('packages/cli/build') && existsSync('packages/cli/dist')) {
-    logger.info('Build artifacts already exist, skipping cache restoration')
-    return true
-  }
-
-  // Ensure directories exist.
-  logger.log('Ensuring build directories exist…')
-  await mkdir('packages/cli/build', { recursive: true })
-  await mkdir('packages/cli/dist', { recursive: true })
-
-  logger.log('Attempting to restore build cache from CI…')
-
-  const result = await spawn(
-    'pnpm',
-    ['--filter', '@socketsecurity/cli', 'run', 'restore-cache', '--quiet'],
-    {
-      stdio: 'inherit',
-    },
-  )
-
-  if (result.code === 0) {
-    logger.log('Build cache restored!')
-    return true
-  }
-
-  logger.info('Cache not available for this commit (will build from scratch)')
-  return false
 }
 
 /**
@@ -551,7 +158,7 @@ async function main(): Promise<number> {
   })
 
   // Check gh CLI (optional, with auto-install).
-  const ghOk = await ensureGhCli()
+  const ghOk = await ensureGhCli({ autoInstall })
 
   if (!quiet) {
     logger.log('')
@@ -579,12 +186,12 @@ async function main(): Promise<number> {
   }
 
   // Generate packages from templates.
-  await generateCliSentryPackage()
+  await generateCliSentryPackage({ quiet })
   if (!quiet) {
     logger.log('')
   }
 
-  await generateSocketbinPackages()
+  await generateSocketbinPackages({ quiet })
 
   if (!quiet) {
     logger.log('')

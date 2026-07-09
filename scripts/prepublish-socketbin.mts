@@ -17,7 +17,17 @@ import { preparePackageForPublish } from 'package-builder/scripts/util/prepare-p
 
 const logger = getDefaultLogger()
 
-const { values } = parseArgs({
+interface PrepublishSocketbinArgs {
+  arch?: string | undefined
+  dev?: boolean | undefined
+  libc?: string | undefined
+  method: string
+  platform?: string | undefined
+  prod?: boolean | undefined
+  version?: string | undefined
+}
+
+const { values } = parseArgs<PrepublishSocketbinArgs>({
   options: {
     arch: { type: 'string' },
     dev: { type: 'boolean' },
@@ -59,7 +69,7 @@ if (!platform || !arch) {
     const version = providedVersion.replace(/^v/, '')
 
     // Prepare package for publishing.
-    const { name } = preparePackageForPublish(packageDir, {
+    preparePackageForPublish(packageDir, {
       buildMethod,
       version,
     })

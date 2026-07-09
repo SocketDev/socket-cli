@@ -3,17 +3,39 @@
  *   checks: if (DEBUG) { ... }
  */
 
+import type {
+  BabelApi,
+  BabelConditionalExpression,
+  BabelIfStatement,
+  BabelLogicalExpression,
+  BabelNode,
+  BabelPath,
+  BabelTypes,
+} from './babel-plugin-types.mts'
+
+export interface StripDebugOptions {
+  identifiers?: string[] | undefined
+}
+
 /**
  * Check if a node is a DEBUG identifier.
  */
-function isDebugIdentifier(t, node, debugIds) {
+function isDebugIdentifier(
+  t: BabelTypes,
+  node: BabelNode | null | undefined,
+  debugIds: Set<string>,
+): boolean {
   return t.isIdentifier(node) && debugIds.has(node.name)
 }
 
 /**
  * Check if test expression is a debug check.
  */
-function isDebugTest(t, test, debugIds) {
+function isDebugTest(
+  t: BabelTypes,
+  test: BabelNode,
+  debugIds: Set<string>,
+): boolean {
   // Simple: if (DEBUG)
   if (isDebugIdentifier(t, test, debugIds)) {
     return true
@@ -46,7 +68,10 @@ function isDebugTest(t, test, debugIds) {
  *
  * @returns {object} Babel plugin object
  */
-export default function stripDebug(babel, options = {}) {
+export default function stripDebug(
+  babel: BabelApi,
+  options: StripDebugOptions = {},
+) {
   const { types: t } = babel
   const { identifiers = ['DEBUG'] } = options
   const debugIds = new Set(identifiers)
@@ -56,7 +81,7 @@ export default function stripDebug(babel, options = {}) {
 
     visitor: {
       // Remove: if (DEBUG) { ... }
-      IfStatement(path) {
+      IfStatement(path: BabelPath<BabelIfStatement>) {
         const { test } = path.node
 
         // Check if test is DEBUG identifier or logical expression containing DEBUG.
@@ -76,7 +101,7 @@ export default function stripDebug(babel, options = {}) {
       },
 
       // Remove: DEBUG && expression
-      LogicalExpression(path) {
+      LogicalExpression(path: BabelPath<BabelLogicalExpression>) {
         const { left, operator } = path.node
 
         if (operator === '&&' && isDebugIdentifier(t, left, debugIds)) {
@@ -91,7 +116,7 @@ export default function stripDebug(babel, options = {}) {
       },
 
       // Handle: DEBUG ? trueExpr : falseExpr → falseExpr
-      ConditionalExpression(path) {
+      ConditionalExpression(path: BabelPath<BabelConditionalExpression>) {
         const { alternate, test } = path.node
 
         if (isDebugIdentifier(t, test, debugIds)) {

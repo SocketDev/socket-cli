@@ -22,7 +22,15 @@
  *   const regex = /[a-zA-Z0-9]+/
  */
 
-import { unicodePropertyMap } from 'build-infra/lib/unicode-property-escape-transform'
+import type {
+  BabelCallExpressionNode,
+  BabelPath,
+  BabelProgramNode,
+  BabelRegExpLiteralNode,
+  BabelTemplateApi,
+  BabelTypes,
+  HelperName,
+} from './babel-ast-types.mts'
 
 /**
  * Helper Functions (injected at runtime via Babel template.ast):
@@ -32,7 +40,13 @@ import { unicodePropertyMap } from 'build-infra/lib/unicode-property-escape-tran
  * with time __simpleCompare(a, b) - Basic string comparison.
  */
 
-export default function babelPluginWithIntlNone({ template, types: t }) {
+export default function babelPluginWithIntlNone({
+  template,
+  types: t,
+}: {
+  template: BabelTemplateApi
+  types: BabelTypes
+}) {
   const stats = {
     toLocaleString: 0,
     toLocaleDateString: 0,
@@ -43,8 +57,8 @@ export default function babelPluginWithIntlNone({ template, types: t }) {
   }
 
   // Helper to create runtime helper import
-  const helperImports = new WeakMap()
-  function ensureHelper(path, helperName) {
+  const helperImports = new WeakMap<BabelProgramNode, Set<HelperName>>()
+  function ensureHelper(path: BabelPath, helperName: HelperName) {
     const program = path.findParent(p => p.isProgram())
     if (!program) {
       return
@@ -55,7 +69,7 @@ export default function babelPluginWithIntlNone({ template, types: t }) {
     }
 
     const imports = helperImports.get(program.node)
-    if (imports.has(helperName)) {
+    if (!imports || imports.has(helperName)) {
       return
     }
 
@@ -109,7 +123,7 @@ export default function babelPluginWithIntlNone({ template, types: t }) {
        *   __formatNumber(1234567)
        *   __formatNumber(num)
        */
-      CallExpression(path) {
+      CallExpression(path: BabelPath<BabelCallExpressionNode>) {
         const { node } = path
 
         // Handle toLocaleString() on numbers
@@ -118,11 +132,12 @@ export default function babelPluginWithIntlNone({ template, types: t }) {
           t.isIdentifier(node.callee.property, { name: 'toLocaleString' })
         ) {
           const objectType = path.get('callee.object')
+          const objectNode = objectType.node
 
           // Check if it's likely a number (numeric literal or number-type identifier)
           const isNumber =
-            t.isNumericLiteral(objectType.node) ||
-            (t.isIdentifier(objectType.node) &&
+            t.isNumericLiteral(objectNode) ||
+            (t.isIdentifier(objectNode) &&
               [
                 'count',
                 'size',
@@ -132,7 +147,7 @@ export default function babelPluginWithIntlNone({ template, types: t }) {
                 'number',
                 'amount',
                 'bytes',
-              ].some(n => objectType.node.name.toLowerCase().includes(n)))
+              ].some(n => objectNode.name.toLowerCase().includes(n)))
 
           if (isNumber) {
             ensureHelper(path, '__formatNumber')
@@ -152,8 +167,8 @@ export default function babelPluginWithIntlNone({ template, types: t }) {
 
           // Handle Date.prototype.toLocaleString()
           if (
-            t.isNewExpression(objectType.node) &&
-            t.isIdentifier(objectType.node.callee, { name: 'Date' })
+            t.isNewExpression(objectNode) &&
+            t.isIdentifier(objectNode.callee, { name: 'Date' })
           ) {
             ensureHelper(path, '__formatDateTime')
             path.replaceWith(
@@ -230,10 +245,11 @@ export default function babelPluginWithIntlNone({ template, types: t }) {
           t.isIdentifier(node.callee.property, { name: 'localeCompare' })
         ) {
           ensureHelper(path, '__simpleCompare')
+          const compareArg = node.arguments[0]
           path.replaceWith(
             t.callExpression(t.identifier('__simpleCompare'), [
               node.callee.object,
-              node.arguments[0],
+              ...(compareArg === undefined ? [] : [compareArg]),
             ]),
           )
           stats.localeCompare++
@@ -336,7 +352,7 @@ export default function babelPluginWithIntlNone({ template, types: t }) {
        *   /[a-zA-Z0-9_]/
        *   /[a-zA-Z0-9]+/
        */
-      RegExpLiteral(path) {
+      RegExpLiteral(path: BabelPath<BabelRegExpLiteralNode>) {
         const { node } = path
 
         // Handle /v flag (unicodeSets) - ES2024 feature requiring Unicode support.
@@ -345,13 +361,9 @@ export default function babelPluginWithIntlNone({ template, types: t }) {
         if (node.flags.includes('v')) {
           const pattern = node.pattern
           const newFlags = node.flags.replace('v', 'u')
-          let transformed = false
 
           // Check if pattern uses \p{...} that we can transform.
-          if (pattern.includes('\\p{')) {
-            // Continue to transformation below.
-            transformed = true
-          } else {
+          if (!pattern.includes('\\p{')) {
             // No \p{...} - just downgrade v→u flag.
             path.replaceWith(t.regExpLiteral(pattern, newFlags))
             stats.unicodeRegex++
@@ -375,7 +387,7 @@ export default function babelPluginWithIntlNone({ template, types: t }) {
           // Match character classes that contain \p{...}
           pattern = pattern.replace(
             /\[([^\]]*\\p\{[^}]+\}[^\]]*)\]/g,
-            (_match, content) => {
+            (_match: string, content: string) => {
               let newContent = content
               // Inside character class, replace with just the character range
               newContent = newContent.replace(/\\p\{Letter\}/g, 'a-zA-Z')
@@ -446,7 +458,7 @@ export default function babelPluginWithIntlNone({ template, types: t }) {
        * Add stats comment at the end of the file.
        */
       Program: {
-        exit(path) {
+        exit(path: BabelPath<BabelProgramNode>) {
           const totalTransforms = Object.values(stats).reduce(
             (a, b) => a + b,
             0,

@@ -346,8 +346,7 @@ function computeBuildSignature(pkg: BuildPackageConfig): string {
   files.sort()
 
   const hash = crypto.createHash('sha256')
-  for (let i = 0, { length } = files; i < length; i += 1) {
-    const file = files[i]
+  for (const file of files) {
     const relative = path.relative(rootDir, file)
     hash.update(relative)
     hash.update('\0')
@@ -446,7 +445,7 @@ export function parseArgs(): ParsedArgs {
   }
 }
 
-function readSignature(pkg: BuildPackageConfig): string | null {
+function readSignature(pkg: BuildPackageConfig): string | undefined {
   const file = signaturePath(pkg)
   if (!existsSync(file)) {
     return undefined
@@ -479,7 +478,9 @@ async function runParallelBuilds(
     const cliOutputPath = path.join(rootDir, 'packages/cli/dist/index.js')
     if (!existsSync(cliOutputPath)) {
       logger.log(`${colors.cyan('→')} Building CLI first…`)
-      const cliResult = await buildPackage(BUILD_PACKAGES[0], { force: false })
+      const cliResult = await buildPackage(BUILD_PACKAGES[0]!, {
+        force: false,
+      })
       if (!cliResult.success) {
         process.exitCode = 1
         return
@@ -550,7 +551,9 @@ async function runSequentialBuilds(
     const cliOutputPath = path.join(rootDir, 'packages/cli/dist/index.js')
     if (!existsSync(cliOutputPath)) {
       logger.log(`${colors.cyan('→')} Building CLI first…`)
-      const cliResult = await buildPackage(BUILD_PACKAGES[0], { force: false })
+      const cliResult = await buildPackage(BUILD_PACKAGES[0]!, {
+        force: false,
+      })
       if (!cliResult.success) {
         process.exitCode = 1
         return
@@ -560,10 +563,9 @@ async function runSequentialBuilds(
   }
 
   const startTime = Date.now()
-  const results = []
+  const results: BuildTargetResult[] = []
 
-  for (let i = 0, { length } = targetsToBuild; i < length; i += 1) {
-    const target = targetsToBuild[i]
+  for (const target of targetsToBuild) {
     const result = await buildTarget(target, buildArgs)
     results.push(result)
 
@@ -700,7 +702,9 @@ async function runTargetedBuild(
     const cliOutputPath = path.join(rootDir, 'packages/cli/dist/index.js')
     if (!existsSync(cliOutputPath)) {
       logger.log(`${colors.cyan('→')} Building CLI first…`)
-      const cliResult = await buildPackage(BUILD_PACKAGES[0], { force: false })
+      const cliResult = await buildPackage(BUILD_PACKAGES[0]!, {
+        force: false,
+      })
       if (!cliResult.success) {
         process.exitCode = 1
         return

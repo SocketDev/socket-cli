@@ -20,7 +20,88 @@
  *   var str = '\n' // Proper escape
  */
 
-export default function babelPluginStrictMode({ types: t }) {
+/**
+ * Minimal Babel AST node shape — only the fields this plugin reads.
+ */
+export interface BabelNode {
+  type: string
+  [key: string]: unknown
+}
+
+export interface BabelDirectiveLiteralNode extends BabelNode {
+  value: string
+}
+
+export interface BabelDirectiveNode extends BabelNode {
+  value: BabelDirectiveLiteralNode
+}
+
+export interface BabelExpressionStatementNode extends BabelNode {
+  type: 'ExpressionStatement'
+  expression: BabelNode
+}
+
+export interface BabelStringLiteralNode extends BabelNode {
+  extra?: { raw?: string | undefined } | undefined
+  type: 'StringLiteral'
+  value: string
+}
+
+export interface BabelNumericLiteralNode extends BabelNode {
+  extra?: { raw?: string | undefined } | undefined
+  type: 'NumericLiteral'
+}
+
+export interface BabelTemplateElementValue {
+  cooked?: string | undefined
+  raw: string
+}
+
+export interface BabelTemplateElementNode extends BabelNode {
+  value: BabelTemplateElementValue
+}
+
+export interface BabelTemplateLiteralNode extends BabelNode {
+  quasis: BabelTemplateElementNode[]
+}
+
+export interface BabelProgramNode extends BabelNode {
+  body: BabelNode[]
+  directives: BabelDirectiveNode[]
+}
+
+/**
+ * Minimal Babel `types` (`t`) surface this plugin uses.
+ */
+export interface BabelTypes {
+  directive(literal: BabelNode): BabelNode
+  directiveLiteral(value: string): BabelDirectiveLiteralNode
+  isExpressionStatement(
+    node: BabelNode | null | undefined,
+  ): node is BabelExpressionStatementNode
+  isStringLiteral(
+    node: BabelNode | null | undefined,
+  ): node is BabelStringLiteralNode
+  numericLiteral(value: number): BabelNode
+  stringLiteral(value: string): BabelNode
+}
+
+/**
+ * Minimal Babel `NodePath` surface this plugin uses.
+ */
+export interface BabelPath<T extends BabelNode = BabelNode> {
+  addComment(position: 'leading' | 'trailing' | 'inner', comment: string): void
+  buildCodeFrameError(message: string): Error
+  node: T
+  replaceWith(node: BabelNode): void
+  unshiftContainer(key: string, node: BabelNode): void
+}
+
+export default function babelPluginStrictMode({
+  types: t,
+}: {
+  types: BabelTypes
+}) {
   const stats = {
     octalLiterals: 0,
     octalEscapes: 0,
@@ -36,7 +117,7 @@ export default function babelPluginStrictMode({ types: t }) {
        * Add 'use strict' directive to programs that don't have it.
        */
       Program: {
-        enter(path) {
+        enter(path: BabelPath<BabelProgramNode>) {
           const { body, directives } = path.node
 
           // Check if already has 'use strict'
@@ -59,7 +140,7 @@ export default function babelPluginStrictMode({ types: t }) {
           }
         },
 
-        exit(path) {
+        exit(path: BabelPath<BabelProgramNode>) {
           const totalTransforms = Object.values(stats).reduce(
             (a, b) => a + b,
             0,
@@ -87,14 +168,14 @@ Strict Mode Transformation Stats:
        *   // Input: var x = 0123
        *   // Output: var x = 83
        */
-      NumericLiteral(path) {
+      NumericLiteral(path: BabelPath<BabelNumericLiteralNode>) {
         const { node } = path
         const { extra } = node
 
         // Check if this is a legacy octal literal (starts with 0)
         if (extra?.raw) {
           const decimal = convertOctalLiteral(extra.raw)
-          if (decimal !== null) {
+          if (decimal !== undefined) {
             // Replace with decimal equivalent
             path.replaceWith(t.numericLiteral(decimal))
             stats.octalLiterals++
@@ -114,7 +195,7 @@ Strict Mode Transformation Stats:
        *   // Input: var str = "Hello\012World"
        *   // Output: var str = "Hello\nWorld"
        */
-      StringLiteral(path) {
+      StringLiteral(path: BabelPath<BabelStringLiteralNode>) {
         const { node } = path
         const { extra } = node
 
@@ -144,7 +225,7 @@ Strict Mode Transformation Stats:
        *   // Input: with (obj) { x = 1 }
        *   // Output: Error thrown
        */
-      WithStatement(path) {
+      WithStatement(path: BabelPath) {
         stats.withStatements++
 
         // Add a warning comment
@@ -163,12 +244,15 @@ Strict Mode Transformation Stats:
       /**
        * Transform template literals with octal escapes.
        */
-      TemplateLiteral(path) {
+      TemplateLiteral(path: BabelPath<BabelTemplateLiteralNode>) {
         const { node } = path
         let transformed = false
 
         for (let i = 0, { length } = node.quasis; i < length; i += 1) {
           const quasi = node.quasis[i]
+          if (!quasi) {
+            continue
+          }
           const { value } = quasi
           if (value.raw && /\\[0-7]/.test(value.raw)) {
             const transformedCooked = transformOctalEscapes(
@@ -204,14 +288,14 @@ Strict Mode Transformation Stats:
  *
  * @returns {number | undefined} Decimal value or undefined if not octal
  */
-function convertOctalLiteral(value) {
+function convertOctalLiteral(value: string): number | undefined {
   // Match legacy octal: starts with 0, followed by octal digits (0-7)
   const octalMatch = /^0([0-7]+)$/.exec(value)
-  if (!octalMatch) {
+  const octalDigits = octalMatch?.[1]
+  if (!octalMatch || octalDigits === undefined) {
     return undefined
   }
 
-  const octalDigits = octalMatch[1]
   return Number.parseInt(octalDigits, 8)
 }
 
@@ -222,7 +306,7 @@ function convertOctalLiteral(value) {
  *
  * @returns {string} Transformed string
  */
-function transformOctalEscapes(str) {
+function transformOctalEscapes(str: string): string {
   // Common octal escapes and their replacements
   const commonOctals = {
     // Null (allowed in strict mode if not followed by digit)
@@ -268,13 +352,16 @@ function transformOctalEscapes(str) {
   }
 
   // Replace any remaining octal escapes (\16-\377) with hex escapes
-  result = result.replace(/\\([0-7]{1,3})/g, (_match, octalDigits) => {
-    const codePoint = Number.parseInt(octalDigits, 8)
-    if (codePoint <= 0xff) {
-      return `\\x${codePoint.toString(16).padStart(2, '0')}`
-    }
-    return `\\u${codePoint.toString(16).padStart(4, '0')}`
-  })
+  result = result.replace(
+    /\\([0-7]{1,3})/g,
+    (_match: string, octalDigits: string) => {
+      const codePoint = Number.parseInt(octalDigits, 8)
+      if (codePoint <= 0xff) {
+        return `\\x${codePoint.toString(16).padStart(2, '0')}`
+      }
+      return `\\u${codePoint.toString(16).padStart(4, '0')}`
+    },
+  )
 
   return result
 }

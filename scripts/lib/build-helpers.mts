@@ -22,7 +22,7 @@ export function formatBytes(bytes: number): string {
  * Get build log path.
  */
 function getBuildLogPath(buildDir: string): string {
-  return join(buildDir, 'build.log')
+  return path.join(buildDir, 'build.log')
 }
 
 /**

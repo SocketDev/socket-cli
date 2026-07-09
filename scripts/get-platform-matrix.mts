@@ -8,7 +8,11 @@
  * # Outputs: {"include":[...]}
  */
 
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+
 import { PLATFORM_CONFIGS } from '../packages/build-infra/lib/platform-targets.mts'
+
+const logger = getDefaultLogger()
 
 interface MatrixEntry {
   arch: string
@@ -22,7 +26,7 @@ const matrix: { include: MatrixEntry[] } = {
   include: PLATFORM_CONFIGS.map(
     (c): MatrixEntry => ({
       arch: c.arch,
-      libc: c.libc ?? undefined,
+      libc: c.libc ?? null,
       platform: c.platform, // Node.js platform (win32 for Windows)
       releasePlatform: c.releasePlatform, // Release naming (win for Windows)
       runner: c.runner,

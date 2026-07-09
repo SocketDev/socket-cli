@@ -71,7 +71,7 @@ export function compareVersions(v1: string, v2: string): number {
 /**
  * Analyze what a patch modifies.
  */
-function analyzePatchContent(patchContent: string): PatchAnalysis {
+export function analyzePatchContent(patchContent: string): PatchAnalysis {
   const analysis: PatchAnalysis = {
     modifiesV8Includes: false,
     modifiesSEA: false,
@@ -83,12 +83,16 @@ function analyzePatchContent(patchContent: string): PatchAnalysis {
 
   for (let i = 0, { length } = lines; i < length; i += 1) {
     const line = lines[i]
+    if (line === undefined) {
+      continue
+    }
     // Track which files are modified.
     if (line.startsWith('---') || line.startsWith('+++')) {
       const match = line.match(/[+-]{3}\s+(?:a\/|b\/)?(.+)/)
       if (match) {
         currentFile = match[1]
         if (
+          currentFile !== undefined &&
           currentFile !== '/dev/null' &&
           !analysis.modifiesFiles.includes(currentFile)
         ) {
@@ -118,7 +122,7 @@ function analyzePatchContent(patchContent: string): PatchAnalysis {
 /**
  * Check for patch conflicts.
  */
-function checkPatchConflicts(
+export function checkPatchConflicts(
   patches: PatchInfo[],
   nodeVersion: string,
 ): PatchConflict[] {
@@ -129,6 +133,9 @@ function checkPatchConflicts(
 
   for (let i = 0, { length } = patches; i < length; i += 1) {
     const patch = patches[i]
+    if (!patch) {
+      continue
+    }
     for (const file of patch.analysis.modifiesFiles) {
       if (!fileModifications.has(file)) {
         fileModifications.set(file, [])
@@ -173,7 +180,7 @@ function isPatchCompatible(
 ): CompatibilityResult {
   if (metadata.nodeVersions.length === 0) {
     // No version restriction = compatible with all.
-    return { compatible: true, reason: undefined }
+    return { compatible: true, reason: null }
   }
 
   // Check version ranges.
@@ -182,21 +189,23 @@ function isPatchCompatible(
       // v24.10.0+ means v24.10.0 and later.
       const baseVersion = versionSpec.replace('+', '')
       if (compareVersions(nodeVersion, baseVersion) >= 0) {
-        return { compatible: true, reason: undefined }
+        return { compatible: true, reason: null }
       }
     } else if (versionSpec.includes('-')) {
       // v24.9.0-v24.9.5 means range.
       const [min, max] = versionSpec.split('-')
       if (
+        min !== undefined &&
+        max !== undefined &&
         compareVersions(nodeVersion, min) >= 0 &&
         compareVersions(nodeVersion, max) <= 0
       ) {
-        return { compatible: true, reason: undefined }
+        return { compatible: true, reason: null }
       }
     } else {
       // Exact version.
       if (nodeVersion === versionSpec) {
-        return { compatible: true, reason: undefined }
+        return { compatible: true, reason: null }
       }
     }
   }
@@ -213,7 +222,7 @@ function isPatchCompatible(
 function parsePatchMetadata(patchContent: string): PatchMetadata {
   const lines = patchContent.split('\n')
   const metadata: PatchMetadata = {
-    description: undefined,
+    description: null,
     nodeVersions: [],
     requires: [],
     conflicts: [],
@@ -221,6 +230,9 @@ function parsePatchMetadata(patchContent: string): PatchMetadata {
 
   for (let i = 0, { length } = lines; i < length; i += 1) {
     const line = lines[i]
+    if (line === undefined) {
+      continue
+    }
     // Stop at first non-comment
     if (!line.startsWith('#')) {
       break
@@ -228,22 +240,28 @@ function parsePatchMetadata(patchContent: string): PatchMetadata {
 
     // Parse metadata directives.
     if (line.includes('@node-versions:')) {
-      const versions = line
-        .split(':')[1]
-        .trim()
-        .split(/[,\s]+/)
-      metadata.nodeVersions.push(...versions)
+      const value = line.split(':')[1]
+      if (value !== undefined) {
+        metadata.nodeVersions.push(...value.trim().split(/[,\s]+/))
+      }
     }
     if (line.includes('@requires:')) {
-      const required = line.split(':')[1].trim()
-      metadata.requires.push(required)
+      const value = line.split(':')[1]
+      if (value !== undefined) {
+        metadata.requires.push(value.trim())
+      }
     }
     if (line.includes('@conflicts:')) {
-      const conflicted = line.split(':')[1].trim()
-      metadata.conflicts.push(conflicted)
+      const value = line.split(':')[1]
+      if (value !== undefined) {
+        metadata.conflicts.push(value.trim())
+      }
     }
     if (line.includes('@description:')) {
-      metadata.description = line.split(':')[1].trim()
+      const value = line.split(':')[1]
+      if (value !== undefined) {
+        metadata.description = value.trim()
+      }
     }
   }
 
@@ -253,7 +271,7 @@ function parsePatchMetadata(patchContent: string): PatchMetadata {
 /**
  * Test if a patch will apply cleanly (dry-run).
  */
-async function testPatchApplication(
+export async function testPatchApplication(
   patchPath: string,
   targetDir: string,
   stripLevel: number = 1,
@@ -270,7 +288,7 @@ async function testPatchApplication(
     if (result.code === 0) {
       return {
         canApply: true,
-        reason: undefined,
+        reason: null,
       }
     }
 
@@ -291,7 +309,7 @@ async function testPatchApplication(
 /**
  * Validate patch file before applying.
  */
-async function validatePatch(
+export async function validatePatch(
   patchPath: string,
   nodeVersion: string,
 ): Promise<ValidationResult> {
@@ -348,7 +366,7 @@ async function validatePatch(
     return {
       valid: false,
       reason: `Cannot read patch: ${message}`,
-      metadata: undefined,
+      metadata: null,
     }
   }
 }

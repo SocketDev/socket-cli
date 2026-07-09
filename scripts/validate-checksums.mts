@@ -19,6 +19,11 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { PLATFORM_MAP_TOOLS } from '../packages/cli/scripts/constants/external-tools-platforms.mts'
 
+export interface ExternalToolConfig {
+  checksums?: Record<string, string> | undefined
+  release?: string | undefined
+}
+
 const logger = getDefaultLogger()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
@@ -26,7 +31,9 @@ const rootPath = path.join(__dirname, '..')
 // Load external tools configuration. Entries live under the `tools` key
 // (the shared external-tools shape).
 const externalToolsPath = path.join(rootPath, 'packages/cli/bundle-tools.json')
-const externalTools = JSON.parse(readFileSync(externalToolsPath, 'utf8')).tools
+const externalTools: Record<string, ExternalToolConfig> = JSON.parse(
+  readFileSync(externalToolsPath, 'utf8'),
+).tools
 
 /**
  * Validate that all required checksums exist for external tools.
@@ -42,7 +49,7 @@ export function validateChecksums(): boolean {
   const requiredAssets = new Map<string, Set<string>>()
 
   // Collect all assets needed across all platforms.
-  for (const [platform, tools] of Object.entries(PLATFORM_MAP_TOOLS)) {
+  for (const tools of Object.values(PLATFORM_MAP_TOOLS)) {
     if (!tools) {
       continue
     }
@@ -52,10 +59,12 @@ export function validateChecksums(): boolean {
         continue
       }
 
-      if (!requiredAssets.has(toolName)) {
-        requiredAssets.set(toolName, new Set())
+      let assetSet = requiredAssets.get(toolName)
+      if (!assetSet) {
+        assetSet = new Set()
+        requiredAssets.set(toolName, assetSet)
       }
-      requiredAssets.get(toolName).add(assetName)
+      assetSet.add(assetName)
     }
   }
 
@@ -76,8 +85,7 @@ export function validateChecksums(): boolean {
     const checksums = toolConfig.checksums || {}
     const missingAssets: string[] = []
 
-    for (let i = 0, { length } = assets; i < length; i += 1) {
-      const assetName = assets[i]
+    for (const assetName of assets) {
       if (!checksums[assetName]) {
         missingAssets.push(assetName)
       }

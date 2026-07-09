@@ -32,7 +32,7 @@
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs'
 
-import os from 'node:os'
+import { tmpdir } from 'node:os'
 
 import path from 'node:path'
 import process from 'node:process'
@@ -154,7 +154,7 @@ const readPinnedVersion = (pkgName: string): string => {
     const lines = content.split('\n')
     let inCatalog = false
     for (let i = 0, { length } = lines; i < length; i += 1) {
-      const rawLine = lines[i]
+      const rawLine = lines[i] ?? ''
       const line = rawLine.replace(/\r$/, '')
       if (/^catalog:\s*$/.test(line)) {
         inCatalog = true
@@ -297,7 +297,7 @@ const main = async (): Promise<number> => {
     `Bootstrapping ${BOOTSTRAP_PACKAGES.length} package(s) from npm registry…`,
   )
   for (let i = 0, { length } = BOOTSTRAP_PACKAGES; i < length; i += 1) {
-    const pkg = BOOTSTRAP_PACKAGES[i]
+    const pkg = BOOTSTRAP_PACKAGES[i]!
     try {
       await bootstrapPackage(pkg)
     } catch (e) {
