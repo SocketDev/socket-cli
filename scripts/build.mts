@@ -33,6 +33,7 @@ import fg from 'fast-glob'
 import colors from 'yoctocolors-cjs'
 
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
@@ -161,9 +162,10 @@ async function buildCurrentPlatformSea(): Promise<{ success: boolean }> {
  */
 async function buildPackage(
   pkg: BuildPackageConfig,
-  force: boolean,
+  options: { force: boolean },
 ): Promise<BuildResult> {
-  const skip = !needsBuild(pkg, force)
+  const { force } = { __proto__: null, ...options } as typeof options
+  const skip = !needsBuild(pkg, { force })
 
   if (skip) {
     logger.log(
@@ -199,7 +201,7 @@ async function buildPackage(
     writeSignature(pkg, computeBuildSignature(pkg))
   } catch (e) {
     logger.warn(
-      `Could not write build signature for ${pkg.name}: ${e instanceof Error ? e.message : String(e)}`,
+      `Could not write build signature for ${pkg.name}: ${errorMessage(e)}`,
     )
   }
 
@@ -362,7 +364,11 @@ function computeBuildSignature(pkg: BuildPackageConfig): string {
  * Rebuild triggers: 1. --force 2. Missing build output 3. Missing signature
  * sidecar 4. Current input signature differs from the recorded one.
  */
-function needsBuild(pkg: BuildPackageConfig, force: boolean): boolean {
+function needsBuild(
+  pkg: BuildPackageConfig,
+  options: { force: boolean },
+): boolean {
+  const { force } = { __proto__: null, ...options } as typeof options
   if (force) {
     return true
   }
@@ -473,7 +479,7 @@ async function runParallelBuilds(
     const cliOutputPath = path.join(rootDir, 'packages/cli/dist/index.js')
     if (!existsSync(cliOutputPath)) {
       logger.log(`${colors.cyan('→')} Building CLI first…`)
-      const cliResult = await buildPackage(BUILD_PACKAGES[0], false)
+      const cliResult = await buildPackage(BUILD_PACKAGES[0], { force: false })
       if (!cliResult.success) {
         process.exitCode = 1
         return
@@ -544,7 +550,7 @@ async function runSequentialBuilds(
     const cliOutputPath = path.join(rootDir, 'packages/cli/dist/index.js')
     if (!existsSync(cliOutputPath)) {
       logger.log(`${colors.cyan('→')} Building CLI first…`)
-      const cliResult = await buildPackage(BUILD_PACKAGES[0], false)
+      const cliResult = await buildPackage(BUILD_PACKAGES[0], { force: false })
       if (!cliResult.success) {
         process.exitCode = 1
         return
@@ -632,7 +638,7 @@ async function runSmartBuild(force: boolean): Promise<void> {
           absolute: true,
         }),
         run: async () => {
-          const result = await buildPackage(cliPkg, force)
+          const result = await buildPackage(cliPkg, { force })
           if (!result.success) {
             throw new Error(`${cliPkg.name} build failed`)
           }
@@ -694,7 +700,7 @@ async function runTargetedBuild(
     const cliOutputPath = path.join(rootDir, 'packages/cli/dist/index.js')
     if (!existsSync(cliOutputPath)) {
       logger.log(`${colors.cyan('→')} Building CLI first…`)
-      const cliResult = await buildPackage(BUILD_PACKAGES[0], false)
+      const cliResult = await buildPackage(BUILD_PACKAGES[0], { force: false })
       if (!cliResult.success) {
         process.exitCode = 1
         return
@@ -837,7 +843,7 @@ async function main(): Promise<void> {
 }
 
 main().catch((e: unknown) => {
-  const message = e instanceof Error ? e.message : String(e)
+  const message = errorMessage(e)
   logger.error('')
   logger.error(`${colors.red('✗')} Unexpected error: ${message}`)
   logger.error('')

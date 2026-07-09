@@ -5,6 +5,7 @@
 
 import type { SpawnStdioResult } from '@socketsecurity/lib-stable/process/spawn/types'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
@@ -60,7 +61,7 @@ async function downloadWithRetry(
 
       return true
     } catch (e) {
-      const message = e instanceof Error ? e.message : String(e)
+      const message = errorMessage(e)
       if (attempt === maxRetries) {
         throw new Error(
           `Download failed after ${maxRetries} attempts: ${message}`,

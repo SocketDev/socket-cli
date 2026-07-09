@@ -5,6 +5,7 @@
 
 import path from 'node:path'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { preparePackageForPublish } from 'package-builder/scripts/util/prepare-package.mts'
@@ -22,9 +23,9 @@ if (!packagePath) {
   process.exitCode = 1
 } else {
   try {
-    preparePackageForPublish(resolve(packagePath), { version })
+    preparePackageForPublish(path.resolve(packagePath), { version })
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e)
+    const message = errorMessage(e)
     logger.error(`Error preparing package: ${message}`)
     process.exitCode = 1
   }

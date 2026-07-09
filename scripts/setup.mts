@@ -34,6 +34,7 @@ import { existsSync } from 'node:fs'
 import { mkdir } from 'node:fs/promises'
 
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
@@ -616,7 +617,7 @@ if (!showHelp) {
       process.exitCode = code
     })
     .catch((e: unknown) => {
-      const message = e instanceof Error ? e.message : String(e)
+      const message = errorMessage(e)
       logger.error(message)
       process.exitCode = 1
     })

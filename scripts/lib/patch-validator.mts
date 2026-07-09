@@ -4,6 +4,7 @@
  */
 import { promises as fs } from 'node:fs'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 interface PatchMetadata {
@@ -279,7 +280,7 @@ async function testPatchApplication(
       stderr: result.stderr,
     }
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e)
+    const message = errorMessage(e)
     return {
       canApply: false,
       reason: `Patch dry-run error: ${message}`,
@@ -343,7 +344,7 @@ async function validatePatch(
       metadata,
     }
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e)
+    const message = errorMessage(e)
     return {
       valid: false,
       reason: `Cannot read patch: ${message}`,

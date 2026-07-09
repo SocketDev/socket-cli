@@ -261,6 +261,7 @@ function transformOctalEscapes(str) {
   for (const [octal, replacement] of Object.entries(commonOctals)) {
     // Use word boundary to avoid matching longer sequences
     result = result.replace(
+      // oxlint-disable-next-line socket/prefer-normalize-path -- escaping a literal backslash inside an octal escape-sequence key, not a filesystem path; normalizePath does not apply.
       new RegExp(`${octal.replace(/\\/g, '\\\\')}(?![0-7])`, 'g'),
       replacement,
     )
