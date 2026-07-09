@@ -189,19 +189,14 @@ export function wirePackageJson(dest: string): void {
  * Compute the gitignore entries for thin mode — the wholly-fleet files that the
  * download/fetch action supplies, so they need not be git-tracked. Hybrid paths
  * (manifest.segments — CLAUDE.md, pnpm-workspace.yaml, …) are merged per repo
- * and stay tracked, so they're excluded. Each remaining non-hybrid path is
- * collapsed to an entry that can NEVER catch a repo-owned sibling:
+ * and stay tracked, so they're excluded.
  *
- * - A path under a `fleet/` tier (`.claude/hooks/fleet/…`, `.config/fleet/…`,
- *   `docs/agents.md/fleet/…`, `scripts/fleet/…`) collapses to that tier root.
- *   The `fleet/` convention guarantees the dir holds only fleet files; the
- *   member's own live beside it under `repo/`.
- * - EVERY other path — a root file (`.npmrc`), or a wholly-fleet file inside a
- *   MIXED dir (`.github/workflows/publish-npm.yml`, where the member's OWN
- *   ci.yml also lives) — is listed EXACTLY.
- *
- * A blind 2-segment collapse would gitignore `.github/workflows/` (member CI),
- * `.claude/hooks/repo/`, `.config/repo/` — repo-owned. This never does that.
+ * EVERY entry is EXPLICIT — one line per bundle file, never a blanket
+ * `…/fleet/` dir entry. A dir blanket also swallows any future non-bundle
+ * file that lands beside the payload, hiding it from git entirely; the
+ * explicit list ignores exactly what the bundle supplies and nothing else.
+ * The dir-level collapse still exists for the sync-prune walk — see
+ * fleetDirRoots().
  */
 export function thinIgnoreEntries(manifest: {
   files: Record<string, string>
@@ -209,17 +204,45 @@ export function thinIgnoreEntries(manifest: {
 }): string[] {
   const hybridPaths = new Set((manifest.segments ?? []).map(s => s.path))
   const entries = new Set<string>()
-  for (const p of Object.keys(manifest.files)) {
+  const files = Object.keys(manifest.files)
+  for (let i = 0, { length } = files; i < length; i += 1) {
+    const p = files[i]!
+    if (hybridPaths.has(p)) {
+      continue
+    }
+    entries.add(p)
+  }
+  return [...entries].toSorted()
+}
+
+/**
+ * The wholly-fleet DIRECTORY roots — each `fleet/` tier a bundle file sits
+ * under (`.claude/hooks/fleet/`, `.config/fleet/`, `scripts/fleet/`, …). The
+ * sync-prune walks these so an on-disk file the current bundle dropped is
+ * deleted. The `fleet/` convention guarantees each root holds only fleet
+ * files (the member's own live beside it under `repo/`), so the walk can
+ * never touch repo-owned content. The .gitignore block deliberately does NOT
+ * use these — its entries are explicit per-file (thinIgnoreEntries).
+ */
+export function fleetDirRoots(manifest: {
+  files: Record<string, string>
+  segments?: ReadonlyArray<{ path: string }> | undefined
+}): string[] {
+  const hybridPaths = new Set((manifest.segments ?? []).map(s => s.path))
+  const roots = new Set<string>()
+  const files = Object.keys(manifest.files)
+  for (let i = 0, { length } = files; i < length; i += 1) {
+    const p = files[i]!
     if (hybridPaths.has(p)) {
       continue
     }
     const parts = p.split('/')
     const fleetIdx = parts.indexOf('fleet')
-    entries.add(
-      fleetIdx >= 0 ? `${parts.slice(0, fleetIdx + 1).join('/')}/` : p,
-    )
+    if (fleetIdx >= 0) {
+      roots.add(`${parts.slice(0, fleetIdx + 1).join('/')}/`)
+    }
   }
-  return [...entries].toSorted()
+  return [...roots].toSorted()
 }
 
 /**
@@ -304,16 +327,12 @@ export function pruneStaleFleetFiles(
     kept.add(segment.path)
   }
   let pruned = 0
-  for (const root of thinIgnoreEntries(manifest)) {
-    // Exact-file entries are themselves manifest files → never stale. Only DIR
-    // roots (trailing separator) can hold on-disk files the current bundle
-    // dropped. The trailing separator IS the dir marker (thinIgnoreEntries
-    // convention, '/'-joined; tolerate '\' from a Windows-authored manifest) —
-    // test the RAW string end; normalizePath strips the very marker tested.
-    // require-regex-comment: a path ending in '/' or '\'.
-    if (!/[/\\]$/.test(root)) {
-      continue
-    }
+  // Only the wholly-fleet DIR roots can hold on-disk files the current bundle
+  // dropped (an explicit ignore entry is itself a manifest file → never
+  // stale), so the walk uses fleetDirRoots, not the per-file ignore list.
+  const roots = fleetDirRoots(manifest)
+  for (let r = 0, { length: rootCount } = roots; r < rootCount; r += 1) {
+    const root = roots[r]!
     const dirAbs = path.join(dest, root)
     if (!existsSync(dirAbs)) {
       continue
