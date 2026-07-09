@@ -17,8 +17,8 @@ const require = createRequire(import.meta.url)
  *   'linux-x64-musl')
  */
 export function getPlatformIdentifier() {
-  const platformName = platform()
-  const archName = arch()
+  const platformName = os.platform()
+  const archName = os.arch()
 
   // Map Node.js platform/arch to package names.
   const platformMap = {
@@ -83,7 +83,7 @@ export function loadNativeAddon() {
   } catch (e) {
     // Fallback for development: resolve based on actual package location.
     try {
-      const { dirname, join, resolve } = require('node:path')
+      const { dirname, join } = require('node:path')
       const { fileURLToPath } = require('node:url')
       const { realpathSync, existsSync } = require('node:fs')
 
@@ -152,7 +152,7 @@ export function loadNativeAddon() {
       }
 
       throw new Error('Not in development build structure')
-    } catch (fallbackError) {
+    } catch {
       if (e.code === 'MODULE_NOT_FOUND') {
         throw new Error(
           `Failed to load iocraft native addon for ${platformId}.\n` +

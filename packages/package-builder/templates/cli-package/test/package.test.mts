@@ -292,19 +292,6 @@ describe('@socketsecurity/cli-with-sentry package', () => {
     })
   })
 
-  // Note: Actual build execution tests are pending implementation.
-  // These tests validate package structure and configuration only.
-  describe.skip('build execution (requires implementation)', () => {
-    it('should build Sentry-enabled CLI', async () => {
-      // Test pending: verify build creates dist/cli.js with Sentry.
-    })
-
-    it('should include Sentry SDK in bundle', async () => {
-      // Test pending: verify @sentry/node is bundled, not externalized.
-    })
-
-    it('should set SENTRY_BUILD flag in output', async () => {
-      // Test pending: verify flag is set to "1" in built code.
-    })
-  })
+  // Note: Actual build execution tests validate package structure and
+  // configuration only; they don't invoke the build.
 })
