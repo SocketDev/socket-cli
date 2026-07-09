@@ -1,0 +1,21 @@
+diff --git a/dist/errors/stack.js b/dist/errors/stack.js
+index 320e3b3bf7144a9ecf1933d7050cb921b25ce807..95a74e12c5abc93d2d1e744b81bb830d89febd90 100644
+--- a/dist/errors/stack.js
++++ b/dist/errors/stack.js
+@@ -2,6 +2,7 @@
+ /* Socket Lib - Built with rolldown */
+ Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+ let src_external_pony_cause = require("../external/pony-cause");
++let src_errors_predicates = require("./predicates");
+ 
+ //#region src/errors/stack.ts
+ /**
+@@ -18,7 +19,7 @@ let src_external_pony_cause = require("../external/pony-cause");
+ * errorStack(e) })` safely.
+ */
+ function errorStack(value) {
+-	if (isError(value)) return (0, src_external_pony_cause.stackWithCauses)(value);
++	if (src_errors_predicates.isError(value)) return (0, src_external_pony_cause.stackWithCauses)(value);
+ }
+ 
+ //#endregion
