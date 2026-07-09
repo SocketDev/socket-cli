@@ -13,11 +13,17 @@ const logger = getDefaultLogger()
  * Options for {@link preparePackageForPublish}.
  */
 export interface PreparePackageOptions {
-  /** Build method to set (for socketbin packages). */
+  /**
+   * Build method to set (for socketbin packages).
+   */
   buildMethod?: string | undefined
-  /** Suppress success logging. */
+  /**
+   * Suppress success logging.
+   */
   quiet?: boolean | undefined
-  /** Version to set. */
+  /**
+   * Version to set.
+   */
   version?: string | undefined
 }
 
