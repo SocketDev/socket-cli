@@ -177,16 +177,19 @@ describe('cmd-scan', () => {
       const call = mockMeowWithSubcommands.mock.calls[0]
       const subcommands = call[0].subcommands
 
-      expect(subcommands.create).toBe(cmdScanCreate)
-      expect(subcommands.del).toBe(cmdScanDel)
-      expect(subcommands.diff).toBe(cmdScanDiff)
-      expect(subcommands.github).toBe(cmdScanGithub)
-      expect(subcommands.list).toBe(cmdScanList)
-      expect(subcommands.metadata).toBe(cmdScanMetadata)
-      expect(subcommands.reach).toBe(cmdScanReach)
-      expect(subcommands.report).toBe(cmdScanReport)
-      expect(subcommands.setup).toBe(cmdScanSetup)
-      expect(subcommands.view).toBe(cmdScanView)
+      // Reference-identity checks (=== inside the expect(actual) call): the
+      // routed subcommand must BE the imported src module instance, so the
+      // -stable alias (a different module instance) can't stand in here.
+      expect(subcommands.create === cmdScanCreate).toBe(true)
+      expect(subcommands.del === cmdScanDel).toBe(true)
+      expect(subcommands.diff === cmdScanDiff).toBe(true)
+      expect(subcommands.github === cmdScanGithub).toBe(true)
+      expect(subcommands.list === cmdScanList).toBe(true)
+      expect(subcommands.metadata === cmdScanMetadata).toBe(true)
+      expect(subcommands.reach === cmdScanReach).toBe(true)
+      expect(subcommands.report === cmdScanReport).toBe(true)
+      expect(subcommands.setup === cmdScanSetup).toBe(true)
+      expect(subcommands.view === cmdScanView).toBe(true)
     })
   })
 
