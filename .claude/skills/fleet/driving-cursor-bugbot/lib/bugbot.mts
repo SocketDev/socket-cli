@@ -28,7 +28,13 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 const logger = getDefaultLogger()
 
-const BUGBOT_LOGIN_RE = /cursor|bugbot/i
+// Cursor Bugbot posts under the `cursor` / `cursor[bot]` App logins
+// (historically `bugbot`). GitHub usernames are case-insensitive but
+// case-PRESERVING: the API `.user.login` is canonical, but the same handle in
+// message text (an @-mention, the OAuth-returned name) can be mixed case — so
+// match case-insensitively.
+// See https://github.com/orgs/community/discussions/51746
+const BUGBOT_LOGIN_RE = /bugbot|cursor/i
 
 export interface BugbotFinding {
   readonly body: string
@@ -95,9 +101,35 @@ export async function resolveOwnerRepo(): Promise<OwnerRepo> {
 }
 
 /**
+ * Refuse to operate on a draft PR. Bugbot review-and-fix pushes changes and
+ * replies on review threads — a draft is explicit WIP, never a review target.
+ * Throws loud when the PR is a draft.
+ */
+export async function assertNotDraft(pr: number): Promise<void> {
+  const out = await gh([
+    'pr',
+    'view',
+    String(pr),
+    '--json',
+    'isDraft',
+    '--jq',
+    '.isDraft',
+  ])
+  if (out.trim() === 'true') {
+    throw new Error(
+      `PR #${pr} is a draft — refusing to drive Bugbot on it. ` +
+        'Where: driving-cursor-bugbot. Saw: isDraft=true; wanted: a ' +
+        'ready-for-review PR. Fix: mark the PR ready for review, or run on a ' +
+        'non-draft PR.',
+    )
+  }
+}
+
+/**
  * List Bugbot review comments on a PR as structured findings.
  */
 export async function inventory(pr: number): Promise<readonly BugbotFinding[]> {
+  await assertNotDraft(pr)
   const { owner, repo } = await resolveOwnerRepo()
   const out = await gh([
     'api',

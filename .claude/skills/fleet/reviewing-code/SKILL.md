@@ -61,7 +61,7 @@ Invoke the skill; it authors the `Workflow` inline. The following knobs are pass
 
 | Var               | Default       | Effect                                         |
 | ----------------- | ------------- | ---------------------------------------------- |
-| `CODEX_MODEL`     | `gpt-5.4`     | Codex model when codex is the active backend   |
+| `CODEX_MODEL`     | `gpt-5.5`     | Codex model when codex is the active backend   |
 | `CODEX_REASONING` | `xhigh`       | Codex reasoning effort                         |
 | `CLAUDE_MODEL`    | `opus`        | Claude model when claude is the active backend |
 | `KIMI_MODEL`      | `kimi-latest` | Kimi model when kimi is the active backend     |

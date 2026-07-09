@@ -82,6 +82,7 @@ To check `already-fixed`: read `git log` on the PR branch since the comment's `c
 - **One commit per `real` finding.** Don't bundle. Conventional Commits: `fix(<scope>): address Bugbot finding on <file>:<line>`.
 - **Push after each fix; reply with the new commit SHA.** The reply cites the SHA, so the SHA must already be pushed.
 - **Propagate canonical fixes.** When the file lives under `.claude/hooks/`, `.claude/skills/`, or `.git-hooks/`, fix at `socket-wheelhouse/template/` first, then sync to consumers. Drifting fleet copies is the larger bug.
+- **Never run on a draft PR.** A draft is explicit WIP, not a review target. `inventory()` calls `assertNotDraft()` and throws before any fetch/reply/push, so every mode refuses a draft.
 
 ## When to use
 
