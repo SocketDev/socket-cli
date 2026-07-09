@@ -172,10 +172,15 @@ describe('cmd-organization', () => {
       const call = mockMeowWithSubcommands.mock.calls[0]
       const subcommands = call[0].subcommands
 
-      expect(subcommands.dependencies).toBe(cmdOrganizationDependencies)
-      expect(subcommands.list).toBe(cmdOrganizationList)
-      expect(subcommands.policy).toBe(cmdOrganizationPolicy)
-      expect(subcommands.quota).toBe(cmdOrganizationQuota)
+      // Reference-identity checks (=== inside the expect(actual) call): the
+      // routed subcommand must BE the imported src module instance, so the
+      // -stable alias (a different module instance) can't stand in here.
+      expect(subcommands.dependencies === cmdOrganizationDependencies).toBe(
+        true,
+      )
+      expect(subcommands.list === cmdOrganizationList).toBe(true)
+      expect(subcommands.policy === cmdOrganizationPolicy).toBe(true)
+      expect(subcommands.quota === cmdOrganizationQuota).toBe(true)
     })
   })
 

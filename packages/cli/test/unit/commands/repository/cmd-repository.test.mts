@@ -154,11 +154,14 @@ describe('cmd-repository', () => {
       const call = mockMeowWithSubcommands.mock.calls[0]
       const subcommands = call[0].subcommands
 
-      expect(subcommands.create).toBe(cmdRepositoryCreate)
-      expect(subcommands.view).toBe(cmdRepositoryView)
-      expect(subcommands.list).toBe(cmdRepositoryList)
-      expect(subcommands.del).toBe(cmdRepositoryDel)
-      expect(subcommands.update).toBe(cmdRepositoryUpdate)
+      // Reference-identity checks (=== inside the expect(actual) call): the
+      // routed subcommand must BE the imported src module instance, so the
+      // -stable alias (a different module instance) can't stand in here.
+      expect(subcommands.create === cmdRepositoryCreate).toBe(true)
+      expect(subcommands.view === cmdRepositoryView).toBe(true)
+      expect(subcommands.list === cmdRepositoryList).toBe(true)
+      expect(subcommands.del === cmdRepositoryDel).toBe(true)
+      expect(subcommands.update === cmdRepositoryUpdate).toBe(true)
     })
   })
 
