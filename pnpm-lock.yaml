@@ -557,6 +557,7 @@ overrides:
 patchedDependencies:
   '@npmcli/run-script@10.0.4': 65d59a7c4dd7b00f1c218cbcf97d78fe2f462f2e048de4a22b41bd70dbdefcdc
   '@sigstore/sign@4.1.0': cdf99454490d44e78fde33563611c0bf50da7f256a239c94d3eb7af6c7d205fa
+  '@socketsecurity/lib@6.0.9': 77e528cea0e080982c8939c554b1ae7c8f8d622f99e0b16ce4a3306285ce9ac6
   execa@2.1.0: e06dd2da266f9d3e4ac91468988bdc140c6ec1e5722f321960e1f61c83acb9fd
   execa@5.1.1: ee0e2217eadd7986ec585d2e684030a05ad958593a9b11affa002a14a5d46f77
   node-gyp@12.2.0: 140ba43d43d74f7d3577feb3f8a6efad544dbb0059784102b144a0e2daa437f9
@@ -654,10 +655,10 @@ importers:
         version: 1.0.25
       '@socketsecurity/lib':
         specifier: 6.0.9
-        version: 6.0.9(typescript@7.0.2)
+        version: 6.0.9(patch_hash=77e528cea0e080982c8939c554b1ae7c8f8d622f99e0b16ce4a3306285ce9ac6)(typescript@7.0.2)
       '@socketsecurity/lib-stable':
         specifier: npm:@socketsecurity/lib@6.0.9
-        version: '@socketsecurity/lib@6.0.9(typescript@7.0.2)'
+        version: '@socketsecurity/lib@6.0.9(patch_hash=77e528cea0e080982c8939c554b1ae7c8f8d622f99e0b16ce4a3306285ce9ac6)(typescript@7.0.2)'
       '@socketsecurity/registry':
         specifier: npm:@socketsecurity/registry@2.0.2
         version: 2.0.2(typescript@7.0.2)
@@ -1084,10 +1085,10 @@ importers:
         version: 0.34.49
       '@socketsecurity/lib':
         specifier: 6.0.9
-        version: 6.0.9(typescript@7.0.2)
+        version: 6.0.9(patch_hash=77e528cea0e080982c8939c554b1ae7c8f8d622f99e0b16ce4a3306285ce9ac6)(typescript@7.0.2)
       '@socketsecurity/lib-stable':
         specifier: npm:@socketsecurity/lib@6.0.9
-        version: '@socketsecurity/lib@6.0.9(typescript@7.0.2)'
+        version: '@socketsecurity/lib@6.0.9(patch_hash=77e528cea0e080982c8939c554b1ae7c8f8d622f99e0b16ce4a3306285ce9ac6)(typescript@7.0.2)'
       magic-string:
         specifier: 0.30.21
         version: 0.30.21
@@ -1144,10 +1145,10 @@ importers:
         version: 1.0.25
       '@socketsecurity/lib':
         specifier: 6.0.9
-        version: 6.0.9(typescript@7.0.2)
+        version: 6.0.9(patch_hash=77e528cea0e080982c8939c554b1ae7c8f8d622f99e0b16ce4a3306285ce9ac6)(typescript@7.0.2)
       '@socketsecurity/lib-stable':
         specifier: npm:@socketsecurity/lib@6.0.9
-        version: '@socketsecurity/lib@6.0.9(typescript@7.0.2)'
+        version: '@socketsecurity/lib@6.0.9(patch_hash=77e528cea0e080982c8939c554b1ae7c8f8d622f99e0b16ce4a3306285ce9ac6)(typescript@7.0.2)'
       '@socketsecurity/registry':
         specifier: npm:@socketsecurity/registry@2.0.2
         version: 2.0.2(typescript@7.0.2)
@@ -1273,7 +1274,7 @@ importers:
     dependencies:
       '@socketsecurity/lib':
         specifier: 6.0.9
-        version: 6.0.9(typescript@7.0.2)
+        version: 6.0.9(patch_hash=77e528cea0e080982c8939c554b1ae7c8f8d622f99e0b16ce4a3306285ce9ac6)(typescript@7.0.2)
       build-infra:
         specifier: workspace:*
         version: link:../build-infra
@@ -6708,7 +6709,7 @@ snapshots:
     dependencies:
       yoctocolors-cjs: 2.1.3
 
-  '@socketsecurity/lib@6.0.9(typescript@7.0.2)':
+  '@socketsecurity/lib@6.0.9(patch_hash=77e528cea0e080982c8939c554b1ae7c8f8d622f99e0b16ce4a3306285ce9ac6)(typescript@7.0.2)':
     optionalDependencies:
       typescript: 7.0.2
 
