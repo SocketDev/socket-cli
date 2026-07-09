@@ -44,7 +44,8 @@
  * - Src/util/config.mts - Config management utilities
  */
 
-import semver from '@socketsecurity/lib-stable/external/semver'
+// socket-lint: allow bare-semver -- lib-stable 6.0.9 doesn't publish ./external/semver; semver is a devDep in tests so no runtime dep leaks.
+import semver from 'semver'
 import { describe, expect } from 'vitest'
 
 import { getNodeVersion } from '@socketsecurity/lib-stable/constants/node'

@@ -17,7 +17,7 @@
  * identical across repos.
  */
 
-import crypto from 'node:crypto'
+import { createHash } from 'node:crypto'
 import { existsSync, promises as fs, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'

@@ -16,7 +16,8 @@
 
 import https from 'node:https'
 
-import semver from '@socketsecurity/lib-stable/external/semver'
+// socket-lint: allow bare-semver -- lib-stable 6.0.9 doesn't publish ./external/semver; semver is bundled at build so no runtime dep leaks.
+import semver from 'semver'
 
 import { NPM_REGISTRY_URL } from '@socketsecurity/lib-stable/constants/agents'
 import { debug } from '@socketsecurity/lib-stable/debug/output'

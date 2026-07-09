@@ -1,6 +1,7 @@
 import path from 'node:path'
 
-import semver from '@socketsecurity/lib-stable/external/semver'
+// socket-lint: allow bare-semver -- lib-stable 6.0.9 doesn't publish ./external/semver; semver is bundled at build so no runtime dep leaks.
+import semver from 'semver'
 
 import { NPM, PNPM } from '@socketsecurity/lib-stable/constants/agents'
 import { hasOwn } from '@socketsecurity/lib-stable/objects/predicates'

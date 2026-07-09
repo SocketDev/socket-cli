@@ -22,7 +22,8 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import browserslist from 'browserslist'
-import semver from '@socketsecurity/lib-stable/external/semver'
+// socket-lint: allow bare-semver -- lib-stable 6.0.9 doesn't publish ./external/semver; semver is bundled at build so no runtime dep leaks.
+import semver from 'semver'
 
 import { whichReal } from '@socketsecurity/lib-stable/bin/which'
 import {
