@@ -66,7 +66,9 @@ const main = async (): Promise<number> => {
       stderr.write(
         `\n✗ Socket Firewall flagged ${pkgName}@${version} as malware (${alerts.length} alert(s)):\n`,
       )
-      for (const a of alerts.slice(0, 10)) {
+      const topAlerts = alerts.slice(0, 10)
+      for (let i = 0, { length } = topAlerts; i < length; i += 1) {
+        const a = topAlerts[i]!
         stderr.write(
           `    ${a.type ?? a.key ?? 'malware'}${a.severity ? ` (${a.severity})` : ''}\n`,
         )

@@ -76,6 +76,11 @@ jobs:
         with:
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
       - uses: ./.github/actions/fleet/run-script
+        env:
+          # Authenticate build-time GitHub API reads (release listings,
+          # prebuilt-artifact downloads). Unauthenticated calls share the
+          # hosted runner's IP-scoped rate limit and 403 under load.
+          GH_TOKEN: ${{ github.token }}
         with:
           setup-script: pnpm run build
           main-script: pnpm test
