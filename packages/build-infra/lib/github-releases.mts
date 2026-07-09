@@ -132,8 +132,9 @@ export async function getLatestRelease(
         // Accept both shapes.
         let releases
         try {
-          releases =
-            typeof response.body === 'string'
+          releases = Buffer.isBuffer(response.body)
+            ? JSON.parse(response.body.toString('utf8'))
+            : typeof response.body === 'string'
               ? JSON.parse(response.body)
               : response.body
         } catch (e) {
@@ -230,12 +231,14 @@ export async function getReleaseAssetUrl(
           throw new Error(`Failed to fetch release ${tag}: ${response.status}`)
         }
 
-        // See the releases-list parse above: `response.body` may be a parsed
-        // object or a raw string depending on the lib version. Accept both.
+        // See the releases-list parse above: `response.body` may be a Buffer,
+        // a raw string, or a parsed object depending on the lib version.
+        // Accept all three shapes.
         let release
         try {
-          release =
-            typeof response.body === 'string'
+          release = Buffer.isBuffer(response.body)
+            ? JSON.parse(response.body.toString('utf8'))
+            : typeof response.body === 'string'
               ? JSON.parse(response.body)
               : response.body
         } catch (e) {

@@ -174,7 +174,9 @@ export async function runPipeline(
         `Unknown --clean-stage=${flags.cleanStage}. Valid: ${stages.map(s => s.name).join(', ')}`,
       )
     }
-    for (const stage of stages.slice(idx)) {
+    const stagesToClean = stages.slice(idx)
+    for (let i = 0, { length } = stagesToClean; i < length; i += 1) {
+      const stage = stagesToClean[i]!
       const buildDir = resolveCheckpointBuildDir(stage, ctx)
       const markerDir = path.join(buildDir, 'checkpoints')
       for (const ext of ['.json', '.tar.gz', '.tar.gz.lock']) {
@@ -213,7 +215,9 @@ export async function runPipeline(
     logger.substep(`Starting from stage: ${flags.fromStage}`)
   }
 
-  for (const stage of stages.slice(startIdx)) {
+  const stagesToRun = stages.slice(startIdx)
+  for (let i = 0, { length } = stagesToRun; i < length; i += 1) {
+    const stage = stagesToRun[i]!
     await runStage(stage, ctx, {})
   }
 

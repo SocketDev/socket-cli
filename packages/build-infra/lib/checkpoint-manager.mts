@@ -237,7 +237,9 @@ export function hasCheckpoint(
 
 export function hashSourcePaths(sourcePaths: string[]) {
   const hash = crypto.createHash('sha256')
-  for (const file of [...sourcePaths].toSorted()) {
+  const sortedPaths = [...sourcePaths].toSorted()
+  for (let i = 0, { length } = sortedPaths; i < length; i += 1) {
+    const file = sortedPaths[i]!
     hash.update(`${file}:`)
     if (existsSync(file)) {
       try {

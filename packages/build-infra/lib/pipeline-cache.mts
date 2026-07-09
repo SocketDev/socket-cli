@@ -46,10 +46,14 @@ export function buildCacheKey({
   hash.update(`platformArch=${platformArch}`)
   hash.update(`mode=${buildMode}`)
   hash.update(`tools=${toolsHash}`)
-  for (const tool of Object.keys(toolVersions).toSorted()) {
+  const tools = Object.keys(toolVersions).toSorted()
+  for (let i = 0, { length } = tools; i < length; i += 1) {
+    const tool = tools[i]!
     hash.update(`${tool}@${toolVersions[tool]}`)
   }
-  for (const key of Object.keys(sources).toSorted()) {
+  const sourceKeys = Object.keys(sources).toSorted()
+  for (let i = 0, { length } = sourceKeys; i < length; i += 1) {
+    const key = sourceKeys[i]!
     const src = sources[key] ?? {}
     hash.update(
       `src:${key}=${src.version ?? ''}:${src.ref ?? ''}:${src.url ?? ''}`,
@@ -64,7 +68,9 @@ export function buildCacheKey({
 
 export function hashFileContents(files: string[]): string {
   const hash = crypto.createHash('sha256')
-  for (const file of files.toSorted()) {
+  const sortedFiles = files.toSorted()
+  for (let i = 0, { length } = sortedFiles; i < length; i += 1) {
+    const file = sortedFiles[i]!
     let content = Buffer.alloc(0)
     if (existsSync(file)) {
       try {
