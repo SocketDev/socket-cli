@@ -26,7 +26,7 @@
  * @module build-infra/lib/build-pipeline
  */
 
-import { createHash } from 'node:crypto'
+import crypto from 'node:crypto'
 import { existsSync, promises as fs, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -144,7 +144,7 @@ export function buildCacheKey({
   packageVersion,
   extraHash,
 }) {
-  const hash = createHash('sha256')
+  const hash = crypto.createHash('sha256')
   hash.update(`node=${nodeVersion}`)
   hash.update(`platformArch=${platformArch}`)
   hash.update(`mode=${buildMode}`)
@@ -166,7 +166,7 @@ export function buildCacheKey({
 }
 
 export function hashFileContents(files) {
-  const hash = createHash('sha256')
+  const hash = crypto.createHash('sha256')
   for (const file of files.toSorted()) {
     let content = Buffer.alloc(0)
     if (existsSync(file)) {
@@ -197,7 +197,7 @@ export async function loadExternalTools(packageRoot) {
   for (const [tool, meta] of Object.entries(data.tools ?? {})) {
     versions[tool] = meta?.version ?? ''
   }
-  const rawHash = createHash('sha256')
+  const rawHash = crypto.createHash('sha256')
     .update(JSON.stringify(data))
     .digest('hex')
     .slice(0, 16)
@@ -443,15 +443,15 @@ export async function runPipelineCli(options) {
 }
 
 export async function runStage(stage, ctx, stageParams) {
-  const { buildMode, forceRebuild, logger } = ctx
+  const { buildMode, forceRebuild, logger: stageLogger } = ctx
 
   if (stage.skipInDev && buildMode === 'dev') {
-    logger.substep(`Skipping ${stage.name} (dev build)`)
+    stageLogger.substep(`Skipping ${stage.name} (dev build)`)
     return
   }
 
   if (typeof stage.skip === 'function' && stage.skip(ctx)) {
-    logger.substep(`Skipping ${stage.name} (skip predicate)`)
+    stageLogger.substep(`Skipping ${stage.name} (skip predicate)`)
     return
   }
 
@@ -482,11 +482,11 @@ export async function runStage(stage, ctx, stageParams) {
 
   if (!shouldProceed) {
     // oxlint-disable-next-line socket/no-status-emoji -- substep takes its own indent prefix; ✓ marks the cache-hit state.
-    logger.substep(`✓ ${stage.name} up-to-date (cached)`)
+    stageLogger.substep(`✓ ${stage.name} up-to-date (cached)`)
     return
   }
 
-  logger.step(`Running ${stage.name}`)
+  stageLogger.step(`Running ${stage.name}`)
   const result = (await stage.run(ctx, stageParams)) ?? {}
   const {
     artifactPath,

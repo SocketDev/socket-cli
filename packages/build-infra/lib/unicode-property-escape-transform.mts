@@ -148,6 +148,7 @@ export function escapeForStringLiteral(str: string) {
   return (
     str
       // Backslash must be doubled.
+      // oxlint-disable-next-line socket/prefer-normalize-path -- escapes a backslash for a JS string literal, not a path separator rewrite.
       .replace(/\\/g, '\\\\')
       // Escape quotes if needed (handled by keeping original quotes).
       .replace(/"/g, '\\"')

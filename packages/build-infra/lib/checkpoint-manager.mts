@@ -17,7 +17,7 @@
  * identical across repos.
  */
 
-import { createHash } from 'node:crypto'
+import crypto from 'node:crypto'
 import { existsSync, promises as fs, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -56,7 +56,7 @@ export function computeCacheHash(sourcePaths, options) {
   if (!sourcesHash && !platformHash) {
     return ''
   }
-  return createHash('sha256')
+  return crypto.createHash('sha256')
     .update(sourcesHash)
     .update('|')
     .update(platformHash)
@@ -178,7 +178,7 @@ export function hasCheckpoint(buildDir, packageName, name) {
 }
 
 export function hashSourcePaths(sourcePaths) {
-  const hash = createHash('sha256')
+  const hash = crypto.createHash('sha256')
   for (const file of [...sourcePaths].toSorted()) {
     hash.update(`${file}:`)
     if (existsSync(file)) {
@@ -211,7 +211,7 @@ export function platformCacheKey({
   if (!parts.length) {
     return ''
   }
-  return createHash('sha256').update(parts.join('|')).digest('hex').slice(0, 16)
+  return crypto.createHash('sha256').update(parts.join('|')).digest('hex').slice(0, 16)
 }
 
 /**
@@ -235,10 +235,7 @@ export async function shouldRun(
 
   // Only validate hash if the caller provided inputs or platform metadata.
   const wantsValidation =
-    (sourcePaths?.length) ||
-    options.buildMode ||
-    options.platform ||
-    options.arch
+    sourcePaths?.length || options.buildMode || options.platform || options.arch
 
   if (!wantsValidation) {
     return false

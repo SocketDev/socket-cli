@@ -5,6 +5,7 @@
 import path from 'node:path'
 
 import { createTtlCache } from '@socketsecurity/lib-stable/cache/ttl/store'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
 import { httpDownload } from '@socketsecurity/lib-stable/http-request/download'
 import { httpRequest } from '@socketsecurity/lib-stable/http-request/request'
@@ -137,7 +138,7 @@ export async function getLatestRelease(
               : response.body
         } catch (e) {
           throw new Error(
-            `Failed to parse GitHub API response: ${e instanceof Error ? e.message : String(e)}`,
+            `Failed to parse GitHub API response: ${errorMessage(e)}`,
           )
         }
 
@@ -239,7 +240,7 @@ export async function getReleaseAssetUrl(
               : response.body
         } catch (e) {
           throw new Error(
-            `Failed to parse GitHub release ${tag}: ${e instanceof Error ? e.message : String(e)}`,
+            `Failed to parse GitHub release ${tag}: ${errorMessage(e)}`,
           )
         }
 
