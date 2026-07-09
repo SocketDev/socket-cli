@@ -20,6 +20,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdThreatFeed } from '../../../../src/commands/threat-feed/cmd-threat-feed.mts'
+
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 import type * as SdkModule from '../../../../src/util/socket/sdk.mjs'
 
@@ -69,10 +71,6 @@ vi.mock(import('../../../../src/util/socket/sdk.mjs'), async importOriginal => {
     hasDefaultApiToken: mockHasDefaultApiToken,
   }
 })
-
-// Import after mocks.
-const { cmdThreatFeed } =
-  await import('../../../../src/commands/threat-feed/cmd-threat-feed.mts')
 
 describe('cmd-threat-feed', () => {
   beforeEach(() => {

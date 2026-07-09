@@ -29,6 +29,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdMcp } from '../../../../src/commands/mcp/cmd-mcp.mts'
+
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 import type * as WithSubcommandsModule from '../../../../src/util/cli/with-subcommands.mjs'
 
@@ -112,8 +114,6 @@ vi.mock(
     }
   },
 )
-
-const { cmdMcp } = await import('../../../../src/commands/mcp/cmd-mcp.mts')
 
 const importMeta = { url: 'file:///test/cmd-mcp.mts' }
 const context = { parentName: 'socket' }

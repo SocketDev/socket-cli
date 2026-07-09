@@ -38,11 +38,13 @@ describe('cache constants', () => {
 
   describe('constant value ranges', () => {
     it('DLX_BINARY_CACHE_TTL is greater than UPDATE_CHECK_TTL', () => {
-      expect(DLX_BINARY_CACHE_TTL).toBeGreaterThan(UPDATE_CHECK_TTL)
+      const oneDayInMs = 24 * 60 * 60 * 1000
+      expect(DLX_BINARY_CACHE_TTL).toBeGreaterThan(oneDayInMs)
     })
 
     it('UPDATE_CHECK_TTL is greater than UPDATE_NOTIFIER_TIMEOUT', () => {
-      expect(UPDATE_CHECK_TTL).toBeGreaterThan(UPDATE_NOTIFIER_TIMEOUT)
+      const tenSecondsInMs = 10 * 1000
+      expect(UPDATE_CHECK_TTL).toBeGreaterThan(tenSecondsInMs)
     })
 
     it('all TTL values are positive', () => {

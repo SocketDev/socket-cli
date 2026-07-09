@@ -298,6 +298,8 @@ describe('debug utilities', () => {
     })
 
     it('handles all operation types', () => {
+      mockIsDebugNs.mockReturnValue(false)
+
       const operations: Array<'read' | 'write' | 'delete' | 'create'> = [
         'read',
         'write',
@@ -308,8 +310,9 @@ describe('debug utilities', () => {
       for (let i = 0, { length } = operations; i < length; i += 1) {
         const op = operations[i]
         debugFileOp(op, `/path/${op}`)
-        // No errors expected.
       }
+
+      expect(debugNs).not.toHaveBeenCalled()
     })
   })
 

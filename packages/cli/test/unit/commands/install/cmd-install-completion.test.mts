@@ -8,6 +8,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdInstallCompletion } from '../../../../src/commands/install/cmd-install-completion.mts'
+
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -38,10 +40,6 @@ vi.mock(
 vi.mock(import('../../../../src/util/dry-run/output.mts'), () => ({
   outputDryRunWrite: mockOutputDryRunWrite,
 }))
-
-// Import after mocks.
-const { cmdInstallCompletion } =
-  await import('../../../../src/commands/install/cmd-install-completion.mts')
 
 describe('cmd-install-completion', () => {
   const originalEnv = process.env

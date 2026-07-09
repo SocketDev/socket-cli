@@ -39,6 +39,13 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import {
+  DEPSCORE_TOOL_DESCRIPTION,
+  DEPSCORE_TOOL_NAME,
+  DepscoreInputSchema,
+  runDepscore,
+} from '../../../../src/commands/mcp/depscore.mts'
+
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 
 const mockLogger = vi.hoisted(() => ({
@@ -70,13 +77,6 @@ vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
   setupSdk: mockSetupSdk,
   getDefaultApiToken: vi.fn(() => 'test_fake_token'),
 }))
-
-const {
-  DEPSCORE_TOOL_DESCRIPTION,
-  DEPSCORE_TOOL_NAME,
-  DepscoreInputSchema,
-  runDepscore,
-} = await import('../../../../src/commands/mcp/depscore.mts')
 
 function makeErr(status: number, message: string, cause?: string) {
   return {

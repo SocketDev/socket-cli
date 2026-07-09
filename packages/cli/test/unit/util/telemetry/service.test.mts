@@ -137,11 +137,13 @@ describe('TelemetryService', () => {
       const client3 = await TelemetryService.getTelemetryClient('test-org')
 
       // Track event - this should work since we have a fresh instance.
-      client3.track({
-        event_sender_created_at: new Date().toISOString(),
-        event_type: 'test_event',
-        context: {},
-      })
+      expect(() => {
+        client3.track({
+          event_sender_created_at: new Date().toISOString(),
+          event_type: 'test_event',
+          context: {},
+        })
+      }).not.toThrow()
 
       // The event tracking itself succeeds.
       await client3.destroy()

@@ -129,7 +129,7 @@ describe('cli/completion', () => {
       if (result.ok) {
         expect(result.data.targetName).toBe('socket')
         expect(result.data.completionCommand).toBe(
-          `${COMPLETION_CMD_PREFIX} socket`,
+          'complete -F _socket_completion socket',
         )
         expect(result.data.toAddToBashrc).toContain('Socket CLI completion')
         expect(result.data.toAddToBashrc).toContain('socket')
@@ -159,7 +159,7 @@ describe('cli/completion', () => {
       if (result.ok) {
         expect(result.data.targetName).toBe('socket-npm')
         expect(result.data.completionCommand).toBe(
-          `${COMPLETION_CMD_PREFIX} socket-npm`,
+          'complete -F _socket_completion socket-npm',
         )
         expect(result.data.toAddToBashrc).toContain('socket-npm')
       }

@@ -46,9 +46,9 @@ describe('github constants', () => {
     })
 
     it('all PR states are uppercase', () => {
-      expect(GQL_PR_STATE_CLOSED).toBe(GQL_PR_STATE_CLOSED.toUpperCase())
-      expect(GQL_PR_STATE_MERGED).toBe(GQL_PR_STATE_MERGED.toUpperCase())
-      expect(GQL_PR_STATE_OPEN).toBe(GQL_PR_STATE_OPEN.toUpperCase())
+      expect(GQL_PR_STATE_CLOSED).toMatch(/^[A-Z]+$/)
+      expect(GQL_PR_STATE_MERGED).toMatch(/^[A-Z]+$/)
+      expect(GQL_PR_STATE_OPEN).toMatch(/^[A-Z]+$/)
     })
   })
 

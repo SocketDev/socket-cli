@@ -9,6 +9,8 @@ import path from 'node:path'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdManifestKotlin } from '../../../../src/commands/manifest/cmd-manifest-kotlin.mts'
+
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 
 // Mock the logger.
@@ -60,10 +62,6 @@ vi.mock(
 vi.mock(import('../../../../src/util/socket/json.mts'), () => ({
   readOrDefaultSocketJson: mockReadOrDefaultSocketJson,
 }))
-
-// Import after mocks.
-const { cmdManifestKotlin } =
-  await import('../../../../src/commands/manifest/cmd-manifest-kotlin.mts')
 
 describe('cmd-manifest-kotlin', () => {
   beforeEach(() => {

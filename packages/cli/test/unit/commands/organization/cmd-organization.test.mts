@@ -6,6 +6,14 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdOrganization } from '../../../../src/commands/organization/cmd-organization.mts'
+import { cmdOrganizationDependencies } from '../../../../src/commands/organization/cmd-organization-dependencies.mts'
+import { cmdOrganizationList } from '../../../../src/commands/organization/cmd-organization-list.mts'
+import { cmdOrganizationPolicy } from '../../../../src/commands/organization/cmd-organization-policy.mts'
+import { cmdOrganizationPolicyLicense } from '../../../../src/commands/organization/cmd-organization-policy-license.mts'
+import { cmdOrganizationPolicySecurity } from '../../../../src/commands/organization/cmd-organization-policy-security.mts'
+import { cmdOrganizationQuota } from '../../../../src/commands/organization/cmd-organization-quota.mts'
+
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
   fail: vi.fn(),
@@ -24,22 +32,6 @@ const mockMeowWithSubcommands = vi.hoisted(() => vi.fn())
 vi.mock(import('../../../../src/util/cli/with-subcommands.mts'), () => ({
   meowWithSubcommands: mockMeowWithSubcommands,
 }))
-
-// Import after mocks.
-const { cmdOrganization } =
-  await import('../../../../src/commands/organization/cmd-organization.mts')
-const { cmdOrganizationDependencies } =
-  await import('../../../../src/commands/organization/cmd-organization-dependencies.mts')
-const { cmdOrganizationList } =
-  await import('../../../../src/commands/organization/cmd-organization-list.mts')
-const { cmdOrganizationPolicy } =
-  await import('../../../../src/commands/organization/cmd-organization-policy.mts')
-const { cmdOrganizationPolicyLicense } =
-  await import('../../../../src/commands/organization/cmd-organization-policy-license.mts')
-const { cmdOrganizationPolicySecurity } =
-  await import('../../../../src/commands/organization/cmd-organization-policy-security.mts')
-const { cmdOrganizationQuota } =
-  await import('../../../../src/commands/organization/cmd-organization-quota.mts')
 
 describe('cmd-organization', () => {
   beforeEach(() => {

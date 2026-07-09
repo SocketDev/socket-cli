@@ -33,6 +33,8 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js'
 
+import { createConfiguredServer } from '../../../../src/commands/mcp/server.mts'
+
 import type * as DepscoreModule from '../../../../src/commands/mcp/depscore.mts'
 
 const { mockRunDepscore } = vi.hoisted(() => ({
@@ -49,9 +51,6 @@ vi.mock(
     }
   },
 )
-
-const { createConfiguredServer } =
-  await import('../../../../src/commands/mcp/server.mts')
 
 // Helper: invoke a handler from the underlying SDK Server. The SDK
 // exposes `.setRequestHandler` but not a public `.handle(...)`, so we

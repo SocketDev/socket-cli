@@ -1,5 +1,11 @@
 /* max-file-lines: test — comprehensive test suite for one command/module; splitting would fragment closely related assertions. */
+import * as binModule from '@socketsecurity/lib-stable/bin/which'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { cmdPip } from '../../../../src/commands/pip/cmd-pip.mts'
+import * as meowModule from '../../../../src/util/cli/with-subcommands.mjs'
+import * as spawnModule from '../../../../src/util/dlx/spawn.mts'
+import * as cmdModule from '../../../../src/util/process/cmd.mts'
 
 import type { CliCommandContext } from '../../../../src/util/cli/with-subcommands.mts'
 
@@ -19,13 +25,6 @@ vi.mock(import('../../../../src/util/process/cmd.mts'), () => ({
 vi.mock(import('../../../../src/util/cli/with-subcommands.mjs'), () => ({
   meowOrExit: vi.fn(),
 }))
-
-// Import modules after mocks are set up.
-const { cmdPip } = await import('../../../../src/commands/pip/cmd-pip.mts')
-const binModule = await import('@socketsecurity/lib-stable/bin/which')
-const spawnModule = await import('../../../../src/util/dlx/spawn.mts')
-const cmdModule = await import('../../../../src/util/process/cmd.mts')
-const meowModule = await import('../../../../src/util/cli/with-subcommands.mjs')
 
 const mockWhichReal = vi.mocked(binModule.whichReal)
 const mockSpawnSfwDlx = vi.mocked(spawnModule.spawnSfwDlx)

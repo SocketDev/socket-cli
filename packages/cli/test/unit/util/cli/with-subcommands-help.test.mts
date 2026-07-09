@@ -100,6 +100,9 @@ function rootSubcommands(): Record<string, CliSubcommand> {
  * Bucket assignments mirroring `rootCommandBuckets` in src/commands.mts. Tests
  * pass this through `buildHelpLines`.
  */
+// socket-lint: allow object-property-order -- mirrors the bucket grouping
+// (main/api/tools/config) in src/commands.mts; alphabetizing would scatter
+// the buckets and defeat the point of the comparison.
 const ROOT_BUCKETS: CliBuckets = {
   // main.
   fix: 'main',

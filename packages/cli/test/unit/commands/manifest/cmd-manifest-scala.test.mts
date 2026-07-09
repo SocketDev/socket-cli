@@ -7,6 +7,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdManifestScala } from '../../../../src/commands/manifest/cmd-manifest-scala.mts'
+
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 
 // Mock the logger.
@@ -58,10 +60,6 @@ vi.mock(
 vi.mock(import('../../../../src/util/socket/json.mts'), () => ({
   readOrDefaultSocketJson: mockReadOrDefaultSocketJson,
 }))
-
-// Import after mocks.
-const { cmdManifestScala } =
-  await import('../../../../src/commands/manifest/cmd-manifest-scala.mts')
 
 describe('cmd-manifest-scala', () => {
   beforeEach(() => {

@@ -6,6 +6,18 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdScan } from '../../../../src/commands/scan/cmd-scan.mts'
+import { cmdScanCreate } from '../../../../src/commands/scan/cmd-scan-create.mts'
+import { cmdScanDel } from '../../../../src/commands/scan/cmd-scan-del.mts'
+import { cmdScanDiff } from '../../../../src/commands/scan/cmd-scan-diff.mts'
+import { cmdScanGithub } from '../../../../src/commands/scan/cmd-scan-github.mts'
+import { cmdScanList } from '../../../../src/commands/scan/cmd-scan-list.mts'
+import { cmdScanMetadata } from '../../../../src/commands/scan/cmd-scan-metadata.mts'
+import { cmdScanReach } from '../../../../src/commands/scan/cmd-scan-reach.mts'
+import { cmdScanReport } from '../../../../src/commands/scan/cmd-scan-report.mts'
+import { cmdScanSetup } from '../../../../src/commands/scan/cmd-scan-setup.mts'
+import { cmdScanView } from '../../../../src/commands/scan/cmd-scan-view.mts'
+
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
   fail: vi.fn(),
@@ -24,29 +36,6 @@ const mockMeowWithSubcommands = vi.hoisted(() => vi.fn())
 vi.mock(import('../../../../src/util/cli/with-subcommands.mts'), () => ({
   meowWithSubcommands: mockMeowWithSubcommands,
 }))
-
-// Import after mocks.
-const { cmdScan } = await import('../../../../src/commands/scan/cmd-scan.mts')
-const { cmdScanCreate } =
-  await import('../../../../src/commands/scan/cmd-scan-create.mts')
-const { cmdScanDel } =
-  await import('../../../../src/commands/scan/cmd-scan-del.mts')
-const { cmdScanDiff } =
-  await import('../../../../src/commands/scan/cmd-scan-diff.mts')
-const { cmdScanGithub } =
-  await import('../../../../src/commands/scan/cmd-scan-github.mts')
-const { cmdScanList } =
-  await import('../../../../src/commands/scan/cmd-scan-list.mts')
-const { cmdScanMetadata } =
-  await import('../../../../src/commands/scan/cmd-scan-metadata.mts')
-const { cmdScanReach } =
-  await import('../../../../src/commands/scan/cmd-scan-reach.mts')
-const { cmdScanReport } =
-  await import('../../../../src/commands/scan/cmd-scan-report.mts')
-const { cmdScanSetup } =
-  await import('../../../../src/commands/scan/cmd-scan-setup.mts')
-const { cmdScanView } =
-  await import('../../../../src/commands/scan/cmd-scan-view.mts')
 
 describe('cmd-scan', () => {
   beforeEach(() => {

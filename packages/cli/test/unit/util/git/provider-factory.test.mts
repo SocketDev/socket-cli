@@ -20,6 +20,11 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import {
+  createPrProvider,
+  getGitRemoteUrlSync,
+} from '../../../../src/util/git/provider-factory.mts'
+
 const { mockSpawnSync } = vi.hoisted(() => ({ mockSpawnSync: vi.fn() }))
 
 vi.mock(import('@socketsecurity/lib-stable/process/spawn/child'), () => ({
@@ -37,9 +42,6 @@ vi.mock(import('../../../../src/util/git/gitlab-provider.mts'), () => ({
     readonly kind = 'gitlab' as const
   },
 }))
-
-const { createPrProvider, getGitRemoteUrlSync } =
-  await import('../../../../src/util/git/provider-factory.mts')
 
 const savedGitlabHost = process.env['GITLAB_HOST']
 

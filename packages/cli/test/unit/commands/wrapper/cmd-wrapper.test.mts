@@ -6,6 +6,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdWrapper } from '../../../../src/commands/wrapper/cmd-wrapper.mts'
+
 import type * as FsModule from 'node:fs'
 import type * as PathsModule from '../../../../src/constants/paths.mts'
 
@@ -86,10 +88,6 @@ vi.mock(import('../../../../src/constants/paths.mts'), async importOriginal => {
     getZshRcPath: mockGetZshRcPath,
   }
 })
-
-// Import after mocks.
-const { cmdWrapper } =
-  await import('../../../../src/commands/wrapper/cmd-wrapper.mts')
 
 describe('cmd-wrapper', () => {
   beforeEach(() => {

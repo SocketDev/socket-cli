@@ -7,6 +7,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdPackageShallow } from '../../../../src/commands/package/cmd-package-shallow.mts'
+
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 
 // Mock the logger.
@@ -39,10 +41,6 @@ vi.mock(
     handlePurlsShallowScore: mockHandlePurlsShallowScore,
   }),
 )
-
-// Import after mocks.
-const { cmdPackageShallow } =
-  await import('../../../../src/commands/package/cmd-package-shallow.mts')
 
 describe('cmd-package-shallow', () => {
   beforeEach(() => {

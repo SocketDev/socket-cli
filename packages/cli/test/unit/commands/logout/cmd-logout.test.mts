@@ -6,6 +6,11 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import {
+  CMD_NAME,
+  cmdLogout,
+} from '../../../../src/commands/logout/cmd-logout.mts'
+
 import type * as ConfigModule from '../../../../src/util/config.mts'
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 import type * as WithSubcommandsModule from '../../../../src/util/cli/with-subcommands.mjs'
@@ -94,10 +99,6 @@ vi.mock(
     }
   },
 )
-
-// Import after mocks.
-const { cmdLogout, CMD_NAME } =
-  await import('../../../../src/commands/logout/cmd-logout.mts')
 
 describe('cmd-logout', () => {
   beforeEach(() => {

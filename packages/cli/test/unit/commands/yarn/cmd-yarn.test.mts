@@ -11,7 +11,10 @@
  * Subprocess spawning and exit handling - Telemetry tracking - Error handling.
  */
 
+import { YARN } from '@socketsecurity/lib-stable/constants/agents'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { cmdYarn } from '../../../../src/commands/yarn/cmd-yarn.mts'
 
 import type { EventEmitter } from 'node:events'
 
@@ -44,10 +47,6 @@ vi.mock(import('../../../../src/util/telemetry/integration.mts'), () => ({
   trackSubprocessExit: mockTrackSubprocessExit,
   trackSubprocessStart: mockTrackSubprocessStart,
 }))
-
-// Import after mocks.
-const { cmdYarn } = await import('../../../../src/commands/yarn/cmd-yarn.mts')
-const { YARN } = await import('@socketsecurity/lib-stable/constants/agents')
 
 describe('cmd-yarn', () => {
   interface MockChildProcess extends Partial<EventEmitter> {

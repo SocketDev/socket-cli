@@ -84,7 +84,7 @@ describe('socket constants', () => {
     })
 
     it('has TOKEN_PREFIX_LENGTH constant', () => {
-      expect(TOKEN_PREFIX_LENGTH).toBe(TOKEN_PREFIX.length)
+      expect(TOKEN_PREFIX_LENGTH).toBe('sktsec_'.length)
       expect(TOKEN_PREFIX_LENGTH).toBe(7)
     })
   })

@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdSfw } from '../../../../src/commands/sfw/cmd-sfw.mts'
+
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -20,9 +22,6 @@ const mockSpawnSfw = vi.hoisted(() => vi.fn())
 vi.mock(import('../../../../src/util/dlx/spawn.mts'), () => ({
   spawnSfw: mockSpawnSfw,
 }))
-
-// Import after mocks.
-const { cmdSfw } = await import('../../../../src/commands/sfw/cmd-sfw.mts')
 
 describe('cmd-sfw', () => {
   const mockChildProcess = {

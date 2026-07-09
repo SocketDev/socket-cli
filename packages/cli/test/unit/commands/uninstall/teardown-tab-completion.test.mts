@@ -24,6 +24,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { teardownTabCompletion } from '../../../../src/commands/uninstall/teardown-tab-completion.mts'
+
 const { mockExistsSync, mockReadFileSync, mockWriteFileSync } = vi.hoisted(
   () => ({
     mockExistsSync: vi.fn(),
@@ -61,9 +63,6 @@ vi.mock(import('../../../../src/constants/paths.mts'), () => ({
     return mockHomePath.value
   },
 }))
-
-const { teardownTabCompletion } =
-  await import('../../../../src/commands/uninstall/teardown-tab-completion.mts')
 
 const validDetails = {
   data: {

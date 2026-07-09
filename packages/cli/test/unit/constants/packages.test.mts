@@ -185,7 +185,7 @@ describe('packages constants', () => {
     })
 
     it('has SOCKET_DESCRIPTION_WITH_SENTRY constant', () => {
-      expect(SOCKET_DESCRIPTION_WITH_SENTRY).toContain(SOCKET_DESCRIPTION)
+      expect(SOCKET_DESCRIPTION_WITH_SENTRY).toContain('CLI for Socket.dev')
       expect(SOCKET_DESCRIPTION_WITH_SENTRY).toContain('Sentry')
     })
   })

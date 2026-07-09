@@ -37,6 +37,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { performReachabilityAnalysis } from '../../../../src/commands/scan/perform-reachability-analysis.mts'
+
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 
 const {
@@ -115,9 +117,6 @@ vi.mock(
     }
   },
 )
-
-const { performReachabilityAnalysis } =
-  await import('../../../../src/commands/scan/perform-reachability-analysis.mts')
 
 const enterpriseOrgs = {
   data: {

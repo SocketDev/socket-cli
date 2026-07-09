@@ -6,6 +6,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdManifestConda } from '../../../../src/commands/manifest/cmd-manifest-conda.mts'
+
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -42,10 +44,6 @@ vi.mock(
 vi.mock(import('../../../../src/util/socket/json.mts'), () => ({
   readOrDefaultSocketJson: mockReadOrDefaultSocketJson,
 }))
-
-// Import after mocks.
-const { cmdManifestConda } =
-  await import('../../../../src/commands/manifest/cmd-manifest-conda.mts')
 
 describe('cmd-manifest-conda', () => {
   beforeEach(() => {

@@ -450,9 +450,9 @@ describe('meow-with-subcommands', () => {
 
     it('returns "(env)" when SOCKET_API_TOKEN is set (line 52)', () => {
       const originalNo = process.env['SOCKET_CLI_NO_API_TOKEN']
-      const original = process.env['SOCKET_API_TOKEN']
+      const original = process.env['SOCKET_API_TOKEN'] // socket-api-token-getter: allow direct-env -- test bootstrap; saves the ambient token to restore after simulating the (env) source.
       delete process.env['SOCKET_CLI_NO_API_TOKEN']
-      process.env['SOCKET_API_TOKEN'] = 'sktsec_test_xxxxxxxxxxxx'
+      process.env['SOCKET_API_TOKEN'] = 'sktsec_test_xxxxxxxxxxxx' // socket-api-token-getter: allow direct-env -- test bootstrap; simulates the env-sourced token getTokenOrigin() must detect.
       try {
         const result = getTokenOrigin()
         expect(result).toBe('(env)')
@@ -461,9 +461,9 @@ describe('meow-with-subcommands', () => {
           process.env['SOCKET_CLI_NO_API_TOKEN'] = originalNo
         }
         if (original === undefined) {
-          delete process.env['SOCKET_API_TOKEN']
+          delete process.env['SOCKET_API_TOKEN'] // socket-api-token-getter: allow direct-env -- test teardown; restores the ambient token env state.
         } else {
-          process.env['SOCKET_API_TOKEN'] = original
+          process.env['SOCKET_API_TOKEN'] = original // socket-api-token-getter: allow direct-env -- test teardown; restores the ambient token env state.
         }
       }
     })
@@ -808,8 +808,8 @@ describe('meow-with-subcommands', () => {
       // commands.delete loop empties the Set and the
       // `if (commands.size)` failure-message branch (lines 700-711)
       // is skipped, exercising the `lines.push` block (lines 712-750).
-      const stub = (description: string) => ({
-        description,
+      const stub = (cmdDescription: string) => ({
+        description: cmdDescription,
         run: vi.fn(async () => undefined),
       })
       const subcommands = {
@@ -1037,9 +1037,9 @@ describe('meow-with-subcommands', () => {
 
     it('applies SOCKET_API_TOKEN override (line 362)', async () => {
       const originalNoToken = process.env['SOCKET_CLI_NO_API_TOKEN']
-      const originalToken = process.env['SOCKET_API_TOKEN']
+      const originalToken = process.env['SOCKET_API_TOKEN'] // socket-api-token-getter: allow direct-env -- test bootstrap; saves the ambient token to restore after simulating the override.
       delete process.env['SOCKET_CLI_NO_API_TOKEN']
-      process.env['SOCKET_API_TOKEN'] = 'sktsec_test_xxxxxxxxxxxx'
+      process.env['SOCKET_API_TOKEN'] = 'sktsec_test_xxxxxxxxxxxx' // socket-api-token-getter: allow direct-env -- test bootstrap; simulates the env-sourced token override under test.
       const runSpy = vi.fn(async () => undefined)
       const subcommands = {
         scan: {
@@ -1063,9 +1063,9 @@ describe('meow-with-subcommands', () => {
           process.env['SOCKET_CLI_NO_API_TOKEN'] = originalNoToken
         }
         if (originalToken === undefined) {
-          delete process.env['SOCKET_API_TOKEN']
+          delete process.env['SOCKET_API_TOKEN'] // socket-api-token-getter: allow direct-env -- test teardown; restores the ambient token env state.
         } else {
-          process.env['SOCKET_API_TOKEN'] = originalToken
+          process.env['SOCKET_API_TOKEN'] = originalToken // socket-api-token-getter: allow direct-env -- test teardown; restores the ambient token env state.
         }
       }
     })

@@ -7,6 +7,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdPackageScore } from '../../../../src/commands/package/cmd-package-score.mts'
+
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 import type * as SdkModule from '../../../../src/util/socket/sdk.mjs'
 
@@ -49,10 +51,6 @@ vi.mock(import('../../../../src/util/socket/sdk.mjs'), async importOriginal => {
     hasDefaultApiToken: mockHasDefaultApiToken,
   }
 })
-
-// Import after mocks.
-const { cmdPackageScore } =
-  await import('../../../../src/commands/package/cmd-package-score.mts')
 
 describe('cmd-package-score', () => {
   beforeEach(() => {

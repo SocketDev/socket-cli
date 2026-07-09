@@ -10,7 +10,10 @@
  * Subprocess spawning and exit handling - Telemetry tracking - Error handling.
  */
 
+import { NPX } from '@socketsecurity/lib-stable/constants/agents'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { cmdNpx } from '../../../../src/commands/npx/cmd-npx.mts'
 
 import type { EventEmitter } from 'node:events'
 
@@ -43,10 +46,6 @@ vi.mock(import('../../../../src/util/telemetry/integration.mts'), () => ({
   trackSubprocessExit: mockTrackSubprocessExit,
   trackSubprocessStart: mockTrackSubprocessStart,
 }))
-
-// Import after mocks.
-const { cmdNpx } = await import('../../../../src/commands/npx/cmd-npx.mts')
-const { NPX } = await import('@socketsecurity/lib-stable/constants/agents')
 
 describe('cmd-npx', () => {
   interface MockChildProcess extends Partial<EventEmitter> {

@@ -16,6 +16,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdManifest } from '../../../../src/commands/manifest/cmd-manifest.mts'
+
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -92,10 +94,6 @@ vi.mock(
     cmdManifestSetup: { description: 'Setup manifest config', hidden: false },
   }),
 )
-
-// Import after mocks.
-const { cmdManifest } =
-  await import('../../../../src/commands/manifest/cmd-manifest.mts')
 
 describe('cmd-manifest', () => {
   beforeEach(() => {

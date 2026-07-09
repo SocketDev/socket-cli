@@ -79,7 +79,10 @@ describe('fetchDeleteOrgFullScan', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { mockSetupSdk } = await setupSdkMockSuccess('deleteFullScan', {})
+    const { mockSetupSdk: mockSetupSdkForCall } = await setupSdkMockSuccess(
+      'deleteFullScan',
+      {},
+    )
 
     const sdkOpts = {
       apiToken: 'custom-token',
@@ -88,7 +91,7 @@ describe('fetchDeleteOrgFullScan', () => {
 
     await fetchDeleteOrgFullScan('org', 'scan', { sdkOpts })
 
-    expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts)
+    expect(mockSetupSdkForCall).toHaveBeenCalledWith(sdkOpts)
   })
 
   it('handles different org slugs and scan IDs', async () => {

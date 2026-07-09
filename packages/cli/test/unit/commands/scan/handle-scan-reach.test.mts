@@ -16,6 +16,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { handleScanReach } from '../../../../src/commands/scan/handle-scan-reach.mts'
 import {
   createErrorResult,
   createSuccessResult,
@@ -86,9 +87,6 @@ vi.mock(import('../../../../src/util/validation/check-input.mts'), () => ({
 vi.mock(import('../../../../src/util/fs/path-resolve.mjs'), () => ({
   getPackageFilesForScan: mockGetPackageFilesForScan,
 }))
-
-const { handleScanReach } =
-  await import('../../../../src/commands/scan/handle-scan-reach.mts')
 
 describe('handleScanReach', () => {
   beforeEach(() => {

@@ -723,6 +723,10 @@ describe('util/dlx/vfs-extract', () => {
         } finally {
           ;(process as { kill: unknown }).kill = realKill
         }
+
+        // The missing-tool branch must have been hit exactly once, triggering
+        // the retry via recursion.
+        expect(toolMissCount).toBe(1)
       })
 
       it('hits the i % 5 === 4 cache-marker re-check branch', async () => {
@@ -760,6 +764,9 @@ describe('util/dlx/vfs-extract', () => {
         } finally {
           ;(process as { kill: unknown }).kill = realKill
         }
+
+        // The re-check must have observed the marker flip to true.
+        expect(existsCalls).toBeGreaterThanOrEqual(6)
       })
 
       it('hits the i % 5 === 4 dead-PID branch in wait loop', async () => {
@@ -919,6 +926,9 @@ describe('util/dlx/vfs-extract', () => {
         } finally {
           ;(process as { kill: unknown }).kill = realKill
         }
+
+        // The stillValid TOCTOU failure must have triggered the recursive retry.
+        expect(recursed).toBe(true)
       })
 
       it('post-loop final check: marker true and all tools present', async () => {

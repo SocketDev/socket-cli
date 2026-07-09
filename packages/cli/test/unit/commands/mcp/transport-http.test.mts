@@ -44,6 +44,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { httpRequest } from '@socketsecurity/lib-stable/http-request/request'
 
+import { runHttpTransport } from '../../../../src/commands/mcp/transport-http.mts'
+
 import type * as HttpModule from 'node:http'
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 import type * as NetModule from 'node:net'
@@ -74,9 +76,6 @@ vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
   setupSdk: mockSetupSdk,
   getDefaultApiToken: vi.fn(() => 'test_default'),
 }))
-
-const { runHttpTransport } =
-  await import('../../../../src/commands/mcp/transport-http.mts')
 
 // We boot a real http.Server and need to tear it down between tests.
 // runHttpTransport doesn't return a stop handle, so we discover the

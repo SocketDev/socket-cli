@@ -6,6 +6,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdUninstallCompletion } from '../../../../src/commands/uninstall/cmd-uninstall-completion.mts'
+
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -36,10 +38,6 @@ vi.mock(
 vi.mock(import('../../../../src/util/dry-run/output.mts'), () => ({
   outputDryRunDelete: mockOutputDryRunDelete,
 }))
-
-// Import after mocks.
-const { cmdUninstallCompletion } =
-  await import('../../../../src/commands/uninstall/cmd-uninstall-completion.mts')
 
 describe('cmd-uninstall-completion', () => {
   const originalExitCode = process.exitCode

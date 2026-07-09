@@ -25,6 +25,7 @@ import EventEmitter from 'node:events'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { setupTestEnvironment } from '../../../helpers/index.mts'
+import { cmdNuget } from '../../../../src/commands/nuget/cmd-nuget.mts'
 
 const mockSpawnSfwDlx = vi.hoisted(() => vi.fn())
 const mockMeowOrExit = vi.hoisted(() => vi.fn())
@@ -41,9 +42,6 @@ vi.mock(import('../../../../src/util/cli/with-subcommands.mjs'), () => ({
 vi.mock(import('../../../../src/util/process/cmd.mts'), () => ({
   filterFlags: mockFilterFlags,
 }))
-
-const { cmdNuget } =
-  await import('../../../../src/commands/nuget/cmd-nuget.mts')
 
 describe('cmd-nuget', () => {
   setupTestEnvironment()
@@ -81,7 +79,6 @@ describe('cmd-nuget', () => {
           unknownFlags: [],
         }
       })
-      const EventEmitter = (await import('node:events')).default
       const mockChildProcess = new EventEmitter()
       const mockSpawnPromise = Promise.resolve({
         code: 0,

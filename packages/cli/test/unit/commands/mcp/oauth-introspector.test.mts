@@ -23,6 +23,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { OAuthIntrospector } from '../../../../src/commands/mcp/transport-http-helpers.mts'
+
 import type { ServerResponse } from 'node:http'
 import type { IncomingMessage } from 'node:http'
 
@@ -42,9 +44,6 @@ vi.mock(
     }
   },
 )
-
-const { OAuthIntrospector } =
-  await import('../../../../src/commands/mcp/transport-http-helpers.mts')
 
 const ISSUER = 'https://auth.example.com'
 const CLIENT_ID = 'client-id'

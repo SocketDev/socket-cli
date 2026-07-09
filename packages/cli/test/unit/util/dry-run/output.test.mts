@@ -1,5 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import {
+  outputDryRunDelete,
+  outputDryRunExecute,
+  outputDryRunFetch,
+  outputDryRunPreview,
+  outputDryRunUpload,
+  outputDryRunWrite,
+} from '../../../../src/util/dry-run/output.mts'
+
 // Dry-run previews are contextual output and always route to stderr
 // per the stream discipline rule (CLAUDE.md SHARED STANDARDS). The
 // mocks capture both streams separately so we can assert routing.
@@ -19,15 +28,6 @@ vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
     },
   }),
 }))
-
-const {
-  outputDryRunDelete,
-  outputDryRunExecute,
-  outputDryRunFetch,
-  outputDryRunPreview,
-  outputDryRunUpload,
-  outputDryRunWrite,
-} = await import('../../../../src/util/dry-run/output.mts')
 
 describe('dry-run output utilities', () => {
   beforeEach(() => {

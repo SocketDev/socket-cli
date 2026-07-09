@@ -6,6 +6,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdRepositoryView } from '../../../../src/commands/repository/cmd-repository-view.mts'
+
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 import type * as SdkModule from '../../../../src/util/socket/sdk.mjs'
 
@@ -55,10 +57,6 @@ vi.mock(import('../../../../src/util/socket/sdk.mjs'), async importOriginal => {
     hasDefaultApiToken: mockHasDefaultApiToken,
   }
 })
-
-// Import after mocks.
-const { cmdRepositoryView } =
-  await import('../../../../src/commands/repository/cmd-repository-view.mts')
 
 describe('cmd-repository-view', () => {
   beforeEach(() => {

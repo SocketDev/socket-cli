@@ -600,6 +600,9 @@ describe('downloadGitHubReleaseBinary', () => {
     } finally {
       ;(process as { kill: unknown }).kill = realKill
     }
+
+    // The stale-lock recovery path must have probed liveness at least once.
+    expect(killCount).toBeGreaterThanOrEqual(1)
   })
 
   it('rethrows non-EEXIST errors during lock creation', async () => {

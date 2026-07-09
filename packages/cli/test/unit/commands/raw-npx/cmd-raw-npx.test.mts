@@ -17,6 +17,11 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import {
+  CMD_NAME,
+  cmdRawNpx,
+} from '../../../../src/commands/raw-npx/cmd-raw-npx.mts'
+
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 import type * as WithSubcommandsModule from '../../../../src/util/cli/with-subcommands.mjs'
 
@@ -122,10 +127,6 @@ vi.mock(
     }
   },
 )
-
-// Import after mocks.
-const { CMD_NAME, cmdRawNpx } =
-  await import('../../../../src/commands/raw-npx/cmd-raw-npx.mts')
 
 describe('cmd-raw-npx', () => {
   beforeEach(() => {
@@ -477,11 +478,11 @@ describe('cmd-raw-npx', () => {
       })
 
       it('should handle binary executables from packages', async () => {
-        await cmdRawNpx.run(['eslint', '--fix'], importMeta, context)
+        await cmdRawNpx.run(['acme-lint', '--fix'], importMeta, context)
 
         expect(mockSpawn).toHaveBeenCalledWith(
           expect.any(String),
-          ['eslint', '--fix'],
+          ['acme-lint', '--fix'],
           expect.any(Object),
         )
       })

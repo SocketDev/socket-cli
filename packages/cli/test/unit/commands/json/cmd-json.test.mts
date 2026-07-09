@@ -9,6 +9,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdJson } from '../../../../src/commands/json/cmd-json.mts'
+
 // Mock dependencies.
 const mockHandleCmdJson = vi.hoisted(() => vi.fn())
 
@@ -22,9 +24,6 @@ vi.stubGlobal('process', {
   ...process,
   cwd: mockCwd,
 })
-
-// Import after mocks.
-const { cmdJson } = await import('../../../../src/commands/json/cmd-json.mts')
 
 describe('cmd-json', () => {
   beforeEach(() => {

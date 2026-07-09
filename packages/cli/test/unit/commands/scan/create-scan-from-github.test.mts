@@ -20,6 +20,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
+
 const mockOctokit = vi.hoisted(() => ({
   repos: {
     get: vi.fn(),
@@ -40,7 +42,7 @@ const mockWithGitHubRetry = vi.hoisted(() =>
       return {
         ok: false,
         message: 'GitHub API error',
-        cause: `Error while ${context}: ${e instanceof Error ? e.message : String(e)}`,
+        cause: `Error while ${context}: ${errorMessage(e)}`,
       }
     }
   }),

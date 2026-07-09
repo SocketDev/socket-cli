@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdPyCli } from '../../../../src/commands/pycli/cmd-pycli.mts'
+
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -20,10 +22,6 @@ const mockSpawnSocketPyCli = vi.hoisted(() => vi.fn())
 vi.mock(import('../../../../src/util/python/standalone.mts'), () => ({
   spawnSocketPyCli: mockSpawnSocketPyCli,
 }))
-
-// Import after mocks.
-const { cmdPyCli } =
-  await import('../../../../src/commands/pycli/cmd-pycli.mts')
 
 describe('cmd-pycli', () => {
   beforeEach(() => {

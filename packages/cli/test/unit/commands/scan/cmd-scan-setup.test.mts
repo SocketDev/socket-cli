@@ -9,6 +9,8 @@ import path from 'node:path'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdScanSetup } from '../../../../src/commands/scan/cmd-scan-setup.mts'
+
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 import type * as WithSubcommandsModule from '../../../../src/util/cli/with-subcommands.mjs'
 
@@ -58,10 +60,6 @@ const mockHandleScanConfig = vi.hoisted(() => vi.fn())
 vi.mock(import('../../../../src/commands/scan/handle-scan-config.mts'), () => ({
   handleScanConfig: mockHandleScanConfig,
 }))
-
-// Import after mocks.
-const { cmdScanSetup } =
-  await import('../../../../src/commands/scan/cmd-scan-setup.mts')
 
 describe('cmd-scan-setup', () => {
   beforeEach(() => {

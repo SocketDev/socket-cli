@@ -6,6 +6,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdOptimize } from '../../../../src/commands/optimize/cmd-optimize.mts'
+
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 
 // Mock the logger.
@@ -52,10 +54,6 @@ vi.mock(
 vi.mock(import('../../../../src/util/ecosystem/environment.mjs'), () => ({
   detectAndValidatePackageEnvironment: mockDetectAndValidatePackageEnvironment,
 }))
-
-// Import after mocks.
-const { cmdOptimize } =
-  await import('../../../../src/commands/optimize/cmd-optimize.mts')
 
 describe('cmd-optimize', () => {
   beforeEach(() => {

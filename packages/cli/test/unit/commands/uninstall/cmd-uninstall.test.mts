@@ -7,6 +7,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdUninstall } from '../../../../src/commands/uninstall/cmd-uninstall.mts'
+
 import type * as WithSubcommandsModule from '../../../../src/util/cli/with-subcommands.mjs'
 
 // Mock meowWithSubcommands.
@@ -22,10 +24,6 @@ vi.mock(
     }
   },
 )
-
-// Import after mocks.
-const { cmdUninstall } =
-  await import('../../../../src/commands/uninstall/cmd-uninstall.mts')
 
 describe('cmd-uninstall', () => {
   beforeEach(() => {

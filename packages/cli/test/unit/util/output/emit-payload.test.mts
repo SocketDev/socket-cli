@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import {
+  emitJsonPayload,
+  emitPayload,
+} from '../../../../src/util/output/emit-payload.mts'
+import { SENTINEL_BEGIN, SENTINEL_END } from '../../../../src/util/output/mode.mts'
+
 const mockStdoutLog = vi.fn()
 const mockStderrLog = vi.fn()
 
@@ -13,11 +19,6 @@ vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
     },
   }),
 }))
-
-const { emitJsonPayload, emitPayload } =
-  await import('../../../../src/util/output/emit-payload.mts')
-const { SENTINEL_BEGIN, SENTINEL_END } =
-  await import('../../../../src/util/output/mode.mts')
 
 describe('emitPayload', () => {
   beforeEach(() => {

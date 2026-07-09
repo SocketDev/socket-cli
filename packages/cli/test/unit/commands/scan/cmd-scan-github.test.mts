@@ -7,6 +7,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdScanGithub } from '../../../../src/commands/scan/cmd-scan-github.mts'
+
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 import type * as SdkModule from '../../../../src/util/socket/sdk.mjs'
 import type * as SocketCliModule from '@socketsecurity/lib-stable/env/socket-cli'
@@ -93,10 +95,6 @@ const mockOutputDryRunUpload = vi.hoisted(() => vi.fn())
 vi.mock(import('../../../../src/util/dry-run/output.mts'), () => ({
   outputDryRunUpload: mockOutputDryRunUpload,
 }))
-
-// Import after mocks.
-const { cmdScanGithub } =
-  await import('../../../../src/commands/scan/cmd-scan-github.mts')
 
 describe('cmd-scan-github', () => {
   beforeEach(() => {

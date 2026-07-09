@@ -7,6 +7,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { CMD_NAME, cmdPatch } from '../../../../src/commands/patch/cmd-patch.mts'
+
 import type * as WithSubcommandsModule from '../../../../src/util/cli/with-subcommands.mts'
 
 // Mock meowOrExit.
@@ -33,10 +35,6 @@ vi.mock(
 vi.mock(import('../../../../src/util/dlx/spawn.mjs'), () => ({
   spawnSocketPatchDlx: mockSpawnSocketPatchDlx,
 }))
-
-// Import after mocks.
-const { cmdPatch, CMD_NAME } =
-  await import('../../../../src/commands/patch/cmd-patch.mts')
 
 describe('cmd-patch', () => {
   beforeEach(() => {

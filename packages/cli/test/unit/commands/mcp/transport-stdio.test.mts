@@ -16,6 +16,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { runStdioTransport } from '../../../../src/commands/mcp/transport-stdio.mts'
+
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 
 const mockLogger = vi.hoisted(() => ({
@@ -74,9 +76,6 @@ const { mockStdioTransportInstance, MockStdioServerTransport } = vi.hoisted(
 vi.mock(import('@modelcontextprotocol/sdk/server/stdio.js'), () => ({
   StdioServerTransport: MockStdioServerTransport,
 }))
-
-const { runStdioTransport } =
-  await import('../../../../src/commands/mcp/transport-stdio.mts')
 
 const baseConfig = {
   getApiToken: () => 'test_a',

@@ -6,6 +6,13 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdRepository } from '../../../../src/commands/repository/cmd-repository.mts'
+import { cmdRepositoryCreate } from '../../../../src/commands/repository/cmd-repository-create.mts'
+import { cmdRepositoryDel } from '../../../../src/commands/repository/cmd-repository-del.mts'
+import { cmdRepositoryList } from '../../../../src/commands/repository/cmd-repository-list.mts'
+import { cmdRepositoryUpdate } from '../../../../src/commands/repository/cmd-repository-update.mts'
+import { cmdRepositoryView } from '../../../../src/commands/repository/cmd-repository-view.mts'
+
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
   fail: vi.fn(),
@@ -24,20 +31,6 @@ const mockMeowWithSubcommands = vi.hoisted(() => vi.fn())
 vi.mock(import('../../../../src/util/cli/with-subcommands.mts'), () => ({
   meowWithSubcommands: mockMeowWithSubcommands,
 }))
-
-// Import after mocks.
-const { cmdRepository } =
-  await import('../../../../src/commands/repository/cmd-repository.mts')
-const { cmdRepositoryCreate } =
-  await import('../../../../src/commands/repository/cmd-repository-create.mts')
-const { cmdRepositoryDel } =
-  await import('../../../../src/commands/repository/cmd-repository-del.mts')
-const { cmdRepositoryList } =
-  await import('../../../../src/commands/repository/cmd-repository-list.mts')
-const { cmdRepositoryUpdate } =
-  await import('../../../../src/commands/repository/cmd-repository-update.mts')
-const { cmdRepositoryView } =
-  await import('../../../../src/commands/repository/cmd-repository-view.mts')
 
 describe('cmd-repository', () => {
   beforeEach(() => {

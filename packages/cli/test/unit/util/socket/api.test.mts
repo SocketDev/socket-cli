@@ -248,16 +248,18 @@ describe('api utilities', () => {
         data: { result: 'test' },
       } as unknown)
 
-      const mockSpinner = {
+      const mockCallSpinner = {
         start: mockStart,
         stop: mockStop,
         succeed: mockSucceed,
         fail: mockFail,
       }
 
-      await handleApiCall(mockApiPromise, { spinner: mockSpinner as unknown })
-      expect(mockSpinner.start).toHaveBeenCalled()
-      expect(mockSpinner.stop).toHaveBeenCalled()
+      await handleApiCall(mockApiPromise, {
+        spinner: mockCallSpinner as unknown,
+      })
+      expect(mockCallSpinner.start).toHaveBeenCalled()
+      expect(mockCallSpinner.stop).toHaveBeenCalled()
     })
 
     it('starts spinner with description when both provided (line 256)', async () => {
@@ -266,7 +268,7 @@ describe('api utilities', () => {
         success: true,
         data: { x: 1 },
       } as unknown)
-      const mockSpinner = {
+      const mockCallSpinner = {
         start: mockStart,
         stop: mockStop,
         succeed: mockSucceed,
@@ -274,9 +276,9 @@ describe('api utilities', () => {
       }
       await handleApiCall(mockApiPromise, {
         description: 'test data',
-        spinner: mockSpinner as unknown,
+        spinner: mockCallSpinner as unknown,
       })
-      expect(mockSpinner.start).toHaveBeenCalledWith(
+      expect(mockCallSpinner.start).toHaveBeenCalledWith(
         expect.stringContaining('Requesting test data from API'),
       )
     })
@@ -286,7 +288,7 @@ describe('api utilities', () => {
         success: true,
         data: { x: 1 },
       } as unknown)
-      const mockSpinner = {
+      const mockCallSpinner = {
         start: mockStart,
         stop: mockStop,
         succeed: mockSucceed,
@@ -294,7 +296,7 @@ describe('api utilities', () => {
       }
       await handleApiCall(mockApiPromise, {
         description: 'thing',
-        spinner: mockSpinner as unknown,
+        spinner: mockCallSpinner as unknown,
       })
       // logger.success was called via the description+spinner branch.
       expect(mockLogger.success).toHaveBeenCalledWith(
@@ -308,7 +310,7 @@ describe('api utilities', () => {
         success: false,
         error: { message: 'fail', statusCode: 500 },
       } as unknown)
-      const mockSpinner = {
+      const mockCallSpinner = {
         start: mockStart,
         stop: mockStop,
         succeed: mockSucceed,
@@ -316,7 +318,7 @@ describe('api utilities', () => {
       }
       await handleApiCall(mockApiPromise, {
         description: 'thing',
-        spinner: mockSpinner as unknown,
+        spinner: mockCallSpinner as unknown,
       })
       // logger.info was called via the description+spinner branch on
       // non-thrown failure.
@@ -358,7 +360,7 @@ describe('api utilities', () => {
         data: { result: 'test' },
       } as unknown)
 
-      const mockSpinner = {
+      const mockCallSpinner = {
         start: mockStart,
         stop: mockStop,
         succeed: mockSucceed,
@@ -366,9 +368,9 @@ describe('api utilities', () => {
       }
 
       await handleApiCallNoSpinner(mockApiPromise, {
-        spinner: mockSpinner as unknown,
+        spinner: mockCallSpinner as unknown,
       })
-      expect(mockSpinner.start).not.toHaveBeenCalled()
+      expect(mockCallSpinner.start).not.toHaveBeenCalled()
     })
 
     it('returns success result for successful API call', async () => {

@@ -16,6 +16,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { handleDiffScan } from '../../../../src/commands/scan/handle-diff-scan.mts'
 import {
   createErrorResult,
   createSuccessResult,
@@ -46,9 +47,6 @@ vi.mock(import('../../../../src/commands/scan/fetch-diff-scan.mts'), () => ({
 vi.mock(import('../../../../src/commands/scan/output-diff-scan.mts'), () => ({
   outputDiffScan: mockOutputDiffScan,
 }))
-
-const { handleDiffScan } =
-  await import('../../../../src/commands/scan/handle-diff-scan.mts')
 
 describe('handleDiffScan', () => {
   beforeEach(() => {

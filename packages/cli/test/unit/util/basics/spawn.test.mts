@@ -35,6 +35,12 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import {
+  isSocketBasicsInstalled,
+  isSocketPyCliInstalled,
+  runSocketBasics,
+} from '../../../../src/util/basics/spawn.mts'
+
 const {
   mockAreBasicsToolsAvailable,
   mockExistsSync,
@@ -79,9 +85,6 @@ vi.mock(import('../../../../src/env/pycli-version.mts'), () => ({
 vi.mock(import('../../../../src/constants.mts'), () => ({
   DOT_SOCKET_DOT_FACTS_JSON: '.socket.facts.json',
 }))
-
-const { isSocketBasicsInstalled, isSocketPyCliInstalled, runSocketBasics } =
-  await import('../../../../src/util/basics/spawn.mts')
 
 const baseOpts = {
   cwd: '/work',

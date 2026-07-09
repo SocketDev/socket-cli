@@ -24,6 +24,8 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { detectManifestActions } from '../../../../src/commands/manifest/detect-manifest-actions.mts'
+
 import type { SocketJson } from '../../../../src/util/socket/json.mts'
 
 // Source-of-truth constants/paths.mts evaluates the bundle-tools.json
@@ -34,9 +36,6 @@ vi.mock(import('../../../../src/constants/paths.mjs'), () => ({
   ENVIRONMENT_YAML: 'environment.yaml',
   ENVIRONMENT_YML: 'environment.yml',
 }))
-
-const { detectManifestActions } =
-  await import('../../../../src/commands/manifest/detect-manifest-actions.mts')
 
 let cwd = ''
 
