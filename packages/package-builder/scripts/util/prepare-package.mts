@@ -68,7 +68,9 @@ export function preparePackageForPublish(
 
     // Update optionalDependencies to use the same version (lockstep).
     if (pkg.optionalDependencies) {
-      for (const dep of Object.keys(pkg.optionalDependencies)) {
+      const deps = Object.keys(pkg.optionalDependencies)
+      for (let i = 0, { length } = deps; i < length; i += 1) {
+        const dep = deps[i]!
         pkg.optionalDependencies[dep] = version
       }
     }
