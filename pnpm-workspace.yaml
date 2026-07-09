@@ -243,12 +243,9 @@ minimumReleaseAgeExclude:
   - '@socketbin/*'
   - '@socketregistry/*'
   - '@socketsecurity/*'
-  - 'ecc-agentshield'
   - 'sfw'
-  - 'socket-*'
   - '@stuie/*'
   - '@ultrathink/*'
-  - '@yuku-parser/*'
   - '@socketoverride/*'
   - 'socket'
   - '@sdxgen/*'
@@ -378,10 +375,24 @@ enablePrePostScripts: true
 
 # Patched dependencies (migrated from package.json pnpm.patchedDependencies).
 patchedDependencies:
+  # Splits the 'node-gyp/bin/node-gyp.js' literal in require.resolve so the
+  # CLI's rolldown bundle keeps the lookup at runtime instead of inlining a
+  # build-machine path. Consumer: packages/cli bundled npm shim.
   '@npmcli/run-script@10.0.4': patches/@npmcli__run-script@10.0.4.patch
+  # Replaces the unconditional require('http2') constants with literals so the
+  # bundle loads on node-smol SEA builds, which ship without http2. Consumer:
+  # packages/cli SEA binary.
   '@sigstore/sign@4.1.0': patches/@sigstore__sign@4.1.0.patch
+  # signal-exit is deduped to v4, which exports a named onExit instead of the
+  # v3 default export execa calls; restores the call contract. Consumer:
+  # packages/cli bundled npm tooling.
   execa@2.1.0: patches/execa@2.1.0.patch
+  # Same signal-exit v4 named-onExit contract restore as execa@2.1.0.
+  # Consumer: packages/cli bundled npm tooling.
   execa@5.1.1: patches/execa@5.1.1.patch
+  # Drops the bundled Find-VisualStudio.cs source (compiled ad hoc on Windows
+  # hosts) so the CLI package payload carries no compilable C# for AV/pack
+  # scanners to flag. Consumer: packages/cli bundled npm tooling.
   node-gyp@12.2.0: patches/node-gyp@12.2.0.patch
 saveExact: true
 strictPeerDependencies: true

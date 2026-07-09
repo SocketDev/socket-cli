@@ -327,8 +327,9 @@ export async function executeCliInScratch(
         NPM_CONFIG_CACHE: path.join(scratchHome, '.npm'),
         npm_config_prefix: path.join(scratchHome, '.npm-global'),
         NPM_CONFIG_PREFIX: path.join(scratchHome, '.npm-global'),
-        npm_config_userconfig: path.join(scratchHome, '.npmrc'),
-        NPM_CONFIG_USERCONFIG: path.join(scratchHome, '.npmrc'),
+        // No userconfig pin: HOME above already points npm's user .npmrc
+        // into the scratch dir, and a repo-committed userconfig redirect is
+        // a trust-gate opt-out (see check/trust-gates-are-not-weakened.mts).
         // Sibling package managers.
         PNPM_HOME: path.join(scratchHome, '.pnpm'),
         YARN_CACHE_FOLDER: path.join(scratchHome, '.yarn-cache'),
