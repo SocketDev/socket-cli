@@ -147,9 +147,6 @@ phrase (where one exists):
   comments (`// Plan:`, `// As requested`, `// removed X`).
 - **no-disable-lint-rule-guard** — PreToolUse(Edit|Write) refusing `"rule": "off"`/`"warn"`.
   Bypass: `Allow disable-lint-rule bypass`.
-- **extension-build-current-nudge** — PreToolUse(Bash) reminder pairing
-  trusted-publisher-extension `src/**` commits with a build. Bypass:
-  `Allow extension-build-current bypass`.
 - **no-file-scope-oxlint-disable-guard** — PreToolUse(Edit|Write) refusing
   file-scope `oxlint-disable`; forces per-call-site `oxlint-disable-next-line <rule> -- <reason>`.
 - **no-underscore-ident-guard** — PreToolUse(Edit|Write) refusing new

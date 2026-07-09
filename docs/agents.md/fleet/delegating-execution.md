@@ -45,6 +45,17 @@ Fable's current `suspended: true` in `model-pricing.json` is runtime data the sp
 - `delegating-execution` — route the EXECUTION of a settled scope across tiers.
 - `_shared/multi-agent-backends.md` — the CLI-subprocess layer (codex/opencode/kimi) for non-Anthropic delegation; this skill is the Workflow-harness tier layer above it.
 
+## Staged verification ladder
+
+An execution brief names its verification ladder explicitly, cheapest rung
+first, and the executor climbs in order: smoke (the binary runs / the module
+imports) → the unit(s) touched → a random sample beyond the touched set →
+the full gate (`check --all` + full tests). Each rung gates the next; a
+failure drops the executor back to fix-and-re-climb instead of burning the
+full-suite budget per iteration. (Bun's Zig→Rust rewrite ran this exact
+ladder per workflow loop: `bun --version` → `bun test <file>` → random
+files → full CI.)
+
 ## Output contract
 
 - Plan doc + fenced execution prompt at `.claude/plans/delegating-<slug>.md` (slug = kebab-case from the task).

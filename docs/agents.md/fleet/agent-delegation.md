@@ -190,6 +190,19 @@ file, broad fixers banned, collect-and-verify in main — scope held (0 strays),
 quality held (named-capture conversions, options-object refactors with in-file
 call-site updates), full suite green. Companion hook: `parallel-agent-spawn-nudge`.
 
+Two rules proven at industrial scale (Bun's 1,448-file Zig→Rust rewrite ran
+~50 continuous agent workflows for 11 days with every line adversarially
+reviewed):
+
+- **Pilot before fan-out.** Any fan-out beyond ~10 agents runs a 1–3 item
+  pilot lane first; fold the pilot's failure modes into the prompt before
+  scaling. Bun trialed 3 files before committing to 1,448.
+- **Reviewer rejection rules are part of the prompt.** Adversarial reviewers
+  get named auto-reject patterns beyond "find bugs": (a) a placeholder or
+  stubbed-out implementation is an automatic reject; (b) a workaround whose
+  justification comment needs a paragraph is wrong code, reject it. Both
+  counter the strongest drift agents show under volume.
+
 ## When the surfaces overlap
 
 A skill that wants `codex` output should call the CLI (Surface 1) so the result lands in a structured report. A live conversation that wants Codex's opinion on the _current_ problem should use the subagent (Surface 2) so the result flows back into the conversation. Same model, different orchestration.

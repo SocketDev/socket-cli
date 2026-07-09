@@ -7,123 +7,232 @@ Companion to the `### Hook registry` section in `CLAUDE.md`. Full enforcement li
 - **`.claude/hooks/fleet/<name>/`** — fleet-canonical hooks. Edited only in `socket-wheelhouse/template/.claude/hooks/fleet/<name>/`; cascade pushes to every fleet repo. Citation gate (`new-hook-claude-md-guard`) requires each hook to have a matching `(enforced by ...)` mention somewhere in CLAUDE.md or the linked fleet docs.
 - **`.claude/hooks/repo/<name>/`** — host-repo-only hooks. Live in the downstream repo; exempt from the citation gate. Mirrors `docs/agents.md/repo/` + `scripts/repo/`.
 - **`.claude/hooks/fleet/_shared/`** — utilities imported by hooks (`transcript.mts`, `stop-nudge.mts`, `shell-command.mts`, `acorn/`, etc.). Also fleet-canonical.
+- `_dispatch` (**`.claude/hooks/fleet/_dispatch/`**) — the single-process fleet hook dispatcher (rolldown-bundled). Claude Code invokes the dispatcher once per event instead of spawning one process per hook, running every bundled hook for that event from the static dispatch table. Not a policy hook itself: the runtime the policy hooks above execute inside.
 
 ## Currently enforced (fleet)
 
 The fleet hooks each cite their own trigger + bypass surface in their `README.md`. They are:
 
 - `actionlint-on-workflow-edit` — runs actionlint when `.github/workflows/**` is edited
+- `active-edits-ledger` — PostToolUse(Edit/Write/NotebookEdit) recorder: writes this actor's edited paths to a per-session ledger (keyed by a hash of `transcript_path`) so `live-edit-collision-guard`, `dirty-worktree-stop-guard`, and `excuse-detector` can detect a live foreign actor. Never blocks; fails open on every error path.
+- `agents-skills-mirror-nudge` — Stop hook, non-blocking. Nudges to regenerate the derived `.agents/skills/` mirror (`scripts/fleet/gen-agents-skills-mirror.mts`) when this session edited `.claude/skills/**` and the mirror now drifts from the source.
+- `alpha-sort-nudge` — PreToolUse Edit/Write, non-blocking. Flags an unsorted run of sibling JSON keys, YAML mapping keys, markdown bullets, or bash `NAME=` assignments — the non-code surfaces `socket/sort-*` oxlint rules cannot reach. Informational only.
 - `answer-questions-nudge` — surface unanswered transcript questions
 - `answer-status-requests-nudge` — surface status pings before silent end-of-turn
+- `anti-prose-guard` — PreToolUse block on AI prose tells (em-dash chains, throat-clearing, "not X it's Y", hedging adverbs) in CHANGELOG.md / docs/**/*.md / README.md; bypass `Allow prose-antipattern bypass`
+- `ask-suppression-nudge` — PreToolUse(AskUserQuestion), non-blocking. Reminds to skip the question and pick the obvious default when a recent user turn already gave an explicit go-ahead directive ("yes"/"do it"/"proceed").
 - `auth-rotation-nudge` — reminds about expiring keychain tokens
+- `auto-land-on-stop` — Stop hook: groups this session's own authored source changes into logical commits and lands them onto local main in every repo the session touched, via `scripts/fleet/land-work.mts --commit`. Skips foreign-staged/generated/both-touched/unmerged-conflict paths; skipped entirely during a cascade (`FLEET_SYNC`) or history squash (`SQUASH_HISTORY`).
 - `avoid-cd-nudge` — keeps `cd` out of Bash, use `{ cwd }` instead
 - `broken-hook-detector` — SessionStart probe for sibling hooks with missing imports
+- `bump-defers-to-release-guard` — PreToolUse Bash: blocks an agent-driven version bump (a `bump.mts` write run, or `npm|pnpm|yarn version <arg>`; `--dry-run` always passes). The version is the user's decision: derived bumps are patch or minor with patch the default, and MAJOR is never derived. The bump + CHANGELOG belong to the release workflow/scripts. Bypass `Allow release-bump bypass` (typed after the user names the version); a major bump additionally requires `Allow major-bump bypass`.
+- `bundle-stale-reminder` — PostToolUse, non-blocking. Fires when an Edit/Write to a hook-bundle source (`_dispatch/`, `dispatch-table.mts`, a bundled `index.mts`, or `_shared/`) is newer than the built `_dispatch/bundle.cjs`, and points at `node scripts/fleet/build-hook-bundle.mts`. Bypass `Allow hook-bundle-current bypass`.
 - `c8-ignore-reason-guard` — blocks a c8/v8 coverage-ignore directive with no reason
+- `cascade-first-triage-nudge` — Stop hook, non-blocking. Flags an assistant turn that shows a "not found"-shaped error for a fleet-canonical artifact (a rule/hook/lib/check) AND describes hand-patching a member-repo copy instead of re-cascading from socket-wheelhouse.
 - `changelog-entry-shape-nudge` — PreToolUse Edit/Write, non-blocking. Warns when a `CHANGELOG.md` edit adds a column-0 entry bullet that links no detail into `docs/agents.md/{fleet,repo}/<topic>.md`. A CHANGELOG entry is a one-line bullet with the rationale linked to an agents.md doc (same diet pattern as the CLAUDE.md card); inline prose drifts from the doc. Sub-bullets/headings ignored. No bypass (never blocks)
+- `changelog-no-empty-guard` — PreToolUse Edit/Write: blocks landing a `### <Section>` Keep-a-Changelog heading in `CHANGELOG.md` whose immediate next non-blank line is another heading — i.e. an empty section with no bullets. Bypass `Allow changelog-empty-section bypass`.
+- `claude-lockdown-guard` — headless `claude`/`codex exec` must set the lockdown flags
+- `claude-md-defer-detail-nudge` — PreToolUse Edit/Write, non-blocking. Nudges when a NEW `###` section added to the CLAUDE.md fleet block reads as detail (3+ body lines) with no `docs/agents.md/{fleet,repo,wheelhouse}/<topic>.md` link, before it hits the section size cap.
 - `claude-md-rule-add-guard` — blocks hand-adding a CLAUDE.md rule; routes it through `scripts/fleet/codify-rule.mts` (which writes the terse bullet within the 40KB cap + the `agents.md/{fleet,repo}/` detail doc via the AI helper)
+- `claude-md-section-size-guard` — PreToolUse Edit/Write: blocks a CLAUDE.md fleet-block `###` section whose body exceeds the per-section line/byte cap; the message names the section and points at outsourcing to `docs/agents.md/fleet/<topic>.md`.
+- `claude-md-size-guard` — PreToolUse Edit/Write: blocks an Edit/Write that would push the WHOLE CLAUDE.md file past the 40 KB cap (override via `CLAUDE_MD_BYTES`). Forces reference-deferral to `docs/agents.md/fleet/<topic>.md`.
 - `claude-segmentation-guard` — PreToolUse Edit/Write, blocks a dangling top-level `.claude/{agents,commands,hooks,skills}/<name>/` entry that shadows the canonical `fleet/<name>/` copy; segment as `fleet/<name>/` or `repo/<name>/`
+- `clipboard-snippet-nudge` — PostToolUse(Write), non-blocking, macOS-only. Nudges to `pbcopy < <file>` when a user-run/paste snippet is written into the session scratchpad, so it lands on the clipboard instead of the scrolling terminal.
 - `clone-reviewed-repo-nudge` — PreToolUse(Bash), non-blocking. Nudges when reviewing/cloning an external (non-SocketDev) GitHub repo toward the standard reference-clone dir (`~/.socket/_wheelhouse/repo-clones/<org>-<repo>/`, via `getSocketRepoClonesDir()`) and the smallest-practical clone flags (`--depth=1 --single-branch --filter=blob:none`). Two arms: a `gh repo view`/`--repo` of an external repo, and a `git clone` of an external repo missing those flags. No bypass (never blocks)
 - `codex-no-write-guard` — blocks `codex` invocations with write-intent flags
-- `convo-prose-nudge` — PreToolUse Bash, non-blocking. Fires when a `gh pr create|edit|comment` or `gh issue create|edit|comment` command's `--body`/`-b` value carries AI-scaffolding antipatterns (throat-clearing openers, closing filler, honesty announcements). Points to the prose skill (conversational mode) for the rewrite. Never blocks (exit 0).
 - `commit-author-guard` — canonical-identity gate on git author email
+- `commit-cadence-nudge` — Stop hook, non-blocking, worktree-scoped. Reminds to commit each logical step inside a `git worktree`, and to pass the pre-merge gate (`pnpm run fix --all` / `check --all` / `test`) before landing the branch.
+- `commit-message-format-guard` — PreToolUse(Bash) hook: blocks a `git commit -m`/`--message=` whose subject fails the Conventional Commits 1.0 shape, or whose body carries an AI-attribution marker. Bypass `Allow commit-format bypass` / `Allow ai-attribution bypass`.
+- `commit-pr-nudge` — Stop hook, non-blocking. Flags a drafted commit message or PR body missing a Conventional Commits header, carrying AI-attribution lines, or (for a PR) missing a Summary section.
 - `commit-size-nudge` — PreToolUse Bash, non-blocking. On a `git commit`, warns when the STAGED diff exceeds ~400 changed lines of authored source (generated/lockfile/bundle/dist pathspecs excluded; `FLEET_SYNC=1` cascades exempt). The commit-time twin of `small-pr-nudge`: fleet commits stay small (one logical change) so they land clean onto local main without cross-worktree collisions. The message points at surgical `git commit -o <file>` splits.
+- `compound-lessons-nudge` — Stop hook, non-blocking. Flags a repeat-finding signal — prose language like "again"/"same as before", or a repeated edit to the same fleet-canonical surface across turns — with no evidence of promoting it to a rule.
 - `concurrent-cargo-build-guard` — blocks a second `cargo build --release` while one is in flight (an OOM guard). Capability-gated via the `@socket-capability cargo` header, so the cascade installs it only in repos declaring `claude.capabilities: ["cargo"]`.
+- `consumer-grep-nudge` — PreToolUse Edit/Write, non-blocking. Reminds to grep vendored/upstream/third_party/external trees (not just repo-root) before deleting a CSS class, HTML attribute, selector, or named export those trees may still consume.
+- `convo-prose-nudge` — PreToolUse Bash, non-blocking. Fires when a `gh pr create|edit|comment` or `gh issue create|edit|comment` command's `--body`/`-b` value carries AI-scaffolding antipatterns (throat-clearing openers, closing filler, honesty announcements). Points to the prose skill (conversational mode) for the rewrite. Never blocks (exit 0).
+- `copy-on-select-hint-nudge` — SessionStart, informational. Surfaces the Option-drag hint once when `~/.claude.json` has `copyOnSelect: false` and the terminal is mouse-reporting-capable, since a plain drag-select no longer auto-copies.
 - `cross-repo-guard` — PreToolUse Edit/Write, blocks a hardcoded cross-repo path reference (`../<sibling-repo>/`) that breaks in CI / fresh clones; use `@socketsecurity/lib-stable/<subpath>` imports instead. One-line opt-out `// socket-lint: allow cross-repo`.
+- `dated-citation-guard` — PreToolUse Edit/Write: blocks adding a dated-incident citation (a specific date/SHA/percentage) to fleet rule prose (CLAUDE.md, `docs/agents.md/fleet`, `SKILL.md`, hook `README.md`); the motivating case must read as a generic, timeless example.
+- `default-branch-guard` — PreToolUse(Bash) hook: blocks a scripted Bash command that hard-codes `main`/`master` as the default branch instead of resolving via `git symbolic-ref refs/remotes/origin/HEAD`. Bypass `Allow default-branch bypass`.
+- `defer-to-script-nudge` — PreToolUse Edit/Write, non-blocking. Nudges when an edited skill/command markdown embeds a large fenced code block with no reference to a backing `scripts/**.mts` script it should defer to.
 - `dirty-worktree-stop-guard` — Stop-time: BLOCKS ending a turn with a dirty PRIMARY checkout (uncommitted/untracked/staged-but-uncommitted). Escapes: clean tree, a linked git worktree (defer via `git commit --no-verify` there), or `Allow dirty-worktree bypass`. Once-per-turn (suppressed when `stop_hook_active`); fail-open.
 - `dogfood-cascade-nudge` — Stop-time: edited template/ but the dogfood copy is stale → cascade
+- `dont-blame-nudge` — Stop hook, BLOCKING (once per stop chain). Catches the assistant blaming the user or "the linter" for state actually produced by its own scripts (autofix, cascade, format-on-save) or a parallel Claude session; forces continued investigation or an evidenced correction.
+- `dont-stop-mid-queue-nudge` — Stop hook, non-blocking. Flags "stopping here"/"pausing"/"what's next?" language when the user hasn't explicitly said stop/pause, to keep the assistant moving through an already-authorized queue.
+- `drift-check-nudge` — Stop hook, non-blocking. Flags an assistant turn that edited a known drift surface (a tool/action SHA, CLAUDE.md fleet block, hook code, `.gitmodules`) without mentioning a cascade/drift check to the other fleet repos.
+- `enqueue-dont-pivot-nudge` — Stop hook, non-blocking. Catches the assistant abandoning in-progress work to chase a topic the user just mentioned ("also do X") — the mention should be enqueued (TaskCreate), not treated as a redirect, unless the user explicitly authorized the pivot.
 - `enterprise-push-nudge` — GitHub enterprise ruleset push-property reminders
-- `extension-build-current-nudge` — pairs `tools/.../extension/src/**` edits with a build
+- `error-message-quality-nudge` — Stop hook, non-blocking. Flags a thrown error in the assistant's code whose message is a vague, short phrase missing the What / Where / Saw-vs-wanted / Fix shape.
+- `excuse-detector` — Stop hook, BLOCKING (once per stop chain, suppressed by `stop_hook_active`). Scans the last turn for "pre-existing"/deferral-shaped excuse phrases; forces a fix or an explicitly evidenced trade-off instead of ending the turn on the excuse.
 - `file-size-nudge` — Stop-time scan for source files over the 500-line soft cap
+- `follow-direct-imperative-nudge` — Stop hook, non-blocking. Fires when the last user turn is a bare imperative ("do it"/"land it") and the assistant's response hedged with trade-off prose instead of executing.
+- `gh-token-hygiene-guard` — PreToolUse(gh Bash) hook: blocks a `gh` invocation when the token is not keyring-stored, is older than the 8-hour age cap, or carries the `workflow` scope outside the on-demand gate. `gh auth refresh -h github.com` always self-recovers.
+- `git-config-write-guard` — PreToolUse(Bash/Edit/Write) + SessionStart hook: blocks a local `.git/config` write that clobbers identity/signing/topology keys, and on SessionStart auto-fixes `core.bare = true` and a placeholder local `user.email` when a `--global` identity exists.
+- `git-identity-drift-nudge` — Stop hook, non-blocking. Reminds to fix the EFFECTIVE git `user.email` before pushing when it resolves to a non-verifiable placeholder — a placeholder author fails GitHub's `required_signatures` even with a valid signature.
+- `gitmodules-comment-guard` — PreToolUse Edit/Write: blocks a new submodule section in `.gitmodules` with no `# <name>-<version>` comment immediately above it. Per-line exempt: `socket-lint: allow gitmodules-no-comment`.
+- `headroom-proxy-start` — auto-starts the telemetry-locked headroom proxy fail-closed
+- `immutable-release-guard` — PreToolUse Edit/Write: blocks a workflow edit that introduces a single-call `gh release create` (no `--draft`) instead of the 3-step create/upload/publish pattern the immutable-release attestation needs. Bypass `Allow immutable-release-pattern bypass`.
 - `inline-script-defer-guard` — blocks `<script>` without `defer`/`async`/`module`
 - `judgment-nudge` — perfectionist / direct-imperative / queue-completion nudges
+- `land-fast-nudge` — Stop hook, non-blocking. Fires when the default branch has DIVERGED from origin (both ahead and behind) and points at the `managing-worktrees land` engine instead of a hand-rolled cherry-pick + force dance.
+- `live-edit-collision-guard` — PreToolUse(Edit/Write/NotebookEdit) hook: blocks writing a path a DIFFERENT live actor (per the active-edits ledger) wrote within the last 5 minutes. Bypass `Allow live-edit-collision bypass`.
+- `lock-step-ref-nudge` — PreToolUse Edit/Write, non-blocking. Flags a stale or malformed Lock-step cross-reference comment the moment it is typed, ahead of the CI gate (`scripts/fleet/check/lock-step-refs-resolve.mts`).
+- `logger-guard` — PreToolUse Edit/Write: blocks introducing a direct console/stdout/stderr write call in a source file; use `getDefaultLogger()` instead. Per-line exempt `socket-lint: allow console`.
+- `markdown-filename-guard` — PreToolUse Edit/Write: blocks creating a markdown file with a non-canonical filename — everything outside the SCREAMING_CASE allowlist (README/CLAUDE/CHANGELOG/…) must be `lowercase-with-hyphens.md` under `docs/` or `.claude/`.
+- `marketplace-comment-guard` — PreToolUse Edit/Write: blocks a `.claude-plugin/marketplace.json` pin (or its README pin-table row) from going out of sync — every pinned plugin's version/sha/date must match on both sides.
 - `mass-delete-guard` — blocks a commit deleting ≥50 files or >75% of the tree (clobbered index)
+- `memory-discovery-nudge` — SessionStart, informational. Surfaces where this repo's per-cwd memory store lives (`~/.claude/projects/<slug>/memory/`) and where the fleet-wide wheelhouse store lives, so a fact gets filed to the repo that owns it.
 - `module-noun-name-guard` — PreToolUse Write, fleet-scoped. Blocks CREATING a new `src/` module whose filename is a verb-phrase action (`trim-publish-manifest.ts`, `create-release.ts`, `fetch-packument.ts`). Fleet modules are concise NOUN names that GROUP the related functions for a domain (`manifest.ts` holds `trimPublishManifest` + `createPackageJson`); not one-method-per-file. Single-word names (`normalize.ts`) and pre-existing files are untouched. Bypass: `Allow module-noun-name bypass`. Detail: [`module-naming`](module-naming.md)
+- `new-hook-claude-md-guard` — PreToolUse Write/Edit: blocks creating or editing a hook's `index.mts` unless the relevant CLAUDE.md already carries a citation for it — in the wheelhouse template and in every downstream fleet repo.
 - `no-amend-foreign-commit-guard` — blocks `git commit --amend` onto an unpushed commit not authored this turn (a parallel session's work); bypass `Allow amend-foreign bypass`
 - `no-blanket-file-exclusion-guard` — blocks a `max-file-lines:` exemption marker that names a self-judgment word (`legitimate`, `ok`, …) instead of a real category; no bypass
 - `no-blind-keychain-read-guard` — blocks Bash reads of platform keychain tokens
+- `no-boolean-trap-guard` — PreToolUse Write/Edit: blocks a new TypeScript function signature with a boolean POSITIONAL parameter (the "boolean trap"); a lone predicate boolean and overload signatures pass through.
+- `no-branch-reuse-nudge` — PreToolUse(git commit Bash) hook, non-blocking. Reminds against committing onto a non-default branch that already has a remote upstream — cut a fresh branch per logical change instead of reusing a shared one.
 - `no-cascade-transient-git-guard` — blocks cascade commits on a cherry-pick/detached/rebase HEAD
 - `no-clipboard-access-guard` — PreToolUse Bash + Edit/Write: blocks clipboard READS + source-embedded OSC-52 escapes; explicit writes are allowed. Two surfaces: a clipboard READ CLI in a Bash command (`pbpaste`, `wl-paste`, `xclip -o`, `xsel` default-output), AST-parsed via the fleet shell parser — write-only tools (`pbcopy`/`wl-copy`/`clip`) and a writing `xclip`/`xsel -i` pass; or source that emits an OSC-52 clipboard escape (`ESC ]52;`). Reading is a cross-process exfil surface; putting data onto the clipboard is a deliberate operator action. Bypass `Allow clipboard-access bypass`
 - `no-direct-linter-guard` — PreToolUse Bash: blocks invoking a linter/formatter binary directly (`oxlint`/`oxfmt`/`eslint`/`prettier`/`biome`/`dprint`/`rustfmt`/`gofmt`, the `node_modules/.bin/` path form, and `cargo fmt`/`cargo clippy` subcommands), matched on basename via AST parse. The fleet runs lint/format only through the script wrappers (`pnpm run lint`/`fix`/`check`/`format`, `scripts/fleet/*`), which own the `-c .config/fleet/…` flag plus ignore set. A bare formatter is configless (corrupts files) and unscoped (reformats vendored `upstream/`). Bypass `Allow direct-linter bypass`
+- `no-disable-lint-rule-guard` — PreToolUse Edit/Write: blocks adding an off/warn entry for an oxlint or ESLint rule to a config file; use a per-site disable-next-line comment instead. Bypass `Allow disable-lint-rule bypass`.
 - `no-empty-commit-guard` — blocks `--allow-empty` commits without bypass
 - `no-env-kill-switch-guard` — blocks adding a `disabledEnvVar` / `SOCKET_*_DISABLED` kill switch to a hook
 - `no-ext-issue-ref-guard` — blocks `<owner>/<repo>#<num>` from non-SocketDev orgs
+- `no-file-oxlint-disable-guard` — PreToolUse Edit/Write: blocks a file-scope oxlint-disable comment with no -next-line suffix; forces the inline per-call-site form so each exemption is independently justified. The rule's own test/rule-dir subtree is exempt.
+- `no-fleet-fork-guard` — PreToolUse Edit/Write: blocks editing a fleet-canonical file path inside a downstream fleet repo instead of `socket-wheelhouse/template/...` plus a cascade. Bypass `Allow fleet-fork bypass`.
 - `no-force-push-guard` — PreToolUse Bash: blocks a `git push` carrying any force flag (`--force`, `-f`, `--force-with-lease` bare or `=<branch>:<expected-sha>`, `--force-if-includes`) unless authorized. One phrase unlocks both the bare and lease forms; the block message teaches the fleet default `--force-with-lease=<branch>:$(git rev-parse origin/<branch>)`. Honors the `SQUASH_HISTORY=1` sentinel for the `squashing-history` skill's force-push. Universal, fires in every repo, not fleet-only. Bypass `Allow force-push bypass` (legacy aliases: `Allow force-with-lease bypass`, `Allow force-push-hard bypass`)
+- `no-github-ai-attribution-guard` — PreToolUse(gh Bash) hook: blocks a `gh` invocation that would post AI-attribution boilerplate onto a public GitHub prose surface — PR/issue body + title, comments, reviews, release notes, discussions, gists. Bypass `Allow ai-attribution bypass`.
+- `no-glob-run-s-guard` — PreToolUse Edit/Write/MultiEdit: blocks a `package.json` edit introducing an order-dependent run-s/run-p prefix glob (npm-run-all2 resolves it in package.json SOURCE order, not alphabetical). Bypass `Allow run-s glob bypass`.
+- `no-hook-cmd-regex-guard` — PreToolUse Write/Edit: blocks a new regex literal under `.claude/hooks/**` that parses a shell command by binary name (git/gh/npm/…); use the shared AST-based `shell-command.mts` parser instead. Bypass `Allow command-regex bypass`.
+- `no-meta-comments-guard` — PreToolUse Edit/Write: blocks a new comment that references the current task/user-request, or narrates removed code, instead of describing the code's actual runtime semantics.
+- `no-non-fleet-push-guard` — PreToolUse(git push Bash) hook: blocks a `git push` whose target repo's origin remote resolves outside the fleet roster (`FLEET_REPO_NAMES`). Bypass `Allow non-fleet-push bypass`.
 - `no-orphaned-staging` — blocks ending a turn with staged-but-uncommitted hunks
 - `no-other-linters-guard` — PreToolUse Edit/Write: fleet uses oxlint + oxfmt ONLY. Blocks creating a biome/eslint/prettier/dprint config file or adding `@biomejs/biome`/`eslint`/`@eslint/*`/`@typescript-eslint/*`/`prettier`/`dprint`/`rome` to a `package.json`. Vendored upstream (`upstream/`, `vendor/`, `*-upstream`) exempt. Committed-state gate: `scripts/fleet/check/linters-are-oxlint-oxfmt-only.mts`. Bypass `Allow other-linter bypass`
-- `no-pkgjson-pnpm-overrides-guard` — keeps overrides in `pnpm-workspace.yaml`
-- `no-pm-exec-guard` — blocks `<pm> exec` (wrapper overhead) + `npx`/`pnpm dlx`/`yarn dlx` (fetch+exec) Bash invocations; bypass `Allow pm-exec bypass`
+- `no-placeholder-commit-subject-guard` — PreToolUse(git commit Bash) hook: blocks a `git commit` whose subject is a content-free placeholder (wip/init/test/a single period/…), sharing the denylist with the commit-msg git hook (`.git-hooks/_shared/commit-subject.mts`).
 - `no-platform-import-guard` — blocks direct `/node` or `/browser` imports of platform-split modules (http-request, logger); bypass `Allow platform-http-import bypass`
+- `no-pm-exec-guard` — blocks `<pm> exec` (wrapper overhead) + `npx`/`pnpm dlx`/`yarn dlx` (fetch+exec) Bash invocations; bypass `Allow pm-exec bypass`
 - `no-pr-from-default-branch-guard` — PreToolUse Bash: blocks `gh pr create` when the PR head resolves to the default branch (`main`/`master`/resolved default), including `--head <owner>:main`; bypass `Allow pr-from-default-branch bypass`
 - `no-pr-from-default-checkout-guard` — PreToolUse Bash: blocks `gh pr create` run from a checkout sitting on its default branch (current branch === default), even when `--head` names a feature branch; bypass `Allow pr-from-default-checkout bypass`
+- `no-pr-review-verdict-guard` — PreToolUse Bash: blocks a `gh pr review` carrying an approve/request-changes verdict (`--approve`/`-a`, `--request-changes`/`-r`), AST-parsed via the fleet shell parser; `--comment`/`-c` and `gh pr comment` pass. The agent reviews by leaving findings and flags the PR for a person; rendering a verdict (approve or request changes) is a human's call. Bypass `Allow pr-review-verdict bypass`
 - `no-premature-commit-kill-guard` — PreToolUse Bash: blocks `run_in_background:true` on a `git commit`/`rebase`/`merge`/`cherry-pick` (its bounded ~60s pre-commit looks like a hang when backgrounded), and blocks a `pkill`/`kill` targeting a `git commit`/`git push`, a `pre-commit`/`pre-push` hook process, or a `vitest` run (killing a mid-hook run corrupts the index + leaks workers; a broad bare-verb pattern also reaps a parallel session's op in a sibling checkout). The worker-scoped reap `vitest/dist/workers` is exempt. Bypass `Allow background-git bypass`
 - `no-private-path-in-source-guard` — PreToolUse Edit/Write/MultiEdit: blocks a private/internal path (`.claude/plans|reports/…`, `socket-<repo>/.claude/…`, `/Users/<name>/…`, `../socket-<repo>/…`) inside a SOURCE-code comment; markdown / docs / `.claude/` files are out of scope. Bypass `Allow private-path-in-source bypass`
+- `no-removal-comment-nudge` — PreToolUse Edit/MultiEdit, non-blocking. Flags a newly-added comment that narrates a relocation at a code-removal site, or narrates the deprecated past anywhere — state the present, not the removed past.
+- `no-repo-scope-in-fleet-config-guard` — PreToolUse Edit/Write: blocks adding a one-repo path-scope glob (not double-star-anchored) into a fleet-canonical config under `template/.config/fleet/`. Bypass `Allow repo-scope-in-fleet bypass`.
+- `no-revert-guard` — PreToolUse(Bash) hook: blocks a command that reverts tracked changes (checkout/restore/reset/stash drop/clean) or bypasses the git-hook chain (`--no-verify`/`--no-gpg-sign`) without the matching `Allow <X> bypass` phrase in a recent user turn.
 - `no-screenshot-guard` — PreToolUse Bash: blocks a screen-capture invocation (`screencapture`, `scrot`, `grim`, `import`, `gnome-screenshot`, `spectacle`, `maim`, `flameshot`, `snippingtool`/`SnippingTool.exe`), AST-parsed via the fleet shell parser. A screenshot can capture any window on the display (a password manager, a 2FA code) and write it to a file the agent then reads, an exfiltration surface. Fleet tooling renders known pages to PNG via the rendering-chromium-to-png skill, never the live desktop. Bypass `Allow screenshot bypass`
 - `no-test-in-scripts-guard` — blocks `node:test` suites under `scripts/` (they never run in CI; move to `test/unit/` vitest)
-- `options-param-naming-guard` — PreToolUse Edit/Write: blocks introducing a function options-bag param named `opts` into a code file (the param is `options`, the normalized local is `opts`). AST-parsed via `_shared/acorn` (no regex; the parser handles TS). Edit-time half of the pair with the `socket/options-param-naming` lint rule. Skips `.d.ts` + test files; per-line marker `// socket-lint: allow options-param-naming`; bypass `Allow options-param-naming bypass`
-- `prefer-json-clone-guard` — `JSON.parse(JSON.stringify(x))` over `structuredClone`
 - `no-token-in-dotenv-guard` — blocks raw token writes into `.env*` / `.envrc`
+- `no-underscore-ident-guard` — PreToolUse Edit/Write: blocks introducing a new underscore-prefixed identifier (function/variable/type/export); privacy is module boundaries or an `_internal/` directory, not a leading underscore.
 - `no-unisolated-git-fixture-guard` — blocks a test that spawns `git` against a temp-dir fixture without isolation. Under pre-commit the inherited `GIT_DIR`/`GIT_WORK_TREE` leaks the fixture's writes onto the live `.git/config` (sets `core.bare`/junk identity, stacks junk commits). Satisfy it with the blessed one-liner `import '.git-hooks/_shared/isolate-git-env.mts'` (strips the discovery vars on load; vitest does this via its setup) or by pinning `GIT_CONFIG_GLOBAL` per-spawn. Bypass `Allow unisolated-git-fixture bypass`
+- `no-unmocked-ai-guard` — PreToolUse Write/Edit(test files): blocks a test file calling the fleet's AI-spawn helper with no mock in the same content. Bypass `Allow unmocked-ai-in-tests bypass`.
+- `no-unmocked-net-guard` — PreToolUse Write/Edit(test files): blocks a test file making an HTTP call against a non-localhost host with no `nock` mock in the same content. Bypass `Allow unmocked-network-in-tests bypass`.
 - `no-verify-format-nudge` — PreToolUse Bash, non-blocking. On a `git commit`/`push --no-verify` (the `Allow no-verify bypass` path) it runs `oxfmt --check` on the changed format-relevant files and warns about any that are unformatted. Rationale: `--no-verify` skips the format gate too, so the debt would otherwise ship and fail CI. The message names the files plus the `oxfmt -c .config/fleet/oxfmtrc.json <files>` fix. Silent for `FLEET_SYNC=1` cascade commits.
+- `no-vitest-double-dash-guard` — PreToolUse(Bash) hook: blocks a vitest invocation with a double-dash separator before the test-file path (the pnpm/npm args-separator swallows it, so vitest silently runs the WHOLE suite instead of one file). Bypass `Allow vitest-double-dash bypass`.
 - `node-modules-staging-guard` — blocks staging `node_modules/` into git
+- `non-fleet-pr-issue-ask-guard` — PreToolUse(gh Bash) hook: blocks `gh pr create`/`gh issue create`/`gh release create` against a repo NOT in the fleet roster without explicit user confirmation — a captured plan bullet is not standing authorization.
+- `options-param-naming-guard` — PreToolUse Edit/Write: blocks introducing a function options-bag param named `opts` into a code file (the param is `options`, the normalized local is `opts`). AST-parsed via `_shared/acorn` (no regex; the parser handles TS). Edit-time half of the pair with the `socket/options-param-naming` lint rule. Skips `.d.ts` + test files; per-line marker `// socket-lint: allow options-param-naming`; bypass `Allow options-param-naming bypass`
+- `overeager-staging-guard` — PreToolUse(git Bash) hook: blocks a sweeping stage-everything add (stages a parallel session's unstaged work) and a bare `git commit` when the index holds files this session never touched; use `git commit -o <files>` instead.
+- `oxlint-plugin-load-nudge` — PostToolUse, non-blocking. After an edit under `.config/fleet/oxlint-plugin/**`, re-verifies the whole `socket/` plugin still loads and registers every rule — a broken import silently disables the entire plugin.
 - `parallel-agent-edit-guard` — blocks edits to files another agent owns this session
 - `parallel-agent-on-stop-nudge` — Stop hook: warns when dirty paths changed recently that this session did not author — fingerprint of a concurrent Claude session sharing the same checkout
 - `parallel-agent-removal-nudge` — Stop hook: warns when files this session READ have since vanished or moved on disk without this session deleting them (`rm`/`git rm`/`safeDelete`/`unlink`) — the fingerprint of a parallel Claude session sharing the same `.git/` removing or moving files mid-flight
+- `parallel-agent-spawn-nudge` — PreToolUse(Task) hook, non-blocking. Reminds when a spawned sub-agent's prompt tells it to commit/push/land into a shared checkout — the orchestrator should commit by explicit path, not the sub-agent.
 - `parallel-agent-staging-guard` — PreToolUse Bash: when foreign dirty paths are present, blocks a git op that would sweep up / hide / destroy another agent's in-flight work (`git add -A`/`.`/`-u`, `commit -a`, `stash`, `reset --hard`, `checkout`/`switch`, `restore`). AST-parsed via the fleet shell parser; fires only when the parallel-agent signal is live. Bypass `Allow parallel-agent-staging bypass`
 - `path-guard` — blocks multi-stage paths constructed outside `paths.mts`
+- `path-regex-normalize-nudge` — Stop hook, non-blocking. Flags a regex pattern that matches both path separators inline in the assistant's code; points at `normalizePath` plus a forward-slash-only regex instead.
 - `paths-mts-inherit-guard` — sub-package `paths.mts` must `export *` from parent
+- `personal-path-guard` — PreToolUse Edit/Write: blocks landing content containing a hardcoded personal home-directory path; the username-free placeholder forms pass through.
+- `plan-location-guard` — PreToolUse Edit/Write/MultiEdit: blocks writing a plan/design/migration document to a tracked location (e.g. `docs/plans/`) instead of `<repo-root>/.claude/plans/<name>.md`.
+- `plan-review-nudge` — Stop hook, non-blocking. Flags a prose-only "here's the plan" announcement with no numbered-step structure within ~20 lines, per the "plan is a deliverable" rule.
 - `plugin-patch-format-guard` — `# @`-header + plain `diff -u` body for plugin patches
 - `pnpm-filter-zero-match-nudge` — PostToolUse Bash, non-blocking. Fires when a `pnpm --filter <name> run x` command's output contains "No projects matched the filters". pnpm exits 0 silently in that case; the no-op looks like success. Nudges to verify the package name via `pnpm ls --filter <name> --depth -1`. Never blocks.
 - `pointer-comment-nudge` — limits one-line "see X" pointer comments per file
+- `post-push-ci-monitor-nudge` — PostToolUse(git push Bash) hook, non-blocking. After a real (non-dry-run) `git push`, reminds to watch the triggered CI run to green rather than declaring the push done.
 - `pr-vs-push-default-nudge` — direct-push-to-main vs. PR-only-on-rejection nudge
+- `pre-commit-race-nudge` — PreToolUse(git commit --no-verify Bash) hook, non-blocking. Nudges to retry (or isolate the index) instead of reflexively reaching for `--no-verify` when the real failure is a parallel session racing the shared `.git/` index.
+- `prefer-async-spawn-guard` — PreToolUse Edit/Write: blocks importing the raw Node child-process module; route every subprocess through `@socketsecurity/lib-stable/process/spawn/child` instead. Bypass `Allow async-spawn bypass`.
+- `prefer-evergreen-target-nudge` — Stop hook, non-blocking. Nudges when the last turn introduced a conservative build/lang target on an auto-updating runtime where an evergreen target fits. Bypass `Allow evergreen-target bypass`.
+- `prefer-fn-decl-guard` — PreToolUse Write/Edit: blocks introducing a module-scope const-bound function expression; use a named function declaration instead. Indented/inner function expressions pass through.
+- `prefer-json-clone-guard` — `JSON.parse(JSON.stringify(x))` over `structuredClone`
 - `prefer-rebase-over-revert-nudge` — rebase unpushed commits, don't revert
+- `prefer-type-import-guard` — PreToolUse Write/Edit: blocks mixing an inline type-only specifier into a value import statement; requires a separate type-only import statement. Bypass `Allow separate-type-import bypass`.
+- `prefer-vitest-guard` — PreToolUse(Bash) hook: blocks a raw `node --test` on a src/repo test, or a bare vitest binary call, and steers to `pnpm test [<file>]`. The non-vitest tiers (hook/lint-rule/script/git-hook tests) keep `node --test` as their sanctioned runner.
 - `primary-checkout-branch-guard` — blocks `git checkout/switch <branch>` / `-b` / `-c` in the primary checkout (branch work goes in a worktree); bypass `Allow primary-branch bypass`
 - `private-name-nudge` — blocks private repo / company names in public surface
-- `claude-lockdown-guard` — headless `claude`/`codex exec` must set the lockdown flags
-- `anti-prose-guard` — PreToolUse block on AI prose tells (em-dash chains, throat-clearing, "not X it's Y", hedging adverbs) in CHANGELOG.md / docs/**/*.md / README.md; bypass `Allow prose-antipattern bypass`
-- `reply-prose-nudge` — merged Stop scan: teacher-tone comments + "the user" naming + speed-vs-depth choice menus + self-narration (status-recap padding, "now let me" openers, hedges, apology-padding); per-group disable env vars preserved
+- `prose-code-format-nudge` — PostToolUse(Edit/Write on `*.md`), non-blocking. Flags a known software identifier (rustls, reqwest, rolldown, …) written as a bare word instead of a code span, from the shared `_shared/known-names.mts` dictionary.
 - `provenance-publish-nudge` — `--staged` provenance lifecycle reminder
 - `public-surface-nudge` — Linear refs / private names / external issue refs
 - `pull-request-target-guard` — `pull_request_target` + fork-head checkout pattern
 - `push-protected-branch-guard` — PreToolUse Bash: blocks a `git push` that would UPDATE a protected remote branch (`main`/`master`) when the user only asked to "land"/"commit"/"surgically commit" (which mean a LOCAL commit). Parses the destination ref of every refspec (`main`, `HEAD:main`, `<sha>:refs/heads/main`, `+main`/`--force`, the `:main` delete) plus the bare-push-on-a-main-tracking-checkout case, via `_shared/push-refspec.mts`. Allows every feature-branch / PR-opening push (`git push -u origin feature-x`) and all non-push git. A sub-agent cannot self-authorize — only an explicit user-turn "push" directive (`Allow push to main`) lifts the block. Fail-open on parse ambiguity. Bypass `Allow push to main` / `Allow push-to-protected bypass`
+- `readme-fleet-shape-guard` — PreToolUse Edit/Write(root `README.md`): blocks a resulting README missing/reordering the 5 canonical level-2 sections, mentioning `socket-wheelhouse` outside a code fence, invoking a sibling-repo relative path, or missing a follow badge.
+- `release-tag-tied-guard` — PreToolUse(gh release create Bash) hook: allows `gh release create <ref>` only when `<ref>` is an existing pushed/local tag and `--target` is absent; blocks the on-the-fly-tag / arbitrary-ref shape. Bypass `Allow arbitrary-release bypass`.
+- `release-workflow-guard` — PreToolUse(Bash) hook: risk-tiered gate on dispatching a GitHub Actions workflow — always blocks an npm-publish or container-push workflow, allows a verifiable `dry-run=true` dispatch or a release-only (no publish) workflow.
+- `reply-prose-nudge` — merged Stop scan: teacher-tone comments + "the user" naming + speed-vs-depth choice menus + self-narration (status-recap padding, "now let me" openers, hedges, apology-padding); per-group disable env vars preserved
+- `report-location-guard` — PreToolUse Edit/Write/MultiEdit: blocks writing a scan/audit/quality/security report to a tracked location instead of `<repo-root>/.claude/reports/<name>.md`.
 - `scan-label-in-commit-guard` — strips Socket scan labels from commit messages
+- `secret-content-guard` — PreToolUse(Write/Edit) hook: blocks content carrying a literal secret-value shape (a cloud access key, a GitHub token, a Socket API key, a JWT, a PEM header) at edit time, sharing the pattern catalog with the commit-time and Bash-time secret scans. Bypass `Allow secret-content bypass`.
+- `session-handoff-nudge` — Stop hook, non-blocking. Flags the assistant offloading session/context management onto the user; points at writing a `.claude/plans/<name>.md` handoff doc and continuing instead.
 - `setup-basics-tools` — SessionStart installer for baseline dev tooling
 - `setup-claude-scanners` — SessionStart installer for the Claude scanner toolchain
 - `setup-firewall` — SessionStart installer/starter for Socket Firewall
 - `setup-misc-tools` — SessionStart installer for miscellaneous fleet tools
 - `setup-security-tools` — SessionStart SFW-shim integrity checker (flags shims whose dlx-cached target vanished) + the Socket security-tool installer (`install.mts`: SFW, AgentShield, Zizmor, TruffleHog, … + token-to-keychain)
+- `setup-signing` — Install-only helper (`node .claude/hooks/fleet/setup-signing/install.mts [--check|--force]`): auto-detects SSH/GPG signing material and walks through `git config user.signingkey` + `commit.gpgsign` + `gpg.format` setup.
+- `shallow-clone-guard` — PreToolUse(git clone Bash) hook: blocks a `git clone` missing either `--depth=1`/`--depth 1` or `--single-branch`; `git clone --help`/`-h` pass through. Bypass `Allow shallow-clone bypass`.
 - `skill-usage-logger` — PreToolUse telemetry-only logger: appends one TSV line per Skill invocation to `~/.claude/projects/<project>/.skill-usage.log`; falls open on every error path
-- `headroom-proxy-start` — auto-starts the telemetry-locked headroom proxy fail-closed
+- `small-pr-nudge` — PreToolUse(gh pr create Bash) hook, non-blocking. Reminds to decompose or stack a PR when its diff exceeds the ~200-changed-line ceiling.
+- `squash-history-nudge` — Stop hook, non-blocking. Reminds about the `squashing-history` skill when the repo opted into `squash-history` and the default branch's commit count exceeds the threshold.
+- `stale-node-modules-nudge` — PostToolUse(Bash), non-blocking. After a Bash failure showing a module-not-found error for a workspace package, or the no-TTY pnpm-remove-modules-dir trap, points at the safe `pnpm install` fix for a dangling `node_modules` symlink.
 - `stale-process-sweeper` — Stop-time reaper for orphaned vitest workers
+- `stop-claim-verify-nudge` — Stop hook, non-blocking. Scans the last turn for a self-claim of success ("tests pass"/"builds"/"verified") with no backing tool call this session that actually ran it.
 - `sweep-ds-store` — Stop-time `.DS_Store` removal (no bypass)
 - `synthesized-script-edit-guard` — blocks editing a cascade-synthesized `package.json` `scripts` entry (lives in `CANONICAL_SCRIPT_BODIES`) directly, since the next cascade reverts it; edit the manifest + cascade instead. Bypass: `Allow synthesized-script-edit bypass`
 - `test-platform-coverage-nudge` — nudges to gate POSIX-vs-Windows path assertions in test edits
+- `test-script-defers-guard` — PreToolUse Edit/Write/MultiEdit: blocks a `package.json` test script invoking a raw test-runner binary directly instead of deferring to a `.mts` wrapper; the hook/lint-rule/git-hook tier's own runner scripts are exempt.
 - `token-guard` — redacts tokens/keys/JWTs in tool output
+- `token-spend-guard` — PreToolUse(Bash) hook, exit-2 nudge (non-fatal). Flags a known-mechanical command (a cascade, a lint-autofix sweep, a rename) run on a premium model or high reasoning effort. Bypass `Allow model bypass` / `Allow effort bypass`.
 - `unbacked-claim-commit-guard` — blocks `git commit`/`push` when the last turn claimed "tests pass"/"builds"/"typechecks"/"lint passes"/"render verified" with no backing command this session (shares the matcher with `stop-claim-verify-nudge`). Bypass: `Allow unbacked-claim bypass`
 - `uncodified-lesson-nudge` — Stop-time: the turn wrote a `feedback`/`project` memory with an enforceable shape + no enforcer citation → nudge to codify it via `/codifying-disciplines` or `scripts/fleet/codify-rule.mts`. Scoped to the memory-write signal so it doesn't overlap `compound-lessons-nudge`. Non-blocking, no bypass.
+- `unpushed-main-nudge` — Stop hook, non-blocking. On the default branch: nags to push when local HEAD is ahead of origin; nudges to reconcile FORWARD (never reset to origin) when origin is ahead only by the operator's own/bot commits.
 - `uses-sha-verify-guard` — full-SHA reachability check for `uses:` pins
+- `variant-analysis-nudge` — Stop hook, non-blocking. Flags a High/Critical finding in the assistant's prose with no subsequent Grep/Glob/Read tool call in the same turn — the "search the rest of the repo for the same shape" rule.
+- `verify-before-publish-guard` — PreToolUse(npm|pnpm|yarn publish Bash) hook: blocks a publish path arg missing a leading relative-path prefix (npm misparses a bare scoped path as a GitHub git spec) and blocks a non-dry-run publish with no same-session registry-read receipt.
+- `verify-render-pre-commit-nudge` — PreToolUse(git commit Bash) hook, non-blocking. Reminds to verify a rebuilt UI/render output before committing when the staged set carries render-shape files and a recent build ran with no explicit go-ahead from the user since.
 - `version-bump-order-guard` — version bump → CHANGELOG → tag ordering
 - `vitest-vs-node-test-guard` — vitest vs node-test runner separation
-- `workflow-uses-comment-guard` — SHA-pinned `uses:` lines need `# <tag> (YYYY-MM-DD)`
+- `vscode-folder-open-task-guard` — PreToolUse Edit/Write/MultiEdit: blocks a VS Code tasks config carrying a run-on-folder-open trigger — a zero-click auto-run-on-open RCE/dropper vector. Bypass `Allow vscode-folder-open-task bypass`.
+- `workflow-agent-task-tools-nudge` — PreToolUse(Workflow) hook, non-blocking. Fires when a Workflow script or its `agent()` subagent prompt references a session Task tool that a workflow subagent can never reach; inline the full spec instead.
 - `workflow-multiline-body-guard` — `gh ... --body-file` over inline `--body "..."`
+- `workflow-uses-comment-guard` — SHA-pinned `uses:` lines need `# <tag> (YYYY-MM-DD)`
+- `worktree-remove-relink-nudge` — PostToolUse(git worktree remove|prune Bash) hook, non-blocking. Nudges to run `pnpm i` in the main checkout after a worktree removal, since `node_modules` symlinks can dangle into the removed worktree.
 
 Tooling + package manager:
 
+- `no-corepack-guard` — BLOCKS `corepack enable`/`prepare`/`use`/`install` — the fleet provisions pnpm via a pinned, integrity-checked download, not corepack's un-pinned registry fetch. Bypass `Allow corepack bypass`.
+- `no-npm-otp-flag-guard` — blocks an npm-family command (npm/pnpm/yarn) passing the 2FA code as an `--otp` flag (leaks it into history/process-list/CI logs); use browser auth or `NODE_AUTH_TOKEN` in CI.
 - `no-strip-types-guard` — blocks `--experimental-strip-types`
 - `no-tail-install-out-guard` — blocks piping install/check/test/build to `tail`/`head` (hides SFW warnings)
+- `no-tsx-guard` — BLOCKS running TypeScript via `tsx`/`ts-node` (standalone or as a node loader flag); Node runs `.mts`/`.ts` natively per the pinned `.node-version`.
+- `npm-otp-flow-nudge` — npm 2FA registry ops need an interactive-TTY OTP (run in a real terminal)
+- `operate-from-repo-root-guard` — blocks `cd <subpackage> && pnpm/npm/yarn …`; run from the repo root with `pnpm --filter <pkg> …` instead. Bypass `Allow repo-root bypass`.
 - `prefer-pipx-over-pip-guard` — blocks `pip`/`pip3`; use `pypa-tool` or `pipx install <pkg>==<ver>`
 - `reserved-script-dir-guard` — blocks build/output dir names under `scripts/`; bypass `Allow reserved-script-dir bypass`
-- `npm-otp-flow-nudge` — npm 2FA registry ops need an interactive-TTY OTP (run in a real terminal)
+- `zsh-word-split-nudge` — PreToolUse(Bash), non-blocking. Fires when a space-joined list built from a command substitution is later expanded unquoted (zsh doesn't word-split it, so it passes as ONE argument); points at safe splitting alternatives.
 
 Supply-chain hygiene:
 
-- `check-new-deps` — Socket-scores newly added dependencies at edit time
-- `minimum-release-age-guard` — enforces the 7-day soak on new deps
-- `soak-exclude-date-guard` — a soak-bypass entry needs a `# published: … | removable: …` annotation
-- `soak-exclude-scope-guard` — soak-exclude entries are exact-pin + scoped
-- `no-pkgjson-pnpm-overrides-guard` — version-range pins go in `pnpm-workspace.yaml` `overrides:`, not `package.json`
+- `brew-supply-chain-guard` — blocks a `brew` invocation when the installed Homebrew is below 6.0.0 or its tap-trust/cask-checksum env knobs are unset. Bypass `Allow brew-supply-chain bypass`.
 - `bundle-flags-guard` — guards bundler trust/exotic-subdep flags
 - `catch-message-guard` — keeps catch-block error messages thorough
+- `cdn-allowlist-guard` — blocks a `curl`/`wget`/fetch to a host outside the fleet's public-CDN / package-registry allowlist (`_shared/cdn-allowlist.mts`, shared with the commit-time check). Bypass `Allow cdn-allowlist bypass`.
+- `check-new-deps` — Socket-scores newly added dependencies at edit time
+- `dep-derived-source-nudge` — PostToolUse(Edit/Write), non-blocking. After an edit to a manifest's dependency surface, reminds to regenerate the lockfile AND update the derived canonical sources (soak-exclude parity, cross-major dedup, catalog).
+- `dirty-lockfile-nudge` — PostToolUse(git|pnpm Bash), non-blocking. After a git/pnpm command, checks whether `pnpm-lock.yaml` is dirty in the working tree and reminds to run `pnpm i` before landing.
+- `minimum-release-age-guard` — enforces the 7-day soak on new deps
+- `no-hand-edit-registry-pin-guard` — BLOCKS an Edit/Write that changes a SocketDev/socket-registry shared workflow/action SHA pin by hand — those pins are cascade-owned. Bypass `Allow registry-pin-edit bypass`.
+- `no-pkgjson-pnpm-overrides-guard` — version-range pins go in `pnpm-workspace.yaml` `overrides:`, not `package.json`
 - `npmrc-trust-optout-guard` — blocks the pnpm trust-aware env-expansion opt-out (`PNPM_CONFIG_NPMRC_AUTH_FILE`/`NPM_CONFIG_USERCONFIG`) + `${ENV}`-beside-`_authToken` in a committed `.npmrc`
+- `package-manager-auto-update-guard` — blocks a package-manager invocation while that manager's auto-update is still enabled on this machine. Bypass `Allow package-manager-auto-update bypass` (or per-manager).
+- `soak-exclude-date-guard` — a soak-bypass entry needs a `# published: … | removable: …` annotation
+- `soak-exclude-scope-guard` — soak-exclude entries are exact-pin + scoped
+- `soak-pin-needs-annotation-guard` — blocks adding a version-pinned soak-exclude entry with no matching published/removable date annotation. No bypass — add the date annotation.
 - `target-arch-env-guard` — guards cross-arch build env vars
 - `trust-downgrade-guard` — blocks weakening a `trustPolicy`/`trust-all`/`blockExoticSubdeps` gate
 
@@ -137,5 +246,6 @@ Prompt-injection + agent-DoS:
 - `proc-environ-exfil-guard` — blocks reads of `/proc/*/environ`-style secret exfil
 - `untrusted-coauthor-guard` — blocks a `Co-authored-by:` trailer crediting an identity not on the cascaded `git-authors.json` allowlist (a drive-by issue/PR from a new low-history account is untrusted input, not a contributor to auto-credit); bypass `Allow untrusted-coauthor bypass`
 - `issue-autolink-nudge` — warns that a bare `#N` in a GitHub-destined surface (commit/PR/issue/comment/release body) auto-links to an unrelated issue/PR; suggests backticking or reshaping when `#N` means a list item / task number (advisory, never blocks)
+- `no-new-config-guard` — blocks creating a new standalone config-DATA file (`.json`/`.yaml`/`.toml`) under `.config/`; per-repo config flows through the one per-member wheelhouse settings (`.config/socket-wheelhouse.json`) + its schema as a section, not a new file; bypass `Allow new-config bypass`
 
 The set drifts; the citation gate (`new-hook-claude-md-guard`) catches additions that ship without a CLAUDE.md reference.
