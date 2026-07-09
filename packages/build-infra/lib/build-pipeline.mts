@@ -1,4 +1,3 @@
-/* max-file-lines: legitimate — single-orchestrator pipeline (clone → configure → build → bundle → sign); the stages share enough internal state (manifest, paths, checkpoints) that splitting would tangle cross-stage data passing. */
 /**
  * WASM build pipeline orchestrator.
  *
@@ -26,253 +25,59 @@
  * @module build-infra/lib/build-pipeline
  */
 
-import crypto from 'node:crypto'
-import { existsSync, promises as fs, readFileSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
-
-import {
-  cleanCheckpoint,
-  createCheckpoint,
-  shouldRun,
-} from './checkpoint-manager.mts'
-import { getBuildMode, validateCheckpointChain } from './constants.mts'
-import { validateExternalTools } from './external-tools-schema.mts'
-import { getCurrentPlatformArch } from './platform-mappings.mts'
-import { getNodeVersion } from './version-helpers.mts'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
+
+import { cleanCheckpoint } from './checkpoint-manager.mts'
+import { getBuildMode, validateCheckpointChain } from './constants.mts'
+import { getCurrentPlatformArch } from './platform-mappings.mts'
+import {
+  buildCacheKey,
+  hashFileContents,
+  loadExternalTools,
+  loadPackageJson,
+  parseFlags,
+} from './pipeline-cache.mts'
+import {
+  resolveCheckpointBuildDir,
+  runStage,
+} from './pipeline-stage-runner.mts'
+import type {
+  ParsedFlags,
+  PipelineContext,
+  RunPipelineOptions,
+  SharedBuildPaths,
+  SourceMap,
+} from './pipeline-types.mts'
+import { getNodeVersion } from './version-helpers.mts'
+
+export {
+  buildCacheKey,
+  hashFileContents,
+  loadExternalTools,
+  loadPackageJson,
+  parseFlags,
+  readJson,
+} from './pipeline-cache.mts'
+export {
+  resolveCheckpointBuildDir,
+  runStage,
+} from './pipeline-stage-runner.mts'
 
 const logger = getDefaultLogger()
 
 /**
- * @typedef {object} StageResult
- *
- * @property {() => Promise<void> | void} [smokeTest] Post-run validation. Runs
- *   before the checkpoint is committed.
- * @property {string} [artifactPath] Absolute path archived into the checkpoint
- *   tarball.
- * @property {string} [binaryPath] Relative path (from buildDir) to a binary to
- *   codesign on macOS.
- * @property {string | number} [binarySize] Optional size metadata surfaced in
- *   checkpoint data.
- */
-
-/**
- * @typedef {object} PipelineStage
- *
- * @property {string} name - Checkpoint name (must appear in CHECKPOINTS).
- * @property {(
- *   ctx: PipelineContext,
- *   params?: object,
- * ) => Promise<StageResult | void>} run
- *   Stage worker. Receives the shared context and optional per-stage params.
- *   Should perform the build work only — no shouldRun / createCheckpoint calls.
- *   Return a StageResult to configure the checkpoint (smoke test + artifact).
- * @property {string[]} [sourcePaths] Extra file paths whose content contributes
- *   to this stage's cache hash. The orchestrator always includes package-wide
- *   inputs (external-tools.json, package.json); list stage-specific inputs here
- *   (e.g. an optimization flags module).
- * @property {boolean} [skipInDev] Skip this stage entirely when buildMode ===
- *   'dev' (e.g. wasm-optimized).
- * @property {(ctx: PipelineContext) => boolean} [skip] Dynamic skip predicate.
- *   Runs before shouldRun(). When it returns true, the stage is skipped without
- *   being recorded as cached. Use when the skip condition depends on runtime
- *   context beyond buildMode (e.g. socket-cli's SEA stage, which only runs when
- *   --force is present).
- * @property {boolean} [shared] Checkpoint lives at the shared build dir instead
- *   of per-platform (e.g. source-cloned, which is platform-agnostic).
- */
-
-/**
- * @typedef {object} PipelineContext
- *
- * @property {string} packageRoot - Package root (absolute).
- * @property {string} packageName - Friendly name used in logs.
- * @property {string} buildMode - 'dev' or 'prod'.
- * @property {string} platformArch - Canonical platform-arch string.
- * @property {string} nodeVersion - Node version running the build.
- * @property {boolean} forceRebuild - Global --force flag.
- * @property {Record<string, string>} toolVersions - Map of tool name -> pinned
- *   version.
- * @property {Record<string, object>} sources - Contents of package.json
- *   `sources`.
- * @property {object} paths - Result of the package's getBuildPaths(mode,
- *   platformArch).
- * @property {object} sharedPaths - Result of the package's
- *   getSharedBuildPaths(), if any.
- * @property {string} cacheKey - Unified cache key for GH Actions.
- * @property {typeof logger} logger
- */
-
-/**
- * @typedef {object} RunPipelineOptions
- *
- * @property {string} packageRoot - Absolute path to the package directory.
- * @property {string} packageName - Short name used in logs (e.g. 'yoga').
- * @property {PipelineStage[]} stages - Stages in execution order.
- * @property {(mode: string, platformArch: string) => object} getBuildPaths
- *   Package's path resolver for mode + platformArch.
- * @property {() => object} [getSharedBuildPaths] Optional shared-path resolver
- *   (for source-cloned tarballs).
- * @property {() => Promise<void>} [preflight] Optional pre-build check (tool
- *   probing, disk space). Runs once before the first stage. Throws to abort the
- *   build.
- * @property {(paths: object) => string[]} [getOutputFiles] Returns absolute
- *   paths to the artifacts the build is expected to emit. Missing files trigger
- *   a full-checkpoint clean to force a rebuild.
- * @property {string[]} [extraCacheInputs] Extra file paths whose content is
- *   mixed into the cache key. Package-wide inputs (external-tools.json +
- *   package.json) are already included.
- * @property {() => Promise<string>} [resolvePlatformArch] Override
- *   platform-arch resolution. Default calls getCurrentPlatformArch() from
- *   platform-mappings (returns e.g. 'darwin-arm64'). Platform-agnostic builds
- *   (e.g. JS bundling in socket-tui) should return a fixed string like
- *   'universal' so the cache key stays stable across host OSes.
- */
-
-export function buildCacheKey({
-  buildMode,
-  nodeVersion,
-  platformArch,
-  sources,
-  toolVersions,
-  toolsHash,
-  packageVersion,
-  extraHash,
-}) {
-  const hash = crypto.createHash('sha256')
-  hash.update(`node=${nodeVersion}`)
-  hash.update(`platformArch=${platformArch}`)
-  hash.update(`mode=${buildMode}`)
-  hash.update(`tools=${toolsHash}`)
-  for (const tool of Object.keys(toolVersions).toSorted()) {
-    hash.update(`${tool}@${toolVersions[tool]}`)
-  }
-  for (const key of Object.keys(sources).toSorted()) {
-    const src = sources[key] ?? {}
-    hash.update(
-      `src:${key}=${src.version ?? ''}:${src.ref ?? ''}:${src.url ?? ''}`,
-    )
-  }
-  if (extraHash) {
-    hash.update(`extra=${extraHash}`)
-  }
-  const digest = hash.digest('hex').slice(0, 12)
-  return `v${nodeVersion}-${platformArch}-${buildMode}-${digest}-${packageVersion}`
-}
-
-export function hashFileContents(files) {
-  const hash = crypto.createHash('sha256')
-  for (const file of files.toSorted()) {
-    let content = Buffer.alloc(0)
-    if (existsSync(file)) {
-      try {
-        content = readFileSync(file)
-      } catch {}
-    }
-    hash.update(`${file}:`)
-    hash.update(content)
-  }
-  return hash.digest('hex').slice(0, 16)
-}
-
-export async function loadExternalTools(packageRoot) {
-  const filePath = path.join(packageRoot, 'external-tools.json')
-  const data = await readJson(filePath)
-  if (!data) {
-    return { versions: {}, rawHash: '' }
-  }
-  const validated = validateExternalTools(data)
-  if (!validated.ok) {
-    const details = validated.errors
-      .map(e => `  ${e.path}: ${e.message}`)
-      .join('\n')
-    throw new Error(`Invalid external-tools.json at ${filePath}:\n${details}`)
-  }
-  const versions = {}
-  for (const [tool, meta] of Object.entries(data.tools ?? {})) {
-    versions[tool] = meta?.version ?? ''
-  }
-  const rawHash = crypto
-    .createHash('sha256')
-    .update(JSON.stringify(data))
-    .digest('hex')
-    .slice(0, 16)
-  return { versions, rawHash }
-}
-
-export async function loadPackageJson(packageRoot) {
-  const pkg = await readJson(path.join(packageRoot, 'package.json'))
-  if (!pkg) {
-    throw new Error(`Missing package.json in ${packageRoot}`)
-  }
-  return pkg
-}
-
-export function parseFlags(argv) {
-  const args = new Set(argv)
-  const getValue = flag => {
-    const prefix = `${flag}=`
-    for (let i = 0, { length } = argv; i < length; i += 1) {
-      const arg = argv[i]
-      if (arg.startsWith(prefix)) {
-        return arg.slice(prefix.length)
-      }
-    }
-    return undefined
-  }
-  return {
-    force: args.has('--force'),
-    clean: args.has('--clean'),
-    printCacheKey: args.has('--cache-key'),
-    cleanStage: getValue('--clean-stage'),
-    fromStage: getValue('--from-stage'),
-    raw: args,
-  }
-}
-
-export async function readJson(filePath) {
-  let raw
-  try {
-    raw = await fs.readFile(filePath, 'utf8')
-  } catch (e) {
-    if (e.code === 'ENOENT') {
-      return undefined
-    }
-    throw new Error(`Failed to read ${filePath}: ${errorMessage(e)}`, {
-      cause: e,
-    })
-  }
-  try {
-    return JSON.parse(raw)
-  } catch (e) {
-    throw new Error(`Failed to parse ${filePath}: ${errorMessage(e)}`, {
-      cause: e,
-    })
-  }
-}
-
-export function resolveCheckpointBuildDir(stage, ctx) {
-  if (stage.shared && ctx.sharedPaths?.buildDir) {
-    return ctx.sharedPaths.buildDir
-  }
-  return ctx.paths.buildDir
-}
-
-/**
  * Validate + run a pipeline. On --cache-key, prints the key and exits without
  * building. Returns the context so the caller can render a summary.
- *
- * @param {RunPipelineOptions} options
- * @param {object} [cliOverrides] - Pre-parsed flags (for programmatic use).
- *
- * @returns {Promise<PipelineContext>}
  */
-export async function runPipeline(options, cliOverrides) {
+export async function runPipeline(
+  options: RunPipelineOptions,
+  cliOverrides?: ParsedFlags | undefined,
+): Promise<PipelineContext | undefined> {
   const {
     extraCacheInputs = [],
     getBuildPaths,
@@ -298,7 +103,7 @@ export async function runPipeline(options, cliOverrides) {
       loadExternalTools(packageRoot),
     ])
 
-  const sources = pkgJson.sources ?? {}
+  const sources: SourceMap = pkgJson.sources ?? {}
   const packageVersion = pkgJson.version ?? '0.0.0'
 
   const extraHash =
@@ -320,7 +125,9 @@ export async function runPipeline(options, cliOverrides) {
   }
 
   const paths = getBuildPaths(buildMode, platformArch)
-  const sharedPaths = getSharedBuildPaths ? getSharedBuildPaths() : undefined
+  const sharedPaths: SharedBuildPaths | undefined = getSharedBuildPaths
+    ? getSharedBuildPaths()
+    : undefined
   const outputFiles = getOutputFiles ? getOutputFiles(paths) : []
 
   // Validate chain for typos / unknown names.
@@ -329,7 +136,7 @@ export async function runPipeline(options, cliOverrides) {
     packageName,
   )
 
-  const ctx = {
+  const ctx: PipelineContext = {
     buildMode,
     cacheKey,
     forceRebuild: flags.force,
@@ -417,8 +224,7 @@ export async function runPipeline(options, cliOverrides) {
   if (outputFiles.length) {
     logger.info('')
     logger.info('Files:')
-    for (let i = 0, { length } = outputFiles; i < length; i += 1) {
-      const file = outputFiles[i]
+    for (const file of outputFiles) {
       logger.info(`  - ${path.relative(packageRoot, file)}`)
     }
     logger.info('')
@@ -428,10 +234,10 @@ export async function runPipeline(options, cliOverrides) {
 
 /**
  * CLI entry-point helper. Wraps runPipeline with a top-level error handler.
- *
- * @param {RunPipelineOptions} options
  */
-export async function runPipelineCli(options) {
+export async function runPipelineCli(
+  options: RunPipelineOptions,
+): Promise<void> {
   try {
     await runPipeline(options)
   } catch (e) {
@@ -441,67 +247,4 @@ export async function runPipelineCli(options) {
     process.exitCode = 1
     throw e
   }
-}
-
-export async function runStage(stage, ctx, stageParams) {
-  const { buildMode, forceRebuild, logger: stageLogger } = ctx
-
-  if (stage.skipInDev && buildMode === 'dev') {
-    stageLogger.substep(`Skipping ${stage.name} (dev build)`)
-    return
-  }
-
-  if (typeof stage.skip === 'function' && stage.skip(ctx)) {
-    stageLogger.substep(`Skipping ${stage.name} (skip predicate)`)
-    return
-  }
-
-  const buildDir = resolveCheckpointBuildDir(stage, ctx)
-  const sourcePaths = [
-    path.join(ctx.packageRoot, 'external-tools.json'),
-    path.join(ctx.packageRoot, 'package.json'),
-    ...(stage.sourcePaths ?? []),
-  ].filter(p => existsSync(p))
-
-  const platformMeta = stage.shared
-    ? {}
-    : {
-        buildMode,
-        nodeVersion: ctx.nodeVersion,
-        platform: process.platform,
-        arch: process.arch,
-      }
-
-  const shouldProceed = await shouldRun(
-    buildDir,
-    '',
-    stage.name,
-    forceRebuild,
-    sourcePaths,
-    platformMeta,
-  )
-
-  if (!shouldProceed) {
-    // oxlint-disable-next-line socket/no-status-emoji -- substep takes its own indent prefix; ✓ marks the cache-hit state.
-    stageLogger.substep(`✓ ${stage.name} up-to-date (cached)`)
-    return
-  }
-
-  stageLogger.step(`Running ${stage.name}`)
-  const result = (await stage.run(ctx, stageParams)) ?? {}
-  const {
-    artifactPath,
-    binaryPath,
-    binarySize,
-    smokeTest = async () => {},
-  } = result
-
-  await createCheckpoint(buildDir, stage.name, smokeTest, {
-    ...(artifactPath ? { artifactPath } : {}),
-    ...(binaryPath ? { binaryPath } : {}),
-    ...(binarySize !== undefined ? { binarySize } : {}),
-    packageRoot: ctx.packageRoot,
-    sourcePaths,
-    ...platformMeta,
-  })
 }

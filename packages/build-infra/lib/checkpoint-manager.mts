@@ -87,10 +87,7 @@ export function checkpointFile(
 /**
  * Delete all checkpoints under a build dir (or a single package's scope).
  */
-export async function cleanCheckpoint(
-  buildDir: string,
-  packageName?: string,
-) {
+export async function cleanCheckpoint(buildDir: string, packageName?: string) {
   const dir = checkpointDir(buildDir, packageName)
   if (!existsSync(dir)) {
     return
@@ -246,7 +243,8 @@ export function hashSourcePaths(sourcePaths: string[]) {
       try {
         hash.update(readFileSync(file))
       } catch (e) {
-        const code = e instanceof Error ? (e as NodeJS.ErrnoException).code : undefined
+        const code =
+          e instanceof Error ? (e as NodeJS.ErrnoException).code : undefined
         if (code !== 'ENOENT') {
           throw e
         }

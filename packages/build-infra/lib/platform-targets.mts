@@ -172,7 +172,8 @@ export interface PlatformTargetInfo {
  * @param {string} target - Target string (e.g., "darwin-arm64" or
  *   "linux-x64-musl").
  *
- * @returns {PlatformTargetInfo | undefined} Parsed info or undefined if invalid.
+ * @returns {PlatformTargetInfo | undefined} Parsed info or undefined if
+ *   invalid.
  */
 export function parsePlatformTarget(
   target: string,
@@ -224,7 +225,7 @@ export function parsePlatformTarget(
  * @returns {boolean} True if valid platform target.
  */
 // oxlint-disable-next-line socket/sort-source-methods -- grouped by phase (parse → validate → resolve → format); alphabetizing would scatter the parse-validate-resolve flow.
-export function isPlatformTarget(target) {
+export function isPlatformTarget(target: string) {
   return PLATFORM_TARGETS.includes(target)
 }
 
@@ -239,7 +240,7 @@ export function isPlatformTarget(target) {
  *   or undefined.
  */
 // oxlint-disable-next-line socket/sort-source-methods -- grouped by phase (parse → validate → resolve → format); alphabetizing would scatter the parse-validate-resolve flow.
-export function getPlatformConfig(target) {
+export function getPlatformConfig(target: string) {
   return PLATFORM_CONFIGS.find(
     c =>
       `${c.releasePlatform}-${c.arch}${c.libc ? `-${c.libc}` : ''}` ===
@@ -258,20 +259,23 @@ export function getPlatformConfig(target) {
  * @returns {string} Target string (e.g., "linux-x64-musl").
  */
 // oxlint-disable-next-line socket/sort-source-methods -- grouped by phase (parse → validate → resolve → format); alphabetizing would scatter the parse-validate-resolve flow.
-export function formatPlatformTarget(platform, arch, libc) {
+export function formatPlatformTarget(
+  platform: string,
+  arch: string,
+  libc?: string,
+) {
   const muslSuffix = libc === 'musl' ? '-musl' : ''
   return `${platform}-${arch}${muslSuffix}`
 }
 
 /**
  * Parsed platform arguments from CLI.
- *
- * @typedef {Object} PlatformArgs
- *
- * @property {string | null} platform - Platform or null.
- * @property {string | null} arch - Architecture or null.
- * @property {string | null} libc - Libc variant or null.
  */
+export interface PlatformArgs {
+  arch: string | undefined
+  libc: string | undefined
+  platform: string | undefined
+}
 
 /**
  * Parse CLI arguments for platform/arch/target/libc flags.
@@ -289,11 +293,18 @@ export function formatPlatformTarget(platform, arch, libc) {
  * @returns {PlatformArgs} Parsed platform arguments.
  */
 // oxlint-disable-next-line socket/sort-source-methods -- grouped by phase (parse → validate → resolve → format); alphabetizing would scatter the parse-validate-resolve flow.
-export function parsePlatformArgs(args) {
-  const result = { arch: undefined, libc: undefined, platform: undefined }
+export function parsePlatformArgs(args: string[]): PlatformArgs {
+  const result: PlatformArgs = {
+    arch: undefined,
+    libc: undefined,
+    platform: undefined,
+  }
 
   for (let i = 0, { length } = args; i < length; i += 1) {
     const arg = args[i]
+    if (arg === undefined) {
+      continue
+    }
     if (arg.startsWith('--platform=')) {
       const parts = arg.split('=')
       if (parts.length >= 2) {
@@ -311,8 +322,9 @@ export function parsePlatformArgs(args) {
       }
     } else if (arg.startsWith('--target=')) {
       const parts = arg.split('=')
-      if (parts.length >= 2) {
-        const parsed = parsePlatformTarget(parts[1])
+      const targetValue = parts[1]
+      if (parts.length >= 2 && targetValue !== undefined) {
+        const parsed = parsePlatformTarget(targetValue)
         if (parsed) {
           result.platform = parsed.platform
           result.arch = parsed.arch
