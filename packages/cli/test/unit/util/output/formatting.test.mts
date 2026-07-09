@@ -14,6 +14,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+// oxlint-disable-next-line socket/no-src-import-in-test-expect -- getFlagListOutput is compared for reference identity against getFlagsHelpOutput (alias check), not used to build a derived expected value; the -stable alias would be a different module instance.
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
@@ -185,7 +186,6 @@ describe('output-formatting utilities', () => {
 
   describe('getFlagsHelpOutput', () => {
     it('is an alias for getFlagListOutput', () => {
-      // oxlint-disable-next-line socket/no-src-import-in-test-expect -- reference-identity check that getFlagsHelpOutput is the same function object as getFlagListOutput; the -stable alias would be a different module instance and always fail.
       expect(getFlagsHelpOutput).toBe(getFlagListOutput)
     })
   })

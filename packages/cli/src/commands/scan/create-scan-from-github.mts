@@ -26,6 +26,21 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 const logger = getDefaultLogger()
 
+// Best-effort cleanup of a partial download. Isolated in its own function so
+// its catch handler doesn't shadow the caller's catch binding.
+export async function cleanupPartialDownload(localPath: string): Promise<void> {
+  try {
+    await safeDelete(localPath, { force: true })
+  } catch (e) {
+    logger.fail(
+      formatErrorWithDetail(
+        `Error deleting partial file ${localPath}`,
+        e as NodeJS.ErrnoException,
+      ),
+    )
+  }
+}
+
 export type RepoListItem =
   SocketSdkSuccessResult<'listRepositories'>['data']['results'][number]
 
@@ -409,21 +424,6 @@ export async function scanRepo(
   logger.groupEnd()
   logger.log('')
   return result
-}
-
-// Best-effort cleanup of a partial download. Isolated in its own function so
-// its catch handler doesn't shadow the caller's catch binding.
-export async function cleanupPartialDownload(localPath: string): Promise<void> {
-  try {
-    await safeDelete(localPath, { force: true })
-  } catch (e) {
-    logger.fail(
-      formatErrorWithDetail(
-        `Error deleting partial file ${localPath}`,
-        e as NodeJS.ErrnoException,
-      ),
-    )
-  }
 }
 
 // Courtesy of gemini:
