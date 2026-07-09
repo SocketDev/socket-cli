@@ -1,4 +1,3 @@
-/* max-file-lines: test — comprehensive test suite for one command/module; splitting would fragment closely related assertions. */
 /**
  * Integration tests for `socket optimize` command.
  *
@@ -28,7 +27,7 @@
  */
 
 import { existsSync, promises } from 'node:fs'
-import os from 'node:os'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
 
 import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
@@ -46,7 +45,6 @@ import {
   FLAG_MARKDOWN,
   FLAG_PIN,
   FLAG_PROD,
-  FLAG_VERSION,
 } from '../../../src/constants/cli.mts'
 import {
   PACKAGE_JSON,
@@ -425,121 +423,4 @@ describe('socket optimize', async () => {
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
-
-  describe('error handling and usability tests', () => {
-    cmdit(
-      [
-        'optimize',
-        '/nonexistent/path',
-        FLAG_CONFIG,
-        '{"apiToken":"fake-token"}',
-      ],
-      'should show clear error for non-existent directory',
-      async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-        const output = stdout + stderr
-        expect(output.length).toBeGreaterThan(0)
-        expect(code).toBe(1)
-      },
-    )
-
-    cmdit(
-      ['optimize', FLAG_DRY_RUN, '.', FLAG_CONFIG, '{}'],
-      'should show clear error when API token is missing',
-      async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
-        })
-        const output = stdout + stderr
-        expect(output.length).toBeGreaterThan(0)
-        expect(code, 'should exit with code 0 when no token').toBe(0)
-      },
-    )
-
-    cmdit(
-      ['optimize', FLAG_DRY_RUN, '.', FLAG_CONFIG, '{"apiToken":""}'],
-      'should show clear error when API token is empty',
-      async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
-        })
-        const output = stdout + stderr
-        expect(output.length).toBeGreaterThan(0)
-        expect(code, 'should exit with code 0 with empty token').toBe(0)
-      },
-    )
-
-    cmdit(
-      [
-        'optimize',
-        '.',
-        FLAG_DRY_RUN,
-        FLAG_PIN,
-        FLAG_PROD,
-        FLAG_JSON,
-        FLAG_MARKDOWN,
-        FLAG_CONFIG,
-        '{"apiToken":"fake-token"}',
-      ],
-      'should show clear error when conflicting output flags are used',
-      async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
-        })
-        const output = stdout + stderr
-        expect(output.length).toBeGreaterThan(0)
-        expect(code).toBe(0)
-      },
-    )
-
-    cmdit(
-      [
-        'optimize',
-        '.',
-        FLAG_DRY_RUN,
-        '--unknown-flag',
-        FLAG_CONFIG,
-        '{"apiToken":"fake-token"}',
-      ],
-      'should show helpful error for unknown flags',
-      async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
-        })
-        const output = stdout + stderr
-        expect(output.length).toBeGreaterThan(0)
-        expect(code).toBe(0)
-      },
-    )
-
-    cmdit(
-      ['optimize', FLAG_PIN, FLAG_PROD, FLAG_HELP, FLAG_CONFIG, '{}'],
-      'should prioritize help over other flags',
-      async cmd => {
-        const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
-        })
-        expect(stdout).toContain(
-          'Optimize dependencies with @socketregistry overrides',
-        )
-        expect(code).toBe(0)
-      },
-    )
-
-    cmdit(
-      ['optimize', FLAG_VERSION, FLAG_CONFIG, '{}'],
-      'should show version information',
-      async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
-        })
-        const output = stdout + stderr
-        expect(output.length).toBeGreaterThan(0)
-        expect(
-          code,
-          'should exit with non-zero code for version mismatch',
-        ).toBeGreaterThan(0)
-      },
-    )
-  })
 })

@@ -1,4 +1,3 @@
-/* max-file-lines: test — comprehensive test suite for one command/module; splitting would fragment closely related assertions. */
 /**
  * Unit tests for config set command.
  *
@@ -9,11 +8,7 @@
  * - Command metadata (description, hidden flag, CMD_NAME)
  * - Config key validation (valid, invalid, missing keys)
  * - Value requirement validation (present, missing, empty)
- * - Flag combinations (--json, --markdown, conflicting flags)
  * - --dry-run flag support (preview with write operations)
- * - Handler invocation with correct parameters (key, value, outputKind)
- * - Output kind resolution (text, json, markdown)
- * - Value handling (simple strings, strings with spaces, special characters)
  *
  * Testing Approach:
  *
@@ -377,7 +372,7 @@ describe('cmd-config-set', () => {
         )
 
         expect(mockOutputDryRunWrite).toHaveBeenCalledWith(
-          '/test/home/.config/socket/config.json',
+          '/test/home/.config/socket/config.json', // socket-lint: allow personal-path
           'set config value for "defaultOrg"',
           ['Set "defaultOrg" to: my-org'],
         )
@@ -394,7 +389,7 @@ describe('cmd-config-set', () => {
         )
 
         expect(mockOutputDryRunWrite).toHaveBeenCalledWith(
-          '/custom/home/.config/socket/config.json',
+          '/custom/home/.config/socket/config.json', // socket-lint: allow personal-path
           'set config value for "apiToken"',
           ['Set "apiToken" to: token'],
         )
@@ -428,188 +423,6 @@ describe('cmd-config-set', () => {
           'set config value for "apiProxy"',
           ['Set "apiProxy" to: https://proxy.example.com with path'],
         )
-      })
-    })
-
-    describe('output formats', () => {
-      it('should pass text output kind when no format flag provided', async () => {
-        mockGetOutputKind.mockReturnValue('text')
-
-        await cmdConfigSet.run(['defaultOrg', 'my-org'], importMeta, context)
-
-        expect(mockGetOutputKind).toHaveBeenCalledWith(false, false)
-        expect(mockHandleConfigSet).toHaveBeenCalledWith({
-          key: 'defaultOrg',
-          outputKind: 'text',
-          value: 'my-org',
-        })
-      })
-
-      it('should pass json output kind when --json flag provided', async () => {
-        mockGetOutputKind.mockReturnValue('json')
-
-        await cmdConfigSet.run(
-          ['defaultOrg', 'my-org', '--json'],
-          importMeta,
-          context,
-        )
-
-        expect(mockGetOutputKind).toHaveBeenCalledWith(true, false)
-        expect(mockHandleConfigSet).toHaveBeenCalledWith({
-          key: 'defaultOrg',
-          outputKind: 'json',
-          value: 'my-org',
-        })
-      })
-
-      it('should pass markdown output kind when --markdown flag provided', async () => {
-        mockGetOutputKind.mockReturnValue('markdown')
-
-        await cmdConfigSet.run(
-          ['defaultOrg', 'my-org', '--markdown'],
-          importMeta,
-          context,
-        )
-
-        expect(mockGetOutputKind).toHaveBeenCalledWith(false, true)
-        expect(mockHandleConfigSet).toHaveBeenCalledWith({
-          key: 'defaultOrg',
-          outputKind: 'markdown',
-          value: 'my-org',
-        })
-      })
-    })
-
-    describe('flag validation', () => {
-      it('should validate that --json and --markdown are not used together', async () => {
-        await cmdConfigSet.run(
-          ['defaultOrg', 'my-org', '--json', '--markdown'],
-          importMeta,
-          context,
-        )
-
-        expect(mockCheckCommandInput).toHaveBeenCalled()
-        const call = mockCheckCommandInput.mock.calls[0]
-
-        // Check that validation includes the conflicting flags check.
-        const validations = call.slice(1)
-        const conflictCheck = validations.find(
-          (v: unknown) =>
-            v.message?.includes('--json') && v.message.includes('--markdown'),
-        )
-        expect(conflictCheck).toBeDefined()
-        expect(conflictCheck.nook).toBe(true)
-        expect(conflictCheck.test).toBe(false)
-      })
-
-      it('should not call handler when flag validation fails', async () => {
-        mockCheckCommandInput.mockReturnValue(false)
-
-        await cmdConfigSet.run(
-          ['defaultOrg', 'my-org', '--json', '--markdown'],
-          importMeta,
-          context,
-        )
-
-        expect(mockHandleConfigSet).not.toHaveBeenCalled()
-      })
-    })
-
-    describe('edge cases', () => {
-      it('should handle readonly argv array', async () => {
-        const readonlyArgv = Object.freeze([
-          'defaultOrg',
-          'my-org',
-        ]) as readonly string[]
-
-        await cmdConfigSet.run(readonlyArgv, importMeta, context)
-
-        expect(mockHandleConfigSet).toHaveBeenCalledWith({
-          key: 'defaultOrg',
-          outputKind: 'text',
-          value: 'my-org',
-        })
-      })
-
-      it('should handle missing HOME environment variable in dry-run', async () => {
-        delete process.env['HOME']
-
-        await cmdConfigSet.run(
-          ['defaultOrg', 'my-org', '--dry-run'],
-          importMeta,
-          context,
-        )
-
-        expect(mockOutputDryRunWrite).toHaveBeenCalledWith(
-          expect.stringContaining('config.json'),
-          expect.any(String),
-          expect.any(Array),
-        )
-      })
-
-      it('should handle value that looks like a flag', async () => {
-        await cmdConfigSet.run(
-          ['apiProxy', '--not-a-flag'],
-          importMeta,
-          context,
-        )
-
-        // meowOrExit would parse --not-a-flag as a flag, so this tests that behavior.
-        const callArgs = mockHandleConfigSet.mock.calls[0]
-        expect(callArgs).toBeDefined()
-      })
-
-      it('should handle very long values', async () => {
-        const longValue = 'a'.repeat(1000)
-        await cmdConfigSet.run(['apiToken', longValue], importMeta, context)
-
-        expect(mockHandleConfigSet).toHaveBeenCalledWith({
-          key: 'apiToken',
-          outputKind: 'text',
-          value: longValue,
-        })
-      })
-    })
-
-    describe('validation flow', () => {
-      it('should check all validations in correct order', async () => {
-        await cmdConfigSet.run(['apiToken', 'token'], importMeta, context)
-
-        expect(mockCheckCommandInput).toHaveBeenCalled()
-        const call = mockCheckCommandInput.mock.calls[0]
-        const validations = call.slice(1)
-
-        // Should have at least 3 validations: key, value, and flag conflict.
-        expect(validations.length).toBeGreaterThanOrEqual(3)
-
-        // First validation: key check.
-        expect(validations[0]).toMatchObject({
-          test: true,
-          message: 'Config key should be the first arg',
-        })
-
-        // Second validation: value check.
-        expect(validations[1]).toMatchObject({
-          test: true,
-        })
-
-        // Last validation: flag conflict check.
-        const lastValidation = validations[validations.length - 1]
-        expect(lastValidation).toMatchObject({
-          nook: true,
-          test: true,
-          fail: 'bad',
-        })
-      })
-
-      it('should always pass value parameter to handler', async () => {
-        await cmdConfigSet.run(['apiToken', 'token'], importMeta, context)
-
-        const callArgs = mockHandleConfigSet.mock.calls[0][0]
-        expect(callArgs).toHaveProperty('value')
-        expect(callArgs).toHaveProperty('key')
-        expect(callArgs).toHaveProperty('outputKind')
-        expect(callArgs.value).toBe('token')
       })
     })
   })

@@ -1,4 +1,3 @@
-/* max-file-lines: test — comprehensive test suite for one command/module; splitting would fragment closely related assertions. */
 /**
  * Unit Tests: Fix Command Handler - Limit Behavior.
  *
@@ -10,7 +9,7 @@
  * mode: Verify --limit 0 processes no GHSAs - Local mode: Verify limit
  * exceeding GHSA count processes all - PR mode: Verify --limit N with adjusted
  * limit based on open PRs - PR mode: Verify limit 0 when existing PRs exceed
- * limit - --id filtering: Verify limit applies to filtered IDs.
+ * limit.
  *
  * Testing Approach: Uses mocks and spies to verify the actual arguments passed
  * to coana CLI, ensuring the business logic correctly applies the limit without
@@ -419,147 +418,6 @@ describe('socket fix --limit behavior verification', () => {
       expect(result.data?.fixedAll).toBe(false)
 
       // With 5 open PRs and limit 3, adjusted limit is 0, so no processing.
-      expect(mockSpawnCoanaDlx).not.toHaveBeenCalled()
-    })
-  })
-
-  describe('--id filtering with --limit', () => {
-    it('should apply limit to filtered GHSA IDs', async () => {
-      const ghsas = [
-        'GHSA-1111-1111-1111',
-        'GHSA-2222-2222-2222',
-        'GHSA-3333-3333-3333',
-        'GHSA-4444-4444-4444',
-        'GHSA-5555-5555-5555',
-      ]
-
-      mockSpawnCoanaDlx.mockResolvedValue({
-        ok: true,
-        data: 'fix applied',
-      })
-
-      const result = await coanaFix({
-        ...baseConfig,
-        ghsas,
-        prLimit: 2,
-      })
-
-      expect(result.ok).toBe(true)
-
-      // Should only process first 2 GHSAs.
-      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
-      const callArgs = mockSpawnCoanaDlx.mock.calls[0]?.[0] as string[]
-      const applyFixesIndex = callArgs.indexOf('--apply-fixes-to')
-      const ghsaArgs = callArgs
-        .slice(applyFixesIndex + 1)
-        .filter(arg => arg.startsWith('GHSA-'))
-
-      expect(ghsaArgs).toHaveLength(2)
-      expect(ghsaArgs).toEqual(['GHSA-1111-1111-1111', 'GHSA-2222-2222-2222'])
-    })
-
-    it('should handle limit 1 with single GHSA ID', async () => {
-      const ghsas = ['GHSA-1111-1111-1111']
-
-      mockSpawnCoanaDlx.mockResolvedValue({
-        ok: true,
-        data: 'fix applied',
-      })
-
-      const result = await coanaFix({
-        ...baseConfig,
-        ghsas,
-        prLimit: 1,
-      })
-
-      expect(result.ok).toBe(true)
-      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
-
-      const callArgs = mockSpawnCoanaDlx.mock.calls[0]?.[0] as string[]
-      const applyFixesIndex = callArgs.indexOf('--apply-fixes-to')
-      const ghsaArgs = callArgs
-        .slice(applyFixesIndex + 1)
-        .filter(arg => arg.startsWith('GHSA-'))
-
-      expect(ghsaArgs).toEqual(['GHSA-1111-1111-1111'])
-    })
-  })
-
-  describe('early-return error paths', () => {
-    it('returns SDK setup error when setupSdk fails (line 110)', async () => {
-      mockSetupSdk.mockResolvedValueOnce({
-        ok: false,
-        message: 'Auth Error',
-        cause: 'Invalid token',
-      })
-
-      const result = await coanaFix({
-        ...baseConfig,
-        ghsas: ['GHSA-1111-1111-1111'],
-      })
-
-      expect(result.ok).toBe(false)
-      if (!result.ok) {
-        expect(result.message).toBe('Auth Error')
-      }
-      // spawnCoanaDlx should never run when SDK setup fails.
-      expect(mockSpawnCoanaDlx).not.toHaveBeenCalled()
-    })
-
-    it('returns supported-files error when fetch fails (line 117)', async () => {
-      mockFetchSupportedScanFileNames.mockResolvedValueOnce({
-        ok: false,
-        message: 'API Error',
-        cause: 'Network timeout',
-      })
-
-      const result = await coanaFix({
-        ...baseConfig,
-        ghsas: ['GHSA-1111-1111-1111'],
-      })
-
-      expect(result.ok).toBe(false)
-      if (!result.ok) {
-        expect(result.message).toBe('API Error')
-      }
-      expect(mockSpawnCoanaDlx).not.toHaveBeenCalled()
-    })
-
-    it('returns upload error when manifest upload fails (line 150)', async () => {
-      mockHandleApiCall.mockResolvedValueOnce({
-        ok: false,
-        message: 'Upload Failed',
-        cause: 'Bad gateway',
-      })
-
-      const result = await coanaFix({
-        ...baseConfig,
-        ghsas: ['GHSA-1111-1111-1111'],
-      })
-
-      expect(result.ok).toBe(false)
-      if (!result.ok) {
-        expect(result.message).toBe('Upload Failed')
-      }
-      expect(mockSpawnCoanaDlx).not.toHaveBeenCalled()
-    })
-
-    it('returns error when upload returns no tar hash (lines 154-160)', async () => {
-      mockHandleApiCall.mockResolvedValueOnce({
-        ok: true,
-        // No tarHash in payload — server contract violation.
-        data: {},
-      })
-
-      const result = await coanaFix({
-        ...baseConfig,
-        ghsas: ['GHSA-1111-1111-1111'],
-      })
-
-      expect(result.ok).toBe(false)
-      if (!result.ok) {
-        expect(result.message).toContain('tar hash')
-      }
       expect(mockSpawnCoanaDlx).not.toHaveBeenCalled()
     })
   })

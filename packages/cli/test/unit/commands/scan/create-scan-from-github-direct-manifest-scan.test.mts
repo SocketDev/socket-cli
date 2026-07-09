@@ -81,8 +81,11 @@ import {
   scanOneRepo,
   scanRepo,
   testAndDownloadManifestFile,
-  testAndDownloadManifestFiles,
 } from '../../../../src/commands/scan/create-scan-from-github.mts'
+// testAndDownloadManifestFiles (plural) lives in github-scan-manifest.mts and
+// is only re-exported singular from create-scan-from-github.mts, so import it
+// from its owning module directly.
+import { testAndDownloadManifestFiles } from '../../../../src/commands/scan/github-scan-manifest.mts'
 
 describe('create-scan-from-github (direct) - manifest and scan', () => {
   beforeEach(() => {

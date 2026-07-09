@@ -1,4 +1,3 @@
-/* max-file-lines: cohesive-module — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
@@ -7,6 +6,14 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { input, select } from '@socketsecurity/lib-stable/stdio/prompts'
 
 import { detectManifestActions } from './detect-manifest-actions.mts'
+import {
+  askForBin,
+  askForEnabled,
+  askForInputFile,
+  askForOutputFile,
+  askForStdout,
+  askForVerboseFlag,
+} from './setup-manifest-config-prompts.mts'
 import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
 import { SOCKET_JSON } from '../../constants/socket.mts'
 import { readSocketJsonSync, writeSocketJson } from '../../util/socket/json.mts'
@@ -15,127 +22,14 @@ import type { CResult } from '../../types.mts'
 import type { SocketJson } from '../../util/socket/json.mts'
 const logger = getDefaultLogger()
 
-export async function askForBin(defaultName = ''): Promise<string | undefined> {
-  return await input({
-    message:
-      '(--bin) What should be the command to execute? Usually your build binary.' +
-      (defaultName ? ' (Backspace to leave default)' : ''),
-    default: defaultName,
-    required: false,
-    // validate: async string => bool
-  })
-}
-
-export async function askForEnabled(
-  defaultValue: boolean | undefined,
-): Promise<boolean | undefined> {
-  return await select({
-    message:
-      'Do you want to enable or disable auto generating manifest files for this language in this dir?',
-    choices: [
-      {
-        name: 'Enable',
-        value: true,
-        description: 'Generate manifest files for this language when detected',
-      },
-      {
-        name: 'Disable',
-        value: false,
-        description:
-          'Do not generate manifest files for this language when detected, unless explicitly asking for it',
-      },
-      {
-        name: 'Cancel',
-        value: undefined,
-        description: 'Exit configurator',
-      },
-    ],
-    default:
-      defaultValue === true
-        ? 'enable'
-        : defaultValue === false
-          ? 'disable'
-          : '',
-  })
-}
-
-export async function askForInputFile(
-  defaultName = '',
-): Promise<string | undefined> {
-  return await input({
-    message:
-      '(--file) What should be the default file name to read? Should be an absolute path or relative to the cwd. Use `-` to read from stdin instead.' +
-      (defaultName ? ' (Backspace to leave default)' : ''),
-    default: defaultName,
-    required: false,
-    // validate: async string => bool
-  })
-}
-
-export async function askForOutputFile(
-  defaultName = '',
-): Promise<string | undefined> {
-  return await input({
-    message:
-      '(--out) What should be the default output file? Should be absolute path or relative to cwd.' +
-      (defaultName ? ' (Backspace to leave default)' : ''),
-    default: defaultName,
-    required: false,
-    // validate: async string => bool
-  })
-}
-
-export async function askForStdout(
-  defaultValue: boolean | undefined,
-): Promise<string | undefined> {
-  return await select({
-    message: '(--stdout) Print the resulting pom.xml to stdout?',
-    choices: [
-      {
-        name: 'no',
-        value: 'no',
-        description: 'Write output to a file, not stdout',
-      },
-      {
-        name: 'yes',
-        value: 'yes',
-        description: 'Print in stdout (this will supersede --out)',
-      },
-      {
-        name: '(leave default)',
-        value: '',
-        description: 'Do not store a setting for this',
-      },
-    ],
-    default: defaultValue === true ? 'yes' : defaultValue === false ? 'no' : '',
-  })
-}
-
-export async function askForVerboseFlag(
-  current: boolean | undefined,
-): Promise<string | undefined> {
-  return await select({
-    message: '(--verbose) Should this run in verbose mode by default?',
-    choices: [
-      {
-        name: 'no',
-        value: 'no',
-        description: 'Do not run this manifest in verbose mode',
-      },
-      {
-        name: 'yes',
-        value: 'yes',
-        description: 'Run this manifest in verbose mode',
-      },
-      {
-        name: '(leave default)',
-        value: '',
-        description: 'Do not store a setting for this',
-      },
-    ],
-    default: current === true ? 'yes' : current === false ? 'no' : '',
-  })
-}
+export {
+  askForBin,
+  askForEnabled,
+  askForInputFile,
+  askForOutputFile,
+  askForStdout,
+  askForVerboseFlag,
+} from './setup-manifest-config-prompts.mts'
 
 export function canceledByUser(): CResult<{ canceled: boolean }> {
   logger.log('')

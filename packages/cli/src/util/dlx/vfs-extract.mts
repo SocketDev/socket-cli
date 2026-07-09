@@ -1,7 +1,3 @@
-/* max-file-lines: cohesive-module — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
-/* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
-/* oxlint-disable socket/no-status-emoji -- TUI / custom output formatter; emojis are part of the visual contract. */
-
 /**
  * VFS extraction utilities for external tools bundled in SEA binaries.
  *
@@ -57,9 +53,7 @@
  * See socket-btm/docs/vfs-runtime-api.md for full documentation.
  */
 
-import crypto from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
-import os from 'node:os'
 import path from 'node:path'
 
 import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
@@ -68,68 +62,36 @@ import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
-import { UPDATE_STORE_DIR } from '../../constants/paths.mts'
 import { getErrorCause } from '../error/errors.mts'
 import { isSeaBinary } from '../sea/detect.mts'
+import {
+  EXTERNAL_TOOLS,
+  TOOL_NPM_PATHS,
+  TOOL_STANDALONE_PATHS,
+  getNodeSmolBasePath,
+  getToolFilePath,
+  isNpmPackageExtracted,
+} from './vfs-extract-config.mts'
+import {
+  buildAndValidateToolPaths,
+  verifyToolPathsStillValid,
+  waitForConcurrentExtraction,
+} from './vfs-extract-lock.mts'
+
+import type { ExternalTool } from './vfs-extract-config.mts'
 
 const logger = getDefaultLogger()
 
-// External tool names bundled in VFS.
-// Includes standalone binaries and npm packages that are packaged in the VFS tarball.
-export const EXTERNAL_TOOLS = [
-  'cdxgen',
-  'coana',
-  'opengrep',
-  'python',
-  'sfw',
-  'socket-patch',
-  'synp',
-  'trivy',
-  'trufflehog',
-] as const
-
-export type ExternalTool = (typeof EXTERNAL_TOOLS)[number]
-
-// Map of npm package tools to their node_modules/ paths.
-// These are full npm packages with dependencies and node_modules/ subdirectories.
-// Note: sfw uses GitHub binary for SEA (standalone), npm package for CLI (dlx).
-const TOOL_NPM_PATHS: Partial<
-  Record<ExternalTool, { packageName: string; binPath: string }>
-> = {
-  cdxgen: {
-    packageName: '@cyclonedx/cdxgen',
-    binPath: 'node_modules/@cyclonedx/cdxgen/bin/cdxgen',
-  },
-  coana: {
-    packageName: '@coana-tech/cli',
-    binPath: 'node_modules/@coana-tech/cli/bin/coana',
-  },
-  synp: {
-    packageName: 'synp',
-    binPath: 'node_modules/synp/bin/synp',
-  },
-}
-
-// Map of standalone binary tools to their VFS paths.
-// These tools are single binaries from GitHub releases without npm dependencies.
-// sfw is stored under node_modules/@socketsecurity/sfw-bin/ for VFS structure.
-const TOOL_STANDALONE_PATHS: Partial<Record<ExternalTool, string>> = {
-  // opengrep is a SAST/code analysis engine from GitHub releases (opengrep/opengrep).
-  opengrep: 'opengrep',
-  // python is a standalone runtime from GitHub releases (astral-sh/python-build-standalone).
-  // Entire python/ directory is extracted, binary is at python/bin/python (Unix) or python/python.exe (Windows).
-  python: 'python',
-  // sfw is a standalone binary from GitHub releases (SocketDev/sfw-free).
-  // Note: npm CLI uses the sfw npm package via dlx instead.
-  sfw: 'node_modules/@socketsecurity/sfw-bin/sfw',
-  // socket-patch is a Rust binary downloaded from GitHub releases.
-  // As of v2.0.0, it's bundled directly (not as an npm package).
-  'socket-patch': 'socket-patch',
-  // trivy is a container/filesystem vulnerability scanner from GitHub releases (aquasecurity/trivy).
-  trivy: 'trivy',
-  // trufflehog is a secret/credential detector from GitHub releases (trufflesecurity/trufflehog).
-  trufflehog: 'trufflehog',
-}
+// Tool-registry + path helpers extracted to keep this file under the
+// 1000-line File-size cap. See vfs-extract-config.mts.
+export {
+  EXTERNAL_TOOLS,
+  getNodeSmolBasePath,
+  getToolFilePath,
+  getToolPaths,
+  isNpmPackageExtracted,
+  type ExternalTool,
+} from './vfs-extract-config.mts'
 
 /**
  * Extract external tools from VFS to node-smol's dlx directory.
@@ -255,104 +217,16 @@ export async function extractExternalTools(
 
       // Another process is extracting, wait and check for completion.
       logger.info('Another process is extracting external tools, waiting…')
-      for (let i = 0; i < 60; i++) {
-        await new Promise(resolve => {
-          setTimeout(resolve, 1000)
-        })
-        if (existsSync(cacheMarker)) {
-          debugNs('notice', 'External tools extracted by another process')
-          // Build and validate toolPaths from cache.
-          const toolPaths: Partial<Record<ExternalTool, string>> = {}
-          let allValid = true
-          for (let j = 0, { length } = EXTERNAL_TOOLS; j < length; j += 1) {
-            const tool = EXTERNAL_TOOLS[j]!
-            const toolPath = getToolFilePath(tool, nodeSmolBase)
-            const toolPathWithExt = isPlatWin ? `${toolPath}.exe` : toolPath
-            // Validate tool exists and is executable.
-            if (!existsSync(toolPathWithExt)) {
-              allValid = false
-              debugNs(
-                'notice',
-                `Tool ${tool} missing after extraction by other process`,
-              )
-              break
-            }
-            toolPaths[tool] = toolPathWithExt
-          }
-          if (allValid) {
-            // TOCTOU mitigation: Final atomic verification pass.
-            const stillValid = EXTERNAL_TOOLS.every(tool => {
-              const p = toolPaths[tool]
-              return p && existsSync(p)
-            })
-            if (stillValid) {
-              return toolPaths as Record<ExternalTool, string>
-            }
-            debugNs('notice', 'Tool(s) disappeared during validation')
-            allValid = false
-          }
-          // Extraction incomplete, clean up and retry.
-          debugNs('notice', 'Incomplete extraction detected, cleaning up…')
-          await safeDelete([cacheMarker, lockFile], { force: true })
-          return await extractExternalTools(depth + 1)
-        }
-
-        // Check if lock process is still alive every 5 iterations.
-        if (i % 5 === 4) {
-          // Check if extraction completed first before PID validation.
-          if (existsSync(cacheMarker)) {
-            debugNs('notice', 'Extraction completed during wait')
-            return await extractExternalTools(depth + 1)
-          }
-          // Then check if lock holder is still alive.
-          try {
-            const lockPid = await fs.readFile(lockFile, 'utf8')
-            const pid = Number.parseInt(lockPid.trim(), 10)
-            if (!Number.isNaN(pid) && pid > 0) {
-              try {
-                process.kill(pid, 0)
-              } catch {
-                // Process died, lock is stale.
-                debugNs('notice', `Lock holder (PID ${pid}) died during wait`)
-                await safeDelete(lockFile, { force: true })
-                return await extractExternalTools(depth + 1)
-              }
-            }
-          } catch {
-            // Lock file gone, retry.
-            return await extractExternalTools(depth + 1)
-          }
-        }
+      const waited = await waitForConcurrentExtraction({
+        cacheMarker,
+        isPlatWin,
+        lockFile,
+        nodeSmolBase,
+      })
+      if (waited !== 'retry') {
+        return waited
       }
-      // Final check before throwing timeout - extraction may have completed just now.
-      if (existsSync(cacheMarker)) {
-        debugNs('notice', 'External tools extracted just before timeout')
-        const toolPaths: Partial<Record<ExternalTool, string>> = {}
-        let allValid = true
-        for (let i = 0, { length } = EXTERNAL_TOOLS; i < length; i += 1) {
-          const tool = EXTERNAL_TOOLS[i]!
-          const toolPath = getToolFilePath(tool, nodeSmolBase)
-          const toolPathWithExt = isPlatWin ? `${toolPath}.exe` : toolPath
-          if (!existsSync(toolPathWithExt)) {
-            allValid = false
-            break
-          }
-          toolPaths[tool] = toolPathWithExt
-        }
-        if (allValid) {
-          // TOCTOU mitigation: Final atomic verification pass.
-          const stillValid = EXTERNAL_TOOLS.every(tool => {
-            const p = toolPaths[tool]
-            return p && existsSync(p)
-          })
-          if (stillValid) {
-            return toolPaths as Record<ExternalTool, string>
-          }
-        }
-      }
-      throw new Error(
-        `timed out waiting for another socket process to finish extracting external tools from the SEA VFS; if no other socket process is running, remove any stale lock files under the node-smol base dir and retry`,
-      )
+      return await extractExternalTools(depth + 1)
     }
     throw e
   }
@@ -361,28 +235,14 @@ export async function extractExternalTools(
     // Check if already extracted (cache marker exists).
     if (existsSync(cacheMarker)) {
       debugNs('notice', 'External tools already extracted (cache marker found)')
-      const toolPaths: Partial<Record<ExternalTool, string>> = {}
-      let allValid = true
-      for (let i = 0, { length } = EXTERNAL_TOOLS; i < length; i += 1) {
-        const tool = EXTERNAL_TOOLS[i]!
-        const toolPath = getToolFilePath(tool, nodeSmolBase)
-        const toolPathWithExt = isPlatWin ? `${toolPath}.exe` : toolPath
-        // Validate tool exists before adding to paths.
-        if (!existsSync(toolPathWithExt)) {
-          debugNs('notice', `Cached tool ${tool} missing at ${toolPathWithExt}`)
-          allValid = false
-          break
-        }
-        toolPaths[tool] = toolPathWithExt
-      }
+      const { allValid, toolPaths } = buildAndValidateToolPaths(
+        nodeSmolBase,
+        isPlatWin,
+      )
       if (allValid) {
-        // TOCTOU mitigation: Final atomic verification pass.
-        // Re-check all tools still exist right before returning to minimize race window.
-        const stillValid = EXTERNAL_TOOLS.every(tool => {
-          const p = toolPaths[tool]
-          return p && existsSync(p)
-        })
-        if (stillValid) {
+        // TOCTOU mitigation: re-check all tools still exist right before
+        // returning to minimize the race window.
+        if (verifyToolPathsStillValid(toolPaths)) {
           return toolPaths as Record<ExternalTool, string>
         }
         // Tools disappeared during validation - cleanup and retry extraction.
@@ -567,125 +427,3 @@ export async function extractTool(tool: ExternalTool): Promise<string> {
   }
 }
 
-/**
- * Get the base dlx directory path for node-smol. This is where both
- * VFS-extracted tools and npm-installed packages live.
- *
- * Structure: ~/.socket/_dlx/<node-smol-hash>/ ├── node/node # Node binary ├──
- * socket-patch # Standalone Rust binary (GitHub release) └── node_modules/ #
- * npm packages with dependencies ├── @cyclonedx/cdxgen/ │ ├── bin/cdxgen │ └──
- * node_modules/ ├── @coana-tech/cli/ │ ├── bin/coana │ └── node_modules/ ├──
- *
- * @returns Path to node-smol's dlx directory.
- *
- * @socketsecurity/sfw-bin/ # Standalone sfw binary (GitHub release) │ └── sfw
- * └── synp/ ├── bin/synp └── node_modules/
- */
-export function getNodeSmolBasePath(): string {
-  // Get actual hash from process.smol if available, otherwise use process version.
-  let nodeSmolHash = 'node-smol-placeholder'
-
-  try {
-    // Try to get hash from process.smol API (if available in future node-smol).
-    const processWithSmol = process as unknown as {
-      smol?: { getHash?: (() => string) | undefined } | undefined
-    }
-    if (typeof processWithSmol.smol?.getHash === 'function') {
-      nodeSmolHash = processWithSmol.smol.getHash()
-    } else {
-      // Fallback: hash based on Node.js version and platform.
-      const hashInput = `${process.version}-${process.platform}-${process.arch}`
-      const hash = crypto.createHash('sha256').update(hashInput).digest('hex')
-      nodeSmolHash = hash.slice(0, 16)
-    }
-  } catch {
-    // Fallback to versioned hash.
-    const hashInput = `${process.version}-${process.platform}-${process.arch}`
-    const hash = crypto.createHash('sha256').update(hashInput).digest('hex')
-    nodeSmolHash = hash.slice(0, 16)
-  }
-
-  return normalizePath(path.join(os.homedir(), UPDATE_STORE_DIR, nodeSmolHash))
-}
-
-/**
- * Get the file system path for a tool based on its type (npm package or
- * standalone binary).
- *
- * @param tool - Tool name.
- * @param nodeSmolBase - Base dlx directory path.
- *
- * @returns Path to the tool binary (without .exe extension).
- */
-export function getToolFilePath(
-  tool: ExternalTool,
-  nodeSmolBase: string,
-): string {
-  const npmPath = TOOL_NPM_PATHS[tool]
-  const standalonePath = TOOL_STANDALONE_PATHS[tool]
-
-  // For npm packages, use node_modules/ path with binPath.
-  // For standalone binaries under node_modules/, use standalonePath.
-  // For other standalone binaries, use direct tool name.
-  return npmPath
-    ? normalizePath(path.join(nodeSmolBase, npmPath.binPath))
-    : standalonePath
-      ? normalizePath(path.join(nodeSmolBase, standalonePath))
-      : normalizePath(path.join(nodeSmolBase, tool))
-}
-
-/**
- * Get paths to extracted external tools in node-smol's dlx directory. npm
- * packages are in node_modules/{packageName}/bin/{binaryName}. Standalone
- * binaries are in the base directory.
- *
- * @example
- *   const paths = getToolPaths()
- *   logger.log('sfw:', paths.sfw) // ~/.socket/_dlx/<hash>/node_modules/@socketsecurity/sfw-bin/sfw
- *   logger.log('cdxgen:', paths.cdxgen) // ~/.socket/_dlx/<hash>/node_modules/@cyclonedx/cdxgen/bin/cdxgen
- *
- * @returns Object with paths to each tool binary.
- */
-export function getToolPaths(): Record<ExternalTool, string> {
-  const isPlatWin = process.platform === 'win32'
-  const nodeSmolBase = getNodeSmolBasePath()
-
-  const paths: Partial<Record<ExternalTool, string>> = {}
-
-  for (let i = 0, { length } = EXTERNAL_TOOLS; i < length; i += 1) {
-    const tool = EXTERNAL_TOOLS[i]!
-    const toolPath = getToolFilePath(tool, nodeSmolBase)
-    paths[tool] = isPlatWin ? `${toolPath}.exe` : toolPath
-  }
-
-  return paths as Record<ExternalTool, string>
-}
-
-/**
- * Check if npm package directory with dependencies exists and is valid.
- *
- * @param packagePath - Path to npm package directory.
- *
- * @returns True if package directory exists with node_modules/ and binary.
- */
-export async function isNpmPackageExtracted(
-  packagePath: string,
-): Promise<boolean> {
-  if (!existsSync(packagePath)) {
-    return false
-  }
-
-  const packageJsonPath = path.join(packagePath, 'package.json')
-  if (!existsSync(packageJsonPath)) {
-    return false
-  }
-
-  // node_modules/ directory should exist for packages with dependencies.
-  const nodeModulesPath = path.join(packagePath, 'node_modules')
-  if (!existsSync(nodeModulesPath)) {
-    debugNs('notice', `Package ${packagePath} exists but missing node_modules/`)
-    return false
-  }
-
-  return true
-}

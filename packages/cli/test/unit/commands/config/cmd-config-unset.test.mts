@@ -1,4 +1,3 @@
-/* max-file-lines: test — comprehensive test suite for one command/module; splitting would fragment closely related assertions. */
 /**
  * Unit tests for config unset command.
  *
@@ -7,12 +6,13 @@
  * Test Coverage:
  *
  * - Command metadata (description, hidden flag, CMD_NAME)
- * - Config key validation (valid, invalid, missing keys)
  * - Flag combinations (--json, --markdown, conflicting flags)
- * - --dry-run flag support (preview with remove operations)
  * - Handler invocation with correct parameters (key, outputKind, no value)
  * - Output kind resolution (text, json, markdown)
  * - Verification that no value parameter is passed to handler
+ *
+ * Config key validation, --dry-run flag support, and edge cases live in
+ * sibling `cmd-config-unset-*.test.mts` files.
  *
  * Testing Approach:
  *
@@ -20,7 +20,6 @@
  * - Mock meowOrExit to control flag values and input parsing
  * - Mock handleConfigUnset to verify handler calls
  * - Mock config utilities (isSupportedConfigKey, getSupportedConfigEntries)
- * - Mock dry-run output utilities
  * - Mock output mode utilities
  * - Mock validation utilities
  *
@@ -33,10 +32,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import {
-  CMD_NAME,
-  cmdConfigUnset,
-} from '../../../../src/commands/config/cmd-config-unset.mts'
+import { cmdConfigUnset } from '../../../../src/commands/config/cmd-config-unset.mts'
 
 import type * as ConfigModule from '../../../../src/util/config.mts'
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
@@ -92,13 +88,6 @@ vi.mock(import('../../../../src/util/config.mts'), async importOriginal => {
     isSupportedConfigKey: mockIsSupportedConfigKey,
   }
 })
-
-// Mock dry-run output.
-const mockOutputDryRunWrite = vi.hoisted(() => vi.fn())
-
-vi.mock(import('../../../../src/util/dry-run/output.mts'), () => ({
-  outputDryRunWrite: mockOutputDryRunWrite,
-}))
 
 // Mock output mode utilities.
 const mockGetOutputKind = vi.hoisted(() => vi.fn(() => 'text'))
@@ -169,147 +158,9 @@ describe('cmd-config-unset', () => {
     mockGetOutputKind.mockReturnValue('text')
   })
 
-  describe('command metadata', () => {
-    it('should export CMD_NAME as unset', () => {
-      expect(CMD_NAME).toBe('unset')
-    })
-
-    it('should have correct description', () => {
-      expect(cmdConfigUnset.description).toBe(
-        'Clear the value of a local CLI config item',
-      )
-    })
-
-    it('should not be hidden', () => {
-      expect(cmdConfigUnset.hidden).toBe(false)
-    })
-  })
-
   describe('run', () => {
     const importMeta = { url: 'file:///test/cmd-config-unset.mts' }
     const context = { parentName: 'socket config' }
-
-    describe('valid config key', () => {
-      it('should call handler with correct parameters', async () => {
-        await cmdConfigUnset.run(['defaultOrg'], importMeta, context)
-
-        expect(mockHandleConfigUnset).toHaveBeenCalledWith({
-          key: 'defaultOrg',
-          outputKind: 'text',
-        })
-      })
-
-      it('should validate config key', async () => {
-        await cmdConfigUnset.run(['apiToken'], importMeta, context)
-
-        expect(mockIsSupportedConfigKey).toHaveBeenCalledWith('apiToken')
-      })
-
-      it('should call handler when validation passes', async () => {
-        mockCheckCommandInput.mockReturnValue(true)
-
-        await cmdConfigUnset.run(['apiBaseUrl'], importMeta, context)
-
-        expect(mockHandleConfigUnset).toHaveBeenCalledWith({
-          key: 'apiBaseUrl',
-          outputKind: 'text',
-        })
-      })
-
-      it('should handle multiple valid config keys', async () => {
-        const keys = ['apiToken', 'defaultOrg', 'apiBaseUrl', 'apiProxy']
-
-        for (let i = 0, { length } = keys; i < length; i += 1) {
-          const key = keys[i]
-          vi.clearAllMocks()
-          mockCheckCommandInput.mockReturnValue(true)
-
-          await cmdConfigUnset.run([key], importMeta, context)
-
-          expect(mockHandleConfigUnset).toHaveBeenCalledWith({
-            key,
-            outputKind: 'text',
-          })
-        }
-      })
-
-      it('should handle "test" key specially', async () => {
-        mockCheckCommandInput.mockReturnValue(true)
-
-        await cmdConfigUnset.run(['test'], importMeta, context)
-
-        // "test" key bypasses isSupportedConfigKey check in validation.
-        expect(mockIsSupportedConfigKey).not.toHaveBeenCalled()
-        expect(mockHandleConfigUnset).toHaveBeenCalledWith({
-          key: 'test',
-          outputKind: 'text',
-        })
-      })
-    })
-
-    describe('invalid config key', () => {
-      it('should not call handler when config key is invalid', async () => {
-        mockIsSupportedConfigKey.mockReturnValue(false)
-        mockCheckCommandInput.mockReturnValue(false)
-
-        await cmdConfigUnset.run(['invalidKey'], importMeta, context)
-
-        expect(mockHandleConfigUnset).not.toHaveBeenCalled()
-      })
-
-      it('should not call handler when config key is missing', async () => {
-        mockCheckCommandInput.mockReturnValue(false)
-
-        await cmdConfigUnset.run([], importMeta, context)
-
-        expect(mockHandleConfigUnset).not.toHaveBeenCalled()
-      })
-
-      it('should validate empty string key', async () => {
-        mockIsSupportedConfigKey.mockReturnValue(false)
-        mockCheckCommandInput.mockReturnValue(false)
-
-        await cmdConfigUnset.run([''], importMeta, context)
-
-        expect(mockIsSupportedConfigKey).toHaveBeenCalledWith('')
-        expect(mockHandleConfigUnset).not.toHaveBeenCalled()
-      })
-    })
-
-    describe('--dry-run flag', () => {
-      it('should show preview without calling handler', async () => {
-        await cmdConfigUnset.run(
-          ['defaultOrg', '--dry-run'],
-          importMeta,
-          context,
-        )
-
-        expect(mockOutputDryRunWrite).toHaveBeenCalledWith(
-          '/test/home/.config/socket/config.json',
-          'unset config value for "defaultOrg"',
-          ['Remove "defaultOrg" from config'],
-        )
-        expect(mockHandleConfigUnset).not.toHaveBeenCalled()
-      })
-
-      it('should construct correct config path in dry-run', async () => {
-        process.env['HOME'] = '/custom/home'
-
-        await cmdConfigUnset.run(['apiToken', '--dry-run'], importMeta, context)
-
-        expect(mockOutputDryRunWrite).toHaveBeenCalledWith(
-          '/custom/home/.config/socket/config.json',
-          'unset config value for "apiToken"',
-          ['Remove "apiToken" from config'],
-        )
-      })
-
-      it('should not execute handler in dry-run mode', async () => {
-        await cmdConfigUnset.run(['apiToken', '--dry-run'], importMeta, context)
-
-        expect(mockHandleConfigUnset).not.toHaveBeenCalled()
-      })
-    })
 
     describe('output formats', () => {
       it('should pass text output kind when no format flag provided', async () => {
@@ -384,68 +235,6 @@ describe('cmd-config-unset', () => {
           context,
         )
 
-        expect(mockHandleConfigUnset).not.toHaveBeenCalled()
-      })
-    })
-
-    describe('edge cases', () => {
-      it('should handle readonly argv array', async () => {
-        const readonlyArgv = Object.freeze(['defaultOrg']) as readonly string[]
-
-        await cmdConfigUnset.run(readonlyArgv, importMeta, context)
-
-        expect(mockHandleConfigUnset).toHaveBeenCalledWith({
-          key: 'defaultOrg',
-          outputKind: 'text',
-        })
-      })
-
-      it('should ignore extra arguments after key', async () => {
-        await cmdConfigUnset.run(
-          ['apiToken', 'extra', 'args'],
-          importMeta,
-          context,
-        )
-
-        expect(mockHandleConfigUnset).toHaveBeenCalledWith({
-          key: 'apiToken',
-          outputKind: 'text',
-        })
-      })
-
-      it('should handle missing HOME environment variable in dry-run', async () => {
-        delete process.env['HOME']
-
-        await cmdConfigUnset.run(
-          ['defaultOrg', '--dry-run'],
-          importMeta,
-          context,
-        )
-
-        expect(mockOutputDryRunWrite).toHaveBeenCalledWith(
-          expect.stringContaining('config.json'),
-          expect.any(String),
-          expect.any(Array),
-        )
-      })
-
-      it('should handle keys with special characters', async () => {
-        mockIsSupportedConfigKey.mockReturnValue(false)
-        mockCheckCommandInput.mockReturnValue(false)
-
-        await cmdConfigUnset.run(['api-token'], importMeta, context)
-
-        expect(mockIsSupportedConfigKey).toHaveBeenCalledWith('api-token')
-        expect(mockHandleConfigUnset).not.toHaveBeenCalled()
-      })
-
-      it('should handle numeric key', async () => {
-        mockIsSupportedConfigKey.mockReturnValue(false)
-        mockCheckCommandInput.mockReturnValue(false)
-
-        await cmdConfigUnset.run(['123'], importMeta, context)
-
-        expect(mockIsSupportedConfigKey).toHaveBeenCalledWith('123')
         expect(mockHandleConfigUnset).not.toHaveBeenCalled()
       })
     })

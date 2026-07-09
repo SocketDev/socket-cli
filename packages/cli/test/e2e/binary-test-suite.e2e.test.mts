@@ -1,7 +1,7 @@
-/* max-file-lines: test — comprehensive test suite for one command/module; splitting would fragment closely related assertions. */
 /**
- * @file Comprehensive E2E test suite for all Socket CLI binary types. Tests ALL
- *   73 CLI commands across 3 binary types:
+ * @file Comprehensive E2E test suite for all Socket CLI binary types. Tests
+ *   the core, config, install/uninstall, manifest, and organization command
+ *   groups across 3 binary types:
  *
  *   - JS binary (npm CLI) - Always tested
  *   - SEA binary (Single Executable Application) - Optional via TEST_SEA_BINARY=1
@@ -18,15 +18,9 @@
  *     conda, manifest gradle, manifest kotlin, manifest scala, manifest setup
  *   - Organization commands (7): organization, organization dependencies,
  *     organization list, organization policy, organization policy license,
- *     organization policy security, organization quota
- *   - Package commands (3): package, package score, package shallow
- *   - Package manager wrappers (13): bundler, cargo, gem, go, npm, npx, nuget,
- *     pip, pnpm, raw-npm, raw-npx, uv, yarn
- *   - Repository commands (6): repository, repository create, repository del,
- *     repository list, repository update, repository view
- *   - Scan commands (11): scan, scan create, scan del, scan diff, scan github,
- *     scan list, scan metadata, scan reach, scan report, scan setup, scan view
- *     Test strategy:
+ *     organization policy security, organization quota The
+ *     package/package-manager-wrapper/repository/scan/auth/performance command
+ *     groups live in `binary-test-suite-more.e2e.test.mts`. Test strategy:
  *   - Minimum test per command: --help (validates command loads without auth)
  *   - Auth-required commands: Basic execution test (with Socket API token)
  *   - Performance validation: Help commands execute within 5 seconds
@@ -43,10 +37,7 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { ENV } from '../../src/constants/env.mts'
 import { getDefaultApiToken } from '../../src/util/socket/sdk.mts'
-import {
-  executeCliCommand,
-  executeCliInScratch,
-} from '../helpers/cli-execution.mts'
+import { executeCliCommand } from '../helpers/cli-execution.mts'
 
 const logger = getDefaultLogger()
 
@@ -155,7 +146,6 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
   }
 
   describe(`${binary.name}`, () => {
-    let hasAuth = false
     let binaryExists = false
 
     beforeAll(async () => {
@@ -191,7 +181,6 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
       // Check authentication.
       if (ENV.RUN_E2E_TESTS) {
         const apiToken = await getDefaultApiToken()
-        hasAuth = !!apiToken
         if (!apiToken) {
           logger.log('')
           logger.warn('E2E tests require Socket authentication.')
@@ -402,193 +391,6 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
           },
         )
       }
-    })
-
-    describe('Package command help (no auth required)', () => {
-      const commands = [
-        ['package', '--help'],
-        ['package', 'score', '--help'],
-        ['package', 'shallow', '--help'],
-      ]
-
-      for (let i = 0, { length } = commands; i < length; i += 1) {
-        const cmd = commands[i]
-        it.skipIf(!ENV.RUN_E2E_TESTS)(
-          `should display ${cmd.join(' ')} help`,
-          async () => {
-            if (!binaryExists) {
-              return
-            }
-
-            const result = await executeCliCommand(cmd, {
-              binPath: binary.path,
-              isolateConfig: false,
-            })
-
-            expect(result.code).toBe(0)
-            expect(result.stdout.length).toBeGreaterThan(0)
-          },
-        )
-      }
-    })
-
-    describe('Package manager wrapper command help (no auth required)', () => {
-      const commands = [
-        'bundler',
-        'cargo',
-        'gem',
-        'go',
-        'npm',
-        'npx',
-        'nuget',
-        'pip',
-        'pnpm',
-        'raw-npm',
-        'raw-npx',
-        'uv',
-        'yarn',
-      ]
-
-      for (let i = 0, { length } = commands; i < length; i += 1) {
-        const cmd = commands[i]
-        it.skipIf(!ENV.RUN_E2E_TESTS)(
-          `should display ${cmd} command help`,
-          async () => {
-            if (!binaryExists) {
-              return
-            }
-
-            const result = await executeCliCommand([cmd, '--help'], {
-              binPath: binary.path,
-              isolateConfig: false,
-            })
-
-            expect(result.code).toBe(0)
-            expect(result.stdout.length).toBeGreaterThan(0)
-          },
-        )
-      }
-    })
-
-    describe('Repository command help (no auth required)', () => {
-      const commands = [
-        ['repository', '--help'],
-        ['repository', 'create', '--help'],
-        ['repository', 'del', '--help'],
-        ['repository', 'list', '--help'],
-        ['repository', 'update', '--help'],
-        ['repository', 'view', '--help'],
-      ]
-
-      for (let i = 0, { length } = commands; i < length; i += 1) {
-        const cmd = commands[i]
-        it.skipIf(!ENV.RUN_E2E_TESTS)(
-          `should display ${cmd.join(' ')} help`,
-          async () => {
-            if (!binaryExists) {
-              return
-            }
-
-            const result = await executeCliCommand(cmd, {
-              binPath: binary.path,
-              isolateConfig: false,
-            })
-
-            expect(result.code).toBe(0)
-            expect(result.stdout.length).toBeGreaterThan(0)
-          },
-        )
-      }
-    })
-
-    describe('Scan command help (no auth required)', () => {
-      const commands = [
-        ['scan', '--help'],
-        ['scan', 'create', '--help'],
-        ['scan', 'del', '--help'],
-        ['scan', 'diff', '--help'],
-        ['scan', 'github', '--help'],
-        ['scan', 'list', '--help'],
-        ['scan', 'metadata', '--help'],
-        ['scan', 'reach', '--help'],
-        ['scan', 'report', '--help'],
-        ['scan', 'setup', '--help'],
-        ['scan', 'view', '--help'],
-      ]
-
-      for (let i = 0, { length } = commands; i < length; i += 1) {
-        const cmd = commands[i]
-        it.skipIf(!ENV.RUN_E2E_TESTS)(
-          `should display ${cmd.join(' ')} help`,
-          async () => {
-            if (!binaryExists) {
-              return
-            }
-
-            const result = await executeCliCommand(cmd, {
-              binPath: binary.path,
-              isolateConfig: false,
-            })
-
-            expect(result.code).toBe(0)
-            expect(result.stdout.length).toBeGreaterThan(0)
-          },
-        )
-      }
-    })
-
-    describe('Auth-required commands', () => {
-      it.skipIf(!ENV.RUN_E2E_TESTS)('should list config settings', async () => {
-        if (!binaryExists || !hasAuth) {
-          return
-        }
-
-        // Scratch HOME so the test can't read the dev's real Socket config.
-        const result = await executeCliInScratch(['config', 'list'], {
-          binPath: binary.path,
-        })
-
-        expect(result.code).toBe(0)
-      })
-
-      it.skipIf(!ENV.RUN_E2E_TESTS)(
-        'should display whoami information',
-        async () => {
-          if (!binaryExists || !hasAuth) {
-            return
-          }
-
-          // Scratch HOME so the API call uses the env-supplied token but
-          // can't persist anything back into the dev's config / keychain.
-          const result = await executeCliInScratch(['whoami'], {
-            binPath: binary.path,
-          })
-
-          expect(result.code).toBe(0)
-        },
-      )
-    })
-
-    describe('Performance validation', () => {
-      it.skipIf(!ENV.RUN_E2E_TESTS)(
-        'should execute help command within reasonable time',
-        async () => {
-          if (!binaryExists) {
-            return
-          }
-
-          const startTime = Date.now()
-          const result = await executeCliCommand(['--help'], {
-            binPath: binary.path,
-            isolateConfig: false,
-          })
-          const duration = Date.now() - startTime
-
-          expect(result.code).toBe(0)
-          // Help should execute in under 5 seconds even for bundled binaries.
-          expect(duration).toBeLessThan(5000)
-        },
-      )
     })
   })
 }

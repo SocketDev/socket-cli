@@ -1,15 +1,11 @@
 import { describe, expect } from 'vitest'
 
-import {
-  constants,
-  FLAG_CONFIG,
-  FLAG_DRY_RUN,
-  FLAG_ORG,
-} from '../../../src/constants.mts'
+import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_ORG } from '../../../src/constants.mts'
+import { getBinCliPath } from '../../../src/constants/paths.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 describe('socket scan create reachability flag validation', async () => {
-  const { binCliPath } = constants
+  const binCliPath = getBinCliPath()
 
   cmdit(
     [

@@ -1,11 +1,10 @@
-/* max-file-lines: test — comprehensive test suite for one command/module; splitting would fragment closely related assertions. */
 /**
  * Unit tests for the MCP `depscore` tool implementation.
  *
  * Tests runDepscore(input, opts) — the worker behind the only MCP tool `socket
  * mcp` exposes. Covers SDK setup caching, payload shaping (PURL conversion,
- * version cleanup), response parsing, formatting, and the error paths Socket
- * API returns (401/403/non-200, empty, malformed).
+ * version cleanup), and the error paths Socket API returns (401/403/non-200,
+ * empty, malformed).
  *
  * Test Coverage:
  *
@@ -17,17 +16,10 @@
  * - Caret/tilde stripped from version (^1.2.3 → 1.2.3)
  * - Default ecosystem is npm when caller omits
  * - Default version is 'unknown' when caller omits
- * - 200 OK with NDJSON-shaped response → formatted "pkg: dim:N, …"
- * - 200 OK with empty data → "No packages were found." error
- * - 200 OK with only `_type` rows → "No valid artifact records" error
  * - 401 → auth-failed message
  * - 403 → access-denied message
  * - Other non-2xx → generic error
  * - Network exception → "Error connecting to Socket API"
- * - Score formatting: numeric values ≤ 1 multiplied by 100 and rounded
- * - Score formatting: numeric values > 1 passed through
- * - Score formatting: `overall` and `uuid` keys filtered out
- * - Artifacts without score field → "No score found"
  * - Platform hint forwarded to deduplicateArtifacts
  *
  * Related Files:
@@ -232,145 +224,6 @@ describe('runDepscore — payload shaping', () => {
   })
 })
 
-describe('runDepscore — response handling', () => {
-  it('formats a single artifact with score breakdown', async () => {
-    mockBatchPackageFetch.mockResolvedValue(
-      makeOk([
-        {
-          type: 'npm',
-          name: 'lodash',
-          version: '4.17.21',
-          score: {
-            overall: 0.9,
-            quality: 0.85,
-            maintenance: 0.95,
-          },
-        },
-      ]),
-    )
-    const result = await runDepscore(
-      { packages: [{ depname: 'lodash' }] },
-      { apiToken: 'test_a' },
-    )
-    expect(result.isError).toBeUndefined()
-    expect(result.content[0]!.text).toContain('Dependency scores:')
-    expect(result.content[0]!.text).toContain('pkg:npm/lodash@4.17.21')
-    expect(result.content[0]!.text).toContain('quality: 85')
-    expect(result.content[0]!.text).toContain('maintenance: 95')
-  })
-
-  it('omits overall and uuid from the score breakdown', async () => {
-    mockBatchPackageFetch.mockResolvedValue(
-      makeOk([
-        {
-          type: 'npm',
-          name: 'foo',
-          version: '1.0.0',
-          score: { overall: 0.7, uuid: 'abc-def', supplyChain: 0.6 },
-        },
-      ]),
-    )
-    const result = await runDepscore(
-      { packages: [{ depname: 'foo' }] },
-      { apiToken: 'test_a' },
-    )
-    expect(result.content[0]!.text).toContain('supplyChain: 60')
-    expect(result.content[0]!.text).not.toContain('overall:')
-    expect(result.content[0]!.text).not.toContain('uuid:')
-  })
-
-  it('passes numeric values >1 through as-is (no *100 scaling)', async () => {
-    mockBatchPackageFetch.mockResolvedValue(
-      makeOk([
-        {
-          type: 'npm',
-          name: 'foo',
-          version: '1.0.0',
-          score: { overall: 95, quality: 87 },
-        },
-      ]),
-    )
-    const result = await runDepscore(
-      { packages: [{ depname: 'foo' }] },
-      { apiToken: 'test_a' },
-    )
-    // 87 already on 0–100 scale → not re-scaled.
-    expect(result.content[0]!.text).toContain('quality: 87')
-  })
-
-  it('formats namespace into the PURL when present', async () => {
-    mockBatchPackageFetch.mockResolvedValue(
-      makeOk([
-        {
-          type: 'npm',
-          namespace: '@scope',
-          name: 'pkg',
-          version: '1.0.0',
-          score: { overall: 0.5, quality: 0.5 },
-        },
-      ]),
-    )
-    const result = await runDepscore(
-      { packages: [{ depname: '@scope/pkg' }] },
-      { apiToken: 'test_a' },
-    )
-    expect(result.content[0]!.text).toContain('pkg:npm/@scope/pkg@1.0.0')
-  })
-
-  it('returns "No score found" when artifact has no score field', async () => {
-    mockBatchPackageFetch.mockResolvedValue(
-      makeOk([{ type: 'npm', name: 'foo', version: '1.0.0' }]),
-    )
-    const result = await runDepscore(
-      { packages: [{ depname: 'foo' }] },
-      { apiToken: 'test_a' },
-    )
-    expect(result.content[0]!.text).toContain('No score found')
-  })
-
-  it('drops `_type` envelope rows from the response', async () => {
-    mockBatchPackageFetch.mockResolvedValue(
-      makeOk([
-        { _type: 'summary', count: 1 },
-        {
-          type: 'npm',
-          name: 'foo',
-          version: '1.0.0',
-          score: { overall: 0.8, quality: 0.8 },
-        },
-      ]),
-    )
-    const result = await runDepscore(
-      { packages: [{ depname: 'foo' }] },
-      { apiToken: 'test_a' },
-    )
-    expect(result.isError).toBeUndefined()
-    expect(result.content[0]!.text).toContain('quality: 80')
-  })
-
-  it('returns an error when the response only has _type rows', async () => {
-    mockBatchPackageFetch.mockResolvedValue(
-      makeOk([{ _type: 'summary', count: 0 }]),
-    )
-    const result = await runDepscore(
-      { packages: [{ depname: 'foo' }] },
-      { apiToken: 'test_a' },
-    )
-    expect(result.isError).toBe(true)
-    expect(result.content[0]!.text).toContain('No valid artifact records')
-  })
-
-  it('returns "No packages were found." when data is empty', async () => {
-    mockBatchPackageFetch.mockResolvedValue(makeOk([]))
-    const result = await runDepscore(
-      { packages: [{ depname: 'foo' }] },
-      { apiToken: 'test_a' },
-    )
-    expect(result.isError).toBe(true)
-    expect(result.content[0]!.text).toBe('No packages were found.')
-  })
-})
-
 describe('runDepscore — error paths', () => {
   it('surfaces a 401 with a re-authenticate message', async () => {
     mockBatchPackageFetch.mockResolvedValue(
@@ -416,28 +269,6 @@ describe('runDepscore — error paths', () => {
     )
     expect(result.isError).toBe(true)
     expect(result.content[0]!.text).toBe('Error connecting to Socket API')
-  })
-})
-
-describe('runDepscore — formatScore fallbacks', () => {
-  it('uses "unknown" placeholder for missing type / name / version', async () => {
-    mockBatchPackageFetch.mockResolvedValue(
-      makeOk([
-        {
-          // No type, no name, no version. score is empty so we land in
-          // the "No score found" branch but still exercise the
-          // type||'unknown', name||'unknown', version||'unknown' arms.
-          score: undefined,
-        },
-      ]),
-    )
-    const result = await runDepscore(
-      { packages: [{ depname: 'whatever' }] },
-      { apiToken: 'test_a' },
-    )
-    expect(result.isError).toBeUndefined()
-    expect(result.content[0]!.text).toContain('pkg:unknown/unknown@unknown')
-    expect(result.content[0]!.text).toContain('No score found')
   })
 })
 

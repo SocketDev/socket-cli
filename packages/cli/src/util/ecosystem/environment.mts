@@ -1,4 +1,3 @@
-/* max-file-lines: cohesive-module — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 /**
  * Package environment detection utilities for Socket CLI. Analyzes project
  * environment and package manager configuration.
@@ -18,67 +17,25 @@
  * compatibility - Configuring concurrent execution limits.
  */
 
-import { existsSync } from 'node:fs'
-import path from 'node:path'
+import { detectAndValidatePackageEnvironment, detectPackageEnvironment } from './environment-detect.mts'
+import { getAgentExecPath, getAgentVersion } from './environment-agent.mts'
+import { AGENTS } from './supported-agents.mts'
 
-import browserslist from 'browserslist'
-// socket-lint: allow bare-semver -- lib-stable 6.0.9 doesn't publish ./external/semver; semver is bundled at build so no runtime dep leaks.
-import semver from 'semver'
-
-import { whichReal } from '@socketsecurity/lib-stable/bin/which'
-import {
-  BUN,
-  NPM,
-  PNPM,
-  VLT,
-  YARN,
-  YARN_BERRY,
-  YARN_CLASSIC,
-} from '@socketsecurity/lib-stable/constants/agents'
-import { getMaintainedNodeVersions } from '@socketsecurity/lib-stable/constants/node'
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug/output'
-import { toEditablePackageJson } from '@socketsecurity/lib-stable/packages/edit'
-import { readPackageJson } from '@socketsecurity/lib-stable/packages/read'
-import { naturalCompare } from '@socketsecurity/lib-stable/sorts/natural'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
-import { isNonEmptyString } from '@socketsecurity/lib-stable/strings/predicates'
-
-import {
-  getMinimumVersionByAgent,
-  getNpmExecPath,
-  getPnpmExecPath,
-} from '../../constants/agents.mts'
-import { FLAG_VERSION } from '../../constants/cli.mts'
-import { VITEST } from '../../env/vitest.mts'
-import {
-  NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
-  PACKAGE_JSON,
-} from '../../constants/packages.mts'
-import { execPath, nodeNoWarningsFlags } from '../../constants/paths.mts'
-import { findUp } from '../fs/find-up.mts'
-import { cmdPrefixMessage } from '../process/cmd.mts'
-
-import type { CResult } from '../../types.mjs'
+import type { Agent } from './supported-agents.mts'
 import type { Logger } from '@socketsecurity/lib-stable/logger/logger'
 import type { Remap } from '@socketsecurity/lib-stable/objects/types'
 import type { EditablePackageJson } from '@socketsecurity/lib-stable/packages/types'
 import type { SemVer } from 'semver'
 
-const DOT_PACKAGE_LOCK_JSON = '.package-lock.json'
+export { AGENTS }
+export type { Agent }
 
-export const AGENTS = [BUN, NPM, PNPM, YARN_BERRY, YARN_CLASSIC, VLT] as const
-
-const binByAgent = new Map<Agent, string>([
-  [BUN, BUN],
-  [NPM, NPM],
-  [PNPM, PNPM],
-  [YARN_BERRY, YARN],
-  [YARN_CLASSIC, YARN],
-  [VLT, VLT],
-])
-
-export type Agent = (typeof AGENTS)[number]
+export {
+  detectAndValidatePackageEnvironment,
+  detectPackageEnvironment,
+  getAgentExecPath,
+  getAgentVersion,
+}
 
 export type EnvBase = {
   agent: Agent
@@ -139,17 +96,9 @@ export type PartialEnvDetails = Readonly<
   >
 >
 
-// Lockfile registration + per-agent reader Map extracted to keep this file
-// under the 1000-line cap. Re-export ReadLockFile for back-compat.
-import { LOCKS, readLockFileByAgent } from './lockfile-readers.mts'
-
 export type { ReadLockFile } from './lockfile-readers.mts'
 
-// Windows-shim helpers extracted to keep this file under the 1000-line cap.
-// Imported for local use AND re-exported so existing import paths keep working.
-import { preferWindowsCmdShim, resolveBinPathSync } from './windows-shims.mts'
-
-export { preferWindowsCmdShim, resolveBinPathSync }
+export { preferWindowsCmdShim, resolveBinPathSync } from './windows-shims.mts'
 
 export async function detectAndValidatePackageEnvironment(
   cwd: string,

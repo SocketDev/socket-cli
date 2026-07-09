@@ -1,12 +1,11 @@
-/* max-file-lines: test — comprehensive test suite for one command/module; splitting would fragment closely related assertions. */
 /**
  * Unit tests for binary path resolution utilities.
  *
- * Purpose: Tests the binary resolution logic for external tools like Coana,
- * cdxgen, sfw, etc.
+ * Purpose: Tests the binary resolution logic for external tools like cdxgen,
+ * sfw, etc.
  *
- * Test Coverage: - resolveCoana function - resolveCdxgen function -
- * resolvePyCli function - resolveSfw function - resolveSocketPatch function.
+ * Test Coverage: - resolveCdxgen function - resolvePyCli function -
+ * resolveSfw function - resolveSocketPatch function.
  *
  * Related Files: - src/util/dlx/resolve-binary.mts (implementation)
  */
@@ -14,9 +13,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock all environment variable modules.
-const mockCoanaLocalPath = vi.hoisted(() => ({
-  SOCKET_CLI_COANA_LOCAL_PATH: '',
-}))
 const mockCdxgenLocalPath = vi.hoisted(() => ({
   SOCKET_CLI_CDXGEN_LOCAL_PATH: '',
 }))
@@ -28,10 +24,6 @@ const mockSocketPatchLocalPath = vi.hoisted(() => ({
   SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH: '',
 }))
 
-vi.mock(
-  import('../../../../src/env/socket-cli-coana-local-path.mts'),
-  () => mockCoanaLocalPath,
-)
 vi.mock(
   import('../../../../src/env/socket-cli-cdxgen-local-path.mts'),
   () => mockCdxgenLocalPath,
@@ -50,9 +42,6 @@ vi.mock(
 )
 
 // Mock version getters.
-vi.mock(import('../../../../src/env/coana-version.mts'), () => ({
-  getCoanaVersion: () => '1.0.0',
-}))
 vi.mock(import('../../../../src/env/cdxgen-version.mts'), () => ({
   getCdxgenVersion: () => '10.0.0',
 }))
@@ -102,45 +91,12 @@ describe('binary resolution utilities', () => {
     vi.clearAllMocks()
     vi.resetModules()
     // Reset all local path mocks.
-    mockCoanaLocalPath.SOCKET_CLI_COANA_LOCAL_PATH = ''
     mockCdxgenLocalPath.SOCKET_CLI_CDXGEN_LOCAL_PATH = ''
     mockPyCliLocalPath.SOCKET_CLI_PYCLI_LOCAL_PATH = ''
     mockSfwLocalPath.SOCKET_CLI_SFW_LOCAL_PATH = ''
     mockSocketPatchLocalPath.SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH = ''
     mockOs.platform.mockReturnValue('darwin')
     mockOs.arch.mockReturnValue('arm64')
-  })
-
-  describe('resolveCoana', () => {
-    it('returns dlx spec when no local path is set', async () => {
-      const { resolveCoana } =
-        await import('../../../../src/util/dlx/resolve-binary.mts')
-
-      const result = resolveCoana()
-
-      expect(result).toEqual({
-        type: 'dlx',
-        details: {
-          name: '@coana-tech/cli',
-          version: '1.0.0',
-          binaryName: 'coana',
-        },
-      })
-    })
-
-    it('returns local path when SOCKET_CLI_COANA_LOCAL_PATH is set', async () => {
-      mockCoanaLocalPath.SOCKET_CLI_COANA_LOCAL_PATH = '/custom/path/coana'
-
-      const { resolveCoana } =
-        await import('../../../../src/util/dlx/resolve-binary.mts')
-
-      const result = resolveCoana()
-
-      expect(result).toEqual({
-        type: 'local',
-        path: '/custom/path/coana',
-      })
-    })
   })
 
   describe('resolveCdxgen', () => {

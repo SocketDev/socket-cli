@@ -1,29 +1,25 @@
-/* max-file-lines: cohesive-module — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 import path from 'node:path'
 
-import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 const logger = getDefaultLogger()
 
+import { applyScanCreateDefaults } from './cmd-scan-create-defaults.mts'
+import {
+  computeReachabilityFlagUsage,
+  validateReachEcosystems,
+  validateScanCreateInput,
+} from './cmd-scan-create-checks.mts'
+import { resolveScanCreateTargetsAndOrg } from './cmd-scan-create-interactive.mts'
+import { validateScanCreateNumericFlags } from './cmd-scan-create-numeric-flags.mts'
 import { assertNoNegationPatterns } from './exclude-paths.mts'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
-import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { excludePathsFlag, reachabilityFlags } from './reachability-flags.mts'
-import { suggestOrgSlug } from './suggest-org-slug.mts'
-import { suggestTarget } from './suggest_target.mts'
 import { validateReachabilityTarget } from './validate-reachability-target.mts'
-import { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
+import { REQUIREMENTS_TXT } from '../../constants.mts'
 import { outputDryRunUpload } from '../../util/dry-run/output.mts'
-import { InputError } from '../../util/error/errors.mts'
 import { defineFlags } from '../../meow.mts'
 import { meowOrExit } from '../../util/cli/with-subcommands.mts'
-import { getEcosystemChoicesForMeow } from '../../util/ecosystem/types.mts'
-import {
-  detectDefaultBranch,
-  getRepoName,
-  gitBranch,
-} from '../../util/git/operations.mts'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
@@ -34,8 +30,6 @@ import { readOrDefaultSocketJsonUp } from '../../util/socket/json.mts'
 import { determineOrgSlug } from '../../util/socket/org-slug.mts'
 import { hasDefaultApiToken } from '../../util/socket/sdk.mts'
 import { socketDashboardLink } from '../../util/terminal/link.mts'
-import { checkCommandInput } from '../../util/validation/check-input.mts'
-import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 
 import type { REPORT_LEVEL } from './types.mts'
 import type { CliCommandContext } from '../../util/cli/with-subcommands.mts'
@@ -255,18 +249,9 @@ export async function run(
   const makeDefaultBranch = makeDefaultBranchFlag || legacyDefaultBranch
 
   // Validate ecosystem values.
-  const reachEcosystems: PURL_Type[] = []
   const reachEcosystemsRaw = cmdFlagValueToArray(cli.flags['reachEcosystems'])
-  const validEcosystems = getEcosystemChoicesForMeow()
-  for (let i = 0, { length } = reachEcosystemsRaw; i < length; i += 1) {
-    const ecosystem = reachEcosystemsRaw[i]!
-    if (!validEcosystems.includes(ecosystem)) {
-      throw new InputError(
-        `--reach-ecosystems must be one of: ${joinAnd(validEcosystems)} (saw: "${ecosystem}"); pass a supported ecosystem like --reach-ecosystems=${validEcosystems[0]}`,
-      )
-    }
-    reachEcosystems.push(ecosystem as PURL_Type)
-  }
+  const reachEcosystems: PURL_Type[] =
+    validateReachEcosystems(reachEcosystemsRaw)
 
   const dryRun = !!cli.flags['dryRun']
 
@@ -294,60 +279,14 @@ export async function run(
 
   const sockJson = await readOrDefaultSocketJsonUp(cwd)
 
-  // Note: This needs meow booleanDefault=undefined.
-  if (typeof autoManifest !== 'boolean') {
-    if (sockJson.defaults?.scan?.create?.autoManifest !== undefined) {
-      autoManifest = sockJson.defaults.scan.create.autoManifest
-      logger.info(
-        `Using default --auto-manifest from ${SOCKET_JSON}:`,
-        autoManifest,
-      )
-    } else {
-      autoManifest = false
-    }
-  }
-  if (!branchName) {
-    if (sockJson.defaults?.scan?.create?.branch) {
-      branchName = sockJson.defaults.scan.create.branch
-      logger.info(`Using default --branch from ${SOCKET_JSON}:`, branchName)
-    } else {
-      branchName = (await gitBranch(cwd)) || (await detectDefaultBranch(cwd))
-    }
-  }
-  if (!repoName) {
-    if (sockJson.defaults?.scan?.create?.repo) {
-      repoName = sockJson.defaults.scan.create.repo
-      logger.info(`Using default --repo from ${SOCKET_JSON}:`, repoName)
-    } else {
-      repoName = await getRepoName(cwd)
-    }
-  }
-  if (!workspace && sockJson.defaults?.scan?.create?.workspace) {
-    workspace = sockJson.defaults.scan.create.workspace
-    logger.info(`Using default --workspace from ${SOCKET_JSON}:`, workspace)
-  }
-  if (typeof report !== 'boolean') {
-    if (sockJson.defaults?.scan?.create?.report !== undefined) {
-      report = sockJson.defaults.scan.create.report
-      logger.info(`Using default --report from ${SOCKET_JSON}:`, report)
-    } else {
-      report = false
-    }
-  }
-
-  // If we updated any inputs then we should print the command line to repeat
-  // the command without requiring user input, as a suggestion.
-  let updatedInput = false
-
-  // Accept zero or more paths. Default to cwd() if none given.
-  let targets = cli.input.length ? [...cli.input] : [cwd]
-
-  /* c8 ignore start - defensive: targets always has at least [cwd] from the line above */
-  if (!targets.length && !dryRun && interactive) {
-    targets = await suggestTarget()
-    updatedInput = true
-  }
-  /* c8 ignore stop */
+  ;({ autoManifest, branchName, repoName, report, workspace } =
+    await applyScanCreateDefaults(cwd, sockJson, {
+      autoManifest,
+      branchName,
+      repoName,
+      report,
+      workspace,
+    }))
 
   // We're going to need an api token to suggest data because those suggestions
   // must come from data we already know. Don't error on missing api token yet.
@@ -358,90 +297,39 @@ export async function run(
 
   const pendingHead = tmp ? false : pendingHeadFlag
 
-  // If the current cwd is unknown and is used as a repo slug anyways, we will
-  // first need to register the slug before we can use it.
-  // Only do suggestions with an apiToken and when not in dryRun mode
-  if (hasApiToken && !dryRun && interactive) {
-    if (!orgSlug) {
-      const suggestion = await suggestOrgSlug()
-      if (suggestion === undefined) {
-        await outputCreateNewScan(
-          {
-            ok: false,
-            message: 'Canceled by user',
-            cause: 'Org selector was canceled by user',
-          },
-          {
-            interactive: false,
-            outputKind,
-          },
-        )
-        return
-      }
-      if (suggestion) {
-        orgSlug = suggestion
-      }
-      updatedInput = true
-    }
+  const suggestResult = await resolveScanCreateTargetsAndOrg({
+    autoManifest,
+    cli,
+    cwd,
+    dryRun,
+    hasApiToken,
+    interactive,
+    orgSlug,
+    outputKind,
+    sockJson,
+  })
+  if (suggestResult.canceled) {
+    return
   }
-
-  const detected = await detectManifestActions(sockJson, cwd)
-  if (detected.count > 0 && !autoManifest) {
-    logger.info(
-      `Detected ${detected.count} manifest targets we could try to generate. Please set the --auto-manifest flag if you want to include languages covered by \`socket manifest auto\` in the Scan.`,
-    )
-  }
-
-  if (updatedInput && orgSlug && targets.length) {
-    logger.info(
-      'Note: You can invoke this command next time to skip the interactive questions:',
-    )
-    logger.error('```')
-    logger.error(
-      `    socket scan create [other flags...] ${orgSlug} ${targets.join(' ')}`,
-    )
-    logger.error('```')
-    logger.error('')
-    logger.info(
-      `You can also run \`socket scan setup\` to persist these flag defaults to a ${SOCKET_JSON} file.`,
-    )
-    logger.error('')
-  }
+  const targets = suggestResult.targets
+  orgSlug = suggestResult.orgSlug
 
   const excludePaths = cmdFlagValueToArray(cli.flags['excludePaths'])
   assertNoNegationPatterns(excludePaths)
 
   const reachExcludePaths = cmdFlagValueToArray(cli.flags['reachExcludePaths'])
 
-  // Validation helpers for better readability.
-  const hasReachEcosystems = reachEcosystems.length > 0
-
-  const hasReachExcludePaths = reachExcludePaths.length > 0
-
-  const isUsingNonDefaultMemoryLimit =
-    reachAnalysisMemoryLimit !==
-    reachabilityFlags['reachAnalysisMemoryLimit']?.default
-
-  const isUsingNonDefaultTimeout =
-    reachAnalysisTimeout !== reachabilityFlags['reachAnalysisTimeout']?.default
-
-  const isUsingNonDefaultConcurrency =
-    reachConcurrency !== reachabilityFlags['reachConcurrency']?.default
-
-  const isUsingNonDefaultAnalytics =
-    reachDisableAnalytics !==
-    reachabilityFlags['reachDisableAnalytics']?.default
-
-  const isUsingAnyReachabilityFlags =
-    hasReachEcosystems ||
-    hasReachExcludePaths ||
-    isUsingNonDefaultAnalytics ||
-    isUsingNonDefaultConcurrency ||
-    isUsingNonDefaultMemoryLimit ||
-    isUsingNonDefaultTimeout ||
-    reachEnableAnalysisSplitting ||
-    reachLazyMode ||
-    reachSkipCache
+  const isUsingAnyReachabilityFlags = computeReachabilityFlagUsage({
+    reachAnalysisMemoryLimit,
+    reachAnalysisTimeout,
+    reachConcurrency,
+    reachDisableAnalytics,
+    reachEcosystems,
+    reachEnableAnalysisSplitting,
+    reachExcludePaths,
+    reachLazyMode,
+    reachSkipCache,
+  })
 
   // Validate target constraints when --reach is enabled.
   const reachTargetValidation = reach
@@ -453,77 +341,20 @@ export async function run(
         targetExists: false,
       }
 
-  const wasValidInput = checkCommandInput(
+  const wasValidInput = validateScanCreateInput({
+    branchName,
+    hasApiToken,
+    isUsingAnyReachabilityFlags,
+    json,
+    makeDefaultBranch,
+    markdown,
+    orgSlug,
     outputKind,
-    {
-      nook: true,
-      test: !!orgSlug,
-      message: 'Org name by default setting, --org, or auto-discovered',
-      fail: 'missing',
-    },
-    {
-      test: !!targets.length,
-      message: 'At least one TARGET (e.g. `.` or `./package.json`)',
-      fail: 'missing',
-    },
-    {
-      nook: true,
-      test: !json || !markdown,
-      message: 'The json and markdown flags cannot be both set, pick one',
-      fail: 'omit one',
-    },
-    {
-      nook: true,
-      test: hasApiToken,
-      message: 'This command requires a Socket API token for access',
-      fail: 'try `socket login`',
-    },
-    {
-      nook: true,
-      test: !makeDefaultBranch || !!branchName,
-      message: 'When --make-default-branch is set, --branch is mandatory',
-      fail: 'missing branch name',
-    },
-    {
-      nook: true,
-      test: !pendingHead || !!branchName,
-      message: 'When --pending-head is set, --branch is mandatory',
-      fail: 'missing branch name',
-    },
-    {
-      nook: true,
-      test: reach || !isUsingAnyReachabilityFlags,
-      message: 'Reachability analysis flags require --reach to be enabled',
-      fail: 'add --reach flag to use --reach-* options',
-    },
-    {
-      nook: true,
-      test: !reach || reachTargetValidation.isValid,
-      message:
-        'Reachability analysis requires exactly one target directory when --reach is enabled',
-      fail: 'provide exactly one directory path',
-    },
-    {
-      nook: true,
-      test: !reach || reachTargetValidation.isDirectory,
-      message:
-        'Reachability analysis target must be a directory when --reach is enabled',
-      fail: 'provide a directory path, not a file',
-    },
-    {
-      nook: true,
-      test: !reach || reachTargetValidation.targetExists,
-      message: 'Target directory must exist when --reach is enabled',
-      fail: 'provide an existing directory path',
-    },
-    {
-      nook: true,
-      test: !reach || reachTargetValidation.isInsideCwd,
-      message:
-        'Target directory must be inside the current working directory when --reach is enabled',
-      fail: 'provide a path inside the working directory',
-    },
-  )
+    pendingHead,
+    reach,
+    reachTargetValidation,
+    targets,
+  })
   if (!wasValidInput) {
     return
   }
@@ -550,49 +381,17 @@ export async function run(
   }
 
   // Validate numeric flag conversions.
-  const validatedPullRequest = Number(pullRequest)
-  if (
-    pullRequest !== undefined &&
-    (Number.isNaN(validatedPullRequest) ||
-      !Number.isInteger(validatedPullRequest) ||
-      validatedPullRequest < 0)
-  ) {
-    throw new InputError(
-      `--pull-request must be a non-negative integer (saw: "${pullRequest}"); pass a number like --pull-request=42`,
-    )
-  }
-
-  const validatedReachAnalysisMemoryLimit = Number(reachAnalysisMemoryLimit)
-  if (
-    reachAnalysisMemoryLimit !== undefined &&
-    Number.isNaN(validatedReachAnalysisMemoryLimit)
-  ) {
-    throw new InputError(
-      `--reach-analysis-memory-limit must be a number of megabytes (saw: "${reachAnalysisMemoryLimit}"); pass an integer like --reach-analysis-memory-limit=4096`,
-    )
-  }
-
-  const validatedReachAnalysisTimeout = Number(reachAnalysisTimeout)
-  if (
-    reachAnalysisTimeout !== undefined &&
-    Number.isNaN(validatedReachAnalysisTimeout)
-  ) {
-    throw new InputError(
-      `--reach-analysis-timeout must be a number of seconds (saw: "${reachAnalysisTimeout}"); pass an integer like --reach-analysis-timeout=300`,
-    )
-  }
-
-  const validatedReachConcurrency = Number(reachConcurrency)
-  if (
-    reachConcurrency !== undefined &&
-    (Number.isNaN(validatedReachConcurrency) ||
-      !Number.isInteger(validatedReachConcurrency) ||
-      validatedReachConcurrency <= 0)
-  ) {
-    throw new InputError(
-      `--reach-concurrency must be a positive integer (saw: "${reachConcurrency}"); pass a number like --reach-concurrency=4`,
-    )
-  }
+  const {
+    validatedPullRequest,
+    validatedReachAnalysisMemoryLimit,
+    validatedReachAnalysisTimeout,
+    validatedReachConcurrency,
+  } = validateScanCreateNumericFlags({
+    pullRequest,
+    reachAnalysisMemoryLimit,
+    reachAnalysisTimeout,
+    reachConcurrency,
+  })
 
   await handleCreateNewScan({
     autoManifest: Boolean(autoManifest),

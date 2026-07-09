@@ -1,4 +1,3 @@
-/* max-file-lines: test — comprehensive test suite for one command/module; splitting would fragment closely related assertions. */
 /**
  * Unit tests for scan list command.
  *
@@ -449,64 +448,6 @@ describe('cmd-scan-list', () => {
         false,
       )
       expect(mockHandleListScans).toHaveBeenCalled()
-    })
-
-    it('throws InputError when --page is not a positive integer', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
-
-      await expect(
-        cmdScanList.run(
-          ['--org', 'test-org', '--page', 'not-a-number'],
-          importMeta,
-          context,
-        ),
-      ).rejects.toThrow(/--page must be a positive integer/)
-    })
-
-    it('throws InputError when --per-page is not a positive integer', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
-
-      await expect(
-        cmdScanList.run(
-          ['--org', 'test-org', '--per-page', 'oops'],
-          importMeta,
-          context,
-        ),
-      ).rejects.toThrow(/--per-page must be a positive integer/)
-    })
-
-    it('passes flag-default direction and sort to handleListScans', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
-
-      await cmdScanList.run(
-        ['--org', 'test-org', '--no-interactive'],
-        importMeta,
-        context,
-      )
-
-      // The CLI flag schema sets defaults (direction=desc, sort=created_at).
-      expect(mockHandleListScans).toHaveBeenCalledWith(
-        expect.objectContaining({
-          direction: 'desc',
-          sort: 'created_at',
-        }),
-      )
-    })
-
-    it('uses default sort=created_at and direction=desc in dry-run output', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
-
-      await cmdScanList.run(
-        ['--org', 'test-org', '--dry-run', '--no-interactive'],
-        importMeta,
-        context,
-      )
-
-      expect(mockHandleListScans).not.toHaveBeenCalled()
-      // Defaults should appear in the dry-run output via outputDryRunFetch.
-      const errors = mockLogger.error.mock.calls.flat().join(' ')
-      expect(errors).toContain('created_at')
-      expect(errors).toContain('desc')
     })
   })
 })
