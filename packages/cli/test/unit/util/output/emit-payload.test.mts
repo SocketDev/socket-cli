@@ -4,10 +4,6 @@ import {
   emitJsonPayload,
   emitPayload,
 } from '../../../../src/util/output/emit-payload.mts'
-import {
-  SENTINEL_BEGIN,
-  SENTINEL_END,
-} from '../../../../src/util/output/mode.mts'
 
 const mockStdoutLog = vi.fn()
 const mockStderrLog = vi.fn()
@@ -42,17 +38,17 @@ describe('emitPayload', () => {
   it('emits BEGIN, payload, END as three log calls under --json', () => {
     emitPayload('{"ok":true}', { flags: { json: true } })
     expect(mockStdoutLog).toHaveBeenCalledTimes(3)
-    expect(mockStdoutLog).toHaveBeenNthCalledWith(1, SENTINEL_BEGIN)
+    expect(mockStdoutLog).toHaveBeenNthCalledWith(1, '\0SOCKET_PAYLOAD_BEGIN\0')
     expect(mockStdoutLog).toHaveBeenNthCalledWith(2, '{"ok":true}')
-    expect(mockStdoutLog).toHaveBeenNthCalledWith(3, SENTINEL_END)
+    expect(mockStdoutLog).toHaveBeenNthCalledWith(3, '\0SOCKET_PAYLOAD_END\0')
   })
 
   it('emits three log calls under --markdown', () => {
     emitPayload('# Hello', { flags: { markdown: true } })
     expect(mockStdoutLog).toHaveBeenCalledTimes(3)
-    expect(mockStdoutLog).toHaveBeenNthCalledWith(1, SENTINEL_BEGIN)
+    expect(mockStdoutLog).toHaveBeenNthCalledWith(1, '\0SOCKET_PAYLOAD_BEGIN\0')
     expect(mockStdoutLog).toHaveBeenNthCalledWith(2, '# Hello')
-    expect(mockStdoutLog).toHaveBeenNthCalledWith(3, SENTINEL_END)
+    expect(mockStdoutLog).toHaveBeenNthCalledWith(3, '\0SOCKET_PAYLOAD_END\0')
   })
 
   it('emits three log calls under --quiet', () => {

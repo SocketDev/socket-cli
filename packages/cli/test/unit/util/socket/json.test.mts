@@ -67,10 +67,6 @@ vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
 }))
 
 import {
-  SOCKET_JSON,
-  SOCKET_WEBSITE_URL,
-} from '../../../../src/constants/socket.mts'
-import {
   findSocketJsonUp,
   getDefaultSocketJson,
   readOrDefaultSocketJson,
@@ -93,7 +89,7 @@ describe('socket-json utilities', () => {
       const result = getDefaultSocketJson()
       expect(result.version).toBe(1)
       expect(result[' _____         _       _     ']).toContain(
-        SOCKET_WEBSITE_URL,
+        'https://socket.dev',
       )
       expect(Object.keys(result)).toContain('|   __|___ ___| |_ ___| |_   ')
       expect(Object.keys(result)).toContain("|__   | . |  _| '_| -_|  _|  ")
@@ -148,7 +144,7 @@ describe('socket-json utilities', () => {
       const result = await findSocketJsonUp('/test/dir')
       // Should find socket.json somewhere up the tree.
       expect(result).toBeDefined()
-      expect(result).toContain(SOCKET_JSON)
+      expect(result).toContain('socket.json')
     })
 
     it('returns undefined when socket.json not found', async () => {
@@ -275,7 +271,7 @@ describe('socket-json utilities', () => {
       const result = await writeSocketJson('/test/dir', mockJson as unknown)
       expect(result.ok).toBe(true)
       expect(mockWriteFile).toHaveBeenCalledWith(
-        path.join('/test/dir', SOCKET_JSON),
+        path.join('/test/dir', 'socket.json'),
         expect.stringContaining('"version": 1'),
         'utf8',
       )

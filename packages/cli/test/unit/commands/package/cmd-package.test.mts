@@ -58,15 +58,22 @@ describe('cmd-package', () => {
       await cmdPackage.run(['score'], importMeta, context)
 
       expect(mockMeowWithSubcommands).toHaveBeenCalledTimes(1)
+      const [subcommandsCallArgs] = mockMeowWithSubcommands.mock.calls[0]
+      expect(subcommandsCallArgs.subcommands.score === cmdPackageScore).toBe(
+        true,
+      )
+      expect(
+        subcommandsCallArgs.subcommands.shallow === cmdPackageShallow,
+      ).toBe(true)
       expect(mockMeowWithSubcommands).toHaveBeenCalledWith(
         {
           argv: ['score'],
           importMeta,
           name: 'socket package',
-          subcommands: {
-            score: cmdPackageScore,
-            shallow: cmdPackageShallow,
-          },
+          subcommands: expect.objectContaining({
+            score: expect.anything(),
+            shallow: expect.anything(),
+          }),
         },
         {
           aliases: {
@@ -149,8 +156,8 @@ describe('cmd-package', () => {
       const call = mockMeowWithSubcommands.mock.calls[0]
       const subcommands = call[0].subcommands
 
-      expect(subcommands.score).toBe(cmdPackageScore)
-      expect(subcommands.shallow).toBe(cmdPackageShallow)
+      expect(subcommands.score === cmdPackageScore).toBe(true)
+      expect(subcommands.shallow === cmdPackageShallow).toBe(true)
     })
   })
 

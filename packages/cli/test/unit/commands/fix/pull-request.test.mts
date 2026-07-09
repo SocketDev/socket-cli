@@ -27,6 +27,7 @@
  */
 
 import { RequestError } from '@octokit/request-error'
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
@@ -91,7 +92,7 @@ vi.mock(import('../../../../src/util/git/github.mts'), () => ({
   handleGitHubApiError: vi.fn((e: unknown, context: string) => ({
     ok: false,
     message: 'GitHub API error',
-    cause: `Error while ${context}: ${e instanceof Error ? e.message : String(e)}`,
+    cause: `Error while ${context}: ${errorMessage(e)}`,
   })),
   handleGraphqlError: mockHandleGraphqlError,
   withGitHubRetry: mockWithGitHubRetry,

@@ -413,7 +413,7 @@ export async function scanRepo(
 
 // Best-effort cleanup of a partial download. Isolated in its own function so
 // its catch handler doesn't shadow the caller's catch binding.
-async function cleanupPartialDownload(localPath: string): Promise<void> {
+export async function cleanupPartialDownload(localPath: string): Promise<void> {
   try {
     await safeDelete(localPath, { force: true })
   } catch (e) {

@@ -262,9 +262,8 @@ export function getProtectedResourceMetadataUrl(baseUrl: URL): string {
 }
 
 // socket-lint: allow boolean-trap -- collapsing into an options object would
-// change call sites in transport-http.mts and
-// test/unit/commands/mcp/transport-http-helpers.test.mts, which are out of
-// scope for this pass.
+// change call sites in transport-http.mts + transport-http-helpers.test.mts,
+// out of scope for this pass.
 export function getRequestBaseUrl(
   req: IncomingMessage,
   fallbackPort: number,

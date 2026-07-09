@@ -61,18 +61,26 @@ describe('cmd-config', () => {
       await cmdConfig.run(['auto'], importMeta, context)
 
       expect(mockMeowWithSubcommands).toHaveBeenCalledTimes(1)
+      const [subcommandsCallArgs] = mockMeowWithSubcommands.mock.calls[0]
+      expect(subcommandsCallArgs.subcommands.auto === cmdConfigAuto).toBe(true)
+      expect(subcommandsCallArgs.subcommands.get === cmdConfigGet).toBe(true)
+      expect(subcommandsCallArgs.subcommands.list === cmdConfigList).toBe(true)
+      expect(subcommandsCallArgs.subcommands.set === cmdConfigSet).toBe(true)
+      expect(subcommandsCallArgs.subcommands.unset === cmdConfigUnset).toBe(
+        true,
+      )
       expect(mockMeowWithSubcommands).toHaveBeenCalledWith(
         {
           argv: ['auto'],
           importMeta,
           name: 'socket config',
-          subcommands: {
-            auto: cmdConfigAuto,
-            get: cmdConfigGet,
-            list: cmdConfigList,
-            set: cmdConfigSet,
-            unset: cmdConfigUnset,
-          },
+          subcommands: expect.objectContaining({
+            auto: expect.anything(),
+            get: expect.anything(),
+            list: expect.anything(),
+            set: expect.anything(),
+            unset: expect.anything(),
+          }),
         },
         {
           description: 'Manage Socket CLI configuration',
@@ -150,11 +158,11 @@ describe('cmd-config', () => {
       const call = mockMeowWithSubcommands.mock.calls[0]
       const subcommands = call[0].subcommands
 
-      expect(subcommands.auto).toBe(cmdConfigAuto)
-      expect(subcommands.get).toBe(cmdConfigGet)
-      expect(subcommands.list).toBe(cmdConfigList)
-      expect(subcommands.set).toBe(cmdConfigSet)
-      expect(subcommands.unset).toBe(cmdConfigUnset)
+      expect(subcommands.auto === cmdConfigAuto).toBe(true)
+      expect(subcommands.get === cmdConfigGet).toBe(true)
+      expect(subcommands.list === cmdConfigList).toBe(true)
+      expect(subcommands.set === cmdConfigSet).toBe(true)
+      expect(subcommands.unset === cmdConfigUnset).toBe(true)
     })
   })
 

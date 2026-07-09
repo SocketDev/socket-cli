@@ -16,6 +16,7 @@
 import os from 'node:os'
 import path from 'node:path'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockGetOctokit = vi.hoisted(() => vi.fn())
@@ -43,7 +44,7 @@ vi.mock(import('../../../../src/util/git/github.mts'), () => ({
   handleGitHubApiError: vi.fn((e: unknown, context: string) => ({
     ok: false,
     message: 'GitHub API error',
-    cause: `Error while ${context}: ${e instanceof Error ? e.message : String(e)}`,
+    cause: `Error while ${context}: ${errorMessage(e)}`,
   })),
   handleGraphqlError: vi.fn((_e: unknown, context: string) => ({
     ok: false,

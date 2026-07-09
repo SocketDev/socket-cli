@@ -853,6 +853,7 @@ describe('ensureSocketPyCli', () => {
       })
       try {
         await ensureSocketPyCli('/py')
+        expect(spawnCount).toBeGreaterThan(1)
       } finally {
         ;(process as { kill: unknown }).kill = realKill
       }
@@ -886,6 +887,7 @@ describe('ensureSocketPyCli', () => {
 
     try {
       await ensureSocketPyCli('/py')
+      expect(spawnCount).toBeGreaterThan(1)
     } finally {
       ;(process as { kill: unknown }).kill = realKill
     }
@@ -910,6 +912,7 @@ describe('ensureSocketPyCli', () => {
       return { code: 0 } as never
     })
     await ensureSocketPyCli('/py')
+    expect(spawnCount).toBeGreaterThan(1)
   })
 
   it('treats unreadable lock as stale and retries', async () => {
@@ -931,6 +934,7 @@ describe('ensureSocketPyCli', () => {
       return { code: 0 } as never
     })
     await ensureSocketPyCli('/py')
+    expect(spawnCount).toBeGreaterThan(1)
   })
 
   it('hits i % 5 === 4 dead-PID branch in wait loop', async () => {
@@ -1089,6 +1093,7 @@ describe('ensureSocketPyCli', () => {
       })
       try {
         await ensureSocketPyCli('/py')
+        expect(spawnCount).toBeGreaterThan(31)
       } finally {
         ;(process as { kill: unknown }).kill = realKill
       }

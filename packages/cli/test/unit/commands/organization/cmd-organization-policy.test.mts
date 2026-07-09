@@ -60,15 +60,24 @@ describe('cmd-organization-policy', () => {
       await cmdOrganizationPolicy.run(['security'], importMeta, context)
 
       expect(mockMeowWithSubcommands).toHaveBeenCalledTimes(1)
+      const [subcommandsCallArgs] = mockMeowWithSubcommands.mock.calls[0]
+      expect(
+        subcommandsCallArgs.subcommands.license ===
+          cmdOrganizationPolicyLicense,
+      ).toBe(true)
+      expect(
+        subcommandsCallArgs.subcommands.security ===
+          cmdOrganizationPolicySecurity,
+      ).toBe(true)
       expect(mockMeowWithSubcommands).toHaveBeenCalledWith(
         {
           argv: ['security'],
           importMeta,
           name: 'socket organization policy',
-          subcommands: {
-            license: cmdOrganizationPolicyLicense,
-            security: cmdOrganizationPolicySecurity,
-          },
+          subcommands: expect.objectContaining({
+            license: expect.anything(),
+            security: expect.anything(),
+          }),
         },
         {
           defaultSub: 'list',
@@ -145,8 +154,8 @@ describe('cmd-organization-policy', () => {
       const call = mockMeowWithSubcommands.mock.calls[0]
       const subcommands = call[0].subcommands
 
-      expect(subcommands.security).toBe(cmdOrganizationPolicySecurity)
-      expect(subcommands.license).toBe(cmdOrganizationPolicyLicense)
+      expect(subcommands.security === cmdOrganizationPolicySecurity).toBe(true)
+      expect(subcommands.license === cmdOrganizationPolicyLicense).toBe(true)
     })
   })
 
