@@ -1,6 +1,6 @@
 {
-  "$schema": "https://raw.githubusercontent.com/SocketDev/socket-btm/main/packages/build-infra/lib/external-tools-schema.json",
-  "description": "External tools required to build + release socket-cli. Wrapped `tools` shape matches the canonical schema every fleet repo now uses. When composite actions or scripts want integrity-verified downloads of pnpm / sfw / zizmor, they read from `config.tools.<name>` in this file.",
+  "$schema": "https://raw.githubusercontent.com/SocketDev/socket-wheelhouse/main/packages/build-infra/lib/external-tools-schema.json",
+  "description": "External tools required to build + release this repo. The canonical schema lives at socket-wheelhouse/packages/build-infra/lib/external-tools-schema.json (generated from scripts/fleet/lib/external-tools-schema.mts); every fleet repo references it via the $schema field above so validators pick up the single source of truth. Extend the `tools` map with repo-specific entries (e.g. language toolchains for sdxgen, git credential helpers for packageurl-js).",
   "tools": {
     "git": {
       "description": "Git CLI — checkout, submodule init, tag signing.",
@@ -12,154 +12,192 @@
       ]
     },
     "node": {
-      "description": "Node.js — runs the CLI and all build scripts.",
-      "version": "25.9.0",
+      "description": "Node.js — runs the build scripts and TypeScript stripping.",
+      "version": "25+",
       "notes": [
         "Required: yes",
         "Node 25+ runs .mts files natively with no flag",
-        "The pinned version lives in .node-version at the repo root"
+        "Install via volta / nvm / fnm / official installer",
+        "The pinned version lives in .node-version at the repo root",
+        "Docker prebakes: node-base (docker/fleet-bases/node-base.Dockerfile) builds node from source at the .node-version pin with V8 pointer compression (--experimental-enable-pointer-compression = lower memory), replicating the vendored platformatic/node-caged recipe rather than pulling its DockerHub image. scripts/repo/build-prebakes.mts injects NODE_VERSION (.node-version) + PNPM_VERSION (pnpm pin) as build-args; every compiler-base build COPYs node --from=node-base instead of installing it."
       ]
     },
     "pnpm": {
       "description": "pnpm — the fleet's package manager.",
-      "version": "11.0.0-rc.5",
+      "version": "11.8.0",
       "packageManager": "pnpm",
       "repository": "github:pnpm/pnpm",
       "release": "asset",
       "notes": [
         "Required: yes",
-        "Bootstrap locally via `corepack enable pnpm`",
-        "CI downloads + integrity-verifies the pinned tarball"
+        "Bootstrap locally via `corepack enable pnpm` (the version resolves from package.json's packageManager field)",
+        "CI downloads + SRI-verifies (sha512) the pinned tarball directly"
       ],
       "platforms": {
         "darwin-arm64": {
           "asset": "pnpm-darwin-arm64.tar.gz",
-          "integrity": "sha256-MqUHEMys/c8U5tWZXVNoKY7skTsM45A7ngm2VV8G9OU="
+          "integrity": "sha512-kgYcLu653+Gx7l7qEtM2zMNLBvb96ABcRSkzOrbfvkndb+veMt6lHJK5r3wTfuRYlDb8Lnk/h0wUD6sP3taJ9g=="
         },
         "darwin-x64": {
-          "asset": "pnpm-darwin-x64.tar.gz",
-          "integrity": "sha256-cdyjP0J12mtDvx60C9xNh29ZoRZxbqy/AQecPZhf+F0="
+          "asset": "pnpm-11.8.0.tgz",
+          "integrity": "sha512-wfXnxMskHI8XS3Q4UdgvQrgCMkr8iw8Ra5atsVqgZmSUjd42lgo7oQebpbSyndAUATW5S1tfUmNZIknWjlVfJg=="
         },
         "linux-arm64": {
           "asset": "pnpm-linux-arm64.tar.gz",
-          "integrity": "sha256-LdBBJ/8QsfndILriSLd5x3qOxn46+jXnJW5flKvd1JM="
+          "integrity": "sha512-p1IcVUlwYf3OJQYmdHGFr08d1BOSatHEmLJSBSdoNPGqOqfslFHjSqiuZ/3yuQxxypqp8OfnM3ci3Jh7ZEBlSw=="
+        },
+        "linux-arm64-musl": {
+          "asset": "pnpm-linux-arm64-musl.tar.gz",
+          "integrity": "sha512-u5Do3diwK7FL5vk+i/x2I4q4ujdZ5gSoLNgmlt1w2C7NOjAZOpDK0CJYM4gDa5BetEwzdNpuN/gaMqzJk6I5NA=="
         },
         "linux-x64": {
           "asset": "pnpm-linux-x64.tar.gz",
-          "integrity": "sha256-fr70tha6QfsNVKIHs2UI+uM0ZyMoOgiLQ/weA47m/tA="
+          "integrity": "sha512-Sn7hG4Xsq6pmi8TE8lpIkwRzAYzf5qtFk8zSsZWkSJFcmv5FlsrO8UP3lLRI+ppcRNYS10FMCTwXe3Nt66A0Pg=="
+        },
+        "linux-x64-musl": {
+          "asset": "pnpm-linux-x64-musl.tar.gz",
+          "integrity": "sha512-5WXlo2yCDmoBIue5iHRK3zNSPVAmzci+5RhuxwUA4hnH9W3TFjDnQHyAzDVnkY878mfTXE35THZeEc1OKYPmag=="
         },
         "win-arm64": {
           "asset": "pnpm-win32-arm64.zip",
-          "integrity": "sha256-5KOa1MJR2140sYuYVh7yW6tVBq1lytL6NgKvWNGXJmc="
+          "integrity": "sha512-iv1hJEj9FUiVFae2cmCYjbRK0Xn27Uh+kpglT2LWvQyl4WeIOgs1ouKrptVxk3X3t7DB5vuYKbsmE+9BnoQ4FA=="
         },
         "win-x64": {
           "asset": "pnpm-win32-x64.zip",
-          "integrity": "sha256-FHSFri84w9HM8vXbANAkRBa80iuRFMAjiOanj0FTj8Q="
+          "integrity": "sha512-jyqMgedndbck/xJjXPem5Lw7V0YtDfiUJIB81e/hmnrg3yLKPoyCKO5ILegYkLPIr945IJRcVoJZwjtog8FCqg=="
         }
       }
     },
     "gh": {
-      "description": "GitHub CLI — workflow dispatch, release downloads, PR creation.",
-      "version": "2.63+",
+      "description": "GitHub CLI — workflow dispatch, release downloads, PR creation in weekly-update; host for the gh-aw agentic-workflows extension.",
+      "version": "2.94.0",
       "notes": [
-        "Required: only in workflows that call `gh api` / `gh pr create`",
+        "Required: only in workflows that call `gh api` / `gh pr create` (weekly-update, provenance)",
         "Preinstalled on GitHub-hosted runners",
-        "Local: `brew install gh` / `winget install gh` / `apt install gh`"
+        "Local: `brew install gh` / `winget install gh` / `apt install gh`",
+        "The gh-aw extension needs gh >= 2.0.0; the pinned version above is the current latest"
+      ]
+    },
+    "gh-aw": {
+      "description": "GitHub Agentic Workflows — `gh` extension that authors agentic workflows as `.github/workflows/<name>.md` (markdown + frontmatter) and compiles them to a hardened `<name>.lock.yml`. The fleet uses `engine: claude`.",
+      "version": "latest",
+      "repository": "github:github/gh-aw",
+      "notes": [
+        "Required: any repo with a `.github/workflows/*.md` agentic workflow",
+        "Install: `gh extension install github/gh-aw`; init a repo with `gh aw init`; compile after editing frontmatter with `gh aw compile` (commit BOTH the .md and the generated .lock.yml)",
+        "Engine secrets (set per repo, by engine): `ANTHROPIC_API_KEY` (claude), `COPILOT_GITHUB_TOKEN` (copilot — distinct from the default GITHUB_TOKEN; or use `permissions: copilot-requests: write` to bill the org via the Actions token, no PAT), `OPENAI_API_KEY` (codex), `GEMINI_API_KEY` (gemini)",
+        "`copilot-requests: write` is Copilot-engine-only — claude/codex/gemini need no GitHub permission beyond their API key",
+        "Any action a compiled .lock.yml references must be added to the repo's GitHub Actions allowlist (Settings → Actions → Allowed actions)"
+      ]
+    },
+    "uv": {
+      "description": "uv (Astral) — the fleet's Python project tool: hash-verified uv.lock + exclude-newer soak. Replaces unpinned `pip3 install`.",
+      "version": "0.11.21",
+      "repository": "github:astral-sh/uv",
+      "release": "asset",
+      "notes": [
+        "Required: any repo with a Python project (pyproject.toml [tool.uv]); pipx stays the dev shortcut for one-off CLI tools",
+        "Reproducible install: `uv sync --locked` (errors if uv.lock is stale — the --frozen-lockfile analog); `uv lock --check` asserts current without side effects",
+        "Supply-chain: pin `[tool.uv] exclude-newer` to the 7-day soak (the minimumReleaseAge analog); optionally set UV_MALWARE_CHECK=1 for the OSV lockfile scan",
+        "Apache-2.0 / MIT, single static binary; pre-1.0 (noted exception to the stable-1.0+ rule — de-facto stable, Astral-backed)",
+        "Install: `curl -LsSf https://astral.sh/uv/install.sh | sh` or the pinned GitHub release asset"
       ]
     },
     "zizmor": {
       "description": "GitHub Actions security linter — audits .github/ for workflow-injection / credential-leak patterns.",
-      "version": "1.23.1",
+      "version": "1.25.2",
       "repository": "github:zizmorcore/zizmor",
       "release": "asset",
       "notes": [
-        "Used by the setup-and-install composite action",
-        "Blocks merges on medium+ findings"
+        "Required: CI (blocks merges on medium+ findings)",
+        "Installed by the setup-and-install composite; SRI-verified (sha512) per platform"
       ],
       "platforms": {
         "darwin-arm64": {
           "asset": "zizmor-aarch64-apple-darwin.tar.gz",
-          "integrity": "sha256-JjJWG5dMaflSJYwatLdDLVx/kuVVcEFVw6woopEL1xc="
+          "integrity": "sha512-LUPNdfltqkBiFfPSUAWJovrH4kaqOoFQgn1ISEKc6yOmsUD1cYmKvnnsYfDP/Y1KsMua+BKNWJ3B9IMb0D1lpg=="
         },
         "darwin-x64": {
           "asset": "zizmor-x86_64-apple-darwin.tar.gz",
-          "integrity": "sha256-idXtQggd2dBDOhC3VF+sQrNfHwMIhcJ4uXErMsZvJZc="
+          "integrity": "sha512-M/T9PX+FRG1VvfS34T3aXXJ95DjpnsxcJV767BHYfKhmy/oUecI4v3jIwDBGnDt52oDtZTHx9H0uMVKg9NaNOA=="
         },
         "linux-arm64": {
           "asset": "zizmor-aarch64-unknown-linux-gnu.tar.gz",
-          "integrity": "sha256-NyXXzXEC5NcIJxhjiffVkwtoeCMpMNCj6wWNfltH5lg="
+          "integrity": "sha512-SBFp8h++QWZEZ5SfkmPxElDUYy5u0JUkgbzlz90gmB3UPbKgOcYqKOn6mY1tha5+RriMmuNtZxtrAiihECMOFA=="
         },
         "linux-x64": {
           "asset": "zizmor-x86_64-unknown-linux-gnu.tar.gz",
-          "integrity": "sha256-Z6jfChQ1LdgYguFIdmU9CXuZsPT2tv55jtwDIM/yev8="
+          "integrity": "sha512-FSmYWvlOzySHwlI2IkoEQNHfRU/UitumuQJc+umYyYcDr50colg0Bzio74YS19sGH41leMdXu4KJtB5XM45eUg=="
         },
         "win-x64": {
           "asset": "zizmor-x86_64-pc-windows-msvc.zip",
-          "integrity": "sha256-M8IpP/AoNHIN182LRzSKr7LpWhm9yZPA7KypyASt6So="
+          "integrity": "sha512-OhgPngI8gKygJFKa3VGk5y4S7KUuW5CPyBiI1WvfM58OHd5rUbdillfJeLsLhRbOMFAdigdUeZtNDyR6VPIs1A=="
         }
       }
     },
     "sfw-free": {
       "description": "Socket Firewall (free tier) — malware gate on dep installs.",
-      "version": "1.7.2",
+      "version": "1.12.0",
       "repository": "github:SocketDev/sfw-free",
       "release": "asset",
+      "binaryName": "sfw",
       "notes": [
-        "Used when SOCKET_API_KEY is not set",
+        "Used when neither SOCKET_API_KEY (primary) nor SOCKET_API_TOKEN (forward-canonical) is set",
         "Shims npm/yarn/pnpm so every install call passes through the firewall"
       ],
       "platforms": {
         "darwin-arm64": {
           "asset": "sfw-free-macos-arm64",
-          "integrity": "sha256-JI+1iOHhon5xkvewefc5/Cmp3mHwutfpCSg2MCLcVkM="
+          "integrity": "sha256-MZrrqT1eV8LbaNZwnloEqhIuMmstlaJ8EHTQqExWcDE="
         },
         "darwin-x64": {
           "asset": "sfw-free-macos-x86_64",
-          "integrity": "sha256-pUJ9R51EDwjjeJ+hkbpXWZvmSZcZba9C5n2WT+wDgrQ="
+          "integrity": "sha256-sF/KJci6E/rQGhbwW5nSG4Zlkca0b5xmL2i6MSC1obM="
         },
         "linux-arm64": {
           "asset": "sfw-free-linux-arm64",
-          "integrity": "sha256-hKBF5OG7MgzFwNOSnwLlPxmTmLW+BjfohG0C2e8AJ7E="
+          "integrity": "sha256-WYyNGcgIMu9cp/2wqfw1wEWEf9AoiRJqcRXANFpHjaM="
         },
         "linux-x64": {
           "asset": "sfw-free-linux-x86_64",
-          "integrity": "sha256-k+LZ36JEuCp04BTcJrHGrxi0rewg81JUN4lD21/pFBE="
+          "integrity": "sha256-UYJPAqJC+JLGHEIiPgW36Cu2JHYjN/Amr8KsIp/8rec="
         },
         "win-x64": {
           "asset": "sfw-free-windows-x86_64.exe",
-          "integrity": "sha256-bTM7TKydfFcS4umWd8pjSsijAg1VDGMIMSxgvql/Cig="
+          "integrity": "sha256-gg0IaLeHCvtHwJTJNoZmv5rxh0TXXJRlM6M0tX7Z8Yo="
         }
       }
     },
     "sfw-enterprise": {
-      "description": "Socket Firewall (enterprise tier) — selected when SOCKET_API_KEY is set.",
-      "version": "1.7.2",
+      "description": "Socket Firewall (enterprise tier) — selected when SOCKET_API_KEY (or SOCKET_API_TOKEN) is set.",
+      "version": "1.12.0",
       "repository": "github:SocketDev/firewall-release",
       "release": "asset",
+      "binaryName": "sfw",
       "notes": [
-        "Used when SOCKET_API_KEY is set (e.g. via repo secrets in CI)",
-        "Same shims as sfw-free, broader ecosystem support"
+        "Used when SOCKET_API_KEY is set (primary, universally supported). SOCKET_API_TOKEN is accepted as the forward-canonical secondary read.",
+        "Same shims as sfw-free, broader ecosystem support (Ruby, .NET, Go on Linux)"
       ],
       "platforms": {
         "darwin-arm64": {
           "asset": "sfw-macos-arm64",
-          "integrity": "sha256-sc3Dvb0qMWEke9XMIV6zxEqQuH/guACjOImhT2G7DW0="
+          "integrity": "sha256-D52Q9TM9YuYwvSo+ZGDJlZld0T2+xCxY0RLJr/vCvMQ="
         },
         "darwin-x64": {
           "asset": "sfw-macos-x86_64",
-          "integrity": "sha256-2iUtKppdDtsnG7dx4NAbnNb6FjW212X2Hv1h7bZznxI="
+          "integrity": "sha256-b2Q2wZlUhNyhUg501J0sKjNfOUKFGyZoVSvEolhqh0M="
         },
         "linux-arm64": {
           "asset": "sfw-linux-arm64",
-          "integrity": "sha256-wkp5wn4aAaWbehYMFlkwrgKYFscrFB/PzbL3Pgd0iYo="
+          "integrity": "sha256-705i7ErN2Yk8NV6ni/zUWEsFYGI6cOGbzM2OMZ0tI6k="
         },
         "linux-x64": {
           "asset": "sfw-linux-x86_64",
-          "integrity": "sha256-RIK1LmNnvUYQUZv9V6EE1ZB+yH1TmRQu07s9Ii3h8z0="
+          "integrity": "sha256-klirLZpQsTIoESFp1yAQ86WswmiQI9E268x6omPu3us="
         },
         "win-x64": {
           "asset": "sfw-windows-x86_64.exe",
-          "integrity": "sha256-5SrYBqHEG0QPBAmOscfkB4RfA/V0Cmp5AGum/RcgVuw="
+          "integrity": "sha256-/Oac58s/MglUVyeFi3pdoxnaQp50zWk854iazWUbXOw="
         }
       }
     }
