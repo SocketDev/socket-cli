@@ -17,7 +17,7 @@
 catalog:
   # The fleet AI CLI — gh-aw workflow engine + socket-lib src/ai spawnAiAgent
   # runtime. Soaked (published 2026-06-04). Members reference it via `catalog:`.
-  '@anthropic-ai/claude-code': 2.1.197
+  '@anthropic-ai/claude-code': 2.1.198
   '@redwoodjs/agent-ci': 0.16.2
   'dtu-github-actions': 0.16.2
   '@sinclair/typebox': 0.34.49
@@ -70,4 +70,5 @@ catalog:
 # resolve versions for catalog: refs that are missing their catalog entry.
 catalogOptional:
   'rolldown': 1.1.4
+  'svgo': 4.0.1
   'vite': 8.1.0
