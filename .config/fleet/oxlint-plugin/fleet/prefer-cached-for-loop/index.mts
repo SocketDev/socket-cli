@@ -107,7 +107,11 @@
  * @type {import('eslint').Rule.RuleModule}
  */
 
-import { createKindResolver, FLAGGED_KINDS } from '../../lib/iterable-kind.mts'
+import {
+  classifyInit,
+  createKindResolver,
+  FLAGGED_KINDS,
+} from '../../lib/iterable-kind.mts'
 import type { AstNode, RuleContext, RuleFixer } from '../../lib/rule-types.mts'
 
 const rule = {
@@ -343,12 +347,28 @@ const rule = {
           // Skip silently rather than emit an unfixable warning.
           return
         }
-        // Iterable must be a bare Identifier — otherwise we don't
-        // know if it's a (cheap) array indexing target. The rewrite
-        // for a MemberExpression / CallExpression iterable IS doable
-        // (hoist to a local), but the human review is cleaner.
-        // Skip silently rather than nag.
         const iter = node.right
+        // A CallExpression iterable that provably yields an array
+        // (`Object.keys(x)`, `names.toSorted()`, `s.split('\n')`) is a real
+        // finding, but the fix needs the call hoisted to a local first —
+        // report without autofix so the human owns the hoist.
+        if (iter.type === 'CallExpression') {
+          if (classifyInit(iter) === 'array') {
+            context.report({
+              node,
+              messageId: 'preferCachedForNoFix',
+              data: {
+                shape: 'for…of over an array-producing call',
+                reason:
+                  'hoist the call to a local (`const items = …`) so the loop can cache its length',
+              },
+            })
+          }
+          return
+        }
+        // Otherwise the iterable must be a bare Identifier — for a
+        // MemberExpression we don't know if it's a (cheap) array indexing
+        // target. Skip silently rather than nag.
         if (iter.type !== 'Identifier') {
           return
         }

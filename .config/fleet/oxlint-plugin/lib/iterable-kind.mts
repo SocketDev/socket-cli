@@ -58,6 +58,24 @@ const ITERABLE_TYPE_NAMES = new Set([
 ])
 const ARRAY_TYPE_NAMES = new Set(['Array', 'ReadonlyArray'])
 
+// Instance methods that produce a NEW array on every standard receiver
+// (Array's immutable-returning methods + String.split). Name-based inference,
+// same confidence class as the Object.keys/values/entries recognition below —
+// a custom object could alias these names, in which case the manual-rewrite
+// escape applies.
+const ARRAY_PRODUCING_METHODS = new Set([
+  'concat',
+  'filter',
+  'flat',
+  'flatMap',
+  'map',
+  'slice',
+  'split',
+  'toReversed',
+  'toSorted',
+  'toSpliced',
+])
+
 export type Kind = 'set' | 'map' | 'iterable' | 'array' | 'unknown'
 
 // Non-array kinds — the ones flagged by no-cached-for-on-iterable
@@ -171,6 +189,18 @@ export function classifyInit(init: AstNode | undefined): Kind {
     ) {
       return 'array'
     }
+  }
+  // A trailing array-producing method on ANY receiver expression —
+  // `x.toSorted()`, `Object.keys(y).filter(...)`, `s.split('\n')` — yields an
+  // array regardless of the receiver's own kind.
+  if (
+    init.type === 'CallExpression' &&
+    init.callee.type === 'MemberExpression' &&
+    !init.callee.computed &&
+    init.callee.property.type === 'Identifier' &&
+    ARRAY_PRODUCING_METHODS.has(init.callee.property.name as string)
+  ) {
+    return 'array'
   }
   return 'unknown'
 }

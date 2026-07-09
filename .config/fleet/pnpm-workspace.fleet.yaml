@@ -1,0 +1,74 @@
+# Fleet-canonical catalog — the single source of truth for catalog deps that
+# EVERY fleet repo carries. The cascade splices this `catalog:` block into each
+# repo's real pnpm-workspace.yaml (the wheelhouse's own included, via dogfood).
+#
+# NOT a pnpm config file — the `.fleet` infix keeps it from colliding with the
+# real `pnpm-workspace.yaml` (pnpm's own discovery, the cascade's pnpm-workspace
+# handling, and find-by-name tooling all key on the bare name). Same reason
+# `vitest.coverage.fleet.config.mts` is infixed.
+#
+# Fleet vs repo: deps HERE are fleet-wide (present in every repo's catalog).
+# Repo-specific catalog deps stay in that repo's own pnpm-workspace.yaml and are
+# never cascaded. That split is the whole point of this file.
+#
+# Versions live here; the human-readable purpose for each lives alongside the
+# name in FLEET_CANONICAL_CATALOG_NAMES (scripts/repo/sync-scaffolding/manifest.mts).
+# loadExpectedCatalogEntries() reads versions from this file + merges the purpose.
+catalog:
+  # The fleet AI CLI — gh-aw workflow engine + socket-lib src/ai spawnAiAgent
+  # runtime. Soaked (published 2026-06-04). Members reference it via `catalog:`.
+  '@anthropic-ai/claude-code': 2.1.198
+  '@redwoodjs/agent-ci': 0.16.2
+  'dtu-github-actions': 0.16.2
+  '@sinclair/typebox': 0.34.49
+  '@socketregistry/packageurl-js': 1.4.2
+  '@socketsecurity/lib': 6.0.9
+  '@socketsecurity/registry': 2.0.2
+  '@socketsecurity/sdk': 4.0.1
+  '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.4.2'
+  '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@6.0.9'
+  '@socketsecurity/registry-stable': 'npm:@socketsecurity/registry@2.0.2'
+  '@socketsecurity/sdk-stable': 'npm:@socketsecurity/sdk@4.0.1'
+  '@types/mdast': 4.0.4
+  '@types/node': 26.1.0
+  '@types/semver': 7.7.1
+  '@types/shell-quote': 1.7.5
+  # Aliased to the published pre-rename artifact until @ultrathink/acorn.wasm
+  # ships; then flip to a plain version + npm deprecate the old name.
+  '@ultrathink/acorn.wasm': 'npm:@ultrathink/acorn-wasm@0.0.1'
+  'magic-string': 0.30.21
+  'markdownlint-cli2': 0.23.0
+  'mdast-util-from-markdown': 2.0.3
+  'micromark': 4.0.2
+  'neosanitize': 0.3.0
+  'nock': 15.0.0
+  'npm-run-all2': 9.0.2
+  'oxfmt': 0.57.0
+  'oxlint': 1.72.0
+  # playwright-core — headless Chromium driver for the rendering-chromium-to-png
+  # skill (render a page or a real unpacked MV3 extension popup to PNG so an
+  # agent can SEE it). Browser binary via `pnpm exec playwright install chromium`.
+  'playwright-core': 1.61.1
+  'regjsparser': 0.13.2
+  'semver': 7.8.5
+  'shell-quote': 1.9.0
+  'taze': 19.14.1
+  # TypeScript 7 NATIVE (the Go `tsc`). Track the highest available 7.x
+  # PRE-RELEASE — the RC line is intentional. npm's `latest` dist-tag points at
+  # 6.x stable, so "latest" is a DOWNGRADE off the native compiler: never follow
+  # it. Bump only to a newer `7.x-rc`/`7.x` (7 > 6, and a real 7.x release when
+  # it ships outranks the rc). Pinned-toolchain, excluded from taze
+  # (UPDATE_PINNED_TOOLCHAIN) so it is never auto-bumped — always a deliberate bump.
+  'typescript': 7.0.2
+  'vitest': 4.1.9
+  '@vitest/coverage-v8': 4.1.9
+  '@vitest/ui': 4.1.9
+
+# Optional fleet catalog — present in repos that use these tools; absent is
+# fine (the cascade never injects these). Read by loadOptionalCatalogEntries()
+# (manifest/catalog.mts) and the fleet doctor (scripts/fleet/doctor.mts) to
+# resolve versions for catalog: refs that are missing their catalog entry.
+catalogOptional:
+  'rolldown': 1.1.4
+  'svgo': 4.0.1
+  'vite': 8.1.0

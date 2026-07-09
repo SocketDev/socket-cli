@@ -48,6 +48,13 @@ bypass:bitbucket.org
 bypass:ziglang.org
 bypass:cmake.org
 bypass:sh.rustup.rs
+# rustup component/toolchain dist CDN (rust-std-wasm32-unknown-unknown
+# et al). rustup downloads with rustls, which rejects SFW's MITM cert
+# chain outright — `invalid peer certificate: UnknownIssuer` — so a
+# `rustup target add` inside a proxied build step fails without this.
+# Same shape as the proxy.golang.org entries below. Integrity stays
+# enforced by rustup's own per-component SHA256 verification.
+bypass:static.rust-lang.org
 bypass:nodejs.org
 bypass:bootstrap.pypa.io
 # OrbStack — recommended macOS Docker runtime for Dockerfile-based builds

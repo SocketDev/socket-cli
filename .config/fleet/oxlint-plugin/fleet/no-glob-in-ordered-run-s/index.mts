@@ -19,10 +19,11 @@ import type { AstNode, RuleContext } from '../../lib/rule-types.mts'
 
 // Detects `run-s name:*` / `run-p name:*` patterns. The glob suffix `:*` is
 // the npm-run-all2 wildcard form — `prefix:` before `*`, anchored at word
-// boundary on the left, followed by `:*` or `:*` surrounded by more task
-// name chars. We require at least one colon before `*` to avoid matching a
-// lone `*` passed to something else entirely.
-const GLOB_RE = /\brun-[sp]\s+[^'"`\s]*:\*/
+// boundary on the left. We require at least one colon before `*` to avoid
+// matching a lone `*` passed to something else entirely. The glob may appear
+// ANYWHERE in the argument list (`run-s build build-mcpb:*`), so scan to the
+// end of the unquoted literal, not just the first argument.
+const GLOB_RE = /\brun-[sp]\s[^'"`\n]*:\*/
 
 /**
  * Returns the matched glob fragment for the diagnostic message, or undefined
