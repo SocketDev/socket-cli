@@ -174,12 +174,12 @@ describe('cli constants', () => {
 
     it('has DRY_RUN_BAILING_NOW constant', () => {
       expect(DRY_RUN_BAILING_NOW).toBe('[DryRun]: Bailing now')
-      expect(DRY_RUN_BAILING_NOW).toContain(DRY_RUN_LABEL)
+      expect(DRY_RUN_BAILING_NOW).toContain('[DryRun]')
     })
 
     it('has DRY_RUN_NOT_SAVING constant', () => {
       expect(DRY_RUN_NOT_SAVING).toBe('[DryRun]: Not saving')
-      expect(DRY_RUN_NOT_SAVING).toContain(DRY_RUN_LABEL)
+      expect(DRY_RUN_NOT_SAVING).toContain('[DryRun]')
     })
   })
 

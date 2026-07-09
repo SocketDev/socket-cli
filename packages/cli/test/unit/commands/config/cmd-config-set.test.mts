@@ -34,7 +34,10 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { CMD_NAME, cmdConfigSet } from '../../../../src/commands/config/cmd-config-set.mts'
+import {
+  CMD_NAME,
+  cmdConfigSet,
+} from '../../../../src/commands/config/cmd-config-set.mts'
 
 import type * as ConfigModule from '../../../../src/util/config.mts'
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'

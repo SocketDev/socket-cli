@@ -20,7 +20,10 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { CMD_NAME, cmdConfigAuto } from '../../../../src/commands/config/cmd-config-auto.mts'
+import {
+  CMD_NAME,
+  cmdConfigAuto,
+} from '../../../../src/commands/config/cmd-config-auto.mts'
 
 import type * as ConfigModule from '../../../../src/util/config.mts'
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'

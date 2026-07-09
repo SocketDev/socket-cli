@@ -7,7 +7,10 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { CMD_NAME, cmdPatch } from '../../../../src/commands/patch/cmd-patch.mts'
+import {
+  CMD_NAME,
+  cmdPatch,
+} from '../../../../src/commands/patch/cmd-patch.mts'
 
 import type * as WithSubcommandsModule from '../../../../src/util/cli/with-subcommands.mts'
 

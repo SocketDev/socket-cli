@@ -7,7 +7,10 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { CMD_NAME, cmdLogin } from '../../../../src/commands/login/cmd-login.mts'
+import {
+  CMD_NAME,
+  cmdLogin,
+} from '../../../../src/commands/login/cmd-login.mts'
 
 import type { InputError } from '../../../../src/util/error/errors.mjs'
 

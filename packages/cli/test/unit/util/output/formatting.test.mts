@@ -185,6 +185,7 @@ describe('output-formatting utilities', () => {
 
   describe('getFlagsHelpOutput', () => {
     it('is an alias for getFlagListOutput', () => {
+      // oxlint-disable-next-line socket/no-src-import-in-test-expect -- reference-identity check that getFlagsHelpOutput is the same function object as getFlagListOutput; the -stable alias would be a different module instance and always fail.
       expect(getFlagsHelpOutput).toBe(getFlagListOutput)
     })
   })

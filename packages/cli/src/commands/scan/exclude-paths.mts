@@ -102,9 +102,7 @@ export function expandReachExcludePath(reachExcludePath: string): string[] {
   }
   const firstSlash = reachExcludePath.indexOf('/')
   const prefix =
-    firstSlash === -1 || firstSlash === reachExcludePath.length - 1
-      ? '**/'
-      : ''
+    firstSlash === -1 || firstSlash === reachExcludePath.length - 1 ? '**/' : ''
   const normalized = stripTrailingSlash(
     normalizePath(reachExcludePath).startsWith('/')
       ? reachExcludePath.slice(1)

@@ -31,8 +31,9 @@ describe('ecosystem utilities', () => {
     })
 
     it('has unique values', () => {
+      const ecosystemCount = ALL_ECOSYSTEMS.length
       const uniqueValues = new Set(ALL_ECOSYSTEMS)
-      expect(uniqueValues.size).toBe(ALL_ECOSYSTEMS.length)
+      expect(uniqueValues.size).toBe(ecosystemCount)
     })
 
     it('is an array', () => {
@@ -43,8 +44,9 @@ describe('ecosystem utilities', () => {
   describe('getEcosystemChoicesForMeow', () => {
     it('returns array of all ecosystems', () => {
       const choices = getEcosystemChoicesForMeow()
+      const expectedChoices = [...ALL_ECOSYSTEMS]
       expect(Array.isArray(choices)).toBe(true)
-      expect(choices).toEqual([...ALL_ECOSYSTEMS])
+      expect(choices).toEqual(expectedChoices)
     })
 
     it('returns a new array instance', () => {

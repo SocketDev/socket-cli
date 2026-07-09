@@ -15,7 +15,7 @@ export function formatReportCard(
   artifact: DedupedArtifact,
   options: { colorize: boolean },
 ): string {
-  const { colorize } = options
+  const { colorize } = { __proto__: null, ...options } as typeof options
   const scoreResult = {
     'Supply Chain Risk': Math.floor((artifact.score?.supplyChain ?? 0) * 100),
     Maintenance: Math.floor((artifact.score?.maintenance ?? 0) * 100),

@@ -28,7 +28,6 @@ const config = {
         'Auto generate manifest files where detected? See autoManifest flag in `socket scan create`',
     },
   }),
-  hidden: false,
   help: (command: string, _config: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options]
@@ -50,6 +49,7 @@ const config = {
       $ ${command}
       $ ${command} --auto-manifest
   `,
+  hidden: false,
 }
 
 export const cmdCI = {

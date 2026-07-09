@@ -81,10 +81,8 @@ describe('fetchSupportedScanFileNames', () => {
     const { fetchSupportedScanFileNames } =
       await import('../../../../src/commands/scan/fetch-supported-scan-file-names.mts')
 
-    const { mockSdk, mockSetupSdk } = await setupSdkMockSuccess(
-      'getSupportedFiles',
-      {},
-    )
+    const { mockSdk, mockSetupSdk: scopedMockSetupSdk } =
+      await setupSdkMockSuccess('getSupportedFiles', {})
 
     await fetchSupportedScanFileNames({
       orgSlug: 'my-org',
@@ -94,7 +92,7 @@ describe('fetchSupportedScanFileNames', () => {
       },
     })
 
-    expect(mockSetupSdk).toHaveBeenCalledWith({
+    expect(scopedMockSetupSdk).toHaveBeenCalledWith({
       apiToken: 'custom-token',
       baseUrl: 'https://api.example.com',
     })
@@ -145,16 +143,14 @@ describe('fetchSupportedScanFileNames', () => {
     const { fetchSupportedScanFileNames } =
       await import('../../../../src/commands/scan/fetch-supported-scan-file-names.mts')
 
-    const { mockHandleApi, mockSetupSdk } = await setupSdkMockSuccess(
-      'getSupportedFiles',
-      {
+    const { mockHandleApi, mockSetupSdk: scopedMockSetupSdk } =
+      await setupSdkMockSuccess('getSupportedFiles', {
         supportedFiles: ['package.json'],
-      },
-    )
+      })
 
     const result = await fetchSupportedScanFileNames({ orgSlug: 'test-org' })
 
-    expect(mockSetupSdk).toHaveBeenCalledWith(undefined)
+    expect(scopedMockSetupSdk).toHaveBeenCalledWith(undefined)
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
       description: 'supported scan file types',
       spinner: undefined,

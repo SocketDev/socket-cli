@@ -51,11 +51,11 @@ export function defineAutoDispatch(options: {
   dlx: ToolSpawnFn
 }): ToolSpawnFn {
   const { dlx, vfs } = { __proto__: null, ...options } as typeof options
-  return async (args, options, spawnExtra) => {
+  return async (args, dlxOptions, spawnExtra) => {
     if (isSeaBinary() && areExternalToolsAvailable()) {
-      return await vfs(args, options, spawnExtra)
+      return await vfs(args, dlxOptions, spawnExtra)
     }
-    return await dlx(args, options, spawnExtra)
+    return await dlx(args, dlxOptions, spawnExtra)
   }
 }
 
@@ -72,7 +72,7 @@ export function defineGitHubReleaseSpawn(options: {
     __proto__: null,
     ...options,
   } as typeof options
-  return async (args, options, spawnExtra) => {
+  return async (args, dlxCallOptions, spawnExtra) => {
     const resolution = resolve()
 
     if (resolution.type !== 'github-release') {
@@ -83,7 +83,7 @@ export function defineGitHubReleaseSpawn(options: {
 
     const { env: spawnEnv, ...dlxOptions } = {
       __proto__: null,
-      ...options,
+      ...dlxCallOptions,
     } as DlxOptions
 
     const binaryPath = await downloadGitHubReleaseBinary(resolution.details)

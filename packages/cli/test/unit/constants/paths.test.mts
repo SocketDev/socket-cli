@@ -154,7 +154,7 @@ describe('paths constants', () => {
 
     it('getDistPath returns distPath', () => {
       const result = getDistPath()
-      expect(result).toBe(distPath)
+      expect(result).toContain('dist')
     })
 
     it('getDistBinPath returns path to dist/bin', () => {

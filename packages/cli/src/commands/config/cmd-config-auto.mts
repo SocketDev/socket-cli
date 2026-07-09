@@ -62,7 +62,9 @@ export async function run(
 
     Keys:
 ${getSupportedConfigEntries()
-  .map(({ 0: key, 1: entryDescription }) => `     - ${key} -- ${entryDescription}`)
+  .map(
+    ({ 0: key, 1: entryDescription }) => `     - ${key} -- ${entryDescription}`,
+  )
   .join('\n')}
   `,
   }

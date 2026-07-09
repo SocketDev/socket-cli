@@ -4,7 +4,10 @@ import {
   emitJsonPayload,
   emitPayload,
 } from '../../../../src/util/output/emit-payload.mts'
-import { SENTINEL_BEGIN, SENTINEL_END } from '../../../../src/util/output/mode.mts'
+import {
+  SENTINEL_BEGIN,
+  SENTINEL_END,
+} from '../../../../src/util/output/mode.mts'
 
 const mockStdoutLog = vi.fn()
 const mockStderrLog = vi.fn()
