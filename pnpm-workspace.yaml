@@ -383,6 +383,12 @@ patchedDependencies:
   # bundle loads on node-smol SEA builds, which ship without http2. Consumer:
   # packages/cli SEA binary.
   '@sigstore/sign@4.1.0': patches/@sigstore__sign@4.1.0.patch
+  # The 6.0.9 rolldown build of dist/errors/stack.js drops the isError import
+  # (source imports it from ./predicates), so every errorStack() call throws
+  # ReferenceError. Restores the require so errorStack works. Consumer:
+  # packages/cli src/util/command/registry-core.mts. Removable once a fixed
+  # @socketsecurity/lib ships (source on main is already correct).
+  '@socketsecurity/lib@6.0.9': patches/@socketsecurity__lib@6.0.9.patch
   # signal-exit is deduped to v4, which exports a named onExit instead of the
   # v3 default export execa calls; restores the call contract. Consumer:
   # packages/cli bundled npm tooling.
