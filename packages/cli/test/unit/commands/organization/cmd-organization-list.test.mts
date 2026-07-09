@@ -7,6 +7,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdOrganizationList } from '../../../../src/commands/organization/cmd-organization-list.mts'
+
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 import type * as SdkModule from '../../../../src/util/socket/sdk.mjs'
 
@@ -49,10 +51,6 @@ vi.mock(import('../../../../src/util/socket/sdk.mjs'), async importOriginal => {
     hasDefaultApiToken: mockHasDefaultApiToken,
   }
 })
-
-// Import after mocks.
-const { cmdOrganizationList } =
-  await import('../../../../src/commands/organization/cmd-organization-list.mts')
 
 describe('cmd-organization-list', () => {
   beforeEach(() => {

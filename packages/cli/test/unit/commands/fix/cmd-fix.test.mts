@@ -7,6 +7,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdFix } from '../../../../src/commands/fix/cmd-fix.mts'
+
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 
 // Mock the logger.
@@ -46,9 +48,6 @@ vi.mock(
     getDefaultOrgSlug: mockGetDefaultOrgSlug,
   }),
 )
-
-// Import after mocks.
-const { cmdFix } = await import('../../../../src/commands/fix/cmd-fix.mts')
 
 describe('cmd-fix', () => {
   beforeEach(() => {

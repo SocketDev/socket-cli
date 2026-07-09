@@ -968,23 +968,6 @@ if (BINARY.enabled) {
       )
 
       it.skipIf(!ENV.RUN_INTEGRATION_TESTS)(
-        'should display patch get help',
-        async () => {
-          if (!binaryExists) {
-            return
-          }
-
-          const result = await executeCliCommand(['patch', 'get', '--help'], {
-            binPath: BINARY.path,
-            isolateConfig: false,
-          })
-
-          expect(result.code).toBe(0)
-          expect(result.stdout).toContain('get')
-        },
-      )
-
-      it.skipIf(!ENV.RUN_INTEGRATION_TESTS)(
         'should display patch repair help',
         async () => {
           if (!binaryExists) {

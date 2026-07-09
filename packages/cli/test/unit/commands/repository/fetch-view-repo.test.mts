@@ -85,7 +85,10 @@ describe('fetchViewRepo', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { mockSetupSdk } = await setupSdkMockSuccess('getRepository', {})
+    const { mockSetupSdk: mockSetupSdkForCall } = await setupSdkMockSuccess(
+      'getRepository',
+      {},
+    )
 
     const sdkOpts = {
       apiToken: 'view-token',
@@ -94,7 +97,7 @@ describe('fetchViewRepo', () => {
 
     await fetchViewRepo('my-org', 'my-repo', { sdkOpts })
 
-    expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts)
+    expect(mockSetupSdkForCall).toHaveBeenCalledWith(sdkOpts)
   })
 
   it('handles private repository access', async () => {

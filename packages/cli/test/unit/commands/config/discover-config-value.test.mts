@@ -22,6 +22,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { discoverConfigValue } from '../../../../src/commands/config/discover-config-value.mts'
+
 const {
   mockFetchOrganization,
   mockHasDefaultApiToken,
@@ -46,9 +48,6 @@ vi.mock(
     fetchOrganization: mockFetchOrganization,
   }),
 )
-
-const { discoverConfigValue } =
-  await import('../../../../src/commands/config/discover-config-value.mts')
 
 const orgFixture = (slugs: string[]) => ({
   ok: true as const,

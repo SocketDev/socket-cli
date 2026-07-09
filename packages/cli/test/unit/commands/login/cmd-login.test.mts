@@ -7,6 +7,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { CMD_NAME, cmdLogin } from '../../../../src/commands/login/cmd-login.mts'
+
 import type { InputError } from '../../../../src/util/error/errors.mjs'
 
 // Mock the logger.
@@ -43,10 +45,6 @@ const mockOutputDryRunWrite = vi.hoisted(() => vi.fn())
 vi.mock(import('../../../../src/util/dry-run/output.mts'), () => ({
   outputDryRunWrite: mockOutputDryRunWrite,
 }))
-
-// Import after mocks.
-const { cmdLogin, CMD_NAME } =
-  await import('../../../../src/commands/login/cmd-login.mts')
 
 describe('cmd-login', () => {
   beforeEach(() => {

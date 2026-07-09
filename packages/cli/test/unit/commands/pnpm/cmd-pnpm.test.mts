@@ -13,6 +13,10 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { PNPM } from '@socketsecurity/lib-stable/constants/agents'
+
+import { cmdPnpm } from '../../../../src/commands/pnpm/cmd-pnpm.mts'
+
 import type { EventEmitter } from 'node:events'
 
 // Mock the logger.
@@ -44,10 +48,6 @@ vi.mock(import('../../../../src/util/telemetry/integration.mts'), () => ({
   trackSubprocessExit: mockTrackSubprocessExit,
   trackSubprocessStart: mockTrackSubprocessStart,
 }))
-
-// Import after mocks.
-const { cmdPnpm } = await import('../../../../src/commands/pnpm/cmd-pnpm.mts')
-const { PNPM } = await import('@socketsecurity/lib-stable/constants/agents')
 
 describe('cmd-pnpm', () => {
   interface MockChildProcess extends Partial<EventEmitter> {

@@ -18,7 +18,9 @@
 import { FLAG_HELP } from '../../constants/cli.mjs'
 import { camelToKebab } from '../data/strings.mts'
 
-const helpFlags = new Set([FLAG_HELP, '-h'])
+const helpFlags = new Set<string>()
+helpFlags.add(FLAG_HELP)
+helpFlags.add('-h')
 
 /**
  * Convert flag values to array format for processing.

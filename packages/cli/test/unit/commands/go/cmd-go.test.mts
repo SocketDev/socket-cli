@@ -24,6 +24,7 @@ import EventEmitter from 'node:events'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdGo } from '../../../../src/commands/go/cmd-go.mts'
 import { setupTestEnvironment } from '../../../helpers/index.mts'
 
 const mockSpawnSfwDlx = vi.hoisted(() => vi.fn())
@@ -41,8 +42,6 @@ vi.mock(import('../../../../src/util/cli/with-subcommands.mjs'), () => ({
 vi.mock(import('../../../../src/util/process/cmd.mts'), () => ({
   filterFlags: mockFilterFlags,
 }))
-
-const { cmdGo } = await import('../../../../src/commands/go/cmd-go.mts')
 
 describe('cmd-go', () => {
   setupTestEnvironment()
@@ -78,7 +77,6 @@ describe('cmd-go', () => {
           unknownFlags: [],
         }
       })
-      const EventEmitter = (await import('node:events')).default
       const mockChildProcess = new EventEmitter()
       const mockSpawnPromise = Promise.resolve({
         code: 0,

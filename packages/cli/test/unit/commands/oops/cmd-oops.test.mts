@@ -18,6 +18,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { CMD_NAME, cmdOops } from '../../../../src/commands/oops/cmd-oops.mts'
+
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 import type * as WithSubcommandsModule from '../../../../src/util/cli/with-subcommands.mjs'
 
@@ -111,10 +113,6 @@ vi.mock(
     }
   },
 )
-
-// Import after mocks.
-const { CMD_NAME, cmdOops } =
-  await import('../../../../src/commands/oops/cmd-oops.mts')
 
 describe('cmd-oops', () => {
   beforeEach(() => {

@@ -6,6 +6,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdRepositoryDel } from '../../../../src/commands/repository/cmd-repository-del.mts'
+
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 import type * as SdkModule from '../../../../src/util/socket/sdk.mjs'
 
@@ -55,10 +57,6 @@ vi.mock(import('../../../../src/util/socket/sdk.mjs'), async importOriginal => {
     hasDefaultApiToken: mockHasDefaultApiToken,
   }
 })
-
-// Import after mocks.
-const { cmdRepositoryDel } =
-  await import('../../../../src/commands/repository/cmd-repository-del.mts')
 
 describe('cmd-repository-del', () => {
   beforeEach(() => {

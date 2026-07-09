@@ -7,6 +7,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdScanCreate } from '../../../../src/commands/scan/cmd-scan-create.mts'
+
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 import type * as SdkModule from '../../../../src/util/socket/sdk.mts'
 
@@ -119,10 +121,6 @@ vi.mock(import('../../../../src/util/git/operations.mts'), () => ({
   getRepoName: mockGetRepoName,
   gitBranch: mockGitBranch,
 }))
-
-// Import after mocks.
-const { cmdScanCreate } =
-  await import('../../../../src/commands/scan/cmd-scan-create.mts')
 
 describe('cmd-scan-create', () => {
   beforeEach(() => {

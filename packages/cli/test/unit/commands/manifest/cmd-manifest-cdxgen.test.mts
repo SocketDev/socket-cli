@@ -18,6 +18,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdManifestCdxgen } from '../../../../src/commands/manifest/cmd-manifest-cdxgen.mts'
+
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -46,10 +48,6 @@ vi.mock(import('../../../../src/commands/manifest/run-cdxgen.mts'), () => ({
   isNodejsCdxgenType: mockIsNodejsCdxgenType,
   runCdxgen: mockRunCdxgen,
 }))
-
-// Import after mocks.
-const { cmdManifestCdxgen } =
-  await import('../../../../src/commands/manifest/cmd-manifest-cdxgen.mts')
 
 describe('cmd-manifest-cdxgen', () => {
   beforeEach(() => {

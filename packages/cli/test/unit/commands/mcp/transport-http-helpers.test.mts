@@ -275,14 +275,14 @@ describe('getProtectedResourceMetadataUrl', () => {
   it('appends the well-known path to the base URL', () => {
     const url = new URL('https://example.com/')
     expect(getProtectedResourceMetadataUrl(url)).toBe(
-      `https://example.com${OAUTH_PROTECTED_RESOURCE_METADATA_PATH}`,
+      'https://example.com/.well-known/oauth-protected-resource',
     )
   })
 
   it('overrides any existing path on the base URL', () => {
     const url = new URL('https://example.com/some/other/path')
     expect(getProtectedResourceMetadataUrl(url)).toBe(
-      `https://example.com${OAUTH_PROTECTED_RESOURCE_METADATA_PATH}`,
+      'https://example.com/.well-known/oauth-protected-resource',
     )
   })
 })

@@ -15,6 +15,7 @@ import EventEmitter from 'node:events'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { setupTestEnvironment } from '../../../helpers/index.mts'
+import { cmdBundler } from '../../../../src/commands/bundler/cmd-bundler.mts'
 
 // Mock spawnSfwDlx.
 const mockSpawnSfwDlx = vi.hoisted(() => vi.fn())
@@ -32,10 +33,6 @@ vi.mock(import('../../../../src/util/cli/with-subcommands.mjs'), () => ({
 vi.mock(import('../../../../src/util/process/cmd.mts'), () => ({
   filterFlags: mockFilterFlags,
 }))
-
-// Import after mocks.
-const { cmdBundler } =
-  await import('../../../../src/commands/bundler/cmd-bundler.mts')
 
 describe('cmd-bundler', () => {
   setupTestEnvironment()
@@ -73,7 +70,6 @@ describe('cmd-bundler', () => {
           unknownFlags: [],
         }
       })
-      const EventEmitter = (await import('node:events')).default
       const mockChildProcess = new EventEmitter()
       const mockSpawnPromise = Promise.resolve({
         code: 0,

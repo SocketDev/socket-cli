@@ -22,6 +22,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdConfigGet } from '../../../../src/commands/config/cmd-config-get.mts'
+
 import type * as ConfigModule from '../../../../src/util/config.mts'
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 import type * as WithSubcommandsModule from '../../../../src/util/cli/with-subcommands.mjs'
@@ -142,10 +144,6 @@ vi.mock(
     }
   },
 )
-
-// Import after mocks.
-const { cmdConfigGet } =
-  await import('../../../../src/commands/config/cmd-config-get.mts')
 
 describe('cmd-config-get', () => {
   beforeEach(() => {

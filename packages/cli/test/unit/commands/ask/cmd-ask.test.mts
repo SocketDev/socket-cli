@@ -7,6 +7,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdAsk } from '../../../../src/commands/ask/cmd-ask.mts'
+
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -25,9 +27,6 @@ vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
 vi.mock(import('@socketsecurity/lib-stable/process/spawn/child'), () => ({
   spawn: vi.fn().mockResolvedValue({ code: 0 }),
 }))
-
-// Import after mocks.
-const { cmdAsk } = await import('../../../../src/commands/ask/cmd-ask.mts')
 
 describe('cmd-ask', () => {
   beforeEach(() => {

@@ -7,6 +7,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdInstall } from '../../../../src/commands/install/cmd-install.mts'
+
 import type * as WithSubcommandsModule from '../../../../src/util/cli/with-subcommands.mjs'
 
 // Mock meowWithSubcommands.
@@ -22,10 +24,6 @@ vi.mock(
     }
   },
 )
-
-// Import after mocks.
-const { cmdInstall } =
-  await import('../../../../src/commands/install/cmd-install.mts')
 
 describe('cmd-install', () => {
   beforeEach(() => {

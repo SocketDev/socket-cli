@@ -17,6 +17,11 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import {
+  CMD_NAME,
+  cmdRawNpm,
+} from '../../../../src/commands/raw-npm/cmd-raw-npm.mts'
+
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 import type * as WithSubcommandsModule from '../../../../src/util/cli/with-subcommands.mjs'
 
@@ -122,10 +127,6 @@ vi.mock(
     }
   },
 )
-
-// Import after mocks.
-const { CMD_NAME, cmdRawNpm } =
-  await import('../../../../src/commands/raw-npm/cmd-raw-npm.mts')
 
 describe('cmd-raw-npm', () => {
   beforeEach(() => {

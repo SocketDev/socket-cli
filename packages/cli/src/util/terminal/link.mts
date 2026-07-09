@@ -2,6 +2,8 @@ import path from 'node:path'
 
 import terminalLink from 'terminal-link'
 
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+
 import { SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
 
 /**
@@ -20,10 +22,10 @@ export function fileLink(filePath: string, text?: string | undefined): string {
 export function githubRepoLink(
   owner: string,
   repo: string,
-  path?: string | undefined,
+  repoPath?: string | undefined,
   text?: string | undefined,
 ): string {
-  const url = `https://github.com/${owner}/${repo}${path ? `/${path}` : ''}`
+  const url = `https://github.com/${owner}/${repo}${repoPath ? `/${repoPath}` : ''}`
   return terminalLink(text ?? `${owner}/${repo}`, url)
 }
 
@@ -41,7 +43,7 @@ export function socketDashboardLink(
   dashPath: string,
   text?: string | undefined,
 ): string {
-  const url = `https://socket.dev/dashboard${dashPath.startsWith('/') ? dashPath : `/${dashPath}`}`
+  const url = `https://socket.dev/dashboard${normalizePath(dashPath).startsWith('/') ? dashPath : `/${dashPath}`}`
   return terminalLink(text ?? url, url)
 }
 
@@ -65,7 +67,7 @@ export function socketDocsLink(
   docPath: string,
   text?: string | undefined,
 ): string {
-  const url = `https://docs.socket.dev${docPath.startsWith('/') ? docPath : `/${docPath}`}`
+  const url = `https://docs.socket.dev${normalizePath(docPath).startsWith('/') ? docPath : `/${docPath}`}`
   return terminalLink(text ?? url, url)
 }
 

@@ -13,6 +13,10 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { NPM } from '@socketsecurity/lib-stable/constants/agents'
+
+import { cmdNpm } from '../../../../src/commands/npm/cmd-npm.mts'
+
 import type { EventEmitter } from 'node:events'
 
 // Mock the logger.
@@ -44,10 +48,6 @@ vi.mock(import('../../../../src/util/telemetry/integration.mts'), () => ({
   trackSubprocessExit: mockTrackSubprocessExit,
   trackSubprocessStart: mockTrackSubprocessStart,
 }))
-
-// Import after mocks.
-const { cmdNpm } = await import('../../../../src/commands/npm/cmd-npm.mts')
-const { NPM } = await import('@socketsecurity/lib-stable/constants/agents')
 
 describe('cmd-npm', () => {
   interface MockChildProcess extends Partial<EventEmitter> {

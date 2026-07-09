@@ -7,6 +7,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdScanReach } from '../../../../src/commands/scan/cmd-scan-reach.mts'
+
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 import type * as SdkModule from '../../../../src/util/socket/sdk.mts'
 
@@ -73,10 +75,6 @@ vi.mock(import('../../../../src/util/socket/sdk.mts'), async importOriginal => {
     hasDefaultApiToken: mockHasDefaultApiToken,
   }
 })
-
-// Import after mocks.
-const { cmdScanReach } =
-  await import('../../../../src/commands/scan/cmd-scan-reach.mts')
 
 describe('cmd-scan-reach', () => {
   beforeEach(() => {

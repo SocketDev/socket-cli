@@ -6,6 +6,10 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdPackageScore } from '../../../../src/commands/package/cmd-package-score.mts'
+import { cmdPackageShallow } from '../../../../src/commands/package/cmd-package-shallow.mts'
+import { cmdPackage } from '../../../../src/commands/package/cmd-package.mts'
+
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
   fail: vi.fn(),
@@ -24,14 +28,6 @@ const mockMeowWithSubcommands = vi.hoisted(() => vi.fn())
 vi.mock(import('../../../../src/util/cli/with-subcommands.mts'), () => ({
   meowWithSubcommands: mockMeowWithSubcommands,
 }))
-
-// Import after mocks.
-const { cmdPackage } =
-  await import('../../../../src/commands/package/cmd-package.mts')
-const { cmdPackageScore } =
-  await import('../../../../src/commands/package/cmd-package-score.mts')
-const { cmdPackageShallow } =
-  await import('../../../../src/commands/package/cmd-package-shallow.mts')
 
 describe('cmd-package', () => {
   beforeEach(() => {

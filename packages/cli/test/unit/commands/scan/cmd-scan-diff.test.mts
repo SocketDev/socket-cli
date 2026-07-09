@@ -6,6 +6,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdScanDiff } from '../../../../src/commands/scan/cmd-scan-diff.mts'
+
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 import type * as SdkModule from '../../../../src/util/socket/sdk.mjs'
 
@@ -52,10 +54,6 @@ vi.mock(import('../../../../src/util/socket/sdk.mjs'), async importOriginal => {
     hasDefaultApiToken: mockHasDefaultApiToken,
   }
 })
-
-// Import after mocks.
-const { cmdScanDiff } =
-  await import('../../../../src/commands/scan/cmd-scan-diff.mts')
 
 describe('cmd-scan-diff', () => {
   beforeEach(() => {

@@ -6,12 +6,12 @@
 
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const packagePath = path.resolve(__dirname, '..', '..')
+import { findUpPackageJson } from '@socketsecurity/lib-stable/packages/find'
+
+const packagePath = path.dirname(findUpPackageJson(import.meta))
 const buildPath = path.join(packagePath, 'build')
 
 /**

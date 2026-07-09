@@ -6,6 +6,10 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdOrganizationPolicyLicense } from '../../../../src/commands/organization/cmd-organization-policy-license.mts'
+import { cmdOrganizationPolicySecurity } from '../../../../src/commands/organization/cmd-organization-policy-security.mts'
+import { cmdOrganizationPolicy } from '../../../../src/commands/organization/cmd-organization-policy.mts'
+
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
   fail: vi.fn(),
@@ -24,14 +28,6 @@ const mockMeowWithSubcommands = vi.hoisted(() => vi.fn())
 vi.mock(import('../../../../src/util/cli/with-subcommands.mts'), () => ({
   meowWithSubcommands: mockMeowWithSubcommands,
 }))
-
-// Import after mocks.
-const { cmdOrganizationPolicy } =
-  await import('../../../../src/commands/organization/cmd-organization-policy.mts')
-const { cmdOrganizationPolicyLicense } =
-  await import('../../../../src/commands/organization/cmd-organization-policy-license.mts')
-const { cmdOrganizationPolicySecurity } =
-  await import('../../../../src/commands/organization/cmd-organization-policy-security.mts')
 
 describe('cmd-organization-policy', () => {
   beforeEach(() => {
