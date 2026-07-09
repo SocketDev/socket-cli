@@ -109,7 +109,9 @@ export function resolveCoverageConfig(
   const overlay = readRepoCoverageOverlay(options)
   const removals = new Set(overlay.exclude?.remove ?? [])
   const exclude = [
-    ...(baseFleetCoverageConfig.exclude ?? []).filter((g: string) => !removals.has(g)),
+    ...(baseFleetCoverageConfig.exclude ?? []).filter(
+      (g: string) => !removals.has(g),
+    ),
     ...(overlay.exclude?.add ?? []),
   ]
   // `include` spreads conditionally: exactOptionalPropertyTypes forbids an

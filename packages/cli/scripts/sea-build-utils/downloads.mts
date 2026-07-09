@@ -153,7 +153,7 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
   for (const [toolName, toolConfig] of Object.entries(externalTools)) {
     if (toolConfig.release === 'asset') {
       const repoPath = toolConfig.repository.replace(/^[^:]+:/, '')
-      const parts = repoPath.split('/')
+      const parts = normalizePath(repoPath).split('/')
       if (parts.length !== 2 || !parts[0] || !parts[1]) {
         throw new Error(
           `Invalid repository format for ${toolName}: expected '<host>:owner/repo', got '${toolConfig.repository}'`,

@@ -282,7 +282,7 @@ export async function runPipeline(options, cliOverrides) {
     preflight,
     resolvePlatformArch,
     stages,
-  } = options
+  } = { __proto__: null, ...options } as typeof options
 
   const flags = cliOverrides ?? parseFlags(process.argv.slice(2))
   const buildMode = getBuildMode(flags.raw ?? new Set())

@@ -179,7 +179,7 @@ export function hasCheckpoint(buildDir, packageName, name) {
 
 export function hashSourcePaths(sourcePaths) {
   const hash = createHash('sha256')
-  for (const file of [...sourcePaths].sort()) {
+  for (const file of [...sourcePaths].toSorted()) {
     hash.update(`${file}:`)
     if (existsSync(file)) {
       try {
@@ -235,7 +235,7 @@ export async function shouldRun(
 
   // Only validate hash if the caller provided inputs or platform metadata.
   const wantsValidation =
-    (sourcePaths && sourcePaths.length) ||
+    (sourcePaths?.length) ||
     options.buildMode ||
     options.platform ||
     options.arch
