@@ -25,7 +25,6 @@
       "matcher": "Edit|Write",
       "hooks": [
         "fleet/actionlint-on-workflow-edit/index.mts",
-        "fleet/extension-build-current-nudge/index.mts",
         "fleet/oxlint-plugin-load-nudge/index.mts",
         "fleet/prose-code-format-nudge/index.mts"
       ]

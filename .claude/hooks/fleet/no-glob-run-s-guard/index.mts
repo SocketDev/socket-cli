@@ -30,9 +30,11 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 const BYPASS_PHRASE = 'Allow run-s glob bypass' as const
 
 // Matches a `run-s <x>:*` or `run-p <x>:*` pattern inside a JSON string value.
-// The `:*` glob suffix is npm-run-all2's wildcard form for task expansion.
+// The `:*` glob suffix is npm-run-all2's wildcard form for task expansion. The
+// glob may appear anywhere in the argument list (`run-s build build-mcpb:*`),
+// so scan to the end of the unquoted value, not just the first argument.
 // require-regex-comment: detects run-s/run-p `:*` glob in package.json scripts values.
-const GLOB_RE = /\brun-[sp]\s+[^"'\s]*:\*/
+const GLOB_RE = /\brun-[sp]\s[^"'\n]*:\*/
 
 export interface GlobDetection {
   readonly detected: boolean

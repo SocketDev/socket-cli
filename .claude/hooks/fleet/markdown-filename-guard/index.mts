@@ -5,10 +5,11 @@
 // with a non-canonical filename. Per the fleet's docs convention:
 //
 //   - Allowed everywhere: README.md, LICENSE.
-//   - Allowed at root, docs/, or .claude/ (top level only): the
-//     conventional SCREAMING_CASE set (AUTHORS, CHANGELOG, CLAUDE,
-//     CODE_OF_CONDUCT, CONTRIBUTING, GOVERNANCE, MAINTAINERS,
-//     NOTICE, SECURITY, SUPPORT, etc.).
+//   - Allowed at root, docs/, .claude/ (top level only), or any
+//     package root (a directory holding package.json — npm renders
+//     these files from there): the conventional SCREAMING_CASE set
+//     (AUTHORS, CHANGELOG, CLAUDE, CODE_OF_CONDUCT, CONTRIBUTING,
+//     GOVERNANCE, MAINTAINERS, NOTICE, SECURITY, SUPPORT, etc.).
 //   - Everything else must be lowercase-with-hyphens AND placed
 //     under `docs/` or `.claude/` (at any depth).
 //
@@ -84,6 +85,19 @@ export function classifyMarkdownPath(absPath: string): Verdict {
     return { ok: true }
   }
 
+  // A markdown file inside a vendored-source payload tree mirrors an
+  // EXTERNAL project's layout (node-smol's additions/source-patched/doc/api,
+  // vendor/, third_party/, upstream/, …): its name and location are
+  // upstream-dictated source-tree content, not fleet docs.
+  const payloadNorm = normalizePath(absPath)
+  if (
+    /\/(?:additions\/source-patched|external|third_party|upstream|vendor)\//.test(
+      payloadNorm,
+    )
+  ) {
+    return { ok: true }
+  }
+
   // Anything under a `.claude/` segment is off-limits to doc-filename
   // rules: that tree is owned by Claude Code (auto-memory, skills,
   // hooks, settings) and each tool inside picks its own filename
@@ -133,9 +147,13 @@ export function classifyMarkdownPath(absPath: string): Verdict {
   const relPath = normalizePath(toRepoRelative(absPath))
   // For docs that describe a specific code file (e.g. `smol-ffi.js.md`),
   // strip the source-file hint before validating the stem.
-  const nameWithoutExt = stripCodeFileHintExt(
-    filename.replace(/\.(MD|markdown|md)$/, ''),
-  )
+  const stemRaw = filename.replace(/\.(MD|markdown|md)$/, '')
+  const nameWithoutExt = stripCodeFileHintExt(stemRaw)
+  // A stripped hint means the stem IS a source filename, quoted verbatim
+  // (mirror docs: `version_subset.js.md` documents `version_subset.js`).
+  // Source filenames follow the source tree's convention, so lowercase
+  // underscores are fine there — renaming the doc would break the mirror.
+  const mirrorsSourceFile = nameWithoutExt !== stemRaw
 
   // README / LICENSE — anywhere.
   if (nameWithoutExt === 'LICENSE' || nameWithoutExt === 'README') {
@@ -147,11 +165,18 @@ export function classifyMarkdownPath(absPath: string): Verdict {
     if (isAtAllowedScreamingLocation(relPath)) {
       return { ok: true }
     }
+    // A package root gets the repo-root allowance: npm force-includes
+    // CHANGELOG/LICENSE/AUTHORS-style files from the directory holding
+    // package.json, so these names are ecosystem-dictated there (e.g. a
+    // workspace sub-package's CHANGELOG.md rendered on its npm page).
+    if (existsSync(path.join(path.dirname(absPath), 'package.json'))) {
+      return { ok: true }
+    }
     const lowered = filename.toLowerCase().replace(/_/g, '-')
     return {
       ok: false,
-      message: `${filename} (SCREAMING_CASE) is allowed only at the repo root, docs/, or .claude/. This path puts it deeper.`,
-      suggestion: `Either move to root / docs/ / .claude/, or rename to ${lowered}.`,
+      message: `${filename} (SCREAMING_CASE) is allowed only at the repo root, docs/, .claude/, or a package root (a directory with package.json). This path puts it deeper.`,
+      suggestion: `Either move to root / docs/ / .claude/ / the package root, or rename to ${lowered}.`,
     }
   }
 
@@ -173,8 +198,12 @@ export function classifyMarkdownPath(absPath: string): Verdict {
     }
   }
 
-  // Must be lowercase-with-hyphens.
-  if (!isLowercaseHyphenated(nameWithoutExt)) {
+  // Must be lowercase-with-hyphens (a source-mirroring stem may also carry
+  // the source file's underscores).
+  if (
+    !isLowercaseHyphenated(nameWithoutExt) &&
+    !(mirrorsSourceFile && isLowercaseSourceName(nameWithoutExt))
+  ) {
     const suggested = nameWithoutExt
       .toLowerCase()
       .replace(/[_\s]+/g, '-')
@@ -263,6 +292,17 @@ export function isAtAllowedScreamingLocation(relPath: string): boolean {
 
 export function isLowercaseHyphenated(nameWithoutExt: string): boolean {
   return /^[a-z0-9]+(-[a-z0-9]+)*$/.test(nameWithoutExt)
+}
+
+/**
+ * Loose stem rule for docs that mirror a source file verbatim: lowercase
+ * segments joined by hyphens or underscores (Node internals use
+ * `version_subset.js`-style names). Only consulted when the stem carried a
+ * code-file hint extension. Underscores fold to hyphens so the base
+ * predicate stays the single shape authority.
+ */
+export function isLowercaseSourceName(nameWithoutExt: string): boolean {
+  return isLowercaseHyphenated(nameWithoutExt.replace(/_/g, '-'))
 }
 
 export function isScreamingCase(nameWithoutExt: string): boolean {

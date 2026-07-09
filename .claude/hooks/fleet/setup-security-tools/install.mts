@@ -42,7 +42,11 @@ import {
   promptAndPersist,
   wireBridgeIntoShellRc,
 } from './lib/operator-prompts.mts'
-import { findBrokenShimTargets, getShimsDir } from './lib/shims.mts'
+import {
+  findBrokenShimTargets,
+  getShimsDir,
+  stabilizeShims,
+} from './lib/shims.mts'
 
 const logger = getDefaultLogger()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -178,6 +182,16 @@ async function main(): Promise<void> {
       installers.setupCdxgen(),
       installers.setupSynp(),
     ])
+  // Stabilize any dlx-backed shims the installs above just (re)wrote: mirror
+  // their targets into the GC-stable dir and repoint the shim, so the next dlx
+  // sweep can't orphan them (the recurring broken-headroom-shim failure). Runs
+  // now, while the freshly-installed dlx sources still exist to mirror.
+  const stabilized = await stabilizeShims()
+  if (stabilized.length > 0) {
+    logger.log(
+      `Stabilized ${stabilized.length} shim(s) against dlx GC: ${stabilized.join(', ')}`,
+    )
+  }
   // Native messaging host — optional step (only runs when the lib exports it).
   // Allows the Chrome Trusted Publisher extension to call the OS keychain
   // without the user having to set SOCKET_API_TOKEN in their browser environment.
