@@ -4,6 +4,8 @@
  *   fleet file-size cap.
  */
 
+import { fileURLToPath } from 'node:url'
+
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
@@ -23,11 +25,15 @@ export async function generateCliSentryPackage({
     logger.log('Generating cli-with-sentry package from template…')
   }
 
-  const scriptPath = new URL(
-    '../../packages/package-builder/scripts/generate-cli-sentry-package.mts',
-    import.meta.url,
+  // fileURLToPath, not URL.pathname: pathname yields `/D:/...` on Windows,
+  // which node cannot load as a filesystem path.
+  const scriptPath = fileURLToPath(
+    new URL(
+      '../../packages/package-builder/scripts/generate-cli-sentry-package.mts',
+      import.meta.url,
+    ),
   )
-  const result = await spawn('node', [scriptPath.pathname], {
+  const result = await spawn('node', [scriptPath], {
     stdio: quiet ? 'pipe' : 'inherit',
   })
 
@@ -52,11 +58,14 @@ export async function generateSocketbinPackages({
     logger.log('Generating socketbin packages from template…')
   }
 
-  const scriptPath = new URL(
-    '../../packages/package-builder/scripts/generate-socketbin-packages.mts',
-    import.meta.url,
+  // fileURLToPath, not URL.pathname — see generateCliSentryPackage above.
+  const scriptPath = fileURLToPath(
+    new URL(
+      '../../packages/package-builder/scripts/generate-socketbin-packages.mts',
+      import.meta.url,
+    ),
   )
-  const result = await spawn('node', [scriptPath.pathname], {
+  const result = await spawn('node', [scriptPath], {
     stdio: quiet ? 'pipe' : 'inherit',
   })
 

@@ -233,10 +233,15 @@ export async function runSmartBuild(force: boolean): Promise<void> {
       // historical behavior of runSmartBuild — plain `pnpm build` stops
       // after CLI, `pnpm build --force` also builds SEA for the current
       // platform). The skip predicate runs before shouldRun(), so the
-      // stage is transparently absent on a normal dev build.
+      // stage is transparently absent on a normal dev build. Also skipped
+      // on CI unless forced: the CI test matrix only consumes the JS
+      // bundle, and the SEA asset lookups hit the anonymous GitHub API
+      // rate limit on shared runners; release flows dispatch build:sea
+      // explicitly.
       {
         name: CHECKPOINTS.SEA,
-        skip: ctx => !force && ctx.buildMode !== 'prod',
+        skip: ctx =>
+          !force && (ctx.buildMode !== 'prod' || !!process.env['CI']),
         // Hash the CLI output into this stage's cache key. Without it,
         // shouldRun() only sees external-tools.json + package.json, so a
         // CLI rebuild that leaves those files untouched would skip SEA

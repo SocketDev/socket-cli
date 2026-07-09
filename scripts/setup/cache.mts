@@ -6,6 +6,7 @@
 import { existsSync } from 'node:fs'
 import { mkdir } from 'node:fs/promises'
 
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
@@ -34,10 +35,13 @@ export async function restoreCache(hasGh: boolean): Promise<boolean> {
 
   logger.log('Attempting to restore build cache from CI…')
 
+  // shell: WIN32 — pnpm resolves to a .cmd shim on Windows, which only a
+  // shell can execute.
   const result = await spawn(
     'pnpm',
     ['--filter', '@socketsecurity/cli', 'run', 'restore-cache', '--quiet'],
     {
+      shell: WIN32,
       stdio: 'inherit',
     },
   )

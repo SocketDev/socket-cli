@@ -121,7 +121,9 @@ export function showHelp(): void {
   }
   logger.log('')
   logger.log('Other Available Targets:')
-  for (const target of Object.keys(TARGET_PACKAGES).toSorted()) {
+  const otherTargets = Object.keys(TARGET_PACKAGES).toSorted()
+  for (let i = 0, { length } = otherTargets; i < length; i += 1) {
+    const target = otherTargets[i]!
     if (!PLATFORM_TARGETS.includes(target)) {
       logger.log(`  ${target}`)
     }

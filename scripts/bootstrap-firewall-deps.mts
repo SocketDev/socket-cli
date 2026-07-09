@@ -99,7 +99,9 @@ const checkFirewall = async (
       err(
         `\n✗ Socket Firewall flagged ${pkgName}@${version} as malware (${alerts.length} alert(s)):`,
       )
-      for (const a of alerts.slice(0, 10)) {
+      const topAlerts = alerts.slice(0, 10)
+      for (let i = 0, { length } = topAlerts; i < length; i += 1) {
+        const a = topAlerts[i]!
         err(
           `    ${a.type ?? a.key ?? 'malware'}${a.severity ? ` (${a.severity})` : ''}`,
         )

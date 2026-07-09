@@ -4,6 +4,7 @@
  *   fleet file-size cap.
  */
 
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
@@ -46,7 +47,10 @@ export async function getVersion(
   args: string[] = ['--version'],
 ): Promise<string | undefined> {
   try {
+    // shell: WIN32 — pnpm/gh resolve to .cmd shims on Windows, which only a
+    // shell can execute.
     const result = await spawn(command, args, {
+      shell: WIN32,
       stdio: 'pipe',
     })
     if (result.code === 0) {
@@ -63,7 +67,9 @@ export async function getVersion(
  */
 export async function hasCommand(command: string): Promise<boolean> {
   try {
+    // shell: WIN32 — see getVersion above.
     const result = await spawn(command, ['--version'], {
+      shell: WIN32,
       stdio: 'pipe',
     })
     return result.code === 0

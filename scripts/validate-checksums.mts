@@ -49,7 +49,9 @@ export function validateChecksums(): boolean {
   const requiredAssets = new Map<string, Set<string>>()
 
   // Collect all assets needed across all platforms.
-  for (const tools of Object.values(PLATFORM_MAP_TOOLS)) {
+  const platformTools = Object.values(PLATFORM_MAP_TOOLS)
+  for (let i = 0, { length } = platformTools; i < length; i += 1) {
+    const tools = platformTools[i]!
     if (!tools) {
       continue
     }
