@@ -18,6 +18,7 @@ import type { RolldownOptions } from 'rolldown'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
+// oxlint-disable-next-line socket/prefer-find-up-package-json, socket/prefer-find-repo-root -- this is a scaffolding template: the ascent targets the sibling `cli` package in the DEPLOYED consumer monorepo layout, not this repo's own package.json/repo root.
 const cliPath = path.join(__dirname, '..', '..', 'cli')
 
 const config: RolldownOptions = {

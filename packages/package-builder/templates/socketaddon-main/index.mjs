@@ -11,6 +11,18 @@ import os from 'node:os'
 const require = createRequire(import.meta.url)
 
 /**
+ * Convert a path to forward-slash separators. Local, dependency-free
+ * equivalent of `normalizePath` — this loader ships as a native-addon
+ * runtime dependency and must not pull in fleet tooling libs.
+ *
+ * @param {string} pathValue
+ * @returns {string}
+ */
+function toUnixPath(pathValue) {
+  return pathValue.replaceAll('\\', '/')
+}
+
+/**
  * Detect the current platform and architecture.
  *
  * @returns {string} Platform identifier (e.g., 'darwin-arm64',
@@ -89,7 +101,10 @@ export function loadNativeAddon() {
 
       // Get the real path of this module (resolves pnpm symlinks).
       const __dirname = dirname(fileURLToPath(import.meta.url))
-      const realDir = realpathSync(__dirname)
+      // Normalize to forward slashes so the separator-based checks below
+      // work on Windows, where realpathSync returns backslash-separated
+      // paths.
+      const realDir = toUnixPath(realpathSync(__dirname))
 
       // Check if we're in the build output directory structure.
       // Expected: .../build/dev/out/socketaddon-iocraft
