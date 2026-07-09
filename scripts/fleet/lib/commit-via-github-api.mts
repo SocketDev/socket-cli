@@ -61,13 +61,14 @@ export async function commitViaGithubApi(
     'content-type': 'application/json',
     'x-github-api-version': '2022-11-28',
   }
-  const post = <T,>(resource: string, body: unknown): Promise<T> =>
-    httpJson<T>(`${git}/${resource}`, {
+  function post<T>(resource: string, body: unknown): Promise<T> {
+    return httpJson<T>(`${git}/${resource}`, {
       body: JSON.stringify(body),
       headers,
       method: 'POST',
       timeout: 30_000,
     })
+  }
 
   // 1. One blob per file (base64 so binary-safe).
   const tree: Array<{

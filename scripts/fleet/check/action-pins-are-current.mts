@@ -92,7 +92,7 @@ export interface Unit extends UnitRef {
   readonly reads: readonly string[]
 }
 
-export type Verdict = 'stale' | 'unreachable'
+export type Verdict = 'stale' | 'unreachable' | 'missing_dep'
 
 export interface PinFinding {
   // The unit file the pin appears in.
@@ -354,10 +354,24 @@ export function findStalePins(
     ) {
       const pin = deps[i]!
       const depId = unitId(pin)
-      if (pin.repo !== selfRepo || !units.has(depId)) {
+      if (pin.repo !== selfRepo) {
         continue
       }
       const file = unitFile(unit)
+      // A self-repo pin whose dep unit is GONE from the current tree (the
+      // action moved tiers or was deleted) is broken the moment the pinned SHA
+      // advances past the removal — and repinning to HEAD would guarantee it.
+      // Silently skipping here once shipped a false-green while a reusable
+      // workflow pointed consumers at a path that no longer existed.
+      if (!units.has(depId)) {
+        findings.push({
+          file,
+          dep: depId,
+          sha: pin.sha,
+          verdict: 'missing_dep',
+        })
+        continue
+      }
       if (!git.isReachable(pin.sha, base)) {
         findings.push({
           file,
@@ -392,7 +406,9 @@ export function rewritePin(
 
 // Rewrite each stale/unreachable pin's SHA → base HEAD and refresh its
 // `# <branch> (YYYY-MM-DD)` comment (committer date of the new SHA). Returns the
-// set of files rewritten.
+// set of files rewritten. A missing_dep finding is never rewritten: its dep
+// path does not exist at HEAD, so repinning would point the ref at a commit
+// where the action is guaranteed absent.
 export function applyFix(
   findings: readonly PinFinding[],
   base: string,
@@ -406,6 +422,9 @@ export function applyFix(
   const byFile = new Map<string, PinFinding[]>()
   for (let i = 0, { length } = findings; i < length; i += 1) {
     const f = findings[i]!
+    if (f.verdict === 'missing_dep') {
+      continue
+    }
     const list = byFile.get(f.file)
     if (list) {
       list.push(f)
@@ -519,8 +538,11 @@ function main(): void {
 
   const selfRepo = resolveSelfRepo()
   const undeclared = findUndeclared(units)
+  // Any self-repo pin counts — including one whose dep unit no longer exists
+  // in the tree (that is the missing_dep case this check must surface, not
+  // a reason to declare "nothing to check").
   const hasInternalPins = [...units.values()].some(u =>
-    u.deps.some(d => d.repo === selfRepo && units.has(unitId(d))),
+    u.deps.some(d => d.repo === selfRepo),
   )
   if (!hasInternalPins && !undeclared.length) {
     if (!quiet) {
@@ -532,24 +554,32 @@ function main(): void {
   }
 
   const base = resolveBase()
-  const stale = findStalePins(units, base, cliGit, selfRepo)
+  const all = findStalePins(units, base, cliGit, selfRepo)
+  const missing = all.filter(f => f.verdict === 'missing_dep')
+  const stale = all.filter(f => f.verdict !== 'missing_dep')
 
   if (fix && stale.length) {
     const touched = applyFix(stale, base, cliGit)
     logger.success(
       `[check-action-pins-are-current] repinned ${stale.length} pin(s) to ${base} HEAD in: ${touched.join(', ')}`,
     )
-    // Re-scan after the rewrite so undeclared (which --fix does not touch) still
-    // gates.
-    if (!undeclared.length) {
+    // Re-scan after the rewrite so undeclared and missing_dep (which --fix
+    // cannot repair — the dep path is gone at HEAD) still gate.
+    if (!undeclared.length && !missing.length) {
       return
     }
   }
 
-  if (undeclared.length || (!fix && stale.length)) {
+  if (undeclared.length || missing.length || (!fix && stale.length)) {
     logger.fail('[check-action-pins-are-current] action-pin problems:')
     for (let i = 0, { length } = undeclared; i < length; i += 1) {
       logger.error(`  ✗ undeclared data edge: ${undeclared[i]!}`)
+    }
+    for (let i = 0, { length } = missing; i < length; i += 1) {
+      const f = missing[i]!
+      logger.error(
+        `  ✗ ${f.file}: pin to ${f.dep}@${f.sha.slice(0, 12)} references a path that no longer exists in this tree — the action moved or was deleted, so any newer SHA breaks the ref. Fix the \`uses:\` PATH to the action's new location (e.g. its {fleet,repo}/ tier), then re-run --fix; repinning alone cannot repair this.`,
+      )
     }
     for (let i = 0, { length } = stale; i < length; i += 1) {
       const f = stale[i]!

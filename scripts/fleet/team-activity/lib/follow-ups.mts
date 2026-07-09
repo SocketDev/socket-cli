@@ -32,9 +32,7 @@ export function attributeQuote(
   comments: ReadonlyArray<{ a: string; body: string }>,
   reviews: ReadonlyArray<{ a: string; body: string }>,
 ): string | undefined {
-  const quoted = reply.body
-    .split('\n')
-    .find(line => line.startsWith('>'))
+  const quoted = reply.body.split('\n').find(line => line.startsWith('>'))
   if (!quoted) {
     return undefined
   }

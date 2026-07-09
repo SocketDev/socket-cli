@@ -157,13 +157,13 @@ export function diagnoseCatalogGaps(options: {
   let fleetCatalog: Record<string, string> = {}
   if (opts.fleetYaml === undefined) {
     findings.push({
-      fix: 'Re-cascade from the wheelhouse (node scripts/fleet/fetch-fleet-bundle.mts) to restore pnpm-workspace.fleet.yaml.',
+      fix: 'Re-cascade from the wheelhouse (node scripts/fleet/fetch-fleet-bundle.mts) to restore .config/fleet/pnpm-workspace.fleet.yaml.',
       fixable: false,
-      saw: 'file not found in the repo root',
+      saw: 'file not found at .config/fleet/ (or the pre-relocation repo root)',
       wanted:
-        'pnpm-workspace.fleet.yaml present in the repo root (cascaded fleet catalog)',
+        '.config/fleet/pnpm-workspace.fleet.yaml present (cascaded fleet catalog)',
       what: 'Fleet catalog file missing',
-      where: 'pnpm-workspace.fleet.yaml',
+      where: '.config/fleet/pnpm-workspace.fleet.yaml',
     })
   } else {
     const fleetMain = parseCatalogBlock(opts.fleetYaml)

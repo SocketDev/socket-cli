@@ -48,6 +48,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
+import { AI_TIER } from '@socketsecurity/lib-stable/ai/tier'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { globSync } from '@socketsecurity/lib-stable/globs/match'
@@ -103,12 +104,47 @@ export function objectSpan(text: string, start: number): string {
   return ''
 }
 
-// The floor a spawn defaults to: the cheapest model and the lowest effort.
-// `claude-haiku-4-5` is the cheapest entry in
-// scripts/fleet/constants/model-pricing.json; `low` is the lowest AiEffort.
-// A literal above either is an escalation that must carry a justifying comment.
-export const FLOOR_MODEL = 'claude-haiku-4-5'
-export const FLOOR_EFFORT = 'low'
+// The floor a spawn defaults to: the cheapest tier's model + effort, sourced
+// from the canonical AI_TIER (`haiku` is the floor row) so a model-generation
+// bump is one edit in socket-lib, not a hand-copied literal that drifts. A
+// literal above either is an escalation that must carry a justifying comment.
+export const FLOOR_MODEL = AI_TIER.haiku.model
+export const FLOOR_EFFORT = AI_TIER.haiku.effort
+
+// Every model string the fleet recognizes: the priced models in the canonical
+// registry (all providers) plus the AI_TIER model ids as a fallback when the
+// registry is unreadable. A literal `model` outside this set is drift (a
+// stale/renamed id like `claude-sonnet-4-5`) or a typo — not a model any spawn
+// should pin. Aliases (`sonnet`/`haiku`/…) are deliberately EXCLUDED: a spawn's
+// `model` is a raw CLI `--model` value, so a bare alias would fail at runtime.
+export const KNOWN_MODELS: ReadonlySet<string> = loadKnownModels()
+
+function loadKnownModels(): ReadonlySet<string> {
+  const models = new Set<string>()
+  for (const tier of Object.values(AI_TIER)) {
+    models.add(tier.model)
+  }
+  const pricingPath = path.join(
+    REPO_ROOT,
+    'scripts/fleet/constants/model-pricing.json',
+  )
+  if (existsSync(pricingPath)) {
+    try {
+      const pricing = JSON.parse(readFileSync(pricingPath, 'utf8')) as {
+        services?: Record<string, { models?: Record<string, unknown> }>
+      }
+      for (const svc of Object.values(pricing.services ?? {})) {
+        for (const id of Object.keys(svc.models ?? {})) {
+          models.add(id)
+        }
+      }
+    } catch {
+      // Registry unreadable — fall back to the AI_TIER model set; the
+      // known-model check stays sound for the canonical tiers.
+    }
+  }
+  return models
+}
 
 // Match the value of a property KEY inside an object-literal span. Returns the
 // raw value text up to the next top-level `,` or the closing `}`, trimmed; or
@@ -256,6 +292,15 @@ export function scanSpawnCalls(
     // Both pinned — flag a literal escalation above the floor with no comment.
     const modelLit = stringLiteral(propValue(span, 'model'))
     const effortLit = stringLiteral(propValue(span, 'effort'))
+    // A literal model must be a model the fleet actually knows. Catches the
+    // drift class — a stale id (`claude-sonnet-4-5`) that reads plausible but
+    // no longer exists — that the escalation-comment rule waves through.
+    if (modelLit !== undefined && !KNOWN_MODELS.has(modelLit)) {
+      hits.push({
+        index: callStart,
+        detail: `${callKind(isSpawnHelper)} pins an unknown model '${modelLit}' — not in the canonical registry (scripts/fleet/constants/model-pricing.json) or AI_TIER. A stale/renamed id or a typo; use a current model id.`,
+      })
+    }
     const modelEscalates = modelLit !== undefined && modelLit !== FLOOR_MODEL
     const effortEscalates =
       effortLit !== undefined && effortLit !== FLOOR_EFFORT

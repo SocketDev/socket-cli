@@ -271,9 +271,17 @@ async function main(): Promise<void> {
   }
   const workspaceYaml = readFileSync(workspaceYamlPath, 'utf8')
 
-  // Read pnpm-workspace.fleet.yaml — cascaded from the wheelhouse.
-  const fleetYamlPath = path.join(cwd, 'pnpm-workspace.fleet.yaml')
-  const fleetYaml = existsSync(fleetYamlPath)
+  // Read the cascaded fleet catalog. The loader accepts three locations,
+  // first hit wins; the fleet convention (cascade + guard + rules) places it
+  // at .config/fleet/pnpm-workspace.fleet.yaml — the others are transition
+  // fallbacks so a member mid-wave keeps working.
+  const fleetYamlCandidates = [
+    path.join(cwd, '.config', 'fleet', 'pnpm-workspace.fleet.yaml'),
+    path.join(cwd, '.config', 'pnpm-workspace.fleet.yaml'),
+    path.join(cwd, 'pnpm-workspace.fleet.yaml'),
+  ]
+  const fleetYamlPath = fleetYamlCandidates.find(p => existsSync(p))
+  const fleetYaml = fleetYamlPath
     ? readFileSync(fleetYamlPath, 'utf8')
     : undefined
 

@@ -1,22 +1,35 @@
 /**
  * @file Canonical GitHub bot-login detector for fleet scripts. One source of
  *   truth for "is this login an automation account rather than a person" — used
- *   by the team-activity monitor to skip Dependabot/Renovate/etc. and by any
- *   fleet script that filters bot noise. Generic: no org-specific accounts, so
- *   it cascades to every member unchanged. The repo-tier `reviewing-team-prs`
- *   sampler re-exports from here so the two never drift.
+ *   by the team-activity monitor and the heartbeat PR scan to tell a bot
+ *   comment (Cursor, Copilot, CodeRabbit, Codex, Claude, Pullfrog, Dependabot,
+ *   …) from a real teammate, and by any fleet script that filters bot noise.
+ *   Covers the generic CI/review bots plus the fleet's own Socket automation
+ *   bot (every fleet member is a Socket repo, so it's universally relevant).
+ *   The repo-tier `reviewing-team-prs` sampler re-exports from here so the two
+ *   never drift. Every login below was verified to exist on GitHub before it
+ *   was added.
  */
 
 // Login prefixes that identify review/automation bots. A trailing `[bot]` also
-// counts. Sorted; extend here, never fork a second copy.
+// counts (most GitHub Apps post as `<name>[bot]`), so this list only needs the
+// non-`[bot]` login forms plus a few belt-and-suspenders prefixes. Sorted;
+// extend here, never fork a second copy.
 export const BOT_PREFIXES: readonly string[] = [
+  'chatgpt',
+  'claude',
   'coderabbit',
+  'coderabbitai',
+  'codex',
   'copilot',
   'cursor',
   'dependabot',
   'github-actions',
   'linear',
+  'pullfrog',
   'renovate',
+  'socket-bot',
+  'socket-security',
 ]
 
 /**

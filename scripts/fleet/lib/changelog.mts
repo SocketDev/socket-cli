@@ -129,6 +129,23 @@ export function bumpLevelFor(
 }
 
 /**
+ * A committed version HINT: when package.json's version carries a prerelease
+ * suffix (`6.0.10-prerelease`, `6.0.10-rc.1`), the base version IS the
+ * human-named release target — the bump uses it instead of the commit-type
+ * heuristic. A plain release version (no suffix) yields undefined (derive as
+ * usual). This lets a human pre-commit the version decision as a repo
+ * artifact instead of threading a flag.
+ */
+export function versionHintFrom(current: string): string | undefined {
+  const dash = current.indexOf('-')
+  if (dash === -1) {
+    return undefined
+  }
+  const base = current.slice(0, dash).split('+')[0]!
+  return /^\d+\.\d+\.\d+$/.test(base) ? base : undefined
+}
+
+/**
  * Apply a bump level to a semver `MAJOR.MINOR.PATCH` string. Any prerelease /
  * build suffix is dropped (a release bump produces a clean release version).
  */
@@ -206,7 +223,11 @@ export function generateChangelogSection(options: {
   const bySection = new Map<string, string[]>()
   for (let i = 0, { length } = commits; i < length; i += 1) {
     const commit = commits[i]!
-    const section = TYPE_TO_SECTION[commit.type]
+    // A breaking commit is user-visible whatever its type — an unmapped type
+    // (refactor!, chore!) still lands, under Changed, so a `!` can never
+    // vanish from the CHANGELOG.
+    const section =
+      TYPE_TO_SECTION[commit.type] ?? (commit.breaking ? 'Changed' : undefined)
     if (!section) {
       continue
     }

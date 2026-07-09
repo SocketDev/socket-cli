@@ -36,7 +36,9 @@ const REGISTRY_PATH = path.join(
 const FLEET_HOOKS_DIR = path.join(REPO_ROOT, '.claude', 'hooks', 'fleet')
 
 // Bullet shape: `- \`<name>\` — description`. Captures the backticked hook id.
-const REGISTRY_BULLET_RE = /^- `([a-z0-9-]+)`/gm
+// A leading underscore admits the infrastructure dirs (`_dispatch`) so they
+// can be registered like any hook instead of reading as omitted forever.
+const REGISTRY_BULLET_RE = /^- `(_?[a-z0-9-]+)`/gm
 
 // A bullet is "capability-gated" when its prose declares the hook installs only
 // in repos opting into a capability — the canonical phrasing cites the hook's

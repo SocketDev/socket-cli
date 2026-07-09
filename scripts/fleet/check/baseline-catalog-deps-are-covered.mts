@@ -18,7 +18,7 @@
  *   onto members while none of those were in EXPECTED/OPTIONAL_CATALOG_ENTRIES
  *   — every member cascade (hit on socket-mcp + socket-registry) installed red.
  *   nock was the subtler shape: it WAS in FLEET_CANONICAL_CATALOG_NAMES but
- *   missing from the version-source template/base/pnpm-workspace.fleet.yaml, so
+ *   missing from the version-source template/base/.config/fleet/pnpm-workspace.fleet.yaml, so
  *   loadExpectedCatalogEntries() silently skipped it and EXPECTED never carried
  *   it. This gate catches BOTH (a name not in the map, and a name in the map
  *   the version-source drops) because it asserts membership of the RESOLVED
@@ -130,7 +130,7 @@ async function main(): Promise<void> {
       '',
       '  Where: scripts/repo/sync-scaffolding/manifest/catalog.mts',
       '  (FLEET_CANONICAL_CATALOG_NAMES / OPTIONAL_CATALOG_NAMES + their',
-      '  version-source template/base/pnpm-workspace.fleet.yaml).',
+      '  version-source template/base/.config/fleet/pnpm-workspace.fleet.yaml).',
       '',
       '  Saw vs. wanted: each member install resolves `"<name>": "catalog:"` and',
       '  dies with ERR_PNPM_CATALOG_ENTRY_NOT_FOUND_FOR_SPEC. Wanted: EXPECTED ∪',
@@ -142,7 +142,7 @@ async function main(): Promise<void> {
       '  Fix: add each name to FLEET_CANONICAL_CATALOG_NAMES (or',
       '  OPTIONAL_CATALOG_NAMES if conditional) in',
       '  scripts/repo/sync-scaffolding/manifest/catalog.mts AND pin its version',
-      '  in template/base/pnpm-workspace.fleet.yaml (copy the wheelhouse',
+      '  in template/base/.config/fleet/pnpm-workspace.fleet.yaml (copy the wheelhouse',
       '  pnpm-workspace.yaml pin verbatim) so loadExpectedCatalogEntries()',
       '  resolves it. A name present in the map but missing from the',
       '  version-source yaml is skipped silently and still counts as a gap.',

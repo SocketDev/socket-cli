@@ -90,18 +90,18 @@
       "notes": [
         "npm is platform-agnostic — ONE registry tarball (npm-<version>.tgz, pure JS run through node), so a single top-level integrity rather than a per-platform map. install-npm.mts downloads it via the socket-lib download helper, verifies `integrity` (the stored sha512, captured once at pin time + checked against the registry dist.integrity), then drives the DOWNLOADED `node bin/npm-cli.js install -gf` — never `npm install -g npm`, so there's no self-update path. Models npmjs.com/install.sh + the fleet supply-chain gate.",
         "Bootstrap order: node first (.node-version), then npm (this entry), then the Socket packages — all downloaded + installed through the socket-lib helpers.",
-        "11.17.0 published 2026-06-11, inside the 7-day minimumReleaseAge soak, so the bump rides a dated soakBypass (auto-disarms at `removable`). update-external-tools.mts recognizes the `<pkg>-<version>.tgz` asset shape and re-fetches integrity from the npm registry on a bump.",
-        "11.17.0 adds the `min-release-age-exclude` .npmrc config — kept in lockstep with pnpm-workspace.yaml minimumReleaseAgeExclude."
+        "12.0.0 published 2026-07-09, inside the 7-day minimumReleaseAge soak, so the bump rides a dated soakBypass (auto-disarms at `removable`). update-external-tools.mts recognizes the `<pkg>-<version>.tgz` asset shape and re-fetches integrity from the npm registry on a bump.",
+        "npm carries the `min-release-age-exclude` .npmrc config — kept in lockstep with pnpm-workspace.yaml minimumReleaseAgeExclude."
       ],
       "description": "npm — pinned, SRI-verified registry tarball; installed without self-update",
       "repository": "npm:npm",
-      "version": "11.17.0",
+      "version": "12.0.0",
       "soakBypass": {
-        "version": "11.17.0",
-        "published": "2026-06-11",
-        "removable": "2026-06-18"
+        "version": "12.0.0",
+        "published": "2026-07-09",
+        "removable": "2026-07-16"
       },
-      "integrity": "sha512-PurxiZexEHDTE4SSaLI3ZrnbAGiZfeyUcQcxcP5D+hfytNAze/D1IzDuInTn9XVLIbAQUnQuSPXJx02LHjLvQw=="
+      "integrity": "sha512-qzvPQfNSY7louiM6rv7dL0hi5esBGLn1lLwxbdyL5XOIssWzoYMwn8xqvWhYcZL6onTkenYSxrtKxsFrFbUFyw=="
     },
     "smithers": {
       "notes": [
@@ -193,29 +193,29 @@
       ],
       "description": "uv — Astral Python package/project manager (pinned, SRI-verified)",
       "repository": "github:astral-sh/uv",
-      "version": "0.11.21",
+      "version": "0.11.28",
       "release": "asset",
       "binaryName": "uv",
       "platforms": {
         "darwin-arm64": {
           "asset": "uv-aarch64-apple-darwin.tar.gz",
-          "integrity": "sha512-HVEGTGGzjKNRCbzhhhP5+fDMGPyHW/qsG7Oa4cL0YGfdDOMyas1pAi/q/Q4dPE5/uoqNSbk+1qqfzlI1Ryfveg=="
+          "integrity": "sha512-yxcruknz+sl/ZlsUW9N96qoXRsz3CHuCF2+PBDcLzbPupWa6OTyWZMWp72EM1mBsX5FY6FBUkCcGB7bzrasKeA=="
         },
         "darwin-x64": {
           "asset": "uv-x86_64-apple-darwin.tar.gz",
-          "integrity": "sha512-F6G/11wlZ54uhhDN6gO63jaLE6R5RU7ULf601Zf3sOef43rcf/nQ0+8vWGKW+MtH7tQAr9HFCmt5CmeIaiSVFw=="
+          "integrity": "sha512-tTEbWp5tCmJlP4ulZ2G493SLB5HF8jfo2YOPiUlmJtuE//oq6/Nb4mt8lSh0VItqMErUThJFJWpZ3ahfx+BtQg=="
         },
         "linux-arm64": {
           "asset": "uv-aarch64-unknown-linux-gnu.tar.gz",
-          "integrity": "sha512-kLYDGEDldFPEgMRSc1Gvn+uusu0MDH6cWddYtzlCx8Oy/zsKUFU8D/HVmTb+YwJ05H8CPFrqdXlRq8KC/Jj4uA=="
+          "integrity": "sha512-RmGCO1sekfkggd152Dg6FEgR7Cj6U9LNZylLCE3kgkRyLajBSxuBtNbLl1a8/RtS3mHokS8E0PFsW3S+3IlLJw=="
         },
         "linux-x64": {
           "asset": "uv-x86_64-unknown-linux-gnu.tar.gz",
-          "integrity": "sha512-d0in3UgzEbgDxRtI53DE/ZCnE/n7Uy90vB3G4H7cV0ZjSbpxgbEP/UVPSKzdWHnD8qjIt3+liZ/PSlI30uiQyw=="
+          "integrity": "sha512-NxPIaxb/4tDf9nuG/S5wOlDNmjNev5H8sfKHG+WjK9o1WjsVOEsQt9PhdO8Hp+RngSE+Ho39/eReurr0NyUq0Q=="
         },
         "win-x64": {
           "asset": "uv-x86_64-pc-windows-msvc.zip",
-          "integrity": "sha512-FZDwC81ha5JsP3KCnuLYMooSaLaSmFCe3Oky/ctYX0DV/pe4YI5vSvDxHqI+z46UgN0ctGYhZxK3/hKbei9sXA=="
+          "integrity": "sha512-SbgI6DfsIDU0nMripR1fny6EzT5j52nbGx/MM8Vns2Twwo33Nqqr+OEjV781vAqC5fsE6VmxWy0uUpvTEGjfJA=="
         }
       }
     },
@@ -225,38 +225,38 @@
         "Installed when neither SOCKET_API_KEY nor SOCKET_API_TOKEN is set; the enterprise flavor (sfw-enterprise) is selected when one of those is present. The two flavors share a version and install to the same `sfw` binary name."
       ],
       "description": "Socket Firewall (free tier) — package manager command wrapper",
-      "version": "1.12.0",
+      "version": "1.13.1",
       "repository": "github:SocketDev/sfw-free",
       "binaryName": "sfw",
       "release": "asset",
       "platforms": {
         "darwin-arm64": {
           "asset": "sfw-free-macos-arm64",
-          "integrity": "sha512-lwh/AIf7HXVIrE28LDfvtJqnaGb7azC+Up8Hi/c9hIfn9wMRt55misCKx9b6CjYi+d3bHladYNYPlqVtlqNpcQ=="
+          "integrity": "sha512-T6wBOJGdRVSI8577lGqRNzNd6Q+1vqKyaqGgOA8G4M5MU2vcsUnXuJTgP2MMZjUqROSXUlFL0mHguuxXT2QadQ=="
         },
         "darwin-x64": {
           "asset": "sfw-free-macos-x86_64",
-          "integrity": "sha512-iBLJ7bzrnnUPmUbN8FFzmXNYowWnahOD4DWzKYbneeCsvFa1xlHT4LaLWTysatd5npJIO7QOiRow6yw/tgjCWw=="
+          "integrity": "sha512-4G/AIY5UGU81wcepDKErY5u0nY85D8UM9nXTEPv8CR2rOV/s4IcmrkxywwZ3ipejHVQB7QmCVt0/SsqWglGikw=="
         },
         "linux-arm64": {
           "asset": "sfw-free-linux-arm64",
-          "integrity": "sha512-TZ0hzAzPyNfi1PgqU5+TzkrlBcWXZlXaSHkx1/wzIck4vlZXFQI8i7CCvWYihrJQ3zgEwVI30MmrqsJ9W7xWQw=="
+          "integrity": "sha512-FYRYR52SL+KKFldW4ogYOUnTH5OSqvtXwzGFeWi0W2x+75KZcPiGzWBbhMmh0f5QtgYLV+4qdREgmKCBEayNtA=="
         },
         "linux-arm64-musl": {
           "asset": "sfw-free-musl-linux-arm64",
-          "integrity": "sha512-O+X0JxQJJn2YpAJFP38ZuG156pewgk+HJBVUTJZM8AMZSbERLy6LLDD2S8uwPXpMXDD9uRy8/h7EpRcu1OQLcw=="
+          "integrity": "sha512-5a5VXzMmda9baCHqcNYnFm/Y71BB589IzXlrfXapEJfxMdqs2Dwdubn84TPMgGDRaErxsuYzP1Fe/cNHPZRMnA=="
         },
         "linux-x64": {
           "asset": "sfw-free-linux-x86_64",
-          "integrity": "sha512-Yuu+qoqxa0n7WIS9NMI3uuitUMoELbbUqJm3W6L2AsMJNZpVekXKmrZIhEjxWjJqvKt3mErKxK+izdP3/F+64Q=="
+          "integrity": "sha512-waLrsPG2a7EOv0XuvXDQZGgCZ4MTtOfZh8TmGbM6gn2B6Nh6HI+15jaoKdAS9wgdTyIqTuqU+O+NtVYd+kuFaA=="
         },
         "linux-x64-musl": {
           "asset": "sfw-free-musl-linux-x86_64",
-          "integrity": "sha512-U4WJeq+/Z634uFvW0+Hvmb/BUutMeiZQ1dwP40/wKMiCDwKGPr+Unl4KqwaG3qaLjkTRJ938sUWQy+/gFeEmDg=="
+          "integrity": "sha512-BYmolBjZVlXPmj7ilM8CP99EJTcOIha0SFAN6b9z1oc6tQvRsTYjoYKwB18X7kKwcx1jomdOYrEuW9+0t0LrkA=="
         },
         "win-x64": {
           "asset": "sfw-free-windows-x86_64.exe",
-          "integrity": "sha512-tkZHeaxydBStW6SsCi5S2jLMtdj2UQ/PdZb/ch8W532UjFdZUJD0oygW/YWliK0HQkcyw5GQm2d1iZU0P/yElg=="
+          "integrity": "sha512-YYnfwR6M/PHo72LSyKtpY3bAUG4F4ckToJqGx5Fkz4rwg1+48hkxuBaF3hdxHUdHPkfO5grDyoNgXGe7FojGcg=="
         }
       }
     },
@@ -266,38 +266,38 @@
         "Installed when SOCKET_API_KEY (or SOCKET_API_TOKEN) is set; otherwise the free flavor (sfw-free) is used. The two flavors share a version and install to the same `sfw` binary name."
       ],
       "description": "Socket Firewall (enterprise tier) — package manager command wrapper",
-      "version": "1.12.0",
+      "version": "1.13.1",
       "repository": "github:SocketDev/firewall-release",
       "binaryName": "sfw",
       "release": "asset",
       "platforms": {
         "darwin-arm64": {
           "asset": "sfw-macos-arm64",
-          "integrity": "sha512-G7te2xB1Q+K/k/2Wijbn96eJZUZoNFlDNKURydLBLB69Jkuc1M1lNFbqxiyP8tfOlMIBKWxRwfZyeX9ipPy4Ew=="
+          "integrity": "sha512-ZDy2C6leKyTHZFvcZZpG2eQqVzs7buk+Hs92fkaMYME829QzyxdGQVVgwEVaGJpedGdUvhksKKcvT9IynI1kxg=="
         },
         "darwin-x64": {
           "asset": "sfw-macos-x86_64",
-          "integrity": "sha512-/ogpJY01pDTEcvDPq09FNxGP5eXu4d+ab2RxT1r4he0ptfCOGOO3rQXfxTFqrOmS+OSz5RZe+4qPupM4nGriMQ=="
+          "integrity": "sha512-cm76we0sn7kqPOya/ZGQpPyhjRDyFT5lHigeT5Qso+QaPL6Cmwi0FVs2L7l63j+WR/9eYPU1WjjGOto5NbWsEQ=="
         },
         "linux-arm64": {
           "asset": "sfw-linux-arm64",
-          "integrity": "sha512-oXhTWx/I/1yZRn0ik3DL5y2/4RZqv/msJpTi6m190jBGg/x7bgqJO4uCOUJe1+iudK3bNGsYB8zs6vIJTLwA7g=="
+          "integrity": "sha512-9qPi3mobBfyq1k+pD2GDG0tZkhy16f7FXE9oGiwmwPvy5PXwnlzqEXnYld3qGsKIVwNhunev/If26oROTHbrHA=="
         },
         "linux-arm64-musl": {
           "asset": "sfw-musl-linux-arm64",
-          "integrity": "sha512-VtvO4OkLNO7XW1YwY73WoIZeRp7sMg+LbdeL2CVy5bgysTnuBxKrkkJvW41BsuScVdf7nt/bh5V8ZBAMN993rg=="
+          "integrity": "sha512-/xdisbXTp44v7GFBUkgtxyxfzS28gjnU7MdGPqrb0q6i8EvQYoqnuG8DCN88ybJouU3RYLwagO3o/5EgS/4cWw=="
         },
         "linux-x64": {
           "asset": "sfw-linux-x86_64",
-          "integrity": "sha512-91W90AOLI0RBN6lsPor2wf7wUvV3hzebXf0SM7SEzVPGM76Yjwj2D5E/jtJ8LjNNE7afggUDEtgMvFSTmgnZDg=="
+          "integrity": "sha512-lu9h8UzDZt34gdCEVHBGW6goE1Ayykq413EovV5B4nG7jBK27mI0GQstzVbWXA3wWaweT39PehXGtVpdqIDGSA=="
         },
         "linux-x64-musl": {
           "asset": "sfw-musl-linux-x86_64",
-          "integrity": "sha512-5CUE3LnXKzRqoT7SmT/yDBtyVyiUqwKtgS11j7qEhb2KJI3kztBuUQwBoOKPxxwpS0X7R/DuANvax7pQ76f4xw=="
+          "integrity": "sha512-R1f7/2OoX9WWeW+mGroHVjO1TtUDF5cxokUIi6qPs4hpNvvI+NFK7dgxFOc16dP+qhY0fz8ZNxz5CBgSiZKteA=="
         },
         "win-x64": {
           "asset": "sfw-windows-x86_64.exe",
-          "integrity": "sha512-GXKV67rN0XTP+2v9VTfzz84N09x9UkEItj2wmcA7pmy5YoLPF/+Z/XkVGoUHzVSTTeivbYicRLAxl8BNkoUZ6w=="
+          "integrity": "sha512-URZXauIsdUT12E2KTc4sfsxRmJm7nRJzAgM+IYGX4Xq+X0cl/eAbH5SpYIJKpsnW9csSztW9ceyPhlM+f3neIQ=="
         }
       }
     }

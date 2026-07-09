@@ -16,6 +16,7 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
+import { discoverRepoChecks } from './_shared/repo-checks.mts'
 import { isScopeFlag } from './_shared/scope-flags.mts'
 import { REPO_ROOT } from './paths.mts'
 
@@ -277,13 +278,6 @@ const steps: Array<() => boolean> = [
   // incident: a drifted tool entry left an INLINED_* env var empty and hung a
   // pre-commit test run.
   () => run('node', ['scripts/fleet/check/external-tools-are-valid.mts']),
-  // The layered Depot prebake manifest (.config/fleet/docker-prebakes.json) is
-  // internally consistent: required per-layer fields, every `from` resolves to
-  // another layer or an external <image>:<tag>, no dependency cycle, and bases
-  // are TOOLCHAIN-named not OUTPUT-named (no elf/macho/pe/wasm segment). Data
-  // only (the wheelhouse-owned Dockerfiles aren't cascaded); the build itself is
-  // validated by scripts/repo/build-prebakes.mts --check.
-  () => run('node', ['scripts/fleet/check/docker-prebakes-are-valid.mts']),
   // Fail-closed telemetry scan: no dependency or external tool ships a telemetry
   // / analytics SDK (Sentry/PostHog/Segment/Datadog/OTEL-SDK/langfuse/…) that
   // isn't in the reviewed baseline. A dep update or a new tool that ADDS one is
@@ -664,7 +658,25 @@ const steps: Array<() => boolean> = [
   // (exits 0) — the fleet backlog of raw invocations predates this gate; flip
   // to --strict once it clears.
   () => run('node', ['scripts/fleet/check/test-scripts-are-deferred.mts']),
+  // external-tools.json shared entries match the wheelhouse copy: the
+  // cascade-owned setup actions read this per-repo-owned data file at runtime,
+  // so stale copies break CI setup (five repos on 2026-07-08). Compares only
+  // SHARED tool names; repo-specific tools pass. Skips cleanly in CI (needs a
+  // sibling wheelhouse checkout for the reference copy).
+  () =>
+    run('node', [
+      'scripts/fleet/check/external-tools-match-wheelhouse.mts',
+      '--quiet',
+    ]),
 ]
+
+// Repo-owned checks: a member extends `check --all` by dropping assertion-named
+// scripts into scripts/repo/check/ (fleet/repo segmentation — a one-repo
+// concern never enters the fleet tier). Appended after the fleet steps,
+// alphabetical, same fail-fast loop; vacuous when the dir is absent.
+for (const rel of discoverRepoChecks(REPO_ROOT)) {
+  steps.push(() => run('node', [rel]))
+}
 
 for (let i = 0, { length } = steps; i < length; i += 1) {
   if (!steps[i]!()) {

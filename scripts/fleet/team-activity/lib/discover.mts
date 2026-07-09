@@ -111,10 +111,7 @@ export function runSearch(
         error: `search failed for query \`${query}\` on page ${page}`,
       }
     }
-    const lines = out
-      .trim()
-      .split('\n')
-      .filter(Boolean)
+    const lines = out.trim().split('\n').filter(Boolean)
     for (const line of lines) {
       let parsed: SearchLine
       try {
@@ -163,7 +160,12 @@ export function planQueries(config: TeamActivityConfig): string[] {
   for (const kind of kinds) {
     for (const author of authors) {
       queries.add(
-        buildSearchQuery({ author, kind, org: config.org, repos: config.repos }),
+        buildSearchQuery({
+          author,
+          kind,
+          org: config.org,
+          repos: config.repos,
+        }),
       )
     }
     for (const label of labels) {
@@ -197,6 +199,12 @@ export function discoverCandidates(
         continue
       }
       if (config.skipBots && isBotLogin(candidate.author)) {
+        continue
+      }
+      // Never surface a draft PR for review — a draft is explicit WIP. The
+      // review-state assessment also drops drafts; dropping them here keeps
+      // them out of the candidate set entirely.
+      if (candidate.kind === 'pr' && candidate.draft) {
         continue
       }
       byUrl.set(candidate.url, candidate)

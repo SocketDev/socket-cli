@@ -1,19 +1,31 @@
-/**
+/*
  * PR-activity scanner — the deterministic engine behind recurring
  * review-follow-up loops (code first, then AI: the script owns the
  * heartbeat, the gh queries, the state diffing, and the all-quiet report;
  * the agent only acts when this prints CHANGES or fails).
+ *
+ * Two tiers of signal, by design (see the fleet PR-review doctrine):
+ *
+ * - REPLY-WORTHY — you were explicitly pulled in: a review was requested from
+ *   you, or you were @-mentioned in a fresh issue/PR. Engage these.
+ * - REVIEW FYI — open, non-draft team PRs whose only commenters are bots (no
+ *   teammate has weighed in yet). Look, don't reply unless pulled in. DRAFT PRs
+ *   are never surfaced. Bot authorship is resolved by the canonical
+ *   `isBotLogin` (Cursor, Copilot, CodeRabbit, Codex, Claude, Pullfrog, the
+ *   Socket bot, …), so a PR a bot touched still counts as needing a human.
  *
  * Usage: node scripts/fleet/scan-pr-activity.mts <config.json> [--quiet]
  *
  * Config (JSON object):
  * repoDir          absolute path of the checkout to run gh from
  * repoSlug         owner/name for API routes (e.g. SocketDev/depscan)
+ * org              owner to scope org-wide pull-in search (defaults to
+ * repoSlug's owner) — where "review requested" / "@me" count
  * watchedComments  [{ pr: number, commentId: number }] — replies + reactions
- * authors          logins whose NEW open PRs (no human comments) to surface
+ * authors          logins whose open, bot-only, non-draft PRs to surface (FYI)
  * dupPairs         [[prA, prB]] — report when either closes
- * selfLogin        login whose own comments don't count as replies
- * createdSince     YYYY-MM-DD floor for the new-PR search.
+ * selfLogin        login whose review-requests / mentions to surface, and whose
+ * own comments don't count as replies.
  *
  * State (sibling `<config>.state.json`, script-owned): last scan time and
  * per-comment reaction totals, so "new" means since the previous tick.
@@ -35,10 +47,9 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { refreshGhHeartbeat } from './gh-heartbeat.mts'
+import { isBotLogin } from './lib/github-bots.mts'
 
 const logger = getDefaultLogger()
-
-const BOT_AUTHOR_PATTERN = /bot|linear|cursor|copilot/i
 
 export interface WatchedComment {
   readonly commentId: number
@@ -47,8 +58,8 @@ export interface WatchedComment {
 
 export interface ScanConfig {
   readonly authors: string[]
-  readonly createdSince: string
   readonly dupPairs: number[][]
+  readonly org?: string | undefined
   readonly repoDir: string
   readonly repoSlug: string
   readonly selfLogin: string
@@ -67,6 +78,11 @@ export interface GhRunner {
 // Config paths accept `~/` so the file carries no hardcoded home prefix.
 export function expandHome(p: string): string {
   return p.startsWith('~/') ? `${os.homedir()}/${p.slice(2)}` : p
+}
+
+// The org to scope pull-in search: explicit config, else the repoSlug owner.
+export function resolveOrg(config: ScanConfig): string {
+  return config.org ?? config.repoSlug.split('/')[0] ?? ''
 }
 
 function makeGhRunner(repoDir: string): GhRunner {
@@ -96,9 +112,11 @@ export interface CommentActivity {
 export interface ScanReport {
   readonly closedDups: string[]
   readonly errors: string[]
-  readonly newPrs: string[]
+  readonly mentions: string[]
   readonly reactionChanges: string[]
   readonly replies: CommentActivity[]
+  readonly reviewCandidates: string[]
+  readonly reviewRequests: string[]
 }
 
 // Attribute a reply's leading `>`-quoted text to whoever wrote it — the
@@ -139,40 +157,57 @@ export function scanChanged(report: ScanReport): boolean {
   return (
     report.closedDups.length > 0 ||
     report.errors.length > 0 ||
-    report.newPrs.length > 0 ||
+    report.mentions.length > 0 ||
     report.reactionChanges.length > 0 ||
-    report.replies.length > 0
+    report.replies.length > 0 ||
+    report.reviewCandidates.length > 0 ||
+    report.reviewRequests.length > 0
   )
 }
 
-// One full scan pass. Mutates `state` (reaction totals + scannedAt) so the
-// caller can persist it after reporting.
-export function runScan(
+// A search row from `gh search prs|issues --json`. `isDraft` exists only on
+// `search prs` (issue search has no draft concept); `author` is available on
+// both and lets us skip bot-authored items (Dependabot bumps, etc.).
+interface SearchRow {
+  author?: { login?: string | undefined } | undefined
+  isDraft?: boolean | undefined
+  number: number
+  repository?: { nameWithOwner?: string | undefined } | undefined
+  title: string
+  url: string
+}
+
+function parseSearchRows(out: string): SearchRow[] {
+  const parsed = JSON.parse(out) as SearchRow[]
+  return Array.isArray(parsed) ? parsed : []
+}
+
+function formatRow(row: SearchRow): string {
+  const slug = row.repository?.nameWithOwner
+  const ref = slug ? `${slug}#${row.number}` : `#${row.number}`
+  return `${ref} ${row.title} ${row.url}`
+}
+
+// Watched-comment replies + reaction deltas. Bots and self are never a reply.
+function scanWatchedThreads(
   config: ScanConfig,
   state: ScanState,
   gh: GhRunner,
-): ScanReport {
-  const report: ScanReport = {
-    closedDups: [],
-    errors: [],
-    newPrs: [],
-    reactionChanges: [],
-    replies: [],
-  }
+  report: ScanReport,
+): void {
   const since = state.scannedAt
   const prs = [...new Set(config.watchedComments.map(c => c.pr))].toSorted(
     (a, b) => a - b,
   )
-
   for (const pr of prs) {
     const out = gh([
       'pr',
       'view',
       String(pr),
       '--json',
-      'author,comments,reviews',
+      'author,comments,reviews,state',
       '--jq',
-      '{author: .author.login, comments: [.comments[] | {a: .author.login, at: .createdAt, body: .body}], reviews: [.reviews[] | {a: .author.login, body: .body}]}',
+      '{author: .author.login, state: .state, comments: [.comments[] | {a: .author.login, at: .createdAt, body: .body}], reviews: [.reviews[] | {a: .author.login, body: .body}]}',
     ])
     if (out === undefined) {
       report.errors.push(`pr ${pr}: comment fetch failed`)
@@ -182,6 +217,7 @@ export function runScan(
       author: string
       comments: Array<{ a: string; at: string; body: string }>
       reviews: Array<{ a: string; body: string }>
+      state: string
     }
     try {
       payload = JSON.parse(out) as typeof payload
@@ -189,12 +225,13 @@ export function runScan(
       report.errors.push(`pr ${pr}: unparseable comment payload`)
       continue
     }
+    // Never surface replies on a closed/merged PR — we don't comment there.
+    if (payload.state !== 'OPEN') {
+      continue
+    }
     const { author: prAuthor, comments, reviews } = payload
     for (const c of comments) {
-      if (c.at <= since) {
-        continue
-      }
-      if (c.a === config.selfLogin || BOT_AUTHOR_PATTERN.test(c.a)) {
+      if (c.at <= since || c.a === config.selfLogin || isBotLogin(c.a)) {
         continue
       }
       const role: CommentAuthorRole =
@@ -213,7 +250,6 @@ export function runScan(
       })
     }
   }
-
   for (const watched of config.watchedComments) {
     const out = gh([
       'api',
@@ -235,53 +271,145 @@ export function runScan(
       state.reactions[key] = total
     }
   }
+}
 
+// REPLY-WORTHY: a review was explicitly requested from selfLogin. Drafts are
+// excluded (a draft cannot really be requesting your review yet), and so are
+// bot-authored PRs — a Dependabot bump with an auto-requested review is not a
+// human asking for feedback.
+function scanReviewRequests(
+  config: ScanConfig,
+  gh: GhRunner,
+  report: ScanReport,
+): void {
+  const out = gh([
+    'search',
+    'prs',
+    '--owner',
+    resolveOrg(config),
+    '--review-requested',
+    config.selfLogin,
+    '--state',
+    'open',
+    '--json',
+    'author,number,title,url,isDraft,repository',
+    '--limit',
+    '50',
+  ])
+  if (out === undefined) {
+    report.errors.push('review-requested search failed')
+    return
+  }
+  try {
+    for (const row of parseSearchRows(out)) {
+      if (!row.isDraft && !isBotLogin(row.author?.login ?? '')) {
+        report.reviewRequests.push(formatRow(row))
+      }
+    }
+  } catch {
+    report.errors.push('unparseable review-requested payload')
+  }
+}
+
+// REPLY-WORTHY: selfLogin was @-mentioned in an issue/PR updated since the last
+// tick (fresh asks only). Bot-authored items are skipped. `gh search issues`
+// has no draft field, so drafts are not filtered here — a direct @-mention is
+// an explicit ask worth surfacing even on a draft.
+function scanMentions(
+  config: ScanConfig,
+  state: ScanState,
+  gh: GhRunner,
+  report: ScanReport,
+): void {
+  const sinceDate = state.scannedAt.slice(0, 10)
+  const out = gh([
+    'search',
+    'issues',
+    `updated:>=${sinceDate}`,
+    '--owner',
+    resolveOrg(config),
+    '--mentions',
+    config.selfLogin,
+    '--state',
+    'open',
+    '--json',
+    'author,number,title,url,repository',
+    '--limit',
+    '50',
+  ])
+  if (out === undefined) {
+    report.errors.push('mentions search failed')
+    return
+  }
+  try {
+    for (const row of parseSearchRows(out)) {
+      if (!isBotLogin(row.author?.login ?? '')) {
+        report.mentions.push(formatRow(row))
+      }
+    }
+  } catch {
+    report.errors.push('unparseable mentions payload')
+  }
+}
+
+// REVIEW FYI: open, non-draft PRs by a roster author whose only commenters are
+// bots (no teammate, and not selfLogin, has weighed in). No date floor.
+function scanReviewCandidates(
+  config: ScanConfig,
+  gh: GhRunner,
+  report: ScanReport,
+): void {
   const search = gh([
     'pr',
     'list',
+    '--repo',
+    config.repoSlug,
     '--state',
     'open',
-    '--search',
-    `created:>=${config.createdSince}`,
     '--json',
-    'number,title,author,url,comments',
+    'number,title,author,url,comments,isDraft',
+    '--limit',
+    '100',
   ])
   if (search === undefined) {
-    report.errors.push('new-PR search failed')
-  } else {
-    try {
-      const rows = JSON.parse(search) as Array<{
-        author: { login: string }
-        comments: Array<{ author: { login: string } }>
-        number: number
-        title: string
-        url: string
-      }>
-      for (const row of rows) {
-        if (!config.authors.includes(row.author.login)) {
-          continue
-        }
-        // A PR I've already commented on is handled — suppress it, or the
-        // scan re-detects it as "new/uncommented" every tick and the loop
-        // never converges (my own comment doesn't count as someone else
-        // engaging, but it DOES mean I've engaged).
-        if (row.comments.some(c => c.author.login === config.selfLogin)) {
-          continue
-        }
-        const humanComments = row.comments.filter(
-          c =>
-            c.author.login !== config.selfLogin &&
-            !BOT_AUTHOR_PATTERN.test(c.author.login),
-        )
-        if (humanComments.length === 0) {
-          report.newPrs.push(`#${row.number} ${row.title} ${row.url}`)
-        }
-      }
-    } catch {
-      report.errors.push('unparseable new-PR search payload')
-    }
+    report.errors.push('review-candidate search failed')
+    return
   }
+  try {
+    const rows = JSON.parse(search) as Array<{
+      author: { login: string }
+      comments: Array<{ author: { login: string } }>
+      isDraft?: boolean | undefined
+      number: number
+      title: string
+      url: string
+    }>
+    for (const row of rows) {
+      if (row.isDraft || !config.authors.includes(row.author.login)) {
+        continue
+      }
+      // A PR I've already commented on is handled — my own comment counts as
+      // engagement, so it must not resurface every tick (loop convergence).
+      if (row.comments.some(c => c.author.login === config.selfLogin)) {
+        continue
+      }
+      const humanComments = row.comments.filter(
+        c => c.author.login !== config.selfLogin && !isBotLogin(c.author.login),
+      )
+      if (humanComments.length === 0) {
+        report.reviewCandidates.push(`#${row.number} ${row.title} ${row.url}`)
+      }
+    }
+  } catch {
+    report.errors.push('unparseable review-candidate payload')
+  }
+}
 
+function scanDupPairs(
+  config: ScanConfig,
+  gh: GhRunner,
+  report: ScanReport,
+): void {
   for (const pair of config.dupPairs) {
     for (const pr of pair) {
       const out = gh([
@@ -302,7 +430,29 @@ export function runScan(
       }
     }
   }
+}
 
+// One full scan pass. Mutates `state` (reaction totals + scannedAt) so the
+// caller can persist it after reporting.
+export function runScan(
+  config: ScanConfig,
+  state: ScanState,
+  gh: GhRunner,
+): ScanReport {
+  const report: ScanReport = {
+    closedDups: [],
+    errors: [],
+    mentions: [],
+    reactionChanges: [],
+    replies: [],
+    reviewCandidates: [],
+    reviewRequests: [],
+  }
+  scanWatchedThreads(config, state, gh, report)
+  scanReviewRequests(config, gh, report)
+  scanMentions(config, state, gh, report)
+  scanReviewCandidates(config, gh, report)
+  scanDupPairs(config, gh, report)
   state.scannedAt = new Date().toISOString()
   return report
 }
@@ -314,12 +464,19 @@ export function renderReport(config: ScanConfig, report: ScanReport): string {
       .join(', ')
     return (
       `SCAN: all quiet — heartbeat green, ${config.repoSlug.split('/')[1]} ` +
-      `quiet: nothing new on the ${config.watchedComments.length} watched ` +
-      `comments, no uncommented PRs from ${config.authors.join('/')}, ` +
+      `quiet: no review requests or mentions for ${config.selfLogin}, ` +
+      `no bot-only PRs from ${config.authors.join('/')}, nothing new on the ` +
+      `${config.watchedComments.length} watched comments, ` +
       `dup pair ${pairs} still open. Board unchanged.`
     )
   }
   const lines = ['SCAN: CHANGES']
+  for (const line of report.reviewRequests) {
+    lines.push(`- review requested of you: ${line}`)
+  }
+  for (const line of report.mentions) {
+    lines.push(`- you were @-mentioned: ${line}`)
+  }
   for (const r of report.replies) {
     const role = r.role === 'pr-author' ? 'PR author' : r.role
     const quote = r.quotedFrom ? `, quotes ${r.quotedFrom}` : ''
@@ -334,8 +491,8 @@ export function renderReport(config: ScanConfig, report: ScanReport): string {
   for (const line of report.reactionChanges) {
     lines.push(`- ${line}`)
   }
-  for (const line of report.newPrs) {
-    lines.push(`- new uncommented PR: ${line}`)
+  for (const line of report.reviewCandidates) {
+    lines.push(`- review FYI (bot-only, reply only if pulled in): ${line}`)
   }
   for (const line of report.closedDups) {
     lines.push(`- dup pair movement: ${line}`)

@@ -15,6 +15,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { REPO_ROOT } from '../paths.mts'
 
@@ -36,6 +37,60 @@ export function isAllowedLargeFile(relativePath: string): boolean {
   return ALLOWED_LARGE_SUFFIXES.some(suffix => unix.endsWith(suffix))
 }
 
+// Repo-owned exceptions (same opt-in pattern as .config/repo/lock-step-refs.json):
+// exact repo-relative paths a host repo deliberately tracks above the cap
+// (bench corpora whose size IS the workload, committed PGO profiles). Every
+// entry must carry a non-empty reason; globs are not supported so an entry
+// can never silently admit future large files.
+const EXCEPTIONS_CONFIG = '.config/repo/size-cap-exceptions.json'
+
+export async function loadSizeCapExceptions(
+  rootDir: string,
+): Promise<Set<string>> {
+  const configPath = path.join(rootDir, EXCEPTIONS_CONFIG)
+  let raw: string
+  try {
+    raw = await fs.readFile(configPath, 'utf8')
+  } catch {
+    return new Set()
+  }
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  } catch (e) {
+    throw new Error(
+      `${EXCEPTIONS_CONFIG} is not valid JSON: ${(e as Error).message}. ` +
+        `Fix the syntax (or drop the config to run with no exceptions).`,
+    )
+  }
+  const allow = (parsed as { allow?: unknown })?.allow
+  if (!Array.isArray(allow)) {
+    throw new Error(
+      `${EXCEPTIONS_CONFIG} must be { "allow": [{ "path", "reason" }] } — ` +
+        `saw no "allow" array. Fix the shape (or drop the config).`,
+    )
+  }
+  const paths = new Set<string>()
+  for (const entry of allow) {
+    const p = (entry as { path?: unknown })?.path
+    const reason = (entry as { reason?: unknown })?.reason
+    if (typeof p !== 'string' || p === '' || p.includes('*')) {
+      throw new Error(
+        `${EXCEPTIONS_CONFIG}: every allow entry needs an exact ` +
+          `repo-relative "path" (no globs) — saw ${JSON.stringify(p)}.`,
+      )
+    }
+    if (typeof reason !== 'string' || reason.trim() === '') {
+      throw new Error(
+        `${EXCEPTIONS_CONFIG}: entry for ${p} is missing a non-empty ` +
+          `"reason" — justify the exception or remove the entry.`,
+      )
+    }
+    paths.add(p)
+  }
+  return paths
+}
+
 const SKIP_DIRS = new Set<string>([
   '.cache',
   '.git',
@@ -46,12 +101,23 @@ const SKIP_DIRS = new Set<string>([
   '.vercel',
   '.vscode',
   'build',
+  'cmake-build',
+  'cmake-build-tests',
   'coverage',
   'dist',
+  'dist-app',
   // Vendored upstream trees (submodule corpora) are foreign content sized by
   // their upstreams, not this repo's tracked surface.
   'external',
   'node_modules',
+  // Cargo build-output dirs: `target` is cargo's default and `out` is the
+  // fleet build layout's output segment (build/<mode>/<platform-arch>/out/…,
+  // also used as CARGO_TARGET_DIR). Local rust builds drop multi-hundred-MB
+  // rlibs there; they are never tracked surface.
+  'out',
+  'pkg-node',
+  'pkg-node-dev',
+  'target',
   'third_party',
   'tmp',
   'upstream',
@@ -84,6 +150,15 @@ export async function scanDirectory(
     entries = await fs.readdir(dir, { withFileTypes: true })
   } catch {
     // Skip directories we can't read.
+    return violations
+  }
+  // A `.git` entry below the root marks a nested checkout (submodule
+  // working tree) — foreign surface sized by its upstream, never this
+  // repo's tracked content. Don't descend.
+  if (
+    dir !== rootDir &&
+    entries.some(e => e.name === '.git')
+  ) {
     return violations
   }
   for (const entry of entries) {
@@ -122,10 +197,49 @@ export async function scanDirectory(
   return violations
 }
 
+// Drop violations git itself ignores (local build stragglers a commit can
+// never sweep in — a stray compiled binary, a generated embed). One batch
+// check-ignore call over the violation set only; fail-open (keep the
+// violation) when git is unavailable.
+export function filterGitIgnored(
+  violations: SizeViolation[],
+  rootDir: string,
+): SizeViolation[] {
+  if (violations.length === 0) {
+    return violations
+  }
+  const result = spawnSync(
+    'git',
+    ['check-ignore', '--stdin', '-z'],
+    {
+      cwd: rootDir,
+      input: violations.map(v => v.file).join('\0'),
+      stdio: 'pipe',
+      stdioString: true,
+    },
+  )
+  // Exit 0 = some ignored, 1 = none ignored, 128 = error (fail-open).
+  if (result.status !== 0 && result.status !== 1) {
+    return violations
+  }
+  const ignored = new Set(
+    String(result.stdout ?? '')
+      .split('\0')
+      .filter(Boolean),
+  )
+  return violations.filter(v => !ignored.has(v.file))
+}
+
 export async function validateFileSizes(
   rootDir: string = REPO_ROOT,
 ): Promise<SizeViolation[]> {
-  const violations = await scanDirectory(rootDir, rootDir)
+  const exceptions = await loadSizeCapExceptions(rootDir)
+  const violations = filterGitIgnored(
+    (await scanDirectory(rootDir, rootDir)).filter(
+      v => !exceptions.has(v.file.split(path.sep).join('/')),
+    ),
+    rootDir,
+  )
   violations.sort((a, b) => b.size - a.size)
   return violations
 }

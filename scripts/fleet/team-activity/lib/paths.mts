@@ -1,9 +1,10 @@
 /**
- * @file One-reference path resolvers for the team-activity monitor. All operator
- *   data lives under a single umbrella `~/.socket/_wheelhouse/hooks/…`, resolved
- *   via the canonical `getSocketAppDir('wheelhouse')` helper — never a hand-rolled
- *   home join. Watch config + state + MCP input files sit under `team-activity/`;
- *   per-user voice cards under `voice/`. Mantra: 1 path, 1 reference.
+ * @file One-reference path resolvers for the team-activity monitor. All
+ *   operator data lives under a single umbrella
+ *   `~/.socket/_wheelhouse/hooks/…`, resolved via the canonical
+ *   `getSocketAppDir('wheelhouse')` helper — never a hand-rolled home join.
+ *   Watch config + state + MCP input files sit under `team-activity/`; per-user
+ *   voice cards under `voice/`. Mantra: 1 path, 1 reference.
  */
 
 import os from 'node:os'

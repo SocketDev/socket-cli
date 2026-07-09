@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * @file Full repo setup wizard — runs all setup steps in order. Each step is
- *   also runnable independently via pnpm run setup:<name>. Usage: pnpm
- *   setup-all pnpm setup-all --rotate pnpm setup-all --skip-tools pnpm
- *   setup-all --skip-native-host.
+ * @file Full repo setup wizard — runs the fleet steps in order, then any
+ *   repo-owned steps discovered in scripts/repo/setup/. Each fleet step is also
+ *   runnable independently via pnpm run setup:<name>. Usage: pnpm setup-all
+ *   pnpm setup-all --rotate pnpm setup-all --skip-tools.
  */
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
+import { discoverRepoSetup } from '../_shared/repo-setup.mts'
 import { REPO_ROOT } from '../paths.mts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -30,7 +31,6 @@ function main(): void {
   const logger = getDefaultLogger()
   const argv = process.argv.slice(2)
   const rotate = argv.includes('--rotate')
-  const skipNativeHost = argv.includes('--skip-native-host')
   const skipTools = argv.includes('--skip-tools')
 
   const results: Array<[string, boolean]> = []
@@ -58,19 +58,6 @@ function main(): void {
   ])
   logger.log('')
 
-  if (!skipNativeHost) {
-    logger.log('── Native Messaging Host ──────────────────')
-    results.push(['Native host', run(path.join(__dirname, 'native-host.mts'))])
-    logger.log('')
-  }
-
-  logger.log('── Trusted Publisher Extension ────────────')
-  results.push([
-    'Extension',
-    run(path.join(__dirname, 'trusted-publisher-extension.mts')),
-  ])
-  logger.log('')
-
   if (!skipTools) {
     logger.log('── Security Tools ─────────────────────────')
     results.push([
@@ -86,6 +73,16 @@ function main(): void {
         ),
       ),
     ])
+    logger.log('')
+  }
+
+  // Repo-owned setup steps (scripts/repo/setup/*.mts) — the fleet/repo seam.
+  // Absent in most members; the wheelhouse ships the native-host + extension
+  // steps here. Ordered by filename (see discoverRepoSetup).
+  for (const rel of discoverRepoSetup(REPO_ROOT)) {
+    const name = path.basename(rel, '.mts')
+    logger.log(`── ${name} ─────────────────────────────────`)
+    results.push([name, run(path.join(REPO_ROOT, rel))])
     logger.log('')
   }
 

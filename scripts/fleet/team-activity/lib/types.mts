@@ -1,9 +1,9 @@
 /**
  * @file Shared contract for the team-activity monitor. Every stage — config
- *   load, GitHub discovery, follow-up scan, state diff, render — agrees on these
- *   types, so a new field is one edit and the discriminated shapes stay honest.
- *   No org-specific identifiers appear in any type; those are config or runtime
- *   values, keeping the engine publish-safe and fleet-cascadable.
+ *   load, GitHub discovery, follow-up scan, state diff, render — agrees on
+ *   these types, so a new field is one edit and the discriminated shapes stay
+ *   honest. No org-specific identifiers appear in any type; those are config or
+ *   runtime values, keeping the engine publish-safe and fleet-cascadable.
  */
 
 // A GitHub item kind the monitor surfaces. Both flow through one discovery path

@@ -72,11 +72,11 @@ function fetchReviewFacts(
 function humanEngaged(
   logins: readonly string[],
   selfLogin: string,
-  skipBots: boolean,
+  options: { skipBots: boolean },
 ): boolean {
+  const { skipBots } = options
   return logins.some(
-    login =>
-      login !== selfLogin && !(skipBots && isBotLogin(login)),
+    login => login !== selfLogin && !(skipBots && isBotLogin(login)),
   )
 }
 
@@ -127,7 +127,9 @@ export function assessItems(
     if (engagement.includes(config.selfLogin)) {
       continue
     }
-    if (humanEngaged(engagement, config.selfLogin, config.skipBots)) {
+    if (
+      humanEngaged(engagement, config.selfLogin, { skipBots: config.skipBots })
+    ) {
       continue
     }
     items.push({

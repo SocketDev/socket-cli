@@ -34,6 +34,7 @@ import {
   generateChangelogSection,
   parseConventionalCommits,
   repoBaseUrl,
+  versionHintFrom,
 } from './lib/changelog.mts'
 import { REPO_ROOT } from './paths.mts'
 import { runCapture } from './publish-shared.mts'
@@ -147,7 +148,15 @@ async function main(): Promise<void> {
 
   const fromTag = await lastReleaseTag()
   const commits = parseConventionalCommits(await readCommitStream(fromTag))
+  // Version resolution, most-explicit first: the --release-as flag, then a
+  // committed version HINT (package.json version carrying a prerelease
+  // suffix, e.g. `6.0.10-prerelease` → release 6.0.10), then the commit-type
+  // heuristic. MAJOR is never derived and a hint cannot smuggle one in: a
+  // major jump always needs the explicit flag (agent runs are hook-gated on
+  // the user's typed authorization; CI on the dispatch input).
+  const hinted = versionHintFrom(pkg.version)
   let level: BumpLevel | undefined
+  let hintedVersion: string | undefined
   if (typeof releaseAs === 'string') {
     if (
       releaseAs !== 'major' &&
@@ -161,8 +170,39 @@ async function main(): Promise<void> {
       return
     }
     level = releaseAs
+  } else if (hinted) {
+    const currentMajor = pkg.version.split('.')[0]
+    if (hinted.split('.')[0] !== currentMajor) {
+      logger.fail(
+        `Version hint ${pkg.version} names a MAJOR jump — a major requires ` +
+          `the explicit --release-as major signal, not a hint.`,
+      )
+      process.exitCode = 1
+      return
+    }
+    hintedVersion = hinted
+    level = 'patch'
+    logger.log(
+      `Version hint found: ${pkg.version} → releasing as ${hinted} ` +
+        `(hint overrides the commit-type heuristic).`,
+    )
   } else {
     level = bumpLevelFor(commits)
+    // MAJOR is never derived: it is a human decision, made either by the
+    // user naming it to an agent (hook-gated `--release-as major`) or by a
+    // human selecting it on the release workflow's dispatch form. Breaking
+    // commits without that explicit signal stop the release here, loud.
+    if (level === 'major') {
+      logger.fail(
+        `Breaking commit(s) found since ${fromTag ?? 'the start of history'} — ` +
+          `a MAJOR bump requires an explicit human decision. Re-run with ` +
+          `--release-as major (agent runs need the user's typed authorization; ` +
+          `CI needs the release-as=major dispatch input), or --release-as ` +
+          `minor|patch if the breaking marker is wrong.`,
+      )
+      process.exitCode = 1
+      return
+    }
   }
   if (!level) {
     logger.fail(
@@ -201,7 +241,7 @@ async function main(): Promise<void> {
     return
   }
 
-  const nextVersion = computeNextVersion(pkg.version, level)
+  const nextVersion = hintedVersion ?? computeNextVersion(pkg.version, level)
   const repositoryUrl =
     typeof pkg.repository === 'string' ? pkg.repository : pkg.repository?.url
   // ISO date (YYYY-MM-DD). bump.mts is a normal node script (not a workflow

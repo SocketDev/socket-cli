@@ -30,8 +30,10 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { REPO_ROOT } from '../paths.mts'
 
-// require-regex-comment: matches `run-s`/`run-p` followed by a task prefix ending in `:*`.
-const GLOB_RE = /\brun-[sp]\s+[^\s"']*:\*/
+// require-regex-comment: matches `run-s`/`run-p` with a `:*` glob task ANYWHERE
+// in its argument list — earlier explicit tasks may precede the glob (e.g.
+// `run-s build build-mcpb:*`), so scan to the end of the unquoted value.
+const GLOB_RE = /\brun-[sp]\s[^"'\n]*:\*/
 
 // require-regex-comment: matches `# order-independent` or `// order-independent` annotation.
 const ORDER_INDEPENDENT_RE = /(?:#|\/\/)\s*order-independent/i

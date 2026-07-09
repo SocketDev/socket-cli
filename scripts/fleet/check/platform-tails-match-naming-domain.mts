@@ -21,7 +21,7 @@
  *   See docs/agents.md/fleet/binary-vs-napi-naming.md for the doctrine.
  */
 
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -70,15 +70,18 @@ export function collectManifestPaths(repoRoot: string): string[] {
   const stack = [root]
   while (stack.length > 0) {
     const dir = stack.pop()!
-    for (const entry of readdirSync(dir)) {
-      if (entry === 'node_modules' || entry.startsWith('.')) {
+    // Dirent types (no stat call): a dangling symlink under packages/ (a
+    // stale build-output link) would crash a follow-the-link statSync with
+    // ENOENT; dirents classify it as a symlink and it falls through both
+    // branches harmlessly.
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name === 'node_modules' || entry.name.startsWith('.')) {
         continue
       }
-      const full = path.join(dir, entry)
-      if (statSync(full).isDirectory()) {
-        stack.push(full)
-      } else if (entry === 'package.json') {
-        results.push(full)
+      if (entry.isDirectory()) {
+        stack.push(path.join(dir, entry.name))
+      } else if (entry.name === 'package.json' && entry.isFile()) {
+        results.push(path.join(dir, entry.name))
       }
     }
   }

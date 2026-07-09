@@ -185,11 +185,16 @@ export function runPackDryRun(pkgDir: string): PackOutput | undefined {
     return undefined
   }
   try {
-    const parsed = JSON.parse(String(r.stdout)) as PackOutput[]
-    if (!Array.isArray(parsed) || parsed.length === 0) {
+    // npm ≤11 emits an ARRAY of pack results; npm 12 emits an OBJECT keyed by
+    // package name. Accept both so the gate survives the npm major.
+    const parsed = JSON.parse(String(r.stdout)) as
+      | PackOutput[]
+      | Record<string, PackOutput>
+    const results = Array.isArray(parsed) ? parsed : Object.values(parsed)
+    if (results.length === 0) {
       return undefined
     }
-    return parsed[0]
+    return results[0]
   } catch {
     return undefined
   }
@@ -202,7 +207,10 @@ export function runPackDryRun(pkgDir: string): PackOutput | undefined {
  * uniformly shallow.
  */
 export function matchesAny(paths: string[], entry: string): boolean {
-  const clean = entry.replace(/^\.?\/?/, '')
+  // Strip a leading ./ AND a trailing slash: npm treats `bin/` and `bin`
+  // identically, but an unstripped tail made the dir test `startsWith('bin//')`
+  // — unmatchable, so every `dir/`-form entry read as an undershoot.
+  const clean = entry.replace(/^\.?\/?/, '').replace(/\/$/, '')
   if (clean.includes('*')) {
     const re = new RegExp(
       '^' +

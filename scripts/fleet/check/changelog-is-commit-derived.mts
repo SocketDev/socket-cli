@@ -25,6 +25,7 @@ import {
   generateChangelogSection,
   parseConventionalCommits,
   repoBaseUrl,
+  versionHintFrom,
 } from '../lib/changelog.mts'
 import { REPO_ROOT } from '../paths.mts'
 
@@ -110,9 +111,27 @@ async function main(): Promise<void> {
     return
   }
 
+  // A `-prerelease` hint version means the CHANGELOG entry for the hinted
+  // release doesn't exist yet — the release run's bump.mts generates it. Until
+  // then the top section must remain the last released version; a section
+  // already carrying the hinted version is stale or hand-authored.
+  const topVersion = headingVersion(section)
+  const hinted = versionHintFrom(version)
+  if (hinted) {
+    const tagVersion = tag.replace(/^v/, '')
+    if (topVersion !== tagVersion) {
+      fail(
+        `package.json carries release hint ${version} (next release: ${hinted}) ` +
+          `but the top CHANGELOG section is for ${topVersion ?? 'an unparseable heading'}. ` +
+          `The release run's bump.mts generates the ${hinted} entry — restore ` +
+          `CHANGELOG.md to its v${tagVersion} state and don't hand-edit it.`,
+      )
+    }
+    return
+  }
+
   // The top CHANGELOG section must be the pending version. A mismatch means the
   // bump touched package.json without a matching CHANGELOG entry (or vice versa).
-  const topVersion = headingVersion(section)
   if (topVersion !== version) {
     fail(
       `package.json is at ${version} (ahead of tag ${tag}) but the top CHANGELOG ` +

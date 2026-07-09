@@ -1,19 +1,16 @@
 #!/usr/bin/env node
 /**
- * @file team-activity monitor CLI — the deterministic engine behind the
+ * @file Team-activity monitor CLI — the deterministic engine behind the
  *   recurring team review-follow-up loop. Discovers open PRs AND issues the
  *   team owns across every configured repo (no date floor), tracks watched
- *   review threads, and reports via the fail-LOUD exit contract:
- *
- *     exit 0, "SCAN: all quiet — …"   nothing changed; the loop ends the turn
- *     exit 0, "SCAN: CHANGES" + bullets   the loop investigates/handles
- *     exit 1, heartbeat/auth/config failure   the loop reports the fix
- *
- *   MCP-free by design: GitHub via `gh`, everything testable through the
- *   injected `GhRunner`. Slack/Linear steps live in the skill layer (later
- *   phases), which hands this engine input files to consume.
- *
- *   Usage: node scripts/fleet/team-activity/cli.mts [scan] <config.json> [--quiet]
+ *   review threads, and reports via the fail-LOUD exit contract: exit 0, "SCAN:
+ *   all quiet — …" nothing changed; the loop ends the turn exit 0, "SCAN:
+ *   CHANGES" + bullets the loop investigates/handles exit 1,
+ *   heartbeat/auth/config failure the loop reports the fix MCP-free by design:
+ *   GitHub via `gh`, everything testable through the injected `GhRunner`.
+ *   Slack/Linear steps live in the skill layer (later phases), which hands this
+ *   engine input files to consume. Usage: node
+ *   scripts/fleet/team-activity/cli.mts [scan] <config.json> [--quiet]
  */
 
 import process from 'node:process'

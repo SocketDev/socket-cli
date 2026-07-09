@@ -268,10 +268,16 @@ export function scanRules(
 
 // The check-script test for <name>, accepting either the canonical
 // `check-<name>.test.mts` or the bare `<name>.test.mts` (a few predate the
-// `check-` prefix). Check tests live under test/unit/fleet/ (wheelhouse-only —
-// cascade-excluded from members, like hook/rule tests).
-function findCheckTest(repoRoot: string, name: string): string | undefined {
-  const dir = path.join(repoRoot, 'test', 'unit', 'fleet')
+// `check-` prefix). Tier-matched: a fleet-tier check (scripts/fleet/check/) is
+// tested under test/unit/fleet/; a repo-tier check (scripts/repo/check/) under
+// test/unit/repo/ — a repo check must NOT be held to the fleet test dir. Both
+// dirs are wheelhouse-only (cascade-excluded from members, like hook/rule tests).
+function findCheckTest(
+  repoRoot: string,
+  seg: string,
+  name: string,
+): string | undefined {
+  const dir = path.join(repoRoot, 'test', 'unit', seg)
   for (const base of [`check-${name}.test.mts`, `${name}.test.mts`]) {
     const candidate = path.join(dir, base)
     if (existsSync(candidate)) {
@@ -305,12 +311,12 @@ export function scanCheckScripts(
       if (CHECK_SCRIPT_TEST_ALLOWLIST[name]) {
         continue
       }
-      const testPath = findCheckTest(repoRoot, name)
+      const testPath = findCheckTest(repoRoot, seg, name)
       if (!testPath) {
         gaps.push({
           kind: 'check',
           name,
-          reason: `no test under test/unit/fleet/check-${name}.test.mts`,
+          reason: `no test under test/unit/${seg}/check-${name}.test.mts`,
         })
         continue
       }

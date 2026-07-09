@@ -1,9 +1,10 @@
 /**
  * @file Report renderer + the fail-LOUD exit contract. `scanChanged` decides
- *   quiet vs. changed; `renderReport` produces the one-line all-quiet summary or
- *   the multi-line CHANGES digest the recurring loop relays verbatim. An errored
- *   scan counts as changed, so an empty-but-broken run never reads as all-quiet.
- *   This renders a to-do list for a human — it NEVER approves anything.
+ *   quiet vs. changed; `renderReport` produces the one-line all-quiet summary
+ *   or the multi-line CHANGES digest the recurring loop relays verbatim. An
+ *   errored scan counts as changed, so an empty-but-broken run never reads as
+ *   all-quiet. This renders a to-do list for a human — it NEVER approves
+ *   anything.
  */
 
 import type { ScanReport, TeamActivityConfig } from './types.mts'
