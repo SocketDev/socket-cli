@@ -66,11 +66,11 @@ import { getErrorCause } from '../error/errors.mts'
 import { isSeaBinary } from '../sea/detect.mts'
 import {
   EXTERNAL_TOOLS,
-  TOOL_NPM_PATHS,
-  TOOL_STANDALONE_PATHS,
   getNodeSmolBasePath,
   getToolFilePath,
   isNpmPackageExtracted,
+  TOOL_NPM_PATHS,
+  TOOL_STANDALONE_PATHS,
 } from './vfs-extract-config.mts'
 import {
   buildAndValidateToolPaths,
@@ -235,10 +235,9 @@ export async function extractExternalTools(
     // Check if already extracted (cache marker exists).
     if (existsSync(cacheMarker)) {
       debugNs('notice', 'External tools already extracted (cache marker found)')
-      const { allValid, toolPaths } = buildAndValidateToolPaths(
-        nodeSmolBase,
+      const { allValid, toolPaths } = buildAndValidateToolPaths(nodeSmolBase, {
         isPlatWin,
-      )
+      })
       if (allValid) {
         // TOCTOU mitigation: re-check all tools still exist right before
         // returning to minimize the race window.
@@ -384,8 +383,8 @@ export async function extractTool(tool: ExternalTool): Promise<string> {
       const vfsPackagePath = `/snapshot/node_modules/${npmPath.packageName}`
       const packageDir = await processWithSmol.smol.mount(vfsPackagePath)
 
-      logger.info(
-        `  ✓ Extracted ${tool} package with dependencies to ${packageDir}`,
+      logger.success(
+        `Extracted ${tool} package with dependencies to ${packageDir}`,
       )
 
       // Return path to binary within extracted package.
@@ -399,6 +398,7 @@ export async function extractTool(tool: ExternalTool): Promise<string> {
         : `/snapshot/${tool}`
       const binaryPath = await processWithSmol.smol.mount(vfsBinaryPath)
 
+      // oxlint-disable-next-line socket/no-status-emoji -- TUI / custom output formatter; emoji is part of the visual contract.
       logger.info(`  ✓ Extracted ${tool} binary to ${binaryPath}`)
 
       extractedPath = isPlatWin ? `${binaryPath}.exe` : binaryPath
@@ -426,4 +426,3 @@ export async function extractTool(tool: ExternalTool): Promise<string> {
     )
   }
 }
-

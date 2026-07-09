@@ -6,7 +6,7 @@
 
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { existsSync, promises as fs } from 'node:fs'
+import { existsSync, promises as fs, statSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -36,7 +36,8 @@ export async function runVfsMode(platform) {
     throw new Error('VFS tar.gz not found')
   }
 
-  const vfsStats = await fs.stat(vfsTarGz)
+  // Need file size for the MB report below, not just existence.
+  const vfsStats = statSync(vfsTarGz)
   logger.log(`VFS tar.gz: ${(vfsStats.size / 1024 / 1024).toFixed(2)} MB`)
   logger.log('')
 
@@ -60,7 +61,8 @@ export async function runVfsMode(platform) {
   // Build SEA blob.
   await buildBlob(configPath)
 
-  const blobStats = await fs.stat(blobPath)
+  // Need file size for the MB report below, not just existence.
+  const blobStats = statSync(blobPath)
   logger.log(`Blob size: ${(blobStats.size / 1024 / 1024).toFixed(2)} MB`)
   logger.log('')
 
@@ -69,7 +71,8 @@ export async function runVfsMode(platform) {
   await fs.copyFile(process.execPath, outputPath)
   await fs.chmod(outputPath, 0o755)
 
-  const baseStats = await fs.stat(outputPath)
+  // Need file size for the MB report below, not just existence.
+  const baseStats = statSync(outputPath)
   logger.log(`Base binary: ${(baseStats.size / 1024 / 1024).toFixed(2)} MB`)
   logger.log('')
 
@@ -124,8 +127,8 @@ export async function runVfsMode(platform) {
     }
   }
 
-  // Results.
-  const finalStats = await fs.stat(outputPath)
+  // Results. Need file size for the MB report below, not just existence.
+  const finalStats = statSync(outputPath)
   const finalSizeMB = finalStats.size / 1024 / 1024
   const uncompressedToolsSize = 460.78
   const uncompressedTotal =

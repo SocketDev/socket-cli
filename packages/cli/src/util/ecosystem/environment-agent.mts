@@ -17,10 +17,7 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 // socket-lint: allow bare-semver -- lib-stable 6.0.9 doesn't publish ./external/semver; semver is bundled at build so no runtime dep leaks.
 import semver from 'semver'
 
-import {
-  getNpmExecPath,
-  getPnpmExecPath,
-} from '../../constants/agents.mts'
+import { getNpmExecPath, getPnpmExecPath } from '../../constants/agents.mts'
 import { FLAG_VERSION } from '../../constants/cli.mts'
 import { execPath, nodeNoWarningsFlags } from '../../constants/paths.mts'
 import { preferWindowsCmdShim, resolveBinPathSync } from './windows-shims.mts'

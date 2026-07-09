@@ -49,7 +49,7 @@ export async function resolveScanCreateTargetsAndOrg(
     orgSlug,
     outputKind,
     sockJson,
-  } = options
+  } = { __proto__: null, ...options } as typeof options
 
   let updatedInput = false
 

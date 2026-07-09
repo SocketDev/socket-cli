@@ -30,8 +30,9 @@ export interface WaitForConcurrentExtractionOptions {
  */
 export function buildAndValidateToolPaths(
   nodeSmolBase: string,
-  isPlatWin: boolean,
+  options: { isPlatWin: boolean },
 ): { toolPaths: Partial<Record<ExternalTool, string>>; allValid: boolean } {
+  const { isPlatWin } = { __proto__: null, ...options } as typeof options
   const toolPaths: Partial<Record<ExternalTool, string>> = {}
   let allValid = true
   for (let i = 0, { length } = EXTERNAL_TOOLS; i < length; i += 1) {
@@ -73,7 +74,10 @@ export function verifyToolPathsStillValid(
 export async function waitForConcurrentExtraction(
   options: WaitForConcurrentExtractionOptions,
 ): Promise<Record<ExternalTool, string> | 'retry'> {
-  const { cacheMarker, isPlatWin, lockFile, nodeSmolBase } = options
+  const { cacheMarker, isPlatWin, lockFile, nodeSmolBase } = {
+    __proto__: null,
+    ...options,
+  } as typeof options
 
   for (let i = 0; i < 60; i++) {
     await new Promise(resolve => {
@@ -81,10 +85,9 @@ export async function waitForConcurrentExtraction(
     })
     if (existsSync(cacheMarker)) {
       debugNs('notice', 'External tools extracted by another process')
-      const { allValid, toolPaths } = buildAndValidateToolPaths(
-        nodeSmolBase,
+      const { allValid, toolPaths } = buildAndValidateToolPaths(nodeSmolBase, {
         isPlatWin,
-      )
+      })
       if (allValid) {
         if (verifyToolPathsStillValid(toolPaths)) {
           return toolPaths as Record<ExternalTool, string>
@@ -128,10 +131,9 @@ export async function waitForConcurrentExtraction(
   // Final check before throwing timeout - extraction may have completed just now.
   if (existsSync(cacheMarker)) {
     debugNs('notice', 'External tools extracted just before timeout')
-    const { allValid, toolPaths } = buildAndValidateToolPaths(
-      nodeSmolBase,
+    const { allValid, toolPaths } = buildAndValidateToolPaths(nodeSmolBase, {
       isPlatWin,
-    )
+    })
     if (allValid && verifyToolPathsStillValid(toolPaths)) {
       return toolPaths as Record<ExternalTool, string>
     }

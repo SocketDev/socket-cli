@@ -6,7 +6,7 @@
 
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { promises as fs } from 'node:fs'
+import { promises as fs, statSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -46,8 +46,8 @@ export async function runStandaloneMode(platform, toolPaths) {
   // Build blob.
   await buildBlob(configPath)
 
-  // Check blob size.
-  const blobStats = await fs.stat(blobPath)
+  // Check blob size — need the file size for the MB report, not just existence.
+  const blobStats = statSync(blobPath)
   const blobSizeMB = blobStats.size / 1024 / 1024
   logger.log(`Blob size: ${blobSizeMB.toFixed(2)} MB`)
   logger.log('')
@@ -57,7 +57,8 @@ export async function runStandaloneMode(platform, toolPaths) {
   await fs.copyFile(process.execPath, outputPath)
   await fs.chmod(outputPath, 0o755)
 
-  const baseStats = await fs.stat(outputPath)
+  // Need file size for the MB report below, not just existence.
+  const baseStats = statSync(outputPath)
   logger.log(`Base binary: ${(baseStats.size / 1024 / 1024).toFixed(2)} MB`)
   logger.log('')
 
@@ -95,8 +96,8 @@ export async function runStandaloneMode(platform, toolPaths) {
     }
   }
 
-  // Results.
-  const finalStats = await fs.stat(outputPath)
+  // Results. Need file size for the MB report below, not just existence.
+  const finalStats = statSync(outputPath)
   const finalSizeMB = finalStats.size / 1024 / 1024
   const uncompressedTotal = (totalToolSize + baseStats.size) / 1024 / 1024
   const compression = ((1 - finalSizeMB / uncompressedTotal) * 100).toFixed(1)

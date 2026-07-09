@@ -27,7 +27,7 @@
  */
 
 import { existsSync, promises } from 'node:fs'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 
 import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
@@ -63,7 +63,7 @@ const pnpmFixtureDir = path.join(fixtureBaseDir, PNPM)
 export async function createTempFixture(sourceDir: string): Promise<string> {
   // Create a temporary directory with a unique name.
   const tempDir = path.join(
-    tmpdir(),
+    os.tmpdir(),
     `socket-optimize-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   )
 

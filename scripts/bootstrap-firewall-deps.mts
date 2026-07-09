@@ -32,7 +32,7 @@
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs'
 
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 
 import path from 'node:path'
 import process from 'node:process'
@@ -255,7 +255,7 @@ const bootstrapPackage = async (pkgName: string): Promise<void> => {
 
   log(`Fetching ${tarballUrl}`)
   const tarballPath = path.join(
-    tmpdir(),
+    os.tmpdir(),
     `socket-bootstrap-${unscoped}-${version}.tgz`,
   )
 

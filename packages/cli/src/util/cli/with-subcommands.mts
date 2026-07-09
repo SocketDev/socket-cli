@@ -182,7 +182,7 @@ export async function meowWithSubcommands(
     }
   }
 
-  applyRootCommandFlagVisibility(flags, isRootCommand)
+  applyRootCommandFlagVisibility(flags, { isRootCommand })
 
   // This is basically a dry-run parse of cli args and flags. We use this to
   // determine config overrides and expected output mode.

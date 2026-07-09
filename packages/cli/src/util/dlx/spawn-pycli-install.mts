@@ -60,17 +60,8 @@ export async function ensureSocketPyCli(
         const lockPid = await fs.readFile(lockFile, 'utf8')
         const pid = Number.parseInt(lockPid.trim(), 10)
         if (!Number.isNaN(pid) && pid > 0) {
-          try {
-            // Signal 0 checks process existence.
-            process.kill(pid, 0)
-            // Process exists, lock is valid.
-          } catch (e) {
-            const pidErr = e as NodeJS.ErrnoException
-            // EPERM means process exists but no permission (treat as alive).
-            // ESRCH means process doesn't exist (dead).
-            if (pidErr.code !== 'EPERM') {
-              isStale = true
-            }
+          if (!isProcessAlive(pid)) {
+            isStale = true
           }
         } else {
           isStale = true
@@ -99,17 +90,10 @@ export async function ensureSocketPyCli(
           try {
             const lockPid = await fs.readFile(lockFile, 'utf8')
             const pid = Number.parseInt(lockPid.trim(), 10)
-            if (!Number.isNaN(pid) && pid > 0) {
-              try {
-                process.kill(pid, 0)
-              } catch (e) {
-                const pidErr = e as NodeJS.ErrnoException
-                if (pidErr.code !== 'EPERM') {
-                  // Lock holder died during wait, retry.
-                  await safeDelete(lockFile, { force: true })
-                  return ensureSocketPyCli(pythonBin, retryCount + 1)
-                }
-              }
+            if (!Number.isNaN(pid) && pid > 0 && !isProcessAlive(pid)) {
+              // Lock holder died during wait, retry.
+              await safeDelete(lockFile, { force: true })
+              return ensureSocketPyCli(pythonBin, retryCount + 1)
             }
           } catch {
             // Lock file gone, retry.
@@ -167,6 +151,21 @@ export async function ensureSocketPyCli(
   } finally {
     // Clean up lock file.
     await safeDelete(lockFile, { force: true })
+  }
+}
+
+/**
+ * Whether the process at `pid` is still alive. Signal 0 sends no actual
+ * signal, only checking existence/permission. EPERM means the process exists
+ * but we lack permission to signal it (treat as alive); any other error
+ * (e.g. ESRCH) means it's dead.
+ */
+export function isProcessAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch (e) {
+    return (e as NodeJS.ErrnoException).code === 'EPERM'
   }
 }
 

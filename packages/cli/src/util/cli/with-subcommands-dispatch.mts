@@ -42,7 +42,7 @@ export async function tryDispatchSubcommand(
     name,
     rawCommandArgv,
     subcommands,
-  } = options
+  } = { __proto__: null, ...options } as typeof options
 
   // Skip command lookup if first arg is a flag (starts with -)
   if (!commandOrAliasName || commandOrAliasName.startsWith('-')) {

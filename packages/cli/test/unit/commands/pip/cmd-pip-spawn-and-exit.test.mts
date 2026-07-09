@@ -1,0 +1,493 @@
+import * as binModule from '@socketsecurity/lib-stable/bin/which'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { cmdPip } from '../../../../src/commands/pip/cmd-pip.mts'
+import * as meowModule from '../../../../src/util/cli/with-subcommands.mjs'
+import * as spawnModule from '../../../../src/util/dlx/spawn.mts'
+import * as cmdModule from '../../../../src/util/process/cmd.mts'
+
+import type { CliCommandContext } from '../../../../src/util/cli/with-subcommands.mts'
+
+// Mock dependencies before imports.
+vi.mock(import('@socketsecurity/lib-stable/bin/which'), () => ({
+  whichReal: vi.fn(),
+}))
+
+vi.mock(import('../../../../src/util/dlx/spawn.mts'), () => ({
+  spawnSfwDlx: vi.fn(),
+}))
+
+vi.mock(import('../../../../src/util/process/cmd.mts'), () => ({
+  filterFlags: vi.fn(argv => argv),
+}))
+
+vi.mock(import('../../../../src/util/cli/with-subcommands.mjs'), () => ({
+  meowOrExit: vi.fn(),
+}))
+
+const mockWhichReal = vi.mocked(binModule.whichReal)
+const mockSpawnSfwDlx = vi.mocked(spawnModule.spawnSfwDlx)
+const mockFilterFlags = vi.mocked(cmdModule.filterFlags)
+const mockMeowOrExit = vi.mocked(meowModule.meowOrExit)
+
+// Mock process methods.
+const mockProcessExit = vi
+  .spyOn(process, 'exit')
+  .mockImplementation(() => undefined as never)
+const mockProcessKill = vi.spyOn(process, 'kill').mockImplementation(() => true)
+
+describe('cmd-pip', () => {
+  const mockChildProcess = {
+    on: vi.fn(),
+    pid: 12_345,
+  }
+
+  // Create a proper promise-like object for spawnPromise.
+  const createMockSpawnResult = (exitCode = 0, signal?: NodeJS.Signals) => {
+    const promise: unknown = Promise.resolve({
+      success: exitCode === 0 && !signal,
+      code: signal ? undefined : exitCode,
+      signal: signal || undefined,
+    })
+    promise.process = mockChildProcess
+    return {
+      spawnPromise: promise,
+    }
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+
+    // Reset process properties.
+    process.exitCode = undefined
+
+    // Setup default mock implementations.
+    mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
+    mockWhichReal.mockResolvedValue('/usr/bin/pip')
+    mockFilterFlags.mockImplementation(argv => argv)
+    mockChildProcess.on.mockImplementation((event, handler) => {
+      // Simulate immediate successful exit by default.
+      if (event === 'exit') {
+        // Don't call handler here, let the test control when exit is called.
+      }
+      return mockChildProcess
+    })
+  })
+
+  describe('spawn behavior', () => {
+    it('should set initial exit code to 1', async () => {
+      const argv = ['install', 'flask']
+      const importMeta = { url: import.meta.url } as ImportMeta
+      const context: CliCommandContext = {
+        parentName: 'socket',
+      }
+
+      const promise = cmdPip.run(argv, importMeta, context)
+      // Wait a tick for the exit code to be set.
+      await new Promise(resolve => process.nextTick(resolve))
+      expect(process.exitCode).toBe(1)
+      await promise
+    })
+
+    it('should call spawnSfwDlx with correct arguments', async () => {
+      const argv = ['install', 'django', '--upgrade']
+      const importMeta = { url: import.meta.url } as ImportMeta
+      const context: CliCommandContext = {
+        parentName: 'socket',
+      }
+
+      mockFilterFlags.mockReturnValue(['install', 'django', '--upgrade'])
+
+      await cmdPip.run(argv, importMeta, context)
+
+      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+        ['pip', 'install', 'django', '--upgrade'],
+        {
+          stdio: 'inherit',
+        },
+      )
+    })
+
+    it('should forward all arguments to sfw', async () => {
+      const argv = [
+        'install',
+        '-r',
+        'requirements.txt',
+        '--no-cache-dir',
+        '--user',
+      ]
+      const importMeta = { url: import.meta.url } as ImportMeta
+      const context: CliCommandContext = {
+        parentName: 'socket',
+      }
+
+      mockFilterFlags.mockReturnValue([
+        'install',
+        '-r',
+        'requirements.txt',
+        '--no-cache-dir',
+        '--user',
+      ])
+
+      await cmdPip.run(argv, importMeta, context)
+
+      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+        [
+          'pip',
+          'install',
+          '-r',
+          'requirements.txt',
+          '--no-cache-dir',
+          '--user',
+        ],
+        expect.objectContaining({
+          stdio: 'inherit',
+        }),
+      )
+    })
+
+    it('should handle empty arguments array', async () => {
+      const argv: string[] = []
+      const importMeta = { url: import.meta.url } as ImportMeta
+      const context: CliCommandContext = {
+        parentName: 'socket',
+      }
+
+      mockFilterFlags.mockReturnValue([])
+
+      await cmdPip.run(argv, importMeta, context)
+
+      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['pip'], {
+        stdio: 'inherit',
+      })
+    })
+
+    it('should use stdio inherit for process communication', async () => {
+      const argv = ['list']
+      const importMeta = { url: import.meta.url } as ImportMeta
+      const context: CliCommandContext = {
+        parentName: 'socket',
+      }
+
+      await cmdPip.run(argv, importMeta, context)
+
+      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+        ['pip', 'list'],
+        expect.objectContaining({
+          stdio: 'inherit',
+        }),
+      )
+    })
+
+    it('should wait for spawn promise completion', async () => {
+      const argv = ['--version']
+      const importMeta = { url: import.meta.url } as ImportMeta
+      const context: CliCommandContext = {
+        parentName: 'socket',
+      }
+
+      await cmdPip.run(argv, importMeta, context)
+
+      expect(mockSpawnSfwDlx).toHaveBeenCalled()
+    })
+  })
+
+  describe('process exit handling', () => {
+    it('skips exit/kill when both code and signal are null', async () => {
+      const argv = ['install', 'flask']
+      const importMeta = { url: import.meta.url } as ImportMeta
+      const context: CliCommandContext = {
+        parentName: 'socket',
+      }
+
+      let exitHandler: (
+        code: number | null,
+        signal: NodeJS.Signals | null,
+      ) => void
+      mockChildProcess.on.mockImplementation((event, handler) => {
+        if (event === 'exit') {
+          exitHandler = handler as unknown
+        }
+        return mockChildProcess
+      })
+
+      mockProcessExit.mockClear()
+      mockProcessKill.mockClear()
+
+      const promise = cmdPip.run(argv, importMeta, context)
+      await new Promise(resolve => process.nextTick(resolve))
+
+      // Trigger exit with both null.
+      exitHandler!(undefined, undefined)
+
+      await promise
+
+      expect(mockProcessExit).not.toHaveBeenCalled()
+      expect(mockProcessKill).not.toHaveBeenCalled()
+    })
+
+    it('should handle process exit with numeric code 0', async () => {
+      const argv = ['install', 'flask']
+      const importMeta = { url: import.meta.url } as ImportMeta
+      const context: CliCommandContext = {
+        parentName: 'socket',
+      }
+
+      let exitHandler: (
+        code: number | null,
+        signal: NodeJS.Signals | null,
+      ) => void
+      mockChildProcess.on.mockImplementation((event, handler) => {
+        if (event === 'exit') {
+          exitHandler = handler as unknown
+        }
+        return mockChildProcess
+      })
+
+      const promise = cmdPip.run(argv, importMeta, context)
+
+      // Wait a tick for the event handler to be registered.
+      await new Promise(resolve => process.nextTick(resolve))
+
+      // Trigger exit event.
+      exitHandler!(0, undefined)
+
+      await promise
+
+      expect(mockProcessExit).toHaveBeenCalledWith(0)
+    })
+
+    it('should handle process exit with numeric code 1', async () => {
+      const argv = ['install', 'nonexistent-package']
+      const importMeta = { url: import.meta.url } as ImportMeta
+      const context: CliCommandContext = {
+        parentName: 'socket',
+      }
+
+      mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(1))
+
+      let exitHandler: (
+        code: number | null,
+        signal: NodeJS.Signals | null,
+      ) => void
+      mockChildProcess.on.mockImplementation((event, handler) => {
+        if (event === 'exit') {
+          exitHandler = handler as unknown
+        }
+        return mockChildProcess
+      })
+
+      const promise = cmdPip.run(argv, importMeta, context)
+
+      // Wait a tick for the event handler to be registered.
+      await new Promise(resolve => process.nextTick(resolve))
+
+      // Trigger exit event.
+      exitHandler!(1, undefined)
+
+      await promise
+
+      expect(mockProcessExit).toHaveBeenCalledWith(1)
+    })
+
+    it('should handle process exit with SIGTERM signal', async () => {
+      const argv = ['install', 'flask']
+      const importMeta = { url: import.meta.url } as ImportMeta
+      const context: CliCommandContext = {
+        parentName: 'socket',
+      }
+
+      mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0, 'SIGTERM'))
+
+      let exitHandler: (
+        code: number | null,
+        signal: NodeJS.Signals | null,
+      ) => void
+      mockChildProcess.on.mockImplementation((event, handler) => {
+        if (event === 'exit') {
+          exitHandler = handler as unknown
+        }
+        return mockChildProcess
+      })
+
+      const promise = cmdPip.run(argv, importMeta, context)
+
+      // Wait a tick for the event handler to be registered.
+      await new Promise(resolve => process.nextTick(resolve))
+
+      // Trigger exit event with signal.
+      exitHandler!(undefined, 'SIGTERM')
+
+      await promise
+
+      expect(mockProcessKill).toHaveBeenCalledWith(process.pid, 'SIGTERM')
+    })
+
+    it('should handle process exit with SIGINT signal', async () => {
+      const argv = ['install', 'requests']
+      const importMeta = { url: import.meta.url } as ImportMeta
+      const context: CliCommandContext = {
+        parentName: 'socket',
+      }
+
+      mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0, 'SIGINT'))
+
+      let exitHandler: (
+        code: number | null,
+        signal: NodeJS.Signals | null,
+      ) => void
+      mockChildProcess.on.mockImplementation((event, handler) => {
+        if (event === 'exit') {
+          exitHandler = handler as unknown
+        }
+        return mockChildProcess
+      })
+
+      const promise = cmdPip.run(argv, importMeta, context)
+
+      // Wait a tick for the event handler to be registered.
+      await new Promise(resolve => process.nextTick(resolve))
+
+      // Trigger exit event with signal.
+      exitHandler!(undefined, 'SIGINT')
+
+      await promise
+
+      expect(mockProcessKill).toHaveBeenCalledWith(process.pid, 'SIGINT')
+    })
+  })
+
+  describe('context handling', () => {
+    it('should handle context with parentName', async () => {
+      const argv = ['install', 'flask']
+      const importMeta = { url: import.meta.url } as ImportMeta
+      const context: CliCommandContext = {
+        parentName: 'socket',
+      }
+
+      await cmdPip.run(argv, importMeta, context)
+
+      expect(mockMeowOrExit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          parentName: 'socket',
+        }),
+      )
+    })
+
+    it('should handle context with invokedAs', async () => {
+      const argv = ['install', 'numpy']
+      const importMeta = { url: import.meta.url } as ImportMeta
+      const context: CliCommandContext = {
+        parentName: 'socket',
+        invokedAs: 'pip3',
+      }
+
+      mockWhichReal.mockResolvedValue('/usr/bin/pip3')
+
+      await cmdPip.run(argv, importMeta, context)
+
+      expect(mockWhichReal).toHaveBeenCalledWith('pip3', { nothrow: true })
+    })
+
+    it('should handle context without invokedAs', async () => {
+      const argv = ['install', 'pandas']
+      const importMeta = { url: import.meta.url } as ImportMeta
+      const context: CliCommandContext = {
+        parentName: 'socket',
+      }
+
+      mockWhichReal.mockResolvedValue('/usr/bin/pip')
+
+      await cmdPip.run(argv, importMeta, context)
+
+      expect(mockWhichReal).toHaveBeenCalledWith('pip', { nothrow: true })
+    })
+  })
+
+  describe('common pip operations', () => {
+    it('should handle pip install', async () => {
+      const argv = ['install', 'requests']
+      const importMeta = { url: import.meta.url } as ImportMeta
+      const context: CliCommandContext = {
+        parentName: 'socket',
+      }
+
+      mockFilterFlags.mockReturnValue(['install', 'requests'])
+
+      await cmdPip.run(argv, importMeta, context)
+
+      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+        ['pip', 'install', 'requests'],
+        expect.any(Object),
+      )
+    })
+
+    it('should handle pip list', async () => {
+      const argv = ['list']
+      const importMeta = { url: import.meta.url } as ImportMeta
+      const context: CliCommandContext = {
+        parentName: 'socket',
+      }
+
+      mockFilterFlags.mockReturnValue(['list'])
+
+      await cmdPip.run(argv, importMeta, context)
+
+      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+        ['pip', 'list'],
+        expect.any(Object),
+      )
+    })
+
+    it('should handle pip freeze', async () => {
+      const argv = ['freeze']
+      const importMeta = { url: import.meta.url } as ImportMeta
+      const context: CliCommandContext = {
+        parentName: 'socket',
+      }
+
+      mockFilterFlags.mockReturnValue(['freeze'])
+
+      await cmdPip.run(argv, importMeta, context)
+
+      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+        ['pip', 'freeze'],
+        expect.any(Object),
+      )
+    })
+
+    it('should handle pip uninstall', async () => {
+      const argv = ['uninstall', 'flask', '-y']
+      const importMeta = { url: import.meta.url } as ImportMeta
+      const context: CliCommandContext = {
+        parentName: 'socket',
+      }
+
+      mockFilterFlags.mockReturnValue(['uninstall', 'flask', '-y'])
+
+      await cmdPip.run(argv, importMeta, context)
+
+      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+        ['pip', 'uninstall', 'flask', '-y'],
+        expect.any(Object),
+      )
+    })
+
+    it('should handle pip install with requirements.txt', async () => {
+      const argv = ['install', '-r', 'requirements.txt']
+      const importMeta = { url: import.meta.url } as ImportMeta
+      const context: CliCommandContext = {
+        parentName: 'socket',
+      }
+
+      mockFilterFlags.mockReturnValue(['install', '-r', 'requirements.txt'])
+
+      await cmdPip.run(argv, importMeta, context)
+
+      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+        ['pip', 'install', '-r', 'requirements.txt'],
+        expect.any(Object),
+      )
+    })
+  })
+})

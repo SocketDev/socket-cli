@@ -1,4 +1,3 @@
-/* max-file-lines: cohesive-module — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 /**
  * Telemetry integration helpers for Socket CLI. Provides utilities for tracking
  * common CLI events and subprocess executions.
@@ -301,101 +300,6 @@ export function setupTelemetryExitHandlers(): void {
 }
 
 /**
- * Track CLI completion event. Should be called on successful CLI exit. Flushes
- * immediately since this is typically the last event before process exit.
- *
- * @param argv
- * @param startTime Start timestamp from trackCliStart.
- * @param exitCode Process exit code (default: 0).
- */
-export async function trackCliComplete(
-  argv: string[],
-  startTime: number,
-  exitCode?: string | number | undefined | null,
-): Promise<void> {
-  debug('Capture end of command')
-
-  await trackEvent(
-    'cli_complete',
-    buildContext(argv),
-    {
-      duration: calculateDuration(startTime),
-      exit_code: normalizeExitCode(exitCode, 0),
-    },
-    {
-      flush: true,
-    },
-  )
-}
-
-/**
- * Track CLI error event. Should be called when CLI exits with an error. Flushes
- * immediately since this is typically the last event before process exit.
- *
- * @param argv
- * @param startTime Start timestamp from trackCliStart.
- * @param error Error that occurred.
- * @param exitCode Process exit code (default: 1).
- */
-export async function trackCliError(
-  argv: string[],
-  startTime: number,
-  error: unknown,
-  exitCode?: number | string | undefined | null,
-): Promise<void> {
-  debug('Capture error and stack trace of command')
-
-  await trackEvent(
-    'cli_error',
-    buildContext(argv),
-    {
-      duration: calculateDuration(startTime),
-      exit_code: normalizeExitCode(exitCode, 1),
-    },
-    {
-      error: normalizeError(error),
-      flush: true,
-    },
-  )
-}
-
-/**
- * Track a generic CLI event with optional metadata. Use this for tracking
- * custom events during CLI execution.
- *
- * @param eventType Type of event to track.
- * @param argv Command line arguments (process.argv).
- * @param metadata Optional additional metadata to include with the event.
- */
-export async function trackCliEvent(
-  eventType: string,
-  argv: string[],
-  metadata?: Record<string, unknown> | undefined,
-): Promise<void> {
-  debug(`Tracking CLI event: ${eventType}`)
-
-  await trackEvent(eventType, buildContext(argv), metadata)
-}
-
-/**
- * Track CLI initialization event. Should be called at the start of CLI
- * execution.
- *
- * @param argv Command line arguments (process.argv).
- *
- * @returns Start timestamp for duration calculation.
- */
-export async function trackCliStart(argv: string[]): Promise<number> {
-  debug('Capture start of command')
-
-  const startTime = Date.now()
-
-  await trackEvent('cli_start', buildContext(argv))
-
-  return startTime
-}
-
-/**
  * Generic event tracking function. Tracks any telemetry event with optional
  * error details and explicit flush.
  *
@@ -457,126 +361,16 @@ export async function trackEvent(
   }
 }
 
-/**
- * Track subprocess/command completion event.
- *
- * Should be called when spawned command completes successfully.
- *
- * @param command Command that was executed.
- * @param startTime Start timestamp from trackSubprocessStart.
- * @param exitCode Process exit code.
- * @param metadata Optional additional metadata (e.g., stdout length, stderr
- *   length).
- */
-export async function trackSubprocessComplete(
-  command: string,
-  startTime: number,
-  exitCode: number | null,
-  metadata?: Record<string, unknown> | undefined,
-): Promise<void> {
-  debug(`Tracking subprocess complete: ${command}`)
+export {
+  trackCliComplete,
+  trackCliError,
+  trackCliEvent,
+  trackCliStart,
+} from './cli-tracking.mts'
 
-  await trackEvent('subprocess_complete', buildContext(process.argv), {
-    command,
-    duration: calculateDuration(startTime),
-    exit_code: normalizeExitCode(exitCode, 0),
-    ...metadata,
-  })
-}
-
-/**
- * Track subprocess/command error event.
- *
- * Should be called when spawned command fails or throws error.
- *
- * @param command Command that was executed.
- * @param startTime Start timestamp from trackSubprocessStart.
- * @param error Error that occurred.
- * @param exitCode Process exit code.
- * @param metadata Optional additional metadata.
- */
-export async function trackSubprocessError(
-  command: string,
-  startTime: number,
-  error: unknown,
-  exitCode?: number | null | undefined,
-  metadata?: Record<string, unknown> | undefined,
-): Promise<void> {
-  debug(`Tracking subprocess error: ${command}`)
-
-  await trackEvent(
-    'subprocess_error',
-    buildContext(process.argv),
-    {
-      command,
-      duration: calculateDuration(startTime),
-      exit_code: normalizeExitCode(exitCode, 1),
-      ...metadata,
-    },
-    {
-      error: normalizeError(error),
-    },
-  )
-}
-
-/**
- * Track subprocess exit and finalize telemetry. This is a convenience function
- * that tracks completion/error based on exit code and ensures telemetry is
- * flushed before returning.
- *
- * Note: Only tracks subprocess-level events. CLI-level events (cli_complete,
- * cli_error) are tracked by the main CLI entry point in src/cli.mts.
- *
- * @example
- *   ;```typescript
- *   await trackSubprocessExit(NPM, subprocessStartTime, code)
- *   ```
- *
- * @param command - Command name (e.g., 'npm', 'pip').
- * @param startTime - Start timestamp from trackSubprocessStart.
- * @param exitCode - Process exit code (null treated as error).
- *
- * @returns Promise that resolves when tracking and flush complete.
- */
-export async function trackSubprocessExit(
-  command: string,
-  startTime: number,
-  exitCode: number | null,
-): Promise<void> {
-  // Track subprocess completion or error based on exit code.
-  if (exitCode !== null && exitCode !== 0) {
-    const error = new Error(`${command} exited with code ${exitCode}`)
-    await trackSubprocessError(command, startTime, error, exitCode)
-  } else if (exitCode === 0) {
-    await trackSubprocessComplete(command, startTime, exitCode)
-  }
-
-  // Flush telemetry to ensure events are sent before exit.
-  await finalizeTelemetry()
-}
-
-/**
- * Track subprocess/command start event.
- *
- * Use this when spawning external commands like npm, npx, coana, cdxgen, etc.
- *
- * @param command Command being executed (e.g., 'npm', 'npx', 'coana').
- * @param metadata Optional additional metadata (e.g., cwd, purpose).
- *
- * @returns Start timestamp for duration calculation.
- */
-export async function trackSubprocessStart(
-  command: string,
-  metadata?: Record<string, unknown> | undefined,
-): Promise<number> {
-  debug(`Tracking subprocess start: ${command}`)
-
-  const startTime = Date.now()
-
-  await trackEvent('subprocess_start', buildContext(process.argv), {
-    command,
-    ...metadata,
-  })
-
-  return startTime
-}
+export {
+  trackSubprocessComplete,
+  trackSubprocessError,
+  trackSubprocessExit,
+  trackSubprocessStart,
+} from './subprocess-tracking.mts'

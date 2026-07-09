@@ -27,6 +27,7 @@ import {
   getBasicsToolPaths,
 } from '../basics/vfs-extract.mts'
 import { getPythonBuildTag } from '../../env/python-build-tag.mts'
+import { isProcessAlive } from './spawn-pycli-install.mts'
 import { requirePythonChecksum } from '../../env/python-checksums.mts'
 import { getPythonVersion } from '../../env/python-version.mts'
 import { SOCKET_CLI_PYTHON_PATH } from '../../env/socket-cli-python-path.mts'
@@ -121,17 +122,8 @@ export async function ensurePythonDlx(retryCount = 0): Promise<string> {
           const lockPid = await fs.readFile(lockFile, 'utf8')
           const pid = Number.parseInt(lockPid.trim(), 10)
           if (!Number.isNaN(pid) && pid > 0) {
-            try {
-              // Signal 0 checks process existence without sending actual signal.
-              process.kill(pid, 0)
-              // Process exists, lock is valid.
-            } catch (e) {
-              const pidErr = e as NodeJS.ErrnoException
-              // EPERM means process exists but no permission (treat as alive).
-              // ESRCH means process doesn't exist (dead).
-              if (pidErr.code !== 'EPERM') {
-                isStale = true
-              }
+            if (!isProcessAlive(pid)) {
+              isStale = true
             }
           } else {
             isStale = true

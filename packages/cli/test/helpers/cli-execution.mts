@@ -18,7 +18,7 @@ import type { SpawnOptions } from '@socketsecurity/lib-stable/process/spawn/type
 /**
  * Result from CLI execution with enhanced utilities.
  */
-interface CliExecutionResult {
+export interface CliExecutionResult {
   /**
    * Exit code from the CLI command.
    */

@@ -37,24 +37,6 @@ export interface ScanCreateInputCheckOptions {
 }
 
 /**
- * Validate `--reach-ecosystems` values against the supported ecosystem list.
- */
-export function validateReachEcosystems(rawValues: string[]): PURL_Type[] {
-  const reachEcosystems: PURL_Type[] = []
-  const validEcosystems = getEcosystemChoicesForMeow()
-  for (let i = 0, { length } = rawValues; i < length; i += 1) {
-    const ecosystem = rawValues[i]!
-    if (!validEcosystems.includes(ecosystem)) {
-      throw new InputError(
-        `--reach-ecosystems must be one of: ${joinAnd(validEcosystems)} (saw: "${ecosystem}"); pass a supported ecosystem like --reach-ecosystems=${validEcosystems[0]}`,
-      )
-    }
-    reachEcosystems.push(ecosystem as PURL_Type)
-  }
-  return reachEcosystems
-}
-
-/**
  * Detect whether any `--reach-*` flag was set to a non-default value, so
  * we can warn when reachability flags are used without `--reach`.
  */
@@ -71,7 +53,7 @@ export function computeReachabilityFlagUsage(
     reachExcludePaths,
     reachLazyMode,
     reachSkipCache,
-  } = options
+  } = { __proto__: null, ...options } as typeof options
 
   const hasReachEcosystems = reachEcosystems.length > 0
 
@@ -105,6 +87,24 @@ export function computeReachabilityFlagUsage(
 }
 
 /**
+ * Validate `--reach-ecosystems` values against the supported ecosystem list.
+ */
+export function validateReachEcosystems(rawValues: string[]): PURL_Type[] {
+  const reachEcosystems: PURL_Type[] = []
+  const validEcosystems = getEcosystemChoicesForMeow()
+  for (let i = 0, { length } = rawValues; i < length; i += 1) {
+    const ecosystem = rawValues[i]!
+    if (!validEcosystems.includes(ecosystem)) {
+      throw new InputError(
+        `--reach-ecosystems must be one of: ${joinAnd(validEcosystems)} (saw: "${ecosystem}"); pass a supported ecosystem like --reach-ecosystems=${validEcosystems[0]}`,
+      )
+    }
+    reachEcosystems.push(ecosystem as PURL_Type)
+  }
+  return reachEcosystems
+}
+
+/**
  * Run the full `socket scan create` input-validation checklist (org, target,
  * output-format, api-token, and reachability constraints).
  */
@@ -124,7 +124,7 @@ export function validateScanCreateInput(
     reach,
     reachTargetValidation,
     targets,
-  } = options
+  } = { __proto__: null, ...options } as typeof options
 
   return checkCommandInput(
     outputKind,

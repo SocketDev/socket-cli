@@ -3,8 +3,9 @@
  * path loading, and CLI argument parsing used by every test mode.
  */
 
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -118,7 +119,7 @@ export async function loadToolPaths() {
   try {
     toolPathsData = JSON.parse(await fs.readFile(toolPathsFile, 'utf8'))
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e)
+    const msg = errorMessage(e)
     logger.fail(`Failed to parse tool paths from ${toolPathsFile}: ${msg}`)
     logger.fail('Run: node scripts/test-download-external-tools.mts')
     throw new Error('Invalid tool paths JSON')

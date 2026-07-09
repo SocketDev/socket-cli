@@ -38,6 +38,19 @@ import type { CResult } from '../../types.mts'
 import type { GhsaDetails } from '../../util/git/github.mts'
 const logger = getDefaultLogger()
 
+export async function cleanupBranchesAfterUnexpectedError(
+  branch: string,
+  cwd: string,
+): Promise<void> {
+  try {
+    const remoteBranchExists = await gitRemoteBranchExists(branch, cwd)
+    await cleanupErrorBranches(branch, cwd, remoteBranchExists)
+  } catch (e) {
+    debug('pr: failed to cleanup branches during exception cleanup')
+    debugDir(e)
+  }
+}
+
 export async function runGhsaFixLoop(
   fixConfig: FixConfig,
   context: {
@@ -337,6 +350,7 @@ export async function runGhsaFixLoop(
           // Don't delete branch - PR exists and needs it.
         } else if (prResult.reason === 'validation_error') {
           logger.error(
+            // oxlint-disable-next-line socket/no-logger-newline-literal -- multi-line user-facing message where the embedded \n produces the intended layout.
             `Failed to create PR for ${ghsaId}:\n${prResult.details}`,
           )
           await cleanupFailedPrBranches(branch, cwd)
@@ -367,13 +381,7 @@ export async function runGhsaFixLoop(
       )
       debugDir(e)
       // Clean up branches after unexpected error.
-      try {
-        const remoteBranchExists = await gitRemoteBranchExists(branch, cwd)
-        await cleanupErrorBranches(branch, cwd, remoteBranchExists)
-      } catch (e) {
-        debug('pr: failed to cleanup branches during exception cleanup')
-        debugDir(e)
-      }
+      await cleanupBranchesAfterUnexpectedError(branch, cwd)
       // Clean up local state.
       await gitResetAndClean(fixEnv.baseBranch, cwd)
       await gitCheckoutBranch(fixEnv.baseBranch, cwd)
