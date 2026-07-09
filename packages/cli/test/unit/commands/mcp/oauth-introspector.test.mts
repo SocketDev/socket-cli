@@ -1,11 +1,9 @@
-/* max-file-lines: test — comprehensive test suite for one command/module; splitting would fragment closely related assertions. */
 /**
  * Unit tests for the OAuthIntrospector class.
  *
  * Mocks @socketsecurity/lib/http-request so the issuer's well-known +
  * introspection endpoints can be controlled per-test, exercising every branch
- * of loadMetadata, verifyAccessToken, and authenticateRequest without booting a
- * real HTTP server.
+ * of loadMetadata and verifyAccessToken without booting a real HTTP server.
  *
  * Test Coverage (100% target):
  *
@@ -13,8 +11,6 @@
  *   retry-after-failure clears the cached promise
  * - VerifyAccessToken: 200 active / 200 inactive / non-2xx / missing exp /
  *   non-numeric exp / non-string client_id
- * - AuthenticateRequest: missing Authorization / non-Bearer / bare "Bearer" /
- *   verifier throws / inactive / expired / missing scope / success
  *
  * Related Files:
  *
@@ -24,9 +20,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { OAuthIntrospector } from '../../../../src/commands/mcp/transport-http-helpers.mts'
-
-import type { ServerResponse } from 'node:http'
-import type { IncomingMessage } from 'node:http'
 
 import type * as HttpRequestModule from '@socketsecurity/lib-stable/http-request/request'
 

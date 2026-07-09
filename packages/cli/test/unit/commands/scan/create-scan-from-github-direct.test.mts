@@ -1,4 +1,3 @@
-/* max-file-lines: test — comprehensive test suite for one command/module; splitting would fragment closely related assertions. */
 /**
  * Direct unit tests for create-scan-from-github helpers.
  *
@@ -62,34 +61,13 @@ vi.mock(import('../../../../src/util/socket/api.mjs'), () => ({
   socketHttpRequest: mockSocketHttpRequest,
 }))
 
-const mockFetchSupportedScanFileNames = vi.hoisted(() => vi.fn())
-vi.mock(
-  import('../../../../src/commands/scan/fetch-supported-scan-file-names.mts'),
-  () => ({
-    fetchSupportedScanFileNames: mockFetchSupportedScanFileNames,
-  }),
-)
-
-const mockHandleCreateNewScan = vi.hoisted(() => vi.fn())
-vi.mock(
-  import('../../../../src/commands/scan/handle-create-new-scan.mts'),
-  () => ({
-    handleCreateNewScan: mockHandleCreateNewScan,
-  }),
-)
-
 import {
-  downloadManifestFile,
   getLastCommitDetails,
   getRepoBranchTree,
   getRepoDetails,
   makeSure,
-  scanOneRepo,
-  scanRepo,
   selectFocus,
   streamDownloadWithFetch,
-  testAndDownloadManifestFile,
-  testAndDownloadManifestFiles,
 } from '../../../../src/commands/scan/create-scan-from-github.mts'
 
 describe('create-scan-from-github (direct)', () => {
