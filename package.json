@@ -175,11 +175,18 @@
     "ignoreEmptyType": true,
     "strict": true
   },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": ">=11.0.0 <12.0.0",
+      "onFail": "error"
+    }
+  },
   "engines": {
     "node": ">=26.0.0",
+    "npm": ">=11.17.0",
     "pnpm": ">=11.0.5"
   },
-  "packageManager": "pnpm@>=11.0.5",
   "allowScripts": {
     "cpu-features": false,
     "protobufjs": false,
