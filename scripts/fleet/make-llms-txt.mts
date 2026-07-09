@@ -69,7 +69,9 @@ export async function main(): Promise<void> {
         process.exitCode = 1
         return
       }
-      if (!quiet) {logger.info('llms.txt is current')}
+      if (!quiet) {
+        logger.info('llms.txt is current')
+      }
       return
     }
 
@@ -83,7 +85,9 @@ export async function main(): Promise<void> {
       const newStruct = parseStructure(skeletonDoc)
       if (structuresMatch(existingStruct, newStruct)) {
         existingNotes = harvestProse(existing)
-        if (!quiet) {logger.info('structure unchanged — reusing existing prose')}
+        if (!quiet) {
+          logger.info('structure unchanged — reusing existing prose')
+        }
       }
     }
 
@@ -94,8 +98,9 @@ export async function main(): Promise<void> {
       if (slots.length > 0) {
         const canUseAi = await hasClaudeCli(REPO_ROOT)
         if (!canUseAi) {
-          if (!quiet)
-            {logger.warn('claude CLI not found — rendering without AI fill')}
+          if (!quiet) {
+            logger.warn('claude CLI not found — rendering without AI fill')
+          }
         } else {
           const charBudgets: Record<string, number> = {}
           for (const slot of slots) {
@@ -114,8 +119,9 @@ export async function main(): Promise<void> {
             return
           }
           filledNotes = result.slots
-          if (!quiet)
-            {logger.info(`AI filled ${Object.keys(filledNotes).length} slots`)}
+          if (!quiet) {
+            logger.info(`AI filled ${Object.keys(filledNotes).length} slots`)
+          }
         }
       }
     }
@@ -127,8 +133,9 @@ export async function main(): Promise<void> {
     const rendered = renderDocument(facts, summary, sections, filledNotes)
     writeFileSync(outPath, rendered, 'utf8')
 
-    if (!quiet)
-      {logger.info(`wrote ${outPath} (${Buffer.byteLength(rendered)} bytes)`)}
+    if (!quiet) {
+      logger.info(`wrote ${outPath} (${Buffer.byteLength(rendered)} bytes)`)
+    }
   } catch (e) {
     logger.error(`make-llms-txt failed: ${errorMessage(e)}`)
     process.exitCode = 1

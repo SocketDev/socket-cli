@@ -1,7 +1,7 @@
 /**
  * Parse taze output for version-lookup failures.
  *
- * taze resolves versions through fast-npm-meta's hosted endpoint
+ * Taze resolves versions through fast-npm-meta's hosted endpoint
  * (npm.antfu.dev), NOT the configured npm registry, with a hard 5s timeout
  * per packument — and it exits 0 even when every fetch fails. On a machine
  * whose egress policy blocks that host, taze prints one

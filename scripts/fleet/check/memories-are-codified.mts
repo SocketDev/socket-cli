@@ -96,7 +96,7 @@ export function findUncodifiedMemories(dir: string): MemoryCodifyResult {
   const uncodified: string[] = []
   let candidates = 0
   for (let i = 0, { length } = entries; i < length; i += 1) {
-    const name = entries[i]!;
+    const name = entries[i]!
     if (!name.endsWith('.md') || name === 'MEMORY.md') {
       continue
     }
@@ -114,7 +114,6 @@ export function findUncodifiedMemories(dir: string): MemoryCodifyResult {
     if (!isCodified(content)) {
       uncodified.push(name)
     }
-  
   }
   uncodified.sort()
   return { candidates, uncodified }

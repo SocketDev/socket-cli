@@ -98,6 +98,35 @@ edit and by review, not by a lint rule.
   - **NO ELLIPSIS.** Drop `"..."` / `"…"` from list endings. List every item
     alphabetically, or write "N items, see `<source>`". Never trail off.
 
+## Load-bearing order: verify before sorting
+
+Before re-sorting any sibling list, verify that order is not load-bearing. Two
+failure classes:
+
+1. **Shared-object aliasing / mutation order.** When siblings are objects that
+   share identity (the same reference held by multiple callers) and one sibling
+   writes to the shared object's properties, the write sequence is load-bearing.
+   Alphabetical re-sorting changes which write happens first and can silently
+   corrupt the shared object's state for subsequent reads. The kw() incident:
+   a helper's `options` parameter was the same object the caller passed in.
+   Sibling helpers wrote directly to `options.beforeExpr` and `options.startsExpr`
+   on the shared config. When those siblings were alphabetically re-sorted, the
+   write ordering changed and the caller's config was left in a different state,
+   producing a silent misparse. The fix for the underlying bug is the
+   `socket/no-options-param-mutation` rule: never write `options.x = y` inside a
+   function body — use a spread-copy local (`const merged = { ...options, x: y }`)
+   so the caller's object is never touched. Once mutation is eliminated, the sort
+   order is safe.
+
+2. **TDZ chains and module-scope reads.** A module-scope `const A = f()` that
+   reads `B` before `B` is initialized is a temporal dead zone fault. Sort only
+   when every sibling is independently initialized (no cross-references at
+   definition time).
+
+When in doubt: add an inline comment stating the reason for the ordering, then
+leave the block unsorted. `// order-independent` is the opt-in for sorted blocks
+under `run-s name:*` globs (see `npm-run-all-ordering.md`).
+
 ## Behavior rules
 
 - **Fully re-sort, don't append.** Editing an already-sorted block → insert in

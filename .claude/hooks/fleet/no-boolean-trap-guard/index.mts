@@ -160,7 +160,9 @@ export function isExemptPath(filePath: string): boolean {
     normalizePath(filePath).includes('/dist/') ||
     normalizePath(filePath).includes('/build/') ||
     normalizePath(filePath).includes('/node_modules/') ||
-    normalizePath(filePath).includes('/.claude/hooks/fleet/no-boolean-trap-guard/') ||
+    normalizePath(filePath).includes(
+      '/.claude/hooks/fleet/no-boolean-trap-guard/',
+    ) ||
     isRepoTestHome(filePath)
   )
 }

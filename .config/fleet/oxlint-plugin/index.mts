@@ -38,6 +38,7 @@ import noMinifiedBundlerOutput from './fleet/no-minified-bundler-output/index.mt
 import noModuleEvalSideEffects from './fleet/no-module-eval-side-effects/index.mts'
 import noNamespaceImport from './fleet/no-namespace-import/index.mts'
 import noNpxDlx from './fleet/no-npx-dlx/index.mts'
+import noOptionsParamMutation from './fleet/no-options-param-mutation/index.mts'
 import noPackageManagerAutoUpdateReenable from './fleet/no-package-manager-auto-update-reenable/index.mts'
 import noPlaceholders from './fleet/no-placeholders/index.mts'
 import noPlatformSpecificImport from './fleet/no-platform-specific-import/index.mts'
@@ -143,6 +144,7 @@ const plugin = {
     'no-module-eval-side-effects': noModuleEvalSideEffects,
     'no-namespace-import': noNamespaceImport,
     'no-npx-dlx': noNpxDlx,
+    'no-options-param-mutation': noOptionsParamMutation,
     'no-package-manager-auto-update-reenable':
       noPackageManagerAutoUpdateReenable,
     'no-placeholders': noPlaceholders,

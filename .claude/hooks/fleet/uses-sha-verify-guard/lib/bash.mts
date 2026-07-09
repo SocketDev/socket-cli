@@ -72,7 +72,10 @@ export function findBareUsesIssues(
   while ((m = BARE_USES_RE_GLOBAL.exec(scanInput)) !== null) {
     const ownerRepoPath = m.groups!.ownerRepoPath!
     const ref = m.groups!.ref!
-    const ownerRepo = normalizePath(ownerRepoPath).split('/').slice(0, 2).join('/')
+    const ownerRepo = normalizePath(ownerRepoPath)
+      .split('/')
+      .slice(0, 2)
+      .join('/')
     const shape = validateRefShape(ref)
     if (!shape.ok) {
       issues.push({ line: 0, raw: m[0]!, problem: shape.problem })
@@ -119,7 +122,10 @@ function targetWorkflowOwnerRepos(command: string): string[] {
         continue
       }
       const ownerRepoPath = m.groups!.ownerRepoPath!
-      const ownerRepo = normalizePath(ownerRepoPath).split('/').slice(0, 2).join('/')
+      const ownerRepo = normalizePath(ownerRepoPath)
+        .split('/')
+        .slice(0, 2)
+        .join('/')
       ownerRepos.add(ownerRepo)
     }
   }

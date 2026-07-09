@@ -35,7 +35,12 @@ const NORMALIZE_CALLEE_NAMES: ReadonlySet<string> = new Set([
 ])
 
 // String method calls that indicate a path-separator-sensitive operation.
-const PATH_STRING_METHODS: ReadonlySet<string> = new Set(['endsWith', 'includes', 'split', 'startsWith'])
+const PATH_STRING_METHODS: ReadonlySet<string> = new Set([
+  'endsWith',
+  'includes',
+  'split',
+  'startsWith',
+])
 
 // Regex method calls on the RECEIVER side (/re/.test(pathVar)) — the path is
 // the argument. Only fires when the receiver regex is a separator pattern.

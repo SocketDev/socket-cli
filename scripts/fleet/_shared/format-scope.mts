@@ -23,12 +23,21 @@ import path from 'node:path'
 // canonical. Picks at invocation time — adding the overlay doesn't
 // require touching scripts. The basename (oxlintrc.json / oxfmtrc.json)
 // stays identical on both sides; only the directory differs.
-export function pickConfig(basename: string): string {
-  const repoOverlay = path.join('.config', 'repo', basename)
+export function pickConfig(
+  basename: string,
+  options?: { cwd?: string | undefined } | undefined,
+): string {
+  // `cwd` exists for tests: worker-thread pools can't process.chdir(), so a
+  // fixture root is passed explicitly. Runtime callers omit it (repo root).
+  const opts = { __proto__: null, ...options } as {
+    cwd?: string | undefined
+  }
+  const base = opts.cwd ?? '.'
+  const repoOverlay = path.join(base, '.config', 'repo', basename)
   if (existsSync(repoOverlay)) {
     return repoOverlay
   }
-  return path.join('.config', 'fleet', basename)
+  return path.join(base, '.config', 'fleet', basename)
 }
 
 // Resolve the oxfmt `--ignore-path`. The fleet canonical
@@ -47,19 +56,32 @@ export const FLEET_IGNORE_PATH = path.join(
   '.prettierignore',
 )
 let cachedIgnorePath: string | undefined
-export function pickIgnorePath(): string {
-  if (cachedIgnorePath !== undefined) {
+export function pickIgnorePath(
+  options?: { cwd?: string | undefined } | undefined,
+): string {
+  // `cwd` exists for tests (worker-thread pools can't process.chdir());
+  // explicit-cwd calls skip the cache so fixture roots never leak into the
+  // runtime (cwd-less) resolution.
+  const opts = { __proto__: null, ...options } as {
+    cwd?: string | undefined
+  }
+  const base = opts.cwd ?? '.'
+  const cacheable = opts.cwd === undefined
+  if (cacheable && cachedIgnorePath !== undefined) {
     return cachedIgnorePath
   }
-  const repoOverlay = path.join('.config', 'repo', '.prettierignore')
+  const fleetIgnore = path.join(base, FLEET_IGNORE_PATH)
+  const repoOverlay = path.join(base, '.config', 'repo', '.prettierignore')
   if (!existsSync(repoOverlay)) {
-    cachedIgnorePath = FLEET_IGNORE_PATH
-    return cachedIgnorePath
+    if (cacheable) {
+      cachedIgnorePath = fleetIgnore
+    }
+    return fleetIgnore
   }
   let fleetBody = ''
   let repoBody = ''
   try {
-    fleetBody = readFileSync(FLEET_IGNORE_PATH, 'utf8')
+    fleetBody = readFileSync(fleetIgnore, 'utf8')
   } catch {}
   try {
     repoBody = readFileSync(repoOverlay, 'utf8')
@@ -71,8 +93,10 @@ export function pickIgnorePath(): string {
     `${fleetBody}\n# --- .config/repo/.prettierignore (repo-specific verbatim trees) ---\n${repoBody}\n`,
     'utf8',
   )
-  cachedIgnorePath = combined
-  return cachedIgnorePath
+  if (cacheable) {
+    cachedIgnorePath = combined
+  }
+  return combined
 }
 
 // Build the `pnpm exec oxfmt …` argv. The `--ignore-path` is non-negotiable —
@@ -83,10 +107,12 @@ export function pickIgnorePath(): string {
 // unit-testable without spawning a subprocess.
 export function buildOxfmtArgs(options?: {
   check?: boolean | undefined
+  cwd?: string | undefined
   files?: readonly string[] | undefined
 }): string[] {
   const opts = { __proto__: null, ...options } as {
     check?: boolean | undefined
+    cwd?: string | undefined
     files?: readonly string[] | undefined
   }
   const files = opts.files?.length ? [...opts.files] : ['.']
@@ -94,9 +120,9 @@ export function buildOxfmtArgs(options?: {
     'exec',
     'oxfmt',
     '-c',
-    pickConfig('oxfmtrc.json'),
+    pickConfig('oxfmtrc.json', { cwd: opts.cwd }),
     '--ignore-path',
-    pickIgnorePath(),
+    pickIgnorePath({ cwd: opts.cwd }),
     opts.check ? '--check' : '--write',
     '--no-error-on-unmatched-pattern',
     ...files,

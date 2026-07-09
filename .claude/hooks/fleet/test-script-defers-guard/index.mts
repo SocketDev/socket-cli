@@ -67,7 +67,8 @@ function isMtsWrapper(cmd: Command): boolean {
 function isRawRunner(cmd: Command): boolean {
   const base = path.basename(cmd.binary)
   return (
-    RAW_RUNNER_BINARIES.has(base) || (base === 'node' && cmd.args.includes('--test'))
+    RAW_RUNNER_BINARIES.has(base) ||
+    (base === 'node' && cmd.args.includes('--test'))
   )
 }
 
@@ -89,7 +90,8 @@ function isRawRunnerValue(value: string): boolean {
 
 export function isPackageJson(filePath: string): boolean {
   return (
-    (normalizePath(filePath).endsWith('/package.json') || filePath === 'package.json') &&
+    (normalizePath(filePath).endsWith('/package.json') ||
+      filePath === 'package.json') &&
     !normalizePath(filePath).includes('/node_modules/')
   )
 }

@@ -153,13 +153,18 @@ export function unguardedInvocation(text: string): string | undefined {
   return undefined
 }
 
-export function scanHookMains(repoRoot: string): ScanResult {
+export function scanHookMains(
+  repoRoot: string,
+  options?: { ownsRelocatedTests?: boolean | undefined } | undefined,
+): ScanResult {
+  const opts = { __proto__: null, ...options }
   const hits: UnguardedHit[] = []
   let scanned = 0
   // The relocated hook tests are wheelhouse-only (under `test/repo/`). A member
   // ships the hook sources but not their tests, so there's no test to import the
-  // module → nothing to check; no-op (scanned stays 0) and pass.
-  if (!OWNS_RELOCATED_TESTS) {
+  // module → nothing to check; no-op (scanned stays 0) and pass. Fixture tests
+  // force ownership so the scan runs everywhere.
+  if (!(opts.ownsRelocatedTests ?? OWNS_RELOCATED_TESTS)) {
     return { hits, scanned }
   }
   for (const seg of ['fleet', 'repo']) {

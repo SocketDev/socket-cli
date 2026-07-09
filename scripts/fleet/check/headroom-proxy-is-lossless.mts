@@ -29,11 +29,15 @@ const HOOK = path.join(
 )
 
 // The proxy flags that together force verbatim (lossless) compression.
-export const REQUIRED_PROXY_FLAGS = ['--disable-kompress', '--lossless'] as const
+export const REQUIRED_PROXY_FLAGS = [
+  '--disable-kompress',
+  '--lossless',
+] as const
 
 // The REQUIRED_PROXY_FLAGS absent from the `PROXY_ARGS` array literal (empty =
 // all present). A flag mentioned outside the literal does not count.
 export function missingProxyFlags(source: string): string[] {
+  // oxlint-disable-next-line socket/no-source-sniffing -- this check's sole purpose is scanning source text for PROXY_ARGS literal presence.
   const match = source.match(/const PROXY_ARGS\s*=\s*\[([\s\S]*?)]/)
   if (!match) {
     return [...REQUIRED_PROXY_FLAGS]
@@ -62,8 +66,12 @@ export function main(): number {
     )
     logger.group()
     logger.error(`where: ${HOOK} (PROXY_ARGS)`)
-    logger.error('saw:   proxy args without the lossless flags (token mode is LOSSY)')
-    logger.error('want:  --lossless AND --disable-kompress for verbatim tool reads')
+    logger.error(
+      'saw:   proxy args without the lossless flags (token mode is LOSSY)',
+    )
+    logger.error(
+      'want:  --lossless AND --disable-kompress for verbatim tool reads',
+    )
     logger.error('fix:   add the missing flag(s) to the PROXY_ARGS array')
     logger.groupEnd()
     return 1

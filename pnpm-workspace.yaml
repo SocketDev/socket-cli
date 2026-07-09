@@ -20,7 +20,7 @@ allowBuilds:
 pmOnFail: warn
 
 catalog:
-  '@anthropic-ai/claude-code': 2.1.197
+  '@anthropic-ai/claude-code': 2.1.198
   '@babel/core': 7.29.7
   '@babel/generator': 7.28.5
   '@babel/parser': 7.28.4
@@ -76,7 +76,7 @@ catalog:
   '@types/mdast': 4.0.4
   '@types/micromatch': 4.0.9
   '@types/mock-fs': 4.13.4
-  '@types/node': 26.0.1
+  '@types/node': 26.1.0
   '@types/npm-package-arg': 6.1.4
   '@types/npmcli__arborist': 6.3.1
   '@types/npmcli__config': 6.0.3
@@ -253,40 +253,6 @@ minimumReleaseAgeExclude:
   - '@sdxgen/*'
   - 'sdxgen'
   - 'stuie'
-  # published: 2026-07-01 | removable: 2026-07-08
-  - '@rolldown/binding-android-arm64@1.1.4'
-  # published: 2026-07-01 | removable: 2026-07-08
-  - '@rolldown/binding-darwin-arm64@1.1.4'
-  # published: 2026-07-01 | removable: 2026-07-08
-  - '@rolldown/binding-darwin-x64@1.1.4'
-  # published: 2026-07-01 | removable: 2026-07-08
-  - '@rolldown/binding-freebsd-x64@1.1.4'
-  # published: 2026-07-01 | removable: 2026-07-08
-  - '@rolldown/binding-linux-arm-gnueabihf@1.1.4'
-  # published: 2026-07-01 | removable: 2026-07-08
-  - '@rolldown/binding-linux-arm64-gnu@1.1.4'
-  # published: 2026-07-01 | removable: 2026-07-08
-  - '@rolldown/binding-linux-arm64-musl@1.1.4'
-  # published: 2026-07-01 | removable: 2026-07-08
-  - '@rolldown/binding-linux-ppc64-gnu@1.1.4'
-  # published: 2026-07-01 | removable: 2026-07-08
-  - '@rolldown/binding-linux-s390x-gnu@1.1.4'
-  # published: 2026-07-01 | removable: 2026-07-08
-  - '@rolldown/binding-linux-x64-gnu@1.1.4'
-  # published: 2026-07-01 | removable: 2026-07-08
-  - '@rolldown/binding-linux-x64-musl@1.1.4'
-  # published: 2026-07-01 | removable: 2026-07-08
-  - '@rolldown/binding-openharmony-arm64@1.1.4'
-  # published: 2026-07-01 | removable: 2026-07-08
-  - '@rolldown/binding-wasm32-wasi@1.1.4'
-  # published: 2026-07-01 | removable: 2026-07-08
-  - '@rolldown/binding-win32-arm64-msvc@1.1.4'
-  # published: 2026-07-01 | removable: 2026-07-08
-  - '@rolldown/binding-win32-x64-msvc@1.1.4'
-  # published: 2026-07-01 | removable: 2026-07-08
-  - 'markdownlint-cli2@0.23.0'
-  # published: 2026-07-01 | removable: 2026-07-08
-  - 'rolldown@1.1.4'
 
 # Refuse transitive dependencies declared via git/tarball/local-tarball
 # specs — an npm package shouldn't be allowed to drag in a git URL we

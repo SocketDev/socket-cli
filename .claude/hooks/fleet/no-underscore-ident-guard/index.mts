@@ -138,7 +138,9 @@ export function isInternalDirPath(filePath: string): boolean {
 // can have its own tests without bypass phrases.
 export function isPluginOrHookTestPath(filePath: string): boolean {
   return (
-    normalizePath(filePath).includes('/.claude/hooks/fleet/no-underscore-ident-guard/') ||
+    normalizePath(filePath).includes(
+      '/.claude/hooks/fleet/no-underscore-ident-guard/',
+    ) ||
     // The rule lives at .config/fleet/oxlint-plugin/fleet/no-underscore-identifier/
     // (index.mts + test/), carrying banned `_`-prefixed identifiers as fixture
     // data; the per-rule dir prefix exempts both files.

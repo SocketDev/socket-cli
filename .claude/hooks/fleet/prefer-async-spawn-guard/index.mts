@@ -65,7 +65,9 @@ export function isExemptPath(filePath: string): boolean {
     normalizePath(filePath).includes('/dist/') ||
     normalizePath(filePath).includes('/build/') ||
     normalizePath(filePath).includes('/node_modules/') ||
-    normalizePath(filePath).includes('/.claude/hooks/fleet/prefer-async-spawn-guard/') ||
+    normalizePath(filePath).includes(
+      '/.claude/hooks/fleet/prefer-async-spawn-guard/',
+    ) ||
     // The two spawn rules live at .config/fleet/oxlint-plugin/fleet/<id>/ (index.mts +
     // test/), embedding the banned execSync/spawnSync shape as rule data; the
     // per-rule dir prefix exempts both files at once.
@@ -81,7 +83,8 @@ export function isExemptPath(filePath: string): boolean {
     // Pre-pnpm bootstrap .mjs provisioners (scripts/fleet/setup/{lib/,*}.mjs):
     // run before node_modules exists, so the lib spawn wrapper isn't importable
     // yet. Scoped to `.mjs` so the dir's `.mts` steps stay guarded.
-    (normalizePath(filePath).includes('/scripts/fleet/setup/') && filePath.endsWith('.mjs')) ||
+    (normalizePath(filePath).includes('/scripts/fleet/setup/') &&
+      filePath.endsWith('.mjs')) ||
     // The dep-0 bootstrap (bootstrap/fleet.mjs, bootstrap/prepare.mts) is the
     // fetcher that runs before any dependency exists — same constraint as the
     // setup provisioners above, so the sync builtin is its only spawn option.

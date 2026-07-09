@@ -214,6 +214,7 @@ import { hook as hook205 } from '../workflow-agent-task-tools-nudge/index.mts'
 import { hook as hook206 } from '../workflow-multiline-body-guard/index.mts'
 import { hook as hook207 } from '../workflow-uses-comment-guard/index.mts'
 import { hook as hook208 } from '../worktree-remove-relink-nudge/index.mts'
+import { hook as hook209 } from '../zsh-word-split-nudge/index.mts'
 
 export const DISPATCH_TABLE: Record<string, readonly DispatchHookEntry[]> = {
   __proto__: null,
@@ -389,6 +390,7 @@ export const DISPATCH_TABLE: Record<string, readonly DispatchHookEntry[]> = {
     { name: 'workflow-agent-task-tools-nudge', check: hook205.check, tools: ['Workflow'] },
     { name: 'workflow-multiline-body-guard', check: hook206.check, tools: ['Edit', 'Write', 'MultiEdit'] },
     { name: 'workflow-uses-comment-guard', check: hook207.check, tools: ['Edit', 'Write', 'MultiEdit'] },
+    { name: 'zsh-word-split-nudge', check: hook209.check, tools: ['Bash'] },
   ],
   'SessionStart': [
     { name: 'copy-on-select-hint-nudge', check: hook40.check, tools: undefined },

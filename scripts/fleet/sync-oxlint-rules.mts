@@ -424,7 +424,7 @@ function main(): number {
     },
   ]
   for (let i = 0, { length } = targets; i < length; i += 1) {
-    const target = targets[i]!;
+    const target = targets[i]!
     const result = reconcileGenerated({ ...target, check, ids })
     if (result.drifted) {
       drift = true
@@ -432,7 +432,6 @@ function main(): number {
     if (result.problem) {
       problems.push(result.problem)
     }
-  
   }
 
   // 3. test coverage (reported, never auto-written)

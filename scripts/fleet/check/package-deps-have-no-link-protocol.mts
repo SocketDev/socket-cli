@@ -119,12 +119,11 @@ async function main(): Promise<void> {
   )
   logger.log('')
   for (let i = 0, { length } = violations; i < length; i += 1) {
-    const violation = violations[i]!;
+    const violation = violations[i]!
     logger.log(`  ${path.relative(REPO_ROOT, violation.file)}`)
     logger.log(
       `    ${violation.field}.${violation.package}: "${violation.value}"`,
     )
-  
   }
   process.exitCode = 1
 }

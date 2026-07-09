@@ -82,7 +82,9 @@ export function isExemptPath(filePath: string): boolean {
     normalizePath(filePath).includes('/dist/') ||
     normalizePath(filePath).includes('/build/') ||
     normalizePath(filePath).includes('/node_modules/') ||
-    normalizePath(filePath).includes('/.claude/hooks/fleet/prefer-fn-decl-guard/') ||
+    normalizePath(filePath).includes(
+      '/.claude/hooks/fleet/prefer-fn-decl-guard/',
+    ) ||
     // The rule lives at .config/fleet/oxlint-plugin/fleet/prefer-function-declaration/
     // (index.mts + test/), embedding the const-arrow shape it bans as rule data;
     // the per-rule dir prefix exempts both files.

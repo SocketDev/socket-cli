@@ -25,9 +25,13 @@ const API_COLLAPSE_THRESHOLD = 40
  */
 function collectMdFiles(dir: string, repoRoot: string, maxDepth = 3): string[] {
   const results: string[] = []
-  if (!existsSync(dir)) {return results}
+  if (!existsSync(dir)) {
+    return results
+  }
   function walk(current: string, depth: number): void {
-    if (depth > maxDepth) {return}
+    if (depth > maxDepth) {
+      return
+    }
     let entries: string[]
     try {
       entries = readdirSync(current)
@@ -35,7 +39,9 @@ function collectMdFiles(dir: string, repoRoot: string, maxDepth = 3): string[] {
       return
     }
     for (const entry of entries.toSorted()) {
-      if (entry.startsWith('.') || entry === 'node_modules') {continue}
+      if (entry.startsWith('.') || entry === 'node_modules') {
+        continue
+      }
       const full = path.join(current, entry)
       let stat
       try {
@@ -59,12 +65,18 @@ function collectMdFiles(dir: string, repoRoot: string, maxDepth = 3): string[] {
  * a description hint (used as the slot source for link notes).
  */
 function readMdLead(filePath: string): string | undefined {
-  if (!existsSync(filePath)) {return undefined}
+  if (!existsSync(filePath)) {
+    return undefined
+  }
   const lines = readFileSync(filePath, 'utf8').split('\n')
   for (const line of lines) {
     const t = line.trim()
-    if (t === '' || t.startsWith('#')) {continue}
-    if (t.length <= 200) {return t}
+    if (t === '' || t.startsWith('#')) {
+      continue
+    }
+    if (t.length <= 200) {
+      return t
+    }
     // Word-boundary truncation: cut at last space before 200, add ellipsis.
     const cut = t.lastIndexOf(' ', 200)
     return (cut > 0 ? t.slice(0, cut) : t.slice(0, 200)).trimEnd() + '…'
@@ -81,7 +93,9 @@ function collectPackages(
   packagesDir: string,
   repoRoot: string,
 ): Array<{ name: string; relPath: string }> {
-  if (!existsSync(packagesDir)) {return []}
+  if (!existsSync(packagesDir)) {
+    return []
+  }
   let entries: string[]
   try {
     entries = readdirSync(packagesDir)
@@ -97,8 +111,12 @@ function collectPackages(
     } catch {
       continue
     }
-    if (!stat.isDirectory()) {continue}
-    if (!existsSync(path.join(full, 'package.json'))) {continue}
+    if (!stat.isDirectory()) {
+      continue
+    }
+    if (!existsSync(path.join(full, 'package.json'))) {
+      continue
+    }
     result.push({
       name: entry,
       relPath: normalizePath(path.relative(repoRoot, full)),
@@ -170,7 +188,9 @@ export function buildSections(
       dirEntries = []
     }
     for (const entry of dirEntries.toSorted()) {
-      if (entry.startsWith('.') || entry.startsWith('_')) {continue}
+      if (entry.startsWith('.') || entry.startsWith('_')) {
+        continue
+      }
       const full = path.join(srcDir, entry)
       let stat
       try {
@@ -188,7 +208,9 @@ export function buildSections(
         ? entries.slice(0, API_COLLAPSE_THRESHOLD)
         : entries
     for (const rel of collapsed) {
-      const name = path.basename(rel).replace(/\.(?:mts|ts|cts|js|mjs|cjs)$/, '')
+      const name = path
+        .basename(rel)
+        .replace(/\.(?:mts|ts|cts|js|mjs|cjs)$/, '')
       apiLinks.push({
         name,
         note: readMdLead(
@@ -240,7 +262,7 @@ export function buildSections(
           'format',
         ]
         for (let i = 0, { length } = KEY_COMMANDS; i < length; i += 1) {
-          const cmd = KEY_COMMANDS[i]!;
+          const cmd = KEY_COMMANDS[i]!
           if (typeof scripts[cmd] === 'string') {
             commandLinks.push({
               name: `pnpm run ${cmd}`,
@@ -248,7 +270,6 @@ export function buildSections(
               url: 'package.json',
             })
           }
-        
         }
       }
     }

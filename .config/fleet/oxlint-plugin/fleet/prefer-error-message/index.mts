@@ -1,18 +1,19 @@
 /**
  * @file Flag the `<id> instanceof Error ? <id>.message : String(<id>)` ternary
- *   and prefer the `errorMessage` helper from `@socketsecurity/lib/errors/message`. The
- *   helper short-circuits the same shape, handles `aggregate` / cause chaining
- *   the bare ternary doesn't, and keeps every call site identical so a future
- *   change (adding cause chains, redacting tokens, etc.) lands in one place.
- *   The ternary form gets reinvented in nearly every error-handling branch, so
- *   the linter is the right surface to catch it. Report-only — no autofix. The
- *   rewrite to `errorMessage(<id>)` looks mechanical but the right import path
- *   depends on the file's context: a runtime source file in a downstream repo
- *   wants `@socketsecurity/lib/errors/message` (catalog), a script / test / hook in the
- *   same repo wants `@socketsecurity/lib-stable/errors/message` (devDep), and a repo
- *   that doesn't depend on `@socketsecurity/lib` at all can't apply the rewrite
- *   without first adding the dep. None of those choices belong to the linter.
- *   Surface the smell, let the human pick the import line. The rule
+ *   and prefer the `errorMessage` helper from
+ *   `@socketsecurity/lib/errors/message`. The helper short-circuits the same
+ *   shape, handles `aggregate` / cause chaining the bare ternary doesn't, and
+ *   keeps every call site identical so a future change (adding cause chains,
+ *   redacting tokens, etc.) lands in one place. The ternary form gets
+ *   reinvented in nearly every error-handling branch, so the linter is the
+ *   right surface to catch it. Report-only — no autofix. The rewrite to
+ *   `errorMessage(<id>)` looks mechanical but the right import path depends on
+ *   the file's context: a runtime source file in a downstream repo wants
+ *   `@socketsecurity/lib/errors/message` (catalog), a script / test / hook in
+ *   the same repo wants `@socketsecurity/lib-stable/errors/message` (devDep),
+ *   and a repo that doesn't depend on `@socketsecurity/lib` at all can't apply
+ *   the rewrite without first adding the dep. None of those choices belong to
+ *   the linter. Surface the smell, let the human pick the import line. The rule
  *   deliberately does not chase any of the harder variants (`e?.message ??
  *   String(e)`, `typeof e === 'string' ? e : ...`, `'message' in e ? e.message
  *   : String(e)`) because each carries different semantics — only the

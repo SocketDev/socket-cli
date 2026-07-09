@@ -9,7 +9,6 @@
  *   only fail when the fleet list grants a host gh-aw does NOT permit — a local
  *   egress reach the CI fence would block, i.e. a hole. Background:
  *   docs/agents.md/fleet/agent-egress.md.
- *
  *   Reference set = the union of every `allowDomains` array across the repo's
  *   compiled gh-aw `*.lock.yml` files. A gh-aw `*.suffix` wildcard covers any
  *   subdomain of `suffix`. Vacuous pass (exit 0) when the allowlist is absent

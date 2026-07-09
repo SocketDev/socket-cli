@@ -61,7 +61,10 @@ async function run(cmd: string, args: string[]): Promise<RunResult> {
     })
     process.stdout.write(String(result.stdout ?? ''))
     process.stderr.write(String(result.stderr ?? ''))
-    return { ok: true, output: `${result.stdout ?? ''}\n${result.stderr ?? ''}` }
+    return {
+      ok: true,
+      output: `${result.stdout ?? ''}\n${result.stderr ?? ''}`,
+    }
   } catch (e) {
     const err = e as {
       code?: number | undefined
@@ -112,7 +115,7 @@ const steps: Step[] = [
 
 const uncheckedPackages = new Set<string>()
 for (let i = 0, { length } = steps; i < length; i += 1) {
-  const step = steps[i]!;
+  const step = steps[i]!
   let { ok, output } = await run(step.cmd, step.args)
   if (ok && step.tazePass && collectPackumentFailures(output).length > 0) {
     // One retry absorbs a transient blip; a persistent failure set is a real
@@ -130,7 +133,6 @@ for (let i = 0, { length } = steps; i < length; i += 1) {
       uncheckedPackages.add(pkg)
     }
   }
-
 }
 
 // Fail-loud gate: taze exits 0 even when version lookups fail, which reads as

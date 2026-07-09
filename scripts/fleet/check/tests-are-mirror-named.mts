@@ -27,7 +27,7 @@
  *   Usage: node scripts/fleet/check/tests-are-mirror-named.mts [--strict] [--quiet]
  */
 
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -61,7 +61,9 @@ function testBasename(testPath: string): string {
 
 // True when the test lives under an exempt category segment.
 function isExemptLocation(relTestPath: string): boolean {
-  return normalizePath(relTestPath).split('/').some(seg => EXEMPT_SEGMENTS.has(seg))
+  return normalizePath(relTestPath)
+    .split('/')
+    .some(seg => EXEMPT_SEGMENTS.has(seg))
 }
 
 // True when the test's first line carries the inline-marker escape:
@@ -88,7 +90,8 @@ export function firstPartyImports(
   const out = new Set<string>()
   // Static import/export-from: `import … from 'spec'` or `export … from 'spec'`.
   // Dynamic import call: `import('spec')` with optional surrounding whitespace.
-  const re = /(?:import|export)[^'"]*?from\s*['"]([^'"]+)['"]|import\s*\(\s*['"]([^'"]+)['"]\s*\)/g
+  const re =
+    /(?:import|export)[^'"]*?from\s*['"]([^'"]+)['"]|import\s*\(\s*['"]([^'"]+)['"]\s*\)/g
   let m: RegExpExecArray | null
   // eslint-disable-next-line no-cond-assign
   while ((m = re.exec(content))) {
@@ -123,15 +126,17 @@ export function firstPartyImports(
  */
 export function isBlessedVariant(basename: string, sources: string[]): boolean {
   for (let i = 0, { length } = sources; i < length; i += 1) {
-    const src = sources[i]!;
+    const src = sources[i]!
     const parts = normalizePath(src).split('/')
     const srcBase = path.basename(src).replace(/\.[cm]?[jt]sx?$/, '')
     const parent = parts[parts.length - 2] ?? ''
     const grandparent = parts[parts.length - 3] ?? ''
-    if (srcBase === 'index' && (basename === parent || basename === grandparent)) {
+    if (
+      srcBase === 'index' &&
+      (basename === parent || basename === grandparent)
+    ) {
       return true
     }
-  
   }
   return false
 }
@@ -155,7 +160,10 @@ export function isCheckByName(basename: string, repoRoot: string): boolean {
 // `<srcBase>.test.mts`) for a source it imports — several focused test files
 // deliberately splitting one large source (e.g. cover-thresholds, cover-discovery
 // for cover.mts) each stay grouped under the source's basename prefix.
-export function matchesShard(basename: string, sourceBasenames: string[]): boolean {
+export function matchesShard(
+  basename: string,
+  sourceBasenames: string[],
+): boolean {
   return sourceBasenames.some(
     sb => basename === sb || basename.startsWith(`${sb}-`),
   )
@@ -202,11 +210,14 @@ interface Violation {
 }
 
 export function scanRepo(repoRoot: string): Violation[] {
-  const testFiles = globSync(['test/**/*.{test,spec}.{mts,ts,mjs,cjs,js,tsx,jsx}'], {
-    cwd: repoRoot,
-    absolute: false,
-    ignore: ['**/node_modules/**', '**/fixtures/**'],
-  })
+  const testFiles = globSync(
+    ['test/**/*.{test,spec}.{mts,ts,mjs,cjs,js,tsx,jsx}'],
+    {
+      cwd: repoRoot,
+      absolute: false,
+      ignore: ['**/node_modules/**', '**/fixtures/**'],
+    },
+  )
   const violations: Violation[] = []
   for (const rel of testFiles) {
     const abs = path.join(repoRoot, rel)
@@ -228,10 +239,47 @@ export function scanRepo(repoRoot: string): Violation[] {
   return violations
 }
 
+// Grandfather ratchet: entries here are legacy off-convention tests that
+// predate the --strict flip. `--strict` fails only on NEW violations;
+// `--update` rewrites the baseline DOWN as legacy tests conform. Same shape
+// as scripts-have-unit-tests-baseline.json.
+const BASELINE_PATH = '.config/repo/tests-mirror-baseline.json'
+
+function readBaseline(): Set<string> {
+  try {
+    const parsed = JSON.parse(readFileSync(BASELINE_PATH, 'utf8')) as string[]
+    return new Set(Array.isArray(parsed) ? parsed : [])
+  } catch {
+    return new Set()
+  }
+}
+
 function main(): number {
   const strict = process.argv.includes('--strict')
   const quiet = process.argv.includes('--quiet')
-  const violations = scanRepo(REPO_ROOT)
+  const update = process.argv.includes('--update')
+  let violations = scanRepo(REPO_ROOT)
+  if (update) {
+    writeFileSync(
+      BASELINE_PATH,
+      `${JSON.stringify(violations.map(v => v.testPath).toSorted(), null, 2)}\n`,
+      'utf8',
+    )
+    logger.success(
+      `[tests-are-mirror-named] baseline updated — ${violations.length} legacy test(s) grandfathered.`,
+    )
+    return 0
+  }
+  const baseline = readBaseline()
+  const stale = [...baseline].filter(
+    p => !violations.some(v => v.testPath === p),
+  )
+  if (stale.length && !quiet) {
+    logger.warn(
+      `[tests-are-mirror-named] ${stale.length} stale baseline entr(ies) — now conforming or removed; run --update to ratchet DOWN.`,
+    )
+  }
+  violations = violations.filter(v => !baseline.has(v.testPath))
   if (!violations.length) {
     if (!quiet) {
       logger.success(

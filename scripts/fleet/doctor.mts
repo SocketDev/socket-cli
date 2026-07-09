@@ -148,7 +148,9 @@ function readPinnedTrufflehogVersion(cwd: string): string | undefined {
   }
   try {
     const cfg = JSON.parse(readFileSync(cfgPath, 'utf8')) as {
-      tools?: { trufflehog?: { version?: string | undefined } | undefined } | undefined
+      tools?:
+        | { trufflehog?: { version?: string | undefined } | undefined }
+        | undefined
     }
     return cfg.tools?.trufflehog?.version
   } catch {
@@ -521,7 +523,9 @@ async function main(): Promise<void> {
     }
     if (!doFix && fixes.length > 0) {
       logger.error('')
-      logger.info('Run `node scripts/fleet/doctor.mts --fix` to apply the auto-fixable catalog fixes.')
+      logger.info(
+        'Run `node scripts/fleet/doctor.mts --fix` to apply the auto-fixable catalog fixes.',
+      )
     }
     process.exitCode = 1
   } else {

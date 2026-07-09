@@ -9,7 +9,7 @@
 
 import { existsSync, readFileSync } from 'node:fs'
 
-import type { CoverageOptions } from 'vitest'
+import type { CoverageOptions } from 'vitest/node'
 
 /**
  * Fleet-shared coverage base. Excludes cover the dirs every fleet repo has
@@ -17,7 +17,6 @@ import type { CoverageOptions } from 'vitest'
  * deltas live in the repo's `.config/repo/coverage.json` overlay.
  */
 export const baseFleetCoverageConfig: CoverageOptions = {
-  all: true,
   clean: true,
   exclude: [
     '**/*.config.*',
@@ -110,15 +109,18 @@ export function resolveCoverageConfig(
   const overlay = readRepoCoverageOverlay(options)
   const removals = new Set(overlay.exclude?.remove ?? [])
   const exclude = [
-    ...(baseFleetCoverageConfig.exclude ?? []).filter(g => !removals.has(g)),
+    ...(baseFleetCoverageConfig.exclude ?? []).filter((g: string) => !removals.has(g)),
     ...(overlay.exclude?.add ?? []),
   ]
+  // `include` spreads conditionally: exactOptionalPropertyTypes forbids an
+  // explicit `include: undefined` on CoverageOptions.
+  const include =
+    overlay.include && overlay.include.length > 0
+      ? [...overlay.include]
+      : baseFleetCoverageConfig.include
   return {
     ...baseFleetCoverageConfig,
     exclude,
-    include:
-      overlay.include && overlay.include.length > 0
-        ? [...overlay.include]
-        : baseFleetCoverageConfig.include,
+    ...(include ? { include } : {}),
   }
 }

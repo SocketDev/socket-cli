@@ -2,10 +2,8 @@
  * @file Owning formatter for a repo's first-party Rust: run `cargo fmt` for
  *   every cargo workspace in the tree, skipping vendored/generated code. The
  *   root rustfmt.toml (fleet 2-space style) governs every run. Modes:
- *
- *     node scripts/fleet/fmt-rust.mts           # rewrite
- *     node scripts/fleet/fmt-rust.mts --check   # verify only (CI / pre-push)
- *
+ *   node scripts/fleet/fmt-rust.mts           # rewrite
+ *   node scripts/fleet/fmt-rust.mts --check   # verify only (CI / pre-push)
  *   A Cargo.toml nested under another discovered manifest's directory is a
  *   workspace member — `cargo fmt --all` at the outer root already covers it,
  *   so only the outermost manifests run.
@@ -52,7 +50,11 @@ export function findWorkspaceManifests(root: string): string[] {
     }
     for (let i = 0, { length } = entries; i < length; i += 1) {
       const name = entries[i]!
-      if (SKIP_DIRS.has(name) || name.endsWith('-bundled') || name.endsWith('-vendored')) {
+      if (
+        SKIP_DIRS.has(name) ||
+        name.endsWith('-bundled') ||
+        name.endsWith('-vendored')
+      ) {
         continue
       }
       const abs = path.join(dir, name)
@@ -94,10 +96,18 @@ function main(): void {
   let failed = false
   for (let i = 0, { length } = manifests; i < length; i += 1) {
     const manifest = manifests[i]!
-    logger.info(`fmt-rust: cargo fmt --all (${path.relative(repoRoot, manifest)})`)
+    logger.info(
+      `fmt-rust: cargo fmt --all (${path.relative(repoRoot, manifest)})`,
+    )
     const result = spawnSync(
       'cargo',
-      ['fmt', '--all', '--manifest-path', manifest, ...(check ? ['--check'] : [])],
+      [
+        'fmt',
+        '--all',
+        '--manifest-path',
+        manifest,
+        ...(check ? ['--check'] : []),
+      ],
       { stdio: 'inherit' },
     )
     if (result.status !== 0) {

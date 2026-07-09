@@ -30,7 +30,7 @@ export function extractFilterName(command: string): string | undefined {
   const m =
     /--filter[= ](['"]?)([^\s'"]+)\1/.exec(command) ??
     /--filter[= ]["']([^'"]+)["']/.exec(command)
-  return m ? m[2] ?? m[1] : undefined
+  return m ? (m[2] ?? m[1]) : undefined
 }
 
 export function formatNudge(command: string): string {

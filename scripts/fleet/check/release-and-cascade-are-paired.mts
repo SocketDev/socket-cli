@@ -110,7 +110,9 @@ export function readBundlePin(): BundlePin | undefined {
   }
   try {
     const json = JSON.parse(readFileSync(CONFIG_PATH, 'utf8')) as {
-      bundle?: { ref?: unknown | undefined; cascadeSha?: unknown | undefined } | undefined
+      bundle?:
+        | { ref?: unknown | undefined; cascadeSha?: unknown | undefined }
+        | undefined
     }
     const ref = json.bundle?.ref
     const cascadeSha = json.bundle?.cascadeSha

@@ -62,7 +62,7 @@ export function buildSlots(
 
   // Per-link note slots — one per link that has non-empty source text.
   for (let i = 0, { length } = sections; i < length; i += 1) {
-    const section = sections[i]!;
+    const section = sections[i]!
     for (const link of section.links) {
       if (link.note === undefined) {
         // No source text available — skip, deterministic fallback will be used.
@@ -75,7 +75,6 @@ export function buildSlots(
         source: link.note,
       })
     }
-  
   }
 
   return slots

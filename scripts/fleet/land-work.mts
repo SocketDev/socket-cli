@@ -74,12 +74,15 @@ interface GitRun {
 
 function isUntrackedByDefault(p: string): boolean {
   const np = normalizePath(p)
-  for (let i = 0, { length } = UNTRACKED_BY_DEFAULT_PREFIXES; i < length; i += 1) {
-    const prefix = UNTRACKED_BY_DEFAULT_PREFIXES[i]!;
+  for (
+    let i = 0, { length } = UNTRACKED_BY_DEFAULT_PREFIXES;
+    i < length;
+    i += 1
+  ) {
+    const prefix = UNTRACKED_BY_DEFAULT_PREFIXES[i]!
     if (np.startsWith(prefix)) {
       return true
     }
-  
   }
   // A path segment (anchored at start or after `/`) ending in `-bundled` or
   // `-vendored`, followed by `/` or end-of-string.
@@ -89,11 +92,10 @@ function isUntrackedByDefault(p: string): boolean {
 export function isSourceArea(p: string): boolean {
   const np = normalizePath(p)
   for (let i = 0, { length } = SOURCE_AREA_PREFIXES; i < length; i += 1) {
-    const prefix = SOURCE_AREA_PREFIXES[i]!;
+    const prefix = SOURCE_AREA_PREFIXES[i]!
     if (np.startsWith(prefix)) {
       return true
     }
-  
   }
   return false
 }
@@ -295,11 +297,10 @@ const GENERATED_PATTERNS = [
 export function isGenerated(p: string): boolean {
   const np = normalizePath(p)
   for (let i = 0, { length } = GENERATED_PATTERNS; i < length; i += 1) {
-    const re = GENERATED_PATTERNS[i]!;
+    const re = GENERATED_PATTERNS[i]!
     if (re.test(np)) {
       return true
     }
-  
   }
   return false
 }

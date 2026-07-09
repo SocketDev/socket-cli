@@ -824,7 +824,9 @@ export async function setupZizmor(): Promise<boolean> {
       logger.log(`Found on PATH: ${systemBin} (${releaseTag(ZIZMOR.version)})`)
       return true
     }
-    logger.log(`Found on PATH but wrong version (need ${releaseTag(ZIZMOR.version)})`)
+    logger.log(
+      `Found on PATH but wrong version (need ${releaseTag(ZIZMOR.version)})`,
+    )
   }
 
   // Download archive via dlx (handles caching + checksum).

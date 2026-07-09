@@ -14,12 +14,18 @@
  * CONTRACT (the sweeper hook implements its own tiny reader against the
  * same layout — keep in lockstep with
  * `.claude/hooks/fleet/stale-process-sweeper/index.mts`):
- *   directory  ~/.claude/hooks/stale-process-sweeper/active-runs/
- *   entry      one empty file per registrant, named `<pid>`
- *   liveness   the file counts only while `kill -0 <pid>` succeeds
+ * directory  ~/.claude/hooks/stale-process-sweeper/active-runs/
+ * entry      one empty file per registrant, named `<pid>`
+ * liveness   the file counts only while `kill -0 <pid>` succeeds.
  */
 
-import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
@@ -65,9 +71,7 @@ export function registerActiveRun(options?: MarkerOptions | undefined): void {
   writeFileSync(path.join(dir, String(opts.pid ?? process.pid)), '')
 }
 
-export function unregisterActiveRun(
-  options?: MarkerOptions | undefined,
-): void {
+export function unregisterActiveRun(options?: MarkerOptions | undefined): void {
   const opts = { __proto__: null, ...options }
   const file = path.join(
     activeRunsDir(opts.homeDir),

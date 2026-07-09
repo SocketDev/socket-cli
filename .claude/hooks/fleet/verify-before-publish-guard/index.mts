@@ -165,7 +165,7 @@ export function hasRegistryReadReceipt(
     ...readPriorAssistantToolUses(transcriptPath, RECEIPT_LOOKBACK_TURNS),
   ]
   for (let i = 0, { length } = events; i < length; i += 1) {
-    const event = events[i]!;
+    const event = events[i]!
     if (event.name !== 'Bash') {
       continue
     }
@@ -176,7 +176,6 @@ export function hasRegistryReadReceipt(
     if (isRegistryRead(cmd)) {
       return true
     }
-  
   }
   return false
 }

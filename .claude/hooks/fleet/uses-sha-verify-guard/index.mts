@@ -71,14 +71,20 @@ function isWorkflowOrActionPath(filePath: string): boolean {
 }
 
 function isGitmodulesPath(filePath: string): boolean {
-  return normalizePath(filePath).endsWith('/.gitmodules') || filePath === '.gitmodules'
+  return (
+    normalizePath(filePath).endsWith('/.gitmodules') ||
+    filePath === '.gitmodules'
+  )
 }
 
 function isPackageJsonPath(filePath: string): boolean {
   if (normalizePath(filePath).includes('/node_modules/')) {
     return false
   }
-  return normalizePath(filePath).endsWith('/package.json') || filePath === 'package.json'
+  return (
+    normalizePath(filePath).endsWith('/package.json') ||
+    filePath === 'package.json'
+  )
 }
 
 function checkBashSurface(

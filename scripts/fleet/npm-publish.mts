@@ -801,7 +801,7 @@ async function runApprove(options: {
   let failed = 0
   const approvedEntries: StageListEntry[] = []
   for (let i = 0, { length } = verified; i < length; i += 1) {
-    const stageId = verified[i]!;
+    const stageId = verified[i]!
     const args = ['stage', 'approve', stageId]
     if (otp) {
       args.push('--otp', otp)
@@ -818,7 +818,6 @@ async function runApprove(options: {
       failed += 1
       logger.fail(`Approve ${stageId} exited ${code}`)
     }
-  
   }
   if (failed > 0) {
     logger.fail(`${failed}/${verified.length} failed; ${approved} approved`)

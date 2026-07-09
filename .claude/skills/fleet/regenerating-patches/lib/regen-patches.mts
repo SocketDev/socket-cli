@@ -400,7 +400,7 @@ export async function main(argv: readonly string[]): Promise<void> {
     entries.sort()
     const report: Record<string, PatchClassification> = {
       __proto__: null,
-    } as Record<string, PatchClassification>
+    } as unknown as Record<string, PatchClassification>
     for (let i = 0, { length } = entries; i < length; i += 1) {
       const name = entries[i]!
       const patch = parsePatch(

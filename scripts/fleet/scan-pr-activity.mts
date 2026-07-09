@@ -7,21 +7,21 @@
  * Usage: node scripts/fleet/scan-pr-activity.mts <config.json> [--quiet]
  *
  * Config (JSON object):
- *   repoDir          absolute path of the checkout to run gh from
- *   repoSlug         owner/name for API routes (e.g. SocketDev/depscan)
- *   watchedComments  [{ pr: number, commentId: number }] — replies + reactions
- *   authors          logins whose NEW open PRs (no human comments) to surface
- *   dupPairs         [[prA, prB]] — report when either closes
- *   selfLogin        login whose own comments don't count as replies
- *   createdSince     YYYY-MM-DD floor for the new-PR search
+ * repoDir          absolute path of the checkout to run gh from
+ * repoSlug         owner/name for API routes (e.g. SocketDev/depscan)
+ * watchedComments  [{ pr: number, commentId: number }] — replies + reactions
+ * authors          logins whose NEW open PRs (no human comments) to surface
+ * dupPairs         [[prA, prB]] — report when either closes
+ * selfLogin        login whose own comments don't count as replies
+ * createdSince     YYYY-MM-DD floor for the new-PR search.
  *
  * State (sibling `<config>.state.json`, script-owned): last scan time and
  * per-comment reaction totals, so "new" means since the previous tick.
  *
  * Output contract (the recurring prompt relays this verbatim):
- *   exit 0, "SCAN: all quiet — …"   nothing changed; the agent ends the turn
- *   exit 0, "SCAN: CHANGES" + bullets   the agent investigates/acts
- *   exit 1, heartbeat/auth failure  the agent reports the re-auth ask
+ * exit 0, "SCAN: all quiet — …"   nothing changed; the agent ends the turn
+ * exit 0, "SCAN: CHANGES" + bullets   the agent investigates/acts
+ * exit 1, heartbeat/auth failure  the agent reports the re-auth ask.
  */
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
@@ -121,18 +121,16 @@ export function attributeQuote(
     return undefined
   }
   for (let i = 0, { length } = comments; i < length; i += 1) {
-    const c = comments[i]!;
+    const c = comments[i]!
     if (c.a !== reply.a && c.body.includes(needle)) {
       return `${c.a}'s comment`
     }
-  
   }
   for (let i = 0, { length } = reviews; i < length; i += 1) {
-    const r = reviews[i]!;
+    const r = reviews[i]!
     if (r.a !== reply.a && r.body.includes(needle)) {
       return `${r.a}'s review`
     }
-  
   }
   return undefined
 }
@@ -286,7 +284,15 @@ export function runScan(
 
   for (const pair of config.dupPairs) {
     for (const pr of pair) {
-      const out = gh(['pr', 'view', String(pr), '--json', 'state', '--jq', '.state'])
+      const out = gh([
+        'pr',
+        'view',
+        String(pr),
+        '--json',
+        'state',
+        '--jq',
+        '.state',
+      ])
       if (out === undefined) {
         report.errors.push(`dup pair pr ${pr}: state fetch failed`)
         continue
@@ -350,7 +356,10 @@ export function loadState(configPath: string): ScanState {
     try {
       const parsed = JSON.parse(readFileSync(statePath, 'utf8')) as ScanState
       if (parsed && typeof parsed === 'object' && parsed.scannedAt) {
-        return { reactions: parsed.reactions ?? {}, scannedAt: parsed.scannedAt }
+        return {
+          reactions: parsed.reactions ?? {},
+          scannedAt: parsed.scannedAt,
+        }
       }
     } catch {
       // Fall through to a fresh state — a torn state file must not stop the
@@ -387,7 +396,11 @@ function main(): void {
     return
   }
   const state = loadState(configPath)
-  const report = runScan(config, state, makeGhRunner(expandHome(config.repoDir)))
+  const report = runScan(
+    config,
+    state,
+    makeGhRunner(expandHome(config.repoDir)),
+  )
   writeFileSync(statePathFor(configPath), JSON.stringify(state, undefined, 1))
   const rendered = renderReport(config, report)
   if (!quiet || scanChanged(report)) {

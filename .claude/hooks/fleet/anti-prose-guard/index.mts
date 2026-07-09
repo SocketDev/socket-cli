@@ -88,10 +88,7 @@ export const check = editGuard((filePath, content, payload) => {
   if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
     return undefined
   }
-  const lines: string[] = [
-    `🚨 anti-prose-guard: blocked write to ${rel}.`,
-    '',
-  ]
+  const lines: string[] = [`🚨 anti-prose-guard: blocked write to ${rel}.`, '']
   for (let i = 0, { length } = hits; i < length; i += 1) {
     const hit = hits[i]!
     lines.push(`  ✗ ${hit.label}: ${hit.why}`)

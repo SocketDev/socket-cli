@@ -74,7 +74,9 @@ export function isHookIndexPath(filePath: string): boolean {
 }
 
 export function isOwnTestPath(filePath: string): boolean {
-  return normalizePath(filePath).includes('/.claude/hooks/fleet/no-env-kill-switch-guard/')
+  return normalizePath(filePath).includes(
+    '/.claude/hooks/fleet/no-env-kill-switch-guard/',
+  )
 }
 
 export const check = editGuard((filePath, content, payload) => {

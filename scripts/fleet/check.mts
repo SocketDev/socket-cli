@@ -516,7 +516,8 @@ const steps: Array<() => boolean> = [
   // ⊆ gh-aw), not byte-equality, so a gh-aw version bump doesn't flap it; fails
   // only when the local allowlist grants a host the CI fence would block (a
   // hole). Vacuous pass where the allowlist or a gh-aw lock is absent.
-  () => run('node', ['scripts/fleet/check/egress-allowlist-is-gh-aw-subset.mts']),
+  () =>
+    run('node', ['scripts/fleet/check/egress-allowlist-is-gh-aw-subset.mts']),
   // The non-gh-aw weekly-update fallback ships disabled-only
   // (`weekly-update-non-gh-aw.yml.disabled`); the ENABLED `.yml` is transient +
   // untracked. If it were committed it auto-runs weekly in every cascaded repo —

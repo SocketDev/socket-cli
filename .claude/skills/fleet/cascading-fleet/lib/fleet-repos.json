@@ -59,6 +59,7 @@
     },
     {
       "name": "ultrathink",
+      "optIns": ["squash-history"],
       "description": "Multi-language acorn JavaScript parser: Rust (reference), Go, C++, TypeScript"
     },
     {

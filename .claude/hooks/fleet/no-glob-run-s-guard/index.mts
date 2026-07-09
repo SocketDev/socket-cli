@@ -41,7 +41,8 @@ export interface GlobDetection {
 
 export function isPackageJson(filePath: string): boolean {
   return (
-    (normalizePath(filePath).endsWith('/package.json') || filePath === 'package.json') &&
+    (normalizePath(filePath).endsWith('/package.json') ||
+      filePath === 'package.json') &&
     !normalizePath(filePath).includes('/node_modules/')
   )
 }

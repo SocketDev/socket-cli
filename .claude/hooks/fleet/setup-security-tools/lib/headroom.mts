@@ -57,7 +57,7 @@ export const HEADROOM_LOCKDOWN_ENV: Readonly<Record<string, string>> = {
   // fetch); the ONNX-Kompress text compressor degrades to a no-op rather than
   // phoning HuggingFace.
   HF_HUB_OFFLINE: '1',
-} as Record<string, string>
+} as unknown as Record<string, string>
 
 // The security invariant the lockdown MUST satisfy: telemetry OFF and the model
 // download OFF. Asserted at load time (fail-closed) so a future edit that drops
@@ -67,7 +67,7 @@ const REQUIRED_LOCKDOWN: Readonly<Record<string, string>> = {
   __proto__: null,
   HEADROOM_TELEMETRY: 'off',
   HF_HUB_OFFLINE: '1',
-} as Record<string, string>
+} as unknown as Record<string, string>
 
 export function lockdownViolations(
   applied: Readonly<Record<string, string>>,
@@ -238,7 +238,7 @@ export async function setupHeadroom(version: string): Promise<boolean> {
           ...HEADROOM_LOCKDOWN_ENV,
           UV_PROJECT_ENVIRONMENT: venvDir,
           UV_CACHE_DIR: cacheDir,
-        },
+        } as unknown as Record<string, string>,
         stdio: 'pipe',
       },
     )

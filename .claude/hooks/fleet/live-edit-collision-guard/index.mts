@@ -82,7 +82,10 @@ export function detectCollision(
     ownWriteTs?: number | undefined
   },
 ): CollisionResult | undefined {
-  const { now, collisionWindowMs, ttlMs, ownWriteTs } = { __proto__: null, ...options } as typeof options
+  const { now, collisionWindowMs, ttlMs, ownWriteTs } = {
+    __proto__: null,
+    ...options,
+  } as typeof options
   for (let i = 0, { length } = otherLedgerPaths; i < length; i += 1) {
     const fp = otherLedgerPaths[i]!
     const raw = readActorLedger(fp)

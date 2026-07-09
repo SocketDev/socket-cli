@@ -31,6 +31,29 @@ import { PNPM_LOCK } from '../paths.mts'
 
 const logger = getDefaultLogger()
 
+// Repo overlay opt-out for the esbuild ban ONLY (the vite<8 floor is
+// unconditional). A repo with a legitimate non-bundler esbuild use — e.g.
+// socket-lib's browser-bundle e2e arm — declares it with a reason:
+//   .config/repo/vite-rolldown.json  →  { "allowEsbuild": "<why>" }
+// The build bundler stays rolldown either way; this tolerates esbuild as a
+// declared test/dev dependency, never as the bundler.
+const REPO_OVERLAY = '.config/repo/vite-rolldown.json'
+export function esbuildAllowReason(): string | undefined {
+  if (!existsSync(REPO_OVERLAY)) {
+    return undefined
+  }
+  try {
+    const parsed = JSON.parse(readFileSync(REPO_OVERLAY, 'utf8')) as {
+      allowEsbuild?: string | undefined
+    }
+    return typeof parsed.allowEsbuild === 'string' && parsed.allowEsbuild
+      ? parsed.allowEsbuild
+      : undefined
+  } catch {
+    return undefined
+  }
+}
+
 export interface ViteFinding {
   // 'vite-too-old' (a vite@<8 resolution) or 'esbuild-present'.
   readonly kind: 'esbuild-present' | 'vite-too-old'
@@ -88,7 +111,17 @@ export function main(): void {
     }
     return
   }
-  const findings = scanLock(readFileSync(PNPM_LOCK, 'utf8'))
+  let findings = scanLock(readFileSync(PNPM_LOCK, 'utf8'))
+  const allowReason = esbuildAllowReason()
+  if (allowReason) {
+    const tolerated = findings.filter(f => f.kind === 'esbuild-present')
+    findings = findings.filter(f => f.kind !== 'esbuild-present')
+    if (tolerated.length > 0 && !quiet) {
+      logger.log(
+        `vite-is-rolldown-native: tolerating ${tolerated.length} esbuild resolution(s) — ${REPO_OVERLAY}: ${allowReason}`,
+      )
+    }
+  }
   if (findings.length === 0) {
     if (!quiet) {
       logger.success(

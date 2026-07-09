@@ -56,8 +56,7 @@ const SUMMARY_SHAPE =
 // A numeric item/finding reference. The reference must be followed by its
 // item's short title in italics — either ` _(title)_` or `, _title_` — with an
 // optional markdown-link tail (`[2](#user-content-finding-2)`) in between.
-const NUMERIC_REF_PATTERN =
-  /\b(?:item|finding)s?\s+\[?(\d+)\]?(\(#[^)]*\))?/gi
+const NUMERIC_REF_PATTERN = /\b(?:item|finding)s?\s+\[?(\d+)\]?(\(#[^)]*\))?/gi
 
 const TITLED_REF_TAIL = /^,?\s*_\(?/
 
@@ -240,7 +239,8 @@ function lintNoAnchorLinks(lines: string[]): CommentViolation[] {
         line: i + 1,
         rule: 'no-anchor-links',
         saw: 'an intra-comment fragment link',
-        wanted: 'no fragment links — GitHub cannot open a collapsed <details> from one',
+        wanted:
+          'no fragment links — GitHub cannot open a collapsed <details> from one',
       })
     }
     if (/<a name="[a-z0-9-]+">/.test(lines[i]!)) {
@@ -305,7 +305,8 @@ function lintDetailsIndent(lines: string[]): CommentViolation[] {
 
 // A severity-circle bullet: `- ` then an `<abbr>` with hover text wrapping a
 // severity emoji (🔴/🟠/🟡/🟢) or any non-whitespace glyph, then a space.
-const BULLET_CIRCLE_SHAPE = /^- <abbr title="([^"]+)">(🔴|🟠|🟡|🟢|\S+)<\/abbr> /u
+const BULLET_CIRCLE_SHAPE =
+  /^- <abbr title="([^"]+)">(🔴|🟠|🟡|🟢|\S+)<\/abbr> /u
 
 // Inside a "Smaller items" fold, every bullet carries its OWN severity circle
 // (with canonical hover text), and the fold's summary circle matches the most
@@ -331,9 +332,7 @@ function lintSmallerItems(lines: string[]): CommentViolation[] {
     }
     if (line.startsWith('</details>')) {
       const foldRank =
-        foldCircle === undefined
-          ? undefined
-          : SEVERITY_RANKS.get(foldCircle)
+        foldCircle === undefined ? undefined : SEVERITY_RANKS.get(foldCircle)
       if (
         foldRank !== undefined &&
         Number.isFinite(mostSevereRank) &&

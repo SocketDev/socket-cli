@@ -140,15 +140,17 @@ export function pickOxlintConfig(repoDir: string): string {
  * runFiles() — same config picker, same --no-error-on-unmatched-pattern flag.
  * Exported so unit tests can pin the argv and detect divergence from lint.mts.
  */
-export function buildLintArgs(
-  repoDir: string,
-  files: string[],
-): string[] {
+export function buildLintArgs(repoDir: string, files: string[]): string[] {
   // Mirrors lint.mts runFiles():
   //   pnpm exec oxlint -c <config> --no-error-on-unmatched-pattern <files>
   // Running via the local binary (not pnpm exec) keeps land.mts dependency-free
   // on the pnpm wrapper, but the config path and flags MUST match lint.mts.
-  return ['-c', pickOxlintConfig(repoDir), '--no-error-on-unmatched-pattern', ...files]
+  return [
+    '-c',
+    pickOxlintConfig(repoDir),
+    '--no-error-on-unmatched-pattern',
+    ...files,
+  ]
 }
 
 /**
@@ -159,7 +161,7 @@ export function buildLintArgs(
  * --no-verify-lint (e.g. a worktree without node_modules).
  *
  * Invocation shape matches scripts/fleet/lint.mts runFiles() exactly:
- *   -c <config> --no-error-on-unmatched-pattern <files>
+ * -c <config> --no-error-on-unmatched-pattern <files>
  * See buildLintArgs() — lint.mts is the source of truth.
  */
 export async function lintLandsClean(
@@ -191,11 +193,10 @@ export async function lintLandsClean(
   // `Found <W> warnings and <E> errors.`; clean ⟺ E === 0. spawn rejects on a
   // non-zero exit, so read stdout/stderr off either the resolved result or the
   // caught error.
-  const result = (await spawn(
-    lintBin,
-    buildLintArgs(repoDir, lintable),
-    { cwd: repoDir, stdioString: true },
-  ).catch((e: unknown) => e)) as {
+  const result = (await spawn(lintBin, buildLintArgs(repoDir, lintable), {
+    cwd: repoDir,
+    stdioString: true,
+  }).catch((e: unknown) => e)) as {
     stdout?: string | undefined
     stderr?: string | undefined
   }

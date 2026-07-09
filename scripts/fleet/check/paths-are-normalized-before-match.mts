@@ -110,6 +110,20 @@ export function scan(filePath: string, rawText: string): PathFinding[] {
         break
       }
     }
+    // Assignment provenance beats proximity: a variable BORN from a
+    // normalize call (`const x = normalizePath(…)` anywhere in the file)
+    // is normalized at every later use, however far from the assignment.
+    if (!proven) {
+      const assignRe = new RegExp(
+        `\\b${varName}\\s*=\\s*(?:normalizePath|toUnixPath)\\(`,
+      )
+      for (let j = 0, { length } = lines; j < length; j += 1) {
+        if (assignRe.test(lines[j] ?? '')) {
+          proven = true
+          break
+        }
+      }
+    }
     if (!proven) {
       findings.push({ file: filePath, line: i + 1, text: line.trim(), varName })
     }
@@ -138,10 +152,7 @@ function main(): void {
           .split('\n')
           .map(f => f.trim())
           .filter(
-            f =>
-              f.length > 0 &&
-              SOURCE_FILE_RE.test(f) &&
-              !SKIP_DIR_RE.test(f),
+            f => f.length > 0 && SOURCE_FILE_RE.test(f) && !SKIP_DIR_RE.test(f),
           )
           .map(f => path.join(REPO_ROOT, f))
       : []

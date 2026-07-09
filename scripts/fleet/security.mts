@@ -317,11 +317,10 @@ function printSummary(findings: Finding[]): void {
   }
   const byTool = new Map<string, Finding[]>()
   for (let i = 0, { length } = findings; i < length; i += 1) {
-    const f = findings[i]!;
+    const f = findings[i]!
     const bucket = byTool.get(f.tool) ?? []
     bucket.push(f)
     byTool.set(f.tool, bucket)
-  
   }
   for (const [tool, fs] of byTool) {
     logger.error('')

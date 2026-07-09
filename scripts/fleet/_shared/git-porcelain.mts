@@ -5,25 +5,30 @@
  *   status column (a ` M path` first line becomes `M path`, shifting every
  *   parsed field by one char and corrupting the result). This helper uses
  *   `stdioString: false` to get a raw Buffer, stringifies without trim, and
- *   returns the untrimmed string ready for `parsePorcelain`.
- *
- *   Consumers: `scripts/fleet/land-work.mts` has its own inlined copy of this
- *   logic (because it predates this module); new callers should import from here.
+ *   returns the untrimmed string ready for `parsePorcelain`. Consumers:
+ *   `scripts/fleet/land-work.mts` has its own inlined copy of this logic
+ *   (because it predates this module); new callers should import from here.
  */
 
 // oxlint-disable-next-line socket/prefer-async-spawn -- sync helper; callers are sync check scripts needing a one-shot status read before git ops.
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 export interface PorcelainEntry {
-  /** Two-char porcelain status (e.g. `' M'`, `'??'`, `'R '`). */
+  /**
+   * Two-char porcelain status (e.g. `' M'`, `'??'`, `'R '`).
+   */
   readonly status: string
-  /** Repo-relative path (rename entries resolve to the NEW path). */
+  /**
+   * Repo-relative path (rename entries resolve to the NEW path).
+   */
   readonly path: string
 }
 
 export interface GitPorcelainResult {
   readonly ok: boolean
-  /** Untrimmed stdout from `git status --porcelain`. */
+  /**
+   * Untrimmed stdout from `git status --porcelain`.
+   */
   readonly raw: string
   readonly entries: PorcelainEntry[]
 }
@@ -35,7 +40,7 @@ export interface GitPorcelainResult {
  *
  * Options:
  * - `unatrackedAll` — pass `--untracked-files=all`; expands new directories
- *   to individual file entries instead of collapsing to `?? dir/`.
+ * to individual file entries instead of collapsing to `?? dir/`.
  */
 export function gitPorcelain(
   cwd: string,
@@ -71,9 +76,9 @@ export function gitPorcelain(
  * Rename entries (`R old -> new`) resolve to the NEW path. Pure; no I/O.
  *
  * The two-char status at columns 0–1 is preserved verbatim. Example inputs:
- *   ` M src/foo.mts`   → `{ status: ' M', path: 'src/foo.mts' }`
- *   `?? scripts/x.mts` → `{ status: '??', path: 'scripts/x.mts' }`
- *   `R  old.mts -> new.mts` → `{ status: 'R ', path: 'new.mts' }`
+ * ` M src/foo.mts`   → `{ status: ' M', path: 'src/foo.mts' }`
+ * `?? scripts/x.mts` → `{ status: '??', path: 'scripts/x.mts' }`
+ * `R  old.mts -> new.mts` → `{ status: 'R ', path: 'new.mts' }`
  */
 export function parsePorcelain(out: string): PorcelainEntry[] {
   const entries: PorcelainEntry[] = []

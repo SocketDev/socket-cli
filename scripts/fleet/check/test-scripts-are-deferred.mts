@@ -52,7 +52,8 @@ const MTS_WRAPPER_RE = /^node\s+\S+\.mts\b/
 // bare word, or the Node built-in runner's `--test` flag anywhere in a `node`
 // invocation.
 // require-regex-comment: matches a bare vitest/jest/mocha/ava/tap runner token, or `node ... --test`.
-const RAW_RUNNER_RE = /\b(?:vitest|jest|mocha|ava|tap)\b|\bnode\b[^&|;]*--test\b/
+const RAW_RUNNER_RE =
+  /\b(?:vitest|jest|mocha|ava|tap)\b|\bnode\b[^&|;]*--test\b/
 
 // The hook / lint-rule / git-hook tier's canonical runner IS `node --test`
 // (CLAUDE.md "Two test runners by tier"); this gate never applies there.
@@ -155,7 +156,7 @@ function main(): number {
   logger.groupEnd()
   logger.log(
     'Fix: route through the fleet-canonical wrapper — `node scripts/fleet/test.mts` from the ' +
-      'root (its vitest `include` already reaches a monorepo package\'s test/ tree), or an ' +
+      "root (its vitest `include` already reaches a monorepo package's test/ tree), or an " +
       'equivalent thin `.mts` wrapper for a package that needs its own vitest config/env. ' +
       'See docs/agents.md/fleet/test-scripts-defer-to-mts.md.',
   )

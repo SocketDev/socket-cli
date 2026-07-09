@@ -12,10 +12,10 @@
  *   pinned token action). Scans `.github/**` (workflows + composite actions) of
  *   the repo, the cascaded `template/base/.github/**`, and the fleet-shared
  *   override actions under `template/overrides/socket-registry/.github/**`
- *   (which host the shared github-release-/github-pr-app-token actions every member
- *   consumes). Exit 0 = every minter step scoped (or none used). Exit 1 = an
- *   unscoped step, listed with What / Where / Saw-vs-wanted / Fix. CI gate via
- *   `scripts/check.mts`. Usage: node
+ *   (which host the shared github-release-/github-pr-app-token actions every
+ *   member consumes). Exit 0 = every minter step scoped (or none used). Exit 1
+ *   = an unscoped step, listed with What / Where / Saw-vs-wanted / Fix. CI gate
+ *   via `scripts/check.mts`. Usage: node
  *   scripts/fleet/check/app-tokens-are-scoped.mts.
  */
 

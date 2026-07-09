@@ -433,9 +433,8 @@ export async function main(): Promise<void> {
             : []),
         ]
         for (let i = 0, { length } = failureLines; i < length; i += 1) {
-          const line = failureLines[i]!;
+          const line = failureLines[i]!
           logger.error(line)
-        
         }
       }
     }
