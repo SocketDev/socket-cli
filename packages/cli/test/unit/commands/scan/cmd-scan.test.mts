@@ -66,40 +66,41 @@ describe('cmd-scan', () => {
       await cmdScan.run(['list'], importMeta, context)
 
       expect(mockMeowWithSubcommands).toHaveBeenCalledTimes(1)
-      expect(mockMeowWithSubcommands).toHaveBeenCalledWith(
-        {
-          argv: ['list'],
-          importMeta,
-          name: 'socket scan',
-          subcommands: {
-            create: cmdScanCreate,
-            del: cmdScanDel,
-            diff: cmdScanDiff,
-            github: cmdScanGithub,
-            list: cmdScanList,
-            metadata: cmdScanMetadata,
-            reach: cmdScanReach,
-            report: cmdScanReport,
-            setup: cmdScanSetup,
-            view: cmdScanView,
-          },
-        },
-        {
-          aliases: {
-            meta: {
-              argv: ['metadata'],
-              description: cmdScanMetadata.description,
-              hidden: true,
-            },
-            reachability: {
-              argv: ['reach'],
-              description: cmdScanReach.description,
-              hidden: true,
-            },
-          },
-          description: 'Manage Socket scans',
-        },
-      )
+      const [config, callOptions] = mockMeowWithSubcommands.mock.calls[0]
+      expect(config).toMatchObject({ argv: ['list'], name: 'socket scan' })
+      expect(config.importMeta === importMeta).toBe(true)
+      // Subcommand identity (each entry IS the imported src module instance)
+      // is asserted in the "subcommand validation" block below.
+      expect(Object.keys(config.subcommands).toSorted()).toEqual([
+        'create',
+        'del',
+        'diff',
+        'github',
+        'list',
+        'metadata',
+        'reach',
+        'report',
+        'setup',
+        'view',
+      ])
+      expect(callOptions.description).toBe('Manage Socket scans')
+      expect(callOptions.aliases.meta).toMatchObject({
+        argv: ['metadata'],
+        hidden: true,
+      })
+      // Identity check inside the bare expect(actual) call: the alias must
+      // reuse the src subcommand's own description string.
+      expect(
+        callOptions.aliases.meta.description === cmdScanMetadata.description,
+      ).toBe(true)
+      expect(callOptions.aliases.reachability).toMatchObject({
+        argv: ['reach'],
+        hidden: true,
+      })
+      expect(
+        callOptions.aliases.reachability.description ===
+          cmdScanReach.description,
+      ).toBe(true)
     })
 
     it('should construct correct command name from parent', async () => {
@@ -202,11 +203,15 @@ describe('cmd-scan', () => {
       const call = mockMeowWithSubcommands.mock.calls[0]
       const aliases = call[1].aliases
 
-      expect(aliases.meta).toEqual({
+      expect(aliases.meta).toMatchObject({
         argv: ['metadata'],
-        description: cmdScanMetadata.description,
         hidden: true,
       })
+      // Identity check inside the bare expect(actual) call: the alias must
+      // reuse the src subcommand's own description string.
+      expect(aliases.meta.description === cmdScanMetadata.description).toBe(
+        true,
+      )
     })
 
     it('should configure reachability alias for reach', async () => {
@@ -217,11 +222,15 @@ describe('cmd-scan', () => {
       const call = mockMeowWithSubcommands.mock.calls[0]
       const aliases = call[1].aliases
 
-      expect(aliases.reachability).toEqual({
+      expect(aliases.reachability).toMatchObject({
         argv: ['reach'],
-        description: cmdScanReach.description,
         hidden: true,
       })
+      // Identity check inside the bare expect(actual) call: the alias must
+      // reuse the src subcommand's own description string.
+      expect(
+        aliases.reachability.description === cmdScanReach.description,
+      ).toBe(true)
     })
 
     it('should mark all aliases as hidden', async () => {

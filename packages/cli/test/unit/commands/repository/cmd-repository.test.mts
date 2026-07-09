@@ -61,23 +61,24 @@ describe('cmd-repository', () => {
       await cmdRepository.run(['list'], importMeta, context)
 
       expect(mockMeowWithSubcommands).toHaveBeenCalledTimes(1)
-      expect(mockMeowWithSubcommands).toHaveBeenCalledWith(
-        {
-          argv: ['list'],
-          importMeta,
-          name: 'socket repository',
-          subcommands: {
-            create: cmdRepositoryCreate,
-            del: cmdRepositoryDel,
-            list: cmdRepositoryList,
-            update: cmdRepositoryUpdate,
-            view: cmdRepositoryView,
-          },
-        },
-        {
-          description: 'Manage registered repositories',
-        },
-      )
+      const [config, callOptions] = mockMeowWithSubcommands.mock.calls[0]
+      expect(config).toMatchObject({
+        argv: ['list'],
+        name: 'socket repository',
+      })
+      expect(config.importMeta === importMeta).toBe(true)
+      // Subcommand identity (each entry IS the imported src module instance)
+      // is asserted in the "include all subcommands" test below.
+      expect(Object.keys(config.subcommands).toSorted()).toEqual([
+        'create',
+        'del',
+        'list',
+        'update',
+        'view',
+      ])
+      expect(callOptions).toEqual({
+        description: 'Manage registered repositories',
+      })
     })
 
     it('should construct correct command name from parent', async () => {

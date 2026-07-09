@@ -64,39 +64,49 @@ describe('cmd-organization', () => {
       await cmdOrganization.run(['list'], importMeta, context)
 
       expect(mockMeowWithSubcommands).toHaveBeenCalledTimes(1)
-      expect(mockMeowWithSubcommands).toHaveBeenCalledWith(
-        {
-          argv: ['list'],
-          importMeta,
-          name: 'socket organization',
-          subcommands: {
-            dependencies: cmdOrganizationDependencies,
-            list: cmdOrganizationList,
-            policy: cmdOrganizationPolicy,
-            quota: cmdOrganizationQuota,
-          },
-        },
-        {
-          aliases: {
-            deps: {
-              argv: ['dependencies'],
-              description: cmdOrganizationDependencies.description,
-              hidden: true,
-            },
-            license: {
-              argv: ['policy', 'license'],
-              description: cmdOrganizationPolicyLicense.description,
-              hidden: true,
-            },
-            security: {
-              argv: ['policy', 'security'],
-              description: cmdOrganizationPolicySecurity.description,
-              hidden: true,
-            },
-          },
-          description: 'Manage Socket organization account details',
-        },
+      const [config, callOptions] = mockMeowWithSubcommands.mock.calls[0]
+      expect(config).toMatchObject({
+        argv: ['list'],
+        name: 'socket organization',
+      })
+      expect(config.importMeta === importMeta).toBe(true)
+      // Subcommand identity (each entry IS the imported src module instance)
+      // is asserted in the "subcommand validation" block below.
+      expect(Object.keys(config.subcommands).toSorted()).toEqual([
+        'dependencies',
+        'list',
+        'policy',
+        'quota',
+      ])
+      expect(callOptions.description).toBe(
+        'Manage Socket organization account details',
       )
+      expect(callOptions.aliases.deps).toMatchObject({
+        argv: ['dependencies'],
+        hidden: true,
+      })
+      expect(callOptions.aliases.license).toMatchObject({
+        argv: ['policy', 'license'],
+        hidden: true,
+      })
+      expect(callOptions.aliases.security).toMatchObject({
+        argv: ['policy', 'security'],
+        hidden: true,
+      })
+      // Identity checks inside the bare expect(actual) call: each alias must
+      // reuse its src subcommand's own description string.
+      expect(
+        callOptions.aliases.deps.description ===
+          cmdOrganizationDependencies.description,
+      ).toBe(true)
+      expect(
+        callOptions.aliases.license.description ===
+          cmdOrganizationPolicyLicense.description,
+      ).toBe(true)
+      expect(
+        callOptions.aliases.security.description ===
+          cmdOrganizationPolicySecurity.description,
+      ).toBe(true)
     })
 
     it('should construct correct command name from parent', async () => {
@@ -197,11 +207,15 @@ describe('cmd-organization', () => {
       const call = mockMeowWithSubcommands.mock.calls[0]
       const aliases = call[1].aliases
 
-      expect(aliases.deps).toEqual({
+      expect(aliases.deps).toMatchObject({
         argv: ['dependencies'],
-        description: cmdOrganizationDependencies.description,
         hidden: true,
       })
+      // Identity check inside the bare expect(actual) call: the alias must
+      // reuse the src subcommand's own description string.
+      expect(
+        aliases.deps.description === cmdOrganizationDependencies.description,
+      ).toBe(true)
     })
 
     it('should configure license alias for policy license', async () => {
@@ -216,11 +230,16 @@ describe('cmd-organization', () => {
       const call = mockMeowWithSubcommands.mock.calls[0]
       const aliases = call[1].aliases
 
-      expect(aliases.license).toEqual({
+      expect(aliases.license).toMatchObject({
         argv: ['policy', 'license'],
-        description: cmdOrganizationPolicyLicense.description,
         hidden: true,
       })
+      // Identity check inside the bare expect(actual) call: the alias must
+      // reuse the src subcommand's own description string.
+      expect(
+        aliases.license.description ===
+          cmdOrganizationPolicyLicense.description,
+      ).toBe(true)
     })
 
     it('should configure security alias for policy security', async () => {
@@ -235,11 +254,16 @@ describe('cmd-organization', () => {
       const call = mockMeowWithSubcommands.mock.calls[0]
       const aliases = call[1].aliases
 
-      expect(aliases.security).toEqual({
+      expect(aliases.security).toMatchObject({
         argv: ['policy', 'security'],
-        description: cmdOrganizationPolicySecurity.description,
         hidden: true,
       })
+      // Identity check inside the bare expect(actual) call: the alias must
+      // reuse the src subcommand's own description string.
+      expect(
+        aliases.security.description ===
+          cmdOrganizationPolicySecurity.description,
+      ).toBe(true)
     })
 
     it('should mark all aliases as hidden', async () => {
