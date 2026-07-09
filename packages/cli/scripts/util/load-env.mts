@@ -20,7 +20,9 @@ export function loadEnvFile(filePath: string): Record<string, string> {
   } catch {
     return env
   }
-  for (const line of content.split('\n')) {
+  const lines = content.split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
     const trimmed = line.trim()
     // Skip comments and blank lines.
     if (!trimmed || trimmed.startsWith('#')) {

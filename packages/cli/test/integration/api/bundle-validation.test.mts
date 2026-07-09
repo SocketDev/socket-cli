@@ -55,7 +55,9 @@ export async function checkBundledDependencies(content: string): Promise<{
     }
   } else {
     // If we have dependencies, check that they remain external (not bundled).
-    for (const dep of Object.keys(dependencies)) {
+    const deps = Object.keys(dependencies)
+    for (let i = 0, { length } = deps; i < length; i += 1) {
+      const dep = deps[i]!
       const escapedDep = dep.replace(/[/\\^$*+?.()|[\]{}]/g, '\\$&')
       // Check if dependency code is bundled by looking for __toCommonJS pattern.
       const bundlePattern = new RegExp(

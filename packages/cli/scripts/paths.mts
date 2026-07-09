@@ -1,4 +1,8 @@
-export * from '../../../scripts/paths.mts'
+/**
+ * @file Canonical path constants for the packages/cli scripts. Self-contained
+ *   (no root scripts/paths.mts ancestor exists to inherit from); every path
+ *   this package's scripts need is constructed exactly once here.
+ */
 
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'

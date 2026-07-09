@@ -113,8 +113,11 @@ export async function getDefaultNodeVersion() {
  */
 async function getLatestSocketBtmNodeRelease() {
   try {
+    // per_page=100: the default page size (30) can bury the newest
+    // node-smol-* tag under newer releases of the repo's other artifacts
+    // (binject, lief, stubs, …), making the find below miss it entirely.
     const response = await httpRequest(
-      'https://api.github.com/repos/SocketDev/socket-btm/releases',
+      'https://api.github.com/repos/SocketDev/socket-btm/releases?per_page=100',
       {
         headers: getAuthHeaders(),
       },

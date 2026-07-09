@@ -233,7 +233,9 @@ export function getConfigValues(retryCount = 0): LocalConfig {
             const parsed = JSON.parse(decoded)
             // Only copy supported config keys to prevent prototype pollution.
             if (parsed && typeof parsed === 'object') {
-              for (const key of Object.keys(parsed)) {
+              const keys = Object.keys(parsed)
+              for (let i = 0, { length } = keys; i < length; i += 1) {
+                const key = keys[i]!
                 if (isSupportedConfigKey(key)) {
                   ;(cachedConfig as Record<string, unknown>)[key] = parsed[key]
                 }
@@ -334,7 +336,9 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
   // Only copy supported config keys to prevent prototype pollution.
   cachedConfig = {} as LocalConfig
   const configObj = config as Record<string, unknown>
-  for (const key of Object.keys(configObj)) {
+  const keys = Object.keys(configObj)
+  for (let i = 0, { length } = keys; i < length; i += 1) {
+    const key = keys[i]!
     if (isSupportedConfigKey(key)) {
       ;(cachedConfig as Record<string, unknown>)[key] = configObj[key]
     }

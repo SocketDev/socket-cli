@@ -194,9 +194,9 @@ export function projectIgnorePathsToReachExcludePaths(
 }
 
 export function stripTrailingSlash(value: string): string {
-  return value.length > 1 && normalizePath(value).endsWith('/')
-    ? value.slice(0, -1)
-    : value
+  // normalizePath collapses separators AND drops any trailing slash, so the
+  // normalized form IS the stripped form (root '/' stays '/').
+  return value.length > 1 ? normalizePath(value) : value
 }
 
 export function toPosixPath(value: string): string {

@@ -55,7 +55,9 @@ export function getSupportedFilePatterns(
   supportedFiles: SocketSdkSuccessResult<'getSupportedFiles'>['data'],
 ): string[] {
   const patterns: string[] = []
-  for (const key of Object.keys(supportedFiles)) {
+  const keys = Object.keys(supportedFiles)
+  for (let i = 0, { length } = keys; i < length; i += 1) {
+    const key = keys[i]!
     const supported = supportedFiles[key]
     if (supported) {
       patterns.push(...Object.values(supported).map(p => `**/${p.pattern}`))

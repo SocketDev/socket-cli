@@ -59,7 +59,9 @@ export function formatDataOrg(
   for (let i = 0, { length } = data; i < length; i += 1) {
     const entry = data[i]!
     const topFiveAlertTypes = entry.top_five_alert_types
-    for (const type of Object.keys(topFiveAlertTypes)) {
+    const types = Object.keys(topFiveAlertTypes)
+    for (let j = 0, { length: typesLength } = types; j < typesLength; j += 1) {
+      const type = types[j]!
       const count = topFiveAlertTypes[type] ?? 0
       if (totalTopAlerts[type]) {
         totalTopAlerts[type] += count
@@ -112,7 +114,9 @@ export function formatDataRepo(
   for (let i = 0, { length } = data; i < length; i += 1) {
     const entry = data[i]!
     const topFiveAlertTypes = entry.top_five_alert_types
-    for (const type of Object.keys(topFiveAlertTypes)) {
+    const types = Object.keys(topFiveAlertTypes)
+    for (let j = 0, { length: typesLength } = types; j < typesLength; j += 1) {
+      const type = types[j]!
       const count = topFiveAlertTypes[type] ?? 0
       if (totalTopAlerts[type]) {
         totalTopAlerts[type] += count

@@ -378,9 +378,8 @@ describe('downloadGitHubReleaseBinary', () => {
   it('recovers from a stale lock (dead PID) and re-runs download', async () => {
     const eexistErr = Object.assign(new Error('EEXIST'), { code: 'EEXIST' })
 
-    // First call: EEXIST. After stale cleanup, the recursive call's
-    // writeFile succeeds. To exit the recursive call, make the binary
-    // appear right after download/extract.
+    // First writeFile: EEXIST (lock held). After the stale cleanup recurses,
+    // the recursive call short-circuits on the cache check (existsSync below).
     let writeCount = 0
     mockFsWriteFile.mockImplementation(async () => {
       writeCount += 1
@@ -390,40 +389,31 @@ describe('downloadGitHubReleaseBinary', () => {
       return undefined
     })
 
-    // Lock file polling reads the PID; we'll make it return so that the
-    // first poll iteration goes to lock-aliveness check (i % 5 === 4 only on i=4).
-    // Simpler path: make the binary appear before the loop even fires.
-    let existsCount = 0
-    mockExistsSync.mockImplementation(() => {
-      existsCount += 1
-      // call 1: initial cache check (false)
-      // call 2+ depends on flow. After we send recursion, we want the
-      // recursive call to short-circuit on cache-check.
-      return existsCount >= 3
-    })
-
+    // Dead lock holder: the liveness probe (process.kill(pid, 0)) throws.
     const realKill = process.kill
-    // First kill(0) call (in stale check) throws -> stale.
     let killCount = 0
     ;(process as { kill: unknown }).kill = vi.fn(() => {
       killCount += 1
-      if (killCount === 1) {
-        // We're inside the stale-check path (kill(pid, 0)) — wait no,
-        // the lock-busy branch is only hit on EEXIST. Stale check happens
-        // inside the inner `for` poll's `i % 5 === 4` branch.
-        // Actually the FIRST EEXIST goes into the wait-loop, not the stale
-        // check directly. So skip — just throw consistently to mark stale.
-        throw new Error('ESRCH')
-      }
-      return true
+      throw new Error('ESRCH')
     })
 
+    // Keep the binary absent until the liveness probe has run, so the wait
+    // loop reaches the i % 5 === 4 stale check instead of returning early;
+    // after the stale cleanup, the recursive call's cache check succeeds.
+    mockExistsSync.mockImplementation(() => killCount >= 1)
+
+    // setTimeout: bypass the actual 1s polls so reaching i = 4 is instant.
+    const realSetTimeout = globalThis.setTimeout
+    ;(globalThis as { setTimeout: unknown }).setTimeout = ((cb: () => void) => {
+      cb()
+      return 0 as never
+    }) as never
+
     try {
-      // Either branch is fine — we just want coverage.
-      await downloadGitHubReleaseBinary(baseSpec).catch(() => {
-        // Some branches may throw timeout — accept it.
-      })
+      const result = await downloadGitHubReleaseBinary(baseSpec)
+      expect(result).toContain('tool')
     } finally {
+      ;(globalThis as { setTimeout: unknown }).setTimeout = realSetTimeout
       ;(process as { kill: unknown }).kill = realKill
     }
 

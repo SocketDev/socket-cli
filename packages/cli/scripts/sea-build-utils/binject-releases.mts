@@ -31,8 +31,11 @@ export function getAuthHeaders() {
  */
 export async function getLatestBinjectVersion() {
   try {
+    // per_page=100: the default page size (30) can bury the newest
+    // binject-* tag under newer releases of the repo's other artifacts
+    // (lief, stubs, curl, …), making the find below miss it entirely.
     const response = await httpRequest(
-      'https://api.github.com/repos/SocketDev/socket-btm/releases',
+      'https://api.github.com/repos/SocketDev/socket-btm/releases?per_page=100',
       {
         headers: getAuthHeaders(),
       },

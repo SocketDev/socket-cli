@@ -123,7 +123,10 @@ vi.mock(import('../../../../src/util/socket/sdk.mjs'), () => ({
 }))
 
 // Mock TOKEN_PREFIX constant to avoid security check false positives.
-const MOCK_TOKEN_PREFIX = 'test_'
+// vi.hoisted so the hoisted vi.mock factory below can read it (a plain
+// module-level const is still in its TDZ when the factory runs against a
+// statically imported system-under-test).
+const MOCK_TOKEN_PREFIX = vi.hoisted(() => 'test_')
 vi.mock(import('../../../../src/constants/socket.mjs'), () => ({
   TOKEN_PREFIX: MOCK_TOKEN_PREFIX,
   TOKEN_PREFIX_LENGTH: MOCK_TOKEN_PREFIX.length,

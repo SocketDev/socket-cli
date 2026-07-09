@@ -17,7 +17,10 @@ import { fileURLToPath } from 'node:url'
 
 import { logTransientErrorHelp } from 'build-infra/lib/github-error-utils'
 
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { downloadSocketBtmRelease } from '@socketsecurity/lib-stable/releases/socket-btm'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
@@ -91,13 +94,17 @@ async function downloadAsset(config) {
       assetPath = await downloadSocketBtmRelease(tool, downloadOptions)
       logger.info(`Downloaded to ${assetPath}`)
     } catch (e) {
-      // Some assets are optional (models).
-      if (name === 'models') {
-        logger.warn(`${name} not available: ${e.message}`)
-        logger.groupEnd()
-        return { name, ok: true, skipped: true }
-      }
-      throw e
+      // This phase is a cache PRE-WARM: every consumer (the SEA build, the
+      // e2e runner) re-resolves and downloads its own assets at point of use
+      // and fails loud there. A warm miss (anonymous GitHub API rate limit on
+      // a shared CI runner, an asset-naming mismatch on one platform) must
+      // not kill the whole build — warn loud and let the consumer own the
+      // failure. Set GH_TOKEN/GITHUB_TOKEN to avoid the anonymous API limit.
+      logger.warn(
+        `${name} pre-warm skipped: ${errorMessage(e)} — the consuming build stage will download it on demand.`,
+      )
+      logger.groupEnd()
+      return { name, ok: true, skipped: true }
     }
 
     // Process based on asset type.
@@ -109,10 +116,12 @@ async function downloadAsset(config) {
     logger.success(`${name} extraction complete`)
     return { name, ok: true }
   } catch (e) {
+    // Same pre-warm contract as the download catch above: an extraction
+    // failure only loses the warm cache, never the build.
     logger.groupEnd()
-    logger.error(`Failed to extract ${name}: ${e.message}`)
+    logger.warn(`${name} pre-warm extraction skipped: ${errorMessage(e)}`)
     await logTransientErrorHelp(e)
-    return { error: e, name, ok: false }
+    return { name, ok: true, skipped: true }
   }
 }
 
@@ -196,8 +205,19 @@ async function extractArchive(tarGzPath, extractConfig, assetName) {
     logger.info(`Extracting ${assetName} (this may take a minute)...`)
   }
 
-  // Extract tar.gz using tar command.
-  const result = await spawn('tar', ['-xzf', tarGzPath, '-C', outputDir], {
+  // Extract tar.gz using tar command. On Windows, Git-for-Windows GNU tar
+  // needs --force-local (a bare `D:` prefix parses as a remote host) AND
+  // forward-slash paths (it mangles backslash-separated arguments).
+  const tarArgs = [
+    '-xzf',
+    normalizePath(tarGzPath),
+    '-C',
+    normalizePath(outputDir),
+  ]
+  if (WIN32) {
+    tarArgs.push('--force-local')
+  }
+  const result = await spawn('tar', tarArgs, {
     stdio: 'inherit',
   })
 

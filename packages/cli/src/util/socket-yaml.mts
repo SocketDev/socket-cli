@@ -61,7 +61,9 @@ export function asBooleanRecord(value: unknown): { [k: string]: boolean } {
     return {}
   }
   const out: { [k: string]: boolean } = {}
-  for (const key of Object.keys(value)) {
+  const keys = Object.keys(value)
+  for (let i = 0, { length } = keys; i < length; i += 1) {
+    const key = keys[i]!
     if (typeof value[key] === 'boolean') {
       out[key] = value[key] as boolean
     }
