@@ -9,22 +9,26 @@
  */
 
 /**
+ * Complete platform configuration entry, describing a single supported
+ * platform/arch/libc combination.
+ */
+export interface PlatformConfig {
+  arch: string
+  binExt: string
+  cpu: string
+  description: string
+  libc?: string | undefined
+  os: string
+  platform: string
+  releasePlatform: string
+  runner: string
+}
+
+/**
  * Complete platform configuration with all metadata. This is the authoritative
  * source for platform definitions.
- *
- * @type {ReadonlyArray<{
- *   platform: string
- *   releasePlatform: string
- *   arch: string
- *   libc?: string
- *   runner: string
- *   cpu: string
- *   os: string
- *   binExt: string
- *   description: string
- * }>}
  */
-export const PLATFORM_CONFIGS = Object.freeze([
+export const PLATFORM_CONFIGS: readonly PlatformConfig[] = Object.freeze([
   {
     arch: 'arm64',
     binExt: '',
@@ -125,7 +129,7 @@ export const PLATFORM_TARGETS = PLATFORM_CONFIGS.map(
  *
  * @returns {string} Release platform (darwin, linux, win).
  */
-export function getReleasePlatform(platform) {
+export function getReleasePlatform(platform: string) {
   return platform === 'win32' ? 'win' : platform
 }
 
@@ -141,13 +145,12 @@ const VALID_ARCHS = ['arm64', 'x64']
 
 /**
  * Parsed platform target information.
- *
- * @typedef {Object} PlatformTargetInfo
- *
- * @property {string} platform - Platform (darwin, linux, win32).
- * @property {string} arch - Architecture (arm64, x64).
- * @property {string} [libc] - Optional libc variant (musl).
  */
+export interface PlatformTargetInfo {
+  arch: string
+  libc?: string | undefined
+  platform: string
+}
 
 /**
  * Parse a platform target string into components. Handles formats:
@@ -169,9 +172,11 @@ const VALID_ARCHS = ['arm64', 'x64']
  * @param {string} target - Target string (e.g., "darwin-arm64" or
  *   "linux-x64-musl").
  *
- * @returns {PlatformTargetInfo | null} Parsed info or null if invalid.
+ * @returns {PlatformTargetInfo | undefined} Parsed info or undefined if invalid.
  */
-export function parsePlatformTarget(target) {
+export function parsePlatformTarget(
+  target: string,
+): PlatformTargetInfo | undefined {
   if (!target || typeof target !== 'string') {
     return undefined
   }
@@ -180,12 +185,14 @@ export function parsePlatformTarget(target) {
   if (target.endsWith('-musl')) {
     const base = target.slice(0, -5) // Remove '-musl'.
     const parts = base.split('-')
+    const arch = parts[1]
     if (
       parts.length === 2 &&
       parts[0] === 'linux' &&
-      VALID_ARCHS.includes(parts[1])
+      arch !== undefined &&
+      VALID_ARCHS.includes(arch)
     ) {
-      return { arch: parts[1], libc: 'musl', platform: 'linux' }
+      return { arch, libc: 'musl', platform: 'linux' }
     }
     return undefined
   }
@@ -196,7 +203,12 @@ export function parsePlatformTarget(target) {
     const [rawPlatform, arch] = parts
     // Normalize 'win' to 'win32' for internal use.
     const platform = rawPlatform === 'win' ? 'win32' : rawPlatform
-    if (VALID_PLATFORMS.includes(platform) && VALID_ARCHS.includes(arch)) {
+    if (
+      platform !== undefined &&
+      arch !== undefined &&
+      VALID_PLATFORMS.includes(platform) &&
+      VALID_ARCHS.includes(arch)
+    ) {
       return { arch, platform }
     }
   }

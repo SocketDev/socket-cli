@@ -27,7 +27,7 @@ const RELEASE_PLATFORM_MAP = Object.freeze({
   darwin: 'darwin',
   linux: 'linux',
   win32: 'win',
-})
+}) as unknown as Readonly<Record<string, string>>
 
 /**
  * Maps Node.js architecture names to GitHub release architecture names.
@@ -39,7 +39,7 @@ const RELEASE_ARCH_MAP = Object.freeze({
   arm64: 'arm64',
   ia32: 'x86',
   x64: 'x64',
-})
+}) as unknown as Readonly<Record<string, string>>
 
 /**
  * Get platform-arch string for GitHub release asset naming. Uses shortened
@@ -55,7 +55,11 @@ const RELEASE_ARCH_MAP = Object.freeze({
  *
  * @throws {Error} If platform/arch is unsupported.
  */
-export function getAssetPlatformArch(platform, arch, libc) {
+export function getAssetPlatformArch(
+  platform: string,
+  arch: string,
+  libc: string | undefined,
+): string {
   const releasePlatform = RELEASE_PLATFORM_MAP[platform]
   const releaseArch = RELEASE_ARCH_MAP[arch]
 
@@ -104,14 +108,14 @@ export function getAssetPlatformArch(platform, arch, libc) {
  */
 export async function getCurrentPlatformArch() {
   // If the workflow or Dockerfile set PLATFORM_ARCH explicitly, trust it.
-  if (process.env.PLATFORM_ARCH) {
-    return process.env.PLATFORM_ARCH
+  if (process.env['PLATFORM_ARCH']) {
+    return process.env['PLATFORM_ARCH']
   }
   // Respect LIBC environment variable for cross-compilation (set by workflows)
   // Falls back to isMusl() for host detection when not cross-compiling.
-  const libc = process.env.LIBC || ((await isMusl()) ? 'musl' : undefined)
+  const libc = process.env['LIBC'] || ((await isMusl()) ? 'musl' : undefined)
   // Respect TARGET_ARCH for cross-compilation (set by workflows/Makefiles)
-  const arch = process.env.TARGET_ARCH || process.arch
+  const arch = process.env['TARGET_ARCH'] || process.arch
   return getAssetPlatformArch(process.platform, arch, libc)
 }
 
@@ -128,7 +132,11 @@ export async function getCurrentPlatformArch() {
  *
  * @throws {Error} If platform/arch is unsupported.
  */
-export function getPlatformArch(platform, arch, libc) {
+export function getPlatformArch(
+  platform: string,
+  arch: string,
+  libc: string | undefined,
+): string {
   const releaseArch = RELEASE_ARCH_MAP[arch]
 
   if (!releaseArch) {
@@ -168,7 +176,7 @@ export function getPlatformArch(platform, arch, libc) {
  * @returns {string | undefined} Requested glibc floor, or undefined.
  */
 export function getRequestedGlibcFloor(): string | undefined {
-  const raw = process.env.GLIBC_FLOOR
+  const raw = process.env['GLIBC_FLOOR']
   if (!raw) {
     return undefined
   }

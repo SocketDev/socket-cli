@@ -119,6 +119,6 @@ export const externalToolsSchema = Type.Object(
  * @returns `{ ok: true, value }` on success, `{ ok: false, errors }` with
  *   normalized `{ path, message }` issues on failure.
  */
-export function validateExternalTools(data) {
+export function validateExternalTools(data: unknown) {
   return validateSchema(externalToolsSchema, data)
 }
