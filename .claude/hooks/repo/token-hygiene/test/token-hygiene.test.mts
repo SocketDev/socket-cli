@@ -13,7 +13,7 @@ import { spawnSync } from "@socketsecurity/lib-stable/process/spawn/child";
 
 const hookScript = new URL("../index.mts", import.meta.url).pathname;
 const nodeBin = whichSync("node");
-if (!nodeBin) {
+if (!nodeBin || Array.isArray(nodeBin)) {
   throw new Error('"node" not found on PATH');
 }
 
