@@ -31,7 +31,7 @@ import { existsSync, promises as fs, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
 

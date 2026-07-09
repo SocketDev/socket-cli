@@ -15,7 +15,7 @@ import { getCI } from '@socketsecurity/lib-stable/env/ci'
 /**
  * Build stage directory names inside build/<mode>/.
  */
-const BUILD_STAGES = {
+export const BUILD_STAGES = {
   BUNDLED: 'Bundled',
   FINAL: 'Final',
   OPTIMIZED: 'Optimized',
@@ -29,13 +29,13 @@ const BUILD_STAGES = {
 /**
  * Canonical checkpoint names. Each pipeline stage picks one.
  */
-const CHECKPOINTS = {
+export const CHECKPOINTS = {
   CLI: 'cli',
   FINALIZED: 'finalized',
   SEA: 'sea',
 }
 
-const VALID_CHECKPOINT_VALUES = new Set(Object.values(CHECKPOINTS))
+export const VALID_CHECKPOINT_VALUES = new Set(Object.values(CHECKPOINTS))
 
 /**
  * Checkpoint chain for socket-cli's build pipeline. Order: newest → oldest
@@ -44,7 +44,7 @@ const VALID_CHECKPOINT_VALUES = new Set(Object.values(CHECKPOINTS))
  * The SEA binary is built only for --force / --prod today; the chain is
  * declared including SEA so --clean-stage=sea works when it runs.
  */
-const CHECKPOINT_CHAINS = {
+export const CHECKPOINT_CHAINS = {
   cli: () => [CHECKPOINTS.FINALIZED, CHECKPOINTS.SEA, CHECKPOINTS.CLI],
 }
 

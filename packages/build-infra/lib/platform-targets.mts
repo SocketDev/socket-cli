@@ -113,7 +113,7 @@ export const PLATFORM_CONFIGS = Object.freeze([
  * Valid platform targets for SEA builds (using releasePlatform for naming).
  * Format: <releasePlatform>-<arch>[-musl] Derived from PLATFORM_CONFIGS.
  */
-const PLATFORM_TARGETS = PLATFORM_CONFIGS.map(
+export const PLATFORM_TARGETS = PLATFORM_CONFIGS.map(
   c => `${c.releasePlatform}-${c.arch}${c.libc ? `-${c.libc}` : ''}`,
 )
 
