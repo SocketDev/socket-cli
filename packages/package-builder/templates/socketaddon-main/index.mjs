@@ -16,6 +16,7 @@ const require = createRequire(import.meta.url)
  * runtime dependency and must not pull in fleet tooling libs.
  *
  * @param {string} pathValue
+ *
  * @returns {string}
  */
 function toUnixPath(pathValue) {
