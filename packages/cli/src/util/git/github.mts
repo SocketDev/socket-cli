@@ -142,9 +142,9 @@ export type PrAutoMergeState = {
 export async function enablePrAutoMerge({
   node_id: prId,
 }: Pr): Promise<PrAutoMergeState> {
-  const octokitGraphql = getOctokitGraphql()
+  const graphqlClient = getOctokitGraphql()
   try {
-    const gqlResp = await octokitGraphql(
+    const gqlResp = await graphqlClient(
       `
       mutation EnableAutoMerge($pullRequestId: ID!) {
         enablePullRequestAutoMerge(input: {
@@ -218,7 +218,7 @@ export async function fetchGhsaDetails(
     return results
   }
 
-  const octokitGraphql = getOctokitGraphql()
+  const graphqlClient = getOctokitGraphql()
   try {
     // Use '::' delimiter to avoid collisions (GHSA IDs contain hyphens).
     const gqlCacheKey = `${ids.join('::')}-graphql-snapshot`
@@ -246,7 +246,7 @@ export async function fetchGhsaDetails(
       .join('\n')
 
     const gqlResp = await cacheFetch(gqlCacheKey, () =>
-      octokitGraphql(`
+      graphqlClient(`
         query {
           ${aliases}
         }

@@ -14,7 +14,7 @@ const config = {
   flags: defineFlags({
     ...commonFlags,
   }),
-  help: (command: string, config: { flags: MeowFlags }) => `
+  help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [NAME=socket]
 
@@ -34,7 +34,7 @@ const config = {
     different alias for socket on your system.
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Examples
 

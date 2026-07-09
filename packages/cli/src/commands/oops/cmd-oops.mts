@@ -40,11 +40,11 @@ export async function run(
       },
     }),
     help: (
-      parentName: string,
-      config: { commandName: string; flags: MeowFlags },
+      helpParentName: string,
+      helpConfig: { commandName: string; flags: MeowFlags },
     ) => `
     Usage
-      $ ${parentName} ${config.commandName}
+      $ ${helpParentName} ${helpConfig.commandName}
 
     Don't run me.
   `,

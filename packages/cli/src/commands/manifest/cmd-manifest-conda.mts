@@ -65,7 +65,7 @@ const config = {
       description: 'Print debug messages',
     },
   }),
-  help: (command: string, config: { flags: MeowFlags }) => `
+  help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [CWD=.]
 
@@ -79,7 +79,7 @@ const config = {
           contents of a file to have it processed.
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Examples
 

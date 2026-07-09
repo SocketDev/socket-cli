@@ -145,6 +145,9 @@ export async function outputScanReport(
   }
 }
 
+// socket-lint: allow boolean-trap -- collapsing into an options object would
+// change call sites in test/unit/commands/scan/output-scan-report.test.mts,
+// which is out of scope for this pass.
 export function toJsonReport(
   report: ScanReport,
   includeLicensePolicy?: boolean | undefined,
@@ -163,6 +166,9 @@ export function toJsonReport(
   })
 }
 
+// socket-lint: allow boolean-trap -- collapsing into an options object would
+// change call sites in test/unit/commands/scan/output-scan-report.test.mts,
+// which is out of scope for this pass.
 export function toMarkdownReport(
   report: ScanReport,
   includeLicensePolicy?: boolean | undefined,

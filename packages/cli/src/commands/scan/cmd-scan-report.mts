@@ -87,7 +87,7 @@ export async function run(
         description: 'Also report the license policy status. Default: false',
       },
     }),
-    help: (command: string, config: { flags: MeowFlags }) => `
+    help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] <SCAN_ID> [OUTPUT_PATH]
 
@@ -95,7 +95,7 @@ export async function run(
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     When no output path is given the contents is sent to stdout.
 

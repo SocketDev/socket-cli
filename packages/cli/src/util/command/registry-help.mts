@@ -132,8 +132,12 @@ export function generateGlobalHelp(registry: CommandRegistry): string {
 
       // Show subcommands
       const subcommands = registry.list(cmd.name)
-      for (let i = 0, { length } = subcommands; i < length; i += 1) {
-        const sub = subcommands[i]!
+      for (
+        let j = 0, { length: subLength } = subcommands;
+        j < subLength;
+        j += 1
+      ) {
+        const sub = subcommands[j]!
         if (!sub.hidden) {
           const subLine = `    ${sub.name.padEnd(18)} ${sub.description}`
           lines.push(subLine)

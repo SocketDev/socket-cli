@@ -21,7 +21,8 @@ export interface HandleMcpOptions {
 
 const DEFAULT_OAUTH_REQUIRED_SCOPES = ['packages:list'] as const
 
-export async function handleMcp(opts: HandleMcpOptions): Promise<void> {
+export async function handleMcp(options: HandleMcpOptions): Promise<void> {
+  const opts = { __proto__: null, ...options } as typeof options
   const ENV = constants['ENV'] as { INLINED_VERSION?: string | undefined }
   const version = ENV.INLINED_VERSION || '0.0.0'
 

@@ -164,6 +164,9 @@ export function debugApiResponse(
 /**
  * Debug configuration loading.
  */
+// socket-lint: allow boolean-trap -- collapsing into an options object would
+// change call sites in src/util/config.mts and test/unit/util/debug.test.mts,
+// which are out of scope for this pass.
 export function debugConfig(
   source: string,
   found: boolean,
@@ -207,6 +210,9 @@ export function debugFileOp(
 /**
  * Debug git operations. Only logs important git operations, not every command.
  */
+// socket-lint: allow boolean-trap -- collapsing into an options object would
+// change call sites in src/util/git/operations.mts and
+// test/unit/util/debug.test.mts, which are out of scope for this pass.
 export function debugGit(
   operation: string,
   success: boolean,

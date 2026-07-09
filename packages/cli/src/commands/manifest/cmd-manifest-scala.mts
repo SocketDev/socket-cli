@@ -58,12 +58,12 @@ const config = {
       description: 'Print debug messages',
     },
   }),
-  help: (command: string, config: { flags: MeowFlags }) => `
+  help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [CWD=.]
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Uses \`sbt makePom\` to generate a \`pom.xml\` from your \`build.sbt\` file.
     This xml file is the dependency manifest (like a package.json

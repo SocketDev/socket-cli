@@ -31,6 +31,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { handleMcp } from '../../../../src/commands/mcp/handle-mcp.mts'
+
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 
 const mockLogger = vi.hoisted(() => ({
@@ -83,9 +85,6 @@ vi.mock(import('../../../../src/constants.mts'), () => ({
     },
   },
 }))
-
-const { handleMcp } =
-  await import('../../../../src/commands/mcp/handle-mcp.mts')
 
 const exitSpy = vi
   .spyOn(process, 'exit')

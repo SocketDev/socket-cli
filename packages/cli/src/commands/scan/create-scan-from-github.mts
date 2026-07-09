@@ -411,6 +411,21 @@ export async function scanRepo(
   return result
 }
 
+// Best-effort cleanup of a partial download. Isolated in its own function so
+// its catch handler doesn't shadow the caller's catch binding.
+async function cleanupPartialDownload(localPath: string): Promise<void> {
+  try {
+    await safeDelete(localPath, { force: true })
+  } catch (e) {
+    logger.fail(
+      formatErrorWithDetail(
+        `Error deleting partial file ${localPath}`,
+        e as NodeJS.ErrnoException,
+      ),
+    )
+  }
+}
+
 // Courtesy of gemini:
 export async function streamDownloadWithFetch(
   localPath: string,
@@ -445,16 +460,7 @@ export async function streamDownloadWithFetch(
     debugDir(e)
 
     // If an error occurs and fileStream was created, attempt to clean up.
-    try {
-      await safeDelete(localPath, { force: true })
-    } catch (e) {
-      logger.fail(
-        formatErrorWithDetail(
-          `Error deleting partial file ${localPath}`,
-          e as NodeJS.ErrnoException,
-        ),
-      )
-    }
+    await cleanupPartialDownload(localPath)
     // Construct a more informative error message
     let detailedError = `Error during download of ${downloadUrl}: ${(e as { message: string }).message}`
     if ((e as { cause: string }).cause) {

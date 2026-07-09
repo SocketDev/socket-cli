@@ -46,11 +46,11 @@ export function capitalize(s: string): string {
  *
  * Used by every tool wrapper in the dlx/spawn-* family.
  */
-export function defineAutoDispatch(opts: {
+export function defineAutoDispatch(options: {
   vfs: ToolSpawnFn
   dlx: ToolSpawnFn
 }): ToolSpawnFn {
-  const { dlx, vfs } = { __proto__: null, ...opts } as typeof opts
+  const { dlx, vfs } = { __proto__: null, ...options } as typeof options
   return async (args, options, spawnExtra) => {
     if (isSeaBinary() && areExternalToolsAvailable()) {
       return await vfs(args, options, spawnExtra)
@@ -64,11 +64,14 @@ export function defineAutoDispatch(opts: {
  * releases (trufflehog, trivy, opengrep). Throws a clearly-attributed
  * resolver-contract error if the resolver returns a non-github-release type.
  */
-export function defineGitHubReleaseSpawn(opts: {
+export function defineGitHubReleaseSpawn(options: {
   toolName: string
   resolve: () => BinaryResolution
 }): ToolSpawnFn {
-  const { resolve, toolName } = { __proto__: null, ...opts } as typeof opts
+  const { resolve, toolName } = {
+    __proto__: null,
+    ...options,
+  } as typeof options
   return async (args, options, spawnExtra) => {
     const resolution = resolve()
 
@@ -104,7 +107,7 @@ export function defineGitHubReleaseSpawn(opts: {
  * Returns `{ Dlx, Vfs, auto }` where `auto` is the public spawnFoo() dispatcher
  * and Dlx/Vfs are the underlying spawners.
  */
-export function defineToolSpawn(opts: {
+export function defineToolSpawn(options: {
   toolName: string
   vfsName: ExternalTool
   resolve: () => BinaryResolution
@@ -113,6 +116,7 @@ export function defineToolSpawn(opts: {
   Vfs: ToolSpawnFn
   auto: ToolSpawnFn
 } {
+  const opts = { __proto__: null, ...options } as typeof options
   const Dlx = defineGitHubReleaseSpawn({
     toolName: opts.toolName,
     resolve: opts.resolve,

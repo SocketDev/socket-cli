@@ -41,7 +41,6 @@ function formatResults(results) {
       const message = `${result.file}: ${issue.message}`
       if (issue.severity === 'error') {
         errors.push(message)
-        const logger = getDefaultLogger()
         logger.fail(message)
       } else if (issue.severity === 'warning') {
         warnings.push(message)

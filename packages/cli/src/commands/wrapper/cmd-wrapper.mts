@@ -29,12 +29,12 @@ const config = {
   flags: defineFlags({
     ...commonFlags,
   }),
-  help: (command: string, config: { flags: MeowFlags }) => `
+  help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} <"on" | "off">
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     While enabled, the wrapper makes it so that when you call npm/npx on your
     machine, it will automatically actually run \`socket npm\` / \`socket npx\`

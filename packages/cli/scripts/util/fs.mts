@@ -26,8 +26,8 @@ function findUpSync(name, options) {
   // Search up to and including root directory.
   while (dir) {
     for (let i = 0, { length } = names; i < length; i += 1) {
-      const name = names[i]
-      const filePath = path.join(dir, name)
+      const candidateName = names[i]
+      const filePath = path.join(dir, candidateName)
       try {
         const stats = statSync(filePath, { throwIfNoEntry: false })
         if (!onlyDirectories && stats?.isFile()) {

@@ -54,7 +54,7 @@ export async function run(
         description: 'Proxy to use when making connection to API server',
       },
     }),
-    help: (command: string, config: { flags: MeowFlags }) => `
+    help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options]
 
@@ -64,7 +64,7 @@ export async function run(
     Logs into the Socket API by prompting for an API token
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Examples
       $ ${command}

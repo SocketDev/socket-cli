@@ -18,7 +18,6 @@ const config = {
   commandName: 'ci',
   description:
     'Alias for `socket scan create --report` (creates report and exits with error if unhealthy)',
-  hidden: false,
   flags: defineFlags({
     ...commonFlags,
     autoManifest: {
@@ -29,6 +28,7 @@ const config = {
         'Auto generate manifest files where detected? See autoManifest flag in `socket scan create`',
     },
   }),
+  hidden: false,
   help: (command: string, _config: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options]

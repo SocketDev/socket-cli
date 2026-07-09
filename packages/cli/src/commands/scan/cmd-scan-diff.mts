@@ -76,7 +76,7 @@ export async function run(
           'Force override the organization slug, overrides the default org from config',
       },
     }),
-    help: (command: string, config: { flags: MeowFlags }) => `
+    help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] <SCAN_ID1> <SCAN_ID2>
 
@@ -92,7 +92,7 @@ export async function run(
           added/removed list (similar to diffing two files with git).
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Examples
       $ ${command} aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1

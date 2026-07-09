@@ -87,11 +87,11 @@ const BUCKET_SECTIONS: readonly BucketSection[] = [
  * For sub-commands (`socket scan`, `socket package`, …): a flat alphabetised
  * list of the subcommand's own children + aliases.
  */
-export function buildHelpLines(opts: BuildHelpLinesOptions): string[] {
+export function buildHelpLines(options: BuildHelpLinesOptions): string[] {
   const { aliases, argv, buckets, flags, isRootCommand, name, subcommands } = {
     __proto__: null,
-    ...opts,
-  } as typeof opts
+    ...options,
+  } as typeof options
 
   const lines = ['', 'Usage', `  $ ${name} <command>`]
   if (isRootCommand) {

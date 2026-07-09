@@ -90,7 +90,7 @@ export function createRepositoryCommand(spec: RepositoryCommandSpec) {
           },
           ...(spec.extraFlags || {}),
         },
-        help: (command, config) => `
+        help: (command, helpConfig) => `
     Usage
       $ ${command} [options]${spec.needsRepoName !== false ? ' <REPO>' : ''}
 
@@ -98,7 +98,7 @@ export function createRepositoryCommand(spec: RepositoryCommandSpec) {
       ${getFlagApiRequirementsOutput(`${parentName}:${spec.commandName}`)}
 ${spec.helpDescription ? `\n    ${spec.helpDescription}\n` : ''}
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Examples
 ${spec.helpExamples.map(ex => `      $ ${command} ${ex}`).join('\n')}

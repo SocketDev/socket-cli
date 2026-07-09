@@ -62,7 +62,7 @@ export async function run(
           'Force override the organization slug, overrides the default org from config',
       },
     }),
-    help: (command: string, config: { flags: MeowFlags }) => `
+    help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] <SCAN_ID> [OUTPUT_FILE]
 
@@ -72,7 +72,7 @@ export async function run(
     When no output path is given the contents is sent to stdout.
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Examples
       $ ${command} 000aaaa1-0000-0a0a-00a0-00a0000000a0

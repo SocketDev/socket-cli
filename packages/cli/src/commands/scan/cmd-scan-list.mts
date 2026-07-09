@@ -98,7 +98,7 @@ export async function run(
         description: 'Until time - as a unix timestamp',
       },
     }),
-    help: (command: string, config: { flags: MeowFlags }) => `
+    help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [REPO [BRANCH]]
 
@@ -110,7 +110,7 @@ export async function run(
     \`--branch\` to filter by branch across all repos).
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Examples
       $ ${command}

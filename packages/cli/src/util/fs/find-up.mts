@@ -46,11 +46,11 @@ export async function findUp(
   // This ensures root directory is checked when cwd is root.
   do {
     for (let i = 0, { length } = names; i < length; i += 1) {
-      const name = names[i]!
+      const candidateName = names[i]!
       if (signal?.aborted) {
         return undefined
       }
-      const thePath = path.join(dir, name)
+      const thePath = path.join(dir, candidateName)
       try {
         // oxlint-disable-next-line socket/prefer-exists-sync -- reads .isFile() / .isDirectory() metadata to distinguish file vs dir matches.
         const stats = await fs.stat(thePath)

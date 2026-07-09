@@ -1,5 +1,6 @@
 import { Type } from '@sinclair/typebox'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { setupSdk } from '../../util/socket/sdk.mts'
@@ -108,8 +109,9 @@ export async function getSdk(apiToken: string): Promise<SocketSdk> {
 
 export async function runDepscore(
   input: DepscoreInput,
-  opts: DepscoreOptions,
+  options: DepscoreOptions,
 ): Promise<DepscoreToolResult> {
+  const opts = { __proto__: null, ...options } as typeof options
   const { packages, platform } = input
   logger.info(`Received request for ${packages.length} packages`)
 
@@ -131,7 +133,7 @@ export async function runDepscore(
   try {
     sdk = await getSdk(opts.apiToken)
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e)
+    const message = errorMessage(e)
     logger.error(`SDK setup failed: ${message}`)
     return {
       content: [{ text: `SDK setup failed: ${message}`, type: 'text' }],
@@ -152,7 +154,7 @@ export async function runDepscore(
       },
     )
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e)
+    const message = errorMessage(e)
     logger.error(`Error processing packages: ${message}`)
     return {
       content: [{ text: 'Error connecting to Socket API', type: 'text' }],

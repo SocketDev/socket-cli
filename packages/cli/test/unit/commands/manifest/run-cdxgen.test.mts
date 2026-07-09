@@ -7,6 +7,12 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import {
+  detectNodejsCdxgenSources,
+  isNodejsCdxgenType,
+  runCdxgen,
+} from '../../../../src/commands/manifest/run-cdxgen.mts'
+
 const mockFindUp = vi.hoisted(() => vi.fn())
 const mockSpawnCdxgenDlx = vi.hoisted(() => vi.fn())
 const mockSpawnSynpDlx = vi.hoisted(() => vi.fn())
@@ -45,9 +51,6 @@ vi.mock(import('../../../../src/util/dlx/spawn.mts'), () => ({
 vi.mock(import('../../../../src/util/yarn/version.mts'), () => ({
   isYarnBerry: mockIsYarnBerry,
 }))
-
-const { detectNodejsCdxgenSources, isNodejsCdxgenType, runCdxgen } =
-  await import('../../../../src/commands/manifest/run-cdxgen.mts')
 
 describe('isNodejsCdxgenType', () => {
   it('treats an undefined type as Node.js (the cdxgen default)', () => {

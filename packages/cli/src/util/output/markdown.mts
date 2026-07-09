@@ -184,12 +184,12 @@ export function mdTable<T extends Array<Record<string, string>>>(
 
   for (let i = 0, { length } = logs; i < length; i += 1) {
     const log = logs[i]!
-    for (let i = 0, { length } = cols; i < length; i += 1) {
-      const val: unknown = log[cols[i] ?? ''] ?? ''
-      cws[i] = Math.max(
-        cws[i] ?? 0,
+    for (let j = 0, { length: colsLength } = cols; j < colsLength; j += 1) {
+      const val: unknown = log[cols[j] ?? ''] ?? ''
+      cws[j] = Math.max(
+        cws[j] ?? 0,
         String(val).length,
-        (titles[i] || '').length,
+        (titles[j] || '').length,
       )
     }
   }
@@ -209,9 +209,9 @@ export function mdTable<T extends Array<Record<string, string>>>(
   for (let i = 0, { length } = logs; i < length; i += 1) {
     const log = logs[i]!
     body += '|'
-    for (let i = 0, { length } = cols; i < length; i += 1) {
-      const val: unknown = log[cols[i] ?? ''] ?? ''
-      body += ` ${String(val).padEnd(cws[i] ?? 0, ' ')} |`
+    for (let j = 0, { length: colsLength } = cols; j < colsLength; j += 1) {
+      const val: unknown = log[cols[j] ?? ''] ?? ''
+      body += ` ${String(val).padEnd(cws[j] ?? 0, ' ')} |`
     }
     body += '\n'
   }

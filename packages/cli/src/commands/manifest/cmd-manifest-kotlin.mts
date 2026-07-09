@@ -53,12 +53,12 @@ const config = {
       description: 'Print debug messages',
     },
   }),
-  help: (command: string, config: { flags: MeowFlags }) => `
+  help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [CWD=.]
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Uses gradle, preferably through your local project \`gradlew\`, to generate a
     \`pom.xml\` file for each task. If you have no \`gradlew\` you can try the

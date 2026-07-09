@@ -103,13 +103,13 @@ const DEFAULT_TRACK_TELEMETRY = true
  * Build the help-text generator function used by meow.
  */
 export function buildHelp(
-  opts: DefineHandoffCommandOptions,
+  options: DefineHandoffCommandOptions,
   parentName: string,
 ): (command: string) => string {
   const { examples, helpNotes, name, showApiRequirements, wrapperHint } = {
     __proto__: null,
-    ...opts,
-  } as typeof opts
+    ...options,
+  } as typeof options
 
   return (command: string) => {
     const lines: string[] = []
@@ -164,7 +164,7 @@ export function buildHelp(
  * Returns a CliSubcommand-shaped object ready to plug into the meow router.
  */
 export function defineHandoffCommand(
-  opts: DefineHandoffCommandOptions,
+  options: DefineHandoffCommandOptions,
 ): CliSubcommand {
   const {
     description,
@@ -173,7 +173,7 @@ export function defineHandoffCommand(
     spawnMode,
     supportDryRun = DEFAULT_SUPPORT_DRY_RUN,
     trackTelemetry = DEFAULT_TRACK_TELEMETRY,
-  } = { __proto__: null, ...opts } as typeof opts
+  } = { __proto__: null, ...options } as typeof options
 
   async function run(
     argv: string[] | readonly string[],
@@ -190,7 +190,7 @@ export function defineHandoffCommand(
       description,
       hidden,
       flags: defineFlags({ ...commonFlags }),
-      help: buildHelp(opts, parentName),
+      help: buildHelp(options, parentName),
     }
 
     const cli = meowOrExit({ argv, config, importMeta, parentName })
@@ -209,8 +209,8 @@ export function defineHandoffCommand(
     }
 
     // Resolve the actual binary to forward (pip → pip/pip3 fallback, etc.).
-    const binaryName = opts.binaryPicker
-      ? await opts.binaryPicker(context)
+    const binaryName = options.binaryPicker
+      ? await options.binaryPicker(context)
       : name
 
     // Default to failure; child's exit listener overwrites on success.

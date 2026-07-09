@@ -13,8 +13,9 @@ const logger = getDefaultLogger()
 
 export function formatReportCard(
   artifact: DedupedArtifact,
-  colorize: boolean,
+  options: { colorize: boolean },
 ): string {
+  const { colorize } = options
   const scoreResult = {
     'Supply Chain Risk': Math.floor((artifact.score?.supplyChain ?? 0) * 100),
     Maintenance: Math.floor((artifact.score?.maintenance ?? 0) * 100),
@@ -81,7 +82,7 @@ export function generateMarkdownReport(
   const blocks: string[] = []
   const dupes: Set<string> = new Set()
   for (const artifact of artifacts.values()) {
-    const block = `## ${formatReportCard(artifact, false)}`
+    const block = `## ${formatReportCard(artifact, { colorize: false })}`
     if (dupes.has(block)) {
       // Omit duplicate blocks.
       continue
@@ -120,7 +121,7 @@ export function generateTextReport(
   }
   const dupes: Set<string> = new Set()
   for (const artifact of artifacts.values()) {
-    const block = formatReportCard(artifact, true)
+    const block = formatReportCard(artifact, { colorize: true })
     if (dupes.has(block)) {
       // Omit duplicate blocks.
       continue

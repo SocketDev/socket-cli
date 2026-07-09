@@ -14,7 +14,7 @@ const config = {
   flags: defineFlags({
     ...commonFlags,
   }),
-  help: (command: string, config: { flags: MeowFlags }) => `
+  help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [COMMAND_NAME=socket]
 
@@ -27,7 +27,7 @@ const config = {
     tab completion that is registered for it in bash.
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Examples
 

@@ -113,8 +113,8 @@ export async function getBaseBranch(cwd = process.cwd()): Promise<string> {
   // 3. Try to resolve the default remote branch using 'git remote show origin'.
   // This handles detached HEADs or workflows triggered by tags/releases.
   try {
-    const gitPath = await getGitPath()
-    const result = await spawn(gitPath, ['remote', 'show', 'origin'], { cwd })
+    const gitBin = await getGitPath()
+    const result = await spawn(gitBin, ['remote', 'show', 'origin'], { cwd })
 
     if (!result) {
       return 'main'
@@ -155,8 +155,8 @@ export async function getRepoInfo(
 ): Promise<RepoInfo | undefined> {
   let info: RepoInfo | undefined
   try {
-    const gitPath = await getGitPath()
-    const result = await spawn(gitPath, ['remote', 'get-url', 'origin'], {
+    const gitBin = await getGitPath()
+    const result = await spawn(gitBin, ['remote', 'get-url', 'origin'], {
       cwd,
     })
 
@@ -231,8 +231,8 @@ export async function gitCheckoutBranch(
     stdio: isDebug() ? 'inherit' : 'ignore',
   }
   try {
-    const gitPath = await getGitPath()
-    await spawn(gitPath, ['checkout', branch], stdioIgnoreOptions)
+    const gitBin = await getGitPath()
+    await spawn(gitBin, ['checkout', branch], stdioIgnoreOptions)
     debugGit(`checkout ${branch}`, true)
     return true
   } catch (e) {
@@ -253,8 +253,8 @@ export async function gitCleanFdx(cwd = process.cwd()): Promise<boolean> {
     stdio: isDebug() ? 'inherit' : 'ignore',
   }
   try {
-    const gitPath = await getGitPath()
-    await spawn(gitPath, ['clean', '-fdx'], stdioIgnoreOptions)
+    const gitBin = await getGitPath()
+    await spawn(gitBin, ['clean', '-fdx'], stdioIgnoreOptions)
     debugGit('clean -fdx', true)
     return true
   } catch (e) {
@@ -285,8 +285,8 @@ export async function gitCommit(
     stdio: isDebug() ? 'inherit' : 'ignore',
   }
   try {
-    const gitPath = await getGitPath()
-    await spawn(gitPath, ['add', ...filepaths], stdioIgnoreOptions)
+    const gitBin = await getGitPath()
+    await spawn(gitBin, ['add', ...filepaths], stdioIgnoreOptions)
     debugGit('add', true, { count: filepaths.length })
   } catch (e) {
     debugGit('add', false, { error: e })
@@ -295,8 +295,8 @@ export async function gitCommit(
   }
 
   try {
-    const gitPath = await getGitPath()
-    await spawn(gitPath, ['commit', '-m', commitMsg], stdioIgnoreOptions)
+    const gitBin = await getGitPath()
+    await spawn(gitBin, ['commit', '-m', commitMsg], stdioIgnoreOptions)
     debugGit('commit', true)
     return true
   } catch (e) {
@@ -318,8 +318,8 @@ export async function gitCreateBranch(
     stdio: isDebug() ? 'inherit' : 'ignore',
   }
   try {
-    const gitPath = await getGitPath()
-    await spawn(gitPath, ['branch', branch], stdioIgnoreOptions)
+    const gitBin = await getGitPath()
+    await spawn(gitBin, ['branch', branch], stdioIgnoreOptions)
     debugGit(`branch ${branch}`, true)
     return true
   } catch (e) {
@@ -338,8 +338,8 @@ export async function gitDeleteBranch(
   }
   try {
     // Will throw with exit code 1 if branch does not exist.
-    const gitPath = await getGitPath()
-    await spawn(gitPath, ['branch', '-D', branch], stdioIgnoreOptions)
+    const gitBin = await getGitPath()
+    await spawn(gitBin, ['branch', '-D', branch], stdioIgnoreOptions)
     return true
   } catch (e) {
     // Expected failure when branch doesn't exist.
@@ -411,8 +411,8 @@ export async function gitEnsureIdentity(
           stdio: isDebug() ? 'inherit' : 'ignore',
         }
         try {
-          const gitPath = await getGitPath()
-          await spawn(gitPath, ['config', prop, value], stdioIgnoreOptions)
+          const gitBin = await getGitPath()
+          await spawn(gitBin, ['config', prop, value], stdioIgnoreOptions)
         } catch (e) {
           debug(`Failed to set git config: ${prop}`)
           debugDir(e)
@@ -516,8 +516,8 @@ export async function gitResetHard(
     stdio: isDebug() ? 'inherit' : 'ignore',
   }
   try {
-    const gitPath = await getGitPath()
-    await spawn(gitPath, ['reset', '--hard', branch], stdioIgnoreOptions)
+    const gitBin = await getGitPath()
+    await spawn(gitBin, ['reset', '--hard', branch], stdioIgnoreOptions)
     debugGit(`reset --hard ${branch}`, true)
     return true
   } catch (e) {

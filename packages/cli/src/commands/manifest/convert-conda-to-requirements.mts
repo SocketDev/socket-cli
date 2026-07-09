@@ -7,6 +7,7 @@ import { stripAnsi } from '@socketsecurity/lib-stable/ansi/strip'
 import type { CResult } from '../../types.mts'
 const logger = getDefaultLogger()
 
+// socket-lint: allow boolean-trap -- exported call sites span handle-manifest-conda.mts and its test suite (outside this fix's scope); an options-object migration needs those call sites updated together.
 export async function convertCondaToRequirements(
   filename: string,
   cwd: string,

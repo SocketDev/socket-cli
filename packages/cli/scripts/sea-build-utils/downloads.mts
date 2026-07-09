@@ -666,6 +666,6 @@ export async function getLatestBinjectVersion() {
  * @returns Absolute path to monorepo root.
  */
 export function getRootPath() {
-  const __dirname = path.dirname(fileURLToPath(import.meta.url))
-  return path.join(__dirname, '../../../..')
+  const scriptDirname = path.dirname(fileURLToPath(import.meta.url))
+  return path.join(scriptDirname, '../../../..')
 }

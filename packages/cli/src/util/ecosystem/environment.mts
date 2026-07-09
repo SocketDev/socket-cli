@@ -517,20 +517,20 @@ export async function getAgentVersion(
     }
 
     if (shouldRunWithNode) {
-      const result = await spawn(
+      const spawnResult = await spawn(
         execPath,
         [...nodeNoWarningsFlags, shouldRunWithNode, FLAG_VERSION],
         { cwd },
       )
 
-      if (!result) {
+      if (!spawnResult) {
         return undefined
       }
 
-      stdout = result.stdout
+      stdout = spawnResult.stdout
       /* c8 ignore stop */
     } else {
-      const result = await spawn(agentExecPath, [FLAG_VERSION], {
+      const spawnResult = await spawn(agentExecPath, [FLAG_VERSION], {
         cwd,
         // On Windows, package managers are often .cmd files that require shell execution.
         // The spawn function from @socketsecurity/registry will handle this properly
@@ -538,11 +538,11 @@ export async function getAgentVersion(
         shell: WIN32,
       })
 
-      if (!result) {
+      if (!spawnResult) {
         return undefined
       }
 
-      stdout = result.stdout
+      stdout = spawnResult.stdout
     }
 
     result =

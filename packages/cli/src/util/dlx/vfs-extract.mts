@@ -264,8 +264,8 @@ export async function extractExternalTools(
           // Build and validate toolPaths from cache.
           const toolPaths: Partial<Record<ExternalTool, string>> = {}
           let allValid = true
-          for (let i = 0, { length } = EXTERNAL_TOOLS; i < length; i += 1) {
-            const tool = EXTERNAL_TOOLS[i]!
+          for (let j = 0, { length } = EXTERNAL_TOOLS; j < length; j += 1) {
+            const tool = EXTERNAL_TOOLS[j]!
             const toolPath = getToolFilePath(tool, nodeSmolBase)
             const toolPathWithExt = isPlatWin ? `${toolPath}.exe` : toolPath
             // Validate tool exists and is executable.

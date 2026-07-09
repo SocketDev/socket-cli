@@ -112,7 +112,7 @@ export async function run(
         description: 'Filter by this package version',
       },
     }),
-    help: (command: string, config: { flags: MeowFlags }) => `
+    help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [ECOSYSTEM] [TYPE_FILTER]
 
@@ -124,7 +124,7 @@ export async function run(
     ${mailtoLink('sales@socket.dev')} if you are interested in purchasing this access.
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Valid ecosystems:
 
@@ -222,7 +222,7 @@ export async function run(
     }
   })
 
-  const haves = new Set([ecoFilter, versionFilter, typeFilter])
+  const haves = new Set([ecoFilter, typeFilter, versionFilter])
   cli.input.some(str => {
     if (!haves.has(str)) {
       nameFilter = str

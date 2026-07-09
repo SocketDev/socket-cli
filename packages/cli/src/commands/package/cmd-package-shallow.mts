@@ -47,7 +47,7 @@ export async function run(
       ...commonFlags,
       ...outputFlags,
     }),
-    help: (command: string, config: { flags: MeowFlags }) => `
+    help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] <<ECOSYSTEM> <PKGNAME> [<PKGNAME> ...] | <PURL> [<PURL> ...]>
 
@@ -55,7 +55,7 @@ export async function run(
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Show scoring details for one or more packages purely based on their own package.
     This means that any dependency scores are not reflected by the score. You can

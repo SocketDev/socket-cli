@@ -6,6 +6,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdConfigList } from '../../../../src/commands/config/cmd-config-list.mts'
+
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 
 // Mock the logger.
@@ -38,10 +40,6 @@ vi.mock(
     outputConfigList: mockOutputConfigList,
   }),
 )
-
-// Import after mocks.
-const { cmdConfigList } =
-  await import('../../../../src/commands/config/cmd-config-list.mts')
 
 describe('cmd-config-list', () => {
   beforeEach(() => {

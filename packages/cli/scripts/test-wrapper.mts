@@ -152,7 +152,7 @@ async function main() {
         ...spawnEnv,
       },
       stdio: 'inherit',
-      ...(WIN32 ? { shell: true } : {}),
+      shell: WIN32,
     }
 
     // --passWithNoTests: a scoped run where the expanded args don't

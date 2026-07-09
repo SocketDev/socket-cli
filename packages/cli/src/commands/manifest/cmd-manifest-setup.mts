@@ -22,12 +22,12 @@ const config = {
       description: `If reading the ${SOCKET_JSON} fails, just use a default config? Warning: This might override the existing json file!`,
     },
   }),
-  help: (command: string, config: { flags: MeowFlags }) => `
+  help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [CWD=.]
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     This command will try to detect all supported ecosystems in given CWD. Then
     it starts a configurator where you can setup default values for certain flags

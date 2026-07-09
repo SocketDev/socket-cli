@@ -124,14 +124,14 @@ const inflightInit = new LRUCache<string, Promise<TelemetryService>>({
  *
  * @param promise Promise to wrap.
  * @param timeoutMs Timeout in milliseconds.
- * @param errorMessage Error message if timeout occurs.
+ * @param timeoutMessage Error message if timeout occurs.
  *
  * @returns Promise that resolves or times out.
  */
 export function withTimeout<T>(
   promise: Promise<T>,
   timeoutMs: number,
-  errorMessage: string,
+  timeoutMessage: string,
 ): Promise<T> {
   let timeoutId: NodeJS.Timeout | undefined
   // oxlint-disable-next-line socket/no-promise-race -- finalizer race: the .finally() arm clears the timeout the moment the promise settles, so the losing Promise resolves to undefined and is GC'd. No handler-list leak.
@@ -151,7 +151,7 @@ export function withTimeout<T>(
         if (id) {
           clearTimeout(id)
         }
-        reject(new Error(errorMessage))
+        reject(new Error(timeoutMessage))
         /* c8 ignore stop */
       }, timeoutMs)
     }),

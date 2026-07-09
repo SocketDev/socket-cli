@@ -48,12 +48,12 @@ export async function run(
       ...commonFlags,
       ...outputFlags,
     }),
-    help: (command: string, config: { flags: MeowFlags }) => `
+    help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] KEY
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Attempt to automatically discover the correct value for a given config KEY.
 
@@ -62,7 +62,7 @@ export async function run(
 
     Keys:
 ${getSupportedConfigEntries()
-  .map(({ 0: key, 1: description }) => `     - ${key} -- ${description}`)
+  .map(({ 0: key, 1: entryDescription }) => `     - ${key} -- ${entryDescription}`)
   .join('\n')}
   `,
   }

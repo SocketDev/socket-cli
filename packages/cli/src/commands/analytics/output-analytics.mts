@@ -72,8 +72,8 @@ export function formatDataOrg(
   for (let i = 0, { length } = METRICS; i < length; i += 1) {
     const metric = METRICS[i]!
     const formatted = formattedData[metric]
-    for (let i = 0, { length } = data; i < length; i += 1) {
-      const entry = data[i]!
+    for (let j = 0, { length: dataLength } = data; j < dataLength; j += 1) {
+      const entry = data[j]!
       const date = formatDate(entry.created_at)
       if (formatted[date]) {
         formatted[date] += entry[metric]!
@@ -123,8 +123,12 @@ export function formatDataRepo(
   }
   for (let i = 0, { length } = data; i < length; i += 1) {
     const entry = data[i]!
-    for (let i = 0, { length } = METRICS; i < length; i += 1) {
-      const metric = METRICS[i]!
+    for (
+      let j = 0, { length: metricsLength } = METRICS;
+      j < metricsLength;
+      j += 1
+    ) {
+      const metric = METRICS[j]!
       formattedData[metric]![formatDate(entry.created_at)] = entry[metric]
     }
   }

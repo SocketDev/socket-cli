@@ -17,6 +17,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdManifestSetup } from '../../../../src/commands/manifest/cmd-manifest-setup.mts'
+
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -49,10 +51,6 @@ const mockOutputDryRunWrite = vi.hoisted(() => vi.fn())
 vi.mock(import('../../../../src/util/dry-run/output.mts'), () => ({
   outputDryRunWrite: mockOutputDryRunWrite,
 }))
-
-// Import after mocks.
-const { cmdManifestSetup } =
-  await import('../../../../src/commands/manifest/cmd-manifest-setup.mts')
 
 describe('cmd-manifest-setup', () => {
   beforeEach(() => {

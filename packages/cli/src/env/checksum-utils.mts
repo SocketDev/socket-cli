@@ -8,6 +8,7 @@
  */
 
 import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
 
 export type Checksums = Record<string, string>
 
@@ -35,7 +36,7 @@ export function parseChecksums(
     return JSON.parse(jsonString) as Checksums
   } catch (e) {
     throw new Error(
-      `inlined checksums for ${toolName} are not valid JSON at runtime (JSON.parse threw: ${e instanceof Error ? e.message : String(e)}); the build-time inline step produced corrupt data — rebuild socket-cli (\`pnpm run build:cli\`) and verify the matching checksums entry in bundle-tools.json`,
+      `inlined checksums for ${toolName} are not valid JSON at runtime (JSON.parse threw: ${errorMessage(e)}); the build-time inline step produced an invalid value — rebuild socket-cli (\`pnpm run build:cli\`) and verify the matching checksums entry in bundle-tools.json`,
     )
   }
 }

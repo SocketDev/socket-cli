@@ -7,6 +7,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdManifestAuto } from '../../../../src/commands/manifest/cmd-manifest-auto.mts'
+
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -53,10 +55,6 @@ vi.mock(
 vi.mock(import('../../../../src/util/socket/json.mts'), () => ({
   readOrDefaultSocketJson: mockReadOrDefaultSocketJson,
 }))
-
-// Import after mocks.
-const { cmdManifestAuto } =
-  await import('../../../../src/commands/manifest/cmd-manifest-auto.mts')
 
 describe('cmd-manifest-auto', () => {
   beforeEach(() => {

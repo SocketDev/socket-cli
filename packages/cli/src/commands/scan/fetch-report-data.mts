@@ -15,7 +15,6 @@ import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 const logger = getDefaultLogger()
-const spinner = getDefaultSpinner()
 
 export type FetchScanData = {
   includeLicensePolicy?: boolean | undefined
@@ -40,6 +39,7 @@ export async function fetchScanData(
     __proto__: null,
     ...options,
   } as FetchScanData
+  const spinner = getDefaultSpinner()
   const sockSdkCResult = await setupSdk(sdkOpts)
   if (!sockSdkCResult.ok) {
     return sockSdkCResult

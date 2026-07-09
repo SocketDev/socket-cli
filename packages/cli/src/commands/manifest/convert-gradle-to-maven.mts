@@ -67,12 +67,9 @@ export async function convertGradleToMaven({
     if (isTextMode) {
       logger.log(`Converting gradle to maven from \`${bin}\` on \`${cwd}\` ...`)
     }
-    const output = await execGradleWithSpinner(
-      rBin,
-      commandArgs,
-      cwd,
-      isTextMode,
-    )
+    const output = await execGradleWithSpinner(rBin, commandArgs, cwd, {
+      showSpinner: isTextMode,
+    })
     if (verbose && isTextMode) {
       logger.group('[VERBOSE] gradle stdout:')
       logger.log(output)
@@ -157,8 +154,9 @@ export async function execGradleWithSpinner(
   bin: string,
   commandArgs: string[],
   cwd: string,
-  showSpinner: boolean,
+  options: { showSpinner: boolean },
 ): Promise<{ code: number; stdout: string; stderr: string }> {
+  const { showSpinner } = { __proto__: null, ...options } as typeof options
   let pass = false
   const spinner = showSpinner ? getDefaultSpinner() : undefined
   try {

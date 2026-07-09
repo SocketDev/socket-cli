@@ -15,6 +15,7 @@ import EventEmitter from 'node:events'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdCargo } from '../../../../src/commands/cargo/cmd-cargo.mts'
 import { setupTestEnvironment } from '../../../helpers/index.mts'
 
 // Mock spawnSfwDlx.
@@ -33,10 +34,6 @@ vi.mock(import('../../../../src/util/cli/with-subcommands.mjs'), () => ({
 vi.mock(import('../../../../src/util/process/cmd.mts'), () => ({
   filterFlags: mockFilterFlags,
 }))
-
-// Import after mocks.
-const { cmdCargo } =
-  await import('../../../../src/commands/cargo/cmd-cargo.mts')
 
 describe('cmd-cargo', () => {
   setupTestEnvironment()
@@ -77,7 +74,6 @@ describe('cmd-cargo', () => {
       })
       // run() will fall through to spawning sfw; mock that to avoid
       // touching the real binary.
-      const EventEmitter = (await import('node:events')).default
       const mockChildProcess = new EventEmitter()
       const mockSpawnPromise = Promise.resolve({
         code: 0,

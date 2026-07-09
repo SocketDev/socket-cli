@@ -30,12 +30,12 @@ const config = {
         'Enable debug output (only for auto itself; sub-steps need to have it pre-configured), may help when running into errors',
     },
   }),
-  help: (command: string, config: { flags: MeowFlags }) => `
+  help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [CWD=.]
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Tries to figure out what language your target repo uses. If it finds a
     supported case then it will try to generate the manifest file for that

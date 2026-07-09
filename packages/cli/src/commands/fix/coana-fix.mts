@@ -647,12 +647,15 @@ export async function coanaFix(
         if (autopilot) {
           logger.indent()
           spinner?.indent()
-          const { details, enabled } = await enablePrAutoMerge(data)
+          const { details: autoMergeDetails, enabled } =
+            await enablePrAutoMerge(data)
           if (enabled) {
             logger.info(`Auto-merge enabled for ${prRef}.`)
           } else {
             const message = `Failed to enable auto-merge for ${prRef}${
-              details ? `:\n${details.map(d => ` - ${d}`).join('\n')}` : '.'
+              autoMergeDetails
+                ? `:\n${autoMergeDetails.map(d => ` - ${d}`).join('\n')}`
+                : '.'
             }`
             logger.error(message)
           }

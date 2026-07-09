@@ -79,6 +79,21 @@ export const cmdFix = {
 }
 
 const generalFlags: MeowFlags = {
+  all: {
+    type: 'boolean',
+    default: false,
+    description:
+      'Process all discovered vulnerabilities in local mode. Cannot be used with --id.',
+  },
+  applyFixes: {
+    aliases: ['onlyCompute'],
+    type: 'boolean',
+    default: true,
+    description:
+      'Compute fixes only, do not apply them. Logs what upgrades would be applied. If combined with --output-file, the output file will contain the upgrades that would be applied.',
+    // Hidden to allow custom documenting of the negated `--no-apply-fixes` variant.
+    hidden: true,
+  },
   autopilot: {
     type: 'boolean',
     default: false,
@@ -94,34 +109,31 @@ const generalFlags: MeowFlags = {
       'Create a single PR for all fixes instead of one PR per GHSA (CI mode only)',
     hidden: true,
   },
-  applyFixes: {
-    aliases: ['onlyCompute'],
-    type: 'boolean',
-    default: true,
-    description:
-      'Compute fixes only, do not apply them. Logs what upgrades would be applied. If combined with --output-file, the output file will contain the upgrades that would be applied.',
-    // Hidden to allow custom documenting of the negated `--no-apply-fixes` variant.
-    hidden: true,
-  },
-  majorUpdates: {
-    type: 'boolean',
-    default: true,
-    description:
-      'Allow major version updates. Use --no-major-updates to disable.',
-    // Hidden to allow custom documenting the negated `--no-major-updates` variant.
-    hidden: true,
-  },
-  all: {
+  debug: {
     type: 'boolean',
     default: false,
     description:
-      'Process all discovered vulnerabilities in local mode. Cannot be used with --id.',
+      'Enable debug logging in the Coana-based Socket Fix CLI invocation.',
+    shortFlag: 'd',
+  },
+  disableExternalToolChecks: {
+    type: 'boolean',
+    default: false,
+    description: 'Disable external tool checks during fix analysis.',
+    hidden: true,
   },
   ecosystems: {
     type: 'string',
     default: [],
     description:
       'Limit fix analysis to specific ecosystems. Can be provided as comma separated values or as multiple flags. Defaults to all ecosystems.',
+    isMultiple: true,
+  },
+  exclude: {
+    type: 'string',
+    default: [],
+    description:
+      'Exclude workspaces matching these glob patterns. Can be provided as comma separated values or as multiple flags',
     isMultiple: true,
   },
   fixVersion: {
@@ -147,6 +159,32 @@ const generalFlags: MeowFlags = {
     Can be provided as comma separated values or as multiple flags. Cannot be used with --all.`,
     isMultiple: true,
   },
+  include: {
+    type: 'string',
+    default: [],
+    description:
+      'Include workspaces matching these glob patterns. Can be provided as comma separated values or as multiple flags',
+    isMultiple: true,
+  },
+  majorUpdates: {
+    type: 'boolean',
+    default: true,
+    description:
+      'Allow major version updates. Use --no-major-updates to disable.',
+    // Hidden to allow custom documenting the negated `--no-major-updates` variant.
+    hidden: true,
+  },
+  minimumReleaseAge: {
+    type: 'string',
+    default: '',
+    description:
+      'Set a minimum age requirement for suggested upgrade versions (e.g., 1h, 2d, 3w). A higher age requirement reduces the risk of upgrading to malicious versions. For example, setting the value to 1 week (1w) gives ecosystem maintainers one week to remove potentially malicious versions.',
+  },
+  outputFile: {
+    type: 'string',
+    default: '',
+    description: 'Path to store upgrades as a JSON file at this path.',
+  },
   prLimit: {
     aliases: ['limit'],
     type: 'number',
@@ -163,30 +201,6 @@ Available styles:
   * preserve - Retain the existing version range style as-is
       `.trim(),
   },
-  outputFile: {
-    type: 'string',
-    default: '',
-    description: 'Path to store upgrades as a JSON file at this path.',
-  },
-  minimumReleaseAge: {
-    type: 'string',
-    default: '',
-    description:
-      'Set a minimum age requirement for suggested upgrade versions (e.g., 1h, 2d, 3w). A higher age requirement reduces the risk of upgrading to malicious versions. For example, setting the value to 1 week (1w) gives ecosystem maintainers one week to remove potentially malicious versions.',
-  },
-  debug: {
-    type: 'boolean',
-    default: false,
-    description:
-      'Enable debug logging in the Coana-based Socket Fix CLI invocation.',
-    shortFlag: 'd',
-  },
-  disableExternalToolChecks: {
-    type: 'boolean',
-    default: false,
-    description: 'Disable external tool checks during fix analysis.',
-    hidden: true,
-  },
   showAffectedDirectDependencies: {
     type: 'boolean',
     default: false,
@@ -197,20 +211,6 @@ Available styles:
     type: 'boolean',
     default: false,
     description: 'Silence all output except the final result',
-  },
-  exclude: {
-    type: 'string',
-    default: [],
-    description:
-      'Exclude workspaces matching these glob patterns. Can be provided as comma separated values or as multiple flags',
-    isMultiple: true,
-  },
-  include: {
-    type: 'string',
-    default: [],
-    description:
-      'Include workspaces matching these glob patterns. Can be provided as comma separated values or as multiple flags',
-    isMultiple: true,
   },
 }
 
@@ -282,7 +282,7 @@ export async function run(
       ...generalFlags,
       ...hiddenFlags,
     }),
-    help: (command: string, config: { flags: MeowFlags }) => `
+    help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [CWD=.]
 
@@ -291,15 +291,15 @@ export async function run(
 
     Options
       ${getFlagListOutput({
-        ...config.flags,
+        ...helpConfig.flags,
         // Explicitly document the negated --no-apply-fixes variant.
         noApplyFixes: {
-          ...config.flags['applyFixes'],
+          ...helpConfig.flags['applyFixes'],
           hidden: false,
         } as MeowFlag,
         // Explicitly document the negated --no-major-updates variant.
         noMajorUpdates: {
-          ...config.flags['majorUpdates'],
+          ...helpConfig.flags['majorUpdates'],
           description:
             'Do not suggest or apply fixes that require major version updates of direct or transitive dependencies',
           hidden: false,

@@ -74,7 +74,7 @@ export async function run(
         description: 'Results per page - default is 30',
       },
     }),
-    help: (command: string, config: { flags: MeowFlags }) => `
+    help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [FILTER]
 
@@ -97,7 +97,7 @@ export async function run(
     The page arg should be a positive integer, offset 1. Defaults to 1.
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Examples
       $ ${command}

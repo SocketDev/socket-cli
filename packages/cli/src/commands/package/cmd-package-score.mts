@@ -41,7 +41,7 @@ export async function run(
       ...commonFlags,
       ...outputFlags,
     }),
-    help: (command: string, config: { flags: MeowFlags }) => `
+    help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] <<ECOSYSTEM> <NAME> | <PURL>>
 
@@ -49,7 +49,7 @@ export async function run(
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Show deep scoring details for one package. The score will reflect the package
     itself, any of its dependencies, and any of its transitive dependencies.

@@ -6,6 +6,13 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdConfigAuto } from '../../../../src/commands/config/cmd-config-auto.mts'
+import { cmdConfigGet } from '../../../../src/commands/config/cmd-config-get.mts'
+import { cmdConfigList } from '../../../../src/commands/config/cmd-config-list.mts'
+import { cmdConfigSet } from '../../../../src/commands/config/cmd-config-set.mts'
+import { cmdConfigUnset } from '../../../../src/commands/config/cmd-config-unset.mts'
+import { cmdConfig } from '../../../../src/commands/config/cmd-config.mts'
+
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
   fail: vi.fn(),
@@ -24,20 +31,6 @@ const mockMeowWithSubcommands = vi.hoisted(() => vi.fn())
 vi.mock(import('../../../../src/util/cli/with-subcommands.mts'), () => ({
   meowWithSubcommands: mockMeowWithSubcommands,
 }))
-
-// Import after mocks.
-const { cmdConfig } =
-  await import('../../../../src/commands/config/cmd-config.mts')
-const { cmdConfigAuto } =
-  await import('../../../../src/commands/config/cmd-config-auto.mts')
-const { cmdConfigGet } =
-  await import('../../../../src/commands/config/cmd-config-get.mts')
-const { cmdConfigList } =
-  await import('../../../../src/commands/config/cmd-config-list.mts')
-const { cmdConfigSet } =
-  await import('../../../../src/commands/config/cmd-config-set.mts')
-const { cmdConfigUnset } =
-  await import('../../../../src/commands/config/cmd-config-unset.mts')
 
 describe('cmd-config', () => {
   beforeEach(() => {

@@ -55,12 +55,12 @@ export function createConfigCommand(spec: ConfigCommandSpec) {
       ...commonFlags,
       ...outputFlags,
     },
-    help: (command, config) => `
+    help: (command, helpConfig) => `
     Usage
       $ ${command} [options] ${spec.helpUsage}
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     ${spec.helpDescription}
 

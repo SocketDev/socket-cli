@@ -121,28 +121,6 @@ export function toLower(arg: string): string {
 // Yargs CDXGEN configuration defined at:
 // https://github.com/CycloneDX/cdxgen/blob/v11.2.7/bin/cdxgen.js#L64
 const yargsConfig = {
-  configuration: {
-    'camel-case-expansion': false,
-    'greedy-arrays': false,
-    'parse-numbers': false,
-    'populate--': true,
-    'short-option-groups': false,
-    'strip-aliased': true,
-    'unknown-options-as-args': true,
-  },
-  coerce: {
-    'exclude-type': arrayToLower,
-    'feature-flags': arrayToLower,
-    filter: arrayToLower,
-    only: arrayToLower,
-    profile: toLower,
-    standard: arrayToLower,
-    technique: arrayToLower,
-    type: arrayToLower,
-  },
-  default: {
-    type: ['js'],
-  },
   alias: {
     help: ['h'],
     output: ['o'],
@@ -186,6 +164,28 @@ const yargsConfig = {
     'validate',
     'version',
   ],
+  coerce: {
+    'exclude-type': arrayToLower,
+    'feature-flags': arrayToLower,
+    filter: arrayToLower,
+    only: arrayToLower,
+    profile: toLower,
+    standard: arrayToLower,
+    technique: arrayToLower,
+    type: arrayToLower,
+  },
+  configuration: {
+    'camel-case-expansion': false,
+    'greedy-arrays': false,
+    'parse-numbers': false,
+    'populate--': true,
+    'short-option-groups': false,
+    'strip-aliased': true,
+    'unknown-options-as-args': true,
+  },
+  default: {
+    type: ['js'],
+  },
   string: [
     'api-key',
     'data-flow-slices-file', // hidden
@@ -215,11 +215,11 @@ const yargsConfig = {
 const config = {
   commandName: 'cdxgen',
   description: 'Run cdxgen for SBOM generation',
-  hidden: false,
   // Stub out flags and help since cdxgen uses yargs internally.
   // Socket CLI uses custom meow - see note above about conversion complexity.
   flags: {},
   help: () => '',
+  hidden: false,
 }
 
 export const cmdManifestCdxgen = {

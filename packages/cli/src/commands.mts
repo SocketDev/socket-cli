@@ -108,6 +108,7 @@ export type RootCommandBucket = 'main' | 'api' | 'tools' | 'config'
 
 export const rootCommandBuckets: Readonly<
   Partial<Record<keyof typeof rootCommands, RootCommandBucket>>
+  // socket-lint: allow object-property-order -- grouped by help-display bucket (main/api/tools/config), not alphabetical.
 > = {
   // Main commands — the "hero" actions surfaced first in `socket --help`.
   fix: 'main',

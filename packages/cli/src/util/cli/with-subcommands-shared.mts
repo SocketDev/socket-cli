@@ -63,8 +63,10 @@ const HELP_PAD_NAME = 28
  * Format a command description for help output.
  */
 export function description(command: CliSubcommand | undefined): string {
-  const description = command?.description
+  const commandDescription = command?.description
   const str =
-    typeof description === 'string' ? description : String(description)
+    typeof commandDescription === 'string'
+      ? commandDescription
+      : String(commandDescription)
   return indentString(str, { count: HELP_PAD_NAME }).trimStart()
 }

@@ -1,3 +1,4 @@
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { httpRequest } from '@socketsecurity/lib-stable/http-request/request'
 
 import type { HttpResponse } from '@socketsecurity/lib-stable/http-request/response-types'
@@ -155,7 +156,7 @@ export class OAuthIntrospector {
     try {
       authInfo = await this.verifyAccessToken(token)
     } catch (e) {
-      const message = e instanceof Error ? e.message : String(e)
+      const message = errorMessage(e)
       this.log.error(`Token verification failed: ${message}`)
       writeJson(res, 500, {
         error: 'server_error',
@@ -260,6 +261,10 @@ export function getProtectedResourceMetadataUrl(baseUrl: URL): string {
   return new URL(OAUTH_PROTECTED_RESOURCE_METADATA_PATH, baseUrl).href
 }
 
+// socket-lint: allow boolean-trap -- collapsing into an options object would
+// change call sites in transport-http.mts and
+// test/unit/commands/mcp/transport-http-helpers.test.mts, which are out of
+// scope for this pass.
 export function getRequestBaseUrl(
   req: IncomingMessage,
   fallbackPort: number,
@@ -357,7 +362,7 @@ export function parseJsonObject(
   try {
     parsed = JSON.parse(responseText)
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e)
+    const message = errorMessage(e)
     throw new Error(`${context} returned invalid JSON: ${message}`)
   }
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
