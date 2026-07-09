@@ -110,7 +110,10 @@ describe('fetchPurlsShallowScore', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { mockSetupSdk } = await setupSdkMockSuccess('batchPackageFetch', [])
+    const { mockSetupSdk: scopedMockSetupSdk } = await setupSdkMockSuccess(
+      'batchPackageFetch',
+      [],
+    )
 
     const sdkOpts = {
       apiToken: 'batch-token',
@@ -119,7 +122,7 @@ describe('fetchPurlsShallowScore', () => {
 
     await fetchPurlsShallowScore(['pkg:npm/test@1.0.0'], { sdkOpts })
 
-    expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts)
+    expect(scopedMockSetupSdk).toHaveBeenCalledWith(sdkOpts)
   })
 
   it('handles empty purl array', async () => {

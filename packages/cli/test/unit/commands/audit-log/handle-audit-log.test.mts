@@ -205,8 +205,8 @@ describe('handleAuditLog', () => {
     const { outputAuditLog } =
       await import('../../../../src/commands/audit-log/output-audit-log.mts')
 
-    const mockError = createErrorResult('API error')
-    mockFetchAuditLog.mockResolvedValue(mockError)
+    const mockFetchErrorResult = createErrorResult('API error')
+    mockFetchAuditLog.mockResolvedValue(mockFetchErrorResult)
 
     await handleAuditLog({
       logType: 'security',
@@ -216,7 +216,10 @@ describe('handleAuditLog', () => {
       perPage: 10,
     })
 
-    expect(outputAuditLog).toHaveBeenCalledWith(mockError, expect.any(Object))
+    expect(outputAuditLog).toHaveBeenCalledWith(
+      mockFetchErrorResult,
+      expect.any(Object),
+    )
   })
 
   it('handles different log types', async () => {

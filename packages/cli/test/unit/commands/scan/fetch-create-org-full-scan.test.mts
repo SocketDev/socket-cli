@@ -143,10 +143,8 @@ describe('fetchCreateOrgFullScan', () => {
     const { fetchCreateOrgFullScan } =
       await import('../../../../src/commands/scan/fetch-create-org-full-scan.mts')
 
-    const { mockSdk, mockSetupSdk } = await setupSdkMockSuccess(
-      'createFullScan',
-      {},
-    )
+    const { mockSdk, mockSetupSdk: scopedMockSetupSdk } =
+      await setupSdkMockSuccess('createFullScan', {})
 
     const config = {
       branchName: 'develop',
@@ -175,7 +173,7 @@ describe('fetchCreateOrgFullScan', () => {
       options,
     )
 
-    expect(mockSetupSdk).toHaveBeenCalledWith(options.sdkOpts)
+    expect(scopedMockSetupSdk).toHaveBeenCalledWith(options.sdkOpts)
     expect(mockSdk.createFullScan).toHaveBeenCalledWith(
       'custom-org',
       ['/path/to/package.json'],
