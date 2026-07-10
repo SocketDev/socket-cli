@@ -25,7 +25,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import constants from '../constants.mts'
-import { getExtraCaCerts, setupSdk } from './sdk.mts'
+import { getCliUserAgent, getExtraCaCerts, setupSdk } from './sdk.mts'
 
 import type { RequestInfo, ResponseInfo } from '@socketsecurity/sdk'
 
@@ -572,6 +572,23 @@ describe('SDK setup with telemetry hooks', () => {
         )
       }
     })
+  })
+})
+
+describe('getCliUserAgent', () => {
+  it('formats name/version, node version, and platform/arch', () => {
+    const userAgent = getCliUserAgent()
+
+    expect(userAgent).toBe(
+      `socket-cli/1.1.34 node/${process.version} ${process.platform}/${process.arch}`,
+    )
+  })
+
+  it('returns a stable value across repeated calls', () => {
+    const first = getCliUserAgent()
+    const second = getCliUserAgent()
+
+    expect(second).toBe(first)
   })
 })
 

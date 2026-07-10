@@ -327,7 +327,8 @@ describe('glob utilities', () => {
       // pyvenv.cfg marker at its root. Manifests inside it must not surface.
       mockTestFs({
         [`${mockFixturePath}/requirements.txt`]: '',
-        [`${mockFixturePath}/myenv/pyvenv.cfg`]: 'home = /usr/bin\nversion = 3.11.0\n',
+        [`${mockFixturePath}/myenv/pyvenv.cfg`]:
+          'home = /usr/bin\nversion = 3.11.0\n',
         [`${mockFixturePath}/myenv/requirements.txt`]: '',
         [`${mockFixturePath}/myenv/lib/python3.11/site-packages/foo/setup.py`]:
           '',
