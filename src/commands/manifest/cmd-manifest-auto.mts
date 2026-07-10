@@ -7,10 +7,13 @@ import { detectManifestActions } from './detect-manifest-actions.mts'
 import { generateAutoManifest } from './generate_auto_manifest.mts'
 import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
+import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
+import { assertValidExcludePaths } from '../scan/exclude-paths.mts'
+import { excludePathsFlag } from '../scan/reachability-flags.mts'
 
 import type {
   CliCommandConfig,
@@ -23,6 +26,7 @@ const config: CliCommandConfig = {
   hidden: false,
   flags: {
     ...commonFlags,
+    ...excludePathsFlag,
     verbose: {
       type: 'boolean',
       default: false,
@@ -117,9 +121,13 @@ async function run(
     return
   }
 
+  const excludePaths = cmdFlagValueToArray(cli.flags['excludePaths'])
+  assertValidExcludePaths(excludePaths)
+
   await generateAutoManifest({
     detected,
     cwd,
+    excludePaths,
     outputKind,
     verbose,
   })

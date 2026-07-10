@@ -36,6 +36,7 @@ export async function runManifestFacts({
   cwd,
   ecosystem,
   excludeConfigs,
+  excludePaths,
   ignoreUnresolved,
   includeConfigs,
   sidecarAcc,
@@ -47,6 +48,7 @@ export async function runManifestFacts({
   cwd: string
   ecosystem: BuildTool
   excludeConfigs: string
+  excludePaths?: string[] | undefined
   ignoreUnresolved: boolean
   includeConfigs: string
   sidecarAcc?: SidecarAccumulator | undefined
@@ -62,6 +64,7 @@ export async function runManifestFacts({
   const scriptOpts = {
     bin: bin || undefined,
     excludeConfigs: excludeConfigs || undefined,
+    excludePaths: excludePaths?.length ? excludePaths : undefined,
     includeConfigs: includeConfigs || undefined,
     projectDir: cwd,
     // Stream the build tool's output only when asked; otherwise capture it and

@@ -147,6 +147,7 @@ export async function handleCreateNewScan({
       computeArtifactsSidecar: reach.runReachabilityAnalysis,
       cwd,
       detected,
+      excludePaths: reach.excludePaths,
       outputKind,
       verbose: false,
     })

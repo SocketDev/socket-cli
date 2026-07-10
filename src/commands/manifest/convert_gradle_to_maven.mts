@@ -9,11 +9,13 @@ import constants from '../../constants.mts'
 export async function convertGradleToMaven({
   bin,
   cwd,
+  excludePaths,
   gradleOpts,
   verbose,
 }: {
   bin: string
   cwd: string
+  excludePaths?: string[] | undefined
   verbose: boolean
   gradleOpts: string[]
 }) {
@@ -48,7 +50,19 @@ export async function convertGradleToMaven({
     // I'd prefer something plain-text if it is to be committed.
     // Note: init.gradle will be exported by .config/rollup.dist.config.mjs
     const initLocation = path.join(constants.distPath, 'init.gradle')
-    const commandArgs = ['--init-script', initLocation, ...gradleOpts, 'pom']
+    // CSV: `--exclude-paths` is comma-split at the CLI, so an entry can never
+    // contain a comma. The init script skips POM generation for excluded
+    // subprojects.
+    const excludeProps = excludePaths?.length
+      ? [`-Psocket.excludePaths=${excludePaths.join(',')}`]
+      : []
+    const commandArgs = [
+      '--init-script',
+      initLocation,
+      ...excludeProps,
+      ...gradleOpts,
+      'pom',
+    ]
     if (verbose) {
       logger.log('[VERBOSE] Executing:', [bin], ', args:', commandArgs)
     }

@@ -7,6 +7,7 @@ export async function convertGradleToFacts({
   bin,
   cwd,
   excludeConfigs,
+  excludePaths,
   gradleOpts,
   ignoreUnresolved,
   includeConfigs,
@@ -17,6 +18,7 @@ export async function convertGradleToFacts({
   bin: string
   cwd: string
   excludeConfigs: string
+  excludePaths?: string[] | undefined
   gradleOpts: string[]
   ignoreUnresolved: boolean
   includeConfigs: string
@@ -30,6 +32,7 @@ export async function convertGradleToFacts({
     cwd,
     ecosystem: 'gradle',
     excludeConfigs,
+    excludePaths,
     ignoreUnresolved,
     includeConfigs,
     sidecarAcc,

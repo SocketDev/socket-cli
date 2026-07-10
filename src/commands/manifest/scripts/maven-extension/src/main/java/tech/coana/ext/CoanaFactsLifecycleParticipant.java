@@ -57,6 +57,7 @@ public class CoanaFactsLifecycleParticipant extends AbstractMavenLifecyclePartic
     opts.populateFilesFor = opt(session, "socket.populateFilesFor");
     opts.includeConfigs = opt(session, "socket.includeConfigs");
     opts.excludeConfigs = opt(session, "socket.excludeConfigs");
+    opts.excludePaths = opt(session, "socket.excludePaths");
     File rootDir = new File(session.getExecutionRootDirectory());
     try {
       new SocketFactsRecordsEngine(repoSystem, dependencyGraphBuilder, runtimeInformation.getMavenVersion(), LOG)

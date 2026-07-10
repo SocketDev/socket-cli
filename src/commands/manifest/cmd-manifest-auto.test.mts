@@ -23,6 +23,7 @@ describe('socket manifest auto', async () => {
             $ socket manifest auto [options] [CWD=.]
 
           Options
+            --exclude-paths     List of glob patterns to exclude from the scan, including SCA/SBOM manifest discovery and (when --reach is enabled) full application reachability analysis. Patterns are anchored micromatch globs matched relative to the Socket scan root, which is the command working directory (\`--cwd\` if set), not the reachability target: \`tests\` matches only \`<cwd>/tests\`; use \`**/tests\` to match at any depth. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags.
             --verbose           Enable debug output (only for auto itself; sub-steps need to have it pre-configured), may help when running into errors
 
           Tries to figure out what language your target repo uses. If it finds a
