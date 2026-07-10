@@ -1,5 +1,7 @@
+import type { PURL_Type } from '../../../utils/ecosystem.mts'
+
 export type AnyPURL = {
-  type: string
+  type: PURL_Type
   namespace?: string | undefined
   name: string
   version?: string | undefined
@@ -16,7 +18,7 @@ export type SocketFactsSbom = {
 
 export type SocketFactsSbomMetadata = {
   format: 'socket-facts-sbom'
-  tool: 'gradle' | 'maven' | 'sbt'
+  tool: 'dotnet' | 'gradle' | 'maven' | 'sbt'
   toolVersion: string
   javaVersion?: string | undefined
 }

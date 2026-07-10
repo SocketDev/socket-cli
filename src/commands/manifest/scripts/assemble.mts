@@ -12,8 +12,27 @@ import {
 
 import type { ParsedRecords, RawCoord, RawProject } from './records.mts'
 import type { ResolutionReport } from './resolution-report.mts'
+import type { PURL_Type } from '../../../utils/ecosystem.mts'
 
-const PURL_TYPE_MAVEN = 'maven'
+const PURL_TYPE_MAVEN: PURL_Type = 'maven'
+const PURL_TYPE_NUGET: PURL_Type = 'nuget'
+
+function purlTypeForTool(tool: SocketFactsSbomMetadata['tool']): PURL_Type {
+  return tool === 'dotnet' ? PURL_TYPE_NUGET : PURL_TYPE_MAVEN
+}
+
+// Maven-type entries always carry the namespace key (even empty — the
+// pre-dotnet output shape, which downstream identity matching may rely on);
+// groupless ecosystems (nuget) omit it.
+function namespaceEntry(
+  purlType: PURL_Type,
+  group: string,
+): { namespace?: string } {
+  if (purlType === PURL_TYPE_NUGET && !group) {
+    return {}
+  }
+  return { namespace: group }
+}
 
 export type AssembleResult = {
   facts: SocketFactsSbom
@@ -54,11 +73,12 @@ export function assembleFacts(
   const { directByRoot, finalNodes } = mergePathSensitive(perRoot)
 
   const tool = (parsed.tool || 'gradle') as SocketFactsSbomMetadata['tool']
-  const components = buildComponents(finalNodes)
+  const purlType = purlTypeForTool(tool)
+  const components = buildComponents(finalNodes, purlType)
   const projects =
     opts.emitProjects === false
       ? []
-      : buildProjects(parsed, finalNodes, directByRoot, perRoot)
+      : buildProjects(parsed, finalNodes, directByRoot, perRoot, purlType)
 
   const metadata: SocketFactsSbomMetadata = {
     format: 'socket-facts-sbom',
@@ -241,6 +261,7 @@ function mergePathSensitive(perRoot: Map<string, PerRoot>): {
 
 function buildComponents(
   finalNodes: Map<string, MergedNode>,
+  purlType: PURL_Type,
 ): SocketFactsSbomComponent[] {
   return [...finalNodes.keys()].sort().map(id => {
     const fn = finalNodes.get(id)!
@@ -255,8 +276,8 @@ function buildComponents(
       qualifiers['ext'] = c.ext
     }
     const comp: SocketFactsSbomComponent = {
-      type: PURL_TYPE_MAVEN,
-      namespace: c.group,
+      type: purlType,
+      ...namespaceEntry(purlType, c.group),
       name: c.name,
       ...(c.version ? { version: c.version } : {}),
       ...(Object.keys(qualifiers).length ? { qualifiers } : {}),
@@ -280,6 +301,7 @@ function buildProjects(
   finalNodes: Map<string, MergedNode>,
   directByRoot: Map<string, Set<string>>,
   perRoot: Map<string, PerRoot>,
+  purlType: PURL_Type,
 ): SocketFactsSbomProject[] {
   const idsByGav = new Map<string, Set<string>>()
   for (const [id, fn] of finalNodes) {
@@ -306,8 +328,8 @@ function buildProjects(
 
   const projects = [...parsed.projects.values()].map(p => {
     const entry: SocketFactsSbomProject = {
-      type: PURL_TYPE_MAVEN,
-      namespace: p.group,
+      type: purlType,
+      ...namespaceEntry(purlType, p.group),
       name: p.name,
       ...(p.version ? { version: p.version } : {}),
       subprojectDir: p.dir,
@@ -319,8 +341,8 @@ function buildProjects(
     return entry
   })
   projects.sort((a, b) => {
-    const ka = `${a.subprojectDir} ${a.namespace}:${a.name}`
-    const kb = `${b.subprojectDir} ${b.namespace}:${b.name}`
+    const ka = `${a.subprojectDir} ${a.namespace ?? ''}:${a.name}`
+    const kb = `${b.subprojectDir} ${b.namespace ?? ''}:${b.name}`
     return ka < kb ? -1 : ka > kb ? 1 : 0
   })
   return projects
@@ -452,5 +474,35 @@ function buildReport(parsed: ParsedRecords): ResolutionReport {
     seenUnscannable.add(key)
     return true
   })
-  return { failures, scannedConfigs: parsed.scannedConfigs, unscannable }
+  // Roots carry the (project, config) pairs; label projects by their relative
+  // dir (unique and human-readable), falling back to name, then key.
+  const configsByProjectKey = new Map<string, Set<string>>()
+  for (const root of parsed.roots.values()) {
+    if (!root.config) {
+      continue
+    }
+    let set = configsByProjectKey.get(root.projectKey)
+    if (!set) {
+      set = new Set()
+      configsByProjectKey.set(root.projectKey, set)
+    }
+    set.add(root.config)
+  }
+  const configsByProject = [...configsByProjectKey]
+    .map(({ 0: projectKey, 1: configs }) => {
+      const p = parsed.projects.get(projectKey)
+      return {
+        project: p?.dir || p?.name || projectKey,
+        configs: [...configs].sort(),
+      }
+    })
+    .sort((a, b) =>
+      a.project < b.project ? -1 : a.project > b.project ? 1 : 0,
+    )
+  return {
+    failures,
+    scannedConfigs: parsed.scannedConfigs,
+    configsByProject,
+    unscannable,
+  }
 }

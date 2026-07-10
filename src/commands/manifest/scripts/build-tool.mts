@@ -1,18 +1,20 @@
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-export type BuildTool = 'gradle' | 'maven' | 'sbt'
+export type BuildTool = 'dotnet' | 'gradle' | 'maven' | 'sbt'
 
 // PATH fallback when no `bin` and no project wrapper.
 const DEFAULT_BUILD_TOOL_BIN: Record<BuildTool, string> = {
   __proto__: null,
+  dotnet: 'dotnet',
   gradle: 'gradle',
   maven: 'mvn',
   sbt: 'sbt',
 } as unknown as Record<BuildTool, string>
 
 // Project-local wrapper, preferred because it pins the expected build-tool
-// version. sbt has no wrapper convention. POSIX names only (no win32 target).
+// version. sbt and dotnet have no wrapper convention (dotnet pins the SDK via
+// global.json instead). POSIX names only (no win32 target).
 const BUILD_TOOL_WRAPPER = {
   __proto__: null,
   gradle: 'gradlew',

@@ -6,6 +6,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { assembleFacts } from './assemble.mts'
 import { resolveBuildToolBin } from './build-tool.mts'
+import { serializeConfigPatterns } from './config-glob.mts'
 import { parseRecords } from './records.mts'
 import constants from '../../../constants.mts'
 
@@ -151,6 +152,8 @@ export async function runManifestScript(
   opts: ManifestScriptOptions,
 ): Promise<ManifestRunResult> {
   switch (tool) {
+    case 'dotnet':
+      return await runDotnet(opts)
     case 'gradle':
       return await runGradle(opts)
     case 'sbt':
@@ -171,13 +174,59 @@ function commonProps(
   if (opts.populateFilesFor) {
     props.push(`${prefix}socket.populateFilesFor=${opts.populateFilesFor}`)
   }
-  if (opts.includeConfigs) {
-    props.push(`${prefix}socket.includeConfigs=${opts.includeConfigs}`)
+  // Globs compile to regex pattern sources HERE (config-glob.mts is the single
+  // glob implementation); the scripts just Pattern.compile what they receive.
+  const includePatterns = serializeConfigPatterns(opts.includeConfigs)
+  if (includePatterns) {
+    props.push(`${prefix}socket.includeConfigs=${includePatterns}`)
   }
-  if (opts.excludeConfigs) {
-    props.push(`${prefix}socket.excludeConfigs=${opts.excludeConfigs}`)
+  const excludePatterns = serializeConfigPatterns(opts.excludeConfigs)
+  if (excludePatterns) {
+    props.push(`${prefix}socket.excludeConfigs=${excludePatterns}`)
   }
   return props
+}
+
+// Missing only in an unbuilt local checkout. Fail loudly: without the tool,
+// dotnet facts generation is impossible.
+function assertDotnetToolBuilt(dllPath: string): void {
+  if (existsSync(dllPath)) {
+    return
+  }
+  throw new Error(
+    `socket-facts-dotnet tool not found at ${dllPath}. It is bundled in the published CLI; for local dev build it with: bash src/commands/manifest/scripts/dotnet-tool/build-tool.sh`,
+  )
+}
+
+// The bundled C# tool runs one MSBuild session (evaluate -> restore -> read
+// project.assets.json via NuGet's own APIs) under a single global-property
+// bag, so user -p: opts apply to resolution and the emitted graph alike. It
+// emits the same records protocol as the JVM scripts.
+async function runDotnet(
+  opts: ManifestScriptOptions,
+): Promise<ManifestRunResult> {
+  const toolDll = manifestScriptsPath('dotnet-tool', 'socket-facts-dotnet.dll')
+  assertDotnetToolBuilt(toolDll)
+  const bin = resolveBuildToolBin('dotnet', opts.projectDir, opts.bin)
+  return await withTmpDir('socket-dotnet-facts-', async tmp => {
+    const recordsFile = path.join(tmp, 'records.tsv')
+    const includePatterns = serializeConfigPatterns(opts.includeConfigs)
+    const excludePatterns = serializeConfigPatterns(opts.excludeConfigs)
+    const args = [
+      toolDll,
+      '--records',
+      recordsFile,
+      '--root',
+      opts.projectDir,
+      ...(opts.withFiles ? ['--with-files'] : []),
+      ...(includePatterns ? ['--include-configs', includePatterns] : []),
+      ...(excludePatterns ? ['--exclude-configs', excludePatterns] : []),
+      ...(opts.stdio === 'inherit' ? ['--verbose'] : []),
+      ...(opts.toolOpts ?? []),
+    ]
+    const out = await runNeverThrow(bin, args, opts)
+    return await assembleFromRecords(out, recordsFile)
+  })
 }
 
 async function runGradle(

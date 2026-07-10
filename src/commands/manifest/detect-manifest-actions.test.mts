@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -135,6 +135,67 @@ describe('detectManifestActions — gradle detector', () => {
       cwd,
     )
     expect(result.gradle).toBe(false)
+    expect(result.count).toBe(0)
+  })
+})
+
+describe('detectManifestActions — dotnet detector', () => {
+  let cwd: string
+
+  beforeEach(() => {
+    cwd = mkTmp()
+  })
+
+  afterEach(() => {
+    rmSync(cwd, { recursive: true, force: true })
+  })
+
+  it.each(['app.sln', 'app.slnx', 'app.csproj', 'app.fsproj', 'app.vbproj'])(
+    'detects dotnet from a top-level %s',
+    async name => {
+      touch(cwd, name)
+      const result = await detectManifestActions(null, cwd)
+      expect(result.dotnet).toBe(true)
+      expect(result.count).toBe(1)
+    },
+  )
+
+  it('does not detect dotnet from unrelated files', async () => {
+    touch(cwd, 'project.pbxproj')
+    touch(cwd, 'package.json')
+    const result = await detectManifestActions(null, cwd)
+    expect(result.dotnet).toBe(false)
+  })
+
+  it('skips dotnet when defaults.manifest.dotnet.disabled is true', async () => {
+    touch(cwd, 'app.sln')
+    const result = await detectManifestActions(
+      {
+        defaults: { manifest: { dotnet: { disabled: true } } },
+      } as SocketJson,
+      cwd,
+    )
+    expect(result.dotnet).toBe(false)
+    expect(result.count).toBe(0)
+  })
+})
+
+describe('detectManifestActions — dotnet detector ignores directories', () => {
+  let cwd: string
+
+  beforeEach(() => {
+    cwd = mkTmp()
+  })
+
+  afterEach(() => {
+    rmSync(cwd, { recursive: true, force: true })
+  })
+
+  it('does not detect dotnet from a directory named like a project file', async () => {
+    mkdirSync(path.join(cwd, 'templates.csproj'))
+    mkdirSync(path.join(cwd, 'legacy.sln'))
+    const result = await detectManifestActions(null, cwd)
+    expect(result.dotnet).toBe(false)
     expect(result.count).toBe(0)
   })
 })

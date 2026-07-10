@@ -1,6 +1,7 @@
 import { GRADLE_DIALECT } from './resolution-report-gradle.mts'
 import { SBT_DIALECT } from './resolution-report-ivy.mts'
 import { MAVEN_DIALECT } from './resolution-report-maven.mts'
+import { NUGET_DIALECT } from './resolution-report-nuget.mts'
 
 import type { BuildTool } from './build-tool.mts'
 import type {
@@ -37,6 +38,10 @@ export type ResolutionDialect = {
   label: string
   classify: (detail: string) => FailureCategory
   categories: FailureCategorySpec[]
+  // What a "config" is called in this ecosystem (defaults below); NuGet
+  // resolves per target framework and its exclude flag is named accordingly.
+  configNoun?: string | undefined
+  excludeConfigsFlag?: string | undefined
 }
 
 export type RenderedResolutionReport = {
@@ -96,6 +101,8 @@ export function renderResolutionReport(
   } = {},
 ): RenderedResolutionReport {
   const name = dialect.label
+  const noun = dialect.configNoun ?? 'configuration'
+  const excludeFlag = dialect.excludeConfigsFlag ?? '--exclude-configs'
   const unscannable = opts.unscannable ?? []
   const unscannableConfigs = new Set(unscannable.map(u => u.config))
   const specOf = new Map(dialect.categories.map(c => [c.key, c]))
@@ -172,10 +179,15 @@ export function renderResolutionReport(
   const out: string[] = []
   if (hasBlockingFailures) {
     if (blockingCount > 0) {
+      // Failures without config attribution (e.g. restore-level errors) would
+      // read "in 0 …(s)"; drop the clause instead.
+      const inConfigs = perDepBlockingConfigs.size
+        ? ` in ${perDepBlockingConfigs.size} ${noun}(s)`
+        : ''
       out.push(
         opts.ignoreUnresolved
-          ? `Ignored ${blockingCount} unresolved dependency(ies) in ${perDepBlockingConfigs.size} configuration(s):`
-          : `Could not resolve ${blockingCount} dependency(ies) in ${perDepBlockingConfigs.size} configuration(s):`,
+          ? `Ignored ${blockingCount} unresolved dependency(ies)${inConfigs}:`
+          : `Could not resolve ${blockingCount} dependency(ies)${inConfigs}:`,
       )
       for (const { infos, spec } of blockingGroups) {
         out.push('')
@@ -200,8 +212,8 @@ export function renderResolutionReport(
       }
       out.push(
         opts.ignoreUnresolved
-          ? `Ignored ${blockingUnscannable.length} configuration(s) that could not be scanned:`
-          : `Could not scan ${blockingUnscannable.length} configuration(s) (reason from ${name}):`,
+          ? `Ignored ${blockingUnscannable.length} ${noun}(s) that could not be scanned:`
+          : `Could not scan ${blockingUnscannable.length} ${noun}(s) (reason from ${name}):`,
       )
       for (const u of blockingUnscannable.slice(
         0,
@@ -232,7 +244,7 @@ export function renderResolutionReport(
       out.push(`To proceed, re-run with either:`)
       out.push(`    --ignore-unresolved`)
       if (blockingFailed.length) {
-        out.push(`    --exclude-configs '${blockingFailed.join(',')}'`)
+        out.push(`    ${excludeFlag} '${blockingFailed.join(',')}'`)
       }
     }
     out.push('')
@@ -252,7 +264,7 @@ export function renderResolutionReport(
   if (nonBlockingUnscannable.length) {
     const n = new Set(nonBlockingUnscannable.map(u => u.config)).size
     notices.push(
-      `Could not scan ${n} configuration(s) — re-run with --verbose for ${name}'s messages.`,
+      `Could not scan ${n} ${noun}(s) — re-run with --verbose for ${name}'s messages.`,
     )
   }
 
@@ -266,7 +278,7 @@ export function renderResolutionReport(
   }
   if (unscannable.length) {
     detailLines.push('')
-    detailLines.push(`${name} configurations that could not be scanned:`)
+    detailLines.push(`${name} ${noun}s that could not be scanned:`)
     for (const u of unscannable) {
       detailLines.push('')
       detailLines.push(`  ${u.config}:`)
@@ -286,6 +298,8 @@ export function renderResolutionReport(
 
 function dialectFor(tool: BuildTool): ResolutionDialect {
   switch (tool) {
+    case 'dotnet':
+      return NUGET_DIALECT
     case 'gradle':
       return GRADLE_DIALECT
     case 'sbt':

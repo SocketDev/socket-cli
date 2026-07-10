@@ -70,6 +70,7 @@ describe('compute-artifacts sidecar', () => {
         version: 'da517db',
         ext: 'jar',
         classifier: null,
+        ecosystem: 'maven',
         targets: ['/abs/lib.jar'],
         sources: ['/abs/lib/src/main/java'],
       },
@@ -152,6 +153,7 @@ describe('compute-artifacts sidecar', () => {
         version: '1.0',
         ext: '',
         classifier: null,
+        ecosystem: 'maven',
         targets: ['/abs/app/build/classes'],
         sources: ['/abs/app/src/main/java'],
       },
@@ -168,5 +170,111 @@ describe('compute-artifacts sidecar', () => {
 
     expect(resolved).toHaveLength(1)
     expect(resolved[0]!.targets).toEqual(['/root-a/a.jar', '/root-b/a.jar'])
+  })
+})
+
+describe('nuget (dotnet) sidecar entries', () => {
+  it('tags dotnet facts entries with ecosystem and keeps them separate from maven', () => {
+    const acc: SidecarAccumulator = new Map()
+
+    const dotnetFacts = {
+      metadata: {
+        format: 'socket-facts-sbom' as const,
+        tool: 'dotnet' as const,
+        toolVersion: '8.0.414',
+      },
+      components: [
+        {
+          type: 'nuget',
+          name: 'Newtonsoft.Json',
+          version: '13.0.3',
+          id: 'Newtonsoft.Json:13.0.3',
+          direct: true,
+        },
+      ],
+      projects: [
+        {
+          type: 'nuget',
+          name: 'MyApp',
+          version: '1.0.0',
+          subprojectDir: 'MyApp',
+          dependencies: ['Newtonsoft.Json:13.0.3'],
+          resolvedAs: [],
+        },
+      ],
+    }
+    const dotnetPaths = {
+      targetsByCoord: new Map([
+        [
+          'Newtonsoft.Json:13.0.3',
+          ['/nuget/newtonsoft.json/13.0.3/lib/net6.0/Newtonsoft.Json.dll'],
+        ],
+        ['MyApp:1.0.0', ['/repo/MyApp/bin/Debug/net8.0/MyApp.dll']],
+      ]),
+      targetsByGav: new Map<string, string[]>(),
+      sourcesByCoord: new Map([['MyApp:1.0.0', ['/repo/MyApp']]]),
+      coords: new Set(['Newtonsoft.Json:13.0.3', 'MyApp:1.0.0']),
+    }
+    accumulateSidecar(acc, dotnetFacts, dotnetPaths)
+
+    // A maven artifact that would key identically without the ecosystem
+    // namespace (groupless, ext-less) must not merge with the nuget entry.
+    const mavenFacts = {
+      metadata: {
+        format: 'socket-facts-sbom' as const,
+        tool: 'gradle' as const,
+        toolVersion: '8.0',
+      },
+      components: [
+        {
+          type: 'maven',
+          namespace: '',
+          name: 'Newtonsoft.Json',
+          version: '13.0.3',
+          id: 'Newtonsoft.Json:13.0.3',
+        },
+      ],
+    }
+    const mavenPaths = {
+      targetsByCoord: new Map([['Newtonsoft.Json:13.0.3', ['/m2/weird.jar']]]),
+      targetsByGav: new Map<string, string[]>(),
+      sourcesByCoord: new Map<string, string[]>(),
+      coords: new Set(['Newtonsoft.Json:13.0.3']),
+    }
+    accumulateSidecar(acc, mavenFacts, mavenPaths)
+
+    const resolved = serializeSidecar(acc)
+    expect(resolved).toHaveLength(3)
+
+    const nugetPkg = resolved.find(
+      c => c.ecosystem === 'nuget' && c.name === 'Newtonsoft.Json',
+    )
+    expect(nugetPkg).toMatchObject({
+      group: '',
+      version: '13.0.3',
+      ext: '',
+      classifier: null,
+      targets: ['/nuget/newtonsoft.json/13.0.3/lib/net6.0/Newtonsoft.Json.dll'],
+      sources: [],
+    })
+
+    const nugetProject = resolved.find(
+      c => c.ecosystem === 'nuget' && c.name === 'MyApp',
+    )
+    expect(nugetProject).toMatchObject({
+      targets: ['/repo/MyApp/bin/Debug/net8.0/MyApp.dll'],
+      sources: ['/repo/MyApp'],
+    })
+
+    // The maven entry is explicitly tagged 'maven' (strict producer) and keyed
+    // separately from the same-coordinate nuget entry — no cross-ecosystem merge.
+    const mavenPkg = resolved.find(
+      c => c.ecosystem === 'maven' && c.name === 'Newtonsoft.Json',
+    )
+    expect(mavenPkg).toMatchObject({
+      ecosystem: 'maven',
+      name: 'Newtonsoft.Json',
+      targets: ['/m2/weird.jar'],
+    })
   })
 })
