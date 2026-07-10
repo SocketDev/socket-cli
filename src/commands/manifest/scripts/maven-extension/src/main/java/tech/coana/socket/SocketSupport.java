@@ -87,8 +87,10 @@ public final class SocketSupport {
    * Compile a comma-separated list of {@code --exclude-paths} into glob {@link PathMatcher}s, used
    * only to skip whole excluded reactor modules. Each entry variant yields the entry itself and
    * {@code entry/**} so it matches the dir and its subtree (same expansion as the SCA ignore path).
-   * Standard glob semantics (anchored to the scan root, matching the CLI flag): {@code x} is
-   * root-level; {@code **}{@code /x} matches at any depth. Mirrors the gradle/sbt producers.
+   * A trailing {@code /**} is stripped first, so a user-written {@code dir/**} still excludes the
+   * {@code dir} directory itself, not only its contents. Standard glob semantics (anchored to the
+   * scan root, matching the CLI flag): {@code x} is root-level; {@code **}{@code /x} matches at any
+   * depth. Mirrors the gradle/sbt producers.
    */
   public static List<PathMatcher> parseExcludeMatchers(String csv) {
     List<PathMatcher> out = new ArrayList<>();
@@ -97,6 +99,10 @@ public final class SocketSupport {
       String g = raw.trim().replace("\\", "/");
       while (g.startsWith("/")) g = g.substring(1);
       while (g.endsWith("/")) g = g.substring(0, g.length() - 1);
+      while (g.endsWith("/**")) {
+        g = g.substring(0, g.length() - 3);
+        while (g.endsWith("/")) g = g.substring(0, g.length() - 1);
+      }
       if (g.isEmpty()) continue;
       for (String v : zeroDepthVariants(g)) {
         out.add(FileSystems.getDefault().getPathMatcher("glob:" + v));

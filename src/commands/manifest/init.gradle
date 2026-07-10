@@ -22,8 +22,81 @@ initscript {
     }
 }
 
+// `Project.findProperty` only exists since Gradle 2.13; fall back to hasProperty/property for older Gradle.
+gradle.ext.socketProp = { proj, name -> proj.hasProperty(name) ? proj.property(name) : null }
+
+// `-Psocket.excludePaths` → glob PathMatchers, used only to skip POM generation for whole excluded
+// subprojects. Each entry variant yields the entry itself and `entry/**` so it matches the dir and its
+// subtree (same expansion as the SCA ignore path). A trailing `/**` is stripped first, so a user-written
+// `dir/**` still excludes the `dir` directory itself, not only its contents. Standard glob semantics
+// (anchored to the scan root, matching the CLI flag): `x` is root-level, `**/x` matches at any depth.
+// NIO glob requires a slash-adjacent `**` to consume at least one path segment, but the CLI's micromatch
+// lets it match zero (`**/x` matches root-level `x`). Emit every variant with `**/` occurrences dropped so
+// both semantics hold. Mirrors the socket-facts producers.
+gradle.ext.socketZeroDepthVariants = { String glob ->
+  def out = new LinkedHashSet()
+  def work = new ArrayDeque()
+  work.add(glob)
+  while (!work.isEmpty()) {
+    def cur = work.poll()
+    if (!out.add(cur)) { continue }
+    int idx = cur.indexOf('**/')
+    while (idx >= 0) {
+      if (idx == 0 || cur[idx - 1] == '/') {
+        def collapsed = cur.substring(0, idx) + cur.substring(idx + 3)
+        if (!collapsed.isEmpty()) { work.add(collapsed) }
+      }
+      idx = cur.indexOf('**/', idx + 1)
+    }
+  }
+  out
+}
+gradle.ext.socketExcludeMatchersCache = null
+gradle.ext.socketExcludeMatchers = {
+  if (gradle.ext.socketExcludeMatchersCache != null) return gradle.ext.socketExcludeMatchersCache
+  def raw = gradle.socketProp.call(gradle.rootProject, 'socket.excludePaths')?.toString()
+  def matchers = []
+  if (raw != null && !raw.trim().isEmpty()) {
+    def fs = java.nio.file.FileSystems.getDefault()
+    raw.split(',').each { r ->
+      def g = r.trim().replace('\\', '/')
+      while (g.startsWith('/')) { g = g.substring(1) }
+      while (g.endsWith('/')) { g = g.substring(0, g.length() - 1) }
+      while (g.endsWith('/**')) {
+        g = g.substring(0, g.length() - 3)
+        while (g.endsWith('/')) { g = g.substring(0, g.length() - 1) }
+      }
+      if (!g.isEmpty()) {
+        gradle.ext.socketZeroDepthVariants.call(g).each { v ->
+          matchers << fs.getPathMatcher('glob:' + v)
+          matchers << fs.getPathMatcher('glob:' + v + '/**')
+        }
+      }
+    }
+  }
+  gradle.ext.socketExcludeMatchersCache = matchers
+  matchers
+}
+gradle.ext.socketIsExcluded = { String rel ->
+  def c = (rel == null ? '' : rel).replace('\\', '/')
+  while (c.startsWith('./')) { c = c.substring(2) }
+  while (c.startsWith('/')) { c = c.substring(1) }
+  while (c.endsWith('/')) { c = c.substring(0, c.length() - 1) }
+  if (c.isEmpty()) { return false }
+  def p = java.nio.file.Paths.get(c)
+  gradle.ext.socketExcludeMatchers.call().any { m -> m.matches(p) }
+}
+
 // Apply these configurations to all projects in the build
 gradle.allprojects { project ->
+    // Skip a wholly excluded subproject: `--exclude-paths` covering its dir means we don't
+    // generate a POM for it (source-file-level exclusion is left to the reachability analysis).
+    def excludeRelDir = project.rootProject.projectDir.toPath()
+        .relativize(project.projectDir.toPath()).toString().replace(File.separator, '/')
+    if (gradle.ext.socketIsExcluded.call(excludeRelDir.isEmpty() ? '.' : excludeRelDir)) {
+        return
+    }
+
     // Create a unique name for the Maven publication
     // Example: project ':foo:bar' becomes 'maven-foo-bar'
     def publicationName = "maven-${project.path.replace(':', '-')}"

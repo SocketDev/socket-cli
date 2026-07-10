@@ -310,6 +310,7 @@ async function run(
   await convertGradleToMaven({
     bin: String(bin),
     cwd,
+    excludePaths,
     gradleOpts: parsedGradleOpts,
     verbose: Boolean(verbose),
   })

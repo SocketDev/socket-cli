@@ -13,9 +13,10 @@ gradle.ext.socketProp = { proj, name -> proj.hasProperty(name) ? proj.property(n
 
 // `-Psocket.excludePaths` → glob PathMatchers, used only to skip whole excluded subprojects
 // (source-file-level exclusion is left to the reachability analysis). Each entry variant yields the entry
-// itself and `entry/**` so it matches the dir and its subtree (same expansion as the SCA ignore path).
-// Standard glob semantics (anchored to the scan root, matching the CLI flag): `x` is root-level, `**/x`
-// matches at any depth. Mirrors the sbt/maven producers.
+// itself and `entry/**` so it matches the dir and its subtree (same expansion as the SCA ignore path). A
+// trailing `/**` is stripped first, so a user-written `dir/**` still excludes the `dir` directory itself,
+// not only its contents. Standard glob semantics (anchored to the scan root, matching the CLI flag): `x`
+// is root-level, `**/x` matches at any depth. Mirrors the sbt/maven producers.
 // NIO glob requires a slash-adjacent `**` to consume at least one path segment, but the CLI's
 // micromatch lets it match zero (`**/x` matches root-level `x`). Emit every variant with `**/`
 // occurrences dropped so both semantics hold.
@@ -48,6 +49,10 @@ gradle.ext.socketExcludeMatchers = {
       def g = r.trim().replace('\\', '/')
       while (g.startsWith('/')) { g = g.substring(1) }
       while (g.endsWith('/')) { g = g.substring(0, g.length() - 1) }
+      while (g.endsWith('/**')) {
+        g = g.substring(0, g.length() - 3)
+        while (g.endsWith('/')) { g = g.substring(0, g.length() - 1) }
+      }
       if (!g.isEmpty()) {
         gradle.ext.socketZeroDepthVariants.call(g).each { v ->
           matchers << fs.getPathMatcher('glob:' + v)

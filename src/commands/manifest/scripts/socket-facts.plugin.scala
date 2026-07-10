@@ -394,8 +394,9 @@ object SocketFactsPlugin extends AutoPlugin {
 
   // `-Dsocket.excludePaths` → glob PathMatchers, used only to skip whole excluded subprojects. Each
   // entry variant yields the entry itself and `entry/**` so it matches the dir and its subtree (same expansion
-  // as the SCA ignore path). Standard glob semantics (anchored to the scan root, matching the CLI
-  // flag): `x` is root-level, `**/x` matches at any depth. Mirrors the gradle/maven producers.
+  // as the SCA ignore path). A trailing `/**` is stripped first, so a user-written `dir/**` still excludes the
+  // `dir` directory itself, not only its contents. Standard glob semantics (anchored to the scan root, matching
+  // the CLI flag): `x` is root-level, `**/x` matches at any depth. Mirrors the gradle/maven producers.
   private def parseExcludeMatchers(): Seq[java.nio.file.PathMatcher] = {
     sys.props.get("socket.excludePaths").map(_.trim).filter(_.nonEmpty) match {
       case None => Nil
@@ -405,6 +406,10 @@ object SocketFactsPlugin extends AutoPlugin {
           var g = r.trim.replace("\\", "/")
           while (g.startsWith("/")) g = g.substring(1)
           while (g.endsWith("/")) g = g.substring(0, g.length - 1)
+          while (g.endsWith("/**")) {
+            g = g.substring(0, g.length - 3)
+            while (g.endsWith("/")) g = g.substring(0, g.length - 1)
+          }
           if (g.isEmpty) Nil
           else zeroDepthVariants(g).flatMap { v =>
             Seq(fs.getPathMatcher("glob:" + v), fs.getPathMatcher("glob:" + v + "/**"))
