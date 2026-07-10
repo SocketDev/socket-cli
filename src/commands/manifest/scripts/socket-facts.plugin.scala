@@ -38,6 +38,17 @@ object SocketFactsPlugin extends AutoPlugin {
       val extracted = Project.extract(st)
       val allRefs = extracted.structure.allProjectRefs
 
+      // `-Dsocket.excludePaths` (scan-root-relative globs): a subproject whose dir is wholly excluded is
+      // never resolved and emits no project record. Source-file-level exclusion is left to the analysis.
+      val excludeMatchers = parseExcludeMatchers()
+      val rootCanonPath = buildRoot.getCanonicalFile.toPath
+      def relOf(f: File): String = {
+        val r = rootCanonPath.relativize(f.getCanonicalFile.toPath).toString.replace(java.io.File.separator, "/")
+        if (r.isEmpty) "." else r
+      }
+      def isExcludedRef(ref: ProjectRef): Boolean =
+        isExcludedPath(relOf(extracted.get(baseDirectory.in(ref))), excludeMatchers)
+
       // Prefer `updateFull` (coursier `update` returns empty callers); fall back to `update` (sbt 0.13).
       val hasUpdateFull =
         extracted.structure.settings.map(_.key.key).exists(_.label == "updateFull")
@@ -53,21 +64,17 @@ object SocketFactsPlugin extends AutoPlugin {
       val moduleExts = buildModuleExts(allRefs, extracted)
 
       allRefs.foreach { ref =>
-        runUpdateResilient(updateTaskName, ref, extracted, st, failures).foreach { report =>
-          foldReport(report, ref, extracted, matcher, scannedConfigs, withFiles, populateScope, moduleExts).foreach {
-            case (rootKey, tree) => perSub(rootKey) = tree
+        if (!isExcludedRef(ref)) {
+          runUpdateResilient(updateTaskName, ref, extracted, st, failures).foreach { report =>
+            foldReport(report, ref, extracted, matcher, scannedConfigs, withFiles, populateScope, moduleExts).foreach {
+              case (rootKey, tree) => perSub(rootKey) = tree
+            }
           }
         }
       }
 
       val moduleDirs: Map[String, (Seq[String], Seq[String])] =
         if (withFiles) buildModuleDirs(allRefs, extracted) else Map.empty
-
-      val rootPath = buildRoot.getCanonicalFile.toPath
-      def relOf(f: File): String = {
-        val r = rootPath.relativize(f.getCanonicalFile.toPath).toString.replace(java.io.File.separator, "/")
-        if (r.isEmpty) "." else r
-      }
 
       val sb = new StringBuilder
       def rec(fields: String*): Unit = {
@@ -76,16 +83,19 @@ object SocketFactsPlugin extends AutoPlugin {
 
       rec("meta", "sbt", extracted.getOpt(sbtVersion).getOrElse(""), sys.props.getOrElse("java.version", ""))
 
-      // One `project` record per build module (sources/targets only with --with-files).
+      // One `project` record per build module (sources/targets only with --with-files). Excluded
+      // subprojects are omitted (they were also skipped during resolution above).
       allRefs.foreach { ref =>
-        val mid = rootIdOf(extracted, ref)
-        val ver = if (mid.revision == null) "" else mid.revision
-        rec("project", ref.project, mid.organization, mid.name, ver, relOf(extracted.get(baseDirectory.in(ref))))
-        if (withFiles) {
-          moduleDirs.get(mid.organization + ":" + mid.name + ":" + ver).foreach {
-            case (sources, targets) =>
-              sources.foreach(s => rec("projectSrc", ref.project, s))
-              targets.foreach(t => rec("projectTgt", ref.project, t))
+        if (!isExcludedRef(ref)) {
+          val mid = rootIdOf(extracted, ref)
+          val ver = if (mid.revision == null) "" else mid.revision
+          rec("project", ref.project, mid.organization, mid.name, ver, relOf(extracted.get(baseDirectory.in(ref))))
+          if (withFiles) {
+            moduleDirs.get(mid.organization + ":" + mid.name + ":" + ver).foreach {
+              case (sources, targets) =>
+                sources.foreach(s => rec("projectSrc", ref.project, s))
+                targets.foreach(t => rec("projectTgt", ref.project, t))
+            }
           }
         }
       }
@@ -141,6 +151,8 @@ object SocketFactsPlugin extends AutoPlugin {
 
   // Absolute source roots + compiled-output dirs per build module, keyed by GAV. --with-files only;
   // absolute because reachability locates an internal module's code on THIS machine (no registry jar).
+  // ALL of the project's configurations are scanned (not just Compile/Test) so custom ones
+  // (IntegrationTest, ...) reach the analysis; source-file-level exclusion is coana's job.
   private def buildModuleDirs(
       allRefs: Seq[ProjectRef],
       extracted: Extracted
@@ -148,10 +160,12 @@ object SocketFactsPlugin extends AutoPlugin {
     allRefs.map { ref =>
       val mid = rootIdOf(extracted, ref)
       val ver = if (mid.revision == null) "" else mid.revision
-      val sources = Seq(Compile, Test)
+      val configs: Seq[Configuration] =
+        extracted.getOpt(thisProject.in(ref)).map(_.configurations).getOrElse(Seq(Compile, Test))
+      val sources = configs
         .flatMap(c => extracted.getOpt(sourceDirectories.in(ref).in(c)).getOrElse(Nil))
         .map(_.getAbsolutePath).distinct.sorted
-      val targets = Seq(Compile, Test)
+      val targets = configs
         .flatMap(c => extracted.getOpt(classDirectory.in(ref).in(c)))
         .map(_.getAbsolutePath).distinct.sorted
       (mid.organization + ":" + mid.name + ":" + ver) -> ((sources, targets))
@@ -376,6 +390,64 @@ object SocketFactsPlugin extends AutoPlugin {
     val c: Any = cr.configuration
     try c.getClass.getMethod("name").invoke(c).toString
     catch { case _: Throwable => c.toString }
+  }
+
+  // `-Dsocket.excludePaths` → glob PathMatchers, used only to skip whole excluded subprojects. Each
+  // entry variant yields the entry itself and `entry/**` so it matches the dir and its subtree (same expansion
+  // as the SCA ignore path). Standard glob semantics (anchored to the scan root, matching the CLI
+  // flag): `x` is root-level, `**/x` matches at any depth. Mirrors the gradle/maven producers.
+  private def parseExcludeMatchers(): Seq[java.nio.file.PathMatcher] = {
+    sys.props.get("socket.excludePaths").map(_.trim).filter(_.nonEmpty) match {
+      case None => Nil
+      case Some(raw) =>
+        val fs = java.nio.file.FileSystems.getDefault
+        raw.split(",").toSeq.flatMap { r =>
+          var g = r.trim.replace("\\", "/")
+          while (g.startsWith("/")) g = g.substring(1)
+          while (g.endsWith("/")) g = g.substring(0, g.length - 1)
+          if (g.isEmpty) Nil
+          else zeroDepthVariants(g).flatMap { v =>
+            Seq(fs.getPathMatcher("glob:" + v), fs.getPathMatcher("glob:" + v + "/**"))
+          }
+        }
+    }
+  }
+
+  // NIO glob requires a slash-adjacent `**` to consume at least one path segment, but the CLI's
+  // micromatch lets it match zero (`**/x` matches root-level `x`). Emit every variant with `**/`
+  // occurrences dropped so both semantics hold.
+  private def zeroDepthVariants(glob: String): Seq[String] = {
+    val out = mutable.LinkedHashSet[String]()
+    val work = mutable.Queue(glob)
+    while (work.nonEmpty) {
+      val cur = work.dequeue()
+      if (out.add(cur)) {
+        var idx = cur.indexOf("**/")
+        while (idx >= 0) {
+          if (idx == 0 || cur.charAt(idx - 1) == '/') {
+            val collapsed = cur.substring(0, idx) + cur.substring(idx + 3)
+            if (collapsed.nonEmpty) work.enqueue(collapsed)
+          }
+          idx = cur.indexOf("**/", idx + 1)
+        }
+      }
+    }
+    out.toSeq
+  }
+
+  private def isExcludedPath(rel: String, matchers: Seq[java.nio.file.PathMatcher]): Boolean = {
+    if (matchers.isEmpty) false
+    else {
+      var c = (if (rel == null) "" else rel).replace("\\", "/")
+      while (c.startsWith("./")) c = c.substring(2)
+      while (c.startsWith("/")) c = c.substring(1)
+      while (c.endsWith("/")) c = c.substring(0, c.length - 1)
+      if (c.isEmpty) false
+      else {
+        val p = java.nio.file.Paths.get(c)
+        matchers.exists(_.matches(p))
+      }
+    }
   }
 
   private def isTestConf(name: String): Boolean = name.toLowerCase.contains("test")

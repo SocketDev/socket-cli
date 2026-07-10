@@ -9,6 +9,7 @@ export async function convertSbtToFacts({
   bin,
   cwd,
   excludeConfigs,
+  excludePaths,
   ignoreUnresolved,
   includeConfigs,
   sbtOpts,
@@ -19,6 +20,7 @@ export async function convertSbtToFacts({
   bin: string
   cwd: string
   excludeConfigs: string
+  excludePaths?: string[] | undefined
   ignoreUnresolved: boolean
   includeConfigs: string
   sbtOpts: string[]
@@ -32,6 +34,7 @@ export async function convertSbtToFacts({
     cwd,
     ecosystem: 'sbt',
     excludeConfigs,
+    excludePaths,
     ignoreUnresolved,
     includeConfigs,
     sidecarAcc,

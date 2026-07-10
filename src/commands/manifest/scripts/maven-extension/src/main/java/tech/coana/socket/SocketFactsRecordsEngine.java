@@ -48,6 +48,8 @@ public final class SocketFactsRecordsEngine {
     public String populateFilesFor;
     public String includeConfigs;
     public String excludeConfigs;
+    // Scan-root-relative `--exclude-paths` (CSV): a wholly excluded reactor module is skipped.
+    public String excludePaths;
     public String recordsFile;
   }
 
@@ -77,16 +79,20 @@ public final class SocketFactsRecordsEngine {
     // GAVs to materialize under --with-files (null = all). Scopes artifact downloads so reachability
     // doesn't fetch the whole dependency universe. Module src/tgt dirs are emitted regardless (no download).
     Set<String> populateGavs = readPopulateGavs(opts);
+    // reactorGavs stays complete (all modules) so a KEPT module depending on an excluded one still
+    // recognizes it as internal; `excludes` only gates resolution + the project record.
     Set<String> reactorGavs = new HashSet<>();
     for (MavenProject p : reactor) {
       reactorGavs.add(p.getGroupId() + ":" + p.getArtifactId() + ":" + p.getVersion());
     }
+    List<java.nio.file.PathMatcher> excludes = SocketSupport.parseExcludeMatchers(opts.excludePaths);
 
     List<String> lines = new ArrayList<>();
     rec(lines, "meta", "maven", mavenVersion, System.getProperty("java.version"));
 
     for (MavenProject module : reactor) {
       String ws = SocketSupport.workspace(rootDir.toPath(), module.getBasedir().toPath());
+      if (SocketSupport.isExcludedPath(ws, excludes)) continue;
       rec(lines, "project", ws, module.getGroupId(), module.getArtifactId(), module.getVersion(), ws);
       if (opts.withFiles) {
         for (String s : collectSources(module)) rec(lines, "projectSrc", ws, s);
@@ -100,6 +106,8 @@ public final class SocketFactsRecordsEngine {
     int rootIdx = 0;
     for (MavenProject module : reactor) {
       String ws = SocketSupport.workspace(rootDir.toPath(), module.getBasedir().toPath());
+      // A wholly excluded reactor module is not resolved (matches the project-record skip above).
+      if (SocketSupport.isExcludedPath(ws, excludes)) continue;
       Map<String, Node> nodes = new LinkedHashMap<>();
       Set<String> directIds = new HashSet<>();
       collectModule(session, repoSession, module, passingScopes, reactorGavs, populateGavs, opts, nodes, directIds, failures);

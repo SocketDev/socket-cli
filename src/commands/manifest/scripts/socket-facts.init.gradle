@@ -11,6 +11,64 @@ import java.util.Collections
 // `Project.findProperty` only exists since Gradle 2.13; fall back to hasProperty/property for older Gradle.
 gradle.ext.socketProp = { proj, name -> proj.hasProperty(name) ? proj.property(name) : null }
 
+// `-Psocket.excludePaths` → glob PathMatchers, used only to skip whole excluded subprojects
+// (source-file-level exclusion is left to the reachability analysis). Each entry variant yields the entry
+// itself and `entry/**` so it matches the dir and its subtree (same expansion as the SCA ignore path).
+// Standard glob semantics (anchored to the scan root, matching the CLI flag): `x` is root-level, `**/x`
+// matches at any depth. Mirrors the sbt/maven producers.
+// NIO glob requires a slash-adjacent `**` to consume at least one path segment, but the CLI's
+// micromatch lets it match zero (`**/x` matches root-level `x`). Emit every variant with `**/`
+// occurrences dropped so both semantics hold.
+gradle.ext.socketZeroDepthVariants = { String glob ->
+  def out = new LinkedHashSet()
+  def work = new ArrayDeque()
+  work.add(glob)
+  while (!work.isEmpty()) {
+    def cur = work.poll()
+    if (!out.add(cur)) { continue }
+    int idx = cur.indexOf('**/')
+    while (idx >= 0) {
+      if (idx == 0 || cur[idx - 1] == '/') {
+        def collapsed = cur.substring(0, idx) + cur.substring(idx + 3)
+        if (!collapsed.isEmpty()) { work.add(collapsed) }
+      }
+      idx = cur.indexOf('**/', idx + 1)
+    }
+  }
+  out
+}
+gradle.ext.socketExcludeMatchersCache = null
+gradle.ext.socketExcludeMatchers = {
+  if (gradle.ext.socketExcludeMatchersCache != null) return gradle.ext.socketExcludeMatchersCache
+  def raw = gradle.socketProp.call(gradle.rootProject, 'socket.excludePaths')?.toString()
+  def matchers = []
+  if (raw != null && !raw.trim().isEmpty()) {
+    def fs = java.nio.file.FileSystems.getDefault()
+    raw.split(',').each { r ->
+      def g = r.trim().replace('\\', '/')
+      while (g.startsWith('/')) { g = g.substring(1) }
+      while (g.endsWith('/')) { g = g.substring(0, g.length() - 1) }
+      if (!g.isEmpty()) {
+        gradle.ext.socketZeroDepthVariants.call(g).each { v ->
+          matchers << fs.getPathMatcher('glob:' + v)
+          matchers << fs.getPathMatcher('glob:' + v + '/**')
+        }
+      }
+    }
+  }
+  gradle.ext.socketExcludeMatchersCache = matchers
+  matchers
+}
+gradle.ext.socketIsExcluded = { String rel ->
+  def c = (rel == null ? '' : rel).replace('\\', '/')
+  while (c.startsWith('./')) { c = c.substring(2) }
+  while (c.startsWith('/')) { c = c.substring(1) }
+  while (c.endsWith('/')) { c = c.substring(0, c.length() - 1) }
+  if (c.isEmpty()) { return false }
+  def p = java.nio.file.Paths.get(c)
+  gradle.ext.socketExcludeMatchers.call().any { m -> m.matches(p) }
+}
+
 // Synchronized collections so --parallel-enabled builds don't race; lives on gradle.ext so every
 // collector and the root aggregator share one instance.
 gradle.ext.socketFactsState = [
@@ -55,15 +113,22 @@ gradle.projectsEvaluated { g ->
       }
     } catch (Exception ignore) {}
     g.socketFactsState.projectArtifactExt["${p.group ?: ''}:${p.name}".toString()] = artExt
+    // A wholly excluded subproject emits no project record and its configs are never resolved (see the
+    // collector). projectKeys/projectArtifactExt above stay populated so a KEPT project depending on it
+    // still recognizes it as a first-party module.
+    if (g.ext.socketIsExcluded.call(rel(p.projectDir))) {
+      return
+    }
     // Guarded: projects without the java `sourceSets` convention (pure aggregators, AGP-only
     // Android modules) contribute empty lists rather than failing.
+    // ALL source sets are emitted (not just main/test) so custom ones (integrationTest,
+    // functionalTest, ...) reach the analysis; source-file-level exclusion is coana's job.
     // `classesDirs` (Gradle 4+) falls back to the legacy single `classesDir` on older Gradle.
     def sources = [] as Set
     def targets = [] as Set
     try {
       if (p.hasProperty('sourceSets')) {
-        ['main', 'test'].each { sn ->
-          def ss = p.sourceSets.findByName(sn)
+        p.sourceSets.each { ss ->
           if (ss != null) {
             ss.allSource.srcDirs.each { d -> sources << d.absolutePath }
             try {
@@ -95,6 +160,13 @@ allprojects { project ->
 
     doLast {
       def state = gradle.socketFactsState
+      // Skip resolving a wholly excluded subproject: `--exclude-paths` covering its dir means we don't
+      // resolve for it at all (matches the project-record skip in projectsEvaluated).
+      def excludeRootPath = project.rootProject.projectDir.toPath()
+      def excludeRelDir = excludeRootPath.relativize(project.projectDir.toPath()).toString().replace(File.separator, '/')
+      if (gradle.ext.socketIsExcluded.call(excludeRelDir.isEmpty() ? '.' : excludeRelDir)) {
+        return
+      }
       // Per-RESOLUTION-ROOT accumulators, LOCAL to this collector: one (subproject, configuration)
       // classpath resolved into its own coordinate-keyed tree. Reassigned per config below (the
       // visit/upsertNode closures capture them); `failures`/`scannedConfigs` stay shared.

@@ -77,6 +77,31 @@ describe('exclude-paths', () => {
         )
       },
     )
+
+    it.each([
+      'src/[abc',
+      'foo{bar',
+      'a/{b/{c}}',
+      'x}y{z',
+      'src/[]]x',
+      'src/[!]x',
+    ])('rejects NIO-glob-incompatible bracket pattern %j', input => {
+      expect(() => assertValidExcludePaths([input])).toThrow(
+        /unbalanced or nested/,
+      )
+    })
+
+    it.each([
+      'src/[abc]',
+      'src/[!abc]',
+      'src/[^abc]',
+      'src/[a]b]',
+      'src/[[]',
+      'a/{b}/c',
+      'x}y',
+    ])('allows balanced bracket pattern %j', input => {
+      expect(() => assertValidExcludePaths([input])).not.toThrow()
+    })
   })
 
   describe('excludePathToScanIgnores', () => {

@@ -23,6 +23,10 @@ export type ManifestScriptOptions = {
   populateFilesFor?: string | undefined
   includeConfigs?: string | undefined
   excludeConfigs?: string | undefined
+  // Scan-root-relative `--exclude-paths`. Passed to the build script, which skips
+  // resolving a wholly excluded subproject. Source-file-level exclusion is left to
+  // the reachability analysis (coana's --exclude-dirs), not applied here.
+  excludePaths?: string[] | undefined
   toolOpts?: string[] | undefined
   stdio?: 'inherit' | 'pipe' | undefined
   env?: NodeJS.ProcessEnv | undefined
@@ -176,6 +180,11 @@ function commonProps(
   }
   if (opts.excludeConfigs) {
     props.push(`${prefix}socket.excludeConfigs=${opts.excludeConfigs}`)
+  }
+  if (opts.excludePaths?.length) {
+    // CSV: `--exclude-paths` is comma-split at the CLI, so an entry can never
+    // contain a comma.
+    props.push(`${prefix}socket.excludePaths=${opts.excludePaths.join(',')}`)
   }
   return props
 }

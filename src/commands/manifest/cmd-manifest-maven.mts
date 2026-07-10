@@ -9,10 +9,13 @@ import { resolveBuildToolBin } from './scripts/build-tool.mts'
 import constants, { SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
+import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
+import { assertValidExcludePaths } from '../scan/exclude-paths.mts'
+import { excludePathsFlag } from '../scan/reachability-flags.mts'
 
 import type {
   CliCommandConfig,
@@ -41,6 +44,7 @@ const config: CliCommandConfig = {
       description:
         'Comma-separated glob patterns; Maven scopes matching any pattern are skipped (applied after --include-configs)',
     },
+    ...excludePathsFlag,
     ignoreUnresolved: {
       type: 'boolean',
       description:
@@ -224,10 +228,14 @@ async function run(
 
   const parsedMavenOpts = parseBuildToolOpts(String(mavenOpts || ''))
 
+  const excludePaths = cmdFlagValueToArray(cli.flags['excludePaths'])
+  assertValidExcludePaths(excludePaths)
+
   await convertMavenToFacts({
     bin: String(bin),
     cwd,
     excludeConfigs: String(excludeConfigs || ''),
+    excludePaths,
     ignoreUnresolved: Boolean(ignoreUnresolved),
     includeConfigs: String(includeConfigs || ''),
     mavenOpts: parsedMavenOpts,

@@ -50,6 +50,7 @@ export async function generateAutoManifest({
   computeArtifactsSidecar,
   cwd,
   detected,
+  excludePaths,
   outputKind,
   verbose,
 }: {
@@ -57,6 +58,9 @@ export async function generateAutoManifest({
   computeArtifactsSidecar?: boolean | undefined
   detected: GeneratableManifests
   cwd: string
+  // Scan-root-relative `--exclude-paths`: skip excluded subprojects and drop
+  // excluded source roots from the resolved-paths sidecar.
+  excludePaths?: string[] | undefined
   outputKind: OutputKind
   verbose: boolean
 }): Promise<GenerateAutoManifestResult> {
@@ -91,6 +95,7 @@ export async function generateAutoManifest({
       await convertSbtToFacts({
         ...sbtArgs,
         excludeConfigs: sockJson.defaults?.manifest?.sbt?.excludeConfigs ?? '',
+        excludePaths,
         ignoreUnresolved: Boolean(
           sockJson.defaults?.manifest?.sbt?.ignoreUnresolved,
         ),
@@ -133,6 +138,7 @@ export async function generateAutoManifest({
         ...gradleArgs,
         excludeConfigs:
           sockJson.defaults?.manifest?.gradle?.excludeConfigs ?? '',
+        excludePaths,
         ignoreUnresolved: Boolean(
           sockJson.defaults?.manifest?.gradle?.ignoreUnresolved,
         ),
@@ -162,6 +168,7 @@ export async function generateAutoManifest({
         resolveBuildToolBin('maven', cwd),
       cwd,
       excludeConfigs: sockJson.defaults?.manifest?.maven?.excludeConfigs ?? '',
+      excludePaths,
       ignoreUnresolved: Boolean(
         sockJson.defaults?.manifest?.maven?.ignoreUnresolved,
       ),

@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.141](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.141) - 2026-07-10
+
+### Added
+- The `socket manifest` commands (`auto`, `gradle`, `kotlin`, `maven`, `scala`) now accept `--exclude-paths`, keeping excluded subprojects and their dependencies out of generated manifests.
+
+### Fixed
+- `--exclude-paths` is now fully honored across JVM, .NET, and Rust reachability analysis: excluded directories no longer contribute dependencies, code, or framework resources to scan results. Includes an update of the Coana CLI to v `15.8.7`.
+- Invalid `--exclude-paths` glob patterns are rejected with a clear error instead of failing mid-scan.
+
 ## [1.1.140](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.140) - 2026-07-08
 
 ### Changed

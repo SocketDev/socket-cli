@@ -111,11 +111,49 @@ const DEGENERATE_EXCLUDE_PATHS = new Set<string>([
 ])
 
 /**
+ * NIO glob syntax (used by the JVM manifest producers) throws on unbalanced
+ * `[`/`{` and nested `{...}` groups, where micromatch silently falls back to a
+ * literal match. Detect those shapes so the CLI can reject them up front
+ * instead of crashing mid-build inside gradle/maven/sbt. Backslashes are
+ * normalized to `/` throughout the pipeline, so no escape handling is needed.
+ */
+function hasNioIncompatibleGlobBrackets(pattern: string): boolean {
+  let braceDepth = 0
+  for (let i = 0; i < pattern.length; i += 1) {
+    const ch = pattern[i]
+    if (ch === '[') {
+      let j = i + 1
+      if (pattern[j] === '!' || pattern[j] === '^') {
+        j += 1
+      }
+      // NIO glob has no literal-`]`-first convention: `[]x` / `[!]x` throws
+      // as an empty/unclosed class.
+      if (j >= pattern.length || pattern[j] === ']') {
+        return true
+      }
+      const close = pattern.indexOf(']', j + 1)
+      if (close === -1) {
+        return true
+      }
+      i = close
+    } else if (ch === '{') {
+      braceDepth += 1
+      if (braceDepth > 1) {
+        return true
+      }
+    } else if (ch === '}' && braceDepth > 0) {
+      braceDepth -= 1
+    }
+  }
+  return braceDepth !== 0
+}
+
+/**
  * Validates --exclude-paths entries before they reach either exclusion sink.
  * Rejects gitignore-style negations (coana's --exclude-dirs has no negation
  * form), absolute paths (the flag is scan-root relative), patterns escaping
- * the scan root via `..`, and degenerate match-everything sentinels like `.`,
- * `**`, `/`.
+ * the scan root via `..`, degenerate match-everything sentinels like `.`,
+ * `**`, `/`, and bracket shapes the JVM producers' NIO glob parser rejects.
  */
 export function assertValidExcludePaths(paths: readonly string[]): void {
   for (const p of paths) {
@@ -138,6 +176,11 @@ export function assertValidExcludePaths(paths: readonly string[]): void {
     if (posix === '..' || posix.startsWith('../') || posix.includes('/../')) {
       throw new InputError(
         `--exclude-paths cannot escape the scan root with '..'. Got: '${p}'.`,
+      )
+    }
+    if (hasNioIncompatibleGlobBrackets(posix)) {
+      throw new InputError(
+        `--exclude-paths contains a glob with unbalanced or nested '[' / '{' brackets: '${p}'. Note that '{a,b}' alternations are not supported (values are comma-split).`,
       )
     }
   }

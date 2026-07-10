@@ -10,10 +10,13 @@ import { resolveBuildToolBin } from './scripts/build-tool.mts'
 import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
+import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
+import { assertValidExcludePaths } from '../scan/exclude-paths.mts'
+import { excludePathsFlag } from '../scan/reachability-flags.mts'
 
 import type {
   CliCommandConfig,
@@ -57,6 +60,7 @@ const config: CliCommandConfig = {
       description:
         'When generating facts: comma-separated glob patterns; Gradle configurations matching any pattern are skipped (applied after --include-configs)',
     },
+    ...excludePathsFlag,
     ignoreUnresolved: {
       type: 'boolean',
       description:
@@ -289,11 +293,15 @@ async function run(
 
   const parsedGradleOpts = parseBuildToolOpts(String(gradleOpts || ''))
 
+  const excludePaths = cmdFlagValueToArray(cli.flags['excludePaths'])
+  assertValidExcludePaths(excludePaths)
+
   if (facts) {
     await convertGradleToFacts({
       bin: String(bin),
       cwd,
       excludeConfigs: String(excludeConfigs || ''),
+      excludePaths,
       gradleOpts: parsedGradleOpts,
       ignoreUnresolved: Boolean(ignoreUnresolved),
       includeConfigs: String(includeConfigs || ''),

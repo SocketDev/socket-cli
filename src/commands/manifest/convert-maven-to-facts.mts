@@ -7,6 +7,7 @@ export async function convertMavenToFacts({
   bin,
   cwd,
   excludeConfigs,
+  excludePaths,
   ignoreUnresolved,
   includeConfigs,
   mavenOpts,
@@ -17,6 +18,7 @@ export async function convertMavenToFacts({
   bin: string
   cwd: string
   excludeConfigs: string
+  excludePaths?: string[] | undefined
   ignoreUnresolved: boolean
   includeConfigs: string
   mavenOpts: string[]
@@ -30,6 +32,7 @@ export async function convertMavenToFacts({
     cwd,
     ecosystem: 'maven',
     excludeConfigs,
+    excludePaths,
     ignoreUnresolved,
     includeConfigs,
     sidecarAcc,
