@@ -39,7 +39,7 @@ scenarios that rewrite a published package's internals) — there, inline.
 A `# @key: value` provenance header above a **plain `diff -u` body** — never a
 `git diff` (git injects `index <hash>` / `new file mode` markers that bare
 `patch` doesn't expect). The reapply step strips everything before the first
-`--- ` line and pipes the diff to `patch -p1`. Sidecar modules (the
+`---` line and pipes the diff to `patch -p1`. Sidecar modules (the
 smallest-footprint mechanism above) live in the companion `<x>.files/` dir, not
 in the diff.
 

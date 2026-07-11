@@ -9,7 +9,7 @@ Two paired fleet rules captured under one doc because they're symbiotic — expo
 - Privacy is handled by NOT importing in consumers, or by `_internal/` directory layout for module-private files.
 - Underscore-prefixed identifiers are separately banned (see _No underscore-prefixed identifiers_).
 - Tests need to reach helpers directly — coverage holes appear whenever a test has to go through the public API to exercise an internal helper.
-- The `socket/export-top-level-functions` oxlint rule enforces this for all four top-level declaration kinds — function, interface, type alias, and class (one `Program > …Declaration` visitor each, shared autofix that prepends `export `).
+- The `socket/export-top-level-functions` oxlint rule enforces this for all four top-level declaration kinds — function, interface, type alias, and class (one `Program > …Declaration` visitor each, shared autofix that prepends `export`).
 
 **Past incident.** socket-packageurl-js had `interface PurlObject` private at `src/purl-type.mts`. Tests of per-type validators (`PurlType.npm.validate(...)`) had to cast `PurlType` to `any` to call `.validate` because the helper namespace's generic shape didn't propagate the per-type signatures. The `any` cast hid every other type error on those call sites. The fix was to `export interface PurlObject` so tests can import it and type the shape correctly.
 

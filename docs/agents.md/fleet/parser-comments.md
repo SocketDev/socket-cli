@@ -127,7 +127,7 @@ Cross-references catch path rot. They don't catch _semantic_ drift, the case whe
 
 Rules:
 
-- **Single-line `// ` syntax across every language**: no `//!` / `///` / `/** */` mixing. Strip the leading `// `, byte-compare. Languages that need a doc-comment for tooling (Rust's `//!` for `rustdoc`, JSDoc for TypeScript) put that separately. The Lock-step header is its own block and lives alongside.
+- **Single-line `//` syntax across every language**: no `//!` / `///` / `/** */` mixing. Strip the leading `//`, byte-compare. Languages that need a doc-comment for tooling (Rust's `//!` for `rustdoc`, JSDoc for TypeScript) put that separately. The Lock-step header is its own block and lives alongside.
 - **Mandatory: name + cross-refs.** First line is the file's purpose. Body lists `Lock-step with <Lang>: <path>` for every peer in the quadruplet, and `Lock-step from <Lang>: <path>` if the file is a port. The path forms are the same ones validated in §5.
 - **No timestamps, no authors, no per-impl prose.** Anything that differs between impls goes _outside_ the header (in language-specific doc comments, `// PORT NOTE:` blocks, etc.). The header is the contract; divergence is contraband.
 

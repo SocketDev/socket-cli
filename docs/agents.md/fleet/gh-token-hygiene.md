@@ -123,8 +123,8 @@ Local timestamp tracking is advisory. A malicious process can backdate the file.
 
 ## Recovery flow if a token leaks
 
-1. **Revoke immediately** at https://github.com/settings/tokens (search "gh" or the token name, click Delete).
-2. Audit recent activity: https://github.com/settings/security-log
+1. **Revoke immediately** at <https://github.com/settings/tokens> (search "gh" or the token name, click Delete).
+2. Audit recent activity: <https://github.com/settings/security-log>
 3. Check repo audit logs for unauthorized pushes / workflow dispatches / PRs.
 4. If anything looks wrong: rotate every repo's deploy keys, deploy tokens, and CI secrets accessible from the affected token's scope.
 5. Re-issue gh token with keychain storage + minimal scopes (`gh auth logout && gh auth login` — keychain is the default; then trim scopes via `gh auth refresh -h github.com -r workflow,admin:public_key,admin:repo_hook`).
@@ -143,9 +143,11 @@ Three recovery paths, ordered from cleanest to most surgical:
 
 1. **Run the refresh through Claude.** Ask Claude to run `gh auth refresh -h github.com` in a Bash tool call. The hook sees it, pre-stamps, and the next gh call goes through.
 2. **Use the hook's `--stamp` CLI mode.** From any shell:
+
    ```sh
    node ~/.claude/hooks/fleet/gh-token-hygiene-guard/index.mts --stamp
    ```
+
    Writes a fresh `Date.now()` to the stamp file. Use this when you've already done `gh auth refresh` externally and don't want to re-run it.
 3. **Auto-correction of malformed values.** If the stamp file contains a value less than `1577836800000` (2020-01-01 in ms) — e.g. you accidentally wrote POSIX seconds via `date "+%s" > ~/.claude/gh-token-issued-at` — the hook treats it as malformed on the next read, re-stamps, and proceeds. No manual intervention required; the malformed-value branch is there as a safety net for cases like the seconds-vs-ms confusion.
 

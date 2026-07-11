@@ -50,7 +50,7 @@ loop the trigger until it's debuggable.
    in `test/repo/`), never `node:test`, never source-text assertions. If no correct
    seam exists, that itself is the finding — flag it, don't fake confidence.
 6. **Cleanup + post-mortem** — `grep` out the `[DEBUG-` tags, run `pnpm run check`
-   + `pnpm test`, and **name the root cause in the commit message** (`fix(<scope>):
+   - `pnpm test`, and **name the root cause in the commit message** (`fix(<scope>):
    <root cause>`, per fleet commit doctrine). A second occurrence of the same shape
    → search the repo for siblings (variant analysis) before closing.
 

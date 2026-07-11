@@ -34,7 +34,7 @@ The strict `=== "true"` match is deliberate. A misconfigured token, transient AP
 
 1. Push fails with the enterprise-ruleset error pattern above.
 2. The `enterprise-push-nudge` Stop-hook surfaces the bypass mechanism inline.
-3. Operator goes to https://github.com/SocketDev/`<repo>`/settings/properties and flips `temporarily-doesnt-touch-customers`to`true`.
+3. Operator goes to <https://github.com/SocketDev/`><repo>`/settings/properties and flips`temporarily-doesnt-touch-customers`to`true`.
 4. Re-run `git push origin main`. It succeeds.
 5. After the in-flight remediation window closes, operator flips the property back to `false` (re-engaging the ruleset).
 

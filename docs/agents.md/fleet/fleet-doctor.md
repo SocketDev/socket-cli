@@ -34,6 +34,7 @@ the 7-day `minimumReleaseAge` soak window and is not in
 `minimumReleaseAgeExclude`.
 
 The doctor reports these loud with:
+
 - The exact annotated bullet to add to `pnpm-workspace.yaml`.
 - The `pnpm view <name> time --json` command to get the publish date.
 - A note that the durable fleet-wide fix is updating the wheelhouse's canonical
@@ -57,7 +58,7 @@ reads the `catalogOptional:` block as its version source of truth.
 ## Run modes
 
 | Command | Effect |
-|---|---|
+| --- | --- |
 | `node scripts/fleet/doctor.mts` | Diagnose only. No FS writes, no network. Exit 1 if any finding. |
 | `node scripts/fleet/doctor.mts --fix` | Auto-fix Gap 1 (catalog entries). Run probe install if fixes were applied. |
 | `node scripts/fleet/doctor.mts --probe-install` | Run probe install unconditionally. |

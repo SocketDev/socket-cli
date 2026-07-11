@@ -642,6 +642,6 @@ See [CLAUDE.md](../../CLAUDE.md) for development guidelines and code standards.
 
 ## Support
 
-- GitHub Issues: https://github.com/SocketDev/socket-cli/issues
-- Documentation: https://docs.socket.dev/
-- Website: https://socket.dev/
+- GitHub Issues: <https://github.com/SocketDev/socket-cli/issues>
+- Documentation: <https://docs.socket.dev/>
+- Website: <https://socket.dev/>

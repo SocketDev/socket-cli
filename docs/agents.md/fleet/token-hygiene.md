@@ -98,7 +98,7 @@ npm opens the browser to approve the publish + 2FA — no code touches the comma
 
 **CI (non-interactive): a granular automation token.** Authenticate with a granular npm automation token exposed via the `NODE_AUTH_TOKEN` env var (set from a secret), never `--otp`.
 
-The `no-npm-otp-flag-guard` PreToolUse hook blocks any `npm`/`pnpm`/`yarn` command carrying an `--otp` flag (in either `--otp=<code>` or `--otp <code>` form); bypass with `Allow npm-otp-flag bypass` for a genuine operator-driven need (effectively never). The CLAUDE.md bullet is also doctrine: the assistant must never *suggest* `--otp` in prose — recommend `--auth-type=web` instead.
+The `no-npm-otp-flag-guard` PreToolUse hook blocks any `npm`/`pnpm`/`yarn` command carrying an `--otp` flag (in either `--otp=<code>` or `--otp <code>` form); bypass with `Allow npm-otp-flag bypass` for a genuine operator-driven need (effectively never). The CLAUDE.md bullet is also doctrine: the assistant must never _suggest_ `--otp` in prose — recommend `--auth-type=web` instead.
 
 ## Cross-repo path references
 

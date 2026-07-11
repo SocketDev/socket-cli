@@ -178,7 +178,7 @@ the Read tool runs in-process (no sandbox, no env scrubbing), the unscrubbed
 `ANTHROPIC_API_KEY` is readable; the injection then launders the key past
 GitHub's secret scanner by stripping the `sk-ant-` prefix before exfiltrating it
 via `WebFetch` / the GitHub MCP tool. The shape is what matters: untrusted input
-+ in-process secret read + outbound tool = exfiltration.
+- in-process secret read + outbound tool = exfiltration.
 `proc-environ-exfil-guard` blocks authoring a read of
 `/proc/*/environ` or `/proc/*/cmdline` (the secret + argv harvest paths) in any
 file we write, regardless of host OS, since it matches the attempt to author

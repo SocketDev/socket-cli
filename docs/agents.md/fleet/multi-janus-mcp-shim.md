@@ -21,7 +21,7 @@ Zero-config discovery: every fleet repo (from the wheelhouse-canonical `fleet-re
 Each tool except `list_workspaces` takes a required `workspace` arg.
 
 | Tool | Maps to | Notes |
-|------|---------|-------|
+| ------ | --------- | ------- |
 | `list_workspaces` | discovery | name + repoPath for each |
 | `create_ticket` | `janus create` | the cross-repo fire-off; `externalRef` links back |
 | `get_next_available_ticket` | `janus next --json` | the runner loop's "what's next" |

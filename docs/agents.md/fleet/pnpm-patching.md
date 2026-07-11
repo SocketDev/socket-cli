@@ -9,7 +9,7 @@ This is the third dedup lever (after `@socketregistry` redirects and plain versi
 ## When to patch vs. scope
 
 | situation | move |
-|---|---|
+| --- | --- |
 | break is CJS↔ESM module format only, output is bundled | force the ESM major (no patch; the bundler handles interop) |
 | API break, a small compat shim restores the old surface | patch, then force unscoped (max dedup) |
 | API break, shim would be large or fragile, or the old major is rare | scope the override (`'name@>=N': 'X'`), leave the incompatible major |

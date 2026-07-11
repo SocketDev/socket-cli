@@ -59,7 +59,7 @@ Detection order (first hit wins):
 2. **SSH key on disk**: `~/.ssh/id_ed25519.pub` (preferred), `id_ecdsa.pub`, then `id_rsa.pub`. `user.signingkey` points at the `.pub` path.
 3. **GPG secret key**: `gpg --list-secret-keys --with-colons`, first `sec:` entry. `user.signingkey` set to the long key ID.
 
-The helper never generates keys (user's call) and never uploads keys to GitHub. After running, upload the public key as a Signing Key at https://github.com/settings/keys to get the "Verified" badge on web-rendered commits.
+The helper never generates keys (user's call) and never uploads keys to GitHub. After running, upload the public key as a Signing Key at <https://github.com/settings/keys> to get the "Verified" badge on web-rendered commits.
 
 ## Why three layers
 

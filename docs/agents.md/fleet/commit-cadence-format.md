@@ -49,7 +49,7 @@ Where:
   - `revert`: undoes a prior commit
 - `[scope]` (optional): a parenthesized noun describing the affected area (e.g. `(parser)`, `(extension)`, `(lib)`, `(hooks)`)
 - `[!]` (optional): flags a breaking change. Either `feat!: ...` or `feat(api)!: ...`. Adding `BREAKING CHANGE:` in the footer is also acceptable but `!` is preferred.
-- `: ` (required): colon + space, separates the header from the description
+- `:` (required): colon + space, separates the header from the description
 - `<description>` (required): non-empty, lowercase-leading, short imperative summary
 
 ### Valid examples

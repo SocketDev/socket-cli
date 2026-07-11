@@ -40,7 +40,7 @@ a corrupt output with no error.
 ## Enforcement
 
 | Tier | Artifact | What it catches |
-|---|---|---|
+| --- | --- | --- |
 | Rule doc | `.claude/rules/fleet/npm-run-all-ordering.md` | The rule for AI sessions |
 | Lint rule | `socket/no-glob-in-ordered-run-s` | `:*` globs in `run-s`/`run-p` string literals in `.ts`/`.mts` source files |
 | Edit guard | `.claude/hooks/fleet/no-glob-run-s-guard/` | Writing a new `:*` glob into a `package.json` |

@@ -21,7 +21,7 @@ Flow, mirroring the gh-aw `.md`:
 ### Flags (mirror the gh-aw inputs)
 
 | Flag | Default | Effect |
-|------|---------|--------|
+| ------ | --------- | -------- |
 | `--test-setup-script <cmd>` | `pnpm run build` | pre-test command |
 | `--test-script <cmd>` | `pnpm test` | test command |
 | `--update-model <model>` | `haiku` | model for the agentic step |
@@ -45,7 +45,7 @@ The two paths share the same update logic; the difference is the wrapper (budget
 To use it, toggle it with `scripts/fleet/weekly-update-workflow.mts`:
 
 | Command | Effect |
-|---------|--------|
+| --------- | -------- |
 | `node scripts/fleet/weekly-update-workflow.mts status` | report shipped / enabled state |
 | `… enable` | copy `…non-gh-aw.yml.disabled` → `…non-gh-aw.yml` (now live + listed) |
 | `… disable` | remove the live copy (back to dormant) |

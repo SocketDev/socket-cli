@@ -19,11 +19,13 @@ These keys must never appear in a fleet repo's local `.git/config`:
 `PreToolUse(Bash + Edit/Write)` blocker triggered by either path:
 
 1. **Bash** — `git config <key> <value>` (no `--global` / `--system` / `--worktree` qualifier) that touches a banned key:
+
    ```
    git config core.bare true
    git config user.email test@example.com
    git config commit.gpgsign false
    ```
+
 2. **Edit / Write** — direct writes to `.git/config` (any path matching `**/.git/config`) where the new content contains one of the banned `[section] key = value` shapes.
 
 `git config --global <key>` is **always allowed** — global config is the canonical home for identity / signing settings.

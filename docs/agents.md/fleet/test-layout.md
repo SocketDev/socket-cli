@@ -6,7 +6,7 @@ cascades** to members and ships in the release bundle.
 ## The three homes
 
 | Test of… | Lives in | Runner | Cascades to members? |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Fleet **scripts** (`scripts/fleet/**`) | `test/unit/fleet/**` | vitest | **Yes** — in lock-step with the scripts (`manifest/files.mts`); members run them against their own copy |
 | Repo-specific code (host-owned) | `test/unit/**`, `test/repo/**` (host) | vitest | No (host-only) |
 | Wheelhouse **hooks / lint-rules / git-hooks** | `test/repo/{unit,integration,e2e}/**` | vitest | **No** — wheelhouse-only |

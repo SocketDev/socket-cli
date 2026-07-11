@@ -28,7 +28,7 @@ or changing a cascaded hook/rule.
     structure-sensitive Bash guards. Replaces regex command detection so
     `$var`/eval/`$(…)` indirection is seen, not evaded. shell-quote is a
     fleet-wide catalog devDep (resolves from root node_modules, the ancestor
-    every hook + _shared walks up to).
+    every hook +_shared walks up to).
   - `transcript.mts` — centralizes `readStdin()` + the JSONL user-turn parser (3
     shape variants) used by every hook that needs the `Allow <X> bypass` phrase
     scan. Before extraction the parser was copy-pasted across no-revert-guard /
@@ -180,7 +180,7 @@ phrase (where one exists):
 - **commit-author-guard** — PreToolUse(Bash) refusing commits whose author email
   drifts from the canonical GitHub identity. Bypass: `Allow commit-author bypass`.
 - **commit-message-format-guard** — PreToolUse(Bash) enforcing Conventional Commits
-  + banning AI attribution. Bypass: `Allow commit-format bypass` / `Allow ai-attribution bypass`.
+  - banning AI attribution. Bypass: `Allow commit-format bypass` / `Allow ai-attribution bypass`.
 - **default-branch-guard** — PreToolUse(Bash) refusing hard-coded `main`/`master` in
   scripting contexts. Bypass: `Allow default-branch bypass`.
 - **version-bump-order-guard** — PreToolUse(Bash) refusing `git tag vX.Y.Z` when HEAD

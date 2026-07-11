@@ -116,12 +116,14 @@ The right recovery, in order:
 
 1. **Retry.** The lock clears the moment the other session's git op finishes. A second attempt usually succeeds.
 2. **Commit from an isolated index** so the two sessions don't share the staging area:
+
    ```bash
    TMP_IDX=$(mktemp)
    GIT_INDEX_FILE="$TMP_IDX" git add -- path/to/your/file
    GIT_INDEX_FILE="$TMP_IDX" git commit -o path/to/your/file -m "type(scope): …"
    rm -f "$TMP_IDX"
    ```
+
 3. **Only then**, if pre-commit is genuinely broken (not racing) AND you've verified the tree green independently (`git write-tree` clean, tests pass, oxfmt clean), `--no-verify` is the last resort — and it still needs the `Allow no-verify bypass` phrase.
 
 Nudged by `.claude/hooks/fleet/pre-commit-race-nudge/` on any `git commit --no-verify` (cascade `FLEET_SYNC=1` commits exempt).

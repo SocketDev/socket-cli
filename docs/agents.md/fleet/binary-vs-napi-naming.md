@@ -13,7 +13,7 @@ The domains are never blurred into one convention.
   `darwin-arm64`, `darwin-x64`, `linux-arm64`, `linux-arm64-musl`,
   `linux-x64`, `linux-x64-musl`, `win32-arm64`, `win32-x64`.
   Canonical source: `scripts/fleet/util/pack-app-triplets.mts`.
-  Spec: https://pnpm.io/cli/pack-app
+  Spec: <https://pnpm.io/cli/pack-app>
 - **ABI/NAPI** (kind `napi` — `.node` addons, payload `<name>.node` beside
   package.json) follow **napi-rs** naming: `platform-arch[-abi]`, ABI segment
   explicit (`-gnu`/`-musl` on linux, `-msvc` on windows), darwin bare.

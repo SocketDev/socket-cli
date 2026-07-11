@@ -12,7 +12,7 @@ Finish a code change → **commit it**. Don't end a turn with uncommitted edits,
 
 ## Branch discipline (and the checkout trap)
 
-"Smallest chunks" governs the *commit*, not the *branch*. A fresh branch holds a whole queue of related commits — **one logical change does not mean one commit, and one branch is not one commit.** The `no-branch-reuse-nudge` enforces this: it fires only when you commit onto a branch that already has a **remote upstream** (a shared branch others may have pushed to). It stays silent on the default branch and on a fresh local branch with no upstream. So:
+"Smallest chunks" governs the _commit_, not the _branch_. A fresh branch holds a whole queue of related commits — **one logical change does not mean one commit, and one branch is not one commit.** The `no-branch-reuse-nudge` enforces this: it fires only when you commit onto a branch that already has a **remote upstream** (a shared branch others may have pushed to). It stays silent on the default branch and on a fresh local branch with no upstream. So:
 
 - **Stack related commits on one fresh local branch.** Building a multi-fix queue? Commit each fix onto the same branch, in order. That is correct and expected, not "branch reuse."
 - **"Shared" = has a remote upstream.** Only then cut a new branch. A local-only branch is yours to keep committing to.
@@ -73,7 +73,7 @@ cherry-pick worktree's pnpm install is what stole the link.
 
 ### Periodic fleet-wide tidy
 
-`managing-worktrees` Mode 3 prunes spent worktrees in the *current* repo. The
+`managing-worktrees` Mode 3 prunes spent worktrees in the _current_ repo. The
 `tidying-worktrees` skill is the fleet-wide, no-prompt sweep — it iterates the
 canonical roster (`cascading-fleet/lib/fleet-repos.txt`) and removes only
 provably-spent worktrees across every repo. Engine:

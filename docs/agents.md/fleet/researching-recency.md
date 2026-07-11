@@ -27,7 +27,7 @@ Two halves, by design (the Anthropic Agent-Skills best-practices split):
 ## Sources
 
 | Source | Auth | Notes |
-|--------|------|-------|
+| -------- | ------ | ------- |
 | GitHub | `gh auth token` / `GITHUB_TOKEN`, else unauthenticated | issues + PRs, sorted by reactions |
 | Hacker News | none | Algolia full-text, points floor |
 | Reddit | none | Atom RSS search (the `.json` path 403s); no engagement counts |
