@@ -46,7 +46,7 @@ the file. They stay on the per-file cascade.
 Shipped in the bundle but **activated per-repo**: `CONDITIONAL_FILES` groups gate
 on a marker file's presence; `OPTIONAL_IDENTICAL_FILES` are byte-identical only
 when present; `settings.json` registers only the hooks the repo's
-`socket-wheelhouse.json` flags enable. The bundle is the superset; the repo's
+fleet config flags enable. The bundle is the superset; the repo's
 config decides what's active.
 
 ## Block-marker convention
@@ -54,11 +54,11 @@ config decides what's active.
 A fleet-managed region is delimited by HTML-element-like open/close markers; only
 the surrounding comment delimiter changes per file syntax.
 
-| Comment style                                                                             | Open marker                  | Close marker                 |
-| ----------------------------------------------------------------------------------------- | ---------------------------- | ---------------------------- |
-| HTML (`CLAUDE.md`, `README.md`)                                                           | `<!-- <fleet-canonical> -->` | `<!-- </fleet-canonical> -->` |
-| `#` (`.gitignore`, `.gitattributes`, YAML, `.gitmodules`, JSON **array** sentinel string) | `# <fleet-canonical>`        | `# </fleet-canonical>`        |
-| `//` (JS/TS, JSON **object** sentinel key)                                                | `// <fleet-canonical>`       | `// </fleet-canonical>`       |
+| Comment style | Open marker | Close marker |
+| --- | --- | --- |
+| HTML (`CLAUDE.md`, `README.md`) | `<!-- <fleet-canonical> -->` | `<!-- </fleet-canonical> -->` |
+| `#` (`.gitignore`, `.gitattributes`, YAML, `.gitmodules`, JSON **array** sentinel string) | `# <fleet-canonical>` | `# </fleet-canonical>` |
+| `//` (JS/TS, JSON **object** sentinel key) | `// <fleet-canonical>` | `// </fleet-canonical>` |
 
 The legacy `BEGIN`/`END` keyword form (`# BEGIN <fleet-canonical>` / `# END </fleet-canonical>`)
 is still parsed by the detector for backward compatibility during the fleet-wide migration,
