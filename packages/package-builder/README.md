@@ -38,12 +38,12 @@ Automated package generation system for Socket CLI distribution. Transforms temp
 - [Code Quality Observations](#code-quality-observations)
   - [Strengths](#strengths)
   - [Patterns](#patterns)
-  - [Potential Improvements](#potential-improvements)
+  - Potential Improvements
 - [Summary](#summary)
 
 ## Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                        Package Builder                          │
 │                                                                 │
@@ -82,7 +82,7 @@ Automated package generation system for Socket CLI distribution. Transforms temp
 
 Socket CLI uses a multi-channel distribution approach with VFS-based tool bundling:
 
-```
+```text
 ┌────────────────────────────────────────────────────────────┐
 │                 Distribution Channels                      │
 ├────────────────────────────────────────────────────────────┤
@@ -134,7 +134,7 @@ Socket CLI uses a multi-channel distribution approach with VFS-based tool bundli
 
 Standard Node.js implementations with all CLI functionality.
 
-**@socketsecurity/cli**
+#### @socketsecurity/cli
 
 - Pure JavaScript CLI package (no binaries, no VFS).
 - No telemetry.
@@ -143,7 +143,7 @@ Standard Node.js implementations with all CLI functionality.
 - Lazy downloads external tools from GitHub on first run.
 - Tools cached in `~/.socket/vfs-tools/`.
 
-**@socketsecurity/cli-with-sentry**
+#### @socketsecurity/cli-with-sentry
 
 - Pure JavaScript CLI with Sentry error reporting (no binaries, no VFS).
 - Built from `templates/cli-sentry-package/`.
@@ -160,7 +160,7 @@ Installs platform-specific binaries via optionalDependencies.
 
 Self-contained SEA binaries with embedded VFS.
 
-**socketbin-cli-{platform}-{arch}**
+#### socketbin-cli-{platform}-{arch}
 
 - 6 packages total (darwin × 2, linux × 2, win32 × 2).
 - Generated from `templates/socketbin-package/`.
@@ -175,7 +175,7 @@ Self-contained SEA binaries with embedded VFS.
 
 Creates both standard CLI packages.
 
-```
+```text
 Input:  templates/cli-package/
         templates/cli-sentry-package/
 
@@ -189,7 +189,7 @@ Action: Recursive directory copy.
 
 Creates all platform-specific binary packages.
 
-```
+```text
 Input:  templates/socketbin-package/
         - package.json.template
         - README.md.template
@@ -204,7 +204,7 @@ Action: Template variable replacement:
 
 **Platform Configurations:**
 
-```
+```text
 darwin-arm64  → macOS ARM64 (Apple Silicon)
 darwin-x64    → macOS x64 (Intel)
 linux-arm64   → Linux ARM64
@@ -219,7 +219,7 @@ win32-x64     → Windows x64 (.exe)
 
 Located in `templates/cli-package/scripts/build.mjs`:
 
-```
+```text
 1. Build CLI bundle     → .config/esbuild.cli.build.mjs
 2. Build index loader   → .config/esbuild.index.config.mjs
 3. Build npm inject     → .config/esbuild.inject.config.mjs
@@ -240,7 +240,7 @@ Located in `templates/cli-package/scripts/build.mjs`:
 
 ### CLI Package Template
 
-```
+```text
 cli-package/
 ├── .config/
 │   ├── esbuild.cli.build.mjs      # Main CLI build
@@ -264,7 +264,7 @@ cli-package/
 
 ### Socket Package Template
 
-```
+```text
 socket-package/
 ├── scripts/
 │   ├── build.mjs                      # Build orchestration
@@ -284,7 +284,7 @@ socket-package/
 
 ### Socketbin Package Template
 
-```
+```text
 socketbin-package/
 ├── package.json.template    # Template with variables
 ├── README.md.template       # Template with variables
@@ -323,7 +323,7 @@ node scripts/verify-package.mjs
 
 Generated packages appear in `build/` directory:
 
-```
+```text
 build/
 ├── cli/                      # @socketsecurity/cli
 ├── cli-with-sentry/          # @socketsecurity/cli-with-sentry
