@@ -99,13 +99,13 @@ build/tests are failing. Fix the failures so the update can ship.
 
 Build output (last 100 lines):
 
-```
+```text
 ${{ inputs.build-log }}
 ```
 
 Test output (last 100 lines):
 
-```
+```text
 ${{ inputs.test-log }}
 ```
 

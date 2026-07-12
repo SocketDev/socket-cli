@@ -214,7 +214,7 @@ were detected: `${{ needs.check-updates.outputs.has-updates }}`. If that is not
 
 2. Run the test setup + test commands:
 
-   ```
+   ```text
    ${{ inputs.test-setup-script }}
    ${{ inputs.test-script }}
    ```
