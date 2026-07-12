@@ -12,57 +12,57 @@ Layered enforcement, with each layer catching what the previous one missed.
 
 ## Layer 1: never let secrets touch disk
 
-| Surface                    | Hook / mechanism                                    | What it blocks                                                                                                                                                                                              |
-| -------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Socket API token storage   | `.claude/hooks/fleet/no-token-in-dotenv-guard/`     | Write/Edit of any `.env*`/`.envrc` file containing a real token                                                                                                                                             |
-| Keychain read invocations  | `.claude/hooks/fleet/no-blind-keychain-read-guard/` | Bash calls to `security find-*-password`, `secret-tool lookup`, `Get-StoredCredential`, `keyring get` — these surface UI prompts per call and the token is already cached in-process                        |
-| Token detection in commits | `.git-hooks/pre-commit.mts` + `pre-push.mts`        | Staged files containing AWS keys, GitHub tokens (`ghp_`/`gho_`/`ghr_`/`ghs_`/`ghu_`/`github_pat_`), Socket API tokens, or any PEM private key (RSA / EC / DSA / OPENSSH / ENCRYPTED / PGP / generic PKCS#8) |
-| gh CLI token storage       | `.claude/hooks/fleet/gh-token-hygiene-guard/`       | Bash invocations of `gh` when the token is in the on-disk `~/.config/gh/hosts.yml` — must be `(keyring)`                                                                                                    |
+| Surface | Hook / mechanism | What it blocks |
+| --- | --- | --- |
+| Socket API token storage | `.claude/hooks/fleet/no-token-in-dotenv-guard/` | Write/Edit of any `.env*`/`.envrc` file containing a real token |
+| Keychain read invocations | `.claude/hooks/fleet/no-blind-keychain-read-guard/` | Bash calls to `security find-*-password`, `secret-tool lookup`, `Get-StoredCredential`, `keyring get` — these surface UI prompts per call and the token is already cached in-process |
+| Token detection in commits | `.git-hooks/pre-commit.mts` + `pre-push.mts` | Staged files containing AWS keys, GitHub tokens (`ghp_`/`gho_`/`ghr_`/`ghs_`/`ghu_`/`github_pat_`), Socket API tokens, or any PEM private key (RSA / EC / DSA / OPENSSH / ENCRYPTED / PGP / generic PKCS#8) |
+| gh CLI token storage | `.claude/hooks/fleet/gh-token-hygiene-guard/` | Bash invocations of `gh` when the token is in the on-disk `~/.config/gh/hosts.yml` — must be `(keyring)` |
 
 ## Layer 2: gate access to dangerous capabilities
 
-| Capability                       | Hook                                                    | Gate                                                                                                                                                                                                                 |
-| -------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `gh workflow run` / dispatch     | `.claude/hooks/fleet/gh-token-hygiene-guard/`           | Token must have `workflow` scope (off by default) AND a fresh `Allow workflow-scope bypass` chat phrase AND Touch ID / password auth AND unconsumed grant marker. Single-use: each dispatch consumes the grant.      |
-| GitHub Actions workflow_dispatch | `.claude/hooks/fleet/release-workflow-guard/`           | Blocks `gh workflow run`/`dispatch` against publish/release workflows. Bypass: `--dry-run=true` (if workflow declares `dry-run:` input) OR `Allow workflow-dispatch bypass: <workflow>` typed verbatim               |
-| Pre-existing branch protection   | `lint-github-settings.mts`                              | Audits the default branch's protection on GitHub for `required_signatures`, `required_pull_request_reviews` (≥1 + dismiss_stale_reviews), `allow_force_pushes=false`, `allow_deletions=false`, `enforce_admins=true` |
-| Commit signing                   | `.git-hooks/pre-commit.mts` + `.git-hooks/pre-push.mts` | Pre-commit: `commit.gpgsign=true` + `user.signingkey` set. Pre-push: `git log --format='%G?'` excludes `N` and `B` for commits landing on `main`/`master`.                                                           |
-| Hook bypass attempts             | `.claude/hooks/fleet/no-revert-guard/`                  | Blocks `git revert`, `--no-verify`, `--no-gpg-sign` — gated by canonical `Allow X bypass` phrases                                                                                                    |
-| Force-push attempts              | `.claude/hooks/fleet/no-force-push-guard/`              | Blocks `git push --force`/`-f`/`--force-with-lease`/`--force-if-includes`; gated by `Allow force-push bypass` (legacy aliases `force-with-lease bypass`, `force-push-hard bypass`)                                  |
-| Programmatic-Claude lockdown     | `.git-hooks/pre-push.mts` (push-time) + `claude-lockdown-guard` (Bash-time) | Pre-push BLOCKS a pushed `.mts` that drives Claude (`query()`/`new ClaudeSDKClient()`) without all four lockdown options, or with `bypassPermissions`/`default`. Guard-infra trees exempt (they name the patterns they detect). |
-| Soak-bypass date annotations     | `.git-hooks/pre-push.mts` (push-time) + `soak-excludes-have-dates.mts` (CI) + `soak-exclude-date-guard` (edit-time) | Pre-push BLOCKS a `pnpm-workspace.yaml` exact-pin soak entry missing `# published: … \| removable: …` (the 7-day malware-soak record). Honors the `socket-lint: allow soak-exclude-no-date-annotation` marker. |
-| AI-config poison (push-time)     | `.git-hooks/pre-push.mts` (WARN) + `ai-config-poisoning-guard` (edit-time) | Pre-push WARNS (never blocks — heuristic) when a staged `.claude`/`.cursor`/`.gemini`/`.vscode` config (non-hook, non-`.md`) carries a planted `Allow X bypass`, an exfiltration line, or a disable-the-guard directive. |
+| Capability | Hook | Gate |
+| --- | --- | --- |
+| `gh workflow run` / dispatch | `.claude/hooks/fleet/gh-token-hygiene-guard/` | Token must have `workflow` scope (off by default) AND a fresh `Allow workflow-scope bypass` chat phrase AND Touch ID / password auth AND unconsumed grant marker. Single-use: each dispatch consumes the grant. |
+| GitHub Actions workflow_dispatch | `.claude/hooks/fleet/release-workflow-guard/` | Blocks `gh workflow run`/`dispatch` against publish/release workflows. Bypass: `--dry-run=true` (if workflow declares `dry-run:` input) OR `Allow workflow-dispatch bypass: <workflow>` typed verbatim |
+| Pre-existing branch protection | `lint-github-settings.mts` | Audits the default branch's protection on GitHub for `required_signatures`, `required_pull_request_reviews` (≥1 + dismiss_stale_reviews), `allow_force_pushes=false`, `allow_deletions=false`, `enforce_admins=true` |
+| Commit signing | `.git-hooks/pre-commit.mts` + `.git-hooks/pre-push.mts` | Pre-commit: `commit.gpgsign=true` + `user.signingkey` set. Pre-push: `git log --format='%G?'` excludes `N` and `B` for commits landing on `main`/`master`. |
+| Hook bypass attempts | `.claude/hooks/fleet/no-revert-guard/` | Blocks `git revert`, `--no-verify`, `--no-gpg-sign` — gated by canonical `Allow X bypass` phrases |
+| Force-push attempts | `.claude/hooks/fleet/no-force-push-guard/` | Blocks `git push --force`/`-f`/`--force-with-lease`/`--force-if-includes`; gated by `Allow force-push bypass` (legacy aliases `force-with-lease bypass`, `force-push-hard bypass`) |
+| Programmatic-Claude lockdown | `.git-hooks/pre-push.mts` (push-time) + `claude-lockdown-guard` (Bash-time) | Pre-push BLOCKS a pushed `.mts` that drives Claude (`query()`/`new ClaudeSDKClient()`) without all four lockdown options, or with `bypassPermissions`/`default`. Guard-infra trees exempt (they name the patterns they detect). |
+| Soak-bypass date annotations | `.git-hooks/pre-push.mts` (push-time) + `soak-excludes-have-dates.mts` (CI) + `soak-exclude-date-guard` (edit-time) | Pre-push BLOCKS a `pnpm-workspace.yaml` exact-pin soak entry missing `# published: …` / `removable: …` (the 7-day malware-soak record). Honors the `socket-lint: allow soak-exclude-no-date-annotation` marker. |
+| AI-config poison (push-time) | `.git-hooks/pre-push.mts` (WARN) + `ai-config-poisoning-guard` (edit-time) | Pre-push WARNS (never blocks — heuristic) when a staged `.claude`/`.cursor`/`.gemini`/`.vscode` config (non-hook, non-`.md`) carries a planted `Allow X bypass`, an exfiltration line, or a disable-the-guard directive. |
 
 ## Layer 3: enforce token lifetime
 
-| Token                                                    | Mechanism                                                    | Window                                                                                                                                                                                    |
-| -------------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| gh CLI token                                             | `.claude/hooks/fleet/gh-token-hygiene-guard/` 8-hour age cap | Errors when token >8h since last `gh auth login` or `gh auth refresh`. Self-recovery: `gh auth refresh` is always allowed.                                                                |
-| GitHub Actions `GITHUB_TOKEN`                            | GitHub-provided                                              | 1 hour per workflow run, scope-limited by the workflow's `permissions:` block                                                                                                             |
-| Authenticated CLIs (npm, pnpm, gcloud, docker, vault, …) | `.claude/hooks/fleet/auth-rotation-nudge/`                | Stop-hook periodically logs you out of stale long-lived sessions. `gh` is exempt from auto-logout (would break in-session work); its age check lives in `gh-token-hygiene-guard` instead. |
+| Token | Mechanism | Window |
+| --- | --- | --- |
+| gh CLI token | `.claude/hooks/fleet/gh-token-hygiene-guard/` 8-hour age cap | Errors when token >8h since last `gh auth login` or `gh auth refresh`. Self-recovery: `gh auth refresh` is always allowed. |
+| GitHub Actions `GITHUB_TOKEN` | GitHub-provided | 1 hour per workflow run, scope-limited by the workflow's `permissions:` block |
+| Authenticated CLIs (npm, pnpm, gcloud, docker, vault, …) | `.claude/hooks/fleet/auth-rotation-nudge/` | Stop-hook periodically logs you out of stale long-lived sessions. `gh` is exempt from auto-logout (would break in-session work); its age check lives in `gh-token-hygiene-guard` instead. |
 
 ## Layer 4: workflow + repo audit
 
-| Surface                      | Hook / scanner                                            | When it fires                                                                                                                                                                                                             |
-| ---------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GitHub Actions workflow YAML | `.claude/hooks/fleet/actionlint-on-workflow-edit/`        | PostToolUse after Edit/Write to `.github/workflows/*.y*ml`. Runs `actionlint` (YAML / shell / SHA-pin) + `zizmor` (security: privilege escalation, secret leaks, untrusted-input-in-script, `pull_request_target` misuse) |
-| `pull_request_target` misuse | `.claude/hooks/fleet/pull-request-target-guard/`          | Blocks Edit/Write that creates a `pull_request_target` workflow checking out the fork head + executing the checked-out code in the same job                                                                               |
-| Workflow `uses:` SHA pinning | `.claude/hooks/fleet/workflow-uses-comment-guard/`        | Every SHA-pinned `uses:` line needs a `# <tag> (YYYY-MM-DD)` comment for staleness tracking                                                                                                                               |
-| Workflow heredoc bodies      | `.claude/hooks/fleet/workflow-multiline-body-guard/` | Blocks `gh ... --body "..."` (multi-line markdown breaks YAML) in favor of `--body-file <path>`                                                                                                                           |
-| GitHub repo settings         | `scripts/lint-github-settings.mts`                        | Audits visibility, merge settings, branch protection, required apps. Weekly cache-gated; CI doesn't burn API quota                                                                                                        |
-| AgentShield + zizmor         | `/scanning-security` skill                                | A-F graded report on `.claude/` config + workflow YAML. Run after touching `.claude/` or workflows, before releases                                                                                                       |
+| Surface | Hook / scanner | When it fires |
+| --- | --- | --- |
+| GitHub Actions workflow YAML | `.claude/hooks/fleet/actionlint-on-workflow-edit/` | PostToolUse after Edit/Write to `.github/workflows/*.y*ml`. Runs `actionlint` (YAML / shell / SHA-pin) + `zizmor` (security: privilege escalation, secret leaks, untrusted-input-in-script, `pull_request_target` misuse) |
+| `pull_request_target` misuse | `.claude/hooks/fleet/pull-request-target-guard/` | Blocks Edit/Write that creates a `pull_request_target` workflow checking out the fork head + executing the checked-out code in the same job |
+| Workflow `uses:` SHA pinning | `.claude/hooks/fleet/workflow-uses-comment-guard/` | Every SHA-pinned `uses:` line needs a `# <tag> (YYYY-MM-DD)` comment for staleness tracking |
+| Workflow heredoc bodies | `.claude/hooks/fleet/workflow-multiline-body-guard/` | Blocks `gh ... --body "..."` (multi-line markdown breaks YAML) in favor of `--body-file <path>` |
+| GitHub repo settings | `scripts/lint-github-settings.mts` | Audits visibility, merge settings, branch protection, required apps. Weekly cache-gated; CI doesn't burn API quota |
+| AgentShield + zizmor | `/scanning-security` skill | A-F graded report on `.claude/` config + workflow YAML. Run after touching `.claude/` or workflows, before releases |
 
 ## Layer 5: catch the operator mistake
 
-| Mistake                                | Hook                                                           | What it catches                                                        |
-| -------------------------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Pushing a real customer / company name | `.claude/hooks/fleet/private-name-nudge/`                      | Real names in commits / PR text / release notes                        |
-| Linear ticket refs                     | `.claude/hooks/fleet/private-name-nudge/`                      | `SOC-123`, `ENG-456`, Linear URLs in code or PR text                   |
-| External issue refs (auto-link spam)   | `.claude/hooks/fleet/no-ext-issue-ref-guard/`             | `<owner>/<repo>#<num>` in commits or PR bodies for non-SocketDev repos |
-| Empty commits                          | `.claude/hooks/fleet/no-empty-commit-guard/`                   | `git commit --allow-empty`, `cherry-pick --allow-empty`                |
-| `--no-verify` use                      | `.claude/hooks/fleet/no-revert-guard/`                         | Hook bypass via `--no-verify` without typed bypass phrase              |
-| Personal paths in code                 | `pre-commit.mts` / `pre-push.mts`                              | `/Users/<name>/`, `/home/<name>/`, `C:\Users\<NAME>\`                  |
-| Cross-repo path imports                | `.claude/hooks/fleet/cross-repo-guard/` + `scanCrossRepoPaths` | `../<fleet-repo>/` and absolute `/projects/<fleet-repo>/` references   |
+| Mistake | Hook | What it catches |
+| --- | --- | --- |
+| Pushing a real customer / company name | `.claude/hooks/fleet/private-name-nudge/` | Real names in commits / PR text / release notes |
+| Linear ticket refs | `.claude/hooks/fleet/private-name-nudge/` | `SOC-123`, `ENG-456`, Linear URLs in code or PR text |
+| External issue refs (auto-link spam) | `.claude/hooks/fleet/no-ext-issue-ref-guard/` | `<owner>/<repo>#<num>` in commits or PR bodies for non-SocketDev repos |
+| Empty commits | `.claude/hooks/fleet/no-empty-commit-guard/` | `git commit --allow-empty`, `cherry-pick --allow-empty` |
+| `--no-verify` use | `.claude/hooks/fleet/no-revert-guard/` | Hook bypass via `--no-verify` without typed bypass phrase |
+| Personal paths in code | `pre-commit.mts` / `pre-push.mts` | `/Users/<name>/`, `/home/<name>/`, `C:\Users\<NAME>\` |
+| Cross-repo path imports | `.claude/hooks/fleet/cross-repo-guard/` + `scanCrossRepoPaths` | `../<fleet-repo>/` and absolute `/projects/<fleet-repo>/` references |
 
 ## Layer 6: find and fix code vulnerabilities
 

@@ -44,7 +44,7 @@ the hook-owned file.
 
 A variable is considered path-like when its name matches:
 
-```
+```text
 (?:^|_)(?:path|file|dir|cwd|root|src|dest|target|from|to|base|entry|output|input|abs|rel)(?:_|$)
 | Path$ | File$ | Dir$
 ```

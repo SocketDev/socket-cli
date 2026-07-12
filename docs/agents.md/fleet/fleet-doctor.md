@@ -75,7 +75,7 @@ reads the `catalogOptional:` block as its version source of truth.
 
 Each finding uses the four-ingredient error format:
 
-```
+```text
 What:  <short phrase describing the problem>
 Where: <file path or config key>
 Saw:   <what was observed vs. what is required>

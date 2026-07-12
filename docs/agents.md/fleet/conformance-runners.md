@@ -8,7 +8,7 @@ skill for invocation specifics.
 
 ## The 4-tier layout
 
-```
+```text
 packages/<pkg>/
   test/
     fixtures/<corpus>/                # 1. Sparse-checkout submodule

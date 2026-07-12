@@ -6,7 +6,7 @@ Every commit landing on a default branch (`main` / `master`) in the fleet must c
 
 Before git records a commit, the pre-commit hook reads:
 
-```
+```bash
 git config --get commit.gpgsign      # expect: true
 git config --get user.signingkey     # expect: a key ID or .pub path
 ```

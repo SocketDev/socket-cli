@@ -11,7 +11,7 @@ When a fleet repo needs a database, the stack is fixed: **PostgreSQL** as the en
 
 ## Layout (per data-owning package)
 
-```
+```text
 packages/<pkg>/
   .config/drizzle.config.mts     # drizzle-kit config (NOT root drizzle.config.ts)
   schema/

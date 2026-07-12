@@ -9,7 +9,7 @@ These keys must never appear in a fleet repo's local `.git/config`:
 | Key               | Why it's banned                                                                                                                                                                                                                  |
 | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `core.bare`       | `bare = true` turns the work tree into a bare repo. Every `git status` / `git commit` / `git rev-parse --is-inside-work-tree` then fails with "must be run in a work tree". The repo becomes unusable until manually cleaned up. |
-| `user.email`      | Overrides the global identity. Commits sign with the global GPG key but author with the local email — GitHub rejects the push for "Found N violations: <sha>" verified-signature check.                                          |
+| `user.email`      | Overrides the global identity. Commits sign with the global GPG key but author with the local email — GitHub rejects the push for "Found N violations: `<sha>`" verified-signature check.                                        |
 | `user.name`       | Same shape — the commit author won't match the global GitHub identity.                                                                                                                                                           |
 | `user.signingkey` | Pinning a key locally drifts from the canonical global key. If the local key is wrong (or stale after rotation), every commit is unsigned to GitHub.                                                                             |
 | `commit.gpgsign`  | Disabling signing locally bypasses the fleet rule. Pre-commit hook catches it for `main`/`master` but the local config has clobbered the global preference.                                                                      |
@@ -20,7 +20,7 @@ These keys must never appear in a fleet repo's local `.git/config`:
 
 1. **Bash** — `git config <key> <value>` (no `--global` / `--system` / `--worktree` qualifier) that touches a banned key:
 
-   ```
+   ```bash
    git config core.bare true
    git config user.email test@example.com
    git config commit.gpgsign false
@@ -34,7 +34,7 @@ These keys must never appear in a fleet repo's local `.git/config`:
 
 Single-use bypass for genuine operator scenarios (initial signing setup on a fresh checkout, signing-key rotation, manual cleanup after a `bare = true` incident):
 
-```
+```text
 Allow git-config-write bypass
 ```
 
