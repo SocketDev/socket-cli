@@ -108,7 +108,7 @@ To skip the gate but keep the ordering check, set
 
 ### 5. Do NOT dispatch the publish workflow
 
-Per the [Public-surface hygiene](#public-surface-hygiene) rule (in
+Per the public-surface hygiene rule (in
 CLAUDE.md), releases are user-triggered. Stop after the tag push;
 the user runs the publish workflow manually.
 
