@@ -157,7 +157,7 @@ Typical test savings:
 | Workspace Setup   | 15-20 lines | 3-5 lines | 12-15 lines |
 | Result Validation | 3-5 lines   | 1-2 lines | 2-3 lines   |
 
-**Overall: 100-200 lines saved per 10 test files**
+Overall: 100-200 lines saved per 10 test files.
 
 ### Improved Readability
 

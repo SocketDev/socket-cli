@@ -31,7 +31,7 @@ Command-line interface for Socket.dev supply chain security analysis. Provides s
 - [Documentation](#documentation)
 - [Module Reference](#module-reference)
   - [Command Modules (src/commands/)](#command-modules-srccommands)
-  - [Utility Modules (src/util/)](#utility-modules-srcutils)
+  - [Utility Modules (src/util/)](#utility-modules-srcutil)
 - [Constants (src/constants/)](#constants-srcconstants)
 - [Installation](#installation)
 - [License](#license)
@@ -40,7 +40,7 @@ Command-line interface for Socket.dev supply chain security analysis. Provides s
 
 ## Architecture Overview
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                         Socket CLI                              │
 │                                                                 │
@@ -86,7 +86,7 @@ Commands use two patterns based on complexity:
 
 **Complex commands** (with subcommands or >200 lines) use a 3-layer pattern:
 
-```
+```text
 cmd-{name}.mts       Command definition, flags, CLI interface
      │
      ├─> handle-{name}.mts    Business logic, orchestration
@@ -111,7 +111,7 @@ Example: scan create command
 
 ### Command Organization
 
-```
+```text
 src/commands/
 ├── scan/              Security scanning (11 subcommands)
 │   ├── cmd-scan-create.mts
@@ -143,7 +143,7 @@ src/commands/
 
 Package manager wrapping uses Socket Firewall (sfw) for security scanning:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                Socket Firewall (sfw)                        │
 │                                                             │
@@ -182,7 +182,7 @@ Package manager wrapping uses Socket Firewall (sfw) for security scanning:
 
 Multi-target build system supporting npm distribution and standalone executables:
 
-```
+```text
 Build Pipeline
 ├── Source Build (esbuild)
 │   ├── TypeScript compilation (.mts → .js)
@@ -226,7 +226,7 @@ pnpm build:sea             # Build SEA binaries (all platforms)
 
 Dual update system based on installation method:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                  Update Architecture                        │
 │                                                             │
@@ -253,7 +253,7 @@ Dual update system based on installation method:
 
 ## Utility Modules
 
-```
+```text
 src/util/
 ├── alert/               Alert translations and formatting
 ├── cli/                 CLI framework (meow integration)
@@ -322,7 +322,7 @@ type CResult<T> =
 
 Hierarchical configuration system:
 
-```
+```text
 Priority (highest to lowest):
 1. Command-line flags (--org, --config)
 2. Environment variables (SOCKET_CLI_API_TOKEN)
@@ -341,7 +341,7 @@ Config keys:
 
 Multi-ecosystem architecture supporting 11 package managers:
 
-```
+```text
 JavaScript/TypeScript    npm, npx, pnpm, yarn
 Python                   pip, uv
 Ruby                     gem, bundler
@@ -506,58 +506,58 @@ Features:
 
 ### Utility Modules (src/util/)
 
-**API & Network**
+#### API & Network
 
 - `socket/api.mts` - Socket API communication with error handling
 - `socket/sdk.mts` - SDK initialization and configuration
 - `socket/alerts.mts` - Security alert processing
 
-**CLI Framework**
+#### CLI Framework
 
 - `cli/with-subcommands.mts` - Subcommand routing (350+ lines)
 - `cli/completion.mts` - Shell completion generation
 - `cli/messages.mts` - User-facing messages
 
-**Data Processing**
+#### Data Processing
 
 - `data/map-to-object.mts` - Map to object conversion
 - `data/objects.mts` - Object utilities
 - `data/strings.mts` - String manipulation
 - `data/walk-nested-map.mts` - Nested map traversal
 
-**Ecosystem Support**
+#### Ecosystem Support
 
 - `ecosystem/types.mts` - PURL types for 11 languages
 - `ecosystem/environment.mts` - Runtime environment detection
 - `ecosystem/requirements.mts` - API requirements lookup
 - `ecosystem/spec.mts` - Package spec parsing
 
-**Error Handling**
+#### Error Handling
 
 - `error/errors.mts` - Error types and diagnostics (560+ lines)
 - `error/fail-msg-with-badge.mts` - Formatted error messages
 
-**File Operations**
+#### File Operations
 
 - `fs/fs.mts` - Safe file operations
 - `fs/home-path.mts` - Home directory resolution
 - `fs/path-resolve.mts` - Path resolution for scans
 - `fs/find-up.mts` - Find files in parent directories
 
-**Git Integration**
+#### Git Integration
 
 - `git/operations.mts` - Git commands (branch, commit, etc)
 - `git/github.mts` - GitHub API integration
 - `git/providers.mts` - Multi-provider support (GitHub, GitLab, Bitbucket)
 
-**Output Formatting**
+#### Output Formatting
 
 - `output/formatting.mts` - Help text and flag formatting
 - `output/result-json.mts` - JSON serialization
 - `output/markdown.mts` - Markdown table generation
 - `output/mode.mts` - Output mode detection
 
-**Package Managers**
+#### Package Managers
 
 - `npm/config.mts` - npm configuration reading
 - `npm/package-arg.mts` - npm package spec parsing
@@ -566,30 +566,30 @@ Features:
 - `pnpm/scanning.mts` - pnpm scan integration
 - `yarn/paths.mts` - yarn path resolution
 
-**Process & Spawn**
+#### Process & Spawn
 
 - `process/cmd.mts` - Command-line utilities
 - `process/os.mts` - OS detection
 - `spawn/spawn-node.mts` - Node.js process spawning
 
-**Security Tools**
+#### Security Tools
 
 - `coana/extract-scan-id.mts` - Coana reachability integration
 - `dlx/cdxgen.mts` - SBOM generation
 - `python/standalone.mts` - Python runtime management
 
-**Terminal UI**
+#### Terminal UI
 
 - `terminal/ascii-header.mts` - ASCII logo rendering
 - `terminal/colors.mts` - ANSI color utilities
 - `terminal/link.mts` - Hyperlink generation
 
-**Update System**
+#### Update System
 
 - `update/manager.mts` - Update check orchestration
 - `update/checker.mts` - Version comparison logic
 
-**Validation**
+#### Validation
 
 - `validation/check-input.mts` - Input validation
 - `validation/filter-config.mts` - Config validation
