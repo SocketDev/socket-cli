@@ -26,11 +26,11 @@ The **code-security loop** is four chained skills, each leg resumable (see [`sec
 
 Every skill under `.claude/skills/` falls into one of three tiers. Surface this distinction when adding a new skill so it lands in the right place:
 
-- **Fleet skill**: present in every fleet repo, identical contract everywhere. Examples: `guarding-paths`, `scanning-quality`, `looping-quality`, `scanning-security`, `threat-modeling`, `scanning-vulns`, `triaging-findings`, `patching-findings`, `updating`, `locking-down-claude`, `plugging-promise-race`. New fleet skills land in `socket-wheelhouse/template/.claude/skills/fleet/<name>/` and cascade via `node socket-wheelhouse/scripts/sync-scaffolding.mts --all --fix`. The whole `.claude/skills/fleet` tree is tracked as a directory in the sync manifest, so a new skill dir cascades with no manifest edit.
+- **Fleet skill**: present in every fleet repo, identical contract everywhere. Examples: `guarding-paths`, `scanning-quality`, `looping-quality`, `scanning-security`, `threat-modeling`, `scanning-vulns`, `triaging-findings`, `patching-findings`, `updating`, `locking-down-claude`, `plugging-promise-race`. New fleet skills land in the wheelhouse `template/.claude/skills/fleet/<name>/` and cascade via `node scripts/sync-scaffolding.mts --all --fix`. The whole `.claude/skills/fleet` tree is tracked as a directory in the sync manifest, so a new skill dir cascades with no manifest edit.
 - **Partial skill**: present in the subset of repos that need it, identical contract within that subset. Examples: `driving-cursor-bugbot` (every repo with PR review), `updating-lockstep` (every repo with `lockstep.json`), `squashing-history` (repos with the squash workflow). Live in each adopting repo's `.claude/skills/<name>/`. When you change one, propagate to the others.
 - **Unique skill**: one repo only, bespoke to that repo's domain. Examples: `updating-cdxgen` (sdxgen), `updating-yoga` (socket-btm), `release` (socket-registry). Never canonical-tracked; the host repo owns it end-to-end.
 
-Audit the current classification with `node socket-wheelhouse/scripts/run-skill-fleet.mts --list-skills`.
+Audit the current classification with `node scripts/run-skill-fleet.mts --list-skills`.
 
 ## `updating` umbrella + `updating-*` siblings
 
@@ -38,7 +38,7 @@ Audit the current classification with `node socket-wheelhouse/scripts/run-skill-
 
 ## Running skills across the fleet
 
-`scripts/run-skill-fleet.mts` (in `socket-wheelhouse`) spawns one headless `claude --print` agent per fleet repo, in parallel (concurrency 4 by default), with the four lockdown flags set per the _Programmatic Claude calls_ rule above. Per-skill profile table maps known skills to sensible tool/allow/disallow lists; override with `--tools` / `--allow` / `--disallow`. Per-repo logs land in `.cache/fleet-skill/<timestamp>-<skill>/<repo>.log`. Uses `Promise.allSettled` semantics; one repo's failure doesn't abort the rest.
+`scripts/run-skill-fleet.mts` spawns one headless `claude --print` agent per fleet repo, in parallel (concurrency 4 by default), with the four lockdown flags set per the _Programmatic Claude calls_ rule above. Per-skill profile table maps known skills to sensible tool/allow/disallow lists; override with `--tools` / `--allow` / `--disallow`. Per-repo logs land in `.cache/fleet-skill/<timestamp>-<skill>/<repo>.log`. Uses `Promise.allSettled` semantics; one repo's failure doesn't abort the rest.
 
 ```bash
 # Run from inside socket-wheelhouse:
