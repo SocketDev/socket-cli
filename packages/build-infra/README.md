@@ -4,7 +4,7 @@ Shared build infrastructure utilities for Socket CLI. Provides esbuild plugins, 
 
 ## Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                      build-infra                             │
 ├─────────────────────────────────────────────────────────────┤
@@ -270,7 +270,7 @@ None. Code is clean, well-organized, and follows consistent patterns.
 
 The `build/downloaded/` directory stores cached GitHub release assets:
 
-```
+```text
 build/downloaded/
 ├── binject-{tag}-{platform}-{arch}
 ├── node-smol-{tag}-{platform}-{arch}

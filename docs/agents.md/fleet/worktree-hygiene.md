@@ -39,13 +39,13 @@ checkout's `node_modules` symlinks (for example
 `node_modules/@socketsecurity/lib-stable`) are left pointing at the deleted
 directory:
 
-```
+```text
 node_modules/@socketsecurity/lib-stable -> ../../../<removed-worktree>/node_modules/.pnpm/...
 ```
 
 Every fleet hook that imports a lib subpath then dies at module resolution:
 
-```
+```text
 Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@socketsecurity/lib-stable'
 ```
 

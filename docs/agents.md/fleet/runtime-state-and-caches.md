@@ -24,7 +24,7 @@ untracked, dirty file.)
     standard tool-cache convention: gitignored via `node_modules`, reachable with
     only a path (walk to the nearest `node_modules`). The bootstrap fetcher
     (`bootstrap/fleet.mjs`) runs at `prepare`, BEFORE the payload + socket-lib
-    exist, so it is strictly dep-0 — `node_modules/.cache/socket-wheelhouse/` is
+    exist, so it is strictly dep-0 — `node_modules/.cache/fleet/` is
     its cacache-equivalent.
 
 - **Call out invisible state LOUDLY.** cacache and `node_modules/.cache` are
@@ -36,15 +36,15 @@ untracked, dirty file.)
 
 ## Known state stores
 
-- **`bundle.ref`** (`.config/socket-wheelhouse.json`) — a CUSTOM pin (not a
+- **`bundle.ref`** (`.config/fleet.json`) — a CUSTOM pin (not a
   standard field): the wheelhouse bundle ref (`fleet-<sha>`) a thin consumer
   fetches. The fleet's equivalent of a payload lockfile pin; the version decision
   lives in exactly one auditable place. This one IS tracked — it's config, not
   runtime state.
-- **`node_modules/.cache/socket-wheelhouse/bundle-applied`** (dep-0 fetcher
+- **`node_modules/.cache/fleet/bundle-applied`** (dep-0 fetcher
   cache) — the bootstrap fetcher records the `bundle.ref` it last applied so
   `bootstrap/fleet.mjs --if-current` skips a redundant warm fetch in local dev. A
   fresh clone / CI has no `node_modules/.cache`, so the fetch runs. Inspect:
-  `cat node_modules/.cache/socket-wheelhouse/bundle-applied`; clear: delete it (or
+  `cat node_modules/.cache/fleet/bundle-applied`; clear: delete it (or
   the whole `.cache` dir) and the next `prepare` re-fetches. The fetcher migrates
   away the legacy in-tree `.config/fleet/.bundle-applied` on write.

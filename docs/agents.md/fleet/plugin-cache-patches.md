@@ -43,7 +43,7 @@ A `# @key: value` provenance header above a **plain `diff -u` body** — never a
 smallest-footprint mechanism above) live in the companion `<x>.files/` dir, not
 in the diff.
 
-```
+```text
 # @plugin: codex
 # @plugin-version: 1.0.1
 # @sha: 9cb4fe4099195b2587c402117a3efce6ab5aac78

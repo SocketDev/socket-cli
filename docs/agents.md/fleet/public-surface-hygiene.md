@@ -75,7 +75,7 @@ Bypass: `Allow external-issue-ref bypass` (enforced by `.claude/hooks/fleet/no-e
 Every fleet member's root `README.md` carries the canonical five level-2 sections
 in order — `Why this repo exists` / `Install` / `Usage` / `Development` /
 `License` — plus the universal social-follow badges (X / Twitter + Bluesky) under
-the title, no `socket-wheelhouse` leak, no sibling-relative script commands.
+the title, no private-repo leak, no sibling-relative script commands.
 Canonical skeleton: `template/README.md`.
 
 Some repos are not infra repos. The VS Code + browser extensions and the skills
@@ -84,7 +84,7 @@ by the listing, not the fleet skeleton. Those repos declare
 `"optIns": ["freeform-readme"]` in the cascade roster
 (`.claude/skills/fleet/cascading-fleet/lib/fleet-repos.json`). The opt-in exempts
 them from the **five-section skeleton only** — the follow-badges, the
-`socket-wheelhouse`-leak check, and the sibling-relative-path check stay universal.
+private-repo-leak check, and the sibling-relative-path check stay universal.
 
 The rule is enforced across four surfaces, all reading the one roster:
 

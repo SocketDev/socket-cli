@@ -48,7 +48,7 @@ SEA binaries contain all tools pre-bundled in a Virtual File System (VFS). Tools
 
 ### VFS Structure
 
-```
+```text
 /snapshot/
 ├── node_modules/           # npm packages with full dependency trees
 │   ├── @coana-tech/cli/
@@ -104,7 +104,7 @@ When installed via npm, tools are downloaded at runtime.
 
 ### Download Flow
 
-```
+```text
 1. Check local path override (SOCKET_CLI_*_LOCAL_PATH env var)
    └── If set, use local binary directly
 

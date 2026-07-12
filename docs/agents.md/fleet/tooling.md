@@ -123,10 +123,10 @@ pnpm 11 stores the integrity hash in `pnpm-lock.yaml` (a separate YAML document)
 
 ## Bumping a versioned tool fleet-wide (pnpm, zizmor, sfw)
 
-🚨 **Single entry point: `socket-wheelhouse/scripts/repo/cascade-fleet.mts`.** Run from the wheelhouse repo:
+🚨 **Single entry point: `scripts/repo/cascade-fleet.mts`.** Run from the wheelhouse repo:
 
 ```bash
-node socket-wheelhouse/scripts/repo/cascade-fleet.mts \
+node scripts/repo/cascade-fleet.mts \
   --pnpm 11.3.0 \
   [--skip-ci-wait] \
   [--dry-run]
@@ -151,7 +151,7 @@ If Stage A+B+C landed (registry has a new tip) but Stage D didn't run, pass `--f
 
 ### What this does NOT do
 
-- It does NOT bump `socket-wheelhouse/external-tools.json` (the wheelhouse's own at-repo-root copy, consumed by `scripts/install-sfw.mts`). The live source of truth for cascade purposes is `socket-registry/external-tools.json`. The wheelhouse file uses a different schema (tools nested under `.tools.<name>` with `sha256` field; registry uses top-level keys with `integrity` field) and a different consumer (the local SFW installer + zizmor setup). When SFW or zizmor bumps, the wheelhouse file's checksums go stale. Today refreshing them is manual (run `node scripts/update-external-tools.mts` from the wheelhouse repo). Wiring this into the cascade orchestrator is a known gap. For now, treat wheelhouse's external-tools.json as a "sibling source of truth" that needs its own update step after a tool bump.
+- It does NOT bump the wheelhouse's `external-tools.json` (the at-repo-root copy, consumed by `scripts/install-sfw.mts`). The live source of truth for cascade purposes is `socket-registry/external-tools.json`. The wheelhouse file uses a different schema (tools nested under `.tools.<name>` with `sha256` field; registry uses top-level keys with `integrity` field) and a different consumer (the local SFW installer + zizmor setup). When SFW or zizmor bumps, the wheelhouse file's checksums go stale. Today refreshing them is manual (run `node scripts/update-external-tools.mts` from the wheelhouse repo). Wiring this into the cascade orchestrator is a known gap. For now, treat wheelhouse's external-tools.json as a "sibling source of truth" that needs its own update step after a tool bump.
 - It does NOT bump `.node-version`. Node bumps follow a different cadence (the Node ecosystem doesn't ship the same per-platform binary model; `.node-version` is just a string).
 
 ## Monorepo internal `engines.node`
@@ -212,7 +212,7 @@ Every entry in `.gitmodules` MUST set `shallow = true`. Every `git submodule upd
 
 The fleet pins `npm-run-all2: 9.0.0` in the wheelhouse catalog. Every repo that depends on it MUST also declare the top-level `"npm-run-all2": { "nodeRun": true }` key in its own `package.json`. That key tells npm-run-all2 9.x to execute each script via `node --run` instead of the package manager CLI. `run-s build:*` and `run-p test:*` chains skip the per-script pnpm startup cost, which is non-trivial for N-script fan-outs. Inherited limitations from `node --run` (no `pre`/`post` lifecycle hooks; no `npm_*` env injection: `NODE_RUN_SCRIPT_NAME` + `NODE_RUN_PACKAGE_JSON_PATH` replace them; `node_modules/.bin` still on PATH) are acceptable for the fleet because none of our canonical scripts rely on those features. Enforced by `scripts/sync-scaffolding/checks/package-npm-run-all2-noderun.mts`: `npm_run_all2_node_run_missing` findings auto-fix.
 
-## Backward compatibility
+## Legacy backward compatibility
 
 FORBIDDEN to maintain. Remove when encountered.
 

@@ -1,10 +1,6 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="logo-light.png">
-  <source media="(prefers-color-scheme: light)" srcset="logo-dark.png">
-  <img alt="Socket" src="logo-dark.png" width="200">
-</picture>
-
 # Socket CLI
+
+<img alt="Socket" src="logo-dark.png" width="200">
 
 [![Socket Badge](https://socket.dev/api/badge/npm/package/socket)](https://socket.dev/npm/package/socket)
 

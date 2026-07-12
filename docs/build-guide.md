@@ -45,7 +45,7 @@ pnpm dev
 
 ### Directory Structure
 
-```
+```text
 socket-cli/
 ├── packages/
 │   ├── cli/                      # Main CLI package
@@ -77,7 +77,7 @@ socket-cli/
 
 The CLI build executes in four phases:
 
-```
+```text
 Phase 1: Clean (optional, with --force)
     └── Removes dist/ directory
 
@@ -158,7 +158,7 @@ pnpm build --platform darwin --arch arm64
 
 #### SEA Build Process
 
-```
+```text
 1. Download node-smol binary (minimal Node.js)
    └── From socket-btm GitHub releases
 

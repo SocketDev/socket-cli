@@ -90,7 +90,7 @@ A one-time code in any of those is a leaked secret. It is also a worse UX than t
 
 **Local (interactive): browser auth.** Re-run with `--auth-type=web`:
 
-```
+```bash
 npm publish --access public --auth-type=web
 ```
 

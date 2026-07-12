@@ -14,7 +14,7 @@ When an untracked directory appears under a path that looks like vendored upstre
 
 When `.gitignore` has the shape:
 
-```
+```text
 deps/<libname>/*
 !deps/<libname>/<file>
 ```
@@ -23,7 +23,7 @@ deps/<libname>/*
 
 **Worked example**: `packages/node-smol-builder/additions/source-patched/deps/libdeflate/`:
 
-```
+```text
 packages/node-smol-builder/additions/source-patched/deps/libdeflate/*
 !packages/node-smol-builder/additions/source-patched/deps/libdeflate/libdeflate.gyp
 ```

@@ -11,7 +11,7 @@ mistake.
 Stamp each codifiable memory's frontmatter with an `enforcement:` line naming
 how the lesson is enforced, or why it isn't:
 
-```
+```text
 enforcement: .claude/hooks/fleet/<name>       # a guard / nudge hook
 enforcement: socket/<rule>                    # a lint rule
 enforcement: scripts/fleet/check/<name>.mts   # an assertion check

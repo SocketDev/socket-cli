@@ -31,7 +31,7 @@ sibling (`.claude/hooks/repo/`, `.config/repo/`, the member's own
 ## The ref pin
 
 A thin member pins which bundle to fetch in its wheelhouse settings file:
-`.config/socket-wheelhouse.json` → `"bundle": { "ref": "fleet-<sha>" }`. That
+`.config/fleet.json` → `"bundle": { "ref": "fleet-<sha>" }`. That
 file is the single member-owned config surface. The bootstrap defaults its
 `--ref` from there, so the pin lives in exactly one place.
 

@@ -242,9 +242,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - register rm and cleanup subcommands in patch command Added cmdPatchRm and cmdPatchCleanup to the patch command's subcommand registry. This enables users to run socket patch rm and socket patch cleanup commands. All subcommands are now registered: - apply: Apply patches with backup creation - cleanup: Clean up orphaned backups - get: Download patch files - info: Show patch details - list: List all patches - rm: Remove patch and restore backups
 - integrate backup system with patch apply Integrated Phase 1.1 backup system into patch apply command. Before applying any patch, createBackup() is called to store the original file contents. This enables safe rollback via socket patch rm. Changes: - Import createBackup from backup utilities - Add patchUuid parameter to processFilePatch - Create backup before copying patched file - Log backup creation and continue on backup failure - Pass patch UUID from manifest to backup system This completes the backup integration loop: - apply: creates backups - rm: restores backups - cleanup: removes orphaned backups
 - add patch cleanup subcommand for backup management Implemented socket patch cleanup to manage orphaned patch backups. Supports three modes: - No args: Clean up orphaned backups (not in manifest) - UUID: Clean up specific patch backups - --all: Clean up all patch backups Uses Phase 1.1 backup system APIs: - listAllPatches() to find all backup UUIDs - cleanupBackups() to remove backup data Includes 7 comprehensive tests covering help, missing directory, cleanup modes, and all output formats.
-- add patch rm subcommand with backup restoration Implemented socket patch rm <PURL> to remove applied patches and restore original files from backups. Uses the Phase 1.1 backup system to restore files and clean up backups. Supports --keep-backups flag to preserve backup files after removal. Integrates with: - restoreAllBackups() to restore original files - cleanupBackups() to remove backup data - removePatch() to update manifest Includes 8 comprehensive tests covering help, missing PURL, patch not found, removal without backups, and all output formats.
-- add patch get subcommand Implemented socket patch get <PURL> to download patch files from the .socket/blobs directory to a local directory for inspection. Files are copied with their directory structure preserved. Supports custom output directory via --output flag. Supports JSON and markdown output formats. Ready for tests to be added in next commit.
-- add patch info subcommand Implemented socket patch info <PURL> to show detailed information about a specific patch. Displays all vulnerability details (GHSA IDs, CVEs, severity, descriptions), file changes with before/after hashes, and patch metadata (UUID, description, tier, license). Supports JSON and markdown output formats. Includes comprehensive tests covering help, missing PURL, patch not found, and all output formats.
+- add patch rm subcommand with backup restoration Implemented socket patch rm `<PURL>` to remove applied patches and restore original files from backups. Uses the Phase 1.1 backup system to restore files and clean up backups. Supports --keep-backups flag to preserve backup files after removal. Integrates with: - restoreAllBackups() to restore original files - cleanupBackups() to remove backup data - removePatch() to update manifest Includes 8 comprehensive tests covering help, missing PURL, patch not found, removal without backups, and all output formats.
+- add patch get subcommand Implemented socket patch get `<PURL>` to download patch files from the .socket/blobs directory to a local directory for inspection. Files are copied with their directory structure preserved. Supports custom output directory via --output flag. Supports JSON and markdown output formats. Ready for tests to be added in next commit.
+- add patch info subcommand Implemented socket patch info `<PURL>` to show detailed information about a specific patch. Displays all vulnerability details (GHSA IDs, CVEs, severity, descriptions), file changes with before/after hashes, and patch metadata (UUID, description, tier, license). Supports JSON and markdown output formats. Includes comprehensive tests covering help, missing PURL, patch not found, and all output formats.
 - add patch list subcommand Implemented socket patch list to display all patches from the manifest. Shows PURL, UUID, description, exported date, file count, vulnerability count, tier, and license for each patch. Supports JSON and markdown output formats. Includes comprehensive tests covering help, error cases, and all output formats.
 - add handle test helper infrastructure Add setupStandardHandleMocks helper for handle function tests: - Automatic function name derivation from module paths - Module-level mock setup for vi.mock hoisting - Clear pattern for testing fetch + output orchestration - Comprehensive JSDoc with usage examples
 - use unified runner for all test stages with Ctrl+O support - Use unified-runner for checks, build, and tests (not just tests) - Display "Press Ctrl+O to show/hide output" hint at start - Eliminates spinner artifacts in logs - Provides consistent Ctrl+O toggle experience throughout - Cleaner output with no leaked spinner frames
@@ -331,7 +331,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`mcp/transport-http`** — drop `| undefined` from McpHandleRequest's auth field
 - **`lint`** — convert file-scope oxlint disables + clear other violations
 - **`packageManager`** — bump pnpm@11.0.8 → pnpm@11.1.2
-- stop oxfmt from reformatting socket-wheelhouse-schema.json
+- stop oxfmt from reformatting wheelhouse-schema.json
 - **`scripts/check-prompt-less-setup`** — drop never-used writeFileSync + isLinux
 - **`deps`** — restore -stable catalog aliases for self-named fleet packages
 - **`lint`** — clean lint debt in packages/cli/scripts + src
@@ -479,7 +479,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - remove cross-repository updates from quality-scan skill
 - **`sea`** — update Trivy to v0.69.2
 - **`sea`** — use win32 platform keys in external-tools-platforms
-- **`vfs`** — update mount type signature to async Promise<string>
+- **`vfs`** — update mount type signature to async `Promise<string>`
 - **`sea`** — fix sfw extraction from VFS with node_modules structure
 - **`sea`** — add Socket Firewall (sfw) to VFS bundling
 - **`scan`** — correct policy strictness comparison in alert aggregation
@@ -1306,9 +1306,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - register rm and cleanup subcommands in patch command Added cmdPatchRm and cmdPatchCleanup to the patch command's subcommand registry. This enables users to run socket patch rm and socket patch cleanup commands. All subcommands are now registered: - apply: Apply patches with backup creation - cleanup: Clean up orphaned backups - get: Download patch files - info: Show patch details - list: List all patches - rm: Remove patch and restore backups
 - integrate backup system with patch apply Integrated Phase 1.1 backup system into patch apply command. Before applying any patch, createBackup() is called to store the original file contents. This enables safe rollback via socket patch rm. Changes: - Import createBackup from backup utilities - Add patchUuid parameter to processFilePatch - Create backup before copying patched file - Log backup creation and continue on backup failure - Pass patch UUID from manifest to backup system This completes the backup integration loop: - apply: creates backups - rm: restores backups - cleanup: removes orphaned backups
 - add patch cleanup subcommand for backup management Implemented socket patch cleanup to manage orphaned patch backups. Supports three modes: - No args: Clean up orphaned backups (not in manifest) - UUID: Clean up specific patch backups - --all: Clean up all patch backups Uses Phase 1.1 backup system APIs: - listAllPatches() to find all backup UUIDs - cleanupBackups() to remove backup data Includes 7 comprehensive tests covering help, missing directory, cleanup modes, and all output formats.
-- add patch rm subcommand with backup restoration Implemented socket patch rm <PURL> to remove applied patches and restore original files from backups. Uses the Phase 1.1 backup system to restore files and clean up backups. Supports --keep-backups flag to preserve backup files after removal. Integrates with: - restoreAllBackups() to restore original files - cleanupBackups() to remove backup data - removePatch() to update manifest Includes 8 comprehensive tests covering help, missing PURL, patch not found, removal without backups, and all output formats.
-- add patch get subcommand Implemented socket patch get <PURL> to download patch files from the .socket/blobs directory to a local directory for inspection. Files are copied with their directory structure preserved. Supports custom output directory via --output flag. Supports JSON and markdown output formats. Ready for tests to be added in next commit.
-- add patch info subcommand Implemented socket patch info <PURL> to show detailed information about a specific patch. Displays all vulnerability details (GHSA IDs, CVEs, severity, descriptions), file changes with before/after hashes, and patch metadata (UUID, description, tier, license). Supports JSON and markdown output formats. Includes comprehensive tests covering help, missing PURL, patch not found, and all output formats.
+- add patch rm subcommand with backup restoration Implemented socket patch rm `<PURL>` to remove applied patches and restore original files from backups. Uses the Phase 1.1 backup system to restore files and clean up backups. Supports --keep-backups flag to preserve backup files after removal. Integrates with: - restoreAllBackups() to restore original files - cleanupBackups() to remove backup data - removePatch() to update manifest Includes 8 comprehensive tests covering help, missing PURL, patch not found, removal without backups, and all output formats.
+- add patch get subcommand Implemented socket patch get `<PURL>` to download patch files from the .socket/blobs directory to a local directory for inspection. Files are copied with their directory structure preserved. Supports custom output directory via --output flag. Supports JSON and markdown output formats. Ready for tests to be added in next commit.
+- add patch info subcommand Implemented socket patch info `<PURL>` to show detailed information about a specific patch. Displays all vulnerability details (GHSA IDs, CVEs, severity, descriptions), file changes with before/after hashes, and patch metadata (UUID, description, tier, license). Supports JSON and markdown output formats. Includes comprehensive tests covering help, missing PURL, patch not found, and all output formats.
 - add patch list subcommand Implemented socket patch list to display all patches from the manifest. Shows PURL, UUID, description, exported date, file count, vulnerability count, tier, and license for each patch. Supports JSON and markdown output formats. Includes comprehensive tests covering help, error cases, and all output formats.
 - add handle test helper infrastructure Add setupStandardHandleMocks helper for handle function tests: - Automatic function name derivation from module paths - Module-level mock setup for vi.mock hoisting - Clear pattern for testing fetch + output orchestration - Comprehensive JSDoc with usage examples
 - use unified runner for all test stages with Ctrl+O support - Use unified-runner for checks, build, and tests (not just tests) - Display "Press Ctrl+O to show/hide output" hint at start - Eliminates spinner artifacts in logs - Provides consistent Ctrl+O toggle experience throughout - Cleaner output with no leaked spinner frames
@@ -1392,7 +1392,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`mcp/transport-http`** — drop `| undefined` from McpHandleRequest's auth field
 - **`lint`** — convert file-scope oxlint disables + clear other violations
 - **`packageManager`** — bump pnpm@11.0.8 → pnpm@11.1.2
-- stop oxfmt from reformatting socket-wheelhouse-schema.json
+- stop oxfmt from reformatting wheelhouse-schema.json
 - **`scripts/check-prompt-less-setup`** — drop never-used writeFileSync + isLinux
 - **`deps`** — restore -stable catalog aliases for self-named fleet packages
 - **`lint`** — clean lint debt in packages/cli/scripts + src
@@ -1540,7 +1540,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - remove cross-repository updates from quality-scan skill
 - **`sea`** — update Trivy to v0.69.2
 - **`sea`** — use win32 platform keys in external-tools-platforms
-- **`vfs`** — update mount type signature to async Promise<string>
+- **`vfs`** — update mount type signature to async `Promise<string>`
 - **`sea`** — fix sfw extraction from VFS with node_modules structure
 - **`sea`** — add Socket Firewall (sfw) to VFS bundling
 - **`scan`** — correct policy strictness comparison in alert aggregation
@@ -2153,7 +2153,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Border customization: borderEdges for selective border rendering (top, right, bottom, left)
   - Layout spacing: rowGap and columnGap for fine-grained flex item spacing
 
-### Changed
+### Updated
 
 - Updated to @socketsecurity/socket-patch@1.2.0.
 - Updated Coana CLI to v14.12.148.

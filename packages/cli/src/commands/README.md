@@ -134,7 +134,7 @@ All connect via Socket Firewall (sfw) except raw-npm and raw-npx which bypass So
 
 Each command follows a consistent pattern:
 
-```
+```text
 src/commands/<command>/
 ├── cmd-<command>.mts           # Command definition (meow config)
 ├── handle-<command>.mts        # Business logic
@@ -145,7 +145,7 @@ src/commands/<command>/
 
 ### Example: Package Score Command
 
-```
+```text
 src/commands/package/
 ├── cmd-package.mts                    # Parent command
 ├── cmd-package-score.mts              # Subcommand definition

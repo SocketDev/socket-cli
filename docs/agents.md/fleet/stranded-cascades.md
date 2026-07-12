@@ -6,7 +6,7 @@ A real incident drove this rule: a fleet repo ended up with 4 stranded local cas
 
 ## How auto-cleanup works
 
-The wheelhouse cascade runs `socket-wheelhouse/scripts/fleet/cleanup-stranded.mts --target <repo>` against each fleet repo **before** creating that wave's `chore/wheelhouse-<sha>` worktree. Default mode is **fix**:
+The wheelhouse cascade runs the wheelhouse `scripts/fleet/cleanup-stranded.mts --target <repo>` against each fleet repo **before** creating that wave's `chore/wheelhouse-<sha>` worktree. Default mode is **fix**:
 
 - Stranded commits are removed via `git reset --hard origin/<base>`.
 - Stranded worktrees are removed via `git worktree remove --force` followed by `git branch -D chore/wheelhouse-<sha>`.
@@ -53,19 +53,19 @@ Only worktrees that match both conditions are removed. Other worktrees (task bra
 
 ## Manual invocation
 
-The script lives at `socket-wheelhouse/scripts/fleet/cleanup-stranded.mts`. You don't normally run it directly (the cascade does that), but it's safe to invoke ad-hoc:
+The script lives at `scripts/fleet/cleanup-stranded.mts` in the wheelhouse. You don't normally run it directly (the cascade does that), but it's safe to invoke ad-hoc:
 
 ```bash
 # Dry-run against one repo (substitute the actual repo path).
-node $PROJECTS/socket-wheelhouse/scripts/fleet/cleanup-stranded.mts \
+node $PROJECTS/wheelhouse/scripts/fleet/cleanup-stranded.mts \
   --target $PROJECTS/<repo> --dry-run
 
 # Sweep the whole fleet, reporting only.
-node $PROJECTS/socket-wheelhouse/scripts/fleet/cleanup-stranded.mts \
+node $PROJECTS/wheelhouse/scripts/fleet/cleanup-stranded.mts \
   --all --dry-run
 
 # Apply the fix.
-node $PROJECTS/socket-wheelhouse/scripts/fleet/cleanup-stranded.mts --all
+node $PROJECTS/wheelhouse/scripts/fleet/cleanup-stranded.mts --all
 ```
 
 ## Recovery when auto-cleanup bails
@@ -75,7 +75,7 @@ If the script reports `not cleaning up: <reason>`, the repo has at least one loc
 1. **Real work ahead of origin** (e.g. a one-off fix you committed to `main` locally without pushing): push it, or move it to a feature branch (`git switch -c feat/x && git push -u origin feat/x`). Then re-run cleanup.
 2. **Cascade commit touching unexpected files**: inspect with `git show <sha>`. If the cascade should have written that path, lift the path into the cascade allowlist (in `scripts/fleet/cleanup-stranded.mts`) and re-run. If the file shouldn't be cascade-touched at all, this is an authoring bug in `sync-scaffolding/manifest.mts`.
 3. **Cascade commit from an untrusted author**: usually means another agent / contributor authored it. Validate the commit by hand, then either trust the author (add to `~/.claude/git-authors.json` aliases) or rebase the commit out manually.
-4. **Template SHA that's not a strict ancestor**: the local commit may be from a branch of `socket-wheelhouse/template/` that was never merged. Confirm by inspecting the SHA in the wheelhouse history (`git -C $PROJECTS/socket-wheelhouse log <sha>`). If it's orphan / abandoned, `git reset --hard origin/<base>` manually after backing up the SHA in case it's wanted later.
+4. **Template SHA that's not a strict ancestor**: the local commit may be from a branch of the wheelhouse `template/` that was never merged. Confirm by inspecting the SHA in the wheelhouse history. If it's orphan / abandoned, `git reset --hard origin/<base>` manually after backing up the SHA in case it's wanted later.
 
 ## Dogfood cascade sweeps parallel-session work: inspect before push
 

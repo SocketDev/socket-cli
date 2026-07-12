@@ -157,7 +157,7 @@ one unsorted that did costs a merge conflict later.
 ## Provenance
 
 User-confirmed across 2026-04-17 → 2026-05-29 in socket-lib, socket-cli,
-socket-btm, ultrathink, socket-sdk-js, socket-wheelhouse. Representative asks:
+socket-btm, ultrathink, socket-sdk-js, and the wheelhouse. Representative asks:
 "properties and configs should be sorted alphanumerically" (JSON keys,
 2026-04-17); "lets alphanumeric sort" (object-literal props); repeated
 `sort-source-methods` reorders; "make `sort-source-methods` autofixable"; "add a
