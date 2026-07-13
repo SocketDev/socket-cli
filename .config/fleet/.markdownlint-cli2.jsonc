@@ -16,12 +16,33 @@
     // Disabled fleet-wide; reviewers catch genuinely-too-long prose.
     "MD013": false,
     // MD033 (no inline HTML) bites our <details> collapsed Development
-    // sections and Socket-badge img tags. Allow specific tags only.
-    "MD033": { "allowed_elements": ["details", "summary", "img", "br"] },
+    // sections and Socket-badge img tags. Allow specific tags only:
+    // a+img carry the height-pinned Socket badge (markdown image syntax
+    // cannot pin height, and the badge row is normalized at 20px);
+    // picture/source are load-bearing for the README's dark-mode logo
+    // variants and reduced-motion GIF posters; div carries align="center"
+    // on the footer mark (GitHub renders no CSS alternative).
+    "MD033": {
+      "allowed_elements": [
+        "a",
+        "br",
+        "details",
+        "div",
+        "img",
+        "kbd",
+        "picture",
+        "source",
+        "summary",
+      ],
+    },
     // MD041 (first-line-h1) is the contract; keep it on.
     // MD024 (no-duplicate-heading) — siblings-only mode so that ### subsections
     // can repeat under different ## parents (common in API docs).
     "MD024": { "siblings_only": true },
+    // MD060 (table-column-style) duplicates a concern oxfmt owns: the fleet
+    // formatter realigns markdown table pipes on every fix pass, so a second
+    // opinion here can only agree or fight it. Table layout has one owner.
+    "MD060": false,
   },
   // Globs: every *.md / *.mdx under the repo, except generated output,
   // node_modules, vendored upstream trees, and CHANGELOG.md (auto-generated).
@@ -34,11 +55,20 @@
     "**/vendor/**",
     "**/upstream/**",
     "**/third_party/**",
+    // Test fixtures are data (often vendored external content — e.g. a
+    // test262 sparse-checkout submodule); linting them produces findings
+    // in files the repo must not rewrite.
+    "**/test/fixtures/**",
+    "**/tests/fixtures/**",
     // .claude/ markdown is internal scaffolding (hook READMEs, agent
     // role files, skill SKILL.mds, command reminders) — scoped docs
     // with their own shape conventions. Excluded from the public-
     // facing markdown lint surface.
     "**/.claude/**",
+    // .agents/ is the generated, untracked mirror of .claude/skills for
+    // non-Claude harnesses — generated output whose sources are already
+    // excluded above; linting it would double-lint the mirror.
+    "**/.agents/**",
   ],
   // Custom rule plugins live under markdownlint-rules/, byte-identical
   // across the fleet via sync-scaffolding manifest registration.
@@ -50,10 +80,13 @@
   // (https://oxc.rs/docs/guide/usage/formatter.html) only structural
   // formatting is supported.
   "customRules": [
+    "./markdownlint-rules/socket-details-summary-blank-line.mts",
+    "./markdownlint-rules/socket-gfm-alert-keywords.mts",
     "./markdownlint-rules/socket-no-empty-changelog-sections.mts",
     "./markdownlint-rules/socket-no-private-wheelhouse-leak.mts",
     "./markdownlint-rules/socket-no-relative-sibling-script.mts",
     "./markdownlint-rules/socket-readme-required-sections.mts",
     "./markdownlint-rules/socket-readme-social-badges.mts",
+    "./markdownlint-rules/socket-task-list-syntax.mts",
   ],
 }

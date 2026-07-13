@@ -28,7 +28,6 @@ import noEslintBiomeConfigRef from './fleet/no-eslint-biome-config-ref/index.mts
 import noFetchPreferHttpRequest from './fleet/no-fetch-prefer-http-request/index.mts'
 import noFileScopeOxlintDisable from './fleet/no-file-scope-oxlint-disable/index.mts'
 import noFileoverviewPreferFile from './fleet/no-fileoverview-prefer-file/index.mts'
-import noGlobInOrderedRunS from './fleet/no-glob-in-ordered-run-s/index.mts'
 import noInlineDeferAsync from './fleet/no-inline-defer-async/index.mts'
 import noInlineLogger from './fleet/no-inline-logger/index.mts'
 import noLibBarrelImport from './fleet/no-lib-barrel-import/index.mts'
@@ -134,7 +133,6 @@ const plugin = {
     'no-fetch-prefer-http-request': noFetchPreferHttpRequest,
     'no-file-scope-oxlint-disable': noFileScopeOxlintDisable,
     'no-fileoverview-prefer-file': noFileoverviewPreferFile,
-    'no-glob-in-ordered-run-s': noGlobInOrderedRunS,
     'no-inline-defer-async': noInlineDeferAsync,
     'no-inline-logger': noInlineLogger,
     'no-lib-barrel-import': noLibBarrelImport,
