@@ -8,7 +8,6 @@
 
 import { readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
@@ -16,11 +15,11 @@ import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { getGlobalCacheDirs } from '../../packages/cli/scripts/constants/paths.mts'
+import { REPO_ROOT } from '../fleet/paths.mts'
 
 const logger = getDefaultLogger()
 
-const __dirname = fileURLToPath(new URL('.', import.meta.url))
-const ROOT_DIR = path.join(__dirname, '..', '..')
+const ROOT_DIR = REPO_ROOT
 
 const { values } = parseArgs({
   options: {
