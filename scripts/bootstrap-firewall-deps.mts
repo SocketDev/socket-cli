@@ -116,7 +116,7 @@ const checkFirewall = async (
   } catch (e) {
     clearTimeout(timer)
     err(
-      // oxlint-disable-next-line socket/prefer-error-message -- bootstraps lib-stable itself; can't depend on it yet.
+      // oxlint-disable-next-line socket/prefer-error-message, socket/prefer-error-message-helper -- bootstraps lib-stable itself; can't depend on it yet.
       `firewall-api: ${e instanceof Error ? e.message : String(e)} — proceeding anyway (non-fatal)`,
     )
     return true
@@ -304,7 +304,7 @@ const main = async (): Promise<number> => {
       await bootstrapPackage(pkg)
     } catch (e) {
       err(
-        // oxlint-disable-next-line socket/prefer-error-message -- bootstraps lib-stable itself; can't depend on it yet.
+        // oxlint-disable-next-line socket/prefer-error-message, socket/prefer-error-message-helper -- bootstraps lib-stable itself; can't depend on it yet.
         `Failed to bootstrap ${pkg}: ${e instanceof Error ? e.message : String(e)}`,
       )
       return 1
