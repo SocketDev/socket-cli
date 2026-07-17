@@ -331,7 +331,7 @@ overrides:
   'graceful-fs': 'catalog:'
   'has-property-descriptors': 'catalog:'
   'has-proto': 'catalog:'
-  'hono': '>=4.12.27'
+  'hono': '>=4.12.28'
   'https-proxy-agent': 'catalog:'
   'indent-string': 'catalog:'
   'ip-address': '>=10.2.0'

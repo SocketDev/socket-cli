@@ -23,6 +23,7 @@
     "socket/no-fetch-prefer-http-request": "error",
     "socket/no-file-scope-oxlint-disable": "error",
     "socket/no-fileoverview-prefer-file": "error",
+    "socket/no-glob-in-ordered-run-s": "error",
     "socket/no-inline-defer-async": "error",
     "socket/no-inline-logger": "error",
     "socket/no-logger-newline-literal": "error",
