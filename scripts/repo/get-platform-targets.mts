@@ -10,7 +10,7 @@
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { PLATFORM_TARGETS } from '../packages/build-infra/lib/platform-targets.mts'
+import { PLATFORM_TARGETS } from '../../packages/build-infra/lib/platform-targets.mts'
 
 const logger = getDefaultLogger()
 

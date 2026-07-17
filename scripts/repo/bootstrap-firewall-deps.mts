@@ -40,7 +40,8 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const REPO_ROOT = path.resolve(__dirname, '..')
+// oxlint-disable-next-line socket/prefer-find-up-package-json, socket/prefer-find-repo-root -- this zero-dependency bootstrap cannot import the fleet/lib helpers it installs.
+const REPO_ROOT = path.resolve(__dirname, '..', '..')
 
 // Packages to bootstrap. Each entry must:
 //   1. Be zero-dependency (or only depend on already-bootstrapped
