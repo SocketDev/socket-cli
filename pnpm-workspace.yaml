@@ -370,9 +370,5 @@ trustPolicy: no-downgrade
 trustPolicyExclude:
   # Transitive dep of @vitest/coverage-v8@4.1.6. Same maintainer
   # (ariperkkio) + same repo + provenance attestation as earlier
-  # versions; the downgrade flag reflects a trusted-publisher ->
-  # provenance evidence-class change, not a takeover.
-  # published: 2026-05-25 | removable: 2026-06-01
-  - 'ast-v8-to-istanbul@1.0.2'
   - undici@6.21.3
   - 'compromise@14.15.0'
