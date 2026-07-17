@@ -1,7 +1,7 @@
 {
   "name": "@socketsecurity/type-coverage-runner",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "devDependencies": {
     "type-coverage": "catalog:",
     "typescript": "6.0.3"

@@ -1,4 +1,4 @@
-/**
+/*
  * @file Validates that there are no CDN references in the codebase. This is a
  *   preventative check to ensure no hardcoded CDN URLs are introduced. The
  *   project deliberately avoids CDN dependencies for security and reliability.

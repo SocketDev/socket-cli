@@ -15,9 +15,9 @@ import fg from 'fast-glob'
 
 import colors from 'yoctocolors-cjs'
 
-import { CHECKPOINTS } from '../../packages/build-infra/lib/constants.mts'
-import { parsePlatformTarget } from '../../packages/build-infra/lib/platform-targets.mts'
-import { runPipelineCli } from '../../packages/build-infra/lib/build-pipeline.mts'
+import { CHECKPOINTS } from '../../../packages/build-infra/lib/constants.mts'
+import { parsePlatformTarget } from '../../../packages/build-infra/lib/platform-targets.mts'
+import { runPipelineCli } from '../../../packages/build-infra/lib/build-pipeline.mts'
 import {
   buildCurrentPlatformSea,
   buildPackage,

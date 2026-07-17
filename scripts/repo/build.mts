@@ -1,4 +1,4 @@
-/**
+/*
  * Comprehensive build script with intelligent caching.
  *
  * Builds packages in the correct order:
@@ -34,7 +34,7 @@ import {
 } from './build-steps/build-orchestration.mts'
 import { parseArgs, showHelp } from './build-steps/cli.mts'
 import { logger } from './build-steps/context.mts'
-import { PLATFORM_TARGETS } from '../packages/build-infra/lib/platform-targets.mts'
+import { PLATFORM_TARGETS } from '../../packages/build-infra/lib/platform-targets.mts'
 
 export { parseArgs } from './build-steps/cli.mts'
 export { showHelp } from './build-steps/cli.mts'

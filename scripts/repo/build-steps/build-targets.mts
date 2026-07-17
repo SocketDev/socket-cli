@@ -13,7 +13,7 @@ import colors from 'yoctocolors-cjs'
 import {
   formatPlatformTarget,
   parsePlatformTarget,
-} from '../../packages/build-infra/lib/platform-targets.mts'
+} from '../../../packages/build-infra/lib/platform-targets.mts'
 import {
   computeBuildSignature,
   needsBuild,

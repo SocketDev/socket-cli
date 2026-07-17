@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { PLATFORM_MAP_TOOLS } from '../packages/cli/scripts/constants/external-tools-platforms.mts'
+import { PLATFORM_MAP_TOOLS } from '../../packages/cli/scripts/constants/external-tools-platforms.mts'
 
 export interface ExternalToolConfig {
   checksums?: Record<string, string> | undefined

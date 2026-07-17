@@ -7,7 +7,7 @@ import process from 'node:process'
 
 import colors from 'yoctocolors-cjs'
 
-import { PLATFORM_TARGETS } from '../../packages/build-infra/lib/platform-targets.mts'
+import { PLATFORM_TARGETS } from '../../../packages/build-infra/lib/platform-targets.mts'
 import { TARGET_PACKAGES } from './config.mts'
 import type { ParsedArgs } from './config.mts'
 import { logger } from './context.mts'

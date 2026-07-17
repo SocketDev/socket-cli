@@ -1,4 +1,4 @@
-/**
+/*
  * @file Bootstrap zero-dep Socket packages into node_modules/ before `pnpm
  *   install` runs, with Socket Firewall verification on each pinned tarball
  *   before extraction. Why: setup.mts (and downstream tooling) imports

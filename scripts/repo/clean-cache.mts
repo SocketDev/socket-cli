@@ -15,12 +15,12 @@ import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { getGlobalCacheDirs } from '../packages/cli/scripts/constants/paths.mts'
+import { getGlobalCacheDirs } from '../../packages/cli/scripts/constants/paths.mts'
 
 const logger = getDefaultLogger()
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
-const ROOT_DIR = path.join(__dirname, '..')
+const ROOT_DIR = path.join(__dirname, '..', '..')
 
 const { values } = parseArgs({
   options: {
