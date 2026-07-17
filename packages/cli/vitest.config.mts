@@ -106,6 +106,11 @@ export default defineConfig({
     // enough that V8's internal timezone cache picks it up.
     env: {
       ...inlinedEnv,
+      // Text-report snapshots intentionally cover ANSI formatting. Force color
+      // in workers so they are stable when Vitest runs without a TTY (as in CI
+      // and programmatic quality scans).
+      FORCE_COLOR: '1',
+      NO_COLOR: '',
       TZ: 'UTC',
     },
     include: ['test/**/*.test.{mts,ts}'],
