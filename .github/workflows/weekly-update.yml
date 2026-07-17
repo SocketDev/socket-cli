@@ -141,7 +141,7 @@ jobs:
           pnpm build 2>&1 | tee build.log
           BUILD_EXIT=${PIPESTATUS[0]}
 
-          pnpm test 2>&1 | tee test.log
+          pnpm test --all 2>&1 | tee test.log
           TEST_EXIT=${PIPESTATUS[0]}
           set -e
 
@@ -181,13 +181,13 @@ jobs:
           The dependency updates above caused build or test failures.
           Diagnose the failures from the logs and fix the code so it builds and tests pass.
           Create one atomic commit per fix with a conventional commit message.
-          Run pnpm build && pnpm test to verify your fixes.
+          Run pnpm build && pnpm test --all to verify your fixes.
           Leave all changes local — the workflow handles pushing and PR creation.
           </instructions>
 
           <success_criteria>
           pnpm build succeeds.
-          pnpm test succeeds.
+          pnpm test --all succeeds.
           Each fix has its own commit.
           No uncommitted changes remain in the working tree.
           </success_criteria>

@@ -83,5 +83,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         with:
           setup-script: pnpm run build
-          main-script: pnpm test
+          main-script: pnpm test --all
   # </fleet-canonical>
