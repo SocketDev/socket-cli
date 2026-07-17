@@ -2,7 +2,7 @@
 # `setup-and-install` (Layer 2b). When this file bumps, cascade is:
 # 2b → 3 → 4 → external repos. See updating-workflows skill at
 # .claude/skills/updating-workflows/.
-# cascade-data-deps: external-tools.json, .github/actions/fleet/lib
+# cascade-data-deps: .github/actions/fleet/lib
 # (read at runtime via ${GITHUB_ACTION_PATH}/../… — implicit edges with no
 # `uses:` line; action-pins-are-current.mts tracks them for staleness.)
 
@@ -145,7 +145,7 @@ runs:
         # absent or unparseable.
         FALLBACK_VERSION="1.4.0"
         JQ="${GITHUB_ACTION_PATH}/../lib/jq.mjs"
-        EXTERNAL_TOOLS="${GITHUB_ACTION_PATH}/../../../../external-tools.json"
+        EXTERNAL_TOOLS="${GITHUB_ACTION_PATH}/../lib/external-tools.json"
         resolve_version() {
           if [ -f "$EXTERNAL_TOOLS" ]; then
             local purl

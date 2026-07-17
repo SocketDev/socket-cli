@@ -12,7 +12,7 @@
 # cannot call this local composite, since nothing is checked out yet for GitHub
 # to resolve `./.github/actions/*` from.
 #
-# cascade-data-deps: ., .github, .github/actions/fleet/lib, external-tools.json
+# cascade-data-deps: ., .github, .github/actions/fleet/lib
 # (read at runtime via ${GITHUB_ACTION_PATH}/../… — implicit edges with no
 # `uses:` line; action-pins-are-current.mts tracks them for staleness.)
 
@@ -105,18 +105,9 @@ runs:
       shell: bash
       run: | # zizmor: ignore[github-env]
         set -euo pipefail
-        # Single source of truth: external-tools.json at the repo root. Resolve
-        # from GITHUB_WORKSPACE (the full working-tree this action's checkout
-        # step just populated) FIRST — GITHUB_ACTION_PATH points into the
-        # workflow's INITIAL sparse checkout (cone mode fetches only .github/ to
-        # load this local action), where the repo-root external-tools.json is
-        # NOT materialized, so the old `${GITHUB_ACTION_PATH}/../../../../` path
-        # 404s under sparse-checkout even though the file is tracked. Fall back
-        # to the action-relative path for any context without GITHUB_WORKSPACE.
-        TOOLS_FILE="${GITHUB_WORKSPACE:-}/external-tools.json"
-        if [ -z "${GITHUB_WORKSPACE:-}" ] || [ ! -f "$TOOLS_FILE" ]; then
-          TOOLS_FILE="${GITHUB_ACTION_PATH}/../../../../external-tools.json"
-        fi
+        # The checkout action runs while the workspace may still contain only
+        # the initial .github/ sparse checkout. Keep its pins beside the action.
+        TOOLS_FILE="${GITHUB_ACTION_PATH}/../lib/external-tools.json"
         if [ ! -f "$TOOLS_FILE" ]; then
           echo "× the fleet checkout action is broken: external-tools.json not found at ${TOOLS_FILE}." >&2
           echo "  This is a packaging bug in the fleet scaffolding, not a consumer issue. File a bug." >&2

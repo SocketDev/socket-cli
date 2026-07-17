@@ -2,7 +2,7 @@
 # (Layer 2b). When this file bumps, cascade is: 2b → 3 → 4 → external
 # repos. See updating-workflows skill at .claude/skills/updating-workflows/.
 # cascade-data-deps: ., .github, .github/actions/fleet/lib,
-# scripts/fleet/setup, external-tools.json
+# .github/actions/fleet/lib
 # (read at runtime via ${GITHUB_ACTION_PATH}/../… — implicit edges with no
 # `uses:` line; action-pins-are-current.mts tracks them for staleness.)
 
@@ -66,8 +66,9 @@ runs:
         EXTENDED_ENV: ${{ inputs.extended-env }}
       run: | # zizmor: ignore[github-env]
         set -euo pipefail
-        # Single source of truth: external-tools.json at the repo root of this action's checkout.
-        TOOLS_FILE="${GITHUB_ACTION_PATH}/../../../../external-tools.json"
+        # Bundle fleet pins beside the action so sparse bootstrap checkouts have them.
+        # A repo-root external-tools.json is optional and may contain repo-only tools.
+        TOOLS_FILE="${GITHUB_ACTION_PATH}/../lib/external-tools.json"
         if [ ! -f "$TOOLS_FILE" ]; then
           echo "× the fleet setup action is broken: external-tools.json not found at ${TOOLS_FILE}." >&2
           echo "  This is a packaging bug in the fleet scaffolding, not a consumer issue. File a bug." >&2
@@ -233,7 +234,7 @@ runs:
         # platform's integrity (SRI string) there in the same commit.
         # The lib/ scripts below resolve platform → asset → URL →
         # install at the currently-detected runner.
-        TOOLS_FILE="${GITHUB_ACTION_PATH}/../../../../external-tools.json"
+        TOOLS_FILE="${GITHUB_ACTION_PATH}/../lib/external-tools.json"
         JQ="${GITHUB_ACTION_PATH}/../lib/jq.mjs"
         # The tools file nests entries under `tools` (current schema) or at the
         # top level (legacy flat). Probe once; an empty $NS splits away.
