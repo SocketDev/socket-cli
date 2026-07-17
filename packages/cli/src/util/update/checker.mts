@@ -21,7 +21,7 @@ import semver from 'semver'
 
 import { NPM_REGISTRY_URL } from '@socketsecurity/lib-stable/constants/agents'
 import { debug } from '@socketsecurity/lib-stable/debug/output'
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { onExit } from '@socketsecurity/lib-stable/events/exit/handler'
 import { isNonEmptyString } from '@socketsecurity/lib-stable/strings/predicates'

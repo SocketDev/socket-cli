@@ -8,7 +8,7 @@
  */
 
 import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 
 export type Checksums = Record<string, string>
 

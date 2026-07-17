@@ -1,4 +1,4 @@
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { httpRequest } from '@socketsecurity/lib-stable/http-request/request'
 
 import type { HttpResponse } from '@socketsecurity/lib-stable/http-request/response-types'

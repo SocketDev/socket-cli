@@ -23,7 +23,7 @@
  */
 
 import { dlxManifest } from '@socketsecurity/lib-stable/dlx/manifest'
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { isNonEmptyString } from '@socketsecurity/lib-stable/strings/predicates'
 

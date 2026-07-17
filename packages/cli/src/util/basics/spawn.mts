@@ -10,7 +10,7 @@ import path from 'node:path'
 
 import { debugNs } from '@socketsecurity/lib-stable/debug/output'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'

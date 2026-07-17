@@ -23,7 +23,7 @@
  *   }
  */
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 
 /**
  * Validate and parse Socket CLI JSON output.

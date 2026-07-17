@@ -9,7 +9,7 @@
  * Related Files: - util/git/github-provider.mts (implementation)
  */
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockGetOctokit = vi.hoisted(() => vi.fn())

@@ -7,7 +7,7 @@ import { GraphqlResponseError } from '@octokit/graphql'
 import { RequestError } from '@octokit/request-error'
 
 import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug/output'
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { isError } from '@socketsecurity/lib-stable/errors/predicates'
 
 import { formatErrorWithDetail } from '../error/errors.mts'

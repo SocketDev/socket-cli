@@ -48,7 +48,7 @@ import { setupSdk } from '../socket/sdk.mts'
 
 import type { TelemetryEvent } from './types.mts'
 import type { InspectOptions } from '@socketsecurity/lib-stable/debug/types'
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 export type TelemetryConfig =

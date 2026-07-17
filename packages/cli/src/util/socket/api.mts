@@ -23,7 +23,7 @@
  */
 
 import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
-import { messageWithCauses } from '@socketsecurity/lib-stable/errors'
+import { messageWithCauses } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { debugApiResponse } from '../debug.mts'

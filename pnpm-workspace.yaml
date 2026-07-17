@@ -19,6 +19,13 @@ allowBuilds:
 # (which in rc.5 leaves a placeholder launcher that errors at runtime).
 pmOnFail: warn
 
+catalogDriftIgnore:
+  # type-coverage uses TypeScript's JavaScript compiler API. TypeScript 7 is a
+  # native compiler and its npm package does not expose that API, so
+  # type-coverage crashes before scanning any files. Keep the last JavaScript
+  # compiler release until type-coverage supports the native API.
+  - 'typescript'
+
 catalog:
   '@anthropic-ai/claude-code': 2.1.198
   '@babel/core': 7.29.7
@@ -175,7 +182,7 @@ catalog:
   trash: 10.0.0
   type-coverage: 2.29.7
   typedarray: npm:@socketregistry/typedarray@^1.0.8
-  typescript: 7.0.2
+  typescript: 6.0.3
   undici: 6.21.3
   unplugin-purge-polyfills: 0.1.0
   # vite 8.0.14 swaps esbuild → rolldown natively; the override forces its
@@ -195,10 +202,6 @@ linkWorkspacePackages: false
 # Wait 7 days (10080 minutes) before installing newly published packages.
 minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
-  # typescript 7.0.2 — first stable of the native 7.x compiler line, pulled
-  # ahead of the soak by owner directive (out of RC). The main package + its
-  # 20-package per-platform binding family are pinned to the exact version
-  # (a scope glob would blanket-bypass any future @typescript publish).
   - '@socketaddon/*'
   - '@socketbin/*'
   - '@socketregistry/*'
@@ -349,12 +352,6 @@ patchedDependencies:
   # bundle loads on node-smol SEA builds, which ship without http2. Consumer:
   # packages/cli SEA binary.
   '@sigstore/sign@4.1.0': patches/@sigstore__sign@4.1.0.patch
-  # The 6.0.9 rolldown build of dist/errors/stack.js drops the isError import
-  # (source imports it from ./predicates), so every errorStack() call throws
-  # ReferenceError. Restores the require so errorStack works. Consumer:
-  # packages/cli src/util/command/registry-core.mts. Removable once a fixed
-  # @socketsecurity/lib ships (source on main is already correct).
-  '@socketsecurity/lib@6.0.9': patches/@socketsecurity__lib@6.0.9.patch
   # signal-exit is deduped to v4, which exports a named onExit instead of the
   # v3 default export execa calls; restores the call contract. Consumer:
   # packages/cli bundled npm tooling.

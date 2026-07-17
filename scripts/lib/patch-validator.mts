@@ -4,7 +4,7 @@
  */
 import { promises as fs } from 'node:fs'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 interface PatchMetadata {
