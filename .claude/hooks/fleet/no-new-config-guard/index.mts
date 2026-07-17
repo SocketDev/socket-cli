@@ -42,7 +42,7 @@ const ALLOWED_BASENAMES: ReadonlySet<string> = new Set([
 ])
 
 // Config-DATA extensions. Code configs (`.mts`/`.mjs`/`.ts`) are tooling, exempt.
-const CONFIG_DATA_EXT = /\.(json|ya?ml|toml)$/
+const CONFIG_DATA_EXT = /\.(?:json|ya?ml|toml)$/
 
 export function isNewConfigViolation(absPath: string): boolean {
   if (isEphemeralPath(absPath)) {

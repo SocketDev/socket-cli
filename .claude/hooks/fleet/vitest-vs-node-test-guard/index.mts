@@ -27,6 +27,7 @@
 
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { resolveEditedText } from '../_shared/payload.mts'
@@ -171,7 +172,9 @@ export function relPathFromRepoRoot(
   // wrapper suffixes longest-first so a repo whose own root dir happens to be
   // named `repo`/`template` isn't mis-stripped (only the full known chain
   // matches).
-  let repoRoot = path.dirname(configPath)
+  const normalizedFilePath = normalizePath(filePath)
+  const normalizedConfigPath = normalizePath(configPath)
+  let repoRoot = path.posix.dirname(normalizedConfigPath)
   const WRAPPER_SUFFIXES = [
     '/template/base/.config/repo',
     '/template/base/.config',
@@ -186,7 +189,7 @@ export function relPathFromRepoRoot(
       break
     }
   }
-  return path.relative(repoRoot, filePath).split(path.sep).join('/')
+  return path.posix.relative(repoRoot, normalizedFilePath)
 }
 
 export const check = editGuard((filePath, content, payload) => {

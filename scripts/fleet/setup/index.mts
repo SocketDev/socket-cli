@@ -15,10 +15,33 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { discoverRepoSetup } from '../_shared/repo-setup.mts'
 import { REPO_ROOT } from '../paths.mts'
+import { setupBrew } from './setup-brew.mts'
+import { setupGo } from './setup-go.mts'
+import { setupMcp } from './setup-mcp.mts'
+import { setupPython } from './setup-python.mts'
+import { setupRefero } from './setup-refero.mts'
+import { setupRust } from './setup-rust.mts'
+
+import type { EcosystemStepResult } from './ecosystems.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-function run(script: string, extraArgs: string[] = []): boolean {
+// The per-ecosystem provisioning steps, alphabetical. Each self-detects and
+// no-ops (skips) when its ecosystem or platform does not apply, so the whole
+// list runs unconditionally. Also runnable standalone via pnpm run setup:<eco>.
+const ECOSYSTEM_STEPS: ReadonlyArray<
+  readonly [string, () => Promise<EcosystemStepResult>]
+> = [
+  ['setup:brew', setupBrew],
+  ['setup:go', setupGo],
+  ['setup:mcp', setupMcp],
+  ['setup:python', setupPython],
+  ['setup:refero', setupRefero],
+  ['setup:rust', setupRust],
+]
+
+export function run(script: string, extraArgs: string[] = []): boolean {
   const r = spawnSync(
     'node',
     ['--experimental-strip-types', script, ...extraArgs],
@@ -27,11 +50,35 @@ function run(script: string, extraArgs: string[] = []): boolean {
   return r.status === 0
 }
 
-function main(): void {
+// Parse the setup-all CLI flags: --rotate (rotate the API token) and
+// --skip-tools (skip package-manager/security-tool/ecosystem installs).
+export function parseSetupArgs(argv: string[]): {
+  rotate: boolean
+  skipTools: boolean
+} {
+  return {
+    rotate: argv.includes('--rotate'),
+    skipTools: argv.includes('--skip-tools'),
+  }
+}
+
+// True only when every named step succeeded.
+export function allStepsOk(
+  results: ReadonlyArray<readonly [string, boolean]>,
+): boolean {
+  return results.every(([, ok]) => ok)
+}
+
+// Render the "=== Summary ===" checklist lines for the setup results.
+export function formatSummaryLines(
+  results: ReadonlyArray<readonly [string, boolean]>,
+): string[] {
+  return results.map(([name, ok]) => `  ${ok ? '✓' : '✗'} ${name}`)
+}
+
+async function main(): Promise<void> {
   const logger = getDefaultLogger()
-  const argv = process.argv.slice(2)
-  const rotate = argv.includes('--rotate')
-  const skipTools = argv.includes('--skip-tools')
+  const { rotate, skipTools } = parseSetupArgs(process.argv.slice(2))
 
   const results: Array<[string, boolean]> = []
 
@@ -76,6 +123,19 @@ function main(): void {
     logger.log('')
   }
 
+  // Per-ecosystem provisioning (local == CI): brew / go / python / rust, each
+  // self-detecting and installing only through the locked/soaked artifact.
+  // Gated by --skip-tools like the other install steps (each still no-ops when
+  // its ecosystem/platform is absent, so a repo without them sees clean skips).
+  if (!skipTools) {
+    for (const [name, step] of ECOSYSTEM_STEPS) {
+      logger.log(`── ${name} ─────────────────────────────────`)
+      const result = await step()
+      results.push([name, result.ok])
+      logger.log('')
+    }
+  }
+
   // Repo-owned setup steps (scripts/repo/setup/*.mts) — the fleet/repo seam.
   // Absent in most members; the wheelhouse ships the native-host + extension
   // steps here. Ordered by filename (see discoverRepoSetup).
@@ -87,11 +147,11 @@ function main(): void {
   }
 
   logger.log('=== Summary ===')
-  for (const [name, ok] of results) {
-    logger.log(`  ${ok ? '✓' : '✗'} ${name}`)
+  for (const line of formatSummaryLines(results)) {
+    logger.log(line)
   }
 
-  if (!results.every(([, ok]) => ok)) {
+  if (!allStepsOk(results)) {
     logger.error('')
     logger.warn('Some steps failed — see above.')
     process.exitCode = 1
@@ -101,4 +161,9 @@ function main(): void {
   }
 }
 
-main()
+if (isMainModule(import.meta.url)) {
+  main().catch((e: unknown) => {
+    getDefaultLogger().error(e)
+    process.exitCode = 1
+  })
+}

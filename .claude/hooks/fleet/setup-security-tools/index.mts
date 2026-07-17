@@ -50,6 +50,7 @@ import {
   getShimsDir,
   missingCoreShims,
 } from './lib/shims.mts'
+import { isHookEntrypoint } from '../_shared/entrypoint.mts'
 
 interface Finding {
   readonly kind:
@@ -366,7 +367,7 @@ async function main(): Promise<void> {
   }
 }
 
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+if (isHookEntrypoint(import.meta.url)) {
   main().catch(e => {
     process.stderr.write(
       `[setup-security-tools] health-check error (allowing): ${e}\n`,

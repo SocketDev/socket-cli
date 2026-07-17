@@ -17,6 +17,7 @@
 // user turn. Fails open on regex / parse errors.
 
 import { safeReadFileSync } from '@socketsecurity/lib-stable/fs/read-file'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { block, defineHook, runHook } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
@@ -141,7 +142,7 @@ export function findPipInstalls(text: string): Finding[] {
 }
 
 export function isFileInScope(filePath: string): boolean {
-  return FILE_SCOPE_RE.test(filePath)
+  return FILE_SCOPE_RE.test(normalizePath(filePath))
 }
 
 export function buildBlockMessage(

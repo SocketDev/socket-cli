@@ -23,6 +23,7 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import process from 'node:process'
 
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
+import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 
 // AI-assistant config dirs a worm targets. Matched as a leading or
 // embedded path segment.
@@ -64,7 +65,7 @@ export const hook = defineHook({
     const repoDir = getProjectDir()
     const r = spawnSync('git', ['status', '--porcelain'], {
       cwd: repoDir,
-      timeout: 5000,
+      timeout: spawnTimeoutMs(5000),
     })
     if (r.error || r.status !== 0 || typeof r.stdout !== 'string') {
       return undefined

@@ -1,6 +1,6 @@
 ---
 name: rendering-chromium-to-png
-description: Render a web page, local HTML file, or a real unpacked Chrome MV3 extension popup to a PNG so you can SEE it — then Read the image to put the actual rendered pixels in context. Catches layout / color / empty-state / render-throw bugs that code-reading misses (a view can look correct in source and render broken). Use before redesigning UI, when "verify rendered output before commit" applies, or to inspect an extension popup with its real chrome.* powers. Page mode renders any url/file; extension mode loads an unpacked MV3 extension (background SW + content scripts + popup) and screenshots a page inside it.
+description: Render pages or extension popups to PNG and inspect pixels to catch real UI regressions.
 user-invocable: true
 allowed-tools: Read, Bash(node:*), Bash(pnpm exec playwright:*), Bash(ls:*)
 model: claude-haiku-4-5

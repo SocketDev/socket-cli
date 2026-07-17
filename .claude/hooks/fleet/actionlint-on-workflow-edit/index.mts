@@ -21,26 +21,30 @@
 // have both via brew or setup-security-tools, CI runners have them
 // preinstalled, but downstreams may not.
 
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { defineHook, editGuard, notify, runHook } from '../_shared/guard.mts'
+import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 
 export function actionlintAvailable(): boolean {
   const r = spawnSync('command', ['-v', 'actionlint'], {
-    timeout: 2000,
+    timeout: spawnTimeoutMs(2000),
   })
   return r.status === 0 && String(r.stdout ?? '').trim().length > 0
 }
 
 export function zizmorAvailable(): boolean {
   const r = spawnSync('command', ['-v', 'zizmor'], {
-    timeout: 2000,
+    timeout: spawnTimeoutMs(2000),
   })
   return r.status === 0 && String(r.stdout ?? '').trim().length > 0
 }
 
 export function isWorkflowYaml(filePath: string): boolean {
-  return /[\\/]\.github[\\/]workflows[\\/][^\\/]+\.ya?ml$/.test(filePath)
+  return /[\\/]\.github[\\/]workflows[\\/][^\\/]+\.ya?ml$/.test(
+    normalizePath(filePath),
+  )
 }
 
 // PostToolUse — reporting only, never blocks (a nudge). Runs both scanners
@@ -53,7 +57,9 @@ export const check = editGuard(filePath => {
 
   // actionlint — YAML / shell / SHA-pin issues.
   if (actionlintAvailable()) {
-    const r = spawnSync('actionlint', [filePath], { timeout: 10_000 })
+    const r = spawnSync('actionlint', [filePath], {
+      timeout: spawnTimeoutMs(10_000),
+    })
     if (r.status !== 0) {
       reports.push(
         [
@@ -92,7 +98,7 @@ export const check = editGuard(filePath => {
       'zizmor',
       ['--no-progress', '--format', 'plain', filePath],
       {
-        timeout: 15_000,
+        timeout: spawnTimeoutMs(15_000),
       },
     )
     // zizmor exits non-zero when findings exist. Surface the output

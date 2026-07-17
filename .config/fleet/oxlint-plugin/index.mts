@@ -16,6 +16,7 @@ import exportTopLevelFunctions from './fleet/export-top-level-functions/index.mt
 import guardContract from './fleet/guard-contract/index.mts'
 import inclusiveLanguage from './fleet/inclusive-language/index.mts'
 import maxFileLines from './fleet/max-file-lines/index.mts'
+import noAgentBrandAssumption from './fleet/no-agent-brand-assumption/index.mts'
 import noBareCryptoNamedUsage from './fleet/no-bare-crypto-named-usage/index.mts'
 import noBareSpawnChildprocAccess from './fleet/no-bare-spawn-childproc-access/index.mts'
 import noBooleanTrapParam from './fleet/no-boolean-trap-param/index.mts'
@@ -28,7 +29,6 @@ import noEslintBiomeConfigRef from './fleet/no-eslint-biome-config-ref/index.mts
 import noFetchPreferHttpRequest from './fleet/no-fetch-prefer-http-request/index.mts'
 import noFileScopeOxlintDisable from './fleet/no-file-scope-oxlint-disable/index.mts'
 import noFileoverviewPreferFile from './fleet/no-fileoverview-prefer-file/index.mts'
-import noGlobInOrderedRunS from './fleet/no-glob-in-ordered-run-s/index.mts'
 import noInlineDeferAsync from './fleet/no-inline-defer-async/index.mts'
 import noInlineLogger from './fleet/no-inline-logger/index.mts'
 import noLibBarrelImport from './fleet/no-lib-barrel-import/index.mts'
@@ -74,6 +74,7 @@ import preferCachedForLoop from './fleet/prefer-cached-for-loop/index.mts'
 import preferEllipsisChar from './fleet/prefer-ellipsis-char/index.mts'
 import preferEnvAsBoolean from './fleet/prefer-env-as-boolean/index.mts'
 import preferErrorMessage from './fleet/prefer-error-message/index.mts'
+import preferErrorMessageHelper from './fleet/prefer-error-message-helper/index.mts'
 import preferExistsSync from './fleet/prefer-exists-sync/index.mts'
 import preferFindRepoRoot from './fleet/prefer-find-repo-root/index.mts'
 import preferFindUpPackageJson from './fleet/prefer-find-up-package-json/index.mts'
@@ -122,6 +123,7 @@ const plugin = {
     'guard-contract': guardContract,
     'inclusive-language': inclusiveLanguage,
     'max-file-lines': maxFileLines,
+    'no-agent-brand-assumption': noAgentBrandAssumption,
     'no-bare-crypto-named-usage': noBareCryptoNamedUsage,
     'no-bare-spawn-childproc-access': noBareSpawnChildprocAccess,
     'no-boolean-trap-param': noBooleanTrapParam,
@@ -134,7 +136,6 @@ const plugin = {
     'no-fetch-prefer-http-request': noFetchPreferHttpRequest,
     'no-file-scope-oxlint-disable': noFileScopeOxlintDisable,
     'no-fileoverview-prefer-file': noFileoverviewPreferFile,
-    'no-glob-in-ordered-run-s': noGlobInOrderedRunS,
     'no-inline-defer-async': noInlineDeferAsync,
     'no-inline-logger': noInlineLogger,
     'no-lib-barrel-import': noLibBarrelImport,
@@ -181,6 +182,7 @@ const plugin = {
     'prefer-ellipsis-char': preferEllipsisChar,
     'prefer-env-as-boolean': preferEnvAsBoolean,
     'prefer-error-message': preferErrorMessage,
+    'prefer-error-message-helper': preferErrorMessageHelper,
     'prefer-exists-sync': preferExistsSync,
     'prefer-find-repo-root': preferFindRepoRoot,
     'prefer-find-up-package-json': preferFindUpPackageJson,

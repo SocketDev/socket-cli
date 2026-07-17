@@ -50,11 +50,14 @@
 // per session, and removes the stale markers ONLY immediately before a
 // guarded install so it never leaves node_modules in a worse state.
 
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { existsSync, lstatSync, readdirSync, rmSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
+import { isHookEntrypoint } from '../_shared/entrypoint.mts'
+import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 
 const PROJECT_DIR = process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
 const HOOKS_DIR = path.join(PROJECT_DIR, '.claude', 'hooks')
@@ -235,7 +238,7 @@ export function hasDanglingLibSymlink(): boolean {
 /* c8 ignore start - shells out to pgrep; untestable without a live process table; called only from main() which is fully c8-ignored */
 function pnpmInstallRunning(): boolean {
   const r = spawnSync('pgrep', ['-f', 'pnpm.*install|sfw.*install'], {
-    timeout: 1500,
+    timeout: spawnTimeoutMs(1500),
     encoding: 'utf8',
   })
   // pgrep exit 1 = no match (safe to install); 0 = match; anything else
@@ -262,7 +265,9 @@ function repairGutted(): string {
   // Drop the once-per-session sentinel up front: if the install hangs or fails,
   // we do NOT retry within this session (avoids a repair loop).
   try {
-    spawnSync('touch', [REPAIR_SENTINEL], { timeout: 1000 })
+    spawnSync('touch', [REPAIR_SENTINEL], {
+      timeout: spawnTimeoutMs(1000),
+    })
   } catch {
     // Sentinel is best-effort; proceed.
   }
@@ -279,6 +284,9 @@ function repairGutted(): string {
     timeout: 120_000,
     encoding: 'utf8',
     env: { ...process.env, CI: 'true' },
+    // Windows shell-shim: pnpm is pnpm.cmd there; an unshelled spawnSync
+    // cannot execute it (the variant of the bump-order gate's fail-open).
+    shell: WIN32,
   })
   const relinked = existsSync(path.join(NODE_MODULES, '@socketsecurity'))
   if (r.status === 0 && relinked) {
@@ -489,7 +497,7 @@ export function main(): void {
 /* c8 ignore stop */
 
 /* c8 ignore start - entrypoint guard only fires when run as a script; subprocess tests cover this path */
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+if (isHookEntrypoint(import.meta.url)) {
   try {
     main()
   } catch {

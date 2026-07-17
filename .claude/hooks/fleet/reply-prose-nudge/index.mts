@@ -214,9 +214,26 @@ const SELF_NARRATION: ReminderGroup = {
   ],
 }
 
+export const NAMED_TASK_REFS: ReminderGroup = {
+  closingHint:
+    'CLAUDE.md "Identifying users" / vocabulary: a task or issue number is a session-local pointer — pair it with its subject on first mention ("#12 (remove npm-run-all2)"). Bare #N reads as jargon to anyone without the task list open.',
+  name: 'named-task-refs-nudge',
+  patterns: [
+    {
+      label: 'bare task/issue ref (#N with no name)',
+      // A `#N` token that is NOT part of an owner/repo#N GitHub ref (word or
+      // slash immediately before), NOT a markdown heading, and NOT followed
+      // by a parenthesized name binding it.
+      regex: /(?<![\w/])#\d+\b(?!\s*\()/,
+      why: 'Name the task on first mention: "#12 (remove npm-run-all2)". The number is the pointer; the name is the content.',
+    },
+  ],
+}
+
 const GROUPS: readonly ReminderGroup[] = [
   COMMENT_TONE,
   IDENTIFYING_USERS,
+  NAMED_TASK_REFS,
   PERFECTIONIST,
   SELF_NARRATION,
 ]

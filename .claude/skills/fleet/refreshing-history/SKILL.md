@@ -1,6 +1,6 @@
 ---
 name: refreshing-history
-description: Squashes the repo's default branch (main, falling back to master) to a single signed "Initial commit", refreshes deps + lockfile, runs format / fix / check / type passes, amends results, and force-pushes. Wraps the lower-level `squashing-history` skill with a dep-refresh + integrity check + verified-signature workflow. Use when cutting a fleet-wide history reset or preparing a clean baseline before a major release.
+description: Refresh a default branch to one signed initial commit, update deps, verify, and force-push with backup.
 user-invocable: true
 allowed-tools: AskUserQuestion, Bash(git:*), Bash(pnpm:*), Bash(diff:*), Bash(ls:*)
 model: claude-haiku-4-5

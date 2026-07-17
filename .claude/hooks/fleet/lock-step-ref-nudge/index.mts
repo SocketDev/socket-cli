@@ -47,6 +47,8 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+
 import { defineHook, editGuard, notify, runHook } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
@@ -279,11 +281,15 @@ export function loadConfig(repoRoot: string): LockStepConfig | undefined {
 }
 
 export const check = editGuard((filePath, content, payload) => {
-  if (!SOURCE_EXT_RE.test(filePath)) {
+  const normalizedFilePath = normalizePath(filePath)
+  if (!SOURCE_EXT_RE.test(normalizedFilePath)) {
     return undefined
   }
   // Skip tests — illustrative example refs are common.
-  if (/(^|\/)test\//.test(filePath) || /\.test\.[a-z]+$/.test(filePath)) {
+  if (
+    /(^|\/)test\//.test(normalizedFilePath) ||
+    /\.test\.[a-z]+$/.test(normalizedFilePath)
+  ) {
     return undefined
   }
   if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)) {

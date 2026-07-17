@@ -1,9 +1,10 @@
 # auth-rotation-nudge
 
-A **Claude Code hook** that runs at the _end_ of every Claude turn,
-notices when you've been logged into a CLI for "too long," and
-automatically logs you out so stale long-lived tokens don't sit in
-your dotfiles or keychain for days.
+A **Claude Code hook** that runs at the _end_ of every Claude turn and,
+once your session has sat idle long enough, automatically logs you out
+of authenticated CLIs so stale long-lived tokens don't sit in your
+dotfiles or keychain for days. Active work keeps resetting the idle
+clock, so it never logs you out mid-session.
 
 > If you haven't worked with Claude Code hooks before: hooks are tiny
 > scripts that run at specific lifecycle points. A `Stop` hook like
@@ -23,8 +24,10 @@ mean to publish?").
 
 ## Defaults
 
-- **Interval**: 1 hour. Set `SOCKET_AUTH_ROTATION_INTERVAL_HOURS=4` to
-  loosen, `=0` to run on every Stop event.
+- **Idle timeout**: 1 hour. Rotation fires only after the session sits
+  idle (no Stop events) this long; active work keeps resetting the
+  clock. Set `SOCKET_AUTH_ROTATION_INTERVAL_HOURS=4` to loosen, `=0` to
+  rotate on every Stop event.
 - **Mode**: auto-logout (the hook _acts_, not just warns).
 - **Default skip-list**: `gh` is skipped because Claude Code itself
   uses `gh` for `gh pr edit` etc. — auto-revoking it would break the

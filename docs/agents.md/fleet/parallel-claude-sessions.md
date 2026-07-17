@@ -46,6 +46,16 @@ Both halves matter: surgical `git add` keeps your index clean, surgical `git com
 
 The wheelhouse cascade is the documented exception: it commits the whole index in a fresh worktree off `origin/main`, opted in via the `FLEET_SYNC=1` sentinel.
 
+## Squash-history repos coordinate on paths, not commits
+
+A repo opted into `squash-history` discards intermediate commit boundaries at
+the final collapse. Never wait for another session to commit when its dirty
+paths are disjoint from yours. Continue immediately, edit only your paths, and
+commit them with an explicit pathspec. Pause only when the same path changes
+between your reads or when starting the final repo-wide squash/push. The
+`parallel-agent-on-stop-nudge` reads the fleet roster and reinforces this rule
+in squash-opted repos.
+
 ## Whose work is this? Own-work-first check
 
 `git status` or `git log` shows unfamiliar changes? Before treating them as another session's, run the own-work check:
@@ -182,3 +192,21 @@ primary-checkout reset for exactly this reason.
 Enforced by `no-revert-guard` (blocks the rewind), `no-force-push-guard` (gates
 the forward reconcile), and `whose-work` (classifies author). A dedicated
 origin-ahead Stop nudge is tracked to surface this proactively.
+
+## Codex companions are quick checks, not long sessions
+
+A Codex companion session (identified by a FOREIGN
+`CODEX_COMPANION_SESSION_ID` — one that does not appear in the session's own
+transcript path; the codex plugin exports every session's OWN id, which marks
+nothing) exists for a quick second opinion — a diagnosis pass, a small
+verification. It is NOT a peer long-running session: a runaway multi-hour
+companion once looped `land-work.mts`/`cover.mts` for 8+ hours, monopolizing the
+shared checkout's test gate and index while mis-attributing its dirty files to
+the primary session.
+
+`codex-session-budget-guard` (PreToolUse) enforces this: the companion's first
+tool call stamps a start marker under
+`node_modules/.cache/socket-codex-session/`, and once the 1-minute wall-clock
+budget is spent every further tool call blocks with a hand-off message. Sustained
+work belongs in a full Claude session. The user lifts it for one session by
+typing `Allow codex-long-session bypass`.

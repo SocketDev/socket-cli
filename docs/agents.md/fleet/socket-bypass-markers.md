@@ -4,7 +4,7 @@ Some fleet audits + custom lints recognize an explicit opt-out comment that live
 
 The marker shape is:
 
-```text
+```bash
 # socket-bypass: <name> -- <reason>
 ```
 

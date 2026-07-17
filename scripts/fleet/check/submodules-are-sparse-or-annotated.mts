@@ -1,29 +1,34 @@
 #!/usr/bin/env node
 /**
- * @file `check --all` gate: every `.gitmodules` `[submodule]` block must either
- *   declare a `sparse-checkout = …` field (so partial clones pull only the
- *   subtrees this repo consumes) OR carry a `# full-checkout: <reason>`
- *   annotation justifying a whole-tree checkout. A vendored upstream is almost
- *   never consumed in full — a parser reference, a test corpus, a build's
- *   single subdir — so an un-sparsed, un-annotated submodule is presumed
- *   un-optimized (it drags the whole upstream tree into every clone) and fails
- *   here. Determination of the safe pattern set is the `optimizing-submodules`
- *   skill's job; this gate keeps the result from silently regressing. The `#
- *   full-checkout:` escape hatch is for the rare genuine case (a crate built
- *   from its whole source tree, an upstream with no separable subtree). It must
- *   name a reason, so the choice is reviewable rather than an omission. Exit: 0
- *   — every block is sparse or annotated; 1 — one or more is neither. Usage:
+ * @file `check --all` gate: every `.gitmodules` `[submodule]` block is
+ *   optimized — it either declares a `sparse-checkout = …` field (partial
+ *   clones pull only the subtrees this repo consumes), is a shallow
+ *   single-branch reference (`shallow = true` + `branch = <ref>`, owned by
+ *   upstream-submodules-are-shallow-single-branch — see
+ *   docs/agents.md/fleet/upstream-references.md), OR carries a `#
+ *   full-checkout: <reason>` annotation justifying a whole-tree, full-history
+ *   checkout. A vendored upstream is almost never consumed in full — a parser
+ *   reference, a test corpus, a build's single subdir — so a block that is none
+ *   of the three is presumed un-optimized (it drags the whole upstream tree
+ *   into every clone) and fails here. Determination of the safe sparse pattern
+ *   set is the `optimizing-submodules` skill's job; this gate keeps the result
+ *   from silently regressing. The `# full-checkout:` escape hatch is for the
+ *   rare genuine case (a crate built from its whole source tree, an upstream
+ *   with no separable subtree). It must name a reason, so the choice is
+ *   reviewable rather than an omission. Exit: 0 — every block is optimized; 1 —
+ *   one or more is neither sparse, shallow single-branch, nor annotated. Usage:
  *   node scripts/fleet/check/submodules-are-sparse-or-annotated.mts [--quiet]
  */
 
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from '../paths.mts'
+import { parseGitmodules } from '../_shared/gitmodules.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -44,48 +49,12 @@ export interface SubmoduleEntry {
 // Parse `.gitmodules` into one entry per submodule, recording whether it has a
 // sparse-checkout field and any `# full-checkout: <reason>` header annotation.
 export function parseEntries(text: string): SubmoduleEntry[] {
-  const lines = text.split(/\r?\n/)
-  const entries: SubmoduleEntry[] = []
-  for (let i = 0, { length } = lines; i < length; i += 1) {
-    const open = /^\s*\[submodule\s+"([^"]+)"\s*\]\s*$/.exec(lines[i]!)
-    if (!open) {
-      continue
-    }
-    // Scan the contiguous comment lines directly above for a full-checkout
-    // annotation (it may sit on the `# <name>-<version>` header or its own
-    // comment line).
-    let fullCheckoutReason: string | undefined
-    for (let j = i - 1; j >= 0; j -= 1) {
-      const prev = lines[j]!
-      if (!prev.trimStart().startsWith('#')) {
-        break
-      }
-      const m = /#.*\bfull-checkout:\s*(.+?)\s*$/.exec(prev)
-      if (m) {
-        fullCheckoutReason = m[1]
-        break
-      }
-    }
-    // Scan the block body for a non-empty sparse-checkout field.
-    let hasSparse = false
-    for (let j = i + 1; j < length; j += 1) {
-      const next = lines[j]!
-      if (/^\s*\[/.test(next)) {
-        break
-      }
-      const m = /^\s*sparse-checkout\s*=\s*(\S.*)$/.exec(next)
-      if (m) {
-        hasSparse = true
-      }
-    }
-    entries.push({
-      name: open[1]!,
-      line: i + 1,
-      hasSparse,
-      fullCheckoutReason,
-    })
-  }
-  return entries
+  return parseGitmodules(text).map(e => ({
+    name: e.name,
+    line: e.line,
+    hasSparse: e.hasSparse,
+    fullCheckoutReason: e.fullCheckoutReason,
+  }))
 }
 
 function main(): void {
@@ -99,14 +68,19 @@ function main(): void {
     process.exitCode = 0
     return
   }
-  const entries = parseEntries(readFileSync(gitmodulesPath, 'utf8'))
-  const offenders = entries.filter(e => !e.hasSparse && !e.fullCheckoutReason)
+  const entries = parseGitmodules(readFileSync(gitmodulesPath, 'utf8'))
+  const offenders = entries.filter(
+    e => !e.hasSparse && !(e.shallow && e.branch) && !e.fullCheckoutReason,
+  )
   if (offenders.length === 0) {
     if (!quiet) {
       const sparse = entries.filter(e => e.hasSparse).length
-      const full = entries.length - sparse
+      const shallowRef = entries.filter(
+        e => !e.hasSparse && e.shallow && e.branch,
+      ).length
+      const annotated = entries.length - sparse - shallowRef
       logger.log(
-        `submodules-are-sparse-or-annotated: ${entries.length} submodule(s) — ${sparse} sparse, ${full} full-checkout-annotated.`,
+        `submodules-are-sparse-or-annotated: ${entries.length} submodule(s) — ${sparse} sparse, ${shallowRef} shallow single-branch, ${annotated} full-checkout-annotated.`,
       )
     }
     process.exitCode = 0
@@ -114,15 +88,15 @@ function main(): void {
   }
   for (const o of offenders) {
     logger.fail(
-      `.gitmodules:${o.line} [submodule "${o.name}"] has neither a \`sparse-checkout =\` field nor a \`# full-checkout: <reason>\` annotation — add the consumed-subtree sparse pattern (see the optimizing-submodules skill), or annotate why the whole tree is needed.`,
+      `.gitmodules:${o.line} [submodule "${o.name}"] is not optimized — it has no \`sparse-checkout =\` field, is not a shallow single-branch reference (\`shallow = true\` + \`branch = <ref>\`), and carries no \`# full-checkout: <reason>\` annotation. Add the consumed-subtree sparse pattern (see the optimizing-submodules skill), make it a shallow single-branch reference, or annotate why the whole tree is needed.`,
     )
   }
   logger.fail(
-    `submodules-are-sparse-or-annotated: ${offenders.length} un-optimized submodule(s). A vendored upstream pulls its whole tree into every clone unless sparse-checkout'd; justify the exceptions with \`# full-checkout: <reason>\`.`,
+    `submodules-are-sparse-or-annotated: ${offenders.length} un-optimized submodule(s). A vendored upstream pulls its whole tree into every clone unless sparse-checkout'd, shallow single-branch, or justified with \`# full-checkout: <reason>\`.`,
   )
   process.exitCode = 1
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   main()
 }

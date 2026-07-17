@@ -34,15 +34,17 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { currentBranch, resolveDefaultBranch } from '../_shared/git-branch.mts'
 import { bashGuard, defineHook, notify, runHook } from '../_shared/guard.mts'
+import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
-import { commandsFor } from '../_shared/shell-command.mts'
+import { gitCommitSegments } from '../_shared/commit-command.mts'
 
 const BYPASS_PHRASE = 'Allow branch-reuse bypass'
 
+// Amend excluded on purpose: amending the tip is not branch reuse. The
+// segment parse is the shared one — a positional arg that merely CONTAINS
+// the word commit (a path, `git log commit`) never matches.
 export function isGitCommit(command: string): boolean {
-  return commandsFor(command, 'git').some(
-    c => c.args.includes('commit') && !c.args.includes('--amend'),
-  )
+  return gitCommitSegments(command).some(c => !c.args.includes('--amend'))
 }
 
 // True when the branch has a remote upstream tracking ref AND that
@@ -54,7 +56,7 @@ export function hasExistingRemoteHistory(cwd: string, branch: string): boolean {
   const upstreamRef = spawnSync(
     'git',
     ['rev-parse', '--abbrev-ref', `${branch}@{upstream}`],
-    { cwd, timeout: 5000 },
+    { cwd, timeout: spawnTimeoutMs(5000) },
   )
   if (upstreamRef.status !== 0) {
     return false
@@ -63,7 +65,7 @@ export function hasExistingRemoteHistory(cwd: string, branch: string): boolean {
   const upstream = String(upstreamRef.stdout).trim()
   const revParse = spawnSync('git', ['rev-parse', '--verify', upstream], {
     cwd,
-    timeout: 5000,
+    timeout: spawnTimeoutMs(5000),
   })
   return revParse.status === 0
 }

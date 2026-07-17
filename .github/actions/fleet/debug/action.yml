@@ -29,25 +29,21 @@ runs:
       env:
         DEBUG_INPUT: ${{ inputs.debug }}
       run: | # zizmor: ignore[github-env]
-        # Check if input is in DEBUG='...' format
+        # Normalize DEBUG='...' and simple inputs to one value first.
         if [[ "$DEBUG_INPUT" =~ ^DEBUG=[\'\"]*(.+)[\'\"]*$ ]]; then
           debug_value="${BASH_REMATCH[1]}"
-          {
-            echo "socket_debug=$debug_value"
-            echo "debug_value=$debug_value"
-          } >> "$GITHUB_OUTPUT"
+        else
+          debug_value="$DEBUG_INPUT"
+        fi
+        {
+          echo "socket_debug=$debug_value"
+          echo "debug_value=$debug_value"
+        } >> "$GITHUB_OUTPUT"
+        # Debug consumers use env presence/truthiness. Exporting the string "0"
+        # therefore turns debugging ON; disabled must leave both vars unset.
+        if [[ -n "$debug_value" && "$debug_value" != "0" ]]; then
           {
             echo "DEBUG=$debug_value"
             echo "SOCKET_DEBUG=$debug_value"
           } >> "$GITHUB_ENV"
-        # Check if it's just a simple value (0, 1, or debug string)
-        else
-          {
-            echo "socket_debug=$DEBUG_INPUT"
-            echo "debug_value=$DEBUG_INPUT"
-          } >> "$GITHUB_OUTPUT"
-          echo "SOCKET_DEBUG=$DEBUG_INPUT" >> "$GITHUB_ENV"
-          if [[ "$DEBUG_INPUT" != "0" ]]; then
-            echo "DEBUG=$DEBUG_INPUT" >> "$GITHUB_ENV"
-          fi
         fi

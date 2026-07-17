@@ -1,6 +1,6 @@
 ---
 name: delegating-execution
-description: Route non-trivial build/design work through the tier cycle — big-brain plan, floor execute, big-brain review, floor follow-up. Use when a task deserves a written plan and the execution is delegable grunt work; benign infra/docs planning routes to Fable, security-sensitive planning to Opus 4.8.
+description: Route substantial work through plan, execution, review, and follow-up agents at the right effort tier.
 user-invocable: true
 argument-hint: '<task summary> [benign|security]'
 allowed-tools: Bash(node:*), Read, Workflow, Write

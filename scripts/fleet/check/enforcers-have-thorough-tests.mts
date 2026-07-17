@@ -10,7 +10,7 @@
 //   - Hooks under .claude/hooks/{fleet,repo}/<name>/ that have an index.mts.
 //   - Lint rules under .config/fleet/oxlint-plugin/fleet/<name>/index.mts.
 //   - Check scripts under scripts/{fleet,repo}/check/<name>.mts, tested by
-//     test/unit/fleet/check-<name>.test.mts (or the bare <name>.test.mts).
+//     test/repo/unit/check-<name>.test.mts (or the bare <name>.test.mts).
 //
 // Hook + lint-rule tests are NOT co-located in the cascaded trees; they live
 // under test/repo/{unit,integration}/{hooks,lint-rules}/<name>.test.mts (vitest)
@@ -27,17 +27,11 @@
 //       * lint-rule test missing a `valid:` array OR an `invalid:` array
 //         (a RuleTester run must exercise BOTH arms).
 //
-// A few enforcers legitimately can't be unit-tested the usual way (setup/
-// installer hooks that shell out to a machine, SessionStart probes). Those are
-// listed in NO_TEST_ALLOWLIST with a one-line reason; everything else must
-// carry thorough tests.
-//
 // Usage: node scripts/fleet/check/enforcers-have-thorough-tests.mts [--quiet]
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
@@ -46,7 +40,9 @@ import {
   LINT_RULE_TEST_DIRS,
   OWNS_RELOCATED_TESTS,
   REPO_ROOT,
+  TEST_REPO_DIR,
 } from '../paths.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -56,39 +52,85 @@ const logger = getDefaultLogger()
 // which it is provably a token test.
 const MIN_HOOK_CASES = 2
 
-// Enforcers that can't carry conventional unit tests, with the reason. Keep
-// this short and justified — it is the exception, not the escape hatch.
-const NO_TEST_ALLOWLIST: Record<string, string> = {
-  __proto__: null as never,
-  'broken-hook-detector':
-    'SessionStart probe — exercised by the hooks it scans',
-  // installer hooks shell out to the host machine (keychain, pipx, git config)
-  'setup-security-tools':
-    'installer — mutates the host machine, no pure surface',
-  'setup-signing': 'installer — writes git signing config to the host',
+function findCheckTest(repoRoot: string, name: string): string | undefined {
+  const rel = path.relative(REPO_ROOT, TEST_REPO_DIR)
+  const basenames = new Set<string>()
+  basenames.add(`check-${name}.test.mts`)
+  basenames.add(`${name}.test.mts`)
+  return findTestByBasenames(path.join(repoRoot, rel), basenames)
 }
 
-// Check scripts that can't carry a conventional unit test yet, with the reason.
-// The fleet entries run main() at module scope (no entrypoint guard) and export
-// no pure surface, so importing them has side effects (spawns git/gh, sets
-// exitCode) — each needs a guard + an exported detection fn before it's testable
-// (two are thin wrappers over already-tested shared libs). The repo entries are
-// wheelhouse-only checks whose tests are still pending. Shrink as each is fixed.
-const CHECK_SCRIPT_TEST_ALLOWLIST: Record<string, string> = {
-  __proto__: null as never,
-  'bundle-is-installable':
-    'no entrypoint guard + no injectable validator seam — needs refactor',
-  'capability-hooks-are-registered':
-    'wheelhouse-only repo check — test pending',
-  'coverage-badge-is-current':
-    'thin wrapper — logic tested in test/unit/fleet/coverage-badge.test.mts',
-  'fleet-members-are-onboarded': 'wheelhouse-only repo check — test pending',
-  'llms-txt-is-current':
-    'thin wrapper — logic tested in test/unit/fleet/make-llms-txt.test.mts',
-  'sparkle-auto-update-is-disabled':
-    'thin wrapper — logic tested in test/unit/fleet/sparkle-auto-update.test.mts',
-  'template-fleet-oxlint-ignore-current':
-    'wheelhouse-only repo check — test pending',
+// The relocated hook test for <name>, if present in any HOOK_TEST_DIRS home.
+// Resolved RELATIVE to the scanned repoRoot (each HOOK_TEST_DIRS entry's suffix
+// under REPO_ROOT, re-rooted at repoRoot) so a temp-dir fixture resolves to its
+// own test/repo/ tree, not the live wheelhouse's.
+function findHookTest(repoRoot: string, name: string): string | undefined {
+  for (let i = 0, { length } = HOOK_TEST_DIRS; i < length; i += 1) {
+    const rel = path.relative(REPO_ROOT, HOOK_TEST_DIRS[i]!)
+    const candidate = path.join(repoRoot, rel, `${name}.test.mts`)
+    if (existsSync(candidate)) {
+      return candidate
+    }
+  }
+  return undefined
+}
+
+// The relocated lint-rule tests for <id> in every recognized home. A rule may
+// have pure in-process unit coverage and a separate subprocess RuleTester
+// integration smoke; either file may own the case table without duplicating it.
+function findRuleTests(repoRoot: string, id: string): string[] {
+  const found: string[] = []
+  for (let i = 0, { length } = LINT_RULE_TEST_DIRS; i < length; i += 1) {
+    const rel = path.relative(REPO_ROOT, LINT_RULE_TEST_DIRS[i]!)
+    const candidate = path.join(repoRoot, rel, `${id}.test.mts`)
+    if (existsSync(candidate)) {
+      found.push(candidate)
+    }
+  }
+  return found
+}
+
+// The check-script test for <name>, accepting either the canonical
+// `check-<name>.test.mts` or the bare `<name>.test.mts` (a few predate the
+// `check-` prefix). Both tiers' check tests live flat under test/repo/unit/
+// (the test-tree migration retired the per-tier test/unit/{fleet,repo} split),
+// with test/repo/integration/ as the fallback home for spawn-heavy suites.
+// Wheelhouse-only dirs (cascade-excluded from members, like hook/rule tests).
+function findTestByBasenames(
+  dir: string,
+  basenames: ReadonlySet<string>,
+): string | undefined {
+  let entries
+  try {
+    entries = readdirSync(dir, { withFileTypes: true })
+  } catch {
+    return undefined
+  }
+  for (let i = 0, { length } = entries; i < length; i += 1) {
+    const entry = entries[i]!
+    const candidate = path.join(dir, entry.name)
+    if (entry.isDirectory()) {
+      const nested = findTestByBasenames(candidate, basenames)
+      if (nested) {
+        return nested
+      }
+    } else if (basenames.has(entry.name)) {
+      return candidate
+    }
+  }
+  return undefined
+}
+
+function hasNonEmptyRuleArm(source: string, arm: 'invalid' | 'valid'): boolean {
+  const property = new RegExp(`^\\s*${arm}\\s*:\\s*\\[`, 'gm')
+  for (const match of source.matchAll(property)) {
+    const open = match.index + match[0].lastIndexOf('[')
+    const firstCase = skipTrivia(source, open + 1)
+    if (source[firstCase] !== ']') {
+      return true
+    }
+  }
+  return false
 }
 
 export interface TestGap {
@@ -119,6 +161,27 @@ function listDirs(dir: string): string[] {
     return []
   }
 }
+// Count `test('…'` / `it('…'` case registrations in a test source.
+
+function skipTrivia(source: string, start: number): number {
+  let cursor = start
+  while (cursor < source.length) {
+    if (/\s/.test(source[cursor]!)) {
+      cursor += 1
+      continue
+    }
+    if (source.startsWith('//', cursor)) {
+      const newline = source.indexOf('\n', cursor + 2)
+      return newline === -1 ? source.length : skipTrivia(source, newline + 1)
+    }
+    if (source.startsWith('/*', cursor)) {
+      const close = source.indexOf('*/', cursor + 2)
+      return close === -1 ? source.length : skipTrivia(source, close + 2)
+    }
+    break
+  }
+  return cursor
+}
 
 // Count `test('…'` / `it('…'` case registrations in a test source.
 export function countTestCases(src: string): number {
@@ -128,29 +191,57 @@ export function countTestCases(src: string): number {
   // \s*          — optional whitespace before .each or (
   // (?:\.each\([^)]*\))? — optional .each(...) call with any arguments
   // \s*\(        — required opening paren that starts the case callback
-  const matches = src.match(/\b(?:it|test)\s*(?:\.each\([^)]*\))?\s*\(/g)
+  const matches = src.match(/^\s*(?:it|test)\s*(?:\.each\([^)]*\))?\s*\(/gm)
   return matches ? matches.length : 0
 }
 
-// A RuleTester test must drive BOTH arms: a `valid` array AND an `invalid`
-// array (each typically holding several cases).
+// A RuleTester test must drive BOTH arms with at least one real case. Comments,
+// strings, and empty arrays do not count as executable coverage.
 export function hasBothRuleArms(src: string): boolean {
-  return /\bvalid\s*:/.test(src) && /\binvalid\s*:/.test(src)
+  return hasNonEmptyRuleArm(src, 'valid') && hasNonEmptyRuleArm(src, 'invalid')
 }
 
-// The relocated hook test for <name>, if present in any HOOK_TEST_DIRS home.
-// Resolved RELATIVE to the scanned repoRoot (each HOOK_TEST_DIRS entry's suffix
-// under REPO_ROOT, re-rooted at repoRoot) so a temp-dir fixture resolves to its
-// own test/repo/ tree, not the live wheelhouse's.
-function findHookTest(repoRoot: string, name: string): string | undefined {
-  for (let i = 0, { length } = HOOK_TEST_DIRS; i < length; i += 1) {
-    const rel = path.relative(REPO_ROOT, HOOK_TEST_DIRS[i]!)
-    const candidate = path.join(repoRoot, rel, `${name}.test.mts`)
-    if (existsSync(candidate)) {
-      return candidate
+export function scanCheckScripts(
+  repoRoot: string,
+  options?: ScanOptions | undefined,
+): TestGap[] {
+  const opts = { __proto__: null, ...options }
+  // Check-script tests are wheelhouse-only (under test/repo/unit/, cascade-
+  // excluded). A member ships the check sources but not their tests.
+  if (!(opts.ownsRelocatedTests ?? OWNS_RELOCATED_TESTS)) {
+    return []
+  }
+  const gaps: TestGap[] = []
+  for (const seg of ['fleet', 'repo']) {
+    const checkDir = path.join(repoRoot, 'scripts', seg, 'check')
+    let files: string[]
+    try {
+      files = readdirSync(checkDir).filter(n => n.endsWith('.mts'))
+    } catch {
+      continue
+    }
+    for (let i = 0, { length } = files; i < length; i += 1) {
+      const name = files[i]!.slice(0, -'.mts'.length)
+      const testPath = findCheckTest(repoRoot, name)
+      if (!testPath) {
+        gaps.push({
+          kind: 'check',
+          name,
+          reason: `no test under test/repo/{unit,integration}/check-${name}.test.mts`,
+        })
+        continue
+      }
+      const cases = countTestCases(readFileSync(testPath, 'utf8'))
+      if (cases < MIN_HOOK_CASES) {
+        gaps.push({
+          kind: 'check',
+          name,
+          reason: `token test — only ${cases} case(s); needs a fires-case + a passes-case`,
+        })
+      }
     }
   }
-  return undefined
+  return gaps
 }
 
 export function scanHooks(
@@ -169,9 +260,6 @@ export function scanHooks(
     for (const name of listDirs(hooksDir)) {
       const dir = path.join(hooksDir, name)
       if (!existsSync(path.join(dir, 'index.mts'))) {
-        continue
-      }
-      if (NO_TEST_ALLOWLIST[name]) {
         continue
       }
       const testPath = findHookTest(repoRoot, name)
@@ -194,20 +282,6 @@ export function scanHooks(
     }
   }
   return gaps
-}
-
-// The relocated lint-rule test for <id>, if present in any LINT_RULE_TEST_DIRS
-// home. Lint-rule tests live under test/repo/ (wheelhouse-only), never
-// co-located in the cascaded fleet/<id>/test/ tree.
-function findRuleTest(repoRoot: string, id: string): string | undefined {
-  for (let i = 0, { length } = LINT_RULE_TEST_DIRS; i < length; i += 1) {
-    const rel = path.relative(REPO_ROOT, LINT_RULE_TEST_DIRS[i]!)
-    const candidate = path.join(repoRoot, rel, `${id}.test.mts`)
-    if (existsSync(candidate)) {
-      return candidate
-    }
-  }
-  return undefined
 }
 
 export function scanRules(
@@ -241,11 +315,8 @@ export function scanRules(
   }
   for (let i = 0, { length } = rules; i < length; i += 1) {
     const name = rules[i]!
-    if (NO_TEST_ALLOWLIST[name]) {
-      continue
-    }
-    const testPath = findRuleTest(repoRoot, name)
-    if (!testPath) {
+    const testPaths = findRuleTests(repoRoot, name)
+    if (testPaths.length === 0) {
       gaps.push({
         kind: 'rule',
         name,
@@ -253,81 +324,17 @@ export function scanRules(
       })
       continue
     }
-    const src = readFileSync(testPath, 'utf8')
-    if (!hasBothRuleArms(src)) {
+    if (
+      !testPaths.some(testPath =>
+        hasBothRuleArms(readFileSync(testPath, 'utf8')),
+      )
+    ) {
       gaps.push({
         kind: 'rule',
         name,
         reason:
-          'token test — missing a valid[] or invalid[] arm (RuleTester must drive both)',
+          'token test — missing a non-empty valid[] or invalid[] arm (RuleTester must drive both)',
       })
-    }
-  }
-  return gaps
-}
-
-// The check-script test for <name>, accepting either the canonical
-// `check-<name>.test.mts` or the bare `<name>.test.mts` (a few predate the
-// `check-` prefix). Tier-matched: a fleet-tier check (scripts/fleet/check/) is
-// tested under test/unit/fleet/; a repo-tier check (scripts/repo/check/) under
-// test/unit/repo/ — a repo check must NOT be held to the fleet test dir. Both
-// dirs are wheelhouse-only (cascade-excluded from members, like hook/rule tests).
-function findCheckTest(
-  repoRoot: string,
-  seg: string,
-  name: string,
-): string | undefined {
-  const dir = path.join(repoRoot, 'test', 'unit', seg)
-  for (const base of [`check-${name}.test.mts`, `${name}.test.mts`]) {
-    const candidate = path.join(dir, base)
-    if (existsSync(candidate)) {
-      return candidate
-    }
-  }
-  return undefined
-}
-
-export function scanCheckScripts(
-  repoRoot: string,
-  options?: ScanOptions | undefined,
-): TestGap[] {
-  const opts = { __proto__: null, ...options }
-  // Check-script tests are wheelhouse-only (under test/unit/fleet/, cascade-
-  // excluded). A member ships the check sources but not their tests.
-  if (!(opts.ownsRelocatedTests ?? OWNS_RELOCATED_TESTS)) {
-    return []
-  }
-  const gaps: TestGap[] = []
-  for (const seg of ['fleet', 'repo']) {
-    const checkDir = path.join(repoRoot, 'scripts', seg, 'check')
-    let files: string[]
-    try {
-      files = readdirSync(checkDir).filter(n => n.endsWith('.mts'))
-    } catch {
-      continue
-    }
-    for (let i = 0, { length } = files; i < length; i += 1) {
-      const name = files[i]!.slice(0, -'.mts'.length)
-      if (CHECK_SCRIPT_TEST_ALLOWLIST[name]) {
-        continue
-      }
-      const testPath = findCheckTest(repoRoot, seg, name)
-      if (!testPath) {
-        gaps.push({
-          kind: 'check',
-          name,
-          reason: `no test under test/unit/${seg}/check-${name}.test.mts`,
-        })
-        continue
-      }
-      const cases = countTestCases(readFileSync(testPath, 'utf8'))
-      if (cases < MIN_HOOK_CASES) {
-        gaps.push({
-          kind: 'check',
-          name,
-          reason: `token test — only ${cases} case(s); needs a fires-case + a passes-case`,
-        })
-      }
     }
   }
   return gaps
@@ -361,6 +368,6 @@ function main(): void {
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   main()
 }

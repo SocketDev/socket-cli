@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Claude Code PreToolUse hook — verify-before-publish-guard.
 //
-// BLOCKS two publish-family footguns, in EVERY repo (fleet or external —
+// BLOCKS three publish-family footguns, in EVERY repo (fleet or external —
 // registry mistakes are universal guardrails, same posture as
 // no-direct-linter-guard):
 //
@@ -13,12 +13,23 @@
 //    pbcopy`): handing the user broken commands is the same defect as running
 //    them.
 //
-// 2. Unverified publish: a non-`--dry-run` publish with no same-session
+// 2. Local publish (REDIRECT to the remote/CI flow): a live `npm publish` /
+//    `pnpm publish` / `pnpm stage publish` run LOCALLY. The fleet publishes
+//    from GitHub Actions under OIDC trusted publishing + provenance — there is
+//    no local npm login, no local OTP. The block TEACHES the remote flow
+//    (`pnpm run remote:npm:publish`, or dispatch npm-publish.yml) rather than
+//    just refusing. Carve-out: the one-time `npm publish` of a `0.0.0`
+//    placeholder (npm trusted-publishing bootstrap — see
+//    scripts/fleet/publish-infra/npm/placeholder.mts) is ALLOWED; it is the
+//    only sanctioned local publish.
+//
+// 3. Unverified publish: a non-`--dry-run` publish with no same-session
 //    registry-read receipt — no `npm view` / `npm info` / `gh release view` in
 //    a recent assistant tool call. Publishing is irreversible (a version can
 //    never be republished); reading the current published state first is
 //    mandatory. Run the read, then retry — the receipt makes the same command
-//    pass.
+//    pass. (Applies to the placeholder carve-out too: reserving a name is still
+//    an irreversible publish.)
 //
 // Detection is AST-based (`parseCommands` on the fleet shell parser) for real
 // invocations; snippet-embedded publishes are found by whitespace-token
@@ -30,8 +41,16 @@
 // Fails open on parse / payload errors — a guard bug must not wedge every Bash
 // call.
 
+import { existsSync, readFileSync } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
-import { commandsFor, parseCommands } from '../_shared/shell-command.mts'
+import {
+  commandWorkingDir,
+  commandsFor,
+  parseCommands,
+} from '../_shared/shell-command.mts'
 import {
   bypassPhrasePresent,
   readLastAssistantToolUses,
@@ -43,6 +62,26 @@ const BYPASS_PHRASE = 'Allow verify-before-publish bypass' as const
 
 const PUBLISH_BINARIES = ['npm', 'pnpm', 'yarn'] as const
 
+// The sanctioned-local-publish carve-out: a placeholder reservation is pinned to
+// this version (see scripts/fleet/publish-infra/npm/placeholder.mts). A publish
+// of a package whose local package.json is at this version is the trusted-
+// publishing bootstrap, NOT a real release, so it is exempt from the remote
+// redirect.
+export const PLACEHOLDER_VERSION = '0.0.0'
+
+// Flags whose following value is prose (commit messages, PR/issue bodies,
+// release notes) — never an executable snippet, so the embedded-command scan
+// skips it.
+const PROSE_VALUE_FLAGS: ReadonlySet<string> = new Set([
+  '--body',
+  '--message',
+  '--notes',
+  '--title',
+  '-m',
+])
+// The inline `--flag=value` forms of the same prose flags.
+const PROSE_INLINE_FLAG_RE = /^--(?:body|message|notes|title)=/ // socket-lint: allow uncommented-regex
+
 // How many prior assistant turns to scan for a registry-read receipt.
 const RECEIPT_LOOKBACK_TURNS = 5
 
@@ -52,6 +91,10 @@ export interface PublishHit {
   readonly dryRun: boolean
   readonly misparsedArg: string | undefined
   readonly source: string
+  // The first non-flag token after `publish` (the target), or undefined for a
+  // bare `publish` / `pnpm stage publish`. Used to locate the local
+  // package.json for the placeholder carve-out.
+  readonly target: string | undefined
 }
 
 /**
@@ -97,6 +140,7 @@ function classify(
     misparsedArg:
       target !== undefined && isMisparsedTarget(target) ? target : undefined,
     source,
+    target,
   }
 }
 
@@ -131,17 +175,29 @@ export function detectPublishes(command: string): PublishHit[] {
     }
     // Embedded snippet: a string argument that itself contains a publish
     // command line (e.g. each line handed to printf for a pbcopy snippet).
-    for (const arg of segment.args) {
+    // Message-flag VALUES are prose, not snippets — a commit message or PR
+    // body that merely mentions "npm publish" must not fire (live incident:
+    // a multiline `git commit -m` describing publish behavior was blocked).
+    const { args } = segment
+    for (let i = 0, { length } = args; i < length; i += 1) {
+      const arg = args[i]!
+      if (PROSE_VALUE_FLAGS.has(arg)) {
+        i += 1
+        continue
+      }
+      if (PROSE_INLINE_FLAG_RE.test(arg)) {
+        continue
+      }
       if (!arg.includes(' ') || !arg.includes('publish')) {
         continue
       }
       const tokens = arg.split(/\s+/).filter(Boolean)
-      for (let i = 0, { length } = tokens; i < length - 1; i += 1) {
+      for (let j = 0, tl = tokens.length; j < tl - 1; j += 1) {
         if (
-          (PUBLISH_BINARIES as readonly string[]).includes(tokens[i]!) &&
-          tokens[i + 1] === 'publish'
+          (PUBLISH_BINARIES as readonly string[]).includes(tokens[j]!) &&
+          tokens[j + 1] === 'publish'
         ) {
-          const hit = classify(tokens.slice(i + 2), arg)
+          const hit = classify(tokens.slice(j + 2), arg)
           if (hit) {
             hits.push(hit)
           }
@@ -150,6 +206,95 @@ export function detectPublishes(command: string): PublishHit[] {
     }
   }
   return hits
+}
+
+/**
+ * Detect `pnpm stage publish` — the staged upload step. `detectPublishes` keys
+ * off `publish` as the FIRST non-flag arg, so `stage publish` (publish is the
+ * SECOND) slips past it; this catches it explicitly. The staged upload is meant
+ * to run in CI under the OIDC token, so a LOCAL `pnpm stage publish` is a
+ * redirect candidate just like a bare `pnpm publish`.
+ */
+export function detectStagePublish(command: string): PublishHit[] {
+  const hits: PublishHit[] = []
+  for (const segment of commandsFor(command, 'pnpm')) {
+    const bare = segment.args.filter(a => !a.startsWith('-'))
+    if (bare[0] === 'stage' && bare[1] === 'publish') {
+      hits.push({
+        dryRun: segment.args.includes('--dry-run'),
+        misparsedArg: undefined,
+        source: `pnpm ${segment.args.join(' ')}`,
+        target: undefined,
+      })
+    }
+  }
+  return hits
+}
+
+/**
+ * Resolve the local directory a publish acts on: a path-ish target
+ * (`./dir`, `../dir`, `/abs`, `~/dir`) resolved against the command's effective
+ * working dir; otherwise that working dir itself (a bare `publish` /
+ * `pnpm stage publish`). Registry-ish targets (bare `a/b`, `@scope/x`, `$VAR`)
+ * carry no local package.json, so they fall back to the working dir.
+ */
+function resolvePublishDir(
+  command: string,
+  target: string | undefined,
+): string {
+  const baseDir = commandWorkingDir(command)
+  if (
+    !target ||
+    !(
+      target.startsWith('./') ||
+      target.startsWith('../') ||
+      path.isAbsolute(target) ||
+      target.startsWith('~')
+    )
+  ) {
+    return baseDir
+  }
+  const expanded =
+    target === '~'
+      ? os.homedir()
+      : target.startsWith('~/')
+        ? path.join(os.homedir(), target.slice(2))
+        : target
+  return path.resolve(baseDir, expanded)
+}
+
+/**
+ * Read the `version` from the package.json a publish would ship. Returns
+ * undefined when there is no readable/parseable manifest at the resolved dir.
+ */
+export function readPublishTargetVersion(
+  command: string,
+  target: string | undefined,
+): string | undefined {
+  const pkgPath = path.join(resolvePublishDir(command, target), 'package.json')
+  try {
+    if (!existsSync(pkgPath)) {
+      return undefined
+    }
+    const parsed = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
+      version?: unknown
+    }
+    return typeof parsed.version === 'string' ? parsed.version : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * True when this publish is the sanctioned trusted-publishing bootstrap: the
+ * package it ships is at the `0.0.0` placeholder version. Only such a publish
+ * is allowed to run locally; every other local publish is redirected to CI.
+ */
+export function isPlaceholderBootstrap(
+  command: string,
+  target: string | undefined,
+): boolean {
+  return readPublishTargetVersion(command, target) === PLACEHOLDER_VERSION
 }
 
 /**
@@ -226,6 +371,36 @@ export function formatMisparseBlock(hit: PublishHit): string {
   )
 }
 
+export function formatRemoteRedirectBlock(hit: PublishHit): string {
+  return (
+    [
+      '[verify-before-publish-guard] Blocked: local publish. Publishing runs in CI, not on your machine.',
+      '',
+      `  Command: ${hit.source}`,
+      '',
+      '  Releases publish from GitHub Actions under OIDC trusted publishing +',
+      '  provenance — no local npm login, no local OTP. Trigger the CI publish:',
+      '',
+      '    pnpm run remote:npm:publish              # dry-run (CI previews)',
+      '    pnpm run remote:npm:publish -- --publish # publish for real',
+      '',
+      '  or dispatch the workflow directly:',
+      '',
+      '    gh workflow run npm-publish.yml -f publish=true',
+      '',
+      '  The staged upload (`pnpm stage publish`) runs IN CI under the OIDC',
+      '  token; `pnpm run publish -- --approve` is the only local step (2FA',
+      '  promote of an already-staged package).',
+      '',
+      '  Carve-out: the one-time `npm publish` of a 0.0.0 placeholder (the npm',
+      '  trusted-publishing bootstrap — scripts/fleet/publish-infra/npm/placeholder.mts)',
+      '  is allowed.',
+      '',
+      `  Bypass: type "${BYPASS_PHRASE}" to allow it for this invocation.`,
+    ].join('\n') + '\n'
+  )
+}
+
 export function formatUnverifiedBlock(hit: PublishHit): string {
   return (
     [
@@ -244,17 +419,30 @@ export function formatUnverifiedBlock(hit: PublishHit): string {
 }
 
 export const check = bashGuard((command, payload) => {
-  const hits = detectPublishes(command)
+  const publishHits = detectPublishes(command)
+  const stageHits = detectStagePublish(command)
+  const hits = [...publishHits, ...stageHits]
   if (hits.length === 0) {
     return undefined
   }
   if (bypassPhrasePresent(payload.transcript_path, [BYPASS_PHRASE], 3)) {
     return undefined
   }
-  const misparsed = hits.find(h => h.misparsedArg)
+  // A broken git-spec target is the most urgent (the command can't succeed).
+  const misparsed = publishHits.find(h => h.misparsedArg)
   if (misparsed) {
     return block(formatMisparseBlock(misparsed))
   }
+  // Redirect a LIVE local publish to the remote/CI flow, unless it is the
+  // sanctioned 0.0.0 placeholder bootstrap. A --dry-run publish is a harmless
+  // preview and passes.
+  const liveLocal = hits.find(h => !h.dryRun)
+  if (liveLocal && !isPlaceholderBootstrap(command, liveLocal.target)) {
+    return block(formatRemoteRedirectBlock(liveLocal))
+  }
+  // The placeholder carve-out (or a receipt-less live publish that slipped the
+  // redirect) still owes a registry-read receipt — reserving/publishing a
+  // version is irreversible.
   const live = hits.find(h => !h.dryRun)
   if (live && !hasRegistryReadReceipt(payload.transcript_path)) {
     return block(formatUnverifiedBlock(live))

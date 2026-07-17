@@ -31,13 +31,15 @@
 //
 // Exit codes: 0 — pass. 2 — block. Fails open on malformed payload.
 
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 const BYPASS_PHRASE = 'Allow claude-action-lockdown bypass'
 
 export function isWorkflowPath(filePath: string): boolean {
-  return /\/\.github\/workflows\/[^/]+\.ya?ml$/.test(filePath)
+  return /\/\.github\/workflows\/[^/]+\.ya?ml$/.test(normalizePath(filePath))
 }
 
 // The action wiring. Matches `uses: anthropics/claude-code-action@<ref>` (any

@@ -33,6 +33,7 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import { extractFleetBlock } from '../_shared/fleet-markers.mts'
+import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 
 export function getProjectDir(): string {
   return process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
@@ -53,7 +54,10 @@ export function changedTemplateFiles(repoDir: string): string[] {
     ['diff', '--name-only', 'origin/main…HEAD'],
     ['status', '--porcelain'],
   ]) {
-    const r = spawnSync('git', args, { cwd: repoDir, timeout: 5000 })
+    const r = spawnSync('git', args, {
+      cwd: repoDir,
+      timeout: spawnTimeoutMs(5000),
+    })
     if (r.status !== 0) {
       continue
     }

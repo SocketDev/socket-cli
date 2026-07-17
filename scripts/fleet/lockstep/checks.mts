@@ -404,15 +404,15 @@ export function checkLangParity(
 }
 
 // ---------------------------------------------------------------------------
-// Cross-row consistency checks (beyond zod's per-row validation).
+// Cross-row consistency checks (beyond the schema's per-row validation).
 // ---------------------------------------------------------------------------
 
 /**
- * Cross-row checks that zod validation can't express: unique ids, upstream refs
- * resolve to the `upstreams` map, port keys resolve to the `sites` map. Zod's
- * `LockstepManifestSchema.parse()` (called from `loadManifestTree`) already
- * covers per-row shape, enum values, id pattern, and required fields — this is
- * the referential-integrity layer on top.
+ * Cross-row checks that schema validation can't express: unique ids, upstream
+ * refs resolve to the `upstreams` map, port keys resolve to the `sites` map.
+ * The TypeBox pass (`validateSchema(LockstepManifestSchema, …)` in
+ * `readManifest`) already covers per-row shape, enum values, id pattern, and
+ * required fields — this is the referential-integrity layer on top.
  */
 export function checkCrossRowConsistency(
   rowsWithArea: Array<{ row: Row; area: string }>,

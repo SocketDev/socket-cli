@@ -47,26 +47,57 @@ const RepoSchema = Type.Object(
   },
 )
 
+// A publish channel's release source and artifact kind. Extracted so the
+// primary `build` and each `secondaries[]` channel share the EXACT same enums.
+const BuildFromSchema = Type.Union(
+  [
+    Type.Literal('npm-registry'),
+    Type.Literal('github-release'),
+    Type.Literal('crates-registry'),
+    Type.Literal('go-registry'),
+  ],
+  {
+    description:
+      'Release source/target. `npm-registry` = published as an npm package. `github-release` = raw artifacts attached to a GitHub Release. `crates-registry` = published as a Rust crate to crates.io. `go-registry` = the Go module ecosystem — published by pushing a semver tag; proxy.golang.org fetches it, pkg.go.dev indexes it (no registry upload/token).',
+  },
+)
+
+const BuildTypeSchema = Type.Union(
+  [
+    Type.Literal('js'),
+    Type.Literal('addon'),
+    Type.Literal('binary'),
+    Type.Literal('rust'),
+    Type.Literal('go'),
+  ],
+  {
+    description:
+      'Artifact kind. `js` = plain JS package. `addon` = `.node` native addon. `binary` = a native binary (executable or wasm module — wasm is a binary format, so it lives here, not its own value). `rust` = a native Rust crate (single crate or a Cargo workspace of crates) published to crates.io — no JS build. `go` = a native Go module with no JS build (symmetric to `rust`).',
+  },
+)
+
 const BuildSchema = Type.Object(
   {
-    from: Type.Union(
-      [Type.Literal('npm-registry'), Type.Literal('github-release')],
-      {
-        description:
-          'Release source/target. `npm-registry` = published as an npm package. `github-release` = raw artifacts attached to a GitHub Release.',
-      },
-    ),
-    type: Type.Union(
-      [Type.Literal('js'), Type.Literal('addon'), Type.Literal('binary')],
-      {
-        description:
-          'Artifact kind. `js` = plain JS package. `addon` = `.node` native addon. `binary` = a native binary (executable or wasm module — wasm is a binary format, so it lives here, not its own value).',
-      },
-    ),
+    from: BuildFromSchema,
+    type: BuildTypeSchema,
   },
   {
     description:
-      'How the repo is built + released. Drives the release-checksums file cascade + CI breadth. `from: github-release` repos are native producers (socket-btm); `from: npm-registry` + non-`js` type wrap prebuilt native bits (socket-bin/socket-addon); `type: js` is a plain package.',
+      'How the repo is built + released. Drives the release-checksums file cascade + CI breadth. `from: github-release` repos are native producers (socket-btm); `from: npm-registry` + non-`js` type wrap prebuilt native bits (socket-bin/socket-addon); `type: js` is a plain package; `from: crates-registry` + `type: rust` is a native Rust crate (crates.io provides integrity, so no release-checksums cascade).',
+    additionalProperties: false,
+  },
+)
+
+// A secondary publish channel — same `{ from, type }` shape as the primary
+// `build`, using the identical enums.
+const SecondarySchema = Type.Object(
+  {
+    from: BuildFromSchema,
+    type: BuildTypeSchema,
+  },
+  {
+    description:
+      'An additional publish channel beyond the primary `build`, e.g. `{from:npm-registry, type:addon}` for a `.node` addon shipped alongside a Rust crate.',
     additionalProperties: false,
   },
 )
@@ -147,6 +178,60 @@ const LintSchema = Type.Object(
     ),
   },
   { description: 'oxlint profile.' },
+)
+
+// ---------------------------------------------------------------------------
+// Vitest block — test-suite tuning the canonical vitest config reads.
+// ---------------------------------------------------------------------------
+
+const VitestSchema = Type.Object(
+  {
+    conformanceExclude: Type.Optional(
+      Type.Array(Type.String(), {
+        description:
+          'Heavy external-suite / cross-impl conformance wrapper globs excluded from the DEFAULT (unit) + cover suites, keeping the unit pass inside the fleet under-a-minute budget. A repo setting this MUST pair it with an explicit `test:conformance` runner so the tier never silently drops.',
+      }),
+    ),
+    lanes: Type.Optional(
+      Type.Object(
+        {
+          mid: Type.Optional(
+            Type.Array(Type.String(), {
+              description:
+                'Globs for the `mid` lane — isolated in-process suites (env-mutating / vi.mock / fs-heavy). Skipped by the bare `pnpm test` fast lane; run via `pnpm run test:mid`. Coverage + CI run every lane, so nothing is cut.',
+            }),
+          ),
+          slow: Type.Optional(
+            Type.Array(Type.String(), {
+              description:
+                'Globs for the `slow` lane — heavy suites (subprocess-per-case, e.g. hook integration specs). Skipped by the bare `pnpm test` fast lane; run via `pnpm run test:slow`. Coverage + CI run every lane, so nothing is cut.',
+            }),
+          ),
+        },
+        {
+          description:
+            "Test LANES: a SPEED category orthogonal to test TYPE (unit/integration/e2e). `fast` is the implicit complement of `mid`+`slow`. The runner's `--lane <fast|mid|slow>` flag selects one; bare `pnpm test` defaults to `fast`.",
+        },
+      ),
+    ),
+    legacyScriptTests: Type.Optional(
+      Type.Array(Type.String(), {
+        description:
+          'Repo-relative paths of legacy script-style test files (self-executing scripts, not vitest suites) excluded from every vitest tier. Each file keeps running through its own runner; listing it here keeps the tier configs from picking it up.',
+      }),
+    ),
+    unitBudgetMs: Type.Optional(
+      Type.Number({
+        minimum: 1000,
+        description:
+          'Wall-clock budget for the unit test suites under cover.mts, in milliseconds. Fleet default 60000 (under a minute). A suite exceeding the budget gets a loud report-only warning pointing at the slow/mid lanes (`vitest.lanes`); the gate ratchets to a hard failure once the fleet conforms.',
+      }),
+    ),
+  },
+  {
+    description:
+      'Tuning for the canonical vitest config (.config/repo/vitest.config.mts).',
+  },
 )
 
 // ---------------------------------------------------------------------------
@@ -459,7 +544,8 @@ const PrebakeEntrySchema = Type.Object(
       description: 'Image name. Toolchain-named, not output-named.',
     }),
     status: Type.Union([Type.Literal('active'), Type.Literal('planned')], {
-      description: '`active` = built + pushed today; `planned` = designed only.',
+      description:
+        '`active` = built + pushed today; `planned` = designed only.',
     }),
     from: Type.String({
       description:
@@ -481,10 +567,9 @@ const PrebakeEntrySchema = Type.Object(
       description: 'Toolchains/packages this layer adds on top of `from`.',
     }),
     libc: Type.Optional(
-      Type.Array(
-        Type.Union([Type.Literal('glibc'), Type.Literal('musl')]),
-        { description: 'libc variants built.' },
-      ),
+      Type.Array(Type.Union([Type.Literal('glibc'), Type.Literal('musl')]), {
+        description: 'libc variants built.',
+      }),
     ),
     platforms: Type.Optional(
       Type.Array(Type.String(), {
@@ -566,12 +651,19 @@ export const SocketWheelhouseConfigSchema = Type.Object(
     }),
     repo: RepoSchema,
     build: BuildSchema,
+    secondaries: Type.Optional(
+      Type.Array(SecondarySchema, {
+        description:
+          'Additional publish channels beyond the primary `build` — e.g. a Rust crate (crates-registry/rust) that also ships a `.node` addon to npm carries `{from:npm-registry, type:addon}`. Each channel gets its own publish workflow.',
+      }),
+    ),
     release: Type.Optional(ReleaseSchema),
     design: Type.Optional(DesignSchema),
     docker: Type.Optional(DockerSchema),
     hooks: Type.Optional(HooksSchema),
     scripts: Type.Optional(ScriptsSchema),
     lint: Type.Optional(LintSchema),
+    vitest: Type.Optional(VitestSchema),
     workflows: Type.Optional(WorkflowsSchema),
     claude: Type.Optional(ClaudeSchema),
     workspace: Type.Optional(WorkspaceSchema),
@@ -592,3 +684,5 @@ export const SocketWheelhouseConfigSchema = Type.Object(
 export type SocketWheelhouseConfig = Static<typeof SocketWheelhouseConfigSchema>
 export type Repo = Static<typeof RepoSchema>
 export type Build = Static<typeof BuildSchema>
+export type Secondary = Static<typeof SecondarySchema>
+export type Vitest = Static<typeof VitestSchema>

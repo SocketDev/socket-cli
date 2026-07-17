@@ -18,7 +18,6 @@
  */
 
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
@@ -28,6 +27,7 @@ import { run } from './researching-recency/cli.mts'
 
 import type { ServiceEntry } from './estimate-ai-cost.mts'
 import type { QueryPlan } from './researching-recency/lib/types.mts'
+import { isMainModule } from './_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -103,7 +103,7 @@ async function main(): Promise<void> {
   logger.log(envelope)
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   void (async () => {
     try {
       await main()

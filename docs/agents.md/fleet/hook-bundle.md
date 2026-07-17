@@ -52,4 +52,4 @@ The bypass phrase is registered in `docs/agents.md/fleet/bypass-phrases.md` unde
 
 ## Proving the compile cache
 
-`test/unit/fleet/hook-bundle-compile-cache.test.mts` (vitest) builds the bundle, spawns the `.cjs` loader for an event, then asserts the compile-cache dir is populated under `<cache>/<v8-version>/` (cache files greater than 0). Without that file count the cache claim is unproven, so the test is the gate on the whole feature.
+`test/repo/unit/hook-bundle-compile-cache.test.mts` (vitest) builds the bundle, spawns the `.cjs` loader for an event, then asserts the compile-cache dir is populated under `<cache>/<v8-version>/` (cache files greater than 0). Without that file count the cache claim is unproven, so the test is the gate on the whole feature.

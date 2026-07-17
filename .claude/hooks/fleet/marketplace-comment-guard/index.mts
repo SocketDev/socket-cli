@@ -28,6 +28,7 @@
 
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { resolveEditedText } from '../_shared/payload.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
@@ -126,8 +127,9 @@ export function extractReadmeRows(readme: string): ReadmeRow[] {
 }
 
 export function isGuardedPath(
-  p: string,
+  filePath: string,
 ): { kind: 'json' | 'readme' } | undefined {
+  const p = normalizePath(filePath)
   if (p.endsWith('/.claude-plugin/marketplace.json')) {
     return { kind: 'json' }
   }

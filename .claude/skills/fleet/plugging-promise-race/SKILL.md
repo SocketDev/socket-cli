@@ -1,6 +1,6 @@
 ---
 name: plugging-promise-race
-description: Reference for the `Promise.race` cross-iteration handler-leak bug. Loads on demand when writing or reviewing concurrency code that uses `Promise.race`, `Promise.any`, or hand-rolled concurrency limiters.
+description: Reference for avoiding Promise.race/any handler leaks in loops and hand-rolled concurrency pools.
 user-invocable: false
 allowed-tools: Read, Grep, Glob
 ---

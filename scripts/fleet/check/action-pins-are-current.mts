@@ -36,7 +36,6 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
@@ -45,6 +44,7 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { REPO_ROOT } from '../paths.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -513,7 +513,21 @@ const cliGit: GitRunner = {
     return Number.isNaN(n) ? 0 : n
   },
   isReachable(sha, base) {
-    return git(['merge-base', '--is-ancestor', sha, base]).status === 0
+    if (git(['merge-base', '--is-ancestor', sha, base]).status === 0) {
+      return true
+    }
+    // A shallow CI clone (setup-and-install checks out at fetch-depth 25)
+    // truncates history, so an older-but-genuine ancestor looks unreachable
+    // and the check reports phantom stale pins. Deepen once and retest
+    // before declaring the pin unreachable; after --unshallow the repo is
+    // no longer shallow, so later pins skip the fetch.
+    if (
+      git(['rev-parse', '--is-shallow-repository']).stdout.trim() === 'true'
+    ) {
+      git(['fetch', '--unshallow', 'origin'])
+      return git(['merge-base', '--is-ancestor', sha, base]).status === 0
+    }
+    return false
   },
   resolve(ref) {
     return git(['rev-parse', ref]).stdout.trim()
@@ -601,6 +615,6 @@ function main(): void {
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   main()
 }

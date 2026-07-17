@@ -22,6 +22,7 @@ import process from 'node:process'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
+import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 
 export function getProjectDir(): string {
   return process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
@@ -63,7 +64,10 @@ export function touchedSkillSource(repoDir: string): boolean {
     ['diff', '--name-only', 'origin/HEAD…HEAD'],
     ['status', '--porcelain'],
   ]) {
-    const r = spawnSync('git', args, { cwd: repoDir, timeout: 5000 })
+    const r = spawnSync('git', args, {
+      cwd: repoDir,
+      timeout: spawnTimeoutMs(5000),
+    })
     if (r.status !== 0) {
       continue
     }

@@ -2,14 +2,14 @@
 // Claude Code PreToolUse hook — commit-size-nudge.
 //
 // Reminder (NOT a block) on `git commit` when the STAGED diff is large. Fleet
-// commits stay small — one logical change, ~400 changed lines of authored
+// commits stay small — one logical change, ~200 changed lines of authored
 // source — so they land cleanly onto local main without cross-worktree
 // collisions and read like a small reviewable PR. A large staged set is the
 // signal to split into surgical commits (`git commit -o <file>`), each its own
 // logical change.
 //
-// This is the commit-time twin of `small-pr-nudge` (~200 lines on the rare PR
-// path): the fleet direct-pushes to main, so the size discipline actually bites
+// This is the commit-time twin of `small-pr-nudge`: both target ~200 authored
+// lines. The fleet direct-pushes to main, so the size discipline actually bites
 // here, at commit time.
 //
 // Generated / mechanical churn does NOT count toward the ceiling (a lockfile
@@ -22,15 +22,17 @@
 // `git -c k=v` prefixes); the size is `git diff --cached --shortstat` scoped by
 // exclude pathspecs, so `&&` chains and quoting in the command don't matter.
 
-import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import process from 'node:process'
+
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { isGitCommit } from '../_shared/commit-command.mts'
 import { bashGuard, defineHook, notify, runHook } from '../_shared/guard.mts'
+import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 
-// Fleet doctrine: one logical change, ~400 changed lines of authored source.
-const COMMIT_SIZE_LINES = 400
+// Fleet doctrine: one logical change, ~200 changed lines of authored source.
+const COMMIT_SIZE_LINES = 200
 
 /**
  * The changed-line + file totals of the staged diff. Undefined when the diff
@@ -48,14 +50,15 @@ export interface DiffSize {
  * nested location, which a `**`-pathspec is not).
  */
 export function isGeneratedPath(filePath: string): boolean {
-  const base = normalizePath(filePath).split('/').pop() ?? filePath
+  const normalizedFilePath = normalizePath(filePath)
+  const base = normalizedFilePath.split('/').pop() ?? filePath
   return (
     base === 'package-lock.json' ||
     base === 'pnpm-lock.yaml' ||
     base.endsWith('.snap') ||
     /\.min\.[^/]+$/.test(base) ||
-    (base === 'bundle.cjs' && filePath.includes('_dispatch/')) ||
-    /(?:^|\/)(?:build|dist)\//.test(filePath)
+    (base === 'bundle.cjs' && normalizedFilePath.includes('_dispatch/')) ||
+    /(?:^|\/)(?:build|dist)\//.test(normalizedFilePath)
   )
 }
 
@@ -89,7 +92,7 @@ export function parseNumstat(numstat: string): DiffSize {
 export function stagedDiffSize(cwd: string): DiffSize | undefined {
   const r = spawnSync('git', ['diff', '--cached', '--numstat'], {
     cwd,
-    timeout: 5000,
+    timeout: spawnTimeoutMs(5000),
   })
   if (r.status !== 0) {
     return undefined

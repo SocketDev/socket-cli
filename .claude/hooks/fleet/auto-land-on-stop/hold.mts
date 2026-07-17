@@ -24,6 +24,7 @@ import {
   readParked,
   resolveParkedFile,
 } from '../_shared/parked-paths.mts'
+import { isHookEntrypoint } from '../_shared/entrypoint.mts'
 
 const logger = getDefaultLogger()
 
@@ -103,7 +104,7 @@ export function main(): void {
 }
 
 /* c8 ignore start - entrypoint guard; exercised via subprocess in integration */
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+if (isHookEntrypoint(import.meta.url)) {
   void (async () => {
     main()
   })()

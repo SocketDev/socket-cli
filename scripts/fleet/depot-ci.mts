@@ -12,11 +12,11 @@
  */
 
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { httpJson } from '@socketsecurity/lib-stable/http-request'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { isMainModule } from './_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 const BASE = 'https://api.depot.dev/depot.ci.v1.CIService'
@@ -242,7 +242,7 @@ export async function main(argv: readonly string[]): Promise<void> {
   process.exitCode = 1
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+if (isMainModule(import.meta.url)) {
   main(process.argv.slice(2)).catch((e: unknown) => {
     logger.fail(errorMessage(e))
     process.exitCode = 1

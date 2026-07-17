@@ -1,44 +1,43 @@
 # Test layout
 
-Where a test lives is decided by **who runs it**, which decides **whether it
-cascades** to members and ships in the release bundle.
+**No wheelhouse test ships to the fleet.** Members receive the fleet scripts,
+hooks, and lint-rules as opaque cascaded tooling and run their OWN tests with the
+cascaded **runner** (`scripts/fleet/test.mts`, `cover.mts`, the cascaded
+`vitest.config.mts` + `test/scripts/{fleet,repo}/setup.mts`, `test/_shared/fleet`
+helpers). The wheelhouse authors + owns every `*.test.mts`, and they all live
+under `test/repo/**` — host-only, never cascaded, never in the release bundle.
 
-## The three homes
+There is no `test/fleet/` and no cascaded test tier.
 
-| Test of… | Lives in | Runner | Cascades to members? |
-| --- | --- | --- | --- |
-| Fleet **scripts** (`scripts/fleet/**`) | `test/unit/fleet/**` | vitest | **Yes** — in lock-step with the scripts (`manifest/files.mts`); members run them against their own copy |
-| Repo-specific code (host-owned) | `test/unit/**`, `test/repo/**` (host) | vitest | No (host-only) |
-| Wheelhouse **hooks / lint-rules / git-hooks** | `test/repo/{unit,integration,e2e}/**` | vitest | **No** — wheelhouse-only |
+## Homes
 
-## Why hook / lint-rule / git-hook tests are wheelhouse-only
+| Test of… | Lives in |
+| --- | --- |
+| Fleet **scripts** (`scripts/fleet/**`) | `test/repo/{unit,integration}/**` |
+| Wheelhouse **hooks / lint-rules / git-hooks** | `test/repo/{unit,integration,e2e}/**` |
+| Repo-specific host-owned code | `test/repo/**` |
 
-Their sources cascade byte-identical inside dir-mirrors (`.claude/hooks/fleet`,
-`.config/fleet/oxlint-plugin`, `.git-hooks`). But the cascaded
-`vitest.config.mts` **excludes** exactly those paths — so a member that received
-a co-located test could never run it. It would ship to every member and into the
-GitHub release bundle as pure dead weight.
-
-So those tests live under `test/repo/` in the wheelhouse only. They are NOT
-co-located with the code they test, and the cascaded trees ship **no** `*.test.*`
-files.
+All wheelhouse-only. The cascaded trees (`.claude/hooks/fleet`,
+`.config/fleet/oxlint-plugin`, `.git-hooks`, `scripts/fleet`) ship **no**
+`*.test.*` files.
 
 ## `test/repo/` organization
 
-`test/repo/<category>/<area>/<name>.test.mts`
+`test/repo/<category>/<area?>/<name>.test.mts`
 
 - **category** — `unit` (pure, in-process), `integration` (spawns a child
   process / git fixture / exercises the cascade engine), `e2e` (release /
-  publish / bundle flows).
-- **area** — `hooks`, `hooks-shared`, `lint-rules`, `git-hooks`.
-- Tests import the canonical source under `template/base/…` via a relative path
-  (the file sits 4 levels deep, so `../../../../template/base/…`).
+  publish / bundle flows), `isolated` (own forks / longer timeouts).
+- **area** (optional) — e.g. `hooks`, `hooks-shared`, `lint-rules`, `git-hooks`,
+  `sync-scaffolding`. Tests of fleet scripts sit flat under the category.
+- Tests import the source under a relative path; a hook / lint-rule test that
+  targets a cascaded dir-mirror source reads it under `template/base/…`.
 
 ## Enforcement (code-is-law)
 
-- **Runner**: `prefer-vitest-guard` — fleet tests are vitest, not `node:test`.
-- **No co-located co-tenant tests**: `cascaded-fleet-trees-have-no-tests` check
-  (in `check --all`) + the edit-time guard fail loud if a `*.test.*` appears
-  under a cascaded tree. Move it to `test/repo/` instead.
-- `test/unit/fleet/**` is the deliberate exception — those are cascaded fleet
-  contract tests, not co-tenant dead weight.
+- **Runner**: `prefer-vitest-guard` — tests are vitest, not `node:test`.
+- **No test in a cascaded tree**: `cascaded-fleet-trees-have-no-tests` (in
+  `check --all`) + the edit-time guard fail loud if a `*.test.*` appears under
+  any cascaded tree — absolute, no exceptions. Put it under `test/repo/`.
+- **No test in the cascade manifest**: `manifest/files.mts` lists no `test/**`
+  tree, so the cascade never carries a wheelhouse test to a member.

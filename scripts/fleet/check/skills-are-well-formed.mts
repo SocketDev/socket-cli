@@ -15,6 +15,7 @@
 //      loader + the mirror generator both key on name == dir).
 //   4. The frontmatter declares a non-empty `description:` (the trigger text the
 //      model uses to decide relevance — a skill with none is undiscoverable).
+//   5. The description is short enough to fit cross-agent skill-list budgets.
 //
 // Complements: mutating-skills-have-model (model: gate) and claude-md-citations-
 // resolve (every /fleet:<name> bullet resolves). Those assume a well-formed
@@ -23,20 +24,29 @@
 // `_shared` is not a skill (shared subskill libs) — skipped.
 //
 // ERROR (exit 1): any skill dir missing SKILL.md, frontmatter, a matching name,
-// or a description.
+// a description, or a budget-sized description.
 //
 // Usage: node scripts/fleet/check/skills-are-well-formed.mts [--quiet]
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from '../paths.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
+
+// Codex/OpenCode list every available skill in a fixed context slice before
+// the agent can choose one. Long descriptions crowd out other skills and get
+// truncated, so the source frontmatter owns a hard budget instead of relying on
+// each agent surface to shorten it differently.
+export const MAX_SKILL_DESCRIPTION_LENGTH = 180
+export const MAX_SKILL_CATALOG_DESCRIPTION_LENGTH = 7_000
+
+const SKILL_TIERS = ['fleet', 'repo'] as const
 
 export interface SkillDefect {
   name: string
@@ -46,6 +56,8 @@ export interface SkillDefect {
     | 'no-name'
     | 'name-mismatch'
     | 'no-description'
+    | 'description-too-long'
+    | 'catalog-description-budget-exceeded'
   detail: string
 }
 
@@ -129,6 +141,13 @@ export function classifySkill(
       detail: `frontmatter has no \`description:\` (the trigger text the model uses to find the skill)`,
     }
   }
+  if (description.length > MAX_SKILL_DESCRIPTION_LENGTH) {
+    return {
+      name,
+      reason: 'description-too-long',
+      detail: `frontmatter \`description:\` is ${description.length} chars; keep it <= ${MAX_SKILL_DESCRIPTION_LENGTH} chars so Codex/OpenCode skill lists do not get truncated`,
+    }
+  }
   return undefined
 }
 
@@ -161,10 +180,64 @@ export function findSkillDefects(skillsDir: string): SkillDefect[] {
   return defects
 }
 
+/**
+ * Check every discoverable tier and enforce a catalog-wide description budget.
+ */
+export function findSkillCatalogDefects(skillsRoot: string): SkillDefect[] {
+  const defects: SkillDefect[] = []
+  let catalogDescriptionLength = 0
+
+  for (let i = 0, { length } = SKILL_TIERS; i < length; i += 1) {
+    const tier = SKILL_TIERS[i]!
+    const tierDir = path.join(skillsRoot, tier)
+    const tierDefects = findSkillDefects(tierDir)
+    for (
+      let j = 0, { length: defectCount } = tierDefects;
+      j < defectCount;
+      j += 1
+    ) {
+      const defect = tierDefects[j]!
+      defects.push({ ...defect, name: `${tier}/${defect.name}` })
+    }
+
+    let names: string[]
+    try {
+      names = readdirSync(tierDir)
+    } catch {
+      continue
+    }
+    for (let j = 0, { length: nameCount } = names; j < nameCount; j += 1) {
+      const name = names[j]!
+      if (name === '_shared' || name.startsWith('.')) {
+        continue
+      }
+      const skillMd = path.join(tierDir, name, 'SKILL.md')
+      if (!existsSync(skillMd)) {
+        continue
+      }
+      const frontmatter = extractFrontmatter(readFileSync(skillMd, 'utf8'))
+      if (frontmatter === undefined) {
+        continue
+      }
+      catalogDescriptionLength +=
+        frontmatterValue(frontmatter, 'description')?.length ?? 0
+    }
+  }
+
+  if (catalogDescriptionLength > MAX_SKILL_CATALOG_DESCRIPTION_LENGTH) {
+    defects.push({
+      name: 'catalog',
+      reason: 'catalog-description-budget-exceeded',
+      detail: `skill descriptions total ${catalogDescriptionLength} chars; keep the catalog <= ${MAX_SKILL_CATALOG_DESCRIPTION_LENGTH} chars so Codex can render routing metadata without truncation`,
+    })
+  }
+  return defects
+}
+
 function main(): void {
   const quiet = process.argv.includes('--quiet')
-  const skillsDir = path.join(REPO_ROOT, '.claude', 'skills', 'fleet')
-  const defects = findSkillDefects(skillsDir)
+  const skillsRoot = path.join(REPO_ROOT, '.claude', 'skills')
+  const defects = findSkillCatalogDefects(skillsRoot)
 
   if (defects.length) {
     logger.fail(
@@ -180,11 +253,11 @@ function main(): void {
 
   if (!quiet) {
     logger.success(
-      '[check-skills-are-well-formed] every skill has a SKILL.md with a matching name + description.',
+      `[check-skills-are-well-formed] every skill has a SKILL.md with a matching name, <=${MAX_SKILL_DESCRIPTION_LENGTH}-char description, and <=${MAX_SKILL_CATALOG_DESCRIPTION_LENGTH}-char catalog.`,
     )
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   main()
 }

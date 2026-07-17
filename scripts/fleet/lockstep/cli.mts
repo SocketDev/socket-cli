@@ -38,6 +38,7 @@ import {
 } from './checks.mts'
 import { loadManifestTree, resolveManifestRoot } from './manifest.mts'
 import { emitHuman, summarize } from './report.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 import type { Row } from './schema.mts'
 import type { Manifest, Report } from './types.mts'
@@ -93,7 +94,7 @@ function evaluate(
   return reports
 }
 
-function main(): void {
+export function main(): void {
   const rootManifestPath = resolveManifestRoot(rootDir)
   const { areas, merged } = loadManifestTree(rootManifestPath)
 
@@ -140,4 +141,9 @@ function main(): void {
   }
 }
 
-main()
+// Direct execution (`node scripts/fleet/lockstep/cli.mts`) still runs the CLI;
+// importing this module no longer does — the lockstep.mts shim calls main()
+// explicitly under its own guard.
+if (isMainModule(import.meta.url)) {
+  void main()
+}

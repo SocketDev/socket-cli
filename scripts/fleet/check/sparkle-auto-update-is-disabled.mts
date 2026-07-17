@@ -26,40 +26,49 @@ import {
   auditSparkleApps,
   SPARKLE_DISABLE_KEYS,
 } from '../../../.claude/hooks/fleet/_shared/sparkle-auto-update.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
-const results = auditSparkleApps()
-const enabled = results.filter(r => r.state === 'enabled')
+export function main(): void {
+  const results = auditSparkleApps()
+  const enabled = results.filter(r => r.state === 'enabled')
 
-for (let i = 0, { length } = results; i < length; i += 1) {
-  const r = results[i]!
-  if (r.state === 'disabled') {
-    logger.log(`  ok  ${r.id}: ${r.reason}`)
-  } else if (r.state === 'absent') {
-    logger.log(`  --  ${r.id}: ${r.reason} (not applicable)`)
+  for (let i = 0, { length } = results; i < length; i += 1) {
+    const r = results[i]!
+    if (r.state === 'disabled') {
+      logger.log(`  ok  ${r.id}: ${r.reason}`)
+    } else if (r.state === 'absent') {
+      logger.log(`  --  ${r.id}: ${r.reason} (not applicable)`)
+    }
+  }
+
+  if (enabled.length === 0) {
+    logger.log('sparkle auto-update: disabled on every detected app.')
+    process.exitCode = 0
+  } else {
+    logger.error('')
+    logger.error(
+      `[sparkle-auto-update] ${enabled.length} app(s) still auto-update:`,
+    )
+    for (let i = 0, { length } = enabled; i < length; i += 1) {
+      const r = enabled[i]!
+      logger.error(`  ✗ ${r.id}: ${r.reason}`)
+      for (let j = 0, klen = SPARKLE_DISABLE_KEYS.length; j < klen; j += 1) {
+        logger.error(
+          `    fix: defaults write ${r.domain} ${SPARKLE_DISABLE_KEYS[j]!} -bool false`,
+        )
+      }
+    }
+    logger.error('')
+    logger.error('  Or run the installer that sets every knob:')
+    logger.error(
+      '    node .claude/hooks/fleet/setup-security-tools/install.mts',
+    )
+    process.exitCode = 1
   }
 }
 
-if (enabled.length === 0) {
-  logger.log('sparkle auto-update: disabled on every detected app.')
-  process.exitCode = 0
-} else {
-  logger.error('')
-  logger.error(
-    `[sparkle-auto-update] ${enabled.length} app(s) still auto-update:`,
-  )
-  for (let i = 0, { length } = enabled; i < length; i += 1) {
-    const r = enabled[i]!
-    logger.error(`  ✗ ${r.id}: ${r.reason}`)
-    for (let j = 0, klen = SPARKLE_DISABLE_KEYS.length; j < klen; j += 1) {
-      logger.error(
-        `    fix: defaults write ${r.domain} ${SPARKLE_DISABLE_KEYS[j]!} -bool false`,
-      )
-    }
-  }
-  logger.error('')
-  logger.error('  Or run the installer that sets every knob:')
-  logger.error('    node .claude/hooks/fleet/setup-security-tools/install.mts')
-  process.exitCode = 1
+if (isMainModule(import.meta.url)) {
+  main()
 }

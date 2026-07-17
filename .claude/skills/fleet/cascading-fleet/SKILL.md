@@ -1,6 +1,6 @@
 ---
 name: cascading-fleet
-description: Propagate a wheelhouse template change to every fleet repo. Packages the canonical fleet-repo list, the FLEET_SYNC=1 sentinel pattern, the worktree-per-repo loop, push-direct + PR-fallback, and worktree-cleanup that survives mid-loop crashes. Use when a wheelhouse template SHA needs to land in every fleet repo, or when batching multiple template SHAs into one cascade wave. Tool-version pin propagation is the wheelhouse pipeline's job (scripts/repo/pipeline.mts), not this skill's.
+description: Propagate a wheelhouse template change across fleet repos with worktrees, push/PR fallback, and cleanup.
 user-invocable: true
 allowed-tools: Bash(git fetch:*), Bash(git worktree:*), Bash(git branch:*), Bash(git status:*), Bash(git rev-list:*), Bash(git symbolic-ref:*), Bash(git show-ref:*), Bash(git push:*), Bash(git commit:*), Bash(git add:*), Bash(git log:*), Bash(node:*), Bash(gh pr create:*), Bash(gh repo view:*), Read, Bash(bash:*), Bash(chmod:*), Bash(cd:*), Bash(printf:*), Bash(echo:*), Bash(tee:*), Bash(tail:*), Bash(ls:*)
 model: claude-haiku-4-5

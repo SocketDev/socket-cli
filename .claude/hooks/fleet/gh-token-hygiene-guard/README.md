@@ -77,8 +77,9 @@ Two files under `~/.claude/`:
 - **Known gaps** (documented in
   [`docs/agents.md/fleet/security-stack.md`](../../../docs/agents.md/fleet/security-stack.md)):
   the transcript JSONL the bypass-phrase check reads is
-  unauthenticated (needs harness HMAC), and `containsGhInvocation` is
-  regex-based, not AST-based (shell-variable / eval evasion possible).
+  unauthenticated (needs harness HMAC), and the AST parser behind
+  `containsGhInvocation` cannot resolve a `$VAR`-sourced binary or an
+  `eval` body (shell-variable / eval evasion possible).
 
 ## Escape hatches
 

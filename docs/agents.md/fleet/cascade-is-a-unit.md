@@ -28,11 +28,9 @@ Calling a cascade "churn" or "noise" invites two failure modes:
   a dirty source for this reason).
 - **A multi-layer change collapses to one composite BEFORE any mutation.** When
   a single update spans layers (base + kind + per-repo override in the archetype
-  template, or a nested action-pin chain), resolve the full composite first,
-  then commit it in one indivisible step — never leave a member half-merged.
-  (The layered resolver materializes the whole composite into a staging tree,
-  then swaps it in with one rename; the registry pin cascade bumps until stable,
-  then pushes once.)
+  template), resolve the full composite first, then commit it in one indivisible
+  step — never leave a member half-merged. The layered resolver materializes the
+  whole composite into a staging tree, then swaps it in with one rename.
 - **A breaking value change is one wave, not a drip.** Renaming a fleet-wide
   enum (`repo.type`) means the schema + every member's config + every consumer
   move together, so no member is invalid mid-flight. Pick one atomic wave over a
@@ -43,5 +41,5 @@ Calling a cascade "churn" or "noise" invites two failure modes:
 - [`drift-watch.md`](drift-watch.md) — drift is a defect; cascade scope is safe.
 - [`stranded-cascades.md`](stranded-cascades.md) — interrupted waves leave
   stranded local commits/worktrees; the cleanup that keeps the unit whole.
-- [`shared-workflow-cascade.md`](shared-workflow-cascade.md) — the registry
-  nested-pin cascade, the canonical multi-layer atomic example.
+- [`shared-workflow-cascade.md`](shared-workflow-cascade.md) — the gh-aw
+  `.md`/`.lock.yml`/`actions-lock.json` trio, a companion atomic-unit example.

@@ -25,7 +25,6 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
@@ -36,6 +35,7 @@ import {
 } from '../../../.claude/hooks/fleet/_shared/npmrc-trust.mts'
 import { checkGateFloors } from '../../../.claude/hooks/fleet/_shared/trust-gates.mts'
 import { PNPM_WORKSPACE_YAML, REPO_ROOT } from '../paths.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -225,6 +225,6 @@ export function main(): void {
 
 // Run only when invoked directly (CLI / CI), not when imported by unit tests
 // — main() calls process.exit, which would tear down the test runner.
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   main()
 }

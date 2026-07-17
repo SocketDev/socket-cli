@@ -19,26 +19,42 @@
 
 import process from 'node:process'
 
+import { originOwnerRepo } from '../_shared/fleet-repos.mts'
+import { ghPrCreateCommands, isGhPrCreate } from '../_shared/gh-pr-command.mts'
 import { currentBranch, resolveDefaultBranch } from '../_shared/git-branch.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
-import { commandsFor } from '../_shared/shell-command.mts'
+import { flagValue } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-import type { Command } from '../_shared/shell-command.mts'
 
 const BYPASS_PHRASE = 'Allow pr-from-default-checkout bypass'
 
-// True when a parsed `gh` segment is a `pr create` / `pr new`. The verb is the
-// first two non-flag args after the binary, so `gh repo create` (a different
-// subcommand) does not match.
-function isGhPrCreateCmd(c: Command): boolean {
-  const verbs = c.args.filter(a => !a.startsWith('-'))
-  return verbs[0] === 'pr' && (verbs[1] === 'create' || verbs[1] === 'new')
+// The `gh pr create` detection is the shared parser-backed one; re-exported
+// so this guard's tests exercise the exact predicate the check runs.
+export { isGhPrCreate }
+
+// The explicit `--repo <value>` / `--repo=<value>` / `-R <value>` target of a
+// `gh pr create` in `command`, or undefined when gh would infer the repo from
+// the checkout.
+export function explicitRepoTarget(command: string): string | undefined {
+  for (const c of ghPrCreateCommands(command)) {
+    const value = flagValue(c.args, '--repo', '-R')
+    if (value !== undefined) {
+      return value
+    }
+  }
+  return undefined
 }
 
-// True when the command opens a PR (`gh pr create` / `gh pr new`).
-export function isGhPrCreate(command: string): boolean {
-  return commandsFor(command, 'gh').some(isGhPrCreateCmd)
+// Case-insensitive `owner/repo` equality between an explicit `--repo` value
+// (OWNER/REPO, HOST/OWNER/REPO, or a full URL) and a checkout's origin slug.
+export function sameOwnerRepo(target: string, origin: string): boolean {
+  const tail = target
+    .replace(/\.git$/, '')
+    .split('/')
+    .filter(Boolean)
+    .slice(-2)
+    .join('/')
+  return tail.toLowerCase() === origin.toLowerCase()
 }
 
 // True when `branch` is a default-branch checkout — the repo's resolved
@@ -57,6 +73,18 @@ export const hook = defineHook({
       return undefined
     }
     const cwd = payload.cwd ?? process.cwd()
+    // An explicit `--repo` naming a DIFFERENT repository than this checkout's
+    // origin means the cwd checkout is not the PR's source — its branch is
+    // irrelevant (the sibling no-pr-from-default-branch-guard still vets the
+    // PR head). Only same-repo (or repo-less) invocations are the
+    // wrong-checkout mistake this guard exists to stop.
+    const explicitRepo = explicitRepoTarget(command)
+    if (explicitRepo) {
+      const origin = originOwnerRepo(cwd)
+      if (origin && !sameOwnerRepo(explicitRepo, origin)) {
+        return undefined
+      }
+    }
     const branch = currentBranch(cwd)
     if (!branch) {
       return undefined

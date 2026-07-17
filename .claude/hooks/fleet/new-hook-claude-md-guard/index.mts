@@ -33,6 +33,7 @@
 
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
@@ -70,17 +71,18 @@ export function findCanonicalClaudeMd(
   filePath: string,
   cwd: string | undefined,
 ): string | undefined {
+  const normalizedFilePath = normalizePath(filePath)
   // Wheelhouse mode: `<repo>/template/base/.claude/hooks/<name>/index.mts`
   // → check `<repo>/template/base/CLAUDE.md` (the fleet-canonical source).
-  const tplIdx = filePath.indexOf('/template/base/.claude/hooks/')
+  const tplIdx = normalizedFilePath.indexOf('/template/base/.claude/hooks/')
   if (tplIdx >= 0) {
-    return filePath.slice(0, tplIdx) + '/template/base/CLAUDE.md'
+    return normalizedFilePath.slice(0, tplIdx) + '/template/base/CLAUDE.md'
   }
   // Downstream mode: `<repo>/.claude/hooks/<name>/index.mts`
   // → check `<repo>/CLAUDE.md` (the cascaded fleet block lives here).
-  const repoIdx = filePath.indexOf('/.claude/hooks/')
+  const repoIdx = normalizedFilePath.indexOf('/.claude/hooks/')
   if (repoIdx >= 0) {
-    return filePath.slice(0, repoIdx) + '/CLAUDE.md'
+    return normalizedFilePath.slice(0, repoIdx) + '/CLAUDE.md'
   }
   // Fallback: try cwd-relative. Prefer template/ if present, else
   // fall back to repo-root CLAUDE.md.
@@ -99,7 +101,8 @@ export function findCanonicalClaudeMd(
 
 export const check = editGuard((filePath, _content, payload) => {
   const toolName = payload.tool_name
-  const match = HOOK_INDEX_PATH_RE.exec(filePath)
+  const normalizedFilePath = normalizePath(filePath)
+  const match = HOOK_INDEX_PATH_RE.exec(normalizedFilePath)
   if (!match) {
     return undefined
   }
@@ -128,7 +131,7 @@ export const check = editGuard((filePath, _content, payload) => {
   if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)) {
     return undefined
   }
-  const claudeMdPath = findCanonicalClaudeMd(filePath, payload.cwd)
+  const claudeMdPath = findCanonicalClaudeMd(normalizedFilePath, payload.cwd)
   if (!claudeMdPath || !existsSync(claudeMdPath)) {
     // Can't find CLAUDE.md; fail-open rather than blocking on
     // infrastructure problems.

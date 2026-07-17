@@ -31,10 +31,10 @@ export const CORE_SHIM_COMMANDS = ['cargo', 'npm', 'pnpm', 'uv'] as const
  */
 export function findBrokenShimTargets(content: string): string[] {
   const broken: string[] = []
-  const quoted = content.matchAll(/"(?<target>\/[^"]+)"/g)
+  const quoted = content.matchAll(/"(?<target>[^"]+)"/g)
   for (const match of quoted) {
     const target = match.groups!['target']!
-    if (target.includes('$')) {
+    if (target.includes('$') || !path.isAbsolute(target)) {
       continue
     }
     if (!existsSync(target)) {
@@ -61,14 +61,16 @@ const DLX_SEGMENT = '/_dlx/'
 /**
  * GC-stable mirror root for shim exec targets. `_dlx/<hash>/…` is
  * content-addressed and garbage-collected; nothing sweeps `sfw-stable/`, so a
- * shim repointed here survives a dlx eviction. Sibling to the shim dir under the
- * one `getSocketAppDir('wheelhouse')` umbrella.
+ * shim repointed here survives a dlx eviction. Sibling to the shim dir under
+ * the one `getSocketAppDir('wheelhouse')` umbrella.
  */
 export function getStableDir(): string {
   return path.join(getSocketAppDir('wheelhouse'), 'sfw-stable')
 }
 
-/** True when a shim exec target lives in the GC-able dlx cache. */
+/**
+ * True when a shim exec target lives in the GC-able dlx cache.
+ */
 export function isDlxTarget(target: string): boolean {
   return normalizePath(target).includes(DLX_SEGMENT)
 }
@@ -87,7 +89,9 @@ export function stableTargetFor(target: string): string | undefined {
   return path.join(getStableDir(), norm.slice(at + DLX_SEGMENT.length))
 }
 
-/** The `…/_dlx/<hash>` root of a dlx target (the whole dir to mirror). */
+/**
+ * The `…/_dlx/<hash>` root of a dlx target (the whole dir to mirror).
+ */
 function dlxRootOf(target: string): string | undefined {
   const norm = normalizePath(target)
   const at = norm.indexOf(DLX_SEGMENT)
@@ -104,9 +108,13 @@ function dlxRootOf(target: string): string | undefined {
  */
 export function findDlxBackedTargets(content: string): string[] {
   const targets: string[] = []
-  for (const match of content.matchAll(/"(?<target>\/[^"]+)"/g)) {
+  for (const match of content.matchAll(/"(?<target>[^"]+)"/g)) {
     const target = match.groups!['target']!
-    if (!target.includes('$') && isDlxTarget(target)) {
+    if (
+      !target.includes('$') &&
+      path.isAbsolute(target) &&
+      isDlxTarget(target)
+    ) {
       targets.push(target)
     }
   }

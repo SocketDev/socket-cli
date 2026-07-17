@@ -189,10 +189,19 @@ export function repoBaseUrl(
  * Render one bullet for a commit: a bold scope prefix when present, the
  * description, and a `**BREAKING:**` marker for breaking changes.
  */
+function escapeMarkdownText(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+}
+
 function renderBullet(commit: ConventionalCommit): string {
   const breaking = commit.breaking ? '**BREAKING:** ' : ''
-  const scope = commit.scope ? `**\`${commit.scope}\`** — ` : ''
-  return `- ${breaking}${scope}${commit.description}`
+  const scope = commit.scope
+    ? `**\`${escapeMarkdownText(commit.scope)}\`** — `
+    : ''
+  return `- ${breaking}${scope}${escapeMarkdownText(commit.description)}`
 }
 
 /**
@@ -201,24 +210,49 @@ function renderBullet(commit: ConventionalCommit): string {
  * a repo URL is known, else `## X.Y.Z - DATE`); only user-visible commits
  * appear, grouped into Added / Changed / Fixed in that order.
  */
+/**
+ * The `## <version> - <date>` heading (linked to the release tag when a repo
+ * URL is known). One definition, shared by section generation and Unreleased
+ * promotion.
+ */
+export function changelogHeading(
+  version: string,
+  date: string,
+  repoUrl: string | undefined,
+): string {
+  return repoUrl
+    ? `## [${version}](${repoUrl}/releases/tag/v${version}) - ${date}`
+    : `## ${version} - ${date}`
+}
+
 export function generateChangelogSection(options: {
   commits: readonly ConventionalCommit[]
   date: string
   repoUrl: string | undefined
   version: string
+  /**
+   * Override the computed `## <version> - <date>` heading. Used to render the
+   * accrued `## [Unreleased]` section at squash time.
+   */
+  heading?: string | undefined
 }): string {
-  const { commits, date, repoUrl, version } = {
+  const {
+    commits,
+    date,
+    heading: headingOverride,
+    repoUrl,
+    version,
+  } = {
     __proto__: null,
     ...options,
   } as {
     commits: readonly ConventionalCommit[]
     date: string
+    heading?: string | undefined
     repoUrl: string | undefined
     version: string
   }
-  const heading = repoUrl
-    ? `## [${version}](${repoUrl}/releases/tag/v${version}) - ${date}`
-    : `## ${version} - ${date}`
+  const heading = headingOverride ?? changelogHeading(version, date, repoUrl)
 
   const bySection = new Map<string, string[]>()
   for (let i = 0, { length } = commits; i < length; i += 1) {
@@ -245,4 +279,195 @@ export function generateChangelogSection(options: {
     }
   }
   return blocks.join('\n\n')
+}
+
+/**
+ * The heading of the accrued, not-yet-released changelog section. Squash-time
+ * accrual prepends user-visible entries here; a release promotes it to the
+ * version heading.
+ */
+export const UNRELEASED_HEADING = '## [Unreleased]'
+
+/**
+ * True when a generated changelog section carries at least one user-visible
+ * entry (a `- ` bullet), vs a bare heading with nothing under it. The empty
+ * case is what the release/squash flow stops on (loudly) unless the operator
+ * supplies an explicit empty-changelog entry.
+ */
+export function sectionHasEntries(section: string): boolean {
+  return section.split('\n').some(line => /^\s*-\s/u.test(line))
+}
+
+/**
+ * Append a `### Changed` block with the operator-supplied `bullet` to an
+ * otherwise entry-less section, so a release still documents something when the
+ * operator explicitly names the entry (bump --empty-changelog-entry "…")
+ * instead of authoring real entries under [Unreleased].
+ */
+export function withChangelogEntry(section: string, bullet: string): string {
+  return `${section}\n\n### Changed\n\n- ${bullet}`
+}
+
+/**
+ * Promote the accrued `## [Unreleased]` section to a released `versionHeading`.
+ * Returns the promoted section (heading + the accrued body) and the changelog
+ * with the `[Unreleased]` block removed, or undefined when there is no
+ * `[Unreleased]` section with entries to promote (so the caller falls back to
+ * commit-derivation, then the empty-guard). Pure over its inputs.
+ */
+/**
+ * The `[start, end)` line range of the `## [Unreleased]` block within `lines`
+ * (heading at `start`, `end` at the next `## ` heading or EOF), or undefined
+ * when there is no `[Unreleased]` heading. One scanner, shared by
+ * promote+merge.
+ */
+function unreleasedRange(
+  lines: readonly string[],
+): { end: number; start: number } | undefined {
+  const start = lines.findIndex(l => l.trim() === UNRELEASED_HEADING)
+  if (start === -1) {
+    return undefined
+  }
+  let end = lines.length
+  for (let i = start + 1, { length } = lines; i < length; i += 1) {
+    if (lines[i]!.startsWith('## ')) {
+      end = i
+      break
+    }
+  }
+  return { end, start }
+}
+
+/**
+ * Parse a changelog section's `### <Section>` blocks into a
+ * `{ section -> bullet lines }` map (bullets kept verbatim, already rendered).
+ * Pure over its input.
+ */
+export function parseSectionBullets(section: string): Map<string, string[]> {
+  const out = new Map<string, string[]>()
+  let current: string | undefined
+  for (const line of section.split('\n')) {
+    const heading = /^###\s+(.+?)\s*$/u.exec(line)
+    if (heading) {
+      current = heading[1]!
+      if (!out.has(current)) {
+        out.set(current, [])
+      }
+      continue
+    }
+    if (current && /^\s*-\s/u.test(line)) {
+      out.get(current)!.push(line.trim())
+    }
+  }
+  return out
+}
+
+/**
+ * Render a `{ section -> bullets }` map under `heading`, standard sections in
+ * canonical order first, then any others. Empty sections are omitted.
+ */
+function renderSectionMap(
+  heading: string,
+  bySection: Map<string, string[]>,
+): string {
+  const blocks: string[] = [heading]
+  const emit = (section: string): void => {
+    const bullets = bySection.get(section)
+    if (bullets && bullets.length > 0) {
+      blocks.push(`### ${section}\n\n${bullets.join('\n')}`)
+    }
+  }
+  for (let i = 0, { length } = SECTION_ORDER; i < length; i += 1) {
+    emit(SECTION_ORDER[i]!)
+  }
+  for (const section of bySection.keys()) {
+    if (!SECTION_ORDER.includes(section)) {
+      emit(section)
+    }
+  }
+  return blocks.join('\n\n')
+}
+
+/**
+ * Merge a freshly-generated `entriesSection` (from generateChangelogSection)
+ * into the changelog's `## [Unreleased]` block — creating it above the first
+ * version heading when absent — newest entries first, deduping identical
+ * bullets. Squash-time accrual calls this so user-visible entries survive the
+ * collapse and accumulate across squashes until a release promotes them. A
+ * no-entry `entriesSection` returns the changelog unchanged. Pure over inputs.
+ */
+export function mergeUnreleased(
+  changelog: string,
+  entriesSection: string,
+): string {
+  const incoming = parseSectionBullets(entriesSection)
+  let incomingCount = 0
+  for (const bullets of incoming.values()) {
+    incomingCount += bullets.length
+  }
+  if (incomingCount === 0) {
+    return changelog
+  }
+  const lines = changelog.split('\n')
+  const range = unreleasedRange(lines)
+  let before: string[]
+  let after: string[]
+  let existingBody = ''
+  if (!range) {
+    const firstVersion = lines.findIndex(l => l.startsWith('## '))
+    if (firstVersion === -1) {
+      before = lines
+      after = []
+    } else {
+      before = lines.slice(0, firstVersion)
+      after = lines.slice(firstVersion)
+    }
+  } else {
+    existingBody = lines.slice(range.start + 1, range.end).join('\n')
+    before = lines.slice(0, range.start)
+    after = lines.slice(range.end)
+  }
+  // Incoming (newest) first, then the existing accrued bullets, deduped.
+  const merged = new Map<string, string[]>()
+  for (const [section, bullets] of incoming) {
+    merged.set(section, [...bullets])
+  }
+  for (const [section, bullets] of parseSectionBullets(existingBody)) {
+    const arr = merged.get(section) ?? []
+    for (const bullet of bullets) {
+      if (!arr.includes(bullet)) {
+        arr.push(bullet)
+      }
+    }
+    merged.set(section, arr)
+  }
+  const block = renderSectionMap(UNRELEASED_HEADING, merged)
+  const beforeText = before.join('\n').replace(/\s*$/u, '')
+  const afterText = after.join('\n').replace(/^\s*/u, '')
+  return `${beforeText}\n\n${block}\n\n${afterText}`
+    .replace(/\n{3,}/gu, '\n\n')
+    .replace(/\s+$/u, '\n')
+}
+
+export function promoteUnreleased(
+  changelog: string,
+  versionHeading: string,
+): { changelog: string; section: string } | undefined {
+  const lines = changelog.split('\n')
+  const range = unreleasedRange(lines)
+  if (!range) {
+    return undefined
+  }
+  const body = lines
+    .slice(range.start + 1, range.end)
+    .join('\n')
+    .trim()
+  if (!sectionHasEntries(body)) {
+    return undefined
+  }
+  const remainder = [...lines.slice(0, range.start), ...lines.slice(range.end)]
+    .join('\n')
+    .replace(/\n{3,}/gu, '\n\n')
+    .replace(/\s+$/u, '\n')
+  return { changelog: remainder, section: `${versionHeading}\n\n${body}` }
 }

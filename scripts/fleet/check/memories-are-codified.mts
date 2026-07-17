@@ -29,6 +29,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -49,7 +50,7 @@ export interface MemoryCodifyResult {
  * `~/.claude/projects/<slug>/memory/`.
  */
 export function memoryStoreDir(repoRoot: string, home = os.homedir()): string {
-  const slug = repoRoot.split(path.sep).join('-')
+  const slug = repoRoot.replaceAll('\\', '-').replaceAll('/', '-')
   return path.join(home, '.claude', 'projects', slug, 'memory')
 }
 
@@ -153,7 +154,7 @@ export function main(): void {
 }
 
 /* c8 ignore start - entrypoint guard; exercised via subprocess */
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+if (isMainModule(import.meta.url)) {
   main()
 }
 /* c8 ignore stop */

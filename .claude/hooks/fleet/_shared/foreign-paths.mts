@@ -26,6 +26,8 @@ import { appendFileSync, mkdirSync, readFileSync, statSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
+import { spawnTimeoutMs } from './spawn-timeout.mts'
+
 // Untracked-by-default path prefixes — kept in lock-step with
 // dirty-worktree-stop-guard. Vendored / build-copied trees are
 // expected to be dirty and are never "another agent's work".
@@ -407,7 +409,7 @@ export function listForeignDirtyPaths(
   const r = spawnSync('git', ['status', '--porcelain'], {
     cwd: repoDir,
     stdioString: false,
-    timeout: 5000,
+    timeout: spawnTimeoutMs(5000),
   })
   if (r.status !== 0) {
     return []

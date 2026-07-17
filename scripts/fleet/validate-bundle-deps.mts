@@ -19,6 +19,7 @@ import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from './paths.mts'
+import { isMainModule } from './_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -69,7 +70,7 @@ export async function findDistFiles(distPath: string): Promise<string[]> {
 /**
  * Check if a string is a valid package specifier.
  */
-function isValidPackageSpecifier(specifier: string): boolean {
+export function isValidPackageSpecifier(specifier: string): boolean {
   // Relative imports
   if (specifier.startsWith('.') || specifier.startsWith('/')) {
     return false
@@ -114,7 +115,9 @@ function isValidPackageSpecifier(specifier: string): boolean {
  * Extract external package names from require() and import statements in built
  * files.
  */
-async function extractExternalPackages(filePath: string): Promise<Set<string>> {
+export async function extractExternalPackages(
+  filePath: string,
+): Promise<Set<string>> {
   const content = await fs.readFile(filePath, 'utf8')
   const externals = new Set<string>()
 
@@ -178,7 +181,9 @@ async function extractExternalPackages(filePath: string): Promise<Set<string>> {
 /**
  * Extract bundled package names from node_modules paths in comments and code.
  */
-async function extractBundledPackages(filePath: string): Promise<Set<string>> {
+export async function extractBundledPackages(
+  filePath: string,
+): Promise<Set<string>> {
   const content = await fs.readFile(filePath, 'utf8')
   const bundled = new Set<string>()
 
@@ -243,7 +248,7 @@ async function extractBundledPackages(filePath: string): Promise<Set<string>> {
 /**
  * Get package name from a module specifier (strip subpaths).
  */
-function getPackageName(specifier: string): string | undefined {
+export function getPackageName(specifier: string): string | undefined {
   // Relative imports are not packages
   if (specifier.startsWith('.') || specifier.startsWith('/')) {
     return undefined
@@ -466,7 +471,9 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((e: unknown) => {
-  logger.error('Unhandled error in main():', e)
-  process.exitCode = 1
-})
+if (isMainModule(import.meta.url)) {
+  main().catch((e: unknown) => {
+    logger.error('Unhandled error in main():', e)
+    process.exitCode = 1
+  })
+}

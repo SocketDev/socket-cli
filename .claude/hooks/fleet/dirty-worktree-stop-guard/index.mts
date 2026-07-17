@@ -62,6 +62,13 @@
 // additions/source-patched/) are filtered out — they're under
 // .gitignore rules and not the failure mode this hook targets.
 //
+// Auto-lander lock-step (_shared/landable.mts): a path the auto-lander
+// (land-work.mts) will not hand-commit — generated (lockfile, hook bundle,
+// build/coverage output), unmerged (conflict), or both-touched (staged +
+// worktree differ) — is filtered out too. Blocking on one strands the turn
+// demanding a `git commit -o` the lander itself refuses; both mechanisms
+// read the SAME classifiers so they can't drift.
+//
 // Fail-open: any error in the hook allows the stop (a guard bug must
 // not wedge every Stop) — runGuard swallows throws.
 
@@ -86,6 +93,7 @@ import {
   resolveStoreRoot,
 } from '../_shared/active-edits-ledger.mts'
 import { readSessionTouchedPaths } from '../_shared/foreign-paths.mts'
+import { isBothTouched, isGenerated, isUnmerged } from '../_shared/landable.mts'
 import {
   isParked,
   readParked,
@@ -95,6 +103,7 @@ import type { ParkedEntry } from '../_shared/parked-paths.mts'
 import { block, defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
+import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 const BYPASS_PHRASE = 'Allow dirty-worktree bypass'
@@ -112,7 +121,7 @@ export function getProjectDir(): string | undefined {
 export function isPrimaryCheckout(dir: string): boolean {
   const r = spawnSync('git', ['rev-parse', '--git-dir'], {
     cwd: dir,
-    timeout: 5000,
+    timeout: spawnTimeoutMs(5000),
   })
   if (r.status !== 0) {
     // Not a git repo (or git unavailable) — nothing to guard, treat as
@@ -173,6 +182,16 @@ export function parsePorcelain(out: string): DirtyEntry[] {
     if (isUntrackedByDefault(filePath)) {
       continue
     }
+    // Lock-step with the auto-lander (land-work.mts): a path IT would not
+    // hand-commit is one this guard must not demand a human commit. It skips
+    // generated (machine-written: lockfile, hook bundle, build/coverage),
+    // unmerged (conflict — a human resolves, never auto-lands), and both-touched
+    // (staged+worktree differ — concurrent authorship it won't blend). Blocking
+    // on any of these strands the turn on work `git commit -o` can't cleanly
+    // land. Shared classifiers keep the two mechanisms from drifting.
+    if (isGenerated(filePath) || isUnmerged(status) || isBothTouched(status)) {
+      continue
+    }
     entries.push({ status, path: filePath })
   }
   return entries
@@ -181,7 +200,7 @@ export function parsePorcelain(out: string): DirtyEntry[] {
 export function listDirtyEntries(repoDir: string): DirtyEntry[] {
   const r = spawnSync('git', ['status', '--porcelain'], {
     cwd: repoDir,
-    timeout: 5000,
+    timeout: spawnTimeoutMs(5000),
   })
   if (r.status !== 0) {
     return []

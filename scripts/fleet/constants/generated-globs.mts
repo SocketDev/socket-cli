@@ -12,7 +12,7 @@
  *               can't hang the pre-commit run by being transformed as a graph
  *               input.
  *     - format / git — `.config/fleet/.prettierignore` and `.gitignore` are
- *               static formats; `scripts/fleet/check/generated-globs-consistent.mts`
+ *               static formats; `scripts/fleet/check/generated-globs-are-consistent.mts`
  *               asserts they cover every entry here rather than re-listing it.
  *
  *   Repo-specific generated dirs (e.g. a parser's `pkg-node/`) are added via the

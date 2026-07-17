@@ -14,7 +14,6 @@
 
 import process from 'node:process'
 import { readFileSync, writeFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
@@ -26,6 +25,7 @@ import {
   summarizeOutcomes,
 } from './lib/patch-parse.mts'
 import type { PatchOutcome } from './lib/patch-parse.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -82,6 +82,6 @@ export function main(argv: readonly string[]): number {
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   process.exitCode = main(process.argv.slice(2))
 }

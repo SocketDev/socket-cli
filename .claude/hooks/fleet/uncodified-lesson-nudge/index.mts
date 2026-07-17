@@ -21,8 +21,14 @@
 //
 // Fail-open on parse / payload errors.
 
+import process from 'node:process'
+
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
+import {
+  RECURRENCE_THRESHOLD,
+  recordOccurrence,
+} from '../_shared/learning-ledger.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import { readLastAssistantToolUses } from '../_shared/transcript.mts'
 
@@ -61,6 +67,8 @@ export function citesEnforcer(content: string): boolean {
 export const check = (payload: ToolCallPayload): GuardResult => {
   const toolUses = readLastAssistantToolUses(payload?.transcript_path)
   const flagged: string[] = []
+  // Content of each flagged lesson, for cross-session recurrence recording.
+  const flaggedContent: string[] = []
   for (let i = 0, { length } = toolUses; i < length; i += 1) {
     const evt = toolUses[i]!
     if (
@@ -86,23 +94,50 @@ export const check = (payload: ToolCallPayload): GuardResult => {
           : JSON.stringify(evt.input)
     if (isEnforceableLesson(content) && !citesEnforcer(content)) {
       flagged.push(filePath.replace(/^.*\/memory\//, 'memory/'))
+      flaggedContent.push(content)
     }
   }
   if (flagged.length === 0) {
     return undefined
   }
-  return notify(
-    [
-      '[uncodified-lesson-nudge] Recorded a durable lesson with no code enforcer:',
-      '',
-      ...flagged.map(f => `  • ${f}`),
-      '',
-      '  Memory alone does not enforce ("code is law"). Turn this into an',
-      '  executable enforcer — run `/codifying-disciplines` (scans memory →',
-      '  proposes a hook / lint rule / check + agents.md doc), or for a single',
-      '  rule `node scripts/fleet/codify-rule.mts --memory <path> --apply`.',
-    ].join('\n') + '\n',
+  // Record each still-uncodified lesson in the cross-session ledger. A lesson
+  // re-written uncodified in a LATER session escalates: recording the same
+  // memory content twice without an enforcer is the strongest "codify it now"
+  // signal. Fail-open — a broken ledger yields 0 and the base nudge still fires.
+  const projectDir =
+    process.env['CLAUDE_PROJECT_DIR'] ?? payload?.cwd ?? process.cwd()
+  const sessionId = payload?.transcript_path ?? 'unknown-session'
+  let maxOccurrences = 0
+  for (let i = 0, { length } = flaggedContent; i < length; i += 1) {
+    const n = recordOccurrence(projectDir, {
+      sessionId,
+      text: `uncodified: ${flaggedContent[i]!}`,
+      type: 'convention',
+    })
+    if (n > maxOccurrences) {
+      maxOccurrences = n
+    }
+  }
+  const lines = [
+    '[uncodified-lesson-nudge] Recorded a durable lesson with no code enforcer:',
+    '',
+    ...flagged.map(f => `  • ${f}`),
+    '',
+  ]
+  if (maxOccurrences >= RECURRENCE_THRESHOLD) {
+    lines.push(
+      `  ⚠ This lesson has been recorded uncodified across ${maxOccurrences} ` +
+        'sessions (learning ledger) — stop deferring, codify it THIS turn.',
+    )
+    lines.push('')
+  }
+  lines.push(
+    '  Memory alone does not enforce ("code is law"). Turn this into an',
+    '  executable enforcer — run `/codifying-disciplines` (scans memory →',
+    '  proposes a hook / lint rule / check + agents.md doc), or for a single',
+    '  rule `node scripts/fleet/codify-rule.mts --memory <path> --apply`.',
   )
+  return notify(lines.join('\n') + '\n')
 }
 
 export const hook = defineHook({

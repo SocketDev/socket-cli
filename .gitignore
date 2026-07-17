@@ -194,6 +194,16 @@ pnpm-debug.log
 !/.claude/settings.json
 !/.claude/skills/
 !/.claude/workflows/
+# Release-only generated hook bundles (multi-MB rolldown output): shipped via
+# the GitHub-release bundle + rebuilt by `setup:3-hook-snapshot`, NEVER
+# committed to the cascade. Re-ignored even though /.claude/hooks/ is
+# re-included above. Unanchored (**/) so the wheelhouse template/base/ mirror
+# copies are ignored too, not just the repo-root live copy. Keep in lock-step
+# with RELEASE_ONLY_DIR_MIRROR_FILES (scripts/repo/sync-scaffolding/
+# dir-mirror-skip.mts). See docs/agents.md/fleet/release-vs-cascade.md.
+**/.claude/hooks/fleet/_dispatch/bundle.cjs
+**/.claude/hooks/fleet/_dispatch/excluded-bundle.cjs
+**/.claude/hooks/fleet/_dispatch/snapshot-bundle.cjs
 
 # Derived cross-harness rule adapters — generated per-repo, per-platform by
 # the multi-agent scaffolding (setup / init / sync) script from .claude/skills/
@@ -227,11 +237,28 @@ Thumbs.db
 
 # Build outputs — universal across the fleet. Project-specific
 # variants (e.g. a non-standard dist path) go OUTSIDE this block.
+# The build/test-output + vendored-tree entries below are kept in
+# lock-step with GENERATED_GLOBS (scripts/fleet/constants/
+# generated-globs.mts) by generated-globs-are-consistent.mts.
 **/build/
 **/coverage/
+**/coverage-children/
 **/coverage-isolated/
 **/dist/
+**/out/
 **/.cache/
+**/.repo-map/
+
+# Vendored / upstream trees + conformance fixtures — untracked-by-default
+# (docs/agents.md/fleet/untracked-by-default.md): someone else's source or
+# synced corpora, restored by the owning sync/build step, never hand-edited.
+# A repo that must track a hand-written file inside one re-includes it
+# OUTSIDE this block (!<dir>/ then <dir>/* then !<dir>/<file>).
+**/external/
+**/test/fixtures/
+**/third_party/
+**/upstream/
+**/vendor/
 
 # Node
 node_modules/

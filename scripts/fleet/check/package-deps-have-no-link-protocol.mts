@@ -17,6 +17,7 @@ import process from 'node:process'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
+import { isMainModule } from '../_shared/is-main-module.mts'
 import { REPO_ROOT } from '../paths.mts'
 
 const logger = getDefaultLogger()
@@ -128,7 +129,9 @@ async function main(): Promise<void> {
   process.exitCode = 1
 }
 
-main().catch((error: unknown) => {
-  logger.fail('link-protocol check failed:', error)
-  process.exitCode = 1
-})
+if (isMainModule(import.meta.url)) {
+  main().catch((error: unknown) => {
+    logger.fail('link-protocol check failed:', error)
+    process.exitCode = 1
+  })
+}

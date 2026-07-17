@@ -21,6 +21,7 @@ export type FleetCommentStyle = 'hash' | 'html' | 'slash'
 export interface BundleManifest {
   readonly files: Record<string, string>
   readonly segments?: readonly SegmentEntry[] | undefined
+  readonly settingsSegment?: SettingsSegmentEntry | undefined
   readonly templateSha: string
   readonly version: string
   readonly workspaceSegment?: WorkspaceSegmentEntry | undefined
@@ -77,10 +78,45 @@ export interface SegmentEntry {
   readonly sha256: string
 }
 
+export interface SettingsSegmentEntry {
+  readonly path: string
+  readonly sha256: string
+}
+
 export interface SpliceOptions {
   readonly commentStyle: FleetCommentStyle
   readonly fleetBlock: string
   readonly target: string
+}
+
+export interface TarExtractOptions {
+  readonly archive: string
+  readonly destination: string
+  readonly platform: NodeJS.Platform
+}
+
+/**
+ * Normalize bundle-manifest paths to their portable `/` wire format.
+ */
+export function normalizeBundlePath(filePath: string): string {
+  return filePath.replaceAll('\\', '/')
+}
+
+export function tarExecutable(
+  platform: NodeJS.Platform,
+  systemRoot: string | undefined,
+): string {
+  return platform === 'win32'
+    ? path.join(systemRoot ?? 'C:\\Windows', 'System32', 'tar.exe')
+    : 'tar'
+}
+
+/**
+ * Build extraction arguments for the platform-selected tar executable.
+ */
+export function tarExtractArgs(options: TarExtractOptions): string[] {
+  const opts = { __proto__: null, ...options } as TarExtractOptions
+  return ['-xzf', opts.archive, '-C', opts.destination]
 }
 
 export function errorMessage(e: unknown): string {
@@ -297,6 +333,10 @@ export function run(cmd: string, args: readonly string[]): void {
   execFileSync(cmd, args as string[], { stdio: 'inherit' })
 }
 
+export function segmentFileName(relativePath: string): string {
+  return `${relativePath.replace(/^\./, 'dot-')}.fleetblock`
+}
+
 export function readManifest(manifestPath: string): BundleManifest {
   return JSON.parse(readFileSync(manifestPath, 'utf8')) as BundleManifest
 }
@@ -339,21 +379,18 @@ export function verifyBundleFiles(
 }
 
 /**
- * Verify every segment in `manifest.segments` against its expected SHA-256. A
- * segment mismatch is just as fatal as a file mismatch — the splice result
- * would silently differ from the producer's intent.
+ * Verify every generic block segment and the specialized Claude settings
+ * segment against its expected SHA-256. A mismatch is just as fatal as a file
+ * mismatch — the merge result would silently differ from producer intent.
  */
 export function verifySegments(
   segmentsDir: string,
   manifest: BundleManifest,
 ): string[] {
   const segments = manifest.segments
-  if (!segments || segments.length === 0) {
-    return []
-  }
   const problems: string[] = []
-  for (const entry of segments) {
-    const destName = `${entry.path.replace(/^\./, 'dot-')}.fleetblock`
+  for (const entry of segments ?? []) {
+    const destName = segmentFileName(entry.path)
     const abs = path.join(segmentsDir, destName)
     if (!existsSync(abs)) {
       problems.push(`missing segment: ${entry.path}`)
@@ -364,6 +401,20 @@ export function verifySegments(
       problems.push(
         `sha256 mismatch for segment ${entry.path} (got ${actual}, want ${entry.sha256})`,
       )
+    }
+  }
+  const settingsSegment = manifest.settingsSegment
+  if (settingsSegment !== undefined) {
+    const abs = path.join(segmentsDir, segmentFileName(settingsSegment.path))
+    if (!existsSync(abs)) {
+      problems.push(`missing settings segment: ${settingsSegment.path}`)
+    } else {
+      const actual = computeSha256(readFileSync(abs))
+      if (actual !== settingsSegment.sha256) {
+        problems.push(
+          `sha256 mismatch for settings segment ${settingsSegment.path} (got ${actual}, want ${settingsSegment.sha256})`,
+        )
+      }
     }
   }
   return problems

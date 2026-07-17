@@ -24,6 +24,7 @@ import process from 'node:process'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
+import { KNOWN_MODELS, TIER_ALIASES } from '../lib/known-models.mts'
 import { REPO_ROOT } from '../paths.mts'
 
 const logger = getDefaultLogger()
@@ -55,6 +56,21 @@ export function hasModel(fm: string): boolean {
   return /^model:\s*\S/m.test(fm)
 }
 
+// The `model:` value from a frontmatter block, or undefined when absent.
+export function modelValue(fm: string): string | undefined {
+  const m = /^model:\s*(\S+)/m.exec(fm)
+  return m ? m[1] : undefined
+}
+
+// A skill model is valid when it's a canonical full model id (KNOWN_MODELS,
+// derived from AI_TIER + the pricing registry) or a bare tier alias
+// (haiku/sonnet/opus/fable) the harness resolves to a current model. A value
+// that is neither is drift — a stale id like `claude-sonnet-4-5` or a typo —
+// which the presence-only `hasModel` check waved through.
+export function isCanonicalModel(value: string): boolean {
+  return KNOWN_MODELS.has(value) || TIER_ALIASES.has(value)
+}
+
 async function main(): Promise<void> {
   if (!existsSync(skillsDir)) {
     logger.success('No fleet skills to check.')
@@ -71,29 +87,34 @@ async function main(): Promise<void> {
       continue
     }
     const fm = frontmatter(readFileSync(skillPath, 'utf8'))
-    if (!fm) {
+    if (!fm || !isMutating(fm)) {
       continue
     }
-    if (isMutating(fm) && !hasModel(fm)) {
-      offenders.push(name)
+    const model = modelValue(fm)
+    if (!model) {
+      offenders.push(`${name} — no model: declared`)
+    } else if (!isCanonicalModel(model)) {
+      offenders.push(
+        `${name} — model '${model}' is off-canonical (not a current model id or tier alias; a stale id or typo)`,
+      )
     }
   }
 
   if (offenders.length) {
     logger.error(
-      `Mutating fleet skills missing a model: frontmatter (${offenders.length}):`,
+      `Mutating fleet skills without a canonical model: tier (${offenders.length}):`,
     )
     for (let i = 0, { length } = offenders; i < length; i += 1) {
       logger.error(`  ${offenders[i]!}`)
     }
     logger.error(
-      'A skill that edits the tree must declare model: so fix work routes to the cheap tier. See docs/agents.md/fleet/skill-model-routing.md (haiku=mechanical, sonnet=judgment, opus=heavy). Add `model: claude-haiku-4-5` + `context: fork` (or the right tier).',
+      'A skill that edits the tree must declare a canonical model: so fix work routes to the cheap tier. See docs/agents.md/fleet/skill-model-routing.md (haiku=mechanical, sonnet=judgment, opus=heavy). Use a current model id (`model: claude-haiku-4-5`) or a tier alias (`model: haiku`), not a stale/renamed id.',
     )
     process.exitCode = 1
     return
   }
 
-  logger.success('Every mutating fleet skill declares a model: tier.')
+  logger.success('Every mutating fleet skill declares a canonical model: tier.')
 }
 
 main().catch((e: unknown) => {

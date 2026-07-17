@@ -28,7 +28,6 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
@@ -38,10 +37,16 @@ import {
   FLEET_HOOKS_DIR,
 } from '../make-hook-dispatch.mts'
 import { CLAUDE_SETTINGS_JSON, REPO_ROOT } from '../paths.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
-const DISPATCHER_CMD_RE = /_dispatch\/index\.cjs\s+(\w+)/
+// The dispatcher is wired EITHER as the compile-cache baseline
+// (`_dispatch/index.cjs <Event>`) OR the per-machine snapshot fast-path launcher
+// (`_dispatch/dispatch-launcher <Event>`, from setup/hook-snapshot.mts, which
+// fail-opens to that baseline). Both front-end the SAME bundled dispatcher, so
+// either counts as the wired dispatcher entry for coverage.
+const DISPATCHER_CMD_RE = /_dispatch\/(?:index\.cjs|dispatch-launcher)\s+(\w+)/
 
 export interface DispatcherEntry {
   readonly matcher: string | undefined
@@ -261,6 +266,6 @@ function main(): void {
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   main()
 }

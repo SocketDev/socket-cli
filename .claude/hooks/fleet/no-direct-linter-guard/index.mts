@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 // Claude Code PreToolUse(Bash) hook — no-direct-linter-guard.
 //
-// Blocks invoking a linter or formatter binary directly. The fleet runs
-// lint/format ONLY through the repo scripts (`pnpm run lint` / `fix` / `check`
-// / `format`) and the `scripts/fleet/*` wrappers — those own the explicit
-// `-c .config/fleet/<oxlintrc|oxfmtrc>` flag and the ignore set. A bare binary
-// call is a double hazard:
+// Blocks invoking a linter, formatter, or TypeScript compiler binary directly.
+// The fleet runs lint/format/type-check ONLY through the repo scripts
+// (`pnpm run lint` / `fix` / `check` / `format`) and the `scripts/fleet/*`
+// wrappers — those own the explicit `-c .config/fleet/<oxlintrc|oxfmtrc>` /
+// `-p .config/fleet/tsconfig.check.json` flag and the ignore set. A bare binary
+// call is a double hazard (for `tsc`/`tsgo`: the default tsconfig misses
+// `allowImportingTsExtensions` → bogus TS5097 on every `.mts` import):
 //
 //   1. Configless `oxfmt`/`oxlint` falls back to its own defaults (double-quote
 //      + semicolon) and corrupts fleet files. The scripts always pass `-c`.
@@ -61,6 +63,13 @@ const BANNED_BINARIES: ReadonlySet<string> = new Set([
   'oxlint',
   'prettier',
   'rustfmt',
+  // TypeScript compiler. A bare `tsc` / `tsgo` (incl. `pnpm exec tsc`) resolves
+  // the DEFAULT tsconfig, which lacks the fleet check config's flags (e.g.
+  // `allowImportingTsExtensions`) → bogus TS5097 "import path can only end with
+  // '.mts'" on every fleet `.mts` import. The fleet type-checks ONLY through
+  // `pnpm run check` (the tsc step passes `-p .config/fleet/tsconfig.check.json`).
+  'tsc',
+  'tsgo',
 ])
 
 // `<binary> <subcommand>` forms — cargo's format/lint subcommands. `cargo
@@ -161,8 +170,9 @@ export const check = bashGuard((command, payload) => {
     [
       `[no-direct-linter-guard] Blocked: direct \`${tool}\` invocation.`,
       '',
-      '  The fleet runs lint/format ONLY through the repo scripts, which own',
-      '  the `-c .config/fleet/…` flag + ignore set. Use a wrapper instead:',
+      '  The fleet runs lint/format/type-check ONLY through the repo scripts,',
+      '  which own the `-c .config/fleet/…` / `-p …/tsconfig.check.json` flag +',
+      '  ignore set (a bare `tsc` uses the wrong tsconfig). Use a wrapper:',
       '    pnpm run lint        pnpm run fix --all',
       '    pnpm run check       pnpm run format',
       `    not  ${tool} …`,

@@ -39,8 +39,10 @@ export const PLUGIN_REPO_DIR = '.config/repo/oxlint-plugin/'
  * True when `filename` is inside the plugin's own rule subtree (either tier).
  */
 export function isPluginInternalPath(filename: string): boolean {
+  const normalized = normalizePath(filename)
   return (
-    filename.includes(PLUGIN_FLEET_DIR) || filename.includes(PLUGIN_REPO_DIR)
+    normalized.includes(PLUGIN_FLEET_DIR) ||
+    normalized.includes(PLUGIN_REPO_DIR)
   )
 }
 
@@ -48,7 +50,7 @@ export function isPluginInternalPath(filename: string): boolean {
  * True when `filename` points at the fleet-canonical `scripts/fleet/paths.mts`.
  */
 export function isPathsModule(filename: string): boolean {
-  return filename.endsWith(PATHS_FILE)
+  return normalizePath(filename).endsWith(PATHS_FILE)
 }
 
 /**
@@ -65,3 +67,4 @@ export function isPluginSelfFile(context: {
   const filename = context.filename ?? context.getFilename?.() ?? ''
   return isPluginInternalPath(filename)
 }
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'

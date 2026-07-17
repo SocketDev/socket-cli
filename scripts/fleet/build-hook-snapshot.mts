@@ -38,7 +38,13 @@ import {
   FLEET_HOOKS_DIR,
   generateDispatchTableSource,
 } from './make-hook-dispatch.mts'
-import { REPO_ROOT } from './paths.mts'
+import {
+  DISPATCH_TABLE_EXCLUDED_PATH,
+  DISPATCH_TABLE_SNAPSHOT_PATH,
+  EXCLUDED_BUNDLE_PATH,
+  REPO_ROOT,
+} from './paths.mts'
+import { isMainModule } from './_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -50,6 +56,13 @@ const SNAPSHOT_CONFIG = path.join(
   'rolldown',
   'hook-bundle-snapshot.config.mts',
 )
+const EXCLUDED_CONFIG = path.join(
+  REPO_ROOT,
+  '.config',
+  'repo',
+  'rolldown',
+  'hook-bundle-excluded.config.mts',
+)
 const SNAPSHOT_BUNDLE = path.join(DISPATCH_DIR, 'snapshot-bundle.cjs')
 
 // snapshot-cache-path.cjs is the SHARED key derivation: the loader resolves the
@@ -60,10 +73,40 @@ const { blobPath } = require(
   path.join(DISPATCH_DIR, 'snapshot-cache-path.cjs'),
 ) as { blobPath: (entryId: string, sourceHash: string) => string }
 
+/**
+ * Content-key a built bundle — sha256, first 16 hex — the same derivation the
+ * loader uses, so a bundle change always resolves to a fresh blob path.
+ */
+export function computeSourceHash(content: Buffer | string): string {
+  return crypto.createHash('sha256').update(content).digest('hex').slice(0, 16)
+}
+
+/**
+ * Classify a spawned build step from its exit status + whether the expected
+ * output landed.
+ */
+export function classifySpawnOutcome(
+  exitStatus: number | null,
+  outputExists: boolean,
+): { ok: boolean } {
+  return { ok: exitStatus === 0 && outputExists }
+}
+
 function main(): void {
+  // All three table variants: the FULL table (index.cjs path), the
+  // snapshot-SAFE table (aliased into the snapshot bundle), and the
+  // EXCLUDED table (the sibling runtime bundle's source).
   writeFileSync(
     DISPATCH_TABLE_PATH,
     generateDispatchTableSource(FLEET_HOOKS_DIR),
+  )
+  writeFileSync(
+    DISPATCH_TABLE_SNAPSHOT_PATH,
+    generateDispatchTableSource(FLEET_HOOKS_DIR, 'snapshot'),
+  )
+  writeFileSync(
+    DISPATCH_TABLE_EXCLUDED_PATH,
+    generateDispatchTableSource(FLEET_HOOKS_DIR, 'excluded'),
   )
 
   mkdirSync(DISPATCH_DIR, { recursive: true })
@@ -76,11 +119,27 @@ function main(): void {
     return
   }
 
+  // The excluded-hooks sibling first: deserialize-main requires it at
+  // runtime, so it must exist alongside every snapshot blob.
+  const excluded = spawnSync(ROLLDOWN_BIN, ['-c', EXCLUDED_CONFIG], {
+    cwd: REPO_ROOT,
+    stdio: 'inherit',
+  })
+  if (
+    !classifySpawnOutcome(excluded.status, existsSync(EXCLUDED_BUNDLE_PATH)).ok
+  ) {
+    logger.error(
+      `excluded bundle build failed (exit ${String(excluded.status)}).`,
+    )
+    process.exitCode = excluded.status ?? 1
+    return
+  }
+
   const bundle = spawnSync(ROLLDOWN_BIN, ['-c', SNAPSHOT_CONFIG], {
     cwd: REPO_ROOT,
     stdio: 'inherit',
   })
-  if (bundle.status !== 0 || !existsSync(SNAPSHOT_BUNDLE)) {
+  if (!classifySpawnOutcome(bundle.status, existsSync(SNAPSHOT_BUNDLE)).ok) {
     logger.error(
       `snapshot bundle build failed (exit ${String(bundle.status)}).`,
     )
@@ -92,11 +151,7 @@ function main(): void {
   // same way (sha256, first 16 hex), so the blob written here is exactly the one
   // the loader looks for. A bundle change → new hash → new blob; the stale one is
   // orphaned in tmpdir and reaped, never booted.
-  const sourceHash = crypto
-    .createHash('sha256')
-    .update(readFileSync(SNAPSHOT_BUNDLE))
-    .digest('hex')
-    .slice(0, 16)
+  const sourceHash = computeSourceHash(readFileSync(SNAPSHOT_BUNDLE))
   const blobOut = blobPath('dispatch', sourceHash)
   mkdirSync(path.dirname(blobOut), { recursive: true })
 
@@ -105,7 +160,7 @@ function main(): void {
     ['--snapshot-blob', blobOut, '--build-snapshot', SNAPSHOT_BUNDLE],
     { cwd: REPO_ROOT, stdio: 'inherit' },
   )
-  if (snap.status !== 0 || !existsSync(blobOut)) {
+  if (!classifySpawnOutcome(snap.status, existsSync(blobOut)).ok) {
     logger.error(`--build-snapshot failed (exit ${String(snap.status)}).`)
     process.exitCode = snap.status ?? 1
     return
@@ -113,6 +168,6 @@ function main(): void {
   logger.log(`Built ${blobOut}.`)
 }
 
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+if (isMainModule(import.meta.url)) {
   main()
 }

@@ -52,26 +52,10 @@ require/import that escapes the repo.
 
 ## Fleet repo list
 
-The hook recognizes these names as fleet repos:
-
-```
-claude-code
-socket-addon
-socket-btm
-socket-cli
-socket-lib
-socket-packageurl-js
-socket-registry
-socket-wheelhouse
-socket-sdk-js
-socket-sdxgen
-socket-stuie
-ultrathink
-```
-
-To add a new fleet repo, update the list in `index.mts` AND in the
-companion git-side scanner in `.git-hooks/_helpers.mts` (`FLEET_REPO_NAMES`)
-— keep the two in sync.
+The hook derives fleet membership from
+`.claude/skills/fleet/cascading-fleet/lib/fleet-repos.json`. Update that
+canonical roster when membership changes; the hook and companion scanners read
+the same source.
 
 ## Wiring
 

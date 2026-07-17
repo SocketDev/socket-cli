@@ -14,7 +14,10 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+
 import { gitOut } from './git-branch.mts'
+import { fleetRosterPaths } from './paths.mts'
 
 export interface FleetRepo {
   readonly name: string
@@ -33,14 +36,19 @@ export interface FleetRoster {
  * remote slug (survives checkout-dir renames like `socket-cli-fix-foo`); fall
  * back to the working-tree basename.
  */
+export function repoNameFromRemoteUrl(remote: string): string | undefined {
+  // Git preserves native separators in local file remotes on Windows. Treat
+  // those like URL separators before extracting the final repo segment.
+  const normalized = normalizePath(remote.trim())
+  const m = /[/:](?<repo>[^/:]+?)(?:\.git)?$/.exec(normalized)
+  return m?.groups?.['repo']
+}
+
 export function resolveRepoName(cwd: string): string | undefined {
-  const remote = gitOut(cwd, ['config', '--get', 'remote.origin.url'])?.trim()
-  if (remote) {
-    // git@github.com:Org/repo.git OR https://github.com/Org/repo(.git)?
-    const m = /[/:](?<repo>[^/:]+?)(?:\.git)?$/.exec(remote)
-    if (m?.groups?.['repo']) {
-      return m.groups['repo']
-    }
+  const remote = gitOut(cwd, ['config', '--get', 'remote.origin.url'])
+  const remoteName = remote ? repoNameFromRemoteUrl(remote) : undefined
+  if (remoteName) {
+    return remoteName
   }
   const base = path.basename(cwd)
   return base || undefined
@@ -65,16 +73,7 @@ export function readRoster(rosterPath: string): FleetRoster | undefined {
  * seed first (so the wheelhouse itself resolves) then the live tree.
  */
 export function loadRosterFromRepo(repoRoot: string): FleetRoster | undefined {
-  const candidates = [
-    path.join(
-      repoRoot,
-      'template/base/.claude/skills/fleet/cascading-fleet/lib/fleet-repos.json',
-    ),
-    path.join(
-      repoRoot,
-      '.claude/skills/fleet/cascading-fleet/lib/fleet-repos.json',
-    ),
-  ]
+  const candidates = fleetRosterPaths(repoRoot)
   for (let i = 0, { length } = candidates; i < length; i += 1) {
     const roster = readRoster(candidates[i]!)
     if (roster) {

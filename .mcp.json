@@ -1,0 +1,35 @@
+{
+  "mcpServers": {
+    "chrome-devtools": {
+      "command": "pnpm",
+      "args": [
+        "exec",
+        "chrome-devtools-mcp",
+        "--isolated",
+        "--category-extensions",
+        "--no-category-performance",
+        "--no-category-emulation"
+      ]
+    },
+    "fff": {
+      "command": "fff-mcp",
+      "args": []
+    },
+    "janus-multi": {
+      "command": "node",
+      "args": ["scripts/fleet/janus-multi-mcp.mts"]
+    },
+    "linear": {
+      "type": "http",
+      "url": "https://mcp.linear.app/mcp"
+    },
+    "notion": {
+      "type": "http",
+      "url": "https://mcp.notion.com/mcp"
+    },
+    "refero": {
+      "type": "http",
+      "url": "https://api.refero.design/mcp"
+    }
+  }
+}

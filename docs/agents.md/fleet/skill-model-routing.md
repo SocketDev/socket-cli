@@ -88,7 +88,7 @@ Fable never writes the code, Codex never decides the design. A note on the Fable
 
 > **Pricing/leverage data below is a snapshot as of 2026-06-11.** Model prices and plan limits move often; re-verify against vendor docs (and re-run `researching-recency`) before relying on the exact numbers. Treat the ratios as directional, not current.
 
-<!-- MODEL-PRICING-SNAPSHOT: 2026-07-05 -- machine-readable anchor for scripts/fleet/check/pricing-data-is-current.mts. When this date is >35 days old the check reminds you to re-run `/researching-recency` and refresh the figures above + the cost-ladder report, then bump this date. Code is law: the staleness is enforced, not left to memory. -->
+<!-- MODEL-PRICING-SNAPSHOT: 2026-07-17 -- machine-readable anchor for scripts/fleet/check/pricing-data-is-current.mts. When this date is >35 days old the check reminds you to re-run `/researching-recency` and refresh the figures above + the cost-ladder report, then bump this date. Code is law: the staleness is enforced, not left to memory. -->
 
 The per-token math above is the metered-API view. Most fleet work runs under a flat-rate subscription, and subscriptions are far more generous than $200 of API tokens. A Claude Max 20× plan ($200/mo) bills against roughly $8,000/mo of API-equivalent spend before the weekly cap; a ChatGPT Pro 20× plan reaches roughly $14,000/mo. Under a subscription the marginal dollar cost of a token up to the weekly cap is effectively zero.
 

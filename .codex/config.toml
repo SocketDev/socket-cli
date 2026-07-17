@@ -1,0 +1,30 @@
+# Generated from ../.mcp.json by scripts/fleet/mcp-config.mts.
+# OAuth credentials stay in Codex user storage; do not add them here.
+
+[mcp_servers.chrome-devtools]
+command = "pnpm"
+args = [
+  "exec",
+  "chrome-devtools-mcp",
+  "--isolated",
+  "--category-extensions",
+  "--no-category-performance",
+  "--no-category-emulation",
+]
+
+[mcp_servers.fff]
+command = "fff-mcp"
+args = []
+
+[mcp_servers.janus-multi]
+command = "node"
+args = ["scripts/fleet/janus-multi-mcp.mts"]
+
+[mcp_servers.linear]
+url = "https://mcp.linear.app/mcp"
+
+[mcp_servers.notion]
+url = "https://mcp.notion.com/mcp"
+
+[mcp_servers.refero]
+url = "https://api.refero.design/mcp"

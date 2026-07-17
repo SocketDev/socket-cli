@@ -1,6 +1,6 @@
 ---
 name: locking-down-claude
-description: Reference for locking down programmatic Claude invocations (the `claude` CLI in workflows/scripts, the `@anthropic-ai/claude-agent-sdk` `query()` in code). Loads on demand when writing or reviewing any callsite that runs Claude programmatically. Source: https://code.claude.com/docs/en/agent-sdk/permissions.
+description: Reference for secure non-interactive Claude or SDK calls with pinned tools, prompts, and permissions.
 user-invocable: false
 allowed-tools: Read, Grep, Glob
 ---

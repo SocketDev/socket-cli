@@ -1,6 +1,6 @@
 ---
 name: tidying-worktrees
-description: Sweeps every fleet repo and removes spent git worktrees — clean trees whose branch is fully merged into the remote base, or gone from the remote with nothing unpushed. Conservative and no-prompt: a dirty worktree, or one carrying unpushed commits, is always kept (it may be a parallel session's live work). Use for periodic low-friction care of the fleet's worktree clutter, or before a cascade wave to clear interrupted-wave leftovers. Defaults to dry-run; pass --fix to act.
+description: Sweep spent clean worktrees whose branches merged or disappeared, while preserving dirty or unpushed work.
 user-invocable: true
 allowed-tools: Bash(node:*), Bash(git worktree:*), Bash(git branch:*), Bash(git fetch:*), Bash(pnpm i:*), Read
 model: claude-haiku-4-5

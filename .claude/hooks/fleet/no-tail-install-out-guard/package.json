@@ -10,10 +10,9 @@
     "test": "node --test test/*.test.mts"
   },
   "dependencies": {
-    "shell-quote": "catalog:"
+    "@socketsecurity/lib-stable": "catalog:"
   },
   "devDependencies": {
-    "@socketsecurity/lib-stable": "catalog:",
     "@types/node": "catalog:"
   }
 }

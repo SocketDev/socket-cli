@@ -24,6 +24,7 @@ import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 import v8 from 'node:v8'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import {
@@ -253,8 +254,12 @@ export function applyGuardResult(
         JSON.stringify({ decision: 'block', reason: result.message }),
       )
     } else {
-      logger().error(result.message)
+      // exitCode is the load-bearing side effect — set it BEFORE the
+      // best-effort stderr write. `runGuard`'s catch resets exitCode to 0 on
+      // ANY throw (fail-open contract); a logger construction/write failure
+      // must never cost the block itself by racing ahead of this line.
       process.exitCode = 2
+      logger().error(result.message)
     }
     return
   }
@@ -285,7 +290,18 @@ export async function runGuard(
       return
     }
     applyGuardResult(await check(payload), payload)
-  } catch {
+  } catch (e) {
+    // Fail-open stays fail-open in prod — a buggy hook must never wedge the
+    // session. But a silent `catch {}` here means a genuine environment-
+    // specific throw (a spawn quirk, a logger/tty failure) vanishes with no
+    // trace, and downstream sees only "the guard exited 0" with nothing to
+    // diagnose from. SOCKET_DEBUG opts into a stderr line carrying the real
+    // error, without changing the fail-open decision.
+    if (process.env['SOCKET_DEBUG']) {
+      process.stderr.write(
+        `[guard] runGuard caught (fail-open): ${errorMessage(e)}\n`,
+      )
+    }
     if (process.exitCode !== 2) {
       process.exitCode = 0
     }

@@ -40,11 +40,11 @@ substitute for running (or fixing) the script.
   the native binary (or the project's own script) is the sanctioned path, and the
   repo's own CI, not a fleet hook, owns the format gate.
 
-- **Don't hand-edit a script-owned artifact** to dodge a wrong script. Registry
-  pins, `CHANGELOG.md`, the lockfile, and generated output are owned by their
-  scripts (and guarded: `no-hand-edit-registry-pin-guard`, `changelog-is-commit-derived`,
-  `dirty-lockfile-nudge`). If the script is wrong, **fix the script** — bypassing
-  the guard to hand-edit is the anti-pattern this rule exists to stop.
+- **Don't hand-edit a script-owned artifact** to dodge a wrong script.
+  `CHANGELOG.md`, the lockfile, and generated output are owned by their scripts
+  (and guarded: `changelog-is-commit-derived`, `dirty-lockfile-nudge`). If the
+  script is wrong, **fix the script** — bypassing the guard to hand-edit is the
+  anti-pattern this rule exists to stop.
 
 ## Why
 

@@ -17,3 +17,13 @@ instruction the moment the phrase appears — no clarifying question needed.
 ## Operational
 
 - **A dirty / stale `pnpm-lock.yaml` is not a blocker** — it's regenerable. Run `pnpm i` (or `pnpm run update` then `pnpm i`) when it matters (before a frozen-lockfile CI step or a release prep wave). Don't pause, ask, or hand-restore around lockfile dirtiness. `pnpm install --lockfile-only` is instant (no proxy) and tells you whether the lockfile is actually stale before any full install.
+
+## Task and issue references carry their name
+
+A task/issue number is a session-local pointer: "#12" means nothing to a
+reader without the task list open (including a future session). Pair every
+ref with its subject on first mention — "#12 (remove npm-run-all2)",
+"#24 (migrate wheelhouse-only scripts out of scripts/fleet)". Later mentions
+in the same paragraph may shorten once the binding is established.
+GitHub `owner/repo#N` autolinks are exempt (the repo half carries context).
+Enforced by the `named-task-refs` group in `reply-prose-nudge`.

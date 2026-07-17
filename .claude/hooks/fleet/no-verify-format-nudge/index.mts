@@ -26,9 +26,15 @@
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import process from 'node:process'
 
+import { gitSubcommand } from '../_shared/commit-command.mts'
 import { actedOnPath } from '../_shared/fleet-context.mts'
 import { bashGuard, defineHook, notify, runHook } from '../_shared/guard.mts'
-import { invocationHasFlag } from '../_shared/shell-command.mts'
+import {
+  commandsFor,
+  invocationHasFlag,
+  isFleetSyncCommand,
+} from '../_shared/shell-command.mts'
+import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 
 const NO_VERIFY_FLAGS = ['--no-verify', '-n']
 // Files oxfmt formats — the gate that --no-verify skipped. Lockfiles, JSON
@@ -36,13 +42,18 @@ const NO_VERIFY_FLAGS = ['--no-verify', '-n']
 export const FORMATTABLE_RE = /\.(?:c|m)?[jt]sx?$/
 
 export function isGitCommitOrPush(command: string): boolean {
-  // `git` (optionally with -c flags) then `commit` or `push`. The lookahead
-  // avoids matching `git config commit.gpgsign` etc.
-  return /\bgit\b(?:\s+-c\s+[^\s]+)*\s+(?:commit|push)(?:\s|$)/.test(command)
+  // Parser-backed subcommand read (never a raw regex over the command
+  // string): a quoted "git commit" literal inside another command's string
+  // argument is not an invocation, and `git config commit.gpgsign` /
+  // `git -c k=v commit` resolve to their real subcommands.
+  return commandsFor(command, 'git').some(c => {
+    const sub = gitSubcommand(c)
+    return sub === 'commit' || sub === 'push'
+  })
 }
 
 function gitLines(cwd: string, args: readonly string[]): string[] {
-  const r = spawnSync('git', args, { cwd, timeout: 5000 })
+  const r = spawnSync('git', args, { cwd, timeout: spawnTimeoutMs(5000) })
   if (r.status !== 0) {
     return []
   }
@@ -97,7 +108,7 @@ function unformatted(cwd: string, files: readonly string[]): string[] {
 }
 
 export const check = bashGuard((command, payload) => {
-  if (/\bFLEET_SYNC=1\b/.test(command)) {
+  if (isFleetSyncCommand(command)) {
     return undefined
   }
   if (!isGitCommitOrPush(command)) {

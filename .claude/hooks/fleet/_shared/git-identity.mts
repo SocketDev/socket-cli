@@ -14,6 +14,8 @@ import process from 'node:process'
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
+import { spawnTimeoutMs } from './spawn-timeout.mts'
+
 // Placeholder author emails that GitHub can't verify against a signing key:
 //   - any RFC-2606 reserved domain (example.com/org/net, *.example)
 //   - CI-bot identities (agent-ci@…) planted by a container entrypoint
@@ -48,7 +50,7 @@ export function effectiveUserEmail(dir: string): string {
   const r = spawnSync('git', ['config', '--get', 'user.email'], {
     cwd: dir,
     encoding: 'utf8',
-    timeout: 5000,
+    timeout: spawnTimeoutMs(5000),
   })
   if (r.status !== 0) {
     return ''
@@ -64,7 +66,7 @@ export function effectiveUserEmail(dir: string): string {
 export function hasGlobalIdentity(): boolean {
   const r = spawnSync('git', ['config', '--global', '--get', 'user.email'], {
     encoding: 'utf8',
-    timeout: 5000,
+    timeout: spawnTimeoutMs(5000),
   })
   return r.status === 0 && String(r.stdout).trim().length > 0
 }

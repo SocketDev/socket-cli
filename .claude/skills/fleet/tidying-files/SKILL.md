@@ -1,6 +1,6 @@
 ---
 name: tidying-files
-description: Sweeps every fleet repo for never-wanted junk (.DS_Store, Thumbs.db, *.orig, *.rej, *.swp, *.pyc, __pycache__) and stray AI/temp scratch (orphaned /tmp cascade dirs, dry-run logs), deleting only untracked-or-ignored paths — never a git-tracked file, never anything inside a submodule. Conservative and no-prompt: dry-run by default, /loop-able. Use for periodic low-friction cleanup of accreted junk across the fleet, or before a commit/cascade.
+description: Remove untracked or ignored junk and scratch files across fleet repos without touching tracked work.
 user-invocable: true
 allowed-tools: Bash(node:*), Bash(git:*), Read
 model: claude-haiku-4-5

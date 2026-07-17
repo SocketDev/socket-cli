@@ -169,8 +169,10 @@ export async function verifyAttestation(
   artifactPath: string,
   sourceRepo: GitHubRepoSlug,
   signerWorkflow: string,
+  command: typeof runCommand = runCommand,
 ): Promise<void> {
-  const result = await runGh(
+  const result = await command(
+    'gh',
     [
       'attestation',
       'verify',

@@ -14,7 +14,6 @@
  */
 
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 // oxlint-disable-next-line socket/prefer-async-spawn -- sequential CLI probe loop; sync keeps the state machine trivial and the process short-lived.
@@ -27,6 +26,7 @@ import { runScan } from './lib/scan.mts'
 import { loadState, writeState } from './lib/state.mts'
 
 import type { GhRunner } from './lib/types.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -107,6 +107,6 @@ export function main(argv: readonly string[]): number {
   return runScanCommand({ configPath: parsed.configPath, quiet: parsed.quiet })
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   process.exitCode = main(process.argv.slice(2))
 }

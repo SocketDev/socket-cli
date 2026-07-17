@@ -1,15 +1,14 @@
-# Layer 4 — `_local` wrapper. NOT reused externally; this is socket-registry's
-# own get-green entry point. References Layer 3 (get-green.yml, the thin
-# delegator) which it pins to the PROPAGATION SHA on cascade — exercising the
-# same delegator → gh-aw .lock.yml path that weekly-update's dispatch-workflow
-# drives. workflow_dispatch only: get-green runs on demand (a failing update
-# branch), never on a schedule.
+# `_local` wrapper — each repo's own manual get-green entry point. References
+# the local delegator (get-green.yml) via a `./` path ref (no @sha) —
+# exercising the same delegator → gh-aw .lock.yml path that weekly-update's
+# dispatch-workflow drives. workflow_dispatch only: get-green runs on demand
+# (a failing update branch), never on a schedule. Cascaded byte-identical
+# fleet-wide.
 
 name: 🟢 Get Green
 
-# Local (socket-registry) get-green workflow. Delegates to the shared reusable at
-# ./.github/workflows/get-green.yml, which in turn
-# delegates to the gh-aw-compiled get-green.lock.yml.
+# Manual get-green dispatch. Delegates to ./.github/workflows/get-green.yml,
+# which in turn delegates to the gh-aw-compiled get-green.lock.yml.
 
 on:
   workflow_dispatch:

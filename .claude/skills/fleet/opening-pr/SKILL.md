@@ -1,6 +1,6 @@
 ---
 name: opening-pr
-description: Implement a fix for an issue / finding / request, ensure it has a unit test or a verification path, and open the PR. Use when the user wants a change shipped as a PR — not just described, but fixed AND verified.
+description: Implement a requested change, verify it, commit it, and open or update the PR.
 user-invocable: true
 ---
 

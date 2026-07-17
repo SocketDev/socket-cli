@@ -21,13 +21,14 @@
 import process from 'node:process'
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from '../paths.mts'
 import { findDistFiles } from '../validate-bundle-deps.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -142,8 +143,6 @@ export async function main(argv: readonly string[]): Promise<number> {
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  void (async () => {
-    process.exitCode = await main(process.argv.slice(2))
-  })()
+if (isMainModule(import.meta.url)) {
+  runMain(() => main(process.argv.slice(2)))
 }

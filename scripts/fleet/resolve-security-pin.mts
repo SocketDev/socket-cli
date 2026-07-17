@@ -35,7 +35,6 @@
 
 import { readFileSync } from 'node:fs'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
@@ -44,6 +43,7 @@ import {
   filterVersions,
   maxVersion,
 } from '@socketsecurity/lib-stable/versions/range'
+import { isMainModule } from './_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -229,7 +229,7 @@ export function main(argv: readonly string[]): number {
   return result.outcome === 'resolved' ? 0 : 1
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   try {
     process.exitCode = main(process.argv.slice(2))
   } catch (e) {

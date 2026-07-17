@@ -27,12 +27,21 @@ import { findInvocation } from './shell-command.mts'
 export const ALLOWED_CDN_HOSTS: readonly string[] = [
   // uv installer: `curl -LsSf https://astral.sh/uv/install.sh` (fleet Python tooling).
   'astral.sh',
+  // Socket's own badge service — the fleet README skeleton's Socket Badge;
+  // agents verify badge markup/dimensions against the live SVG.
+  'badge.socket.dev',
   // gh CLI (release assets, clones, API) + release-asset downloads; fleet-wide.
   'github.com',
   // Go toolchain download in CI/Docker for Go-based tooling.
   'go.dev',
-  // rustup installer in docker/fleet-bases/rust-base.Dockerfile (NAPI native builds).
+  // Official Node.js distribution host for versioned source and binary archives.
+  'nodejs.org',
+  // rustup one-line installer host (`https://sh.rustup.rs`) — an allowed Rust
+  // installer CDN for convenience-installer bootstraps.
   'sh.rustup.rs',
+  // Official Rust distribution CDN: versioned rustup-init binaries + .sha256
+  // (docker/fleet-bases/{rust,acorn}-base.Dockerfile pin + verify rustup-init).
+  'static.rust-lang.org',
 ]
 
 // Wildcard hosts the fleet fetches from. `*.` matches any subdomain depth of

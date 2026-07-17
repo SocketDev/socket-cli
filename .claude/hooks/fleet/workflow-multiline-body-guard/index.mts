@@ -23,6 +23,8 @@
 
 import path from 'node:path'
 
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { resolveEditedText } from '../_shared/payload.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
@@ -81,7 +83,9 @@ export function findUnsafeBody(text: string): string | undefined {
 
 export function isWorkflowYaml(filePath: string): boolean {
   // .github/workflows/*.yml or .github/workflows/*.yaml.
-  return /[\\/]\.github[\\/]workflows[\\/][^\\/]+\.ya?ml$/.test(filePath)
+  return /[\\/]\.github[\\/]workflows[\\/][^\\/]+\.ya?ml$/.test(
+    normalizePath(filePath),
+  )
 }
 
 export const check = editGuard((filePath, content, payload) => {

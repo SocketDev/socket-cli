@@ -60,6 +60,10 @@
     // in files the repo must not rewrite.
     "**/test/fixtures/**",
     "**/tests/fixtures/**",
+    // Template sources (e.g. Eta `<%~ it.readme %>` package-README
+    // scaffolds) are generators, not prose — their output is what gets
+    // linted, in the repo it lands in.
+    "**/scripts/templates/**",
     // .claude/ markdown is internal scaffolding (hook READMEs, agent
     // role files, skill SKILL.mds, command reminders) — scoped docs
     // with their own shape conventions. Excluded from the public-

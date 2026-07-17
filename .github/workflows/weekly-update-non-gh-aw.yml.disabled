@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@b3f42a5f19c0a3854a67a8387c97ed0bb77caa00 # main (2026-06-09)
+      - uses: ./.github/actions/fleet/setup-and-install
         with:
           checkout-fetch-depth: '0'
       - name: Run the plain weekly-update

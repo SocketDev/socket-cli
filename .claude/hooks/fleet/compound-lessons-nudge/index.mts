@@ -41,6 +41,10 @@ import process from 'node:process'
 
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
+import {
+  RECURRENCE_THRESHOLD,
+  recordOccurrence,
+} from '../_shared/learning-ledger.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import {
   readLastAssistantText,
@@ -154,9 +158,55 @@ function isFleetCanonicalPath(filePath: string): boolean {
   return false
 }
 
+// Sentence boundary for coherent snippet extraction: a period, question mark,
+// exclamation, or newline. Kept at module scope so the char-scan below reuses
+// one compiled regex.
+const SENTENCE_BOUNDARY_RE = /[.?!\n]/
+// Cap a snippet at a coherent-sentence length: long enough to carry the lesson,
+// short enough to keep a runaway sentence from bloating a ledger key.
+const MAX_SNIPPET_LEN = 200
+
 interface RepeatFindingHit {
   readonly label: string
   readonly snippet: string
+}
+
+/**
+ * Extract the coherent sentence containing a match, not a raw character window.
+ * A fixed ±N-char window starts mid-token ("…ixth coverage run failed again"),
+ * so the recorded lesson is an incoherent slice that never dedups against a
+ * differently-worded recurrence of the same lesson — which silently degrades
+ * the cross-session recurrence signal the learning ledger exists to provide.
+ * Walking to the nearest sentence boundary on each side yields a stable,
+ * human-readable key. Pure.
+ */
+export function extractSentence(
+  text: string,
+  matchIndex: number,
+  matchLength: number,
+): string {
+  let start = 0
+  for (let i = matchIndex - 1; i >= 0; i -= 1) {
+    if (SENTENCE_BOUNDARY_RE.test(text[i]!)) {
+      start = i + 1
+      break
+    }
+  }
+  let end = text.length
+  for (
+    let i = matchIndex + matchLength, { length } = text;
+    i < length;
+    i += 1
+  ) {
+    if (SENTENCE_BOUNDARY_RE.test(text[i]!)) {
+      end = i + 1
+      break
+    }
+  }
+  return text
+    .slice(start, Math.min(end, start + MAX_SNIPPET_LEN))
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 interface RepeatEditHit {
@@ -221,9 +271,7 @@ export function detectRepeatFindings(text: string): RepeatFindingHit[] {
     if (!match) {
       continue
     }
-    const start = Math.max(0, match.index - 25)
-    const end = Math.min(stripped.length, match.index + match[0].length + 40)
-    const snippet = stripped.slice(start, end).replace(/\s+/g, ' ').trim()
+    const snippet = extractSentence(stripped, match.index, match[0].length)
     found.push({ label: pattern.label, snippet })
   }
   return found
@@ -298,10 +346,47 @@ export const check = (payload: ToolCallPayload): GuardResult => {
     return undefined
   }
 
+  // Record each surfaced finding in the cross-session learning ledger so a
+  // finding that recurs BEYOND this transcript's lookback (a different session
+  // last week) escalates. The ledger dedupes per session, so re-firing on
+  // repeated stops in ONE session does not inflate the count. Fail-open: a
+  // broken ledger just yields occurrences 0 and the base nudge still fires.
+  const projectDir =
+    process.env['CLAUDE_PROJECT_DIR'] ?? payload.cwd ?? process.cwd()
+  const sessionId = payload.transcript_path ?? 'unknown-session'
+  let maxOccurrences = 0
+  for (let i = 0, { length } = proseHits; i < length; i += 1) {
+    const hit = proseHits[i]!
+    const n = recordOccurrence(projectDir, {
+      sessionId,
+      text: `${hit.label}: ${hit.snippet}`,
+    })
+    if (n > maxOccurrences) {
+      maxOccurrences = n
+    }
+  }
+  for (let i = 0, { length } = editHits; i < length; i += 1) {
+    const n = recordOccurrence(projectDir, {
+      sessionId,
+      text: `repeat-edit ${editHits[i]!.path}`,
+    })
+    if (n > maxOccurrences) {
+      maxOccurrences = n
+    }
+  }
+
   const lines = [
     '[compound-lessons-nudge] Repeat finding detected without rule promotion:',
     '',
   ]
+  if (maxOccurrences >= RECURRENCE_THRESHOLD) {
+    lines.push(
+      `  ⚠ This finding has now recurred across ${maxOccurrences} sessions ` +
+        '(learning ledger). This is exactly the "fix it twice → codify it"',
+    )
+    lines.push('  case — promote it to a rule THIS turn, do not fix it again.')
+    lines.push('')
+  }
   for (let i = 0, { length } = proseHits; i < length; i += 1) {
     const hit = proseHits[i]!
     lines.push(`  • prose: "${hit.label}" — …${hit.snippet}…`)

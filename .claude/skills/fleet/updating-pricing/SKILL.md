@@ -1,6 +1,6 @@
 ---
 name: updating-pricing
-description: Refresh the fleet's model-pricing data by reading current per-model prices off each provider's vendor pricing page (or, when a number isn't directly available, the researching-recency feed) and rewriting one service in `scripts/fleet/constants/model-pricing.json` (and the routing-doc snapshot marker) with today's date. Sibling of `updating-coverage` / `updating-security` / `updating-lockstep` under the `updating` umbrella; the source of the numbers the AI cost estimator computes against.
+description: Refresh current AI model pricing data from vendor sources and update fleet pricing constants.
 user-invocable: true
 allowed-tools: Skill, Read, Edit, WebFetch, Bash(node:*), Bash(git:*)
 model: claude-haiku-4-5

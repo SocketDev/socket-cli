@@ -14,7 +14,6 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
@@ -29,13 +28,13 @@ import {
 import { buildSections } from './lib/llms-txt/sections.mts'
 import { buildPrompt, buildSlots } from './lib/llms-txt/slots.mts'
 import { REPO_ROOT } from './paths.mts'
+import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
-if (fileURLToPath(import.meta.url) === process.argv[1]) {
-  void (async () => {
-    await main()
-  })()
+if (isMainModule(import.meta.url)) {
+  runMain(main)
 }
 
 export async function main(): Promise<void> {
@@ -148,7 +147,7 @@ export async function main(): Promise<void> {
  * when the structure has not changed. Returns a slot-keyed map matching the
  * same id scheme used in buildSlots.
  */
-function harvestProse(content: string): Record<string, string> {
+export function harvestProse(content: string): Record<string, string> {
   const notes: Record<string, string> = {}
   const lines = content.split('\n')
   let currentSection: string | undefined

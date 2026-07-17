@@ -17,6 +17,7 @@ import { appendFileSync, existsSync, mkdirSync, statSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+import { isHookEntrypoint } from '../_shared/entrypoint.mts'
 
 interface ToolInput {
   readonly tool_name?: string | undefined
@@ -154,7 +155,7 @@ async function main(): Promise<void> {
   process.exit(0)
 }
 
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+if (isHookEntrypoint(import.meta.url)) {
   main().catch(() => {
     // Last-resort fall-open. Telemetry must never cost the user a tool call.
     process.exit(0)

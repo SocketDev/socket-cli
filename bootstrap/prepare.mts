@@ -26,7 +26,7 @@
 
 // oxlint-disable-next-line socket/prefer-spawn-over-execsync -- dep-0 bare-node fetcher (documented invariant: never imports in-repo socket-lib): shells out to pnpm via node:child_process, and execFileSync's throw-on-nonzero gates the reconcile step — the lib spawn wrapper (async, non-throwing) would re-plumb the error handling.
 import { execFileSync } from 'node:child_process'
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -114,6 +114,18 @@ export function fetchBundle(): void {
   }
   if (!tryRun('node', [fleet, '--if-current'])) {
     log('bundle fetch (fleet.mjs --if-current) reported a problem — continuing')
+  }
+}
+
+export function isMainModule(): boolean {
+  const entry = process.argv[1]
+  if (!entry) {
+    return false
+  }
+  try {
+    return realpathSync(fileURLToPath(import.meta.url)) === realpathSync(entry)
+  } catch {
+    return false
   }
 }
 
@@ -236,7 +248,10 @@ export function tryRun(
   }
 }
 
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+// Realpath both sides: Node resolves the REAL path for `import.meta.url`
+// while `process.argv[1]` keeps the path as invoked, so a bare URL equality
+// silently skips the CLI body under a symlinked invocation.
+if (isMainModule()) {
   // socket-lint: allow top-level-await -- dep-0 ESM CLI run via node, never CJS-bundled
   process.exitCode = await runPrepare()
 }

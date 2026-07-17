@@ -23,6 +23,11 @@ can see dirty files it never touched (a parallel agent's in-flight migration) an
 mistake them for its own regression — then commit them. Nothing warns it. This
 hook makes the signal visible at the turn that surfaces it.
 
+In a repo opted into `squash-history`, the reminder is stronger: disjoint work
+continues immediately because intermediate commit boundaries are ephemeral.
+Coordination follows path ownership; only a same-path live collision or the
+final repo-wide squash/push warrants pausing.
+
 ## Bypass
 
 No bypass — it's a reminder (exit 0), not a block.

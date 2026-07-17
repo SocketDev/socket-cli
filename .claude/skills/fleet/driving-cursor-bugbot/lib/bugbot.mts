@@ -27,6 +27,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 const logger = getDefaultLogger()
+const WIN32 = process.platform === 'win32'
 
 // Cursor Bugbot posts under the `cursor` / `cursor[bot]` App logins
 // (historically `bugbot`). GitHub usernames are case-insensitive but
@@ -73,7 +74,7 @@ const RESOLVING_STATES: ReadonlySet<FindingState> = new Set<FindingState>([
  */
 export async function gh(args: readonly string[]): Promise<string> {
   try {
-    const result = await spawn('gh', args as string[])
+    const result = await spawn('gh', args as string[], { shell: WIN32 })
     return String(result.stdout)
   } catch (e) {
     throw new Error(`gh ${args.join(' ')} failed: ${errorMessage(e)}`)

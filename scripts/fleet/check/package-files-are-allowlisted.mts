@@ -12,9 +12,10 @@
  *   3. **Missing essentials** — common files (`README.md`, `LICENSE*`) absent from
  *      the publish output. README + LICENSE are required-by- convention;
  *      missing them ships malformed packages. Skips workspaces marked
- *      `"private": true` (those don't publish). Uses `npm pack --dry-run
- *      --json` as the source of truth for "what would publish" — same logic npm
- *      itself uses, including `.npmignore` resolution + the
+ *      `"private": true` (those don't publish). Uses a `pack --dry-run
+ *      --json` (pnpm first, npm fallback) as the source of truth for "what
+ *      would publish" — the registry's own logic, including `.npmignore`
+ *      resolution + the
  *      unconditionally-included file list. CI gate via `scripts/check.mts`.
  *      Exit 0 = clean. Exit 1 = drift, with per-package finding lists.
  */
@@ -33,6 +34,7 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from '../paths.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -44,7 +46,11 @@ export interface PackageJson {
 }
 
 export interface PackOutput {
-  files: Array<{ path: string; size: number; mode: number }>
+  files: Array<{
+    path: string
+    size?: number | undefined
+    mode?: number | undefined
+  }>
 }
 
 export interface Finding {
@@ -173,10 +179,53 @@ export function readPackageJson(pkgDir: string): PackageJson | undefined {
 }
 
 /**
- * Run `npm pack --dry-run --json` in `pkgDir` and parse the publish file list.
- * Returns `undefined` on pack failure (caller emits a finding).
+ * Run a pack dry-run in `pkgDir` and parse the publish file list. pnpm goes
+ * first — the fleet baseline pins `devEngines.packageManager: pnpm` with
+ * `onFail: 'error'`, which makes `npm pack` hard-fail EBADDEVENGINES in any
+ * repo whose root package is publishable (hit live in socket-sdk-js). npm is
+ * the fallback for a repo without pnpm on PATH. Returns `undefined` when both
+ * fail (caller emits a finding).
  */
 export function runPackDryRun(pkgDir: string): PackOutput | undefined {
+  return packWithPnpm(pkgDir) ?? packWithNpm(pkgDir)
+}
+
+/**
+ * `pnpm pack --dry-run --json`: emits ONE object `{ name, version, filename,
+ * files: [{ path }] }`, prefixed by any lifecycle-script stdout (`$ node …`),
+ * so parsing slices from the first brace.
+ */
+export function packWithPnpm(pkgDir: string): PackOutput | undefined {
+  const r = spawnSync('pnpm', ['pack', '--dry-run', '--json'], {
+    cwd: pkgDir,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  } as unknown as Parameters<typeof spawnSync>[2])
+  if (r.status !== 0 || typeof r.stdout !== 'string') {
+    return undefined
+  }
+  // Slice to the outermost brace pair: a wrapper on the pnpm shim (Socket
+  // Firewall) prints banner lines around the JSON on the SAME stream, and
+  // lifecycle-script stdout can precede it too.
+  const raw = String(r.stdout)
+  const start = raw.indexOf('{')
+  const end = raw.lastIndexOf('}')
+  if (start === -1 || end <= start) {
+    return undefined
+  }
+  try {
+    const parsed = JSON.parse(raw.slice(start, end + 1)) as PackOutput
+    return Array.isArray(parsed.files) ? parsed : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * `npm pack --dry-run --json`: npm ≤11 emits an ARRAY of pack results; npm 12
+ * emits an OBJECT keyed by package name. Accept both so the gate survives the
+ * npm major.
+ */
+export function packWithNpm(pkgDir: string): PackOutput | undefined {
   const r = spawnSync('npm', ['pack', '--dry-run', '--json'], {
     cwd: pkgDir,
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -185,8 +234,6 @@ export function runPackDryRun(pkgDir: string): PackOutput | undefined {
     return undefined
   }
   try {
-    // npm ≤11 emits an ARRAY of pack results; npm 12 emits an OBJECT keyed by
-    // package name. Accept both so the gate survives the npm major.
     const parsed = JSON.parse(String(r.stdout)) as
       | PackOutput[]
       | Record<string, PackOutput>
@@ -361,7 +408,7 @@ export function runCheck(repoRoot: string, fix = false): number {
         kind: 'pack_failed',
         pkgDir,
         pkgName: pkg.name,
-        message: `\`npm pack --dry-run --json\` failed; can't verify the publish surface.`,
+        message: `\`pack --dry-run --json\` failed under both pnpm and npm; can't verify the publish surface.`,
       })
       continue
     }
@@ -414,6 +461,6 @@ export function runCheck(repoRoot: string, fix = false): number {
   return 1
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMainModule(import.meta.url)) {
   process.exit(runCheck(REPO_ROOT, process.argv.includes('--fix')))
 }

@@ -15,36 +15,51 @@
 # name in FLEET_CANONICAL_CATALOG_NAMES (scripts/repo/sync-scaffolding/manifest.mts).
 # loadExpectedCatalogEntries() reads versions from this file + merges the purpose.
 catalog:
-  # The fleet AI CLI — gh-aw workflow engine + socket-lib src/ai spawnAiAgent
-  # runtime. Soaked (published 2026-06-04). Members reference it via `catalog:`.
-  '@anthropic-ai/claude-code': 2.1.198
-  '@redwoodjs/agent-ci': 0.16.2
-  'dtu-github-actions': 0.16.2
-  '@sinclair/typebox': 0.34.49
+  '@redwoodjs/agent-ci': 0.17.1
+  'dtu-github-actions': 0.17.1
+  '@sinclair/typebox': 0.34.50
   '@socketregistry/packageurl-js': 1.4.2
-  '@socketsecurity/lib': 6.0.9
+  '@socketsecurity/lib': 6.0.10
   '@socketsecurity/registry': 2.0.2
   '@socketsecurity/sdk': 4.0.1
   '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.4.2'
-  '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@6.0.9'
+  '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@6.0.10'
   '@socketsecurity/registry-stable': 'npm:@socketsecurity/registry@2.0.2'
   '@socketsecurity/sdk-stable': 'npm:@socketsecurity/sdk@4.0.1'
   '@types/mdast': 4.0.4
-  '@types/node': 26.1.0
+  '@types/node': 26.1.1
   '@types/semver': 7.7.1
   '@types/shell-quote': 1.7.5
   # Aliased to the published pre-rename artifact until @ultrathink/acorn.wasm
   # ships; then flip to a plain version + npm deprecate the old name.
   '@ultrathink/acorn.wasm': 'npm:@ultrathink/acorn-wasm@0.0.1'
-  'magic-string': 0.30.21
+  # istanbul-org converter for raw NODE_V8_COVERAGE output — cover.mts turns
+  # spawned-child coverage into the children merge tier with `c8 report`.
+  # Soaked (11.0.0 published 2026-02-22).
+  c8: 11.0.0
+  # chrome-devtools-mcp — Puppeteer-based browser-automation MCP server. Drives
+  # Chrome for HTML/design-system rendering + page-JS/console/network inspection
+  # and MV3 extension load+eval (socket-webext). Enabled by default via .mcp.json
+  # (`pnpm exec chrome-devtools-mcp`). Soaked (1.5.0 published 2026-07-03; 1.6.0
+  # published 2026-07-14 is still inside the 7-day cooldown).
+  'chrome-devtools-mcp': 1.5.0
+  # compromise.js NLP — the judgment-nudge hook's modal-verb (POS) detector.
+  # 14.15.1 is the attested re-publish that cleared the 14.15.0
+  # trust-downgrade flag.
+  'compromise': 14.15.1
+  'magic-string': 1.0.0
   'markdownlint-cli2': 0.23.0
   'mdast-util-from-markdown': 2.0.3
   'micromark': 4.0.2
   'neosanitize': 0.3.0
+  # 15.0.0 is the fleet-wide migrated version (the @mswjs/interceptors rewrite;
+  # suites use static replies or scope.on('request') capture — no 2-arity reply
+  # functions, no this.req). Upstream marks 15.0.0 deprecated ("released
+  # accidentally"); bump to the stabilized 15.x when it ships.
   'nock': 15.0.0
   'npm-run-all2': 9.0.2
-  'oxfmt': 0.57.0
-  'oxlint': 1.72.0
+  'oxfmt': 0.58.0
+  'oxlint': 1.73.0
   # playwright-core — headless Chromium driver for the rendering-chromium-to-png
   # skill (render a page or a real unpacked MV3 extension popup to PNG so an
   # agent can SEE it). Browser binary via `pnpm exec playwright install chromium`.
@@ -60,9 +75,9 @@ catalog:
   # it ships outranks the rc). Pinned-toolchain, excluded from taze
   # (UPDATE_PINNED_TOOLCHAIN) so it is never auto-bumped — always a deliberate bump.
   'typescript': 7.0.2
-  'vitest': 4.1.9
-  '@vitest/coverage-v8': 4.1.9
-  '@vitest/ui': 4.1.9
+  'vitest': 4.1.10
+  '@vitest/coverage-v8': 4.1.10
+  '@vitest/ui': 4.1.10
 
 # Optional fleet catalog — present in repos that use these tools; absent is
 # fine (the cascade never injects these). Read by loadOptionalCatalogEntries()

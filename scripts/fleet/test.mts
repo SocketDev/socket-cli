@@ -13,17 +13,18 @@
  *     files directly, plus (b) for each staged SOURCE file, the test files that
  *     mirror it via the MIRROR resolver — never `vitest related` (that broad
  *     walk blew the pre-commit budget on a widely-imported util). The mirror
- *     resolver finds: bare basename tests, shard tests (basename-hyphen
- *     prefix), check-by-name tests for check scripts, and any test file whose
- *     first-party imports include the staged source (direct importers, the
- *     accurate catch for not-yet-renamed tests). Untracked paths are dropped so
- *     a foreign, mid-write test another live actor hasn't committed can't gate
- *     a commit. The staged lane stays tight to what is being committed; the
- *     full suite at pre-push + CI covers cross-cutting impact. A staged source
- *     file with no committed mirror test simply runs nothing at commit time
- *     (its impact is caught at the gate).
+ *     resolver finds: bare basename tests, shard tests that import the source
+ *     (basename-hyphen prefix), check-by-name tests for check scripts, and any
+ *     test file whose first-party imports include the staged source (direct
+ *     importers, the accurate catch for not-yet-renamed tests). Untracked paths
+ *     are dropped so a foreign, mid-write test another live actor hasn't
+ *     committed can't gate a commit. The staged lane stays tight to what is
+ *     being committed; the full suite at pre-push + CI covers cross-cutting
+ *     impact. A staged source file with no committed mirror test simply runs
+ *     nothing at commit time (its impact is caught at the gate).
  *   - `--all` — run the full suite (`vitest run`). Used in CI and on explicit
- *     opt-in. Flags: `--quiet` / `--silent` suppress progress output. Config /
+ *     opt-in. `--shard=<index>/<count>` partitions that full suite across CI
+ *     jobs. Flags: `--quiet` / `--silent` suppress progress output. Config /
  *     infrastructure changes (`vitest.config*`, `tsconfig*`, `.oxlintrc.json`,
  *     `.oxfmtrc.json`, `pnpm-lock.yaml`, `package.json`, the vitest setup
  *     files, and the test runner itself) still escalate to `all` — module-graph
@@ -40,12 +41,15 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { globSync } from '@socketsecurity/lib-stable/globs/match'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import type { SpawnSyncOptions } from '@socketsecurity/lib-stable/process/spawn/types'
 
-import { resolveScopeMode } from './_shared/scope-flags.mts'
+import { hasLiveForeignActiveRun } from './_shared/active-run-marker.mts'
+import { isScopeFlag, resolveScopeMode } from './_shared/scope-flags.mts'
 import {
   firstPartyImports,
   isCheckByName,
@@ -54,6 +58,8 @@ import {
   GENERATED_GLOBS,
   isGeneratedPath,
 } from './constants/generated-globs.mts'
+import { ensurePinnedNode } from './lib/ensure-node.mts'
+import { isMainModule } from './_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -91,7 +97,44 @@ const ROOT_WORKSPACE_MANIFEST = 'pnpm-workspace.yaml'
 // `pnpm test` in monorepos with no root config (UNRESOLVED_ENTRY).
 const ROOT_VITEST_CONFIG = '.config/repo/vitest.config.mts'
 
-const args = process.argv.slice(2)
+// Test LANES — a SPEED category orthogonal to scope. `--lane fast|mid|slow`
+// runs that lane (membership from `vitest.lanes` in the settings file); bare
+// `pnpm test` defaults to the fast lane. See .config/repo/vitest.config.mts.
+const VALID_LANES: ReadonlySet<string> = new Set(['fast', 'mid', 'slow'])
+// Pull the `--lane <value>` / `--lane=<value>` flag out of argv and return the
+// rest, so the scope/shard parsers never mistake the lane value for a file.
+function extractLane(argv: readonly string[]): {
+  lane: string | undefined
+  rest: string[]
+} {
+  const rest: string[] = []
+  let lane: string | undefined
+  for (let i = 0, { length } = argv; i < length; i += 1) {
+    const arg = argv[i]!
+    let value: string | undefined
+    if (arg === '--lane') {
+      i += 1
+      value = argv[i]
+    } else if (arg.startsWith('--lane=')) {
+      value = arg.slice('--lane='.length)
+    } else {
+      rest.push(arg)
+      continue
+    }
+    if (!value || !VALID_LANES.has(value)) {
+      throw new Error(
+        'Invalid --lane value.\n' +
+          '  Where: scripts/fleet/test.mts CLI argument parsing.\n' +
+          `  Saw: ${value ?? '(missing value)'}; wanted one of fast | mid | slow.\n` +
+          '  Fix: pass --lane fast (the bare `pnpm test` default), --lane mid, or --lane slow.',
+      )
+    }
+    lane = value
+  }
+  return { lane, rest }
+}
+
+const { lane: laneFlag, rest: args } = extractLane(process.argv.slice(2))
 const mode = resolveScopeMode(args)
 const quiet = args.includes('--quiet') || args.includes('--silent')
 const stdio: SpawnSyncOptions['stdio'] = quiet ? 'pipe' : 'inherit'
@@ -126,10 +169,11 @@ function log(msg: string): void {
   }
 }
 
-function gitFiles(args: string[]): string[] {
+function gitFiles(args: string[], cwd?: string | undefined): string[] {
   // spawnSync with array args — no shell interpolation. Matches the
   // socket/prefer-spawn-over-execsync rule contract.
   const r = spawnSync('git', args, {
+    ...(cwd ? { cwd } : {}),
     stdio: ['ignore', 'pipe', 'pipe'],
     stdioString: true,
   })
@@ -216,6 +260,22 @@ function shouldEscalate(files: string[]): boolean {
   return false
 }
 
+// Resolve the child env for a vitest spawn, always dropping COVERAGE. Coverage
+// is owned by cover.mts, which spawns the outer vitest DIRECTLY (never via
+// test.mts), so any COVERAGE reaching test.mts belongs to a NESTED run — a
+// subprocess-spawning test re-entered test.mts (via `pnpm test` / a git hook)
+// while the outer coverage run is live. A nested vitest with coverage on would
+// clean the shared coverage/.tmp and ENOENT the outer forks' reports (the reason
+// coverage used to force `maxWorkers: 1`). test.mts never collects coverage
+// itself, so strip it and let the suite run parallel without the clobber.
+function resolveVitestEnv(
+  optsEnv: Record<string, string> | undefined,
+): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = { ...process.env, ...optsEnv }
+  delete env['COVERAGE']
+  return env
+}
+
 function runVitest(
   vitestArgs: string[],
   label: string,
@@ -224,7 +284,12 @@ function runVitest(
   const opts = { __proto__: null, ...options } as {
     env?: Record<string, string> | undefined
   }
-  log(`Test scope: ${label}`)
+  // Announce the effective budget tier so a CI log answers "which timeout did
+  // the config compute?" without a probe commit — a 30s timeout under a
+  // config that should compute 60s on CI is diagnosable from the run log.
+  log(
+    `Test scope: ${label} (CI=${process.env['CI'] ? 'yes' : 'no'}, budget tier: ${process.env['CI'] ? '60s' : '10s local'})`,
+  )
   const configArgs = existsSync(ROOT_VITEST_CONFIG)
     ? ['--config', ROOT_VITEST_CONFIG]
     : []
@@ -235,7 +300,7 @@ function runVitest(
     {
       shell: useShell,
       stdio,
-      ...(opts.env ? { env: { ...process.env, ...opts.env } } : {}),
+      env: resolveVitestEnv(opts.env),
     },
   )
   if (r.status !== 0) {
@@ -313,8 +378,64 @@ function isDelegatedWorkspace(): boolean {
   return !existsSync(ROOT_VITEST_CONFIG) && existsSync(ROOT_WORKSPACE_MANIFEST)
 }
 
+export interface ParsedTestRunnerArgs {
+  files: string[]
+  shard: string | undefined
+}
+
+export function parseTestRunnerArgs(
+  argv: readonly string[],
+): ParsedTestRunnerArgs {
+  const files: string[] = []
+  let shard: string | undefined
+
+  for (let i = 0, { length } = argv; i < length; i += 1) {
+    const arg = argv[i]!
+    let candidate: string | undefined
+    if (arg === '--shard') {
+      i += 1
+      candidate = argv[i]
+    } else if (arg.startsWith('--shard=')) {
+      candidate = arg.slice('--shard='.length)
+    } else if (!arg.startsWith('-')) {
+      files.push(arg)
+      continue
+    } else {
+      continue
+    }
+
+    const match = /^(?<index>[1-9]\d*)\/(?<count>[1-9]\d*)$/.exec(
+      candidate ?? '',
+    )
+    if (
+      !match?.groups ||
+      Number(match.groups['index']) > Number(match.groups['count']) ||
+      shard !== undefined
+    ) {
+      throw new Error(
+        'Invalid test shard argument.\n' +
+          'Where: scripts/fleet/test.mts CLI argument parsing.\n' +
+          `Saw: ${candidate ?? '(missing value)'}; wanted one --shard=<index>/<count> with 1 <= index <= count.\n` +
+          'Fix: pass a single shard such as --shard=1/4 alongside --all.',
+      )
+    }
+    shard = candidate
+  }
+
+  return { files, shard }
+}
+
 // The test-file glob patterns, one pattern each for .mts/.ts/.mjs/.cjs/.js/.tsx/.jsx.
 const TEST_EXTENSIONS = '{mts,ts,mjs,cjs,js,tsx,jsx}'
+
+interface MirrorTestIndex {
+  readonly importersBySource: ReadonlyMap<string, readonly string[]>
+  readonly testFiles: readonly string[]
+}
+
+// A staged run may resolve mirrors for many source files. Index each repo's
+// test tree once so that cost is O(tests + sources), not O(tests × sources).
+const mirrorTestIndexCache = new Map<string, MirrorTestIndex>()
 
 // Filesystem-only test-file count (no vitest subprocess), matching the SAME
 // `**/`-anchored shape as the root vitest config's `include`. Lets `runAll()`
@@ -346,7 +467,7 @@ function totalTestFileCount(): number {
   ).length
 }
 
-function runAll(): number {
+function runAll(shard?: string | undefined): number {
   if (isDelegatedWorkspace()) {
     return runWorkspaceTests()
   }
@@ -366,7 +487,10 @@ function runAll(): number {
     )
     return 1
   }
-  return runVitest(['run'], 'all')
+  return runVitest(
+    ['run', ...(shard ? ['--shard', shard] : [])],
+    shard ? `all (shard ${shard})` : 'all',
+  )
 }
 
 // --passWithNoTests: a scoped run where the changed files don't resolve
@@ -377,9 +501,61 @@ function runChanged(): number {
   return runVitest(['run', '--changed', '--passWithNoTests'], 'changed')
 }
 
+function mirrorTestIndex(root: string): MirrorTestIndex {
+  const resolvedRoot = path.resolve(root)
+  const cached = mirrorTestIndexCache.get(resolvedRoot)
+  if (cached) {
+    return cached
+  }
+  const tracked = gitFiles(['ls-files'], resolvedRoot)
+  // Git is the fast and exact index for a real checkout: it omits ignored
+  // output and submodule contents. A non-git fixture falls back to the glob.
+  const testFiles = tracked.length
+    ? tracked.filter(
+        file => /(?:^|\/)test\//.test(normalizePath(file)) && isTestFile(file),
+      )
+    : globSync(
+        [
+          `**/test/**/*.test.${TEST_EXTENSIONS}`,
+          `**/test/**/*.spec.${TEST_EXTENSIONS}`,
+        ],
+        {
+          cwd: resolvedRoot,
+          absolute: false,
+          ignore: ['**/node_modules/**'],
+        },
+      )
+  const importersBySource = new Map<string, string[]>()
+  for (let i = 0, { length } = testFiles; i < length; i += 1) {
+    const rel = testFiles[i]!
+    const abs = path.join(resolvedRoot, rel)
+    let content = ''
+    try {
+      content = readFileSync(abs, 'utf8')
+    } catch {
+      continue
+    }
+    const imports = firstPartyImports(content, path.dirname(abs), resolvedRoot)
+    for (let j = 0, { length } = imports; j < length; j += 1) {
+      const source = imports[j]!
+      const importers = importersBySource.get(source)
+      if (importers) {
+        importers.push(rel)
+      } else {
+        importersBySource.set(source, [rel])
+      }
+    }
+  }
+  const index = { importersBySource, testFiles }
+  mirrorTestIndexCache.set(resolvedRoot, index)
+  return index
+}
+
 // Find a source file's mirror test files by the MIRROR resolver:
 //   (1) `**/test/**/<base>.test.*` — bare basename match
-//   (2) `**/test/**/<base>-*.test.*` — shard tests (e.g. cover-thresholds for cover.mts)
+//   (2) direct importers named `**/test/**/<base>-*.test.*` — shard tests
+//       (e.g. cover-thresholds for cover.mts); requiring the import prevents a
+//       generic source such as test.mts from claiming unrelated test-* specs
 //   (3) `**/test/**/check-<base>.test.*` — check-by-name tests, only when
 //       a `scripts/.../check/<base>.mts` enforcer exists (isCheckByName)
 //   (4) any test file under a `test/` tree whose first-party imports include this
@@ -395,74 +571,29 @@ export function findMirrorTests(sourcePath: string, root: string): string[] {
     return []
   }
   const out = new Set<string>()
-
-  // (1) Bare basename: **/test/**/<base>.test.*
-  const bare = globSync([`**/test/**/${base}.test.${TEST_EXTENSIONS}`], {
-    cwd: root,
-    absolute: false,
-    ignore: ['**/node_modules/**'],
-  })
-  for (const f of bare) {
-    out.add(f)
-  }
-
-  // (2) Shards: **/test/**/<base>-*.test.*
-  const shards = globSync([`**/test/**/${base}-*.test.${TEST_EXTENSIONS}`], {
-    cwd: root,
-    absolute: false,
-    ignore: ['**/node_modules/**'],
-  })
-  for (const f of shards) {
-    out.add(f)
-  }
-
-  // (3) Check-by-name: **/test/**/check-<base>.test.* only when the check exists.
-  if (isCheckByName(`check-${base}`, root)) {
-    const checkTests = globSync(
-      [`**/test/**/check-${base}.test.${TEST_EXTENSIONS}`],
-      {
-        cwd: root,
-        absolute: false,
-        ignore: ['**/node_modules/**'],
-      },
-    )
-    for (const f of checkTests) {
-      out.add(f)
-    }
-  }
-
-  // (4) Direct importers: scan all test files for those whose first-party
-  // imports include this source. This is the accurate catch for test files that
-  // haven't been renamed yet, or that test a source under a different basename.
-  const allTests = globSync(
-    [
-      `**/test/**/*.test.${TEST_EXTENSIONS}`,
-      `**/test/**/*.spec.${TEST_EXTENSIONS}`,
-    ],
-    {
-      cwd: root,
-      absolute: false,
-      ignore: ['**/node_modules/**'],
-    },
-  )
-  for (const rel of allTests) {
-    if (out.has(rel)) {
+  const index = mirrorTestIndex(root)
+  const checkBase = `check-${base}`
+  const acceptsCheckName = isCheckByName(checkBase, root)
+  const importers = index.importersBySource.get(sourcePath) ?? []
+  const importerSet = new Set(importers)
+  for (let i = 0, { length } = index.testFiles; i < length; i += 1) {
+    const rel = index.testFiles[i]!
+    if (!/\.test\.[cm]?[jt]sx?$/.test(rel)) {
       continue
     }
-    const abs = path.join(root, rel)
-    let content = ''
-    try {
-      content = readFileSync(abs, 'utf8')
-    } catch {
-      continue
-    }
-    const imports = firstPartyImports(content, path.dirname(abs), root)
-    if (imports.includes(sourcePath)) {
+    const testBase = path.basename(rel).replace(/\.test\.[cm]?[jt]sx?$/, '')
+    if (
+      testBase === base ||
+      (testBase.startsWith(`${base}-`) && importerSet.has(rel)) ||
+      (acceptsCheckName && testBase === checkBase)
+    ) {
       out.add(rel)
     }
   }
-
-  return [...out]
+  for (let i = 0, { length } = importers; i < length; i += 1) {
+    out.add(importers[i]!)
+  }
+  return [...out].toSorted()
 }
 
 function runStaged(files: string[]): number {
@@ -491,42 +622,97 @@ function runStaged(files: string[]): number {
   )
 }
 
-// Explicit positional file paths → the fast, file-scoped run. This is the
-// fleet-canonical replacement for a raw `node_modules/.bin/vitest run <file>`:
-// `pnpm test <file…>` runs exactly those files (vitest `run <files>`), so no
-// one ever needs to reach past the script to the bare binary. Flags (scope +
-// --quiet/--silent) are filtered out; what remains is treated as file paths.
-function fileArgs(): string[] {
-  return args.filter(a => !a.startsWith('-'))
-}
-
 function runFiles(files: string[]): number {
   // `vitest run <files…>` executes exactly the named test files (no watch),
   // the fast path for "test this one file". --passWithNoTests keeps a path
   // that resolves to no test file from erroring.
   //
-  // A template/ path is the CANONICAL copy, which the config excludes by
-  // default (the cascaded live copy is what the suite runs). Setting
-  // FLEET_TEST_TEMPLATE=1 lifts that one exclude so `pnpm test
-  // template/base/.../x.test.mts` verifies a canonical test IN PLACE — before
-  // the cascade — instead of forcing a commit + cascade just to run it.
-  const includeTemplate = files.some(f => f.startsWith('template/'))
   return runVitest(
     ['run', ...files, '--passWithNoTests'],
     `files (${files.length})`,
-    includeTemplate ? { env: { FLEET_TEST_TEMPLATE: '1' } } : undefined,
+    undefined,
   )
 }
 
 function main(): void {
-  const explicitFiles = fileArgs()
+  // Re-exec under the pinned node when a stale PATH node (e.g. a Homebrew node
+  // in a non-interactive shell that never sourced fnm) is below the hook floor,
+  // so the vitest + hooks this spawns run on the fleet runtime.
+  ensurePinnedNode()
+
+  let parsedArgs: ParsedTestRunnerArgs
+  try {
+    parsedArgs = parseTestRunnerArgs(args)
+  } catch (e) {
+    logger.error(errorMessage(e))
+    process.exitCode = 1
+    return
+  }
+  if (parsedArgs.shard && mode !== 'all') {
+    logger.error(
+      'Test sharding requires full-suite scope.\n' +
+        'Where: scripts/fleet/test.mts CLI scope resolution.\n' +
+        `Saw: --shard=${parsedArgs.shard} with ${mode} scope; wanted --all.\n` +
+        `Fix: run pnpm test --all --shard=${parsedArgs.shard}.`,
+    )
+    process.exitCode = 1
+    return
+  }
+
+  // A concurrent vitest run during a live coverage run cleans the shared
+  // coverage/.tmp and ENOENTs the outer run's v8 reports (two live
+  // incidents on 2026-07-11 killed 15-minute cover runs at the merge
+  // step). cover.mts registers an active-run marker; refuse to start
+  // while one is live instead of corrupting it.
+  if (
+    !args.includes('--force-during-active-run') &&
+    hasLiveForeignActiveRun()
+  ) {
+    // The staged pre-commit lane is non-blocking by design (its timeout
+    // path already skips) — a hard refusal here would freeze ALL commits
+    // for the length of any cover run. Skip like the timeout path; the
+    // merge gate runs the full suite.
+    if (mode === 'staged') {
+      logger.log(
+        'A long fleet run (coverage/build) is live — skipping the staged test lane (non-blocking; the merge gate runs the full suite).',
+      )
+      return
+    }
+    logger.error(
+      'A long fleet run (coverage/build) is live — refusing to start vitest.\n' +
+        '  Where: scripts/fleet/test.mts startup gate\n' +
+        '  Saw vs wanted: a live active-run marker in ~/.claude/hooks/stale-process-sweeper/active-runs/; wanted none\n' +
+        '  Fix: wait for the run to finish (or stop it), then re-run. Deliberate override: --force-during-active-run.',
+    )
+    process.exitCode = 1
+    return
+  }
+  // Lane routing (a SPEED category, orthogonal to scope). `--lane fast|mid|slow`
+  // runs that lane; bare `pnpm test` (no scope flag, no explicit files) defaults
+  // to the fast lane for a quick local loop. --all / --staged / --changed and
+  // explicit files intentionally run EVERY lane (so editing a slow-lane test
+  // still runs it). The lane reaches the vitest config via FLEET_LANE, which
+  // shapes the config's include/exclude.
+  const hasScopeFlag = args.some(a => isScopeFlag(a))
+  const effectiveLane =
+    laneFlag ??
+    (!hasScopeFlag && parsedArgs.files.length === 0 ? 'fast' : undefined)
+  if (effectiveLane) {
+    process.env['FLEET_LANE'] = effectiveLane
+    process.exitCode = runVitest(['run'], `lane:${effectiveLane}`)
+    return
+  }
+
+  // Explicit positional file paths take the fast file-scoped path. The parser
+  // removes scope/runner flags and consumes the separate `--shard 1/4` value.
+  const explicitFiles = parsedArgs.files
   if (explicitFiles.length > 0) {
     process.exitCode = runFiles(explicitFiles)
     return
   }
 
   if (mode === 'all') {
-    process.exitCode = runAll()
+    process.exitCode = runAll(parsedArgs.shard)
     return
   }
 
@@ -578,6 +764,6 @@ function main(): void {
 
 // Entrypoint-guarded so importing this module (e.g. a unit test of
 // buildRelatedArgs) doesn't kick off a vitest run.
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+if (isMainModule(import.meta.url)) {
   main()
 }

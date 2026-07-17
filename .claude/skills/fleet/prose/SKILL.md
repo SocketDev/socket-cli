@@ -1,6 +1,6 @@
 ---
 name: prose
-description: Removes AI writing patterns from prose. Use when drafting, editing, or reviewing essays, blog posts, docs, release notes, commit message bodies, PR descriptions, CHANGELOG entries, README content, or any human-facing text that reads AI-generated: hedged, metronomic, padded with throat-clearing, or full of em-dashes, adverbs, and "not X, it's Y" contrasts.
+description: Edit human-facing prose to remove AI patterns, padding, hedging, and awkward generated phrasing.
 user-invocable: true
 allowed-tools: Read, Edit, Write, Grep
 model: claude-sonnet-4-6
@@ -22,7 +22,7 @@ This skill runs in two modes. Both strip the AI-slop the Core Rules target; the 
 **Route by surface:**
 
 - Targeting a `docs/**` file, README, CHANGELOG, GitHub Release notes, or API-reference prose → **documentation mode** (the Core Rules below, unchanged).
-- Targeting a PR description / comment (`gh pr create/edit/comment --body`), an issue body or reply (`gh issue create/comment`), a review comment, a Linear issue/comment, a status summary, or a multi-paragraph commit *body* → **conversational mode**: the Core Rules **plus** [references/conversational.md](references/conversational.md) (lead with the point, be brief, show the receipt, drop the AI scaffolding).
+- Targeting a PR description / comment (`gh pr create/edit/comment --body`), an issue body or reply (`gh issue create/comment`), a review comment, a Linear issue/comment, a status summary, or a multi-paragraph commit *body* → **conversational mode**: the Core Rules **plus** [references/conversational.md](references/conversational.md) (lead with the point, be brief, show the receipt, drop the AI scaffolding; when a body earns structure, use GitHub advanced formatting — `<details>` folds with specific summaries, at most one `> [!NOTE]`-family alert, `- [ ]` task lists, autolinks/permalinks, sparing footnotes).
 
 **Documentation mode applies to:**
 

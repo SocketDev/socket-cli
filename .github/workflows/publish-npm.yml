@@ -420,11 +420,33 @@ jobs:
           else
             echo "present=false" >> "$GITHUB_OUTPUT"
           fi
-      - name: Checkout (for the local PR-App action)
+      - name: Bootstrap checkout (for the local PR-App action)
         if: steps.pr_app_creds.outputs.present == 'true'
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3 (2026-06-02)
-        with:
-          persist-credentials: false
+        shell: bash
+        env:
+          # Route context through env (no ${{ }} in the shell body). Token
+          # authorizes the fetch inline; never persisted to .git/config.
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          # First checkout in this job (the preceding step only reads a secret),
+          # so it can't call the local ./.github/actions/fleet/checkout composite;
+          # bootstrap the workspace inline so the PR-App composite below resolves.
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+          else
+            git fetch "${FETCH_ARGS[@]}"
+          fi
+          git checkout -q --detach FETCH_HEAD
       - name: Mint PR-App token
         id: pr_app_token
         if: steps.pr_app_creds.outputs.present == 'true'

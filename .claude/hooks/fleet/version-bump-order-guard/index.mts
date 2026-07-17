@@ -34,7 +34,12 @@
 // skipped with SOCKET_VERSION_BUMP_SKIP_GATE=1 when the bump ordering is
 // fine but the gate is being run out-of-band.
 
-import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
+import { which } from '@socketsecurity/lib-stable/bin/which'
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import {
+  spawn,
+  spawnSync,
+} from '@socketsecurity/lib-stable/process/spawn/child'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -229,7 +234,7 @@ function hasLintScript(cwd: string): boolean {
 // never invents a failure.
 // Newest mtime (ms) under a dir tree, or 0 when absent/empty. Skips
 // node_modules + dotdirs so a stray install timestamp can't mask staleness.
-function newestMtime(dir: string): number {
+export function newestMtime(dir: string): number {
   let newest = 0
   let entries: string[]
   try {
@@ -293,7 +298,30 @@ function coverageFreshnessFailure(cwd: string): string | undefined {
   return undefined
 }
 
-function runPreReleaseGate(options: { cwd?: string | undefined }): string[] {
+// One gate command through the fleet-preferred ASYNC lib spawn. The lib
+// rejects on non-zero exit, so exit semantics come back through catch —
+// mapped to a plain code (-1 = spawn-level failure).
+async function runGateCommand(
+  args: string[],
+  options: { cwd?: string | undefined },
+): Promise<number> {
+  const opts = { __proto__: null, ...options } as typeof options
+  try {
+    // Windows shell-shim: pnpm is pnpm.cmd there; the lib resolves .cmd
+    // safely under shell (array args stay literal — no injection). Unshelled,
+    // the spawn errors and the gate silently vanished on every windows run
+    // (the GATE tests' 0-instead-of-2).
+    await spawn('pnpm', args, { cwd: opts.cwd, shell: WIN32 })
+    return 0
+  } catch (e) {
+    const err = e as { code?: number | string | undefined }
+    return typeof err.code === 'number' ? err.code : -1
+  }
+}
+
+async function runPreReleaseGate(options: {
+  cwd?: string | undefined
+}): Promise<string[]> {
   const opts = { __proto__: null, ...options } as typeof options
   const failures: string[] = []
   /* c8 ignore next - opts.cwd is always provided by the hook payload; process.cwd() fallback untestable without chdir */
@@ -302,26 +330,31 @@ function runPreReleaseGate(options: { cwd?: string | undefined }): string[] {
   if (coverageFailure) {
     failures.push(coverageFailure)
   }
-  const spawnOpts = { ...options, stdio: 'pipe' as const }
-  // `pnpm run lint --all` — the exact command CI's Check job runs. A
-  // non-zero exit means accumulated lint debt that CI will reject.
-  const lint = spawnSync('pnpm', ['run', 'lint', '--all'], spawnOpts)
-  if (lint.error) {
-    // pnpm not spawnable — can't confirm, fail open.
+  // "pnpm not spawnable → fail open" is decided DETERMINISTICALLY up front: a
+  // PATH resolution via the lib's async which. Exit-code archaeology after
+  // the fact is platform-fuzzy — under the windows shell shim, cmd launches
+  // via ComSpec even with an empty PATH, and command-not-found surfaces as an
+  // exit code (9009/127) that varies by shell; the belt below keeps those,
+  // but the which-probe is the portable contract.
+  if (!(await which('pnpm'))) {
     return failures
   }
-  if (lint.status !== 0) {
+  // `pnpm run lint --all` — the exact command CI's Check job runs. A
+  // non-zero exit means accumulated lint debt that CI will reject.
+  const lintCode = await runGateCommand(['run', 'lint', '--all'], opts)
+  if (lintCode === -1 || lintCode === 9009 || lintCode === 127) {
+    return failures
+  }
+  if (lintCode !== 0) {
     failures.push('`pnpm run lint --all` failed — fix lint before tagging.')
   }
   // `pnpm audit` — open security advisories. Only meaningful against a
   // resolved lockfile; without `pnpm-lock.yaml` it has nothing to audit
   // and its exit code is noise, so skip it there (fail open).
-  /* c8 ignore next - opts.cwd is always provided by the hook payload; process.cwd() fallback untestable without chdir */
-  const cwd = opts.cwd ?? process.cwd()
-  if (existsSync(path.join(cwd, 'pnpm-lock.yaml'))) {
-    const audit = spawnSync('pnpm', ['audit'], spawnOpts)
+  if (existsSync(path.join(gateCwd, 'pnpm-lock.yaml'))) {
+    const auditCode = await runGateCommand(['audit'], opts)
     /* c8 ignore start - requires real vulnerable dependencies; not reproducible in a unit test */
-    if (!audit.error && audit.status !== 0) {
+    if (auditCode > 0 && auditCode !== 9009 && auditCode !== 127) {
       failures.push(
         '`pnpm audit` found advisories — pin safe versions in ' +
           'pnpm-workspace.yaml overrides (past soak) before tagging.',
@@ -332,7 +365,7 @@ function runPreReleaseGate(options: { cwd?: string | undefined }): string[] {
   return failures
 }
 
-export const check = bashGuard((command, payload) => {
+export const check = bashGuard(async (command, payload) => {
   const bumpMsg = bumpCommitMessage(command)
   const isTag = isVersionTagCommand(command)
   if (!bumpMsg && !isTag) {
@@ -391,7 +424,7 @@ export const check = bashGuard((command, payload) => {
     !process.env['SOCKET_VERSION_BUMP_SKIP_GATE'] &&
     hasLintScript(effectiveCwd)
   ) {
-    const gateFailures = runPreReleaseGate(opts)
+    const gateFailures = await runPreReleaseGate(opts)
     if (gateFailures.length) {
       const lines = [
         '[version-bump-order-guard] Pre-bump gate failed — refusing the bump commit.',
@@ -431,7 +464,7 @@ export const check = bashGuard((command, payload) => {
     !process.env['SOCKET_VERSION_BUMP_SKIP_GATE'] &&
     hasLintScript(effectiveCwd)
   ) {
-    const gateFailures = runPreReleaseGate(opts)
+    const gateFailures = await runPreReleaseGate(opts)
     if (gateFailures.length) {
       const gateLines = [
         '[version-bump-order-guard] Pre-release gate failed for tag.',
@@ -456,11 +489,24 @@ export const check = bashGuard((command, payload) => {
   // Read the most-recent commit subject from HEAD.
   const subjectResult = spawnSync('git', ['log', '-1', '--pretty=%s'], opts)
   if (subjectResult.status !== 0) {
-    // Not a git repo or git unavailable — fail open.
+    // Not a git repo or git unavailable — fail open. Under SOCKET_DEBUG, say
+    // so with the inputs: a windows CI run allowed a tag the fixture proved
+    // should block, with zero output — a mangled acted-on path failing this
+    // spawn is the prime suspect, and only the inputs can confirm it.
+    if (process.env['SOCKET_DEBUG']) {
+      process.stderr.write(
+        `[version-bump-order-guard] fail-open: subject read failed (status ${subjectResult.status}, cwd ${effectiveCwd}, stderr ${String(subjectResult.stderr ?? '').trim()})\n`,
+      )
+    }
     return undefined
   }
   const headSubject = String(subjectResult.stdout).trim()
   if (BUMP_SUBJECT_RE.test(headSubject)) {
+    if (process.env['SOCKET_DEBUG']) {
+      process.stderr.write(
+        `[version-bump-order-guard] allow: HEAD subject is a bump (${headSubject}, cwd ${effectiveCwd})\n`,
+      )
+    }
     return undefined
   }
 

@@ -32,7 +32,6 @@
 
 import { existsSync, readFileSync } from 'node:fs'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { AI_PROFILE } from '@socketsecurity/lib-stable/ai/profiles'
 import { discoverAiAgents } from '@socketsecurity/lib-stable/ai/discover'
@@ -49,6 +48,7 @@ import {
 } from './codify-guidance.mts'
 
 import type { CodifySurface } from './codify-guidance.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -266,7 +266,7 @@ async function main(): Promise<void> {
   )
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   main().catch((e: unknown) => {
     logger.error(`ai-codify: ${errorMessage(e)}`)
     process.exitCode = 1

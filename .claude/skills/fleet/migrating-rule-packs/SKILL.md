@@ -1,6 +1,6 @@
 ---
 name: migrating-rule-packs
-description: Run a code migration (zod → typebox, fetch → http-request, lib → lib-stable, etc.) as a rule-pack-driven autonomous loop across many target files in parallel. Runs a Workflow that streams the target files through a transform → build/fix/check/test pipeline, one worktree-isolated agent per file, with a feedback channel that rewrites PR-review comments back into the rule files. Use when a migration touches 10+ files with a deterministic transformation, when each target file is independently transformable, or when human-led serial editing would dominate the wall-clock time. The skill packages the four pieces a rule-pack migration needs: a rule-pack format, an autonomous per-file build/fix/check/test loop, parallel worktree execution, and a feedback channel that rewrites PR-review comments back into the rule files.
+description: Run deterministic 10+ file code migrations through rule-pack transforms, isolated agents, and feedback loops.
 user-invocable: true
 allowed-tools: Workflow, Read, Edit, Write, Grep, Glob, Bash(git worktree:*), Bash(git branch:*), Bash(git status:*), Bash(git rev-parse:*), Bash(git symbolic-ref:*), Bash(git show-ref:*), Bash(git add:*), Bash(git commit:*), Bash(git push:*), Bash(git log:*), Bash(git diff:*), Bash(node:*), Bash(pnpm:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(cat:*), Bash(mkdir:*), Bash(rm:*), Bash(mv:*), Bash(cp:*)
 model: claude-sonnet-4-6

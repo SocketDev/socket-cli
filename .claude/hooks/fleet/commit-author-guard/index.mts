@@ -28,6 +28,7 @@
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import process from 'node:process'
 
+import { isGitCommit } from '../_shared/commit-command.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 // Cross-tree shared reader (canonical home: .git-hooks/_shared/). The DATA it
@@ -46,14 +47,7 @@ const BYPASS_PHRASES = [
   'Allow commitauthor bypass',
 ] as const
 
-// Detect whether the command is `git commit ...` (not push, not log).
-// Also returns true for `git -c ... commit ...` and other forms with
-// flags before the subcommand.
-export function isGitCommit(command: string): boolean {
-  // Match `git` (optionally with -c flags between) followed by `commit`.
-  // Negative lookahead avoids `git config commit.gpgsign`.
-  return /\bgit\b(?:\s+-c\s+[^\s]+)*\s+commit(?:\s|$)/.test(command)
-}
+export { isGitCommit }
 
 // Parse a `git commit ...` command for explicit author overrides.
 // Three forms we recognize:

@@ -18,7 +18,9 @@ NEVER pass `--experimental-strip-types` to `node`. Runners are `.mts` executed b
 
 The Socket Firewall (SFW) footer carries malware/soak warnings; piping `pnpm install`/`check`/`test`/`build` output to `tail` or `head` hides it. Let the full output through (`.claude/hooks/fleet/no-tail-install-out-guard/`).
 
-## Python: `uv` for projects, never `pip` / `pip3`
+## Search: `fff` MCP, not `ripgrep` / `grep`
+
+For file + content search in a git-indexed tree, reach for the **fff** MCP tools (`ffgrep` content search, `fffind` path search, `fff-multi-grep`) before `ripgrep` / `grep` / `rg`. fff (`.mcp.json` → `fff-mcp`, a resident Rust index installed by `setup-tools` + pinned in `external-tools.json`) keeps the index + file cache warm for the whole session — sub-10ms queries vs 3-9s per ripgrep spawn on a large tree — and ranks definitions first with frecency + git-aware annotations, so the agent lands on the right code in fewer roundtrips and less context. `ripgrep` / `grep` stay fine for one-off shell use and inside scripts; this rule is about the agent's interactive search loop. Ask the agent to "use fff" if a session's client didn't auto-pick the tools.
 
 A Python project uses [`uv`](https://docs.astral.sh/uv/) (Astral), pinned in `external-tools.json` (currently `0.11.21`). uv is the Python analog of the fleet's pnpm model: a hash-verified `uv.lock` plus an `exclude-newer` soak. The dev shortcut for one-off CLI tools stays `pipx install <pkg>==<ver>` (pinned). Never bare `pip`/`pip3` (`.claude/hooks/fleet/prefer-pipx-over-pip-guard/`).
 
@@ -123,36 +125,19 @@ pnpm 11 stores the integrity hash in `pnpm-lock.yaml` (a separate YAML document)
 
 ## Bumping a versioned tool fleet-wide (pnpm, zizmor, sfw)
 
-🚨 **Single entry point: `scripts/repo/cascade-fleet.mts`.** Run from the wheelhouse repo:
+**Entry point: `scripts/repo/cascade-fleet.mts`** — bumps one tool's pinned version and commits it. Run from the wheelhouse repo:
 
 ```bash
-node scripts/repo/cascade-fleet.mts \
-  --pnpm 11.3.0 \
-  [--skip-ci-wait] \
-  [--dry-run]
+node scripts/repo/cascade-fleet.mts --pnpm 11.3.0 [--dry-run] [--self]
 ```
 
-This is a four-stage orchestrator. Don't reach for any of the lower-level scripts directly unless one of the stages bailed and you're recovering:
+The bump stage (`pipeline-stages.mts#runBump` → `tools/<tool>.mts#applyToRegistry`) downloads every platform binary from upstream, recomputes sha256 ourselves (integrity = binary-download + own-checksum, never trust in upstream-published values), writes `external-tools.json`, and commits. Tools with a `sourceDir` override (node, npm) write the wheelhouse root instead (`.node-version` / `package.json` engines).
 
-| Stage | Does                                                                                                                                                                                                                                                                                                                                                                                                                       | Driven by                                                    |
-| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| A     | Bumps `socket-registry/external-tools.json`: downloads every platform binary from upstream, recomputes sha256 ourselves (integrity model is binary-download + own-checksum, not trust in upstream-published values), writes the file. Commits to registry.                                                                                                                                                                 | `tools/pnpm.mts#applyToRegistry` (+ `zizmor.mts`, `sfw.mts`) |
-| B     | Delegates to `socket-registry/scripts/cascade-workflows.mts`: recursively bumps every SHA pin in registry's own workflows (`setup-and-install` → `setup` → `checkout`), converging to a fixed point. Commits to registry.                                                                                                                                                                                                  | `pipeline.mts#stageB`                                        |
-| C     | Pushes registry main; polls GitHub Actions for the cascade SHA's CI to land green. Aborts the whole cascade if registry CI fails. Fleet repos must not pin to a broken registry. Skipped via `--skip-ci-wait`.                                                                                                                                                                                                             | `pipeline.mts#stageC`                                        |
-| D     | For every primary fleet checkout: runs `cleanup-stranded.mts --against <stageBSha>` (no-layering rule discards prior unpushed cascade commits), rewrites every `setup-and-install@<old-sha>` reference to the new registry SHA via diff-based pin matching, optionally runs the tool's per-fleet step (pnpm bumps `packageManager` + `engines.pnpm`), runs `pnpm run format` to fold pre-existing drift, commits + pushes. | `pipeline.mts#stageD`                                        |
+**Propagation is the sync-scaffolding cascade, not this script.** external-tools.json is a cascaded file — after a bump, run the cascade to fan it out to every member. The former registry-hosted reconcile / gate / propagate stages (which pinned members to a socket-registry SHA) were retired with the socket-registry shared-source model; fleet actions now live in each repo as `.github/actions/fleet/*`, referenced by local `./` path, so there is no cross-repo pin to rewrite. (`--skip-ci-wait` / `--ci-timeout` are vestigial no-ops from the retired gate stage.)
 
 ### Soak gate
 
-Stage A honors the 7-day `minimumReleaseAge` cooldown via `--soak-days <n>` (default 7). Pulling a same-day release requires explicit bypass. See `bypass-phrases.md` row `Allow soak-time bypass` (alias `Allow minimumReleaseAge bypass`).
-
-### Recovery from an interrupted cascade
-
-If Stage A+B+C landed (registry has a new tip) but Stage D didn't run, pass `--force-fanout` to skip Stages A+B+C and use the current registry HEAD as the propagation SHA. This is the only sanctioned way to "resume" a cascade. Manually invoking `cascade-workflows.mts` then `cascade-fleet.mts` without the resume flag would re-run Stages A+B+C and produce a no-op commit / extra runner minutes.
-
-### What this does NOT do
-
-- It does NOT bump the wheelhouse's `external-tools.json` (the at-repo-root copy, consumed by `scripts/install-sfw.mts`). The live source of truth for cascade purposes is `socket-registry/external-tools.json`. The wheelhouse file uses a different schema (tools nested under `.tools.<name>` with `sha256` field; registry uses top-level keys with `integrity` field) and a different consumer (the local SFW installer + zizmor setup). When SFW or zizmor bumps, the wheelhouse file's checksums go stale. Today refreshing them is manual (run `node scripts/update-external-tools.mts` from the wheelhouse repo). Wiring this into the cascade orchestrator is a known gap. For now, treat wheelhouse's external-tools.json as a "sibling source of truth" that needs its own update step after a tool bump.
-- It does NOT bump `.node-version`. Node bumps follow a different cadence (the Node ecosystem doesn't ship the same per-platform binary model; `.node-version` is just a string).
+The bump honors the 7-day `minimumReleaseAge` cooldown via `--soak-days <n>` (default 7). Pulling a same-day release requires explicit bypass. See `bypass-phrases.md` row `Allow soak-time bypass` (alias `Allow minimumReleaseAge bypass`).
 
 ## Monorepo internal `engines.node`
 
@@ -212,7 +197,7 @@ Every entry in `.gitmodules` MUST set `shallow = true`. Every `git submodule upd
 
 The fleet pins `npm-run-all2: 9.0.0` in the wheelhouse catalog. Every repo that depends on it MUST also declare the top-level `"npm-run-all2": { "nodeRun": true }` key in its own `package.json`. That key tells npm-run-all2 9.x to execute each script via `node --run` instead of the package manager CLI. `run-s build:*` and `run-p test:*` chains skip the per-script pnpm startup cost, which is non-trivial for N-script fan-outs. Inherited limitations from `node --run` (no `pre`/`post` lifecycle hooks; no `npm_*` env injection: `NODE_RUN_SCRIPT_NAME` + `NODE_RUN_PACKAGE_JSON_PATH` replace them; `node_modules/.bin` still on PATH) are acceptable for the fleet because none of our canonical scripts rely on those features. Enforced by `scripts/sync-scaffolding/checks/package-npm-run-all2-noderun.mts`: `npm_run_all2_node_run_missing` findings auto-fix.
 
-## Legacy backward compatibility
+## Backward compatibility (npm-run-all2)
 
 FORBIDDEN to maintain. Remove when encountered.
 
@@ -258,12 +243,12 @@ import { dlxPackage, executePackage } from '@socketsecurity/lib/dlx/package'
 ```
 
 **Limitations** ([compatibility](https://agent-ci.dev/compatibility)) — it
-**skips reusable workflows** (so the fleet `ci.yml`'s
-`SocketDev/socket-registry/.github/workflows/*` uses are skipped with a
-warning), has no GH-secret access, no concurrency groups, and a simplified
-job-`if` evaluator. Useful for the self-contained `ci.yml` jobs (lint /
-type / test matrix), not the provenance/release reusable workflows. Repos
-that adopt it pin the version in their own `external-tools.json`.
+**skips reusable workflows** (`workflow_call`), has no GH-secret access, no
+concurrency groups, and a simplified job-`if` evaluator. The fleet `ci.yml`
+is self-contained: its jobs call local `./.github/actions/fleet/*` composite
+actions (which agent-ci runs), never a cross-repo reusable workflow — so
+agent-ci runs the full lint / type / test matrix. Repos that adopt it pin
+the version in their own `external-tools.json`.
 
 ## npm 2FA registry ops
 

@@ -31,11 +31,12 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { globSync } from '@socketsecurity/lib-stable/globs/match'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { REPO_ROOT } from '../paths.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
+import { collectTrackedFiles } from '../_shared/tracked-globs.mts'
 
 const logger = getDefaultLogger()
 
@@ -96,11 +97,9 @@ export interface TestScriptFinding {
   readonly value: string
 }
 
-export function scanRepo(repoRoot: string): TestScriptFinding[] {
-  const manifests = globSync(['**/package.json'], {
+export async function scanRepo(repoRoot: string): Promise<TestScriptFinding[]> {
+  const manifests = await collectTrackedFiles(['**/package.json'], {
     cwd: repoRoot,
-    absolute: false,
-    ignore: ['**/node_modules/**'],
   })
   const findings: TestScriptFinding[] = []
   for (const rel of manifests) {
@@ -133,10 +132,10 @@ export function scanRepo(repoRoot: string): TestScriptFinding[] {
   return findings
 }
 
-function main(): number {
+async function main(): Promise<number> {
   const strict = process.argv.includes('--strict')
   const quiet = process.argv.includes('--quiet')
-  const findings = scanRepo(REPO_ROOT)
+  const findings = await scanRepo(REPO_ROOT)
   if (!findings.length) {
     if (!quiet) {
       logger.success(
@@ -167,6 +166,6 @@ function main(): number {
   return 0
 }
 
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
-  main()
+if (isMainModule(import.meta.url)) {
+  void main()
 }

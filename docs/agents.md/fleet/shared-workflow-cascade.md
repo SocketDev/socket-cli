@@ -1,38 +1,42 @@
 # Shared-workflow cascade (gh-aw)
 
-How the fleet's shared reusable workflows propagate, now that the weekly-update
-automation runs on [GitHub Agentic Workflows](https://github.github.com/gh-aw/)
-(gh-aw). Companion to the `### Drift watch` rule in `template/CLAUDE.md`.
+How the fleet's AI-assisted workflows propagate on [GitHub Agentic
+Workflows](https://github.github.com/gh-aw/) (gh-aw). Companion to the
+`### Drift watch` rule in `template/CLAUDE.md` and to the inlined-workflow
+model in [`drift-watch.md`](drift-watch.md).
 
-## The four layers
+## The model: per-repo copies, cascaded byte-identical
 
-The fleet's shared-workflow model has four layers; gh-aw changes only what the
-pinned file looks like, not the propagation mechanics:
+Every gh-aw workflow is authored ONCE in the wheelhouse template and cascaded
+whole to every member — each repo runs its own scheduled copy. There is no
+cross-repo reusable and no delegator pinned to another repo's SHA
+(`template/base/.github/workflows/weekly-update.md:2-5` states the contract).
+The unit that cascades is a pair plus a shared lock:
 
-1. **Layer 1 — source `.md`.** `socket-registry/.github/workflows/weekly-update.md`
-   is the gh-aw source: natural-language agent prompt + a YAML frontmatter that
-   declares `on:`, `engine:`, budget (`max-ai-credits`), the `network:` egress
-   allowlist, and `safe-outputs:`.
-2. **Layer 2 — compiled `.lock.yml`.** `gh aw compile` lowers the `.md` to a
-   hardened GitHub Actions workflow (`weekly-update.lock.yml`) plus a pinned
+1. **Source `.md`.** `.github/workflows/<name>.md` is the gh-aw source:
+   natural-language agent prompt + YAML frontmatter that declares `on:`,
+   `engine:`, budget (`max-ai-credits`), the `network:` egress allowlist, and
+   `safe-outputs:`.
+2. **Compiled `.lock.yml`.** `gh aw compile` lowers the `.md` to a hardened
+   GitHub Actions workflow (`<name>.lock.yml`) plus a pinned
    `.github/aw/actions-lock.json`. The three are one unit: edit the `.md`,
    recompile, commit all three together. `gh-aw-locks-are-current` guards the
    `.md` ↔ `.lock.yml` sync.
-3. **Layer 3 — the reusable.** Members `uses:` the compiled
-   `SocketDev/socket-registry/.github/workflows/weekly-update.lock.yml@<sha>` —
-   the same `workflow_call` contract the legacy `.yml` exposed, keyed now on the
-   `.lock.yml` path.
-4. **Layer 4 — the `_local` delegator.** Each repo's
-   `.github/workflows/_local-not-for-reuse-<workflow>.yml` is its own entry
-   point; it pins the Layer-3 reusable to the **propagation SHA** and passes
-   inputs + secrets through.
 
-## Propagation SHA
+Both files are mirror entries in
+`scripts/repo/sync-scaffolding/manifest/bundle.json`, so the fleet cascade
+delivers them like any other canonical file, and a member's copy that differs
+from the template is drift.
 
-The propagation SHA is the socket-registry merge commit that carries a given
-`.lock.yml`. Each repo's `_local` delegator pins the Layer-3 reusable to that
-SHA; keeping every delegator in step with it is a drift-watch concern (see
-[`drift-watch.md`](drift-watch.md)).
+## Local delegation only
+
+Where a workflow needs a stable `workflow_call` entry point, the delegator is
+a LOCAL file in the same repo — e.g. `get-green.yml` runs
+`uses: ./.github/workflows/get-green.lock.yml`, and the `workflow_dispatch`
+wrapper `_local-not-for-reuse-get-green.yml` runs
+`uses: ./.github/workflows/get-green.yml`. Every `uses:` in the chain is a
+`./` ref that resolves inside the repo the run executes in — auditable by
+zizmor/actionlint at rest, no cross-repo SHA to keep in step.
 
 ## Comment-stamp exemption
 
@@ -43,7 +47,7 @@ edit-time `workflow-uses-comment-guard` hook and the commit-time
 `workflow-uses-comment` check skip `*.lock.yml`. Never hand-edit a `.lock.yml`;
 edit the `.md` and recompile.
 
-## Testing a gh-aw reusable
+## Testing a gh-aw workflow
 
 gh-aw workflows are NOT testable through the local Agent CI runner: it parses
 workflows with GitHub's `@actions/workflow-parser`, which cannot convert the
@@ -63,9 +67,8 @@ gh aw trial ./.github/workflows/weekly-update.md \
 Four requirements, each learned the hard way:
 
 - **`workflow_dispatch` trigger.** `gh aw trial` (and `gh aw run`) reject a
-  `workflow_call`-only workflow. Every gh-aw reusable carries both
-  `workflow_dispatch` (trial-able + manually dispatchable) and `workflow_call`
-  (production).
+  workflow without one. Every fleet gh-aw workflow carries `workflow_dispatch`
+  alongside its `schedule:` crons so it stays trial-able + manually runnable.
 - **`--yes`.** The trial is interactive without it (a continue prompt + an
   "enable Actions permissions" prompt).
 - **`delete_repo` gh scope.** Needed for the host-repo auto-clean
@@ -84,6 +87,8 @@ needs no key.
 
 `weekly-update` (haiku, the update agent) dispatches `get-green` (sonnet,
 the escalation worker) via `safe-outputs.dispatch-workflow` on a test failure.
-gh-aw is one engine + model per workflow, so a two-model escalation is two
-workflows. This same dispatch pattern is the substrate the fleet's planned
-multi-agent harness builds on.
+The dispatch target is a workflow BASENAME resolved in the same repo — rename
+`get-green` and the `.md` frontmatter must move in lockstep. gh-aw is one
+engine + model per workflow, so a two-model escalation is two workflows. This
+same dispatch pattern is the substrate the fleet's planned multi-agent harness
+builds on.

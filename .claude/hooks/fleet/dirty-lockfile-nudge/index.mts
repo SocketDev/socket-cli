@@ -36,6 +36,7 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { actedOnPath } from '../_shared/fleet-context.mts'
 import { bashGuard, defineHook, notify, runHook } from '../_shared/guard.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
+import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 
 // Binaries whose use means the lockfile may have just drifted or is about
@@ -84,7 +85,7 @@ export function dirtyLockfilesFromPorcelain(out: string): string[] {
 export function listDirtyLockfiles(repoDir: string): string[] {
   const r = spawnSync('git', ['status', '--porcelain'], {
     cwd: repoDir,
-    timeout: 5000,
+    timeout: spawnTimeoutMs(5000),
   })
   if (r.status !== 0) {
     return []
@@ -98,7 +99,7 @@ export function listDirtyLockfiles(repoDir: string): string[] {
 export function lockfileDiff(repoDir: string): string {
   const r = spawnSync('git', ['diff', 'HEAD', '--', LOCKFILE_NAME], {
     cwd: repoDir,
-    timeout: 5000,
+    timeout: spawnTimeoutMs(5000),
   })
   if (r.status !== 0) {
     return ''

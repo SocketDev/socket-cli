@@ -22,9 +22,8 @@ investigation, bare `node_modules/.bin/tsgo` ran in 422ms vs the multi-second
 
 **`npx` / `dlx`** FETCH + execute unpinned code — a supply-chain risk. The
 `socket/no-npx-dlx` oxlint rule already bans these in committed source, but a
-Claude Bash invocation runs before any lint, so this hook is the run-time block
-(2026-06-06: a code-is-law scan found dlx/npx had no Bash-time gate). Add the dep
-and run it installed, or use `pipx` / `node_modules/.bin`.
+Claude Bash invocation runs before any lint, so this hook is the run-time block.
+Add the dep and run it installed, or use `pipx` / `node_modules/.bin`.
 
 ## Bypass
 

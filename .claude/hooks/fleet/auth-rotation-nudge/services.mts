@@ -32,13 +32,17 @@ export interface Service {
   docUrl?: string | undefined
 }
 
-// Default skip-list seeds. Devs can extend via the per-user
-// `~/.claude/hooks/auth-rotation/services-skip` (one id per line)
+// Default skip-list seeds — NONE. Every service (gh included) rotates on the
+// idle-based schedule (see `withinThrottle`): rotation fires ONLY after the
+// session has sat idle for >= the timeout, so an active / heavy session is
+// never logged out mid-use. `gh` USED to be seeded here because the old
+// elapsed-based throttle logged it out mid-session and broke the agent — the
+// idle-based trigger removes that hazard, so gh now expires on genuine idle
+// like the rest instead of being skipped forever (a stale token that never
+// rotates is the thing we're avoiding). Devs can still skip a specific CLI via
+// the per-user `~/.claude/hooks/auth-rotation/services-skip` (one id per line)
 // or per-repo `.claude/auth-rotation.services-skip` files.
-//
-// `gh` is seeded because Claude Code itself uses `gh` for `gh pr edit`
-// etc. — auto-revoking it mid-session would break the agent.
-export const DEFAULT_SKIP_IDS = ['gh'] as const
+export const DEFAULT_SKIP_IDS: readonly string[] = []
 
 export const SERVICES: readonly Service[] = [
   {

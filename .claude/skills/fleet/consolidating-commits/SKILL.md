@@ -1,6 +1,6 @@
 ---
 name: consolidating-commits
-description: Regroup the commits since the previous bump (or a given base) into logical commits — one per concern, bump kept last — via scripts/fleet/consolidate-commits.mts. "Consolidate commits" never means squash-to-one; that is squashing-history.
+description: Regroup commits since a base into logical commits, keeping any version bump last; not squash-to-one.
 model: haiku
 ---
 

@@ -16,6 +16,7 @@ import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import {
+  BYPASS_LOOKBACK_USER_TURNS,
   bypassPhrasePresent,
   extractCodeFences,
   readLastAssistantText,
@@ -27,7 +28,6 @@ interface Finding {
 }
 
 const BYPASS_PHRASE = 'Allow evergreen-target bypass'
-const BYPASS_LOOKBACK_USER_TURNS = 8
 
 // A year-stamped ES target below this is "conservative" — nudge toward ESNext.
 // Bump the floor as the fleet baseline moves; the point is "don't pin an old

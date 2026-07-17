@@ -9,7 +9,7 @@
       "kind": "first-party",
       "apiBase": "https://api.anthropic.com",
       "pricingSource": "https://platform.claude.com/docs/en/about-claude/pricing",
-      "snapshot": "2026-06-30",
+      "snapshot": "2026-07-12",
       "notes": [
         "multipliers.batch 0.5 = the Batch API's 50%-off on input + output.",
         "multipliers.cacheRead 0.1 = a prompt-cache hit costs 0.1x base input.",
@@ -68,7 +68,7 @@
       "kind": "metered-openai-compatible",
       "apiBase": "https://api.fireworks.ai/inference/v1",
       "pricingSource": "https://docs.fireworks.ai/serverless/pricing",
-      "snapshot": "2026-07-05",
+      "snapshot": "2026-07-17",
       "notes": [
         "Metered per-token list prices from the serverless pricing page; re-source per snapshot. No org budget here — that is private runtime config."
       ],
@@ -101,7 +101,7 @@
       "kind": "flat-rate-openai-compatible",
       "apiBase": "https://api.synthetic.new/openai/v1",
       "pricingSource": "https://synthetic.new/pricing",
-      "snapshot": "2026-07-05",
+      "snapshot": "2026-07-17",
       "notes": [
         "Flat-rate plan: models bill under the plan (billing:'plan'), not per token. The generic plan STRUCTURE (price + public rate limits) is here; private usage is not."
       ],

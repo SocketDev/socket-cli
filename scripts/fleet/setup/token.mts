@@ -18,8 +18,26 @@ import {
   promptAndPersist,
   wireBridgeIntoShellRc,
 } from '../../../.claude/hooks/fleet/setup-security-tools/lib/operator-prompts.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
-async function main(): Promise<void> {
+// The two lines logged when an existing token is found via `source` (env var
+// or keychain) and the prompt is skipped.
+export function formatFoundTokenLines(source: string): string[] {
+  return [
+    `SOCKET_API_TOKEN: found via ${source} — no prompt needed.`,
+    'Pass --rotate to overwrite.',
+  ]
+}
+
+// The closing line(s) once the token flow settles: a persisted token gets a
+// blank-line separator + confirmation, no token gets a single skip note.
+export function formatCompletionLines(hasToken: boolean): string[] {
+  return hasToken
+    ? ['', 'Token setup complete.']
+    : ['No token set — continuing without one.']
+}
+
+export async function main(): Promise<void> {
   const logger = getDefaultLogger()
   const args = parseArgs(process.argv.slice(2))
   const rotate = args.rotate
@@ -30,11 +48,13 @@ async function main(): Promise<void> {
     apiToken = await promptAndPersist(logger, 'rotate')
   } else {
     const lookup = await findApiToken()
-    if (lookup) {
-      logger.log(
-        `SOCKET_API_TOKEN: found via ${lookup.source} — no prompt needed.`,
-      )
-      logger.log('Pass --rotate to overwrite.')
+    // findApiToken always returns an object; a hit sets token + source
+    // together. Narrowing on the fields (not the object) also revives the
+    // prompt fallback, which an always-truthy `if (lookup)` had made dead.
+    if (lookup.token && lookup.source) {
+      for (const line of formatFoundTokenLines(lookup.source)) {
+        logger.log(line)
+      }
       apiToken = lookup.token
     } else {
       apiToken = await offerTokenPrompt(logger)
@@ -43,11 +63,12 @@ async function main(): Promise<void> {
 
   if (apiToken) {
     wireBridgeIntoShellRc(logger, apiToken)
-    logger.log('')
-    logger.log('Token setup complete.')
-  } else {
-    logger.log('No token set — continuing without one.')
+  }
+  for (const line of formatCompletionLines(Boolean(apiToken))) {
+    logger.log(line)
   }
 }
 
-void main()
+if (isMainModule(import.meta.url)) {
+  void main()
+}

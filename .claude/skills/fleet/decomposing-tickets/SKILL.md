@@ -1,6 +1,6 @@
 ---
 name: decomposing-tickets
-description: Break a plan, spec, or findings report into independently-grabbable tracker tickets using vertical-slice tracer bullets. Use when the user wants to turn a plan into tickets, or to decompose a findings report into assignable work.
+description: Break a plan, spec, or findings report into independently-grabbable vertical-slice tracker tickets.
 user-invocable: true
 ---
 

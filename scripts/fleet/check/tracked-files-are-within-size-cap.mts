@@ -27,8 +27,10 @@ const MAX_FILE_SIZE = 2 * 1024 * 1024
 // not by repo authoring. Matched by path SUFFIX so both a member's live copy
 // (.claude/…) and the wheelhouse template/base/.claude/… mirror are covered.
 const ALLOWED_LARGE_SUFFIXES: readonly string[] = [
-  // Rolldown-bundled fleet hook dispatcher + its V8-snapshot variant.
+  // Rolldown-bundled fleet hook dispatcher, its V8-snapshot variant, and the
+  // excluded-hooks companion bundle (non-bundle-safe hooks, same build).
   '.claude/hooks/fleet/_dispatch/bundle.cjs',
+  '.claude/hooks/fleet/_dispatch/excluded-bundle.cjs',
   '.claude/hooks/fleet/_dispatch/snapshot-bundle.cjs',
 ]
 
@@ -155,10 +157,7 @@ export async function scanDirectory(
   // A `.git` entry below the root marks a nested checkout (submodule
   // working tree) — foreign surface sized by its upstream, never this
   // repo's tracked content. Don't descend.
-  if (
-    dir !== rootDir &&
-    entries.some(e => e.name === '.git')
-  ) {
+  if (dir !== rootDir && entries.some(e => e.name === '.git')) {
     return violations
   }
   for (const entry of entries) {
@@ -208,16 +207,12 @@ export function filterGitIgnored(
   if (violations.length === 0) {
     return violations
   }
-  const result = spawnSync(
-    'git',
-    ['check-ignore', '--stdin', '-z'],
-    {
-      cwd: rootDir,
-      input: violations.map(v => v.file).join('\0'),
-      stdio: 'pipe',
-      stdioString: true,
-    },
-  )
+  const result = spawnSync('git', ['check-ignore', '--stdin', '-z'], {
+    cwd: rootDir,
+    input: violations.map(v => v.file).join('\0'),
+    stdio: 'pipe',
+    stdioString: true,
+  })
   // Exit 0 = some ignored, 1 = none ignored, 128 = error (fail-open).
   if (result.status !== 0 && result.status !== 1) {
     return violations

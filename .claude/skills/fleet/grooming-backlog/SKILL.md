@@ -1,6 +1,6 @@
 ---
 name: grooming-backlog
-description: Consolidate a bloated task backlog into a lean, accurate set — complete verified-done tasks, fold related clusters into umbrella survivors (folding each child's scope into the umbrella BEFORE deleting), delete superseded/duplicate/stale/parked, and keep in_progress honest (only actively-worked items). Use when the task list is noisy, when asked to "get pending under N", or to triage a stale in_progress list. The inverse of decomposing-tickets.
+description: Collapse noisy backlogs by verifying done work, folding duplicates, deleting stale tasks, and cleaning in-progress.
 user-invocable: true
 ---
 

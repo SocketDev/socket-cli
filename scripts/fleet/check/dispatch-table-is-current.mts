@@ -19,16 +19,18 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import {
+  DISPATCH_MANIFEST_PATH,
   DISPATCH_TABLE_PATH,
   FLEET_HOOKS_DIR,
+  generateDispatchManifestSource,
   generateDispatchTableSource,
 } from '../make-hook-dispatch.mts'
 import { REPO_ROOT } from '../paths.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -39,6 +41,24 @@ export function dispatchTableIsCurrent(
   const generated = generateDispatchTableSource(hooksDir)
   const onDisk = existsSync(dispatchPath)
     ? readFileSync(dispatchPath, 'utf8')
+    : ''
+  return onDisk === generated
+}
+
+/**
+ * The committed dep-0 dispatch manifest (`_shared/dispatch-manifest.json`, the
+ * bootstrap dispatcher's routing table) matches a fresh regen. A stale manifest
+ * leaves a hook silently INERT on the bootstrap path even when the bundled
+ * table carries it — the exact drift that made ~30 hooks (including critical
+ * guards) dead on that path.
+ */
+export function dispatchManifestIsCurrent(
+  hooksDir: string = FLEET_HOOKS_DIR,
+  manifestPath: string = DISPATCH_MANIFEST_PATH,
+): boolean {
+  const generated = generateDispatchManifestSource(hooksDir)
+  const onDisk = existsSync(manifestPath)
+    ? readFileSync(manifestPath, 'utf8')
     : ''
   return onDisk === generated
 }
@@ -65,13 +85,27 @@ function main(): void {
     process.exitCode = 1
     return
   }
+  if (!dispatchManifestIsCurrent()) {
+    logger.fail(
+      '[check-dispatch-table-is-current] _shared/dispatch-manifest.json drifts from a fresh regen.',
+    )
+    logger.error(
+      `Where: ${path.relative(REPO_ROOT, DISPATCH_MANIFEST_PATH)}\n` +
+        'Saw:   the committed manifest differs from a regen over the current hook dirs\n' +
+        '       (a hook added/removed without regenerating — the dep-0 bootstrap dispatcher\n' +
+        '       routes off this manifest, so a drifted hook is silently inert on that path).\n' +
+        'Fix:   node scripts/fleet/build-hook-bundle.mts  (regenerates the table + manifest), then commit.',
+    )
+    process.exitCode = 1
+    return
+  }
   if (!quiet) {
     logger.success(
-      '[check-dispatch-table-is-current] dispatch table matches a fresh regen.',
+      '[check-dispatch-table-is-current] dispatch table + manifest match a fresh regen.',
     )
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   main()
 }

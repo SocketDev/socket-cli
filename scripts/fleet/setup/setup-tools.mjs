@@ -13,17 +13,16 @@
  *      `lib/install-tool.mjs`. NO corepack.
  *   2. installs Socket Firewall (sfw-free) the same way.
  *   3. regenerates sfw shims (npm/yarn/pnpm/pip/uv/cargo) into `bin/`, routing
- *      those package managers through sfw. 3b. installs codedb (Zig
- *      code-intelligence MCP server) + a telemetry-off `bin/codedb` shim
- *      (CODEDB_NO_TELEMETRY=1, always).
- *   4. bootstraps the zero-dep Socket packages into `node_modules/` (direct
- *      tarball + firewall check) so root scripts / .claude/hooks can import
- *      them before `pnpm install` runs. Dependency-free on purpose: it
- *      provisions pnpm itself, so it can only use system Node + `node:`
- *      builtins (no `@socketsecurity/lib` — not on disk yet). Idempotent:
- *      re-running with the pinned versions already installed is a no-op.
- *      Accepts `--ci` (reserved; CI calls this same script via the setup action
- *      — currently a no-op locally). Usage: node setup-tools.mjs [--ci]
+ *      those package managers through sfw.
+ *   4. bootstraps declared zero-dep foundation packages into `node_modules/`
+ *      through the shared firewall + lockfile-SRI verifier so root scripts /
+ *      .claude/hooks can import them before `pnpm install` runs.
+ *      Dependency-free on purpose: it provisions pnpm itself, so it can only
+ *      use system Node + `node:` builtins (no `@socketsecurity/lib` — not on
+ *      disk yet). Idempotent: re-running with the pinned versions already
+ *      installed is a no-op. Accepts `--ci` (reserved; CI calls this same
+ *      script via the setup action — currently a no-op locally). Usage: node
+ *      setup-tools.mjs [--ci]
  */
 
 // oxlint-disable-next-line socket/prefer-async-spawn -- pre-pnpm bootstrap: runs before node_modules exists, so the lib spawn wrapper isn't importable; sync child_process is the only option (same constraint as lib/install-tool.mjs).
@@ -33,11 +32,8 @@ import {
   chmodSync,
   existsSync,
   mkdirSync,
-  mkdtempSync,
-  rmSync,
   writeFileSync,
 } from 'node:fs'
-import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -50,15 +46,11 @@ import {
   detectPlatform,
   IS_WINDOWS,
   jq,
-  LIB,
   log,
-  nodeOut,
   rackedBinFor,
   REPO_ROOT,
   resolveReal,
-  warn,
 } from './lib/bootstrap-common.mjs'
-import { installCodedb } from './lib/install-codedb.mjs'
 import { installFff } from './lib/install-fff.mjs'
 import { installJanus } from './lib/install-janus.mjs'
 import { installNpm } from './lib/install-npm.mjs'
@@ -80,7 +72,7 @@ import {
 // ./setup-tools-sfw.mjs (split out for file size).
 function regenerateShims(sfwBin, enterprise) {
   // BIN_DIR is the SHARED handle dir (_wheelhouse/bin) — it also holds the
-  // codedb / sfw / headroom handles, so NEVER rm the whole dir.
+  // sfw / headroom handles, so NEVER rm the whole dir.
   // Just ensure it exists and overwrite the pm-shims in place (idempotent).
   mkdirSync(BIN_DIR, { recursive: true })
   const cmds = shimCommands(enterprise)
@@ -198,85 +190,21 @@ function refreshStaleRacks(platform) {
 
 // ── 4. bootstrap zero-dep packages into node_modules/ ────────────────────────
 function bootstrapZeroDepPackages() {
-  // A repo with its own bootstrap-from-registry.mts handles all packages.
-  if (
-    existsSync(path.join(REPO_ROOT, 'scripts', 'bootstrap-from-registry.mts'))
-  ) {
-    log(
-      'Repo has its own bootstrap-from-registry.mts; skipping zero-dep bootstrap.',
-    )
-    return
-  }
-  const packages = [
-    '@socketregistry/packageurl-js',
-    '@sinclair/typebox',
-    '@socketsecurity/lib',
-    '@socketsecurity/lib-stable',
-  ]
-  const readPinned = path.join(LIB, 'read-pinned-version.mjs')
-  const checkFirewall = path.join(LIB, 'check-firewall.mjs')
-  for (let i = 0, { length } = packages; i < length; i += 1) {
-    const pkg = packages[i]
-    // Already resolvable?
-    const resolved = spawnSync(
-      process.execPath,
-      ['-e', `require.resolve('${pkg}/package.json')`],
-      { stdio: 'ignore', cwd: REPO_ROOT },
-    )
-    if (resolved.status === 0) {
-      log(`${pkg} already resolvable; skipping.`)
-      continue
-    }
-    const pinned = nodeOut(readPinned, [pkg])
-    if (!pinned) {
-      log(`${pkg} not pinned in this repo; skipping.`)
-      continue
-    }
-    let fetchPkg = pkg
-    let version = pinned
-    if (pinned.includes('\t')) {
-      const tab = pinned.indexOf('\t')
-      fetchPkg = pinned.slice(0, tab)
-      version = pinned.slice(tab + 1)
-    }
-    // Firewall check — bail loudly on any alert.
-    const fw = spawnSync(process.execPath, [checkFirewall, fetchPkg, version], {
-      stdio: 'inherit',
-    })
-    if (fw.status === 1) {
-      process.exit(1)
-    }
-    const base = fetchPkg.includes('/')
-      ? fetchPkg.slice(fetchPkg.lastIndexOf('/') + 1)
-      : fetchPkg
-    const tarballUrl = `https://registry.npmjs.org/${fetchPkg}/-/${base}-${version}.tgz`
-    const dest = path.join(REPO_ROOT, 'node_modules', pkg)
-    const tmpDir = mkdtempSync(path.join(os.tmpdir(), 'bootstrap-'))
-    const tarball = path.join(tmpDir, `${base}.tgz`)
-    log(`Bootstrapping ${pkg}@${version} from npm registry…`)
-    const dl = spawnSync('curl', ['-fsSL', tarballUrl, '-o', tarball], {
-      stdio: 'inherit',
-    })
-    if (dl.status !== 0) {
-      warn(
-        `Warning: failed to fetch ${tarballUrl}; pnpm install will resolve it.`,
-      )
-      rmSync(tmpDir, { recursive: true, force: true })
-      continue
-    }
-    rmSync(dest, { recursive: true, force: true })
-    mkdirSync(dest, { recursive: true })
-    const x = spawnSync(
-      'tar',
-      ['-xzf', tarball, '--strip-components=1', '-C', dest],
-      { stdio: 'inherit' },
-    )
-    rmSync(tmpDir, { recursive: true, force: true })
-    if (x.status !== 0) {
-      warn(`Warning: failed to extract ${pkg}; pnpm install will resolve it.`)
-      continue
-    }
-    log(`✓ ${pkg}@${version} → node_modules/${pkg}`)
+  const script = path.join(
+    REPO_ROOT,
+    'scripts',
+    'fleet',
+    'setup',
+    'bootstrap-zero-dep-packages.mjs',
+  )
+  const result = spawnSync(
+    process.execPath,
+    [script, '--repo-root', REPO_ROOT],
+    { cwd: REPO_ROOT, stdio: 'inherit' },
+  )
+  if (result.status !== 0) {
+    process.exitCode = 1
+    throw new Error('zero-dependency package bootstrap failed')
   }
 }
 
@@ -316,7 +244,6 @@ function main() {
   // uv.lock) that run after the bootstrap.
   installUv(platform)
   regenerateShims(sfwBin, enterprise)
-  installCodedb(platform)
   installFff(platform)
   installJanus(platform)
   installSmithers()

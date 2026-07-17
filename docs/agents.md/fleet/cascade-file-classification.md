@@ -23,30 +23,31 @@ files, and branding assets.
 ## 2. Hybrid (fleet block/fields merged into a repo-owned file)
 
 A repo-owned file with a fleet-managed region the cascade rewrites in place while
-preserving everything outside it. These CANNOT be bundled — the repo owns part of
-the file. They stay on the per-file cascade.
+preserving everything outside it. These cannot be copied byte-identically. A
+release may carry a merge-aware segment; the per-file cascade uses the same
+ownership boundary.
 
-| File                                       | Check                                                                           | Fleet-managed region                                                    | Repo-owned                                   |
-| ------------------------------------------ | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | -------------------------------------------- |
-| `CLAUDE.md`                                | `claude-md-fleet-block`                                                         | the `<fleet-canonical>` block                                           | preamble + Project-Specific                  |
-| `.gitignore`                               | `gitignore-fleet-block`                                                         | the `<fleet-canonical>` block                                           | ignores outside markers                      |
-| `.gitattributes`                           | `gitattributes-fleet-block`                                                     | the `<fleet-canonical>` block                                           | attrs outside markers                        |
-| `README.md`                                | `readme-skeleton-drift`                                                         | the `<fleet-canonical>` block                                           | prose, coverage badge, social buttons        |
-| `package.json`                             | `package-scripts`, `package-files`, `package-npm-run-all2-noderun`              | fleet script names/bodies, `engines`, `packageManager`, catalog devDeps | `name`, `description`, version, repo scripts |
-| `pnpm-workspace.yaml`                      | `workspace-config` (+ `-catalog`, `-soak`, `lockfile-workspaces`)               | catalog, soak rules, overrides, `packages`, trust policy                | repo-specific entries                        |
-| `.claude/settings.json`                    | `settings-merge`, `settings-hook-paths`                                         | fleet hook registrations                                                | repo's own hooks/settings                    |
-| `.config/fleet/oxlintrc.json`              | `oxlint-fleet-ignore-block` (+ `-profile`, `-rule-activations`, `-rule-wiring`) | `fleet-canonical` ignore block                                          | repo ignores outside block                   |
-| `tsconfig.json`, `tsconfig.check.json`     | `tsconfig-shape`                                                                | must `extends` the fleet base                                           | `rootDir`, include/exclude, repo knobs       |
-| `.github/workflows/ci.yml`                 | `workflow-fleet-block` (+ `-pnpm`, `-sha-pinning`, `-uses-comment`)             | the `<fleet-canonical>` header block                                    | repo matrix/jobs                             |
-| `.gitmodules`                              | `gitmodules-hygiene`                                                            | `# name-version` comment format                                         | submodule entries                            |
-| `.node-version` ↔ `package.json` `engines` | `node-version-sync`                                                             | the synced version value                                                | —                                            |
+| File                                       | Check                                                                           | Fleet-managed region                                                    | Repo-owned                                                                                      |
+| ------------------------------------------ | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `CLAUDE.md`                                | `claude-md-fleet-block`                                                         | the `<fleet-canonical>` block                                           | preamble + Project-Specific                                                                     |
+| `.gitignore`                               | `gitignore-fleet-block`                                                         | the `<fleet-canonical>` block                                           | ignores outside markers                                                                         |
+| `.gitattributes`                           | `gitattributes-fleet-block`                                                     | the `<fleet-canonical>` block                                           | attrs outside markers                                                                           |
+| `README.md`                                | `readme-skeleton-drift`                                                         | the `<fleet-canonical>` block                                           | prose, coverage badge, social buttons                                                           |
+| `package.json`                             | `package-scripts`, `package-files`, `package-npm-run-all2-noderun`              | fleet script names/bodies, `engines`, `packageManager`, catalog devDeps | `name`, `description`, version, repo scripts                                                    |
+| `pnpm-workspace.yaml`                      | `workspace-config` (+ `-catalog`, `-soak`, `lockfile-workspaces`)               | catalog, soak rules, overrides, `packages`, trust policy                | repo-specific entries                                                                           |
+| `.claude/settings.json`                    | `settings-merge`, `settings-hook-paths`                                         | marked hooks + baseline permissions                                     | top-level settings after the close marker; repo hook registrations are preserved inside `hooks` |
+| `.config/fleet/oxlintrc.json`              | `oxlint-fleet-ignore-block` (+ `-profile`, `-rule-activations`, `-rule-wiring`) | `fleet-canonical` ignore block                                          | repo ignores outside block                                                                      |
+| `tsconfig.json`, `tsconfig.check.json`     | `tsconfig-shape`                                                                | must `extends` the fleet base                                           | `rootDir`, include/exclude, repo knobs                                                          |
+| `.github/workflows/ci.yml`                 | `workflow-fleet-block` (+ `-pnpm`, `-sha-pinning`, `-uses-comment`)             | the `<fleet-canonical>` header block                                    | repo matrix/jobs                                                                                |
+| `.gitmodules`                              | `gitmodules-hygiene`                                                            | `# name-version` comment format                                         | submodule entries                                                                               |
+| `.node-version` ↔ `package.json` `engines` | `node-version-sync`                                                             | the synced version value                                                | —                                                                                               |
 
 ## 3. Conditional / optional (marker-gated, feature flags)
 
 Shipped in the bundle but **activated per-repo**: `CONDITIONAL_FILES` groups gate
 on a marker file's presence; `OPTIONAL_IDENTICAL_FILES` are byte-identical only
 when present; `settings.json` registers only the hooks the repo's
-fleet config flags enable. The bundle is the superset; the repo's
+`socket-wheelhouse.json` flags enable. The bundle is the superset; the repo's
 config decides what's active.
 
 ## Block-marker convention
@@ -54,11 +55,11 @@ config decides what's active.
 A fleet-managed region is delimited by HTML-element-like open/close markers; only
 the surrounding comment delimiter changes per file syntax.
 
-| Comment style | Open marker | Close marker |
-| --- | --- | --- |
-| HTML (`CLAUDE.md`, `README.md`) | `<!-- <fleet-canonical> -->` | `<!-- </fleet-canonical> -->` |
-| `#` (`.gitignore`, `.gitattributes`, YAML, `.gitmodules`, JSON **array** sentinel string) | `# <fleet-canonical>` | `# </fleet-canonical>` |
-| `//` (JS/TS, JSON **object** sentinel key) | `// <fleet-canonical>` | `// </fleet-canonical>` |
+| Comment style                                                                             | Open marker                  | Close marker                  |
+| ----------------------------------------------------------------------------------------- | ---------------------------- | ----------------------------- |
+| HTML (`CLAUDE.md`, `README.md`)                                                           | `<!-- <fleet-canonical> -->` | `<!-- </fleet-canonical> -->` |
+| `#` (`.gitignore`, `.gitattributes`, YAML, `.gitmodules`, JSON **array** sentinel string) | `# <fleet-canonical>`        | `# </fleet-canonical>`        |
+| `//` (JS/TS, JSON **object** sentinel key)                                                | `// <fleet-canonical>`       | `// </fleet-canonical>`       |
 
 The legacy `BEGIN`/`END` keyword form (`# BEGIN <fleet-canonical>` / `# END </fleet-canonical>`)
 is still parsed by the detector for backward compatibility during the fleet-wide migration,

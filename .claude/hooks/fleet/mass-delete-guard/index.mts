@@ -37,8 +37,10 @@
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import process from 'node:process'
 
+import { isGitCommit } from '../_shared/commit-command.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
-import { findInvocation } from '../_shared/shell-command.mts'
+import { isFleetSyncCommand } from '../_shared/shell-command.mts'
+import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 import { squashSentinelAllows } from '../_shared/squash-sentinel.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
@@ -46,10 +48,10 @@ const BYPASS_PHRASES = ['Allow mass-delete bypass'] as const
 
 // Pre-flight triggers: the dispatcher skips importing this guard unless the raw
 // payload contains one of these substrings. The guard can only ever block when
-// `isGitCommit(command)` is true, and that detection
-// (`findInvocation(command, { binary: 'git', subcommand: 'commit' })`) requires
-// `commit` as a non-flag argument of a `git` segment. So `commit` is a
-// necessary substring of every blocking command — safe to gate on.
+// `isGitCommit(command)` is true, and that detection (the shared
+// `_shared/commit-command.mts` segment parse) requires `commit` as the
+// subcommand verb of a real `git` segment. So `commit` is a necessary
+// substring of every blocking command — safe to gate on.
 export const triggers: readonly string[] = ['commit']
 
 // A commit deleting at least this many files is catastrophic regardless of
@@ -64,9 +66,7 @@ export function getRepoDir(): string {
   return process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
 }
 
-export function isGitCommit(command: string): boolean {
-  return findInvocation(command, { binary: 'git', subcommand: 'commit' })
-}
+export { isGitCommit }
 
 /**
  * Count files staged for DELETION in the index (vs HEAD).
@@ -75,7 +75,7 @@ export function countStagedDeletions(repoDir: string): number {
   const r = spawnSync(
     'git',
     ['diff', '--cached', '--diff-filter=D', '--name-only'],
-    { cwd: repoDir, timeout: 5000 },
+    { cwd: repoDir, timeout: spawnTimeoutMs(5000) },
   )
   if (r.status !== 0) {
     return 0
@@ -90,7 +90,10 @@ export function countStagedDeletions(repoDir: string): number {
  * Count files tracked in HEAD's tree (the denominator for the ratio test).
  */
 export function countTrackedFiles(repoDir: string): number {
-  const r = spawnSync('git', ['ls-files'], { cwd: repoDir, timeout: 5000 })
+  const r = spawnSync('git', ['ls-files'], {
+    cwd: repoDir,
+    timeout: spawnTimeoutMs(5000),
+  })
   if (r.status !== 0) {
     return 0
   }
@@ -127,7 +130,7 @@ export const check = bashGuard((command, payload) => {
   // Cascade commits legitimately replace whole fleet directories; the
   // FLEET_SYNC sentinel marks a trusted cascade run (same opt-in the
   // no-revert / overeager-staging guards honor).
-  if (/(?:^|\s)FLEET_SYNC\s*=\s*1\b/.test(command)) {
+  if (isFleetSyncCommand(command)) {
     return undefined
   }
   // The squashing-history collapse commit deletes files removed since the root

@@ -24,6 +24,8 @@
  *   that escapes this rule. The fleet doesn't use webpack, so it isn't wired up.
  */
 
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+
 import type { AstNode, RuleContext, RuleFixer } from '../../lib/rule-types.mts'
 
 // Core bundler package names. A config importing one of these (or a subpath) is
@@ -146,7 +148,9 @@ const rule = {
   },
 
   create(context: RuleContext) {
-    const filename = context.filename ?? context.getFilename?.() ?? ''
+    const filename = normalizePath(
+      context.filename ?? context.getFilename?.() ?? '',
+    )
     let hasBundlerSignal =
       BUNDLER_CONFIG_FILENAME_RE.test(filename) ||
       ROLLDOWN_DIR_RE.test(filename)

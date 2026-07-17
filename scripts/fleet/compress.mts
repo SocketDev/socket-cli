@@ -13,10 +13,10 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 import { constants, zstdCompressSync } from 'node:zlib'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { isMainModule } from './_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -94,6 +94,6 @@ export function main(args: readonly string[]): void {
   )
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+if (isMainModule(import.meta.url)) {
   main(process.argv.slice(2))
 }

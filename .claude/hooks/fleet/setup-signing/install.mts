@@ -34,6 +34,8 @@ import process from 'node:process'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
+import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
+
 const logger = getDefaultLogger()
 
 interface CliArgs {
@@ -100,7 +102,7 @@ function detect1PasswordSshAgent(): DetectedSigner | undefined {
     stdio: 'pipe',
     stdioString: true,
     env: { ...process.env, SSH_AUTH_SOCK: sock },
-    timeout: 5000,
+    timeout: spawnTimeoutMs(5000),
   })
   if (r.status !== 0) {
     return undefined
@@ -148,7 +150,7 @@ function detectGpgKey(): DetectedSigner | undefined {
     {
       stdio: 'pipe',
       stdioString: true,
-      timeout: 5000,
+      timeout: spawnTimeoutMs(5000),
     },
   )
   if (r.status !== 0) {

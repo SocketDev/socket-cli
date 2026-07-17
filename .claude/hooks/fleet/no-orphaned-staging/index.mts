@@ -34,6 +34,7 @@ import process from 'node:process'
 
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
+import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 
 export function getProjectDir(): string | undefined {
   // Prefer the harness-supplied env (correct even when cwd has been
@@ -44,7 +45,7 @@ export function getProjectDir(): string | undefined {
 export function listStagedFiles(repoDir: string): string[] {
   const r = spawnSync('git', ['diff', '--cached', '--name-only'], {
     cwd: repoDir,
-    timeout: 5000,
+    timeout: spawnTimeoutMs(5000),
   })
   if (r.status !== 0) {
     return []

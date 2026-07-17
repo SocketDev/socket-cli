@@ -25,6 +25,7 @@
 import path from 'node:path'
 
 import { safeReadFileSync } from '@socketsecurity/lib-stable/fs/read-file'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { resolveEditedText } from '../_shared/payload.mts'
@@ -68,7 +69,9 @@ export function callIsDraft(call: string): boolean {
 }
 
 export function isWorkflowYaml(filePath: string): boolean {
-  return /[\\/]\.github[\\/]workflows[\\/][^\\/]+\.ya?ml$/.test(filePath)
+  return /[\\/]\.github[\\/]workflows[\\/][^\\/]+\.ya?ml$/.test(
+    normalizePath(filePath),
+  )
 }
 
 // Return the first offending (non-draft) `gh release create` call, or

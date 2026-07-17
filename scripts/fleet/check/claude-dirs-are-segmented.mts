@@ -29,12 +29,12 @@
 import { existsSync, promises as fs, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
 import { REPO_ROOT } from '../paths.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -115,7 +115,8 @@ export const BUILTIN_FLEET_SET: Readonly<Record<string, readonly string[]>> = {
   commands: [
     'audit-gha-settings',
     'green-ci',
-    'quality-loop',
+    'looping-quality',
+    'scanning-quality',
     'security-scan',
     'setup-security-tools',
     'squash-history',
@@ -140,6 +141,7 @@ export const BUILTIN_FLEET_SET: Readonly<Record<string, readonly string[]>> = {
     'reviewing-code',
     'migrating-rule-packs',
     'running-test262',
+    'looping-quality',
     'scanning-quality',
     'scanning-security',
     'squashing-history',
@@ -281,7 +283,7 @@ async function main(): Promise<void> {
   logger.log('[check-claude-dirs-are-segmented] Done.')
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   main().catch((e: unknown) => {
     logger.error(`[check-claude-dirs-are-segmented] error: ${e}`)
     process.exitCode = 1

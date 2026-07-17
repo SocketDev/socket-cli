@@ -24,7 +24,6 @@
 import { existsSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
@@ -35,6 +34,7 @@ import {
   readPackageJson,
 } from './package-files-are-allowlisted.mts'
 import { isPrivatePath, matchesGlob } from '../make-package-exports.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -57,7 +57,7 @@ const JUNK_SEGMENT_RE =
   // (\/|^) — literal "/" or start-of-string (segment boundary on the left)
   // (?:coverage|…|vendor) — non-capturing alternation of the known junk dir names
   // ($|\/) — end-of-string or "/" (segment boundary on the right)
-  /(\/|^)(?:coverage|node_modules|scripts|src|test|tests|tools|vendor)($|\/)/
+  /(?:\/|^)(?:coverage|node_modules|scripts|src|test|tests|tools|vendor)(?:$|\/)/
 
 /**
  * Collect every export target (string leaf) from an `exports` value, descending
@@ -307,7 +307,7 @@ export async function runCheck(repoRoot: string): Promise<number> {
   return 1
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   void (async () => {
     process.exit(await runCheck(REPO_ROOT))
   })()

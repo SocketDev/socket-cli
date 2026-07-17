@@ -29,6 +29,7 @@ import process from 'node:process'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { httpRequest } from '@socketsecurity/lib-stable/http-request'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { isMainModule } from './_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -45,7 +46,7 @@ Usage:
 The hash is sha256 of https://codeload.github.com/<owner>/<repo>/tar.gz/<ref>.
 `
 
-interface Block {
+export interface Block {
   // The submodule's quoted name from `[submodule "<name>"]`.
   name: string
   // 0-based index of the `[submodule "<name>"]` opening line.
@@ -72,7 +73,7 @@ interface Block {
 // Parse `.gitmodules` into blocks, retaining the header-comment line index so
 // `--write` can rewrite exactly that line. Mirrors the section/keyword shapes
 // `uses-sha-verify-guard` and `git-partial-submodule.mts` recognize.
-function parseBlocks(lines: string[]): Block[] {
+export function parseBlocks(lines: string[]): Block[] {
   const blocks: Block[] = []
   for (let i = 0, { length } = lines; i < length; i += 1) {
     const open = /^\s*\[submodule\s+"([^"]+)"\s*\]\s*$/.exec(lines[i]!)
@@ -146,7 +147,10 @@ function parseBlocks(lines: string[]): Block[] {
 
 // SHA-256 of the codeload .tar.gz at `ref`. Uses the lib http helper so the
 // fleet's proxy / retry / redirect handling applies.
-async function archiveSha256(ownerRepo: string, ref: string): Promise<string> {
+export async function archiveSha256(
+  ownerRepo: string,
+  ref: string,
+): Promise<string> {
   const url = `https://codeload.github.com/${ownerRepo}/tar.gz/${ref}`
   const res = await httpRequest(url, { method: 'GET' })
   if (!res.ok) {
@@ -157,13 +161,13 @@ async function archiveSha256(ownerRepo: string, ref: string): Promise<string> {
   return crypto.createHash('sha256').update(res.body).digest('hex')
 }
 
-interface Resolved {
+export interface Resolved {
   block: Block
   computed: string | undefined
   skipped: string | undefined
 }
 
-async function resolveAll(blocks: Block[]): Promise<Resolved[]> {
+export async function resolveAll(blocks: Block[]): Promise<Resolved[]> {
   const out: Resolved[] = []
   for (let i = 0, { length } = blocks; i < length; i += 1) {
     const block = blocks[i]!
@@ -195,7 +199,7 @@ async function resolveAll(blocks: Block[]): Promise<Resolved[]> {
 
 // Resolve the `.gitmodules` path argument (positional, after any flags) and
 // confirm it exists. Exits non-zero with a fix message otherwise.
-function resolveGitmodulesPath(positional: string | undefined): string {
+export function resolveGitmodulesPath(positional: string | undefined): string {
   const gitmodulesPath = path.resolve(positional ?? '.gitmodules')
   if (!existsSync(gitmodulesPath)) {
     logger.fail(
@@ -206,12 +210,14 @@ function resolveGitmodulesPath(positional: string | undefined): string {
   return gitmodulesPath
 }
 
-// `--set <name|path> <ref> [--label <text>]`: bump one submodule's ref AND its
-// sha256 in a single write. This is the sanctioned ref-bump path — a hand-edit
-// of `ref =` alone is (correctly) blocked by uses-sha-verify-guard because the
-// new archive hash can't be computed at edit time. `--label` replaces the
-// `# <name>-<version|date>` prefix (keep it accurate to the new ref's track).
-async function runSet(argv: string[], gitmodulesPath: string): Promise<void> {
+// `--set <name|path> <ref> [--label <text>]` argv parsing + validation: the
+// hex-40 ref shape and the positional-arg presence checks. Pure so the CLI
+// exit-on-error path and the decision logic can be tested independently.
+export type SetArgs =
+  | { error: string }
+  | { label: string | undefined; newRef: string; selector: string }
+
+export function parseSetArgs(argv: string[]): SetArgs {
   const setIdx = argv.indexOf('--set')
   const selector = argv[setIdx + 1]
   const newRef = argv[setIdx + 2]
@@ -223,17 +229,31 @@ async function runSet(argv: string[], gitmodulesPath: string): Promise<void> {
     selector.startsWith('--') ||
     newRef.startsWith('--')
   ) {
-    logger.fail(
-      'gen-gitmodules-hash --set: needs `<name|path> <ref>` — e.g. `--set packages/acorn/upstream/acorn 8a47812…`',
-    )
-    process.exit(2)
+    return {
+      error:
+        'gen-gitmodules-hash --set: needs `<name|path> <ref>` — e.g. `--set packages/acorn/upstream/acorn 8a47812…`',
+    }
   }
   if (!/^[0-9a-f]{40}$/.test(newRef)) {
-    logger.fail(
-      `gen-gitmodules-hash --set: ref must be a full 40-hex commit SHA, got \`${newRef}\` — resolve a tag/branch to its commit first (git ls-remote <url> refs/tags/<t>^{})`,
-    )
+    return {
+      error: `gen-gitmodules-hash --set: ref must be a full 40-hex commit SHA, got \`${newRef}\` — resolve a tag/branch to its commit first (git ls-remote <url> refs/tags/<t>^{})`,
+    }
+  }
+  return { label, newRef, selector }
+}
+
+// `--set <name|path> <ref> [--label <text>]`: bump one submodule's ref AND its
+// sha256 in a single write. This is the sanctioned ref-bump path — a hand-edit
+// of `ref =` alone is (correctly) blocked by uses-sha-verify-guard because the
+// new archive hash can't be computed at edit time. `--label` replaces the
+// `# <name>-<version|date>` prefix (keep it accurate to the new ref's track).
+async function runSet(argv: string[], gitmodulesPath: string): Promise<void> {
+  const parsed = parseSetArgs(argv)
+  if ('error' in parsed) {
+    logger.fail(parsed.error)
     process.exit(2)
   }
+  const { label, newRef, selector } = parsed
 
   const raw = await fs.readFile(gitmodulesPath, 'utf8')
   const eol = raw.includes('\r\n') ? '\r\n' : '\n'
@@ -291,17 +311,9 @@ async function runSet(argv: string[], gitmodulesPath: string): Promise<void> {
   process.exitCode = 0
 }
 
-async function main(): Promise<void> {
-  const argv = process.argv.slice(2)
-  const mode = argv.find(
-    a => a === '--check' || a === '--set' || a === '--write',
-  )
-  if (!mode) {
-    process.stderr.write(USAGE)
-    process.exit(2)
-  }
-  // The positional .gitmodules path is the last non-flag arg that isn't a
-  // value consumed by --set / --label.
+// The positional .gitmodules path is the last non-flag arg that isn't a value
+// consumed by --set / --label.
+export function resolvePositionalFileArg(argv: string[]): string | undefined {
   const consumed = new Set<number>()
   for (const flag of ['--set', '--label']) {
     const fi = argv.indexOf(flag)
@@ -313,9 +325,19 @@ async function main(): Promise<void> {
       }
     }
   }
-  const fileArg = argv.find(
-    (a, idx) => !a.startsWith('--') && !consumed.has(idx),
+  return argv.find((a, idx) => !a.startsWith('--') && !consumed.has(idx))
+}
+
+async function main(): Promise<void> {
+  const argv = process.argv.slice(2)
+  const mode = argv.find(
+    a => a === '--check' || a === '--set' || a === '--write',
   )
+  if (!mode) {
+    process.stderr.write(USAGE)
+    process.exit(2)
+  }
+  const fileArg = resolvePositionalFileArg(argv)
   const gitmodulesPath = resolveGitmodulesPath(fileArg)
 
   if (mode === '--set') {
@@ -375,7 +397,9 @@ async function main(): Promise<void> {
   process.exitCode = 0
 }
 
-main().catch((e: unknown) => {
-  logger.fail(`gen-gitmodules-hash: ${errorMessage(e)}`)
-  process.exitCode = 1
-})
+if (isMainModule(import.meta.url)) {
+  main().catch((e: unknown) => {
+    logger.fail(`gen-gitmodules-hash: ${errorMessage(e)}`)
+    process.exitCode = 1
+  })
+}

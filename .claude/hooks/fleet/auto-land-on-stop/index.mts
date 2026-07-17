@@ -13,10 +13,13 @@
 //     add|mv|rm in the transcript), so a FOREIGN staged feature in the shared
 //     index is never swept in. A repo the session only READ never enters.
 //   - Each repo is landed by shelling the tested `scripts/fleet/land-work.mts
-//     --commit <session-authored repo-relative paths>` with cwd=<repoRoot>. That
-//     restricts to the passed paths AND skips generated / both-touched (concurrent
-//     index+worktree, which a `git add` would blend) / unmerged-conflict paths,
-//     and lands clean source even mid-rebase.
+//     --commit <session-authored repo-relative paths>` with cwd=<repoRoot>. The
+//     engine is resolved FLEET-FIRST (the session's own repo if it ships one,
+//     else the wheelhouse source-of-truth) so a repo that doesn't yet carry its
+//     own land-work still lands to local main. That run restricts to the passed
+//     paths AND skips generated / both-touched (concurrent index+worktree, which
+//     a `git add` would blend) / unmerged-conflict paths, and lands clean source
+//     even mid-rebase.
 //   - Each commit passes that repo's own pre-commit gate (broken code caught).
 //     The staged run is scoped `related` (not full-suite) so turn-end stays fast.
 //   - Fail-open + deterministic: a per-repo spawn is bounded; any failure skips
@@ -43,6 +46,8 @@ import {
   resolveParkedFile,
 } from '../_shared/parked-paths.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
+import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
+import { findWheelhouseRoot } from '../_shared/wheelhouse-root.mts'
 
 // Per-repo land budget. land-work runs the repo's pre-commit per group; the
 // staged run is scoped `related` (fast) so this rarely bites, but bound it so a
@@ -58,7 +63,7 @@ function primaryDir(): string {
  */
 function gitToplevel(dir: string): string | undefined {
   const r = spawnSync('git', ['-C', dir, 'rev-parse', '--show-toplevel'], {
-    timeout: 5000,
+    timeout: spawnTimeoutMs(5000),
   })
   if (r.status !== 0) {
     return undefined
@@ -95,9 +100,49 @@ export function groupByRepo(
   return byRoot
 }
 
+/**
+ * Resolve the `scripts/fleet/land-work.mts` engine, FLEET-FIRST: a session's
+ * own repo (`primary`) if it carries its own copy, else the wheelhouse
+ * source-of-truth. Returns the absolute script path, or undefined when neither
+ * has it. `exists` / `findWheelhouse` are injectable for tests. This is what
+ * lets auto-land land session-authored work to local main even in a repo that
+ * doesn't (yet) ship its own land-work — the engine runs against each touched
+ * repo via cwd, so it needn't live there.
+ */
+export function resolveLandWork(
+  primary: string,
+  options: {
+    exists?: ((p: string) => boolean) | undefined
+    findWheelhouse?: (() => string | undefined) | undefined
+  } = {},
+): string | undefined {
+  const exists = options.exists ?? existsSync
+  const findWheelhouse = options.findWheelhouse ?? findWheelhouseRoot
+  const own = path.join(primary, 'scripts', 'fleet', 'land-work.mts')
+  if (exists(own)) {
+    return own
+  }
+  const wheelhouse = findWheelhouse()
+  if (wheelhouse) {
+    const fallback = path.join(wheelhouse, 'scripts', 'fleet', 'land-work.mts')
+    if (exists(fallback)) {
+      return fallback
+    }
+  }
+  return undefined
+}
+
 export const check = (payload: ToolCallPayload): GuardResult => {
   // Cascade + history-squash own their own commits; never auto-land under them.
-  if (process.env['FLEET_SYNC'] || process.env['SQUASH_HISTORY']) {
+  // SOCKET_LAND_WORK_ACTIVE marks an in-flight land-work run (including the
+  // headless child its AI summarizer spawns, which inherits the env) — never
+  // auto-land re-entrantly under one, or the summarizer's Stop hook would
+  // re-trigger land-work on the same still-dirty tree.
+  if (
+    process.env['FLEET_SYNC'] ||
+    process.env['SQUASH_HISTORY'] ||
+    process.env['SOCKET_LAND_WORK_ACTIVE']
+  ) {
     return undefined
   }
   const allTouched = [...readSessionTouchedPaths(payload.transcript_path)]
@@ -126,10 +171,11 @@ export const check = (payload: ToolCallPayload): GuardResult => {
   if (byRoot.size === 0) {
     return undefined
   }
-  // land-work lives in the PRIMARY checkout; run it against each touched repo
-  // via cwd (so a sibling needn't have its own copy yet).
-  const landWork = path.join(primaryDir(), 'scripts', 'fleet', 'land-work.mts')
-  if (!existsSync(landWork)) {
+  // Resolve land-work FLEET-FIRST (the session's own repo), then fall back to
+  // the wheelhouse source-of-truth, and run it against each touched repo via cwd
+  // (so a repo needn't ship its own copy to have its work land to local main).
+  const landWork = resolveLandWork(primaryDir())
+  if (!landWork) {
     return undefined
   }
   const landed: string[] = []

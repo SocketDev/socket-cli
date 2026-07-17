@@ -1,6 +1,6 @@
 ---
 name: updating
-description: Umbrella update skill for a Socket fleet repo. Runs `pnpm run update` (npm), validates `lockstep.json` via `pnpm run lockstep` (if present), optionally bumps submodules, checks workflow SHA pins, resolves open Dependabot security alerts, refreshes the README coverage badge when applicable, and audits GitHub repo + Actions settings drift via `scripts/lint-github-settings.mts`. Discovers what applies via a parallel read-only Workflow sweep, then applies per-category drift (per-row lockstep bumps, per-alert security) as pipeline fan-out. Use when asked to update dependencies, sync upstreams, fix security advisories, refresh coverage, or prepare for a release.
+description: Run repo maintenance: dependency updates, lockstep drift, submodules, security alerts, coverage, and settings audits.
 user-invocable: true
 allowed-tools: Workflow, Skill, Read, Edit, Grep, Glob, Bash(pnpm run:*), Bash(pnpm test:*), Bash(pnpm install:*), Bash(git:*), Bash(claude --version)
 model: claude-haiku-4-5
@@ -32,19 +32,11 @@ This umbrella reads repo state first to discover what applies. Sub-skills are on
 
 ## When the bump includes pnpm or npm
 
-A bump to `engines.pnpm`, `packageManager: "pnpm@<ver>"`, or `engines.npm` in a fleet repo has a **transitive blast radius**: the socket-registry shared `setup-and-install` GHA action installs pnpm from `external-tools.json` at a specific version; if that version doesn't match the fleet repo's new `packageManager` pin, every CI job fails the version check before tests run.
+A bump to `engines.pnpm`, `packageManager: "pnpm@<ver>"`, or `engines.npm` has a **transitive blast radius**: the cascaded `setup` / `setup-and-install` actions install pnpm from `external-tools.json` at a specific version; if that version doesn't match a fleet repo's new `packageManager` pin, every CI job fails the version check before tests run. The tool version and the pin must move together, so **don't land a fleet-repo bump in isolation**:
 
-The fix order is fixed — **don't try to land the fleet-repo bump first**:
+1. **Bump the tool centrally** — in socket-wheelhouse (the fleet-ops repo), the tool bumper rewrites `external-tools.json` (version + per-platform SRI integrity), the `packageManager` / `engines` pins, and the `pnpm-workspace.yaml` `allowBuilds` entries the new pnpm enforces (`pnpm@11.4` made `[ERR_PNPM_IGNORED_BUILDS]` a hard exit); it honors the 7-day soak. A member's own `updating` run does NOT bump pnpm — that step is fleet-central.
 
-1. **Defer to socket-registry's `updating-workflows` skill** (lives at `socket-registry/.claude/skills/updating-workflows/SKILL.md`). That skill drives the Layer 1 → 2a → 2b → 3 → 4 cascade in socket-registry, ending at a **Layer 3 merge SHA** known as the **propagation SHA**. The skill's external-tools.json bump bundles the new pnpm version with its 7-platform SRI integrity values.
-
-2. **Capture the propagation SHA** from step 1. Every fleet-repo `uses: socket-registry/.github/{workflows,actions}/...@<sha>` ref bumps to it.
-
-3. **Update wheelhouse template** in the same wave: `template/package.json` `engines.pnpm` / `engines.npm` / `packageManager` + `template/pnpm-workspace.yaml` `allowBuilds` entries for any new transitive build-scripts the bumped pnpm enforces (`pnpm@11.4` added `[ERR_PNPM_IGNORED_BUILDS]` as hard exit, so `esbuild` and friends need explicit allowlisting).
-
-4. **Cascade fleet repos** atomically: each downstream socket-\* repo gets the new pnpm pin AND the new propagation SHA in the same cascade commit. Without atomicity, you get the failure mode we hit on 2026-05-28: fleet repo bumps to pnpm@11.4, CI fails because the installed pnpm (11.3 via old setup-action) refuses the pin.
-
-Why reference, not duplicate: the cascade procedure is fleet-canonical knowledge owned by socket-registry. Duplicating it into wheelhouse means two copies that drift. The wheelhouse `updating` skill encodes "when to run the registry cascade and how to consume its output", not the cascade itself.
+2. **Cascade to members** via the sync-scaffolding cascade: each socket-\* repo gets the new `external-tools.json` + `packageManager` / `engines` in one atomic cascade commit, so the installed pnpm and the pin always match. The setup actions are `./`-referenced cascaded copies, not `@sha` reusables — there is no separate propagation SHA to bump. (Without the atomic pin+tool move you hit the 2026-05-28 failure: a repo on pnpm@11.4 whose installed pnpm was still 11.3 refused the pin.)
 
 ## Phases
 

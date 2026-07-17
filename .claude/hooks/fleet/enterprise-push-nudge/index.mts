@@ -36,6 +36,7 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { bashGuard, defineHook, notify, runHook } from '../_shared/guard.mts'
 import { findInvocation } from '../_shared/shell-command.mts'
+import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 
 // Patterns that identify the enterprise-ruleset rejection. Both must
 // be present in the push output to fire — we don't want false
@@ -107,7 +108,7 @@ export function parseGitHubSlug(url: string): string | undefined {
 export function getCurrentRepoSlug(): string | undefined {
   const r = spawnSync('git', ['remote', 'get-url', 'origin'], {
     encoding: 'utf8',
-    timeout: 2000,
+    timeout: spawnTimeoutMs(2000),
   })
   /* c8 ignore start - git failure requires a broken environment */
   if (r.status !== 0 || typeof r.stdout !== 'string') {
@@ -136,6 +137,7 @@ export function getPropertyValue(
     ],
     {
       encoding: 'utf8',
+      // win-timeout: network — bounded `gh api` call; keep it fixed, don't scale by platform.
       timeout: 5000,
     },
   )

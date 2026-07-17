@@ -1,6 +1,6 @@
 ---
 name: optimizing-submodules
-description: Determines and applies the minimal sparse-checkout for each .gitmodules submodule so a vendored upstream pulls only the subtrees this repo consumes, not its whole tree. Use when adding a submodule, when a submodule drags a large tree into clones, or when the submodules-are-sparse-or-annotated check fails. The determination is AI-assisted (analyze what consumes the submodule); the apply + verify + enforcement are scripted.
+description: Minimize submodule sparse-checkouts to only the trees the repo actually consumes.
 user-invocable: true
 allowed-tools: Bash(git config:*), Bash(git submodule:*), Bash(git -C:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(du:*), Bash(node scripts/fleet/optimizing-submodules/collect-submodule-consumers.mts:*), Bash(node scripts/fleet/git-partial-submodule.mts:*), Bash(node scripts/fleet/verify-submodule-sparse.mts:*), Bash(node scripts/fleet/check/submodules-are-sparse-or-annotated.mts:*), Read, Grep, Glob
 model: claude-sonnet-4-6

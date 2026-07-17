@@ -34,7 +34,6 @@
 import path from 'node:path'
 import process from 'node:process'
 import { existsSync, readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
@@ -44,6 +43,8 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { REPO_ROOT } from '../paths.mts'
 import { parseBlocks } from '../verify-submodule-sparse.mts'
 import type { SubmoduleBlock } from '../verify-submodule-sparse.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -288,8 +289,6 @@ export async function main(): Promise<void> {
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  void (async () => {
-    await main()
-  })()
+if (isMainModule(import.meta.url)) {
+  runMain(main)
 }

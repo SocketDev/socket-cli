@@ -82,7 +82,8 @@ function isSeparatorRegexLiteral(node: AstNode): boolean {
   if (!node || node.type !== 'Literal' || !node.regex) {
     return false
   }
-  return SEPARATOR_PATTERNS.has(node.regex.pattern ?? '')
+  const pattern = node.regex.pattern ?? ''
+  return SEPARATOR_PATTERNS.has(pattern) || pattern.includes('\\/')
 }
 
 function getIdentifierName(node: AstNode): string | undefined {

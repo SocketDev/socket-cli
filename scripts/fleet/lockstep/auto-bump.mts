@@ -31,7 +31,6 @@
 import process from 'node:process'
 import { readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
@@ -44,6 +43,7 @@ import {
 } from './manifest.mts'
 
 import type { Manifest, Report, VersionPinReport } from './types.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 export type UpgradePolicy = 'track-latest' | 'major-gate' | 'locked'
 
@@ -793,6 +793,6 @@ export function main(argv: readonly string[]): number {
   return 1
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   process.exitCode = main(process.argv.slice(2))
 }

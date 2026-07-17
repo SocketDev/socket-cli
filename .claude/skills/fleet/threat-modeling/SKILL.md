@@ -1,15 +1,6 @@
 ---
 name: threat-modeling
-description: >-
-  Build a threat model for a target codebase. Three modes: "interview" walks an
-  application owner through the four-question framework and produces a threat
-  model from their answers; "bootstrap" derives one from the code plus past
-  vulnerabilities (CVEs, git history, advisories) when no owner is available;
-  "bootstrap-then-interview" chains the two when both owner and codebase are
-  present. All write THREAT_MODEL.md in a shared schema. Use when asked to
-  "threat model", "build a threat model", "map the attack surface", or "what
-  should we be worried about in this codebase". Feeds scanning-vulns focus
-  areas and triaging-findings severity boosts.
+description: Build or interview for a threat model covering assets, attackers, trust boundaries, and mitigations.
 argument-hint: "[bootstrap-then-interview|bootstrap|interview] <target-dir> [--vulns FILE] [--design-doc FILE] [--seed THREAT_MODEL.md] [--depth recon|full] [--fresh]"
 user-invocable: true
 allowed-tools: Workflow, Task, Read, Glob, Grep, Write, AskUserQuestion, Bash(git:*), Bash(gh api:*), Bash(find:*), Bash(ls:*), Bash(node .claude/skills/fleet/_shared/scripts/checkpoint.mts:*)

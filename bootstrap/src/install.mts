@@ -27,10 +27,14 @@ import {
   endMarker,
   errorMessage,
   mergeWorkspaceYaml,
+  normalizeBundlePath,
+  segmentFileName,
   spliceFleetBlock,
   walkFiles,
 } from './helpers.mts'
 import type { BundleManifest, ThinOptions } from './helpers.mts'
+import { mergeClaudeSettings } from './settings.mts'
+import type { ClaudeSettings } from './settings.mts'
 
 const logger = getDefaultLogger()
 
@@ -65,7 +69,7 @@ export function installSegments(
     return
   }
   for (const entry of segments) {
-    const destName = `${entry.path.replace(/^\./, 'dot-')}.fleetblock`
+    const destName = segmentFileName(entry.path)
     const blockPath = path.join(segmentsDir, destName)
     const fleetBlock = readFileSync(blockPath, 'utf8')
     const targetPath = path.join(dest, entry.path)
@@ -79,6 +83,47 @@ export function installSegments(
     })
     mkdirSync(path.dirname(targetPath), { recursive: true })
     writeFileSync(targetPath, updated)
+  }
+}
+
+/**
+ * Merge the release's canonical Claude settings section into the consumer's
+ * hybrid file. Fleet keys are replaced; repo-owned top-level settings and
+ * `.claude/hooks/repo/` registrations survive. Malformed JSON fails closed.
+ */
+export function installSettingsSegment(
+  segmentsDir: string,
+  dest: string,
+  manifest: BundleManifest,
+): number {
+  const segment = manifest.settingsSegment
+  if (segment === undefined) {
+    return 0
+  }
+  const sourcePath = path.join(segmentsDir, segmentFileName(segment.path))
+  if (!existsSync(sourcePath)) {
+    logger.log(
+      `install-fleet: Claude settings segment missing at ${sourcePath} — refusing to merge.`,
+    )
+    return 1
+  }
+  const targetPath = path.join(dest, segment.path)
+  try {
+    const fleetSettings = JSON.parse(
+      readFileSync(sourcePath, 'utf8'),
+    ) as ClaudeSettings
+    const repoSettings = existsSync(targetPath)
+      ? (JSON.parse(readFileSync(targetPath, 'utf8')) as ClaudeSettings)
+      : undefined
+    const merged = mergeClaudeSettings({ fleetSettings, repoSettings })
+    mkdirSync(path.dirname(targetPath), { recursive: true })
+    writeFileSync(targetPath, `${JSON.stringify(merged, undefined, 2)}\n`)
+    return 0
+  } catch (e) {
+    logger.log(
+      `install-fleet: Claude settings merge failed for ${targetPath}: ${errorMessage(e)}. Nothing written.`,
+    )
+    return 1
   }
 }
 
@@ -185,6 +230,16 @@ export function wirePackageJson(dest: string): void {
   writeFileSync(pkgPath, `${JSON.stringify(pkg, undefined, 2)}\n`)
 }
 
+export function normalizeManifestEntryPath(entry: { path: string }): string {
+  return normalizeBundlePath(entry.path)
+}
+
+export interface FleetFileManifest {
+  files: Record<string, string>
+  segments?: ReadonlyArray<{ path: string }> | undefined
+  settingsSegment?: { path: string } | undefined
+}
+
 /**
  * Compute the gitignore entries for thin mode — the wholly-fleet files that the
  * download/fetch action supplies, so they need not be git-tracked. Hybrid paths
@@ -198,15 +253,17 @@ export function wirePackageJson(dest: string): void {
  * The dir-level collapse still exists for the sync-prune walk — see
  * fleetDirRoots().
  */
-export function thinIgnoreEntries(manifest: {
-  files: Record<string, string>
-  segments?: ReadonlyArray<{ path: string }> | undefined
-}): string[] {
-  const hybridPaths = new Set((manifest.segments ?? []).map(s => s.path))
+export function thinIgnoreEntries(manifest: FleetFileManifest): string[] {
+  const hybridPaths = new Set(
+    (manifest.segments ?? []).map(normalizeManifestEntryPath),
+  )
+  if (manifest.settingsSegment !== undefined) {
+    hybridPaths.add(normalizeBundlePath(manifest.settingsSegment.path))
+  }
   const entries = new Set<string>()
   const files = Object.keys(manifest.files)
   for (let i = 0, { length } = files; i < length; i += 1) {
-    const p = files[i]!
+    const p = normalizeBundlePath(files[i]!)
     if (hybridPaths.has(p)) {
       continue
     }
@@ -224,15 +281,17 @@ export function thinIgnoreEntries(manifest: {
  * never touch repo-owned content. The .gitignore block deliberately does NOT
  * use these — its entries are explicit per-file (thinIgnoreEntries).
  */
-export function fleetDirRoots(manifest: {
-  files: Record<string, string>
-  segments?: ReadonlyArray<{ path: string }> | undefined
-}): string[] {
-  const hybridPaths = new Set((manifest.segments ?? []).map(s => s.path))
+export function fleetDirRoots(manifest: FleetFileManifest): string[] {
+  const hybridPaths = new Set(
+    (manifest.segments ?? []).map(normalizeManifestEntryPath),
+  )
+  if (manifest.settingsSegment !== undefined) {
+    hybridPaths.add(normalizeBundlePath(manifest.settingsSegment.path))
+  }
   const roots = new Set<string>()
   const files = Object.keys(manifest.files)
   for (let i = 0, { length } = files; i < length; i += 1) {
-    const p = files[i]!
+    const p = normalizeBundlePath(files[i]!)
     if (hybridPaths.has(p)) {
       continue
     }
@@ -317,14 +376,14 @@ const PRUNE_SKIP_NAMES = new Set(['._.DS_Store', '.DS_Store', 'Thumbs.db'])
  */
 export function pruneStaleFleetFiles(
   dest: string,
-  manifest: {
-    files: Record<string, string>
-    segments?: ReadonlyArray<{ path: string }> | undefined
-  },
+  manifest: FleetFileManifest,
 ): number {
-  const kept = new Set(Object.keys(manifest.files))
+  const kept = new Set(Object.keys(manifest.files).map(normalizeBundlePath))
   for (const segment of manifest.segments ?? []) {
-    kept.add(segment.path)
+    kept.add(normalizeBundlePath(segment.path))
+  }
+  if (manifest.settingsSegment !== undefined) {
+    kept.add(normalizeBundlePath(manifest.settingsSegment.path))
   }
   let pruned = 0
   // Only the wholly-fleet DIR roots can hold on-disk files the current bundle
@@ -342,7 +401,7 @@ export function pruneStaleFleetFiles(
         continue
       }
       // walkFiles returns OS-separated paths; manifest keys are '/'-joined.
-      const key = rel.split(path.sep).join('/')
+      const key = normalizeBundlePath(rel)
       if (!kept.has(key)) {
         rmSync(path.join(dest, rel), { force: true })
         pruned += 1

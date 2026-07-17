@@ -26,7 +26,8 @@ import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from './paths.mts'
-import { runCapture } from './publish-shared.mts'
+import { runCapture } from './publish-infra/shared.mts'
+import { isMainModule } from './_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -46,6 +47,38 @@ export interface RunEntry {
   createdAt: number
   id: number
   workflowId: number
+}
+
+// Resolve the effective retention window in days from the raw `--days` CLI
+// value: a finite positive number wins, anything else (absent/NaN/<=0) falls
+// back to the default.
+export function resolveRetentionDays(rawDays: string | undefined): number {
+  const days = Number(rawDays ?? RETENTION_DAYS_DEFAULT)
+  return Number.isFinite(days) && days > 0 ? days : RETENTION_DAYS_DEFAULT
+}
+
+export function computeCutoff(retentionDays: number, now: number): number {
+  return now - retentionDays * MS_PER_DAY
+}
+
+// The retention decision: a run is doomed when its workflow is no longer
+// valid (source absent from the default branch / an orphaned run group) OR
+// it predates the cutoff. Pure — no gh/network access.
+export function selectRunsToDelete(
+  runs: readonly RunEntry[],
+  validById: ReadonlyMap<number, boolean>,
+  cutoff: number,
+): number[] {
+  const doomed: number[] = []
+  for (let i = 0, { length } = runs; i < length; i += 1) {
+    const run = runs[i]!
+    const valid = validById.get(run.workflowId) ?? false
+    const expired = run.createdAt < cutoff
+    if (!valid || expired) {
+      doomed.push(run.id)
+    }
+  }
+  return doomed
 }
 
 function sleep(ms: number): Promise<void> {
@@ -199,10 +232,11 @@ async function main(): Promise<void> {
     return
   }
   const dryRun = !!values['dry-run']
-  const days = Number(values['days'] ?? RETENTION_DAYS_DEFAULT)
-  const retentionDays =
-    Number.isFinite(days) && days > 0 ? days : RETENTION_DAYS_DEFAULT
-  const cutoff = Date.now() - retentionDays * MS_PER_DAY
+  const rawDays = values['days']
+  const retentionDays = resolveRetentionDays(
+    typeof rawDays === 'string' ? rawDays : undefined,
+  )
+  const cutoff = computeCutoff(retentionDays, Date.now())
 
   const repo = await resolveRepoSlug()
   if (!repo) {
@@ -228,15 +262,7 @@ async function main(): Promise<void> {
   }
 
   const runs = await listAllRuns(repo)
-  const doomed: number[] = []
-  for (let i = 0, { length } = runs; i < length; i += 1) {
-    const run = runs[i]!
-    const valid = validById.get(run.workflowId) ?? false
-    const expired = run.createdAt < cutoff
-    if (!valid || expired) {
-      doomed.push(run.id)
-    }
-  }
+  const doomed = selectRunsToDelete(runs, validById, cutoff)
   logger.log(`${doomed.length} run(s) to delete of ${runs.length} total.`)
   if (dryRun || doomed.length === 0) {
     logger.success(
@@ -274,7 +300,7 @@ async function main(): Promise<void> {
   logger.success(`Pruned ${deleted} workflow run(s) from ${repo}.`)
 }
 
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+if (isMainModule(import.meta.url)) {
   main().catch((e: unknown) => {
     logger.error(e)
     process.exitCode = 1

@@ -20,13 +20,21 @@
 
 import { existsSync } from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
+import {
+  GENERATED_PATTERNS,
+  isBothTouched,
+  isGenerated,
+  isUnmerged,
+} from '../../.claude/hooks/fleet/_shared/landable.mts'
 import { parsePorcelain } from './_shared/git-porcelain.mts'
+import { summarizeGroups } from './land-work/ai-summary.mts'
+import { commitMessage } from './land-work/message.mts'
+import { isMainModule } from './_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -193,11 +201,6 @@ export function groupPaths(paths: readonly string[]): CommitGroup[] {
   return groups
 }
 
-export function commitMessage(group: CommitGroup): string {
-  const n = group.paths.length
-  return `${group.type}(${group.scope}): land ${n} ${group.scope} change${n === 1 ? '' : 's'}`
-}
-
 export interface PartitionedTree {
   readonly landable: string[]
   readonly skippedAmbiguous: string[]
@@ -257,53 +260,12 @@ function git(cwd: string, args: readonly string[]): GitRun {
   }
 }
 
-/**
- * True for a porcelain status that marks an UNMERGED (conflicted) path:
- * any `U`, or the both-added/both-deleted pairs `AA`/`DD`. Never auto-commit
- * one — an unresolved conflict must be resolved by a human, not landed. Pure.
- */
-export function isUnmerged(status: string): boolean {
-  return status.includes('U') || status === 'AA' || status === 'DD'
-}
-
-/**
- * True when a porcelain status shows BOTH an index change AND a worktree change
- * (e.g. `MM`, `AM`, `RM`): the staged blob and the on-disk file differ, so a
- * `git add` before commit would fold in whatever is unstaged — possibly a
- * concurrent session's hunks to a file both touched. The auto-lander skips
- * these (surfaces for manual review) rather than blend authorship. `??`
- * (untracked) is not both-touched. Pure.
- */
-export function isBothTouched(status: string): boolean {
-  const index = status[0] ?? ' '
-  const worktree = status[1] ?? ' '
-  return index !== ' ' && index !== '?' && worktree !== ' ' && worktree !== '?'
-}
-
-// Tracked-but-generated paths that live inside source areas yet are never
-// hand-authored — a formatter/build/lockfile step writes them. The auto-lander
-// must not commit them just because they're dirty in a source dir.
-const GENERATED_PATTERNS = [
-  /(?:^|\/)pnpm-lock\.yaml$/,
-  /(?:^|\/)_dispatch\/bundle\.cjs$/,
-  /(?:^|\/)(?:build|dist|coverage|coverage-isolated)\//,
-]
-
-/**
- * True for a tracked-but-generated path (lockfile, hook bundle, build/coverage
- * output) that sits in a source area but is machine-written, not authored.
- * Pure.
- */
-export function isGenerated(p: string): boolean {
-  const np = normalizePath(p)
-  for (let i = 0, { length } = GENERATED_PATTERNS; i < length; i += 1) {
-    const re = GENERATED_PATTERNS[i]!
-    if (re.test(np)) {
-      return true
-    }
-  }
-  return false
-}
+// The landable-vs-skip classification (isGenerated / isUnmerged / isBothTouched)
+// is the single source in _shared/landable.mts — dirty-worktree-stop-guard reads
+// the SAME definitions so a path the lander skips is never one the guard demands
+// a human commit. Re-exported here so land-work's own callers/tests keep their
+// import site.
+export { GENERATED_PATTERNS, isBothTouched, isGenerated, isUnmerged }
 
 /**
  * The in-progress git operation ('rebase' | 'merge' | 'cherry-pick'), or
@@ -332,29 +294,38 @@ function inProgressOp(cwd: string): string | undefined {
   return undefined
 }
 
-function landGroup(cwd: string, group: CommitGroup): boolean {
-  const added = git(cwd, ['add', '--', ...group.paths])
-  if (!added.ok) {
-    logger.fail(`git add failed for ${group.scope}: ${added.out.trim()}`)
-    return false
-  }
+function landGroup(
+  cwd: string,
+  group: CommitGroup,
+  aiSummary?: string,
+): boolean {
+  const message = commitMessage(group, aiSummary)
+  // `-A -- <paths>` so a DELETED path stages as a deletion — plain `git add`
+  // errors "pathspec did not match" on removed files (cascade tombstones,
+  // pruned hooks), stranding the whole group. Scoped to the pathspec, so it
+  // stays surgical (same rationale as the cascade's stagePaths). Advisory:
+  // when a path's deletion is ALREADY staged nothing on disk matches the
+  // pathspec and the add errors spuriously, while `git commit -o` below
+  // commits the named paths' working-tree state without needing the index —
+  // so a real problem surfaces as the commit failure, not the add.
+  git(cwd, ['add', '-A', '--', ...group.paths])
   const committed = git(cwd, [
     'commit',
     '-o',
     ...group.paths,
     '-S',
     '-m',
-    commitMessage(group),
+    message,
   ])
   if (!committed.ok) {
     logger.fail(`git commit failed for ${group.scope}: ${committed.out.trim()}`)
     return false
   }
-  logger.success(`landed ${commitMessage(group)}`)
+  logger.success(`landed ${message.split('\n')[0]}`)
   return true
 }
 
-export function main(cwd: string = process.cwd()): number {
+export async function main(cwd: string = process.cwd()): Promise<number> {
   const argv = process.argv.slice(2)
   const doCommit = argv.includes('--commit')
   // Non-flag args restrict landing to EXACTLY this set (repo-relative paths).
@@ -439,15 +410,29 @@ export function main(cwd: string = process.cwd()): number {
     logger.log('Re-run with --commit to land.')
     return 0
   }
+  // Mark the run so the AI summarizer's headless child — which inherits this
+  // env and loads this repo's Stop hook — never re-triggers auto-land on the
+  // still-dirty tree (auto-land-on-stop skips when this is set).
+  process.env['SOCKET_LAND_WORK_ACTIVE'] = '1'
+  // Deterministic subject + file digest always stand; the floor-tier AI summary
+  // is pure enrichment the land never waits on (empty map = digest-only body).
+  const summaries = await summarizeGroups(cwd, groups)
   let failed = 0
   for (const g of groups) {
-    if (!landGroup(cwd, g)) {
+    if (!landGroup(cwd, g, summaries.get(g.scope))) {
       failed += 1
     }
   }
   return failed === 0 ? 0 : 1
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  process.exitCode = main()
+if (isMainModule(import.meta.url)) {
+  main().then(
+    code => {
+      process.exitCode = code
+    },
+    () => {
+      process.exitCode = 1
+    },
+  )
 }

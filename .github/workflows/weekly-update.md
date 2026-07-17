@@ -1,123 +1,27 @@
 ---
-# Shared reusable weekly-update — gh-aw agentic workflow. Source of truth: this
-# .md. Edit it, then `gh aw compile` → weekly-update.lock.yml (commit BOTH +
-# .github/aw/actions-lock.json). The 12 fleet delegators `uses:` the compiled
-# .lock.yml@<propagation-sha> (Layer 3 of the shared-workflow cascade).
+# Per-repo weekly + daily dependency update — gh-aw agentic workflow. Source of
+# truth: this .md. Edit it, then `gh aw compile` → weekly-update.lock.yml (commit
+# BOTH + .github/aw/actions-lock.json). Cascaded to every fleet member; each repo
+# runs its own scheduled copy — no shared reusable, no socket-registry delegator.
 #
-# Replaces the legacy 485-line claude --print reusable workflow. Wins: per-run +
-# daily AI-credit budget, firewall egress allowlist, safe-output PR (GitHub
-# web-flow-signed + atomic via git-bundle — no BOT_GPG plumbing needed).
+# Two cadences share ONE workflow: the Monday cron runs the full /updating
+# umbrella; the daily cron runs /updating-daily (promote soaked exclusions only).
+# The stronger get-green workflow is dispatched on a test failure.
+#
+# Wins over the legacy claude --print reusable: per-run + 24h AI-credit budget,
+# firewall egress allowlist, safe-output PR (GitHub web-flow-signed + atomic via
+# git-bundle — no BOT_GPG plumbing).
 on:
-  # workflow_dispatch is what makes this trial-able (`gh aw trial` / `gh aw run`
-  # both require it) and manually dispatchable; the inputs mirror workflow_call's
-  # so a manual run can override the same knobs. Production callers use
-  # workflow_call below.
+  schedule:
+    # Monday 09:00 UTC — full weekly /updating umbrella.
+    - cron: '0 9 * * 1'
+    # Daily 08:00 UTC — /updating-daily soaked-exclusion promotion (an hour
+    # before the Monday run so soaked bypasses are promoted first).
+    - cron: '0 8 * * *'
+  # workflow_dispatch keeps the workflow trial-able (`gh aw trial` / `gh aw run`
+  # both require it) and manually runnable — a manual run does the full weekly
+  # update.
   workflow_dispatch:
-    inputs:
-      test-setup-script:
-        description: 'Command to run before tests (e.g. "pnpm run build")'
-        required: false
-        type: string
-        default: 'pnpm run build'
-      test-script:
-        description: 'Test command'
-        required: false
-        type: string
-        default: 'pnpm test'
-      update-model:
-        description: 'Claude model for the update step'
-        required: false
-        type: string
-        default: 'haiku'
-  workflow_call:
-    inputs:
-      branch-prefix:
-        description: 'Branch name prefix for the PR branch (date suffix added automatically)'
-        required: false
-        type: string
-        default: 'weekly-update'
-      check-timeout-minutes:
-        description: 'Timeout for the check-updates job'
-        required: false
-        type: number
-        default: 10
-      checkout-fetch-depth:
-        description: 'Fetch depth for checkout (0 = full history; recommended for submodule drift analysis)'
-        required: false
-        type: string
-        default: '0'
-      checkout-submodules:
-        description: 'Submodule init mode: "false", "true" (top-level), or "recursive"'
-        required: false
-        type: string
-        default: 'false'
-      fix-model:
-        description: 'Claude model for the get-green escalation'
-        required: false
-        type: string
-        default: 'sonnet'
-      fix-timeout-minutes:
-        description: 'Timeout for the get-green step'
-        required: false
-        type: number
-        default: 15
-      pr-base:
-        description: 'Base branch for the PR'
-        required: false
-        type: string
-        default: 'main'
-      pr-body-extra:
-        description: 'Optional markdown appended to the PR body (e.g. cross-linked cascade PRs)'
-        required: false
-        type: string
-        default: ''
-      pr-title-prefix:
-        description: 'PR title prefix (date suffix added automatically)'
-        required: false
-        type: string
-        default: 'chore(deps): weekly dependency update'
-      test-setup-script:
-        description: 'Command to run before tests (e.g. "pnpm run build")'
-        required: false
-        type: string
-        default: 'pnpm run build'
-      test-script:
-        description: 'Test command'
-        required: false
-        type: string
-        default: 'pnpm test'
-      test-timeout-minutes:
-        description: 'Timeout for the test step'
-        required: false
-        type: number
-        default: 15
-      update-model:
-        description: 'Claude model for the update step'
-        required: false
-        type: string
-        default: 'haiku'
-      update-timeout-minutes:
-        description: 'Timeout for the update step'
-        required: false
-        type: number
-        default: 10
-      updating-skill:
-        description: 'Skill to invoke for the update (defaults to the /updating umbrella)'
-        required: false
-        type: string
-        default: 'updating'
-      validate-file-patterns:
-        description: 'Pipe-separated case-glob patterns of paths allowed to change'
-        required: false
-        type: string
-        default: 'package.json|*/package.json|pnpm-lock.yaml|*/pnpm-lock.yaml|.npmrc|pnpm-workspace.yaml|.gitmodules|.config/lockstep.json'
-    secrets:
-      ANTHROPIC_API_KEY:
-        description: 'Anthropic API key for Claude'
-        required: true
-      SOCKET_API_TOKEN:
-        description: 'Socket API token — sfw-enterprise instead of sfw-free when provided'
-        required: false
 
 engine:
   id: claude
@@ -136,24 +40,39 @@ network:
     - defaults
     - api.anthropic.com
 
-# Deterministic gate — ports the legacy check-updates job verbatim. The agent
-# job waits on this and reads needs.check-updates.outputs.has-updates.
+# Deterministic gate — single source in weekly-update.mts (`--check-updates`
+# exits 0 on actionable drift: pnpm outdated / lockstep exit 2 / submodule-behind
+# / soaked-cleared exclude). Cadence-agnostic: a soaked-cleared exclude makes the
+# daily promotion actionable without a second gate mode. The agent job waits on
+# this and reads needs.check-updates.outputs.has-updates.
 jobs:
   check-updates:
     runs-on: ubuntu-latest
-    timeout-minutes: ${{ inputs.check-timeout-minutes }}
+    timeout-minutes: 10
     outputs:
+      cadence: ${{ steps.cadence.outputs.cadence }}
       has-updates: ${{ steps.check.outputs.has-updates }}
     steps:
       - uses: actions/checkout@v5.0.0
         with:
           persist-credentials: false
+      - name: Determine cadence
+        id: cadence
+        shell: bash
+        # The daily cron ('0 8 * * *') promotes soaked exclusions only; every
+        # other trigger (Monday cron / manual dispatch) runs the full weekly
+        # update. gh-aw forbids `${{ github.event.schedule }}` in expressions, so
+        # read the triggering cron from the event payload with jq instead.
+        run: |
+          sched="$(jq -r '.schedule // empty' "$GITHUB_EVENT_PATH" 2>/dev/null || true)"
+          if [ "$sched" = "0 8 * * *" ]; then
+            echo "cadence=daily" >> "$GITHUB_OUTPUT"
+          else
+            echo "cadence=weekly" >> "$GITHUB_OUTPUT"
+          fi
       - name: Check for actionable updates
         id: check
         shell: bash
-        # Single source of the gate logic: weekly-update.mts --check-updates
-        # exits 0 when there is actionable drift (pnpm outdated / lockstep exit 2
-        # / submodule-behind), 1 when there is not. Map that to has-updates.
         run: |
           if node scripts/fleet/weekly-update.mts --check-updates; then
             echo "has-updates=true" >> "$GITHUB_OUTPUT"
@@ -162,21 +81,20 @@ jobs:
           fi
 
 # The agent commits inside its run; gh-aw packages them as a git bundle and a
-# safe_outputs job opens a signed (GitHub web-flow GPG) PR. protected_files is
-# emptied because a dependency-update PR's whole job is to change manifests +
-# lockfiles that gh-aw protects by default.
+# safe_outputs job opens a signed (GitHub web-flow GPG) PR.
 safe-outputs:
   create-pull-request:
-    title-prefix: 'chore(deps): weekly dependency update '
+    title-prefix: 'chore(deps): '
     draft: true
     labels: [dependencies, automation]
     # Commits are signed by default (signed-commits: true → GraphQL
     # createCommitOnBranch / GitHub web-flow signature), preserving the fleet's
     # signed-commit invariant without the legacy BOT_GPG_PRIVATE_KEY plumbing.
     #
-    # Positive allowlist of paths the PR may change (a dependency update only
-    # touches manifests / lockfiles / submodules), replacing the legacy
-    # validate-file-patterns warn-step with a hard safe-output constraint.
+    # Positive allowlist of paths a PR may change — the UNION of both cadences: a
+    # weekly /updating touches manifests / lockfiles / submodules / lockstep; a
+    # daily /updating-daily only touches the workspace yaml + lockfile (a subset),
+    # so one allowlist safely covers both.
     allowed-files:
       - 'package.json'
       - '*/package.json'
@@ -188,46 +106,53 @@ safe-outputs:
       - '.config/lockstep.json'
     # gh-aw protects manifests/lockfiles by default (supply-chain guard) with a
     # request_review block — but changing exactly those IS this workflow's job,
-    # and allowed-files already constrains the surface. Disable the redundant
-    # review gate.
+    # and allowed-files already constrains the surface. Disable the redundant gate.
     protected-files: 'allowed'
-  # On test failure, escalate to the stronger model via a separate gh-aw
-  # workflow (one engine/model per workflow → the fix is its own workflow).
+  # On test failure, escalate to the stronger model via a separate gh-aw workflow
+  # (one engine/model per workflow → the fix is its own workflow).
   dispatch-workflow:
     workflows: [get-green]
     max: 1
 ---
 
-# Weekly dependency update
+# Dependency update
 
-You are an automated CI agent running the fleet's weekly dependency update. Updates
-were detected: `${{ needs.check-updates.outputs.has-updates }}`. If that is not
-`true`, do nothing and exit.
+You are an automated CI agent running the fleet's dependency update. Actionable
+updates were detected: `${{ needs.check-updates.outputs.has-updates }}`. If that
+is not `true`, do nothing and exit.
+
+## Cadence
+
+Two schedules share this workflow. The cadence for this run is
+`${{ needs.check-updates.outputs.cadence }}`:
+
+- **`daily`:** run the `/updating-daily` skill only — promote soaked
+  `minimumReleaseAgeExclude` entries whose 7-day soak has cleared, then reconcile
+  the lockfile. No npm bumps. Title the PR `promote soaked exclusions
+(<YYYY-MM-DD>)`.
+- **`weekly`:** run the `/updating` umbrella — npm dependencies, lockstep
+  manifest, submodules, and workflow pins. Title the PR `weekly dependency update
+(<YYYY-MM-DD>)`.
 
 ## Steps
 
-1. Run the `/${{ inputs.updating-skill }}` skill to update everything applicable to
-   this repo — npm dependencies, lockstep manifest, submodules, and workflow pins.
-   Work in CI mode: skip builds/tests during the update. Make **atomic commits**
-   (one logical change per commit) so the PR history is reviewable. Do NOT push or
-   open a PR yourself — the workflow's safe outputs handle that.
+1. Run the cadence-appropriate skill above. Work in CI mode: skip builds/tests
+   during the update. Make **atomic commits** (one logical change per commit) so
+   the PR history is reviewable. Do NOT push or open a PR yourself — the
+   workflow's safe outputs handle that.
 
-2. Run the test setup + test commands:
+2. Build the project if it has a `build` script, then run its tests:
 
-   ```text
-   ${{ inputs.test-setup-script }}
-   ${{ inputs.test-script }}
+   ```bash
+   pnpm run build   # skip if the repo has no build script
+   pnpm test
    ```
 
-3. **If tests pass:** open a pull request via the `create_pull_request` safe output.
-   Title it `${{ inputs.pr-title-prefix }} (<YYYY-MM-DD>)`. Body: a "## Weekly Update"
-   intro noting it ran the `/updating` umbrella (npm + lockstep + submodules +
-   pins), then `${{ inputs.pr-body-extra }}` if non-empty, then a
-   `<details><summary>View commit history</summary>` block with the commit list,
-   then a generated-by footer. Only include files matching
-   `${{ inputs.validate-file-patterns }}`; if your changes touch anything outside
-   that allowlist, call it out in the PR body for human review.
+3. **If tests pass:** open a pull request via the `create_pull_request` safe
+   output, titled per the cadence above. Body: a short intro naming the skill that
+   ran, then a `<details><summary>View commit history</summary>` block with the
+   commit list.
 
-4. **If tests fail:** do NOT open a PR. Dispatch the `get-green` workflow via
-   the `workflow_call` safe output, passing the branch and the build/test logs, so
-   the stronger `${{ inputs.fix-model }}` model attempts the fix.
+4. **If tests fail:** do NOT open a PR. Dispatch the `get-green` workflow via the
+   `dispatch_workflow` safe output, passing the branch and the build/test logs, so
+   the stronger model attempts the fix.

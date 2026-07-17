@@ -4,7 +4,7 @@
  *
  *   1. Private (un-exported) functions, sorted alphanumerically.
  *   2. Exported functions (`export function ...`), sorted alphanumerically.
- *   3. The script entrypoint (`main()` for runners) is allowed to be last
+ *   3. The script entrypoint (`main()` for runners) must stay last
  *      regardless of name. Rationale: a reader scanning the file should be able
  *      to predict where any function lives. Mixed-visibility ordering makes it
  *      hard to find the public surface; alphabetical inside each group is
@@ -106,9 +106,10 @@ interface FunctionEntry {
 
 export function sortKey(entry: FunctionEntry): string {
   if (entry.isEntrypoint) {
-    // '~' (0x7E) is the highest printable ASCII char, so this sort key
-    // pins the entrypoint to the end of any group.
-    return '~~entrypoint'
+    // Private and export groups use 0/1 prefixes; entrypoints are the explicit
+    // third group. Do not rely on punctuation ordering: naturalCompare ignores
+    // some punctuation, which previously made `~~entrypoint` sort first.
+    return '2entrypoint'
   }
   return `${entry.visibility === 'private' ? '0' : '1'}${entry.name}`
 }
@@ -205,6 +206,8 @@ const rule = {
     },
     fixable: 'code',
     messages: {
+      entrypointOutOfOrder:
+        'Script entrypoint `{{name}}` must be the final top-level function.',
       groupOutOfOrder:
         'Top-level function `{{name}}` ({{visibility}}) appears after a function from the next visibility group. Order: private functions first (alphanumeric), then exported functions (alphanumeric).',
       alphaOutOfOrder:
@@ -315,6 +318,21 @@ const rule = {
           } else {
             lastNameInGroup = name
           }
+        }
+
+        // Entrypoints are a third, final visibility group. The sort key already
+        // pins them last; report when the source does not, so the fixer can run.
+        for (let i = 0, last = entries.length - 1; i < last; i += 1) {
+          const entry = entries[i]!
+          if (!entry.isEntrypoint) {
+            continue
+          }
+          const info = declVisibility(entry.node)
+          violations.push({
+            node: info?.fn.id ?? entry.node,
+            messageId: 'entrypointOutOfOrder',
+            data: { name: entry.name },
+          })
         }
 
         if (violations.length === 0) {

@@ -139,6 +139,12 @@ export const check = bashGuard((command, payload) => {
     '  @socketsecurity/lib with a low AI_PROFILE). The subagent runs the command',
     '  cheap + returns; your premium session keeps its context for the real work.',
     '',
+    '  Report-back contract: a foreground Agent call returns the child’s final',
+    '  text as YOUR tool result; a background delegate re-invokes you when it',
+    '  completes. A delegate can NEVER SendMessage you (you are not addressable',
+    '  to it) — do not instruct it to, and never end your turn waiting on a',
+    '  delegate’s message.',
+    '',
   )
   return block(lines.join('\n') + '\n')
 })

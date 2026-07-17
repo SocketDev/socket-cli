@@ -22,13 +22,13 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import {
   isFleetMarkerBeginLine,
   isFleetMarkerEndLine,
 } from '../../../.claude/hooks/fleet/_shared/fleet-markers.mts'
 import { REPO_ROOT } from '../paths.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 // A top-level `- ` bullet is a rule. The thin CLAUDE.md is a flat list — one
 // bullet per rule, each carrying its own enforcer citation / detail-doc link.
@@ -178,6 +178,6 @@ function main(): void {
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   main()
 }

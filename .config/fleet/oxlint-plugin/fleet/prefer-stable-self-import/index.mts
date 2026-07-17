@@ -39,6 +39,8 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+
 import type { AstNode, RuleContext, RuleFixer } from '../../lib/rule-types.mts'
 
 /**
@@ -86,17 +88,18 @@ const rule = {
 
   create(context: RuleContext) {
     const filename = context.filename ?? context.getFilename?.() ?? ''
+    const normalizedFilename = normalizePath(filename)
     // Only enforce on scripts/ + .claude/hooks/ paths. Test files in those
     // dirs are exempt — fixtures may intentionally reference the bare name.
     if (
-      !/\/(?:\.claude\/hooks|scripts)\//.test(filename) ||
-      /\/test\//.test(filename) ||
-      /\.test\.(?:[mc]?[jt]s)$/.test(filename)
+      !/\/(?:\.claude\/hooks|scripts)\//.test(normalizedFilename) ||
+      /\/test\//.test(normalizedFilename) ||
+      /\.test\.(?:[mc]?[jt]s)$/.test(normalizedFilename)
     ) {
       return {}
     }
 
-    const owned = findOwnedPackageName(path.dirname(filename))
+    const owned = findOwnedPackageName(path.dirname(normalizedFilename))
     // No owned name, or the owned name is already a `-stable` alias target
     // (shouldn't happen, but guard anyway) → nothing to enforce.
     if (!owned || owned.endsWith('-stable')) {

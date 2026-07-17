@@ -18,11 +18,39 @@
 // export-surface evidence, authored a synthetic `refactor!:` commit to steer
 // the CHANGELOG generator, and ran the bump, all unilaterally.
 
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+import process from 'node:process'
+
+import { parseVersion } from '@socketsecurity/lib-stable/versions/parse'
+
 import { block, defineHook, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
+
+// True when the checked-out package.json carries a `-prerelease` version
+// hint (`X.Y.Z-prerelease`): the human wrote the release target into the
+// tree, so a non-major bump that consumes it is already user-authorized.
+export function committedVersionHint(): boolean {
+  const pkgPath = path.join(
+    process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd(),
+    'package.json',
+  )
+  try {
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
+      version?: string
+    }
+    if (typeof pkg.version !== 'string') {
+      return false
+    }
+    const parsed = parseVersion(pkg.version)
+    return parsed?.prerelease.join('.') === 'prerelease'
+  } catch {
+    return false
+  }
+}
 
 const BYPASS_PHRASE = 'Allow release-bump bypass'
 const MAJOR_BYPASS_PHRASE = 'Allow major-bump bypass'
@@ -96,6 +124,14 @@ export function bumpViolation(
 export function check(payload: ToolCallPayload): GuardResult {
   const violation = bumpViolation(payload)
   if (!violation) {
+    return undefined
+  }
+  // A committed `-prerelease` version hint (e.g. 6.0.10-prerelease) IS the
+  // user's named version — the hint convention exists so the human writes
+  // the target into package.json and the release tooling consumes it.
+  // A non-major bump under a committed hint is therefore pre-authorized;
+  // MAJOR still demands its explicit phrase.
+  if (!violation.major && committedVersionHint()) {
     return undefined
   }
   const authorized =

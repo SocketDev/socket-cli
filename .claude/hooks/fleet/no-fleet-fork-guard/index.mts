@@ -52,14 +52,13 @@ import {
   textHasFleetBlockMarkers,
 } from '../_shared/fleet-markers.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import {
+  BYPASS_LOOKBACK_USER_TURNS,
+  bypassPhrasePresent,
+} from '../_shared/transcript.mts'
 import { isWheelhouseRoot } from '../_shared/wheelhouse-root.mts'
 
 const BYPASS_PHRASE = 'Allow fleet-fork bypass'
-
-// How many recent user turns to scan for the bypass phrase. Matches
-// the no-revert-guard hook's window.
-const BYPASS_LOOKBACK_USER_TURNS = 8
 
 // File-path tokens that identify the socket-wheelhouse canonical
 // home. If the resolved absolute path contains one of these, we're
@@ -140,6 +139,17 @@ export function isPerRepoMarkerPath(rel: string): boolean {
   return PER_REPO_MARKER_PATHS.includes(normalizePath(rel))
 }
 
+// Operator-local files live INSIDE a canonical dir (`.claude/`) but are
+// gitignored and never cascaded — Claude Code reads `settings.local.json` as a
+// per-machine override. Without this exemption the parent-dir-under-template
+// rule in isCanonicalRelativePath marks it canonical (because `template/.claude/`
+// exists), false-blocking a legitimate local settings edit.
+const OPERATOR_LOCAL_PATHS: readonly string[] = ['.claude/settings.local.json']
+
+export function isOperatorLocalPath(rel: string): boolean {
+  return OPERATOR_LOCAL_PATHS.includes(normalizePath(rel))
+}
+
 export function isCanonicalRelativePath(
   rel: string,
   repoRoot?: string | undefined,
@@ -193,6 +203,11 @@ export const check = editGuard((filePath, content, payload) => {
     return undefined
   }
 
+  // Operator-local overrides (gitignored, never cascaded) are not forks.
+  if (isOperatorLocalPath(relToRepo)) {
+    return undefined
+  }
+
   if (!isCanonicalRelativePath(relToRepo, repoRoot)) {
     return undefined
   }
@@ -238,16 +253,16 @@ export const check = editGuard((filePath, content, payload) => {
     [
       `🚨 no-fleet-fork-guard: blocked Edit/Write to fleet-canonical path.`,
       ``,
-      `File:  ${relToRepo}`,
+      `File:  ${relNormalized}`,
       `Repo:  ${path.basename(repoRoot)}`,
       ``,
       `Fleet-canonical files (anything tracked by`,
       `socket-wheelhouse/scripts/sync-scaffolding/manifest.mts) MUST`,
-      `be edited in socket-wheelhouse/template/${relToRepo} and`,
+      `be edited in socket-wheelhouse/template/${relNormalized} and`,
       `cascaded out — never branched locally in a downstream fleet repo.`,
       ``,
       `Fix path:`,
-      `  1. Edit socket-wheelhouse/template/${relToRepo}`,
+      `  1. Edit socket-wheelhouse/template/${relNormalized}`,
       `  2. Commit + push template`,
       `  3. Cascade with: node scripts/sync-scaffolding/cli.mts \\`,
       `       --target ${repoRoot} --fix`,

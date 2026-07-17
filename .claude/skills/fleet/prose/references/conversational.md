@@ -13,6 +13,7 @@ The goal shifts from "complete, precise, durable" (documentation) to "land the p
 - Plain, direct register
 - Ask when collaborating
 - No structure for its own sake
+- Use GitHub's formatting when structure is earned
 - Drop the AI scaffolding
 
 ## Lead with the point
@@ -57,6 +58,50 @@ A question pulls people in. "What do you think?" or "@person — thoughts?" beat
 ## No structure for its own sake
 
 Do not impose Summary / Changes / Testing headers on a PR a sentence describes. Use a list only when there genuinely are N parallel items. A small PR body is one sentence on what + why, then (if needed) a short list of the non-obvious changes, then the test note. Big PRs earn structure; small ones do not.
+
+## Use GitHub's formatting when structure is earned
+
+These render on every GitHub prose surface (PR/issue bodies, comments, reviews, discussions, release notes). Reach for them when a body outgrows a few sentences; skip them on a one-liner.
+
+### Collapsed sections
+
+Long supporting material folds under `<details>`; the verdict stays outside the fold. A reader sees the point first and opens the evidence only when they want it. The blank line after `</summary>` is required or the markdown inside will not render.
+
+```markdown
+The fix is a one-line cache-key change; full benchmark matrix below.
+
+<details>
+<summary>Benchmarks (12 runs, M3 Max)</summary>
+
+| parser | p50   | p95   |
+| ------ | ----- | ----- |
+| acorn  | 700ms | 810ms |
+
+</details>
+```
+
+Write the `<summary>` as a specific label ("Benchmarks (12 runs, M3 Max)"). "Details" / "More info" / "Click to expand" tell the reader nothing about whether to open it.
+
+### Alerts
+
+GitHub renders five blockquote alerts: `> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!WARNING]`, `> [!CAUTION]`. Use at most one per body, for the single thing a skimming reader must act on (a breaking change, a required migration step). Stacked alerts cancel each other out.
+
+```markdown
+> [!WARNING]
+> Rolling back past v3.2 loses the migrated soak annotations.
+```
+
+### Task lists
+
+`- [ ]` items in a PR/issue body are live checkboxes, and GitHub shows N-of-M progress wherever the issue is referenced. Use them for genuinely actionable follow-ups and check them off as they land. A task list nobody updates is worse than a sentence.
+
+### Autolinks and permalinks
+
+Bare references autolink: `#123`, `owner/repo#123` for cross-repo, full commit SHAs, and `@user`. Paste a file permalink with a line range (press `y` in the file view for the canonical URL, then select the lines) and GitHub embeds the code snippet inline in the body — better than a re-typed excerpt because it cannot drift.
+
+### Footnotes
+
+`[^1]` footnotes park an aside without derailing the paragraph. One or two per body at most; more than that means the body wants a `<details>` section instead.
 
 ## Drop the AI scaffolding
 

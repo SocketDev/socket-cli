@@ -1,6 +1,6 @@
 ---
 name: scanning-quality
-description: Scans the codebase for bugs, logic errors, cache races, workflow problems, insecure defaults, security regressions in the diff, and variant analysis on prior findings. Runs a Workflow that fans out one finder per scan type in parallel, runs variant-analysis as a dependent stage, adversarially verifies High/Critical findings, deduplicates, and produces an A-F prioritized report. Use when preparing a release, investigating quality issues, running pre-merge checks, or whenever a recent diff touches security-sensitive code.
+description: Scan for bugs, races, workflow flaws, insecure defaults, and regressions; verify and rank findings.
 user-invocable: true
 allowed-tools: Workflow, Task, Read, Grep, Glob, Write, AskUserQuestion, Bash(pnpm run check:*), Bash(pnpm run test:*), Bash(pnpm test:*), Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*)
 model: claude-opus-4-8

@@ -48,7 +48,7 @@ or changing a cascaded hook/rule.
     scan for the same vendor / generic shapes. Categorized by vendor (Socket, LLM
     providers, GitHub, Linear, Notion, AWS, Stripe, etc.) so consumers can opt
     out per category; `ALL_TOKEN_KEY_PATTERNS` is the default union.
-  - `wheelhouse-root.mts` — walks up from cwd to find the wheelhouse
+  - `wheelhouse-root.mts` — walks up from cwd to find the fleet source
     checkout. Used by the user-global wheelhouse-dispatch hook so wheelhouse-only
     hooks (new-hook-claude-md-guard, drift-check-nudge) can fire from any
     fleet-repo session. Must cascade since the dispatcher imports it via the

@@ -1,6 +1,6 @@
 ---
 name: creating-guards
-description: How to author or convert a fleet PreToolUse / PostToolUse / Stop hook guard to the uniform contract (export const check + block/notify/undefined verdict + runGuard), so the per-event dispatcher runs it in ONE process instead of spawning a node process per guard. Loads on demand when adding a `.claude/hooks/fleet/<name>/` guard or converting an old one.
+description: Author or convert fleet hooks to the uniform check plus runGuard contract used by the dispatcher.
 model: claude-haiku-4-5
 context: fork
 user-invocable: false

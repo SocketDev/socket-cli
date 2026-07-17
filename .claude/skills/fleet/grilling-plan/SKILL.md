@@ -1,6 +1,6 @@
 ---
 name: grilling-plan
-description: Interview the user relentlessly to stress-test a plan or design BEFORE building, one question at a time. Use when the user wants to grill / pressure-test a plan, or before a change that touches fleet-shared resources (template/, _shared/, a new hook/lint rule/check).
+description: Stress-test a plan one question at a time before building, especially for shared fleet resources.
 ---
 
 # grilling-plan

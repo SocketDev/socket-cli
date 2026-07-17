@@ -19,7 +19,7 @@ import process from 'node:process'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import { fetchVersionTrustInfo } from '../publish-shared.mts'
+import { fetchVersionTrustInfo } from '../publish-infra/npm/registry.mts'
 
 const WIN32 = process.platform === 'win32'
 

@@ -20,7 +20,6 @@
 
 import process from 'node:process'
 import { readFileSync, writeFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
@@ -29,6 +28,7 @@ import { ingest } from './lib/ingest.mts'
 import type { RawRecord } from './lib/ingest.mts'
 import { buildTriageEnvelope, terminalSummary } from './lib/report.mts'
 import type { TriagedFinding } from './lib/report.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -127,6 +127,6 @@ export function main(argv: readonly string[]): number {
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   process.exitCode = main(process.argv.slice(2))
 }

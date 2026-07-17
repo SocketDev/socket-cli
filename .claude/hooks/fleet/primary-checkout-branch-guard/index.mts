@@ -12,6 +12,8 @@
 //   - `git switch -c <name>` / `git switch -C <name>`      (create + switch)
 //   - `git switch <name>`                                  (switch existing)
 //   - `git checkout <branch>`                              (switch existing)
+//   - `git checkout -` / `git switch -`                    (previous branch —
+//     the `-` shorthand still moves HEAD)
 //
 // What it ALLOWS (not branch ops):
 //   - `git checkout -- <file>` / `git checkout .` (file restore — has `--`
@@ -19,6 +21,11 @@
 //   - any of the above inside a LINKED worktree (the sanctioned place for
 //     branch work)
 //   - `git checkout`/`switch` with no branch argument
+//
+// Effective directory: `git -C <path> checkout <branch>` runs the checkout in
+// <path>, so the guard resolves the `-C` target (against the session cwd) and
+// tests THAT for primary-ness — a worktree cwd can't launder a switch aimed at
+// the primary via `-C`.
 //
 // Why a guard, not just the doc rule: the CLAUDE.md clause listed the
 // prohibition but shipped no enforcer, so an agent created a `fix/...` branch
@@ -30,6 +37,7 @@
 //
 // Fails OPEN on its own errors (exit 0 + stderr log).
 
+import path from 'node:path'
 import process from 'node:process'
 
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
@@ -37,6 +45,7 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
+import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 // Pre-flight: the dispatcher imports + runs this guard only when the raw
@@ -57,6 +66,13 @@ const BYPASS_PHRASES = [
 // HEAD in the primary checkout).
 function looksLikePathRestore(args: readonly string[]): boolean {
   return args.includes('--') || args.includes('.')
+}
+
+// A ref that moves HEAD: a normal branch/commit name (no leading dash), or the
+// `-` shorthand for the previous branch (`git checkout -` / `git switch -`).
+// Without the `-` case, the previous-branch switch slips past the flag filter.
+function isSwitchTarget(arg: string): boolean {
+  return arg === '-' || !arg.startsWith('-')
 }
 
 /**
@@ -81,18 +97,19 @@ export function branchOpKind(
     return 'create'
   }
   if (sub === 'switch') {
-    // `git switch <name>` — switching to an existing branch. A bare `git
-    // switch` with no positional has no branch to move to → ignore.
-    const positional = rest.find(a => !a.startsWith('-'))
-    return positional ? 'switch' : undefined
+    // `git switch <name>` (or `git switch -`) — moving to another branch. A
+    // bare `git switch` with only flags has no target → ignore.
+    const target = rest.find(isSwitchTarget)
+    return target ? 'switch' : undefined
   }
-  // sub === 'checkout': a branch switch only when there's a positional arg
-  // that isn't a file-restore form.
+  // sub === 'checkout': a branch switch only when there's a target arg that
+  // isn't a file-restore form. `--`/`.` guards the file-restore case, so a lone
+  // `-` here is the previous-branch shorthand, not a filename.
   if (looksLikePathRestore(rest)) {
     return undefined
   }
-  const positional = rest.find(a => !a.startsWith('-'))
-  return positional ? 'switch' : undefined
+  const target = rest.find(isSwitchTarget)
+  return target ? 'switch' : undefined
 }
 
 /**
@@ -103,7 +120,7 @@ export function branchOpKind(
 export function isPrimaryCheckout(cwd: string): boolean {
   const r = spawnSync('git', ['rev-parse', '--git-dir'], {
     cwd,
-    timeout: 5000,
+    timeout: spawnTimeoutMs(5000),
   })
   if (r.status !== 0) {
     // Not a git repo (or git unavailable) — nothing to guard, fail open.
@@ -113,13 +130,22 @@ export function isPrimaryCheckout(cwd: string): boolean {
   return !gitDir.includes('/.git/worktrees/')
 }
 
+// `git -C <path> ...` runs the subcommand in <path>. Extract that path so a
+// branch op aimed at the primary via `-C` is judged by the target, not the
+// (possibly worktree) session cwd.
+function dashCDir(args: readonly string[]): string | undefined {
+  const i = args.indexOf('-C')
+  return i >= 0 && i + 1 < args.length ? args[i + 1] : undefined
+}
+
 export function firstBranchOp(
   command: string,
-): { kind: 'create' | 'switch' } | undefined {
+): { kind: 'create' | 'switch'; dashC?: string } | undefined {
   for (const c of commandsFor(command, 'git')) {
     const kind = branchOpKind(c.args)
     if (kind) {
-      return { kind }
+      const dashC = dashCDir(c.args)
+      return dashC === undefined ? { kind } : { kind, dashC }
     }
   }
   return undefined
@@ -130,7 +156,10 @@ export const check = bashGuard((command, payload) => {
   if (!op) {
     return undefined
   }
-  const cwd = payload.cwd ?? process.cwd()
+  const baseCwd = payload.cwd ?? process.cwd()
+  // A `-C <path>` on the branch-op command redirects it to <path>; judge THAT
+  // directory (resolved against the session cwd), else the session cwd.
+  const cwd = op.dashC ? path.resolve(baseCwd, op.dashC) : baseCwd
   if (!isPrimaryCheckout(cwd)) {
     // Branch work in a linked worktree is exactly what the rule wants.
     return undefined

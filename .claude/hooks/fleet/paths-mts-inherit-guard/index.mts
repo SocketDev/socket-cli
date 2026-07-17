@@ -54,11 +54,15 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import {
+  BYPASS_LOOKBACK_USER_TURNS,
+  bypassPhrasePresent,
+} from '../_shared/transcript.mts'
 
 const BYPASS_PHRASE = 'Allow paths-mts-inherit bypass'
-const BYPASS_LOOKBACK_USER_TURNS = 8
 
 // Match any path that ends with `/paths.mts` or `/paths.cts`, whether at the
 // start of the string or after a directory separator.
@@ -114,14 +118,15 @@ export function findAncestorPathsMts(filePath: string): string | undefined {
 export const hook = defineHook({
   check: editGuard((filePath, content, payload) => {
     const tool = payload.tool_name
-    if (!PATHS_MTS_RE.test(filePath)) {
+    const normalizedFilePath = normalizePath(filePath)
+    if (!PATHS_MTS_RE.test(normalizedFilePath)) {
       return undefined
     }
 
     // Only enforce on `<...>/scripts/paths.{mts,cts}` (the canonical
     // location). A `paths.mts` outside a `scripts/` dir is some other
     // file with the same name; not our concern.
-    if (!/\/scripts\/paths\.(?:cts|mts)$/.test(filePath)) {
+    if (!/\/scripts\/paths\.(?:cts|mts)$/.test(normalizedFilePath)) {
       return undefined
     }
 
@@ -169,14 +174,17 @@ export const hook = defineHook({
       return undefined
     }
 
-    const relAncestor = path.relative(path.dirname(filePath), ancestor)
+    const relAncestor = normalizePath(
+      path.relative(path.dirname(filePath), ancestor),
+    )
+    const normalizedAncestor = normalizePath(ancestor)
     return block(
       [
         `🚨 paths-mts-inherit-guard: blocked Edit/Write to a sub-package`,
         `paths.mts that doesn't inherit from the nearest ancestor.`,
         ``,
         `File:     ${filePath}`,
-        `Ancestor: ${ancestor}`,
+        `Ancestor: ${normalizedAncestor}`,
         ``,
         `Mantra: 1 path, 1 reference.`,
         ``,

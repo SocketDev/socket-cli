@@ -21,7 +21,6 @@ import {
   mergeInProgress,
   normalizePath,
   readFileForScan,
-  runStagedTestsReminder,
   scanAwsKeys,
   scanCrossRepoPaths,
   scanDocsPnpmFirst,
@@ -619,30 +618,13 @@ const main = (): number => {
     return 1
   }
 
-  // Staged-test reminder — NON-BLOCKING. Runs `vitest related` on the staged
-  // delta and warns if anything fails, so breakage surfaces at the earliest
-  // moment. It never blocks: the fleet cadence allows per-step `--no-verify`
-  // commits and gates tests at the merge (`fix --all` / `check --all` / `test`
-  // before landing). This runs LAST, after the security gate has passed, so a
-  // slow test pass doesn't delay a security-failing commit's feedback.
-  logger.info('Running staged tests (reminder)…')
-  const testFailure = runStagedTestsReminder(
-    stagedFiles,
-    repoTopline || process.cwd(),
-  )
-  if (testFailure) {
-    logger.warn('Staged tests are failing — run before landing:')
-    for (const line of testFailure.split('\n').slice(-12)) {
-      logger.info(line)
-    }
-    logger.warn(
-      'Not blocking this commit (fleet cadence gates tests at the merge), ' +
-        'but fix these before `fix --all` / `check --all` / `test` + push.',
-    )
-  }
-
+  // Staged tests are run ONCE, by the shell hook's bounded `run_step_bounded
+  // test pnpm test --staged` step (PRECOMMIT_STEP_BUDGET_S) — not here. Running
+  // them in this security pass too meant the staged delta was tested twice, and
+  // this pass used the old 60s ceiling, which is what blew the ≤10s pre-commit
+  // budget. The single bounded shell step keeps the commit fast.
   logger.success('All security checks passed!')
   return 0
 }
 
-process.exit(main())
+process.exitCode = main()

@@ -25,11 +25,11 @@
 // Bypass (per call): user types `Allow async-spawn bypass`.
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 import { isRepoTestHome } from '../_shared/repo-test-home.mts'
-import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 const logger = getDefaultLogger()
 
@@ -60,35 +60,36 @@ const CHILD_PROCESS_REQUIRE_RE =
  * each carries an `oxlint-disable socket/prefer-async-spawn` documenting it.
  */
 export function isExemptPath(filePath: string): boolean {
+  const normalizedFilePath = normalizePath(filePath)
   return (
-    normalizePath(filePath).includes('/_internal/') ||
-    normalizePath(filePath).includes('/dist/') ||
-    normalizePath(filePath).includes('/build/') ||
-    normalizePath(filePath).includes('/node_modules/') ||
-    normalizePath(filePath).includes(
+    normalizedFilePath.includes('/_internal/') ||
+    normalizedFilePath.includes('/dist/') ||
+    normalizedFilePath.includes('/build/') ||
+    normalizedFilePath.includes('/node_modules/') ||
+    normalizedFilePath.includes(
       '/.claude/hooks/fleet/prefer-async-spawn-guard/',
     ) ||
     // The two spawn rules live at .config/fleet/oxlint-plugin/fleet/<id>/ (index.mts +
     // test/), embedding the banned execSync/spawnSync shape as rule data; the
     // per-rule dir prefix exempts both files at once.
-    normalizePath(filePath).includes(
+    normalizedFilePath.includes(
       '/.config/fleet/oxlint-plugin/fleet/prefer-async-spawn/',
     ) ||
-    normalizePath(filePath).includes(
+    normalizedFilePath.includes(
       '/.config/fleet/oxlint-plugin/fleet/prefer-spawn-over-execsync/',
     ) ||
-    normalizePath(filePath).includes(
+    normalizedFilePath.includes(
       '/.config/fleet/markdownlint-rules/_shared/wheelhouse-self-skip.',
     ) ||
     // Pre-pnpm bootstrap .mjs provisioners (scripts/fleet/setup/{lib/,*}.mjs):
     // run before node_modules exists, so the lib spawn wrapper isn't importable
     // yet. Scoped to `.mjs` so the dir's `.mts` steps stay guarded.
-    (normalizePath(filePath).includes('/scripts/fleet/setup/') &&
-      filePath.endsWith('.mjs')) ||
+    (normalizedFilePath.includes('/scripts/fleet/setup/') &&
+      normalizedFilePath.endsWith('.mjs')) ||
     // The dep-0 bootstrap (bootstrap/fleet.mjs, bootstrap/prepare.mts) is the
     // fetcher that runs before any dependency exists — same constraint as the
     // setup provisioners above, so the sync builtin is its only spawn option.
-    /(?:^|\/)bootstrap\//.test(filePath) ||
+    /(?:^|\/)bootstrap\//.test(normalizedFilePath) ||
     isRepoTestHome(filePath)
   )
 }
@@ -145,7 +146,11 @@ export const check = editGuard(
         `Use the fleet wrapper instead:\n` +
         `  import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'\n` +
         `Prefer async \`spawn\`; reach for \`spawnSync\` only when sync semantics\n` +
-        `are genuinely required (still from the lib, not the builtin).\n` +
+        `are genuinely required (still from the lib, not the builtin). This holds\n` +
+        `for the LIB spawnSync too — async where the caller can await (subprocess-\n` +
+        `heavy pnpm/npm/git-network calls especially; sync for CLI bootstrap / hot\n` +
+        `loops only, code-style.md). windows-portability flags pnpm-family spawns\n` +
+        `missing \`shell: WIN32\`.\n` +
         `Bypass: type "${BYPASS_PHRASE}".\n`,
     )
   },

@@ -22,11 +22,16 @@
  */
 
 import { existsSync } from 'node:fs'
+import path from 'node:path'
 import process from 'node:process'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { FLEET_CATALOG_YAML, PNPM_WORKSPACE_YAML, REPO_ROOT } from './paths.mts'
+import { applyClaudeMdTrim } from './lib/claude-md-trim.mts'
+import { applyStableAliasReconcile } from './lib/stable-alias.mts'
+import { isMainModule } from './_shared/is-main-module.mts'
 
 const WIN32 = process.platform === 'win32'
 const logger = getDefaultLogger()
@@ -118,6 +123,55 @@ async function main(): Promise<void> {
     })
   }
 
+  // `-stable` alias reconcile — deterministic, so it runs before AI. Syncs any
+  // `<name>-stable` catalog alias to its floating base version across the live
+  // workspace + fleet catalog source (+ their template/base sources in the
+  // wheelhouse). Idempotent + writes only on a real desync, so it is safe in
+  // every flow (staged or --all). Pairs with the stable-aliases-match-base check.
+  const reconciled = applyStableAliasReconcile([
+    PNPM_WORKSPACE_YAML,
+    FLEET_CATALOG_YAML,
+    path.join(REPO_ROOT, 'template', 'base', 'pnpm-workspace.yaml'),
+    path.join(
+      REPO_ROOT,
+      'template',
+      'base',
+      '.config',
+      'fleet',
+      'pnpm-workspace.fleet.yaml',
+    ),
+  ])
+  for (let i = 0, { length } = reconciled; i < length; i += 1) {
+    const r = reconciled[i]!
+    const rel = path.relative(REPO_ROOT, r.file)
+    for (let j = 0, jl = r.changed.length; j < jl; j += 1) {
+      const c = r.changed[j]!
+      logger.info(
+        `fix: synced ${rel} '${c.alias}' ${c.aliasVersion} → ${c.baseVersion}`,
+      )
+    }
+  }
+
+  // CLAUDE.md fleet-block trim — deterministic, before AI. The fleet block is
+  // byte-capped; bullets are a terse index whose detail lives in their linked
+  // docs/agents.md page, so when the block is over cap the fix is to trim a
+  // bullet's description, never to defer the rule. Only fires over cap, only on
+  // the fattest doc-linked bullet, and reports each trim. Pairs with the
+  // claude-md-section-size-guard cap gate.
+  const trimmed = applyClaudeMdTrim([
+    path.join(REPO_ROOT, 'CLAUDE.md'),
+    path.join(REPO_ROOT, 'template', 'base', 'CLAUDE.md'),
+  ])
+  for (let i = 0, { length } = trimmed; i < length; i += 1) {
+    const t = trimmed[i]!
+    const rel = path.relative(REPO_ROOT, t.file)
+    for (let j = 0, jl = t.trims.length; j < jl; j += 1) {
+      logger.info(
+        `fix: trimmed ${rel} L${t.trims[j]!.line + 1} (fleet block over cap)`,
+      )
+    }
+  }
+
   // AI-assisted lint fix. Most lint rules ship a deterministic autofix and
   // the lint --fix step above handled them. What remains is the judgment-call
   // set — rule violations whose right rewrite depends on surrounding context
@@ -148,7 +202,11 @@ async function main(): Promise<void> {
   process.exitCode = verifyCode !== 0 ? verifyCode : doctorCode
 }
 
-main().catch((e: unknown) => {
-  logger.error(errorMessage(e))
-  process.exitCode = 1
-})
+// Entrypoint-guarded: importing this module (unit tests of its exported
+// helpers) must not execute the script.
+if (isMainModule(import.meta.url)) {
+  main().catch((e: unknown) => {
+    logger.error(errorMessage(e))
+    process.exitCode = 1
+  })
+}

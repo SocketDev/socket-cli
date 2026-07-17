@@ -30,7 +30,7 @@ When discussing code or an abstraction, **lead with a small snippet or a concret
 
 - Code: show the 1–3 relevant lines (with `file_path:line`) before explaining.
 - A commit/hash: show the short SHA + subject (`018d639c fix(hooks): …`), not "the commit I made."
-- A path: use the **absolute path** with personal segments written as the placeholder form per `personal-path-placeholders`, not a bare basename or "that file" — absolute is unambiguous across worktrees and parallel sessions.
+- A path: use the **absolute path** (`/Users/<user>/projects/<repo>/tools/...`; write personal segments as the `<user>` placeholder per `personal-path-placeholders`), not a bare basename or "that file" — absolute is unambiguous across worktrees and parallel sessions.
 
 ## Pause when told
 

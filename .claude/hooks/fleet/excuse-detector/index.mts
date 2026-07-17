@@ -261,6 +261,49 @@ const PROMISSORY_WAIT_PATTERNS: readonly RegExp[] = [
   /\b(?:i'?ll?\s+)?(?:watch|monitor)\b[^.?!\n]{0,60}\b(?:workflow|run|agent|task|job)\b[^.?!\n]{0,60}\b(?:to completion|finish|complete|land)\b/i,
 ]
 
+// Delegate-wait patterns — UNGATED (no ledger check): a parent ending its
+// turn waiting on a spawned delegate parks forever no matter who else is
+// live, because a delegate cannot SendMessage its parent (the parent is not
+// an addressable agent; the child's message bounces and its report lands
+// only in the orchestrator's notification stream). Each pattern is anchored
+// to a delegate/subagent/child-agent reference so benign forward-looking
+// prose never matches.
+const DELEGATE_WAIT_PATTERNS: readonly RegExp[] = [
+  // "waiting for the delegate's report/reply/result" — parked parent.
+  /\b(?:wait(?:ing)?|park(?:ed|ing)?)\b[^.?!\n]{0,60}\b(?:delegate|sub-?agent|child agent)(?:'s)?\b[^.?!\n]{0,40}\b(?:report|repl(?:y|ies)|message|response|result)/i,
+  // "when/once the subagent reports back / messages me" — report-back that never arrives.
+  /\b(?:delegate|sub-?agent|child agent)\b[^.?!\n]{0,60}\b(?:reports? back|replies|sends? (?:a |its )?(?:message|report)|messages? me)\b/i,
+  // "once the delegate finishes/completes/returns, I'll …" — turn-end deferral to a child.
+  /\b(?:once|when|after) (?:the |my |its )?(?:delegate|sub-?agent|child agent)\b[^.?!\n]{0,60}\b(?:finish|complet|report|repl|return)/i,
+  // "awaiting/expecting a SendMessage" — the exact mechanism that bounces.
+  /\b(?:await|expect)(?:ing)?\b[^.?!\n]{0,40}\bsendmessage\b/i,
+]
+
+/**
+ * Scan text for delegate report-back waits. Ungated: these park the parent
+ * in every context. The remedy is the report-back contract from
+ * docs/agents.md/fleet/agent-delegation.md — foreground Agent calls return
+ * the child's final text as the tool result; background delegates re-invoke
+ * the spawner on completion; anything else means the parent polls the
+ * delegate's output (or re-runs verification itself) before ending the turn.
+ */
+export function delegateWaitHits(text: string): readonly ReminderHit[] {
+  const hits: ReminderHit[] = []
+  for (let i = 0, { length } = DELEGATE_WAIT_PATTERNS; i < length; i += 1) {
+    const re = DELEGATE_WAIT_PATTERNS[i]!
+    const m = re.exec(text)
+    if (m) {
+      const snippet = m[0].length > 80 ? m[0].slice(0, 77) + '…' : m[0]
+      hits.push({
+        label: 'ending the turn on a delegate report-back',
+        why: "A delegate cannot SendMessage its parent — the parent is not addressable and the message bounces. Report-back contract (docs/agents.md/fleet/agent-delegation.md): a foreground Agent call returns the child's final text as the tool result; a background delegate re-invokes you on completion; otherwise poll the delegate's output or re-run the verification yourself. Do that now instead of ending the turn waiting.",
+        snippet,
+      })
+    }
+  }
+  return hits
+}
+
 /**
  * Scan text for promissory-wait phrases. Returns hits only when a live foreign
  * actor is confirmed in the ledger (gated). When no live actor is present,
@@ -309,7 +352,7 @@ export const check = async (payload: ToolCallPayload): Promise<GuardResult> => {
     projectDir,
   )
   const hits = await scanReminderText(text, PATTERNS, relayedUnverifiedClaims)
-  const allHits = [...hits, ...promissoryHits]
+  const allHits = [...hits, ...promissoryHits, ...delegateWaitHits(text)]
   if (allHits.length === 0) {
     return undefined
   }

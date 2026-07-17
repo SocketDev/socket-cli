@@ -26,8 +26,10 @@ import process from 'node:process'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
+import { SOAK_DAYS } from './constants/soak.mts'
 import { SOCKET_SCOPES } from './constants/socket-scopes.mts'
-import { REPO_ROOT } from './paths.mts'
+import { FLEET_CATALOG_YAML, PNPM_WORKSPACE_YAML, REPO_ROOT } from './paths.mts'
+import { applyStableAliasReconcile } from './lib/stable-alias.mts'
 import { collectPackumentFailures } from './lib/taze-output.mts'
 import { scanRepoForTelemetry } from './lib/telemetry-scan.mts'
 
@@ -109,8 +111,10 @@ const steps: Step[] = [
     cmd: path.join(REPO_ROOT, 'node_modules', '.bin', 'taze'),
     tazePass: true,
   },
-  /* Pass 3 — resync lockfile against the updated package.json. */
-  { args: ['install'], cmd: 'pnpm', tazePass: false },
+  // The lockfile resync (`pnpm install`) runs AFTER the `-stable` alias
+  // reconcile below — a Socket bump in pass 2 moves the base version, and the
+  // matching `<name>-stable` alias must track it before the lockfile is
+  // regenerated, else the lockfile pins the alias to the stale build.
 ]
 
 const uncheckedPackages = new Set<string>()
@@ -158,7 +162,92 @@ if (process.exitCode !== 1 && uncheckedPackages.size > 0) {
   process.exitCode = 1
 }
 
-// Pass 4 — fail-closed telemetry scan. An update may have pulled a telemetry /
+// Pass 3a — reconcile `-stable` aliases, THEN resync the lockfile. A pass-2
+// Socket bump moves the floating base (`@socketsecurity/lib: 6.0.10`); the
+// pinned alias (`@socketsecurity/lib-stable: 'npm:@socketsecurity/lib@…'`) must
+// track it or `-stable` imports resolve the stale build. Reconcile the live
+// workspace + fleet catalog source (+ their template/base sources in the
+// wheelhouse) before `pnpm install` regenerates the lockfile. Enforced by
+// scripts/fleet/check/stable-aliases-match-base.mts.
+if (process.exitCode !== 1) {
+  const catalogFiles = [
+    PNPM_WORKSPACE_YAML,
+    FLEET_CATALOG_YAML,
+    path.join(REPO_ROOT, 'template', 'base', 'pnpm-workspace.yaml'),
+    path.join(
+      REPO_ROOT,
+      'template',
+      'base',
+      '.config',
+      'fleet',
+      'pnpm-workspace.fleet.yaml',
+    ),
+  ]
+  const reconciled = applyStableAliasReconcile(catalogFiles)
+  for (let i = 0, { length } = reconciled; i < length; i += 1) {
+    const r = reconciled[i]!
+    const rel = path.relative(REPO_ROOT, r.file)
+    for (let j = 0, jl = r.changed.length; j < jl; j += 1) {
+      const c = r.changed[j]!
+      logger.info(
+        `update: synced ${rel} '${c.alias}' ${c.aliasVersion} → ${c.baseVersion} (tracking base '${c.base}')`,
+      )
+    }
+  }
+  const { ok } = await run('pnpm', ['install'])
+  if (!ok) {
+    process.exitCode = process.exitCode || 1
+  }
+}
+
+// Pass 4 — multi-ecosystem soak-aware plans. Beyond npm, a repo may carry Rust
+// (Cargo.toml), Go (go.mod), Docker (Dockerfile) deps, pin a Node runtime
+// version, or install tools via Homebrew — which has no soak of its own, so the
+// brew runner adds one by discovering the repo's `brew install` sites (CI +
+// scripts) and age-checking each formula/cask/tap against its tap-commit date.
+// The node runner age-checks the pinned Node release against its published
+// date the same way. Each runner self-detects
+// its OWN manifests/sites (skipping vendored trees) and, in its default
+// dry-plan mode, prints the soak-cleared updates it WOULD apply — no ecosystem
+// toolchain is needed to plan. Applying stays a deliberate per-ecosystem step
+// (`node scripts/fleet/update/<eco>.mts --soak-days N --apply|--fix`) because it
+// needs that toolchain + network. A planner miss (blocked proxy/registry,
+// absent manifest) is non-fatal to the npm update: it warns and moves on.
+// SOAK_DAYS is the one fleet soak window — the same value taze's maturityPeriod
+// and pnpm's minimumReleaseAge derive from. Network goes through tazeEnv() so it
+// works behind the Socket Firewall, exactly like the taze passes above.
+if (process.exitCode !== 1) {
+  const ecosystems = ['brew', 'cargo', 'docker', 'go', 'node']
+  for (let i = 0, { length } = ecosystems; i < length; i += 1) {
+    const eco = ecosystems[i]!
+    const runner = path.join(
+      REPO_ROOT,
+      'scripts',
+      'fleet',
+      'update',
+      `${eco}.mts`,
+    )
+    logger.info(
+      `update/${eco}: planning soak-cleared updates (soak ${SOAK_DAYS}d)…`,
+    )
+    const priorExit = process.exitCode
+    const { ok } = await run(process.execPath, [
+      runner,
+      '--soak-days',
+      String(SOAK_DAYS),
+    ])
+    if (!ok) {
+      // Restore the pre-plan exit code: an ecosystem planner miss must not fail
+      // the npm update. Applying is where a hard failure matters, not planning.
+      process.exitCode = priorExit
+      logger.warn(
+        `update/${eco}: planner exited non-zero (non-fatal; see output above).`,
+      )
+    }
+  }
+}
+
+// Pass 5 — fail-closed telemetry scan. An update may have pulled a telemetry /
 // analytics SDK (Sentry/PostHog/Segment/Datadog/OTEL-SDK/langfuse/…) into the
 // refreshed lockfile. Scan the post-update dep surface; if anything unreviewed
 // appears, FAIL loudly so it can't land silently — the operator's "never

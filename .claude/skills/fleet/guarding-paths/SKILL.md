@@ -1,6 +1,6 @@
 ---
 name: guarding-paths
-description: Audits and fixes path duplication in a Socket repo. Applies the strict "1 path, 1 reference" rule: every build/test/runtime/config path is constructed exactly once; everywhere else references the constructed value. Default mode finds and fixes; `check` mode reports only; `install` mode drops the gate + hook + rule into a fresh repo. Use when path drift surfaces from `pnpm check`, when a new sibling package needs path conventions, or when bootstrapping a fresh Socket repo.
+description: Enforce one constructed path per concern; audit and fix duplicated build, test, runtime, or config paths.
 user-invocable: true
 allowed-tools: Task, Read, Edit, Write, Grep, Glob, AskUserQuestion, Bash(pnpm run check:*), Bash(node scripts/fleet/check/paths-are-canonical.mts:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(git:*)
 model: claude-haiku-4-5

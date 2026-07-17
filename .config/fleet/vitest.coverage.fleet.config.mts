@@ -9,6 +9,7 @@
 
 import { existsSync, readFileSync } from 'node:fs'
 
+import { getCI } from '@socketsecurity/lib-stable/env/ci'
 import type { CoverageOptions } from 'vitest/node'
 
 /**
@@ -41,7 +42,16 @@ export const baseFleetCoverageConfig: CoverageOptions = {
   ignoreClassMethods: ['constructor'],
   include: ['src/**/*.{ts,mts,cts}', '!src/external/**'],
   provider: 'v8',
-  reporter: ['text', 'json', 'json-summary', 'html', 'lcov', 'clover'],
+  // Reporters are CI-gated. `json` is always kept — the aggregate merge reads
+  // coverage-final.json — as is the cheap `json-summary` (badge/threshold) and
+  // the `text` console table. The EXPENSIVE artifact reporters (`html` writes
+  // ~one page per source file, `lcov`, `clover`) only earn their keep in CI
+  // (uploaded/inspected there); locally they dominate the coverage run's tail
+  // for output nobody opens. getCI() is the fleet's rewire-aware CI presence
+  // check (truthy for any CI value). CI output is byte-for-byte unchanged.
+  reporter: getCI()
+    ? ['text', 'json', 'json-summary', 'html', 'lcov', 'clover']
+    : ['text', 'json', 'json-summary'],
   skipFull: false,
 }
 

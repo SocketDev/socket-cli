@@ -16,6 +16,8 @@
  *      becomes a concern.
  */
 
+import { AI_TIER } from '@socketsecurity/lib-stable/ai/tier'
+
 import type { AiEffort } from '@socketsecurity/lib-stable/ai/types'
 
 // Rules below need an AI-driven fix because the right rewrite
@@ -100,16 +102,17 @@ export const RULE_MODEL_TIER: Readonly<
 } as unknown as Readonly<Record<string, 'haiku' | 'opus' | 'sonnet'>>
 
 /**
- * Map a tier label to the canonical Claude Code model ID. Centralized here so a
- * global tier bump (Haiku 4.5 → 4.6, Sonnet 4.6 → 5.0, etc.) is a single-file
- * edit and won't drift across the orchestrator + the docs.
+ * Map a tier label to the canonical Claude Code model ID — derived from
+ * socket-lib's AI_TIER ladder (`@socketsecurity/lib-stable/ai/tier`), so a
+ * global tier bump lands in ONE place (socket-lib) and every orchestrator
+ * follows on the next lib-stable install.
  */
 export const TIER_MODEL: Readonly<Record<'haiku' | 'opus' | 'sonnet', string>> =
   {
     __proto__: null,
-    haiku: 'claude-haiku-4-5',
-    sonnet: 'claude-sonnet-4-6',
-    opus: 'claude-opus-4-8',
+    haiku: AI_TIER.haiku.model,
+    sonnet: AI_TIER.sonnet.model,
+    opus: AI_TIER.opus.model,
   } as Readonly<Record<'haiku' | 'opus' | 'sonnet', string>>
 
 /**
@@ -128,9 +131,9 @@ export const TIER_EFFORT: Readonly<
   Record<'haiku' | 'opus' | 'sonnet', AiEffort>
 > = {
   __proto__: null,
-  haiku: 'low',
-  sonnet: 'medium',
-  opus: 'high',
+  haiku: AI_TIER.haiku.effort,
+  sonnet: AI_TIER.sonnet.effort,
+  opus: AI_TIER.opus.effort,
 } as unknown as Readonly<Record<'haiku' | 'opus' | 'sonnet', AiEffort>>
 
 /**

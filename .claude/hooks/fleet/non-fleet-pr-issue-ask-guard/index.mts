@@ -34,13 +34,17 @@
 // dir, or the remote): better to under-block than to wedge a
 // legitimate fleet PR/issue when the shape is unfamiliar.
 
-import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
-import { isFleetRepo, slugFromRemoteUrl } from '../_shared/fleet-repos.mts'
+import {
+  acceptedScopedBypassPhrases,
+  isFleetRepo,
+  originSlug,
+} from '../_shared/fleet-repos.mts'
 import { extractGitCwd } from '../_shared/git-cwd.mts'
-import { commandsFor } from '../_shared/shell-command.mts'
+import { commandsFor, flagValue } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
+
+import type { Command } from '../_shared/shell-command.mts'
 
 // Bare, session-wide form (kept as a fallback). The scoped form is
 // preferred — it names the exact repo so authorization can't leak to an
@@ -50,29 +54,14 @@ const BYPASS_PHRASE_PREFIX = 'Allow non-fleet-publish bypass:'
 
 // Phrases that authorize a publish to this repo: the bare session-wide
 // fallback plus a scoped phrase for every identifier the operator might type
-// (case-preserved `owner/repo`, bare repo name), each in original AND
-// lowercased form — GitHub slugs are case-insensitive, so `PerryTS/perry` and
-// `perryts/perry` both authorize (#45).
+// (case-preserved `owner/repo`, bare repo name) — GitHub slugs are
+// case-insensitive, so `PerryTS/perry` and `perryts/perry` both
+// authorize (#45).
 export function acceptedBypassPhrases(
   targets: ReadonlyArray<string | undefined>,
 ): string[] {
-  const forms = new Set<string>()
-  for (let i = 0, { length } = targets; i < length; i += 1) {
-    const t = targets[i]
-    if (t) {
-      forms.add(t)
-      forms.add(t.toLowerCase())
-    }
-  }
-  const out = [BYPASS_PHRASE]
-  for (const form of forms) {
-    out.push(`${BYPASS_PHRASE_PREFIX} ${form}`)
-  }
-  return out
+  return acceptedScopedBypassPhrases(BYPASS_PHRASE, targets)
 }
-
-const GH_DASH_REPO_RE =
-  /--repo[\s=]+(?:"(?<dq>[^"]+)"|'(?<sq>[^']+)'|(?<bare>\S+))/
 
 // gh subcommands that publish public-facing content. `release create`
 // is also in the harness deny list, but the hook layer here catches
@@ -84,32 +73,27 @@ const PUBLIC_SURFACE_SUBCOMMANDS = [
   ['release', 'create'],
 ] as const
 
-export function extractGhTargetRepo(command: string): string | undefined {
-  const m = GH_DASH_REPO_RE.exec(command)
-  if (m) {
-    return m.groups?.dq ?? m.groups?.sq ?? m.groups?.bare
-  }
-  return undefined
+// True when a parsed `gh` segment is one of the publishing subcommands.
+export function isPublicGhCmd(c: Command): boolean {
+  return PUBLIC_SURFACE_SUBCOMMANDS.some(
+    pair => c.args[0] === pair[0] && c.args[1] === pair[1],
+  )
 }
 
-function originSlugFromCwd(dir: string): string | undefined {
-  try {
-    const r = spawnSync('git', ['-C', dir, 'remote', 'get-url', 'origin'], {
-      stdio: ['ignore', 'pipe', 'ignore'],
-      encoding: 'utf8',
-      timeout: 5000,
-    })
-    if (r.status !== 0) {
-      return undefined
+// The `--repo` / `-R` target of a publishing gh segment, read from the
+// segment's PARSED args (never a regex over the raw command string, where a
+// quoted "--repo x" inside a title or heredoc body would false-match).
+export function extractGhTargetRepo(command: string): string | undefined {
+  for (const c of commandsFor(command, 'gh')) {
+    if (!isPublicGhCmd(c)) {
+      continue
     }
-    /* c8 ignore next - spawnSync with encoding:'utf8' always returns a string stdout */
-    const url = (r.stdout ?? '').trim()
-    return slugFromRemoteUrl(url)
-    /* c8 ignore start - catch only reachable if spawnSync throws (e.g. git binary missing), not reproducible in the standard test env */
-  } catch {
-    return undefined
+    const value = flagValue(c.args, '--repo', '-R')
+    if (value !== undefined) {
+      return value
+    }
   }
-  /* c8 ignore stop */
+  return undefined
 }
 
 // Identifies the gh subcommand. Returns the matching
@@ -147,7 +131,7 @@ export const check = bashGuard((command, payload) => {
     slug = dashRepo
   } else {
     const cwd = extractGitCwd(command)
-    slug = originSlugFromCwd(cwd)
+    slug = originSlug(cwd)
   }
   if (!slug) {
     // Fail open — can't determine target. The user gets the gh

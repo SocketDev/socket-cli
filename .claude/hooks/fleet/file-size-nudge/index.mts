@@ -28,6 +28,8 @@
 
 import { existsSync, readFileSync, statSync } from 'node:fs'
 
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
@@ -154,8 +156,9 @@ interface SizeHit {
 }
 
 export function isExempt(absPath: string): boolean {
+  const normalizedPath = normalizePath(absPath)
   for (let i = 0, { length } = SKIP_PATH_SUBSTRINGS; i < length; i += 1) {
-    if (absPath.includes(SKIP_PATH_SUBSTRINGS[i]!)) {
+    if (normalizedPath.includes(SKIP_PATH_SUBSTRINGS[i]!)) {
       return true
     }
   }

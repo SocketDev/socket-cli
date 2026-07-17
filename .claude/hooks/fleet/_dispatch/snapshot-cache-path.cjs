@@ -16,8 +16,8 @@
 //     #ifdef NODE_IMPLEMENTS_POSIX_CREDENTIALS        // L55 — POSIX only
 //       tag += "-" + std::to_string(getuid())         // decimal; OMITTED on Windows
 
-const os = require('node:os')
 const path = require('node:path')
+const fs = require('node:fs')
 const v8 = require('node:v8')
 
 // 8 lowercase zero-padded hex, matching Node's Uint32ToHex() — nodejs/node
@@ -39,11 +39,46 @@ function versionTag() {
   return `${process.version}-${process.arch}-${v8Tag()}${uid}`
 }
 
-// Same ephemeral home as Node's compile cache (os.tmpdir()/node-compile-cache/
-// <tag>), under a sibling name so the two never collide. tmpdir is machine-local
-// and self-reaping, so blobs need no gitignore and pollute no repo tree.
+// Durable per-runtime store under the repo's `node_modules/.cache/` (the fleet
+// runtime-state home for dep-0 code): git-ignored (node_modules is), out of the
+// tracked tree, and — unlike `os.tmpdir()` — NOT reaped by the OS on a timer.
+// tmpdir reaping silently drops the blob, and while the launcher then fail-opens
+// to index.cjs (correct, ~13-16ms slower), the fast path never survived a temp
+// sweep. node_modules/.cache persists until an explicit node_modules rebuild, at
+// which point the next hook-bundle build regenerates the blob; a missing blob is
+// never an error (launcher fail-opens, builder recreates). Build-time only — the
+// launcher reads the frozen snapshot-blob.path sidecar, never this module.
+//
+// Walk to the workspace marker instead of assuming this file has a fixed depth:
+// the canonical template copy lives below template/base/, while the dogfooded
+// copy lives directly below the repo root. Both must share the real repo cache.
+function findRepoRoot(start) {
+  let dir = start
+  for (let i = 0; i < 10; i += 1) {
+    if (fs.existsSync(path.join(dir, 'pnpm-workspace.yaml'))) {
+      return dir
+    }
+    const parent = path.dirname(dir)
+    if (parent === dir) {
+      break
+    }
+    dir = parent
+  }
+  return undefined
+}
+
 function snapshotCacheDir() {
-  return path.join(os.tmpdir(), 'node-snapshot-cache', versionTag())
+  const repoRoot = findRepoRoot(__dirname)
+  if (!repoRoot) {
+    throw new Error('Cannot locate the fleet workspace root')
+  }
+  return path.join(
+    repoRoot,
+    'node_modules',
+    '.cache',
+    'node-snapshot-cache',
+    versionTag(),
+  )
 }
 
 // Per-blob filename is content-addressed on the entry's source hash, so editing
@@ -55,4 +90,4 @@ function blobPath(entryId, sourceHash) {
   return path.join(snapshotCacheDir(), `${entryId}-${sourceHash}.blob`)
 }
 
-module.exports = { v8Tag, versionTag, snapshotCacheDir, blobPath }
+module.exports = { v8Tag, versionTag, findRepoRoot, snapshotCacheDir, blobPath }

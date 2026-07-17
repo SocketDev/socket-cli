@@ -27,6 +27,7 @@ import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
+import { isMainModule } from '../_shared/is-main-module.mts'
 import { loadPricing } from '../estimate-ai-cost.mts'
 import { REPO_ROOT } from '../paths.mts'
 
@@ -174,4 +175,6 @@ function main(): void {
   }
 }
 
-main()
+if (isMainModule(import.meta.url)) {
+  void main()
+}

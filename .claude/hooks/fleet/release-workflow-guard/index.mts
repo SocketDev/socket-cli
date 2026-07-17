@@ -84,7 +84,14 @@ import {
   runHook,
 } from '../_shared/guard.mts'
 import { commandsFor, parseCommands } from '../_shared/shell-command.mts'
-import { bypassPhraseRemaining } from '../_shared/transcript.mts'
+import {
+  extractTurnPieces,
+  normalizeBypassText,
+  phrasePattern,
+  resolveRoleAndContent,
+  stripCodeFences,
+  stripQuotedSpans,
+} from '../_shared/transcript.mts'
 
 // Pre-flight triggers: the dispatcher imports + runs this guard only when the
 // raw command contains at least one of these substrings. They mirror
@@ -129,7 +136,6 @@ export const triggers: readonly string[] = ['dispatches', 'workflow']
 // instead the test "is this phrase present AFTER my last dispatch
 // of this workflow" answers it. See `findUnclaimedBypassPhrase`.
 const BYPASS_PHRASE_PREFIX = 'Allow workflow-dispatch bypass:'
-const BYPASS_LOOKBACK_USER_TURNS = 8
 
 /**
  * Build the canonical phrase variants that authorize ONE dispatch of
@@ -171,6 +177,11 @@ export function countPriorDispatches(
   const accepted = new Set([workflow, workflow.replace(/\.(?:yaml|yml)$/i, '')])
   let count = 0
   const lines = raw.split('\n')
+  // First pass: tool_use ids whose tool_result was a PreToolUse hook denial.
+  // A DENIED dispatch never reached GitHub, so it must not consume a bypass
+  // slot — without this, blocked attempts eat every future phrase and the
+  // budget can never go positive again.
+  const deniedIds = collectHookDeniedToolUseIds(lines)
   for (let i = 0, { length } = lines; i < length; i += 1) {
     const line = lines[i]!
     if (!line) {
@@ -215,6 +226,10 @@ export function countPriorDispatches(
       if (typeof cmd !== 'string') {
         continue
       }
+      const id = b['id']
+      if (typeof id === 'string' && deniedIds.has(id)) {
+        continue
+      }
       const dispatch = detectDispatch(cmd)
       if (dispatch.workflow && accepted.has(dispatch.workflow)) {
         count += 1
@@ -222,6 +237,159 @@ export function countPriorDispatches(
     }
   }
   return count
+}
+
+// Chronological credit/debit ledger over the whole transcript: each accepted
+// phrase OCCURRENCE in a user turn adds one credit; each PRIOR non-denied
+// dispatch of the same workflow consumes one (floored at zero, so a dispatch
+// that ran outside this gate — web UI, user terminal — never eats a future
+// credit). Windowing phrases while counting dispatches unwindowed was the
+// prior design's defect: as phrases aged out of the window the un-aged
+// dispatch debits ate every fresh phrase, and the budget could never go
+// positive again.
+export function dispatchLedgerRemaining(
+  transcriptPath: string | undefined,
+  phrases: readonly string[],
+  workflow: string,
+): number {
+  if (!transcriptPath || !workflow) {
+    return 0
+  }
+  let raw: string
+  try {
+    raw = readFileSync(transcriptPath, 'utf8')
+  } catch {
+    return 0
+  }
+  const lines = raw.split('\n')
+  const deniedIds = collectHookDeniedToolUseIds(lines)
+  // oxlint-disable-next-line socket/sort-set-args -- two derived forms of one workflow name; membership order is immaterial.
+  const accepted = new Set([workflow, workflow.replace(/\.(?:yaml|yml)$/i, '')])
+  const needles = phrases.map(p => normalizeBypassText(p))
+  let credits = 0
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
+    if (!line) {
+      continue
+    }
+    let evt: unknown
+    try {
+      evt = JSON.parse(line)
+    } catch {
+      continue
+    }
+    const r = resolveRoleAndContent(evt)
+    if (r?.role === 'user' && !r.isSidechain) {
+      const pieces = extractTurnPieces(r.content)
+      if (pieces.length) {
+        const haystack = normalizeBypassText(
+          stripQuotedSpans(stripCodeFences(pieces.join('\n'))),
+        )
+        // One credit per typed phrase occurrence. A needle set holds
+        // VARIANTS of the same phrase (exact, extension-stripped), so one
+        // typed phrase can match several needles — take the max occurrence
+        // count across needles instead of summing, or a single phrase
+        // would mint multiple credits.
+        let occurrences = 0
+        for (
+          let j = 0, needlesLength = needles.length;
+          j < needlesLength;
+          j += 1
+        ) {
+          const matched = haystack.match(phrasePattern(needles[j]!))
+          if (matched && matched.length > occurrences) {
+            occurrences = matched.length
+          }
+        }
+        credits += occurrences
+      }
+      continue
+    }
+    if ((evt as Record<string, unknown>)['type'] !== 'assistant') {
+      continue
+    }
+    const message = (evt as Record<string, unknown>)['message']
+    const content =
+      message && typeof message === 'object'
+        ? (message as Record<string, unknown>)['content']
+        : undefined
+    if (!Array.isArray(content)) {
+      continue
+    }
+    for (let j = 0, blocksLen = content.length; j < blocksLen; j += 1) {
+      const block = content[j]
+      if (!block || typeof block !== 'object') {
+        continue
+      }
+      const b = block as Record<string, unknown>
+      if (b['type'] !== 'tool_use' || b['name'] !== 'Bash') {
+        continue
+      }
+      const cmd = (b['input'] as Record<string, unknown> | undefined)?.[
+        'command'
+      ]
+      if (typeof cmd !== 'string') {
+        continue
+      }
+      const id = b['id']
+      if (typeof id === 'string' && deniedIds.has(id)) {
+        continue
+      }
+      const dispatch = detectDispatch(cmd)
+      if (dispatch.workflow && accepted.has(dispatch.workflow)) {
+        credits = credits > 0 ? credits - 1 : 0
+      }
+    }
+  }
+  return credits
+}
+
+// Marker every PreToolUse denial carries in its tool_result content. The
+// harness renders hook blocks as `PreToolUse:Bash hook error: …`.
+const HOOK_DENIAL_MARKER = 'PreToolUse:Bash hook error'
+
+export function collectHookDeniedToolUseIds(
+  lines: readonly string[],
+): Set<string> {
+  const denied = new Set<string>()
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
+    if (!line || !line.includes(HOOK_DENIAL_MARKER)) {
+      continue
+    }
+    let evt: unknown
+    try {
+      evt = JSON.parse(line)
+    } catch {
+      continue
+    }
+    const message = (evt as Record<string, unknown> | undefined)?.['message']
+    if (!message || typeof message !== 'object') {
+      continue
+    }
+    const content = (message as Record<string, unknown>)['content']
+    if (!Array.isArray(content)) {
+      continue
+    }
+    for (let j = 0, blocksLen = content.length; j < blocksLen; j += 1) {
+      const block = content[j]
+      if (!block || typeof block !== 'object') {
+        continue
+      }
+      const b = block as Record<string, unknown>
+      if (b['type'] !== 'tool_result') {
+        continue
+      }
+      const toolUseId = b['tool_use_id']
+      if (
+        typeof toolUseId === 'string' &&
+        JSON.stringify(b['content'] ?? '').includes(HOOK_DENIAL_MARKER)
+      ) {
+        denied.add(toolUseId)
+      }
+    }
+  }
+  return denied
 }
 
 // Flags on `gh workflow run/dispatch` that take a value argument — so
@@ -696,16 +864,10 @@ export const check = bashGuard((command, payload) => {
   // dispatch consumes one slot and is allowed.
   /* c8 ignore next - workflow is always defined when detectDispatch returns blocked:true; defensive guard for future code paths */
   if (workflow) {
-    const acceptedPhrases = buildAcceptedPhrases(workflow)
-    const priorDispatches = countPriorDispatches(
+    const remaining = dispatchLedgerRemaining(
       payload.transcript_path,
+      buildAcceptedPhrases(workflow),
       workflow,
-    )
-    const remaining = bypassPhraseRemaining(
-      payload.transcript_path,
-      acceptedPhrases,
-      priorDispatches,
-      BYPASS_LOOKBACK_USER_TURNS,
     )
     if (remaining > 0) {
       return notify(

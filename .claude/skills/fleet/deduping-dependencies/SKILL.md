@@ -1,6 +1,6 @@
 ---
 name: deduping-dependencies
-description: Reduce duplicate installs across the fleet through safe pnpm overrides, @socketregistry hardened drop-ins, and compatibility patches. Packages the dedup decision tree (collapse / scope / force-ESM-for-bundling / patch-for-compat), the mandatory consumer-grep verification, and the cross-repo frozen-lockfile safety gate. Use on the weekly-update cadence, during a tidying/cleaning pass, or whenever the lockfile carries duplicate majors of a package.
+description: Reduce duplicate dependency installs with safe overrides, hardened drop-ins, patches, and consumer checks.
 user-invocable: true
 allowed-tools: Bash(node:*), Bash(git:*), Bash(grep:*), Bash(rg:*), Bash(ls:*), Bash(pnpm install:*), Bash(pnpm patch:*), Bash(pnpm patch-commit:*), Read, Edit, Write
 model: claude-sonnet-4-6

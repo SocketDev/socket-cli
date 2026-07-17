@@ -265,7 +265,12 @@ export function resolveReal(cmd) {
     d => d && d !== BIN_DIR,
   )
   const exts = IS_WINDOWS
-    ? (process.env.PATHEXT ?? '.COM;.EXE;.BAT;.CMD').split(';').filter(Boolean)
+    ? [
+        '',
+        ...(process.env.PATHEXT ?? '.COM;.EXE;.BAT;.CMD')
+          .split(';')
+          .filter(Boolean),
+      ]
     : ['']
   for (let i = 0, { length } = dirs; i < length; i += 1) {
     for (let j = 0, { length: extLen } = exts; j < extLen; j += 1) {

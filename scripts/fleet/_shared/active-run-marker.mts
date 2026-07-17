@@ -81,3 +81,28 @@ export function unregisterActiveRun(options?: MarkerOptions | undefined): void {
     rmSync(file, { force: true })
   }
 }
+
+/**
+ * True when another live process has a registered active run. A concurrent
+ * vitest invocation during a coverage run cleans the shared coverage/.tmp
+ * and ENOENTs the outer run's v8 reports (two live incidents on
+ * 2026-07-11), so test runners consult this before starting. The caller's
+ * own pid never counts.
+ */
+export function hasLiveForeignActiveRun(
+  options?: MarkerOptions | undefined,
+): boolean {
+  const opts = { __proto__: null, ...options }
+  const dir = activeRunsDir(opts.homeDir)
+  if (!existsSync(dir)) {
+    return false
+  }
+  const self = opts.pid ?? process.pid
+  for (const entry of readdirSync(dir)) {
+    const pid = Number(entry)
+    if (pid !== self && pidIsAlive(pid)) {
+      return true
+    }
+  }
+  return false
+}

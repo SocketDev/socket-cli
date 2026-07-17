@@ -24,6 +24,8 @@
 //
 // Exit codes: 0 — pass; 2 — block. Fails open on malformed payloads.
 
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+
 import {
   block,
   defineHook,
@@ -32,7 +34,6 @@ import {
   runHook,
 } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
-import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 const BYPASS_PHRASE = 'Allow env-kill-switch bypass'
 
@@ -67,9 +68,11 @@ export function findKillSwitches(text: string): Finding[] {
 }
 
 export function isHookIndexPath(filePath: string): boolean {
+  const normalizedFilePath = normalizePath(filePath)
   return (
-    /\/\.claude\/hooks\/(?:fleet|repo)\/[^/]+\/index\.mts$/.test(filePath) &&
-    !normalizePath(filePath).includes('/node_modules/')
+    /\/\.claude\/hooks\/(?:fleet|repo)\/[^/]+\/index\.mts$/.test(
+      normalizedFilePath,
+    ) && !normalizedFilePath.includes('/node_modules/')
   )
 }
 

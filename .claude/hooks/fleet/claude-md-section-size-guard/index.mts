@@ -297,6 +297,17 @@ export const check = editGuard((filePath, content, payload) => {
           "  leave room for each repo's own section under the 40 KB total. Trim a",
           '  rule bullet to its 1-line invariant and move detail to its',
           '  docs/agents.md/fleet/<topic>.md page.',
+          '',
+          '  DOCTRINE: a full block is a TRIM signal, never a DEFER signal. When',
+          '  promoting a rule, free room by trimming an existing bullet’s inline',
+          '  detail into its doc — do NOT hold up (defer / down-scope) the new rule',
+          '  because the block is at cap. Trimming an over-cap block is exempt',
+          '  from this guard, so the trim + the promotion can land together.',
+          '',
+          '  Deterministic trim: `node scripts/fleet/trim-claude-md.mts --apply`',
+          '  (also auto-runs in `pnpm run fix`) drops the last `; `-clause of the',
+          '  fattest doc-linked bullet until the block fits — its detail already',
+          '  lives in the linked doc.',
         ].join('\n'),
       )
     }

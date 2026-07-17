@@ -1,6 +1,6 @@
 ---
 name: updating-daily
-description: Daily fleet-repo maintenance that promotes soak-cleared dependency exclusions. Runs check-soak-excludes-have-dates --fix to drop minimumReleaseAgeExclude entries whose 7-day soak has passed, then reconciles the lockfile. Sibling of updating-coverage / updating-security / updating-lockstep under the updating umbrella; the lightweight daily counterpart to the weekly /updating run.
+description: Promote soak-cleared dependency exclusions, drop expired dates, and reconcile the lockfile.
 user-invocable: true
 allowed-tools: Read, Bash(node scripts/fleet/check/soak-excludes-have-dates.mts:*), Bash(pnpm install:*), Bash(git:*)
 model: claude-haiku-4-5

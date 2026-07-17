@@ -21,10 +21,10 @@
 
 import { readFileSync, writeFileSync } from 'node:fs'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { PNPM_WORKSPACE_YAML } from './paths.mts'
 import { fetchPackagePublishDate } from './registry-publish-date.mts'
+import { isMainModule } from './_shared/is-main-module.mts'
 
 const SOAK_DAYS = 7
 
@@ -173,6 +173,6 @@ async function main(): Promise<void> {
 
 // Run only when invoked directly (CLI), not when imported by unit tests —
 // main() calls process.exit, which would tear down the test runner.
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   main()
 }

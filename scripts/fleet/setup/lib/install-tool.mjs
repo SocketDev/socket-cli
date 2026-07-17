@@ -140,7 +140,11 @@ async function main() {
   let extractArgs
   if (lower.endsWith('.tar.gz') || lower.endsWith('.tgz')) {
     extractCmd = 'tar'
-    extractArgs = ['xzf', archivePath, '-C', destDir]
+    // Run inside the destination and pass a local basename. Git for Windows'
+    // tar treats an absolute `D:\\...` archive path as `host:path` and tries
+    // to connect to a host named D; the basename is portable across GNU tar,
+    // bsdtar, and the tar bundled with Git for Windows.
+    extractArgs = ['xzf', assetName]
   } else if (lower.endsWith('.zip')) {
     if (process.platform === 'win32') {
       extractCmd = 'powershell'
@@ -156,7 +160,10 @@ async function main() {
   }
 
   if (extractCmd) {
-    const r = spawnSync(extractCmd, extractArgs, { stdio: 'inherit' })
+    const r = spawnSync(extractCmd, extractArgs, {
+      cwd: destDir,
+      stdio: 'inherit',
+    })
     if (r.status !== 0) {
       // oxlint-disable-next-line socket/no-console-prefer-logger -- pre-setup-node action; @socketsecurity/lib-stable not installed yet.
       console.error(`× extraction failed: ${extractCmd} exited ${r.status}`)

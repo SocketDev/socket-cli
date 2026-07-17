@@ -5,6 +5,13 @@
 // vault, aws sso, docker, socket, …) so stale long-lived tokens don't
 // sit in dotfiles or keychains for days.
 //
+// Rotation is IDLE-based, not elapsed-based. A state file records the
+// LAST Stop event; every Stop is treated as activity and resets that
+// clock. Rotation fires only once the session has sat IDLE — no Stop —
+// for >= the configured idle timeout. A continuously active session
+// (Stops minutes apart) keeps resetting the clock and never rotates
+// mid-work; only genuine inactivity counts toward the timeout.
+//
 // Behavior on each Stop event:
 //
 //   1. Drain stdin (Stop hook delivers a JSON payload we don't need).
@@ -13,13 +20,16 @@
 //      an ISO 8601 expiry on line 1; if past, the file is auto-cleaned
 //      and the hook proceeds. If unexpired, the hook honors the snooze
 //      and exits silently.
-//   4. Throttle via a state file: if the last successful run was within
-//      the configured interval (default 1h), exit silently.
-//   5. For each service in services.mts:
+//   4. Read the idle gap (now − last-activity mtime) from the state
+//      file, then record THIS Stop as activity (touch the file to now).
+//   5. Rotate only when a leak warning was just detected OR the idle gap
+//      is >= the idle timeout (default 1h). The first Stop of a fresh
+//      session (no state file yet) is treated as activity and never
+//      rotates.
+//   6. For each service in services.mts:
 //        a. Skip if the binary is missing and `optional: true`.
 //        b. Run detectCmd. Skip if not authenticated.
 //        c. Run logoutCmd. Surface the result as a notify() line.
-//   6. Update the state file's mtime.
 //
 // The hook NEVER reads, prints, or compares any token value. Detection
 // is exit-code only; logout commands' output is suppressed except for
@@ -34,10 +44,9 @@
 // Configuration env vars (all optional):
 //
 //   SOCKET_AUTH_ROTATION_INTERVAL_HOURS   default: 1
-//     How long between actual auth-rotation runs (state-file throttle).
-//     Set to 0 to run on every Stop event (verbose).
-//
-//     If set to a truthy value, skip the hook entirely.
+//     Idle timeout in hours: how long the session must sit idle (no
+//     Stop events) before the next Stop triggers rotation. Set to 0 to
+//     rotate on every Stop event after the first (verbose).
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import {
@@ -58,6 +67,7 @@ import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
+import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 import {
   readLastAssistantText,
   stripCodeFences,
@@ -71,7 +81,9 @@ const PREFIX = '[auth-rotation-nudge]'
 // ── Paths ───────────────────────────────────────────────────────────
 
 const STATE_DIR = path.join(os.homedir(), '.claude', 'hooks', 'auth-rotation')
-const STATE_FILE = path.join(STATE_DIR, 'last-run')
+// Tracks the LAST Stop event (last activity), not the last rotation — its
+// mtime is the baseline the idle-gap check measures against.
+const STATE_FILE = path.join(STATE_DIR, 'last-activity')
 const GLOBAL_SNOOZE = path.join(STATE_DIR, 'snooze')
 const GLOBAL_SKIP_LIST = path.join(STATE_DIR, 'services-skip')
 
@@ -168,8 +180,8 @@ export function loadSkipIds(): Set<string> {
 // ── Leak detection ──────────────────────────────────────────────────
 
 // Patterns that signal the assistant just announced a token leak in
-// its own output. Bypass the throttle when any of these fire so the
-// rotation happens immediately, not in the next 1h tick.
+// its own output. Rotate immediately when any of these fire — bypassing
+// the idle timeout — instead of waiting for the session to go idle.
 //
 // The patterns target the WARNING text (i.e., what the assistant
 // said about a leak), not the token value itself. token-guard handles
@@ -196,7 +208,7 @@ interface LeakDetection {
 /**
  * Scan the most-recent assistant turn (from the Stop-hook JSON payload's
  * transcript_path) for a leak-warning marker. Returns `triggered: true` when
- * any pattern hits — caller bypasses the throttle and runs rotation
+ * any pattern hits — caller bypasses the idle timeout and runs rotation
  * immediately.
  *
  * Caller passes in the raw stdin payload because `main()` already captured it
@@ -238,8 +250,10 @@ export function detectLeakWarning(stdinPayload: string): LeakDetection {
   return { triggered: false, matchedPattern: undefined }
 }
 
-// ── Throttle ────────────────────────────────────────────────────────
+// ── Idle detection ──────────────────────────────────────────────────
 
+// The configured idle timeout, in milliseconds. The session must sit
+// idle (no Stop events) at least this long before the next Stop rotates.
 export function intervalMs(): number {
   const raw = process.env['SOCKET_AUTH_ROTATION_INTERVAL_HOURS']
   const hours = raw === undefined ? 1 : Number.parseFloat(raw)
@@ -249,20 +263,32 @@ export function intervalMs(): number {
   return Math.round(hours * 60 * 60 * 1000)
 }
 
+// Returns true while the session is still ACTIVE — i.e. rotation should be
+// SKIPPED — and false only once the token has sat idle for >= the timeout.
+//
+// The state file's mtime records the last Stop event (each Stop is
+// activity). A missing state file is the very first Stop of a fresh
+// session: treat it as activity (return true) so the first run never
+// rotates; the caller's touchStateFile() then establishes the baseline.
 export function withinThrottle(): boolean {
-  const interval = intervalMs()
-  if (interval === 0) {
-    return false
-  }
+  // First Stop of a fresh session — no baseline yet, so nothing has been
+  // idle. Skip rotation and let the caller stamp the baseline.
   if (!existsSync(STATE_FILE)) {
+    return true
+  }
+  const idleTimeout = intervalMs()
+  // Idle timeout 0 → every gap counts as "past timeout"; rotate on every
+  // Stop after the first (verbose diagnostic mode).
+  if (idleTimeout === 0) {
     return false
   }
   try {
     const { mtimeMs } = statSync(STATE_FILE)
-    return Date.now() - mtimeMs < interval
+    // Still active while the idle gap is below the timeout.
+    return Date.now() - mtimeMs < idleTimeout
   } catch {
     /* c8 ignore next - statSync only throws if file disappears between existsSync and statSync (TOCTOU race); not testable without FS mocks */
-    return false
+    return true
   }
 }
 
@@ -275,8 +301,9 @@ export function touchStateFile(): void {
     const now = new Date()
     utimesSync(STATE_FILE, now, now)
   } catch {
-    // Throttle is best-effort. Loss = hook runs more often than configured;
-    // not worth surfacing.
+    // Activity stamping is best-effort. Loss = the idle gap looks larger
+    // than it is, so we may rotate sooner than the timeout; not worth
+    // surfacing.
   }
 }
 
@@ -299,7 +326,7 @@ export function isOnPath(binary: string): boolean {
 export function isAuthenticated(s: Service): boolean {
   const r = spawnSync(s.detectCmd[0]!, s.detectCmd.slice(1) as string[], {
     stdio: 'ignore',
-    timeout: 5000,
+    timeout: spawnTimeoutMs(5000),
   })
   return r.status === 0
 }
@@ -310,7 +337,7 @@ export function runLogout(s: Service): {
 } {
   const r = spawnSync(s.logoutCmd[0]!, s.logoutCmd.slice(1) as string[], {
     stdio: 'ignore',
-    timeout: 10_000,
+    timeout: spawnTimeoutMs(10_000),
   })
   if (r.status === 0) {
     return { ok: true }
@@ -321,14 +348,17 @@ export function runLogout(s: Service): {
   return { ok: false, reason: `exit code ${r.status}` }
 }
 
-export function rotateAll(skipIds: Set<string>): RotationResult {
+export function rotateAll(
+  skipIds: Set<string>,
+  serviceList: readonly Service[] = SERVICES,
+): RotationResult {
   const result: RotationResult = {
     loggedOut: [],
     failed: [],
     skippedMissing: [],
   }
-  for (let i = 0, { length } = SERVICES; i < length; i += 1) {
-    const service = SERVICES[i]!
+  for (let i = 0, { length } = serviceList; i < length; i += 1) {
+    const service = serviceList[i]!
     if (skipIds.has(service.id)) {
       continue
     }
@@ -406,20 +436,28 @@ export async function run(stdinPayload: string): Promise<string[]> {
   }
   // Inspect the most-recent assistant turn for a leak-warning marker.
   // When the assistant just said "rotate the token" / "leaked into
-  // transcript", bypass the throttle so rotation runs immediately
-  // instead of waiting for the next 1h tick.
+  // transcript", rotate immediately — bypassing the idle timeout —
+  // instead of waiting for the session to go idle.
   const leak = detectLeakWarning(stdinPayload)
+  // Read the idle gap from the last-activity state file BEFORE recording
+  // this Stop as new activity.
+  const active = withinThrottle()
+  // This Stop IS activity: reset the idle clock regardless of the rotation
+  // decision below. A continuously active session keeps resetting this, so
+  // it never accumulates enough idle time to rotate mid-work.
+  touchStateFile()
   if (leak.triggered) {
     lines.push(
-      `${PREFIX} leak warning detected in assistant output ("${leak.matchedPattern}"); bypassing throttle`,
+      `${PREFIX} leak warning detected in assistant output ("${leak.matchedPattern}"); bypassing idle timeout`,
     )
-  } else if (withinThrottle()) {
+  } else if (active) {
+    // Session still active (idle gap below the timeout) or the first Stop
+    // of a fresh session — nothing to rotate yet.
     return lines
   }
   const skipIds = loadSkipIds()
   const result = rotateAll(skipIds)
   lines.push(...reportRotation(result))
-  touchStateFile()
   return lines
 }
 

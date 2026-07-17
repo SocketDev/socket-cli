@@ -13,13 +13,12 @@
  *   exported so the test drives it without the process-env dependency.
  */
 
-import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { FLEET_ENV } from '../../../.claude/hooks/fleet/_shared/fleet-env.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -70,10 +69,7 @@ async function main(): Promise<void> {
 
 // Entrypoint-guarded so the test imports findUnsetFleetEnv without triggering
 // the process.env read (the check runs as a standalone `node` entrypoint).
-if (
-  process.argv[1] &&
-  fileURLToPath(import.meta.url) === path.resolve(process.argv[1])
-) {
+if (isMainModule(import.meta.url)) {
   main().catch((error: unknown) => {
     logger.fail('telemetry-env-is-disabled check failed:', error)
     process.exitCode = 1

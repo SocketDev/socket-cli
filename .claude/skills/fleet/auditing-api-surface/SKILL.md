@@ -1,6 +1,6 @@
 ---
 name: auditing-api-surface
-description: Audits a lib's published export surface for dead/unconsumed subpaths. For each `package.json#exports` subpath, checks whether any other fleet repo imports it and whether the lib's own `src/` references it, then classifies every subpath (dead / single-consumer / internal-only / consumed) into a ranked report. Read-only — reports prune candidates, never deletes. Use weekly (the `audit-api-surface.lock.yml` gh-aw cron drives it), before a major version bump, or when trimming bundle size on an infra lib.
+description: Audit package exports for dead, internal-only, or weakly-consumed subpaths before pruning or major releases.
 user-invocable: true
 allowed-tools: Read, Grep, Glob, Bash(node:*), Bash(rg:*), Bash(git:*), Bash(gh:*)
 model: claude-haiku-4-5

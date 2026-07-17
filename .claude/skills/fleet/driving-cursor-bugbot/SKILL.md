@@ -1,6 +1,6 @@
 ---
 name: driving-cursor-bugbot
-description: Drives the Cursor Bugbot review-and-fix loop on a PR. Inventories open Bugbot threads, classifies each (real bug / false positive / already fixed), fixes the real ones, replies on the inline thread (never as a detached PR comment), updates the PR title/body if scope shifted, and pushes. Use when reviewing a PR you just authored, after `gh pr create`, or after a new Bugbot pass on an existing PR.
+description: Review Cursor Bugbot PR threads, classify findings, fix real bugs, reply inline, and push updates.
 user-invocable: true
 allowed-tools: Read, Edit, Write, Grep, Glob, AskUserQuestion, Bash(node:*), Bash(gh:*), Bash(git:*), Bash(pnpm run:*), Bash(rg:*), Bash(grep:*)
 model: claude-sonnet-4-6

@@ -1,12 +1,6 @@
 ---
 name: scanning-vulns
-description: >-
-  Static source-code vulnerability scan of an arbitrary target tree. Reads a
-  target directory (and THREAT_MODEL.md if present), fans out one review agent
-  per focus area, and writes VULN-FINDINGS.json + .md for triaging-findings to
-  consume. Read-only — no building, running, or network. Use when asked to "scan
-  for vulns", "review this code for security issues", "find vulnerabilities in
-  <dir>", or as the step between threat-modeling and triaging-findings.
+description: Run static vulnerability scanners over a target tree and write raw findings for triage.
 argument-hint: "<target-dir> [--focus <area>] [--single] [--extra <file>] [--no-score]"
 user-invocable: true
 allowed-tools: Workflow, Task, Read, Glob, Grep, Write, Bash(rg:*), Bash(grep:*), Bash(ls:*), Bash(wc:*), Bash(head:*), Bash(find:*), Bash(node scripts/fleet/scanning-vulns/cli.mts:*)

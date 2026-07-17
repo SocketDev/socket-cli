@@ -32,12 +32,13 @@
 
 import path from 'node:path'
 
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+
 import { isFleetTarget } from '../_shared/fleet-context.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { parseCommands } from '../_shared/shell-command.mts'
 import type { Command } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
-import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 const BYPASS_PHRASE = 'Allow test-script-defers bypass' as const
 
@@ -89,20 +90,22 @@ function isRawRunnerValue(value: string): boolean {
 }
 
 export function isPackageJson(filePath: string): boolean {
+  const normalizedFilePath = normalizePath(filePath)
   return (
-    (normalizePath(filePath).endsWith('/package.json') ||
+    (normalizedFilePath.endsWith('/package.json') ||
       filePath === 'package.json') &&
-    !normalizePath(filePath).includes('/node_modules/')
+    !normalizedFilePath.includes('/node_modules/')
   )
 }
 
 // The hook / lint-rule / git-hook tier's canonical runner IS `node --test`
 // (CLAUDE.md "Tests are vitest via…"); this guard never applies there.
 export function isNodeTestTierPath(filePath: string): boolean {
+  const normalizedFilePath = normalizePath(filePath)
   return (
-    /(?:^|\/)\.claude\/hooks\//.test(filePath) ||
-    /(?:^|\/)\.config\/fleet\/oxlint-plugin\//.test(filePath) ||
-    /(?:^|\/)\.git-hooks\//.test(filePath)
+    /(?:^|\/)\.claude\/hooks\//.test(normalizedFilePath) ||
+    /(?:^|\/)\.config\/fleet\/oxlint-plugin\//.test(normalizedFilePath) ||
+    /(?:^|\/)\.git-hooks\//.test(normalizedFilePath)
   )
 }
 

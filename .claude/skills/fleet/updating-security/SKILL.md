@@ -1,6 +1,6 @@
 ---
 name: updating-security
-description: Resolve open GitHub Dependabot security alerts on a fleet repo. Fetches alerts via `gh api`, then runs a Workflow that pipelines each alert through classify → fix (direct dep bump, pnpm override for transitives, or principled dismissal) → validate → commit independently, with a major-cross benignity gate before risky bumps land. Reports remaining advisories. Sibling of `updating-lockstep` under the `updating` umbrella.
+description: Resolve open Dependabot security alerts by bumping, overriding, patching, or dismissing with evidence.
 user-invocable: true
 allowed-tools: Workflow, AskUserQuestion, Read, Edit, Grep, Glob, Bash(gh api:*), Bash(gh auth:*), Bash(pnpm:*), Bash(git:*), Bash(node:*), Bash(jq:*)
 model: claude-sonnet-4-6

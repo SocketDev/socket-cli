@@ -17,7 +17,6 @@
 import path from 'node:path'
 import process from 'node:process'
 import { existsSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 
 import {
   collectFleetDocs,
@@ -26,6 +25,7 @@ import {
   collectScriptPaths,
 } from '../lib/enforcer-inventory.mts'
 import { REPO_ROOT } from '../paths.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 export interface EnforcementInventory {
   hooks: {
@@ -104,6 +104,6 @@ export function main(): void {
   )
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   main()
 }

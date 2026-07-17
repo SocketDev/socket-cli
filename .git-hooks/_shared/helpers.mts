@@ -4,9 +4,7 @@
 // `@socketsecurity/lib-stable/logger/default` directly for output; this module stays
 // import-light so the cost of `import '../_shared/helpers.mts'` is bounded.
 //
-// Requires Node 25+ for stable .mts type-stripping (no flag needed).
-// Earlier Node versions either lacked --experimental-strip-types or
-// shipped it under a flag, both unacceptable for hook ergonomics.
+// Requires Node 24+ for default-on native .mts type-stripping (no flag needed).
 //
 // Hooks run *after* `pnpm install`, so `@socketsecurity/lib-stable` is on the
 // resolution path for any caller that imports it.
@@ -45,14 +43,14 @@ export { PERSONAL_PATH_RE, isPurePlaceholder, suggestPlaceholder }
 // Hard-fail if Node is below 25. This runs at module load — every
 // hook invocation imports _shared/helpers.mts before doing anything, so the
 // version check is the first thing that happens.
-const NODE_MIN_MAJOR = 25
+const NODE_MIN_MAJOR = 24
 const nodeMajor = Number.parseInt(
   process.versions.node.split('.')[0] || '0',
   10,
 )
 if (nodeMajor < NODE_MIN_MAJOR) {
-  // @socketsecurity/lib-stable requires Node >= 25; the canonical logger
-  // isn't importable here. Use raw process.stderr with ASCII (no
+  // This import-light shared helper does not own a logger. Use raw
+  // process.stderr with ASCII (no
   // status-emoji glyph) so the no-status-emoji lint rule stays clean
   // — the lint rule's recommendation (use logger.fail()) doesn't
   // apply when the entire branch is the logger-unavailable bail.
@@ -62,7 +60,7 @@ if (nodeMajor < NODE_MIN_MAJOR) {
   )
   // oxlint-disable-next-line socket/no-module-eval-side-effects -- Node-floor bail before any import resolves; raw stderr is the only channel here.
   process.stderr.write(
-    'Install Node 25+ — these hooks rely on stable .mts type stripping.\n',
+    'Install Node 24+ — these hooks rely on default-on .mts type stripping.\n',
   )
   process.exit(1)
 }
@@ -1338,9 +1336,10 @@ const SKIP_FILE_RE =
 export const shouldSkipFile = (filePath: string): boolean =>
   SKIP_FILE_RE.test(filePath)
 
-// Returns file content as a string. For binaries, runs `strings` to
-// extract printable byte sequences (catches paths embedded in WASM
-// or other compiled artifacts).
+// Returns file content as a string. Text files stay in-process; binaries run
+// through `strings` to catch paths embedded in WASM or compiled artifacts.
+// A NUL byte is the stable cross-platform binary signal for the artifacts this
+// hook scans, and avoids spawning Git-for-Windows `grep` for every text file.
 export const readFileForScan = (filePath: string): string => {
   if (!existsSync(filePath)) {
     return ''
@@ -1352,18 +1351,16 @@ export const readFileForScan = (filePath: string): string => {
   } catch {
     return ''
   }
-  // Detect binary via grep -I (matches text-only); if grep says
-  // binary, fall back to `strings`.
-  const grepResult = spawnSync('grep', ['-qI', '', filePath])
-  if (grepResult.status === 0) {
-    // Text file.
-    try {
-      return readFileSync(filePath, 'utf8')
-    } catch {
-      return ''
-    }
+  let bytes: Buffer
+  try {
+    bytes = readFileSync(filePath)
+  } catch {
+    return ''
   }
-  // Binary — extract strings.
+  if (!bytes.includes(0)) {
+    return bytes.toString('utf8')
+  }
+  // NUL-bearing binary — extract printable strings.
   const stringsResult = spawnSync('strings', [filePath], {
     encoding: 'utf8',
   })

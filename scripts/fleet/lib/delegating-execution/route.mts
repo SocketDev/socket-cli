@@ -3,11 +3,32 @@
 // .claude/workflows/delegating-execution.js hardcodes a mirror (workflows
 // cannot import repo TS).
 
+import { AI_TIER } from '@socketsecurity/lib-stable/ai/tier'
+
 import type { TierPhase, TierRoute, TierSensitivity } from './types.mts'
 
 // ASCII-sorted.
 export const PHASES = ['execute', 'followup', 'plan', 'review'] as const
 export const SENSITIVITIES = ['benign', 'security'] as const
+
+// The three routes, each an AI_TIER ladder row (socket-lib's canonical
+// model+effort source — a model-generation roll lands there once and this
+// table follows). The benign brain takes the fable MODEL only, with NO effort:
+// Fable is adaptive-only, and an effort knob on a Fable spawn violates
+// fable-fallback rule 2 (the ladder row's 'xhigh' is for effort-accepting
+// surfaces, not a claude spawn).
+const EXECUTOR_ROUTE: TierRoute = {
+  effort: AI_TIER.sonnet.effort,
+  model: AI_TIER.sonnet.model,
+}
+const BENIGN_BRAIN_ROUTE: TierRoute = {
+  effort: undefined,
+  model: AI_TIER.fable.model,
+}
+const SECURITY_BRAIN_ROUTE: TierRoute = {
+  effort: AI_TIER.opus.effort,
+  model: AI_TIER.opus.model,
+}
 
 // plan/review + benign → Fable with NO effort (adaptive-only — an effort key on
 // a Fable spawn violates fable-fallback rule 2). plan/review + security →
@@ -20,33 +41,34 @@ export const TIER_TABLE: Record<
   Record<TierSensitivity, TierRoute>
 > = {
   execute: {
-    benign: { effort: 'medium', model: 'claude-sonnet-4-6' },
-    security: { effort: 'medium', model: 'claude-sonnet-4-6' },
+    benign: EXECUTOR_ROUTE,
+    security: EXECUTOR_ROUTE,
   },
   followup: {
-    benign: { effort: 'medium', model: 'claude-sonnet-4-6' },
-    security: { effort: 'medium', model: 'claude-sonnet-4-6' },
+    benign: EXECUTOR_ROUTE,
+    security: EXECUTOR_ROUTE,
   },
   plan: {
-    benign: { effort: undefined, model: 'claude-fable-5' },
-    security: { effort: 'high', model: 'claude-opus-4-8' },
+    benign: BENIGN_BRAIN_ROUTE,
+    security: SECURITY_BRAIN_ROUTE,
   },
   review: {
-    benign: { effort: undefined, model: 'claude-fable-5' },
-    security: { effort: 'high', model: 'claude-opus-4-8' },
+    benign: BENIGN_BRAIN_ROUTE,
+    security: SECURITY_BRAIN_ROUTE,
   },
 }
 
-// The floor tier: cheapest model + lowest effort (mirrors
-// scripts/fleet/check/ai-spawns-have-paired-effort.mts FLOOR_*). A provably
-// mechanical execute/followup step — a cascade, a bulk rename, applying an
-// enumerated finding list — needs no judgment the plan didn't already supply,
-// so it routes here instead of the sonnet/medium executor. This is the ONE live
-// cost lever while Fable is suspended (plan/review already pin the apex); the
-// full complexity classifier is deferred (see eval-auto-model-effort-routing).
+// The floor tier: the cheapest AI_TIER row (haiku/low — the same row
+// scripts/fleet/check/ai-spawns-have-paired-effort.mts derives FLOOR_* from).
+// A provably mechanical execute/followup step — a cascade, a bulk rename,
+// applying an enumerated finding list — needs no judgment the plan didn't
+// already supply, so it routes here instead of the sonnet/medium executor.
+// This is the ONE live cost lever while Fable is suspended (plan/review
+// already pin the apex); the full complexity classifier is deferred (see
+// eval-auto-model-effort-routing).
 export const MECHANICAL_ROUTE: TierRoute = {
-  effort: 'low',
-  model: 'claude-haiku-4-5',
+  effort: AI_TIER.haiku.effort,
+  model: AI_TIER.haiku.model,
 }
 
 // Phases the `mechanical` flag downgrades. plan/review are judgment work at the

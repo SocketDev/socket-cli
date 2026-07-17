@@ -10,13 +10,12 @@
 // The fix is the entrypoint guard — run main() only when the module is the
 // process entrypoint, never on import:
 //
-//   if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
-//     void main()
-//   }
+//   if (isHookEntrypoint(import.meta.url)) { void main() }
 //
-// or the equally-valid `fileURLToPath` form the check scripts use:
+// (hooks import it from `../_shared/entrypoint.mts`; it is snapshot-safe), or
+// the realpath-comparing form the check scripts use:
 //
-//   if (process.argv[1] === fileURLToPath(import.meta.url)) { main() }
+//   if (isMainModule(import.meta.url)) { main() }
 //
 // Why a gate: this exact hang fired across 15 hooks in two waves — the runner
 // could not even reach their tests until each `main()` was wrapped. It was
@@ -52,11 +51,11 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { HOOK_TEST_DIRS, OWNS_RELOCATED_TESTS, REPO_ROOT } from '../paths.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -215,15 +214,16 @@ function main(): void {
       const h = hits[i]!
       logger.error(`  ✗ ${h.file} — top-level \`${h.invocation}\``)
     }
+    logger.group()
     logger.error(
-      '  Wrap the invocation in the entrypoint guard so it runs only when the',
+      'Wrap the invocation in the shared entrypoint guard so it runs only',
     )
-    logger.error('  module is the process entrypoint, never on import:')
-    logger.error(
-      '    if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {',
-    )
-    logger.error('      void main()')
-    logger.error('    }')
+    logger.error('when the module is the process entrypoint, never on import:')
+    logger.group()
+    logger.error("import { isHookEntrypoint } from '../_shared/entrypoint.mts'")
+    logger.error('if (isHookEntrypoint(import.meta.url)) { void main() }')
+    logger.groupEnd()
+    logger.groupEnd()
     process.exitCode = 1
     return
   }
@@ -245,6 +245,6 @@ function main(): void {
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   main()
 }

@@ -8,7 +8,7 @@
 //   to the import/call/config that replaces it; it is useless next to the
 //   blank line where something used to be).
 //
-// Detection (two modes, on Edit/MultiEdit):
+// Detection (three modes, on Edit/MultiEdit):
 //   - Relocation (removal-gated): old_string REMOVES ≥1 code line AND
 //     new_string ADDS a comment carrying a relocation phrase — "moved to",
 //     "now lives", "no longer here", "lives in", "handled elsewhere", etc.
@@ -16,6 +16,11 @@
 //     dead past — "used to be", "that/which replaced the", "replaced the
 //     old/legacy", "formerly known as", "no longer used". Describe the present
 //     state; the deprecated past is noise the reader never needs.
+//   - Negation / disclaimer (ungated): new_string ADDS a comment that defines
+//     the code by what it is NOT, lacks, or is not like — "not a fork", "not a
+//     derivative", "inspired by X", "unlike X", "we don't include a Y".
+//     Describe what the code IS; never comment on what it isn't or lacks. When
+//     something is removed or absent, the code simply doesn't mention it.
 //
 //   Does NOT fire when:
 //   - Only comments changed (no code removal).
@@ -82,11 +87,23 @@ const RELOCATION_RE =
 const TEMPORAL_NARRATION_RE =
   /\b(?:used\s+to\s+be|(?:that|which)\s+replaced\s+the|replaced\s+the\s+(?:old|legacy|former|previous|prior)|migrated\s+away\s+from|formerly\s+(?:known\s+as|called|named|the)|no\s+longer\s+(?:used|in\s+use))\b/i
 
+// Negation / DISCLAIMER: a comment that defines the code by what it is NOT,
+// lacks, or is not like, instead of what it IS. Fires anywhere (no code-removal
+// gate) — an identity/comparison disclaimer is noise regardless of context.
+// Kept to distinctive derivation/comparison/lack shapes so ordinary behavioral
+// negation ("does not mutate std::env", "not yet stable", "no unsafe") does NOT
+// match: a derivation disclaimer ("not a fork", "not derived from"), an
+// affiliation/inspiration disclaimer ("not affiliated", "inspired by"), a
+// comparison ("unlike X", "as opposed to"), or an explicit feature-lack
+// ("we don't include a Y", "no longer a Z").
+const NEGATION_RE =
+  /\b(?:not\s+(?:a|an)\s+(?:fork|derivative|derivation|port|clone|copy|rewrite|reimplementation|variant|drop-in)|not\s+(?:derived|based)\s+(?:on|off|from|of)|not\s+affiliated|no\s+affiliation\s+with|inspired\s+by|unlike|not\s+like|as\s+opposed\s+to|in\s+contrast\s+to|rather\s+than\s+being|no\s+longer\s+(?:a|an)\b|(?:we|it|this)\s+(?:do(?:es)?\s+not|don'?t|doesn'?t)\s+(?:have|include|ship|bundle|vendor|provide)\s+(?:a|an|any))\b/i
+
 /**
  * Result of inspecting an Edit's old/new fragments.
  */
 export interface RemovalCommentFinding {
-  readonly kind: 'relocation' | 'temporal'
+  readonly kind: 'negation' | 'relocation' | 'temporal'
   readonly phrase: string
   readonly commentSnippet: string
 }
@@ -149,6 +166,14 @@ export function detectRemovalComment(
         commentSnippet: trimmed.slice(0, 80),
       }
     }
+    const negation = NEGATION_RE.exec(text)
+    if (negation) {
+      return {
+        kind: 'negation',
+        phrase: negation[0],
+        commentSnippet: trimmed.slice(0, 80),
+      }
+    }
     if (hasCodeRemoval) {
       const m = RELOCATION_RE.exec(text)
       if (m) {
@@ -181,6 +206,20 @@ export function detectRemovalCommentInEdits(
 }
 
 function buildMessage(finding: RemovalCommentFinding): string {
+  if (finding.kind === 'negation') {
+    return [
+      '[no-removal-comment-nudge] Comment defines the code by what it is NOT or lacks.',
+      '',
+      `  Comment: ${finding.commentSnippet}`,
+      `  Phrase:  "${finding.phrase}"`,
+      '',
+      '  Describe what the code IS, on its own terms. Never comment on what it is',
+      '  not, what it lacks, or what it is not like — no "not a fork", "inspired by',
+      '  X", "unlike Y", "no Z here". State the present identity; drop the negation.',
+      '',
+      '  Reminder-only; not a block.',
+    ].join('\n')
+  }
   if (finding.kind === 'temporal') {
     return [
       '[no-removal-comment-nudge] Comment narrates the past instead of the present.',

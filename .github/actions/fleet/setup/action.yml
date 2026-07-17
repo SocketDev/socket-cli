@@ -1,15 +1,16 @@
 # Layer 2a — references Layer 1 (debug). Consumed by `setup-and-install`
 # (Layer 2b). When this file bumps, cascade is: 2b → 3 → 4 → external
 # repos. See updating-workflows skill at .claude/skills/updating-workflows/.
-# cascade-data-deps: ., .github, .github/actions/fleet/lib, external-tools.json
+# cascade-data-deps: ., .github, .github/actions/fleet/lib,
+# scripts/fleet/setup, external-tools.json
 # (read at runtime via ${GITHUB_ACTION_PATH}/../… — implicit edges with no
 # `uses:` line; action-pins-are-current.mts tracks them for staleness.)
 
 name: 'Setup'
-description: 'Setup debug, Node.js, pnpm, Socket firewall shims, and bootstrap zero-dep Socket packages (@socketsecurity/lib, @socketregistry/packageurl-js, @sinclair/typebox)'
+description: 'Setup debug, Node.js, pnpm, Socket firewall shims, and bootstrap zero-dep foundation packages (@socketsecurity/lib, @socketsecurity/sdk, @socketregistry/packageurl-js, @sinclair/typebox)'
 
 # Dependencies:
-#   - actions/setup-node@v6.2.0
+#   - actions/setup-node@v6.4.0
 #   - ./.github/actions/debug
 
 inputs:
@@ -425,9 +426,13 @@ runs:
         # cross-step) — always exported. The SOCKET_TOOL_SFW_* provenance has
         # no required consumer; disabled-seam-gated off unless extended-env
         # opts in. See disabled-seam-pattern (fleet docs).
+        # SFW_SILENT keeps the firewall's stdout banners out of every
+        # wrapped command — scripts that parse a tool's stdout (pack --json,
+        # the format pipe) would otherwise ingest banner lines as data.
         {
           echo "SFW_BIN=$SFW_BIN"
           echo "SFW_IS_ENTERPRISE=$SFW_IS_ENTERPRISE"
+          echo "SFW_SILENT=true"
         } >> "${GITHUB_ENV:-/dev/null}"
         if [ "$EXTENDED_ENV" = "true" ]; then
           {
@@ -631,101 +636,72 @@ runs:
         echo "DO_NOT_TRACK=1" >> "${GITHUB_ENV:-/dev/null}"
         echo "GH_TELEMETRY=0" >> "${GITHUB_ENV:-/dev/null}"
 
+    - name: Install pinned Homebrew bundle
+      # Only when the repo has enrolled (committed a root Brewfile). Homebrew has
+      # no minimum-release-age, so the fleet enforces one with per-tap SHA pins
+      # in scripts/fleet/constants/brew-tap-pins.mts (owned by
+      # scripts/fleet/update/brew.mts --apply, gated by
+      # scripts/fleet/check/brew-install-is-pinned.mts). Runs after Setup Node.js,
+      # but the pins are read with grep/sed so this stays dependency-free.
+      if: ${{ hashFiles('Brewfile') != '' }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        # No brew on the runner (Linux GitHub-hosted images) → nothing to pin.
+        if ! command -v brew >/dev/null 2>&1; then
+          echo "brew not on this runner; skipping the pinned Homebrew bundle."
+          exit 0
+        fi
+        # Pin the taps at a soaked SHA and resolve every formula from the local
+        # git tap instead of the always-latest API.
+        export HOMEBREW_NO_INSTALL_FROM_API=1
+        PINS="${GITHUB_WORKSPACE}/scripts/fleet/constants/brew-tap-pins.mts"
+        if [ ! -f "$PINS" ]; then
+          echo "× brew-tap-pins.mts not found at ${PINS}." >&2
+          exit 1
+        fi
+        # sha_for <core|cask>: the entry lines carry a trailing comma
+        # (`homebrew-core',`), which the interface union type does not — so this
+        # matches only the pin entries.
+        sha_for() { grep -B1 "homebrew-$1'," "$PINS" | grep "sha:" | sed "s/.*'\([0-9a-f]*\)'.*/\1/"; }
+        pin_tap() {
+          SHORT="$1"
+          SLUG="$2"
+          SHA="$(sha_for "$SHORT")"
+          if [ -z "$SHA" ]; then
+            echo "× no tap pin for homebrew-${SHORT} in brew-tap-pins.mts." >&2
+            exit 1
+          fi
+          # Ensure the tap's git checkout exists, then pin it. Runner images
+          # may ship tracked formula edits, so force the soaked commit instead
+          # of letting image drift abort checkout.
+          brew tap "$SLUG" >/dev/null 2>&1 || true
+          REPO="$(brew --repository "$SLUG")"
+          git -C "$REPO" fetch --depth 1 origin "$SHA"
+          git -C "$REPO" checkout -q -f "$SHA"
+        }
+        pin_tap core homebrew/core
+        if grep -q '^cask ' "${GITHUB_WORKSPACE}/Brewfile"; then
+          pin_tap cask homebrew/cask
+        fi
+        # Retry the bundle to ride out a transient tap/network hiccup.
+        ATTEMPT=0
+        until brew bundle install --file="${GITHUB_WORKSPACE}/Brewfile" --no-upgrade; do
+          ATTEMPT=$((ATTEMPT + 1))
+          if [ "$ATTEMPT" -ge 3 ]; then
+            echo "× brew bundle failed after 3 attempts." >&2
+            exit 1
+          fi
+          echo "brew bundle attempt ${ATTEMPT} failed; retrying in $((ATTEMPT * 3))s…" >&2
+          sleep $((ATTEMPT * 3))
+        done
+
     - name: Bootstrap zero-dep packages from npm registry
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       env:
         ACTION_DIR: ${{ github.action_path }}
       run: |
-        # Bootstrap a small set of zero-dep packages into node_modules/
-        # BEFORE pnpm install runs. Several Socket repos have root
-        # scripts (setup.mts, postinstall hooks, .claude/hooks/*) that
-        # import these packages at module-load time. On a fresh
-        # checkout, pnpm install itself runs scripts that import them —
-        # but pnpm install hasn't completed yet, so the imports fail
-        # with ERR_MODULE_NOT_FOUND. Pre-seeding each package's tarball
-        # directly into node_modules/<scope>/<name>/ solves the
-        # chicken-and-egg.
-        #
-        # Restricted to ZERO-DEP packages so a tarball extract is the
-        # whole install — no transitive resolution needed. Any package
-        # we add here must `npm view <pkg> dependencies` empty; if it
-        # picks up a dep later, drop it from this list.
-        #
-        # Lives in `setup` (alongside zizmor + sfw provisioning) rather
-        # than `install` so consumers calling only `setup` also benefit,
-        # not just consumers of `setup-and-install` or `install`
-        # directly.
-        #
-        # Per-package skip rules:
-        #   - the repo has its own scripts/bootstrap-from-registry.mts
-        #     (the preinstall hook handles all packages; no duplicate)
-        #   - <pkg> is already resolvable from the working directory
-        #   - <pkg> isn't pinned in this repo's package.json /
-        #     pnpm-workspace.yaml catalog (skip silently)
-        #
-        # Before each download, the version is checked against the
-        # Socket Firewall API (firewall-api.socket.dev/purl). Critical/
-        # high severity alerts block the bootstrap; firewall errors
-        # are non-fatal so a network blip doesn't break a fresh clone.
         set -euo pipefail
-        if [ -f scripts/bootstrap-from-registry.mts ]; then
-          echo "Repo has its own bootstrap-from-registry.mts; skipping action-level bootstrap."
-          exit 0
-        fi
-        # Zero-dep packages worth pre-seeding so .claude/hooks/* and
-        # root scripts can import them at module-load time. Order
-        # matters only for log readability.
-        PACKAGES=(
-          '@socketregistry/packageurl-js'
-          '@sinclair/typebox'
-          '@socketsecurity/lib'
-          '@socketsecurity/lib-stable'
-        )
-        for PKG in "${PACKAGES[@]}"; do
-          # Already resolvable? Skip.
-          if node -e "require.resolve('${PKG}/package.json')" 2>/dev/null; then
-            echo "${PKG} already resolvable; skipping."
-            continue
-          fi
-          # Pinned somewhere in the consumer repo?
-          # Script emits `<real-pkg>\t<version>` when the pin uses
-          # pnpm's `npm:` alias form (e.g.
-          # `@socketsecurity/lib-stable: npm:@socketsecurity/lib@5.28.0`),
-          # so the tarball URL points at the alias TARGET (which has a
-          # published tarball) rather than the alias name (which doesnt).
-          # Plain pins emit just `<version>`.
-          PINNED="$(node "${ACTION_DIR}/../lib/read-pinned-version.mts" "${PKG}")"
-          if [ -z "$PINNED" ]; then
-            echo "${PKG} not pinned in this repo; skipping."
-            continue
-          fi
-          if [[ "$PINNED" == *$'\t'* ]]; then
-            FETCH_PKG="${PINNED%$'\t'*}"
-            VERSION="${PINNED#*$'\t'}"
-          else
-            FETCH_PKG="$PKG"
-            VERSION="$PINNED"
-          fi
-          # Firewall check — bail loudly on critical/high alerts.
-          if ! node "${ACTION_DIR}/../lib/check-firewall.mts" "${FETCH_PKG}" "$VERSION"; then
-            exit 1
-          fi
-          # Strip leading scope from package name for tarball path.
-          # `@scope/name` → `name`; `name` → `name`.
-          BASE="${FETCH_PKG##*/}"
-          echo "Bootstrapping ${PKG}@${VERSION} from npm registry..."
-          TARBALL_URL="https://registry.npmjs.org/${FETCH_PKG}/-/${BASE}-${VERSION}.tgz"
-          TARBALL="$(mktemp -t bootstrap-XXXXXX.tgz)"
-          if ! curl -fsSL "$TARBALL_URL" -o "$TARBALL"; then
-            echo "Warning: failed to fetch ${TARBALL_URL}; pnpm install will resolve it." >&2
-            rm -f "$TARBALL"
-            continue
-          fi
-          DEST="node_modules/${PKG}"
-          rm -rf "$DEST"
-          mkdir -p "$DEST"
-          tar -xzf "$TARBALL" --strip-components=1 -C "$DEST"
-          rm -f "$TARBALL"
-          echo "✓ ${PKG}@${VERSION} → ${DEST}"
-        done
+        BOOTSTRAP="${ACTION_DIR}/../../../../scripts/fleet/setup/bootstrap-zero-dep-packages.mjs"
+        node "$BOOTSTRAP" --repo-root "$PWD"

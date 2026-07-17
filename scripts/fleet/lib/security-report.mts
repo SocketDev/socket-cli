@@ -10,7 +10,7 @@
 
 import process from 'node:process'
 import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 export type Grade = 'A' | 'B' | 'C' | 'D' | 'F'
 
@@ -121,6 +121,6 @@ export function main(argv: readonly string[]): number {
   return 1
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   process.exitCode = main(process.argv.slice(2))
 }

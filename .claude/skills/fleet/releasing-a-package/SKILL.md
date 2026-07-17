@@ -1,6 +1,6 @@
 ---
 name: releasing-a-package
-description: End-to-end release of a single-package fleet repo — pre-bump wave, public-facing CHANGELOG, a `chore: bump version to X.Y.Z` commit, a `vX.Y.Z` tag, a CI staged-publish (OIDC trusted publisher + provenance) via `scripts/fleet/npm-publish.mts --staged`, then a local human 2FA `--approve` (web-OTP browser flow). Use when shipping a new version of a repo whose `publish` script is the canonical `scripts/fleet/npm-publish.mts`. NOT for socket-registry / socket-addon, which keep a bespoke multi-package publish.mts.
+description: Release a single-package fleet repo: pre-bump, changelog, version commit, tag, staged publish, and approval.
 model: claude-sonnet-4-6
 user-invocable: true
 allowed-tools: AskUserQuestion, Bash(git:*), Bash(node:*), Bash(pnpm run:*), Edit, Read

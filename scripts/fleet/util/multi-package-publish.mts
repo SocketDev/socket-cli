@@ -44,7 +44,6 @@ import {
   findRawBinaryForTriplet,
   parseShaSums,
   runCommand,
-  runGh,
   sha256Of,
   verifyAttestation,
 } from './multi-package-publish-verify.mts'
@@ -57,6 +56,7 @@ import type {
   GitHubRepoSlug,
   SourceAllowlistEntry,
 } from './source-allowlist.mts'
+import { tarExecutable } from '../_shared/tar-executable.mts'
 
 const logger = getDefaultLogger()
 
@@ -125,6 +125,11 @@ export interface MultiPackagePublishConfig {
    * tests.
    */
   readonly tripletsFilter?: readonly PackAppTriplet[] | undefined
+
+  /**
+   * Injectable shell-free command runner for offline integration tests.
+   */
+  readonly runCommand?: typeof runCommand | undefined
 }
 
 /**
@@ -193,6 +198,7 @@ export class MultiPackageStageError extends Error {
 export async function stageMultiPackagePublish(
   config: MultiPackagePublishConfig,
 ): Promise<MultiPackagePublishResult> {
+  const command = config.runCommand ?? runCommand
   // Stage 1 — allowlist match.
   const entry = findAllowlistEntry(
     config.allowlist,
@@ -233,7 +239,8 @@ export async function stageMultiPackagePublish(
   logger.log(
     `Downloading release assets: ${config.sourceRepo} @ ${config.releaseTag}`,
   )
-  const downloadResult = await runGh(
+  const downloadResult = await command(
+    'gh',
     [
       'release',
       'download',
@@ -265,7 +272,12 @@ export async function stageMultiPackagePublish(
 
   // Stage 6 — verify the checksums manifest itself is attested.
   logger.log(`Verifying ${checksumsAsset} attestation`)
-  await verifyAttestation(sumsPath, config.sourceRepo, entry.attestationSubject)
+  await verifyAttestation(
+    sumsPath,
+    config.sourceRepo,
+    entry.attestationSubject,
+    command,
+  )
 
   // Stage 7 — for each requested triplet, find + verify + extract + stage.
   const tripletsToStage = config.tripletsFilter ?? entry.triplets
@@ -328,6 +340,7 @@ export async function stageMultiPackagePublish(
       assetPath,
       config.sourceRepo,
       entry.attestationSubject,
+      command,
     )
 
     const expectedName = buildTailPackageName(entry, triplet)
@@ -338,8 +351,8 @@ export async function stageMultiPackagePublish(
       // eslint-disable-next-line no-await-in-loop
       await safeMkdir(extractDir, { recursive: true })
       // eslint-disable-next-line no-await-in-loop
-      const extractResult = await runCommand(
-        'tar',
+      const extractResult = await command(
+        tarExecutable(),
         ['-xzf', assetPath, '-C', extractDir],
         config.stagingDir,
       )

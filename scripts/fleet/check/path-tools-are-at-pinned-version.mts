@@ -15,7 +15,14 @@
 // Skips a tool that is not on PATH (absence is a separate concern). Fails ONLY
 // when a PRESENT tool reports a version below its floor.
 //
-// Usage: node scripts/fleet/check/path-tools-are-at-pinned-version.mts [--quiet]
+// `--fix` heals a below-floor tool that Homebrew provides by running
+// `brew upgrade <formula>` (only for floor-pinned tools like node — a stale
+// Homebrew node commonly shadows the racked/fnm one; pnpm + uv are exact-pinned
+// and racked, so brew's latest would overshoot their pin and they are left for
+// the racked installer). A post-upgrade re-check is the real gate: if a
+// non-Homebrew binary still wins PATH, it fails LOUD with the manual step.
+//
+// Usage: node scripts/fleet/check/path-tools-are-at-pinned-version.mts [--quiet] [--fix]
 
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
@@ -28,6 +35,7 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { coerce, lt, minVersion } from 'semver'
 
 import { REPO_ROOT } from '../paths.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -167,8 +175,94 @@ export function findBelowFloor(
   return out
 }
 
+// Bins whose pin is a `>=` FLOOR (any newer version satisfies it), so a Homebrew
+// `brew upgrade` to the latest is a valid heal. pnpm + uv are pinned to an EXACT
+// racked version — brew's latest would overshoot the pin, so they are NOT
+// brew-upgradable and keep the racked-installer fix.
+export const BREW_UPGRADABLE: ReadonlySet<string> = new Set(['node'])
+
+export type BrewFixPlan =
+  | { action: 'skip'; reason: string }
+  | { action: 'upgrade'; formula: string }
+
+/**
+ * Pure: decide whether a below-floor violation can be healed by `brew upgrade`.
+ * Only floor-pinned, brew-provisioned tools qualify; everything else is skipped
+ * with a reason (never silently no-op'd).
+ */
+export function planBrewFix(options: {
+  brewAvailable: boolean
+  violation: FloorViolation
+}): BrewFixPlan {
+  const opts = { __proto__: null, ...options } as typeof options
+  const { bin } = opts.violation
+  if (!BREW_UPGRADABLE.has(bin)) {
+    return {
+      action: 'skip',
+      reason: `${bin} is exact-pinned (racked) — reinstall the pinned version via the racked installer, not brew`,
+    }
+  }
+  if (!opts.brewAvailable) {
+    return {
+      action: 'skip',
+      reason: 'Homebrew (brew) is not on PATH — cannot auto-upgrade',
+    }
+  }
+  return { action: 'upgrade', formula: bin }
+}
+
+// True when the `brew` CLI is callable.
+function brewAvailable(): boolean {
+  try {
+    return spawnSync('brew', ['--version'], { stdioString: true }).status === 0
+  } catch {
+    return false
+  }
+}
+
+/**
+ * `--fix`: bring each below-floor Homebrew tool up via `brew upgrade`, then
+ * re-check. Returns the count still below floor after the attempt (0 = healed).
+ * The re-check — not the brew exit code — is the gate: `brew upgrade` exits
+ * non-zero when a formula is already latest, and a non-Homebrew binary
+ * (fnm/nvm) may still win PATH, which the re-check catches and reports LOUD.
+ */
+export function runBrewFix(violations: readonly FloorViolation[]): number {
+  const available = brewAvailable()
+  let unresolved = 0
+  for (let i = 0, { length } = violations; i < length; i += 1) {
+    const v = violations[i]!
+    const plan = planBrewFix({ brewAvailable: available, violation: v })
+    if (plan.action === 'skip') {
+      logger.warn(`[path-tools-are-at-pinned-version] ${v.bin}: ${plan.reason}`)
+      unresolved += 1
+      continue
+    }
+    logger.info(
+      `[path-tools-are-at-pinned-version] brew upgrade ${plan.formula} (on PATH ${v.found}, floor ${v.floor})…`,
+    )
+    spawnSync('brew', ['upgrade', plan.formula], { stdio: 'inherit' })
+    const now = pathToolVersion(v.bin)
+    if (now && !lt(now, v.floor)) {
+      logger.success(
+        `[path-tools-are-at-pinned-version] ${v.bin} is now ${now} (floor ${v.floor}).`,
+      )
+      continue
+    }
+    unresolved += 1
+    logger.fail(
+      `[path-tools-are-at-pinned-version] ${v.bin} is ${now ?? 'unresolved'} after brew upgrade — still below floor ${v.floor}.\n` +
+        `  A non-Homebrew ${v.bin} likely wins PATH (e.g. fnm/nvm). Remove it or\n` +
+        `  reinstall the pinned version via the racked installer:\n` +
+        `    node scripts/fleet/setup/setup-tools.mjs`,
+    )
+  }
+  return unresolved
+}
+
 function main(): void {
   const quiet = process.argv.includes('--quiet')
+  const fix = process.argv.includes('--fix')
   const violations = findBelowFloor(pathToolPins(REPO_ROOT), pathToolVersion)
   if (violations.length === 0) {
     if (!quiet) {
@@ -176,6 +270,10 @@ function main(): void {
         '[path-tools-are-at-pinned-version] every PATH tool meets its pinned floor.',
       )
     }
+    return
+  }
+  if (fix) {
+    process.exitCode = runBrewFix(violations) === 0 ? 0 : 1
     return
   }
   const lines = [
@@ -202,6 +300,6 @@ function main(): void {
   process.exitCode = 1
 }
 
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+if (isMainModule(import.meta.url)) {
   main()
 }

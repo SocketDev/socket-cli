@@ -17,7 +17,6 @@
  */
 
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
@@ -26,6 +25,7 @@ import {
   REVIEWED_TELEMETRY,
   scanRepoForTelemetry,
 } from '../lib/telemetry-scan.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -65,6 +65,6 @@ function main(): number {
   return 0
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   main()
 }

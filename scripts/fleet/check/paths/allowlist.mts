@@ -24,10 +24,12 @@ import type { AllowlistEntry, Finding } from './types.mts'
  * dropped with a stderr note rather than blowing up the whole gate.
  */
 export const loadAllowlist = (repoRoot: string): AllowlistEntry[] => {
-  // Two accepted locations match the rest of the fleet's
-  // socket-wheelhouse.json resolution: primary under .config/ and
-  // legacy root-level dotfile.
+  // Accepted locations match the rest of the fleet's socket-wheelhouse.json
+  // resolution: the .config/{fleet,repo} split's repo tier first (where the
+  // per-repo settings actually live), then the pre-split .config/ location,
+  // then the legacy root-level dotfile.
   const candidates = [
+    path.join(repoRoot, '.config', 'repo', 'socket-wheelhouse.json'),
     path.join(repoRoot, '.config', 'socket-wheelhouse.json'),
     path.join(repoRoot, '.socket-wheelhouse.json'),
   ]

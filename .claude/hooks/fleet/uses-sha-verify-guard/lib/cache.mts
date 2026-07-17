@@ -76,7 +76,7 @@ export function verifyCommitSha(
   const result = spawnSync(
     'gh',
     ['api', `repos/${ownerRepo}/commits/${sha}`, '--silent'],
-    { stdio: 'ignore', timeout: 5000 },
+    { stdio: 'ignore', timeout: 5000 /* win-timeout: network */ },
   )
   const reachable = result.status === 0
   cache.entries[key] = { reachable, checkedAt: Date.now() }

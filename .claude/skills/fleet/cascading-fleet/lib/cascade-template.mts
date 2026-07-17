@@ -66,7 +66,35 @@ if (!TEMPLATE_SHA) {
 
 const SCRIPT_DIR = import.meta.dirname
 const FLEET_REPOS_FILE = path.join(SCRIPT_DIR, 'fleet-repos.txt')
+// The structured roster carries each member's GitHub owner. The .txt is bare
+// names; owner (for a cross-org member like decmpfs) lives in the .json sibling.
+const FLEET_REPOS_JSON = path.join(SCRIPT_DIR, 'fleet-repos.json')
 const PROJECTS = process.env['PROJECTS'] || path.join(os.homedir(), 'projects')
+
+// Map bare repo name → GitHub owner (default 'SocketDev'). Only the gh-PR
+// fallback below needs the owner — the worktree fetch/push use the local clone's
+// own `origin`, already per-repo correct. Absent .json / entry / owner field ⇒
+// 'SocketDev' (backward-compatible: existing entries carry no `owner`).
+function loadOwnerMap(): Map<string, string> {
+  const map = new Map<string, string>()
+  try {
+    const parsed = JSON.parse(readFileSync(FLEET_REPOS_JSON, 'utf8')) as {
+      repos?: Array<{ name?: string; owner?: string }> | undefined
+    }
+    for (const entry of parsed.repos ?? []) {
+      if (typeof entry.name === 'string' && typeof entry.owner === 'string') {
+        map.set(entry.name, entry.owner)
+      }
+    }
+  } catch {
+    // No / invalid .json — every repo defaults to SocketDev via ownerOf.
+  }
+  return map
+}
+const OWNER_MAP = loadOwnerMap()
+function ownerOf(repo: string): string {
+  return OWNER_MAP.get(repo) ?? 'SocketDev'
+}
 // socket-lint: allow cross-repo
 const WH_SCRIPT = path.join(
   PROJECTS,
@@ -427,7 +455,7 @@ for (const rawLine of fleetReposRaw) {
           'pr',
           'create',
           '--repo',
-          `SocketDev/${repo}`,
+          `${ownerOf(repo)}/${repo}`,
           '--base',
           base,
           '--head',

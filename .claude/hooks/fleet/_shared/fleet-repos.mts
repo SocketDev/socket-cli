@@ -19,7 +19,10 @@
  *   never as a divergent array here.
  */
 
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
+
 import fleetRosterJson from '../../../skills/fleet/cascading-fleet/lib/fleet-repos.json' with { type: 'json' }
+import { spawnTimeoutMs } from './spawn-timeout.mts'
 
 // All under the SocketDev org; names match the GitHub repo slug
 // (`github.com:SocketDev/<name>`). Sorted for stable diffs — membership lookups
@@ -85,4 +88,73 @@ export function ownerRepoFromRemoteUrl(url: string): string | undefined {
     return undefined
   }
   return `${match[1]!}/${match[2]!}`
+}
+
+/**
+ * Build the accepted spellings of a repo-scoped bypass: the bare session-wide
+ * `basePhrase` (kept as a fallback) plus `<basePhrase>: <target>` for every
+ * identifier the operator might reasonably type — each in original AND
+ * lowercased form (GitHub slugs are case-insensitive). The non-fleet guards
+ * share this ONE builder so their phrase grammars can't drift.
+ */
+export function acceptedScopedBypassPhrases(
+  basePhrase: string,
+  targets: ReadonlyArray<string | undefined>,
+): string[] {
+  const forms = new Set<string>()
+  for (let i = 0, { length } = targets; i < length; i += 1) {
+    const t = targets[i]
+    if (t) {
+      forms.add(t)
+      forms.add(t.toLowerCase())
+    }
+  }
+  const out = [basePhrase]
+  for (const form of forms) {
+    out.push(`${basePhrase}: ${form}`)
+  }
+  return out
+}
+
+/**
+ * The raw origin remote URL of `dir`, or undefined when unresolvable (not a
+ * git checkout, no origin remote, git missing). Bounded by a 5s timeout so a
+ * hung git can never wedge a guard; stderr is discarded — the caller's
+ * fail-open contract wants a clean undefined, not git noise.
+ */
+export function originRemoteUrl(dir: string): string | undefined {
+  try {
+    const r = spawnSync('git', ['-C', dir, 'remote', 'get-url', 'origin'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+      timeout: spawnTimeoutMs(5000),
+    })
+    if (r.status !== 0) {
+      return undefined
+    }
+    /* c8 ignore next - spawnSync with encoding:'utf8' always returns a string stdout */
+    return String(r.stdout ?? '').trim()
+    /* c8 ignore start - lib-stable spawnSync never throws; defensive only */
+  } catch {
+    return undefined
+  }
+  /* c8 ignore stop */
+}
+
+/**
+ * Case-preserved `owner/repo` of `dir`'s origin remote (for scoped bypass
+ * phrases and same-repo comparisons), or undefined when unresolvable.
+ */
+export function originOwnerRepo(dir: string): string | undefined {
+  const url = originRemoteUrl(dir)
+  return url === undefined ? undefined : ownerRepoFromRemoteUrl(url)
+}
+
+/**
+ * Lowercased bare repo slug of `dir`'s origin remote (the fleet-membership
+ * key), or undefined when unresolvable.
+ */
+export function originSlug(dir: string): string | undefined {
+  const url = originRemoteUrl(dir)
+  return url === undefined ? undefined : slugFromRemoteUrl(url)
 }

@@ -1,6 +1,6 @@
 ---
 name: building-tdd
-description: Test-driven development — build a feature or fix a bug test-first. Use when the user wants test-first / red-green-refactor, or asks to build a feature with tests.
+description: Use red-green-refactor for a feature or bug fix when the user asks for test-first work.
 ---
 
 # building-tdd

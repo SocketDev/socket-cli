@@ -1,6 +1,6 @@
 ---
 name: running-test262
-description: Run the test262 conformance suite against fleet parsers / runtimes (ultrathink acorn variants, socket-btm temporal-infra, future ports) using each repo's canonical runner. Never write homebrew test262 runners. Every parser/runtime in the fleet ships a runner under `test/scripts/test262-*.mts` and an unsupported-features config. Use this skill when asked to run spec tests, check conformance, debug a failing test262 case, or compare a parser against a reference implementation.
+description: Run the repo's canonical Test262 suite for parser/runtime conformance; never write ad hoc runners.
 user-invocable: true
 allowed-tools: Bash(node:*), Bash(pnpm:*), Bash(ls:*), Bash(cat:*), Bash(grep:*), Bash(find:*), Read
 model: claude-haiku-4-5

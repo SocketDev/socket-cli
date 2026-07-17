@@ -2,6 +2,16 @@
 # `setup-and-install` (Layer 2b) + `_local-not-for-reuse-*.yml` (Layer 4).
 # When this file bumps, the cascade is: 2b → 3 → 4 → external repos.
 # See updating-workflows skill at .claude/skills/updating-workflows/.
+#
+# Checkout is INLINE git-fetch here — no third-party actions/checkout@sha: git
+# init + a non-persisting auth-header fetch + checkout FETCH_HEAD, covering the
+# ref / working-directory / fetch-depth / persist-credentials=false inputs and
+# the pull_request merge ref (github.ref is refs/pull/<N>/merge on a PR). Two
+# forms of the same shape exist: this composite (used once the workspace is
+# populated) and an inline `run:` bootstrap in a job's FIRST step — that step
+# cannot call this local composite, since nothing is checked out yet for GitHub
+# to resolve `./.github/actions/*` from.
+#
 # cascade-data-deps: ., .github, .github/actions/fleet/lib, external-tools.json
 # (read at runtime via ${GITHUB_ACTION_PATH}/../… — implicit edges with no
 # `uses:` line; action-pins-are-current.mts tracks them for staleness.)
@@ -37,12 +47,49 @@ runs:
         git config --global --unset-all "http.https://github.com/.extraheader" 2>/dev/null || true
 
     - name: Checkout code
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-15)
-      with:
-        ref: ${{ inputs.ref }}
-        path: ${{ inputs.working-directory != '.' && inputs.working-directory || '' }}
-        fetch-depth: ${{ inputs.fetch-depth }}
-        persist-credentials: false
+      shell: bash
+      env:
+        # Route every workflow-context value through env so no ${{ }} expands
+        # directly into the shell body (zizmor expression-injection). The token
+        # authorizes the fetch inline via `git -c …extraheader` and is NEVER
+        # written to .git/config — the persist-credentials:false equivalent.
+        CHECKOUT_REF: ${{ inputs.ref }}
+        CHECKOUT_DEST: ${{ inputs.working-directory }}
+        CHECKOUT_FETCH_DEPTH: ${{ inputs.fetch-depth }}
+        GITHUB_TOKEN: ${{ github.token }}
+        SERVER_URL: ${{ github.server_url }}
+        REPOSITORY: ${{ github.repository }}
+        # github.ref is the triggering ref — on a pull_request it is the merge
+        # ref refs/pull/<N>/merge, so this also covers the PR-merge case.
+        TRIGGER_REF: ${{ github.ref }}
+      run: |
+        set -euo pipefail
+        DEST="${CHECKOUT_DEST:-.}"
+        mkdir -p "$DEST"
+        cd "$DEST"
+        # git init is idempotent — safe on an already-populated workspace (a
+        # first-step bootstrap runs this same shape; see the header). Re-point
+        # origin without failing when it already exists.
+        git init -q
+        git config --local advice.detachedHead false
+        git remote remove origin 2>/dev/null || true
+        git remote add origin "${SERVER_URL}/${REPOSITORY}"
+        # Explicit inputs.ref wins; otherwise the triggering ref.
+        FETCH_REF="${CHECKOUT_REF:-${TRIGGER_REF}}"
+        # fetch-depth 0 = full history + tags; >0 = shallow, tag-free (CI speed).
+        if [ "${CHECKOUT_FETCH_DEPTH}" = "0" ]; then
+          FETCH_ARGS=(--prune --tags origin "${FETCH_REF}")
+        else
+          FETCH_ARGS=(--no-tags --prune --depth "${CHECKOUT_FETCH_DEPTH}" origin "${FETCH_REF}")
+        fi
+        # Inline, non-persisting auth header (persist-credentials:false equiv).
+        if [ -n "${GITHUB_TOKEN}" ]; then
+          AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+          git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+        else
+          git fetch "${FETCH_ARGS[@]}"
+        fi
+        git checkout -q --detach FETCH_HEAD
 
     - name: Install zizmor
       # Auto-skip in matrix cells: zizmor has its own per-platform

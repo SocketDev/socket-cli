@@ -1,6 +1,6 @@
 ---
 name: updating-hooks-dry
-description: Read-only DRY/KISS sweep of the fleet hook tree (.claude/hooks/fleet/**) and the oxlint plugin (.config/fleet/oxlint-plugin/fleet/**). Fans out scanner agents to find copy-paste clusters that should absorb a _shared/ helper, dead _shared/ exports, overlapping guards / redundant lint rules, and KISS smells (a hook far longer than its siblings, regex where the shared AST parser exists). Produces a ranked report under .claude/reports/ with evidence + a concrete consolidation sketch per cluster. Plans only — applies nothing, opens no PR. Sibling of updating-coverage / updating-security under the updating umbrella; the periodic counterpart that keeps the ~170-hook tree from bloating as codifying-disciplines lands new enforcers.
+description: Read-only DRY/KISS sweep of fleet hooks and oxlint rules for overlap, dead helpers, and consolidation candidates.
 user-invocable: true
 allowed-tools: Workflow, Task, Read, Grep, Glob, Write, AskUserQuestion, Bash(node scripts/fleet/check/shared-hook-helpers-are-used.mts:*), Bash(node scripts/fleet/check/hooks-have-no-guard-nudge-overlap.mts:*), Bash(node scripts/fleet/check/hook-registry-is-current.mts:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(wc:*), Bash(cat:*), Bash(head:*), Bash(tail:*)
 model: claude-opus-4-8

@@ -36,6 +36,11 @@ import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { parsePatchFileName } from './constants/plugin-patch.mts'
+import { SOAK_DAYS } from './constants/soak.mts'
+import { isSocketSourcedRepository } from './constants/socket-scopes.mts'
+import { isMainModule } from './_shared/is-main-module.mts'
+
+const DAY_MS = 86_400_000
 
 const logger = getDefaultLogger()
 
@@ -230,6 +235,160 @@ export function findOrphanMarketplaces(
 }
 
 /**
+ * A plugin held out of reconcile by the soak gate: a non-Socket plugin whose
+ * pinned SHA is younger than the soak window (or whose commit date / pin can't
+ * be verified — fail closed). `committedAt` is undefined when unresolvable.
+ */
+export interface PluginSoakHold {
+  committedAt: Date | undefined
+  name: string
+  remainingMs: number
+  sha: string
+}
+
+/**
+ * The soak partition of a marketplace's plugins: `cleared` passed the window
+ * and reconcile, `exempt` are Socket-owned (own provenance pipeline, mirroring
+ * the npm SOCKET_SCOPES bypass), `held` are too-young / unverifiable non-Socket
+ * pins the gate keeps from installing.
+ */
+export interface PluginSoakPartition {
+  cleared: MarketplacePlugin[]
+  exempt: MarketplacePlugin[]
+  held: PluginSoakHold[]
+}
+
+/**
+ * Resolves a commit's authored date for `owner/repo` at `sha`. Injectable so
+ * the unit tests drive the partition without `gh` or the network; returns
+ * undefined when unresolvable (an unverifiable date is never soak-cleared).
+ */
+export type ResolvePluginCommitDate = (
+  ownerRepo: string,
+  sha: string,
+) => Date | undefined
+
+/**
+ * Extract the `owner/repo` slug from a plugin source's git URL (both
+ * `https://github.com/owner/repo.git` and `git@github.com:owner/repo.git`
+ * forms). Returns undefined when the URL is absent or not a GitHub remote.
+ */
+export function pluginSourceOwnerRepo(
+  source: MarketplacePluginSource,
+): string | undefined {
+  const { url } = source
+  if (typeof url !== 'string' || url === '') {
+    return undefined
+  }
+  const m = /github\.com[/:]([^/]+)\/([^/#?]+?)(?:\.git)?\/?$/i.exec(url.trim())
+  return m ? `${m[1]}/${m[2]}` : undefined
+}
+
+/**
+ * True when a plugin's source repo is Socket-owned (SocketDev org). Socket
+ * plugins go through our own provenance pipeline, so they bypass the soak — the
+ * same exemption Socket-published npm scopes get.
+ */
+export function isSocketOwnedPluginSource(
+  source: MarketplacePluginSource,
+): boolean {
+  const ownerRepo = pluginSourceOwnerRepo(source)
+  return ownerRepo !== undefined && isSocketSourcedRepository(ownerRepo)
+}
+
+/**
+ * Soak-partition marketplace plugins. Socket-owned plugins are exempt; every
+ * other plugin's pinned SHA must have a commit date at least `soakDays` old.
+ * A missing SHA, a non-GitHub URL, or an unverifiable commit date is held
+ * (fail closed — a third-party plugin must be SHA-pinned and soak-verifiable to
+ * install). Pure given `resolveCommitDate` — the primary unit-test target.
+ */
+export function partitionPluginsBySoak(options: {
+  now: Date
+  plugins: readonly MarketplacePlugin[]
+  resolveCommitDate: ResolvePluginCommitDate
+  soakDays: number
+}): PluginSoakPartition {
+  const { now, plugins, resolveCommitDate, soakDays } = options
+  const soakMs = soakDays * DAY_MS
+  const nowMs = now.getTime()
+  const cleared: MarketplacePlugin[] = []
+  const exempt: MarketplacePlugin[] = []
+  const held: PluginSoakHold[] = []
+  for (let i = 0, { length } = plugins; i < length; i += 1) {
+    const plugin = plugins[i]!
+    const { source } = plugin
+    if (isSocketOwnedPluginSource(source)) {
+      exempt.push(plugin)
+      continue
+    }
+    const ownerRepo = pluginSourceOwnerRepo(source)
+    const sha = source.sha
+    if (ownerRepo === undefined || typeof sha !== 'string' || sha === '') {
+      held.push({
+        committedAt: undefined,
+        name: plugin.name,
+        remainingMs: soakMs,
+        sha: typeof sha === 'string' ? sha : '',
+      })
+      continue
+    }
+    const committedAt = resolveCommitDate(ownerRepo, sha)
+    if (!committedAt || Number.isNaN(committedAt.getTime())) {
+      held.push({
+        committedAt: undefined,
+        name: plugin.name,
+        remainingMs: soakMs,
+        sha,
+      })
+      continue
+    }
+    const ageMs = nowMs - committedAt.getTime()
+    if (ageMs >= soakMs) {
+      cleared.push(plugin)
+    } else {
+      held.push({
+        committedAt,
+        name: plugin.name,
+        remainingMs: soakMs - ageMs,
+        sha,
+      })
+    }
+  }
+  return { cleared, exempt, held }
+}
+
+/**
+ * Resolve a commit's authored date through the sanctioned `gh api` read path.
+ * Returns undefined on any failure so the soak gate treats an unverifiable date
+ * as not-cleared (fail closed). Never a raw api.github.com fetch.
+ */
+function resolvePluginCommitDateViaGhApi(
+  ownerRepo: string,
+  sha: string,
+): Date | undefined {
+  const result = spawnSync(
+    'gh',
+    [
+      'api',
+      `repos/${ownerRepo}/commits/${sha}`,
+      '--jq',
+      '.commit.committer.date',
+    ],
+    { stdio: ['ignore', 'pipe', 'pipe'] },
+  )
+  if (result.status !== 0) {
+    return undefined
+  }
+  const iso = String(result.stdout ?? '').trim()
+  if (!iso) {
+    return undefined
+  }
+  const date = new Date(iso)
+  return Number.isNaN(date.getTime()) ? undefined : date
+}
+
+/**
  * Run `claude` CLI synchronously; return stdout + exit code. Stderr goes
  * through to our own stderr so the user sees CLI errors in real time. Fails
  * loudly on non-zero exit codes — the install flow has no graceful fallback if
@@ -253,8 +412,14 @@ function runClaudeCli(args: string[]): string {
   return String(result.stdout)
 }
 
-function listMarketplaces(): MarketplaceListEntry[] {
-  const stdout = runClaudeCli(['plugin', 'marketplace', 'list', '--json'])
+// The CLI boundary the reconciler runs against. Injectable so unit tests can
+// drive reconcilePlugin through every branch without a real `claude` binary.
+export type CliRunner = (args: string[]) => string
+
+function listMarketplaces(
+  runCli: CliRunner = runClaudeCli,
+): MarketplaceListEntry[] {
+  const stdout = runCli(['plugin', 'marketplace', 'list', '--json'])
   try {
     return JSON.parse(stdout) as MarketplaceListEntry[]
   } catch {
@@ -262,8 +427,8 @@ function listMarketplaces(): MarketplaceListEntry[] {
   }
 }
 
-function listPlugins(): PluginListEntry[] {
-  const stdout = runClaudeCli(['plugin', 'list', '--json'])
+function listPlugins(runCli: CliRunner = runClaudeCli): PluginListEntry[] {
+  const stdout = runCli(['plugin', 'list', '--json'])
   try {
     return JSON.parse(stdout) as PluginListEntry[]
   } catch {
@@ -328,7 +493,7 @@ function loadInstalledPluginsState(): unknown {
   }
 }
 
-function loadMarketplaceManifest(
+export function loadMarketplaceManifest(
   marketplace: MarketplaceListEntry,
 ): MarketplaceManifest {
   if (!marketplace.installLocation) {
@@ -353,14 +518,21 @@ function loadMarketplaceManifest(
   return JSON.parse(raw) as MarketplaceManifest
 }
 
-function uninstallPlugin(installId: string): void {
+function uninstallPlugin(
+  installId: string,
+  runCli: CliRunner = runClaudeCli,
+): void {
   logger.log(`Uninstalling ${installId}…`)
-  runClaudeCli(['plugin', 'uninstall', installId, '--scope', 'user'])
+  runCli(['plugin', 'uninstall', installId, '--scope', 'user'])
 }
 
-function installPlugin(installId: string, pinDescription: string): void {
+function installPlugin(
+  installId: string,
+  pinDescription: string,
+  runCli: CliRunner = runClaudeCli,
+): void {
   logger.log(`Installing ${installId} pinned to ${pinDescription}…`)
-  runClaudeCli(['plugin', 'install', installId, '--scope', 'user'])
+  runCli(['plugin', 'install', installId, '--scope', 'user'])
 }
 
 /**
@@ -381,17 +553,30 @@ function resolveInstalledSha(
   return extractInstalledSha(ours.installPath)
 }
 
+export interface ReconcileOptions {
+  // State loader for ~/.claude/plugins/installed_plugins.json; injectable so
+  // tests can exercise the SHA-compare branches without a real HOME.
+  readonly loadState?: (() => unknown) | undefined
+  readonly runCli?: CliRunner | undefined
+}
+
 /**
  * Reconcile a single plugin to the wheelhouse pin. Handles four cases: foreign
  * install (uninstall + install), missing (install), stale SHA (uninstall +
  * reinstall), and correct (no-op).
  */
-function reconcilePlugin(plugin: MarketplacePlugin): void {
+export function reconcilePlugin(
+  plugin: MarketplacePlugin,
+  options?: ReconcileOptions | undefined,
+): void {
+  const opts = { __proto__: null, ...options } as ReconcileOptions
+  const runCli = opts.runCli ?? runClaudeCli
+  const loadState = opts.loadState ?? loadInstalledPluginsState
   const ourInstallId = `${plugin.name}@${MARKETPLACE_NAME}`
   const expectedSha = plugin.source.sha ?? undefined
   const pinDescription = plugin.source.sha ?? plugin.source.ref ?? '<no ref>'
 
-  let plugins = listPlugins()
+  let plugins = listPlugins(runCli)
 
   // (1) Foreign install: same plugin name, different marketplace. Wheelhouse
   // is the pin authority; uninstall the foreign install so our pin can
@@ -402,8 +587,8 @@ function reconcilePlugin(plugin: MarketplacePlugin): void {
     logger.log(
       `Found foreign install ${foreign.id} (path: ${foreign.installPath ?? '<unknown>'}); rewiring to ${ourInstallId}.`,
     )
-    uninstallPlugin(foreign.id)
-    plugins = listPlugins()
+    uninstallPlugin(foreign.id, runCli)
+    plugins = listPlugins(runCli)
   }
 
   // (2) Our install present? Check SHA against installed_plugins.json's
@@ -421,7 +606,7 @@ function reconcilePlugin(plugin: MarketplacePlugin): void {
       )
       return
     }
-    const state = loadInstalledPluginsState()
+    const state = loadState()
     const installedSha = resolveInstalledSha(ours, state)
     const expectedPrefix = expectedSha.slice(0, 12)
     const installedPrefix = installedSha?.slice(0, 12) ?? undefined
@@ -435,14 +620,14 @@ function reconcilePlugin(plugin: MarketplacePlugin): void {
     logger.log(
       `Plugin ${ourInstallId} drift: installed at ${installedPrefix ?? '<unknown>'}, manifest pins ${expectedPrefix}. Reinstalling.`,
     )
-    uninstallPlugin(ourInstallId)
-    installPlugin(ourInstallId, pinDescription)
+    uninstallPlugin(ourInstallId, runCli)
+    installPlugin(ourInstallId, pinDescription, runCli)
     return
   }
 
   // (3) Not installed at all (or we just uninstalled a foreign copy).
-  installPlugin(ourInstallId, pinDescription)
-  const after = listPlugins().find(p => p.id === ourInstallId)
+  installPlugin(ourInstallId, pinDescription, runCli)
+  const after = listPlugins(runCli).find(p => p.id === ourInstallId)
   if (!after) {
     throw new Error(
       `plugin ${ourInstallId} did not appear in plugin list after install ` +
@@ -551,11 +736,50 @@ function copyPatchSidecar(patchPath: string, cacheDir: string): void {
  * applies neither way (e.g. the plugin bumped and the patch went stale) is
  * reported, not fatal — a stale patch shouldn't wedge the whole reconcile.
  */
-function reapplyPluginPatches(): void {
-  if (!existsSync(PLUGIN_PATCHES_DIR)) {
+export interface ReapplyPatchesOptions {
+  readonly patchesDir?: string | undefined
+  // Cache-dir resolver for <plugin>@<version>; injectable so tests can point
+  // patches at a tmp tree instead of a real ~/.claude/plugins cache.
+  readonly resolveCacheDir?:
+    | ((pluginName: string, version: string) => string | undefined)
+    | undefined
+  // The `patch` binary boundary — receives the extra args (dry-run / reverse),
+  // the cache dir, and the diff body; returns the exit status.
+  readonly runPatchCommand?:
+    | ((
+        extraArgs: readonly string[],
+        cacheDir: string,
+        diff: string,
+      ) => { status: number | null })
+    | undefined
+}
+
+function runPatchBinary(
+  extraArgs: readonly string[],
+  cacheDir: string,
+  diff: string,
+): { status: number | null } {
+  // patch reads the diff from stdin. -p1 strips the leading a/ b/ segment;
+  // --forward refuses to re-apply an already-applied hunk (so the forward
+  // dry-run cleanly fails when the fix is present).
+  return spawnSync('patch', ['-p1', '--forward', '--silent', ...extraArgs], {
+    cwd: cacheDir,
+    input: diff,
+    stdio: ['pipe', 'ignore', 'ignore'],
+  })
+}
+
+export function reapplyPluginPatches(
+  options?: ReapplyPatchesOptions | undefined,
+): void {
+  const opts = { __proto__: null, ...options } as ReapplyPatchesOptions
+  const patchesDir = opts.patchesDir ?? PLUGIN_PATCHES_DIR
+  const resolveCacheDir = opts.resolveCacheDir ?? resolvePluginCacheDir
+  const runPatchCommand = opts.runPatchCommand ?? runPatchBinary
+  if (!existsSync(patchesDir)) {
     return
   }
-  const patchFiles = readdirSync(PLUGIN_PATCHES_DIR)
+  const patchFiles = readdirSync(patchesDir)
     .filter(f => f.endsWith('.patch'))
     // oxlint-disable-next-line unicorn/no-array-sort -- .filter() already returns a fresh array (no shared mutation); .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
     .sort()
@@ -569,13 +793,13 @@ function reapplyPluginPatches(): void {
       continue
     }
     const { plugin: pluginName, version } = parsed
-    const patchPath = path.join(PLUGIN_PATCHES_DIR, file)
+    const patchPath = path.join(patchesDir, file)
     const diff = stripPatchHeader(readFileSync(patchPath, 'utf8'))
     if (!diff) {
       logger.warn(`Skipping patch "${file}": no \`--- \` diff body found.`)
       continue
     }
-    const cacheDir = resolvePluginCacheDir(pluginName, version)
+    const cacheDir = resolveCacheDir(pluginName, version)
     if (!cacheDir) {
       logger.log(
         `Patch "${file}": no cache for ${pluginName}@${version}; skipping (plugin not installed).`,
@@ -586,15 +810,8 @@ function reapplyPluginPatches(): void {
     // import of them resolves (and so the already-applied reverse-check sees
     // the same tree the forward apply produced).
     copyPatchSidecar(patchPath, cacheDir)
-    // patch reads the diff from stdin. -p1 strips the leading a/ b/ segment;
-    // --forward refuses to re-apply an already-applied hunk (so the forward
-    // dry-run cleanly fails when the fix is present).
     const runPatch = (extraArgs: readonly string[]) =>
-      spawnSync('patch', ['-p1', '--forward', '--silent', ...extraArgs], {
-        cwd: cacheDir,
-        input: diff,
-        stdio: ['pipe', 'ignore', 'ignore'],
-      })
+      runPatchCommand(extraArgs, cacheDir, diff)
     if (runPatch(['--dry-run']).status !== 0) {
       // Forward dry-run failed. Either already applied or genuinely stale —
       // a reverse dry-run that succeeds means the fix is already present.
@@ -629,8 +846,34 @@ function main(): void {
       `marketplace "${MARKETPLACE_NAME}" has no plugins listed — nothing to install.`,
     )
   }
+
+  // Soak gate: a non-Socket plugin whose pinned SHA is younger than the fleet
+  // soak window (or whose commit date can't be verified) is HELD out of
+  // reconcile — a fresh third-party plugin can't land before its soak. Socket
+  // plugins bypass (own provenance pipeline).
+  const { held } = partitionPluginsBySoak({
+    now: new Date(),
+    plugins,
+    resolveCommitDate: resolvePluginCommitDateViaGhApi,
+    soakDays: SOAK_DAYS,
+  })
+  const heldNames = new Set(held.map(h => h.name))
+  for (let i = 0, { length } = held; i < length; i += 1) {
+    const { committedAt, name, remainingMs, sha } = held[i]!
+    const age =
+      committedAt === undefined
+        ? 'commit date unverifiable / no pinned SHA'
+        : `${Math.ceil(remainingMs / DAY_MS)}d left of ${SOAK_DAYS}d soak`
+    logger.fail(
+      `Holding plugin "${name}" (${sha.slice(0, 12) || '<no sha>'}) — too fresh: ${age}.`,
+    )
+  }
+
   for (let i = 0, { length } = plugins; i < length; i += 1) {
     const plugin = plugins[i]!
+    if (heldNames.has(plugin.name)) {
+      continue
+    }
     reconcilePlugin(plugin)
   }
 
@@ -641,12 +884,19 @@ function main(): void {
   // Post-pass: reapply wheelhouse-owned patches over the (re)installed caches.
   reapplyPluginPatches()
 
+  if (held.length) {
+    logger.fail(
+      `${held.length} plugin(s) held under the ${SOAK_DAYS}-day soak — re-run once they clear.`,
+    )
+    process.exitCode = 1
+  }
+
   logger.log('Done.')
 }
 
 // Skip execution when imported (for tests). The CLI entry is direct
 // `node scripts/install-claude-plugins.mts` invocation.
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMainModule(import.meta.url)) {
   try {
     main()
   } catch (e) {

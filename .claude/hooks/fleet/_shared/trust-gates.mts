@@ -95,7 +95,8 @@ export interface GateFloorViolation {
   readonly wanted: string
 }
 
-const TRUST_POLICY_RE = /^trustPolicy\s*:\s*(?<value>\S+)/m
+const TRUST_POLICY_RE =
+  /^trustPolicy\s*:\s*(?<quote>['"]?)(?<value>[^'"\s#]+)\k<quote>(?:\s*(?:#.*)?)?$/m
 const BLOCK_EXOTIC_RE = /^blockExoticSubdeps\s*:\s*(?<value>\S+)/m
 const MIN_RELEASE_AGE_YAML_RE = /^minimumReleaseAge\s*:\s*(?<value>\d+)/m
 

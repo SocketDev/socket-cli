@@ -1,0 +1,76 @@
+#!/usr/bin/env node
+/**
+ * @file `setup:mcp` — bridge the committed `.mcp.json` authority to clients
+ *   that do not discover it themselves. Codex and OpenCode use generated,
+ *   project-local files; Kimi requires a per-user config, so this step merges
+ *   only the fleet-managed server names and preserves all unrelated user
+ *   state.
+ */
+
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import process from 'node:process'
+
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
+
+import { mergeKimiMcpConfig, parseCanonicalMcpConfig } from '../mcp-config.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
+import { resolveEcosystemOptions, skipResult } from './ecosystems.mts'
+
+import type {
+  EcosystemStepOptions,
+  EcosystemStepResult,
+} from './ecosystems.mts'
+
+export interface McpSetupOptions extends EcosystemStepOptions {
+  readonly kimiConfigPath?: string | undefined
+}
+
+/**
+ * Merge the canonical server inventory into Kimi's user-owned config.
+ */
+export async function setupMcp(
+  options?: McpSetupOptions | undefined,
+): Promise<EcosystemStepResult> {
+  const opts = options ?? {}
+  const { commandExists, logger, repoRoot } = resolveEcosystemOptions(opts)
+  if (!(await commandExists('kimi'))) {
+    return skipResult(logger, 'setup:mcp', 'kimi CLI not on PATH')
+  }
+
+  const canonicalPath = path.join(repoRoot, '.mcp.json')
+  const kimiConfigPath =
+    opts.kimiConfigPath ?? path.join(os.homedir(), '.kimi', 'mcp.json')
+  try {
+    const servers = parseCanonicalMcpConfig(readFileSync(canonicalPath, 'utf8'))
+    const current = existsSync(kimiConfigPath)
+      ? readFileSync(kimiConfigPath, 'utf8')
+      : '{}'
+    const next = mergeKimiMcpConfig(current, servers, repoRoot)
+    if (next !== current) {
+      mkdirSync(path.dirname(kimiConfigPath), { recursive: true })
+      writeFileSync(kimiConfigPath, next, { mode: 0o600 })
+    }
+  } catch (error) {
+    logger.error(`setup:mcp — ${errorMessage(error)}`)
+    return { ok: false, reason: 'Kimi MCP setup failed', skipped: false }
+  }
+
+  logger.success(
+    'setup:mcp — Kimi server definitions synced; run `kimi mcp auth <name>` for OAuth servers.',
+  )
+  return { ok: true, skipped: false }
+}
+
+if (isMainModule(import.meta.url)) {
+  setupMcp().then(
+    result => {
+      process.exitCode = result.ok ? 0 : 1
+    },
+    (error: unknown) => {
+      process.stderr.write(`${errorMessage(error)}\n`)
+      process.exitCode = 1
+    },
+  )
+}

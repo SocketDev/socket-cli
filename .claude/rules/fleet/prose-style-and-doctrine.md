@@ -52,6 +52,25 @@ by `convo-prose-nudge` on PR/issue bodies:
 - **"not X, it's Y" contrast pairs** — state the positive directly.
 - **Honesty announcements:** "to be honest", "if I'm honest" — just say it.
 
+## GitHub advanced formatting
+
+When a GitHub body earns structure, use GitHub's own affordances (detail +
+examples: `references/conversational.md` "Use GitHub's formatting when
+structure is earned"):
+
+- **Collapsed sections:** supporting material folds under
+  `<details><summary>specific label</summary>` (blank line after
+  `</summary>` or the markdown inside will not render); the verdict stays
+  outside the fold. Written at junior-dev comprehension level.
+- **Alerts:** at most one `> [!NOTE]/[!TIP]/[!IMPORTANT]/[!WARNING]/[!CAUTION]`
+  per body, reserved for the thing a skimmer must act on.
+- **Task lists:** `- [ ]` checkboxes for genuinely actionable follow-ups;
+  check them off as they land.
+- **Autolinks/permalinks:** `#123`, `owner/repo#123`, full SHAs, `@user`,
+  and line-range file permalinks (GitHub embeds the snippet inline).
+- **Footnotes:** `[^1]` for one or two asides; more means a `<details>`
+  section.
+
 ## Surface routing
 
 - Conversational surfaces (PR body/comment, issue body/comment, Linear update,

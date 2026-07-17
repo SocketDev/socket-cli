@@ -41,13 +41,16 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { isSocketSourcedPackage } from '../constants/socket-scopes.mts'
+import {
+  isSocketSourcedPackage,
+  SOCKET_PACKAGE_PATTERNS,
+} from '../constants/socket-scopes.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { fetchPackagePublishDate } from '../registry-publish-date.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -94,6 +97,29 @@ export function parseSoakExcludeBlock(content: string): string[] {
     }
   }
   return entries
+}
+
+/**
+ * The Socket-owned soak-bypass patterns (globs + bare names) that MUST be
+ * present in the live `minimumReleaseAgeExclude` block. Returns the canonical
+ * `SOCKET_PACKAGE_PATTERNS` entries ABSENT from `wheelhouse` — the reverse of
+ * `diffSoakExclude`, which guards `wheelhouse ⊆ canonical`. Without this, a
+ * stale or hand-trimmed live block (missing e.g. `@ultrathink/*`) reads green
+ * even though those scopes get no soak bypass — a fresh Socket publish then
+ * fails every `pnpm install` with `[ERR_PNPM_NO_MATURE_MATCHING_VERSION]`, and
+ * the "Socket scopes are always soak-excluded" invariant becomes a doc claim,
+ * not code-as-law.
+ */
+export function missingSocketPatterns(wheelhouse: readonly string[]): string[] {
+  const present = new Set(wheelhouse)
+  const missing: string[] = []
+  for (let i = 0, { length } = SOCKET_PACKAGE_PATTERNS; i < length; i += 1) {
+    const pattern = SOCKET_PACKAGE_PATTERNS[i]!
+    if (!present.has(pattern)) {
+      missing.push(pattern)
+    }
+  }
+  return missing
 }
 
 /**
@@ -383,6 +409,37 @@ async function main(): Promise<void> {
   }
 
   const wheelhouseEntries = parseSoakExcludeBlock(content)
+
+  // Fourth invariant: every Socket-owned soak-bypass pattern must be PRESENT in
+  // the live block. Socket scopes are permanent bypasses (they ship through
+  // Socket's own provenance pipeline), so a missing one is never intentional —
+  // it is cascade-staleness or a hand-trim, and it silently denies the bypass.
+  const missingSocket = missingSocketPatterns(wheelhouseEntries)
+  if (missingSocket.length > 0) {
+    logger.fail(
+      [
+        '[check-fleet-soak-exclude-parity] Socket-owned soak-bypass pattern(s) missing from the live block.',
+        '',
+        '  `minimumReleaseAgeExclude:` in pnpm-workspace.yaml is missing Socket',
+        '  scope pattern(s) that SOCKET_PACKAGE_PATTERNS marks as permanent',
+        '  soak-bypasses. Socket packages ship through our own provenance',
+        '  pipeline, so they are always excluded — a missing entry denies the',
+        '  bypass and a fresh Socket publish then fails every `pnpm install`.',
+        '',
+        '  Missing (add to the block, or re-run the cascade which regenerates it):',
+        ...missingSocket.map(e => `    - '${e}'`),
+        '',
+        '  Canonical source: scripts/fleet/constants/socket-scopes.mts',
+        '  SOCKET_PACKAGE_PATTERNS (spread into EXPECTED_RELEASE_AGE_EXCLUDE by',
+        '  scripts/repo/sync-scaffolding/manifest/workspace.mts). Fix:',
+        '  `node scripts/repo/sync-scaffolding/cli.mts --target . --fix`.',
+        '',
+      ].join('\n'),
+    )
+    process.exitCode = 1
+    return
+  }
+
   const missing = diffSoakExclude(
     wheelhouseEntries,
     EXPECTED_RELEASE_AGE_EXCLUDE,
@@ -412,7 +469,7 @@ async function main(): Promise<void> {
   process.exitCode = 1
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   main().catch((e: unknown) => {
     logger.fail(`[check-fleet-soak-exclude-parity] error: ${e}`)
     process.exitCode = 1

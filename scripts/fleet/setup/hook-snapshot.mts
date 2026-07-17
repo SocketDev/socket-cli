@@ -59,95 +59,24 @@ import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
+import {
+  baselineCommand,
+  isDispatchCommand,
+  launcherCommand,
+  rewriteDispatchCommands,
+} from '../../../bootstrap/src/dispatch-wiring.mts'
+import type { DispatchSettings } from '../../../bootstrap/src/dispatch-wiring.mts'
 import { DISPATCH_DIR, REPO_ROOT } from '../paths.mts'
 
 const logger = getDefaultLogger()
 
 const SETTINGS_PATH = path.join(REPO_ROOT, '.claude', 'settings.json')
-const LAUNCHER_REL = '.claude/hooks/fleet/_dispatch/dispatch-launcher'
-const INDEX_REL = '.claude/hooks/fleet/_dispatch/index.cjs'
 
-// The four hook events the fleet dispatcher fans out (the entries the cascaded
-// settings.json points at the compile-cache `index.cjs`). These are the ONLY
-// commands this step rewrites — the standalone single-hook entries
-// (skill-usage-logger, …) are left untouched.
-const DISPATCH_EVENTS = ['PreToolUse', 'PostToolUse', 'SessionStart', 'Stop']
-
-/**
- * The compile-cache baseline command for an event (cascaded canonical).
- */
-function baselineCommand(event: string): string {
-  return `node "$CLAUDE_PROJECT_DIR"/${INDEX_REL} ${event}`
-}
-
-/**
- * The launcher fast-path command for an event (POSIX execv, host-built).
- */
-function launcherCommand(event: string): string {
-  return `"$CLAUDE_PROJECT_DIR"/${LAUNCHER_REL} ${event}`
-}
-
-/**
- * A dispatch command for `event` in either form (baseline or launcher). Used to
- * recognize an existing dispatch entry regardless of which path it's wired to,
- * so the rewrite is idempotent and a re-wire replaces (never duplicates) it.
- */
-function isDispatchCommand(command: string, event: string): boolean {
-  return (
-    command === baselineCommand(event) ||
-    command === launcherCommand(event) ||
-    // Pre-cutover form: the live per-event dispatcher this step supersedes.
-    command ===
-      `node "$CLAUDE_PROJECT_DIR"/.claude/hooks/fleet/_shared/dispatch.mts ${event}`
-  )
-}
-
-interface HookEntry {
-  type?: string | undefined
-  command?: string | undefined
-}
-interface MatcherEntry {
-  matcher?: string | undefined
-  hooks?: HookEntry[] | undefined
-}
-interface SettingsJson {
-  hooks?: Record<string, MatcherEntry[]> | undefined
-  [key: string]: unknown
-}
-
-/**
- * Rewrite every dispatch command in `settings` to the form `make(event)`
- * produces. Returns the number of commands changed. Pure on the parsed object.
- */
-function rewriteDispatchCommands(
-  settings: SettingsJson,
-  make: (event: string) => string,
-): number {
-  let changed = 0
-  const hooks = settings.hooks ?? {}
-  for (let i = 0, { length } = DISPATCH_EVENTS; i < length; i += 1) {
-    const event = DISPATCH_EVENTS[i]!
-    const matchers = hooks[event] ?? []
-    for (let i = 0, { length } = matchers; i < length; i += 1) {
-      const entries = matchers[i]!.hooks ?? []
-      for (let j = 0, hl = entries.length; j < hl; j += 1) {
-        const entry = entries[j]!
-        if (
-          entry.type === 'command' &&
-          entry.command &&
-          isDispatchCommand(entry.command, event)
-        ) {
-          const next = make(event)
-          if (entry.command !== next) {
-            entry.command = next
-            changed += 1
-          }
-        }
-      }
-    }
-  }
-  return changed
-}
+// The baseline/launcher command vocabulary + the idempotent dispatch rewrite are
+// the SINGLE source in bootstrap/src/dispatch-wiring.mts — shared verbatim with
+// the cascade merge (settings.mts), so the launcher form this step writes is the
+// exact form the merge PRESERVES and the drift check CANONICALIZES. Re-exported
+// at the bottom for the setup unit test.
 
 /**
  * Run a build script with the host node; returns true on exit 0.
@@ -166,9 +95,11 @@ function wireSettings(make: (event: string) => string, label: string): boolean {
     logger.warn(`.claude/settings.json absent — skipping the ${label} wire.`)
     return false
   }
-  let settings: SettingsJson
+  let settings: DispatchSettings
   try {
-    settings = JSON.parse(readFileSync(SETTINGS_PATH, 'utf8')) as SettingsJson
+    settings = JSON.parse(
+      readFileSync(SETTINGS_PATH, 'utf8'),
+    ) as DispatchSettings
   } catch (e) {
     logger.error(`.claude/settings.json is not valid JSON: ${String(e)}.`)
     return false

@@ -9,6 +9,7 @@
  *   substitution.
  */
 
+import path from 'node:path'
 import process from 'node:process'
 
 import { commandsFor, normalizeShellDir } from './shell-command.mts'
@@ -16,6 +17,10 @@ import { commandsFor, normalizeShellDir } from './shell-command.mts'
 export { normalizeShellDir }
 
 export interface GitCwdOptions {
+  /**
+   * Directory the inspected command starts in. Defaults to the hook cwd.
+   */
+  readonly cwd?: string | undefined
   /**
    * When set, scope the `-C` lookup to the git invocation carrying one of
    * these subcommands (e.g. `commit`, or `['add', 'commit']` for a guard
@@ -43,7 +48,7 @@ export function extractGitCwd(
   options?: GitCwdOptions | undefined,
 ): string {
   const opts = { __proto__: null, ...options } as GitCwdOptions
-  const { subcommand } = opts
+  const { cwd, subcommand } = opts
   const gitInvocations = commandsFor(command, 'git')
   if (subcommand !== undefined) {
     const wanted = typeof subcommand === 'string' ? [subcommand] : subcommand
@@ -51,7 +56,7 @@ export function extractGitCwd(
       if (wanted.some(s => c.args.includes(s))) {
         const dir = dashCValue(c.args)
         if (dir) {
-          return normalizeShellDir(dir)
+          return normalizeShellDir(dir, cwd)
         }
         break
       }
@@ -60,13 +65,13 @@ export function extractGitCwd(
     for (const c of gitInvocations) {
       const dir = dashCValue(c.args)
       if (dir) {
-        return normalizeShellDir(dir)
+        return normalizeShellDir(dir, cwd)
       }
     }
   }
   const cdDir = commandsFor(command, 'cd')[0]?.args[0]
   if (cdDir) {
-    return normalizeShellDir(cdDir)
+    return normalizeShellDir(cdDir, cwd)
   }
-  return process.cwd()
+  return path.resolve(cwd ?? process.cwd())
 }

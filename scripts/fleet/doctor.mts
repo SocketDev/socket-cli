@@ -27,6 +27,17 @@
  *      but not reflected in pnpm-lock.yaml's resolved catalogs (CI's
  *      --frozen-lockfile then fails). Always runs (cheap file reads);
  *      report-only, operator runs `pnpm install`.
+ *   9. Pin-shadowed catalog entries (GAP 11) — a package.json pins a version
+ *      directly while the catalog carries the same dep, so catalog bumps
+ *      silently no-op. Auto-fixed to "catalog:" under --fix; deliberate
+ *      off-catalog pins opt out via catalogShadowIgnore: in
+ *      pnpm-workspace.yaml.
+ *   10. Brewfile drift — an enrolled repo's (repo-root Brewfile present)
+ *      committed Brewfile out of sync with a fresh render of the current
+ *      `.github/` brew install sites, which is what makes
+ *      `check/brew-install-is-pinned.mts` red. Always runs (cheap file
+ *      reads); auto-fixed (rewrites the Brewfile) under --fix, otherwise
+ *      reported loud. A repo with no Brewfile is not enrolled — no finding.
  *
  *   CLI: node scripts/fleet/doctor.mts [--fix] [--probe-install] [--probe-git]
  *        [--probe-secrets]
@@ -48,6 +59,11 @@ import {
 } from '@socketsecurity/lib-stable/process/spawn/child'
 import { isSpawnError } from '@socketsecurity/lib-stable/process/spawn/errors'
 
+import { SOAK_DAYS } from './constants/soak.mts'
+import {
+  findBrewfileDrift,
+  formatBrewfileDriftFinding,
+} from './lib/doctor/brewfile-gap.mts'
 import {
   applyCatalogFixes,
   collectCatalogRefs,
@@ -60,6 +76,10 @@ import {
   detectUnsignedCommits,
 } from './lib/doctor/git-gap.mts'
 import { diagnoseLockfileCatalogDrift } from './lib/doctor/lockfile-catalog-gap.mts'
+import {
+  applyPinShadowFixes,
+  diagnosePinShadowGaps,
+} from './lib/doctor/pin-shadow-gap.mts'
 import {
   formatSecretFindings,
   formatToolMissingFinding,
@@ -74,8 +94,52 @@ import {
   formatStrandedCascadeFinding,
 } from './lib/doctor/stranded-cascade-gap.mts'
 import { parseListBlock } from './lib/workspace-yaml.mts'
+import { brewfilePath, findManifestBrewSites } from './update/brew-parse.mts'
+import { isMainModule } from './_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
+
+// True when the repo at `cwd` is on the `squash-history` cadence — its roster
+// entry (`.claude/skills/fleet/cascading-fleet/lib/fleet-repos.json`) lists
+// `squash-history` in `optIns`. Such a repo squashes local history and
+// force-pushes over origin, so a diverged (behind > 0) local main is the
+// intended state, not a defect. Resolves the repo name from the origin remote,
+// falling back to the directory name. Any read/parse error yields false (the
+// divergence probe then behaves as before).
+function isSquashHistoryRepo(cwd: string): boolean {
+  const rosterPath = path.join(
+    cwd,
+    '.claude/skills/fleet/cascading-fleet/lib/fleet-repos.json',
+  )
+  if (!existsSync(rosterPath)) {
+    return false
+  }
+  let repoName = path.basename(cwd)
+  const remoteR = spawnSync('git', ['config', '--get', 'remote.origin.url'], {
+    cwd,
+    stdioString: true,
+    timeout: 5_000,
+  })
+  if (remoteR.status === 0 && typeof remoteR.stdout === 'string') {
+    const slug = remoteR.stdout
+      .trim()
+      .replace(/\.git$/, '')
+      .split(/[/:]/)
+      .pop()
+    if (slug) {
+      repoName = slug
+    }
+  }
+  try {
+    const roster = JSON.parse(readFileSync(rosterPath, 'utf8')) as {
+      repos?: Array<{ name?: string; optIns?: string[] }>
+    }
+    const entry = roster.repos?.find(r => r.name === repoName)
+    return Boolean(entry?.optIns?.includes('squash-history'))
+  } catch {
+    return false
+  }
+}
 
 // Print a finding in the canonical four-ingredient format.
 function printFinding(f: DoctorFinding, idx: number): void {
@@ -324,6 +388,34 @@ async function main(): Promise<void> {
     )
   }
 
+  // GAP 11: direct pins shadowing catalog entries — the pin wins over the
+  // catalog, so catalog bumps silently no-op (a repo can run a stale tool
+  // version while its catalog reports current). Fix rewrites the pin to
+  // "catalog:"; the install probe below then refreshes the lockfile check.
+  const { findings: shadowFindings, fixes: shadowFixes } =
+    diagnosePinShadowGaps({ packageJsons, workspaceYaml })
+  if (shadowFixes.length > 0 && doFix) {
+    for (const shadowFix of shadowFixes) {
+      const absPath = path.join(cwd, shadowFix.path)
+      writeFileSync(
+        absPath,
+        applyPinShadowFixes({
+          content: readFileSync(absPath, 'utf8'),
+          deps: shadowFix.deps,
+        }),
+        'utf8',
+      )
+    }
+    const depCount = shadowFixes.reduce((n, f) => n + f.deps.length, 0)
+    logger.info(
+      `doctor --fix: rewrote ${depCount} pin(s) to catalog: across ${shadowFixes.length} package.json file(s) — run pnpm install to refresh the lockfile`,
+    )
+    catalogFixed = true
+    allFindings.push(...shadowFindings.filter(f => !f.fixable))
+  } else {
+    allFindings.push(...shadowFindings)
+  }
+
   // GAP: lockfile ↔ catalog drift — a bumped pnpm-workspace.yaml catalog entry
   // not yet reflected in pnpm-lock.yaml's resolved catalogs (CI's
   // --frozen-lockfile then fails). Cheap pure file reads, so it always runs;
@@ -336,6 +428,38 @@ async function main(): Promise<void> {
         workspaceYaml,
       }),
     )
+  }
+
+  // GAP: Brewfile drift — an enrolled repo's (repo-root Brewfile present)
+  // committed Brewfile out of sync with a fresh render of the current
+  // `.github/` brew install sites, which is what makes
+  // `check/brew-install-is-pinned.mts` red. Cheap pure file reads, so it
+  // always runs. A repo with no Brewfile is not enrolled — no finding
+  // (enrollment stays a deliberate, separate step per tasks #18/#19).
+  const rootBrewfilePath = brewfilePath(cwd)
+  const brewfileContent = existsSync(rootBrewfilePath)
+    ? readFileSync(rootBrewfilePath, 'utf8')
+    : undefined
+  const brewfileDrift = findBrewfileDrift({
+    brewfileContent,
+    discoveredTools: findManifestBrewSites(cwd),
+    soakDays: SOAK_DAYS,
+  })
+  if (brewfileDrift.enrolled && brewfileDrift.drifted) {
+    if (doFix) {
+      writeFileSync(rootBrewfilePath, brewfileDrift.expected, 'utf8')
+      logger.info(
+        'doctor --fix: regenerated Brewfile (was out of sync with .github brew install sites)',
+      )
+    } else {
+      allFindings.push(
+        formatBrewfileDriftFinding({
+          brewfilePath: path.relative(cwd, rootBrewfilePath),
+          expected: brewfileDrift.expected,
+          soakDays: SOAK_DAYS,
+        }),
+      )
+    }
   }
 
   // GAP 2: soak-window probe — only when --fix applied catalog fixes or
@@ -413,7 +537,9 @@ async function main(): Promise<void> {
       const behind = parseInt(parts[0] ?? '0', 10)
       const ahead = parseInt(parts[1] ?? '0', 10)
       if (!Number.isNaN(behind) && !Number.isNaN(ahead)) {
-        const divergedFinding = detectDivergedMain(ahead, behind)
+        const divergedFinding = detectDivergedMain(ahead, behind, {
+          squashHistory: isSquashHistoryRepo(cwd),
+        })
         if (divergedFinding) {
           allFindings.push(divergedFinding)
         }
@@ -541,9 +667,11 @@ async function main(): Promise<void> {
   }
 }
 
-void (async () => {
-  await main()
-})().catch((e: unknown) => {
-  logger.error(errorMessage(e))
-  process.exitCode = 1
-})
+if (isMainModule(import.meta.url)) {
+  void (async () => {
+    await main()
+  })().catch((e: unknown) => {
+    logger.error(errorMessage(e))
+    process.exitCode = 1
+  })
+}

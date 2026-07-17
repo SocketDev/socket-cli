@@ -29,11 +29,11 @@ import {
 } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from './paths.mts'
+import { isMainModule } from './_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -117,7 +117,7 @@ export function writeAdapter(repoRoot: string, adapter: Adapter): void {
   }
 }
 
-function toPosix(p: string): string {
+export function toPosix(p: string): string {
   return p.replaceAll('\\', '/')
 }
 
@@ -188,6 +188,6 @@ function main(): void {
   )
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   main()
 }

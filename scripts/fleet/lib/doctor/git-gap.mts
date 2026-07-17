@@ -84,17 +84,26 @@ export function formatUnsignedCommitsFinding(
  * meaning it is not fast-forwardable. A pure ahead count is healthy (unpushed
  * local work). Behind > 0 means a merge or rebase is required before push.
  *
+ * For a repo on the `squash-history` cadence, local main is canonical and the
+ * publish step squashes local history and force-pushes over origin. Divergence
+ * (behind > 0) is the intended steady state there, not a defect, so the probe
+ * returns nothing — surfacing it would be a false alarm and the reconcile /
+ * do-not-force-push advice would be wrong.
+ *
  * @param ahead - Commits local has that origin does not.
  * @param behind - Commits origin has that local does not.
+ * @param options.squashHistory - True when the repo squashes + force-pushes;
+ *   suppresses the finding.
  *
- * @returns A DoctorFinding when behind > 0, undefined when the branch is
- *   ahead-only or fully in sync.
+ * @returns A DoctorFinding when behind > 0 and the repo is not on the
+ *   squash-history cadence, undefined otherwise.
  */
 export function detectDivergedMain(
   ahead: number,
   behind: number,
+  options?: { squashHistory?: boolean | undefined } | undefined,
 ): DoctorFinding | undefined {
-  if (behind <= 0) {
+  if (behind <= 0 || options?.squashHistory) {
     return undefined
   }
   return formatDivergedMainFinding(ahead, behind)

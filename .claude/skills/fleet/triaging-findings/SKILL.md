@@ -1,14 +1,6 @@
 ---
 name: triaging-findings
-description: >-
-  Triage a batch of raw security findings. Verify each is real, collapse
-  duplicates, re-rank by derived exploitability, and tag with an owner. Takes a
-  directory or file of scanner output (Socket CLI, Trivy, OpenGrep, TruffleHog,
-  scanning-vulns VULN-FINDINGS.json, or any JSON/markdown report) and writes
-  TRIAGE.json + TRIAGE.md sorted by what actually needs engineering attention.
-  Use when asked to "triage findings", "validate scanner output", "prioritize
-  vulns", or "review the security backlog". Runs interactively by default; pass
-  --auto to skip the interview.
+description: Verify raw security findings, dedupe them, rerank exploitability, and assign owners.
 argument-hint: "<findings-path> [--auto] [--votes N] [--repo PATH] [--fp-rules FILE] [--fresh]"
 user-invocable: true
 allowed-tools: Workflow, Task, Read, Glob, Grep, Write, AskUserQuestion, Bash(git log:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(wc:*), Bash(node .claude/skills/fleet/_shared/scripts/checkpoint.mts:*), Bash(node scripts/fleet/triaging-findings/cli.mts:*)

@@ -333,6 +333,31 @@ export function invocationHasFlag(
 }
 
 /**
+ * Read a flag's value from a parsed segment's args, supporting the separate
+ * (`--head v`, short `-H v`) and `=`-joined (`--head=v`) forms. Returns
+ * undefined when the flag is absent or valueless (next token missing or
+ * itself a flag) — reading from already-parsed args means a flag inside a
+ * quoted string or heredoc body can never match.
+ */
+export function flagValue(
+  args: readonly string[],
+  long: string,
+  short?: string | undefined,
+): string | undefined {
+  for (let i = 0, { length } = args; i < length; i += 1) {
+    const a = args[i]!
+    if (a === long || (short !== undefined && a === short)) {
+      const next = args[i + 1]
+      return next && !next.startsWith('-') ? next : undefined
+    }
+    if (a.startsWith(`${long}=`)) {
+      return a.slice(long.length + 1)
+    }
+  }
+  return undefined
+}
+
+/**
  * True when the command uses indirection a static parser can't resolve to a
  * concrete binary: a `$VAR`-sourced binary or an `eval`. A guard that wants to
  * be strict (fail-closed on evasion attempts) can treat this as suspicious; a
@@ -343,19 +368,42 @@ export function hasOpaqueInvocation(command: string): boolean {
 }
 
 /**
+ * True when `command` carries the fleet cascade sentinel — a real
+ * `FLEET_SYNC=1` environment assignment on one of its segments
+ * (`FLEET_SYNC=1 git commit …`, `env FLEET_SYNC=1 …`, `export FLEET_SYNC=1`).
+ * The guards that exempt cascade commands share this ONE parser-backed check
+ * so the sentinel's accepted spellings can't drift between hooks, and a
+ * quoted "FLEET_SYNC=1" literal inside prose or another command's string
+ * argument does NOT activate the exemption — the substring scans this
+ * replaces harvested exactly that shape.
+ */
+export function isFleetSyncCommand(command: string): boolean {
+  const sentinel = 'FLEET_SYNC=1'
+  return parseCommands(command).some(
+    c =>
+      c.assignments.includes(sentinel) ||
+      ((c.binary === 'env' || c.binary === 'export') &&
+        c.args.includes(sentinel)),
+  )
+}
+
+/**
  * Expand a leading `~` the way the shell would have BEFORE the hook saw the
  * string, then resolve against the hook's cwd. A raw `~/x` handed to
  * `existsSync` silently misses (`./~/x`), which flipped a downstream
  * transient-state probe into a false "missing .git" verdict.
  */
-export function normalizeShellDir(dir: string): string {
+export function normalizeShellDir(
+  dir: string,
+  baseDir: string = process.cwd(),
+): string {
   const expanded =
     dir === '~'
       ? os.homedir()
       : dir.startsWith('~/')
         ? path.join(os.homedir(), dir.slice(2))
         : dir
-  return path.resolve(process.cwd(), expanded)
+  return path.resolve(baseDir, expanded)
 }
 
 /**

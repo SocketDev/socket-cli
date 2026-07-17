@@ -37,17 +37,49 @@ import type { ToolCallPayload } from './payload.mts'
  * `cd` target (resolved against `cwd`), or `undefined` when the command never
  * changes directory.
  */
+// A `cd` to a windows drive-letter path, extracted from the RAW command:
+// shell-quote applies POSIX escape semantics, so `cd C:\Users\x` tokenizes to
+// `C:Usersx` — the mangled dir then fails git resolution and fleet detection
+// fails SAFE to fleet, false-blocking non-fleet work on windows (gotchas doc,
+// class 7). Anchored at command position (start / separator before `cd`);
+// quoted and bare forms.
+// cd\s+ — the cd token + gap; then one of:
+//   "([A-Za-z]:[\\/][^"]*)" — double-quoted drive path
+//   '([A-Za-z]:[\\/][^']*)' — single-quoted drive path
+//   ([A-Za-z]:[\\/][^\s&|;)"']*) — bare drive path up to a separator
+const WIN_CD_RE =
+  /(?:^|[\s;&|(])cd\s+(?:"([A-Za-z]:[\\/][^"]*)"|'([A-Za-z]:[\\/][^']*)'|([A-Za-z]:[\\/][^\s&|;)"']*))/g
+
 export function lastCdTarget(command: string, cwd: string): string | undefined {
   let target: string | undefined
+  let sawDriveishCd = false
   for (const cmd of parseCommands(command)) {
     if (cmd.binary && path.basename(cmd.binary) === 'cd') {
       const arg = cmd.args.find(a => !a.startsWith('-'))
       if (arg) {
+        // A parsed cd arg like `C:UsersTempx` is the de-backslashed residue of
+        // a windows path — the marker that the raw-recovery lane below applies.
+        sawDriveishCd ||= /^[A-Za-z]:/.test(arg)
         target = path.isAbsolute(arg) ? arg : path.resolve(target ?? cwd, arg)
       }
     }
   }
-  return target
+  if (!sawDriveishCd) {
+    return target
+  }
+  // Windows-drive lane: recover backslash targets from the raw command (the
+  // tokenizer ate their backslashes in `target`). Gated on the PARSED loop
+  // having seen a real drive-ish cd — a raw-only regex would harvest prose
+  // (an echo'd string mentioning a cd) as a target, the substring-scanner
+  // class. The LAST drive-shaped cd wins, matching the loop above; absolute
+  // by construction, so no resolve against cwd.
+  let winTarget: string | undefined
+  let m: RegExpExecArray | null
+  WIN_CD_RE.lastIndex = 0
+  while ((m = WIN_CD_RE.exec(command)) !== null) {
+    winTarget = m[1] ?? m[2] ?? m[3]
+  }
+  return winTarget ?? target
 }
 
 // The filesystem location a tool call acts on: an Edit/Write file's directory,
@@ -93,6 +125,15 @@ export function isFleetRepoRoot(repoRoot: string): boolean {
   // A named fleet repo, identified by its GitHub remote slug.
   const remote = gitOut(repoRoot, ['config', '--get', 'remote.origin.url'])
   const slug = remote ? slugFromRemoteUrl(remote.trim()) : undefined
+  // Under SOCKET_DEBUG, narrate the membership inputs: a windows CI run
+  // resolved a roster-remoted fixture NON-fleet (skipping a fleet-only gate)
+  // and only these inputs can say which arm diverged — the git config read,
+  // the slug parse, or the roster lookup.
+  if (process.env['SOCKET_DEBUG']) {
+    process.stderr.write(
+      `[fleet-context] isFleetRepoRoot: root ${norm}, remote ${remote ?? '<none>'}, slug ${slug ?? '<none>'}, roster ${slug ? isFleetRepo(slug) : 'n/a'}\n`,
+    )
+  }
   if (slug) {
     return isFleetRepo(slug)
   }

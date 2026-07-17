@@ -3,7 +3,7 @@
  * @file Install Socket Firewall (sfw) into the Socket _dlx cache via
  *
  * @socketsecurity/lib-stable's downloadBinary helper. Matches the CI install
- *   path: same version source, same binary integrity check (SHA-256 inline),
+ *   path: same version source, same binary integrity check (SRI-verified inline,
  *   same on-disk layout (~/.socket/_dlx/<hash>/sfw — the content-addressed
  *   binary store). Two dev-only handles layer readable paths over that hash:
  *   a rack alias `~/.socket/_wheelhouse/rack/sfw/<version>` → the _dlx dir, and
@@ -16,7 +16,7 @@
  *   _cacache, etc.) — `sfw/` was the lone non-prefixed sibling, now
  *   regularized.
  *
- *   Reads version + per-platform sha256 from the repo's root
+ *   Reads version + per-platform integrity (SRI) from the repo's root
  *   `external-tools.json` under `tools.sfw-free` / `tools.sfw-enterprise`.
  *   That file is the single fleet source of truth — every consumer of
  *   external tooling reads the same entries. Usage: pnpm run install:sfw #
@@ -46,6 +46,7 @@ import {
 } from '@socketsecurity/lib-stable/paths/socket'
 
 import { REPO_ROOT } from './paths.mts'
+import { isMainModule } from './_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -68,15 +69,20 @@ const WHEELHOUSE_RACK_DIR = path.join(WHEELHOUSE_DIR, 'rack')
 // at the new path). Idempotent: skips when either condition fails. Older
 // fleet machines won't break across the rename.
 const LEGACY_SFW_DIR = path.join(getUserHomeDir(), '.socket', 'sfw')
-if (existsSync(LEGACY_SFW_DIR) && !existsSync(WHEELHOUSE_DIR)) {
-  logger.log(`Migrating legacy ${LEGACY_SFW_DIR} → ${WHEELHOUSE_DIR}…`)
-  renameSync(LEGACY_SFW_DIR, WHEELHOUSE_DIR)
-}
-// Ensure the expected subdir layout exists. safeMkdirSync is recursive +
-// EEXIST-safe by default.
-safeMkdirSync(WHEELHOUSE_BIN_DIR)
 
 const SFW_BIN_DIR = WHEELHOUSE_BIN_DIR
+
+// Migrate a pre-rename legacy install in place, then ensure the expected
+// subdir layout exists. Called from main() (never at import time) so
+// importing this module for its pure helpers never touches the filesystem.
+// safeMkdirSync is recursive + EEXIST-safe by default.
+export function ensureWheelhouseLayout(): void {
+  if (existsSync(LEGACY_SFW_DIR) && !existsSync(WHEELHOUSE_DIR)) {
+    logger.log(`Migrating legacy ${LEGACY_SFW_DIR} → ${WHEELHOUSE_DIR}…`)
+    renameSync(LEGACY_SFW_DIR, WHEELHOUSE_DIR)
+  }
+  safeMkdirSync(WHEELHOUSE_BIN_DIR)
+}
 
 interface ToolEntry {
   version: string
@@ -85,25 +91,95 @@ interface ToolEntry {
   platforms?: Record<string, { asset: string; integrity: string }> | undefined
 }
 
+const SUPPORTED_SRI_RE = /^sha(?:256|384|512)-[A-Za-z0-9+/]+={0,2}$/
+
 /**
- * Decode the Subresource Integrity form (`sha256-<base64>`) the canonical fleet
- * external-tools.json uses into the bare hex digest the downloadBinary helper
- * expects. Single-source-of-truth schema:
+ * Validate the Subresource Integrity string the canonical fleet
+ * external-tools.json uses and return it UNCHANGED. downloadBinary verifies the
+ * raw SRI natively across sha-2 variants, so the whole pipeline passes the SRI
+ * through rather than pre-decoding to a bare sha256 hex — which is why the sfw
+ * assets' `sha512-` pins now install instead of being rejected (the old
+ * sha256-only decoder threw on anything but sha256, stranding sfw at whatever
+ * stale build was last installed and, with it, a proxy CA the client no longer
+ * trusts — `tlsv1 alert unknown ca`). Single-source-of-truth schema:
  * socket-btm/packages/build-infra/lib/external-tools-schema.json.
  */
-function sriToHex(integrity: string): string {
-  if (!integrity.startsWith('sha256-')) {
+export function assertIntegrity(integrity: string): string {
+  if (!SUPPORTED_SRI_RE.test(integrity)) {
     throw new Error(
-      `Unsupported integrity prefix in external-tools.json (expected 'sha256-'): ${integrity}`,
+      `Unsupported integrity in external-tools.json (expected sha256-/sha384-/sha512-<base64>): ${integrity}`,
     )
   }
-  return Buffer.from(integrity.slice('sha256-'.length), 'base64').toString(
-    'hex',
-  )
+  return integrity
 }
 
-interface ExternalToolsFile {
+export interface ExternalToolsFile {
   tools: Record<string, ToolEntry>
+}
+
+export interface ResolvedSfwTool {
+  binaryName: string
+  entry: ToolEntry
+  platform: string
+  integrity: string
+  toolKey: string
+  url: string
+  version: string
+}
+
+export type ResolveSfwToolResult =
+  | { ok: true; value: ResolvedSfwTool }
+  | { ok: false; error: string }
+
+// Resolve the tool entry + platform asset for the requested flavor
+// (sfw-free / sfw-enterprise) out of a parsed external-tools.json — pure
+// validation/derivation, no I/O. main() turns a `{ ok: false }` result into a
+// `logger.fail` + exit(1).
+export function resolveSfwTool(options: {
+  platform: string
+  tools: ExternalToolsFile
+  toolKey: string
+  win32: boolean
+}): ResolveSfwToolResult {
+  const { platform, tools, toolKey, win32 } = options
+  const entry = tools.tools?.[toolKey]
+  if (!entry) {
+    return {
+      error: `external-tools.json has no \`tools.${toolKey}\` entry at ${EXTERNAL_TOOLS_PATH}`,
+      ok: false,
+    }
+  }
+  if (!entry.repository) {
+    return {
+      error: `tools.${toolKey} is missing the required \`repository\` field`,
+      ok: false,
+    }
+  }
+
+  // The canonical version field can carry a leading `v` (template ships
+  // `v1.12.0`). Strip it for the URL; the wheelhouse-root mirror stores
+  // it bare. downloadBinary verifies the raw SRI (any sha-2 variant) directly.
+  const version = entry.version.replace(/^v/, '')
+  const platformMeta = entry.platforms?.[platform]
+  if (!platformMeta) {
+    const supported = Object.keys(entry.platforms ?? {}).join(', ')
+    return {
+      error:
+        `${toolKey} v${version} is not published for ${platform}.\n` +
+        `  Supported: ${supported || '(none)'}`,
+      ok: false,
+    }
+  }
+
+  const repoSlug = entry.repository.replace(/^github:/, '')
+  const url = `https://github.com/${repoSlug}/releases/download/v${version}/${platformMeta.asset}`
+  const binaryName = win32 ? 'sfw.exe' : 'sfw'
+  const integrity = assertIntegrity(platformMeta.integrity)
+
+  return {
+    ok: true,
+    value: { binaryName, entry, platform, integrity, toolKey, url, version },
+  }
 }
 
 export function detectPlatform(): string {
@@ -126,6 +202,8 @@ export function detectPlatform(): string {
 }
 
 async function main(): Promise<void> {
+  ensureWheelhouseLayout()
+
   const { values } = parseArgs({
     args: process.argv.slice(2),
     options: {
@@ -170,40 +248,14 @@ async function main(): Promise<void> {
     readFileSync(EXTERNAL_TOOLS_PATH, 'utf8'),
   ) as ExternalToolsFile
   const toolKey = values['enterprise'] ? 'sfw-enterprise' : 'sfw-free'
-  const entry = tools.tools?.[toolKey]
-  if (!entry) {
-    logger.fail(
-      `external-tools.json has no \`tools.${toolKey}\` entry at ${EXTERNAL_TOOLS_PATH}`,
-    )
-    process.exit(1)
-    return
-  }
-  if (!entry.repository) {
-    logger.fail(`tools.${toolKey} is missing the required \`repository\` field`)
-    process.exit(1)
-    return
-  }
-
-  // The canonical version field can carry a leading `v` (template ships
-  // `v1.12.0`). Strip it for the URL; the wheelhouse-root mirror stores
-  // it bare. downloadBinary expects the hex form so decode the SRI.
-  const ver = entry.version.replace(/^v/, '')
   const platform = detectPlatform()
-  const platformMeta = entry.platforms?.[platform]
-  if (!platformMeta) {
-    const supported = Object.keys(entry.platforms ?? {}).join(', ')
-    logger.fail(
-      `${toolKey} v${ver} is not published for ${platform}.\n` +
-        `  Supported: ${supported || '(none)'}`,
-    )
+  const resolved = resolveSfwTool({ platform, tools, toolKey, win32: WIN32 })
+  if (!resolved.ok) {
+    logger.fail(resolved.error)
     process.exit(1)
     return
   }
-
-  const repoSlug = entry.repository.replace(/^github:/, '')
-  const url = `https://github.com/${repoSlug}/releases/download/v${ver}/${platformMeta.asset}`
-  const binaryName = WIN32 ? 'sfw.exe' : 'sfw'
-  const sha256 = sriToHex(platformMeta.integrity)
+  const { binaryName, integrity, url, version: ver } = resolved.value
 
   if (!values['quiet']) {
     logger.info(`Installing ${toolKey} v${ver} (${platform})`)
@@ -212,8 +264,8 @@ async function main(): Promise<void> {
 
   const { binaryPath, downloaded } = await downloadBinary({
     force: Boolean(values['force']),
+    integrity,
     name: binaryName,
-    sha256,
     url,
   })
 
@@ -260,7 +312,9 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((e: unknown) => {
-  logger.fail(errorMessage(e))
-  process.exitCode = 1
-})
+if (isMainModule(import.meta.url)) {
+  main().catch((e: unknown) => {
+    logger.fail(errorMessage(e))
+    process.exitCode = 1
+  })
+}

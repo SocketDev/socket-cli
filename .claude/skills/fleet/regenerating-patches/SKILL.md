@@ -1,6 +1,6 @@
 ---
 name: regenerating-patches
-description: Regenerates plugin-cache patches in scripts/fleet/plugin-patches/ against the pinned upstream plugin source when they go stale after a plugin SHA bump. Use when install-claude-plugins.mts warns that a patch no longer applies, or after bumping a plugin's source.sha in marketplace.json.
+description: Regenerate plugin-cache patches against the pinned upstream plugin source after drift or SHA bumps.
 user-invocable: true
 allowed-tools: Read, Edit, Write, Glob, Grep, Bash(node:*), Bash(patch:*), Bash(diff:*), Bash(git:*), Bash(mkdir:*), Bash(rm:*), Bash(cat:*), Bash(ls:*), AskUserQuestion
 model: claude-haiku-4-5

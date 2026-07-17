@@ -5,7 +5,7 @@
 
 # Put the repo-pinned Node (.node-version) on PATH — git runs hooks with
 # the login shell's PATH, which may be an older system Node than the
-# hooks' floor (.mts type-stripping needs Node >= 25). See
+# hooks' floor (.mts type-stripping needs Node >= 24). See
 # _shared/resolve-node.sh.
 . "$(dirname "$0")/../_shared/resolve-node.sh"
 

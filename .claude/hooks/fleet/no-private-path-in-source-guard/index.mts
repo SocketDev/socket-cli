@@ -41,10 +41,12 @@ import {
   matchPrivatePath,
   scanCommentBodyLines,
 } from '../_shared/private-paths.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import {
+  BYPASS_LOOKBACK_USER_TURNS,
+  bypassPhrasePresent,
+} from '../_shared/transcript.mts'
 
 const BYPASS_PHRASE = 'Allow private-path-in-source bypass'
-const BYPASS_LOOKBACK_USER_TURNS = 8
 
 // Source-code extensions whose COMMENTS we scan. Markdown / docs / JSON / YAML
 // and the `.claude/` tree are deliberately excluded — they reference these

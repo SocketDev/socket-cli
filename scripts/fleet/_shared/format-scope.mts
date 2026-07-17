@@ -129,6 +129,86 @@ export function buildOxfmtArgs(options?: {
   ]
 }
 
+// Compile one anchored .prettierignore glob to a RegExp. The fleet ignore file
+// is enforced to hold only `**/`-anchored globs
+// (scripts/fleet/check/prettierignore-globs-are-anchored.mts), so the dialect
+// here is small: `**/` = zero or more leading segments, `**` = any run
+// including `/`, `*` = one segment, everything else literal. A trailing `/**`
+// therefore matches the whole subtree.
+export function ignoreGlobToRegExp(glob: string): RegExp {
+  let out = '^'
+  for (let i = 0, { length } = glob; i < length; i += 1) {
+    const c = glob[i]!
+    if (c === '*') {
+      if (glob[i + 1] === '*') {
+        if (glob[i + 2] === '/') {
+          out += '(?:.*/)?'
+          i += 2
+        } else {
+          out += '.*'
+          i += 1
+        }
+      } else {
+        out += '[^/]*'
+      }
+    } else {
+      out += c.replace(/[$()+.?[\]\\^{|}]/, m => `\\${m}`)
+    }
+  }
+  return new RegExp(`${out}$`)
+}
+
+/**
+ * Non-comment, non-negation pattern lines of an ignore file body. Negations
+ * (`!re-include`) are not part of the fleet ignore dialect — the anchored-glob
+ * check rejects them — so they are excluded rather than half-implemented.
+ */
+export function parseIgnoreGlobs(content: string): string[] {
+  return content
+    .split('\n')
+    .map(s => s.trim())
+    .filter(s => s.length > 0 && !s.startsWith('#') && !s.startsWith('!'))
+}
+
+/**
+ * Filter a file list down to the paths the merged .prettierignore does NOT
+ * exclude. oxfmt skips `--ignore-path` for files passed explicitly on the
+ * argv (hit live: a member's staged pre-commit red-lit
+ * `.claude/skills/fleet/…` cascade payload that the ignore file excludes,
+ * wedging every payload landing), so the staged/modified lanes must
+ * pre-filter. `template/**` is always kept: it exists only in the wheelhouse,
+ * where it is the canonical SOURCE every mirror is cut from — the one place
+ * those bytes must stay format-gated.
+ */
+export function filterFormatIgnored(
+  files: readonly string[],
+  options?: { cwd?: string | undefined } | undefined,
+): string[] {
+  const opts = { __proto__: null, ...options } as {
+    cwd?: string | undefined
+  }
+  let body = ''
+  try {
+    body = readFileSync(
+      pickIgnorePath(opts.cwd ? { cwd: opts.cwd } : undefined),
+      'utf8',
+    )
+  } catch {
+    return [...files]
+  }
+  const regs = parseIgnoreGlobs(body).map(ignoreGlobToRegExp)
+  return files.filter(f => {
+    const unix = f.replaceAll('\\', '/')
+    // template/** stays gated (the canon every mirror is cut from) — except
+    // generated _dispatch artifacts (rolldown bundle + maker-written table),
+    // whose bytes the generators own, not the formatter.
+    if (unix.startsWith('template/') && !unix.includes('/_dispatch/')) {
+      return true
+    }
+    return !regs.some(r => r.test(unix))
+  })
+}
+
 // Newline-split `git` porcelain output with array args (no shell, no injection
 // surface). Empty on a non-zero status so callers fail open to a broad scope.
 function gitFiles(args: readonly string[]): string[] {

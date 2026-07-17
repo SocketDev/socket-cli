@@ -8,8 +8,9 @@
  *   this is the escape hatch + the local-dev entry. Flow (mirrors the gh-aw
  *   .md):
  *
- *   1. check-updates gate — `pnpm outdated`, lockstep `--json` exit 2, and
- *      submodule-behind. No-op exit when nothing is actionable. Exposed as a
+ *   1. check-updates gate — `pnpm outdated`, lockstep `--json` exit 2,
+ *      submodule-behind, and soaked-cleared minimumReleaseAgeExclude entries.
+ *      No-op exit when nothing is actionable. Exposed as a
  *      standalone `--check-updates` mode (exit 0 = updates, 1 = none) so the
  *      gh-aw workflow's gate job calls THIS, not an inline bash port.
  *   2. deterministic chain (ALWAYS, IN ORDER) — lockstep version-pin auto-bumps,
@@ -29,21 +30,23 @@
  *      flags.
  */
 
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { discoverAiAgents } from '@socketsecurity/lib-stable/ai/discover'
 import { AI_PROFILE } from '@socketsecurity/lib-stable/ai/profiles'
 import { spawnAiAgent } from '@socketsecurity/lib-stable/ai/spawn'
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 
 import type { AiEffort } from '@socketsecurity/lib-stable/ai/types'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import { REPO_ROOT } from './paths.mts'
+import { scan } from './check/soak-excludes-have-dates.mts'
+import { PNPM_WORKSPACE_YAML, REPO_ROOT } from './paths.mts'
 import { runDeterministicChain } from './weekly-update/deterministic-chain.mts'
+import { isMainModule } from './_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -99,6 +102,7 @@ async function capture(
   try {
     const r = await spawn(cmd, [...args], {
       cwd: REPO_ROOT,
+      shell: WIN32,
       stdioString: true,
     })
     return { ok: true, out: String(r.stdout ?? '') }
@@ -110,8 +114,9 @@ async function capture(
 
 // The deterministic check-updates gate, ported from the gh-aw workflow: true
 // when `pnpm outdated` reports drift, the lockstep manifest is behind (exit 2),
-// or a submodule is behind its remote. This is the single source of the gate
-// logic — the gh-aw `weekly-update.md` check-updates job calls
+// a submodule is behind its remote, or a soaked minimumReleaseAgeExclude entry
+// has cleared its removable date. This is the single source of the gate logic —
+// the gh-aw `weekly-update.md` check-updates job calls
 // `weekly-update.mts --check-updates`, not an inline bash port of it.
 export async function hasActionableUpdates(): Promise<boolean> {
   // pnpm outdated exits non-zero WHEN there are outdated deps, so key on the
@@ -126,7 +131,10 @@ export async function hasActionableUpdates(): Promise<boolean> {
   if (hasLockstep) {
     // lockstep --json exits 2 when manifests are behind.
     try {
-      await spawn('pnpm', ['run', 'lockstep', '--json'], { cwd: REPO_ROOT })
+      await spawn('pnpm', ['run', 'lockstep', '--json'], {
+        cwd: REPO_ROOT,
+        shell: WIN32,
+      })
     } catch (e) {
       if ((e as { code?: unknown | undefined }).code === 2) {
         return true
@@ -138,6 +146,21 @@ export async function hasActionableUpdates(): Promise<boolean> {
   // lockstep-managed submodules are already covered by the exit-2 check above).
   if (!hasLockstep && existsSync(path.join(REPO_ROOT, '.gitmodules'))) {
     if (await anySubmoduleBehind()) {
+      return true
+    }
+  }
+  // Soaked-cleared minimumReleaseAgeExclude entries (their `removable:` date is
+  // now in the past) are actionable: the daily promotion pass removes them so
+  // the held release becomes installable on the next update. Reuses the soak
+  // gate's own scan so there is one source of the annotation-parsing logic.
+  if (existsSync(PNPM_WORKSPACE_YAML)) {
+    const todayISO = new Date().toISOString().slice(0, 10)
+    const cleared = scan(readFileSync(PNPM_WORKSPACE_YAML, 'utf8'), todayISO)
+    if (
+      cleared.some(
+        f => f.kind === 'stale' && f.block === 'minimumReleaseAgeExclude',
+      )
+    ) {
       return true
     }
   }
@@ -306,6 +329,6 @@ async function main(): Promise<void> {
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   void main()
 }

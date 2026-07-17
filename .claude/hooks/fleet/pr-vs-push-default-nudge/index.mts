@@ -28,9 +28,10 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { readFileSync } from 'node:fs'
 import process from 'node:process'
 
-import { isFleetRepo, slugFromRemoteUrl } from '../_shared/fleet-repos.mts'
+import { isFleetRepo, originSlug } from '../_shared/fleet-repos.mts'
 import { bashGuard, defineHook, notify, runHook } from '../_shared/guard.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
+import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 
 import type { Command } from '../_shared/shell-command.mts'
 
@@ -51,7 +52,7 @@ const TURN_WINDOW = 6
 export function currentBranch(cwd: string): string | undefined {
   const r = spawnSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
     cwd,
-    timeout: 5000,
+    timeout: spawnTimeoutMs(5000),
   })
   if (r.status !== 0) {
     return undefined
@@ -186,7 +187,7 @@ export function hasOpenPrForBranch(cwd: string, branch: string): boolean {
   const r = spawnSync(
     'gh',
     ['pr', 'list', '--head', branch, '--state', 'open', '--json', 'number'],
-    { cwd, timeout: 5000 },
+    { cwd, timeout: 5000 /* win-timeout: network */ },
   )
   /* c8 ignore next - the false branch (status 0) requires live gh auth */
   if (r.status !== 0) {
@@ -211,7 +212,7 @@ export function defaultBranchOf(
 ): string {
   const r = spawnSync('git', ['symbolic-ref', 'refs/remotes/origin/HEAD'], {
     cwd,
-    timeout: 5000,
+    timeout: spawnTimeoutMs(5000),
   })
   if (r.status === 0) {
     const ref = String(r.stdout)
@@ -228,16 +229,10 @@ export function defaultBranchOf(
   return 'main'
 }
 
-// Origin slug (owner/repo) for fleet-membership classification.
-export function originSlug(cwd: string): string | undefined {
-  const r = spawnSync('git', ['-C', cwd, 'remote', 'get-url', 'origin'], {
-    timeout: 5000,
-  })
-  if (r.status !== 0) {
-    return undefined
-  }
-  return slugFromRemoteUrl(String(r.stdout).trim())
-}
+// Origin slug (owner/repo) for fleet-membership classification — the canonical
+// impl lives in _shared/fleet-repos; re-exported here so this hook's test can
+// import it from its own module.
+export { originSlug }
 
 // Did a push to the default branch already happen this session? Scans the
 // recent transcript text lines for a git-push command targeting the

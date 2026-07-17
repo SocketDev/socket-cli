@@ -286,36 +286,6 @@
         }
       }
     },
-    "codedb": {
-      "description": "codedb — justrach/codedb Zig code-intelligence MCP server. Raw-binary release assets (the asset IS the executable). Telemetry MUST stay off (CODEDB_NO_TELEMETRY=1) at install + invocation. No Windows build. Integrity verified against the upstream checksums.sha256.",
-      "version": "v0.2.5827",
-      "repository": "github:justrach/codedb",
-      "release": "asset",
-      "installDir": "wheelhouse",
-      "soakBypass": {
-        "version": "v0.2.5825",
-        "published": "2026-06-12",
-        "removable": "2026-06-19"
-      },
-      "platforms": {
-        "darwin-arm64": {
-          "asset": "codedb-darwin-arm64",
-          "integrity": "sha512-A/Rg+IYbwy9Htvdec7uqu5hR6CzXWEjecdA7aTVkMg0m4qR9bBxNSbbZE8GKXdMbCa9xw4j3BftABzqAvLFx2g=="
-        },
-        "darwin-x64": {
-          "asset": "codedb-darwin-x86_64",
-          "integrity": "sha512-fJfJb8TufaMqfW2rW3zCo6Vuuqd44NntBuj47GFZareyOy7gGmAKfeOLtFxmc2epU30w5p5/YPhkYo2B64Qocg=="
-        },
-        "linux-arm64": {
-          "asset": "codedb-linux-arm64",
-          "integrity": "sha512-S73ZunTy3ddsPOvurCgg5Xb5kL7/K4PAwcpduqvtg+fCj3NsTquISi4+WmxNzMVlv1Hi0g2h9AEDogAp8VzTSQ=="
-        },
-        "linux-x64": {
-          "asset": "codedb-linux-x86_64",
-          "integrity": "sha512-kgdMwumxCvoYueqYc9SGjP6UxToeavjzeBmmR6EgRty5fulNvbWrjEJhSNb+4fwO6BboyrHKIai74vrYXCmyig=="
-        }
-      }
-    },
     "actionlint": {
       "description": "actionlint — rhysd/actionlint static linter for GitHub Actions workflow YAML. Validates action syntax, shell scripts in run: steps, expression types, and SHA-pin coverage. Used by the actionlint-on-workflow-edit hook (PostToolUse nudge) and the lint:actions CI gate.",
       "version": "v1.7.12",

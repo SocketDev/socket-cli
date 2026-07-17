@@ -1,6 +1,6 @@
 ---
 name: reviewing-code
-description: Reviews the current branch against a base ref using multiple AI backends. Runs a Workflow that streams the diff through discovery, discovery-secondary, remediation, and adversarial-verify stages, routing each stage to the available agents (codex, claude, opencode, kimi, …) and gracefully skipping any backend that isn't installed. Writes a markdown findings report under docs/. Use when preparing or updating a PR, before merging a feature branch, or when wanting an independent second opinion from a different agent.
+description: Review the current branch against a base with multiple AI backends and produce verified findings.
 user-invocable: true
 allowed-tools: Workflow, Read, Grep, Glob, Bash(node:*), Bash(git:*), Bash(command -v:*)
 model: claude-opus-4-8

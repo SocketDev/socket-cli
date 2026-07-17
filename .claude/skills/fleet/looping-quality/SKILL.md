@@ -1,6 +1,6 @@
 ---
 name: looping-quality
-description: Loop driver over the scanning-quality skill — runs a single-pass scan, fixes the findings, re-scans, and repeats until zero findings remain or a max iteration count is reached. Use to drive a codebase to a clean quality scan interactively. Interactive only — it makes code changes and commits, so never use it as an automated pipeline gate.
+description: Run scanning-quality, fix findings, and repeat until clean or the configured iteration limit is reached.
 user-invocable: true
 allowed-tools: Skill, Task, Read, Grep, Glob, Bash(pnpm run check:*), Bash(pnpm run test:*), Bash(pnpm test:*), Bash(pnpm run build:*), Bash(git status:*), Bash(git diff:*), Bash(git add:*), Bash(git commit:*)
 model: claude-sonnet-4-6

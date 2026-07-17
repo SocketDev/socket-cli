@@ -17,6 +17,15 @@
 // Surgical `git add <file>` and every op when NO foreign paths are
 // present pass through untouched.
 //
+// Squash-history relaxation: in a repo opted into `squash-history` (the
+// cascade roster's `optIns`), the default branch flattens to one commit
+// before every push, so commit order/granularity are meaningless. The
+// NON-destructive staging sweeps (`git add -A`, `git commit -a`) relax
+// there — they LAND foreign work, then the pre-push squash collapses it.
+// The destructive ops (stash / reset --hard / restore / checkout) stay
+// gated: squashing rewrites commits, it does not un-destroy uncommitted
+// work.
+//
 // Relationship to overeager-staging-guard: that hook owns the GENERAL
 // staging-sweep rules regardless of parallel-agent signal — it blocks
 // `git add -A` AND a bare `git commit` (no pathspec) whose index holds
@@ -51,6 +60,7 @@
 
 import process from 'node:process'
 
+import { isSquashOptIn } from '../_shared/fleet-roster.mts'
 import {
   listForeignDirtyPaths,
   readSessionTouchedPaths,
@@ -61,6 +71,7 @@ import {
   detectBroadGitAdd,
   findInvocation,
   invocationHasFlag,
+  isFleetSyncCommand,
 } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
@@ -131,7 +142,7 @@ export const check = bashGuard((command, payload) => {
 
   // Fleet-sync cascade sentinel: no parallel-session hazard in a fresh
   // cascade worktree off origin/main.
-  if (/(?:^|\s)FLEET_SYNC\s*=\s*1\b/.test(command)) {
+  if (isFleetSyncCommand(command)) {
     return undefined
   }
 
@@ -141,6 +152,21 @@ export const check = bashGuard((command, payload) => {
   }
 
   const repoDir = getProjectDir()
+
+  // Squash-history relaxation. A repo opted into `squash-history` flattens its
+  // default branch to one commit before every push, so commit order and
+  // granularity carry no meaning — a broad `git add -A` / `git commit -a` that
+  // sweeps a parallel actor's in-flight work into a shared commit is harmless:
+  // the work LANDS (not lost), then the pre-push squash collapses it. Only the
+  // NON-destructive staging sweeps relax here; stash / reset --hard / restore /
+  // checkout still hide or DESTROY uncommitted work, which squashing does not
+  // undo, so they stay gated even in a squash repo.
+  const isStagingSweep =
+    detectBroadGitAdd(command) !== undefined || gatedOp === 'git commit -a'
+  if (isStagingSweep && isSquashOptIn(repoDir)) {
+    return undefined
+  }
+
   const touched = readSessionTouchedPaths(payload.transcript_path)
   const foreign = listForeignDirtyPaths(repoDir, touched)
   if (foreign.length === 0) {

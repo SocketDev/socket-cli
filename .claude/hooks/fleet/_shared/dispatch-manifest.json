@@ -11,8 +11,20 @@
             "--filter"
           ]
         },
+        {
+          "path": "fleet/post-push-ci-monitor-nudge/index.mts",
+          "triggers": [
+            "push"
+          ]
+        },
         "fleet/stale-node-modules-nudge/index.mts",
         "fleet/worktree-remove-relink-nudge/index.mts"
+      ]
+    },
+    {
+      "matcher": "Edit|MultiEdit|Write",
+      "hooks": [
+        "fleet/dep-derived-source-nudge/index.mts"
       ]
     },
     {
@@ -25,12 +37,29 @@
       "matcher": "Edit|Write",
       "hooks": [
         "fleet/actionlint-on-workflow-edit/index.mts",
-        "fleet/oxlint-plugin-load-nudge/index.mts",
+        "fleet/oxlint-plugin-load-nudge/index.mts"
+      ]
+    },
+    {
+      "matcher": "Edit|Write|MultiEdit",
+      "hooks": [
         "fleet/prose-code-format-nudge/index.mts"
+      ]
+    },
+    {
+      "matcher": "Write",
+      "hooks": [
+        "fleet/clipboard-snippet-nudge/index.mts"
       ]
     }
   ],
   "PreToolUse": [
+    {
+      "matcher": "",
+      "hooks": [
+        "fleet/read-orientation-nudge/index.mts"
+      ]
+    },
     {
       "matcher": "AskUserQuestion",
       "hooks": [
@@ -38,17 +67,29 @@
       ]
     },
     {
-      "matcher": "Task",
+      "matcher": "AskUserQuestion|Bash|Edit|MultiEdit|NotebookEdit|Task|Workflow|Write",
       "hooks": [
-        "fleet/parallel-agent-spawn-nudge/index.mts"
+        "fleet/codex-session-budget-guard/index.mts"
       ]
     },
     {
       "matcher": "Bash",
       "hooks": [
+        "fleet/attribution-rewrite-nudge/index.mts",
+        "fleet/avoid-cd-nudge/index.mts",
         "fleet/brew-supply-chain-guard/index.mts",
+        {
+          "path": "fleet/bump-defers-to-release-guard/index.mts",
+          "triggers": [
+            "bump.mts",
+            "npm version",
+            "pnpm version",
+            "yarn version"
+          ]
+        },
         "fleet/cdn-allowlist-guard/index.mts",
         "fleet/claude-lockdown-guard/index.mts",
+        "fleet/clone-reviewed-repo-nudge/index.mts",
         "fleet/codex-no-write-guard/index.mts",
         "fleet/commit-author-guard/index.mts",
         {
@@ -57,12 +98,26 @@
             "commit"
           ]
         },
-        "fleet/concurrent-cargo-build-guard/index.mts",
+        "fleet/commit-size-nudge/index.mts",
+        {
+          "path": "fleet/convo-prose-nudge/index.mts",
+          "triggers": [
+            "gh issue",
+            "gh pr"
+          ]
+        },
         "fleet/default-branch-guard/index.mts",
         {
           "path": "fleet/gh-token-hygiene-guard/index.mts",
           "triggers": [
             "gh"
+          ]
+        },
+        {
+          "path": "fleet/issue-autolink-nudge/index.mts",
+          "triggers": [
+            "gh",
+            "git"
           ]
         },
         {
@@ -88,15 +143,13 @@
             "secret-tool"
           ]
         },
+        "fleet/no-branch-reuse-nudge/index.mts",
         "fleet/no-cascade-transient-git-guard/index.mts",
         {
           "path": "fleet/no-clipboard-access-guard/index.mts",
           "triggers": [
             "]52;",
-            "clip",
-            "pbcopy",
             "pbpaste",
-            "wl-copy",
             "wl-paste",
             "xclip",
             "xsel"
@@ -118,14 +171,28 @@
           ]
         },
         {
-          "path": "fleet/no-github-ai-attribution-guard/index.mts",
+          "path": "fleet/no-force-push-guard/index.mts",
           "triggers": [
-            "gh"
+            "push"
           ]
         },
         "fleet/no-non-fleet-push-guard/index.mts",
+        {
+          "path": "fleet/no-npm-otp-flag-guard/index.mts",
+          "triggers": [
+            "--otp"
+          ]
+        },
         "fleet/no-placeholder-commit-subject-guard/index.mts",
         "fleet/no-pm-exec-guard/index.mts",
+        "fleet/no-pr-from-default-branch-guard/index.mts",
+        "fleet/no-pr-from-default-checkout-guard/index.mts",
+        {
+          "path": "fleet/no-pr-review-verdict-guard/index.mts",
+          "triggers": [
+            "pr review"
+          ]
+        },
         {
           "path": "fleet/no-premature-commit-kill-guard/index.mts",
           "triggers": [
@@ -139,6 +206,7 @@
           "triggers": [
             "--no-gpg-sign",
             "--no-verify",
+            "HUSKY",
             "SKIP_ASSET_DOWNLOAD",
             "cat",
             "commit.gpgsign",
@@ -180,6 +248,12 @@
           ]
         },
         "fleet/no-strip-types-guard/index.mts",
+        {
+          "path": "fleet/no-subagent-commit-guard/index.mts",
+          "triggers": [
+            "git"
+          ]
+        },
         "fleet/no-tail-install-out-guard/index.mts",
         {
           "path": "fleet/no-tsx-guard/index.mts",
@@ -188,6 +262,7 @@
             "ts-node"
           ]
         },
+        "fleet/no-verify-format-nudge/index.mts",
         {
           "path": "fleet/no-vitest-double-dash-guard/index.mts",
           "triggers": [
@@ -206,6 +281,7 @@
           ]
         },
         "fleet/non-fleet-pr-issue-ask-guard/index.mts",
+        "fleet/npm-otp-flow-nudge/index.mts",
         {
           "path": "fleet/operate-from-repo-root-guard/index.mts",
           "triggers": [
@@ -226,12 +302,16 @@
             "git"
           ]
         },
+        "fleet/pr-vs-push-default-nudge/index.mts",
+        "fleet/pre-commit-race-nudge/index.mts",
+        "fleet/prefer-rebase-over-revert-nudge/index.mts",
         {
           "path": "fleet/prefer-vitest-guard/index.mts",
           "triggers": [
             "--test",
             "ts-node",
-            "tsx"
+            "tsx",
+            "vitest"
           ]
         },
         {
@@ -241,7 +321,21 @@
             "switch"
           ]
         },
+        {
+          "path": "fleet/private-name-nudge/index.mts",
+          "triggers": [
+            "gh",
+            "git"
+          ]
+        },
         "fleet/proc-environ-exfil-guard/index.mts",
+        {
+          "path": "fleet/public-surface-nudge/index.mts",
+          "triggers": [
+            "gh",
+            "git"
+          ]
+        },
         {
           "path": "fleet/push-protected-branch-guard/index.mts",
           "triggers": [
@@ -267,6 +361,14 @@
             "commit"
           ]
         },
+        "fleet/sed-in-place-guard/index.mts",
+        {
+          "path": "fleet/shallow-clone-guard/index.mts",
+          "triggers": [
+            "clone"
+          ]
+        },
+        "fleet/small-pr-nudge/index.mts",
         "fleet/token-guard/index.mts",
         "fleet/token-spend-guard/index.mts",
         "fleet/trust-downgrade-guard/index.mts",
@@ -278,44 +380,15 @@
         },
         "fleet/untrusted-coauthor-guard/index.mts",
         "fleet/uses-sha-verify-guard/index.mts",
+        {
+          "path": "fleet/verify-before-publish-guard/index.mts",
+          "triggers": [
+            "publish"
+          ]
+        },
+        "fleet/verify-render-pre-commit-nudge/index.mts",
         "fleet/version-bump-order-guard/index.mts",
-        "fleet/avoid-cd-nudge/index.mts",
-        "fleet/clone-reviewed-repo-nudge/index.mts",
-        {
-          "path": "fleet/convo-prose-nudge/index.mts",
-          "triggers": [
-            "gh issue",
-            "gh pr"
-          ]
-        },
-        {
-          "path": "fleet/issue-autolink-nudge/index.mts",
-          "triggers": [
-            "gh",
-            "git"
-          ]
-        },
-        "fleet/no-branch-reuse-nudge/index.mts",
-        "fleet/no-verify-format-nudge/index.mts",
-        "fleet/npm-otp-flow-nudge/index.mts",
-        "fleet/pr-vs-push-default-nudge/index.mts",
-        "fleet/pre-commit-race-nudge/index.mts",
-        "fleet/prefer-rebase-over-revert-nudge/index.mts",
-        {
-          "path": "fleet/private-name-nudge/index.mts",
-          "triggers": [
-            "gh",
-            "git"
-          ]
-        },
-        {
-          "path": "fleet/public-surface-nudge/index.mts",
-          "triggers": [
-            "gh",
-            "git"
-          ]
-        },
-        "fleet/verify-render-pre-commit-nudge/index.mts"
+        "fleet/zsh-word-split-nudge/index.mts"
       ]
     },
     {
@@ -331,43 +404,80 @@
       ]
     },
     {
-      "matcher": "Edit|MultiEdit|Write",
+      "matcher": "Bash|Grep",
+      "hooks": [
+        "fleet/prefer-fff-search-nudge/index.mts"
+      ]
+    },
+    {
+      "matcher": "Bash|mcp__.*",
       "hooks": [
         {
-          "path": "fleet/no-unmocked-ai-guard/index.mts",
+          "path": "fleet/no-github-ai-attribution-guard/index.mts",
           "triggers": [
-            "spawnAiAgent"
+            "gh",
+            "mcp__"
           ]
-        },
+        }
+      ]
+    },
+    {
+      "matcher": "Edit|MultiEdit",
+      "hooks": [
+        "fleet/no-removal-comment-nudge/index.mts"
+      ]
+    },
+    {
+      "matcher": "Edit|MultiEdit|Write",
+      "hooks": [
         {
           "path": "fleet/defer-to-script-nudge/index.mts",
           "triggers": [
             "SKILL.md",
             "/commands/"
           ]
+        },
+        "fleet/golden-fixture-naming-guard/index.mts",
+        "fleet/no-private-ref-in-tests-docs-guard/index.mts",
+        {
+          "path": "fleet/no-unmocked-ai-guard/index.mts",
+          "triggers": [
+            "spawnAiAgent"
+          ]
         }
+      ]
+    },
+    {
+      "matcher": "Edit|NotebookEdit|Write",
+      "hooks": [
+        "fleet/live-edit-collision-guard/index.mts"
       ]
     },
     {
       "matcher": "Edit|Write|MultiEdit",
       "hooks": [
         "fleet/ai-config-poisoning-guard/index.mts",
-        "fleet/live-edit-collision-guard/index.mts",
+        "fleet/alpha-sort-nudge/index.mts",
+        "fleet/anti-prose-guard/index.mts",
         "fleet/bundle-flags-guard/index.mts",
         "fleet/c8-ignore-reason-guard/index.mts",
         "fleet/catch-message-guard/index.mts",
+        "fleet/changelog-entry-shape-nudge/index.mts",
         "fleet/changelog-no-empty-guard/index.mts",
         "fleet/check-new-deps/index.mts",
         "fleet/claude-code-action-lockdown-guard/index.mts",
+        "fleet/claude-md-defer-detail-nudge/index.mts",
         "fleet/claude-md-rule-add-guard/index.mts",
         "fleet/claude-md-section-size-guard/index.mts",
         "fleet/claude-md-size-guard/index.mts",
         "fleet/claude-segmentation-guard/index.mts",
+        "fleet/consumer-grep-nudge/index.mts",
         "fleet/cross-repo-guard/index.mts",
         "fleet/dated-citation-guard/index.mts",
         "fleet/gitmodules-comment-guard/index.mts",
         "fleet/immutable-release-guard/index.mts",
         "fleet/inline-script-defer-guard/index.mts",
+        "fleet/lock-step-ref-nudge/index.mts",
         "fleet/logger-guard/index.mts",
         "fleet/markdown-filename-guard/index.mts",
         "fleet/marketplace-comment-guard/index.mts",
@@ -380,13 +490,13 @@
         "fleet/no-env-kill-switch-guard/index.mts",
         "fleet/no-file-oxlint-disable-guard/index.mts",
         "fleet/no-fleet-fork-guard/index.mts",
-        "fleet/no-glob-run-s-guard/index.mts",
-        "fleet/no-hand-edit-registry-pin-guard/index.mts",
         "fleet/no-hook-cmd-regex-guard/index.mts",
         "fleet/no-meta-comments-guard/index.mts",
+        "fleet/no-new-config-guard/index.mts",
         "fleet/no-other-linters-guard/index.mts",
         "fleet/no-pkgjson-pnpm-overrides-guard/index.mts",
         "fleet/no-platform-import-guard/index.mts",
+        "fleet/no-private-path-in-source-guard/index.mts",
         "fleet/no-repo-scope-in-fleet-config-guard/index.mts",
         "fleet/no-test-in-scripts-guard/index.mts",
         "fleet/no-token-in-dotenv-guard/index.mts",
@@ -400,12 +510,12 @@
         "fleet/personal-path-guard/index.mts",
         "fleet/plan-location-guard/index.mts",
         "fleet/plugin-patch-format-guard/index.mts",
+        "fleet/pointer-comment-nudge/index.mts",
         "fleet/prefer-async-spawn-guard/index.mts",
         "fleet/prefer-fn-decl-guard/index.mts",
         "fleet/prefer-json-clone-guard/index.mts",
         "fleet/prefer-type-import-guard/index.mts",
         "fleet/prompt-injection-guard/index.mts",
-        "fleet/anti-prose-guard/index.mts",
         "fleet/pull-request-target-guard/index.mts",
         "fleet/readme-fleet-shape-guard/index.mts",
         "fleet/report-location-guard/index.mts",
@@ -416,18 +526,30 @@
         "fleet/soak-pin-needs-annotation-guard/index.mts",
         "fleet/synthesized-script-edit-guard/index.mts",
         "fleet/target-arch-env-guard/index.mts",
+        "fleet/test-platform-coverage-nudge/index.mts",
+        "fleet/test-script-defers-guard/index.mts",
         "fleet/vitest-vs-node-test-guard/index.mts",
         "fleet/vscode-folder-open-task-guard/index.mts",
         "fleet/workflow-multiline-body-guard/index.mts",
-        "fleet/workflow-uses-comment-guard/index.mts",
-        "fleet/alpha-sort-nudge/index.mts",
-        "fleet/changelog-entry-shape-nudge/index.mts",
-        "fleet/claude-md-defer-detail-nudge/index.mts",
-        "fleet/consumer-grep-nudge/index.mts",
-        "fleet/lock-step-ref-nudge/index.mts",
-        "fleet/no-removal-comment-nudge/index.mts",
-        "fleet/pointer-comment-nudge/index.mts",
-        "fleet/test-platform-coverage-nudge/index.mts"
+        "fleet/workflow-uses-comment-guard/index.mts"
+      ]
+    },
+    {
+      "matcher": "Task|Agent",
+      "hooks": [
+        "fleet/parallel-agent-spawn-nudge/index.mts"
+      ]
+    },
+    {
+      "matcher": "Workflow",
+      "hooks": [
+        "fleet/workflow-agent-task-tools-nudge/index.mts"
+      ]
+    },
+    {
+      "matcher": "Write|Edit|MultiEdit",
+      "hooks": [
+        "fleet/no-registry-mutation-in-repo-script-nudge/index.mts"
       ]
     }
   ],
@@ -435,8 +557,8 @@
     {
       "matcher": "",
       "hooks": [
-        "fleet/git-config-write-guard/index.mts",
         "fleet/copy-on-select-hint-nudge/index.mts",
+        "fleet/git-config-write-guard/index.mts",
         "fleet/memory-discovery-nudge/index.mts"
       ]
     }
@@ -445,23 +567,25 @@
     {
       "matcher": "",
       "hooks": [
-        "fleet/dirty-worktree-stop-guard/index.mts",
-        "fleet/excuse-detector/index.mts",
+        "fleet/adversarial-review-nudge/index.mts",
         "fleet/agents-skills-mirror-nudge/index.mts",
         "fleet/ai-config-drift-nudge/index.mts",
         "fleet/answer-questions-nudge/index.mts",
         "fleet/answer-status-requests-nudge/index.mts",
         "fleet/auth-rotation-nudge/index.mts",
+        "fleet/auto-land-on-stop/index.mts",
         "fleet/cascade-first-triage-nudge/index.mts",
         "fleet/commit-cadence-nudge/index.mts",
         "fleet/commit-pr-nudge/index.mts",
         "fleet/compound-lessons-nudge/index.mts",
+        "fleet/dirty-worktree-stop-guard/index.mts",
         "fleet/dogfood-cascade-nudge/index.mts",
         "fleet/dont-blame-nudge/index.mts",
         "fleet/dont-stop-mid-queue-nudge/index.mts",
         "fleet/drift-check-nudge/index.mts",
         "fleet/enqueue-dont-pivot-nudge/index.mts",
         "fleet/error-message-quality-nudge/index.mts",
+        "fleet/excuse-detector/index.mts",
         "fleet/file-size-nudge/index.mts",
         "fleet/follow-direct-imperative-nudge/index.mts",
         "fleet/git-identity-drift-nudge/index.mts",
@@ -474,12 +598,13 @@
         "fleet/plan-review-nudge/index.mts",
         "fleet/prefer-evergreen-target-nudge/index.mts",
         "fleet/provenance-publish-nudge/index.mts",
+        "fleet/reply-prose-nudge/index.mts",
+        "fleet/session-handoff-nudge/index.mts",
         "fleet/squash-history-nudge/index.mts",
         "fleet/stop-claim-verify-nudge/index.mts",
         "fleet/uncodified-lesson-nudge/index.mts",
         "fleet/unpushed-main-nudge/index.mts",
-        "fleet/variant-analysis-nudge/index.mts",
-        "fleet/reply-prose-nudge/index.mts"
+        "fleet/variant-analysis-nudge/index.mts"
       ]
     }
   ]

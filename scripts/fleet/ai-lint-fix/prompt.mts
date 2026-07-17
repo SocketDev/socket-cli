@@ -9,6 +9,7 @@
 import path from 'node:path'
 import process from 'node:process'
 
+import { isGeneratedPath } from '../constants/generated-globs.mts'
 import { AI_HANDLED_RULES, RULE_GUIDANCE } from './rule-guidance.mts'
 
 import type { OxlintFile, OxlintMessage } from './oxlint-json.mts'
@@ -19,6 +20,12 @@ export function bucketFindings(
   const byFile = new Map<string, OxlintMessage[]>()
   for (let i = 0, { length } = files; i < length; i += 1) {
     const f = files[i]!
+    // AI edits are only for repo-owned source. The raw JSON invocation does
+    // not load every repo-specific ignore overlay, so enforce the shared
+    // generated/vendored boundary again before an agent can touch a file.
+    if (isGeneratedPath(f.filePath)) {
+      continue
+    }
     const handled = f.messages.filter(
       m => m.ruleId !== undefined && AI_HANDLED_RULES.has(m.ruleId),
     )

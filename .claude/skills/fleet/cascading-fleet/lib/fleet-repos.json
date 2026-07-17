@@ -1,18 +1,6 @@
 {
   "repos": [
     {
-      "name": "socket-addon",
-      "description": "NAPI .node binaries for @socketaddon/* npm packages",
-      "optIns": ["squash-history"],
-      "publishes": "node"
-    },
-    {
-      "name": "socket-bin",
-      "description": "SEA-packed CLI distributions for @socketbin/* packages",
-      "optIns": ["squash-history"],
-      "publishes": "binary"
-    },
-    {
       "name": "socket-btm",
       "description": "Build toolchain — produces signed prebuilt binaries for @socketaddon/* and @socketbin/*",
       "optIns": ["squash-history"],
@@ -48,9 +36,32 @@
       "publishes": "js"
     },
     {
+      "name": "abitious",
+      "description": "napi-rs alternative — ship native .node addons as compressed hybrid .node via decmpfs",
+      "optIns": ["squash-history"],
+      "publishes": "cargo"
+    },
+    {
+      "name": "decmpfs",
+      "owner": "decmpfs",
+      "description": "Transparent-compression (decmpfs) reader/writer for macOS — Rust crate",
+      "publishes": "cargo"
+    },
+    {
+      "name": "envrypt",
+      "description": "Encrypted .env library for Rust — ECIES + locked v1/v2, keychain-first",
+      "optIns": ["squash-history"]
+    },
+    {
       "name": "sdxgen",
       "description": "CycloneDX and SPDX manifest generator (Socket dx gen)",
       "optIns": ["squash-history"]
+    },
+    {
+      "name": "sockeye",
+      "description": "Touch-gated local secret bridge for developer tools and automation",
+      "optIns": ["squash-history"],
+      "publishes": "binary"
     },
     {
       "name": "stuie",

@@ -525,7 +525,8 @@ export async function setupCdxgen(): Promise<boolean> {
 }
 
 export async function setupJanus(): Promise<boolean> {
-  // janus ships darwin-arm64 only at v1.22.0. On every other platform,
+  // janus ships a darwin-arm64 binary only (upstream builds one platform; the
+  // version is pinned in external-tools.json). On every other platform,
   // skip the install with a quiet log rather than emitting a warning —
   // janus isn't a fleet-critical dependency, just a tool some Socket
   // workflows opt into. Install lands in the shared
@@ -546,7 +547,7 @@ export async function setupJanus(): Promise<boolean> {
     JANUS.version!,
     platformKey,
   )
-  return installGitHubReleaseTool({
+  const installed = await installGitHubReleaseTool({
     name: 'janus',
     displayName: 'janus',
     tool: JANUS,
@@ -554,6 +555,32 @@ export async function setupJanus(): Promise<boolean> {
     finalBinaryName: 'janus',
     installDir,
   })
+  if (installed) {
+    await ensureJanusQueue(path.join(installDir, 'janus'))
+  }
+  return installed
+}
+
+/**
+ * Best-effort `janus init` so a repo that just received the janus binary has a
+ * `.janus/` queue without a manual step. Per docs/agents.md/fleet/release-vs-
+ * cascade.md, `.janus/` is gitignored + created per-repo at setup (never seeded
+ * from the release — the queue is repo-local + dynamic, and `janus init` is the
+ * canonical creator). Idempotent (skips when `.janus/` already exists) and
+ * NON-FATAL: a failure never fails the security-tools setup — the multi-Janus
+ * shim simply treats a missing queue as "not adopted yet".
+ */
+export async function ensureJanusQueue(janusBin: string): Promise<void> {
+  const repoRoot = process.cwd()
+  if (existsSync(path.join(repoRoot, '.janus'))) {
+    return
+  }
+  try {
+    await spawn(janusBin, ['init'], { cwd: repoRoot, stdio: 'ignore' })
+    logger.log('janus: initialized .janus/ queue')
+  } catch {
+    // Non-fatal: `janus init` is a convenience, not a setup gate.
+  }
 }
 
 interface NpmToolInstallOptions {

@@ -57,7 +57,7 @@ async function getSmolPower(): Promise<SmolPower | undefined> {
 }
 
 // Coerce spawn's stdout (string | Buffer | undefined) to a string.
-function stdoutString(value: unknown): string {
+export function stdoutString(value: unknown): string {
   if (typeof value === 'string') {
     return value
   }
@@ -67,7 +67,7 @@ function stdoutString(value: unknown): string {
   return ''
 }
 
-async function detectMacOs(): Promise<boolean> {
+export async function detectMacOs(): Promise<boolean> {
   try {
     // `pmset -g batt` on macOS prints lines like
     //   Now drawing from 'AC Power'
@@ -83,7 +83,7 @@ async function detectMacOs(): Promise<boolean> {
   }
 }
 
-async function detectLinux(): Promise<boolean> {
+export async function detectLinux(): Promise<boolean> {
   // Linux exposes power state under /sys/class/power_supply. Each
   // AC adapter is its own dir (`AC`, `ADP1`, `AC0`, `ACAD`, …)
   // with an `online` file holding "1" when power is connected.
@@ -118,7 +118,7 @@ async function detectLinux(): Promise<boolean> {
   return false
 }
 
-async function detectWindows(): Promise<boolean> {
+export async function detectWindows(): Promise<boolean> {
   try {
     // Windows: query the battery status via PowerShell + CIM.
     // `Win32_Battery.BatteryStatus`:

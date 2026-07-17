@@ -22,10 +22,10 @@
 
 import process from 'node:process'
 import { createInterface } from 'node:readline'
-import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
+import { isMainModule } from './_shared/is-main-module.mts'
 import {
   createTicketArgs,
   listTicketsArgs,
@@ -49,7 +49,7 @@ const SERVER_VERSION = '0.1.0'
 // param names which repo's queue to target.
 const WORKSPACE_PROP = {
   description:
-    'The fleet repo name whose Janus queue to target (e.g. socket-wheelhouse). Call list_workspaces for the set.',
+    'Fleet repo name whose Janus queue to target (see list_workspaces).',
   type: 'string',
 } as const
 
@@ -74,7 +74,7 @@ export const TOOLS: ToolDef[] = [
   {
     annotations: { destructiveHint: false, readOnlyHint: false },
     description:
-      "Create a ticket in a workspace's Janus queue. Use this to file work into ANOTHER repo's queue (e.g. a fleet-canonical change that belongs in socket-wheelhouse) instead of editing that repo's checkout.",
+      "Create a ticket in a workspace's Janus queue (file work into another repo's queue without editing its checkout).",
     inputSchema: {
       properties: {
         description: { description: 'Ticket description', type: 'string' },
@@ -99,7 +99,7 @@ export const TOOLS: ToolDef[] = [
   {
     annotations: { readOnlyHint: true },
     description:
-      "Get the next available ticket(s) to work on in a workspace (dependency-aware). The runner loop's 'what's next'.",
+      'Get the next available ticket(s) in a workspace (dependency-aware).',
     inputSchema: {
       properties: {
         limit: {
@@ -142,14 +142,20 @@ export const TOOLS: ToolDef[] = [
       idempotentHint: true,
       readOnlyHint: false,
     },
-    description:
-      'Change a ticket status in a workspace. Statuses: new, next, in_progress, complete, cancelled, archived.',
+    description: 'Change a ticket status in a workspace.',
     inputSchema: {
       properties: {
         id: { description: 'Ticket ID', type: 'string' },
         status: {
-          description:
-            'new | next | in_progress | complete | cancelled | archived',
+          description: 'New status.',
+          enum: [
+            'new',
+            'next',
+            'in_progress',
+            'complete',
+            'cancelled',
+            'archived',
+          ],
           type: 'string',
         },
         workspace: WORKSPACE_PROP,
@@ -309,6 +315,6 @@ async function main(): Promise<void> {
   logger.info('[janus-multi-mcp] ready (stdio)')
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   void main()
 }

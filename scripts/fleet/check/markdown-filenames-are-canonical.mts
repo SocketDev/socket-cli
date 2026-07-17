@@ -13,13 +13,13 @@
 
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { classifyMarkdownPath } from '../../../.claude/hooks/fleet/markdown-filename-guard/index.mts'
 import { REPO_ROOT } from '../paths.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -80,10 +80,7 @@ async function main(): Promise<void> {
 
 // Entrypoint-guarded so the test can import findViolations without triggering
 // the git scan (the check runs as a standalone `node` entrypoint via check.mts).
-if (
-  process.argv[1] &&
-  fileURLToPath(import.meta.url) === path.resolve(process.argv[1])
-) {
+if (isMainModule(import.meta.url)) {
   main().catch((error: unknown) => {
     logger.fail('markdown-filenames check failed:', error)
     process.exitCode = 1

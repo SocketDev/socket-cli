@@ -34,18 +34,11 @@
 //
 // Fails open on malformed payloads (exit 0 + stderr log).
 
-// oxlint-disable-next-line no-explicit-any -- shell-quote ships no types; runtime contract is stable.
-import { parse as shellQuoteParse } from 'shell-quote'
+import { parseShell } from '@socketsecurity/lib-stable/shell/parse'
+
+import type { ParseEntry } from '@socketsecurity/lib-stable/shell/parse'
 
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
-
-type ParseEntry = string | { op: string } | { comment: string }
-
-const parse = shellQuoteParse as unknown as (cmd: string) => ParseEntry[]
-
-function isOp(e: ParseEntry): e is { op: string } {
-  return typeof e === 'object' && 'op' in e
-}
 
 // Verbs whose output we never want truncated. `i` and `install` are the
 // classic case; `run check`/`run fix`/`run update`/`run test`/`run cover`/
@@ -71,12 +64,52 @@ const PNPM_RUN_SCRIPTS = new Set([
   'update',
 ])
 
+// Return a human-readable label for an install-shaped command, or
+// undefined when the tokens are something else (`git log`, `ls`, etc.).
+// Skips leading `NAME=value` assignment tokens so `CI=true pnpm i`
+// still matches.
+export function describeInstallShape(tokens: string[]): string | undefined {
+  let i = 0
+  while (i < tokens.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(tokens[i]!)) {
+    i += 1
+  }
+  const bin = tokens[i]
+  if (bin !== 'npm' && bin !== 'pnpm' && bin !== 'yarn') {
+    return undefined
+  }
+  // Find first non-flag token after the binary.
+  let j = i + 1
+  while (j < tokens.length && tokens[j]!.startsWith('-')) {
+    j += 1
+  }
+  const verb = tokens[j]
+  if (!verb) {
+    return undefined
+  }
+  // `pnpm i`, `pnpm install`, etc.
+  if (PNPM_VERBS_FIRST.has(verb)) {
+    return `${bin} ${verb}`
+  }
+  // `pnpm run <script>`.
+  if (verb === 'run') {
+    let k = j + 1
+    while (k < tokens.length && tokens[k]!.startsWith('-')) {
+      k += 1
+    }
+    const script = tokens[k]
+    if (script && PNPM_RUN_SCRIPTS.has(script)) {
+      return `${bin} run ${script}`
+    }
+  }
+  return undefined
+}
+
 // Walk shell-quote tokens to find a pipe `|` whose LEFT side is an
 // install-shaped command and whose RIGHT side starts with `tail` or
 // `head`. Pipes are the only operator that matters — `&&`, `||`, `;`,
 // `&` separate independent commands, so `pnpm i && echo done | tail -5`
 // is NOT the bad pattern (the tail consumes `echo`, not `pnpm`).
-function findOffendingPipe(command: string):
+export function findOffendingPipe(command: string):
   | {
       install: string
       truncator: string
@@ -84,7 +117,7 @@ function findOffendingPipe(command: string):
   | undefined {
   let entries: ParseEntry[]
   try {
-    entries = parse(command)
+    entries = parseShell(command)
   } catch {
     /* c8 ignore start - shell-quote does not throw on string inputs; bashGuard guarantees a string */
     return undefined
@@ -126,6 +159,10 @@ function findOffendingPipe(command: string):
       // Keep collecting; they don't separate commands.
       continue
     }
+    if (typeof e !== 'string') {
+      // Glob tokens are structural metadata, not command arguments.
+      continue
+    }
     if (e === '') {
       // `$VAR` placeholder. Push a sentinel so the segment isn't lost
       // (the binary may still be `pnpm` later in the tokens).
@@ -159,44 +196,8 @@ function findOffendingPipe(command: string):
   return undefined
 }
 
-// Return a human-readable label for an install-shaped command, or
-// undefined when the tokens are something else (`git log`, `ls`, etc.).
-// Skips leading `NAME=value` assignment tokens so `CI=true pnpm i`
-// still matches.
-function describeInstallShape(tokens: string[]): string | undefined {
-  let i = 0
-  while (i < tokens.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(tokens[i]!)) {
-    i += 1
-  }
-  const bin = tokens[i]
-  if (bin !== 'npm' && bin !== 'pnpm' && bin !== 'yarn') {
-    return undefined
-  }
-  // Find first non-flag token after the binary.
-  let j = i + 1
-  while (j < tokens.length && tokens[j]!.startsWith('-')) {
-    j += 1
-  }
-  const verb = tokens[j]
-  if (!verb) {
-    return undefined
-  }
-  // `pnpm i`, `pnpm install`, etc.
-  if (PNPM_VERBS_FIRST.has(verb)) {
-    return `${bin} ${verb}`
-  }
-  // `pnpm run <script>`.
-  if (verb === 'run') {
-    let k = j + 1
-    while (k < tokens.length && tokens[k]!.startsWith('-')) {
-      k += 1
-    }
-    const script = tokens[k]
-    if (script && PNPM_RUN_SCRIPTS.has(script)) {
-      return `${bin} run ${script}`
-    }
-  }
-  return undefined
+export function isOp(e: ParseEntry): e is { op: string } {
+  return typeof e === 'object' && 'op' in e
 }
 
 // bashGuard handles the tool_name gate, command narrow, and fail-open on any

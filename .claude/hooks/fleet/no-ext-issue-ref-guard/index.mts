@@ -40,10 +40,12 @@
 import { scanExternalIssueRefs } from '../../../../.git-hooks/_shared/external-issue-ref.mts'
 import type { ExternalIssueRef } from '../../../../.git-hooks/_shared/external-issue-ref.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import {
+  BYPASS_LOOKBACK_USER_TURNS,
+  bypassPhrasePresent,
+} from '../_shared/transcript.mts'
 
 const BYPASS_PHRASE = 'Allow external-issue-ref bypass'
-const BYPASS_LOOKBACK_USER_TURNS = 8
 
 // Dispatcher pre-flight. The guard can only ever block a PUBLIC_MESSAGE_COMMANDS
 // shape: `git commit` (always contains `commit`) or `gh pr|issue|release`

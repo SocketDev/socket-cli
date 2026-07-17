@@ -21,6 +21,8 @@
  *      instead of duplicating the prompt.
  */
 
+import { AI_TIER } from '@socketsecurity/lib-stable/ai/tier'
+
 import type { AiEffort } from '@socketsecurity/lib-stable/ai/types'
 
 /**
@@ -77,30 +79,31 @@ export const SURFACE_TIER: Readonly<
 } as unknown as Readonly<Record<CodifySurface, 'haiku' | 'opus' | 'sonnet'>>
 
 /**
- * Map a tier label to the canonical Claude Code model ID. Centralized so a
- * global tier bump is a single-file edit and won't drift across orchestrators.
- * Identical to ai-lint-fix's TIER_MODEL by intent — the two share the fleet's
- * model ladder; keep them in lockstep when a model generation rolls.
+ * Map a tier label to the canonical Claude Code model ID — derived from
+ * socket-lib's AI_TIER ladder (`@socketsecurity/lib-stable/ai/tier`), the same
+ * source ai-lint-fix's TIER_MODEL derives from, so the two orchestrators stay
+ * in lockstep structurally and a model-generation roll is one socket-lib edit.
  */
 export const TIER_MODEL: Readonly<Record<'haiku' | 'opus' | 'sonnet', string>> =
   {
     __proto__: null,
-    haiku: 'claude-haiku-4-5',
-    opus: 'claude-opus-4-8',
-    sonnet: 'claude-sonnet-4-6',
+    haiku: AI_TIER.haiku.model,
+    opus: AI_TIER.opus.model,
+    sonnet: AI_TIER.sonnet.model,
   } as Readonly<Record<'haiku' | 'opus' | 'sonnet', string>>
 
 /**
  * Map a tier label to its reasoning-effort level (claude `--effort`). Effort
- * rides with the model per the CLAUDE.md token-spend rule.
+ * rides with the model per the CLAUDE.md token-spend rule; both come from the
+ * same AI_TIER row, so the pair can never drift apart here.
  */
 export const TIER_EFFORT: Readonly<
   Record<'haiku' | 'opus' | 'sonnet', AiEffort>
 > = {
   __proto__: null,
-  haiku: 'low',
-  opus: 'high',
-  sonnet: 'medium',
+  haiku: AI_TIER.haiku.effort,
+  opus: AI_TIER.opus.effort,
+  sonnet: AI_TIER.sonnet.effort,
 } as unknown as Readonly<Record<'haiku' | 'opus' | 'sonnet', AiEffort>>
 
 /**
@@ -132,10 +135,10 @@ export const SURFACE_GUIDANCE: Readonly<Record<CodifySurface, string>> = {
 
 <conventions>
   - Name the file as an ASSERTION (\`<thing>-is-<property>.mts\`, e.g. \`hook-dirs-are-not-husks.mts\`) — the check-names-are-assertions gate enforces this.
-  - Mirror an existing check's shape (read scripts/fleet/check/hook-dirs-are-not-husks.mts as the canonical template): a header comment (what / why / what fails / usage), pure exported scan functions (\`scanForX(repoRoot): Hit[]\`), a \`main()\` that logs hits + sets \`process.exitCode = 1\` on findings, and the entrypoint guard \`if (process.argv[1] === fileURLToPath(import.meta.url)) { main() }\`.
+  - Mirror an existing check's shape (read scripts/fleet/check/hook-dirs-are-not-husks.mts as the canonical template): a header comment (what / why / what fails / usage), pure exported scan functions (\`scanForX(repoRoot): Hit[]\`), a \`main()\` that logs hits + sets \`process.exitCode = 1\` on findings, and the entrypoint guard \`if (isMainModule(import.meta.url)) { main() }\`.
   - Import REPO_ROOT from '../paths.mts'; logger from '@socketsecurity/lib-stable/logger/default'.
   - Register it in scripts/fleet/check.mts as \`() => run('node', ['scripts/fleet/check/<name>.mts'])\` with a 2-4 line comment naming the discipline + the motivating incident generically (no dates/SHAs — the dated-citation rule).
-  - If the check has non-trivial pure logic, write a vitest test at test/unit/fleet/check/<name>.test.mts (a dead-export fixture that fails + a clean one that passes) and run it with \`pnpm test test/unit/fleet/check/<name>.test.mts\`. Fleet-script tests cascade in lock-step; see docs/agents.md/fleet/test-layout.md.
+  - If the check has non-trivial pure logic, write a vitest test at test/repo/unit/check/<name>.test.mts (a dead-export fixture that fails + a clean one that passes) and run it with \`pnpm test test/repo/unit/check/<name>.test.mts\`. Fleet-script tests cascade in lock-step; see docs/agents.md/fleet/test-layout.md.
 </conventions>`,
   'hook-guard': `Author a new BLOCKING hook at .claude/hooks/{fleet,repo}/<name>-guard/ (a -guard BLOCKS; if it only nudges, use hook-nudge instead — never both for one concern).
 

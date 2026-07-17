@@ -32,10 +32,11 @@
 // shape is irrelevant to our work) and exit code is advisory.
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-import { readdirSync } from 'node:fs'
+import { appendFileSync, mkdirSync, readdirSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+import { isHookEntrypoint } from '../_shared/entrypoint.mts'
 
 // Process-name patterns that indicate a stale test/build worker.
 // Must be specific enough that real user processes (a normal `node`
@@ -328,6 +329,68 @@ export function readActiveRunPids(homeDir?: string | undefined): Set<number> {
 // True when `pid`'s ancestor chain (via the captured ps snapshot) reaches
 // any of `ancestors`. Bounded hops guard against ppid cycles in a torn
 // snapshot.
+// Append one line per kill to ~/.claude/hooks/stale-process-sweeper/kills.log
+// — the auditable receipt. Sweeper stderr is only visible to the session
+// whose Stop hook ran the sweep; a cross-session kill (2026-07-11: cover-run
+// wrappers repeatedly SIGKILLed with no attributable killer) is invisible
+// without a shared log. Best-effort: a logging failure never blocks the sweep.
+export function recordKillReceipt(
+  row: ProcRow,
+  name: string,
+  reason: SweepReason,
+  signal: string,
+): void {
+  try {
+    const dir = path.join(
+      os.homedir(),
+      '.claude',
+      'hooks',
+      'stale-process-sweeper',
+    )
+    mkdirSync(dir, { recursive: true })
+    appendFileSync(
+      path.join(dir, 'kills.log'),
+      `${new Date().toISOString()} sweeper-pid=${process.pid} ppid=${process.ppid} ${signal} pid=${row.pid} name=${name} reason=${reason} rssMb=${Math.round(row.rss / 1024)} cmd=${row.command.slice(0, 160)}\n`,
+    )
+  } catch {
+    // Receipt is diagnostics, never load-bearing.
+  }
+}
+
+// Collect every ancestor pid of every live registered run: the wrapper
+// chain ABOVE a cover run (sfw shim → pnpm → cover.mts) is as load-bearing
+// as its worker subtree below, but descendant checks never cover it — a
+// forced sweep during a coverage run repeatedly SIGKILLed the run's own
+// sfw wrapper (receipts 2026-07-12, runs 7–11). Killing an ancestor
+// orphans the run mid-flight; spare the whole chain while the marker is
+// live.
+export function collectMarkerAncestors(
+  rows: ProcRow[],
+  markerPids: Set<number>,
+): Set<number> {
+  const ancestors = new Set<number>()
+  if (markerPids.size === 0) {
+    return ancestors
+  }
+  const parentOf = new Map<number, number>()
+  for (let i = 0, { length } = rows; i < length; i += 1) {
+    const row = rows[i]!
+    parentOf.set(row.pid, row.ppid)
+  }
+  for (const marker of markerPids) {
+    let current = parentOf.get(marker)
+    for (
+      let hops = 0;
+      hops < 25 && current !== undefined && current > 1;
+      hops += 1
+    ) {
+      ancestors.add(current)
+      current = parentOf.get(current)
+    }
+  }
+  return ancestors
+}
+
 export function isDescendantOf(
   rows: ProcRow[],
   pid: number,
@@ -399,6 +462,9 @@ export interface SweepOptions {
   // target / `--all` flag), NOT the conservative Stop-hook default which
   // spares healthy live-parent work.
   all?: boolean | undefined
+  // Test seam: forwarded to readActiveRunPids() so specs can register
+  // fake active-run markers without touching the real home directory.
+  homeDir?: string | undefined
 }
 
 export type SweepReason = 'orphan' | 'stuck' | 'forced'
@@ -419,7 +485,8 @@ export function sweep(options?: SweepOptions): {
   // are exempt from the STUCK heuristic only. Incident: three cover runs
   // SIGKILLed at ~15min with flat RSS because hot coverage workers matched
   // the stuck signature exactly.
-  const activeRunPids = readActiveRunPids()
+  const activeRunPids = readActiveRunPids(opts?.homeDir)
+  const markerAncestors = collectMarkerAncestors(rows, activeRunPids)
   const myPid = process.pid
   const myPpid = process.ppid
   const killed: Array<{
@@ -452,6 +519,12 @@ export function sweep(options?: SweepOptions): {
     if (!name) {
       continue
     }
+    // Ancestors of a live registered run (the sfw/pnpm wrapper chain
+    // above it) are spared in EVERY mode — killing one orphans the run.
+    if (markerAncestors.has(row.pid)) {
+      skipped += 1
+      continue
+    }
     let reason: SweepReason | undefined
     if (agentName !== undefined && workerName === undefined) {
       // Orphaned agent matched only by AGENT_PATTERNS (already
@@ -460,8 +533,26 @@ export function sweep(options?: SweepOptions): {
     } else if (all) {
       // Explicit kill-everything: any build/test worker qualifies,
       // including healthy live-parent work the Stop hook would spare.
+      // EXCEPT a live REGISTERED run's tree: the marker is another
+      // session's "please don't" (a coverage baseline in flight is
+      // coordinated work, not background garbage). Two cover runs died
+      // to cross-session SIGKILLs on 2026-07-11; the marker must hold
+      // even here.
+      if (isDescendantOf(rows, row.pid, activeRunPids)) {
+        skipped += 1
+        continue
+      }
       reason = 'forced'
     } else if (isOrphan) {
+      // Descendants of a LIVE registered run stay exempt here too: when an
+      // intermediate ancestor dies (e.g. the pnpm wrapper above a cover
+      // run), the run's healthy workers re-parent and would otherwise be
+      // reaped as orphans mid-run. readActiveRunPids() is pid-live-gated,
+      // so the exemption expires with the run.
+      if (isDescendantOf(rows, row.pid, activeRunPids)) {
+        skipped += 1
+        continue
+      }
       reason = 'orphan'
     } else if (
       row.elapsedSec >= STUCK_MIN_ELAPSED_SEC &&
@@ -491,6 +582,7 @@ export function sweep(options?: SweepOptions): {
         reason,
         rssMb: Math.round(row.rss / 1024),
       })
+      recordKillReceipt(row, name, reason, all ? 'SIGKILL' : 'SIGTERM')
     } catch {
       // Already gone, or we lack permission — nothing to do.
     }
@@ -555,6 +647,6 @@ export function runSweep(options?: SweepOptions) {
 // imports this module for its pure helpers (else main() blocks on stdin at
 // import and the test file never terminates).
 /* c8 ignore next - condition is always false when imported; true only when run as a script */
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+if (isHookEntrypoint(import.meta.url)) {
   main()
 }

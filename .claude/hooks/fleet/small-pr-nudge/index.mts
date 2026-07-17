@@ -24,6 +24,7 @@ import {
 } from '../pr-vs-push-default-nudge/index.mts'
 import { bashGuard, defineHook, notify, runHook } from '../_shared/guard.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
+import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 
 import type { Command } from '../_shared/shell-command.mts'
 
@@ -117,7 +118,7 @@ export function parseShortstat(shortstat: string): DiffSize | undefined {
 export function prDiffSize(cwd: string, base: string): DiffSize | undefined {
   const r = spawnSync('git', ['diff', '--shortstat', `${base}...HEAD`], {
     cwd,
-    timeout: 5000,
+    timeout: spawnTimeoutMs(5000),
   })
   if (r.status !== 0) {
     return undefined

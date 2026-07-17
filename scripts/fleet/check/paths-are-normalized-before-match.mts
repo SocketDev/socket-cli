@@ -22,13 +22,13 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 // oxlint-disable-next-line socket/prefer-async-spawn -- sync check; needs typed string stdout from `git ls-files`, sequential gate.
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { REPO_ROOT } from '../paths.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 // Source-code extensions to scan (TypeScript only — bundled .cjs/.mjs output
 // is vendored/generated and intentionally excluded; see git ls-files filter).
@@ -125,7 +125,12 @@ export function scan(filePath: string, rawText: string): PathFinding[] {
       }
     }
     if (!proven) {
-      findings.push({ file: filePath, line: i + 1, text: line.trim(), varName })
+      findings.push({
+        file: filePath,
+        line: i + 1,
+        text: line.trim(),
+        varName,
+      })
     }
   }
   return findings
@@ -165,7 +170,7 @@ function main(): void {
       continue
     }
     // Skip the normalize helper itself.
-    if (/\/paths\/normalize\.[mc]?[jt]s$/.test(file)) {
+    if (/\/paths\/normalize\.[mc]?[jt]s$/.test(normalizePath(file))) {
       continue
     }
     // Skip this check script itself.
@@ -216,6 +221,6 @@ function main(): void {
   process.exit(1)
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   main()
 }

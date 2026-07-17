@@ -3,7 +3,7 @@
  *   Reads the canonical registry's packument `time` map via `httpJson` (socket-
  *   lib — the fleet "never bare `fetch()`" rule; only the dep-0 bootstrap goes
  *   bare). Lean on purpose: the soak-exclude verification + soak-bypass import
- *   THIS, not publish-shared.mts (which also pulls the publish/spawn
+ *   THIS, not publish-infra/ (which also pulls the publish/spawn
  *   machinery). FAIL-OPEN — a slow/unreachable registry yields `undefined`,
  *   never a throw, so offline CI / firewall warmup never blocks or false-reds a
  *   caller.

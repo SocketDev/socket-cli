@@ -14,7 +14,7 @@
  *   reappears under a cascaded tree — at which point it would silently ride out
  *   to members + the release again.
  *
- *   NOTE this is NOT the same concern as `test/unit/fleet/**`: those ARE
+ *   NOTE this is NOT the same concern as `test/repo/unit/**`: those ARE
  *   deliberately cascaded in lock-step with the fleet scripts they cover and
  *   members DO run them (manifest/files.mts). This gate only governs the three
  *   trees whose tests members cannot run.
@@ -34,7 +34,7 @@ import { REPO_ROOT } from '../paths.mts'
 const logger = getDefaultLogger()
 
 // The cascaded co-located trees, scanned both at the template seed and live.
-// A member's tests of fleet SCRIPTS live in test/unit/fleet/ (NOT here) — see
+// A member's tests of fleet SCRIPTS live in test/repo/unit/ (NOT here) — see
 // the @file note.
 const CASCADED_TREES: readonly string[] = [
   '.claude/hooks/fleet',
@@ -45,6 +45,11 @@ const ROOTS: readonly string[] = ['template/base', '.']
 
 // A `*.test.*` file (test.mts/ts/js/mjs/cjs/tsx/jsx). Path normalized to `/`.
 const TEST_FILE_RE = /\.test\.[a-z]+$/
+
+// Directory names the walk never descends into: an installed dependency tree or
+// a nested git working tree holds files this gate does not own — a dependency's
+// own `*.test.js` under node_modules is not a cascaded fleet test.
+const SKIP_DIRS: ReadonlySet<string> = new Set(['.git', 'node_modules'])
 
 function walkForTests(dir: string, found: string[]): void {
   let entries: string[]
@@ -63,6 +68,9 @@ function walkForTests(dir: string, found: string[]): void {
       continue
     }
     if (isDir) {
+      if (SKIP_DIRS.has(entry)) {
+        continue
+      }
       walkForTests(full, found)
     } else if (TEST_FILE_RE.test(entry)) {
       found.push(full)

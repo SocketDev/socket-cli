@@ -1,6 +1,6 @@
 ---
 name: greening-ci-local
-description: Drive a repo's CI to green LOCALLY with Agent-CI (Docker), the local analog of greening-ci. Runs a workflow (or all PR/push workflows) in containers, and on the first paused step reads the failure log, fixes the code locally, and `agent-ci retry`s the SAME paused runner — looping until the run lands green or a wall-clock budget expires. Use to validate a workflow change or a release dispatch BEFORE burning a remote run, to catch a CI failure on your own machine, or as the local pre-flight before `republishing-stubs` / any remote build-matrix dispatch. Where greening-ci watches GitHub Actions remotely and fixes-then-pushes, this runs in local containers and fixes-then-retries in place — no push, no remote runner minutes.
+description: Run Agent-CI locally in Docker, fix paused failures, and retry until the workflow is green.
 user-invocable: true
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash(git:*), Bash(node:*), Bash(pnpm:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(cat:*), Bash(head:*), Bash(tail:*), Bash(docker info:*), Bash(open -a OrbStack:*)
 model: claude-sonnet-4-6

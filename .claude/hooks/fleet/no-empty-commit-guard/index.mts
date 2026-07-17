@@ -30,11 +30,16 @@
 //   0  — allow.
 //   2  — block. Stderr carries the operator-facing message.
 //
+// squash-history repos (roster opt-in) are EXEMPT — no bypass needed: every
+// commit collapses into the lone `chore: initial commit`, so an empty commit is
+// absorbed by the next squash and never reaches the log/CHANGELOG this protects.
+//
 // Fails open on any internal error (exit 0 + stderr log) so the
 // hook never wedges the operator's flow.
 
+import { isSquashOptIn } from '../_shared/fleet-roster.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
-import { commandsFor } from '../_shared/shell-command.mts'
+import { commandsFor, commandWorkingDir } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 const BYPASS_PHRASE = 'Allow empty-commit bypass'
@@ -72,6 +77,14 @@ export const check = bashGuard((command, payload) => {
   const allowEmptyCommit = isAllowEmptyCommit(command)
   const allowEmptyCherryPick = isCherryPickAllowEmpty(command)
   if (!allowEmptyCommit && !allowEmptyCherryPick) {
+    return undefined
+  }
+
+  // squash-history repos (roster opt-in) collapse ALL commits into the one
+  // canonical `chore: initial commit` — an empty commit is absorbed on the next
+  // squash, so it never reaches the `git log` / CHANGELOG the ban protects. No
+  // bypass needed there; the rationale simply doesn't apply.
+  if (isSquashOptIn(commandWorkingDir(command))) {
     return undefined
   }
 

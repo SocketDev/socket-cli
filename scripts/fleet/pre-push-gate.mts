@@ -8,7 +8,10 @@
 //   1. pnpm run update      — refresh tool/catalog pins (soak-held held)
 //   2. pnpm install         — reconcile the lockfile
 //   3. pnpm run fix --all   — lint/format autofix
-//   4. pnpm run check --all — the fleet check gates
+//   4. pnpm run check --all --release — the fleet check gates, FULL tier
+//      (--release opts the interactive-skipped long poles + release/network
+//      checks back in, so a push is gated on the complete set, not the fast
+//      interactive subset).
 //   5. pnpm run cover       — full coverage suite (covers "all tests pass")
 //
 // On all-green it prints the next step (push + watch CI). It does NOT push —
@@ -22,6 +25,8 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -30,7 +35,7 @@ export const GATE_STEPS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ['pnpm', ['run', 'update']],
   ['pnpm', ['install']],
   ['pnpm', ['run', 'fix', '--all']],
-  ['pnpm', ['run', 'check', '--all']],
+  ['pnpm', ['run', 'check', '--all', '--release']],
   ['pnpm', ['run', 'cover']],
 ]
 
@@ -99,8 +104,6 @@ async function main(): Promise<void> {
   )
 }
 
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
-  void (async () => {
-    await main()
-  })()
+if (isMainModule(import.meta.url)) {
+  runMain(main)
 }

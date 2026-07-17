@@ -10,7 +10,7 @@
  *
  *   1. `.config/fleet/taze.config.mts` — `exclude:` for pass 1
  *      (cooldown-respecting) / re-included in pass 2 (immediate-bump).
- *   2. `scripts/repo/update-external-tools.mts` — bypasses GitHub-release soak
+ *   2. `scripts/fleet/external-tools/update.mts` — bypasses GitHub-release soak
  *      when the tool's `repository: 'github:owner/repo'` owner is a SocketDev
  *      org (see `isSocketSourcedRepository`).
  *   3. `pnpm-workspace.yaml` `minimumReleaseAgeExclude:` — kept in lockstep with
@@ -104,10 +104,11 @@ export const UPDATE_PINNED_TOOLCHAIN: readonly string[] = [
 
 /**
  * GitHub organizations whose releases are Socket-published and bypass the soak
- * window in `update-external-tools.mts`. Matched against the `owner` segment of
- * an `external-tools.json` entry's `repository: 'github:owner/repo'` field.
- * `SocketDev` is the canonical fleet org; aliases are listed for completeness
- * and so the rename to a single org (whenever that happens) is mechanical.
+ * window in `scripts/fleet/external-tools/update.mts`. Matched against the
+ * `owner` segment of an `external-tools.json` entry's `repository:
+ * 'github:owner/repo'` field. `SocketDev` is the canonical fleet org; aliases
+ * are listed for completeness and so the rename to a single org (whenever that
+ * happens) is mechanical.
  */
 export const SOCKET_GITHUB_ORGS: readonly string[] = ['SocketDev']
 

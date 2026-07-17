@@ -30,6 +30,7 @@ import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import {
+  BYPASS_LOOKBACK_USER_TURNS,
   bypassPhrasePresent,
   extractCodeFences,
   readLastAssistantText,
@@ -41,7 +42,6 @@ interface Finding {
 }
 
 const BYPASS_PHRASE = 'Allow path-regex-normalize bypass'
-const BYPASS_LOOKBACK_USER_TURNS = 8
 
 const CODE_LANGS = new Set([
   '',

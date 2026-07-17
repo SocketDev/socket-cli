@@ -1,6 +1,6 @@
 ---
 name: trimming-bundle
-description: For repos that ship a built bundle, finds unused code paths in dist/ and iteratively stubs them via the bundler's stub plugin. Each candidate stub goes through stub → rebuild → test loop; only paths that pass the loop are kept. Today the only supported bundler is rolldown (createLibStubPlugin); the skill shape generalizes to other bundlers if the fleet adopts them. Use after a bundler migration, before publishing a new version, or whenever bundle size grows unexpectedly.
+description: Find unused bundled code paths and keep only stubs that rebuild and pass tests.
 user-invocable: true
 allowed-tools: Read, Edit, Grep, Glob, AskUserQuestion, Bash(pnpm:*), Bash(node:*), Bash(grep:*), Bash(rg:*), Bash(find:*), Bash(ls:*), Bash(wc:*), Bash(du:*), Bash(stat:*), Bash(git status:*), Bash(git diff:*)
 model: claude-haiku-4-5

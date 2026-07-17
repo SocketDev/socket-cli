@@ -33,12 +33,23 @@ import {
   listForeignDirtyPaths,
   readTouchedPaths,
 } from '../_shared/foreign-paths.mts'
+import { isSquashOptIn } from '../_shared/fleet-roster.mts'
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 
 function getProjectDir(): string | undefined {
   return process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
+}
+
+export function squashHistoryProgressGuidance(): string {
+  return (
+    '\nThis repo opts into squashing-history: commit boundaries are ephemeral.\n' +
+    '  • NEVER wait for another session to commit disjoint paths. Continue\n' +
+    '    immediately and commit your paths surgically with `git commit -o`.\n' +
+    '  • Coordinate on PATH ownership, not COMMIT ownership. Pause only for\n' +
+    '    a same-path live collision or the final repo-wide squash/push.\n'
+  )
 }
 
 export const check = (payload: ToolCallPayload): GuardResult => {
@@ -75,6 +86,10 @@ export const check = (payload: ToolCallPayload): GuardResult => {
     '  • A real collision is a file changing between two of your OWN reads\n' +
     '    THIS turn — that alone warrants pausing.\n' +
     '\nSee: docs/agents.md/fleet/parallel-claude-sessions.md\n'
+
+  if (isSquashOptIn(repoDir)) {
+    message += squashHistoryProgressGuidance()
+  }
 
   return notify(message)
 }

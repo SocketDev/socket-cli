@@ -26,6 +26,7 @@
  *
  * Usage: node .claude/skills/fleet/squashing-history/run.mts /path/to/<repo>
  */
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
@@ -34,6 +35,15 @@ import { errorMessage } from '@socketsecurity/lib/errors/message'
 import { isError } from '@socketsecurity/lib/errors/predicates'
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 
+import {
+  COMMIT_LOG_FORMAT,
+  generateChangelogSection,
+  mergeUnreleased,
+  parseConventionalCommits,
+  repoBaseUrl,
+  sectionHasEntries,
+  UNRELEASED_HEADING,
+} from '../../../../scripts/fleet/lib/changelog.mts'
 import { slugFromRemoteUrl } from '../../../hooks/fleet/_shared/fleet-repos.mts'
 import {
   isOptedIn,
@@ -63,6 +73,86 @@ export async function resolveFleetName(src: string): Promise<string> {
 }
 
 export { header, run, timestamp }
+
+/**
+ * Accrue user-visible CHANGELOG entries into the `## [Unreleased]` section
+ * before a squash collapses the commit history those entries derive from.
+ * Derives the Conventional-Commit entries since the current root, merges them
+ * into CHANGELOG.md at `cwd`, and commits that file on the checked-out branch
+ * (--no-verify, unsigned — the commit is squashed away moments later so only
+ * its TREE survives, re-signed by the mint/squash root). Returns the
+ * post-accrual HEAD sha (the current HEAD when nothing was accrued). Fail-open:
+ * any problem logs and returns the current HEAD, so a changelog hiccup never
+ * blocks a squash. The caller must have `cwd` checked out on the branch being
+ * squashed.
+ */
+export async function accrueUnreleased(
+  cwd: string,
+  repoUrl: string | undefined,
+): Promise<string> {
+  const headSha = async (): Promise<string> =>
+    (await run('git', ['rev-parse', 'HEAD'], cwd)).stdout.trim()
+  try {
+    if (!existsSync(path.join(cwd, 'CHANGELOG.md'))) {
+      return await headSha()
+    }
+    // The oldest root reachable from HEAD — the last squash's root (or the true
+    // start). Commits after it are the window this squash would otherwise erase.
+    const roots = (
+      await run('git', ['rev-list', '--max-parents=0', 'HEAD'], cwd)
+    ).stdout
+      .trim()
+      .split('\n')
+      .filter(Boolean)
+    const root = roots[roots.length - 1]
+    if (!root) {
+      return await headSha()
+    }
+    const log = (
+      await run(
+        'git',
+        ['log', `${root}..HEAD`, `--format=${COMMIT_LOG_FORMAT}`],
+        cwd,
+      )
+    ).stdout
+    const section = generateChangelogSection({
+      commits: parseConventionalCommits(log),
+      date: '',
+      heading: UNRELEASED_HEADING,
+      repoUrl: repoBaseUrl(repoUrl),
+      version: '',
+    })
+    if (!sectionHasEntries(section)) {
+      logger.substep('changelog accrual: no user-visible commits to accrue')
+      return await headSha()
+    }
+    const changelogPath = path.join(cwd, 'CHANGELOG.md')
+    writeFileSync(
+      changelogPath,
+      mergeUnreleased(readFileSync(changelogPath, 'utf8'), section),
+    )
+    await run(
+      'git',
+      [
+        'commit',
+        '--no-verify',
+        '-o',
+        'CHANGELOG.md',
+        '-m',
+        'docs(changelog): accrue [Unreleased] before squash',
+      ],
+      cwd,
+      { env: { SQUASH_HISTORY: '1' } },
+    )
+    logger.substep('changelog accrual: [Unreleased] updated before squash')
+    return await headSha()
+  } catch (e) {
+    logger.warn(
+      `changelog accrual skipped (squash proceeds): ${errorMessage(e)}`,
+    )
+    return await headSha()
+  }
+}
 
 export interface SquashOptions {
   /**
@@ -157,6 +247,55 @@ export async function squashSingleCommit(
   return { __proto__: null, newHead } as SquashResult
 }
 
+/**
+ * Mint a single root commit whose tree is byte-identical to `tipSha`'s tree,
+ * via `git commit-tree` — pure object creation, so neither the index nor the
+ * working tree of `cwd` is touched and no worktree is needed. Signs with the
+ * user's configured key and asserts the signature verifies.
+ */
+export async function mintSquashRoot(options: {
+  readonly cwd: string
+  readonly message?: string | undefined
+  readonly tipSha: string
+}): Promise<SquashResult> {
+  const opts = { __proto__: null, ...options } as {
+    cwd: string
+    message?: string | undefined
+    tipSha: string
+  }
+  const { cwd, tipSha } = opts
+  const message = opts.message ?? 'chore: initial commit'
+  const newHead = (
+    await run(
+      'git',
+      ['commit-tree', '-S', `${tipSha}^{tree}`, '-m', message],
+      cwd,
+    )
+  ).stdout.trim()
+  // Integrity gate — the whole point is zero content change. A non-empty
+  // diff means the mint altered the tree; that is corruption, so exit hard.
+  const diff = await run(
+    'git',
+    ['diff', '--ignore-submodules', newHead, tipSha],
+    cwd,
+    {
+      allowFailure: true,
+    },
+  )
+  if (diff.stdout.length > 0) {
+    logger.error(`minted-root diff vs ${tipSha} non-empty; aborting`)
+    logger.error(diff.stdout.split('\n').slice(0, 20).join('\n'))
+    process.exit(1)
+  }
+  const sig = (
+    await run('git', ['log', '--format=%G?', '-1', newHead], cwd)
+  ).stdout.trim()
+  if (sig !== 'G') {
+    throw new Error(`minted root not signed (got ${sig})`)
+  }
+  return { __proto__: null, newHead } as SquashResult
+}
+
 async function main(): Promise<number> {
   const src = process.argv[2]
   if (!src) {
@@ -241,6 +380,124 @@ async function main(): Promise<number> {
   ).stdout
   header(`original ${base}`, `${origHead} (${origCount} commits)`)
 
+  // Origin URL, for the changelog accrual's release links (best-effort).
+  const remoteUrl =
+    (
+      await run('git', ['config', '--get', 'remote.origin.url'], src, {
+        allowFailure: true,
+      })
+    ).stdout.trim() || undefined
+
+  // Local main is canonical in the fleet. When the local branch is AHEAD of
+  // origin (origin is its ancestor), the squash must collapse the LOCAL tree
+  // — squashing origin's stale tree would mint a root missing local work and
+  // the next push would obliterate the squash. When local and origin have
+  // DIVERGED (each has commits the other lacks), refuse loudly: reconcile
+  // forward first (merge origin into local), then re-run.
+  let localHead = ''
+  try {
+    localHead = (
+      await run('git', ['rev-parse', `refs/heads/${base}`], src)
+    ).stdout.trim()
+  } catch {}
+  const localMode = localHead !== '' && localHead !== origHead
+  if (localMode) {
+    const originIsAncestor =
+      (
+        await run(
+          'git',
+          ['merge-base', '--is-ancestor', origHead, localHead],
+          src,
+          {
+            allowFailure: true,
+          },
+        )
+      ).code === 0
+    if (!originIsAncestor) {
+      // Diverged: local main is canonical and clobbers origin anyway. Back up
+      // origin's tip first so the overwrite is recoverable, then proceed.
+      logger.substep(
+        `origin/${base} (${origHead.slice(0, 8)}) diverges from local — ` +
+          `clobbering; backing up origin tip -> refs/heads/${backup}-origin`,
+      )
+      await run(
+        'git',
+        [
+          'push',
+          '--no-verify',
+          'origin',
+          `${origHead}:refs/heads/${backup}-origin`,
+        ],
+        src,
+      )
+    }
+    const localCount = (
+      await run('git', ['rev-list', '--count', localHead], src)
+    ).stdout
+    header(
+      `local ${base}`,
+      `${localHead} (${localCount} commits, ahead of origin)`,
+    )
+
+    // Accrue the [Unreleased] changelog from the commits this squash collapses,
+    // so they survive in the minted tree. Only when src is checked out on the
+    // base branch (the accrual commits there and advances localHead); skip
+    // otherwise so a detached / worktree checkout is never committed onto.
+    const srcBranch = (
+      await run('git', ['symbolic-ref', '--quiet', '--short', 'HEAD'], src, {
+        allowFailure: true,
+      })
+    ).stdout.trim()
+    if (srcBranch === base) {
+      localHead = await accrueUnreleased(src, remoteUrl)
+    } else {
+      logger.substep(`changelog accrual: skipped (src not on ${base})`)
+    }
+
+    // Backup the LOCAL tip — it strictly contains origin.
+    logger.substep(
+      `pushing remote backup ref: refs/heads/${backup} -> ${localHead}`,
+    )
+    await run(
+      'git',
+      ['push', '--no-verify', 'origin', `${localHead}:refs/heads/${backup}`],
+      src,
+    )
+
+    const { newHead } = await mintSquashRoot({ cwd: src, tipSha: localHead })
+    logger.success(`minted signed root ${newHead} from local ${base} tree`)
+
+    // Point the local branch at the root (tree-identical, so the working
+    // tree and index stay clean), then lease-push against origin's tip.
+    await run(
+      'git',
+      ['update-ref', `refs/heads/${base}`, newHead, localHead],
+      src,
+    )
+    logger.substep(`force-pushing to ${base}...`)
+    await run(
+      'git',
+      [
+        'push',
+        '--no-verify',
+        `--force-with-lease=${base}:${origHead}`,
+        'origin',
+        `${base}`,
+      ],
+      src,
+      { env: { SQUASH_HISTORY: '1' } },
+    )
+
+    logger.log('')
+    logger.success(`${repoName} squashed (local-canonical mode)`)
+    logger.substep(`new ${base}:   ${newHead}`)
+    logger.substep(`backup ref: refs/heads/${backup} -> ${localHead}`)
+    logger.substep(
+      `recover:    git fetch origin ${backup} && git push --force origin FETCH_HEAD:${base}`,
+    )
+    return 0
+  }
+
   if (origCount === '1') {
     logger.info('already a single commit — nothing to squash')
     return 0
@@ -271,16 +528,21 @@ async function main(): Promise<number> {
     worktree,
   )
 
+  // Accrue the [Unreleased] changelog from the commits this squash collapses
+  // (the worktree is on the squash branch, off origin/base). The accrual commit
+  // becomes the new pre-squash tip the integrity gate matches against.
+  const accruedHead = await accrueUnreleased(worktree, remoteUrl)
+
   // Phase 4 + 5 — squash + integrity (shared engine; HARD exit on mismatch).
   // sign: a fleet repo's default branch must carry signed commits, and GitHub
   // enforces required_signatures server-side regardless of --no-verify below.
   const { newHead } = await squashSingleCommit({
-    origHead,
+    origHead: accruedHead,
     sign: true,
     worktree,
   })
   logger.success(`squashed ${origCount} commits → 1 commit (${newHead})`)
-  logger.success(`integrity: post-squash tree == origin/${base} tree`)
+  logger.success('integrity: post-squash tree == pre-squash tree')
 
   // Phase 6 — force-push (lease guards against a racing push).
   logger.substep(`force-pushing to ${base}...`)

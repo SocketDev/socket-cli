@@ -1,6 +1,6 @@
 ---
 name: codifying-disciplines
-description: Scans a repo for disciplines that exist only in prose, convention, or agent memory but are NOT enforced by executable code, then codifies each into the right surface — a script, a hook, a lint rule, or a CLAUDE.md rule. Runs a Workflow that fans out scanner agents (CLAUDE.md rules with no enforcer, repeated review/PR feedback, build/release steps relying on humans remembering, conventions stated in docs but unchecked), dedups, ranks by blast radius, and for each gap proposes the lowest-friction codification with a concrete diff. "Code is law" — agent memory and prose don't enforce; scripts/hooks/rules do. Use after a session surfaces a recurring discipline, when onboarding a repo, or whenever "we keep having to remember X" comes up.
+description: Find repo rules that live only in prose or memory and turn them into scripts, hooks, lint rules, or checks.
 user-invocable: true
 allowed-tools: Workflow, Task, Read, Grep, Glob, Write, AskUserQuestion, Bash(git status:*), Bash(git log:*), Bash(git diff:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(cat:*), Bash(wc:*), Bash(head:*), Bash(tail:*), Bash(node scripts/fleet/ai-codify/cli.mts:*), Bash(node scripts/fleet/codify-rule.mts:*), Bash(node scripts/fleet/codify-scan/inventory.mts:*), Bash(node scripts/repo/run-hook-tests.mts:*), Bash(node scripts/fleet/check/:*), Bash(node scripts/repo/sync-scaffolding/cli.mts:*)
 model: claude-opus-4-8

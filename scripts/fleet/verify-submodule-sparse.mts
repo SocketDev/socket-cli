@@ -30,6 +30,7 @@ import { fileURLToPath } from 'node:url'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { isMainModule } from './_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -261,7 +262,7 @@ async function main(): Promise<void> {
   process.exitCode = 0
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   main().catch((e: unknown) => {
     logger.fail(`verify-submodule-sparse: ${errorMessage(e)}`)
     process.exitCode = 1

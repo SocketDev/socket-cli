@@ -10,7 +10,7 @@
 // `…/projects/<repo>/…` absolute path into a sibling fleet repo. The fix is
 // always an `@socketsecurity/<pkg>` package import, never a path.
 
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
@@ -57,7 +57,31 @@ function findRepoRoot(fileAbsPath: string): string | undefined {
 // no `projects/<repo>` layout assumption.
 export function repoNameForFile(fileAbsPath: string): string | undefined {
   const repoRoot = findRepoRoot(fileAbsPath)
-  return repoRoot ? path.basename(repoRoot) : undefined
+  return repoRoot ? path.basename(resolveTrueRepoRoot(repoRoot)) : undefined
+}
+
+// In a LINKED WORKTREE the walk-up root's `.git` is a FILE whose `gitdir:`
+// pointer ends in `<primary>/.git/worktrees/<name>` — the worktree
+// directory's own basename (e.g. a `.wt-*` scratch checkout) is NOT the
+// repo's name. Resolve the primary root so own-repo references keep reading
+// as own-repo inside worktrees; without this, absolute paths naming the
+// repo's canonical name false-flagged as cross-repo escapes on every
+// worktree run (coverage runs 10-11, 2026-07-12). Falls back to the given
+// root on any read/parse miss — never worse than the old behavior.
+export function resolveTrueRepoRoot(repoRoot: string): string {
+  const gitEntry = path.join(repoRoot, '.git')
+  try {
+    if (!statSync(gitEntry).isFile()) {
+      return repoRoot
+    }
+    const pointer = readFileSync(gitEntry, 'utf8').trim()
+    const m = /^gitdir:\s*(.+?)[/\\]\.git[/\\]worktrees[/\\][^/\\]+$/.exec(
+      pointer,
+    )
+    return m?.[1] ? m[1] : repoRoot
+  } catch {
+    return repoRoot
+  }
 }
 
 // A matched RELATIVE token (a `..`-traversal ending in a repo name) is a genuine

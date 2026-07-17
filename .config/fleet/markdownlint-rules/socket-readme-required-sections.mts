@@ -14,12 +14,13 @@
  *      No autofix: a missing section needs content, not just a heading.
  */
 
-import path from 'node:path'
-
 import type { MarkdownlintRule } from './_shared/rule-types.mts'
 
 import { isFreeformReadmeOptIn } from './_shared/freeform-readme-optin.mts'
+import { isRootReadme } from './_shared/root-readme.mts'
 import { isInsideWheelhouse } from './_shared/wheelhouse-self-skip.mts'
+
+export { isRootReadme } from './_shared/root-readme.mts'
 
 const RULE_NAME = 'socket-readme-required-sections'
 const REQUIRED_SECTIONS = [
@@ -29,21 +30,6 @@ const REQUIRED_SECTIONS = [
   'Development',
   'License',
 ]
-
-export function isRootReadme(filePath) {
-  // markdownlint passes `params.name` as a path relative to the working
-  // dir. The root README is the one whose basename is README.md AND
-  // whose directory is the cwd or `.`.
-  if (!filePath) {
-    return false
-  }
-  const base = path.basename(filePath)
-  if (base !== 'README.md') {
-    return false
-  }
-  const dir = path.dirname(filePath)
-  return dir === '.' || dir === '' || dir === process.cwd()
-}
 
 const rule: MarkdownlintRule = {
   description:

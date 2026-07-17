@@ -43,6 +43,8 @@
 //
 // Bypass: `Allow uses-sha-verify bypass`.
 
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 import { block, defineHook, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
@@ -59,31 +61,31 @@ import { findGitmodulesIssues } from './lib/gitmodules.mts'
 import { findPackageJsonIssues } from './lib/package-json.mts'
 import { BASH_TARGETS_WORKFLOW_RE } from './lib/regexes.mts'
 import { findUsesIssues } from './lib/workflow.mts'
-import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 const BYPASS_PHRASE = 'Allow uses-sha-verify bypass'
 
 function isWorkflowOrActionPath(filePath: string): boolean {
+  const normalizedFilePath = normalizePath(filePath)
   return (
-    /\.github\/workflows\/[^/]+\.ya?ml$/.test(filePath) ||
-    /\.github\/actions\/[^/]+\/action\.ya?ml$/.test(filePath)
+    /\.github\/workflows\/[^/]+\.ya?ml$/.test(normalizedFilePath) ||
+    /\.github\/actions\/[^/]+\/action\.ya?ml$/.test(normalizedFilePath)
   )
 }
 
 function isGitmodulesPath(filePath: string): boolean {
+  const normalizedFilePath = normalizePath(filePath)
   return (
-    normalizePath(filePath).endsWith('/.gitmodules') ||
-    filePath === '.gitmodules'
+    normalizedFilePath.endsWith('/.gitmodules') || filePath === '.gitmodules'
   )
 }
 
 function isPackageJsonPath(filePath: string): boolean {
-  if (normalizePath(filePath).includes('/node_modules/')) {
+  const normalizedFilePath = normalizePath(filePath)
+  if (normalizedFilePath.includes('/node_modules/')) {
     return false
   }
   return (
-    normalizePath(filePath).endsWith('/package.json') ||
-    filePath === 'package.json'
+    normalizedFilePath.endsWith('/package.json') || filePath === 'package.json'
   )
 }
 

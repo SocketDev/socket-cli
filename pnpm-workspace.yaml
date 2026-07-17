@@ -48,12 +48,12 @@ catalog:
   '@pnpm/logger': 1001.0.0
   '@redwoodjs/agent-ci': 0.16.2
   '@sentry/node': 8.0.0
-  '@sinclair/typebox': 0.34.49
+  '@sinclair/typebox': 0.34.50
   '@socketregistry/hyrious__bun.lockb': 1.0.19
   '@socketregistry/indent-string': 1.0.14
   '@socketregistry/is-interactive': 1.0.6
   '@socketregistry/packageurl-js': 'npm:@socketregistry/packageurl-js@1.4.2'
-  '@socketsecurity/lib': 6.0.9
+  '@socketsecurity/lib': 6.0.10
   '@types/shell-quote': 1.7.5
   '@ultrathink/acorn.wasm': npm:@ultrathink/acorn-wasm@0.0.1
   # -stable aliases: pnpm `overrides:` can't redirect a package's own
@@ -65,7 +65,7 @@ catalog:
   # full rationale.
   '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.4.2'
   '@socketregistry/yocto-spinner': 1.0.25
-  '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@6.0.9'
+  '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@6.0.10'
   '@socketsecurity/registry': 'npm:@socketsecurity/registry@2.0.2'
   '@socketsecurity/registry-stable': 'npm:@socketsecurity/registry@2.0.2'
   '@socketsecurity/sdk': 'npm:@socketsecurity/sdk@4.0.1'
@@ -76,7 +76,7 @@ catalog:
   '@types/mdast': 4.0.4
   '@types/micromatch': 4.0.9
   '@types/mock-fs': 4.13.4
-  '@types/node': 26.1.0
+  '@types/node': 26.1.1
   '@types/npm-package-arg': 6.1.4
   '@types/npmcli__arborist': 6.3.1
   '@types/npmcli__config': 6.0.3
@@ -86,8 +86,8 @@ catalog:
   '@types/which': 3.0.4
   '@types/yargs-parser': 21.0.3
   '@typescript/native-preview': 7.0.0-dev.20260510.1
-  '@vitest/coverage-v8': 4.1.9
-  '@vitest/ui': 4.1.9
+  '@vitest/coverage-v8': 4.1.10
+  '@vitest/ui': 4.1.10
   '@yao-pkg/pkg': 6.8.0
   '@yarnpkg/parsers': 3.0.3
   adm-zip: 0.5.16
@@ -96,9 +96,11 @@ catalog:
   ansi-regex: 6.2.2
   brace-expansion: 5.0.5
   browserslist: 4.25.4
+  'c8': 11.0.0
   chalk-table: 1.0.2
+  'chrome-devtools-mcp': 1.5.0
   cmd-shim: 7.0.0
-  compromise: 14.14.4
+  compromise: 14.15.1
   del-cli: 6.0.0
   dev-null-cli: 2.0.0
   'dtu-github-actions': 0.16.2
@@ -141,8 +143,8 @@ catalog:
   octokit: 5.0.5
   onnxruntime-web: 1.23.0
   open: 10.2.0
-  oxfmt: 0.57.0
-  oxlint: 1.72.0
+  oxfmt: 0.58.0
+  oxlint: 1.73.0
   packageurl-js: npm:@socketregistry/packageurl-js@^1.4.2
   path-parse: npm:@socketregistry/path-parse@^1.0.8
   'playwright-core': 1.61.1
@@ -179,7 +181,7 @@ catalog:
   # vite 8.0.14 swaps esbuild → rolldown natively; the override forces its
   # bundled rolldown up to the catalog's 1.0.3.
   vite: 8.1.0
-  vitest: 4.1.9
+  vitest: 4.1.10
   wrap-ansi: 9.0.2
   xml2js: 0.6.2
   yaml: 2.8.1
@@ -197,48 +199,6 @@ minimumReleaseAgeExclude:
   # ahead of the soak by owner directive (out of RC). The main package + its
   # 20-package per-platform binding family are pinned to the exact version
   # (a scope glob would blanket-bypass any future @typescript publish).
-  # published: 2026-07-08 | removable: 2026-07-15
-  - 'typescript@7.0.2'
-  # published: 2026-07-08 | removable: 2026-07-15
-  - '@typescript/typescript-aix-ppc64@7.0.2'
-  # published: 2026-07-08 | removable: 2026-07-15
-  - '@typescript/typescript-darwin-arm64@7.0.2'
-  # published: 2026-07-08 | removable: 2026-07-15
-  - '@typescript/typescript-darwin-x64@7.0.2'
-  # published: 2026-07-08 | removable: 2026-07-15
-  - '@typescript/typescript-freebsd-arm64@7.0.2'
-  # published: 2026-07-08 | removable: 2026-07-15
-  - '@typescript/typescript-freebsd-x64@7.0.2'
-  # published: 2026-07-08 | removable: 2026-07-15
-  - '@typescript/typescript-linux-arm@7.0.2'
-  # published: 2026-07-08 | removable: 2026-07-15
-  - '@typescript/typescript-linux-arm64@7.0.2'
-  # published: 2026-07-08 | removable: 2026-07-15
-  - '@typescript/typescript-linux-loong64@7.0.2'
-  # published: 2026-07-08 | removable: 2026-07-15
-  - '@typescript/typescript-linux-mips64el@7.0.2'
-  # published: 2026-07-08 | removable: 2026-07-15
-  - '@typescript/typescript-linux-ppc64@7.0.2'
-  # published: 2026-07-08 | removable: 2026-07-15
-  - '@typescript/typescript-linux-riscv64@7.0.2'
-  # published: 2026-07-08 | removable: 2026-07-15
-  - '@typescript/typescript-linux-s390x@7.0.2'
-  # published: 2026-07-08 | removable: 2026-07-15
-  - '@typescript/typescript-linux-x64@7.0.2'
-  # published: 2026-07-08 | removable: 2026-07-15
-  - '@typescript/typescript-netbsd-arm64@7.0.2'
-  # published: 2026-07-08 | removable: 2026-07-15
-  - '@typescript/typescript-netbsd-x64@7.0.2'
-  # published: 2026-07-08 | removable: 2026-07-15
-  - '@typescript/typescript-openbsd-arm64@7.0.2'
-  # published: 2026-07-08 | removable: 2026-07-15
-  - '@typescript/typescript-openbsd-x64@7.0.2'
-  # published: 2026-07-08 | removable: 2026-07-15
-  - '@typescript/typescript-sunos-x64@7.0.2'
-  # published: 2026-07-08 | removable: 2026-07-15
-  - '@typescript/typescript-win32-arm64@7.0.2'
-  # published: 2026-07-08 | removable: 2026-07-15
-  - '@typescript/typescript-win32-x64@7.0.2'
   - '@socketaddon/*'
   - '@socketbin/*'
   - '@socketregistry/*'
@@ -294,7 +254,7 @@ overrides:
   'iconv-lite': '0.7.2'
   'isexe@>=3': '4.0.0'
   'lru-cache@>=10': '11.3.6'
-  'magic-string': '0.30.21'
+  'magic-string': '1.0.0'
   'mime-db': '1.54.0'
   'mime-types@>=3': '3.0.2'
   'minipass@>=4': '7.1.3'

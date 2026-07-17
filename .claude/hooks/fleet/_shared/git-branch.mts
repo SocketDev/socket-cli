@@ -7,13 +7,18 @@
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
+import { spawnTimeoutMs } from './spawn-timeout.mts'
+
 // Run a git command in `repoDir`, returning trimmed stdout, or undefined on a
 // non-zero exit / spawn error / missing repo.
 export function gitOut(
   repoDir: string,
   args: readonly string[],
 ): string | undefined {
-  const r = spawnSync('git', [...args], { cwd: repoDir, timeout: 5000 })
+  const r = spawnSync('git', [...args], {
+    cwd: repoDir,
+    timeout: spawnTimeoutMs(5000),
+  })
   if (r.status !== 0 || typeof r.stdout !== 'string') {
     return undefined
   }

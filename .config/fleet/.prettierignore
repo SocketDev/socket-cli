@@ -37,6 +37,16 @@
 # fight the bundler output. The bootstrap/src/* modules ARE formatted.
 **/bootstrap/fleet.mjs
 
+# Generated build/test output — machine-written trees whose generators own the
+# bytes; formatting them is churn against the next build. These are the
+# GENERATED_GLOBS twins (scripts/fleet/constants/generated-globs.mts is the
+# single source; scripts/fleet/check/generated-globs-are-consistent.mts asserts
+# this file covers every entry).
+**/build/**
+**/coverage/**
+**/dist/**
+**/out/**
+
 # Vendored / upstream trees — kept byte-identical with their source of truth. Per
 # CLAUDE.md "untracked-by-default for vendored / build-copied trees": someone
 # else's source, not ours; the formatter would rewrite it into our local style.

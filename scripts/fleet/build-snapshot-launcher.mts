@@ -54,6 +54,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { DISPATCH_DIR } from './make-hook-dispatch.mts'
+import { isMainModule } from './_shared/is-main-module.mts'
 
 const require = createRequire(import.meta.url)
 const { blobPath } = require(
@@ -128,6 +129,70 @@ does NOT hold, Windows takes the compile-cache fallback (point settings.json at
 only as the perf path. Fail-open guarantees correctness on every platform.
 `.trim()
 
+export interface CompilerPlan {
+  args: string[]
+  cc: string
+}
+
+/**
+ * Pick the compiler + flags for this host: mingw gcc or MSVC `cl` on Windows
+ * (prefer gcc when present), plain `cc` everywhere else.
+ */
+export function selectCompiler(
+  isWin: boolean,
+  haveGcc: boolean,
+  src: string,
+  outBin: string,
+): CompilerPlan {
+  if (isWin) {
+    return haveGcc
+      ? {
+          args: [
+            '-O2',
+            '-municode',
+            '-DUNICODE',
+            '-D_UNICODE',
+            '-o',
+            outBin,
+            src,
+          ],
+          cc: 'gcc',
+        }
+      : {
+          args: [
+            '/O2',
+            '/DUNICODE',
+            '/D_UNICODE',
+            src,
+            `/Fe:${outBin}`,
+            'kernel32.lib',
+          ],
+          cc: 'cl',
+        }
+  }
+  return { args: ['-O2', '-o', outBin, src], cc: 'cc' }
+}
+
+export type LauncherAction = 'build' | 'missing-bundle' | 'print-build'
+
+/**
+ * Decide which top-level action `main()` takes: `--print-build` short-circuits
+ * before anything else is checked, then a missing snapshot bundle blocks the
+ * build (the prerequisite `build-hook-snapshot.mts` step hasn't run yet).
+ */
+export function planLauncherAction(
+  argv: readonly string[],
+  bundleExists: boolean,
+): LauncherAction {
+  if (argv.includes('--print-build')) {
+    return 'print-build'
+  }
+  if (!bundleExists) {
+    return 'missing-bundle'
+  }
+  return 'build'
+}
+
 /**
  * Host C-compile of the right source for this os/arch.
  */
@@ -143,31 +208,11 @@ function buildHostLauncher(): boolean {
     return false
   }
 
-  let cc: string
-  let args: string[]
-  if (isWin) {
-    // The host build on Windows uses whatever C compiler is on PATH. mingw gcc
-    // is the simplest; MSVC `cl` is the CI default. Prefer gcc if present.
-    const haveGcc =
-      spawnSync('gcc', ['--version'], { stdio: 'ignore' }).status === 0
-    if (haveGcc) {
-      cc = 'gcc'
-      args = ['-O2', '-municode', '-DUNICODE', '-D_UNICODE', '-o', outBin, src]
-    } else {
-      cc = 'cl'
-      args = [
-        '/O2',
-        '/DUNICODE',
-        '/D_UNICODE',
-        src,
-        `/Fe:${outBin}`,
-        'kernel32.lib',
-      ]
-    }
-  } else {
-    cc = 'cc'
-    args = ['-O2', '-o', outBin, src]
-  }
+  // The host build on Windows uses whatever C compiler is on PATH. mingw gcc
+  // is the simplest; MSVC `cl` is the CI default. Prefer gcc if present.
+  const haveGcc =
+    isWin && spawnSync('gcc', ['--version'], { stdio: 'ignore' }).status === 0
+  const { args, cc } = selectCompiler(isWin, haveGcc, src, outBin)
 
   const r = spawnSync(cc, args, { stdio: 'inherit' })
   if (r.status !== 0 || !existsSync(outBin)) {
@@ -196,11 +241,12 @@ function writeSidecars(): void {
 }
 
 function main(): void {
-  if (process.argv.includes('--print-build')) {
+  const action = planLauncherAction(process.argv, existsSync(SNAPSHOT_BUNDLE))
+  if (action === 'print-build') {
     process.stdout.write(BUILD_RECIPE + '\n')
     return
   }
-  if (!existsSync(SNAPSHOT_BUNDLE)) {
+  if (action === 'missing-bundle') {
     process.stderr.write(
       'snapshot-bundle.cjs missing — run build-hook-snapshot.mts first.\n',
     )
@@ -217,6 +263,6 @@ function main(): void {
   )
 }
 
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+if (isMainModule(import.meta.url)) {
   main()
 }

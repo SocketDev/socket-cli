@@ -4,9 +4,9 @@ A stdio MCP server (`scripts/fleet/janus-multi-mcp.mts`) that fronts **many** re
 
 ## Why
 
-The native `janus mcp` is rooted at a single `.janus/` (its launch cwd). An agent working in `socket-lib` can't file a ticket into another repo's queue without changing directories — which, on a shared checkout, means fighting the other session's `.git/index`. That contention is what wedged a recent landing.
+The native `janus mcp` is rooted at a single `.janus/` (its launch cwd). An agent working in `socket-lib` can't file a ticket into the fleet source repo's queue without changing directories — which, on a shared checkout, means fighting the other session's `.git/index`. That contention is what wedged a recent landing.
 
-This shim adds a `workspace` parameter to every tool and routes the call to that repo's `.janus/` by shelling `janus` with `JANUS_ROOT` set. So a `socket-lib` agent that discovers it needs a fleet-canonical change **files it into the wheelhouse queue and keeps draining its own** — no cross-checkout commit.
+This shim adds a `workspace` parameter to every tool and routes the call to that repo's `.janus/` by shelling `janus` with `JANUS_ROOT` set. So a `socket-lib` agent that discovers it needs a fleet-canonical change **files it into the the fleet source repo queue and keeps draining its own** — no cross-checkout commit.
 
 ## Stopgap status
 
@@ -14,7 +14,7 @@ This is a stopgap. The upstream `janus mcp --workspace name=path` (a PR stack ag
 
 ## Workspaces
 
-Zero-config discovery: every fleet repo (from the wheelhouse-canonical `fleet-repos.json`) that is a sibling directory of the wheelhouse root **and** has a `.janus/` dir is a workspace. The workspace name is the repo dir name. Call `list_workspaces` for the live set. A repo with no `.janus/` is not listed (it has not adopted Janus yet).
+Zero-config discovery: every fleet repo (from the fleet-canonical `fleet-repos.json`, cascaded per-repo) that is a sibling directory of the running repo's root **and** has a `.janus/` dir is a workspace. The shim is fleet-tier (`scripts/fleet/`), so it ships to every member — an agent in any repo drives its own queue and its siblings'. The workspace name is the repo dir name (e.g. the fleet source repo). Call `list_workspaces` for the live set. A repo with no `.janus/` is not listed (it has not adopted Janus yet).
 
 ## Tools
 
@@ -53,8 +53,8 @@ Requires the `janus` binary on `PATH` (Homebrew: `brew tap divmain/janus && brew
   sleep 1 ) | node scripts/fleet/janus-multi-mcp.mts
 ```
 
-The pure logic (JSON-RPC dispatch, tool→argv mapping, workspace discovery) is unit-tested in `test/unit/fleet/janus-multi-mcp.test.mts`.
+The pure logic (JSON-RPC dispatch, tool→argv mapping, workspace discovery) is unit-tested in `test/repo/unit/janus-multi-mcp.test.mts`.
 
-## Caveat: `.janus/` is not gitignored
+## `.janus/` is gitignored (release-bundle, not the cascade)
 
-When the fleet adopts Janus, decide per repo whether `.janus/` is tracked (tickets-as-code, synced to GitHub Issues) or ignored. That is an adoption decision separate from this shim — the shim only reads whatever `.janus/` exists.
+`.janus/` is in the fleet-canonical `.gitignore` block, so a repo's ticket queue never enters the byte-identical commit cascade — it rides the gh-release bundle and per-repo seeding instead (less in the cascade, more in the release). The shim only reads whatever `.janus/` exists on disk; a repo that has not been seeded is simply absent from `list_workspaces`.

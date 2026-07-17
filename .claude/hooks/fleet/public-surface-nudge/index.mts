@@ -24,9 +24,9 @@
 import { bashGuard, defineHook, notify, runHook } from '../_shared/guard.mts'
 import { isPublicSurface } from '../_shared/public-surfaces.mts'
 
-// Pre-flight skip keys. Every PUBLIC_SURFACE_PATTERN begins with `\bgit\s+`
-// or `\bgh\s+`, so isPublicSurface can only fire when the command names one
-// of these two binaries. A payload with neither substring can never notify.
+// Pre-flight skip keys. isPublicSurface only matches parsed `git`/`gh`
+// segments, so it can only fire when the command names one of these two
+// binaries. A payload with neither substring can never notify.
 export const triggers: readonly string[] = ['gh', 'git']
 
 export const check = bashGuard(command => {

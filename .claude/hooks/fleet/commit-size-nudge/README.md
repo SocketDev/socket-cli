@@ -2,12 +2,12 @@
 
 **PreToolUse (Bash) — nudge, never blocks.**
 
-On a `git commit`, warns when the STAGED diff exceeds **~400 changed lines of
+On a `git commit`, warns when the STAGED diff exceeds **~200 changed lines of
 authored source**. Fleet commits stay small (one logical change) so they land
 cleanly onto local `main` without cross-worktree collisions and read like a
 small reviewable PR.
 
-It is the commit-time twin of `small-pr-nudge` (~200 lines on the rare PR path).
+It is the commit-time twin of `small-pr-nudge`: both target ~200 authored lines.
 The fleet direct-pushes to `main`, so the size discipline actually bites here,
 at commit time.
 
@@ -33,4 +33,4 @@ Reminder-only. There is no bypass phrase because it never blocks.
 ## Trigger
 
 `git commit` (via the shared `isGitCommit` parse). Threshold:
-`COMMIT_SIZE_LINES = 400`.
+`COMMIT_SIZE_LINES = 200`.

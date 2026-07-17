@@ -23,12 +23,12 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { findWorkspacePackages } from './package-files-are-allowlisted.mts'
 import { REPO_ROOT } from '../paths.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -120,7 +120,7 @@ export function collectFindings(repoRoot: string): FilesFieldFinding[] {
       continue
     }
     const rel = path.relative(repoRoot, pkgDir)
-    const relPath = `${rel === '' ? '.' : rel}/package.json`
+    const relPath = path.join(rel === '' ? '.' : rel, 'package.json')
     const finding = checkFilesField(pkg, relPath)
     if (finding) {
       findings.push(finding)
@@ -170,6 +170,6 @@ function main(): void {
   process.exit(runCheck(REPO_ROOT))
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   main()
 }

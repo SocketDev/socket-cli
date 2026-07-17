@@ -18,6 +18,7 @@ import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+import { isMainModule } from './_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -86,6 +87,24 @@ export function findWorkspaceManifests(root: string): string[] {
   return roots
 }
 
+// The `cargo fmt` argv for one workspace manifest. Pure + exported so a test
+// asserts the `--check` toggle without spawning cargo.
+export function buildCargoFmtArgs(
+  manifest: string,
+  options?: { check?: boolean | undefined } | undefined,
+): string[] {
+  const opts = { __proto__: null, ...options } as {
+    check?: boolean | undefined
+  }
+  return [
+    'fmt',
+    '--all',
+    '--manifest-path',
+    manifest,
+    ...(opts.check ? ['--check'] : []),
+  ]
+}
+
 function main(): void {
   const repoRoot = process.cwd()
   const manifests = findWorkspaceManifests(repoRoot)
@@ -99,17 +118,13 @@ function main(): void {
     logger.info(
       `fmt-rust: cargo fmt --all (${path.relative(repoRoot, manifest)})`,
     )
-    const result = spawnSync(
-      'cargo',
-      [
-        'fmt',
-        '--all',
-        '--manifest-path',
-        manifest,
-        ...(check ? ['--check'] : []),
-      ],
-      { stdio: 'inherit' },
-    )
+    const result = spawnSync('cargo', buildCargoFmtArgs(manifest, { check }), {
+      // Cargo/rustup discover rust-toolchain.toml and .cargo/config.toml from
+      // cwd, not from --manifest-path. Run at the workspace so a nested pin or
+      // target config is honored consistently.
+      cwd: path.dirname(manifest),
+      stdio: 'inherit',
+    })
     if (result.status !== 0) {
       failed = true
     }
@@ -126,4 +141,6 @@ function main(): void {
   logger.info('fmt-rust: clean.')
 }
 
-main()
+if (isMainModule(import.meta.url)) {
+  main()
+}

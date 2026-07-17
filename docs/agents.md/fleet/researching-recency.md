@@ -45,4 +45,4 @@ The SKILL.md prose and the engine output share literal marker strings (the badge
 
 ## Tests
 
-`test/unit/fleet/researching-recency-*.test.mts` cover every pure module (relevance, signals, dedupe, rank, plan, render) directly, and every source adapter against `nock`-mocked fixtures that mirror the real API shapes, under `disableNetConnect()`.
+`test/repo/unit/researching-recency-*.test.mts` cover every pure module (relevance, signals, dedupe, rank, plan, render) directly, and every source adapter against `nock`-mocked fixtures that mirror the real API shapes, under `disableNetConnect()`.

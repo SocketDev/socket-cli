@@ -14,6 +14,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from '../paths.mts'
 import { LockstepManifestSchema } from './schema.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -24,27 +25,35 @@ const outPath = path.join(rootDir, 'lockstep.schema.json')
 // [Kind] marker that JSON.stringify drops. Spreading the schema first
 // then layering the canonical $schema / $id / title on top gives a clean
 // draft-2020-12 document with the Socket-specific headers.
-const enriched = {
-  $schema: 'https://json-schema.org/draft/2020-12/schema',
-  $id: 'https://github.com/SocketDev/lockstep.schema.json',
-  title: 'lockstep manifest',
-  ...LockstepManifestSchema,
+export function buildLockstepSchemaDocument(): Record<string, unknown> {
+  return {
+    $schema: 'https://json-schema.org/draft/2020-12/schema',
+    $id: 'https://github.com/SocketDev/lockstep.schema.json',
+    title: 'lockstep manifest',
+    ...LockstepManifestSchema,
+  }
 }
 
-writeFileSync(outPath, JSON.stringify(enriched, null, 2) + '\n', 'utf8')
+export async function main(): Promise<void> {
+  writeFileSync(
+    outPath,
+    JSON.stringify(buildLockstepSchemaDocument(), null, 2) + '\n',
+    'utf8',
+  )
 
-// Run oxfmt on the output so the file matches what oxfmt would
-// produce. Without this, `pnpm run check --all` (which runs oxfmt
-// over the tree) would flag the emitted schema as drifted on every
-// repo that re-emits it. The schema is in IDENTICAL_FILES, so the
-// formatted form is the byte-canonical form fleet-wide.
-await spawn(
-  'pnpm',
-  ['exec', 'oxfmt', '-c', '.config/fleet/oxfmtrc.json', outPath],
-  {
+  // Format the output through the package.json wrapper (it owns the config +
+  // ignore set; never a bare oxfmt invocation). Without this, `pnpm run check
+  // --all` would flag the emitted schema as drifted on every repo that
+  // re-emits it. The schema is in IDENTICAL_FILES, so the formatted form is
+  // the byte-canonical form fleet-wide.
+  await spawn('pnpm', ['run', 'format', outPath], {
     cwd: rootDir,
     stdio: 'inherit',
-  },
-)
+  })
 
-logger.success(`wrote ${path.relative(rootDir, outPath)}`)
+  logger.success(`wrote ${path.relative(rootDir, outPath)}`)
+}
+
+if (isMainModule(import.meta.url)) {
+  void main()
+}

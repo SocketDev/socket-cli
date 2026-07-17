@@ -31,7 +31,7 @@ sibling (`.claude/hooks/repo/`, `.config/repo/`, the member's own
 ## The ref pin
 
 A thin member pins which bundle to fetch in its wheelhouse settings file:
-`.config/fleet.json` → `"bundle": { "ref": "fleet-<sha>" }`. That
+`.config/socket-wheelhouse.json` → `"bundle": { "ref": "fleet-<sha>" }`. That
 file is the single member-owned config surface. The bootstrap defaults its
 `--ref` from there, so the pin lives in exactly one place.
 
@@ -41,15 +41,21 @@ A thin member repopulates its payload BOTH ways — neither alone is enough, so
 both are required (and enforced):
 
 - **Belt (dev / clone)** — `package.json` `prepare` starts with
-  `node bootstrap/fleet.mjs --if-current`. A fresh clone / `pnpm install`
-  fetches + applies the pinned bundle BEFORE the (itself-untracked)
-  install-git-hooks step + any chained build. `--if-current` is idempotent: it
-  skips when the pinned ref is already applied (a local, gitignored
-  `.config/fleet/.bundle-applied` marker), so warm installs do no network, and it
-  no-ops in a non-thin repo (nothing pinned → nothing to fetch).
-- **Suspenders (CI)** — the canonical `ci.yml` delegates to socket-registry's
-  shared reusable, whose `setup-and-install` composite runs the same fetch after
-  checkout, before lint/test. CI never runs against a missing payload.
+  `node bootstrap/prepare.mts` (`PREPARE_FETCH` in `bootstrap/src/install.mts`),
+  which runs `node bootstrap/fleet.mjs --if-current` then reconciles the
+  install. A fresh clone / `pnpm install` fetches + applies the pinned bundle
+  BEFORE the (itself-untracked) install-git-hooks step + any chained build.
+  `--if-current` is idempotent: it skips when the pinned ref is already applied
+  (a local marker at `node_modules/.cache/socket-wheelhouse/bundle-applied`),
+  so warm installs do no network, and it no-ops in a non-thin repo (nothing
+  pinned → nothing to fetch).
+- **Suspenders (CI)** — the same belt, exercised by CI's install step: the
+  checked-in `ci.yml` runs the local `./.github/actions/fleet/setup-and-install`
+  composite, whose install step runs `pnpm install` — lifecycle scripts
+  included, so `prepare` fires the identical `--if-current` fetch after
+  checkout, before lint/test. CI never runs against a missing payload. (The
+  fetch shells `gh release download` against the private wheelhouse, so the CI
+  job needs a token that can read wheelhouse releases in `GH_TOKEN`.)
 
 ## Enforcement (code-is-law)
 
@@ -59,7 +65,59 @@ that went thin (its `.gitignore` untracks the fleet payload — detected by the
 gitignores) is missing the prepare belt. A non-thin member (it tracks the
 payload) is exempt. Run `node bootstrap/fleet.mjs --wire` to add the belt +
 `sync-fleet` script. The CI suspenders are enforced by the `ci.yml`-shape check
-(workflow-fleet-block) plus socket-registry's own CI on the shared composite.
+(workflow-fleet-block), which pins the fleet block that runs the
+setup-and-install composite.
+
+## Always tracked: the GitHub surface
+
+Going thin never untracks `.github/workflows/**` or
+`.github/actions/fleet/**`. GitHub reads both at rest from the committed tree:
+a scheduled workflow registers its cron from the DEFAULT branch's committed
+file, and a `uses: ./.github/actions/...` composite must exist at checkout —
+before any fetch step could run. Workflow + composite updates therefore always
+travel in the cascade COMMIT, never the release bundle. Same for `bootstrap/`
+itself (the fetcher can't ship inside the bundle it fetches — `releaseExclude`
+in the mirror manifest) and the hybrid-spliced files the repo part-owns.
+
+## Release updates: prune vs tombstones
+
+A bundle update reaches a thin member as a true SYNC, and two different
+mechanisms prune what a new release dropped:
+
+- **Wholly-fleet dir roots** (the `fleet/` tiers): after placing the bundle,
+  `pruneStaleFleetFiles()` (`bootstrap/src/install.mts`) deletes any on-disk
+  file under those roots that the fetched manifest no longer lists. Renames,
+  deletions, and additions inside a mirror tree need NO bookkeeping — the
+  fetch prunes them, and the cascade's delete-and-replace does the same for
+  tracked members.
+- **Loose files outside the mirror roots**: these need a `removed[]` tombstone
+  in `scripts/repo/sync-scaffolding/manifest/bundle.json`; the cascade fixer
+  `safeDelete`s the path in every member.
+
+The LAW joining the two (`fleetMirroredTombstones` in
+`scripts/repo/sync-scaffolding/manifest/identical-files.mts`): **never
+tombstone a fleet-mirrored path.** A tombstone overlapping an ACTIVE
+delete-and-replace mirror root is at best redundant and at worst a
+self-destruct — the orphan pass would delete the freshly-copied tree on every
+cascade — so the module THROWS at load time on any overlap. A RETIRED mirror
+tier (removed from the manifest, e.g. the old cascaded `test/unit/fleet`) is
+no longer mirrored and legitimately gets a tombstone; the overlap check is the
+sole gate.
+
+## The post-thin cascade commit
+
+The 2026-07-12 thin-cascade scan sized the split: of the ~1,853 files /
+~20.6 MB a tracked member mirrors today, ~1,700 can leave version control;
+the tracked residue is the GitHub surface, the hybrids, the fetcher, a small
+Claude session kernel, and a few at-rest pin files. A steady-state wave then
+lands in each member as a commit touching **1-3 files**:
+
+- the ref pin bump — `bundle.ref` + `bundle.cascadeSha` in
+  `.config/socket-wheelhouse.json` (always),
+- hybrid files, IF their fleet blocks changed,
+- tracked kernel / workflow / composite files, IF they changed.
+
+Everything else arrives via the belt fetch on the next `pnpm install`.
 
 ## Commands
 

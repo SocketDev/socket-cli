@@ -1,14 +1,5 @@
 {
-  "env": {
-    "//": [
-      "Deliberately NOT setting CLAUDE_CODE_NO_FLICKER: that enables fullscreen",
-      "(alternate-screen) rendering, which does not write to the terminal's",
-      "scrollback — fast output scrolls past and is unrecoverable. Classic",
-      "rendering keeps all output in real scrollback so it can be reviewed.",
-      "settings.json is strict JSON (no JSONC/JSON5), so this is a dummy '//'",
-      "key — Claude Code ignores unknown keys."
-    ]
-  },
+  "// <fleet-canonical>": "Managed by socket-wheelhouse; edit the template, then cascade.",
   "hooks": {
     "PostToolUse": [
       {
@@ -23,7 +14,7 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "AskUserQuestion|Bash|Edit|MultiEdit|NotebookEdit|Task|Workflow|Write",
+        "matcher": ".*",
         "hooks": [
           {
             "type": "command",
@@ -68,6 +59,10 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/oxlint-plugin-load-nudge/index.mts"
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/repo-map-refresh/index.mts"
           }
         ]
       },
@@ -133,5 +128,6 @@
       "Bash(git push -f:*)",
       "Bash(git push --force-with-lease:*)"
     ]
-  }
+  },
+  "// </fleet-canonical>": "Repository-owned Claude settings belong below this marker."
 }

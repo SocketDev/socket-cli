@@ -1,6 +1,6 @@
 # Never fork fleet-canonical files locally
 
-Fleet-canonical files (anything tracked by the wheelhouse `scripts/sync-scaffolding/manifest.mts`) MUST be edited in the wheelhouse `template/...` and cascaded out. Never branched locally in a downstream fleet repo.
+Fleet-canonical files (anything tracked by `scripts/sync-scaffolding/manifest.mts`) MUST be edited in `template/...` and cascaded out. Never branched locally in a downstream fleet repo.
 
 ## Canonical surfaces
 
@@ -16,13 +16,13 @@ These directories and files cascade fleet-wide. They are **not** repo-local:
 - Downstream repos may add their own `docs/agents.md/<repo>/` subdirectory for repo-specific docs. Those are NOT fleet-canonical.
 - Anything else listed in the sync manifest
 
-If unsure, check the wheelhouse `scripts/sync-scaffolding/manifest.mts`. Tracked = canonical.
+If unsure, check `scripts/sync-scaffolding/manifest.mts`. Tracked = canonical.
 
 ## How to apply
 
 If a downstream repo needs a behavior change in one of these files:
 
-1. Edit the file in the wheelhouse `template/...`.
+1. Edit the file in `template/...`.
 2. Commit the template change.
 3. Run `node scripts/sync-scaffolding/cli.mts --target <downstream-repo> --fix` to cascade.
 
@@ -50,7 +50,7 @@ The fleet's value is the shared canon. Branching locally splits the canon and er
 
 Companion behavior to the no-fork rule: **don't read, grep, or debug wheelhouse-canonical files in a downstream repo to verify what they contain or how they behave**.
 
-- **DO NOT** grep a downstream repo's copy of `.config/fleet/oxlint-plugin/`, `.claude/hooks/fleet/`, `.git-hooks/`, `docs/agents.md/fleet/`, or the `CLAUDE.md` fleet block to check what's in it. Read from the wheelhouse `template/...` instead.
+- **DO NOT** grep a downstream repo's copy of `.config/fleet/oxlint-plugin/`, `.claude/hooks/fleet/`, `.git-hooks/`, `docs/agents.md/fleet/`, or the `CLAUDE.md` fleet block to check what's in it. Read from `template/...` instead.
 - **DO NOT** debug the behavior of a cascaded hook by reading its downstream copy. The cascade overwrites those files; their content is the wheelhouse's content. Read upstream.
 - **DO** treat any divergence as the downstream being stale. The wheelhouse is the oracle.
 
@@ -62,7 +62,7 @@ This matters because:
 
 When the user says "the wheelhouse has X," X is true. Act on it without verification.
 
-If a cascaded file genuinely seems wrong, the fix lives in the wheelhouse `template/...`, never in the downstream copy. Open the template file in the wheelhouse, read it there, edit it there, cascade.
+If a cascaded file genuinely seems wrong, the fix lives in `template/...`, never in the downstream copy. Open the template file in the fleet source repo, read it there, edit it there, cascade.
 
 ## Cascade-first triage
 
@@ -88,7 +88,7 @@ Never debug or hand-patch the member's copy of code that's byte-copied from the 
   ← postamble (repo-owned: architecture, commands, domain rules)
 ```
 
-- The **canonical block** between the `<fleet-canonical>` markers IS fleet-canonical. Apply the no-fork rule + the trust-the-wheelhouse rule there. Edit only in the wheelhouse `template/CLAUDE.md` and cascade.
+- The **canonical block** between the `<fleet-canonical>` markers IS fleet-canonical. Apply the no-fork rule + the trust-the-wheelhouse rule there. Edit only in `template/CLAUDE.md` and cascade.
 - The **preamble** (file header, fleet/repo split blurb) and the **postamble** (`🏗️ Project-Specific` section after the END marker) are **repo-owned**. You CAN and SHOULD edit them in a downstream repo.
 
 ### When to trim preamble + postamble

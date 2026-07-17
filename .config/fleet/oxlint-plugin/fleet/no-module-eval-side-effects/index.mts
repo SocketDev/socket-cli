@@ -150,6 +150,15 @@ const FUNCTION_TYPES = new Set<string>([
   'FunctionExpression',
 ])
 
+// Globals whose BARE module-scope reference throws ReferenceError where the
+// global is absent — V8's --build-snapshot builder context, and (for
+// SharedArrayBuffer) any browser without cross-origin isolation. `new X()`
+// is covered by DENYLISTED_CONSTRUCTORS; this catches the reference-capture
+// shape (`const XCtor = SharedArrayBuffer`) that slipped the NewExpression
+// arm — the exact primordials/globals.ts gap that fed the wheelhouse
+// snapshot shim.
+const GUARDED_GLOBAL_REFS: ReadonlySet<string> = new Set(['SharedArrayBuffer'])
+
 /**
  * True when `node` is inside a function/class-method body — i.e. lazy, not
  * module-eval. Walks the `.parent` chain (oxlint exposes parents on visited
@@ -277,6 +286,8 @@ const rule = {
         '`child_process.{{member}}` at module eval spawns/forks on import — a side effect every consumer pays. Move the spawn inside the function that needs it.',
       snapshotTopLevelAwait:
         'Top-level `await` in a snapshot-eligible module (it freezes into the V8 dispatch bundle). The snapshot build pass is synchronous, so a module-scope `await` aborts `--build-snapshot`. Move it inside `run()` (the dispatcher awaits the hook), or opt out with `// socket-lint: allow top-level-await -- <reason>` if this file is genuinely never bundled.',
+      eagerGlobalCapture:
+        "Bare `{{name}}` reference at module eval — this global is NOT defined everywhere ({{name}} is absent in the V8 snapshot builder and, for SharedArrayBuffer, in non-cross-origin-isolated browsers), so this line is a module-eval ReferenceError there. Capture it guarded: `typeof {{name}} === 'undefined' ? undefined : {{name}}`, or reference it lazily inside the function that needs it.",
       snapshotDynamicImport:
         "Variable-path dynamic `import()` in a snapshot-eligible module. A non-literal specifier can't be statically resolved or frozen into the snapshot — only a string-literal `import('…')` is snapshottable. Use a static `import` (or a literal-specifier dynamic import).",
     },
@@ -326,6 +337,78 @@ const rule = {
             data: { name: callee.name },
           })
         }
+      },
+
+      // Bare global-constructor REFERENCE capture at module scope
+      // (`const X = SharedArrayBuffer`): a value read of a global that is
+      // absent in the snapshot builder / non-isolated browsers. `typeof`
+      // guards are the sanctioned shape and stay silent, as do type
+      // positions, member property names, and import/export specifiers.
+      Identifier(node: AstNode) {
+        const name = (node as { name?: string }).name
+        if (!name || !GUARDED_GLOBAL_REFS.has(name)) {
+          return
+        }
+        const parent = node.parent
+        if (!parent) {
+          return
+        }
+        if (
+          parent.type === 'UnaryExpression' &&
+          (parent as { operator?: string }).operator === 'typeof'
+        ) {
+          return
+        }
+        // Guarded read: a bare reference inside a conditional whose span
+        // carries a `typeof <name>` check is the sanctioned capture shape
+        // (`typeof X === 'undefined' ? undefined : X`).
+        for (let anc: AstNode | undefined = parent; anc; anc = anc.parent) {
+          if (
+            anc.type === 'ConditionalExpression' ||
+            anc.type === 'IfStatement' ||
+            anc.type === 'LogicalExpression'
+          ) {
+            const { end, start } = anc as {
+              end?: number | undefined
+              start?: number | undefined
+            }
+            if (
+              typeof start === 'number' &&
+              typeof end === 'number' &&
+              source.slice(start, end).includes(`typeof ${name}`)
+            ) {
+              return
+            }
+          }
+        }
+        if (parent.type.startsWith('TS')) {
+          return
+        }
+        if (
+          parent.type === 'MemberExpression' &&
+          (parent as { property?: AstNode }).property === node &&
+          !(parent as { computed?: boolean }).computed
+        ) {
+          return
+        }
+        if (
+          parent.type === 'Property' &&
+          (parent as { key?: AstNode }).key === node &&
+          !(parent as { computed?: boolean }).computed
+        ) {
+          return
+        }
+        if (parent.type.includes('Specifier')) {
+          return
+        }
+        if (isLazy(node)) {
+          return
+        }
+        context.report({
+          node,
+          messageId: 'eagerGlobalCapture',
+          data: { name },
+        })
       },
 
       CallExpression(node: AstNode) {

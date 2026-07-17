@@ -1,6 +1,6 @@
 ---
 name: researching-recency
-description: Research what the developer community is actually saying and shipping about a tool, library, language, framework, or maintainer over the last 30 days. Fans out across GitHub (issues/PRs/releases), Hacker News, programming subreddits, Lobsters, dev.to, Bluesky, and the web; ranks by real engagement (stars, points, upvotes, reactions) rather than SEO; and synthesizes a cited brief. Use before adopting a dependency, choosing between tools, reading up on a maintainer before a meeting, scoping a feature against what users actually hit, or whenever you need the recent ground truth a stale README or training cutoff won't give you.
+description: Research recent community and upstream signals across GitHub, forums, social feeds, and web sources.
 user-invocable: true
 allowed-tools: Read, Write, WebSearch, AskUserQuestion, Bash(node:*), Bash(gh:*)
 model: claude-opus-4-8

@@ -26,6 +26,9 @@ outputs:
   token:
     description: 'The minted installation token (pass as GH_TOKEN / checkout token).'
     value: ${{ steps.app-token.outputs.token }}
+  slug:
+    description: 'The app slug — build the `<slug>[bot]` committer identity from it (an installation token cannot call `gh api /user`).'
+    value: ${{ steps.app-token.outputs.slug }}
 
 runs:
   using: composite

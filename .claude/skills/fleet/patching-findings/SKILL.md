@@ -1,13 +1,6 @@
 ---
 name: patching-findings
-description: >-
-  Apply fixes for verified security findings. Consumes TRIAGE.json (preferred)
-  or VULN-FINDINGS.json. For each true-positive: a patch agent writes a minimal
-  root-cause fix, an independent blind reviewer (never sees the finding prose or
-  the author's rationale) judges it, and on ACCEPT the fix is applied and
-  committed — one surgical commit per finding. Use when asked to "fix the
-  findings", "patch these vulns", "remediate triage", or "close the loop on
-  triage".
+description: Fix verified security findings with minimal patches and independent review before validation.
 argument-hint: "<findings-path> [--repo PATH] [--top N] [--id fNNN] [--dry-run] [--fresh]"
 user-invocable: true
 allowed-tools: Workflow, Task, Read, Glob, Grep, Edit, Write, AskUserQuestion, Bash(git status:*), Bash(git diff:*), Bash(git add:*), Bash(git commit:*), Bash(git log:*), Bash(rg:*), Bash(grep:*), Bash(ls:*), Bash(wc:*), Bash(node .claude/skills/fleet/_shared/scripts/checkpoint.mts:*), Bash(node scripts/fleet/patching-findings/cli.mts:*)

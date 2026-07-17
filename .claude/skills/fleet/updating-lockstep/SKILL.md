@@ -1,6 +1,6 @@
 ---
 name: updating-lockstep
-description: Acts on `lockstep.json` drift for repos that carry the lockstep manifest. Reads `pnpm run lockstep --json`, then runs a Workflow that pipelines each mechanical `version-pin` row through resolve → bump → validate → commit independently. Surfaces `file-fork` / `feature-parity` / `spec-conformance` / `lang-parity` rows as advisory. Invoked by the `updating` umbrella skill; can also run standalone.
+description: Resolve lockstep manifest drift by pipelining version-pin rows and reporting parity rows.
 user-invocable: true
 allowed-tools: Workflow, Read, Edit, Grep, Glob, Bash(pnpm:*), Bash(npm:*), Bash(git:*), Bash(node:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(cat:*), Bash(head:*), Bash(tail:*), Bash(wc:*), Bash(diff:*)
 model: claude-haiku-4-5

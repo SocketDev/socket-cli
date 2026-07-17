@@ -31,12 +31,11 @@
 
 import path from 'node:path'
 
-import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-
 import {
+  acceptedScopedBypassPhrases,
   isFleetRepo,
-  ownerRepoFromRemoteUrl,
-  slugFromRemoteUrl,
+  originOwnerRepo,
+  originSlug,
 } from '../_shared/fleet-repos.mts'
 import { extractGitCwd } from '../_shared/git-cwd.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
@@ -49,67 +48,19 @@ import { bypassPhrasePresent } from '../_shared/transcript.mts'
 const BYPASS_PHRASE = 'Allow non-fleet-push bypass'
 const BYPASS_PHRASE_PREFIX = 'Allow non-fleet-push bypass:'
 
+// The origin-remote readers are the shared fleet-repos ones; re-exported so
+// this guard's tests exercise the exact resolvers the check runs.
+export { originOwnerRepo, originSlug }
+
 // Build the phrases that authorize a push to this repo. Accept every
 // identifier the user might reasonably type — the case-preserved `owner/repo`
 // (`PerryTS/perry`), the bare repo name (`perry`), and the local checkout dir
-// basename — each in original AND lowercased form (GitHub slugs are
-// case-insensitive). The bare session-wide phrase stays accepted for
-// back-compat. So `Allow non-fleet-push bypass: perry` and
+// basename. So `Allow non-fleet-push bypass: perry` and
 // `… bypass: PerryTS/perry` both authorize the same push.
 export function acceptedBypassPhrases(
   targets: ReadonlyArray<string | undefined>,
 ): string[] {
-  const forms = new Set<string>()
-  for (let i = 0, { length } = targets; i < length; i += 1) {
-    const t = targets[i]
-    if (t) {
-      forms.add(t)
-      forms.add(t.toLowerCase())
-    }
-  }
-  const out = [BYPASS_PHRASE]
-  for (const form of forms) {
-    out.push(`${BYPASS_PHRASE_PREFIX} ${form}`)
-  }
-  return out
-}
-
-export function originSlug(dir: string): string | undefined {
-  let out: string
-  try {
-    const r = spawnSync('git', ['-C', dir, 'remote', 'get-url', 'origin'], {
-      encoding: 'utf8',
-    })
-    if (r.status !== 0) {
-      return undefined
-    }
-    /* c8 ignore next - spawnSync with encoding:'utf8' always returns a string stdout */
-    out = String(r.stdout ?? '').trim()
-  } catch {
-    /* c8 ignore start - lib-stable spawnSync never throws; defensive only */
-    return undefined
-    /* c8 ignore stop */
-  }
-  return slugFromRemoteUrl(out)
-}
-
-// Case-preserved `owner/repo` of the dir's origin remote (for the scoped
-// bypass), or undefined when unresolvable.
-export function originOwnerRepo(dir: string): string | undefined {
-  try {
-    const r = spawnSync('git', ['-C', dir, 'remote', 'get-url', 'origin'], {
-      encoding: 'utf8',
-    })
-    if (r.status !== 0) {
-      return undefined
-    }
-    /* c8 ignore next - spawnSync with encoding:'utf8' always returns a string stdout */
-    return ownerRepoFromRemoteUrl(String(r.stdout ?? '').trim())
-  } catch {
-    /* c8 ignore start - lib-stable spawnSync never throws; defensive only */
-    return undefined
-    /* c8 ignore stop */
-  }
+  return acceptedScopedBypassPhrases(BYPASS_PHRASE, targets)
 }
 
 export const check = bashGuard((command, payload) => {

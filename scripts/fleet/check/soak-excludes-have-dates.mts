@@ -34,10 +34,10 @@
 
 import { readFileSync, writeFileSync } from 'node:fs'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { isSocketSourcedPackage } from '../constants/socket-scopes.mts'
 import { PNPM_WORKSPACE_YAML } from '../paths.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 // The two soak/waiver list blocks this gate scans. Both carry `name@version`
 // exact-pin bullets with `# published: … | removable: …` annotations; they
@@ -352,6 +352,6 @@ function main(): void {
 // Run only when invoked directly (CLI / CI), not when imported by the unit
 // tests for `scan` / `removeStaleEntries` — `main()` calls `process.exit`,
 // which would tear down the test runner mid-suite.
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   main()
 }

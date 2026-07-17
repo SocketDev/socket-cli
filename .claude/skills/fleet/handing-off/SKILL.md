@@ -1,6 +1,6 @@
 ---
 name: handing-off
-description: Compact the current conversation into a handoff doc so a fresh agent can pick up the work. Use when context is getting thin, a session is about to end, or the next stage of the work needs a different agent / human.
+description: Write a compact handoff so another agent or human can continue the work without replaying context.
 user-invocable: true
 argument-hint: 'What will the next session focus on?'
 allowed-tools: Bash(mkdir:*), Bash(date:*), Read, Write

@@ -10,7 +10,7 @@
  *   scripts/fleet/audit-transcript.mts --recent # auto-pick most recent Output:
  *   human-readable report grouped by category. With --json, emits {findings:
  *   [...]} for programmatic consumption. The transcript JSONL lives at
- *   ~/.claude/projects/<encoded-cwd>/<session-id>.jsonl on macOS / Linux.
+ *   ~/.claude/projects/<encoded-cwd>/<session-id>.jsonl.
  *   --recent auto-picks the most-recently-modified transcript for the cwd the
  *   script is invoked from.
  */
@@ -22,10 +22,11 @@ import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { parseShell } from '@socketsecurity/lib-stable/shell/parse'
+import { isMainModule } from './_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
-interface Finding {
+export interface Finding {
   // Severity tier. critical = direct credential exfil risk; warn =
   // unusual but explainable; info = forensic record only.
   severity: 'critical' | 'warn' | 'info'
@@ -37,13 +38,13 @@ interface Finding {
   line: number
 }
 
-interface ToolUseEvent {
+export interface ToolUseEvent {
   name: string
   input: Record<string, unknown>
   line: number
 }
 
-function readToolUses(transcriptPath: string): ToolUseEvent[] {
+export function readToolUses(transcriptPath: string): ToolUseEvent[] {
   if (!existsSync(transcriptPath)) {
     throw new Error(`transcript not found: ${transcriptPath}`)
   }
@@ -104,7 +105,7 @@ function readToolUses(transcriptPath: string): ToolUseEvent[] {
  * `||`, `|` as segment terminators so chained commands each get their own
  * scan.
  */
-function findInvocations(
+export function findInvocations(
   command: string,
   cmdLine: readonly string[],
 ): readonly string[][] {
@@ -147,7 +148,10 @@ function findInvocations(
  * Equivalent to `findInvocations(command, cmdLine).length > 0`. The most common
  * audit-pattern shape.
  */
-function commandInvokes(command: string, cmdLine: readonly string[]): boolean {
+export function commandInvokes(
+  command: string,
+  cmdLine: readonly string[],
+): boolean {
   return findInvocations(command, cmdLine).length > 0
 }
 
@@ -266,7 +270,7 @@ const PATTERNS: ReadonlyArray<{
   },
 ]
 
-function scanToolUse(evt: ToolUseEvent): Finding[] {
+export function scanToolUse(evt: ToolUseEvent): Finding[] {
   const findings: Finding[] = []
   // Most patterns target Bash commands; some target file paths (Edit/Write).
   const command =
@@ -302,15 +306,24 @@ function scanToolUse(evt: ToolUseEvent): Finding[] {
   return findings
 }
 
-function findRecentTranscript(): string | undefined {
+export function claudeProjectSlug(cwd: string): string {
+  // Claude's project directory is a flattened absolute path. Replace both
+  // platform separators and the Windows drive separator so the slug is one
+  // legal path segment everywhere (`C:\\repo` -> `C--repo`).
+  return cwd.replace(/[\\/:]/g, '-')
+}
+
+export function findRecentTranscript(
+  home: string = os.homedir(),
+  cwd: string = process.cwd(),
+): string | undefined {
   // ~/.claude/projects/<encoded-cwd>/<session-id>.jsonl
-  // encoded-cwd is the cwd with every `/` replaced by `-`. The leading
-  // `/` becomes the leading `-` automatically since the replace
-  // operates on the whole path. (So `/Users/foo` → `-Users-foo`, not
-  // `--Users-foo`.)
+  // encoded-cwd flattens path separators (and a Windows drive separator) to
+  // `-`. The leading `/` becomes the leading `-` automatically. For example,
+  // `/Users/foo` -> `-Users-foo`; `C:\\Users\\foo` -> `C--Users-foo`.
   // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- audit-transcript intentionally reads the user-invoked cwd to look up the matching Claude Code transcript dir; anchoring on the script's own location would always return the wheelhouse transcripts.
-  const encoded = process.cwd().replace(/\//g, '-')
-  const dir = path.join(os.homedir(), '.claude', 'projects', encoded)
+  const encoded = claudeProjectSlug(cwd)
+  const dir = path.join(home, '.claude', 'projects', encoded)
   if (!existsSync(dir)) {
     return undefined
   }
@@ -332,13 +345,13 @@ function findRecentTranscript(): string | undefined {
   return entries[0]?.full
 }
 
-interface Args {
+export interface Args {
   json: boolean
   transcript: string | undefined
   recent: boolean
 }
 
-function parseArgs(argv: readonly string[]): Args {
+export function parseArgs(argv: readonly string[]): Args {
   let json = false
   let recent = false
   let transcript: string | undefined
@@ -441,7 +454,9 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch(err => {
-  logger.error(String((err as Error)?.message ?? err))
-  process.exit(1)
-})
+if (isMainModule(import.meta.url)) {
+  main().catch(err => {
+    logger.error(String((err as Error)?.message ?? err))
+    process.exit(1)
+  })
+}

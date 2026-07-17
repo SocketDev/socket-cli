@@ -32,6 +32,7 @@ import {
   readToolVersions,
 } from '../sync-package-manager-pins.mts'
 import type { PinDrift } from '../sync-package-manager-pins.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -106,6 +107,6 @@ function main(): number {
   return 0
 }
 
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+if (isMainModule(import.meta.url)) {
   main()
 }

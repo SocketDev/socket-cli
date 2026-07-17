@@ -24,6 +24,7 @@ import process from 'node:process'
 import { detectAvailableBackends } from '@socketsecurity/lib/ai/backends'
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 import { spawn } from '@socketsecurity/lib/process/spawn/child'
+import { isMainModule } from './_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -190,7 +191,7 @@ export async function main(argv: readonly string[]): Promise<number> {
   return 0
 }
 
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+if (isMainModule(import.meta.url)) {
   main(process.argv.slice(2)).then(code => {
     process.exitCode = code
   })

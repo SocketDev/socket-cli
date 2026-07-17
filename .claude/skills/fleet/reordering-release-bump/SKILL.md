@@ -1,6 +1,6 @@
 ---
 name: reordering-release-bump
-description: Moves an existing `chore: bump version to X.Y.Z` commit to the tip of the default branch when work landed on top of it, then retags vX.Y.Z onto the moved commit and force-pushes — with a timestamped backup branch, tree-identical integrity verification, and the package.json+CHANGELOG-only bump check. Use when a release bump is no longer the latest commit and needs to be again.
+description: Move an existing version-bump commit back to tip, retag it, verify integrity, and force-push safely.
 user-invocable: true
 allowed-tools: AskUserQuestion, Bash(node:*), Bash(git:*)
 model: claude-haiku-4-5

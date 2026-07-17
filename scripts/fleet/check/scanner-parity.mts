@@ -20,7 +20,6 @@
  */
 
 import { readdirSync, readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 
 import type { Dirent } from 'node:fs'
 import path from 'node:path'
@@ -33,6 +32,7 @@ import {
   walkSimple,
 } from '../../../.claude/hooks/fleet/_shared/acorn/index.mts'
 import type { AcornNode } from '../../../.claude/hooks/fleet/_shared/acorn/index.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -498,6 +498,6 @@ function main(): void {
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   main()
 }

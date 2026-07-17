@@ -19,6 +19,8 @@
  *   path layer (see EXEMPT_PATH_RE).
  */
 
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+
 // A line is "rationale" if it carries one of these markers. Only rationale
 // lines are candidates — this keeps the matcher off required-date annotations.
 const RATIONALE_MARKER_RE =
@@ -98,13 +100,16 @@ export function findDatedCitations(content: string): DatedCitationHit[] {
  * must be generic. Used by both the edit-time hook and the commit-time check.
  */
 export function isRuleProseSurface(filePath: string): boolean {
-  if (EXEMPT_PATH_RE.test(filePath)) {
+  const normalizedFilePath = normalizePath(filePath)
+  if (EXEMPT_PATH_RE.test(normalizedFilePath)) {
     return false
   }
   return (
-    /(?:^|\/)CLAUDE\.md$/.test(filePath) ||
-    /(?:^|\/)docs\/agents\.md\/fleet\//.test(filePath) ||
-    /(?:^|\/)\.claude\/skills\/.*\/SKILL\.md$/.test(filePath) ||
-    /(?:^|\/)\.claude\/hooks\/fleet\/[^/]+\/README\.md$/.test(filePath)
+    /(?:^|\/)CLAUDE\.md$/.test(normalizedFilePath) ||
+    /(?:^|\/)docs\/agents\.md\/fleet\//.test(normalizedFilePath) ||
+    /(?:^|\/)\.claude\/skills\/.*\/SKILL\.md$/.test(normalizedFilePath) ||
+    /(?:^|\/)\.claude\/hooks\/fleet\/[^/]+\/README\.md$/.test(
+      normalizedFilePath,
+    )
   )
 }
