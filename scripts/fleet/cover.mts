@@ -138,9 +138,21 @@ export async function runQuiet(
 ): Promise<SuiteResult> {
   options = { __proto__: null, ...options } as typeof options
   try {
-    const result = await spawn('pnpm', args, {
+    // A pnpm shim can select a different `node` from PATH than the runtime
+    // executing this coverage process. Prefer pnpm's JS entrypoint so the test
+    // children stay on this exact Node, and lead PATH with the same binary dir
+    // because `pnpm exec` launches local Node CLIs by name.
+    const pnpmEntry = process.env['npm_execpath']
+    const command = pnpmEntry ? process.execPath : 'pnpm'
+    const commandArgs = pnpmEntry ? [pnpmEntry, ...args] : args
+    const env = options.env ?? process.env
+    const nodeBin = path.dirname(process.execPath)
+    const result = await spawn(command, commandArgs, {
       cwd: options.cwd,
-      env: options.env ?? process.env,
+      env: {
+        ...env,
+        PATH: [nodeBin, env['PATH']].filter(Boolean).join(path.delimiter),
+      },
     })
     return {
       exitCode: result.code ?? 0,

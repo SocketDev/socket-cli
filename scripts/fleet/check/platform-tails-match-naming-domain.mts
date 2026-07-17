@@ -114,7 +114,11 @@ export function collectManifestPaths(repoRoot: string): string[] {
     // ENOENT; dirents classify it as a symlink and it falls through both
     // branches harmlessly.
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      if (entry.name === 'node_modules' || entry.name.startsWith('.')) {
+      if (
+        entry.name === 'node_modules' ||
+        entry.name === 'upstream' ||
+        entry.name.startsWith('.')
+      ) {
         continue
       }
       if (entry.isDirectory()) {

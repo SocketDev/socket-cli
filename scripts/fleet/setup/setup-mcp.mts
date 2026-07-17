@@ -7,7 +7,13 @@
  *   state.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
@@ -51,6 +57,7 @@ export async function setupMcp(
     if (next !== current) {
       mkdirSync(path.dirname(kimiConfigPath), { recursive: true })
       writeFileSync(kimiConfigPath, next, { mode: 0o600 })
+      chmodSync(kimiConfigPath, 0o600)
     }
   } catch (error) {
     logger.error(`setup:mcp — ${errorMessage(error)}`)

@@ -191,7 +191,13 @@ function scanFile(
     let match: RegExpExecArray | null
     while ((match = LOCK_STEP_RE.exec(line)) !== null) {
       const lang = match.groups!['lang']
-      const refPath = match.groups!['refPath']
+      // Sentence punctuation is not part of the referenced path. After
+      // removing it, a symbol-only phrase such as `helper_name.` no longer
+      // qualifies as a path and should remain a free-form lock-step note.
+      const refPath = match.groups!['refPath']!.replace(/\.$/, '')
+      if (!/[./]/.test(refPath)) {
+        continue
+      }
       const { found, knownLang } = resolveRef(config, repoRoot, lang!, refPath!)
       if (!knownLang) {
         findings.push({

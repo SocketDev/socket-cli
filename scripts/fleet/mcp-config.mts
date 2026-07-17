@@ -121,6 +121,14 @@ function runMain(): void {
   }
 }
 
+function sortRecord<T>(record: Readonly<Record<string, T>>): Record<string, T> {
+  return Object.fromEntries(
+    Object.entries(record).toSorted(([left], [right]) =>
+      left < right ? -1 : left > right ? 1 : 0,
+    ),
+  )
+}
+
 function tomlString(value: string): string {
   return JSON.stringify(value)
 }
@@ -168,7 +176,11 @@ export function mergeKimiMcpConfig(
             cwd: repoRoot,
           }
   }
-  return `${JSON.stringify({ ...parsed, mcpServers }, undefined, 2)}\n`
+  return `${JSON.stringify(
+    { ...parsed, mcpServers: sortRecord(mcpServers) },
+    undefined,
+    2,
+  )}\n`
 }
 
 /**
@@ -209,7 +221,7 @@ export function parseCanonicalMcpConfig(text: string): PortableMcpServers {
       kind: 'stdio',
     }
   }
-  return servers
+  return sortRecord(servers)
 }
 
 /**
@@ -220,7 +232,7 @@ export function renderCodexMcpConfig(servers: PortableMcpServers): string {
     '# Generated from ../.mcp.json by scripts/fleet/mcp-config.mts.',
     '# OAuth credentials stay in Codex user storage; do not add them here.',
   ]
-  for (const [name, server] of Object.entries(servers)) {
+  for (const [name, server] of Object.entries(sortRecord(servers))) {
     lines.push('', `[mcp_servers.${name}]`)
     if (server.kind === 'http') {
       lines.push(`url = ${tomlString(server.url)}`)
@@ -237,7 +249,7 @@ export function renderCodexMcpConfig(servers: PortableMcpServers): string {
  */
 export function renderOpenCodeMcpConfig(servers: PortableMcpServers): string {
   const mcp: Record<string, unknown> = {}
-  for (const [name, server] of Object.entries(servers)) {
+  for (const [name, server] of Object.entries(sortRecord(servers))) {
     mcp[name] =
       server.kind === 'http'
         ? { enabled: true, type: 'remote', url: server.url }
