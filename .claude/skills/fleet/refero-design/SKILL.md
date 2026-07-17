@@ -62,6 +62,20 @@ patterns from screens, and sequencing from flows when the task has multiple step
   the locked target/reference before handoff. Fix actionable design drift instead of
   treating research as sufficient.
 
+## Companion Skills
+
+Refero remains the design authority: it owns reference research, the visual lock, and
+the implementation direction. Use the companion skills only for their narrower roles:
+
+- [improving-web-interfaces](../improving-web-interfaces/SKILL.md) for component
+  construction and motion after the direction is locked.
+- [reviewing-web-interfaces](../reviewing-web-interfaces/SKILL.md) for deterministic
+  anti-pattern and accessibility review.
+- [optimizing-react-interfaces](../optimizing-react-interfaces/SKILL.md) for React
+  performance work.
+- [testing-web-interfaces](../testing-web-interfaces/SKILL.md) for browser and
+  component-test coverage.
+
 ## MCP Setup
 
 This skill is useful on its own as a research-first design methodology and craft reference.

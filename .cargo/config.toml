@@ -1,9 +1,12 @@
 # Fleet-canonical cargo soak config. A repository that needs target runners,
-# rustflags, or other local Cargo settings puts them in `config.repo.toml`;
-# Cargo merges that optional file first, then this file keeps the fleet trust
-# keys authoritative. This split lets the cascade stay byte-identical without
-# deleting legitimate platform configuration.
-include = [{ path = "config.repo.toml", optional = true }]
+# rustflags, or other local Cargo settings puts them in `config.repo.toml`.
+# Rust-capable repos also receive the fleet's optional Darwin signing runner.
+# This split lets the cascade stay byte-identical without deleting legitimate
+# repository configuration.
+include = [
+  { path = "config.darwin-signing.toml", optional = true },
+  { path = "config.repo.toml", optional = true },
+]
 
 # Owned by
 # scripts/fleet/update/cargo.mts (renderMinPublishAgeConfig derives this exact

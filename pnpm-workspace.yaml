@@ -1,9 +1,10 @@
 packages:
   - packages/*
   - '!packages/package-builder/build'
-  - .claude/hooks/*
   - '.config/fleet/oxlint-plugin'
   - '.config/fleet/oxlint-plugin/fleet/*'
+  - '.claude/hooks/fleet/*'
+  - '.claude/hooks/repo/*'
 
 # Packages allowed to run build scripts (pnpm v11 strictDepBuilds default).
 allowBuilds:

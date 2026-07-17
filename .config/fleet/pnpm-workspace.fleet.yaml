@@ -84,6 +84,7 @@ catalog:
 # (manifest/catalog.mts) and the fleet doctor (scripts/fleet/doctor.mts) to
 # resolve versions for catalog: refs that are missing their catalog entry.
 catalogOptional:
+  'impeccable': 3.2.1
   'rolldown': 1.1.4
   'svgo': 4.0.1
   'vite': 8.1.0
