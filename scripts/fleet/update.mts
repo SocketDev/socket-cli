@@ -273,3 +273,20 @@ if (process.exitCode !== 1) {
     logger.success('update: telemetry scan clean (no unreviewed phone-home).')
   }
 }
+
+// Pass 6 — refresh fleet scaffolding. After dependencies are updated, apply the
+// latest fleet GitHub-release bundle if one is available and lock-step allows.
+// Fail-open: a network/gh outage must not fail `pnpm run update`.
+if (process.exitCode !== 1) {
+  const priorExit = process.exitCode
+  const { ok } = await run(process.execPath, [
+    'bootstrap/fleet.mjs',
+    '--update',
+  ])
+  if (!ok) {
+    process.exitCode = priorExit
+    logger.warn(
+      'update: fleet:update reported a problem (non-fatal). Run `pnpm run fleet:update` manually when connectivity returns.',
+    )
+  }
+}

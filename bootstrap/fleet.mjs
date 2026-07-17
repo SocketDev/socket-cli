@@ -1248,6 +1248,7 @@ function parseArgs(argv) {
     repo: DEFAULT_REPO,
     status: false,
     thin: false,
+    update: false,
     wire: false,
   }
   for (let i = 0, { length } = argv; i < length; i += 1) {
@@ -1266,6 +1267,7 @@ function parseArgs(argv) {
     else if (arg === '--repo') opts.repo = argv[++i] ?? DEFAULT_REPO
     else if (arg === '--status') opts.status = true
     else if (arg === '--thin') opts.thin = true
+    else if (arg === '--update') opts.update = true
     else if (arg === '--wire') opts.wire = true
   }
   return opts
@@ -1474,6 +1476,9 @@ async function installFleet(options) {
     logger.log(
       `install-fleet: placed ${fileCount} file(s) + ${segmentCount} segment(s)${prunedNote} from ${sourceRef} (template ${manifest.templateSha}) → ${dest}.`,
     )
+    if (!opts.dryRun) {
+      runPostInstallSetup(dest)
+    }
     return 0
   } finally {
     rmSync(tmp, {
@@ -1481,6 +1486,52 @@ async function installFleet(options) {
       force: true,
     })
   }
+}
+/**
+ * Run member-side setup steps after a fleet bundle is applied. Fail-open: a
+ * setup step failure must not roll back a successful bundle install.
+ */
+function runPostInstallSetup(dest) {
+  const kimiSetup = path.join(dest, 'scripts', 'fleet', 'setup', 'setup-kimi-user-config.mts')
+  if (!existsSync(kimiSetup)) {
+    logger.log('install-fleet: setup-kimi-user-config.mts not present — skipping post-install setup.')
+    return
+  }
+  try {
+    execFileSync(process.execPath, [kimiSetup], { cwd: dest, stdio: 'pipe' })
+    logger.log('install-fleet: Kimi user config synced.')
+  } catch (error) {
+    logger.warn(
+      `install-fleet: Kimi user config setup failed (non-fatal): ${errorMessage(error)}`,
+    )
+  }
+}
+/**
+ * Auto-update mode: apply the newest fleet release if one exists and lock-step
+ * allows. Fail-open on network/gh errors so `pnpm install` is never blocked.
+ */
+async function runUpdate(options) {
+  const opts = { __proto__: null, ...options }
+  const dest = path.resolve(opts.dest ?? repoRoot)
+  const repo = opts.repo ?? DEFAULT_REPO
+  const cfg = readBundleConfig(dest)
+  const currentRef = cfg.ref || ''
+  if (!currentRef) {
+    if (!opts.quiet)
+      logger.log('fleet:update: no bundle.ref pinned — not a thin consumer, nothing to update.')
+    return 0
+  }
+  const newestRef = resolveNewestRef(repo)
+  if (!newestRef) {
+    if (!opts.quiet) logger.log('fleet:update: could not resolve newest release (offline or no releases).')
+    return 0
+  }
+  if (newestRef === currentRef) {
+    if (!opts.quiet) logger.log(`fleet:update: ${currentRef} is already the newest release.`)
+    return 0
+  }
+  logger.log(`fleet:update: ${newestRef} is newer than pinned ${currentRef} — applying…`)
+  return installFleet({ ...opts, ref: newestRef })
 }
 function isMainModule() {
   const entry = process.argv[1]
@@ -1493,9 +1544,13 @@ function isMainModule() {
 }
 if (isMainModule()) {
   const parsed = parseArgs(process.argv.slice(2))
-  process.exitCode = parsed.status
-    ? runStatus(parsed)
-    : await installFleet(parsed)
+  if (parsed.status) {
+    process.exitCode = runStatus(parsed)
+  } else if (parsed.update) {
+    process.exitCode = await runUpdate(parsed)
+  } else {
+    process.exitCode = await installFleet(parsed)
+  }
 }
 
 //#endregion
