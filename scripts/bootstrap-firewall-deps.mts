@@ -20,7 +20,7 @@
  *     `@socketsecurity/lib-stable/http-request`.
  *   - `rmSync` is used directly instead of `safeDelete` from
  *     `@socketsecurity/lib-stable/fs`.
- *   - Caught errors use the inline `e instanceof Error ? e.message : String(e)`
+ *   - Caught errors use the local zero-dependency `bootstrapErrorMessage()`
  *     pattern instead of `errorMessage()` from
  *     `@socketsecurity/lib-stable/errors`. These exceptions are intentional,
  *     narrow, and self-contained. Do not add other repo-convention violations
@@ -116,8 +116,7 @@ const checkFirewall = async (
   } catch (e) {
     clearTimeout(timer)
     err(
-      // oxlint-disable-next-line socket/prefer-error-message, socket/prefer-error-message-helper -- bootstraps lib-stable itself; can't depend on it yet.
-      `firewall-api: ${e instanceof Error ? e.message : String(e)} — proceeding anyway (non-fatal)`,
+      `firewall-api: ${bootstrapErrorMessage(e)} — proceeding anyway (non-fatal)`,
     )
     return true
   }
@@ -129,6 +128,15 @@ const log = (msg: string): void => {
 
 const err = (msg: string): void => {
   process.stderr.write(`[bootstrap] ${msg}\n`)
+}
+
+/**
+ * The bootstrap runs before `@socketsecurity/lib-stable` is installed, so it
+ * cannot import the fleet's normal `errorMessage()` helper.
+ */
+function bootstrapErrorMessage(error: unknown): string {
+  // oxlint-disable-next-line socket/prefer-error-message, socket/prefer-error-message-helper -- bootstrap's zero-dependency equivalent of the unavailable fleet helper.
+  return error instanceof Error ? error.message : String(error)
 }
 
 /**
@@ -303,10 +311,7 @@ const main = async (): Promise<number> => {
     try {
       await bootstrapPackage(pkg)
     } catch (e) {
-      err(
-        // oxlint-disable-next-line socket/prefer-error-message, socket/prefer-error-message-helper -- bootstraps lib-stable itself; can't depend on it yet.
-        `Failed to bootstrap ${pkg}: ${e instanceof Error ? e.message : String(e)}`,
-      )
+      err(`Failed to bootstrap ${pkg}: ${bootstrapErrorMessage(e)}`)
       return 1
     }
   }

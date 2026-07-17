@@ -252,6 +252,9 @@ overrides:
   '@socketsecurity/lib': 'catalog:'
   '@socketsecurity/registry': 'catalog:'
   '@socketsecurity/sdk': 'catalog:'
+  # The previous transitive 1.0.2 release failed the trust policy; 1.0.4 has
+  # cleared the seven-day soak and restores the normal no-downgrade gate.
+  'ast-v8-to-istanbul': '1.0.4'
   'chalk@>=5': '5.6.2'
   'es-define-property': 'npm:@socketregistry/es-define-property@1.0.7'
   'es-set-tostringtag': 'npm:@socketregistry/es-set-tostringtag@1.0.10'
