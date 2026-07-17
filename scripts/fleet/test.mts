@@ -375,7 +375,26 @@ function workspaceHasScript(script: string): boolean {
 // the per-file related/changed filtering vitest would do at the root is the
 // optimization that breaks, and a per-package full run is the safe trade.
 function isDelegatedWorkspace(): boolean {
-  return !existsSync(ROOT_VITEST_CONFIG) && existsSync(ROOT_WORKSPACE_MANIFEST)
+  return shouldDelegateWorkspace(
+    mode,
+    existsSync(ROOT_VITEST_CONFIG),
+    existsSync(ROOT_WORKSPACE_MANIFEST),
+  )
+}
+
+// Pre-commit is deliberately file-scoped even in a delegated workspace. Once
+// hook packages are registered as workspace members, `pnpm -r run test` fans
+// out across hundreds of hook manifests; a lockfile-only commit then spends
+// its entire budget launching empty test processes. Full/changed runs retain
+// per-package delegation and therefore keep package-specific env wrappers.
+export function shouldDelegateWorkspace(
+  scopeMode: string,
+  rootVitestConfigExists: boolean,
+  workspaceManifestExists: boolean,
+): boolean {
+  return (
+    scopeMode !== 'staged' && !rootVitestConfigExists && workspaceManifestExists
+  )
 }
 
 export interface ParsedTestRunnerArgs {
