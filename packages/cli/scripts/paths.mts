@@ -27,3 +27,4 @@ function resolvePackageRoot(): string {
 }
 
 export const PACKAGE_ROOT = resolvePackageRoot()
+export const WORKSPACE_ROOT = path.resolve(PACKAGE_ROOT, '..', '..')

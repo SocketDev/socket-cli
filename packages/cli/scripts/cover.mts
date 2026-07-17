@@ -17,7 +17,7 @@ import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import { PACKAGE_ROOT } from './paths.mts'
+import { PACKAGE_ROOT, WORKSPACE_ROOT } from './paths.mts'
 
 const logger = getDefaultLogger()
 
@@ -69,7 +69,14 @@ async function main() {
       '--passWithNoTests',
       ...process.argv.slice(2).filter(arg => !customFlags.includes(arg)),
     ]
-    const typeCoverageArgs = ['exec', 'type-coverage']
+    const typeCoverageArgs = [
+      '--filter',
+      '@socketsecurity/type-coverage-runner',
+      'exec',
+      'type-coverage',
+      '--project',
+      'packages/cli/tsconfig.json',
+    ]
 
     let exitCode = 0
     let codeCoverageResult
@@ -78,7 +85,7 @@ async function main() {
     // Handle --type-only flag
     if (values['type-only']) {
       typeCoverageResult = await spawn('pnpm', typeCoverageArgs, {
-        cwd: PACKAGE_ROOT,
+        cwd: WORKSPACE_ROOT,
         encoding: 'utf8',
         shell: WIN32,
         stdio: ['pipe', 'pipe', 'pipe'],
@@ -203,7 +210,7 @@ async function main() {
 
     // Run type coverage
     typeCoverageResult = await spawn('pnpm', typeCoverageArgs, {
-      cwd: PACKAGE_ROOT,
+      cwd: WORKSPACE_ROOT,
       encoding: 'utf8',
       shell: WIN32,
       stdio: ['pipe', 'pipe', 'pipe'],

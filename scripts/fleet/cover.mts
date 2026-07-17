@@ -712,7 +712,12 @@ export async function main(): Promise<void> {
   const isolatedVitestArgs = isolatedSuite
     ? suiteVitestArgs(isolatedSuite)
     : undefined
-  const typeCoverageArgs = ['exec', 'type-coverage']
+  const typeCoverageArgs = [
+    '--filter',
+    '@socketsecurity/type-coverage-runner',
+    'exec',
+    'type-coverage',
+  ]
 
   try {
     let exitCode = 0
