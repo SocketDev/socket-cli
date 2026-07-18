@@ -200,6 +200,7 @@
   "allowScripts": {
     "cpu-features": false,
     "protobufjs": false,
+    "puppeteer": false,
     "rolldown": true,
     "postject": false,
     "ssh2": false

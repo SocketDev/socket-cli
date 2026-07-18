@@ -311,6 +311,21 @@ export async function mintSquashRoot(options: {
 
 export type SquashMode = 'origin' | 'local-canonical' | 'diverged'
 
+export interface ClassifySquashModeOptions {
+  /**
+   * Local branch tip sha, or `''` when there is no local branch.
+   */
+  readonly localHead: string
+  /**
+   * Origin/<base> tip sha.
+   */
+  readonly origHead: string
+  /**
+   * Whether origin's tip is an ancestor of the local branch tip.
+   */
+  readonly originIsAncestor: boolean
+}
+
 /**
  * Classify the squash mode from the local branch tip, the origin tip, and
  * whether origin is an ancestor of local (`''` localHead = no local branch):
@@ -325,14 +340,13 @@ export type SquashMode = 'origin' | 'local-canonical' | 'diverged'
  *   then re-run.
  */
 export function classifySquashMode(
-  localHead: string,
-  origHead: string,
-  originIsAncestor: boolean,
+  options: ClassifySquashModeOptions,
 ): SquashMode {
-  if (localHead === '' || localHead === origHead) {
+  const opts = { __proto__: null, ...options } as ClassifySquashModeOptions
+  if (opts.localHead === '' || opts.localHead === opts.origHead) {
     return 'origin'
   }
-  return originIsAncestor ? 'local-canonical' : 'diverged'
+  return opts.originIsAncestor ? 'local-canonical' : 'diverged'
 }
 
 async function main(): Promise<number> {
@@ -452,7 +466,8 @@ async function main(): Promise<number> {
         )
       ).code === 0
     if (
-      classifySquashMode(localHead, origHead, originIsAncestor) === 'diverged'
+      classifySquashMode({ localHead, origHead, originIsAncestor }) ===
+      'diverged'
     ) {
       // Diverged: origin holds commits the local branch lacks. Local is
       // canonical, but a blind squash mints the root from the local tree and

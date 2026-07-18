@@ -13,3 +13,4 @@ dispatch-launcher
 dispatch-launcher.exe
 node.path
 snapshot-blob.path
+dispatch-table.mts
