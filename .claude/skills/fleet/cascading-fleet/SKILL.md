@@ -99,3 +99,8 @@ The cascade script (`lib/cascade-template.mts`) is deterministic — it `--no-ve
 - Wheelhouse sync-scaffolding: `socket-wheelhouse/scripts/repo/sync-scaffolding/cli.mts`.
 - Fleet-repo manifest: `lib/fleet-repos.txt`.
 - Tool-pin propagation: the wheelhouse pipeline (`socket-wheelhouse/scripts/repo/pipeline.mts` — bump → reconcile → CI-green gate → propagate); this skill then carries the template change fleet-wide.
+
+## Handoff
+
+For a narrow, named cascade category, use [syncing-fleet](../../repo/syncing-fleet/SKILL.md)
+instead of a full template wave.

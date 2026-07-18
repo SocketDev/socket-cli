@@ -62,11 +62,13 @@ catalog:
   'oxlint': 1.73.0
   # playwright-core — headless Chromium driver for the rendering-chromium-to-png
   # skill (render a page or a real unpacked MV3 extension popup to PNG so an
-  # agent can SEE it). Browser binary via `pnpm exec playwright install chromium`.
+  # agent can SEE it). Browser binary via `node_modules/.bin/playwright install chromium`.
   'playwright-core': 1.61.1
+  # portless — stable HTTPS `.localhost` URLs for local page tests and rendered UI checks.
+  'portless': 0.15.4
   'regjsparser': 0.13.2
   'semver': 7.8.5
-  'shell-quote': 1.9.0
+  'shell-quote': 1.10.0
   'taze': 19.14.1
   # TypeScript 7 NATIVE (the Go `tsc`). Track the highest available 7.x
   # PRE-RELEASE — the RC line is intentional. npm's `latest` dist-tag points at
@@ -84,7 +86,6 @@ catalog:
 # (manifest/catalog.mts) and the fleet doctor (scripts/fleet/doctor.mts) to
 # resolve versions for catalog: refs that are missing their catalog entry.
 catalogOptional:
-  'impeccable': 3.2.1
   'rolldown': 1.1.4
   'svgo': 4.0.1
   'vite': 8.1.0

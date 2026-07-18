@@ -6,26 +6,28 @@ description: Reviews web interface quality before landing UI changes.
 # Reviewing Web Interfaces
 
 Use evidence from a rendered interface. This is a review skill, not permission to
-redesign a product without the [Refero Design](../refero-design/SKILL.md) reference lock.
+redesign a product without the [Designing Interfaces](../designing-interfaces/SKILL.md) reference lock.
 
 ## Workflow
 
 1. Capture the affected route and viewport(s) with
    [rendering-chromium-to-png](../rendering-chromium-to-png/SKILL.md).
-2. Review semantics, keyboard flow, focus, overflow, contrast, responsive states, and
-   visible hierarchy using [review-checklist.md](references/review-checklist.md).
-3. When `impeccable` is declared in the current repo, run its deterministic detector
-   against the changed UI. Treat its findings as review leads; verify each one against
-   the product context before changing code.
+2. For a material UI change, get a fresh-context critique when an independent reviewer is
+   available. Keep its evidence separate from the implementation rationale.
+3. Review semantics, keyboard flow, focus, overflow, contrast, responsive states, production
+   states, and user-facing copy using [review-checklist.md](references/review-checklist.md)
+   and [interface-copy.md](../designing-interfaces/references/interface-copy.md).
 4. Re-render after each material correction. Report the remaining risks with evidence.
 
-## Impeccable Availability
+## Design Cluster
 
-The fleet catalogs `impeccable` for UI-owning repos. Add it to that repo's
-`devDependencies` as `"impeccable": "catalog:"`; never use an ad-hoc download in a
-review. See [tooling.md](references/tooling.md) for command and installation boundaries.
+Review preserves the direction set by
+[designing-interfaces](../designing-interfaces/SKILL.md). Route implementation fixes to
+[improving-web-interfaces](../improving-web-interfaces/SKILL.md), performance findings to
+[optimizing-react-interfaces](../optimizing-react-interfaces/SKILL.md), repeated patterns to
+[extracting-design-systems](../extracting-design-systems/SKILL.md), and behavior or visual
+regressions to [testing-web-interfaces](../testing-web-interfaces/SKILL.md).
 
 ## References
 
 - [Review checklist](references/review-checklist.md)
-- [Impeccable tooling boundary](references/tooling.md)

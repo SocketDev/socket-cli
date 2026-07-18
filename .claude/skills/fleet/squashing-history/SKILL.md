@@ -1,6 +1,6 @@
 ---
 name: squashing-history
-description: Squash default-branch history to one conventional initial commit with backup, verification, and confirmed force-push.
+description: Squash default-branch history to one commit with backup and force-push.
 user-invocable: true
 allowed-tools: AskUserQuestion, Bash(node:*), Bash(git:*)
 model: claude-haiku-4-5

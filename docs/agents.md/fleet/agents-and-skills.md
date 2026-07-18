@@ -4,12 +4,30 @@ The CLAUDE.md `### Agents & skills` section names the entry-point skills. This f
 
 ## Naming & namespace
 
-Fleet skills live at `.claude/skills/fleet/<name>/SKILL.md`; fleet commands at `.claude/commands/fleet/<name>.md`. Claude Code derives the namespace from the `fleet/` directory, so both autocomplete as `fleet:<name>` — type `/fleet:` + Tab to browse the whole group. The `name:` frontmatter stays **bare** (`name: scanning-quality`, never `fleet:scanning-quality`); the prefix is a display affordance, not part of the name. Invoke either `/<name>` or `/fleet:<name>` — both resolve. When one skill references another (in prose or a `Skill` call), use the bare name. Skill names follow the gerund convention (`scanning-quality`, `looping-quality`, `greening-ci`, `guarding-paths`); a paired command shares the skill's name.
+Fleet skills live at `.claude/skills/fleet/<name>/SKILL.md`; fleet commands at `.claude/commands/fleet/<name>.md`. Claude Code derives the namespace from the `fleet/` directory, so both autocomplete as `fleet:<name>` — type `/fleet:` + Tab to browse the whole group. The `name:` frontmatter stays **bare** (`name: scanning-quality`, never `fleet:scanning-quality`); the prefix is a display affordance, not part of the name. Invoke either `/<name>` or `/fleet:<name>` — both resolve. When one skill references another (in prose or a `Skill` call), use the bare name. Skill names use action-oriented phrases (`scanning-quality`, `looping-quality`, `greening-ci`, `map`); a paired command shares the skill's name.
+
+## Operating map
+
+[`skill-system.mts`](../../../scripts/fleet/lib/skill-system.mts) classifies every fleet
+skill and declares the enforced handoffs. Start with the current state, then follow the
+named successor:
+
+| State      | Path                                                                             |
+| ---------- | -------------------------------------------------------------------------------- |
+| Understand | `setup-repo` / `map` → `authoring-spec`                                          |
+| Decide     | `authoring-spec` → `grilling-plan` → `decomposing-tickets`                       |
+| Build      | `building-tdd` → `reviewing-code` → `pushing`                                    |
+| Assess     | `scanning-quality` → `looping-quality`                                           |
+| Secure     | `threat-modeling` → `scanning-vulns` → `triaging-findings` → `patching-findings` |
+| Ship       | `agent-ci` → `opening-pr` / `pushing` → `greening-ci`                            |
+| Propagate  | `cascading-fleet` or narrow `syncing-fleet`                                      |
+| Maintain   | `updating` → `updating-security` → `cascading-fleet`                             |
+| Design     | `designing-interfaces` → build/review/performance/test companions                |
 
 ## Entry-point skills
 
 - `/fleet:scanning-security`: AgentShield + zizmor audit
-- `/fleet:scanning-quality`: single-pass quality scan → A-F report (read-only primitive)
+- `/fleet:scanning-quality`: quality assessment plus explicit maintenance/report mutations
 - `/fleet:looping-quality`: loop driver over `scanning-quality` — scan, fix, re-scan until clean or 5 iterations (interactive; makes commits)
 
 The **code-security loop** is four chained skills, each leg resumable (see [`security-stack.md`](security-stack.md) Layer 6 for the full contract):

@@ -35,3 +35,8 @@ gh run watch
 ```
 
 If `pnpm run update` / `pnpm install` changed the lockfile or pins, commit those first (the lockfile-only `-o pnpm-lock.yaml` reconcile is sanctioned), then re-run the gate. The gate never pushes for you — it only tells you it is safe to.
+
+## Handoffs
+
+Run [agent-ci](../agent-ci/SKILL.md) before CI-sensitive pushes when Docker is available.
+After the push, use [greening-ci](../greening-ci/SKILL.md) until remote CI is green.

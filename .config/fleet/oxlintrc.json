@@ -252,6 +252,7 @@
     "**/scripts/fleet/plugin-patches/**/*.patch",
     "**/.config/lockstep.schema.json",
     "**/.config/repo/vitest.config.mts",
+    "**/.kimi-code/mcp.json",
     "**/.mcp.json",
     "**/opencode.json",
     "**/packages/build-infra/lib/release-checksums/consumer.mts",

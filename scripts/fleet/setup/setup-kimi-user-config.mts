@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 /**
  * @file `setup:kimi-user-config` — bridge the fleet-canonical Claude permission
- *   rules into Kimi Code CLI's user-owned `~/.kimi-code/config.toml`. Kimi has no
- *   project-level config for permissions/hooks, so this step merges only the
+ *   rules into Kimi Code CLI's user-owned `~/.kimi-code/config.toml`. Kimi has
+ *   no project-level config for permissions/hooks, so this step merges only the
  *   fleet-managed `[[permission.rules]]` block and preserves all unrelated user
  *   settings. Idempotent: re-running splices the same marked block. Credentials
- *   never belong here. Usage: node scripts/fleet/setup/setup-kimi-user-config.mts
+ *   never belong here. Usage: node
+ *   scripts/fleet/setup/setup-kimi-user-config.mts.
  */
 
 import {
@@ -58,7 +59,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * Returns the subset of fields that live between the `// <fleet-canonical>`
  * and `// </fleet-canonical>` marker keys.
  */
-export function extractFleetCanonicalFields(text: string): Record<string, unknown> {
+export function extractFleetCanonicalFields(
+  text: string,
+): Record<string, unknown> {
   let parsed: unknown
   try {
     parsed = JSON.parse(text)
@@ -177,7 +180,10 @@ export async function setupKimiUserConfig(
   const settingsPath = path.join(repoRoot, '.claude', 'settings.json')
   const kimiConfigPath =
     opts.kimiConfigPath ??
-    path.join(process.env['KIMI_CODE_HOME'] ?? path.join(os.homedir(), '.kimi-code'), 'config.toml')
+    path.join(
+      process.env['KIMI_CODE_HOME'] ?? path.join(os.homedir(), '.kimi-code'),
+      'config.toml',
+    )
 
   try {
     const settingsText = readFileSync(settingsPath, 'utf8')
@@ -195,7 +201,11 @@ export async function setupKimiUserConfig(
     }
   } catch (error) {
     logger.error(`setup:kimi-user-config — ${errorMessage(error)}`)
-    return { ok: false, reason: 'Kimi user config setup failed', skipped: false }
+    return {
+      ok: false,
+      reason: 'Kimi user config setup failed',
+      skipped: false,
+    }
   }
 
   logger.success(

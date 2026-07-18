@@ -35,9 +35,12 @@ There is no `--list` or dry-run flag — `run` executes. Args after the subcomma
 To resolve the binary from a `.mts` script (not a package.json script — those resolve `node_modules/.bin` themselves), use the fleet helper, never a shelled-out `which`/`command -v` (which searches the global PATH and resolves the wrong binary — enforced by `socket/no-which-for-local-bin`):
 
 ```ts
-import { whichSync } from '@socketsecurity/lib-stable/bin/which'
+import { whichSync } from "@socketsecurity/lib-stable/bin/which";
 
-const agentCi = whichSync('agent-ci', { path: nodeModulesBinDir, nothrow: true })
+const agentCi = whichSync("agent-ci", {
+  path: nodeModulesBinDir,
+  nothrow: true,
+});
 ```
 
 ## Fix and retry
@@ -53,3 +56,8 @@ Call the linked binary directly (the fleet form for an ad-hoc bin invocation, sa
 ## Reference
 
 - **Machine-readable `--json` event stream, the full requirements rationale, and the agent-ci-vs-remote-CI decision matrix**: see [reference.md](reference.md).
+
+## Handoffs
+
+Use [greening-ci-local](../greening-ci-local/SKILL.md) for the local fix-and-retry
+loop, and [greening-ci](../greening-ci/SKILL.md) when a real runner is required.

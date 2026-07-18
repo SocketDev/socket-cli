@@ -70,6 +70,7 @@ Or all-at-once with the canonical fleet list (manual today; the orchestrator ski
     node .claude/skills/fleet/auditing-gha/run.mts \
       SocketDev/socket-btm \
       SocketDev/socket-cli \
+      SocketDev/socket-gemini-nano \
       SocketDev/socket-lib \
       SocketDev/socket-mcp \
       SocketDev/socket-packageurl-js \

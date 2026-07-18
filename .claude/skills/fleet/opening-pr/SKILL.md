@@ -56,3 +56,8 @@ the diff is the intended scope first.
 The fix is applied, `pnpm run check` + the test/verification are green, the PR body
 has passed the prose + doctrine pass and leaks no private name, and the PR links
 its issue. A PR with no test and no named verification path is not complete.
+
+## Handoffs
+
+Use [prose](../prose/SKILL.md) for the outward-facing body and
+[pushing](../pushing/SKILL.md) for the full pre-push and CI-green loop.

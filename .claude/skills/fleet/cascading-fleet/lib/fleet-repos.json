@@ -7,8 +7,19 @@
       "publishes": "custom"
     },
     {
+      "name": "node-smol",
+      "description": "Customized Node.js distribution with Socket native integrations",
+      "optIns": ["squash-history"],
+      "publishes": "binary"
+    },
+    {
       "name": "socket-cli",
       "description": "Command-line interface for socket.dev security analysis"
+    },
+    {
+      "name": "socket-gemini-nano",
+      "description": "On-device Gemini Nano Prompt API library for browser and Node",
+      "publishes": "js"
     },
     {
       "name": "socket-lib",

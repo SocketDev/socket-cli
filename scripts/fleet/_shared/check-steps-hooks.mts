@@ -5,7 +5,8 @@
  *   chain, release-and-docs); see that file for the assembled order.
  */
 
-import { run, type CheckStep } from './check-steps.mts'
+import { run } from './check-steps.mts'
+import type { CheckStep } from './check-steps.mts'
 
 export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
   return [
@@ -92,6 +93,14 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
     // half-built skill (engine/test, no SKILL.md) that the mirror + citation
     // gates would otherwise trip on later.
     () => run('node', ['scripts/fleet/check/skills-are-well-formed.mts']),
+    () => run('node', ['scripts/fleet/check/skill-system-is-coherent.mts']),
+    // The interface-design authority and its four companions form one routing
+    // cluster. Require reciprocal direct links so no skill becomes an orphaned
+    // prompt island after a rename or a future companion is added.
+    () =>
+      run('node', [
+        'scripts/fleet/check/design-skill-cluster-is-connected.mts',
+      ]),
     // Cost routing: every mutating (fix) skill must declare a model: tier so
     // mechanical work runs cheap. See docs/agents.md/fleet/skill-model-routing.md.
     () => run('node', ['scripts/fleet/check/mutating-skills-have-model.mts']),

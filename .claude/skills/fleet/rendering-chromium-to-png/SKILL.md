@@ -17,6 +17,11 @@ throw that aborts the render partway). This skill gives you eyes: render to a PN
 
 ## Page mode — render any URL or local file
 
+For a locally served app, run its existing development command through the package.json script
+that launches it through `portless`, then pass the generated HTTPS `.localhost` URL to this
+script. Do not invent a fixed port or a second server command. Use `file:` only for a genuinely
+static page.
+
 ```sh
 node .claude/skills/fleet/rendering-chromium-to-png/screenshot.mts <url|file> \
   [--out p.png] [--width 580] [--height 0=full] [--theme dark|light] [--wait 2500] [--full]
@@ -55,9 +60,9 @@ extension popup as it actually renders in-browser, not a static file:// approxim
 - **MV3 service workers suspend** after ~30s idle and restart on demand — long-lived
   `evaluate()` may throw "Service worker restarted"; keep interactions short.
 - **No browser available** (headless CI without chromium): say so explicitly rather than
-  claiming you verified — run `pnpm exec playwright install chromium` first.
+  claiming you verified — run `node_modules/.bin/playwright install chromium` first.
 
 ## Browser dependency
 
 `playwright-core` (fleet catalog devDep) drives a headless Chromium. If the binary is
-missing the script says so — install it with `pnpm exec playwright install chromium`.
+missing the script says so — install it with `node_modules/.bin/playwright install chromium`.

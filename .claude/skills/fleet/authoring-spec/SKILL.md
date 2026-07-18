@@ -58,3 +58,9 @@ outward-facing — confirm the destination first.
 The spec has all sections including named test seams and an enforcement plan,
 passed the prose + doctrine pass, leaks no private name, and is published to the
 confirmed tracker.
+
+## Handoffs
+
+Use [grilling-plan](../grilling-plan/SKILL.md) to challenge the plan,
+[decomposing-tickets](../decomposing-tickets/SKILL.md) to publish slices, and
+[building-tdd](../building-tdd/SKILL.md) to implement them.

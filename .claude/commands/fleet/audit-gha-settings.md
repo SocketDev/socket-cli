@@ -8,6 +8,7 @@ If no arguments given, audit the canonical fleet repo list:
 
 - `SocketDev/socket-btm`
 - `SocketDev/socket-cli`
+- `SocketDev/socket-gemini-nano`
 - `SocketDev/socket-lib`
 - `SocketDev/socket-mcp`
 - `SocketDev/socket-packageurl-js`

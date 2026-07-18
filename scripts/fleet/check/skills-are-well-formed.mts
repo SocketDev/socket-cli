@@ -16,6 +16,8 @@
 //   4. The frontmatter declares a non-empty `description:` (the trigger text the
 //      model uses to decide relevance — a skill with none is undiscoverable).
 //   5. The description is short enough to fit cross-agent skill-list budgets.
+//   6. The entry SKILL.md stays within the progressive-disclosure line budget;
+//      detailed procedures belong in linked references.
 //
 // Complements: mutating-skills-have-model (model: gate) and claude-md-citations-
 // resolve (every /fleet:<name> bullet resolves). Those assume a well-formed
@@ -24,7 +26,7 @@
 // `_shared` is not a skill (shared subskill libs) — skipped.
 //
 // ERROR (exit 1): any skill dir missing SKILL.md, frontmatter, a matching name,
-// a description, or a budget-sized description.
+// a description, an oversized entry body, or a budget-sized description.
 //
 // Usage: node scripts/fleet/check/skills-are-well-formed.mts [--quiet]
 
@@ -45,6 +47,7 @@ const logger = getDefaultLogger()
 // each agent surface to shorten it differently.
 export const MAX_SKILL_DESCRIPTION_LENGTH = 180
 export const MAX_SKILL_CATALOG_DESCRIPTION_LENGTH = 7_000
+export const MAX_SKILL_BODY_LINES = 500
 
 const SKILL_TIERS = ['fleet', 'repo'] as const
 
@@ -57,6 +60,7 @@ export interface SkillDefect {
     | 'name-mismatch'
     | 'no-description'
     | 'description-too-long'
+    | 'body-too-long'
     | 'catalog-description-budget-exceeded'
   detail: string
 }
@@ -146,6 +150,14 @@ export function classifySkill(
       name,
       reason: 'description-too-long',
       detail: `frontmatter \`description:\` is ${description.length} chars; keep it <= ${MAX_SKILL_DESCRIPTION_LENGTH} chars so Codex/OpenCode skill lists do not get truncated`,
+    }
+  }
+  const bodyLines = source.split('\n').length
+  if (bodyLines > MAX_SKILL_BODY_LINES) {
+    return {
+      name,
+      reason: 'body-too-long',
+      detail: `SKILL.md has ${bodyLines} lines; keep it <= ${MAX_SKILL_BODY_LINES} and move conditional detail into a direct references/ file`,
     }
   }
   return undefined
@@ -253,7 +265,7 @@ function main(): void {
 
   if (!quiet) {
     logger.success(
-      `[check-skills-are-well-formed] every skill has a SKILL.md with a matching name, <=${MAX_SKILL_DESCRIPTION_LENGTH}-char description, and <=${MAX_SKILL_CATALOG_DESCRIPTION_LENGTH}-char catalog.`,
+      `[check-skills-are-well-formed] every skill has a SKILL.md with a matching name, <=${MAX_SKILL_DESCRIPTION_LENGTH}-char description, <=${MAX_SKILL_BODY_LINES}-line entry body, and <=${MAX_SKILL_CATALOG_DESCRIPTION_LENGTH}-char catalog.`,
     )
   }
 }

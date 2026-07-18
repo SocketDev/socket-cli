@@ -95,11 +95,12 @@ export function defaultBase(tip: string): string | undefined {
  * the base sits on superseded history and consolidating onto it re-embeds
  * old-lineage commits.
  */
-export function isOffLineage(
-  baseReachableFromOrigin: boolean,
-  originReachableFromBase: boolean,
-): boolean {
-  return !baseReachableFromOrigin && !originReachableFromBase
+export function isOffLineage(options: {
+  baseReachableFromOrigin: boolean
+  originReachableFromBase: boolean
+}): boolean {
+  const opts = { __proto__: null, ...options }
+  return !opts.baseReachableFromOrigin && !opts.originReachableFromBase
 }
 
 export interface RewritePushLineage {
@@ -200,7 +201,10 @@ function main(): void {
   const originRef = resolveOriginDefaultRef()
   if (originRef && !values['allow-off-lineage-base']) {
     if (
-      isOffLineage(isAncestor(base, originRef), isAncestor(originRef, base))
+      isOffLineage({
+        baseReachableFromOrigin: isAncestor(base, originRef),
+        originReachableFromBase: isAncestor(originRef, base),
+      })
     ) {
       logger.fail(
         `[consolidate-commits] the base commit is not part of ${originRef}'s history.\n` +

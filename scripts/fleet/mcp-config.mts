@@ -302,7 +302,9 @@ export function renderOpenCodeMcpConfig(servers: PortableMcpServers): string {
  * stdio commands relative to the project root when the file lives at
  * `<project>/.kimi-code/mcp.json`, so no `cwd` is needed.
  */
-export function renderKimiProjectMcpConfig(servers: PortableMcpServers): string {
+export function renderKimiProjectMcpConfig(
+  servers: PortableMcpServers,
+): string {
   const mcpServers: Record<string, unknown> = {}
   for (const [name, server] of Object.entries(sortRecord(servers))) {
     mcpServers[name] =

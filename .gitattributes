@@ -140,6 +140,7 @@ template/.claude/hooks/fleet/_shared/acorn/acorn.wasm binary
 .github/workflows/weekly-update-non-gh-aw.yml.disabled linguist-generated=true
 .github/workflows/weekly-update.lock.yml linguist-generated=true
 .github/workflows/weekly-update.md linguist-generated=true
+.kimi-code/mcp.json linguist-generated=true
 .mcp.json linguist-generated=true
 .npmrc linguist-generated=true
 assets/fleet/badge-follow-bluesky.svg linguist-generated=true

@@ -29,6 +29,15 @@ it addresses a measured rendering, interaction, or bundle cost.
 - Route visual quality questions to
   [reviewing-web-interfaces](../reviewing-web-interfaces/SKILL.md).
 
+## Design Cluster
+
+Preserve the direction from [designing-interfaces](../designing-interfaces/SKILL.md).
+Use [improving-web-interfaces](../improving-web-interfaces/SKILL.md) for visual/component
+work, [reviewing-web-interfaces](../reviewing-web-interfaces/SKILL.md) to assess the
+result, [extracting-design-systems](../extracting-design-systems/SKILL.md) for repeated
+component reuse, and [testing-web-interfaces](../testing-web-interfaces/SKILL.md) for
+regression proof.
+
 ## References
 
 - [React performance routing and sources](references/react-performance.md)

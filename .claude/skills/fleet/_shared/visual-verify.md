@@ -50,7 +50,7 @@ source read fine; the pixels exposed it instantly.
 - **MV3 service workers suspend** after ~30s idle; long-lived `evaluate()` may throw
   "Service worker restarted" — keep interactions short.
 - **No browser available** (headless CI without chromium): say so explicitly rather than
-  claiming you verified. Install with `pnpm exec playwright install chromium`.
+  claiming you verified. Install with `node_modules/.bin/playwright install chromium`.
 
 ## The discipline
 

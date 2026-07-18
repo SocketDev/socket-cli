@@ -22,7 +22,7 @@ This skill runs in two modes. Both strip the AI-slop the Core Rules target; the 
 **Route by surface:**
 
 - Targeting a `docs/**` file, README, CHANGELOG, GitHub Release notes, or API-reference prose → **documentation mode** (the Core Rules below, unchanged).
-- Targeting a PR description / comment (`gh pr create/edit/comment --body`), an issue body or reply (`gh issue create/comment`), a review comment, a Linear issue/comment, a status summary, or a multi-paragraph commit *body* → **conversational mode**: the Core Rules **plus** [references/conversational.md](references/conversational.md) (lead with the point, be brief, show the receipt, drop the AI scaffolding; when a body earns structure, use GitHub advanced formatting — `<details>` folds with specific summaries, at most one `> [!NOTE]`-family alert, `- [ ]` task lists, autolinks/permalinks, sparing footnotes).
+- Targeting a PR description / comment (`gh pr create/edit/comment --body`), an issue body or reply (`gh issue create/comment`), a review comment, a Linear issue/comment, a status summary, or a multi-paragraph commit _body_ → **conversational mode**: the Core Rules **plus** [references/conversational.md](references/conversational.md) (lead with the point, be brief, show the receipt, drop the AI scaffolding; when a body earns structure, use GitHub advanced formatting — `<details>` folds with specific summaries, at most one `> [!NOTE]`-family alert, `- [ ]` task lists, autolinks/permalinks, sparing footnotes).
 
 **Documentation mode applies to:**
 
@@ -53,11 +53,11 @@ If an edit changes meaning or loses the author's voice, revert it. Never rewrite
 
 ## Core Rules
 
-1. **Cut filler phrases.** Remove throat-clearing openers, emphasis crutches, and all adverbs. See [references/phrases.md](references/phrases.md).
+1. **Cut filler phrases.** Remove throat-clearing openers and emphasis crutches; cut adverbs that do not add meaning. See [references/phrases.md](references/phrases.md).
 
 2. **Break formulaic structures.** Avoid binary contrasts, negative listings, dramatic fragmentation, rhetorical setups, false agency. See [references/structures.md](references/structures.md).
 
-3. **Use active voice.** Every sentence needs a human subject doing something. No passive constructions. No inanimate objects performing human actions ("the complaint becomes a fix").
+3. **Prefer active voice when it clarifies the actor.** Keep passive constructions when they are more precise or the actor is intentionally unknown. Avoid inanimate objects performing human actions ("the complaint becomes a fix").
 
 4. **Be specific.** No vague declaratives ("The reasons are structural"). Name the specific thing. No lazy extremes ("every," "always," "never") doing vague work.
 
@@ -73,8 +73,8 @@ If an edit changes meaning or loses the author's voice, revert it. Never rewrite
 
 Before delivering prose:
 
-- Any adverbs? Kill them.
-- Any passive voice? Find the actor, make them the subject.
+- Any adverbs that add no meaning? Cut them.
+- Would active voice clarify responsibility? Name the actor.
 - Inanimate thing doing a human verb ("the decision emerges")? Name the person.
 - Sentence starts with a Wh- word? Restructure it.
 - Any "here's what/this/that" throat-clearing? Cut to the point.

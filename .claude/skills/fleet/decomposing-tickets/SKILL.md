@@ -54,3 +54,7 @@ outward-facing — confirm the tracker + label before the first create.
 Every approved slice is published in dependency order with real "Blocked by"
 references, each body has passed the prose + doctrine pass, and no body leaks a
 private name or bare `#N`.
+
+## Handoff
+
+Take an approved, ready-for-agent slice to [opening-pr](../opening-pr/SKILL.md).

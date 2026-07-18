@@ -11,6 +11,7 @@ packages:
 allowBuilds:
   cpu-features: false
   protobufjs: false
+  puppeteer: false
   rolldown: true
   postject: false
   ssh2: false
@@ -157,6 +158,7 @@ catalog:
   packageurl-js: npm:@socketregistry/packageurl-js@^1.4.2
   path-parse: npm:@socketregistry/path-parse@^1.0.8
   'playwright-core': 1.61.1
+  'portless': 0.15.4
   postject: 1.0.0-alpha.6
   react: 19.2.0
   react-reconciler: 0.33.0
@@ -170,7 +172,7 @@ catalog:
   safer-buffer: npm:@socketregistry/safer-buffer@^1.0.10
   semver: 7.8.5
   set-function-length: npm:@socketregistry/set-function-length@^1.0.10
-  shell-quote: 1.9.0
+  shell-quote: 1.10.0
   side-channel: npm:@socketregistry/side-channel@^1.0.10
   ssri: 12.0.0
   string-width: 8.1.0
@@ -222,6 +224,8 @@ minimumReleaseAgeExclude:
   - 'dtu-github-actions@0.17.1'
   # published: 2026-07-16 | removable: 2026-07-23
   - 'magic-string@1.0.0'
+  # published: 2026-07-16 | removable: 2026-07-23
+  - 'portless@0.15.4'
 
 # Refuse transitive dependencies declared via git/tarball/local-tarball
 # specs — an npm package shouldn't be allowed to drag in a git URL we

@@ -51,6 +51,7 @@ import {
 } from '../../../hooks/fleet/_shared/fleet-roster.mts'
 import { resolveDefaultBranch } from '../_shared/scripts/git-default-branch.mts'
 import { header, run, timestamp } from '../_shared/scripts/run-helpers.mts'
+import { formatBackupBranch } from '../../../../scripts/fleet/lib/backup-branch.mts'
 
 const logger = getDefaultLogger()
 
@@ -73,6 +74,18 @@ export async function resolveFleetName(src: string): Promise<string> {
 }
 
 export { header, run, timestamp }
+
+/**
+ * Derive a canonical recovery-ref name from the commit Git will preserve.
+ */
+export async function backupBranchForCommit(
+  cwd: string,
+  sha: string,
+): Promise<string> {
+  const date = (await run('git', ['show', '-s', '--format=%cI', sha], cwd))
+    .stdout
+  return formatBackupBranch(date)
+}
 
 /**
  * Accrue user-visible CHANGELOG entries into the `## [Unreleased]` section
@@ -296,6 +309,32 @@ export async function mintSquashRoot(options: {
   return { __proto__: null, newHead } as SquashResult
 }
 
+export type SquashMode = 'origin' | 'local-canonical' | 'diverged'
+
+/**
+ * Classify the squash mode from the local branch tip, the origin tip, and
+ * whether origin is an ancestor of local (`''` localHead = no local branch):
+ *
+ * - `origin`: no local branch, or local == origin — squash origin's history.
+ * - `local-canonical`: local is ahead (origin is its ancestor) — squash the local
+ *   tree; origin's tip is already contained.
+ * - `diverged`: local and origin each hold commits the other lacks — MUST be
+ *   refused. A blind squash mints the root from the local tree and
+ *   force-pushes, dropping origin's commits (they survive only in a backup ref,
+ *   never on the branch). Reconcile forward first (merge origin into local),
+ *   then re-run.
+ */
+export function classifySquashMode(
+  localHead: string,
+  origHead: string,
+  originIsAncestor: boolean,
+): SquashMode {
+  if (localHead === '' || localHead === origHead) {
+    return 'origin'
+  }
+  return originIsAncestor ? 'local-canonical' : 'diverged'
+}
+
 async function main(): Promise<number> {
   const src = process.argv[2]
   if (!src) {
@@ -342,8 +381,6 @@ async function main(): Promise<number> {
 
   const repoName = fleetName
   const worktree = `${src}-squash`
-  const ts = timestamp()
-  const backup = `backup-${ts}`
   const squashBranch = 'chore/squash'
 
   logger.info('============================================================')
@@ -378,6 +415,7 @@ async function main(): Promise<number> {
   const origCount = (
     await run('git', ['rev-list', '--count', `origin/${base}`], src)
   ).stdout
+  const backup = await backupBranchForCommit(src, origHead)
   header(`original ${base}`, `${origHead} (${origCount} commits)`)
 
   // Origin URL, for the changelog accrual's release links (best-effort).
@@ -413,23 +451,22 @@ async function main(): Promise<number> {
           },
         )
       ).code === 0
-    if (!originIsAncestor) {
-      // Diverged: local main is canonical and clobbers origin anyway. Back up
-      // origin's tip first so the overwrite is recoverable, then proceed.
-      logger.substep(
-        `origin/${base} (${origHead.slice(0, 8)}) diverges from local — ` +
-          `clobbering; backing up origin tip -> refs/heads/${backup}-origin`,
+    if (
+      classifySquashMode(localHead, origHead, originIsAncestor) === 'diverged'
+    ) {
+      // Diverged: origin holds commits the local branch lacks. Local is
+      // canonical, but a blind squash mints the root from the local tree and
+      // force-pushes — dropping origin's commits (they would survive only in a
+      // backup ref, never on the branch). Refuse loudly; the caller must
+      // reconcile FORWARD (fold origin's commits into local), then re-run.
+      logger.error(
+        `error: origin/${base} (${origHead.slice(0, 8)}) has commits your ` +
+          `local ${base} lacks — local and origin have DIVERGED. Squashing ` +
+          `now would drop origin's commits. Fix: reconcile forward first — ` +
+          `git -C ${src} merge --no-edit origin/${base} (resolve any ` +
+          `conflicts), then re-run.`,
       )
-      await run(
-        'git',
-        [
-          'push',
-          '--no-verify',
-          'origin',
-          `${origHead}:refs/heads/${backup}-origin`,
-        ],
-        src,
-      )
+      return 2
     }
     const localCount = (
       await run('git', ['rev-list', '--count', localHead], src)
@@ -454,13 +491,21 @@ async function main(): Promise<number> {
       logger.substep(`changelog accrual: skipped (src not on ${base})`)
     }
 
-    // Backup the LOCAL tip — it strictly contains origin.
+    const localBackup = await backupBranchForCommit(src, localHead)
+
+    // Backup the LOCAL tip before the rewrite so the pre-squash history is
+    // always recoverable.
     logger.substep(
-      `pushing remote backup ref: refs/heads/${backup} -> ${localHead}`,
+      `pushing remote backup ref: refs/heads/${localBackup} -> ${localHead}`,
     )
     await run(
       'git',
-      ['push', '--no-verify', 'origin', `${localHead}:refs/heads/${backup}`],
+      [
+        'push',
+        '--no-verify',
+        'origin',
+        `${localHead}:refs/heads/${localBackup}`,
+      ],
       src,
     )
 
@@ -491,9 +536,9 @@ async function main(): Promise<number> {
     logger.log('')
     logger.success(`${repoName} squashed (local-canonical mode)`)
     logger.substep(`new ${base}:   ${newHead}`)
-    logger.substep(`backup ref: refs/heads/${backup} -> ${localHead}`)
+    logger.substep(`backup ref: refs/heads/${localBackup} -> ${localHead}`)
     logger.substep(
-      `recover:    git fetch origin ${backup} && git push --force origin FETCH_HEAD:${base}`,
+      `recover:    git fetch origin ${localBackup} && git push --force origin FETCH_HEAD:${base}`,
     )
     return 0
   }

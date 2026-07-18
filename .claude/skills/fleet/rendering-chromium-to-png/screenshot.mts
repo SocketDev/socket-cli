@@ -23,7 +23,7 @@
  *      headless Chromium (plain headless silently ignores --load-extension).
  *
  *   Browser: playwright-core's bundled Chromium (a wheelhouse devDep). If the
- *   browser binary is missing, run `pnpm exec playwright install chromium`.
+ *   browser binary is missing, run `node_modules/.bin/playwright install chromium`.
  *
  *   Exit codes: 0 — PNG written (path printed); 1 — render / launch failed.
  */
