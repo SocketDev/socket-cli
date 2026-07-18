@@ -135,9 +135,10 @@ export async function generatePackage(config) {
     'utf-8',
   )
 
-  // Copy .gitignore.
+  // Copy .gitignore (template seed is stored dotless so it is not a tracked
+  // nested .gitignore in this repo).
   const gitignoreContent = await fs.readFile(
-    path.join(templatePath, '.gitignore'),
+    path.join(templatePath, 'gitignore'),
     'utf-8',
   )
   await fs.writeFile(

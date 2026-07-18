@@ -13,7 +13,7 @@ import {
   getPackageOutDir,
   SOCKET_TEMPLATE_DIR,
 } from './paths.mts'
-import { copyDirectory } from './utils.mts'
+import { copyDirectory, materializeGitignore } from './utils.mts'
 
 const logger = getDefaultLogger()
 
@@ -54,6 +54,7 @@ async function main() {
 
     // Copy entire template directory.
     await copyDirectory(pkg.templateDir, packagePath)
+    await materializeGitignore(packagePath)
 
     logger.success(`Generated ${pkg.name} package`)
   }

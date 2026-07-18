@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { copyDirectory } from './utils.mts'
+import { copyDirectory, materializeGitignore } from './utils.mts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const generatePath = path.join(__dirname, '..')
@@ -32,6 +32,7 @@ async function main() {
 
   // Copy entire template directory.
   await copyDirectory(templatePath, packagePath)
+  await materializeGitignore(packagePath)
 
   logger.success('Generated @socketsecurity/cli-with-sentry package')
   logger.log('')

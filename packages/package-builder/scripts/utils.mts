@@ -2,7 +2,8 @@
  * Shared utilities for package generator scripts.
  */
 
-import { promises as fs } from 'node:fs'
+import { existsSync, promises as fs } from 'node:fs'
+import path from 'node:path'
 
 import Handlebars from 'handlebars'
 
@@ -14,6 +15,21 @@ import Handlebars from 'handlebars'
  */
 export async function copyDirectory(src, dest) {
   await fs.cp(src, dest, { recursive: true })
+}
+
+/**
+ * Rename a copied dotless `gitignore` template seed to a real `.gitignore` in
+ * the generated package. Templates store the seed dotless so it is not a
+ * tracked nested `.gitignore` in this repo; the generated package needs the
+ * dotted name.
+ *
+ * @param {string} packageDir - Generated package directory.
+ */
+export async function materializeGitignore(packageDir) {
+  const seedPath = path.join(packageDir, 'gitignore')
+  if (existsSync(seedPath)) {
+    await fs.rename(seedPath, path.join(packageDir, '.gitignore'))
+  }
 }
 
 /**
