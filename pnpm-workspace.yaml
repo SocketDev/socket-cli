@@ -308,7 +308,7 @@ overrides:
   'graceful-fs': 'catalog:'
   'has-property-descriptors': 'catalog:'
   'has-proto': 'catalog:'
-  'hono': '>=4.12.28'
+  'hono': '>=4.12.29'
   'https-proxy-agent': 'catalog:'
   'indent-string': 'catalog:'
   'ip-address': '>=10.2.0'
@@ -318,7 +318,7 @@ overrides:
   'npm-package-arg': 'catalog:'
   'packageurl-js': 'catalog:'
   'path-parse': 'catalog:'
-  'postcss': '>=8.5.16'
+  'postcss': '>=8.5.17'
   'qs': '>=6.15.3'
   # Force vite's bundled rolldown (1.0.2) up to the catalog's 1.0.3.
   'rolldown': 'catalog:'

@@ -4,6 +4,6 @@
   "private": true,
   "devDependencies": {
     "type-coverage": "catalog:",
-    "typescript": "6.0.3"
+    "typescript": "catalog:"
   }
 }

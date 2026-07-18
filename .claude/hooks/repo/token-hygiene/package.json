@@ -11,6 +11,6 @@
   },
   "devDependencies": {
     "@socketsecurity/lib-stable": "catalog:",
-    "@types/node": "24.9.2"
+    "@types/node": "catalog:"
   }
 }
