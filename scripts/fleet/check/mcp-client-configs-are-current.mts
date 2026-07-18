@@ -15,6 +15,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { isMainModule } from '../_shared/is-main-module.mts'
 import {
   parseCanonicalMcpConfig,
+  renderCodexHooksConfig,
   renderCodexMcpConfig,
   renderKimiProjectMcpConfig,
   renderOpenCodeMcpConfig,
@@ -63,6 +64,10 @@ export function findMcpClientConfigIssues(repoRoot: string): string[] {
   }
 
   const expected = [
+    {
+      content: renderCodexHooksConfig(),
+      relativePath: '.codex/hooks.json',
+    },
     {
       content: renderCodexMcpConfig(servers),
       relativePath: '.codex/config.toml',

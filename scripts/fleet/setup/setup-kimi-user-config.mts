@@ -118,8 +118,51 @@ export function parseClaudePermissions(
   }
 }
 
+// PreToolUse hooks that route every edit-capable tool through the shared
+// cross-cli fleet-fork detector — the Kimi analog of the Claude
+// no-fleet-fork-guard (Kimi has no project config for hooks, so it rides the
+// user config alongside the permission rules). Kimi's `[[hooks]]` accepts
+// EXACTLY event/matcher/command/timeout; any extra field fails the config load.
+// matcher is an exact tool-name, so one entry per edit-capable tool. The command
+// runs from the session cwd: in a fleet repo the script resolves + enforces; in
+// a non-fleet repo it is absent, and Kimi treats a failed hook as allow.
+const KIMI_FLEET_FORK_HOOK_COMMAND =
+  'node scripts/fleet/cross-cli/pretooluse-hook.mts'
+const KIMI_FLEET_FORK_HOOK_MATCHERS: readonly string[] = [
+  'Bash',
+  'Edit',
+  'MultiEdit',
+  'Shell',
+  'Write',
+]
+
 /**
- * Render the fleet-managed permission rules as a Kimi TOML block.
+ * Render the fleet-managed PreToolUse hook block as Kimi TOML lines (one
+ * `[[hooks]]` table per edit-capable tool). Trailing blank line per entry;
+ * caller trims before the close marker.
+ */
+export function renderKimiHooks(): string[] {
+  const lines: string[] = []
+  for (
+    let i = 0, { length } = KIMI_FLEET_FORK_HOOK_MATCHERS;
+    i < length;
+    i += 1
+  ) {
+    lines.push(
+      '[[hooks]]',
+      'event = "PreToolUse"',
+      `matcher = ${JSON.stringify(KIMI_FLEET_FORK_HOOK_MATCHERS[i]!)}`,
+      `command = ${JSON.stringify(KIMI_FLEET_FORK_HOOK_COMMAND)}`,
+      'timeout = 10',
+      '',
+    )
+  }
+  return lines
+}
+
+/**
+ * Render the fleet-managed permission rules + PreToolUse fork hooks as a Kimi
+ * TOML block, wrapped in the fleet-canonical markers.
  */
 export function renderKimiPermissionRules(rules: PermissionRules): string {
   const lines: string[] = [FLEET_MARKERS.begin]
@@ -134,6 +177,7 @@ export function renderKimiPermissionRules(rules: PermissionRules): string {
   for (const pattern of rules.allow) add('allow', pattern)
   for (const pattern of rules.deny) add('deny', pattern)
   for (const pattern of rules.ask) add('ask', pattern)
+  lines.push(...renderKimiHooks())
   // Trim trailing blank before the close marker.
   while (lines[lines.length - 1] === '') lines.pop()
   lines.push(FLEET_MARKERS.end)

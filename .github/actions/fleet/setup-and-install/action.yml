@@ -112,3 +112,14 @@ runs:
       uses: ./.github/actions/fleet/setup-go-toolchain
       with:
         version: ${{ inputs.setup-go-version }}
+
+    - name: Generate hook dispatch table
+      # dispatch-table.mts + dispatch-manifest.json are GENERATED (gitignored,
+      # never committed); checks + tests read them, so regenerate here after
+      # install. Uses make-hook-dispatch (pure JS, cross-platform) rather than
+      # build-hook-bundle (whose native rolldown spawn does not resolve on
+      # Windows) — the rolldown bundle.cjs is only needed at hook-run time, not
+      # by the checks/tests. The per-machine snapshot blob/launcher is NOT built.
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: node scripts/fleet/make-hook-dispatch.mts

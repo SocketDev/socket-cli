@@ -250,6 +250,7 @@
     "**/wasm_exec.js",
     "**/scripts/fleet/plugin-patches/**/*.files/**",
     "**/scripts/fleet/plugin-patches/**/*.patch",
+    "**/.codex/hooks.json",
     "**/.config/lockstep.schema.json",
     "**/.config/repo/vitest.config.mts",
     "**/.kimi-code/mcp.json",

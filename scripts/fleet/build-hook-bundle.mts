@@ -116,6 +116,29 @@ function main(): void {
   // build-hook-bundle writes the table directly, not via make-hook-dispatch).
   writeFileSync(DISPATCH_MANIFEST_PATH, generatedManifest)
 
+  // Dogfood: the wheelhouse carries template/base/ (a member does not). Mirror
+  // the generated table + manifest into the template so its CI readers + the
+  // release-bundle walk find them — both are gitignored + never committed, so a
+  // fresh checkout has none. Computed relative to REPO_ROOT (not the
+  // wheelhouse-only sync-scaffolding paths) so this file stays cascade-safe.
+  const templateDispatchDir = path.join(
+    REPO_ROOT,
+    'template/base/.claude/hooks/fleet/_dispatch',
+  )
+  if (existsSync(templateDispatchDir)) {
+    writeFileSync(
+      path.join(templateDispatchDir, 'dispatch-table.mts'),
+      generated,
+    )
+    writeFileSync(
+      path.join(
+        REPO_ROOT,
+        'template/base/.claude/hooks/fleet/_shared/dispatch-manifest.json',
+      ),
+      generatedManifest,
+    )
+  }
+
   if (!existsSync(ROLLDOWN_BIN)) {
     logger.error(
       `rolldown binary not found at ${path.relative(REPO_ROOT, ROLLDOWN_BIN)}.\n` +
@@ -126,6 +149,10 @@ function main(): void {
   }
   const result = spawnSync(ROLLDOWN_BIN, ['-c', ROLLDOWN_CONFIG], {
     cwd: REPO_ROOT,
+    // Windows: node_modules/.bin/rolldown has no extension, so a direct spawn
+    // ENOENTs — a shell resolves it to rolldown.CMD via PATHEXT. POSIX keeps the
+    // direct spawn (shell:false) so nothing changes on macOS/Linux.
+    shell: process.platform === 'win32',
     stdio: 'inherit',
   })
   const outcome = classifyBundleBuild(

@@ -13,6 +13,13 @@ CHANGELOG, and release notes. The prose skill enforces these rules at write time
 - Code beats prose when the answer is code — show it, don't narrate it.
 - Decide fast and name the reason + reversal condition — don't survey options;
   decide, state why, state what would change it, move on.
+- For a breaking or architectural decision, name the migration path. Ask focused
+  stakeholders for input when their code or users are affected.
+- Keep direct requests complete and junior-readable. Explain the non-obvious
+  mechanism before asking for a change; use the existing code, a small snippet,
+  or a link as the receipt.
+- Be warm without ceremony: thank a useful contribution and credit good work,
+  but skip service-desk openings, vague praise, and manufactured enthusiasm.
 
 ## Evidence
 

@@ -47,6 +47,11 @@
       "publishes": "js"
     },
     {
+      "name": "bun-security-scanner",
+      "description": "Security scanner for the Bun package manager (bunfig.toml install.security integration)",
+      "publishes": "js"
+    },
+    {
       "name": "abitious",
       "description": "napi-rs alternative — ship native .node addons as compressed hybrid .node via decmpfs",
       "optIns": ["squash-history"],

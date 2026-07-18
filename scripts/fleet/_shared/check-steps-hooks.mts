@@ -118,6 +118,10 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
     // goldenTarget predicate.
     () =>
       run('node', ['scripts/fleet/check/golden-fixtures-are-named-golden.mts']),
+    // Commit-time twin of no-nested-gitignore-guard: every ignore entry lives in
+    // the single root .gitignore — no tracked nested per-dir .gitignore. Reuses
+    // the guard's isNestedGitignore predicate.
+    () => run('node', ['scripts/fleet/check/gitignore-is-single-file.mts']),
     // package.json's packageManager + engines.{pnpm,npm} are GENERATED from
     // external-tools.json (the single source); this gate fails on drift.
     () =>

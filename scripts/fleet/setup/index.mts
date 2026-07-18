@@ -16,6 +16,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { discoverRepoSetup } from '../_shared/repo-setup.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { setupBrew } from './setup-brew.mts'
+import { setupDeveloperTools } from './setup-developer-tools.mts'
 import { setupGo } from './setup-go.mts'
 import { setupMcp } from './setup-mcp.mts'
 import { setupPython } from './setup-python.mts'
@@ -26,6 +27,7 @@ import type { EcosystemStepResult } from './ecosystems.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const logger = getDefaultLogger()
 
 // The per-ecosystem provisioning steps, alphabetical. Each self-detects and
 // no-ops (skips) when its ecosystem or platform does not apply, so the whole
@@ -34,6 +36,7 @@ const ECOSYSTEM_STEPS: ReadonlyArray<
   readonly [string, () => Promise<EcosystemStepResult>]
 > = [
   ['setup:brew', setupBrew],
+  ['setup:developer-tools', setupDeveloperTools],
   ['setup:go', setupGo],
   ['setup:mcp', setupMcp],
   ['setup:python', setupPython],
@@ -77,7 +80,6 @@ export function formatSummaryLines(
 }
 
 async function main(): Promise<void> {
-  const logger = getDefaultLogger()
   const { rotate, skipTools } = parseSetupArgs(process.argv.slice(2))
 
   const results: Array<[string, boolean]> = []
@@ -163,7 +165,7 @@ async function main(): Promise<void> {
 
 if (isMainModule(import.meta.url)) {
   main().catch((e: unknown) => {
-    getDefaultLogger().error(e)
+    logger.error(e)
     process.exitCode = 1
   })
 }

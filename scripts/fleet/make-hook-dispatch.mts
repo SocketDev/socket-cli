@@ -24,7 +24,7 @@
  *     --check  exit 2 if the on-disk table differs from freshly generated.
  */
 
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -462,6 +462,30 @@ function main(): void {
     DISPATCH_MANIFEST_PATH,
     generateDispatchManifestSource(FLEET_HOOKS_DIR),
   )
+  // Dogfood: the wheelhouse carries template/base/ (a member does not). Mirror
+  // the generated full table + manifest into the template so its CI readers +
+  // the release-bundle walk find them — both are gitignored + never committed,
+  // so a fresh checkout has none. Computed relative to REPO_ROOT so this file
+  // stays cascade-safe (no wheelhouse-only imports). Pure JS (no rolldown), so
+  // it runs cross-platform in CI setup where build-hook-bundle's native rolldown
+  // spawn does not.
+  const templateDispatch = path.join(
+    REPO_ROOT,
+    'template/base/.claude/hooks/fleet/_dispatch',
+  )
+  if (existsSync(templateDispatch)) {
+    writeFileSync(
+      path.join(templateDispatch, 'dispatch-table.mts'),
+      generateDispatchTableSource(FLEET_HOOKS_DIR),
+    )
+    writeFileSync(
+      path.join(
+        REPO_ROOT,
+        'template/base/.claude/hooks/fleet/_shared/dispatch-manifest.json',
+      ),
+      generateDispatchManifestSource(FLEET_HOOKS_DIR),
+    )
+  }
   const all = collectEligibleHooks(FLEET_HOOKS_DIR)
   const excluded = all.filter(h => h.snapshotExcluded).length
   logger.log(

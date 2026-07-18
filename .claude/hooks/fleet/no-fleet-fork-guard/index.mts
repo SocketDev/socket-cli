@@ -44,7 +44,6 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { isDirSync } from '@socketsecurity/lib-stable/fs/inspect'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import {
@@ -150,29 +149,55 @@ export function isOperatorLocalPath(rel: string): boolean {
   return OPERATOR_LOCAL_PATHS.includes(normalizePath(rel))
 }
 
+// The fleet-canonical file set is the repo's `.gitattributes`
+// `linguist-generated=true` entries — a cascade-GENERATED projection of the sync
+// manifest (IDENTICAL_FILES + OPTIONAL_IDENTICAL_FILES + generated globs, built
+// by gitattributes-fleet-block.mts). `.gitattributes` ships to EVERY fleet repo,
+// so this resolves canonical status in members AND the wheelhouse alike. The
+// retired predecessor probed `<repoRoot>/template/<dir>`, which matched nothing:
+// members carry no `template/`, and the wheelhouse moved its canonical source to
+// `template/base/` — so the guard was inert everywhere.
+export function fleetCanonicalEntries(repoRoot: string): string[] {
+  let content = ''
+  try {
+    content = readFileSync(path.join(repoRoot, '.gitattributes'), 'utf8')
+  } catch {
+    return []
+  }
+  const entries: string[] = []
+  const lines = content.split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const match = /^(\S+)\s.*\blinguist-generated=true\b/.exec(lines[i]!)
+    if (match) {
+      entries.push(normalizePath(match[1]!))
+    }
+  }
+  return entries
+}
+
 export function isCanonicalRelativePath(
   rel: string,
   repoRoot?: string | undefined,
 ): boolean {
-  const normalized = normalizePath(rel)
   if (!repoRoot) {
     return false
   }
-  const dir = path.posix.dirname(normalized)
-  // Root-level files (dir === '.') have no parent dir to probe — `template/.`
-  // is the template dir itself and ALWAYS exists, which would wrongly mark
-  // EVERY root file (pnpm-workspace.yaml, package.json) as canonical. Root
-  // config like pnpm-workspace.yaml is the wheelhouse's OWN source of truth
-  // (synthesized into downstream via the cascade, not via a template/ copy) —
-  // there is no `template/pnpm-workspace.yaml`. So for a root file, require an
-  // actual `template/<file>` to exist before calling it canonical.
-  if (dir === '.') {
-    return existsSync(path.join(repoRoot, 'template', normalized))
+  const normalized = normalizePath(rel)
+  const entries = fleetCanonicalEntries(repoRoot)
+  for (let i = 0, { length } = entries; i < length; i += 1) {
+    const entry = entries[i]!
+    // Skip glob entries (supplemental generated globs) — this guard matches the
+    // concrete canonical dirs + files; a glob is best-effort excluded so a bad
+    // pattern can never over-block.
+    if (entry.includes('*')) {
+      continue
+    }
+    // Exact file match, or the edited path sits under a canonical dir entry.
+    if (normalized === entry || normalized.startsWith(`${entry}/`)) {
+      return true
+    }
   }
-  // A file is fleet-canonical iff its parent directory exists under template/
-  // in the wheelhouse. Directory-level: if the dir is in the template, every
-  // file in that dir is canonical.
-  return isDirSync(path.join(repoRoot, 'template', dir))
+  return false
 }
 
 export function isInsideTemplate(filePath: string): boolean {

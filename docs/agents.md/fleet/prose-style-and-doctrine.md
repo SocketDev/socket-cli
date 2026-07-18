@@ -26,6 +26,13 @@ adds brevity and directness on top.
   paragraph about it.
 - **Ask when collaborating.** "What do you think?" pulls people in. Credit good
   work plainly.
+- **Write like a decisive, generous maintainer.** State the proposal or answer,
+  name the concrete reason, then give the next action. For a breaking or
+  architectural decision, name the migration path and ask focused stakeholders
+  when their code or users are affected.
+- **Keep directness readable.** Write complete sentences. Explain the
+  non-obvious mechanism before requesting a change, at a junior-developer level;
+  cite the code, a small snippet, or a link rather than relying on jargon.
 - **No structure for its own sake.** Don't impose Summary/Changes/Testing headers
   on a PR a sentence describes. Use a list only when N parallel items genuinely
   exist.
@@ -58,6 +65,9 @@ Blocked by `anti-prose-guard` on doc writes; flagged by
 
 - **Decide fast; state the reason + reversal condition.** Don't survey options.
   Decide, name why, name what would change it, move.
+- **Use `<details>` only when GitHub prose has supporting evidence, alternatives,
+  migration notes, or a multi-item plan.** Keep the decision outside the fold and
+  use a specific summary. A one-line or 1-3 sentence reply stays flat.
 - **Verify before claiming.** Subagent output counts and file lists are leads, not
   facts — grep/read before relaying.
 - **Finish the task; capture side-quests.** Don't chase tangents — note them and

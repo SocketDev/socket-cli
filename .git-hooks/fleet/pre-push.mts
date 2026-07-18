@@ -529,7 +529,15 @@ const scanFilesInRange = (range: string): number => {
       errors++
     }
 
-    const pkHits = scanPrivateKeys(text)
+    // Conformance test vectors (`conformance/{vectors,cases,fixtures}/…`) hold
+    // deterministic golden crypto data — a `-----BEGIN … PRIVATE KEY-----` block
+    // there is a checked-in test vector for a crypto lib's decrypt conformance
+    // (e.g. envrypt), never a live secret. Exempt only these test-data dirs.
+    const isConformanceVector =
+      /(?:^|\/)conformance\/(?:vectors|cases|fixtures)\//.test(
+        normalizePath(file),
+      )
+    const pkHits = isConformanceVector ? [] : scanPrivateKeys(text)
     if (pkHits.length > 0) {
       logger.fail(`Private key found in: ${file}`)
       errors++

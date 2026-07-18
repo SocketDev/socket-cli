@@ -83,6 +83,7 @@ template/.claude/hooks/fleet/_shared/acorn/acorn.wasm binary
 .claude/skills/fleet linguist-generated=true
 .claude/workflows linguist-generated=true
 .codex/config.toml linguist-generated=true
+.codex/hooks.json linguist-generated=true
 .config/fleet/.markdownlint-cli2.jsonc linguist-generated=true
 .config/fleet/.prettierignore linguist-generated=true
 .config/fleet/git-authors.json linguist-generated=true

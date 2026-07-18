@@ -137,6 +137,7 @@ pnpm run check --all    # verify the repo is green
 
 If `pnpm run check` fails, surface the failures and stop — the repo needs fixing before it's usable.
 
+
 ---
 
 ## Summary Table
