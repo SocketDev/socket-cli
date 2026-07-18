@@ -209,6 +209,8 @@ pnpm-debug.log
 **/.claude/hooks/fleet/_dispatch/bundle.cjs
 **/.claude/hooks/fleet/_dispatch/excluded-bundle.cjs
 **/.claude/hooks/fleet/_dispatch/snapshot-bundle.cjs
+**/.claude/hooks/fleet/_dispatch/dispatch-table.mts
+**/.claude/hooks/fleet/_shared/dispatch-manifest.json
 
 # Derived cross-harness rule adapters — generated per-repo, per-platform by
 # the multi-agent scaffolding (setup / init / sync) script from .claude/skills/
