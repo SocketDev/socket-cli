@@ -17,6 +17,7 @@ interface RepoApiPayload {
   allow_update_branch?: boolean | undefined
   delete_branch_on_merge?: boolean | undefined
   pull_request_creation_policy?: string | undefined
+  web_commit_signoff_required?: boolean | undefined
   full_name?: string | undefined
   fork?: boolean | undefined
 }

@@ -193,6 +193,15 @@ export function evaluate(
     `${settingsUrl}#pull-requests`,
     { pull_request_creation_policy: 'collaborators_only' },
   )
+  // DCO: web-based commits must be signed off (the fleet's Developer Certificate
+  // of Origin gate). Auto-fixable via PATCH /repos/{owner}/{repo}.
+  check(
+    'web_commit_signoff_required must be true',
+    apiRepo.web_commit_signoff_required,
+    true,
+    `${settingsUrl}#commits`,
+    { web_commit_signoff_required: true },
+  )
 
   // Branch protection on main — signed commits.
   if (!apiProtection) {
