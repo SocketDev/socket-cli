@@ -30,10 +30,7 @@ import path from 'node:path'
 import { safeReadFileSync } from '@socketsecurity/lib-stable/fs/read-file'
 
 import { resolveEditedText } from '../_shared/payload.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-
-const BYPASS_PHRASE = 'Allow repo-scope-in-fleet bypass'
 
 // Fleet config basenames whose `overrides[].files` / `ignorePatterns` globs
 // must be universal. (oxfmtrc has no overrides today, but guard it too so a
@@ -127,12 +124,6 @@ export const check = editGuard((filePath, content, payload) => {
   if (!introduced.length) {
     return undefined
   }
-  if (
-    payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
-  ) {
-    return undefined
-  }
 
   return block(
     `[no-repo-scope-in-fleet-config-guard] repo-specific path-scope in a fleet config:\n` +
@@ -141,12 +132,12 @@ export const check = editGuard((filePath, content, payload) => {
       `  Fleet configs apply to EVERY member, so a path-glob must be universal\n` +
       `  (start with \`**/\`, or be a bare extension like \`*.ts\`). A glob naming one\n` +
       `  repo's tree (e.g. \`packages/npm/**\`) makes that repo's exception fleet-wide.\n` +
-      `  Fix: put the override in THAT repo's own \`.config/repo/\` overlay instead.\n` +
-      `  Bypass: type "${BYPASS_PHRASE}" if the path genuinely applies fleet-wide.`,
+      `  Fix: put the override in THAT repo's own \`.config/repo/\` overlay instead.`,
   )
 })
 
 export const hook = defineHook({
+  bypass: ['repo-scope-in-fleet'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

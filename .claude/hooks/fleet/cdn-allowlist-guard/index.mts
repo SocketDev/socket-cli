@@ -16,16 +16,10 @@
 
 import { findDisallowedCdn } from '../_shared/cdn-allowlist.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
-const BYPASS_PHRASE = 'Allow cdn-allowlist bypass'
-
-export const check = bashGuard((command, payload) => {
+export const check = bashGuard(command => {
   const hit = findDisallowedCdn(command)
   if (!hit) {
-    return undefined
-  }
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
     return undefined
   }
   return block(
@@ -41,13 +35,12 @@ export const check = bashGuard((command, payload) => {
       '  ALLOWED_CDN_HOSTS in _shared/cdn-allowlist.mts if it is a legitimate',
       '  PUBLIC registry (never an internal *.svc.cluster.local host).',
       '',
-      `  Bypass: type \`${BYPASS_PHRASE}\` if this fetch is genuinely intended.`,
-      '',
     ].join('\n'),
   )
 })
 
 export const hook = defineHook({
+  bypass: ['cdn-allowlist'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

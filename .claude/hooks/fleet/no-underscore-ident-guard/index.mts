@@ -30,8 +30,6 @@
 //     "I don't care about this value."
 //   - `_$$_` / `_$` style names from generated code (rollup, swc
 //     temporaries) inside files under `dist/` or `build/`.
-//   - Bypass phrase `Allow underscore-identifier bypass` typed
-//     verbatim in a recent user turn.
 //
 // Reads PreToolUse JSON payload from stdin:
 //   { "tool_name": "Edit"|"Write",
@@ -44,7 +42,6 @@
 // Fails open on malformed payloads (exit 0 + stderr log).
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 // Match declarations that introduce a leading-underscore identifier.
@@ -70,8 +67,6 @@ const BANNED_DECL_PATTERNS: readonly RegExp[] = [
   // export { _foo, ... }
   /\bexport\s*\{[^}]*?\b(_[A-Za-z][A-Za-z0-9_]*)\b/g,
 ]
-
-const BYPASS_PHRASE = 'Allow underscore-identifier bypass'
 
 // Node CJS exposes `__dirname` and `__filename` as module-scoped free
 // variables. ESM modules conventionally re-create them via
@@ -113,14 +108,6 @@ export function findBannedIdentifiers(text: string): Finding[] {
   return findings
 }
 
-export function hasRecentBypass(transcriptPath: string | undefined): boolean {
-  // Delegates to the shared transcript reader. Reads the JSONL the harness
-  // points at; `normalizeBypassText` handles hyphen/em-dash/whitespace
-  // normalization. Previous version checked process.env['CLAUDE_RECENT_USER_TURNS'],
-  // which no harness sets — bypass channel was effectively dead.
-  return bypassPhrasePresent(transcriptPath, BYPASS_PHRASE)
-}
-
 export function isGeneratedPath(filePath: string): boolean {
   return (
     normalizePath(filePath).includes('/dist/') ||
@@ -151,7 +138,7 @@ export function isPluginOrHookTestPath(filePath: string): boolean {
 }
 
 export const check = editGuard(
-  (filePath, content, payload) => {
+  (filePath, content, _payload) => {
     // Allowlist: _internal/ dirs, generated output, this rule's own
     // test/lint fixtures.
     if (
@@ -177,10 +164,6 @@ export const check = editGuard(
       return undefined
     }
 
-    if (hasRecentBypass(payload.transcript_path)) {
-      return undefined
-    }
-
     const lines = findings
       .map(f => `  ${filePath}:${f.line}  ${f.identifier}\n    ${f.text}`)
       .join('\n')
@@ -191,15 +174,14 @@ export const check = editGuard(
         `\n` +
         `Drop the leading underscore. Privacy in TypeScript is handled by:\n` +
         `  - not exporting the symbol (module boundary), or\n` +
-        `  - placing the file under a "_internal/" directory.\n` +
-        `\n` +
-        `Bypass: type "${BYPASS_PHRASE}" in a recent message.\n`,
+        `  - placing the file under a "_internal/" directory.\n`,
     )
   },
   { fleetOnly: true },
 )
 
 export const hook = defineHook({
+  bypass: ['underscore-identifier'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

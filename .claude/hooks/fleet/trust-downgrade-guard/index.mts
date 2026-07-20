@@ -387,6 +387,8 @@ export const check = (payload: ToolCallPayload): GuardResult => {
 }
 
 export const hook = defineHook({
+  bypass: ['trust-downgrade'],
+  bypassMode: 'manual',
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

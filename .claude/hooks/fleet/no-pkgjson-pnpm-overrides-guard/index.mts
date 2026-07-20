@@ -26,11 +26,8 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { resolveEditedText } from '../_shared/payload.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 const logger = getDefaultLogger()
-
-const BYPASS_PHRASE = 'Allow package-json-overrides bypass'
 
 // Extract the set of override keys declared under `pnpm.overrides` in a
 // package.json text. Returns an empty set when the block is absent, the
@@ -98,13 +95,6 @@ export const check = editGuard((filePath, _content, payload) => {
     return undefined
   }
 
-  if (
-    payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
-  ) {
-    return undefined
-  }
-
   added.sort()
   return block(
     [
@@ -120,14 +110,12 @@ export const check = editGuard((filePath, _content, payload) => {
       '',
       '  Fix: move the override to the top-level `overrides:` map in',
       '  `pnpm-workspace.yaml`, then `pnpm install`.',
-      '',
-      `  Bypass: type "${BYPASS_PHRASE}" in a new message, then retry.`,
-      '',
     ].join('\n'),
   )
 })
 
 export const hook = defineHook({
+  bypass: ['package-json-overrides'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

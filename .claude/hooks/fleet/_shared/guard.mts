@@ -27,6 +27,8 @@ import v8 from 'node:v8'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
+import { bypassFooter, bypassPhrasesFor } from './bypass.mts'
+import { isFleetManagedDir, isFleetManagedPath } from './fleet-repo.mts'
 import {
   readCommand,
   readFilePath,
@@ -34,8 +36,8 @@ import {
   readWriteContent,
 } from './payload.mts'
 import type { ToolCallPayload } from './payload.mts'
-import { isFleetManagedDir, isFleetManagedPath } from './fleet-repo.mts'
 import { commandWorkingDir } from './shell-command.mts'
+import { bypassPhrasePresent } from './transcript.mts'
 
 // Lazily resolved, NOT eagerly at module-eval. The shared logger graph
 // (`@socketsecurity/lib`'s logger → primordials/globals) captures `SharedArray
@@ -125,6 +127,17 @@ export type HookMatcher = string
  * generator; `check` is the runtime verdict function.
  */
 export interface HookSpec {
+  // Bypass phrase slug(s) — the `<slug>` in the canonical `Allow <slug> bypass`
+  // (see _shared/bypass.mts). When set with the default `bypassMode: 'auto'`,
+  // defineHook wraps `check` so a block verdict is (a) waved through when the
+  // user typed any accepted phrase, else (b) annotated with the EXACT phrase(s)
+  // to type — both derived from this one array, so the phrase shown is provably
+  // the phrase detected. `bypassMode: 'manual'` declares the phrase for the doc
+  // enumeration + message reuse but leaves detection to the guard's own `check`
+  // (per-trigger / targeted `Allow <slug> bypass: <target>` bypasses that a
+  // simple presence test would wrongly re-authorize).
+  readonly bypass?: readonly string[] | undefined
+  readonly bypassMode?: 'auto' | 'manual' | undefined
   readonly check: GuardCheck
   readonly event: HookEvent
   readonly matcher?: HookMatcher | readonly HookMatcher[] | undefined
@@ -328,24 +341,67 @@ function payloadTargetIsFleetManaged(payload: ToolCallPayload): boolean {
 }
 
 /**
+ * Wrap a check so a BLOCK or a NUDGE (notify) verdict honors the hook's
+ * declared bypass phrase. When the user typed any accepted phrase (case /
+ * separator / colon-space / newline-tolerant — see transcript.mts) the verdict
+ * is dropped (undefined): the block is allowed through, the nudge is silenced —
+ * matching the pre-metadata per-guard behavior. Otherwise the message gains the
+ * uniform footer naming the EXACT phrase(s) to type. The detector input and the
+ * footer both come from `bypassPhrasesFor(slugs)`, so a guard can never surface
+ * a phrase the detector wouldn't accept — and never forget to surface one.
+ * Auto-mode only; a per-trigger / targeted guard keeps its own detection
+ * (`bypassMode: 'manual'`).
+ */
+function withBypass(base: GuardCheck, slugs: readonly string[]): GuardCheck {
+  const phrases = bypassPhrasesFor(slugs)
+  return async (payload: ToolCallPayload) => {
+    const result = await base(payload)
+    if (!result) {
+      return result
+    }
+    // A typed phrase authorizes the action (block) or silences the nudge
+    // (notify) — drop the verdict so the tool call proceeds with no output.
+    if (bypassPhrasePresent(payload.transcript_path, phrases)) {
+      return undefined
+    }
+    // No phrase — surface the EXACT phrase(s) to type on whichever verdict.
+    const footer = bypassFooter(phrases)
+    return result.kind === 'block'
+      ? block(`${result.message}\n\n${footer}`)
+      : notify(`${result.message}\n\n${footer}`)
+  }
+}
+
+/**
  * Build a typed hook instance from its spec. Pure — safe to import, so the
  * build-time generator can read `.event` / `.type` / `.matcher` / `.triggers`
  * off it without running the hook.
  *
  * A `scope: 'convention'` spec gets its check wrapped so the hook stands down
- * when the acted-on repo is not fleet-managed (no `.config/fleet/` at its
- * root) — fleet conventions never bind a foreign repo unless it opts in by
- * carrying that directory. The module's own exported raw `check` is untouched,
- * so in-process tests still exercise the logic directly.
+ * when the acted-on repo is not fleet-managed (no `.config/fleet/` at its root)
+ * — fleet conventions never bind a foreign repo unless it opts in by carrying
+ * that directory. A `bypass` spec (auto mode) wraps the check so a block/nudge
+ * honors the declared phrase (withBypass). The module's own exported raw
+ * `check` is untouched, so in-process tests still exercise the logic.
  */
+
 export function defineHook(spec: HookSpec): Hook {
-  const check: GuardCheck =
+  const scoped: GuardCheck =
     spec.scope === 'convention'
       ? payload =>
           payloadTargetIsFleetManaged(payload) ? spec.check(payload) : undefined
       : spec.check
+  // Auto-bypass wrapping — only when phrases are declared AND detection is not
+  // hand-owned. Applied OUTSIDE the convention scope so a foreign-repo stand-
+  // down (scoped → undefined, never a block) never reaches the bypass path.
+  const check: GuardCheck =
+    spec.bypass && spec.bypass.length > 0 && spec.bypassMode !== 'manual'
+      ? withBypass(scoped, spec.bypass)
+      : scoped
   return {
     __proto__: null,
+    bypass: spec.bypass,
+    bypassMode: spec.bypassMode,
     check,
     event: spec.event,
     invoke(payload: ToolCallPayload) {

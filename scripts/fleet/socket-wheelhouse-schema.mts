@@ -76,10 +76,19 @@ const BuildTypeSchema = Type.Union(
   },
 )
 
+const BuildRuntimeSchema = Type.Union(
+  [Type.Literal('node'), Type.Literal('bun'), Type.Literal('deno')],
+  {
+    description:
+      'JS/TS execution runtime for a `type: js` repo — mirrors package.json `devEngines.runtime.name`. `node` (default, omit to get it) = the fleet standard: pnpm for deps, vitest for tests, node to run. `bun` = a Bun repo (bunfig.toml + bun.lock + `bun test`). `deno` = a Deno repo (deno.json + `deno test`). For any non-node runtime the cascade relaxes its pnpm/vitest/node expectations and keeps the repo’s own toolchain intact. Ignored for native builds (`rust`/`go`/`addon`/`binary`).',
+  },
+)
+
 const BuildSchema = Type.Object(
   {
     from: BuildFromSchema,
     type: BuildTypeSchema,
+    runtime: Type.Optional(BuildRuntimeSchema),
   },
   {
     description:

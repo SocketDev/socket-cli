@@ -27,10 +27,7 @@
 
 import { isFleetTarget } from '../_shared/fleet-context.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
-
-const BYPASS_PHRASE = 'Allow corepack bypass' as const
 
 // corepack subcommands that fetch + activate a package manager. `enable`
 // shims the PMs onto PATH; `prepare`/`use`/`install` download a specific
@@ -87,8 +84,6 @@ export function formatBlock(d: CorepackDetection): string {
       '  The package.json `packageManager` field is a declared-version record',
       '  kept in lockstep with external-tools.json; leave it in place, just',
       '  do not invoke corepack to act on it.',
-      '',
-      `  Bypass: type "${BYPASS_PHRASE}" to allow it for this invocation.`,
     ].join('\n') + '\n'
   )
 }
@@ -105,13 +100,11 @@ export const check = bashGuard((command, payload) => {
   if (!isFleetTarget(payload)) {
     return undefined
   }
-  if (bypassPhrasePresent(payload.transcript_path, [BYPASS_PHRASE], 3)) {
-    return undefined
-  }
   return block(formatBlock(detection))
 })
 
 export const hook = defineHook({
+  bypass: ['corepack'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

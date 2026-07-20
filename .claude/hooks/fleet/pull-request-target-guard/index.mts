@@ -47,9 +47,6 @@ import path from 'node:path'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow pr-target-execution bypass'
 
 // Workflow-file shape.
 export function isWorkflowPath(filePath: string): boolean {
@@ -230,9 +227,6 @@ export const check = editGuard((filePath, content, payload) => {
   if (findings.length === 0) {
     return undefined
   }
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    return undefined
-  }
   const lines: string[] = []
   lines.push(
     '[pull-request-target-guard] Blocked: fork-execution in pull_request_target workflow.',
@@ -281,14 +275,11 @@ export const check = editGuard((filePath, content, payload) => {
   lines.push(
     '  Reference: https://bsky.app/profile/43081j.com/post/3mlnme43qnc2e',
   )
-  lines.push('')
-  lines.push(
-    `  Bypass (rare; requires a deliberate review trade-off): type "${BYPASS_PHRASE}".`,
-  )
   return block(lines.join('\n') + '\n')
 })
 
 export const hook = defineHook({
+  bypass: ['pr-target-execution'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

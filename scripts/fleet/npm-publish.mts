@@ -71,6 +71,10 @@ import {
   verifyStagedEntry,
 } from './publish-infra/npm/staged.mts'
 import {
+  discardReleaseBranch,
+  promoteReleaseBranch,
+} from './publish-infra/release-branch.mts'
+import {
   ensureTagAndRelease,
   extractChangelogSection,
 } from './publish-infra/release.mts'
@@ -192,36 +196,58 @@ async function main(): Promise<void> {
   // `--staged` runs on a clean OIDC checkout and must never touch git.
   // `--no-reconcile` is the deliberate local opt-out.
   const reconcile = !getCI() && !values['no-reconcile']
-  // CI release path: `--staged --bump` bumps + commits (via the release App)
-  // before staging, so the publish targets the bumped tree.
-  if (values['bump']) {
-    await runBump({ dryRun, releaseAs })
-  }
-  if (mode === 'staged') {
-    await runStaged(String(values['tag']), { dryRun })
-  } else if (mode === 'direct') {
-    await runDirect(String(values['tag']), { dryRun })
-  } else {
-    await runApprove({
-      dryRun,
-      noScan: !!values['no-scan'],
-      otpFromFlag,
-      yes: !!values['yes'],
-    })
-    // Reconcile ONCE PUBLISHED: approve just made the version public and the
-    // release App pushed its bump to origin. Rebase our remaining local commits
-    // onto that freshly-published base, then ff-pull so local main matches the
-    // now-updated origin. Fail-loud on a conflict — never guess a lineage.
-    if (reconcile && !dryRun) {
-      const pkgName = String(
-        JSON.parse(readFileSync(path.join(rootPath, 'package.json'), 'utf8'))
-          .name,
-      )
-      const published = await fetchPublishedVersion(pkgName)
-      const baseSha = await findPublishedBaseSha(rootPath, published)
-      await rebaseOntoPublishedBase(rootPath, baseSha)
-      await syncFromOriginMain(rootPath)
+  // CI release path: `--staged --bump` bumps + commits (via the release App) on
+  // a throwaway release branch before staging, so the publish targets the bumped
+  // tree without touching main. `bumpResult` is undefined on a dry-run / no-op
+  // bump (nothing to promote).
+  const bumpResult = values['bump']
+    ? await runBump({ dryRun, releaseAs })
+    : undefined
+  try {
+    if (mode === 'staged') {
+      await runStaged(String(values['tag']), { dryRun })
+    } else if (mode === 'direct') {
+      await runDirect(String(values['tag']), { dryRun })
+    } else {
+      await runApprove({
+        dryRun,
+        noScan: !!values['no-scan'],
+        otpFromFlag,
+        yes: !!values['yes'],
+      })
+      // Reconcile ONCE PUBLISHED: approve just made the version public and the
+      // release App pushed its bump to origin. Rebase our remaining local
+      // commits onto that freshly-published base, then ff-pull so local main
+      // matches the now-updated origin. Fail-loud on a conflict — never guess a
+      // lineage.
+      if (reconcile && !dryRun) {
+        const pkgName = String(
+          JSON.parse(readFileSync(path.join(rootPath, 'package.json'), 'utf8'))
+            .name,
+        )
+        const published = await fetchPublishedVersion(pkgName)
+        const baseSha = await findPublishedBaseSha(rootPath, published)
+        await rebaseOntoPublishedBase(rootPath, baseSha)
+        await syncFromOriginMain(rootPath)
+      }
     }
+  } catch (e) {
+    // The publish FAILED (before it completed): nuke the release branch so main
+    // never sees the bump. Discard only runs here, on a pre-success failure —
+    // never for a promote failure below.
+    if (bumpResult) {
+      await discardReleaseBranch(bumpResult.releaseBranch)
+    }
+    throw e
+  }
+  // The publish SUCCEEDED — fast-forward main to the bump commit (same SHA) and
+  // remove the release branch. This is deliberately OUTSIDE the try: if the
+  // fast-forward fails (main moved mid-publish, or a branch-protected main the
+  // App can't advance), the throw must NOT discard the branch — the version is
+  // already published, so promoteReleaseBranch leaves the branch intact for
+  // manual reconcile and fails loud.
+  if (bumpResult) {
+    await promoteReleaseBranch(bumpResult.releaseBranch, bumpResult.sha)
   }
 }
 

@@ -17,13 +17,13 @@
 catalog:
   '@redwoodjs/agent-ci': 0.17.1
   'dtu-github-actions': 0.17.1
-  '@sinclair/typebox': 0.34.50
-  '@socketregistry/packageurl-js': 1.4.2
-  '@socketsecurity/lib': 6.0.10
+  '@sinclair/typebox': 0.34.52
+  '@socketregistry/packageurl-js': 1.4.4
+  '@socketsecurity/lib': 6.1.0
   '@socketsecurity/registry': 2.0.2
   '@socketsecurity/sdk': 4.0.1
-  '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.4.2'
-  '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@6.0.10'
+  '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.4.4'
+  '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@6.1.0'
   '@socketsecurity/registry-stable': 'npm:@socketsecurity/registry@2.0.2'
   '@socketsecurity/sdk-stable': 'npm:@socketsecurity/sdk@4.0.1'
   '@types/mdast': 4.0.4
@@ -47,6 +47,10 @@ catalog:
   # 14.15.1 is the attested re-publish that cleared the 14.15.0
   # trust-downgrade flag.
   'compromise': 14.15.1
+  # fast-check — property-based testing (QuickCheck for JS) for pure fleet-script
+  # logic; runs standalone in vitest. Soaked (4.9.0 published 2026-07-08). See
+  # .claude/skills/fleet/property-and-fuzz-testing.
+  'fast-check': 4.9.0
   'magic-string': 1.0.0
   'markdownlint-cli2': 0.23.0
   'mdast-util-from-markdown': 2.0.3
@@ -88,4 +92,12 @@ catalog:
 catalogOptional:
   'rolldown': 1.1.4
   'svgo': 4.0.1
+  # vitiate — coverage-guided fuzzer (SWC-instrumented, native @vitiate/engine).
+  # Optional tier: adopted only in repos that fuzz an input boundary (parsers,
+  # decoders, native addons), so its native @swc/core engine never installs
+  # fleet-wide. Pinned to the published 0.3.1 (soaked 2026-06-22). NOTE: 0.4.0
+  # changes the crash exit code 1→77 (timeout→70) — pin -error_exitcode /
+  # -timeout_exitcode in the runner. See .claude/skills/fleet/property-and-fuzz-testing.
+  '@vitiate/core': 0.3.1
   'vite': 8.1.0
+  'vitiate': 0.3.1

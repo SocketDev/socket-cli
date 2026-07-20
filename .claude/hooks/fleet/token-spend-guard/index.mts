@@ -150,6 +150,8 @@ export const check = bashGuard((command, payload) => {
 })
 
 export const hook = defineHook({
+  bypass: ['model', 'model-spend', 'effort'],
+  bypassMode: 'manual',
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

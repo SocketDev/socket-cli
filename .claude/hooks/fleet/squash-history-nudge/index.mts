@@ -14,8 +14,6 @@
 // `template/base/.claude/skills/fleet/squashing-history/SKILL.md` skill that
 // does the actual squash.
 //
-// Bypass phrase: `Allow squash-history-nudge bypass`. Disable
-
 import process from 'node:process'
 
 import {
@@ -32,12 +30,7 @@ import {
   readRoster,
   resolveRepoName,
 } from '../_shared/fleet-roster.mts'
-import {
-  BYPASS_LOOKBACK_USER_TURNS,
-  bypassPhrasePresent,
-} from '../_shared/transcript.mts'
 
-const BYPASS_PHRASE = 'Allow squash-history-nudge bypass'
 const DEFAULT_HISTORY_COMMIT_THRESHOLD = Number.parseInt(
   process.env['SOCKET_SQUASH_HISTORY_COMMIT_THRESHOLD'] ?? '50',
   10,
@@ -97,28 +90,18 @@ export const check = (
     return undefined
   }
 
-  if (
-    bypassPhrasePresent(
-      payload?.transcript_path,
-      BYPASS_PHRASE,
-      BYPASS_LOOKBACK_USER_TURNS,
-    )
-  ) {
-    return undefined
-  }
-
   return notify(
     [
       `💡 squash-history-nudge: ${repoName} is opted into the squash-history convention.`,
       `   The default branch \`${branch}\` has ${count} commits (threshold ${commitThreshold}).`,
       `   Consider running the \`squashing-history\` skill to collapse to a single Initial commit.`,
       `   Skill: .claude/skills/fleet/squashing-history/SKILL.md`,
-      `   Suppress for this session: type "${BYPASS_PHRASE}" verbatim.`,
     ].join('\n'),
   )
 }
 
 export const hook = defineHook({
+  bypass: ['squash-history-nudge'],
   check,
   event: 'Stop',
   type: 'nudge',

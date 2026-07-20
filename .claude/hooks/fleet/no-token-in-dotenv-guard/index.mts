@@ -27,11 +27,6 @@
 //   - The value isn't an obvious placeholder (`<your-token>`,
 //     `xxx`, `TODO`, `replace-me`, `${SECRET}`, `$(...)`).
 //
-// Bypass: `Allow dotenv-token bypass` in a recent user turn. The
-// canonical phrase tells the assistant the operator has a specific
-// reason (e.g. seeding a test fixture's `.env` with a known-junk
-// token that's structurally valid but not authoritative).
-//
 // Exit codes:
 //   0 — pass.
 //   2 — block.
@@ -44,7 +39,6 @@ import {
   GENERIC_TOKEN_SUFFIX_RE,
   isTokenKey,
 } from '../_shared/token-patterns.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 
 // Dotfile shapes that carry env-style KEY=VALUE content.
@@ -61,8 +55,6 @@ const DOTENV_BASENAME_RE = /^\.env(?:\..+)?$|^\.envrc$/
 // secrets. Tight allowlist; anything else fires.
 const PLACEHOLDER_RE =
   /^(?:|<[^>]+>|x{3,}|TODO|REPLACE[_-]?ME|your[_-]?token|your[_-]?key|\$\{[A-Z_][A-Z0-9_]*\}|\$\([^)]+\))$/i
-
-const BYPASS_PHRASE = 'Allow dotenv-token bypass'
 
 /**
  * Scan a dotenv body for `<token-key>=<real-value>` patterns. Returns one hit
@@ -132,7 +124,7 @@ export function isPlaceholder(value: string): boolean {
 
 // editGuard handles the tool_name gate, file_path narrow, content extraction
 // (new_string / content), and fail-open on any throw.
-export const check = editGuard((filePath, content, payload) => {
+export const check = editGuard((filePath, content, _payload) => {
   if (!isDotenvPath(filePath)) {
     return undefined
   }
@@ -142,10 +134,6 @@ export const check = editGuard((filePath, content, payload) => {
   }
   const hits = findTokenLeaks(text)
   if (hits.length === 0) {
-    return undefined
-  }
-  // Bypass check.
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
     return undefined
   }
   const lines: string[] = []
@@ -174,13 +162,11 @@ export const check = editGuard((filePath, content, payload) => {
   lines.push(
     '    - CI env: set as a secret in your CI provider, not in a file.',
   )
-  lines.push('')
-  lines.push('  Bypass (e.g. seeding a test fixture with a known-junk value):')
-  lines.push(`    Type "${BYPASS_PHRASE}" in your next message.`)
   return block(lines.join('\n') + '\n')
 })
 
 export const hook = defineHook({
+  bypass: ['dotenv-token'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

@@ -19,8 +19,6 @@
 //   2. file spawns `make` or `configure`
 //   3. file does NOT contain `delete .*TARGET_ARCH`
 //
-// Bypass: `Allow target-arch-env bypass` typed verbatim.
-//
 // Fails open on regex errors.
 
 import { safeReadFileSync } from '@socketsecurity/lib-stable/fs/read-file'
@@ -28,9 +26,6 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { resolveEditedText } from '../_shared/payload.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow target-arch-env bypass'
 
 // Match builder script paths: a file directly inside a top-level `scripts/`
 // dir or a per-package `packages/<name>/scripts/` dir, with a JS/TS
@@ -100,12 +95,6 @@ export const check = editGuard((filePath, _content, payload) => {
   if (cb.reads && cb.spawnsTarget && !cb.deletes) {
     return undefined
   }
-  if (
-    payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
-  ) {
-    return undefined
-  }
 
   return block(
     [
@@ -129,14 +118,12 @@ export const check = editGuard((filePath, _content, payload) => {
       '',
       '    const TARGET_ARCH = process.env.TARGET_ARCH || process.arch',
       '    delete process.env.TARGET_ARCH',
-      '',
-      `  Bypass: type "${BYPASS_PHRASE}" in a new message, then retry.`,
-      '',
     ].join('\n'),
   )
 })
 
 export const hook = defineHook({
+  bypass: ['target-arch-env'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

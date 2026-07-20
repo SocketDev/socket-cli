@@ -40,9 +40,6 @@
 import { isSquashOptIn } from '../_shared/fleet-roster.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { commandsFor, commandWorkingDir } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow empty-commit bypass'
 
 /**
  * Detect `git commit --allow-empty` (and `--allow-empty-message`, which is the
@@ -88,11 +85,6 @@ export const check = bashGuard((command, payload) => {
     return undefined
   }
 
-  // Operator bypass — `Allow empty-commit bypass` in a recent turn.
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    return undefined
-  }
-
   const flag = allowEmptyCommit
     ? '--allow-empty (or --allow-empty-message)'
     : '--allow-empty / --keep-redundant-commits'
@@ -106,15 +98,12 @@ export const check = bashGuard((command, payload) => {
       '  If you are anchoring a release tag forward, use:',
       '    git tag -f vX.Y.Z <real-content-commit>',
       '    git push origin --force-with-lease vX.Y.Z',
-      '',
-      '  If you genuinely need to record a no-content waypoint, type',
-      `  "${BYPASS_PHRASE}" in chat, then retry.`,
-      '',
     ].join('\n'),
   )
 })
 
 export const hook = defineHook({
+  bypass: ['empty-commit'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

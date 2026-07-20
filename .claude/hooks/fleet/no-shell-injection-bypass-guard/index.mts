@@ -26,8 +26,6 @@
 // not raw-string regex, per `no-command-regex-in-hooks-guard`. Lifted from the
 // Claude Code client's BashTool/bashSecurity.ts threat model.
 //
-// Bypass: `Allow shell-injection bypass` in a recent user turn.
-//
 // Exit codes: 0 — pass; 2 — block. Fails open on a malformed payload.
 
 import { parseShell } from '@socketsecurity/lib-stable/shell/parse'
@@ -35,9 +33,6 @@ import { parseShell } from '@socketsecurity/lib-stable/shell/parse'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import { parseCommands } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow shell-injection bypass'
 
 // Pre-flight skip set: the dispatcher imports this guard only when the raw
 // command contains at least one of these substrings. Every block path requires
@@ -157,15 +152,9 @@ function processSubstitutionBypass(command: string): string | undefined {
   return undefined
 }
 
-export const check = bashGuard((command, payload): GuardResult => {
+export const check = bashGuard((command): GuardResult => {
   const bypass = shellInjectionBypass(command)
   if (!bypass) {
-    return undefined
-  }
-  if (
-    payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
-  ) {
     return undefined
   }
   return block(
@@ -177,14 +166,12 @@ export const check = bashGuard((command, payload): GuardResult => {
       '  These shell constructs route around the fleet Bash allowlists +',
       '  findInvocation guards. They have no legitimate fleet use. (`$(...)`,',
       '  `${...}`, and backticks are NOT blocked — only the evasion-only forms.)',
-      '',
-      `  If you genuinely need this, type the phrase in a new message:`,
-      `  ${BYPASS_PHRASE}`,
     ].join('\n'),
   )
 })
 
 export const hook = defineHook({
+  bypass: ['shell-injection'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

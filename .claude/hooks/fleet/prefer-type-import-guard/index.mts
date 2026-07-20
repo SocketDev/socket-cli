@@ -14,13 +14,8 @@
 // the inline form is drift, and mixing the two defeats the sorted-imports rules
 // that group type imports separately.
 //
-// Bypass: "Allow separate-type-import bypass" in a recent user turn, or
-
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
 import { isRepoTestHome } from '../_shared/repo-test-home.mts'
-
-const BYPASS_PHRASE = 'Allow separate-type-import bypass'
 
 // Match a value `import { ... }` statement (NOT already `import type { ... }`)
 // whose brace body contains at least one inline `type` specifier. The negative
@@ -45,7 +40,7 @@ function findInlineTypeImports(text: string): number {
 }
 
 export const check = editGuard(
-  (filePath, content, payload) => {
+  (filePath, content) => {
     // Only police TS/JS source.
     if (!/\.(?:c|m)?[jt]sx?$/.test(filePath)) {
       return undefined
@@ -60,10 +55,6 @@ export const check = editGuard(
 
     const count = findInlineTypeImports(text)
     if (count === 0) {
-      return undefined
-    }
-
-    if (bypassPhrasePresent(payload.transcript_path, [BYPASS_PHRASE])) {
       return undefined
     }
 
@@ -82,7 +73,6 @@ export const check = editGuard(
         '',
         '  Separate `import type` keeps the sorted-imports rules grouping type',
         '  imports cleanly, and is the fleet-canonical shape (~200:1 over inline).',
-        `  Bypass: type "${BYPASS_PHRASE}".`,
         '',
       ].join('\n') + '\n',
     )
@@ -91,6 +81,7 @@ export const check = editGuard(
 )
 
 export const hook = defineHook({
+  bypass: ['separate-type-import'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

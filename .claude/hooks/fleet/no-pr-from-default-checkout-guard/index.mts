@@ -24,9 +24,6 @@ import { ghPrCreateCommands, isGhPrCreate } from '../_shared/gh-pr-command.mts'
 import { currentBranch, resolveDefaultBranch } from '../_shared/git-branch.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { flagValue } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow pr-from-default-checkout bypass'
 
 // The `gh pr create` detection is the shared parser-backed one; re-exported
 // so this guard's tests exercise the exact predicate the check runs.
@@ -68,6 +65,7 @@ export function isDefaultCheckout(
 }
 
 export const hook = defineHook({
+  bypass: ['pr-from-default-checkout'],
   check: bashGuard((command, payload) => {
     if (!isGhPrCreate(command)) {
       return undefined
@@ -93,9 +91,6 @@ export const hook = defineHook({
     if (!isDefaultCheckout(branch, defaultBranch)) {
       return undefined
     }
-    if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-      return undefined
-    }
     return block(
       [
         '[no-pr-from-default-checkout-guard] Refusing to open a PR from a checkout on the default branch.',
@@ -106,8 +101,6 @@ export const hook = defineHook({
         '         default-branch checkout —',
         '           git switch -c <feature-branch>   # or cd into the feature worktree',
         '           # then re-run gh pr create',
-        '',
-        `  Bypass: type "${BYPASS_PHRASE}" in a recent message.`,
         '',
       ].join('\n'),
     )

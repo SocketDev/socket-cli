@@ -24,9 +24,6 @@ import { block, defineHook, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow npm-otp-flag bypass'
 
 // npm-family binaries whose auth subcommands (publish, login, access,
 // dist-tag, unpublish, deprecate, owner) accept `--otp`.
@@ -78,12 +75,6 @@ export function check(payload: ToolCallPayload): GuardResult {
   if (!binary) {
     return undefined
   }
-  if (
-    payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
-  ) {
-    return undefined
-  }
   return block(
     [
       '[no-npm-otp-flag-guard] Blocked: OTP passed as a command flag.',
@@ -97,14 +88,12 @@ export function check(payload: ToolCallPayload): GuardResult {
       '         (npm opens the browser to approve 2FA; no code on the CLI).',
       '         For CI, authenticate with a granular automation token via',
       '         the NODE_AUTH_TOKEN env var — never `--otp`.',
-      '',
-      `  If you truly must pass the OTP as a flag, type the phrase in a new`,
-      `  message: ${BYPASS_PHRASE}`,
     ].join('\n'),
   )
 }
 
 export const hook = defineHook({
+  bypass: ['npm-otp-flag'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

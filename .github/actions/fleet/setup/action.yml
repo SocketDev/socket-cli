@@ -524,6 +524,9 @@ runs:
             SENTINEL="$(sentinel_for "$CMD")"
             SHIM_LINES=('#!/bin/bash' "if [ -n \"\${${SENTINEL}:-}\" ]; then" "  exec \"${REAL}\" \"\$@\"" 'fi' "export ${SENTINEL}=1")
             SHIM_LINES+=('export SFW_UNKNOWN_HOST_ACTION=ignore')
+            # uv-only: opt sfw into malware scanning of the packages a uv
+            # install resolves (mirrors setup-tools-sfw.mjs — keep in lockstep).
+            if [ "$CMD" = "uv" ]; then SHIM_LINES+=('export UV_MALWARE_CHECK=1'); fi
             # Run sfw in its OWN process group and reap the whole group on
             # exit, instead of `exec`-ing it. sfw spawns the real package
             # manager, which spawns probe children (--version, list, install
@@ -555,8 +558,10 @@ runs:
               # %errorlevel% once at PARSE time for everything inside a single
               # parenthesized block, so reading it there would capture the
               # exit code from BEFORE the guarded command ran.
-              printf '@echo off\r\nif defined %s goto :real\r\nset "%s=1"\r\nset "SFW_UNKNOWN_HOST_ACTION=ignore"\r\n"%s" "%s" %%*\r\nexit /b %%errorlevel%%\r\n:real\r\n"%s" %%*\r\nexit /b %%errorlevel%%\r\n' \
-                "$SENTINEL" "$SENTINEL" "$SFW_BIN" "$REAL" "$REAL" > "$SHIM_DIR/$CMD.cmd"
+              WIN_UV_MALWARE=""
+              if [ "$CMD" = "uv" ]; then WIN_UV_MALWARE='set "UV_MALWARE_CHECK=1"\r\n'; fi
+              printf '@echo off\r\nif defined %s goto :real\r\nset "%s=1"\r\nset "SFW_UNKNOWN_HOST_ACTION=ignore"\r\n%s"%s" "%s" %%*\r\nexit /b %%errorlevel%%\r\n:real\r\n"%s" %%*\r\nexit /b %%errorlevel%%\r\n' \
+                "$SENTINEL" "$SENTINEL" "$WIN_UV_MALWARE" "$SFW_BIN" "$REAL" "$REAL" > "$SHIM_DIR/$CMD.cmd"
             fi
           else
             # Helpful-error stub. Without this, a workflow that calls a

@@ -26,9 +26,6 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { FLEET_REPO_NAMES } from '../_shared/fleet-repos.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow private-ref-in-tests-docs bypass'
 
 // SocketDev org references in any of the shapes that name a repo:
 //   SocketDev/<repo>   github.com/SocketDev/<repo>   git@github.com:SocketDev/<repo>
@@ -74,7 +71,8 @@ export function privateRefsIn(content: string): string[] {
 }
 
 export const hook = defineHook({
-  check: editGuard((filePath, content, payload) => {
+  bypass: ['private-ref-in-tests-docs'],
+  check: editGuard((filePath, content) => {
     if (!isTestOrDocPath(filePath)) {
       return undefined
     }
@@ -83,9 +81,6 @@ export const hook = defineHook({
     }
     const refs = privateRefsIn(content)
     if (!refs.length) {
-      return undefined
-    }
-    if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
       return undefined
     }
     return block(
@@ -99,9 +94,6 @@ export const hook = defineHook({
         '  FICTIONAL slug (e.g. acme/widgets) — never a real private repo,',
         '  Linear issue, or Slack thread. The fleet roster (fleet-repos.json)',
         '  is the only sanctioned place private repo names appear.',
-        '',
-        `  Bypass: type "${BYPASS_PHRASE}" if this reference is genuinely public.`,
-        '',
       ].join('\n'),
     )
   }),

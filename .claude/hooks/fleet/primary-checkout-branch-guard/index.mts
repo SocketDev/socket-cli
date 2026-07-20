@@ -33,8 +33,6 @@
 // live. The fix landed via cherry-pick; this guard stops the branch from being
 // cut in the primary checkout at all.
 //
-// Bypass: "Allow primary-branch bypass" in a recent user turn.
-//
 // Fails OPEN on its own errors (exit 0 + stderr log).
 
 import path from 'node:path'
@@ -46,7 +44,6 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
 import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 // Pre-flight: the dispatcher imports + runs this guard only when the raw
 // command contains one of these substrings. `check` can return a block only
@@ -54,11 +51,6 @@ import { bypassPhrasePresent } from '../_shared/transcript.mts'
 // include the literal `checkout` or `switch` token — so every blocking command
 // necessarily contains one of these. Complete set (no narrower trigger exists).
 export const triggers: readonly string[] = ['checkout', 'switch']
-
-const BYPASS_PHRASES = [
-  'Allow primary-branch bypass',
-  'Allow primary branch bypass',
-] as const
 
 // A `git checkout` arg list that's a working-tree / file restore rather than a
 // branch switch: `git checkout -- <file>` or `git checkout .`. Conservative —
@@ -164,9 +156,6 @@ export const check = bashGuard((command, payload) => {
     // Branch work in a linked worktree is exactly what the rule wants.
     return undefined
   }
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)) {
-    return undefined
-  }
   const verb = op.kind === 'create' ? 'Creating' : 'Switching'
   return block(
     `\n[primary-checkout-branch-guard] Blocked: ${verb} a branch in the ` +
@@ -176,12 +165,12 @@ export const check = bashGuard((command, payload) => {
       `it out from under any sibling session.\n` +
       `  Fix: cut a worktree instead —\n` +
       `    git worktree add ../<repo>-<topic> -b <branch>\n` +
-      `    cd ../<repo>-<topic>\n` +
-      `  Bypass: type "Allow primary-branch bypass" in a recent message.\n`,
+      `    cd ../<repo>-<topic>\n`,
   )
 })
 
 export const hook = defineHook({
+  bypass: ['primary-branch'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

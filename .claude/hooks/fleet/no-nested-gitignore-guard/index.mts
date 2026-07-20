@@ -30,9 +30,6 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { isFleetTarget } from '../_shared/fleet-context.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow nested-gitignore bypass'
 
 // Upstream-owned trees that carry their own `.gitignore` (untracked-by-default,
 // per CLAUDE.md) — a nested `.gitignore` there is not fleet-managed.
@@ -115,9 +112,8 @@ export const check = editGuard((filePath, content, payload) => {
   if (!isNestedGitignore(rel)) {
     return undefined
   }
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    return undefined
-  }
+  // Detection + the exact-phrase bypass footer are owned by defineHook's
+  // auto-bypass (bypass: ['nested-gitignore']) — see _shared/bypass.mts.
   return block(
     [
       '🚨 no-nested-gitignore-guard: refusing to create a nested `.gitignore`.',
@@ -131,13 +127,12 @@ export const check = editGuard((filePath, content, payload) => {
       'Fix: add the pattern to the root `.gitignore`. To reach a deep path, use a',
       `     \`**/\`-anchored line, e.g. \`**/${rel.replace(/\/\.gitignore$/, '')}/<file>\`.`,
       '     Detail: docs/agents.md/fleet/single-gitignore.md.',
-      '',
-      `Bypass (the user must type verbatim in a recent turn): \`${BYPASS_PHRASE}\``,
     ].join('\n'),
   )
 })
 
 export const hook = defineHook({
+  bypass: ['nested-gitignore'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'MultiEdit', 'Write'],

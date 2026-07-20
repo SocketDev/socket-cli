@@ -35,11 +35,9 @@
 import { offsetToLineCol, tryParse } from '../_shared/acorn/index.mts'
 import type { AcornNode } from '../_shared/acorn/index.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 const ALLOW_MARKER = '// socket-lint: allow options-param-naming'
 const BANNED_PARAM_NAME = 'opts'
-const BYPASS_PHRASE = 'Allow options-param-naming bypass'
 
 // File extensions where the convention applies. `.d.ts` is handled separately
 // (it mirrors external signatures and is always exempt).
@@ -160,9 +158,6 @@ export const check = editGuard((filePath, content, payload) => {
   if (offenses.length === 0) {
     return undefined
   }
-  if (bypassPhrasePresent(payload.transcript_path, [BYPASS_PHRASE], 3)) {
-    return undefined
-  }
   const where = offenses
     .map(o => `    line ${o.line}: a param named \`opts\``)
     .join('\n')
@@ -185,12 +180,12 @@ export const check = editGuard((filePath, content, payload) => {
       'lint rule autofixes this).\n' +
       '\n' +
       `One-off override: add \`${ALLOW_MARKER}\` on the param line or the\n` +
-      'line above the function. Whole-session bypass requires the user to\n' +
-      `type \`${BYPASS_PHRASE}\` verbatim.\n`,
+      'line above the function.\n',
   )
 })
 
 export const hook = defineHook({
+  bypass: ['options-param-naming'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

@@ -42,9 +42,6 @@
 
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow programmatic-claude-lockdown bypass'
 
 const ALLOWED_TOOLS_FLAGS = new Set(['--allowed-tools', '--allowedTools'])
 const DISALLOWED_TOOLS_FLAGS = new Set([
@@ -152,12 +149,9 @@ export function lockdownReason(command: string): string | undefined {
   return claudeLockdownReason(command) ?? codexLockdownReason(command)
 }
 
-export const check = bashGuard((command, payload) => {
+export const check = bashGuard(command => {
   const reason = lockdownReason(command)
   if (!reason) {
-    return undefined
-  }
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
     return undefined
   }
   return block(
@@ -173,13 +167,12 @@ export const check = bashGuard((command, payload) => {
       '  --dangerously-bypass-approvals-and-sandbox. See',
       '  .claude/skills/fleet/locking-down-claude/SKILL.md.',
       '',
-      `  Bypass: type "${BYPASS_PHRASE}" in a recent message.`,
-      '',
     ].join('\n'),
   )
 })
 
 export const hook = defineHook({
+  bypass: ['programmatic-claude-lockdown'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

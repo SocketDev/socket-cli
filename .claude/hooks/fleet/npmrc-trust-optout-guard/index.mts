@@ -173,6 +173,8 @@ export async function check(payload: ToolCallPayload): Promise<GuardResult> {
 }
 
 export const hook = defineHook({
+  bypass: ['npmrc-trust-optout'],
+  bypassMode: 'manual',
   check,
   event: 'PreToolUse',
   matcher: ['Bash', 'Edit', 'Write', 'MultiEdit'],

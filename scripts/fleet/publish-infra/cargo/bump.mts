@@ -27,10 +27,16 @@ import {
   sectionHasEntries,
 } from '../../lib/changelog.mts'
 import { commitViaGithubApi } from '../../lib/commit-via-github-api.mts'
+import {
+  discardReleaseBranch,
+  openReleaseBranch,
+  resolveReleaseEnv,
+} from '../release-branch.mts'
 import { logger, rootPath, runCapture } from '../shared.mts'
 import { readCargoPackage } from './shared.mts'
 
 import type { BumpLevel } from '../../lib/changelog.mts'
+import type { BumpResult } from '../release-branch.mts'
 
 /**
  * Resolve the most recent `v<semver>` release tag, or undefined for a repo with
@@ -134,15 +140,20 @@ export function insertChangelogSection(
  * git-objects API so the commit is verified/SIGNED without a GPG key —
  * authenticated with the in-house release APP token (RELEASE_APP_TOKEN /
  * GH_TOKEN, set by the workflow's app-token minter, NOT the default
- * github.token). Resets the checkout to the new commit so the publish runs
- * against the bumped tree. Dry-run previews and writes/commits nothing. Unlike
- * npm there is no dist/ rebuild — cargo builds from source at publish time.
+ * github.token). The commit lands on a throwaway `cargo-publish-v<version>`
+ * branch (NOT main): the caller fast-forwards main to it only once the publish
+ * succeeds and nukes it on rejection, so a failed publish never creeps the
+ * version. Resets the checkout to the new commit so the publish runs against
+ * the bumped tree, and returns the branch + tip SHA for the caller to promote /
+ * discard. Dry-run previews and writes/commits nothing (returns undefined).
+ * Unlike npm there is no dist/ rebuild — cargo builds from source at publish
+ * time.
  */
 export async function runBump(options: {
   dryRun: boolean
   packageName?: string | undefined
   releaseAs?: string | undefined
-}): Promise<void> {
+}): Promise<BumpResult | undefined> {
   const opts = { __proto__: null, ...options } as {
     dryRun: boolean
     packageName?: string | undefined
@@ -301,18 +312,7 @@ export async function runBump(options: {
     logger.log('[cargo bump] no changes from the bump — nothing to commit.')
     return
   }
-  const repo = process.env['GITHUB_REPOSITORY']
-  const branch = process.env['GITHUB_REF_NAME']
-  // The in-house release App token (minted by the workflow's app-token action),
-  // NOT the default github.token — least-privilege + verified/app-attributed.
-  const token =
-    process.env['RELEASE_APP_TOKEN'] || process.env['GH_TOKEN'] || ''
-  if (!repo || !branch || !token) {
-    throw new Error(
-      '[cargo bump] needs GITHUB_REPOSITORY, GITHUB_REF_NAME, and a release App ' +
-        'token (RELEASE_APP_TOKEN / GH_TOKEN) in the environment.',
-    )
-  }
+  const env = resolveReleaseEnv()
   const commitFiles = files.map(p => ({
     content: readFileSync(path.join(rootPath, p), 'utf8'),
     path: p,
@@ -323,18 +323,38 @@ export async function runBump(options: {
     ['rev-parse', 'HEAD^{tree}'],
     rootPath,
   )
-  const sha = await commitViaGithubApi({
-    baseTreeSha: baseTree.stdout.trim(),
-    branch,
-    files: commitFiles,
-    message: `chore: bump version to ${nextVersion}`,
-    parentSha: parent.stdout.trim(),
-    repo,
-    token,
+  const parentSha = parent.stdout.trim()
+  // Land the bump on a throwaway cargo-publish-v<version> branch, NOT main — the
+  // caller fast-forwards main to it only after the publish succeeds, and nukes
+  // it on rejection, so a failed publish never creeps the version.
+  const releaseBranch = await openReleaseBranch({
+    channel: 'cargo',
+    env,
+    parentSha,
+    version: nextVersion,
   })
-  await runCapture('git', ['fetch', 'origin', branch], rootPath)
-  await runCapture('git', ['reset', '--hard', sha], rootPath)
-  logger.success(
-    `[cargo bump] ${nextVersion} committed ${sha.slice(0, 7)} via the release App.`,
-  )
+  // Once the branch exists, any failure below must nuke it — otherwise a leftover
+  // <channel>-publish-v<version> branch accumulates (main is never touched, so
+  // the version-creep invariant holds regardless).
+  try {
+    const sha = await commitViaGithubApi({
+      baseTreeSha: baseTree.stdout.trim(),
+      branch: releaseBranch.branch,
+      files: commitFiles,
+      message: `chore: bump version to ${nextVersion}`,
+      parentSha,
+      repo: env.repo,
+      token: env.token,
+    })
+    await runCapture('git', ['fetch', 'origin', releaseBranch.branch], rootPath)
+    await runCapture('git', ['reset', '--hard', sha], rootPath)
+    logger.success(
+      `[cargo bump] ${nextVersion} committed ${sha.slice(0, 7)} on ` +
+        `${releaseBranch.branch} via the release App.`,
+    )
+    return { releaseBranch, sha }
+  } catch (e) {
+    await discardReleaseBranch(releaseBranch)
+    throw e
+  }
 }

@@ -25,16 +25,11 @@
 // regex): the command runs the `tsx`/`ts-node` binary, OR a `node`
 // invocation carries a `tsx`/`ts-node` loader flag.
 //
-// Bypass: `Allow tsx bypass` typed verbatim in a recent user turn.
-//
 // Fails open on parse / payload errors (exit 0) — a guard bug must not
 // wedge every Bash call.
 
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
-
-const BYPASS_PHRASE = 'Allow tsx bypass' as const
 
 // Pre-flight triggers: the dispatcher skips importing this guard unless
 // the raw payload contains one of these substrings. Every blocking path
@@ -134,13 +129,11 @@ export function formatBlock(d: TsxDetection): string {
       '  For tests:',
       '    • hook tests (.claude/hooks/**/test/): node --test test/*.test.mts',
       '    • src/repo tests:  node_modules/.bin/vitest run path/to/foo.test.mts',
-      '',
-      `  Bypass: type "${BYPASS_PHRASE}" to allow it for this invocation.`,
     ].join('\n') + '\n'
   )
 }
 
-export const check = bashGuard((command, payload) => {
+export const check = bashGuard(command => {
   if (!command.trim()) {
     return undefined
   }
@@ -148,16 +141,11 @@ export const check = bashGuard((command, payload) => {
   if (!detection.detected) {
     return undefined
   }
-  if (
-    payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, [BYPASS_PHRASE], 3)
-  ) {
-    return undefined
-  }
   return block(formatBlock(detection))
 })
 
 export const hook = defineHook({
+  bypass: ['tsx'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

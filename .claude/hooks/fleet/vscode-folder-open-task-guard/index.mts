@@ -17,9 +17,6 @@
 // committed at all); this guard backstops an explicitly force-added one and
 // catches a `*.code-workspace`, which the `.vscode/` ignore doesn't cover.
 //
-// Bypass: `Allow vscode-folder-open-task bypass` in a recent user turn (rare;
-// e.g. authoring this guard's own test fixtures).
-//
 // Exit codes: 0 — pass (not a VS Code tasks file, or no folderOpen auto-run);
 // 2 — block. Fails open on read/parse errors (exit 0).
 
@@ -28,9 +25,6 @@ import path from 'node:path'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow vscode-folder-open-task bypass'
 
 // `.vscode/tasks.json` — the canonical VS Code tasks file (path normalized to
 // `/` before matching, so a Windows `\` path still matches).
@@ -48,15 +42,12 @@ export function isVscodeTaskPath(filePath: string): boolean {
 // rather than JSON-parsing (which a comment would break) — `"runOn"` : `"folderOpen"`.
 const FOLDER_OPEN_RE = /"runOn"\s*:\s*"folderOpen"/
 
-export const check = editGuard((filePath, content, payload) => {
+export const check = editGuard((filePath, content) => {
   if (!isVscodeTaskPath(filePath)) {
     return undefined
   }
   const text = content ?? ''
   if (!FOLDER_OPEN_RE.test(text)) {
-    return undefined
-  }
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
     return undefined
   }
   const lines: string[] = []
@@ -80,14 +71,11 @@ export const check = editGuard((filePath, content, payload) => {
   lines.push(
     '  (Tasks: Run Task) or on an explicit event — never on folder open.',
   )
-  lines.push('')
-  lines.push(
-    `  Bypass (rare; e.g. this guard's own fixtures): type "${BYPASS_PHRASE}".`,
-  )
   return block(lines.join('\n') + '\n')
 })
 
 export const hook = defineHook({
+  bypass: ['vscode-folder-open-task'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

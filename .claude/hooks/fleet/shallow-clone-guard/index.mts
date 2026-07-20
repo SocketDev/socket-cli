@@ -15,17 +15,12 @@
 // as a separate token; hasSingleBranch is true when `--single-branch` appears.
 // The guard fires when either flag is missing.
 //
-// Bypass: `Allow shallow-clone bypass` typed verbatim in a recent user turn.
-//
 // Fails open on parse / payload errors — a guard bug must not wedge every Bash
 // call.
 
 import { isFleetTarget } from '../_shared/fleet-context.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
-
-const BYPASS_PHRASE = 'Allow shallow-clone bypass' as const
 
 export const triggers: readonly string[] = ['clone']
 
@@ -95,8 +90,6 @@ export function formatBlock(d: ShallowCloneDetection): string {
       '  unnecessary for review work. Always use both shallow flags:',
       '',
       '    git clone --depth=1 --single-branch <url> <dest>',
-      '',
-      `  Bypass: type "${BYPASS_PHRASE}" to allow it for this invocation.`,
     ].join('\n') + '\n'
   )
 }
@@ -109,13 +102,11 @@ export const check = bashGuard((command, payload) => {
   if (!isFleetTarget(payload)) {
     return undefined
   }
-  if (bypassPhrasePresent(payload.transcript_path, [BYPASS_PHRASE], 3)) {
-    return undefined
-  }
   return block(formatBlock(detection))
 })
 
 export const hook = defineHook({
+  bypass: ['shallow-clone'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

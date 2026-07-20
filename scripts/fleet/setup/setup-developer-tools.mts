@@ -22,6 +22,8 @@ import type {
 } from './ecosystems.mts'
 
 const logger = getDefaultLogger()
+const PRIVACY_SECURITY_SETTINGS_URL =
+  'x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy'
 
 async function promptForDeveloperTools(): Promise<boolean> {
   return (await confirm({
@@ -84,6 +86,14 @@ export async function setupDeveloperTools(
       ok: false,
       reason: 'Developer Tools enrollment failed',
       skipped: false,
+    }
+  }
+  if (!isCI) {
+    const settings = await runCommand('open', [PRIVACY_SECURITY_SETTINGS_URL])
+    if (settings.exitCode !== 0) {
+      setupLogger.warn(
+        'Developer Tools enrollment succeeded, but System Settings could not be opened. Open System Settings → Privacy & Security → Developer Tools manually.',
+      )
     }
   }
   setupLogger.success(

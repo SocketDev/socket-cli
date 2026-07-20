@@ -22,9 +22,9 @@ target; other libs get a meaningful report too.
 
 ## When to use
 
-- **Weekly health check** — the `audit-api-surface.lock.yml` gh-aw cron (Monday
-  09:23 UTC; source `audit-api-surface.md`) runs this and opens a tracking
-  issue. Dead surface accumulates silently; a weekly sweep keeps it visible.
+- **On-demand surface sweep** — run this skill to list dead / single-consumer
+  exports. Dead surface accumulates silently, so sweep it on a cadence you
+  choose (there is no scheduled workflow — invoke it manually).
 - **Before a major version bump** — a `dead` or `single-consumer` export is a
   candidate to remove (major) or inline into its one consumer.
 - **Bundle trimming** — pairs with `trimming-bundle`; an unconsumed subpath is

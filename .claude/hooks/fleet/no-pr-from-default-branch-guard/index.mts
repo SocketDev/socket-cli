@@ -25,9 +25,6 @@ import { ghPrCreateCommand, isGhPrCreate } from '../_shared/gh-pr-command.mts'
 import { currentBranch, resolveDefaultBranch } from '../_shared/git-branch.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { flagValue } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow pr-from-default-branch bypass'
 
 // The `gh pr create` detection is the shared parser-backed one; re-exported
 // so this guard's tests exercise the exact predicate the check runs.
@@ -67,6 +64,7 @@ export function stripOwnerPrefix(head: string): string {
 }
 
 export const hook = defineHook({
+  bypass: ['pr-from-default-branch'],
   check: bashGuard((command, payload) => {
     if (!isGhPrCreate(command)) {
       return undefined
@@ -80,9 +78,6 @@ export const hook = defineHook({
     if (!isDefaultHead(head, defaultBranch)) {
       return undefined
     }
-    if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-      return undefined
-    }
     return block(
       [
         '[no-pr-from-default-branch-guard] Refusing to open a PR whose head is the default branch.',
@@ -94,8 +89,6 @@ export const hook = defineHook({
         '           # then re-run gh pr create',
         '         or target an explicit feature head:',
         '           gh pr create --head <owner>:<feature-branch>',
-        '',
-        `  Bypass: type "${BYPASS_PHRASE}" in a recent message.`,
         '',
       ].join('\n'),
     )

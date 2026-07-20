@@ -41,13 +41,6 @@ import {
   matchPrivatePath,
   scanCommentBodyLines,
 } from '../_shared/private-paths.mts'
-import {
-  BYPASS_LOOKBACK_USER_TURNS,
-  bypassPhrasePresent,
-} from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow private-path-in-source bypass'
-
 // Source-code extensions whose COMMENTS we scan. Markdown / docs / JSON / YAML
 // and the `.claude/` tree are deliberately excluded — they reference these
 // paths legitimately.
@@ -122,7 +115,7 @@ export function findPrivatePaths(
     : findPrivatePathsLexical(text)
 }
 
-export const check = editGuard((filePath, content, payload) => {
+export const check = editGuard((filePath, content) => {
   if (!SOURCE_FILE_RE.test(filePath)) {
     return undefined
   }
@@ -132,15 +125,6 @@ export const check = editGuard((filePath, content, payload) => {
   }
   const findings = findPrivatePaths(text, filePath)
   if (findings.length === 0) {
-    return undefined
-  }
-  if (
-    bypassPhrasePresent(
-      payload.transcript_path,
-      BYPASS_PHRASE,
-      BYPASS_LOOKBACK_USER_TURNS,
-    )
-  ) {
     return undefined
   }
   const lines: string[] = []
@@ -171,14 +155,11 @@ export const check = editGuard((filePath, content, payload) => {
   )
   lines.push('')
   lines.push('  Background: docs/agents.md/fleet/public-surface-hygiene.md')
-  lines.push('')
-  lines.push(
-    `  One-shot bypass (rare): user types "${BYPASS_PHRASE}" verbatim in a recent message.`,
-  )
   return block(lines.join('\n') + '\n')
 })
 
 export const hook = defineHook({
+  bypass: ['private-path-in-source'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

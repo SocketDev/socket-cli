@@ -65,6 +65,8 @@ export const check = bashGuard((command, payload) => {
 })
 
 export const hook = defineHook({
+  bypass: ['package-manager-auto-update'],
+  bypassMode: 'manual',
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

@@ -39,9 +39,11 @@ import { isMainModule } from '../_shared/is-main-module.mts'
 const logger = getDefaultLogger()
 
 export interface PackageJson {
-  name?: string | undefined
-  private?: boolean | undefined
+  cpu?: string[] | undefined
   files?: string[] | undefined
+  name?: string | undefined
+  os?: string[] | undefined
+  private?: boolean | undefined
   scripts?: Record<string, string> | undefined
 }
 
@@ -392,6 +394,16 @@ export function computeCanonicalFiles(packOut: PackOutput): string[] {
  * each package.json `files:` to {@link computeCanonicalFiles}. Returns exit code
  * (0 = clean / fixed, 1 = findings remain in report mode).
  */
+// Packages that legitimately have no publish surface to allowlist here:
+// `"private": true` (never published), and os/cpu-gated platform binary packages
+// (e.g. @abitious/<triple>) whose prebuilt binary is absent in the source
+// checkout until the publish job fetches it — `pack --dry-run` then finds
+// nothing, a false "missing essentials" hit. Mirrors public-files-are-exported's
+// shouldSkip.
+export function shouldSkip(pkg: PackageJson): boolean {
+  return Boolean(pkg.private || pkg.os || pkg.cpu)
+}
+
 export function runCheck(repoRoot: string, fix = false): number {
   const findings: Finding[] = []
   const fixed: string[] = []
@@ -399,7 +411,7 @@ export function runCheck(repoRoot: string, fix = false): number {
   for (let i = 0, { length } = pkgDirs; i < length; i += 1) {
     const pkgDir = pkgDirs[i]!
     const pkg = readPackageJson(pkgDir)
-    if (!pkg || pkg.private || !pkg.name) {
+    if (!pkg || !pkg.name || shouldSkip(pkg)) {
       continue
     }
     const packOut = runPackDryRun(pkgDir)

@@ -200,6 +200,8 @@ export const check: GuardCheck = payload => {
 }
 
 export const hook = defineHook({
+  bypass: ['proc-environ-read'],
+  bypassMode: 'manual',
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

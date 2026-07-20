@@ -25,9 +25,6 @@
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow unmocked-ai-in-tests bypass'
 
 // A path is a test file if its basename matches `*.test.*` / `*.spec.*` or it
 // lives under a `test/` / `tests/` / `__tests__/` directory.
@@ -91,11 +88,8 @@ export function callsUnmockedAi(content: string): boolean {
 }
 
 export const hook = defineHook({
-  check: editGuard((filePath, content, payload) => {
+  check: editGuard((filePath, content) => {
     if (!content || !isTestFilePath(filePath) || !callsUnmockedAi(content)) {
-      return undefined
-    }
-    if (bypassPhrasePresent(payload?.transcript_path, BYPASS_PHRASE)) {
       return undefined
     }
     return block(
@@ -109,11 +103,10 @@ export const hook = defineHook({
         '',
         '  Fix: mock the AI surface, then assert on the stub —',
         "    vi.mock(import('@socketsecurity/lib/ai/spawn'), …)",
-        '',
-        `  Bypass: type "${BYPASS_PHRASE}".`,
       ].join('\n'),
     )
   }),
+  bypass: ['unmocked-ai-in-tests'],
   event: 'PreToolUse',
   matcher: ['Edit', 'MultiEdit', 'Write'],
   scope: 'convention',

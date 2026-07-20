@@ -28,12 +28,10 @@
 
 import {
   BREW_MIN_VERSION,
-  BREW_SUPPLY_CHAIN_BYPASS_PHRASE,
   commandInvokesBrew,
   detectBrewSecurity,
 } from '../_shared/brew-supply-chain.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 export function formatBlock(reason: string): string {
   return (
@@ -48,30 +46,19 @@ export function formatBlock(reason: string): string {
       '    • upgrade:  brew update && brew upgrade   (to >= 6.0.0)',
       '    • harden:   node .claude/hooks/fleet/setup-security-tools/install.mts',
       '                (sets HOMEBREW_REQUIRE_TAP_TRUST + HOMEBREW_CASK_OPTS_REQUIRE_SHA)',
-      '',
-      `  Bypass: type "${BREW_SUPPLY_CHAIN_BYPASS_PHRASE}" to allow it for this invocation.`,
     ].join('\n') + '\n'
   )
 }
 
 export const hook = defineHook({
-  check: bashGuard((command, payload) => {
+  bypass: ['brew-supply-chain'],
+  check: bashGuard(command => {
     if (!command.trim() || !commandInvokesBrew(command)) {
       return undefined
     }
 
     const status = detectBrewSecurity()
     if (status.state !== 'unhardened') {
-      return undefined
-    }
-
-    if (
-      bypassPhrasePresent(
-        payload.transcript_path,
-        [BREW_SUPPLY_CHAIN_BYPASS_PHRASE],
-        8,
-      )
-    ) {
       return undefined
     }
 

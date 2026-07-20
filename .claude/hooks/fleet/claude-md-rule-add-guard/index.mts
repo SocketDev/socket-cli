@@ -26,8 +26,7 @@
  *
  * Exit 2 = block: add a docs/agents.md/{fleet,repo}/<topic>.md link (and move
  * the detail into that doc) or run codify-rule.mts to author both. Bypass:
- * `Allow claude-md-rule-add bypass` for the rare self-contained rule that
- * genuinely needs no doc.
+ * for the rare self-contained rule that genuinely needs no doc.
  *
  * Fails open on parse / payload errors (a guard bug must not block edits).
  */
@@ -35,9 +34,6 @@
 import process from 'node:process'
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow claude-md-rule-add bypass'
 
 const DOC_LINK_RE = /docs\/agents\.md\/(?:fleet|repo)\//
 
@@ -98,16 +94,6 @@ export const check = editGuard((filePath, content, payload) => {
   if (!addsUndeferredRule(content)) {
     return undefined
   }
-  const transcriptPath =
-    typeof payload.transcript_path === 'string'
-      ? payload.transcript_path
-      : undefined
-  if (
-    transcriptPath &&
-    bypassPhrasePresent(transcriptPath, [BYPASS_PHRASE], 8)
-  ) {
-    return undefined
-  }
   return block(
     [
       '🚨 claude-md-rule-add-guard: a new CLAUDE.md rule needs a detail-doc link.',
@@ -125,13 +111,13 @@ export const check = editGuard((filePath, content, payload) => {
       '',
       '    node scripts/fleet/codify-rule.mts --memory <path> --apply',
       '',
-      '  A plain (unmarked) bullet or a reword is NOT blocked. A genuinely',
-      `  self-contained rule that needs no doc? Type "${BYPASS_PHRASE}".`,
+      '  A plain (unmarked) bullet or a reword is NOT blocked.',
     ].join('\n'),
   )
 })
 
 export const hook = defineHook({
+  bypass: ['claude-md-rule-add'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

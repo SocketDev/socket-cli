@@ -18,9 +18,6 @@ import { block, defineHook, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow pr-review-verdict bypass'
 
 // Verdict flags on `gh pr review`. `--comment`/`-c` (comment-only) is allowed
 // and deliberately absent here. Sorted ASCII.
@@ -79,12 +76,6 @@ export function check(payload: ToolCallPayload): GuardResult {
   if (!flag) {
     return undefined
   }
-  if (
-    payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
-  ) {
-    return undefined
-  }
   return block(
     [
       '[no-pr-review-verdict-guard] Blocked: a PR review verdict.',
@@ -97,14 +88,12 @@ export function check(payload: ToolCallPayload): GuardResult {
       '  Fix:   leave findings with `gh pr comment` or `gh pr review',
       '         --comment`, then flag the PR for a person to give the',
       '         verdict. The agent reviews; it never approves or rejects.',
-      '',
-      '  If a person truly authorized this verdict, type the phrase in a new',
-      `  message: ${BYPASS_PHRASE}`,
     ].join('\n'),
   )
 }
 
 export const hook = defineHook({
+  bypass: ['pr-review-verdict'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

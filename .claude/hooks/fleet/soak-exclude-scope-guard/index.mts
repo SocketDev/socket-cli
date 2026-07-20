@@ -23,9 +23,6 @@ import { safeReadFileSync } from '@socketsecurity/lib-stable/fs/read-file'
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { resolveEditedText } from '../_shared/payload.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow soak-exclude-third-party bypass'
 
 // Fleet-internal first-party scopes published by trusted Socket pipelines —
 // soak-exempt by design. The danger the guard targets is a third-party
@@ -143,12 +140,6 @@ export const check = editGuard((filePath, _content, payload) => {
   if (offending.length === 0) {
     return undefined
   }
-  if (
-    payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
-  ) {
-    return undefined
-  }
 
   const lines: string[] = [
     '[soak-exclude-scope-guard] Blocked: non-Socket entry in minimumReleaseAgeExclude',
@@ -173,18 +164,16 @@ export const check = editGuard((filePath, _content, payload) => {
     '  job. (`overrides:` pins a version but does NOT bypass minimumReleaseAge,',
     '  so it is not a soak escape hatch.)',
     '',
-    '  Last resort — to use it before the soak clears, type the bypass phrase',
-    '  below, then add it (and any `@scope/*` platform binaries) here with a',
+    '  Last resort — to use it before the soak clears, add it (and any',
+    '  `@scope/*` platform binaries) here with a',
     '  `# published: <date> | removable: <date + 7d>` annotation. That knowingly',
     '  weakens the soak for those exact pins.',
-    '',
-    `  Bypass: type "${BYPASS_PHRASE}" in a new message, then retry.`,
-    '',
   )
   return block(lines.join('\n'))
 })
 
 export const hook = defineHook({
+  bypass: ['soak-exclude-third-party'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

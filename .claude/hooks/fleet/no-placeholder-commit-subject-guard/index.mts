@@ -40,13 +40,10 @@ import {
   isGitCommit,
 } from '../_shared/commit-command.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
 import {
   commitSubject,
   isPlaceholderSubject,
 } from '../../../../.git-hooks/_shared/commit-subject.mts'
-
-const BYPASS_PHRASE = 'Allow placeholder-subject bypass'
 
 export const check = bashGuard((command, payload) => {
   if (!isGitCommit(command)) {
@@ -65,11 +62,6 @@ export const check = bashGuard((command, payload) => {
     return undefined
   }
 
-  // Operator bypass — `Allow placeholder-subject bypass` in a recent turn.
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    return undefined
-  }
-
   const saw = subject.trim() ? `"${subject}"` : 'an empty subject'
   return block(
     [
@@ -84,14 +76,12 @@ export const check = bashGuard((command, payload) => {
       '  Fix  : rewrite as a Conventional Commits subject naming the',
       '         change, e.g. `fix(scan): handle empty manifest`.',
       '',
-      '  If this junk subject is genuinely intentional, type',
-      `  "${BYPASS_PHRASE}" in chat, then retry.`,
-      '',
     ].join('\n'),
   )
 })
 
 export const hook = defineHook({
+  bypass: ['placeholder-subject'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

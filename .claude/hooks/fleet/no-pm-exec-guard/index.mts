@@ -25,10 +25,7 @@
 // Exit codes: 0 — pass; 2 — block. Fails open on any throw.
 
 import { findInvocation } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
-
-const BYPASS_PHRASE = 'Allow pm-exec bypass'
 
 // (binary, label) pairs whose `exec` subcommand is banned (overhead/wrapper).
 const PM_EXEC: ReadonlyArray<readonly [string, string]> = [
@@ -70,13 +67,10 @@ export function bannedFetchExec(command: string): string | undefined {
 }
 
 export const check = bashGuard(
-  (command, payload) => {
+  command => {
     const execLabel = bannedPmExec(command)
     const fetchLabel = bannedFetchExec(command)
     if (!execLabel && !fetchLabel) {
-      return undefined
-    }
-    if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
       return undefined
     }
     if (fetchLabel) {
@@ -89,8 +83,6 @@ export const check = bashGuard(
           '',
           '  Add the dep and run it installed, or use pipx / node_modules/.bin:',
           `    pnpm add -D <pkg> && node_modules/.bin/<tool>   not  ${fetchLabel} <pkg>`,
-          '',
-          `  Bypass: type \`${BYPASS_PHRASE}\` if this is genuinely intended.`,
           '',
         ].join('\n'),
       )
@@ -106,8 +98,6 @@ export const check = bashGuard(
         `    node_modules/.bin/<tool>      not  ${execLabel} <tool>`,
         '    pnpm run <script>',
         '',
-        `  Bypass: type \`${BYPASS_PHRASE}\` if this is genuinely intended.`,
-        '',
       ].join('\n'),
     )
   },
@@ -115,6 +105,7 @@ export const check = bashGuard(
 )
 
 export const hook = defineHook({
+  bypass: ['pm-exec'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

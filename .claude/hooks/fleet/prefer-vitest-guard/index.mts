@@ -36,9 +36,6 @@
 // package.json scripts via the node binary. A `node --test` whose every target
 // resolves under a `.claude/hooks/**/test/` path is allowed (hook tier).
 //
-// Bypass: `Allow node-test-runner bypass` typed verbatim in a recent user
-// turn.
-//
 // Fails open on parse / payload errors.
 
 import { existsSync, readFileSync } from 'node:fs'
@@ -49,9 +46,6 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import { commandsFor, parseCommands } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow node-test-runner bypass' as const
 
 // Pre-flight skip set. The dispatcher imports + runs this guard only when the
 // raw command contains one of these substrings. A block can ONLY arise from
@@ -272,22 +266,11 @@ function isNodeTestCommand(command: string): {
 }
 
 export const check = bashGuard(
-  (command, payload): GuardResult => {
-    const transcriptPath =
-      typeof payload.transcript_path === 'string'
-        ? payload.transcript_path
-        : undefined
-    const bypassed = !!(
-      transcriptPath && bypassPhrasePresent(transcriptPath, [BYPASS_PHRASE], 3)
-    )
-
+  (command): GuardResult => {
     // Path (c): a raw `vitest` binary call — always blocked, steered to the
     // repo script (no node:test-tier exception; raw vitest is never sanctioned).
     const raw = rawVitestInvocation(command)
     if (raw.detected) {
-      if (bypassed) {
-        return undefined
-      }
       const suggestion =
         raw.testFiles.length > 0
           ? `pnpm test ${raw.testFiles.join(' ')}`
@@ -301,17 +284,12 @@ export const check = bashGuard(
           '  the --config, scope, and single-worker pre-commit settings:',
           `    ${suggestion}        (fast, file-scoped)`,
           '    pnpm test                            (the whole suite)',
-          '',
-          `  Bypass: type "${BYPASS_PHRASE}" to allow it for this invocation.`,
         ].join('\n'),
       )
     }
 
     const { detected, testFiles, reason } = isNodeTestCommand(command)
     if (!detected) {
-      return undefined
-    }
-    if (bypassed) {
       return undefined
     }
 
@@ -342,8 +320,6 @@ export const check = bashGuard(
         '    pnpm test',
         '',
         '  Targeting a specific file is faster and scopes coverage to your change.',
-        '',
-        `  Bypass: type "${BYPASS_PHRASE}" to allow it for this invocation.`,
       ].join('\n'),
     )
   },
@@ -351,6 +327,7 @@ export const check = bashGuard(
 )
 
 export const hook = defineHook({
+  bypass: ['node-test-runner'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

@@ -22,15 +22,12 @@
 //
 // This guard covers Claude `git commit` TOOL CALLS; subprocess / worktree / CI
 // commits are caught by the commit-msg git-stage backstop.
-//
-// Bypass: type "Allow commit-author bypass" in a recent user message.
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import process from 'node:process'
 
 import { isGitCommit } from '../_shared/commit-command.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
 // Cross-tree shared reader (canonical home: .git-hooks/_shared/). The DATA it
 // reads is the cascaded .config/fleet|repo/git-authors.json — the single
 // source of truth shared with the commit-msg git-stage backstop.
@@ -40,12 +37,6 @@ import {
   readIdentityPolicy,
 } from '../../../../.git-hooks/_shared/git-identity.mts'
 import type { GitAuthor } from '../../../../.git-hooks/_shared/git-identity.mts'
-
-const BYPASS_PHRASES = [
-  'Allow commit-author bypass',
-  'Allow commit author bypass',
-  'Allow commitauthor bypass',
-] as const
 
 export { isGitCommit }
 
@@ -135,12 +126,6 @@ export const check = bashGuard((command, payload) => {
     return undefined
   }
 
-  // Transcript read is the expensive last gate — only reached once we
-  // know the author would otherwise be blocked.
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)) {
-    return undefined
-  }
-
   const who = `${effective.name ?? '(unset)'} <${effective.email ?? '(unset)'}>`
   const lines = [
     denied
@@ -174,13 +159,11 @@ export const check = bashGuard((command, payload) => {
   lines.push(
     '  placeholder identities (test@example.com, Test, …) is never allowed.',
   )
-  lines.push('')
-  lines.push('  Bypass: type "Allow commit-author bypass" in a recent message.')
-  lines.push('')
   return block(lines.join('\n') + '\n')
 })
 
 export const hook = defineHook({
+  bypass: ['commit-author'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

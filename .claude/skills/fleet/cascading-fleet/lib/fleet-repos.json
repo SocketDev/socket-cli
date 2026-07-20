@@ -59,7 +59,7 @@
     },
     {
       "name": "decmpfs",
-      "owner": "decmpfs",
+      "owner": "SocketDev",
       "description": "Transparent-compression (decmpfs) reader/writer for macOS — Rust crate",
       "publishes": "cargo"
     },

@@ -42,9 +42,6 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { isEphemeralPath } from '../_shared/ephemeral-path.mts'
 import { isFleetTarget } from '../_shared/fleet-context.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow markdown-filename bypass'
 
 // SCREAMING_CASE files allowed at root / docs/ / .claude/ (top level).
 const ALLOWED_SCREAMING_CASE: ReadonlySet<string> = new Set([
@@ -251,8 +248,6 @@ export function emitBlock(filePath: string, verdict: Verdict): string {
   lines.push(
     '    - Everything else: lowercase-with-hyphens, in docs/ or .claude/.',
   )
-  lines.push('')
-  lines.push(`  Deliberate exception? Type "${BYPASS_PHRASE}".`)
   return lines.join('\n') + '\n'
 }
 
@@ -384,14 +379,11 @@ export const check = editGuard((filePath, content, payload) => {
   if (existsSync(filePath)) {
     return undefined
   }
-  // Recoverable override for a deliberate exception.
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    return undefined
-  }
   return block(emitBlock(filePath, verdict))
 })
 
 export const hook = defineHook({
+  bypass: ['markdown-filename'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

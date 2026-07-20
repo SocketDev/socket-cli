@@ -33,11 +33,9 @@
 // hook deploy can't brick the session.
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 const ALLOW_MARKER = '# socket-lint: allow soak-exclude-no-date-annotation'
-const BYPASS_PHRASE = 'Allow soak-exclude-no-date-annotation bypass'
 
 // Matches the section header for the soak-exclude block.
 const SECTION_HEADER = /^minimumReleaseAgeExclude:\s*$/
@@ -133,16 +131,13 @@ export function findOrphanEntries(text: string): OrphanReport[] {
   return orphans
 }
 
-export const check = editGuard((filePath, content, payload) => {
+export const check = editGuard((filePath, content) => {
   if (!normalizePath(filePath).endsWith('/pnpm-workspace.yaml')) {
     return undefined
   }
   const proposed = content ?? ''
   const orphans = findOrphanEntries(proposed)
   if (orphans.length === 0) {
-    return undefined
-  }
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
     return undefined
   }
   const today = new Date().toISOString().slice(0, 10)
@@ -174,6 +169,7 @@ export const check = editGuard((filePath, content, payload) => {
 })
 
 export const hook = defineHook({
+  bypass: ['soak-exclude-no-date-annotation'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

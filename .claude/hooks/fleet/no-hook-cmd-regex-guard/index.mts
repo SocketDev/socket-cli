@@ -25,17 +25,8 @@
 //
 // Exit codes: 0 pass, 2 block. Fails open on malformed payloads.
 
-import {
-  block,
-  defineHook,
-  editGuard,
-  notify,
-  runHook,
-} from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
-
-const BYPASS_PHRASE = 'Allow command-regex bypass'
 
 // Shell binaries whose appearance inside a regex literal signals
 // command-structure matching. Kept to the high-signal ones the fleet's
@@ -127,7 +118,7 @@ export function isHookFile(filePath: string): boolean {
   )
 }
 
-export const check = editGuard((filePath, content, payload) => {
+export const check = editGuard((filePath, content, _payload) => {
   if (!isHookFile(filePath)) {
     return undefined
   }
@@ -138,11 +129,6 @@ export const check = editGuard((filePath, content, payload) => {
   const findings = findCommandRegexes(text)
   if (findings.length === 0) {
     return undefined
-  }
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    return notify(
-      `no-hook-cmd-regex-guard: ${findings.length} command-shaped regex(es) — bypassed via "${BYPASS_PHRASE}"\n`,
-    )
   }
   const lines = findings
     .map(
@@ -161,14 +147,12 @@ export const check = editGuard((filePath, content, payload) => {
       `  commandsFor(command, 'git').some(c => c.args.includes('push'))\n` +
       `\n` +
       `The parser sees through && / | / ; chains, quoting, and $(…) and\n` +
-      `won't false-positive on a literal "git push" inside a grep arg.\n` +
-      `\n` +
-      `Bypass (e.g. the regex matches tool stdout, not a command line):\n` +
-      `  type "${BYPASS_PHRASE}" in a recent message.\n`,
+      `won't false-positive on a literal "git push" inside a grep arg.\n`,
   )
 })
 
 export const hook = defineHook({
+  bypass: ['command-regex'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

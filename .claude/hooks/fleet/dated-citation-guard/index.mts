@@ -36,9 +36,6 @@ import {
   isRuleProseSurface,
 } from '../_shared/dated-citation.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow dated-citation bypass'
 
 // File-path fragments (normalized to `/`) that define or quote the pattern, so
 // the guard doesn't fire on its own machinery.
@@ -72,9 +69,7 @@ export const check = editGuard((filePath, content, payload) => {
   if (!hits.length) {
     return undefined
   }
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    return undefined
-  }
+  void payload
   const lines = [
     `[dated-citation-guard] Blocked: dated-incident citation(s) in rule prose — ${filePath}:`,
     '',
@@ -93,12 +88,11 @@ export const check = editGuard((filePath, content, payload) => {
   lines.push('    ✗ "**Why:** <date> pnpm <x> vs <y> broke the cascade"')
   lines.push('    ✓ "**Why:** a stale pnpm on PATH fails the version check and')
   lines.push('       aborts the cascade install"')
-  lines.push('')
-  lines.push(`  Bypass: type "${BYPASS_PHRASE}" in a recent message.`)
   return block(lines.join('\n'))
 })
 
 export const hook = defineHook({
+  bypass: ['dated-citation'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

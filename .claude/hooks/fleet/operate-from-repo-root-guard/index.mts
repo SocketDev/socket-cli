@@ -24,9 +24,6 @@
 
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { parseCommands } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow repo-root bypass'
 
 // Pre-flight gate: the guard can only block a `cd <subpackage> && <pm> …`
 // chain, which requires a package-manager binary segment — so the literal pm
@@ -87,12 +84,9 @@ export function findCdThenPm(
   return undefined
 }
 
-export const check = bashGuard((command, payload) => {
+export const check = bashGuard(command => {
   const hit = findCdThenPm(command)
   if (!hit) {
-    return undefined
-  }
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
     return undefined
   }
   return block(
@@ -110,13 +104,12 @@ export const check = bashGuard((command, payload) => {
       `  (\`cd ${hit.target}\` parks the Bash cwd there for later commands`,
       "  and runs against the subpackage's local resolution, not the",
       '  workspace root.)',
-      '',
-      `  Bypass: type \`${BYPASS_PHRASE}\` if this is genuinely intended.`,
     ].join('\n'),
   )
 })
 
 export const hook = defineHook({
+  bypass: ['repo-root'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

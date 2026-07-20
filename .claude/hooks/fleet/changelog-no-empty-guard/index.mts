@@ -208,6 +208,8 @@ export const check = editGuard((filePath, content, payload) => {
 })
 
 export const hook = defineHook({
+  bypass: ['changelog-empty-section'],
+  bypassMode: 'manual',
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

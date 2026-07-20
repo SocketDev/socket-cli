@@ -122,6 +122,10 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
     // the single root .gitignore — no tracked nested per-dir .gitignore. Reuses
     // the guard's isNestedGitignore predicate.
     () => run('node', ['scripts/fleet/check/gitignore-is-single-file.mts']),
+    // DRY bypass-phrase gate: a defineHook hook that references an `Allow <slug>
+    // bypass` phrase must declare it as `bypass:` metadata (single source →
+    // detector + footer), never hand-write it. Catches drift regressions.
+    () => run('node', ['scripts/fleet/check/bypass-phrases-are-metadata.mts']),
     // package.json's packageManager + engines.{pnpm,npm} are GENERATED from
     // external-tools.json (the single source); this gate fails on drift.
     () =>

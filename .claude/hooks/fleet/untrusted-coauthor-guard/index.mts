@@ -38,9 +38,6 @@ import {
 } from '../_shared/commit-command.mts'
 import { defaultRepoDir } from '../_shared/git-identity.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASES = ['Allow untrusted-coauthor bypass']
 
 const COAUTHOR_RE =
   /^\s*Co-authored-by:\s*(?<name>.+?)\s*<(?<email>[^>]+)>\s*$/gim
@@ -115,13 +112,6 @@ export const check = bashGuard((command, payload) => {
     return undefined
   }
 
-  if (
-    payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)
-  ) {
-    return undefined
-  }
-
   return block(
     [
       '[untrusted-coauthor-guard] Blocked: Co-authored-by an unvetted identity',
@@ -135,16 +125,15 @@ export const check = bashGuard((command, payload) => {
       '  social-engineering vector.',
       '',
       '  Land the change under your own authorship (drop the trailer), OR — only',
-      '  after you have actually vetted the account — type',
-      `  "${BYPASS_PHRASES[0]}" in a new message and retry. To make a teammate`,
-      '  a permanent trusted co-author, add them to',
-      '  .config/{fleet,repo}/git-authors.json.',
-      '',
+      '  after you have actually vetted the account — retry after typing the',
+      '  bypass phrase. To make a teammate a permanent trusted co-author, add',
+      '  them to .config/{fleet,repo}/git-authors.json.',
     ].join('\n'),
   )
 })
 
 export const hook = defineHook({
+  bypass: ['untrusted-coauthor'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

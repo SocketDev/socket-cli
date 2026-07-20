@@ -23,9 +23,6 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { isFleetTarget } from '../_shared/fleet-context.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow golden-fixture-naming bypass'
 
 // Basename ends with `.expected.json` (case-insensitive extension).
 const EXPECTED_JSON_RE = /\.expected\.json$/i
@@ -58,9 +55,6 @@ export const check = editGuard((filePath, content, payload) => {
   if (existsSync(filePath)) {
     return undefined
   }
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    return undefined
-  }
   return block(
     [
       '🚨 golden-fixture-naming-guard: refusing to create a `*.expected.json`',
@@ -72,13 +66,12 @@ export const check = editGuard((filePath, content, payload) => {
       '',
       `Fix: name it \`${target.slice(target.lastIndexOf('/') + 1)}\`.`,
       '     Detail: docs/agents.md/fleet/golden-fixtures.md.',
-      '',
-      `Bypass (the user must type verbatim in a recent turn): \`${BYPASS_PHRASE}\``,
     ].join('\n'),
   )
 })
 
 export const hook = defineHook({
+  bypass: ['golden-fixture-naming'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'MultiEdit', 'Write'],

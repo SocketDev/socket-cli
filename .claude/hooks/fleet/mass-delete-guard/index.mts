@@ -183,6 +183,8 @@ export const check = bashGuard((command, payload) => {
 })
 
 export const hook = defineHook({
+  bypass: ['mass-delete'],
+  bypassMode: 'manual',
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

@@ -138,6 +138,8 @@ export const check = bashGuard((command, payload) => {
 })
 
 export const hook = defineHook({
+  bypass: ['push-to-protected', 'protected-push', 'force-with-lease'],
+  bypassMode: 'manual',
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

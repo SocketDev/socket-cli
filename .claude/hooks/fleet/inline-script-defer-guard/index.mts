@@ -31,9 +31,6 @@
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { resolveEditedText } from '../_shared/payload.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow inline-defer bypass'
 
 // File extensions where we check the full text content. For other
 // extensions, only the new_string is checked (template strings embedded
@@ -97,13 +94,6 @@ export const check = editGuard((filePath, content, payload) => {
     return undefined
   }
 
-  if (
-    payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
-  ) {
-    return undefined
-  }
-
   const tag = `<script${found.attrs.slice(0, 80)}>`
   return block(
     [
@@ -129,13 +119,12 @@ export const check = editGuard((filePath, content, payload) => {
       '',
       '      <script defer src="/path/to/script.js"></script>',
       '',
-      `  Bypass: type "${BYPASS_PHRASE}" in a new message, then retry.`,
-      '',
     ].join('\n'),
   )
 })
 
 export const hook = defineHook({
+  bypass: ['inline-defer'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

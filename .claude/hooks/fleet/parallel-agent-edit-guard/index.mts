@@ -50,9 +50,7 @@ import {
 import { block, defineHook, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
-const BYPASS_PHRASES = ['Allow parallel-agent-edit bypass'] as const
 const EDIT_TOOLS = new Set(['Edit', 'NotebookEdit', 'Write'])
 
 function getProjectDir(): string {
@@ -101,14 +99,6 @@ export const check = (payload: ToolCallPayload): GuardResult => {
     return undefined
   }
 
-  if (
-    payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES, 3)
-  ) {
-    recordTouchedPath(payload.transcript_path, targetAbs)
-    return undefined
-  }
-
   return block(
     [
       `[parallel-agent-edit-guard] Blocked: ${payload.tool_name} ${filePath}`,
@@ -124,14 +114,12 @@ export const check = (payload: ToolCallPayload): GuardResult => {
       '    `node scripts/fleet/land-work.mts --commit` — then edit it clean.',
       '  • A genuine concurrent editor on this `.git/` is the rare case; if',
       '    so, let it land or take the edit into a `git worktree`.',
-      '',
-      '  Bypass (the dirty edit is truly abandoned):',
-      '  user types "Allow parallel-agent-edit bypass" in chat, then retry.',
     ].join('\n'),
   )
 }
 
 export const hook = defineHook({
+  bypass: ['parallel-agent-edit'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

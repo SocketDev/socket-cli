@@ -63,6 +63,17 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // ~200 dangling entries across 10 repos. Auto-fixable with
     // `node scripts/fleet/check/claude-dirs-are-segmented.mts --fix`.
     () => run('node', ['scripts/fleet/check/claude-dirs-are-segmented.mts']),
+    // Every file under template/base is classified into exactly one distribution
+    // channel (mirror / optional / preset / conditional / expected / carveOut /
+    // overrides / native handler) — Assertion A (blocking) fails when a file
+    // reaches no member + no release bundle, the silent-drift class that shipped
+    // a stale github-release.yml / npm-publish.yml. Assertion B (report-only)
+    // flags a present root copy that drifted from its resolved template source.
+    // Wheelhouse-only in effect (scripts/repo absent → vacuous pass in members).
+    () =>
+      run('node', [
+        'scripts/fleet/check/wheelhouse-controlled-files-are-classified.mts',
+      ]),
     // Release-hygiene floor: every publishable package.json (private!==true,
     // has a name) must declare a `files` field. Without it, npm publishes the
     // ENTIRE directory — test fixtures, .claude/ tooling, coverage, secrets.
@@ -103,6 +114,12 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // launcher fails open to baseline, so a rotted snapshot is otherwise
     // invisible; this makes it loud. Release-tier (builds + boots).
     releaseStep(['scripts/fleet/check/hook-snapshot-is-wired.mts']),
+    // Every fleet member's ci.yml workflow must actually FIRE on push — a repo
+    // can carry a valid push trigger yet never run (fresh private repo pending
+    // org/enterprise Actions activation), landing commits unverified. Reads the
+    // push-run count per member via gh; report-mode for now (skips cleanly when
+    // gh is unauthenticated / no fleet-repos.json in a member checkout).
+    releaseStep(['scripts/fleet/check/member-ci-fires-on-push.mts']),
     // The dep-0 fetcher (bootstrap/fleet.mjs) is a rolldown-inlined build artifact;
     // fail loud if it drifts from its bootstrap/src/* source (rebuild: node
     // scripts/repo/build-bootstrap-fetcher.mts). Wheelhouse-only — the build script

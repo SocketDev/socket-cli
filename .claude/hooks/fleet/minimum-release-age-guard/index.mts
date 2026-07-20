@@ -30,15 +30,6 @@ import { safeReadFileSync } from '@socketsecurity/lib-stable/fs/read-file'
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { resolveEditedText } from '../_shared/payload.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-// `soak-time` is the canonical phrase; `minimumReleaseAge` is kept as an alias
-// so older transcripts / muscle memory still authorize the bypass. Both fold
-// through normalizeBypassText, so spacing/hyphen variants of each also match.
-const BYPASS_PHRASES = [
-  'Allow soak-time bypass',
-  'Allow minimumReleaseAge bypass',
-]
 
 // Permissive YAML extraction tailored to the `minimumReleaseAge.exclude`
 // block. We don't pull in a full YAML library — the block shape is narrow:
@@ -130,13 +121,6 @@ export const check = editGuard((filePath, _content, payload) => {
     return undefined
   }
 
-  if (
-    payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)
-  ) {
-    return undefined
-  }
-
   added.sort()
   return block(
     [
@@ -158,14 +142,12 @@ export const check = editGuard((filePath, _content, payload) => {
       '  looks up the npm publish date and writes the dated annotation for you:',
       '    node scripts/fleet/soak-bypass.mts <pkg>@<version>',
       '  (the daily updating-daily job removes the entry once its soak clears).',
-      '',
-      `  Bypass (to hand-edit anyway): type "${BYPASS_PHRASES[0]}" in a new message, then retry.`,
-      '',
     ].join('\n'),
   )
 })
 
 export const hook = defineHook({
+  bypass: ['soak-time', 'minimum-release-age'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

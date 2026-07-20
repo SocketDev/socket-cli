@@ -15,8 +15,6 @@
 // changes — the regression patterns are subtle (perf, semantic edge cases)
 // that human review catches but Codex doesn't.
 //
-// Bypass: `Allow codex-write bypass` typed verbatim in a recent user turn.
-//
 // This hook ships in the wheelhouse template (cascaded everywhere) but is
 // wired into `.claude/settings.json` only in opt-in repos. Where unwired,
 // it has zero effect.
@@ -25,9 +23,6 @@ import { block, defineHook, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import { commandsFor, invocationHasFlag } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow codex-write bypass'
 
 // Implementation-intent verb pattern. Conservative — matches verbs that
 // signal "make code changes" rather than "diagnose / explain / review".
@@ -123,8 +118,6 @@ export function blockMessage(blocked: {
     '    - "Implement / write / add / fix / patch / refactor X"',
     '    - Anything with `--write` or `-w` flags',
     '',
-    `  Bypass: type "${BYPASS_PHRASE}" in a new message, then retry.`,
-    '',
   ].join('\n')
 }
 
@@ -181,17 +174,11 @@ export function check(payload: ToolCallPayload): GuardResult {
     return undefined
   }
 
-  if (
-    payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
-  ) {
-    return undefined
-  }
-
   return block(blockMessage(blocked))
 }
 
 export const hook = defineHook({
+  bypass: ['codex-write'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

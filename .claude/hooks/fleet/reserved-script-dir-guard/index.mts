@@ -28,9 +28,6 @@
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow reserved-script-dir bypass'
 
 // Dir names under scripts/ that collide with build/output/tooling concepts.
 // `fleet`/`repo` are the canonical tiers and are deliberately NOT here.
@@ -54,12 +51,9 @@ export function reservedScriptDir(filePath: string): string | undefined {
   return m?.groups?.['entry']
 }
 
-export const check = editGuard((filePath, _content, payload) => {
+export const check = editGuard((filePath, _content, _payload) => {
   const entry = reservedScriptDir(filePath)
   if (!entry) {
-    return undefined
-  }
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
     return undefined
   }
   const suggestion = entry === 'build' ? 'bundle' : '<what-it-does>'
@@ -77,13 +71,12 @@ export const check = editGuard((filePath, _content, payload) => {
       `    scripts/${suggestion}/  not  scripts/${entry}/`,
       '',
       `  Reserved (blocked): ${RESERVED_DIRS.join(', ')}.`,
-      `  Bypass: type \`${BYPASS_PHRASE}\` if this is genuinely intended.`,
-      '',
     ].join('\n'),
   )
 })
 
 export const hook = defineHook({
+  bypass: ['reserved-script-dir'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

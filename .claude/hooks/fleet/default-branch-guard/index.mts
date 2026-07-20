@@ -40,13 +40,6 @@ import {
   notify,
   runHook,
 } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASES = [
-  'Allow default-branch bypass',
-  'Allow default branch bypass',
-  'Allow defaultbranch bypass',
-] as const
 
 // Patterns we consider "script context" (not interactive one-off):
 //
@@ -137,11 +130,7 @@ export const check = bashGuard((command, payload) => {
     return undefined
   }
 
-  // Transcript read is the expensive last gate — only reached once a
-  // hard-coded default-branch pattern matched and we would otherwise block.
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)) {
-    return undefined
-  }
+  void payload
 
   const lines = [
     '[default-branch-guard] Command hard-codes a default branch name in scripting context:',
@@ -166,15 +155,11 @@ export const check = bashGuard((command, payload) => {
     '    [ -z "$BASE" ] && git show-ref --verify --quiet refs/remotes/origin/master && BASE=master',
   )
   lines.push('    BASE="${BASE:-main}"')
-  lines.push('')
-  lines.push(
-    '  Bypass: type "Allow default-branch bypass" in a recent message.',
-  )
-  lines.push('')
   return block(lines.join('\n') + '\n')
 })
 
 export const hook = defineHook({
+  bypass: ['default-branch'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

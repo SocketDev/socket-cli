@@ -50,19 +50,12 @@ import process from 'node:process'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { defineHook, editGuard, notify, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 interface LockStepConfig {
   readonly roots: Readonly<Record<string, readonly string[]>>
   readonly scan: readonly string[]
   readonly extensions: readonly string[]
 }
-
-const BYPASS_PHRASES = [
-  'Allow lock-step bypass',
-  'Allow lockstep bypass',
-  'Allow lock step bypass',
-] as const
 
 const SOURCE_EXT_RE =
   /\.(?:cjs|cpp|cts|go|h|hh|hpp|js|jsx|mjs|mts|py|rs|ts|tsx|zig)$/
@@ -292,9 +285,6 @@ export const check = editGuard((filePath, content, payload) => {
   ) {
     return undefined
   }
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)) {
-    return undefined
-  }
   if (!content) {
     return undefined
   }
@@ -337,12 +327,12 @@ export const check = editGuard((filePath, content, payload) => {
   out.push(
     '  CI gate: scripts/fleet/check/lock-step-refs-resolve.mts (run via `pnpm check`).',
   )
-  out.push('  Bypass: "Allow lock-step bypass" in a recent user message.')
   out.push('')
   return notify(out.join('\n'))
 })
 
 export const hook = defineHook({
+  bypass: ['lock-step'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

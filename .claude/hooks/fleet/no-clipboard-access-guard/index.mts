@@ -33,9 +33,6 @@
 import { block, defineHook, runHook } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow clipboard-access bypass'
 
 // Pre-flight skip set: the dispatcher only imports this guard when the raw
 // payload contains one of these. Every block path requires one — a clipboard
@@ -151,12 +148,6 @@ export const check = (payload: ToolCallPayload) => {
   if (!reason) {
     return undefined
   }
-  if (
-    payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
-  ) {
-    return undefined
-  }
   return block(
     [
       '[no-clipboard-access-guard] Blocked: clipboard read',
@@ -167,14 +158,12 @@ export const check = (payload: ToolCallPayload) => {
       '  secret or another app’s copied data into the agent’s context; a',
       '  source-embedded OSC-52 escape can silently overwrite/read it. Writing',
       '  TO the clipboard (e.g. `pbcopy`) is allowed — that is not blocked.',
-      '',
-      `  If you genuinely need a clipboard read, type the phrase in a new`,
-      `  message: ${BYPASS_PHRASE}`,
     ].join('\n'),
   )
 }
 
 export const hook = defineHook({
+  bypass: ['clipboard-access'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

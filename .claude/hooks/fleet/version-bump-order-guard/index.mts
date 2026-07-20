@@ -30,9 +30,8 @@
 // stays in CI; this hook front-runs the two that catch the common
 // release-day breakage (accumulated lint debt, an unpinned advisory).
 //
-// Bypass: "Allow version-bump-order bypass" in a recent user turn, or
-// skipped with SOCKET_VERSION_BUMP_SKIP_GATE=1 when the bump ordering is
-// fine but the gate is being run out-of-band.
+// Skipped with SOCKET_VERSION_BUMP_SKIP_GATE=1 when the bump ordering is fine
+// but the gate is being run out-of-band.
 
 import { which } from '@socketsecurity/lib-stable/bin/which'
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
@@ -47,13 +46,6 @@ import process from 'node:process'
 import { actedOnPath, isFleetTarget } from '../_shared/fleet-context.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASES = [
-  'Allow version-bump-order bypass',
-  'Allow version bump order bypass',
-  'Allow versionbumporder bypass',
-] as const
 
 // `git tag <name>` (also `git tag -a`, `git tag -s`, etc.) creating a
 // version tag (`vX.Y.Z`). Parser-based: a real `git` command with a
@@ -371,9 +363,6 @@ export const check = bashGuard(async (command, payload) => {
   if (!bumpMsg && !isTag) {
     return undefined
   }
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)) {
-    return undefined
-  }
 
   // The directory the command ACTS on, honoring a `cd <repo> && git …` — a
   // wheelhouse-rooted session bumping a sibling repo must be gated against
@@ -405,8 +394,6 @@ export const check = bashGuard(async (command, payload) => {
         '  Stage both, then commit (named paths keep a parallel session out):',
         '',
         '    git commit -o package.json CHANGELOG.md -m "chore: bump version to X.Y.Z"',
-        '',
-        '  Bypass: type "Allow version-bump-order bypass" in a recent message.',
         '',
       ]
       return block(lines.join('\n') + '\n')
@@ -444,7 +431,6 @@ export const check = bashGuard(async (command, payload) => {
         '  Then commit `chore: bump version to X.Y.Z`.',
         '',
         '  Bypass the gate only: SOCKET_VERSION_BUMP_SKIP_GATE=1',
-        '  Bypass the whole guard: "Allow version-bump-order bypass".',
         '',
       ]
       return block(lines.join('\n') + '\n')
@@ -479,7 +465,6 @@ export const check = bashGuard(async (command, payload) => {
         '    pnpm run check --all   # typecheck + unit tests + coverage',
         '',
         '  Bypass the gate only: SOCKET_VERSION_BUMP_SKIP_GATE=1',
-        '  Bypass the whole guard: "Allow version-bump-order bypass".',
         '',
       ]
       return block(gateLines.join('\n') + '\n')
@@ -545,13 +530,12 @@ export const check = bashGuard(async (command, payload) => {
     '  Then update CHANGELOG.md and commit `chore: bump version to X.Y.Z`',
     '  carrying package.json + CHANGELOG.md. Then tag.',
     '',
-    '  Bypass: type "Allow version-bump-order bypass" in a recent message.',
-    '',
   ]
   return block(lines.join('\n') + '\n')
 })
 
 export const hook = defineHook({
+  bypass: ['version-bump-order'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

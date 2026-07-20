@@ -27,9 +27,6 @@
 
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow unmocked-network-in-tests bypass'
 
 // A path is a test file if its basename matches `*.test.*` / `*.spec.*` or it
 // lives under a `test/` or `__tests__/` directory.
@@ -86,15 +83,8 @@ export function shouldBlock(filePath: string, content: string): boolean {
 
 // editGuard handles the stdin drain, tool_name gate, file_path narrow, content
 // extraction, and fail-open on any throw.
-export const check = editGuard((filePath, content, payload) => {
+export const check = editGuard((filePath, content) => {
   if (!shouldBlock(filePath, content ?? '')) {
-    return undefined
-  }
-
-  if (
-    payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
-  ) {
     return undefined
   }
 
@@ -115,13 +105,13 @@ export const check = editGuard((filePath, content, payload) => {
       "    nock('https://host').get('/path').reply(200, { ... })",
       '',
       '  Detail: docs/agents.md/fleet/no-live-network-in-tests.md',
-      `  Bypass: type "${BYPASS_PHRASE}" in a new message, then retry.`,
       '',
     ].join('\n'),
   )
 })
 
 export const hook = defineHook({
+  bypass: ['unmocked-network-in-tests'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

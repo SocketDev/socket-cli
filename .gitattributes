@@ -86,6 +86,7 @@ template/.claude/hooks/fleet/_shared/acorn/acorn.wasm binary
 .codex/hooks.json linguist-generated=true
 .config/fleet/.markdownlint-cli2.jsonc linguist-generated=true
 .config/fleet/.prettierignore linguist-generated=true
+.config/fleet/egress-allowlist.json linguist-generated=true
 .config/fleet/git-authors.json linguist-generated=true
 .config/fleet/markdownlint-rules linguist-generated=true
 .config/fleet/oxfmtrc.json linguist-generated=true
@@ -136,6 +137,8 @@ template/.claude/hooks/fleet/_shared/acorn/acorn.wasm binary
 .github/workflows/get-green.lock.yml linguist-generated=true
 .github/workflows/get-green.md linguist-generated=true
 .github/workflows/get-green.yml linguist-generated=true
+.github/workflows/github-release.yml linguist-generated=true
+.github/workflows/npm-publish.yml linguist-generated=true
 .github/workflows/prune-workflow-runs.yml linguist-generated=true
 .github/workflows/publish-npm.yml linguist-generated=true
 .github/workflows/weekly-update-non-gh-aw.yml.disabled linguist-generated=true

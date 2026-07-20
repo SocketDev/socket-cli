@@ -94,8 +94,15 @@ export function normalizeBypassText(text: string): string {
  * escaped literally.
  */
 export function phrasePattern(normalizedPhrase: string): RegExp {
-  const escaped = normalizedPhrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  return new RegExp(escaped.replace(/ /g, ' ?'), 'g')
+  // Collapse whitespace on BOTH sides of a `:` target separator to a bare colon
+  // first, so the emitted pattern makes surrounding space optional on either
+  // side — `Allow x bypass: t`, `bypass :t`, `bypass  :  t`, and `bypass:t` all
+  // match (normalizeBypassText already folded newlines + runs of space to one
+  // space before this). Plain colon-free phrases are unaffected.
+  const collapsed = normalizedPhrase.replace(/ *: */g, ':')
+  const escaped = collapsed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const src = escaped.replace(/ /g, ' ?').replace(/:/g, ' ?: ?')
+  return new RegExp(src, 'g')
 }
 
 export function bypassPhrasePresent(

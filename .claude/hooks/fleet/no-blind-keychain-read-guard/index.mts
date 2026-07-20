@@ -48,15 +48,12 @@
 import { block, defineHook, runHook } from '../_shared/guard.mts'
 import { readCommand } from '../_shared/payload.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 interface Hit {
   readonly tool: string
   readonly platform: 'macos' | 'linux' | 'windows' | 'cross-platform'
   readonly snippet: string
 }
-
-const BYPASS_PHRASE = 'Allow blind-keychain-read bypass'
 
 // Pre-flight triggers — the dispatcher imports + runs this guard only
 // when the raw command contains at least one of these substrings. Each
@@ -200,30 +197,21 @@ export function keychainReadMessage(
   lines.push('  Writes / deletes (security add-generic-password / secret-tool')
   lines.push('  store / New-StoredCredential / etc.) are allowed — they only')
   lines.push('  happen during operator-driven setup / rotation.')
-  lines.push('')
-  lines.push('  Bypass (e.g. operator-invoked diagnostics that need a fresh')
-  lines.push('  keychain read):')
-  lines.push(`    Type "${BYPASS_PHRASE}" in your next message.`)
   return lines.join('\n') + '\n'
 }
 
-// The block logic. Blocks when a keychain read is found without a
-// bypass phrase; allows (returns undefined) otherwise.
+// The block logic. Blocks when a keychain read is found; allows (returns
+// undefined) otherwise.
 export const check = (payload: ToolCallPayload) => {
   const message = keychainReadMessage(payload)
   if (!message) {
-    return undefined
-  }
-  if (
-    payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
-  ) {
     return undefined
   }
   return block(message)
 }
 
 export const hook = defineHook({
+  bypass: ['blind-keychain-read'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

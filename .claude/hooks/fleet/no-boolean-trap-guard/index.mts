@@ -30,18 +30,9 @@
 //
 // Exit codes: 0 pass, 2 block. Fails open on malformed payloads.
 
-import {
-  block,
-  defineHook,
-  editGuard,
-  notify,
-  runHook,
-} from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { isRepoTestHome } from '../_shared/repo-test-home.mts'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
-
-const BYPASS_PHRASE = 'Allow boolean-trap bypass'
 
 interface Finding {
   readonly line: number
@@ -168,7 +159,7 @@ export function isExemptPath(filePath: string): boolean {
 }
 
 export const check = editGuard(
-  (filePath, content, payload) => {
+  (filePath, content) => {
     if (isExemptPath(filePath)) {
       return undefined
     }
@@ -183,11 +174,6 @@ export const check = editGuard(
     const findings = findBooleanTrapParams(text)
     if (findings.length === 0) {
       return undefined
-    }
-    if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-      return notify(
-        `no-boolean-trap-guard: ${findings.length} boolean-trap param(s) — bypassed via "${BYPASS_PHRASE}"\n`,
-      )
     }
     const lines = findings
       .map(f => `  ${filePath}:${f.line}  param \`${f.param}\`\n    ${f.text}`)
@@ -208,14 +194,14 @@ export const check = editGuard(
         `    …\n` +
         `  }\n` +
         `\n` +
-        `See docs/agents.md/fleet/options-object.md for the full recipe.\n` +
-        `Bypass: type "${BYPASS_PHRASE}" in a recent message.\n`,
+        `See docs/agents.md/fleet/options-object.md for the full recipe.\n`,
     )
   },
   { fleetOnly: true },
 )
 
 export const hook = defineHook({
+  bypass: ['boolean-trap'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

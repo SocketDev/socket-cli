@@ -35,14 +35,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-
-const BYPASS_PHRASES = [
-  'Allow new-hook bypass',
-  'Allow new hook bypass',
-  'Allow newhook bypass',
-] as const
 
 // Match either:
 //   <repo>/template/.claude/hooks/<name>/index.mts    (wheelhouse)
@@ -127,10 +120,6 @@ export const check = editGuard((filePath, _content, payload) => {
   if (segment === 'repo') {
     return undefined
   }
-  // Bypass via canonical user phrase.
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)) {
-    return undefined
-  }
   const claudeMdPath = findCanonicalClaudeMd(normalizedFilePath, payload.cwd)
   if (!claudeMdPath || !existsSync(claudeMdPath)) {
     // Can't find CLAUDE.md; fail-open rather than blocking on
@@ -207,16 +196,12 @@ export const check = editGuard((filePath, _content, payload) => {
     "  truth. A hook with no entry is policy that doesn't exist on paper —",
     "  users won't know why they got blocked. Prefer the registry bullet;",
     '  it keeps CLAUDE.md under the 40 KB cap.',
-    '',
-    '  Bypass (use sparingly, e.g. when adding the entry in a follow-up',
-    '  commit on the same PR): type "Allow new-hook bypass" in a recent',
-    '  message.',
-    '',
   ]
   return block(lines.join('\n') + '\n')
 })
 
 export const hook = defineHook({
+  bypass: ['new-hook'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

@@ -208,6 +208,8 @@ export const check = bashGuard((command, payload) => {
 })
 
 export const hook = defineHook({
+  bypass: ['parallel-agent-staging'],
+  bypassMode: 'manual',
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

@@ -555,6 +555,8 @@ function fail(headline: string, body: string): GuardBlock {
 }
 
 export const hook = defineHook({
+  bypass: ['workflow-scope', 'workflow-dispatch'],
+  bypassMode: 'manual',
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

@@ -25,9 +25,6 @@
 
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { parseCommands } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-export const SED_IN_PLACE_BYPASS_PHRASE = 'Allow sed-in-place bypass'
 
 // Editor commands and the flag shapes that flip them into in-place mode.
 // Perl/ruby clusters restrict the letters allowed BEFORE the `i` to the
@@ -102,25 +99,15 @@ export function formatBlock(reason: string): string {
       '    • Write — for whole-file rewrites you have just read',
       '    • scripted bulk edits — python/node with ASSERTED unique content',
       '      anchors (`assert old in s`), never line numbers',
-      '',
-      `  Bypass: type "${SED_IN_PLACE_BYPASS_PHRASE}" to allow it once.`,
     ].join('\n') + '\n'
   )
 }
 
 export const hook = defineHook({
-  check: bashGuard((command, payload) => {
+  bypass: ['sed-in-place'],
+  check: bashGuard((command, _payload) => {
     const reason = detectInPlaceEdit(command)
     if (!reason) {
-      return undefined
-    }
-    if (
-      bypassPhrasePresent(
-        payload.transcript_path,
-        [SED_IN_PLACE_BYPASS_PHRASE],
-        8,
-      )
-    ) {
       return undefined
     }
     return block(formatBlock(reason))

@@ -41,9 +41,6 @@ import { resolveDefaultBranch } from '../_shared/git-branch.mts'
 import { extractGitCwd } from '../_shared/git-cwd.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow amend-foreign bypass'
 
 // Pre-flight skip set. The only path to a block is gated by `isAmendCommit`,
 // which requires a `git` segment whose args include both `commit` and
@@ -137,9 +134,6 @@ export const check = bashGuard(
     if (!reason) {
       return undefined
     }
-    if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-      return undefined
-    }
     return block(
       [
         '[no-amend-foreign-commit-guard] Blocked: `git commit --amend` onto a foreign unpushed commit.',
@@ -154,14 +148,13 @@ export const check = bashGuard(
         '  Fix: verify HEAD first — `git log -1 --format=%s` +',
         '  `git rev-list --count origin/<default>..HEAD`. If the tip is another',
         "  session's, commit your change as a NEW commit, not an amend.",
-        '',
-        `  If you truly mean to amend this older own-commit, type: ${BYPASS_PHRASE}`,
       ].join('\n'),
     )
   },
 )
 
 export const hook = defineHook({
+  bypass: ['amend-foreign'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

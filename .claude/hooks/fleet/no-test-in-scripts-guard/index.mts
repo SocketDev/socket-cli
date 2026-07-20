@@ -27,16 +27,11 @@
 // Reusable test helpers belong in `test/_shared/fleet/lib/`, not a
 // `scripts/**/test/helpers.mts`.
 //
-// Bypass: `Allow test-in-scripts bypass` in a recent user turn.
-//
 // Exit codes: 0 — pass; 2 — block. Fails open on any throw.
 
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-
-const BYPASS_PHRASE = 'Allow test-in-scripts bypass'
 
 // A `*.test.*` file (test.mts/ts/js/mjs/cjs/tsx/jsx) sitting under a `scripts/`
 // dir at any depth. Path normalized to `/` first so the regex stays
@@ -47,11 +42,8 @@ export function isTestInScripts(filePath: string): boolean {
   return TEST_IN_SCRIPTS_RE.test(normalizePath(filePath))
 }
 
-export const check = editGuard((filePath, _content, payload) => {
+export const check = editGuard((filePath, _content, _payload) => {
   if (!isTestInScripts(filePath)) {
-    return undefined
-  }
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
     return undefined
   }
   return block(
@@ -70,14 +62,12 @@ export const check = editGuard((filePath, _content, payload) => {
       '  Hook / lint-rule / git-hook tests are NOT co-located either — they live',
       '  under test/repo/{unit,integration,e2e}/ (vitest), gated by the',
       '  cascaded-fleet-trees-have-no-tests check.',
-      '',
-      `  Bypass: type \`${BYPASS_PHRASE}\` if this is genuinely intended.`,
-      '',
     ].join('\n'),
   )
 })
 
 export const hook = defineHook({
+  bypass: ['test-in-scripts'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

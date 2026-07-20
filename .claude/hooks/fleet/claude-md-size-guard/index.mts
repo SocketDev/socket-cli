@@ -35,17 +35,8 @@
 import { existsSync, readFileSync } from 'node:fs'
 import process from 'node:process'
 
-import {
-  block,
-  defineHook,
-  editGuard,
-  notify,
-  runHook,
-} from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
-
-const BYPASS_PHRASE = 'Allow claude-md-size bypass'
 
 const DEFAULT_CAP_BYTES = 40 * 1024
 
@@ -108,10 +99,6 @@ export function buildBlockMessage(
   lines.push('    1. State the invariant + one-line "Why" inline.')
   lines.push('    2. Move detail to `docs/agents.md/fleet/<topic>.md`.')
   lines.push('    3. Link from the rule: `[Full details](docs/agents.md/...)`.')
-  lines.push('')
-  lines.push(`  Genuinely can't trim now? Type \`${BYPASS_PHRASE}\` to`)
-  lines.push('  land this edit over-cap (one edit per phrase). See')
-  lines.push('  `docs/agents.md/fleet/bypass-phrases.md`.')
   return lines.join('\n') + '\n'
 }
 
@@ -163,18 +150,11 @@ export const check = editGuard((filePath, content, payload) => {
   if (size <= cap) {
     return undefined
   }
-  // Authorized over-cap edit: the user typed the bypass phrase this turn.
-  // One phrase authorizes one over-cap edit; the message names the phrase.
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    return notify(
-      `[claude-md-size-guard] Over-cap edit allowed by \`${BYPASS_PHRASE}\` ` +
-        `(${size} bytes > ${cap} cap). Trim back under cap when you can.\n`,
-    )
-  }
   return block(buildBlockMessage(filePath, size, cap))
 })
 
 export const hook = defineHook({
+  bypass: ['claude-md-size'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

@@ -28,9 +28,6 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { isEphemeralPath } from '../_shared/ephemeral-path.mts'
 import { isFleetTarget } from '../_shared/fleet-context.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow new-config bypass'
 
 // The sanctioned per-member config home + its schema. Everything else new under
 // `.config/` is blocked. `.socket-wheelhouse.json` (root dotfile alternative)
@@ -67,8 +64,6 @@ export function emitBlock(filePath: string): string {
       '  Add a section there + extend the schema; each script reads its part via',
       '  the schema. Do NOT create a new single-purpose config file — they',
       '  fragment config, drift, and blur the fleet/repo tier.',
-      '',
-      `  Genuinely-needed new fleet-wide config? Type "${BYPASS_PHRASE}".`,
     ].join('\n') + '\n'
   )
 }
@@ -85,13 +80,11 @@ export const check = editGuard((filePath, content, payload) => {
   if (existsSync(filePath)) {
     return undefined
   }
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    return undefined
-  }
   return block(emitBlock(filePath))
 })
 
 export const hook = defineHook({
+  bypass: ['new-config'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

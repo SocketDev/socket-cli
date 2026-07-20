@@ -621,6 +621,8 @@ export const check = (payload: ToolCallPayload): GuardResult => {
 }
 
 export const hook = defineHook({
+  bypass: ['dirty-worktree'],
+  bypassMode: 'manual',
   check,
   event: 'Stop',
   type: 'guard',

@@ -53,6 +53,10 @@ import {
   runStaged,
 } from './publish-infra/cargo/staged.mts'
 import {
+  discardReleaseBranch,
+  promoteReleaseBranch,
+} from './publish-infra/release-branch.mts'
+import {
   ensureTagAndRelease,
   extractChangelogSection,
 } from './publish-infra/release.mts'
@@ -160,22 +164,43 @@ async function main(): Promise<void> {
   const otpFromFlag =
     typeof values['otp'] === 'string' ? values['otp'] : undefined
 
-  // CI release path: `--staged --bump` bumps + commits (via the release App)
-  // before staging, so the publish targets the bumped tree.
-  if (values['bump']) {
-    await runBump({ dryRun, packageName, releaseAs })
+  // CI release path: `--staged --bump` bumps + commits (via the release App) on
+  // a throwaway release branch before staging, so the publish targets the bumped
+  // tree without touching main. `bumpResult` is undefined on a dry-run / no-op
+  // bump (nothing to promote).
+  const bumpResult = values['bump']
+    ? await runBump({ dryRun, packageName, releaseAs })
+    : undefined
+  try {
+    if (mode === 'staged') {
+      await runStaged({ dryRun, packageName })
+    } else if (mode === 'direct') {
+      await runDirect({ dryRun, packageName })
+    } else {
+      await runApprove({
+        dryRun,
+        otpFromFlag,
+        packageName,
+        yes: !!values['yes'],
+      })
+    }
+  } catch (e) {
+    // The publish FAILED (before it completed): nuke the release branch so main
+    // never sees the bump. Discard only runs here, on a pre-success failure —
+    // never for a promote failure below. Critical for cargo: a crates.io publish
+    // is PERMANENT, so once it returns the branch must survive a failed promote.
+    if (bumpResult) {
+      await discardReleaseBranch(bumpResult.releaseBranch)
+    }
+    throw e
   }
-  if (mode === 'staged') {
-    await runStaged({ dryRun, packageName })
-  } else if (mode === 'direct') {
-    await runDirect({ dryRun, packageName })
-  } else {
-    await runApprove({
-      dryRun,
-      otpFromFlag,
-      packageName,
-      yes: !!values['yes'],
-    })
+  // The publish SUCCEEDED — fast-forward main to the bump commit (same SHA) and
+  // remove the release branch. Deliberately OUTSIDE the try: a failed
+  // fast-forward (main moved / branch-protected) must NOT discard the branch,
+  // since the crate version is already permanently published — leave it for
+  // manual reconcile and fail loud.
+  if (bumpResult) {
+    await promoteReleaseBranch(bumpResult.releaseBranch, bumpResult.sha)
   }
 }
 

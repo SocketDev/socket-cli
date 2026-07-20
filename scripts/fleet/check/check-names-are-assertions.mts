@@ -73,6 +73,9 @@ const ALLOWLIST = new Set<string>([
   // Verb-assertion: "lint configs PROTECT vendored paths" — declarative,
   // verb-tailed (protect).
   'lint-configs-protect-vendored',
+  // Verb-assertion: "member CI FIRES on push" — declarative, verb-tailed
+  // (fires) with an object phrase, not an -are-/-is- state tail.
+  'member-ci-fires-on-push',
 ])
 
 export function isAssertionName(basename: string): boolean {

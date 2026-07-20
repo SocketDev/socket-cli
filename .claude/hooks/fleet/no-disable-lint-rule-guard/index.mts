@@ -26,9 +26,6 @@ import { existsSync, readFileSync } from 'node:fs'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow disable-lint-rule bypass'
 
 // Matches: ESLint configs and oxlint configs by filename, anywhere in path.
 const CONFIG_FILE_RE =
@@ -138,8 +135,6 @@ export function reportBlock(reason: BlockReason): string {
     '',
     '  See docs/agents.md/fleet/no-disable-lint-rule.md for the full',
     '  rationale + scoped-override recipe.',
-    '',
-    `  Bypass: type "${BYPASS_PHRASE}" in a recent message.`,
   ]
   return lines.join('\n')
 }
@@ -159,17 +154,11 @@ export const check = editGuard((filePath, _content, payload): GuardResult => {
     return undefined
   }
 
-  if (
-    payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
-  ) {
-    return undefined
-  }
-
   return block(reportBlock({ addedRules: added, filePath }))
 })
 
 export const hook = defineHook({
+  bypass: ['disable-lint-rule'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

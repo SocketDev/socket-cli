@@ -213,6 +213,8 @@ export const check = (payload: ToolCallPayload): GuardResult => {
 }
 
 export const hook = defineHook({
+  bypass: ['uses-sha-verify'],
+  bypassMode: 'manual',
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

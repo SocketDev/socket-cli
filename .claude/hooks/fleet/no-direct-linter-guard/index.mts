@@ -46,9 +46,6 @@ import path from 'node:path'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { isFleetTarget } from '../_shared/fleet-context.mts'
 import { parseCommands } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow direct-linter bypass'
 
 // Linter/formatter binaries banned as a bare/direct invocation. Matched on the
 // command's basename, so the `node_modules/.bin/<tool>` path form is caught too.
@@ -163,9 +160,6 @@ export const check = bashGuard((command, payload) => {
   if (!isFleetTarget(payload)) {
     return undefined
   }
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    return undefined
-  }
   return block(
     [
       `[no-direct-linter-guard] Blocked: direct \`${tool}\` invocation.`,
@@ -176,14 +170,12 @@ export const check = bashGuard((command, payload) => {
       '    pnpm run lint        pnpm run fix --all',
       '    pnpm run check       pnpm run format',
       `    not  ${tool} …`,
-      '',
-      `  Bypass: type \`${BYPASS_PHRASE}\` if this is genuinely intended.`,
-      '',
     ].join('\n'),
   )
 })
 
 export const hook = defineHook({
+  bypass: ['direct-linter'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

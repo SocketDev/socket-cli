@@ -127,6 +127,7 @@
     "del-cli": "catalog:",
     "dev-null-cli": "catalog:",
     "ecc-agentshield": "catalog:",
+    "fast-check": "catalog:",
     "fast-glob": "catalog:",
     "hpagent": "catalog:",
     "ignore": "catalog:",

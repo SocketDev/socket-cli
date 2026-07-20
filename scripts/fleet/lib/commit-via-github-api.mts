@@ -17,6 +17,8 @@
 
 import { httpJson } from '@socketsecurity/lib-stable/http-request'
 
+import { updateBranchRef } from './github-git-refs.mts'
+
 const DEFAULT_API_URL = 'https://api.github.com'
 
 export interface CommitFile {
@@ -100,12 +102,13 @@ export async function commitViaGithubApi(
     tree: newTree.sha,
   })
 
-  // 4. Advance the branch ref.
-  await httpJson(`${git}/refs/heads/${opts.branch}`, {
-    body: JSON.stringify({ sha: commit.sha }),
-    headers,
-    method: 'PATCH',
-    timeout: 30_000,
+  // 4. Fast-forward the branch ref to the new commit.
+  await updateBranchRef({
+    apiUrl,
+    branch: opts.branch,
+    repo: opts.repo,
+    sha: commit.sha,
+    token: opts.token,
   })
 
   return commit.sha

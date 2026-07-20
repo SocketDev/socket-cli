@@ -17,9 +17,6 @@
 //
 // Fix: replace with `--body-file <path>` or `--body "$VAR"` where the
 // content is built via heredoc into a tempfile / shell var.
-//
-// Bypass: `Allow workflow-yaml-multiline-body bypass` typed verbatim in a
-// recent user turn.
 
 import path from 'node:path'
 
@@ -27,9 +24,6 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { resolveEditedText } from '../_shared/payload.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow workflow-yaml-multiline-body bypass'
 
 // Detect a multi-line `--body "..."` argument to gh. The match is
 // conservative: we look for the literal `--body "` opener, then scan to
@@ -103,13 +97,6 @@ export const check = editGuard((filePath, content, payload) => {
     return undefined
   }
 
-  if (
-    payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
-  ) {
-    return undefined
-  }
-
   const preview = unsafe.split('\n').slice(0, 3).join('\\n')
   return block(
     [
@@ -139,14 +126,12 @@ export const check = editGuard((filePath, content, payload) => {
       '           EOF',
       '           )',
       '           gh pr create --body "$BODY"',
-      '',
-      `  Bypass: type "${BYPASS_PHRASE}" in a new message, then retry.`,
-      '',
     ].join('\n'),
   )
 })
 
 export const hook = defineHook({
+  bypass: ['workflow-yaml-multiline-body'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

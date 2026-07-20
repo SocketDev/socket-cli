@@ -50,9 +50,6 @@
 
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { commandsFor, findInvocation } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow background-git bypass'
 
 // Dispatcher pre-flight: the guard can only ever block when the command
 // contains one of these substrings, so the dispatcher skips importing it
@@ -172,8 +169,6 @@ export function backgroundBlockMessage(label: string): string {
     '  in the FOREGROUND and wait — a still-running commit is not a hang.',
     '  Backgrounding hides its completion and invites a premature kill that',
     '  corrupts the index + leaks vitest workers.',
-    '',
-    `  Bypass (rare; you'll babysit it): type "${BYPASS_PHRASE}".`,
   ].join('\n')
 }
 
@@ -193,7 +188,7 @@ export function killBlockMessage(label: string): string {
     '',
     '  If a run is genuinely dead (confirmed, not just slow), reap the orphan',
     '  with `pkill -f "vitest/dist/workers"` after the op has exited (that',
-    `  worker-scoped pattern is allowed), or type "${BYPASS_PHRASE}".`,
+    '  worker-scoped pattern is allowed).',
   ].join('\n')
 }
 
@@ -211,8 +206,6 @@ export function pausingCiBlockMessage(label: string): string {
     '  `agent-ci run --all --quiet` exits on failure and prints the log), or',
     '  use the `/fleet:green-ci-local` skill which drives agent-ci and fixes',
     '  the first failure programmatically.',
-    '',
-    `  Bypass (only if a human is at this terminal): type "${BYPASS_PHRASE}".`,
   ].join('\n')
 }
 
@@ -229,16 +222,6 @@ export const check = bashGuard((command, payload) => {
     return undefined
   }
 
-  const transcriptPath = payload.transcript_path
-  // Wider lookback than the fleet default (3): unsticking a hung/dead commit is
-  // inherently a multi-turn diagnosis (confirm the proc is dead, check the lock,
-  // try a reap), so the user's bypass phrase routinely ages past a 3-turn window
-  // before the kill command re-fires. 8 turns keeps the granted bypass live
-  // through that back-and-forth.
-  if (bypassPhrasePresent(transcriptPath, [BYPASS_PHRASE], 8)) {
-    return undefined
-  }
-
   if (bgGit) {
     return block(backgroundBlockMessage(bgGit))
   }
@@ -249,6 +232,7 @@ export const check = bashGuard((command, payload) => {
 })
 
 export const hook = defineHook({
+  bypass: ['background-git'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

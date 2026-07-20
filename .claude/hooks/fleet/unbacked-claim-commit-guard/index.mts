@@ -37,16 +37,11 @@ import {
 } from '../_shared/active-edits-ledger.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { findInvocation } from '../_shared/shell-command.mts'
-import {
-  bypassPhrasePresent,
-  readLastAssistantTextSameActor,
-} from '../_shared/transcript.mts'
+import { readLastAssistantTextSameActor } from '../_shared/transcript.mts'
 import {
   findUnbackedClaims,
   sessionBashCommands,
 } from '../_shared/unbacked-claims.mts'
-
-const BYPASS_PHRASE = 'Allow unbacked-claim bypass'
 
 // Pre-flight: this guard can ONLY block when the command invokes `git commit`
 // or `git push` (see isLandingCommand → findInvocation, whose own substring
@@ -91,9 +86,6 @@ export const check = bashGuard((command, payload) => {
   if (!unbacked.length) {
     return undefined
   }
-  if (bypassPhrasePresent(transcriptPath, BYPASS_PHRASE)) {
-    return undefined
-  }
   const lines = [
     '[unbacked-claim-commit-guard] Blocked: landing a commit/push with an',
     'unverified success claim in this turn:',
@@ -107,12 +99,11 @@ export const check = bashGuard((command, payload) => {
   lines.push('  Run the command that backs the claim (and let its output show)')
   lines.push('  before committing, or qualify the statement. Verify before you')
   lines.push('  claim — and before you land.')
-  lines.push('')
-  lines.push(`  Bypass: type "${BYPASS_PHRASE}" in a recent message.`)
   return block(lines.join('\n'))
 })
 
 export const hook = defineHook({
+  bypass: ['unbacked-claim'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

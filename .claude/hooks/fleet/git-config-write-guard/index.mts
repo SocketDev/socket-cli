@@ -543,6 +543,8 @@ export const check: GuardCheck = payload => {
 }
 
 export const hook = defineHook({
+  bypass: ['git-config-write'],
+  bypassMode: 'manual',
   check,
   event: 'SessionStart',
   type: 'guard',

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/SocketDev/socket-wheelhouse/main/template/packages/build-infra/release-assets.schema.json",
+  "$id": "https://raw.githubusercontent.com/SocketDev/socket-wheelhouse/main/template/base/packages/build-infra/release-assets.schema.json",
   "title": "Release Assets Manifest",
   "description": "Embedded SRI-integrity manifest for release artifacts. One block per tool: identifies the upstream release tag and the SRI integrity string (sha256/384/512) of every asset that release published. Consumers verify downloads against these pins before installing or republishing. The release's checksums.txt asset stays sha256-hex (the ecosystem `shasum -c` convention) — this manifest is the internal pin, not the transport format. Producers (e.g. socket-btm) update this file when cutting a new release.",
   "type": "object",

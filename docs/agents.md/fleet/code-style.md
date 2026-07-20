@@ -18,6 +18,10 @@ Use `undefined`. `null` is allowed only for `__proto__: null` or external API re
 
 `{ __proto__: null, ... }` for config / return / internal-state.
 
+## Working directory
+
+Never call `process.chdir()`. It mutates global process state, so concurrent work (parallel installs, spawned subprocesses, other async tasks) silently inherits the new cwd and relative paths resolve wrong. Pass an explicit `cwd` to `spawn` / `exec` / path builders instead of changing the process's directory.
+
 ## Imports
 
 No dynamic `await import()`. `node:fs` is the canonical fs source. One import per file: `import { existsSync, promises as fs } from 'node:fs'`. Sync APIs may be cherry-picked (`existsSync`, `copyFileSync`, `readFileSync`, etc.). Async APIs MUST go through the `promises as fs` namespace. Never cherry-pick from `node:fs/promises` (`import { rename } from 'node:fs/promises'` is forbidden; use `fs.rename(...)` instead). Rationale: a single canonical handle for async fs keeps the call sites uniform across the fleet and avoids two imports for what's logically one module. `path` / `os` / `crypto` use default imports. `node:url` is cherry-picked like `node:fs` (`import { fileURLToPath, pathToFileURL } from 'node:url'`) — callers use those symbols directly and `url.fileURLToPath(...)` reads worse than the named form.

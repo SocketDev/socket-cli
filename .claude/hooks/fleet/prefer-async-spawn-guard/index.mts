@@ -158,6 +158,8 @@ export const check = editGuard(
 )
 
 export const hook = defineHook({
+  bypass: ['async-spawn'],
+  bypassMode: 'manual',
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

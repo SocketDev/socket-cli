@@ -24,9 +24,6 @@
 // are vanishingly rare.
 
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow node-modules-staging bypass'
 
 // Dispatcher pre-flight: a block requires a forbidden PATH arg, and every
 // forbidden path (per `isForbiddenPath`) contains one of these substrings —
@@ -96,7 +93,7 @@ export function isForbiddenPath(arg: string): boolean {
   return false
 }
 
-export const check = bashGuard((command, payload) => {
+export const check = bashGuard(command => {
   const forced = findGitAddForceInvocations(command)
   if (forced.length === 0) {
     return undefined
@@ -116,13 +113,6 @@ export const check = bashGuard((command, payload) => {
     return undefined
   }
 
-  if (
-    payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
-  ) {
-    return undefined
-  }
-
   return block(
     [
       '[node-modules-staging-guard] Blocked: `git add -f` of node_modules / hook lockfile',
@@ -138,13 +128,12 @@ export const check = bashGuard((command, payload) => {
       '  INTENTIONALLY. Each consumer runs its own `pnpm install` against',
       '  the package.json that did land in the commit.',
       '',
-      `  Bypass: type "${BYPASS_PHRASE}" in a new message, then retry.`,
-      '',
     ].join('\n'),
   )
 })
 
 export const hook = defineHook({
+  bypass: ['node-modules-staging'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

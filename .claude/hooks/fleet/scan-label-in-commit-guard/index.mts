@@ -42,7 +42,6 @@ import process from 'node:process'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 interface Hit {
   readonly label: string
@@ -55,8 +54,6 @@ interface Hit {
 // parsed `git` segment whose args include the verbatim `commit` token, so a
 // command without the substring `commit` can never reach a block verdict.
 export const triggers: readonly string[] = ['commit']
-
-const BYPASS_PHRASE = 'Allow scan-label-in-commit bypass'
 
 // Match standalone scan-report-internal IDs: B/M/H/L (Blocker /
 // Medium / High / Low) followed by 1–4 digits. The lookbehind /
@@ -186,9 +183,6 @@ export const check = bashGuard((command, payload: ToolCallPayload) => {
   if (hits.length === 0) {
     return undefined
   }
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    return undefined
-  }
   const lines: string[] = []
   lines.push(
     '[scan-label-in-commit-guard] Blocked: scan-report-internal label in commit message.',
@@ -213,13 +207,11 @@ export const check = bashGuard((command, payload: ToolCallPayload) => {
   lines.push(
     '    ✓ fix(http-request/download): settle on fileStream finish, not res end',
   )
-  lines.push('')
-  lines.push('  Bypass (e.g. citing a real advisory ID that happens to match):')
-  lines.push(`    Type "${BYPASS_PHRASE}" in your next message.`)
   return block(lines.join('\n') + '\n')
 })
 
 export const hook = defineHook({
+  bypass: ['scan-label-in-commit'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

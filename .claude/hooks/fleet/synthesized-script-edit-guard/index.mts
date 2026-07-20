@@ -14,9 +14,6 @@
 // wheelhouse (the only repo that ships the manifest); in a cascaded fleet repo
 // the manifest is absent and the hook is a no-op.
 //
-// Bypass: `Allow synthesized-script-edit bypass` in a recent user turn (for the
-// rare case where a transient local edit is intended before the manifest catch-up).
-//
 // Exit codes:
 //   2 — edit touches a synthesized script key (blocked).
 //   0 — otherwise, or on any error (fail-open).
@@ -26,9 +23,6 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow synthesized-script-edit bypass'
 
 export function getProjectDir(): string {
   return process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
@@ -98,7 +92,7 @@ export function touchedSynthesizedKeys(
   return hit
 }
 
-export const check = editGuard((filePath, content, payload) => {
+export const check = editGuard((filePath, content) => {
   if (path.basename(filePath) !== 'package.json') {
     return undefined
   }
@@ -128,9 +122,6 @@ export const check = editGuard((filePath, content, payload) => {
   if (touched.length === 0) {
     return undefined
   }
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    return undefined
-  }
   return block(
     [
       `[synthesized-script-edit-guard] Blocked: this package.json edit touches a cascade-synthesized script:`,
@@ -142,14 +133,12 @@ export const check = editGuard((filePath, content, payload) => {
       '  reverted by the next cascade. Edit the manifest, then run:',
       '',
       '    node scripts/repo/sync-scaffolding/cli.mts --target . --fix',
-      '',
-      `  Bypass: type "${BYPASS_PHRASE}" in a recent message.`,
-      '',
     ].join('\n'),
   )
 })
 
 export const hook = defineHook({
+  bypass: ['synthesized-script-edit'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

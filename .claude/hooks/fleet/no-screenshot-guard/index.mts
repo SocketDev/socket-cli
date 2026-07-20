@@ -26,9 +26,6 @@
 
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { findInvocation } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow screenshot bypass'
 
 // Pre-flight triggers — the dispatcher imports + runs this guard only when the
 // raw payload contains at least one of these substrings. The guard blocks ONLY
@@ -78,15 +75,9 @@ export function screenshotBinaryIn(command: string): string | undefined {
   return undefined
 }
 
-export const check = bashGuard((command, payload) => {
+export const check = bashGuard(command => {
   const binary = screenshotBinaryIn(command)
   if (!binary) {
-    return undefined
-  }
-  if (
-    payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
-  ) {
     return undefined
   }
   return block(
@@ -99,14 +90,12 @@ export const check = bashGuard((command, payload) => {
       '  manager, a 2FA code, another app) and write it to a file — an',
       '  exfiltration surface. Fleet tooling renders known pages to PNG via',
       '  the rendering-chromium-to-png skill; it never captures the desktop.',
-      '',
-      `  If the user explicitly asked for a screenshot, type the phrase in a`,
-      `  new message: ${BYPASS_PHRASE}`,
     ].join('\n'),
   )
 })
 
 export const hook = defineHook({
+  bypass: ['screenshot'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

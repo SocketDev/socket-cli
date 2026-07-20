@@ -21,18 +21,13 @@
 // committing) plus the orchestrator gate. This guard is defense-in-depth for the
 // case the platform lets us pin.
 //
-// Bypass: `Allow subagent-commit bypass` in a recent turn — for the agents whose
-// job IS a commit flow (the `fix` agent's surgical `git commit -o`, the
-// history-rewrite skills). They carry the phrase so they keep working.
+// The agents whose job IS a commit flow (the `fix` agent's surgical
+// `git commit -o`, the history-rewrite skills) carry the bypass phrase so
+// they keep working.
 
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { findInvocation } from '../_shared/shell-command.mts'
-import {
-  bypassPhrasePresent,
-  mostRecentAssistantIsSidechain,
-} from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow subagent-commit bypass'
+import { mostRecentAssistantIsSidechain } from '../_shared/transcript.mts'
 
 // Pre-flight: this guard can only block a command that invokes `git` (the
 // commit/push subcommands matter only once `git` is present). The dispatcher
@@ -59,9 +54,6 @@ export const check = bashGuard((command, payload) => {
     // discipline (see header).
     return undefined
   }
-  if (bypassPhrasePresent(transcriptPath, BYPASS_PHRASE)) {
-    return undefined
-  }
   return block(
     [
       '[no-subagent-commit-guard] Blocked: a subagent is committing.',
@@ -71,13 +63,12 @@ export const check = bashGuard((command, payload) => {
       '  keeps one reviewer between the work and the branch.',
       '',
       '  Return your changes and let the orchestrator commit them.',
-      '',
-      `  Bypass (commit-flow agents only): type "${BYPASS_PHRASE}".`,
     ].join('\n'),
   )
 })
 
 export const hook = defineHook({
+  bypass: ['subagent-commit'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

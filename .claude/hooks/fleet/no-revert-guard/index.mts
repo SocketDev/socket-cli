@@ -600,6 +600,15 @@ export const check = bashGuard((command, payload): GuardResult => {
 })
 
 export const hook = defineHook({
+  bypass: [
+    'revert',
+    'no-verify',
+    'gpg',
+    'asset-download',
+    'stash',
+    'bash-write',
+  ],
+  bypassMode: 'manual',
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

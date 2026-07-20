@@ -35,9 +35,6 @@
 // invocations; snippet-embedded publishes are found by whitespace-token
 // scanning of string arguments — no command-matching regexes.
 //
-// Bypass: `Allow verify-before-publish bypass` typed verbatim in a recent user
-// turn.
-//
 // Fails open on parse / payload errors — a guard bug must not wedge every Bash
 // call.
 
@@ -52,13 +49,10 @@ import {
   parseCommands,
 } from '../_shared/shell-command.mts'
 import {
-  bypassPhrasePresent,
   readLastAssistantToolUses,
   readPriorAssistantToolUses,
 } from '../_shared/transcript.mts'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
-
-const BYPASS_PHRASE = 'Allow verify-before-publish bypass' as const
 
 const PUBLISH_BINARIES = ['npm', 'pnpm', 'yarn'] as const
 
@@ -365,8 +359,6 @@ export function formatMisparseBlock(hit: PublishHit): string {
       '  publish dies on `git ls-remote`. Prefix the local path:',
       '',
       `    publish ./${hit.misparsedArg}`,
-      '',
-      `  Bypass: type "${BYPASS_PHRASE}" to allow it for this invocation.`,
     ].join('\n') + '\n'
   )
 }
@@ -395,8 +387,6 @@ export function formatRemoteRedirectBlock(hit: PublishHit): string {
       '  Carve-out: the one-time `npm publish` of a 0.0.0 placeholder (the npm',
       '  trusted-publishing bootstrap — scripts/fleet/publish-infra/npm/placeholder.mts)',
       '  is allowed.',
-      '',
-      `  Bypass: type "${BYPASS_PHRASE}" to allow it for this invocation.`,
     ].join('\n') + '\n'
   )
 }
@@ -412,8 +402,6 @@ export function formatUnverifiedBlock(hit: PublishHit): string {
       '  the registry state, then retry (the receipt makes this pass):',
       '',
       '    npm view <pkg> version   # or: gh release view <tag>',
-      '',
-      `  Bypass: type "${BYPASS_PHRASE}" to allow it for this invocation.`,
     ].join('\n') + '\n'
   )
 }
@@ -423,9 +411,6 @@ export const check = bashGuard((command, payload) => {
   const stageHits = detectStagePublish(command)
   const hits = [...publishHits, ...stageHits]
   if (hits.length === 0) {
-    return undefined
-  }
-  if (bypassPhrasePresent(payload.transcript_path, [BYPASS_PHRASE], 3)) {
     return undefined
   }
   // A broken git-spec target is the most urgent (the command can't succeed).
@@ -451,6 +436,7 @@ export const check = bashGuard((command, payload) => {
 })
 
 export const hook = defineHook({
+  bypass: ['verify-before-publish'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

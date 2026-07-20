@@ -332,6 +332,8 @@ export function checkCommand(command: string, payload: ToolCallPayload) {
 export const check = bashGuard(checkCommand)
 
 export const hook = defineHook({
+  bypass: ['add-all', 'index-sweep'],
+  bypassMode: 'manual',
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

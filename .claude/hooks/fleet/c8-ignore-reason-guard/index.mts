@@ -24,9 +24,6 @@
  */
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow c8-ignore-reason bypass'
 
 // A c8/v8 ignore directive. Captures the kind (next|start|stop) and the
 // trailing text after the count, so the reason check can run on what's
@@ -95,7 +92,8 @@ export function isInScope(filePath: string): boolean {
 }
 
 export const hook = defineHook({
-  check: editGuard((filePath, content, payload) => {
+  bypass: ['c8-ignore-reason'],
+  check: editGuard((filePath, content) => {
     if (!isInScope(filePath)) {
       return undefined
     }
@@ -105,9 +103,6 @@ export const hook = defineHook({
     }
     const findings = findUnexplainedIgnores(source)
     if (findings.length === 0) {
-      return undefined
-    }
-    if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
       return undefined
     }
     const lines = findings
@@ -152,8 +147,6 @@ export const hook = defineHook({
         ...guidance,
         '',
         '  See docs/agents.md/fleet/c8-ignore-directives.md.',
-        '',
-        `  Bypass: type "${BYPASS_PHRASE}" in a recent message.`,
         '',
       ].join('\n'),
     )

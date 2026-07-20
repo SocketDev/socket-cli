@@ -47,9 +47,6 @@ import { block, defineHook, runHook } from '../_shared/guard.mts'
 import { readFilePath } from '../_shared/payload.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import type { GuardResult } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow live-edit-collision bypass'
 
 function getProjectDir(): string {
   return process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
@@ -128,12 +125,6 @@ export function check(payload: ToolCallPayload): GuardResult {
     return undefined
   }
 
-  // Bypass check FIRST — transcript IO before ledger IO, exactly like the
-  // other guards (ai-config-poisoning-guard etc.).
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    return undefined
-  }
-
   const filePath = readFilePath(payload)
   if (!filePath) {
     return undefined
@@ -186,14 +177,15 @@ export function check(payload: ToolCallPayload): GuardResult {
       `      journal (.claude/plans/...) once it has landed.`,
       `  (b) Queue this edit for after the other run completes; work on a`,
       `      different file in the meantime.`,
-      `  (c) The other run is already finished or abandoned — the user types`,
-      `      "${BYPASS_PHRASE}" verbatim to proceed.`,
+      `  (c) The other run is already finished or abandoned — the user`,
+      `      supplies the bypass phrase to proceed.`,
       ``,
     ].join('\n'),
   )
 }
 
 export const hook = defineHook({
+  bypass: ['live-edit-collision'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'NotebookEdit', 'Write'],

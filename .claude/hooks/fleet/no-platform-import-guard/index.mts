@@ -33,10 +33,7 @@
 // OR add `// no-platform-http-import: <reason>` on the preceding line.
 
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-
-const BYPASS_PHRASE = 'Allow platform-http-import bypass'
 
 // Modules that have platform-specific node/browser entry points.
 const PLATFORM_MODULES = ['http-request', 'logger'].join('|')
@@ -82,8 +79,7 @@ export function findViolations(
   return results
 }
 
-export const check = editGuard((filePath, content, payload) => {
-  const transcriptPath = payload.transcript_path
+export const check = editGuard((filePath, content) => {
   if (!content) {
     return undefined
   }
@@ -93,10 +89,6 @@ export const check = editGuard((filePath, content, payload) => {
 
   const violations = findViolations(content, filePath)
   if (violations.length === 0) {
-    return undefined
-  }
-
-  if (bypassPhrasePresent(transcriptPath, BYPASS_PHRASE)) {
     return undefined
   }
 
@@ -124,12 +116,11 @@ export const check = editGuard((filePath, content, payload) => {
     '  If this file genuinely runs on one platform only, add before the import:',
   )
   lines.push('    // no-platform-http-import: <reason>')
-  lines.push('')
-  lines.push(`  Or type "${BYPASS_PHRASE}" to bypass for this edit.`)
   return block(lines.join('\n'))
 })
 
 export const hook = defineHook({
+  bypass: ['platform-http-import'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

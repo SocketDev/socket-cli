@@ -46,10 +46,14 @@ exclude-newer = "2026-06-10T00:00:00Z"
 # - pydantic-settings < 2.14.2 carries GHSA-4xgf-cpjx-pc3j (medium: NestedSecrets
 #   symlink read outside secrets_dir); 2.14.2 published 2026-06-19. User-authorized
 #   soak-bypass; drop once it clears the 7-day soak (2026-06-26).
-exclude-newer-package = { headroom-ai = "2026-07-04T00:00:00Z", pydantic-settings = "2026-06-20T00:00:00Z", starlette = "2026-06-13T00:00:00Z" }
+# - mcp < 1.28.1 is a high Dependabot advisory; 1.28.1 published 2026-06-26 (already
+#   past the 7-day soak). The 06-27 cutoff pins 1.28.1 and excludes the 2.0.0b2
+#   prerelease (2026-07-14). Drop once the global exclude-newer advances past it.
+exclude-newer-package = { headroom-ai = "2026-07-04T00:00:00Z", mcp = "2026-06-27T00:00:00Z", pydantic-settings = "2026-06-20T00:00:00Z", starlette = "2026-06-13T00:00:00Z" }
 # Force the security-fixed floors past headroom-ai 0.24.0's transitive caps:
 # litellm < 1.84.0 carries 6 critical advisories (GHSA-4xpc-pv4p-pm3w et al.);
 # 1.84.6 (2026-06-09) is the latest soaked fix. starlette per the note above.
-override-dependencies = ["litellm>=1.84.6", "pydantic-settings>=2.14.2", "starlette>=1.3.1"]
+# mcp < 1.28.1 is a high Dependabot advisory; 1.28.1 is the patched floor.
+override-dependencies = ["litellm>=1.84.6", "mcp>=1.28.1", "pydantic-settings>=2.14.2", "starlette>=1.3.1"]
 # Use only the uv-managed CPython under the _dlx store — never a system Python.
 python-preference = "only-managed"

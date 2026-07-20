@@ -1,0 +1,28 @@
+{
+  "//": [
+    "Fleet-owned egress allowlist for LOCAL agent execution (the hosts a local",
+    "agent run may reach). Authored here in template/, cascaded to every member.",
+    "PHASE 1 is plumbing only: mode is 'off' — nothing enforces allowDomains yet.",
+    "INVARIANT: allowDomains must be a SUBSET of gh-aw's expanded firewall",
+    "allowDomains (the CI agent already trusts these) — enforced by the fleet",
+    "check-all gate. Grow this list only from traffic proven in the observe soak,",
+    "and only with a host gh-aw already permits. A leading '*.' entry is a suffix",
+    "wildcard (matches any subdomain of the suffix)."
+  ],
+  "mode": "off",
+  "allowDomains": [
+    "*.githubusercontent.com",
+    "anthropic.com",
+    "api.anthropic.com",
+    "api.github.com",
+    "codeload.github.com",
+    "ghcr.io",
+    "github-cloud.githubusercontent.com",
+    "github.com",
+    "lfs.github.com",
+    "objects.githubusercontent.com",
+    "raw.githubusercontent.com",
+    "registry.npmjs.org",
+    "statsig.anthropic.com"
+  ]
+}

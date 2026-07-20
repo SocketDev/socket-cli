@@ -169,6 +169,8 @@ export function check(payload: ToolCallPayload): GuardResult {
 }
 
 export const hook = defineHook({
+  bypass: ['release-bump', 'major-bump'],
+  bypassMode: 'manual',
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

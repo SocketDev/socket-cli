@@ -35,10 +35,7 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { currentBranch, resolveDefaultBranch } from '../_shared/git-branch.mts'
 import { bashGuard, defineHook, notify, runHook } from '../_shared/guard.mts'
 import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
 import { gitCommitSegments } from '../_shared/commit-command.mts'
-
-const BYPASS_PHRASE = 'Allow branch-reuse bypass'
 
 // Amend excluded on purpose: amending the tip is not branch reuse. The
 // segment parse is the shared one — a positional arg that merely CONTAINS
@@ -88,11 +85,6 @@ export const check = bashGuard((command, payload) => {
   if (!hasExistingRemoteHistory(cwd, branch)) {
     return undefined
   }
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    return notify(
-      `no-branch-reuse-nudge: committing onto existing remote branch "${branch}" — bypassed via "${BYPASS_PHRASE}"\n`,
-    )
-  }
   return notify(
     [
       `no-branch-reuse-nudge: committing onto an existing remote branch`,
@@ -109,8 +101,6 @@ export const check = bashGuard((command, payload) => {
       ``,
       `  If you need a new branch: git checkout -b <fresh-name>`,
       ``,
-      `  Bypass: type "${BYPASS_PHRASE}" to proceed anyway.`,
-      ``,
       `  Reminder-only; not a block.`,
       ``,
     ].join('\n'),
@@ -118,6 +108,7 @@ export const check = bashGuard((command, payload) => {
 })
 
 export const hook = defineHook({
+  bypass: ['branch-reuse'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

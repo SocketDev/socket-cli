@@ -27,9 +27,6 @@ import process from 'node:process'
 
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow arbitrary-release bypass' as const
 
 // `gh release create` flags that consume the FOLLOWING token as their value.
 // Skipping their values keeps the positional <tag> scan from mistaking a
@@ -140,8 +137,6 @@ export function formatBlock(d: ReleaseCreateDetection): string {
       '',
       '    git tag vX.Y.Z <commit> && git push origin vX.Y.Z',
       '    gh release create vX.Y.Z --verify-tag …',
-      '',
-      `  Bypass (arbitrary/new-tag release): type "${BYPASS_PHRASE}".`,
     ].join('\n') + '\n'
   )
 }
@@ -158,14 +153,11 @@ export const check = bashGuard((command, payload) => {
     return undefined
   }
 
-  if (bypassPhrasePresent(payload.transcript_path, [BYPASS_PHRASE], 3)) {
-    return undefined
-  }
-
   return block(formatBlock(detection))
 })
 
 export const hook = defineHook({
+  bypass: ['arbitrary-release'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

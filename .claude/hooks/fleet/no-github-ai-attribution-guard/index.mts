@@ -191,6 +191,8 @@ export const check = (
 }
 
 export const hook = defineHook({
+  bypass: ['ai-attribution'],
+  bypassMode: 'manual',
   check,
   event: 'PreToolUse',
   matcher: ['Bash', 'mcp__.*'],

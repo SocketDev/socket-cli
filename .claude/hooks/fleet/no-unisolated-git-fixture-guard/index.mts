@@ -36,9 +36,6 @@
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { materializePostEditContent } from '../_shared/edit-content.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow unisolated-git-fixture bypass'
 
 // A path is a test file if its basename matches `*.test.*` / `*.spec.*` or it
 // lives under a `test/` / `__tests__/` directory.
@@ -113,12 +110,6 @@ export const check = editGuard((filePath, content, payload) => {
   if (!shouldBlock(filePath, full ?? '')) {
     return undefined
   }
-  if (
-    payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
-  ) {
-    return undefined
-  }
   return block(
     [
       '[no-unisolated-git-fixture-guard] Blocked: git fixture is not isolated from the live repo',
@@ -137,13 +128,12 @@ export const check = editGuard((filePath, content, payload) => {
       '  node:test git-fixture suites need the explicit import.) For the',
       '  stronger config-pin form, call isolateGitEnv({ pinConfigToNull: true }).',
       '',
-      `  Bypass: type "${BYPASS_PHRASE}" in a new message, then retry.`,
-      '',
     ].join('\n'),
   )
 })
 
 export const hook = defineHook({
+  bypass: ['unisolated-git-fixture'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

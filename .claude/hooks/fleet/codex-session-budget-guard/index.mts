@@ -20,8 +20,7 @@
 //
 // On the companion's FIRST tool call the guard stamps a start marker under
 // node_modules/.cache; every later call re-reads it, and once the budget is
-// spent every further call blocks with a hand-off message. A
-// `Allow codex-long-session bypass` in a user turn lifts it for that session.
+// spent every further call blocks with a hand-off message.
 //
 // Fail-open on any IO error: a guard bug must never wedge a legitimate
 // session.
@@ -33,13 +32,11 @@ import process from 'node:process'
 import { block, defineHook, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 // A Codex companion "quick check" gets ONE minute of wall clock; past it the
 // companion must wrap up and hand off sustained work to a full Claude session.
 export const BUDGET_MS = 60_000
 
-const BYPASS_PHRASE = 'Allow codex-long-session bypass'
 const STORE = 'socket-codex-session'
 
 export interface BudgetVerdict {
@@ -132,9 +129,6 @@ export function check(payload: ToolCallPayload): GuardResult {
   if (!exceeded) {
     return undefined
   }
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    return undefined
-  }
   const budgetLabel = `${Math.round(BUDGET_MS / 1000)}s`
   return block(
     [
@@ -144,12 +138,12 @@ export function check(payload: ToolCallPayload): GuardResult {
       '  Why:   Codex companions are for QUICK CHECKS, not long sessions — a long',
       '         companion loops build/land work and monopolizes the shared checkout.',
       '  Fix:   wrap up; hand sustained work to a full Claude session.',
-      `  Bypass (this turn): the USER types \`${BYPASS_PHRASE}\``,
     ].join('\n'),
   )
 }
 
 export const hook = defineHook({
+  bypass: ['codex-long-session'],
   check,
   event: 'PreToolUse',
   // The work-tools the settings.json PreToolUse dispatcher matcher covers. A

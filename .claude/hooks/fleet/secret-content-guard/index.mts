@@ -21,19 +21,13 @@
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { scanSecretValues } from '../_shared/token-patterns.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
-const BYPASS_PHRASE = 'Allow secret-content bypass'
-
-export const check = editGuard((filePath, content, payload) => {
+export const check = editGuard((filePath, content, _payload) => {
   if (content === undefined) {
     return undefined
   }
   const hit = scanSecretValues(content)
   if (!hit) {
-    return undefined
-  }
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
     return undefined
   }
   return block(
@@ -47,15 +41,12 @@ export const check = editGuard((filePath, content, payload) => {
       '  Fix: remove the secret. Tokens live in env vars (CI) or the OS',
       '  keychain (dev) — never hardcoded. For a doc example, use a redacted',
       '  placeholder.',
-      '',
-      `  Bypass (rare — e.g. this guard's own test fixtures): type`,
-      `  \`${BYPASS_PHRASE}\` verbatim.`,
-      '',
     ].join('\n'),
   )
 })
 
 export const hook = defineHook({
+  bypass: ['secret-content'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

@@ -31,9 +31,6 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { resolveEditedText } from '../_shared/payload.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow bundle-flags bypass'
 
 // Bundler config filenames the hook scrutinizes. Match basename only;
 // `*.config.ts` style files live wherever the package author put them.
@@ -209,6 +206,7 @@ function stripLineComment(line: string): string {
 }
 
 export const hook = defineHook({
+  bypass: ['bundle-flags'],
   check: editGuard((filePath, _content, payload) => {
     if (isTestTree(filePath)) {
       return undefined
@@ -241,12 +239,6 @@ export const hook = defineHook({
     if (findings.length === 0) {
       return undefined
     }
-    if (
-      payload.transcript_path &&
-      bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
-    ) {
-      return undefined
-    }
 
     const lines: string[] = [
       '[bundle-flags-guard] Blocked: shipped-build flag flipped to true',
@@ -267,9 +259,6 @@ export const hook = defineHook({
       '',
       '  Fix: set the flag to `false` (or remove it — `false` is the default',
       '  for fleet packages).',
-      '',
-      `  Bypass: type "${BYPASS_PHRASE}" in a new message, then retry.`,
-      '',
     )
     return block(lines.join('\n'))
   }),

@@ -38,9 +38,6 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { isFleetTarget } from '../_shared/fleet-context.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
-
-const BYPASS_PHRASE = 'Allow module-noun-name bypass'
 
 // Leading action verbs that mark a filename as an ACTION rather than a
 // domain noun. Deliberately excludes predicate prefixes (is/has/can/should)
@@ -177,8 +174,6 @@ export function emitBlock(filePath: string, verdict: Verdict): string {
   lines.push('    - It GROUPS the related functions; not one method per file.')
   lines.push('    - trimPublishManifest + createPackageJson both live in')
   lines.push('      manifest.ts, reachable via one `exports` entry.')
-  lines.push('')
-  lines.push(`  Deliberate exception? Type "${BYPASS_PHRASE}".`)
   return lines.join('\n') + '\n'
 }
 
@@ -197,13 +192,11 @@ export const check = editGuard((filePath, content, payload) => {
   if (existsSync(filePath)) {
     return undefined
   }
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    return undefined
-  }
   return block(emitBlock(filePath, verdict))
 })
 
 export const hook = defineHook({
+  bypass: ['module-noun-name'],
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

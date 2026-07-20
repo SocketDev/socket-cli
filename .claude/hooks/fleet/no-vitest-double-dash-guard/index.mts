@@ -25,10 +25,7 @@
 // Fails open on parse / payload errors.
 
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
 import { parseCommands } from '../_shared/shell-command.mts'
-
-const BYPASS_PHRASE = 'Allow vitest-double-dash bypass' as const
 
 // Pre-flight triggers: the dispatcher skips importing this guard unless the
 // raw payload contains one of these substrings. Every blocking path requires
@@ -95,24 +92,13 @@ export function vitestDoubleDash(command: string): string | undefined {
   return undefined
 }
 
-export const check = bashGuard((command, payload) => {
+export const check = bashGuard(command => {
   if (!command.trim()) {
     return undefined
   }
 
   const offender = vitestDoubleDash(command)
   if (!offender) {
-    return undefined
-  }
-
-  const transcriptPath =
-    typeof payload.transcript_path === 'string'
-      ? payload.transcript_path
-      : undefined
-  if (
-    transcriptPath &&
-    bypassPhrasePresent(transcriptPath, [BYPASS_PHRASE], 3)
-  ) {
     return undefined
   }
 
@@ -128,13 +114,12 @@ export const check = bashGuard((command, payload) => {
       '  Drop the `--` — the positional path is forwarded fine without it:',
       '    pnpm test test/foo.test.mts',
       '    node_modules/.bin/vitest run test/foo.test.mts',
-      '',
-      `  Bypass: type "${BYPASS_PHRASE}" to allow this invocation.`,
     ].join('\n'),
   )
 })
 
 export const hook = defineHook({
+  bypass: ['vitest-double-dash'],
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],
