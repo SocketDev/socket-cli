@@ -14,39 +14,24 @@
  *     tree matches the freshly-released remote.
  */
 
-import { httpJson } from '@socketsecurity/lib-stable/http-request'
-
 import { NPM_REGISTRY_URL } from '../constants/npm-registry.mts'
+import { fetchLatestPublishedVersion } from './npm/registry.mts'
 import { logger, runCapture } from './shared.mts'
 
 /**
  * The registry `dist-tags.latest` for a package — the currently-published
- * version. Uses the packument (not `npm view`, which trips this repo's pnpm
- * `devEngines`). Throws What/Where/Saw/Fix when the tag can't be resolved.
+ * version. Wraps the tolerant reader (single dist-tags source of truth) and
+ * throws What/Where/Saw/Fix when the tag can't be resolved, because a reconcile
+ * lineage is never auto-resolved on a missing base.
  */
 export async function fetchPublishedVersion(name: string): Promise<string> {
-  const url = `${NPM_REGISTRY_URL}/${encodeURIComponent(name).replace('%40', '@')}`
-  let json: { 'dist-tags'?: { latest?: string | undefined } | undefined }
-  try {
-    json = await httpJson<typeof json>(url, {
-      headers: { accept: 'application/vnd.npm.install-v1+json' },
-      timeout: 15_000,
-    })
-  } catch (e) {
-    throw new Error(
-      `reconcile: could not read the published version of ${name}.\n` +
-        `  Where: ${url}\n` +
-        `  Saw: ${String(e)}\n` +
-        `  Fix: check network / registry reachability, then re-run.`,
-    )
-  }
-  const latest = json['dist-tags']?.latest
+  const latest = await fetchLatestPublishedVersion(name)
   if (!latest) {
     throw new Error(
-      `reconcile: ${name} has no dist-tags.latest on the registry.\n` +
-        `  Where: ${url}\n` +
-        `  Saw: ${JSON.stringify(json['dist-tags'] ?? null)}\n` +
-        `  Fix: the registry has no latest yet (first publish / dist-tag lag) — retry, or --no-reconcile.`,
+      `reconcile: could not read the published version of ${name}.\n` +
+        `  Where: ${NPM_REGISTRY_URL}/${encodeURIComponent(name).replace('%40', '@')}\n` +
+        `  Saw: no dist-tags.latest (registry unreachable, or first publish / dist-tag lag)\n` +
+        `  Fix: check network / registry reachability, then re-run — or --no-reconcile.`,
     )
   }
   return latest

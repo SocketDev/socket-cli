@@ -158,6 +158,21 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // Catches the failure mode that shipped a CHANGELOG entry describing work that
     // landed after its tag. Published versions are historical and not re-checked.
     () => run('node', ['scripts/fleet/check/changelog-is-commit-derived.mts']),
+    // A PENDING release's package.json version must be at most ONE bump ahead of
+    // the registry's latest-published version. A manifest pre-bumped further
+    // skips the versions between (package.json pre-bumped to 1.4.3, then the
+    // workflow bumped 1.4.3 → 1.4.4, so 1.4.3 was never published). Network read
+    // → release-tier; fail-open when no published version / registry unreachable.
+    releaseStep(['scripts/fleet/check/version-is-not-ahead-of-published.mts']),
+    // A publishable manifest's version must be an `X.Y.Z-prerelease` HINT on the
+    // dev branch — the agent never hand-sets a bare release version; the publish
+    // script owns the bare bump (strips the suffix). No-ops on non-publishable
+    // manifests (private / no publishConfig) + fail-opens when git is unreadable.
+    // Release-tier so it gates at publish time, not every dev commit.
+    releaseStep([
+      'scripts/fleet/check/publishable-version-is-prerelease-hint.mts',
+      '--quiet',
+    ]),
     // No tracked symlink is self-referential or points at an absolute path
     // inside the repo (a `node_modules → /abs/<repo>/node_modules` self-loop
     // bricked fresh clones fleet-wide with ELOOP; git kept it tracked despite

@@ -24,6 +24,7 @@ import {
   parseConventionalCommits,
   promoteUnreleased,
   repoBaseUrl,
+  resolveBumpBase,
   sectionHasEntries,
 } from '../../lib/changelog.mts'
 import { commitViaGithubApi } from '../../lib/commit-via-github-api.mts'
@@ -33,6 +34,7 @@ import {
   resolveReleaseEnv,
 } from '../release-branch.mts'
 import { logger, rootPath, runCapture } from '../shared.mts'
+import { fetchPublishedVersion } from './registry.mts'
 import { readCargoPackage } from './shared.mts'
 
 import type { BumpLevel } from '../../lib/changelog.mts'
@@ -164,6 +166,15 @@ export async function runBump(options: {
 
   const fromTag = await lastReleaseTag()
   const commits = parseConventionalCommits(await readCommitStream(fromTag))
+  // Anchor the bump base to what actually RELEASED (crates.io latest + last
+  // tag), NEVER the Cargo.toml version — a pre-bumped manifest would otherwise
+  // skip a version.
+  const publishedVersion = await fetchPublishedVersion(pkg.name)
+  const base = resolveBumpBase({
+    manifestVersion: pkg.version,
+    publishedVersion,
+    tagVersion: fromTag ?? undefined,
+  })
   // Version resolution: the --release-as flag wins, else the commit-type
   // heuristic. MAJOR is never derived — it needs the explicit --release-as
   // major signal (agent runs are hook-gated on the user's typed authorization;
@@ -205,7 +216,7 @@ export async function runBump(options: {
     return
   }
 
-  const nextVersion = computeNextVersion(pkg.version, level)
+  const nextVersion = computeNextVersion(base, level)
   const repoUrl = repoBaseUrl(pkg.repository)
   const date = new Date().toISOString().slice(0, 10)
   const changelogPath = path.join(rootPath, 'CHANGELOG.md')

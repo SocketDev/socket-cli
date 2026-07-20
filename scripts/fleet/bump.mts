@@ -25,6 +25,7 @@ import process from 'node:process'
 
 import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { gt } from '@socketsecurity/lib-stable/versions/compare'
 
 import {
   bumpLevelFor,
@@ -35,12 +36,14 @@ import {
   parseConventionalCommits,
   promoteUnreleased,
   repoBaseUrl,
+  resolveBumpBase,
   sectionHasEntries,
   UNRELEASED_HEADING,
   versionHintFrom,
   withChangelogEntry,
 } from './lib/changelog.mts'
 import { loadSocketWheelhouseConfig, REPO_ROOT } from './paths.mts'
+import { fetchLatestPublishedVersion } from './publish-infra/npm/registry.mts'
 import { runCapture } from './publish-infra/shared.mts'
 
 import type { BumpLevel } from './lib/changelog.mts'
@@ -159,6 +162,18 @@ async function main(): Promise<void> {
 
   const fromTag = await lastReleaseTag()
   const commits = parseConventionalCommits(await readCommitStream(fromTag))
+  // Anchor the bump base to what actually RELEASED (registry latest + last
+  // tag), NEVER the manifest — a pre-bumped package.json would otherwise skip a
+  // version (package.json pre-bumped to 1.4.3, then bumped 1.4.3 → 1.4.4, so
+  // 1.4.3 was never published).
+  const publishedVersion = pkg.name
+    ? await fetchLatestPublishedVersion(pkg.name)
+    : undefined
+  const base = resolveBumpBase({
+    manifestVersion: pkg.version,
+    publishedVersion,
+    tagVersion: fromTag ?? undefined,
+  })
   // Version resolution, most-explicit first: the --release-as flag, then a
   // committed version HINT (package.json version carrying a prerelease
   // suffix, e.g. `6.0.10-prerelease` → release 6.0.10), then the commit-type
@@ -196,6 +211,17 @@ async function main(): Promise<void> {
       logger.fail(
         `Version hint ${pkg.version} names a MAJOR jump — a major requires ` +
           `the explicit --release-as major signal, not a hint.`,
+      )
+      process.exitCode = 1
+      return
+    }
+    // The hint must advance PAST the last released version — a hint naming an
+    // already-published (or lower) version would re-publish or move backward.
+    if (!gt(hinted, base)) {
+      logger.fail(
+        `Version hint ${pkg.version} names ${hinted}, which is not ahead of the ` +
+          `last released version ${base} — it would re-publish or move backward. ` +
+          `Name a version greater than ${base}.`,
       )
       process.exitCode = 1
       return
@@ -245,7 +271,7 @@ async function main(): Promise<void> {
     return
   }
 
-  const nextVersion = hintedVersion ?? computeNextVersion(pkg.version, level)
+  const nextVersion = hintedVersion ?? computeNextVersion(base, level)
   const repositoryUrl =
     typeof pkg.repository === 'string' ? pkg.repository : pkg.repository?.url
   // ISO date (YYYY-MM-DD). bump.mts is a normal node script (not a workflow

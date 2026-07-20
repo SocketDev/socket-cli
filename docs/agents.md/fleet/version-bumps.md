@@ -112,6 +112,22 @@ Per the [Public-surface hygiene](public-surface-hygiene.md) rule (in
 CLAUDE.md), releases are user-triggered. Stop after the tag push;
 the user runs the publish workflow manually.
 
+## The bump base is the last PUBLISHED version, never the manifest
+
+`bump.mts` (and the cargo bump) compute the next version from `resolveBumpBase`
+— the max of the registry's `dist-tags.latest` and the last `vX.Y.Z` tag —
+NEVER from `package.json`/`Cargo.toml`. A manifest can sit ahead of what
+actually published (a hand pre-bump, or a stale `X.Y.Z-prerelease` hint), and
+bumping off an ahead manifest silently SKIPS a version: package.json was
+pre-bumped to 1.4.3, then the release bumped 1.4.3 → 1.4.4, so 1.4.3 was never
+published. A `-prerelease` hint that names an already-published (or lower)
+version fails loud rather than re-publishing.
+
+The `version-is-not-ahead-of-published` check is the release-tier gate: it fails
+when the manifest is more than one valid bump ahead of the published latest, and
+fails open (no published version / registry unreachable) so offline lint lanes
+never trip it.
+
 ## Why this order
 
 - **Bisecting from `main` past the tag must not land on a
@@ -132,4 +148,5 @@ the user runs the publish workflow manually.
 
 - `.claude/hooks/fleet/version-bump-order-guard/`: enforces the bump-at-tip + tag-after-bump ordering.
 - `.claude/hooks/fleet/release-workflow-guard/`: blocks `gh workflow run` dispatches that aren't dry-run.
+- `scripts/fleet/check/version-is-not-ahead-of-published.mts`: release-tier gate that fails when package.json is bumped more than one release past the published latest (the skip-risk state).
 - [`immutable-releases.md`](immutable-releases.md): every GitHub Release that lands as a result of this sequence ships immutable (Sigstore release attestation, asset lock, tag protection). The release workflow MUST use the 3-step draft → upload → publish pattern; single-call `gh release create <tag> <files>` is forbidden.

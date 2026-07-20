@@ -10,6 +10,32 @@ import { NPM_REGISTRY_URL } from '../../constants/npm-registry.mts'
 import { runCapture } from '../shared.mts'
 
 /**
+ * The registry `dist-tags.latest` for a package — the currently-published
+ * version — or undefined on any failure/unpublished. Reads the packument (not
+ * `npm view`, which trips this repo's pnpm devEngines). The tolerant twin of
+ * reconcile's throwing reader: the bump uses it to anchor the base version to
+ * what actually published (never a possibly-ahead manifest), so it must NOT
+ * throw on a first-publish / offline registry — it returns undefined and the
+ * caller falls back.
+ */
+export async function fetchLatestPublishedVersion(
+  name: string,
+): Promise<string | undefined> {
+  const url = `${NPM_REGISTRY_URL}/${encodeURIComponent(name).replace('%40', '@')}`
+  try {
+    const json = await httpJson<{
+      'dist-tags'?: { latest?: string | undefined } | undefined
+    }>(url, {
+      headers: { accept: 'application/vnd.npm.install-v1+json' },
+      timeout: 15_000,
+    })
+    return json['dist-tags']?.latest
+  } catch {
+    return undefined
+  }
+}
+
+/**
  * `npm view <name>@<version> version` exits 0 iff the version exists on the
  * registry. Faster than fetching the full packument for a yes/no check.
  */

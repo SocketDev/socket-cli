@@ -13,6 +13,8 @@
  *   not internal churn.
  */
 
+import { maxVersion } from '@socketsecurity/lib-stable/versions/range'
+
 // Record separator between commits, unit separator between fields — both
 // control chars that never appear in a commit subject/body, so a `git log
 // --format=%H%x1f%s%x1f%b%x1e` stream parses unambiguously.
@@ -162,6 +164,36 @@ export function computeNextVersion(current: string, level: BumpLevel): string {
     return `${major}.${minor + 1}.0`
   }
   return `${major}.${minor}.${patch + 1}`
+}
+
+export interface ResolveBumpBaseOptions {
+  manifestVersion: string
+  publishedVersion?: string | undefined
+  tagVersion?: string | undefined
+}
+
+/**
+ * The version a release bumps FROM. Anchored to already-RELEASED authorities —
+ * the registry's latest-published version and the last release tag — NEVER to
+ * the manifest, which can sit ahead (a hand pre-bump, or a stale
+ * `X.Y.Z-prerelease` hint) and would silently SKIP a version: package.json was
+ * pre-bumped to 1.4.3, then the release bumped 1.4.3 → 1.4.4, so 1.4.3 was
+ * never published. Excluding the manifest from the base means an ahead manifest
+ * can never inflate it. Falls back to the manifest core ONLY for a genuine
+ * first release (no published version, no tag).
+ */
+export function resolveBumpBase(options: ResolveBumpBaseOptions): string {
+  const opts = { __proto__: null, ...options } as ResolveBumpBaseOptions
+  const released: string[] = []
+  if (opts.publishedVersion) {
+    released.push(opts.publishedVersion)
+  }
+  if (opts.tagVersion) {
+    released.push(opts.tagVersion.replace(/^v/, ''))
+  }
+  return (
+    maxVersion(released) ?? opts.manifestVersion.split('-')[0]!.split('+')[0]!
+  )
 }
 
 /**
