@@ -1,11 +1,16 @@
 #!/usr/bin/env node
 // Claude Code PreToolUse hook — bump-defers-to-release-guard.
 //
-// Blocks an agent-driven version bump: a `bump.mts` WRITE run (no --dry-run)
-// or an `npm|pnpm|yarn version <arg>` mutation. The VERSION is the user's
-// decision. Derived bumps are patch or minor with patch the default; MAJOR
-// is never derived and never the agent's call. The bump commit + CHANGELOG
-// belong to the release workflow/scripts.
+// Blocks a version bump outside the release workflow, in either vector:
+//   - a `bump.mts` WRITE run (no --dry-run) or an `npm|pnpm|yarn version <arg>`
+//     mutation (Bash), or
+//   - a MANUAL Edit/Write to package.json's `version` field, or a CHANGELOG.md
+//     release entry.
+// Both are the same anti-pattern: the release workflow (npm-publish.mts --bump)
+// OWNS the version bump + CHANGELOG. Prepping them by hand BEFORE triggering the
+// release skips versions — package.json pre-bumped to 1.4.3, then the workflow
+// bumped 1.4.3 → 1.4.4, so 1.4.3 was never published. The VERSION is the user's
+// decision; derived bumps are patch/minor (patch default), MAJOR never derived.
 //
 // The sanctioned flow: gather evidence with `bump.mts --dry-run` (always
 // allowed), present the version question to the user, and STOP. After the
@@ -22,10 +27,12 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { parseVersion } from '@socketsecurity/lib-stable/versions/parse'
 
 import { block, defineHook, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
+import { readFilePath, readWriteContent } from '../_shared/payload.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
@@ -65,8 +72,10 @@ const MAJOR_ARGS: readonly string[] = ['major', 'premajor']
 // Pre-flight skip set: the dispatcher only imports this guard when the raw
 // payload contains one of these substrings.
 export const triggers: readonly string[] = [
+  'CHANGELOG',
   'bump.mts',
   'npm version',
+  'package.json',
   'pnpm version',
   'yarn version',
 ]
@@ -106,12 +115,63 @@ export function bumpViolationIn(command: string): BumpViolation | undefined {
   return undefined
 }
 
+// The manual-edit vector of the SAME anti-pattern: hand-editing package.json's
+// `version` (a pre-release bump) or writing a CHANGELOG release entry. The
+// release workflow (npm-publish.mts --bump) owns BOTH — pre-bumping by hand is
+// what skipped 1.4.3 (package.json pre-set to 1.4.3, then the workflow bumped
+// 1.4.3 → 1.4.4, so 1.4.3 was never published). Compares the incoming version
+// to the on-disk one, so a same-version edit (touching other keys) is clean.
+export function manualBumpViolation(
+  filePath: string,
+  content: string | undefined,
+): BumpViolation | undefined {
+  if (!content) {
+    return undefined
+  }
+  const base = path.basename(normalizePath(filePath))
+  if (base === 'package.json') {
+    const incoming = /"version"\s*:\s*"([^"]+)"/.exec(content)?.[1]
+    if (!incoming) {
+      return undefined
+    }
+    let current: string | undefined
+    try {
+      current = (
+        JSON.parse(readFileSync(filePath, 'utf8')) as { version?: string }
+      ).version
+    } catch {
+      current = undefined
+    }
+    if (!current || current === incoming) {
+      return undefined
+    }
+    const cur = parseVersion(current)
+    const inc = parseVersion(incoming)
+    return {
+      invocation: `manual package.json version bump ${current} → ${incoming}`,
+      major: !!(cur && inc && inc.major > cur.major),
+    }
+  }
+  if (base === 'CHANGELOG.md' && /^##\s+\[?v?\d+\.\d+\.\d+/m.test(content)) {
+    return { invocation: 'manual CHANGELOG.md release entry', major: false }
+  }
+  return undefined
+}
+
 // Decide what (if anything) to block for a payload. Pure — the test drives
-// it directly.
+// it directly. A Bash command bump OR a manual Edit/Write to package.json /
+// CHANGELOG.md — both defer to the release workflow.
 export function bumpViolation(
   payload: ToolCallPayload,
 ): BumpViolation | undefined {
-  if (payload.tool_name !== 'Bash') {
+  const tool = payload.tool_name
+  if (tool === 'Edit' || tool === 'MultiEdit' || tool === 'Write') {
+    const filePath = readFilePath(payload)
+    return filePath
+      ? manualBumpViolation(filePath, readWriteContent(payload))
+      : undefined
+  }
+  if (tool !== 'Bash') {
     return undefined
   }
   const command = payload.tool_input?.command
@@ -150,7 +210,9 @@ export function check(payload: ToolCallPayload): GuardResult {
     [
       '[bump-defers-to-release-guard] Blocked: agent-driven version bump.',
       '',
-      `  What:  \`${violation.invocation}\` writes the version + CHANGELOG.`,
+      `  What:  ${violation.invocation}.`,
+      '         The release workflow (npm-publish.mts --bump) OWNS the version +',
+      '         CHANGELOG — pre-bumping by hand skips versions (it skipped 1.4.3).',
       '  Where: the release surface. The VERSION is the USER’s decision,',
       '         never the agent’s: derived bumps are patch or minor (patch',
       '         default), MAJOR is never derived, and the bump + CHANGELOG',
@@ -173,7 +235,7 @@ export const hook = defineHook({
   bypassMode: 'manual',
   check,
   event: 'PreToolUse',
-  matcher: ['Bash'],
+  matcher: ['Bash', 'Edit', 'MultiEdit', 'Write'],
   triggers,
   type: 'guard',
 })
