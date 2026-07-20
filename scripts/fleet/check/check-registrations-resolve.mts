@@ -13,8 +13,12 @@
  *   it names to resolve in the index, so a pre-commit `check` run (or any
  *   local run with the split staged) fails before the commit exists.
  *   Covers the wheelhouse's own copy and template/base/'s seed copy, each
- *   against its own tree. Exit codes: 0 — every registration resolves;
- *   1 — dangling registration(s).
+ *   against its own tree. A REVERSE pass also fires: every fleet check file
+ *   must be WIRED into a runner (check-steps / package.json / workflow) or on
+ *   the deferred allowlist — catching the inert-enforcer class (a tested check
+ *   that no runner invokes, so it runs never). Exit codes: 0 — every
+ *   registration resolves + every check is wired; 1 — a dangling registration
+ *   or an unwired check.
  */
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
@@ -35,6 +39,12 @@ const logger = getDefaultLogger()
 // is the complete registration surface.
 // oxlint-disable-next-line socket/require-regex-comment -- documented above
 const REGISTRATION_RE = /'(scripts\/fleet\/check\/[\w-]+\.mts)'/g
+
+// Any reference to a fleet check path (quoted or bare) — used by the reverse
+// gate to decide a check is WIRED into some runner (check-steps, package.json
+// script, workflow, git-hook), not just the quoted check-steps registration.
+// oxlint-disable-next-line socket/require-regex-comment -- documented above
+const CHECK_PATH_RE = /scripts\/fleet\/check\/[\w-]+\.mts/g
 
 /**
  * Every check path a check.mts source registers, deduplicated in order.
@@ -95,6 +105,86 @@ export function registrationSources(
   return out
 }
 
+// Fleet checks that are DELIBERATELY not wired into any `check --all` runner
+// (each with the reason it stands alone) — the reverse gate's allowlist. A
+// standalone check invoked only manually / post-publish belongs here so the
+// gate stays loud about the ACCIDENTALLY-orphaned enforcer (the class that let
+// publishable-version-is-prerelease-hint sit inert), not the intentional one.
+export const DEFERRED_CHECKS: Readonly<Record<string, string>> = {
+  __proto__: null,
+  // Post-publish registry audit — run against a published version, not part of
+  // the pre-publish source `check --all` (its source twin is
+  // publish-config-is-hardened, which IS registered).
+  'scripts/fleet/check/provenance-is-attested.mts':
+    'post-publish registry audit, run manually against a published version',
+} as unknown as Record<string, string>
+
+// Every fleet check file that exists in a tree, as `<treePrefix>scripts/fleet/
+// check/<name>.mts` rel paths — the reverse gate's inventory.
+export function listFleetCheckFiles(
+  repoRoot: string,
+  treePrefix: string,
+): string[] {
+  const dir = path.join(repoRoot, treePrefix, 'scripts/fleet/check')
+  if (!existsSync(dir)) {
+    return []
+  }
+  return readdirSync(dir)
+    .filter(f => f.endsWith('.mts'))
+    .map(f => `${treePrefix}scripts/fleet/check/${f}`)
+}
+
+// Check files that no runner references and that aren't on the deferred
+// allowlist — the inert enforcers. `wired` is the set of check rel paths named
+// anywhere a runner would invoke them (check-steps + check.mts + package.json +
+// workflows + git-hooks); `deferred` is the reason-annotated allowlist. Pure.
+export function findUnregisteredChecks(
+  checkFiles: readonly string[],
+  wired: ReadonlySet<string>,
+  deferred: Readonly<Record<string, string>>,
+): string[] {
+  return checkFiles.filter(f => {
+    const bare = f.replace(/^template\/base\//, '')
+    return !wired.has(bare) && !Object.hasOwn(deferred, bare)
+  })
+}
+
+// Every fleet-check rel path (bare, treePrefix-stripped) referenced by a runner
+// in `treePrefix`: the check-steps/check.mts registrations PLUS package.json
+// scripts and CI workflows (where standalone checks are invoked). A check named
+// in any of these is WIRED.
+export function collectWiredChecks(
+  repoRoot: string,
+  treePrefix: string,
+): Set<string> {
+  const files = registrationSources(repoRoot, treePrefix).map(p =>
+    path.join(repoRoot, p),
+  )
+  const pkg = path.join(repoRoot, treePrefix, 'package.json')
+  if (existsSync(pkg)) {
+    files.push(pkg)
+  }
+  const wfDir = path.join(repoRoot, treePrefix, '.github/workflows')
+  if (existsSync(wfDir)) {
+    for (const f of readdirSync(wfDir)) {
+      if (f.endsWith('.yaml') || f.endsWith('.yml')) {
+        files.push(path.join(wfDir, f))
+      }
+    }
+  }
+  const wired = new Set<string>()
+  for (let i = 0, { length } = files; i < length; i += 1) {
+    const abs = files[i]!
+    if (!existsSync(abs)) {
+      continue
+    }
+    for (const m of readFileSync(abs, 'utf8').matchAll(CHECK_PATH_RE)) {
+      wired.add(m[0])
+    }
+  }
+  return wired
+}
+
 async function main(): Promise<void> {
   // Each tree (the repo's own + template/base/'s seed) resolves its
   // registrations against itself.
@@ -138,6 +228,28 @@ async function main(): Promise<void> {
         )
       }
     }
+  }
+  // Reverse pass: every fleet check file must be WIRED into a runner (or on the
+  // deferred allowlist). The forward pass catches registered→missing; this
+  // catches exists→unwired — the inert-enforcer class that let a tested check
+  // (publishable-version-is-prerelease-hint) sit in the tree running never.
+  // Scoped to the ROOT tree only: that's the real runtime (its package.json is
+  // the GENERATED one that invokes standalone checks); template/base/'s
+  // package.json is a minimal seed, so a package.json-invoked check would
+  // false-positive there. The template check files are cascaded copies of the
+  // root's, so root coverage is authoritative.
+  const orphaned = findUnregisteredChecks(
+    listFleetCheckFiles(REPO_ROOT, ''),
+    collectWiredChecks(REPO_ROOT, ''),
+    DEFERRED_CHECKS,
+  )
+  for (const rel of orphaned) {
+    errors.push(
+      `${rel} is a check file no runner invokes (not in check-steps, package.json, or a workflow).\n` +
+        `    It runs NEVER — a tested enforcer that's policy on paper.\n` +
+        `    Fix: register it in a _shared/check-steps*.mts (or a package.json script),\n` +
+        `    or add it to DEFERRED_CHECKS in this file with the reason it stands alone.`,
+    )
   }
   if (errors.length) {
     logger.error(`check-registrations-resolve: ${errors.length} finding(s):`)

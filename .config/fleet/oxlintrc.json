@@ -66,6 +66,7 @@
     "socket/options-null-proto": "error",
     "socket/options-param-naming": "error",
     "socket/personal-path-placeholders": "error",
+    "socket/prefer-all-settled": "error",
     "socket/prefer-async-spawn": "error",
     "socket/prefer-cached-for-loop": "error",
     "socket/prefer-ellipsis-char": "error",

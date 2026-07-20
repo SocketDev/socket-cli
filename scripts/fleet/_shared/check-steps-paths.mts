@@ -50,6 +50,11 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // a renamed/dropped script can't leave a dead `pnpm run` citation shipping
     // fleet-wide. Skips `allowed-tools:` frontmatter (Bash() permission globs).
     () => run('node', ['scripts/fleet/check/pnpm-run-citations-resolve.mts']),
+    // Sibling of the two above for the skill-NAME surface: every command that
+    // delegates in prose ("Run the `<name>` skill") must name a real
+    // .claude/skills/**/<name>/SKILL.md, so a renamed/moved skill can't leave a
+    // command pointing at nothing.
+    () => run('node', ['scripts/fleet/check/skill-delegations-resolve.mts']),
     // A package's `exports` map and its public file surface must agree: every
     // exports target resolves to a real file (no stale map entry that throws
     // ERR_MODULE_NOT_FOUND for consumers), and every public built file (privacy

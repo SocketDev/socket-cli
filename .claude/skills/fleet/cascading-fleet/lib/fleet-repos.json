@@ -69,6 +69,12 @@
       "optIns": ["squash-history"]
     },
     {
+      "name": "meander",
+      "description": "Walkthrough generator — annotated code walkthroughs with comments, hosted on Val Town",
+      "optIns": ["squash-history"],
+      "publishes": "js"
+    },
+    {
       "name": "sdxgen",
       "description": "CycloneDX and SPDX manifest generator (Socket dx gen)",
       "optIns": ["squash-history"]

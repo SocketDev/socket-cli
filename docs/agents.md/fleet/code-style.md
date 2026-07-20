@@ -108,6 +108,10 @@ See [`parser-comments.md`](parser-comments.md) §5–7 for the full Lock-step co
 
 Never re-race a pool that survives across iterations (the handlers stack). See `.claude/skills/plugging-promise-race/SKILL.md`.
 
+## Prefer `Promise.allSettled` for order-independent batches
+
+When you `await Promise.all([...])` and DISCARD the resolved array (the await is its own statement), the only thing `Promise.all` does that `Promise.allSettled` doesn't is abort the whole batch on the first rejection — leaving the sibling promises' rejections unhandled. For order-independent concurrent work prefer `Promise.allSettled(...)` so one failure doesn't abandon the rest (then `.filter(Boolean)` / inspect the settled results). Keep `Promise.all` when you consume the positional result (`const [a, b] = await Promise.all(...)`) or genuinely want fail-fast — for the latter, mark it: `// oxlint-disable-next-line socket/prefer-all-settled -- fail-fast: <reason>`. Enforced by `socket/prefer-all-settled` (report-only; the fix changes error semantics, so it's the author's call).
+
 ## `Safe` suffix
 
 Non-throwing wrappers end in `Safe` (`safeDelete`, `safeDeleteSync`, `applySafe`, `weakRefSafe`). Read it as "X, but safe from throwing." The wrapper traps the thrown value internally and returns `undefined` (or the documented fallback). Don't invent alternative suffixes (`Try`, `OrUndefined`, `Maybe`). Pick `Safe`.

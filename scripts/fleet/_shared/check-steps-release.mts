@@ -120,6 +120,12 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // push-run count per member via gh; report-mode for now (skips cleanly when
     // gh is unauthenticated / no fleet-repos.json in a member checkout).
     releaseStep(['scripts/fleet/check/member-ci-fires-on-push.mts']),
+    // Every repo in fleet-repos.json must EXIST in its org — a roster entry with
+    // no repo is a half-onboarded member (socket-gemini-nano: roster entry, no
+    // SocketDev/ repo → stranded cascades + 404'd environments). Onboarding must
+    // create the repo AND update the roster together. Report-mode + network-gated
+    // (a 404 can mean private + no token access), skips cleanly in offline lanes.
+    releaseStep(['scripts/fleet/check/member-repos-exist.mts']),
     // The dep-0 fetcher (bootstrap/fleet.mjs) is a rolldown-inlined build artifact;
     // fail loud if it drifts from its bootstrap/src/* source (rebuild: node
     // scripts/repo/build-bootstrap-fetcher.mts). Wheelhouse-only — the build script

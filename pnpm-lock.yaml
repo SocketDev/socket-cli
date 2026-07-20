@@ -1344,6 +1344,12 @@ importers:
         specifier: 'catalog:'
         version: 26.1.1
 
+  .claude/hooks/fleet/handoff-command-nudge:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.1.1
+
   .claude/hooks/fleet/headroom-proxy-start:
     dependencies:
       '@socketsecurity/lib-stable':
@@ -2506,6 +2512,8 @@ importers:
   .config/fleet/oxlint-plugin/fleet/options-param-naming: {}
 
   .config/fleet/oxlint-plugin/fleet/personal-path-placeholders: {}
+
+  .config/fleet/oxlint-plugin/fleet/prefer-all-settled: {}
 
   .config/fleet/oxlint-plugin/fleet/prefer-async-spawn: {}
 

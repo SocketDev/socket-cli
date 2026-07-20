@@ -121,6 +121,7 @@ function main(): void {
   const argv = process.argv.slice(2)
   const noWire = argv.includes('--no-wire')
   const winLauncher = argv.includes('--win-launcher')
+  const wireLauncher = argv.includes('--wire-launcher')
   const unwire = argv.includes('--unwire')
   const isWin = process.platform === 'win32'
 
@@ -182,6 +183,19 @@ function main(): void {
     return
   }
 
+  if (!wireLauncher) {
+    // The launcher is a per-machine V8-snapshot fast path — a marginal win over
+    // the always-present compile-cache baseline. Pinning it into the TRACKED
+    // settings.json is FRAGILE: EDR / cleanup reaps the launcher binary, and the
+    // committed dispatch then points at an absent file → every hook fails open
+    // (guards inert, fleet-wide, silently). Default to the resilient baseline;
+    // opt in with --wire-launcher only on a machine where the launcher persists.
+    logger.log(
+      'Built the launcher; staying on the compile-cache baseline (pass ' +
+        '--wire-launcher to pin the per-machine snapshot fast path).',
+    )
+    return
+  }
   wireSettings(launcherCommand, 'snapshot launcher')
 }
 

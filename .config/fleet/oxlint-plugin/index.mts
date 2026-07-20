@@ -69,6 +69,7 @@ import optionalExplicitUndefined from './fleet/optional-explicit-undefined/index
 import optionsNullProto from './fleet/options-null-proto/index.mts'
 import optionsParamNaming from './fleet/options-param-naming/index.mts'
 import personalPathPlaceholders from './fleet/personal-path-placeholders/index.mts'
+import preferAllSettled from './fleet/prefer-all-settled/index.mts'
 import preferAsyncSpawn from './fleet/prefer-async-spawn/index.mts'
 import preferCachedForLoop from './fleet/prefer-cached-for-loop/index.mts'
 import preferEllipsisChar from './fleet/prefer-ellipsis-char/index.mts'
@@ -177,6 +178,7 @@ const plugin = {
     'options-null-proto': optionsNullProto,
     'options-param-naming': optionsParamNaming,
     'personal-path-placeholders': personalPathPlaceholders,
+    'prefer-all-settled': preferAllSettled,
     'prefer-async-spawn': preferAsyncSpawn,
     'prefer-cached-for-loop': preferCachedForLoop,
     'prefer-ellipsis-char': preferEllipsisChar,
