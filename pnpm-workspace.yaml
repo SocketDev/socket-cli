@@ -62,7 +62,7 @@ catalog:
   '@socketregistry/hyrious__bun.lockb': 1.0.19
   '@socketregistry/indent-string': 1.0.14
   '@socketregistry/is-interactive': 1.0.6
-  '@socketregistry/packageurl-js': 'npm:@socketregistry/packageurl-js@1.4.2'
+  '@socketregistry/packageurl-js': 1.4.4
   '@socketsecurity/lib': 6.1.0
   '@types/shell-quote': 1.7.5
   '@ultrathink/acorn.wasm': npm:@ultrathink/acorn-wasm@0.0.1

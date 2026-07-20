@@ -495,7 +495,7 @@ catalogs:
       version: 4.1.8
 
 overrides:
-  '@socketregistry/packageurl-js': npm:@socketregistry/packageurl-js@1.4.2
+  '@socketregistry/packageurl-js': 1.4.4
   '@socketsecurity/lib': 6.1.0
   '@socketsecurity/registry': npm:@socketsecurity/registry@2.0.2
   '@socketsecurity/sdk': npm:@socketsecurity/sdk@4.0.1
@@ -669,8 +669,8 @@ importers:
         specifier: 'catalog:'
         version: 1.0.6
       '@socketregistry/packageurl-js':
-        specifier: npm:@socketregistry/packageurl-js@1.4.2
-        version: 1.4.2
+        specifier: 1.4.4
+        version: 1.4.4
       '@socketregistry/packageurl-js-stable':
         specifier: npm:@socketregistry/packageurl-js@1.4.2
         version: '@socketregistry/packageurl-js@1.4.2'
@@ -2654,8 +2654,8 @@ importers:
         specifier: 'catalog:'
         version: 1.0.6
       '@socketregistry/packageurl-js':
-        specifier: npm:@socketregistry/packageurl-js@1.4.2
-        version: 1.4.2
+        specifier: 1.4.4
+        version: 1.4.4
       '@socketregistry/packageurl-js-stable':
         specifier: npm:@socketregistry/packageurl-js@1.4.2
         version: '@socketregistry/packageurl-js@1.4.2'
@@ -3987,6 +3987,10 @@ packages:
   '@socketregistry/packageurl-js@1.4.2':
     resolution: {integrity: sha512-yt9UfUzD02wZ7kwb67oe4jxG2D9JtgPqjrK/ans2BovFyeie0w8hvRR0MuOWM4mUt2371oFPp7NB6O5ZjYJmlw==}
     engines: {node: '>=18.20.8', pnpm: '>=11.0.0-rc.0'}
+
+  '@socketregistry/packageurl-js@1.4.4':
+    resolution: {integrity: sha512-yC/FL9o4IhTcAn5BILV2L9kCzbopESefffLFbvkWsYUdXSyRbWmmw8+mLhiEL7Zck0A6C1D9rgf8+r4T1WVPLA==}
+    engines: {node: '>=24', npm: '>=12.0.0', pnpm: '>=11.0.5'}
 
   '@socketregistry/path-parse@1.0.8':
     resolution: {integrity: sha512-9dcT4Vj4TY6BsU7hd3sEemoaA8OEGUutK2ufNdP+qKOljcH0xy/5+WnbEZ1RLEJcSKDnpZ3T47mVdq/ZWiGNxw==}
@@ -8304,6 +8308,8 @@ snapshots:
   '@socketregistry/isarray@1.0.8': {}
 
   '@socketregistry/packageurl-js@1.4.2': {}
+
+  '@socketregistry/packageurl-js@1.4.4': {}
 
   '@socketregistry/path-parse@1.0.8': {}
 
