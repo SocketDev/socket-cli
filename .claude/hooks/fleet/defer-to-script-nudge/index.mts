@@ -43,11 +43,21 @@ export function maxCodeBlockLines(content: string): number {
   return max
 }
 
-// True when the doc references a backing `scripts/**.mts` (the deferral target
-// a thin skill/command should point to). Scans the markdown content, not a
-// shell command line.
+// True when the doc references a backing `.mts` in ANY of the fleet's deferral
+// conventions: a `scripts/**.mts` path, a co-located `.claude/skills/**.mts`, or
+// a relative co-located `lib/**.mts` / `run.mts` the skill invokes (the dominant
+// skill-backing shape). Scans the markdown content, not a shell command line.
 export function referencesScript(content: string): boolean {
-  return /\bscripts\/[^\s)'"]*\.mts\b/.test(content)
+  return /(?:\bscripts\/[^\s)'"]*\.mts|\.claude\/skills\/[^\s)'"]*\.mts|\blib\/[^\s)'"]*\.mts|\brun\.mts)\b/.test(
+    content,
+  )
+}
+
+// A `user-invocable: false` skill is a REFERENCE/doc — its fenced blocks are
+// examples, not an operation with logic to extract — so the thin-wrapper rule
+// doesn't apply and a large example block is not a smell.
+export function isReferenceSkill(content: string): boolean {
+  return /^user-invocable:\s*false\b/m.test(content)
 }
 
 export const hook = defineHook({
@@ -55,6 +65,7 @@ export const hook = defineHook({
     if (
       !content ||
       !isSkillOrCommandDoc(filePath) ||
+      isReferenceSkill(content) ||
       maxCodeBlockLines(content) <= HEAVY_LINES ||
       referencesScript(content)
     ) {
@@ -66,10 +77,11 @@ export const hook = defineHook({
         '',
         `  File: ${filePath}`,
         '',
-        `  A fenced code block over ${HEAVY_LINES} lines with no backing`,
-        '  `scripts/**.mts` reference — inline logic in a skill/command is',
-        '  untested, unlinted, and not reusable. Move it to a script and invoke',
-        '  that from the markdown so the skill stays a thin wrapper.',
+        `  A fenced code block over ${HEAVY_LINES} lines with no backing \`.mts\``,
+        '  reference (`scripts/**.mts`, a co-located `lib/*.mts`, or `run.mts`) —',
+        '  inline logic in a skill/command is untested, unlinted, and not',
+        '  reusable. Move it to a script and invoke that from the markdown so the',
+        '  skill stays a thin wrapper.',
       ].join('\n'),
     )
   }),
