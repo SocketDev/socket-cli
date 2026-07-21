@@ -9,6 +9,9 @@ packages:
 
 # Packages allowed to run build scripts (pnpm v11 strictDepBuilds default).
 allowBuilds:
+  # @swc/core native binding — vitiate's coverage-guided fuzz lane
+  # (packages/cli/scripts/repo/fuzz.mts) SWC-instruments src for coverage.
+  '@swc/core': true
   cpu-features: false
   protobufjs: false
   puppeteer: false
@@ -96,6 +99,7 @@ catalog:
   '@types/which': 3.0.4
   '@types/yargs-parser': 21.0.3
   '@typescript/native-preview': 7.0.0-dev.20260510.1
+  '@vitiate/core': 0.3.1
   '@vitest/coverage-v8': 4.1.10
   '@vitest/ui': 4.1.10
   '@yao-pkg/pkg': 6.8.0
@@ -193,6 +197,7 @@ catalog:
   # vite 8.0.14 swaps esbuild → rolldown natively; the override forces its
   # bundled rolldown up to the catalog's 1.0.3.
   vite: 8.1.0
+  vitiate: 0.3.1
   vitest: 4.1.10
   wrap-ansi: 9.0.2
   xml2js: 0.6.2

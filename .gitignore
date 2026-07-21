@@ -289,3 +289,9 @@ pnpm-debug.log
 # fleet-canonical globs would otherwise ignore (untrack-ignored-files fix) ───
 !/packages/cli/test/fixtures/
 !/.node-version
+
+# vitiate coverage-guided fuzz lane caches (regenerable; never commit)
+/.swc/
+/.vitiate/
+**/.swc/
+**/.vitiate/

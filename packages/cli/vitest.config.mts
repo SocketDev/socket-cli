@@ -5,6 +5,19 @@ import { fileURLToPath } from 'node:url'
 
 import { defineConfig } from 'vitest/config'
 
+import { vitiatePlugin } from '@vitiate/core/plugin'
+
+// The vitiate coverage-guided fuzz lane (scripts/repo/fuzz.mts) sets
+// VITIATE_FUZZ=1 and runs `vitest run` against THIS auto-discovered config. In
+// a monorepo package that already owns its vitest.config.mts we can't drop a
+// separate root config, so gate the SWC-instrumenting plugin + the fuzz-target
+// include behind VITIATE_FUZZ: a normal `pnpm test` never loads the plugin, and
+// the supervisor's re-spawned child (which inherits VITIATE_FUZZ) auto-discovers
+// this same file and gates the plugin ON. See the property-and-fuzz-testing
+// skill's javascript-typescript.md.
+const FUZZING = process.env['VITIATE_FUZZ'] === '1'
+const FUZZ_TIME_MS = Number(process.env['FUZZ_TIME_MS']) || 15_000
+
 // Pin TZ in the parent process before vitest spawns its workers, so
 // every worker inherits TZ=UTC from spawn env. V8 caches the timezone
 // at the first Date op per-worker, so it must be present before any
@@ -90,8 +103,7 @@ export function getMaxThreads(): number {
   return os.cpus().length
 }
 
-// oxlint-disable-next-line socket/no-default-export -- vitest config file requires default export
-export default defineConfig({
+const normalConfig = defineConfig({
   resolve: {
     preserveSymlinks: false,
   },
@@ -198,3 +210,26 @@ export default defineConfig({
     },
   },
 })
+
+// When VITIATE_FUZZ=1, use a MINIMAL config (mirrors socket-lib's working
+// reference): the vitiatePlugin + the `*.fuzz.ts` include only. The full cli
+// test config's pool:'threads' + custom setupFiles conflict with vitiate's
+// supervisor (which spawns a coverage-guided child process sharing an SWC
+// coverage shmem) and trip "shmem attach failed"; a stripped config avoids it.
+// `pnpm test` never sets VITIATE_FUZZ, so it uses normalConfig unchanged.
+// oxlint-disable-next-line socket/no-default-export -- vitest config file requires default export
+export default FUZZING
+  ? defineConfig({
+      plugins: [
+        vitiatePlugin({
+          instrument: { include: ['src/**/*.mts', 'src/**/*.ts'] },
+          fuzz: {
+            fuzzTimeMs: FUZZ_TIME_MS,
+            stopOnCrash: true,
+            detectors: { prototypePollution: true },
+          },
+        }),
+      ],
+      test: { include: ['test/**/*.fuzz.ts'] },
+    })
+  : normalConfig
