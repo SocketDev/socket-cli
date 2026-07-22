@@ -750,7 +750,17 @@ function pruneStaleFleetFiles(dest, manifest) {
   }
   return pruned
 }
-const SETTINGS_PATH = '.config/socket-wheelhouse.json'
+const SETTINGS_CANDIDATES = [
+  '.config/repo/socket-wheelhouse.json',
+  '.config/socket-wheelhouse.json',
+  '.socket-wheelhouse.json',
+]
+function resolveSettingsPath(dest) {
+  for (let i = 0, { length } = SETTINGS_CANDIDATES; i < length; i += 1) {
+    const p = path.join(dest, SETTINGS_CANDIDATES[i])
+    if (existsSync(p)) return p
+  }
+}
 const APPLIED_MARKER = 'node_modules/.cache/socket-wheelhouse/bundle-applied'
 const LEGACY_APPLIED_MARKER = '.config/fleet/.bundle-applied'
 /**
@@ -759,8 +769,8 @@ const LEGACY_APPLIED_MARKER = '.config/fleet/.bundle-applied'
  * the pin lives in exactly one place. Returns undefined when absent/malformed.
  */
 function readBundleRef(dest) {
-  const p = path.join(dest, SETTINGS_PATH)
-  if (!existsSync(p)) return
+  const p = resolveSettingsPath(dest)
+  if (!p) return
   try {
     return JSON.parse(readFileSync(p, 'utf8')).bundle?.ref
   } catch {
@@ -774,8 +784,8 @@ function readBundleRef(dest) {
  * Returns both as undefined when the file is absent / malformed.
  */
 function readBundleConfig(dest) {
-  const p = path.join(dest, SETTINGS_PATH)
-  if (!existsSync(p))
+  const p = resolveSettingsPath(dest)
+  if (!p)
     return {
       ref: void 0,
       cascadeSha: void 0,
@@ -943,7 +953,7 @@ function formatLockStepError(parts) {
   return [
     `${ERR_LOCKSTEP_MISMATCH}  the pinned bundle is out of lock-step.`,
     `  What:   bundle out of lock-step — the pinned release and the cascaded template SHA disagree.`,
-    `  Where:  .config/socket-wheelhouse.json (bundle.ref + bundle.cascadeSha).`,
+    `  Where:  .config/repo/socket-wheelhouse.json (bundle.ref + bundle.cascadeSha).`,
     `  Wanted: bundle.cascadeSha === templateSha of the release at bundle.ref.`,
     `  Saw:    ref = ${ref} (${sawTemplate}), cascadeSha = ${cascadeSha}.`,
     `  Fix:    re-cascade to the pin — \`node scripts/repo/sync-scaffolding/cli.mts --target . --fix\` — OR re-pin bundle.ref to the release whose templateSha is ${cascadeSha}.`,
@@ -1285,7 +1295,7 @@ function runStatus(options) {
   if (!ref) {
     if (!opts.quiet)
       logger.log(
-        'fleet:status: no bundle.ref pinned in .config/socket-wheelhouse.json — not a thin consumer.',
+        'fleet:status: no bundle.ref pinned in .config/repo/socket-wheelhouse.json — not a thin consumer.',
       )
     return 0
   }
@@ -1334,7 +1344,7 @@ async function installFleet(options) {
       return 0
     }
     logger.log(
-      'install-fleet: no --ref and no `bundle.ref` in .config/socket-wheelhouse.json. Pass --ref fleet-<sha> or set bundle.ref.',
+      'install-fleet: no --ref and no `bundle.ref` in .config/repo/socket-wheelhouse.json. Pass --ref fleet-<sha> or set bundle.ref.',
     )
     return 1
   }

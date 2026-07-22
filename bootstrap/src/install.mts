@@ -412,8 +412,24 @@ export function pruneStaleFleetFiles(
 }
 
 // The member's wheelhouse settings file — the single member-owned config
-// surface (repo identity + the pinned bundle ref). Relative to <dest>.
-const SETTINGS_PATH = '.config/socket-wheelhouse.json'
+// surface (repo identity + the pinned bundle ref). Resolved preferring the
+// segregated `.config/repo/` location (repo-owned), then the legacy loose
+// `.config/` and the root dotfile — mirrors paths.mts's
+// findSocketWheelhouseConfig, but dep-0 (no import). Relative to <dest>.
+const SETTINGS_CANDIDATES = [
+  '.config/repo/socket-wheelhouse.json',
+  '.config/socket-wheelhouse.json',
+  '.socket-wheelhouse.json',
+]
+function resolveSettingsPath(dest: string): string | undefined {
+  for (let i = 0, { length } = SETTINGS_CANDIDATES; i < length; i += 1) {
+    const p = path.join(dest, SETTINGS_CANDIDATES[i]!)
+    if (existsSync(p)) {
+      return p
+    }
+  }
+  return undefined
+}
 // Local cache marker recording the ref of the last-applied bundle. Lives under
 // node_modules/.cache/ — the standard tool-cache location: gitignored via
 // node_modules (so it never dirties the worktree), and reachable dep-free at
@@ -435,8 +451,8 @@ const LEGACY_APPLIED_MARKER = '.config/fleet/.bundle-applied'
  * the pin lives in exactly one place. Returns undefined when absent/malformed.
  */
 export function readBundleRef(dest: string): string | undefined {
-  const p = path.join(dest, SETTINGS_PATH)
-  if (!existsSync(p)) {
+  const p = resolveSettingsPath(dest)
+  if (!p) {
     return undefined
   }
   try {
@@ -461,8 +477,8 @@ export interface BundleConfig {
  * Returns both as undefined when the file is absent / malformed.
  */
 export function readBundleConfig(dest: string): BundleConfig {
-  const p = path.join(dest, SETTINGS_PATH)
-  if (!existsSync(p)) {
+  const p = resolveSettingsPath(dest)
+  if (!p) {
     return { ref: undefined, cascadeSha: undefined }
   }
   try {

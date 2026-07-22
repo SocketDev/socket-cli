@@ -217,7 +217,7 @@ export function formatLockStepError(parts: LockStepErrorParts): string {
   return [
     `${ERR_LOCKSTEP_MISMATCH}  the pinned bundle is out of lock-step.`,
     `  What:   bundle out of lock-step — the pinned release and the cascaded template SHA disagree.`,
-    `  Where:  .config/socket-wheelhouse.json (bundle.ref + bundle.cascadeSha).`,
+    `  Where:  .config/repo/socket-wheelhouse.json (bundle.ref + bundle.cascadeSha).`,
     `  Wanted: bundle.cascadeSha === templateSha of the release at bundle.ref.`,
     `  Saw:    ref = ${ref} (${sawTemplate}), cascadeSha = ${cascadeSha}.`,
     `  Fix:    re-cascade to the pin — \`node scripts/repo/sync-scaffolding/cli.mts --target . --fix\` —` +
