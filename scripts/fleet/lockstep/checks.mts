@@ -215,19 +215,26 @@ export function checkVersionPin(
     )
     return base
   }
+  // adapt-step (`materialization: sparse`) scopes drift to the consumed cone:
+  // upstream commits outside `sparse_cone` don't touch what we vendor, so they
+  // are not drift. A `full` (lock-step) pin counts every commit on the branch.
+  const cone = row.materialization === 'sparse' ? (row.sparse_cone ?? []) : []
   try {
-    const count = gitIn(submoduleDir, [
-      'rev-list',
-      '--count',
-      `${row.pinned_sha}..${driftRef}`,
-    ]).trim()
+    const revArgs = ['rev-list', '--count', `${row.pinned_sha}..${driftRef}`]
+    if (cone.length) {
+      revArgs.push('--', ...cone)
+    }
+    const count = gitIn(submoduleDir, revArgs).trim()
     const n = parseInt(count, 10)
     if (!Number.isNaN(n) && n > 0) {
       base.drift_count = n
       base.severity = 'drift'
       const tagSuffix = row.pinned_tag ? ` (from ${row.pinned_tag})` : ''
+      const coneSuffix = cone.length
+        ? ` (sparse: within ${cone.join(', ')})`
+        : ''
       messages.push(
-        `${n} upstream commit(s) since pin${tagSuffix} on ${driftRef.replace('refs/remotes/', '')}`,
+        `${n} upstream commit(s) since pin${tagSuffix} on ${driftRef.replace('refs/remotes/', '')}${coneSuffix}`,
       )
     }
   } catch {
@@ -480,6 +487,19 @@ export function checkCrossRowConsistency(
           `${loc} upstream '${row.upstream}' not in upstreams map (known: ${[...upstreamAliases].join(', ') || '(none)'})`,
         )
       }
+    }
+
+    // adapt-step: a `sparse` version-pin must name the cone it consumes, else
+    // the drift scope is undefined (it would silently fall back to counting the
+    // whole branch, defeating the point of sparse).
+    if (
+      row.kind === 'version-pin' &&
+      row.materialization === 'sparse' &&
+      !(row.sparse_cone && row.sparse_cone.length > 0)
+    ) {
+      errors.push(
+        `${loc} materialization 'sparse' requires a non-empty sparse_cone (the upstream paths the adapt-step consumes)`,
+      )
     }
 
     if (row.kind === 'lang-parity') {

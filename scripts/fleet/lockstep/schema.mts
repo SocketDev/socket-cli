@@ -57,13 +57,15 @@ const NotesSchema = Type.String({
     'Free-form context: why this row exists, gotchas, links to related issues / PRs / upstream discussions. Read by humans, not by the harness.',
 })
 
-// How much of a pinned upstream a row consumes — the lock-step vs adapt-step
-// mode. `full` (the default when omitted) = lock-step: the whole upstream, kept
-// fleet-uniform across consumers so any divergence is a defect. `sparse` =
-// adapt-step: a sparse-checkout cone / inlined subset of the SAME pin (git
+// How much of a pinned upstream a version-pin consumes — the lock-step vs
+// adapt-step mode. `full` (the default when omitted) = lock-step: the whole
+// submodule, kept fleet-uniform across consumers so any divergence is a defect.
+// `sparse` = adapt-step: a sparse-checkout cone of the SAME pin (git
 // sparse-checkout + partial-clone semantics) — take what you want, leave the
-// rest. Both share the pin, drift, and latest-release machinery; only the take
-// differs. See docs/agents.md/fleet/lockstep.md.
+// rest; the harness scopes drift to the cone. Both share the pin, drift, and
+// latest-release machinery; only the take differs. (file-fork is inherently a
+// single-file subset, so it carries no materialization field.) See
+// docs/agents.md/fleet/lockstep.md.
 const MaterializationSchema = Type.Union(
   [Type.Literal('full'), Type.Literal('sparse')],
   {
@@ -211,8 +213,6 @@ const FileForkRowSchema = Type.Object(
     criticality: Type.Optional(CriticalitySchema),
     conformance_test: Type.Optional(ConformanceTestSchema),
     notes: Type.Optional(NotesSchema),
-    materialization: Type.Optional(MaterializationSchema),
-    sparse_cone: Type.Optional(SparseConeSchema),
     local: Type.String({
       description:
         'Path (relative to repo root) of our ported copy of the upstream file.',

@@ -86,11 +86,12 @@ lang-parity), `checks.test.mts` (cross-row + lang-parity).
 
 ## Materialization — lock-step vs adapt-step
 
-`file-fork` and `version-pin` rows carry an optional `materialization` field —
-how much of the pinned upstream this repo consumes. It is one mechanism with two
-modes, not two systems: both share the same pin, `.gitmodules` `sha256:`,
-drift-count, and latest-release machinery; only the *take* differs
-(`schema.mts` `MaterializationSchema`).
+A `version-pin` row carries an optional `materialization` field — how much of
+the pinned submodule this repo consumes. It is one mechanism with two modes, not
+two systems: both share the same pin, `.gitmodules` `sha256:`, drift-count, and
+latest-release machinery; only the *take* differs (`schema.mts`
+`MaterializationSchema`). (`file-fork` is inherently a single-file subset, so it
+carries no `materialization` field.)
 
 - **`full` (default when omitted) — lock-step.** Consume the WHOLE upstream and
   keep every consumer on the same pin, fleet-uniform. Any divergence between two
@@ -105,8 +106,13 @@ drift-count, and latest-release machinery; only the *take* differs
   environment — e.g. a fleet composite action that inlines only one code path of
   an upstream action, or a platform lock scoped to just the targets shipped.
 
-Both modes still obey "pin the latest release" below and the drift backstop —
-`sparse` narrows what you vendor, never how the pin is tracked.
+The harness makes `sparse` real: `checkVersionPin` scopes the drift count to the
+`sparse_cone` paths (`git rev-list --count <pin>..<branch> -- <cone>`), so
+upstream commits outside the cone are not drift. A `sparse` row with no
+non-empty `sparse_cone` is a cross-row validation error — the cone is what
+defines the drift scope. Both modes still obey "pin the latest release" below
+and the shallow-clone drift backstop; `sparse` narrows what you vendor and what
+counts as drift, never how the pin itself is tracked.
 
 ## Conformance via upstream test reuse
 

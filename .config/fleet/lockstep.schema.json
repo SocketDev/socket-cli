@@ -123,27 +123,6 @@
                 "description": "Free-form context: why this row exists, gotchas, links to related issues / PRs / upstream discussions. Read by humans, not by the harness.",
                 "type": "string"
               },
-              "materialization": {
-                "description": "Lock-step vs adapt-step mode. `full` (default when omitted) = lock-step: consume the whole pinned upstream, kept fleet-uniform. `sparse` = adapt-step: consume only a sparse-checkout cone / inlined subset of the same pin. Rows omitting this are `full`.",
-                "anyOf": [
-                  {
-                    "const": "full",
-                    "type": "string"
-                  },
-                  {
-                    "const": "sparse",
-                    "type": "string"
-                  }
-                ]
-              },
-              "sparse_cone": {
-                "minItems": 1,
-                "description": "For `materialization: sparse` — the upstream paths (the sparse-checkout cone) this row actually consumes or inlines. Documents what the adapt-step takes; the harness ignores it when materialization is `full` or omitted.",
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
               "local": {
                 "description": "Path (relative to repo root) of our ported copy of the upstream file.",
                 "type": "string"
