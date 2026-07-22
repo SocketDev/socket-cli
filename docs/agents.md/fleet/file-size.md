@@ -18,7 +18,7 @@ Source files have a **soft cap of 500 lines** and a **hard cap of 1000 lines**. 
 
 There is exactly one case, and it lives **past the hard cap (>1000 lines)**:
 
-- A single function legitimately needs the space (a parser, a state machine, a configuration table), or the file is a generated artifact (lockfile-style data, schema dump). Generated files the lint config already ignores don't count toward the cap.
+- A single function legitimately needs the space — a parser, a state machine, a configuration table — or the file is a generated artifact (lockfile-style data, schema dump). Generated files the lint config already ignores don't count toward the cap.
 
 A file in the **soft band (501–1000) always splits.** There is no "when NOT to split" in the soft band — the cap forces the seam. If a 600-line file feels cohesive, that is the signal it has two concerns sharing a scope, not an exception.
 

@@ -180,7 +180,7 @@ GitHub's secret scanner by stripping the `sk-ant-` prefix before exfiltrating it
 via `WebFetch` / the GitHub MCP tool. The shape is what matters: untrusted input
 → in-process secret read + outbound tool = exfiltration.
 `proc-environ-exfil-guard` blocks authoring a read of
-`/proc/*/environ` or `/proc/*/cmdline` (the secret + argv harvest paths) in any
+`/proc/*/environ` or `/proc/*/cmdline` — the secret + argv harvest paths — in any
 file we write, regardless of host OS, since it matches the attempt to author
 such a read, not a Linux runtime.
 

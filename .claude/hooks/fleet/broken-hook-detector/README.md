@@ -14,7 +14,7 @@ A `pnpm install` aborted mid-purge (`ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`
 
 The hook detects this by a precise 3-way signature (`.pnpm` store populated, a stale state marker present, and the top-level `@socketsecurity/` link missing), then auto-repairs. It removes the stale markers and runs `CI=true pnpm install`, which re-links from the intact store in under a second with no network (every package is already in `.pnpm`). It reports the outcome as `additionalContext`.
 
-The repair is guarded. It only fires on the exact signature, skips when a `pnpm install` is already running (a second concurrent install is what *causes* the gutting), runs at most once per session (a temp-dir sentinel), and removes the markers only immediately before the install so a bail-out never leaves `node_modules` in a worse state. If any guard trips, it reports the manual command instead of acting.
+The repair is guarded. It only fires on the exact signature, skips when a `pnpm install` is already running — a second concurrent install is what *causes* the gutting — runs at most once per session (a temp-dir sentinel), and removes the markers only immediately before the install so a bail-out never leaves `node_modules` in a worse state. If any guard trips, it reports the manual command instead of acting.
 
 ### (B) Missing dep, reported
 
@@ -22,7 +22,7 @@ A genuinely-uninstalled new dependency (absent from the `.pnpm` store too, usual
 
 ## Self-imposed constraint: Node built-ins only
 
-This hook is the safety net for "the lib is unresolvable"; it must not itself depend on anything installed via pnpm. The entire import surface is `node:fs`, `node:path`, `node:child_process`, `node:url`. It *spawns* `pnpm` for the gutted repair, but never *imports* a pnpm-installed module, so it works even when every such module is broken, which is the whole point. This is the documented exemption from `prefer-async-spawn-guard` (the recovery net cannot route through the lib it recovers).
+This hook is the safety net for "the lib is unresolvable"; it must not itself depend on anything installed via pnpm. The entire import surface is `node:fs`, `node:path`, `node:child_process`, `node:url`. It *spawns* `pnpm` for the gutted repair, but never *imports* a pnpm-installed module, so it works even when every such module is broken, which is the whole point. This is the documented exemption from `prefer-async-spawn-guard` — the recovery net cannot route through the lib it recovers.
 
 ## Fail-open
 

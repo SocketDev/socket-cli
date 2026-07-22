@@ -102,6 +102,7 @@ export const check = (
 
 export const hook = defineHook({
   bypass: ['squash-history-nudge'],
+  bypassOptional: true,
   check,
   event: 'Stop',
   type: 'nudge',

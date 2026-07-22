@@ -62,7 +62,7 @@ Use the standard pnpm runner so the repo's own env config (catalog versions, etc
 node scripts/fleet/make-coverage-badge.mts
 ```
 
-This reads `coverage/coverage-summary.json` (the `json-summary` reporter's output) and rewrites the README badge in place: the percent is `Math.round`-ed to an integer and the color is the bucket `badgeColor` computes (red → brightgreen). Exit 0 = written or already current; exit 1 = no coverage data / no badge to fill. To see the before value first, run `node scripts/fleet/make-coverage-badge.mts --check` (the dry-run the gate uses) and read its output.
+This reads `coverage/coverage-summary.json` (the `json-summary` reporter's output) and rewrites the README badge in place: the percent is `Math.round`-ed to an integer and the color is the bucket `badgeColor` computes (red → brightgreen). Exit 0 = written or already current; exit 1 = no coverage data / no badge to fill. To see the before value first, run `node scripts/fleet/make-coverage-badge.mts --check` — the dry-run the gate uses — and read its output.
 
 The canonical badge line in `README.md` is the placeholder a seeded repo ships:
 

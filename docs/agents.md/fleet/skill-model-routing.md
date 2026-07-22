@@ -21,7 +21,7 @@ Skills where the work is "run the tool, commit, push" without judgment:
 - `updating-lockstep` — lockstep.json drift bump
 - `managing-worktrees` — worktree create/fanout
 
-These tasks fail-cheap (the sync runner / git command decides what changes), so Haiku's faster latency + lower cost dominates.
+These tasks fail-cheap — the sync runner / git command decides what changes — so Haiku's faster latency + lower cost dominates.
 
 ## Tier 2 — default model (general dev work)
 
@@ -58,7 +58,7 @@ No skill, workflow, agent, or programmatic `claude` call declares Fable as its d
 
 Two operational notes for Fable-targeted prompts, from Anthropic's Fable prompting guide (<https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-fable-5>). Never instruct it to echo or reproduce its reasoning as response text, because that trips the `reasoning_extraction` refusal and silently falls back to Opus. Expect longer turns, so structure long runs to check asynchronously rather than block. Fable's safety classifiers (offensive-cyber plus bio) can return `stop_reason: "refusal"` on benign security work, so configure fallback to Opus 4.8.
 
-Fable runs adaptive thinking only: it is always on, with no manual thinking-mode or `budget_tokens` control, so effort is the only depth dial and its recommended range tops out at `xhigh` (the `max` level belongs to Opus). The lib reflects this. `buildArgs` (`src/ai/spawn.mts`) omits `--effort` for a Fable or Mythos model rather than pass a level it ignores, and the multi-agent backend registry (`src/ai/backends.mts`) does the same.
+Fable runs adaptive thinking only: it is always on, with no manual thinking-mode or `budget_tokens` control, so effort is the only depth dial and its recommended range tops out at `xhigh` — the `max` level belongs to Opus. The lib reflects this. `buildArgs` (`src/ai/spawn.mts`) omits `--effort` for a Fable or Mythos model rather than pass a level it ignores, and the multi-agent backend registry (`src/ai/backends.mts`) does the same.
 
 The code-level encoding of this ladder is `@socketsecurity/lib`'s `AI_TIER` table (`src/ai/tier.mts`). The `fable` row pins `{ model: 'claude-fable-5', effort: 'xhigh' }` (xhigh is Fable's recommended ceiling; the spawn layer then drops the flag for Fable anyway), and the `token-spend-guard` hook now nudges when Fable runs mechanical work, the same as Opus. Availability-gated routing (`src/ai/route.mts`) resolves a tier to its preferred engine only when that CLI exists and is keyed, falling back to a cross-engine equivalent (Codex GPT-5.5, then an open-weight provider) otherwise.
 

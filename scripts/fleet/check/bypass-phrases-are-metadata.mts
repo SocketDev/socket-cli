@@ -23,7 +23,7 @@
  *   Usage: node scripts/fleet/check/bypass-phrases-are-metadata.mts
  */
 
-import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 

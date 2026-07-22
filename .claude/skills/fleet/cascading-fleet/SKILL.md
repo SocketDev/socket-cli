@@ -64,7 +64,7 @@ Workflow({ name: 'reconcile-fleet-lockfiles' })                 # whole roster (
 Workflow({ name: 'reconcile-fleet-lockfiles', args: ['socket-lib', 'sdxgen'] })   # only the cascade's targets
 ```
 
-Because surface 1 is idempotent, running the whole roster is safe; pass `args` (a repo-name array, or `{ only, skip }`) to narrow to just the repos a cascade touched. Local/experimental workflow scripts save to `~/.claude/workflows/` — the repo's `.claude/workflows/` is fleet-owned and delete-and-replace mirrored.
+Because surface 1 is idempotent, running the whole roster is safe; pass `args` — a repo-name array, or `{ only, skip }` — to narrow to just the repos a cascade touched. Local/experimental workflow scripts save to `~/.claude/workflows/` — the repo's `.claude/workflows/` is fleet-owned and delete-and-replace mirrored.
 
 ## Worktree cleanup: the branch-cleanup bug
 
@@ -80,7 +80,7 @@ If the wheelhouse template change includes a `@socketsecurity/lib` catalog bump 
 - Worktree-add fails: another worktree at the target path; cleanup with `git worktree remove --force <wt>`.
 - Push rejected on direct base: the script automatically falls back to PR. Confirm via the PR URL printed to stdout.
 
-## Recovery playbook (the judgment exceptions a plain run can't decide)
+## Recovery playbook — the judgment exceptions a plain run can't decide
 
 The cascade script (`lib/cascade-template.mts`) is deterministic — it `--no-verify` commits + pushes per repo and always cleans up its worktree (verified: the success path, every early-exit, and the PR-fallback all run `worktree remove --force` + `branch -D`). What it CANNOT decide are these three situations. Each needs a human/agent call, not a script branch:
 

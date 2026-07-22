@@ -76,7 +76,7 @@ Whatever the source, `git checkout -- <file>` / `git reset --hard` against work 
 
 ## Auto-landed commits are expected
 
-Every session runs the same hooks, and the fleet biases toward landing to local main often. So a commit can appear that you did not personally issue: an auto-lander (or an aligned session) grouped the dirty tree into a logical commit and landed it. That is the system working. Do not spend cycles reverse-engineering why a commit exists that you don't remember making. Run `whose-work` if you need to confirm it is local plus your identity, then keep going. Landing is recoverable (a local commit can be amended or reset to `HEAD~`); a phantom-collision stall is wasted work.
+Every session runs the same hooks, and the fleet biases toward landing to local main often. So a commit can appear that you did not personally issue: an auto-lander (or an aligned session) grouped the dirty tree into a logical commit and landed it. That is the system working. Do not spend cycles reverse-engineering why a commit exists that you don't remember making. Run `whose-work` if you need to confirm it is local plus your identity, then keep going. Landing is recoverable: a local commit can be amended or reset to `HEAD~`; a phantom-collision stall is wasted work.
 
 ## Never reach into a sibling fleet repo's path
 

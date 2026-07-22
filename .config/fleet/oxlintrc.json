@@ -193,7 +193,10 @@
         "**/tests/**",
         "**/.config/**",
         "**/.git-hooks/**",
-        "**/.github/**"
+        "**/.github/**",
+        "**/.claude/hooks/**",
+        "**/.claude/skills/**",
+        "**/.claude/workflows/**"
       ],
       "rules": {
         "socket/export-top-level-functions": "off",
@@ -251,8 +254,7 @@
     "**/wasm_exec.js",
     "**/scripts/fleet/plugin-patches/**/*.files/**",
     "**/scripts/fleet/plugin-patches/**/*.patch",
-    "**/.codex/hooks.json",
-    "**/.config/lockstep.schema.json",
+    "**/.config/fleet/lockstep.schema.json",
     "**/.config/repo/vitest.config.mts",
     "**/.kimi-code/mcp.json",
     "**/.mcp.json",

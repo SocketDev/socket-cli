@@ -26,7 +26,7 @@ Detection runs through the shared shell AST parser
 regardless of parallel agents). This hook adds the parallel-agent-specific
 **destructive-op** coverage (stash / reset --hard / checkout / restore) and fires
 **only** when the parallel-agent signal is live. On plain `git add -A` both may
-fire; messages complement (this one names the foreign paths).
+fire; messages complement — this one names the foreign paths.
 
 ## Foreign-path heuristic
 

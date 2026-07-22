@@ -2,12 +2,18 @@
  * @file Git helpers for the lockstep harness. Thin wrappers over `git -C <dir>
  *   <cmd>` that the kind checkers (file-fork, version-pin) use to peek at
  *   submodule state without dragging in a full libgit binding. The harness is
- *   read-only — these helpers never mutate. `splitLines` is the CRLF-tolerant
- *   counterpart to `.split('\n')`; bare splits leave a trailing `\r` on each
- *   line when git is invoked on Windows / msys, which throws off downstream
- *   `includes`/match checks. `resolveUpstream` is a lookup helper that lives
- *   here because it's coupled to the same per-row-message accumulator the other
- *   helpers write to.
+ *   read-only over the working tree — the ONE mutation is `fetchTagsQuiet`, a
+ *   best-effort `git fetch --tags` the version-pin drift path runs so a
+ *   never-fetched shallow/partial clone can't under-report drift off a stale
+ *   remote ref; it touches only remote-tracking refs + tags, never HEAD or the
+ *   checkout. `isShallowRepo` is the belt behind it: when a fetch can't deepen
+ *   a shallow clone, the drift count is untrustworthy and the checker says so
+ *   LOUD instead of reporting a falsely-low number. `splitLines` is the
+ *   CRLF-tolerant counterpart to `.split('\n')`; bare splits leave a trailing
+ *   `\r` on each line when git is invoked on Windows / msys, which throws off
+ *   downstream `includes`/match checks. `resolveUpstream` is a lookup helper
+ *   that lives here because it's coupled to the same per-row-message
+ *   accumulator the other helpers write to.
  */
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
@@ -44,6 +50,52 @@ export function shaIsReachable(submoduleDir: string, sha: string): boolean {
   try {
     gitIn(submoduleDir, ['cat-file', '-e', sha])
     return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Best-effort `git fetch --tags` so drift is computed against the CURRENT
+ * upstream default ref + release tags, not a stale remote-tracking ref left by
+ * a shallow/partial clone that was never re-fetched. Returns true when the
+ * fetch succeeded. Failure — offline, no remote, auth — is swallowed: the
+ * caller falls back to `isShallowRepo` / no-ref detection and reports drift as
+ * unknown rather than trusting an unrefreshed count. Timeout-bounded so a slow
+ * remote can't wedge `pnpm run lockstep`. Touches only remote-tracking refs +
+ * tags.
+ */
+export function fetchTagsQuiet(submoduleDir: string): boolean {
+  try {
+    const result = spawnSync(
+      'git',
+      ['-C', submoduleDir, 'fetch', '--tags', '--quiet'],
+      {
+        stdio: ['ignore', 'ignore', 'pipe'],
+        stdioString: true,
+        timeout: 30_000,
+      },
+    )
+    return !result.error && result.status === 0
+  } catch {
+    return false
+  }
+}
+
+/**
+ * True when the submodule is a shallow clone (`git rev-parse
+ * --is-shallow-repository`). A shallow clone can't yield a trustworthy
+ * `pinned_sha..origin` count — `rev-list` truncates at the graft boundary — so
+ * the version-pin checker surfaces drift as UNKNOWN rather than a falsely-low
+ * number. Fails closed to non-shallow when git can't answer, matching the
+ * repo's other read helpers.
+ */
+export function isShallowRepo(submoduleDir: string): boolean {
+  try {
+    return (
+      gitIn(submoduleDir, ['rev-parse', '--is-shallow-repository']).trim() ===
+      'true'
+    )
   } catch {
     return false
   }

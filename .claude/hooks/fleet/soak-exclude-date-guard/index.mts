@@ -170,6 +170,7 @@ export const check = editGuard((filePath, content) => {
 
 export const hook = defineHook({
   bypass: ['soak-exclude-no-date-annotation'],
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

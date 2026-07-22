@@ -34,7 +34,7 @@ filesystem path.
 ## 3. Shebangs do not execute
 
 `#!/usr/bin/env node` is meaningless on windows. Spawning an npm package's
-`bin/` script directly (the RuleTester spawning `oxlint`'s node-shim bin)
+`bin/` script directly — the RuleTester spawning `oxlint`'s node-shim bin —
 fails on every windows run.
 
 Fix: run non-`.exe` bins through `process.execPath`:
@@ -75,7 +75,7 @@ narration).
 
 ## 7. POSIX tokenizers eat backslash paths in command strings
 
-`shell-quote` (the fleet's shell parser) applies POSIX escape semantics to
+`shell-quote` — the fleet's shell parser — applies POSIX escape semantics to
 every command string, so `cd C:\Users\x` tokenizes to `C:Usersx`. The mangled
 target then fails git resolution, fleet detection fails SAFE to fleet, and
 convention guards false-block non-fleet work — windows-only, and invisible

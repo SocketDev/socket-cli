@@ -9,10 +9,11 @@
 
 // oxlint-disable-next-line socket/prefer-spawn-over-execsync -- dep-0 bare-node fetcher (documented invariant: never imports in-repo socket-lib): gh resolution runs via node:child_process
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { formatLockStepError } from './lockstep.mts'
@@ -134,6 +135,6 @@ export function resolveReleaseTemplateSha(
   } catch {
     return undefined
   } finally {
-    rmSync(tmp, { recursive: true, force: true })
+    safeDeleteSync(tmp)
   }
 }

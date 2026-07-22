@@ -38,7 +38,7 @@ A regex literal whose body names a shell binary (`git`, `gh`, `npm`,
 
 ## Note
 
-This guard detects a CODE pattern (a regex literal in source), not a
+This guard detects a CODE pattern — a regex literal in source — not a
 shell command, so it is itself allowed to use regex.
 
 ## Cross-fleet sync

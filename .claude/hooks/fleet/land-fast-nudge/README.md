@@ -11,7 +11,7 @@ commits onto origin via PR while your local keeps the unsquashed
 originals. Rather than hand-roll a cherry-pick + force, the reminder points
 at the `managing-worktrees land` engine
 (`.claude/skills/fleet/managing-worktrees/lib/land.mts`): it re-asserts the
-lint gate (the fleet lints as it edits — no heavy re-run), cherry-picks the
+lint gate — the fleet lints as it edits, no heavy re-run — cherry-picks the
 local-only commits onto a throwaway `origin/<base>` worktree, and
 fast-forwards (never force).
 

@@ -41,13 +41,13 @@ no PR.
 Run the `prose` skill over the PR description (conversational mode) and apply
 [`prose-style-and-doctrine`](../../../rules/fleet/prose-style-and-doctrine.md):
 lead with what changed and why, 1–3 sentences, no throat-clearers, no diff
-narration, evidence (the test/command that proves it). Public-surface hygiene: no
+narration, evidence, the test/command that proves it. Public-surface hygiene: no
 real customer/company name, no private repo, no Linear ref, no bare `#N` (use
 `org/repo#N` or the full URL); link the issue with a closing keyword.
 
 ## 5. Open it
 
-Commit on a branch (a worktree if the primary checkout has other sessions), push,
+Commit on a branch — a worktree if the primary checkout has other sessions — push,
 `gh pr create`. Opening a PR is outward-facing — confirm the base branch + that
 the diff is the intended scope first.
 

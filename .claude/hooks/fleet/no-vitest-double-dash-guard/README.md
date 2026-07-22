@@ -12,7 +12,7 @@ pnpm run test -- path/to/foo.test.mts
 node_modules/.bin/vitest run -- foo.test.mts
 ```
 
-Detection is AST-based (the fleet shell parser via `parseCommands`), per
+Detection is AST-based — the fleet shell parser via `parseCommands` — per
 `no-command-regex-in-hooks-guard`. It matches a vitest binary (`vitest` or
 `node_modules/.bin/vitest`) OR a `pnpm`/`npm`/`yarn` `test` / `run test` script
 invocation, then flags a `--` token followed by a non-flag positional.

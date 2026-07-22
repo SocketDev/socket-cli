@@ -27,7 +27,7 @@ run this session:
 | typechecks / no type err | `tsgo`, `tsc`, `pnpm run check`             |
 | lint passes / clean      | `oxlint`, `pnpm run lint`, `pnpm run check` |
 
-Claims inside a code fence (an example, a quoted plan) are ignored.
+Claims inside a code fence — an example, a quoted plan — are ignored.
 
 ## Not a blocker
 

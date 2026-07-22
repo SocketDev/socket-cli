@@ -6,7 +6,7 @@ PreToolUse hook. Blocks a `git commit` whose staged tree would delete a catastro
 
 That deletion shape is almost never intentional. It's the fingerprint of a clobbered index: a stray `git read-tree`, a `git commit` fired against a near-empty or foreign index, a leftover rename/test artifact, or a misfired scripted commit. The commit records a tiny tree plus tens of thousands of deletions; once pushed, recovery is painful.
 
-A session committed `2396 files / 329k deletions` from a 1-file index **twice in a row** (the second on top of the first), and only recovered because nothing had been pushed — `git reset --mixed` to the prior good commit, worktree intact. This gate catches it before the bad commit exists.
+A session committed `2396 files / 329k deletions` from a 1-file index **twice in a row** — the second on top of the first — and only recovered because nothing had been pushed — `git reset --mixed` to the prior good commit, worktree intact. This gate catches it before the bad commit exists.
 
 ## How
 

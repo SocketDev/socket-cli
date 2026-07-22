@@ -48,10 +48,14 @@ import { slugFromRemoteUrl } from '../../../hooks/fleet/_shared/fleet-repos.mts'
 import {
   isOptedIn,
   loadRosterFromRepo,
+  publishProfile,
 } from '../../../hooks/fleet/_shared/fleet-roster.mts'
 import { resolveDefaultBranch } from '../_shared/scripts/git-default-branch.mts'
 import { header, run, timestamp } from '../_shared/scripts/run-helpers.mts'
 import { formatBackupBranch } from '../../../../scripts/fleet/lib/backup-branch.mts'
+import { publishedReleaseBlocksSquash } from '../../../../scripts/fleet/lib/squash-publish-guard.mts'
+import { fetchPublishedVersion } from '../../../../scripts/fleet/publish-infra/cargo/registry.mts'
+import { fetchLatestPublishedVersion } from '../../../../scripts/fleet/publish-infra/npm/registry.mts'
 
 const logger = getDefaultLogger()
 
@@ -389,6 +393,53 @@ async function main(): Promise<number> {
         `Fix: add "${fleetName}" with optIns:['squash-history'] to ` +
         `cascading-fleet/lib/fleet-repos.json (then cascade), or squash a ` +
         `repo that is already opted in.`,
+    )
+    return 2
+  }
+
+  // Published-release safeguard. A full-root squash is safe for a repo whose
+  // crates.io / npm names are still 0.0.0 placeholders, but it ERASES the
+  // published-release history of a repo that has cut a REAL release. Detect a
+  // real published version and REFUSE — a published repo keeps its history and
+  // consolidates only the range since its last publish. Fail-OPEN: a registry
+  // read error must NOT block a legit squash (the opt-in gate above is the
+  // primary control), so any lookup failure leaves `latest` undefined and the
+  // squash proceeds.
+  const publishes = publishProfile(roster, fleetName)
+  let latest: string | undefined
+  try {
+    if (publishes === 'cargo') {
+      // Crate names match repo names in the fleet.
+      latest = await fetchPublishedVersion(fleetName)
+    } else if (publishes === 'js' || publishes === 'npm') {
+      // An npm package name is frequently SCOPED (e.g. @socketsecurity/sdk) and
+      // differs from the repo/fleet name, so resolve it from the target's
+      // package.json; fall back to fleetName when it is absent / private /
+      // unparsable.
+      let pkgName = fleetName
+      const pkgPath = path.join(src, 'package.json')
+      if (existsSync(pkgPath)) {
+        const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
+          name?: unknown | undefined
+          private?: unknown | undefined
+        }
+        if (typeof pkg.name === 'string' && pkg.name && pkg.private !== true) {
+          pkgName = pkg.name
+        }
+      }
+      latest = await fetchLatestPublishedVersion(pkgName)
+    }
+  } catch {}
+  const block = publishedReleaseBlocksSquash(publishes, latest)
+  if (block) {
+    logger.error(
+      `error: ${fleetName} has a published ${block.registry} release ` +
+        `(${block.version}) — refusing a full-root squash (it erases ` +
+        `published-release history). Fix: remove 'squash-history' from ` +
+        `"${fleetName}" in cascading-fleet/lib/fleet-repos.json (a published ` +
+        `repo keeps its history), then consolidate only the range since the ` +
+        `last publish: git reset --soft <publish-sha> (SHA is in the ` +
+        `published .crate's .cargo_vcs_info.json / the npm tarball's gitHead).`,
     )
     return 2
   }

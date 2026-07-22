@@ -13,7 +13,7 @@ Umbrella update skill. Runs `pnpm run update` for npm deps, then adapts to whate
 
 ## When to use
 
-- Weekly maintenance (the `weekly-update.yml` workflow calls this skill).
+- Weekly maintenance — the `weekly-update.yml` workflow calls this skill.
 - Security patch rollout.
 - Pre-release preparation.
 
@@ -26,7 +26,7 @@ Umbrella update skill. Runs `pnpm run update` for npm deps, then adapts to whate
 - **Security advisories**: open GitHub Dependabot alerts via `/update-security`. Direct deps bumped via `pnpm update`; transitives pinned via `pnpm.overrides`; unfixable advisories dismissed with documented reasons. Honors the 7-day soak gate.
 - **Coverage badge**: when a coverage script exists (`cover` / `coverage` / `test:cover`), `/update-coverage` runs the script and rewrites the README badge to match. Repos without a coverage script skip silently.
 - **Model pricing**: `/update-pricing` re-sources per-model token prices from the vendor pricing page and restamps `scripts/fleet/constants/model-pricing.json` + the routing-doc snapshot. This is what anchors pricing freshness to the weekly cadence — the snapshot is "as fresh as the last weekly run", not a guessed timer. Repos without the pricing data skip silently.
-- **GitHub settings drift**: `scripts/fleet/lint-github-settings.mts --force --json` audits repo + Actions settings against the fleet baseline (custom properties, feature flags, merge policy, branch protection, required apps like `cursor` / `claude` / `socket-security`). Read-only by default; fixes are surfaced as URLs the operator clicks through (`--fix` is gated on `repo:admin`, not auto-applied in the umbrella). Skipped under `CI=true` (the underlying script's local-only design).
+- **GitHub settings drift**: `scripts/fleet/lint-github-settings.mts --force --json` audits repo + Actions settings against the fleet baseline (custom properties, feature flags, merge policy, branch protection, required apps like `cursor` / `claude` / `socket-security`). Read-only by default; fixes are surfaced as URLs the operator clicks through (`--fix` is gated on `repo:admin`, not auto-applied in the umbrella). Skipped under `CI=true` — the underlying script's local-only design.
 
 This umbrella reads repo state first to discover what applies. Sub-skills are only invoked when relevant.
 

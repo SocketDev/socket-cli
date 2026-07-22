@@ -57,6 +57,27 @@ const NotesSchema = Type.String({
     'Free-form context: why this row exists, gotchas, links to related issues / PRs / upstream discussions. Read by humans, not by the harness.',
 })
 
+// How much of a pinned upstream a row consumes — the lock-step vs adapt-step
+// mode. `full` (the default when omitted) = lock-step: the whole upstream, kept
+// fleet-uniform across consumers so any divergence is a defect. `sparse` =
+// adapt-step: a sparse-checkout cone / inlined subset of the SAME pin (git
+// sparse-checkout + partial-clone semantics) — take what you want, leave the
+// rest. Both share the pin, drift, and latest-release machinery; only the take
+// differs. See docs/agents.md/fleet/lockstep.md.
+const MaterializationSchema = Type.Union(
+  [Type.Literal('full'), Type.Literal('sparse')],
+  {
+    description:
+      'Lock-step vs adapt-step mode. `full` (default when omitted) = lock-step: consume the whole pinned upstream, kept fleet-uniform. `sparse` = adapt-step: consume only a sparse-checkout cone / inlined subset of the same pin. Rows omitting this are `full`.',
+  },
+)
+
+const SparseConeSchema = Type.Array(Type.String(), {
+  minItems: 1,
+  description:
+    'For `materialization: sparse` — the upstream paths (the sparse-checkout cone) this row actually consumes or inlines. Documents what the adapt-step takes; the harness ignores it when materialization is `full` or omitted.',
+})
+
 const PortStatusSchema = Type.Object(
   {
     status: Type.Union([Type.Literal('implemented'), Type.Literal('opt-out')], {
@@ -190,6 +211,8 @@ const FileForkRowSchema = Type.Object(
     criticality: Type.Optional(CriticalitySchema),
     conformance_test: Type.Optional(ConformanceTestSchema),
     notes: Type.Optional(NotesSchema),
+    materialization: Type.Optional(MaterializationSchema),
+    sparse_cone: Type.Optional(SparseConeSchema),
     local: Type.String({
       description:
         'Path (relative to repo root) of our ported copy of the upstream file.',
@@ -224,6 +247,8 @@ const VersionPinRowSchema = Type.Object(
     criticality: Type.Optional(CriticalitySchema),
     conformance_test: Type.Optional(ConformanceTestSchema),
     notes: Type.Optional(NotesSchema),
+    materialization: Type.Optional(MaterializationSchema),
+    sparse_cone: Type.Optional(SparseConeSchema),
     pinned_sha: Type.String({
       pattern: FULL_SHA_PATTERN,
       description:
@@ -403,7 +428,7 @@ export const LockstepManifestSchema = Type.Object(
     $schema: Type.Optional(
       Type.String({
         description:
-          'JSON Schema reference for editor autocompletion. Conventionally `./lockstep.schema.json` — both the manifest and its schema live side-by-side at repo root.',
+          'JSON Schema reference for editor autocompletion. The repo-owned manifest lives at `.config/repo/lockstep.json` and the fleet-identical schema at `.config/fleet/lockstep.schema.json`, so the reference is `../fleet/lockstep.schema.json` (a repo using a root `lockstep.json` points at `./lockstep.schema.json`).',
       }),
     ),
     description: Type.Optional(

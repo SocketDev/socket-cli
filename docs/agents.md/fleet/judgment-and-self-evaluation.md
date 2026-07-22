@@ -45,7 +45,7 @@ When the user authorizes a queue with phrases like "complete each one," "100%," 
 - "Session totals so far…"
 - "Should I continue?"
 
-Those re-litigate intent already given. Continue until the queue is empty or you hit a genuine blocker (a dependency that hasn't published, a credential the agent doesn't hold, a destructive operation that needs explicit confirmation). Enforced by `.claude/hooks/fleet/dont-stop-mid-queue-nudge/`.
+Those re-litigate intent already given. Continue until the queue is empty or you hit a genuine blocker: a dependency that hasn't published, a credential the agent doesn't hold, or a destructive operation that needs explicit confirmation. Enforced by `.claude/hooks/fleet/dont-stop-mid-queue-nudge/`.
 
 When the user has clearly said "do it" / "yes" / "proceed" in the recent transcript, skip the AskUserQuestion confirmation step — pick the obvious default and execute. Enforced by `.claude/hooks/fleet/ask-suppression-nudge/`.
 
@@ -53,7 +53,7 @@ When the user has clearly said "do it" / "yes" / "proceed" in the recent transcr
 
 A new instruction that arrives while a task is in flight is an **add**, not a redirect. The default response is `TaskCreate` the new ask, finish the current in-progress task, then pick up the new one in queue order. Dropping half-done work to chase the latest mention is the antipattern — it leaves the queue littered with abandoned tasks and re-litigates work already underway. The user has stated this directly: "a lot of the time when I am telling you something I want you to put it on the todos, but you need to prioritize finishing your todos … add as I tell you, not constantly redirect and refocus."
 
-Pivot immediately **only** when the user explicitly signals it: "stop," "drop that," "do this now/first," "urgent," "before you continue," "switch to X," "interrupt your todos," "new priority." Or when the new ask genuinely **blocks** the current task — in which case name why it blocks before switching. Absent one of those, enqueue and keep going. Enforced by `.claude/hooks/fleet/enqueue-dont-pivot-nudge/` (the inverse of `dont-stop-mid-queue-nudge`: that hook catches stopping mid-queue, this one catches pivoting mid-queue).
+Pivot immediately **only** when the user explicitly signals it: "stop," "drop that," "do this now/first," "urgent," "before you continue," "switch to X," "interrupt your todos," "new priority." Or when the new ask genuinely **blocks** the current task — in which case name why it blocks before switching. Absent one of those, enqueue and keep going. Enforced by `.claude/hooks/fleet/enqueue-dont-pivot-nudge/` — the inverse of `dont-stop-mid-queue-nudge`: that hook catches stopping mid-queue, this one catches pivoting mid-queue.
 
 ## Fix-failed-twice reset
 
@@ -68,11 +68,11 @@ Burning a third attempt on the same broken model is the antipattern.
 
 ## Adjacent bug, flag don't fix-silently
 
-If you spot a bug adjacent to the task — wrong logic in a sibling function, a broken comment, a missed edge case — flag it inline: "I also noticed X — want me to fix it?" Don't silently fix it (the diff balloons past the user's review scope) and don't silently ignore it (the bug stays). The flag-then-ask pattern keeps the user in control.
+If you spot a bug adjacent to the task — wrong logic in a sibling function, a broken comment, a missed edge case — flag it inline: "I also noticed X — want me to fix it?" Don't silently fix it — the diff balloons past the user's review scope — and don't silently ignore it (the bug stays). The flag-then-ask pattern keeps the user in control.
 
 ## Misconception, name it before executing
 
-If the user's request is based on a misconception (the file doesn't exist anymore, the function was renamed, the bug they're describing is fixed already), name the misconception in the response before executing anything that depends on it. The execution doesn't happen until the misconception is resolved — otherwise you're building on bad assumptions.
+If the user's request is based on a misconception — the file doesn't exist anymore, the function was renamed, the bug they're describing is fixed already — name the misconception in the response before executing anything that depends on it. The execution doesn't happen until the misconception is resolved — otherwise you're building on bad assumptions.
 
 ## Verify rendered output before commit
 

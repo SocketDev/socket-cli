@@ -50,7 +50,7 @@ Bad sanity-check prompts:
 - "Review the last 12 commits." (no anchor, no specific question)
 - "Help me design the next refactor." (that's design work, not verification; use `Plan` or `codex:codex-rescue`)
 
-## Verifying subagent output (their claims are leads, not facts)
+## Verifying subagent output: their claims are leads, not facts
 
 A subagent that you fan out to audit/search/review returns a confident, specific, fluent
 report. **Treat its structural claims as leads to verify, not facts to relay.** Fan-out
@@ -213,7 +213,7 @@ call-site updates), full suite green. Companion hook: `parallel-agent-spawn-nudg
 
 **Worktree isolation vs same-checkout disjoint.** `isolation: 'worktree'` is the
 safe default when slices are file-level or an agent might reach past its scope.
-When the slices are COARSE and cleanly disjoint (a whole language dir per agent),
+When the slices are COARSE and cleanly disjoint — a whole language dir per agent —
 same-checkout fan-out is viable and skips the per-worktree `pnpm install` cost —
 but only under all three guards: (a) the orchestrator owns the shared files
 (above), (b) each agent is hard-forbidden broad `--fix`/`format`/`check`
@@ -223,7 +223,7 @@ by path — no agent runs `git commit` (one reviewer between work and main; no
 `.git/index.lock` race).
 
 **Platform limit on the commit control.** `no-subagent-commit-guard` blocks an
-inline Task subagent's commit (its turn is `isSidechain` in this transcript), but
+inline Task subagent's commit — its turn is `isSidechain` in this transcript — but
 a background / Workflow `agent()` subagent writes to its own transcript and its
 Bash reaches the hook with the PARENT transcript — so the guard cannot attribute
 it and does NOT fire. Likewise a Workflow `agent()` spawn bypasses PreToolUse
@@ -283,4 +283,4 @@ reworks the prompt.
 
 ## Compatibility note
 
-Codex is fleet-wide (the `codex` CLI is a fleet plugin). OpenCode and the `delegate` subagent are **per-developer**: they require local setup outside the repo. Skills that automate work across the fleet must not assume `delegate` exists; humans driving Claude in their own checkout can use it freely.
+Codex is fleet-wide — the `codex` CLI is a fleet plugin. OpenCode and the `delegate` subagent are **per-developer**: they require local setup outside the repo. Skills that automate work across the fleet must not assume `delegate` exists; humans driving Claude in their own checkout can use it freely.

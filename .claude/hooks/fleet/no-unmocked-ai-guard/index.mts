@@ -107,6 +107,7 @@ export const hook = defineHook({
     )
   }),
   bypass: ['unmocked-ai-in-tests'],
+  bypassOptional: true,
   event: 'PreToolUse',
   matcher: ['Edit', 'MultiEdit', 'Write'],
   scope: 'convention',

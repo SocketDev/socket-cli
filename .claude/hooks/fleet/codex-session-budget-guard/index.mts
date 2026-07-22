@@ -144,6 +144,7 @@ export function check(payload: ToolCallPayload): GuardResult {
 
 export const hook = defineHook({
   bypass: ['codex-long-session'],
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   // The work-tools the settings.json PreToolUse dispatcher matcher covers. A

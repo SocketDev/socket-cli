@@ -28,7 +28,7 @@ mean to publish?").
   idle (no Stop events) this long; active work keeps resetting the
   clock. Set `SOCKET_AUTH_ROTATION_INTERVAL_HOURS=4` to loosen, `=0` to
   rotate on every Stop event.
-- **Mode**: auto-logout (the hook _acts_, not just warns).
+- **Mode**: auto-logout — the hook _acts_, not just warns.
 - **Default skip-list**: `gh` is skipped because Claude Code itself
   uses `gh` for `gh pr edit` etc. — auto-revoking it would break the
   agent.

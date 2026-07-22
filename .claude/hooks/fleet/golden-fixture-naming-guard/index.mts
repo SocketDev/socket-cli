@@ -72,6 +72,7 @@ export const check = editGuard((filePath, content, payload) => {
 
 export const hook = defineHook({
   bypass: ['golden-fixture-naming'],
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'MultiEdit', 'Write'],

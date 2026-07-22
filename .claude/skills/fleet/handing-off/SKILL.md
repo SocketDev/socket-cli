@@ -39,7 +39,7 @@ PATH=".claude/reports/${DATE}-<slug>-handoff.md"
 
 ## What NOT to include
 
-- The full conversation (the next agent reads commits + diffs, not transcripts).
+- The full conversation — the next agent reads commits + diffs, not transcripts.
 - Code listings that exist verbatim in source files (link instead).
 - Decisions already captured in commit messages or ADRs (cite the SHA / file).
 - A retrospective "what I learned" section unless it's load-bearing for the next agent's choices.

@@ -4,7 +4,7 @@ PreToolUse hook that blocks `gh pr create` / `gh issue create` / `gh release cre
 
 ## Rule
 
-Public-facing artifacts (PRs, issues, releases) on non-fleet repos go out under the user's gh identity. They're permanent on the upstream side once posted — closing one with an "opened in error" comment doesn't fully un-publish it (the email notification fires, the issue number is consumed, the upstream maintainers see the noise).
+Public-facing artifacts (PRs, issues, releases) on non-fleet repos go out under the user's gh identity. They're permanent on the upstream side once posted — closing one with an "opened in error" comment doesn't fully un-publish it: the email notification fires, the issue number is consumed, the upstream maintainers see the noise.
 
 The fleet rule: **never submit to a non-fleet repo without explicit per-action confirmation**. Captured plan text + batched "do all N tasks" directives are NOT standing authorization to post under your identity.
 

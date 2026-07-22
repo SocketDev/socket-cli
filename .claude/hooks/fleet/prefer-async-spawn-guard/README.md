@@ -21,7 +21,7 @@ surface). The lib `spawn` is async, ships a typed `SpawnError` +
 `isSpawnError` guard, and takes an array-of-args contract. Mirrors the
 commit-time `socket/prefer-async-spawn` + `socket/prefer-spawn-over-execsync`
 oxlint rules — this hook catches the import at edit time so the wrong shape is
-never written (the rules would only fire at commit). Defense in depth: rule +
+never written — the rules would only fire at commit. Defense in depth: rule +
 hook + CLAUDE.md "Code style" invariant.
 
 ## Use the wrapper

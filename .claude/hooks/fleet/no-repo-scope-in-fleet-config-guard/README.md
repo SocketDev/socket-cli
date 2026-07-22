@@ -6,7 +6,7 @@ PreToolUse Edit/Write hook. Blocks adding a **one-repo path-scope** into a fleet
 
 The fleet config tier is for rules that apply to **every** member. A concern specific to one repo's tree belongs in that repo's own `.config/repo/` overlay, never the wheelhouse fleet config. The canonical example is socket-registry's `packages/npm/**` zero-dependency reimplementations, which some fleet lint rules should not touch. Reaching for the fleet `oxlintrc.json` to solve one repo's tree silently makes that exception fleet-wide.
 
-This guards the inverse of `no-fleet-fork-guard`. That hook blocks editing a canonical file downstream; this one blocks a repo concern leaking into the canonical fleet tier (an edit `no-fleet-fork-guard` allows, since it targets the canonical home).
+This guards the inverse of `no-fleet-fork-guard`. That hook blocks editing a canonical file downstream; this one blocks a repo concern leaking into the canonical fleet tier — an edit `no-fleet-fork-guard` allows, since it targets the canonical home.
 
 ## What it catches
 

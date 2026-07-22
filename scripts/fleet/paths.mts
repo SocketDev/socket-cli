@@ -80,6 +80,37 @@ export const REPO_ROOT = resolveRepoRoot()
 export const CONFIG_DIR = path.join(REPO_ROOT, '.config')
 
 /**
+ * Segregated `.config/` subtrees: `fleet/` holds fleet-identical cascaded
+ * config, `repo/` holds repo-owned config. No loose files sit in `.config/`.
+ */
+export const CONFIG_FLEET_DIR = path.join(CONFIG_DIR, 'fleet')
+export const CONFIG_REPO_DIR = path.join(CONFIG_DIR, 'repo')
+
+/**
+ * The lockstep schema is fleet-identical, so it lives under `.config/fleet/`;
+ * `pnpm run lockstep:emit-schema` regenerates it here from the TypeBox source.
+ */
+export const LOCKSTEP_SCHEMA = path.join(
+  CONFIG_FLEET_DIR,
+  'lockstep.schema.json',
+)
+
+/**
+ * Ordered lockstep-manifest candidates for a repo root, most-preferred first: a
+ * root `lockstep.json` (shim layout), the segregated
+ * `.config/repo/lockstep.json` (the manifest is repo-owned), then the legacy
+ * loose `.config/lockstep.json`. The single source of these paths — resolvers
+ * pick the first that exists.
+ */
+export function lockstepManifestCandidates(repoRoot: string): string[] {
+  return [
+    path.join(repoRoot, 'lockstep.json'),
+    path.join(repoRoot, '.config', 'repo', 'lockstep.json'),
+    path.join(repoRoot, '.config', 'lockstep.json'),
+  ]
+}
+
+/**
  * Absolute path to the repo's `node_modules/` directory.
  */
 export const NODE_MODULES_DIR = path.join(REPO_ROOT, 'node_modules')

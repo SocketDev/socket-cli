@@ -39,9 +39,9 @@ No bypass. Unsigned commits on `main`/`master` are always blocked — sign the c
 
 ## Layer 3: server-side (GitHub branch protection)
 
-`lint-github-settings.mts` audits the default branch's protection on GitHub for `required_signatures: { enabled: true }`. If the audit reports drift, the operator fixes it via the GitHub branch-protection UI (this script's `--fix` does not auto-apply branch-protection patches because that endpoint can clobber custom status-check requirements).
+`lint-github-settings.mts` audits the default branch's protection on GitHub for `required_signatures: { enabled: true }`. If the audit reports drift, the operator fixes it via the GitHub branch-protection UI — this script's `--fix` does not auto-apply branch-protection patches because that endpoint can clobber custom status-check requirements.
 
-GitHub-side enforcement is the failsafe: it catches pushes that somehow bypassed both local layers (an attacker who manipulated `core.hooksPath`, a CI pipeline that pushed without running hooks, a freshly-created fleet repo whose hooks aren't yet installed).
+GitHub-side enforcement is the failsafe: it catches pushes that somehow bypassed both local layers — an attacker who manipulated `core.hooksPath`, a CI pipeline that pushed without running hooks, a freshly-created fleet repo whose hooks aren't yet installed.
 
 ## Setup helper
 

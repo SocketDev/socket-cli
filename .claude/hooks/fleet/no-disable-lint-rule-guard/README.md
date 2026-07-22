@@ -19,7 +19,7 @@ Allow examples:
 - Editing a lint config to add new rules
 - Editing a lint config to REMOVE a rule disable (i.e. re-enabling)
 - Edits to any non-config file
-- Per-line `oxlint-disable-next-line <rule> -- <reason>` comments (those live in source files, not config)
+- Per-line `oxlint-disable-next-line <rule> -- <reason>` comments: those live in source files, not config
 
 ## How to bypass
 

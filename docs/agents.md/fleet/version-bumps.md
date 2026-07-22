@@ -96,7 +96,7 @@ runs the fast pre-release gate (`pnpm run lint --all` + `pnpm audit`) when
 it sees a `git commit -m "chore: bump version to X.Y.Z"`, and blocks the
 commit if either fails. The gate runs at the commit as well as the tag, so
 a bump cannot land atop accumulated lint debt that CI then rejects on push
-(a bump once shipped over 100+ lint errors and failed CI after the commit).
+— a bump once shipped over 100+ lint errors and failed CI after the commit.
 To skip the gate but keep the ordering check, set
 `SOCKET_VERSION_BUMP_SKIP_GATE=1`; to bypass the whole guard, type
 `Allow version-bump-order bypass`.
@@ -117,7 +117,7 @@ the user runs the publish workflow manually.
 `bump.mts` (and the cargo bump) compute the next version from `resolveBumpBase`
 — the max of the registry's `dist-tags.latest` and the last `vX.Y.Z` tag —
 NEVER from `package.json`/`Cargo.toml`. A manifest can sit ahead of what
-actually published (a hand pre-bump, or a stale `X.Y.Z-prerelease` hint), and
+actually published — a hand pre-bump, or a stale `X.Y.Z-prerelease` hint — and
 bumping off an ahead manifest silently SKIPS a version: package.json was
 pre-bumped to 1.4.3, then the release bumped 1.4.3 → 1.4.4, so 1.4.3 was never
 published. A `-prerelease` hint that names an already-published (or lower)

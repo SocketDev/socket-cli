@@ -110,6 +110,7 @@ export const check = bashGuard(command => {
 
 export const hook = defineHook({
   bypass: ['repo-root'],
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

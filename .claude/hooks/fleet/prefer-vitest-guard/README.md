@@ -26,7 +26,7 @@ Targeting a specific file is always preferred over the full suite — faster fee
 - `.config/fleet/oxlint-plugin/**/test/**` — `socket/*` lint-rule tests.
 - `scripts/**/test/**` — script-suite tests.
 - `.git-hooks/**` — git-hook tests.
-- repo-tunable globs from the `nodeTestExclude` key of `.config/{fleet,repo}/vitest.json` (the same key vitest merges into `exclude`, so the two never drift).
+- repo-tunable globs from the `nodeTestExclude` key of `.config/{fleet,repo}/vitest.json` — the same key vitest merges into `exclude`, so the two never drift.
 
 A `node --test` whose targets all resolve under these tiers passes. Mixing one of these with a src/repo test still blocks.
 

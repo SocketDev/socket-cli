@@ -12,7 +12,7 @@ These directories and files cascade fleet-wide. They are **not** repo-local:
 - `.claude/skills/fleet/_shared/`: shared skill helpers
 - `CLAUDE.md` fleet block (between the `<fleet-canonical>` markers)
 - `docs/agents.md/fleet/`: fleet-canonical CLAUDE.md offshoot references (applies to every socket-\* repo)
-- `docs/agents.md/wheelhouse/`: docs about the wheelhouse cascade mechanism itself (this file lives here)
+- `docs/agents.md/wheelhouse/`: docs about the wheelhouse cascade mechanism itself — this file lives here
 - Downstream repos may add their own `docs/agents.md/<repo>/` subdirectory for repo-specific docs. Those are NOT fleet-canonical.
 - Anything else listed in the sync manifest
 
@@ -66,7 +66,7 @@ If a cascaded file genuinely seems wrong, the fix lives in `template/...`, never
 
 ## Cascade-first triage
 
-When a member repo errors that a canonical artifact is "not found" / "missing" / "unregistered" (a `socket/*` lint rule, a hook, a `_shared/` lib, a check), check the wheelhouse template FIRST. If the artifact is there, the member's cascade is incomplete, so re-cascade that member:
+When a member repo errors that a canonical artifact is "not found" / "missing" / "unregistered" — a `socket/*` lint rule, a hook, a `_shared/` lib, a check — check the wheelhouse template FIRST. If the artifact is there, the member's cascade is incomplete, so re-cascade that member:
 
 ```bash
 node scripts/repo/sync-scaffolding/cli.mts --target <repo> --fix

@@ -89,9 +89,9 @@ node .claude/skills/fleet/tidying-worktrees/lib/tidy-worktrees.mts --here --fix
 
 ### Mode 4: `land`
 
-Move already-verified commits onto `origin/<default>` with the least ceremony that's still safe — the fast path for when the primary checkout's branch has **diverged** from origin (a parallel session squashed your commits onto origin via PR, leaving your local with unsquashable duplicates) or is **actively churned** by another session, so a direct `git push` would be rejected and a `reset --hard` would discard that session's work.
+Move already-verified commits onto `origin/<default>` with the least ceremony that's still safe — the fast path for when the primary checkout's branch has **diverged** from origin — a parallel session squashed your commits onto origin via PR, leaving your local with unsquashable duplicates — or is **actively churned** by another session, so a direct `git push` would be rejected and a `reset --hard` would discard that session's work.
 
-The fleet **lints as it edits**, so a commit's diff already passed the gates the pre-commit / pre-push hooks re-run. Re-running them on land is ceremony that can wedge (a pre-commit staged-test run hung 55 min in practice) or crash (a fresh worktree has no `node_modules`, so the lib-importing pre-push hooks throw `ERR_MODULE_NOT_FOUND`). Mode 4 replaces the manual cherry-pick → fast-forward dance with one command: it re-asserts the lint gate on the landing diff (fast, deterministic — NOT a heavy test re-run), cherry-picks the commits onto a throwaway worktree branched off `origin/<base>` (a clean tree), confirms a clean fast-forward, then fast-forwards `origin/<base>`. NEVER force-pushes; if origin moved since, it aborts and tells you to re-run.
+The fleet **lints as it edits**, so a commit's diff already passed the gates the pre-commit / pre-push hooks re-run. Re-running them on land is ceremony that can wedge or crash — a pre-commit staged-test run hung 55 min in practice; a fresh worktree has no `node_modules`, so the lib-importing pre-push hooks throw `ERR_MODULE_NOT_FOUND`. Mode 4 replaces the manual cherry-pick → fast-forward dance with one command: it re-asserts the lint gate on the landing diff (fast, deterministic — NOT a heavy test re-run), cherry-picks the commits onto a throwaway worktree branched off `origin/<base>` (a clean tree), confirms a clean fast-forward, then fast-forwards `origin/<base>`. NEVER force-pushes; if origin moved since, it aborts and tells you to re-run.
 
 ```bash
 # Dry-run (default): plan + re-assert the lint gate, don't push.
@@ -104,7 +104,7 @@ node .claude/skills/fleet/managing-worktrees/lib/land.mts --last 2 --push
 node .claude/skills/fleet/managing-worktrees/lib/land.mts <sha-a> <sha-b> --push
 ```
 
-The lint re-assert is the contract: a clean diff lands instantly; a lint failure ABORTS (the lint-as-edit contract was bypassed → `pnpm run fix` + re-commit). Only pass `--no-verify-lint` when the checkout genuinely can't run oxlint (no `node_modules`) AND you know the diff was lint-clean at edit time. The throwaway worktree + branch are cleaned up automatically; the `git push --no-verify` is deliberate (the diff is lint-verified above, and a fresh worktree's hooks can't load the lib).
+The lint re-assert is the contract: a clean diff lands instantly; a lint failure ABORTS — the lint-as-edit contract was bypassed → `pnpm run fix` + re-commit. Only pass `--no-verify-lint` when the checkout genuinely can't run oxlint (no `node_modules`) AND you know the diff was lint-clean at edit time. The throwaway worktree + branch are cleaned up automatically; the `git push --no-verify` is deliberate — the diff is lint-verified above, and a fresh worktree's hooks can't load the lib.
 
 ## Safety contract
 

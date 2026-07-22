@@ -66,6 +66,7 @@ export function isDefaultCheckout(
 
 export const hook = defineHook({
   bypass: ['pr-from-default-checkout'],
+  bypassOptional: true,
   check: bashGuard((command, payload) => {
     if (!isGhPrCreate(command)) {
       return undefined

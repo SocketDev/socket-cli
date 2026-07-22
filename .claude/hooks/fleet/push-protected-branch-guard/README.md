@@ -10,7 +10,7 @@ A sub-agent cannot authorize the push itself: the bypass scanner reads only genu
 
 ## What it catches
 
-Deny (a write to a protected branch):
+Deny — a write to a protected branch:
 
 - `git push origin main`
 - `git push origin HEAD:main`
@@ -19,7 +19,7 @@ Deny (a write to a protected branch):
 - `git push origin :main` — deleting a protected branch
 - a bare `git push` on a checkout whose current branch is `main` / `master`
 
-Allow (the PR / feature-branch flow must never break):
+Allow — the PR / feature-branch flow must never break:
 
 - `git push fork perf/foo`
 - `git push origin feature-x`

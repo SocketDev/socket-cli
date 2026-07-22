@@ -25,7 +25,7 @@ Passing the OTP on the command line writes the one-time code into:
 
 - **shell history** (`~/.zsh_history`, `~/.bash_history`),
 - **the process list** (`ps` shows full argv to any local user),
-- **CI logs** (the command line is echoed).
+- **CI logs** — the command line is echoed.
 
 A one-time code in any of those is a leaked secret (token-hygiene). The browser flow (`--auth-type=web`) never puts a code on the CLI, and CI authenticates with a granular automation token via the `NODE_AUTH_TOKEN` env var. The bullet in CLAUDE.md is also the doctrine that stops the assistant from *suggesting* `--otp` in prose.
 

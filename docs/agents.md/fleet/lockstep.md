@@ -13,15 +13,16 @@ same word, different subsystem (see
 
 ## The manifest
 
-- **Location.** `resolveManifestRoot` (`scripts/fleet/lockstep/manifest.mts:61-67`)
-  reads `<repo-root>/lockstep.json` when present, else
-  `.config/lockstep.json`. The cascade seeds `.config/lockstep.json` as
-  per-repo content — rows differ per repo
+- **Location.** `resolveManifestRoot` (`scripts/fleet/lockstep/manifest.mts`)
+  reads `<repo-root>/lockstep.json` when present, then the segregated
+  `.config/repo/lockstep.json`, then legacy loose `.config/lockstep.json`. The
+  manifest is repo-owned content — rows differ per repo, so it lives under
+  `.config/repo/`
   (`scripts/repo/sync-scaffolding/manifest/files.mts`, `EXPECTED_FILES`
   comment). Empty `rows: []` is valid for repos with no upstream ties.
 - **Schema.** `scripts/fleet/lockstep/schema.mts` is the TypeBox single source
   of truth; everything derives from it: TS types via `Static<typeof …>`, the
-  editor-facing `.config/lockstep.schema.json` (emitted by
+  fleet-identical editor-facing `.config/fleet/lockstep.schema.json` (emitted by
   `pnpm run lockstep:emit-schema`, never hand-edited), and runtime validation
   via `validateSchema` (`manifest.mts:41`). A schema failure exits 1 with a
   per-issue error trail.
@@ -51,9 +52,15 @@ skip):
 - **`version-pin`** — a submodule pinned to `pinned_sha` (full 40-hex,
   authoritative; `pinned_tag` is informational — `schema.mts:227-237`). The
   submodule HEAD must equal the pin or the row errors ("run
-  `git submodule update`", `checks.mts:153-159`). Drift = commit count from
-  the pin to the fetched `origin/HEAD|main|master` ref (`checks.mts:161-207`);
-  with no remote ref the row stays ok with a can't-compute note.
+  `git submodule update`", `checks.mts:153-159`). Before counting, the checker
+  runs a best-effort `git fetch --tags` in the submodule — `fetchTagsQuiet` in
+  `git.mts` — so a shallow or never-fetched clone can't under-report against a
+  STALE remote ref, the opentui trap where drift read "1 commit" while the true
+  gap was 211. Drift = commit count from the pin to the refreshed
+  `origin/HEAD|main|master` ref; a shallow clone, or one with no fetched remote
+  ref, reports drift UNKNOWN and LOUD — an error naming
+  `git fetch --tags`/`--unshallow`, never a falsely-low count that reads clean
+  (`checks.mts` `checkVersionPin`, `git.mts` `isShallowRepo`).
   `upgrade_policy` picks the auto-bump behavior: `track-latest`, `major-gate`
   (patch/minor auto, major advisory), or `locked` (report-only,
   `schema.mts:238-248`).
@@ -76,6 +83,91 @@ refs resolve, port keys match `sites`. Behavior receipts:
 `test/repo/unit/checks-git.test.mts` (file-fork + version-pin against real
 temp git repos), `checks-scoring.test.mts` (parity floors, spec-conformance,
 lang-parity), `checks.test.mts` (cross-row + lang-parity).
+
+## Materialization — lock-step vs adapt-step
+
+`file-fork` and `version-pin` rows carry an optional `materialization` field —
+how much of the pinned upstream this repo consumes. It is one mechanism with two
+modes, not two systems: both share the same pin, `.gitmodules` `sha256:`,
+drift-count, and latest-release machinery; only the *take* differs
+(`schema.mts` `MaterializationSchema`).
+
+- **`full` (default when omitted) — lock-step.** Consume the WHOLE upstream and
+  keep every consumer on the same pin, fleet-uniform. Any divergence between two
+  consumers is a defect. This is the historical behavior, so every existing row
+  is `full` without stating it. Use for a reusable workflow, a conformance
+  submodule, or a whole-toolchain pin.
+- **`sparse` — adapt-step.** Consume only a sparse-checkout cone / inlined
+  subset of the SAME pin — git's own sparse-checkout + partial-clone idea, "take
+  what you want, leave the rest." Lighter, drift-stable across dev machines, and
+  minimal surface. Name the cone in `sparse_cone` (the upstream paths actually
+  taken). Use when the whole thing exceeds the need or resolves differently per
+  environment — e.g. a fleet composite action that inlines only one code path of
+  an upstream action, or a platform lock scoped to just the targets shipped.
+
+Both modes still obey "pin the latest release" below and the drift backstop —
+`sparse` narrows what you vendor, never how the pin is tracked.
+
+## Conformance via upstream test reuse
+
+A `feature-parity` port or a `spec-conformance` implementation reimplements
+an upstream project, so its conformance gate reuses the upstream's OWN test
+suite instead of hand-porting it. Two rules, both mandatory:
+
+1. **Drive the upstream suite through a shim; never rewrite it.** Expose the
+   local port under the upstream's exact public API through an adapter — a
+   napi shim for a native port, a thin re-export module for a JS port — then
+   run the upstream's own test files against it with a harness that aliases
+   the upstream's module imports to the shim. Hand-porting or paraphrasing
+   the tests is forbidden: a paraphrase drifts from the source the instant
+   upstream changes and silently drops every case you did not copy. Build a
+   bespoke runner ONLY where the upstream harness genuinely cannot be driven
+   directly, such as a non-standard runner or an embedded DSL; that runner
+   follows the [`conformance-runners`](conformance-runners.md) shape. The
+   payoff: a `version-pin` or parity bump re-runs the upstream's NEWEST tests
+   against the port for free — reproducible, deterministic, auto-updating.
+2. **Run copies from `os.tmpdir()`; never in the upstream tree.** A pinned
+   submodule is read-only truth; a test's side effects — snapshot writes,
+   temp files, runner scratch — must never dirty it, since a dirty submodule
+   breaks the `version-pin` HEAD check and the `.gitmodules` hash. The harness
+   therefore COPIES the needed upstream test files plus their relative helper
+   imports into a throwaway scratch dir under `os.tmpdir()`, runs them from
+   there, and deletes the dir afterward. The module-under-test import still
+   resolves to the shim by ABSOLUTE path, so moving the test files never
+   breaks the alias. Fleet helpers: `getTmpdir()` from
+   `@socketsecurity/lib-stable/env/temp-dir`, which returns `undefined` on a
+   locked-down host, so fall back to `os.tmpdir()`; `copy` from
+   `@socketsecurity/lib-stable/fs/copy` for the file copy; and `safeDelete`
+   from `@socketsecurity/lib-stable/fs/safe` for cleanup. Never spawn the
+   upstream runner with its cwd inside `upstream/<name>/`.
+
+Enforcement today is this doctrine plus the CLAUDE.md conformance bullet. A
+mechanical guard that flags a test-runner invocation whose path points inside
+an `upstream/` submodule without a tmp copy is future work: a robust check is
+false-positive-prone across the many runner shapes, so correctness wins over a
+flaky gate.
+
+## Pin the latest release — always
+
+Porting an upstream means the LATEST shipped release, not a stale or inherited
+pin. Before adding or changing a `version-pin` row or a `.gitmodules` submodule
+pin:
+
+1. `git fetch --tags` in the submodule so the local view is current.
+2. Pin the NEWEST release tag — `gen-gitmodules-hash.mts --set` for
+   `.gitmodules`, the `version-pin` row for `lockstep.json`.
+3. Never port against a stale/inherited pin, and never trust a drift count from
+   a clone that hasn't fetched tags — a shallow or never-fetched clone reports a
+   falsely-low number.
+
+Enforced at edit time by `.claude/hooks/fleet/latest-release-pin-guard/`, which
+fetches the upstream's tags with `git ls-remote --tags` when a pin is set or
+changed and blocks a pin older than the newest release, naming the newer one.
+The `checkVersionPin` drift path is the CI-side backstop: it fetches tags before
+counting and reports drift UNKNOWN rather than a stale count. Motivating
+incident: an opentui pin at v0.1.99 — 211 commits and 3 minor releases behind
+v0.4.5 — against which ~31k lines were ported before the drift was noticed. The
+fleet-wide framing lives in [`drift-watch.md`](drift-watch.md).
 
 ## Running it
 
@@ -107,7 +199,7 @@ chain, `scripts/fleet/weekly-update/deterministic-chain.mts`) drives:
   the `includes[]` sub-manifest that physically holds the row,
   `auto-bump.mts:650-663`), regenerates the `.gitmodules`
   `# <name>-<version> sha256:…` annotation via `gen-gitmodules-hash.mts --set`
-  (the only annotation path `uses-sha-verify-guard` accepts), and commits
+  — the only annotation path `uses-sha-verify-guard` accepts — and commits
   surgically: `chore(deps): bump <upstream> to <tag>`
   (`auto-bump.mts:455-623`).
 
@@ -118,5 +210,12 @@ approval happen BEFORE `--apply` is called.
 
 - [`drift-watch.md`](drift-watch.md) — the fleet-wide drift doctrine lockstep
   serves.
+- [`conformance-runners.md`](conformance-runners.md) — the runner shape for the
+  bespoke case, and for external-spec corpora such as test262 and WPT.
+- [`no-live-network-in-tests.md`](no-live-network-in-tests.md) — the conformance
+  harness copies fixtures locally and hits no network.
 - `.claude/hooks/fleet/gitmodules-comment-guard/` — enforces the
   `# name-version` annotations auto-bump regenerates.
+- `.claude/hooks/fleet/latest-release-pin-guard/` — blocks setting a
+  `.gitmodules` or `version-pin` pin to an older release than the upstream's
+  newest tag.

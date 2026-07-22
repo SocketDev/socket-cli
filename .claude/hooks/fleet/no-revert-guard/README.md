@@ -24,7 +24,7 @@ Two batch flows run the same blocked operations many times and would otherwise n
 | `FLEET_SYNC=1`    | wheelhouse cascade    | `git commit` whose message starts `chore(wheelhouse): cascade template@`; any `git push`                                                                   |
 | `SQUASH_HISTORY=1`| `squashing-history` skill | a single un-chained `git commit --amend -m "chore: initial commit"` (this guard); a single un-chained `git push --force`/`--force-with-lease` to a bare remote + one plain branch ref (`no-force-push-guard`) |
 
-`SQUASH_HISTORY=1` is hardened against malicious bypass (a poisoned prompt riding the sentinel to clobber a remote or chain extra work): the shared `_shared/squash-sentinel.mts` parses the command and honors the sentinel **only** when the line is exactly one statically-resolved `git` segment — no `&&`/`;`/`|` chaining, no `$(…)` substitution, no `$VAR`/`eval` indirection, no extra inline env assignment, no refspec (`src:dst`) / `--mirror` / `--all` / `--delete` / `--no-verify` on the push.
+`SQUASH_HISTORY=1` is hardened against malicious bypass, a poisoned prompt riding the sentinel to clobber a remote or chain extra work: the shared `_shared/squash-sentinel.mts` parses the command and honors the sentinel **only** when the line is exactly one statically-resolved `git` segment — no `&&`/`;`/`|` chaining, no `$(…)` substitution, no `$VAR`/`eval` indirection, no extra inline env assignment, no refspec (`src:dst`) / `--mirror` / `--all` / `--delete` / `--no-verify` on the push.
 
 ## How the bypass works
 

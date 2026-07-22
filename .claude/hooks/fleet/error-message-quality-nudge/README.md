@@ -34,7 +34,7 @@ The check is intentionally conservative — only the trivially-vague cases. Skip
 - Messages containing `:` (signals a field-path prefix like `"user.email: must be lowercase"`)
 - Messages containing quoted values (`"`, `` ` ``) — suggests "saw vs. wanted" content
 - Messages longer than 40 chars (likely have the four ingredients spread across the sentence)
-- Dynamic templates with `${...}` (the static check can't know the interpolated content)
+- Dynamic templates with `${...}` — the static check can't know the interpolated content
 
 Conservative by design: the goal is to flag the cases that are 100% definitely wrong, not to grade every message. The user reads the warning and decides if there are deeper quality issues to address.
 

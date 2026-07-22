@@ -169,6 +169,7 @@ async function main() {
       console.error(`× extraction failed: ${extractCmd} exited ${r.status}`)
       process.exit(1)
     }
+    // oxlint-disable-next-line socket/prefer-safe-delete -- dep-0: pre-setup-node composite-action helper; @socketsecurity/lib-stable is not on disk yet, so safeDelete is unavailable.
     rmSync(archivePath, { force: true })
   } else if (binName) {
     // Bare-binary asset (no archive). Rename to bin-name and chmod.

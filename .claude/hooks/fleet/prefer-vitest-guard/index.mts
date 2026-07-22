@@ -328,6 +328,7 @@ export const check = bashGuard(
 
 export const hook = defineHook({
   bypass: ['node-test-runner'],
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

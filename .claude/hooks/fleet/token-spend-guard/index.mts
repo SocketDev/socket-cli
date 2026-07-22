@@ -99,12 +99,17 @@ export const check = bashGuard((command, payload) => {
 
   // Each dimension is independently bypassable, so only flag the dimensions
   // that are both premium AND not bypassed for this turn.
+  // Low-risk cost nudge (token spend only, nothing security) — `bypass` optional.
   const flagModel =
     modelIsPremium &&
-    !bypassPhrasePresent(payload.transcript_path, MODEL_BYPASS)
+    !bypassPhrasePresent(payload.transcript_path, MODEL_BYPASS, undefined, {
+      optionalSuffix: true,
+    })
   const flagEffort =
     effortIsPremium &&
-    !bypassPhrasePresent(payload.transcript_path, EFFORT_BYPASS)
+    !bypassPhrasePresent(payload.transcript_path, EFFORT_BYPASS, undefined, {
+      optionalSuffix: true,
+    })
 
   if (!flagModel && !flagEffort) {
     return undefined
@@ -152,6 +157,7 @@ export const check = bashGuard((command, payload) => {
 export const hook = defineHook({
   bypass: ['model', 'model-spend', 'effort'],
   bypassMode: 'manual',
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

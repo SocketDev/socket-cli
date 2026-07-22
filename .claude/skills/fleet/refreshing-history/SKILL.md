@@ -21,7 +21,7 @@ Resets the default branch to a single signed commit, with deps freshly resolved 
 
 ## Boundary with `squashing-history`
 
-`squashing-history` is the lower-level "squash to 1 commit" primitive. This skill layers on dep refresh + signed commit + integrity check + force-push contract. The org's `required_signatures` branch protection mandates `git commit-tree -S` (the bare config flag is unreliable for plumbing commands).
+`squashing-history` is the lower-level "squash to 1 commit" primitive. This skill layers on dep refresh + signed commit + integrity check + force-push contract. The org's `required_signatures` branch protection mandates `git commit-tree -S` — the bare config flag is unreliable for plumbing commands.
 
 ## Run
 

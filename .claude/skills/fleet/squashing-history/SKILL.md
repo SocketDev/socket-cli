@@ -16,7 +16,7 @@ commit on top of the same engine.
 The commit message is **`chore: initial commit`** — a Conventional Commits header, so it clears
 `commit-message-format-guard`. The collapse is gated by `no-revert-guard` and the force-push by
 `no-force-push-guard`; the runner sets an inline **`SQUASH_HISTORY=1`** sentinel limited to exactly
-those two commands (the same opt-in-per-command shape as the cascade's `FLEET_SYNC=1`).
+those two commands — the same opt-in-per-command shape as the cascade's `FLEET_SYNC=1`.
 
 ## Run
 
@@ -53,7 +53,7 @@ fleet):
 ## Why the runner is shaped the way it is
 
 - **Amend the root, don't re-commit**: a soft-reset to the root commit followed by a fresh commit
-  leaves **two** commits (the original root plus the new one). Amending the root is what collapses to
+  leaves **two** commits — the original root plus the new one. Amending the root is what collapses to
   one.
 - **Integrity is a HARD exit**: the post-squash tree must be byte-identical to the pre-squash backup.
   A non-empty diff means the squash altered content — that is corruption, so the runner exits before

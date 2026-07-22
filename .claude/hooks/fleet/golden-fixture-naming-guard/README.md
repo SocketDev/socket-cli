@@ -15,7 +15,7 @@ migration steps: [`golden-fixtures`](../../../../docs/agents.md/fleet/golden-fix
 ## Scope
 
 - Fires only on **creation** of a `*.expected.json` name — editing one that
-  already exists on disk (a pre-rule fixture, or a rename in progress) is never
+  already exists on disk — a pre-rule fixture, or a rename in progress — is never
   blocked.
 - Fleet-only (`isFleetTarget`): an external / sibling clone owns its own naming.
 - Belt scan: `scripts/fleet/check/golden-fixtures-are-named-golden.mts` fails

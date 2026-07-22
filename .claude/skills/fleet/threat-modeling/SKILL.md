@@ -15,7 +15,7 @@ and what should we do about it?"** independently of whether any specific bug has
 been found yet. It is the map; vulnerability discovery is the metal detector. A
 good threat model tells [`scanning-vulns`](../scanning-vulns/SKILL.md) where to
 look and tells [`triaging-findings`](../triaging-findings/SKILL.md) which
-findings matter (its threat-model boost reads this file's section 4).
+findings matter — its threat-model boost reads this file's section 4.
 
 **Litmus test:** If patching one line of code makes an entry disappear, it was a
 vulnerability, not a threat. A threat ("attacker achieves RCE via untrusted media
@@ -128,7 +128,7 @@ After writing the file, print to the user:
    `interview` pass) and the Stage-3b sibling locations (candidate leads for
    `scanning-vulns`).
 4. For `interview`: any owner statements that could not be verified in code
-   (these seed follow-up code review).
+   — these seed follow-up code review.
 
 ---
 

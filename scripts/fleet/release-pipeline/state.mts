@@ -8,14 +8,10 @@
  *   (`loadState`, `saveState`) so tests round-trip against a temp dir.
  */
 
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
+
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 
 import type { StageId } from './stages.mts'
 
@@ -181,5 +177,5 @@ export function saveState(filePath: string, state: PipelineState): void {
  * Clear the state file (`--reset`). Tolerates a missing file.
  */
 export function resetState(filePath: string): void {
-  rmSync(filePath, { force: true })
+  safeDeleteSync(filePath)
 }

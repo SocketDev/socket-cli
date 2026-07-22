@@ -17,7 +17,7 @@ A categorized marker in the soft band was still an escape hatch that let oversiz
 - **Tangled leaf helpers.** Use a one-directional DAG: `<module>-internal.mts` imported by `<module>-commands.mts` imported by `cli.mts`. Module-scoped imports are safe at runtime because nothing executes at load time.
 - **Function and class clusters.** Group by domain, not by type. A file named for its contents is easier to split later.
 
-When a file legitimately exceeds 1000 lines (a generated artifact, a spec table, a genuine single cohesive unit), the marker is allowed. The category field must name WHAT the file is (`generated`, `spec-table`, `registry`), not a meta-label like `ok` or `exempt`. The reason field must state WHY it cannot be split.
+When a file legitimately exceeds 1000 lines — a generated artifact, a spec table, a genuine single cohesive unit — the marker is allowed. The category field must name WHAT the file is (`generated`, `spec-table`, `registry`), not a meta-label like `ok` or `exempt`. The reason field must state WHY it cannot be split.
 
 ## Enforcement
 

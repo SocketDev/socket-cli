@@ -15,7 +15,7 @@ The runtime consumer is `scripts/install-claude-plugins.mts` — its `reapplyPlu
 
 Fires only when the target `file_path` resolves under `scripts/fleet/plugin-patches/` and ends in `.patch` (normalized to `/`-separators first). Everything else passes through untouched.
 
-`Write` carries the whole file in `tool_input.content`, so it's fully validated. `Edit` only carries a `new_string` fragment — the hook can't see the surrounding file, so an `Edit` without `content` is skipped (the next `Write` or commit-time path catches it).
+`Write` carries the whole file in `tool_input.content`, so it's fully validated. `Edit` only carries a `new_string` fragment — the hook can't see the surrounding file, so an `Edit` without `content` is skipped — the next `Write` or commit-time path catches it.
 
 ## Why
 

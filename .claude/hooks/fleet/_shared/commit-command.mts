@@ -84,7 +84,7 @@ export function extractCommitMessage(command: string): string | undefined {
     const { args } = segment
     for (let i = 0, { length } = args; i < length; i += 1) {
       const arg = args[i]!
-      if (arg === '-m' || arg === '--message') {
+      if (arg === '--message' || arg === '-m') {
         const value = args[i + 1]
         if (value !== undefined) {
           pieces.push(value)

@@ -4,7 +4,7 @@ PreToolUse (Bash) hook that nudges away from reflexive `git commit --no-verify` 
 
 ## Why
 
-When a sibling worktree session's pre-commit keeps racing the shared `.git/` index on a dangling object, the failure is reproducible but it isn't the agent's own change — so reflexive `--no-verify` is the wrong reflex. Even with each tree verified green independently before bypassing, `--no-verify` skips **all** validation, so a genuine problem in the agent's own change would slip through the same gap. An index race is recoverable by retrying (the lock clears when the other session's git op finishes) or by committing from an isolated `GIT_INDEX_FILE`. Disabling the gate is the wrong tool.
+When a sibling worktree session's pre-commit keeps racing the shared `.git/` index on a dangling object, the failure is reproducible but it isn't the agent's own change — so reflexive `--no-verify` is the wrong reflex. Even with each tree verified green independently before bypassing, `--no-verify` skips **all** validation, so a genuine problem in the agent's own change would slip through the same gap. An index race is recoverable by retrying — the lock clears when the other session's git op finishes — or by committing from an isolated `GIT_INDEX_FILE`. Disabling the gate is the wrong tool.
 
 Per CLAUDE.md "Parallel Claude sessions."
 

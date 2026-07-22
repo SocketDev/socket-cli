@@ -14,7 +14,7 @@ comment-only rule in the fleet PR-review doctrine
 ## What passes
 
 - `gh pr review --comment` / `-c` (a comment-only review).
-- `gh pr comment` (a plain PR comment).
+- `gh pr comment` — a plain PR comment.
 - Any command without a `gh pr review` verdict flag.
 
 The command is parsed with the fleet shell tokenizer (`_shared/shell-command.mts`),

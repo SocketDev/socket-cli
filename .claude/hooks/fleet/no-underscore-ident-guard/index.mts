@@ -182,6 +182,7 @@ export const check = editGuard(
 
 export const hook = defineHook({
   bypass: ['underscore-identifier'],
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

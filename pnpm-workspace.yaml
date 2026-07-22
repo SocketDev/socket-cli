@@ -110,11 +110,11 @@ catalog:
   ansi-regex: 6.2.2
   brace-expansion: 5.0.5
   browserslist: 4.25.4
-  'c8': 11.0.0
+  'c8': 12.0.0
   chalk-table: 1.0.2
-  'chrome-devtools-mcp': 1.5.0
+  'chrome-devtools-mcp': 1.6.0
   cmd-shim: 7.0.0
-  compromise: 14.15.1
+  compromise: 14.16.0
   del-cli: 6.0.0
   dev-null-cli: 2.0.0
   'dtu-github-actions': 0.17.1
@@ -158,8 +158,8 @@ catalog:
   octokit: 5.0.5
   onnxruntime-web: 1.23.0
   open: 10.2.0
-  oxfmt: 0.58.0
-  oxlint: 1.73.0
+  oxfmt: 0.59.0
+  oxlint: 1.74.0
   packageurl-js: npm:@socketregistry/packageurl-js@^1.4.2
   path-parse: npm:@socketregistry/path-parse@^1.0.8
   'playwright-core': 1.61.1
@@ -224,10 +224,6 @@ minimumReleaseAgeExclude:
   - '@sdxgen/*'
   - 'sdxgen'
   - 'stuie'
-  # published: 2026-07-14 | removable: 2026-07-21
-  - '@redwoodjs/agent-ci@0.17.1'
-  # published: 2026-07-14 | removable: 2026-07-21
-  - 'dtu-github-actions@0.17.1'
   # published: 2026-07-16 | removable: 2026-07-23
   - 'magic-string@1.0.0'
   # published: 2026-07-16 | removable: 2026-07-23

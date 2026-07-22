@@ -27,7 +27,7 @@ diffs its `actual` result against. The fleet names these `*.golden.json` (or
   that path and compares structurally.
 - Do not name it `*.expected.json`. The guard blocks writing one; the check
   belt-scans the tree for stragglers.
-- An error-expectation fixture (a fixture that must be rejected) keeps the same
+- An error-expectation fixture — a fixture that must be rejected — keeps the same
   stem: `<name>.golden.json` carrying `{ "error": "…" }`, or
   `<name>.error.golden.json`.
 

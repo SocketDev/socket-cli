@@ -202,6 +202,7 @@ export const check = editGuard(
 
 export const hook = defineHook({
   bypass: ['boolean-trap'],
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

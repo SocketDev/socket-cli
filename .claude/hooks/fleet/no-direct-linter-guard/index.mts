@@ -176,6 +176,7 @@ export const check = bashGuard((command, payload) => {
 
 export const hook = defineHook({
   bypass: ['direct-linter'],
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

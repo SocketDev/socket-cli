@@ -19,16 +19,12 @@
  * liveness   the file counts only while `kill -0 <pid>` succeeds.
  */
 
-import {
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 
 export function activeRunsDir(homeDir?: string | undefined): string {
   return path.join(
@@ -65,7 +61,7 @@ export function registerActiveRun(options?: MarkerOptions | undefined): void {
   mkdirSync(dir, { recursive: true })
   for (const entry of readdirSync(dir)) {
     if (!pidIsAlive(Number(entry))) {
-      rmSync(path.join(dir, entry), { force: true })
+      safeDeleteSync(path.join(dir, entry))
     }
   }
   writeFileSync(path.join(dir, String(opts.pid ?? process.pid)), '')
@@ -78,7 +74,7 @@ export function unregisterActiveRun(options?: MarkerOptions | undefined): void {
     String(opts.pid ?? process.pid),
   )
   if (existsSync(file)) {
-    rmSync(file, { force: true })
+    safeDeleteSync(file)
   }
 }
 

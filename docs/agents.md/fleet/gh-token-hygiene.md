@@ -1,6 +1,6 @@
 # gh token hygiene
 
-GitHub CLI auth tokens are the highest-blast-radius credential most developers carry. The Nx Console supply-chain compromise (May 2026) exfiltrated `~/.config/gh/hosts.yml` and used the token against the GitHub API within 74 seconds of malware execution. Three layered defenses, all enforced by `.claude/hooks/fleet/gh-token-hygiene-guard/` (the 8h age cap, keychain check, and workflow-scope gate all live in this hook — `auth-rotation-nudge` handles non-gh CLIs like npm/pnpm/gcloud/docker/vault).
+GitHub CLI auth tokens are the highest-blast-radius credential most developers carry. The Nx Console supply-chain compromise (May 2026) exfiltrated `~/.config/gh/hosts.yml` and used the token against the GitHub API within 74 seconds of malware execution. Three layered defenses, all enforced by `.claude/hooks/fleet/gh-token-hygiene-guard/`: the 8h age cap, keychain check, and workflow-scope gate all live in this hook — `auth-rotation-nudge` handles non-gh CLIs like npm/pnpm/gcloud/docker/vault.
 
 ## 1. Keychain storage only
 
@@ -92,7 +92,7 @@ sudo -v
 If you see the Touch ID dialog, you're good. If you see a password prompt instead, either:
 
 - Touch ID isn't enrolled on this Mac: check System Settings → Touch ID & Password
-- You're on a Mac without Touch ID hardware: use the password fallback (the hook handles this automatically)
+- You're on a Mac without Touch ID hardware: use the password fallback — the hook handles this automatically
 - The file path or content is wrong: re-run the `sudo tee` command and double-check
 
 #### Undoing it

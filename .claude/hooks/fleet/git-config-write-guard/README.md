@@ -30,7 +30,7 @@ Scans every fleet repo under `~/projects/` for an already-corrupted `.git/config
 Findings surface via stdout at SessionStart (never blocks). Two AUTO-FIX; the rest report for manual cleanup:
 
 - `core.bare = true` is unset (always wrong for a non-bare checkout).
-- a placeholder local `user.email` / `user.name` is unset WHEN a `--global` identity exists to fall back to. A placeholder author email can't be verified against the signing key on GitHub, so a signed push is rejected by `required_signatures`, and the bad value is typically planted outside the tool channel (an agent-CI container entrypoint), so the PreToolUse write-block never sees it. Unsetting the local override lets the signed global identity win. With no global fallback the finding is reported, not unset, so the repo is not left with no author.
+- a placeholder local `user.email` / `user.name` is unset WHEN a `--global` identity exists to fall back to. A placeholder author email can't be verified against the signing key on GitHub, so a signed push is rejected by `required_signatures`, and the bad value is typically planted outside the tool channel — an agent-CI container entrypoint — so the PreToolUse write-block never sees it. Unsetting the local override lets the signed global identity win. With no global fallback the finding is reported, not unset, so the repo is not left with no author.
 
 ## Bypass
 

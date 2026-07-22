@@ -59,7 +59,7 @@ on:
         description: 'Pipe-separated case-glob patterns of paths allowed to change'
         required: false
         type: string
-        default: 'package.json|*/package.json|pnpm-lock.yaml|*/pnpm-lock.yaml|.npmrc|pnpm-workspace.yaml|.gitmodules|.config/lockstep.json'
+        default: 'package.json|*/package.json|pnpm-lock.yaml|*/pnpm-lock.yaml|.npmrc|pnpm-workspace.yaml|.gitmodules|.config/repo/lockstep.json|.config/lockstep.json'
 
 engine:
   id: claude

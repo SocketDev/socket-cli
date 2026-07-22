@@ -22,7 +22,7 @@ The goal is not "one layer is enough." It is to make the wrong move fail at ever
 The enforcers are themselves fleet code and obey every fleet rule:
 
 - **1 path, 1 reference.** An enforcer constructs a path once and references the value everywhere else. Never re-derive a path or a banned-pattern list in two enforcers.
-- **DRY into `_shared/`.** When a hook and a check script (or two hooks) need the same detection logic (a parser, a regex set, an allowlist, a shell-command AST walk), lift it into a `.claude/skills/fleet/_shared/` lib (or `_shared/scripts/`) and import it. Copy-pasted detection drifts: one copy gets the fix, the other stays buggy, and a green gate hides the gap.
+- **DRY into `_shared/`.** When a hook and a check script (or two hooks) need the same detection logic — a parser, a regex set, an allowlist, a shell-command AST walk — lift it into a `.claude/skills/fleet/_shared/` lib (or `_shared/scripts/`) and import it. Copy-pasted detection drifts: one copy gets the fix, the other stays buggy, and a green gate hides the gap.
 - **Tests are mandatory.** A codification without thorough tests (both arms, every branch, the bypass, pass-through, adversarial inputs) is not done. See the `codifying-disciplines` skill for the per-surface test matrix.
 - **Standard code style.** `function` declarations, no `any`, `import type`, `getDefaultLogger()`, error messages that name What / Where / Saw-vs-wanted / Fix. The enforcer is not exempt from the rules it enforces.
 
@@ -35,5 +35,5 @@ The enforcers are themselves fleet code and obey every fleet rule:
 
 ## A documented-but-uncodified rule is itself a gap
 
-The failure mode this rule exists to catch: a `🚨` line lands in CLAUDE.md, everyone nods, and nothing changes because no code fires when the rule is broken. If a discipline is worth a 🚨, it is worth an enforcer. When no enforceable surface exists today (the violation isn't visible to any tool, or the check needs off-machine state), say so in the rule and the detail doc. Don't leave the reader assuming an enforcer exists. Otherwise, codify it.
+The failure mode this rule exists to catch: a `🚨` line lands in CLAUDE.md, everyone nods, and nothing changes because no code fires when the rule is broken. If a discipline is worth a 🚨, it is worth an enforcer. When no enforceable surface exists today — the violation isn't visible to any tool, or the check needs off-machine state — say so in the rule and the detail doc. Don't leave the reader assuming an enforcer exists. Otherwise, codify it.
 <!-- enforcement: human-review — this paragraph describes the enforcement model itself (when a rule has no codeable surface); the 🚨 here is meta-prose, not a discipline with its own enforcer -->

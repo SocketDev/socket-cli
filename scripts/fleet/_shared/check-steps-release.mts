@@ -125,7 +125,7 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // SocketDev/ repo → stranded cascades + 404'd environments). Onboarding must
     // create the repo AND update the roster together. Report-mode + network-gated
     // (a 404 can mean private + no token access), skips cleanly in offline lanes.
-    releaseStep(['scripts/fleet/check/member-repos-exist.mts']),
+    releaseStep(['scripts/fleet/check/member-repos-resolve.mts']),
     // The dep-0 fetcher (bootstrap/fleet.mjs) is a rolldown-inlined build artifact;
     // fail loud if it drifts from its bootstrap/src/* source (rebuild: node
     // scripts/repo/build-bootstrap-fetcher.mts). Wheelhouse-only — the build script
@@ -170,13 +170,13 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // workflow bumped 1.4.3 → 1.4.4, so 1.4.3 was never published). Network read
     // → release-tier; fail-open when no published version / registry unreachable.
     releaseStep(['scripts/fleet/check/version-is-not-ahead-of-published.mts']),
-    // A publishable manifest's version must be an `X.Y.Z-prerelease` HINT on the
-    // dev branch — the agent never hand-sets a bare release version; the publish
-    // script owns the bare bump (strips the suffix). No-ops on non-publishable
-    // manifests (private / no publishConfig) + fail-opens when git is unreadable.
-    // Release-tier so it gates at publish time, not every dev commit.
+    // A multi-crate cargo workspace keeps every publishable crate BARE — a
+    // `-prerelease` breaks inter-crate `^X.Y.Z` resolution. The hint is OPTIONAL
+    // for a single crate (the release bumps from the published version by
+    // heuristic; anti-skip is version-is-not-ahead-of-published). No-ops without
+    // a Cargo.toml / cargo. Release-tier.
     releaseStep([
-      'scripts/fleet/check/publishable-version-is-prerelease-hint.mts',
+      'scripts/fleet/check/multi-crate-cargo-versions-are-bare.mts',
       '--quiet',
     ]),
     // No tracked symlink is self-referential or points at an absolute path
@@ -232,6 +232,14 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
       'scripts/fleet/check/release-and-cascade-are-paired.mts',
       '--quiet',
     ]),
+    // Persisted release pins store ONLY exact canonical values — the belt twin of
+    // the write-time bundle-pin validators (bootstrap/src/lockstep.mts +
+    // sync-scaffolding/socket-wheelhouse-config.mts). Asserts the committed
+    // bundle.ref is an exact fleet-<hex> tag (no latest/main/head/stable/newest
+    // alias), bundle.cascadeSha / a manifest templateSha is a bare 40-hex SHA, and
+    // no alias is stored beside a canonical value. Pure local reads → always on;
+    // vacuous pass where nothing is pinned (the producer / a non-thin member).
+    () => run('node', ['scripts/fleet/check/release-pins-are-canonical.mts']),
     // llms.txt structural freshness: compares H1 + section titles + ordered link
     // pairs of the committed file against deterministic extraction. Prose is never
     // diffed — the check is credential-free and member-safe fail-open (no file or

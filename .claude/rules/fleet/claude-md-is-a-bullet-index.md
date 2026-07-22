@@ -17,7 +17,7 @@ repo-specific (🏗️) section.
   explanation, the list of cases, or the rationale.
 - Adjacent guards keep this honest: `claude-md-size-guard` (40 KB cap),
   `claude-md-section-size-guard` (≤8 lines/section), `claude-md-defer-detail-nudge`,
-  `claude-md-rule-add-guard` (a new section / marked bullet must link a doc).
+  `claude-md-rule-add-guard`: a new section / marked bullet must link a doc.
 
 ## Why
 

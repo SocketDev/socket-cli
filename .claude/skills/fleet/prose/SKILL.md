@@ -21,7 +21,7 @@ This skill runs in two modes. Both strip the AI-slop the Core Rules target; the 
 
 **Route by surface:**
 
-- Targeting a `docs/**` file, README, CHANGELOG, GitHub Release notes, or API-reference prose → **documentation mode** (the Core Rules below, unchanged).
+- Targeting a `docs/**` file, README, CHANGELOG, GitHub Release notes, or API-reference prose → **documentation mode** — the Core Rules below, unchanged.
 - Targeting a PR description / comment (`gh pr create/edit/comment --body`), an issue body or reply (`gh issue create/comment`), a review comment, a Discussion, a Linear issue/comment, a status summary, or a multi-paragraph commit _body_ → **conversational mode**: the Core Rules **plus** [references/conversational.md](references/conversational.md) (lead with the point, be brief, show the receipt, use the maintainer voice, and drop AI scaffolding; when a body earns structure, use GitHub advanced formatting — `<details>` folds with specific summaries, at most one `> [!NOTE]`-family alert, `- [ ]` task lists, autolinks/permalinks, sparing footnotes).
 
 **Documentation mode applies to:**

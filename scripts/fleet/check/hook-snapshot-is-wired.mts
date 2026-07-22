@@ -29,12 +29,13 @@
  *   Usage: node scripts/fleet/check/hook-snapshot-is-wired.mts
  */
 
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
 import { getCI } from '@socketsecurity/lib-stable/env/ci'
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 // oxlint-disable-next-line socket/prefer-async-spawn -- a check main() is a sync CLI gate; build + boot run inline in sequence.
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
@@ -218,7 +219,7 @@ function main(): number {
       }
     }
   } finally {
-    rmSync(tmp, { force: true, recursive: true })
+    safeDeleteSync(tmp)
   }
 
   if (!wiredToLauncher) {

@@ -49,7 +49,7 @@ Then `git -C <dir> remote get-url origin` → slug via `slugFromRemoteUrl`
 
 Any resolution ambiguity (no `git push` found, dir unreadable, no
 `origin`, unparseable remote URL) → allow. Under-blocking is recoverable
-(the operator reverts a stray push); a false block wedges a valid
+— the operator reverts a stray push; a false block wedges a valid
 workflow. The guard only fires when it can positively identify a
 non-fleet origin slug.
 

@@ -45,7 +45,7 @@ FILES CHANGED: list
 NOTES: anything the reviewer should know (deviations, surprises, judgment calls)
 ```
 
-### Review (the advisor's real job here)
+### Review — the advisor's real job here
 
 Note on fresh worktrees: they share git history but not `node_modules` or build artifacts — the executor must install dependencies first, and check tooling that resolves from `dist/` may need one build even though the plan's command table (recon'd in the main tree) didn't mention it. Expect this; it isn't a deviation.
 

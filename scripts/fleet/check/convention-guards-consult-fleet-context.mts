@@ -35,14 +35,18 @@ import { isMainModule } from '../_shared/is-main-module.mts'
 // until both are true.
 export const CONVENTION_GUARDS: readonly string[] = [
   'golden-fixture-naming-guard',
+  'latest-release-pin-guard',
   'markdown-filename-guard',
   'module-noun-name-guard',
   'no-corepack-guard',
   'no-direct-linter-guard',
+  'no-ignoring-tracked-file-guard',
   'no-nested-gitignore-guard',
   'no-new-config-guard',
   'no-other-linters-guard',
   'no-revert-guard',
+  'no-upstream-edit-guard',
+  'no-upstream-gitlink-guard',
   'private-name-nudge',
   'shallow-clone-guard',
   'test-script-defers-guard',

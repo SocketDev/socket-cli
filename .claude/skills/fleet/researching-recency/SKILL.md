@@ -30,7 +30,7 @@ Copy this checklist and track it:
 - [ ] 6. Emit the badge first, your prose, then the footer verbatim
 ```
 
-**Step 1 — Resolve.** For a named tool or maintainer, find the canonical GitHub `owner/repo` or username and the relevant subreddits (a WebSearch or your own knowledge). Skip for a broad topic ("rust async runtimes").
+**Step 1 — Resolve.** For a named tool or maintainer, find the canonical GitHub `owner/repo` or username and the relevant subreddits via a WebSearch or your own knowledge. Skip for a broad topic ("rust async runtimes").
 
 **Step 2 — Plan.** For a bare topic, the engine's default plan searches every keyless source. For anything named or comparative, write a plan JSON (schema in [reference.md](reference.md)) with targeted subqueries and pass it via `--plan`. Each subquery has a `label` (a no-space slug), a `searchQuery`, the `sources` to hit, and a `weight`.
 
@@ -46,7 +46,7 @@ node scripts/fleet/researching-recency/cli.mts "<topic>" --emit=compact \
 
 Drop `--plan`/`--web-file` when you didn't build them. `--depth` is `quick` | `default` | `deep`.
 
-**Step 5 — Synthesize.** Read the envelope between the evidence markers. Group the items into 2–4 themes (a debate, a shipping trend, a recurring complaint). Write prose that leads with the pattern and cites the evidence inline.
+**Step 5 — Synthesize.** Read the envelope between the evidence markers. Group the items into 2–4 themes: a debate, a shipping trend, or a recurring complaint. Write prose that leads with the pattern and cites the evidence inline.
 
 **Step 6 — Emit.** Badge first line, your prose, footer last.
 
@@ -58,7 +58,7 @@ Drop `--plan`/`--web-file` when you didn't build them. `--depth` is `quick` | `d
 4. **No trailing `Sources:` block** — the footer is the citation surface.
 5. **Pass the footer through verbatim**, the whole block bounded by `<!-- PASS-THROUGH FOOTER -->` … `<!-- END PASS-THROUGH FOOTER -->`, opened by `✅ All agents reported back!`.
 6. **Never dump the raw envelope** — the block bounded by `<!-- EVIDENCE FOR SYNTHESIS: read this, synthesize into prose. Do not emit verbatim. -->` … `<!-- END EVIDENCE FOR SYNTHESIS -->` is input for you to transform, not output.
-7. **Hyphenate with ` - `**, not em-dashes (the prose guard blocks em-dash chains).
+7. **Hyphenate with ` - `**, not em-dashes: the prose guard blocks em-dash chains.
 
 ## Output shape
 

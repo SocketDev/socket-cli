@@ -131,6 +131,7 @@ export const check = editGuard((filePath, content): GuardResult => {
 
 export const hook = defineHook({
   bypass: ['no-structured-clone-prefer-json'],
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

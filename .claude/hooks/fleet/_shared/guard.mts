@@ -39,6 +39,8 @@ import type { ToolCallPayload } from './payload.mts'
 import { commandWorkingDir } from './shell-command.mts'
 import { bypassPhrasePresent } from './transcript.mts'
 
+import type { BypassMatchOptions } from './transcript.mts'
+
 // Lazily resolved, NOT eagerly at module-eval. The shared logger graph
 // (`@socketsecurity/lib`'s logger → primordials/globals) captures `SharedArray
 // Buffer` and touches `node:console`/`node:tty` at construction — both are
@@ -137,6 +139,14 @@ export interface HookSpec {
   // (per-trigger / targeted `Allow <slug> bypass: <target>` bypasses that a
   // simple presence test would wrongly re-authorize).
   readonly bypass?: readonly string[] | undefined
+  // LOW-RISK guards ONLY: when true, the trailing `bypass` keyword is OPTIONAL
+  // in detection (`Allow <slug>` == `Allow <slug> bypass`). Default (omit) =
+  // strict: the suffix is REQUIRED — the anti-false-positive anchor for
+  // security / supply-chain / destructive / exfil guards. Set true only when the
+  // guard's worst case is benign (cosmetic / quality / process) or backstopped
+  // (e.g. a protected-branch push, where GitHub branch protection is the final
+  // gate). Anything Socket.dev/SFW-tracked or a security tool stays strict.
+  readonly bypassOptional?: boolean | undefined
   readonly bypassMode?: 'auto' | 'manual' | undefined
   readonly check: GuardCheck
   readonly event: HookEvent
@@ -352,7 +362,11 @@ function payloadTargetIsFleetManaged(payload: ToolCallPayload): boolean {
  * Auto-mode only; a per-trigger / targeted guard keeps its own detection
  * (`bypassMode: 'manual'`).
  */
-function withBypass(base: GuardCheck, slugs: readonly string[]): GuardCheck {
+function withBypass(
+  base: GuardCheck,
+  slugs: readonly string[],
+  options?: BypassMatchOptions | undefined,
+): GuardCheck {
   const phrases = bypassPhrasesFor(slugs)
   return async (payload: ToolCallPayload) => {
     const result = await base(payload)
@@ -361,7 +375,9 @@ function withBypass(base: GuardCheck, slugs: readonly string[]): GuardCheck {
     }
     // A typed phrase authorizes the action (block) or silences the nudge
     // (notify) — drop the verdict so the tool call proceeds with no output.
-    if (bypassPhrasePresent(payload.transcript_path, phrases)) {
+    if (
+      bypassPhrasePresent(payload.transcript_path, phrases, undefined, options)
+    ) {
       return undefined
     }
     // No phrase — surface the EXACT phrase(s) to type on whichever verdict.
@@ -396,12 +412,13 @@ export function defineHook(spec: HookSpec): Hook {
   // down (scoped → undefined, never a block) never reaches the bypass path.
   const check: GuardCheck =
     spec.bypass && spec.bypass.length > 0 && spec.bypassMode !== 'manual'
-      ? withBypass(scoped, spec.bypass)
+      ? withBypass(scoped, spec.bypass, { optionalSuffix: spec.bypassOptional })
       : scoped
   return {
     __proto__: null,
     bypass: spec.bypass,
     bypassMode: spec.bypassMode,
+    bypassOptional: spec.bypassOptional,
     check,
     event: spec.event,
     invoke(payload: ToolCallPayload) {

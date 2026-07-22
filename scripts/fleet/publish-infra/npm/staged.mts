@@ -10,6 +10,7 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
+import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import type {
@@ -291,7 +292,7 @@ export async function compareExtractedTarballs(
       ? { detail: `${hashesA.size} file(s) byte-identical`, equal: true }
       : { detail: diffs.slice(0, 10).join('; '), equal: false }
   } finally {
-    await fs.rm(tmpDir, { force: true, recursive: true })
+    await safeDelete(tmpDir)
   }
 }
 

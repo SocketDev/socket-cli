@@ -1,6 +1,6 @@
 ---
 name: releasing-a-package
-description: Release a single-package fleet repo: pre-bump, changelog, version commit, tag, staged publish, and approval.
+description: Release a single-package fleet repo: pre-bump, changelog, version tag, and staged publish.
 model: claude-sonnet-4-6
 user-invocable: true
 allowed-tools: AskUserQuestion, Bash(git:*), Bash(node:*), Bash(pnpm run:*), Edit, Read
@@ -34,7 +34,7 @@ a botched stage upload is rescued server-side with `pnpm stage reject`.
    or a milestone major), pass `--release-as <major|minor|patch>` (a publish-workflow dropdown
    can supply it). It is an explicit human decision, never AI-inferred. Do NOT hand-edit
    `CHANGELOG.md` — a
-   hand-written entry drifts from the tag (the 6.0.x failure mode); the
+   hand-written entry drifts from the tag — the 6.0.x failure mode; the
    `changelog-is-commit-derived` check rejects a pending entry that doesn't match its commits.
    The tag is created later, at publish/approve time — `bump.mts` does not tag.
 3. **Push the bump.**

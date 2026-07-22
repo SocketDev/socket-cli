@@ -32,13 +32,13 @@ import {
   mkdtempSync,
   readdirSync,
   realpathSync,
-  rmSync,
 } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import {
@@ -407,7 +407,7 @@ export async function installFleet(options: InstallOptions): Promise<number> {
     )
     return 0
   } finally {
-    rmSync(tmp, { recursive: true, force: true })
+    safeDeleteSync(tmp)
   }
 }
 

@@ -24,9 +24,9 @@ First gather the evidence — one deterministic pass that `rg`s every submodule,
 node scripts/fleet/optimizing-submodules/collect-submodule-consumers.mts --pretty
 ```
 
-It emits, per submodule, the OUTSIDE-only consumer hits bucketed `rust` / `cpp` / `go` / `jsts` / `testCorpus` / `build` / `other`, the current sparse/verify state, the on-disk tree size (the why-bother signal), and an `internalHitCount` (the self-references it excluded). Plain (no `--pretty`) emits the same as a JSON envelope. It renders **no verdict** — that is your call from the buckets. Read each bucket and interpret it:
+It emits, per submodule, the OUTSIDE-only consumer hits bucketed `rust` / `cpp` / `go` / `jsts` / `testCorpus` / `build` / `other`, the current sparse/verify state, the on-disk tree size (the why-bother signal), and an `internalHitCount` — the self-references it excluded. Plain (no `--pretty`) emits the same as a JSON envelope. It renders **no verdict** — that is your call from the buckets. Read each bucket and interpret it:
 
-- Rust (`Cargo.toml` / `build.rs`): a **path/git** dep is consumption; a `version = "=x"` crates.io pin is NOT (the code comes from the registry, the submodule is reference-only).
+- Rust (`Cargo.toml` / `build.rs`): a **path/git** dep is consumption; a `version = "=x"` crates.io pin is NOT — the code comes from the registry, the submodule is reference-only.
 - C/C++ (`CMakeLists.txt` / `binding.gyp`): which subdir does `add_subdirectory` / a `*_DIR` var point at?
 - Go (`go.mod`): a registry module is not the submodule.
 - JS/TS (imports / `package.json` / vitest): a `workspace:*` fork supersedes the submodule.
@@ -38,11 +38,11 @@ It emits, per submodule, the OUTSIDE-only consumer hits bucketed `rust` / `cpp` 
 Outcomes per submodule:
 - **Subtree-consumed** → the minimal pattern (e.g. `c`, `src`, `tests files-toml-1.0.0`, `files`).
 - **Reference-only** (pin tracking, crates.io/npm dep, lockstep metadata, a doc cites it) → a minimal `README.md` (or the specific cited files) so the dir isn't empty but pulls ~nothing.
-- **Genuinely whole-tree** (a crate built from its entire source with no separable subtree) → no sparse; annotate the block `# full-checkout: <reason>`.
+- **Genuinely whole-tree** — a crate built from its entire source with no separable subtree → no sparse; annotate the block `# full-checkout: <reason>`.
 
 ### 2. Apply (scripted)
 
-Write the pattern into `.gitmodules` (this is what `git-partial-submodule.mts clone` honors):
+Write the pattern into `.gitmodules`, which is what `git-partial-submodule.mts clone` honors:
 
 ```bash
 git config -f .gitmodules submodule."<name>".sparse-checkout "<space-separated patterns>"
@@ -66,7 +66,7 @@ verify = pnpm --filter @x/parser test     # the command that builds against the 
 verify = none                              # reference-only — nothing builds against it
 ```
 
-Then prove it: `verify-submodule-sparse.mts --run <name|path>` sparse-clones the submodule per its recorded pattern and runs the declared `verify =` command. Green → the pattern is build-sufficient. Fail → it's too narrow (a needed path isn't checked out); widen and re-run.
+Then prove it: `verify-submodule-sparse.mts --run <name|path>` sparse-clones the submodule per its recorded pattern and runs the declared `verify =` command. Green → the pattern is build-sufficient. Fail → it's too narrow — a needed path isn't checked out; widen and re-run.
 
 ```bash
 node scripts/fleet/verify-submodule-sparse.mts --run <name|path>   # prove one

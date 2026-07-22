@@ -28,7 +28,7 @@ gh api "repos/$SLUG/dependabot/alerts?state=open&per_page=100" > /tmp/dependabot
 jq '. | length' /tmp/dependabot-alerts.json
 ```
 
-## Alert shape (the fields we use)
+## Alert shape: the fields we use
 
 ```json
 {
@@ -228,7 +228,7 @@ the pin in-major — crossing a major is the separate gated path below.
    the surface lets the classifier ignore a breaking change in a
    method nobody calls.
 
-   `nodeFloor` = our `engines.node` (the fleet floors at `>=26.0.0`).
+   `nodeFloor` = our `engines.node` — the fleet floors at `>=26.0.0`.
    This is what makes "remove CommonJS support" benign: Node ≥22 ships
    unflagged `require(esm)` (synchronous `require()` of an ESM module),
    so a CJS-removing major still loads via `require('pkg')`. CJS
@@ -291,7 +291,7 @@ consumer (CHANGELOG bullets verified against
 | 11.0.0 | drop node@16, TS port, ESM (dual CJS)            | No                                                                            |
 | 12.0.0 | drop node@16, **remove CommonJS**                | No — Node ≥22 `require(esm)` loads the ESM build                              |
 | 13.0.0 | make browser exports default                     | No — packaging priority only                                                  |
-| 14.0.0 | drop node@18, `crypto` must be global (node@20+) | No — floor drop ≤ ours. (The RangeError guard is the CVE fix, never a break.) |
+| 14.0.0 | drop node@18, `crypto` must be global (node@20+) | No — floor drop ≤ ours. The RangeError guard is the CVE fix, never a break. |
 
 Three things this teaches the classifier:
 

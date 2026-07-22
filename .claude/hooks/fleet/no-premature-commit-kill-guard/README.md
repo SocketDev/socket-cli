@@ -4,7 +4,7 @@ PreToolUse Bash hook. Blocks three anti-patterns — a git/test operation wedged
 
 1. **Backgrounding a `git commit`** (or `rebase` / `merge` / `cherry-pick`) via `run_in_background: true`.
 2. **`pkill` / `kill` / `killall` of a `git commit` / `git push`, a `pre-commit` / `pre-push` hook process, or a `vitest` run.** The worker-scoped reap `vitest/dist/workers` is exempt.
-3. **`agent-ci run … --pause-on-failure`** (the canonical `ci:local` shape, direct or via the `agent-ci-skip-locks.mts run` wrapper). That flag holds the run at the first failing step waiting for an interactive keypress; a non-interactive agent can never answer it, so the run parks forever AND pins the worktree's `.git/index.lock`, wedging every concurrent `git commit` in that checkout.
+3. **`agent-ci run … --pause-on-failure`** — the canonical `ci:local` shape, direct or via the `agent-ci-skip-locks.mts run` wrapper. That flag holds the run at the first failing step waiting for an interactive keypress; a non-interactive agent can never answer it, so the run parks forever AND pins the worktree's `.git/index.lock`, wedging every concurrent `git commit` in that checkout.
 
 ## Why
 
@@ -23,7 +23,7 @@ Running the op in the **foreground** and waiting for the bounded hook avoids the
 AST-parsed via `_shared/shell-command.mts` (`findInvocation` / `commandsFor`), never a raw regex on the line:
 
 - `run_in_background === true` **and** the command invokes `git commit` / `git rebase` / `git merge` / `git cherry-pick`.
-- a `pkill` / `kill` / `killall` whose args reference `git commit` / `git push`, a `pre-commit` / `pre-push` hook process, or a bare `vitest` run. Two non-matches: a `kill <pid>` of an unrelated process (no git/test token), and `pkill -f "vitest/dist/workers"` (the blessed orphan-reap — the hook must not block its own recommended recovery).
+- a `pkill` / `kill` / `killall` whose args reference `git commit` / `git push`, a `pre-commit` / `pre-push` hook process, or a bare `vitest` run. Two non-matches: a `kill <pid>` of an unrelated process (no git/test token), and `pkill -f "vitest/dist/workers"`, the blessed orphan-reap — the hook must not block its own recommended recovery.
 - `agent-ci run` (binary or the `agent-ci-skip-locks.mts run` wrapper) **and** the command text carries `--pause-on-failure`. A non-pausing `agent-ci run --all --quiet` is **not** matched — it exits on failure and is safe headless. This arm is independent of `run_in_background`: the harness may auto-background a slow foreground command, so the flag in the payload can't be relied on; the command shape is matched directly.
 
 ## Bypass

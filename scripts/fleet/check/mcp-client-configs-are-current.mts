@@ -14,9 +14,8 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { isMainModule } from '../_shared/is-main-module.mts'
 import {
+  CODEX_ADAPTERS,
   parseCanonicalMcpConfig,
-  renderCodexHooksConfig,
-  renderCodexMcpConfig,
   renderKimiProjectMcpConfig,
   renderOpenCodeMcpConfig,
 } from '../mcp-config.mts'
@@ -63,15 +62,24 @@ export function findMcpClientConfigIssues(repoRoot: string): string[] {
     return [`.mcp.json is invalid: ${errorMessage(error)}`]
   }
 
-  const expected = [
-    {
-      content: renderCodexHooksConfig(),
-      relativePath: '.codex/hooks.json',
-    },
-    {
-      content: renderCodexMcpConfig(servers),
-      relativePath: '.codex/config.toml',
-    },
+  const issues: string[] = []
+  // `.codex/*` is generated-untracked (repo-root LIVE tree, gitignored,
+  // regenerated at setup — never committed). An ABSENT root copy is fine (setup
+  // recreates it); a PRESENT-but-stale copy is flagged so a hand-edit is caught.
+  // Iterates the CODEX_ADAPTERS authority so the render logic lives in one place.
+  for (let i = 0, { length } = CODEX_ADAPTERS; i < length; i += 1) {
+    const adapter = CODEX_ADAPTERS[i]!
+    const filePath = path.join(repoRoot, adapter.path)
+    if (
+      existsSync(filePath) &&
+      readFileSync(filePath, 'utf8') !== adapter.render(servers)
+    ) {
+      issues.push(`${adapter.path} is drifted from .mcp.json.`)
+    }
+  }
+  // `opencode.json` + `.kimi-code/mcp.json` are tracked cascade sources — they
+  // MUST be present at configRoot and match `.mcp.json`.
+  const cascadeAdapters = [
     {
       content: renderOpenCodeMcpConfig(servers),
       relativePath: 'opencode.json',
@@ -81,9 +89,8 @@ export function findMcpClientConfigIssues(repoRoot: string): string[] {
       relativePath: '.kimi-code/mcp.json',
     },
   ]
-  const issues: string[] = []
-  for (let i = 0, { length } = expected; i < length; i += 1) {
-    const entry = expected[i]!
+  for (let i = 0, { length } = cascadeAdapters; i < length; i += 1) {
+    const entry = cascadeAdapters[i]!
     const filePath = path.join(configRoot, entry.relativePath)
     if (!existsSync(filePath)) {
       issues.push(`${entry.relativePath} is missing.`)

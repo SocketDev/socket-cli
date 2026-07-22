@@ -51,8 +51,9 @@
 // guarded install so it never leaves node_modules in a worse state.
 
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-import { existsSync, lstatSync, readdirSync, rmSync, statSync } from 'node:fs'
+import { existsSync, lstatSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
@@ -274,7 +275,7 @@ function repairGutted(): string {
   for (let i = 0, { length } = STALE_MARKERS; i < length; i += 1) {
     const marker = STALE_MARKERS[i]!
     try {
-      rmSync(marker, { force: true })
+      safeDeleteSync(marker)
     } catch {
       // Marker may not exist or be unremovable; the install attempt still runs.
     }

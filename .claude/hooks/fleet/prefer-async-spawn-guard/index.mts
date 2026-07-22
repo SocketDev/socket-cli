@@ -129,7 +129,12 @@ export const check = editGuard(
       return undefined
     }
 
-    if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
+    // Low-risk convention guard (oxlint rules backstop it) — `bypass` optional.
+    if (
+      bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE, undefined, {
+        optionalSuffix: true,
+      })
+    ) {
       logger.error(
         `prefer-async-spawn-guard: ${findings.length} child_process import(s) — bypassed via "${BYPASS_PHRASE}"`,
       )
@@ -160,6 +165,7 @@ export const check = editGuard(
 export const hook = defineHook({
   bypass: ['async-spawn'],
   bypassMode: 'manual',
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

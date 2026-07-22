@@ -12,7 +12,7 @@ A turn-end stderr reminder proved too easy to scroll past — dirty worktrees st
 
 Reads the Stop payload, then runs `git status --porcelain` in `$CLAUDE_PROJECT_DIR`. Filters out untracked-by-default trees (`vendor/`, `third_party/`, `upstream/`, `additions/source-patched/`, `deps/`, `external/`, `pkg-node/`, `*-bundled/`, `*-vendored/`) so vendor drops don't trip it.
 
-On a dirty primary checkout it emits a Stop-hook `{decision:'block'}` with the dirty paths plus the remediation menu (commit / revert / announce-or-bypass). The block is suppressed when Claude Code reports `stop_hook_active: true`, so it fires at most once per turn and can't loop. Fail-open: any error in the hook exits 0 (a guard bug must not wedge every Stop).
+On a dirty primary checkout it emits a Stop-hook `{decision:'block'}` with the dirty paths plus the remediation menu (commit / revert / announce-or-bypass). The block is suppressed when Claude Code reports `stop_hook_active: true`, so it fires at most once per turn and can't loop. Fail-open: any error in the hook exits 0 — a guard bug must not wedge every Stop.
 
 ## Escapes (any one allows the stop)
 

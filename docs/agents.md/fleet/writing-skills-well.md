@@ -52,7 +52,7 @@ needs it:
    by a **context pointer**, loaded only when the pointer fires.
 
 **Progressive disclosure** is the move down the ladder so the top stays legible.
-Inline what every **branch** (a distinct path through the skill) needs; push behind
+Inline what every **branch** — a distinct path through the skill — needs; push behind
 a pointer what only some branches reach. **Co-location**: keep a concept's
 definition, rules, and caveats under one heading so reading one part brings its
 neighbours.
@@ -64,7 +64,7 @@ the agent thinks with while running the skill (`tight`, `red`, `residue`, `trace
 bullet`). It anchors a region of behaviour in the fewest tokens by recruiting
 priors the model holds. Fleet leading words worth reaching for:
 
-- `tight` — a fast, deterministic, low-overhead loop (a *tight* feedback loop).
+- `tight` — a fast, deterministic, low-overhead loop: a *tight* feedback loop.
 - `red` — a loop that goes *red* on this bug; converts a fuzzy gate to a binary
   observable.
 - `residue` — the part a script can't do; what AI owns after the deterministic

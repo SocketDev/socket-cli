@@ -118,7 +118,7 @@ Cross-realm-safe. Uses the native ES2025 `Error.isError` when the engine ships i
 
 ### `isErrnoException(value)`: replaces `'code' in err` guards
 
-Narrows to `NodeJS.ErrnoException` (an Error with a string `code` set by libuv/syscalls like `ENOENT`, `EACCES`, `EBUSY`, `EPERM`). Builds on `isError`, so it's also cross-realm-safe. It checks that `code` is a string. A branded Error without a real errno code returns `false`.
+Narrows to `NodeJS.ErrnoException` — an Error with a string `code` set by libuv/syscalls like `ENOENT`, `EACCES`, `EBUSY`, `EPERM`. Builds on `isError`, so it's also cross-realm-safe. It checks that `code` is a string. A branded Error without a real errno code returns `false`.
 
 - ✗ `if (e && typeof e === 'object' && 'code' in e && e.code === 'ENOENT') { … }`
 - ✓ `if (isErrnoException(e) && e.code === 'ENOENT') { … }`

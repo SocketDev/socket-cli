@@ -27,7 +27,7 @@ Watch a target repo's CI, surface failures the moment they land, and drive a fix
 | `release` | 30s           | Any job fails OR any job succeeds    | Build-server matrices. Matrix slots run in parallel; one slot's outcome is enough to start reacting. |
 | `cool`    | 120s          | Whole run completes                  | After `release` reported a first success: just confirming the rest of the matrix. No fast polls.     |
 
-The skill picks `fast` by default. After running `release` and getting a first success, the orchestrator (the agent invoking this skill) flips to `cool` for the remainder.
+The skill picks `fast` by default. After running `release` and getting a first success, the orchestrator — the agent invoking this skill — flips to `cool` for the remainder.
 
 ## How the skill drives the fix-and-push loop
 

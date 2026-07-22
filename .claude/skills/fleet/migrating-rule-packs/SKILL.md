@@ -1,6 +1,6 @@
 ---
 name: migrating-rule-packs
-description: Run deterministic 10+ file code migrations through rule-pack transforms, isolated agents, and feedback loops.
+description: Run deterministic 10+ file code migrations via rule-pack transforms and isolated agents.
 user-invocable: true
 allowed-tools: Workflow, Read, Edit, Write, Grep, Glob, Bash(git worktree:*), Bash(git branch:*), Bash(git status:*), Bash(git rev-parse:*), Bash(git symbolic-ref:*), Bash(git show-ref:*), Bash(git add:*), Bash(git commit:*), Bash(git push:*), Bash(git log:*), Bash(git diff:*), Bash(node:*), Bash(pnpm:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(cat:*), Bash(mkdir:*), Bash(rm:*), Bash(mv:*), Bash(cp:*)
 model: claude-sonnet-4-6
@@ -79,11 +79,11 @@ The skill author writes the rule pack first, lands a reference PR by hand, then 
 
 The per-file loop is built as `lib/run-migration.mts` — a bounded-concurrency worker pool over the target files (each a fresh worktree off `origin/<default-branch>` on a `migration/<name>-<slug>` branch). The target files are independent units that each stream through the same transform → verify stages, and the per-file agents MUTATE files in parallel, so they run worktree-isolated. The intelligence is contained: the locked-down agent's ONLY job is "apply the rule pack to this one file"; everything else (survey, gate verdict, commit/push/PR) is deterministic code. This section is the architecture the runner implements:
 
-1. **Resolve the target set first (plain code, no agents).** Survey the target files (`rg` the before-pattern across the migration scope), load the rule-pack markdown, resolve the default branch per CLAUDE.md's _Default branch fallback_ recipe. Build the per-file work items.
-2. **`phase('Migrate')` — `pipeline(targetFiles, transform, buildFixCheckTest)`.** Each target file streams through two stages, both as `agent()` with `isolation: 'worktree'` (a fresh worktree off `origin/<default-branch>` on a `migration/<migration-name>-<target-slug>` branch, mirroring cascade's convention at `<repo>/.claude/worktrees/<migration-name>/<target-slug>/`):
+1. **Resolve the target set first (plain code, no agents).** Survey the target files — `rg` the before-pattern across the migration scope — then load the rule-pack markdown, resolve the default branch per CLAUDE.md's _Default branch fallback_ recipe. Build the per-file work items.
+2. **`phase('Migrate')` — `pipeline(targetFiles, transform, buildFixCheckTest)`.** Each target file streams through two stages, both as `agent()` with `isolation: 'worktree'` — a fresh worktree off `origin/<default-branch>` on a `migration/<migration-name>-<target-slug>` branch, mirroring cascade's convention at `<repo>/.claude/worktrees/<migration-name>/<target-slug>/`:
    - **`transform`** — self-prompt with the rule-pack as context; apply the rules to the one target file, returning a `TRANSFORM_SCHEMA` (`{ file, rulesApplied: string[], exceptions: [{ rule, why }] }`).
    - **`buildFixCheckTest`** — the validation gate: loop `pnpm run build && pnpm run check && pnpm run test` up to 3 attempts; on failure append `result.stderr` to the agent's rule-context and retry; on success `git add <file>` + commit + push the branch + open the PR. Returns a `RESULT_SCHEMA` (`{ file, status: landed|exception, attempts, prUrl?, failureMode? }`). `pipeline()` gives per-item streaming — file N+1 starts its transform while file N is still in build/check/test — without a barrier across files.
-   - The `pipeline()` runtime caps concurrency; default 5 in-flight worktree agents (higher risks lock-stepped pnpm/cargo runs hammering shared caches; lower under-utilizes). Tune per migration. If the migration accumulates (the rule-pack keeps growing as PRs land), make the pipeline budget-aware / loop-until-done: re-survey for newly-matching files after each rule-pack update and feed them back through.
+   - The `pipeline()` runtime caps concurrency; default 5 in-flight worktree agents (higher risks lock-stepped pnpm/cargo runs hammering shared caches; lower under-utilizes). Tune per migration. If the migration accumulates — the rule-pack keeps growing as PRs land — make the pipeline budget-aware / loop-until-done: re-survey for newly-matching files after each rule-pack update and feed them back through.
 3. **Barrier → report.** Collect every item's `RESULT_SCHEMA`, `.filter(Boolean)`, and surface any `status: exception` files as per-file findings the human handles. Worktrees are cleaned up after the PR lands or by `cleaning-ci`'s sibling cleanup hook.
 
 Return `{ landed, exceptions, prUrls }` from the script. The `RESULT_SCHEMA` replaces re-parsing each Agent's free-text exit — every file returns validated landed/exception status the report reads directly. The validation gate stays the same: if `pnpm run check` doesn't catch the regression, the rule needs a tighter assertion.
@@ -118,7 +118,7 @@ Per-migration flow:
      --repo SocketDev/socket-mcp
    ```
 
-   It surveys the target set, then for each file spawns a worktree-isolated, locked-down agent (`spawnAiAgent` + `AI_PROFILE.verify` — four-flag lockdown, `permissionMode: acceptEdits`, never the raw `claude` CLI) that applies the rule pack and self-runs the gate; the runner re-asserts `build → check → test` in plain code (the agent's self-report is a lead, not the verdict), then deterministically commits + pushes + opens the PR. `--dry-run` runs the transform + gate but never lands. `--concurrency` (default 5), `--attempts` (default 3), `--model`, `--effort` tune the run. Exits non-zero while any file is in `exception` status.
+   It surveys the target set, then for each file spawns a worktree-isolated, locked-down agent (`spawnAiAgent` + `AI_PROFILE.verify` — four-flag lockdown, `permissionMode: acceptEdits`, never the raw `claude` CLI) that applies the rule pack and self-runs the gate; the runner re-asserts `build → check → test` in plain code — the agent's self-report is a lead, not the verdict — then deterministically commits + pushes + opens the PR. `--dry-run` runs the transform + gate but never lands. `--concurrency` (default 5), `--attempts` (default 3), `--model`, `--effort` tune the run. Exits non-zero while any file is in `exception` status.
 3. **Review + fold feedback (you).** Review each PR, merge the clean ones. Inline review comments become new "When the rule does NOT apply" entries in the rule files (the [§4](#4-pr-review-feedback-as-rule-rewrites) loop); re-run the runner to pick up newly-matching files against the updated rules.
 
 ## Acceptance for the skill itself
@@ -133,7 +133,7 @@ The cascade orchestrator (`template/.claude/skills/fleet/cascading-fleet/lib/cas
 
 Related fleet skills:
 
-- `cascading-fleet` — propagate one wheelhouse SHA to every fleet repo (this skill's parent pattern).
+- `cascading-fleet` — propagate one wheelhouse SHA to every fleet repo, this skill's parent pattern.
 - `refactor-cleaner` (agent) — for non-mechanical refactors that need per-call-site human judgment.
 - `looping-quality` — for in-repo cleanup waves; rule-pack migrations are the cross-repo / cross-file generalization.
 

@@ -287,7 +287,7 @@ gate. Attach the parsed fields to each finding. Checkpoint `checkpoint.mts save
 
 ---
 
-## Phase 4: Apply and commit (the fleet divergence from upstream)
+## Phase 4: Apply and commit — the fleet divergence from upstream
 
 For each finding with `status != "no_patch"` and `review == "ACCEPT"`, in severity
 order:

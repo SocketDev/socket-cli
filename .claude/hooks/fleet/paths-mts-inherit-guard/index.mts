@@ -118,6 +118,7 @@ export function findAncestorPathsMts(filePath: string): string | undefined {
 export const hook = defineHook({
   bypass: ['paths-mts-inherit'],
   bypassMode: 'manual',
+  bypassOptional: true,
   check: editGuard((filePath, content, payload) => {
     const tool = payload.tool_name
     const normalizedFilePath = normalizePath(filePath)
@@ -171,6 +172,8 @@ export const hook = defineHook({
         payload.transcript_path,
         BYPASS_PHRASE,
         BYPASS_LOOKBACK_USER_TURNS,
+        // Low-risk (DRY/convention drift; oxlint backstops it) — `bypass` optional.
+        { optionalSuffix: true },
       )
     ) {
       return undefined

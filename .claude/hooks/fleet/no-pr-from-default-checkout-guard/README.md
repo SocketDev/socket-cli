@@ -13,10 +13,10 @@ default branch (current branch === `main` / `master` / the resolved
 The current branch and default are resolved with `git-branch.mts`'s shared
 helpers (`currentBranch` via `git symbolic-ref`, `resolveDefaultBranch` via
 `origin/HEAD` → `main` → `master`). Detection of `gh pr create` is **AST-based**
-(the shell-quote-backed `shell-command.mts` parser, not regex), so `&&` chains,
+— the shell-quote-backed `shell-command.mts` parser, not regex — so `&&` chains,
 quoting, `$(…)` substitution, and a literal `"gh pr create"` inside a `grep`
-string are all handled correctly. `gh repo create` does not match (the verb must
-be `pr create` / `pr new`).
+string are all handled correctly. `gh repo create` does not match — the verb must
+be `pr create` / `pr new`.
 
 ## Why
 

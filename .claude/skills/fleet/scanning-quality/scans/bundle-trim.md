@@ -10,7 +10,7 @@ For each repo that ships a rolldown bundle, look at `dist/index.js` (or the prim
 
 - `dist/` — the most recent build output. If missing or stale, the scan flags "build first" and skips.
 - `.config/repo/rolldown.config.mts` — required (signal that this repo uses rolldown).
-- `.config/repo/rolldown/lib-stub.mts` — required (the canonical plugin the trim skill uses). If missing, the scan flags "cascade missing canonical plugin" and skips.
+- `.config/repo/rolldown/lib-stub.mts` — required — the canonical plugin the trim skill uses. If missing, the scan flags "cascade missing canonical plugin" and skips.
 - `src/index.ts` (or the entry declared in `package.json` `exports`) — the published API surface.
 
 ## Skip when

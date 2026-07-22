@@ -414,6 +414,8 @@ export const check = editGuard((filePath, content, payload) => {
       payload.transcript_path,
       BYPASS_PHRASE,
       BYPASS_LOOKBACK_USER_TURNS,
+      // Low-risk doc-shape guard (nothing security/supply-chain) — `bypass` optional.
+      { optionalSuffix: true },
     )
   ) {
     return undefined
@@ -451,6 +453,7 @@ export const check = editGuard((filePath, content, payload) => {
 export const hook = defineHook({
   bypass: ['readme-fleet-shape'],
   bypassMode: 'manual',
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

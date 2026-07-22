@@ -29,7 +29,7 @@ await runGuard(check)
 Three verdicts — pick by intended behavior:
 
 - `block(message)` — prints `message` to stderr **and** sets exitCode 2 (Claude Code blocks the tool call). Use for a `-guard`.
-- `notify(message)` — prints to stderr, exit 0 (the tool call proceeds). Use for a `-nudge` / `-nudge`.
+- `notify(message)` — prints to stderr, exit 0, the tool call proceeds. Use for a `-nudge` / `-nudge`.
 - `undefined` — allow, silent.
 
 ## Shape by event

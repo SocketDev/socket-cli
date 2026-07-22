@@ -85,7 +85,7 @@ claude --print \
 
 ## Recipe: agent that needs Bash (e.g. `/updating`: pnpm + git + jq)
 
-Narrow `Bash(...)` patterns surgically. Block dangerous Bash patterns explicitly. Fleet rules: no `npx`/`pnpm dlx`/`yarn dlx`; no `curl`/`wget` exfil; no destructive `rm -rf`; no `sudo`. Build the deny list as shell vars so the `npx`/`dlx` denials can carry the `# zizmor:` exemption marker (the pre-commit `scanNpxDlx` hook treats those literal strings as the prohibited tools, not as exemptions, unless the line is tagged):
+Narrow `Bash(...)` patterns surgically. Block dangerous Bash patterns explicitly. Fleet rules: no `npx`/`pnpm dlx`/`yarn dlx`; no `curl`/`wget` exfil; no destructive `rm -rf`; no `sudo`. Build the deny list as shell vars so the `npx`/`dlx` denials can carry the `# zizmor:` exemption marker — the pre-commit `scanNpxDlx` hook treats those literal strings as the prohibited tools, not as exemptions, unless the line is tagged:
 
 ```yaml
 DISALLOW_BASE='Agent Task NotebookEdit WebFetch WebSearch Bash(curl:*) Bash(wget:*) Bash(rm -rf*) Bash(sudo:*)'
@@ -118,6 +118,6 @@ The four-flag lockdown is enforced at edit time by `.claude/hooks/fleet/claude-l
 
 ## Existing fleet callsites
 
-- `scripts/fleet/weekly-update.mts`: the plain (non-gh-aw) weekly runner — drives the deterministic chain, then the optional advisory pass via `spawnAiAgent({ ...AI_PROFILE.full })` (the locked-down four-flag wrapper). The escape-hatch + local-dev entry; gh-aw stays the primary scheduled path.
+- `scripts/fleet/weekly-update.mts`: the plain (non-gh-aw) weekly runner — drives the deterministic chain, then the optional advisory pass via `spawnAiAgent({ ...AI_PROFILE.full })`, the locked-down four-flag wrapper. The escape-hatch + local-dev entry; gh-aw stays the primary scheduled path.
 - `socket-registry/.github/workflows/weekly-update.md`: the gh-aw reusable workflow (`engine: claude`, `max-ai-credits`, network allowlist, safe-output PR). Replaced the legacy `claude --print` reusable; its deterministic check-updates gate calls `weekly-update.mts --check-updates`.
 - `socket-lib/tools/prim/src/disambiguate.mts`: read-only recipe above (`query()` SDK form).

@@ -24,7 +24,7 @@ Type `Allow claude-md-size bypass` verbatim in a recent user turn to land one ov
 
 ## Failing open
 
-The hook fails open on its own bugs (exit 0 + stderr log) so a buggy hook can't brick the session. The trade-off: a bug means the cap silently doesn't apply for that edit. Acceptable because the alternative (a hook crash blocking unrelated edits) is worse.
+The hook fails open on its own bugs (exit 0 + stderr log) so a buggy hook can't brick the session. The trade-off: a bug means the cap silently doesn't apply for that edit. Acceptable because the alternative — a hook crash blocking unrelated edits — is worse.
 
 ## How to add a fleet rule that fits
 

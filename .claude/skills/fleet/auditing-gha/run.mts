@@ -22,12 +22,13 @@
  *   toggles to flip.
  */
 
-import { rmSync, writeFileSync } from 'node:fs'
+import { writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 import { spawn } from '@socketsecurity/lib/process/spawn/child'
 
@@ -364,7 +365,7 @@ export async function ghInput(
     })
     return String(r.stdout ?? '').trim()
   } finally {
-    rmSync(file, { force: true })
+    safeDeleteSync(file)
   }
 }
 

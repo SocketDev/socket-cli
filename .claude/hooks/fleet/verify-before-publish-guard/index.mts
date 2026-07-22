@@ -44,8 +44,8 @@ import path from 'node:path'
 
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import {
-  commandWorkingDir,
   commandsFor,
+  commandWorkingDir,
   parseCommands,
 } from '../_shared/shell-command.mts'
 import {

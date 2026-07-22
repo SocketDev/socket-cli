@@ -244,17 +244,45 @@ function isExecutable(filePath) {
   return st.isFile() && (IS_WINDOWS || (st.mode & 0o111) !== 0)
 }
 
+// Rust tooling is driven by the rustup PROXY at $CARGO_HOME/bin (default
+// ~/.cargo/bin): each proxy reads rust-toolchain.toml and dispatches to the
+// pinned toolchain's compiler. A standalone Homebrew (or system) `cargo`
+// earlier on PATH bundles its OWN rustc and IGNORES the toolchain file, so
+// wrapping it builds every Rust repo with the wrong compiler — observed:
+// Homebrew rustc 1.95.0 shadowing a nightly-pinned repo, so `cargo` under the
+// shim rejected the crate ("rustc 1.95.0 is not supported"). Only `cargo` is
+// shimmed today, but the set covers the other rustup proxies defensively.
+const RUSTUP_PROXIED = new Set(['cargo', 'rustc', 'rustdoc', 'rustfmt'])
+
+// The $CARGO_HOME/bin/<cmd> rustup proxy for a rust command, or '' when the
+// command isn't rustup-driven / the proxy is absent or is itself a firewall
+// shim. Preferred over the bare-PATH walk so a Homebrew cargo can't shadow the
+// toolchain-aware proxy.
+export function rustupProxyFor(cmd) {
+  if (!RUSTUP_PROXIED.has(cmd)) {
+    return ''
+  }
+  const cargoHome = process.env.CARGO_HOME || path.join(os.homedir(), '.cargo')
+  const proxy = path.join(cargoHome, 'bin', IS_WINDOWS ? `${cmd}.exe` : cmd)
+  return isExecutable(proxy) && !isFirewallShim(proxy) ? proxy : ''
+}
+
 // Resolve a command's real path. For a fleet-RACKED tool (uv / pnpm / npm),
 // return the PINNED racked binary's absolute path — so the sfw shim wraps the
 // pinned version and a stray Homebrew/corepack copy that wins bare-PATH
 // resolution can NEVER shadow it (the bug path-tools-are-at-pinned-version
-// guards). For a non-racked tool, fall back to a bare-PATH `command -v` lookup
-// with the bin (shim) dir stripped, so we wrap the ACTUAL tool, not our own
-// shim. Returns '' when not found.
+// guards). For a rustup-driven tool (cargo), return the $CARGO_HOME/bin proxy
+// so rust-toolchain.toml is honored. For any other tool, fall back to a
+// bare-PATH `command -v` lookup with the bin (shim) dir stripped, so we wrap
+// the ACTUAL tool, not our own shim. Returns '' when not found.
 export function resolveReal(cmd) {
   const racked = rackedBinFor(cmd)
   if (racked) {
     return racked
+  }
+  const rustup = rustupProxyFor(cmd)
+  if (rustup) {
+    return rustup
   }
   // Inline of the `which` algorithm socket-lib's whichSync wraps (the bootstrap
   // is dep-free, so the package itself can't be imported): walk PATH for an

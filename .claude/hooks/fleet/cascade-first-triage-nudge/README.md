@@ -20,7 +20,7 @@ wheelhouse" / "incomplete cascade").
 
 Member repos hold byte-copies of wheelhouse-canonical content. A missing or
 unregistered canonical artifact in a member is almost always an **incomplete
-cascade** (the cascade skips a fleet dir whose template source is git-dirty),
+cascade** — the cascade skips a fleet dir whose template source is git-dirty —
 not a real bug. Debugging or hand-patching the member's copy wastes cycles on
 code you don't own there — the fix lives upstream in the wheelhouse template,
 and re-cascading propagates it.

@@ -18,6 +18,8 @@ import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { validateSchema } from '@socketsecurity/lib-stable/schema/validate'
 
+import { lockstepManifestCandidates } from '../paths.mts'
+
 import { LockstepManifestSchema } from './schema.mts'
 import type { Row, Site, Upstream } from './schema.mts'
 
@@ -51,19 +53,19 @@ export function readManifest(manifestPath: string): Manifest {
 }
 
 /**
- * Resolve the manifest tree's ROOT file for a repo: `<root>/lockstep.json`
- * when present (the shim-plus-includes layout), else
- * `<root>/.config/lockstep.json` (repos that moved root configs under
- * .config/ without a shim — socket-btm). The harness and auto-bump both
- * resolve through this so a config-dir migration can't strand them on a
- * hardcoded path.
+ * Resolve the manifest tree's ROOT file for a repo, in preference order:
+ * `<root>/lockstep.json` (the shim-plus-includes layout), then the segregated
+ * `<root>/.config/repo/lockstep.json` (the manifest is repo-owned content —
+ * `.config/repo/` holds it, `.config/fleet/lockstep.schema.json` holds the
+ * fleet-identical schema), then the legacy loose `<root>/.config/lockstep.json`
+ * for repos not yet migrated. The harness and auto-bump both resolve through
+ * this so a config-dir migration can't strand them on a hardcoded path.
  */
 export function resolveManifestRoot(repoRoot: string): string {
-  const atRoot = path.join(repoRoot, 'lockstep.json')
-  if (existsSync(atRoot)) {
-    return atRoot
-  }
-  return path.join(repoRoot, '.config', 'lockstep.json')
+  const candidates = lockstepManifestCandidates(repoRoot)
+  return (
+    candidates.find(p => existsSync(p)) ?? candidates[candidates.length - 1]!
+  )
 }
 
 /**

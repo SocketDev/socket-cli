@@ -172,6 +172,7 @@ export const check = editGuard(
 
 export const hook = defineHook({
   bypass: ['function-declaration'],
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

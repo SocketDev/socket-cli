@@ -2,8 +2,8 @@
  * @file Source module for the dep-0 fleet bundle installer: the install
  *   pipeline (files / segments / workspace-segment), package.json wiring, thin
  *   mode + stale-prune, and the settings / applied-ref readers. Built into the
- *   single distributed `bootstrap/fleet.mjs`. Dep-0: node: builtins + the
- *   lib-stable logger only (never the in-repo socket-lib).
+ *   single distributed `bootstrap/fleet.mjs`. Dep-0: node: builtins + lib-stable
+ *   (logger + safe-delete) only (never the in-repo socket-lib).
  */
 
 // socket-lint: allow source-method-order -- ordered by the install pipeline (files → segments → workspace → wire → thin → prune → settings), mirroring the dep-0 fetcher's call-flow rather than alphabetized.
@@ -13,13 +13,13 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
-  rmSync,
   writeFileSync,
 } from 'node:fs'
 // oxlint-disable-next-line socket/prefer-spawn-over-execsync -- dep-0 bare-node fetcher (documented invariant: never imports in-repo socket-lib): `git rm --cached` runs via node:child_process, and execFileSync's throw-on-nonzero is caught locally — the lib spawn wrapper (async, non-throwing) would re-plumb the error handling.
 import { execFileSync } from 'node:child_process'
 import path from 'node:path'
 
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import {
@@ -403,7 +403,7 @@ export function pruneStaleFleetFiles(
       // walkFiles returns OS-separated paths; manifest keys are '/'-joined.
       const key = normalizeBundlePath(rel)
       if (!kept.has(key)) {
-        rmSync(path.join(dest, rel), { force: true })
+        safeDeleteSync(path.join(dest, rel))
         pruned += 1
       }
     }
@@ -493,6 +493,6 @@ export function writeAppliedRef(dest: string, ref: string): void {
   // state lives only under node_modules/.cache/ (out of the tracked tree).
   const legacy = path.join(dest, LEGACY_APPLIED_MARKER)
   if (existsSync(legacy)) {
-    rmSync(legacy, { force: true })
+    safeDeleteSync(legacy)
   }
 }

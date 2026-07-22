@@ -58,7 +58,7 @@ This guard is the **edit-time block**. It complements:
 - `socket/no-eslint-biome-config-ref` — **reports** stale string refs to legacy
   tools in TS/JS source (lint rule).
 - `scripts/fleet/check/linters-are-oxlint-oxfmt-only.mts` — gates **committed
-  state** (a hard gate in `check --all`).
+  state** — a hard gate in `check --all`.
 
 ## Fix
 

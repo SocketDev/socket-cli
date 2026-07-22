@@ -36,7 +36,7 @@ A module belongs in `_shared/` when:
 2. The logic is self-contained — no Claude Code hook lifecycle (`process.stdin`, exit codes, blocking semantics).
 3. Test coverage lives in `_shared/test/` alongside the helper.
 
-If only one hook uses it, keep it inline in that hook's directory. If three or more hooks need it across `.claude/hooks/` AND `.git-hooks/`, escalate it to `_helpers.mts` (the cross-boundary shared module) instead.
+If only one hook uses it, keep it inline in that hook's directory. If three or more hooks need it across `.claude/hooks/` AND `.git-hooks/`, escalate it to `_helpers.mts` — the cross-boundary shared module — instead.
 
 ## Not a hook
 

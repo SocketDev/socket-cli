@@ -21,7 +21,7 @@ Quoted spans are stripped before matching, so the hook doesn't self-fire when th
 
 ## Why it blocks
 
-Unlike most `Stop` reminders, this one runs in **blocking** mode. The assistant must continue the turn and either (a) prove the blame with hard evidence (a quoted user message, a `git reflog` entry, a commit hash) or (b) keep investigating the real cause (its own script, or a parallel session) via `git log --oneline -8`, `git log -S`, pre-commit phases in isolation, and a `template/` diff. `stop_hook_active` suppresses it after the first fire, so it triggers at most once per stop chain.
+Unlike most `Stop` reminders, this one runs in **blocking** mode. The assistant must continue the turn and either (a) prove the blame with hard evidence — a quoted user message, a `git reflog` entry, a commit hash — or (b) keep investigating the real cause — its own script, or a parallel session — via `git log --oneline -8`, `git log -S`, pre-commit phases in isolation, and a `template/` diff. `stop_hook_active` suppresses it after the first fire, so it triggers at most once per stop chain.
 
 ## Test
 

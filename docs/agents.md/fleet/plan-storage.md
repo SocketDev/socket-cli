@@ -61,7 +61,7 @@ Do NOT:
 
 Plans capture state: what we're about to do, what we've ruled out, what the LOC estimates are. State decays the moment a commit lands. A plan tracked in git rots into "this file describes what main looked like 4 months ago" lies that future-you trusts. Keeping plans local-only forces the work to live in:
 
-- The **code** (the actual implementation is the source of truth).
+- The **code** — the actual implementation is the source of truth.
 - **Commit messages** (capture the why at the moment the change ships).
 - **CHANGELOG** (capture the consumer-visible diff at release time).
 

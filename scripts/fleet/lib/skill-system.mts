@@ -73,6 +73,7 @@ export const FLEET_SKILL_CATALOG: Readonly<Record<string, SkillDefinition>> = {
   'optimizing-webassembly-performance': { family: 'build', mode: 'mutating' },
   'patching-findings': { family: 'security', mode: 'mutating' },
   'plugging-promise-race': { family: 'build', mode: 'mutating' },
+  'property-and-fuzz-testing': { family: 'build', mode: 'mutating' },
   prose: { family: 'orient', mode: 'mutating' },
   pushing: { family: 'ship', mode: 'mutating' },
   'refreshing-history': { family: 'fleet', mode: 'mutating' },

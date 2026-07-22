@@ -107,6 +107,7 @@ export const check = bashGuard((command, payload) => {
 
 export const hook = defineHook({
   bypass: ['shallow-clone'],
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

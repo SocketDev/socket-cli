@@ -36,7 +36,7 @@ gh api "repos/{owner}/{repo}/pulls/<PR#>/comments/<comment-id>/replies" \
   -X POST -f body="…"
 ```
 
-After replying, **resolve the thread** (the reply alone doesn't auto-resolve — resolution is a GraphQL mutation):
+After replying, **resolve the thread**: the reply alone doesn't auto-resolve — resolution is a GraphQL mutation:
 
 ```bash
 # Step 1: get the thread node ID (PRRT_…) for a given comment databaseId.
@@ -67,7 +67,7 @@ mutation($threadId: ID!) {
 ### When to resolve
 
 - **`real`, fixed** — resolve after the fix commit lands and the reply is posted.
-- **`already-fixed`** — resolve immediately after the reply (the fix already exists).
+- **`already-fixed`** — resolve immediately after the reply, the fix already exists.
 - **`false-positive`** — resolve immediately after the reply, _unless_ the verdict is contested by the reviewer.
 - **`wont-fix`** — do NOT resolve. The reviewer decides; leave it open as an open question.
 

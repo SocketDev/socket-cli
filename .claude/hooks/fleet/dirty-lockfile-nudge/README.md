@@ -26,7 +26,7 @@ never triggers a `git status` probe.
 
 **Distinct from [`stale-node-modules-nudge`](../stale-node-modules-nudge/):**
 that one reacts to a `Cannot find package` resolution error in command
-OUTPUT (a dangling pnpm symlink after a worktree removal). This one
+OUTPUT — a dangling pnpm symlink after a worktree removal. This one
 reacts to a dirty lockfile in `git status` (a reconcile-needed drift).
 Different signal, different fix surface.
 

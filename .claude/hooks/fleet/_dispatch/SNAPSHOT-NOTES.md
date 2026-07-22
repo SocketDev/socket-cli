@@ -9,7 +9,7 @@ runtime `loadBundleB()` splice anymore; the frozen `dispatch()` runs the whole
 set. Built + boots + byte-equivalent to the live per-hook path on Node 22, 24,
 26 (snapshot == cold dispatch.mts == compile-cache index.cjs).
 
-## Migrating the last 10 (the prior hybrid remainder) into the frozen bundle
+## Migrating the last 10 — the prior hybrid remainder — into the frozen bundle
 
 The 10 that previously could not freeze — 8 acorn-WASM guards + check-new-deps
 (SDK) + brew-supply-chain-guard (semver) — are now all snapshot-safe via lazy
@@ -96,7 +96,7 @@ The prior bundle-B 10 (8 acorn-WASM + check-new-deps + brew-supply-chain-guard)
 are now snapshot-safe and frozen into bundle A — see the migration section
 above. No hook carries `@dispatch-snapshot-exclude`; nothing is irreducible.
 
-## Wiring — single bundle (the hybrid `loadBundleB` is gone)
+## Wiring — single bundle: the hybrid `loadBundleB` is gone
 
 The snapshot entry's `deserializeMain()` no longer splices a second bundle: every
 hook is in the frozen `DISPATCH_TABLE`, so the entry just reads the event arg,
@@ -108,7 +108,7 @@ The one build-step carry-over: rolldown leaves the acorn bindgen's
 `createRequire(...)('./acorn-bindgen.cjs')` external (not inlined), so the build
 copies `acorn-bindgen.cjs` + `acorn.wasm` next to the bundle (gitignored; source
 of truth `_shared/acorn/`). A snapshot-booted process resolves the bindgen via
-the bundled createRequire (its anchor `__filename` freezes to the bundle dir),
+the bundled createRequire — its anchor `__filename` freezes to the bundle dir —
 and the lazy bindgen reads `acorn.wasm` from `path.join(__dirname, 'acorn.wasm')`
 — both resolve to the frozen `_dispatch/` dir.
 
@@ -184,7 +184,7 @@ What stays a PROTOTYPE in this worktree vs the permanent home:
 
 ## Build / boot / equivalence at full coverage
 
-Built with each Node major (the blob is Node-major + platform + V8-tag keyed):
+Built with each Node major — the blob is Node-major + platform + V8-tag keyed:
 
 - **Build:** `node scripts/fleet/build-hook-snapshot.mts` succeeds on 22, 24, 26
   (only the benign `node:module` builder warning).
@@ -233,19 +233,19 @@ supersedes — it is no longer wired anywhere.)
 
 It resolves the fast path from two build-time-FROZEN sidecars written next to it
 (`build-snapshot-launcher.mts`), mirroring `dispatch-snapshot-entry.mts`'s
-DISPATCH_DIR_FROZEN model: `node.path` (the node that built the blob) and
+DISPATCH_DIR_FROZEN model: `node.path` — the node that built the blob — and
 `snapshot-blob.path` (the content-keyed blob). Reading a frozen line beats
 re-deriving the node-ver × arch × v8tag × uid × content-hash key in C and keeps
 the launcher ~null-cost. Fail-open is total — a missing/blank sidecar, a vanished
 blob, or any error falls open to `node index.cjs <Event>`, the always-correct
 compile-cache path (same fail-open target `snapshot-loader.cjs` uses).
 
-**FAIL-OPEN COVERAGE — now FULL (the hybrid caveat is retired):** with all 190
+**FAIL-OPEN COVERAGE — now FULL, the hybrid caveat is retired:** with all 190
 hooks in the single frozen bundle, `index.cjs` requires `bundle.cjs` = **the same
 full 190-hook set** the snapshot freezes (both compile from `dispatch-table.mts`
 via `dispatch-entry.mts` → `runDispatcherCli`). So a launcher fail-open to
 `node index.cjs <Event>` now runs the COMPLETE guard set — there is no longer a
-"10 B-hooks absent on fail-open" gap (the prior hybrid's `bundle-b.cjs` is gone).
+"10 B-hooks absent on fail-open" gap — the prior hybrid's `bundle-b.cjs` is gone.
 The launcher's fail-open target is fully equivalent to the fast path. (Confirmed:
 `snapshot blob == index.cjs == live _shared/dispatch.mts`, all 190 hooks, every
 fixture below, on Node 22 / 24 / 26.)
@@ -258,7 +258,7 @@ execv) by pointing it at `/usr/bin/true`:
 | variant | mean ± σ |
 | --- | --- |
 | launcher → true (self-locate + 2 sidecars + execv) | 9.6 ± 1.7 ms |
-| bare execv → true (a C `execv` and nothing else) | 8.2 ± 2.2 ms |
+| bare execv → true: a C `execv` and nothing else | 8.2 ± 2.2 ms |
 | `/usr/bin/true` (no exec hop) | 3.8 ± 1.2 ms |
 
 So the launcher adds **~1.4 ms** over a bare `execv` — under the ≤2 ms target.
@@ -290,7 +290,7 @@ index.cjs, all PASS**, on five fixtures spanning:
   pointer-comment fixture — its comment-block walk parses the edit via the
   vendored acorn-wasm, confirming the WASM instantiates + parses an AST
   POST-deserialize from the frozen module → a `notify`), and
-  `options-param-naming-guard` (an `opts`-named param → `block`, exit 2);
+  `options-param-naming-guard` — an `opts`-named param → `block`, exit 2;
 - the **SDK** hook `check-new-deps` (the lazy `await import('@socketsecurity/
   sdk-stable')` path; offline allow-path fixture, hook present + runs identically);
 - the **semver** hook `brew-supply-chain-guard` — verified BOTH branches: an allow
@@ -351,11 +351,11 @@ fail-open.
 
 ## Provisioning — local setup + the CI image-bake
 
-- **Local dev (the warm win after setup):** `pnpm setup-all` builds the blob +
+- **Local dev — the warm win after setup:** `pnpm setup-all` builds the blob +
   the host launcher and wires the live settings (POSIX). The blob is
   node-major × arch × V8-tag keyed (~18–21 MB/platform), lives in `os.tmpdir()`,
   and is NEVER committed — it is built per environment.
-- **CI / ephemeral / cold containers (the cold 1.5× win):** bake the blob into
+- **CI / ephemeral / cold containers — the cold 1.5× win:** bake the blob into
   the container IMAGE LAYER once, so a cold/ephemeral runner boots from a
   pre-built blob without paying the build. Build it into the image as a layer
   step keyed to the image's node:
@@ -397,4 +397,4 @@ launcher fails open to `node index.cjs` byte-equivalently.
   see `snapshot-cache-path.cjs`, which cites
   `https://github.com/nodejs/node/blob/v26.4.0/src/compile_cache.cc#L28-L59`.
 - `[Foreign]`-handle / `WebAssembly is not defined` builder constraints: observed
-  empirically on Node v22.21.1, v24.14.1, v26.3.1 (the errors above are verbatim).
+  empirically on Node v22.21.1, v24.14.1, v26.3.1 — the errors above are verbatim.

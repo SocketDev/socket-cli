@@ -133,6 +133,7 @@ export const check = editGuard((filePath, content, payload) => {
 
 export const hook = defineHook({
   bypass: ['nested-gitignore'],
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'MultiEdit', 'Write'],

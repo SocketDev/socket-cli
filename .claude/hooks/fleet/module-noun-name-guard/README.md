@@ -6,7 +6,7 @@ Blocks **creating** a new `src/` module whose filename is a verb-phrase action �
 
 ## Allowed (passes)
 
-- Single-word names — `manifest.ts`, `normalize.ts` (a one-word verb reads as the domain).
+- Single-word names — `manifest.ts`, `normalize.ts`: a one-word verb reads as the domain.
 - Noun-phrase names — `package-json.ts` (first segment isn't an action verb).
 - Predicate prefixes — `is-number.ts`, `has-foo.ts`.
 - Exempt stems — `index`, `types`, `constants`, `primordials`; `<module>.test.mts`; `.d.ts`.

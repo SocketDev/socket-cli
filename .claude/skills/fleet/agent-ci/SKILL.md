@@ -51,7 +51,7 @@ When a step fails the run pauses (and the `run.paused` event carries the exact `
 node_modules/.bin/agent-ci retry --name <runner-name>
 ```
 
-Call the linked binary directly (the fleet form for an ad-hoc bin invocation, same as `node_modules/.bin/oxfmt` / `tsgo` in build scripts) — never `pnpm exec`/`npx`. Re-run from an earlier step with `--from-step <N>`. Repeat fix → retry until every job passes. Don't push to trigger remote CI when agent-ci can run it locally.
+Call the linked binary directly, the fleet form for an ad-hoc bin invocation, same as `node_modules/.bin/oxfmt` / `tsgo` in build scripts — never `pnpm exec`/`npx`. Re-run from an earlier step with `--from-step <N>`. Repeat fix → retry until every job passes. Don't push to trigger remote CI when agent-ci can run it locally.
 
 ## Reference
 

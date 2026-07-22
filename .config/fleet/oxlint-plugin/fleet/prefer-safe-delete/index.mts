@@ -58,7 +58,7 @@ const rule = {
     fixable: 'code',
     messages: {
       banned:
-        'fs.{{method}}() — use safeDelete / safeDeleteSync from @socketsecurity/lib-stable/fs/safe. The lib wrapper handles ENOENT, retries on EBUSY, and integrates with the rest of the fleet.',
+        '`{{method}}()` — use safeDelete / safeDeleteSync from @socketsecurity/lib-stable/fs/safe (bare `rmSync`/`unlinkSync` imported from node:fs counts too). The lib wrapper handles ENOENT, retries on EBUSY, and integrates with the rest of the fleet. In unit tests prefer an `os.tmpdir()` mkdtemp dir + `safeDeleteSync(dir)` over deleting individual files.',
     },
     schema: [],
   },
@@ -67,6 +67,45 @@ const rule = {
     const sourceCode = context.getSourceCode
       ? context.getSourceCode()
       : context.sourceCode
+
+    // Bare named-import delete calls (`import { rmSync } from 'node:fs'; rmSync(p)`)
+    // are the common test-cleanup shape and were slipping through the
+    // MemberExpression-only match below. Collect the LOCAL name each fs delete
+    // method is imported under (honoring `as` aliases) so a bare call to it is
+    // caught too. Only the node:fs family is trusted — a local `rm`/`unlink`
+    // helper is never flagged.
+    const fsDeleteLocals = new Map<string, string>()
+    const FS_SOURCES = new Set([
+      'fs',
+      'fs/promises',
+      'node:fs',
+      'node:fs/promises',
+    ])
+    const body = sourceCode.ast?.body
+    if (Array.isArray(body)) {
+      for (let i = 0, { length } = body; i < length; i += 1) {
+        const stmt = body[i]!
+        if (
+          stmt.type !== 'ImportDeclaration' ||
+          typeof stmt.source?.value !== 'string' ||
+          !FS_SOURCES.has(stmt.source.value) ||
+          !Array.isArray(stmt.specifiers)
+        ) {
+          continue
+        }
+        for (let j = 0, slen = stmt.specifiers.length; j < slen; j += 1) {
+          const spec = stmt.specifiers[j]!
+          if (
+            spec.type === 'ImportSpecifier' &&
+            spec.imported?.type === 'Identifier' &&
+            DELETE_METHODS.has(spec.imported.name) &&
+            spec.local?.type === 'Identifier'
+          ) {
+            fsDeleteLocals.set(spec.local.name, spec.imported.name)
+          }
+        }
+      }
+    }
 
     // One summary per replacement target — async (safeDelete) and
     // sync (safeDeleteSync) are separate import names from the same
@@ -117,24 +156,19 @@ const rule = {
       return true
     }
 
-    return {
-      CallExpression(node: AstNode) {
-        const callee = node.callee
-        if (callee.type !== 'MemberExpression') {
-          return
+    // Resolve the fs delete method this call invokes, or undefined if it isn't
+    // one. Covers `fs.rm` / `fs.promises.rm` / `promises.rm` / `fsPromises.rm`
+    // (member) AND a bare `rmSync(...)` whose name is a node:fs delete import
+    // (bare). A method call on an unrelated object (`child.unlink()`) or a local
+    // `rm`/`unlink` helper (not imported from fs) is skipped.
+    function detectFsDeleteMethod(callee: AstNode): string | undefined {
+      if (callee.type === 'MemberExpression') {
+        if (
+          callee.property.type !== 'Identifier' ||
+          !DELETE_METHODS.has(callee.property.name)
+        ) {
+          return undefined
         }
-        if (callee.property.type !== 'Identifier') {
-          return
-        }
-        if (!DELETE_METHODS.has(callee.property.name)) {
-          return
-        }
-
-        // Heuristic: callee.object should be a node that plausibly
-        // refers to the fs module (named `fs`, `promises`, etc.).
-        // Cover both `fs.rm`, `fs.promises.rm`, `promises.rm`,
-        // `fsPromises.rm`. Skip method calls on instances (e.g.
-        // `child.rm()` — not fs).
         const obj = callee.object
         const objName =
           obj.type === 'Identifier'
@@ -143,18 +177,23 @@ const rule = {
                 obj.property.type === 'Identifier'
               ? obj.property.name
               : undefined
+        if (!objName || !/^(fs|fsPromises|fsp|promises)$/.test(objName)) {
+          return undefined
+        }
+        return callee.property.name
+      }
+      if (callee.type === 'Identifier') {
+        return fsDeleteLocals.get(callee.name)
+      }
+      return undefined
+    }
 
-        if (!objName) {
+    return {
+      CallExpression(node: AstNode) {
+        const method = detectFsDeleteMethod(node.callee)
+        if (!method) {
           return
         }
-
-        // Match common fs aliases. Conservative — we'd rather miss a
-        // case than flag `someChild.unlink()` on an unrelated object.
-        if (!/^(fs|fsPromises|fsp|promises)$/.test(objName)) {
-          return
-        }
-
-        const method = callee.property.name
         const isSync = SYNC_METHODS.has(method)
         const replacement = isSync ? 'safeDeleteSync' : 'safeDelete'
 

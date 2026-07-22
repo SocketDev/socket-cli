@@ -51,7 +51,7 @@ Every file under `template/base/` MUST be reachable by exactly one channel:
 - **A native handler** — a per-file cascade handler outside the manifest byte
   lists: `.claude/settings.json` (merge-aware `settings-merge`), `README.md`
   (`readme-skeleton-drift`, per-repo content), and `.github/aw/actions-lock.json`
-  (the gh-aw `gh aw compile` companion, generated + committed per repo).
+  — the gh-aw `gh aw compile` companion, generated + committed per repo.
 
 An unclassified `template/base` file is a defect — it reaches no member and no
 release bundle, so it is authored-but-undistributed.

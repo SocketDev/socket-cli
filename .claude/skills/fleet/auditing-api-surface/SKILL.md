@@ -1,6 +1,6 @@
 ---
 name: auditing-api-surface
-description: Audit package exports for dead, internal-only, or weakly-consumed subpaths before pruning or major releases.
+description: Audit package exports for dead, internal-only, or weakly-consumed subpaths before pruning.
 user-invocable: true
 allowed-tools: Read, Grep, Glob, Bash(node:*), Bash(rg:*), Bash(git:*), Bash(gh:*)
 model: claude-haiku-4-5

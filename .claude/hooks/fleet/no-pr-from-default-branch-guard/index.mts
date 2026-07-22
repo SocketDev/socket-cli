@@ -65,6 +65,7 @@ export function stripOwnerPrefix(head: string): string {
 
 export const hook = defineHook({
   bypass: ['pr-from-default-branch'],
+  bypassOptional: true,
   check: bashGuard((command, payload) => {
     if (!isGhPrCreate(command)) {
       return undefined

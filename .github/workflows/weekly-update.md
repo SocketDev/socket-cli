@@ -29,9 +29,34 @@ engine:
 
 permissions:
   contents: read
+  issues: read
+  pull-requests: read
 
-# Per-run + 24h AI-credit budget (the safety win the legacy claude --print lacked).
+# Per-run + 24h AI-credit budget — the safety win the legacy claude --print lacked.
 max-ai-credits: 1500
+
+# Auth without a PAT: the Socket PR App mints a short-lived installation token
+# per run for gh-aw's checkout, the GitHub MCP server, and the safe-output PR.
+# gh aw compile injects actions/create-github-app-token and revokes at run end;
+# it falls back to GH_AW_GITHUB_TOKEN || GITHUB_TOKEN only when the app secrets
+# are absent (ignore-if-missing). The custom check-updates job below mints its
+# own token pre-checkout (gh-aw does not inject minting into custom jobs).
+tools:
+  github:
+    github-app:
+      client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
+      private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
+      owner: ${{ github.repository_owner }}
+
+checkout:
+  # No ignore-if-missing here: the creds-presence gate gh-aw generates for it
+  # nests a ${{ }} inside the safe-output checkout's `if:` (zizmor
+  # unsound-condition), and the github.token fallback would 404 on this private
+  # repo anyway. The SocketDev PR-App org creds are always present fleet-wide.
+  github-app:
+    client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
+    private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
+    owner: ${{ github.repository_owner }}
 
 # Firewall egress allowlist: gh-aw `defaults` (npm / github / apt / ghcr) + the
 # Anthropic engine API. Nothing else reaches the agent's network.
@@ -53,9 +78,60 @@ jobs:
       cadence: ${{ steps.cadence.outputs.cadence }}
       has-updates: ${{ steps.check.outputs.has-updates }}
     steps:
-      - uses: actions/checkout@v5.0.0
+      # Mint a Socket PR-App installation token pre-checkout so the private-repo
+      # fetch authenticates — the default GITHUB_TOKEN is denied by org policy
+      # ("Repository not found"). Secrets can't be read in `if:`, so reflect the
+      # key's presence into an output; the checkout falls back to github.token
+      # when the app secrets are absent.
+      - name: Detect PR-App credentials
+        id: pr_app_creds
+        shell: bash
+        env:
+          PR_APP_KEY: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
+        run: |
+          if [ -n "$PR_APP_KEY" ]; then
+            echo 'present=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'present=false' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Mint PR-App token
+        id: pr_app_token
+        if: steps.pr_app_creds.outputs.present == 'true'
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
-          persist-credentials: false
+          app-id: ${{ vars.SOCKET_PR_APP_ID }}
+          private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          # Least-privilege: this token only authenticates the read-only
+          # checkout fetch of THIS repo (zizmor github-app audit).
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: read
+      # Plain actions/checkout can't authenticate the private-repo git fetch in
+      # this environment (fatal: Repository not found). Use the same manual
+      # bootstrap the fleet CI uses: route context through env (no ${{ }} in the
+      # shell body — zizmor expression-injection), authorize the fetch inline via
+      # an x-access-token extraheader, and never persist it to .git/config.
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ steps.pr_app_token.outputs.token || github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_SHA}")
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+          else
+            git fetch "${FETCH_ARGS[@]}"
+          fi
+          git checkout -q --detach FETCH_HEAD
       - name: Determine cadence
         id: cadence
         shell: bash
@@ -83,6 +159,14 @@ jobs:
 # The agent commits inside its run; gh-aw packages them as a git bundle and a
 # safe_outputs job opens a signed (GitHub web-flow GPG) PR.
 safe-outputs:
+  # No ignore-if-missing on any github-app block: gh-aw's presence-gate for it
+  # emits `if: ${{ … secrets.X != '' }}`, which GitHub rejects (the `secrets`
+  # context is not valid in `if:`). The SocketDev PR-App org creds are always
+  # present fleet-wide, so the mint is unconditional.
+  github-app:
+    client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
+    private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
+    owner: ${{ github.repository_owner }}
   create-pull-request:
     title-prefix: 'chore(deps): '
     draft: true
@@ -103,6 +187,7 @@ safe-outputs:
       - '.npmrc'
       - 'pnpm-workspace.yaml'
       - '.gitmodules'
+      - '.config/repo/lockstep.json'
       - '.config/lockstep.json'
     # gh-aw protects manifests/lockfiles by default (supply-chain guard) with a
     # request_review block — but changing exactly those IS this workflow's job,

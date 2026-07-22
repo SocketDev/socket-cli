@@ -63,7 +63,7 @@ A non-primary worktree is removed ONLY when its tree is **clean** AND it has
 1. its branch is **fully merged** into `origin/<base>` (every commit is already
    an ancestor — spent), OR
 2. its branch is **gone from the remote** AND the worktree is **not ahead** of
-   the base (a never-shared local branch with no unpushed commits).
+   the base — a never-shared local branch with no unpushed commits.
 
 Everything else is **kept**:
 
@@ -80,7 +80,7 @@ Everything else is **kept**:
   clean-tree check, so it clears the submodule guard without discarding work.
 - **Relink after removal.** A `git worktree remove` can dangle the primary
   checkout's `node_modules` symlinks. After a `--fix` that removed anything, run
-  `pnpm i` in each affected repo's primary checkout (the engine names them).
+  `pnpm i` in each affected repo's primary checkout — the engine names them.
 - **Default branch fallback.** Base resolves via
   `git symbolic-ref refs/remotes/origin/HEAD` → `main` → `master`. Never
   hard-coded.

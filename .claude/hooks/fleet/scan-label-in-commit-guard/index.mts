@@ -212,6 +212,7 @@ export const check = bashGuard((command, payload: ToolCallPayload) => {
 
 export const hook = defineHook({
   bypass: ['scan-label-in-commit'],
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

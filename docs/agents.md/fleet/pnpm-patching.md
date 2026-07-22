@@ -1,6 +1,6 @@
 # pnpm patching to enable more deduping
 
-Forcing a duplicated package to its newest (ESM) major maximizes dedup and bundle quality: one copy, tree-shakeable. But a **non-format API break** across the collapse range blocks the force. A bundler resolves CJS↔ESM module format; it never repairs an API contract (a removed method, a changed signature, callback→promise). When that is the only thing between you and a single forced version, a **pnpm patch** restores the old surface onto the new version so the force is safe. Patch-for-compat turns a `do-not-collapse` or `scoped` verdict into a clean unscoped collapse.
+Forcing a duplicated package to its newest (ESM) major maximizes dedup and bundle quality: one copy, tree-shakeable. But a **non-format API break** across the collapse range blocks the force. A bundler resolves CJS↔ESM module format; it never repairs an API contract: a removed method, a changed signature, callback→promise. When that is the only thing between you and a single forced version, a **pnpm patch** restores the old surface onto the new version so the force is safe. Patch-for-compat turns a `do-not-collapse` or `scoped` verdict into a clean unscoped collapse.
 
 Keep the two concerns separate. The **override** (or the update) handles the dependency *requirement* — it collapses the tree to one version. The **patch** handles the *API contract* that the major change broke. The patch is not about the version; it is about the contract. A contract patch is equally valid whether the version arrived via an override-force, a security bump, or natural resolution.
 
@@ -36,7 +36,7 @@ The patch is inert without the force, and the force is unsafe without the patch.
 
 ## Code is law: the justified-patches invariant
 
-A pnpm patch is opaque (a diff against minified vendor code) and high-trust (it rewrites a dependency). So every `patchedDependencies` entry must be **justified**, enforced by `scripts/fleet/check/dedup-patches-are-justified.mts`:
+A pnpm patch is opaque — a diff against minified vendor code — and high-trust (it rewrites a dependency). So every `patchedDependencies` entry must be **justified**, enforced by `scripts/fleet/check/dedup-patches-are-justified.mts`:
 
 1. **Rationale annotation**: a `# dedup: <why>` comment on or above the entry, naming the API break it shims and the consumer that needs it (generic, no dated log per the dated-citation rule). An undocumented patch reads as a backdoor.
 2. **Patch file exists** at the referenced path.

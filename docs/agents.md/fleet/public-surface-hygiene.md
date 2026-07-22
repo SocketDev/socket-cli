@@ -20,7 +20,7 @@ Blocked inside comment syntax (string literals and real code are left alone):
 - **`/Users/<name>/…`** — an absolute home path (leaks the username + on-disk layout).
 - **`../socket-<repo>/…`** — a sibling fleet-repo relative path (presumes a parent dir that only exists on a dev box; see the no-cross-repo-relative-paths rule).
 
-Scope is SOURCE-code files only (`.rs`/`.ts`/`.mts`/`.js`/`.go`/`.py`/`.c`/`.h`/…). Markdown, docs, JSON/YAML, and the `.claude/` tree itself are out of scope — those surfaces reference these paths legitimately (a plan doc names a plan path).
+Scope is SOURCE-code files only (`.rs`/`.ts`/`.mts`/`.js`/`.go`/`.py`/`.c`/`.h`/…). Markdown, docs, JSON/YAML, and the `.claude/` tree itself are out of scope — those surfaces reference these paths legitimately: a plan doc names a plan path.
 
 Three surfaces enforce one rule (code is law): the edit-time `.claude/hooks/fleet/no-private-path-in-source-guard/` (bypass: `Allow private-path-in-source bypass`), the `socket/no-private-path-in-source` lint rule, and the commit-time `scripts/fleet/check/private-paths-are-absent.mts` full scan. The fix is always to remove the path from the comment and describe the constraint instead — not where a plan doc lives.
 

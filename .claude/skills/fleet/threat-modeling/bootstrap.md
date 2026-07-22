@@ -218,7 +218,7 @@ Then `checkpoint.mts save ./.threat-model-state 3 generalize --key stage --from
 
 ---
 
-## Stage 4 — Gap-fill (the part past vulns can't give you)
+## Stage 4 — Gap-fill: the part past vulns can't give you
 
 Past vulnerabilities are biased toward what's already been found. For **every
 section 3 entry point that has no section 4 row yet**, walk STRIDE and add the

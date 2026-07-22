@@ -128,6 +128,7 @@ export const check = editGuard((filePath, content, payload) => {
 export const hook = defineHook({
   bypass: ['other-linter'],
   bypassMode: 'manual',
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

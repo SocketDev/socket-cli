@@ -75,7 +75,7 @@ Lines removed: D
 
 ## When to skip
 
-- Pure dependency bumps (the bump is what `updating-lockstep` reviews).
+- Pure dependency bumps — the bump is what `updating-lockstep` reviews.
 - Branches with zero code changes (docs-only / config-only diffs unrelated to security).
 
 ## Source

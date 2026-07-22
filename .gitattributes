@@ -82,12 +82,11 @@ template/.claude/hooks/fleet/_shared/acorn/acorn.wasm binary
 .claude/rules/fleet linguist-generated=true
 .claude/skills/fleet linguist-generated=true
 .claude/workflows linguist-generated=true
-.codex/config.toml linguist-generated=true
-.codex/hooks.json linguist-generated=true
 .config/fleet/.markdownlint-cli2.jsonc linguist-generated=true
 .config/fleet/.prettierignore linguist-generated=true
 .config/fleet/egress-allowlist.json linguist-generated=true
 .config/fleet/git-authors.json linguist-generated=true
+.config/fleet/lockstep.schema.json linguist-generated=true
 .config/fleet/markdownlint-rules linguist-generated=true
 .config/fleet/oxfmtrc.json linguist-generated=true
 .config/fleet/oxlint-plugin/_shared linguist-generated=true
@@ -104,7 +103,6 @@ template/.claude/hooks/fleet/_shared/acorn/acorn.wasm binary
 .config/fleet/tsconfig.base.json linguist-generated=true
 .config/fleet/tsconfig.check.base.json linguist-generated=true
 .config/fleet/vitest.coverage.fleet.config.mts linguist-generated=true
-.config/lockstep.schema.json linguist-generated=true
 .config/repo/rolldown/define-guarded.mts linguist-generated=true
 .config/repo/rolldown/lib-stub.mts linguist-generated=true
 .config/repo/vitest.config.mts linguist-generated=true
@@ -125,6 +123,7 @@ template/.claude/hooks/fleet/_shared/acorn/acorn.wasm binary
 .github/actions/fleet/github-status-check linguist-generated=true
 .github/actions/fleet/install linguist-generated=true
 .github/actions/fleet/lib linguist-generated=true
+.github/actions/fleet/run-offline linguist-generated=true
 .github/actions/fleet/run-script linguist-generated=true
 .github/actions/fleet/setup linguist-generated=true
 .github/actions/fleet/setup-and-install linguist-generated=true

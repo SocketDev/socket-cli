@@ -1,6 +1,6 @@
 ---
 name: updating-hooks-dry
-description: Read-only DRY/KISS sweep of fleet hooks and oxlint rules for overlap, dead helpers, and consolidation candidates.
+description: Read-only DRY sweep of fleet hooks and oxlint rules for overlap and consolidation.
 user-invocable: true
 allowed-tools: Workflow, Task, Read, Grep, Glob, Write, AskUserQuestion, Bash(node scripts/fleet/check/shared-hook-helpers-are-used.mts:*), Bash(node scripts/fleet/check/hooks-have-no-guard-nudge-overlap.mts:*), Bash(node scripts/fleet/check/hook-registry-is-current.mts:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(wc:*), Bash(cat:*), Bash(head:*), Bash(tail:*)
 model: claude-opus-4-8
@@ -9,7 +9,7 @@ context: fork
 
 # updating-hooks-dry
 
-The fleet hook tree grows every time `codifying-disciplines` lands a new enforcer — and growth invites drift: two hooks that copy-paste the same logic instead of sharing a `_shared/` helper, a `_shared/` export nobody imports anymore, a lint rule and a hook both catching the identical AST shape, a 400-line hook doing one job its 80-line siblings do. This skill **finds** that bloat and writes a plan. It is **read-only and plan-only by design**: it applies nothing and opens no PR (a consolidation is a judgment call a human makes from the report). The one mechanical, safe gate — dead `_shared/` exports — is already a hard check (`shared-hook-helpers-are-used.mts`); this skill is the broader, advisory companion.
+The fleet hook tree grows every time `codifying-disciplines` lands a new enforcer — and growth invites drift: two hooks that copy-paste the same logic instead of sharing a `_shared/` helper, a `_shared/` export nobody imports anymore, a lint rule and a hook both catching the identical AST shape, a 400-line hook doing one job its 80-line siblings do. This skill **finds** that bloat and writes a plan. It is **read-only and plan-only by design**: it applies nothing and opens no PR — a consolidation is a judgment call a human makes from the report. The one mechanical, safe gate — dead `_shared/` exports — is already a hard check (`shared-hook-helpers-are-used.mts`); this skill is the broader, advisory companion.
 
 ## When to use
 
@@ -38,12 +38,12 @@ Scout the surface so the fan-out has a work-list:
 Run as a **`Workflow`** (sanctioned opt-in; pass the inventory as `args`). Four read-only scanner dimensions in parallel, then an adversarial verify, then synthesis. Each scanner uses `agentType: 'Explore'` (read-only) and returns a structured finding list.
 
 1. **`phase('Scan')` — four parallel scanners**, each over the hook + lint-rule tree:
-   - **Copy-paste clusters** — hooks whose decision logic is near-identical (same parse → same match → same emit shape) and should absorb a `_shared/` helper. Compare STRUCTURE (the AST shape via `_shared/shell-command.mts` concepts), not just text. Schema per finding: `{ kind: 'copy-paste', members: [file:line], sharedHelperProposed, evidence }`.
-   - **Dead `_shared/` exports** — start from `shared-hook-helpers-are-used.mts` output; for each candidate, confirm whether it's genuinely unused or consumed out-of-tree (the check is advisory precisely because some `_shared/` exports are consumed by wheelhouse-root or sibling repos). Schema: `{ kind: 'dead-export', symbol, file, confirmedUnused: bool, evidence }`.
+   - **Copy-paste clusters** — hooks whose decision logic is near-identical (same parse → same match → same emit shape) and should absorb a `_shared/` helper. Compare STRUCTURE — the AST shape via `_shared/shell-command.mts` concepts — not just text. Schema per finding: `{ kind: 'copy-paste', members: [file:line], sharedHelperProposed, evidence }`.
+   - **Dead `_shared/` exports** — start from `shared-hook-helpers-are-used.mts` output; for each candidate, confirm whether it's genuinely unused or consumed out-of-tree — the check is advisory precisely because some `_shared/` exports are consumed by wheelhouse-root or sibling repos. Schema: `{ kind: 'dead-export', symbol, file, confirmedUnused: bool, evidence }`.
    - **Overlapping enforcers** — two enforcers catching the same shape: a lint rule + a hook for an identical AST pattern where one suffices, or two lint rules with subsuming selectors. Schema: `{ kind: 'overlap', enforcers: [name], subsumes, evidence }`.
    - **KISS smells** — a hook/rule far longer than its siblings doing one job; raw regex on a command line where the `_shared/` AST parser exists (the `no-hook-cmd-regex` concern); a hook reimplementing a `_shared/` helper inline. Schema: `{ kind: 'kiss', file, smell, siblingNorm, evidence }`.
 2. **`phase('Verify')` — adversarial pass**: per finding, a skeptic tries to REFUTE it — two guards that look similar but guard genuinely different surfaces are NOT a duplicate (e.g. a PreToolUse edit-guard vs a Stop reminder for related-but-distinct concerns the overlap check already knows are fine); a `_shared/` export "unused" in-tree may be consumed by wheelhouse-root. Drop a finding unless the skeptic confirms it's a real consolidation opportunity. Default to refuted when uncertain.
-3. **Synthesize** — a final `agent()` writes the ranked report: highest-leverage consolidations first (a `_shared/` helper that would absorb 4 hooks beats a one-off), each with evidence (`file:line`), the proposed consolidation, and a concrete diff sketch.
+3. **Synthesize** — a final `agent()` writes the ranked report: highest-leverage consolidations first — a `_shared/` helper that would absorb 4 hooks beats a one-off — each with evidence (`file:line`), the proposed consolidation, and a concrete diff sketch.
 
 Return `{ report, findingCount, byKind }`.
 

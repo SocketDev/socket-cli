@@ -58,7 +58,7 @@ The conservative contract makes an unattended `--fix` safe: its only mutation is
    fleet-canonical, sync-managed).
 3. **Fat shim** — an `external/<dep>.js` exceeds the re-export-shim size cap, meaning it
    likely re-vendors its own tree instead of delegating to a shared `*-pack` bundle
-   (the `*-pack.js` consolidation bundles are exempt). Reported for a human.
+   — the `*-pack.js` consolidation bundles are exempt. Reported for a human.
 
 ## Why external/ rarely needs hand-deduping
 

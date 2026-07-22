@@ -19,7 +19,7 @@ A path is **foreign** when all hold (see `_shared/foreign-paths.mts`):
 ## Why
 
 When two sessions share one `.git/` checkout, a session running `pnpm run check`
-can see dirty files it never touched (a parallel agent's in-flight migration) and
+can see dirty files it never touched — a parallel agent's in-flight migration — and
 mistake them for its own regression — then commit them. Nothing warns it. This
 hook makes the signal visible at the turn that surfaces it.
 

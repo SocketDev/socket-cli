@@ -15,11 +15,11 @@ Pass `--dry-run` to report without acting. Pass `--all` instead of `--target <pa
 
 ## No-layering rule
 
-🚨 **A repo carries at most one in-flight cascade at a time.** When a new cascade wave starts (a fresh `chore(wheelhouse): cascade template@<sha>` is being prepared), any pre-existing local-only cascade commits get discarded, not stacked on top of.
+🚨 **A repo carries at most one in-flight cascade at a time.** When a new cascade wave starts — a fresh `chore(wheelhouse): cascade template@<sha>` is being prepared — any pre-existing local-only cascade commits get discarded, not stacked on top of.
 
-The shape this rule prevents: a repo accumulates `chore(wheelhouse): cascade template@A`, then `@B`, then `@C` locally without any of them landing on origin. Each successive wave is a strict superset of the prior (template is monotonic on the relevant paths), so layering 3 unpushed cascade commits buys nothing over discarding A + B + landing C. The layered state is also hostile to merge resolution when origin diverges (a parallel session lands its own `@D` to origin). Every conflict has to be resolved against 3 cascade commits instead of 1.
+The shape this rule prevents: a repo accumulates `chore(wheelhouse): cascade template@A`, then `@B`, then `@C` locally without any of them landing on origin. Each successive wave is a strict superset of the prior (template is monotonic on the relevant paths), so layering 3 unpushed cascade commits buys nothing over discarding A + B + landing C. The layered state is also hostile to merge resolution when origin diverges — a parallel session lands its own `@D` to origin. Every conflict has to be resolved against 3 cascade commits instead of 1.
 
-Same supersession check as below, but the comparison is **`local-commit-N` vs `local-commit-N+1`**. When wave N+1 is being prepared, wave N's local-only commit must already have a strict-ancestor relationship to N+1's template SHA. If it does (the common case where template moves forward), N gets discarded as part of N+1's setup. If it doesn't, the script bails because something unusual is going on.
+Same supersession check as below, but the comparison is **`local-commit-N` vs `local-commit-N+1`**. When wave N+1 is being prepared, wave N's local-only commit must already have a strict-ancestor relationship to N+1's template SHA. If it does — the common case where template moves forward — N gets discarded as part of N+1's setup. If it doesn't, the script bails because something unusual is going on.
 
 The wheelhouse cascade enforces this by running `scripts/repo/cleanup-stranded.mts` against the target repo **before** creating wave N+1's worktree. Same call site as the supersession cleanup below, with the "vs origin" check extended to "vs the next-wave SHA we're about to use." A new transient cascade commit at the wrong base is blocked at commit time by `.claude/hooks/fleet/no-cascade-transient-git-guard/`.
 
@@ -59,7 +59,7 @@ Only worktrees that match both conditions are removed. Other worktrees (task bra
 
 ## Manual invocation
 
-The script lives at `scripts/fleet/cleanup-stranded.mts`. You don't normally run it directly (the cascade does that), but it's safe to invoke ad-hoc:
+The script lives at `scripts/fleet/cleanup-stranded.mts`. You don't normally run it directly — the cascade does that — but it's safe to invoke ad-hoc:
 
 ```bash
 # Dry-run against one repo (substitute the actual repo path).

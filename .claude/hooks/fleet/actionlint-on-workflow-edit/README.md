@@ -2,7 +2,7 @@
 
 PostToolUse Edit/Write hook that runs local `actionlint` against any
 `.github/workflows/*.y*ml` file after the edit. Reports any actionlint
-errors via stderr; never blocks (the edit already landed).
+errors via stderr; never blocks — the edit already landed.
 
 ## Why
 

@@ -18,7 +18,7 @@ turn that created it, so the push happens before the next reset.
   `git symbolic-ref refs/remotes/origin/HEAD`, falling back main → master).
 - `git rev-list --count origin/<branch>..HEAD` is greater than zero.
 
-It does NOT fire on a feature branch (an unpushed feature branch is normal) or
+It does NOT fire on a feature branch — an unpushed feature branch is normal — or
 when nothing is ahead of origin.
 
 ## What to do

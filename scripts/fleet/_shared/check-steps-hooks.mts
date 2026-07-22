@@ -83,6 +83,10 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
     // (the cascade's tombstones prune the historical flat locations). Same
     // fleet/repo split as .claude/hooks/ and the oxlint plugin.
     () => run('node', ['scripts/fleet/check/actions-are-segmented.mts']),
+    // Native (rust/go/c++) unit tests run network-off: a workflow that runs
+    // cargo test / go test / ctest must gate the run through the run-offline
+    // action (loopback-only netns) — the compiled-language nock equivalent.
+    () => run('node', ['scripts/fleet/check/native-tests-are-network-off.mts']),
     // Single-source for the co-located app-token minter: every action dir's
     // mint-app-installation-token.mjs copy must be byte-identical (the inlined
     // form of single-source-of-truth — a drifted copy mints with stale logic).
@@ -108,6 +112,12 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
     // JSDoc — oxfmt's JSDoc reflow drops markdown content on `format`.
     () =>
       run('node', ['scripts/fleet/check/markdown-doc-headers-are-plain.mts']),
+    // Prose in tracked markdown must not tuck an explanatory clause into a
+    // parenthetical appositive aside — rewrite with a comma, colon, or em-dash.
+    () =>
+      run('node', [
+        'scripts/fleet/check/prose-parenthetical-asides-are-absent.mts',
+      ]),
     // Commit-time twin of markdown-filename-guard: every tracked .md has a
     // canonical filename (lowercase-hyphens, or an allowlisted SCREAMING_CASE name
     // only at root/docs/.claude). Reuses the guard's classifyMarkdownPath predicate.

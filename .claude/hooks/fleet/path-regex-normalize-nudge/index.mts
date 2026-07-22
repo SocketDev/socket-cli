@@ -205,6 +205,7 @@ export const check = (payload: ToolCallPayload): GuardResult => {
 export const hook = defineHook({
   bypass: ['path-regex-normalize'],
   bypassMode: 'manual',
+  bypassOptional: true,
   check,
   event: 'Stop',
   scope: 'convention',

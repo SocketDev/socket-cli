@@ -15,7 +15,7 @@ disk. They surface in:
 - Spotlight indexing churn
 
 The right fix is to delete them, not just ignore them. The hook runs
-at every turn-end (the same time `stale-process-sweeper` runs), so
+at every turn-end — the same time `stale-process-sweeper` runs — so
 files Finder created mid-session are gone before the next turn.
 
 ## Behavior

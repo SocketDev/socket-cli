@@ -146,6 +146,7 @@ export const check = bashGuard(command => {
 
 export const hook = defineHook({
   bypass: ['tsx'],
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

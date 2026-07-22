@@ -114,7 +114,7 @@ on:
         description: 'DEPRECATED alias of SOCKET_API_TOKEN. Pass `SOCKET_API_TOKEN:` instead. Tracked for one cycle so existing callers keep working.'
         required: false
       SOCKET_PR_APP_PRIVATE_KEY:
-        description: 'GitHub PR-App private key. When provided, the GitHub-side steps (lockfile commit, release tag) authenticate as the PR bot via github-pr-app-token instead of the default GITHUB_TOKEN — the client id comes from the SOCKET_PR_APP_CLIENT_ID variable. An app-token-created tag also triggers downstream tag workflows, which a github.token one does not. Omit to fall back to github.token (external callers stay working).'
+        description: 'GitHub PR-App private key. When provided, the GitHub-side steps (lockfile commit, release tag) authenticate as the PR bot via github-pr-app-token instead of the default GITHUB_TOKEN — the client id comes from the SOCKET_PR_CLIENT_ID variable. An app-token-created tag also triggers downstream tag workflows, which a github.token one does not. Omit to fall back to github.token (external callers stay working).'
         required: false
 
 permissions: {}
@@ -186,7 +186,7 @@ jobs:
         if: steps.pr_app_creds.outputs.present == 'true'
         uses: ./.github/actions/fleet/github-pr-app-token
         with:
-          client-id: ${{ vars.SOCKET_PR_APP_CLIENT_ID }}
+          client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
           private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
 
@@ -452,7 +452,7 @@ jobs:
         if: steps.pr_app_creds.outputs.present == 'true'
         uses: ./.github/actions/fleet/github-pr-app-token
         with:
-          client-id: ${{ vars.SOCKET_PR_APP_CLIENT_ID }}
+          client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
           private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
       - name: Tag release (idempotent)

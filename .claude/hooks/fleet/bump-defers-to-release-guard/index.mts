@@ -23,7 +23,7 @@
 // export-surface evidence, authored a synthetic `refactor!:` commit to steer
 // the CHANGELOG generator, and ran the bump, all unilaterally.
 
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -37,26 +37,72 @@ import type { ToolCallPayload } from '../_shared/payload.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
-// True when the checked-out package.json carries a `-prerelease` version
-// hint (`X.Y.Z-prerelease`): the human wrote the release target into the
-// tree, so a non-major bump that consumes it is already user-authorized.
-export function committedVersionHint(): boolean {
-  const pkgPath = path.join(
-    process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd(),
-    'package.json',
+// True when a version string carries the `-prerelease` hint tag.
+function isPrereleaseHint(version: string | undefined): boolean {
+  return (
+    typeof version === 'string' &&
+    parseVersion(version)?.prerelease.join('.') === 'prerelease'
   )
+}
+
+// The `-prerelease` hint for a cargo repo, which carries its version in
+// Cargo.toml, not package.json: a workspace repo pins it under
+// `[workspace.package]`, a single-crate repo under a member's `[package]`
+// (`version.workspace = true` members defer to the workspace pin). Exported for
+// tests — takes the project dir so it needs no env.
+export function cargoVersionHint(dir: string): boolean {
   try {
-    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
-      version?: string
+    const rootToml = readFileSync(path.join(dir, 'Cargo.toml'), 'utf8')
+    const wsVersion = rootToml.match(
+      /\[workspace\.package\][^[]*?\nversion\s*=\s*"([^"]+)"/,
+    )?.[1]
+    if (isPrereleaseHint(wsVersion)) {
+      return true
     }
-    if (typeof pkg.version !== 'string') {
-      return false
-    }
-    const parsed = parseVersion(pkg.version)
-    return parsed?.prerelease.join('.') === 'prerelease'
+  } catch {}
+  let members: string[]
+  try {
+    members = readdirSync(path.join(dir, 'crates'))
   } catch {
     return false
   }
+  for (let i = 0, { length } = members; i < length; i += 1) {
+    let toml: string
+    try {
+      toml = readFileSync(
+        path.join(dir, 'crates', members[i]!, 'Cargo.toml'),
+        'utf8',
+      )
+    } catch {
+      continue
+    }
+    const pkgVersion = toml.match(
+      /\[package\][^[]*?\nversion\s*=\s*"([^"]+)"/,
+    )?.[1]
+    if (isPrereleaseHint(pkgVersion)) {
+      return true
+    }
+  }
+  return false
+}
+
+// True when the checked-out tree carries a `-prerelease` version hint
+// (`X.Y.Z-prerelease`) — in package.json (npm) or Cargo.toml (cargo). The human
+// wrote the release target into the tree, so a non-major bump that consumes it
+// is already user-authorized.
+export function committedVersionHint(): boolean {
+  const dir = process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
+  try {
+    const pkg = JSON.parse(
+      readFileSync(path.join(dir, 'package.json'), 'utf8'),
+    ) as {
+      version?: string
+    }
+    if (isPrereleaseHint(pkg.version)) {
+      return true
+    }
+  } catch {}
+  return cargoVersionHint(dir)
 }
 
 const BYPASS_PHRASE = 'Allow release-bump bypass'

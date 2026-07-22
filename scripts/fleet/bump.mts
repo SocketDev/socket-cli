@@ -29,8 +29,8 @@ import { gt } from '@socketsecurity/lib-stable/versions/compare'
 
 import {
   bumpLevelFor,
-  COMMIT_LOG_FORMAT,
   changelogHeading,
+  COMMIT_LOG_FORMAT,
   computeNextVersion,
   generateChangelogSection,
   parseConventionalCommits,
@@ -206,11 +206,17 @@ async function main(): Promise<void> {
     }
     level = releaseAs
   } else if (hinted) {
-    const currentMajor = pkg.version.split('.')[0]
-    if (hinted.split('.')[0] !== currentMajor) {
+    // Compare the hint's major against the LAST RELEASED version (`base`), not
+    // the manifest — `hinted` is the manifest with its suffix stripped, so its
+    // major always equals the manifest's; comparing them was dead code that let
+    // a `X.0.0-prerelease` hint smuggle a major past the "MAJOR never derived"
+    // rule.
+    const baseMajor = base.split('.')[0]
+    if (hinted.split('.')[0] !== baseMajor) {
       logger.fail(
-        `Version hint ${pkg.version} names a MAJOR jump — a major requires ` +
-          `the explicit --release-as major signal, not a hint.`,
+        `Version hint ${pkg.version} names ${hinted}, a MAJOR jump past the ` +
+          `last released version ${base} — a major requires the explicit ` +
+          `--release-as major signal, not a hint.`,
       )
       process.exitCode = 1
       return

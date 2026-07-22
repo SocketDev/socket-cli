@@ -45,7 +45,7 @@
  *   the fleet logger. The ONE exception is `load`, which writes raw
  *   `progress.json` to stdout: that is the resume protocol the calling skill
  *   parses back, and a logger prefix would corrupt it. `reset` confines its
- *   target to a `*-state` dir under cwd before `rmSync`.
+ *   target to a `*-state` dir under cwd before `safeDeleteSync`.
  */
 import {
   appendFileSync,
@@ -53,10 +53,11 @@ import {
   mkdirSync,
   readFileSync,
   renameSync,
-  rmSync,
   writeFileSync,
 } from 'node:fs'
 import path from 'node:path'
+
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 
@@ -277,7 +278,7 @@ export function cmdReset(argv: readonly string[]): number {
   }
   const dir = confinePath(argv[0]!, '-state')
   if (existsSync(dir)) {
-    rmSync(dir, { force: true, recursive: true })
+    safeDeleteSync(dir)
     logger.log(`checkpoint: removed ${dir}/`)
   }
   return 0

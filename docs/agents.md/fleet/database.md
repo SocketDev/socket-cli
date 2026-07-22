@@ -97,7 +97,7 @@ The `schema` import and every query built on `db` are identical between the two.
 
 There are two layers, and only one of them is Postgres-native:
 
-1. **Single connection-URL env var: an application convention, not a Postgres feature.** libpq defines no single-URL env var, and neither the `postgres.js` driver nor drizzle-kit auto-reads one. So `createDbFromEnv()` reads it and passes the string explicitly. Order: **`POSTGRES_URL` → `DATABASE_URL`** (the same precedence `node:smol-sql` uses). Prefer `POSTGRES_URL` (engine-specific, unambiguous when a service talks to more than one datastore); fall back to `DATABASE_URL` (the 12-factor / Heroku norm) so a single-DB host that only sets the generic name still works.
+1. **Single connection-URL env var: an application convention, not a Postgres feature.** libpq defines no single-URL env var, and neither the `postgres.js` driver nor drizzle-kit auto-reads one. So `createDbFromEnv()` reads it and passes the string explicitly. Order: **`POSTGRES_URL` → `DATABASE_URL`** — the same precedence `node:smol-sql` uses. Prefer `POSTGRES_URL` (engine-specific, unambiguous when a service talks to more than one datastore); fall back to `DATABASE_URL` — the 12-factor / Heroku norm — so a single-DB host that only sets the generic name still works.
 
 2. **Discrete libpq vars: the actual Postgres-native fallback.** `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD` (Postgres docs §34.15). These do NOT assemble into a URL; they are a separate connection-input mechanism that libpq consumes parameter-by-parameter. When no URL env is set, the connection string reaching `PQconnectdb` is empty, and libpq fills each unset parameter from its own `PG*` var (host from `PGHOST`, dbname from `PGDATABASE`, etc.), then a built-in default. No URL is ever built from them. This is what Postgres itself supports, so it's the bottom of the chain and works in any standard PG environment (CI containers, managed PG that injects `PG*`).
 
@@ -111,7 +111,7 @@ Drizzle covers the database boundary (table shape, query types). For validating 
 
 ## When NOT to add a database
 
-Most fleet repos are libraries, parsers, or CLIs with no persistent state; they need no database at all. Don't add Drizzle/Postgres speculatively. The stack applies only when a repo genuinely persists relational state (a service, a registry API, an events store). A cache or a flat-file index is not a database need.
+Most fleet repos are libraries, parsers, or CLIs with no persistent state; they need no database at all. Don't add Drizzle/Postgres speculatively. The stack applies only when a repo genuinely persists relational state — a service, a registry API, an events store. A cache or a flat-file index is not a database need.
 
 ## Reference implementation
 

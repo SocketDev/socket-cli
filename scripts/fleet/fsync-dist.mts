@@ -49,5 +49,6 @@ export async function fsyncDist(dir: string): Promise<void> {
   }
   await Promise.all(filePromises)
   // Subdirs in parallel to keep the barrier cheap on wide trees.
+  // oxlint-disable-next-line socket/prefer-all-settled -- fail-fast: a failed fsync means the dist isn't durable; surface it immediately rather than press on.
   await Promise.all(subdirs.map(fsyncDist))
 }

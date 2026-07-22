@@ -177,6 +177,7 @@ export const check = bashGuard((command, payload) => {
 export const hook = defineHook({
   bypass: ['commit-format', 'ai-attribution'],
   bypassMode: 'manual',
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

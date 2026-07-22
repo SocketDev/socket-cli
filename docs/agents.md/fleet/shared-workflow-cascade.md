@@ -51,7 +51,7 @@ edit the `.md` and recompile.
 
 gh-aw workflows are NOT testable through the local Agent CI runner: it parses
 workflows with GitHub's `@actions/workflow-parser`, which cannot convert the
-gh-aw agent-runtime jobs (the `agent` / `conclusion` / `detection` jobs), so it
+gh-aw agent-runtime jobs — the `agent` / `conclusion` / `detection` jobs — so it
 aborts with `No jobs found`. Never feed a `.lock.yml` to `ci:local`.
 
 The gh-aw-native test path is `gh aw trial`, which runs the workflow in a

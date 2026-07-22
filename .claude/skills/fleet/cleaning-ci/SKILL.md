@@ -16,7 +16,7 @@ target classes:
 
 2. **GitHub-Dependabot automated security PRs**: the fleet pattern is to handle vulnerability fixes via `/updating-security` (pnpm `overrides:` for transitive deps), not via auto-PRs from Dependabot. The `dependabot.yml` no-op file (`open-pull-requests-limit: 0`) suppresses version-update PRs but does NOT suppress security PRs. Those flow from a separate repo-settings toggle (`automated-security-fixes`). Disable via `gh api -X DELETE /repos/{owner}/{repo}/automated-security-fixes`.
 
-3. **Stale workflow run history**: when a workflow YAML gets deleted, the **runs** stay listed in the Actions sidebar forever (the workflow appears as a name with no associated file). Delete the workflow record via `gh api /repos/{owner}/{repo}/actions/workflows/{id} -X DELETE` to remove the sidebar entry.
+3. **Stale workflow run history**: when a workflow YAML gets deleted, the **runs** stay listed in the Actions sidebar forever — the workflow appears as a name with no associated file. Delete the workflow record via `gh api /repos/{owner}/{repo}/actions/workflows/{id} -X DELETE` to remove the sidebar entry.
 
 ## When to use
 

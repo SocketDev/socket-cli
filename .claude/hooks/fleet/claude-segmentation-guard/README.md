@@ -6,7 +6,7 @@ PreToolUse Edit/Write hook that blocks new files/directories at dangling top-lev
 
 Every entry under those four directories must live under one of:
 
-- `<kind>/fleet/<name>/` — wheelhouse-canonical entries (the wheelhouse template ships an entry with this name).
+- `<kind>/fleet/<name>/` — wheelhouse-canonical entries: the wheelhouse template ships an entry with this name.
 - `<kind>/repo/<name>/` — repo-only entries (everything else).
 - `<kind>/_<name>/` — internals folder (`_shared` and friends).
 

@@ -33,4 +33,4 @@ The exception is a workflow that commits, pushes, or tags: it NEEDS the persiste
 
 ## Enforcement
 
-The `.claude/hooks/fleet/pull-request-target-guard/` hook scans workflow YAML for the fork-checkout-and-execute combo and blocks edits that introduce it. The hook is byte-identical across fleet repos; the rule is the contract, the hook is the enforcer. The persisted-credential half is enforced in CI by zizmor's `artipacked` audit (a default audit, no config needed) — no edit-time hook duplicates it.
+The `.claude/hooks/fleet/pull-request-target-guard/` hook scans workflow YAML for the fork-checkout-and-execute combo and blocks edits that introduce it. The hook is byte-identical across fleet repos; the rule is the contract, the hook is the enforcer. The persisted-credential half is enforced in CI by zizmor's `artipacked` audit — a default audit, no config needed — no edit-time hook duplicates it.

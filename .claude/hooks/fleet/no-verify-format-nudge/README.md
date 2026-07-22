@@ -4,7 +4,7 @@ PreToolUse Bash hook, non-blocking. When a `git commit` / `git push --no-verify`
 
 ## Why
 
-`--no-verify` skips the **whole** pre-commit / pre-push chain, including the oxfmt **format** gate, not only the test/lint steps. The usual reason to reach for `--no-verify` is a hanging pre-commit (a slow staged-test reminder, a wedged install), but the side effect is that unformatted files ship and then fail CI's format check.
+`--no-verify` skips the **whole** pre-commit / pre-push chain, including the oxfmt **format** gate, not only the test/lint steps. The usual reason to reach for `--no-verify` is a hanging pre-commit — a slow staged-test reminder or a wedged install — but the side effect is that unformatted files ship and then fail CI's format check.
 
 This hook closes that gap: at the moment the bypassing command is detected, it checks the files that are about to land and names the ones that need formatting, so the debt gets fixed (`oxfmt` + amend) before it reaches CI.
 

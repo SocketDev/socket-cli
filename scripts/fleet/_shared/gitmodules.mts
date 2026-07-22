@@ -69,6 +69,8 @@ export function parseGitmodules(text: string): GitmodulesEntry[] {
       if (/^\s*\[/.test(next)) {
         break
       }
+      // Match a `key = value` .gitmodules line: capture the key (word chars
+      // and hyphens) and the trimmed value on either side of the `=`.
       const kv = /^\s*([\w-]+)\s*=\s*(.*?)\s*$/.exec(next)
       if (!kv) {
         continue

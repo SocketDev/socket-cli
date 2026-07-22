@@ -40,7 +40,7 @@ node scripts/fleet/lockstep/auto-bump.mts --plan --report /tmp/lockstep-report.j
 - **auto** — version-pin rows with an actionable `upgrade_policy` (`track-latest` / `major-gate`) AND a resolvable newer stable tag. Each carries the already-resolved `targetTag`.
 - **advisory** — everything else with `severity != "ok"`, plus any version-pin that can't auto-bump (locked, no-newer-tag, or a major bump gated by `major-gate`) — surfaced as an advisory line, never silently dropped.
 
-`--tags <tags.json>` is `{ "<upstream>": ["<tag>", …] }` (the fetched tags per upstream — `git -C <submodule> tag` after `git fetch --tags`); omit it and the auto list resolves no targets (the rows fall to advisory with "no parseable stable tags"). If both lists are empty: exit 0 with "no lockstep drift". The partition + the entire tag-scheme/semver/major-gate resolution (the old Phase 3a/3b inline jq) live in the engine — see its unit tests for the four tag schemes.
+`--tags <tags.json>` is `{ "<upstream>": ["<tag>", …] }`: the fetched tags per upstream — `git -C <submodule> tag` after `git fetch --tags`; omit it and the auto list resolves no targets — the rows fall to advisory with "no parseable stable tags". If both lists are empty: exit 0 with "no lockstep drift". The partition + the entire tag-scheme/semver/major-gate resolution, the old Phase 3a/3b inline jq, live in the engine — see its unit tests for the four tag schemes.
 
 ### Phase 3 — Auto-bump version-pin rows
 

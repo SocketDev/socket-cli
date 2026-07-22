@@ -64,6 +64,12 @@
       "publishes": "cargo"
     },
     {
+      "name": "depsight",
+      "description": "Scans a machine for open-source dependencies and surfaces Socket threat intelligence — CLI/TUI plus a macOS menu bar app",
+      "optIns": ["squash-history"],
+      "publishes": "binary"
+    },
+    {
       "name": "envrypt",
       "description": "Encrypted .env library for Rust — ECIES + locked v1/v2, keychain-first",
       "optIns": ["squash-history"]

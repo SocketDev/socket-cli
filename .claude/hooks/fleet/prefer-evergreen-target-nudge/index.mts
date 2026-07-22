@@ -108,6 +108,7 @@ export const check = (payload: ToolCallPayload): GuardResult => {
 
 export const hook = defineHook({
   bypass: ['evergreen-target'],
+  bypassOptional: true,
   check,
   event: 'Stop',
   scope: 'convention',

@@ -1,6 +1,6 @@
 ---
 name: authoring-spec
-description: Turn the current conversation into a spec with problem, solution, stories, decisions, tests, and enforcement.
+description: Turn the current conversation into a spec: problem, solution, stories, tests, enforcement.
 user-invocable: true
 ---
 

@@ -40,14 +40,14 @@ A bare topic with no `--plan` gets a default single-subquery plan over every key
 
 ### Scoping X to specific handles
 
-When the plan includes the `x` source, `xHandles` scopes the X search to accounts (the xAI `x_search` tool's `allowed_x_handles` / `excluded_x_handles`, max 20 each, mutually exclusive):
+When the plan includes the `x` source, `xHandles` scopes the X search to accounts — the xAI `x_search` tool's `allowed_x_handles` / `excluded_x_handles`, max 20 each, mutually exclusive:
 
 - `"xHandles": { "allowed": ["youyuxi", "patak_dev"] }` — **allowlist**: only posts from these handles. Use to read what a project's maintainers are saying.
 - `"xHandles": { "excluded": ["noisy_bot"] }` — **denylist**: all of X except these handles. Use to mute an aggregator or spam account drowning the signal.
 
-Handles are bare (a leading `@` is stripped). Passing both `allowed` and `excluded` is rejected — the API accepts only one.
+Handles are bare — a leading `@` is stripped. Passing both `allowed` and `excluded` is rejected — the API accepts only one.
 
-When the `x` source runs with **no** `xHandles` in the plan, the engine seeds the allowlist with `DEFAULT_DEV_HANDLES` (a vetted set of tool-author + dev-news accounts in `lib/sources/x.mts`) so an unscoped X search still favors high-signal voices. An explicit plan `xHandles` always overrides the default — set `allowed` to your own follows to tune it, or `excluded` to opt out of the default scoping and search all of X minus a few accounts.
+When the `x` source runs with **no** `xHandles` in the plan, the engine seeds the allowlist with `DEFAULT_DEV_HANDLES` — a vetted set of tool-author + dev-news accounts in `lib/sources/x.mts` — so an unscoped X search still favors high-signal voices. An explicit plan `xHandles` always overrides the default — set `allowed` to your own follows to tune it, or `excluded` to opt out of the default scoping and search all of X minus a few accounts.
 
 ## Per-source query recipes
 
@@ -59,13 +59,13 @@ When the `x` source runs with **no** `xHandles` in the plan, the engine seeds th
 
 ## Opt-in source setup
 
-Both opt-in sources read their credential from a process env var, populated from the OS keychain at session start. The engine never reads the keychain on the hot path (a per-call keychain read triggers a UI prompt and is blocked by `no-blind-keychain-read-guard`); it only reads `process.env`.
+Both opt-in sources read their credential from a process env var, populated from the OS keychain at session start. The engine never reads the keychain on the hot path — a per-call keychain read triggers a UI prompt and is blocked by `no-blind-keychain-read-guard`; it only reads `process.env`.
 
 ### X / Twitter (xAI)
 
 X carries the earliest dev signal — maintainers post breaking changes and hot takes there first. The adapter uses the **xAI Responses API** with the native `x_search` tool: Grok searches X over the date window and returns structured posts. That's a single bearer token, not browser-cookie scraping.
 
-1. **Get a key.** Create an xAI API key at [console.x.ai](https://console.x.ai) (the key looks like `xai-…`). X search via the `x_search` tool is a paid feature — check your account's model entitlement.
+1. **Get a key.** Create an xAI API key at [console.x.ai](https://console.x.ai) — the key looks like `xai-…`. X search via the `x_search` tool is a paid feature — check your account's model entitlement.
 2. **Store it in the keychain** (write is allowed; reads on the hot path are not):
 
    ```bash

@@ -134,6 +134,7 @@ export const check = bashGuard(command => {
 
 export const hook = defineHook({
   bypass: ['node-modules-staging'],
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

@@ -138,6 +138,7 @@ export const check = editGuard((filePath, content, payload) => {
 
 export const hook = defineHook({
   bypass: ['repo-scope-in-fleet'],
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

@@ -293,7 +293,25 @@ const rule = {
 
         const iterText = sourceCode.getText(callee.object)
         const itemName = itemParam.name
-        const indexName = indexParam ? indexParam.name : 'i'
+        // Scope-aware counter: an explicit index param is already a bound name
+        // (safe); otherwise pick one colliding with neither the item nor a body
+        // identifier. Skip (report, no fix) when no safe counter exists or the
+        // body uses `length` — the `{ length } = arr` head would shadow it.
+        const indexName = indexParam
+          ? indexParam.name
+          : pickCounterName(itemName, bodyText)
+        if (!indexName || referencesIdentifier(bodyText, 'length')) {
+          context.report({
+            node,
+            messageId: 'preferCachedForNoFix',
+            data: {
+              shape: '.forEach',
+              reason:
+                'a `for` counter or the `{ length }` binding would collide with an identifier the callback body already uses',
+            },
+          })
+          return
+        }
         // If the callback body reassigns the item param (e.g.
         // `arr.forEach(line => { line = line.trim(); ... })`), the
         // rewritten `const line = arr[i]` would trip `no-const-assign`.
@@ -321,7 +339,16 @@ const rule = {
             // would trip TS18048. Emitting it into a plain JS file would
             // be a SyntaxError, so JS files get the same rewrite without
             // the assertion.
-            const replacement = `for (let ${indexName} = 0, { length } = ${iterText}; ${indexName} < length; ${indexName} += 1) {\n${innerIndent}${itemKind} ${itemName} = ${iterText}[${indexName}]${nonNullAssertion};${bodyInner}\n${indent}}`
+            // Emit oxfmt-clean output directly: terminate the item declaration
+            // only when the body's first statement is an ASI hazard, and trim
+            // the body's trailing whitespace so the closing brace gains no blank
+            // line.
+            const asiGuard = ASI_HAZARD_LEAD.test(
+              bodyInner.trimStart().charAt(0),
+            )
+              ? ';'
+              : ''
+            const replacement = `for (let ${indexName} = 0, { length } = ${iterText}; ${indexName} < length; ${indexName} += 1) {\n${innerIndent}${itemKind} ${itemName} = ${iterText}[${indexName}]${nonNullAssertion}${asiGuard}${bodyInner.trimEnd()}\n${indent}}`
             return fixer.replaceText(parent, replacement)
           },
         })
@@ -397,7 +424,24 @@ const rule = {
 
         const itemName = declarator.id.name
         const iterText = iter.name
-        const counterName = pickCounterName(itemName)
+        // Scope-aware counter: pick one colliding with neither the loop var nor
+        // a body identifier; skip (report, no fix) when none is free or the body
+        // uses `length` — the `{ length } = arr` head would shadow it. This is
+        // the collision that silently broke a body already binding its own `i`.
+        const forOfBodyText = sourceCode.getText(node.body)
+        const counterName = pickCounterName(itemName, forOfBodyText)
+        if (!counterName || referencesIdentifier(forOfBodyText, 'length')) {
+          context.report({
+            node,
+            messageId: 'preferCachedForNoFix',
+            data: {
+              shape: 'for...of',
+              reason:
+                'a `for` counter or the `{ length }` binding would collide with an identifier the loop body already uses',
+            },
+          })
+          return
+        }
         // Preserve the original `let`/`const` declaration kind from
         // the `for...of`. `for (let item of arr)` opted into a
         // mutable per-iteration binding (the body may reassign
@@ -424,7 +468,14 @@ const rule = {
             const innerIndent = `${indent}  `
             // `!` non-null assertion, TypeScript files only — see the
             // sibling .forEach branch for the rationale.
-            const replacement = `for (let ${counterName} = 0, { length } = ${iterText}; ${counterName} < length; ${counterName} += 1) {\n${innerIndent}${itemKind} ${itemName} = ${iterText}[${counterName}]${nonNullAssertion};${bodyInner}\n${indent}}`
+            // Emit oxfmt-clean output directly (see the .forEach branch): a `;`
+            // only for an ASI-hazard body head, and no trailing blank line.
+            const asiGuard = ASI_HAZARD_LEAD.test(
+              bodyInner.trimStart().charAt(0),
+            )
+              ? ';'
+              : ''
+            const replacement = `for (let ${counterName} = 0, { length } = ${iterText}; ${counterName} < length; ${counterName} += 1) {\n${innerIndent}${itemKind} ${itemName} = ${iterText}[${counterName}]${nonNullAssertion}${asiGuard}${bodyInner.trimEnd()}\n${indent}}`
             return fixer.replaceText(node, replacement)
           },
         })
@@ -434,15 +485,44 @@ const rule = {
 }
 
 /**
- * Pick a counter-variable name that won't collide with the item variable.
- * Defaults to `i`, falls back to `i2`, `i3`, ... if the item is itself named
- * `i` (rare but defensive).
+ * A statement whose first character is one of these can merge with the
+ * preceding line under ASI (e.g. `arr[i]!` newline `(fn)()` parses as a call).
+ * When a loop body's first statement leads with one, the injected item
+ * declaration needs an explicit `;` terminator to stay correct under the
+ * fleet's no-semicolon style.
  */
-export function pickCounterName(itemName: string): string {
-  if (itemName !== 'i') {
-    return 'i'
+const ASI_HAZARD_LEAD = /[([`+\-*/]/
+
+/**
+ * Does the loop body text reference `name` as a standalone identifier? A
+ * word-boundary textual probe (not a substring match). Conservative: a false
+ * positive only forces a different counter name or a skip — both safe.
+ */
+export function referencesIdentifier(bodyText: string, name: string): boolean {
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp(String.raw`\b${escaped}\b`).test(bodyText)
+}
+
+/**
+ * Pick a loop-counter name that collides with neither the item variable NOR any
+ * identifier the loop body already uses (scope-aware). Tries `i`, then
+ * `i2`…`i9`. Returns `undefined` when every candidate is taken so the caller
+ * skips the autofix rather than shadow a live binding — the collision that made
+ * a naive `i` rewrite silently break a body that already bound its own `i`.
+ * `bodyText` defaults to '' so a name-only call still dodges the item name.
+ */
+export function pickCounterName(
+  itemName: string,
+  bodyText = '',
+): string | undefined {
+  const candidates = ['i', 'i2', 'i3', 'i4', 'i5', 'i6', 'i7', 'i8', 'i9']
+  for (let idx = 0, { length } = candidates; idx < length; idx += 1) {
+    const name = candidates[idx]!
+    if (name !== itemName && !referencesIdentifier(bodyText, name)) {
+      return name
+    }
   }
-  return 'i2'
+  return undefined
 }
 
 /**

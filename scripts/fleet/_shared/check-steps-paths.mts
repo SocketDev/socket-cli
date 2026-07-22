@@ -55,6 +55,11 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // .claude/skills/**/<name>/SKILL.md, so a renamed/moved skill can't leave a
     // command pointing at nothing.
     () => run('node', ['scripts/fleet/check/skill-delegations-resolve.mts']),
+    // Dead-code gate: a fleet member is a SIBLING repo, never a wheelhouse
+    // subdir. A root dir matching a roster member name is a stray scaffold
+    // someone left in-tree (a full fleet-scaffold copy) that gets swept into
+    // cascade commits — fail loud so it's removed, not gitignored.
+    () => run('node', ['scripts/fleet/check/member-dirs-are-not-nested.mts']),
     // A package's `exports` map and its public file surface must agree: every
     // exports target resolves to a real file (no stale map entry that throws
     // ERR_MODULE_NOT_FOUND for consumers), and every public built file (privacy
@@ -113,6 +118,42 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     () =>
       run('node', [
         'scripts/fleet/check/upstream-submodules-are-shallow-single-branch.mts',
+        '--quiet',
+      ]),
+    // Fleet policy: an `upstream/<name>` reference pins the latest RELEASE TAG
+    // (immutable), not a moving branch (`main`/`releases/v6`). Fails unless the
+    // branch is a `<major>.<minor>` tag or the block is annotated
+    // `# no-release-tag: <reason>` (upstream has no releases). See
+    // docs/agents.md/fleet/upstream-references.md.
+    () =>
+      run('node', [
+        'scripts/fleet/check/upstream-submodules-are-release-tagged.mts',
+      ]),
+    // Fleet-canonical check over each repo's repo-local
+    // scripts/repo/upstream-contracts.mts: the materialized submodule HEAD
+    // matches contract.revision + required paths/fixture exist. No-ops without
+    // that file; fail-open when a submodule isn't materialized. The contract is
+    // tracked repo DATA and lives under scripts/repo/ (never under the ignored
+    // upstream/ tree). See docs/agents.md/fleet/upstream-references.md.
+    () =>
+      run('node', ['scripts/fleet/check/upstream-contracts-are-current.mts']),
+    // Belt: no `upstream/` reference is git-tracked as a gitlink — the
+    // `.gitmodules` `ref`+`sha256:` is the pin, so a `160000` index entry is a
+    // redundant copy. Write-time twin: no-upstream-gitlink-guard. See
+    // docs/agents.md/fleet/upstream-references.md.
+    () =>
+      run('node', [
+        'scripts/fleet/check/upstream-gitlinks-are-absent.mts',
+        '--quiet',
+      ]),
+    // Belt (superset of the gitlink gate above): no tracked file is matched by
+    // .gitignore anywhere in the tree — build output, vendored trees, caches, or
+    // a stray nested gitlink. `git ls-files -ci --exclude-standard` is the
+    // detector (it honors negations); a hand-authored file under an ignored tree
+    // stays tracked via a `!` re-include OUTSIDE the fleet-canonical block.
+    () =>
+      run('node', [
+        'scripts/fleet/check/ignored-files-are-untracked.mts',
         '--quiet',
       ]),
     // Companion: every sparse submodule declares a `verify =` consumer (the
@@ -197,6 +238,12 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // unstable keys are inert on stable cargo, so the lock is the build-time
     // enforcement and the nightly updater is the only thing that moves it.
     () => run('node', ['scripts/fleet/check/cargo-soak-config-is-current.mts']),
+    // Fuzz tiers are non-opt-in: every language present in the repo must carry
+    // its property-and-fuzz-testing tier (JS/TS fast-check/vitiate, Rust
+    // proptest/cargo-fuzz, C++ libFuzzer, Go native fuzz). A repo with no
+    // fuzzable boundary opts out via `fuzz.exempt` + `fuzz.reason` in
+    // .config/repo/socket-wheelhouse.json.
+    () => run('node', ['scripts/fleet/check/fuzz-tiers-are-covered.mts']),
     // Brew install pinning: an enrolled repo (repo-root Brewfile present — the
     // opt-in signal; doctor --fix generates it) must keep that Brewfile in sync
     // with its real `.github/` install sites, every tap pin aged >= SOAK_DAYS
@@ -216,6 +263,32 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
       run('node', [
         'scripts/fleet/check/npmrc-socket-soak-excludes-are-derived.mts',
       ]),
+    // .npmrc's versioned-soak-MIRROR block is DERIVED from pnpm-workspace.yaml's
+    // `minimumReleaseAgeExclude` version-pins (bare name only — npm can't pin a
+    // version, npm/cli#9532), so npm + pnpm share the ONE canonical list. Fails
+    // on drift; `scripts/fleet/soak-bypass.mts` + the cascade --fix it. This is
+    // what MANDATES the writer: hand-editing one file (pin OR mirror) reddens.
+    () =>
+      run('node', [
+        'scripts/fleet/check/npmrc-versioned-soak-mirror-is-derived.mts',
+      ]),
+    // The fleet's Rust toolchain pin is single-sourced in rust-toolchain.toml;
+    // template/base's copy + RUST_UPDATER_TOOLCHAIN (cargo.mts) are DERIVED. A
+    // hand-bump of one without the others reddens here; the cascade --fixes it.
+    () =>
+      run('node', ['scripts/fleet/check/rust-toolchain-pins-are-synced.mts']),
+    // The language-agnostic socket/* doctrine (no-status-emoji,
+    // personal-path-placeholders, max-file-lines) enforced across Rust/Go/C++
+    // source by one shared scanner — the hybrid half no native linter can express.
+    () =>
+      run('node', [
+        'scripts/fleet/check/native-sources-are-doctrine-clean.mts',
+      ]),
+    // The fleet SIGNS every commit — GitHub rulesets reject an unsigned push,
+    // but a spawned tool with no key access commits unsigned SILENTLY. Fail the
+    // gate on any unsigned/bad-signed commit ahead of the base; fail-open when
+    // the base can't be resolved (offline/shallow CI).
+    () => run('node', ['scripts/fleet/check/commits-are-signed.mts']),
     // Fleet soak-exclude parity. Wheelhouse-only at runtime — the script
     // no-ops when `scripts/sync-scaffolding/manifest.mts` is absent (i.e.
     // in every cascaded fleet repo). Enforces that every versioned soak

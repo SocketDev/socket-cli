@@ -28,8 +28,8 @@ source read fine; the pixels exposed it instantly.
 - **Page mode** — any URL or local HTML file → PNG.
 - **Extension mode** — load an unpacked Chrome MV3 extension with its REAL powers (background
   service worker, content scripts, `chrome.*` APIs) via `launchPersistentContext` +
-  `channel: 'chromium'` (the documented way to run extensions in headless Chromium), then
-  screenshot a page inside it (the popup by default). This is the actual in-browser render,
+  `channel: 'chromium'` — the documented way to run extensions in headless Chromium — then
+  screenshot a page inside it, the popup by default. This is the actual in-browser render,
   not a `file://` approximation.
 
 ## When to reach for it

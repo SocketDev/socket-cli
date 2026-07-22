@@ -222,7 +222,7 @@ Cluster findings where all of:
 - same `file` (after path normalization), AND
 - same `category` (case-insensitive, punctuation stripped), AND
 - `line` numbers within 10 of each other. Both-missing matches; one-side-missing
-  does NOT (a line-less record must not absorb a located one).
+  does NOT — a line-less record must not absorb a located one.
 
 Within each cluster, the canonical is the record with the fewest `missing_fields`;
 ties break to lowest `id`. Every other member gets `verdict: duplicate`,
@@ -288,7 +288,7 @@ spots).
 
 ### Run the verifiers as a Workflow
 
-Use a `Workflow` (the fleet's sanctioned fan-out, same as `scanning-quality`),
+Use a `Workflow` — the fleet's sanctioned fan-out, same as `scanning-quality` —
 not ad-hoc `Task` spawns. Each `agent()` call gets a fresh, isolated context — it
 sees only the 3a prompt plus the single finding under review. This is what
 guarantees verifier independence: a fork or shared context would inherit every
@@ -435,7 +435,7 @@ via the structured-output tool.
 ```
 
 Findings with a `file` but no `line` get **one** verifier vote regardless of
-`--votes` (a file-level sweep doesn't benefit from voting).
+`--votes` — a file-level sweep doesn't benefit from voting.
 
 ### 3c. Tally votes
 

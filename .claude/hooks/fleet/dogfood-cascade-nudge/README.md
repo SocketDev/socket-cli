@@ -25,7 +25,7 @@ This enforces the rule on real filesystem state, not turn narration: it lists th
 node scripts/repo/sync-scaffolding/cli.mts --target . --fix
 ```
 
-Then commit the `template/` source (the cascade commits the dogfood copy).
+Then commit the `template/` source — the cascade commits the dogfood copy.
 
 ## Test
 

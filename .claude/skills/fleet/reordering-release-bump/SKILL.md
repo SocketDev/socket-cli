@@ -63,4 +63,4 @@ that phrase (ask via `AskUserQuestion` if unsure) before invoking with `--apply`
   moved, so any content change means corruption and the push must not happen.
 
 If a fresh worktree's pre-push hook crashes with `ERR_MODULE_NOT_FOUND @socketsecurity/lib-stable`,
-run `pnpm i` in the worktree first (the hook needs its deps).
+run `pnpm i` in the worktree first — the hook needs its deps.

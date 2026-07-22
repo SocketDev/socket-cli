@@ -19,6 +19,6 @@ A quoted package-manager token (`'npm'` / `'pnpm'` / `'yarn'`) AND a quoted
 mutation verb (`'publish'` / `'deprecate'` / `'unpublish'`) in the about-to-land
 content of a `scripts/repo/**` script. Best-effort — args assembled from a
 variable escape it. Read-only calls (`view`, `whoami`) never match, and
-`scripts/fleet/` (the sanctioned publisher's home) is never scanned.
+`scripts/fleet/`, the sanctioned publisher's home, is never scanned.
 
 Doctrine: the CLAUDE.md `plan-storage` bullet.

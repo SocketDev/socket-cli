@@ -188,6 +188,7 @@ export function findPointerOnlyComments(blocks: readonly Comment[]): Hit[] {
 
 export const hook = defineHook({
   bypass: ['pointer-comment'],
+  bypassOptional: true,
   check: editGuard((filePath, content) => {
     const normalizedFilePath = normalizePath(filePath)
     if (!SOURCE_EXT_RE.test(normalizedFilePath)) {

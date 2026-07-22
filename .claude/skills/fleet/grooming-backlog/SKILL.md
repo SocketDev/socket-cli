@@ -1,6 +1,6 @@
 ---
 name: grooming-backlog
-description: Collapse noisy backlogs by verifying done work, folding duplicates, deleting stale tasks, and cleaning in-progress.
+description: Collapse noisy backlogs: verify done work, fold duplicates, delete stale tasks.
 user-invocable: true
 ---
 
@@ -35,7 +35,7 @@ verify against the repo, and apply the tracker mutations here.
 2. **Verify status — claims are leads, not facts.** For each open task,
    establish its ACTUAL state from code / git / the repo, not from the label or
    a stale "DONE" note. A task's own progress note or a subagent report is a
-   lead — confirm (the file exists, the commit landed, the test is green) before
+   lead — confirm the file exists, the commit landed, the test is green before
    completing it.
 3. **Bucket each open task:**
    - **COMPLETE** — verifiably done (mark completed, with the receipt in mind).

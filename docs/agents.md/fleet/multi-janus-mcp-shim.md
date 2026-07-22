@@ -10,7 +10,7 @@ This shim adds a `workspace` parameter to every tool and routes the call to that
 
 ## Stopgap status
 
-This is a stopgap. The upstream `janus mcp --workspace name=path` (a PR stack against `divmain/janus`) will provide the same `workspace`-parameterized tool shape natively. When it lands, callers swap shim → native with no change, and the shim (`janus-multi-{mcp,runner,workspace}.mts` + this doc + the test) is deleted. It needs zero Janus changes today — it only uses the already-shipping `JANUS_ROOT` env knob.
+This is a stopgap. The upstream `janus mcp --workspace name=path` — a PR stack against `divmain/janus` — will provide the same `workspace`-parameterized tool shape natively. When it lands, callers swap shim → native with no change, and the shim (`janus-multi-{mcp,runner,workspace}.mts` + this doc + the test) is deleted. It needs zero Janus changes today — it only uses the already-shipping `JANUS_ROOT` env knob.
 
 ## Workspaces
 

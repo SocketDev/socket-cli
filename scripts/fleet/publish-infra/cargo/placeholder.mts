@@ -31,6 +31,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
+import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
 import { isMainModule } from '../../_shared/is-main-module.mts'
 import { logger, runInherit } from '../shared.mts'
@@ -177,7 +178,7 @@ async function defaultPublishExec(dir: string): Promise<number> {
 }
 
 async function defaultRemoveDir(dir: string): Promise<void> {
-  await fs.rm(dir, { force: true, recursive: true })
+  await safeDelete(dir)
 }
 
 /**

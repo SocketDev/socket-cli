@@ -104,6 +104,7 @@ export const check = bashGuard((command, payload) => {
 
 export const hook = defineHook({
   bypass: ['empty-commit'],
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

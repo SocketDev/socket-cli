@@ -120,6 +120,7 @@ export const check = bashGuard(command => {
 
 export const hook = defineHook({
   bypass: ['vitest-double-dash'],
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

@@ -21,11 +21,11 @@ export interface CargoPackage {
 
 // A raw `cargo metadata` package entry, projected to the fields we read.
 interface RawCargoPackage {
-  manifest_path?: unknown
-  name?: unknown
-  publish?: unknown
-  repository?: unknown
-  version?: unknown
+  manifest_path?: unknown | undefined
+  name?: unknown | undefined
+  publish?: unknown | undefined
+  repository?: unknown | undefined
+  version?: unknown | undefined
 }
 
 /**
@@ -44,15 +44,15 @@ export function isPublishable(publish: unknown): boolean {
 }
 
 /**
- * Resolve the single publishable package from `cargo metadata --format-version
- * 1 --no-deps`. Fails LOUD when nothing is publishable (every package sets
- * `publish = false`) or when more than one is (ambiguous — pass `packageName`,
- * wired to the `--package` selector, to disambiguate). Returns the package's
- * name/version/repository/manifest_path.
+ * Every publishable package in the workspace, projected to `CargoPackage`, from
+ * `cargo metadata --format-version 1 --no-deps`. Returns `[]` when nothing is
+ * publishable (every package sets `publish = false`). Throws LOUD when
+ * `cargo metadata` fails, its JSON can't be parsed, or a publishable package is
+ * missing a field. The version-discipline checks iterate every entry (a
+ * workspace can publish several crates); the publish path (`readCargoPackage`)
+ * selects one.
  */
-export async function readCargoPackage(
-  packageName?: string | undefined,
-): Promise<CargoPackage> {
+export async function readPublishableCargoPackages(): Promise<CargoPackage[]> {
   const { code, stdout } = await runCapture(
     'cargo',
     ['metadata', '--format-version', '1', '--no-deps'],
@@ -70,15 +70,51 @@ export async function readCargoPackage(
     throw new Error('[cargo] could not parse `cargo metadata` JSON output.')
   }
   const packages = Array.isArray(parsed.packages) ? parsed.packages : []
-  const publishable = packages.filter(p => isPublishable(p.publish))
+  const out: CargoPackage[] = []
+  for (let i = 0, { length } = packages; i < length; i += 1) {
+    const p = packages[i]!
+    if (!isPublishable(p.publish)) {
+      continue
+    }
+    const name = typeof p.name === 'string' ? p.name : undefined
+    const version = typeof p.version === 'string' ? p.version : undefined
+    const manifestPath =
+      typeof p.manifest_path === 'string' ? p.manifest_path : undefined
+    if (!name || !version || !manifestPath) {
+      throw new Error(
+        '[cargo] a publishable package is missing name/version/manifest_path ' +
+          'in `cargo metadata` output.',
+      )
+    }
+    out.push({
+      manifestPath,
+      name,
+      version,
+      ...(typeof p.repository === 'string' && p.repository
+        ? { repository: p.repository }
+        : {}),
+    })
+  }
+  return out
+}
+
+/**
+ * Resolve the single publishable package. Fails LOUD when nothing is
+ * publishable (every package sets `publish = false`) or when more than one is
+ * (ambiguous — pass `packageName`, wired to the `--package` selector, to
+ * disambiguate). Returns the package's name/version/repository/manifest_path.
+ */
+export async function readCargoPackage(
+  packageName?: string | undefined,
+): Promise<CargoPackage> {
+  const publishable = await readPublishableCargoPackages()
   if (publishable.length === 0) {
     throw new Error(
       '[cargo] no publishable package found (every package sets ' +
         '`publish = false`). Nothing to publish.',
     )
   }
-  const names = publishable.map(p => String(p.name)).join(', ')
-  let selected: RawCargoPackage
+  const names = publishable.map(p => p.name).join(', ')
   if (packageName) {
     const match = publishable.find(p => p.name === packageName)
     if (!match) {
@@ -87,36 +123,15 @@ export async function readCargoPackage(
           `Publishable: ${names}.`,
       )
     }
-    selected = match
-  } else if (publishable.length > 1) {
+    return match
+  }
+  if (publishable.length > 1) {
     throw new Error(
       `[cargo] ${publishable.length} publishable packages (${names}); ` +
         'ambiguous. Pass --package <name> to select one.',
     )
-  } else {
-    selected = publishable[0]!
   }
-  const name = typeof selected.name === 'string' ? selected.name : undefined
-  const version =
-    typeof selected.version === 'string' ? selected.version : undefined
-  const manifestPath =
-    typeof selected.manifest_path === 'string'
-      ? selected.manifest_path
-      : undefined
-  if (!name || !version || !manifestPath) {
-    throw new Error(
-      '[cargo] selected package is missing name/version/manifest_path in ' +
-        '`cargo metadata` output.',
-    )
-  }
-  return {
-    manifestPath,
-    name,
-    version,
-    ...(typeof selected.repository === 'string' && selected.repository
-      ? { repository: selected.repository }
-      : {}),
-  }
+  return publishable[0]!
 }
 
 /**

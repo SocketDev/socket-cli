@@ -13,12 +13,16 @@
  *   has, rarely, changed archive gzip parameters platform-wide (breaking
  *   Go-module / Homebrew checksums); when that happens `--check` flags the
  *   drift and `--write` refreshes the pin. That is the intended drift-watch
- *   behavior, not a failure. Usage: gen-gitmodules-hash.mts --check
+ *   behavior, not a failure. Non-GitHub remotes (e.g. *.googlesource.com) have
+ *   no codeload archive, and gitiles `+archive` .tar.gz is gzip-timestamped
+ *   (regenerated per fetch — movable under our feet), so they are pinned to the
+ *   SHA-256 of the `git ls-tree -r <ref>` manifest of the materialized
+ *   submodule worktree instead: blob SHAs are immutable content addresses, so
+ *   that hash is an unmovable content pin tied to the commit. It is re-verified
+ *   whenever the worktree is present and fail-open (skipped) on a checkout that
+ *   hasn't materialized the submodule. Usage: gen-gitmodules-hash.mts --check
  *   [path/to/.gitmodules] # verify, exit 1 on drift gen-gitmodules-hash.mts
- *   --write [path/to/.gitmodules] # rewrite stale/missing hashes Non-GitHub
- *   remotes (e.g. *.googlesource.com) have no codeload archive and are skipped
- *   with a logged note — the guard still requires a hash there, so such a
- *   submodule needs a hand-supplied pin (out of scope for this tool).
+ *   --write [path/to/.gitmodules] # rewrite stale/missing hashes.
  */
 
 import crypto from 'node:crypto'
@@ -29,6 +33,7 @@ import process from 'node:process'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { httpRequest } from '@socketsecurity/lib-stable/http-request'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { isMainModule } from './_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
@@ -43,7 +48,9 @@ Usage:
                                                     together (the only correct way to bump a
                                                     ref — uses-sha-verify-guard requires both)
 
-The hash is sha256 of https://codeload.github.com/<owner>/<repo>/tar.gz/<ref>.
+The hash is sha256 of https://codeload.github.com/<owner>/<repo>/tar.gz/<ref>
+for GitHub remotes, or the sha256 of \`git ls-tree -r <ref>\` (the materialized
+worktree's manifest) for non-GitHub remotes (e.g. *.googlesource.com).
 `
 
 export interface Block {
@@ -161,24 +168,65 @@ export async function archiveSha256(
   return crypto.createHash('sha256').update(res.body).digest('hex')
 }
 
+// SHA-256 of the `git ls-tree -r <ref>` manifest of a MATERIALIZED submodule
+// worktree. Every manifest line is `<mode> <type> <blob-sha>\t<path>`; the blob
+// SHAs are git's immutable content addresses and `ls-tree` output is
+// git-version-stable, so this hash is an UNMOVABLE content pin tied to the
+// commit — it cannot shift under our feet the way a gitiles `+archive` .tar.gz
+// (gzip-timestamped, regenerated per fetch) does. This is the content-hash for
+// a non-codeload remote (e.g. *.googlesource.com); the codeload archive hash
+// stays the pin for GitHub remotes. Requires the worktree checked out at `ref`.
+export async function treeManifestSha256(
+  worktreeDir: string,
+  ref: string,
+): Promise<string> {
+  let stdout = ''
+  try {
+    // `-c core.quotePath=false`: emit non-ASCII path bytes verbatim, not the
+    // config-dependent `\NNN`-escaped form — otherwise the manifest hash (the
+    // pin) would shift with the local git config for a tree with a non-ASCII
+    // path, breaking the "unmovable" guarantee. No-op for an all-ASCII tree.
+    const result = (await spawn(
+      'git',
+      ['-C', worktreeDir, '-c', 'core.quotePath=false', 'ls-tree', '-r', ref],
+      {
+        stdio: 'pipe',
+        stdioString: true,
+      },
+    )) as { stdout?: string }
+    stdout = String(result?.stdout ?? '')
+  } catch (e) {
+    throw new Error(
+      `git ls-tree failed for ${ref} in ${worktreeDir}: ${errorMessage(e)} — is the submodule materialized at that ref?`,
+    )
+  }
+  if (stdout.trim() === '') {
+    throw new Error(
+      `git ls-tree produced no output for ${ref} in ${worktreeDir} — the submodule is not materialized at that ref`,
+    )
+  }
+  return crypto.createHash('sha256').update(stdout).digest('hex')
+}
+
+// A submodule worktree is materialized when its checkout dir holds a `.git`
+// pointer (file for a submodule, dir for a plain clone).
+export function isMaterialized(worktreeDir: string): boolean {
+  return existsSync(path.join(worktreeDir, '.git'))
+}
+
 export interface Resolved {
   block: Block
   computed: string | undefined
   skipped: string | undefined
 }
 
-export async function resolveAll(blocks: Block[]): Promise<Resolved[]> {
+export async function resolveAll(
+  blocks: Block[],
+  repoRoot: string,
+): Promise<Resolved[]> {
   const out: Resolved[] = []
   for (let i = 0, { length } = blocks; i < length; i += 1) {
     const block = blocks[i]!
-    if (!block.ownerRepo) {
-      out.push({
-        block,
-        computed: undefined,
-        skipped: 'non-GitHub remote (no codeload archive)',
-      })
-      continue
-    }
     if (!block.ref) {
       out.push({
         block,
@@ -187,10 +235,58 @@ export async function resolveAll(blocks: Block[]): Promise<Resolved[]> {
       })
       continue
     }
-    logger.log(`fetching ${block.ownerRepo}@${block.ref.slice(0, 12)}…`)
+    const worktree = block.path ? path.join(repoRoot, block.path) : undefined
+    // GitHub remote: the codeload .tar.gz is the pin (remote-verifiable). If it
+    // is unavailable (404 — private repo, or a commit not reachable from any
+    // public ref), fall back to the ls-tree manifest of the materialized
+    // worktree, the same unmovable pin used for non-GitHub remotes.
+    if (block.ownerRepo) {
+      try {
+        logger.log(`fetching ${block.ownerRepo}@${block.ref.slice(0, 12)}…`)
+        out.push({
+          block,
+          computed: await archiveSha256(block.ownerRepo, block.ref),
+          skipped: undefined,
+        })
+        continue
+      } catch (e) {
+        if (!/HTTP 404/.test(errorMessage(e))) {
+          throw e
+        }
+        if (!worktree || !isMaterialized(worktree)) {
+          out.push({
+            block,
+            computed: undefined,
+            skipped: `codeload 404 and worktree not materialized — cannot pin ${block.name}`,
+          })
+          continue
+        }
+        logger.warn(
+          `${block.name}: codeload 404; falling back to ls-tree manifest of the materialized worktree`,
+        )
+        out.push({
+          block,
+          computed: await treeManifestSha256(worktree, block.ref),
+          skipped: undefined,
+        })
+        continue
+      }
+    }
+    // Non-GitHub remote: hash the materialized worktree's git ls-tree manifest
+    // (unmovable). Fail-open when not materialized (a fresh/shallow CI checkout
+    // hasn't cloned it) — same posture as upstream-contracts.
+    if (!worktree || !isMaterialized(worktree)) {
+      out.push({
+        block,
+        computed: undefined,
+        skipped:
+          'non-GitHub remote not materialized (worktree absent) — cannot verify tree manifest',
+      })
+      continue
+    }
     out.push({
       block,
-      computed: await archiveSha256(block.ownerRepo, block.ref),
+      computed: await treeManifestSha256(worktree, block.ref),
       skipped: undefined,
     })
   }
@@ -266,12 +362,6 @@ async function runSet(argv: string[], gitmodulesPath: string): Promise<void> {
     )
     process.exit(1)
   }
-  if (!block.ownerRepo) {
-    logger.fail(
-      `gen-gitmodules-hash --set: ${block.name} is not a GitHub remote — no codeload archive to hash; set the sha256 by hand.`,
-    )
-    process.exit(1)
-  }
   // A brand-new block (just `git submodule add`ed) has neither the
   // `# <name>-<version>` header nor a `ref =` line. `--set` provisions both —
   // but then it needs a `--label` to name the new comment.
@@ -283,8 +373,43 @@ async function runSet(argv: string[], gitmodulesPath: string): Promise<void> {
     process.exit(1)
   }
 
-  logger.log(`fetching ${block.ownerRepo}@${newRef.slice(0, 12)}…`)
-  const sha = await archiveSha256(block.ownerRepo, newRef)
+  // GitHub → codeload archive hash; non-GitHub (or a GitHub codeload 404:
+  // private repo / unreachable commit) → git ls-tree manifest of the
+  // materialized worktree, an unmovable content hash tied to the commit.
+  const worktree = block.path
+    ? path.join(path.dirname(gitmodulesPath), block.path)
+    : undefined
+  const lsTreeOrFail = async (why: string): Promise<string> => {
+    if (!worktree || !isMaterialized(worktree)) {
+      logger.fail(
+        `gen-gitmodules-hash --set: ${block.name} ${why} — its sha256 is then the git ls-tree manifest hash, which needs the submodule materialized at ${newRef.slice(0, 12)}…. Check it out first (git -C ${block.path ?? '<path>'} fetch + checkout ${newRef.slice(0, 12)}…), then re-run.`,
+      )
+      process.exit(1)
+    }
+    logger.log(
+      `hashing ls-tree manifest of ${block.path}@${newRef.slice(0, 12)}…`,
+    )
+    return treeManifestSha256(worktree, newRef)
+  }
+  let sha: string
+  if (block.ownerRepo) {
+    try {
+      logger.log(`fetching ${block.ownerRepo}@${newRef.slice(0, 12)}…`)
+      sha = await archiveSha256(block.ownerRepo, newRef)
+    } catch (e) {
+      if (!/HTTP 404/.test(errorMessage(e))) {
+        throw e
+      }
+      logger.warn(
+        `${block.name}: codeload 404; falling back to ls-tree manifest`,
+      )
+      sha = await lsTreeOrFail(
+        'is a GitHub remote whose codeload archive 404s (private / unreachable commit)',
+      )
+    }
+  } else {
+    sha = await lsTreeOrFail('is a non-GitHub remote (no codeload archive)')
+  }
   const prefix = label ? `# ${label}` : block.headerPrefix!
   const headerText = `${prefix} sha256:${sha}`
 
@@ -349,7 +474,7 @@ async function main(): Promise<void> {
   const eol = raw.includes('\r\n') ? '\r\n' : '\n'
   const lines = raw.split(/\r?\n/)
   const blocks = parseBlocks(lines)
-  const resolved = await resolveAll(blocks)
+  const resolved = await resolveAll(blocks, path.dirname(gitmodulesPath))
 
   let drift = 0
   let skips = 0
@@ -392,7 +517,7 @@ async function main(): Promise<void> {
     return
   }
   logger.success(
-    `gen-gitmodules-hash: all ${resolved.length - skips} GitHub block(s) current${skips ? `, ${skips} skipped` : ''}.`,
+    `gen-gitmodules-hash: all ${resolved.length - skips} pinned block(s) current${skips ? `, ${skips} skipped` : ''}.`,
   )
   process.exitCode = 0
 }

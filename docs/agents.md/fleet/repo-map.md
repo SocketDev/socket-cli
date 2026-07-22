@@ -65,7 +65,7 @@ it is always regenerable from source.
 
 ## The workflow
 
-1. `/map <path>` (the fleet `map` skill, a thin wrapper over the engine) — or run
+1. `/map <path>` — the fleet `map` skill, a thin wrapper over the engine — or run
    the engine directly. To seed/rebuild the whole cache, run the saved
    `refresh-repo-map` workflow (full `--write .` build + a coverage/top-savings
    report).

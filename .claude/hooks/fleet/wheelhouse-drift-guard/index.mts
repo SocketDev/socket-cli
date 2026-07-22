@@ -233,6 +233,7 @@ export const check = editGuard(async (filePath, _content, payload) => {
 
 export const hook = defineHook({
   bypass: ['wheelhouse-drift'],
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'MultiEdit', 'Write'],

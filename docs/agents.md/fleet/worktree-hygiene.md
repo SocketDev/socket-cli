@@ -12,7 +12,7 @@ Finish a code change → **commit it**. Don't end a turn with uncommitted edits,
 
 ## Branch discipline (and the checkout trap)
 
-"Smallest chunks" governs the _commit_, not the _branch_. A fresh branch holds a whole queue of related commits — **one logical change does not mean one commit, and one branch is not one commit.** The `no-branch-reuse-nudge` enforces this: it fires only when you commit onto a branch that already has a **remote upstream** (a shared branch others may have pushed to). It stays silent on the default branch and on a fresh local branch with no upstream. So:
+"Smallest chunks" governs the _commit_, not the _branch_. A fresh branch holds a whole queue of related commits — **one logical change does not mean one commit, and one branch is not one commit.** The `no-branch-reuse-nudge` enforces this: it fires only when you commit onto a branch that already has a **remote upstream** — a shared branch others may have pushed to. It stays silent on the default branch and on a fresh local branch with no upstream. So:
 
 - **Stack related commits on one fresh local branch.** Building a multi-fix queue? Commit each fix onto the same branch, in order. That is correct and expected, not "branch reuse."
 - **"Shared" = has a remote upstream.** Only then cut a new branch. A local-only branch is yours to keep committing to.
@@ -21,7 +21,7 @@ Finish a code change → **commit it**. Don't end a turn with uncommitted edits,
   - **reverts commits that live only on the branch you left** — the new branch doesn't have them, so your files snap back to that branch's state.
 - **To move a commit between branches, `git cherry-pick` it** — never switch away from work in progress and hope it follows.
 
-Example: mid-queue on a multi-fix branch, `git checkout <default>` to "branch the next fix off the default" reverts the first fix's already-committed source changes (that fix lives only on the abandoned branch) and leaves the working tree on a branch missing it. To move a commit, `cherry-pick` it onto the target — never leave the branch holding the queue.
+Example: mid-queue on a multi-fix branch, `git checkout <default>` to "branch the next fix off the default" reverts the first fix's already-committed source changes — that fix lives only on the abandoned branch — and leaves the working tree on a branch missing it. To move a commit, `cherry-pick` it onto the target — never leave the branch holding the queue.
 
 ## The principle
 

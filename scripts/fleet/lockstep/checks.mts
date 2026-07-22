@@ -33,7 +33,9 @@ import type {
 
 import {
   driftCommitsSince,
+  fetchTagsQuiet,
   gitIn,
+  isShallowRepo,
   resolveUpstream,
   shaIsReachable,
   splitLines,
@@ -158,7 +160,27 @@ export function checkVersionPin(
     return base
   }
 
-  // Count commits on the upstream default branch since pinned SHA.
+  // Refresh remote-tracking refs + tags BEFORE counting. A shallow / partial /
+  // never-fetched submodule clone carries a STALE `origin/*` ref, so the
+  // `pinned_sha..origin` count silently under-reports — the opentui incident,
+  // where drift read "1 commit" while the true gap was 211 commits / 3 minor
+  // releases. Best-effort: an offline run falls through to the loud detection
+  // below rather than trusting an unrefreshed count.
+  fetchTagsQuiet(submoduleDir)
+
+  // A shallow clone can't yield a trustworthy count — `rev-list` truncates at
+  // the graft boundary — and a fetch does not deepen it. Surface drift as
+  // UNKNOWN and LOUD (error) instead of a falsely-low number that reads clean.
+  if (isShallowRepo(submoduleDir)) {
+    base.severity = 'error'
+    messages.push(
+      `drift unknown — ${upstream.submodule} is a shallow clone; run \`git fetch --unshallow --tags\` before trusting the drift count`,
+    )
+    return base
+  }
+
+  // Count commits on the upstream default branch since pinned SHA, using the
+  // ref refreshed above.
   let driftRef = ''
   try {
     const remoteRefs = gitIn(submoduleDir, [
@@ -181,10 +203,16 @@ export function checkVersionPin(
       }
     }
   } catch {
-    // no remotes available — drift can't be computed; report OK with a note.
+    // no remotes available — handled by the loud no-ref branch below.
   }
   if (!driftRef) {
-    messages.push(`no origin remote ref found; cannot compute upstream drift`)
+    // No origin remote ref even after a fetch attempt. A "0" here would read as
+    // clean, so report drift as UNKNOWN and LOUD — the clone hasn't fetched the
+    // refs/tags a count needs.
+    base.severity = 'error'
+    messages.push(
+      `drift unknown — no origin remote ref/tags fetched for ${upstream.submodule}; run \`git fetch --tags\` before trusting drift`,
+    )
     return base
   }
   try {
@@ -239,9 +267,8 @@ export function checkFeatureParity(
   const codePatterns = row.code_patterns ?? []
   const testPatterns = row.test_patterns ?? []
   // Match source file extensions: .mjs, .mts, .js, .ts, .jsx, .tsx, and .json.
-  // The second regex excludes test directories (__tests__, test, tests) and
-  // files whose name contains .test. or .spec. so only production code is counted.
-  const codeFiles = walkDirFiles(localAreaPath, /\.(?:m?[jt]sx?|json)$/).filter(
+  // Excludes test dirs and .test./.spec. files so only production code counts.
+  const codeFiles = walkDirFiles(localAreaPath, /\.(?:json|m?[jt]sx?)$/).filter(
     f => !/[/\\](?:__tests__|test|tests)[/\\]|\.test\.|\.spec\./.test(f),
   )
 
@@ -256,9 +283,8 @@ export function checkFeatureParity(
   // as above; the directory/name filter keeps only files inside __tests__,
   // test, or tests folders or whose basename contains .test. or .spec.
   const testAreaPath = path.join(rootDir, row.test_area ?? row.local_area)
-  // Same source extensions as above (.mjs/.mts/.cjs/.cts/.js/.ts/.jsx/.tsx) plus
-  // .json fixtures.
-  const testAreaFiles = walkDirFiles(testAreaPath, /\.(?:m?[jt]sx?|json)$/)
+  // Trailing .json, or .js/.ts/.jsx/.tsx with an optional leading m for .mjs/.mts.
+  const testAreaFiles = walkDirFiles(testAreaPath, /\.(?:json|m?[jt]sx?)$/)
   const testFiles = row.test_area
     ? testAreaFiles
     : testAreaFiles.filter(f =>
@@ -376,7 +402,9 @@ export function checkLangParity(
       messages.push(`port '${site}' missing (declared in sites)`)
     }
   }
-  for (const port of Object.keys(row.ports)) {
+  const ports = Object.keys(row.ports)
+  for (let i = 0, { length } = ports; i < length; i += 1) {
+    const port = ports[i]!
     if (!declaredSites.includes(port)) {
       base.severity = 'error'
       messages.push(`port '${port}' not in sites map`)
@@ -389,7 +417,9 @@ export function checkLangParity(
   }
 
   if (row.category === 'rejected') {
-    for (const port of Object.keys(row.ports)) {
+    const rejectedPorts = Object.keys(row.ports)
+    for (let i = 0, { length } = rejectedPorts; i < length; i += 1) {
+      const port = rejectedPorts[i]!
       const state = row.ports[port]!
       if (state.status !== 'opt-out') {
         base.severity = 'drift'
@@ -453,7 +483,9 @@ export function checkCrossRowConsistency(
     }
 
     if (row.kind === 'lang-parity') {
-      for (const port of Object.keys(row.ports)) {
+      const langPorts = Object.keys(row.ports)
+      for (let i = 0, { length } = langPorts; i < length; i += 1) {
+        const port = langPorts[i]!
         if (!siteKeys.has(port)) {
           errors.push(
             `${loc} port '${port}' not in sites map (known: ${[...siteKeys].join(', ') || '(none)'})`,

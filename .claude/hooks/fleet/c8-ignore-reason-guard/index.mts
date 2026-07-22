@@ -93,6 +93,7 @@ export function isInScope(filePath: string): boolean {
 
 export const hook = defineHook({
   bypass: ['c8-ignore-reason'],
+  bypassOptional: true,
   check: editGuard((filePath, content) => {
     if (!isInScope(filePath)) {
       return undefined

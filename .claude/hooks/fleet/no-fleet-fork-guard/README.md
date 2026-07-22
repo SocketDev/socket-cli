@@ -42,9 +42,9 @@ For each Edit/Write/MultiEdit call:
 1. Resolve `tool_input.file_path` to an absolute path.
 2. Check if the path contains `/socket-wheelhouse/template/` — if yes, allow.
 3. Walk up directories looking for a fleet repo root: `package.json` AND `CLAUDE.md` carrying a `<fleet-canonical>` block marker (`<!-- <fleet-canonical> -->`).
-4. If no fleet repo root is found (the file is outside any fleet repo), allow.
+4. If no fleet repo root is found — the file is outside any fleet repo — allow.
 5. Compute the file path relative to the repo root.
-6. **Wheelhouse-own-README exemption:** if the path is the root `README.md` AND the repo is the wheelhouse itself (identified by a `template/CLAUDE.md` marker via `isWheelhouseRoot`), allow. The wheelhouse's root README is authored repo content (`# socket-wheelhouse`, real badges), not a cascade copy of `template/README.md`. That template file is the `<REPO_NAME>` placeholder fresh repos adopt, a different file: the cascade synthesizes each downstream README from the placeholder and never overwrites the wheelhouse's own. (A downstream repo has no `template/`, so its root README is already non-canonical and reaches this point allowed anyway.)
+6. **Wheelhouse-own-README exemption:** if the path is the root `README.md` AND the repo is the wheelhouse itself (identified by a `template/CLAUDE.md` marker via `isWheelhouseRoot`), allow. The wheelhouse's root README is authored repo content (`# socket-wheelhouse`, real badges), not a cascade copy of `template/README.md`. That template file is the `<REPO_NAME>` placeholder fresh repos adopt, a different file: the cascade synthesizes each downstream README from the placeholder and never overwrites the wheelhouse's own. A downstream repo has no `template/`, so its root README is already non-canonical and reaches this point allowed anyway.
 7. **Fleet-block exemption:** if the file carries `<fleet-canonical>` block markers (`<!-- <fleet-canonical> -->` … `<!-- </fleet-canonical> -->`, on disk or in the incoming content), it's a hybrid whose content outside the markers is repo-owned, so allow. The sync's fleet-block check re-validates the marked region at commit time.
 8. If the relative path matches one of the canonical prefixes, check the bypass phrase.
 9. No bypass → exit 2 with the explanation.

@@ -17,7 +17,7 @@ the freshly-installed cache as a post-reconcile pass (`reapplyPluginPatches()`).
 🚨 Keep the diff itself as small as possible. When a fix needs more than a few
 lines of new logic, **move that logic into a standalone file** and let the diff
 `import` it + swap the call sites, rather than inlining a 30-line function
-body as `+` lines. A thin diff (an import + a call-site swap) re-anchors cleanly
+body as `+` lines. A thin diff — an import + a call-site swap — re-anchors cleanly
 across upstream version bumps; a fat inlined diff breaks on the first nearby
 edit and is painful to review.
 
@@ -85,7 +85,7 @@ skipped with a warning.
    stdin.
 3. **Idempotency:** a forward `--dry-run` that fails while a reverse `--dry-run`
    succeeds means the fix is already present → skip. A patch that applies
-   neither way (the plugin bumped, the patch went stale) **warns, doesn't
+   neither way — the plugin bumped, the patch went stale — **warns, doesn't
    abort** — a stale patch must not wedge the whole reconcile.
 
 ## Lifecycle

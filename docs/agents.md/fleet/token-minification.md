@@ -2,7 +2,7 @@
 
 Wire-level token minification losslessly compresses Claude Code `tool_result`
 payloads before they reach the model — cutting token cost without changing
-semantics (the model sees the same information, fewer tokens).
+semantics: the model sees the same information, fewer tokens.
 
 ## headroom-ai
 

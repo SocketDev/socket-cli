@@ -565,7 +565,14 @@ export const check = (payload: ToolCallPayload): GuardResult => {
     primaryDirtyCount: primaryDirty.length,
     siblingDirtyCount,
     isPrimary: isPrimaryCheckout(repoDir),
-    bypassPresent: bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE),
+    // Low-risk commit-hygiene guard (nothing security/supply-chain) — `bypass`
+    // keyword optional.
+    bypassPresent: bypassPhrasePresent(
+      payload.transcript_path,
+      BYPASS_PHRASE,
+      undefined,
+      { optionalSuffix: true },
+    ),
     stopHookActive,
     hasLiveChild: hasLiveBackgroundChild(payload.transcript_path, {
       now: Date.now(),
@@ -623,6 +630,7 @@ export const check = (payload: ToolCallPayload): GuardResult => {
 export const hook = defineHook({
   bypass: ['dirty-worktree'],
   bypassMode: 'manual',
+  bypassOptional: true,
   check,
   event: 'Stop',
   type: 'guard',

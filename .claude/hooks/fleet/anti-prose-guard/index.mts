@@ -107,6 +107,7 @@ export const check = editGuard((filePath, content, payload) => {
 export const hook = defineHook({
   bypass: ['prose-antipattern', 'changelog-impl-detail'],
   bypassMode: 'manual',
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

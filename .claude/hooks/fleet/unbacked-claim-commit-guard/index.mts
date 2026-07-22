@@ -104,6 +104,7 @@ export const check = bashGuard((command, payload) => {
 
 export const hook = defineHook({
   bypass: ['unbacked-claim'],
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

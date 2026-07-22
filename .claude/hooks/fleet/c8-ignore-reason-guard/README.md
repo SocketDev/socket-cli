@@ -15,7 +15,7 @@ reader distinguish a principled ignore from a coverage dodge on core SDK logic
 
 - A `c8`/`v8` `ignore next`/`ignore start` directive with no `- <reason>` /
   `— <reason>` trailing text, in a `.ts`/`.mts`/`.cts`/`.js`/… source file.
-- `ignore stop` is exempt (its paired `start` carries the reason).
+- `ignore stop` is exempt — its paired `start` carries the reason.
 - `test/`, `fixtures/`, `external/`, `vendor/` paths are exempt.
 
 ## Bypass

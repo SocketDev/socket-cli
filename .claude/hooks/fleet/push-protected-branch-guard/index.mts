@@ -93,14 +93,22 @@ export const check = bashGuard((command, payload) => {
   }
 
   // A protected-branch push. Allow ONLY if the user explicitly authorized it.
-  // The branch-scoped combo `Allow force-with-lease <branch> bypass` counts
-  // too: one phrase covering BOTH this guard and no-force-push-guard for a
-  // squash-repo lease-force reconciliation, scoped to exactly this branch.
-  const phrases = [
-    ...BYPASS_PHRASES,
-    `Allow force-with-lease ${offending.branch} bypass`,
-  ]
-  if (bypassPhrasePresent(payload.transcript_path, phrases)) {
+  // The plain protected-push phrases are LOW-RISK — GitHub branch protection is
+  // the real final gate behind a fast-forward push to the shared trunk — so
+  // their trailing `bypass` keyword is OPTIONAL (`Allow push to main` counts).
+  // The branch-scoped combo `Allow force-with-lease <branch> bypass` stays
+  // STRICT: it also satisfies no-force-push-guard for a squash-repo lease-force
+  // reconcile, where the remote ACCEPTS the force push (branch protection is not
+  // the backstop there), so it must be typed in full and scoped to this branch.
+  if (
+    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES, undefined, {
+      optionalSuffix: true,
+    }) ||
+    bypassPhrasePresent(
+      payload.transcript_path,
+      `Allow force-with-lease ${offending.branch} bypass`,
+    )
+  ) {
     return undefined
   }
 
@@ -140,6 +148,7 @@ export const check = bashGuard((command, payload) => {
 export const hook = defineHook({
   bypass: ['push-to-protected', 'protected-push', 'force-with-lease'],
   bypassMode: 'manual',
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

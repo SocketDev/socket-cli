@@ -109,6 +109,7 @@ export const check = bashGuard((command, payload) => {
 
 export const hook = defineHook({
   bypass: ['branch-reuse'],
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

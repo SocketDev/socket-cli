@@ -112,6 +112,7 @@ export const check = editGuard((filePath, content) => {
 
 export const hook = defineHook({
   bypass: ['unmocked-network-in-tests'],
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

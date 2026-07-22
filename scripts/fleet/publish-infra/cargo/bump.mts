@@ -15,6 +15,8 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
+import { gt } from '@socketsecurity/lib-stable/versions/compare'
+
 import {
   bumpLevelFor,
   changelogHeading,
@@ -26,6 +28,7 @@ import {
   repoBaseUrl,
   resolveBumpBase,
   sectionHasEntries,
+  versionHintFrom,
 } from '../../lib/changelog.mts'
 import { commitViaGithubApi } from '../../lib/commit-via-github-api.mts'
 import {
@@ -105,6 +108,7 @@ export function replaceCargoVersion(
     if (/^\s*\[/.test(line)) {
       break
     }
+    // Capture a `version = "X"` line as (indent+key+open-quote)(value)(close-quote+rest).
     const m = /^(\s*version\s*=\s*")([^"]*)(".*)$/.exec(line)
     if (m) {
       lines[i] = `${m[1]}${nextVersion}${m[3]}`
@@ -175,10 +179,13 @@ export async function runBump(options: {
     publishedVersion,
     tagVersion: fromTag ?? undefined,
   })
-  // Version resolution: the --release-as flag wins, else the commit-type
+  // Version resolution: the --release-as flag wins, else a committed
+  // `X.Y.Z-prerelease` hint names the exact target, else the commit-type
   // heuristic. MAJOR is never derived — it needs the explicit --release-as
   // major signal (agent runs are hook-gated on the user's typed authorization;
   // CI on the dispatch input).
+  const hinted = versionHintFrom(pkg.version)
+  let hintedVersion: string | undefined
   let level: BumpLevel | undefined
   if (typeof releaseAs === 'string') {
     if (
@@ -193,6 +200,41 @@ export async function runBump(options: {
       return
     }
     level = releaseAs
+  } else if (hinted) {
+    // A `X.Y.Z-prerelease` hint names the exact release target — the human
+    // pre-committed the version as a repo artifact instead of leaning on the
+    // heuristic. MAJOR can't be smuggled in through a hint (it still needs
+    // --release-as major), and the hint must advance PAST the last released
+    // base or it would re-publish / move backward.
+    // Compare against the last released `base`, not the manifest — `hinted` is
+    // the manifest with its suffix stripped, so its major always equals the
+    // manifest's; comparing them was dead code that let a `X.0.0-prerelease`
+    // hint smuggle a major into a PERMANENT crates.io publish.
+    const baseMajor = base.split('.')[0]
+    if (hinted.split('.')[0] !== baseMajor) {
+      logger.fail(
+        `Version hint ${pkg.version} names ${hinted}, a MAJOR jump past the ` +
+          `last released version ${base} — a major requires the explicit ` +
+          `--release-as major signal, not a hint.`,
+      )
+      process.exitCode = 1
+      return
+    }
+    if (!gt(hinted, base)) {
+      logger.fail(
+        `Version hint ${pkg.version} names ${hinted}, which is not ahead of the ` +
+          `last released version ${base} — it would re-publish or move backward. ` +
+          `Name a version greater than ${base}.`,
+      )
+      process.exitCode = 1
+      return
+    }
+    hintedVersion = hinted
+    level = 'patch'
+    logger.log(
+      `Version hint found: ${pkg.version} → releasing as ${hinted} ` +
+        `(hint overrides the commit-type heuristic).`,
+    )
   } else {
     level = bumpLevelFor(commits)
     if (level === 'major') {
@@ -216,7 +258,7 @@ export async function runBump(options: {
     return
   }
 
-  const nextVersion = computeNextVersion(base, level)
+  const nextVersion = hintedVersion ?? computeNextVersion(base, level)
   const repoUrl = repoBaseUrl(pkg.repository)
   const date = new Date().toISOString().slice(0, 10)
   const changelogPath = path.join(rootPath, 'CHANGELOG.md')

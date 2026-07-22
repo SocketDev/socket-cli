@@ -124,6 +124,7 @@ export const check = editGuard((filePath, _content, payload) => {
 
 export const hook = defineHook({
   bypass: ['target-arch-env'],
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

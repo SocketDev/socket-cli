@@ -7,13 +7,13 @@ import {
   readFileSync,
   readdirSync,
   realpathSync,
-  rmSync,
   writeFileSync,
 } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import crypto from 'node:crypto'
 import { execFileSync } from 'node:child_process'
@@ -743,7 +743,7 @@ function pruneStaleFleetFiles(dest, manifest) {
       if (PRUNE_SKIP_NAMES.has(path.basename(rel))) continue
       const key = normalizeBundlePath(rel)
       if (!kept.has(key)) {
-        rmSync(path.join(dest, rel), { force: true })
+        safeDeleteSync(path.join(dest, rel))
         pruned += 1
       }
     }
@@ -802,7 +802,7 @@ function writeAppliedRef(dest, ref) {
   mkdirSync(path.dirname(p), { recursive: true })
   writeFileSync(p, `${ref}\n`)
   const legacy = path.join(dest, LEGACY_APPLIED_MARKER)
-  if (existsSync(legacy)) rmSync(legacy, { force: true })
+  if (existsSync(legacy)) safeDeleteSync(legacy)
 }
 
 //#endregion
@@ -1118,10 +1118,7 @@ function resolveReleaseTemplateSha(ref, repo) {
   } catch {
     return
   } finally {
-    rmSync(tmp, {
-      recursive: true,
-      force: true,
-    })
+    safeDeleteSync(tmp)
   }
 }
 
@@ -1476,10 +1473,7 @@ async function installFleet(options) {
     )
     return 0
   } finally {
-    rmSync(tmp, {
-      recursive: true,
-      force: true,
-    })
+    safeDeleteSync(tmp)
   }
 }
 function isMainModule() {

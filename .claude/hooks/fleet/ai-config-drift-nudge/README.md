@@ -27,7 +27,7 @@ Exit 0 always (Stop hooks fire after the turn — informational, not a gate).
 
 Companion to `ai-config-poisoning-guard`, which blocks Claude's _own_
 poison-shaped writes to these paths at edit time. This reminder catches the
-out-of-band case (a dependency / upstream wrote them) that edit-time hooks can't
+out-of-band case — a dependency / upstream wrote them — that edit-time hooks can't
 see. Distinct base names so they don't violate the fleet `-guard`/`-nudge`
 no-overlap rule.
 

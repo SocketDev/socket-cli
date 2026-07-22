@@ -101,7 +101,7 @@ Write the `<summary>` as a specific label ("Benchmarks (12 runs, M3 Max)"). "Det
 
 ### Alerts
 
-GitHub renders five blockquote alerts: `> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!WARNING]`, `> [!CAUTION]`. Use at most one per body, for the single thing a skimming reader must act on (a breaking change, a required migration step). Stacked alerts cancel each other out.
+GitHub renders five blockquote alerts: `> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!WARNING]`, `> [!CAUTION]`. Use at most one per body, for the single thing a skimming reader must act on: a breaking change or a required migration step. Stacked alerts cancel each other out.
 
 ```markdown
 > [!WARNING]

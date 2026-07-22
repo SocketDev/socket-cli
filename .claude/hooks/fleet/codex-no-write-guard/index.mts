@@ -179,6 +179,7 @@ export function check(payload: ToolCallPayload): GuardResult {
 
 export const hook = defineHook({
   bypass: ['codex-write'],
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

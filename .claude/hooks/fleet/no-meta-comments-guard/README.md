@@ -6,7 +6,7 @@
 
 2. **Describes code that was removed** rather than code that exists — e.g. `// removed: old behavior used a Map here` / `// previously called X` / `// used to be sync, made async in 6.0`.
 
-Per CLAUDE.md "Code style → Comments": comments default to none; when written, they explain the **constraint** or the **hidden invariant**, not the development context. Development context (the plan, the task, the user request, removed code) goes in commit messages and PR descriptions, not source comments.
+Per CLAUDE.md "Code style → Comments": comments default to none; when written, they explain the **constraint** or the **hidden invariant**, not the development context. Development context — the plan, the task, the user request, removed code — goes in commit messages and PR descriptions, not source comments.
 
 ## The comment is usually useful — it's the prefix that's noise
 
@@ -19,7 +19,7 @@ Suggest: // Use the cache to avoid re-resolving
 
 The agent gets to keep the useful "why" — drop the meta-label.
 
-For removed-code references the suggestion is to delete entirely (the info lives in git history).
+For removed-code references the suggestion is to delete entirely — the info lives in git history.
 
 ## File scope
 

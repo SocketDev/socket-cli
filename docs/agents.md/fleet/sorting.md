@@ -104,7 +104,7 @@ Before re-sorting any sibling list, verify that order is not load-bearing. Two
 failure classes:
 
 1. **Shared-object aliasing / mutation order.** When siblings are objects that
-   share identity (the same reference held by multiple callers) and one sibling
+   share identity — the same reference held by multiple callers — and one sibling
    writes to the shared object's properties, the write sequence is load-bearing.
    Alphabetical re-sorting changes which write happens first and can silently
    corrupt the shared object's state for subsequent reads. The kw() incident:

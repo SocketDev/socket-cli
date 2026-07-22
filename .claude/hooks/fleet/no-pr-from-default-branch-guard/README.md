@@ -14,7 +14,7 @@ PreToolUse Bash hook (blocking, exit 2) that HARD-BLOCKS `gh pr create` /
 
 The PR head is resolved structurally: an explicit `--head` / `-H` value wins,
 otherwise the current git branch (`git-branch.mts`'s shared resolver). Detection
-is **AST-based** (the shell-quote-backed `shell-command.mts` parser, not regex),
+is **AST-based** — the shell-quote-backed `shell-command.mts` parser, not regex —
 so `&&` chains, quoting, `$(…)` substitution, and a literal `"gh pr create"`
 inside a `grep` string are all handled correctly.
 

@@ -85,15 +85,30 @@ export function normalizeBypassText(text: string): string {
     .toLowerCase()
 }
 
+export interface BypassMatchOptions {
+  // LOW-RISK guards ONLY (opt-in): when true, the trailing `bypass` keyword is
+  // OPTIONAL — `Allow <slug>` authorizes the same as `Allow <slug> bypass`.
+  // SECURITY guards (the default) omit this: the `bypass` suffix stays REQUIRED
+  // as the anti-false-positive anchor that keeps a bare `Allow <slug>` in casual
+  // prose from disarming a supply-chain / destructive / exfil guard. See
+  // docs/agents.md/fleet/bypass-phrases.md.
+  readonly optionalSuffix?: boolean | undefined
+}
+
 /**
  * Compile a normalized phrase into a matcher where every inter-word gap is
  * OPTIONAL. `opt in readme fleet shape` then matches `Opt-in`, `Opt in`, and
  * `Optin` spellings alike (normalizeBypassText already folds dashes/whitespace
  * to one space; this makes that one space elidable), and `non fleet` matches
  * `nonfleet`. Regex metacharacters in the phrase (`:` targets, dots) are
- * escaped literally.
+ * escaped literally. With `optionalSuffix` the reserved `bypass` keyword is
+ * also elidable (LOW-RISK guards only — see BypassMatchOptions).
  */
-export function phrasePattern(normalizedPhrase: string): RegExp {
+export function phrasePattern(
+  normalizedPhrase: string,
+  options?: BypassMatchOptions | undefined,
+): RegExp {
+  const opts = { __proto__: null, ...options } as BypassMatchOptions
   // Collapse whitespace on BOTH sides of a `:` target separator to a bare colon
   // first, so the emitted pattern makes surrounding space optional on either
   // side — `Allow x bypass: t`, `bypass :t`, `bypass  :  t`, and `bypass:t` all
@@ -101,7 +116,13 @@ export function phrasePattern(normalizedPhrase: string): RegExp {
   // space before this). Plain colon-free phrases are unaffected.
   const collapsed = normalizedPhrase.replace(/ *: */g, ':')
   const escaped = collapsed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const src = escaped.replace(/ /g, ' ?').replace(/:/g, ' ?: ?')
+  let src = escaped.replace(/ /g, ' ?').replace(/:/g, ' ?: ?')
+  if (opts.optionalSuffix) {
+    // Make the reserved ` bypass` keyword elidable (` ?bypass` is how it lands
+    // in `src` after the space-optional pass — at the end, or before a ` ?: ?`
+    // target). A non-bypass phrase has no `bypass` token, so this is a no-op.
+    src = src.replace(/ \?bypass/g, '(?: ?bypass)?')
+  }
   return new RegExp(src, 'g')
 }
 
@@ -109,6 +130,7 @@ export function bypassPhrasePresent(
   transcriptPath: string | undefined,
   phrases: string | readonly string[],
   lookbackUserTurns?: number | undefined,
+  options?: BypassMatchOptions | undefined,
 ): boolean {
   const list = typeof phrases === 'string' ? [phrases] : phrases
   const { length } = list
@@ -130,7 +152,7 @@ export function bypassPhrasePresent(
   const haystack = normalizeBypassText(text)
   for (let i = 0; i < length; i += 1) {
     const needle = normalizeBypassText(list[i]!)
-    if (phrasePattern(needle).test(haystack)) {
+    if (phrasePattern(needle, options).test(haystack)) {
       return true
     }
   }

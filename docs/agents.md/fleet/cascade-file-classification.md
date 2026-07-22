@@ -69,7 +69,7 @@ but new markers are emitted without the redundant keywords.
   distinct tags; same-tag blocks may **nest**, like HTML elements.
 - **Attributes** — the open tag may carry HTML-style attributes
   (`<fleet-canonical id="standards" managed>`), including bare boolean attrs.
-  They are PARSED but not yet consumed (a disabled seam — wired in, gated off).
+  They are PARSED but not yet consumed — a disabled seam, wired in, gated off.
 - **Nested + balanced** — blocks nest and must be balanced; overlap, an unclosed
   open, or an orphan close is **malformed → rejected** (never auto-fixed).
 - **JSON** carries the marker as a sentinel that reuses the same text: a

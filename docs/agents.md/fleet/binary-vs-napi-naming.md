@@ -10,7 +10,7 @@ blurred into one convention.
 
 Ratified 2026-07-04 as the binary-vs-napi split; generalized 2026-07-13 to the
 dotted two-axis scheme (`.lang` + `.target`) so multi-implementation families
-(a Rust addon, a C++ addon, and a wasm fallback of the same package) never
+— a Rust addon, a C++ addon, and a wasm fallback of the same package — never
 collide.
 
 ## The grammar
@@ -26,15 +26,15 @@ collide.
 - **`<target>`** — build-artifact kind, the **domain signal**:
   - **`node`** — native NAPI addon (payload `<name>.node`). Platform tail follows
     **napi-rs** naming: `platform-arch[-abi]`, `-gnu`/`-musl` on linux and
-    `-msvc` on windows explicit, darwin bare. Default matrix is 5 targets (the
-    wasm fallback covers the rest): `darwin-arm64`, `darwin-x64`,
+    `-msvc` on windows explicit, darwin bare. Default matrix is 5 targets, the
+    wasm fallback covers the rest: `darwin-arm64`, `darwin-x64`,
     `linux-arm64-gnu`, `linux-x64-gnu`, `win32-x64-msvc`. Canonical set:
     `scripts/fleet/util/napi-targets.mts`.
   - **`wasm`** — portable WebAssembly. No platform tail; one artifact runs
     everywhere.
   - **`exe`** — standalone executable (payload at `bin/<name>`). Platform tail
     follows pnpm **pack-app** naming: `<os>-<arch>[-musl]`, glibc unsuffixed, no
-    toolchain segment. 8 targets (an executable has no fallback): `darwin-arm64`,
+    toolchain segment. 8 targets, an executable has no fallback: `darwin-arm64`,
     `darwin-x64`, `linux-arm64`, `linux-arm64-musl`, `linux-x64`,
     `linux-x64-musl`, `win32-arm64`, `win32-x64`. Canonical set:
     `scripts/fleet/util/pack-app-triplets.mts`. Exemplar:

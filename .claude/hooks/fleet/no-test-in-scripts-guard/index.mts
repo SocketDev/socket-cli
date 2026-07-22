@@ -68,6 +68,7 @@ export const check = editGuard((filePath, _content, _payload) => {
 
 export const hook = defineHook({
   bypass: ['test-in-scripts'],
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

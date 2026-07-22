@@ -207,6 +207,7 @@ function stripLineComment(line: string): string {
 
 export const hook = defineHook({
   bypass: ['bundle-flags'],
+  bypassOptional: true,
   check: editGuard((filePath, _content, payload) => {
     if (isTestTree(filePath)) {
       return undefined

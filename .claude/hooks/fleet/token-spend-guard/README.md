@@ -6,7 +6,7 @@ PreToolUse hook that reminds (non-fatal `exit 2`) when a **known-mechanical** Ba
 
 A command whose shape is unambiguously mechanical — wheelhouse cascade (`pnpm run sync`, `chore(wheelhouse): cascade` commit), whole-tree lint autofix (`oxlint --fix .` / `fix --all`), or format sweep (`oxfmt --write .`) — while:
 
-- the model (read from the transcript's most-recent assistant `model` field) is an Opus or a Fable / Mythos (the apex tier, ~2× Opus cost), **or**
+- the model (read from the transcript's most-recent assistant `model` field) is an Opus or a Fable / Mythos — the apex tier, ~2× Opus cost — **or**
 - `$CLAUDE_EFFORT` is `high` / `xhigh` / `max`.
 
 Each dimension is flagged and bypassed independently. `low`/`medium` effort and Sonnet/Haiku never trigger — they're already the cheap/fast tier.

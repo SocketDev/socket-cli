@@ -61,7 +61,7 @@ The mapping was looked up from, and should be re-verified against:
   socket-packageurl-js, stuie, ultrathink sit on Node 18; most others are
   evergreen.
 - **A new copy/static built-in is adopted.** When the fleet starts using another
-  recent built-in (a future ES proposal, a new `Iterator.*` helper, etc.), add
+  recent built-in — a future ES proposal, a new `Iterator.*` helper, etc. — add
   it to the table here and to `MEMBER_METHOD_MAJORS` / `STATIC_METHOD_MAJORS` in
   the rule, with a valid + invalid test arm.
 

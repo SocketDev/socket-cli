@@ -10,9 +10,9 @@ When two socket-\* repos pin different versions of the same shared
 resource, the divergence is a bug. The repo with the **newer version
 is the source of truth**; older repos catch up.
 
-This applies whenever a value is meant to be byte-identical (a SHA, a
-hook, a CLAUDE.md fleet block) or semver-aligned (a tool version, a
-Node release, a pnpm pin).
+This applies whenever a value is meant to be byte-identical — a SHA, a
+hook, a CLAUDE.md fleet block — or semver-aligned — a tool version, a
+Node release, a pnpm pin.
 
 ## Cascade scope is never a hazard to warn about
 
@@ -71,7 +71,7 @@ Scheduled workflows (`on: schedule`) register their cron from the DEFAULT
 branch's committed file, so every workflow stays git-tracked even in a thin
 member ([`thin-distribution.md`](thin-distribution.md)).
 
-## Internal action-pin staleness (the implicit data edge)
+## Internal action-pin staleness: the implicit data edge
 
 A composite action reads its data dependencies at runtime via
 `${GITHUB_ACTION_PATH}/../…` — e.g. `setup` reads `external-tools.json` and
@@ -79,8 +79,8 @@ A composite action reads its data dependencies at runtime via
 `setup` silently captures `external-tools.json` AS IT WAS at that SHA. The
 DEEPEST pin in a chain therefore decides tool versions, not the entrypoint — and
 a content change to the data file leaves every older pin stale with nothing to
-flag it. This broke fleet CI once (a pinned pnpm version went stale behind the
-edge).
+flag it. This broke fleet CI once — a pinned pnpm version went stale behind the
+edge.
 
 `scripts/fleet/check/action-pins-are-current.mts` closes the gap. The CLOSURE of
 a pinned unit = its own files ∪ each transitive internal `uses:` dep's closure ∪
@@ -136,8 +136,8 @@ sync-scaffolding tool produces this body automatically when run with
 
 The drift rule generalizes from "two repos pin different versions" to every
 build and language target choice: default to the latest the runtime supports,
-not a conservative back-version. For an auto-updating runtime (a Chrome
-extension, the web, a CI-pinned Node) the `tsconfig` `target`/`lib` should be
+not a conservative back-version. For an auto-updating runtime — a Chrome
+extension, the web, a CI-pinned Node — the `tsconfig` `target`/`lib` should be
 `ESNext`, `engines.node` the current floor, `browserslist` `defaults` or `last
 N versions`, and dependency floors the latest practical. A back-versioned
 target downlevels or untypes modern syntax for no benefit. The motivating case
@@ -145,16 +145,33 @@ was a `tsconfig` bumped only to `ES2023` to satisfy one method, where the
 runtime was evergreen and `ESNext` was the right answer.
 
 `.claude/hooks/fleet/prefer-evergreen-target-nudge/` is a Stop nudge (never
-blocks, exit 0) that flags a conservative `target`/`lib` (an `ES<year>` below
-the current floor) introduced in the last assistant turn and points at
+blocks, exit 0) that flags a conservative `target`/`lib` — an `ES<year>` below
+the current floor — introduced in the last assistant turn and points at
 `ESNext`. JSON config (tsconfig, package.json, browserslist) is not lintable by
 oxlint, so the nudge is the only enforcement surface for the principle. Bypass:
 type `Allow evergreen-target bypass` in a recent message.
+
+## Upstream pins track the latest release
+
+The drift rule applies at PIN time, not just across repos: porting an upstream
+means the LATEST shipped release. Before adding or changing a `.gitmodules`
+submodule pin or a `lockstep.json` `version-pin` row, `git fetch --tags` and pin
+the NEWEST release; never port against a stale or inherited pin, and never trust
+a drift count from a clone that hasn't fetched tags. A shallow or never-fetched
+clone silently reports a falsely-low number — the opentui incident pinned
+v0.1.99, 211 commits and 3 minor releases behind v0.4.5, and ~31k lines were
+ported against it before the drift surfaced.
+
+`.claude/hooks/fleet/latest-release-pin-guard/` blocks a pin set to an older
+release than the remote's newest tag; the lockstep harness fetches tags before
+counting drift and reports drift UNKNOWN rather than a falsely-low count off a
+shallow clone. Full harness detail: [`lockstep.md`](lockstep.md).
 
 ## See also
 
 - `.claude/hooks/fleet/drift-check-nudge/`
 - `.claude/hooks/fleet/prefer-evergreen-target-nudge/`
 - `.claude/hooks/fleet/gitmodules-comment-guard/`
+- `.claude/hooks/fleet/latest-release-pin-guard/`
 - `scripts/repo/sync-scaffolding/`: drift detection + auto-fix tooling (canonical in the fleet source repo).
 - [`lockstep.md`](lockstep.md): the upstream-drift harness for submodule pins + file forks.

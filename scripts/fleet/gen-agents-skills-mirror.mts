@@ -38,12 +38,12 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
-  rmSync,
   writeFileSync,
 } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
@@ -230,7 +230,7 @@ export function writeMirror(
   const agentsSkills = path.join(repoRoot, '.agents', 'skills')
   // Regenerate from scratch so a removed/renamed source skill can't leave a
   // stale mirror entry behind.
-  rmSync(agentsSkills, { force: true, recursive: true })
+  safeDeleteSync(agentsSkills)
   for (let i = 0, { length } = entries; i < length; i += 1) {
     const entry = entries[i]!
     const files = renderMirrorEntry(repoRoot, entry)

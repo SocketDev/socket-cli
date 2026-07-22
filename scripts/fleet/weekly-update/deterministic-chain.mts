@@ -39,7 +39,7 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { applyBump, planFromReport } from '../lockstep/auto-bump.mts'
 import { readManifest } from '../lockstep/manifest.mts'
-import { REPO_ROOT } from '../paths.mts'
+import { lockstepManifestCandidates, REPO_ROOT } from '../paths.mts'
 
 import type { Report } from '../lockstep/types.mts'
 
@@ -52,21 +52,13 @@ export interface ChainStepResult {
 }
 
 // Resolve the lockstep manifest path. The canonical CLI reads `lockstep.json` at
-// the repo root; some repos keep it under `.config/`. Return whichever exists so
-// the chain drives the same manifest the gate keyed on.
+// the repo root; the segregated location is `.config/repo/lockstep.json` (the
+// manifest is repo-owned); older repos keep the loose `.config/lockstep.json`.
+// Return whichever exists so the chain drives the same manifest the gate keyed on.
 export function resolveLockstepManifestPath(
   repoRoot: string,
 ): string | undefined {
-  const candidates = [
-    path.join(repoRoot, 'lockstep.json'),
-    path.join(repoRoot, '.config', 'lockstep.json'),
-  ]
-  for (let i = 0, { length } = candidates; i < length; i += 1) {
-    if (existsSync(candidates[i]!)) {
-      return candidates[i]
-    }
-  }
-  return undefined
+  return lockstepManifestCandidates(repoRoot).find(p => existsSync(p))
 }
 
 // Run a command capturing stdout; never throws. Mirrors weekly-update.mts.

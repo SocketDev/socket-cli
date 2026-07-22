@@ -71,7 +71,7 @@ Fireworks (`api.fireworks.ai/inference/v1`) and Synthetic (`api.synthetic.new/op
 1. **Through `opencode`** (the hybrid backend). Set `OPENCODE_MODEL` to a `provider/model` slug and the opencode runner passes `--model <slug>`. opencode owns the provider auth + base-URL config; the slug just picks the model. This is the path that matches the local OpenCode setup.
 2. **Directly from Node** via `@socketsecurity/lib/ai/spawn`'s HTTP backends (`fireworks` / `synthetic`) — for scripts/hooks that call a model programmatically without an interactive CLI. Same OpenAI-compatible wire format; the lib owns the base URL + `Authorization` header (token from env, never inline) + the `reasoning_effort` field.
 
-**Provider/model slug catalog** (the shapes opencode + the lib accept):
+**Provider/model slug catalog** — the shapes opencode + the lib accept:
 
 | Provider     | Slug shape                                      | Notable models                                                                            |
 | ------------ | ----------------------------------------------- | ----------------------------------------------------------------------------------------- |
@@ -88,11 +88,11 @@ Model choice by job (research-backed, as of 2026-06):
 - **Cross-provider backup (Fireworks itself down) → Synthetic**, flat-rate: `hf:moonshotai/Kimi-K2.7-Code` + `hf:zai-org/GLM-5.2`, or `hf:Qwen/Qwen3-Coder-480B-A35B-Instruct` for code.
 - **Reserve Anthropic for planning + deep reasoning.** The live roster is `opencode models` — it drifts; re-run it rather than trusting this list.
 
-Reasoning effort on the HTTP providers is per-model (the OpenAI `reasoning_effort` field where the model supports it) — only set it for a model that accepts it.
+Reasoning effort on the HTTP providers is per-model: the OpenAI `reasoning_effort` field where the model supports it — only set it for a model that accepts it.
 
 Tokens for these providers live in env / the keychain (`FIREWORKS_API_KEY`, `SYNTHETIC_API_KEY`), never inline — same token-hygiene rule as `SOCKET_API_KEY`.
 
-To see which fallback backends are authed + reachable on your machine — and get the exact `codex login` / `opencode auth login` fix for any that aren't — run `node scripts/fleet/ai-backends-status.mts`. It dogfoods `detectAvailableBackends` + reads each backend's auth home without triggering a keychain prompt; informational by default (these backends are dev-only), and `--require <codex|fireworks|synthetic|anthropic>` fails loud when a backend you depend on isn't ready.
+To see which fallback backends are authed + reachable on your machine — and get the exact `codex login` / `opencode auth login` fix for any that aren't — run `node scripts/fleet/ai-backends-status.mts`. It dogfoods `detectAvailableBackends` + reads each backend's auth home without triggering a keychain prompt; informational by default — these backends are dev-only — and `--require <codex|fireworks|synthetic|anthropic>` fails loud when a backend you depend on isn't ready.
 
 ## Giving the opencode backend read-access to another repo (references)
 
@@ -118,7 +118,7 @@ Model attribution (above) is one axis; _where the model's shell runs_ is a separ
 - **`real`** — the lib `spawn`; touches the actual filesystem. The default for trusted, intentional work.
 - **`sandboxed`** — [`just-bash`](https://justbash.dev) (an in-process virtual-filesystem bash interpreter; zero model calls). For running model-generated or untrusted shell without touching the real FS — eval harnesses, agent self-test, analyzing a script before trusting it. Consumed via its `createBashTool({ files })` / Vercel-compatible `Sandbox.create()` surface.
 
-Pick the exec backend by _trust level_, not by model. `just-bash` is NOT a `lib/ai/backends` entry — it makes no model call and produces no attributed output, so it lives in the exec seam, never the model-CLI registry. (The `flue` agent framework, which is an _orchestrator_ peer to this whole delegate + opencode + `lib/ai/spawn` stack — not a backend — uses a sandbox in exactly this slot. We evaluated adopting it as our harness and **declined**: it is pre-1.0 (v0.10.x, breaking fast), its provider-routing layer is thinner than our `route`/`tier`/`backends`, and its added capabilities — durable execution, Cloudflare/container deploy — target hosted long-running agents, not the hook/CI/lint tooling we actually run. Re-evaluate only if we need durable hosted agents or it ships a stable 1.0 with routing at least as capable as ours.)
+Pick the exec backend by _trust level_, not by model. `just-bash` is NOT a `lib/ai/backends` entry — it makes no model call and produces no attributed output, so it lives in the exec seam, never the model-CLI registry. The `flue` agent framework, which is an _orchestrator_ peer to this whole delegate + opencode + `lib/ai/spawn` stack — not a backend — uses a sandbox in exactly this slot. We evaluated adopting it as our harness and **declined**: it is pre-1.0 (v0.10.x, breaking fast), its provider-routing layer is thinner than our `route`/`tier`/`backends`, and its added capabilities — durable execution, Cloudflare/container deploy — target hosted long-running agents, not the hook/CI/lint tooling we actually run. Re-evaluate only if we need durable hosted agents or it ships a stable 1.0 with routing at least as capable as ours.
 
 ## Canonical implementation
 
@@ -132,6 +132,6 @@ Provider tokens resolve through **`resolveProviderCredential`** (`@socketsecurit
 
 ## When NOT to use
 
-- Skills that only need _one_ agent (the current Claude session driving the user). No detection needed; just do the work.
+- Skills that only need _one_ agent — the current Claude session driving the user. No detection needed; just do the work.
 - Skills that need a specific model unconditionally (e.g. a benchmark that compares two models — those use direct API calls, not the CLI registry).
 - Per-repo fix scripts that rely on a single tool (`pnpm`, `git`, `cargo`). Tooling, not agents.

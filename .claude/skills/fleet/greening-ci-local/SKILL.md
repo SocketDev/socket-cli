@@ -20,7 +20,7 @@ fix-and-loop discipline, different engine. Reach for local when you want to
 validate BEFORE the remote run exists; reach for remote when the run is already
 dispatched (or the failure only reproduces on real runners — Depot/macOS VMs).
 
-## Requirements (the same ones agent-ci needs)
+## Requirements — the same ones agent-ci needs
 
 - **Docker daemon up.** Each job runs in a container. On macOS the fleet uses
   **OrbStack** (`open -a OrbStack`; confirm with `docker info`). If it's down,
@@ -31,7 +31,7 @@ dispatched (or the failure only reproduces on real runners — Depot/macOS VMs).
   reusable workflow; agent-ci needs the token to fetch it (bare flag →
   `gh auth token`).
 - **macOS matrix legs** need `tart` + `sshpass` on Apple Silicon; without them
-  those legs are SKIPPED (the rest still run). Linux/musl legs run in Docker.
+  those legs are SKIPPED, the rest still run. Linux/musl legs run in Docker.
 - Some legs genuinely can't run locally (Depot OIDC, runner-only system libs like
   `libatomic.so.1` missing from the base image). Treat an env-gap failure as
   "validated up to the local boundary," not a code defect — see Classify below.

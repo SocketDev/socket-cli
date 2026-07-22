@@ -18,11 +18,12 @@
 
 // oxlint-disable-next-line socket/prefer-async-spawn -- sync check; needs typed string stdout from gh, no async flow.
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from '../paths.mts'
@@ -92,7 +93,7 @@ export function resolveReleaseTemplateSha(
   } catch {
     return undefined
   } finally {
-    rmSync(tmp, { recursive: true, force: true })
+    safeDeleteSync(tmp)
   }
 }
 

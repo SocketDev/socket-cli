@@ -213,6 +213,7 @@ export const check = bashGuard((command, payload) => {
 export const hook = defineHook({
   bypass: ['external-issue-ref'],
   bypassMode: 'manual',
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

@@ -23,7 +23,7 @@ point at itself).
 Persistent memory lives in `~/.claude`, keyed to cwd — **not committed, not
 shared across checkouts, not inherited by spawned subagents**. A session
 therefore has no way to know its memory exists, nor that a *different* repo's
-store (the fleet-wide wheelhouse one) is the correct home for a given fact. The
+store — the fleet-wide wheelhouse one — is the correct home for a given fact. The
 result, without this hook: fleet-wide lessons get siloed under whatever repo the
 session happened to be standing in, invisible to a session in another fleet repo
 doing the same fleet work.

@@ -5,7 +5,7 @@ Claude Code **Stop** hook (nudge — never blocks, always exits 0).
 ## Why
 
 The fleet default is evergreen / latest-and-greatest. For an auto-updating
-runtime (a Chrome extension, the web, a CI-pinned Node) a back-versioned
+runtime — a Chrome extension, the web, a CI-pinned Node — a back-versioned
 `tsconfig` `target`/`lib` leaves modern syntax downleveled or untyped for no
 benefit. JSON config (tsconfig, package.json, browserslist) is not lintable by
 oxlint, so this Stop nudge is the only enforcement surface for the principle.

@@ -21,8 +21,8 @@ section, OR a marked `- ` bullet (carries 🚨 / `.claude/hooks/` / `socket/<rul
   section size is capped by `claude-md-section-size-guard`.
 - Rewording an existing line (no new rule surface).
 - Edits to non-`CLAUDE.md` files.
-- The sanctioned writers: `FLEET_SYNC=1` (the cascade copies CLAUDE.md verbatim)
-  and `SOCKET_CODIFY_RULE=1` (the codify-rule agent's own write).
+- The sanctioned writers: `FLEET_SYNC=1` — the cascade copies CLAUDE.md verbatim —
+  and `SOCKET_CODIFY_RULE=1`, the codify-rule agent's own write.
 
 ## How to land a new rule
 

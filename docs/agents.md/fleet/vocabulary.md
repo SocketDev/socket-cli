@@ -25,5 +25,5 @@ reader without the task list open (including a future session). Pair every
 ref with its subject on first mention — "#12 (remove npm-run-all2)",
 "#24 (migrate wheelhouse-only scripts out of scripts/fleet)". Later mentions
 in the same paragraph may shorten once the binding is established.
-GitHub `owner/repo#N` autolinks are exempt (the repo half carries context).
+GitHub `owner/repo#N` autolinks are exempt — the repo half carries context.
 Enforced by the `named-task-refs` group in `reply-prose-nudge`.

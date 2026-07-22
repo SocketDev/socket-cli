@@ -27,14 +27,14 @@ Runs in order, stopping + failing loud on the first red step:
 
 ## On GREEN
 
-Push, then drive CI to green — don't walk away on a red run (the `post-push-ci-monitor-nudge` hook reminds you):
+Push, then drive CI to green — don't walk away on a red run — the `post-push-ci-monitor-nudge` hook reminds you:
 
 ```bash
 git push
 gh run watch
 ```
 
-If `pnpm run update` / `pnpm install` changed the lockfile or pins, commit those first (the lockfile-only `-o pnpm-lock.yaml` reconcile is sanctioned), then re-run the gate. The gate never pushes for you — it only tells you it is safe to.
+If `pnpm run update` / `pnpm install` changed the lockfile or pins, commit those first — the lockfile-only `-o pnpm-lock.yaml` reconcile is sanctioned — then re-run the gate. The gate never pushes for you — it only tells you it is safe to.
 
 ## Handoffs
 

@@ -6,13 +6,16 @@
  *   pnpm setup-all --rotate pnpm setup-all --skip-tools.
  */
 
-import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
+import { parseCanonicalMcpConfig, writeCodexAdapters } from '../mcp-config.mts'
 import { discoverRepoSetup } from '../_shared/repo-setup.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { setupBrew } from './setup-brew.mts'
@@ -79,6 +82,29 @@ export function formatSummaryLines(
   return results.map(([name, ok]) => `  ${ok ? '✓' : '✗'} ${name}`)
 }
 
+// Generate the gitignored, generated-untracked `.codex` adapters from the
+// committed `.mcp.json`. A pure repo-local projection (writes files, installs
+// nothing), so it runs UNCONDITIONALLY — never behind `--skip-tools`, like the
+// Claude-config step — otherwise `setup-all --skip-tools` would leave a member
+// with no Codex MCP config or PreToolUse guard. A missing `.mcp.json` is not a
+// failure (nothing to project). See docs/agents.md/fleet/release-vs-cascade.md.
+export function generateCodexAdapters(): boolean {
+  const canonicalPath = path.join(REPO_ROOT, '.mcp.json')
+  if (!existsSync(canonicalPath)) {
+    return true
+  }
+  try {
+    writeCodexAdapters(
+      REPO_ROOT,
+      parseCanonicalMcpConfig(readFileSync(canonicalPath, 'utf8')),
+    )
+    return true
+  } catch (e) {
+    logger.error(`Codex adapters — ${errorMessage(e)}`)
+    return false
+  }
+}
+
 async function main(): Promise<void> {
   const { rotate, skipTools } = parseSetupArgs(process.argv.slice(2))
 
@@ -105,6 +131,12 @@ async function main(): Promise<void> {
     'Claude config',
     run(path.join(__dirname, 'claude-config.mts')),
   ])
+  logger.log('')
+
+  // Pure repo-local projection (.mcp.json → .codex) — always-run, never gated
+  // by --skip-tools; the kimi-CLI user merge (setup:mcp) stays tools-gated.
+  logger.log('── Codex adapters ─────────────────────────')
+  results.push(['Codex adapters', generateCodexAdapters()])
   logger.log('')
 
   if (!skipTools) {

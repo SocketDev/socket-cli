@@ -23,13 +23,13 @@ import {
   mkdirSync,
   readFileSync,
   readlinkSync,
-  rmSync,
   symlinkSync,
   writeFileSync,
 } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from './paths.mts'
@@ -97,7 +97,7 @@ export function writeAdapter(repoRoot: string, adapter: Adapter): void {
   mkdirSync(path.dirname(destAbs), { recursive: true })
   // Remove any existing form first (symlink, file, or stale) so re-runs are
   // idempotent across a symlink <-> pointer-file flip.
-  rmSync(destAbs, { force: true })
+  safeDeleteSync(destAbs)
   if (adapter.kind === 'file') {
     writeFileSync(destAbs, adapter.content)
     return

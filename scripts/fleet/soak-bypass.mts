@@ -22,7 +22,8 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import process from 'node:process'
 
-import { PNPM_WORKSPACE_YAML } from './paths.mts'
+import { runCheck as regenNpmrcMirror } from './check/npmrc-versioned-soak-mirror-is-derived.mts'
+import { PNPM_WORKSPACE_YAML, REPO_ROOT } from './paths.mts'
 import { fetchPackagePublishDate } from './registry-publish-date.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 
@@ -158,9 +159,15 @@ async function main(): Promise<void> {
     process.exit(0)
   }
   writeFileSync(PNPM_WORKSPACE_YAML, next)
+  // Mirror the pin's bare NAME into `.npmrc` for npm (>= v12, npm/cli#9532),
+  // which matches by name/glob only. pnpm-workspace.yaml (dated `name@version`)
+  // is canonical; this regenerates the derived `.npmrc versioned-soak-mirror`
+  // block FROM it, so one command keeps both package managers in lockstep.
+  regenNpmrcMirror(REPO_ROOT, { fix: true })
   process.stdout.write(
     `soak-bypass: added ${spec.name}@${spec.version} to minimumReleaseAgeExclude\n` +
-      `  # published: ${publishedISO} | removable: ${removableISO}\n\n` +
+      `  # published: ${publishedISO} | removable: ${removableISO}\n` +
+      `  + mirrored '${spec.name}' into .npmrc (npm soak-exclude, name-only)\n\n` +
       `Next:\n` +
       `  1. pnpm install   (reconcile the lockfile)\n` +
       `  2. commit: chore(deps): soak-bypass ${spec.name}@${spec.version}\n` +

@@ -352,8 +352,51 @@ export function renderKimiProjectMcpConfig(
   return `${compactKimiArgsArrays(rendered, servers)}\n`
 }
 
+// The Codex project adapters — the ONLY MCP adapters in the generated-untracked
+// class: setup-generated per-repo + gitignored (the `.janus/` + harness-adapter
+// model), never a tracked cascade file. `opencode.json` + `.kimi-code/mcp.json`
+// stay tracked cascade sources. Single authority: `writeCodexAdapters` iterates
+// this, `findMcpClientConfigIssues` reads it for the drift check, and the
+// `codex-adapters-are-gitignored` gate asserts every entry is gitignored. Keep
+// in lock-step with the `/.codex/` gitignore entry
+// (scripts/repo/sync-scaffolding/checks/gitignore-fleet-block.mts). See
+// docs/agents.md/fleet/release-vs-cascade.md.
+export interface CodexAdapter {
+  readonly path: string
+  readonly render: (servers: PortableMcpServers) => string
+}
+
+export const CODEX_ADAPTERS: readonly CodexAdapter[] = [
+  { path: '.codex/config.toml', render: renderCodexMcpConfig },
+  { path: '.codex/hooks.json', render: () => renderCodexHooksConfig() },
+]
+
+export const CODEX_ADAPTER_PATHS: readonly string[] = CODEX_ADAPTERS.map(
+  adapter => adapter.path,
+)
+
 /**
- * Regenerate the three committed project adapters from `.mcp.json`.
+ * Write the Codex project adapters into `repoRoot`'s LIVE tree. Generated-
+ * untracked (gitignored, regenerated at setup) — so they land at the repo root,
+ * never `template/base` (they are not a cascade source) and never committed.
+ */
+export function writeCodexAdapters(
+  repoRoot: string,
+  servers: PortableMcpServers,
+): void {
+  for (let i = 0, { length } = CODEX_ADAPTERS; i < length; i += 1) {
+    const adapter = CODEX_ADAPTERS[i]!
+    const dest = path.join(repoRoot, adapter.path)
+    mkdirSync(path.dirname(dest), { recursive: true })
+    writeFileSync(dest, adapter.render(servers))
+  }
+}
+
+/**
+ * Regenerate the project MCP adapters from `.mcp.json`. `.codex/*` writes to
+ * the repo-root LIVE tree (generated-untracked, gitignored); `opencode.json` +
+ * `.kimi-code/mcp.json` are tracked cascade sources, written to `configRoot`
+ * (`template/base` in the wheelhouse, the repo root in a member).
  */
 export function writeMcpClientConfigs(repoRoot: string): void {
   const templateRoot = path.join(repoRoot, 'template', 'base')
@@ -363,16 +406,8 @@ export function writeMcpClientConfigs(repoRoot: string): void {
   const servers = parseCanonicalMcpConfig(
     readFileSync(path.join(configRoot, '.mcp.json'), 'utf8'),
   )
-  mkdirSync(path.join(configRoot, '.codex'), { recursive: true })
+  writeCodexAdapters(repoRoot, servers)
   mkdirSync(path.join(configRoot, '.kimi-code'), { recursive: true })
-  writeFileSync(
-    path.join(configRoot, '.codex', 'config.toml'),
-    renderCodexMcpConfig(servers),
-  )
-  writeFileSync(
-    path.join(configRoot, '.codex', 'hooks.json'),
-    renderCodexHooksConfig(),
-  )
   writeFileSync(
     path.join(configRoot, 'opencode.json'),
     renderOpenCodeMcpConfig(servers),

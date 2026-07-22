@@ -77,6 +77,7 @@ export const check = editGuard((filePath, _content, _payload) => {
 
 export const hook = defineHook({
   bypass: ['reserved-script-dir'],
+  bypassOptional: true,
   check,
   event: 'PreToolUse',
   matcher: ['Edit', 'Write', 'MultiEdit'],

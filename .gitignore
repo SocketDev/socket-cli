@@ -227,7 +227,9 @@ pnpm-debug.log
 # and CLAUDE.md, never committed. A tracked symlink checks out as a plain
 # pointer file on Windows, so each host gets a real symlink generated on its
 # own OS. Tracking them only produces churn + merge conflicts. Keep in sync
-# with ADAPTERS in scripts/fleet/gen-harness-adapters.mts + the .agents/ mirror.
+# with ADAPTERS in scripts/fleet/gen-harness-adapters.mts + the .agents/ mirror
+# (and CODEX_ADAPTER_PATHS in scripts/fleet/mcp-config.mts for /.codex/ — the
+# .mcp.json -> .codex projection generated at setup:mcp, never committed).
 # Host dirs we own entirely are ignored wholesale; .github/ holds tracked
 # fleet files, so only its generated adapter file is named.
 /.agents/
@@ -266,6 +268,8 @@ Thumbs.db
 **/out/
 **/.cache/
 **/.repo-map/
+**/.swc/
+**/.vitiate/
 
 # Vendored / upstream trees + conformance fixtures — untracked-by-default
 # (docs/agents.md/fleet/untracked-by-default.md): someone else's source or

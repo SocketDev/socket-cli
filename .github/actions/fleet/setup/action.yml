@@ -510,6 +510,16 @@ runs:
         }
         for CMD in $SHIM_CMDS; do
           REAL="$(PATH="$CLEAN_PATH" command -v "$CMD" 2>/dev/null || true)"
+          # Rust tooling must resolve through the rustup PROXY ($CARGO_HOME/bin,
+          # default ~/.cargo/bin): it reads rust-toolchain.toml and dispatches to
+          # the pinned toolchain's rustc. A Homebrew/system cargo earlier on PATH
+          # bundles its own rustc and IGNORES the toolchain file. Keep in lockstep
+          # with bootstrap-common.mjs rustupProxyFor().
+          if [ "$CMD" = "cargo" ]; then
+            for CARGO_PROXY in "${CARGO_HOME:-$HOME/.cargo}/bin/cargo" "${CARGO_HOME:-$HOME/.cargo}/bin/cargo.exe"; do
+              if [ -x "$CARGO_PROXY" ]; then REAL="$CARGO_PROXY"; break; fi
+            done
+          fi
           if [ -n "$REAL" ]; then
             REAL="$(msys_to_win_path "$REAL")"
             # SFW_UNKNOWN_HOST_ACTION=ignore: only sfw-enterprise reads this

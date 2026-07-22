@@ -29,7 +29,7 @@ into the V8 dispatch bundle.
 
 ## What it flags — hygiene subset (everywhere)
 
-Module scope (a statement **not** inside any function or class-method body)
+Module scope — a statement **not** inside any function or class-method body —
 matching the denylist. These cost startup time and break the snapshot
 everywhere, so they are flagged repo-wide:
 
@@ -65,7 +65,7 @@ survive the synchronous, statically-frozen snapshot build:
 
 - **Top-level `await`** (module-scope `await` / `for await`): the snapshot build
   pass is synchronous, so a module-scope `await` aborts `--build-snapshot`. Move
-  the work into `run()` (the dispatcher awaits the hook). This reuses
+  the work into `run()` — the dispatcher awaits the hook. This reuses
   `socket/no-top-level-await`'s enclosing-function walk and bypass marker —
   that rule is OFF in the hooks tree (TLA there is the normal entrypoint
   pattern), so this clause re-bans it only for the snapshot-eligible subset.

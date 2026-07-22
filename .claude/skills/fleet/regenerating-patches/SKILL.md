@@ -38,7 +38,7 @@ For each `stale` patch:
    # prints the staging dir; copy a/ → b/:
    cp -R <dir>/a <dir>/b
    ```
-2. Read the stale patch to recover its **intent** (the `+`/`−` lines and which files they touch).
+2. Read the stale patch to recover its **intent** — the `+`/`−` lines and which files they touch.
 3. Re-apply that intent to the `b/<file>` copy with the **Edit tool** — exact-match editing forces byte-for-byte context against the new pristine source. (This step is yours; the script does the plumbing around it.)
 4. Rebuild + restamp + validate in one call — emits the clean `diff -u` body (timestamps stripped, paths rewritten to `a/`-`b/`) under the restamped `# @` header, and fails non-zero unless `patch -p1 --dry-run` exits 0:
    ```bash

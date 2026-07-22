@@ -64,7 +64,7 @@ Both env knobs are silently ignored by an older Homebrew, so the **≥6.0.0 vers
 
 macOS GUI apps the fleet uses for tooling that self-update via the [Sparkle](https://sparkle-project.org/) framework (e.g. OrbStack, bundle `dev.kdrag0n.MacVirt`) must have auto-update disabled. A Sparkle install can swap a tool version under a running build or scan, and it rides the app's own update channel outside the soak gate. Set by `setup-security-tools`, audited in `check --all` (`scripts/fleet/check/sparkle-auto-update-is-disabled.mts`); both read `_shared/sparkle-auto-update.mts`. There's no PreToolUse guard: a GUI app self-updates with no Bash invocation to gate, so persist plus audit are the surfaces.
 
-The disable writes two Sparkle prefs into the app's defaults domain (a user-level `defaults write` overrides the Info.plist default):
+The disable writes two Sparkle prefs into the app's defaults domain — a user-level `defaults write` overrides the Info.plist default:
 
 ```sh
 defaults write dev.kdrag0n.MacVirt SUAutomaticallyUpdate -bool false
@@ -97,6 +97,8 @@ Every new dep added to `package.json` runs a Socket-score check at edit time. Lo
 
 Every per-package soak-bypass entry (the `'pkg@1.2.3'` exact-pin form) MUST carry a `# published: YYYY-MM-DD | removable: YYYY-MM-DD` annotation as the LAST comment line above the bullet. `published` is the version's npm publish date; `removable` is `published + 7d` so a periodic cleanup can drop entries that no longer need the bypass (enforced by `.claude/hooks/fleet/soak-exclude-date-guard/` at edit time + `scripts/fleet/check/soak-excludes-have-dates.mts` at commit time).
 
+**Add a soak-bypass ONLY with the writer, never by hand:** `node scripts/fleet/soak-bypass.mts <pkg>@<version>`. It fetches the authoritative npm publish date, writes the dated `'name@version'` pin to `pnpm-workspace.yaml` (canonical — pnpm reads it directly), AND regenerates the name-only mirror block in `.npmrc` (for npm >= v12, which matches soak-excludes by NAME or glob only, no `@version` — [npm/cli#9532](https://github.com/npm/cli/pull/9532)), keeping both package managers in lockstep from one command. Hand-editing either the pnpm pin or the `.npmrc` mirror reddens `scripts/fleet/check/npmrc-versioned-soak-mirror-is-derived.mts` — that check is the code-as-law contract that the two files agree.
+
 Vitest `include` globs must not match `node:test` files. Mismatched runners produce confusing "no test suite found" errors (enforced by `.claude/hooks/fleet/vitest-vs-node-test-guard/`).
 
 ## Bundler
@@ -121,7 +123,7 @@ FORBIDDEN to maintain. Remove when encountered.
 
 The fleet pins `packageManager` to a **forgiving floor**, `pnpm@>=<floor>` (currently `pnpm@>=11.0.5`), matching the `engines.pnpm` floor. `pnpm-workspace.yaml` sets `managePackageManagerVersions: false` plus `pmOnFail: warn`, so pnpm treats the field as a minimum hint rather than a version lock: it never switches pnpm versions and only warns on a mismatch. The exact pnpm for CI comes from the setup action (`external-tools.json`), not this field. `derivePins` (`sync-package-manager-pins.mts`) emits the floor from root `engines.pnpm`, and the cascade propagates both pins via `sync.mts package-manager --fleet`. A `packageManager` drift is always benign (`isBehindSource`) because the field is only a hint; the enforced gate is `engines.pnpm`.
 
-pnpm 11 stores the integrity hash in `pnpm-lock.yaml` (a separate YAML document) rather than inline. The lockfile is the integrity source of truth, and a legacy `pnpm@<version>+sha512.<hex>` migrates on first install.
+pnpm 11 stores the integrity hash in `pnpm-lock.yaml` — a separate YAML document — rather than inline. The lockfile is the integrity source of truth, and a legacy `pnpm@<version>+sha512.<hex>` migrates on first install.
 
 ## Bumping a versioned tool fleet-wide (pnpm, zizmor, sfw)
 
@@ -141,11 +143,11 @@ The bump honors the 7-day `minimumReleaseAge` cooldown via `--soak-days <n>` (de
 
 ## Monorepo internal `engines.node`
 
-Only the workspace root needs `engines.node`. Private (`"private": true`) sub-packages in `packages/*` don't need their own `engines.node` field. The field is dead, drift-prone, and removing it is the cleaner play. Public-published sub-packages (the npm-published ones with no `"private": true`) keep their `engines.node` because external consumers see it.
+Only the workspace root needs `engines.node`. Private (`"private": true`) sub-packages in `packages/*` don't need their own `engines.node` field. The field is dead, drift-prone, and removing it is the cleaner play. Public-published sub-packages — the npm-published ones with no `"private": true` — keep their `engines.node` because external consumers see it.
 
 ## Config files in `.config/`
 
-Place tool / test / build configs in `.config/`: `taze.config.mts`, `vitest.config.mts`, `tsconfig.base.json` (the abstract compiler-options layer, fleet-canonical, byte-identical across the fleet), `esbuild.config.mts`. New abstract configs go in `.config/` by default.
+Place tool / test / build configs in `.config/`: `taze.config.mts`, `vitest.config.mts`, `esbuild.config.mts`, `tsconfig.base.json` — the abstract compiler-options layer, fleet-canonical, byte-identical across the fleet. New abstract configs go in `.config/` by default.
 
 Repo root keeps only what _must_ be there: package manifests + lockfile (`package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`), the linter / formatter dotfiles whose tools require root placement (`.oxlintrc.json`, `.oxfmtrc.json`, `.npmrc`, `.gitignore`, `.node-version`), and every **concrete** tsconfig (`tsconfig.json`, `tsconfig.check.json`, `tsconfig.dts.json`, `tsconfig.test.json`, etc.; anything with `include`/`exclude`/`files`). Concrete tsconfigs live at the package root so tsc + IDE language-servers discover them natively at cwd. Burying them in `.config/` breaks the lookup. In monorepos the concrete `tsconfig.json` lives at each `packages/<pkg>/`. Concrete configs `extend` `./.config/tsconfig.base.json` (single-repo at root) or `../../.config/tsconfig.base.json` (monorepo per-package).
 
@@ -155,7 +157,7 @@ Every executable script (skill runner, hook handler, fleet automation) is TypeSc
 
 ## Soak time
 
-(pnpm-workspace.yaml `minimumReleaseAge`, default 7 days). Never add packages to `minimumReleaseAgeExclude` in CI. Locally, ASK before adding (security control).
+(pnpm-workspace.yaml `minimumReleaseAge`, default 7 days). Never add packages to `minimumReleaseAgeExclude` in CI. Locally, ASK before adding (security control), then add it with `node scripts/fleet/soak-bypass.mts <pkg>@<version>` (never by hand — see "New dependencies + soak" above for why: it keeps `pnpm-workspace.yaml` and `.npmrc` in lockstep).
 
 ## External repo clones
 
@@ -203,7 +205,7 @@ FORBIDDEN to maintain. Remove when encountered.
 
 ## `-stable` self-import in tooling
 
-A fleet repo that publishes `@socketsecurity/<X>` resolves the bare `@socketsecurity/<X>` specifier to its OWN local `src/` (the pnpm workspace link), which is work-in-progress and may be mid-edit or broken. Build scripts and git-hooks must run against a known-good PUBLISHED copy, so the fleet pins a `@socketsecurity/<X>-stable` catalog alias (`npm:@socketsecurity/<X>@<last-published>`). Tooling imports the `-stable` alias; only the package's own source consumers use the bare name.
+A fleet repo that publishes `@socketsecurity/<X>` resolves the bare `@socketsecurity/<X>` specifier to its OWN local `src/` — the pnpm workspace link — which is work-in-progress and may be mid-edit or broken. Build scripts and git-hooks must run against a known-good PUBLISHED copy, so the fleet pins a `@socketsecurity/<X>-stable` catalog alias (`npm:@socketsecurity/<X>@<last-published>`). Tooling imports the `-stable` alias; only the package's own source consumers use the bare name.
 
 Scope: files under `scripts/**` or `.claude/hooks/**` (test files exempt). The owned package name is read from the nearest ancestor `package.json` `name`. Only the repo's OWN package is flagged — e.g. in socket-lib, `@socketsecurity/lib/...` must become `@socketsecurity/lib-stable/...`, but `@socketsecurity/registry/...` is left alone (socket-lib doesn't own registry).
 

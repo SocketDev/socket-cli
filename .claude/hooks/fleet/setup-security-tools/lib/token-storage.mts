@@ -17,14 +17,9 @@
  *   persistence failed.
  */
 
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -103,7 +98,7 @@ export function deleteWindows(account: string, service = SERVICE): void {
   const filePath = getWindowsDpapiFilePath()
   if (existsSync(filePath)) {
     try {
-      rmSync(filePath, { force: true })
+      safeDeleteSync(filePath)
     } catch {
       // best-effort
     }

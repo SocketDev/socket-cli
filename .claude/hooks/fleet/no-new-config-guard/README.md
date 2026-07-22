@@ -13,4 +13,4 @@ and blur the fleet/repo tier.
 - Only config **data** (`.json`/`.yaml`/`.yml`/`.toml`); tooling code configs
   (`*.config.mts`, vitest/oxlint sources) are exempt.
 - The wheelhouse settings + its schema are allowlisted.
-- Bypass: `Allow new-config bypass` (a genuinely-needed new fleet-wide config).
+- Bypass: `Allow new-config bypass` — a genuinely-needed new fleet-wide config.

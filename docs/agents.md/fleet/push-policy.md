@@ -17,7 +17,7 @@ remote: - Changes must be made through a pull request.
 
 These two rules sit ABOVE per-repo admin permission. Repository-level admins cannot bypass them. Only members of the ruleset's explicit `bypass_actors` list can push around them.
 
-The ruleset can reject a push with EITHER of two rules, and each has its OWN custom-property escape hatch. A push that trips both needs both properties — setting only one leaves the other rule blocking (this is what left a direct push blocked until the second property was added).
+The ruleset can reject a push with EITHER of two rules, and each has its OWN custom-property escape hatch. A push that trips both needs both properties — setting only one leaves the other rule blocking: this is what left a direct push blocked until the second property was added.
 
 ### How it works
 

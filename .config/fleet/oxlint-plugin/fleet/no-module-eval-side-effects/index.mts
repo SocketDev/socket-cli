@@ -345,7 +345,7 @@ const rule = {
       // guards are the sanctioned shape and stay silent, as do type
       // positions, member property names, and import/export specifiers.
       Identifier(node: AstNode) {
-        const name = (node as { name?: string }).name
+        const name = (node as { name?: string | undefined }).name
         if (!name || !GUARDED_GLOBAL_REFS.has(name)) {
           return
         }
@@ -355,7 +355,7 @@ const rule = {
         }
         if (
           parent.type === 'UnaryExpression' &&
-          (parent as { operator?: string }).operator === 'typeof'
+          (parent as { operator?: string | undefined }).operator === 'typeof'
         ) {
           return
         }
@@ -386,15 +386,15 @@ const rule = {
         }
         if (
           parent.type === 'MemberExpression' &&
-          (parent as { property?: AstNode }).property === node &&
-          !(parent as { computed?: boolean }).computed
+          (parent as { property?: AstNode | undefined }).property === node &&
+          !(parent as { computed?: boolean | undefined }).computed
         ) {
           return
         }
         if (
           parent.type === 'Property' &&
-          (parent as { key?: AstNode }).key === node &&
-          !(parent as { computed?: boolean }).computed
+          (parent as { key?: AstNode | undefined }).key === node &&
+          !(parent as { computed?: boolean | undefined }).computed
         ) {
           return
         }

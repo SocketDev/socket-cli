@@ -18,8 +18,8 @@ AST-parsing the command (`commandsFor`), not a raw regex, so a quoted
 **Why:** a GitHub release is always tied to a git tag. `settings.json` moves
 `Bash(gh release create:*)` from `deny` to `allow` so tag-backfills run without
 a prompt; this guard is the rail that keeps "allow" from meaning "create any
-release at any ref". Pair: `immutable-release-guard` (the 3-step draft→upload→
-publish shape) and `version-bump-order-guard` (the tag sits on a bump commit).
+release at any ref". Pair: `immutable-release-guard` checks the 3-step draft→upload→
+publish shape, and `version-bump-order-guard` checks the tag sits on a bump commit.
 
 **Fix the message gives:** push the tag first, then create the release for it —
 `git tag vX.Y.Z <commit> && git push origin vX.Y.Z`, then

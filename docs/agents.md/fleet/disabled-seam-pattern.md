@@ -2,13 +2,13 @@
 
 ## What
 
-Keep the **wire-in point** (the seam where a future capability slots in) present in the code, but gate the **behavior** behind a flag defaulted off. Never delete the seam; never hard-wire the behavior on.
+Keep the **wire-in point** — the seam where a future capability slots in — present in the code, but gate the **behavior** behind a flag defaulted off. Never delete the seam; never hard-wire the behavior on.
 
 ## Why
 
 A deleted extension point forces every future change to re-discover and re-thread the same plumbing through all call sites — the cost compounds with each layer that must be reopened.
 
-A hard-wired-on capability that nobody consumes is live attack surface. Every unconditional side-effect (an emitted env var, an unconditional network call, an always-on credential check) is a manipulation point that can be targeted before there is a consumer to justify the exposure.
+A hard-wired-on capability that nobody consumes is live attack surface. Every unconditional side-effect — an emitted env var, an unconditional network call, an always-on credential check — is a manipulation point that can be targeted before there is a consumer to justify the exposure.
 
 Gating the behavior off by default removes it as active surface while keeping the seam cheap to re-enable. The cost of the flag is negligible; the cost of re-threading is not.
 

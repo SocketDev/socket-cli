@@ -129,6 +129,7 @@ function installPackage(repoRoot, pkgName, fetchPkg, version, integrity) {
     { cwd: repoRoot, stdio: 'inherit' },
   )
   if (install.status !== 0) {
+    // oxlint-disable-next-line socket/prefer-safe-delete -- dep-0: pre-pnpm bootstrap imports only node: builtins; @socketsecurity/lib-stable is one of the packages it provisions.
     rmSync(stageDir, { recursive: true, force: true })
     fail(`× verified download failed for ${pkgName}@${version}`)
     return false
@@ -137,6 +138,7 @@ function installPackage(repoRoot, pkgName, fetchPkg, version, integrity) {
   const packageDir = path.join(stageDir, 'package')
   const manifestPath = path.join(packageDir, 'package.json')
   if (!existsSync(manifestPath)) {
+    // oxlint-disable-next-line socket/prefer-safe-delete -- dep-0: pre-pnpm bootstrap imports only node: builtins; @socketsecurity/lib-stable is one of the packages it provisions.
     rmSync(stageDir, { recursive: true, force: true })
     fail(`× ${pkgName}@${version} tarball has no package/package.json`)
     return false
@@ -146,6 +148,7 @@ function installPackage(repoRoot, pkgName, fetchPkg, version, integrity) {
   try {
     manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
   } catch (error) {
+    // oxlint-disable-next-line socket/prefer-safe-delete -- dep-0: pre-pnpm bootstrap imports only node: builtins; @socketsecurity/lib-stable is one of the packages it provisions.
     rmSync(stageDir, { recursive: true, force: true })
     fail(
       // oxlint-disable-next-line socket/prefer-error-message, socket/prefer-error-message-helper -- pre-pnpm bootstrap cannot import the lib error helper it is provisioning.
@@ -155,14 +158,17 @@ function installPackage(repoRoot, pkgName, fetchPkg, version, integrity) {
   }
   const invalid = validateZeroDepManifest(manifest, fetchPkg, version)
   if (invalid) {
+    // oxlint-disable-next-line socket/prefer-safe-delete -- dep-0: pre-pnpm bootstrap imports only node: builtins; @socketsecurity/lib-stable is one of the packages it provisions.
     rmSync(stageDir, { recursive: true, force: true })
     fail(`× ${invalid}`)
     return false
   }
 
   mkdirSync(path.dirname(dest), { recursive: true })
+  // oxlint-disable-next-line socket/prefer-safe-delete -- dep-0: pre-pnpm bootstrap imports only node: builtins; @socketsecurity/lib-stable is one of the packages it provisions.
   rmSync(dest, { recursive: true, force: true })
   renameSync(packageDir, dest)
+  // oxlint-disable-next-line socket/prefer-safe-delete -- dep-0: pre-pnpm bootstrap imports only node: builtins; @socketsecurity/lib-stable is one of the packages it provisions.
   rmSync(stageDir, { recursive: true, force: true })
   log(`✓ ${pkgName}@${version} → node_modules/${pkgName}`)
   return true
