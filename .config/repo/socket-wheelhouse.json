@@ -1,7 +1,12 @@
 {
-  "$schema": "../socket-wheelhouse-schema.json",
+  "$schema": "./socket-wheelhouse-schema.json",
   "schemaVersion": 1,
   "repoName": "socket-cli",
-  "repo": { "type": "mono" },
-  "build": { "from": "npm-registry", "type": "js" }
+  "repo": {
+    "type": "mono"
+  },
+  "build": {
+    "from": "npm-registry",
+    "type": "js"
+  }
 }
