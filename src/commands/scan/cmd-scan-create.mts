@@ -1,7 +1,6 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { assertValidExcludePaths } from './exclude-paths.mts'
@@ -20,7 +19,7 @@ import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
-import { getEcosystemChoicesForMeow } from '../../utils/ecosystem.mts'
+import { parseReachEcosystems } from '../../utils/ecosystem.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import {
   detectDefaultBranch,
@@ -39,7 +38,6 @@ import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 
 import type { REPORT_LEVEL } from './types.mts'
 import type { MeowFlags } from '../../flags.mts'
-import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type {
   CliCommandConfig,
   CliCommandContext,
@@ -308,18 +306,10 @@ async function run(
     reachVersion: string | undefined
   }
 
-  // Validate ecosystem values.
-  const reachEcosystems: PURL_Type[] = []
-  const reachEcosystemsRaw = cmdFlagValueToArray(cli.flags['reachEcosystems'])
-  const validEcosystems = getEcosystemChoicesForMeow()
-  for (const ecosystem of reachEcosystemsRaw) {
-    if (!validEcosystems.includes(ecosystem)) {
-      throw new Error(
-        `Invalid ecosystem: "${ecosystem}". Valid values are: ${joinAnd(validEcosystems)}`,
-      )
-    }
-    reachEcosystems.push(ecosystem as PURL_Type)
-  }
+  // Validate ecosystem values against the reachability-supported set.
+  const reachEcosystems = parseReachEcosystems(
+    cmdFlagValueToArray(cli.flags['reachEcosystems']),
+  )
 
   const dryRun = !!cli.flags['dryRun']
 

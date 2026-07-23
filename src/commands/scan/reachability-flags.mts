@@ -1,4 +1,5 @@
 import constants from '../../constants.mts'
+import { getReachabilityEcosystemChoices } from '../../utils/ecosystem.mts'
 
 import type { MeowFlags } from '../../flags.mts'
 
@@ -88,8 +89,7 @@ export const reachabilityFlags: MeowFlags = {
   reachEcosystems: {
     type: 'string',
     isMultiple: true,
-    description:
-      'List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Defaults to all ecosystems.',
+    description: `List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Supported: ${getReachabilityEcosystemChoices().join(', ')}. Defaults to all supported ecosystems.`,
   },
   reachExcludePaths: {
     type: 'string',

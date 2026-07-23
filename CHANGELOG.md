@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.144](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.144) - 2026-07-23
+
+### Fixed
+- `--reach-ecosystems` now rejects ecosystems the reachability engine cannot analyze, failing fast at the CLI with a clear message listing the supported ecosystems instead of erroring partway through a scan.
+
 ## [1.1.143](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.143) - 2026-07-10
 
 ### Changed
