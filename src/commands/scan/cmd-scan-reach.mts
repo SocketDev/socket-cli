@@ -1,6 +1,5 @@
 import path from 'node:path'
 
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { assertValidExcludePaths } from './exclude-paths.mts'
@@ -13,7 +12,7 @@ import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
-import { getEcosystemChoicesForMeow } from '../../utils/ecosystem.mts'
+import { parseReachEcosystems } from '../../utils/ecosystem.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import {
@@ -23,7 +22,6 @@ import {
 import { hasDefaultApiToken } from '../../utils/sdk.mts'
 
 import type { MeowFlags } from '../../flags.mts'
-import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type {
   CliCommandConfig,
   CliCommandContext,
@@ -176,17 +174,8 @@ async function run(
   const reachExcludePaths = cmdFlagValueToArray(cli.flags['reachExcludePaths'])
   assertValidExcludePaths(excludePaths)
 
-  // Validate ecosystem values.
-  const reachEcosystems: PURL_Type[] = []
-  const validEcosystems = getEcosystemChoicesForMeow()
-  for (const ecosystem of reachEcosystemsRaw) {
-    if (!validEcosystems.includes(ecosystem)) {
-      throw new Error(
-        `Invalid ecosystem: "${ecosystem}". Valid values are: ${joinAnd(validEcosystems)}`,
-      )
-    }
-    reachEcosystems.push(ecosystem as PURL_Type)
-  }
+  // Validate ecosystem values against the reachability-supported set.
+  const reachEcosystems = parseReachEcosystems(reachEcosystemsRaw)
 
   const processCwd = process.cwd()
   const cwd =

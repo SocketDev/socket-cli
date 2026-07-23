@@ -49,7 +49,7 @@ describe('socket scan reach', async () => {
             --reach-detailed-analysis-log-file  A log file with detailed analysis logs is written to root of each analyzed workspace.
             --reach-disable-analytics  Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.
             --reach-disable-external-tool-checks  Disable external tool checks during reachability analysis.
-            --reach-ecosystems  List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Defaults to all ecosystems.
+            --reach-ecosystems  List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Supported: cargo, composer, gem, golang, maven, npm, nuget, pypi. Defaults to all supported ecosystems.
             --reach-enable-analysis-splitting  Allow the reachability analysis to partition CVEs into buckets that are processed in separate analysis runs. May improve accuracy, but not recommended by default.
             --reach-retain-facts-file  Keep the \`.socket.facts.json\` reachability report that the analysis writes to the scan directory instead of deleting it after a successful scan. IMPORTANT: you must delete this file before running a fresh full application reachability scan. A stale \`.socket.facts.json\` left in place is picked up as a pre-generated input and silently overrides fresh analysis, so the new scan results will not be reliable.
             --reach-skip-cache  Skip caching-based optimizations. By default, the reachability analysis will use cached configurations from previous runs to speed up the analysis.
@@ -287,6 +287,27 @@ describe('socket scan reach', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain('Invalid ecosystem: "invalid-ecosystem"')
+      expect(code, 'should exit with non-zero code').not.toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'reach',
+      '--reach-ecosystems',
+      'conda',
+      '--org',
+      'fakeOrg',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should reject a purl type that lacks reachability support',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain('Invalid ecosystem: "conda"')
+      expect(output).toContain('maven')
       expect(code, 'should exit with non-zero code').not.toBe(0)
     },
   )
