@@ -22,7 +22,6 @@ import { extractName, extractOwner } from '../sanitize-names.mts'
 import { getGitPath } from './git-path.mts'
 
 import type { CResult } from '../../types.mjs'
-import type { SpawnOptions } from '@socketsecurity/lib-stable/process/spawn/types'
 
 export type RepoInfo = {
   owner: string
@@ -73,7 +72,9 @@ export async function getRepoOwner(
 export async function gitBranch(
   cwd = process.cwd(),
 ): Promise<string | undefined> {
-  const stdioPipeOptions: SpawnOptions = { cwd }
+  // No annotation: the literal keeps the `stdioString?: true` overload of
+  // `spawn`, so `stdout` is typed `string` without a cast.
+  const stdioPipeOptions = { cwd }
   // Try symbolic-ref first which returns the branch name or fails in a
   // detached HEAD state.
   try {
@@ -82,7 +83,7 @@ export async function gitBranch(
       ['symbolic-ref', '--short', 'HEAD'],
       stdioPipeOptions,
     )
-    return gitSymbolicRefResult.stdout as string
+    return gitSymbolicRefResult.stdout
   } catch (e) {
     // Expected in detached HEAD state, fallback to rev-parse.
     debugDir({ message: 'In detached HEAD state', error: e })
@@ -108,7 +109,7 @@ export async function gitBranch(
       ['rev-parse', '--short', 'HEAD'],
       stdioPipeOptions,
     )
-    return gitRevParseResult.stdout as string
+    return gitRevParseResult.stdout
   } catch (e) {
     // Both methods failed, likely not in a git repo.
     debugDir({ message: 'Unable to determine git branch', error: e })
@@ -119,14 +120,16 @@ export async function gitBranch(
 export async function gitUnstagedModifiedFiles(
   cwd = process.cwd(),
 ): Promise<CResult<string[]>> {
-  const stdioPipeOptions: SpawnOptions = { cwd }
+  // No annotation: the literal keeps the `stdioString?: true` overload of
+  // `spawn`, so `stdout` is typed `string` without a cast.
+  const stdioPipeOptions = { cwd }
   try {
     const gitDiffResult = await spawn(
       'git',
       ['diff', '--name-only'],
       stdioPipeOptions,
     )
-    const changedFilesDetails = gitDiffResult.stdout as string
+    const changedFilesDetails = gitDiffResult.stdout
     const relPaths = changedFilesDetails.split('\n')
     return {
       ok: true,
