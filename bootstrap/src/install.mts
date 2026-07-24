@@ -421,7 +421,7 @@ const SETTINGS_CANDIDATES = [
   '.config/socket-wheelhouse.json',
   '.socket-wheelhouse.json',
 ]
-function resolveSettingsPath(dest: string): string | undefined {
+export function resolveSettingsPath(dest: string): string | undefined {
   for (let i = 0, { length } = SETTINGS_CANDIDATES; i < length; i += 1) {
     const p = path.join(dest, SETTINGS_CANDIDATES[i]!)
     if (existsSync(p)) {

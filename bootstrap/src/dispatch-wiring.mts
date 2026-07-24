@@ -45,13 +45,6 @@ export function baselineCommand(event: string): string {
 }
 
 /**
- * The launcher fast-path command for an event (POSIX execv, host-built).
- */
-export function launcherCommand(event: string): string {
-  return `"$CLAUDE_PROJECT_DIR"/${LAUNCHER_REL} ${event}`
-}
-
-/**
  * A dispatch command for `event` in either form (baseline or launcher). Used to
  * recognize an existing dispatch entry regardless of which path it's wired to,
  * so a rewrite is idempotent and replaces (never duplicates) the entry.
@@ -72,6 +65,37 @@ export function isDispatchCommand(command: string, event: string): boolean {
  */
 export function isLauncherCommand(command: string, event: string): boolean {
   return command === launcherCommand(event)
+}
+
+/**
+ * The launcher fast-path command for an event (POSIX execv, host-built).
+ */
+export function launcherCommand(event: string): string {
+  return `"$CLAUDE_PROJECT_DIR"/${LAUNCHER_REL} ${event}`
+}
+
+/**
+ * The set of dispatch events `settings` has wired to the LAUNCHER (fast-path)
+ * form. Used to carry a host's launcher choice across a cascade merge that
+ * would otherwise reset the fleet section to the baseline.
+ */
+export function launcherWiredEvents(settings: DispatchSettings): Set<string> {
+  const wired = new Set<string>()
+  const hooks = settings.hooks ?? {}
+  for (let i = 0, { length } = DISPATCH_EVENTS; i < length; i += 1) {
+    const event = DISPATCH_EVENTS[i]!
+    const matchers = hooks[event] ?? []
+    for (let m = 0, ml = matchers.length; m < ml; m += 1) {
+      const entries = matchers[m]!.hooks ?? []
+      for (let j = 0, hl = entries.length; j < hl; j += 1) {
+        const entry = entries[j]!
+        if (entry.command && isLauncherCommand(entry.command, event)) {
+          wired.add(event)
+        }
+      }
+    }
+  }
+  return wired
 }
 
 export interface HookEntry {
@@ -124,28 +148,4 @@ export function rewriteDispatchCommands(
     }
   }
   return changed
-}
-
-/**
- * The set of dispatch events `settings` has wired to the LAUNCHER (fast-path)
- * form. Used to carry a host's launcher choice across a cascade merge that
- * would otherwise reset the fleet section to the baseline.
- */
-export function launcherWiredEvents(settings: DispatchSettings): Set<string> {
-  const wired = new Set<string>()
-  const hooks = settings.hooks ?? {}
-  for (let i = 0, { length } = DISPATCH_EVENTS; i < length; i += 1) {
-    const event = DISPATCH_EVENTS[i]!
-    const matchers = hooks[event] ?? []
-    for (let m = 0, ml = matchers.length; m < ml; m += 1) {
-      const entries = matchers[m]!.hooks ?? []
-      for (let j = 0, hl = entries.length; j < hl; j += 1) {
-        const entry = entries[j]!
-        if (entry.command && isLauncherCommand(entry.command, event)) {
-          wired.add(event)
-        }
-      }
-    }
-  }
-  return wired
 }

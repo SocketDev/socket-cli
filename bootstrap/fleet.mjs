@@ -4,8 +4,8 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
-  readFileSync,
   readdirSync,
+  readFileSync,
   realpathSync,
   writeFileSync,
 } from 'node:fs'
@@ -41,7 +41,7 @@ function tarExtractArgs(options) {
   return ['-xzf', opts.archive, '-C', opts.destination]
 }
 function errorMessage(e) {
-  if (e instanceof Error) return e.message
+  if (e instanceof Error) {return e.message}
   return String(e)
 }
 /**
@@ -58,16 +58,16 @@ function computeSha256(buf) {
  * fleet-markers module.
  */
 function beginMarker(style) {
-  if (style === 'html') return '<!-- <fleet-canonical> -->'
-  if (style === 'slash') return '// <fleet-canonical>'
+  if (style === 'html') {return '<!-- <fleet-canonical> -->'}
+  if (style === 'slash') {return '// <fleet-canonical>'}
   return '# <fleet-canonical>'
 }
 /**
  * The close marker line for a given comment style — canonical bare-tag form.
  */
 function endMarker(style) {
-  if (style === 'html') return '<!-- </fleet-canonical> -->'
-  if (style === 'slash') return '// </fleet-canonical>'
+  if (style === 'html') {return '<!-- </fleet-canonical> -->'}
+  if (style === 'slash') {return '// </fleet-canonical>'}
   return '# </fleet-canonical>'
 }
 /**
@@ -76,13 +76,13 @@ function endMarker(style) {
  * one pass.
  */
 function legacyBeginMarker(style) {
-  if (style === 'html') return '<!-- BEGIN <fleet-canonical> -->'
-  if (style === 'slash') return '// BEGIN <fleet-canonical>'
+  if (style === 'html') {return '<!-- BEGIN <fleet-canonical> -->'}
+  if (style === 'slash') {return '// BEGIN <fleet-canonical>'}
   return '# BEGIN <fleet-canonical>'
 }
 function legacyEndMarker(style) {
-  if (style === 'html') return '<!-- END </fleet-canonical> -->'
-  if (style === 'slash') return '// END </fleet-canonical>'
+  if (style === 'html') {return '<!-- END </fleet-canonical> -->'}
+  if (style === 'slash') {return '// END </fleet-canonical>'}
   return '# END </fleet-canonical>'
 }
 /**
@@ -113,10 +113,10 @@ function spliceFleetBlock(options) {
   if (commentStyle === 'html') {
     let insertIdx = lines.length
     for (const [i, line] of lines.entries())
-      if (i > 0 && line.startsWith('## ')) {
+      {if (i > 0 && line.startsWith('## ')) {
         insertIdx = i
         break
-      }
+      }}
     const before = lines.slice(0, insertIdx)
     const after = lines.slice(insertIdx)
     return [...before, fleetBlock, '', ...after].join('\n')
@@ -133,8 +133,8 @@ function parseYamlKeyBlocks(yaml) {
   const lines = yaml.split('\n')
   const blocks = []
   let current
-  for (const line of lines)
-    if (COL0_KEY_RE.test(line)) {
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]if (COL0_KEY_RE.test(line)) {
       if (current !== void 0) blocks.push(current)
       const colonIdx = line.indexOf(':')
       current = {
@@ -142,7 +142,8 @@ function parseYamlKeyBlocks(yaml) {
         lines: [line],
       }
     } else if (current !== void 0) current.lines.push(line)
-  if (current !== void 0) blocks.push(current)
+  }
+  if (current !== void 0) {blocks.push(current)}
   return blocks
 }
 /**
@@ -160,32 +161,32 @@ function mergeWorkspaceYaml(options) {
   const fleetKeySet = new Set(fleetKeys)
   const consumerKeyCounts = /* @__PURE__ */ new Map()
   for (const block of consumerBlocks)
-    if (fleetKeySet.has(block.key))
-      consumerKeyCounts.set(
+    {if (fleetKeySet.has(block.key))
+      {consumerKeyCounts.set(
         block.key,
         (consumerKeyCounts.get(block.key) ?? 0) + 1,
-      )
+      )}}
   for (const [key, count] of consumerKeyCounts)
-    if (count > 1)
-      throw new Error(
+    {if (count > 1)
+      {throw new Error(
         `mergeWorkspaceYaml: fleet key "${key}" appears ${count} times at column 0 in consumerYaml — cannot merge safely`,
-      )
+      )}}
   const bundleMap = /* @__PURE__ */ new Map()
-  for (const block of bundleBlocks) bundleMap.set(block.key, block)
+  for (const block of bundleBlocks) {bundleMap.set(block.key, block)}
   const resultBlocks = []
   const handledFleetKeys = /* @__PURE__ */ new Set()
   for (const block of consumerBlocks)
-    if (fleetKeySet.has(block.key)) {
+    {if (fleetKeySet.has(block.key)) {
       const bundleBlock = bundleMap.get(block.key)
-      if (bundleBlock !== void 0) resultBlocks.push(bundleBlock)
-      else resultBlocks.push(block)
+      if (bundleBlock !== void 0) {resultBlocks.push(bundleBlock)}
+      else {resultBlocks.push(block)}
       handledFleetKeys.add(block.key)
-    } else resultBlocks.push(block)
+    } else {resultBlocks.push(block)}}
   for (const key of fleetKeys)
-    if (!handledFleetKeys.has(key)) {
+    {if (!handledFleetKeys.has(key)) {
       const bundleBlock = bundleMap.get(key)
-      if (bundleBlock !== void 0) resultBlocks.push(bundleBlock)
-    }
+      if (bundleBlock !== void 0) {resultBlocks.push(bundleBlock)}
+    }}
   return `${resultBlocks
     .map(b => b.lines.join('\n'))
     .join('\n')
@@ -204,8 +205,8 @@ function walkFiles(dir, base) {
   const out = []
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const abs = path.join(dir, entry.name)
-    if (entry.isDirectory()) out.push(...walkFiles(abs, base))
-    else if (entry.isFile()) out.push(path.relative(base, abs))
+    if (entry.isDirectory()) {out.push(...walkFiles(abs, base))}
+    else if (entry.isFile()) {out.push(path.relative(base, abs))}
   }
   return out
 }
@@ -224,7 +225,7 @@ function verifyBundleFiles(filesDir, manifest) {
     }
     const actual = computeSha256(readFileSync(abs))
     if (actual !== expected)
-      problems.push(`sha256 mismatch: ${rel} (got ${actual}, want ${expected})`)
+      {problems.push(`sha256 mismatch: ${rel} (got ${actual}, want ${expected})`)}
   }
   return problems
 }
@@ -245,21 +246,21 @@ function verifySegments(segmentsDir, manifest) {
     }
     const actual = computeSha256(readFileSync(abs))
     if (actual !== entry.sha256)
-      problems.push(
+      {problems.push(
         `sha256 mismatch for segment ${entry.path} (got ${actual}, want ${entry.sha256})`,
-      )
+      )}
   }
   const settingsSegment = manifest.settingsSegment
   if (settingsSegment !== void 0) {
     const abs = path.join(segmentsDir, segmentFileName(settingsSegment.path))
     if (!existsSync(abs))
-      problems.push(`missing settings segment: ${settingsSegment.path}`)
+      {problems.push(`missing settings segment: ${settingsSegment.path}`)}
     else {
       const actual = computeSha256(readFileSync(abs))
       if (actual !== settingsSegment.sha256)
-        problems.push(
+        {problems.push(
           `sha256 mismatch for settings segment ${settingsSegment.path} (got ${actual}, want ${settingsSegment.sha256})`,
-        )
+        )}
     }
   }
   return problems
@@ -273,13 +274,13 @@ const LAUNCHER_REL = '.claude/hooks/fleet/_dispatch/dispatch-launcher'
 /**
  * The compile-cache baseline command for an event (the cascaded canonical).
  */
-function baselineCommand(event) {
+export function baselineCommand(event) {
   return `node "$CLAUDE_PROJECT_DIR"/${INDEX_REL} ${event}`
 }
 /**
  * The launcher fast-path command for an event (POSIX execv, host-built).
  */
-function launcherCommand(event) {
+export function launcherCommand(event) {
   return `"$CLAUDE_PROJECT_DIR"/${LAUNCHER_REL} ${event}`
 }
 /**
@@ -287,7 +288,7 @@ function launcherCommand(event) {
  * recognize an existing dispatch entry regardless of which path it's wired to,
  * so a rewrite is idempotent and replaces (never duplicates) the entry.
  */
-function isDispatchCommand(command, event) {
+export function isDispatchCommand(command, event) {
   return (
     command === baselineCommand(event) ||
     command === launcherCommand(event) ||
@@ -299,7 +300,7 @@ function isDispatchCommand(command, event) {
  * Is `command` the launcher (fast-path) form for `event`? The signal a host has
  * opted this dispatch slot into the per-machine snapshot launcher.
  */
-function isLauncherCommand(command, event) {
+export function isLauncherCommand(command, event) {
   return command === launcherCommand(event)
 }
 /**
@@ -309,7 +310,7 @@ function isLauncherCommand(command, event) {
  * `make` CANONICALIZES (both forms collapse to the baseline) — the shape the
  * fleet-drift comparison needs so a launcher-wired host doesn't read as drift.
  */
-function rewriteDispatchCommands(settings, make) {
+export function rewriteDispatchCommands(settings, make) {
   let changed = 0
   const hooks = settings.hooks ?? {}
   for (let i = 0, { length } = DISPATCH_EVENTS; i < length; i += 1) {
@@ -340,7 +341,7 @@ function rewriteDispatchCommands(settings, make) {
  * form. Used to carry a host's launcher choice across a cascade merge that
  * would otherwise reset the fleet section to the baseline.
  */
-function launcherWiredEvents(settings) {
+export function launcherWiredEvents(settings) {
   const wired = /* @__PURE__ */ new Set()
   const hooks = settings.hooks ?? {}
   for (let i = 0, { length } = DISPATCH_EVENTS; i < length; i += 1) {
@@ -351,7 +352,7 @@ function launcherWiredEvents(settings) {
       for (let j = 0, hl = entries.length; j < hl; j += 1) {
         const entry = entries[j]
         if (entry.command && isLauncherCommand(entry.command, event))
-          wired.add(event)
+          {wired.add(event)}
       }
     }
   }
@@ -362,23 +363,23 @@ function launcherWiredEvents(settings) {
 //#region template/base/bootstrap/src/settings.mts
 const FLEET_SETTINGS_BEGIN = '// <fleet-canonical>'
 const FLEET_SETTINGS_END = '// </fleet-canonical>'
-function cloneJson(value) {
+export function cloneJson(value) {
   return JSON.parse(JSON.stringify(value))
 }
-function fleetSettingsKeys(settings) {
+export function fleetSettingsKeys(settings) {
   const keys = Object.keys(settings)
   const start = keys.indexOf(FLEET_SETTINGS_BEGIN)
   const end = keys.indexOf(FLEET_SETTINGS_END)
   if (start === -1 || end === -1 || end <= start)
-    throw new Error(
+    {throw new Error(
       'Invalid Claude settings fleet section: settings.json has missing or misordered <fleet-canonical> markers; expected one opening marker before one closing marker; fix the marker keys in the canonical template.',
-    )
+    )}
   return keys.slice(start, end + 1)
 }
-function isLegacyFleetCommentEnv(value) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+export function isLegacyFleetCommentEnv(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {return false}
   const entries = Object.entries(value)
-  if (entries.length !== 1 || entries[0]?.[0] !== '//') return false
+  if (entries.length !== 1 || entries[0]?.[0] !== '//') {return false}
   const comments = entries[0][1]
   return (
     Array.isArray(comments) &&
@@ -389,10 +390,10 @@ function isLegacyFleetCommentEnv(value) {
     )
   )
 }
-function isRepoHookCommand(command) {
+export function isRepoHookCommand(command) {
   return typeof command === 'string' && command.includes('/.claude/hooks/repo/')
 }
-function mergeClaudeSettings(options) {
+export function mergeClaudeSettings(options) {
   const { fleetSettings, repoSettings } = {
     __proto__: null,
     ...options,
@@ -400,16 +401,16 @@ function mergeClaudeSettings(options) {
   const fleetKeys = fleetSettingsKeys(fleetSettings)
   const fleetKeySet = new Set(fleetKeys)
   const merged = {}
-  for (const key of fleetKeys) merged[key] = cloneJson(fleetSettings[key])
+  for (const key of fleetKeys) {merged[key] = cloneJson(fleetSettings[key])}
   if (repoSettings !== void 0) {
     spliceRepoHookEntries(merged, repoSettings)
     const hostLauncherEvents = launcherWiredEvents(repoSettings)
     if (hostLauncherEvents.size > 0)
-      rewriteDispatchCommands(merged, event =>
+      {rewriteDispatchCommands(merged, event =>
         hostLauncherEvents.has(event)
           ? launcherCommand(event)
           : baselineCommand(event),
-      )
+      )}
     for (const [key, value] of Object.entries(repoSettings)) {
       if (
         fleetKeySet.has(key) ||
@@ -417,27 +418,27 @@ function mergeClaudeSettings(options) {
         key === '// </fleet-canonical>' ||
         (key === 'env' && isLegacyFleetCommentEnv(value))
       )
-        continue
+        {continue}
       merged[key] = cloneJson(value)
     }
   }
   return merged
 }
-function spliceRepoHookEntries(destination, source) {
+export function spliceRepoHookEntries(destination, source) {
   const sourceHooks = source.hooks
-  if (sourceHooks === void 0) return
+  if (sourceHooks === void 0) {return}
   for (const [event, matcherEntries] of Object.entries(sourceHooks)) {
-    if (!Array.isArray(matcherEntries)) continue
+    if (!Array.isArray(matcherEntries)) {continue}
     for (const matcherEntry of matcherEntries) {
-      if (!Array.isArray(matcherEntry.hooks)) continue
+      if (!Array.isArray(matcherEntry.hooks)) {continue}
       for (const hook of matcherEntry.hooks)
-        if (isRepoHookCommand(hook.command))
-          spliceRepoHookEntry(destination, event, matcherEntry.matcher, hook)
+        {if (isRepoHookCommand(hook.command))
+          {spliceRepoHookEntry(destination, event, matcherEntry.matcher, hook)}}
     }
   }
 }
-function spliceRepoHookEntry(settings, event, matcher, hook) {
-  if (!settings.hooks || typeof settings.hooks !== 'object') settings.hooks = {}
+export function spliceRepoHookEntry(settings, event, matcher, hook) {
+  if (!settings.hooks || typeof settings.hooks !== 'object') {settings.hooks = {}}
   const eventEntries = settings.hooks[event] ?? []
   const matcherValue = matcher ?? ''
   let destination = eventEntries.find(
@@ -453,10 +454,10 @@ function spliceRepoHookEntry(settings, event, matcher, hook) {
     eventEntries.push(destination)
     settings.hooks[event] = eventEntries
   }
-  if (!Array.isArray(destination.hooks)) destination.hooks = []
+  if (!Array.isArray(destination.hooks)) {destination.hooks = []}
   const serialized = JSON.stringify(hook)
   if (destination.hooks.some(entry => JSON.stringify(entry) === serialized))
-    return
+    {return}
   destination.hooks.push(cloneJson(hook))
 }
 
@@ -481,7 +482,7 @@ function installFiles(filesDir, dest, manifest) {
  */
 function installSegments(segmentsDir, dest, manifest) {
   const segments = manifest.segments
-  if (!segments || segments.length === 0) return
+  if (!segments || segments.length === 0) {return}
   for (const entry of segments) {
     const destName = segmentFileName(entry.path)
     const fleetBlock = readFileSync(path.join(segmentsDir, destName), 'utf8')
@@ -505,7 +506,7 @@ function installSegments(segmentsDir, dest, manifest) {
  */
 function installSettingsSegment(segmentsDir, dest, manifest) {
   const segment = manifest.settingsSegment
-  if (segment === void 0) return 0
+  if (segment === void 0) {return 0}
   const sourcePath = path.join(segmentsDir, segmentFileName(segment.path))
   if (!existsSync(sourcePath)) {
     logger$3.log(
@@ -538,7 +539,7 @@ function installSettingsSegment(segmentsDir, dest, manifest) {
  */
 function installWorkspaceSegment(segmentsDir, dest, manifest) {
   const ws = manifest.workspaceSegment
-  if (ws === void 0) return 0
+  if (ws === void 0) {return 0}
   const fleetFile = path.join(segmentsDir, 'pnpm-workspace.yaml.fleet')
   if (!existsSync(fleetFile)) {
     logger$3.log(
@@ -606,7 +607,7 @@ function wirePackageJson(dest) {
     scripts['prepare'] = `${PREPARE_FETCH} && ${prepare}`
     changed = true
   }
-  if (!changed) return
+  if (!changed) {return}
   pkg['scripts'] = scripts
   writeFileSync(pkgPath, `${JSON.stringify(pkg, void 0, 2)}\n`)
 }
@@ -631,12 +632,12 @@ function thinIgnoreEntries(manifest) {
     (manifest.segments ?? []).map(normalizeManifestEntryPath),
   )
   if (manifest.settingsSegment !== void 0)
-    hybridPaths.add(normalizeBundlePath(manifest.settingsSegment.path))
+    {hybridPaths.add(normalizeBundlePath(manifest.settingsSegment.path))}
   const entries = /* @__PURE__ */ new Set()
   const files = Object.keys(manifest.files)
   for (let i = 0, { length } = files; i < length; i += 1) {
     const p = normalizeBundlePath(files[i])
-    if (hybridPaths.has(p)) continue
+    if (hybridPaths.has(p)) {continue}
     entries.add(p)
   }
   return [...entries].toSorted()
@@ -655,15 +656,15 @@ function fleetDirRoots(manifest) {
     (manifest.segments ?? []).map(normalizeManifestEntryPath),
   )
   if (manifest.settingsSegment !== void 0)
-    hybridPaths.add(normalizeBundlePath(manifest.settingsSegment.path))
+    {hybridPaths.add(normalizeBundlePath(manifest.settingsSegment.path))}
   const roots = /* @__PURE__ */ new Set()
   const files = Object.keys(manifest.files)
   for (let i = 0, { length } = files; i < length; i += 1) {
     const p = normalizeBundlePath(files[i])
-    if (hybridPaths.has(p)) continue
+    if (hybridPaths.has(p)) {continue}
     const parts = p.split('/')
     const fleetIdx = parts.indexOf('fleet')
-    if (fleetIdx >= 0) roots.add(`${parts.slice(0, fleetIdx + 1).join('/')}/`)
+    if (fleetIdx >= 0) {roots.add(`${parts.slice(0, fleetIdx + 1).join('/')}/`)}
   }
   return [...roots].toSorted()
 }
@@ -697,7 +698,7 @@ function applyThinMode(options) {
   )
   const rmTargets = ['.agents/', ...sortedRoots]
   if (rmTargets.length > 0)
-    try {
+    {try {
       execFileSync(
         'git',
         ['rm', '-r', '--cached', '--ignore-unmatch', ...rmTargets],
@@ -710,7 +711,7 @@ function applyThinMode(options) {
       logger$3.log(
         `install-fleet: --thin: git rm --cached failed (non-fatal) — ${errorMessage(e)}`,
       )
-    }
+    }}
 }
 const PRUNE_SKIP_NAMES = /* @__PURE__ */ new Set([
   '._.DS_Store',
@@ -730,17 +731,17 @@ const PRUNE_SKIP_NAMES = /* @__PURE__ */ new Set([
 function pruneStaleFleetFiles(dest, manifest) {
   const kept = new Set(Object.keys(manifest.files).map(normalizeBundlePath))
   for (const segment of manifest.segments ?? [])
-    kept.add(normalizeBundlePath(segment.path))
+    {kept.add(normalizeBundlePath(segment.path))}
   if (manifest.settingsSegment !== void 0)
-    kept.add(normalizeBundlePath(manifest.settingsSegment.path))
+    {kept.add(normalizeBundlePath(manifest.settingsSegment.path))}
   let pruned = 0
   const roots = fleetDirRoots(manifest)
   for (let r = 0, { length: rootCount } = roots; r < rootCount; r += 1) {
     const root = roots[r]
     const dirAbs = path.join(dest, root)
-    if (!existsSync(dirAbs)) continue
+    if (!existsSync(dirAbs)) {continue}
     for (const rel of walkFiles(dirAbs, dest)) {
-      if (PRUNE_SKIP_NAMES.has(path.basename(rel))) continue
+      if (PRUNE_SKIP_NAMES.has(path.basename(rel))) {continue}
       const key = normalizeBundlePath(rel)
       if (!kept.has(key)) {
         safeDeleteSync(path.join(dest, rel))
@@ -755,10 +756,10 @@ const SETTINGS_CANDIDATES = [
   '.config/socket-wheelhouse.json',
   '.socket-wheelhouse.json',
 ]
-function resolveSettingsPath(dest) {
+export function resolveSettingsPath(dest) {
   for (let i = 0, { length } = SETTINGS_CANDIDATES; i < length; i += 1) {
     const p = path.join(dest, SETTINGS_CANDIDATES[i])
-    if (existsSync(p)) return p
+    if (existsSync(p)) {return p}
   }
 }
 const APPLIED_MARKER = 'node_modules/.cache/socket-wheelhouse/bundle-applied'
@@ -770,7 +771,7 @@ const LEGACY_APPLIED_MARKER = '.config/fleet/.bundle-applied'
  */
 function readBundleRef(dest) {
   const p = resolveSettingsPath(dest)
-  if (!p) return
+  if (!p) {return}
   try {
     return JSON.parse(readFileSync(p, 'utf8')).bundle?.ref
   } catch {
@@ -786,10 +787,10 @@ function readBundleRef(dest) {
 function readBundleConfig(dest) {
   const p = resolveSettingsPath(dest)
   if (!p)
-    return {
+    {return {
       ref: void 0,
       cascadeSha: void 0,
-    }
+    }}
   try {
     const json = JSON.parse(readFileSync(p, 'utf8'))
     return {
@@ -812,7 +813,7 @@ function writeAppliedRef(dest, ref) {
   mkdirSync(path.dirname(p), { recursive: true })
   writeFileSync(p, `${ref}\n`)
   const legacy = path.join(dest, LEGACY_APPLIED_MARKER)
-  if (existsSync(legacy)) safeDeleteSync(legacy)
+  if (existsSync(legacy)) {safeDeleteSync(legacy)}
 }
 
 //#endregion
@@ -835,13 +836,13 @@ function validateRef(ref) {
     }
   }
   if (FUZZY_REF_RE.test(ref))
-    errors.push(
+    {errors.push(
       `\`bundle.ref\` must be an exact \`fleet-<hex>\` tag — no range/alias (\`^\` \`~\` \`*\` \`latest\` \`lts\` \`main\` …); got ${JSON.stringify(ref)}.`,
-    )
+    )}
   if (!FLEET_REF_RE.test(ref))
-    errors.push(
+    {errors.push(
       `\`bundle.ref\` must match ${String(FLEET_REF_RE)} (a \`fleet-<hex>\` release tag); got ${JSON.stringify(ref)}.`,
-    )
+    )}
   return {
     ok: errors.length === 0,
     errors,
@@ -861,9 +862,9 @@ function validateCascadeSha(cascadeSha) {
     }
   }
   if (!FULL_SHA_RE.test(cascadeSha))
-    errors.push(
+    {errors.push(
       `\`bundle.cascadeSha\` must be a bare full-length git SHA (40 lowercase hex chars); got ${JSON.stringify(cascadeSha)}.`,
-    )
+    )}
   return {
     ok: errors.length === 0,
     errors,
@@ -875,10 +876,10 @@ function validateCascadeSha(cascadeSha) {
  */
 function validateBundleBlock(bundle) {
   if (typeof bundle !== 'object' || bundle === null || Array.isArray(bundle))
-    return {
+    {return {
       ok: false,
       errors: ['`bundle` must be an object.'],
-    }
+    }}
   const b = bundle
   const refResult = validateRef(b.ref)
   const shaResult = validateCascadeSha(b.cascadeSha)
@@ -909,9 +910,9 @@ function resolveLockStepState(inputs) {
     newestTemplateSha !== void 0 &&
     newestTemplateSha !== pinnedTemplateSha
   let state
-  if (!inLockStep) state = 'out-of-sync'
-  else if (updateAvailable) state = 'update-available'
-  else state = 'current'
+  if (!inLockStep) {state = 'out-of-sync'}
+  else if (updateAvailable) {state = 'update-available'}
+  else {state = 'current'}
   return {
     config,
     inLockStep,
@@ -933,8 +934,8 @@ function lockStepExitCode(state, options) {
     __proto__: null,
     ...options,
   }
-  if (state.state === 'out-of-sync') return 1
-  if (state.state === 'update-available') return opts?.exitCode ? 10 : 0
+  if (state.state === 'out-of-sync') {return 1}
+  if (state.state === 'update-available') {return opts?.exitCode ? 10 : 0}
   return 0
 }
 const ERR_LOCKSTEP_MISMATCH = 'ERR_WHEELHOUSE_LOCKSTEP_MISMATCH'
@@ -965,7 +966,7 @@ const TWENTY_FOUR_HOURS_MS = 1440 * 60 * 1e3
 const UPDATE_NOTIFIER_OPT_OUT_ENV = 'WHEELHOUSE_NO_UPDATE_NOTIFIER'
 function readNoticeStore(dest) {
   const p = path.join(dest, NOTICE_STORE_REL)
-  if (!existsSync(p)) return
+  if (!existsSync(p)) {return}
   try {
     const json = JSON.parse(readFileSync(p, 'utf8'))
     return {
@@ -1001,9 +1002,9 @@ function writeNoticeStore(dest, store) {
  */
 function shouldShowNotice(inputs) {
   const { ci, newestRef, nowMs, optedOut, store, updateAvailable } = inputs
-  if (!updateAvailable || ci || optedOut || newestRef === void 0) return false
-  if (store === void 0) return true
-  if (store.lastSeenRef !== newestRef) return true
+  if (!updateAvailable || ci || optedOut || newestRef === void 0) {return false}
+  if (store === void 0) {return true}
+  if (store.lastSeenRef !== newestRef) {return true}
   return nowMs - store.lastCheckMs >= TWENTY_FOUR_HOURS_MS
 }
 /**
@@ -1021,7 +1022,7 @@ function formatUpdateNotice(options) {
     `Re-cascade to ${newestRef}:`,
     'node scripts/repo/sync-scaffolding/cli.mts --target . --fix',
   ]
-  if (!color) return lines.map(l => `  ${l}`).join('\n')
+  if (!color) {return lines.map(l => `  ${l}`).join('\n')}
   const width = Math.max(...lines.map(l => l.length))
   const top = `╭${'─'.repeat(width + 2)}╮`
   const bottom = `╰${'─'.repeat(width + 2)}╯`
@@ -1053,8 +1054,8 @@ function assertLockStep(options) {
     __proto__: null,
     ...options,
   }
-  if (cascadeSha === void 0) return true
-  if (cascadeSha === manifestTemplateSha) return true
+  if (cascadeSha === void 0) {return true}
+  if (cascadeSha === manifestTemplateSha) {return true}
   logger$2.error(
     formatLockStepError({
       cascadeSha,
@@ -1089,8 +1090,8 @@ function resolveNewestRef(repo) {
     )
     const rows = JSON.parse(out)
     for (const row of rows)
-      if (typeof row.tagName === 'string' && row.tagName.startsWith('fleet-'))
-        return row.tagName
+      {if (typeof row.tagName === 'string' && row.tagName.startsWith('fleet-'))
+        {return row.tagName}}
     return
   } catch {
     return
@@ -1103,7 +1104,7 @@ function resolveNewestRef(repo) {
  * is absent (offline, no such tag) — the caller decides whether that's fatal.
  */
 function resolveReleaseTemplateSha(ref, repo) {
-  if (!ref) return
+  if (!ref) {return}
   const tmp = mkdtempSync(path.join(os.tmpdir(), 'fleet-status-'))
   try {
     execFileSync(
@@ -1122,7 +1123,7 @@ function resolveReleaseTemplateSha(ref, repo) {
       { stdio: ['ignore', 'ignore', 'ignore'] },
     )
     const manifestPath = path.join(tmp, MANIFEST_NAME$1)
-    if (!existsSync(manifestPath)) return
+    if (!existsSync(manifestPath)) {return}
     const json = JSON.parse(readFileSync(manifestPath, 'utf8'))
     return typeof json.templateSha === 'string' ? json.templateSha : void 0
   } catch {
@@ -1168,7 +1169,7 @@ function maybeShowUpdateNotice(options) {
     }) ||
     newestRef === void 0
   )
-    return false
+    {return false}
   const color = process.env['NO_COLOR'] === void 0
   process.stderr.write(
     `${formatUpdateNotice({
@@ -1198,7 +1199,7 @@ function printStatusReport(state, options) {
     return
   }
   if (!opts.noHeader)
-    logger$1.log('  Pinned                         | Landed       | Newest')
+    {logger$1.log('  Pinned                         | Landed       | Newest')}
   const mismatchTag = state.state === 'out-of-sync' ? '  [MISMATCH]' : ''
   logger$1.log(`  ${pinnedCell} | ${landedCell} | ${newestCell}${mismatchTag}`)
   if (state.state === 'update-available' && state.newestRef !== void 0) {
@@ -1259,21 +1260,21 @@ function parseArgs(argv) {
   }
   for (let i = 0, { length } = argv; i < length; i += 1) {
     const arg = argv[i]
-    if (arg === void 0) break
-    if (arg === '--dest') opts.dest = argv[++i] ?? repoRoot
-    else if (arg === '--bundle') opts.bundle = argv[++i]
-    else if (arg === '--dry-run') opts.dryRun = true
-    else if (arg === '--exit-code') opts.exitCode = true
-    else if (arg === '--if-current') opts.ifCurrent = true
-    else if (arg === '--json') opts.json = true
-    else if (arg === '--manifest') opts.manifest = argv[++i]
-    else if (arg === '--no-header') opts.noHeader = true
-    else if (arg === '--quiet') opts.quiet = true
-    else if (arg === '--ref') opts.ref = argv[++i] ?? ''
-    else if (arg === '--repo') opts.repo = argv[++i] ?? DEFAULT_REPO
-    else if (arg === '--status') opts.status = true
-    else if (arg === '--thin') opts.thin = true
-    else if (arg === '--wire') opts.wire = true
+    if (arg === void 0) {break}
+    if (arg === '--dest') {opts.dest = argv[++i] ?? repoRoot}
+    else if (arg === '--bundle') {opts.bundle = argv[++i]}
+    else if (arg === '--dry-run') {opts.dryRun = true}
+    else if (arg === '--exit-code') {opts.exitCode = true}
+    else if (arg === '--if-current') {opts.ifCurrent = true}
+    else if (arg === '--json') {opts.json = true}
+    else if (arg === '--manifest') {opts.manifest = argv[++i]}
+    else if (arg === '--no-header') {opts.noHeader = true}
+    else if (arg === '--quiet') {opts.quiet = true}
+    else if (arg === '--ref') {opts.ref = argv[++i] ?? ''}
+    else if (arg === '--repo') {opts.repo = argv[++i] ?? DEFAULT_REPO}
+    else if (arg === '--status') {opts.status = true}
+    else if (arg === '--thin') {opts.thin = true}
+    else if (arg === '--wire') {opts.wire = true}
   }
   return opts
 }
@@ -1294,9 +1295,9 @@ function runStatus(options) {
   const ref = opts.ref || cfg.ref || ''
   if (!ref) {
     if (!opts.quiet)
-      logger.log(
+      {logger.log(
         'fleet:status: no bundle.ref pinned in .config/repo/socket-wheelhouse.json — not a thin consumer.',
-      )
+      )}
     return 0
   }
   const config = {
@@ -1317,9 +1318,9 @@ function runStatus(options) {
     pinnedTemplateSha,
   })
   if (opts.json) {
-    if (!opts.quiet) logger.log(JSON.stringify(statusJson(state)))
+    if (!opts.quiet) {logger.log(JSON.stringify(statusJson(state)))}
   } else if (!opts.quiet)
-    printStatusReport(state, { noHeader: opts.noHeader ?? false })
+    {printStatusReport(state, { noHeader: opts.noHeader ?? false })}
   return lockStepExitCode(state, { exitCode: opts.exitCode ?? false })
 }
 /**
@@ -1467,15 +1468,15 @@ async function installFleet(options) {
     const prunedCount = pruneStaleFleetFiles(dest, manifest)
     installSegments(segmentsDir, dest, manifest)
     const settingsResult = installSettingsSegment(segmentsDir, dest, manifest)
-    if (settingsResult !== 0) return settingsResult
+    if (settingsResult !== 0) {return settingsResult}
     const wsResult = installWorkspaceSegment(segmentsDir, dest, manifest)
-    if (wsResult !== 0) return wsResult
-    if (opts.wire) wirePackageJson(dest)
+    if (wsResult !== 0) {return wsResult}
+    if (opts.wire) {wirePackageJson(dest)}
     if (opts.thin)
-      applyThinMode({
+      {applyThinMode({
         dest,
         manifest,
-      })
+      })}
     writeAppliedRef(dest, sourceRef)
     const prunedNote = prunedCount > 0 ? `, pruned ${prunedCount} stale` : ''
     logger.log(
@@ -1488,7 +1489,7 @@ async function installFleet(options) {
 }
 function isMainModule() {
   const entry = process.argv[1]
-  if (!entry) return false
+  if (!entry) {return false}
   try {
     return realpathSync(fileURLToPath(import.meta.url)) === realpathSync(entry)
   } catch {

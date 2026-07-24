@@ -241,7 +241,8 @@ export function parseYamlKeyBlocks(
   const lines = yaml.split('\n')
   const blocks: Array<{ key: string; lines: string[] }> = []
   let current: { key: string; lines: string[] } | undefined
-  for (const line of lines) {
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
     if (COL0_KEY_RE.test(line)) {
       if (current !== undefined) {
         blocks.push(current)
