@@ -131,7 +131,7 @@ export async function run(
     page,
     perPage,
     sort,
-  } = cli.flags as unknown as RepositoryListFlags
+  } = cli.flags
 
   const hasApiToken = hasDefaultApiToken()
 
@@ -171,8 +171,32 @@ export async function run(
       message: 'The --sort value must be "created_at", "name", or "updated_at"',
       fail: 'unexpected value',
     },
+    {
+      nook: true,
+      test: typeof page === 'number' && Number.isFinite(page),
+      message: 'The --page value must be a number',
+      fail: 'unexpected value',
+    },
+    {
+      nook: true,
+      test: typeof perPage === 'number' && Number.isFinite(perPage),
+      message: 'The --per-page value must be a number',
+      fail: 'unexpected value',
+    },
   )
   if (!wasValidInput) {
+    return
+  }
+
+  // Re-assert the checkCommandInput guards for the type system — meow's
+  // number-typed flags deliver the raw string for garbage input, and the
+  // string-typed enum flags accept any string.
+  if (
+    (direction !== 'asc' && direction !== 'desc') ||
+    (sort !== 'created_at' && sort !== 'name' && sort !== 'updated_at') ||
+    typeof page !== 'number' ||
+    typeof perPage !== 'number'
+  ) {
     return
   }
 

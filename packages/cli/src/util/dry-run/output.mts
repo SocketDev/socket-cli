@@ -40,7 +40,7 @@ export function outputDryRunDelete(
  */
 export function outputDryRunExecute(
   command: string,
-  args: string[],
+  args: string[] | readonly string[],
   description?: string | undefined,
 ): void {
   out('')

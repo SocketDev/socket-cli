@@ -119,6 +119,22 @@ const PATTERNS = {
   },
 } as const
 
+export type AskPattern = (typeof PATTERNS)[Exclude<
+  keyof typeof PATTERNS,
+  '__proto__'
+>]
+
+// Widened view of PATTERNS for dynamic action strings from the semantic
+// matchers — plain assignment widening, no assertion needed. `null` appears in
+// the value union only because TS models the literal's `__proto__: null`
+// prototype marker as a property; lookupPattern folds it away.
+const PATTERNS_BY_ACTION: Record<string, AskPattern | null | undefined> =
+  PATTERNS
+
+export function lookupPattern(action: string): AskPattern | undefined {
+  return PATTERNS_BY_ACTION[action] ?? undefined
+}
+
 /**
  * Severity levels mapping.
  */
@@ -334,7 +350,7 @@ export async function parseIntent(query: string): Promise<ParsedIntent> {
     if (wordMatch && wordMatch.confidence > (bestMatch?.confidence || 0)) {
       // Use word-overlap match.
       /* c8 ignore start - word-overlap match selected branch; requires wordOverlapMatch to return a specific PATTERNS-keyed action that beats the current pattern-match confidence; tests cover the matchers in isolation */
-      const pattern = PATTERNS[wordMatch.action as keyof typeof PATTERNS]
+      const pattern = lookupPattern(wordMatch.action)
       if (pattern) {
         bestMatch = {
           action: wordMatch.action,
@@ -355,7 +371,7 @@ export async function parseIntent(query: string): Promise<ParsedIntent> {
       if (onnxMatch && onnxMatch.confidence > (bestMatch?.confidence || 0)) {
         // Use ONNX semantic match.
         /* c8 ignore start - ONNX match selected branch; requires onnxSemanticMatch to return a specific PATTERNS-keyed action that beats the current confidence; tests cover the matchers in isolation */
-        const pattern = PATTERNS[onnxMatch.action as keyof typeof PATTERNS]
+        const pattern = lookupPattern(onnxMatch.action)
         if (pattern) {
           bestMatch = {
             action: onnxMatch.action,
