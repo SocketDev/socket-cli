@@ -43,6 +43,9 @@ vi.mock(import('../../../../src/util/process/cmd.mts'), () => ({
       .map(([k, v]) => `--${k}=${String(v)}`)
       .join(' '),
   ),
+  mergeNodeOptions: vi.fn((envNodeOptions, addedFlags) =>
+    [envNodeOptions, ...(addedFlags || [])].filter(Boolean).join(' '),
+  ),
 }))
 
 vi.mock(
@@ -107,6 +110,37 @@ describe('agent installer utilities', () => {
           cwd: '/test/project',
         }),
       )
+    })
+
+    it('preserves an inherited NODE_OPTIONS instead of clobbering it', async () => {
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/lib-stable/process/spawn/child'),
+      )
+      spawn.mockReturnValue(Promise.resolve({ status: 0 }) as unknown)
+
+      const pkgEnvDetails = {
+        agent: 'npm',
+        agentExecPath: '/usr/bin/npm',
+        pkgPath: '/test/project',
+        agentVersion: { major: 10, minor: 0, patch: 0 },
+      } as unknown
+
+      const originalNodeOptions = process.env['NODE_OPTIONS']
+      process.env['NODE_OPTIONS'] = '--max-old-space-size=4096'
+      try {
+        await runAgentInstall(pkgEnvDetails)
+      } finally {
+        if (originalNodeOptions === undefined) {
+          delete process.env['NODE_OPTIONS']
+        } else {
+          process.env['NODE_OPTIONS'] = originalNodeOptions
+        }
+      }
+
+      const spawnEnv = (
+        spawn.mock.calls[0]![2] as { env: Record<string, string> }
+      ).env
+      expect(spawnEnv['NODE_OPTIONS']).toContain('--max-old-space-size=4096')
     })
 
     it('uses spawn for pnpm agent', async () => {
