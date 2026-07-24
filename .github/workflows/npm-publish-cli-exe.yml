@@ -1,0 +1,106 @@
+name: 📦 npm publish cli.exe
+
+# Repo-owned — NOT cascade-owned. The cascade's npm-publish.yml stages exactly
+# one package, the repo-root manifest, which here is the private monorepo — so
+# the @socketsecurity/cli.exe.<triplet> tail family and the socket wrapper
+# stage through this sibling instead. Same trust shape as the cascade surface:
+# environment npm-publish + id-token: write, OIDC trusted publishing, DRY-RUN
+# unless `publish: true`, and staging only — nothing goes public until a human
+# runs `pnpm stage approve` locally with 2FA.
+#
+# Phase-1 order rule, see docs/cli-exe-migration.md: every tail must be live
+# before the wrapper. Dispatch family=cli-exe-tails first, approve + verify,
+# then dispatch family=socket-wrapper.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to stamp + stage, e.g. 2.1.0.'
+        type: string
+        required: true
+      family:
+        description: 'What to stage.'
+        type: choice
+        options:
+          - cli-exe-tails
+          - socket-wrapper
+        default: 'cli-exe-tails'
+      triplets:
+        description: >-
+          For cli-exe-tails: all | buildable | comma list. buildable skips the
+          win32 pair while the frozen node-smol win stub launchers refuse
+          binject injection.
+        type: string
+        default: 'buildable'
+      publish:
+        description: 'Publish for real (false = dry-run, the default).'
+        type: boolean
+        default: false
+      dist-tag:
+        description: 'npm dist-tag to stage under.'
+        type: string
+        default: 'latest'
+
+permissions:
+  contents: read
+
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    # npm's trusted-publisher config pins this GitHub environment name; the
+    # OIDC token exchange 404s if the job runs outside it.
+    environment: npm-publish
+    permissions:
+      contents: read
+      # npm provenance / trusted publishing mints its OIDC token here.
+      id-token: write
+    env:
+      # Socket Firewall + CLI auth for the sfw-wrapped setup + pnpm install —
+      # sfw and socket-cli read SOCKET_API_KEY from the org-wide secret.
+      SOCKET_API_KEY: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+    steps:
+      # First step must be the third-party actions/checkout (GitHub fetches it
+      # independently) to populate the workspace so the LOCAL
+      # ./.github/actions/* composite resolves.
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-15)
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup + install
+        uses: ./.github/actions/fleet/setup-and-install
+      # Tail/wrapper package dirs are generated build output — a fresh checkout
+      # has none. Generators are non-destructive: manifests + READMEs only,
+      # binaries land under bin/ afterwards.
+      - name: Generate package scaffolds
+        run: pnpm --filter package-builder run generate:${{ inputs.family == 'cli-exe-tails' && 'cli-exe' || 'cli' }}
+      - name: Build CLI bundle
+        if: inputs.family == 'cli-exe-tails'
+        run: pnpm run build:cli
+      # SEA base assets resolve from the socket-cli base-assets-* mirror
+      # releases with SHA-256 pins — see
+      # packages/cli/scripts/constants/base-assets.mts.
+      - name: Build SEA binaries
+        if: inputs.family == 'cli-exe-tails'
+        env:
+          TRIPLETS: ${{ inputs.triplets }}
+        run: |
+          if [ "$TRIPLETS" = "all" ]; then
+            pnpm --filter @socketsecurity/cli run build:sea --all
+          else
+            pnpm --filter @socketsecurity/cli run build:sea --platform=darwin
+            pnpm --filter @socketsecurity/cli run build:sea --platform=linux
+          fi
+      # --stamp sets version + buildMethod and strips `private` (tails), and
+      # rewrites the wrapper's cli.exe placeholder optionalDependencies to the
+      # same version. Guards refuse unstamped manifests and missing binaries.
+      - name: Stage
+        env:
+          VERSION: ${{ inputs.version }}
+          DIST_TAG: ${{ inputs.dist-tag }}
+          TRIPLETS: ${{ inputs.triplets }}
+        run: >-
+          node scripts/repo/stage-publish-cli-exe.mts
+          --version="$VERSION" --tag="$DIST_TAG" --stamp
+          ${{ inputs.family == 'cli-exe-tails' && '--triplets="$TRIPLETS"' || '--wrapper' }}
+          ${{ inputs.publish == true && '--publish' || '' }}
