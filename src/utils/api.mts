@@ -461,14 +461,22 @@ async function queryApi(path: string, apiToken: string) {
   return result
 }
 
+export type ApiTextResult = {
+  status: number
+  text: string
+}
+
 /**
- * Query Socket API endpoint and return text response with error handling.
+ * Query a Socket API endpoint and return the HTTP status alongside the text
+ * body, with error handling. Unlike queryApiSafeText this surfaces the status
+ * on success (including 2xx statuses like 202 Accepted), so callers can drive
+ * status-dependent flows such as the cached-scan 202 poll loop.
  */
-export async function queryApiSafeText(
+export async function queryApiSafeTextWithStatus(
   path: string,
   description?: string | undefined,
   commandPath?: string | undefined,
-): Promise<CResult<string>> {
+): Promise<CResult<ApiTextResult>> {
   const apiToken = getDefaultApiToken()
   if (!apiToken) {
     return {
@@ -546,10 +554,13 @@ export async function queryApiSafeText(
   }
 
   try {
-    const data = await result.text()
+    const text = await result.text()
     return {
       ok: true,
-      data,
+      data: {
+        status: result.status,
+        text,
+      },
     }
   } catch (e) {
     debugFn('error', 'Failed to read API response text')
@@ -561,6 +572,22 @@ export async function queryApiSafeText(
       cause: `Unexpected error reading response text (path: ${path})`,
     }
   }
+}
+
+/**
+ * Query Socket API endpoint and return text response with error handling.
+ */
+export async function queryApiSafeText(
+  path: string,
+  description?: string | undefined,
+  commandPath?: string | undefined,
+): Promise<CResult<string>> {
+  const result = await queryApiSafeTextWithStatus(
+    path,
+    description,
+    commandPath,
+  )
+  return result.ok ? { ok: true, data: result.data.text } : result
 }
 
 /**
