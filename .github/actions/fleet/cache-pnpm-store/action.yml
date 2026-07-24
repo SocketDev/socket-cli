@@ -4,7 +4,7 @@
 # skill at .claude/skills/updating-workflows/.
 
 name: 'Cache pnpm Store'
-description: 'Restore + save the pnpm content-addressable store to skip cold downloads on every CI job and matrix cell'
+description: 'Restore the pnpm content-addressable store to skip cold downloads on every CI job and matrix cell'
 
 # WHY THIS EXISTS:
 #   The reusable ci.yml runs four jobs (check, lint, type-check, test) and
@@ -20,6 +20,17 @@ description: 'Restore + save the pnpm content-addressable store to skip cold dow
 #   each install. Caching the store (not node_modules) keeps the cache
 #   lockfile-shaped and platform-portable, and lets `pnpm install` still run
 #   its own integrity + link pass — it just skips the network fetch.
+#
+# RESTORE HERE, SAVE IN setup-and-install:
+#   This action only RESTORES. The old shape used actions/cache, whose post
+#   step re-evaluates `path:` at job end — outside this composite's steps
+#   context — and bails with "Input required and not supplied: path"
+#   (observed in run 30097714390), so the save never happened and every run
+#   stayed cold. Composite step outputs are invisible to post steps, but
+#   $GITHUB_ENV persists for the whole job, so this action exports
+#   PNPM_STORE_PATH / PNPM_STORE_CACHE_KEY / PNPM_STORE_CACHE_HIT and
+#   `setup-and-install` runs an explicit actions/cache/save AFTER install —
+#   the point where the store is actually populated.
 #
 # CACHE INVALIDATION:
 #   - Key includes `hashFiles('**/pnpm-lock.yaml')` — a lockfile change (new
@@ -58,7 +69,7 @@ runs:
       id: store
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: |
+      run: | # zizmor: ignore[github-env]
         # `pnpm store path` is authoritative — it honors store-dir config,
         # PNPM_HOME, and the platform default. Fall back to the documented
         # per-OS default only if the query fails (pnpm absent would already
@@ -74,6 +85,9 @@ runs:
           echo "ⓘ pnpm store path query failed; using default ${STORE_PATH}"
         fi
         echo "path=${STORE_PATH}" >> "$GITHUB_OUTPUT"
+        # $GITHUB_ENV (not just step outputs) so the save step in
+        # setup-and-install — a different composite scope — can read it.
+        echo "PNPM_STORE_PATH=${STORE_PATH}" >> "$GITHUB_ENV"
         echo "pnpm store path: ${STORE_PATH}"
 
     - name: Read Node major for cache key
@@ -85,14 +99,31 @@ runs:
         NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 'x')"
         echo "major=${NODE_MAJOR}" >> "$GITHUB_OUTPUT"
 
-    - name: Cache pnpm store
-      id: cache
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0 (2026-06-26)
-      with:
-        path: ${{ steps.store.outputs.path }}
+    - name: Export cache key
+      shell: bash
+      env:
         # Lockfile hash makes the exact key; OS + Node major partition by
-        # platform/ABI; cache-version is the manual bust knob.
-        key: ${{ inputs.key-prefix }}-${{ inputs.cache-version }}-${{ runner.os }}-node${{ steps.node.outputs.major }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+        # platform/ABI; cache-version is the manual bust knob. Computed once
+        # so restore and save use the byte-identical key.
+        CACHE_KEY: ${{ inputs.key-prefix }}-${{ inputs.cache-version }}-${{ runner.os }}-node${{ steps.node.outputs.major }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+      run: | # zizmor: ignore[github-env]
+        echo "PNPM_STORE_CACHE_KEY=${CACHE_KEY}" >> "$GITHUB_ENV"
+
+    - name: Restore pnpm store
+      id: cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0 (2026-06-26)
+      with:
+        path: ${{ env.PNPM_STORE_PATH }}
+        key: ${{ env.PNPM_STORE_CACHE_KEY }}
         restore-keys: |
           ${{ inputs.key-prefix }}-${{ inputs.cache-version }}-${{ runner.os }}-node${{ steps.node.outputs.major }}-
           ${{ inputs.key-prefix }}-${{ inputs.cache-version }}-${{ runner.os }}-
+
+    - name: Export cache-hit for the save step
+      shell: bash
+      env:
+        CACHE_HIT: ${{ steps.cache.outputs.cache-hit }}
+      run: | # zizmor: ignore[github-env]
+        # 'true' only on an exact-key hit — the save step skips then, since
+        # saving an existing key is a rejected no-op anyway.
+        echo "PNPM_STORE_CACHE_HIT=${CACHE_HIT}" >> "$GITHUB_ENV"

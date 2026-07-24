@@ -13,7 +13,9 @@ description: 'Aggregate: checkout + setup environment + install dependencies'
 #     - ./.github/actions/debug
 #     - actions/setup-node@v6.4.0
 #   - ./.github/actions/cache-pnpm-store
-#     - actions/cache@v6.1.0
+#     - actions/cache/restore@v6.1.0
+#   - actions/cache/save@v6.1.0 (explicit save after install; see the
+#     "Save pnpm store" step below)
 #   - ./.github/actions/install
 #   - ./.github/actions/setup-go-toolchain (when setup-go: 'true')
 
@@ -98,6 +100,8 @@ runs:
         working-directory: ${{ inputs.working-directory }}
 
     - name: Cache pnpm store
+      # Restore-only. Exports PNPM_STORE_PATH / PNPM_STORE_CACHE_KEY /
+      # PNPM_STORE_CACHE_HIT via $GITHUB_ENV for the save step below.
       uses: ./.github/actions/fleet/cache-pnpm-store
       with:
         working-directory: ${{ inputs.working-directory }}
@@ -106,6 +110,21 @@ runs:
       uses: ./.github/actions/fleet/install
       with:
         working-directory: ${{ inputs.working-directory }}
+
+    - name: Save pnpm store
+      # Explicit save because actions/cache's post step cannot re-evaluate
+      # composite step outputs (run 30097714390: "Input required and not
+      # supplied: path") — so cache-pnpm-store only restores and this step
+      # saves once the store is actually populated. `always()` keeps red
+      # runs seeding the store — a failed install still populated part of
+      # the closure, so reruns start warm. Skips on an exact-key hit (save
+      # would be a rejected no-op) and when the restore never ran (empty
+      # key, e.g. setup failed).
+      if: always() && env.PNPM_STORE_CACHE_KEY != '' && env.PNPM_STORE_CACHE_HIT != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0 (2026-06-26)
+      with:
+        path: ${{ env.PNPM_STORE_PATH }}
+        key: ${{ env.PNPM_STORE_CACHE_KEY }}
 
     - name: Setup Go toolchain
       if: inputs.setup-go == 'true'
