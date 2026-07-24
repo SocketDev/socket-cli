@@ -1,6 +1,8 @@
 /**
- * Build Socket SEA (Single Executable Application) binaries. Uses pre-compiled
- * Node.js smol binaries from socket-btm releases.
+ * Build Socket SEA (Single Executable Application) binaries. Uses the frozen
+ * pre-compiled node-smol base binaries mirrored into socket-cli base-assets-*
+ * releases (SHA-256 pinned in constants/base-assets.mts, with a transition
+ * fallback to the descoped socket-btm source releases).
  *
  * Options: --target=<target> - Build for specific target (darwin-arm64,
  * linux-x64-musl, etc.) --platform=<platform> - Build for specific platform
@@ -9,8 +11,7 @@
  * --all - Build for all platforms (default if no options)
  *
  * Environment: SOCKET_CLI_SEA_NODE_VERSION - Node.js version to use (default:
- * latest Current) PREBUILT_NODE_DOWNLOAD_URL - Binary source (default:
- * 'socket-btm')
+ * the frozen base pinned in constants/base-assets.mts)
  */
 
 import { existsSync } from 'node:fs'

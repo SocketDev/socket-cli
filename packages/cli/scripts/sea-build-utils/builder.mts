@@ -16,12 +16,8 @@ import { safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import {
-  detectMusl,
-  downloadBinject,
-  getLatestBinjectVersion,
-} from '../util/asset-manager-compat.mts'
-import { getRootPath, logger } from './downloads.mts'
+import { downloadBinject } from '../util/asset-manager-compat.mts'
+import { BINJECT_VERSION } from '../constants/base-assets.mts'
 import { SOCKET_CLI_SEA_BUILD_DIR } from '../constants/paths.mts'
 
 // =============================================================================
@@ -164,47 +160,10 @@ export async function injectSeaBlob(
   cacheId,
   vfsTarGz,
 ) {
-  // Get or download binject binary.
-  let binjectVersion
-  try {
-    binjectVersion = await getLatestBinjectVersion()
-  } catch (e) {
-    // If we can't fetch the latest version, check if we have a cached version.
-    const platform = process.platform
-    const arch = process.arch
-    // Detect actual libc on Linux (musl for Alpine, glibc for standard distros).
-    const muslSuffix = detectMusl() ? '-musl' : ''
-    const platformArch = `${platform}-${arch}${muslSuffix}`
-    const rootPath = getRootPath()
-    const binjectDir = normalizePath(
-      path.join(
-        rootPath,
-        `packages/build-infra/build/downloaded/binject/${platformArch}`,
-      ),
-    )
-    const versionPath = normalizePath(path.join(binjectDir, '.version'))
-
-    if (existsSync(versionPath)) {
-      const versionContent = (await fs.readFile(versionPath, 'utf8')).trim()
-      if (!versionContent) {
-        throw new Error(
-          `Cached binject version file is empty at ${versionPath}. ` +
-            'Please delete the cache directory and try again.',
-          { cause: e },
-        )
-      }
-      binjectVersion = versionContent
-      logger.warn('Failed to fetch latest binject version from GitHub')
-      logger.warn(`Using cached binject version ${binjectVersion}`)
-    } else {
-      throw new Error(
-        `Failed to fetch binject version from GitHub and no cached version found: ${e.message}`,
-        { cause: e },
-      )
-    }
-  }
-
-  const binjectPath = await downloadBinject(binjectVersion)
+  // Download the pinned binject binary. The version is frozen in
+  // constants/base-assets.mts (no latest-release lookup — socket-btm is
+  // descoped and the pinned assets are mirrored into socket-cli releases).
+  const binjectPath = await downloadBinject(BINJECT_VERSION)
 
   // Create unique temp directory for this build's extraction cache.
   // This prevents parallel builds from interfering with each other.

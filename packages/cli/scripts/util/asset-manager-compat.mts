@@ -136,24 +136,3 @@ export async function downloadBinject(version) {
     version,
   })
 }
-
-/**
- * Get the latest binject release version from socket-btm. Returns the version
- * string (e.g., "1.0.0").
- *
- * Note: This function currently delegates to the original implementation in
- * sea-build-utils/downloads.mts. Future enhancement: move to AssetManager.
- *
- * @example
- *   const version = await getLatestBinjectVersion()
- *   // "1.0.0"
- *
- * @returns {Promise<string>} Binject version string.
- *
- * @throws {Error} When socket-btm releases cannot be fetched.
- */
-export async function getLatestBinjectVersion() {
-  const { getLatestBinjectVersion: getLatest } =
-    await import('../sea-build-utils/downloads.mts')
-  return getLatest()
-}

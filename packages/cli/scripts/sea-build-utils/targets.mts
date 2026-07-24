@@ -3,11 +3,7 @@
  *   Manages the list of supported platforms and Node.js version selection.
  */
 
-import { logTransientErrorHelp } from 'build-infra/lib/github-error-utils'
-
-import { httpRequest } from '@socketsecurity/lib-stable/http-request/request'
-
-import { getAuthHeaders } from './downloads.mts'
+import { NODE_SMOL_VERSION } from '../constants/base-assets.mts'
 
 /**
  * Generate build targets for different platforms. Returns array of 8 platform
@@ -80,102 +76,18 @@ export async function getBuildTargets() {
 }
 
 /**
- * Get the default Node.js version for SEA builds. Returns the socket-btm tag
- * suffix (e.g., "20251213-7cf90d2"). Prefers SOCKET_CLI_SEA_NODE_VERSION env
- * var, falls back to latest socket-btm release.
+ * Get the default Node.js version for SEA builds. Returns the node-smol tag
+ * suffix (e.g., "20260418-50af4c8"). Prefers SOCKET_CLI_SEA_NODE_VERSION env
+ * var, falls back to the frozen base pinned in constants/base-assets.mts —
+ * builds no longer chase the latest socket-btm release (the repo is descoped;
+ * the pinned base is mirrored into socket-cli base-assets-* releases).
  *
  * @example
  *   const version = await getDefaultNodeVersion()
- *   // "20251213-7cf90d2"
+ *   // "20260418-50af4c8"
  *
  * @returns Node.js version tag suffix.
  */
 export async function getDefaultNodeVersion() {
-  if (process.env['SOCKET_CLI_SEA_NODE_VERSION']) {
-    return process.env['SOCKET_CLI_SEA_NODE_VERSION']
-  }
-
-  // Fetch the latest node-smol release tag from socket-btm.
-  return await getLatestSocketBtmNodeRelease()
-}
-
-/**
- * Fetch the latest node-smol release tag from socket-btm. Returns the tag
- * suffix (e.g., "20251213-7cf90d2").
- *
- * @example
- *   const version = await getLatestSocketBtmNodeRelease()
- *   // "20251213-7cf90d2"
- *
- * @returns Latest node-smol version tag suffix.
- *
- * @throws {Error} When socket-btm releases cannot be fetched.
- */
-async function getLatestSocketBtmNodeRelease() {
-  try {
-    // per_page=100: the default page size (30) can bury the newest
-    // node-smol-* tag under newer releases of the repo's other artifacts
-    // (binject, lief, stubs, …), making the find below miss it entirely.
-    const response = await httpRequest(
-      'https://api.github.com/repos/SocketDev/socket-btm/releases?per_page=100',
-      {
-        headers: getAuthHeaders(),
-      },
-    )
-
-    if (!response.ok) {
-      // Detect specific error types.
-      if (response.status === 401) {
-        throw new Error(
-          'GitHub API authentication failed. Please check your GH_TOKEN or GITHUB_TOKEN environment variable.',
-        )
-      }
-
-      if (response.status === 403) {
-        const rateLimitReset = response.headers['x-ratelimit-reset']
-        const resetTime = rateLimitReset
-          ? new Date(Number(rateLimitReset) * 1000).toLocaleString()
-          : 'unknown'
-        throw new Error(
-          `GitHub API rate limit exceeded. Resets at: ${resetTime}. ` +
-            'Set GH_TOKEN or GITHUB_TOKEN environment variable to increase rate limits ' +
-            '(unauthenticated: 60/hour, authenticated: 5,000/hour).',
-        )
-      }
-
-      throw new Error(
-        `Failed to fetch socket-btm releases: ${response.status} ${response.statusText}`,
-      )
-    }
-
-    const releases = JSON.parse(response.body.toString('utf8'))
-
-    // Validate API response structure.
-    if (!Array.isArray(releases) || releases.length === 0) {
-      throw new Error(
-        'Invalid API response: expected non-empty array of releases',
-      )
-    }
-
-    // Find the latest node-smol release.
-    const nodeSmolRelease = releases.find(release =>
-      release?.tag_name?.startsWith('node-smol-'),
-    )
-
-    if (!nodeSmolRelease) {
-      throw new Error('No node-smol release found in socket-btm')
-    }
-
-    if (!nodeSmolRelease.tag_name) {
-      throw new Error('Invalid release data: missing tag_name')
-    }
-
-    // Extract the tag suffix (e.g., "node-smol-20251213-7cf90d2" -> "20251213-7cf90d2").
-    return nodeSmolRelease.tag_name.replace('node-smol-', '')
-  } catch (e) {
-    await logTransientErrorHelp(e)
-    throw new Error('Failed to fetch latest socket-btm node-smol release', {
-      cause: e,
-    })
-  }
+  return process.env['SOCKET_CLI_SEA_NODE_VERSION'] || NODE_SMOL_VERSION
 }
