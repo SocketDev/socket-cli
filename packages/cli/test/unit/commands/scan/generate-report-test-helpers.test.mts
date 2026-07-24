@@ -30,12 +30,12 @@ describe('generate-report-test-helpers', () => {
     it('returns artifact with no alerts', () => {
       const scan = getSimpleCleanScan()
 
-      expect(scan[0]!.alerts).toEqual([])
+      expect(scan[0].alerts).toEqual([])
     })
 
     it('returns artifact with expected structure', () => {
       const scan = getSimpleCleanScan()
-      const artifact = scan[0]!
+      const artifact = scan[0]
 
       expect(artifact.type).toBe('npm')
       expect(artifact.name).toBe('tslib')
@@ -55,16 +55,16 @@ describe('generate-report-test-helpers', () => {
 
     it('returns artifact with envVars alerts', () => {
       const scan = getScanWithEnvVars()
-      const artifact = scan[0]!
+      const artifact = scan[0]
 
-      expect(artifact.alerts!.length).toBe(2)
-      expect(artifact.alerts![0]!.type).toBe('envVars')
-      expect(artifact.alerts![1]!.type).toBe('envVars')
+      expect(artifact.alerts.length).toBe(2)
+      expect(artifact.alerts[0].type).toBe('envVars')
+      expect(artifact.alerts[1].type).toBe('envVars')
     })
 
     it('returns alerts with start/end positions', () => {
       const scan = getScanWithEnvVars()
-      const alert = scan[0]!.alerts![0]!
+      const alert = scan[0].alerts[0]
 
       expect(alert.start).toBeDefined()
       expect(alert.end).toBeDefined()
@@ -84,31 +84,31 @@ describe('generate-report-test-helpers', () => {
     it('returns different packages', () => {
       const scan = getScanWithMultiplePackages()
 
-      expect(scan[0]!.name).toBe('tslib')
-      expect(scan[1]!.name).toBe('lodash')
+      expect(scan[0].name).toBe('tslib')
+      expect(scan[1].name).toBe('lodash')
     })
 
     it('returns artifacts with alerts', () => {
       const scan = getScanWithMultiplePackages()
 
-      expect(scan[0]!.alerts!.length).toBe(2)
-      expect(scan[1]!.alerts!.length).toBe(1)
+      expect(scan[0].alerts.length).toBe(2)
+      expect(scan[1].alerts.length).toBe(1)
     })
 
     it('returns artifacts with different versions', () => {
       const scan = getScanWithMultiplePackages()
 
-      expect(scan[0]!.version).toBe('1.14.1')
-      expect(scan[1]!.version).toBe('4.17.21')
+      expect(scan[0].version).toBe('1.14.1')
+      expect(scan[1].version).toBe('4.17.21')
     })
 
     it('returns artifacts with manifest files', () => {
       const scan = getScanWithMultiplePackages()
 
-      expect(scan[0]!.manifestFiles).toBeDefined()
-      expect(scan[0]!.manifestFiles!.length).toBe(1)
-      expect(scan[1]!.manifestFiles).toBeDefined()
-      expect(scan[1]!.manifestFiles!.length).toBe(1)
+      expect(scan[0].manifestFiles).toBeDefined()
+      expect(scan[0].manifestFiles.length).toBe(1)
+      expect(scan[1].manifestFiles).toBeDefined()
+      expect(scan[1].manifestFiles.length).toBe(1)
     })
   })
 })

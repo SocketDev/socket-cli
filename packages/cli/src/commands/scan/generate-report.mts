@@ -190,7 +190,7 @@ export function generateReport(
       // oxlint-disable-next-line socket/prefer-cached-for-loop -- call result is consumed (not a standalone statement)
       alerts?.forEach(
         (alert: NonNullable<SocketArtifact['alerts']>[number]) => {
-          const alertName = alert.type as keyof typeof securityRules // => policy[type]
+          const alertName = alert.type // => policy[type]
           const action = (securityRules[alertName]?.action ||
             '') as REPORT_LEVEL
           switch (action) {

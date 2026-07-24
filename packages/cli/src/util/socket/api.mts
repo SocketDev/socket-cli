@@ -180,7 +180,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
 export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
   value: Promise<unknown>,
   description: string,
-): Promise<CResult<SocketSdkSuccessResult<T>['data']>> {
+): Promise<ApiCallResult<T>> {
   // eslint-disable-next-line typescript-eslint/no-explicit-any -- value is `Promise<unknown>`; sdkResult shape is narrowed inline via `success`/`status`/`error`/`cause` discriminants below.
   let sdkResult: any
   try {
