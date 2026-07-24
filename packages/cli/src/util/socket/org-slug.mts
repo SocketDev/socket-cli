@@ -14,7 +14,15 @@ export async function determineOrgSlug(
   interactive: boolean,
   dryRun: boolean,
 ): Promise<[string, string | undefined]> {
-  const defaultOrgSlug = getConfigValueOrUndef(CONFIG_KEY_DEFAULT_ORG)
+  // The config file is user-editable JSON — a hand-edited `"defaultOrg": 12345`
+  // delivers a number at runtime despite the declared string type.
+  const defaultOrgRaw: unknown = getConfigValueOrUndef(CONFIG_KEY_DEFAULT_ORG)
+  const defaultOrgSlug =
+    typeof defaultOrgRaw === 'string'
+      ? defaultOrgRaw
+      : typeof defaultOrgRaw === 'number'
+        ? String(defaultOrgRaw)
+        : undefined
   let orgSlug = orgFlag || defaultOrgSlug || ''
   if (!orgSlug) {
     if (!interactive) {

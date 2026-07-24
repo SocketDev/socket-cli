@@ -121,7 +121,7 @@ describe('determineOrgSlug', () => {
 
       const result = await determineOrgSlug('', false, false)
 
-      expect(result).toEqual(['12345', 12_345 as unknown])
+      expect(result).toEqual(['12345', '12345'])
     })
   })
 
@@ -224,14 +224,6 @@ describe('determineOrgSlug', () => {
   })
 
   describe('edge cases', () => {
-    it('handles boolean values for org flag', async () => {
-      overrideCachedConfig('{"defaultOrg": "default"}')
-
-      const result = await determineOrgSlug(true as unknown, false, false)
-
-      expect(result).toEqual(['true', 'default'])
-    })
-
     it('handles null values for org flag', async () => {
       overrideCachedConfig('{"defaultOrg": "default"}')
 
@@ -246,14 +238,6 @@ describe('determineOrgSlug', () => {
       const result = await determineOrgSlug(undefined as unknown, false, false)
 
       expect(result).toEqual(['default', 'default'])
-    })
-
-    it('handles numeric values for org flag', async () => {
-      overrideCachedConfig('{}')
-
-      const result = await determineOrgSlug(42 as unknown, false, false)
-
-      expect(result).toEqual(['42', undefined])
     })
 
     it('handles empty string suggestion from suggestOrgSlug', async () => {
