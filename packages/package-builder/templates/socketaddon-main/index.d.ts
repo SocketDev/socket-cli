@@ -8,67 +8,67 @@
  * Component node in the render tree.
  */
 export interface ComponentNode {
-  children?: ComponentNode[]
+  children?: ComponentNode[] | undefined
   type: 'View' | 'Text'
-  content?: string
+  content?: string | undefined
 
   // Border properties
-  border_style?: string
-  border_color?: string
+  border_style?: string | undefined
+  border_color?: string | undefined
 
   // Background
-  background_color?: string
+  background_color?: string | undefined
 
   // Text properties
-  color?: string
-  weight?: string
-  align?: string
-  wrap?: string
-  underline?: boolean
-  italic?: boolean
-  bold?: boolean
-  dim_color?: boolean
-  strikethrough?: boolean
+  color?: string | undefined
+  weight?: string | undefined
+  align?: string | undefined
+  wrap?: string | undefined
+  underline?: boolean | undefined
+  italic?: boolean | undefined
+  bold?: boolean | undefined
+  dim_color?: boolean | undefined
+  strikethrough?: boolean | undefined
 
   // Layout properties
-  flex_direction?: string
-  justify_content?: string
-  align_items?: string
-  flex_grow?: number
-  flex_shrink?: number
-  flex_basis?: number | string
-  flex_wrap?: string
-  overflow_x?: string
-  overflow_y?: string
+  flex_direction?: string | undefined
+  justify_content?: string | undefined
+  align_items?: string | undefined
+  flex_grow?: number | undefined
+  flex_shrink?: number | undefined
+  flex_basis?: number | string | undefined
+  flex_wrap?: string | undefined
+  overflow_x?: string | undefined
+  overflow_y?: string | undefined
 
   // Dimensions
-  width?: number
-  height?: number
-  width_percent?: number
-  height_percent?: number
+  width?: number | undefined
+  height?: number | undefined
+  width_percent?: number | undefined
+  height_percent?: number | undefined
 
   // Padding
-  padding?: number
-  padding_top?: number
-  padding_right?: number
-  padding_bottom?: number
-  padding_left?: number
-  padding_x?: number
-  padding_y?: number
+  padding?: number | undefined
+  padding_top?: number | undefined
+  padding_right?: number | undefined
+  padding_bottom?: number | undefined
+  padding_left?: number | undefined
+  padding_x?: number | undefined
+  padding_y?: number | undefined
 
   // Margin
-  margin?: number
-  margin_top?: number
-  margin_right?: number
-  margin_bottom?: number
-  margin_left?: number
-  margin_x?: number
-  margin_y?: number
+  margin?: number | undefined
+  margin_top?: number | undefined
+  margin_right?: number | undefined
+  margin_bottom?: number | undefined
+  margin_left?: number | undefined
+  margin_x?: number | undefined
+  margin_y?: number | undefined
 
   // Gap
-  gap?: number
-  row_gap?: number
-  column_gap?: number
+  gap?: number | undefined
+  row_gap?: number | undefined
+  column_gap?: number | undefined
 }
 
 /**

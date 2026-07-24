@@ -26,7 +26,7 @@ export function fileExists(filePath) {
 export async function validate() {
   logger.log('')
   logger.log('='.repeat(60))
-  logger.log(`${colors.blue('CLI Package Validation')}`)
+  logger.log(colors.blue('CLI Package Validation'))
   logger.log('='.repeat(60))
   logger.log('')
 
@@ -35,7 +35,7 @@ export async function validate() {
   // Check package.json exists.
   logger.info('Checking package.json…')
   const pkgPath = path.join(packageRoot, 'package.json')
-  if (!(await existsSync(pkgPath))) {
+  if (!existsSync(pkgPath)) {
     errors.push('package.json does not exist')
   } else {
     logger.success('package.json exists')
@@ -69,7 +69,7 @@ export async function validate() {
     const file = rootFiles[i]
     logger.info(`Checking ${file}...`)
     const filePath = path.join(packageRoot, file)
-    if (!(await existsSync(filePath))) {
+    if (!existsSync(filePath)) {
       errors.push(`${file} does not exist`)
     } else {
       logger.success(`${file} exists`)
@@ -82,7 +82,7 @@ export async function validate() {
     const file = distFiles[i]
     logger.info(`Checking dist/${file}...`)
     const filePath = path.join(packageRoot, 'dist', file)
-    if (!(await existsSync(filePath))) {
+    if (!existsSync(filePath)) {
       errors.push(`dist/${file} does not exist`)
     } else {
       logger.success(`dist/${file} exists`)
@@ -92,7 +92,7 @@ export async function validate() {
   // Check build/cli.js exists.
   logger.info('Checking build/cli.js…')
   const buildPath = path.join(packageRoot, 'build', 'cli.js')
-  if (!(await existsSync(buildPath))) {
+  if (!existsSync(buildPath)) {
     errors.push('build/cli.js does not exist')
   } else {
     logger.success('build/cli.js exists')
@@ -101,7 +101,7 @@ export async function validate() {
   // Check data directory exists.
   logger.info('Checking data directory…')
   const dataPath = path.join(packageRoot, 'data')
-  if (!(await existsSync(dataPath))) {
+  if (!existsSync(dataPath)) {
     errors.push('data directory does not exist')
   } else {
     logger.success('data directory exists')
@@ -115,7 +115,7 @@ export async function validate() {
       const file = dataFiles[i]
       logger.info(`Checking data/${file}...`)
       const filePath = path.join(dataPath, file)
-      if (!(await existsSync(filePath))) {
+      if (!existsSync(filePath)) {
         errors.push(`data/${file} does not exist`)
       } else {
         logger.success(`data/${file} exists`)
@@ -126,12 +126,12 @@ export async function validate() {
   // Print summary.
   logger.log('')
   logger.log('='.repeat(60))
-  logger.log(`${colors.blue('Validation Summary')}`)
+  logger.log(colors.blue('Validation Summary'))
   logger.log('='.repeat(60))
   logger.log('')
 
   if (errors.length > 0) {
-    logger.log(`${colors.red('Errors:')}`)
+    logger.log(colors.red('Errors:'))
     for (let i = 0, { length } = errors; i < length; i += 1) {
       const err = errors[i]
       logger.fail(`  ${err}`)

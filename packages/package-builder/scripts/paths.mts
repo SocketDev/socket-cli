@@ -104,7 +104,7 @@ export function getPackageOutDir(packageName: string, mode = getBuildMode()) {
 export function getSocketaddonPackageDir(
   platform: string,
   arch: string,
-  libc?: string,
+  libc?: string | undefined,
   mode = getBuildMode(),
 ) {
   // Normalize win32 → win for directory naming.
@@ -129,7 +129,7 @@ export function getSocketaddonPackageDir(
 export function getSocketbinBinaryPath(
   platform: string,
   arch: string,
-  libc?: string,
+  libc?: string | undefined,
   mode = getBuildMode(),
 ) {
   // Accept both win and win32 for Windows detection.
@@ -157,7 +157,7 @@ export function getSocketbinBinaryPath(
 export function getSocketbinPackageDir(
   platform: string,
   arch: string,
-  libc?: string,
+  libc?: string | undefined,
   mode = getBuildMode(),
 ) {
   // Normalize win32 → win for directory naming.

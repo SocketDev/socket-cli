@@ -70,7 +70,10 @@ export function preparePackageForPublish(
     if (pkg.optionalDependencies) {
       const deps = Object.keys(pkg.optionalDependencies)
       for (let i = 0, { length } = deps; i < length; i += 1) {
-        const dep = deps[i]!
+        const dep = deps[i]
+        if (!dep) {
+          continue
+        }
         pkg.optionalDependencies[dep] = version
       }
     }

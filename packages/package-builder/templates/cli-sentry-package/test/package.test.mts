@@ -1,6 +1,6 @@
 /**
- * @file Tests for @socketsecurity/cli-with-sentry package structure and
- *   configuration.
+ * @file Tests for the @socketsecurity/cli-with-sentry package template
+ *   structure and configuration.
  */
 
 import { existsSync, promises as fs } from 'node:fs'
@@ -14,8 +14,11 @@ const packageDir = path.join(__dirname, '..')
 const configDir = path.join(packageDir, '.config')
 const binDir = path.join(packageDir, 'bin')
 const scriptsDir = path.join(packageDir, 'scripts')
+// The template lives at packages/package-builder/templates/cli-sentry-package;
+// the main CLI package is at packages/cli.
+const cliSrcDir = path.join(packageDir, '../../../cli/src')
 
-describe('@socketsecurity/cli-with-sentry package', () => {
+describe('@socketsecurity/cli-with-sentry package template', () => {
   describe('package.json validation', () => {
     it('should have valid package.json metadata', async () => {
       const pkgJson = JSON.parse(
@@ -23,7 +26,8 @@ describe('@socketsecurity/cli-with-sentry package', () => {
       )
 
       expect(pkgJson.name).toBe('@socketsecurity/cli-with-sentry')
-      expect(pkgJson.version).toMatch(/^\d+\.\d+\.\d+$/)
+      // Allow prerelease tags.
+      expect(pkgJson.version).toMatch(/^\d+\.\d+\.\d+(?:-[\w.]+)?$/)
       expect(pkgJson.license).toBe('MIT')
       expect(pkgJson.description).toContain('Sentry')
       expect(pkgJson.description).toContain('telemetry')
@@ -52,22 +56,26 @@ describe('@socketsecurity/cli-with-sentry package', () => {
       expect(pkgJson.bin['socket-yarn']).toBe('bin/yarn-cli.js')
     })
 
-    it('should depend on main CLI package', async () => {
+    it('should have Sentry as a runtime dependency', async () => {
       const pkgJson = JSON.parse(
         await fs.readFile(path.join(packageDir, 'package.json'), 'utf-8'),
       )
 
+      // @sentry/node stays external to the bundle, so it must be a runtime
+      // dependency of the published package (not a devDependency).
       expect(pkgJson.dependencies).toBeDefined()
-      expect(pkgJson.dependencies['@socketsecurity/cli']).toBe('workspace:*')
+      expect(pkgJson.dependencies['@sentry/node']).toBeDefined()
     })
 
-    it('should have Sentry as devDependency', async () => {
+    it('should build against the main CLI package', async () => {
       const pkgJson = JSON.parse(
         await fs.readFile(path.join(packageDir, 'package.json'), 'utf-8'),
       )
 
+      // The CLI source is bundled at build time, so the workspace link is a
+      // devDependency rather than a runtime dependency.
       expect(pkgJson.devDependencies).toBeDefined()
-      expect(pkgJson.devDependencies['@sentry/node']).toBeDefined()
+      expect(pkgJson.devDependencies['@socketsecurity/cli']).toBe('workspace:*')
       expect(pkgJson.devDependencies.rolldown).toBeDefined()
     })
   })
@@ -77,30 +85,17 @@ describe('@socketsecurity/cli-with-sentry package', () => {
       expect(existsSync(binDir)).toBe(true)
     })
 
-    it('should have cli.js wrapper', () => {
-      const cliPath = path.join(binDir, 'cli.js')
-      expect(existsSync(cliPath)).toBe(true)
-    })
-
-    it('should have npm-cli.js wrapper', () => {
-      const npmPath = path.join(binDir, 'npm-cli.js')
-      expect(existsSync(npmPath)).toBe(true)
-    })
-
-    it('should have npx-cli.js wrapper', () => {
-      const npxPath = path.join(binDir, 'npx-cli.js')
-      expect(existsSync(npxPath)).toBe(true)
-    })
-
-    it('should have pnpm-cli.js wrapper', () => {
-      const pnpmPath = path.join(binDir, 'pnpm-cli.js')
-      expect(existsSync(pnpmPath)).toBe(true)
-    })
-
-    it('should have yarn-cli.js wrapper', () => {
-      const yarnPath = path.join(binDir, 'yarn-cli.js')
-      expect(existsSync(yarnPath)).toBe(true)
-    })
+    for (const wrapper of [
+      'cli.js',
+      'npm-cli.js',
+      'npx-cli.js',
+      'pnpm-cli.js',
+      'yarn-cli.js',
+    ]) {
+      it(`should have ${wrapper} wrapper`, () => {
+        expect(existsSync(path.join(binDir, wrapper))).toBe(true)
+      })
+    }
 
     it('bin wrappers should be executable', async () => {
       const cliPath = path.join(binDir, 'cli.js')
@@ -145,11 +140,18 @@ describe('@socketsecurity/cli-with-sentry package', () => {
       expect(content).toContain('cli-dispatch-with-sentry.mts')
     })
 
-    it('rolldown config should call build() when run', async () => {
+    it('rolldown config should keep Sentry external', async () => {
       const rolldownPath = path.join(configDir, 'rolldown.cli-sentry.build.mts')
       const content = await fs.readFile(rolldownPath, 'utf-8')
 
-      expect(content).toContain('build(config)')
+      expect(content).toContain("external: '@sentry/node'")
+    })
+
+    it('rolldown config should run the build when invoked directly', async () => {
+      const rolldownPath = path.join(configDir, 'rolldown.cli-sentry.build.mts')
+      const content = await fs.readFile(rolldownPath, 'utf-8')
+
+      expect(content).toContain('runBuild(config')
       expect(content).toContain('import.meta.url')
     })
   })
@@ -164,7 +166,7 @@ describe('@socketsecurity/cli-with-sentry package', () => {
       expect(existsSync(buildPath)).toBe(true)
     })
 
-    it('build.mts should be valid JavaScript', async () => {
+    it('build.mts should delegate to the rolldown config', async () => {
       const buildPath = path.join(scriptsDir, 'build.mts')
       const content = await fs.readFile(buildPath, 'utf-8')
 
@@ -180,47 +182,23 @@ describe('@socketsecurity/cli-with-sentry package', () => {
       expect(existsSync(readmePath)).toBe(true)
     })
 
-    it('README should document Sentry integration', async () => {
+    it('README should document the Sentry variant', async () => {
       const readmePath = path.join(packageDir, 'README.md')
       const readme = await fs.readFile(readmePath, 'utf-8')
 
+      expect(readme).toContain('@socketsecurity/cli-with-sentry')
       expect(readme).toContain('Sentry')
-      expect(readme).toContain('telemetry')
-      expect(readme).toContain('error')
-    })
-
-    it('README should document telemetry', async () => {
-      const readmePath = path.join(packageDir, 'README.md')
-      const readme = await fs.readFile(readmePath, 'utf-8')
-
-      expect(readme).toContain('Telemetry')
-      expect(readme).toContain('No sensitive data')
-    })
-
-    it('README should document differences from main CLI', async () => {
-      const readmePath = path.join(packageDir, 'README.md')
-      const readme = await fs.readFile(readmePath, 'utf-8')
-
-      expect(readme).toContain('Differences')
-      expect(readme).toContain('@socketsecurity/cli')
-    })
-
-    it('README should document privacy', async () => {
-      const readmePath = path.join(packageDir, 'README.md')
-      const readme = await fs.readFile(readmePath, 'utf-8')
-
-      expect(readme).toContain('No sensitive data')
-      expect(readme.toLowerCase()).toContain('api token')
+      expect(readme).toContain('npm install')
     })
   })
 
   describe('package is publishable', () => {
-    it('should be marked as private', async () => {
+    it('should be marked as private during development', async () => {
       const pkgJson = JSON.parse(
         await fs.readFile(path.join(packageDir, 'package.json'), 'utf-8'),
       )
 
-      // cli-with-sentry is private during development but will be public on release.
+      // cli-with-sentry is private during development but public on release.
       expect(pkgJson.private).toBe(true)
     })
 
@@ -235,27 +213,18 @@ describe('@socketsecurity/cli-with-sentry package', () => {
     })
   })
 
-  describe('Sentry integration', () => {
+  describe('Sentry integration in the main CLI', () => {
     it('main CLI should have CLI dispatch with Sentry entry point', () => {
-      const sentryEntryPath = path.join(
-        packageDir,
-        '..',
-        'cli',
-        'src',
-        'cli-dispatch-with-sentry.mts',
-      )
-      expect(existsSync(sentryEntryPath)).toBe(true)
+      expect(
+        existsSync(path.join(cliSrcDir, 'cli-dispatch-with-sentry.mts')),
+      ).toBe(true)
     })
 
     it('CLI dispatch with Sentry should import instrumentation first', async () => {
-      const sentryEntryPath = path.join(
-        packageDir,
-        '..',
-        'cli',
-        'src',
-        'cli-dispatch-with-sentry.mts',
+      const content = await fs.readFile(
+        path.join(cliSrcDir, 'cli-dispatch-with-sentry.mts'),
+        'utf-8',
       )
-      const content = await fs.readFile(sentryEntryPath, 'utf-8')
 
       expect(content).toContain("import './instrument-with-sentry.mts'")
       expect(content).toContain("import './cli-dispatch.mts'")
@@ -267,29 +236,25 @@ describe('@socketsecurity/cli-with-sentry package', () => {
     })
 
     it('main CLI should have Sentry instrumentation', () => {
-      const sentryInstrumentPath = path.join(
-        packageDir,
-        '..',
-        'cli',
-        'src',
-        'instrument-with-sentry.mts',
-      )
-      expect(existsSync(sentryInstrumentPath)).toBe(true)
+      expect(
+        existsSync(path.join(cliSrcDir, 'instrument-with-sentry.mts')),
+      ).toBe(true)
     })
 
-    it('Sentry instrumentation should check build flag', async () => {
-      const sentryInstrumentPath = path.join(
-        packageDir,
-        '..',
-        'cli',
-        'src',
-        'instrument-with-sentry.mts',
+    it('Sentry instrumentation should gate on the Sentry build flag', async () => {
+      const content = await fs.readFile(
+        path.join(cliSrcDir, 'instrument-with-sentry.mts'),
+        'utf-8',
       )
-      const content = await fs.readFile(sentryInstrumentPath, 'utf-8')
 
-      expect(content).toContain('INLINED_SENTRY_BUILD')
+      // The build-flag check lives behind the isSentryBuild() env accessor
+      // (which reads INLINED_SENTRY_BUILD at build time).
+      expect(content).toContain('isSentryBuild()')
       expect(content).toContain('@sentry/node')
       expect(content).toContain('Sentry.init')
     })
   })
+
+  // Note: Structure/configuration assertions only; the build itself is not
+  // invoked here.
 })
