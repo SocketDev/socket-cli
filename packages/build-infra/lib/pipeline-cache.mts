@@ -98,10 +98,10 @@ export async function loadExternalTools(
   }
   const validated = validateExternalTools(data)
   if (!validated.ok) {
+    // ValidationIssue.path is a (string | number)[] key path; dot-join it
+    // instead of letting the template comma-join the raw array.
     const details = validated.errors
-      .map(
-        (e: { path: string; message: string }) => `  ${e.path}: ${e.message}`,
-      )
+      .map(e => `  ${e.path.join('.')}: ${e.message}`)
       .join('\n')
     throw new Error(`Invalid external-tools.json at ${filePath}:\n${details}`)
   }
