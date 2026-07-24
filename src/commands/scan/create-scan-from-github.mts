@@ -19,6 +19,11 @@ import constants from '../../constants.mts'
 import { apiFetch } from '../../utils/api.mts'
 import { debugApiRequest, debugApiResponse } from '../../utils/debug.mts'
 import { formatErrorWithDetail } from '../../utils/errors.mts'
+import {
+  classifyGitHubResponse,
+  githubApiRequest,
+  isGitHubBlockingError,
+} from '../../utils/github-errors.mts'
 import { isReportSupportedFile } from '../../utils/glob.mts'
 import { fetchListAllRepos } from '../repository/fetch-list-all-repos.mts'
 
@@ -92,26 +97,91 @@ export async function createScanFromGithub({
     }
   }
 
-  let scansCreated = 0
-  for (const repoSlug of targetRepos) {
-    // eslint-disable-next-line no-await-in-loop
-    const scanCResult = await scanRepo(repoSlug, {
+  return await runGithubScanLoop(targetRepos, repoSlug =>
+    scanRepo(repoSlug, {
       githubApiUrl,
       githubToken,
       orgSlug,
       orgGithub,
       outputKind,
       repos,
-    })
+    }),
+  )
+}
+
+/**
+ * Drive the per-repo scan loop and decide the overall run result.
+ *
+ * The loop stops early on a blocking GitHub error (rate limit / auth / abuse
+ * detection) because every remaining repo would fail the same way. Previously
+ * a rate-limited token made every repo fail its API calls, the loop swallowed
+ * each failure, and the final "N repos / 0 manifests" summary misled users and
+ * CI into thinking the scan succeeded when nothing was uploaded. A run where
+ * every attempted repo failed for a non-blocking reason is also surfaced as an
+ * error rather than a silent ok:true.
+ *
+ * `scanRepoFn` is injected so this decision logic can be tested without the
+ * GitHub network path.
+ */
+export async function runGithubScanLoop(
+  targetRepos: string[],
+  scanRepoFn: (repoSlug: string) => Promise<CResult<{ scanCreated: boolean }>>,
+): Promise<CResult<undefined>> {
+  let scansCreated = 0
+  let reposScanned = 0
+  let blockingError: CResult<undefined> | undefined
+  const perRepoFailures: Array<{ repo: string; message: string }> = []
+  for (const repoSlug of targetRepos) {
+    reposScanned += 1
+    // eslint-disable-next-line no-await-in-loop
+    const scanCResult = await scanRepoFn(repoSlug)
     if (scanCResult.ok) {
       const { scanCreated } = scanCResult.data
       if (scanCreated) {
         scansCreated += 1
       }
+      continue
+    }
+    perRepoFailures.push({ repo: repoSlug, message: scanCResult.message })
+    // Stop on rate-limit / auth / abuse failures: every remaining repo will
+    // fail for the same reason, and continuing only burns more quota while
+    // delaying the real error.
+    if (isGitHubBlockingError(scanCResult.message)) {
+      blockingError = {
+        ok: false,
+        message: scanCResult.message,
+        cause: scanCResult.cause,
+      }
+      break
     }
   }
 
-  logger.success(targetRepos.length, 'GitHub repos detected')
+  if (blockingError) {
+    logger.fail(blockingError.message)
+    return blockingError
+  }
+
+  // If every attempted repo failed (but not for a known blocking reason),
+  // treat the run as an error so scripts do not infer success from an
+  // ok:true with zero scans created. Checked before the success lines below
+  // so an all-failed run never prints green "processed" output that a script
+  // reading log lines could mistake for success.
+  if (
+    reposScanned > 0 &&
+    scansCreated === 0 &&
+    perRepoFailures.length === reposScanned
+  ) {
+    const firstFailure = perRepoFailures[0]!
+    return {
+      ok: false,
+      message: 'All repos failed to scan',
+      cause:
+        `All ${reposScanned} repos failed to scan. First failure for ${firstFailure.repo}: ${firstFailure.message}. ` +
+        'See the log above for per-repo details.',
+    }
+  }
+
+  logger.success(reposScanned, 'GitHub repos processed')
   logger.success(scansCreated, 'with supported Manifest files')
 
   return {
@@ -321,8 +391,20 @@ async function testAndDownloadManifestFiles({
       if (result.data.isManifest) {
         fileCount += 1
       }
-    } else if (!firstFailureResult) {
-      firstFailureResult = result
+    } else {
+      // A blocking error (rate limit / auth / abuse detection) is token-wide:
+      // every remaining download would fail the same way, and an earlier
+      // successful download must not mask it into an ok:true scan of a
+      // partial manifest set. Surface it immediately, the same way the repo
+      // loop short-circuits on blocking errors.
+      if (isGitHubBlockingError(result.message)) {
+        logger.groupEnd()
+        logger.fail(result.message)
+        return result
+      }
+      if (!firstFailureResult) {
+        firstFailureResult = result
+      }
     }
   }
   logger.groupEnd()
@@ -406,23 +488,22 @@ async function downloadManifestFile({
   const fileUrl = `${repoApiUrl}/contents/${file}?ref=${defaultBranch}`
   debugDir('inspect', { fileUrl })
 
-  debugApiRequest('GET', fileUrl)
-  let downloadUrlResponse: Response
-  try {
-    downloadUrlResponse = await apiFetch(fileUrl, {
+  const reqResult = await githubApiRequest(
+    fileUrl,
+    {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${githubToken}`,
       },
-    })
-    debugApiResponse('GET', fileUrl, downloadUrlResponse.status)
-  } catch (e) {
-    debugApiResponse('GET', fileUrl, undefined, e)
-    throw e
+    },
+    `fetching the download URL for ${file}`,
+  )
+  if (!reqResult.ok) {
+    return reqResult
   }
   debugFn('notice', 'complete: request')
 
-  const downloadUrlText = await downloadUrlResponse.text()
+  const downloadUrlText = reqResult.data.bodyText
   debugFn('inspect', 'response: raw download url', downloadUrlText)
 
   let downloadUrl
@@ -477,6 +558,20 @@ async function streamDownloadWithFetch(
     debugApiResponse('GET', downloadUrl, response.status)
 
     if (!response.ok) {
+      // Surface rate-limit / auth failures on the raw download host too, so a
+      // bulk run that trips the limit mid-download fails loudly instead of
+      // being counted as just another skipped file. Header/status-only check;
+      // the stream body is left unconsumed.
+      const blocking = classifyGitHubResponse(
+        response.status,
+        response.headers,
+        '',
+        'downloading a manifest file',
+      )
+      if (blocking) {
+        logger.fail(blocking.message)
+        return blocking
+      }
       const errorMsg = `Download failed due to bad server response: ${response.status} ${response.statusText} for ${downloadUrl}`
       logger.fail(errorMsg)
       return { ok: false, message: 'Download Failed', cause: errorMsg }
@@ -571,21 +666,20 @@ async function getLastCommitDetails({
   const commitApiUrl = `${repoApiUrl}/commits?sha=${defaultBranch}&per_page=1`
   debugFn('inspect', 'url: commit', commitApiUrl)
 
-  debugApiRequest('GET', commitApiUrl)
-  let commitResponse: Response
-  try {
-    commitResponse = await apiFetch(commitApiUrl, {
+  const reqResult = await githubApiRequest(
+    commitApiUrl,
+    {
       headers: {
         Authorization: `Bearer ${githubToken}`,
       },
-    })
-    debugApiResponse('GET', commitApiUrl, commitResponse.status)
-  } catch (e) {
-    debugApiResponse('GET', commitApiUrl, undefined, e)
-    throw e
+    },
+    `fetching the latest commit for ${orgGithub}/${repoSlug}`,
+  )
+  if (!reqResult.ok) {
+    return reqResult
   }
 
-  const commitText = await commitResponse.text()
+  const commitText = reqResult.data.bodyText
   debugFn('inspect', 'response: commit', commitText)
 
   let lastCommit
@@ -683,23 +777,22 @@ async function getRepoDetails({
   const repoApiUrl = `${githubApiUrl}/repos/${orgGithub}/${repoSlug}`
   debugDir('inspect', { repoApiUrl })
 
-  let repoDetailsResponse: Response
-  try {
-    debugApiRequest('GET', repoApiUrl)
-    repoDetailsResponse = await apiFetch(repoApiUrl, {
+  const reqResult = await githubApiRequest(
+    repoApiUrl,
+    {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${githubToken}`,
       },
-    })
-    debugApiResponse('GET', repoApiUrl, repoDetailsResponse.status)
-  } catch (e) {
-    debugApiResponse('GET', repoApiUrl, undefined, e)
-    throw e
+    },
+    `fetching repo details for ${orgGithub}/${repoSlug}`,
+  )
+  if (!reqResult.ok) {
+    return reqResult
   }
   logger.success(`Request completed.`)
 
-  const repoDetailsText = await repoDetailsResponse.text()
+  const repoDetailsText = reqResult.data.bodyText
   debugFn('inspect', 'response: repo', repoDetailsText)
 
   let repoDetails
@@ -747,22 +840,21 @@ async function getRepoBranchTree({
   const treeApiUrl = `${repoApiUrl}/git/trees/${defaultBranch}?recursive=1`
   debugFn('inspect', 'url: tree', treeApiUrl)
 
-  let treeResponse: Response
-  try {
-    debugApiRequest('GET', treeApiUrl)
-    treeResponse = await apiFetch(treeApiUrl, {
+  const reqResult = await githubApiRequest(
+    treeApiUrl,
+    {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${githubToken}`,
       },
-    })
-    debugApiResponse('GET', treeApiUrl, treeResponse.status)
-  } catch (e) {
-    debugApiResponse('GET', treeApiUrl, undefined, e)
-    throw e
+    },
+    `fetching the file tree for ${orgGithub}/${repoSlug}`,
+  )
+  if (!reqResult.ok) {
+    return reqResult
   }
 
-  const treeText = await treeResponse.text()
+  const treeText = reqResult.data.bodyText
   debugFn('inspect', 'response: tree', treeText)
 
   let treeDetails
