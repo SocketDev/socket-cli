@@ -124,7 +124,7 @@ export async function run(
     `override: ${SOCKET_JSON} gradle: ${JSON.stringify(sockJson?.defaults?.manifest?.gradle)}`,
   )
 
-  let { bin, gradleOpts, verbose } = cli.flags as unknown as KotlinFlags
+  let { bin, gradleOpts, verbose } = cli.flags
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (!bin) {

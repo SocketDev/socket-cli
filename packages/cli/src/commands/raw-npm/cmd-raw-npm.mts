@@ -56,7 +56,7 @@ export async function run(
   const dryRun = cli.flags['dryRun']
 
   if (dryRun) {
-    outputDryRunExecute(getNpmBinPath(), argv as string[], 'raw npm command')
+    outputDryRunExecute(getNpmBinPath(), argv, 'raw npm command')
     return
   }
 

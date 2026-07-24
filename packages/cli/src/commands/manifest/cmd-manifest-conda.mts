@@ -107,7 +107,7 @@ export async function run(
     parentName,
   })
 
-  const { dryRun, json, markdown } = cli.flags as unknown as CondaFlags
+  const { dryRun, json, markdown } = cli.flags
 
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
@@ -116,13 +116,7 @@ export async function run(
 
   const sockJson = readOrDefaultSocketJson(cwd)
 
-  let {
-    file: filename,
-    out,
-    stdin,
-    stdout,
-    verbose,
-  } = cli.flags as unknown as CondaFlags
+  let { file: filename, out, stdin, stdout, verbose } = cli.flags
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (

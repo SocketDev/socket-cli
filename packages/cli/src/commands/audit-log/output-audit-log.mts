@@ -8,14 +8,21 @@ import { mdTable } from '../../util/output/markdown.mts'
 import { serializeResultJson } from '../../util/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
+import type { operations } from '@socketsecurity/sdk-stable/types/api'
 const logger = getDefaultLogger()
 
-export type AuditLogEvent =
-  SocketSdkSuccessResult<'getAuditLogEvents'>['data']['results'][number]
+/**
+ * The `getAuditLogEvents` response payload, typed from the SDK's raw OpenAPI
+ * schema — the root export's `SocketSdkSuccessResult` data resolves to `any`
+ * under TypeScript 7's nodenext resolution.
+ */
+export type AuditLogData =
+  operations['getAuditLogEvents']['responses']['200']['content']['application/json']
+
+export type AuditLogEvent = AuditLogData['results'][number]
 
 export async function outputAsJson(
-  auditLogs: CResult<SocketSdkSuccessResult<'getAuditLogEvents'>['data']>,
+  auditLogs: CResult<AuditLogData>,
   {
     logType,
     orgSlug,
@@ -66,7 +73,7 @@ export async function outputAsJson(
 }
 
 export async function outputAsMarkdown(
-  auditLogs: SocketSdkSuccessResult<'getAuditLogEvents'>['data'],
+  auditLogs: AuditLogData,
   {
     logType,
     orgSlug,
@@ -80,17 +87,22 @@ export async function outputAsMarkdown(
   },
 ): Promise<string> {
   try {
-    const table = mdTable(
-      auditLogs.results as unknown as Array<Record<string, string>>,
-      [
-        'event_id',
-        'created_at',
-        'type',
-        'user_email',
-        'ip_address',
-        'user_agent',
-      ],
-    )
+    const rows = auditLogs.results.map(log => ({
+      event_id: log.event_id ?? '',
+      created_at: log.created_at ?? '',
+      type: log.type ?? '',
+      user_email: log.user_email ?? '',
+      ip_address: log.ip_address ?? '',
+      user_agent: log.user_agent ?? '',
+    }))
+    const table = mdTable(rows, [
+      'event_id',
+      'created_at',
+      'type',
+      'user_email',
+      'ip_address',
+      'user_agent',
+    ])
 
     return `
 # Socket Audit Logs
@@ -117,7 +129,7 @@ ${table}
 }
 
 export async function outputAuditLog(
-  result: CResult<SocketSdkSuccessResult<'getAuditLogEvents'>['data']>,
+  result: CResult<AuditLogData>,
   {
     logType,
     orgSlug,

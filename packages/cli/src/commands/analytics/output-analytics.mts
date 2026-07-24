@@ -50,10 +50,19 @@ export function formatDataOrg(
   const sortedTopFiveAlerts: Record<string, number> = {}
   const totalTopAlerts: Record<string, number> = {}
 
-  const formattedData = {} as Omit<FormattedData, 'top_five_alert_types'>
-  for (let i = 0, { length } = METRICS; i < length; i += 1) {
-    const metric = METRICS[i]!
-    formattedData[metric] = {}
+  const formattedData: Omit<FormattedData, 'top_five_alert_types'> = {
+    total_critical_alerts: {},
+    total_high_alerts: {},
+    total_medium_alerts: {},
+    total_low_alerts: {},
+    total_critical_added: {},
+    total_medium_added: {},
+    total_low_added: {},
+    total_high_added: {},
+    total_critical_prevented: {},
+    total_high_prevented: {},
+    total_medium_prevented: {},
+    total_low_prevented: {},
   }
 
   for (let i = 0, { length } = data; i < length; i += 1) {
@@ -104,10 +113,19 @@ export function formatDataRepo(
   const sortedTopFiveAlerts: Record<string, number> = {}
   const totalTopAlerts: Record<string, number> = {}
 
-  const formattedData = {} as Omit<FormattedData, 'top_five_alert_types'>
-  for (let i = 0, { length } = METRICS; i < length; i += 1) {
-    const metric = METRICS[i]!
-    formattedData[metric] = {}
+  const formattedData: Omit<FormattedData, 'top_five_alert_types'> = {
+    total_critical_alerts: {},
+    total_high_alerts: {},
+    total_medium_alerts: {},
+    total_low_alerts: {},
+    total_critical_added: {},
+    total_medium_added: {},
+    total_low_added: {},
+    total_high_added: {},
+    total_critical_prevented: {},
+    total_high_prevented: {},
+    total_medium_prevented: {},
+    total_low_prevented: {},
   }
 
   // Aggregate alert counts: sum across time entries (consistent with formatDataOrg).

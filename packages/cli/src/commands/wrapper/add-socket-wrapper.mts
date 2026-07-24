@@ -1,5 +1,6 @@
 import { promises as fs } from 'node:fs'
 
+import { isErrnoException } from '@socketsecurity/lib-stable/errors/predicates'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { FileSystemError, getErrorCause } from '../../util/error/errors.mts'
@@ -19,7 +20,7 @@ export async function addSocketWrapper(file: string): Promise<void> {
     throw new FileSystemError(
       `failed to append socket aliases (${getErrorCause(e)}); check that the file exists and is writable`,
       file,
-      (e as NodeJS.ErrnoException)?.code,
+      isErrnoException(e) ? e.code : undefined,
     )
   }
   logger.success(

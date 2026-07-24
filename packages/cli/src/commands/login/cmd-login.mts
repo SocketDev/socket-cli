@@ -101,7 +101,7 @@ export async function run(
     )
   }
 
-  const { apiBaseUrl, apiProxy } = cli.flags as unknown as LoginFlags
+  const { apiBaseUrl, apiProxy } = cli.flags
 
   await attemptLogin(apiBaseUrl, apiProxy)
 }

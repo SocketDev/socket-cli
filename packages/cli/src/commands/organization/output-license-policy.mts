@@ -36,7 +36,10 @@ export async function outputLicensePolicy(
     ({ 0: key, 1: value }) =>
       [
         key,
-        (value as { allowed?: boolean | undefined } | undefined)?.allowed
+        value &&
+        typeof value === 'object' &&
+        'allowed' in value &&
+        value.allowed
           ? ' yes'
           : ' no',
       ] as const,

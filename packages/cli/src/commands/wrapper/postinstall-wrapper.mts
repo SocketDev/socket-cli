@@ -2,6 +2,7 @@
 /* oxlint-disable socket/no-logger-newline-literal -- CLI output formatting: multi-line user-facing messages where embedded \n produces the intended layout. Splitting into logger.log("") + logger.log(...) pairs is the canonical rewrite but doesnt preserve the visual flow for these specific outputs. */
 import { existsSync } from 'node:fs'
 
+import { isErrnoException } from '@socketsecurity/lib-stable/errors/predicates'
 import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { confirm } from '@socketsecurity/lib-stable/stdio/prompts'
@@ -90,7 +91,7 @@ export async function setupSocketWrapper(query: string): Promise<void> {
       throw new FileSystemError(
         `failed to add socket aliases to ${bashRcPath} / ${zshRcPath} (${getErrorCause(e)}); check that your shell rc files exist and are writable`,
         undefined,
-        (e as NodeJS.ErrnoException)?.code,
+        isErrnoException(e) ? e.code : undefined,
       )
     }
   }

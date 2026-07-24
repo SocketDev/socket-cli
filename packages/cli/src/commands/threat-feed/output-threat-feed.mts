@@ -22,7 +22,7 @@ export function formatThreatFeedTable(data: ThreadFeedResponse): string {
       description: r.description,
     }
   })
-  return mdTable(rows as unknown as Array<Record<string, string>>, [
+  return mdTable(rows, [
     'created',
     'ecosystem',
     'name',

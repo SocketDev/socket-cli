@@ -104,7 +104,7 @@ export async function run(
   })
 
   // Extract typed flags (commonFlags defines dryRun as boolean).
-  const { dryRun } = cli.flags as unknown as SfwFlags
+  const { dryRun } = cli.flags
 
   // Filter Socket-specific flags from argv, pass rest to sfw.
   const sfwArgs = filterFlags(argv, commonFlags, [])

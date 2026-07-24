@@ -158,6 +158,7 @@ ${spec.helpExamples.map(ex => `      $ ${command} ${ex}`).join('\n')}
       }
 
       await spec.handler({
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the validation above admits the literal 'test' sentinel (the config test-mode key) alongside real LocalConfig keys, so a type guard cannot narrow this; handlers treat 'test' explicitly.
         key: key as keyof LocalConfig,
         ...(spec.needsValue && value !== undefined ? { value } : {}),
         outputKind,

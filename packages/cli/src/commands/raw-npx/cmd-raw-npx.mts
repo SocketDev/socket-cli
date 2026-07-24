@@ -59,11 +59,7 @@ export async function run(
   const dryRun = cli.flags['dryRun']
 
   if (dryRun) {
-    outputDryRunExecute(
-      getNpxBinPath(),
-      argv as string[],
-      'raw pnpm exec command',
-    )
+    outputDryRunExecute(getNpxBinPath(), argv, 'raw pnpm exec command')
     return
   }
 

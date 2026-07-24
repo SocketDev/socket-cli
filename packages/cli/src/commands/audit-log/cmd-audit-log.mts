@@ -114,14 +114,7 @@ export async function run(
     importMeta,
   })
 
-  const {
-    interactive,
-    json,
-    markdown,
-    org: orgFlag,
-    page,
-    perPage,
-  } = cli.flags as unknown as AuditLogFlags
+  const { interactive, json, markdown, org: orgFlag, page, perPage } = cli.flags
 
   const dryRun = cli.flags['dryRun']
 

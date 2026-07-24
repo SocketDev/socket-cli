@@ -13,7 +13,6 @@ import { getOutputKind } from '../../util/output/mode.mjs'
 import { checkCommandInput } from '../../util/validation/check-input.mts'
 
 import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
-import type { LocalConfig } from '../../util/config.mts'
 import type { MeowFlags } from '../../flags.mts'
 
 // Flags interface for type safety.
@@ -76,7 +75,7 @@ ${getSupportedConfigEntries()
     parentName,
   })
 
-  const { json, markdown } = cli.flags as unknown as ConfigAutoFlags
+  const { json, markdown } = cli.flags
 
   const dryRun = cli.flags['dryRun']
 
@@ -116,8 +115,13 @@ ${getSupportedConfigEntries()
     return
   }
 
+  // Re-assert the checkCommandInput guard for the type system.
+  if (!isSupportedConfigKey(key)) {
+    return
+  }
+
   await handleConfigAuto({
-    key: key as keyof LocalConfig,
+    key,
     outputKind,
   })
 }

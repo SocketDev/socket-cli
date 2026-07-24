@@ -114,7 +114,7 @@ export async function run(
     parentName,
   })
 
-  const { dryRun } = cli.flags as unknown as PycliFlags
+  const { dryRun } = cli.flags
 
   // Filter Socket-specific flags from argv, pass rest to Python CLI.
   const pyCliArgs = filterFlags(argv, commonFlags, [])

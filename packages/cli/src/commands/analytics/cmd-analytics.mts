@@ -114,11 +114,7 @@ export async function run(
     time = cli.input[0]
   }
 
-  const {
-    file: filepath,
-    json,
-    markdown,
-  } = cli.flags as unknown as AnalyticsFlags
+  const { file: filepath, json, markdown } = cli.flags
 
   const dryRun = cli.flags['dryRun']
 
