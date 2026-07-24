@@ -49,6 +49,7 @@ import type { ToolCallPayload } from '../_shared/payload.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 
 function getProjectDir(): string {
+  // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- reads the agent-provided CLAUDE_PROJECT_DIR first; process.cwd() is only the fallback when that env var is absent
   return process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
 }
 
@@ -69,7 +70,7 @@ export function detectCollision(
   ownActorId: string,
   normalizedPath: string,
   otherLedgerPaths: readonly string[],
-  options: {
+  config: {
     now: number
     collisionWindowMs: number
     ttlMs: number
@@ -81,8 +82,8 @@ export function detectCollision(
 ): CollisionResult | undefined {
   const { now, collisionWindowMs, ttlMs, ownWriteTs } = {
     __proto__: null,
-    ...options,
-  } as typeof options
+    ...config,
+  } as typeof config
   for (let i = 0, { length } = otherLedgerPaths; i < length; i += 1) {
     const fp = otherLedgerPaths[i]!
     const raw = readActorLedger(fp)

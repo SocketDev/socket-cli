@@ -31,7 +31,9 @@ function findInlineTypeImports(text: string): number {
   // whole file, to keep the count roughly per-statement.
   const normalized = text.replace(/\{[^{}]*\}/g, m => m.replace(/\s+/g, ' '))
   let count = 0
-  for (const line of normalized.split('\n')) {
+  const lines = normalized.split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
     if (INLINE_TYPE_IMPORT_RE.test(line)) {
       count += 1
     }

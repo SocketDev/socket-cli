@@ -13,7 +13,7 @@
  *
  *   3. Thin fs shell (`readActorLedger`, `writeActorLedger`,
  *      `listOtherActorLedgerPaths`, `sweepStaleLedgers`) — wraps the pure
- *      core with real disk IO under `node_modules/.cache/socket-active-edits/`
+ *      core with real disk IO under `node_modules/.cache/fleet/socket-active-edits/`
  *      (dep-0 runtime-state store; never tracked).
  *
  * Fail-open contract: every function returns a safe default on IO / parse
@@ -102,7 +102,7 @@ export function computeActorId(
  */
 export function resolveStoreRoot(projectDir: string | undefined): string {
   if (projectDir) {
-    return path.join(projectDir, 'node_modules', '.cache', STORE_NAME)
+    return path.join(projectDir, 'node_modules', '.cache', 'fleet', STORE_NAME)
   }
   return path.join(
     process.env['TMPDIR'] ??
@@ -129,9 +129,9 @@ export function ledgerFilePath(storeRoot: string, actorId: string): string {
  */
 export function pruneLedger(
   ledger: ActorLedger,
-  options: { now: number; ttlMs: number },
+  config: { now: number; ttlMs: number },
 ): ActorLedger | undefined {
-  const { now, ttlMs } = { __proto__: null, ...options } as typeof options
+  const { now, ttlMs } = { __proto__: null, ...config } as typeof config
   if (now - ledger.updatedAt > ttlMs) {
     return undefined
   }
@@ -170,9 +170,9 @@ export function deriveSubagentsDir(
  */
 export function hasLiveChildMtime(
   mtimes: readonly number[],
-  options: { now: number; windowMs: number },
+  config: { now: number; windowMs: number },
 ): boolean {
-  const { now, windowMs } = { __proto__: null, ...options } as typeof options
+  const { now, windowMs } = { __proto__: null, ...config } as typeof config
   for (let i = 0, { length } = mtimes; i < length; i += 1) {
     if (now - mtimes[i]! <= windowMs) {
       return true
@@ -187,10 +187,10 @@ export function hasLiveChildMtime(
  */
 export function isActorLive(
   ledger: ActorLedger,
-  options: { now: number; ttlMs: number },
+  config: { now: number; ttlMs: number },
 ): boolean {
-  const opts = { __proto__: null, ...options } as typeof options
-  return opts.now - ledger.updatedAt <= opts.ttlMs
+  const cfg = { __proto__: null, ...config } as typeof config
+  return cfg.now - ledger.updatedAt <= cfg.ttlMs
 }
 
 /**
@@ -212,9 +212,9 @@ export function recordPath(
   existing: ActorLedger | undefined,
   actorId: string,
   normalizedPath: string,
-  options: { now: number; ttlMs: number },
+  config: { now: number; ttlMs: number },
 ): ActorLedger {
-  const { now, ttlMs } = { __proto__: null, ...options } as typeof options
+  const { now, ttlMs } = { __proto__: null, ...config } as typeof config
   const base = existing ? pruneLedger(existing, { now, ttlMs }) : undefined
   const paths: Record<string, number> = { ...(base?.paths ?? {}) }
   paths[normalizedPath] = now
@@ -306,9 +306,9 @@ export function listOtherActorLedgerPaths(
  */
 export function sweepStaleLedgers(
   storeRoot: string,
-  options: { now: number; ttlMs: number },
+  config: { now: number; ttlMs: number },
 ): void {
-  const { now, ttlMs } = { __proto__: null, ...options } as typeof options
+  const { now, ttlMs } = { __proto__: null, ...config } as typeof config
   try {
     if (!existsSync(storeRoot)) {
       return
@@ -376,13 +376,13 @@ export function listChildTranscriptMtimes(subagentsDir: string): number[] {
  */
 export function hasLiveBackgroundChild(
   transcriptPath: string | undefined,
-  options: { now: number; windowMs: number },
+  config: { now: number; windowMs: number },
 ): boolean {
   const subagentsDir = deriveSubagentsDir(transcriptPath)
   if (!subagentsDir) {
     return false
   }
-  return hasLiveChildMtime(listChildTranscriptMtimes(subagentsDir), options)
+  return hasLiveChildMtime(listChildTranscriptMtimes(subagentsDir), config)
 }
 
 /**

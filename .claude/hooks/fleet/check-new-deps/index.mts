@@ -404,8 +404,8 @@ async function checkDepsBatch(deps: Dep[]): Promise<BatchOutcome> {
 
       const seenKeys = new Set<string>()
       const pkgs: MalwareCheckPackage[] = result.data
-      for (let i = 0, { length } = pkgs; i < length; i += 1) {
-        const pkg = pkgs[i]!
+      for (let j = 0, { length: len } = pkgs; j < len; j += 1) {
+        const pkg = pkgs[j]!
         const ns = pkg.namespace ? `${pkg.namespace}/` : ''
         const key = `${pkg.type}:${ns}${pkg.name}`
         const purl = purlByKey.get(key)
@@ -701,7 +701,9 @@ export function extractPipfileLock(content: string): Dep[] {
     for (const section of ['default', 'develop']) {
       const packages = lock[section]
       if (packages && typeof packages === 'object') {
-        for (const name of Object.keys(packages)) {
+        const nameList = Object.keys(packages)
+        for (let i = 0, { length } = nameList; i < length; i += 1) {
+          const name = nameList[i]!
           deps.push({ type: 'pypi', name })
         }
       }

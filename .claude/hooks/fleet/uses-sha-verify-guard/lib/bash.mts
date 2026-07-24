@@ -5,7 +5,6 @@
 
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 
 import { arrayUnique } from '@socketsecurity/lib-stable/arrays/unique'
 
@@ -22,6 +21,7 @@ import {
 } from './regexes.mts'
 import { validateRefReachable, validateRefShape } from './validate-ref.mts'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+import { resolveProjectDir } from '../../_shared/project-dir.mts'
 
 // Cap the Bash command we feed to BARE_USES_RE_GLOBAL — that regex
 // has overlapping char classes ([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+) that
@@ -37,7 +37,7 @@ const COMMAND_SCAN_CAP = 50_000
 // We don't want the hook to be a file-existence oracle for arbitrary
 // .yml-suffixed paths outside the cwd.
 function isPathInsideCwd(relPath: string): boolean {
-  const cwd = process.cwd()
+  const cwd = resolveProjectDir()
   const resolved = path.resolve(cwd, relPath)
   // `path.relative` returns an empty string when paths are equal, a
   // relative path when the target is under cwd, and a path starting
@@ -116,7 +116,9 @@ function targetWorkflowOwnerRepos(command: string): string[] {
     } catch {
       continue
     }
-    for (const line of content.split('\n')) {
+    const lineList = content.split('\n')
+    for (let i = 0, { length } = lineList; i < length; i += 1) {
+      const line = lineList[i]!
       const m = USES_RE.exec(line)
       if (!m) {
         continue
@@ -150,7 +152,9 @@ function targetGitmodulesOwnerRepos(command: string): string[] {
     } catch {
       continue
     }
-    for (const line of content.split('\n')) {
+    const lines = content.split('\n')
+    for (let i = 0, { length } = lines; i < length; i += 1) {
+      const line = lines[i]!
       const m = GITMODULES_URL_RE.exec(line)
       if (!m) {
         continue

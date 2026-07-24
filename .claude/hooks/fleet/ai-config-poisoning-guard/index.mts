@@ -89,20 +89,20 @@ const POISON_PATTERNS: readonly PoisonPattern[] = [
     // on the detector pattern.
     regex:
       // Matches: a data-exfiltration tool (curl/wget/fetch/URL) followed by a known secret env var name.
-      /\b(?:curl|wget|fetch|https?:\/\/)[^\n]*\b(?:SOCKET_API_(?:TOKEN|KEY)|GITHUB_TOKEN|GH_TOKEN|NPM_TOKEN|AWS_[A-Z_]+|VAULT_TOKEN)\b/i,
+      /\b(?:curl|fetch|https?:\/\/|wget)[^\n]*\b(?:AWS_[A-Z_]+|GH_TOKEN|GITHUB_TOKEN|NPM_TOKEN|SOCKET_API_(?:KEY|TOKEN)|VAULT_TOKEN)\b/i,
   },
   {
     label: 'token-off-keychain directive',
     // Write a token/secret into a dotenv / dotfile instead of the keychain.
     regex:
       // Matches: a known secret var name followed by a redirect or write phrase targeting a dotfile (.env, .envrc, .netrc).
-      /\b(?:SOCKET_API_(?:TOKEN|KEY)|GITHUB_TOKEN|NPM_TOKEN|VAULT_TOKEN|AWS_[A-Z_]+)\b[^\n]*(?:>>?\s*|into\s+|write[^\n]*to\s+)\.(?:env|envrc|netrc)\b/i,
+      /\b(?:AWS_[A-Z_]+|GITHUB_TOKEN|NPM_TOKEN|SOCKET_API_(?:KEY|TOKEN)|VAULT_TOKEN)\b[^\n]*(?:>>?\s*|into\s+|write[^\n]*to\s+)\.(?:env|envrc|netrc)\b/i,
   },
   {
     label: 'classic injection directive',
     regex:
       // Matches classic prompt-injection phrasing directing the agent to bypass its rules.
-      /\bignore\s+(?:all\s+)?(?:previous|prior|above)\s+instructions\b|\bdisregard\b[^\n]*\b(?:rules?|instructions?|CLAUDE\.md)\b/i,
+      /\bignore\s+(?:all\s+)?(?:above|previous|prior)\s+instructions\b|\bdisregard\b[^\n]*\b(?:CLAUDE\.md|instructions?|rules?)\b/i,
   },
 ]
 

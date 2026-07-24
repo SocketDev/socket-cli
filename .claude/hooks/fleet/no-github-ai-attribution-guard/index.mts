@@ -130,7 +130,9 @@ export function extractMcpProse(payload: ToolCallPayload): string {
     return ''
   }
   const out: string[] = []
-  for (const value of Object.values(input as Record<string, unknown>)) {
+  const valueList = Object.values(input as Record<string, unknown>)
+  for (let i = 0, { length } = valueList; i < length; i += 1) {
+    const value = valueList[i]!
     if (typeof value === 'string') {
       out.push(value)
     }

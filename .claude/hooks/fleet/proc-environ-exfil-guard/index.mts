@@ -83,7 +83,7 @@ export function isProsePath(normalized: string): boolean {
 // unrelated occurrences. Bounded to 64 chars so the cross-literal window can't
 // run away. This is a literal PATH match, not a shell-command-structure parse,
 // so it is exempt from no-hook-cmd-regex-guard.
-const PROC_ENVIRON_RE = /\/proc\/[^/]{0,64}\/(?:environ|cmdline)\b/
+const PROC_ENVIRON_RE = /\/proc\/[^/]{0,64}\/(?:cmdline|environ)\b/
 
 // Commands that read a file's contents. The Bash arm fires only when one of
 // these (or a `<` redirect) sits before the procfs path — so a commit message,
@@ -93,7 +93,7 @@ const PROC_ENVIRON_RE = /\/proc\/[^/]{0,64}\/(?:environ|cmdline)\b/
 // read-context because a shell line is also where prose lives (`git commit -m`,
 // `gh ... --body`).
 const READ_CONTEXT_RE =
-  /(?:\b(?:cat|xxd|od|strings|head|tail|tr|grep|egrep|fgrep|rg|dd|less|more|hexdump|base64|sed|awk|read)\b[^|;&]*|<\s*)\/proc\/[^/]{0,64}\/(?:environ|cmdline)\b/
+  /(?:\b(?:awk|base64|cat|dd|egrep|fgrep|grep|head|hexdump|less|more|od|read|rg|sed|strings|tail|tr|xxd)\b[^|;&]*|<\s*)\/proc\/[^/]{0,64}\/(?:cmdline|environ)\b/
 
 export interface ProcHit {
   // The matched path fragment, for the failure message.

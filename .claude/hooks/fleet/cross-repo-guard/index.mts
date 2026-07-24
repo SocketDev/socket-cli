@@ -78,7 +78,9 @@ export function emitBlock(filePath: string, hits: Hit[]): string {
     '  imports instead. Path-based references break in CI / fresh clones.',
   )
   lines.push(`  File:    ${filePath}`)
-  for (const h of hits.slice(0, 3)) {
+  const hs = hits.slice(0, 3)
+  for (let i = 0, { length } = hs; i < length; i += 1) {
+    const h = hs[i]!
     lines.push(`  Line ${h.lineNumber}: ${h.line.trim()}`)
     lines.push(`  Match:           ${h.matched.trim()}`)
   }

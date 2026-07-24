@@ -25,7 +25,7 @@ import { defineHook, editGuard, notify, runHook } from '../_shared/guard.mts'
 // segment at any depth, followed by any filename ending in `.test.` or
 // `.spec.` and a JS/TS extension (js, ts, mjs, mts, cjs, cts, jsx, tsx).
 const TEST_FILE_RE =
-  /(?:^|[\\/])(?:test|tests|__tests__)[\\/].+\.(?:test|spec)\.(?:[cm]?[jt]sx?)$/u
+  /(?:^|[\\/])(?:test|tests|__tests__)[\\/].+\.(?:spec|test)\.(?:[cm]?[jt]sx?)$/u
 
 // Path tokens that diverge between POSIX and Windows. Hitting any of
 // these in an assertion suggests the test will pick the wrong layout
@@ -40,12 +40,12 @@ const TEST_FILE_RE =
 // python.exe split, generic `.exe` suffixes, and absolute paths
 // keyed off a POSIX `/bin/` or Windows drive letter.
 const PLATFORM_DIVERGENT_RE =
-  /\b(?:bin\/python3?|python\.exe|node\.exe|[a-z0-9_-]+\.exe\b|\\\\(?:Program Files|Users)|C:\\\\|\/usr\/(?:local\/)?bin\/(?:python3?|node|sh)\b|\/bin\/sh\b)/u
+  /\b(?:C:\\\\|[a-z0-9_-]+\.exe\b|\/bin\/sh\b|\/usr\/(?:local\/)?bin\/(?:node|python3?|sh)\b|\\\\(?:Program Files|Users)|bin\/python3?|node\.exe|python\.exe)/u
 
 // Markers that say the test IS already platform-aware. If any of these
 // appear in the content, stay silent — the author considered Windows.
 const PLATFORM_GATE_RE =
-  /(?:process\.platform|os\.platform\(\)|WIN32\b|isWindows\b|isWin32\b|describe\.skipIf|it\.skipIf|test\.skipIf|describeWindows|describeUnix)/u
+  /(?:WIN32\b|describeUnix|describeWindows|describe\.skipIf|isWin32\b|isWindows\b|it\.skipIf|os\.platform\(\)|process\.platform|test\.skipIf)/u
 
 function shouldRemind(filePath: string, content: string | undefined): boolean {
   if (!content) {

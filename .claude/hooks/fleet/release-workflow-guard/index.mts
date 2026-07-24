@@ -212,11 +212,11 @@ export function countPriorDispatches(
       continue
     }
     for (let j = 0, blocksLen = content.length; j < blocksLen; j += 1) {
-      const block = content[j]
-      if (!block || typeof block !== 'object') {
+      const blk = content[j]
+      if (!blk || typeof blk !== 'object') {
         continue
       }
-      const b = block as Record<string, unknown>
+      const b = blk as Record<string, unknown>
       if (b['type'] !== 'tool_use' || b['name'] !== 'Bash') {
         continue
       }
@@ -317,11 +317,11 @@ export function dispatchLedgerRemaining(
       continue
     }
     for (let j = 0, blocksLen = content.length; j < blocksLen; j += 1) {
-      const block = content[j]
-      if (!block || typeof block !== 'object') {
+      const blk = content[j]
+      if (!blk || typeof blk !== 'object') {
         continue
       }
-      const b = block as Record<string, unknown>
+      const b = blk as Record<string, unknown>
       if (b['type'] !== 'tool_use' || b['name'] !== 'Bash') {
         continue
       }
@@ -372,11 +372,11 @@ export function collectHookDeniedToolUseIds(
       continue
     }
     for (let j = 0, blocksLen = content.length; j < blocksLen; j += 1) {
-      const block = content[j]
-      if (!block || typeof block !== 'object') {
+      const blk = content[j]
+      if (!blk || typeof blk !== 'object') {
         continue
       }
-      const b = block as Record<string, unknown>
+      const b = blk as Record<string, unknown>
       if (b['type'] !== 'tool_result') {
         continue
       }
@@ -624,6 +624,7 @@ export function resolveSearchRoots(command: string): string[] {
     /* c8 ignore stop */
   }
   if (!projectDir) {
+    // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- documented last resort (see resolution order above): env unset AND the module-path walk found no .github/workflows; the invoking shell's directory is the only remaining candidate for the workflow root.
     projectDir = process.cwd()
   }
   const repoMatch = GH_REPO_FLAG_RE.exec(command)
@@ -642,6 +643,7 @@ export function resolveSearchRoots(command: string): string[] {
   // workflow YAML when the user types `cd ../sibling && gh workflow
   // run ...` from a session pinned to a different project.
   const roots: string[] = [projectDir]
+  // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- deliberate live-cwd probe (see comment above): the invoking shell's directory is added as a SECONDARY workflow root when it differs from projectDir; an anchored path would make the branch dead.
   const cwd = process.cwd()
   if (
     cwd !== projectDir &&

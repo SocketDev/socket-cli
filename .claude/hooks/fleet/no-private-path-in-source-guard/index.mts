@@ -10,7 +10,7 @@
 // Detected inside comment syntax (NOT inside strings or real code):
 //   - untracked plans/reports directory paths — untracked operator notes.
 //   - `socket-<repo>/.claude/…` — another fleet repo's private tree.
-//   - `/Users/<name>/…` — an absolute home path (username + local layout).
+//   - `/Users/<user>/…` — an absolute home path (username + local layout).
 //   - `../socket-<repo>/…` — a sibling fleet-repo relative path (dev-box layout).
 //
 // Scope: SOURCE-CODE files only (.rs/.ts/.mts/.js/.go/.py/.c/.h/…). Markdown,
@@ -32,7 +32,8 @@
 //
 // Fails open on malformed payloads (exit 0).
 
-import { splitLines, walkComments } from '../_shared/acorn/index.mts'
+import { walkComments } from '../_shared/ast/comments.mts'
+import { splitLines } from '../_shared/ast/core.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import type { PrivatePathFinding } from '../_shared/private-paths.mts'
 import {
@@ -45,7 +46,7 @@ import {
 // and the `.claude/` tree are deliberately excluded — they reference these
 // paths legitimately.
 const SOURCE_FILE_RE =
-  /\.(?:[cm]?[jt]sx?|cc|cpp|cxx|hpp|hh|[ch]|rs|go|py|rb|java|kt|swift|sh|bash|zsh)$/
+  /\.(?:[ch]|[cm]?[jt]sx?|bash|cc|cpp|cxx|go|hh|hpp|java|kt|py|rb|rs|sh|swift|zsh)$/
 
 const JS_TS_FILE_RE = /\.(?:[cm]?[jt]sx?)$/
 

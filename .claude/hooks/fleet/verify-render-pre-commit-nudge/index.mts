@@ -20,11 +20,11 @@
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { readFileSync } from 'node:fs'
-import process from 'node:process'
 
 import { isGitCommit } from '../_shared/commit-command.mts'
 import { bashGuard, defineHook, notify, runHook } from '../_shared/guard.mts'
 import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 // Files whose changes likely affect rendered output.
 const UI_FILE_RE =
@@ -69,8 +69,8 @@ export function analyzeTranscript(entries: TranscriptEntry[]): Analysis {
     const content = msg.content
     // Build invocation — find in assistant tool_use Bash calls.
     if (Array.isArray(content)) {
-      for (let i = 0, { length } = content; i < length; i += 1) {
-        const part = content[i]!
+      for (let p = 0, { length: plen } = content; p < plen; p += 1) {
+        const part = content[p]!
         if (part === null || typeof part !== 'object') {
           continue
         }
@@ -84,11 +84,15 @@ export function analyzeTranscript(entries: TranscriptEntry[]): Analysis {
             'string'
         ) {
           const cmd = (input as { command: string }).command
-          for (let j = 0, { length } = BUILD_COMMAND_RES; j < length; j += 1) {
+          for (
+            let j = 0, { length: len } = BUILD_COMMAND_RES;
+            j < len;
+            j += 1
+          ) {
             const re = BUILD_COMMAND_RES[j]!
             if (re.test(cmd)) {
               buildCommand = cmd
-              buildIndex = i
+              buildIndex = p
               break
             }
           }
@@ -143,7 +147,9 @@ export function readTranscript(transcriptPath: string): TranscriptEntry[] {
     return []
   }
   const out: TranscriptEntry[] = []
-  for (const line of raw.split(/\r?\n/)) {
+  const lineList = raw.split(/\r?\n/)
+  for (let i = 0, { length } = lineList; i < length; i += 1) {
+    const line = lineList[i]!
     if (!line.trim()) {
       continue
     }
@@ -175,7 +181,7 @@ export const check = bashGuard((command, payload) => {
     return undefined
   }
 
-  const cwd = payload.cwd ?? process.cwd()
+  const cwd = resolveProjectDir(payload.cwd)
   const staged = stagedFiles(cwd)
   const uiStaged = staged.filter(f => UI_FILE_RE.test(f))
   if (uiStaged.length === 0) {
@@ -198,7 +204,9 @@ export const check = bashGuard((command, payload) => {
   lines.push('[verify-render-pre-commit-nudge] About to commit UI/render files')
   lines.push('')
   lines.push('  UI files staged:')
-  for (const f of uiStaged.slice(0, 5)) {
+  const fList = uiStaged.slice(0, 5)
+  for (let i = 0, { length } = fList; i < length; i += 1) {
+    const f = fList[i]!
     lines.push(`    ${f}`)
   }
   if (uiStaged.length > 5) {

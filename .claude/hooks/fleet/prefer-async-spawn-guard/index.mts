@@ -44,7 +44,7 @@ const BYPASS_PHRASE = 'Allow async-spawn bypass'
 // or re-export), and `require('node:child_process')`. Quote style and the
 // `node:` prefix both tolerated. Matched per-line.
 const CHILD_PROCESS_IMPORT_RE =
-  /\b(?:import|export)\b[^\n]*\bfrom\s*['"](?:node:)?child_process['"]/
+  /\b(?:export|import)\b[^\n]*\bfrom\s*['"](?:node:)?child_process['"]/
 const CHILD_PROCESS_REQUIRE_RE =
   /\brequire\s*\(\s*['"](?:node:)?child_process['"]\s*\)/
 

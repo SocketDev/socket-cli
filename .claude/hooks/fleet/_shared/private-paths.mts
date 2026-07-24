@@ -64,7 +64,7 @@ export const PRIVATE_PATH_PATTERNS: ReadonlyArray<{
     re: /(?:^|[\s"'`([{<])socket-[a-z0-9][a-z0-9-]*\/\.claude\/[^\s"'`)\]}>]*/i,
   },
   {
-    // An absolute `/Users/<name>/...` home path — a developer's local checkout
+    // An absolute `/Users/<user>/...` home path — a developer's local checkout
     // path, which leaks both the username and the on-disk layout.
     kind: 'home-abs-path',
     re: /(?:^|[\s"'`([{<])\/Users\/[^/\s"'`)\]}>]+\/[^\s"'`)\]}>]*/,
@@ -117,7 +117,7 @@ export function describePrivatePathKind(
     case 'cross-repo-claude':
       return "another fleet repo's private .claude/ tree (cross-repo internal layout)"
     case 'home-abs-path':
-      return 'an absolute /Users/<name>/ home path (leaks username + local layout)'
+      return 'an absolute /Users/<user>/ home path (leaks username + local layout)'
     /* c8 ignore start - 'sibling-repo-rel' is the final arm; the union is exhaustive so the default never runs */
     case 'sibling-repo-rel':
       return 'a ../socket-<repo>/ sibling fleet-repo relative path (presumes a dev-box layout)'
@@ -158,7 +158,7 @@ export function scanCommentBodyLines(
 // a string literal is never reached. JS/TS callers use the acorn walker instead.
 const BLOCK_OPEN_RE = /\/\*/
 const BLOCK_CLOSE_RE = /\*\//
-const LINE_COMMENT_RE = /(?:\/\/|#|--)\s?(.*)$/
+const LINE_COMMENT_RE = /(?:#|--|\/\/)\s?(.*)$/
 
 /**
  * One extracted comment body, paired with its 1-based source line number. The

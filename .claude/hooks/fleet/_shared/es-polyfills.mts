@@ -117,8 +117,8 @@ export function toReversed(this: unknown): unknown[] {
 // 23.1.3.35 Array.prototype.toSpliced.
 export function toSpliced(
   this: unknown,
-  start?: unknown,
-  skipCount?: unknown,
+  start?: unknown | undefined,
+  skipCount?: unknown | undefined,
   ...items: unknown[]
 ): unknown[] {
   const argCount = arguments.length
@@ -197,7 +197,7 @@ export function findLast(
     index: number,
     obj: ArrayLike<unknown>,
   ) => unknown,
-  thisArg?: unknown,
+  thisArg?: unknown | undefined,
 ): unknown {
   if (typeof predicate !== 'function') {
     throw new TypeError('predicate must be a function')
@@ -222,7 +222,7 @@ export function findLastIndex(
     index: number,
     obj: ArrayLike<unknown>,
   ) => unknown,
-  thisArg?: unknown,
+  thisArg?: unknown | undefined,
 ): number {
   if (typeof predicate !== 'function') {
     throw new TypeError('predicate must be a function')
@@ -306,10 +306,10 @@ export function mapGroupBy(
 export function withResolvers<T>(): {
   promise: Promise<T>
   resolve: (value: T | PromiseLike<T>) => void
-  reject: (reason?: unknown) => void
+  reject: (reason?: unknown | undefined) => void
 } {
   let resolve!: (value: T | PromiseLike<T>) => void
-  let reject!: (reason?: unknown) => void
+  let reject!: (reason?: unknown | undefined) => void
   const promise = new Promise<T>((res, rej) => {
     resolve = res
     reject = rej
@@ -322,7 +322,7 @@ export async function fromAsync(
   this: unknown,
   items: unknown,
   mapper?: ((value: unknown, index: number) => unknown) | undefined,
-  thisArg?: unknown,
+  thisArg?: unknown | undefined,
 ): Promise<unknown[]> {
   let mapping = false
   if (mapper !== undefined) {

@@ -15,7 +15,7 @@
 // What's enforced:
 //   - A function (declaration / expression / arrow) with a param that is a
 //     plain Identifier named `opts`. Detected by AST, parsed via the vendored
-//     acorn-wasm in `_shared/acorn/` — which fully parses TypeScript, so a
+//     acorn-wasm in `_shared/ast/` — which fully parses TypeScript, so a
 //     typed `opts?: { … }` param is matched on its Identifier name, never on
 //     a regex over the type-annotation text.
 //   - Destructured params (`{ opts }`), rest params, and a `.opts` PROPERTY or
@@ -32,8 +32,8 @@
 // fail-open. The hook fails OPEN on its own bugs (exit 0 + stderr log) so a
 // bad deploy can't brick the session.
 
-import { offsetToLineCol, tryParse } from '../_shared/acorn/index.mts'
-import type { AcornNode } from '../_shared/acorn/index.mts'
+import { offsetToLineCol, tryParse } from '../_shared/ast/core.mts'
+import type { AcornNode } from '../_shared/ast/core.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 
 const ALLOW_MARKER = '// socket-lint: allow options-param-naming'
@@ -75,7 +75,7 @@ export function isApplicable(filePath: string): boolean {
 // that is a property or type member are not param Identifiers, so they never
 // appear here. Pure AST — no regex over source structure.
 export function findOptsParams(source: string): number[] {
-  // No options: the `_shared/acorn` defaults already enable TypeScript and the
+  // No options: the `_shared/ast/core.mts` defaults already enable TypeScript and the
   // fleet's ES2026 floor, which is exactly what a hook parsing `.ts`/`.mts`
   // source wants.
   const ast = tryParse(source)
@@ -107,7 +107,9 @@ export function findOptsParams(source: string): number[] {
         }
       }
     }
-    for (const key of Object.keys(node)) {
+    const keyList = Object.keys(node)
+    for (let j = 0, { length: jlen } = keyList; j < jlen; j += 1) {
+      const key = keyList[j]!
       /* c8 ignore start - acorn never emits a parent back-reference; defensive guard for enriched ASTs */
       if (key === 'parent') {
         continue

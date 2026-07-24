@@ -32,7 +32,7 @@ import { resolveEditedText } from '../_shared/payload.mts'
 // extension (mts, ts, js, mjs, cjs). Anchors to a path segment boundary so
 // a bare filename without a leading slash also matches.
 const BUILDER_SCRIPT_RE =
-  /(?:^|\/)(?:packages\/[^/]+\/scripts\/|scripts\/)[^/]+\.(?:mts|ts|js|mjs|cjs)$/i
+  /(?:^|\/)(?:packages\/[^/]+\/scripts\/|scripts\/)[^/]+\.(?:cjs|js|mjs|mts|ts)$/i
 
 // `process.env.TARGET_ARCH` — read or assignment.
 const READS_TARGET_ARCH_RE = /\bprocess\.env\.TARGET_ARCH\b/
@@ -54,7 +54,7 @@ const DELETES_TARGET_ARCH_RE = /\bdelete\s+[\w.]+\.TARGET_ARCH\b/
 // fix is cheap; just add the delete). False negatives are the
 // failure mode that previously cost a CI dispatch.
 const SPAWNS_MAKE_OR_CONFIGURE_RE =
-  /(?:\bspawn(?:Sync)?\s*\(\s*['"`]make['"`]|\b(?:exec|execSync|spawn(?:Sync)?)\s*\(\s*['"`]make\b|['"`]make\s+-[a-zA-Z]|\[\s*['"`]make['"`]\s*,|\.\/configure\b|\bbash\s+configure\b|\bsh\s+configure\b)/
+  /(?:['"`]make\s+-[a-zA-Z]|\.\/configure\b|\[\s*['"`]make['"`]\s*,|\b(?:exec|execSync|spawn(?:Sync)?)\s*\(\s*['"`]make\b|\bbash\s+configure\b|\bsh\s+configure\b|\bspawn(?:Sync)?\s*\(\s*['"`]make['"`])/
 
 export function isBuilderScript(filePath: string): boolean {
   return BUILDER_SCRIPT_RE.test(normalizePath(filePath))

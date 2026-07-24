@@ -147,7 +147,7 @@ export function installShellRcBridge(
   // block before writing the new one closes that loop without
   // double-appending.
   const legacyRe =
-    /\n*# BEGIN socket-cli (?:keychain bridge \(managed\)|env \(managed\))[\s\S]*?# END socket-cli (?:keychain bridge|env)\n?/g
+    /\n*# BEGIN socket-cli (?:env \(managed\)|keychain bridge \(managed\))[\s\S]*?# END socket-cli (?:env|keychain bridge)\n?/g
   existing = existing.replace(legacyRe, '\n')
 
   // Look for an existing canonical block. Capture the BEGIN line,

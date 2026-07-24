@@ -162,7 +162,7 @@ const CHECKS: readonly RevertCheck[] = [
     // their changes interfering. Reflex of SWE muscle memory; the
     // worktree pattern is less familiar. Block the reflex; the
     // bypass phrase exists for single-session contexts where the
-    // user knows no other Claude session is active.
+    // user knows no other agent session is active.
     bypassPhrase: 'Allow stash bypass',
     fleetOnly: true,
     label: 'git stash (primary-checkout parallel-Claude hazard)',
@@ -218,7 +218,7 @@ const CHECKS: readonly RevertCheck[] = [
     fleetOnly: true,
     label: 'Bash file-write (likely dodging an Edit/Write hook)',
     pattern:
-      /(?:^|[\s;&|(`])(?:python3?\s+-c\b.*(?:open\([^)]*['"]w['"]?|\.write_text\(|\.write\([^)]*\)\s*$)|cat\s+<<-?\s*['"]?[A-Z_]+['"]?\b[^|;`]*>\s*[^/]|tee\s+(?!-)\S*\.(?:m?[jt]sx?|json|md|ya?ml|toml|sh|py|rs|go|css)\b|\bdd\s+[^|;`]*\bof=)/,
+      /(?:^|[\s;&|(`])(?:python3?\s+-c\b.*(?:open\([^)]*['"]w['"]?|\.write_text\(|\.write\([^)]*\)\s*$)|cat\s+<<-?\s*['"]?[A-Z_]+['"]?\b[^|;`]*>\s*[^/]|tee\s+(?!-)\S*\.(?:css|go|json|m?[jt]sx?|md|py|rs|sh|toml|ya?ml)\b|\bdd\s+[^|;`]*\bof=)/,
   },
 ]
 
@@ -305,7 +305,7 @@ export function isLockfileOnlyReconcile(rest: readonly string[]): boolean {
 // accepted: an assignment smuggled inside a quoted eval string
 // (`sh -c 'HUSKY=0 git …'`) — the same indirection limit the other pattern
 // checks share.
-const HUSKY_ZERO = /^HUSKY=(?:0|'0'|"0")$/
+const HUSKY_ZERO = /^HUSKY=(?:"0"|'0'|0)$/
 const ENV_ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/
 
 export function matchHuskySkip(command: string): string | undefined {
@@ -316,7 +316,8 @@ export function matchHuskySkip(command: string): string | undefined {
   // statement/pipe terminators; `$(` and backtick — command substitution openers;
   // `(` and `{` — subshell/compound-command starters.
   const segments = command.split(/\|\||&&|[;|&\n]|\$\(|`|[({]/)
-  for (const segment of segments) {
+  for (let j = 0, { length: jlen } = segments; j < jlen; j += 1) {
+    const segment = segments[j]!
     const words = segment.trim().split(/\s+/)
     if (words[0] === 'export') {
       // `export HUSKY=0` persists for the whole shell session — block even

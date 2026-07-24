@@ -30,6 +30,7 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { isGitCommit } from '../_shared/commit-command.mts'
 import { bashGuard, defineHook, notify, runHook } from '../_shared/guard.mts'
 import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 // Fleet doctrine: one logical change, ~200 changed lines of authored source.
 const COMMIT_SIZE_LINES = 200
@@ -70,10 +71,12 @@ export function isGeneratedPath(filePath: string): boolean {
 export function parseNumstat(numstat: string): DiffSize {
   let files = 0
   let lines = 0
-  for (const line of numstat.split('\n')) {
+  const lineList = numstat.split('\n')
+  for (let i = 0, { length } = lineList; i < length; i += 1) {
+    const line = lineList[i]!
     // `<added>\t<deleted>\t<path>`; a binary file shows `-` for both counts —
     // group 1 is added, group 2 is deleted, group 3 is the path.
-    const m = /^(\d+|-)\t(\d+|-)\t(.+)$/.exec(line)
+    const m = /^(-|\d+)\t(-|\d+)\t(.+)$/.exec(line)
     if (!m || isGeneratedPath(m[3]!)) {
       continue
     }
@@ -109,7 +112,7 @@ export const hook = defineHook({
     if (process.env['FLEET_SYNC'] === '1') {
       return undefined
     }
-    const cwd = payload.cwd ?? process.cwd()
+    const cwd = resolveProjectDir(payload.cwd)
     const size = stagedDiffSize(cwd)
     if (!size || size.lines <= COMMIT_SIZE_LINES) {
       return undefined

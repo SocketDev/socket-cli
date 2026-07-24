@@ -24,7 +24,7 @@ import { readTokenFromKeychain } from './token-storage.mts'
 // Both names are checked at read time — first env hit wins. Storage layer
 // (token-storage.mts) writes ONLY SOCKET_API_KEY to keep macOS Keychain
 // rotation to a single auth prompt.
-const ENV_NAMES = ['SOCKET_API_TOKEN', 'SOCKET_API_KEY'] as const
+const ENV_NAMES = ['SOCKET_API_TOKEN', 'SOCKET_API_TOKEN'] as const
 
 export interface TokenLookup {
   readonly token: string | undefined

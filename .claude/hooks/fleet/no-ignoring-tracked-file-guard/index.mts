@@ -100,7 +100,7 @@ function trackedFilesMatching(pattern: string, cwd: string): string[] {
       cwd,
       stdio: 'pipe',
       stdioString: true,
-    }) as { status?: number | null; stdout?: string }
+    }) as { status?: number | null | undefined; stdout?: string | undefined }
     if (result.status !== 0) {
       return []
     }

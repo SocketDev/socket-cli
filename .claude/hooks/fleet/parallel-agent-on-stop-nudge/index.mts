@@ -27,8 +27,6 @@
 // Verdict: notify (never blocks). Stop hooks fire after the turn ended —
 // there's no tool call to refuse.
 
-import process from 'node:process'
-
 import {
   listForeignDirtyPaths,
   readTouchedPaths,
@@ -37,9 +35,10 @@ import { isSquashOptIn } from '../_shared/fleet-roster.mts'
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 function getProjectDir(): string | undefined {
-  return process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
+  return resolveProjectDir()
 }
 
 export function squashHistoryProgressGuidance(): string {
@@ -54,7 +53,7 @@ export function squashHistoryProgressGuidance(): string {
 
 export const check = (payload: ToolCallPayload): GuardResult => {
   const repoDir = getProjectDir()
-  /* c8 ignore start - process.cwd() always returns a string; this branch is unreachable */
+  /* c8 ignore start - resolveProjectDir() always returns a string; this branch is unreachable */
   if (!repoDir) {
     return undefined
   }
@@ -67,7 +66,9 @@ export const check = (payload: ToolCallPayload): GuardResult => {
   }
 
   let message = `[parallel-agent-on-stop-nudge] ${foreign.length} dirty path(s) not from this session's edits (changed recently):\n`
-  for (const p of foreign.slice(0, 10)) {
+  const ps = foreign.slice(0, 10)
+  for (let i = 0, { length } = ps; i < length; i += 1) {
+    const p = ps[i]!
     message += `  ${p}\n`
   }
   if (foreign.length > 10) {

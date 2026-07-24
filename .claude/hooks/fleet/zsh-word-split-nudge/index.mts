@@ -34,30 +34,70 @@ const LIST_ASSIGN_RE =
   // socket-lint: allow uncommented-regex -- broken down in the comment above.
   /(?:^|[\s;&|(])(?<name>[A-Za-z_]\w*)=\$\((?<rhs>[^)]*)\)/g
 
+// A QUOTED assignment whose value is a space-joined literal list —
+// name="a/b c/d", name="-a -b", name="$x $y". zsh passes the bare expansion
+// as ONE argument exactly like the command-substitution case (the `git commit
+// -o "$paths"` footgun: the whole string becomes a single pathspec).
+const LITERAL_ASSIGN_RE =
+  // socket-lint: allow uncommented-regex -- quoted assign; value in <val>.
+  /(?:^|[\s;&|(])(?<name>[A-Za-z_]\w*)=(?<q>["'])(?<val>[^"']*)\k<q>/g
+
 // A list-producing right side: newline-to-space flattening, or a
 // file-enumerating command anywhere in the pipeline.
 function looksLikeListRhs(rhs: string): boolean {
   return (
-    /tr\s+(?:'\\n'|"\\n"|\\n)\s+/.test(rhs) ||
-    /(?:^|[\s;&|(])(?:find|ls|fd)\s/.test(rhs) ||
-    /(?:grep|rg)\s+(?:-\w*l|--files-with-matches)/.test(rhs)
+    /tr\s+(?:"\\n"|'\\n'|\\n)\s+/.test(rhs) ||
+    /(?:^|[\s;&|(])(?:fd|find|ls)\s/.test(rhs) ||
+    /(?:grep|rg)\s+(?:--files-with-matches|-\w*l)/.test(rhs)
   )
+}
+
+// A quoted value is a list-of-args (not prose): 2+ whitespace-separated
+// tokens where at least one looks like a path (`/`), a flag (`-…`), a
+// dotted filename, or another variable expansion. `msg="hello world"` is not
+// flagged; `paths=".config/a .config/b"` is.
+function looksLikeListLiteral(val: string): boolean {
+  const tokens = val.trim().split(/\s+/)
+  if (tokens.length < 2) {
+    return false
+  }
+  return tokens.some(
+    t =>
+      t.includes('/') ||
+      t.startsWith('-') ||
+      /\.\w+$/.test(t) ||
+      t.startsWith('$'),
+  )
+}
+
+// A bare, unquoted `$name` expansion used as an argument after `from`.
+// `${=name}` (forced split), quoted forms, and `${name[@]}` arrays are fine.
+function bareUnquotedUseAfter(
+  flat: string,
+  from: number,
+  name: string,
+): boolean {
+  const after = flat.slice(from)
+  return new RegExp(`[^"'={\\w]\\$${name}(?![\\w}])`).test(after)
 }
 
 export function detectsUnsplitListVar(command: string): string | undefined {
   const flat = command.replace(/\\\n/g, ' ')
-  let m: RegExpExecArray | null
-  while ((m = LIST_ASSIGN_RE.exec(flat)) !== null) {
+  for (const m of flat.matchAll(LIST_ASSIGN_RE)) {
     const name = m.groups!['name']!
-    if (!looksLikeListRhs(m.groups!['rhs']!)) {
-      continue
+    if (
+      looksLikeListRhs(m.groups!['rhs']!) &&
+      bareUnquotedUseAfter(flat, m.index + m[0].length, name)
+    ) {
+      return name
     }
-    // Unquoted bare `$name` used as a standalone argument after the
-    // assignment. `${=name}` (forced split), quoted forms, and array
-    // expansions are fine.
-    const after = flat.slice(m.index + m[0].length)
-    const bareUse = new RegExp(`[^"'={\\w]\\$${name}(?![\\w}])`).test(after)
-    if (bareUse) {
+  }
+  for (const m of flat.matchAll(LITERAL_ASSIGN_RE)) {
+    const name = m.groups!['name']!
+    if (
+      looksLikeListLiteral(m.groups!['val']!) &&
+      bareUnquotedUseAfter(flat, m.index + m[0].length, name)
+    ) {
       return name
     }
   }

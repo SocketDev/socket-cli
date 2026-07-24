@@ -270,7 +270,9 @@ export async function updateGithubReleaseTool(
       const resp = await httpRequest(checksumsAsset.browser_download_url)
       if (resp.ok) {
         checksumMap = { __proto__: null } as unknown as Record<string, string>
-        for (const line of resp.text().split('\n')) {
+        const lines = resp.text().split('\n')
+        for (let i = 0, { length } = lines; i < length; i += 1) {
+          const line = lines[i]!
           const match = /^(?<hash>[a-f0-9]{64})\s+(?<filename>.+)$/.exec(
             line.trim(),
           )
@@ -291,7 +293,9 @@ export async function updateGithubReleaseTool(
   } as unknown as Record<string, string>
   let allFound = true
 
-  for (const assetName of Object.keys(currentChecksums)) {
+  const assetNames = Object.keys(currentChecksums)
+  for (let i = 0, { length } = assetNames; i < length; i += 1) {
+    const assetName = assetNames[i]!
     let newHash: string | undefined
 
     // Try checksums.txt first.

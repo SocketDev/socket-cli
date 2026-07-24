@@ -22,11 +22,10 @@
 // filesystem key per actor — the same scheme foreign-paths.mts uses for
 // its same-turn ledger.
 //
-// Store: `CLAUDE_PROJECT_DIR/node_modules/.cache/socket-active-edits/`
+// Store: `CLAUDE_PROJECT_DIR/node_modules/.cache/fleet/socket-active-edits/`
 // (dep-0 runtime state; never tracked).
 
 import path from 'node:path'
-import process from 'node:process'
 
 import {
   computeActorId,
@@ -43,11 +42,12 @@ import { defineHook, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import { readFilePath } from '../_shared/payload.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 const EDIT_TOOLS = new Set(['Edit', 'NotebookEdit', 'Write'])
 
 function getProjectDir(): string {
-  return process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
+  return resolveProjectDir()
 }
 
 export const check = (payload: ToolCallPayload): GuardResult => {

@@ -42,8 +42,8 @@ import process from 'node:process'
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import {
-  RECURRENCE_THRESHOLD,
   recordOccurrence,
+  RECURRENCE_THRESHOLD,
 } from '../_shared/learning-ledger.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import {
@@ -52,6 +52,7 @@ import {
   readPriorAssistantToolUses,
   stripCodeFences,
 } from '../_shared/transcript.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 // Probe common sibling locations for a wheelhouse checkout. Order is
 // preference: socket-wheelhouse first (canonical), then aliases that
@@ -351,8 +352,9 @@ export const check = (payload: ToolCallPayload): GuardResult => {
   // last week) escalates. The ledger dedupes per session, so re-firing on
   // repeated stops in ONE session does not inflate the count. Fail-open: a
   // broken ledger just yields occurrences 0 and the base nudge still fires.
-  const projectDir =
-    process.env['CLAUDE_PROJECT_DIR'] ?? payload.cwd ?? process.cwd()
+  const projectDir = resolveProjectDir(
+    process.env['CLAUDE_PROJECT_DIR'] ?? payload.cwd,
+  )
   const sessionId = payload.transcript_path ?? 'unknown-session'
   let maxOccurrences = 0
   for (let i = 0, { length } = proseHits; i < length; i += 1) {
@@ -410,8 +412,8 @@ export const check = (payload: ToolCallPayload): GuardResult => {
   // If the rule is fleet-wide (not just this repo), it belongs in
   // socket-wheelhouse/template/. Help the user find the right path
   // — or fall back to the PR link if the wheelhouse isn't local.
-  const wheelhouseMd = findWheelhouseClaudeMd(process.cwd())
-  /* c8 ignore start - both arms depend on process.cwd(): truthy when run from the wheelhouse repo (always in CI/local), falsy when run from an unrelated dir — neither arm can be forced from in-process tests without process.chdir() */
+  const wheelhouseMd = findWheelhouseClaudeMd(resolveProjectDir())
+  /* c8 ignore start - both arms depend on resolveProjectDir(): truthy when run from the wheelhouse repo (always in CI/local), falsy when run from an unrelated dir — neither arm can be forced from in-process tests without process.chdir() */
   if (wheelhouseMd) {
     lines.push(`  Fleet rule? Edit: ${wheelhouseMd}`)
     lines.push(

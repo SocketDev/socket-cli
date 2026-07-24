@@ -40,7 +40,7 @@ export const ALLOWED_CDN_HOSTS: readonly string[] = [
   // installer CDN for convenience-installer bootstraps.
   'sh.rustup.rs',
   // Official Rust distribution CDN: versioned rustup-init binaries + .sha256
-  // (docker/fleet-bases/{rust,acorn}-base.Dockerfile pin + verify rustup-init).
+  // (docker/fleet/{rust,acorn}-base.Dockerfile pin + verify rustup-init).
   'static.rust-lang.org',
 ]
 

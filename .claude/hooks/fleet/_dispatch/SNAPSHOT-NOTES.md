@@ -15,7 +15,7 @@ The 10 that previously could not freeze — 8 acorn-WASM guards + check-new-deps
 (SDK) + brew-supply-chain-guard (semver) — are now all snapshot-safe via lazy
 deferral of the module-eval native-handle captures:
 
-1. **8 acorn-WASM guards.** `_shared/acorn/acorn-sync.mts` no longer requires the
+1. **8 acorn-WASM guards.** `_shared/ast/core.mts` no longer requires the
    vendored `acorn-bindgen.cjs` at module-eval — the require (hence the WASM
    instantiation) is DEFERRED to first parse. `acorn-bindgen.cjs` ALSO defers its
    own `new WebAssembly.Module/Instance` to first property access of `wasm` (a
@@ -107,7 +107,7 @@ the `hook-bundle-b.config.mts` build are all retired.
 The one build-step carry-over: rolldown leaves the acorn bindgen's
 `createRequire(...)('./acorn-bindgen.cjs')` external (not inlined), so the build
 copies `acorn-bindgen.cjs` + `acorn.wasm` next to the bundle (gitignored; source
-of truth `_shared/acorn/`). A snapshot-booted process resolves the bindgen via
+of truth `_shared/ast/`). A snapshot-booted process resolves the bindgen via
 the bundled createRequire — its anchor `__filename` freezes to the bundle dir —
 and the lazy bindgen reads `acorn.wasm` from `path.join(__dirname, 'acorn.wasm')`
 — both resolve to the frozen `_dispatch/` dir.
@@ -376,7 +376,7 @@ fail-open.
 ## Reproduce / verify
 
 ```sh
-node scripts/fleet/make-hook-dispatch.mts          # regen the 190-hook table
+node scripts/fleet/gen/hook-dispatch.mts          # regen the 190-hook table
 node scripts/fleet/build-hook-bundle.mts           # build the compile-cache bundle.cjs (index.cjs requires it)
 node scripts/fleet/build-hook-snapshot.mts         # build snapshot-bundle.cjs + the runtime-keyed blob
 node scripts/fleet/build-snapshot-launcher.mts     # compile the host launcher + freeze its sidecars

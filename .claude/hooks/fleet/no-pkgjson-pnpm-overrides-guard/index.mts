@@ -53,7 +53,9 @@ export function extractOverrideKeys(jsonText: string): Set<string> {
   if (!overrides || typeof overrides !== 'object') {
     return out
   }
-  for (const key of Object.keys(overrides as Record<string, unknown>)) {
+  const keyList = Object.keys(overrides as Record<string, unknown>)
+  for (let i = 0, { length } = keyList; i < length; i += 1) {
+    const key = keyList[i]!
     out.add(key)
   }
   return out

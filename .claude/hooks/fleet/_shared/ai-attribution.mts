@@ -6,6 +6,7 @@
  *   `label` only. The fleet forbids AI attribution anywhere in commit/PR text.
  */
 
+// oxlint-disable-next-line socket/no-agent-brand-assumption -- real Claude-specific integration: this file detects Claude AI-attribution trailers/emoji, the "Claude session" text below documents that detection scope, not generic agent guidance.
 export interface AiAttributionPattern {
   readonly label: string
   readonly regex: RegExp

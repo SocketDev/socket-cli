@@ -40,6 +40,7 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 const RELEASE_MESSAGE_RE =
   /^chore(?:\([^)]*\))?:\s+(?:bump version to |release )v?(?<version>\d+\.\d+\.\d+)/i
@@ -89,7 +90,8 @@ function isReleaseHead(repoRoot: string, pkgVersion: string): boolean {
     /* c8 ignore stop */
     .split('\n')
     .filter(Boolean)
-  for (const t of tags) {
+  for (let i = 0, { length } = tags; i < length; i += 1) {
+    const t = tags[i]!
     const m = RELEASE_TAG_RE.exec(t)
     if (m && m.groups!.version === pkgVersion) {
       return true
@@ -174,7 +176,7 @@ async function fetchVersionInfo(
 }
 
 export const check = async (_payload: ToolCallPayload) => {
-  const repoRoot = process.cwd()
+  const repoRoot = resolveProjectDir()
   const pkgPath = path.join(repoRoot, 'package.json')
   if (!existsSync(pkgPath)) {
     return undefined

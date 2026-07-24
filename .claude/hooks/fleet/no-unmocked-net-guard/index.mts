@@ -32,7 +32,7 @@ import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 // lives under a `test/` or `__tests__/` directory.
 export function isTestFilePath(filePath: string): boolean {
   const normalized = normalizePath(filePath)
-  if (/\.(?:test|spec)\.[cm]?[jt]sx?$/.test(normalized)) {
+  if (/\.(?:spec|test)\.[cm]?[jt]sx?$/.test(normalized)) {
     return true
   }
   return /(?:^|\/)(?:test|tests|__tests__)\//.test(normalized)
@@ -41,7 +41,7 @@ export function isTestFilePath(filePath: string): boolean {
 // Network-call surfaces flagged in test bodies: the fleet HTTP helpers and raw
 // fetch / `.request(`.
 const NETWORK_CALL_RE =
-  /\b(?:httpJson|httpText|httpRequest|fetch)\s*\(|\.request\s*\(/
+  /\b(?:fetch|httpJson|httpRequest|httpText)\s*\(|\.request\s*\(/
 
 export function hasNetworkCall(text: string): boolean {
   return NETWORK_CALL_RE.test(text)

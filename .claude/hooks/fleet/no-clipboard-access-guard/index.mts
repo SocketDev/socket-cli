@@ -92,7 +92,7 @@ const CLIPBOARD_READERS: ReadonlyArray<{
 // the raw ESC byte, or an escaped \x1b / \033 / , immediately followed
 // by `]52;`. Matching the prefix is enough — the payload after `52;` is the
 // clipboard data and need not be parsed.
-const OSC52_RE = /(?:\x1b|\\x1b|\\u001b|\\033|\\e)\]52;/i
+const OSC52_RE = /(?:\\033|\\e|\\u001b|\\x1b|\x1b)\]52;/i
 
 // The clipboard READ CLI invoked in a Bash command line, or undefined when none
 // (a write-only tool, or a writing xclip/xsel, is not a read → undefined).

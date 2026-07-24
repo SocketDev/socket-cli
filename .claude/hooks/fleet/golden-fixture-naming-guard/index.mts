@@ -19,26 +19,9 @@
 
 import { existsSync } from 'node:fs'
 
-import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
-
 import { isFleetTarget } from '../_shared/fleet-context.mts'
+import { goldenTarget } from '../_shared/golden-fixture-target.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-
-// Basename ends with `.expected.json` (case-insensitive extension).
-const EXPECTED_JSON_RE = /\.expected\.json$/i
-
-/**
- * If `filePath` is a `*.expected.json` fixture, return the `*.golden.json`
- * name it should use; otherwise undefined. Pure. Path is normalized first so
- * the suffix test is separator-agnostic.
- */
-export function goldenTarget(filePath: string): string | undefined {
-  const unix = normalizePath(filePath)
-  if (!EXPECTED_JSON_RE.test(unix)) {
-    return undefined
-  }
-  return unix.replace(EXPECTED_JSON_RE, '.golden.json')
-}
 
 export const check = editGuard((filePath, content, payload) => {
   void content

@@ -39,6 +39,7 @@ import type {
   NotFoundEntry,
   Verdict,
 } from './types.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 // How long (ms) we remember that a package didn't exist (7 days).
 // Long enough to survive a typical AI hallucination cycle; short enough
@@ -130,7 +131,7 @@ function buildAuditRecords(
   outcome: BatchOutcome,
 ): AuditRecord[] {
   const session = deriveSessionId(hook)
-  const repo = path.basename(process.cwd())
+  const repo = path.basename(resolveProjectDir())
   const ts = Date.now()
   const blockedByPurl = new Map<string, CheckResult>()
   for (const b of outcome.blocked) {

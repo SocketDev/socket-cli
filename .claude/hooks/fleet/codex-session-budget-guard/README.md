@@ -10,6 +10,6 @@ No-op for any session without the companion env var, so the primary Claude
 session and every fleet member are unaffected. Fail-open on IO errors.
 
 - Bypass (user types it in a turn): `Allow codex-long-session bypass`
-- Marker store: `node_modules/.cache/socket-codex-session/<id>.json` (untracked)
+- Marker store: `node_modules/.cache/fleet/socket-codex-session/<id>.json` (untracked)
 - Motivation: a runaway multi-hour companion once looped `land-work`/`cover` and
   monopolized the shared checkout. See CLAUDE.md → parallel-sessions.

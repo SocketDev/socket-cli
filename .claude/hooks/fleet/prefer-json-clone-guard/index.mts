@@ -18,7 +18,7 @@
 //
 // What's enforced:
 //   - Any `structuredClone(...)` CALL EXPRESSION (AST-parsed via the
-//     vendored acorn-wasm in `_shared/acorn/`). Member-call methods
+//     acorn-wasm in `_shared/ast/`). Member-call methods
 //     (`obj.structuredClone(...)`) are correctly NOT flagged because
 //     they're MemberExpression nodes, not bare Identifier calls.
 //   - String-literal mentions, comment mentions, and TypeScript type
@@ -38,7 +38,7 @@
 // The hook fails OPEN on its own bugs (the runner logs + exit 0) so a
 // bad hook deploy can't brick the session.
 
-import { findBareCallsTo } from '../_shared/acorn/index.mts'
+import { findBareCallsTo } from '../_shared/ast/calls.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 

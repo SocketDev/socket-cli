@@ -22,13 +22,13 @@
 // (scaffolding-only repos) and fails open on any error.
 
 import path from 'node:path'
-import process from 'node:process'
 
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { defineHook, editGuard, notify, runHook } from '../_shared/guard.mts'
 import { isPluginPath } from './is-plugin-path.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 // The repo root of the EDITED plugin file — every plugin path contains the
 // `.config/fleet/oxlint-plugin/` marker, so the root is the segment before
@@ -41,9 +41,7 @@ export function pluginRepoRoot(filePath: string): string {
   const normalized = normalizePath(filePath)
   const idx = normalized.indexOf(`/${PLUGIN_MARKER}`)
   /* c8 ignore next - isPluginPath gates callers, so the marker is always present */
-  return idx === -1
-    ? (process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd())
-    : normalized.slice(0, idx)
+  return idx === -1 ? resolveProjectDir() : normalized.slice(0, idx)
 }
 
 export const check = editGuard(filePath => {

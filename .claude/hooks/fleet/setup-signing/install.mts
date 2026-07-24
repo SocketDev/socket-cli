@@ -159,7 +159,8 @@ function detectGpgKey(): DetectedSigner | undefined {
   // Parse `--with-colons` machine output. Lines starting with "sec:" are
   // secret keys; field 5 is the keygrip / long ID.
   const lines = String(r.stdout ?? '').split('\n')
-  for (const line of lines) {
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
     if (line.startsWith('sec:')) {
       const fields = line.split(':')
       const keyId = fields[4]

@@ -1,7 +1,7 @@
 /**
  * @file Claude Code Stop hook — agents-skills-mirror-nudge. The cross-tool
  *   `.agents/skills/` mirror is a DERIVED artifact: the generator
- *   `scripts/fleet/gen-agents-skills-mirror.mts` hoists each segmented
+ *   `scripts/fleet/gen/agents-skills-mirror.mts` hoists each segmented
  *   `.claude/skills/{fleet,repo}/<name>/` skill into a flat `.agents/skills/`
  *   view so Codex + OpenCode (which discover skills one level deep) find every
  *   fleet/repo skill. The `agents-skills-mirror-is-current` CI check reds when
@@ -23,9 +23,10 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 export function getProjectDir(): string {
-  return process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
+  return resolveProjectDir()
 }
 
 // True when a repo-relative path names a `.claude/skills/` source file. Pure —
@@ -44,7 +45,9 @@ export function parseChangedPaths(
   stdout: string,
 ): string[] {
   const out: string[] = []
-  for (const raw of stdout.split('\n')) {
+  const raws = stdout.split('\n')
+  for (let i = 0, { length } = raws; i < length; i += 1) {
+    const raw = raws[i]!
     if (!raw.trim()) {
       continue
     }
@@ -88,7 +91,7 @@ export function mirrorIsStale(repoDir: string): boolean {
     repoDir,
     'scripts',
     'fleet',
-    'gen-agents-skills-mirror.mts',
+    'gen/agents-skills-mirror.mts',
   )
   if (!existsSync(gen)) {
     return false
@@ -115,7 +118,7 @@ export const hook = defineHook({
         '  derived .agents/skills/ mirror is stale (Codex + OpenCode read the',
         '  mirror, not .claude/skills/). Regenerate it so CI stays green:',
         '',
-        '    node scripts/fleet/gen-agents-skills-mirror.mts',
+        '    node scripts/fleet/gen/agents-skills-mirror.mts',
         '',
         '  Then commit the regenerated .agents/skills/ alongside the skill edit.',
         '',

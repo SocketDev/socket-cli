@@ -161,7 +161,7 @@ const FIXED_HEDGE_PATTERNS: readonly RuleViolation[] = [
   {
     label: 'you decide / your call / up to you',
     // Match any of three judgment-offload phrases as whole words, case-insensitive.
-    regex: /\b(?:you\s+decide|your\s+call|up\s+to\s+you)\b/i,
+    regex: /\b(?:up\s+to\s+you|you\s+decide|your\s+call)\b/i,
     why: 'Offloads judgment. Default-perfectionist: pick the recommended path and execute.',
   },
   {
@@ -176,7 +176,7 @@ const FIXED_HEDGE_PATTERNS: readonly RuleViolation[] = [
     label: 'let me know / your preference',
     // Match hand-off phrases ("let me know", "your preference", "tell me what")
     // as whole words, case-insensitive.
-    regex: /\b(?:let\s+me\s+know|your\s+preference|tell\s+me\s+what)\b/i,
+    regex: /\b(?:let\s+me\s+know|tell\s+me\s+what|your\s+preference)\b/i,
     why: 'Hand-off phrasing. If the user already gave intent, execute; if not, ask one specific question, not "let me know."',
   },
   {

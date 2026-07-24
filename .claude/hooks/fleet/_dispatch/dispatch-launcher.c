@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
 
   /* Fail-open: node <dispatch_dir>/index.cjs <Event>. */
   char index[PATH_MAX];
-  snprintf(index, sizeof(index), "%s/index.cjs", dir);
+  snprintf(index, sizeof(index), "%s/../index.cjs", dir);
   char *fargs[4];
   int j = 0;
   fargs[j++] = have_node ? node : (char *)"node";

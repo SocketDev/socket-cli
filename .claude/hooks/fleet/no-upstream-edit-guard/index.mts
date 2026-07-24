@@ -11,7 +11,7 @@
 //     `tee upstream/…`, `rm … upstream/…`, `… > upstream/…` / `… >> upstream/…`,
 //     and `cp`/`mv`/`ln` whose final destination arg is under `upstream/`.
 // Reading FROM `upstream/` (the porting source) is always allowed. Refreshing a
-// pin is `vendor-actions.mts` / `gen-gitmodules-hash.mts --set`, not a hand-edit.
+// pin is `vendor-actions.mts` / `gen/gitmodules-hash.mts --set`, not a hand-edit.
 //
 // Detection normalizes separators before the prefix test and fails open on parse
 // errors — a guard bug must not wedge Bash/edit calls.
@@ -104,7 +104,7 @@ function formatBlock(target: string, how: string): string {
       '',
       '  Fix: port what you need into a fleet-owned path instead. To refresh a',
       '  pin, run `node scripts/fleet/vendor-actions.mts` (or',
-      '  `gen-gitmodules-hash.mts --set`), never a hand-edit. See',
+      '  `gen/gitmodules-hash.mts --set`), never a hand-edit. See',
       '  docs/agents.md/fleet/upstream-references.md.',
     ].join('\n') + '\n'
   )

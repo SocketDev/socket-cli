@@ -24,7 +24,7 @@
 //     code are exempt — see EXEMPT_PATH_PATTERNS.
 //   - Lines marked `// socket-lint: allow console` are exempt.
 //
-// AST-based detector (vendored acorn-wasm in `../_shared/acorn/`).
+// AST-based detector (acorn-wasm in `_shared/ast/`).
 // Replaced the regex implementation that had to compensate for
 // string-literal / comment / template-literal false positives via
 // `looksLikeDocumentation` heuristics — the parser handles all of
@@ -54,7 +54,7 @@ const EXEMPT_PATH_PATTERNS: RegExp[] = [
   // out of `scripts/` lost the `scripts/` exemption below; restore it here.
   /(?:^|\/)bootstrap\//,
   /(?:^|\/)scripts\//,
-  /\.(?:spec|test)\.(?:m?[jt]s|tsx?|cts|mts)$/,
+  /\.(?:spec|test)\.(?:cts|m?[jt]s|mts|tsx?)$/,
   /(?:^|\/)tests?\//,
   /(?:^|\/)fixtures\//,
   /(?:^|\/)external\//,
@@ -77,7 +77,9 @@ export function emitBlock(filePath: string, hits: Hit[]): string {
     '  Use `getDefaultLogger()` from `@socketsecurity/lib-stable/logger/default` instead.',
   )
   out.push(`  File:    ${filePath}`)
-  for (const h of hits.slice(0, 3)) {
+  const hs = hits.slice(0, 3)
+  for (let i = 0, { length } = hs; i < length; i += 1) {
+    const h = hs[i]!
     out.push(`  Line ${h.line}: ${h.text}`)
     out.push(
       `  Fix:           replace \`${h.fullCall}(\` with \`${h.replacement}(\``,
@@ -107,7 +109,7 @@ export function isInScope(filePath: string): boolean {
     return false
   }
   // Match TypeScript source extensions: .ts, .mts, .cts, and .tsx.
-  if (!/\.(?:m?ts|tsx|cts)$/.test(filePath)) {
+  if (!/\.(?:cts|m?ts|tsx)$/.test(filePath)) {
     return false
   }
   for (let i = 0, { length } = EXEMPT_PATH_PATTERNS; i < length; i += 1) {
@@ -158,12 +160,12 @@ const DECORATION_EXEMPT_PATTERNS: RegExp[] = [
   /(?:^|\/)upstream\//,
   /(?:^|\/)fixtures\//,
   /(?:^|\/)src\/logger\//,
-  /\.(?:spec|test)\.(?:m?[jt]s|tsx?|cts|mts)$/,
+  /\.(?:spec|test)\.(?:cts|m?[jt]s|mts|tsx?)$/,
 ]
 
 export function isInDecorationScope(filePath: string): boolean {
   // Same extension gate as isInScope: only .ts, .mts, .cts, and .tsx files.
-  if (!filePath || !/\.(?:m?ts|tsx|cts)$/.test(filePath)) {
+  if (!filePath || !/\.(?:cts|m?ts|tsx)$/.test(filePath)) {
     return false
   }
   for (let i = 0, { length } = DECORATION_EXEMPT_PATTERNS; i < length; i += 1) {

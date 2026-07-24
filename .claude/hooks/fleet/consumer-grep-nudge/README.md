@@ -2,8 +2,7 @@
 
 PreToolUse Edit hook (reminder, NOT a block) that fires when an edit
 removes a CSS class, HTML attribute, or named export AND the repo has
-consumer-bearing subtrees (`upstream/`, `vendor/`, `third_party/`,
-`external/`, `deps/`, `additions/source-patched/`).
+consumer-bearing subtrees (`upstream/`, `additions/source-patched/`).
 
 ## Why
 
@@ -38,7 +37,7 @@ the reminder if they've already verified.
 When this fires, run something like:
 
 ```bash
-rg -nF '.removed-class' upstream/ vendor/ third_party/
+rg -nF '.removed-class' upstream/ additions/source-patched/
 ```
 
 If the grep finds hits, the removal needs coordination with the

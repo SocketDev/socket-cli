@@ -1,8 +1,8 @@
 /**
- * @file Classify a path as an EPHEMERAL scratch location — the Claude session
+ * @file Classify a path as an EPHEMERAL scratch location — the agent session
  *   scratchpad or a `/tmp` working draft — that is never committed repo source.
  *   A path qualifies only when it is BOTH under an OS temp root AND in a
- *   recognizable scratch area: a `scratchpad/` segment or a Claude session temp
+ *   recognizable scratch area: a `scratchpad/` segment or an agent session temp
  *   dir (`claude-<uid>/`). A repo worktree that merely happens to be checked
  *   out under `/tmp` (a CI runner, a `git worktree` in `/private/tmp`) has
  *   neither marker, so it is NOT ephemeral. Roots are segment-anchored, so a

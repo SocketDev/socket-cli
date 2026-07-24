@@ -28,6 +28,7 @@ import { isFleetRepo, slugFromRemoteUrl } from './fleet-repos.mts'
 import { gitOut } from './git-branch.mts'
 import { parseCommands } from './shell-command.mts'
 import type { ToolCallPayload } from './payload.mts'
+import { resolveProjectDir } from './project-dir.mts'
 
 /**
  * The effective directory a Bash command runs in: a leading/`&&`-chained
@@ -94,7 +95,7 @@ export function actedOnPath(payload: ToolCallPayload): string {
   if (filePath) {
     return path.dirname(filePath)
   }
-  const cwd = payload?.cwd || process.cwd()
+  const cwd = resolveProjectDir(payload?.cwd)
   const command =
     input && typeof input.command === 'string' ? input.command : undefined
   if (command) {

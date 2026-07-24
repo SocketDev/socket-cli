@@ -13,11 +13,12 @@
 //    pbcopy`): handing the user broken commands is the same defect as running
 //    them.
 //
-// 2. Local publish (REDIRECT to the remote/CI flow): a live `npm publish` /
-//    `pnpm publish` / `pnpm stage publish` run LOCALLY. The fleet publishes
+// 2. Local publish (REDIRECT to the sanctioned pipeline): a live `npm publish`
+//    / `pnpm publish` / `pnpm stage publish` run LOCALLY. The fleet publishes
 //    from GitHub Actions under OIDC trusted publishing + provenance — there is
-//    no local npm login, no local OTP. The block TEACHES the remote flow
-//    (`pnpm run remote:npm:publish`, or dispatch npm-publish.yml) rather than
+//    no local npm login, no local OTP. The block TEACHES the sanctioned entry
+//    (release-pipeline.mts → publish-pipeline.mts, whose stage-publish leg
+//    DISPATCHES the npm-publish.yml workflow and watches the run) rather than
 //    just refusing. Carve-out: the one-time `npm publish` of a `0.0.0`
 //    placeholder (npm trusted-publishing bootstrap — see
 //    scripts/fleet/publish-infra/npm/placeholder.mts) is ALLOWED; it is the
@@ -30,6 +31,19 @@
 //    mandatory. Run the read, then retry — the receipt makes the same command
 //    pass. (Applies to the placeholder carve-out too: reserving a name is still
 //    an irreversible publish.)
+//
+// 4. Local `cargo publish` (REDIRECT to the cargo engine): a crates.io publish
+//    is just as irreversible. The sanctioned entry is cargo-publish.mts, which
+//    orders the steps (publish first; tag + GH release LAST, behind crates.io
+//    index liveness). A `cargo publish --dry-run` preview passes.
+//
+// 5. Direct publish-runner invocations (REDIRECT to the pipeline): a live
+//    `node scripts/fleet/npm-publish.mts …` run directly publishes from THIS
+//    machine and skips the pipeline's receipts (bump → stage-publish → verify
+//    → approve → release ordering); `publish-pipeline.mts --local` is the same
+//    local-publish escape. Both are for humans / genuinely offline use — an
+//    agent goes through `publish-pipeline.mts` (no --local), whose publish leg
+//    dispatches CI. `--dry-run` invocations pass.
 //
 // Detection is AST-based (`parseCommands` on the fleet shell parser) for real
 // invocations; snippet-embedded publishes are found by whitespace-token
@@ -226,6 +240,67 @@ export function detectStagePublish(command: string): PublishHit[] {
 }
 
 /**
+ * Detect a local `cargo publish`. Same redirect posture as the npm family: a
+ * crates.io publish is irreversible, and the sanctioned entry is the cargo
+ * engine (cargo-publish.mts), which orders publish → liveness → tag+release.
+ * `--dry-run` is a harmless preview and is marked as such.
+ */
+export function detectCargoPublish(command: string): PublishHit[] {
+  const hits: PublishHit[] = []
+  for (const segment of commandsFor(command, 'cargo')) {
+    const bare = segment.args.filter(a => !a.startsWith('-'))
+    if (bare[0] === 'publish') {
+      hits.push({
+        dryRun: segment.args.includes('--dry-run'),
+        misparsedArg: undefined,
+        source: `cargo ${segment.args.join(' ')}`,
+        target: undefined,
+      })
+    }
+  }
+  return hits
+}
+
+// The publish-runner scripts an agent must not invoke directly: running them
+// from a local shell publishes from THIS machine, outside the pipeline's
+// receipts. The pipeline itself spawns npm-publish.mts as a CHILD process
+// (never a Bash tool command), so blocking the Bash shape never breaks it.
+const DIRECT_PUBLISH_SCRIPT_RE = /(?:^|\/)scripts\/fleet\/npm-publish\.mts$/
+const PUBLISH_PIPELINE_SCRIPT_RE =
+  /(?:^|\/)scripts\/fleet\/publish-pipeline\.mts$/
+
+/**
+ * Detect a direct local publish-runner invocation: `node …npm-publish.mts`
+ * (any mode — --staged uploads, --approve standalone cuts its own tag +
+ * release) or `node …publish-pipeline.mts --local` (the explicit local-publish
+ * escape). The plain `publish-pipeline.mts` (no --local) is the SANCTIONED
+ * entry and never hits.
+ */
+export function detectDirectPublishScript(command: string): PublishHit[] {
+  const hits: PublishHit[] = []
+  for (const segment of commandsFor(command, 'node')) {
+    const script = segment.args.find(a => !a.startsWith('-'))
+    if (!script) {
+      continue
+    }
+    const unix = normalizePath(script)
+    const isDirectRunner = DIRECT_PUBLISH_SCRIPT_RE.test(unix)
+    const isLocalPipeline =
+      PUBLISH_PIPELINE_SCRIPT_RE.test(unix) && segment.args.includes('--local')
+    if (!isDirectRunner && !isLocalPipeline) {
+      continue
+    }
+    hits.push({
+      dryRun: segment.args.includes('--dry-run'),
+      misparsedArg: undefined,
+      source: `node ${segment.args.join(' ')}`,
+      target: undefined,
+    })
+  }
+  return hits
+}
+
+/**
  * Resolve the local directory a publish acts on: a path-ish target
  * (`./dir`, `../dir`, `/abs`, `~/dir`) resolved against the command's effective
  * working dir; otherwise that working dir itself (a bare `publish` /
@@ -271,7 +346,7 @@ export function readPublishTargetVersion(
       return undefined
     }
     const parsed = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
-      version?: unknown
+      version?: unknown | undefined
     }
     return typeof parsed.version === 'string' ? parsed.version : undefined
   } catch {
@@ -371,22 +446,60 @@ export function formatRemoteRedirectBlock(hit: PublishHit): string {
       `  Command: ${hit.source}`,
       '',
       '  Releases publish from GitHub Actions under OIDC trusted publishing +',
-      '  provenance — no local npm login, no local OTP. Trigger the CI publish:',
+      '  provenance — no local npm login, no local OTP. The sanctioned entry is',
+      '  the pipeline; its stage-publish leg dispatches the npm-publish.yml',
+      '  workflow and watches the run:',
       '',
-      '    pnpm run remote:npm:publish              # dry-run (CI previews)',
-      '    pnpm run remote:npm:publish -- --publish # publish for real',
+      '    node scripts/fleet/release-pipeline.mts --version X.Y.Z  # readiness → bump',
+      '    node scripts/fleet/publish-pipeline.mts                  # stage-publish (CI) → verify',
+      '    node scripts/fleet/publish-pipeline.mts --approve        # 2FA promote → tag + GH release LAST',
       '',
-      '  or dispatch the workflow directly:',
-      '',
-      '    gh workflow run npm-publish.yml -f publish=true',
-      '',
-      '  The staged upload (`pnpm stage publish`) runs IN CI under the OIDC',
-      '  token; `pnpm run publish -- --approve` is the only local step (2FA',
-      '  promote of an already-staged package).',
+      '  Genuinely offline? The USER runs the pipeline with --local — an agent',
+      '  never publishes from the local machine.',
       '',
       '  Carve-out: the one-time `npm publish` of a 0.0.0 placeholder (the npm',
       '  trusted-publishing bootstrap — scripts/fleet/publish-infra/npm/placeholder.mts)',
       '  is allowed.',
+    ].join('\n') + '\n'
+  )
+}
+
+export function formatCargoRedirectBlock(hit: PublishHit): string {
+  return (
+    [
+      '[verify-before-publish-guard] Blocked: local `cargo publish` outside the cargo engine.',
+      '',
+      `  Command: ${hit.source}`,
+      '',
+      '  A crates.io publish is irreversible — a version can never be',
+      '  re-published. The sanctioned entry is the cargo engine, which orders',
+      '  the steps (publish first; tag + immutable GH release LAST, behind',
+      '  crates.io index liveness):',
+      '',
+      '    node scripts/fleet/cargo-publish.mts --approve',
+      '',
+      '  A `cargo publish --dry-run` preview passes this guard.',
+    ].join('\n') + '\n'
+  )
+}
+
+export function formatDirectScriptBlock(hit: PublishHit): string {
+  return (
+    [
+      '[verify-before-publish-guard] Blocked: direct publish-runner invocation — this publishes from the local machine.',
+      '',
+      `  Command: ${hit.source}`,
+      '',
+      '  `npm-publish.mts` run directly (and `publish-pipeline.mts --local`)',
+      '  publishes from THIS machine and skips the pipeline receipts (bump →',
+      '  stage-publish → verify → approve → release, the tag + GH release cut',
+      '  LAST behind registry liveness). The sanctioned entry:',
+      '',
+      '    node scripts/fleet/publish-pipeline.mts            # stage-publish dispatches npm-publish.yml → verify',
+      '    node scripts/fleet/publish-pipeline.mts --approve  # 2FA promote → tag + GH release LAST',
+      '',
+      '  --local / the direct runner are for humans on a genuinely offline',
+      '  machine. A `--dry-run` invocation passes this guard.',
     ].join('\n') + '\n'
   )
 }
@@ -409,7 +522,9 @@ export function formatUnverifiedBlock(hit: PublishHit): string {
 export const check = bashGuard((command, payload) => {
   const publishHits = detectPublishes(command)
   const stageHits = detectStagePublish(command)
-  const hits = [...publishHits, ...stageHits]
+  const cargoHits = detectCargoPublish(command)
+  const scriptHits = detectDirectPublishScript(command)
+  const hits = [...publishHits, ...stageHits, ...cargoHits, ...scriptHits]
   if (hits.length === 0) {
     return undefined
   }
@@ -418,10 +533,20 @@ export const check = bashGuard((command, payload) => {
   if (misparsed) {
     return block(formatMisparseBlock(misparsed))
   }
-  // Redirect a LIVE local publish to the remote/CI flow, unless it is the
+  // A live local `cargo publish` / direct publish-runner script is always a
+  // redirect (no placeholder analog). A --dry-run preview passes.
+  const liveCargo = cargoHits.find(h => !h.dryRun)
+  if (liveCargo) {
+    return block(formatCargoRedirectBlock(liveCargo))
+  }
+  const liveScript = scriptHits.find(h => !h.dryRun)
+  if (liveScript) {
+    return block(formatDirectScriptBlock(liveScript))
+  }
+  // Redirect a LIVE local publish to the pipeline, unless it is the
   // sanctioned 0.0.0 placeholder bootstrap. A --dry-run publish is a harmless
   // preview and passes.
-  const liveLocal = hits.find(h => !h.dryRun)
+  const liveLocal = [...publishHits, ...stageHits].find(h => !h.dryRun)
   if (liveLocal && !isPlaceholderBootstrap(command, liveLocal.target)) {
     return block(formatRemoteRedirectBlock(liveLocal))
   }

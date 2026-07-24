@@ -34,7 +34,7 @@ import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 
 // A Codex companion "quick check" gets ONE minute of wall clock; past it the
-// companion must wrap up and hand off sustained work to a full Claude session.
+// companion must wrap up and hand off sustained work to a full agent session.
 export const BUDGET_MS = 60_000
 
 const STORE = 'socket-codex-session'
@@ -83,14 +83,21 @@ export function isOwnSessionId(
 // companion id (sanitized to a safe filename). Runtime state — never tracked.
 export function markerFile(projectDir: string, companionId: string): string {
   const safe = companionId.replace(/[^A-Za-z0-9_-]/g, '')
-  return path.join(projectDir, 'node_modules', '.cache', STORE, `${safe}.json`)
+  return path.join(
+    projectDir,
+    'node_modules',
+    '.cache',
+    'fleet',
+    STORE,
+    `${safe}.json`,
+  )
 }
 
 // Read the stamped start timestamp; undefined when missing or unparseable.
 export function readStartMs(file: string): number | undefined {
   try {
     const parsed = JSON.parse(readFileSync(file, 'utf8')) as {
-      start?: unknown
+      start?: unknown | undefined
     }
     return typeof parsed.start === 'number' ? parsed.start : undefined
   } catch {
@@ -116,6 +123,7 @@ export function check(payload: ToolCallPayload): GuardResult {
   if (isOwnSessionId(companionId, payload.transcript_path)) {
     return undefined
   }
+  // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- reads the agent-provided CLAUDE_PROJECT_DIR first; process.cwd() is only the fallback when that env var is absent
   const projectDir = process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
   const file = markerFile(projectDir, companionId)
   const now = Date.now()
@@ -137,7 +145,7 @@ export function check(payload: ToolCallPayload): GuardResult {
       `  What:  this Codex companion (${companionId.slice(0, 8)}…) has run ${minutes} min; the budget is ${budgetLabel}.`,
       '  Why:   Codex companions are for QUICK CHECKS, not long sessions — a long',
       '         companion loops build/land work and monopolizes the shared checkout.',
-      '  Fix:   wrap up; hand sustained work to a full Claude session.',
+      '  Fix:   wrap up; hand sustained work to a full agent session.',
     ].join('\n'),
   )
 }

@@ -36,7 +36,6 @@
 // Fails OPEN on its own errors (exit 0 + stderr log).
 
 import path from 'node:path'
-import process from 'node:process'
 
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
@@ -44,6 +43,7 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
 import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 // Pre-flight: the dispatcher imports + runs this guard only when the raw
 // command contains one of these substrings. `check` can return a block only
@@ -132,7 +132,7 @@ function dashCDir(args: readonly string[]): string | undefined {
 
 export function firstBranchOp(
   command: string,
-): { kind: 'create' | 'switch'; dashC?: string } | undefined {
+): { kind: 'create' | 'switch'; dashC?: string | undefined } | undefined {
   for (const c of commandsFor(command, 'git')) {
     const kind = branchOpKind(c.args)
     if (kind) {
@@ -148,7 +148,7 @@ export const check = bashGuard((command, payload) => {
   if (!op) {
     return undefined
   }
-  const baseCwd = payload.cwd ?? process.cwd()
+  const baseCwd = resolveProjectDir(payload.cwd)
   // A `-C <path>` on the branch-op command redirects it to <path>; judge THAT
   // directory (resolved against the session cwd), else the session cwd.
   const cwd = op.dashC ? path.resolve(baseCwd, op.dashC) : baseCwd

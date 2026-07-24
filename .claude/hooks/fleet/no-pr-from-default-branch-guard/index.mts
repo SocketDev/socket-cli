@@ -19,12 +19,11 @@
 //
 // Bypass: `Allow pr-from-default-branch bypass` in a recent user turn.
 
-import process from 'node:process'
-
 import { ghPrCreateCommand, isGhPrCreate } from '../_shared/gh-pr-command.mts'
 import { currentBranch, resolveDefaultBranch } from '../_shared/git-branch.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { flagValue } from '../_shared/shell-command.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 // The `gh pr create` detection is the shared parser-backed one; re-exported
 // so this guard's tests exercise the exact predicate the check runs.
@@ -70,7 +69,7 @@ export const hook = defineHook({
     if (!isGhPrCreate(command)) {
       return undefined
     }
-    const cwd = payload.cwd ?? process.cwd()
+    const cwd = resolveProjectDir(payload.cwd)
     const head = resolvePrHead(command, cwd)
     if (!head) {
       return undefined

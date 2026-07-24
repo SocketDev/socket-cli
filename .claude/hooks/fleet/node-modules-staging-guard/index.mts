@@ -41,7 +41,7 @@ export const triggers: readonly string[] = [
 // env-var assignments (`FOO=bar git add ...`).
 export function findGitAddForceInvocations(command: string): string[][] {
   const out: string[][] = []
-  const segments = command.split(/(?:&&|\|\||;|\n)/)
+  const segments = command.split(/(?:&&|;|\n|\|\|)/)
   for (let i = 0, { length } = segments; i < length; i += 1) {
     const segment = segments[i]!
     const tokens = segment.trim().split(/\s+/)
@@ -102,8 +102,8 @@ export const check = bashGuard(command => {
   const blockedArgs: string[] = []
   for (let i = 0, { length } = forced; i < length; i += 1) {
     const restArgs = forced[i]!
-    for (let i = 0, { length } = restArgs; i < length; i += 1) {
-      const arg = restArgs[i]!
+    for (let j = 0, { length: len } = restArgs; j < len; j += 1) {
+      const arg = restArgs[j]!
       if (isForbiddenPath(arg)) {
         blockedArgs.push(arg)
       }

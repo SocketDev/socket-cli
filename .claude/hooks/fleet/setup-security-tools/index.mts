@@ -51,6 +51,7 @@ import {
   missingCoreShims,
 } from './lib/shims.mts'
 import { isHookEntrypoint } from '../_shared/entrypoint.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 interface Finding {
   readonly kind:
@@ -97,17 +98,16 @@ export function checkEdition(): Finding[] {
   const isEnt = content.includes('sfw-enterprise')
   // Setup tooling detects whether a token is present in the raw env; the
   // keychain-fallback getter would defeat that "is it wired up yet?" check.
+  // Only the canonical SOCKET_API_TOKEN counts — legacy aliases
+  // (SOCKET_API_KEY et al.) are retired per socket-api-token-env.
   // socket-api-token-getter: allow direct-env
-  const apiKeyInEnv = !!process.env['SOCKET_API_KEY']
-  // socket-api-token-getter: allow direct-env
-  const apiTokenInEnv = !!process.env['SOCKET_API_TOKEN']
-  const tokenPresent = apiKeyInEnv || apiTokenInEnv
+  const tokenPresent = !!process.env['SOCKET_API_TOKEN']
   if (isFree && tokenPresent) {
     return [
       {
         kind: 'edition-mismatch',
         message:
-          'SOCKET_API_KEY is set but the SFW shim is the free build. ' +
+          'SOCKET_API_TOKEN is set but the SFW shim is the free build. ' +
           'Run `node .claude/hooks/fleet/setup-security-tools/install.mts` to ' +
           'switch to sfw-enterprise (org-aware malware scanning + private ' +
           'package data).',
@@ -261,7 +261,7 @@ export function repairShims(home: string): Finding[] {
   // every member), not a per-machine bash script — regeneration IS that
   // script (code-first: one generator owns the shims).
   const generator = path.join(
-    process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd(),
+    resolveProjectDir(),
     'scripts',
     'fleet',
     'setup',

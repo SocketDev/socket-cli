@@ -119,8 +119,8 @@ async function main(): Promise<void> {
     setTimeout(() => resolve(), 100)
   })
 
-  const root = process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
-  if (!existsSync(root)) {
+  const root = process.env['CLAUDE_PROJECT_DIR']
+  if (!root || !existsSync(root)) {
     return
   }
   const { swept, errors } = await sweepDsStore(root)

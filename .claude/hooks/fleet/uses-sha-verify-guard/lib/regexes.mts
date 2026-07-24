@@ -42,7 +42,7 @@ export const SUBMODULE_OPEN_RE = /^\s*\[submodule\s+"(?<name>[^"]+)"\s*\]\s*$/
 // submodule block. Captures owner/repo so we can verify the
 // submodule's `ref = <40hex>` against the right upstream repo.
 export const GITMODULES_URL_RE =
-  /^\s*url\s*=\s*(?:https?:\/\/github\.com\/|git@github\.com:)(?<ownerRepo>[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+?)(?:\.git)?\s*$/
+  /^\s*url\s*=\s*(?:git@github\.com:|https?:\/\/github\.com\/)(?<ownerRepo>[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+?)(?:\.git)?\s*$/
 
 // Match `git+https://github.com/<owner>/<repo>(.git)?#<ref>` in JSON.
 // Captures owner/repo and ref. Tolerates quoting around the URL value.

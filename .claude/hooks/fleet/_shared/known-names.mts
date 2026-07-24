@@ -12,7 +12,7 @@
 
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
+import { resolveProjectDir } from './project-dir.mts'
 
 // Curated names that recur in fleet prose but aren't dependencies of THIS repo
 // (e.g. Rust crates discussed in support-matrix docs). Keep SMALL + concrete;
@@ -205,13 +205,16 @@ export function blankNonProse(text: string): string {
 
 export function findBareKnownNames(
   prose: string,
-  options?: { names?: Set<string> | undefined; repoRoot?: string | undefined },
+  options?:
+    | { names?: Set<string> | undefined; repoRoot?: string | undefined }
+    | undefined,
 ): BareNameHit[] {
   const opts = { __proto__: null, ...options } as {
     names?: Set<string> | undefined
     repoRoot?: string | undefined
   }
-  const names = opts.names ?? buildKnownNames(opts.repoRoot ?? process.cwd())
+  const names =
+    opts.names ?? buildKnownNames(opts.repoRoot ?? resolveProjectDir())
   if (!names.size) {
     return []
   }

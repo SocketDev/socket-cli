@@ -144,7 +144,10 @@ async function main(): Promise<void> {
   }
 
   const timestamp = new Date().toISOString()
-  const cwd = process.cwd()
+  // process.cwd() is unstable for a hook subprocess — anchor on the
+  // agent-provided project-root env var instead, falling back to the
+  // home dir so the log line never records an empty column.
+  const cwd = process.env['CLAUDE_PROJECT_DIR'] || os.homedir()
   const line = buildLine(timestamp, skillName, cwd)
 
   try {

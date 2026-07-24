@@ -30,6 +30,7 @@ import {
   readRoster,
   resolveRepoName,
 } from '../_shared/fleet-roster.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 const DEFAULT_HISTORY_COMMIT_THRESHOLD = Number.parseInt(
   process.env['SOCKET_SQUASH_HISTORY_COMMIT_THRESHOLD'] ?? '50',
@@ -59,7 +60,7 @@ export const check = (
   options: SquashHistoryCheckOptions = {},
 ): GuardResult => {
   const opts = { __proto__: null, ...options } as SquashHistoryCheckOptions
-  const cwd = payload?.cwd ?? process.cwd()
+  const cwd = resolveProjectDir(payload?.cwd)
   const commitThreshold =
     opts.commitThreshold ?? DEFAULT_HISTORY_COMMIT_THRESHOLD
 

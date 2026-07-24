@@ -1,5 +1,5 @@
 {
-  "name": "hook-marketplace-comment-guard",
+  "name": "hook-no-total-squash-guard",
   "private": true,
   "type": "module",
   "main": "./index.mts",
@@ -8,5 +8,8 @@
   },
   "scripts": {
     "test": "node --test test/*.test.mts"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:"
   }
 }

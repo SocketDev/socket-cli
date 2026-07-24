@@ -39,7 +39,7 @@ const HTML_EXT_RE = /\.(?:astro|ejs|handlebars|hbs|htm|html|njk|svelte|vue)$/i
 
 // JS/TS source extensions: optional `m` or `c` prefix, then `js`/`ts`
 // with an optional `x` suffix (JSX/TSX), anchored to the end of the path.
-const SOURCE_EXT_RE = /\.(?:m?[jt]sx?|cts|cjs)$/i
+const SOURCE_EXT_RE = /\.(?:cjs|cts|m?[jt]sx?)$/i
 
 // Match each `<script ...>` opener and capture its attribute body.
 const SCRIPT_OPENER_RE = /<script\b(?<attrs>[^>]*)>/gi

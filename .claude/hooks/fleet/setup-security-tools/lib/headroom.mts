@@ -73,7 +73,9 @@ export function lockdownViolations(
   applied: Readonly<Record<string, string>>,
 ): string[] {
   const out: string[] = []
-  for (const key of Object.keys(REQUIRED_LOCKDOWN)) {
+  const keys = Object.keys(REQUIRED_LOCKDOWN)
+  for (let i = 0, { length } = keys; i < length; i += 1) {
+    const key = keys[i]!
     const want = REQUIRED_LOCKDOWN[key]!
     if (applied[key] !== want) {
       out.push(
@@ -116,16 +118,16 @@ export function lockdownWrapperScriptWin(venvBin: string): string {
 // `_dlx/<hash>` venv is fronted by a readable rack/<tool>/<version> handle, the
 // 1-path-1-reference owner of a tool install destination. Byte-compatible with
 // upstream; REPLACE this local def with the import once lib-stable ships it.
-export function getSocketRackToolDir(options: {
+export function getSocketRackToolDir(config: {
   tool: string
   version: string
 }): string {
-  const opts = { __proto__: null, ...options } as {
+  const cfg = { __proto__: null, ...config } as {
     tool: string
     version: string
   }
   return normalizePath(
-    path.join(getSocketWheelhouseDir(), 'rack', opts.tool, opts.version),
+    path.join(getSocketWheelhouseDir(), 'rack', cfg.tool, cfg.version),
   )
 }
 

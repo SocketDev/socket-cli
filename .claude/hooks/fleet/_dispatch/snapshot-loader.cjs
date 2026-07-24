@@ -46,9 +46,9 @@ function failOpenToIndex() {
 }
 
 let blobExists
-function hasBlobFile(blobPath) {
+function hasBlobFile(blobFilePath) {
   if (blobExists === undefined) {
-    blobExists = fs.existsSync(blobPath)
+    blobExists = fs.existsSync(blobFilePath)
   }
   return blobExists
 }

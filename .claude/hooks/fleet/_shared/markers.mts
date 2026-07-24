@@ -17,7 +17,7 @@
 // bare form (`socket-lint: allow`) leaves capture undefined and means
 // "blanket suppress every scanner on this line."
 export const SOCKET_LINT_MARKER_RE: RegExp =
-  /(?:#|\/\/|\/\*)\s*socket-lint:\s*allow(?:\s+([\w-]+))?/
+  /(?:#|\/\*|\/\/)\s*socket-lint:\s*allow(?:\s+([\w-]+))?/
 
 /**
  * Legacy marker names recognized as equivalent to a current rule for one
@@ -54,7 +54,10 @@ export function aliasMatches(marker: string, rule: string): boolean {
  * `rule === undefined` means "is any marker present at all" — used by generic
  * line-iteration helpers that don't carry a rule context.
  */
-export function lineIsSuppressed(line: string, rule?: string): boolean {
+export function lineIsSuppressed(
+  line: string,
+  rule?: string | undefined,
+): boolean {
   const m = line.match(SOCKET_LINT_MARKER_RE)
   if (!m) {
     return false

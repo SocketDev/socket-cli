@@ -5,6 +5,7 @@
 // reading stdin). The hook's index.mts and its unit test both import
 // PROSE_PATTERNS from here.
 
+import { AI_SLOP_PATTERNS } from '../_shared/ai-slop-patterns.mts'
 import { HONESTY_FRAMING_RE } from '../_shared/honesty-framing.mts'
 
 export interface ProsePattern {
@@ -24,17 +25,17 @@ export const PROSE_PATTERNS: readonly ProsePattern[] = [
   {
     label: 'throat-clearing opener',
     regex:
-      /^\s*(?:Here's the thing|Let me|It's worth noting|I should note)\b/im,
+      /^\s*(?:Here's the thing|I should note|It's worth noting|Let me)\b/im,
     why: 'Throat-clearing preamble. Open on the substance, drop the warm-up.',
   },
   {
     label: '"not X, it\'s Y" contrast',
-    regex: /\bnot\s+\w+[,.]?\s+(?:it's|it is|but rather)\b/i,
+    regex: /\bnot\s+\w+[,.]?\s+(?:but rather|it is|it's)\b/i,
     why: 'The "not X, it\'s Y" reversal is an AI-prose tic. State the point directly.',
   },
   {
     label: 'hedging adverb',
-    regex: /\b(?:basically|essentially|fundamentally|simply|just)\b/i,
+    regex: /\b(?:basically|essentially|fundamentally|just|simply)\b/i,
     why: 'Vague hedging adverb doing no work. Cut it or replace with the concrete fact.',
   },
   {
@@ -46,6 +47,10 @@ export const PROSE_PATTERNS: readonly ProsePattern[] = [
     regex: HONESTY_FRAMING_RE,
     why: 'Announcing your own honesty is throat-clearing. Drop "honest"/"papered over" framing and state the fact plainly.',
   },
+  // The no-ai-slop tells (purple-prose words, importance puffery, weasel
+  // attribution, colon reveals, faux-insight, summary-recap) are the shared
+  // _shared/ai-slop-patterns.mts source, so every prose surface flags them.
+  ...AI_SLOP_PATTERNS,
 ]
 
 /**
@@ -74,21 +79,21 @@ export const CHANGELOG_IMPL_PATTERNS: readonly ProsePattern[] = [
     // Scoped package names + the words deps carry. A user-facing entry
     // describes behavior, not which library moved.
     regex:
-      /@[a-z0-9-]+\/[a-z0-9-]+|\bdependenc(?:y|ies)\b|\blockfile\b|\btransitive\b/i,
+      /@[a-z0-9-]+\/[a-z0-9-]+|\bdependenc(?:ies|y)\b|\blockfile\b|\btransitive\b/i,
     why: 'Dependency/lockfile mention — implementation detail. Describe the user-visible behavior that changed, not which package moved.',
   },
   {
     label: 'version-bump phrasing',
     // Matches "bumped/upgraded/pinned … to v1.2" — implementation-detail version deltas.
     regex:
-      /\b(?:bump(?:ed|s|ing)?|upgrad(?:e|ed|ing)|pin(?:ned)?)\b[^\n]*\bto\b\s*v?\d+\.\d+/i,
+      /\b(?:bump(?:ed|ing|s)?|pin(?:ned)?|upgrad(?:e|ed|ing))\b[^\n]*\bto\b\s*v?\d+\.\d+/i,
     why: 'Version-bump phrasing — implementation detail. State what the user can now do or what stopped breaking, not the version delta.',
   },
   {
     label: '"resolved by" / mechanism tail',
     // Matches "resolved by", "fixed by upgrading/bumping/pinning", or "by upgrading/bumping/pinning".
     regex:
-      /\bresolved by\b|\bfixed by (?:upgrad|bump|pin)|\bby (?:upgrad|bump|pin)/i,
+      /\bresolved by\b|\bfixed by (?:bump|pin|upgrad)|\bby (?:bump|pin|upgrad)/i,
     why: 'The "resolved by upgrading X" tail explains the how. Cut it — the reader cares what changed, not the mechanism.',
   },
   {
@@ -96,7 +101,7 @@ export const CHANGELOG_IMPL_PATTERNS: readonly ProsePattern[] = [
     // Wire/transport/internal-API tokens that surface the plumbing rather
     // than the observable behavior.
     regex:
-      /\b(?:content-encoding|decodeBody|brotli|gzip|httpRequest|OIDC|job_workflow_ref|reusable workflow)\b/i,
+      /\b(?:OIDC|brotli|content-encoding|decodeBody|gzip|httpRequest|job_workflow_ref|reusable workflow)\b/i,
     why: 'Internal mechanism token — implementation detail. Describe the observable outcome, not the plumbing.',
   },
 ]

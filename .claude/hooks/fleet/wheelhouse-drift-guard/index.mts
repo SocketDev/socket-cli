@@ -28,21 +28,8 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { isFleetTarget } from '../_shared/fleet-context.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import { NATIVE_HANDLER_FILES } from '../_shared/native-handler-files.mts'
 import { resolveEditedText } from '../_shared/payload.mts'
-
-// Files under `template/base` distributed by a per-file cascade handler rather
-// than a manifest byte-list — so editing the root copy is NOT byte-drift
-// (content legitimately varies / is generated per repo). `.claude/settings.json`
-// is merge-cascaded (settings-merge), `README.md` is per-repo content
-// (readme-skeleton-drift), `.github/aw/actions-lock.json` is the gh-aw
-// `gh aw compile` companion. The classification belt scan imports this list, so
-// the write-time guard and the scan can never disagree on the native-handler
-// set. Sorted.
-export const NATIVE_HANDLER_FILES: readonly string[] = [
-  '.claude/settings.json',
-  '.github/aw/actions-lock.json',
-  'README.md',
-]
 
 /**
  * Injected classification + resolution seam (pure predicate below stays

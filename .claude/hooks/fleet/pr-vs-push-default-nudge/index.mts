@@ -26,7 +26,6 @@
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { readFileSync } from 'node:fs'
-import process from 'node:process'
 
 import { isFleetRepo, originSlug } from '../_shared/fleet-repos.mts'
 import { bashGuard, defineHook, notify, runHook } from '../_shared/guard.mts'
@@ -34,6 +33,7 @@ import { commandsFor } from '../_shared/shell-command.mts'
 import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 
 import type { Command } from '../_shared/shell-command.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 // Patterns that signal "I want a PR." Match against the FULL trimmed
 // text of any of the last N user turns.
@@ -63,8 +63,8 @@ export function currentBranch(cwd: string): string | undefined {
 export function hasPrDirective(turns: string[]): boolean {
   for (let i = 0, { length } = turns; i < length; i += 1) {
     const text = turns[i]!
-    for (let i = 0, { length } = PR_DIRECTIVE_PATTERNS; i < length; i += 1) {
-      const re = PR_DIRECTIVE_PATTERNS[i]!
+    for (let j = 0, { length: len } = PR_DIRECTIVE_PATTERNS; j < len; j += 1) {
+      const re = PR_DIRECTIVE_PATTERNS[j]!
       if (re.test(text)) {
         return true
       }
@@ -96,7 +96,7 @@ function isGhPrCreateCmd(c: Command): boolean {
 function flagValue(
   args: readonly string[],
   long: string,
-  short?: string,
+  short?: string | undefined,
 ): string | undefined {
   for (let i = 0, { length } = args; i < length; i += 1) {
     const a = args[i]!
@@ -137,7 +137,8 @@ function pushTargetsDefault(c: Command, defaultBranch: string): boolean {
   const refspecs = c.args.filter(
     a => !a.startsWith('-') && a !== 'push' && a !== 'origin',
   )
-  for (const ref of refspecs) {
+  for (let i = 0, { length } = refspecs; i < length; i += 1) {
+    const ref = refspecs[i]!
     const dst = ref.includes(':') ? ref.slice(ref.indexOf(':') + 1) : ref
     if (dst === defaultBranch) {
       return true
@@ -266,7 +267,9 @@ export function readRecentUserTurnTexts(
     return []
   }
   const turns: string[] = []
-  for (const line of raw.split(/\r?\n/)) {
+  const lineList = raw.split(/\r?\n/)
+  for (let i = 0, { length } = lineList; i < length; i += 1) {
+    const line = lineList[i]!
     if (!line.trim()) {
       continue
     }
@@ -311,7 +314,7 @@ export const hook = defineHook({
       return undefined
     }
 
-    const cwd = payload.cwd ?? process.cwd()
+    const cwd = resolveProjectDir(payload.cwd)
     const branch = currentBranch(cwd)
     if (!branch) {
       return undefined

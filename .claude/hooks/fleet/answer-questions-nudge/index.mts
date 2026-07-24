@@ -34,41 +34,41 @@ const DEFLECTION_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> = [
   {
     label: "right now I'm / right now I am",
     // \bright\s+now\s+ = "right now" word boundary; i'? = optional apostrophe; (?:m|\s+am) = "I'm" or "I am"
-    regex: /\bright\s+now\s+i'?(?:m|\s+am)\b/i,
+    regex: /\bright\s+now\s+i'?(?:\s+am|m)\b/i,
   },
   {
     label: 'let me finish / let me first',
     // (?:let\s+me\s+...|finish\s+first) = "let me {finish|first|wrap}" or "finish first"; outer group unused
-    regex: /\b(?:let\s+me\s+(?:finish|first|wrap)|finish\s+first)\b/i,
+    regex: /\b(?:finish\s+first|let\s+me\s+(?:finish|first|wrap))\b/i,
   },
   {
     label:
       "that's a (structural|bigger|separate) (fix|refactor|question) (for|later)",
     regex:
       // that'?s = "that's"/"thats"; (?:a\s+)? = optional "a "; adjective/noun/disposition alternations non-capturing
-      /\bthat'?s\s+(?:a\s+)?(?:structural|bigger|separate|different)\s+(?:fix|refactor|question|issue|concern)\s+(?:for\s+later|though|\.\s)/i,
+      /\bthat'?s\s+(?:a\s+)?(?:bigger|different|separate|structural)\s+(?:concern|fix|issue|question|refactor)\s+(?:\.\s|for\s+later|though)/i,
   },
   {
     label: 'for now / for the moment',
     // \bfor\s+ = "for"; (?:now|the\s+moment) = time phrase; continuation word non-capturing
-    regex: /\bfor\s+(?:now|the\s+moment)\s*,?\s+(?:i'?m|let\s+me|focus)/i,
+    regex: /\bfor\s+(?:now|the\s+moment)\s*,?\s+(?:focus|i'?m|let\s+me)/i,
   },
   {
     label: "I'll come back to / get to that",
     // \bi'?ll\s+ = "I'll"; verb phrase and pronoun alternations non-capturing
-    regex: /\bi'?ll\s+(?:come\s+back\s+to|get\s+to)\s+(?:that|it|this)\b/i,
+    regex: /\bi'?ll\s+(?:come\s+back\s+to|get\s+to)\s+(?:it|that|this)\b/i,
   },
   {
     label: 'later — focus / first',
     regex:
       // (?:later|that\s+(?:part|piece)) = deferral noun; [—–-] = em/en/hyphen dash; focus/first/right now
-      /\b(?:later|that\s+(?:part|piece))\s*[—–-]\s*(?:focus|first|right\s+now)/i,
+      /\b(?:later|that\s+(?:part|piece))\s*[—–-]\s*(?:first|focus|right\s+now)/i,
   },
   {
     label: 'noted / good question — moving on',
     regex:
       // (?:noted|good\s+...|fair\s+...) = opener; [.—-] = separator; continuation word non-capturing
-      /\b(?:noted|good\s+(?:question|catch)|fair\s+(?:point|question))\s*[.—-]\s+(?:moving|continuing|but\s+first)/i,
+      /\b(?:fair\s+(?:point|question)|good\s+(?:catch|question)|noted)\s*[.—-]\s+(?:but\s+first|continuing|moving)/i,
   },
 ]
 
@@ -77,13 +77,13 @@ const DEFLECTION_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> = [
 // pivot.
 const PIVOT_PATTERNS: readonly RegExp[] = [
   // abort/cancel/halt synonyms and "stop and/that" two-word variants
-  /\b(?:stop\s+and|stop\s+that|abort|cancel|kill\s+it|halt)\b/i,
+  /\b(?:abort|cancel|halt|kill\s+it|stop\s+and|stop\s+that)\b/i,
   // directional pivot verbs: switch to, pivot to, focus on
-  /\b(?:switch\s+to|pivot\s+to|focus\s+on)\b/i,
+  /\b(?:focus\s+on|pivot\s+to|switch\s+to)\b/i,
   // "instead of/do" or "never mind" — negation of current course
-  /\b(?:instead\s+(?:of|do)|never\s+mind)\b/i,
+  /\b(?:instead\s+(?:do|of)|never\s+mind)\b/i,
   // "do X now" — imperative redirect: leading verb + noun + "now"
-  /^\s*(?:do|run|execute|make)\s+\w+\s+now\b/i,
+  /^\s*(?:do|execute|make|run)\s+\w+\s+now\b/i,
 ]
 
 // Question-shape detector applied to the most recent user turn.

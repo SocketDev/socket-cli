@@ -56,11 +56,16 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { existsSync, lstatSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { pathToFileURL } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { isHookEntrypoint } from '../_shared/entrypoint.mts'
 import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 
-const PROJECT_DIR = process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
+// This hook lives at `.claude/hooks/fleet/broken-hook-detector/index.mts`, so
+// its own location is four levels below the project root — used only as the
+// last-resort fallback when the agent runner hasn't set CLAUDE_PROJECT_DIR.
+const HERE = path.dirname(fileURLToPath(import.meta.url))
+const PROJECT_DIR =
+  process.env['CLAUDE_PROJECT_DIR'] ?? path.join(HERE, '..', '..', '..', '..')
 const HOOKS_DIR = path.join(PROJECT_DIR, '.claude', 'hooks')
 const NODE_MODULES = path.join(PROJECT_DIR, 'node_modules')
 const PNPM_STORE = path.join(NODE_MODULES, '.pnpm')

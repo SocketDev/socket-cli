@@ -23,9 +23,9 @@
 import { existsSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import process from 'node:process'
 
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 // The wheelhouse is the fleet's shared memory store — facts that apply to every
 // fleet repo (canonical rules, cascade mechanics, cross-repo standards) belong
@@ -110,7 +110,7 @@ export function memoryHint(cwd: string): string | undefined {
 }
 
 export const check = () => {
-  const hint = memoryHint(process.cwd())
+  const hint = memoryHint(resolveProjectDir())
   if (!hint) {
     return undefined
   }

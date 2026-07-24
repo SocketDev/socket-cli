@@ -50,8 +50,10 @@
 //
 // The hook fails OPEN on its own bugs (exit 0 + stderr log).
 
-import { findTemplateLiterals, walkSimple } from '../_shared/acorn/index.mts'
-import type { AcornNode, TemplateLiteralSite } from '../_shared/acorn/index.mts'
+import { walkSimple } from '../_shared/ast/core.mts'
+import { findTemplateLiterals } from '../_shared/ast/literals.mts'
+import type { AcornNode } from '../_shared/ast/core.mts'
+import type { TemplateLiteralSite } from '../_shared/ast/literals.mts'
 import {
   block,
   defineHook,
@@ -216,12 +218,12 @@ export function checkRuleB(calls: PathCall[]) {
     if (!hasBuildContext) {
       continue
     }
-    for (let i = 0; i < call.literals.length - 1; i++) {
+    for (let j = 0; j < call.literals.length - 1; j++) {
       if (
-        call.literals[i] === '..' &&
-        KNOWN_SIBLING_PACKAGES.has(call.literals[i + 1]!)
+        call.literals[j] === '..' &&
+        KNOWN_SIBLING_PACKAGES.has(call.literals[j + 1]!)
       ) {
-        const sibling = call.literals[i + 1]!
+        const sibling = call.literals[j + 1]!
         throw new BlockError(
           'B — cross-package path traversal',
           `Don't reach into '${sibling}'s build output via \`..\`. Add \`${sibling}: workspace:*\` as a dep and import its \`paths.mts\` via the \`exports\` field. 1 path, 1 reference.`,

@@ -28,14 +28,13 @@
 //
 // Fires as a PreToolUse Bash hook; exits 0 always (reminder-only).
 
-import process from 'node:process'
-
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { currentBranch, resolveDefaultBranch } from '../_shared/git-branch.mts'
 import { bashGuard, defineHook, notify, runHook } from '../_shared/guard.mts'
 import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 import { gitCommitSegments } from '../_shared/commit-command.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 // Amend excluded on purpose: amending the tip is not branch reuse. The
 // segment parse is the shared one — a positional arg that merely CONTAINS
@@ -71,7 +70,7 @@ export const check = bashGuard((command, payload) => {
   if (!isGitCommit(command)) {
     return undefined
   }
-  const cwd = payload.cwd ?? process.cwd()
+  const cwd = resolveProjectDir(payload.cwd)
   const branch = currentBranch(cwd)
   if (!branch) {
     return undefined

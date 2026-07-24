@@ -14,7 +14,7 @@ scripts. A test under `scripts/**` is invisible to the vitest runner — the fle
 runs it — so it silently never executes. That's worse than no test: it looks
 green while proving nothing.
 
-Reusable test helpers belong in `test/_shared/fleet/lib/`, not a
+Reusable test helpers belong in `test/fleet/_shared/lib/`, not a
 `scripts/**/test/helpers.mts`.
 
 ## What it allows

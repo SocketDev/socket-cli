@@ -6,11 +6,11 @@
 // rules.
 //
 // Runs in BLOCKING mode: when a match is found, the hook returns a
-// `block()` verdict so Claude must continue the turn and address the
+// `block()` verdict so the agent must continue the turn and address the
 // matched phrase (e.g. fix the "pre-existing" TS errors) rather than
 // ending the turn on the excuse. The block is suppressed when
 // `stop_hook_active` is set, so this can fire at most once per stop
-// chain — Claude is given one forced chance to fix or to state the
+// chain — the agent is given one forced chance to fix or to state the
 // trade-off explicitly; after that it degrades to a non-blocking
 // `notify()`.
 
@@ -35,11 +35,12 @@ import {
   stripCodeFences,
   stripQuotedSpans,
 } from '../_shared/transcript.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 const NAME = 'excuse-detector'
 
 const CLOSING_HINT =
-  "These phrases usually precede a deferral. The Stop hook will block once so Claude must act on the matched item — either fix it now, or state the trade-off explicitly with the user's constraint."
+  "These phrases usually precede a deferral. The Stop hook will block once so the agent must act on the matched item — either fix it now, or state the trade-off explicitly with the user's constraint."
 
 // Deferral-verb fragment shared by every bare-phrase pattern that
 // the assistant might quote descriptively in a summary. Phrases
@@ -123,21 +124,21 @@ const PATTERNS: readonly RuleViolation[] = [
     label: 'should I implement … or accept',
     regex:
       // "should I/we [fix-verb] … or [defer-verb]" — fix-vs-defer binary offered as a question.
-      /\bshould (?:i|we) (?:build|do|fix|implement) [^.?!\n]+(?:or|,)\s+(?:accept|defer|document|leave|skip|treat)\b/i,
+      /\bshould (?:i|we) (?:build|do|fix|implement) [^.?!\n]+(?:,|or)\s+(?:accept|defer|document|leave|skip|treat)\b/i,
     why: 'CLAUDE.md "Fix > defer": this is a choice-architecture masquerading as a question. Fix it.',
   },
   {
     label: 'accept … as (a) (known )?gap',
     regex:
       // "accept [subject] as (a) (known|documented|expected) gap/drift/limitation" — gap-acceptance deferral.
-      /\baccept (?:this|it|that|[^.?!\n]{1,40}) as (?:a |an )?(?:known |documented |expected )?(?:drift|gap|limitation)\b/i,
+      /\baccept (?:this|it|that|[^.?!\n]{1,40}) as (?:a |an )?(?:documented |expected |known )?(?:drift|gap|limitation)\b/i,
     why: 'CLAUDE.md "Fix > defer": gap-acceptance is the rationalization branch. The fix is the answer unless the user explicitly asked for the trade-off.',
   },
   {
     label: 'two paths/options: fix … or',
     regex:
       // "two/three choices/options/paths … fix … or [defer-verb]" — presenting a menu instead of picking fix.
-      /\b(?:three|two) (?:choices|options|paths)[^.?!\n]{0,40}(?:fix|implement)[^.?!\n]{0,80}(?:or|,)\s+(?:accept|defer|document|leave|skip|treat)\b/i,
+      /\b(?:three|two) (?:choices|options|paths)[^.?!\n]{0,40}(?:fix|implement)[^.?!\n]{0,80}(?:,|or)\s+(?:accept|defer|document|leave|skip|treat)\b/i,
     why: 'CLAUDE.md "Fix > defer": collapsing the menu — pick the fix path, start the first sub-step.',
   },
   {
@@ -151,7 +152,7 @@ const PATTERNS: readonly RuleViolation[] = [
     label: 'want me to fix … or',
     regex:
       // "want me to [fix-verb] … or [defer-verb]" — re-litigating the fix decision instead of executing.
-      /\bwant me to (?:address|build|do|fix|implement) [^.?!\n]+(?:or|,)\s+(?:skip|defer|document|treat|accept|leave|move on)\b/i,
+      /\bwant me to (?:address|build|do|fix|implement) [^.?!\n]+(?:,|or)\s+(?:accept|defer|document|leave|move on|skip|treat)\b/i,
     why: 'CLAUDE.md "Fix > defer": same pattern — re-litigating the fix decision. The user already said yes by virtue of asking.',
   },
   {
@@ -170,7 +171,7 @@ const PATTERNS: readonly RuleViolation[] = [
     // fixed now").
     regex:
       // "[fix-verb] (it) … or (just) leave/let … broken/stranded/unfixed/…" — fix-vs-leave-broken false binary.
-      /\b(?:fix|correct|repair)(?:\s+it)?\b[^.?!\n]{0,80}(?:\bor\b|,)\s*(?:just\s+)?(?:leave|let)\b[^.?!\n]{0,40}\b(?:broken|stranded|unfixed|as[- ]is|stuck|blocked|failing|red)\b/i,
+      /\b(?:correct|fix|repair)(?:\s+it)?\b[^.?!\n]{0,80}(?:,|\bor\b)\s*(?:just\s+)?(?:leave|let)\b[^.?!\n]{0,40}\b(?:as[- ]is|blocked|broken|failing|red|stranded|stuck|unfixed)\b/i,
     why: 'CLAUDE.md "Fix > defer" + "Never offer fix-vs-accept-as-gap as a choice": fix-vs-leave-broken is not a real choice. Pick the fix and execute. The only valid exception is a genuinely large refactor or off-machine action — state that trade-off explicitly, do not present "leave it broken" as a peer option.',
   },
 ]
@@ -184,9 +185,9 @@ const PATTERNS: readonly RuleViolation[] = [
 export function relayedUnverifiedClaims(text: string): readonly ReminderHit[] {
   // (the) agent|audit|reviewer … found|flagged|reported … <digit>: structural count claim from an automated source.
   const CLAIM =
-    /\b(?:the )?(?:(?:sub)?agent|audit|reviewer)\b[^.?!\n]{0,40}\b(?:found|flagged|identified|reported|says?|claims?)\b[^.?!\n]{0,30}\d/gi
+    /\b(?:the )?(?:(?:sub)?agent|audit|reviewer)\b[^.?!\n]{0,40}\b(?:claims?|flagged|found|identified|reported|says?)\b[^.?!\n]{0,30}\d/gi
   const VERIFIED =
-    /\b(?:verif|grep|checked|confirm|spot-check|re-deriv|disprov|false|wrong|actually|but|however)\w*/i
+    /\b(?:actually|but|checked|confirm|disprov|false|grep|however|re-deriv|spot-check|verif|wrong)\w*/i
   const hits: ReminderHit[] = []
   for (const m of text.matchAll(CLAIM)) {
     const rest = text.slice(m.index)
@@ -248,17 +249,17 @@ export function hasLiveForeignActor(
 // so benign forward-looking prose ("I'll add tests next") does not match.
 const PROMISSORY_WAIT_PATTERNS: readonly RegExp[] = [
   // "watch/monitor … (to completion|when it finishes|until done)" — open-ended watch promise.
-  /\b(?:i'?ll?\s+)?(?:watch|monitor)\b[^.?!\n]{0,80}\b(?:to completion|when it (?:finishes|completes?|lands?)|until (?:it (?:finishes|completes?|lands?)|done))\b/i,
+  /\b(?:i'?ll?\s+)?(?:monitor|watch)\b[^.?!\n]{0,80}\b(?:to completion|until (?:done|it (?:completes?|finishes|lands?))|when it (?:completes?|finishes|lands?))\b/i,
   // "wait and see" — passive deferral while a run is live.
   /\bwait and see\b/i,
   // "if it (finishes|wedges|lands|completes)" — conditional on a live run's outcome.
-  /\bif it (?:finishes|wedges?|lands?|completes?|stalls?|hangs?|fails?)\b/i,
+  /\bif it (?:completes?|fails?|finishes|hangs?|lands?|stalls?|wedges?)\b/i,
   // "land whatever it leaves" — inheriting a live run's output instead of acting.
-  /\bland whatever it (?:leaves?|drops?|produces?|outputs?)\b/i,
+  /\bland whatever it (?:drops?|leaves?|outputs?|produces?)\b/i,
   // "verify … once it (completes|finishes|lands)" — deferring verification to run completion.
-  /\b(?:verify|check|confirm)\b[^.?!\n]{0,60}\bonce it (?:completes?|finishes?|lands?)\b/i,
+  /\b(?:check|confirm|verify)\b[^.?!\n]{0,60}\bonce it (?:completes?|finishes?|lands?)\b/i,
   // "I'll watch/monitor … (the workflow/run/agent/task) … to completion" — generic.
-  /\b(?:i'?ll?\s+)?(?:watch|monitor)\b[^.?!\n]{0,60}\b(?:workflow|run|agent|task|job)\b[^.?!\n]{0,60}\b(?:to completion|finish|complete|land)\b/i,
+  /\b(?:i'?ll?\s+)?(?:monitor|watch)\b[^.?!\n]{0,60}\b(?:agent|job|run|task|workflow)\b[^.?!\n]{0,60}\b(?:complete|finish|land|to completion)\b/i,
 ]
 
 // Delegate-wait patterns — UNGATED (no ledger check): a parent ending its
@@ -270,11 +271,11 @@ const PROMISSORY_WAIT_PATTERNS: readonly RegExp[] = [
 // prose never matches.
 const DELEGATE_WAIT_PATTERNS: readonly RegExp[] = [
   // "waiting for the delegate's report/reply/result" — parked parent.
-  /\b(?:wait(?:ing)?|park(?:ed|ing)?)\b[^.?!\n]{0,60}\b(?:delegate|sub-?agent|child agent)(?:'s)?\b[^.?!\n]{0,40}\b(?:report|repl(?:y|ies)|message|response|result)/i,
+  /\b(?:park(?:ed|ing)?|wait(?:ing)?)\b[^.?!\n]{0,60}\b(?:child agent|delegate|sub-?agent)(?:'s)?\b[^.?!\n]{0,40}\b(?:message|repl(?:ies|y)|report|response|result)/i,
   // "when/once the subagent reports back / messages me" — report-back that never arrives.
-  /\b(?:delegate|sub-?agent|child agent)\b[^.?!\n]{0,60}\b(?:reports? back|replies|sends? (?:a |its )?(?:message|report)|messages? me)\b/i,
+  /\b(?:child agent|delegate|sub-?agent)\b[^.?!\n]{0,60}\b(?:messages? me|replies|reports? back|sends? (?:a |its )?(?:message|report))\b/i,
   // "once the delegate finishes/completes/returns, I'll …" — turn-end deferral to a child.
-  /\b(?:once|when|after) (?:the |my |its )?(?:delegate|sub-?agent|child agent)\b[^.?!\n]{0,60}\b(?:finish|complet|report|repl|return)/i,
+  /\b(?:after|once|when) (?:its |my |the )?(?:child agent|delegate|sub-?agent)\b[^.?!\n]{0,60}\b(?:complet|finish|repl|report|return)/i,
   // "awaiting/expecting a SendMessage" — the exact mechanism that bounces.
   /\b(?:await|expect)(?:ing)?\b[^.?!\n]{0,40}\bsendmessage\b/i,
 ]
@@ -345,7 +346,7 @@ export const check = async (payload: ToolCallPayload): Promise<GuardResult> => {
   // not count as deferrals. Code-fence stripping is always on.
   const text = stripQuotedSpans(stripCodeFences(rawText))
 
-  const projectDir = process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
+  const projectDir = resolveProjectDir()
   const promissoryHits = promissoryWaitHits(
     text,
     payload?.transcript_path,
@@ -359,7 +360,7 @@ export const check = async (payload: ToolCallPayload): Promise<GuardResult> => {
 
   const message = formatReminderBlock(NAME, allHits, CLOSING_HINT)
 
-  // Blocking mode: return a block() verdict so Claude must continue the
+  // Blocking mode: return a block() verdict so the agent must continue the
   // turn and address the matched phrase. Suppressed when
   // `stop_hook_active` is already set, to avoid loops — that case degrades
   // to a non-blocking notice. `stop_hook_active` is a Stop-payload field

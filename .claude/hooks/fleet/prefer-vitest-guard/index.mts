@@ -113,8 +113,8 @@ export function globMatchesTestPath(glob: string, p: string): boolean {
 // glob like `test/*.test.mts`).
 function looksLikeTestFile(arg: string): boolean {
   return (
-    /\.(?:test|spec)\.[cm]?[jt]sx?\b/.test(arg) ||
-    /[*?].*\.(?:test|spec)\./.test(arg)
+    /\.(?:spec|test)\.[cm]?[jt]sx?\b/.test(arg) ||
+    /[*?].*\.(?:spec|test)\./.test(arg)
   )
 }
 

@@ -33,13 +33,13 @@ const MANIFEST_BASENAMES: ReadonlySet<string> = new Set([
 // `catalog:`/`npm:`/`workspace:` protocol, a bare `1.`, or `*`). Keeps a
 // scripts-only or metadata-only edit from firing.
 const PKG_DEP_RE =
-  /"(?:dependencies|devDependencies|optionalDependencies|peerDependencies|overrides)"\s*:|"[\w@./-]+"\s*:\s*"(?:[\^~]|>=?|\d+\.|catalog:|npm:|workspace:|\*)/
+  /"(?:dependencies|devDependencies|optionalDependencies|overrides|peerDependencies)"\s*:|"[\w@./-]+"\s*:\s*"(?:>=?|[\^~]|\*|\d+\.|catalog:|npm:|workspace:)/
 
 // pnpm-workspace.yaml dependency signal: a dep section key
 // (catalog / overrides / minimumReleaseAgeExclude), a soak/override list bullet
 // (`- 'name@ver'`), or a catalog/override entry (`'name': <spec>`).
 const WS_DEP_RE =
-  /\b(?:catalog|overrides|minimumReleaseAgeExclude)\b|^\s*-\s*'[^']+'|^\s*'[\w@./-]+'\s*:\s*['"\d]/m
+  /\b(?:catalog|minimumReleaseAgeExclude|overrides)\b|^\s*-\s*'[^']+'|^\s*'[\w@./-]+'\s*:\s*['"\d]/m
 
 /**
  * True when an Edit/Write to `package.json` or `pnpm-workspace.yaml` changed

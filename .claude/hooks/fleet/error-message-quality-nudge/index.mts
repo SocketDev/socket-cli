@@ -31,7 +31,7 @@
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
-import { findThrowNew } from '../_shared/acorn/index.mts'
+import { findThrowNew } from '../_shared/ast/literals.mts'
 import {
   ERROR_CLASS_RE,
   gradeMessage,

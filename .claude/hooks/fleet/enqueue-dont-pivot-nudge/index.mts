@@ -42,35 +42,35 @@ export const PIVOT_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> = [
   {
     label: 'pivot / pivoting (to / away from)',
     // matches "pivot", "pivoting", "pivoted", "pivots" as a word boundary
-    regex: /\bpivot(?:ing|ed|s)?\b/i,
+    regex: /\bpivot(?:ed|ing|s)?\b/i,
   },
   {
     label: 'switch / switching gears',
     // matches "switch gears", "switching gears", "switched gears"
-    regex: /\bswitch(?:ing|ed)?\s+gears\b/i,
+    regex: /\bswitch(?:ed|ing)?\s+gears\b/i,
   },
   {
     label: 'change / shift / refocus (my) focus',
     regex:
       // matches "change/shift/refocus [my/the/our] focus" in any inflection
-      /\b(?:change|changing|shift|shifting|re-?focus(?:ing|ed)?)\s+(?:my\s+|the\s+|our\s+)?focus\b/i,
+      /\b(?:change|changing|shift|shifting|re-?focus(?:ed|ing)?)\s+(?:my\s+|our\s+|the\s+)?focus\b/i,
   },
   {
     label: 'this changes the / my focus',
     // matches "changes the/my/our focus"
-    regex: /\bchanges?\s+(?:the|my|our)\s+focus\b/i,
+    regex: /\bchanges?\s+(?:my|our|the)\s+focus\b/i,
   },
   {
     label: 'new directive / directive shift',
     regex:
       // matches "new [high-priority/urgent/major] directive" or "directive shift/change/pivot"
-      /\b(?:new\s+(?:high-priority\s+|urgent\s+|major\s+)?directive|directive\s+(?:shift|change|pivot))\b/i,
+      /\b(?:directive\s+(?:change|pivot|shift)|new\s+(?:high-priority\s+|major\s+|urgent\s+)?directive)\b/i,
   },
   {
     label: 'major shift / change / pivot',
     // matches "major [directive/priority/focus] shift/pivot/change"
     regex:
-      /\bmajor\s+(?:directive\s+|priority\s+|focus\s+)?(?:shift|pivot|change)\b/i,
+      /\bmajor\s+(?:directive\s+|focus\s+|priority\s+)?(?:change|pivot|shift)\b/i,
   },
   {
     label: 'drop everything',
@@ -81,19 +81,19 @@ export const PIVOT_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> = [
     label: 'set aside / set down the current/in-flight work',
     regex:
       // matches "set[ting] aside/down [the/my/this] current/in-flight/in-progress"
-      /\bset(?:ting)?\s+(?:aside|down)\s+(?:the\s+|my\s+|this\s+)?(?:current|in-?flight|in-?progress)\b/i,
+      /\bset(?:ting)?\s+(?:aside|down)\s+(?:my\s+|the\s+|this\s+)?(?:current|in-?flight|in-?progress)\b/i,
   },
   {
     label: 'abandon the/my current/in-flight work',
     regex:
       // matches "abandon[ing] the/my/this current/in-flight/in-progress/queue/work"
-      /\babandon(?:ing)?\s+(?:the|my|this)\s+(?:current|in-?flight|in-?progress|queue|work)\b/i,
+      /\babandon(?:ing)?\s+(?:my|the|this)\s+(?:current|in-?flight|in-?progress|queue|work)\b/i,
   },
   {
     label: 'supersedes / overrides / takes priority over the current work',
     regex:
       // matches "supersedes/overrides/takes priority over my/the current/in-flight/in-progress"
-      /\b(?:supersedes?|overrides?|takes?\s+priority\s+over)\s+(?:my|the)\s+(?:current|in-?flight|in-?progress)\b/i,
+      /\b(?:overrides?|supersedes?|takes?\s+priority\s+over)\s+(?:my|the)\s+(?:current|in-?flight|in-?progress)\b/i,
   },
 ]
 
@@ -101,7 +101,7 @@ export const PIVOT_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> = [
 // matches, the assistant is doing what it was told — short-circuit.
 // matches explicit user directives: stop/halt/drop/urgent/before/switch/pivot/interrupt and variants
 export const USER_PIVOT_AUTHORIZATION_RE =
-  /\b(?:stop|halt|pause|drop\s+(?:everything|that|it|the\s+current|what)|forget\s+(?:that|the|it|about)|right\s+now|do\s+(?:this|that|it)\s+(?:now|first)|urgent(?:ly)?|asap|immediately|before\s+(?:anything|you\s+continue|that|finishing|moving)|prioritize\s+this|this\s+first|switch\s+to|pivot\s+to|change\s+(?:course|direction|focus)|new\s+(?:top\s+)?priority|interrupt\s+(?:your|the|my))\b/i
+  /\b(?:asap|before\s+(?:anything|finishing|moving|that|you\s+continue)|change\s+(?:course|direction|focus)|do\s+(?:it|that|this)\s+(?:first|now)|drop\s+(?:everything|it|that|the\s+current|what)|forget\s+(?:about|it|that|the)|halt|immediately|interrupt\s+(?:my|the|your)|new\s+(?:top\s+)?priority|pause|pivot\s+to|prioritize\s+this|right\s+now|stop|switch\s+to|this\s+first|urgent(?:ly)?)\b/i
 
 /**
  * Find every pivot tell in the assistant text. Returns the matched label +

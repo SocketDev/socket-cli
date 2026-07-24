@@ -197,7 +197,8 @@ export async function reapWedgedProxy(): Promise<number> {
       .split('\n')
       .map(s => s.trim())
       .filter(Boolean)
-    for (const pid of pids) {
+    for (let i = 0, { length } = pids; i < length; i += 1) {
+      const pid = pids[i]!
       const pidNum = Number(pid)
       if (!Number.isInteger(pidNum) || pidNum <= 1) {
         continue

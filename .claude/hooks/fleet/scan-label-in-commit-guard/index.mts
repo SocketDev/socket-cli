@@ -37,11 +37,11 @@
 
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 interface Hit {
   readonly label: string
@@ -174,7 +174,7 @@ export function extractCommitMessage(
 }
 
 export const check = bashGuard((command, payload: ToolCallPayload) => {
-  const cwd = payload.cwd ?? process.cwd()
+  const cwd = resolveProjectDir(payload.cwd)
   const body = extractCommitMessage(command, cwd)
   if (!body) {
     return undefined

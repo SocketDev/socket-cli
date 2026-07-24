@@ -11,7 +11,7 @@
  *   preserved across the rest. A guard import that throws is swallowed (fail
  *   open). Only contract-conformant guards (no `process.exit`, no top-level
  *   side effect beyond `runGuard`) belong in the manifest;
- *   `make-hook-dispatch.mts` enforces that and leaves any non-conformant guard
+ *   `gen/hook-dispatch.mts` enforces that and leaves any non-conformant guard
  *   registered as its own command.
  */
 
@@ -44,7 +44,9 @@ export function matcherMatches(matcher: string, tool: string): boolean {
   if (!matcher) {
     return true
   }
-  for (const m of matcher.split('|')) {
+  const ms = matcher.split('|')
+  for (let i = 0, { length } = ms; i < length; i += 1) {
+    const m = ms[i]!
     if (m === tool) {
       return true
     }
@@ -116,5 +118,6 @@ async function main(): Promise<void> {
   }
 }
 
+// socket-lint: allow top-level-await -- runnable ESM entrypoint (run directly via settings.json), never part of the CJS _dispatch/ bundle (that path is built from _dispatch/dispatch-entry.mts).
 // oxlint-disable-next-line socket/no-module-eval-side-effects -- runnable entrypoint script (run directly via settings.json), NOT a snapshot bundle member; top-level await is correct here. The snapshot-bootable path is the static _dispatch/ bundle, built from _dispatch/dispatch-entry.mts.
 await main()

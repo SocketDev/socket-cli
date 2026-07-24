@@ -15,7 +15,7 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 // A file under the repo test home. Path normalized to `/` first so the regex
 // stays single-separator; matched against an absolute or repo-relative path.
-const REPO_TEST_HOME_RE = /(?:^|\/)test\/repo\/(?:unit|integration|e2e)\//
+const REPO_TEST_HOME_RE = /(?:^|\/)test\/repo\/(?:e2e|integration|unit)\//
 
 export function isRepoTestHome(filePath: string): boolean {
   return REPO_TEST_HOME_RE.test(normalizePath(filePath))

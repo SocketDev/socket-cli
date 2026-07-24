@@ -32,9 +32,9 @@ const SERVICE_LEGACY = 'socket-cli'
 // SOCKET_API_KEY) both find the token without a second prompt. macOS triggers
 // one Keychain auth prompt per `add-generic-password` call, so writing two
 // slots means two prompts on first install — acceptable for a one-time setup.
-const WRITE_SLOTS = ['SOCKET_API_TOKEN', 'SOCKET_API_KEY'] as const
-const READ_SLOTS = ['SOCKET_API_TOKEN', 'SOCKET_API_KEY'] as const
-const DELETE_SLOTS = ['SOCKET_API_TOKEN', 'SOCKET_API_KEY'] as const
+const WRITE_SLOTS = ['SOCKET_API_TOKEN', 'SOCKET_API_TOKEN'] as const
+const READ_SLOTS = ['SOCKET_API_TOKEN', 'SOCKET_API_TOKEN'] as const
+const DELETE_SLOTS = ['SOCKET_API_TOKEN', 'SOCKET_API_TOKEN'] as const
 
 export function deleteLinux(account: string, service = SERVICE): void {
   spawnSync('secret-tool', ['clear', 'service', service, 'user', account], {

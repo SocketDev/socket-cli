@@ -20,7 +20,7 @@ export function isSkillOrCommandDoc(filePath: string): boolean {
   const normalized = normalizePath(filePath)
   // Anchored to a `.claude/` segment, then either a SKILL.md under skills/ or
   // any .md under commands/.
-  return /(?:^|\/)\.claude\/(?:skills\/.+\/SKILL\.md|commands\/.+\.md)$/.test(
+  return /(?:^|\/)\.claude\/(?:commands\/.+\.md|skills\/.+\/SKILL\.md)$/.test(
     normalized,
   )
 }

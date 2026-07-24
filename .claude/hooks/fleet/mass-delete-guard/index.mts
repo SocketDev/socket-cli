@@ -35,7 +35,6 @@
 //     "transcript_path": "/.../session.jsonl" }
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-import process from 'node:process'
 
 import { isGitCommit } from '../_shared/commit-command.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
@@ -43,6 +42,7 @@ import { isFleetSyncCommand } from '../_shared/shell-command.mts'
 import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 import { squashSentinelAllows } from '../_shared/squash-sentinel.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 const BYPASS_PHRASES = ['Allow mass-delete bypass'] as const
 
@@ -63,7 +63,7 @@ const DELETE_FLOOR = 50
 const DELETE_RATIO = 0.75
 
 export function getRepoDir(): string {
-  return process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
+  return resolveProjectDir()
 }
 
 export { isGitCommit }

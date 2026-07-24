@@ -33,12 +33,12 @@ import {
 // chars never matches. Instead we look for a non-word boundary OR
 // start-of-string before, and non-word OR end-of-string after.
 const DRIFT_SURFACE_RE =
-  /(^|\W)(external-tools\.json|template\/CLAUDE\.md|template\/\.claude\/hooks\/|\.github\/actions\/|lockstep\.json|\.gitmodules|setup-and-install|cache-versions\.json)(?=$|\W)/
+  /(^|\W)(\.github\/actions\/|\.gitmodules|cache-versions\.json|external-tools\.json|lockstep\.json|setup-and-install|template\/CLAUDE\.md|template\/\.claude\/hooks\/)(?=$|\W)/
 
 // Cascade-acknowledgement phrases. Any of these in the same turn
 // satisfies the check.
 const CASCADE_ACK_RE =
-  /\b(cascade|sync-scaffolding|drift|fleet|other repos?|downstream|chore\(wheelhouse\)|re-cascade|recascade|wheelhouse)\b/i
+  /\b(cascade|chore\(wheelhouse\)|downstream|drift|fleet|other repos?|re-cascade|recascade|sync-scaffolding|wheelhouse)\b/i
 
 // We want this to fire only when an EDIT actually happened, not just
 // a passing mention. The simplest proxy: look for verbs that imply

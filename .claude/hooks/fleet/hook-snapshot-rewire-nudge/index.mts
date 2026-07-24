@@ -8,7 +8,7 @@
  * The dispatch wiring is PER-MACHINE snapshot state owned by
  * `node scripts/fleet/setup/hook-snapshot.mts` (idempotent). Every fleet cascade
  * rewrites `settings.json` to `merge(template, repo-hooks)`, which reverts the
- * dispatch commands to the portable baseline (`_dispatch/index.cjs`) — SAFE and
+ * dispatch commands to the portable baseline (`index.cjs`) — SAFE and
  * correct on CI / a fresh checkout / a member, where the launcher was never set
  * up.
  *
@@ -101,7 +101,7 @@ export function nudgeMessage(): string {
       '',
       '  That dispatch wiring is PER-MACHINE snapshot state owned by',
       '  `node scripts/fleet/setup/hook-snapshot.mts` (idempotent). Every fleet',
-      '  cascade reverts it to the portable baseline (`_dispatch/index.cjs`) —',
+      '  cascade reverts it to the portable baseline (`index.cjs`) —',
       '  which is correct on CI / a fresh checkout / a member.',
       '',
       '  The `hook-snapshot-is-wired` check ("hook-snapshot-is-active") is',

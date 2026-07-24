@@ -50,11 +50,12 @@ import {
 import { block, defineHook, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 const EDIT_TOOLS = new Set(['Edit', 'NotebookEdit', 'Write'])
 
 function getProjectDir(): string {
-  return process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
+  return resolveProjectDir()
 }
 
 export const check = (payload: ToolCallPayload): GuardResult => {

@@ -30,40 +30,13 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { isFleetTarget } from '../_shared/fleet-context.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import { isNestedGitignore } from '../_shared/nested-gitignore.mts'
 
 // Upstream-owned trees that carry their own `.gitignore` (untracked-by-default,
 // per CLAUDE.md) — a nested `.gitignore` there is not fleet-managed.
 const VENDORED_PREFIX_RE =
-  /(?:^|\/)(?:vendor|third_party|external|upstream|deps|node_modules|additions\/source-patched|pkg-node)\//
-const VENDORED_SUFFIX_RE = /(?:-vendored|-bundled)(?:\/|$)/
-
-/**
- * A repo-relative POSIX path is a NESTED `.gitignore` (a violation) when its
- * basename is `.gitignore` and it does NOT sit at a canonical root — the repo
- * root (`.gitignore`) or a template archetype root (`template/<archetype>/
- * .gitignore`). Any deeper `.gitignore` is nested. Pure; shared with the
- * `gitignore-is-single-file` belt check so the two never diverge.
- */
-export function isNestedGitignore(repoRelativePath: string): boolean {
-  const p = normalizePath(repoRelativePath)
-  if (p !== '.gitignore' && !p.endsWith('/.gitignore')) {
-    return false
-  }
-  if (p === '.gitignore') {
-    return false
-  }
-  if (/^template\/[^/]+\/\.gitignore$/.test(p)) {
-    return false
-  }
-  // cargo-fuzz generates + owns `<crate>/fuzz/.gitignore` (ignores its transient
-  // target/artifacts/coverage output while the seed corpus stays tracked). It is
-  // a tool-mandated convention, not a fleet fork — exempt it so a Rust fuzz repo
-  // stays green.
-  if (p === 'fuzz/.gitignore' || p.endsWith('/fuzz/.gitignore')) {
-    return false
-  }
-  return true
-}
+  /(?:^|\/)(?:additions\/source-patched|deps|external|node_modules|pkg-node|third_party|upstream|vendor)\//
+const VENDORED_SUFFIX_RE = /(?:-bundled|-vendored)(?:\/|$)/
 
 /**
  * Resolve the git-toplevel-relative POSIX path for `filePath`, or undefined

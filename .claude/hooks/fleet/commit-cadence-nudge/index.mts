@@ -21,11 +21,10 @@
 // primary checkout, dirty-worktree-stop-guard + commit-pr-nudge cover
 // the dirty/landing cases; this hook stays quiet there to avoid double-nagging.
 
-import process from 'node:process'
-
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import { gitOut, resolveDefaultBranch } from '../_shared/git-branch.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 // A linked worktree has a distinct working-tree git dir from the common dir;
 // the primary checkout has them equal. Returns true only for linked worktrees.
@@ -60,7 +59,7 @@ function commitsAheadOfBase(repoDir: string): number {
 }
 
 export const check = (): GuardResult => {
-  const repoDir = process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
+  const repoDir = resolveProjectDir()
 
   // Only nudge in a linked worktree — the workflow this rule targets.
   if (!isLinkedWorktree(repoDir)) {

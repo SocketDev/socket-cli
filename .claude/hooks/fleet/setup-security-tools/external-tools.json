@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/SocketDev/socket-wheelhouse/main/packages/build-infra/lib/external-tools-schema.json",
+  "$schema": "https://raw.githubusercontent.com/SocketDev/socket-wheelhouse/main/scripts/fleet/build-infra/lib/external-tools-schema.json",
   "description": "Security tools for Claude Code hooks (self-contained, no external deps)",
   "tools": {
     "agentshield": {
@@ -116,15 +116,7 @@
           "integrity": "sha512-YYnfwR6M/PHo72LSyKtpY3bAUG4F4ckToJqGx5Fkz4rwg1+48hkxuBaF3hdxHUdHPkfO5grDyoNgXGe7FojGcg=="
         }
       },
-      "ecosystems": [
-        "npm",
-        "yarn",
-        "pnpm",
-        "pip",
-        "pip3",
-        "uv",
-        "cargo"
-      ]
+      "ecosystems": ["npm", "yarn", "pnpm", "pip", "pip3", "uv", "cargo"]
     },
     "sfw-enterprise": {
       "description": "Socket Firewall (enterprise tier)",

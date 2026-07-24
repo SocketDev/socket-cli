@@ -11,7 +11,7 @@
  *   top-level logic beyond `runHook`, so many run in ONE dispatcher process
  *   (one node start, one lib import) instead of a process each — the fix for
  *   the per-tool-call hook tax. The metadata (`event` / `type` / `matcher` /
- *   `triggers`) is read at BUILD time by `make-hook-dispatch.mts`, which
+ *   `triggers`) is read at BUILD time by `gen/hook-dispatch.mts`, which
  *   imports each hook and wires it by discovery — nothing is registered by
  *   hand, so a hook can never be silently left unwired. A unit test SPAWNS the
  *   hook (stdin payload) or calls `hook.invoke(payload)` directly. Enforced by
@@ -40,6 +40,7 @@ import { commandWorkingDir } from './shell-command.mts'
 import { bypassPhrasePresent } from './transcript.mts'
 
 import type { BypassMatchOptions } from './transcript.mts'
+import { resolveProjectDir } from './project-dir.mts'
 
 // Lazily resolved, NOT eagerly at module-eval. The shared logger graph
 // (`@socketsecurity/lib`'s logger → primordials/globals) captures `SharedArray
@@ -347,7 +348,7 @@ function payloadTargetIsFleetManaged(payload: ToolCallPayload): boolean {
   if (command) {
     return isFleetManagedDir(commandWorkingDir(command))
   }
-  return isFleetManagedDir(payload?.cwd || process.cwd())
+  return isFleetManagedDir(resolveProjectDir(payload?.cwd))
 }
 
 /**

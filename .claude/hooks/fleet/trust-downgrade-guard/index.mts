@@ -271,7 +271,9 @@ export function countPriorDowngrades(
     return 0
   }
   let count = 0
-  for (const line of raw.split('\n')) {
+  const lines = raw.split('\n')
+  for (let j = 0, { length: jlen } = lines; j < jlen; j += 1) {
+    const line = lines[j]!
     if (!line) {
       continue
     }

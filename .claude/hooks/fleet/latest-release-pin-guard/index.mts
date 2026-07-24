@@ -426,7 +426,7 @@ export function formatBlock(violations: readonly PinViolation[]): string {
   lines.push('')
   lines.push('  Fix: `git fetch --tags`, then pin the newest release above —')
   lines.push(
-    '  `gen-gitmodules-hash.mts --set` for .gitmodules, the version-pin row for',
+    '  `gen/gitmodules-hash.mts --set` for .gitmodules, the version-pin row for',
   )
   lines.push('  lockstep.json. See docs/agents.md/fleet/lockstep.md and')
   lines.push('  docs/agents.md/fleet/drift-watch.md.')

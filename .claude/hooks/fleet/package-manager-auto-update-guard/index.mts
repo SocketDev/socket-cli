@@ -29,22 +29,22 @@ import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 export const check = bashGuard((command, payload) => {
-  const check = matchInvokedManager(command)
-  if (!check) {
+  const invoked = matchInvokedManager(command)
+  if (!invoked) {
     return undefined
   }
-  const status = check.detect()
+  const status = invoked.detect()
   // Only block when auto-update is actively ENABLED. 'absent' (manager not
   // installed) and 'disabled' (already hardened) both pass.
   if (status.state !== 'enabled') {
     return undefined
   }
-  if (bypassPhrasePresent(payload.transcript_path, bypassPhrasesFor(check))) {
+  if (bypassPhrasePresent(payload.transcript_path, bypassPhrasesFor(invoked))) {
     return undefined
   }
   return block(
     [
-      `[package-manager-auto-update-guard] Blocked: \`${check.binaries[0]}\` while ${check.id} auto-update is enabled.`,
+      `[package-manager-auto-update-guard] Blocked: \`${invoked.binaries[0]}\` while ${invoked.id} auto-update is enabled.`,
       '',
       `  ${status.reason}.`,
       '  An auto-updating package manager can change a tool version',
@@ -56,7 +56,7 @@ export const check = bashGuard((command, payload) => {
       '    node .claude/hooks/fleet/setup-security-tools/install.mts',
       '',
       '  Bypass (this manager only):',
-      `    Allow ${check.binaries[0]} auto-update bypass`,
+      `    Allow ${invoked.binaries[0]} auto-update bypass`,
       '  Bypass (all managers):',
       '    Allow package-manager-auto-update bypass',
       '',

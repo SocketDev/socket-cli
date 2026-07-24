@@ -17,12 +17,11 @@
 // PostToolUse (not Pre) so the edit lands first and the scanner reads on-disk
 // state. Exits deterministically; fails open.
 
-import process from 'node:process'
-
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { defineHook, editGuard, notify, runHook } from '../_shared/guard.mts'
 import { findBareKnownNames, safeRead } from '../_shared/known-names.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 export function isHumanProseMarkdown(filePath: string): boolean {
   const p = normalizePath(filePath)
@@ -30,7 +29,7 @@ export function isHumanProseMarkdown(filePath: string): boolean {
     return false
   }
   // Skip vendored / generated / VCS trees — not human-authored prose.
-  return !/(?:^|\/)(?:node_modules|build|dist|\.git)\//.test(p)
+  return !/(?:^|\/)(?:\.git|build|dist|node_modules)\//.test(p)
 }
 
 export const check = editGuard((filePath, content) => {
@@ -43,7 +42,7 @@ export const check = editGuard((filePath, content) => {
   if (!prose) {
     return undefined
   }
-  const repoRoot = process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
+  const repoRoot = resolveProjectDir()
   const hits = findBareKnownNames(prose, { repoRoot })
   if (!hits.length) {
     return undefined

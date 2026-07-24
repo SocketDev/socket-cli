@@ -36,29 +36,29 @@ const BURDEN_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> = [
     label: 'fresh / new context or session',
     // "best done with fresh context", "start a new session", "fresh session".
     regex:
-      /\b(?:(?:with|in|needs?|deserves?|best\s+(?:done|built)\s+(?:in|with))\s+(?:a\s+)?(?:fresh|new)\s+(?:context|session)|start(?:ing)?\s+a\s+(?:fresh|new)\s+session|fresh\s+session)\b/i,
+      /\b(?:(?:best\s+(?:built|done)\s+(?:in|with)|deserves?|in|needs?|with)\s+(?:a\s+)?(?:fresh|new)\s+(?:context|session)|fresh\s+session|start(?:ing)?\s+a\s+(?:fresh|new)\s+session)\b/i,
   },
   {
     label: 'your call to continue / stop',
     // "your call to continue", "your call on whether to stop", "up to you to continue".
     regex:
-      /\b(?:your\s+call\s+(?:to|on|whether)|up\s+to\s+you\s+(?:to|whether))\b[^.?!\n]{0,40}\b(?:continue|stop|proceed|keep\s+going)\b/i,
+      /\b(?:up\s+to\s+you\s+(?:to|whether)|your\s+call\s+(?:on|to|whether))\b[^.?!\n]{0,40}\b(?:continue|keep\s+going|proceed|stop)\b/i,
   },
   {
     label: 'stop here cleanly / keep grinding or stop',
     regex:
-      /\b(?:stop\s+here\s+cleanly|keep\s+(?:grinding|going)[^.?!\n]{0,30}\bor\s+stop)\b/i,
+      /\b(?:stop\s+here\s+cleanly|keep\s+(?:going|grinding)[^.?!\n]{0,30}\bor\s+stop)\b/i,
   },
   {
     label: 'context budget / running low on context',
     // "running low on context", "out of context", "context window/budget/limit".
     regex:
-      /\b(?:running\s+(?:low|out)\s+(?:on|of)\s+context|out\s+of\s+context|context\s+(?:window|budget|limit|runway)\b[^.?!\n]{0,30}(?:low|left|remaining|exhaust|tight))\b/i,
+      /\b(?:running\s+(?:low|out)\s+(?:of|on)\s+context|out\s+of\s+context|context\s+(?:budget|limit|runway|window)\b[^.?!\n]{0,30}(?:exhaust|left|low|remaining|tight))\b/i,
   },
   {
     label: 'risk a half-finished / context exhaustion',
     regex:
-      /\b(?:risk(?:ing)?\s+a\s+half-?finished|context\s+exhaustion|before\s+(?:I\s+)?(?:run\s+out|exhaust)\b[^.?!\n]{0,20}context)\b/i,
+      /\b(?:risk(?:ing)?\s+a\s+half-?finished|context\s+exhaustion|before\s+(?:I\s+)?(?:exhaust|run\s+out)\b[^.?!\n]{0,20}context)\b/i,
   },
 ]
 
@@ -77,7 +77,7 @@ export function matchContextBurden(
 // User turns that mean "the user themselves chose to stop" — then any
 // continuation phrasing is acknowledgement, not offloading. Skip.
 const USER_STOP_RE =
-  /\b(?:stop|pause|we'?re\s+done|that'?s\s+enough|enough\s+for\s+now|hold\s+(?:on|off)|wrap\s+up)\b/i
+  /\b(?:enough\s+for\s+now|hold\s+(?:off|on)|pause|stop|that'?s\s+enough|we'?re\s+done|wrap\s+up)\b/i
 
 export const check = (payload: ToolCallPayload): GuardResult => {
   const rawText = readLastAssistantText(payload.transcript_path)

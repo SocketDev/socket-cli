@@ -48,6 +48,7 @@ import {
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 import { findWheelhouseRoot } from '../_shared/wheelhouse-root.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 // Per-repo land budget. land-work runs the repo's pre-commit per group; the
 // staged run is scoped `related` (fast) so this rarely bites, but bound it so a
@@ -55,7 +56,7 @@ import { findWheelhouseRoot } from '../_shared/wheelhouse-root.mts'
 const LAND_TIMEOUT_MS = 120_000
 
 function primaryDir(): string {
-  return process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
+  return resolveProjectDir()
 }
 
 /**

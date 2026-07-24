@@ -30,16 +30,16 @@
 // commit or explicitly explain why the staged state is intentional.
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-import process from 'node:process'
 
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 export function getProjectDir(): string | undefined {
   // Prefer the harness-supplied env (correct even when cwd has been
   // chdir'd by a tool). Fall back to cwd.
-  return process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
+  return resolveProjectDir()
 }
 
 export function listStagedFiles(repoDir: string): string[] {
@@ -58,7 +58,7 @@ export function listStagedFiles(repoDir: string): string[] {
 
 export const check = (): GuardResult => {
   const repoDir = getProjectDir()
-  /* c8 ignore start - getProjectDir() always falls back to process.cwd(), which is never empty */
+  /* c8 ignore start - getProjectDir() always falls back to resolveProjectDir(), which is never empty */
   if (!repoDir) {
     return undefined
   }
@@ -71,7 +71,9 @@ export const check = (): GuardResult => {
 
   let message =
     '[no-orphaned-staging] Turn ended with staged-but-uncommitted files:\n'
-  for (const f of staged.slice(0, 10)) {
+  const fs = staged.slice(0, 10)
+  for (let i = 0, { length } = fs; i < length; i += 1) {
+    const f = fs[i]!
     message += `  - ${f}\n`
   }
   if (staged.length > 10) {

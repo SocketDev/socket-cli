@@ -21,9 +21,9 @@ The `.gitmodules` content-hash (`sha256:`) and the `ref =` (commit SHA) are both
 It is the **SHA-256 of the GitHub codeload archive at the pinned `ref`** (`https://codeload.github.com/<owner>/<repo>/tar.gz/<ref>`), the same bytes a consumer fetching that submodule downloads. The `ref` is a git-Merkle SHA that proves which commit. The archive hash proves the bytes GitHub serves for it haven't shifted under us. This guard checks only that the comment is present and 64-hex; it does not re-fetch at edit time, since that is slow and network-bound. Authoring and drift-checking the hashes is the generator's job:
 
 ```bash
-node scripts/fleet/gen-gitmodules-hash.mts --set <name|path> <ref> [--label <text>]  # bump a ref + its sha256 together
-node scripts/fleet/gen-gitmodules-hash.mts --write   # populate / refresh every block's sha256
-node scripts/fleet/gen-gitmodules-hash.mts --check   # verify (exit 1 on drift); run on a cadence
+node scripts/fleet/gen/gitmodules-hash.mts --set <name|path> <ref> [--label <text>]  # bump a ref + its sha256 together
+node scripts/fleet/gen/gitmodules-hash.mts --write   # populate / refresh every block's sha256
+node scripts/fleet/gen/gitmodules-hash.mts --check   # verify (exit 1 on drift); run on a cadence
 ```
 
 Bumping a submodule is `--set`, not a hand-edit. A hand-edit of `ref =` alone is blocked here (correctly): the new archive hash can't be computed at edit time, so ref and hash must land together. `--set` updates both in one write (and `--label` refreshes the `# <name>-<version|date>` comment to match the new ref's track), so it never needs a bypass. For a new block (after `git submodule add`, with no header comment or `ref =` line) `--set` with `--label` provisions both. Adding a submodule is `add` then one `--set`.

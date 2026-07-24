@@ -36,7 +36,7 @@ export function isMutatingGhApi(c: Command): boolean {
   }
   for (let i = 0, { length } = c.args; i < length; i += 1) {
     const a = c.args[i]!
-    if (a === '-X' || a === '--method') {
+    if (a === '--method' || a === '-X') {
       const value = c.args[i + 1]
       if (value && GH_MUTATING_METHODS.has(value.toUpperCase())) {
         return true

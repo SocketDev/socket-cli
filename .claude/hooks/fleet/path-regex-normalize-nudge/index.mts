@@ -24,8 +24,9 @@
 // example regexes there are illustrative, not run.
 //
 
-import { findRegexLiterals, walkSimple } from '../_shared/acorn/index.mts'
-import type { AcornNode } from '../_shared/acorn/index.mts'
+import { walkSimple } from '../_shared/ast/core.mts'
+import { findRegexLiterals } from '../_shared/ast/literals.mts'
+import type { AcornNode } from '../_shared/ast/core.mts'
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
@@ -69,7 +70,7 @@ const DUAL_SEP_RE_PATTERNS: readonly RegExp[] = [
 // code block as the dual-sep regex, we trigger. Otherwise the regex
 // is probably matching something else (HTTP path, URL, etc.).
 const PATH_FLAVOR_RE =
-  /(?:\.cache|node_modules|\/build\/|\bpaths?\.|os\.homedir|process\.cwd|fileURLToPath|path\.join|path\.resolve|path\.sep|normalize)/
+  /(?:\.cache|\/build\/|\bpaths?\.|fileURLToPath|node_modules|normalize|os\.homedir|path\.join|path\.resolve|path\.sep|process\.cwd)/
 
 export function findFindings(code: string): Finding[] {
   const findings: Finding[] = []

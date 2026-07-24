@@ -53,11 +53,11 @@ const STATUS_REQUEST_PATTERNS: readonly RegExp[] = [
   // bare "status?" or "status" at end of line
   /\bstatus\s*\??\s*$/im,
   // "status update/check/report/please"
-  /\bstatus\s+(?:update|check|report|please)\b/i,
+  /\bstatus\s+(?:check|please|report|update)\b/i,
   // "how's it going" / "how's the build coming" etc.
-  /\bhow'?s\s+(?:it|the\s+\w+)\s*(?:going|doing|progressing|coming)\b/i,
+  /\bhow'?s\s+(?:it|the\s+\w+)\s*(?:coming|doing|going|progressing)\b/i,
   // "how is it going" / "how is the build doing" etc.
-  /\bhow\s+is\s+(?:it|the\s+\w+)\s*(?:going|doing|progressing|coming)\??/i,
+  /\bhow\s+is\s+(?:it|the\s+\w+)\s*(?:coming|doing|going|progressing)\??/i,
   // "what's it doing" / "what's the build doing"
   /\bwhat'?s\s+(?:it|the\s+\w+)\s+doing\b/i,
   // "what's happening"
@@ -71,7 +71,7 @@ const STATUS_REQUEST_PATTERNS: readonly RegExp[] = [
   // bare "progress?" at end of line
   /\bprogress\s*\??$/im,
   // "any updates/progress/news"
-  /\bany\s+(?:updates|progress|news)\b/i,
+  /\bany\s+(?:news|progress|updates)\b/i,
 ]
 
 // Phrases that indicate the assistant declined / rate-limited the
@@ -80,48 +80,48 @@ const DECLINE_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> = [
   {
     label: 'too soon / too early',
     // "too soon" or "too early"
-    regex: /\btoo\s+(?:soon|early)\b/i,
+    regex: /\btoo\s+(?:early|soon)\b/i,
   },
   {
     label: 'last check ~N (seconds|minutes) ago',
     // "last check was ~30 seconds ago" / "my last check 2 minutes ago"
     regex:
-      /\b(?:last|the\s+last|my\s+last)\s+check\s+(?:was\s+)?[~\d]+\s*\d*\s*(?:seconds?|minutes?|min|sec|s|m)\s+ago\b/i,
+      /\b(?:last|my\s+last|the\s+last)\s+check\s+(?:was\s+)?[~\d]+\s*\d*\s*(?:seconds?|minutes?|min|sec|s|m)\s+ago\b/i,
   },
   {
     label: 'skipping',
     // "skipping," / "I'll skip," / "going to skip."
-    regex: /\b(?:skipping|i'?ll\s+skip|gonna\s+skip|going\s+to\s+skip)\s*[.,]/i,
+    regex: /\b(?:going\s+to\s+skip|gonna\s+skip|i'?ll\s+skip|skipping)\s*[.,]/i,
   },
   {
     label: 'not enough time has passed',
     // "not enough time has passed" / "hasn't been long enough elapsed"
     regex:
-      /\b(?:not\s+enough\s+time|hasn'?t\s+been\s+(?:long|enough))\s+(?:has\s+)?(?:passed|elapsed|gone\s+by)\b/i,
+      /\b(?:hasn'?t\s+been\s+(?:enough|long)|not\s+enough\s+time)\s+(?:has\s+)?(?:elapsed|gone\s+by|passed)\b/i,
   },
   {
     label: "let me wait / I'll wait / wait a bit",
     // "let me wait" / "I'll wait" / "wait a bit/moment/until"
     regex:
-      /\b(?:let\s+me\s+wait|i'?ll\s+wait|wait\s+(?:a\s+(?:bit|moment|few|minute|second)|until))/i,
+      /\b(?:i'?ll\s+wait|let\s+me\s+wait|wait\s+(?:a\s+(?:bit|few|minute|moment|second)|until))/i,
   },
   {
     label: 'no need to check / no point',
     // "no need to check" / "no point polling" / "nothing to check"
     regex:
-      /\b(?:no\s+(?:need|point)\s+(?:to\s+)?(?:check(?:ing)?|polling|looking)|nothing\s+(?:to\s+)?check)\b/i,
+      /\b(?:no\s+(?:need|point)\s+(?:to\s+)?(?:check(?:ing)?|looking|polling)|nothing\s+(?:to\s+)?check)\b/i,
   },
   {
     label: 'polling is wasted / pointless',
     // "polling is wasted" / "poll is pointless" / "polling moot"
     regex:
-      /\bpoll(?:ing)?\s+(?:is\s+)?(?:wasted|pointless|moot|unnecessary)\b/i,
+      /\bpoll(?:ing)?\s+(?:is\s+)?(?:moot|pointless|unnecessary|wasted)\b/i,
   },
   {
     label: 'no change since last check (without checking)',
     // "no change since the last check" / "nothing new since last update"
     regex:
-      /\b(?:no\s+change|nothing\s+new|same\s+as\s+(?:before|last))\s+since\s+(?:the\s+)?last\s+(?:check|update|time)\b/i,
+      /\b(?:no\s+change|nothing\s+new|same\s+as\s+(?:before|last))\s+since\s+(?:the\s+)?last\s+(?:check|time|update)\b/i,
   },
 ]
 

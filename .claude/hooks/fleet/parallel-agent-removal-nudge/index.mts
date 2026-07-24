@@ -5,7 +5,7 @@
 // have since VANISHED or been MOVED on disk — without this session
 // running `rm` / `git rm` / `safeDelete` / `unlink` on them. That
 // asymmetry (I read it, I didn't delete it, it's gone) is the
-// fingerprint of another Claude session sharing the same `.git/`
+// fingerprint of another agent session sharing the same `.git/`
 // removing or moving files mid-flight under us. Emits a loud stderr
 // warning + pause-work instruction.
 //
@@ -51,7 +51,7 @@ import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 
 function getProjectDir(): string | undefined {
-  return process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
+  return process.env['CLAUDE_PROJECT_DIR']
 }
 
 /**
@@ -70,7 +70,9 @@ export function readSeenPaths(transcriptPath: string | undefined): Set<string> {
   } catch {
     return seen
   }
-  for (const line of raw.split('\n')) {
+  const lines = raw.split('\n')
+  for (let li = 0, { length: liLength } = lines; li < liLength; li += 1) {
+    const line = lines[li]!
     if (!line.trim()) {
       continue
     }
@@ -145,8 +147,10 @@ export function readRemovedPaths(
   // Deletion/move verbs to flag in the diff: the rm/unlink/safeDelete family
   // plus the two git subcommands that remove or relocate a tracked path.
   const removalVerbs =
-    /\b(?:rm|unlink|safeDelete|safeRm|safe-delete)\b|\bgit\s+rm\b|\bgit\s+mv\b/
-  for (const line of raw.split('\n')) {
+    /\b(?:rm|safe-delete|safeDelete|safeRm|unlink)\b|\bgit\s+rm\b|\bgit\s+mv\b/
+  const lines = raw.split('\n')
+  for (let li = 0, { length: liLength } = lines; li < liLength; li += 1) {
+    const line = lines[li]!
     if (!line.trim()) {
       continue
     }
@@ -181,7 +185,9 @@ export function readRemovedPaths(
       if (typeof command !== 'string' || !removalVerbs.test(command)) {
         continue
       }
-      for (const tok of command.split(/\s+/)) {
+      const tokens = command.split(/\s+/)
+      for (let ti = 0, { length: tiLength } = tokens; ti < tiLength; ti += 1) {
+        const tok = tokens[ti]!
         if (!tok || tok.startsWith('-') || tok === '.') {
           continue
         }
@@ -248,7 +254,7 @@ export function findVanishedSeenPaths(
 export const check = (payload: ToolCallPayload): GuardResult => {
   const transcriptPath = payload?.transcript_path
   const repoDir = getProjectDir()
-  /* c8 ignore start - getProjectDir always returns process.cwd() as fallback; repoDir can never be falsy */
+  /* c8 ignore start - repoDir is falsy only when CLAUDE_PROJECT_DIR is unset, which the test/CI harness always sets */
   if (!repoDir) {
     return undefined
   }
@@ -272,15 +278,16 @@ export const check = (payload: ToolCallPayload): GuardResult => {
     ? '⚠️  PARALLEL AGENT SUSPECTED — files you READ this session have vanished from disk:'
     : '[parallel-agent-removal-nudge] files this session previously read have vanished from disk:'
   let message = `${banner}\n`
-  for (const p of vanished.slice(0, 10)) {
-    message += `  ${p}\n`
+  const shown = vanished.slice(0, 10)
+  for (let vi = 0, { length: viLength } = shown; vi < viLength; vi += 1) {
+    message += `  ${shown[vi]!}\n`
   }
   if (vanished.length > 10) {
     message += `  ... and ${vanished.length - 10} more\n`
   }
   if (escalate) {
     message +=
-      `\n${foreignDirty.length} additional dirty path(s) not authored by this session — strong signal another Claude is on this checkout.\n` +
+      `\n${foreignDirty.length} additional dirty path(s) not authored by this session — strong signal another agent is on this checkout.\n` +
       '\n*** PAUSE WORK ***\n' +
       '  • Do NOT commit, revert, stash, or `git add -A`.\n' +
       '  • Run: git worktree list ; ps aux | grep -i claude\n' +

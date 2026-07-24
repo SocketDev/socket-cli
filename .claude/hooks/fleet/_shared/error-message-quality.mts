@@ -32,7 +32,7 @@ export const VAGUE_MESSAGE_PATTERNS: readonly VaguePattern[] = [
   {
     label: 'bare "failed"',
     regex:
-      /^(?:failed|failure|operation failed|request failed|action failed)\.?$/i,
+      /^(?:action failed|failed|failure|operation failed|request failed)\.?$/i,
     hint: '"Failed" describes the symptom. Name what was attempted and what blocked it: "could not write <path>: ENOENT", "fetch <url> returned 503".',
   },
   {
@@ -53,7 +53,7 @@ export const VAGUE_MESSAGE_PATTERNS: readonly VaguePattern[] = [
     // Matches a negated-ability opener ("unable to", "could not", "cannot",
     // "can't") followed by exactly one word — the verb only, no object or
     // reason. "Unable to read" hits; "could not read <path>: ENOENT" does not.
-    regex: /^(?:unable to|could not|cannot|can'?t)\s+\w+\.?$/i,
+    regex: /^(?:can'?t|cannot|could not|unable to)\s+\w+\.?$/i,
     hint: 'No object / no reason. "Unable to read" → "could not read <path>: <errno>".',
   },
   {
@@ -61,7 +61,7 @@ export const VAGUE_MESSAGE_PATTERNS: readonly VaguePattern[] = [
     // Matches "not found", "not exist", "does not exist", or "missing" as the
     // entire message (with optional trailing period) — no subject, no path, no
     // context about what was looked for or where.
-    regex: /^(?:not found|not\s+exist|does not exist|missing)\.?$/i,
+    regex: /^(?:does not exist|missing|not found|not\s+exist)\.?$/i,
     hint: 'Missing what? Where? Say "config file not found: <path>" with the specific path.',
   },
   {
@@ -71,7 +71,7 @@ export const VAGUE_MESSAGE_PATTERNS: readonly VaguePattern[] = [
     // "data", "format", "input", "value") as the full message. The noun suffix
     // names a category, not a specific field or violated constraint.
     regex:
-      /^(?:bad|wrong|incorrect|invalid format)(?:\s+(?:argument|data|format|input|value))?\.?$/i,
+      /^(?:bad|incorrect|invalid format|wrong)(?:\s+(?:argument|data|format|input|value))?\.?$/i,
     hint: 'Same as "invalid" — describe the rule the value violated, not how you feel about it.',
   },
 ]

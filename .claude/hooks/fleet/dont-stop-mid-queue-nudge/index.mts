@@ -38,7 +38,7 @@ const STOP_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> = [
   {
     label: 'stopping here / stop here',
     // Matches "stopping here", "I'll stop here", or "I'm stopping".
-    regex: /\b(?:stopping here|i'?ll\s+stop\s+here|i'?m\s+stopping)\b/i,
+    regex: /\b(?:i'?ll\s+stop\s+here|i'?m\s+stopping|stopping here)\b/i,
   },
   {
     label: 'honest/natural/clean stopping point',
@@ -48,7 +48,7 @@ const STOP_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> = [
   {
     label: 'pausing here',
     // Matches "pausing here" or "I'm pausing".
-    regex: /\b(?:pausing\s+here|i'?m\s+pausing)\b/i,
+    regex: /\b(?:i'?m\s+pausing|pausing\s+here)\b/i,
   },
   {
     label: 'holding here / holding for / holding off',
@@ -57,25 +57,25 @@ const STOP_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> = [
     // what's next." Pick the next item instead.
     // Matches "holding here/for/off/pending/until", "I'm holding", "I'll hold", or "will hold".
     regex:
-      /\b(?:holding\s+(?:for|here|off|pending|until)|i'?m\s+holding|i'?ll\s+hold|will\s+hold)\b/i,
+      /\b(?:holding\s+(?:for|here|off|pending|until)|i'?ll\s+hold|i'?m\s+holding|will\s+hold)\b/i,
   },
   {
     label: 'waiting for direction / next direction',
     // Matches "waiting for/on your direction/call/etc." or "waiting for you to choose/decide/etc."
     regex:
-      /\b(?:waiting\s+(?:for|on)\s+(?:next|the|your)\s+(?:call|decision|direction|go-ahead|input|signal|word)|wait(?:ing)?\s+for\s+(?:you|your)\s+to\s+(?:choose|decide|direct|pick|say|tell))\b/i,
+      /\b(?:wait(?:ing)?\s+for\s+(?:you|your)\s+to\s+(?:choose|decide|direct|pick|say|tell)|waiting\s+(?:for|on)\s+(?:next|the|your)\s+(?:call|decision|direction|go-ahead|input|signal|word))\b/i,
   },
   {
     label: 'ready when you (are) / let me know when',
     // Matches "ready when you are/you're", "let me know when", or "standing by".
     regex:
-      /\b(?:ready\s+when\s+you(?:'re|\s+are)|let\s+me\s+know\s+when|standing\s+by)\b/i,
+      /\b(?:let\s+me\s+know\s+when|ready\s+when\s+you(?:'re|\s+are)|standing\s+by)\b/i,
   },
   {
     label: 'want me to continue / should I keep going',
     // Matches "want me to continue", "should I keep going", or "shall I continue" (with optional "?").
     regex:
-      /\b(?:want\s+me\s+to\s+continue|should\s+i\s+keep\s+going|shall\s+i\s+continue)\??/i,
+      /\b(?:shall\s+i\s+continue|should\s+i\s+keep\s+going|want\s+me\s+to\s+continue)\??/i,
   },
   {
     label: "what's next?",
@@ -91,7 +91,7 @@ const STOP_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> = [
     label: 'want me to pick / take them in order',
     // Matches "want me to pick", "take them/these/those in order", "which item/one/task first/next", or "should I start with".
     regex:
-      /\b(?:want\s+me\s+to\s+pick|take\s+(?:them|these|those)\s+in\s+order|which\s+(?:item|one|task)\s+(?:first|next)|should\s+i\s+start\s+with)\b/i,
+      /\b(?:should\s+i\s+start\s+with|take\s+(?:them|these|those)\s+in\s+order|want\s+me\s+to\s+pick|which\s+(?:item|one|task)\s+(?:first|next))\b/i,
   },
   {
     label: 'pick one and continue / one or in order menu',
@@ -111,7 +111,7 @@ const STOP_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> = [
     label: 'session totals / final session state',
     // Matches "session totals", "final session state", or "session summary".
     regex:
-      /\b(?:session\s+totals|final\s+session\s+state|session\s+summary)\b/i,
+      /\b(?:final\s+session\s+state|session\s+summary|session\s+totals)\b/i,
   },
   {
     label: 'remaining queue / open queue (followed by a list)',
@@ -128,7 +128,7 @@ const STOP_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> = [
     // followed by a trailing "…next, or …first?" menu sat past 800.
     // Matches an open-queue header keyword followed by up to 2000 chars and a trailing question mark.
     regex:
-      /\b(?:still\s+pending|what'?s\s+left|remaining|still\s+to\s+do|outstanding|pending:)\b[\s\S]{0,2000}\?\s*$/im,
+      /\b(?:outstanding|pending:|remaining|still\s+pending|still\s+to\s+do|what'?s\s+left)\b[\s\S]{0,2000}\?\s*$/im,
   },
   {
     label: 'deferring work as a follow-up',
@@ -137,19 +137,19 @@ const STOP_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> = [
     // lint/fix/test item in your window is fixed NOW, never deferred to
     // a follow-up (see Fix-it-don't-defer). Pick it up instead.
     regex:
-      /\b(?:(?:is|are)\s+a\s+follow-?up|as\s+a\s+follow-?up|leave\s+[^.?!\n]{0,40}(?:as|for|to)\s+(?:a\s+)?(?:follow-?up|later)|defer(?:red)?\s+[^.?!\n]{0,30}follow-?up|follow-?up\s*:)/i,
+      /\b(?:(?:are|is)\s+a\s+follow-?up|as\s+a\s+follow-?up|leave\s+[^.?!\n]{0,40}(?:as|for|to)\s+(?:a\s+)?(?:follow-?up|later)|defer(?:red)?\s+[^.?!\n]{0,30}follow-?up|follow-?up\s*:)/i,
   },
   {
     label: 'remaining backlog / remaining todos / remaining items',
     // Matches "remaining backlog", "remaining todos", "remaining items", "remaining tasks", or "remaining work".
-    regex: /\bremaining\s+(?:backlog|to-?dos?|items|tasks|work)\b/i,
+    regex: /\bremaining\s+(?:backlog|items|tasks|to-?dos?|work)\b/i,
   },
   {
     label: 'NOT done / left undone / left untouched',
     // Enumerating items as "NOT done" / "left untouched" while the queue
     // is open is the deferral failure in different words.
     regex:
-      /\b(?:not\s+done|left\s+(?:undone|untouched)|still\s+untouched|deferred\s+to\s+(?:a\s+)?(?:later|follow))\b/i,
+      /\b(?:deferred\s+to\s+(?:a\s+)?(?:follow|later)|left\s+(?:undone|untouched)|not\s+done|still\s+untouched)\b/i,
   },
   {
     label: 'budget excuse for an unfinished queue',
@@ -157,7 +157,7 @@ const STOP_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> = [
     // resource excuse for leaving the queue unfinished. Keep going; the
     // user can redirect mid-turn.
     regex:
-      /\b(?:didn'?t\s+have\s+(?:the\s+)?budget|out\s+of\s+budget|ran\s+(?:low\s+)?(?:out\s+)?of\s+budget|budget[\s-]?(?:constrained|exhausted|crunch|limited?|tight))\b/i,
+      /\b(?:budget[\s-]?(?:constrained|crunch|exhausted|limited?|tight)|didn'?t\s+have\s+(?:the\s+)?budget|out\s+of\s+budget|ran\s+(?:low\s+)?(?:out\s+)?of\s+budget)\b/i,
   },
   {
     label: 'narrated continuation then stopped (continuing X / next I will …)',
@@ -167,14 +167,14 @@ const STOP_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> = [
     // ENDS — announcing work instead of doing it. At Stop this means: the very
     // next action should have been the WORK, not a restatement of intent. Do it.
     regex:
-      /\b(?:continuing\s+(?:the\s+queue|with|from|on|to|by)|next\s+(?:up\s+)?(?:is|i'?ll|i\s+will|will\s+be)\b|i'?ll\s+(?:continue|pick\s+up|proceed|tackle|build|start|drive|knock\s+out|move\s+on|now\s+\w+)|proceeding\s+(?:to|with|from)|continuation\s+(?:proceeds|continues))\b/i,
+      /\b(?:continuation\s+(?:continues|proceeds)|continuing\s+(?:by|from|on|the\s+queue|to|with)|i'?ll\s+(?:build|continue|drive|knock\s+out|move\s+on|now\s+\w+|pick\s+up|proceed|start|tackle)|next\s+(?:up\s+)?(?:i'?ll|i\s+will|is|will\s+be)\b|proceeding\s+(?:from|to|with))\b/i,
   },
 ]
 
 // Signals from the user that genuinely authorize stopping. If any
 // recent user turn matches, the hook short-circuits.
 const USER_STOP_AUTHORIZATION_RE =
-  /\b(?:stop|pause|hold|halt|wait|we'?re\s+done|that'?s\s+enough|enough\s+for\s+(?:now|today)|let'?s\s+stop|let'?s\s+pause)\b/i
+  /\b(?:enough\s+for\s+(?:now|today)|halt|hold|let'?s\s+pause|let'?s\s+stop|pause|stop|that'?s\s+enough|wait|we'?re\s+done)\b/i
 
 export const check = (payload: ToolCallPayload): GuardResult => {
   const rawText = readLastAssistantText(payload.transcript_path)

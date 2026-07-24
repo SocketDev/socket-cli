@@ -46,7 +46,7 @@ export const CLAIM_RULES: readonly ClaimRule[] = [
     label: 'tests pass',
     claim:
       // Optional "all", then "test(s)" within 30 chars of pass/green/succeed variants.
-      /\b(?:all )?tests?\b[^.!?\n]{0,30}\b(?:pass(?:ed|ing)?|green|succeed(?:ed)?)\b/i,
+      /\b(?:all )?tests?\b[^.!?\n]{0,30}\b(?:green|pass(?:ed|ing)?|succeed(?:ed)?)\b/i,
     backedBy: [/\bvitest\b/],
     commands: [
       { args: ['test'], binary: 'pnpm' },
@@ -59,7 +59,7 @@ export const CLAIM_RULES: readonly ClaimRule[] = [
     label: 'build succeeds',
     claim:
       // "build/builds/built" within 30 chars of succeed/clean/pass/work variants.
-      /\bbuild(?:s|ed)?\b[^.!?\n]{0,30}\b(?:succeed(?:ed|s)?|clean|pass(?:ed|es)?|work(?:s|ed)?)\b/i,
+      /\bbuild(?:ed|s)?\b[^.!?\n]{0,30}\b(?:clean|pass(?:ed|es)?|succeed(?:ed|s)?|work(?:ed|s)?)\b/i,
     backedBy: [/\brolldown\b/],
     commands: [
       { args: ['build'], binary: 'pnpm' },
@@ -71,7 +71,7 @@ export const CLAIM_RULES: readonly ClaimRule[] = [
     label: 'typechecks',
     claim:
       // "typecheck(s)" within 20 chars of pass/clean, or the phrase "no type errors".
-      /\b(?:type[- ]?checks?\b[^.!?\n]{0,20}\b(?:pass(?:es|ed)?|clean)|no type errors)\b/i,
+      /\b(?:type[- ]?checks?\b[^.!?\n]{0,20}\b(?:clean|pass(?:ed|es)?)|no type errors)\b/i,
     backedBy: [/\btsgo\b/, /\btsc\b/],
     commands: [
       { args: ['check'], binary: 'pnpm' },
@@ -82,7 +82,7 @@ export const CLAIM_RULES: readonly ClaimRule[] = [
   {
     label: 'lint passes',
     // "lint/linting" within 25 chars of pass/clean/green variants.
-    claim: /\blint(?:ing)?\b[^.!?\n]{0,25}\b(?:pass(?:es|ed)?|clean|green)\b/i,
+    claim: /\blint(?:ing)?\b[^.!?\n]{0,25}\b(?:clean|green|pass(?:ed|es)?)\b/i,
     backedBy: [/\boxlint\b/],
     commands: [
       { args: ['lint', 'check'], binary: 'pnpm' },
@@ -97,7 +97,7 @@ export const CLAIM_RULES: readonly ClaimRule[] = [
     // to PNG", "visually verified". Backed ONLY by an actual render this session.
     claim:
       // "visually verified" OR "verified <element>" OR "<element> looks good/renders correctly/verified" — three claim shapes.
-      /\b(?:visually verif(?:y|ied)|verif(?:y|ied)\b[^.!?\n]{0,30}\b(?:popup|render|ui\b|screen|pixels?)|(?:popup|ui|render(?:ed|s)?|page|screen)\b[^.!?\n]{0,30}\b(?:looks? (?:good|correct|right)|renders? (?:correctly|fine)|verified))\b/i,
+      /\b(?:visually verif(?:ied|y)|verif(?:ied|y)\b[^.!?\n]{0,30}\b(?:pixels?|popup|render|screen|ui\b)|(?:page|popup|render(?:ed|s)?|screen|ui)\b[^.!?\n]{0,30}\b(?:looks? (?:correct|good|right)|renders? (?:correctly|fine)|verified))\b/i,
     backedBy: [
       /\bscreenshot\.mts\b/,
       /\brendering-chromium-to-png\b/,

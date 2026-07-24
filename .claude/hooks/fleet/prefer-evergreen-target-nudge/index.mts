@@ -37,7 +37,7 @@ const ES_YEAR_RE = /\bES(?<year>\d{4})\b/g
 // Only scan a block that looks like a tsconfig — otherwise prose discussing
 // "ES2020 added X" would false-positive. A `"target"`/`"lib"`/`compilerOptions`
 // key or the word `tsconfig` is the signal.
-const TSCONFIG_SIGNAL_RE = /["'](?:target|lib|compilerOptions)["']|tsconfig/i
+const TSCONFIG_SIGNAL_RE = /["'](?:compilerOptions|lib|target)["']|tsconfig/i
 
 export function findFindings(text: string): Finding[] {
   if (!TSCONFIG_SIGNAL_RE.test(text)) {

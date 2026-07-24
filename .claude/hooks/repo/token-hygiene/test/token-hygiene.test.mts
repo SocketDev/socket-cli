@@ -32,7 +32,7 @@ function runHook(
   });
   const result = spawnSync(nodeBin, [hookScript], {
     input,
-    timeout: 5_000,
+    timeout: 5000,
     stdio: ["pipe", "pipe", "pipe"],
   });
   return {
@@ -173,7 +173,7 @@ describe("token-hygiene hook", () => {
     it("empty stdin", () => {
       const r = spawnSync(nodeBin, [hookScript], {
         input: "",
-        timeout: 5_000,
+        timeout: 5000,
         stdio: ["pipe", "pipe", "pipe"],
       });
       assert.equal(r.status, 0);
@@ -181,7 +181,7 @@ describe("token-hygiene hook", () => {
     it("non-JSON stdin", () => {
       const r = spawnSync(nodeBin, [hookScript], {
         input: "not json",
-        timeout: 5_000,
+        timeout: 5000,
         stdio: ["pipe", "pipe", "pipe"],
       });
       assert.equal(r.status, 0);

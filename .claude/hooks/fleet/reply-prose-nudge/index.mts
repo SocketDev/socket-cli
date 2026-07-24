@@ -14,6 +14,7 @@
 //
 // Informational; never blocks.
 
+import { AI_SLOP_PATTERNS } from '../_shared/ai-slop-patterns.mts'
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import {
@@ -130,7 +131,7 @@ const PERFECTIONIST: ReminderGroup = {
     {
       label: 'depth over breadth / breadth over depth',
       // Matches "depth over breadth?" or "breadth over depth?"; alternation branches contain \s+ quantifiers, making the disjunction non-trivial.
-      regex: /\b(?:depth\s+over\s+breadth|breadth\s+over\s+depth)\?/i,
+      regex: /\b(?:breadth\s+over\s+depth|depth\s+over\s+breadth)\?/i,
       why: 'The CLAUDE.md default is depth (perfectionist). Pick it.',
     },
     {
@@ -164,7 +165,7 @@ const SELF_NARRATION: ReminderGroup = {
       label: 'unprompted status recap ("where things stand")',
       // Matches "here's/to recap/to summarize … where things/we stand/are|the state|stands|recap|summary"; opener group, then nested location/state alternation groups.
       regex:
-        /\b(?:here'?s|to recap|to summarize)\b[^.?!\n]{0,40}\b(?:where (?:things|we) (?:stand|are)|the state|stands?|recap|summary)\b/i,
+        /\b(?:here'?s|to recap|to summarize)\b[^.?!\n]{0,40}\b(?:recap|stands?|summary|the state|where (?:things|we) (?:are|stand))\b/i,
       why: 'Mid-task status recap the user did not ask for. When mid-queue, keep working; surface status only when asked (CLAUDE.md "don\'t stop mid-queue").',
     },
     {
@@ -178,7 +179,7 @@ const SELF_NARRATION: ReminderGroup = {
         'virtue-narration opener ("let me be disciplined / to be thorough / be careful here")',
       // Matches diligence-theater openers: outer alternation of four phrase templates, each with inner alternation groups for the virtue adjective or directional qualifier.
       regex:
-        /\b(?:let me be (?:disciplined|careful|honest|precise|rigorous|thorough|methodical)|to be (?:thorough|rigorous|careful|disciplined|precise|safe)|i'?ll be (?:careful|thorough|disciplined|rigorous)\s+here|let me (?:think (?:hard|carefully)|step back)(?:\s+(?:here|about|on))?)\b/i,
+        /\b(?:i'?ll be (?:careful|disciplined|rigorous|thorough)\s+here|let me (?:step back|think (?:carefully|hard))(?:\s+(?:about|here|on))?|let me be (?:careful|disciplined|honest|methodical|precise|rigorous|thorough)|to be (?:careful|disciplined|precise|rigorous|safe|thorough))\b/i,
       why: "Diligence theater — performing rigor instead of doing it. Cut the preamble and do the careful thing; the work IS the evidence of care. (Chat analog of the prose skill's throat-clearing-opener ban.)",
     },
     {
@@ -200,7 +201,7 @@ const SELF_NARRATION: ReminderGroup = {
       label: 'apology-padding ("you\'re absolutely right / my apologies")',
       // Matches apology-pad phrases; outer alternation group, inner optional "absolutely" group — branch 1 contains a quantified group making the disjunction non-trivial.
       regex:
-        /\b(?:you'?re\s+(?:absolutely\s+)?right|my\s+apologies|sorry\s+about\s+that)\b/i,
+        /\b(?:my\s+apologies|sorry\s+about\s+that|you'?re\s+(?:absolutely\s+)?right)\b/i,
       why: 'Reflexive agreement/apology padding. Acknowledge the correction by fixing it, not by performing contrition.',
     },
     {
@@ -208,9 +209,22 @@ const SELF_NARRATION: ReminderGroup = {
         'sugary enthusiasm padding ("great question / perfect / excellent / happy to")',
       // Matches enthusiasm fillers: outer alternation group with several branches, inner alternation groups for the noun after "great" and for "happy|glad" and "great|good" — multiple nested structural groups.
       regex:
-        /\b(?:great\s+(?:question|point|idea|catch)|perfect[!.]|excellent[!.]|absolutely[!,]|happy\s+to|i'?d\s+be\s+(?:happy|glad)\s+to|sounds\s+(?:great|good)[!.])/i,
+        /\b(?:absolutely[!,]|excellent[!.]|great\s+(?:catch|idea|point|question)|happy\s+to|i'?d\s+be\s+(?:glad|happy)\s+to|perfect[!.]|sounds\s+(?:good|great)[!.])/i,
       why: 'Overly sugary filler. Be pleasant but plain — no enthusiasm performance. Get to the point.',
     },
+    {
+      label:
+        'investigation-announcement hedge ("let me check/verify/read/find/confirm …")',
+      // Opener announcing read-only investigation instead of executing: line-start
+      // (optional "first,") then let me/I'll/let's + an investigate verb. Nested
+      // optional qualifier groups ("just", "quickly") make the disjunction non-trivial.
+      regex:
+        /(?:^|\n)\s*(?:first,?\s+)?(?:i'?ll|let me|let's)\s+(?:just\s+|quickly\s+)?(?:check|confirm|dig into|examine|find|gather|inspect|investigate|look|make sure|read|see (?:how|if|what|where|whether)|understand|verify)\b/i,
+      why: 'Hedging — announcing investigation instead of doing it. After a direct imperative, make the tool call and open on the RESULT, not the intent. Verify by acting, not by narrating the check.',
+    },
+    // The no-ai-slop tells share _shared/ai-slop-patterns.mts so chat replies
+    // flag the same set as doc writes and PR bodies.
+    ...AI_SLOP_PATTERNS,
   ],
 }
 

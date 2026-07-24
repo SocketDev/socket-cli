@@ -2,7 +2,7 @@
 // Claude Code PreToolUse hook — overeager-staging-guard.
 //
 // Catches the failure mode where an agent's `git commit` sweeps in
-// files it didn't author — usually another Claude session's work
+// files it didn't author — usually another agent session's work
 // that was already staged when this session opened the repo. Two
 // enforcement layers:
 //
@@ -185,7 +185,9 @@ export function listStagedRenamedPaths(repoDir: string): Set<string> {
   if (r.status !== 0) {
     return renamed
   }
-  for (const line of String(r.stdout).split('\n')) {
+  const lines = String(r.stdout).split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
     // `R<score>\t<old>\t<new>` — both sides are session-deliberate.
     const parts = line.split('\t')
     if (parts.length === 3 && parts[0]!.startsWith('R')) {
@@ -311,7 +313,7 @@ export function checkCommand(command: string, payload: ToolCallPayload) {
           ? [`    ... and ${unfamiliar.length - 20} more`]
           : []),
         '',
-        '  Likely a parallel Claude session staged these — a bare commit',
+        '  Likely a parallel agent session staged these — a bare commit',
         '  would include them under your authorship.',
         '',
         '  Fix: commit ONLY your files by pathspec (ignores the rest of',

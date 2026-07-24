@@ -24,13 +24,13 @@ import { readLastAssistantTurnText } from '../_shared/transcript.mts'
 // action ("I'll run", "I ran").
 // oxlint-disable-next-line socket/require-regex-comment -- documented above
 const HANDOFF_RE =
-  /\b(?:go ahead and run|you(?:'ll| can| should| need to| may)? run|fire (?:off )?the|dispatch the|trigger the|kick off|run it (?:now|yourself|when)|do it now)\b/i
+  /\b(?:dispatch the|do it now|fire (?:off )?the|go ahead and run|kick off|run it (?:now|when|yourself)|trigger the|you(?: can| may| need to| should|'ll)? run)\b/i
 
 // A literal command IS present: a fenced code block, an inline `code` span, or a
 // command line (leading `$ ` prompt, or a bare tool invocation at line start).
 // oxlint-disable-next-line socket/require-regex-comment -- documented above
 const COMMAND_RE =
-  /```|`[^`\n]+`|^\s*\$ |^\s*(?:gh|pnpm|npm|node|git|cargo|bash|sh|npx|pnpx) /m
+  /```|`[^`\n]+`|^\s*\$ |^\s*(?:bash|cargo|gh|git|node|npm|npx|pnpm|pnpx|sh) /m
 
 // True when the reply hands a command to the user WITHOUT including the literal
 // command. Pure — the test drives it directly.

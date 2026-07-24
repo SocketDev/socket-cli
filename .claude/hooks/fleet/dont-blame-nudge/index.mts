@@ -5,7 +5,7 @@
 // user (or "the linter") for state that was actually produced by the
 // assistant's own scripts (pre-commit autofix, sync-scaffolding
 // cascades, lint --fix passes, format-on-save) OR by a PARALLEL
-// CLAUDE SESSION editing the same checkout.
+// AGENT SESSION editing the same checkout.
 //
 // Why this exists: jdalton repeatedly saw the assistant claim "the
 // user reverted my edits" / "the linter stripped my !s" / "the linter
@@ -54,8 +54,8 @@ const PATTERNS: readonly RuleViolation[] = [
     // by the assistant's own scripts (sync-cascade, pre-commit
     // autofix, oxlint --fix, oxfmt).
     regex:
-      /\b(?:the\s+)?(?:formatter|linter|user)\s+(?:reverted|stripped|removed|undid|reformatted|rewrote|preserves?|prefers?|keeps?)\b|\buser['']s\s+(?:intentional|preferred|preserved)\s+state\b|\b(?:removed|reverted|stripped)\s+by\s+(?:the\s+)?(?:formatter|linter|user)\b|\b(?:the\s+)?(?:user|linter)\s+(?:wants|chose|picked)\s+(?:to\s+keep|to\s+strip|to\s+remove)\b/i,
-    why: 'Don\'t blame the user or "the linter" for state that may have been produced by (a) your own scripts (sync-cascade, pre-commit autofix, oxlint --fix, oxfmt, template canonical sources) OR (b) a PARALLEL CLAUDE SESSION on the same checkout. Files changing between your Read and Edit ("modified since read"), or tracked content you didn\'t touch getting rewritten, are a parallel agent\'s fingerprint — not a linter. Investigate the real cause: `git log --oneline -8` + `git log -S` the change + `git status --short` (does a recent commit that ISN\'T yours explain it?); run pre-commit phases in isolation; check `template/` canonical sources. Only attribute to the user with direct evidence (a quoted user message, a `git reflog` entry).',
+      /\b(?:the\s+)?(?:formatter|linter|user)\s+(?:keeps?|prefers?|preserves?|reformatted|removed|reverted|rewrote|stripped|undid)\b|\buser['']s\s+(?:intentional|preferred|preserved)\s+state\b|\b(?:removed|reverted|stripped)\s+by\s+(?:the\s+)?(?:formatter|linter|user)\b|\b(?:the\s+)?(?:linter|user)\s+(?:chose|picked|wants)\s+(?:to\s+keep|to\s+remove|to\s+strip)\b/i,
+    why: 'Don\'t blame the user or "the linter" for state that may have been produced by (a) your own scripts (sync-cascade, pre-commit autofix, oxlint --fix, oxfmt, template canonical sources) OR (b) a PARALLEL AGENT SESSION on the same checkout. Files changing between your Read and Edit ("modified since read"), or tracked content you didn\'t touch getting rewritten, are a parallel agent\'s fingerprint — not a linter. Investigate the real cause: `git log --oneline -8` + `git log -S` the change + `git status --short` (does a recent commit that ISN\'T yours explain it?); run pre-commit phases in isolation; check `template/` canonical sources. Only attribute to the user with direct evidence (a quoted user message, a `git reflog` entry).',
   },
 ]
 

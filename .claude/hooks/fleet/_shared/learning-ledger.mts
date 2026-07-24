@@ -18,7 +18,7 @@
  *   1. Taxonomy + pure text ops (`normalizeLearning`, `isSimilarLearning`).
  *   2. Pure correction-signal detection (`detectCorrectionSignal`).
  *   3. Thin fs shell (`recordOccurrence`, `readLedger`, `pruneLedger`) over a
- *      dep-0 runtime-state store at `node_modules/.cache/socket-learning-ledger/`
+ *      dep-0 runtime-state store at `node_modules/.cache/fleet/socket-learning-ledger/`
  *      — never tracked; OS-temp fallback.
  *
  *   Fail-open contract: every fs function returns a safe default on IO / parse
@@ -112,12 +112,12 @@ export function isSimilarLearning(
 // Caliber only refined wording, never did the detection.
 export const CORRECTION_PHRASE_PATTERNS: readonly RegExp[] = [
   /\bno,?\s+(?:use|do|don'?t|not)\b/i,
-  /\b(?:use|do)\s+\w[\w-]*\s+instead\s+of\b/i,
-  /\bdon'?t\s+(?:touch|edit|modify|change|use)\b/i,
+  /\b(?:do|use)\s+\w[\w-]*\s+instead\s+of\b/i,
+  /\bdon'?t\s+(?:change|edit|modify|touch|use)\b/i,
   /\b(?:that'?s|this\s+is)\s+wrong\b/i,
-  /\b(?:always|never)\s+\w[\w -]*\b(?:in\s+(?:this|the)\s+(?:repo|project|fleet)|here)\b/i,
+  /\b(?:always|never)\s+\w[\w -]*\b(?:here|in\s+(?:the|this)\s+(?:fleet|project|repo))\b/i,
   /\bstop,?\s+(?:that|this)\b/i,
-  /\bactually,?\s+(?:use|do|it'?s|the)\b/i,
+  /\bactually,?\s+(?:do|it'?s|the|use)\b/i,
 ] as const
 
 /**
@@ -161,7 +161,7 @@ const EMPTY_LEDGER: LearningLedger = { entries: [], updatedAt: 0 }
  */
 export function resolveStoreRoot(projectDir: string | undefined): string {
   if (projectDir) {
-    return path.join(projectDir, 'node_modules', '.cache', STORE_NAME)
+    return path.join(projectDir, 'node_modules', '.cache', 'fleet', STORE_NAME)
   }
   return path.join(
     process.env['TMPDIR'] ??
@@ -182,9 +182,9 @@ export function ledgerFilePath(storeRoot: string): string {
  */
 export function pruneLedger(
   ledger: LearningLedger,
-  options: { now: number; ttlMs: number },
+  config: { now: number; ttlMs: number },
 ): LearningLedger {
-  const { now, ttlMs } = { __proto__: null, ...options } as typeof options
+  const { now, ttlMs } = { __proto__: null, ...config } as typeof config
   const threshold = now - ttlMs
   const entries = ledger.entries.filter(e => e.lastSeen >= threshold)
   return { entries, updatedAt: ledger.updatedAt }

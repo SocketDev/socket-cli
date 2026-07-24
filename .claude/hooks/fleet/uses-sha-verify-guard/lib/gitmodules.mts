@@ -25,7 +25,7 @@ interface Block {
 
 export function findGitmodulesIssues(
   content: string,
-  cache?: Cache,
+  cache?: Cache | undefined,
 ): SubmoduleIssue[] {
   const issues: SubmoduleIssue[] = []
   const lines = content.split('\n')

@@ -9,7 +9,7 @@
 // origin-ahead commits are genuine divergence, so it stays silent there.
 //
 // Why: a commit fast-forwarded to local `main` but left unpushed is
-// fragile. A parallel Claude session running `git reset --hard
+// fragile. A parallel agent session running `git reset --hard
 // origin/main` (cascade / repair flows do this) discards every local-only
 // commit ahead of origin — the work silently vanishes. "Landing" a commit
 // means it reached ORIGIN, not just local main. This reminder makes the
@@ -32,6 +32,7 @@ import {
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
 
 export function getProjectDir(): string {
+  // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- reads the agent-provided CLAUDE_PROJECT_DIR first; process.cwd() is only the fallback when that env var is absent
   return process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
 }
 
@@ -84,12 +85,12 @@ export function originAheadEmails(repoDir: string, branch: string): string[] {
 // True when EVERY origin-ahead commit is the current identity or a bot — i.e. a
 // squash/consolidation of your own (or a bot's) work, not a real other user's
 // landing. Pure.
-export function allOwnOrBot(options: {
+export function allOwnOrBot(config: {
   emails: readonly string[]
   myEmail: string | undefined
 }): boolean {
-  const opts = { __proto__: null, ...options } as typeof options
-  const { emails, myEmail } = opts
+  const cfg = { __proto__: null, ...config } as typeof config
+  const { emails, myEmail } = cfg
   return emails.every(e => (myEmail && e === myEmail) || isBotEmail(e))
 }
 

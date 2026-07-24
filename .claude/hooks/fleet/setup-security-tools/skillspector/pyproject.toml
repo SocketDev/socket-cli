@@ -36,9 +36,11 @@ exclude-newer = "2026-05-18T00:00:00Z"
 #   - langgraph-sdk        < 0.3.15 → GHSA-w39p-vh2g-g8g5 (medium); 0.3.15 @ 2026-05-22
 #   - pyjwt               < 2.13.0  → GHSA-xgmm-8j9v-c9wx (high);   2.13.0 @ 2026-05-21
 #   - starlette           < 1.3.1   → GHSA-82w8-qh3p-5jfq (high);   1.3.1  @ 2026-06-12
-exclude-newer-package = { cryptography = "2026-06-10T00:00:00Z", langsmith = "2026-06-20T00:00:00Z", "langgraph-checkpoint" = "2026-05-23T00:00:00Z", "langgraph-sdk" = "2026-05-23T00:00:00Z", pyjwt = "2026-05-22T00:00:00Z", starlette = "2026-06-13T00:00:00Z" }
+#   - setuptools          < 83.0.0  → GHSA-h35f-9h28-mq5c (medium); 83.0.0 @ 2026-07-04
+#     (CVE-2026-59890: MANIFEST.in exclusion bypass via NFC/NFD collision on macOS)
+exclude-newer-package = { cryptography = "2026-06-10T00:00:00Z", langsmith = "2026-06-20T00:00:00Z", "langgraph-checkpoint" = "2026-05-23T00:00:00Z", "langgraph-sdk" = "2026-05-23T00:00:00Z", pyjwt = "2026-05-22T00:00:00Z", setuptools = "2026-07-05T00:00:00Z", starlette = "2026-06-13T00:00:00Z" }
 # Force the security-fixed floors past the closure resolved at the pin's date.
-override-dependencies = ["cryptography>=48.0.1", "langsmith>=0.8.18", "langgraph-checkpoint>=4.1.1", "langgraph-sdk>=0.3.15", "pyjwt>=2.13.0", "starlette>=1.3.1"]
+override-dependencies = ["cryptography>=48.0.1", "langsmith>=0.8.18", "langgraph-checkpoint>=4.1.1", "langgraph-sdk>=0.3.15", "pyjwt>=2.13.0", "setuptools>=83.0.0", "starlette>=1.3.1"]
 
 [tool.uv.sources]
 # The SHA IS the pin (no PyPI release / no tags upstream). Keep `rev` in

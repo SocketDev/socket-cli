@@ -62,11 +62,11 @@ const ALWAYS_DANGEROUS = [
 ];
 
 // Plain reads of .env files that would dump values to stdout.
-const ENV_FILE_READ = /\b(?:cat|head|tail|less|more|bat)\b[^|]*\.env[^/\s|]*/;
+const ENV_FILE_READ = /\b(?:bat|cat|head|less|more|tail)\b[^|]*\.env[^/\s|]*/;
 
 // curl calls that include an Authorization header.
 const CURL_WITH_AUTH =
-  /\bcurl\b(?:[^|]|\|(?!\s*(?:sed|grep|head|tail|jq)))*(?:-H|--header)\s*['"]?Authorization:/i;
+  /\bcurl\b(?:[^|]|\|(?!\s*(?:grep|head|jq|sed|tail)))*(?:--header|-H)\s*['"]?Authorization:/i;
 
 // Literal token-shape patterns — if any match in the command string,
 // a real token has been pasted somewhere it shouldn't have been.
@@ -113,8 +113,8 @@ const stdin = (): Promise<string> =>
   });
 
 type ToolInput = {
-  tool_name?: string;
-  tool_input?: { command?: string };
+  tool_name?: string | undefined;
+  tool_input?: { command?: string | undefined } | undefined;
 };
 
 const hasRedaction = (command: string): boolean => REDACTION_MARKERS.some((re) => re.test(command));
@@ -125,7 +125,8 @@ const referencesSensitiveEnv = (command: string): boolean => {
 };
 
 const matchesAlwaysDangerous = (command: string): RegExp | null => {
-  for (const re of ALWAYS_DANGEROUS) {
+  for (let i = 0, { length } = ALWAYS_DANGEROUS; i < length; i += 1) {
+    const re = ALWAYS_DANGEROUS[i]!
     if (re.test(command)) {
       return re;
     }
@@ -180,7 +181,7 @@ const check = (command: string): void => {
   // without a redaction step. Skip when curl-with-auth passed — that
   // rule already evaluated the same pipeline.
   if (!curlHasAuth && referencesSensitiveEnv(command) && !hasRedaction(command)) {
-    const isPureWrite = /^\s*(?:git|pnpm|npm|node|tsc|oxfmt|oxlint)\b/.test(command);
+    const isPureWrite = /^\s*(?:git|node|npm|oxfmt|oxlint|pnpm|tsc)\b/.test(command);
     if (!isPureWrite) {
       throw new BlockError(
         "command references sensitive env var name and writes to stdout without redaction",

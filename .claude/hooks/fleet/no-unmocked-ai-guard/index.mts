@@ -30,7 +30,7 @@ import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 // lives under a `test/` / `tests/` / `__tests__/` directory.
 export function isTestFilePath(filePath: string): boolean {
   const normalized = normalizePath(filePath)
-  if (/\.(?:test|spec)\.[cm]?[jt]sx?$/.test(normalized)) {
+  if (/\.(?:spec|test)\.[cm]?[jt]sx?$/.test(normalized)) {
     return true
   }
   return /(?:^|\/)(?:test|tests|__tests__)\//.test(normalized)

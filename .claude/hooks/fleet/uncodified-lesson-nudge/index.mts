@@ -26,11 +26,12 @@ import process from 'node:process'
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import {
-  RECURRENCE_THRESHOLD,
   recordOccurrence,
+  RECURRENCE_THRESHOLD,
 } from '../_shared/learning-ledger.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import { readLastAssistantToolUses } from '../_shared/transcript.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 // Memory-store path shape, separator-normalized: …/.claude/projects/<slug>/memory/<file>.md
 const MEMORY_PATH_RE = /\/\.claude\/projects\/[^/]+\/memory\/[^/]+\.md$/
@@ -49,7 +50,7 @@ export function isEnforceableLesson(content: string): boolean {
     return false
   }
   // An imperative/invariant shape worth enforcing.
-  return /\b(?:always|never|must|don'?t|do not|forbid|require[ds]?|ban(?:ned)?)\b/i.test(
+  return /\b(?:always|ban(?:ned)?|do not|don'?t|forbid|must|never|require[ds]?)\b/i.test(
     content,
   )
 }
@@ -104,8 +105,9 @@ export const check = (payload: ToolCallPayload): GuardResult => {
   // re-written uncodified in a LATER session escalates: recording the same
   // memory content twice without an enforcer is the strongest "codify it now"
   // signal. Fail-open — a broken ledger yields 0 and the base nudge still fires.
-  const projectDir =
-    process.env['CLAUDE_PROJECT_DIR'] ?? payload?.cwd ?? process.cwd()
+  const projectDir = resolveProjectDir(
+    process.env['CLAUDE_PROJECT_DIR'] ?? payload?.cwd,
+  )
   const sessionId = payload?.transcript_path ?? 'unknown-session'
   let maxOccurrences = 0
   for (let i = 0, { length } = flaggedContent; i < length; i += 1) {

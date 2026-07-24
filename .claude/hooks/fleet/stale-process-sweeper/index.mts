@@ -120,13 +120,13 @@ const STALE_PATTERNS: Array<{ name: string; rx: RegExp }> = [
     //   (?:-[\w.]+)?                  optional "-<version>" suffix (e.g. -1.12.0)
     //   (?:\.exe)?                    optional ".exe" (Windows)
     //   \b                            word boundary — don't match "sfwfoo"
-    // Home prefix (/Users/<u>/ vs /home/<u>/) is intentionally NOT anchored;
+    // Home prefix (/Users/<user>/ vs /home/<user>/) is intentionally NOT anchored;
     // the .socket/… path segment is the invariant. listProcesses() swaps
     // `\` → `/` in the command first, so this `/`-only pattern (incl. the
     // `.exe` branch) matches a future Windows process source too. Negative
     // cases: a plain "/Library/pnpm/pnpm" (no sfw wrapper) and editors/IDEs
     // never match.
-    rx: /(?:\.socket\/(?:_dlx\/[0-9a-f]+|sfw\/bin|_wheelhouse\/(?:bin|rack\/sfw\/[\w.]+|sfw-stable))|sfw-bin)\/sfw(?:-[\w.]+)?(?:\.exe)?\b/,
+    rx: /(?:\.socket\/(?:_dlx\/[0-9a-f]+|_wheelhouse\/(?:bin|rack\/sfw\/[\w.]+|sfw-stable)|sfw\/bin)|sfw-bin)\/sfw(?:-[\w.]+)?(?:\.exe)?\b/,
   },
 ]
 
@@ -154,7 +154,7 @@ const AGENT_PATTERNS: Array<{ name: string; rx: RegExp }> = [
   // arbitrary path containing "claude" (e.g. a project dir).
   {
     name: 'claude-cli',
-    rx: /(?:^|\/|\s)claude\s+(?:doctor|update|mcp|migrate-installer)\b/,
+    rx: /(?:^|\/|\s)claude\s+(?:doctor|mcp|migrate-installer|update)\b/,
   },
   // Orphaned Claude background-task pollers: a bash loop waiting on a
   // task .output.exitcode sentinel that will never appear once the
@@ -239,7 +239,9 @@ export function listProcesses(): ProcRow[] {
   const rows: ProcRow[] = []
   // `ps -A` is unix-only (see comment above), so the output uses LF
   // line endings — no CRLF normalization needed here.
-  for (const line of String(result.stdout).split('\n')) {
+  const lines = String(result.stdout).split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
     if (!line.trim()) {
       continue
     }
@@ -469,7 +471,7 @@ export interface SweepOptions {
 
 export type SweepReason = 'orphan' | 'stuck' | 'forced'
 
-export function sweep(options?: SweepOptions): {
+export function sweep(options?: SweepOptions | undefined): {
   killed: Array<{
     name: string
     pid: number
@@ -614,13 +616,13 @@ function main() {
 }
 /* c8 ignore stop */
 
-export function runSweep(options?: SweepOptions) {
+export function runSweep(options?: SweepOptions | undefined) {
   const opts = { __proto__: null, ...options } as typeof options
   let result: ReturnType<typeof sweep>
   try {
     result = sweep(options)
   } catch (e) {
-    // Hooks must never crash a Claude turn. Log and exit clean.
+    // Hooks must never crash an agent turn. Log and exit clean.
     process.stderr.write(
       `[stale-process-sweeper] unexpected error: ${(e as Error).message}\n`,
     )

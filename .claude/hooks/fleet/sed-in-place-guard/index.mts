@@ -34,7 +34,9 @@ const SED_NAMES = new Set(['gsed', 'sed'])
 const PERLISH_NAMES = new Set(['perl', 'ruby'])
 const AWK_NAMES = new Set(['awk', 'gawk'])
 const PERLISH_IN_PLACE_RE = /^-[pnlw0-7]*i/
-const SED_IN_PLACE_RE = /^(?:-[A-Za-z]*i|--in-place)/
+// Matches sed's long `--in-place` flag, or a short-flag cluster (any letters)
+// ending in `i` (e.g. `-i`, `-ni`, `-e i`-style clusters).
+const SED_IN_PLACE_RE = /^(?:--in-place|-[A-Za-z]*i)/
 
 /**
  * Return a human-readable reason when `command` performs an in-place stream

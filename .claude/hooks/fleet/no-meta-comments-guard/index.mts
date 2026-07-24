@@ -24,7 +24,8 @@
 //
 // Fails open on malformed payloads (exit 0 + stderr log).
 
-import { splitLines, walkComments } from '../_shared/acorn/index.mts'
+import { walkComments } from '../_shared/ast/comments.mts'
+import { splitLines } from '../_shared/ast/core.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 
 interface MetaCommentFinding {
@@ -48,38 +49,38 @@ const TASK_PATTERNS: ReadonlyArray<{
 }> = [
   {
     // Newline or line-start, comment marker, then a task/plan label keyword + colon.
-    re: /(^|\n)\s*(?:\/\/|\/\*|\*|#|-)\s*(?:plan|task|note from (?:brief|plan|task))\s*:/i,
+    re: /(^|\n)\s*(?:#|-|\*|\/\*|\/\/)\s*(?:note from (?:brief|plan|task)|plan|task)\s*:/i,
     stripPrefix:
-      /^(\s*(?:\/\/|\/\*|\*|#|-)\s*)(?:plan|task|note from (?:brief|plan|task))\s*:\s*/i, // socket-lint: allow uncommented-regex
+      /^(\s*(?:#|-|\*|\/\*|\/\/)\s*)(?:note from (?:brief|plan|task)|plan|task)\s*:\s*/i, // socket-lint: allow uncommented-regex
   },
   {
     // Newline or line-start, comment marker, then "per the X" or "as requested" phrase.
-    re: /(^|\n)\s*(?:\/\/|\/\*|\*|#|-)\s*(?:per the (?:brief|plan|request|spec|task|user)|as requested|per the user('s)? request)\b/i,
+    re: /(^|\n)\s*(?:#|-|\*|\/\*|\/\/)\s*(?:as requested|per the (?:brief|plan|request|spec|task|user)|per the user('s)? request)\b/i,
   },
   {
     // Newline or line-start, comment marker, then a FIXME/TODO/XXX + "from/per X" phrase.
-    re: /(^|\n)\s*(?:\/\/|\/\*|\*|#|-)\s*(?:FIXME|TODO|XXX)\s+(?:from|per)\s+(?:the\s+)?(?:brief|plan|request|spec|task|user)\b/i,
+    re: /(^|\n)\s*(?:#|-|\*|\/\*|\/\/)\s*(?:FIXME|TODO|XXX)\s+(?:from|per)\s+(?:the\s+)?(?:brief|plan|request|spec|task|user)\b/i,
   },
   {
     // Newline or line-start, comment marker, then a roadmap keyword + numeric/roman marker.
-    re: /(^|\n)\s*(?:\/\/|\/\*|\*|#|-)\s*(?:iteration|milestone|phase|sprint|step|tier)\s+(?:[0-9]+[a-z]*|i{1,3}|iv|v|vi{0,3}|ix|x)\b/i,
+    re: /(^|\n)\s*(?:#|-|\*|\/\*|\/\/)\s*(?:iteration|milestone|phase|sprint|step|tier)\s+(?:[0-9]+[a-z]*|i{1,3}|iv|v|vi{0,3}|ix|x)\b/i,
     stripPrefix:
-      /^(\s*(?:\/\/|\/\*|\*|#|-)\s*)(?:iteration|milestone|phase|sprint|step|tier)\s+(?:[0-9]+[a-z]*|i{1,3}|iv|v|vi{0,3}|ix|x)\s*[:.-]?\s*/i, // socket-lint: allow uncommented-regex
+      /^(\s*(?:#|-|\*|\/\*|\/\/)\s*)(?:iteration|milestone|phase|sprint|step|tier)\s+(?:[0-9]+[a-z]*|i{1,3}|iv|v|vi{0,3}|ix|x)\s*[:.-]?\s*/i, // socket-lint: allow uncommented-regex
   },
 ]
 
 // Patterns that flag code-deletion phrases inside source comments.
 const REMOVED_CODE_PATTERNS: readonly RegExp[] = [
   // Newline or line-start, comment marker, then the word 'removed' as a whole word.
-  /(^|\n)\s*(?:\/\/|\/\*|\*|#)\s*removed\b/i,
+  /(^|\n)\s*(?:#|\*|\/\*|\/\/)\s*removed\b/i,
   // Newline or line-start, comment marker, then the word 'previously' as a whole word.
-  /(^|\n)\s*(?:\/\/|\/\*|\*|#)\s*previously\b/i,
+  /(^|\n)\s*(?:#|\*|\/\*|\/\/)\s*previously\b/i,
   // Newline or line-start, comment marker, then the two-word phrase 'used to'.
-  /(^|\n)\s*(?:\/\/|\/\*|\*|#)\s*used\s+to\b/i,
+  /(^|\n)\s*(?:#|\*|\/\*|\/\/)\s*used\s+to\b/i,
   // Newline or line-start, comment marker, then the two-word phrase 'no longer'.
-  /(^|\n)\s*(?:\/\/|\/\*|\*|#)\s*no\s+longer\b/i,
+  /(^|\n)\s*(?:#|\*|\/\*|\/\/)\s*no\s+longer\b/i,
   // Newline or line-start, comment marker, then the word 'formerly' as a whole word.
-  /(^|\n)\s*(?:\/\/|\/\*|\*|#)\s*formerly\b/i,
+  /(^|\n)\s*(?:#|\*|\/\*|\/\/)\s*formerly\b/i,
 ]
 
 /**
@@ -89,7 +90,7 @@ const REMOVED_CODE_PATTERNS: readonly RegExp[] = [
  */
 export function uppercaseFirstLetterAfterMarker(line: string): string {
   const m = line.match(
-    /^(?<prefix>\s*(?:\/\/|\/\*|\*|#|-)\s*)(?<firstChar>[a-zA-Z])/,
+    /^(?<prefix>\s*(?:#|-|\*|\/\*|\/\/)\s*)(?<firstChar>[a-zA-Z])/,
   )
   if (!m) {
     return line
@@ -107,13 +108,13 @@ const TASK_BODY_PATTERNS: ReadonlyArray<{
 }> = [
   {
     // Body starts with "plan:", "task:", or "note from (brief|plan|task):" label.
-    re: /^\s*(?:plan|task|note from (?:brief|plan|task))\s*:/i,
+    re: /^\s*(?:note from (?:brief|plan|task)|plan|task)\s*:/i,
     // Strips the leading label keyword + colon, leaving only the label's value text.
-    stripBody: /^\s*(?:plan|task|note from (?:brief|plan|task))\s*:\s*/i,
+    stripBody: /^\s*(?:note from (?:brief|plan|task)|plan|task)\s*:\s*/i,
   },
   {
     // Body starts with "per the X" or "as requested" or "per the user('s) request".
-    re: /^\s*(?:per the (?:brief|plan|request|spec|task|user)|as requested|per the user('s)? request)\b/i,
+    re: /^\s*(?:as requested|per the (?:brief|plan|request|spec|task|user)|per the user('s)? request)\b/i,
   },
   {
     // Body starts with a FIXME/TODO/XXX marker followed by "from/per (the) X".
@@ -233,14 +234,14 @@ export function findMetaCommentsLexical(text: string): MetaCommentFinding[] {
       })
       break
     }
-    for (let i = 0, { length } = REMOVED_CODE_PATTERNS; i < length; i += 1) {
-      const re = REMOVED_CODE_PATTERNS[i]!
+    for (let j = 0, { length: len } = REMOVED_CODE_PATTERNS; j < len; j += 1) {
+      const re = REMOVED_CODE_PATTERNS[j]!
       if (!re.test(`\n${line}`)) {
         continue
       }
       findings.push({
         kind: 'removed-code',
-        line: i + 1,
+        line: j + 1,
         snippet: line.trim(),
         suggestion:
           '(remove the comment — code that no longer exists is git-history territory, not source comments)',

@@ -111,7 +111,7 @@ export interface ReminderGroup {
 export async function scanReminderText(
   text: string,
   patterns: readonly RuleViolation[],
-  extraCheck?: ReminderConfig['extraCheck'],
+  extraCheck?: ReminderConfig['extraCheck'] | undefined,
 ): Promise<ReminderHit[]> {
   const hits: ReminderHit[] = []
   for (let i = 0, { length } = patterns; i < length; i += 1) {
@@ -230,7 +230,7 @@ export async function runStopReminder(config: ReminderConfig): Promise<void> {
 
   const message = formatReminderBlock(config.name, hits, config.closingHint)
 
-  // Blocking mode: emit a Stop-hook block decision so Claude must
+  // Blocking mode: emit a Stop-hook block decision so the agent must
   // continue the turn and address the matched phrase. Suppressed
   // when `stop_hook_active` is already set, to avoid loops.
   if (config.blocking && !payload.stop_hook_active) {

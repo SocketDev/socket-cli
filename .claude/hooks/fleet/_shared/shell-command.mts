@@ -40,6 +40,7 @@ import process from 'node:process'
 import { parseShell } from '@socketsecurity/lib-stable/shell/parse'
 
 import type { ParseEntry } from '@socketsecurity/lib-stable/shell/parse'
+import { resolveProjectDir } from './project-dir.mts'
 
 // shell-quote emits operator objects ({ op }), comment objects ({ comment }),
 // and bare strings. These ops separate one command from the next.
@@ -395,7 +396,7 @@ export function isFleetSyncCommand(command: string): boolean {
  */
 export function normalizeShellDir(
   dir: string,
-  baseDir: string = process.cwd(),
+  baseDir: string = resolveProjectDir(),
 ): string {
   const expanded =
     dir === '~'

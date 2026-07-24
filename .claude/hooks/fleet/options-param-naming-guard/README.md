@@ -40,8 +40,7 @@ function resolve(options?: ResolveOptions) {
 - A function (declaration / expression / arrow) with a param that is a
   plain Identifier named `opts`, in a code file
   (`.ts` / `.mts` / `.cts` / `.js` / `.mjs` / `.cjs`).
-- Detection is **AST-based**, parsed via the vendored acorn-wasm in
-  `_shared/acorn/`. The parser fully understands TypeScript, so a typed
+- Detection is **AST-based**, parsed via the AST helper in   `_shared/ast/`. The parser fully understands TypeScript, so a typed
   `opts?: { … }` param matches on its Identifier name, never on a regex
   over the type-annotation text.
 

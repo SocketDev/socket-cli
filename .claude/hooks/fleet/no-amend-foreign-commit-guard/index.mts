@@ -2,7 +2,7 @@
 // Claude Code PreToolUse hook — no-amend-foreign-commit-guard.
 //
 // Blocks `git commit --amend` when HEAD is an UNPUSHED commit that this session
-// almost certainly did NOT author — i.e. a parallel Claude session's in-flight
+// almost certainly did NOT author — i.e. a parallel agent session's in-flight
 // work sitting on the shared checkout's branch. Amending it rewrites someone
 // else's commit (folding your change + message into their feature commit), and
 // because it's unpushed there's no remote copy to recover from.

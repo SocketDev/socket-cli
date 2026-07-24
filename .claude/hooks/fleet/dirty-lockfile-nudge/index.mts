@@ -28,8 +28,6 @@
 // PostToolUse, not PreToolUse: we react to a lockfile that is already
 // dirty; we don't predict it. Never blocks (notify, exit 0).
 
-import process from 'node:process'
-
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
@@ -38,6 +36,7 @@ import { bashGuard, defineHook, notify, runHook } from '../_shared/guard.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
 import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 // Binaries whose use means the lockfile may have just drifted or is about
 // to be committed. A `git commit`/`git add` is the land path; a `git
@@ -64,7 +63,9 @@ export function commandTouchesTrigger(command: string): boolean {
 // the staged (`M `) and unstaged (` M`) columns count.
 export function dirtyLockfilesFromPorcelain(out: string): string[] {
   const dirty: string[] = []
-  for (const line of out.split('\n')) {
+  const lineItems = out.split('\n')
+  for (let i = 0, { length } = lineItems; i < length; i += 1) {
+    const line = lineItems[i]!
     if (!line) {
       continue
     }
@@ -115,7 +116,9 @@ export function lockfileDiff(repoDir: string): string {
 // `pnpm i` blesses the removal rather than restoring it, so it is escalated.
 export function removedImporterPaths(diff: string): string[] {
   const removed: string[] = []
-  for (const line of diff.split('\n')) {
+  const lineList = diff.split('\n')
+  for (let i = 0, { length } = lineList; i < length; i += 1) {
+    const line = lineList[i]!
     const m = /^-  (\S[^:]*):\s*$/.exec(line)
     if (!m) {
       continue
@@ -204,9 +207,7 @@ export function getRepoDir(payload: ToolCallPayload): string | undefined {
   // The repo the command ACTS on — a `cd <sibling> && pnpm i` targets that
   // repo's lockfiles, not the session repo's (actedOnPath honors cd targets,
   // then the payload cwd).
-  return (
-    actedOnPath(payload) || process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
-  )
+  return actedOnPath(payload) || resolveProjectDir()
 }
 
 export const check = bashGuard((command, payload) => {
@@ -214,7 +215,7 @@ export const check = bashGuard((command, payload) => {
     return undefined
   }
   const repoDir = getRepoDir(payload)
-  /* c8 ignore next - getRepoDir falls back to process.cwd(), always non-empty */
+  /* c8 ignore next - getRepoDir falls back to resolveProjectDir(), always non-empty */
   if (!repoDir) {
     return undefined
   }

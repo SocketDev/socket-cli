@@ -113,7 +113,7 @@ export function findBannedBashWrites(command: string): BannedHit[] {
     }
     const args = m[1]!
     // Skip if --global / --system / --worktree / --file is present.
-    if (/(?:^|\s)--(?:global|system|worktree|file)(?:\s|=|$)/.test(args)) {
+    if (/(?:^|\s)--(?:file|global|system|worktree)(?:\s|=|$)/.test(args)) {
       continue
     }
     // --local is explicit-default; still banned. Strip it so the key
@@ -216,7 +216,7 @@ export function isLocalGitConfigPath(filePath: string): boolean {
 function buildBlockMessage(
   source: 'bash' | 'edit',
   hits: readonly BannedHit[],
-  filePath?: string,
+  filePath?: string | undefined,
 ): string {
   const lines: string[] = []
   lines.push(

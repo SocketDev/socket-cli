@@ -30,7 +30,7 @@ import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 const BYPASS_PHRASE = 'Allow catch-message bypass'
 const BINDING_BYPASS_PHRASE = 'Allow catch-binding-name bypass'
-const PER_LINE_MARKER = /\/\/\s*ok:\s*catch-(?:message|binding)\b/
+const PER_LINE_MARKER = /\/\/\s*ok:\s*catch-(?:binding|message)\b/
 
 const JS_TS_EXT_RE = /\.(?:ts|mts|cts|tsx|js|mjs|cjs|jsx)$/i
 const TEST_TREE_RE = /(?:^|\/)(?:test|tests|__tests__)\//
@@ -41,7 +41,7 @@ const TEST_TREE_RE = /(?:^|\/)(?:test|tests|__tests__)\//
 // keeping the binding name consistent makes the message helper
 // suggestions copy-paste cleanly).
 const CATCH_WRONG_BINDING_RE =
-  /\bcatch\s*\(\s*(?!e\s*[):]|_)(?<bind>[A-Za-z_$][\w$]*)\s*(?::[^)]+)?\)\s*\{/g
+  /\bcatch\s*\(\s*(?!_|e\s*[):])(?<bind>[A-Za-z_$][\w$]*)\s*(?::[^)]+)?\)\s*\{/g
 
 // Match the opening of a catch block. The binding is captured.
 // JS-syntax-only `catch {}` (no binding) is skipped.
@@ -131,8 +131,8 @@ export function findCatchMessageViolations(after: string): Finding[] {
     // BEFORE updating depth, so the line that closes the catch
     // doesn't lose its frame mid-line.
     if (stack.length > 0) {
-      for (let i = 0, { length } = stack; i < length; i += 1) {
-        const frame = stack[i]!
+      for (let j = 0, { length: len } = stack; j < len; j += 1) {
+        const frame = stack[j]!
         const bind = frame.binding
         const bindMessageRe = new RegExp(
           `\\$\\{\\s*${escapeRegex(bind)}\\.message\\b`,
@@ -140,15 +140,15 @@ export function findCatchMessageViolations(after: string): Finding[] {
         if (bindMessageRe.test(code)) {
           findings.push({
             binding: bind,
-            line: i + 1,
+            line: j + 1,
             source: raw.trim(),
           })
         }
       }
     }
     braceDepth = adjustDepth(code, braceDepth, stack)
-    for (let i = 0, { length } = pending; i < length; i += 1) {
-      const binding = pending[i]!
+    for (let j = 0, { length: len } = pending; j < len; j += 1) {
+      const binding = pending[j]!
       stack.push({ binding, depth: braceDepth })
     }
   }
@@ -318,7 +318,8 @@ export const check = editGuard((filePath, content, payload) => {
       `  File: ${filePath}`,
       '',
     )
-    for (const f of newMessageFindings) {
+    for (let i = 0, { length } = newMessageFindings; i < length; i += 1) {
+      const f = newMessageFindings[i]!
       lines.push(`  • line ${f.line}: ${f.source}`)
     }
     lines.push(
@@ -354,7 +355,8 @@ export const check = editGuard((filePath, content, payload) => {
       `  File: ${filePath}`,
       '',
     )
-    for (const f of newBindingFindings) {
+    for (let i = 0, { length } = newBindingFindings; i < length; i += 1) {
+      const f = newBindingFindings[i]!
       lines.push(
         `  • line ${f.line}: \`catch (${f.binding})\` — use \`e\` instead`,
       )

@@ -1,6 +1,6 @@
 # codex-no-write-guard
 
-PreToolUse Bash/Agent hook that blocks Codex invocations with code-change
+PreToolUse Bash hook that blocks `codex` CLI invocations with code-change
 intent. Fleet-wide: only fires when `codex` appears in a command, so it's
 a no-op in repos that don't use Codex.
 
@@ -15,13 +15,11 @@ The rule: use Codex for advice; do the edits yourself based on the advice.
 
 ## What it blocks
 
-| Pattern                                                               | Block? |
-| --------------------------------------------------------------------- | ------ |
-| Bash `codex --write ...` / `codex -w ...`                             | yes    |
-| Bash `codex "implement X" ...` / `codex "add Y" ...` / etc.           | yes    |
-| Bash `codex "explain X"` / `codex "diagnose Y"` / `codex "review"`    | no     |
-| Agent `subagent_type: codex:codex-rescue` w/ prompt "implement / fix" | yes    |
-| Agent `subagent_type: codex:codex-rescue` w/ prompt "diagnose / why"  | no     |
+| Pattern                                                            | Block? |
+| ------------------------------------------------------------------ | ------ |
+| `codex --write ...` / `codex -w ...`                               | yes    |
+| `codex "implement X" ...` / `codex "add Y" ...` / etc.             | yes    |
+| `codex "explain X"` / `codex "diagnose Y"` / `codex "review"`      | no     |
 
 ## Bypass
 

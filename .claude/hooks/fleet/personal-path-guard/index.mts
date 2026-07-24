@@ -11,9 +11,9 @@
 // Blocks Edit/Write tool calls whose about-to-land content contains a
 // real personal path — a hardcoded local USERNAME leak:
 //
-//   /Users/<name>/...      (macOS)
-//   /home/<name>/...       (Linux)
-//   C:\Users\<name>\...    (Windows)
+//   /Users/<user>/...      (macOS)
+//   /home/<user>/...       (Linux)
+//   C:\Users\<USERNAME>\...    (Windows)
 //
 // Username-free forms are the OPPOSITE of a leak and are NOT flagged:
 // `~/...`, `$HOME/...`, and the canonical placeholders
@@ -46,7 +46,7 @@ const EXEMPT_PATH_PATTERNS: RegExp[] = [
   /(?:^|\/)upstream\//,
   /(?:^|\/)external\//,
   /(?:^|\/)third_party\//,
-  /(?:^|\/)(?:pnpm-lock\.yaml|package-lock\.json|yarn\.lock)$/,
+  /(?:^|\/)(?:package-lock\.json|pnpm-lock\.yaml|yarn\.lock)$/,
 ]
 
 export interface PersonalPathHit {
@@ -105,7 +105,9 @@ export function formatBlockMessage(
   out.push('')
   out.push('[personal-path-guard] Blocked: hardcoded personal path found')
   out.push(`  File:    ${filePath}`)
-  for (const h of hits.slice(0, 3)) {
+  const hs = hits.slice(0, 3)
+  for (let i = 0, { length } = hs; i < length; i += 1) {
+    const h = hs[i]!
     out.push(`  Line ${h.line}: ${h.text}`)
     if (h.suggested && h.suggested !== h.text) {
       out.push(`  Fix:           ${h.suggested}`)

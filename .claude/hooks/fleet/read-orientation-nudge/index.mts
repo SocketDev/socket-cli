@@ -8,10 +8,10 @@
  * span-scoped Read.
  *
  * It UTILIZES the on-disk repo-map cache (`.repo-map/<rel>.skel`, warmed by the
- * SessionStart repo-map-refresh hook + the make-repo-map `--write` runs): when a
+ * SessionStart repo-map-refresh hook + the gen/repo-map `--write` runs): when a
  * FRESH skeleton already exists it points straight at that file (a ready-made,
  * ~95%-smaller read — zero generation cost). Only when no fresh skeleton exists
- * does it fall back to suggesting `make-repo-map --write` (which also warms the
+ * does it fall back to suggesting `gen/repo-map --write` (which also warms the
  * cache for next time).
  *
  * Advisory only — never blocks. Skips:
@@ -24,17 +24,17 @@
 
 import { existsSync, statSync } from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 // Below this byte size a skeleton saves little; skip the nudge.
-const SIZE_THRESHOLD_BYTES = 6_000
+const SIZE_THRESHOLD_BYTES = 6000
 
 // The repo-map cache dir (repo-root-relative). Keep in lock-step with
-// DEFAULT_OUT_DIR in scripts/fleet/make-repo-map.mts.
+// DEFAULT_OUT_DIR in scripts/fleet/gen/repo-map.mts.
 const REPO_MAP_DIR = '.repo-map'
 
 const SOURCE_EXTS = new Set<string>([
@@ -73,7 +73,7 @@ function fileSize(filePath: string): number | undefined {
  * (set by Claude Code for hooks), else cwd.
  */
 function freshSkelFor(filePath: string): string | undefined {
-  const repoRoot = process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
+  const repoRoot = resolveProjectDir()
   const relSkel = path.join(
     REPO_MAP_DIR,
     `${path.relative(repoRoot, filePath)}.skel`,
@@ -124,7 +124,7 @@ export function check(payload: ToolCallPayload): GuardResult {
     `[read-orientation-nudge] About to read a ${sizeKb}KB source file whole. ` +
       `It will sit in context and be re-read every later turn (context re-read ` +
       `dominates spend). Consider orienting first:\n` +
-      `  node scripts/fleet/make-repo-map.mts --write ${filePath}\n` +
+      `  node scripts/fleet/gen/repo-map.mts --write ${filePath}\n` +
       `then Read the .repo-map/<file>.skel skeleton and only the span you need ` +
       `(offset/limit). Full read is fine if you are about to edit it and need ` +
       `exact surrounding content.\n`,

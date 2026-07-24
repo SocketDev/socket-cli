@@ -76,6 +76,7 @@ function snapshotCacheDir() {
     repoRoot,
     'node_modules',
     '.cache',
+    'fleet',
     'node-snapshot-cache',
     versionTag(),
   )

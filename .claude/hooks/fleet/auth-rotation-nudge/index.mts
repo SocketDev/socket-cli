@@ -75,6 +75,7 @@ import {
 
 import { DEFAULT_SKIP_IDS, SERVICES } from './services.mts'
 import type { Service } from './services.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 const PREFIX = '[auth-rotation-nudge]'
 
@@ -87,17 +88,18 @@ const STATE_FILE = path.join(STATE_DIR, 'last-activity')
 const GLOBAL_SNOOZE = path.join(STATE_DIR, 'snooze')
 const GLOBAL_SKIP_LIST = path.join(STATE_DIR, 'services-skip')
 
-// Project-local files live at the repo root next to .claude/. Use
-// CLAUDE_PROJECT_DIR (Claude Code injects this on every hook run) so
-// the paths stay correct regardless of session cwd — process.cwd()
-// drifts when the user navigates into a subpackage.
-const PROJECT_DIR = process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
-const PROJECT_SNOOZE = path.join(PROJECT_DIR, '.claude', 'auth-rotation.snooze')
-const PROJECT_SKIP_LIST = path.join(
-  PROJECT_DIR,
-  '.claude',
-  'auth-rotation.services-skip',
-)
+// Project-local files live at the repo root next to .claude/. run() resolves
+// the project dir via resolveProjectDir() — CLAUDE_PROJECT_DIR first (Claude
+// Code injects it on every hook run), so the paths stay correct regardless of
+// session cwd, which drifts when the user navigates into a subpackage — and
+// threads it down so tests can point the lookups at a fixture repo.
+export function projectSnoozePath(projectDir: string): string {
+  return path.join(projectDir, '.claude', 'auth-rotation.snooze')
+}
+
+export function projectSkipListPath(projectDir: string): string {
+  return path.join(projectDir, '.claude', 'auth-rotation.services-skip')
+}
 
 // ── Snooze handling ─────────────────────────────────────────────────
 
@@ -107,7 +109,7 @@ interface SnoozeStatus {
   errors: string[]
 }
 
-export async function checkSnoozes(): Promise<SnoozeStatus> {
+export async function checkSnoozes(projectDir: string): Promise<SnoozeStatus> {
   const status: SnoozeStatus = { active: false, cleaned: [], errors: [] }
   const cleanFile = async (file: string, reason: string): Promise<void> => {
     try {
@@ -121,7 +123,7 @@ export async function checkSnoozes(): Promise<SnoozeStatus> {
       /* c8 ignore stop */
     }
   }
-  for (const file of [GLOBAL_SNOOZE, PROJECT_SNOOZE]) {
+  for (const file of [GLOBAL_SNOOZE, projectSnoozePath(projectDir)]) {
     if (!existsSync(file)) {
       continue
     }
@@ -156,15 +158,17 @@ export async function checkSnoozes(): Promise<SnoozeStatus> {
 
 // ── Skip-list ───────────────────────────────────────────────────────
 
-export function loadSkipIds(): Set<string> {
+export function loadSkipIds(projectDir: string): Set<string> {
   const skipIds = new Set<string>(DEFAULT_SKIP_IDS)
-  for (const file of [GLOBAL_SKIP_LIST, PROJECT_SKIP_LIST]) {
+  for (const file of [GLOBAL_SKIP_LIST, projectSkipListPath(projectDir)]) {
     if (!existsSync(file)) {
       continue
     }
     try {
       const content = readFileSync(file, 'utf8')
-      for (const raw of content.split('\n')) {
+      const raws = content.split('\n')
+      for (let i = 0, { length } = raws; i < length; i += 1) {
+        const raw = raws[i]!
         const trimmed = raw.trim()
         if (trimmed && !trimmed.startsWith('#')) {
           skipIds.add(trimmed)
@@ -190,7 +194,7 @@ const LEAK_WARNING_PATTERNS: readonly RegExp[] = [
   /\brotate the token\b/i,
   /\brotate (?:the )?(?:api )?key\b/i,
   /\bleaked into (?:the )?transcript\b/i,
-  /\btoken (?:value )?(?:was )?(?:briefly )?visible (?:to me )?(?:at one point )?(?:in )?(?:the )?(?:tool output|transcript|context)\b/i,
+  /\btoken (?:value )?(?:was )?(?:briefly )?visible (?:to me )?(?:at one point )?(?:in )?(?:the )?(?:context|tool output|transcript)\b/i,
   // Bright-red rotation banner shape the security-incident block uses.
   /(?:⚠️|⚠|!)+\s*Rotate the token\b/i,
   // "appears in transcript" / "in conversation transcript"
@@ -423,12 +427,15 @@ export function reportRotation(result: RotationResult): string[] {
 
 // ── Main ────────────────────────────────────────────────────────────
 
-export async function run(stdinPayload: string): Promise<string[]> {
+export async function run(
+  stdinPayload: string,
+  projectDir: string = resolveProjectDir(),
+): Promise<string[]> {
   const lines: string[] = []
   if (process.env['CI']) {
     return lines
   }
-  const snooze = await checkSnoozes()
+  const snooze = await checkSnoozes(projectDir)
   lines.push(...snooze.errors)
   lines.push(...reportSnoozeCleaned(snooze.cleaned))
   if (snooze.active) {
@@ -455,7 +462,7 @@ export async function run(stdinPayload: string): Promise<string[]> {
     // of a fresh session — nothing to rotate yet.
     return lines
   }
-  const skipIds = loadSkipIds()
+  const skipIds = loadSkipIds(projectDir)
   const result = rotateAll(skipIds)
   lines.push(...reportRotation(result))
   return lines

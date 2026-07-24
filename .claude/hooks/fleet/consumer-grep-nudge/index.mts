@@ -3,8 +3,8 @@
 //
 // Reminder (not blocker) on Edit/Write operations that DELETE a CSS
 // class, HTML attribute, element selector, or named export. The
-// concern: when the repo has `upstream/`, `vendor/`, `third_party/`, or
-// `external/` submodules / vendored trees, repo-root grep for "is
+// concern: when the repo has `upstream/` or `additions/source-patched/`
+// submodules / vendored trees, repo-root grep for "is
 // anyone using this?" misses consumers that live inside the
 // upstream/vendored bundle. Past incident: an agent stripped a CSS
 // class because the repo-root grep found 0 hits; the project's upstream
@@ -30,14 +30,7 @@ import { defineHook, editGuard, notify, runHook } from '../_shared/guard.mts'
 
 // Dirs that signal "this repo has consumers outside the repo root."
 // Match the same set as the untracked-by-default rule.
-const CONSUMER_DIRS = [
-  'upstream',
-  'vendor',
-  'third_party',
-  'external',
-  'deps',
-  'additions/source-patched',
-]
+const CONSUMER_DIRS = ['upstream', 'additions/source-patched']
 
 // Patterns whose removal triggers the reminder. Conservative — only
 // signals when the removed token is unambiguous (a quoted selector,

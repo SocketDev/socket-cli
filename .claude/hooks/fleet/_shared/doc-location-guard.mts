@@ -147,8 +147,9 @@ export function contentLooksLikeDoc(
   }
   // First non-blank line.
   let firstLine = ''
-  for (const line of content.split('\n')) {
-    const trimmed = line.trim()
+  const lines = content.split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const trimmed = lines[i]!.trim()
     if (trimmed) {
       firstLine = trimmed.toLowerCase()
       break
@@ -182,7 +183,7 @@ export function filenameLooksLikeDoc(
  * lives under a blocked dir passes through for the human to judge.
  */
 export function makeDocLocationCheck(
-  options: DocLocationGuardOptions,
+  config: DocLocationGuardOptions,
 ): GuardCheck {
   const {
     bareDirBlocked = false,
@@ -191,7 +192,7 @@ export function makeDocLocationCheck(
     dirName,
     filenameTokens,
     headingTokens,
-  } = options
+  } = { __proto__: null, ...config } as typeof config
   return editGuard((filePath, content, payload) => {
     // Only target markdown files.
     if (!filePath.toLowerCase().endsWith('.md')) {

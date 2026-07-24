@@ -105,11 +105,12 @@ import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 const BYPASS_PHRASE = 'Allow dirty-worktree bypass'
 
 export function getProjectDir(): string | undefined {
-  return process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
+  return resolveProjectDir()
 }
 
 /**
@@ -171,7 +172,9 @@ export function isUntrackedByDefault(p: string): boolean {
 
 export function parsePorcelain(out: string): DirtyEntry[] {
   const entries: DirtyEntry[] = []
-  for (const line of out.split('\n')) {
+  const lineList = out.split('\n')
+  for (let i = 0, { length } = lineList; i < length; i += 1) {
+    const line = lineList[i]!
     if (!line) {
       continue
     }
@@ -398,7 +401,9 @@ export function formatBlock(
   for (let i = 0, { length } = groups; i < length; i += 1) {
     const g = groups[i]!
     lines.push(`  ${g.label}:`)
-    for (const e of g.dirty.slice(0, 10)) {
+    const es = g.dirty.slice(0, 10)
+    for (let j = 0, { length: jlen } = es; j < jlen; j += 1) {
+      const e = es[j]!
       lines.push(`    ${e.status} ${e.path}`)
     }
     if (g.dirty.length > 10) {
@@ -410,7 +415,9 @@ export function formatBlock(
       '',
       `  owned by live run — not blocking (${sanctioned.length} path(s)):`,
     )
-    for (const s of sanctioned.slice(0, 10)) {
+    const ss = sanctioned.slice(0, 10)
+    for (let i = 0, { length } = ss; i < length; i += 1) {
+      const s = ss[i]!
       lines.push(
         `    ${s.entry.status} ${s.entry.path}  [actor: ${s.ownerActorId}]`,
       )
@@ -500,7 +507,7 @@ export function decideStopAction(inputs: StopInputs): StopAction {
 
 export const check = (payload: ToolCallPayload): GuardResult => {
   const repoDir = getProjectDir()
-  /* c8 ignore start - getProjectDir() always returns process.cwd() as fallback; this guard is defensive */
+  /* c8 ignore start - getProjectDir() always returns resolveProjectDir() as fallback; this guard is defensive */
   if (!repoDir) {
     return undefined
   }
@@ -553,7 +560,8 @@ export const check = (payload: ToolCallPayload): GuardResult => {
     .map(s => ({ ...s, dirty: dropParked(s.dirty, s.root) }))
     .filter(s => s.dirty.length > 0)
   let siblingDirtyCount = 0
-  for (const s of siblingDirt) {
+  for (let i = 0, { length } = siblingDirt; i < length; i += 1) {
+    const s = siblingDirt[i]!
     siblingDirtyCount += s.dirty.length
   }
   // `stop_hook_active` is a Stop-payload field absent from ToolCallPayload's

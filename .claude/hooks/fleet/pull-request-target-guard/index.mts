@@ -192,8 +192,8 @@ export function findUnsafeForkExecution(content: string): Finding[] {
     // line.
     const runHit = /^\s*-?\s*run\s*:\s*(?<body>.*)/.exec(line)
     const bodyLine = runHit ? runHit.groups!.body! : line
-    for (let i = 0, { length } = EXECUTE_PATTERNS; i < length; i += 1) {
-      const ep = EXECUTE_PATTERNS[i]!
+    for (let j = 0, { length: len } = EXECUTE_PATTERNS; j < len; j += 1) {
+      const ep = EXECUTE_PATTERNS[j]!
       if (!ep.re.test(bodyLine)) {
         continue
       }
@@ -203,7 +203,7 @@ export function findUnsafeForkExecution(content: string): Finding[] {
       }
       findings.push({
         cmd: ep.cmd,
-        line: i + 1,
+        line: j + 1,
         snippet:
           bodyLine.trim().length > 90
             ? bodyLine.trim().slice(0, 87) + '…'

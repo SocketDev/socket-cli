@@ -157,7 +157,9 @@ export function foreignToolBinary(name: string): string {
 export function commandWords(script: string): string[] {
   const words: string[] = []
   // Split on shell logical operators (&&, ||) and separators (; |) to isolate individual command segments.
-  for (const segment of script.split(/&&|\|\||[;|]/)) {
+  const segmentList = script.split(/&&|\|\||[;|]/)
+  for (let j = 0, { length: jlen } = segmentList; j < jlen; j += 1) {
+    const segment = segmentList[j]!
     const tokens = segment.trim().split(/\s+/).filter(Boolean)
     let i = 0
     // Skip leading VAR=value env assignments.
@@ -219,7 +221,9 @@ export function auditForeignDeps(jsonText: string): ForeignDepAudit {
   ]) {
     const deps = pkg[block]
     if (deps && typeof deps === 'object') {
-      for (const name of Object.keys(deps as Record<string, unknown>)) {
+      const nameItems = Object.keys(deps as Record<string, unknown>)
+      for (let i = 0, { length } = nameItems; i < length; i += 1) {
+        const name = nameItems[i]!
         if (isForeignToolPackage(name)) {
           const existing = blocksByName.get(name)
           if (existing) {
@@ -252,7 +256,9 @@ export function auditForeignDeps(jsonText: string): ForeignDepAudit {
       : {}
 
   const audit: ForeignDepAudit = { allowed: [], blocked: [] }
-  for (const name of [...blocksByName.keys()].toSorted()) {
+  const nameList = [...blocksByName.keys()].toSorted()
+  for (let i = 0, { length } = nameList; i < length; i += 1) {
+    const name = nameList[i]!
     if (!hostTestDeps.has(name)) {
       audit.blocked.push({
         name,

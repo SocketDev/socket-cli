@@ -52,11 +52,11 @@ interface Finding {
 // also contains a comma (other params present) or is a multi-param
 // function header.
 const BOOL_PARAM_RE =
-  /\b([A-Za-z_$][A-Za-z0-9_$]*)\??:\s*boolean(?:\s*\|\s*(?:undefined|null))?\b/g
+  /\b([A-Za-z_$][A-Za-z0-9_$]*)\??:\s*boolean(?:\s*\|\s*(?:null|undefined))?\b/g
 
 // Detect that a line is a function/method header with params.
 const FUNC_HEADER_RE =
-  /\b(?:async\s+)?(?:function\s*\*?\s*[A-Za-z_$][A-Za-z0-9_$]*|(?:export\s+(?:default\s+)?|private\s+|protected\s+|public\s+|static\s+|abstract\s+|override\s+)*(?:async\s+)?function|(?:export\s+(?:default\s+)?)?(?:async\s+)?\b[A-Za-z_$][A-Za-z0-9_$]*)\s*[<(]/
+  /\b(?:async\s+)?(?:function\s*\*?\s*[A-Za-z_$][A-Za-z0-9_$]*|(?:abstract\s+|export\s+(?:default\s+)?|override\s+|private\s+|protected\s+|public\s+|static\s+)*(?:async\s+)?function|(?:export\s+(?:default\s+)?)?(?:async\s+)?\b[A-Za-z_$][A-Za-z0-9_$]*)\s*[<(]/
 
 /**
  * The substring inside the first balanced `(...)` on a line — the parameter

@@ -2,13 +2,9 @@
 // Claude Code PreToolUse hook — codex-no-write-guard.
 //
 // Per "Codex Usage" rule in opt-in repos (ultrathink today, others future):
-// Codex is for advice and assessment ONLY, never code changes. Blocks:
-//
-//   1. Bash invocations of the `codex` CLI when `--write` or `-w` is passed,
-//      or when the prompt contains implementation-intent verbs.
-//   2. Agent invocations with `subagent_type: codex:codex-rescue` (or other
-//      `codex:*` subagents) when the prompt contains implementation-intent
-//      verbs.
+// Codex is for advice and assessment ONLY, never code changes. Blocks Bash
+// invocations of the `codex` CLI when `--write` or `-w` is passed, or when the
+// command's own prompt arg carries an implementation-intent verb.
 //
 // Prior incident: Codex added inline asm prefetch causing a 5ms perf
 // regression. Codex's output is well-suited for diagnosis but not for code
@@ -42,38 +38,8 @@ const WRITE_INTENT_VERBS = [
   'modify',
 ]
 
-// Detect a write-intent verb used as an IMPERATIVE directed at Codex — i.e. an
-// instruction to make changes ("Implement X", "Fix Y", "1. Add Z", "- Patch W")
-// — NOT a write verb appearing as subject matter inside a read-only review /
-// diagnosis prompt ("inspect the Edit hook", "does it fix stale paths?",
-// "commit bodies", "fix-it-don't-defer").
-//
-// Signal: the verb begins a directive — it sits at the start of the whole text,
-// or right after a clause boundary (sentence end, newline, or a list marker
-// like `-`, `*`, `1.`), optionally preceded by a polite lead-in ("please ",
-// "then "). A bare base-form verb (no -s/-ing/-ed) in that position is an
-// imperative; the inflected forms ("fixes", "editing", "updated") are
-// descriptive prose and are NOT matched here, which is the common review-prose
-// case. The Bash path keeps the broader match on the codex command's own args
-// (a CLI prompt arg is itself the instruction, so any occurrence counts there).
-const IMPERATIVE_LEAD = String.raw`(?:^|[.!?\n]|(?:^|\n)\s*(?:[-*]|\d+\.)\s*)\s*(?:please\s+|then\s+|now\s+|also\s+)?`
-
-export function hasWriteIntent(text: string): string | undefined {
-  const lower = text.toLowerCase()
-  for (let i = 0, { length } = WRITE_INTENT_VERBS; i < length; i += 1) {
-    const verb = WRITE_INTENT_VERBS[i]!
-    // Base-form verb at a directive position, followed by a space (it takes an
-    // object) — the shape of an instruction, not a mid-sentence mention.
-    const re = new RegExp(`${IMPERATIVE_LEAD}${verb}\\s`, 'm')
-    if (re.test(lower)) {
-      return verb
-    }
-  }
-  return undefined
-}
-
-// Broad match (verb anywhere, any inflection) — used ONLY on a codex CLI
-// command's own prompt arg, where the entire arg IS the instruction so a
+// Broad match (verb anywhere, any inflection) — run on the codex CLI command's
+// own prompt arg, where the entire arg IS the instruction so a
 // descriptive-vs-imperative distinction doesn't apply.
 export function hasWriteIntentInArg(text: string): string | undefined {
   const lower = text.toLowerCase()
@@ -95,14 +61,11 @@ export function isCodexBashCommand(command: string): boolean {
   return commandsFor(command, 'codex').length > 0
 }
 
-export function blockMessage(blocked: {
-  kind: 'bash' | 'agent'
-  reason: string
-}): string {
+export function blockMessage(reason: string): string {
   return [
     '[codex-no-write-guard] Blocked: Codex used for code changes',
     '',
-    `  Mode:   ${blocked.kind} (${blocked.reason})`,
+    `  Mode:   bash (${reason})`,
     '',
     '  Per "Codex Usage" rule: Codex is for advice and assessment ONLY,',
     '  never code changes. Prior incident: Codex added inline asm prefetch',
@@ -121,60 +84,35 @@ export function blockMessage(blocked: {
   ].join('\n')
 }
 
-// Handles both the Bash (`codex` CLI) and Agent (`codex:*` subagent) tool
-// paths, so it can't use the single-tool bashGuard/editGuard adapters — it
-// inspects `tool_name` directly.
+// Inspects the `codex` CLI invocation on the Bash tool. The hook matcher is
+// Bash-only, so a non-Bash payload never reaches here.
 export function check(payload: ToolCallPayload): GuardResult {
   const input = payload.tool_input
-  if (!input) {
+  if (!input || payload.tool_name !== 'Bash') {
     return undefined
   }
-
-  let blocked: { kind: 'bash' | 'agent'; reason: string } | undefined
-
-  if (payload.tool_name === 'Bash') {
-    const command = typeof input.command === 'string' ? input.command : ''
-    const codexCommands = commandsFor(command, 'codex')
-    if (codexCommands.length > 0) {
-      if (invocationHasFlag(command, 'codex', ['--write', '-w'])) {
-        blocked = { kind: 'bash', reason: '--write / -w flag' }
-      } else {
-        // Check write-intent verbs only in the codex command's OWN args
-        // (the prompt), not the whole shell line — so a sibling command
-        // or a path containing a verb word doesn't trip the guard.
-        const codexArgText = codexCommands.flatMap(c => c.args).join(' ')
-        const verb = hasWriteIntentInArg(codexArgText)
-        if (verb) {
-          blocked = { kind: 'bash', reason: `write-intent verb "${verb}"` }
-        }
-      }
-    }
-  } else if (payload.tool_name === 'Agent') {
-    // `subagent_type` / `prompt` are Agent-tool fields not on the shared
-    // ToolInput shape — read them through an unknown-typed narrow.
-    const agentInput = input as {
-      readonly subagent_type?: unknown | undefined
-      readonly prompt?: unknown | undefined
-    }
-    const subagent =
-      typeof agentInput.subagent_type === 'string'
-        ? agentInput.subagent_type
-        : ''
-    if (/^codex(?::|$)/.test(subagent)) {
-      const prompt =
-        typeof agentInput.prompt === 'string' ? agentInput.prompt : ''
-      const verb = hasWriteIntent(prompt)
-      if (verb) {
-        blocked = { kind: 'agent', reason: `write-intent verb "${verb}"` }
-      }
-    }
-  }
-
-  if (!blocked) {
+  const command = typeof input.command === 'string' ? input.command : ''
+  const codexCommands = commandsFor(command, 'codex')
+  if (codexCommands.length === 0) {
     return undefined
   }
-
-  return block(blockMessage(blocked))
+  let reason: string | undefined
+  if (invocationHasFlag(command, 'codex', ['--write', '-w'])) {
+    reason = '--write / -w flag'
+  } else {
+    // Check write-intent verbs only in the codex command's OWN args (the
+    // prompt), not the whole shell line — so a sibling command or a path
+    // containing a verb word doesn't trip the guard.
+    const codexArgText = codexCommands.flatMap(c => c.args).join(' ')
+    const verb = hasWriteIntentInArg(codexArgText)
+    if (verb) {
+      reason = `write-intent verb "${verb}"`
+    }
+  }
+  if (!reason) {
+    return undefined
+  }
+  return block(blockMessage(reason))
 }
 
 export const hook = defineHook({

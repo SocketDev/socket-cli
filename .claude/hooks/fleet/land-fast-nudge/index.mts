@@ -26,8 +26,6 @@
 //
 // Exit codes: 0 — always (informational Stop hook). Fails open.
 
-import process from 'node:process'
-
 import {
   currentBranch,
   gitOut,
@@ -35,9 +33,10 @@ import {
 } from '../_shared/git-branch.mts'
 import { isSquashOptIn } from '../_shared/fleet-roster.mts'
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 export function getProjectDir(): string {
-  return process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
+  return resolveProjectDir()
 }
 
 // Ahead / behind counts vs origin/<branch>. `git rev-list --left-right

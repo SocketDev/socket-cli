@@ -83,7 +83,7 @@ export function hasAdversarialEvidence(
   }
   for (let i = 0, { length } = toolUses; i < length; i += 1) {
     const event = toolUses[i]!
-    if (event.name !== 'Task' && event.name !== 'Agent') {
+    if (event.name !== 'Agent' && event.name !== 'Task') {
       continue
     }
     const prompt = event.input['prompt']

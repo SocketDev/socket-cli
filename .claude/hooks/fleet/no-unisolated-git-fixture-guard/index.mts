@@ -41,7 +41,7 @@ import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 // lives under a `test/` / `__tests__/` directory.
 export function isTestFilePath(filePath: string): boolean {
   const normalized = normalizePath(filePath)
-  if (/\.(?:test|spec)\.[cm]?[jt]sx?$/.test(normalized)) {
+  if (/\.(?:spec|test)\.[cm]?[jt]sx?$/.test(normalized)) {
     return true
   }
   return /(?:^|\/)(?:test|tests|__tests__)\//.test(normalized)
@@ -124,7 +124,7 @@ export const check = editGuard((filePath, content, payload) => {
       '  Fix (preferred): side-effect import the shared isolation helper as',
       '  the FIRST import — it strips the GIT_* discovery vars on load:',
       "    import '<…>/.git-hooks/_shared/isolate-git-env.mts'",
-      '  (vitest already does this via test/scripts/fleet/setup.mts; only',
+      '  (vitest already does this via test/fleet/scripts/setup.mts; only',
       '  node:test git-fixture suites need the explicit import.) For the',
       '  stronger config-pin form, call isolateGitEnv({ pinConfigToNull: true }).',
       '',

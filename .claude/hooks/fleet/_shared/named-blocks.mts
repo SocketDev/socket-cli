@@ -93,11 +93,11 @@ export interface MarkerLine {
 // canonical bare-tag form (`# <fleet-canonical>`) and the legacy keyword form
 // (`# BEGIN <fleet-canonical>`) for backward compatibility.
 const OPEN_MARKER_RE =
-  /^\s*(?:<!--|#+|\/\/)\s*(?:BEGIN\s+)?(<[A-Za-z][^>]*>)\s*(?:-->)?\s*$/i
+  /^\s*(?:#+|<!--|\/\/)\s*(?:BEGIN\s+)?(<[A-Za-z][^>]*>)\s*(?:-->)?\s*$/i
 // A CLOSE marker line: an optional legacy `END` keyword + a bare close tag
 // `</tag>`. Accepts both `# </fleet-canonical>` and `# END </fleet-canonical>`.
 const CLOSE_MARKER_RE =
-  /^\s*(?:<!--|#+|\/\/)\s*(?:END\s+)?<\/\s*([A-Za-z][A-Za-z0-9-]*)\s*>\s*(?:-->)?\s*$/i
+  /^\s*(?:#+|<!--|\/\/)\s*(?:END\s+)?<\/\s*([A-Za-z][A-Za-z0-9-]*)\s*>\s*(?:-->)?\s*$/i
 
 const EMPTY_ATTRS: Readonly<Record<string, string>> = Object.freeze({
   __proto__: null,

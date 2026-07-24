@@ -21,6 +21,7 @@
 import { existsSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { resolveProjectDir } from './project-dir.mts'
 
 /**
  * Walk the candidate list and return the first hit. Cheap — at most 5 file-stat
@@ -29,8 +30,7 @@ import path from 'node:path'
 export function findWheelhouseRoot(
   options: { startDir?: string | undefined } = {},
 ): string | undefined {
-  const startDir =
-    options.startDir ?? process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
+  const startDir = options.startDir ?? resolveProjectDir()
 
   // 1. Override via env var — used by CI / non-standard layouts.
   const envOverride = process.env['SOCKET_WHEELHOUSE_DIR']

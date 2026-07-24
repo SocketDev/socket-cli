@@ -71,7 +71,7 @@ const SCRIPT_CONTEXT_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> =
 // to `main..HEAD` / `main...HEAD` inside the writeable body counts as
 // scripting context.
 const SCRIPT_WRITE_RE =
-  /(?:cat\s*>\s*|tee\s+|>\s*)\S+\.(?:bash|fish|js|mjs|mts|sh|ts|zsh)\b/
+  /(?:>\s*|cat\s*>\s*|tee\s+)\S+\.(?:bash|fish|js|mjs|mts|sh|ts|zsh)\b/
 
 const TRIPLE_DOT_BRANCH_RE = /\b(?:main|master)\.{2,3}HEAD\b/
 
@@ -80,7 +80,7 @@ const TRIPLE_DOT_BRANCH_RE = /\b(?:main|master)\.{2,3}HEAD\b/
 // `main`/`master` must be the FINAL token of the segment so a rename AWAY from
 // the default (`git branch -m main develop`) does not match.
 const RENAME_TO_DEFAULT_RE =
-  /\bgit\s+branch\s+(?:-[mM]|--move)\b[^\n;|&]*?\b(?:main|master)\b\s*(?:$|[\n;&|])/
+  /\bgit\s+branch\s+(?:--move|-[mM])\b[^\n;|&]*?\b(?:main|master)\b\s*(?:$|[\n;&|])/
 // GitHub's branch-rename API — `POST .../branches/<src>/rename` with
 // `new_name=main` — switches the default the same way and hits the same wall.
 const GH_RENAME_ENDPOINT_RE = /\/branches\/[^/\s]+\/rename\b/

@@ -18,6 +18,7 @@
 // invocations — no regex command matching. A parse failure exits 0 silently
 // (fail-open — a nudge must never block on its own bug).
 
+import { AI_SLOP_PATTERNS } from '../_shared/ai-slop-patterns.mts'
 import { bashGuard, defineHook, notify, runHook } from '../_shared/guard.mts'
 import {
   HONESTY_FRAMING_RE,
@@ -52,6 +53,9 @@ const ANTIPATTERN_CHECKS: ReadonlyArray<{
   // Honesty framing is the shared _shared/honesty-framing.mts source — one
   // matcher across every surface that bans "honest"/"honestly" filler.
   { label: HONESTY_LABEL, re: HONESTY_FRAMING_RE },
+  // The no-ai-slop tells share _shared/ai-slop-patterns.mts (mapped to this
+  // surface's {label, re} shape) so PR/issue bodies flag the same set.
+  ...AI_SLOP_PATTERNS.map(p => ({ label: p.label, re: p.regex })),
 ]
 
 /**

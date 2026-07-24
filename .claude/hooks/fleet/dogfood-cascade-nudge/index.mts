@@ -34,9 +34,10 @@ import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import { extractFleetBlock } from '../_shared/fleet-markers.mts'
 import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 export function getProjectDir(): string {
-  return process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
+  return resolveProjectDir()
 }
 
 // Extract the fleet block (BEGIN…END) from a CLAUDE.md; undefined when the
@@ -61,7 +62,9 @@ export function changedTemplateFiles(repoDir: string): string[] {
     if (r.status !== 0) {
       continue
     }
-    for (const raw of String(r.stdout).split('\n')) {
+    const raws = String(r.stdout).split('\n')
+    for (let i = 0, { length } = raws; i < length; i += 1) {
+      const raw = raws[i]!
       const line = raw.trim()
       if (!line) {
         continue

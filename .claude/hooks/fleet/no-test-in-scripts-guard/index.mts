@@ -24,7 +24,7 @@
 // lock-step-refs-resolve regex that had gone all-non-capturing). This guard
 // stops the pattern recurring at edit time.
 //
-// Reusable test helpers belong in `test/_shared/fleet/lib/`, not a
+// Reusable test helpers belong in `test/fleet/_shared/lib/`, not a
 // `scripts/**/test/helpers.mts`.
 //
 // Exit codes: 0 — pass; 2 — block. Fails open on any throw.
@@ -58,7 +58,7 @@ export const check = editGuard((filePath, _content, _payload) => {
       '',
       '    test/unit/<name>.test.mts   not   scripts/**/test/<name>.test.mts',
       '',
-      '  Reusable test helpers go in test/_shared/fleet/lib/.',
+      '  Reusable test helpers go in test/fleet/_shared/lib/.',
       '  Hook / lint-rule / git-hook tests are NOT co-located either — they live',
       '  under test/repo/{unit,integration,e2e}/ (vitest), gated by the',
       '  cascaded-fleet-trees-have-no-tests check.',

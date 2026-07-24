@@ -102,7 +102,7 @@ function formatBlock(detection: UpstreamGitlinkDetection): string {
       '  entry) is a redundant second copy of that SHA. `upstream/` is always',
       '  git-ignored and never re-included.',
       '',
-      '  Fix: record the reference in `.gitmodules` (`gen-gitmodules-hash.mts --set`)',
+      '  Fix: record the reference in `.gitmodules` (`gen/gitmodules-hash.mts --set`)',
       '  and materialize it with `git-partial-submodule.mts clone`; drop a stray',
       '  gitlink with `git update-index --force-remove <path>`. See',
       '  docs/agents.md/fleet/upstream-references.md.',

@@ -24,7 +24,6 @@
 // commits are caught by the commit-msg git-stage backstop.
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-import process from 'node:process'
 
 import { isGitCommit } from '../_shared/commit-command.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
@@ -37,6 +36,7 @@ import {
   readIdentityPolicy,
 } from '../../../../.git-hooks/_shared/git-identity.mts'
 import type { GitAuthor } from '../../../../.git-hooks/_shared/git-identity.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 export { isGitCommit }
 
@@ -113,7 +113,7 @@ export const check = bashGuard((command, payload) => {
 
   // Policy comes from the cascaded config (.config/fleet|repo/git-authors.json),
   // rooted at the commit's cwd. Same source the commit-msg backstop reads.
-  const policy = readIdentityPolicy(payload.cwd ?? process.cwd())
+  const policy = readIdentityPolicy(resolveProjectDir(payload.cwd))
 
   // Determine the effective author for this commit.
   const override = parseAuthorOverride(command)

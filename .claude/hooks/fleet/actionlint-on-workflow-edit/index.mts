@@ -3,7 +3,7 @@
 //
 // After an Edit/Write touches `.github/workflows/*.y*ml`, invoke local
 // `actionlint` AND `zizmor` (if installed) against the file. Surface
-// findings as stderr so Claude sees them before the next turn.
+// findings as stderr so the agent sees them before the next turn.
 //
 // Two scanners, independent:
 //   - actionlint catches YAML / shell / SHA-pin issues that GitHub's

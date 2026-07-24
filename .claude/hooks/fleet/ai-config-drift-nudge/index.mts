@@ -20,17 +20,17 @@
 
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-import process from 'node:process'
 
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 // AI-assistant config dirs a worm targets. Matched as a leading or
 // embedded path segment.
 const AI_CONFIG_DIRS = ['.claude', '.cursor', '.gemini', '.vscode']
 
 export function getProjectDir(): string {
-  return process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
+  return resolveProjectDir()
 }
 
 export function isAiConfigPath(p: string): boolean {
@@ -45,7 +45,9 @@ interface DriftEntry {
 
 export function parseAiConfigDrift(out: string): DriftEntry[] {
   const entries: DriftEntry[] = []
-  for (const line of out.split('\n')) {
+  const lineList = out.split('\n')
+  for (let i = 0, { length } = lineList; i < length; i += 1) {
+    const line = lineList[i]!
     if (!line) {
       continue
     }

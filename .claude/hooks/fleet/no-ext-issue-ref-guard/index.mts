@@ -98,7 +98,7 @@ export function extractMessageBodies(command: string): string {
   //   --message text
   //   --body "..."
   const flagRe =
-    /(?:^|\s)(?:--body|--body-text|--message|-m)(?:\s+|=)("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\S+)/g
+    /(?:^|\s)(?:--body|--body-text|--message|-m)(?:=|\s+)("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\S+)/g
   let match: RegExpExecArray | null
   while ((match = flagRe.exec(command)) !== null) {
     const raw = match[1]!

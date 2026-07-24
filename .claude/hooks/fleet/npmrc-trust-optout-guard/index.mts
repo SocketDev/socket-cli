@@ -59,7 +59,7 @@ const BYPASS_PHRASES = ['Allow npmrc-trust-optout bypass']
 // disabling of the protection. A scratch `.env` outside source control is not
 // our concern; these are the tracked surfaces that ship the hole to others.
 const COMMITTED_FILE_RE =
-  /(?:^|\/)(?:\.npmrc|Dockerfile|[^/]+\.(?:sh|bash|zsh|mts|ts|cts|mjs|cjs|js|ya?ml|env))$/
+  /(?:^|\/)(?:\.npmrc|Dockerfile|[^/]+\.(?:bash|cjs|cts|env|js|mjs|mts|sh|ts|ya?ml|zsh))$/
 const WORKFLOW_DIR_RE = /\.github\//
 
 function isCommittedConfigFile(filePath: string): boolean {

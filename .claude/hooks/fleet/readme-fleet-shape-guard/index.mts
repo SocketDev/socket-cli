@@ -256,10 +256,12 @@ interface ShapeFinding {
 
 export function findShapeViolations(
   text: string,
-  options?: {
-    skipSkeleton?: boolean | undefined
-    skipSocialBadges?: boolean | undefined
-  },
+  options?:
+    | {
+        skipSkeleton?: boolean | undefined
+        skipSocialBadges?: boolean | undefined
+      }
+    | undefined,
 ): ShapeFinding[] {
   const opts = { __proto__: null, ...options }
   const lines = text.split('\n')

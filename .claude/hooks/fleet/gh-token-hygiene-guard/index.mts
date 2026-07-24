@@ -330,9 +330,9 @@ function isWorkflowScopeRefresh(command: string): boolean {
     // Find a scope flag, then look at the value token(s) for `workflow`.
     for (let i = 0; i < c.args.length; i += 1) {
       const a = c.args[i]!
-      const isScopeFlag = /^(?:-s|-r|--scopes|--remove-scopes)$/.test(a)
+      const isScopeFlag = /^(?:--remove-scopes|--scopes|-r|-s)$/.test(a)
       // Inline form: `--scopes=workflow` or `-sworkflow`.
-      if (/^(?:-s|-r|--scopes|--remove-scopes)\b.*workflow\b/.test(a)) {
+      if (/^(?:--remove-scopes|--scopes|-r|-s)\b.*workflow\b/.test(a)) {
         return true
       }
       if (isScopeFlag) {
@@ -362,10 +362,10 @@ function isWorkflowScopeRevoke(command: string): boolean {
     for (let i = 0, { length } = c.args; i < length; i += 1) {
       const a = c.args[i]!
       // Inline form: `--remove-scopes=workflow` or `-rworkflow`.
-      if (/^(?:-r|--remove-scopes)\b.*workflow\b/.test(a)) {
+      if (/^(?:--remove-scopes|-r)\b.*workflow\b/.test(a)) {
         return true
       }
-      if (a === '-r' || a === '--remove-scopes') {
+      if (a === '--remove-scopes' || a === '-r') {
         const value = c.args[i + 1]
         if (value && /\bworkflow\b/.test(value)) {
           return true

@@ -100,11 +100,11 @@ export function looksLikeImperative(text: string): boolean {
 // and shout-case (two-plus consecutive ALL-CAPS words of 3+ letters). Per the
 // fleet queue discipline, an explicit now/urgent IS the sanctioned redirect
 // signal — a NEW ask mid-queue is normally enqueued, but an urgent one pivots.
-const URGENCY_CAPS_RE = /\b(?:NOW|ASAP|URGENT)\b/
+const URGENCY_CAPS_RE = /\b(?:ASAP|NOW|URGENT)\b/
 // Urgency keywords: `urgent` or `urgently`, `immediately`, `right now`,
 // `drop everything`, or `this instant` — whole-word match, case-insensitive.
 const URGENCY_WORDS_RE =
-  /\b(?:urgent(?:ly)?|immediately|right now|drop everything|this instant)\b/i
+  /\b(?:drop everything|immediately|right now|this instant|urgent(?:ly)?)\b/i
 const SHOUT_RUN_RE = /\b[A-Z]{3,}(?:\s+[A-Z]{3,})+\b/
 
 export function hasUrgencyMarker(text: string): boolean {
@@ -120,13 +120,13 @@ export function hasUrgencyMarker(text: string): boolean {
 // (enqueue-dont-pivot makes queueing the DEFAULT for non-urgent asks), so
 // these fire solely on the urgent path.
 const DEFERRAL_MARKERS: readonly RegExp[] = [
-  /\bi'?ll (?:get|circle) (?:to|back)\b/i,
-  /\bafter (?:the|this|that) (?:current|in-?flight|running)\b/i,
-  /\bonce (?:the|this|that) (?:current|in-?flight|running|task|workflow)\b/i,
+  /\bi'?ll (?:circle|get) (?:back|to)\b/i,
+  /\bafter (?:that|the|this) (?:current|in-?flight|running)\b/i,
+  /\bonce (?:that|the|this) (?:current|in-?flight|running|task|workflow)\b/i,
   /\bfirst,? let me finish\b/i,
-  /\b(?:added|adding) (?:it|this|that) to the (?:queue|backlog|list)\b/i,
+  /\b(?:added|adding) (?:it|that|this) to the (?:backlog|list|queue)\b/i,
   /\benqueued?\b/i,
-  /\bwhen (?:the|this|that) (?:finishes|completes|lands)\b/i,
+  /\bwhen (?:that|the|this) (?:completes|finishes|lands)\b/i,
 ]
 
 export function hasDeferral(text: string): boolean {
@@ -138,16 +138,16 @@ export function hasDeferral(text: string): boolean {
 const HEDGE_MARKERS: readonly RegExp[] = [
   /\bdoesn't help\b/i,
   /\bwon't help\b/i,
-  /\bbefore (?:i|we) (?:do that|run|kick|switch|cancel)\b/i,
+  /\bbefore (?:i|we) (?:cancel|do that|kick|run|switch)\b/i,
   /\blet me (?:explain|first|note)\b/i,
-  /\b(?:to be clear|just so we'?re clear)\b/i,
+  /\b(?:just so we'?re clear|to be clear)\b/i,
   /\bworth (?:checking|confirming|noting)\b/i,
-  /\bone thing to (?:note|flag)\b/i,
+  /\bone thing to (?:flag|note)\b/i,
   /\bthat said\b/i,
   /\bactually,?\s+/i,
-  /\b(?:however|but),?\s+(?:that|the|this)\b/i,
+  /\b(?:but|however),?\s+(?:that|the|this)\b/i,
   /\bthe in-?flight\b/i,
-  /\b(?:caveat|note|important):/i,
+  /\b(?:caveat|important|note):/i,
 ]
 
 export function hasHedge(text: string): boolean {

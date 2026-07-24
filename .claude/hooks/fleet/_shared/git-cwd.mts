@@ -10,9 +10,9 @@
  */
 
 import path from 'node:path'
-import process from 'node:process'
 
 import { commandsFor, normalizeShellDir } from './shell-command.mts'
+import { resolveProjectDir } from './project-dir.mts'
 
 export { normalizeShellDir }
 
@@ -73,5 +73,5 @@ export function extractGitCwd(
   if (cdDir) {
     return normalizeShellDir(cdDir, cwd)
   }
-  return path.resolve(cwd ?? process.cwd())
+  return path.resolve(cwd ?? resolveProjectDir())
 }

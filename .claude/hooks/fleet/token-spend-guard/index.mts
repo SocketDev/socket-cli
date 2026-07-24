@@ -39,8 +39,8 @@ const PREMIUM_EFFORT = new Set(['high', 'max', 'xhigh'])
 // `claude-opus-4-8[1m]`, `fable`, `claude-fable-5`, `claude-mythos-5`).
 function isPremiumModel(model: string): boolean {
   return (
-    /\b(?:opus|fable|mythos)\b/i.test(model) ||
-    /claude-(?:opus|fable|mythos)/i.test(model)
+    /\b(?:fable|mythos|opus)\b/i.test(model) ||
+    /claude-(?:fable|mythos|opus)/i.test(model)
   )
 }
 
@@ -52,7 +52,7 @@ const MECHANICAL_RE = [
   /\bpnpm\s+run\s+sync\b/,
   /chore\(wheelhouse\):\s*cascade\b/,
   // Mass autofix / format sweeps (the whole-tree variants, not a single file).
-  /\b(?:pnpm\s+(?:run|exec)\s+)?(?:oxlint|eslint)\b[^\n]*--fix\b[^\n]*(?:\s\.|--all)\b/,
+  /\b(?:pnpm\s+(?:exec|run)\s+)?(?:eslint|oxlint)\b[^\n]*--fix\b[^\n]*(?:--all|\s\.)\b/,
   /\b(?:pnpm\s+run\s+)?fix\b\s+--all\b/,
   /\boxfmt\b[^\n]*--write\b[^\n]*\s\.(?:\s|$)/,
 ] as const

@@ -58,11 +58,16 @@ export function parseHoldArgs(argv: readonly string[]): {
   return { clear, clearAll, list, note, paths }
 }
 
+// This hook lives at `.claude/hooks/fleet/auto-land-on-stop/hold.mts`, so its
+// own location is four levels below the project root — used only as the
+// last-resort fallback when the agent runner hasn't set CLAUDE_PROJECT_DIR.
+const HERE = path.dirname(fileURLToPath(import.meta.url))
+const PROJECT_DIR =
+  process.env['CLAUDE_PROJECT_DIR'] ?? path.join(HERE, '..', '..', '..', '..')
+
 export function main(): void {
   const parsed = parseHoldArgs(process.argv.slice(2))
-  const filePath = resolveParkedFile(
-    process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd(),
-  )
+  const filePath = resolveParkedFile(PROJECT_DIR)
   const now = Date.now()
   const abs = parsed.paths.map(p => path.resolve(p))
 

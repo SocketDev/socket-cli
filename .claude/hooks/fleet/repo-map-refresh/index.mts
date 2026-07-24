@@ -4,7 +4,7 @@
 // Keeps the on-disk repo-map cache (.repo-map/<rel>.skel) warm so the
 // read-orientation-nudge hook can point a model straight at a ready-made,
 // ~95%-smaller skeleton instead of a whole-file read (context re-read dominates
-// spend). Runs the CHEAP incremental refresh — `make-repo-map --write
+// spend). Runs the CHEAP incremental refresh — `gen/repo-map --write
 // --changed` — which only re-skeletons git-touched source files.
 //
 // Deliberately INCREMENTAL, not a full build: it only fires when `.repo-map/`
@@ -21,6 +21,7 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { isHookEntrypoint } from '../_shared/entrypoint.mts'
@@ -28,10 +29,16 @@ import { isHookEntrypoint } from '../_shared/entrypoint.mts'
 const logger = getDefaultLogger()
 
 const REPO_MAP_DIR = '.repo-map'
-const MAKE_REPO_MAP = 'scripts/fleet/make-repo-map.mts'
+const GEN_REPO_MAP = 'scripts/fleet/gen/repo-map.mts'
+
+// This hook lives at `.claude/hooks/fleet/repo-map-refresh/index.mts`, so its
+// own location is four levels below the project root — used only as the
+// last-resort fallback when the agent runner hasn't set CLAUDE_PROJECT_DIR.
+const HERE = path.dirname(fileURLToPath(import.meta.url))
+const DEFAULT_REPO_ROOT = path.join(HERE, '..', '..', '..', '..')
 
 /**
- * Spawn `node make-repo-map.mts --write --changed` detached from the repo root.
+ * Spawn `node gen/repo-map.mts --write --changed` detached from the repo root.
  * unref'd so it survives this hook's exit and never holds the SessionStart
  * chain; stdio ignored so a refresh log never leaks into session output.
  */
@@ -39,7 +46,7 @@ const MAKE_REPO_MAP = 'scripts/fleet/make-repo-map.mts'
 export function spawnRefresh(repoRoot: string): void {
   const result = spawn(
     process.execPath,
-    [path.join(repoRoot, MAKE_REPO_MAP), '--write', '--changed'],
+    [path.join(repoRoot, GEN_REPO_MAP), '--write', '--changed'],
     { cwd: repoRoot, detached: true, stdio: 'ignore' },
   )
   // Best-effort: swallow the spawn promise rejection (missing binary / script)
@@ -58,13 +65,13 @@ export function spawnRefresh(repoRoot: string): void {
 export function shouldRefresh(repoRoot: string): boolean {
   return (
     existsSync(path.join(repoRoot, REPO_MAP_DIR)) &&
-    existsSync(path.join(repoRoot, MAKE_REPO_MAP))
+    existsSync(path.join(repoRoot, GEN_REPO_MAP))
   )
 }
 
 /* c8 ignore start - main() depends on real machine state: CLAUDE_PROJECT_DIR + a detached spawn */
 function main(): void {
-  const repoRoot = process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
+  const repoRoot = process.env['CLAUDE_PROJECT_DIR'] ?? DEFAULT_REPO_ROOT
   if (shouldRefresh(repoRoot)) {
     spawnRefresh(repoRoot)
   }

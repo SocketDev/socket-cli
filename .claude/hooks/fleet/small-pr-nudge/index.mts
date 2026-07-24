@@ -3,8 +3,9 @@
 //
 // Reminder (NOT a block) on `gh pr create` invocations when the PR diff
 // is large. Fleet PRs stay small — one logical feature/fix, ~200 changed
-// lines. A large PR is decomposed into smaller landed commits, or stacked
-// (`gh pr create --base <previous-branch>`).
+// lines. A large PR is decomposed into smaller landed commits, or stacked —
+// GitHub stacked PRs are in open preview (CLI form: `gh pr create --base
+// <previous-branch>`).
 //
 // The fleet DIRECT-PUSHES to main; a PR happens only on push-rejection or
 // for external / cross-repo work. So "small PRs" is the same discipline as
@@ -16,7 +17,9 @@
 // so `&&` chains, quoting, and `$(…)` are handled correctly.
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
+import path from 'node:path'
 import process from 'node:process'
+import { fileURLToPath } from 'node:url'
 
 import {
   defaultBranchOf,
@@ -31,6 +34,12 @@ import type { Command } from '../_shared/shell-command.mts'
 // Fleet doctrine: one logical feature/fix, ~200 changed lines. A PR whose
 // three-dot diff exceeds this is a candidate for decomposition or stacking.
 const SMALL_PR_LINES = 200
+
+// This file lives at <repo-root>/.claude/hooks/fleet/small-pr-nudge/index.mts —
+// anchor on that fixed layout instead of process.cwd(), which is unstable
+// depending on where the hook runner invokes from.
+const HERE = path.dirname(fileURLToPath(import.meta.url))
+const DEFAULT_REPO_ROOT = path.join(HERE, '..', '..', '..', '..')
 
 /**
  * The changed-line + file totals of a PR's three-dot diff against `base`.
@@ -131,7 +140,8 @@ export const hook = defineHook({
     if (!isGhPrCreate(command)) {
       return undefined
     }
-    const cwd = payload.cwd ?? process.cwd()
+    const cwd =
+      payload.cwd ?? process.env['CLAUDE_PROJECT_DIR'] ?? DEFAULT_REPO_ROOT
     // Base = the explicit --base/-B flag, else the repo default branch.
     const base = prBaseOf(command) ?? defaultBranchOf(cwd)
     const size = prDiffSize(cwd, base)
@@ -146,7 +156,8 @@ export const hook = defineHook({
         `  Diff: ${size.lines} changed lines across ${size.files} file(s) vs ${base} (${base}...HEAD).`,
         `  Fleet PRs stay small — one logical feature/fix, ~${SMALL_PR_LINES} changed lines.`,
         '',
-        '  Decompose into smaller landed commits, or stack the change:',
+        '  Decompose into smaller landed commits, or stack the change',
+        '  (GitHub stacked PRs are in open preview):',
         '',
         `    gh pr create --base ${stackHint}`,
         '',

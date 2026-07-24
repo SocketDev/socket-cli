@@ -77,7 +77,9 @@ export function readRecentUserTurns(
     return []
   }
   const turns: string[] = []
-  for (const line of raw.split(/\r?\n/)) {
+  const lines = raw.split(/\r?\n/)
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
     if (!line.trim()) {
       continue
     }

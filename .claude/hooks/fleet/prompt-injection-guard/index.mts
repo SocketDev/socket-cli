@@ -89,34 +89,34 @@ const INJECTION_PATTERNS: readonly Pattern[] = [
     label: 'override directive ("disregard/ignore previous instructions")',
     // Matches "ignore/disregard/forget … previous/system/your … instructions/prompts/rules"
     // with up to 48 chars between the verb and qualifier, and 24 between qualifier and noun.
-    re: /\b(?:dis-?regard|ignore|forget|do\s+not\s+(?:follow|obey)|pay\s+no\s+attention\s+to)\b[^.\n]{0,48}\b(?:all\s+)?(?:previous|prior|above|preceding|earlier|former|system|your)\b[^.\n]{0,24}\b(?:instructions?|prompts?|messages?|directions?|context|rules?|guidelines?)\b/i,
+    re: /\b(?:dis-?regard|do\s+not\s+(?:follow|obey)|forget|ignore|pay\s+no\s+attention\s+to)\b[^.\n]{0,48}\b(?:all\s+)?(?:above|earlier|former|preceding|previous|prior|system|your)\b[^.\n]{0,24}\b(?:context|directions?|guidelines?|instructions?|messages?|prompts?|rules?)\b/i,
   },
   {
     label: 'override directive ("your real/actual instructions are")',
     // Matches "your real/actual/true/new/only task/goal/instructions is/are".
-    re: /\byour\s+(?:real|actual|true|new|only)\s+(?:task|job|goal|instructions?|directive|purpose|objective)\s+(?:is|are)\b/i,
+    re: /\byour\s+(?:actual|new|only|real|true)\s+(?:directive|goal|instructions?|job|objective|purpose|task)\s+(?:are|is)\b/i,
   },
   {
     label: 'fake system/role tag injection ("</system>", "[INST]", "system:")',
     // Matches HTML-style role tags (</system>), bracket-style ([INST],[SYS]),
     // markdown heading "# system", and "system prompt/note/message:" prefixes.
-    re: /(?:<\/?\s*(?:system|assistant|user|im_start|im_end)\b[^>]*>|\[\/?(?:INST|SYS|SYSTEM)\]|^\s*#{1,6}\s*system\b|\bsystem\s*(?:prompt|note|message)\s*:)/im,
+    re: /(?:<\/?\s*(?:assistant|im_end|im_start|system|user)\b[^>]*>|\[\/?(?:INST|SYS|SYSTEM)\]|^\s*#{1,6}\s*system\b|\bsystem\s*(?:message|note|prompt)\s*:)/im,
   },
   {
     label: 'agent-addressing imperative ("if you are an AI … you must/do not")',
     // Matches "if you're an AI/LLM/agent…you must/should/do not/never" with up to 96
     // chars between the identity clause and the imperative verb.
-    re: /\bif\s+you(?:'re|\s+are)\s+(?:an?\s+)?(?:ai|a\.?i\.?|llm|language\s+model|agent|assistant|chat\s*bot|coding\s+agent|automated\s+(?:agent|system|tool))\b[^.\n]{0,96}\b(?:you\s+must|you\s+should|you\s+shall|do\s+not|don'?t|never|must\s+not|stop|refuse|delete|ignore)\b/i,
+    re: /\bif\s+you(?:'re|\s+are)\s+(?:an?\s+)?(?:a\.?i\.?|agent|ai|assistant|automated\s+(?:agent|system|tool)|chat\s*bot|coding\s+agent|language\s+model|llm)\b[^.\n]{0,96}\b(?:delete|do\s+not|don'?t|ignore|must\s+not|never|refuse|stop|you\s+must|you\s+shall|you\s+should)\b/i,
   },
   {
     label: 'agent-addressing imperative ("as an AI language model, …")',
     // Matches "as an AI/LLM/assistant/agent, you/do/never/always/ignore/refuse/stop".
-    re: /\bas\s+an?\s+(?:ai|llm|language\s+model|assistant|agent|automated)\b[^,.\n]{0,48},?\s*(?:you|do|never|always|disregard|ignore|refuse|stop)\b/i,
+    re: /\bas\s+an?\s+(?:agent|ai|assistant|automated|language\s+model|llm)\b[^,.\n]{0,48},?\s*(?:always|disregard|do|ignore|never|refuse|stop|you)\b/i,
   },
   {
     label: 'attention directive ("note to AI/LLM/agents")',
     // Matches "attention/note/message to all AI/LLM/agents/assistants/chatbots".
-    re: /\b(?:attention|note|notice|message|instructions?)\b\s*(?:to|for)\s*(?:all\s+)?(?:ai|llm|language\s+models?|agents?|assistants?|chat\s*bots?|automated\s+(?:agents?|tools?))\b/i,
+    re: /\b(?:attention|instructions?|message|note|notice)\b\s*(?:for|to)\s*(?:all\s+)?(?:agents?|ai|assistants?|automated\s+(?:agents?|tools?)|chat\s*bots?|language\s+models?|llm)\b/i,
   },
   {
     label: 'destructive agent command ("delete all tests/code/files")',
@@ -127,24 +127,24 @@ const INJECTION_PATTERNS: readonly Pattern[] = [
     // e.g. nock/Map/registry APIs) via `(?<!\.)`+`(?!\s*\()`, and a noun that is
     // a hyphenated-identifier fragment (`test-org`, `data-color-mode`) via a
     // trailing `(?!-)`. "delete the data" / "wipe the database" still match.
-    re: /(?<!\.)\b(?:delete|remove|drop|destroy|wipe|erase|rm\s+-rf|truncate|corrupt)\b(?!\s*\()[^.\n]{0,24}\b(?:all\s+)?(?:the\s+)?(?:tests?|test\s+suite|code\s*base|code|files?|sources?|repository|repo|commits?|history|database|data)\b(?!-)/i,
+    re: /(?<!\.)\b(?:corrupt|delete|destroy|drop|erase|remove|rm\s+-rf|truncate|wipe)\b(?!\s*\()[^.\n]{0,24}\b(?:all\s+)?(?:the\s+)?(?:tests?|test\s+suite|code\s*base|code|files?|sources?|repository|repo|commits?|history|database|data)\b(?!-)/i,
   },
   {
     label: 'agent-addressing prohibition ("you must not use this library")',
     // Matches "you must not/cannot/are not allowed to use this/the/our library/package/tool…".
-    re: /\byou\s+(?:must\s+not|should\s+not|may\s+not|cannot|can'?t|are\s+not\s+(?:allowed|permitted)\s+to)\s+use\s+(?:this|the|our)\s+(?:library|package|tool|module|dependency|framework|software|api|service)\b/i,
+    re: /\byou\s+(?:are\s+not\s+(?:allowed|permitted)\s+to|can'?t|cannot|may\s+not|must\s+not|should\s+not)\s+use\s+(?:our|the|this)\s+(?:api|dependency|framework|library|module|package|service|software|tool)\b/i,
   },
   {
     label: 'result-suppression directive ("ignore all results/output")',
     // Matches "ignore/discard/suppress … all results/output/findings/warnings … from/of".
-    re: /\b(?:ignore|disregard|discard|suppress|do\s+not\s+(?:report|trust|use))\b[^.\n]{0,24}\b(?:all\s+)?(?:results?|output|findings?|warnings?|errors?)\b[^.\n]{0,24}\b(?:from|of)\b/i,
+    re: /\b(?:discard|disregard|do\s+not\s+(?:report|trust|use)|ignore|suppress)\b[^.\n]{0,24}\b(?:all\s+)?(?:errors?|findings?|output|results?|warnings?)\b[^.\n]{0,24}\b(?:from|of)\b/i,
   },
 ]
 
 // AI/agent-addressing vocabulary — escalates a hiding-mechanism finding
 // even when no full directive pattern matched on its own.
 const AGENT_VOCAB_RE =
-  /\b(?:ai\s+agent|ai\s+assistant|llm|language\s+model|coding\s+agent|automated\s+agent|disregard|ignore\s+(?:all\s+)?(?:previous|prior|the))\b/i
+  /\b(?:ai\s+agent|ai\s+assistant|automated\s+agent|coding\s+agent|disregard|ignore\s+(?:all\s+)?(?:previous|prior|the)|language\s+model|llm)\b/i
 
 interface Finding {
   readonly label: string
@@ -380,7 +380,8 @@ export const check = editGuard((filePath, content, payload) => {
     `  File: ${filePath}`,
     '',
   ]
-  for (const f of newFindings) {
+  for (let i = 0, { length } = newFindings; i < length; i += 1) {
+    const f = newFindings[i]!
     lines.push(`  • line ${f.line}: ${f.label}`, `      ${f.source}`)
   }
   lines.push(

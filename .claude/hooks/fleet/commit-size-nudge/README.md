@@ -16,7 +16,7 @@ at commit time.
 The size is `git diff --cached --shortstat` with generated and mechanical paths
 excluded, so only authored source counts. Excluded: lockfiles
 (`pnpm-lock.yaml`, `package-lock.json`), the rolldown-bundled hook dispatcher
-(`_dispatch/bundle.cjs`), and the `build/**`, `dist/**`, `*.min.*`, and `*.snap`
+(`_dist/bundle.cjs`), and the `build/**`, `dist/**`, `*.min.*`, and `*.snap`
 trees. A cascade (`FLEET_SYNC=1`) is exempt outright: a cascade commit is a whole
 slice by design.
 

@@ -69,7 +69,7 @@ export function extractIncludeGlobs(configText: string): string[] | undefined {
     // Allow comma + whitespace + glob chars; bail on anything else.
   }
   const globs: string[] = []
-  const stringRe = /(?<q>['"`])(?<glob>(?:\\.|(?!\k<q>).)*?)\k<q>/g
+  const stringRe = /(?<q>['"`])(?<glob>(?:(?!\k<q>).|\\.)*?)\k<q>/g
   let strM: RegExpExecArray | null
   while ((strM = stringRe.exec(body)) !== null) {
     globs.push(strM.groups!.glob!)

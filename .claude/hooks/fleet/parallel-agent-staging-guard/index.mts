@@ -58,8 +58,6 @@
 //     "tool_input": { "command": "..." },
 //     "transcript_path": "/.../session.jsonl" }
 
-import process from 'node:process'
-
 import { isSquashOptIn } from '../_shared/fleet-roster.mts'
 import {
   listForeignDirtyPaths,
@@ -74,6 +72,7 @@ import {
   isFleetSyncCommand,
 } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 const BYPASS_PHRASES = ['Allow parallel-agent-staging bypass'] as const
 
@@ -88,7 +87,7 @@ export const triggers: readonly string[] = ['git']
 
 function getProjectDir(): string {
   // c8 ignore next
-  return process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
+  return resolveProjectDir()
 }
 
 // Return a short label for the gated op the command performs, or undefined.

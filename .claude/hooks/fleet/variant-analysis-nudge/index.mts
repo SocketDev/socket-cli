@@ -44,7 +44,7 @@ import {
 const SEVERITY_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> = [
   {
     label: 'Critical/High severity label',
-    regex: /\b(?:severity[:\s]+|grade[:\s]+|●\s*)?(Critical|High)\b(?=[:\s,])/g,
+    regex: /\b(?:grade[:\s]+|severity[:\s]+|●\s*)?(Critical|High)\b(?=[:\s,])/g,
   },
   {
     label: 'CRITICAL/HIGH callout',

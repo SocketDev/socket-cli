@@ -80,7 +80,7 @@ export const check = (payload: ToolCallPayload): GuardResult => {
   // variant-analysis-nudge); matching only `Task` silently skipped every
   // `Agent`-tool spawn — which is how a "commit surgically" delegation slipped
   // through unnudged.
-  if (payload.tool_name !== 'Task' && payload.tool_name !== 'Agent') {
+  if (payload.tool_name !== 'Agent' && payload.tool_name !== 'Task') {
     return undefined
   }
   // `prompt` is the spawn tool's instruction field — not in payload.mts's

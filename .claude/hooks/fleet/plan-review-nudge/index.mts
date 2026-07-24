@@ -30,18 +30,18 @@ import {
 // Plan-announcement phrases. Each fires only if the announcement is
 // NOT followed (within a window of text) by a numbered list.
 const PLAN_PHRASE_RE =
-  /\b(?:here'?s the plan|my plan is|i will:|approach:|steps:|step 1)\b/i
+  /\b(?:approach:|here'?s the plan|i will:|my plan is|step 1|steps:)\b/i
 
 // Numbered-list shape: "1." or "1)" at line start.
 const NUMBERED_LIST_RE = /^\s*1\s*[.)]\s+\S/m
 
 // Fleet-shared resources whose edits should invite a second-opinion pass.
 const FLEET_SHARED_RE =
-  /\b(?:CLAUDE\.md|\.claude\/hooks\/|_shared\/|template\/CLAUDE\.md|sync-scaffolding|scripts\/fleet)\b/
+  /\b(?:CLAUDE\.md|\.claude\/hooks\/|_shared\/|scripts\/fleet|sync-scaffolding|template\/CLAUDE\.md)\b/
 
 // Second-opinion-invitation phrases.
 const SECOND_OPINION_RE =
-  /\b(?:second[- ]opinion|review (?:the|this) plan|sanity[- ]check|pair[- ]review|invite a review)\b/i
+  /\b(?:invite a review|pair[- ]review|review (?:the|this) plan|sanity[- ]check|second[- ]opinion)\b/i
 
 // A plan that establishes a NAME or a SCHEMA SHAPE: a new/renamed check,
 // script, hook, lint rule, skill, or a manifest/schema/marker field. Once
@@ -50,18 +50,18 @@ const SECOND_OPINION_RE =
 // make-/generate-/make- round-trip and the kind→layout+native→repo.type churn
 // are the motivating examples).
 const NAME_OR_SCHEMA_RE =
-  /\b(?:rename|renaming|new (?:check|script|hook|rule|skill|field|schema)|name (?:it|the|this)|call (?:it|the)|add (?:a |the )?(?:field|schema|marker)|schema (?:field|shape|key)|marker (?:field|shape))\b/i
+  /\b(?:add (?:a |the )?(?:field|marker|schema)|call (?:it|the)|marker (?:field|shape)|name (?:it|the|this)|new (?:check|field|hook|rule|schema|script|skill)|rename|renaming|schema (?:field|key|shape))\b/i
 
 // Language signalling the shape lands across MORE THAN ONE file/commit/the
 // cascade — exactly when settling-the-shape-first matters (a single
 // self-contained file is cheap to rename later; a cascaded name is not).
 const MULTI_SURFACE_RE =
-  /\b(?:cascade|across (?:the )?fleet|every (?:fleet )?repo|multiple (?:files|commits)|template\/ and|both template|fleet-wide|each repo|propagat)/i
+  /\b(?:across (?:the )?fleet|both template|cascade|each repo|every (?:fleet )?repo|fleet-wide|multiple (?:commits|files)|propagat|template\/ and)/i
 
 // Language showing the author already locked the final shape (so the nudge is
 // noise) — an explicit decision, or routing the choice to the user.
 const SHAPE_SETTLED_RE =
-  /\b(?:final name|settled (?:on|the)|decided (?:on|the)|locked (?:in|the)|canonical name (?:is|will be)|naming (?:is )?decided|AskUserQuestion|ask(?:ing|ed)? (?:the user|you)|which name)\b/i
+  /\b(?:AskUserQuestion|ask(?:ed|ing)? (?:the user|you)|canonical name (?:is|will be)|decided (?:on|the)|final name|locked (?:in|the)|naming (?:is )?decided|settled (?:on|the)|which name)\b/i
 
 export const check = (payload: ToolCallPayload): GuardResult => {
   const rawText = readLastAssistantText(payload.transcript_path)
@@ -95,7 +95,7 @@ export const check = (payload: ToolCallPayload): GuardResult => {
     // (which keeps the I'll context) and the stripped text.
     if (
       PLAN_PHRASE_RE.test(text) ||
-      /\b(?:I'?ll|I will|I'm going to)\b/i.test(rawText)
+      /\b(?:I will|I'?ll|I'm going to)\b/i.test(rawText)
     ) {
       hits.push(
         'plan touches fleet-shared resources (CLAUDE.md / .claude/hooks/ / ' +
@@ -111,7 +111,7 @@ export const check = (payload: ToolCallPayload): GuardResult => {
   // expensive — settle it in the plan (or route the choice to the user) first.
   const looksLikePlan =
     PLAN_PHRASE_RE.test(text) ||
-    /\b(?:I'?ll|I will|I'm going to|plan(?:ning)? to)\b/i.test(rawText)
+    /\b(?:I will|I'?ll|I'm going to|plan(?:ning)? to)\b/i.test(rawText)
   if (
     looksLikePlan &&
     NAME_OR_SCHEMA_RE.test(text) &&

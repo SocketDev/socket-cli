@@ -7,7 +7,7 @@
 // path is a hook-bundle SOURCE: the `_dispatch/` dispatcher, the generated
 // `dispatch-table.mts`, any bundled hook's `index.mts`, or anything under
 // `_shared/`. When the edited source is NEWER than the built
-// `_dispatch/bundle.cjs`, the bundle is stale and the operator is reminded to
+// `_dist/bundle.cjs`, the bundle is stale and the operator is reminded to
 // rebuild it with `node scripts/fleet/build-hook-bundle.mts`.
 //
 // The hook is a REMINDER, never a block: it only writes to stderr and always
@@ -24,6 +24,7 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { isHookEntrypoint } from '../_shared/entrypoint.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 export interface BundleStalePayload {
   readonly cwd?: string | undefined
@@ -33,13 +34,13 @@ export interface BundleStalePayload {
   readonly transcript_path?: string | undefined
 }
 
-// Read by scripts/fleet/make-hook-dispatch.mts to place this hook in the
+// Read by scripts/fleet/gen/hook-dispatch.mts to place this hook in the
 // static dispatch table (the bundled fast-path). PostToolUse, Edit|Write.
 export const DISPATCH_EVENT = 'PostToolUse'
 export const DISPATCH_TOOLS: readonly string[] = ['Edit', 'Write']
 
 const BYPASS_PHRASE = 'Allow hook-bundle-current bypass'
-const BUNDLE_REL = '.claude/hooks/fleet/_dispatch/bundle.cjs'
+const BUNDLE_REL = '.claude/hooks/fleet/_dist/bundle.cjs'
 // The wheelhouse holds TWO bundles: the live one (above) and the cascaded
 // canonical under template/base/. A hook-source edit leaves both stale until
 // `build-hook-bundle.mts` rebuilds them, so the reminder must watch both.
@@ -184,8 +185,9 @@ export function run(payload: BundleStalePayload): string | undefined {
   if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
     return undefined
   }
-  const cwd =
-    typeof payload.cwd === 'string' && payload.cwd ? payload.cwd : process.cwd()
+  const cwd = resolveProjectDir(
+    typeof payload.cwd === 'string' ? payload.cwd : undefined,
+  )
   const repoRoot = findRepoRoot(cwd) ?? findRepoRoot(path.dirname(filePath))
   if (!repoRoot) {
     return undefined

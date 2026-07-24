@@ -25,7 +25,6 @@
 
 import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { parseVersion } from '@socketsecurity/lib-stable/versions/parse'
@@ -36,6 +35,7 @@ import { readFilePath, readWriteContent } from '../_shared/payload.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 // True when a version string carries the `-prerelease` hint tag.
 function isPrereleaseHint(version: string | undefined): boolean {
@@ -91,12 +91,12 @@ export function cargoVersionHint(dir: string): boolean {
 // wrote the release target into the tree, so a non-major bump that consumes it
 // is already user-authorized.
 export function committedVersionHint(): boolean {
-  const dir = process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
+  const dir = resolveProjectDir()
   try {
     const pkg = JSON.parse(
       readFileSync(path.join(dir, 'package.json'), 'utf8'),
     ) as {
-      version?: string
+      version?: string | undefined
     }
     if (isPrereleaseHint(pkg.version)) {
       return true
@@ -183,7 +183,9 @@ export function manualBumpViolation(
     let current: string | undefined
     try {
       current = (
-        JSON.parse(readFileSync(filePath, 'utf8')) as { version?: string }
+        JSON.parse(readFileSync(filePath, 'utf8')) as {
+          version?: string | undefined
+        }
       ).version
     } catch {
       current = undefined

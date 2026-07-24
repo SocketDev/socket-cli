@@ -39,10 +39,9 @@ import type { DispatchPayload } from './dispatch.mts'
 // FULL COVERAGE (190/190 in ONE bundle): every candidate hook is now frozen into
 // the snapshot, so the prior hybrid's runtime `loadBundleB()` is gone — there is
 // no second bundle to splice in; the frozen `dispatch()` runs the whole set. The
-// 8 acorn-WASM guards (now frozen in bundle A) require `./acorn-bindgen.cjs` at
-// RUNTIME via a bundled createRequire whose anchor resolves (through the frozen
-// build-time `__filename`) to this `_dispatch/` dir, and the bindgen reads
-// `acorn.wasm` from alongside it — the build step copies both artifacts here.
+// The acorn-WASM guards (now frozen in bundle A) load the parser at RUNTIME via
+// `require('@ultrathink/acorn.wasm')` (the npm catalog dep, resolved from
+// node_modules) — nothing acorn-related is vendored or staged in this `_dispatch/` dir.
 
 /**
  * Drain stdin to a string. Local to the deserialize-main path — the snapshot

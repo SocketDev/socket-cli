@@ -49,7 +49,8 @@
 
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
-import { splitLines, walkComments } from '../_shared/acorn/index.mts'
+import { walkComments } from '../_shared/ast/comments.mts'
+import { splitLines } from '../_shared/ast/core.mts'
 import { defineHook, editGuard, notify, runHook } from '../_shared/guard.mts'
 
 // Match JS/TS source file extensions: .js, .mjs, .cjs, .ts, .mts, .cts, .jsx, .tsx.
@@ -63,7 +64,7 @@ const SOURCE_EXT_RE = /\.(?:c|m)?[jt]sx?$/
 // canonical "see X" / "rationale in Y" shapes — narrow enough to
 // avoid false positives on prose like "I'll see if this works."
 const POINTER_OPENERS_RE =
-  /^(?:see\b|full rationale in\b|rationale in\b|details in\b|documented in\b|defined in\b|described in\b|specified in\b|reference[sd]? in\b)/i
+  /^(?:defined in\b|described in\b|details in\b|documented in\b|full rationale in\b|rationale in\b|reference[sd]? in\b|see\b|specified in\b)/i
 
 // A pointer-only comment is one where, after stripping the pointer
 // phrase + its target, no claim text remains. We detect the boundary

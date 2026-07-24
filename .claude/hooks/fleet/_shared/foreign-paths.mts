@@ -126,7 +126,7 @@ export function addTouchedFromBash(
   command: string,
   touched: Set<string>,
 ): void {
-  const segments = command.split(/(?:&&|\|\||;|\n)/)
+  const segments = command.split(/(?:&&|;|\n|\|\|)/)
   for (let i = 0, { length } = segments; i < length; i += 1) {
     const tokens = segments[i]!.trim().split(/\s+/)
     let j = 0
@@ -152,7 +152,9 @@ export function addTouchedFromBash(
     if (verb !== 'add' && verb !== 'mv' && verb !== 'rm') {
       continue
     }
-    for (const arg of tokens.slice(verbIndex + 1)) {
+    const argList = tokens.slice(verbIndex + 1)
+    for (let k = 0, { length: klen } = argList; k < klen; k += 1) {
+      const arg = argList[k]!
       if (arg.startsWith('-') || arg === '.') {
         continue
       }
@@ -179,7 +181,9 @@ export function readTouchedPaths(
   } catch {
     return touched
   }
-  for (const line of raw.split('\n')) {
+  const lineItems = raw.split('\n')
+  for (let j = 0, { length: jlen } = lineItems; j < jlen; j += 1) {
+    const line = lineItems[j]!
     if (!line.trim()) {
       continue
     }
@@ -330,7 +334,9 @@ export function readLedgerPaths(
   } catch {
     return out
   }
-  for (const line of raw.split('\n')) {
+  const lineList = raw.split('\n')
+  for (let i = 0, { length } = lineList; i < length; i += 1) {
+    const line = lineList[i]!
     const p = line.trim()
     if (p) {
       out.add(p)
@@ -367,7 +373,9 @@ export interface DirtyEntry {
  */
 export function parsePorcelain(out: string): DirtyEntry[] {
   const entries: DirtyEntry[] = []
-  for (const line of out.split('\n')) {
+  const lines = out.split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
     if (!line) {
       continue
     }

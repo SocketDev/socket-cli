@@ -200,7 +200,7 @@ export function findViolation(command: string): BlockError | undefined {
     // `(?<!\d)` so a stderr-only redirect (`2>/dev/null`) is NOT treated as a
     // safe sink — the response body still streams to STDOUT. See REDACTION_MARKERS.
     /(?<!\d)>\s*\/dev\/null|(?<!\d)>\s*[^|&]/.test(command) ||
-    /\|\s*(?:jq|grep|head|tail|wc|cut|awk|python3?\s+-m\s+json\.tool)\b/.test(
+    /\|\s*(?:awk|cut|grep|head|jq|python3?\s+-m\s+json\.tool|tail|wc)\b/.test(
       command,
     )
   if (curlHasAuth && !curlOutputSafe) {

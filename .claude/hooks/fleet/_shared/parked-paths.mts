@@ -6,7 +6,7 @@
  *   sanctioned-dirty instead of re-blocking every turn. One checkout-scoped
  *   file (not per-actor): parking states an intent about the PATH, so it holds
  *   for every session sharing the checkout. Storage follows the runtime-state
- *   rule: `node_modules/.cache/socket-parked-paths/parked.json`, falling back
+ *   rule: `node_modules/.cache/fleet/socket-parked-paths/parked.json`, falling back
  *   to OS temp when node_modules is unavailable. Entries expire after
  *   PARKED_TTL_MS (a parked path is a short-lived instruction, not config) and
  *   are cleared explicitly on the user's next go-ahead. Every reader
@@ -16,10 +16,17 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 // Generous by hook standards: a park typically waits on a doc/decision that
 // arrives within a working day. Re-park to extend.
 export const PARKED_TTL_MS = 24 * 60 * 60 * 1000
+
+// Last-resort fallback when a caller passes no projectDir and the agent
+// runner hasn't set CLAUDE_PROJECT_DIR: walk up from this file's own location
+// (`.claude/hooks/fleet/_shared/`) to the repo root.
+const HERE = path.dirname(fileURLToPath(import.meta.url))
+const FALLBACK_PROJECT_DIR = path.join(HERE, '..', '..', '..', '..')
 
 export interface ParkedEntry {
   readonly note?: string | undefined
@@ -29,15 +36,16 @@ export interface ParkedEntry {
 
 /**
  * Absolute path of the parked ledger for a checkout. Prefers
- * `<projectDir>/node_modules/.cache/socket-parked-paths/parked.json` (dep-0
- * runtime state, never tracked); falls back to a checkout-keyed file under OS
- * temp when node_modules doesn't exist yet.
+ * `<projectDir>/node_modules/.cache/fleet/socket-parked-paths/parked.json`
+ * (dep-0 runtime state, never tracked); falls back to a checkout-keyed file
+ * under OS temp when node_modules doesn't exist yet.
  */
 export function resolveParkedFile(projectDir: string | undefined): string {
-  const base = projectDir ?? process.cwd()
+  const base =
+    projectDir ?? process.env['CLAUDE_PROJECT_DIR'] ?? FALLBACK_PROJECT_DIR
   const cacheDir = path.join(base, 'node_modules', '.cache')
   if (existsSync(path.join(base, 'node_modules'))) {
-    return path.join(cacheDir, 'socket-parked-paths', 'parked.json')
+    return path.join(cacheDir, 'fleet', 'socket-parked-paths', 'parked.json')
   }
   const key = base.replace(/[^A-Za-z0-9]+/g, '-')
   return path.join(os.tmpdir(), 'socket-parked-paths', `${key}.json`)
@@ -49,9 +57,9 @@ export function resolveParkedFile(projectDir: string | undefined): string {
  */
 export function readParked(
   filePath: string,
-  options: { now: number },
+  config: { now: number },
 ): ParkedEntry[] {
-  const opts = { __proto__: null, ...options } as { now: number }
+  const cfg = { __proto__: null, ...config } as { now: number }
   let raw: unknown
   try {
     raw = JSON.parse(readFileSync(filePath, 'utf8'))
@@ -77,7 +85,7 @@ export function readParked(
     ) {
       continue
     }
-    if (opts.now - entry['parkedAt'] > PARKED_TTL_MS) {
+    if (cfg.now - entry['parkedAt'] > PARKED_TTL_MS) {
       continue
     }
     out.push({
@@ -104,17 +112,17 @@ export function writeParked(
 export function parkPaths(
   filePath: string,
   absPaths: readonly string[],
-  options: { note?: string | undefined; now: number },
+  config: { note?: string | undefined; now: number },
 ): ParkedEntry[] {
-  const opts = { __proto__: null, ...options } as {
+  const cfg = { __proto__: null, ...config } as {
     note?: string | undefined
     now: number
   }
-  const existing = readParked(filePath, { now: opts.now })
+  const existing = readParked(filePath, { now: cfg.now })
   const incoming = new Set(absPaths.map(p => path.resolve(p)))
   const kept = existing.filter(e => !incoming.has(e.path))
   for (const abs of incoming) {
-    kept.push({ note: opts.note, parkedAt: opts.now, path: abs })
+    kept.push({ note: cfg.note, parkedAt: cfg.now, path: abs })
   }
   writeParked(filePath, kept)
   return kept
@@ -127,15 +135,15 @@ export function parkPaths(
 export function clearParked(
   filePath: string,
   absPaths: readonly string[] | undefined,
-  options: { now: number },
+  config: { now: number },
 ): ParkedEntry[] {
-  const opts = { __proto__: null, ...options } as { now: number }
+  const cfg = { __proto__: null, ...config } as { now: number }
   if (!absPaths) {
     writeParked(filePath, [])
     return []
   }
   const removing = new Set(absPaths.map(p => path.resolve(p)))
-  const kept = readParked(filePath, { now: opts.now }).filter(
+  const kept = readParked(filePath, { now: cfg.now }).filter(
     e => !removing.has(e.path),
   )
   writeParked(filePath, kept)

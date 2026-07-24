@@ -28,7 +28,7 @@ const BYPASS_PHRASE = 'Allow pip-install bypass'
 // messages telling the human user "install with: pip install X" live
 // in docs and are recovery instructions, not active build steps.
 const FILE_SCOPE_RE =
-  /(?:^|\/)Dockerfile(?:\.[^\s/]+)?$|\.(?:sh|bash|dockerfile)$/i
+  /(?:^|\/)Dockerfile(?:\.[^\s/]+)?$|\.(?:bash|dockerfile|sh)$/i
 
 // Match a pip-install invocation anywhere in a line. Tolerates:
 //   pip install <pkg>
@@ -48,7 +48,7 @@ const PIP_INSTALL_RE =
 //   - `--help` / `-h` invocations
 function isAllowedInstall(restOfArgs: string): boolean {
   const trimmed = restOfArgs.trim()
-  if (trimmed === '' || /^(?:-h|--help)\b/.test(trimmed)) {
+  if (trimmed === '' || /^(?:--help|-h)\b/.test(trimmed)) {
     return true
   }
   // `pip install pipx`, `pip install --user pipx`, `pip install -U pipx`
@@ -64,7 +64,7 @@ function isAllowedInstall(restOfArgs: string): boolean {
     return true
   }
   // Requirements file install.
-  if (/(?:^|\s)(?:-r|--requirement)\s+\S/.test(trimmed)) {
+  if (/(?:^|\s)(?:--requirement|-r)\s+\S/.test(trimmed)) {
     return true
   }
   return false

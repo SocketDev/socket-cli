@@ -168,7 +168,7 @@ int wmain(int argc, wchar_t **argv) {
 
   /* Fail-open: node <dispatch_dir>\index.cjs <Event>. */
   wchar_t index[MAX_PATH];
-  _snwprintf_s(index, MAX_PATH, _TRUNCATE, L"%s\\index.cjs", dir);
+  _snwprintf_s(index, MAX_PATH, _TRUNCATE, L"%s\\..\\index.cjs", dir);
   cmd[0] = L'\0';
   append_arg(cmd, MAX_PATH * 6, have_node ? node : L"node");
   append_arg(cmd, MAX_PATH * 6, index);

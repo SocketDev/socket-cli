@@ -35,7 +35,7 @@ import { resolveEditedText } from '../_shared/payload.mts'
 // Bundler config filenames the hook scrutinizes. Match basename only;
 // `*.config.ts` style files live wherever the package author put them.
 const BUNDLER_CONFIG_RE =
-  /^(?:esbuild|rolldown|tsdown|tsup)\.config\.(?:mts|ts|js|mjs|cjs)$/
+  /^(?:esbuild|rolldown|tsdown|tsup)\.config\.(?:cjs|js|mjs|mts|ts)$/
 
 // Test-tree exclusions — these aren't shipped, so flipping flags is
 // harmless. `__tests__` is the Jest convention; fleet uses `test/`
@@ -53,7 +53,7 @@ const TEST_TREE_RE = /(?:^|\/)(?:test|tests|__tests__)\//
 // `sourcemap: false` (the desired state) or `// sourcemap: true` (a
 // comment) or `*sourcemap: true*` (markdown).
 const BAD_SOURCEMAP_RE =
-  /(?<![\w/])(?:['"]?sourcemap['"]?)\s*:\s*(?:true|['"](?:inline|external|linked|both)['"])/i
+  /(?<![\w/])(?:['"]?sourcemap['"]?)\s*:\s*(?:['"](?:both|external|inline|linked)['"]|true)/i
 const BAD_MINIFY_RE = /(?<![\w/])(?:['"]?minify['"]?)\s*:\s*true(?!\w)/i
 
 interface FindingDetail {

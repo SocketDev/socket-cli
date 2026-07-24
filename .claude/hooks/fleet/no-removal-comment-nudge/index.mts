@@ -74,7 +74,7 @@ function commentText(line: string): string {
 //   - General "removed" / "formerly" — covered by no-meta-comments-guard.
 //   - "TODO" / "FIXME" prefixes — separate concern.
 const RELOCATION_RE =
-  /\b(?:moved?\s+(?:to|into|from|above|below|here)|relocated\s+(?:to|from|above|below)|now\s+(?:lives?\s+(?:in|at|above|below)|managed\s+(?:here|above|below))|managed\s+(?:below|above|here|in|by)|lives?\s+in\b|handled\s+(?:below|above|elsewhere|by|in)|no\s+longer\s+(?:here|lives?|needed\s+here)|used?\s+to\s+(?:live|be)\s+(?:here|in|at))\b/i
+  /\b(?:handled\s+(?:above|below|by|elsewhere|in)|lives?\s+in\b|managed\s+(?:above|below|by|here|in)|moved?\s+(?:above|below|from|here|into|to)|no\s+longer\s+(?:here|lives?|needed\s+here)|now\s+(?:lives?\s+(?:above|at|below|in)|managed\s+(?:above|below|here))|relocated\s+(?:above|below|from|to)|used?\s+to\s+(?:be|live)\s+(?:at|here|in))\b/i
 
 // Temporal-deprecation NARRATION: a comment that describes the dead past
 // instead of the present. Distinct from RELOCATION_RE — this fires anywhere
@@ -85,7 +85,7 @@ const RELOCATION_RE =
 // narration ("that/which replaced the", "replaced the old/legacy/former"),
 // a rename narration ("formerly known as"), or a hard "no longer used".
 const TEMPORAL_NARRATION_RE =
-  /\b(?:used\s+to\s+be|(?:that|which)\s+replaced\s+the|replaced\s+the\s+(?:old|legacy|former|previous|prior)|migrated\s+away\s+from|formerly\s+(?:known\s+as|called|named|the)|no\s+longer\s+(?:used|in\s+use))\b/i
+  /\b(?:(?:that|which)\s+replaced\s+the|formerly\s+(?:called|known\s+as|named|the)|migrated\s+away\s+from|no\s+longer\s+(?:in\s+use|used)|replaced\s+the\s+(?:former|legacy|old|previous|prior)|used\s+to\s+be)\b/i
 
 // Negation / DISCLAIMER: a comment that defines the code by what it is NOT,
 // lacks, or is not like, instead of what it IS. Fires anywhere (no code-removal
@@ -97,7 +97,7 @@ const TEMPORAL_NARRATION_RE =
 // comparison ("unlike X", "as opposed to"), or an explicit feature-lack
 // ("we don't include a Y", "no longer a Z").
 const NEGATION_RE =
-  /\b(?:not\s+(?:a|an)\s+(?:fork|derivative|derivation|port|clone|copy|rewrite|reimplementation|variant|drop-in)|not\s+(?:derived|based)\s+(?:on|off|from|of)|not\s+affiliated|no\s+affiliation\s+with|inspired\s+by|unlike|not\s+like|as\s+opposed\s+to|in\s+contrast\s+to|rather\s+than\s+being|no\s+longer\s+(?:a|an)\b|(?:we|it|this)\s+(?:do(?:es)?\s+not|don'?t|doesn'?t)\s+(?:have|include|ship|bundle|vendor|provide)\s+(?:a|an|any))\b/i
+  /\b(?:(?:it|this|we)\s+(?:do(?:es)?\s+not|doesn'?t|don'?t)\s+(?:bundle|have|include|provide|ship|vendor)\s+(?:a|an|any)|as\s+opposed\s+to|in\s+contrast\s+to|inspired\s+by|no\s+affiliation\s+with|no\s+longer\s+(?:a|an)\b|not\s+(?:a|an)\s+(?:clone|copy|derivation|derivative|drop-in|fork|port|reimplementation|rewrite|variant)|not\s+(?:based|derived)\s+(?:on|off|from|of)|not\s+affiliated|not\s+like|rather\s+than\s+being|unlike)\b/i
 
 /**
  * Result of inspecting an Edit's old/new fragments.
@@ -141,7 +141,8 @@ export function detectRemovalComment(
   // Comment texts already present in old_string, so an existing (re-indented)
   // comment isn't treated as newly added.
   const existingCommentTexts = new Set<string>()
-  for (const line of oldLines) {
+  for (let i = 0, { length } = oldLines; i < length; i += 1) {
+    const line = oldLines[i]!
     if (COMMENT_LINE_RE.test(line.trimStart()) && line.trim().length > 0) {
       existingCommentTexts.add(commentText(line))
     }
@@ -149,7 +150,8 @@ export function detectRemovalComment(
 
   // Scan new_string for newly added comments. Temporal narration fires first
   // (ungated); relocation fires only when code was removed.
-  for (const line of newLines) {
+  for (let i = 0, { length } = newLines; i < length; i += 1) {
+    const line = newLines[i]!
     const trimmed = line.trim()
     if (!trimmed || !COMMENT_LINE_RE.test(trimmed)) {
       continue
