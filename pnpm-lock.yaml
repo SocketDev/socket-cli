@@ -507,7 +507,7 @@ overrides:
   '@socketregistry/packageurl-js': 1.4.5
   '@socketsecurity/lib': 6.2.2
   '@socketsecurity/registry': npm:@socketsecurity/registry@2.0.2
-  '@socketsecurity/sdk': npm:@socketsecurity/sdk@4.0.1
+  '@socketsecurity/sdk': npm:@socketsecurity/sdk@4.0.2
   ast-v8-to-istanbul: 1.0.4
   chalk@>=5: 5.6.2
   es-define-property: npm:@socketregistry/es-define-property@1.0.7
@@ -544,7 +544,7 @@ overrides:
   '@socketregistry/packageurl-js-stable': npm:@socketregistry/packageurl-js@1.4.5
   '@socketsecurity/lib-stable': npm:@socketsecurity/lib@6.2.2
   '@socketsecurity/registry-stable': npm:@socketsecurity/registry@2.0.2
-  '@socketsecurity/sdk-stable': npm:@socketsecurity/sdk@4.0.1
+  '@socketsecurity/sdk-stable': npm:@socketsecurity/sdk@4.0.2
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.15
   ansi-regex: 6.2.2
   brace-expansion: 5.0.5
@@ -700,11 +700,11 @@ importers:
         specifier: npm:@socketsecurity/registry@2.0.2
         version: '@socketsecurity/registry@2.0.2(typescript@7.0.2)'
       '@socketsecurity/sdk':
-        specifier: npm:@socketsecurity/sdk@4.0.1
-        version: 4.0.1
+        specifier: npm:@socketsecurity/sdk@4.0.2
+        version: 4.0.2
       '@socketsecurity/sdk-stable':
-        specifier: npm:@socketsecurity/sdk@4.0.1
-        version: '@socketsecurity/sdk@4.0.1'
+        specifier: npm:@socketsecurity/sdk@4.0.2
+        version: '@socketsecurity/sdk@4.0.2'
       '@types/cmd-shim':
         specifier: 'catalog:'
         version: 5.0.2
@@ -1083,8 +1083,8 @@ importers:
         specifier: npm:@socketsecurity/lib@6.2.2
         version: '@socketsecurity/lib@6.2.2(typescript@7.0.2)'
       '@socketsecurity/sdk-stable':
-        specifier: npm:@socketsecurity/sdk@4.0.1
-        version: '@socketsecurity/sdk@4.0.1'
+        specifier: npm:@socketsecurity/sdk@4.0.2
+        version: '@socketsecurity/sdk@4.0.2'
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -2730,11 +2730,11 @@ importers:
         specifier: npm:@socketsecurity/registry@2.0.2
         version: '@socketsecurity/registry@2.0.2(typescript@7.0.2)'
       '@socketsecurity/sdk':
-        specifier: npm:@socketsecurity/sdk@4.0.1
-        version: 4.0.1
+        specifier: npm:@socketsecurity/sdk@4.0.2
+        version: 4.0.2
       '@socketsecurity/sdk-stable':
-        specifier: npm:@socketsecurity/sdk@4.0.1
-        version: '@socketsecurity/sdk@4.0.1'
+        specifier: npm:@socketsecurity/sdk@4.0.2
+        version: '@socketsecurity/sdk@4.0.2'
       '@types/adm-zip':
         specifier: 'catalog:'
         version: 0.5.7
@@ -4129,9 +4129,9 @@ packages:
       typescript:
         optional: true
 
-  '@socketsecurity/sdk@4.0.1':
-    resolution: {integrity: sha512-fe3DQp2dFwhc0G6Za36GIMSV+QaPAP5L96K3ZOtywt9nhbwxc9IQwqzdOVztdn5Rbez3t9EHU9Esj24/hWdP0g==}
-    engines: {node: '>=18.20.8', pnpm: '>=11.0.0-rc.0'}
+  '@socketsecurity/sdk@4.0.2':
+    resolution: {integrity: sha512-wvFylqdM+fxJJ9eeiySe4PoAuaKEnpLiZlPiJZ0GEuy5YVJS3UkSBrHmoyVVLRhrCa7Oh+Hrhaqel4IL5zSbZA==}
+    engines: {node: '>=18.20.8', npm: '>=12.0.0', pnpm: '>=11.0.5'}
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
@@ -8653,7 +8653,7 @@ snapshots:
     optionalDependencies:
       typescript: 7.0.2
 
-  '@socketsecurity/sdk@4.0.1': {}
+  '@socketsecurity/sdk@4.0.2': {}
 
   '@standard-schema/spec@1.1.0': {}
 
