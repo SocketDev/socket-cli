@@ -15,6 +15,8 @@
  * src/commands/wrapper/handle-wrapper.mts - Wrapper management logic.
  */
 
+import path from 'node:path'
+
 import { describe, expect } from 'vitest'
 
 import {
@@ -27,6 +29,18 @@ import { expectDryRunOutput } from '../../helpers/output-assertions.mts'
 import { cmdit, spawnSocketCli } from '../../utils.mts'
 
 const binCliPath = getBinCliPath()
+
+// The wrapper dry-run lists whichever of ~/.bashrc / ~/.zshrc exist, so the
+// real HOME makes the output machine-dependent (macOS has .zshrc, the CI
+// runner has .bashrc). Point HOME at a fixture with both files; the fixture
+// lives inside the workspace so the snapshot scrubber renders it as
+// [PROJECT]/... on every lane. The dir is named rc-home, not home, so the
+// scrubber's /home/<x> pattern can't match inside the fixture path.
+const fixtureHome = path.join(
+  import.meta.dirname,
+  '../../fixtures/commands/wrapper/rc-home',
+)
+const fixtureHomeEnv = { HOME: fixtureHome, USERPROFILE: fixtureHome }
 
 describe('socket wrapper', async () => {
   cmdit(
@@ -92,7 +106,9 @@ describe('socket wrapper', async () => {
     ['wrapper', FLAG_DRY_RUN, 'on', FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+        env: fixtureHomeEnv,
+      })
 
       // Validate dry-run output to prevent flipped snapshots.
       expectDryRunOutput(stderr)
@@ -107,7 +123,7 @@ describe('socket wrapper', async () => {
 
         [DryRun]: Would enable Socket npm/pnpm exec wrapper
 
-          Target file: /[HOME]/.zshrc
+          Target file: [PROJECT]/packages/cli/test/fixtures/commands/wrapper/rc-home/.bashrc, [PROJECT]/packages/cli/test/fixtures/commands/wrapper/rc-home/.zshrc
           Changes:
             - Add shell aliases/functions to wrap npm/pnpm exec commands
             - Redirect npm/pnpm exec calls to socket npm/socket npx
