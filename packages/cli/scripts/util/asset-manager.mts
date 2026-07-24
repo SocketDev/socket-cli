@@ -1,9 +1,11 @@
 /**
- * @file Unified asset manager for socket-btm releases. Consolidates download
+ * @file Unified asset manager for SEA base assets. Consolidates download
  *   functionality from download-assets.mts and sea-build-utils/downloads.mts.
  *   This module provides:
  *
- *   - Unified binary downloads (node-smol, binject)
+ *   - Unified binary downloads (node-smol, binject) from the socket-cli
+ *     base-assets mirror releases with SHA-256 verification, falling back to
+ *     the descoped socket-btm source releases for one transition release
  *   - Version caching and validation
  *   - Platform/arch normalization
  *   - GitHub API authentication Phase 1 (Foundation): Core class implementation
@@ -22,7 +24,15 @@ import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
+import {
+  BASE_ASSET_SHA256,
+  BASE_ASSETS_FALLBACK_OWNER,
+  BASE_ASSETS_FALLBACK_REPO,
+  BASE_ASSETS_MIRROR_OWNER,
+  BASE_ASSETS_MIRROR_REPO,
+} from '../constants/base-assets.mts'
 import { ARCH_MAP, PLATFORM_MAP } from '../constants/platform-mappings.mts'
+import { computeFileHash } from './socket-btm-releases.mts'
 
 // =============================================================================
 // Constants and Utilities.
@@ -301,8 +311,10 @@ export class AssetManager {
         }
       }
 
-      // Map platform/arch to socket-btm release asset names.
-      const mappedPlatform = PLATFORM_MAP[platform]
+      // Map platform/arch to release asset names. node-smol assets use the
+      // shortened platform names ('win'); binject assets keep the raw Node.js
+      // platform identifiers ('win32').
+      const mappedPlatform = isNodeSmol ? PLATFORM_MAP[platform] : platform
       const mappedArch = ARCH_MAP[arch]
 
       if (!mappedPlatform || !mappedArch) {
@@ -314,20 +326,70 @@ export class AssetManager {
       const muslSuffix = libc === 'musl' ? '-musl' : ''
       const assetFilename = `${binaryName}-${mappedPlatform}-${mappedArch}${muslSuffix}${isPlatWin ? '.exe' : ''}`
 
-      this.logger.log(`Downloading ${tool} from socket-btm ${tag}...`)
+      // Frozen tool tags are mirrored into socket-cli base-assets-* releases
+      // with checked-in SHA-256 pins. Anything else (e.g. a custom
+      // SOCKET_CLI_SEA_NODE_VERSION) has no pin and only exists on socket-btm.
+      const pinnedSha256 = BASE_ASSET_SHA256[tag]?.[assetFilename]
 
       // Download using github-releases helper (handles HTTP 302 redirects automatically).
       try {
-        await downloadReleaseAsset(
-          'SocketDev',
-          'socket-btm',
-          tag,
-          assetFilename,
-          binaryPath,
-        )
+        if (pinnedSha256) {
+          const mirrorTag = `base-assets-${tag}`
+          this.logger.log(
+            `Downloading ${tool} from ${BASE_ASSETS_MIRROR_REPO} ${mirrorTag}...`,
+          )
+          try {
+            await downloadReleaseAsset(
+              BASE_ASSETS_MIRROR_OWNER,
+              BASE_ASSETS_MIRROR_REPO,
+              mirrorTag,
+              assetFilename,
+              binaryPath,
+            )
+          } catch (mirrorError) {
+            // TRANSITION FALLBACK: socket-btm is descoped but still serves the
+            // frozen source releases. Keep for one transition release, then
+            // remove once the socket-cli mirror has proven itself.
+            this.logger.warn(
+              `Mirror download failed (${mirrorError.message}), ` +
+                `falling back to ${BASE_ASSETS_FALLBACK_REPO} ${tag}...`,
+            )
+            await downloadReleaseAsset(
+              BASE_ASSETS_FALLBACK_OWNER,
+              BASE_ASSETS_FALLBACK_REPO,
+              tag,
+              assetFilename,
+              binaryPath,
+            )
+          }
+        } else {
+          this.logger.warn(
+            `No SHA-256 pin for ${tag}/${assetFilename} — downloading unverified from ${BASE_ASSETS_FALLBACK_REPO}...`,
+          )
+          await downloadReleaseAsset(
+            BASE_ASSETS_FALLBACK_OWNER,
+            BASE_ASSETS_FALLBACK_REPO,
+            tag,
+            assetFilename,
+            binaryPath,
+          )
+        }
       } catch (e) {
         await logTransientErrorHelp(e)
         throw e
+      }
+
+      // Verify the download against the checked-in pin regardless of which
+      // home served it.
+      if (pinnedSha256) {
+        const actualSha256 = await computeFileHash(binaryPath)
+        if (actualSha256 !== pinnedSha256) {
+          await safeDelete(binaryPath)
+          throw new Error(
+            `SHA-256 mismatch for ${assetFilename} (${tag}): ` +
+              `expected ${pinnedSha256}, got ${actualSha256}`,
+          )
+        }
       }
 
       // Write version file (store full tag for consistency).
