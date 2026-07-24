@@ -59,11 +59,24 @@ checkout:
     owner: ${{ github.repository_owner }}
 
 # Firewall egress allowlist: gh-aw `defaults` (npm / github / apt / ghcr) + the
-# Anthropic engine API. Nothing else reaches the agent's network.
+# Anthropic engine API + the taze version-lookup endpoint. Nothing else reaches
+# the agent's network.
+#
+# npm.antfu.dev is the fast-npm-meta host taze queries for publish dates — the
+# data the fleet's mandatory 7-day soak gate depends on (scripts/fleet/update.mts,
+# `--maturity-period`). It is NOT covered by the `defaults` npm bucket (that only
+# allowlists registry.npmjs.org). Without it, `pnpm run update` hangs on blocked
+# egress: taze retries every lookup until the agent's 60s per-command timeout
+# fires, the agent keeps retrying `pnpm run update`, and the run either fails
+# loud (update.mts exits 1 → missing-tool / incomplete-result issues) or burns
+# the whole 20-minute agent budget until the engine is killed (the "Dependency
+# update failed" issues). Allowlisting the host lets taze's own 5s per-package
+# timeout do its job.
 network:
   allowed:
     - defaults
     - api.anthropic.com
+    - npm.antfu.dev
 
 # Deterministic gate — single source in weekly-update.mts (`--check-updates`
 # exits 0 on actionable drift: pnpm outdated / lockstep exit 2 / submodule-behind
@@ -167,6 +180,14 @@ safe-outputs:
     client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
     private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
     owner: ${{ github.repository_owner }}
+  # A no-op run is a NORMAL outcome, not a failure: most weeks have nothing that
+  # both drifts AND has cleared the 7-day soak, so the agent legitimately makes
+  # no changes and exits. gh-aw's default is to append every such run to an "[aw]
+  # No-Op Runs" tracking issue, which is pure noise for a scheduled updater that
+  # no-ops by design. Silence it — genuine failures still surface via the
+  # missing-tool / incomplete-result / engine-failure issue paths, which stay on.
+  noop:
+    report-as-issue: false
   create-pull-request:
     title-prefix: 'chore(deps): '
     draft: true
