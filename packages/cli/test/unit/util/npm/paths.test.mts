@@ -79,7 +79,7 @@ vi.mock(import('../../../../src/constants/packages.mts'), () => ({
 }))
 
 describe('npm-paths utilities', () => {
-  let originalExit: typeof process.exit
+  let exitSpy: ReturnType<typeof vi.spyOn>
   let getNpmBinPath: (typeof PathsModule)['getNpmBinPath']
   let getNpxBinPath: (typeof PathsModule)['getNpxBinPath']
 
@@ -87,12 +87,12 @@ describe('npm-paths utilities', () => {
     vi.clearAllMocks()
     vi.resetModules()
 
-    // Store original process.exit.
-    originalExit = process.exit
     // Mock process.exit to prevent actual exits.
-    process.exit = vi.fn((code?: number | undefined) => {
-      throw new Error(`process.exit(${code})`)
-    })
+    exitSpy = vi
+      .spyOn(process, 'exit')
+      .mockImplementation((code?: number | string | null | undefined) => {
+        throw new Error(`process.exit(${code})`)
+      })
 
     // Re-import functions after module reset to clear caches.
     const npmPaths = await import('../../../../src/util/npm/paths.mts')
@@ -102,7 +102,7 @@ describe('npm-paths utilities', () => {
 
   afterEach(() => {
     // Restore original process.exit.
-    process.exit = originalExit
+    exitSpy.mockRestore()
     vi.restoreAllMocks()
     vi.resetModules()
   })

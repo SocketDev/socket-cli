@@ -38,7 +38,7 @@ vi.mock(import('../../../../src/util/fs/path-resolve.mts'), () => ({
 }))
 
 describe('yarn-paths utilities', () => {
-  let originalExit: typeof process.exit
+  let exitSpy: ReturnType<typeof vi.spyOn>
   let getYarnBinPath: (typeof PathsModule)['getYarnBinPath']
   let getYarnBinPathDetails: (typeof PathsModule)['getYarnBinPathDetails']
 
@@ -46,12 +46,12 @@ describe('yarn-paths utilities', () => {
     vi.clearAllMocks()
     vi.resetModules()
 
-    // Store original process.exit.
-    originalExit = process.exit
     // Mock process.exit to prevent actual exits.
-    process.exit = vi.fn((code?: number | undefined) => {
-      throw new Error(`process.exit(${code})`)
-    })
+    exitSpy = vi
+      .spyOn(process, 'exit')
+      .mockImplementation((code?: number | string | null | undefined) => {
+        throw new Error(`process.exit(${code})`)
+      })
 
     // Re-import functions after module reset to clear caches.
     const yarnPaths = await import('../../../../src/util/yarn/paths.mts')
@@ -61,7 +61,7 @@ describe('yarn-paths utilities', () => {
 
   afterEach(() => {
     // Restore original process.exit.
-    process.exit = originalExit
+    exitSpy.mockRestore()
     vi.resetModules()
   })
 

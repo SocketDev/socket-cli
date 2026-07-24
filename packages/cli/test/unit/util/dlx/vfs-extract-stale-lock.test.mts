@@ -104,8 +104,7 @@ describe('util/dlx/vfs-extract', () => {
 
       // Stale check: readFile returns PID, process.kill throws ESRCH.
       mockFsReadFile.mockResolvedValue('12345')
-      const realKill = process.kill
-      ;(process as { kill: unknown }).kill = vi.fn(() => {
+      const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => {
         throw new Error('ESRCH')
       })
 
@@ -136,7 +135,7 @@ describe('util/dlx/vfs-extract', () => {
         const result = await extractExternalTools()
         expect(result).toBeTruthy()
       } finally {
-        ;(process as { kill: unknown }).kill = realKill
+        killSpy.mockRestore()
       }
     })
 

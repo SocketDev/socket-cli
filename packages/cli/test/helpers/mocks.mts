@@ -36,9 +36,21 @@ export function createErrorResult(
  * Creates mock logger functions.
  */
 /**
+ * A SocketSdk whose methods are all vi.fn() mocks. The mapped Mock
+ * intersection keeps `expect(mockSdk.method)` assertions clear of the
+ * type-aware unbound-method rule, which flags references to real class
+ * methods.
+ */
+export type MockSocketSdk = {
+  [K in keyof SocketSdk]: ReturnType<typeof vi.fn>
+}
+
+/**
  * Creates a mock Socket SDK with common methods.
  */
-export function createMockSdk(overrides: Partial<SocketSdk> = {}): SocketSdk {
+export function createMockSdk(
+  overrides: Partial<SocketSdk> = {},
+): MockSocketSdk {
   // Tests substitute a vitest-mock-shaped object for the real SocketSdk; this
   // is intentionally structural so command code under test sees a method to call.
   return {
@@ -57,7 +69,7 @@ export function createMockSdk(overrides: Partial<SocketSdk> = {}): SocketSdk {
     getRepoAnalytics: vi.fn(),
     batchPackageFetch: vi.fn(),
     ...overrides,
-  } as unknown as SocketSdk
+  } as unknown as MockSocketSdk
 }
 
 /**

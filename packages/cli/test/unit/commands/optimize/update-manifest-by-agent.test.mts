@@ -22,9 +22,17 @@ import {
 
 import type { EditablePackageJson } from '@socketsecurity/lib-stable/packages/types'
 
+// The factory below substitutes vi.fn() mocks for the class methods; typing
+// them as Mock keeps expect(pkgJson.update) clear of unbound-method.
+type MockEditablePackageJson = EditablePackageJson & {
+  fromJSON: ReturnType<typeof vi.fn>
+  save: ReturnType<typeof vi.fn>
+  update: ReturnType<typeof vi.fn>
+}
+
 describe('update-manifest-by-agent', () => {
   const createEditablePkgJson = (content: Record<string, unknown> = {}) => {
-    const pkgJson: EditablePackageJson = {
+    const pkgJson: MockEditablePackageJson = {
       content,
       fromJSON: vi.fn((json: string) => {
         const parsed = JSON.parse(json)
@@ -36,7 +44,7 @@ describe('update-manifest-by-agent', () => {
       update: vi.fn((updates: Record<string, unknown>) => {
         Object.assign(pkgJson.content, updates)
       }),
-    } as unknown as EditablePackageJson
+    } as unknown as MockEditablePackageJson
     return pkgJson
   }
 

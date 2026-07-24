@@ -331,7 +331,7 @@ describe('fetchCreateOrgFullScan', () => {
     )
 
     // Confirm the SDK was called WITHOUT those keys.
-    const callArgs = mockSdk.createFullScan.mock.calls[0]![2]
+    const callArgs = mockSdk.createFullScan.mock.calls[0][2]
     expect(callArgs.repo).toBeUndefined()
     expect(callArgs.scan_type).toBeUndefined()
     expect(callArgs.workspace).toBeUndefined()
@@ -357,7 +357,7 @@ describe('fetchCreateOrgFullScan', () => {
 
     await fetchCreateOrgFullScan(['/p/package.json'], 'my-org', config)
 
-    const callArgs = mockSdk.createFullScan.mock.calls[0]![2]
+    const callArgs = mockSdk.createFullScan.mock.calls[0][2]
     expect(callArgs.scan_type).toBe('tier1')
     expect(callArgs.workspace).toBe('workspace-1')
   })

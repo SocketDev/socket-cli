@@ -13,7 +13,9 @@ import url, { fileURLToPath } from 'node:url'
 // Suppress MaxListenersExceeded warning for AbortSignal.
 // The Socket SDK properly manages listeners but may exceed the default limit of 30
 // during high-concurrency batch operations.
-const originalEmitWarning = process.emitWarning
+// Bind the captured original so the reference is safe to call standalone
+// (and clear of the type-aware unbound-method rule).
+const originalEmitWarning = process.emitWarning.bind(process)
 process.emitWarning = function (warning, ...args) {
   if (
     (typeof warning === 'string' &&

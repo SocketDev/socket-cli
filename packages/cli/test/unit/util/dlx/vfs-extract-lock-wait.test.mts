@@ -108,8 +108,7 @@ describe('util/dlx/vfs-extract', () => {
         const eexistErr = Object.assign(new Error('EEXIST'), { code: 'EEXIST' })
         mockFsWriteFile.mockRejectedValue(eexistErr)
         // process.kill: alive (valid lock).
-        const realKill = process.kill
-        ;(process as { kill: unknown }).kill = vi.fn(() => true)
+        const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true)
 
         // After EEXIST and stale-check, we enter the wait loop. Make
         // cacheMarker appear immediately on first poll; all tool paths exist.
@@ -119,7 +118,7 @@ describe('util/dlx/vfs-extract', () => {
           const result = await extractExternalTools()
           expect(result).toBeTruthy()
         } finally {
-          ;(process as { kill: unknown }).kill = realKill
+          killSpy.mockRestore()
         }
       })
 
@@ -135,8 +134,7 @@ describe('util/dlx/vfs-extract', () => {
           }
           return undefined
         })
-        const realKill = process.kill
-        ;(process as { kill: unknown }).kill = vi.fn(() => true)
+        const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true)
 
         // 1st phase: cache marker true, but first tool false (missing).
         // After recursive call: everything succeeds.
@@ -162,7 +160,7 @@ describe('util/dlx/vfs-extract', () => {
         try {
           await extractExternalTools().catch(() => {})
         } finally {
-          ;(process as { kill: unknown }).kill = realKill
+          killSpy.mockRestore()
         }
 
         // The missing-tool branch must have been hit exactly once, triggering
@@ -182,9 +180,8 @@ describe('util/dlx/vfs-extract', () => {
           }
           return undefined
         })
-        const realKill = process.kill
         // Keep kill alive (valid lock) so we proceed into poll loop.
-        ;(process as { kill: unknown }).kill = vi.fn(() => true)
+        const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true)
 
         // Cache marker: false during all polls, then true at i=4 cache-marker
         // re-check (which triggers recursion). After recursion: success.
@@ -203,7 +200,7 @@ describe('util/dlx/vfs-extract', () => {
         try {
           await extractExternalTools().catch(() => {})
         } finally {
-          ;(process as { kill: unknown }).kill = realKill
+          killSpy.mockRestore()
         }
 
         // The re-check must have observed the marker flip to true.
@@ -223,9 +220,8 @@ describe('util/dlx/vfs-extract', () => {
           return undefined
         })
 
-        const realKill = process.kill
         let killCount = 0
-        ;(process as { kill: unknown }).kill = vi.fn(() => {
+        const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => {
           killCount += 1
           // First kill (stale check): alive (so we go into wait loop).
           // Second+ kill (i=4 alive check): dead.
@@ -244,7 +240,7 @@ describe('util/dlx/vfs-extract', () => {
           await extractExternalTools().catch(() => {})
           expect(killCount).toBeGreaterThan(1)
         } finally {
-          ;(process as { kill: unknown }).kill = realKill
+          killSpy.mockRestore()
         }
       })
 
@@ -260,8 +256,7 @@ describe('util/dlx/vfs-extract', () => {
           }
           return undefined
         })
-        const realKill = process.kill
-        ;(process as { kill: unknown }).kill = vi.fn(() => true)
+        const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true)
 
         // First readFile (stale check): valid PID (so we enter wait loop).
         // Second+ readFile (i=4 alive check): throws.
@@ -281,7 +276,7 @@ describe('util/dlx/vfs-extract', () => {
           await extractExternalTools().catch(() => {})
           expect(readCount).toBeGreaterThan(1)
         } finally {
-          ;(process as { kill: unknown }).kill = realKill
+          killSpy.mockRestore()
         }
       })
 
@@ -291,8 +286,7 @@ describe('util/dlx/vfs-extract', () => {
         const eexistErr = Object.assign(new Error('EEXIST'), { code: 'EEXIST' })
         mockFsWriteFile.mockRejectedValue(eexistErr)
 
-        const realKill = process.kill
-        ;(process as { kill: unknown }).kill = vi.fn(() => true)
+        const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true)
 
         // existsSync: never true for marker; true for everything else
         // (though we shouldn't reach tool checks).
@@ -303,7 +297,7 @@ describe('util/dlx/vfs-extract', () => {
         try {
           await expect(extractExternalTools()).rejects.toThrow(/timed out/)
         } finally {
-          ;(process as { kill: unknown }).kill = realKill
+          killSpy.mockRestore()
         }
       })
 
@@ -319,8 +313,7 @@ describe('util/dlx/vfs-extract', () => {
           }
           return undefined
         })
-        const realKill = process.kill
-        ;(process as { kill: unknown }).kill = vi.fn(() => true)
+        const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true)
 
         // We want the FIRST in-loop iteration (line 261) to see marker=true,
         // then for the validation pass: 9 tool checks all true, then the
@@ -365,7 +358,7 @@ describe('util/dlx/vfs-extract', () => {
         try {
           await extractExternalTools().catch(() => {})
         } finally {
-          ;(process as { kill: unknown }).kill = realKill
+          killSpy.mockRestore()
         }
 
         // The stillValid TOCTOU failure must have triggered the recursive retry.
@@ -377,8 +370,7 @@ describe('util/dlx/vfs-extract', () => {
         withMountReturning(async () => '/m')
         const eexistErr = Object.assign(new Error('EEXIST'), { code: 'EEXIST' })
         mockFsWriteFile.mockRejectedValue(eexistErr)
-        const realKill = process.kill
-        ;(process as { kill: unknown }).kill = vi.fn(() => true)
+        const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true)
 
         // Count marker existsSync calls. The loop performs ~72 marker
         // checks (60 at line 261 + 12 at line 302). The 73rd marker check
@@ -399,7 +391,7 @@ describe('util/dlx/vfs-extract', () => {
           const result = await extractExternalTools()
           expect(result).toBeTruthy()
         } finally {
-          ;(process as { kill: unknown }).kill = realKill
+          killSpy.mockRestore()
         }
       })
 
@@ -408,8 +400,7 @@ describe('util/dlx/vfs-extract', () => {
         withMountReturning(async () => '/m')
         const eexistErr = Object.assign(new Error('EEXIST'), { code: 'EEXIST' })
         mockFsWriteFile.mockRejectedValue(eexistErr)
-        const realKill = process.kill
-        ;(process as { kill: unknown }).kill = vi.fn(() => true)
+        const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true)
 
         let markerChecks = 0
         mockExistsSync.mockImplementation((p: string) => {
@@ -427,7 +418,7 @@ describe('util/dlx/vfs-extract', () => {
         try {
           await expect(extractExternalTools()).rejects.toThrow(/timed out/)
         } finally {
-          ;(process as { kill: unknown }).kill = realKill
+          killSpy.mockRestore()
         }
       })
     })

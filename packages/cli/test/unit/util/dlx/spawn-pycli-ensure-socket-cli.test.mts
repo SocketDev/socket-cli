@@ -179,8 +179,7 @@ describe('ensureSocketPyCli', () => {
       mockFsWriteFile.mockRejectedValue(
         Object.assign(new Error('EEXIST'), { code: 'EEXIST' }),
       )
-      const realKill = process.kill
-      ;(process as { kill: unknown }).kill = vi.fn(() => true)
+      const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true)
       // Install check: first call (initial isSocketPyCliInstalled) → false.
       // Inside wait loop, isSocketPyCliInstalled poll → true.
       let spawnCount = 0
@@ -195,7 +194,7 @@ describe('ensureSocketPyCli', () => {
         await ensureSocketPyCli('/py')
         expect(spawnCount).toBeGreaterThan(1)
       } finally {
-        ;(process as { kill: unknown }).kill = realKill
+        killSpy.mockRestore()
       }
     } finally {
       restoreTimers()
@@ -211,8 +210,7 @@ describe('ensureSocketPyCli', () => {
       }
       return undefined
     })
-    const realKill = process.kill
-    ;(process as { kill: unknown }).kill = vi.fn(() => {
+    const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => {
       throw Object.assign(new Error('ESRCH'), { code: 'ESRCH' })
     })
     // First isSocketPyCliInstalled: not installed; after retry: installed.
@@ -229,7 +227,7 @@ describe('ensureSocketPyCli', () => {
       await ensureSocketPyCli('/py')
       expect(spawnCount).toBeGreaterThan(1)
     } finally {
-      ;(process as { kill: unknown }).kill = realKill
+      killSpy.mockRestore()
     }
   })
 
@@ -288,9 +286,8 @@ describe('ensureSocketPyCli', () => {
         }
         return undefined
       })
-      const realKill = process.kill
       let killCount = 0
-      ;(process as { kill: unknown }).kill = vi.fn(() => {
+      const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => {
         killCount += 1
         // First kill (stale check): alive. Second+ (i=4 alive check): dead.
         if (killCount === 1) {
@@ -313,7 +310,7 @@ describe('ensureSocketPyCli', () => {
         await ensureSocketPyCli('/py')
         expect(killCount).toBeGreaterThan(1)
       } finally {
-        ;(process as { kill: unknown }).kill = realKill
+        killSpy.mockRestore()
       }
     } finally {
       restoreTimers()
@@ -331,8 +328,7 @@ describe('ensureSocketPyCli', () => {
         }
         return undefined
       })
-      const realKill = process.kill
-      ;(process as { kill: unknown }).kill = vi.fn(() => true)
+      const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true)
       // First readFile (stale check): valid PID. Second+ (i=4): throw.
       let readCount = 0
       mockFsReadFile.mockImplementation(async () => {
@@ -354,7 +350,7 @@ describe('ensureSocketPyCli', () => {
         await ensureSocketPyCli('/py')
         expect(readCount).toBeGreaterThan(1)
       } finally {
-        ;(process as { kill: unknown }).kill = realKill
+        killSpy.mockRestore()
       }
     } finally {
       restoreTimers()
@@ -373,9 +369,8 @@ describe('ensureSocketPyCli', () => {
         }
         return undefined
       })
-      const realKill = process.kill
       let killCount = 0
-      ;(process as { kill: unknown }).kill = vi.fn(() => {
+      const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => {
         killCount += 1
         // First kill (stale check, alive). Subsequent (i=4): EPERM (alive).
         if (killCount === 1) {
@@ -400,7 +395,7 @@ describe('ensureSocketPyCli', () => {
         await ensureSocketPyCli('/py')
         expect(killCount).toBeGreaterThan(1)
       } finally {
-        ;(process as { kill: unknown }).kill = realKill
+        killSpy.mockRestore()
       }
     } finally {
       restoreTimers()
@@ -418,8 +413,7 @@ describe('ensureSocketPyCli', () => {
         }
         return undefined
       })
-      const realKill = process.kill
-      ;(process as { kill: unknown }).kill = vi.fn(() => true)
+      const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true)
       // Inside wait loop, install check stays false → timeout retry.
       // Recursive call: isSocketPyCliInstalled returns true on first call.
       let spawnCount = 0
@@ -435,7 +429,7 @@ describe('ensureSocketPyCli', () => {
         await ensureSocketPyCli('/py')
         expect(spawnCount).toBeGreaterThan(31)
       } finally {
-        ;(process as { kill: unknown }).kill = realKill
+        killSpy.mockRestore()
       }
     } finally {
       restoreTimers()

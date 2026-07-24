@@ -84,23 +84,27 @@ describe('sea/boot', () => {
     it('resolves with handshake data when message arrives', async () => {
       // Stub process.channel + .on/.off so isSubprocess() reports true.
       const handlers: Record<string, Array<(m: unknown) => void>> = {}
-      const fakeOn = vi.fn((event: string, handler: (m: unknown) => void) => {
-        ;(handlers[event] ??= []).push(handler)
-      })
-      const fakeOff = vi.fn((event: string, handler: (m: unknown) => void) => {
-        handlers[event] = (handlers[event] ?? []).filter(h => h !== handler)
-      })
+      const onSpy = vi
+        .spyOn(process, 'on')
+        .mockImplementation((event, handler) => {
+          ;(handlers[String(event)] ??= []).push(handler)
+          return process
+        })
+      const offSpy = vi
+        .spyOn(process, 'off')
+        .mockImplementation((event, handler) => {
+          handlers[String(event)] = (handlers[String(event)] ?? []).filter(
+            h => h !== handler,
+          )
+          return process
+        })
       const originalChannel = process.channel
-      const originalOn = process.on
-      const originalOff = process.off
 
       Object.defineProperty(process, 'channel', {
         value: {},
         writable: true,
         configurable: true,
       })
-      ;(process as unknown).on = fakeOn
-      ;(process as unknown).off = fakeOff
 
       try {
         const { waitForBootstrapHandshake } =
@@ -122,25 +126,21 @@ describe('sea/boot', () => {
           writable: true,
           configurable: true,
         })
-        ;(process as unknown).on = originalOn
-        ;(process as unknown).off = originalOff
+        onSpy.mockRestore()
+        offSpy.mockRestore()
       }
     })
 
     it('rejects on timeout when no message arrives', async () => {
-      const fakeOn = vi.fn()
-      const fakeOff = vi.fn()
+      const onSpy = vi.spyOn(process, 'on').mockImplementation(() => process)
+      const offSpy = vi.spyOn(process, 'off').mockImplementation(() => process)
       const originalChannel = process.channel
-      const originalOn = process.on
-      const originalOff = process.off
 
       Object.defineProperty(process, 'channel', {
         value: {},
         writable: true,
         configurable: true,
       })
-      ;(process as unknown).on = fakeOn
-      ;(process as unknown).off = fakeOff
 
       try {
         const { waitForBootstrapHandshake } =
@@ -152,28 +152,27 @@ describe('sea/boot', () => {
           writable: true,
           configurable: true,
         })
-        ;(process as unknown).on = originalOn
-        ;(process as unknown).off = originalOff
+        onSpy.mockRestore()
+        offSpy.mockRestore()
       }
     })
 
     it('ignores non-handshake messages', async () => {
       const handlers: Record<string, Array<(m: unknown) => void>> = {}
-      const fakeOn = vi.fn((event: string, handler: (m: unknown) => void) => {
-        ;(handlers[event] ??= []).push(handler)
-      })
-      const fakeOff = vi.fn()
+      const onSpy = vi
+        .spyOn(process, 'on')
+        .mockImplementation((event, handler) => {
+          ;(handlers[String(event)] ??= []).push(handler)
+          return process
+        })
+      const offSpy = vi.spyOn(process, 'off').mockImplementation(() => process)
       const originalChannel = process.channel
-      const originalOn = process.on
-      const originalOff = process.off
 
       Object.defineProperty(process, 'channel', {
         value: {},
         writable: true,
         configurable: true,
       })
-      ;(process as unknown).on = fakeOn
-      ;(process as unknown).off = fakeOff
 
       try {
         const { waitForBootstrapHandshake } =
@@ -195,8 +194,8 @@ describe('sea/boot', () => {
           writable: true,
           configurable: true,
         })
-        ;(process as unknown).on = originalOn
-        ;(process as unknown).off = originalOff
+        onSpy.mockRestore()
+        offSpy.mockRestore()
       }
     })
   })

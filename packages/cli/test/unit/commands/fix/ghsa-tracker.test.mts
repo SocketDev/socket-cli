@@ -60,30 +60,28 @@ describe('ghsa-tracker', () => {
     })
 
     it('returns true when process.kill throws EPERM (alive but no permission)', () => {
-      const original = process.kill
-      ;(process as unknown).kill = () => {
+      const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => {
         const e = new Error('Operation not permitted') as NodeJS.ErrnoException
         e.code = 'EPERM'
         throw e
-      }
+      })
       try {
         expect(isPidAlive(1)).toBe(true)
       } finally {
-        ;(process as unknown).kill = original
+        killSpy.mockRestore()
       }
     })
 
     it('returns false when process.kill throws non-EPERM (e.g. EINVAL)', () => {
-      const original = process.kill
-      ;(process as unknown).kill = () => {
+      const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => {
         const e = new Error('Invalid') as NodeJS.ErrnoException
         e.code = 'EINVAL'
         throw e
-      }
+      })
       try {
         expect(isPidAlive(1)).toBe(false)
       } finally {
-        ;(process as unknown).kill = original
+        killSpy.mockRestore()
       }
     })
   })

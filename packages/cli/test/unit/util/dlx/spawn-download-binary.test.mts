@@ -248,9 +248,8 @@ describe('downloadGitHubReleaseBinary', () => {
       cb()
       return 0 as never
     }
-    const realKill = process.kill
     // alive: kill returns true without throwing.
-    ;(process as { kill: unknown }).kill = vi.fn(() => true)
+    const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true)
 
     try {
       // After lock-busy detection, polling proceeds; with everything mocked
@@ -261,7 +260,7 @@ describe('downloadGitHubReleaseBinary', () => {
       )
     } finally {
       ;(globalThis as { setTimeout: unknown }).setTimeout = realSetTimeout
-      ;(process as { kill: unknown }).kill = realKill
+      killSpy.mockRestore()
     }
   })
 
@@ -287,9 +286,8 @@ describe('downloadGitHubReleaseBinary', () => {
       cb()
       return 0 as never
     }
-    const realKill = process.kill
     let killCount = 0
-    ;(process as { kill: unknown }).kill = vi.fn(() => {
+    const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => {
       killCount += 1
       // First kill is the i=4 PID re-check — throw to mark stale.
       throw new Error('ESRCH')
@@ -302,7 +300,7 @@ describe('downloadGitHubReleaseBinary', () => {
       expect(killCount).toBeGreaterThan(0)
     } finally {
       ;(globalThis as { setTimeout: unknown }).setTimeout = realSetTimeout
-      ;(process as { kill: unknown }).kill = realKill
+      killSpy.mockRestore()
     }
   })
 
@@ -364,14 +362,13 @@ describe('downloadGitHubReleaseBinary', () => {
     })
 
     // Use a process.kill that succeeds (alive).
-    const realKill = process.kill
-    ;(process as { kill: unknown }).kill = vi.fn(() => true)
+    const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true)
 
     try {
       const result = await downloadGitHubReleaseBinary(baseSpec)
       expect(result).toContain('tool')
     } finally {
-      ;(process as { kill: unknown }).kill = realKill
+      killSpy.mockRestore()
     }
   })
 
@@ -390,9 +387,8 @@ describe('downloadGitHubReleaseBinary', () => {
     })
 
     // Dead lock holder: the liveness probe (process.kill(pid, 0)) throws.
-    const realKill = process.kill
     let killCount = 0
-    ;(process as { kill: unknown }).kill = vi.fn(() => {
+    const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => {
       killCount += 1
       throw new Error('ESRCH')
     })
@@ -414,7 +410,7 @@ describe('downloadGitHubReleaseBinary', () => {
       expect(result).toContain('tool')
     } finally {
       ;(globalThis as { setTimeout: unknown }).setTimeout = realSetTimeout
-      ;(process as { kill: unknown }).kill = realKill
+      killSpy.mockRestore()
     }
 
     // The stale-lock recovery path must have probed liveness at least once.

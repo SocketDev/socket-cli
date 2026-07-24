@@ -110,18 +110,18 @@ vi.mock(
 )
 
 describe('handleCi', () => {
-  const originalCwd = process.cwd
   const originalExitCode = process.exitCode
   const logger = mockLogger
+  let cwdSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
     vi.clearAllMocks()
-    process.cwd = vi.fn(() => '/test/project')
+    cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue('/test/project')
     process.exitCode = undefined
   })
 
   afterEach(() => {
-    process.cwd = originalCwd
+    cwdSpy.mockRestore()
     process.exitCode = originalExitCode
     vi.unstubAllEnvs()
   })

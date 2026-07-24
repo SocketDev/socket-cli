@@ -221,8 +221,7 @@ describe('ensurePythonDlx', () => {
       mockFsWriteFile.mockRejectedValue(
         Object.assign(new Error('EEXIST'), { code: 'EEXIST' }),
       )
-      const realKill = process.kill
-      ;(process as { kill: unknown }).kill = vi.fn(() => true)
+      const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true)
       // existsSync: false on initial cache check, true on first wait-loop poll.
       let calls = 0
       mockExistsSync.mockImplementation(() => {
@@ -233,7 +232,7 @@ describe('ensurePythonDlx', () => {
         const result = await ensurePythonDlx()
         expect(result).toContain('python')
       } finally {
-        ;(process as { kill: unknown }).kill = realKill
+        killSpy.mockRestore()
       }
     } finally {
       restoreTimers()
@@ -246,14 +245,13 @@ describe('ensurePythonDlx', () => {
       mockFsWriteFile.mockRejectedValue(
         Object.assign(new Error('EEXIST'), { code: 'EEXIST' }),
       )
-      const realKill = process.kill
-      ;(process as { kill: unknown }).kill = vi.fn(() => true)
+      const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true)
       // existsSync always false → timeout.
       mockExistsSync.mockReturnValue(false)
       try {
         await expect(ensurePythonDlx()).rejects.toThrow(/timed out/)
       } finally {
-        ;(process as { kill: unknown }).kill = realKill
+        killSpy.mockRestore()
       }
     } finally {
       restoreTimers()
@@ -270,8 +268,7 @@ describe('ensurePythonDlx', () => {
       return undefined
     })
     mockFsReadFile.mockResolvedValue('12345')
-    const realKill = process.kill
-    ;(process as { kill: unknown }).kill = vi.fn(() => {
+    const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => {
       throw Object.assign(new Error('ESRCH'), { code: 'ESRCH' })
     })
     // existsSync: false (cache check), false (still missing in retry's cache
@@ -285,7 +282,7 @@ describe('ensurePythonDlx', () => {
       const result = await ensurePythonDlx()
       expect(result).toContain('python')
     } finally {
-      ;(process as { kill: unknown }).kill = realKill
+      killSpy.mockRestore()
     }
   })
 
@@ -333,8 +330,7 @@ describe('ensurePythonDlx', () => {
       mockFsWriteFile.mockRejectedValue(
         Object.assign(new Error('EEXIST'), { code: 'EEXIST' }),
       )
-      const realKill = process.kill
-      ;(process as { kill: unknown }).kill = vi.fn(() => {
+      const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => {
         throw Object.assign(new Error('EPERM'), { code: 'EPERM' })
       })
       // existsSync: false on initial, true on first poll.
@@ -347,7 +343,7 @@ describe('ensurePythonDlx', () => {
         const result = await ensurePythonDlx()
         expect(result).toContain('python')
       } finally {
-        ;(process as { kill: unknown }).kill = realKill
+        killSpy.mockRestore()
       }
     } finally {
       restoreTimers()
