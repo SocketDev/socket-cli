@@ -97,7 +97,7 @@ describe('socket ci', async () => {
 
           Details:
             autoManifest: false
-            branchName: "main"
+            branchName: "[BRANCH]"
             cwd: "[PROJECT]"
             organizationSlug: "(from API token)"
             repoName: "socket-cli"
