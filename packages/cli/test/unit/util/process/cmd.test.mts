@@ -31,6 +31,7 @@ import {
   cmdPrefixMessage,
   filterFlags,
   isHelpFlag,
+  mergeNodeOptions,
 } from '../../../../src/util/process/cmd.mts'
 
 describe('cmd utilities', () => {
@@ -96,6 +97,46 @@ describe('cmd utilities', () => {
       expect(cmdFlagsToString(['-v', '--help', '--output=file.txt'])).toBe(
         '-v --help --output=file.txt',
       )
+    })
+  })
+
+  describe('mergeNodeOptions', () => {
+    const addedFlags = [
+      '--disable-warning=ExperimentalWarning',
+      '--no-warnings',
+    ]
+
+    it('prepends the inherited NODE_OPTIONS ahead of added flags', () => {
+      const result = mergeNodeOptions('--max-old-space-size=4096', addedFlags)
+      expect(result).toBe(
+        '--max-old-space-size=4096 --disable-warning=ExperimentalWarning --no-warnings',
+      )
+    })
+
+    it('returns only the added flags when NODE_OPTIONS is undefined', () => {
+      const result = mergeNodeOptions(undefined, addedFlags)
+      expect(result).toBe('--disable-warning=ExperimentalWarning --no-warnings')
+    })
+
+    it('drops an empty NODE_OPTIONS without adding a stray separator', () => {
+      const result = mergeNodeOptions('', addedFlags)
+      expect(result).toBe('--disable-warning=ExperimentalWarning --no-warnings')
+    })
+
+    it('preserves the inherited NODE_OPTIONS when there are no added flags', () => {
+      expect(mergeNodeOptions('--enable-source-maps', [])).toBe(
+        '--enable-source-maps',
+      )
+    })
+
+    it('does not wrap or quote the merged value', () => {
+      const result = mergeNodeOptions('--enable-source-maps', addedFlags)
+      expect(result).not.toContain("'")
+      expect(result).not.toContain('"')
+    })
+
+    it('returns an empty string when nothing is provided', () => {
+      expect(mergeNodeOptions(undefined, [])).toBe('')
     })
   })
 
