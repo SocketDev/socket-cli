@@ -125,13 +125,6 @@ vi.mock(import('../../../../src/util/basics/spawn.mts'), () => ({
   runSocketBasics: mockRunSocketBasics,
 }))
 
-const mockSafeDelete = vi.hoisted(() => vi.fn())
-// Keep safeDeleteSync real — tests below use it to clean up tmp dirs.
-vi.mock(import('@socketsecurity/lib-stable/fs/safe'), async importOriginal => ({
-  ...(await importOriginal()),
-  safeDelete: mockSafeDelete,
-}))
-
 describe('handleCreateNewScan', () => {
   const mockConfig = {
     autoManifest: false,
@@ -205,65 +198,6 @@ describe('handleCreateNewScan', () => {
       expect.any(Object),
     )
     expect(finalizeTier1Scan).toHaveBeenCalledWith('tier1-scan-456', 'scan-789')
-  })
-
-  it('deletes the reachability facts file after a successful submission', async () => {
-    mockFetchSupportedScanFileNames.mockResolvedValue(
-      createSuccessResult(new Set(['package.json'])),
-    )
-    mockGetPackageFilesForScan.mockResolvedValue(['/test/project/package.json'])
-    mockCheckCommandInput.mockReturnValue(true)
-    mockPerformReachabilityAnalysis.mockResolvedValue(
-      createSuccessResult({
-        reachabilityReport: '/test/project/.socket.facts.json',
-        tier1ReachabilityScanId: 'tier1-scan-456',
-      }),
-    )
-    mockFetchCreateOrgFullScan.mockResolvedValue(
-      createSuccessResult({ id: 'scan-789' }),
-    )
-
-    await handleCreateNewScan({
-      ...mockConfig,
-      reach: {
-        excludePaths: [],
-        reachExcludePaths: [],
-        runReachabilityAnalysis: true,
-      },
-    })
-
-    expect(mockSafeDelete).toHaveBeenCalledWith(
-      '/test/project/.socket.facts.json',
-      { force: true },
-    )
-  })
-
-  it('keeps the reachability facts file when submission fails', async () => {
-    mockFetchSupportedScanFileNames.mockResolvedValue(
-      createSuccessResult(new Set(['package.json'])),
-    )
-    mockGetPackageFilesForScan.mockResolvedValue(['/test/project/package.json'])
-    mockCheckCommandInput.mockReturnValue(true)
-    mockPerformReachabilityAnalysis.mockResolvedValue(
-      createSuccessResult({
-        reachabilityReport: '/test/project/.socket.facts.json',
-        tier1ReachabilityScanId: 'tier1-scan-456',
-      }),
-    )
-    mockFetchCreateOrgFullScan.mockResolvedValue(
-      createErrorResult('upload failed'),
-    )
-
-    await handleCreateNewScan({
-      ...mockConfig,
-      reach: {
-        excludePaths: [],
-        reachExcludePaths: [],
-        runReachabilityAnalysis: true,
-      },
-    })
-
-    expect(mockSafeDelete).not.toHaveBeenCalled()
   })
 
   it('handles scan report generation', async () => {

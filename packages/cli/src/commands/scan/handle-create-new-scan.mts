@@ -208,6 +208,11 @@ export async function handleCreateNewScan({
   let scanPaths: string[] = packagePaths
   let tier1ReachabilityScanId: string | undefined
   let reachabilityReport: string | undefined
+  // Whether this run generated the .socket.facts.json itself. We only clean
+  // up a facts file we produced — a pre-existing one (the user pre-generated
+  // it, or --reach-use-only-pregenerated-sboms points at their own artifacts)
+  // is left untouched.
+  let generatedFactsFile = false
 
   // If reachability is enabled, perform reachability analysis.
   if (reach.runReachabilityAnalysis) {
@@ -228,6 +233,15 @@ export async function handleCreateNewScan({
     logger.info('Starting reachability analysis…')
     debugNs('notice', 'Reachability analysis enabled')
     debugDir('inspect', { reachabilityOptions: mergedReachabilityOptions })
+
+    // Record whether the facts file was already on disk before the analysis
+    // ran. The create flow always writes coana's report to the default
+    // .socket.facts.json in cwd, so a file present now was not produced by
+    // this run and must be preserved. --reach-use-only-pregenerated-sboms
+    // likewise signals the user is managing their own artifacts.
+    const factsFilePreExisted = existsSync(
+      path.resolve(cwd, DOT_SOCKET_DOT_FACTS_JSON),
+    )
 
     spinner.start()
 
@@ -252,6 +266,8 @@ export async function handleCreateNewScan({
     logger.success('Reachability analysis completed successfully')
 
     reachabilityReport = reachResult.data?.reachabilityReport
+    generatedFactsFile =
+      !factsFilePreExisted && !reach.reachUseOnlyPregeneratedSboms
 
     scanPaths = [
       ...excludeFactsJson(packagePaths),
@@ -349,9 +365,12 @@ export async function handleCreateNewScan({
     await finalizeTier1Scan(tier1ReachabilityScanId, scanId)
   }
 
-  if (fullScanCResult.ok && reachabilityReport) {
+  if (fullScanCResult.ok && reachabilityReport && generatedFactsFile) {
     // The facts file is an upload artifact, not user-facing output — remove
-    // it once the scan is submitted so it doesn't linger in the project.
+    // it once the scan is submitted so it doesn't linger in the project. Only
+    // a file we generated this run is removed; a pre-existing or
+    // user-pre-generated facts file is left in place (see generatedFactsFile).
+    // On submission failure we intentionally keep the file for debuggability.
     await safeDelete(path.resolve(cwd, reachabilityReport), { force: true })
   }
 
