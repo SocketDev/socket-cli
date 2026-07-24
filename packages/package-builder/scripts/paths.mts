@@ -8,6 +8,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { cliExeBinaryName, cliExeUnscopedName } from './cli-exe-targets.mts'
+import type { CliExeTriplet } from './cli-exe-targets.mts'
+
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
@@ -16,6 +19,7 @@ const PACKAGE_BUILDER_ROOT = path.join(__dirname, '..')
 
 // Template directories.
 const TEMPLATES_DIR = path.join(PACKAGE_BUILDER_ROOT, 'templates')
+export const CLI_EXE_TEMPLATE_DIR = path.join(TEMPLATES_DIR, 'cli-exe-package')
 export const CLI_TEMPLATE_DIR = path.join(TEMPLATES_DIR, 'cli-package')
 export const CLI_SENTRY_TEMPLATE_DIR = path.join(
   TEMPLATES_DIR,
@@ -86,6 +90,45 @@ export function getBuildOutDir(mode = getBuildMode()) {
  */
 export function getPackageOutDir(packageName: string, mode = getBuildMode()) {
   return path.join(getBuildOutDir(mode), packageName)
+}
+
+/**
+ * Get the output directory for a `@socketsecurity/cli.exe.<triplet>` tail
+ * package. Directory name matches the unscoped npm name, e.g.
+ * `cli.exe.darwin-arm64`.
+ *
+ * @param {string} triplet - Pack-app triplet (darwin-arm64, linux-x64-musl, …).
+ * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI
+ *   detection.
+ *
+ * @returns {string} Path to the tail package directory.
+ */
+export function getCliExePackageDir(
+  triplet: CliExeTriplet,
+  mode = getBuildMode(),
+) {
+  return getPackageOutDir(cliExeUnscopedName(triplet), mode)
+}
+
+/**
+ * Get the binary path within a `@socketsecurity/cli.exe.<triplet>` tail
+ * package. Payload lives under `bin/`, `.exe`-suffixed on Windows.
+ *
+ * @param {string} triplet - Pack-app triplet (darwin-arm64, linux-x64-musl, …).
+ * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI
+ *   detection.
+ *
+ * @returns {string} Path to the socket binary.
+ */
+export function getCliExeBinaryPath(
+  triplet: CliExeTriplet,
+  mode = getBuildMode(),
+) {
+  return path.join(
+    getCliExePackageDir(triplet, mode),
+    'bin',
+    cliExeBinaryName(triplet),
+  )
 }
 
 /**

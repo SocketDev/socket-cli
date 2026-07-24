@@ -35,6 +35,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { restoreCache } from './setup/cache.mts'
 import { ensureGhCli } from './setup/installers.mts'
 import {
+  generateCliExePackages,
   generateCliSentryPackage,
   generateSocketbinPackages,
 } from './setup/package-generation.mts'
@@ -187,6 +188,11 @@ async function main(): Promise<number> {
 
   // Generate packages from templates.
   await generateCliSentryPackage({ quiet })
+  if (!quiet) {
+    logger.log('')
+  }
+
+  await generateCliExePackages({ quiet })
   if (!quiet) {
     logger.log('')
   }

@@ -49,6 +49,38 @@ export async function generateCliSentryPackage({
 }
 
 /**
+ * Generate `@socketsecurity/cli.exe.<triplet>` tail packages from template.
+ */
+export async function generateCliExePackages({
+  quiet,
+}: PackageGenerationOptions): Promise<boolean> {
+  if (!quiet) {
+    logger.log('Generating cli.exe tail packages from template…')
+  }
+
+  // fileURLToPath, not URL.pathname — see generateCliSentryPackage above.
+  const scriptPath = fileURLToPath(
+    new URL(
+      '../../../packages/package-builder/scripts/generate-cli-exe-packages.mts',
+      import.meta.url,
+    ),
+  )
+  const result = await spawn('node', [scriptPath], {
+    stdio: quiet ? 'pipe' : 'inherit',
+  })
+
+  if (result.code === 0) {
+    if (!quiet) {
+      logger.log('cli.exe tail packages generated!')
+    }
+    return true
+  }
+
+  logger.warn('Failed to generate cli.exe tail packages')
+  return false
+}
+
+/**
  * Generate socketbin packages from template.
  */
 export async function generateSocketbinPackages({

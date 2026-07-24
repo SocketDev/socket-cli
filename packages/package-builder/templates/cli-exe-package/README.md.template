@@ -1,0 +1,5 @@
+# {{NAME}}
+
+Standalone [Socket CLI](https://socket.dev/npm/package/socket) executable for **{{DESCRIPTION}}**.
+
+Installed automatically as an optional dependency of the [`socket`](https://socket.dev/npm/package/socket) wrapper package — install that instead of depending on this tail directly.

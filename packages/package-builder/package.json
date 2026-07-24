@@ -10,6 +10,7 @@
   "scripts": {
     "generate:all": "node scripts/generate-all.mts",
     "generate:cli": "node scripts/generate-cli-packages.mts",
+    "generate:cli-exe": "node scripts/generate-cli-exe-packages.mts",
     "generate:cli-sentry": "node scripts/generate-cli-sentry-package.mts",
     "generate:socketaddon": "node scripts/generate-socketaddon-packages.mts",
     "generate:socketbin": "node scripts/generate-socketbin-packages.mts"
