@@ -183,7 +183,9 @@ export function legacySocketbinPackageName(triplet: CliExeTriplet): string {
  * scripts/fleet/check/platform-tails-match-naming-domain.mts: dotted `.exe`
  * target, pack-app tail, bin payload, exact engine fields.
  */
-export function cliExeManifest(triplet: CliExeTriplet): Record<string, unknown> {
+export function cliExeManifest(
+  triplet: CliExeTriplet,
+): Record<string, unknown> {
   const binaryName = cliExeBinaryName(triplet)
   const engine = cliExeEngineFields(triplet)
   return {

@@ -3,10 +3,8 @@
  *   staged publish. Sets version + buildMethod and strips the private field;
  *   the binary must already be in place from the SEA build. Publishes go
  *   through the staged npm-publish pipeline — this script never publishes.
- *
- *   Usage:
- *     node scripts/repo/prepublish-cli-exe.mts --version=3.0.0 --all
- *     node scripts/repo/prepublish-cli-exe.mts --version=3.0.0 --triplet=darwin-arm64
+ *   Usage: node scripts/repo/prepublish-cli-exe.mts --version=3.0.0 --all node
+ *   scripts/repo/prepublish-cli-exe.mts --version=3.0.0 --triplet=darwin-arm64.
  */
 
 import { existsSync } from 'node:fs'

@@ -5,7 +5,6 @@
  *   cli-exe-targets.mts so the conditional `libc` field stays typed; the
  *   README comes from templates/cli-exe-package/. Binaries are stamped into
  *   `bin/` afterwards by the SEA build.
- *
  *   Usage: node scripts/generate-cli-exe-packages.mts.
  */
 
@@ -50,7 +49,11 @@ export async function generatePackage(triplet: CliExeTriplet): Promise<void> {
       NAME: packageName,
     },
   )
-  await fs.writeFile(path.join(packagePath, 'README.md'), readmeContent, 'utf-8')
+  await fs.writeFile(
+    path.join(packagePath, 'README.md'),
+    readmeContent,
+    'utf-8',
+  )
 
   // Copy .gitignore — template seed is stored dotless so it is not a tracked
   // nested .gitignore in this repo.
