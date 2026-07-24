@@ -84,7 +84,7 @@ describe('socket raw-npm', async () => {
 
         [DryRun]: Would execute raw npm command
 
-          Command: /[HOME]/.socket/_wheelhouse/rack/npm/12.0.1/package/bin/npm-cli.js
+          Command: [NPM_CLI]
           Arguments: --dry-run --config {"apiToken":"fakeToken"}
 
           Run without --dry-run to execute this command."

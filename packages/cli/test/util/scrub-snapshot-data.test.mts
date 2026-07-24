@@ -220,6 +220,15 @@ Updated: 2 days ago
       const result = scrubSnapshotData(input)
       expect(result).toBe('Working in [PROJECT]/src/utils')
     })
+
+    it('should scrub resolved npm and npx binary paths', () => {
+      const input = [
+        'Command: /opt/hostedtoolcache/node/26.3.0/x64/lib/node_modules/npm/bin/npx-cli.js',
+        'Command: ~/.socket/_wheelhouse/rack/npm/12.0.1/package/bin/npm-cli.js',
+      ].join('\n')
+      const result = scrubSnapshotData(input)
+      expect(result).toBe('Command: [NPX_CLI]\nCommand: [NPM_CLI]')
+    })
   })
 
   describe('toSnapshotString', () => {

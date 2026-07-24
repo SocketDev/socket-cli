@@ -104,6 +104,12 @@ export function scrubSnapshotData(
     // Temp directories.
     scrubbed = scrubbed.replace(/\/tmp\/[a-zA-Z0-9_-]+/g, '/[TEMP]')
     scrubbed = scrubbed.replace(/\\Temp\\[a-zA-Z0-9_-]+/gi, '\\[TEMP]')
+
+    // Resolved npm/npx binary paths. The raw-npm/raw-npx dry-run prints the
+    // npm install it resolved, which varies by machine (wheelhouse rack copy
+    // locally, hostedtoolcache npm in CI) and by rack npm version.
+    scrubbed = scrubbed.replace(/\S+[\\/]npm-cli\.js/g, '[NPM_CLI]')
+    scrubbed = scrubbed.replace(/\S+[\\/]npx-cli\.js/g, '[NPX_CLI]')
   }
 
   // Phase 3: IDs and UUIDs.

@@ -84,7 +84,7 @@ describe('socket raw-npx', async () => {
 
         [DryRun]: Would execute raw pnpm exec command
 
-          Command: /[HOME]/.socket/_wheelhouse/rack/npm/12.0.1/package/bin/npx-cli.js
+          Command: [NPX_CLI]
           Arguments: --dry-run --config {"apiToken":"fakeToken"}
 
           Run without --dry-run to execute this command."
