@@ -76,7 +76,7 @@ controls. Never reach a real host from a unit test.
 Three layers enforce this. Each catches what the others miss.
 
 1. **Runtime fail-closed.**
-   - *js/ts*: `test/scripts/fleet/setup.mts` (vitest `setupFiles`) calls
+   - *js/ts*: `test/fleet/scripts/setup.mts` (vitest `setupFiles`) calls
      `nock.disableNetConnect()` once, allowing only `127.0.0.1` / `localhost`.
      Any unmocked request throws `NetConnectNotAllowedError` at run time.
    - *rust / go / c++*: the CI test step runs inside the `run-offline` composite

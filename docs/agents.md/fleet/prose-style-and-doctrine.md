@@ -60,6 +60,12 @@ Blocked by `anti-prose-guard` on doc writes; flagged by
   heuristic: one matcher (`_shared/honesty-framing.mts`) backs all three
   enforcers, so the rule fires the same on chat, `gh` bodies, and doc writes.
   A warranted adverbial use is rare; the per-surface bypass phrase covers it.
+- AI-slop tells (purple-prose words like delve/tapestry, importance puffery,
+  weasel attribution, colon reveals, faux-insight, summary-recap): the shared
+  `_shared/ai-slop-patterns.mts` matcher backs all three enforcers, the same
+  DRY model as the honesty matcher. The full banned-word + pattern set with
+  fixes lives in the prose skill's `references/phrases.md`; run human-facing
+  prose through it.
 
 ## Operating doctrine
 

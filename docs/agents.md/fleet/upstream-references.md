@@ -39,7 +39,7 @@ of the same SHA.
   annotation. Enforced by `upstream-submodules-are-release-tagged`.
 - `ref = <40hex>` is the exact commit of record, and the `# <name>-<version>
   sha256:<64hex>` header is the codeload-archive content hash of that ref. Both
-  are provisioned together by `scripts/fleet/gen-gitmodules-hash.mts --set
+  are provisioned together by `scripts/fleet/gen/gitmodules-hash.mts --set
   <name|path> <ref> --label <name>-<version>` — never hand-edit `ref` alone
   (`uses-sha-verify-guard` blocks it, because the archive hash can't be recomputed
   at edit time).
@@ -60,7 +60,7 @@ git config -f .gitmodules submodule.upstream/<name>.branch <branch>
 git config -f .gitmodules submodule.upstream/<name>.shallow true
 git config -f .gitmodules submodule.upstream/<name>.sparse-checkout <subpath>   # optional slice
 git config -f .gitmodules submodule.upstream/<name>.verify none                 # or a verify command
-node scripts/fleet/gen-gitmodules-hash.mts --set upstream/<name> <ref> --label <name>-<version>
+node scripts/fleet/gen/gitmodules-hash.mts --set upstream/<name> <ref> --label <name>-<version>
 node scripts/fleet/git-partial-submodule.mts clone upstream/<name>             # materialize (no gitlink)
 ```
 

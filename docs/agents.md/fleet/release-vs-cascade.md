@@ -62,7 +62,7 @@ so it is neither cascaded nor packaged in the release — the source is enough.
   single authority the gitignore fleet block references).
 - **Cross-harness adapters** (`.cursor/`, `.windsurf/`, `.clinerules/`, `.kiro/`,
   `AGENTS.md`, `.github/copilot-instructions.md`) — generated per-repo/per-platform
-  by `gen-harness-adapters.mts` — a tracked symlink checks out wrong on Windows.
+  by `gen/harness-adapters.mts` — a tracked symlink checks out wrong on Windows.
 - **`.janus/`** (per-repo Janus ticket queue) — a fresh queue is created per-repo
   by `janus init` at setup / adoption; there is no canonical seed content, the
   queue is repo-local and dynamic. See

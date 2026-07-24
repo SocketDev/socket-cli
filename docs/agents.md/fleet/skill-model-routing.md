@@ -13,7 +13,6 @@ Skills where the work is "run the tool, commit, push" without judgment:
 - `cleaning-ci` — sweep orphan workflow files
 - `guarding-paths` — path-dedup audit
 - `refreshing-history` — squash + reset
-- `regenerating-patches` — regenerate patches against pinned upstream
 - `running-test262` — conformance suite runner
 - `squashing-history` — git reset/squash
 - `updating` — pnpm update + soak
@@ -79,7 +78,7 @@ A `Workflow` is the natural harness for this. The orchestrator (your session mod
 The strongest split keeps Claude on the two judgment phases and hands the token-heavy middle phase to Codex on its own subscription:
 
 - **Plan** → Fable 5 at `high`. Break the task down: architecture decisions, file targets, constraints, edge cases. Write a precise implementation brief for Codex that carries the project invariants (this CLAUDE.md ruleset).
-- **Execute** → Codex GPT-5.5 at `xhigh`, driven through the `codex:codex-rescue` agent. Codex does the file edits, feature work, refactors, and mechanical sweeps from the brief and hands back a complete diff. This runs on the ChatGPT-plan seat, so the generation tokens never touch the Claude weekly quota.
+- **Execute** → Codex GPT-5.5 at `xhigh`, driven through the `codex` CLI. Codex does the file edits, feature work, refactors, and mechanical sweeps from the brief and hands back a complete diff. This runs on the ChatGPT-plan seat, so the generation tokens never touch the Claude weekly quota.
 - **Review** → Fable 5 at `xhigh`. Critically read the Codex diff for correctness, contract adherence, and test impact; run verification (`pnpm run check`, `pnpm test`); accept, or loop Codex with specific corrections. The cycle repeats until the diff passes review.
 
 Fable never writes the code, Codex never decides the design. A note on the Fable effort levels. Fable runs adaptive thinking only: thinking is always on, there is no manual thinking-mode or token-budget knob, so effort is the single dial. Its recommended range tops out at `xhigh` (start at `high`, step to `xhigh` for the most capability-sensitive work); `max` belongs to Opus, not to Fable's recommended ladder. So planning runs `high` and the review pass runs `xhigh`, the most thorough setting Fable's own guidance recommends. The lib does not even forward `--effort` to a Fable model (`buildArgs` in `src/ai/spawn.mts` drops it, since Fable ignores the dial), so set the tier and let Fable self-pace. Because the bulk of generation runs on the ChatGPT plan rather than Claude, this preserves a large share of the Claude weekly headroom (in practice roughly half) for the planning and review calls that genuinely need apex reasoning. That headroom, not dollars, is the binding constraint under a subscription (see below).

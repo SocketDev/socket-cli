@@ -46,7 +46,7 @@ both are required (and enforced):
   install. A fresh clone / `pnpm install` fetches + applies the pinned bundle
   BEFORE the (itself-untracked) install-git-hooks step + any chained build.
   `--if-current` is idempotent: it skips when the pinned ref is already applied
-  — a local marker at `node_modules/.cache/socket-wheelhouse/bundle-applied` —
+  — a local marker at `node_modules/.cache/fleet/socket-wheelhouse/bundle-applied` —
   so warm installs do no network, and it no-ops in a non-thin repo (nothing
   pinned → nothing to fetch).
 - **Suspenders (CI)** — the same belt, exercised by CI's install step: the

@@ -16,9 +16,7 @@ Pairs with _Don't leave the worktree dirty_ and _Smallest chunks, land ASAP_. Ca
 
 ## Small PRs
 
-A PR carries one logical feature or fix and targets ~200 changed lines. Larger work is decomposed into separate PRs or stacked. `gh pr create --base <previous-branch>` chains a follow-up PR on the branch before it, so each link stays small and reviewable.
-
-Small units keep review sharp and agents constrained. A reviewer reads 200 lines carefully; a 2,000-line PR gets a rubber stamp. This is Depot's point that guardrails increase (not limit) AI usefulness: a tight change boundary is what lets a reviewer trust an agent's diff.
+Keep a PR small — a rule of thumb is under ~200 changed lines overall. Large refactors and new features won't always fit, so decompose a large changeset into separately reviewable commits split along logical boundaries: modules, packages, whatever maps cleanly to the work. Agents are good at this — tell one to break a change into small commits right before opening the PR. GitHub stacked PRs, currently in preview, are another option that keeps each link small and review sharp.
 
 The fleet direct-pushes to main, so it realizes this doctrine primarily as small commits landed fast — the `commit-cadence-nudge` + land-fast cadence above. A PR happens only on push-rejection or for external / cross-repo work. On that rare PR path, `small-pr-nudge` enforces the size ceiling. It fires on `gh pr create`, computes the three-dot diff (`git diff --shortstat <base>...HEAD`), and reminds you to decompose or stack when the change exceeds ~200 lines. Reminder-only, never a block; it fails open when the diff can't be computed.
 

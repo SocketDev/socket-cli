@@ -22,9 +22,13 @@ enforcement: n/a — <reason>                   # a pure-preference, uncodifiabl
 `reference` (pointers, URLs, dashboards) and `user` (who the user is) memories
 are exempt. They hold no rule to enforce.
 
-## The two surfaces
+## The three surfaces
 
-- **Write-time:** `uncodified-lesson-nudge` (Stop hook) fires when a turn writes
+- **Save-moment:** `memory-codify-nudge` (PostToolUse hook) fires the instant a
+  memory-store file is written. It is unconditional on the write: a memory
+  steers one agent, a guard steers them all — when the memory encodes a rule,
+  correction, or convention, codify it now, while the context is loaded.
+- **Turn-end:** `uncodified-lesson-nudge` (Stop hook) fires when a turn writes
   a feedback/project memory with an enforceable shape and no enforcer citation.
   It is the reminder to codify now, while the lesson is fresh.
 - **Audit:** `scripts/fleet/check/memories-are-codified.mts` scans the local
@@ -51,7 +55,7 @@ counter.
   `RECURRENCE_THRESHOLD` (2), the nudge escalates from "consider codifying" to
   "this recurred across N sessions — codify it THIS turn." The nudge fires on
   evidence rather than prose.
-- **Where it lives.** `node_modules/.cache/socket-learning-ledger/` — dep-0
+- **Where it lives.** `node_modules/.cache/fleet/socket-learning-ledger/` — dep-0
   runtime state, never tracked, OS-temp fallback, fail-open (a broken ledger
   yields 0 and the base nudge still fires). No network, no telemetry, no LLM at
   any point — detection is regex + counters.

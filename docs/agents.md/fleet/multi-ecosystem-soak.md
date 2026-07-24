@@ -41,7 +41,7 @@ ecosystem. Vendored trees (`upstream/`, `vendor/`, `third_party/`, `deps/`,
   artifacts (`setup:brew` pinned bundle, `setup:rust` runs
   `cargo fetch --locked`, `setup:go` runs `go mod download`, `setup:python`
   runs `uv sync --frozen`); local == CI.
-- Prebaked images: every `docker/fleet-bases/*.Dockerfile` copies its lock
+- Prebaked images: every `docker/fleet/*.Dockerfile` copies its lock
   before installing and uses the frozen/locked verb;
   `check/prebakes-install-from-lock.mts` (repo tier) fails an unpinned
   external FROM, an unlocked install verb, or a missing lock COPY.

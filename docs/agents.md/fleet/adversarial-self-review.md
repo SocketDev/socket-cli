@@ -41,6 +41,23 @@ explicitly; don't let bot silence stand in for review.
    accepted-but-not-fixed (with rationale), refuted (with evidence). The
    record is what stops the same angles from being re-argued later.
 
+## Verification by domain
+
+Match the verification method to the failing domain before choosing how to
+prove a fix.
+
+- **Autofixable domains — lint, format.** When the toolchain has an autofixer
+  the FIRST move is the autofixer over the affected files: `pnpm run fix`, or
+  the tool's `--fix`. Verification is re-running the linter — its exit code IS
+  the proof. Hand-editing finding-by-finding, or hand-verifying each finding
+  after a fix, is thrash in these domains: the tool both applies and checks
+  the rewrite mechanically. Enforcement: `long-running-task-nudge` appends
+  this triage to every thrash nudge.
+- **Semantic domains — logic, behavior, security.** No autofixer exists, so
+  verified evidence is mandatory: run the code path, plant a probe, reproduce
+  the failure, per-finding hand-verification. This is where the adversarial
+  loop above earns its cost.
+
 ## Why
 
 The loop's value is empirical: rounds against real diffs replace designs, not

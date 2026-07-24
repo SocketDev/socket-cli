@@ -7,17 +7,17 @@ then read only the one line span you actually need.
 
 ## The engine
 
-`scripts/fleet/make-repo-map.mts` emits a symbol skeleton for a file or
+`scripts/fleet/gen/repo-map.mts` emits a symbol skeleton for a file or
 directory: one header line per file plus one line per top-level symbol,
 `Lstart-Lend  <signature>`. Deterministic and read-only apart from `--write`.
 
 ```sh
 # Print a skeleton to stdout.
-node scripts/fleet/make-repo-map.mts <file|dir> [<file|dir>…]
+node scripts/fleet/gen/repo-map.mts <file|dir> [<file|dir>…]
 # (Re)build the on-disk cache.
-node scripts/fleet/make-repo-map.mts --write .
+node scripts/fleet/gen/repo-map.mts --write .
 # Refresh only git-touched files.
-node scripts/fleet/make-repo-map.mts --write --changed
+node scripts/fleet/gen/repo-map.mts --write --changed
 ```
 
 Default mode prints the skeleton to stdout with a `source → skeleton` savings
@@ -35,7 +35,7 @@ dollar savings without paired transcript data.
 Run the same command before and after map changes and keep the stderr summary:
 
 ```sh
-node --experimental-strip-types scripts/fleet/make-repo-map.mts scripts/fleet
+node --experimental-strip-types scripts/fleet/gen/repo-map.mts scripts/fleet
 ```
 
 Baseline captured 2026-07-16 on the wheelhouse fleet scripts:
@@ -83,7 +83,7 @@ Two hooks make the cache actually get used, not just exist:
   whole-file `Read` of a LARGE source file (≥6 KB, no `offset`/`limit`) is about
   to land. When a **fresh** cached skeleton exists (`.repo-map/<rel>.skel`, mtime
   at/after the source's) it points straight at that ready-made file; otherwise it
-  suggests `make-repo-map --write`. It skips scoped reads, small files, non-source
+  suggests `gen/repo-map --write`. It skips scoped reads, small files, non-source
   files, and unreadable paths — a full read is still correct when you need exact
   byte context for an edit.
 - `repo-map-refresh` (SessionStart, fail-open) detached-spawns `--write
@@ -96,4 +96,4 @@ Two hooks make the cache actually get used, not just exist:
 Engine, skill, workflow, and both hooks are fleet-tier — cascaded to every member
 so the orient-first discipline holds fleet-wide. The engine is the single owner;
 the skill and hooks are thin wrappers that defer to it. Fix parsing/behavior in
-`make-repo-map.mts`, not in the wrappers.
+`gen/repo-map.mts`, not in the wrappers.

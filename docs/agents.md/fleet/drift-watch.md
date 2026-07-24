@@ -45,7 +45,7 @@ test using the LOCAL composite actions under `.github/actions/` (inlined — no
 cross-repo reusable, no `uses:@sha` for first-party)"
 (`template/base/.github/workflows/ci.yml:4-6`). Composite actions cascade
 per-subdir under `.github/actions/fleet/<name>/` with local `uses: ./` refs;
-workflow files cascade whole (`prune-workflow-runs.yml`, `publish-npm.yml`,
+workflow files cascade whole (`prune-workflow-runs.yml`, `npm-publish.yml`,
 the gh-aw `.md`/`.lock.yml` pairs — see the mirror entries in
 `scripts/repo/sync-scaffolding/manifest/bundle.json`). SHA pins remain only on
 THIRD-party actions (`actions/checkout@<sha> # v6.0.2 (YYYY-MM-DD)`), and those

@@ -84,7 +84,7 @@ Cross-repo imports go through `@socketsecurity/lib/...` and `@socketregistry/...
 
 ## Active-edits ledger — coordinating concurrent actors
 
-The ledger is a per-actor JSON file under `node_modules/.cache/socket-active-edits/<actorId>.json` (dep-0, never tracked). Actor ID = `sha256(transcript_path).slice(0,16)` — the transcript path discriminates actors because each subagent / workflow-agent gets its own JSONL while the main session has a different one.
+The ledger is a per-actor JSON file under `node_modules/.cache/fleet/socket-active-edits/<actorId>.json` (dep-0, never tracked). Actor ID = `sha256(transcript_path).slice(0,16)` — the transcript path discriminates actors because each subagent / workflow-agent gets its own JSONL while the main session has a different one.
 
 Three hooks build on it:
 
@@ -206,7 +206,7 @@ the primary session.
 
 `codex-session-budget-guard` (PreToolUse) enforces this: the companion's first
 tool call stamps a start marker under
-`node_modules/.cache/socket-codex-session/`, and once the 1-minute wall-clock
+`node_modules/.cache/fleet/socket-codex-session/`, and once the 1-minute wall-clock
 budget is spent every further tool call blocks with a hand-off message. Sustained
 work belongs in a full Claude session. The user lifts it for one session by
 typing `Allow codex-long-session bypass`.

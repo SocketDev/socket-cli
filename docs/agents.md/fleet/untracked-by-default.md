@@ -15,7 +15,7 @@ When you scan a repo for **its own code** (counting files, hunting a pattern to 
 git config -f .gitmodules --get-regexp '^submodule\..*\.path$' | awk '{print $2}'
 
 # survey OWN code, excluding vendored + build output
-grep -rl '<pattern>' . --include='*.rs' | grep -vE '/(upstream|vendor|third_party|external|deps)/|node_modules|/target/|/build/'
+grep -rl '<pattern>' . --include='*.rs' | grep -vE '/(upstream|source-patched)/|node_modules|/target/|/build/'
 ```
 
 Incident: a `#[cold]` survey of socket-btm reported **5,058 `.rs` files**, every one under a package's `upstream/` (tree-sitter, icu4x, temporal, boringssl, and more). The repo has **no own Rust** to touch, so the whole count was vendored noise. Scoping to own-code roots surfaces that in one line.

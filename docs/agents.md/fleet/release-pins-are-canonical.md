@@ -20,8 +20,9 @@ Two layers, deliberately paired (code-is-law):
 
 - **Write time** — `bootstrap/src/lockstep.mts` (`validateRef` /
   `validateCascadeSha`, the dep-0 fetcher) and
-  `scripts/repo/sync-scaffolding/socket-wheelhouse-config.mts`
-  (`validateBundleBlock`, the cascade stamper) reject a fuzzy/ranged/aliased pin
+  the cascade stamper's config module (`validateBundleBlock`, in the
+  template source's `scripts/repo/sync-scaffolding/`) reject a
+  fuzzy/ranged/aliased pin
   as it is written. The stamper writes exactly `{ ref, cascadeSha }` and refuses
   to invent a ref (see `fix-bundle-pin.mts`).
 - **Belt** — `scripts/fleet/check/release-pins-are-canonical.mts` re-asserts the

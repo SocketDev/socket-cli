@@ -22,12 +22,13 @@ pnpm run cover       # tests pass AND the coverage threshold holds
 
 `pnpm run cover` is part of the wave, not optional: it runs the suite under
 coverage and fails if a test fails or coverage drops below the repo's
-threshold. It also emits `coverage/coverage-summary.json` (the `json-summary`
+threshold. It also emits
+`node_modules/.cache/fleet/coverage/coverage-summary.json` (the `json-summary`
 reporter). After it passes, refresh the README coverage badge from that summary
 and commit the refresh:
 
 ```bash
-node scripts/fleet/make-coverage-badge.mts
+node scripts/fleet/gen/coverage-badge.mts
 ```
 
 The badge is generated from the coverage run, so it drifts whenever coverage
@@ -101,16 +102,32 @@ To skip the gate but keep the ordering check, set
 `SOCKET_VERSION_BUMP_SKIP_GATE=1`; to bypass the whole guard, type
 `Allow version-bump-order bypass`.
 
-### 4. Tag at the end
+### 4. Tag + GitHub release come LAST — after the registry publish
 
-`git tag vX.Y.Z` at the bump commit, then push the tag. The
-`version-bump-order-guard` hook enforces this ordering at commit time.
+Never create or push `vX.Y.Z` before the version is live on its registry.
+The tag + immutable GH release are the FINAL markers of a release: a STAGED
+npm package is not published (staging may never be approved), and a release
+cut early can mark a version that never shipped — an immutable release even
+422-rejects its own late asset uploads. The approve flow owns them:
+`publish-pipeline.mts --approve` (or `npm-publish.mts --approve` /
+`cargo-publish.mts --approve` out-of-band) promotes, waits for the registry
+to resolve the version (`requireRegistryLive`), then tags + cuts the release
+at the bump commit. The `version-bump-order-guard` hook enforces the
+bump-before-tag ordering at commit time; the github-release workflow refuses
+to cut for a version the registry can't resolve.
 
-### 5. Do NOT dispatch the publish workflow
+### 5. Publish through the pipeline — never by hand, never a raw dispatch
 
-Per the [Public-surface hygiene](public-surface-hygiene.md) rule (in
-CLAUDE.md), releases are user-triggered. Stop after the tag push;
-the user runs the publish workflow manually.
+The pipeline is the ONE sanctioned publisher. Its stage-publish leg
+dispatches the `npm-publish.yml` workflow itself and watches the run, so the
+staged upload happens in CI under OIDC — no local npm login, no local OTP.
+`publish-pipeline.mts --local` is the explicit offline escape for humans.
+Agents must not publish locally (`npm publish`, `pnpm stage publish`,
+`cargo publish`, a direct `npm-publish.mts` run — blocked by
+`verify-before-publish-guard`) and must not hand-dispatch publish workflows
+(`gh workflow run` — blocked by `release-workflow-guard`). The human-owned
+step remains `publish-pipeline.mts --approve`: the 2FA promote, then the
+tag + immutable GH release cut LAST behind registry liveness.
 
 ## The bump base is the last PUBLISHED version, never the manifest
 

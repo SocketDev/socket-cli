@@ -57,7 +57,7 @@ or changing a cascaded hook/rule.
     Provides a `runStopReminder(config)` that handles stdin parse, code-fence
     stripping, pattern sweep, and stderr emit. Must cascade alongside the
     reminder hooks or imports fail at hook startup.
-  - `_shared/acorn/` — shared acorn-wasm parser for hooks that need structural
+  - `_shared/ast/` — shared acorn-wasm parser for hooks that need structural
     JS/TS parsing (error-message-quality-nudge relies on `findThrowNew`). The
     `.wasm` blob + bindgen + sync wrapper must cascade as a unit.
 
@@ -100,9 +100,6 @@ phrase (where one exists):
 - **plan-location-guard** — PreToolUse(Edit|Write|MultiEdit) for plan-shaped `.md`
   writes to tracked locations; plans belong at `<repo-root>/.claude/plans/`.
   Bypass: `Allow plan-location bypass`.
-- **plugin-patch-format-guard** — PreToolUse(Edit|Write) for
-  `scripts/fleet/plugin-patches/*.patch`: enforces filename shape, the four
-  `# @plugin/@plugin-version/@sha/@description` keys, and a plain `diff -u` body.
 - **pull-request-target-guard** — PreToolUse(Edit|Write) for workflow YAML
   combining `pull_request_target` + fork-HEAD checkout + execute-fork-code.
   Bypass: `Allow pr-target-execution bypass`.
@@ -110,8 +107,6 @@ phrase (where one exists):
   README.md violating the canonical skeleton. Bypass: `Allow readme-fleet-shape bypass`.
 - **workflow-uses-comment-guard** — PreToolUse(Edit|Write) for `uses: <action>@<sha>`
   lines lacking the `# <tag-or-branch> (YYYY-MM-DD)` staleness comment.
-- **marketplace-comment-guard** — PreToolUse(Edit|Write) for edits to
-  `.claude-plugin/marketplace.json` + sibling README that desync the SHA-pin pair.
 - **headroom-proxy-start** — SessionStart auto-start of the telemetry-locked
   headroom wire-level proxy (fail-closed: only sets `ANTHROPIC_BASE_URL` if the
   proxy is healthy on :8787).

@@ -1,0 +1,359 @@
+/**
+ * Socket Fleet — Component Recipes
+ *
+ * Reusable component styles built entirely from tokens.css. Every value is
+ * a var() reference — no hex literals, no magic numbers. Drop into a project
+ * via <link> after tokens.css to get fleet-wide button / form / card / modal
+ * shape without re-implementing.
+ *
+ * Adding a new component:
+ *   - Reference only tokens defined in tokens.css.
+ *   - If a token doesn't exist for what you need, add it to all four
+ *     theme blocks in tokens.css FIRST.
+ *   - Run scripts/check-contrast.mts to verify any new surface/foreground pair.
+ *
+ * Conventions:
+ *   - Components use the shadcn-semantic surface tokens (--background, --card,
+ *     --primary, --muted, --border, …) by default (chrome). Marketing-specific
+ *     recipes live in this same file but reference --mkt-*; namespacing is in
+ *     the selector or class prefix.
+ *   - Text on a surface uses that surface's paired `-foreground` token so
+ *     contrast holds across every theme.
+ *   - All interactive states (hover, focus, active, disabled) defined here.
+ *   - Animation keyframes namespaced to socket-* to avoid collision.
+ */
+
+/* ── Buttons ─────────────────────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--foreground);
+  background: var(--card);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition:
+    background var(--motion-fast),
+    border-color var(--motion-fast),
+    color var(--motion-fast),
+    filter var(--motion-fast),
+    transform 60ms ease;
+  user-select: none;
+}
+
+.btn:hover {
+  filter: brightness(1.08);
+  border-color: var(--primary);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent);
+}
+
+.btn:disabled,
+.btn[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  /* Defeat hover/active visuals on disabled state. */
+  filter: none;
+  transform: none;
+}
+
+/* Primary — Socket-branded gradient fill. The two layered gradients (pad+
+   border) create a contrasting ring effect; works on both light and dark. */
+.btn-primary {
+  color: #fff;
+  background:
+    var(--socket-gradient-pink) padding-box,
+    linear-gradient(90deg, #9866ff 0%, #e158a8 100%) border-box;
+  border: 2px solid transparent;
+  border-radius: var(--radius-full);
+  padding: 9px 22px;
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:hover {
+  filter: brightness(1.08);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  filter: brightness(0.92);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(1px);
+}
+
+/* Secondary — neutral chrome, the default for non-emphasis actions. Same
+   shape as .btn (it's effectively an alias kept for explicit-intent names). */
+.btn-secondary {
+  /* Inherits .btn defaults. Extra opacity for visual hierarchy vs primary. */
+  background: var(--secondary);
+  border-color: var(--border);
+}
+
+.btn-secondary:hover {
+  background: var(--card);
+  border-color: var(--border-strong);
+}
+
+/* Danger — destructive action. Uses the --destructive surface + its paired
+   foreground so text stays legible in every theme (not the page --background). */
+.btn-danger {
+  color: var(--destructive);
+  background: var(--card);
+  border-color: var(--destructive);
+}
+
+.btn-danger:hover {
+  color: var(--destructive-foreground);
+  background: var(--destructive);
+  border-color: var(--destructive);
+  filter: none;
+}
+
+/* ── Form fields ─────────────────────────────────────────────────────── */
+
+input[type='text'],
+input[type='email'],
+input[type='search'],
+input[type='url'],
+input[type='password'],
+input[type='number'],
+input[type='tel'],
+textarea {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.4;
+  padding: var(--space-sm) 10px;
+  color: var(--foreground);
+  background: var(--background);
+  border: 1px solid var(--input);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition:
+    border-color var(--motion-fast),
+    box-shadow var(--motion-fast);
+  box-sizing: border-box;
+}
+
+input[type='text']::placeholder,
+input[type='email']::placeholder,
+input[type='search']::placeholder,
+input[type='url']::placeholder,
+input[type='password']::placeholder,
+input[type='number']::placeholder,
+input[type='tel']::placeholder,
+textarea::placeholder {
+  color: var(--muted-foreground);
+}
+
+input[type='text']:focus,
+input[type='email']:focus,
+input[type='search']:focus,
+input[type='url']:focus,
+input[type='password']:focus,
+input[type='number']:focus,
+input[type='tel']:focus,
+textarea:focus {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px var(--accent);
+}
+
+input:disabled,
+textarea:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+textarea {
+  font-family: var(--font-mono);
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* ── Card ────────────────────────────────────────────────────────────── */
+
+/* Card recipe replaces ad-hoc <details> patterns. Use .card-collapsed +
+   .card-expanded JS toggles, or wrap in <details> and rely on the [open]
+   attribute. Both work. */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  transition:
+    background var(--motion-med),
+    border-color var(--motion-med);
+}
+
+.card-collapsed,
+.card:not([open]) {
+  /* Subtle recess — sits one step behind the page bg. */
+  background: var(--muted);
+}
+
+.card-expanded,
+.card[open] {
+  /* Lifts forward when expanded — slightly stronger border + shadow. */
+  background: var(--card);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.card-header {
+  font-weight: 600;
+  color: var(--foreground);
+  line-height: 1.3;
+  cursor: pointer;
+}
+
+.card[open] .card-header,
+.card-expanded .card-header {
+  margin-bottom: var(--space-sm);
+}
+
+/* ── Modal backdrop ──────────────────────────────────────────────────── */
+
+/* Scrim + blur layer behind a modal. Apply as an overlay element OR via
+   body:has(...) + ::before on the body. Both patterns supported. */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 5, 30, 0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 30;
+  pointer-events: auto;
+}
+
+/* Light-mode scrim — lighter wash so light surfaces don't darken to plum. */
+html[data-theme='light'] .modal-backdrop,
+:root .modal-backdrop {
+  background: rgba(180, 170, 200, 0.35);
+}
+
+html[data-theme='dark'] .modal-backdrop,
+html[data-theme='synthwave'] .modal-backdrop {
+  background: rgba(15, 5, 30, 0.5);
+}
+
+@media (prefers-color-scheme: dark) {
+  html[data-theme='system'] .modal-backdrop {
+    background: rgba(15, 5, 30, 0.5);
+  }
+}
+
+/* ── Spinner ─────────────────────────────────────────────────────────── */
+
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: socket-spin 0.9s linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes socket-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Shimmer ─────────────────────────────────────────────────────────── */
+
+/* Text-clip gradient shimmer for celebratory state. The gradient is text-
+   clipped and the background-position animates horizontally. Pure CSS,
+   GPU-accelerated. */
+.shimmer {
+  background: linear-gradient(
+    110deg,
+    #ffffff 0%,
+    #fff2c4 25%,
+    #c4f0ff 50%,
+    #fff2c4 75%,
+    #ffffff 100%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: socket-shimmer 3s linear infinite;
+}
+
+@keyframes socket-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -120% 0;
+  }
+}
+
+/* ── Pulse ───────────────────────────────────────────────────────────── */
+
+/* Brief scale pulse — draw attention to a changing value (counters,
+   notifications). JS adds .pulse, CSS animates once and falls off. */
+.pulse {
+  animation: socket-pulse 0.5s ease-out;
+}
+
+@keyframes socket-pulse {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* ── Scrollbar (thin) ────────────────────────────────────────────────── */
+
+/* Cross-browser thin scrollbar. Apply .scrollbar-thin to any overflow
+   container. Falls back gracefully on Firefox via scrollbar-width. */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}

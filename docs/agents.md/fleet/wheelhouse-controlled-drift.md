@@ -46,8 +46,8 @@ Every file under `template/base/` MUST be reachable by exactly one channel:
 - **`EXPECTED_FILES`** — must exist but content varies per repo (`package.json`,
   `CLAUDE.md`, `.gitignore`, …).
 - **A carve-out / kind layer / `overrides/<repo>` layer** — the `repo/` tiers and
-  per-repo divergences (e.g. the wheelhouse's own bundle-cutter
-  `github-release.yml` in `template/overrides/socket-wheelhouse/`).
+  per-repo divergences (e.g. the template source's own bundle-cutter
+  `github-release.yml` in its per-repo overrides tier).
 - **A native handler** — a per-file cascade handler outside the manifest byte
   lists: `.claude/settings.json` (merge-aware `settings-merge`), `README.md`
   (`readme-skeleton-drift`, per-repo content), and `.github/aw/actions-lock.json`

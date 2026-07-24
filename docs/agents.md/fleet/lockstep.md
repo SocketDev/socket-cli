@@ -89,7 +89,7 @@ lang-parity), `checks.test.mts` (cross-row + lang-parity).
 A `version-pin` row carries an optional `materialization` field — how much of
 the pinned submodule this repo consumes. It is one mechanism with two modes, not
 two systems: both share the same pin, `.gitmodules` `sha256:`, drift-count, and
-latest-release machinery; only the *take* differs (`schema.mts`
+latest-release machinery; only the _take_ differs (`schema.mts`
 `MaterializationSchema`). (`file-fork` is inherently a single-file subset, so it
 carries no `materialization` field.)
 
@@ -118,7 +118,9 @@ counts as drift, never how the pin itself is tracked.
 
 A `feature-parity` port or a `spec-conformance` implementation reimplements
 an upstream project, so its conformance gate reuses the upstream's OWN test
-suite instead of hand-porting it. Two rules, both mandatory:
+suite instead of hand-porting it. Four rules, all mandatory — each proven in
+production by the stuie port, opentui to Rust at 170/170 upstream
+conformance:
 
 1. **Drive the upstream suite through a shim; never rewrite it.** Expose the
    local port under the upstream's exact public API through an adapter — a
@@ -132,13 +134,31 @@ suite instead of hand-porting it. Two rules, both mandatory:
    follows the [`conformance-runners`](conformance-runners.md) shape. The
    payoff: a `version-pin` or parity bump re-runs the upstream's NEWEST tests
    against the port for free — reproducible, deterministic, auto-updating.
-2. **Run copies from `os.tmpdir()`; never in the upstream tree.** A pinned
-   submodule is read-only truth; a test's side effects — snapshot writes,
-   temp files, runner scratch — must never dirty it, since a dirty submodule
-   breaks the `version-pin` HEAD check and the `.gitmodules` hash. The harness
-   therefore COPIES the needed upstream test files plus their relative helper
-   imports into a throwaway scratch dir under `os.tmpdir()`, runs them from
-   there, and deletes the dir afterward. The module-under-test import still
+2. **Alias by on-disk overlay, never by loader plugin.** The alias mechanism
+   is a real re-export stub file written OVER the upstream module inside the
+   throwaway sandbox copy — `export * from "<abs shim path>"` — so the
+   runtime's own loader resolves it, which works identically for sync,
+   async, dynamic, and child-process imports. NEVER redirect upstream module
+   imports via a Bun runtime-plugin `onResolve` returning a shim path: Bun,
+   observed at >= 1.3.11, misredirects async/dynamic imports and export-star
+   re-exports of a plugin-returned path — it builds `file:<path>` then fails
+   ENOENT (<https://github.com/oven-sh/bun/issues/9863>). Custom overlay
+   bodies handle default-export forwarding and circular injection. Keep the
+   overlay map declarative in one file.
+3. **Run a full physical copy from `os.tmpdir()`; never in the upstream
+   tree.** A pinned submodule is read-only truth; a test's side effects —
+   snapshot writes, temp files, runner scratch — must never dirty it, since
+   a dirty submodule breaks the `version-pin` HEAD check and the
+   `.gitmodules` hash. The harness therefore COPIES the upstream src plus
+   the test files into a throwaway sandbox under `os.tmpdir()`, runs them
+   from there, and deletes the dir afterward. The physical copy is
+   load-bearing: relative imports stay contained inside the sandbox, while
+   a symlink farm escapes back into the real tree because loaders realpath
+   by default. Stage unvendored bare-specifier deps as stand-in packages
+   under the sandbox `node_modules`. For suites that spawn CHILD bun
+   processes, write a `bunfig.toml` at the sandbox root pointing `preload`
+   at an absolute path — children discover it from cwd, and the on-disk
+   overlays are inherited for free. The module-under-test import still
    resolves to the shim by ABSOLUTE path, so moving the test files never
    breaks the alias. Fleet helpers: `getTmpdir()` from
    `@socketsecurity/lib-stable/env/temp-dir`, which returns `undefined` on a
@@ -146,12 +166,56 @@ suite instead of hand-porting it. Two rules, both mandatory:
    `@socketsecurity/lib-stable/fs/copy` for the file copy; and `safeDelete`
    from `@socketsecurity/lib-stable/fs/safe` for cleanup. Never spawn the
    upstream runner with its cwd inside `upstream/<name>/`.
+4. **Stand-ins must share module identity with the sandbox barrel.** When a
+   test asserts a package equals the barrel via reference-based `toEqual`,
+   the bare-specifier stand-in must re-export the SAME module instance as
+   the sandbox barrel — `export * from "<relative path into sandbox src>"`
+   — never a parallel copy of the shims, which fails identity even when the
+   exports match shape-for-shape.
 
 Enforcement today is this doctrine plus the CLAUDE.md conformance bullet. A
 mechanical guard that flags a test-runner invocation whose path points inside
 an `upstream/` submodule without a tmp copy is future work: a robust check is
 false-positive-prone across the many runner shapes, so correctness wins over a
 flaky gate.
+
+## Closing port gaps
+
+How a port fix lands once drift surfaces — a `version-pin` bump breaking the
+gate, a parity-floor breach, a red conformance suite. Same provenance as the
+harness rules above: each rule was validated in production by the stuie port.
+
+- **Upstream ground truth first.** Before fixing any gap, derive upstream's
+  ACTUAL behavior from its sources with file:line evidence, then implement
+  what the evidence shows — mirror, never invent. Any deliberate divergence
+  is explicit, documented at the site, and reported. Receipts: the stuie
+  editor cluster-math fix was confirmed cluster-wise in upstream zig before
+  porting, and the yoga clippy pass rejected a plausible-but-wrong epsilon
+  fix the same way.
+- **Gaps with no upstream test pressure gate on OUR adversarial tests.**
+  When upstream tests never exercise the gap, write unit tests that
+  demonstrably FAIL on the old code — prove it with a targeted revert probe
+  — and include property-style invariants, e.g. N steps right then N left
+  returns to origin.
+- **Adversarial verify between implement and land.** Every tier lands
+  through an independent verify pass that re-derives claims itself: re-runs
+  benches on a clean HEAD worktree, re-reads upstream sources, revert-probes
+  new tests, checks `git status` for strays, and confirms exact-baseline
+  conformance on >= 2 stable runs of the final tree. Fix-is-real means real
+  resolution or computation — never a loosened assertion or an edited
+  snapshot. The general loop lives in
+  [`adversarial-self-review.md`](adversarial-self-review.md).
+- **Hard time-boxes; revert + defer.** Cap fix attempts at ~6-8 iterations,
+  then REVERT and defer with an accurate note: what broke, which impls, the
+  suspected upstream change. Never trade green suites, never grind. Test
+  harnesses set hard per-command timeouts — `spawnSync` `timeout` — so a
+  hung worker fails fast instead of stalling verification.
+- **Perf rewrites in ports.** Measure first in release mode, capture the
+  baseline BEFORE touching loops, keep an honest before/after table, revert
+  wins below ~1.3x. Pin semantics with randomized naive-reference
+  equivalence tests kept in the test module. Microarch policy is
+  [`portable-microarch.md`](portable-microarch.md) — runtime dispatch for
+  distributed targets, floor pins only for controlled ones.
 
 ## Pin the latest release — always
 
@@ -160,7 +224,7 @@ pin. Before adding or changing a `version-pin` row or a `.gitmodules` submodule
 pin:
 
 1. `git fetch --tags` in the submodule so the local view is current.
-2. Pin the NEWEST release tag — `gen-gitmodules-hash.mts --set` for
+2. Pin the NEWEST release tag — `gen/gitmodules-hash.mts --set` for
    `.gitmodules`, the `version-pin` row for `lockstep.json`.
 3. Never port against a stale/inherited pin, and never trust a drift count from
    a clone that hasn't fetched tags — a shallow or never-fetched clone reports a
@@ -204,7 +268,7 @@ chain, `scripts/fleet/weekly-update/deterministic-chain.mts`) drives:
   that row's `pinned_sha`/`pinned_tag` in the OWNING manifest file (root or
   the `includes[]` sub-manifest that physically holds the row,
   `auto-bump.mts:650-663`), regenerates the `.gitmodules`
-  `# <name>-<version> sha256:…` annotation via `gen-gitmodules-hash.mts --set`
+  `# <name>-<version> sha256:…` annotation via `gen/gitmodules-hash.mts --set`
   — the only annotation path `uses-sha-verify-guard` accepts — and commits
   surgically: `chore(deps): bump <upstream> to <tag>`
   (`auto-bump.mts:455-623`).
@@ -218,6 +282,10 @@ approval happen BEFORE `--apply` is called.
   serves.
 - [`conformance-runners.md`](conformance-runners.md) — the runner shape for the
   bespoke case, and for external-spec corpora such as test262 and WPT.
+- [`adversarial-self-review.md`](adversarial-self-review.md) — the general
+  adversarial loop the port-gap verify pass instantiates.
+- [`portable-microarch.md`](portable-microarch.md) — the fleet perf doctrine
+  port perf rewrites defer to for target pinning.
 - [`no-live-network-in-tests.md`](no-live-network-in-tests.md) — the conformance
   harness copies fixtures locally and hits no network.
 - `.claude/hooks/fleet/gitmodules-comment-guard/` — enforces the

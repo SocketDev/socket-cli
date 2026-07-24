@@ -1,0 +1,279 @@
+/**
+ * Socket Fleet — Design Tokens
+ *
+ * Single source of truth for all Socket project styling. Components in
+ * components.css and downstream stylesheets reference these tokens ONLY;
+ * no hex literals outside this file.
+ *
+ * Naming — shadcn/ui-aligned (https://ui.shadcn.com/docs/theming). The core UI
+ * surface tokens use shadcn's SEMANTIC names + the paired `-foreground`
+ * convention, so this system is drop-in familiar to anyone who's used shadcn
+ * and maps 1:1 onto Tailwind v4 `@theme`. Socket-specific richness (brand,
+ * marketing, the full status palette, the four themes) rides ON TOP as clearly
+ * labeled extensions.
+ *
+ *   Core (shadcn):
+ *     --background / --foreground            page surface + its text
+ *     --card / --card-foreground             raised surface + its text
+ *     --popover / --popover-foreground       overlay surface + its text
+ *     --primary / --primary-foreground       brand action + its text
+ *     --secondary / --secondary-foreground   neutral action + its text
+ *     --muted / --muted-foreground           recessed surface + subtle text
+ *     --accent / --accent-foreground         subtle hover/active tint + its text
+ *     --destructive / --destructive-foreground  danger action + its text
+ *     --border  --input  --ring              hairlines, field borders, focus ring
+ *     --radius                               base corner radius (scale derives)
+ *   Every surface/text is a PAIR so contrast is guaranteed by construction —
+ *   pick a surface, use its paired `-foreground` for text on it.
+ *
+ *   Socket extensions (not in shadcn):
+ *     --socket-*  Brand constants. Same value in every theme. Logo / hero only.
+ *     --border-strong  Emphasis hairline (a step past --border).
+ *     --mkt-*     Marketing surfaces — warmer, brand-forward landing/hero palette.
+ *     --status-*  Full semantic status — success / warning / alert / info
+ *                 (danger is --destructive above).
+ *     --space-*   Spacing scale (8px base, T-shirt sizes).
+ *     --radius-*  Corner-radius scale (--radius is the shadcn base alias).
+ *     --shadow-*  Box shadows, three tiers.
+ *     --motion-*  Animation durations.
+ *     --font-*    Font stacks.
+ *
+ * Themes (via html[data-theme="..."]):
+ *   light       Default. Cream + ink for product surfaces.
+ *   dark        Charcoal + lavender for devtools / power-user contexts.
+ *   synthwave   Neon pink on deep purple — Socket-branded celebration.
+ *   system      Follows OS via prefers-color-scheme.
+ *
+ * How to import:
+ *   <link rel="stylesheet" href="path/to/tokens.css">
+ *   <link rel="stylesheet" href="path/to/components.css">
+ *
+ * For inline / Chrome-extension scenarios:
+ *   <style>@import url('./tokens.css'); @import url('./components.css');</style>
+ *
+ * See the README.md alongside this file for the full walkthrough. Colors are
+ * hex today; an oklch pass (shadcn v4's color space) is a deferred follow-up.
+ */
+
+/* ── 1. Brand (constants — same in every theme) ── */
+:root {
+  --socket-purple: #8c50ff;
+  --socket-pink: #ff00aa;
+  --socket-gradient-pink: linear-gradient(90deg, #e158a8 0%, #9866ff 100%);
+}
+
+/* ── 2. Light theme (default) ── */
+:root,
+html[data-theme='light'] {
+  /* Core surfaces + paired foregrounds (shadcn) */
+  --background: #ffffff;
+  --foreground: #18181b;
+  --card: #f9fafb;
+  --card-foreground: #18181b;
+  --popover: #f9fafb;
+  --popover-foreground: #18181b;
+  --primary: var(--socket-purple);
+  --primary-foreground: #ffffff;
+  --secondary: #f3f4f6;
+  --secondary-foreground: #18181b;
+  --muted: #f3f4f6;
+  --muted-foreground: #52525b;
+  --accent: #e9d5ff;
+  --accent-foreground: #6b21a8;
+  --destructive: #b91c1c;
+  --destructive-foreground: #ffffff;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: var(--socket-purple);
+
+  /* Socket extension: emphasis hairline (a step past --border) */
+  --border-strong: #d4d4d8;
+
+  /* Marketing surfaces */
+  --mkt-bg: #ede9e5;
+  --mkt-fg: #242422;
+  --mkt-border: #5a3773;
+  --mkt-glow: rgba(135, 53, 217, 0.34);
+
+  /* Status — light mode (saturated, deep for cream surfaces; danger = --destructive) */
+  --status-success: #15803d;
+  --status-warning: #a16207;
+  --status-alert: #9a3412;
+  --status-info: #1d4ed8;
+
+  /* Typography */
+  --font-sans:
+    'Geist', 'IBM Plex Sans', system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
+  --font-mono:
+    'Geist Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+
+  /* Spacing scale (8px base, T-shirt sizes) */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 48px;
+
+  /* Radii (--radius is the shadcn base alias) */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 999px;
+  --radius: var(--radius-md);
+
+  /* Shadows (3-tier) */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.16);
+
+  /* Motion */
+  --motion-fast: 120ms ease;
+  --motion-med: 220ms ease;
+  --motion-slow: 360ms ease;
+
+  color-scheme: light;
+}
+
+/* ── 3. Dark theme ── */
+html[data-theme='dark'] {
+  --background: #0a0a0a;
+  --foreground: #f4f4f5;
+  --card: #111111;
+  --card-foreground: #f4f4f5;
+  --popover: #111111;
+  --popover-foreground: #f4f4f5;
+  --primary: #b388ff; /* purple-300, brighter for dark bg */
+  --primary-foreground: #0a0a0a;
+  --secondary: #18181b;
+  --secondary-foreground: #f4f4f5;
+  --muted: #18181b;
+  --muted-foreground: #a1a1aa;
+  --accent: #4c1d95;
+  --accent-foreground: #ede9fe;
+  --destructive: #f87171;
+  --destructive-foreground: #0a0a0a;
+  --border: #27272a;
+  --input: #27272a;
+  --ring: #b388ff;
+
+  --border-strong: #3f3f46;
+
+  /* Marketing surfaces — dark-mode marketing is uncommon but supported */
+  --mkt-bg: #0a0a0a;
+  --mkt-fg: #f4f4f5;
+  --mkt-border: #a78bfa;
+  --mkt-glow: rgba(168, 139, 250, 0.34);
+
+  /* Status — dark mode (brighter for dark bg) */
+  --status-success: #4ade80;
+  --status-warning: #facc15;
+  --status-alert: #fb923c;
+  --status-info: #60a5fa;
+
+  /* Shadows — adjusted for dark mode (need stronger darks) */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+
+  color-scheme: dark;
+}
+
+/* ── 4. Synthwave theme — Socket-branded glow ── */
+html[data-theme='synthwave'] {
+  /* Gradient bg for hero / celebration surfaces */
+  --background: radial-gradient(
+    ellipse at top right,
+    #3a2450 0%,
+    #2a1b3d 40%,
+    #1a0f2e 100%
+  );
+  --foreground: #f8f0ff;
+  --card: #2a1b3d;
+  --card-foreground: #f8f0ff;
+  --popover: #241633;
+  --popover-foreground: #f8f0ff;
+  --primary: var(--socket-pink); /* #ff00aa — Socket-branded synthwave */
+  --primary-foreground: #1a0f2e;
+  --secondary: #241633;
+  --secondary-foreground: #f8f0ff;
+  --muted: #241633;
+  --muted-foreground: #c8b8e8;
+  --accent: rgba(255, 0, 170, 0.18);
+  --accent-foreground: #f8f0ff;
+  --destructive: #ff6b9d;
+  --destructive-foreground: #1a0f2e;
+  --border: #3d2a5a;
+  --input: #3d2a5a;
+  --ring: var(--socket-pink);
+
+  --border-strong: #5a3d7a;
+
+  /* Marketing surfaces — neon hero treatment */
+  --mkt-bg: #1a0f2e;
+  --mkt-fg: #f8f0ff;
+  --mkt-border: var(--socket-pink);
+  --mkt-glow: rgba(255, 0, 170, 0.34);
+
+  /* Status — synthwave pulls neon */
+  --status-success: #50fa7b;
+  --status-warning: #f1fa8c;
+  --status-alert: #ffb86c;
+  --status-info: #8be9fd;
+
+  /* Shadows — colored glow for synthwave aesthetic */
+  --shadow-sm: 0 1px 2px rgba(255, 0, 170, 0.1);
+  --shadow-md: 0 2px 12px rgba(255, 0, 170, 0.15);
+  --shadow-lg: 0 8px 32px rgba(255, 0, 170, 0.2);
+
+  color-scheme: dark;
+}
+
+/* ── 5. System (follows OS) ──
+   When data-theme="system", default to light tokens (set above on :root) and
+   override with the dark token block when the OS reports prefers-color-scheme:
+   dark. */
+@media (prefers-color-scheme: dark) {
+  html[data-theme='system'] {
+    --background: #0a0a0a;
+    --foreground: #f4f4f5;
+    --card: #111111;
+    --card-foreground: #f4f4f5;
+    --popover: #111111;
+    --popover-foreground: #f4f4f5;
+    --primary: #b388ff;
+    --primary-foreground: #0a0a0a;
+    --secondary: #18181b;
+    --secondary-foreground: #f4f4f5;
+    --muted: #18181b;
+    --muted-foreground: #a1a1aa;
+    --accent: #4c1d95;
+    --accent-foreground: #ede9fe;
+    --destructive: #f87171;
+    --destructive-foreground: #0a0a0a;
+    --border: #27272a;
+    --input: #27272a;
+    --ring: #b388ff;
+
+    --border-strong: #3f3f46;
+
+    /* Marketing surfaces */
+    --mkt-bg: #0a0a0a;
+    --mkt-fg: #f4f4f5;
+    --mkt-border: #a78bfa;
+    --mkt-glow: rgba(168, 139, 250, 0.34);
+
+    /* Status */
+    --status-success: #4ade80;
+    --status-warning: #facc15;
+    --status-alert: #fb923c;
+    --status-info: #60a5fa;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+
+    color-scheme: dark;
+  }
+}

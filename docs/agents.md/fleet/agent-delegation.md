@@ -9,7 +9,7 @@ Bias toward short, scoped questions when handing off. The agent on the other end
 - **One question, one ask.** "Is this rewrite safe?" beats "Review this whole branch and tell me what you think." Bundled asks return diluted answers.
 - **Concrete scope.** Name the file, the function, the SHA, the diff. "Sanity-check this 40-line diff against the previously-broken pattern" is answerable in one pass; "Audit our cascade infrastructure" isn't.
 - **Bounded expected response.** "Under 200 words", "one of: safe / unsafe / unsure with reason", "list the bugs you find". Open-ended prompts produce open-ended replies that take longer to read than the original analysis would have.
-- **Fast-loop-friendly.** Prefer 2-minute round-trips over 20-minute ones. If the question needs a 20-minute investigation, that's a heavyweight `codex:codex-rescue` invocation, not a sanity check (different tool).
+- **Fast-loop-friendly.** Prefer 2-minute round-trips over 20-minute ones. If the question needs a 20-minute investigation, that's a heavyweight `codex` CLI session, not a sanity check (different tool).
 
 A common anti-pattern: sending the entire commit body + every prior message in the thread so the agent "has context." That's not context, that's noise. Restate the question in 3–5 sentences with the specific artifact attached and ask for a verdict.
 
@@ -48,7 +48,7 @@ Bad sanity-check prompts:
 
 - "Look at our wheelhouse cascade tooling and tell me if it's good." (too broad)
 - "Review the last 12 commits." (no anchor, no specific question)
-- "Help me design the next refactor." (that's design work, not verification; use `Plan` or `codex:codex-rescue`)
+- "Help me design the next refactor." (that's design work, not verification; use `Plan`)
 
 ## Verifying subagent output: their claims are leads, not facts
 
@@ -110,7 +110,6 @@ When the _current_ Claude session wants to hand off a single task to another mod
 
 | Subagent             | When to use                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `codex:codex-rescue` | You want GPT-5.5's take or a heavyweight async investigation. Best for: hard debugging you're stuck on, second implementation pass on a tricky design, deep root-cause work. Persistent runtime; check progress with `/codex:status`, get output with `/codex:result`. Also exposed as `/codex:rescue` for user-driven invocation.                                                                                                                                                                     |
 | `delegate`           | You want a Fireworks / Synthetic / Kimi open model via [OpenCode](https://opencode.ai). Best for: cheap bulk work (classification, summarization, drafting many things), specialist routing (e.g. Qwen-Coder for code-heavy tasks), second opinions from a non-GPT/non-Claude model. Caller specifies the model in the prompt (e.g. `fireworks/qwen3-coder-480b`). Fire-and-forget. **Optional**: only available if the dev has set up the `delegate` agent locally. Skill code must not depend on it. |
 | `Explore`            | Codebase search / "where is X defined" / cross-file lookups. Different model isn't the point; context isolation is.                                                                                                                                                                                                                                                                                                                                                                                    |
 | `Plan`               | Implementation strategy for a non-trivial task before writing code.                                                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -118,7 +117,7 @@ When the _current_ Claude session wants to hand off a single task to another mod
 
 ## Routing heuristics
 
-- **Stuck after one or two failed attempts** → `codex:codex-rescue`. A different family often breaks the deadlock.
+- **Stuck after one or two failed attempts** → `delegate` to a different family, or a `codex` CLI diagnosis. A different family often breaks the deadlock.
 - **About to do 20+ similar small operations** → `delegate` with a cheap model. Keep the main context clean.
 - **Want a sanity check on a non-trivial design or diff** → `/codex:adversarial-review` (slash command) _or_ `delegate` to a different family, depending on which perspective is more useful.
 - **Big codebase question that'll burn context** → `Explore`.
