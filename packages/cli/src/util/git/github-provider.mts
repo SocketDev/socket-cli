@@ -201,11 +201,11 @@ export class GitHubProvider implements PrProvider {
       // Include owner in cache key to avoid collisions with same repo name.
       const gqlCacheKey = `${owner}::${repo}-pr-graphql-snapshot-${states.join('-').toLowerCase()}`
       while (hasNextPage) {
-        const gqlResp = (await cacheFetch(
+        const gqlResp = await cacheFetch(
           `${gqlCacheKey}-page-${pageIndex}`,
           /* c8 ignore start - cacheFetch factory only fires on cache miss; tests pass mocked cached values directly */
           () =>
-            octokitGraphql(
+            octokitGraphql<GqlPullRequestsResponse>(
               `
               query($owner: String!, $repo: String!, $states: [PullRequestState!], $after: String) {
                 repository(owner: $owner, name: $repo) {
@@ -237,7 +237,7 @@ export class GitHubProvider implements PrProvider {
               },
             ),
           /* c8 ignore stop */
-        )) as GqlPullRequestsResponse
+        )
 
         const { nodes, pageInfo } = gqlResp?.repository?.pullRequests ?? {
           nodes: [],

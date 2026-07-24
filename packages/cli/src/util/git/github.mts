@@ -77,7 +77,13 @@ export async function enablePrAutoMerge({
 }: Pr): Promise<PrAutoMergeState> {
   const graphqlClient = getOctokitGraphql()
   try {
-    const gqlResp = await graphqlClient(
+    const gqlResp = await graphqlClient<{
+      enablePullRequestAutoMerge?:
+        | {
+            pullRequest?: { number?: number | undefined } | undefined
+          }
+        | undefined
+    }>(
       `
       mutation EnableAutoMerge($pullRequestId: ID!) {
         enablePullRequestAutoMerge(input: {
@@ -91,17 +97,7 @@ export async function enablePrAutoMerge({
       }`,
       { pullRequestId: prId },
     )
-    const respPrNumber = (
-      gqlResp as
-        | {
-            enablePullRequestAutoMerge?:
-              | {
-                  pullRequest?: { number?: number | undefined } | undefined
-                }
-              | undefined
-          }
-        | undefined
-    )?.enablePullRequestAutoMerge?.pullRequest?.number
+    const respPrNumber = gqlResp?.enablePullRequestAutoMerge?.pullRequest?.number
     /* c8 ignore start - GraphQL success path requires a successful enablePullRequestAutoMerge response; tests mock the call to fail */
     if (respPrNumber) {
       return { enabled: true }
@@ -179,7 +175,7 @@ export async function fetchGhsaDetails(
       .join('\n')
 
     const gqlResp = await cacheFetch(gqlCacheKey, () =>
-      graphqlClient(`
+      graphqlClient<Record<string, GhsaDetails | undefined>>(`
         query {
           ${aliases}
         }
@@ -190,9 +186,7 @@ export async function fetchGhsaDetails(
     for (let i = 0, { length } = ids; i < length; i += 1) {
       const id = ids[i]!
       const advisoryKey = `advisory${i}`
-      const advisory = (gqlResp as Record<string, unknown> | undefined)?.[
-        advisoryKey
-      ] as GhsaDetails | undefined
+      const advisory = gqlResp?.[advisoryKey]
       if (advisory?.ghsaId) {
         results.set(id, advisory)
       } else {

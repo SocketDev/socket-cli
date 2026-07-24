@@ -41,16 +41,19 @@ export async function cacheFetch<T>(
   const inflight = inflightRequests.get(key)
   /* c8 ignore start - inflight cache hit requires concurrent calls; tests run serially */
   if (inflight) {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the LRU stores every key's inflight promise as Promise<unknown>; a same-key hit was produced by the same fetcher, so its resolved type is this call's T.
     return inflight as Promise<T>
   }
   /* c8 ignore stop */
 
   try {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- JSON-file cache boundary: the persisted value was serialized from a T by writeCache, but a disk round-trip can't carry the compile-time type.
     let data = (await readCache(key, ttlMs)) as T
     if (!data) {
       // Re-check inflight after async readCache to prevent race.
       const inflightAfterRead = inflightRequests.get(key)
       if (inflightAfterRead) {
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- same-key inflight promise (see above): produced by the same fetcher, resolves to this call's T.
         return inflightAfterRead as Promise<T>
       }
 
@@ -83,24 +86,22 @@ export async function readCache(
   const cacheJsonPath = path.join(githubCachePath, `${key}.json`)
 
   try {
-    const entry = (await readJson(cacheJsonPath)) as CacheEntry | JsonContent
+    const entry = await readJson(cacheJsonPath)
     // Handle both new format (with timestamp) and legacy format (without).
-    if (
-      entry &&
-      typeof entry === 'object' &&
-      'timestamp' in entry &&
-      'data' in entry
-    ) {
-      const isExpired = Date.now() - (entry.timestamp as number) > ttlMs
+    if (entry && typeof entry === 'object' && !Array.isArray(entry)) {
+      const { data, timestamp } = entry
       /* c8 ignore start - cache fresh-hit + legacy-format branches; tests pre-populate cache files in only one format */
-      if (!isExpired) {
-        return entry.data
+      if (typeof timestamp === 'number' && data !== undefined) {
+        const isExpired = Date.now() - timestamp > ttlMs
+        if (!isExpired) {
+          return data
+        }
+      } else {
+        // Legacy format without timestamp - treat as expired.
+        return undefined
       }
-    } else {
-      // Legacy format without timestamp - treat as expired.
-      return undefined
+      /* c8 ignore stop */
     }
-    /* c8 ignore stop */
   } catch {
     return undefined
   }

@@ -55,6 +55,7 @@ export class GitLabProvider implements PrProvider {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
         debugDir({ attempt, base, head, projectId, title })
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Gitbeaker types every field as `T | Camelize<unknown>` to model its camelize option; this client is constructed without camelize, so responses are the snake_case MergeRequestSchema.
         const mr = (await this.gitlab.MergeRequests.create(
           projectId,
           head,
@@ -88,12 +89,13 @@ export class GitLabProvider implements PrProvider {
           typeof e.cause === 'object' &&
           'response' in e.cause
         ) {
-          const response = (
-            e.cause as {
-              response?: { status?: number | undefined } | undefined
-            }
-          ).response
-          if (response?.status === 400) {
+          const { response } = e.cause
+          if (
+            response &&
+            typeof response === 'object' &&
+            'status' in response &&
+            response.status === 400
+          ) {
             break
           }
         }
@@ -129,6 +131,7 @@ export class GitLabProvider implements PrProvider {
       debug(`mr: updating stale MR !${prNumber}`)
 
       // Check if rebase resulted in conflicts.
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Gitbeaker Camelize-union typing; this client is not camelized (see createPr).
       const mr = (await this.gitlab.MergeRequests.show(
         projectId,
         prNumber,
@@ -179,6 +182,7 @@ export class GitLabProvider implements PrProvider {
       let hasMore = true
 
       while (hasMore) {
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Gitbeaker Camelize-union typing; this client is not camelized (see createPr).
         const mrs = (await this.gitlab.MergeRequests.all({
           maxPages: 1,
           page,
