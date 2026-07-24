@@ -272,7 +272,9 @@ const readAllowedSignerKeys = (): Set<string> => {
     // %GK emits `<key-type> <base64-key>` (no principal). We extract
     // the last two whitespace-separated tokens of each line.
     const text = readFileSync(expanded, 'utf8')
-    for (const rawLine of text.split('\n')) {
+    const rawLines = text.split('\n')
+    for (let i = 0, { length } = rawLines; i < length; i += 1) {
+      const rawLine = rawLines[i]!
       const line = rawLine.trim()
       if (!line || line.startsWith('#')) {
         continue
@@ -354,7 +356,9 @@ const scanSignedCommits = (range: string, remoteRef: string): number => {
     return 0
   }
   logger.fail(`${errors} unsigned commit(s) being pushed to ${refBase}.`)
-  for (const sha of unsigned.slice(0, 5)) {
+  const shaList = unsigned.slice(0, 5)
+  for (let j = 0, { length: jlen } = shaList; j < jlen; j += 1) {
+    const sha = shaList[j]!
     const oneline = git('log', '-1', '--oneline', sha)
     logger.info(`  - ${oneline}`)
   }
@@ -446,7 +450,8 @@ const scanFilesInRange = (range: string): number => {
   }
 
   // Per-file content scans.
-  for (const file of changed) {
+  for (let k = 0, { length: klen } = changed; k < klen; k += 1) {
+    const file = changed[k]!
     if (!file || !existsSync(file)) {
       continue
     }
@@ -480,7 +485,9 @@ const scanFilesInRange = (range: string): number => {
     const pathHits = scanPersonalPaths(text)
     if (pathHits.length > 0) {
       logger.fail(`Hardcoded personal path found in: ${file}`)
-      for (const h of pathHits.slice(0, 3)) {
+      const hItems2 = pathHits.slice(0, 3)
+      for (let i = 0, { length } = hItems2; i < length; i += 1) {
+        const h = hItems2[i]!
         logger.info(`${h.lineNumber}: ${h.line.trim()}`)
         if (h.suggested && h.suggested !== h.line) {
           logger.info(`     fix: ${h.suggested.trim()}`)
@@ -534,7 +541,7 @@ const scanFilesInRange = (range: string): number => {
     // there is a checked-in test vector for a crypto lib's decrypt conformance
     // (e.g. envrypt), never a live secret. Exempt only these test-data dirs.
     const isConformanceVector =
-      /(?:^|\/)conformance\/(?:vectors|cases|fixtures)\//.test(
+      /(?:^|\/)conformance\/(?:cases|fixtures|vectors)\//.test(
         normalizePath(file),
       )
     const pkHits = isConformanceVector ? [] : scanPrivateKeys(text)
@@ -569,12 +576,14 @@ const scanFilesInRange = (range: string): number => {
       // requires direct console.* calls.
       !file.startsWith('src/logger/') &&
       // Matches TypeScript source extensions: .mts, .ts, .tsx, .cts — the only file types that can log.
-      /\.(m?ts|tsx|cts)$/.test(file)
+      /\.(cts|m?ts|tsx)$/.test(file)
     ) {
       const loggerHits = scanLoggerLeaks(text)
       if (loggerHits.length > 0) {
         logger.fail(`direct stream write found in: ${file}`)
-        for (const h of loggerHits.slice(0, 3)) {
+        const hItems2 = loggerHits.slice(0, 3)
+        for (let j = 0, { length: jlen } = hItems2; j < jlen; j += 1) {
+          const h = hItems2[j]!
           logger.info(`${h.lineNumber}: ${h.line.trim()}`)
           if (h.suggested && h.suggested !== h.line) {
             logger.info(`     fix: ${h.suggested.trim()}`)
@@ -612,7 +621,9 @@ const scanFilesInRange = (range: string): number => {
       const crossRepoHits = scanCrossRepoPaths(text, path.resolve(file))
       if (crossRepoHits.length > 0) {
         logger.fail(`cross-repo path reference in: ${file}`)
-        for (const h of crossRepoHits.slice(0, 3)) {
+        const hItems2 = crossRepoHits.slice(0, 3)
+        for (let i = 0, { length } = hItems2; i < length; i += 1) {
+          const h = hItems2[i]!
           logger.info(`${h.lineNumber}: ${h.line.trim()}`)
         }
         logger.info(
@@ -630,7 +641,7 @@ const scanFilesInRange = (range: string): number => {
     // names query()/permissionMode/bypassPermissions as patterns it detects, so
     // it is exempt (same exemption family as the logger / cross-repo scans).
     if (
-      /\.(?:m?ts|cts)$/.test(file) &&
+      /\.(?:cts|m?ts)$/.test(file) &&
       !file.startsWith('.claude/hooks/') &&
       !file.startsWith('.git-hooks/') &&
       !layerless.startsWith('template/.claude/hooks/') &&
@@ -644,7 +655,9 @@ const scanFilesInRange = (range: string): number => {
         logger.fail(
           `programmatic Claude call missing lockdown flags in: ${file}`,
         )
-        for (const h of lockdownHits.slice(0, 3)) {
+        const hItems = lockdownHits.slice(0, 3)
+        for (let i = 0, { length } = hItems; i < length; i += 1) {
+          const h = hItems[i]!
           logger.info(`${h.lineNumber}: ${h.line.trim()}`)
         }
         logger.info(
@@ -670,7 +683,9 @@ const scanFilesInRange = (range: string): number => {
       const poisonHits = scanAiConfigPoison(text)
       if (poisonHits.length > 0) {
         logger.warn(`possible AI-config poison fingerprint in: ${file}`)
-        for (const h of poisonHits.slice(0, 3)) {
+        const hList = poisonHits.slice(0, 3)
+        for (let i = 0, { length } = hList; i < length; i += 1) {
+          const h = hList[i]!
           logger.warn(`  ${h.lineNumber}: ${h.line.trim()}`)
         }
         logger.warn(
@@ -707,7 +722,9 @@ const scanSoakAnnotations = (): number => {
   logger.fail(
     `${hits.length} soak-bypass entr${hits.length === 1 ? 'y' : 'ies'} in pnpm-workspace.yaml missing the date annotation:`,
   )
-  for (const h of hits.slice(0, 5)) {
+  const hs = hits.slice(0, 5)
+  for (let i = 0, { length } = hs; i < length; i += 1) {
+    const h = hs[i]!
     logger.info(`  ${h.lineNumber}: ${h.line.trim()}`)
   }
   logger.info(
@@ -856,7 +873,8 @@ const main = async (): Promise<number> => {
   let totalErrors = 0
   const refLines = splitLines(stdin.trim()).filter(Boolean)
 
-  for (const refLine of refLines) {
+  for (let i = 0, { length } = refLines; i < length; i += 1) {
+    const refLine = refLines[i]!
     const [localRef, localSha, remoteRef, remoteSha] = refLine.split(/\s+/)
     if (!localRef || !localSha || !remoteRef || !remoteSha) {
       continue

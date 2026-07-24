@@ -183,7 +183,9 @@ const main = (): number => {
     const ghHits = scanGitHubTokens(original)
     if (ghHits.length > 0) {
       logger.fail('Commit message contains a potential GitHub token:')
-      for (const hit of ghHits.slice(0, 3)) {
+      const shownHits = ghHits.slice(0, 3)
+      for (let i = 0, { length } = shownHits; i < length; i += 1) {
+        const hit = shownHits[i]!
         logger.info(`  line ${hit.lineNumber}: ${hit.line.trim()}`)
       }
       logger.info(

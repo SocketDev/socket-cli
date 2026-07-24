@@ -66,8 +66,8 @@ const main = (): number => {
     return 1
   }
   // Empty-commit gate — the commit-time twin of the no-empty-commit-guard
-  // PreToolUse hook (which blocks `git commit --allow-empty` at Claude tool
-  // time). A commit made outside Claude — or one that reaches the index empty
+  // PreToolUse hook (which blocks `git commit --allow-empty` at Claude Code
+  // tool time). A commit made outside the agent — or one that reaches the index empty
   // for any other reason — must not produce a zero-diff commit: empty commits
   // pollute `git log`, break CHANGELOG generators (which expect each commit to
   // carry a diff), and hide intent. `git diff --cached --quiet` is the
@@ -194,7 +194,7 @@ const main = (): number => {
     const base = path.basename(f)
     return (
       /^\.env(?:\.[^/]+)?$/.test(base) &&
-      !/^\.env\.(?:example|test|precommit)$/.test(base)
+      !/^\.env\.(?:example|precommit|test)$/.test(base)
     )
   })
   if (envFiles.length > 0) {
@@ -210,7 +210,8 @@ const main = (): number => {
 
   // Hardcoded personal paths.
   logger.info('Checking for hardcoded personal paths…')
-  for (const file of stagedFiles) {
+  for (let k = 0, { length: klen } = stagedFiles; k < klen; k += 1) {
+    const file = stagedFiles[k]!
     if (shouldSkipFile(file)) {
       continue
     }
@@ -221,7 +222,9 @@ const main = (): number => {
     const hits = scanPersonalPaths(text)
     if (hits.length > 0) {
       logger.fail(`Hardcoded personal path found in: ${file}`)
-      for (const h of hits.slice(0, 3)) {
+      const hItems2 = hits.slice(0, 3)
+      for (let j = 0, { length: jlen } = hItems2; j < jlen; j += 1) {
+        const h = hItems2[j]!
         logger.info(`${h.lineNumber}: ${h.line.trim()}`)
         if (h.suggested && h.suggested !== h.line) {
           logger.info(`     fix: ${h.suggested.trim()}`)
@@ -240,7 +243,8 @@ const main = (): number => {
 
   // Socket API keys (warning, not blocking).
   logger.info('Checking for API keys…')
-  for (const file of stagedFiles) {
+  for (let j = 0, { length: jlen } = stagedFiles; j < jlen; j += 1) {
+    const file = stagedFiles[j]!
     if (shouldSkipFile(file)) {
       continue
     }
@@ -262,7 +266,8 @@ const main = (): number => {
 
   // Other secret patterns (AWS, GitHub, private keys).
   logger.info('Checking for potential secrets…')
-  for (const file of stagedFiles) {
+  for (let j = 0, { length: jlen } = stagedFiles; j < jlen; j += 1) {
+    const file = stagedFiles[j]!
     if (shouldSkipFile(file)) {
       continue
     }
@@ -303,7 +308,8 @@ const main = (): number => {
   // package.json pnpm.overrides — overrides belong in
   // pnpm-workspace.yaml overrides:, not package.json.
   logger.info('Checking for package.json pnpm.overrides…')
-  for (const file of stagedFiles) {
+  for (let j = 0, { length: jlen } = stagedFiles; j < jlen; j += 1) {
+    const file = stagedFiles[j]!
     if (path.basename(file) !== 'package.json' || shouldSkipFile(file)) {
       continue
     }
@@ -338,7 +344,9 @@ const main = (): number => {
         logger.fail(
           `${hits.length} soak-bypass entr${hits.length === 1 ? 'y' : 'ies'} in pnpm-workspace.yaml missing the date annotation:`,
         )
-        for (const h of hits.slice(0, 5)) {
+        const hItems2 = hits.slice(0, 5)
+        for (let j = 0, { length: jlen } = hItems2; j < jlen; j += 1) {
+          const h = hItems2[j]!
           logger.info(`  ${h.lineNumber}: ${h.line.trim()}`)
         }
         logger.info(
@@ -353,7 +361,8 @@ const main = (): number => {
 
   // npx/dlx usage.
   logger.info('Checking for npx/dlx usage…')
-  for (const file of stagedFiles) {
+  for (let j = 0, { length: jlen } = stagedFiles; j < jlen; j += 1) {
+    const file = stagedFiles[j]!
     // shouldSkipFile covers tests, fixtures, .git-hooks, etc. — test
     // files frequently mention `npx` as part of fixture paths or
     // resolution-logic test cases (see socket-lib/test/unit/bin.test.mts).
@@ -372,7 +381,7 @@ const main = (): number => {
       // real `npx <pkg>` examples. Their SOURCES are scanned; the built
       // artifact is exempt (flagging it blocks every cascade that ships
       // a rebuilt bundle).
-      normalizePath(file).endsWith('/_dispatch/bundle.cjs') ||
+      normalizePath(file).endsWith('/hooks/fleet/_dist/bundle.cjs') ||
       normalizePath(file).endsWith('/_dispatch/snapshot-bundle.cjs')
     ) {
       continue
@@ -384,7 +393,9 @@ const main = (): number => {
     const hits = scanNpxDlx(text)
     if (hits.length > 0) {
       logger.fail(`npx/dlx usage found in: ${file}`)
-      for (const h of hits.slice(0, 3)) {
+      const hItems2 = hits.slice(0, 3)
+      for (let i = 0, { length } = hItems2; i < length; i += 1) {
+        const h = hItems2[i]!
         logger.info(`${h.lineNumber}: ${h.line.trim()}`)
         if (h.suggested && h.suggested !== h.line) {
           logger.info(`     fix: ${h.suggested.trim()}`)
@@ -406,7 +417,8 @@ const main = (): number => {
   // backtick spans are not scanned. Suppress per-block with
   // `socket-lint: allow pnpm-first`.
   logger.info('Checking docs lead with pnpm install commands…')
-  for (const file of stagedFiles) {
+  for (let j = 0, { length: jlen } = stagedFiles; j < jlen; j += 1) {
+    const file = stagedFiles[j]!
     if (shouldSkipFile(file)) {
       continue
     }
@@ -420,7 +432,9 @@ const main = (): number => {
     const hits = scanDocsPnpmFirst(text)
     if (hits.length > 0) {
       logger.warn(`docs without pnpm-first install command: ${file}`)
-      for (const h of hits.slice(0, 3)) {
+      const hItems2 = hits.slice(0, 3)
+      for (let i = 0, { length } = hItems2; i < length; i += 1) {
+        const h = hItems2[i]!
         logger.info(`${h.lineNumber}: ${h.line.trim()}`)
         if (h.suggested && h.suggested !== h.line) {
           logger.info(`     fix: ${h.suggested.trim()}`)
@@ -440,7 +454,8 @@ const main = (): number => {
   // catches these at edit time, this gate catches them at commit time
   // for edits made outside Claude.
   logger.info('Checking for direct stream writes…')
-  for (const file of stagedFiles) {
+  for (let j = 0, { length: jlen } = stagedFiles; j < jlen; j += 1) {
+    const file = stagedFiles[j]!
     if (shouldSkipFile(file)) {
       continue
     }
@@ -476,7 +491,7 @@ const main = (): number => {
       continue
     }
     // Matches TypeScript source extensions: .mts, .ts, .tsx, .cts.
-    if (!/\.(?:m?ts|tsx|cts)$/.test(file)) {
+    if (!/\.(?:cts|m?ts|tsx)$/.test(file)) {
       continue
     }
     const text = readFileForScan(file)
@@ -486,7 +501,9 @@ const main = (): number => {
     const hits = scanLoggerLeaks(text)
     if (hits.length > 0) {
       logger.fail(`direct stream write found in: ${file}`)
-      for (const h of hits.slice(0, 3)) {
+      const hItems = hits.slice(0, 3)
+      for (let i = 0, { length } = hItems; i < length; i += 1) {
+        const h = hItems[i]!
         logger.info(`${h.lineNumber}: ${h.line.trim()}`)
         if (h.suggested && h.suggested !== h.line) {
           logger.info(`     fix: ${h.suggested.trim()}`)
@@ -509,7 +526,8 @@ const main = (): number => {
   // Repo toplevel — used below as the wiring root. The cross-repo scanner now
   // derives the repo name per-file from each file's `.git` root.
   const repoTopline = gitLines('rev-parse', '--show-toplevel')[0] ?? ''
-  for (const file of stagedFiles) {
+  for (let j = 0, { length: jlen } = stagedFiles; j < jlen; j += 1) {
+    const file = stagedFiles[j]!
     if (shouldSkipFile(file)) {
       continue
     }
@@ -536,7 +554,9 @@ const main = (): number => {
     const hits = scanCrossRepoPaths(text, path.resolve(file))
     if (hits.length > 0) {
       logger.fail(`cross-repo path reference found in: ${file}`)
-      for (const h of hits.slice(0, 3)) {
+      const hList = hits.slice(0, 3)
+      for (let i = 0, { length } = hList; i < length; i += 1) {
+        const h = hList[i]!
         logger.info(`${h.lineNumber}: ${h.line.trim()}`)
       }
       logger.info(
@@ -562,7 +582,8 @@ const main = (): number => {
   // tests/fixtures (which legitimately quote these shapes). Per-line opt-out:
   // `// socket-lint: allow pr-process-comment`.
   logger.info('Checking comments for PR-process / step-N references…')
-  for (const file of stagedFiles) {
+  for (let j = 0, { length: jlen } = stagedFiles; j < jlen; j += 1) {
+    const file = stagedFiles[j]!
     if (shouldSkipFile(file)) {
       continue
     }
@@ -573,7 +594,9 @@ const main = (): number => {
     const hits = scanPrProcessComments(text)
     if (hits.length > 0) {
       logger.fail(`PR-process / step-N reference in comment(s) in: ${file}`)
-      for (const h of hits.slice(0, 3)) {
+      const hs = hits.slice(0, 3)
+      for (let i = 0, { length } = hs; i < length; i += 1) {
+        const h = hs[i]!
         logger.info(`${h.lineNumber}: ${h.line.trim()}`)
       }
       logger.info(
@@ -600,7 +623,9 @@ const main = (): number => {
   const wiringDrift = checkOxlintRuleWiringStaged(stagedFiles, wiringRoot)
   if (wiringDrift) {
     logger.fail('oxlint plugin rule wiring is out of sync.')
-    for (const line of wiringDrift.split('\n').slice(0, 8)) {
+    const lineList = wiringDrift.split('\n').slice(0, 8)
+    for (let i = 0, { length } = lineList; i < length; i += 1) {
+      const line = lineList[i]!
       logger.info(line)
     }
     logger.info(

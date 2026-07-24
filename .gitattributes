@@ -75,7 +75,6 @@ template/.claude/hooks/fleet/_shared/acorn/acorn.wasm binary
 # Cascaded from socket-wheelhouse/template/base/. Don't edit locally —
 # edit upstream and re-cascade via sync-scaffolding. Marked
 # linguist-generated so GitHub PR diffs collapse them by default.
-.cargo/config.toml linguist-generated=true
 .claude/agents/fleet linguist-generated=true
 .claude/commands/fleet linguist-generated=true
 .claude/hooks/fleet linguist-generated=true
@@ -98,6 +97,7 @@ template/.claude/hooks/fleet/_shared/acorn/acorn.wasm binary
 .config/fleet/oxlintrc.json linguist-generated=true
 .config/fleet/pnpm-workspace.fleet.yaml linguist-generated=true
 .config/fleet/rolldown/hook-bundle.config.mts linguist-generated=true
+.config/fleet/rolldown/oxlint-plugin.config.mts linguist-generated=true
 .config/fleet/sfw-bypass-list.txt linguist-generated=true
 .config/fleet/taze.config.mts linguist-generated=true
 .config/fleet/tsconfig.base.json linguist-generated=true
@@ -138,32 +138,24 @@ template/.claude/hooks/fleet/_shared/acorn/acorn.wasm binary
 .github/workflows/get-green.yml linguist-generated=true
 .github/workflows/github-release.yml linguist-generated=true
 .github/workflows/npm-publish.yml linguist-generated=true
+.github/workflows/prebake-publish.yml linguist-generated=true
 .github/workflows/prune-workflow-runs.yml linguist-generated=true
-.github/workflows/publish-npm.yml linguist-generated=true
 .github/workflows/weekly-update-non-gh-aw.yml.disabled linguist-generated=true
 .github/workflows/weekly-update.lock.yml linguist-generated=true
 .github/workflows/weekly-update.md linguist-generated=true
-.kimi-code/mcp.json linguist-generated=true
 .mcp.json linguist-generated=true
 .npmrc linguist-generated=true
 assets/fleet/badge-follow-bluesky.svg linguist-generated=true
 assets/fleet/badge-follow-x.svg linguist-generated=true
-assets/fleet/socket-lockup-dark-840.png linguist-generated=true
-assets/fleet/socket-lockup-dark.svg linguist-generated=true
-assets/fleet/socket-lockup-light-840.png linguist-generated=true
-assets/fleet/socket-lockup-light.svg linguist-generated=true
-bootstrap linguist-generated=true
+assets/fleet/socket-combomark-dark.svg linguist-generated=true
+assets/fleet/socket-combomark-light.svg linguist-generated=true
 docs/agents.md/fleet linguist-generated=true
-docs/references/sfw-local-install.md linguist-generated=true
-opencode.json linguist-generated=true
-packages/build-infra/lib/release-checksums/consumer.mts linguist-generated=true
-packages/build-infra/lib/release-checksums/core.mts linguist-generated=true
-packages/build-infra/lib/release-checksums/producer.mts linguist-generated=true
-packages/build-infra/release-assets.schema.json linguist-generated=true
+docs/design/fleet/README.md linguist-generated=true
+docs/design/fleet/components.css linguist-generated=true
+docs/design/fleet/tokens.css linguist-generated=true
+docs/references/fleet/sfw-local-install.md linguist-generated=true
 scripts/fleet linguist-generated=true
-styles/fleet/README.md linguist-generated=true
-styles/fleet/components.css linguist-generated=true
-styles/fleet/tokens.css linguist-generated=true
-test/_shared/fleet/lib linguist-generated=true
-test/scripts/fleet/setup.mts linguist-generated=true
+scripts/repo/bootstrap linguist-generated=true
+test/fleet/_shared/lib linguist-generated=true
+test/fleet/scripts/setup.mts linguist-generated=true
 # </fleet-canonical>

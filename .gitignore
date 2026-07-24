@@ -42,8 +42,6 @@ yarn-error.log*
 **/coverage/
 **/dist/
 /external/
-# Stale pre-monorepo scaffold dirs at root — tests now live in packages/cli/test/
-/test/
 **/html/
 *.d.ts
 *.d.ts.map
@@ -201,16 +199,14 @@ pnpm-debug.log
 !/.claude/workflows/
 # Release-only GENERATED hook-dispatch artifacts: all three dispatch-table
 # variants, the rolldown bundles, the native snapshot launcher + its frozen
-# sidecars, the vendored acorn copies, and the dispatch manifest. Rebuilt by
+# sidecars, and the dispatch manifest. Rebuilt by
 # build-hook-bundle / build-hook-snapshot / setup:3-hook-snapshot, shipped in
 # the GitHub-release bundle, NEVER committed to the cascade. Unanchored (**/)
 # so each is ignored in BOTH the repo-root live copy AND the template/base/
 # mirror — the fleet keeps ignores in this root block, not nested per-dir
 # files. Keep in lock-step with RELEASE_ONLY_DIR_MIRROR_FILES (scripts/repo/
 # sync-scaffolding/dir-mirror-skip.mts). See docs/agents.md/fleet/release-vs-cascade.md.
-**/.claude/hooks/fleet/_dispatch/acorn-bindgen.cjs
-**/.claude/hooks/fleet/_dispatch/acorn.wasm
-**/.claude/hooks/fleet/_dispatch/bundle.cjs
+**/.claude/hooks/fleet/_dist/bundle.cjs
 **/.claude/hooks/fleet/_dispatch/dispatch-launcher
 **/.claude/hooks/fleet/_dispatch/dispatch-launcher.exe
 **/.claude/hooks/fleet/_dispatch/dispatch-table-excluded.mts
@@ -221,15 +217,21 @@ pnpm-debug.log
 **/.claude/hooks/fleet/_dispatch/snapshot-blob.path
 **/.claude/hooks/fleet/_dispatch/snapshot-bundle.cjs
 **/.claude/hooks/fleet/_shared/dispatch-manifest.json
+# The rolldown-bundled fleet oxlint plugin (build-oxlint-bundle.mts): members
+# load this single artifact via jsPlugins instead of the ~100 rule source
+# dirs. Release-only + gitignored like the hook bundles above.
+**/.config/fleet/oxlint-plugin.mjs
 
 # Derived cross-harness rule adapters — generated per-repo, per-platform by
 # the multi-agent scaffolding (setup / init / sync) script from .claude/skills/
 # and CLAUDE.md, never committed. A tracked symlink checks out as a plain
 # pointer file on Windows, so each host gets a real symlink generated on its
 # own OS. Tracking them only produces churn + merge conflicts. Keep in sync
-# with ADAPTERS in scripts/fleet/gen-harness-adapters.mts + the .agents/ mirror
-# (and CODEX_ADAPTER_PATHS in scripts/fleet/mcp-config.mts for /.codex/ — the
-# .mcp.json -> .codex projection generated at setup:mcp, never committed).
+# with ADAPTERS in scripts/fleet/gen/harness-adapters.mts + the .agents/ mirror
+# (and the .mcp.json projections in scripts/fleet/mcp-config.mts: /.codex/,
+# /.kimi-code/, and /opencode.json — all generated from the single committed
+# .mcp.json authority at setup:mcp and rebuilt into the release bundle at
+# make-release-bundle, never committed).
 # Host dirs we own entirely are ignored wholesale; .github/ holds tracked
 # fleet files, so only its generated adapter file is named.
 /.agents/
@@ -238,9 +240,11 @@ pnpm-debug.log
 /.cursor/
 /.github/copilot-instructions.md
 /.janus/
+/.kimi-code/
 /.kiro/
 /.windsurf/
 /AGENTS.md
+/opencode.json
 
 # VS Code: ignore the dir contents so a hidden tasks.json with a `folderOpen`
 # auto-run (a known npm supply-chain vector — runs on folder open, zero clicks)
@@ -261,10 +265,8 @@ Thumbs.db
 # lock-step with GENERATED_GLOBS (scripts/fleet/constants/
 # generated-globs.mts) by generated-globs-are-consistent.mts.
 **/build/
-**/coverage/
-**/coverage-children/
-**/coverage-isolated/
 **/dist/
+/template/generated/
 **/out/
 **/.cache/
 **/.repo-map/
@@ -276,11 +278,8 @@ Thumbs.db
 # synced corpora, restored by the owning sync/build step, never hand-edited.
 # A repo that must track a hand-written file inside one re-includes it
 # OUTSIDE this block (!<dir>/ then <dir>/* then !<dir>/<file>).
-**/external/
 **/test/fixtures/
-**/third_party/
 **/upstream/
-**/vendor/
 
 # Node
 node_modules/

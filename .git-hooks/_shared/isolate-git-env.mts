@@ -17,7 +17,7 @@
  *     default (strip-only) stops the escape while leaving each fixture free to
  *     scope its own `GIT_CONFIG_GLOBAL` per-spawn (the signing-gate tests need
  *     that). `no-unisolated-git-fixture-guard` recognizes the import.
- *   - vitest, via `setupFiles` (`test/scripts/fleet/setup.mts`), calls
+ *   - vitest, via `setupFiles` (`test/fleet/scripts/setup.mts`), calls
  *     `isolateGitEnv({ pinConfigToNull: true })` for the stronger form (no
  *     fixture there manipulates a controlled global config). Lives in
  *     `.git-hooks/_shared/` (alongside `git-identity.mts`) so the git-hook test

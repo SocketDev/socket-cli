@@ -115,7 +115,7 @@ export const SOCKET_SECURITY_ENV = SOCKET_TOKEN_ENV_NAMES[0]!
 // pre-move flat `template/` path matching for downstream repos not yet moved).
 export const stripTemplateLayer = (p: string): string =>
   p
-    .replace(/^template\/(?:base|solo|mono)\//, 'template/')
+    .replace(/^template\/(?:base|mono|solo)\//, 'template/')
     .replace(/^template\/overrides\/[^/]+\//, 'template/')
 
 /**
@@ -189,7 +189,7 @@ export const filterAllowedApiKeys = (lines: readonly string[]): string[] =>
 // existing files don't have to be rewritten in the same change that
 // renames the marker.
 const SOCKET_LINT_MARKER_RE =
-  /(?:#|\/\/|\/\*)\s*socket-lint:\s*allow(?:\s+([\w-]+))?/
+  /(?:#|\/\*|\/\/)\s*socket-lint:\s*allow(?:\s+([\w-]+))?/
 
 // File extensions whose natural comment syntax is `//` (C-family + cousins).
 // Anything else falls through to `#` (shell / YAML / TOML / Dockerfile /
@@ -209,7 +209,7 @@ export const socketLintMarkerFor = (filePath: string, rule: string): string =>
   SLASH_COMMENT_EXT_RE.test(filePath)
     ? `// socket-lint: allow ${rule}`
     : `# socket-lint: allow ${rule}`
-const LEGACY_ZIZMOR_MARKER_RE = /(?:#|\/\/|\/\*)\s*zizmor:\s*[\w-]+/
+const LEGACY_ZIZMOR_MARKER_RE = /(?:#|\/\*|\/\/)\s*zizmor:\s*[\w-]+/
 
 // Aliases: legacy marker names recognized as equivalent to a current
 // rule for one deprecation cycle, so callers can rename the canonical
@@ -232,7 +232,10 @@ export function aliasMatches(marker: string, rule: string): boolean {
   return RULE_ALIASES[marker] === rule || RULE_ALIASES[rule] === marker
 }
 
-export function lineIsSuppressed(line: string, rule?: string): boolean {
+export function lineIsSuppressed(
+  line: string,
+  rule?: string | undefined,
+): boolean {
   if (LEGACY_ZIZMOR_MARKER_RE.test(line)) {
     return true
   }
@@ -256,9 +259,9 @@ export function lineIsSuppressed(line: string, rule?: string): boolean {
 //     (multi-line JSDoc bodies use leading ` * ` which we already match).
 //   - Lines whose entire interesting content sits inside a backtick span
 //     (markdown / template-literal example).
-const COMMENT_LINE_RE = /^\s*(\*|\/\/|#)/
+const COMMENT_LINE_RE = /^\s*(#|\*|\/\/)/
 // Matches a JSDoc tag (@example, @param, @returns/@return, @see, @link) at a word boundary.
-const JSDOC_TAG_RE = /@(example|param|returns?|see|link)\b/
+const JSDOC_TAG_RE = /@(example|link|param|returns?|see)\b/
 
 export function isInsideBackticks(line: string, needleRe: RegExp): boolean {
   // Find every backtick-delimited span on the line and test if the
@@ -294,7 +297,7 @@ export function isInsideBackticks(line: string, needleRe: RegExp): boolean {
 export function looksLikeDocumentation(
   line: string,
   needleRe: RegExp,
-  rule?: string,
+  rule?: string | undefined,
 ): boolean {
   if (lineIsSuppressed(line, rule)) {
     return true
@@ -405,7 +408,7 @@ export const scanPersonalPaths = (text: string): LineHit[] =>
 // weaken this commit-time net or over-trigger the guards. Keep separate.
 const SOCKET_API_KEY_RE = /sktsec_[a-zA-Z0-9_-]+/
 // Matches AWS credential env-var names or a classic AKIA access-key ID (16 uppercase alphanumeric chars).
-const AWS_KEY_RE = /(aws_access_key|aws_secret|\bAKIA[0-9A-Z]{16}\b)/i
+const AWS_KEY_RE = /(\bAKIA[0-9A-Z]{16}\b|aws_access_key|aws_secret)/i
 // GitHub token formats — accepts both classic opaque and new JWT
 // formats per the 2026-05-15 token-format rollout:
 //
@@ -423,7 +426,7 @@ const AWS_KEY_RE = /(aws_access_key|aws_secret|\bAKIA[0-9A-Z]{16}\b)/i
 // the prefix, JWTs are ~520. GitHub's recommended regex is
 // `ghs_[A-Za-z0-9\._]{36,}`.
 const GITHUB_TOKEN_RE =
-  /\b(?:ghp_[A-Za-z0-9]{36,}|gho_[A-Za-z0-9]{36,}|ghr_[A-Za-z0-9]{36,}|ghs_[A-Za-z0-9._]{36,}|ghu_[A-Za-z0-9._]{36,}|github_pat_[A-Za-z0-9_]{20,})/
+  /\b(?:gho_[A-Za-z0-9]{36,}|ghp_[A-Za-z0-9]{36,}|ghr_[A-Za-z0-9]{36,}|ghs_[A-Za-z0-9._]{36,}|ghu_[A-Za-z0-9._]{36,}|github_pat_[A-Za-z0-9_]{20,})/
 // Private-key PEM headers. Covers every type that wraps a private
 // key in PEM armor:
 //   - `BEGIN PRIVATE KEY` (PKCS#8, generic)
@@ -575,7 +578,7 @@ const PNPM_INSTALL_LINE_RE = /^\s*\$?\s*pnpm\s+(?:add|i|install)\b/
 // `yarn install|add` or a bare `yarn` invocation, capturing the package
 // manager name in group 1 so the caller can suggest the pnpm equivalent.
 const NPM_YARN_INSTALL_LINE_RE =
-  /^\s*\$?\s*(?:(npm)\s+(?:add|i|install)|(?:yarn)\s+(?:install|add)|(?:yarn))\s/
+  /^\s*\$?\s*(?:(npm)\s+(?:add|i|install)|(?:yarn)\s+(?:add|install)|(?:yarn))\s/
 
 // Markdown fence opener: ``` or ~~~ at line start, optionally followed
 // by an info string (language hint). We don't require closing match —
@@ -898,7 +901,7 @@ export const scanCrossRepoPaths = (
 //     mid-line, and the motivating leaks are all whole-line or `//`. A
 //     WHOLE-LINE `#` comment IS scanned, so a `# step 2 of the quest` heading is
 //     still caught.
-const COMMENT_OPENER_WHOLE_RE = /^\s*(?:\/\/+!?|\*|\/\*\*?|<!--|#(?!!))\s?/
+const COMMENT_OPENER_WHOLE_RE = /^\s*(?:#(?!!)|<!--|\*|\/\*\*?|\/\/+!?)\s?/
 export function commentTextOf(
   line: string,
   { block }: { block: boolean },
@@ -916,7 +919,7 @@ export function commentTextOf(
     const opensBlock = /\/\*/.test(line) && !line.includes('*/')
     const comment = line
       .slice(whole.index + whole[0].length)
-      .replace(/\s*(?:\*\/|-->)\s*$/, '')
+      .replace(/\s*(?:-->|\*\/)\s*$/, '')
     return { comment, block: opensBlock }
   }
   // Trailing `//` or `<!--` on a code line — only when outside a quote span.
@@ -981,7 +984,7 @@ function indexInsideQuote(line: string, at: number): boolean {
 // resemble a `part N` / bare-`#` co-occurrence, and they are never the leak
 // this guard targets.
 const LICENSE_HEADER_RE =
-  /\b(?:SPDX-License-Identifier|Copyright\b|\(c\)\s*\d{4}|Licensed under)\b/i
+  /\b(?:Copyright\b|Licensed under|SPDX-License-Identifier|\(c\)\s*\d{4})\b/i
 
 // Tier-1 — confident, block-on-sight process-narrative shapes.
 //
@@ -1073,7 +1076,7 @@ const QUEST_RE = new RegExp(
 // `Step 4 of the net perf quest (#5419)` via QUEST_RE and `Step 2 ([#5638])
 // replaced …` via STEP_SEQ_RE — neither relies on the bracketed-ref arm.
 const PROCESS_ISSUE_REF_RE =
-  /\b(?:resolves|closes|fixes)\s+#\d+\b|\b(?:follow[- ]?up to|reverts?|cherry[- ]?picked)\s+#\d+\b|\b(?:added|fixed|resolved|introduced|landed|shipped|merged)\s+in\s+#\d+\b/i
+  /\b(?:closes|fixes|resolves)\s+#\d+\b|\b(?:cherry[- ]?picked|follow[- ]?up to|reverts?)\s+#\d+\b|\b(?:added|fixed|introduced|landed|merged|resolved|shipped)\s+in\s+#\d+\b/i
 
 // Tier-2: a lone `#<N>` mention blocks ONLY when a STRONG, unambiguous process
 // word co-occurs on the same line. The word set is deliberately narrow — it
@@ -1087,7 +1090,7 @@ const LONE_ISSUE_REF_RE = /#\d+\b/
 // rebased, squashed, cherry-picked — the words that signal a commit message
 // is talking about its own change history rather than general prose.
 const PROCESS_WORD_RE =
-  /\b(?:follow[- ]?up|merged|landed|shipped|reverts?|rebase[ds]?|squash(?:ed)?|cherry[- ]?pick(?:ed)?)\b/i
+  /\b(?:cherry[- ]?pick(?:ed)?|follow[- ]?up|landed|merged|rebase[ds]?|reverts?|shipped|squash(?:ed)?)\b/i
 
 // Upstream-provenance exemption for the Tier-2 lone-`#N` path: a `#N` whose line
 // cites an UPSTREAM Node fact is timeless evidence, not nub's own PR
@@ -1331,7 +1334,7 @@ export type { ExternalIssueRef } from './external-issue-ref.mts'
 // Files we never scan: hooks themselves (both the .mts files and the
 // shell shims under .git-hooks/), test fixtures, vendored lockfiles.
 const SKIP_FILE_RE =
-  /\.(spec|test)\.(m?[jt]s|tsx?|cts|mts)$|\.example$|\/test\/|\/tests\/|fixtures\/|\.git-hooks\/|node_modules\/|pnpm-lock\.yaml/
+  /\.(spec|test)\.(cts|m?[jt]s|mts|tsx?)$|\.example$|\/test\/|\/tests\/|fixtures\/|\.git-hooks\/|node_modules\/|pnpm-lock\.yaml/
 
 export const shouldSkipFile = (filePath: string): boolean =>
   SKIP_FILE_RE.test(filePath)
@@ -1679,11 +1682,11 @@ const POISON_RES: readonly RegExp[] = [
   // An `Allow <x> bypass` phrase planted in a config file (not a hook/doc).
   /\bAllow\s+[a-z][a-z0-9-]*\s+bypass\b/i,
   // Exfiltration: curl/fetch/POST a SOCKET_API* / GITHUB_TOKEN somewhere.
-  /(?:curl|fetch|https?:\/\/)[^\n]*(?:SOCKET_API|GITHUB_TOKEN|GH_TOKEN)/i,
+  /(?:curl|fetch|https?:\/\/)[^\n]*(?:GH_TOKEN|GITHUB_TOKEN|SOCKET_API)/i,
   // Store a token off-keychain (into a dotenv / dotfile).
-  /(?:SOCKET_API\w*|GITHUB_TOKEN)\s*=.*(?:>>?\s*[~.]|\.env|\.zshrc|\.bashrc)/i,
+  /(?:GITHUB_TOKEN|SOCKET_API\w*)\s*=.*(?:>>?\s*[~.]|\.bashrc|\.env|\.zshrc)/i,
   // Tell the agent to disable / ignore a guard.
-  /(?:disable|ignore|skip|turn off)\s+(?:the\s+)?[a-z-]*(?:guard|hook|check)\b/i,
+  /(?:disable|ignore|skip|turn off)\s+(?:the\s+)?[a-z-]*(?:check|guard|hook)\b/i,
 ]
 
 export const scanAiConfigPoison = (text: string): LineHit[] => {

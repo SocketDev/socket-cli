@@ -26,7 +26,7 @@ function splitLines(text: string): string[] {
 //   leaked into a PR summary matches via the leading "Assisted-by: Claude".
 // Plus emoji/AI-generated/vendor-email/session-trailer/Assistant: line forms.
 export const AI_ATTRIBUTION_RE =
-  /(?:(?:Authored|Built|Crafted|Created|Generated|Made|Powered|Written)\s+(?:with|by)\s+(?:Claude|AI|GPT|ChatGPT|Copilot|Cursor|Bard|Gemini)|(?:Co-Authored|Assisted)[\s-]?by:?\s+(?:Claude|AI|GPT|ChatGPT|Copilot|Cursor|Bard|Gemini)|🤖\s+Generated|AI[\s-]generated|Machine[\s-]generated|@(?:anthropic|openai)\.com|^[ \t]*Claude-Session:|claude\.ai\/code\/session_|^Assistant:)/im
+  /(?:(?:Authored|Built|Crafted|Created|Generated|Made|Powered|Written)\s+(?:by|with)\s+(?:AI|Bard|ChatGPT|Claude|Copilot|Cursor|GPT|Gemini)|(?:Assisted|Co-Authored)[\s-]?by:?\s+(?:AI|Bard|ChatGPT|Claude|Copilot|Cursor|GPT|Gemini)|🤖\s+Generated|AI[\s-]generated|Machine[\s-]generated|@(?:anthropic|openai)\.com|^[ \t]*Claude-Session:|claude\.ai\/code\/session_|^Assistant:)/im
 
 export const containsAiAttribution = (text: string): boolean =>
   AI_ATTRIBUTION_RE.test(text)

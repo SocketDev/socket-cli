@@ -11,7 +11,7 @@
 // regex had. Gate-free: imports only the vendored acorn (no Node-25 exit), so
 // either hook tree can use it.
 
-import { findMemberCalls } from '../../.claude/hooks/fleet/_shared/acorn/index.mts'
+import { findMemberCalls } from '../../.claude/hooks/fleet/_shared/ast/calls.mts'
 
 export interface LoggerLeak {
   // 1-based line of the call.
@@ -126,7 +126,7 @@ const GLYPH_LEAD_RE = new RegExp(
 )
 // Leading indentation: a tab or 2+ spaces. The logger owns indentation via
 // group()/substep(); a hand-rolled indent fights it.
-const INDENT_LEAD_RE = /^(?:\t| {2,})/
+const INDENT_LEAD_RE = /^(?: {2,}|\t)/
 // Leading bullet glyph — use logger.substep() for indented sub-items.
 const BULLET_LEAD_RE = /^\s*[•‣◦·]\s/
 
