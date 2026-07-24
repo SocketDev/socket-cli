@@ -18,6 +18,7 @@ import {
   resetMachineOutputMode,
   setMachineOutputMode,
 } from '../output/ambient-mode.mts'
+import { applyMachineOutputStreamPolicy } from '../output/machine-output-streams.mts'
 
 import { buildHelpLines } from './with-subcommands-help.mts'
 import { tryDispatchSubcommand } from './with-subcommands-dispatch.mts'
@@ -222,6 +223,13 @@ export async function meowWithSubcommands(
   // sequential invocations (e.g. multiple vitest cases in one worker).
   resetMachineOutputMode()
   setMachineOutputMode({
+    json: jsonFlag,
+    markdown: markdownFlag,
+    quiet: quietFlag,
+  })
+  // Route the logger's stdout-bound status helpers (step / substep) to stderr
+  // when machine-output mode is engaged, so stdout carries only the payload.
+  applyMachineOutputStreamPolicy({
     json: jsonFlag,
     markdown: markdownFlag,
     quiet: quietFlag,
