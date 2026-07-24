@@ -72,10 +72,14 @@ download path stays intact and npm keeps serving the frozen binaries.
 
 ## Known constraints
 
-- New binaries embed the frozen node-smol base `20260418-50af4c8` from
-  SocketDev/socket-btm releases. SocketDev/node-smol is the successor repo but
-  has no releases yet; mirror the base assets or ship the successor's first
-  release before relying on new binary builds long-term.
+- New binaries embed the frozen node-smol base `20260418-50af4c8`. The base
+  assets are mirrored into socket-cli-controlled asset-carrier releases —
+  `base-assets-node-smol-20260418-50af4c8` and
+  `base-assets-binject-20260507-f1e66a5` on SocketDev/socket-cli — with SHA-256
+  pins checked in at `packages/cli/scripts/constants/base-assets.mts`. Builds
+  resolve the mirror first and fall back to the descoped SocketDev/socket-btm
+  originals for one transition release. SocketDev/node-smol is the successor
+  repo but has no releases yet; move the pins there once it ships.
 - The fleet-mirrored publish surfaces — `scripts/fleet/util/source-allowlist.mts`,
   `scripts/fleet/util/multi-package-publish.mts`, `.github/workflows/npm-publish.yml`
   — are cascade-owned. The `@socketsecurity` scope-union + dot-terminated
