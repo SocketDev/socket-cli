@@ -43,7 +43,7 @@ export function findNestedMemberDirs(
       out.push(name)
     }
   }
-  return out.sort()
+  return out.toSorted()
 }
 
 export function main(): void {

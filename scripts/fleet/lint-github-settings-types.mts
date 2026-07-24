@@ -9,6 +9,7 @@ interface RepoApiPayload {
   has_wiki?: boolean | undefined
   has_discussions?: boolean | undefined
   has_projects?: boolean | undefined
+  has_issues?: boolean | undefined
   allow_forking?: boolean | undefined
   allow_squash_merge?: boolean | undefined
   allow_merge_commit?: boolean | undefined
@@ -17,9 +18,11 @@ interface RepoApiPayload {
   allow_update_branch?: boolean | undefined
   delete_branch_on_merge?: boolean | undefined
   pull_request_creation_policy?: string | undefined
+  issue_creation_policy?: string | undefined
   web_commit_signoff_required?: boolean | undefined
   full_name?: string | undefined
   fork?: boolean | undefined
+  private?: boolean | undefined
 }
 
 interface BranchProtectionPayload {

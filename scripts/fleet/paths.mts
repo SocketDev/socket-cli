@@ -31,6 +31,7 @@
  */
 
 import { existsSync, readFileSync } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -96,17 +97,22 @@ export const LOCKSTEP_SCHEMA = path.join(
 )
 
 /**
- * Ordered lockstep-manifest candidates for a repo root, most-preferred first: a
- * root `lockstep.json` (shim layout), the segregated
- * `.config/repo/lockstep.json` (the manifest is repo-owned), then the legacy
- * loose `.config/lockstep.json`. The single source of these paths — resolvers
- * pick the first that exists.
+ * The repo-owned location of a segregated `.config/` config file:
+ * `.config/repo/<file>`. ONE source of this path (1 path, 1 reference) — every
+ * scripts-tier resolver derives from it.
+ */
+export function segregatedConfigPath(repoRoot: string, file: string): string {
+  return path.join(repoRoot, '.config', 'repo', file)
+}
+
+/**
+ * Lockstep-manifest candidates for a repo root, most-preferred first: a root
+ * `lockstep.json` (shim layout) wins, then the segregated repo-owned manifest.
  */
 export function lockstepManifestCandidates(repoRoot: string): string[] {
   return [
     path.join(repoRoot, 'lockstep.json'),
-    path.join(repoRoot, '.config', 'repo', 'lockstep.json'),
-    path.join(repoRoot, '.config', 'lockstep.json'),
+    segregatedConfigPath(repoRoot, 'lockstep.json'),
   ]
 }
 
@@ -116,29 +122,114 @@ export function lockstepManifestCandidates(repoRoot: string): string[] {
 export const NODE_MODULES_DIR = path.join(REPO_ROOT, 'node_modules')
 
 /**
- * Coverage scratch: `coverage-children/` holds each spawned test child's raw V8
- * profile (under `raw/`), which the coverage runner purges per run and merges.
- */
-export const COVERAGE_CHILDREN_DIR = path.join(REPO_ROOT, 'coverage-children')
-
-/**
- * Absolute path to the raw child-profile subdir the runner sets as
- * `FLEET_CHILD_V8_COVERAGE_DIR`.
- */
-export const COVERAGE_CHILDREN_RAW_DIR = path.join(COVERAGE_CHILDREN_DIR, 'raw')
-
-/**
- * Absolute path to the repo's tool-cache directory. Fleet convention: every
- * per-repo tool cache lives here (vitest, taze, our own audit caches, etc.).
- * Auto-gitignored via the fleet's `**∕.cache/` rule. Build tools also write
- * here (oxlint, etc.).
+ * Absolute path to the repo's tool-cache root. Fleet convention: every
+ * per-repo tool cache lives under here (vitest, taze, our own audit caches,
+ * etc.). Auto-gitignored via the fleet's `**∕.cache/` rule. Build tools also
+ * write here (oxlint, etc.). Segmented into `fleet/` + `repo/` below.
  */
 // oxlint-disable-next-line socket/prefer-node-modules-dot-cache -- NODE_MODULES_DIR is the canonical node_modules root; the rule's per-arg check can't see through identifiers.
 export const NODE_MODULES_CACHE_DIR = path.join(NODE_MODULES_DIR, '.cache')
 
+/**
+ * Fleet-owned tool-cache segment: fleet-managed caches (coverage, hooks,
+ * snapshots, etc.) live under here — mirroring the `.claude/hooks/{fleet,repo}`
+ * / `.github/actions/{fleet,repo}` segmentation.
+ */
+export const FLEET_CACHE_DIR = path.join(NODE_MODULES_CACHE_DIR, 'fleet')
+
+/**
+ * Repo-owned tool-cache segment: caches specific to THIS repo (not fleet
+ * tooling) live under here.
+ */
+export const REPO_CACHE_DIR = path.join(NODE_MODULES_CACHE_DIR, 'repo')
+
+/**
+ * Single coverage home. Every tier's report is persisted here as one distinctly
+ * named FLAT file — never a per-tier subdir. vitest/c8 reporters emit a fixed
+ * `coverage-final.json` and `clean: true` wipes the whole reportsDirectory, so
+ * each tier reports into the throwaway `COVERAGE_SCRATCH_DIR` and the runner
+ * renames the result to its flat name here. The merge writes the combined
+ * `coverage-final.json` + `coverage-summary.json` at this root — the badge +
+ * release gate read the summary from here. The only files under here are the
+ * flat `*.json`; raw dumps + scratch live in `COVERAGE_SCRATCH_DIR` (tmp).
+ */
+export const COVERAGE_DIR = path.join(FLEET_CACHE_DIR, 'coverage')
+
+/**
+ * Per-tier istanbul final reports — flat files in COVERAGE_DIR. The runner
+ * moves each tier's scratch `coverage-final.json` out to its named path here;
+ * the merge reads them back and folds them.
+ */
+export const COVERAGE_FINAL_MAIN_PATH = path.join(
+  COVERAGE_DIR,
+  'coverage-final.main.json',
+)
+export const COVERAGE_FINAL_ISOLATED_PATH = path.join(
+  COVERAGE_DIR,
+  'coverage-final.isolated.json',
+)
+export const COVERAGE_FINAL_ENFORCERS_PATH = path.join(
+  COVERAGE_DIR,
+  'coverage-final.enforcers.json',
+)
+export const COVERAGE_FINAL_CHILDREN_PATH = path.join(
+  COVERAGE_DIR,
+  'coverage-final.children.json',
+)
+
+/**
+ * The merged istanbul final report the coverage runner writes after folding
+ * every tier (main + isolated + enforcers + children) together.
+ */
+export const COVERAGE_FINAL_PATH = path.join(
+  COVERAGE_DIR,
+  'coverage-final.json',
+)
+
+/**
+ * The json-summary the badge + release-check read (line/branch/etc. totals).
+ */
+export const COVERAGE_SUMMARY_PATH = path.join(
+  COVERAGE_DIR,
+  'coverage-summary.json',
+)
+
+/**
+ * Transient coverage scratch — OUTSIDE the coverage home so raw V8 dumps and
+ * each tier's throwaway `coverage-final.json` never clutter COVERAGE_DIR. Lives
+ * in the OS temp dir and is wiped per run. `os` is a node builtin so paths.mts
+ * stays import-safe for the rolldown loader.
+ */
+export const COVERAGE_SCRATCH_DIR = path.join(
+  os.tmpdir(),
+  'fleet-coverage-scratch',
+)
+
+/**
+ * Throwaway reportsDirectory for the vitest tiers (main / isolated). A
+ * dedicated subdir — NOT the scratch root — so a tier's `clean: true` wipes
+ * only its own report and never the sibling `children-raw` (the raw V8 dumps
+ * must survive across the sequential main + isolated runs). The runner renames
+ * the `coverage-final.json` here out to the flat per-tier path after each run.
+ */
+export const COVERAGE_SCRATCH_VITEST_DIR = path.join(
+  COVERAGE_SCRATCH_DIR,
+  'vitest',
+)
+
+/**
+ * Absolute path to the raw child-profile subdir the runner sets as
+ * `FLEET_CHILD_V8_COVERAGE_DIR` — under the transient scratch, never
+ * COVERAGE_DIR.
+ */
+export const COVERAGE_CHILDREN_RAW_DIR = path.join(
+  COVERAGE_SCRATCH_DIR,
+  'children-raw',
+)
+
 // ---------------------------------------------------------------------------
 // Fleet hook dispatch bundle — sources + the rolldown output. Constructed here
-// (1 path, 1 reference) so make-hook-dispatch, build-hook-bundle, and the
+// (1 path, 1 reference) so gen/hook-dispatch, build-hook-bundle, and the
 // rolldown hook-bundle config all REFERENCE these instead of reconstructing
 // them. paths.mts stays light (node: only) so the rolldown config loader can
 // import it.
@@ -160,12 +251,29 @@ export const CLAUDE_SETTINGS_JSON = path.join(
 export const FLEET_HOOKS_DIR = path.join(REPO_ROOT, '.claude', 'hooks', 'fleet')
 
 /**
- * Dispatcher directory holding the generated table, entry, and bundle.
+ * Dispatcher BUILD-INPUT directory: the dispatcher source, entry shims, and
+ * generated tables. Built artifacts land in `DIST_DIR`; the hand-written
+ * loader sits at `FLEET_HOOK_INDEX_PATH` above both.
  */
 export const DISPATCH_DIR = path.join(FLEET_HOOKS_DIR, '_dispatch')
 
 /**
- * The generated static dispatch table (make-hook-dispatch writes this).
+ * Built hook artifacts (rolldown output). This dir plus the loader is the
+ * ENTIRE hook payload a member receives: `.claude/hooks/fleet/index.cjs` +
+ * `.claude/hooks/fleet/_dist/bundle.cjs`. Underscore-prefixed so the hook-dir
+ * scanners skip it, like `_shared/` and `_dispatch/`.
+ */
+export const DIST_DIR = path.join(FLEET_HOOKS_DIR, '_dist')
+
+/**
+ * The hand-written CJS loader — the one path settings.json ever names. Lives
+ * ABOVE `_dist/` because it is authored, not built: `_dist/` holds exclusively
+ * build output.
+ */
+export const FLEET_HOOK_INDEX_PATH = path.join(FLEET_HOOKS_DIR, 'index.cjs')
+
+/**
+ * The generated static dispatch table (gen/hook-dispatch writes this).
  */
 export const DISPATCH_TABLE_PATH = path.join(DISPATCH_DIR, 'dispatch-table.mts')
 // Snapshot split: the snapshot bundle freezes only marker-free hooks (the
@@ -179,6 +287,9 @@ export const DISPATCH_TABLE_EXCLUDED_PATH = path.join(
   DISPATCH_DIR,
   'dispatch-table-excluded.mts',
 )
+// Snapshot-experiment artifact (spliced in by the V8 deserialize path only —
+// the full `bundle.cjs` already carries every hook). Wheelhouse-only, never
+// shipped, so it stays beside its tables in `_dispatch/`.
 export const EXCLUDED_BUNDLE_PATH = path.join(
   DISPATCH_DIR,
   'excluded-bundle.cjs',
@@ -186,7 +297,7 @@ export const EXCLUDED_BUNDLE_PATH = path.join(
 
 /**
  * The GENERATED dispatch manifest the dep-0 bootstrap dispatcher
- * (`_shared/dispatch.mts`) routes off. Emitted by make-hook-dispatch alongside
+ * (`_shared/dispatch.mts`) routes off. Emitted by gen/hook-dispatch alongside
  * the dispatch tables — never hand-maintained. Lives in `_shared/` (not
  * `_dispatch/`) because the bootstrap runtime path reads it directly.
  */
@@ -202,9 +313,32 @@ export const DISPATCH_MANIFEST_PATH = path.join(
 export const DISPATCH_ENTRY_PATH = path.join(DISPATCH_DIR, 'dispatch-entry.mts')
 
 /**
- * The committed, minified CJS hook bundle (rolldown output).
+ * The CJS hook bundle (rolldown output; release-shipped, gitignored).
  */
-export const HOOK_BUNDLE_PATH = path.join(DISPATCH_DIR, 'bundle.cjs')
+export const HOOK_BUNDLE_PATH = path.join(DIST_DIR, 'bundle.cjs')
+
+/**
+ * The fleet oxlint plugin source dir + its rolldown-bundled artifact. Members
+ * load the bundle via `jsPlugins`; the wheelhouse edits + tests the source and
+ * builds the bundle from it (scripts/fleet/build-oxlint-bundle.mts). The bundle
+ * is release-only (gitignored, never committed) like the hook bundle above.
+ */
+export const OXLINT_PLUGIN_DIR = path.join(
+  REPO_ROOT,
+  '.config',
+  'fleet',
+  'oxlint-plugin',
+)
+export const OXLINT_PLUGIN_SOURCE_ENTRY = path.join(
+  OXLINT_PLUGIN_DIR,
+  'index.mts',
+)
+export const OXLINT_PLUGIN_BUNDLE_PATH = path.join(
+  REPO_ROOT,
+  '.config',
+  'fleet',
+  'oxlint-plugin.mjs',
+)
 
 /**
  * Resolve the rolldown output path for the hook bundle. `FLEET_HOOK_BUNDLE_OUT`
@@ -326,24 +460,12 @@ export const OWNS_RELOCATED_TESTS = existsSync(
 // Accepted locations, in priority order. `.config/repo/` (repo tier — sits with
 // the other per-repo configs) is preferred; `.config/` and the repo-root dotfile
 // remain valid so existing repos resolve unchanged. First existing wins.
-const SOCKET_WHEELHOUSE_CONFIG_CANDIDATES: readonly {
-  readonly kind: 'primary' | 'legacy'
-  readonly rel: string
-}[] = [
-  { kind: 'primary', rel: '.config/repo/socket-wheelhouse.json' },
-  { kind: 'primary', rel: '.config/socket-wheelhouse.json' },
-  { kind: 'legacy', rel: '.socket-wheelhouse.json' },
-]
-
 export interface SocketWheelhouseConfigLocation {
   /**
-   * Absolute path to the file that was actually read.
+   * Absolute path to the config that was read
+   * (`.config/repo/socket-wheelhouse.json`).
    */
   readonly path: string
-  /**
-   * `primary` = a `.config/` location; `legacy` = the repo-root dotfile.
-   */
-  readonly kind: 'primary' | 'legacy'
 }
 
 export interface LoadedSocketWheelhouseConfig {
@@ -363,20 +485,8 @@ export interface LoadedSocketWheelhouseConfig {
 export function findSocketWheelhouseConfig(
   repoRoot: string = REPO_ROOT,
 ): SocketWheelhouseConfigLocation | undefined {
-  const found = SOCKET_WHEELHOUSE_CONFIG_CANDIDATES.map(c => ({
-    abs: path.join(repoRoot, c.rel),
-    kind: c.kind,
-    rel: c.rel,
-  })).filter(c => existsSync(c.abs))
-  if (found.length > 1) {
-    process.stderr.write(
-      `[socket-wheelhouse] multiple config locations exist in ${repoRoot} ` +
-        `(${found.map(c => c.rel).join(', ')}); using ${found[0]!.rel}. ` +
-        `Delete the extras to silence this note.\n`,
-    )
-  }
-  const first = found[0]
-  return first ? { path: first.abs, kind: first.kind } : undefined
+  const abs = segregatedConfigPath(repoRoot, 'socket-wheelhouse.json')
+  return existsSync(abs) ? { path: abs } : undefined
 }
 
 /**

@@ -49,26 +49,26 @@ export function resolveBumpScript(root: string = rootPath): string {
  * nothing, and returns undefined; a no-op bump (no file changes) also returns
  * undefined.
  */
-export async function runBump(options: {
+export async function runBump(config: {
   dryRun: boolean
   releaseAs?: string | undefined
 }): Promise<BumpResult | undefined> {
-  const opts = { __proto__: null, ...options } as {
+  const cfg = { __proto__: null, ...config } as {
     dryRun: boolean
     releaseAs?: string | undefined
   }
   const args = [resolveBumpScript(), '--write-only']
-  if (opts.releaseAs) {
-    args.push('--release-as', opts.releaseAs)
+  if (cfg.releaseAs) {
+    args.push('--release-as', cfg.releaseAs)
   }
-  if (opts.dryRun) {
+  if (cfg.dryRun) {
     args.push('--dry-run')
   }
   const code = await runInherit(process.execPath, args, rootPath)
   if (code !== 0) {
     throw new Error(`[bump] bump script exited ${code}`)
   }
-  if (opts.dryRun) {
+  if (cfg.dryRun) {
     logger.log('[bump] dry-run — previewed, nothing committed.')
     return
   }

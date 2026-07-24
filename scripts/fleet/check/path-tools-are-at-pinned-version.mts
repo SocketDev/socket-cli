@@ -31,8 +31,8 @@ import process from 'node:process'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 // oxlint-disable-next-line socket/prefer-async-spawn -- a sync --version probe in a check; no streaming, just exit status + trimmed stdout.
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-// oxlint-disable-next-line socket/prefer-stable-external-semver -- @socketsecurity/lib-stable doesn't export ./external/semver at the pinned version; bare semver is a devDependency here (a check script, not bundled into a runtime artifact).
-import { coerce, lt, minVersion } from 'semver'
+import { lt } from '@socketsecurity/lib-stable/versions/compare'
+import { coerceVersion } from '@socketsecurity/lib-stable/versions/parse'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
@@ -53,15 +53,10 @@ export interface PathToolPin {
  * minimum acceptable version. Returns undefined when the pin can't be parsed.
  */
 export function floorFromPin(pin: string): string | undefined {
-  try {
-    const min = minVersion(pin)
-    if (min) {
-      return min.version
-    }
-  } catch {
-    // Not a range — fall through to coerce.
-  }
-  return coerce(pin)?.version
+  // coerceVersion extracts the first version from a bare pin OR a range
+  // (`^11` / `>=11.8.0` / `~11.8` all coerce to their floor), returning
+  // undefined for an unparseable pin.
+  return coerceVersion(pin)
 }
 
 /**
@@ -143,7 +138,7 @@ export function pathToolVersion(bin: string): string | undefined {
     return undefined
   }
   const out = `${result.stdout ?? ''} ${result.stderr ?? ''}`.trim()
-  return coerce(out)?.version
+  return coerceVersion(out)
 }
 
 export interface FloorViolation {
@@ -190,19 +185,19 @@ export type BrewFixPlan =
  * Only floor-pinned, brew-provisioned tools qualify; everything else is skipped
  * with a reason (never silently no-op'd).
  */
-export function planBrewFix(options: {
+export function planBrewFix(config: {
   brewAvailable: boolean
   violation: FloorViolation
 }): BrewFixPlan {
-  const opts = { __proto__: null, ...options } as typeof options
-  const { bin } = opts.violation
+  const cfg = { __proto__: null, ...config } as typeof config
+  const { bin } = cfg.violation
   if (!BREW_UPGRADABLE.has(bin)) {
     return {
       action: 'skip',
       reason: `${bin} is exact-pinned (racked) — reinstall the pinned version via the racked installer, not brew`,
     }
   }
-  if (!opts.brewAvailable) {
+  if (!cfg.brewAvailable) {
     return {
       action: 'skip',
       reason: 'Homebrew (brew) is not on PATH — cannot auto-upgrade',

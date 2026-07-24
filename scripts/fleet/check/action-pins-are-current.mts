@@ -166,8 +166,13 @@ export function parseDeclaredDataDeps(content: string): string[] {
   for (let i = 0, { length } = lines; i < length; i += 1) {
     const m = DATA_DEPS_RE.exec(lines[i]!)
     if (m) {
-      for (const part of m[1]!.split(',')) {
-        const trimmed = part.trim()
+      const parts = m[1]!.split(',')
+      for (
+        let j = 0, { length: partsLength } = parts;
+        j < partsLength;
+        j += 1
+      ) {
+        const trimmed = parts[j]!.trim()
         if (trimmed) {
           deps.add(normalizePath(trimmed))
         }
@@ -341,7 +346,7 @@ export function findUndeclared(units: ReadonlyMap<string, Unit>): string[] {
 export function findStalePins(
   units: ReadonlyMap<string, Unit>,
   base: string,
-  git: GitRunner,
+  gitRunner: GitRunner,
   selfRepo: string,
 ): PinFinding[] {
   const findings: PinFinding[] = []
@@ -372,7 +377,7 @@ export function findStalePins(
         })
         continue
       }
-      if (!git.isReachable(pin.sha, base)) {
+      if (!gitRunner.isReachable(pin.sha, base)) {
         findings.push({
           file,
           dep: depId,
@@ -382,7 +387,7 @@ export function findStalePins(
         continue
       }
       const paths = closureFor(depId, units, selfRepo, memo)
-      if (git.countSince(pin.sha, base, paths) > 0) {
+      if (gitRunner.countSince(pin.sha, base, paths) > 0) {
         findings.push({ file, dep: depId, sha: pin.sha, verdict: 'stale' })
       }
     }
@@ -412,10 +417,10 @@ export function rewritePin(
 export function applyFix(
   findings: readonly PinFinding[],
   base: string,
-  git: GitRunner,
+  gitRunner: GitRunner,
 ): string[] {
-  const head = git.resolve(base)
-  const date = git.committerDate(head)
+  const head = gitRunner.resolve(base)
+  const date = gitRunner.committerDate(head)
   const branch = base.replace(/^.*\//, '')
   const comment = `${branch} (${date})`
   const touched = new Set<string>()

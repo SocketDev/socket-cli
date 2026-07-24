@@ -34,7 +34,6 @@ const logger = getDefaultLogger()
 // or agent scaffolding and must NEVER ship in an npm tarball.
 const SCAFFOLDING_PREFIXES = [
   '.agents/',
-  '.claude-plugin/',
   '.claude/',
   '.config/',
   '.git-hooks/',
@@ -46,7 +45,7 @@ const SCAFFOLDING_PREFIXES = [
 
 // Entry basenames npm always includes regardless of `files` — allowed.
 const ALWAYS_ALLOWED_RE =
-  /^(?:package\.json|README(?:\..+)?|LICENSE(?:\..+)?|LICENCE(?:\..+)?|CHANGELOG(?:\..+)?)$/i
+  /^(?:CHANGELOG(?:\..+)?|LICENCE(?:\..+)?|LICENSE(?:\..+)?|README(?:\..+)?|package\.json)$/i
 
 // Hidden-file allowlist: dotfiles that are legitimately published.
 const HIDDEN_ALLOWED_RE = /^\.(?:npmignore)$/
@@ -210,7 +209,9 @@ function main(): void {
   ] as const) {
     if (list.length) {
       lines.push(`  ${label}:`)
-      for (const e of list.slice(0, 15)) {
+      const es = list.slice(0, 15)
+      for (let i = 0, { length } = es; i < length; i += 1) {
+        const e = es[i]!
         lines.push(`    ${e}`)
       }
       if (list.length > 15) {

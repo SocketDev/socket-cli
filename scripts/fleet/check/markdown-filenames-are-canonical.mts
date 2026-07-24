@@ -17,7 +17,7 @@ import process from 'node:process'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import { classifyMarkdownPath } from '../../../.claude/hooks/fleet/markdown-filename-guard/index.mts'
+import { classifyMarkdownPath } from '../../../.claude/hooks/fleet/_shared/markdown-path.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 

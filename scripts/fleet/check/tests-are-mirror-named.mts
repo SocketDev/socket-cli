@@ -57,7 +57,7 @@ export interface TestClassification {
 
 // Strip a `.test` / `.spec` + extension tail to the mirrored basename.
 function testBasename(testPath: string): string {
-  return path.basename(testPath).replace(/\.(?:test|spec)\.[cm]?[jt]sx?$/, '')
+  return path.basename(testPath).replace(/\.(?:spec|test)\.[cm]?[jt]sx?$/, '')
 }
 
 // True when the test lives under an exempt category segment.
@@ -92,13 +92,13 @@ export function firstPartyImports(
   // Static import/export-from: `import … from 'spec'` or `export … from 'spec'`.
   // Dynamic import call: `import('spec')` with optional surrounding whitespace.
   const re =
-    /(?:import|export)[^'"]*?from\s*['"]([^'"]+)['"]|import\s*\(\s*['"]([^'"]+)['"]\s*\)/g
+    /(?:export|import)[^'"]*?from\s*['"]([^'"]+)['"]|import\s*\(\s*['"]([^'"]+)['"]\s*\)/g
   let m: RegExpExecArray | null
   // eslint-disable-next-line no-cond-assign
   while ((m = re.exec(content))) {
     // A type-only import (`import type … from`, `export type … from`) is a
     // type dependency, not a unit under test — it never counts as a source.
-    if (/^(?:import|export)\s+type\b/.test(m[0])) {
+    if (/^(?:export|import)\s+type\b/.test(m[0])) {
       continue
     }
     const spec = m[1] ?? m[2]

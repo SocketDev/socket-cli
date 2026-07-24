@@ -39,7 +39,7 @@ const LEADING_BLOCK = /^((?:#![^\n]*\n)?)(\/\*\*[\s\S]*?\*\/)/
 // A symbol declaration right after the leading block — marks the leading `/**`
 // as JSDoc for that symbol (NOT a file-doc header), so it must be left alone.
 const SYMBOL_AFTER =
-  /^(export\s+)?(default\s+)?(async\s+)?(function|class|interface|type|const|let|var|enum|abstract|declare|namespace)\b/
+  /^(export\s+)?(default\s+)?(async\s+)?(abstract|class|const|declare|enum|function|interface|let|namespace|type|var)\b/
 
 /**
  * True when a file's leading block is a `/**`-delimited FILE-DOC header whose

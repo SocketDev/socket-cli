@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * @file Freshness gate for llms.txt. Delegates to make-llms-txt.mts --check,
+ * @file Freshness gate for llms.txt. Delegates to gen/llms-txt.mts --check,
  *   which compares the structural skeleton (H1 + section titles + ordered link
  *   name/url pairs) of the committed file against the deterministic extraction.
  *   Prose is never diffed — only structure is compared, so the check is
@@ -33,17 +33,17 @@ export function decideSkip(repoRoot: string): SkipDecision {
   }
   if (!existsSync(path.join(repoRoot, 'llms.txt'))) {
     return {
-      reason: 'no llms.txt — skipping check (run make-llms-txt to generate)',
+      reason: 'no llms.txt — skipping check (run gen/llms-txt to generate)',
       skip: true,
     }
   }
   return { skip: false }
 }
 
-// The argv passed to `node scripts/fleet/make-llms-txt.mts --check`.
+// The argv passed to `node scripts/fleet/gen/llms-txt.mts --check`.
 export function buildCheckArgs(quiet: boolean): string[] {
   return [
-    'scripts/fleet/make-llms-txt.mts',
+    'scripts/fleet/gen/llms-txt.mts',
     '--check',
     ...(quiet ? ['--quiet'] : []),
   ]

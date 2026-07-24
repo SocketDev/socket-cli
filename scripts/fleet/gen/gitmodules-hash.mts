@@ -20,8 +20,8 @@
  *   submodule worktree instead: blob SHAs are immutable content addresses, so
  *   that hash is an unmovable content pin tied to the commit. It is re-verified
  *   whenever the worktree is present and fail-open (skipped) on a checkout that
- *   hasn't materialized the submodule. Usage: gen-gitmodules-hash.mts --check
- *   [path/to/.gitmodules] # verify, exit 1 on drift gen-gitmodules-hash.mts
+ *   hasn't materialized the submodule. Usage: gen/gitmodules-hash.mts --check
+ *   [path/to/.gitmodules] # verify, exit 1 on drift gen/gitmodules-hash.mts
  *   --write [path/to/.gitmodules] # rewrite stale/missing hashes.
  */
 
@@ -34,16 +34,16 @@ import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { httpRequest } from '@socketsecurity/lib-stable/http-request'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
-import { isMainModule } from './_shared/is-main-module.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
-const USAGE = `gen-gitmodules-hash — set / generate / verify .gitmodules content-hash pins
+const USAGE = `gen/gitmodules-hash — set / generate / verify .gitmodules content-hash pins
 
 Usage:
-  gen-gitmodules-hash.mts --check [<.gitmodules>]   verify every block's sha256 (exit 1 on drift)
-  gen-gitmodules-hash.mts --write [<.gitmodules>]   rewrite stale / missing sha256 comments
-  gen-gitmodules-hash.mts --set <name|path> <ref> [--label <text>] [<.gitmodules>]
+  gen/gitmodules-hash.mts --check [<.gitmodules>]   verify every block's sha256 (exit 1 on drift)
+  gen/gitmodules-hash.mts --write [<.gitmodules>]   rewrite stale / missing sha256 comments
+  gen/gitmodules-hash.mts --set <name|path> <ref> [--label <text>] [<.gitmodules>]
                                                     bump one submodule's ref AND its sha256
                                                     together (the only correct way to bump a
                                                     ref — uses-sha-verify-guard requires both)
@@ -193,7 +193,7 @@ export async function treeManifestSha256(
         stdio: 'pipe',
         stdioString: true,
       },
-    )) as { stdout?: string }
+    )) as { stdout?: string | undefined }
     stdout = String(result?.stdout ?? '')
   } catch (e) {
     throw new Error(
@@ -299,7 +299,7 @@ export function resolveGitmodulesPath(positional: string | undefined): string {
   const gitmodulesPath = path.resolve(positional ?? '.gitmodules')
   if (!existsSync(gitmodulesPath)) {
     logger.fail(
-      `gen-gitmodules-hash: no .gitmodules at ${gitmodulesPath} — pass the path as the first argument`,
+      `gen/gitmodules-hash: no .gitmodules at ${gitmodulesPath} — pass the path as the first argument`,
     )
     process.exit(1)
   }
@@ -327,12 +327,12 @@ export function parseSetArgs(argv: string[]): SetArgs {
   ) {
     return {
       error:
-        'gen-gitmodules-hash --set: needs `<name|path> <ref>` — e.g. `--set packages/acorn/upstream/acorn 8a47812…`',
+        'gen/gitmodules-hash --set: needs `<name|path> <ref>` — e.g. `--set packages/acorn/upstream/acorn 8a47812…`',
     }
   }
   if (!/^[0-9a-f]{40}$/.test(newRef)) {
     return {
-      error: `gen-gitmodules-hash --set: ref must be a full 40-hex commit SHA, got \`${newRef}\` — resolve a tag/branch to its commit first (git ls-remote <url> refs/tags/<t>^{})`,
+      error: `gen/gitmodules-hash --set: ref must be a full 40-hex commit SHA, got \`${newRef}\` — resolve a tag/branch to its commit first (git ls-remote <url> refs/tags/<t>^{})`,
     }
   }
   return { label, newRef, selector }
@@ -358,7 +358,7 @@ async function runSet(argv: string[], gitmodulesPath: string): Promise<void> {
   const block = blocks.find(b => b.name === selector || b.path === selector)
   if (!block) {
     logger.fail(
-      `gen-gitmodules-hash --set: no submodule matching \`${selector}\` — selector matches a [submodule "<name>"] or its \`path =\`.`,
+      `gen/gitmodules-hash --set: no submodule matching \`${selector}\` — selector matches a [submodule "<name>"] or its \`path =\`.`,
     )
     process.exit(1)
   }
@@ -368,7 +368,7 @@ async function runSet(argv: string[], gitmodulesPath: string): Promise<void> {
   const isNew = block.headerLine === undefined || block.refLine === undefined
   if (isNew && !label) {
     logger.fail(
-      `gen-gitmodules-hash --set: ${block.name} has no header comment and/or ref line — pass \`--label <name>-<version|date>\` so the pin can be provisioned.`,
+      `gen/gitmodules-hash --set: ${block.name} has no header comment and/or ref line — pass \`--label <name>-<version|date>\` so the pin can be provisioned.`,
     )
     process.exit(1)
   }
@@ -382,7 +382,7 @@ async function runSet(argv: string[], gitmodulesPath: string): Promise<void> {
   const lsTreeOrFail = async (why: string): Promise<string> => {
     if (!worktree || !isMaterialized(worktree)) {
       logger.fail(
-        `gen-gitmodules-hash --set: ${block.name} ${why} — its sha256 is then the git ls-tree manifest hash, which needs the submodule materialized at ${newRef.slice(0, 12)}…. Check it out first (git -C ${block.path ?? '<path>'} fetch + checkout ${newRef.slice(0, 12)}…), then re-run.`,
+        `gen/gitmodules-hash --set: ${block.name} ${why} — its sha256 is then the git ls-tree manifest hash, which needs the submodule materialized at ${newRef.slice(0, 12)}…. Check it out first (git -C ${block.path ?? '<path>'} fetch + checkout ${newRef.slice(0, 12)}…), then re-run.`,
       )
       process.exit(1)
     }
@@ -431,7 +431,7 @@ async function runSet(argv: string[], gitmodulesPath: string): Promise<void> {
   }
   await fs.writeFile(gitmodulesPath, lines.join(eol), 'utf8')
   logger.success(
-    `gen-gitmodules-hash: ${isNew ? 'provisioned' : 'set'} ${block.name} → ref ${newRef.slice(0, 12)}… sha256 ${sha.slice(0, 12)}….`,
+    `gen/gitmodules-hash: ${isNew ? 'provisioned' : 'set'} ${block.name} → ref ${newRef.slice(0, 12)}… sha256 ${sha.slice(0, 12)}….`,
   )
   process.exitCode = 0
 }
@@ -504,27 +504,27 @@ async function main(): Promise<void> {
   if (mode === '--write' && drift > 0) {
     await fs.writeFile(gitmodulesPath, lines.join(eol), 'utf8')
     logger.success(
-      `gen-gitmodules-hash: wrote ${drift} sha256 pin(s)${skips ? `, ${skips} skipped` : ''}.`,
+      `gen/gitmodules-hash: wrote ${drift} sha256 pin(s)${skips ? `, ${skips} skipped` : ''}.`,
     )
     process.exitCode = 0
     return
   }
   if (mode === '--check' && drift > 0) {
     logger.fail(
-      `gen-gitmodules-hash: ${drift} block(s) with a stale / missing sha256 — run \`--write\` to refresh.`,
+      `gen/gitmodules-hash: ${drift} block(s) with a stale / missing sha256 — run \`--write\` to refresh.`,
     )
     process.exitCode = 1
     return
   }
   logger.success(
-    `gen-gitmodules-hash: all ${resolved.length - skips} pinned block(s) current${skips ? `, ${skips} skipped` : ''}.`,
+    `gen/gitmodules-hash: all ${resolved.length - skips} pinned block(s) current${skips ? `, ${skips} skipped` : ''}.`,
   )
   process.exitCode = 0
 }
 
 if (isMainModule(import.meta.url)) {
   main().catch((e: unknown) => {
-    logger.fail(`gen-gitmodules-hash: ${errorMessage(e)}`)
+    logger.fail(`gen/gitmodules-hash: ${errorMessage(e)}`)
     process.exitCode = 1
   })
 }

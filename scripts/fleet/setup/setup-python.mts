@@ -24,6 +24,8 @@ import type {
   EcosystemStepResult,
 } from './ecosystems.mts'
 
+const mainLogger = getDefaultLogger()
+
 /**
  * True when a `pyproject.toml` body declares a `[tool.uv]` table (or any
  * `[tool.uv.*]` sub-table) — the marker that uv, not another build backend,
@@ -69,10 +71,11 @@ export function findUvProjects(root: string): string[] {
  * The skip reason for `setup:python`, or undefined when the step should run.
  * Pure over the project count so the decision is unit-testable.
  */
-export function pythonSkipReason(options: {
+export function pythonSkipReason(config: {
   readonly projectCount: number
 }): string | undefined {
-  return options.projectCount > 0
+  const cfg = { __proto__: null, ...config } as typeof config
+  return cfg.projectCount > 0
     ? undefined
     : 'no uv project (no pyproject.toml with [tool.uv] and no uv.lock)'
 }
@@ -126,7 +129,7 @@ if (isMainModule(import.meta.url)) {
       }
     },
     (e: unknown) => {
-      getDefaultLogger().error(e)
+      mainLogger.error(e)
       process.exitCode = 1
     },
   )

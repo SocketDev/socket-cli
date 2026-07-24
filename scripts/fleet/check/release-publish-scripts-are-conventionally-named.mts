@@ -133,6 +133,7 @@ export function classifyReleasePublishScript(
 ): ConventionVerdict | null {
   const body = scriptBody.trim()
   if (!body) {
+    // oxlint-disable-next-line socket/prefer-undefined-over-null -- external API contract: the unit test suite asserts strict equality against this exact `null` return value
     return null
   }
   // Remote-dispatch twins first — their filename is the more specific match, so
@@ -148,6 +149,7 @@ export function classifyReleasePublishScript(
   )
   // No target, or an ambiguous combined body → not this check's concern.
   if (matched.length !== 1) {
+    // oxlint-disable-next-line socket/prefer-undefined-over-null -- external API contract: the unit test suite asserts strict equality against this exact `null` return value
     return null
   }
   const { expectedName, target } = matched[0]!

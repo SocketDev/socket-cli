@@ -193,6 +193,44 @@ export function evaluate(
     `${settingsUrl}#pull-requests`,
     { pull_request_creation_policy: 'collaborators_only' },
   )
+  // Issues: PUBLIC repos take community bug reports (issues ON), with creation
+  // open to all users; PRIVATE repos keep the surface closed (issues OFF — no
+  // external reporters, private work is tracked elsewhere). `has_issues` is
+  // readable + PATCH-able. The "creation allowed by: all users" default (GitHub's
+  // out-of-the-box state) is NOT surfaced by the repo GET — unlike
+  // `pull_request_creation_policy`, `issue_creation_policy` is omitted while it's
+  // the default — so it's only asserted when the API DOES surface it AND it has
+  // been restricted away from all_users (no false positive on the undefined
+  // default).
+  if (apiRepo.private) {
+    check(
+      'has_issues must be false (private repo)',
+      apiRepo.has_issues,
+      false,
+      `${settingsUrl}#features`,
+      { has_issues: false },
+    )
+  } else {
+    check(
+      'has_issues must be true (public repo)',
+      apiRepo.has_issues,
+      true,
+      `${settingsUrl}#features`,
+      { has_issues: true },
+    )
+    if (
+      apiRepo.issue_creation_policy !== undefined &&
+      apiRepo.issue_creation_policy !== 'all_users'
+    ) {
+      check(
+        'issue_creation_policy must be all_users (public repo)',
+        apiRepo.issue_creation_policy,
+        'all_users',
+        `${settingsUrl}#features`,
+        { issue_creation_policy: 'all_users' },
+      )
+    }
+  }
   // DCO: web-based commits must be signed off (the fleet's Developer Certificate
   // of Origin gate). Auto-fixable via PATCH /repos/{owner}/{repo}.
   check(

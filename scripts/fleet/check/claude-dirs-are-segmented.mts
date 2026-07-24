@@ -137,7 +137,6 @@ export const BUILTIN_FLEET_SET: Readonly<Record<string, readonly string[]>> = {
     'plugging-promise-race',
     'prose',
     'refreshing-history',
-    'regenerating-patches',
     'reviewing-code',
     'migrating-rule-packs',
     'running-test262',

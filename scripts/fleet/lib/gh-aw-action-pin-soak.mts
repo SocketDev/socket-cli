@@ -74,7 +74,7 @@ export function parseActionsLock(json: string): Map<string, ActionPin> {
   if (!doc || typeof doc !== 'object') {
     return out
   }
-  const entries = (doc as { entries?: unknown }).entries
+  const entries = (doc as { entries?: unknown | undefined }).entries
   if (!entries || typeof entries !== 'object') {
     return out
   }
@@ -85,9 +85,9 @@ export function parseActionsLock(json: string): Map<string, ActionPin> {
       continue
     }
     const { repo, sha, version } = value as {
-      repo?: unknown
-      sha?: unknown
-      version?: unknown
+      repo?: unknown | undefined
+      sha?: unknown | undefined
+      version?: unknown | undefined
     }
     if (
       typeof repo === 'string' &&
@@ -129,7 +129,7 @@ export function diffActionPins(
       version: pin.version,
     })
   }
-  return bumps.sort((a, b) => a.repo.localeCompare(b.repo))
+  return bumps.toSorted((a, b) => a.repo.localeCompare(b.repo))
 }
 
 // Soak-partition pin bumps. Socket-owned action repos are exempt (own
@@ -137,13 +137,16 @@ export function diffActionPins(
 // bump must clear `soakDays` measured from its new SHA's commit date; a
 // too-young OR unverifiable date is held at the old pin. Pure given
 // `resolveCommitDate` — the primary unit-test target.
-export function partitionActionPinBumps(options: {
+export function partitionActionPinBumps(config: {
   bumps: readonly ActionPinBump[]
   now: Date
   resolveCommitDate: ResolveCommitDate
   soakDays: number
 }): ActionPinPartition {
-  const { bumps, now, resolveCommitDate, soakDays } = options
+  const { bumps, now, resolveCommitDate, soakDays } = {
+    __proto__: null,
+    ...config,
+  } as typeof config
   const soakMs = soakDays * DAY_MS
   const nowMs = now.getTime()
   const advanced: ActionPinBump[] = []
@@ -210,13 +213,16 @@ export function readFileSafe(file: string): string {
 // from the snapshot) are deleted, so a brand-new lock introducing an un-soaked
 // pin can't persist on disk. Socket action repos bypass (own provenance
 // pipeline). Returns the held pins for reporting.
-export function soakGateCompile(options: {
+export function soakGateCompile(config: {
   beforeContents: ReadonlyMap<string, string>
   mdPath: string
   outputPaths: readonly string[]
   resolveCommitDate: ResolveCommitDate
 }): HeldActionPin[] {
-  const { beforeContents, mdPath, outputPaths, resolveCommitDate } = options
+  const { beforeContents, mdPath, outputPaths, resolveCommitDate } = {
+    __proto__: null,
+    ...config,
+  } as typeof config
   const lockPath = actionsLockPathFor(mdPath)
   const before = parseActionsLock(beforeContents.get(lockPath) ?? '')
   const after = parseActionsLock(readFileSafe(lockPath))

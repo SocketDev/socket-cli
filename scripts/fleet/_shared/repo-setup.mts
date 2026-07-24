@@ -19,6 +19,6 @@ export function discoverRepoSetup(repoRoot: string): string[] {
   }
   return readdirSync(dir)
     .filter(f => f.endsWith('.mts'))
-    .sort()
+    .toSorted()
     .map(f => `scripts/repo/setup/${f}`)
 }

@@ -121,7 +121,8 @@ function reportUncovered(
   uncovered: UncoveredGlob[],
   fix: string,
 ): void {
-  for (const u of uncovered) {
+  for (let i = 0, { length } = uncovered; i < length; i += 1) {
+    const u = uncovered[i]!
     logger.error(
       `  ${surface}: no covering pattern for ${u.glob}\n` +
         `    Saw: none of ${u.forms.join(' / ')} present; every GENERATED_GLOBS entry needs a **/-anchored twin on this static surface.\n` +

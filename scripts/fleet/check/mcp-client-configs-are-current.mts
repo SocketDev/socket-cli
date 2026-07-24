@@ -36,7 +36,7 @@ function main(): void {
     [
       '[mcp-client-configs-are-current] generated MCP client config drift:',
       ...issues.map(issue => `  - ${issue}`),
-      'Fix: edit only .mcp.json, run `node scripts/fleet/mcp-config.mts --write`, then cascade.',
+      'Fix: edit only .mcp.json, then run `node scripts/fleet/mcp-config.mts --write`.',
     ].join('\n'),
   )
   process.exitCode = 1
@@ -77,9 +77,12 @@ export function findMcpClientConfigIssues(repoRoot: string): string[] {
       issues.push(`${adapter.path} is drifted from .mcp.json.`)
     }
   }
-  // `opencode.json` + `.kimi-code/mcp.json` are tracked cascade sources — they
-  // MUST be present at configRoot and match `.mcp.json`.
-  const cascadeAdapters = [
+  // `opencode.json` + `.kimi-code/mcp.json` are generated-untracked
+  // projections, same contract as `.codex/*`: regenerated at setup:mcp and
+  // built into the release bundle by make-release-bundle. An ABSENT copy is
+  // fine (setup recreates it); a PRESENT-but-stale copy is flagged so a
+  // hand-edit is caught.
+  const generatedAdapters = [
     {
       content: renderOpenCodeMcpConfig(servers),
       relativePath: 'opencode.json',
@@ -89,12 +92,13 @@ export function findMcpClientConfigIssues(repoRoot: string): string[] {
       relativePath: '.kimi-code/mcp.json',
     },
   ]
-  for (let i = 0, { length } = cascadeAdapters; i < length; i += 1) {
-    const entry = cascadeAdapters[i]!
-    const filePath = path.join(configRoot, entry.relativePath)
-    if (!existsSync(filePath)) {
-      issues.push(`${entry.relativePath} is missing.`)
-    } else if (readFileSync(filePath, 'utf8') !== entry.content) {
+  for (let i = 0, { length } = generatedAdapters; i < length; i += 1) {
+    const entry = generatedAdapters[i]!
+    const filePath = path.join(repoRoot, entry.relativePath)
+    if (
+      existsSync(filePath) &&
+      readFileSync(filePath, 'utf8') !== entry.content
+    ) {
       issues.push(`${entry.relativePath} is drifted from .mcp.json.`)
     }
   }

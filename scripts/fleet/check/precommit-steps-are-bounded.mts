@@ -112,7 +112,13 @@ function main(): void {
   }
 
   if (errors.length > 0) {
-    logger.fail(`[precommit-steps-are-bounded]\n${errors.join('\n\n')}`)
+    logger.fail('[precommit-steps-are-bounded]')
+    for (let i = 0, { length } = errors; i < length; i += 1) {
+      if (i > 0) {
+        logger.error('')
+      }
+      logger.error(errors[i]!)
+    }
     process.exitCode = 1
     return
   }

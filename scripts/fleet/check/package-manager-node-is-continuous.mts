@@ -40,16 +40,16 @@ export function isNodeExecutablePath(executablePath: string): boolean {
 }
 
 export function packageManagerNodeExecutables(
-  options: PackageManagerNodeOptions,
+  config: PackageManagerNodeOptions,
 ): readonly string[] {
-  const opts = { __proto__: null, ...options } as PackageManagerNodeOptions
+  const cfg = { __proto__: null, ...config } as PackageManagerNodeOptions
   // npm_node_execpath is historically a Node executable, but standalone pnpm
   // sets it to its own launcher in some CI environments. A package-manager
   // launcher is not evidence of a second Node runtime, so only compare the
   // lifecycle value when it actually names a Node executable.
-  return opts.npmNodeExecPath && isNodeExecutablePath(opts.npmNodeExecPath)
-    ? [opts.npmNodeExecPath, opts.executablePath]
-    : [opts.executablePath]
+  return cfg.npmNodeExecPath && isNodeExecutablePath(cfg.npmNodeExecPath)
+    ? [cfg.npmNodeExecPath, cfg.executablePath]
+    : [cfg.executablePath]
 }
 
 export function main(): void {

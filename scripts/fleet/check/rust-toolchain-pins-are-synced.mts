@@ -4,18 +4,18 @@
  *   from it, never hand-synced. Three copies exist because rustup / the docker
  *   prebake / the cargo soak updater each read a different surface:
  *
- *   1. `<repo>/rust-toolchain.toml` `channel` — the CANONICAL pin (rustup reads
- *      it; build-prebakes.mts injects it as RUST_VERSION). Single source.
- *   2. `template/base/rust-toolchain.toml` `channel` — the pin cascaded to Rust
- *      members (wheelhouse-only; absent in members).
- *   3. `RUST_UPDATER_TOOLCHAIN` in scripts/fleet/update/cargo.mts — the nightly
+ *   1. `template/conditional/rust/rust-toolchain.toml` `channel` — the
+ *      CANONICAL pin (wheelhouse; cascades to the root of every rust member,
+ *      where rustup discovers it; prebake-pins.mts injects it as
+ *      RUST_VERSION). In a member the cascaded root copy IS the canonical.
+ *   2. `RUST_UPDATER_TOOLCHAIN` in scripts/fleet/update/cargo.mts — the nightly
  *      the cargo soak updater runs on, unified onto the build pin so there is
  *      NO separate updater-only nightly (`-Zmin-publish-age` is nightly-only).
- *      This check asserts 2 + 3 equal 1; `--fix` rewrites the derived copies
- *      from the canonical channel. Fails the gate on drift, with What / Where /
- *      Saw-vs-wanted / Fix. No-ops when the repo has no `rust-toolchain.toml`
- *      (a JS-only member has nothing to sync). Wired into the check gate +
- *      cascade (--fix). Usage: node
+ *      This check asserts every derived copy equals 1; `--fix` rewrites the
+ *      drifted copies from the canonical channel. Fails the gate on drift,
+ *      with What / Where / Saw-vs-wanted / Fix. No-ops when the repo has no
+ *      Rust pin (a JS-only member has nothing to sync). Wired into the check
+ *      gate + cascade (--fix). Usage: node
  *      scripts/fleet/check/rust-toolchain-pins-are-synced.mts [--fix]
  */
 
@@ -87,12 +87,14 @@ interface Drift {
 }
 
 /**
- * Assert the derived Rust-pin copies (template/base rust-toolchain.toml +
- * RUST_UPDATER_TOOLCHAIN in cargo.mts) match the canonical
- * `<repoRoot>/rust-toolchain.toml` channel. `options.fix` rewrites the drifted
- * copies; otherwise a drift fails the gate. Returns the intended exit code
- * (0 = synced / no rust-toolchain.toml, 1 = malformed canonical or drift in
- * check mode).
+ * Assert the derived Rust-pin copies (RUST_UPDATER_TOOLCHAIN in cargo.mts, and
+ * in a member its root rust-toolchain.toml) match the canonical channel. The
+ * canonical pin is `template/conditional/rust/rust-toolchain.toml` in the
+ * wheelhouse (the fleet single source; the wheelhouse builds no Rust, so no
+ * root copy exists there) and the cascaded `<repoRoot>/rust-toolchain.toml`
+ * in a member. `options.fix` rewrites the drifted copies; otherwise a drift
+ * fails the gate. Returns the intended exit code (0 = synced / no rust pin,
+ * 1 = malformed canonical or drift in check mode).
  */
 export function runCheck(
   repoRoot: string,
@@ -100,9 +102,17 @@ export function runCheck(
 ): number {
   const opts = { __proto__: null, ...options } as RunCheckOptions
   const fix = opts.fix === true
-  const canonicalPath = path.join(repoRoot, 'rust-toolchain.toml')
+  const templateToml = path.join(
+    repoRoot,
+    'template',
+    'conditional',
+    'rust',
+    'rust-toolchain.toml',
+  )
+  const rootToml = path.join(repoRoot, 'rust-toolchain.toml')
+  const canonicalPath = existsSync(templateToml) ? templateToml : rootToml
   if (!existsSync(canonicalPath)) {
-    // No Rust in this repo — nothing to sync (JS-only member).
+    // No Rust pin in this repo — nothing to sync (JS-only member).
     return 0
   }
   const canonical = parseRustChannel(readFileSync(canonicalPath, 'utf8'))
@@ -119,22 +129,18 @@ export function runCheck(
     return 1
   }
   const drifts: Drift[] = []
-  // Derived copy 1: the members' cascaded toolchain (wheelhouse-only).
-  const templateToml = path.join(
-    repoRoot,
-    'template',
-    'base',
-    'rust-toolchain.toml',
-  )
-  if (existsSync(templateToml)) {
-    const content = readFileSync(templateToml, 'utf8')
+  // Derived copy 1 (wheelhouse-only): a stray root copy. The wheelhouse
+  // builds no Rust — its pin lives ONLY in the conditional trigger dir, so a
+  // root copy is drift against the canonical.
+  if (canonicalPath === templateToml && existsSync(rootToml)) {
+    const content = readFileSync(rootToml, 'utf8')
     const saw = parseRustChannel(content)
     if (saw && saw !== canonical) {
       drifts.push({
-        where: 'template/base/rust-toolchain.toml `channel`',
+        where: 'rust-toolchain.toml `channel` (root copy)',
         saw,
         next: withRustChannel(content, canonical),
-        path: templateToml,
+        path: rootToml,
       })
     }
   }

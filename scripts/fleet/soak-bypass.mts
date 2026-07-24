@@ -19,15 +19,39 @@
  *   - 1 — bad args, version not found on npm, or no `minimumReleaseAge:` anchor.
  */
 
-import { readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import path from 'node:path'
 import process from 'node:process'
 
-import { runCheck as regenNpmrcMirror } from './check/npmrc-versioned-soak-mirror-is-derived.mts'
 import { PNPM_WORKSPACE_YAML, REPO_ROOT } from './paths.mts'
 import { fetchPackagePublishDate } from './registry-publish-date.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 
 const SOAK_DAYS = 7
+
+/**
+ * Append `min-release-age-exclude[]=<name>` to the repo's `.npmrc` so npm
+ * honors the bypass immediately. Idempotent (no duplicate line). `.npmrc` is
+ * cascade-generated (scripts/repo/gen/npmrc.mts in the source repo), so this
+ * local line lives only until the next cascade re-canonicalizes the file — the
+ * durable fleet-wide form is the manifest EXPECTED_RELEASE_AGE_EXCLUDE entry.
+ */
+export function appendNpmrcExcludeLine(repoRoot: string, name: string): void {
+  const npmrcPath = path.join(repoRoot, '.npmrc')
+  if (!existsSync(npmrcPath)) {
+    return
+  }
+  const line = `min-release-age-exclude[]=${name}`
+  const content = readFileSync(npmrcPath, 'utf8')
+  if (content.split('\n').includes(line)) {
+    return
+  }
+  const sep = content.endsWith('\n') ? '' : '\n'
+  writeFileSync(
+    npmrcPath,
+    `${content}${sep}# local soak-bypass (ephemeral — the cascade regenerates this file)\n${line}\n`,
+  )
+}
 
 interface ParsedSpec {
   name: string
@@ -160,10 +184,12 @@ async function main(): Promise<void> {
   }
   writeFileSync(PNPM_WORKSPACE_YAML, next)
   // Mirror the pin's bare NAME into `.npmrc` for npm (>= v12, npm/cli#9532),
-  // which matches by name/glob only. pnpm-workspace.yaml (dated `name@version`)
-  // is canonical; this regenerates the derived `.npmrc versioned-soak-mirror`
-  // block FROM it, so one command keeps both package managers in lockstep.
-  regenNpmrcMirror(REPO_ROOT, { fix: true })
+  // which matches by name/glob only. `.npmrc` is cascade-GENERATED
+  // (scripts/repo/gen/npmrc.mts in the source repo), so this append is the
+  // deliberately-ephemeral local unblock — the next cascade re-canonicalizes
+  // the file; the durable form is the manifest EXPECTED_RELEASE_AGE_EXCLUDE
+  // entry (step 3 below). Idempotent: skipped when the line already exists.
+  appendNpmrcExcludeLine(REPO_ROOT, spec.name)
   process.stdout.write(
     `soak-bypass: added ${spec.name}@${spec.version} to minimumReleaseAgeExclude\n` +
       `  # published: ${publishedISO} | removable: ${removableISO}\n` +

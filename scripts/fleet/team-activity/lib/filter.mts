@@ -72,9 +72,9 @@ function fetchReviewFacts(
 function humanEngaged(
   logins: readonly string[],
   selfLogin: string,
-  options: { skipBots: boolean },
+  config: { skipBots: boolean },
 ): boolean {
-  const { skipBots } = options
+  const { skipBots } = { __proto__: null, ...config } as typeof config
   return logins.some(
     login => login !== selfLogin && !(skipBots && isBotLogin(login)),
   )

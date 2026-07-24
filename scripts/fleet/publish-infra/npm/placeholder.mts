@@ -30,6 +30,7 @@ import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 
 import { isMainModule } from '../../_shared/is-main-module.mts'
 import { logger, runInherit } from '../shared.mts'
+import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
 // The reservation version. Deliberately the lowest possible semver so the real
 // first release (any 0.0.1+ / 1.0.0) always supersedes it as `latest`.
@@ -162,7 +163,7 @@ async function defaultPublishExec(
 }
 
 async function defaultRemoveDir(dir: string): Promise<void> {
-  await fs.rm(dir, { force: true, recursive: true })
+  await safeDelete(dir)
 }
 
 /**
@@ -171,12 +172,13 @@ async function defaultRemoveDir(dir: string): Promise<void> {
  */
 export function formatSummary(
   results: readonly PlaceholderResult[],
-  apply: boolean,
+  config: { apply: boolean },
 ): string {
+  const cfg = { __proto__: null, ...config } as { apply: boolean }
   const count = (status: PlaceholderStatus): number =>
     results.filter(r => r.status === status).length
   return (
-    `Placeholder ${apply ? 'publish' : 'dry-run'} summary: ` +
+    `Placeholder ${cfg.apply ? 'publish' : 'dry-run'} summary: ` +
     `${count('published')} published, ${count('planned')} planned, ` +
     `${count('skipped')} skipped, ${count('failed')} failed.`
   )
@@ -256,7 +258,7 @@ export async function runPlaceholder(
   }
 
   logger.log('')
-  logger.log(formatSummary(results, apply))
+  logger.log(formatSummary(results, { apply }))
   return results
 }
 

@@ -22,17 +22,15 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { getSocketHomePath } from '@socketsecurity/lib-stable/paths/socket'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { REPO_ROOT } from './paths.mts'
 
 const logger = getDefaultLogger()
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 type ToolEntry = {
   version?: string | undefined
@@ -44,9 +42,7 @@ type ToolEntry = {
 // pinning a version here — drift between the installer and this
 // launcher would silently point at a missing dir.
 const DEFAULT_CONFIG_PATH = path.join(
-  __dirname,
-  '..',
-  '..',
+  REPO_ROOT,
   '.claude',
   'hooks',
   'fleet',
@@ -84,9 +80,10 @@ export function resolveBinaryPath(
   homePath: string,
   entry: ToolEntry,
   platformKey: string,
-  win32: boolean,
+  config: { win32: boolean },
 ): string {
-  const binaryName = win32 ? 'janus.exe' : 'janus'
+  const cfg = { __proto__: null, ...config } as { win32: boolean }
+  const binaryName = cfg.win32 ? 'janus.exe' : 'janus'
   return path.join(
     homePath,
     '_wheelhouse',
@@ -112,7 +109,9 @@ async function main(): Promise<void> {
     getSocketHomePath(),
     entry,
     platformKey,
-    process.platform === 'win32',
+    {
+      win32: process.platform === 'win32',
+    },
   )
 
   if (!existsSync(binaryPath)) {

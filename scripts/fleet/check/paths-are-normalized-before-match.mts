@@ -43,11 +43,11 @@ const SKIP_DIR_RE =
 // Path-like variable name heuristics (same shape as the lint rule).
 // require-regex-comment: path-like variable name suffix/prefix patterns.
 const PATH_VAR_IDENT_RE =
-  /(?:^|_)(?:path|file|dir|cwd|root|src|dest|target|from|to|base|entry|output|input|abs|rel)(?:_|$)|Path$|File$|Dir$/
+  /(?:^|_)(?:abs|base|cwd|dest|dir|entry|file|from|input|output|path|rel|root|src|target|to)(?:_|$)|Path$|File$|Dir$/
 
 // require-regex-comment: matches separator-sensitive ops on a path-like ident.
 const SEPARATOR_OP_RE =
-  /\b(\w+)\s*\.\s*(?:split\s*\(\s*['"`]\/|startsWith\s*\(\s*['"`]\/|endsWith\s*\(\s*['"`]\/|includes\s*\(\s*['"`]\/|(?:test|exec|match|replace|replaceAll)\s*\(\s*\/(?:\[\/\\\\]|\[\\\\\/]|\\\\))/
+  /\b(\w+)\s*\.\s*(?:(?:test|exec|match|replace|replaceAll)\s*\(\s*\/(?:\[\/\\\\]|\[\\\\\/]|\\\\)|endsWith\s*\(\s*['"`]\/|includes\s*\(\s*['"`]\/|split\s*\(\s*['"`]\/|startsWith\s*\(\s*['"`]\/)/
 
 // require-regex-comment: matches a normalizePath()/toUnixPath() assignment in the window.
 const NORMALIZE_CALL_RE = /\b(?:normalizePath|toUnixPath)\s*\(/
@@ -57,10 +57,10 @@ const NORMALIZE_CALL_RE = /\b(?:normalizePath|toUnixPath)\s*\(/
 // rule `prefer-normalize-path` owns nudging this idiom toward normalizePath().
 // require-regex-comment: replace/replaceAll of a backslash/dual-separator regex with '/'.
 const INLINE_NORMALIZE_IDIOM_RE =
-  /\.\s*replace(?:All)?\s*\(\s*\/(?:\\\\|\[\/\\\\]|\[\\\\\/])\/g?\s*,\s*['"`]\//
+  /\.\s*replace(?:All)?\s*\(\s*\/(?:\[\/\\\\]|\[\\\\\/]|\\\\)\/g?\s*,\s*['"`]\//
 
 // require-regex-comment: full-line or block comment lead-in.
-const COMMENT_LINE_RE = /^\s*(?:\/\/|\/?\*)/
+const COMMENT_LINE_RE = /^\s*(?:\/?\*|\/\/)/
 
 // Test trees embed violation examples inside fixture strings and test names —
 // a text scan can't tell those from live code, and the AST lint rule

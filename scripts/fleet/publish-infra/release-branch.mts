@@ -78,25 +78,25 @@ export function releaseBranchName(channel: string, version: string): string {
  * force-reset to `parentSha`, so this run's commit(s) land on a clean lineage
  * off the current base.
  */
-export async function openReleaseBranch(options: {
+export async function openReleaseBranch(config: {
   channel: string
   env: ReleaseEnv
   parentSha: string
   version: string
 }): Promise<ReleaseBranch> {
-  const opts = { __proto__: null, ...options } as {
+  const cfg = { __proto__: null, ...config } as {
     channel: string
     env: ReleaseEnv
     parentSha: string
     version: string
   }
-  const { env } = opts
-  const branch = releaseBranchName(opts.channel, opts.version)
+  const { env } = cfg
+  const branch = releaseBranchName(cfg.channel, cfg.version)
   try {
     await createBranchRef({
       branch,
       repo: env.repo,
-      sha: opts.parentSha,
+      sha: cfg.parentSha,
       token: env.token,
     })
   } catch (e) {
@@ -109,12 +109,12 @@ export async function openReleaseBranch(options: {
       branch,
       force: true,
       repo: env.repo,
-      sha: opts.parentSha,
+      sha: cfg.parentSha,
       token: env.token,
     })
   }
   logger.log(
-    `[release-branch] opened ${branch} at ${opts.parentSha.slice(0, 7)}.`,
+    `[release-branch] opened ${branch} at ${cfg.parentSha.slice(0, 7)}.`,
   )
   return { branch, env }
 }

@@ -114,7 +114,7 @@ export function listMtsFiles(dir: string): string[] {
 export function extractImportSpecifiers(content: string): string[] {
   const specifiers: string[] = []
   const fromRe =
-    /(?:^|\n)[ \t]*(?:import|export)\b[\s\w,{}*]*?\bfrom[ \t]*['"]([^'"]+)['"]/g // socket-lint: allow uncommented-regex
+    /(?:^|\n)[ \t]*(?:export|import)\b[\s\w,{}*]*?\bfrom[ \t]*['"]([^'"]+)['"]/g // socket-lint: allow uncommented-regex
   let m: RegExpExecArray | null
   while ((m = fromRe.exec(content)) !== null) {
     specifiers.push(m[1]!)

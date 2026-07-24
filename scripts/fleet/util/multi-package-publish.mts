@@ -178,7 +178,7 @@ export class MultiPackageStageError extends Error {
   constructor(
     message: string,
     stage: MultiPackageStageError['stage'],
-    triplet?: PackAppTriplet,
+    triplet?: PackAppTriplet | undefined,
   ) {
     super(message)
     this.name = 'MultiPackageStageError'

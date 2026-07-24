@@ -9,19 +9,30 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { ensureTagAndRelease } from '../publish-infra/release.mts'
+import {
+  ensureTagAndRelease,
+  requireRegistryLive,
+} from '../publish-infra/release.mts'
 import { listStagedPackages } from '../publish-infra/npm/shared.mts'
-import { verifyStagedEntry } from '../publish-infra/npm/staged.mts'
+import { isAlreadyPublished } from '../publish-infra/npm/registry.mts'
+import {
+  defaultPackTarball,
+  verifyStagedEntry,
+} from '../publish-infra/npm/staged.mts'
 import { runCapture, runInherit } from '../publish-infra/shared.mts'
 
 import type { StageListEntry } from '../publish-infra/npm/shared.mts'
-import type { ReceiptStatus } from './state.mts'
+import type { ReceiptStatus, ReleaseChecksums } from './state.mts'
 
 /**
  * What a stage runner reports back; the CLI writes it into a receipt.
+ * `releaseChecksums` rides on a passed verify outcome so the orchestrator can
+ * stash it into state for the release stage (assets prepared before the
+ * immutable release is created).
  */
 export interface StageOutcome {
   detail: string
+  releaseChecksums?: ReleaseChecksums | undefined
   status: ReceiptStatus
 }
 
@@ -31,9 +42,20 @@ export interface StageOutcome {
  */
 export interface RunnerSeams {
   ensureRelease?:
-    | ((pkg: { name: string; version: string }) => Promise<void>)
+    | ((
+        pkg: { name: string; version: string },
+        options?:
+          | { packAssets?: (() => Promise<string[]>) | undefined }
+          | undefined,
+      ) => Promise<void>)
     | undefined
   listStaged?: (() => Promise<StageListEntry[]>) | undefined
+  packTarball?:
+    | ((name: string, version: string) => Promise<string | undefined>)
+    | undefined
+  registryLive?:
+    | ((name: string, version: string, cwd: string) => Promise<boolean>)
+    | undefined
   runCapture?:
     | ((
         cmd: string,
@@ -49,8 +71,15 @@ export interface RunnerSeams {
 }
 
 export interface ResolvedSeams {
-  ensureRelease: (pkg: { name: string; version: string }) => Promise<void>
+  ensureRelease: (
+    pkg: { name: string; version: string },
+    options?:
+      | { packAssets?: (() => Promise<string[]>) | undefined }
+      | undefined,
+  ) => Promise<void>
   listStaged: () => Promise<StageListEntry[]>
+  packTarball: (name: string, version: string) => Promise<string | undefined>
+  registryLive: (name: string, version: string, cwd: string) => Promise<boolean>
   runCapture: (
     cmd: string,
     args: string[],
@@ -67,6 +96,21 @@ function defaultSleep(ms: number): Promise<void> {
   })
 }
 
+// Default registry-liveness probe for the release stage: the version must be
+// resolvable on npm (with the requireRegistryLive retry window for registry
+// propagation) before the tag + immutable GH release may exist.
+function defaultRegistryLive(
+  name: string,
+  version: string,
+  cwd: string,
+): Promise<boolean> {
+  return requireRegistryLive({
+    isLive: () => isAlreadyPublished(name, version, cwd),
+    registry: 'npm',
+    subject: `${name}@${version}`,
+  })
+}
+
 /**
  * Fill seam gaps with the real implementations.
  */
@@ -75,6 +119,8 @@ export function resolveSeams(seams: RunnerSeams | undefined): ResolvedSeams {
   return {
     ensureRelease: s.ensureRelease ?? ensureTagAndRelease,
     listStaged: s.listStaged ?? listStagedPackages,
+    packTarball: s.packTarball ?? defaultPackTarball,
+    registryLive: s.registryLive ?? defaultRegistryLive,
     runCapture: s.runCapture ?? runCapture,
     runInherit: s.runInherit ?? runInherit,
     sleep: s.sleep ?? defaultSleep,
@@ -87,6 +133,9 @@ export function resolveSeams(seams: RunnerSeams | undefined): ResolvedSeams {
  */
 export function readPkg(cwd: string): { name: string; version: string } {
   const raw = readFileSync(path.join(cwd, 'package.json'), 'utf8')
-  const pkg = JSON.parse(raw) as { name?: string; version?: string }
+  const pkg = JSON.parse(raw) as {
+    name?: string | undefined
+    version?: string | undefined
+  }
   return { name: pkg.name ?? '', version: pkg.version ?? '' }
 }

@@ -25,6 +25,26 @@ import { fileURLToPath } from 'node:url'
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url))
 const LIB_DIR = path.join(SCRIPT_DIR, 'lib')
 
+// Walk up from this script's own location to find the repo root — the
+// nearest ancestor with a package.json. `process.cwd()` is unstable here:
+// the caller (a pre-install hook or an agent) may invoke this script from
+// any directory.
+function findRepoRoot() {
+  let cur = SCRIPT_DIR
+  const root = path.parse(cur).root
+  while (cur && cur !== root) {
+    if (existsSync(path.join(cur, 'package.json'))) {
+      return cur
+    }
+    const parent = path.dirname(cur)
+    if (parent === cur) {
+      break
+    }
+    cur = parent
+  }
+  return undefined
+}
+
 export const FOUNDATION_PACKAGES = Object.freeze([
   '@socketregistry/packageurl-js',
   '@socketregistry/packageurl-js-stable',
@@ -48,7 +68,11 @@ function fail(message) {
 function parseRepoRoot(argv) {
   const index = argv.indexOf('--repo-root')
   if (index === -1) {
-    return process.cwd()
+    const repoRoot = findRepoRoot()
+    if (!repoRoot) {
+      fail('× --repo-root not given and no package.json ancestor was found')
+    }
+    return repoRoot
   }
   const value = argv[index + 1]
   if (!value) {

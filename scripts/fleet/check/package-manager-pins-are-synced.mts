@@ -61,7 +61,7 @@ export function findPinDrift(repoRoot: string): PinDrift[] {
       : undefined
   const pnpmFloor =
     typeof pnpmFloorRaw === 'string'
-      ? /^>=([0-9.]+)$/.exec(pnpmFloorRaw)?.[1]
+      ? /^>=(?<floor>[0-9.]+)$/.exec(pnpmFloorRaw)?.groups?.['floor']
       : undefined
   // applyPins mutates the throwaway parsed object; we only want its drift list.
   return applyPins(pkg, derivePins(pnpmVersion, npmVersion, { pnpmFloor }))

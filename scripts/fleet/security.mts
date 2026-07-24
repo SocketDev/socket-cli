@@ -154,8 +154,9 @@ export function parseZizmorJson(json: string): Finding[] {
 // JSON parse here and update the invocation in runAgentshield() accordingly.
 export function parseAgentshieldOutput(text: string): Finding[] {
   const findings: Finding[] = []
-  for (const raw of text.split('\n')) {
-    const line = raw.trim()
+  const lines = text.split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!.trim()
     if (!line) {
       continue
     }
@@ -202,8 +203,9 @@ export function parseAgentshieldOutput(text: string): Finding[] {
 // update the invocation in runSkillscanner() accordingly.
 export function parseSkillscannerOutput(text: string): Finding[] {
   const findings: Finding[] = []
-  for (const raw of text.split('\n')) {
-    const line = raw.trim()
+  const lines = text.split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!.trim()
     if (!line) {
       continue
     }
@@ -254,9 +256,9 @@ async function hasExecutable(name: string): Promise<boolean> {
 async function runTool(
   command: string,
   args: string[],
-  options: { capture: boolean },
+  config: { capture: boolean },
 ): Promise<ToolRun> {
-  const { capture } = { __proto__: null, ...options } as typeof options
+  const { capture } = { __proto__: null, ...config } as typeof config
   try {
     const result = await spawn(command, args, {
       shell: WIN32,
@@ -286,28 +288,26 @@ async function runTool(
 
 // ─── Per-tool runners ─────────────────────────────────────────────────────────
 
-async function runAgentshield(options: { capture: boolean }): Promise<ToolRun> {
+async function runAgentshield(config: { capture: boolean }): Promise<ToolRun> {
   // agentshield scan target: .claude/ config; no stable JSON flag in the
   // fleet-pinned version — text output is parsed by parseAgentshieldOutput.
-  return runTool('agentshield', ['scan'], options)
+  return runTool('agentshield', ['scan'], config)
 }
 
-async function runZizmor(options: { capture: boolean }): Promise<ToolRun> {
+async function runZizmor(config: { capture: boolean }): Promise<ToolRun> {
   // zizmor supports --format json (verified: v1.25.2); capture mode uses it
   // so parseZizmorJson gets the native array. Default mode omits the flag so
   // colored human output streams live.
-  const opts = { __proto__: null, ...options } as typeof options
-  const args = opts.capture ? ['--format', 'json', '.github/'] : ['.github/']
-  return runTool('zizmor', args, options)
+  const cfg = { __proto__: null, ...config } as typeof config
+  const args = cfg.capture ? ['--format', 'json', '.github/'] : ['.github/']
+  return runTool('zizmor', args, config)
 }
 
-async function runSkillscanner(options: {
-  capture: boolean
-}): Promise<ToolRun> {
+async function runSkillscanner(config: { capture: boolean }): Promise<ToolRun> {
   // skillscanner scan target: .claude/skills/ (its documented default scan
   // surface for skill prompt-injection analysis). No stable JSON flag in the
   // fleet-pinned version — text output is parsed by parseSkillscannerOutput.
-  return runTool('skillscanner', ['.claude/skills/'], options)
+  return runTool('skillscanner', ['.claude/skills/'], config)
 }
 
 // ─── Human-readable summary ───────────────────────────────────────────────────

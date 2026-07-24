@@ -183,7 +183,9 @@ async function main(): Promise<void> {
     detail.push(
       `  ${extra.length} entry(ies) not derived from a released commit (drift):`,
     )
-    for (const b of extra.slice(0, 5)) {
+    const bList = extra.slice(0, 5)
+    for (let i = 0, { length } = bList; i < length; i += 1) {
+      const b = bList[i]!
       detail.push(`    + ${b}`)
     }
   }
@@ -191,7 +193,9 @@ async function main(): Promise<void> {
     detail.push(
       `  ${missing.length} released commit(s) missing from the entry:`,
     )
-    for (const b of missing.slice(0, 5)) {
+    const bs = missing.slice(0, 5)
+    for (let i = 0, { length } = bs; i < length; i += 1) {
+      const b = bs[i]!
       detail.push(`    - ${b}`)
     }
   }

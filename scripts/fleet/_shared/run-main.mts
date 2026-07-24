@@ -15,6 +15,8 @@ import process from 'node:process'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
+const logger = getDefaultLogger()
+
 /**
  * The shape of a script `main()`: it returns an exit code, or nothing
  * (`undefined` / `void` -> exit 0), sync or async.
@@ -54,7 +56,7 @@ export async function runMainAsync(main: MainFn): Promise<void> {
     const code = await main()
     process.exitCode = typeof code === 'number' ? code : 0
   } catch (e) {
-    getDefaultLogger().error(errorMessage(e))
+    logger.error(errorMessage(e))
     process.exitCode = 1
   }
 }

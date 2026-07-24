@@ -11,6 +11,8 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
+import { sleep } from '@socketsecurity/lib/promises/timers'
+
 import { logger, rootPath, runCapture } from './shared.mts'
 
 /**
@@ -51,6 +53,99 @@ export function extractChangelogSection(version: string): string {
     .join('\n')
     .trim()
   return body || `Release ${version}.`
+}
+
+/**
+ * The registry-liveness gate the tag + GitHub release stand behind: the git
+ * tag and the immutable release are the LAST markers of a release, so they
+ * may only exist once the version is actually resolvable on its registry. A
+ * STAGED package is not published — staging may never be approved — and a
+ * near-miss (v6.2.0) once cut the immutable release first, then the publish
+ * failed on auth, leaving a release with no artifact that even 422-rejected
+ * its own checksums upload. Polls `isLive` (registry propagation lags a few
+ * seconds behind a publish), fails LOUD and returns false when the version
+ * never turns up. `sleepFn` is injectable for tests.
+ */
+export async function requireRegistryLive(config: {
+  attempts?: number | undefined
+  delayMs?: number | undefined
+  isLive: () => Promise<boolean>
+  registry: string
+  sleepFn?: ((ms: number) => Promise<void>) | undefined
+  subject: string
+}): Promise<boolean> {
+  const cfg = { __proto__: null, ...config } as typeof config
+  const attempts = cfg.attempts ?? 6
+  const delayMs = cfg.delayMs ?? 5000
+  const sleepFn = cfg.sleepFn ?? sleep
+  for (let i = 0; i < attempts; i += 1) {
+    // eslint-disable-next-line no-await-in-loop
+    if (await cfg.isLive()) {
+      return true
+    }
+    if (i < attempts - 1) {
+      logger.log(
+        `${cfg.subject} not yet resolvable on ${cfg.registry} ` +
+          `(attempt ${i + 1}/${attempts}); retrying in ${delayMs / 1000}s…`,
+      )
+      // eslint-disable-next-line no-await-in-loop
+      await sleepFn(delayMs)
+    }
+  }
+  logger.fail(
+    `Refusing to cut the tag + GitHub release: ${cfg.subject} is not ` +
+      `resolvable on ${cfg.registry} after ${attempts} attempts.\n` +
+      `  The immutable release is the FINAL marker of a release — it can only ` +
+      `follow a live registry publish, never precede one.\n` +
+      `  Fix: confirm the publish actually completed (auth? staged-but-never-` +
+      `approved?), then re-run — the release step is idempotent.`,
+  )
+  return false
+}
+
+/**
+ * The shared post-publish tail every channel funnels through: gate on
+ * registry liveness (requireRegistryLive), then — and only then — create the
+ * git tag + immutable GitHub release. Returns false (after failing loud)
+ * when the version never turned up, so the caller can set a non-zero exit
+ * code; the release is never attempted in that case. `ensureRelease` and
+ * `sleepFn` are injectable for tests.
+ */
+export async function releaseBehindLiveGate(config: {
+  attempts?: number | undefined
+  delayMs?: number | undefined
+  ensureRelease?:
+    | ((
+        pkg: { name: string; version: string },
+        options?:
+          | { packAssets?: (() => Promise<string[]>) | undefined }
+          | undefined,
+      ) => Promise<void>)
+    | undefined
+  isLive: () => Promise<boolean>
+  packAssets?: (() => Promise<string[]>) | undefined
+  pkg: { name: string; version: string }
+  registry: string
+  sleepFn?: ((ms: number) => Promise<void>) | undefined
+}): Promise<boolean> {
+  const cfg = { __proto__: null, ...config } as typeof config
+  const live = await requireRegistryLive({
+    attempts: cfg.attempts,
+    delayMs: cfg.delayMs,
+    isLive: cfg.isLive,
+    registry: cfg.registry,
+    sleepFn: cfg.sleepFn,
+    subject: `${cfg.pkg.name}@${cfg.pkg.version}`,
+  })
+  if (!live) {
+    return false
+  }
+  const ensureRelease = cfg.ensureRelease ?? ensureTagAndRelease
+  await ensureRelease(
+    cfg.pkg,
+    cfg.packAssets ? { packAssets: cfg.packAssets } : undefined,
+  )
+  return true
 }
 
 /**
@@ -106,9 +201,11 @@ export async function ensureTagAndRelease(
     name: string
     version: string
   },
-  options?: {
-    packAssets?: (() => Promise<string[]>) | undefined
-  },
+  options?:
+    | {
+        packAssets?: (() => Promise<string[]>) | undefined
+      }
+    | undefined,
 ): Promise<void> {
   const opts = { __proto__: null, ...options } as {
     packAssets?: (() => Promise<string[]>) | undefined

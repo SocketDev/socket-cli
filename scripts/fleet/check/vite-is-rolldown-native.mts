@@ -79,7 +79,9 @@ const ESBUILD_RE = /^ {2}'?(@esbuild\/[a-z0-9-]+|esbuild)@\d/u
 export function scanLock(lockBody: string): ViteFinding[] {
   const findings: ViteFinding[] = []
   const seen = new Set<string>()
-  for (const line of lockBody.split('\n')) {
+  const lines = lockBody.split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
     const vm = VITE_RE.exec(line)
     if (vm && Number(vm[1]) < 8) {
       const spec = line.trim().replace(/:$/u, '').replace(/^'|'$/gu, '')

@@ -72,14 +72,14 @@ const DEP_SECTIONS = [
  * `catalog:` and `catalog:<named>` dependency specs. Returns the full list of
  * catalog references found.
  */
-export function collectCatalogRefs(options: {
+export function collectCatalogRefs(config: {
   packageJsons: ReadonlyArray<{ content: string; path: string }>
   workspaceYaml: string
 }): CatalogRef[] {
-  const opts = Object.assign(Object.create(null), options) as typeof options
+  const cfg = Object.assign(Object.create(null), config) as typeof config
   const refs: CatalogRef[] = []
 
-  for (const { content, path } of opts.packageJsons) {
+  for (const { content, path } of cfg.packageJsons) {
     let pkg: Record<string, unknown>
     try {
       pkg = JSON.parse(content) as Record<string, unknown>
@@ -108,7 +108,7 @@ export function collectCatalogRefs(options: {
   }
 
   // Also scan the `overrides:` block of pnpm-workspace.yaml.
-  const overrides = parseCatalogBlock(opts.workspaceYaml, {
+  const overrides = parseCatalogBlock(cfg.workspaceYaml, {
     blockKey: 'overrides',
   })
   for (const [dep, spec] of Object.entries(overrides)) {
@@ -138,7 +138,7 @@ export function collectCatalogRefs(options: {
  * produce a fixable finding + fix entry. For unknown names, produce a
  * report-only finding with the four-ingredient error format.
  */
-export function diagnoseCatalogGaps(options: {
+export function diagnoseCatalogGaps(config: {
   fleetYaml: string | undefined
   refs: readonly CatalogRef[]
   workspaceYaml: string
@@ -146,16 +146,16 @@ export function diagnoseCatalogGaps(options: {
   findings: DoctorFinding[]
   fixes: Array<{ name: string; version: string }>
 } {
-  const opts = Object.assign(Object.create(null), options) as typeof options
+  const cfg = Object.assign(Object.create(null), config) as typeof config
   const findings: DoctorFinding[] = []
   const fixes: Array<{ name: string; version: string }> = []
 
-  const memberCatalog = parseCatalogBlock(opts.workspaceYaml)
-  const memberNamedCatalogs = parseNamedCatalogs(opts.workspaceYaml)
+  const memberCatalog = parseCatalogBlock(cfg.workspaceYaml)
+  const memberNamedCatalogs = parseNamedCatalogs(cfg.workspaceYaml)
 
   // Fleet catalog = `catalog:` ∪ `catalogOptional:` from the fleet yaml.
   let fleetCatalog: Record<string, string> = {}
-  if (opts.fleetYaml === undefined) {
+  if (cfg.fleetYaml === undefined) {
     findings.push({
       fix: 'Re-cascade from the wheelhouse (node scripts/fleet/fetch-fleet-bundle.mts) to restore .config/fleet/pnpm-workspace.fleet.yaml.',
       fixable: false,
@@ -166,8 +166,8 @@ export function diagnoseCatalogGaps(options: {
       where: '.config/fleet/pnpm-workspace.fleet.yaml',
     })
   } else {
-    const fleetMain = parseCatalogBlock(opts.fleetYaml)
-    const fleetOptional = parseCatalogBlock(opts.fleetYaml, {
+    const fleetMain = parseCatalogBlock(cfg.fleetYaml)
+    const fleetOptional = parseCatalogBlock(cfg.fleetYaml, {
       blockKey: 'catalogOptional',
     })
     fleetCatalog = { ...fleetMain, ...fleetOptional }
@@ -177,7 +177,7 @@ export function diagnoseCatalogGaps(options: {
   // when the same dep appears in multiple package.jsons.
   const seen = new Set<string>()
 
-  for (const ref of opts.refs) {
+  for (const ref of cfg.refs) {
     const key = `${ref.catalogName ?? ''}\x00${ref.dep}`
     if (seen.has(key)) {
       continue
@@ -242,13 +242,13 @@ export function diagnoseCatalogGaps(options: {
  * Apply catalog fixes to the workspace yaml string by calling
  * spliceCatalogEntry for each fix. Returns the updated content string.
  */
-export function applyCatalogFixes(options: {
+export function applyCatalogFixes(config: {
   fixes: ReadonlyArray<{ name: string; version: string }>
   workspaceYaml: string
 }): string {
-  const opts = Object.assign(Object.create(null), options) as typeof options
-  let content = opts.workspaceYaml
-  for (const { name, version } of opts.fixes) {
+  const cfg = Object.assign(Object.create(null), config) as typeof config
+  let content = cfg.workspaceYaml
+  for (const { name, version } of cfg.fixes) {
     content = spliceCatalogEntry(content, name, version)
   }
   return content

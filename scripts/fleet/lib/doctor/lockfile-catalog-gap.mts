@@ -83,18 +83,18 @@ export function parseLockfileCatalogs(
   return result
 }
 
-function driftFinding(options: {
+function driftFinding(config: {
   catalogName: string
   dep: string
   lockValue: string
   workspaceValue: string
 }): DoctorFinding {
-  const opts = Object.assign(Object.create(null), options) as typeof options
+  const cfg = Object.assign(Object.create(null), config) as typeof config
   const where =
-    opts.catalogName === 'default'
-      ? `pnpm-workspace.yaml catalog: '${opts.dep}'`
-      : `pnpm-workspace.yaml catalogs.${opts.catalogName}.'${opts.dep}'`
-  const saw = `catalog pins '${opts.dep}': ${opts.workspaceValue} but pnpm-lock.yaml resolved it as ${opts.lockValue}`
+    cfg.catalogName === 'default'
+      ? `pnpm-workspace.yaml catalog: '${cfg.dep}'`
+      : `pnpm-workspace.yaml catalogs.${cfg.catalogName}.'${cfg.dep}'`
+  const saw = `catalog pins '${cfg.dep}': ${cfg.workspaceValue} but pnpm-lock.yaml resolved it as ${cfg.lockValue}`
   return {
     fix: [
       "Run `pnpm install` to reconcile pnpm-lock.yaml's catalogs block with",
@@ -103,8 +103,8 @@ function driftFinding(options: {
     ].join('\n'),
     fixable: false,
     saw,
-    wanted: `pnpm-lock.yaml catalogs.${opts.catalogName}.'${opts.dep}' specifier == ${opts.workspaceValue}`,
-    what: `Lockfile catalog drift: '${opts.dep}' (catalog '${opts.catalogName}') is out of sync with pnpm-lock.yaml`,
+    wanted: `pnpm-lock.yaml catalogs.${cfg.catalogName}.'${cfg.dep}' specifier == ${cfg.workspaceValue}`,
+    what: `Lockfile catalog drift: '${cfg.dep}' (catalog '${cfg.catalogName}') is out of sync with pnpm-lock.yaml`,
     where,
   }
 }
@@ -116,12 +116,12 @@ function driftFinding(options: {
  * `pnpm install`. Entries absent from the lockfile catalogs are skipped
  * (defined-but-unreferenced, not drift).
  */
-export function diagnoseLockfileCatalogDrift(options: {
+export function diagnoseLockfileCatalogDrift(config: {
   lockfileYaml: string
   workspaceYaml: string
 }): DoctorFinding[] {
-  const opts = Object.assign(Object.create(null), options) as typeof options
-  const lockCatalogs = parseLockfileCatalogs(opts.lockfileYaml)
+  const cfg = Object.assign(Object.create(null), config) as typeof config
+  const lockCatalogs = parseLockfileCatalogs(cfg.lockfileYaml)
   const findings: DoctorFinding[] = []
 
   const compare = (
@@ -129,7 +129,9 @@ export function diagnoseLockfileCatalogDrift(options: {
     workspaceEntries: Record<string, string>,
   ): void => {
     const lockEntries = lockCatalogs[catalogName] ?? {}
-    for (const dep of Object.keys(workspaceEntries).toSorted()) {
+    const deps = Object.keys(workspaceEntries).toSorted()
+    for (let i = 0, { length } = deps; i < length; i += 1) {
+      const dep = deps[i]!
       const workspaceValue = workspaceEntries[dep]!
       // A `catalog:`-forwarded entry (rare in the catalog block itself) has no
       // concrete version to compare — skip it.
@@ -150,9 +152,11 @@ export function diagnoseLockfileCatalogDrift(options: {
     }
   }
 
-  compare('default', parseCatalogBlock(opts.workspaceYaml))
-  const named = parseNamedCatalogs(opts.workspaceYaml)
-  for (const name of Object.keys(named).toSorted()) {
+  compare('default', parseCatalogBlock(cfg.workspaceYaml))
+  const named = parseNamedCatalogs(cfg.workspaceYaml)
+  const namedKeys = Object.keys(named).toSorted()
+  for (let i = 0, { length } = namedKeys; i < length; i += 1) {
+    const name = namedKeys[i]!
     compare(name, named[name]!)
   }
   return findings

@@ -54,16 +54,16 @@ export type Gitmodules = {
  * the spawn result, or undefined on dry-run.
  */
 export async function runGit(
-  options: CommonOpts,
+  config: CommonOpts,
   gitArgs: string[],
   runOptions: { okReturnCodes?: number[] | undefined } = {},
 ): Promise<{ code: number | null } | undefined> {
-  const opts = { __proto__: null, ...options } as CommonOpts
+  const cfg = { __proto__: null, ...config } as CommonOpts
   const okReturnCodes = runOptions.okReturnCodes ?? [0]
-  if (opts.verbose || opts.dryRun) {
+  if (cfg.verbose || cfg.dryRun) {
     logger.log(`git ${gitArgs.join(' ')}`)
   }
-  if (opts.dryRun) {
+  if (cfg.dryRun) {
     return undefined
   }
   const result = await spawn('git', gitArgs, { stdio: 'inherit' })
@@ -130,10 +130,10 @@ export async function checkGitVersion(
  * <branch> (optional) sparse-checkout = a b c (our extension; space-separated)
  */
 export async function readGitmodules(
-  options: CommonOpts,
+  config: CommonOpts,
   worktreeRoot: string,
 ): Promise<Gitmodules> {
-  const opts = { __proto__: null, ...options } as CommonOpts
+  const cfg = { __proto__: null, ...config } as CommonOpts
   const gitmodulesPath = path.join(worktreeRoot, '.gitmodules')
   if (!existsSync(gitmodulesPath)) {
     logger.error("Couldn't parse .gitmodules!")
@@ -144,7 +144,8 @@ export async function readGitmodules(
   const byName = new Map<string, Submodule>()
   const byPath = new Map<string, Submodule>()
   let current: Submodule | undefined
-  for (const rawLine of lines) {
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const rawLine = lines[i]!
     // Strip inline comments (# or ;) — but not inside quoted strings;
     // .gitmodules section headers are `[submodule "<name>"]` so we strip
     // comments per-line after the section parse.
@@ -175,7 +176,7 @@ export async function readGitmodules(
       }
     }
   }
-  if (opts.verbose) {
+  if (cfg.verbose) {
     logger.log(`parsed ${byName.size} submodules from .gitmodules`)
   }
   return { byName, byPath }
@@ -211,17 +212,12 @@ export async function getRoots(): Promise<{
  * split on whitespace (quoted paths are not yet supported).
  */
 export async function applySparsePatterns(
-  options: CommonOpts,
+  config: CommonOpts,
   submoduleWorktreeRoot: string,
   patterns: string,
 ): Promise<void> {
-  await runGit(options, [
-    '-C',
-    submoduleWorktreeRoot,
-    'sparse-checkout',
-    'init',
-  ])
-  await runGit(options, [
+  await runGit(config, ['-C', submoduleWorktreeRoot, 'sparse-checkout', 'init'])
+  await runGit(config, [
     '-C',
     submoduleWorktreeRoot,
     'sparse-checkout',

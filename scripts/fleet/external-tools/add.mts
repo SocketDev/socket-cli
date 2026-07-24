@@ -73,10 +73,10 @@ export interface BuildGithubEntryDeps {
  * same safety the updater enforces on a bump.
  */
 export function buildGithubEntry(
-  options: BuildGithubEntryOptions,
+  config: BuildGithubEntryOptions,
   deps?: BuildGithubEntryDeps | undefined,
 ): GithubReleaseTool {
-  const opts = { __proto__: null, ...options } as typeof options
+  const cfg = { __proto__: null, ...config } as typeof config
   const d = {
     __proto__: null,
     curlSha512,
@@ -86,9 +86,9 @@ export function buildGithubEntry(
     curlSha512: NonNullable<BuildGithubEntryDeps['curlSha512']>
     hexToSri: NonNullable<BuildGithubEntryDeps['hexToSri']>
   }
-  const slug = opts.repo.replace(/^github:/, '')
-  const tag = opts.tag ?? opts.version
-  const platformKeys = Object.keys(opts.platforms)
+  const slug = cfg.repo.replace(/^github:/, '')
+  const tag = cfg.tag ?? cfg.version
+  const platformKeys = Object.keys(cfg.platforms)
   if (platformKeys.length === 0) {
     throw new Error(
       'add: a github tool needs at least one --platform <key>=<asset>.',
@@ -97,7 +97,7 @@ export function buildGithubEntry(
   const platforms: Record<string, PlatformEntry> = {}
   for (let i = 0, { length } = platformKeys; i < length; i += 1) {
     const key = platformKeys[i]!
-    const asset = opts.platforms[key]!
+    const asset = cfg.platforms[key]!
     const assetUrl = `https://github.com/${slug}/releases/download/${tag}/${asset}`
     const hex = d.curlSha512(assetUrl)
     if (!hex) {
@@ -110,17 +110,17 @@ export function buildGithubEntry(
     platforms[key] = { asset, integrity: d.hexToSri(hex) }
   }
   const entry: GithubReleaseTool = {
-    version: opts.version,
+    version: cfg.version,
     repository: `github:${slug}`,
-    release: opts.release ?? 'asset',
+    release: cfg.release ?? 'asset',
     platforms,
   }
-  if (opts.description) {
-    entry.description = opts.description
+  if (cfg.description) {
+    entry.description = cfg.description
   }
-  if (opts.binaryName) {
+  if (cfg.binaryName) {
     ;(entry as unknown as Record<string, unknown>)['binaryName'] =
-      opts.binaryName
+      cfg.binaryName
   }
   return entry
 }
@@ -143,10 +143,10 @@ export interface BuildNpmEntryDeps {
  * no integrity for that version.
  */
 export async function buildNpmEntry(
-  options: BuildNpmEntryOptions,
+  config: BuildNpmEntryOptions,
   deps?: BuildNpmEntryDeps | undefined,
 ): Promise<NpmTool> {
-  const opts = { __proto__: null, ...options } as typeof options
+  const cfg = { __proto__: null, ...config } as typeof config
   const d = {
     __proto__: null,
     fetchNpmVersionIntegrity,
@@ -156,19 +156,20 @@ export async function buildNpmEntry(
       BuildNpmEntryDeps['fetchNpmVersionIntegrity']
     >
   }
-  const integrity = await d.fetchNpmVersionIntegrity(opts.npmName, opts.version)
+  const integrity = await d.fetchNpmVersionIntegrity(cfg.npmName, cfg.version)
   if (!integrity) {
     throw new Error(
-      `add: npm integrity fetch failed for ${opts.npmName}@${opts.version}. ` +
+      `add: npm integrity fetch failed for ${cfg.npmName}@${cfg.version}. ` +
         `Fix: confirm the version exists on the registry, then retry.`,
     )
   }
   const entry: NpmTool = {
-    purl: `pkg:npm/${opts.npmName}@${opts.version}`,
     integrity,
+    repository: `npm:${cfg.npmName}`,
+    version: cfg.version,
   }
-  if (opts.description) {
-    entry.description = opts.description
+  if (cfg.description) {
+    entry.description = cfg.description
   }
   return entry
 }

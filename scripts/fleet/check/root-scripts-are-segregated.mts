@@ -12,6 +12,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { collectTrackedFiles } from '../_shared/tracked-globs.mts'
+import { REPO_ROOT } from '../paths.mts'
 
 const logger = getDefaultLogger()
 
@@ -22,7 +23,7 @@ export async function findLooseRootScripts(
 }
 
 async function main(): Promise<number> {
-  const files = await findLooseRootScripts(process.cwd())
+  const files = await findLooseRootScripts(REPO_ROOT)
   if (files.length === 0) {
     logger.success(
       '[root-scripts-are-segregated] root scripts are segregated into scripts/fleet/ or scripts/repo/.',

@@ -19,7 +19,7 @@
  *   docs/agents.md/fleet/wheelhouse-controlled-drift.md.
  */
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
@@ -30,7 +30,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 // the two can never disagree (importing the hook is a no-op — its runHook is
 // entrypoint-guarded). Same shape as golden-fixtures-are-named-golden importing
 // the golden-fixture-naming-guard predicate.
-import { NATIVE_HANDLER_FILES } from '../../../.claude/hooks/fleet/wheelhouse-drift-guard/index.mts'
+import { NATIVE_HANDLER_FILES } from '../../../.claude/hooks/fleet/_shared/native-handler-files.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { REPO_ROOT } from '../paths.mts'
 
@@ -107,7 +107,9 @@ export function isClassified(
 
 /**
  * Walk `baseDir`, returning every file's repo-relative POSIX path (sorted).
- * Skips `.git` / `node_modules` — local state, never template content.
+ * Skips `.git` / `node_modules` — local state, never template content — and
+ * `.DS_Store`: gitignored macOS Finder noise that respawns while a Finder
+ * window is open on the tree, so counting it makes the check flap on macOS.
  */
 export function walkBaseFiles(baseDir: string): string[] {
   const out: string[] = []
@@ -120,7 +122,11 @@ export function walkBaseFiles(baseDir: string): string[] {
     }
     for (let i = 0, { length } = entries; i < length; i += 1) {
       const entry = entries[i]!
-      if (entry.name === '.git' || entry.name === 'node_modules') {
+      if (
+        entry.name === '.DS_Store' ||
+        entry.name === '.git' ||
+        entry.name === 'node_modules'
+      ) {
         continue
       }
       const childRel = rel ? `${rel}/${entry.name}` : entry.name

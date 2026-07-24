@@ -65,10 +65,48 @@ export function computeForwardedArgs(argv: string[]): string[] {
   return argv.filter(isForwardedArg)
 }
 
-// Parallel width for the read-only check pool: all cores but one (leave the box
-// responsive). Each check is its own subprocess, so this caps CONCURRENT spawns,
-// not the total check count.
-const CONCURRENCY = Math.max(1, (os.availableParallelism?.() ?? 4) - 1)
+// Parallel width for the read-only check pool: all cores but one by default
+// (leave the box responsive), overridable via FLEET_CHECK_CONCURRENCY (=1 is
+// the honest serial baseline when measuring the pool's win). Each check is its
+// own subprocess, so this caps CONCURRENT spawns, not the total check count.
+// Pure — exported for tests.
+export function resolveConcurrency(
+  envValue: string | undefined,
+  cores: number,
+): number {
+  const parsed = Number.parseInt(envValue ?? '', 10)
+  if (Number.isFinite(parsed) && parsed > 0) {
+    return parsed
+  }
+  return Math.max(1, cores - 1)
+}
+
+const CONCURRENCY = resolveConcurrency(
+  process.env['FLEET_CHECK_CONCURRENCY'],
+  os.availableParallelism?.() ?? 4,
+)
+
+/**
+ * Render the per-check wall-time summary, slowest first, with the pool's
+ * aggregate (sum of subprocess time) vs implied wall win. Timing regressions
+ * in an individual check are visible run over run instead of hiding inside
+ * the pool's overlap. Pure — exported for tests.
+ */
+export function renderTimingSummary(
+  timings: ReadonlyArray<{ label: string; ms: number }>,
+): string {
+  const sorted = timings.toSorted((a, b) => b.ms - a.ms)
+  const lines = [`[check] per-check wall time (slowest first):`]
+  for (let i = 0, { length } = sorted; i < length; i += 1) {
+    const t = sorted[i]!
+    lines.push(`  ${String(Math.round(t.ms)).padStart(6)}ms ${t.label}`)
+  }
+  const totalMs = timings.reduce((sum, t) => sum + t.ms, 0)
+  lines.push(
+    `[check] ${timings.length} check(s), ${(totalMs / 1000).toFixed(1)}s of subprocess time`,
+  )
+  return lines.join('\n')
+}
 
 // Repo-tier (auto-discovered) checks that are RELEASE/CI-only — the heavy
 // wall-clock long poles a dev's inner loop shouldn't pay: dogfood-is-current
@@ -126,6 +164,7 @@ export async function main(): Promise<void> {
       REPO_ROOT,
       'node_modules',
       '.cache',
+      'fleet',
       'fleet-checks',
     )
   }
@@ -160,7 +199,7 @@ export async function main(): Promise<void> {
   // Read-only invariant: a check run WITHOUT --fix must not mutate the tree. A
   // check that writes on its argless path (the runner invokes every check
   // argless) silently drifts a TRACKED file and hard-fails a later gate — past
-  // incident: template-fleet-oxlint-ignore-current re-spliced oxlintrc.json
+  // incident: template-fleet-oxlint-ignore-is-current re-spliced oxlintrc.json
   // during `check --all`, which then tripped dogfood-is-current on the next
   // run. Snapshot around the run and fail naming the offending paths. Skipped
   // in --fix mode (fixers are meant to write) and fail-open outside git.
@@ -193,19 +232,24 @@ export async function main(): Promise<void> {
     // pass surfaces EVERY failure instead of one-per-rerun. Each check's block
     // is captured + written atomically on completion (progress, never interleaved).
     const failedLabels: string[] = []
+    const timings: Array<{ label: string; ms: number }> = []
     await runPool(steps, CONCURRENCY, async step => {
       const r = await step()
       emit(r)
       if (r.skipped) {
         skippedReleaseChecks += 1
+      } else {
+        timings.push({ label: r.label, ms: r.ms })
       }
       if (!r.ok) {
         failedLabels.push(r.label)
       }
     })
+    logger.log(renderTimingSummary(timings))
     if (failedLabels.length) {
+      logger.error('')
       logger.error(
-        `\n[check] ${failedLabels.length} check(s) failed: ${failedLabels.join(', ')}`,
+        `[check] ${failedLabels.length} check(s) failed: ${failedLabels.join(', ')}`,
       )
       process.exitCode = 1
     }

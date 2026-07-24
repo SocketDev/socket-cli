@@ -54,7 +54,7 @@ const MTS_WRAPPER_RE = /^node\s+\S+\.mts\b/
 // invocation.
 // require-regex-comment: matches a bare vitest/jest/mocha/ava/tap runner token, or `node ... --test`.
 const RAW_RUNNER_RE =
-  /\b(?:vitest|jest|mocha|ava|tap)\b|\bnode\b[^&|;]*--test\b/
+  /\b(?:ava|jest|mocha|tap|vitest)\b|\bnode\b[^&|;]*--test\b/
 
 // The hook / lint-rule / git-hook tier's canonical runner IS `node --test`
 // (CLAUDE.md "Two test runners by tier"); this gate never applies there.

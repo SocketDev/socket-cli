@@ -37,10 +37,12 @@ interface GitRunResult {
 
 function git(
   args: readonly string[],
-  options?: {
-    env?: Record<string, string> | undefined
-    input?: string | undefined
-  },
+  options?:
+    | {
+        env?: Record<string, string> | undefined
+        input?: string | undefined
+      }
+    | undefined,
 ): GitRunResult {
   const opts = { __proto__: null, ...options } as {
     env?: Record<string, string> | undefined
@@ -59,10 +61,12 @@ function git(
 function gitOrDie(
   args: readonly string[],
   what: string,
-  options?: {
-    env?: Record<string, string> | undefined
-    input?: string | undefined
-  },
+  options?:
+    | {
+        env?: Record<string, string> | undefined
+        input?: string | undefined
+      }
+    | undefined,
 ): string {
   const r = git(args, options)
   if (r.status !== 0) {

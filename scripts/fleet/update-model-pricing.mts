@@ -7,7 +7,7 @@
  *   researching-recency feed when a number isn't directly available, then read
  *   off the numbers); this script owns the write so the JSON shape, sort order,
  *   and snapshot date stay canonical and a hand-typed price can't drift the
- *   format. Mirrors the make-coverage-badge.mts pattern — the skill is
+ *   format. Mirrors the gen/coverage-badge.mts pattern — the skill is
  *   orchestration over this owner, never re-deriving the data shape in shell.
  *   Prices come in as a JSON object of `{ "<model-id>": { inputPerMtok,
  *   outputPerMtok }, ... }` via `--prices <json>` or on stdin, and merge into
@@ -133,40 +133,40 @@ export function readSourcedPrices(
 // Returns the new PricingData; pure given its inputs.
 export function applyPricingUpdate(
   current: PricingData,
-  options: UpdatePricingOptions,
+  config: UpdatePricingOptions,
 ): PricingData {
-  options = { __proto__: null, ...options } as typeof options
+  config = { __proto__: null, ...config } as typeof config
   const services = {
     __proto__: null,
     ...current.services,
   } as unknown as typeof current.services
-  const target = services[options.service]
+  const target = services[config.service]
   if (!target) {
     const known = Object.keys(current.services ?? {}).join(', ')
     throw new Error(
-      `unknown service "${options.service}". Known: ${known}. ` +
+      `unknown service "${config.service}". Known: ${known}. ` +
         'Pass --service <id> matching a service in model-pricing.json.',
     )
   }
   // --replace starts from an empty block (rename/prune migration); a normal
   // refresh starts from the current models and merges over them.
-  const models: Record<string, ModelPrice> = options.replace
+  const models: Record<string, ModelPrice> = config.replace
     ? ({ __proto__: null } as unknown as Record<string, ModelPrice>)
     : ({ __proto__: null, ...target.models } as unknown as Record<
         string,
         ModelPrice
       >)
-  for (const [model, price] of Object.entries(options.prices)) {
-    models[model] = options.replace
+  for (const [model, price] of Object.entries(config.prices)) {
+    models[model] = config.replace
       ? ({ ...price } as ModelPrice)
       : ({ ...models[model], ...price } as ModelPrice)
   }
-  services[options.service] = {
+  services[config.service] = {
     ...target,
     models,
-    snapshot: options.date,
-    ...(options.aliases !== undefined ? { aliases: options.aliases } : {}),
-    ...(options.source ? { pricingSource: options.source } : {}),
+    snapshot: config.date,
+    ...(config.aliases !== undefined ? { aliases: config.aliases } : {}),
+    ...(config.source ? { pricingSource: config.source } : {}),
   }
   return { ...current, services }
 }
@@ -189,7 +189,9 @@ function main(): void {
 
   if (check) {
     logger.info('[update-model-pricing] current per-service snapshots:')
-    for (const serviceId of Object.keys(current.services ?? {})) {
+    const serviceIds = Object.keys(current.services ?? {})
+    for (let i = 0, { length } = serviceIds; i < length; i += 1) {
+      const serviceId = serviceIds[i]!
       const svc = current.services[serviceId]!
       logger.info(
         `  ${serviceId}: snapshot ${svc.snapshot}, source ${svc.pricingSource}`,

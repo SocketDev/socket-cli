@@ -120,7 +120,9 @@ export function parseWwwAuthenticate(
   if (!bearer) {
     return undefined
   }
-  const params: Record<string, string> = { __proto__: null! }
+  const params: Record<string, string> = Object.create(null)
+  // Each challenge param is `key="value"`: capture 1 = the word-char key,
+  // capture 2 = the quoted value (anything but a double quote).
   for (const match of bearer[1]!.matchAll(/(\w+)="([^"]*)"/g)) {
     params[match[1]!] = match[2]!
   }
@@ -545,6 +547,8 @@ export function repinFrom(
   digest: string,
 ): string {
   const canonical = digest.startsWith('sha256:') ? digest : `sha256:${digest}`
+  // Split a Dockerfile FROM line: capture 1 = leading whitespace + the FROM
+  // keyword + trailing space (preserved verbatim), capture 2 = the rest.
   const from = /^(\s*FROM\s+)(.*)$/i.exec(line)
   if (!from) {
     return line
@@ -604,9 +608,10 @@ export async function planRepinForRef(
     }
     return true
   })
-  const createdByTag: Record<string, Date> = { __proto__: null! }
-  const digestByTag: Record<string, string> = { __proto__: null! }
-  for (const tag of candidates) {
+  const createdByTag: Record<string, Date> = Object.create(null)
+  const digestByTag: Record<string, string> = Object.create(null)
+  for (let i = 0, { length } = candidates; i < length; i += 1) {
+    const tag = candidates[i]!
     const info = await imageCreatedTime(ref.registry, ref.repo, tag, token)
     createdByTag[tag] = info.created
     digestByTag[tag] = info.digest

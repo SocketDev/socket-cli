@@ -169,7 +169,9 @@ export function defaultCommandExists(command: string): boolean {
     process.platform === 'win32'
       ? (process.env['PATHEXT'] ?? '.EXE;.CMD;.BAT;.COM').split(';')
       : ['']
-  for (const dir of pathVar.split(path.delimiter)) {
+  const dirs = pathVar.split(path.delimiter)
+  for (let i = 0, { length } = dirs; i < length; i += 1) {
+    const dir = dirs[i]!
     if (dir === '') {
       continue
     }

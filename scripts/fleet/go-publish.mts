@@ -54,9 +54,9 @@ import {
   parseModuleDirective,
   parseReleaseTag,
   proxyInfoUrl,
+  PUBLIC_GO_PROXY,
   verifyModuleAvailable,
   versionMajor,
-  PUBLIC_GO_PROXY,
 } from './publish-infra/go/shared.mts'
 import {
   logger,

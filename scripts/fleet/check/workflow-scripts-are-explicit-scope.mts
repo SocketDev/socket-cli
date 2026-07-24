@@ -35,7 +35,7 @@ const logger = getDefaultLogger()
 // `test:npm`-style sibling scripts from matching.
 // oxlint-disable-next-line socket/require-regex-comment -- documented above
 const INVOCATION_RE =
-  /(?:pnpm\s+(?:run\s+)?|node\s+scripts\/fleet\/)(?:test|lint|check)(?:\.mts)?(?=$|[\s'"&|;)])/g
+  /(?:node\s+scripts\/fleet\/|pnpm\s+(?:run\s+)?)(?:check|lint|test)(?:\.mts)?(?=$|[\s'"&|;)])/g
 
 export interface ImplicitScopeFinding {
   line: number
@@ -64,7 +64,7 @@ export function findImplicitScopeInvocations(
     }
     const rest = line.slice(m.index + m[0].length)
     const scoped =
-      /--(?:all|staged|modified)\b/.test(rest) ||
+      /--(?:all|modified|staged)\b/.test(rest) ||
       rest.split(/\s+/).some(tok => tok.includes('/'))
     if (!scoped) {
       findings.push({ line: i + 1, text: line.trim() })
@@ -82,7 +82,7 @@ function workflowFiles(dir: string): string[] {
       f =>
         (f.endsWith('.yml') || f.endsWith('.yaml')) && !f.endsWith('.lock.yml'),
     )
-    .sort()
+    .toSorted()
     .map(f => path.join(dir, f))
 }
 
@@ -93,7 +93,8 @@ async function main(): Promise<void> {
     path.join(REPO_ROOT, 'template', 'base', '.github', 'workflows'),
   ]
   const errors: string[] = []
-  for (const dir of dirs) {
+  for (let i = 0, { length } = dirs; i < length; i += 1) {
+    const dir = dirs[i]!
     for (const file of workflowFiles(dir)) {
       const rel = path.relative(REPO_ROOT, file)
       for (const f of findImplicitScopeInvocations(

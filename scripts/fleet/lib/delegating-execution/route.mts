@@ -83,26 +83,26 @@ export interface TierRouteOptions {
   readonly mechanical?: boolean | undefined
 }
 
-export function routeTierForTask(options: TierRouteOptions): TierRoute {
-  const opts: TierRouteOptions = {
+export function routeTierForTask(config: TierRouteOptions): TierRoute {
+  const cfg: TierRouteOptions = {
     __proto__: null,
-    ...options,
+    ...config,
   } as TierRouteOptions
-  if (!PHASES.includes(opts.phase)) {
+  if (!PHASES.includes(cfg.phase)) {
     throw new Error(
-      `routeTierForTask: unknown phase. Where: options.phase. Saw: ${String(opts.phase)}. Wanted one of: ${PHASES.join(', ')}. Fix: pass a PHASES member.`,
+      `routeTierForTask: unknown phase. Where: options.phase. Saw: ${String(cfg.phase)}. Wanted one of: ${PHASES.join(', ')}. Fix: pass a PHASES member.`,
     )
   }
-  if (!SENSITIVITIES.includes(opts.sensitivity)) {
+  if (!SENSITIVITIES.includes(cfg.sensitivity)) {
     throw new Error(
-      `routeTierForTask: unknown sensitivity. Where: options.sensitivity. Saw: ${String(opts.sensitivity)}. Wanted one of: ${SENSITIVITIES.join(', ')}. Fix: pass a SENSITIVITIES member; when unsure use 'security' (fail-safe away from Fable refusals).`,
+      `routeTierForTask: unknown sensitivity. Where: options.sensitivity. Saw: ${String(cfg.sensitivity)}. Wanted one of: ${SENSITIVITIES.join(', ')}. Fix: pass a SENSITIVITIES member; when unsure use 'security' (fail-safe away from Fable refusals).`,
     )
   }
   if (
-    opts.mechanical === true &&
-    (opts.phase === 'execute' || opts.phase === 'followup')
+    cfg.mechanical === true &&
+    (cfg.phase === 'execute' || cfg.phase === 'followup')
   ) {
     return MECHANICAL_ROUTE
   }
-  return TIER_TABLE[opts.phase][opts.sensitivity]
+  return TIER_TABLE[cfg.phase][cfg.sensitivity]
 }

@@ -23,6 +23,10 @@ import { buildReleaseAndDocsSteps } from './check-steps-release.mts'
 // concurrent checks would otherwise interleave their streams into noise.
 export interface StepResult {
   label: string
+  // Wall time of the check subprocess in milliseconds — the runner renders a
+  // slowest-first timing summary so per-check latency regressions are visible
+  // run over run.
+  ms: number
   ok: boolean
   output: string
   // True when a release/CI-only step no-oped on the interactive tier (see
@@ -49,16 +53,30 @@ export function stepLabel(cmd: string, cmdArgs: readonly string[]): string {
 // the runner aggregates verdicts and must not have to catch.
 export async function run(cmd: string, cmdArgs: string[]): Promise<StepResult> {
   const label = stepLabel(cmd, cmdArgs)
+  const startMs = Date.now()
   try {
     const r = (await spawn(cmd, cmdArgs, {
       stdio: 'pipe',
       stdioString: true,
-    })) as { stderr?: string; stdout?: string }
-    return { label, ok: true, output: `${r?.stdout ?? ''}${r?.stderr ?? ''}` }
+    })) as { stderr?: string | undefined; stdout?: string | undefined }
+    return {
+      label,
+      ms: Date.now() - startMs,
+      ok: true,
+      output: `${r?.stdout ?? ''}${r?.stderr ?? ''}`,
+    }
   } catch (e) {
-    const err = e as { stderr?: string; stdout?: string }
+    const err = e as {
+      stderr?: string | undefined
+      stdout?: string | undefined
+    }
     const output = `${err?.stdout ?? ''}${err?.stderr ?? ''}`
-    return { label, ok: false, output: output || errorMessage(e) || String(e) }
+    return {
+      label,
+      ms: Date.now() - startMs,
+      ok: false,
+      output: output || errorMessage(e) || String(e),
+    }
   }
 }
 
@@ -74,6 +92,7 @@ export function releaseStep(cmdArgs: string[]): CheckStep {
       ? run('node', cmdArgs)
       : Promise.resolve({
           label: stepLabel('node', cmdArgs),
+          ms: 0,
           ok: true,
           output: '',
           skipped: true,

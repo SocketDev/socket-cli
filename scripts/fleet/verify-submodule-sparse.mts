@@ -110,7 +110,8 @@ function runCheck(blocks: SubmoduleBlock[]): number {
     )
     return 0
   }
-  for (const g of gaps) {
+  for (let i = 0, { length } = gaps; i < length; i += 1) {
+    const g = gaps[i]!
     logger.fail(
       `[submodule "${g.name}"] has a \`sparse-checkout\` but no \`verify =\` — declare the command that consumes it (so the pattern can be build-proven), or \`verify = none\` for a reference-only checkout.`,
     )

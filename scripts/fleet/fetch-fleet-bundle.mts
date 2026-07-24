@@ -105,7 +105,9 @@ export function verifyFiles(
   manifest: BundleManifest,
 ): string[] {
   const problems: string[] = []
-  for (const rel of Object.keys(manifest.files)) {
+  const relList = Object.keys(manifest.files)
+  for (let i = 0, { length } = relList; i < length; i += 1) {
+    const rel = relList[i]!
     const abs = path.join(filesDir, rel)
     if (!existsSync(abs)) {
       problems.push(`missing from bundle: ${rel}`)
@@ -201,7 +203,9 @@ export async function main(): Promise<number> {
     }
 
     // 5. Place the verified files into the repo.
-    for (const rel of Object.keys(manifest.files)) {
+    const rels = Object.keys(manifest.files)
+    for (let i = 0, { length } = rels; i < length; i += 1) {
+      const rel = rels[i]!
       const dest = path.join(opts.dest, rel)
       mkdirSync(path.dirname(dest), { recursive: true })
       cpSync(path.join(filesDir, rel), dest)
@@ -215,4 +219,12 @@ export async function main(): Promise<number> {
   }
 }
 
-process.exitCode = await main()
+main().then(
+  code => {
+    process.exitCode = code
+  },
+  (e: unknown) => {
+    logger.error(e)
+    process.exitCode = 1
+  },
+)

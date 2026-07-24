@@ -29,7 +29,7 @@ const MAX_FILE_SIZE = 2 * 1024 * 1024
 const ALLOWED_LARGE_SUFFIXES: readonly string[] = [
   // Rolldown-bundled fleet hook dispatcher, its V8-snapshot variant, and the
   // excluded-hooks companion bundle (non-bundle-safe hooks, same build).
-  '.claude/hooks/fleet/_dispatch/bundle.cjs',
+  '.claude/hooks/fleet/_dist/bundle.cjs',
   '.claude/hooks/fleet/_dispatch/excluded-bundle.cjs',
   '.claude/hooks/fleet/_dispatch/snapshot-bundle.cjs',
 ]
@@ -65,7 +65,7 @@ export async function loadSizeCapExceptions(
         `Fix the syntax (or drop the config to run with no exceptions).`,
     )
   }
-  const allow = (parsed as { allow?: unknown })?.allow
+  const allow = (parsed as { allow?: unknown | undefined })?.allow
   if (!Array.isArray(allow)) {
     throw new Error(
       `${EXCEPTIONS_CONFIG} must be { "allow": [{ "path", "reason" }] } — ` +
@@ -74,8 +74,8 @@ export async function loadSizeCapExceptions(
   }
   const paths = new Set<string>()
   for (const entry of allow) {
-    const p = (entry as { path?: unknown })?.path
-    const reason = (entry as { reason?: unknown })?.reason
+    const p = (entry as { path?: unknown | undefined })?.path
+    const reason = (entry as { reason?: unknown | undefined })?.reason
     if (typeof p !== 'string' || p === '' || p.includes('*')) {
       throw new Error(
         `${EXCEPTIONS_CONFIG}: every allow entry needs an exact ` +

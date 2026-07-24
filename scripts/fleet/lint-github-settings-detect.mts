@@ -100,7 +100,7 @@ export function resolveRepo(): string | undefined {
 export function ghApi<T>(
   endpoint: string,
   method: 'GET' | 'PATCH' = 'GET',
-  body?: Record<string, unknown>,
+  body?: Record<string, unknown> | undefined,
 ): T | undefined {
   const args = ['api', endpoint]
   if (method !== 'GET') {

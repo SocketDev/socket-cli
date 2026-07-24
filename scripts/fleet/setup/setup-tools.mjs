@@ -239,7 +239,7 @@ function main() {
   // uv BEFORE regenerateShims: installUv writes a plain exec-the-rack shim
   // (its standalone-bootstrap form), and regenerateShims must run after it so
   // the sfw-wrapped shim is the one that survives — the firewall wrap on uv is
-  // the contract (docs/references/sfw-local-install.md §3). uv here also
+  // the contract (docs/references/fleet/sfw-local-install.md §3). uv here also
   // guarantees a hash-locked install for the uv-project tools (SkillSpector's
   // uv.lock) that run after the bootstrap.
   installUv(platform)

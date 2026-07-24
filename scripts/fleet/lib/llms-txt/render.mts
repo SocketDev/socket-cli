@@ -114,7 +114,8 @@ export function parseStructure(content: string): LlmsStructure {
   const sectionLinks: Record<string, Array<[string, string]>> = {}
   let currentSection: string | undefined
 
-  for (const line of lines) {
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
     const trimmed = line.trim()
     if (trimmed.startsWith('# ') && h1 === '') {
       h1 = trimmed.slice(2).trim()

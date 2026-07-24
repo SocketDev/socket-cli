@@ -41,6 +41,7 @@ import { isMainModule } from '../_shared/is-main-module.mts'
 const logger = getDefaultLogger()
 
 export interface CargoSoakConfigSurfaces {
+  readonly configPresent: boolean
   readonly globalMinPublishAgeDays: number | undefined
   readonly hasOwnCargoToml: boolean
   readonly hasTrackedLock: boolean
@@ -54,7 +55,7 @@ export interface CargoSoakConfigSurfaces {
  * `.cargo/config.toml` body.
  */
 export function extractMinPublishAgeEnabled(toml: string): boolean | undefined {
-  const match = /^min-publish-age\s*=\s*(true|false)\s*$/m.exec(toml)
+  const match = /^min-publish-age\s*=\s*(false|true)\s*$/m.exec(toml)
   return match ? match[1] === 'true' : undefined
 }
 
@@ -81,36 +82,48 @@ export function extractIncompatiblePublishAgeDeny(
 /**
  * Mismatches between the observed `.cargo/config.toml` + lock state and the
  * canonical soak posture. Empty means in sync. Pure — the unit-test target.
- * The config-parity checks run regardless of `hasOwnCargoToml` (the file
- * cascades unconditionally, so its parity with `SOAK_DAYS` must hold
- * everywhere); the tracked-lock check only applies when the repo owns a
- * Cargo.toml.
+ * `.cargo/config.toml` cascades via the cargo capability (conditional), so a
+ * repo with neither the file nor an own Cargo.toml is simply outside the
+ * group — no findings. A cargo-owning repo missing the file, or any repo
+ * carrying a drifted copy, is flagged; the tracked-lock check only applies
+ * when the repo owns a Cargo.toml.
  */
 export function findCargoSoakConfigIssues(
-  options: CargoSoakConfigSurfaces,
+  config: CargoSoakConfigSurfaces,
 ): string[] {
-  const opts = { __proto__: null, ...options } as CargoSoakConfigSurfaces
+  const cfg = { __proto__: null, ...config } as CargoSoakConfigSurfaces
+  if (!cfg.configPresent && !cfg.hasOwnCargoToml) {
+    return []
+  }
   const out: string[] = []
-  if (opts.minPublishAgeEnabled !== true) {
+  if (!cfg.configPresent) {
+    out.push(
+      '.cargo/config.toml is missing — this repo owns a Cargo.toml, so the ' +
+        'cargo capability soak config must be present. Fix: declare the ' +
+        'cargo capability and re-cascade.',
+    )
+    return out
+  }
+  if (cfg.minPublishAgeEnabled !== true) {
     out.push(
       `.cargo/config.toml [unstable] min-publish-age is ` +
-        `${opts.minPublishAgeEnabled ?? '(missing)'}, wanted true.`,
+        `${cfg.minPublishAgeEnabled ?? '(missing)'}, wanted true.`,
     )
   }
-  if (opts.globalMinPublishAgeDays !== opts.soakDays) {
+  if (cfg.globalMinPublishAgeDays !== cfg.soakDays) {
     out.push(
       `.cargo/config.toml [registry] global-min-publish-age is ` +
-        `${opts.globalMinPublishAgeDays ?? '(missing)'}, wanted ` +
-        `${opts.soakDays} (SOAK_DAYS).`,
+        `${cfg.globalMinPublishAgeDays ?? '(missing)'}, wanted ` +
+        `${cfg.soakDays} (SOAK_DAYS).`,
     )
   }
-  if (opts.incompatiblePublishAgeDeny !== true) {
+  if (cfg.incompatiblePublishAgeDeny !== true) {
     out.push(
       `.cargo/config.toml [resolver] incompatible-publish-age is ` +
-        `${opts.incompatiblePublishAgeDeny ?? '(missing)'}, wanted "deny".`,
+        `${cfg.incompatiblePublishAgeDeny ?? '(missing)'}, wanted "deny".`,
     )
   }
-  if (opts.hasOwnCargoToml && !opts.hasTrackedLock) {
+  if (cfg.hasOwnCargoToml && !cfg.hasTrackedLock) {
     out.push(
       'no Cargo.lock is tracked by git — the config keys above are inert ' +
         'on the stable toolchain this repo builds with, so there is no ' +
@@ -146,6 +159,7 @@ function main(): void {
     ? readFileSync(configPath, 'utf8')
     : undefined
   const issues = findCargoSoakConfigIssues({
+    configPresent: toml !== undefined,
     globalMinPublishAgeDays:
       toml === undefined ? undefined : extractGlobalMinPublishAge(toml),
     hasOwnCargoToml,

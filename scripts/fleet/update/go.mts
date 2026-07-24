@@ -19,10 +19,15 @@ import process from 'node:process'
 
 import { httpRequest } from '@socketsecurity/lib-stable/http-request'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { rcompare, valid } from 'semver'
+import { isValidVersion } from '@socketsecurity/lib-stable/versions/parse'
+import { maxVersion } from '@socketsecurity/lib-stable/versions/range'
 
 import { findOwnFiles, requireSoakDays } from './_shared.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { REPO_ROOT } from '../paths.mts'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
+
+const logger = getDefaultLogger()
 
 const DAY_MS = 86_400_000
 
@@ -169,7 +174,10 @@ export async function fetchVersionTime(
       `proxy ${base} returned ${res.status} for ${modulePath}@${version}`,
     )
   }
-  const info = res.json<{ Time?: string; Version?: string }>()
+  const info = res.json<{
+    Time?: string | undefined
+    Version?: string | undefined
+  }>()
   if (!info || typeof info.Time !== 'string' || info.Time === '') {
     throw new Error(
       `proxy ${base} returned no publish time for ${modulePath}@${version}`,
@@ -201,7 +209,8 @@ export async function fetchVersionTimeWithFallback(
   ) => Promise<Date> = fetchVersionTime,
 ): Promise<Date> {
   let lastErr: unknown
-  for (const entry of entries) {
+  for (let i = 0, { length } = entries; i < length; i += 1) {
+    const entry = entries[i]!
     if (entry.isDirect) {
       lastErr = new Error(
         `module ${modulePath}@${version} requires direct VCS access (no proxy)`,
@@ -262,7 +271,7 @@ export function newestSoakClearedVersion(
   const soakMs = soakDays * DAY_MS
   const nowMs = now.getTime()
   const cleared = versions.filter(version => {
-    if (!valid(version, { loose: true })) {
+    if (!isValidVersion(version)) {
       return false
     }
     const time = timesByVersion.get(version)
@@ -274,7 +283,7 @@ export function newestSoakClearedVersion(
   if (cleared.length === 0) {
     return undefined
   }
-  return [...cleared].sort((a, b) => rcompare(a, b, { loose: true }))[0]
+  return maxVersion(cleared)
 }
 
 /**
@@ -327,7 +336,8 @@ export function parseGoMod(text: string): GoModule[] {
   const modules: GoModule[] = []
   const lines = text.split('\n')
   let inBlock = false
-  for (const rawLine of lines) {
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const rawLine = lines[i]!
     const withoutComment = rawLine.split('//')[0] ?? ''
     const line = withoutComment.trim()
     if (line === '') {
@@ -382,16 +392,15 @@ export function formatDays(ms: number): string {
  * passes the fleet soak); it is never hardcoded to a policy value.
  */
 export async function main(argv: string[]): Promise<number> {
-  const logger = getDefaultLogger()
   const checkMode = argv.includes('--check')
   let soakDays: number
   try {
     soakDays = requireSoakDays(argv, 'update/go')
   } catch (e) {
-    logger.error(e instanceof Error ? e.message : String(e))
+    logger.error(errorMessage(e))
     return 2
   }
-  const cwd = process.cwd()
+  const cwd = REPO_ROOT
   const goModFiles = findGoModFiles(cwd)
   if (goModFiles.length === 0) {
     logger.info('update/go: no own go.mod found — nothing to do.')
@@ -467,7 +476,7 @@ if (isMainModule(import.meta.url)) {
       process.exitCode = code
     },
     (e: unknown) => {
-      getDefaultLogger().error(e instanceof Error ? e.message : String(e))
+      logger.error(errorMessage(e))
       process.exitCode = 1
     },
   )

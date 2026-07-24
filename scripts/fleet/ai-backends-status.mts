@@ -68,10 +68,10 @@ export function summarizeAiBackends(probe: BackendProbe): BackendStatus[] {
     },
     {
       key: 'codex',
-      label: 'Codex (review / diagnosis — codex:codex-rescue)',
+      label: 'Codex (review / diagnosis)',
       ready: probe.installed.has('codex') && probe.codexAuthed,
       fix: !probe.installed.has('codex')
-        ? 'install the codex CLI (fleet plugin), then: codex login'
+        ? 'install the codex CLI, then: codex login'
         : probe.codexAuthed
           ? undefined
           : 'codex login',
@@ -151,8 +151,13 @@ export function parseRequired(argv: readonly string[]): Set<string> {
     if (argv[i] === '--require') {
       const value = argv[i + 1]
       if (value) {
-        for (const token of value.split(',')) {
-          const trimmed = token.trim()
+        const tokens = value.split(',')
+        for (
+          let j = 0, { length: tokenCount } = tokens;
+          j < tokenCount;
+          j += 1
+        ) {
+          const trimmed = tokens[j]!.trim()
           if (trimmed) {
             required.add(trimmed)
           }

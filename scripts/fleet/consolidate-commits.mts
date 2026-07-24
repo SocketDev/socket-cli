@@ -35,6 +35,7 @@ import { groupPaths } from './land-work.mts'
 import { commitMessage } from './land-work/message.mts'
 import { REPO_ROOT } from './paths.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 
 const logger = getDefaultLogger()
 
@@ -95,12 +96,12 @@ export function defaultBase(tip: string): string | undefined {
  * the base sits on superseded history and consolidating onto it re-embeds
  * old-lineage commits.
  */
-export function isOffLineage(options: {
+export function isOffLineage(config: {
   baseReachableFromOrigin: boolean
   originReachableFromBase: boolean
 }): boolean {
-  const opts = { __proto__: null, ...options }
-  return !opts.baseReachableFromOrigin && !opts.originReachableFromBase
+  const cfg = { __proto__: null, ...config }
+  return !cfg.baseReachableFromOrigin && !cfg.originReachableFromBase
 }
 
 export interface RewritePushLineage {
@@ -114,13 +115,13 @@ export type RewritePushDisposition = 'fast-forward' | 'lease-force' | 'unknown'
  * Classify the push required after the local history rewrite.
  */
 export function classifyRewritePush(
-  options: RewritePushLineage,
+  config: RewritePushLineage,
 ): RewritePushDisposition {
-  const opts = { __proto__: null, ...options } as RewritePushLineage
-  if (!opts.originAvailable) {
+  const cfg = { __proto__: null, ...config } as RewritePushLineage
+  if (!cfg.originAvailable) {
     return 'unknown'
   }
-  return opts.originIsAncestorOfHead ? 'fast-forward' : 'lease-force'
+  return cfg.originIsAncestorOfHead ? 'fast-forward' : 'lease-force'
 }
 
 /**
@@ -328,7 +329,7 @@ function main(): void {
     git(['reset', '--hard', orig])
     git(['update-ref', '-d', recoveryRef])
     logger.fail(
-      `[consolidate-commits] rewrite failed (${e instanceof Error ? e.message : String(e)}) — restored ${orig.slice(0, 12)}. History unchanged.`,
+      `[consolidate-commits] rewrite failed (${errorMessage(e)}) — restored ${orig.slice(0, 12)}. History unchanged.`,
     )
     process.exitCode = 1
     return

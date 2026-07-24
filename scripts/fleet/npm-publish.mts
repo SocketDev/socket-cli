@@ -100,6 +100,7 @@ async function main(): Promise<void> {
       'dry-run': { default: false, type: 'boolean' },
       help: { default: false, type: 'boolean' },
       'no-reconcile': { default: false, type: 'boolean' },
+      'no-release': { default: false, type: 'boolean' },
       'no-scan': { default: false, type: 'boolean' },
       otp: { type: 'string' },
       'release-as': { type: 'string' },
@@ -143,6 +144,12 @@ async function main(): Promise<void> {
     )
     logger.log(
       '  --no-scan            skip the pre-approve Socket full-scan gate',
+    )
+    logger.log(
+      '  --no-release         with --approve: skip the tag + GitHub release',
+    )
+    logger.log(
+      '                       (the publish-pipeline release stage owns them)',
     )
     logger.log(
       '  --no-reconcile       local: skip the once-published reconcile (rebase',
@@ -213,6 +220,7 @@ async function main(): Promise<void> {
         dryRun,
         noScan: !!values['no-scan'],
         otpFromFlag,
+        skipRelease: !!values['no-release'],
         yes: !!values['yes'],
       })
       // Reconcile ONCE PUBLISHED: approve just made the version public and the

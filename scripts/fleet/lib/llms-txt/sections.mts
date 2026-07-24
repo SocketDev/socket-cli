@@ -38,7 +38,9 @@ function collectMdFiles(dir: string, repoRoot: string, maxDepth = 3): string[] {
     } catch {
       return
     }
-    for (const entry of entries.toSorted()) {
+    const entryItems = entries.toSorted()
+    for (let i = 0, { length } = entryItems; i < length; i += 1) {
+      const entry = entryItems[i]!
       if (entry.startsWith('.') || entry === 'node_modules') {
         continue
       }
@@ -69,7 +71,8 @@ function readMdLead(filePath: string): string | undefined {
     return undefined
   }
   const lines = readFileSync(filePath, 'utf8').split('\n')
-  for (const line of lines) {
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
     const t = line.trim()
     if (t === '' || t.startsWith('#')) {
       continue
@@ -103,7 +106,9 @@ function collectPackages(
     return []
   }
   const result: Array<{ name: string; relPath: string }> = []
-  for (const entry of entries.toSorted()) {
+  const entryList = entries.toSorted()
+  for (let i = 0, { length } = entryList; i < length; i += 1) {
+    const entry = entryList[i]!
     const full = path.join(packagesDir, entry)
     let stat
     try {
@@ -163,7 +168,8 @@ export function buildSections(
   // Cap docs entries so the rendered output stays within the 16 KB hard cap.
   // README + CHANGELOG take 2 slots; leave 28 for discovered docs.
   const docsMdFiles = collectMdFiles(docsDir, repoRoot).slice(0, 28)
-  for (const rel of docsMdFiles) {
+  for (let i = 0, { length } = docsMdFiles; i < length; i += 1) {
+    const rel = docsMdFiles[i]!
     const name = path.basename(rel, '.md')
     docsLinks.push({
       name,
@@ -187,7 +193,9 @@ export function buildSections(
     } catch {
       dirEntries = []
     }
-    for (const entry of dirEntries.toSorted()) {
+    const entrys = dirEntries.toSorted()
+    for (let i = 0, { length } = entrys; i < length; i += 1) {
+      const entry = entrys[i]!
       if (entry.startsWith('.') || entry.startsWith('_')) {
         continue
       }
@@ -198,7 +206,7 @@ export function buildSections(
       } catch {
         continue
       }
-      if (stat.isFile() && /\.(?:mts|ts|cts|js|mjs|cjs)$/.test(entry)) {
+      if (stat.isFile() && /\.(?:cjs|cts|js|mjs|mts|ts)$/.test(entry)) {
         entries.push(normalizePath(path.relative(repoRoot, full)))
       }
     }
@@ -210,7 +218,7 @@ export function buildSections(
     for (const rel of collapsed) {
       const name = path
         .basename(rel)
-        .replace(/\.(?:mts|ts|cts|js|mjs|cjs)$/, '')
+        .replace(/\.(?:cjs|cts|js|mjs|mts|ts)$/, '')
       apiLinks.push({
         name,
         note: readMdLead(

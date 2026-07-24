@@ -8,21 +8,23 @@
  *   something breaks in production. This script audits them and prints the
  *   exact URL to fix each, or PATCHes them itself with `--fix`. Run cadence:
  *   weekly, locally. The first successful run writes
- *   `.cache/socket-wheelhouse-github-settings.json` with a timestamp;
- *   subsequent runs within 7 days are no-ops (use `--force` to override). CI
- *   behavior: if `CI=true` is in the env (GitHub Actions, etc.), the script
- *   skips entirely. Settings audits aren't a CI gate — the local cache write is
- *   the gate. CI failing on a missing/stale cache would burn API quota on every
- *   job and serialize maintainers behind it. Auth: requires `gh` CLI
- *   authenticated, OR `GITHUB_TOKEN` / `GH_TOKEN` in env. Read-only audit needs
- *   `repo:read`; `--fix` needs `repo:admin` (PATCH /repos/{owner}/{repo}).
- *   Usage: node scripts/fleet/lint-github-settings.mts # audit (uses cache)
- *   node scripts/fleet/lint-github-settings.mts --force # audit (skip cache)
- *   node scripts/fleet/lint-github-settings.mts --fix # audit + apply fixes
- *   node scripts/fleet/lint-github-settings.mts --json # machine-readable.
- *   Detection helpers (`gh api` wrapper, app/workflow probes) live in
- *   `lint-github-settings-detect.mts`; the settings→findings decision tree
- *   lives in `lint-github-settings-evaluate.mts`; shared types live in
+ *   `.cache/fleet/socket-wheelhouse-lint-github-settings.json` with a
+ *   timestamp; subsequent runs within 7 days are no-ops (use `--force` to
+ *   override). CI behavior: if `CI=true` is in the env (GitHub Actions, etc.),
+ *   the script skips entirely. Settings audits aren't a CI gate — the local
+ *   cache write is the gate. CI failing on a missing/stale cache would burn API
+ *   quota on every job and serialize maintainers behind it. Auth: requires `gh`
+ *   CLI authenticated, OR `GITHUB_TOKEN` / `GH_TOKEN` in env. Read-only audit
+ *   needs `repo:read`; `--fix` needs `repo:admin` (PATCH
+ *   /repos/{owner}/{repo}). Usage: node scripts/fleet/lint-github-settings.mts.
+ *
+ *   # audit (uses cache) node scripts/fleet/lint-github-settings.mts --force
+ *
+ *   audit (skip cache) node scripts/fleet/lint-github-settings.mts --fix #
+ *   audit + apply fixes node scripts/fleet/lint-github-settings.mts --json #
+ *   machine-readable. Detection helpers (`gh api` wrapper, app/workflow probes)
+ *   live in `lint-github-settings-detect.mts`; the settings→findings decision
+ *   tree lives in `lint-github-settings-evaluate.mts`; shared types live in
  *   `lint-github-settings-types.mts` — split out to keep each file under the
  *   500-line soft cap.
  */
@@ -53,21 +55,21 @@ import { isMainModule } from './_shared/is-main-module.mts'
 // Inline path equivalent of the wheelhouse template's paths.mts helper.
 // `lint-github-settings.mts` cascades into fleet repos whose per-package
 // `paths.mts` is intentionally minimal (`socket-cli`, `ultrathink`, etc.
-// only export REPO_ROOT + package-specific build paths). Importing
-// `NODE_MODULES_CACHE_DIR` from `./paths.mts` would force every consumer
-// to widen their paths.mts surface — wrong direction. Keep the
-// per-package paths.mts narrow; carry the standalone constant here.
-const NODE_MODULES_CACHE_DIR = path.join(REPO_ROOT, 'node_modules', '.cache')
+// only export REPO_ROOT + package-specific build paths). Importing a cache
+// constant from `./paths.mts` would force every consumer to widen their
+// paths.mts surface — wrong direction. Keep the per-package paths.mts
+// narrow; carry the standalone constant here.
+const FLEET_CACHE_DIR = path.join(REPO_ROOT, 'node_modules', '.cache', 'fleet')
 
-// Cache lives at `node_modules/.cache/` — fleet convention for
-// build-tool state (vitest, etc.) and the only `.cache/` flavor
-// that's auto-ignored everywhere (via pnpm/npm's gitignore + the
-// fleet's `**/.cache/` rule). Path constructed once.
+// Cache lives at `node_modules/.cache/fleet/` — the fleet segment of the
+// runtime-state convention (segment = the writing code's tier; this script
+// is cascaded fleet code), auto-ignored everywhere via pnpm/npm's gitignore
+// + the fleet's `**/.cache/` rule. Path constructed once.
 // Cache file name mirrors the script name (`lint-github-settings`)
 // + the `socket-wheelhouse-` fleet prefix so it doesn't collide with
-// any other tool's cache file under node_modules/.cache/.
+// any other tool's cache file in the segment.
 const CACHE_FILE = path.join(
-  NODE_MODULES_CACHE_DIR,
+  FLEET_CACHE_DIR,
   'socket-wheelhouse-lint-github-settings.json',
 )
 // 7 days in ms. Mirrors the fleet's npm catalog soak time

@@ -33,7 +33,7 @@ import {
   findWorkspacePackages,
   readPackageJson,
 } from './package-files-are-allowlisted.mts'
-import { isPrivatePath, matchesGlob } from '../make-package-exports.mts'
+import { isPrivatePath, matchesGlob } from '../gen/package-exports.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
@@ -72,8 +72,9 @@ export function collectExportTargets(
     return out
   }
   if (exportsValue && typeof exportsValue === 'object') {
-    for (const v of Object.values(exportsValue as Record<string, unknown>)) {
-      collectExportTargets(v, out)
+    const values = Object.values(exportsValue as Record<string, unknown>)
+    for (let i = 0, { length } = values; i < length; i += 1) {
+      collectExportTargets(values[i], out)
     }
   }
   return out

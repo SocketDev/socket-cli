@@ -190,6 +190,41 @@ const LintSchema = Type.Object(
 )
 
 // ---------------------------------------------------------------------------
+// Lockstep block — opt-in config the `lock-step-ref-nudge` hook reads to
+// resolve `Lock-step with/from <Lang>: <path>` code-comment refs. Absorbed here
+// (was the standalone `.config/lock-step-refs.json`) so per-repo config lives in
+// ONE member-owned surface — see the `no-new-config-guard`.
+// ---------------------------------------------------------------------------
+
+const LockstepSchema = Type.Object(
+  {
+    roots: Type.Optional(
+      Type.Record(Type.String(), Type.Array(Type.String()), {
+        description:
+          'Per-language impl roots the hook resolves `Lock-step with <Lang>: <path>` refs against, most-preferred first. Keys are the `<Lang>` tokens used in comments (`Rust`, `C++`, `TS`, …); values are repo-relative candidate dirs.',
+      }),
+    ),
+    scan: Type.Optional(
+      Type.Array(Type.String(), {
+        description:
+          'Directories the lock-step comment scanner walks for `Lock-step` refs.',
+      }),
+    ),
+    extensions: Type.Optional(
+      Type.Array(Type.String(), {
+        description:
+          'Source-file extensions (leading dot) the comment scanner considers.',
+      }),
+    ),
+  },
+  {
+    additionalProperties: false,
+    description:
+      'Opt-in config for the `lock-step-ref-nudge` hook — validates `Lock-step with/from <Lang>: <path>` code comments against real impl paths. Absent = malformed-shape checks only (stale-path checks off).',
+  },
+)
+
+// ---------------------------------------------------------------------------
 // Vitest block — test-suite tuning the canonical vitest config reads.
 // ---------------------------------------------------------------------------
 
@@ -274,7 +309,7 @@ const WorkflowsSchema = Type.Object(
 )
 
 // ---------------------------------------------------------------------------
-// Claude block — opt-in agents/skills/commands.
+// Claude Code block — opt-in agents/skills/commands.
 // ---------------------------------------------------------------------------
 
 const ClaudeSchema = Type.Object(
@@ -516,6 +551,24 @@ const PrebakePinsGoSchema = Type.Object(
   },
 )
 
+const PrebakePinsRustupSchema = Type.Object(
+  {
+    version: Type.String(),
+    sha256: Type.Object(
+      {
+        amd64: Type.String({ pattern: '^[0-9a-f]{64}$' }),
+        arm64: Type.String({ pattern: '^[0-9a-f]{64}$' }),
+      },
+      { additionalProperties: false },
+    ),
+  },
+  {
+    additionalProperties: false,
+    description:
+      'rustup-init version + per-arch sha256 (mirrors the .sha256 rustup publishes beside each binary).',
+  },
+)
+
 const PrebakePinsSchema = Type.Object(
   {
     description: Type.Optional(Type.String()),
@@ -538,6 +591,7 @@ const PrebakePinsSchema = Type.Object(
       }),
     ),
     go: Type.Optional(PrebakePinsGoSchema),
+    rustup: Type.Optional(PrebakePinsRustupSchema),
     emsdkVersion: Type.Optional(Type.String()),
   },
   {
@@ -568,7 +622,10 @@ const PrebakeEntrySchema = Type.Object(
     ),
     dockerfile: Type.Optional(
       Type.String({
-        pattern: '^docker/fleet-bases/[a-z0-9-]+\\.Dockerfile$',
+        // Wheelhouse fleet recipes (docker/fleet/), member repo-owned recipes
+        // (docker/repo/), or a monorepo package's recipe (packages/*/docker/).
+        pattern:
+          '^(?:packages/[a-z0-9-]+/docker|docker/(?:fleet|repo))/[a-z0-9-]+\\.Dockerfile$',
         description: 'Repo-relative path to the Dockerfile that builds it.',
       }),
     ),
@@ -588,6 +645,12 @@ const PrebakeEntrySchema = Type.Object(
     tagFrom: Type.Optional(
       Type.String({
         description: 'Source of the content hash deciding when to rebuild.',
+      }),
+    ),
+    warmTargets: Type.Optional(
+      Type.Array(Type.String(), {
+        description:
+          'Intermediate Dockerfile stages baked cache-only (--target, no tag/push) BEFORE the full build, so a final-stage failure cannot cancel and lose their in-flight layers.',
       }),
     ),
     project: Type.Optional(
@@ -615,6 +678,12 @@ const PrebakesSchema = Type.Object(
     registry: Type.String({
       description: 'Registry images are pushed to / pulled from.',
     }),
+    registryDescription: Type.Optional(
+      Type.String({
+        description:
+          'What the registry namespace is for, including the long-form browse URL when the registry value is a short form.',
+      }),
+    ),
     pins: Type.Optional(PrebakePinsSchema),
     prebakes: Type.Array(PrebakeEntrySchema, {
       description: 'Each prebaked base image, ordered bottom-up.',
@@ -672,6 +741,7 @@ export const SocketWheelhouseConfigSchema = Type.Object(
     hooks: Type.Optional(HooksSchema),
     scripts: Type.Optional(ScriptsSchema),
     lint: Type.Optional(LintSchema),
+    lockstep: Type.Optional(LockstepSchema),
     vitest: Type.Optional(VitestSchema),
     workflows: Type.Optional(WorkflowsSchema),
     claude: Type.Optional(ClaudeSchema),

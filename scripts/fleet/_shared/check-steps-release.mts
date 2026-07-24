@@ -10,7 +10,8 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { REPO_ROOT } from '../paths.mts'
-import { releaseStep, run, type CheckStep } from './check-steps.mts'
+import { releaseStep, run } from './check-steps.mts'
+import type { CheckStep } from './check-steps.mts'
 
 export function buildReleaseAndDocsSteps(): CheckStep[] {
   return [
@@ -102,6 +103,12 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // a wrong `files` field publishes silently otherwise. Skips `"private":
     // true` workspaces (never publish).
     releaseStep(['scripts/fleet/check/pack-contents-are-clean.mts']),
+    // A published bundled dist must be MAPLESS + UNMINIFIED — Socket ships
+    // readable, unobscured code. In scope only when package.json `files`
+    // includes "dist" AND a rolldown/rollup config exists; vacuous pass
+    // otherwise, and skips cleanly when `dist/` isn't built yet. Report-only
+    // (member-ci-fires-on-push rollout pattern) until any fleet backlog clears.
+    releaseStep(['scripts/fleet/check/published-dist-is-readable.mts']),
     // Release-gate: the fleet bundle must build → install → verify round-trip
     // cleanly before it ships. Calls validate-release-bundle.mts (wheelhouse-only
     // `scripts/repo/`); vacuous pass in every cascaded fleet repo (validator
@@ -128,16 +135,17 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     releaseStep(['scripts/fleet/check/member-repos-resolve.mts']),
     // The dep-0 fetcher (bootstrap/fleet.mjs) is a rolldown-inlined build artifact;
     // fail loud if it drifts from its bootstrap/src/* source (rebuild: node
-    // scripts/repo/build-bootstrap-fetcher.mts). Wheelhouse-only — the build script
+    // scripts/repo/gen/bootstrap.mts). Wheelhouse-only — the build script
     // lives in uncascaded scripts/repo/, so a member with no such script vacuous-passes.
     () =>
       process.env['FLEET_CHECK_RELEASE'] &&
       existsSync(
-        path.join(REPO_ROOT, 'scripts', 'repo', 'build-bootstrap-fetcher.mts'),
+        path.join(REPO_ROOT, 'scripts', 'repo', 'gen', 'bootstrap.mts'),
       )
-        ? run('node', ['scripts/repo/build-bootstrap-fetcher.mts', '--check'])
+        ? run('node', ['scripts/repo/gen/bootstrap.mts', '--check'])
         : Promise.resolve({
-            label: 'build-bootstrap-fetcher.mts',
+            label: 'gen/bootstrap.mts',
+            ms: 0,
             ok: true,
             output: '',
             skipped: !process.env['FLEET_CHECK_RELEASE'],
@@ -186,11 +194,12 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // committed regardless of how it was staged.
     () => run('node', ['scripts/fleet/check/tracked-symlinks-are-safe.mts']),
     // README coverage badge matches the latest coverage run. When
-    // coverage/coverage-summary.json (vitest json-summary) exists AND the README
+    // node_modules/.cache/fleet/coverage/coverage-summary.json (vitest
+    // json-summary) exists AND the README
     // carries a populated `![Coverage](…coverage-NN%…)` badge, the percent must
     // equal the rounded line-coverage total. Fails open when not checkable (no
     // badge, the `<PCT>` placeholder, or no coverage data — a lint/type CI lane).
-    // Pre-bump-wave twin of `make-coverage-badge.mts`; shares lib/coverage-badge.
+    // Pre-bump-wave twin of `gen/coverage-badge.mts`; shares lib/coverage-badge.
     () => run('node', ['scripts/fleet/check/coverage-badge-is-current.mts']),
     // Reminder/guard duplication gate. The fleet convention: a `-guard` hook
     // BLOCKS, a `-nudge` hook NUDGES — one surface per concern, never both.

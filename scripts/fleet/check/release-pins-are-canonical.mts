@@ -45,7 +45,7 @@ import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import { REPO_ROOT, findSocketWheelhouseConfig } from '../paths.mts'
+import { findSocketWheelhouseConfig, REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
@@ -202,7 +202,7 @@ async function trackedManifestPaths(): Promise<string[]> {
         stdio: 'pipe',
         stdioString: true,
       },
-    )) as { stdout?: string }
+    )) as { stdout?: string | undefined }
     return String(r?.stdout ?? '')
       .split('\n')
       .filter(Boolean)

@@ -48,7 +48,7 @@ export function findTrackedUpstreamGitlinks(
       out.push(filePath)
     }
   }
-  return out.sort()
+  return out.toSorted()
 }
 
 async function main(): Promise<void> {
@@ -58,7 +58,7 @@ async function main(): Promise<void> {
       cwd: REPO_ROOT,
       stdio: 'pipe',
       stdioString: true,
-    })) as { stdout?: string }
+    })) as { stdout?: string | undefined }
     output = String(result?.stdout ?? '')
   } catch {
     // git unavailable — another gate's concern; this belt is vacuous, never a

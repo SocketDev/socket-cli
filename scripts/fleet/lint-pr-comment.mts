@@ -51,12 +51,12 @@ const AI_ATTRIBUTION_PATTERN =
 // the summary so the link target stays reachable while the block is
 // collapsed), an `<abbr>`-wrapped severity circle, then a bolded title.
 const SUMMARY_SHAPE =
-  /^<summary>(?:<a name="([a-z0-9-]+)"><\/a>)?<abbr title="([^"]+)">(🔴|🟠|🟡|🟢|\S+)<\/abbr> <b>(.+)<\/b><\/summary>$/u
+  /^<summary>(?:<a name="([a-z0-9-]+)"><\/a>)?<abbr title="([^"]+)">(\S+|🔴|🟠|🟡|🟢)<\/abbr> <b>(.+)<\/b><\/summary>$/u
 
 // A numeric item/finding reference. The reference must be followed by its
 // item's short title in italics — either ` _(title)_` or `, _title_` — with an
 // optional markdown-link tail (`[2](#user-content-finding-2)`) in between.
-const NUMERIC_REF_PATTERN = /\b(?:item|finding)s?\s+\[?(\d+)\]?(\(#[^)]*\))?/gi
+const NUMERIC_REF_PATTERN = /\b(?:finding|item)s?\s+\[?(\d+)\]?(\(#[^)]*\))?/gi
 
 const TITLED_REF_TAIL = /^,?\s*_\(?/
 
@@ -306,7 +306,7 @@ function lintDetailsIndent(lines: string[]): CommentViolation[] {
 // A severity-circle bullet: `- ` then an `<abbr>` with hover text wrapping a
 // severity emoji (🔴/🟠/🟡/🟢) or any non-whitespace glyph, then a space.
 const BULLET_CIRCLE_SHAPE =
-  /^- <abbr title="([^"]+)">(🔴|🟠|🟡|🟢|\S+)<\/abbr> /u
+  /^- <abbr title="([^"]+)">(\S+|🔴|🟠|🟡|🟢)<\/abbr> /u
 
 // Inside a "Smaller items" fold, every bullet carries its OWN severity circle
 // (with canonical hover text), and the fold's summary circle matches the most

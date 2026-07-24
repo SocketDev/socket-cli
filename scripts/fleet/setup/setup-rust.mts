@@ -25,6 +25,8 @@ import type {
   EcosystemStepResult,
 } from './ecosystems.mts'
 
+const mainLogger = getDefaultLogger()
+
 /**
  * Extract the pinned toolchain channel from a `rust-toolchain.toml` body — the
  * `channel = "…"` key under the `[toolchain]` table. Also tolerates a legacy
@@ -33,7 +35,9 @@ import type {
  */
 export function parseRustToolchainPin(tomlText: string): string | undefined {
   let inToolchain = false
-  for (const rawLine of tomlText.split(/\r?\n/)) {
+  const lines = tomlText.split(/\r?\n/)
+  for (let index = 0, { length } = lines; index < length; index += 1) {
+    const rawLine = lines[index]!
     const line = (rawLine.split('#')[0] ?? '').trim()
     if (line === '') {
       continue
@@ -125,10 +129,11 @@ export function findRustToolchainFile(
  * over the manifest count so the decision is unit-testable without a
  * filesystem.
  */
-export function rustSkipReason(options: {
+export function rustSkipReason(config: {
   readonly manifestCount: number
 }): string | undefined {
-  return options.manifestCount > 0
+  const cfg = { __proto__: null, ...config } as typeof config
+  return cfg.manifestCount > 0
     ? undefined
     : 'no first-party Cargo.toml (repo has no Rust crates)'
 }
@@ -229,7 +234,7 @@ if (isMainModule(import.meta.url)) {
       }
     },
     (e: unknown) => {
-      getDefaultLogger().error(e)
+      mainLogger.error(e)
       process.exitCode = 1
     },
   )

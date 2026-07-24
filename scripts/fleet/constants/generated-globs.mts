@@ -28,14 +28,10 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 export const GENERATED_GLOBS: readonly string[] = [
   '**/build/**',
-  '**/coverage/**',
   '**/dist/**',
-  '**/external/**',
   '**/out/**',
   '**/test/fixtures/**',
-  '**/third_party/**',
   '**/upstream/**',
-  '**/vendor/**',
 ]
 
 /**
@@ -44,13 +40,9 @@ export const GENERATED_GLOBS: readonly string[] = [
  */
 const GENERATED_SEGMENTS: ReadonlySet<string> = new Set([
   'build',
-  'coverage',
   'dist',
-  'external',
   'out',
-  'third_party',
   'upstream',
-  'vendor',
 ])
 
 /**

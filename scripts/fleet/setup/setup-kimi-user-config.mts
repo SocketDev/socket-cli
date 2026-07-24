@@ -105,7 +105,9 @@ export function parseClaudePermissions(
   const perms = fields['permissions']
   const read = (key: string): string[] => {
     const value = perms[key]
-    if (value === undefined) return []
+    if (value === undefined) {
+      return []
+    }
     if (!Array.isArray(value) || value.some(item => typeof item !== 'string')) {
       throw new Error(`permissions.${key} must be an array of strings`)
     }
@@ -174,12 +176,20 @@ export function renderKimiPermissionRules(rules: PermissionRules): string {
       '',
     )
   }
-  for (const pattern of rules.allow) add('allow', pattern)
-  for (const pattern of rules.deny) add('deny', pattern)
-  for (const pattern of rules.ask) add('ask', pattern)
+  for (const pattern of rules.allow) {
+    add('allow', pattern)
+  }
+  for (const pattern of rules.deny) {
+    add('deny', pattern)
+  }
+  for (const pattern of rules.ask) {
+    add('ask', pattern)
+  }
   lines.push(...renderKimiHooks())
   // Trim trailing blank before the close marker.
-  while (lines[lines.length - 1] === '') lines.pop()
+  while (lines[lines.length - 1] === '') {
+    lines.pop()
+  }
   lines.push(FLEET_MARKERS.end)
   return lines.join('\n')
 }

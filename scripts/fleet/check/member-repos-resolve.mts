@@ -50,7 +50,7 @@ export function missingRepos(statuses: readonly RepoExistence[]): string[] {
   return statuses
     .filter(status => status.exists === false)
     .map(status => status.name)
-    .sort()
+    .toSorted()
 }
 
 // True when `gh` is installed and authenticated — the precondition for the reads.
@@ -71,6 +71,8 @@ function ghRepoExists(repo: FleetRepo): boolean | undefined {
     return true
   }
   const err = `${String(result.stdout ?? '')}${String(result.stderr ?? '')}`
+  // Matches any of gh's 404 spellings: the plain-text "Not Found", an
+  // "HTTP 404" status line, or a JSON body with a "status": "404" field.
   return /Not Found|HTTP 404|"status":\s*"404"/.test(err) ? false : undefined
 }
 

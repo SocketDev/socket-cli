@@ -46,7 +46,7 @@ export function installedOxlintVersion(repoRoot: string): string | undefined {
   }
   try {
     const parsed = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
-      version?: string
+      version?: string | undefined
     }
     return parsed.version
   } catch {
@@ -87,9 +87,9 @@ export function planSchemaPin(
   raw: string,
   expected: string,
 ): SchemaPinDecision {
-  let parsed: { $schema?: string }
+  let parsed: { $schema?: string | undefined }
   try {
-    parsed = JSON.parse(raw) as { $schema?: string }
+    parsed = JSON.parse(raw) as { $schema?: string | undefined }
   } catch {
     return { kind: 'unparseable' }
   }
@@ -147,7 +147,7 @@ function main(): number {
       continue
     }
     // A non-oxc $schema (or none at all) is out of scope for this pin.
-    if (decision.kind === 'out-of-scope' || decision.kind === 'match') {
+    if (decision.kind === 'match' || decision.kind === 'out-of-scope') {
       continue
     }
     if (check) {

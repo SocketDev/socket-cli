@@ -19,6 +19,20 @@
  *      scripts/fleet/ai-lint-fix.mts. Forwards `process.argv.slice(2)` to the
  *      lint step, so `pnpm run fix --all` runs `pnpm run lint --fix --all`
  *      (full-tree fix), and `pnpm run fix --staged` does the staged-only flow.
+ *
+ *   Scope: like lint.mts, the no-flag default is the MODIFIED (working-tree
+ *   vs HEAD) scope. A run whose scope resolves to ZERO files early-exits
+ *   before spawning any fixer — the release-pipeline preflight re-runs fix on
+ *   a tree that is usually already clean at the receipt sha, and the full
+ *   spawn chain (lint --fix, zizmor, agentshield, ai-lint-fix, verify lint)
+ *   costs seconds-to-minutes for nothing. `--all` (and explicit file args)
+ *   always run the full pipeline. The per-runner fixpoint caps
+ *   (FORMAT_MAX_PASSES / OXLINT_MAX_PASSES in _shared/lint-runners.mts) are
+ *   untouched — this exit sits entirely above them.
+ *
+ *   Concurrency: mutating runs hold the repo-scoped fixer lock
+ *   (_shared/fixer-lock.mts) so concurrent/zombie fixers never race the same
+ *   tree. On contention the run names the holder and exits non-zero fast.
  */
 
 import { existsSync } from 'node:fs'
@@ -31,6 +45,14 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { FLEET_CATALOG_YAML, PNPM_WORKSPACE_YAML, REPO_ROOT } from './paths.mts'
 import { applyClaudeMdTrim } from './lib/claude-md-trim.mts'
 import { applyStableAliasReconcile } from './lib/stable-alias.mts'
+import { isCascadeMirrorPath } from './_shared/cascade-mirror-scope.mts'
+import { getModifiedFiles, getStagedFiles } from './_shared/format-scope.mts'
+import {
+  acquireFixerLock,
+  describeHolder,
+  fixerLockPath,
+} from './_shared/fixer-lock.mts'
+import { resolveScopeMode } from './_shared/scope-flags.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 
 const WIN32 = process.platform === 'win32'
@@ -79,14 +101,76 @@ async function run(
   }
 }
 
-async function main(): Promise<void> {
+/**
+ * True when a fix run should early-exit without spawning anything: no `--all`,
+ * no explicit positional file args, and the git-derived scope resolved to zero
+ * files — a clean scope has nothing for any fixer to touch. Pure — exported
+ * for tests.
+ */
+export function shouldSkipCleanScope(
+  argv: readonly string[],
+  scopedFiles: readonly string[],
+): boolean {
+  if (argv.includes('--all')) {
+    return false
+  }
+  // Explicit positional file paths (lint.mts's resolveExplicitFiles
+  // convention) always run — they name exactly what to fix.
+  if (argv.some(a => !a.startsWith('-'))) {
+    return false
+  }
+  return scopedFiles.length === 0
+}
+
+export async function main(
+  argv: string[] = process.argv.slice(2),
+): Promise<void> {
+  // Clean-scope early exit: scoped (non---all) runs with nothing in scope
+  // skip the whole fixer chain. The release-pipeline preflight and repeated
+  // interactive `pnpm run fix` calls hit this path constantly.
+  const mode = resolveScopeMode(argv)
+  if (mode !== 'all') {
+    // Live cascade-mirror payloads never count toward a dirty scope: they are
+    // gated at the template source and the mutating runners skip them anyway
+    // — a mirror-only scope, e.g. mid-cascade-landing, is a clean scope.
+    const scoped = (
+      mode === 'staged' ? getStagedFiles() : getModifiedFiles()
+    ).filter(f => !isCascadeMirrorPath(f))
+    if (shouldSkipCleanScope(argv, scoped)) {
+      logger.log(
+        `fix: no ${mode} files — clean scope, nothing to fix (pass --all for the repo-wide pass).`,
+      )
+      return
+    }
+  }
+
+  // Serialize mutating fixers: one fixer per repo tree at a time. A live
+  // holder is named and this run exits non-zero FAST (never queue behind an
+  // interactive fixer); a dead holder's lock is stolen automatically.
+  const lock = acquireFixerLock(
+    fixerLockPath(REPO_ROOT),
+    'scripts/fleet/fix.mts',
+  )
+  if (!lock.acquired) {
+    logger.fail(`fix: ${describeHolder(lock.holder)}`)
+    process.exitCode = 1
+    return
+  }
+  try {
+    await runFixers(argv)
+  } finally {
+    lock.release()
+  }
+}
+
+async function runFixers(argv: string[]): Promise<void> {
   // Lint fix (oxfmt + oxlint via scripts/fleet/lint.mts). Forward extra argv so
   // `--all` / `--staged` / explicit file paths reach the runner unchanged.
   // NON-required: oxlint can't autofix custom socket/* JS-plugin rules, so a
   // non-zero exit is the EXPECTED case — those violations are what ai-lint-fix
   // (below) handles, and gating the pipeline here would skip it when it's needed
   // most. The real pass/fail is the verify run at the end of this function.
-  await run('pnpm', ['run', 'lint', '--fix', ...process.argv.slice(2)], {
+  await run('pnpm', ['run', 'lint', '--fix', ...argv], {
     label: 'lint --fix',
     required: false,
   })
@@ -116,7 +200,7 @@ async function main(): Promise<void> {
   // install failures loud with the exact annotated fix. Runs only when --all
   // is passed so staged-only flows are unaffected.
   let doctorCode = 0
-  if (process.argv.slice(2).includes('--all')) {
+  if (argv.includes('--all')) {
     doctorCode = await run('node', ['scripts/fleet/doctor.mts', '--fix'], {
       label: 'doctor --fix',
       required: false,
@@ -182,23 +266,18 @@ async function main(): Promise<void> {
   // Skipped silently when the claude CLI isn't on PATH, when
   // SKIP_AI_FIX=1, or when --no-ai is passed. CI sets SKIP_AI_FIX=1
   // because the fleet rule is "no AI in CI for code changes."
-  await run(
-    'node',
-    ['scripts/fleet/ai-lint-fix.mts', ...process.argv.slice(2)],
-    {
-      label: 'ai-lint-fix',
-      required: false,
-    },
-  )
+  await run('node', ['scripts/fleet/ai-lint-fix.mts', ...argv], {
+    label: 'ai-lint-fix',
+    required: false,
+  })
 
   // Verify: re-run lint (no --fix) to set the real exit code. `fix` succeeds
   // only when nothing remains after the deterministic + AI passes; a lingering
   // violation (or a genuine lint crash) surfaces here as a non-zero exit.
-  const verifyCode = await run(
-    'pnpm',
-    ['run', 'lint', ...process.argv.slice(2)],
-    { label: 'lint (verify)', required: false },
-  )
+  const verifyCode = await run('pnpm', ['run', 'lint', ...argv], {
+    label: 'lint (verify)',
+    required: false,
+  })
   process.exitCode = verifyCode !== 0 ? verifyCode : doctorCode
 }
 

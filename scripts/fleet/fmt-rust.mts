@@ -19,6 +19,7 @@ import process from 'node:process'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { REPO_ROOT } from './paths.mts'
 
 const logger = getDefaultLogger()
 
@@ -106,7 +107,7 @@ export function buildCargoFmtArgs(
 }
 
 function main(): void {
-  const repoRoot = process.cwd()
+  const repoRoot = REPO_ROOT
   const manifests = findWorkspaceManifests(repoRoot)
   if (!manifests.length) {
     logger.info('fmt-rust: no Cargo.toml found; nothing to format.')

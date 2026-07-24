@@ -6,7 +6,7 @@
  *   baseline. It asserts three things:
  *
  *     1. WIRED — every hook dispatch command in the LIVE `.claude/settings.json`
- *        points at `dispatch-launcher`, not `_dispatch/index.cjs`. A fleet
+ *        points at `dispatch-launcher`, not `index.cjs`. A fleet
  *        cascade rewrites settings to `merge(template, repo-hooks)`, which
  *        reverts the dispatch commands to the baseline — safe, but it silently
  *        DROPS the fast path. This fails loud so the operator re-runs setup.
@@ -108,17 +108,17 @@ export function settingsRoutesToLauncher(settingsText: string): boolean {
 /**
  * True for a fresh checkout that has never opted into the host fast path.
  */
-export function isFreshSnapshotCheckout(options: {
+export function isFreshSnapshotCheckout(config: {
   hasLauncher: boolean
   hasSnapshotBundle: boolean
   isCI: boolean
   wiredToLauncher: boolean
 }): boolean {
-  const opts = { __proto__: null, ...options }
+  const cfg = { __proto__: null, ...config }
   return (
-    !opts.hasLauncher &&
-    !opts.hasSnapshotBundle &&
-    (opts.isCI || !opts.wiredToLauncher)
+    !cfg.hasLauncher &&
+    !cfg.hasSnapshotBundle &&
+    (cfg.isCI || !cfg.wiredToLauncher)
   )
 }
 

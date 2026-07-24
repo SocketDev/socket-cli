@@ -45,6 +45,7 @@
 //
 // Usage: node scripts/fleet/check/ai-spawns-have-paired-effort.mts [--quiet]
 
+// oxlint-disable-next-line socket/no-agent-brand-assumption -- flags this file's "claude block" comment (a real backend-registry key reference, not generic Claude guidance); rule reports comment hits at the Program node.
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -56,8 +57,8 @@ import { globSync } from '@socketsecurity/lib-stable/globs/match'
 import {
   FLOOR_EFFORT,
   FLOOR_MODEL,
-  KNOWN_MODELS,
   isAdaptiveOnlyModel,
+  KNOWN_MODELS,
   ladderRowForModel,
 } from '../lib/known-models.mts'
 import { REPO_ROOT } from '../paths.mts'
@@ -207,7 +208,7 @@ export function scanSpawnCalls(
   // so the object literal that begins the options bag is always what braceAt
   // (and thus objectSpan) lands on.
   const callRe =
-    /(?:spawnAiAgent|\bagent)\s*\(\s*(?:[A-Za-z_$][\w$]*\s*,\s*)?\{/g
+    /(?:\bagent|spawnAiAgent)\s*\(\s*(?:[A-Za-z_$][\w$]*\s*,\s*)?\{/g
   let m: RegExpExecArray | null
   while ((m = callRe.exec(text))) {
     const callStart = m.index

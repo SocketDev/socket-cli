@@ -34,18 +34,18 @@ export interface BrewfileDriftResult {
  * `undefined` when the repo has no repo-root Brewfile (not enrolled) — the
  * result reports `enrolled: false` and never `drifted: true` in that case.
  */
-export function findBrewfileDrift(options: {
+export function findBrewfileDrift(config: {
   brewfileContent: string | undefined
   discoveredTools: readonly BrewTool[]
   soakDays: number
 }): BrewfileDriftResult {
-  const opts = Object.assign(Object.create(null), options) as typeof options
-  const expected = renderBrewfile(opts.discoveredTools, opts.soakDays)
-  if (opts.brewfileContent === undefined) {
+  const cfg = Object.assign(Object.create(null), config) as typeof config
+  const expected = renderBrewfile(cfg.discoveredTools, cfg.soakDays)
+  if (cfg.brewfileContent === undefined) {
     return { drifted: false, enrolled: false, expected }
   }
   return {
-    drifted: opts.brewfileContent !== expected,
+    drifted: cfg.brewfileContent !== expected,
     enrolled: true,
     expected,
   }
@@ -57,24 +57,24 @@ export function findBrewfileDrift(options: {
  * `check/brew-install-is-pinned.mts` never reds without an actionable finding
  * pointing at the exact regeneration command.
  */
-export function formatBrewfileDriftFinding(options: {
+export function formatBrewfileDriftFinding(config: {
   brewfilePath: string
   expected: string
   soakDays: number
 }): DoctorFinding {
-  const opts = Object.assign(Object.create(null), options) as typeof options
+  const cfg = Object.assign(Object.create(null), config) as typeof config
   return {
     fix: [
       'Regenerate the Brewfile (run node scripts/fleet/doctor.mts --fix to',
       'apply automatically), or directly via the brew updater:',
       '',
-      `  node scripts/fleet/update/brew.mts --write-manifest --soak-days ${opts.soakDays}`,
+      `  node scripts/fleet/update/brew.mts --write-manifest --soak-days ${cfg.soakDays}`,
     ].join('\n'),
     fixable: true,
     saw: 'Brewfile content does not byte-match renderBrewfile() over the current .github/ brew install sites',
     wanted:
       'Brewfile byte-matches a fresh renderBrewfile(<current .github brew install sites>, SOAK_DAYS)',
     what: 'Brewfile drifted from its .github brew install sites',
-    where: opts.brewfilePath,
+    where: cfg.brewfilePath,
   }
 }

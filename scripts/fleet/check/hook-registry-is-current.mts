@@ -23,6 +23,7 @@ import process from 'node:process'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from '../paths.mts'
+import { hasFleetHookSource } from '../_shared/fleet-source-present.mts'
 
 const logger = getDefaultLogger()
 
@@ -112,6 +113,14 @@ export function staleBullets(
 function main(): void {
   if (!existsSync(REGISTRY_PATH)) {
     logger.success('No hook-registry.md to check.')
+    return
+  }
+  // A bundle-only member runs hooks from _dist/bundle.cjs — the per-hook
+  // SOURCE dirs the registry bullets name live only in the wheelhouse.
+  if (!hasFleetHookSource(REPO_ROOT)) {
+    logger.success(
+      'No fleet hook source in this repo (bundle-only) — registry validated at the source repo.',
+    )
     return
   }
   const real = realFleetHooks(FLEET_HOOKS_DIR)

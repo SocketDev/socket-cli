@@ -7,7 +7,7 @@
  *   THE LAYERS, and why this step exists.
  *
  *   The cascaded, fleet-canonical `settings.json` points every dispatch event at
- *   `node "$CLAUDE_PROJECT_DIR"/.claude/hooks/fleet/_dispatch/index.cjs <Event>`
+ *   `node "$CLAUDE_PROJECT_DIR"/.claude/hooks/fleet/index.cjs <Event>`
  *   — the V8 COMPILE-CACHE path. That bundle (`index.cjs` → `bundle.cjs`) holds
  *   the COMPLETE 190-hook set and is correct on every OS/arch with zero
  *   per-machine state, so it is the always-safe baseline that ships to every
@@ -64,16 +64,17 @@ import {
   isDispatchCommand,
   launcherCommand,
   rewriteDispatchCommands,
-} from '../../../bootstrap/src/dispatch-wiring.mts'
-import type { DispatchSettings } from '../../../bootstrap/src/dispatch-wiring.mts'
+} from '../_shared/hook-wiring.mts'
+import type { DispatchSettings } from '../_shared/hook-wiring.mts'
 import { DISPATCH_DIR, REPO_ROOT } from '../paths.mts'
+import { hasFleetHookSource } from '../_shared/fleet-source-present.mts'
 
 const logger = getDefaultLogger()
 
 const SETTINGS_PATH = path.join(REPO_ROOT, '.claude', 'settings.json')
 
 // The baseline/launcher command vocabulary + the idempotent dispatch rewrite are
-// the SINGLE source in bootstrap/src/dispatch-wiring.mts — shared verbatim with
+// the SINGLE source in scripts/fleet/_shared/hook-wiring.mts — shared verbatim with
 // the cascade merge (settings.mts), so the launcher form this step writes is the
 // exact form the merge PRESERVES and the drift check CANONICALIZES. Re-exported
 // at the bottom for the setup unit test.
@@ -128,6 +129,16 @@ function main(): void {
   // --unwire is a pure settings revert (no rebuild) — restore the baseline.
   if (unwire) {
     wireSettings(baselineCommand, 'compile-cache baseline')
+    return
+  }
+
+  // A bundle-only member has no hook source — the rebuild passes below would
+  // replace the release-shipped bundle.cjs with an empty one. The snapshot
+  // fast path is a source-repo affordance only.
+  if (!hasFleetHookSource(REPO_ROOT)) {
+    logger.log(
+      '[setup:hook-snapshot] no fleet hook source (bundle-only) — hooks run from the release-shipped bundle; nothing to build.',
+    )
     return
   }
 

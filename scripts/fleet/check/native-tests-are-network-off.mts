@@ -46,7 +46,7 @@ const ENFORCING = false
 // A native test-RUN invocation. `--no-run` (build only) is excluded by the
 // caller — it never runs a test binary, so it needs no network gate.
 // oxlint-disable-next-line socket/require-regex-comment -- documented above
-const NATIVE_TEST_RE = /\b(?:cargo\s+(?:test|nextest\s+run)|go\s+test|ctest)\b/
+const NATIVE_TEST_RE = /\b(?:cargo\s+(?:nextest\s+run|test)|ctest|go\s+test)\b/
 
 // The run-offline gate — the composite action, its ./ uses ref, or the wrapper
 // script name. Any of these in the file marks the offline pattern as adopted.

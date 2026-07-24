@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * @file Generate the cross-tool `.agents/skills/` mirror from the segmented
- *   `.claude/skills/{fleet,repo}/<name>/` source. Why: Claude reads
+ *   `.claude/skills/{fleet,repo}/<name>/` source. Why: Claude Code reads
  *   `.claude/skills/` and handles the `fleet/` + `repo/` namespacing. Codex
  *   (`.agents/skills`) and OpenCode (one-level `<root>/<name>/SKILL.md`)
  *   discover skills ONE level deep — they'd see the `fleet`/`repo` segment dirs
@@ -28,7 +28,7 @@
  *   The `agents-skills-mirror-current` check fails
  *   `check --all` if the committed mirror drifts from the source — the mirror
  *   is generated, never hand-edited. Usage: node
- *   scripts/fleet/gen-agents-skills-mirror.mts [--check] (no flag) regenerate
+ *   scripts/fleet/gen/agents-skills-mirror.mts [--check] (no flag) regenerate
  *   the mirror in place. --check report drift without writing (exit 1 if
  *   stale); used by the check-only twin.
  */
@@ -47,8 +47,8 @@ import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
-import { REPO_ROOT } from './paths.mts'
-import { isMainModule } from './_shared/is-main-module.mts'
+import { REPO_ROOT } from '../paths.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -86,16 +86,20 @@ export function resolveSelectedSkills(
     onlyArg?.slice('--only='.length) ??
     (onlyIndex >= 0 ? args[onlyIndex + 1] : undefined)
   const cli = selectionFrom(cliValue)
-  if (cli) return cli
+  if (cli) {
+    return cli
+  }
   const fromEnv = selectionFrom(env['AGENTS_SKILLS'])
-  if (fromEnv) return fromEnv
+  if (fromEnv) {
+    return fromEnv
+  }
   try {
     const settings = JSON.parse(
       readFileSync(
         path.join(repoRoot, '.config/socket-wheelhouse.json'),
         'utf8',
       ),
-    ) as { codexSkills?: { default?: unknown } }
+    ) as { codexSkills?: { default?: unknown | undefined } | undefined }
     return selectionFrom(settings.codexSkills?.default)
   } catch {
     return undefined
@@ -130,6 +134,9 @@ function rewriteLeadingFrontmatter(
   skillMd: string,
   rewrite: (frontmatter: string) => string,
 ): string {
+  // YAML front-matter: `^` anchors to string start, `---\r?\n` matches the
+  // opening delimiter, `[\s\S]*?` lazily captures the body, then `\r?\n---`
+  // matches the closing delimiter followed by a newline or end-of-string.
   const match = /^(---\r?\n)([\s\S]*?)(\r?\n---(?:\r?\n|$))/.exec(skillMd)
   if (match === null) {
     return skillMd
@@ -155,7 +162,7 @@ export function rewriteSkillName(skillMd: string, mirrorName: string): string {
 // Discover the segmented skills as flat mirror entries.
 export function discoverSkills(
   repoRoot: string,
-  selected?: ReadonlySet<string>,
+  selected?: ReadonlySet<string> | undefined,
 ): MirrorEntry[] {
   const entries: MirrorEntry[] = []
   const claudeSkills = path.join(repoRoot, '.claude', 'skills')
@@ -178,7 +185,9 @@ export function discoverSkills(
         continue
       }
       const mirrorName = `${tier}-${name}`
-      if (selected && !selected.has(mirrorName)) continue
+      if (selected && !selected.has(mirrorName)) {
+        continue
+      }
       entries.push({
         mirrorName,
         source: normalizePath(path.relative(repoRoot, skillDir)),
@@ -295,7 +304,7 @@ function main(): void {
   const checkOnly = process.argv.includes('--check')
   if (!existsSync(CLAUDE_SKILLS_DIR)) {
     logger.log(
-      '[gen-agents-skills-mirror] no .claude/skills/ — nothing to mirror.',
+      '[gen/agents-skills-mirror] no .claude/skills/ — nothing to mirror.',
     )
     return
   }
@@ -307,7 +316,7 @@ function main(): void {
     const drift = findMirrorDrift(REPO_ROOT, entries)
     if (drift.length) {
       logger.fail(
-        `[gen-agents-skills-mirror] .agents/skills/ is stale (${drift.length} drift(s)) — regenerate with \`node scripts/fleet/gen-agents-skills-mirror.mts\`:`,
+        `[gen/agents-skills-mirror] .agents/skills/ is stale (${drift.length} drift(s)) — regenerate with \`node scripts/fleet/gen/agents-skills-mirror.mts\`:`,
       )
       for (let i = 0, { length } = drift; i < length; i += 1) {
         logger.error(`  ✗ ${drift[i]}`)
@@ -316,13 +325,13 @@ function main(): void {
       return
     }
     logger.success(
-      `[gen-agents-skills-mirror] .agents/skills/ in sync (${entries.length} skills mirrored).`,
+      `[gen/agents-skills-mirror] .agents/skills/ in sync (${entries.length} skills mirrored).`,
     )
     return
   }
   writeMirror(REPO_ROOT, entries)
   logger.success(
-    `[gen-agents-skills-mirror] regenerated .agents/skills/ — ${entries.length} skills (${AGENTS_SKILLS_DIR}).`,
+    `[gen/agents-skills-mirror] regenerated .agents/skills/ — ${entries.length} skills (${AGENTS_SKILLS_DIR}).`,
   )
 }
 

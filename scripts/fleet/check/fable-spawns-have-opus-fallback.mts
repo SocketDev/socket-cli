@@ -148,7 +148,7 @@ export function scanSpawnCalls(
   text: string,
 ): Array<{ index: number; rule: 1 | 2; detail: string }> {
   const hits: Array<{ index: number; rule: 1 | 2; detail: string }> = []
-  const callRe = /(?:spawnAiAgent|\bagent)\s*\(\s*\{/g
+  const callRe = /(?:\bagent|spawnAiAgent)\s*\(\s*\{/g
   let m: RegExpExecArray | null
   while ((m = callRe.exec(text))) {
     const callStart = m.index

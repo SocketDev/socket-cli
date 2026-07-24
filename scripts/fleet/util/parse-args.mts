@@ -22,7 +22,8 @@ export function getPositionalArgs(startIndex: number = 2): string[] {
   const args = process.argv.slice(startIndex)
   const positionals: string[] = []
 
-  for (const arg of args) {
+  for (let i = 0, { length } = args; i < length; i += 1) {
+    const arg = args[i]!
     // Stop at first flag
     if (arg.startsWith('-')) {
       break
@@ -45,19 +46,19 @@ export function hasFlag(flag: string, argv: string[] = process.argv): boolean {
  * version for build scripts that don't need yargs-parser features.
  */
 export function parseArgs(
-  config: Partial<ParseArgsConfig> = {},
+  options: Partial<ParseArgsConfig> = {},
 ): ParseArgsResult {
   const {
     allowPositionals = true,
     args = process.argv.slice(2),
-    options = {},
+    options: parseOptions = {},
     strict = false,
-  } = config
+  } = options
 
   try {
     const result = nodeParseArgs({
       args,
-      options,
+      options: parseOptions,
       strict,
       allowPositionals,
     })

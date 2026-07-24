@@ -13,7 +13,7 @@
 //
 // Detection + grading are SHARED with the reminder via
 // `.claude/hooks/fleet/_shared/error-message-quality.mts` (ERROR_CLASS_RE +
-// gradeMessage) and `_shared/acorn` (findThrowNew), so the two surfaces never
+// gradeMessage) and `_shared/ast/literals.mts` (findThrowNew), so the two surfaces never
 // drift. AST-based: `findThrowNew` walks every `throw new <Ctor>(…)`, then the
 // static-string first arg runs through `gradeMessage`. Template literals with
 // interpolation, identifiers, and any message carrying a colon / quoted value /
@@ -34,7 +34,7 @@ import process from 'node:process'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
-import { findThrowNew } from '../../../.claude/hooks/fleet/_shared/acorn/index.mts'
+import { findThrowNew } from '../../../.claude/hooks/fleet/_shared/ast/literals.mts'
 import {
   ERROR_CLASS_RE,
   gradeMessage,

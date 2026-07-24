@@ -35,6 +35,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
@@ -51,6 +52,7 @@ const SCAN_ROOTS = [
 
 const SKIP_SEGMENTS = new Set([
   '_dispatch',
+  '_dist',
   'build',
   'coverage',
   'dist',
@@ -131,8 +133,10 @@ export function scanCmdShimSpawns(raw: string): number[] {
     const start = m.index
     // First argument in RAW source: a quoted bin name?
     const rawSlice = raw.slice(start, start + 160)
+    // Matches a `spawn(`/`spawnSync(` call head whose first argument is a
+    // quoted `npx`/`npm`/`pnpm`/`yarn` bin name — the shims that need `shell:`.
     if (
-      !/^\s*(?:spawn|spawnSync)\s*\(\s*['"](?:pnpm|npm|np[x]|yarn)['"]/.test(
+      !/^\s*(?:spawn|spawnSync)\s*\(\s*['"](?:np[x]|npm|pnpm|yarn)['"]/.test(
         rawSlice,
       )
     ) {
@@ -276,7 +280,7 @@ export function scanFile(filePath: string): PortabilityHit[] {
   // killed by a too-tight win32 timeout fails OPEN *silently*. A script that
   // times out fails LOUD (non-zero exit), so it isn't the silent-hole this
   // rule guards — and scripts can't cleanly import the hook-tier _shared helper.
-  if (rel.replace(/\\/g, '/').includes('.claude/hooks/')) {
+  if (normalizePath(rel).includes('.claude/hooks/')) {
     for (const line of scanSpawnTimeouts(raw)) {
       hits.push({
         file: rel,
@@ -296,7 +300,8 @@ function walk(dir: string, out: string[]): void {
   } catch {
     return
   }
-  for (const name of entries) {
+  for (let i = 0, { length } = entries; i < length; i += 1) {
+    const name = entries[i]!
     if (name.startsWith('.') && name !== '.claude' && name !== '.config') {
       continue
     }
@@ -312,7 +317,7 @@ function walk(dir: string, out: string[]): void {
     }
     if (st.isDirectory()) {
       walk(full, out)
-    } else if (/\.(?:mts|mjs|ts|js)$/.test(name) && !/\.d\.m?ts$/.test(name)) {
+    } else if (/\.(?:js|mjs|mts|ts)$/.test(name) && !/\.d\.m?ts$/.test(name)) {
       out.push(full)
     }
   }
@@ -320,11 +325,13 @@ function walk(dir: string, out: string[]): void {
 
 export function scanRepo(repoRoot: string): PortabilityHit[] {
   const files: string[] = []
-  for (const root of SCAN_ROOTS) {
+  for (let i = 0, { length } = SCAN_ROOTS; i < length; i += 1) {
+    const root = SCAN_ROOTS[i]!
     walk(path.join(repoRoot, root), files)
   }
   const hits: PortabilityHit[] = []
-  for (const f of files) {
+  for (let i = 0, { length } = files; i < length; i += 1) {
+    const f = files[i]!
     hits.push(...scanFile(f))
   }
   return hits

@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/SocketDev/socket-wheelhouse/main/scripts/fleet/build-infra/lib/external-tools-schema.json",
+  "title": "Fleet external-tools data file",
+  "description": "Schema for every external-tools.json across the fleet (build/release tools, security-hook tools). Generated from scripts/fleet/lib/external-tools-schema.mts — edit that TypeBox source, then regenerate with scripts/fleet/external-tools/schema.mts.",
+  "additionalProperties": false,
+  "type": "object",
+  "required": ["tools"],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "extends": {
+      "type": "string"
+    },
+    "tools": {
+      "type": "object",
+      "patternProperties": {
+        "^(.*)$": {
+          "additionalProperties": false,
+          "type": "object",
+          "properties": {
+            "description": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            },
+            "versionDate": {
+              "type": "string"
+            },
+            "tag": {
+              "type": "string"
+            },
+            "packageManager": {
+              "anyOf": [
+                {
+                  "const": "npm",
+                  "type": "string"
+                },
+                {
+                  "const": "pip",
+                  "type": "string"
+                },
+                {
+                  "const": "pnpm",
+                  "type": "string"
+                }
+              ]
+            },
+            "repository": {
+              "type": "string"
+            },
+            "release": {
+              "anyOf": [
+                {
+                  "const": "archive",
+                  "type": "string"
+                },
+                {
+                  "const": "asset",
+                  "type": "string"
+                },
+                {
+                  "const": "uv-project",
+                  "type": "string"
+                }
+              ]
+            },
+            "source": {
+              "type": "string"
+            },
+            "sourceTag": {
+              "type": "string"
+            },
+            "integrity": {
+              "type": "string"
+            },
+            "checksums": {
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": ["asset", "sha256"],
+                      "properties": {
+                        "asset": {
+                          "type": "string"
+                        },
+                        "sha256": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "platforms": {
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": ["asset", "integrity"],
+                  "properties": {
+                    "asset": {
+                      "type": "string"
+                    },
+                    "integrity": {
+                      "type": "string"
+                    },
+                    "source": {
+                      "type": "string"
+                    },
+                    "binary": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "npm": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": ["version"],
+              "properties": {
+                "package": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "string"
+                }
+              }
+            },
+            "purl": {
+              "type": "string"
+            },
+            "ecosystems": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "installDir": {
+              "type": "string"
+            },
+            "soakBypass": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": ["version", "published", "removable"],
+              "properties": {
+                "version": {
+                  "type": "string"
+                },
+                "published": {
+                  "type": "string"
+                },
+                "removable": {
+                  "type": "string"
+                }
+              }
+            },
+            "binaryName": {
+              "type": "string"
+            },
+            "notes": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ]
+            },
+            "bundled": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    }
+  }
+}

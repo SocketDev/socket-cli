@@ -108,7 +108,7 @@ interface ComputedEdit {
  */
 export function computeEdit(
   tool: Tool,
-  options: {
+  config: {
     description?: string | undefined
     version?: string | undefined
     notes?: readonly string[] | undefined
@@ -116,7 +116,7 @@ export function computeEdit(
     integrity?: string | undefined
   },
 ): ComputedEdit {
-  const opts = { __proto__: null, ...options } as {
+  const cfg = { __proto__: null, ...config } as {
     description?: string | undefined
     version?: string | undefined
     notes?: readonly string[] | undefined
@@ -127,43 +127,43 @@ export function computeEdit(
     ...(tool as unknown as Record<string, unknown>),
   }
   const changes: string[] = []
-  if (opts.description !== undefined) {
-    updated['description'] = opts.description
+  if (cfg.description !== undefined) {
+    updated['description'] = cfg.description
     changes.push('description: set')
   }
-  if (opts.version !== undefined) {
-    changes.push(`version: ${String(updated['version'])} → ${opts.version}`)
-    updated['version'] = opts.version
+  if (cfg.version !== undefined) {
+    changes.push(`version: ${String(updated['version'])} → ${cfg.version}`)
+    updated['version'] = cfg.version
   }
-  const notes = opts.notes ?? []
+  const notes = cfg.notes ?? []
   if (notes.length > 0) {
     updated['notes'] = notes.length === 1 ? notes[0]! : [...notes]
     changes.push(`notes: set (${notes.length})`)
   }
-  if (opts.platform !== undefined && opts.integrity !== undefined) {
+  if (cfg.platform !== undefined && cfg.integrity !== undefined) {
     const platformsRaw = updated['platforms']
     if (!platformsRaw || typeof platformsRaw !== 'object') {
       return {
         updated,
         changes,
-        problem: `entry has no platforms map (can't set platform "${opts.platform}")`,
+        problem: `entry has no platforms map (can't set platform "${cfg.platform}")`,
       }
     }
     const platforms = {
       ...(platformsRaw as Record<string, PlatformEntry>),
     }
-    const plat = platforms[opts.platform]
+    const plat = platforms[cfg.platform]
     if (!plat) {
       return {
         updated,
         changes,
-        problem: `entry has no platform "${opts.platform}"`,
+        problem: `entry has no platform "${cfg.platform}"`,
       }
     }
     changes.push(
-      `platforms.${opts.platform}.integrity: ${plat.integrity.slice(0, 20)}… → ${opts.integrity.slice(0, 20)}…`,
+      `platforms.${cfg.platform}.integrity: ${plat.integrity.slice(0, 20)}… → ${cfg.integrity.slice(0, 20)}…`,
     )
-    platforms[opts.platform] = { ...plat, integrity: opts.integrity }
+    platforms[cfg.platform] = { ...plat, integrity: cfg.integrity }
     updated['platforms'] = platforms
   }
   return { updated, changes, problem: undefined }

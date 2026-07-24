@@ -29,11 +29,12 @@ import {
   BREW_SOAK_EXCLUDES,
   isSoakExcluded,
 } from '../constants/soak-excludes.mts'
+import { REPO_ROOT } from '../paths.mts'
 import { requireSoakDays } from './_shared.mts'
 import {
   advanceTapPins,
-  brewTapPinsPath,
   brewfilePath,
+  brewTapPinsPath,
   checkBrewToolAges,
   commitsApiPath,
   dedupeBrewTools,
@@ -47,6 +48,9 @@ import {
 
 import type { BrewTool, BrewToolStatus } from './brew-parse.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
+
+const logger = getDefaultLogger()
 
 export * from './brew-parse.mts'
 
@@ -106,7 +110,7 @@ async function writeManifestMode(
 ): Promise<number> {
   const tools = findManifestBrewSites(root)
   writeFileSync(brewfilePath(root), renderBrewfile(tools, soakDays))
-  getDefaultLogger().success(
+  logger.success(
     `update/brew: wrote Brewfile from ${dedupeBrewTools(tools).length} discovered CI tool(s).`,
   )
   return 0
@@ -120,14 +124,13 @@ async function applyMode(soakDays: number): Promise<number> {
     fetchTapCommitsViaGh,
   )
   writeFileSync(brewTapPinsPath(), renderBrewTapPinsFile(advanced))
-  getDefaultLogger().success(
+  logger.success(
     `update/brew: advanced ${advanced.length} tap pin(s) to the newest commit >= ${soakDays}d old.`,
   )
   return 0
 }
 
 async function planMode(soakDays: number, root: string): Promise<number> {
-  const logger = getDefaultLogger()
   const all = dedupeBrewTools(findBrewToolSites(root))
   if (all.length === 0) {
     logger.info('update/brew: no brew usage found — nothing to do.')
@@ -171,7 +174,8 @@ async function planMode(soakDays: number, root: string): Promise<number> {
       skipped += 1
     }
   }
-  for (const tool of excluded) {
+  for (let i = 0, { length } = excluded; i < length; i += 1) {
+    const tool = excluded[i]!
     logger.substep(`excluded: ${tool.cask ? `cask ${tool.name}` : tool.name}`)
   }
   logger.groupEnd()
@@ -192,13 +196,13 @@ export async function main(argv: string[]): Promise<number> {
   try {
     soakDays = requireSoakDays(argv, 'update/brew')
   } catch (e) {
-    getDefaultLogger().error(e instanceof Error ? e.message : String(e))
+    logger.error(errorMessage(e))
     return 2
   }
   if (argv.includes('--apply')) {
     return applyMode(soakDays)
   }
-  const root = process.cwd()
+  const root = REPO_ROOT
   if (argv.includes('--write-manifest')) {
     return writeManifestMode(root, soakDays)
   }
@@ -211,7 +215,7 @@ if (isMainModule(import.meta.url)) {
       process.exitCode = code
     },
     (e: unknown) => {
-      getDefaultLogger().error(e instanceof Error ? e.message : String(e))
+      logger.error(errorMessage(e))
       process.exitCode = 1
     },
   )

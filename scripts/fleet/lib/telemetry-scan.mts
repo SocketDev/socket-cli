@@ -27,17 +27,17 @@ export const TELEMETRY_SDKS: readonly RegExp[] = [
   /^@sentry\//,
   /^sentry(-sdk)?$/,
   /^@posthog\//,
-  /^posthog(-node|-js|-python|ai)?$/,
+  /^posthog(-js|-node|-python|ai)?$/,
   /^mixpanel/,
   /^@segment\//,
   /^(analytics-node|analytics-python|segment-analytics-python)$/,
   /^@amplitude\//,
   /^amplitude(-js|-analytics|-analytics-browser)?$/,
-  /^(dd-trace|ddtrace|datadog)$/,
+  /^(datadog|dd-trace|ddtrace)$/,
   /^@datadog\//,
   /^opentelemetry-sdk$/,
   /^opentelemetry-exporter-/,
-  /^@opentelemetry\/(sdk|exporter)/,
+  /^@opentelemetry\/(exporter|sdk)/,
   /^@scarf\/scarf$/,
   /^scarf$/,
   /^applicationinsights$/,
@@ -132,7 +132,7 @@ export function namesFromExternalTools(text: string): string[] {
   const out = new Set<string>()
   // capture the package name segment of a purl, scope-aware.
   const re =
-    /pkg:(?:npm|pypi|cargo)\/(@?[a-z0-9][a-z0-9._-]*(?:\/[a-z0-9][a-z0-9._-]*)?)/g
+    /pkg:(?:cargo|npm|pypi)\/(@?[a-z0-9][a-z0-9._-]*(?:\/[a-z0-9][a-z0-9._-]*)?)/g
   let m: RegExpExecArray | null = re.exec(text)
   while (m) {
     out.add(m[1]!)

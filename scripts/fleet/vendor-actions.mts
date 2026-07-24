@@ -9,7 +9,7 @@
  *   action it
  *   resolves the latest release tag and that tag's commit SHA, upserts a
  *   `[submodule "upstream/actions-<name>"]` block in `.gitmodules` (`shallow`,
- *   single-`branch`, `ignore = dirty`), then runs `gen-gitmodules-hash.mts
+ *   single-`branch`, `ignore = dirty`), then runs `gen/gitmodules-hash.mts
  *   --write` to stamp the `# <name>-<version> sha256:<64hex>` archive
  *   content-hash comment that `uses-sha-verify-guard` requires. The `160000`
  *   gitlink is never tracked (`upstream/` is gitignored) — the `ref` +
@@ -104,13 +104,13 @@ export function resolveLatest(name: string): ActionPin {
 
 /**
  * The `[submodule …]` block body (no leading content-hash comment — that is
- * `gen-gitmodules-hash --write`'s job) for a vendored action. Tab-indented to
+ * `gen/gitmodules-hash --write`'s job) for a vendored action. Tab-indented to
  * match git's `.gitmodules` convention. Pure.
  */
 export function blockFor(pin: ActionPin): string {
   const sub = `upstream/${OWNER}-${pin.name}`
   return [
-    // The `# <name>-<version>` header gen-gitmodules-hash --write attaches the
+    // The `# <name>-<version>` header gen/gitmodules-hash --write attaches the
     // sha256 to (gitmodules-comment-guard shape). Version tracks the branch.
     `# ${OWNER}-${pin.name}-${pin.tag}`,
     `[submodule "${sub}"]`,
@@ -198,7 +198,7 @@ export function upsertAll(
 }
 
 /**
- * Run `gen-gitmodules-hash.mts --write` to (re)stamp the content-hash comments
+ * Run `gen/gitmodules-hash.mts --write` to (re)stamp the content-hash comments
  * after refs change. Throws on failure (fail loud).
  */
 function stampHashes(): void {
@@ -206,7 +206,7 @@ function stampHashes(): void {
     REPO_ROOT,
     'scripts',
     'fleet',
-    'gen-gitmodules-hash.mts',
+    'gen/gitmodules-hash.mts',
   )
   const result = spawnSync(process.execPath, [script, '--write', GITMODULES], {
     cwd: REPO_ROOT,
@@ -214,9 +214,9 @@ function stampHashes(): void {
   })
   if (result.status !== 0) {
     throw new Error(
-      `gen-gitmodules-hash --write failed (exit ${String(result.status ?? '?')}).\n` +
+      `gen/gitmodules-hash --write failed (exit ${String(result.status ?? '?')}).\n` +
         `  Where: stamping .gitmodules content-hashes after vendoring.\n` +
-        `  Fix: run \`node scripts/fleet/gen-gitmodules-hash.mts --write\` and inspect.`,
+        `  Fix: run \`node scripts/fleet/gen/gitmodules-hash.mts --write\` and inspect.`,
     )
   }
 }

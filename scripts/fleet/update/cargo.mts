@@ -24,15 +24,16 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { findOwnFiles } from './_shared.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { REPO_ROOT } from '../paths.mts'
 
 const logger = getDefaultLogger()
 
 /**
  * The nightly toolchain the updater tooling runs on — pinned because
  * `-Zmin-publish-age` is a nightly-only unstable flag. Kept in LOCKSTEP with
- * the canonical build pin in `rust-toolchain.toml` (currently
- * nightly-2026-07-20): the fleet unified build + updater on one nightly so
- * there is no separate updater-only pin. Update both together.
+ * the canonical build pin in `template/conditional/rust/rust-toolchain.toml`
+ * (currently nightly-2026-07-20): the fleet unified build + updater on one
+ * nightly so there is no separate updater-only pin. Update both together.
  *
  * TEMPORARY: once Cargo stabilizes the min-publish-age soak (targeting 1.98 —
  * https://github.com/rust-lang/cargo/issues/17009), drop back to the stable pin
@@ -93,10 +94,11 @@ export function assertPositiveSoakDays(soakDays: number): void {
  * not the argv; it is validated here so a bad trust-gate value fails before
  * any spawn.
  */
-export function buildCargoUpdateArgs(
-  options: CargoUpdateArgsOptions,
-): string[] {
-  const { precise, soakDays, toolchain, workspace } = options
+export function buildCargoUpdateArgs(config: CargoUpdateArgsOptions): string[] {
+  const { precise, soakDays, toolchain, workspace } = {
+    __proto__: null,
+    ...config,
+  } as typeof config
   assertPositiveSoakDays(soakDays)
   if (!toolchain) {
     throw new Error(
@@ -165,6 +167,8 @@ export function parseCargoUpdateOutput(stdout: string): CargoUpdate[] {
   const updates: CargoUpdate[] = []
   const lines = stdout.split('\n')
   for (let i = 0, { length } = lines; i < length; i += 1) {
+    // Matches cargo's "Updating <name> v<from> -> v<to>" status line, capturing
+    // the crate name, the from-version, and the to-version.
     const match = /^\s*Updating\s+(\S+)\s+v(\S+)\s+->\s+v(\S+)/.exec(lines[i]!)
     if (match) {
       updates.push({ from: match[2]!, name: match[1]!, to: match[3]! })
@@ -240,7 +244,7 @@ async function runCargoUpdate(
 }
 
 async function main(): Promise<void> {
-  const root = process.cwd()
+  const root = REPO_ROOT
   const { apply, precise, soakDays, workspace } = parseCliArgs(
     process.argv.slice(2),
   )

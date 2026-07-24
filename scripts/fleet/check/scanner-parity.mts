@@ -30,8 +30,8 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import {
   tryParse,
   walkSimple,
-} from '../../../.claude/hooks/fleet/_shared/acorn/index.mts'
-import type { AcornNode } from '../../../.claude/hooks/fleet/_shared/acorn/index.mts'
+} from '../../../.claude/hooks/fleet/_shared/ast/core.mts'
+import type { AcornNode } from '../../../.claude/hooks/fleet/_shared/ast/core.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
@@ -455,7 +455,12 @@ function main(): void {
   // to prevent. Two signals must both hold, so neither a coincidental same-named
   // local in a file that does NOT import the module, nor a private helper name
   // the module never exported (e.g. a module-local `splitLines`), is flagged.
-  for (const mod of crossTreeModules) {
+  for (
+    let mi = 0, { length: modLength } = crossTreeModules;
+    mi < modLength;
+    mi += 1
+  ) {
+    const mod = crossTreeModules[mi]!
     const modFacts = factsByFile.get(mod)
     if (!modFacts) {
       // Imported from both trees but not in the walked dirs — can't verify.

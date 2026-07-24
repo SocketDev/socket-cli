@@ -266,7 +266,9 @@ export async function mismatchedPublishDates(
     name: string
     version: string
   }> = []
-  for (const entry of Object.keys(annotations).toSorted()) {
+  const entrys = Object.keys(annotations).toSorted()
+  for (let i = 0, { length } = entrys; i < length; i += 1) {
+    const entry = entrys[i]!
     const ann = annotations[entry]
     const annotated = ann?.published
     if (!annotated) {

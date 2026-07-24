@@ -29,7 +29,7 @@ const logger = getDefaultLogger()
 // scan") never false-matches — only an explicit `name`-in-code reference counts.
 // oxlint-disable-next-line socket/require-regex-comment -- documented above
 const DELEGATION_RE =
-  /\b(?:run|invokes?|via|using) the [`'"]([a-z][a-z0-9-]*)[`'"] skill\b/gi
+  /\b(?:invokes?|run|using|via) the [`'"]([a-z][a-z0-9-]*)[`'"] skill\b/gi
 
 // Cited skill names in a command markdown, deduped in first-seen order.
 export function extractSkillDelegations(content: string): string[] {

@@ -8,8 +8,11 @@
  *   (function-import cycle; nothing runs at module load, so ESM resolves it).
  */
 
-// oxlint-disable-next-line socket/prefer-stable-external-semver -- @socketsecurity/lib-stable doesn't export ./external/semver at the pinned version; bare semver is a devDependency here (scripts-only, not bundled into a runtime artifact).
-import semver from 'semver'
+import { compare } from '@socketsecurity/lib-stable/versions/compare'
+import {
+  coerceVersion,
+  isValidVersion,
+} from '@socketsecurity/lib-stable/versions/parse'
 
 import { isSocketSourcedRepository } from '../constants/socket-scopes.mts'
 import {
@@ -35,27 +38,27 @@ import { isSoakExcluded } from '../soak-rules.mts'
  * clock. Dates are `YYYY-MM-DD` (what the install-time soak check +
  * soak-pin-needs-annotation expect).
  */
-export function computeSoakBypass(options: {
+export function computeSoakBypass(config: {
   newVersion: string
   nowMs: number
   publishedAt: string
   soakMinutes: number
 }): SoakBypass | undefined {
-  const opts = { __proto__: null, ...options } as typeof options
-  const publishedMs = Date.parse(opts.publishedAt)
+  const cfg = { __proto__: null, ...config } as typeof config
+  const publishedMs = Date.parse(cfg.publishedAt)
   if (!Number.isFinite(publishedMs)) {
     return undefined
   }
-  const soakMs = opts.soakMinutes * 60_000
+  const soakMs = cfg.soakMinutes * 60_000
   // Cleared the soak → no bypass needed.
-  if (publishedMs <= opts.nowMs - soakMs) {
+  if (publishedMs <= cfg.nowMs - soakMs) {
     return undefined
   }
   const isoDay = (ms: number): string => new Date(ms).toISOString().slice(0, 10)
   return {
     published: isoDay(publishedMs),
     removable: isoDay(publishedMs + soakMs),
-    version: opts.newVersion,
+    version: cfg.newVersion,
   }
 }
 
@@ -71,7 +74,10 @@ export interface GithubRelease {
 }
 
 export interface PickNewestSoakedReleaseDeps {
-  curlJson: <T>(url: string, extraHeaders?: string[]) => T | undefined
+  curlJson: <T>(
+    url: string,
+    extraHeaders?: string[] | undefined,
+  ) => T | undefined
 }
 
 /**
@@ -134,7 +140,7 @@ export function pickNewestSoakedRelease(
     isSoakExcluded(toolName, undefined, soakExclude)
   const cutoff = bypass ? Date.now() : Date.now() - soakMinutes * 60_000
   const cleared = releases.filter(r => {
-    if (r.draft || r.prerelease || !semver.valid(semver.coerce(r.tag_name))) {
+    if (r.draft || r.prerelease || !coerceVersion(r.tag_name)) {
       return false
     }
     const t = Date.parse(r.published_at)
@@ -146,9 +152,11 @@ export function pickNewestSoakedRelease(
   // Highest SEMVER wins, NOT newest by publish date: a maintainer may ship an
   // old-line LTS patch (e.g. pnpm 10.34.5) AFTER a newer major (11.11.0), and
   // newest-by-date would pick the patch — a major downgrade the caller refuses.
-  // Tags are `vX.Y.Z`; coerce (non-null after the filter above) + rcompare desc.
-  cleared.sort((a, b) =>
-    semver.rcompare(semver.coerce(a.tag_name)!, semver.coerce(b.tag_name)!),
+  // Tags are `vX.Y.Z`; coerce (non-null after the filter above) + compare(b,a)
+  // for descending order.
+  cleared.sort(
+    (a, b) =>
+      compare(coerceVersion(b.tag_name)!, coerceVersion(a.tag_name)!) ?? 0,
   )
   return cleared[0]
 }
@@ -160,16 +168,16 @@ export function shouldSkipGithubFetch(
   if (!npmLatest) {
     return false
   }
-  if (!semver.valid(npmLatest)) {
+  if (!isValidVersion(npmLatest)) {
     return false
   }
-  if (!semver.valid(current)) {
+  if (!isValidVersion(current)) {
     return false
   }
   // compare() returns -1 / 0 / 1 for older / equal / newer. Skip when
   // npm latest is older or equal — nothing newer can exist on GitHub
   // for the line we track 1:1.
-  return semver.compare(npmLatest, current) <= 0
+  return (compare(npmLatest, current) ?? 0) <= 0
 }
 
 export interface PlanGithubUpdateOptions {

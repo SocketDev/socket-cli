@@ -196,7 +196,8 @@ async function main(): Promise<void> {
   )
   const errors: string[] = []
   const indexPaths = gitIndexPaths()
-  for (const copy of copies) {
+  for (let i = 0, { length } = copies; i < length; i += 1) {
+    const copy = copies[i]!
     const abs = path.join(REPO_ROOT, copy.checkMts)
     if (!existsSync(abs)) {
       continue

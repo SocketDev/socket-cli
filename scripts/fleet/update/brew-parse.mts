@@ -59,7 +59,7 @@ export function isValidBrewToken(token: string): boolean {
 }
 
 // Unquoted characters that end one shell statement and begin the next.
-const STATEMENT_SEPARATORS = new Set(['\n', '&', '(', ')', ';', '|'])
+const STATEMENT_SEPARATORS = new Set(['\n', ';', '(', ')', '&', '|'])
 
 // Sorted shell/YAML tokens that may lead a statement before the real command
 // (control keywords, command wrappers, `- run:` step scaffolding). Skipped while
@@ -162,7 +162,9 @@ export function parseBrewInstallStatement(statement: string): BrewTool[] {
   }
   const tools: BrewTool[] = []
   let cask = false
-  for (const raw of tokens.slice(i + 2)) {
+  const raws = tokens.slice(i + 2)
+  for (let j = 0, { length: jlen } = raws; j < jlen; j += 1) {
+    const raw = raws[j]!
     if (/^\d*[<>]/.test(raw)) {
       break
     }
@@ -190,7 +192,9 @@ export function parseBrewInstallStatement(statement: string): BrewTool[] {
  */
 export function parseBrewInstallCommands(text: string): BrewTool[] {
   const tools: BrewTool[] = []
-  for (const rawLine of joinLineContinuations(text).split('\n')) {
+  const rawLines = joinLineContinuations(text).split('\n')
+  for (let i = 0, { length } = rawLines; i < length; i += 1) {
+    const rawLine = rawLines[i]!
     for (const statement of splitShellStatements(stripLineComment(rawLine))) {
       tools.push(...parseBrewInstallStatement(statement))
     }
@@ -203,7 +207,11 @@ export function parseBrewInstallCommands(text: string): BrewTool[] {
  */
 export function parseBrewfile(text: string): BrewTool[] {
   const tools: BrewTool[] = []
-  for (const line of text.split(/\r?\n/)) {
+  const lineList = text.split(/\r?\n/)
+  for (let i = 0, { length } = lineList; i < length; i += 1) {
+    const line = lineList[i]!
+    // A Brewfile entry: capture 1 = the entry kind (brew formula or cask),
+    // capture 2 = the quoted tool name (single or double quotes).
     const match = /^\s*(brew|cask)\s+["']([^"']+)["']/.exec(line)
     if (match) {
       tools.push({ cask: match[1] === 'cask', explicit: true, name: match[2]! })
@@ -339,7 +347,7 @@ export function isBrewScanFile(name: string): boolean {
 
 /**
  * Every brew tool the repo references: `brew install` sites under `.github/`
- * and `scripts/` plus a root `Brewfile`. Feeds the advisory planner.
+ * and `scripts/` plus the `.config/repo/Brewfile`. Feeds the advisory planner.
  */
 export function findBrewToolSites(root: string): BrewTool[] {
   const out: BrewTool[] = []
@@ -352,7 +360,7 @@ export function findBrewToolSites(root: string): BrewTool[] {
       out.push(...parseBrewInstallCommands(readFileSync(file, 'utf8')))
     }
   }
-  const brewfile = path.join(root, 'Brewfile')
+  const brewfile = brewfilePath(root)
   if (existsSync(brewfile)) {
     out.push(...parseBrewfile(readFileSync(brewfile, 'utf8')))
   }
@@ -494,8 +502,8 @@ export function brewTapPinsPath(): string {
 }
 
 /**
- * Absolute path to the repo-root Brewfile discovery covers.
+ * Absolute path to the `.config/repo/Brewfile` discovery covers.
  */
 export function brewfilePath(root: string): string {
-  return path.join(root, 'Brewfile')
+  return path.join(root, '.config', 'repo', 'Brewfile')
 }

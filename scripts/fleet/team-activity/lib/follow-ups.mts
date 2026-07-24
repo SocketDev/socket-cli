@@ -40,12 +40,14 @@ export function attributeQuote(
   if (needle.length < 12) {
     return undefined
   }
-  for (const c of comments) {
+  for (let i = 0, { length } = comments; i < length; i += 1) {
+    const c = comments[i]!
     if (c.a !== reply.a && c.body.includes(needle)) {
       return `${c.a}'s comment`
     }
   }
-  for (const r of reviews) {
+  for (let i = 0, { length } = reviews; i < length; i += 1) {
+    const r = reviews[i]!
     if (r.a !== reply.a && r.body.includes(needle)) {
       return `${r.a}'s review`
     }

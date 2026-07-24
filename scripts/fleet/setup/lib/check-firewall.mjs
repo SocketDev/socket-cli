@@ -24,6 +24,14 @@ if (!pkgName || !version) {
 const FIREWALL_API_URL = 'https://firewall-api.socket.dev/purl'
 const FIREWALL_TIMEOUT_MS = 10_000
 
+// Dep-0 stand-in for @socketsecurity/lib-stable/errors/message: this
+// composite-action helper runs on the raw runner before setup-node, so the lib
+// isn't installed yet. Kept as a private helper so the call site reads the same.
+function errorMessage(e) {
+  // oxlint-disable-next-line socket/prefer-error-message, socket/prefer-error-message-helper -- dep-0: lib-stable not installed yet
+  return e instanceof Error ? e.message : String(e)
+}
+
 const purl = `pkg:npm/${pkgName}@${version}`
 const url = `${FIREWALL_API_URL}/${encodeURIComponent(purl)}`
 
@@ -57,7 +65,9 @@ async function main() {
       stderr.write(
         `\n✗ Socket Firewall flagged ${pkgName}@${version} as malware (${alerts.length} alert(s)):\n`,
       )
-      for (const a of alerts.slice(0, 10)) {
+      const shown = alerts.slice(0, 10)
+      for (let i = 0, { length } = shown; i < length; i += 1) {
+        const a = shown[i]
         stderr.write(
           `    ${a.type ?? a.key ?? 'malware'}${a.severity ? ` (${a.severity})` : ''}\n`,
         )
@@ -73,8 +83,7 @@ async function main() {
     clearTimeout(timer)
     // Firewall errors are non-fatal — allow bootstrap to proceed.
     // Network blips or registry-down shouldn't break a fresh clone.
-    // oxlint-disable-next-line socket/prefer-error-message -- composite-action helper runs on the raw runner before setup-node; @socketsecurity/lib-stable/errors/message is not installed yet.
-    const message = e instanceof Error ? e.message : String(e)
+    const message = errorMessage(e)
     stderr.write(`firewall-api: ${message} — proceeding anyway (non-fatal)\n`)
     return 0
   }

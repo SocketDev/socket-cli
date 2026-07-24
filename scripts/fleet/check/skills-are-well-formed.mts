@@ -46,7 +46,7 @@ const logger = getDefaultLogger()
 // truncated, so the source frontmatter owns a hard budget instead of relying on
 // each agent surface to shorten it differently.
 export const MAX_SKILL_DESCRIPTION_LENGTH = 180
-export const MAX_SKILL_CATALOG_DESCRIPTION_LENGTH = 7_000
+export const MAX_SKILL_CATALOG_DESCRIPTION_LENGTH = 7000
 export const MAX_SKILL_BODY_LINES = 500
 
 const SKILL_TIERS = ['fleet', 'repo'] as const

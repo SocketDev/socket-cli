@@ -37,6 +37,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { parseArgs } from 'node:util'
+import { REPO_ROOT } from '../paths.mts'
 
 // The config is repo-owned: prefer the `.config/repo/` location, fall back to
 // the legacy top-level `.config/` path during the migration soak.
@@ -258,10 +259,15 @@ function main(): void {
     options: {
       json: { type: 'boolean', default: false },
       quiet: { type: 'boolean', default: false },
+      // --root <dir>: explicit repo-root override — the seam fixture-driven
+      // tests use to point the gate at a temp repo. Production runs omit it
+      // and the script-location REPO_ROOT holds (cwd-independent by
+      // convention).
+      root: { type: 'string' },
     },
     allowPositionals: false,
   })
-  const repoRoot = process.cwd()
+  const repoRoot = values.root ?? REPO_ROOT
   let config: Config | undefined
   try {
     config = loadConfig(repoRoot)

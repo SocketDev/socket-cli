@@ -1,9 +1,9 @@
 /**
  * @file Release-pipeline state store. One JSON file under
- *   `node_modules/.cache/socket-release-pipeline/` (runtime state NEVER lives
- *   in the tracked tree) records a receipt per completed stage so a pipeline
- *   run is resumable: a re-run skips stages whose receipts are still current
- *   and picks up at the first missing/stale one. Pure helpers
+ *   `node_modules/.cache/fleet/socket-release-pipeline/` (runtime state NEVER
+ *   lives in the tracked tree) records a receipt per completed stage so a
+ *   pipeline run is resumable: a re-run skips stages whose receipts are still
+ *   current and picks up at the first missing/stale one. Pure helpers
  *   (`recordReceipt`, `parseState`) are separated from the fs edges
  *   (`loadState`, `saveState`) so tests round-trip against a temp dir.
  */
@@ -40,7 +40,40 @@ export interface StageReceipt {
    * stages (see stages.mts `stageKeyKind`).
    */
   key: string
+  /**
+   * Stage wall time in milliseconds (absent on receipts written before the
+   * timing field existed — rendering tolerates that).
+   */
+  ms?: number | undefined
   status: ReceiptStatus
+}
+
+/**
+ * Release-asset checksums computed at VERIFY time (over the verified local
+ * pack — the exact bytes the approve gate compared against npm staging) and
+ * stashed so the release stage can create the immutable GH release WITH its
+ * assets in one draft → upload → undraft shot, no post-creation upload (an
+ * immutable release 422-rejects late asset uploads).
+ */
+export interface ReleaseChecksums {
+  /**
+   * Sha1 hex of the verified tarball (comparable to npm's staged shasum).
+   */
+  sha1: string
+  /**
+   * Sha512 base64 of the verified tarball (npm integrity, without the SRI
+   * prefix).
+   */
+  sha512: string
+  /**
+   * The tarball filename `pnpm pack` produces (scope-stripped name-version).
+   */
+  tarballName: string
+  /**
+   * The target version the checksums were computed for — a renamed target
+   * invalidates the stash.
+   */
+  version: string
 }
 
 export interface PipelineState {
@@ -48,6 +81,11 @@ export interface PipelineState {
    * Package name at pipeline start (drift check on resume).
    */
   packageName: string
+  /**
+   * Verify-time release-asset checksums (see ReleaseChecksums). Absent until
+   * the verify stage passes for real.
+   */
+  releaseChecksums?: ReleaseChecksums | undefined
   /**
    * ISO timestamp of pipeline creation.
    */
@@ -75,6 +113,7 @@ export function statePath(repoRoot: string): string {
     repoRoot,
     'node_modules',
     '.cache',
+    'fleet',
     STATE_DIR_NAME,
     STATE_FILE_NAME,
   )
@@ -89,11 +128,30 @@ export function newState(
 ): PipelineState {
   return {
     packageName,
+    releaseChecksums: undefined,
     stages: {},
     startedAt,
     targetVersion: undefined,
     version: 1,
   }
+}
+
+function parseReleaseChecksums(value: unknown): ReleaseChecksums | undefined {
+  if (!value || typeof value !== 'object') {
+    return undefined
+  }
+  const c = value as Partial<ReleaseChecksums>
+  return typeof c.sha1 === 'string' &&
+    typeof c.sha512 === 'string' &&
+    typeof c.tarballName === 'string' &&
+    typeof c.version === 'string'
+    ? {
+        sha1: c.sha1,
+        sha512: c.sha512,
+        tarballName: c.tarballName,
+        version: c.version,
+      }
+    : undefined
 }
 
 /**
@@ -123,6 +181,7 @@ export function parseState(raw: string): PipelineState | undefined {
   }
   return {
     packageName: s.packageName,
+    releaseChecksums: parseReleaseChecksums(s.releaseChecksums),
     stages: s.stages,
     startedAt: s.startedAt,
     targetVersion:
@@ -153,6 +212,16 @@ export function withTargetVersion(
   targetVersion: string,
 ): PipelineState {
   return { ...state, targetVersion }
+}
+
+/**
+ * Immutably stash the verify-time release-asset checksums. Pure.
+ */
+export function withReleaseChecksums(
+  state: PipelineState,
+  releaseChecksums: ReleaseChecksums,
+): PipelineState {
+  return { ...state, releaseChecksums }
 }
 
 /**

@@ -60,43 +60,86 @@ export function countRuleDirs(dir: string): number {
   return count
 }
 
+// Import a plugin entry (source index.mts OR the bundled .mjs) and count the
+// rules its default export registers. Never throws — a failed import returns an
+// error string so the caller can classify it `load-threw`.
+async function loadPluginRules(
+  entryPath: string,
+): Promise<{ error: string | undefined; registered: number }> {
+  try {
+    const mod = (await import(entryPath)) as {
+      default?: { rules?: Record<string, unknown> | undefined } | undefined
+    }
+    const rules = mod.default?.rules
+    return {
+      error: undefined,
+      registered: rules ? Object.keys(rules).length : 0,
+    }
+  } catch (e) {
+    return { error: errorMessage(e), registered: 0 }
+  }
+}
+
 /**
- * Import the plugin at `<repoRoot>/.config/fleet/oxlint-plugin/index.mts` and
- * verify it loads + registers exactly the number of rules present under
- * `fleet/`. Returns a structured verdict; never throws (a load failure is
- * `load-threw`). A repo with no plugin returns `no-plugin` (status quo, not a
- * failure).
+ * Verify the fleet oxlint plugin actually loads + registers its rules. Two
+ * shapes, one gate:
+ *
+ * - SOURCE present (the wheelhouse): the plugin ships as ~100 rule dirs under
+ *   `<repoRoot>/.config/fleet/oxlint-plugin/fleet/`. Import the source index
+ *   and assert it registers exactly that many rules (`count-mismatch` catches a
+ *   rule dir that isn't wired into the registry).
+ * - SOURCE absent, BUNDLE present (a bundle-only member): the runtime artifact is
+ *   `<repoRoot>/.config/fleet/oxlint-plugin.mjs`. Import it and assert a
+ *   non-empty rules map — a dead bundle is exactly the vacuous pass this gate
+ *   exists to catch. There is no source count to compare against, so `ok` means
+ *   "registered ≥ 1".
+ *
+ * Returns a structured verdict; never throws (a load failure is `load-threw`).
+ * A repo with neither source nor bundle returns `no-plugin` (not a failure).
  */
 export async function assertPluginLoads(
   repoRoot: string,
 ): Promise<PluginLoadResult> {
   const pluginDir = path.join(repoRoot, '.config', 'fleet', 'oxlint-plugin')
-  const indexPath = path.join(pluginDir, 'index.mts')
+  const sourceIndexPath = path.join(pluginDir, 'index.mts')
+  const bundlePath = path.join(
+    repoRoot,
+    '.config',
+    'fleet',
+    'oxlint-plugin.mjs',
+  )
   const fleetDir = path.join(pluginDir, 'fleet')
   const expected = countRuleDirs(fleetDir)
-  if (expected === 0) {
-    return { error: undefined, expected: 0, registered: 0, status: 'no-plugin' }
-  }
-  let plugin: { rules?: Record<string, unknown> | undefined } | undefined
-  try {
-    const mod = (await import(indexPath)) as {
-      default?: { rules?: Record<string, unknown> | undefined } | undefined
+
+  if (expected > 0) {
+    const { error, registered } = await loadPluginRules(sourceIndexPath)
+    if (error !== undefined) {
+      return { error, expected, registered: 0, status: 'load-threw' }
     }
-    plugin = mod.default
-  } catch (e) {
-    return {
-      error: errorMessage(e),
-      expected,
-      registered: 0,
-      status: 'load-threw',
+    if (registered === 0) {
+      return { error: undefined, expected, registered: 0, status: 'empty' }
     }
+    if (registered !== expected) {
+      return {
+        error: undefined,
+        expected,
+        registered,
+        status: 'count-mismatch',
+      }
+    }
+    return { error: undefined, expected, registered, status: 'ok' }
   }
-  const registered = plugin?.rules ? Object.keys(plugin.rules).length : 0
-  if (registered === 0) {
-    return { error: undefined, expected, registered: 0, status: 'empty' }
+
+  if (existsSync(bundlePath)) {
+    const { error, registered } = await loadPluginRules(bundlePath)
+    if (error !== undefined) {
+      return { error, expected: 0, registered: 0, status: 'load-threw' }
+    }
+    if (registered === 0) {
+      return { error: undefined, expected: 0, registered: 0, status: 'empty' }
+    }
+    return { error: undefined, expected: registered, registered, status: 'ok' }
   }
-  if (registered !== expected) {
-    return { error: undefined, expected, registered, status: 'count-mismatch' }
-  }
-  return { error: undefined, expected, registered, status: 'ok' }
+
+  return { error: undefined, expected: 0, registered: 0, status: 'no-plugin' }
 }

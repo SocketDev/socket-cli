@@ -30,6 +30,7 @@ import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { REPO_ROOT } from '../paths.mts'
 
 const logger = getDefaultLogger()
 
@@ -121,7 +122,7 @@ export function findUncodifiedMemories(dir: string): MemoryCodifyResult {
 }
 
 export function main(): void {
-  const repoRoot = process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
+  const repoRoot = process.env['CLAUDE_PROJECT_DIR'] ?? REPO_ROOT
   const dir = memoryStoreDir(repoRoot)
   if (!existsSync(dir)) {
     logger.log(

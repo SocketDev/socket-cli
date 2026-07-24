@@ -1,5 +1,5 @@
 /**
- * @file Shared coverage-badge logic for make-coverage-badge.mts (writes the
+ * @file Shared coverage-badge logic for gen/coverage-badge.mts (writes the
  *   badge SVG + README reference from a coverage run) and
  *   check/coverage-badge-is-current.mts (asserts the badge matches actual
  *   coverage). The badge is a repo-local optimized SVG asset — no third-party
@@ -15,6 +15,8 @@
 
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
+
+import { COVERAGE_SUMMARY_PATH, REPO_ROOT } from '../paths.mts'
 
 // Where the generated badge lives, relative to the repo root. `assets/repo/`
 // is the repo-owned asset tier (never cascade-synced), so each repo's percent
@@ -236,22 +238,20 @@ export function badgeAssetPath(repoRoot: string): string {
   return path.join(repoRoot, 'assets', 'repo', 'badges', 'coverage.svg')
 }
 
-// The line-coverage total percent from a vitest `coverage/coverage-summary.json`
-// (the `json-summary` reporter). Returns undefined when the file is absent or
-// shapeless — the caller decides whether that's fail-open (the check) or an
-// error (the writer, which needs a real number).
+// The line-coverage total percent from a coverage `coverage-summary.json` (the
+// `json-summary` reporter's shape, under node_modules/.cache/fleet/coverage/).
+// Returns undefined when the file is absent or shapeless — the caller decides
+// whether that's fail-open (the check) or an error (the writer, which needs a
+// real number).
 export function readCoveragePct(repoRoot: string): number | undefined {
-  // Prefer the merged aggregate cover.mts persists (twin-folded, subprocess
-  // tier included) over the raw single-tier vitest summary — the badge should
-  // show the honest composite number when a full cover run produced one.
-  const aggregatePath = path.join(
+  // The merged json-summary the coverage runner persists at the coverage-home
+  // root (twin-folded, subprocess tier included) — the only summary persisted in
+  // COVERAGE_DIR (per-tier reports are transient scratch). Re-anchored on the
+  // passed repoRoot so tests + multi-repo callers read the right tree.
+  const summaryPath = path.join(
     repoRoot,
-    'coverage',
-    'aggregate-summary.json',
+    path.relative(REPO_ROOT, COVERAGE_SUMMARY_PATH),
   )
-  const summaryPath = existsSync(aggregatePath)
-    ? aggregatePath
-    : path.join(repoRoot, 'coverage', 'coverage-summary.json')
   if (!existsSync(summaryPath)) {
     return undefined
   }

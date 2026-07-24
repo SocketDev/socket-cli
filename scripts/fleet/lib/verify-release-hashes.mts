@@ -175,21 +175,21 @@ export function compareHashSources(
  * stage list`, since a staged version is not yet in the public packument).
  */
 export async function verifyReleaseHashes(
-  options: VerifyReleaseHashesOptions,
+  config: VerifyReleaseHashesOptions,
 ): Promise<HashComparison> {
-  const opts = { __proto__: null, ...options } as VerifyReleaseHashesOptions
-  const hashLocal = opts.hashLocalTarball ?? hashTarball
+  const cfg = { __proto__: null, ...config } as VerifyReleaseHashesOptions
+  const hashLocal = cfg.hashLocalTarball ?? hashTarball
   const fetchGitHub =
-    opts.fetchGitHubAssetDigest ?? defaultFetchGitHubAssetDigest
-  const fetchRegistry = opts.fetchRegistryDigest ?? defaultFetchRegistryDigest
-  const local = hashLocal(opts.localTarball)
+    cfg.fetchGitHubAssetDigest ?? defaultFetchGitHubAssetDigest
+  const fetchRegistry = cfg.fetchRegistryDigest ?? defaultFetchRegistryDigest
+  const local = hashLocal(cfg.localTarball)
   const [github, registry] = await Promise.all([
     fetchGitHub({
-      assetName: path.basename(opts.localTarball),
-      cwd: opts.cwd,
-      tag: opts.tag,
+      assetName: path.basename(cfg.localTarball),
+      cwd: cfg.cwd,
+      tag: cfg.tag,
     }),
-    fetchRegistry(opts.name, opts.version),
+    fetchRegistry(cfg.name, cfg.version),
   ])
   const sources: HashSource[] = [
     { integrity: local.integrity, label: 'local pack', shasum: local.shasum },
@@ -199,7 +199,7 @@ export async function verifyReleaseHashes(
   const comparison = compareHashSources(sources)
   if (!comparison.ok) {
     throw new ReleaseHashMismatchError(
-      buildMismatchMessage(opts, sources, comparison),
+      buildMismatchMessage(cfg, sources, comparison),
       comparison,
     )
   }
@@ -207,11 +207,11 @@ export async function verifyReleaseHashes(
 }
 
 function buildMismatchMessage(
-  options: VerifyReleaseHashesOptions,
+  config: VerifyReleaseHashesOptions,
   sources: readonly HashSource[],
   comparison: HashComparison,
 ): string {
-  const opts = { __proto__: null, ...options } as typeof options
+  const cfg = { __proto__: null, ...config } as typeof config
   const axis = comparison.algorithm ?? 'integrity/shasum'
   const rows = sources
     .map(
@@ -220,8 +220,8 @@ function buildMismatchMessage(
     )
     .join('\n')
   return (
-    `Release hash verification failed for ${opts.name}@${opts.version}.\n` +
-    `  Where: comparing local pack vs GitHub release ${opts.tag} vs npm registry (${axis}).\n` +
+    `Release hash verification failed for ${cfg.name}@${cfg.version}.\n` +
+    `  Where: comparing local pack vs GitHub release ${cfg.tag} vs npm registry (${axis}).\n` +
     `  Saw vs wanted: ${comparison.reason ?? 'sources disagree'}; sources:\n${rows}\n` +
     `  Fix: reject the staged publish (pnpm stage reject <stageId>) and re-run the release — never approve a divergent artifact.`
   )
@@ -246,24 +246,24 @@ async function defaultFetchRegistryDigest(
 }
 
 async function defaultFetchGitHubAssetDigest(
-  options: GitHubAssetDigestOptions,
+  config: GitHubAssetDigestOptions,
 ): Promise<HashSource> {
-  const opts = { __proto__: null, ...options } as GitHubAssetDigestOptions
+  const cfg = { __proto__: null, ...config } as GitHubAssetDigestOptions
   const dir = mkdtempSync(path.join(os.tmpdir(), 'release-verify-'))
   const result = await spawn(
     'gh',
     [
       'release',
       'download',
-      opts.tag,
+      cfg.tag,
       '--pattern',
-      opts.assetName,
+      cfg.assetName,
       '--dir',
       dir,
       '--clobber',
     ],
     {
-      cwd: opts.cwd,
+      cwd: cfg.cwd,
       shell: WIN32,
       stdio: ['ignore', 'pipe', 'pipe'],
       stdioString: true,
@@ -273,19 +273,19 @@ async function defaultFetchGitHubAssetDigest(
   if (code !== 0) {
     throw new Error(
       `Could not download the GitHub release asset for hash verification.\n` +
-        `  Where: gh release download ${opts.tag} --pattern ${opts.assetName}\n` +
+        `  Where: gh release download ${cfg.tag} --pattern ${cfg.assetName}\n` +
         `  Saw: gh exited ${code}\n` +
-        `  Fix: confirm the release ${opts.tag} exists and carries the asset ${opts.assetName}.`,
+        `  Fix: confirm the release ${cfg.tag} exists and carries the asset ${cfg.assetName}.`,
     )
   }
   const files = readdirSync(dir)
-  const downloaded = files.includes(opts.assetName) ? opts.assetName : files[0]
+  const downloaded = files.includes(cfg.assetName) ? cfg.assetName : files[0]
   if (!downloaded) {
     throw new Error(
       `The GitHub release download produced no file.\n` +
-        `  Where: ${dir} after gh release download ${opts.tag}\n` +
+        `  Where: ${dir} after gh release download ${cfg.tag}\n` +
         `  Saw: empty directory\n` +
-        `  Fix: confirm the asset ${opts.assetName} is attached to release ${opts.tag}.`,
+        `  Fix: confirm the asset ${cfg.assetName} is attached to release ${cfg.tag}.`,
     )
   }
   return {

@@ -97,7 +97,9 @@ export function parseSnapshotDate(docText: string): Date | undefined {
 export function staleServices(pricing: PricingData, now: Date): StaleService[] {
   const stale: StaleService[] = []
   const services = pricing.services ?? {}
-  for (const service of Object.keys(services)) {
+  const serviceNames = Object.keys(services)
+  for (let i = 0, { length } = serviceNames; i < length; i += 1) {
+    const service = serviceNames[i]!
     const snapshot = services[service]?.snapshot
     if (!snapshot) {
       continue

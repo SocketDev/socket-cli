@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
  * @file Build the fleet hook dispatch bundle. Regenerates the STATIC dispatch
- *   table (`make-hook-dispatch.mts`) so the bundle reflects the current
+ *   table (`gen/hook-dispatch.mts`) so the bundle reflects the current
  *   bundle-safe hook set, then runs rolldown with
  *   `.config/fleet/rolldown/hook-bundle.config.mts` to emit the minified CJS
- *   `_dispatch/bundle.cjs`.
- *   The hand-written `_dispatch/index.cjs` loader (NOT bundled) turns on the V8
+ *   `_dist/bundle.cjs`.
+ *   The hand-written `index.cjs` loader (NOT bundled) turns on the V8
  *   compile cache, then `require()`s the bundle. Output is CJS so the compile
  *   cache reliably persists; see docs/agents.md/fleet/hook-bundle.md.
  *   Usage: `node scripts/fleet/build-hook-bundle.mts [--check]`
@@ -28,8 +28,9 @@ import {
   generateDispatchManifestSource,
   generateDispatchTableSource,
   HOOK_BUNDLE_PATH,
-} from './make-hook-dispatch.mts'
+} from './gen/hook-dispatch.mts'
 import { REPO_ROOT } from './paths.mts'
+import { hasFleetHookSource } from './_shared/fleet-source-present.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
@@ -67,10 +68,12 @@ export function isDispatchTableStale(
  * Classify a rolldown build attempt from its exit status + whether the
  * expected output landed.
  */
-export function classifyBundleBuild(
-  exitStatus: number | null,
-  outputExists: boolean,
-): BundleBuildOutcome {
+export function classifyBundleBuild(config: {
+  exitStatus: number | null
+  outputExists: boolean
+}): BundleBuildOutcome {
+  const cfg = { __proto__: null, ...config }
+  const { exitStatus, outputExists } = cfg
   if (exitStatus !== 0) {
     return { failureReason: 'spawn-failed', ok: false }
   }
@@ -81,6 +84,15 @@ export function classifyBundleBuild(
 }
 
 function main(): void {
+  // A bundle-only member has no hook source to bundle — a rebuild here would
+  // replace the release-shipped bundle.cjs with an EMPTY one, silently
+  // disabling every fleet hook (index.cjs fails open). Built at the source repo.
+  if (!hasFleetHookSource(REPO_ROOT)) {
+    logger.log(
+      '[build-hook-bundle] no fleet hook source (bundle-only) — bundle.cjs ships via the release bundle.',
+    )
+    return
+  }
   const checkOnly = process.argv.includes('--check')
   const generated = generateDispatchTableSource(FLEET_HOOKS_DIR)
   const generatedManifest = generateDispatchManifestSource(FLEET_HOOKS_DIR)
@@ -113,7 +125,7 @@ function main(): void {
   writeFileSync(DISPATCH_TABLE_PATH, generated)
   // The dep-0 bootstrap dispatcher routes off the manifest; regenerate it in
   // lock-step with the table so the two never drift (this is the dogfood path —
-  // build-hook-bundle writes the table directly, not via make-hook-dispatch).
+  // build-hook-bundle writes the table directly, not via gen/hook-dispatch).
   writeFileSync(DISPATCH_MANIFEST_PATH, generatedManifest)
 
   // Dogfood: the wheelhouse carries template/base/ (a member does not). Mirror
@@ -155,10 +167,10 @@ function main(): void {
     shell: process.platform === 'win32',
     stdio: 'inherit',
   })
-  const outcome = classifyBundleBuild(
-    result.status,
-    existsSync(HOOK_BUNDLE_PATH),
-  )
+  const outcome = classifyBundleBuild({
+    exitStatus: result.status,
+    outputExists: existsSync(HOOK_BUNDLE_PATH),
+  })
   if (!outcome.ok) {
     if (outcome.failureReason === 'spawn-failed') {
       logger.error(`rolldown build failed (exit ${String(result.status)}).`)

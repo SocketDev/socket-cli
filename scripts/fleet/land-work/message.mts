@@ -46,7 +46,10 @@ function shortArea(dir: string): string {
  * why" line inserted below the subject, above the digest, for multi-file groups
  * only; a single-file group already names its file. Deterministic and pure.
  */
-export function commitMessage(group: CommitGroup, aiSummary?: string): string {
+export function commitMessage(
+  group: CommitGroup,
+  aiSummary?: string | undefined,
+): string {
   const { paths, scope, type } = group
   const n = paths.length
   if (n === 1) {
@@ -78,7 +81,8 @@ export function commitMessage(group: CommitGroup, aiSummary?: string): string {
   // Body: one bullet per directory (bounded), listing its file basenames.
   const bulletDirs = dirs.slice(0, MAX_BODY_DIRS)
   const lines: string[] = []
-  for (const dir of bulletDirs) {
+  for (let i = 0, { length } = bulletDirs; i < length; i += 1) {
+    const dir = bulletDirs[i]!
     const files = byDir.get(dir)!.toSorted()
     const shownFiles = files.slice(0, MAX_FILES_PER_DIR)
     const moreFiles = files.length - shownFiles.length

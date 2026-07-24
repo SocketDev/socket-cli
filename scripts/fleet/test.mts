@@ -203,7 +203,7 @@ function getUntrackedFiles(): string[] {
 
 // A path that IS a test file (vitest's default test-file shape).
 function isTestFile(filePath: string): boolean {
-  return /\.(?:test|spec)\.[cm]?[jt]sx?$/.test(filePath)
+  return /\.(?:spec|test)\.[cm]?[jt]sx?$/.test(filePath)
 }
 
 // The mirror test(s) of a SOURCE file, found by the MIRROR resolver (not by
@@ -279,7 +279,7 @@ function resolveVitestEnv(
 function runVitest(
   vitestArgs: string[],
   label: string,
-  options?: { env?: Record<string, string> | undefined },
+  options?: { env?: Record<string, string> | undefined } | undefined,
 ): number {
   const opts = { __proto__: null, ...options } as {
     env?: Record<string, string> | undefined
@@ -375,11 +375,10 @@ function workspaceHasScript(script: string): boolean {
 // the per-file related/changed filtering vitest would do at the root is the
 // optimization that breaks, and a per-package full run is the safe trade.
 function isDelegatedWorkspace(): boolean {
-  return shouldDelegateWorkspace(
-    mode,
-    existsSync(ROOT_VITEST_CONFIG),
-    existsSync(ROOT_WORKSPACE_MANIFEST),
-  )
+  return shouldDelegateWorkspace(mode, {
+    rootVitestConfigExists: existsSync(ROOT_VITEST_CONFIG),
+    workspaceManifestExists: existsSync(ROOT_WORKSPACE_MANIFEST),
+  })
 }
 
 // Pre-commit is deliberately file-scoped even in a delegated workspace. Once
@@ -389,11 +388,13 @@ function isDelegatedWorkspace(): boolean {
 // per-package delegation and therefore keep package-specific env wrappers.
 export function shouldDelegateWorkspace(
   scopeMode: string,
-  rootVitestConfigExists: boolean,
-  workspaceManifestExists: boolean,
+  config: { rootVitestConfigExists: boolean; workspaceManifestExists: boolean },
 ): boolean {
+  const cfg = { __proto__: null, ...config } as typeof config
   return (
-    scopeMode !== 'staged' && !rootVitestConfigExists && workspaceManifestExists
+    scopeMode !== 'staged' &&
+    !cfg.rootVitestConfigExists &&
+    cfg.workspaceManifestExists
   )
 }
 

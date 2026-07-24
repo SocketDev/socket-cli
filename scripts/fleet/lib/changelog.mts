@@ -15,6 +15,14 @@
 
 import { maxVersion } from '@socketsecurity/lib-stable/versions/range'
 
+import {
+  renderBullet,
+  renderSectionMap,
+  SECTION_ORDER,
+  TYPE_TO_SECTION,
+  unreleasedRange,
+} from './changelog-render.mts'
+
 // Record separator between commits, unit separator between fields — both
 // control chars that never appear in a commit subject/body, so a `git log
 // --format=%H%x1f%s%x1f%b%x1e` stream parses unambiguously.
@@ -35,19 +43,6 @@ export interface ConventionalCommit {
   scope: string | undefined
   type: string
 }
-
-// User-visible commit types → the Keep a Changelog section each lands under.
-// A type absent from this map is internal churn and never reaches the CHANGELOG.
-const TYPE_TO_SECTION: Record<string, string> = {
-  __proto__: null,
-  feat: 'Added',
-  fix: 'Fixed',
-  perf: 'Changed',
-  revert: 'Changed',
-} as unknown as Record<string, string>
-
-// Section display order in the generated entry.
-const SECTION_ORDER: readonly string[] = ['Added', 'Changed', 'Fixed']
 
 const SUBJECT_RE =
   /^(?<type>[a-z]+)(?:\((?<scope>[^)]+)\))?(?<bang>!)?:\s*(?<description>.+)$/
@@ -182,17 +177,17 @@ export interface ResolveBumpBaseOptions {
  * can never inflate it. Falls back to the manifest core ONLY for a genuine
  * first release (no published version, no tag).
  */
-export function resolveBumpBase(options: ResolveBumpBaseOptions): string {
-  const opts = { __proto__: null, ...options } as ResolveBumpBaseOptions
+export function resolveBumpBase(config: ResolveBumpBaseOptions): string {
+  const cfg = { __proto__: null, ...config } as ResolveBumpBaseOptions
   const released: string[] = []
-  if (opts.publishedVersion) {
-    released.push(opts.publishedVersion)
+  if (cfg.publishedVersion) {
+    released.push(cfg.publishedVersion)
   }
-  if (opts.tagVersion) {
-    released.push(opts.tagVersion.replace(/^v/, ''))
+  if (cfg.tagVersion) {
+    released.push(cfg.tagVersion.replace(/^v/, ''))
   }
   return (
-    maxVersion(released) ?? opts.manifestVersion.split('-')[0]!.split('+')[0]!
+    maxVersion(released) ?? cfg.manifestVersion.split('-')[0]!.split('+')[0]!
   )
 }
 
@@ -218,25 +213,6 @@ export function repoBaseUrl(
 }
 
 /**
- * Render one bullet for a commit: a bold scope prefix when present, the
- * description, and a `**BREAKING:**` marker for breaking changes.
- */
-function escapeMarkdownText(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-}
-
-function renderBullet(commit: ConventionalCommit): string {
-  const breaking = commit.breaking ? '**BREAKING:** ' : ''
-  const scope = commit.scope
-    ? `**\`${escapeMarkdownText(commit.scope)}\`** — `
-    : ''
-  return `- ${breaking}${scope}${escapeMarkdownText(commit.description)}`
-}
-
-/**
  * Build the Markdown CHANGELOG entry for a version from its commits. Heading
  * matches the fleet shape (`## [X.Y.Z](<repo>/releases/tag/vX.Y.Z) - DATE` when
  * a repo URL is known, else `## X.Y.Z - DATE`); only user-visible commits
@@ -257,7 +233,7 @@ export function changelogHeading(
     : `## ${version} - ${date}`
 }
 
-export function generateChangelogSection(options: {
+export function generateChangelogSection(config: {
   commits: readonly ConventionalCommit[]
   date: string
   repoUrl: string | undefined
@@ -276,7 +252,7 @@ export function generateChangelogSection(options: {
     version,
   } = {
     __proto__: null,
-    ...options,
+    ...config,
   } as {
     commits: readonly ConventionalCommit[]
     date: string
@@ -347,28 +323,6 @@ export function withChangelogEntry(section: string, bullet: string): string {
  * `[Unreleased]` section with entries to promote (so the caller falls back to
  * commit-derivation, then the empty-guard). Pure over its inputs.
  */
-/**
- * The `[start, end)` line range of the `## [Unreleased]` block within `lines`
- * (heading at `start`, `end` at the next `## ` heading or EOF), or undefined
- * when there is no `[Unreleased]` heading. One scanner, shared by
- * promote+merge.
- */
-function unreleasedRange(
-  lines: readonly string[],
-): { end: number; start: number } | undefined {
-  const start = lines.findIndex(l => l.trim() === UNRELEASED_HEADING)
-  if (start === -1) {
-    return undefined
-  }
-  let end = lines.length
-  for (let i = start + 1, { length } = lines; i < length; i += 1) {
-    if (lines[i]!.startsWith('## ')) {
-      end = i
-      break
-    }
-  }
-  return { end, start }
-}
 
 /**
  * Parse a changelog section's `### <Section>` blocks into a
@@ -378,7 +332,9 @@ function unreleasedRange(
 export function parseSectionBullets(section: string): Map<string, string[]> {
   const out = new Map<string, string[]>()
   let current: string | undefined
-  for (const line of section.split('\n')) {
+  const lines = section.split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
     const heading = /^###\s+(.+?)\s*$/u.exec(line)
     if (heading) {
       current = heading[1]!
@@ -392,32 +348,6 @@ export function parseSectionBullets(section: string): Map<string, string[]> {
     }
   }
   return out
-}
-
-/**
- * Render a `{ section -> bullets }` map under `heading`, standard sections in
- * canonical order first, then any others. Empty sections are omitted.
- */
-function renderSectionMap(
-  heading: string,
-  bySection: Map<string, string[]>,
-): string {
-  const blocks: string[] = [heading]
-  const emit = (section: string): void => {
-    const bullets = bySection.get(section)
-    if (bullets && bullets.length > 0) {
-      blocks.push(`### ${section}\n\n${bullets.join('\n')}`)
-    }
-  }
-  for (let i = 0, { length } = SECTION_ORDER; i < length; i += 1) {
-    emit(SECTION_ORDER[i]!)
-  }
-  for (const section of bySection.keys()) {
-    if (!SECTION_ORDER.includes(section)) {
-      emit(section)
-    }
-  }
-  return blocks.join('\n\n')
 }
 
 /**
@@ -441,7 +371,7 @@ export function mergeUnreleased(
     return changelog
   }
   const lines = changelog.split('\n')
-  const range = unreleasedRange(lines)
+  const range = unreleasedRange(lines, UNRELEASED_HEADING)
   let before: string[]
   let after: string[]
   let existingBody = ''
@@ -486,7 +416,7 @@ export function promoteUnreleased(
   versionHeading: string,
 ): { changelog: string; section: string } | undefined {
   const lines = changelog.split('\n')
-  const range = unreleasedRange(lines)
+  const range = unreleasedRange(lines, UNRELEASED_HEADING)
   if (!range) {
     return undefined
   }

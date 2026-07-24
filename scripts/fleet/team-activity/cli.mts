@@ -20,6 +20,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { refreshGhHeartbeat } from '../gh-heartbeat.mts'
+import { REPO_ROOT } from '../paths.mts'
 import { loadConfig } from './lib/config.mts'
 import { renderReport, scanChanged } from './lib/render.mts'
 import { runScan } from './lib/scan.mts'
@@ -56,14 +57,14 @@ export function parseArgv(argv: readonly string[]): ParsedArgv {
   return { command: 'scan', configPath: positional[0], quiet }
 }
 
-function runScanCommand(options: {
+function runScanCommand(config: {
   configPath: string
   quiet: boolean
 }): number {
-  const opts = { __proto__: null, ...options } as typeof options
-  let config
+  const cfg = { __proto__: null, ...config } as typeof config
+  let loadedConfig
   try {
-    config = loadConfig(opts.configPath)
+    loadedConfig = loadConfig(cfg.configPath)
   } catch (e) {
     logger.fail(`[team-activity] ${(e as Error).message}`)
     return 1
@@ -74,12 +75,12 @@ function runScanCommand(options: {
     return 1
   }
   const now = new Date().toISOString()
-  const state = loadState(opts.configPath, now)
-  const report = runScan(config, state, makeGhRunner(process.cwd()))
+  const state = loadState(cfg.configPath, now)
+  const report = runScan(loadedConfig, state, makeGhRunner(REPO_ROOT))
   state.scannedAt = now
-  writeState(opts.configPath, state)
-  const rendered = renderReport(config, report)
-  if (!opts.quiet || scanChanged(report)) {
+  writeState(cfg.configPath, state)
+  const rendered = renderReport(loadedConfig, report)
+  if (!cfg.quiet || scanChanged(report)) {
     logger.log(rendered)
   } else {
     logger.log(rendered.split(' — ')[0] ?? rendered)

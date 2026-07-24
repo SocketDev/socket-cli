@@ -29,7 +29,9 @@ export function detectUnsignedCommits(
   logOutput: string,
 ): DoctorFinding | undefined {
   const unsigned: string[] = []
-  for (const line of logOutput.split('\n')) {
+  const logLines = logOutput.split('\n')
+  for (let i = 0, { length } = logLines; i < length; i += 1) {
+    const line = logLines[i]!
     const trimmed = line.trim()
     if (!trimmed) {
       continue
@@ -103,7 +105,8 @@ export function detectDivergedMain(
   behind: number,
   options?: { squashHistory?: boolean | undefined } | undefined,
 ): DoctorFinding | undefined {
-  if (behind <= 0 || options?.squashHistory) {
+  const opts = { __proto__: null, ...options } as typeof options
+  if (behind <= 0 || opts?.squashHistory) {
     return undefined
   }
   return formatDivergedMainFinding(ahead, behind)
@@ -166,7 +169,9 @@ export function parseWorktrees(porcelain: string): WorktreeEntry[] {
   const entries: WorktreeEntry[] = []
   let currentPath: string | undefined
   let isFirst = true
-  for (const line of porcelain.split('\n')) {
+  const porcelainLines = porcelain.split('\n')
+  for (let i = 0, { length } = porcelainLines; i < length; i += 1) {
+    const line = porcelainLines[i]!
     if (line.startsWith('worktree ')) {
       if (isFirst) {
         // The very first `worktree` stanza is always the main worktree (the repo

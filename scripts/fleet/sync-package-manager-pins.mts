@@ -84,7 +84,7 @@ export function majorBoundedRange(version: string): string {
 export function derivePins(
   pnpmVersion: string,
   npmVersion: string,
-  options?: { pnpmFloor?: string | undefined },
+  options?: { pnpmFloor?: string | undefined } | undefined,
 ): ManagerPins {
   const opts = { __proto__: null, ...options } as {
     pnpmFloor?: string | undefined

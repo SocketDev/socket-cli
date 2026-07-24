@@ -8,8 +8,8 @@
 // schema. Regenerate on a schema change; --check fails on drift.
 //
 // Usage:
-//   node scripts/repo/gen-external-tools-schema.mts          (re)write the file
-//   node scripts/repo/gen-external-tools-schema.mts --check  exit 1 on drift
+//   node scripts/fleet/external-tools/schema.mts          (re)write the file
+//   node scripts/fleet/external-tools/schema.mts --check  exit 1 on drift
 
 import { readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
@@ -29,11 +29,18 @@ const logger = getDefaultLogger()
 // at. Raw GitHub on the default branch so editor schema resolution works without
 // a publish step.
 export const SCHEMA_ID =
-  'https://raw.githubusercontent.com/SocketDev/socket-wheelhouse/main/packages/build-infra/lib/external-tools-schema.json'
+  'https://raw.githubusercontent.com/SocketDev/socket-wheelhouse/main/scripts/fleet/build-infra/lib/external-tools-schema.json'
 
+// Template-first: the generated schema lives in template/base/ (the
+// scripts/fleet dir mirror propagates it to the live tree + every member).
+// Writing the live mirror directly would drift it from the template and the
+// next cascade would revert the regenerated output.
 const SCHEMA_PATH = path.join(
   REPO_ROOT,
-  'packages',
+  'template',
+  'base',
+  'scripts',
+  'fleet',
   'build-infra',
   'lib',
   'external-tools-schema.json',
@@ -56,7 +63,7 @@ export function buildExternalToolsSchema(): Record<string, unknown> {
     $id: SCHEMA_ID,
     title: 'Fleet external-tools data file',
     description:
-      'Schema for every external-tools.json across the fleet (build/release tools, security-hook tools). Generated from scripts/fleet/lib/external-tools-schema.mts — edit that TypeBox source, then regenerate with scripts/repo/gen-external-tools-schema.mts.',
+      'Schema for every external-tools.json across the fleet (build/release tools, security-hook tools). Generated from scripts/fleet/lib/external-tools-schema.mts — edit that TypeBox source, then regenerate with scripts/fleet/external-tools/schema.mts.',
     ...body,
   }
 }
@@ -84,7 +91,7 @@ function main(): void {
         [
           `[external-tools-schema] ${path.relative(REPO_ROOT, SCHEMA_PATH)} is stale.`,
           'It is generated from the TypeBox source scripts/fleet/lib/external-tools-schema.mts.',
-          'Regenerate: node scripts/repo/gen-external-tools-schema.mts',
+          'Regenerate: node scripts/fleet/external-tools/schema.mts',
         ].join('\n'),
       )
       process.exitCode = 1

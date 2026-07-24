@@ -93,6 +93,9 @@ export function parseSummaries(
 ): Map<string, string> {
   const out = new Map<string, string>()
   let text = stdout.trim()
+  // Strips a markdown code fence the model may wrap its JSON in: optional
+  // ```json (or bare ```) opener, captures everything up to the closing ```
+  // (group 1 is the fenced body), anchored to the whole trimmed string.
   const fence = /^```(?:json)?\s*([\s\S]*?)\s*```$/.exec(text)
   if (fence) {
     text = fence[1]!.trim()

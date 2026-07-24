@@ -58,7 +58,9 @@ export function globalConfigPath(): string {
 // changed (empty = already hardened). Pure — the test drives it directly.
 export function applyHardening(config: Record<string, unknown>): string[] {
   const changed: string[] = []
-  for (const key of Object.keys(HARDENED_GLOBAL_CONFIG)) {
+  const keys = Object.keys(HARDENED_GLOBAL_CONFIG)
+  for (let i = 0, { length } = keys; i < length; i += 1) {
+    const key = keys[i]!
     const want = HARDENED_GLOBAL_CONFIG[key]
     if (config[key] !== want) {
       config[key] = want

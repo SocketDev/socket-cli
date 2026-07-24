@@ -34,28 +34,28 @@ export interface DiscoverResult {
 // Build one `search/issues` query. Scope is the explicit repo set (`repo:` OR's
 // them) or the whole org. `author`/`label`, when present, add a single AND'd
 // qualifier — the caller fans out to union multiple.
-export function buildSearchQuery(options: {
+export function buildSearchQuery(config: {
   author?: string | undefined
   kind: ItemKind
   label?: string | undefined
   org: string
   repos: readonly string[]
 }): string {
-  const opts = { __proto__: null, ...options } as typeof options
+  const cfg = { __proto__: null, ...config } as typeof config
   const parts: string[] = []
-  if (opts.repos.length) {
-    for (const repo of opts.repos) {
+  if (cfg.repos.length) {
+    for (const repo of cfg.repos) {
       parts.push(`repo:${repo}`)
     }
   } else {
-    parts.push(`org:${opts.org}`)
+    parts.push(`org:${cfg.org}`)
   }
-  parts.push(`type:${opts.kind}`, 'state:open')
-  if (opts.author) {
-    parts.push(`author:${opts.author}`)
+  parts.push(`type:${cfg.kind}`, 'state:open')
+  if (cfg.author) {
+    parts.push(`author:${cfg.author}`)
   }
-  if (opts.label) {
-    parts.push(`label:"${opts.label}"`)
+  if (cfg.label) {
+    parts.push(`label:"${cfg.label}"`)
   }
   return parts.join(' ')
 }
@@ -112,7 +112,8 @@ export function runSearch(
       }
     }
     const lines = out.trim().split('\n').filter(Boolean)
-    for (const line of lines) {
+    for (let i = 0, { length } = lines; i < length; i += 1) {
+      const line = lines[i]!
       let parsed: SearchLine
       try {
         parsed = JSON.parse(line) as SearchLine
@@ -157,7 +158,8 @@ export function planQueries(config: TeamActivityConfig): string[] {
   const labels = config.labels.length
     ? config.labels
     : [undefined as string | undefined]
-  for (const kind of kinds) {
+  for (let i = 0, { length } = kinds; i < length; i += 1) {
+    const kind = kinds[i]!
     for (const author of authors) {
       queries.add(
         buildSearchQuery({

@@ -103,7 +103,7 @@ function formatViaOxfmt(source: string, filename: string): string {
   // strip known banner lines so they can never be written into a
   // regenerated source file.
   const BANNER_LINE_RE =
-    /^(?:>.*|\$ .*|Protected by Socket Firewall.*|=+ *Socket Firewall *=+.*)$/
+    /^(?:=+ *Socket Firewall *=+.*|>.*|Protected by Socket Firewall.*|\$ .*)$/
   const formatted = String(result.stdout ?? '')
     .split('\n')
     .filter(line => !BANNER_LINE_RE.test(line))
@@ -366,7 +366,12 @@ interface ReconcileResult {
 // Regenerate one generated file (index.mts or oxlintrc.json) from the current
 // rule ids. In --check mode reports drift without writing; otherwise writes.
 // A non-existent path (e.g. the template mirror in a member repo) is a no-op.
-function reconcileGenerated(options: {
+// A `cascadeOwned` target (the LIVE copy of a cascaded mirror, chmod'd
+// read-only by mirror-mode) is never written directly — the template write is
+// the canonical edit and the next cascade propagates it, so a drifted live
+// copy just reports drift for the cascade to fix.
+function reconcileGenerated(config: {
+  readonly cascadeOwned?: boolean | undefined
   readonly filePath: string
   readonly ids: readonly string[]
   readonly rewrite: (source: string, ids: readonly string[]) => string
@@ -374,22 +379,28 @@ function reconcileGenerated(options: {
   readonly label: string
   readonly check: boolean
 }): ReconcileResult {
-  const opts = { __proto__: null, ...options } as typeof options
-  if (!existsSync(opts.filePath)) {
+  const cfg = { __proto__: null, ...config } as typeof config
+  if (!existsSync(cfg.filePath)) {
     return { drifted: false, problem: undefined }
   }
-  const current = readFileSync(opts.filePath, 'utf8')
-  const next = formatViaOxfmt(opts.rewrite(current, opts.ids), opts.oxfmtName)
+  const current = readFileSync(cfg.filePath, 'utf8')
+  const next = formatViaOxfmt(cfg.rewrite(current, cfg.ids), cfg.oxfmtName)
   if (current === next) {
     return { drifted: false, problem: undefined }
   }
-  if (opts.check) {
+  if (cfg.check) {
     return {
       drifted: true,
-      problem: `${opts.label} is out of sync with the plugin fleet/ rules. Run \`pnpm run sync-oxlint-rules\`.`,
+      problem: `${cfg.label} is out of sync with the plugin fleet/ rules. Run \`pnpm run sync-oxlint-rules\`.`,
     }
   }
-  writeFileSync(opts.filePath, next)
+  if (cfg.cascadeOwned) {
+    process.stdout.write(
+      `[sync-oxlint-rules] ${cfg.label} drifted — live mirror is cascade-owned; the template write lands it on the next cascade.\n`,
+    )
+    return { drifted: true, problem: undefined }
+  }
+  writeFileSync(cfg.filePath, next)
   return { drifted: true, problem: undefined }
 }
 
@@ -406,12 +417,14 @@ function main(): number {
   // oxlint-ruletester-reads-template-index memory.
   const targets = [
     {
+      cascadeOwned: true,
       filePath: INDEX_PATH,
       rewrite: rewriteIndex,
       oxfmtName: 'index.mts',
       label: '.config/fleet/oxlint-plugin/index.mts',
     },
     {
+      cascadeOwned: true,
       filePath: OXLINTRC_PATH,
       rewrite: rewriteOxlintrc,
       oxfmtName: 'oxlintrc.json',

@@ -17,6 +17,6 @@ export function discoverRepoChecks(repoRoot: string): string[] {
   }
   return readdirSync(dir)
     .filter(f => f.endsWith('.mts'))
-    .sort()
+    .toSorted()
     .map(f => `scripts/repo/check/${f}`)
 }

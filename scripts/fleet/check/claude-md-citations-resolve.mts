@@ -33,6 +33,7 @@ import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from '../paths.mts'
+import { hasFleetHookSource } from '../_shared/fleet-source-present.mts'
 
 const logger = getDefaultLogger()
 
@@ -106,6 +107,15 @@ async function main(): Promise<void> {
   const claudeMdPath = path.join(REPO_ROOT, 'CLAUDE.md')
   if (!existsSync(claudeMdPath)) {
     logger.success('No CLAUDE.md to check.')
+    return
+  }
+  // A bundle-only member has no per-hook / per-rule SOURCE dirs to resolve
+  // citations against — every citation would read as dangling. The doc +
+  // citations are validated at the source repo.
+  if (!hasFleetHookSource(REPO_ROOT)) {
+    logger.success(
+      'No fleet hook source in this repo (bundle-only) — citations validated at the source repo.',
+    )
     return
   }
   const claudeMd = readFileSync(claudeMdPath, 'utf8')

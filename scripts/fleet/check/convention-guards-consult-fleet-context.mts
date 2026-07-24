@@ -28,6 +28,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { REPO_ROOT } from '../paths.mts'
+import { hasFleetHookSource } from '../_shared/fleet-source-present.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 
 // Guards that MUST consult `isFleetTarget` (they lighten outside a fleet repo).
@@ -41,6 +42,7 @@ export const CONVENTION_GUARDS: readonly string[] = [
   'no-corepack-guard',
   'no-direct-linter-guard',
   'no-ignoring-tracked-file-guard',
+  'no-loose-config-ref-guard',
   'no-nested-gitignore-guard',
   'no-new-config-guard',
   'no-other-linters-guard',
@@ -136,6 +138,14 @@ export function findDiscrepancies(
 }
 
 function main(): void {
+  // A bundle-only member has no per-hook SOURCE dirs to scan for isFleetTarget
+  // imports — the classification is validated at the source repo.
+  if (!hasFleetHookSource(REPO_ROOT)) {
+    process.stdout.write(
+      '[convention-guards-consult-fleet-context] no fleet hook source (bundle-only) — validated at the source repo.\n',
+    )
+    return
+  }
   const consulting = listConsultingGuards(FLEET_HOOKS_DIR)
   const discrepancies = findDiscrepancies(consulting)
   if (discrepancies.length === 0) {

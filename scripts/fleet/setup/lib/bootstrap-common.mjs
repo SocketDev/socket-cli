@@ -150,8 +150,9 @@ export function compareVersions(a, b) {
 // install-pnpm's PNPM_DIR). Returns '' for a tool the fleet does not rack, or
 // when the racked binary isn't present on disk yet. Reuses the SAME rack-dir
 // layout the per-tool installers write (uv → rack/uv/<ver>/<assetStem>/uv;
-// npm → rack/npm/<ver>/package/bin/npm; pnpm → PNPM_DIR/pnpm), so the path is
-// never re-invented — drift here would diverge from the installer and is a bug.
+// npm → rack/npm/<ver>/package/bin/npm-cli.js; pnpm → PNPM_DIR/pnpm), so the
+// path is never re-invented — drift here would diverge from the installer and
+// is a bug.
 export function rackedBinFor(cmd) {
   if (cmd === 'pnpm') {
     const pnpmBin = path.join(PNPM_DIR, 'pnpm')
@@ -162,7 +163,18 @@ export function rackedBinFor(cmd) {
     if (!version) {
       return ''
     }
-    const npmBin = path.join(RACK_DIR, 'npm', version, 'package', 'bin', 'npm')
+    // npm-cli.js (shebang-executable), NOT the sibling `bin/npm` shell
+    // wrapper: since npm 12 that wrapper resolves npm-prefix.js against the
+    // NODE install prefix ("Could not determine Node.js install directory"
+    // when npm isn't installed there), which a racked copy never is.
+    const npmBin = path.join(
+      RACK_DIR,
+      'npm',
+      version,
+      'package',
+      'bin',
+      'npm-cli.js',
+    )
     return existsSync(npmBin) ? npmBin : ''
   }
   if (cmd === 'uv') {
@@ -211,12 +223,12 @@ export const IS_WINDOWS = process.platform === 'win32'
 // PowerShell resolve for a bare `<name>` via PATHEXT. Pass `exec` for a binary or
 // `node` for a `node <entry>` launch; `env` sets vars before the exec in each
 // shell's own syntax. Returns the bare shim path.
-export function writeShim(binDir, name, options) {
-  const opts = { __proto__: null, ...options }
+export function writeShim(binDir, name, config) {
+  const cfg = { __proto__: null, ...config }
   mkdirSync(binDir, { recursive: true })
-  const env = opts.env ?? {}
+  const env = cfg.env ?? {}
   const keys = Object.keys(env).toSorted()
-  const argv0 = opts.node ? `node "${opts.node}"` : `"${opts.exec}"`
+  const argv0 = cfg.node ? `node "${cfg.node}"` : `"${cfg.exec}"`
   const shPath = path.join(binDir, name)
   const exports = keys.map(k => `export ${k}="${env[k]}"\n`).join('')
   writeFileSync(shPath, `#!/bin/bash\n${exports}exec ${argv0} "$@"\n`)

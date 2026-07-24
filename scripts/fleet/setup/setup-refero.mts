@@ -22,6 +22,7 @@ import type {
   EcosystemStepOptions,
   EcosystemStepResult,
 } from './ecosystems.mts'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 
 export type ReferoMcpState =
   | 'absent'
@@ -75,14 +76,14 @@ export function referoStateGuidance(state: ReferoMcpState): string[] {
         'Refero MCP is configured but awaits session approval.',
         'Where: `claude mcp list` shows "Pending approval".',
         'Saw: unapproved server config; wanted: approved + authenticated.',
-        'Fix: type `/mcp` in a Claude session, select refero, approve it, then Authenticate (browser OAuth).',
+        'Fix: type `/mcp` in a Claude Code session, select refero, approve it, then Authenticate (browser OAuth).',
       ]
     case 'needs-auth':
       return [
         'Refero MCP is approved but not authenticated (or the token expired).',
         'Where: `claude mcp list` health probe.',
         'Saw: needs authentication; wanted: a live OAuth token.',
-        'Fix: type `/mcp` in a Claude session, select refero, choose Authenticate; the browser OAuth lands the token immediately.',
+        'Fix: type `/mcp` in a Claude Code session, select refero, choose Authenticate; the browser OAuth lands the token immediately.',
       ]
     case 'connected':
       return [
@@ -138,7 +139,7 @@ if (isMainModule(import.meta.url)) {
       process.exitCode = result.ok ? 0 : 1
     },
     (e: unknown) => {
-      process.stderr.write(`${e instanceof Error ? e.message : String(e)}\n`)
+      process.stderr.write(`${errorMessage(e)}\n`)
       process.exitCode = 1
     },
   )

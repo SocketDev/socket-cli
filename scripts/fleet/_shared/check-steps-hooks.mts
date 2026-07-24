@@ -144,10 +144,10 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
     // lint/--fix (the acorn wasm-bindgen glue break). Fails when a vendored glob
     // is left before the last negation.
     () =>
-      run('node', ['scripts/fleet/check/lint-configs-protect-vendored.mts']),
+      run('node', ['scripts/fleet/check/lint-configs-protect-verbatim.mts']),
     // The .agents/skills/ mirror is generated + git-untracked (regenerated in
     // every cascade by sync-scaffolding/fix-agents-mirror.mts, and on demand via
-    // gen-agents-skills-mirror.mts), so there is no committed mirror for a CI
+    // gen/agents-skills-mirror.mts), so there is no committed mirror for a CI
     // gate to verify "current" against. Staleness is handled by the cascade
     // regen + the agents-skills-mirror-nudge hook, not a check here.
     // Code is law for the onboarding skill's CI step: the ci:local script keeps
@@ -234,7 +234,7 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
     // commit path itself. No-ops where the repo carries no
     // .git-hooks/fleet/pre-commit.
     () => run('node', ['scripts/fleet/check/precommit-steps-are-bounded.mts']),
-    // Every hook dir must be WIRED — make-hook-dispatch discovers + wires each by
+    // Every hook dir must be WIRED — gen/hook-dispatch discovers + wires each by
     // its defineHook `hook` export (dispatched) or a SIDE_EFFECT entry (spawned).
     // ADVISORY (never fails): surface `_shared/` hook-helper exports with no
     // in-repo consumer — dead weight in the cascaded layer / a DRY signal. Can't

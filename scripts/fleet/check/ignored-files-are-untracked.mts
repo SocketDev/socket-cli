@@ -43,7 +43,7 @@ export function findTrackedIgnoredFiles(lsFilesOutput: string): string[] {
     }
     out.push(normalizePath(line))
   }
-  return out.sort()
+  return out.toSorted()
 }
 
 async function main(): Promise<void> {
@@ -57,7 +57,7 @@ async function main(): Promise<void> {
         stdio: 'pipe',
         stdioString: true,
       },
-    )) as { stdout?: string }
+    )) as { stdout?: string | undefined }
     output = String(result?.stdout ?? '')
   } catch {
     // git unavailable — another gate's concern; this belt is vacuous, never a

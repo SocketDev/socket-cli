@@ -14,36 +14,45 @@ import type { BumpLevel } from '../lib/changelog.mts'
 import type { PipelineState, StageReceipt } from './state.mts'
 
 /**
- * The RELEASE pipeline stages, in execution order — everything through the
- * immutable GitHub release. A "release" is a GitHub release (tag + release
- * artifact); it NEVER stages or publishes a package to a registry. Publishing
- * npm/cargo/python packages is the separate PUBLISH pipeline below.
+ * The RELEASE pipeline stages, in execution order — readiness gates through
+ * the bump commit. The GH release is deliberately NOT here: the git tag + the
+ * immutable GitHub release are the FINAL markers of a release, cut LAST by
+ * the publish pipeline's `--approve` invocation only after the registry
+ * publish is confirmed live. A STAGED package is not published — staging may
+ * never be approved — so a release cut before approve can end up marking a
+ * version that never shipped (the v6.2.0 near-miss).
  */
 export const RELEASE_STAGE_ORDER = [
   'preflight',
+  'cover',
   'exports',
   'files',
   'ci',
   'bump-stop',
   'bump',
-  'release',
 ] as const
 
 /**
- * The PUBLISH pipeline stages, in execution order — registry staging for the
- * version the RELEASE pipeline already cut. `approve` is deliberately NOT here:
- * promoting a staged package to public stays a separate, explicit `--approve`
- * invocation, never part of a `run`.
+ * The PUBLISH pipeline run stages, in execution order — registry staging for
+ * the version the RELEASE pipeline bumped. `approve` is deliberately NOT
+ * here: promoting a staged package to public stays a separate, explicit
+ * `--approve` invocation, never part of a `run`. The full publish order is
+ * stage-publish → verify → approve → release: after a successful approve the
+ * SAME invocation continues into the release stage, so one promote command
+ * yields the tag + GH release behind the confirmed publish.
  */
 export const PUBLISH_STAGE_ORDER = ['stage-publish', 'verify'] as const
 
 /**
- * Both pipelines' run stages, in order — the union used for shared receipt and
+ * Both pipelines' run stages — the union used for shared receipt and
  * description typing (`StageId`, `STAGE_DESCRIPTIONS`, `PipelineState.stages`).
+ * `release` is last: it is never part of a planned run (neither order lists
+ * it) — it only runs as the post-approve continuation of `--approve`.
  */
 export const RUN_STAGE_ORDER = [
   ...RELEASE_STAGE_ORDER,
   ...PUBLISH_STAGE_ORDER,
+  'release',
 ] as const
 
 export type RunStageId = (typeof RUN_STAGE_ORDER)[number]
@@ -51,11 +60,24 @@ export type RunStageId = (typeof RUN_STAGE_ORDER)[number]
 export type StageId = RunStageId | 'approve'
 
 /**
+ * Every stage in canonical execution order, for `--status` rendering: the
+ * readiness chain, then registry staging + verify, then the explicit approve,
+ * then the release — cut LAST, after the publish is live.
+ */
+export const STATUS_STAGE_ORDER: readonly StageId[] = [
+  ...RELEASE_STAGE_ORDER,
+  ...PUBLISH_STAGE_ORDER,
+  'approve',
+  'release',
+]
+
+/**
  * Stages before the bump hard-stop: they gate the TREE, so their receipts key
  * on the HEAD sha they passed at.
  */
 export const TREE_STAGES: readonly RunStageId[] = [
   'preflight',
+  'cover',
   'exports',
   'files',
   'ci',
@@ -71,19 +93,58 @@ export function stageKeyKind(stage: StageId): 'tree' | 'version' {
 }
 
 /**
+ * The LOCAL gates the ci stage's non-blocking fast path requires: every tree
+ * stage before ci. Exported for tests.
+ */
+export const LOCAL_GATES: readonly RunStageId[] = TREE_STAGES.filter(
+  s => s !== 'ci',
+)
+
+/**
+ * True when every local gate holds a REAL passed receipt keyed at `headSha` —
+ * the precondition for the ci stage's sanctioned deferred-pending-remote fast
+ * path. Deferred, failed, dry-run, or stale-sha receipts all disqualify: the
+ * fast path only ever stands on gates that actually ran green on this exact
+ * tree. Pure — exported for tests.
+ */
+export function localGatesGreenAt(
+  state: PipelineState,
+  headSha: string,
+): boolean {
+  for (let i = 0, { length } = LOCAL_GATES; i < length; i += 1) {
+    const receipt = state.stages[LOCAL_GATES[i]!]
+    if (
+      !receipt ||
+      receipt.dryRun ||
+      receipt.status !== 'passed' ||
+      receipt.key !== headSha
+    ) {
+      return false
+    }
+  }
+  return true
+}
+
+/**
  * One-line purpose per stage, for the readiness summary.
  */
 export const STAGE_DESCRIPTIONS: Readonly<Record<StageId, string>> = {
-  approve: 'pnpm stage approve (separate explicit --approve invocation)',
-  bump: 'bump.mts: CHANGELOG + bump commit (LAST), from the user-named version',
+  approve:
+    'pnpm stage approve (separate explicit --approve invocation; on success the same invocation continues into release)',
+  bump: 'bump.mts: CHANGELOG + bump commit, from the user-named version',
   'bump-stop': 'HARD STOP — the USER names X.Y.Z; --version resumes',
-  ci: 'commit staged fixes surgically; green CI on the pushed head (or defer)',
+  ci: 'commit staged fixes surgically; green CI on the pushed head, or defer (local gates green → pending-remote; --ci-wait blocks)',
+  cover: 'pnpm run cover + gen/coverage-badge refresh (badge rides the bump)',
   exports: 'exports map ↔ public files agree (public-files-are-exported)',
   files: 'pnpm pack tarball inspected (pack-contents-are-clean)',
-  preflight: 'pnpm run update → pnpm i → fix --all → check --all',
-  release: 'git tag vX.Y.Z + immutable GH release (draft → upload → undraft)',
-  'stage-publish': 'pnpm stage publish (npm staging; nothing public yet)',
-  verify: 'pre-approve integrity gate (verifyStagedEntry vs staged shasum)',
+  preflight:
+    'pnpm run update → pnpm i → fix → check (changed-file scope; --preflight-all for full-tree)',
+  release:
+    'git tag vX.Y.Z + immutable GH release (draft → upload → undraft), cut LAST — refuses without a passed approve + registry liveness',
+  'stage-publish':
+    'dispatch + watch npm-publish.yml (CI stages to npm under OIDC; nothing public yet; requires a bump receipt; --local stages from this machine)',
+  verify:
+    'pre-approve integrity gate (verifyStagedEntry vs staged shasum) + stash the release-asset checksums',
 }
 
 /**
@@ -96,23 +157,23 @@ export const STAGE_DESCRIPTIONS: Readonly<Record<StageId, string>> = {
  */
 export function isReceiptCurrent(
   receipt: StageReceipt | undefined,
-  options: {
+  config: {
     headSha: string
     stage: StageId
     targetVersion: string | undefined
   },
 ): boolean {
-  const opts = { __proto__: null, ...options } as typeof options
+  const cfg = { __proto__: null, ...config } as typeof config
   if (!receipt || receipt.dryRun) {
     return false
   }
   if (receipt.status === 'failed') {
     return false
   }
-  if (stageKeyKind(opts.stage) === 'tree') {
-    return receipt.key === opts.headSha
+  if (stageKeyKind(cfg.stage) === 'tree') {
+    return receipt.key === cfg.headSha
   }
-  return opts.targetVersion !== undefined && receipt.key === opts.targetVersion
+  return cfg.targetVersion !== undefined && receipt.key === cfg.targetVersion
 }
 
 export interface RunPlan {
@@ -139,14 +200,14 @@ export interface RunPlan {
  */
 export function planRun(
   state: PipelineState,
-  options: { headSha: string; stageOrder?: readonly RunStageId[] },
+  config: { headSha: string; stageOrder?: readonly RunStageId[] | undefined },
 ): RunPlan {
-  const opts = { __proto__: null, ...options } as typeof options
+  const cfg = { __proto__: null, ...config } as typeof config
   // Default to the RELEASE order; the publish pipeline passes PUBLISH_STAGE_ORDER.
-  const stageOrder = opts.stageOrder ?? RELEASE_STAGE_ORDER
+  const stageOrder = cfg.stageOrder ?? RELEASE_STAGE_ORDER
   const { targetVersion } = state
   const bumpCurrent = isReceiptCurrent(state.stages['bump'], {
-    headSha: opts.headSha,
+    headSha: cfg.headSha,
     stage: 'bump',
     targetVersion,
   })
@@ -163,7 +224,7 @@ export function planRun(
     const current =
       treeSupersededByBump ||
       isReceiptCurrent(state.stages[stage], {
-        headSha: opts.headSha,
+        headSha: cfg.headSha,
         stage,
         targetVersion,
       })
@@ -187,7 +248,8 @@ export function restampTreeReceipts(
   newHeadSha: string,
 ): PipelineState {
   const stages = { ...state.stages }
-  for (const stage of TREE_STAGES) {
+  for (let i = 0, { length } = TREE_STAGES; i < length; i += 1) {
+    const stage = TREE_STAGES[i]!
     const receipt = stages[stage]
     if (receipt && receipt.status !== 'failed' && !receipt.dryRun) {
       stages[stage] = { ...receipt, key: newHeadSha }
@@ -222,7 +284,8 @@ export function deriveReleaseLevel(
     }
   }
   const levels: readonly BumpLevel[] = ['patch', 'minor', 'major']
-  for (const level of levels) {
+  for (let i = 0, { length } = levels; i < length; i += 1) {
+    const level = levels[i]!
     if (computeNextVersion(current, level) === target) {
       return { level }
     }

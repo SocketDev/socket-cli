@@ -92,6 +92,8 @@ export function parseUpstreamPins(gitmodules: string): UpstreamPin[] {
       continue
     }
     if (cur) {
+      // Matches a `.gitmodules` key = value line: group 1 is the key
+      // (leading letter, then word chars/hyphens), group 2 is the raw value.
       const kv = /^([A-Za-z][\w-]*)\s*=\s*(.*)$/.exec(line)
       if (kv) {
         const key = kv[1]!.toLowerCase()
@@ -149,7 +151,7 @@ export function runCheck(repoRoot: string): number {
       '',
       '  Fix: re-pin each to the latest release tag, e.g.',
       '    git config -f .gitmodules submodule.<name>.branch v1.2.3',
-      '    node scripts/fleet/gen-gitmodules-hash.mts --set <name> <tag-sha> --label <name>-v1.2.3',
+      '    node scripts/fleet/gen/gitmodules-hash.mts --set <name> <tag-sha> --label <name>-v1.2.3',
       '  If the upstream publishes NO releases, keep the branch and annotate the',
       '  block:  # no-release-tag: <why>',
       '',

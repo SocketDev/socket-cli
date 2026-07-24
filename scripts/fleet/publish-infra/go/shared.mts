@@ -41,7 +41,7 @@ export const PUBLIC_GO_PROXY = 'https://proxy.golang.org'
 // bounded exponential backoff. Mirrors the go-publish.yml warm-and-verify loop
 // (max 8 attempts, 5s initial delay, capped at 60s).
 export const DEFAULT_VERIFY_MAX_ATTEMPTS = 8
-export const DEFAULT_VERIFY_INITIAL_DELAY_MS = 5_000
+export const DEFAULT_VERIFY_INITIAL_DELAY_MS = 5000
 export const VERIFY_MAX_DELAY_MS = 60_000
 
 /**
@@ -253,7 +253,7 @@ export async function fetchProxyInfo(url: string): Promise<ProxyInfoResult> {
  * tests drive every path with no network and no real delay; fail-soft — never
  * throws, returns `{ ok: false }` after `maxAttempts`.
  */
-export async function verifyModuleAvailable(options: {
+export async function verifyModuleAvailable(config: {
   modulePath: string
   version: string
   proxyBase?: string | undefined
@@ -262,13 +262,13 @@ export async function verifyModuleAvailable(options: {
   maxAttempts?: number | undefined
   initialDelayMs?: number | undefined
 }): Promise<VerifyResult> {
-  const opts = { __proto__: null, ...options } as typeof options
-  const proxyBase = opts.proxyBase ?? PUBLIC_GO_PROXY
-  const fetchInfo = opts.fetchInfo ?? fetchProxyInfo
-  const sleep = opts.sleep ?? defaultSleep
-  const maxAttempts = opts.maxAttempts ?? DEFAULT_VERIFY_MAX_ATTEMPTS
-  const url = proxyInfoUrl(proxyBase, opts.modulePath, opts.version)
-  let delay = opts.initialDelayMs ?? DEFAULT_VERIFY_INITIAL_DELAY_MS
+  const cfg = { __proto__: null, ...config } as typeof config
+  const proxyBase = cfg.proxyBase ?? PUBLIC_GO_PROXY
+  const fetchInfo = cfg.fetchInfo ?? fetchProxyInfo
+  const sleep = cfg.sleep ?? defaultSleep
+  const maxAttempts = cfg.maxAttempts ?? DEFAULT_VERIFY_MAX_ATTEMPTS
+  const url = proxyInfoUrl(proxyBase, cfg.modulePath, cfg.version)
+  let delay = cfg.initialDelayMs ?? DEFAULT_VERIFY_INITIAL_DELAY_MS
   let attempt = 0
   let lastDetail = `not indexed yet at ${url}`
   while (attempt < maxAttempts) {
@@ -283,14 +283,14 @@ export async function verifyModuleAvailable(options: {
     }
     if (result.found) {
       const got = result.info?.Version
-      if (got === opts.version) {
+      if (got === cfg.version) {
         return {
           ok: true,
           attempts: attempt,
-          detail: `${opts.modulePath}@${opts.version} resolved at ${url}`,
+          detail: `${cfg.modulePath}@${cfg.version} resolved at ${url}`,
         }
       }
-      lastDetail = `proxy resolved '${got ?? '<none>'}', expected '${opts.version}'`
+      lastDetail = `proxy resolved '${got ?? '<none>'}', expected '${cfg.version}'`
     }
     if (attempt < maxAttempts) {
       // eslint-disable-next-line no-await-in-loop -- backoff between poll attempts.
@@ -302,7 +302,7 @@ export async function verifyModuleAvailable(options: {
     ok: false,
     attempts: attempt,
     detail:
-      `${opts.modulePath}@${opts.version} not verified after ` +
+      `${cfg.modulePath}@${cfg.version} not verified after ` +
       `${maxAttempts} attempt(s): ${lastDetail}`,
   }
 }

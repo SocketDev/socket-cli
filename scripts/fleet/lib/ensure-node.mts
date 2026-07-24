@@ -27,20 +27,20 @@ export const REEXEC_GUARD_ENV = 'FLEET_NODE_REEXEC'
 
 // Re-exec under the pinned node when the running node is below the floor. Pure
 // decision — the runner supplies the resolved candidate + current state.
-export function nodeReexecPlan(options: {
+export function nodeReexecPlan(config: {
   alreadyReexec: boolean
   currentMajor: number
   floorMajor: number
   pinnedNode: string | undefined
 }): { reexec: false } | { node: string; reexec: true } {
-  const opts = { __proto__: null, ...options } as typeof options
-  if (opts.alreadyReexec || opts.currentMajor >= opts.floorMajor) {
+  const cfg = { __proto__: null, ...config } as typeof config
+  if (cfg.alreadyReexec || cfg.currentMajor >= cfg.floorMajor) {
     return { reexec: false }
   }
-  if (!opts.pinnedNode) {
+  if (!cfg.pinnedNode) {
     return { reexec: false }
   }
-  return { node: opts.pinnedNode, reexec: true }
+  return { node: cfg.pinnedNode, reexec: true }
 }
 
 /**
@@ -49,17 +49,17 @@ export function nodeReexecPlan(options: {
  * idempotent. The case-insensitive key lookup preserves Windows' conventional
  * `Path` spelling and removes duplicate PATH-key variants before spawn.
  */
-export function envWithExecutableFirst(options: {
+export function envWithExecutableFirst(config: {
   delimiter?: string | undefined
   env: NodeJS.ProcessEnv
   executablePath: string
 }): NodeJS.ProcessEnv {
-  const opts = { __proto__: null, ...options } as typeof options
-  const next = { ...opts.env }
+  const cfg = { __proto__: null, ...config } as typeof config
+  const next = { ...cfg.env }
   const pathKeys = Object.keys(next).filter(key => key.toLowerCase() === 'path')
   const pathKey = pathKeys[0] ?? 'PATH'
-  const delimiter = opts.delimiter ?? path.delimiter
-  const executableDir = path.dirname(opts.executablePath)
+  const delimiter = cfg.delimiter ?? path.delimiter
+  const executableDir = path.dirname(cfg.executablePath)
   const entries = String(next[pathKey] ?? '')
     .split(delimiter)
     .filter(
@@ -80,23 +80,23 @@ export function majorOf(version: string): number | undefined {
 
 // The highest node binary among fnm version-dir entries whose major is at/above
 // the floor, or undefined. Pure over the listing (testable without a real fnm).
-export function pickFnmNode(options: {
+export function pickFnmNode(config: {
   binOf: (version: string) => string
   entries: readonly string[]
   floorMajor: number
 }): string | undefined {
-  const opts = { __proto__: null, ...options } as typeof options
+  const cfg = { __proto__: null, ...config } as typeof config
   let bestMajor = -1
   let best: string | undefined
-  for (let i = 0, { length } = opts.entries; i < length; i += 1) {
-    const entry = opts.entries[i]!
+  for (let i = 0, { length } = cfg.entries; i < length; i += 1) {
+    const entry = cfg.entries[i]!
     const major = majorOf(entry)
-    if (major === undefined || major < opts.floorMajor) {
+    if (major === undefined || major < cfg.floorMajor) {
       continue
     }
     if (major > bestMajor) {
       bestMajor = major
-      best = opts.binOf(entry)
+      best = cfg.binOf(entry)
     }
   }
   return best

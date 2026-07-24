@@ -152,6 +152,7 @@ export function compileOne(mdPath: string): CompileResult {
 export function workflowOutputPaths(mdPath: string): string[] {
   const dir = path.dirname(mdPath)
   const awDir = path.join(path.dirname(dir), 'aw')
+  // oxlint-disable-next-line socket/sort-set-args -- non-literal elements (runtime path calls); already alphanumeric by call text (actionsLockPathFor < lockYmlPathFor).
   const out = new Set<string>([
     actionsLockPathFor(mdPath),
     lockYmlPathFor(mdPath),
@@ -246,7 +247,7 @@ export interface CompileGateResult {
 // `compile`, the fs probes (`existsFile`/`readFile`), `outputPathsFor`, and the
 // `soakGate` are all supplied by the caller. Returns the raw compile results,
 // the accumulated held pins, and whether any compile failed.
-export function runCompileGate(options: {
+export function runCompileGate(config: {
   compile: (mdPath: string) => CompileResult
   existsFile: (file: string) => boolean
   mdFiles: readonly string[]
@@ -268,7 +269,7 @@ export function runCompileGate(options: {
     readFile,
     resolveCommitDate,
     soakGate,
-  } = options
+  } = { __proto__: null, ...config } as typeof config
   const results: CompileResult[] = []
   const heldPins: HeldActionPin[] = []
   let anyFailed = false

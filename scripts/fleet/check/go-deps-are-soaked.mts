@@ -68,7 +68,7 @@ export async function findGoSoakViolations(
   root: string,
   soakDays: number,
   now: Date,
-  fetchTime?: (module: string, version: string) => Promise<Date>,
+  fetchTime?: ((module: string, version: string) => Promise<Date>) | undefined,
 ): Promise<Violation[]> {
   const entries = parseGoProxyChain(process.env['GOPROXY'])
   const resolve =

@@ -1,15 +1,23 @@
 /**
- * @file Merge v8 `coverage-final.json` reports from the main and isolated test
- *   suites using a max-hit-count strategy, returning aggregate percentages.
- *   Extracted from `scripts/fleet/cover.mts` to keep that runner under the
- *   file-size cap — this is the pure data-crunching half (read two JSON
- *   reports, union their per-file counters taking the max hit count, derive
- *   statement / branch / function / line percentages). Takes `rootPath` + a
- *   logger so it stays free of module-scoped state.
+ * @file Merge v8 per-tier `coverage-final.<tier>.json` reports (main, isolated,
+ *   children) using a max-hit-count strategy: derive aggregate percentages and
+ *   persist the folded `coverage-final.json` + `coverage-summary.json` at the
+ *   coverage-home root. Extracted from `scripts/fleet/cover.mts` to keep that
+ *   runner under the file-size cap. Takes `rootPath` + a logger so it stays
+ *   free of module-scoped state (paths re-anchor on `rootPath`).
  */
 
 import fs from 'node:fs/promises'
 import path from 'node:path'
+
+import {
+  COVERAGE_FINAL_CHILDREN_PATH,
+  COVERAGE_FINAL_ISOLATED_PATH,
+  COVERAGE_FINAL_MAIN_PATH,
+  COVERAGE_FINAL_PATH,
+  COVERAGE_SUMMARY_PATH,
+  REPO_ROOT,
+} from '../paths.mts'
 
 export interface CoverageLocation {
   start: { line: number; column: number }
@@ -112,7 +120,9 @@ export async function foldTemplateTwins(
 ): Promise<number> {
   const marker = `${path.sep}template${path.sep}base${path.sep}`
   let folded = 0
-  for (const key of Object.keys(report)) {
+  const keys = Object.keys(report)
+  for (let i = 0, { length } = keys; i < length; i += 1) {
+    const key = keys[i]!
     const at = key.indexOf(marker)
     if (at === -1) {
       continue
@@ -142,23 +152,30 @@ export async function foldTemplateTwins(
 // Merge coverage-final.json from the main and isolated suites using a
 // max-hit-count strategy. Returns aggregate percentages, or undefined when
 // neither report exists.
-export async function mergeCoverageFinal(options: {
+export async function mergeCoverageFinal(config: {
   rootPath: string
   logger: CoverageMergeLogger
   expectedTiers?: readonly string[] | undefined
 }): Promise<AggregateCoverage | undefined> {
   const { expectedTiers, logger, rootPath } = {
     __proto__: null,
-    ...options,
-  } as typeof options
-  const mainFinalPath = path.join(rootPath, 'coverage/coverage-final.json')
+    ...config,
+  } as typeof config
+  // Flat per-tier report paths, re-anchored on the caller's rootPath: the
+  // COVERAGE_* constants are absolute (anchored on this repo's root), so a test
+  // passing a tmp root — or a caller measuring another repo — reads that root's
+  // coverage cache, not this one's.
+  const mainFinalPath = path.join(
+    rootPath,
+    path.relative(REPO_ROOT, COVERAGE_FINAL_MAIN_PATH),
+  )
   const isolatedFinalPath = path.join(
     rootPath,
-    'coverage-isolated/coverage-final.json',
+    path.relative(REPO_ROOT, COVERAGE_FINAL_ISOLATED_PATH),
   )
   const childrenFinalPath = path.join(
     rootPath,
-    'coverage-children/coverage-final.json',
+    path.relative(REPO_ROOT, COVERAGE_FINAL_CHILDREN_PATH),
   )
 
   let mainFinal: Record<string, CoverageFileFinal> = {}
@@ -218,8 +235,8 @@ export async function mergeCoverageFinal(options: {
 
   // Children tier (subprocess coverage): script entrypoints exercised via
   // spawn run outside the in-process V8 session, so the vitest tiers read
-  // them as zero. cover.mts converts the raw NODE_V8_COVERAGE output to
-  // coverage-children/coverage-final.json; entries here GAP-FILL only —
+  // them as zero. cover.mts converts the raw NODE_V8_COVERAGE output to the
+  // children tier's coverage-final.json; entries here GAP-FILL only —
   // a file the vitest tiers already measured keeps its in-process entry
   // (the two reports segment statements differently, so a per-id max-merge
   // across them would misalign). Absent file → tier skipped silently (the
@@ -229,7 +246,9 @@ export async function mergeCoverageFinal(options: {
       await fs.readFile(childrenFinalPath, 'utf8'),
     ) as Record<string, CoverageFileFinal>
     await foldTemplateTwins(childrenFinal)
-    for (const key of Object.keys(childrenFinal)) {
+    const childrenKeys = Object.keys(childrenFinal)
+    for (let i = 0, { length } = childrenKeys; i < length; i += 1) {
+      const key = childrenKeys[i]!
       if (!(key in mainFinal) && !(key in isolatedFinal)) {
         isolatedFinal[key] = childrenFinal[key]!
       }
@@ -252,6 +271,11 @@ export async function mergeCoverageFinal(options: {
   let coveredFunctions = 0
   let totalLines = 0
   let coveredLines = 0
+  // Assemble the merged per-file report as we tally so the runner can persist a
+  // combined coverage-final.json alongside the summary. Each tier's non-counter
+  // fields (fnMap/branchMap/path) survive via spread; the counters +
+  // statementMap are overridden with the max-hit union.
+  const mergedReport: Record<string, CoverageFileFinal> = {}
 
   for (let fi = 0, { length: flen } = allFiles; fi < flen; fi += 1) {
     const file = allFiles[fi]!
@@ -282,7 +306,7 @@ export async function mergeCoverageFinal(options: {
       // cached-length `{ length }` form applies (the bound is its length).
       const longer = mainArr.length >= isoArr.length ? mainArr : isoArr
       const branchCounts: number[] = []
-      for (let j = 0, { length } = longer; j < length; j += 1) {
+      for (let j = 0, { length: len } = longer; j < len; j += 1) {
         branchCounts[j] = Math.max(mainArr[j] ?? 0, isoArr[j] ?? 0)
       }
       mergedB[id] = branchCounts
@@ -320,12 +344,48 @@ export async function mergeCoverageFinal(options: {
     }
     totalLines += lineSet.size
     coveredLines += coveredLineSet.size
+
+    mergedReport[file] = {
+      ...(iso ?? {}),
+      ...(main ?? {}),
+      b: mergedB,
+      f: mergedF,
+      s: mergedS,
+      statementMap: stmtMap,
+    }
   }
 
-  return {
+  const aggregate: AggregateCoverage = {
     branches: pct(coveredBranches, totalBranches),
     functions: pct(coveredFunctions, totalFunctions),
     lines: pct(coveredLines, totalLines),
     statements: pct(coveredStatements, totalStatements),
   }
+
+  // Persist the combined report + json-summary at the coverage-home root
+  // (re-anchored on rootPath). The badge + release gate read the summary from
+  // COVERAGE_SUMMARY_PATH; COVERAGE_FINAL_PATH is the folded istanbul report.
+  const finalOutPath = path.join(
+    rootPath,
+    path.relative(REPO_ROOT, COVERAGE_FINAL_PATH),
+  )
+  const summaryOutPath = path.join(
+    rootPath,
+    path.relative(REPO_ROOT, COVERAGE_SUMMARY_PATH),
+  )
+  await fs.mkdir(path.dirname(finalOutPath), { recursive: true })
+  await fs.writeFile(finalOutPath, JSON.stringify(mergedReport))
+  await fs.writeFile(
+    summaryOutPath,
+    JSON.stringify({
+      total: {
+        branches: { pct: Number.parseFloat(aggregate.branches) },
+        functions: { pct: Number.parseFloat(aggregate.functions) },
+        lines: { pct: Number.parseFloat(aggregate.lines) },
+        statements: { pct: Number.parseFloat(aggregate.statements) },
+      },
+    }),
+  )
+
+  return aggregate
 }

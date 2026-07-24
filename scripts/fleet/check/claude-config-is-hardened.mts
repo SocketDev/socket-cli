@@ -41,7 +41,9 @@ export function hardeningViolations(
   config: Record<string, unknown>,
 ): HardeningViolation[] {
   const out: HardeningViolation[] = []
-  for (const key of Object.keys(HARDENED_GLOBAL_CONFIG)) {
+  const keys = Object.keys(HARDENED_GLOBAL_CONFIG)
+  for (let i = 0, { length } = keys; i < length; i += 1) {
+    const key = keys[i]!
     const expected = HARDENED_GLOBAL_CONFIG[key]
     if (config[key] !== expected) {
       out.push({ key, expected, actual: config[key] })

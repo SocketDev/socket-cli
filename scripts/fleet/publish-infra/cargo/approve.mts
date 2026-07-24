@@ -14,7 +14,8 @@ import process from 'node:process'
 
 import { confirm } from '@socketsecurity/lib/stdio/prompts'
 
-import { ensureTagAndRelease } from '../release.mts'
+import { withPinnedReadme } from '../pin-readme.mts'
+import { releaseBehindLiveGate } from '../release.mts'
 import { logger, rootPath, runInherit } from '../shared.mts'
 import { isAlreadyPublished } from './registry.mts'
 import { cratePath, crateSha256, readCargoPackage } from './shared.mts'
@@ -55,22 +56,22 @@ export function resolveStagedSha256(
  * `otpFromFlag` is accepted for signature parity with the npm tier but is a
  * no-op for crates.io (no OTP on publish).
  */
-export async function runApprove(options: {
+export async function runApprove(config: {
   dryRun: boolean
   otpFromFlag?: string | undefined
   packageName?: string | undefined
   yes: boolean
 }): Promise<void> {
-  const opts = { __proto__: null, ...options } as {
+  const cfg = { __proto__: null, ...config } as {
     dryRun: boolean
     otpFromFlag?: string | undefined
     packageName?: string | undefined
     yes: boolean
   }
-  const pkg = await readCargoPackage(opts.packageName)
+  const pkg = await readCargoPackage(cfg.packageName)
   logger.log(
     `Approving publish of ${pkg.name}@${pkg.version}` +
-      `${opts.dryRun ? ' [dry-run]' : ''}`,
+      `${cfg.dryRun ? ' [dry-run]' : ''}`,
   )
 
   if (await isAlreadyPublished(pkg.name, pkg.version)) {
@@ -82,80 +83,106 @@ export async function runApprove(options: {
     return
   }
 
-  // Pre-approve integrity gate: re-pack the .crate and compare its sha256 to the
-  // staged digest. Never approve a divergent artifact.
-  const crate = await packCrate(pkg.name, pkg.version, { locked: true })
-  if (!crate) {
-    logger.fail(
-      `[cargo] could not pack ${pkg.name}@${pkg.version} for the pre-approve ` +
-        'integrity gate. Fix the pack, then re-run --approve.',
-    )
-    process.exitCode = 1
-    return
-  }
-  const localSha = crateSha256(crate)
-  const stagedSha = resolveStagedSha256(pkg.name, pkg.version)
-  if (stagedSha === undefined) {
-    logger.log(
-      `[cargo] no staged sha256 to compare (first/local approve); proceeding ` +
-        `with the local pack digest ${localSha}.`,
-    )
-  } else if (stagedSha !== localSha) {
-    logger.fail(
-      `Pre-approve verify FAILED for ${pkg.name}@${pkg.version}.\n` +
-        `  staged: ${stagedSha}\n` +
-        `  local:  ${localSha}\n` +
-        '  Fix: re-stage the crate; never approve a divergent artifact.',
-    )
-    process.exitCode = 1
-    return
-  } else {
-    logger.success(
-      `Pre-approve verify: local pack sha256 matches the staged digest ` +
-        `(${localSha}).`,
-    )
-  }
+  // The README asset pin must be active for BOTH the integrity re-pack and the
+  // publish: the staged digest was computed with the pin, so an unpinned re-pack
+  // would falsely diverge, and the published `.crate` must carry the pinned
+  // README. Restored after (try/finally in withPinnedReadme).
+  await withPinnedReadme(
+    { repository: pkg.repository, rootPath, version: pkg.version },
+    async pinned => {
+      // Pre-approve integrity gate: re-pack the .crate and compare its sha256 to
+      // the staged digest. Never approve a divergent artifact.
+      const crate = await packCrate(pkg.name, pkg.version, {
+        allowDirty: pinned,
+        locked: true,
+      })
+      if (!crate) {
+        logger.fail(
+          `[cargo] could not pack ${pkg.name}@${pkg.version} for the ` +
+            'pre-approve integrity gate. Fix the pack, then re-run --approve.',
+        )
+        process.exitCode = 1
+        return
+      }
+      const localSha = crateSha256(crate)
+      const stagedSha = resolveStagedSha256(pkg.name, pkg.version)
+      if (stagedSha === undefined) {
+        logger.log(
+          `[cargo] no staged sha256 to compare (first/local approve); ` +
+            `proceeding with the local pack digest ${localSha}.`,
+        )
+      } else if (stagedSha !== localSha) {
+        logger.fail(
+          `Pre-approve verify FAILED for ${pkg.name}@${pkg.version}.\n` +
+            `  staged: ${stagedSha}\n` +
+            `  local:  ${localSha}\n` +
+            '  Fix: re-stage the crate; never approve a divergent artifact.',
+        )
+        process.exitCode = 1
+        return
+      } else {
+        logger.success(
+          `Pre-approve verify: local pack sha256 matches the staged digest ` +
+            `(${localSha}).`,
+        )
+      }
 
-  if (opts.otpFromFlag !== undefined) {
-    logger.log(
-      '[cargo] --otp is a no-op for crates.io (no OTP on publish); ignoring.',
-    )
-  }
+      if (cfg.otpFromFlag !== undefined) {
+        logger.log(
+          '[cargo] --otp is a no-op for crates.io (no OTP on publish); ' +
+            'ignoring.',
+        )
+      }
 
-  if (opts.dryRun) {
-    logger.success(
-      `Dry-run complete for ${pkg.name}@${pkg.version}. Re-run without ` +
-        '--dry-run to publish (PERMANENT).',
-    )
-    return
-  }
+      if (cfg.dryRun) {
+        logger.success(
+          `Dry-run complete for ${pkg.name}@${pkg.version}. Re-run without ` +
+            '--dry-run to publish (PERMANENT).',
+        )
+        return
+      }
 
-  // Confirmation gate — crates.io publishing is PERMANENT (yank-only).
-  if (!opts.yes) {
-    const confirmed = (await confirm({
-      default: false,
-      message:
-        `Publish ${pkg.name}@${pkg.version} to crates.io? This is PERMANENT ` +
-        '(a version can only be yanked, never overwritten).',
-    })) as boolean
-    if (!confirmed) {
-      logger.log('Not confirmed; nothing published.')
-      return
-    }
-  }
+      // Confirmation gate — crates.io publishing is PERMANENT (yank-only).
+      if (!cfg.yes) {
+        const confirmed = (await confirm({
+          default: false,
+          message:
+            `Publish ${pkg.name}@${pkg.version} to crates.io? This is ` +
+            'PERMANENT (a version can only be yanked, never overwritten).',
+        })) as boolean
+        if (!confirmed) {
+          logger.log('Not confirmed; nothing published.')
+          return
+        }
+      }
 
-  // In CI this rides OIDC Trusted Publishing; locally it uses the operator's
-  // `cargo login` token. Either way the script handles no tokens — cargo reads
-  // them.
-  const code = await runInherit('cargo', ['publish', '--locked'], rootPath)
-  if (code !== 0) {
-    logger.fail(`cargo publish exited ${code}`)
-    process.exitCode = code
-    return
-  }
-  logger.success(`Published ${pkg.name}@${pkg.version} to crates.io.`)
-  await ensureTagAndRelease(
-    { name: pkg.name, version: pkg.version },
-    { packAssets: () => packCrateAssets(pkg.name, pkg.version) },
+      // In CI this rides OIDC Trusted Publishing; locally it uses the
+      // operator's `cargo login` token. Either way the script handles no tokens
+      // — cargo reads them.
+      const args = ['publish', '--locked']
+      if (pinned) {
+        args.push('--allow-dirty')
+      }
+      const code = await runInherit('cargo', args, rootPath)
+      if (code !== 0) {
+        logger.fail(`cargo publish exited ${code}`)
+        process.exitCode = code
+        return
+      }
+      logger.success(`Published ${pkg.name}@${pkg.version} to crates.io.`)
+      // The tag + immutable release are the LAST markers: cargo-publish
+      // success alone is not enough — cut them only once the version is
+      // actually resolvable in the crates.io index.
+      const released = await releaseBehindLiveGate({
+        isLive: () => isAlreadyPublished(pkg.name, pkg.version),
+        packAssets: () =>
+          packCrateAssets(pkg.name, pkg.version, { allowDirty: pinned }),
+        pkg: { name: pkg.name, version: pkg.version },
+        registry: 'crates.io',
+      })
+      if (!released) {
+        process.exitCode = 1
+      }
+    },
   )
 }

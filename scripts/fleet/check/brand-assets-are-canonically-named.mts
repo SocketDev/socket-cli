@@ -16,7 +16,7 @@
  *   exceptions — the brand grammar is exact).
  */
 
-import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -58,7 +58,7 @@ export function resolveRepoName(repoRoot: string): string {
   try {
     const pkg = JSON.parse(
       readFileSync(path.join(repoRoot, 'package.json'), 'utf8'),
-    ) as { name?: unknown }
+    ) as { name?: unknown | undefined }
     if (typeof pkg.name === 'string' && pkg.name.length > 0) {
       const slash = pkg.name.lastIndexOf('/')
       return slash >= 0 ? pkg.name.slice(slash + 1) : pkg.name

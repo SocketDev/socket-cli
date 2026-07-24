@@ -37,7 +37,8 @@ export function extractReadmeLead(readmePath: string): string | undefined {
   const lines = text.split('\n')
   let inParagraph = false
   const paragraphLines: string[] = []
-  for (const line of lines) {
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
     const trimmed = line.trim()
     // Skip H1, badge lines, and empty leading lines.
     if (!inParagraph) {

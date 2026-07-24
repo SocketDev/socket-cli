@@ -12,7 +12,7 @@
 
 import path from 'node:path'
 
-import { check } from '../../../.claude/hooks/fleet/no-fleet-fork-guard/index.mts'
+import { check } from '../../../.claude/hooks/fleet/_shared/fleet-fork.mts'
 
 // The apply_patch envelope names each touched file on its own header line. These
 // are the four that carry a path (`*** Move to:` is the rename target). Kept in
@@ -120,10 +120,10 @@ export function extractApplyPatchPaths(patchText: string): string[] {
  * freeform text. Deduplicated, resolved against `cwd`.
  */
 export function extractEditedTargets(
-  options: ExtractEditedTargetsOptions,
+  config: ExtractEditedTargetsOptions,
 ): string[] {
-  const opts = { __proto__: null, ...options } as ExtractEditedTargetsOptions
-  const { cwd, toolInput } = opts
+  const cfg = { __proto__: null, ...config } as ExtractEditedTargetsOptions
+  const { cwd, toolInput } = cfg
   const targets = new Set<string>()
   if (toolInput && typeof toolInput === 'object' && !Array.isArray(toolInput)) {
     const obj = toolInput as Record<string, unknown>
@@ -152,10 +152,10 @@ export function extractEditedTargets(
  * `undefined` when all are allowed.
  */
 export async function findBlockedTarget(
-  options: FindBlockedTargetOptions,
+  config: FindBlockedTargetOptions,
 ): Promise<BlockedTarget | undefined> {
-  const opts = { __proto__: null, ...options } as FindBlockedTargetOptions
-  const { targets, transcriptPath } = opts
+  const cfg = { __proto__: null, ...config } as FindBlockedTargetOptions
+  const { targets, transcriptPath } = cfg
   for (let i = 0, { length } = targets; i < length; i += 1) {
     const abs = targets[i]!
     const verdict = await check({

@@ -10,7 +10,7 @@
 // Detected inside comment syntax (NOT inside strings or real code):
 //   - paths under the plans or reports directories — untracked operator notes.
 //   - `socket-<repo>/.claude/…`                 — another fleet repo's tree.
-//   - `/Users/<name>/…`                          — absolute home path.
+//   - `/Users/<user>/…`                          — absolute home path.
 //   - `../socket-<repo>/…`                       — sibling fleet-repo path.
 //
 // Scope: tracked source-code files (.rs/.ts/.mts/.js/.go/.py/.c/.h/…). Markdown,
@@ -30,10 +30,8 @@ import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import {
-  splitLines,
-  walkComments,
-} from '../../../.claude/hooks/fleet/_shared/acorn/index.mts'
+import { walkComments } from '../../../.claude/hooks/fleet/_shared/ast/comments.mts'
+import { splitLines } from '../../../.claude/hooks/fleet/_shared/ast/core.mts'
 import {
   describePrivatePathKind,
   extractLexicalCommentBodies,
@@ -51,7 +49,7 @@ const logger = getDefaultLogger()
 // (markdown / docs / JSON / YAML / .claude excluded — they reference these
 // paths legitimately).
 const SOURCE_FILE_RE =
-  /\.(?:[cm]?[jt]sx?|cc|cpp|cxx|hpp|hh|[ch]|rs|go|py|rb|java|kt|swift|sh|bash|zsh)$/
+  /\.(?:[ch]|[cm]?[jt]sx?|bash|cc|cpp|cxx|go|hh|hpp|java|kt|py|rb|rs|sh|swift|zsh)$/
 
 const JS_TS_FILE_RE = /\.(?:[cm]?[jt]sx?)$/
 
@@ -60,7 +58,7 @@ const JS_TS_FILE_RE = /\.(?:[cm]?[jt]sx?)$/
 // example) and `cross-repo` (a `../socket-<repo>/` example) — a doc-comment or
 // fixture that deliberately SHOWS the pattern it documents.
 const SUPPRESS_RE =
-  /socket-lint:\s*allow\s+(?:private-path|personal-path|cross-repo)\b/
+  /socket-lint:\s*allow\s+(?:cross-repo|personal-path|private-path)\b/
 
 // Files that legitimately NAME these patterns: the three enforcement surfaces
 // (this check, the edit-time hook, the lint rule), the shared matcher, the doc
@@ -100,7 +98,7 @@ function isSelfExempt(relFile: string): boolean {
 // the pattern, not leaking a real path. Matched against the captured path's
 // owner segment.
 const PLACEHOLDER_MATCH_RE =
-  /(?:^|[/.])(?:socket-foo\b|Users\/(?:x|me|\.\.\.)(?:\/|$))/ // socket-lint: allow personal-path -- placeholder-token detector, not a real path.
+  /(?:^|[/.])(?:socket-foo\b|Users\/(?:\.\.\.|me|x)(?:\/|$))/ // socket-lint: allow personal-path -- placeholder-token detector, not a real path.
 
 function findingIsDocumentation(
   rawLine: string,

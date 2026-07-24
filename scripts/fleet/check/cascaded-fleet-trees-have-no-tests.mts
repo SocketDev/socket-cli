@@ -86,8 +86,8 @@ export function findCascadedTreeTests(repoRoot: string): string[] {
   const found: string[] = []
   for (let i = 0, { length } = ROOTS; i < length; i += 1) {
     const root = ROOTS[i]!
-    for (let i = 0, { length } = CASCADED_TREES; i < length; i += 1) {
-      const tree = CASCADED_TREES[i]!
+    for (let j = 0, { length: len } = CASCADED_TREES; j < len; j += 1) {
+      const tree = CASCADED_TREES[j]!
       const abs = path.join(repoRoot, root, tree)
       if (existsSync(abs)) {
         walkForTests(abs, found)

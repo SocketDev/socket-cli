@@ -6,7 +6,8 @@
  */
 
 import { TSCONFIG_CHECK_PATH } from '../paths.mts'
-import { run, type CheckStep } from './check-steps.mts'
+import { run } from './check-steps.mts'
+import type { CheckStep } from './check-steps.mts'
 
 export function buildPathsAndSupplyChainSteps(): CheckStep[] {
   return [
@@ -18,7 +19,7 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // comment, message, or doc. Back-catalog sweep: 2026-06-06.
     () => run('node', ['scripts/fleet/check/env-kill-switches-are-absent.mts']),
     // No INTERNAL / PRIVATE path (`.claude/plans|reports/…`, `socket-<repo>/.claude/…`,
-    // `/Users/<name>/…`, `../socket-<repo>/…`) inside a SOURCE-code comment. The
+    // `/Users/<user>/…`, `../socket-<repo>/…`) inside a SOURCE-code comment. The
     // edit-time no-private-path-in-source-guard + socket/no-private-path-in-source
     // block NEW ones; this full-scan complement fails the gate if any tracked
     // source file already carries one. Incident: a scaffolding-repo .claude/plans/
@@ -221,6 +222,14 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
         'scripts/fleet/check/lock-step-headers-match.mts',
         '--quiet',
       ]),
+    // Per-repo socket-wheelhouse config vs the fleet TypeBox schema. The
+    // loader is fail-open by design (hooks must never die on a bad config);
+    // this is where drift fails LOUD — bad enum, unknown key, malformed
+    // docker.prebakes entry. No-op when the repo carries no config.
+    () =>
+      run('node', [
+        'scripts/fleet/check/socket-wheelhouse-config-matches-schema.mts',
+      ]),
     // Soak-window parity: the ONE soak value (SOAK_DAYS) must match every
     // surface that can't import it — pnpm-workspace.yaml `minimumReleaseAge`
     // (minutes) and `.npmrc` `min-release-age` (days). taze's config imports
@@ -238,6 +247,13 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // unstable keys are inert on stable cargo, so the lock is the build-time
     // enforcement and the nightly updater is the only thing that moves it.
     () => run('node', ['scripts/fleet/check/cargo-soak-config-is-current.mts']),
+    // Never pin the microarch of a SHIPPED build — a distributed artifact must
+    // detect the CPU at run time (portable SIMD = runtime dispatch), not bake in
+    // the build machine's ISA and SIGILL on older CPUs. Fails on Rust
+    // `-C target-cpu=native` / a baseline `+avx2` target-feature pin and Go
+    // GOAMD64 v2/v3/v4 in build config; a local-profiling/bench pin passes when
+    // annotated `# microarch-pin: local-profiling | removable: YYYY-MM-DD`.
+    () => run('node', ['scripts/fleet/check/build-microarch-is-portable.mts']),
     // Fuzz tiers are non-opt-in: every language present in the repo must carry
     // its property-and-fuzz-testing tier (JS/TS fast-check/vitiate, Rust
     // proptest/cargo-fuzz, C++ libFuzzer, Go native fuzz). A repo with no
@@ -257,21 +273,6 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // via non-Claude paths without the canonical
     // `# published: YYYY-MM-DD | removable: YYYY-MM-DD` annotation.
     () => run('node', ['scripts/fleet/check/soak-excludes-have-dates.mts']),
-    // .npmrc's Socket soak-exclude block is DERIVED from SOCKET_PACKAGE_PATTERNS
-    // (the one source), never hand-copied. Fails on drift; the cascade --fixes it.
-    () =>
-      run('node', [
-        'scripts/fleet/check/npmrc-socket-soak-excludes-are-derived.mts',
-      ]),
-    // .npmrc's versioned-soak-MIRROR block is DERIVED from pnpm-workspace.yaml's
-    // `minimumReleaseAgeExclude` version-pins (bare name only — npm can't pin a
-    // version, npm/cli#9532), so npm + pnpm share the ONE canonical list. Fails
-    // on drift; `scripts/fleet/soak-bypass.mts` + the cascade --fix it. This is
-    // what MANDATES the writer: hand-editing one file (pin OR mirror) reddens.
-    () =>
-      run('node', [
-        'scripts/fleet/check/npmrc-versioned-soak-mirror-is-derived.mts',
-      ]),
     // The fleet's Rust toolchain pin is single-sourced in rust-toolchain.toml;
     // template/base's copy + RUST_UPDATER_TOOLCHAIN (cargo.mts) are DERIVED. A
     // hand-bump of one without the others reddens here; the cascade --fixes it.

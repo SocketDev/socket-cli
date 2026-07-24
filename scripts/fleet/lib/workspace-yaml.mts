@@ -18,7 +18,7 @@
  */
 export function parseCatalogBlock(
   content: string,
-  options?: { blockKey?: string | undefined },
+  options?: { blockKey?: string | undefined } | undefined,
 ): Record<string, string> {
   const opts = Object.assign(Object.create(null) as Record<string, string>, {
     blockKey: 'catalog',
@@ -63,12 +63,12 @@ export function parseCatalogBlock(
  */
 export function parseListBlock(
   content: string,
-  options: { blockKey: string },
+  config: { blockKey: string },
 ): string[] {
-  const opts = Object.assign(Object.create(null), options) as {
+  const cfg = Object.assign(Object.create(null), config) as {
     blockKey: string
   }
-  const blockHeader = `${opts.blockKey}:`
+  const blockHeader = `${cfg.blockKey}:`
   const results: string[] = []
   const lines = content.split('\n')
   let inBlock = false

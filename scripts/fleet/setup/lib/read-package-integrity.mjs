@@ -13,6 +13,13 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 function packageKey(line) {
+  // A pnpm-lock.yaml `packages:` entry key, indented exactly two spaces, in
+  // one of three YAML key spellings:
+  //   ^  <2-space indent>
+  //   (?:'([^']+)'   single-quoted key -> group 1
+  //     |"([^"]+)"   double-quoted key -> group 2
+  //     |(\S.*))     bare/unquoted key -> group 3
+  //   :\s*$          trailing colon, then only whitespace to end of line
   const match = /^  (?:'([^']+)'|"([^"]+)"|(\S.*)):\s*$/.exec(line)
   return match ? (match[1] ?? match[2] ?? match[3]) : undefined
 }

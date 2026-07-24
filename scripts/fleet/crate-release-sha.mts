@@ -14,10 +14,11 @@
 
 import { request } from 'node:https'
 import process from 'node:process'
-import { pathToFileURL } from 'node:url'
 import { gunzipSync } from 'node:zlib'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
+
+import { isMainModule } from './_shared/is-main-module.mts'
 
 const CRATES_IO_ORIGIN = 'https://crates.io'
 const MAX_REDIRECTS = 5
@@ -191,7 +192,11 @@ async function download(
           )
           const bytes = new Uint8Array(length)
           let offset = 0
-          for (let i = 0, { length } = chunks; i < length; i += 1) {
+          for (
+            let i = 0, { length: chunkCount } = chunks;
+            i < chunkCount;
+            i += 1
+          ) {
             const chunk = chunks[i]!
             bytes.set(chunk, offset)
             offset += chunk.length
@@ -234,12 +239,10 @@ function parseCli(args: string[]): CliOptions {
   return { crate, json, version }
 }
 
-async function crateReleaseInfo(
-  options: CliOptions,
-): Promise<CrateReleaseInfo> {
-  const opts = { __proto__: null, ...options } as CliOptions
-  const name = encodeURIComponent(opts.crate)
-  let version = opts.version
+async function crateReleaseInfo(config: CliOptions): Promise<CrateReleaseInfo> {
+  const cfg = { __proto__: null, ...config } as CliOptions
+  const name = encodeURIComponent(cfg.crate)
+  let version = cfg.version
   if (!version) {
     const metadataBytes = await download(
       new URL(`/api/v1/crates/${name}`, CRATES_IO_ORIGIN),
@@ -256,7 +259,7 @@ async function crateReleaseInfo(
     'application/octet-stream',
   )
   return {
-    crate: opts.crate,
+    crate: cfg.crate,
     version,
     ...cargoVcsInfoFromTar(gunzipSync(archive)),
   }
@@ -283,9 +286,6 @@ async function main(): Promise<void> {
   }
 }
 
-if (
-  process.argv[1] &&
-  import.meta.url === pathToFileURL(process.argv[1]).href
-) {
-  await main()
+if (isMainModule(import.meta.url)) {
+  void main()
 }

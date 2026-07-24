@@ -11,8 +11,8 @@
  */
 
 import {
-  HttpResponseError,
   httpJson,
+  HttpResponseError,
   httpText,
 } from '@socketsecurity/lib-stable/http-request'
 
@@ -52,13 +52,13 @@ function refHeaders(token: string): Record<string, string> {
  * decides whether to force-update it instead).
  */
 export async function createBranchRef(
-  options: CreateOrUpdateRefOptions,
+  config: CreateOrUpdateRefOptions,
 ): Promise<void> {
-  const opts = { __proto__: null, ...options } as CreateOrUpdateRefOptions
-  const apiUrl = opts.apiUrl ?? DEFAULT_API_URL
-  await httpJson(`${apiUrl}/repos/${opts.repo}/git/refs`, {
-    body: JSON.stringify({ ref: `refs/heads/${opts.branch}`, sha: opts.sha }),
-    headers: refHeaders(opts.token),
+  const cfg = { __proto__: null, ...config } as CreateOrUpdateRefOptions
+  const apiUrl = cfg.apiUrl ?? DEFAULT_API_URL
+  await httpJson(`${apiUrl}/repos/${cfg.repo}/git/refs`, {
+    body: JSON.stringify({ ref: `refs/heads/${cfg.branch}`, sha: cfg.sha }),
+    headers: refHeaders(cfg.token),
     method: 'POST',
     timeout: 30_000,
   })
@@ -71,13 +71,13 @@ export async function createBranchRef(
  * `HttpResponseError` on any non-2xx response.
  */
 export async function updateBranchRef(
-  options: CreateOrUpdateRefOptions,
+  config: CreateOrUpdateRefOptions,
 ): Promise<void> {
-  const opts = { __proto__: null, ...options } as CreateOrUpdateRefOptions
-  const apiUrl = opts.apiUrl ?? DEFAULT_API_URL
-  await httpJson(`${apiUrl}/repos/${opts.repo}/git/refs/heads/${opts.branch}`, {
-    body: JSON.stringify({ force: opts.force ?? false, sha: opts.sha }),
-    headers: refHeaders(opts.token),
+  const cfg = { __proto__: null, ...config } as CreateOrUpdateRefOptions
+  const apiUrl = cfg.apiUrl ?? DEFAULT_API_URL
+  await httpJson(`${apiUrl}/repos/${cfg.repo}/git/refs/heads/${cfg.branch}`, {
+    body: JSON.stringify({ force: cfg.force ?? false, sha: cfg.sha }),
+    headers: refHeaders(cfg.token),
     method: 'PATCH',
     timeout: 30_000,
   })
@@ -88,18 +88,15 @@ export async function updateBranchRef(
  * is swallowed so cleanup after a failed or re-run publish never itself throws.
  * Any other non-2xx (e.g. 401/403 auth) propagates.
  */
-export async function deleteBranchRef(options: GitRefOptions): Promise<void> {
-  const opts = { __proto__: null, ...options } as GitRefOptions
-  const apiUrl = opts.apiUrl ?? DEFAULT_API_URL
+export async function deleteBranchRef(config: GitRefOptions): Promise<void> {
+  const cfg = { __proto__: null, ...config } as GitRefOptions
+  const apiUrl = cfg.apiUrl ?? DEFAULT_API_URL
   try {
-    await httpText(
-      `${apiUrl}/repos/${opts.repo}/git/refs/heads/${opts.branch}`,
-      {
-        headers: refHeaders(opts.token),
-        method: 'DELETE',
-        timeout: 30_000,
-      },
-    )
+    await httpText(`${apiUrl}/repos/${cfg.repo}/git/refs/heads/${cfg.branch}`, {
+      headers: refHeaders(cfg.token),
+      method: 'DELETE',
+      timeout: 30_000,
+    })
   } catch (e) {
     const status =
       e instanceof HttpResponseError ? e.response.status : undefined

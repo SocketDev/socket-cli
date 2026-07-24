@@ -19,10 +19,8 @@ import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 
 import { isMainModule } from '../_shared/is-main-module.mts'
-import {
-  runWorkflowDispatch,
-  type WorkflowDispatchSpec,
-} from './remote-dispatch.mts'
+import { runWorkflowDispatch } from './remote-dispatch.mts'
+import type { WorkflowDispatchSpec } from './remote-dispatch.mts'
 import { logger } from './shared.mts'
 
 // The dispatched workflow. Kept in sync with
@@ -32,7 +30,7 @@ export const GITHUB_RELEASE_WORKFLOW = 'github-release.yml'
 // Accepted `--release-as` semver levels (github-release.yml's `release-as`
 // choice input). An unknown value is dropped so the dispatch doesn't fail the
 // workflow's own choice validation.
-const RELEASE_LEVELS: ReadonlySet<string> = new Set(['patch', 'minor', 'major'])
+const RELEASE_LEVELS: ReadonlySet<string> = new Set(['major', 'minor', 'patch'])
 
 export interface GithubReleaseDispatchArgs {
   release: boolean

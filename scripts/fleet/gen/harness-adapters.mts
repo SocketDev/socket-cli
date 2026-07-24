@@ -12,7 +12,7 @@
  *   symlink to ./CLAUDE.md (pointer-file fallback on Windows). Cursor + Kiro
  *   need frontmatter, so they get a small generated file pointing at CLAUDE.md
  *   (no content copied — DRY). Usage: node
- *   scripts/fleet/gen-harness-adapters.mts [--check] (no flag) create/repair
+ *   scripts/fleet/gen/harness-adapters.mts [--check] (no flag) create/repair
  *   the adapters in place. --check report drift (missing / wrong target /
  *   stale) without writing; exit 1 if any. Used by the check-only twin.
  */
@@ -32,8 +32,8 @@ import process from 'node:process'
 import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { REPO_ROOT } from './paths.mts'
-import { isMainModule } from './_shared/is-main-module.mts'
+import { REPO_ROOT } from '../paths.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
@@ -160,14 +160,14 @@ export function findDrift(repoRoot: string): string[] {
 function main(): void {
   const checkOnly = process.argv.includes('--check')
   if (!existsSync(path.join(REPO_ROOT, RULES_FILE))) {
-    logger.log(`[gen-harness-adapters] no ${RULES_FILE} — nothing to adapt.`)
+    logger.log(`[gen/harness-adapters] no ${RULES_FILE} — nothing to adapt.`)
     return
   }
   if (checkOnly) {
     const drift = findDrift(REPO_ROOT)
     if (drift.length > 0) {
       logger.fail(
-        `[gen-harness-adapters] ${drift.length} adapter(s) drifted — run \`node scripts/fleet/gen-harness-adapters.mts\`:`,
+        `[gen/harness-adapters] ${drift.length} adapter(s) drifted — run \`node scripts/fleet/gen/harness-adapters.mts\`:`,
       )
       for (let i = 0, { length } = drift; i < length; i += 1) {
         logger.error(`  ✗ ${drift[i]}`)
@@ -176,7 +176,7 @@ function main(): void {
       return
     }
     logger.success(
-      `[gen-harness-adapters] ${ADAPTERS.length} cross-harness adapters in sync.`,
+      `[gen/harness-adapters] ${ADAPTERS.length} cross-harness adapters in sync.`,
     )
     return
   }
@@ -184,7 +184,7 @@ function main(): void {
     writeAdapter(REPO_ROOT, ADAPTERS[i]!)
   }
   logger.success(
-    `[gen-harness-adapters] wrote ${ADAPTERS.length} cross-harness adapters.`,
+    `[gen/harness-adapters] wrote ${ADAPTERS.length} cross-harness adapters.`,
   )
 }
 

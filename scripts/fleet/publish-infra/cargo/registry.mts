@@ -52,7 +52,7 @@ export async function isAlreadyPublished(
   }
   try {
     const parsed = JSON.parse(stdout) as {
-      version?: { num?: unknown } | undefined
+      version?: { num?: unknown | undefined } | undefined
     }
     return !!parsed.version && typeof parsed.version === 'object'
   } catch {
@@ -79,7 +79,10 @@ export async function fetchPublishedVersion(
   try {
     const parsed = JSON.parse(stdout) as {
       crate?:
-        | { max_stable_version?: unknown; newest_version?: unknown }
+        | {
+            max_stable_version?: unknown | undefined
+            newest_version?: unknown | undefined
+          }
         | undefined
     }
     const crate = parsed.crate
@@ -116,8 +119,8 @@ export async function crateNameStatus(
   }
   try {
     const parsed = JSON.parse(stdout) as {
-      crate?: unknown
-      errors?: unknown
+      crate?: unknown | undefined
+      errors?: unknown | undefined
     }
     if (parsed.crate && typeof parsed.crate === 'object') {
       return 'published'

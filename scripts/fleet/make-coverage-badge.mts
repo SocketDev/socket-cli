@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
  * @file Regenerate the repo-local coverage badge from the latest coverage run.
- *   Reads the line-coverage total from `coverage/coverage-summary.json` (the
- *   vitest `json-summary` reporter), renders the optimized badge SVG to
+ *   Reads the line-coverage total from
+ *   `node_modules/.cache/fleet/coverage/coverage-summary.json` (the vitest
+ *   `json-summary` reporter), renders the optimized badge SVG to
  *   `assets/repo/badges/coverage.svg`, and migrates a README still carrying the
  *   retired shields.io badge line — or the legacy pre-badges/ asset path — to
  *   `![Coverage](assets/repo/badges/coverage.svg)`. Part of the pre-bump wave:
@@ -47,9 +48,9 @@ export interface MakeCoverageBadgeOptions {
  * Returns the process exit code: 0 on success/current, 1 on a missing
  * precondition or (under `check`) a stale badge.
  */
-export function makeCoverageBadge(options: MakeCoverageBadgeOptions): number {
-  const opts = { __proto__: null, check: false, ...options }
-  const readmePath = path.join(opts.repoRoot, 'README.md')
+export function makeCoverageBadge(config: MakeCoverageBadgeOptions): number {
+  const cfg = { __proto__: null, check: false, ...config }
+  const readmePath = path.join(cfg.repoRoot, 'README.md')
   if (!existsSync(readmePath)) {
     logger.error(
       'make-coverage-badge: no README.md at the repo root — nothing to update.',
@@ -63,28 +64,29 @@ export function makeCoverageBadge(options: MakeCoverageBadgeOptions): number {
     )
     return 1
   }
-  const pct = readCoveragePct(opts.repoRoot)
+  const pct = readCoveragePct(cfg.repoRoot)
   if (pct === undefined) {
     logger.error(
-      'make-coverage-badge: no coverage data at coverage/coverage-summary.json. Run `pnpm run cover` first (the json-summary reporter emits it), then re-run.',
+      // oxlint-disable-next-line socket/prefer-node-modules-dot-cache -- socket-lint FP: the string already targets node_modules/.cache/ — it's a human-facing message, and the rule's string matcher can't see the node_modules/ prefix on the same path.
+      'make-coverage-badge: no coverage data at node_modules/.cache/fleet/coverage/coverage-summary.json. Run `pnpm run cover` first (the json-summary reporter emits it), then re-run.',
     )
     return 1
   }
-  const svgPath = badgeAssetPath(opts.repoRoot)
+  const svgPath = badgeAssetPath(cfg.repoRoot)
   const nextSvg = coverageBadgeSvg(pct)
   const currentSvg = existsSync(svgPath)
     ? readFileSync(svgPath, 'utf8')
     : undefined
   const nextReadme = migrateReadmeBadge(readme, nextSvg)
   if (nextSvg === currentSvg && nextReadme === readme) {
-    if (!opts.check) {
+    if (!cfg.check) {
       logger.success(
         `make-coverage-badge: badge already current at ${Math.round(pct)}%.`,
       )
     }
     return 0
   }
-  if (opts.check) {
+  if (cfg.check) {
     logger.error(
       `make-coverage-badge: the coverage badge is stale (coverage is ${Math.round(pct)}%). Run \`node scripts/fleet/make-coverage-badge.mts\` and commit.`,
     )

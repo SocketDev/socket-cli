@@ -63,12 +63,12 @@ export function readStagedShasum(entry: {
 // shape used `{ stageId, name, … }`.
 interface RawStageEntry {
   dist?: { shasum?: unknown | undefined } | undefined
-  id?: unknown
-  name?: unknown
-  packageName?: unknown
-  shasum?: unknown
-  stageId?: unknown
-  version?: unknown
+  id?: unknown | undefined
+  name?: unknown | undefined
+  packageName?: unknown | undefined
+  shasum?: unknown | undefined
+  stageId?: unknown | undefined
+  version?: unknown | undefined
 }
 
 function normalizeStageEntry(raw: RawStageEntry): StageListEntry | undefined {
@@ -124,7 +124,8 @@ export function parseStageListJson(stdout: string): StageListEntry[] {
       ? (Object.values(parsed) as Array<RawStageEntry | undefined>)
       : []
   const result: StageListEntry[] = []
-  for (const raw of rawEntries) {
+  for (let i = 0, { length } = rawEntries; i < length; i += 1) {
+    const raw = rawEntries[i]
     const entry = raw ? normalizeStageEntry(raw) : undefined
     if (entry) {
       result.push(entry)
@@ -208,8 +209,9 @@ export function formatPriorProvenance(
 export async function isStagingExpected(pkgName: string): Promise<boolean> {
   try {
     const versions = await fetchVersionTrustInfo(pkgName, 'full')
-    for (const v of Object.values(versions)) {
-      if (v.approver !== undefined) {
+    const versionList = Object.values(versions)
+    for (let i = 0, { length } = versionList; i < length; i += 1) {
+      if (versionList[i]!.approver !== undefined) {
         return true
       }
     }

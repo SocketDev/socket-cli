@@ -59,10 +59,11 @@ const MAX_SOURCE_LINES = 1000
 // Port of socket/no-status-emoji — decorative/status emoji don't belong in
 // source. A conservative set of the common offenders (checkmarks, crosses,
 // warning, rocket, sparkles, fire, party) rather than the full unicode range.
-const STATUS_EMOJI = /[✅❌⚠️✨\u{1f680}\u{1f525}\u{1f389}\u{1f44d}\u{1f44e}]/u
+const STATUS_EMOJI =
+  /[✅❌\u{26a0}✨\u{1f680}\u{1f525}\u{1f389}\u{1f44d}\u{1f44e}]/u
 
 // Port of socket/personal-path-placeholders — a machine-specific home path
-// leaked into committed source (/Users/<name>/… or /home/<name>/…).
+// leaked into committed source (/Users/<user>/… or /home/<user>/…).
 const PERSONAL_PATH = /\/(?:Users|home)\/[A-Za-z0-9._-]+\//
 
 interface Violation {

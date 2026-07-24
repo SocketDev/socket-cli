@@ -13,9 +13,10 @@
 // ALLOWLIST of already-blessed names whose shape predates / sidesteps the tails
 // (e.g. `oxlint-plugin-loads`, `fleet-soak-exclude-parity`).
 //
-// Scope: `scripts/fleet/check/*.mts` only — the check scripts themselves.
-// Excludes `check.mts` (the runner), this file's own name is allowlisted, and
-// helper subdirectories (`check/paths/`) are not scanned.
+// Scope: `scripts/fleet/check/*.mts` plus `scripts/repo/check/*.mts` when the
+// repo carries one (the wheelhouse's repo-tier gates). Excludes `check.mts`
+// (the runner), this file's own name is allowlisted, and helper
+// subdirectories (`check/paths/`) are not scanned.
 //
 // Why an allowlist AND a pattern: the pattern catches the common shapes
 // deterministically; the allowlist covers the handful of legitimate names that
@@ -40,6 +41,7 @@ const logger = getDefaultLogger()
 // `lock-step-refs-resolve`, `soak-excludes-have-dates`.
 //   -are-<state>   dirs-ARE-segmented, paths-ARE-canonical, …-ARE-absent
 //   -is-<state>    setup-IS-prompt-less, provenance-IS-attested
+//   -has-<state>   fleet-HAS-no-wheelhouse-only-refs (singular subject)
 //   -have-<state>  enforcers-HAVE-thorough-tests, soak-excludes-HAVE-dates
 //   -resolve(s)    citations-RESOLVE, script-paths-RESOLVE
 //   -loads         oxlint-plugin-LOADS
@@ -55,10 +57,10 @@ const logger = getDefaultLogger()
 //          a direct object, so subject-verb-object ("tails MATCH naming domain") is as
 //          valid as bare subject-verb ("headers MATCH").
 const ASSERTION_TAIL =
-  // alt1: -(?:are|have|is)-[a-z][a-z0-9-]*$
+  // alt1: -(?:are|has|have|is)-[a-z][a-z0-9-]*$
   // alt2: -(?:resolve|resolves|loads|parity)$
   // alt3: -(?:match|matches|cover|covers)(?:-[a-z][a-z0-9-]*)?$
-  /-(?:are|have|is)-[a-z][a-z0-9-]*$|-(?:resolve|resolves|loads|parity)$|-(?:match|matches|cover|covers)(?:-[a-z][a-z0-9-]*)?$/
+  /-(?:are|has|have|is)-[a-z][a-z0-9-]*$|-(?:resolve|resolves|loads|parity)$|-(?:match|matches|cover|covers)(?:-[a-z][a-z0-9-]*)?$/
 
 // Names that read as assertions but are exempt from the tail pattern (their
 // shape is blessed). Keep this short + justified — it is the exact set, not an
@@ -70,12 +72,15 @@ const ALLOWLIST = new Set<string>([
   // Verb-assertion: "convention guards CONSULT the fleet-context detector" — a
   // declarative statement, just verb-tailed (consult) rather than -are-/-resolve.
   'convention-guards-consult-fleet-context',
-  // Verb-assertion: "lint configs PROTECT vendored paths" — declarative,
+  // Verb-assertion: "lint configs PROTECT verbatim paths" — declarative,
   // verb-tailed (protect).
-  'lint-configs-protect-vendored',
+  'lint-configs-protect-verbatim',
   // Verb-assertion: "member CI FIRES on push" — declarative, verb-tailed
   // (fires) with an object phrase, not an -are-/-is- state tail.
   'member-ci-fires-on-push',
+  // Verb-assertion: "prebakes INSTALL from lock" — declarative, verb-tailed
+  // (install) with a prepositional phrase.
+  'prebakes-install-from-lock',
 ])
 
 export function isAssertionName(basename: string): boolean {
@@ -91,28 +96,33 @@ export interface NameViolation {
 }
 
 export function scanCheckNames(repoRoot: string): NameViolation[] {
-  const dir = path.join(repoRoot, 'scripts', 'fleet', 'check')
-  let entries: string[]
-  try {
-    entries = readdirSync(dir, { withFileTypes: true })
-      .filter(d => d.isFile() && d.name.endsWith('.mts'))
-      .map(d => d.name)
-  } catch {
-    return []
-  }
+  const dirs = [
+    path.join(repoRoot, 'scripts', 'fleet', 'check'),
+    path.join(repoRoot, 'scripts', 'repo', 'check'),
+  ]
   const violations: NameViolation[] = []
-  for (let i = 0, { length } = entries; i < length; i += 1) {
-    const file = entries[i]!
-    const base = file.slice(0, -'.mts'.length)
-    if (base === 'check') {
-      // the runner, not a check
+  for (let d = 0, { length: dlen } = dirs; d < dlen; d += 1) {
+    let entries: string[]
+    try {
+      entries = readdirSync(dirs[d]!, { withFileTypes: true })
+        .filter(e => e.isFile() && e.name.endsWith('.mts'))
+        .map(e => e.name)
+    } catch {
       continue
     }
-    if (!isAssertionName(base)) {
-      violations.push({
-        name: file,
-        suggestion: `rename so the basename asserts the invariant (e.g. <subject>-are-<state> / -resolve / -match[-<object>] / -cover[-<object>] / -have-<state>); "${base}" reads as a topic, not an assertion`,
-      })
+    for (let i = 0, { length } = entries; i < length; i += 1) {
+      const file = entries[i]!
+      const base = file.slice(0, -'.mts'.length)
+      if (base === 'check') {
+        // the runner, not a check
+        continue
+      }
+      if (!isAssertionName(base)) {
+        violations.push({
+          name: file,
+          suggestion: `rename so the basename asserts the invariant (e.g. <subject>-are-<state> / -resolve / -match[-<object>] / -cover[-<object>] / -have-<state>); "${base}" reads as a topic, not an assertion`,
+        })
+      }
     }
   }
   return violations

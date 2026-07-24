@@ -19,6 +19,7 @@
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { REPO_ROOT } from './paths.mts'
 
 const logger = getDefaultLogger()
 
@@ -82,7 +83,9 @@ export function resolveBaseRef(cwd: string): string | undefined {
  */
 export function parseCommitLog(raw: string): WorkCommit[] {
   const commits: WorkCommit[] = []
-  for (const line of raw.split('\n')) {
+  const lines = raw.split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
     if (!line.trim()) {
       continue
     }
@@ -125,12 +128,12 @@ export function currentIdentityEmail(cwd: string): string | undefined {
  * Split local-ahead commits into those by the current identity ("mine" —
  * yours by default) and those by another identity. Pure.
  */
-export function classifyWork(options: {
+export function classifyWork(config: {
   commits: readonly WorkCommit[]
   myEmail: string | undefined
 }): WorkClassification {
-  const opts = { __proto__: null, ...options } as typeof options
-  const { commits, myEmail } = opts
+  const cfg = { __proto__: null, ...config } as typeof config
+  const { commits, myEmail } = cfg
   const mine: WorkCommit[] = []
   const otherIdentity: WorkCommit[] = []
   for (const c of commits) {
@@ -151,13 +154,13 @@ function shortSha(sha: string): string {
  * Human-readable verdict. Leads with own-work-first so the reader's default
  * is "this is mine," not "this is a parallel agent." Pure.
  */
-export function formatReport(options: {
+export function formatReport(config: {
   baseRef: string | undefined
   classification: WorkClassification
   myEmail: string | undefined
 }): string {
-  const opts = { __proto__: null, ...options } as typeof options
-  const { baseRef, classification, myEmail } = opts
+  const cfg = { __proto__: null, ...config } as typeof config
+  const { baseRef, classification, myEmail } = cfg
   const { mine, otherIdentity } = classification
   const lines: string[] = []
   if (!baseRef) {
@@ -179,7 +182,9 @@ export function formatReport(options: {
     '',
     `YOURS by default — ${mine.length} commit(s) by ${myEmail ?? '(identity unset)'}:`,
   )
-  for (const c of mine.slice(0, 15)) {
+  const mineShown = mine.slice(0, 15)
+  for (let i = 0, { length } = mineShown; i < length; i += 1) {
+    const c = mineShown[i]!
     lines.push(`  ${shortSha(c.sha)}  ${c.isoDate}  ${c.subject}`)
   }
   if (mine.length > 15) {
@@ -190,7 +195,9 @@ export function formatReport(options: {
       '',
       `Other identity — ${otherIdentity.length} commit(s) (still local; usually a bot/co-author, not a rival session):`,
     )
-    for (const c of otherIdentity.slice(0, 10)) {
+    const otherShown = otherIdentity.slice(0, 10)
+    for (let i = 0, { length } = otherShown; i < length; i += 1) {
+      const c = otherShown[i]!
       lines.push(`  ${shortSha(c.sha)}  ${c.authorEmail}  ${c.subject}`)
     }
   }
@@ -203,7 +210,7 @@ export function formatReport(options: {
   return lines.join('\n')
 }
 
-export function main(cwd: string = process.cwd()): number {
+export function main(cwd: string = REPO_ROOT): number {
   const baseRef = resolveBaseRef(cwd)
   const myEmail = currentIdentityEmail(cwd)
   const commits = baseRef ? localAheadCommits(cwd, baseRef) : []

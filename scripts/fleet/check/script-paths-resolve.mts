@@ -102,7 +102,9 @@ export function scanScriptMap(
   source: string,
 ): PathHit[] {
   const hits: PathHit[] = []
-  for (const key of Object.keys(scripts)) {
+  const keys = Object.keys(scripts)
+  for (let i = 0, { length } = keys; i < length; i += 1) {
+    const key = keys[i]!
     const command = scripts[key]
     if (typeof command !== 'string') {
       continue

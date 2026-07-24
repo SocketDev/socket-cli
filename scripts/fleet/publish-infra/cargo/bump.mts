@@ -155,18 +155,18 @@ export function insertChangelogSection(
  * Unlike npm there is no dist/ rebuild — cargo builds from source at publish
  * time.
  */
-export async function runBump(options: {
+export async function runBump(config: {
   dryRun: boolean
   packageName?: string | undefined
   releaseAs?: string | undefined
 }): Promise<BumpResult | undefined> {
-  const opts = { __proto__: null, ...options } as {
+  const cfg = { __proto__: null, ...config } as {
     dryRun: boolean
     packageName?: string | undefined
     releaseAs?: string | undefined
   }
-  const { dryRun, releaseAs } = opts
-  const pkg = await readCargoPackage(opts.packageName)
+  const { dryRun, releaseAs } = cfg
+  const pkg = await readCargoPackage(cfg.packageName)
 
   const fromTag = await lastReleaseTag()
   const commits = parseConventionalCommits(await readCommitStream(fromTag))

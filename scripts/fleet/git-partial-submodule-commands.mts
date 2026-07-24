@@ -29,19 +29,20 @@ import type {
 // The `git clone --filter=blob:none --no-checkout --separate-git-dir …` argv
 // for `cmdAdd`'s initial partial clone into the submodule's private repo dir.
 export function buildAddCloneArgs(
-  options: Pick<AddOpts, 'branch' | 'repository' | 'sparse'>,
+  config: Pick<AddOpts, 'branch' | 'repository' | 'sparse'>,
   submoduleRepoRoot: string,
   submoduleWorktreeRoot: string,
 ): string[] {
+  const cfg = { __proto__: null, ...config } as typeof config
   return [
     'clone',
     '--filter=blob:none',
     '--no-checkout',
     '--separate-git-dir',
     submoduleRepoRoot,
-    ...(options.branch ? ['--branch', options.branch] : []),
-    ...(options.sparse ? ['--sparse'] : []),
-    options.repository,
+    ...(cfg.branch ? ['--branch', cfg.branch] : []),
+    ...(cfg.sparse ? ['--sparse'] : []),
+    cfg.repository,
     submoduleWorktreeRoot,
   ]
 }
@@ -104,18 +105,19 @@ export function buildCoreWorktreeConfigArgs(
 
 // `git -C <worktreeRoot> submodule add …` argv for cmdAdd's final step.
 export function buildSubmoduleAddArgs(
-  options: Pick<AddOpts, 'branch' | 'name' | 'repository'>,
+  config: Pick<AddOpts, 'branch' | 'name' | 'repository'>,
   worktreeRoot: string,
   submoduleRelPath: string,
 ): string[] {
+  const cfg = { __proto__: null, ...config } as typeof config
   return [
     '-C',
     worktreeRoot,
     'submodule',
     'add',
-    ...(options.branch ? ['-b', options.branch] : []),
-    ...(options.name ? ['--name', options.name] : []),
-    options.repository,
+    ...(cfg.branch ? ['-b', cfg.branch] : []),
+    ...(cfg.name ? ['--name', cfg.name] : []),
+    cfg.repository,
     submoduleRelPath,
   ]
 }
@@ -160,15 +162,15 @@ export function buildSparseCheckoutDisableArgs(
   return ['-C', submoduleWorktreeRoot, 'sparse-checkout', 'disable']
 }
 
-export async function cmdAdd(options: AddOpts): Promise<void> {
-  options = { __proto__: null, ...options } as AddOpts
+export async function cmdAdd(config: AddOpts): Promise<void> {
+  config = { __proto__: null, ...config } as AddOpts
   const { repoRoot, worktreeRoot } = await getRoots()
-  if (options.verbose) {
+  if (config.verbose) {
     logger.log(`worktree root: ${worktreeRoot}`)
     logger.log(`repo root: ${repoRoot}`)
   }
-  const submoduleRelPath = toWorktreeRelative(worktreeRoot, options.path)
-  const submoduleName = options.name ?? submoduleRelPath
+  const submoduleRelPath = toWorktreeRelative(worktreeRoot, config.path)
+  const submoduleName = config.name ?? submoduleRelPath
   const submoduleRepoRoot = path.join(repoRoot, 'modules', submoduleName)
   if (existsSync(submoduleRepoRoot)) {
     logger.error(`submodule ${submoduleName} repo already exists!`)
@@ -179,7 +181,7 @@ export async function cmdAdd(options: AddOpts): Promise<void> {
     existsSync(submoduleWorktreeRoot) &&
     readdirSync(submoduleWorktreeRoot).length > 0
   ) {
-    logger.error(`${options.path} submodule worktree is nonempty!`)
+    logger.error(`${config.path} submodule worktree is nonempty!`)
     process.exit(1)
   }
   const indexCheck = (
@@ -193,41 +195,38 @@ export async function cmdAdd(options: AddOpts): Promise<void> {
   ).trim()
   if (indexCheck) {
     logger.error(
-      `${options.path} submodule worktree is nonempty in the index!\n` +
+      `${config.path} submodule worktree is nonempty in the index!\n` +
         `You might need to \`git rm\` that directory first.`,
     )
     process.exit(1)
   }
-  if (!options.dryRun) {
+  if (!config.dryRun) {
     mkdirSync(path.dirname(submoduleRepoRoot), { recursive: true })
     mkdirSync(submoduleWorktreeRoot, { recursive: true })
   }
   await runGit(
-    options,
-    buildAddCloneArgs(options, submoduleRepoRoot, submoduleWorktreeRoot),
+    config,
+    buildAddCloneArgs(config, submoduleRepoRoot, submoduleWorktreeRoot),
   )
+  await runGit(config, buildCheckoutArgs(submoduleWorktreeRoot, config.branch))
+  await runGit(config, buildCoreWorktreeConfigArgs(submoduleWorktreeRoot))
   await runGit(
-    options,
-    buildCheckoutArgs(submoduleWorktreeRoot, options.branch),
-  )
-  await runGit(options, buildCoreWorktreeConfigArgs(submoduleWorktreeRoot))
-  await runGit(
-    options,
-    buildSubmoduleAddArgs(options, worktreeRoot, submoduleRelPath),
+    config,
+    buildSubmoduleAddArgs(config, worktreeRoot, submoduleRelPath),
   )
 }
 
-export async function cmdClone(options: CloneOpts): Promise<void> {
-  options = { __proto__: null, ...options } as CloneOpts
+export async function cmdClone(config: CloneOpts): Promise<void> {
+  config = { __proto__: null, ...config } as CloneOpts
   const { repoRoot, worktreeRoot } = await getRoots()
-  if (options.verbose) {
+  if (config.verbose) {
     logger.log(`worktree root: ${worktreeRoot}`)
     logger.log(`repo root: ${repoRoot}`)
   }
-  const gitmodules = await readGitmodules(options, worktreeRoot)
-  await runGit(options, ['submodule', 'init', ...options.paths])
-  const relPaths: string[] = options.paths.length
-    ? options.paths.map(p => toWorktreeRelative(worktreeRoot, p))
+  const gitmodules = await readGitmodules(config, worktreeRoot)
+  await runGit(config, ['submodule', 'init', ...config.paths])
+  const relPaths: string[] = config.paths.length
+    ? config.paths.map(p => toWorktreeRelative(worktreeRoot, p))
     : [...gitmodules.byPath.keys()]
   let skipped = 0
   let processed = 0
@@ -246,7 +245,7 @@ export async function cmdClone(options: CloneOpts): Promise<void> {
       existsSync(submoduleRepoRoot) &&
       readdirSync(submoduleRepoRoot).length > 0
     ) {
-      if (options.verbose) {
+      if (config.verbose) {
         logger.log(`submodule ${submodule.name} repo already exists; skipping`)
       }
       skipped += 1
@@ -263,7 +262,7 @@ export async function cmdClone(options: CloneOpts): Promise<void> {
       skipped += 1
       continue
     }
-    if (!options.dryRun) {
+    if (!config.dryRun) {
       mkdirSync(path.dirname(submoduleRepoRoot), { recursive: true })
       mkdirSync(submoduleWorktreeRoot, { recursive: true })
     }
@@ -274,7 +273,7 @@ export async function cmdClone(options: CloneOpts): Promise<void> {
       continue
     }
     await runGit(
-      options,
+      config,
       buildSubmoduleCloneArgs(
         submodule,
         url,
@@ -284,7 +283,7 @@ export async function cmdClone(options: CloneOpts): Promise<void> {
     )
     const sparsePatterns = submodule['sparse-checkout']
     if (sparsePatterns) {
-      await applySparsePatterns(options, submoduleWorktreeRoot, sparsePatterns)
+      await applySparsePatterns(config, submoduleWorktreeRoot, sparsePatterns)
       logger.log(`Applied sparse-checkout patterns: ${sparsePatterns}`)
     }
     // Resolve the recorded gitlink sha to detach-checkout at.
@@ -305,11 +304,11 @@ export async function cmdClone(options: CloneOpts): Promise<void> {
       process.exit(1)
     }
     const submoduleCommit = treeInfo[2]!
-    if (options.verbose) {
+    if (config.verbose) {
       logger.log(`${submodule.name} submodule sha1 is ${submoduleCommit}`)
     }
     let branchHeadCommit: string | undefined
-    if (submodule.branch && !options.dryRun) {
+    if (submodule.branch && !config.dryRun) {
       branchHeadCommit = (
         await readGitOutput([
           '-C',
@@ -318,7 +317,7 @@ export async function cmdClone(options: CloneOpts): Promise<void> {
           submodule.branch,
         ])
       ).trim()
-      if (options.verbose) {
+      if (config.verbose) {
         logger.log(
           `${submoduleRelPath} branch ${submodule.branch} is at sha1 ${branchHeadCommit}`,
         )
@@ -329,24 +328,24 @@ export async function cmdClone(options: CloneOpts): Promise<void> {
       submoduleCommit,
       branchHeadCommit,
     )
-    await runGit(options, [
+    await runGit(config, [
       '-C',
       submoduleWorktreeRoot,
       'checkout',
       ...checkoutArgs,
     ])
-    await runGit(options, buildCoreWorktreeConfigArgs(submoduleWorktreeRoot))
+    await runGit(config, buildCoreWorktreeConfigArgs(submoduleWorktreeRoot))
     processed += 1
   }
   logger.log(`Cloned ${processed} submodules and skipped ${skipped}.`)
 }
 
-export async function cmdSaveSparse(options: SaveOrRestoreOpts): Promise<void> {
-  options = { __proto__: null, ...options } as SaveOrRestoreOpts
+export async function cmdSaveSparse(config: SaveOrRestoreOpts): Promise<void> {
+  config = { __proto__: null, ...config } as SaveOrRestoreOpts
   const { worktreeRoot } = await getRoots()
-  const gitmodules = await readGitmodules(options, worktreeRoot)
-  const relPaths: string[] = options.paths.length
-    ? options.paths.map(p => toWorktreeRelative(worktreeRoot, p))
+  const gitmodules = await readGitmodules(config, worktreeRoot)
+  const relPaths: string[] = config.paths.length
+    ? config.paths.map(p => toWorktreeRelative(worktreeRoot, p))
     : [...gitmodules.byPath.keys()]
   for (let i = 0, { length } = relPaths; i < length; i += 1) {
     const submoduleRelPath = relPaths[i]!
@@ -381,7 +380,7 @@ export async function cmdSaveSparse(options: SaveOrRestoreOpts): Promise<void> {
         ])
       ).trim()
       await runGit(
-        options,
+        config,
         buildSaveSparseSetArgs(
           worktreeRoot,
           submodule.name,
@@ -391,7 +390,7 @@ export async function cmdSaveSparse(options: SaveOrRestoreOpts): Promise<void> {
       logger.log(`Saved sparse-checkout patterns for ${submodule.name}.`)
     } else {
       await runGit(
-        options,
+        config,
         buildSaveSparseUnsetArgs(worktreeRoot, submodule.name),
         { okReturnCodes: [0, 5] },
       )
@@ -401,13 +400,13 @@ export async function cmdSaveSparse(options: SaveOrRestoreOpts): Promise<void> {
 }
 
 export async function cmdRestoreSparse(
-  options: SaveOrRestoreOpts,
+  config: SaveOrRestoreOpts,
 ): Promise<void> {
-  options = { __proto__: null, ...options } as SaveOrRestoreOpts
+  config = { __proto__: null, ...config } as SaveOrRestoreOpts
   const { worktreeRoot } = await getRoots()
-  const gitmodules = await readGitmodules(options, worktreeRoot)
-  const relPaths: string[] = options.paths.length
-    ? options.paths.map(p => toWorktreeRelative(worktreeRoot, p))
+  const gitmodules = await readGitmodules(config, worktreeRoot)
+  const relPaths: string[] = config.paths.length
+    ? config.paths.map(p => toWorktreeRelative(worktreeRoot, p))
     : [...gitmodules.byPath.keys()]
   for (let i = 0, { length } = relPaths; i < length; i += 1) {
     const submoduleRelPath = relPaths[i]!
@@ -428,11 +427,11 @@ export async function cmdRestoreSparse(
     }
     const sparsePatterns = submodule['sparse-checkout']
     if (sparsePatterns) {
-      await applySparsePatterns(options, submoduleWorktreeRoot, sparsePatterns)
+      await applySparsePatterns(config, submoduleWorktreeRoot, sparsePatterns)
       logger.log(`Applied sparse-checkout patterns for ${submodule.name}.`)
     } else {
       await runGit(
-        options,
+        config,
         buildSparseCheckoutDisableArgs(submoduleWorktreeRoot),
       )
       logger.log(`Sparse checkout disabled for ${submodule.name}.`)

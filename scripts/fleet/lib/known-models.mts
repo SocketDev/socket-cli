@@ -82,10 +82,16 @@ export function loadKnownModels(): ReadonlySet<string> {
   if (existsSync(pricingPath)) {
     try {
       const pricing = JSON.parse(readFileSync(pricingPath, 'utf8')) as {
-        services?: Record<string, { models?: Record<string, unknown> }>
+        services?:
+          | Record<string, { models?: Record<string, unknown> | undefined }>
+          | undefined
       }
-      for (const svc of Object.values(pricing.services ?? {})) {
-        for (const id of Object.keys(svc.models ?? {})) {
+      const svcs = Object.values(pricing.services ?? {})
+      for (let j = 0, { length: jlen } = svcs; j < jlen; j += 1) {
+        const svc = svcs[j]!
+        const idList = Object.keys(svc.models ?? {})
+        for (let i = 0, { length } = idList; i < length; i += 1) {
+          const id = idList[i]!
           models.add(id)
         }
       }

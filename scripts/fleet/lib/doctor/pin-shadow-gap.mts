@@ -44,30 +44,30 @@ const SHADOWABLE_SECTIONS = [
  * `catalog:` would change semantics, not just the version source.
  */
 const NON_REGISTRY_SPEC =
-  /^(?:catalog:|workspace:|link:|file:|npm:|git|https?:)/
+  /^(?:catalog:|file:|git|https?:|link:|npm:|workspace:)/
 
 /**
  * Find every package.json dep whose direct version spec shadows an entry in
  * the member `catalog:` block. Returns report findings plus per-file fix
  * plans (applied by applyPinShadowFixes under --fix).
  */
-export function diagnosePinShadowGaps(options: {
+export function diagnosePinShadowGaps(config: {
   packageJsons: ReadonlyArray<{ content: string; path: string }>
   workspaceYaml: string
 }): {
   findings: DoctorFinding[]
   fixes: PinShadowFix[]
 } {
-  const opts = Object.assign(Object.create(null), options) as typeof options
+  const cfg = Object.assign(Object.create(null), config) as typeof config
   const findings: DoctorFinding[] = []
   const fixes: PinShadowFix[] = []
 
-  const memberCatalog = parseCatalogBlock(opts.workspaceYaml)
+  const memberCatalog = parseCatalogBlock(cfg.workspaceYaml)
   const ignored = new Set(
-    parseListBlock(opts.workspaceYaml, { blockKey: 'catalogShadowIgnore' }),
+    parseListBlock(cfg.workspaceYaml, { blockKey: 'catalogShadowIgnore' }),
   )
 
-  for (const { content, path } of opts.packageJsons) {
+  for (const { content, path } of cfg.packageJsons) {
     let pkg: Record<string, unknown>
     try {
       pkg = JSON.parse(content) as Record<string, unknown>
@@ -116,19 +116,19 @@ export function diagnosePinShadowGaps(options: {
  * package.json shape) so a dep name appearing in overrides or scripts text
  * is never touched by accident.
  */
-export function applyPinShadowFixes(options: {
+export function applyPinShadowFixes(config: {
   content: string
   deps: readonly string[]
 }): string {
-  const opts = Object.assign(Object.create(null), options) as typeof options
-  const pkg = JSON.parse(opts.content) as Record<string, unknown>
+  const cfg = Object.assign(Object.create(null), config) as typeof config
+  const pkg = JSON.parse(cfg.content) as Record<string, unknown>
   for (const section of SHADOWABLE_SECTIONS) {
     const deps = pkg[section]
     if (!deps || typeof deps !== 'object') {
       continue
     }
     const record = deps as Record<string, unknown>
-    for (const dep of opts.deps) {
+    for (const dep of cfg.deps) {
       if (
         typeof record[dep] === 'string' &&
         !NON_REGISTRY_SPEC.test(record[dep] as string)

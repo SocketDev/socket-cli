@@ -3,8 +3,8 @@
  * @file `setup:brew` — install the repo's pinned Homebrew bundle locally, so a
  *   dev machine gets exactly what CI gets. Self-detecting: skips with a clear
  *   line unless the platform has Homebrew (macOS / Linuxbrew) AND the repo has
- *   enrolled by committing a root `Brewfile`. Homebrew has no minimum-release
- *   age, so the fleet enforces one with per-tap SHA pins
+ *   enrolled by committing a `.config/repo/Brewfile`. Homebrew has no
+ *   minimum-release age, so the fleet enforces one with per-tap SHA pins
  *   (`constants/brew-tap-pins.mts`, owned by `update/brew.mts --apply`): this
  *   step sets `HOMEBREW_NO_INSTALL_FROM_API=1`, checks each tap out at its
  *   soaked pin, then runs `brew bundle install --no-upgrade`. It NEVER falls
@@ -13,12 +13,12 @@
  */
 
 import { existsSync, readFileSync } from 'node:fs'
-import path from 'node:path'
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { BREW_TAP_PINS } from '../constants/brew-tap-pins.mts'
+import { brewfilePath } from '../update/brew-parse.mts'
 import { resolveEcosystemOptions, skipResult } from './ecosystems.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 
@@ -29,6 +29,8 @@ import type {
   RunCommand,
 } from './ecosystems.mts'
 import type { Logger } from '@socketsecurity/lib-stable/logger/logger'
+
+const mainLogger = getDefaultLogger()
 
 /**
  * The `brew tap` / `brew --repository` slug for a pin tap: `owner/repo` form
@@ -64,16 +66,19 @@ export function tapPinsForBrewfile(brewfileText: string): BrewTapPin[] {
  * the platform and Brewfile presence. Pure so the decision is unit-testable.
  * The `brew`-on-PATH check is a runtime seam handled by `setupBrew`.
  */
-export function brewSkipReason(options: {
+export function brewSkipReason(config: {
   readonly brewfileExists: boolean
   readonly platform: NodeJS.Platform
 }): string | undefined {
-  const { brewfileExists, platform } = options
+  const { brewfileExists, platform } = {
+    __proto__: null,
+    ...config,
+  } as typeof config
   if (platform !== 'darwin' && platform !== 'linux') {
     return `Homebrew is not available on ${platform}`
   }
   if (!brewfileExists) {
-    return 'no repo-root Brewfile (repo has not enrolled in the pinned Homebrew bundle)'
+    return 'no .config/repo/Brewfile (repo has not enrolled in the pinned Homebrew bundle)'
   }
   return undefined
 }
@@ -141,14 +146,14 @@ async function pinTap(
 
 /**
  * Install the repo's pinned Homebrew bundle: pin each tap at its soaked SHA,
- * then `brew bundle install --no-upgrade` from the root Brewfile.
+ * then `brew bundle install --no-upgrade` from the `.config/repo/Brewfile`.
  */
 export async function setupBrew(
   options?: EcosystemStepOptions | undefined,
 ): Promise<EcosystemStepResult> {
   const { commandExists, logger, platform, repoRoot, runCommand } =
     resolveEcosystemOptions(options)
-  const brewfile = path.join(repoRoot, 'Brewfile')
+  const brewfile = brewfilePath(repoRoot)
   const skip = brewSkipReason({
     brewfileExists: existsSync(brewfile),
     platform,
@@ -206,7 +211,7 @@ if (isMainModule(import.meta.url)) {
       }
     },
     (e: unknown) => {
-      getDefaultLogger().error(e)
+      mainLogger.error(e)
       process.exitCode = 1
     },
   )

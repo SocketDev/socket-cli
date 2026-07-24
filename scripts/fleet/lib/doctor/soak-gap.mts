@@ -23,7 +23,8 @@ export function parseSoakViolations(output: string): string[] {
   // pnpm prints: "No matching version found for <spec>" on a following line.
   const lines = output.split('\n')
   let inSoakError = false
-  for (const ln of lines) {
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const ln = lines[i]!
     if (ln.includes('ERR_PNPM_NO_MATURE_MATCHING_VERSION')) {
       inSoakError = true
       continue

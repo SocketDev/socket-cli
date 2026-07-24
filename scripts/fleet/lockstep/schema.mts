@@ -57,27 +57,29 @@ const NotesSchema = Type.String({
     'Free-form context: why this row exists, gotchas, links to related issues / PRs / upstream discussions. Read by humans, not by the harness.',
 })
 
-// How much of a pinned upstream a version-pin consumes — the lock-step vs
-// adapt-step mode. `full` (the default when omitted) = lock-step: the whole
-// submodule, kept fleet-uniform across consumers so any divergence is a defect.
-// `sparse` = adapt-step: a sparse-checkout cone of the SAME pin (git
-// sparse-checkout + partial-clone semantics) — take what you want, leave the
-// rest; the harness scopes drift to the cone. Both share the pin, drift, and
-// latest-release machinery; only the take differs. (file-fork is inherently a
-// single-file subset, so it carries no materialization field.) See
-// docs/agents.md/fleet/lockstep.md.
+// PORT SCOPE — how much of a pinned upstream this port commits to tracking in
+// lock-step. This is NOT how the submodule is checked out: every upstream
+// submodule is shallow + single-branch + sparse regardless (see the
+// upstream-submodules-are-* checks). `full` (the default when omitted) =
+// lock-step the WHOLE upstream, kept fleet-uniform across consumers so any
+// divergence is a defect. `sparse` = a PARTIAL lock-step port: track only the
+// `sparse_cone` subset of the same pin (e.g. one package of a monorepo, or one
+// file) — port what you want, leave the rest; the harness scopes drift to the
+// cone. Both share the pin, drift, and latest-release machinery; only the scope
+// differs. (file-fork is inherently a single-file subset, so it carries no
+// materialization field.) See docs/agents.md/fleet/lockstep.md.
 const MaterializationSchema = Type.Union(
   [Type.Literal('full'), Type.Literal('sparse')],
   {
     description:
-      'Lock-step vs adapt-step mode. `full` (default when omitted) = lock-step: consume the whole pinned upstream, kept fleet-uniform. `sparse` = adapt-step: consume only a sparse-checkout cone / inlined subset of the same pin. Rows omitting this are `full`.',
+      'Port scope — how much of the pinned upstream this port tracks in lock-step, NOT how the submodule is checked out (checkout is always shallow/single-branch/sparse). `full` (default when omitted) = lock-step the whole upstream, kept fleet-uniform. `sparse` = partial lock-step: track only the `sparse_cone` subset of the same pin. Drift for a `sparse` pin counts only commits touching the cone; a `full` pin counts every commit. Rows omitting this are `full`.',
   },
 )
 
 const SparseConeSchema = Type.Array(Type.String(), {
   minItems: 1,
   description:
-    'For `materialization: sparse` — the upstream paths (the sparse-checkout cone) this row actually consumes or inlines. Documents what the adapt-step takes; the harness ignores it when materialization is `full` or omitted.',
+    'For `materialization: sparse` — the repo-relative upstream paths this port actually tracks (e.g. one monorepo package, or one file). Declares PORT SCOPE and scopes drift: commits outside the cone are not drift. Not a git sparse-checkout directive — submodule checkout is always sparse regardless.',
 })
 
 const PortStatusSchema = Type.Object(

@@ -23,15 +23,18 @@ import type {
   EcosystemStepResult,
 } from './ecosystems.mts'
 
+const mainLogger = getDefaultLogger()
+
 /**
  * The skip reason for `setup:go`, or undefined when the step should run. Pure
  * over the `go.mod` count so the decision is unit-testable without a
  * filesystem.
  */
-export function goSkipReason(options: {
+export function goSkipReason(config: {
   readonly goModCount: number
 }): string | undefined {
-  return options.goModCount > 0
+  const cfg = { __proto__: null, ...config } as typeof config
+  return cfg.goModCount > 0
     ? undefined
     : 'no first-party go.mod (repo has no Go modules)'
 }
@@ -89,7 +92,7 @@ if (isMainModule(import.meta.url)) {
       }
     },
     (e: unknown) => {
-      getDefaultLogger().error(e)
+      mainLogger.error(e)
       process.exitCode = 1
     },
   )

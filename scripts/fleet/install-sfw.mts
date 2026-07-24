@@ -102,7 +102,7 @@ const SUPPORTED_SRI_RE = /^sha(?:256|384|512)-[A-Za-z0-9+/]+={0,2}$/
  * sha256-only decoder threw on anything but sha256, stranding sfw at whatever
  * stale build was last installed and, with it, a proxy CA the client no longer
  * trusts — `tlsv1 alert unknown ca`). Single-source-of-truth schema:
- * socket-btm/packages/build-infra/lib/external-tools-schema.json.
+ * socket-btm/scripts/fleet/build-infra/lib/external-tools-schema.json.
  */
 export function assertIntegrity(integrity: string): string {
   if (!SUPPORTED_SRI_RE.test(integrity)) {
@@ -135,13 +135,16 @@ export type ResolveSfwToolResult =
 // (sfw-free / sfw-enterprise) out of a parsed external-tools.json — pure
 // validation/derivation, no I/O. main() turns a `{ ok: false }` result into a
 // `logger.fail` + exit(1).
-export function resolveSfwTool(options: {
+export function resolveSfwTool(config: {
   platform: string
   tools: ExternalToolsFile
   toolKey: string
   win32: boolean
 }): ResolveSfwToolResult {
-  const { platform, tools, toolKey, win32 } = options
+  const { platform, tools, toolKey, win32 } = {
+    __proto__: null,
+    ...config,
+  } as typeof config
   const entry = tools.tools?.[toolKey]
   if (!entry) {
     return {

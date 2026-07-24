@@ -47,6 +47,7 @@ import { planGithubUpdate } from './github.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { isSoakExcluded, readSoakRules } from '../soak-rules.mts'
 import type { SoakRules } from '../soak-rules.mts'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 
 // Inline soak-bypass annotation: a version adopted while still inside the 7-day
 // minimumReleaseAge soak carries this so the install-time soak check honors it
@@ -59,9 +60,12 @@ export interface SoakBypass {
 
 export interface NpmTool {
   description?: string | undefined
-  purl: string
   integrity: string
+  notes?: readonly string[] | undefined
+  // `npm:<package-name>` — the registry-tarball marker isNpmTool keys on.
+  repository: string
   soakBypass?: SoakBypass | undefined
+  version: string
 }
 
 export interface PlatformEntry {
@@ -86,7 +90,15 @@ export interface ExternalToolsJson {
 }
 
 export function isNpmTool(t: Tool): t is NpmTool {
-  return (t as NpmTool).purl !== undefined
+  // npm-registry tools are marked `repository: "npm:<name>"` — ONE
+  // platform-agnostic tarball, so no `platforms` map (that shape is the
+  // github-release tools').
+  const n = t as NpmTool
+  return (
+    typeof n.repository === 'string' &&
+    n.repository.startsWith('npm:') &&
+    typeof n.version === 'string'
+  )
 }
 
 export function isGithubTool(t: Tool): t is GithubReleaseTool {
@@ -308,13 +320,8 @@ export function planNpmUpdate(
   soakMinutes: number,
   soakExclude: readonly string[],
 ): ToolUpdate | undefined {
-  // Parse current version out of the purl.
-  const m = /^pkg:npm\/([^@]+)@(.+)$/.exec(tool.purl)
-  if (!m) {
-    return undefined
-  }
-  const npmName = decodeURIComponent(m[1]!)
-  const current = m[2]!
+  const npmName = tool.repository.slice('npm:'.length)
+  const current = tool.version
   // The tool's entry NAME and its npm package name can differ; check both
   // against the exclude list so either form bypasses the soak.
   const npmExclude = isSoakExcluded(name, undefined, soakExclude)
@@ -329,7 +336,7 @@ export function planNpmUpdate(
     oldVersion: current,
     newVersion: next.version,
     changes: [
-      `purl: pkg:npm/${npmName}@${current} → pkg:npm/${npmName}@${next.version}`,
+      `version: ${current} → ${next.version} (npm:${npmName})`,
       `integrity: ${tool.integrity.slice(0, 24)}… → ${next.integrity.slice(0, 24)}…`,
     ],
   }
@@ -437,7 +444,7 @@ export async function planAllUpdates(
       // ISOLATE: record + continue. One tool's failure must never abort the
       // sweep (the codedb linux-arm64 asset-fetch abort). CI still notices via
       // the non-zero exit the caller derives from a non-empty failures list.
-      const error = e instanceof Error ? e.message : String(e)
+      const error = errorMessage(e)
       failures.push({ name, error })
       process.stdout.write(`  - ${name}: FAILED — ${error}\n`)
     }
@@ -446,10 +453,11 @@ export async function planAllUpdates(
 }
 
 /**
- * Re-stamp each npm tool named in `updates` with its newest soak-cleared purl +
- * integrity. planNpmUpdate is non-mutating (it only computes the diff), so the
- * write path re-derives here. Shared by the bulk updater's apply step and the
- * CRUD tool's `update` subcommand so the restamp logic lives in one place.
+ * Re-stamp each npm tool named in `updates` with its newest soak-cleared
+ * version + integrity. planNpmUpdate is non-mutating (it only computes the
+ * diff), so the write path re-derives here. Shared by the bulk updater's
+ * apply step and the CRUD tool's `update` subcommand so the restamp logic
+ * lives in one place.
  */
 export function applyNpmRestamp(
   json: ExternalToolsJson,
@@ -462,16 +470,12 @@ export function applyNpmRestamp(
     if (!tool || !isNpmTool(tool)) {
       continue
     }
-    const m = /^pkg:npm\/([^@]+)@/.exec(tool.purl)
-    if (!m) {
-      continue
-    }
-    const npmName = decodeURIComponent(m[1]!)
+    const npmName = tool.repository.slice('npm:'.length)
     const next = pickNewestSoakedNpm(npmName, soakMinutes, soakExclude)
     if (!next) {
       continue
     }
-    tool.purl = `pkg:npm/${npmName}@${next.version}`
+    tool.version = next.version
     tool.integrity = next.integrity
   }
 }
@@ -610,7 +614,7 @@ if (import.meta.main) {
     },
     err => {
       process.stderr.write(
-        `${err instanceof Error ? (err.stack ?? err.message) : String(err)}\n`,
+        `${err instanceof Error ? errorMessage(err) : String(err)}\n`,
       )
       process.exitCode = 1
     },

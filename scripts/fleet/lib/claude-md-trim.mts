@@ -92,7 +92,7 @@ const TAIL_RE = /(?:\s*(?:\([^()]*\)|\[[^\]]*\]\([^)]*\)|<!--[^]*?-->))+\s*$/
  * has a home, so trimming its description is safe).
  */
 function isTrimmableBulletLine(line: string): boolean {
-  return /^- /.test(line) && /\]\(docs\/agents\.md\//.test(line)
+  return line.startsWith('- ') && /\]\(docs\/agents\.md\//.test(line)
 }
 
 /**
@@ -116,19 +116,54 @@ export function dropLastClause(line: string): string | undefined {
 }
 
 /**
- * Trim the fleet block to fit under `capBytes`. Repeatedly drops the last
- * clause of the fattest trimmable bullet until the block is under cap or no
- * bullet can be safely trimmed further. Pure — returns the new content and the
- * list of trims applied (empty when already under cap or nothing is trimmable).
+ * Non-lossy normalization of the fleet block, applied ALWAYS (under or over
+ * cap): strip trailing whitespace from every block line and collapse runs of
+ * blank lines to one. No prose is lost — only bytes that render identically.
+ * Mutates `lines` in place; returns whether anything changed. Blank-line
+ * removal shifts the END marker, so the caller re-derives the bounds.
+ */
+export function normalizeFleetBlock(lines: string[]): boolean {
+  const bounds = fleetBlockBounds(lines)
+  if (bounds === undefined) {
+    return false
+  }
+  let changed = false
+  for (let i = bounds.beginIdx; i < bounds.endIdx; i += 1) {
+    const stripped = lines[i]!.replace(/[ \t]+$/u, '')
+    if (stripped !== lines[i]) {
+      lines[i] = stripped
+      changed = true
+    }
+  }
+  for (let i = bounds.endIdx - 1; i > bounds.beginIdx; i -= 1) {
+    if (lines[i] === '' && lines[i - 1] === '') {
+      lines.splice(i, 1)
+      changed = true
+    }
+  }
+  return changed
+}
+
+/**
+ * Trim the fleet block: the non-lossy normalization runs ALWAYS; the lossy
+ * clause-dropping (last clause of the fattest trimmable bullet) engages only
+ * while the block is still over `capBytes` after normalization. Pure —
+ * returns the new content, the lossy trims applied, and whether the
+ * non-lossy pass changed anything.
  */
 export function trimFleetBlockToFit(
   content: string,
   capBytes: number = FLEET_BLOCK_MAX_BYTES,
-): { content: string; trims: BulletTrim[] } {
+): { content: string; normalized: boolean; trims: BulletTrim[] } {
   const lines = content.split('\n')
-  const bounds = fleetBlockBounds(lines)
+  let bounds = fleetBlockBounds(lines)
   if (bounds === undefined) {
-    return { content, trims: [] }
+    return { content, normalized: false, trims: [] }
+  }
+  const normalized = normalizeFleetBlock(lines)
+  bounds = fleetBlockBounds(lines)
+  if (bounds === undefined) {
+    return { content: lines.join('\n'), normalized, trims: [] }
   }
   const trims: BulletTrim[] = []
   // Guard against a pathological loop: at most one trim per bullet-line per
@@ -165,23 +200,26 @@ export function trimFleetBlockToFit(
     lines[fattestIdx] = after
     trims.push({ after, before, line: fattestIdx })
   }
-  return { content: lines.join('\n'), trims }
+  return { content: lines.join('\n'), normalized, trims }
 }
 
 /**
- * A CLAUDE.md file trimmed on disk: its path plus the trims applied.
+ * A CLAUDE.md file changed on disk: its path, the lossy trims applied, and
+ * whether the always-on non-lossy normalization changed anything.
  */
 export interface ClaudeMdTrimResult {
   readonly file: string
+  readonly normalized: boolean
   readonly trims: BulletTrim[]
 }
 
 /**
- * Trim the fleet block of each given CLAUDE.md IN PLACE to fit under the cap.
- * Reads each existing file, applies `trimFleetBlockToFit`, and writes only when
- * something changed (no spurious mtime churn). Missing files / files with no
- * fleet block are skipped. Returns one result per file that changed. Shared by
- * the CLI and the fix path.
+ * Trim the fleet block of each given CLAUDE.md IN PLACE: the non-lossy
+ * normalization applies always; the lossy clause-dropping only while over
+ * the cap. Reads each existing file, applies `trimFleetBlockToFit`, and
+ * writes only when something changed (no spurious mtime churn). Missing
+ * files / files with no fleet block are skipped. Returns one result per file
+ * that changed. Shared by the CLI and the fix path.
  */
 export function applyClaudeMdTrim(
   files: readonly string[],
@@ -194,10 +232,13 @@ export function applyClaudeMdTrim(
       continue
     }
     const original = readFileSync(file, 'utf8')
-    const { content, trims } = trimFleetBlockToFit(original, capBytes)
-    if (trims.length > 0 && content !== original) {
+    const { content, normalized, trims } = trimFleetBlockToFit(
+      original,
+      capBytes,
+    )
+    if (content !== original) {
       writeFileSync(file, content)
-      results.push({ file, trims })
+      results.push({ file, normalized, trims })
     }
   }
   return results

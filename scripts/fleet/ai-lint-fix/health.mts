@@ -47,8 +47,13 @@ export interface AiCliProbe extends CliProbe {
 }
 
 const LAUNCHER_BROKEN_RE = /native binary|claude install/i
+// CLI stderr tells for a tool-policy failure: a rejected tool name
+// (multiedit / unknown tool / invalid tool) or "tool [name ]not
+// found|recognized" (optional "name " in the middle).
 const TOOL_POLICY_RE =
   /multiedit|unknown tool|invalid tool|tool (?:name )?not (?:found|recognized)/i
+// CLI stderr tells for an untrusted-workspace prompt; `workspace.?trust`
+// tolerates a space, hyphen, or nothing between the words.
 const WORKSPACE_TRUST_RE = /do you trust|trust the files|workspace.?trust/i
 
 export const FAILURE_REMEDY: Readonly<Record<CliFailureKind, string>> = {

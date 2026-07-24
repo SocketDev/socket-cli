@@ -51,7 +51,8 @@ export function parseStrandedOutput(output: string): StrandedCascadeReport {
   let bailReason: string | undefined
   let mode: 'commits' | 'worktrees' | undefined
 
-  for (const line of lines) {
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
     const stripped = stripLoggerPrefix(line).trim()
     if (!stripped) {
       continue

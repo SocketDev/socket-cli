@@ -93,7 +93,7 @@ export interface ExportsConfig {
 // prefixed leaf/dir, is private regardless of dist. Configurable per package
 // via ExportsConfig.privateSegments (adds exact segment names). The
 // `_`-prefix rule is always on. Matched against a normalized (`/`) path.
-const DEFAULT_PRIVATE_PATH_RE = /(\/|^)(_[^/]*|external)($|\/)/
+const DEFAULT_PRIVATE_PATH_RE = /(?:\/|^)(?:_[^/]*|external)(?:$|\/)/
 
 export function privatePathMatcher(
   privateSegments: readonly string[] = [],
@@ -255,9 +255,9 @@ export function resolveSourcePath(
 // path segment, `**` matches across `/`. A leading `./` is tolerated on both
 // sides. The fleet's configs use shallow globs (`./arrays/**`, `**/browser`,
 // `src/**`); full minimatch is overkill.
-export function matchesGlob(target: string, glob: string): boolean {
+export function matchesGlob(target: string, pattern: string): boolean {
   const cleanTarget = target.replace(/^\.\//, '')
-  const clean = glob.replace(/^\.?\/?/, '')
+  const clean = pattern.replace(/^\.?\/?/, '')
   if (!clean.includes('*')) {
     return cleanTarget === clean || cleanTarget.startsWith(`${clean}/`)
   }

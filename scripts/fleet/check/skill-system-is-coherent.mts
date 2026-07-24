@@ -65,12 +65,15 @@ async function main(): Promise<void> {
     return
   }
   logger.error('fleet skill-system defects:')
-  for (const defect of defects) logger.error(`  ${defect}`)
+  for (const defect of defects) {
+    logger.error(`  ${defect}`)
+  }
   process.exitCode = 1
 }
 
-if (isMainModule(import.meta.url))
+if (isMainModule(import.meta.url)) {
   main().catch(error => {
     logger.error(errorMessage(error))
     process.exitCode = 1
   })
+}

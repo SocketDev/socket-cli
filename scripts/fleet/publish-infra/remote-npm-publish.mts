@@ -19,10 +19,8 @@ import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 
 import { isMainModule } from '../_shared/is-main-module.mts'
-import {
-  runWorkflowDispatch,
-  type WorkflowDispatchSpec,
-} from './remote-dispatch.mts'
+import { runWorkflowDispatch } from './remote-dispatch.mts'
+import type { WorkflowDispatchSpec } from './remote-dispatch.mts'
 import { logger } from './shared.mts'
 
 // The dispatched workflow. Kept in sync with .github/workflows/npm-publish.yml

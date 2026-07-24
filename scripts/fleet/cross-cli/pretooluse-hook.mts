@@ -68,8 +68,13 @@ export async function runPreToolUseHook(): Promise<void> {
   if (payload['hook_event_name'] !== 'PreToolUse') {
     return
   }
-  const cwd =
-    typeof payload['cwd'] === 'string' ? payload['cwd'] : process.cwd()
+  const cwd = payload['cwd']
+  if (typeof cwd !== 'string') {
+    // Fail open — without a real cwd from the payload we can't safely
+    // resolve the tool's relative paths (the hook process's own cwd is
+    // not a trustworthy stand-in for the invoking agent's directory).
+    return
+  }
   const targets = extractEditedTargets({
     cwd,
     toolInput: payload['tool_input'],

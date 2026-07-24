@@ -26,15 +26,24 @@ import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
-import { gt, major, rcompare, valid } from 'semver'
+import { compare, gt } from '@socketsecurity/lib-stable/versions/compare'
+import {
+  getMajorVersion,
+  isValidVersion,
+} from '@socketsecurity/lib-stable/versions/parse'
+import { maxVersion } from '@socketsecurity/lib-stable/versions/range'
 
 import { requireSoakDays } from './_shared.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { REPO_ROOT } from '../paths.mts'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
+
+const logger = getDefaultLogger()
 
 const DAY_MS = 86_400_000
 
-// The canonical fleet Node pin file, read/written relative to the runner's cwd
-// (repo root). `node-version-sync` cascades this one file to every member.
+// The canonical fleet Node pin file, read/written relative to the repo root.
+// `node-version-sync` cascades this one file to every member.
 const NODE_VERSION_FILE = '.node-version'
 
 /**
@@ -107,7 +116,7 @@ export function parseNodeReleases(
       continue
     }
     const version = tag.startsWith('v') ? tag.slice(1) : tag
-    if (!valid(version)) {
+    if (!isValidVersion(version)) {
       continue
     }
     const rawDate = entry.published_at
@@ -130,14 +139,17 @@ export function parseNodeReleases(
  * is the highest cleared version (or `undefined` when nothing cleared is newer
  * than the current pin). Pure — the primary unit-test target.
  */
-export function planNodeBump(options: {
+export function planNodeBump(config: {
   readonly current: string
   readonly now: Date
   readonly releases: readonly NodeRelease[]
   readonly soakDays: number
 }): NodeBumpPlan {
-  const { current, now, releases, soakDays } = options
-  if (!valid(current)) {
+  const { current, now, releases, soakDays } = {
+    __proto__: null,
+    ...config,
+  } as typeof config
+  if (!isValidVersion(current)) {
     throw new Error(
       'Invalid current Node pin.\n' +
         `  Where: ${NODE_VERSION_FILE}\n` +
@@ -147,12 +159,12 @@ export function planNodeBump(options: {
   }
   const soakMs = soakDays * DAY_MS
   const nowMs = now.getTime()
-  const currentMajor = major(current)
+  const currentMajor = getMajorVersion(current)
   const cleared: string[] = []
   const held: NodeBumpCandidate[] = []
   for (let i = 0, { length } = releases; i < length; i += 1) {
     const release = releases[i]!
-    if (major(release.version) !== currentMajor) {
+    if (getMajorVersion(release.version) !== currentMajor) {
       continue
     }
     if (!gt(release.version, current)) {
@@ -170,11 +182,8 @@ export function planNodeBump(options: {
       })
     }
   }
-  const proposed =
-    cleared.length === 0
-      ? undefined
-      : [...cleared].sort((a, b) => rcompare(a, b))[0]
-  held.sort((a, b) => rcompare(a.version, b.version))
+  const proposed = cleared.length === 0 ? undefined : maxVersion(cleared)
+  held.sort((a, b) => compare(b.version, a.version) ?? 0)
   return { current, held, proposed }
 }
 
@@ -262,28 +271,27 @@ export async function main(
   argv: readonly string[],
   fetchReleases: FetchNodeReleases = fetchNodeReleasesViaGhApi,
 ): Promise<number> {
-  const logger = getDefaultLogger()
   const apply = argv.includes('--apply')
   let soakDays: number
   try {
     soakDays = requireSoakDays(argv, 'update/node')
   } catch (e) {
-    logger.error(e instanceof Error ? e.message : String(e))
+    logger.error(errorMessage(e))
     return 2
   }
-  const root = process.cwd()
+  const root = REPO_ROOT
   let current: string
   try {
     current = readNodeVersion(root)
   } catch (e) {
-    logger.error(e instanceof Error ? e.message : String(e))
+    logger.error(errorMessage(e))
     return 1
   }
   const releases = await fetchReleases()
   const plan = planNodeBump({ current, now: new Date(), releases, soakDays })
 
   logger.info(
-    `update/node: current pin ${plan.current} (soak ${soakDays}d, same major ${major(plan.current)}.x).`,
+    `update/node: current pin ${plan.current} (soak ${soakDays}d, same major ${getMajorVersion(plan.current)}.x).`,
   )
   for (let i = 0, { length } = plan.held; i < length; i += 1) {
     const candidate = plan.held[i]!
@@ -316,7 +324,7 @@ if (isMainModule(import.meta.url)) {
       process.exitCode = code
     },
     (e: unknown) => {
-      getDefaultLogger().error(e instanceof Error ? e.message : String(e))
+      logger.error(errorMessage(e))
       process.exitCode = 1
     },
   )

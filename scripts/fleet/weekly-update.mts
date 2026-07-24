@@ -17,7 +17,7 @@
  *      submodule remainder note, npm deps (`update.mts`), package-manager pins,
  *      gh-aw action pins. The judgment-free part — see
  *      `weekly-update/deterministic-chain.mts`.
- *   3. agentic update (OPTIONAL) — if a Claude agent is reachable, invoke the
+ *   3. agentic update (OPTIONAL) — if the Claude Code CLI is reachable, invoke the
  *      `/updating` umbrella via the locked-down `spawnAiAgent` (AI_PROFILE.full
  *      = the four-flag lockdown the Programmatic-Claude rule mandates). No
  *      agent → log a skip note and continue on the deterministic result. A
@@ -44,7 +44,11 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { scan } from './check/soak-excludes-have-dates.mts'
-import { PNPM_WORKSPACE_YAML, REPO_ROOT } from './paths.mts'
+import {
+  lockstepManifestCandidates,
+  PNPM_WORKSPACE_YAML,
+  REPO_ROOT,
+} from './paths.mts'
 import { runDeterministicChain } from './weekly-update/deterministic-chain.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 
@@ -125,8 +129,8 @@ export async function hasActionableUpdates(): Promise<boolean> {
   if (outdated.out && !/No outdated/i.test(outdated.out)) {
     return true
   }
-  const hasLockstep = existsSync(
-    path.join(REPO_ROOT, '.config', 'lockstep.json'),
+  const hasLockstep = lockstepManifestCandidates(REPO_ROOT).some(candidate =>
+    existsSync(candidate),
   )
   if (hasLockstep) {
     // lockstep --json exits 2 when manifests are behind.
@@ -205,7 +209,7 @@ export async function anySubmoduleBehind(): Promise<boolean> {
   return false
 }
 
-// True when a Claude agent is reachable (CLI on PATH + resolvable). Mirrors the
+// True when the Claude Code CLI is reachable (on PATH + resolvable). Mirrors the
 // codify-rule.mts probe. A missing agent is fine — the caller degrades.
 export async function agentAvailable(): Promise<boolean> {
   try {
@@ -270,7 +274,7 @@ async function main(): Promise<void> {
     }
   } else if (opts.agent) {
     logger.info(
-      '[weekly-update] agentic step skipped (no Claude agent on PATH); ran the deterministic update only.',
+      '[weekly-update] agentic step skipped (no Claude Code CLI on PATH); ran the deterministic update only.',
     )
   } else {
     logger.info('[weekly-update] --no-agent: deterministic update only.')

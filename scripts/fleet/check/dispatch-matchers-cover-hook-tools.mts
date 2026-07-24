@@ -1,7 +1,7 @@
 // Fleet check — the `.claude/settings.json` dispatcher matcher for each event
 // COVERS every tool the bundled hooks for that event actually handle.
 //
-// The dispatcher (`_dispatch/index.cjs <Event>`) is wired into settings.json
+// The dispatcher (`index.cjs <Event>`) is wired into settings.json
 // behind a coarse regex matcher: Claude Code only invokes the dispatcher when
 // the current tool matches it. Inside the dispatcher, `hookHandlesTool` then
 // does an EXACT-name match against each bundled hook's `tools`. So a tool that
@@ -11,7 +11,7 @@
 // stopped firing on MultiEdit when the coarse matcher listed only `Bash|Edit|Write`.
 //
 // The matcher is hand-maintained (settings.json is the fleet-canonical wiring),
-// while the hooks' `tools` are read by make-hook-dispatch.mts. Nothing tied the
+// while the hooks' `tools` are read by gen/hook-dispatch.mts. Nothing tied the
 // two together, so they drifted. This check ties them: it reads the eligible
 // hooks (via the maker's own collector — single source) and asserts, per event:
 //   - no match-all hook (tools omitted): every explicit `tools` token is present
@@ -31,22 +31,21 @@ import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import type { EligibleHook } from '../make-hook-dispatch.mts'
-import {
-  collectEligibleHooks,
-  FLEET_HOOKS_DIR,
-} from '../make-hook-dispatch.mts'
+import type { EligibleHook } from '../_shared/dispatch-scan.mts'
+import { collectEligibleHooks } from '../_shared/dispatch-scan.mts'
+import { FLEET_HOOKS_DIR } from '../gen/hook-dispatch.mts'
 import { CLAUDE_SETTINGS_JSON, REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
 // The dispatcher is wired EITHER as the compile-cache baseline
-// (`_dispatch/index.cjs <Event>`) OR the per-machine snapshot fast-path launcher
+// (`index.cjs <Event>`) OR the per-machine snapshot fast-path launcher
 // (`_dispatch/dispatch-launcher <Event>`, from setup/hook-snapshot.mts, which
 // fail-opens to that baseline). Both front-end the SAME bundled dispatcher, so
 // either counts as the wired dispatcher entry for coverage.
-const DISPATCHER_CMD_RE = /_dispatch\/(?:index\.cjs|dispatch-launcher)\s+(\w+)/
+const DISPATCHER_CMD_RE =
+  /(?:_dispatch\/dispatch-launcher|hooks\/fleet\/index\.cjs)\s+(\w+)/
 
 export interface DispatcherEntry {
   readonly matcher: string | undefined
@@ -84,7 +83,7 @@ export function matcherCoversAll(matcher: string | undefined): boolean {
 /**
  * Pull the dispatcher matcher entry for each event out of a parsed settings
  * shape. The dispatcher entry is the one whose command runs
- * `_dispatch/index.cjs <Event>`; other entries (standalone per-hook wiring) are
+ * `index.cjs <Event>`; other entries (standalone per-hook wiring) are
  * ignored. Pure + exported for unit tests.
  */
 export function extractDispatcherEntries(
@@ -232,7 +231,7 @@ function main(): void {
       logger.error(`  Where: settings.json hooks.${f.event} dispatcher entry`)
       if (f.kind === 'not-wired') {
         logger.error(
-          `  Saw:   bundled ${f.event} hooks exist but no _dispatch/index.cjs ${f.event} entry is wired`,
+          `  Saw:   bundled ${f.event} hooks exist but no index.cjs ${f.event} entry is wired`,
         )
         logger.error(
           `  Wanted: a dispatcher entry routing ${f.missing.join(', ')} to the dispatcher`,

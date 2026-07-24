@@ -161,5 +161,8 @@ async function main(): Promise<void> {
 }
 
 if (isMainModule(import.meta.url)) {
-  await main()
+  main().catch((e: unknown) => {
+    logger.error(e)
+    process.exitCode = 1
+  })
 }

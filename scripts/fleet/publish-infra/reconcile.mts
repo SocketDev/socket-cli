@@ -54,7 +54,9 @@ export async function findPublishedBaseSha(
     cwd,
   )
   if (code === 0) {
-    for (const line of stdout.split('\n')) {
+    const lines = stdout.split('\n')
+    for (let i = 0, { length } = lines; i < length; i += 1) {
+      const line = lines[i]!
       const sha = line.slice(0, line.indexOf(' '))
       const msg = line.slice(line.indexOf(' ') + 1)
       if (sha && msg === subject) {

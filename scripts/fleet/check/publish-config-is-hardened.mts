@@ -47,6 +47,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { NPM_REGISTRY } from '../constants/npm-registry.mts'
+import { REPO_ROOT } from '../paths.mts'
 import { findWorkspacePackages } from './package-files-are-allowlisted.mts'
 
 const logger = getDefaultLogger()
@@ -111,13 +112,13 @@ export const KNOWN_PUBLISH_CONFIG_FIELDS: ReadonlySet<string> = new Set([
 export interface PublishConfig {
   [key: string]: unknown
   access?: string | undefined
-  directory?: unknown
-  executableFiles?: unknown
-  linkDirectory?: unknown
+  directory?: unknown | undefined
+  executableFiles?: unknown | undefined
+  linkDirectory?: unknown | undefined
   provenance?: boolean | undefined
   registry?: string | undefined
-  types?: unknown
-  typings?: unknown
+  types?: unknown | undefined
+  typings?: unknown | undefined
 }
 
 export interface PublishablePackageJson {
@@ -186,7 +187,7 @@ export function isLegalPublishDirectory(value: string): boolean {
 export function unknownPublishConfigKeys(pc: PublishConfig): string[] {
   return Object.keys(pc)
     .filter(k => !KNOWN_PUBLISH_CONFIG_FIELDS.has(k))
-    .sort()
+    .toSorted()
 }
 
 /**
@@ -365,7 +366,7 @@ function main(): void {
     options: { json: { default: false, type: 'boolean' } },
     strict: false,
   })
-  const repoRoot = process.cwd()
+  const repoRoot = REPO_ROOT
   if (values['json']) {
     const findings = collectFindings(repoRoot)
     logger.log(JSON.stringify({ findings, ok: findings.length === 0 }, null, 2))

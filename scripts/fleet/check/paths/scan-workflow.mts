@@ -95,10 +95,10 @@ export const scanWorkflowFile = (repoRoot: string, relPath: string): void => {
     while ((m = WORKFLOW_GH_EXPR_PATH_RE.exec(line)) !== null) {
       matches.push(m[0])
     }
-    for (let i = 0, { length } = matches; i < length; i += 1) {
-      const pathStr = matches[i]!
+    for (let j = 0, { length: len } = matches; j < len; j += 1) {
+      const pathStr = matches[j]!
       const list = occurrences.get(pathStr) ?? []
-      list.push({ line: i + 1, snippet: line.trim(), pathStr })
+      list.push({ line: j + 1, snippet: line.trim(), pathStr })
       occurrences.set(pathStr, list)
     }
   }

@@ -74,6 +74,11 @@ function main(): void {
     for (let i = 0, { length } = results; i < length; i += 1) {
       const r = results[i]!
       const rel = path.relative(REPO_ROOT, r.file)
+      if (r.normalized) {
+        logger.info(
+          `${rel}: normalized (non-lossy — trailing whitespace / blank-line runs)`,
+        )
+      }
       for (let j = 0, jl = r.trims.length; j < jl; j += 1) {
         logger.info(
           `${rel} L${r.trims[j]!.line + 1}: trimmed last clause of the fattest bullet`,

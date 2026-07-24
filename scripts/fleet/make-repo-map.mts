@@ -37,6 +37,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { isMainModule } from './_shared/is-main-module.mts'
+import { REPO_ROOT } from './paths.mts'
 
 // Default on-disk cache directory (repo-root-relative). Gitignored + treated as
 // generated output, so a warm cache never leaks into the commit cascade.
@@ -52,6 +53,7 @@ const TOP_DECL_RE =
 const SOURCE_EXTS = new Set<string>(['.cjs', '.cts', '.mjs', '.mts', '.ts'])
 const SKIP_DIRS = new Set<string>([
   '_dispatch',
+  '_dist',
   '.git',
   '.repo-map',
   'build',
@@ -223,8 +225,9 @@ export function writeCache(
   repoRoot: string,
   files: readonly string[],
   outDir: string,
-  writeIndex: boolean,
+  config: { writeIndex: boolean },
 ): WriteCacheResult {
+  const cfg = { __proto__: null, ...config } as { writeIndex: boolean }
   let sourceTotal = 0
   let skeletonTotal = 0
   const indexRows: string[] = []
@@ -240,7 +243,7 @@ export function writeCache(
     writeFileSync(skelPath, `${text}\n`)
     indexRows.push(text.split('\n')[0]!)
   }
-  if (writeIndex) {
+  if (cfg.writeIndex) {
     indexRows.sort()
     const ratio = sourceTotal === 0 ? 0 : (skeletonTotal / sourceTotal) * 100
     const header = [
@@ -291,7 +294,7 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
 
 function main(): void {
   const { changed, outDir, roots, write } = parseArgs(process.argv.slice(2))
-  const repoRoot = process.cwd()
+  const repoRoot = REPO_ROOT
 
   // Resolve the file set. --changed narrows to git-touched sources; otherwise
   // walk the given roots (default `.` when --write is used with no roots).
@@ -324,7 +327,8 @@ function main(): void {
       repoRoot,
       files,
       outDir,
-      /* writeIndex */ !changed,
+      // --changed is incremental; a sparse index must not clobber the full one.
+      { writeIndex: !changed },
     )
     const ratio = sourceTotal === 0 ? 0 : (skeletonTotal / sourceTotal) * 100
     process.stderr.write(

@@ -87,27 +87,27 @@ export interface ResolveSecurityPinResult {
 // security pin must never land on an un-provable release.
 export function isSoaked(
   version: string,
-  options: { now: number; publishedAt: Readonly<Record<string, number>> },
+  config: { now: number; publishedAt: Readonly<Record<string, number>> },
 ): boolean {
-  const opts = { __proto__: null, ...options } as {
+  const cfg = { __proto__: null, ...config } as {
     now: number
     publishedAt: Readonly<Record<string, number>>
   }
-  const published = opts.publishedAt[version]
+  const published = cfg.publishedAt[version]
   if (published === undefined) {
     return false
   }
-  return opts.now - published >= SOAK_DAYS * MS_PER_DAY
+  return cfg.now - published >= SOAK_DAYS * MS_PER_DAY
 }
 
 // The deterministic core. Given the advisory's first_patched, the published
 // version list, and per-version publish dates, resolve the exact pin (or the
 // reason there is none). Pure — no network, no clock; the caller injects `now`.
 export function resolveSecurityPin(
-  options: ResolveSecurityPinOptions,
+  config: ResolveSecurityPinOptions,
 ): ResolveSecurityPinResult {
-  const opts = { __proto__: null, ...options } as ResolveSecurityPinOptions
-  const { firstPatched, now, publishedAt, publishedVersions } = opts
+  const cfg = { __proto__: null, ...config } as ResolveSecurityPinOptions
+  const { firstPatched, now, publishedAt, publishedVersions } = cfg
   const major = getMajorVersion(firstPatched)
   if (major === undefined) {
     return {

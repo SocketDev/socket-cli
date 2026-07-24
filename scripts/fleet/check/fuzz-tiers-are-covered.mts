@@ -199,6 +199,20 @@ export function readFuzzExemption(root: string): {
   }
 }
 
+// Cascade-owned fleet payload + infra/build scripts are not a fuzzable product
+// surface — the tier keys on SHIPPED code. TS under these prefixes never
+// counts toward JS/TS language detection (the wheelhouse itself still detects
+// via its test/repo TS and keeps its vitiate lane).
+export const INFRA_TS_PREFIXES = [
+  '.agents/',
+  '.claude/',
+  '.config/',
+  '.git-hooks/',
+  'bootstrap/',
+  'scripts/',
+  'test/fleet/',
+] as const
+
 /**
  * Detect languages present + fuzz tiers carried by reading the repo tree.
  */
@@ -211,12 +225,17 @@ export function detectFuzzTierSurfaces(root: string): FuzzTierSurfaces {
   let hasCppFuzz = false
   let hasGoFuzz = false
   walkSource(root, rel => {
-    if (/\.fuzz\.test\.mts$/.test(rel)) {
+    if (rel.endsWith('.fuzz.test.mts')) {
       hasFastCheck = true
-    } else if (/\.fuzz\.ts$/.test(rel)) {
+    } else if (rel.endsWith('.fuzz.ts')) {
       hasVitiate = true
     }
-    if (/\.(?:ts|mts|cts)$/.test(rel) && !/\.d\.ts$/.test(rel)) {
+    const p = normalizePath(rel)
+    if (
+      /\.(?:cts|mts|ts)$/.test(p) &&
+      !/\.d\.(?:cts|mts|ts)$/.test(p) &&
+      !INFRA_TS_PREFIXES.some(pre => p.startsWith(pre))
+    ) {
       isJsTs = true
     }
     if (/\.(?:cc|cpp|cxx|cppm)$/.test(rel)) {
@@ -236,7 +255,7 @@ export function detectFuzzTierSurfaces(root: string): FuzzTierSurfaces {
         } catch {}
       }
     }
-    if (/_test\.go$/.test(rel)) {
+    if (rel.endsWith('_test.go')) {
       try {
         if (
           /func\s+Fuzz\w*\s*\(/.test(readFileSync(path.join(root, rel), 'utf8'))

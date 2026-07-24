@@ -4,8 +4,9 @@
  *   coverage run. The README references `assets/repo/badges/coverage.svg` (a
  *   generated, optimized SVG — no third-party badge host) and the SVG's
  *   stamped percent must equal the rounded line-coverage total from
- *   `coverage/coverage-summary.json` (the vitest json-summary reporter). The
- *   commit-time twin of `make-coverage-badge.mts --check`; they share
+ *   `node_modules/.cache/fleet/coverage/coverage-summary.json` (the vitest
+ *   json-summary reporter). The
+ *   commit-time twin of `gen/coverage-badge.mts --check`; they share
  *   `lib/coverage-badge.mts` so the writer and the gate can't disagree.
  *
  *   Fails-open (exit 0, no finding) when the badge can't be meaningfully checked:
@@ -16,13 +17,13 @@
  *
  *   Fails loud when:
  *     - the README still carries the retired shields.io badge AND coverage
- *       data exists (run make-coverage-badge to migrate);
+ *       data exists (run gen/coverage-badge to migrate);
  *     - the README references the badge asset but the SVG file is missing or
  *       not a generated badge (broken image in the published README);
  *     - the SVG percent disagrees with the coverage total.
  *
  *   Exit codes: 0 — badge current OR not checkable; 1 — stale/broken (run
- *   `node scripts/fleet/make-coverage-badge.mts`).
+ *   `node scripts/fleet/gen/coverage-badge.mts`).
  */
 
 import { existsSync, readFileSync } from 'node:fs'
@@ -44,7 +45,8 @@ import { isMainModule } from '../_shared/is-main-module.mts'
 const logger = getDefaultLogger()
 
 const FIX_HINT =
-  '  Fix: run `node scripts/fleet/make-coverage-badge.mts` and commit the refreshed badge (it regenerates from coverage/coverage-summary.json).'
+  // oxlint-disable-next-line socket/prefer-node-modules-dot-cache -- socket-lint FP: the string already targets node_modules/.cache/ — it's a human-facing message, and the rule's string matcher can't see the node_modules/ prefix on the same path.
+  '  Fix: run `node scripts/fleet/gen/coverage-badge.mts` and commit the refreshed badge (it regenerates from node_modules/.cache/fleet/coverage/coverage-summary.json).'
 
 export interface CoverageBadgeCheckOptions {
   // Suppress the success line (check --all batch mode).
@@ -59,10 +61,10 @@ export interface CoverageBadgeCheckOptions {
  * 1 — stale or broken.
  */
 export function checkCoverageBadgeIsCurrent(
-  options: CoverageBadgeCheckOptions,
+  config: CoverageBadgeCheckOptions,
 ): number {
-  const opts = { __proto__: null, quiet: false, ...options }
-  const readmePath = path.join(opts.repoRoot, 'README.md')
+  const cfg = { __proto__: null, quiet: false, ...config }
+  const readmePath = path.join(cfg.repoRoot, 'README.md')
   if (!existsSync(readmePath)) {
     return 0
   }
@@ -71,25 +73,25 @@ export function checkCoverageBadgeIsCurrent(
     // No badge in either form — a repo that opted out.
     return 0
   }
-  const pct = readCoveragePct(opts.repoRoot)
-  // 'img' (current) and 'markdown' (legacy-but-valid; make-coverage-badge
+  const pct = readCoveragePct(cfg.repoRoot)
+  // 'img' (current) and 'markdown' (legacy-but-valid; gen/coverage-badge
   // migrates it to <img> opportunistically on the next cover run) both point at
   // the same asset — verify them below. Only the truly-retired external/legacy
   // forms fail the gate, so flipping the current form to <img> never breaks a
   // member that still carries the markdown line.
-  if (form === 'shields' || form === 'legacy-asset') {
+  if (form === 'legacy-asset' || form === 'shields') {
     if (pct === undefined) {
       // Retired form, but no coverage run on this tree to regenerate from —
       // the migration lands with the repo's next cover run.
       return 0
     }
     logger.fail(
-      '[check-coverage-badge-is-current] README still uses a retired coverage-badge form (shields.io or the legacy pre-badges/ path) — the badge is a repo-local SVG at assets/repo/badges/coverage.svg (run make-coverage-badge to migrate).',
+      '[check-coverage-badge-is-current] README still uses a retired coverage-badge form (shields.io or the legacy pre-badges/ path) — the badge is a repo-local SVG at assets/repo/badges/coverage.svg (run gen/coverage-badge to migrate).',
     )
     logger.error(FIX_HINT)
     return 1
   }
-  const svgPath = badgeAssetPath(opts.repoRoot)
+  const svgPath = badgeAssetPath(cfg.repoRoot)
   if (!existsSync(svgPath)) {
     logger.fail(
       '[check-coverage-badge-is-current] README references assets/repo/badges/coverage.svg but the file does not exist — the published README shows a broken image.',
@@ -122,7 +124,7 @@ export function checkCoverageBadgeIsCurrent(
     logger.error(FIX_HINT)
     return 1
   }
-  if (!opts.quiet) {
+  if (!cfg.quiet) {
     logger.success(
       `[check-coverage-badge-is-current] coverage badge matches coverage (${actual}%).`,
     )

@@ -174,8 +174,8 @@ export function escalateTier(
  * XML structure, examples per rule.
  *
  * Each entry is rendered into the prompt as `<rule id="...">…</rule>` inside a
- * `<rules>` block. Claude sees only the rules that fired in the current file,
- * so noise stays low.
+ * `<rules>` block. The agent sees only the rules that fired in the current
+ * file, so noise stays low.
  */
 export const RULE_GUIDANCE: Readonly<Record<string, string>> = {
   // oxlint-disable-next-line socket/prefer-undefined-over-null -- null-prototype object literal.

@@ -37,13 +37,14 @@ import {
   DISPATCH_TABLE_PATH,
   FLEET_HOOKS_DIR,
   generateDispatchTableSource,
-} from './make-hook-dispatch.mts'
+} from './gen/hook-dispatch.mts'
 import {
   DISPATCH_TABLE_EXCLUDED_PATH,
   DISPATCH_TABLE_SNAPSHOT_PATH,
   EXCLUDED_BUNDLE_PATH,
   REPO_ROOT,
 } from './paths.mts'
+import { hasFleetHookSource } from './_shared/fleet-source-present.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
@@ -85,14 +86,25 @@ export function computeSourceHash(content: Buffer | string): string {
  * Classify a spawned build step from its exit status + whether the expected
  * output landed.
  */
-export function classifySpawnOutcome(
-  exitStatus: number | null,
-  outputExists: boolean,
-): { ok: boolean } {
+export function classifySpawnOutcome(config: {
+  exitStatus: number | null
+  outputExists: boolean
+}): { ok: boolean } {
+  const cfg = { __proto__: null, ...config }
+  const { exitStatus, outputExists } = cfg
   return { ok: exitStatus === 0 && outputExists }
 }
 
 function main(): void {
+  // A bundle-only member has no hook source — regenerating the table variants
+  // + snapshot bundles over absent dirs would emit empty artifacts. Built at
+  // the source repo; the per-machine snapshot re-primes only where source ships.
+  if (!hasFleetHookSource(REPO_ROOT)) {
+    logger.log(
+      '[build-hook-snapshot] no fleet hook source (bundle-only) — skipping the snapshot build.',
+    )
+    return
+  }
   // All three table variants: the FULL table (index.cjs path), the
   // snapshot-SAFE table (aliased into the snapshot bundle), and the
   // EXCLUDED table (the sibling runtime bundle's source).
@@ -126,7 +138,10 @@ function main(): void {
     stdio: 'inherit',
   })
   if (
-    !classifySpawnOutcome(excluded.status, existsSync(EXCLUDED_BUNDLE_PATH)).ok
+    !classifySpawnOutcome({
+      exitStatus: excluded.status,
+      outputExists: existsSync(EXCLUDED_BUNDLE_PATH),
+    }).ok
   ) {
     logger.error(
       `excluded bundle build failed (exit ${String(excluded.status)}).`,
@@ -139,7 +154,12 @@ function main(): void {
     cwd: REPO_ROOT,
     stdio: 'inherit',
   })
-  if (!classifySpawnOutcome(bundle.status, existsSync(SNAPSHOT_BUNDLE)).ok) {
+  if (
+    !classifySpawnOutcome({
+      exitStatus: bundle.status,
+      outputExists: existsSync(SNAPSHOT_BUNDLE),
+    }).ok
+  ) {
     logger.error(
       `snapshot bundle build failed (exit ${String(bundle.status)}).`,
     )
@@ -160,7 +180,12 @@ function main(): void {
     ['--snapshot-blob', blobOut, '--build-snapshot', SNAPSHOT_BUNDLE],
     { cwd: REPO_ROOT, stdio: 'inherit' },
   )
-  if (!classifySpawnOutcome(snap.status, existsSync(blobOut)).ok) {
+  if (
+    !classifySpawnOutcome({
+      exitStatus: snap.status,
+      outputExists: existsSync(blobOut),
+    }).ok
+  ) {
     logger.error(`--build-snapshot failed (exit ${String(snap.status)}).`)
     process.exitCode = snap.status ?? 1
     return

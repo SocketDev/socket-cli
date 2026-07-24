@@ -15,6 +15,8 @@ import path from 'node:path'
 
 import { logger, rootPath, runCapture, runInherit } from '../shared.mts'
 import { defaultPackTarball } from './staged.mts'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
+import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
 /**
  * Scan one staged entry's artifact. Packs the local tree (byte-identical to
@@ -69,7 +71,7 @@ export async function scanStagedEntry(entry: {
       )
     } catch (e) {
       logger.fail(
-        `Scan gate: the Socket CLI could not run (${e instanceof Error ? e.message : String(e)}). ` +
+        `Scan gate: the Socket CLI could not run (${errorMessage(e)}). ` +
           'Install/authenticate `socket`, or pass --no-scan to skip the gate explicitly.',
       )
       return false
@@ -82,6 +84,6 @@ export async function scanStagedEntry(entry: {
     }
     return true
   } finally {
-    await fs.rm(tmpDir, { force: true, recursive: true })
+    await safeDelete(tmpDir)
   }
 }

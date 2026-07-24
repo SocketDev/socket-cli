@@ -86,7 +86,8 @@ function main(): void {
     process.exitCode = 0
     return
   }
-  for (const o of offenders) {
+  for (let i = 0, { length } = offenders; i < length; i += 1) {
+    const o = offenders[i]!
     logger.fail(
       `.gitmodules:${o.line} [submodule "${o.name}"] is not optimized — it has no \`sparse-checkout =\` field, is not a shallow single-branch reference (\`shallow = true\` + \`branch = <ref>\`), and carries no \`# full-checkout: <reason>\` annotation. Add the consumed-subtree sparse pattern (see the optimizing-submodules skill), make it a shallow single-branch reference, or annotate why the whole tree is needed.`,
     )

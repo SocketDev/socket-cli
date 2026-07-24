@@ -1,95 +1,187 @@
 /**
- * @file Readiness-gate stage runners (pre-bump): preflight, exports gate,
- *   files gate, and the commit-fixes + CI gate. Each defers to its owning
- *   fleet script — the pipeline orchestrates, it never re-implements a step a
- *   script owns. Spawns go through the injectable seams in seams.mts.
+ * @file Readiness-gate stage runners (pre-bump): preflight, the coverage +
+ *   badge-refresh gate, exports gate, files gate, and the commit-fixes + CI
+ *   gate. Each defers to its owning fleet script — the pipeline orchestrates,
+ *   it never re-implements a step a script owns. Spawns go through the
+ *   injectable seams in seams.mts.
  */
 
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
+import { coverageScriptName, readmeBadgeForm } from '../lib/coverage-badge.mts'
 import { resolveSeams } from './seams.mts'
 
 import type { ResolvedSeams, RunnerSeams, StageOutcome } from './seams.mts'
 
 // ── stage 1: preflight ─────────────────────────────────────────────────────
 
-const PREFLIGHT_STEPS: ReadonlyArray<readonly [string, readonly string[]]> = [
-  ['pnpm', ['run', 'update']],
-  ['pnpm', ['install']],
-  ['pnpm', ['run', 'fix', '--all']],
-  ['pnpm', ['run', 'check', '--all']],
-]
+/**
+ * The preflight step list. The DEFAULT scopes fix + check to changed files
+ * (their own no-flag default) — the preflight tree is usually already clean
+ * at the receipt sha, fix.mts early-exits on a clean scope in under a second,
+ * and the repo-wide fix backlog is not a release readiness question. `all`
+ * (the pipeline's --preflight-all escape) restores the full-tree
+ * `fix --all` + `check --all` passes. Pure — exported for tests.
+ */
+export function preflightSteps(
+  all: boolean,
+): ReadonlyArray<readonly [string, readonly string[]]> {
+  const scope = all ? ['--all'] : []
+  return [
+    ['pnpm', ['run', 'update']],
+    ['pnpm', ['install']],
+    ['pnpm', ['run', 'fix', ...scope]],
+    ['pnpm', ['run', 'check', ...scope]],
+  ]
+}
 
 // The one preflight step that mutates nothing — the only one a dry run
 // executes.
 const PREFLIGHT_CHECK_STEP = 3
 
 /**
- * `pnpm run update` → `pnpm i` → `fix --all` → `check --all`, fail-loud with
- * the exact failing step. Dry runs execute only the non-mutating
- * `check --all`.
+ * `pnpm run update` → `pnpm i` → `fix` → `check` (changed-file scope by
+ * default; `all: true` runs the full-tree `--all` passes), fail-loud with the
+ * exact failing step. Dry runs execute only the non-mutating check step.
  */
-export async function runPreflight(options: {
+export async function runPreflight(config: {
+  all?: boolean | undefined
   cwd: string
   dryRun: boolean
   seams?: RunnerSeams | undefined
 }): Promise<StageOutcome> {
-  const opts = { __proto__: null, ...options } as typeof options
-  const seams = resolveSeams(opts.seams)
-  for (let i = 0; i < PREFLIGHT_STEPS.length; i += 1) {
-    if (opts.dryRun && i !== PREFLIGHT_CHECK_STEP) {
+  const cfg = { __proto__: null, ...config } as typeof config
+  const seams = resolveSeams(cfg.seams)
+  const steps = preflightSteps(cfg.all === true)
+  for (let i = 0; i < steps.length; i += 1) {
+    if (cfg.dryRun && i !== PREFLIGHT_CHECK_STEP) {
       continue
     }
-    const [cmd, args] = PREFLIGHT_STEPS[i]!
-    const code = await seams.runInherit(cmd, [...args], opts.cwd)
+    const [cmd, args] = steps[i]!
+    const code = await seams.runInherit(cmd, [...args], cfg.cwd)
     if (code !== 0) {
       return {
         detail:
           `preflight failed at \`${cmd} ${args.join(' ')}\` (exit ${code}).\n` +
-          `  Where: step ${i + 1}/${PREFLIGHT_STEPS.length} in ${opts.cwd}\n` +
+          `  Where: step ${i + 1}/${steps.length} in ${cfg.cwd}\n` +
           `  Fix: run that command directly, resolve its findings, re-run the pipeline (it resumes here).`,
         status: 'failed',
       }
     }
   }
+  const scopeNote = cfg.all === true ? ' --all' : ' (changed-file scope)'
   return {
-    detail: opts.dryRun
-      ? 'check --all green (dry-run skipped update/install/fix — they mutate)'
-      : 'update, install, fix --all, check --all all green',
+    detail: cfg.dryRun
+      ? `check${scopeNote} green (dry-run skipped update/install/fix — they mutate)`
+      : `update, install, fix, check${scopeNote} all green`,
     status: 'passed',
   }
 }
 
-// ── stage 2: exports gate ──────────────────────────────────────────────────
+// ── stage 2: coverage + badge refresh ──────────────────────────────────────
 
 /**
- * Exports gate: regenerate the exports map when the repo opts in
- * (make-package-exports.mts, write skipped under --dry-run), then run the
- * canonical map ↔ files check (public-files-are-exported).
+ * Cover gate: run the repo's coverage script (`pnpm run cover` — or whichever
+ * of cover/coverage/test:cover the repo declares), then ACTIVELY regenerate
+ * the coverage badge via gen/coverage-badge.mts. `check --all` (preflight)
+ * only runs coverage-badge-is-current — a CHECK, not an UPDATE — so this stage
+ * is where the badge actually refreshes; the refreshed
+ * assets/repo/badges/coverage.svg is a modified tracked file the ci stage
+ * commits surgically, so it rides ahead of the bump commit and ships with the
+ * release. Skips (passes) when the repo declares no coverage script or its
+ * README carries no coverage badge (the same opt-outs
+ * coverage-badge-is-current fails open on). Dry runs skip both steps — the
+ * coverage run and the badge write mutate.
  */
-export async function runExportsGate(options: {
+export async function runCoverGate(config: {
   cwd: string
   dryRun: boolean
   seams?: RunnerSeams | undefined
 }): Promise<StageOutcome> {
-  const opts = { __proto__: null, ...options } as typeof options
-  const seams = resolveSeams(opts.seams)
+  const cfg = { __proto__: null, ...config } as typeof config
+  const seams = resolveSeams(cfg.seams)
+  const script = coverageScriptName(cfg.cwd)
+  if (script === undefined) {
+    return {
+      detail:
+        'no coverage script (cover/coverage/test:cover) declared — coverage + badge refresh skipped',
+      status: 'passed',
+    }
+  }
+  if (cfg.dryRun) {
+    return {
+      detail: `[dry-run] skipped \`pnpm run ${script}\` + badge refresh (both mutate — coverage cache + badge asset)`,
+      status: 'passed',
+    }
+  }
+  const cover = await seams.runInherit('pnpm', ['run', script], cfg.cwd)
+  if (cover !== 0) {
+    return {
+      detail:
+        `\`pnpm run ${script}\` exited ${cover}.\n` +
+        `  Fix: get the coverage run green (failing tests? thresholds?), then re-run the pipeline (it resumes here).`,
+      status: 'failed',
+    }
+  }
+  const readmePath = path.join(cfg.cwd, 'README.md')
+  const badgeForm = existsSync(readmePath)
+    ? readmeBadgeForm(readFileSync(readmePath, 'utf8'))
+    : undefined
+  if (badgeForm === undefined) {
+    return {
+      detail: `\`pnpm run ${script}\` green; README carries no coverage badge — badge refresh skipped`,
+      status: 'passed',
+    }
+  }
+  const badge = await seams.runInherit(
+    'node',
+    ['scripts/fleet/gen/coverage-badge.mts'],
+    cfg.cwd,
+  )
+  if (badge !== 0) {
+    return {
+      detail:
+        `gen/coverage-badge.mts exited ${badge}.\n` +
+        `  Fix: run \`node scripts/fleet/gen/coverage-badge.mts\` directly and resolve its error, then re-run.`,
+      status: 'failed',
+    }
+  }
+  return {
+    detail: `\`pnpm run ${script}\` green + coverage badge refreshed (assets/repo/badges/coverage.svg; the ci stage commits any change before bump)`,
+    status: 'passed',
+  }
+}
+
+// ── stage 3: exports gate ──────────────────────────────────────────────────
+
+/**
+ * Exports gate: regenerate the exports map when the repo opts in
+ * (gen/package-exports.mts, write skipped under --dry-run), then run the
+ * canonical map ↔ files check (public-files-are-exported).
+ */
+export async function runExportsGate(config: {
+  cwd: string
+  dryRun: boolean
+  seams?: RunnerSeams | undefined
+}): Promise<StageOutcome> {
+  const cfg = { __proto__: null, ...config } as typeof config
+  const seams = resolveSeams(cfg.seams)
   const optedIn = existsSync(
-    path.join(opts.cwd, 'scripts/repo/package-exports.config.mts'),
+    path.join(cfg.cwd, 'scripts/repo/package-exports.config.mts'),
   )
   let generated = false
-  if (optedIn && !opts.dryRun) {
+  if (optedIn && !cfg.dryRun) {
     const gen = await seams.runInherit(
       'node',
-      ['scripts/fleet/make-package-exports.mts'],
-      opts.cwd,
+      ['scripts/fleet/gen/package-exports.mts'],
+      cfg.cwd,
     )
     if (gen !== 0) {
       return {
         detail:
-          `make-package-exports.mts exited ${gen}.\n` +
-          `  Fix: run \`node scripts/fleet/make-package-exports.mts\` directly and resolve its error.`,
+          `gen/package-exports.mts exited ${gen}.\n` +
+          `  Fix: run \`node scripts/fleet/gen/package-exports.mts\` directly and resolve its error.`,
         status: 'failed',
       }
     }
@@ -98,7 +190,7 @@ export async function runExportsGate(options: {
   const check = await seams.runInherit(
     'node',
     ['scripts/fleet/check/public-files-are-exported.mts', '--quiet'],
-    opts.cwd,
+    cfg.cwd,
   )
   if (check !== 0) {
     return {
@@ -116,24 +208,24 @@ export async function runExportsGate(options: {
   }
 }
 
-// ── stage 3: files gate ────────────────────────────────────────────────────
+// ── stage 4: files gate ────────────────────────────────────────────────────
 
 /**
  * Files gate: pack the real tarball and inspect its entry list via the
  * owning check (pack-contents-are-clean). Non-mutating (packs to a temp
  * dir), so it runs under --dry-run too.
  */
-export async function runFilesGate(options: {
+export async function runFilesGate(config: {
   cwd: string
   dryRun: boolean
   seams?: RunnerSeams | undefined
 }): Promise<StageOutcome> {
-  const opts = { __proto__: null, ...options } as typeof options
-  const seams = resolveSeams(opts.seams)
+  const cfg = { __proto__: null, ...config } as typeof config
+  const seams = resolveSeams(cfg.seams)
   const code = await seams.runInherit(
     'node',
     ['scripts/fleet/check/pack-contents-are-clean.mts'],
-    opts.cwd,
+    cfg.cwd,
   )
   if (code !== 0) {
     return {
@@ -149,7 +241,7 @@ export async function runFilesGate(options: {
   }
 }
 
-// ── stage 4: commit fixes + CI ─────────────────────────────────────────────
+// ── stage 5: commit fixes + CI ─────────────────────────────────────────────
 
 export interface DirtyFiles {
   modified: string[]
@@ -165,7 +257,9 @@ export interface DirtyFiles {
 export function parsePorcelainStatus(stdout: string): DirtyFiles {
   const modified: string[] = []
   const unmerged: string[] = []
-  for (const line of stdout.split('\n')) {
+  const lines = stdout.split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
     if (line.length < 4) {
       continue
     }
@@ -173,7 +267,7 @@ export function parsePorcelainStatus(stdout: string): DirtyFiles {
     const rest = line.slice(3)
     // Rename lines are `R  old -> new`; the working-tree path is `new`.
     const filePath = rest.includes(' -> ') ? rest.split(' -> ')[1]! : rest
-    if (xy === '??' || xy === '!!') {
+    if (xy === '!!' || xy === '??') {
       continue
     }
     if (xy.includes('U') || xy === 'AA' || xy === 'DD') {
@@ -216,19 +310,28 @@ export function classifyCiRuns(
  * fail loud), then require green CI on the current head — but ONLY when the
  * head is already pushed. An unpushed head records "local-only, CI deferred";
  * the pipeline NEVER pushes.
+ *
+ * Fast path: when every LOCAL gate already passed at this sha
+ * (`localGatesGreen`, computed by the pipeline from the tree receipts) and
+ * strict blocking wasn't requested (`waitForRemote` / --ci-wait), a pushed
+ * head records `deferred-pending-remote` instead of blocking on the remote
+ * run — the remote CI remains an async back-check, and release/stage-publish
+ * proceed on the local receipts.
  */
-export async function runCiGate(options: {
+export async function runCiGate(config: {
   ciTimeoutMs: number
   cwd: string
   dryRun: boolean
+  localGatesGreen?: boolean | undefined
   seams?: RunnerSeams | undefined
+  waitForRemote?: boolean | undefined
 }): Promise<StageOutcome> {
-  const opts = { __proto__: null, ...options } as typeof options
-  const seams = resolveSeams(opts.seams)
+  const cfg = { __proto__: null, ...config } as typeof config
+  const seams = resolveSeams(cfg.seams)
   const status = await seams.runCapture(
     'git',
     ['status', '--porcelain'],
-    opts.cwd,
+    cfg.cwd,
   )
   if (status.code !== 0) {
     return { detail: `git status exited ${status.code}`, status: 'failed' }
@@ -244,10 +347,10 @@ export async function runCiGate(options: {
   }
   let committed = ''
   if (modified.length) {
-    if (opts.dryRun) {
+    if (cfg.dryRun) {
       committed = `[dry-run] would commit ${modified.length} fixed file(s): ${modified.join(', ')}; `
     } else {
-      await seams.runCapture('git', ['add', '--', ...modified], opts.cwd)
+      await seams.runCapture('git', ['add', '--', ...modified], cfg.cwd)
       const commit = await seams.runCapture(
         'git',
         [
@@ -257,7 +360,7 @@ export async function runCiGate(options: {
           '-m',
           'chore: apply release readiness fixes',
         ],
-        opts.cwd,
+        cfg.cwd,
       )
       if (commit.code !== 0) {
         return {
@@ -271,22 +374,36 @@ export async function runCiGate(options: {
       committed = `committed ${modified.length} fixed file(s); `
     }
   }
-  const head = await seams.runCapture('git', ['rev-parse', 'HEAD'], opts.cwd)
+  const head = await seams.runCapture('git', ['rev-parse', 'HEAD'], cfg.cwd)
   const sha = head.stdout.trim()
-  const onOrigin = await headIsOnOrigin(sha, opts.cwd, seams)
+  const onOrigin = await headIsOnOrigin(sha, cfg.cwd, seams)
   if (!onOrigin) {
     return {
       detail: `${committed}local-only, CI deferred (HEAD ${sha.slice(0, 12)} not on origin; the pipeline never pushes)`,
       status: 'deferred',
     }
   }
-  return await pollCi(sha, opts, seams, committed)
+  // Sanctioned non-blocking receipt: local gates green at this sha + strict
+  // blocking not demanded → don't sit in the remote poll loop. The commit-fix
+  // sweep above already ran; only the WAIT is skipped.
+  if (cfg.localGatesGreen === true && cfg.waitForRemote !== true) {
+    return {
+      detail:
+        `${committed}deferred-pending-remote — every local gate passed at ` +
+        `${sha.slice(0, 12)}; the remote CI run stays an async back-check ` +
+        `(re-run with --ci-wait to block on it)`,
+      status: 'deferred',
+    }
+  }
+  return await pollCi(sha, cfg, seams, committed)
 }
 
 /**
- * True when `sha` is an ancestor of the origin default branch.
+ * True when `sha` is an ancestor of the origin default branch. Exported for
+ * the stage-publish runner: a workflow dispatch stages from the ORIGIN default
+ * branch, so an unpushed bump commit would stage the wrong version.
  */
-async function headIsOnOrigin(
+export async function headIsOnOrigin(
   sha: string,
   cwd: string,
   seams: ResolvedSeams,
@@ -319,18 +436,19 @@ const CI_POLL_INTERVAL_MS = 15_000
 
 async function pollCi(
   sha: string,
-  opts: { ciTimeoutMs: number; cwd: string; dryRun: boolean },
+  config: { ciTimeoutMs: number; cwd: string; dryRun: boolean },
   seams: ResolvedSeams,
   prefix: string,
 ): Promise<StageOutcome> {
-  const deadline = Date.now() + opts.ciTimeoutMs
+  const cfg = { __proto__: null, ...config } as typeof config
+  const deadline = Date.now() + cfg.ciTimeoutMs
   for (;;) {
     // Recurring gh loop: re-stamp the token-freshness heartbeat each tick.
     // eslint-disable-next-line no-await-in-loop
     await seams.runCapture(
       'node',
       ['scripts/fleet/gh-heartbeat.mts', '--quiet'],
-      opts.cwd,
+      cfg.cwd,
     )
     // eslint-disable-next-line no-await-in-loop
     const list = await seams.runCapture(
@@ -345,7 +463,7 @@ async function pollCi(
         '--limit',
         '50',
       ],
-      opts.cwd,
+      cfg.cwd,
     )
     if (list.code !== 0) {
       return {
@@ -384,7 +502,7 @@ async function pollCi(
     if (Date.now() >= deadline) {
       return {
         detail:
-          `${prefix}CI still ${runs.length ? 'pending' : 'absent'} for ${sha.slice(0, 12)} after ${Math.round(opts.ciTimeoutMs / 1000)}s.\n` +
+          `${prefix}CI still ${runs.length ? 'pending' : 'absent'} for ${sha.slice(0, 12)} after ${Math.round(cfg.ciTimeoutMs / 1000)}s.\n` +
           `  Fix: wait for CI, or re-run with a larger --ci-timeout.`,
         status: 'failed',
       }

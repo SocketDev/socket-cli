@@ -80,7 +80,12 @@ export function fleetReposPath(repoRoot: string): string {
  */
 export function parseFleetRepos(json: string): FleetRepo[] {
   const data = JSON.parse(json) as {
-    repos?: ReadonlyArray<{ name?: unknown; owner?: unknown }>
+    repos?:
+      | ReadonlyArray<{
+          name?: unknown | undefined
+          owner?: unknown | undefined
+        }>
+      | undefined
   }
   const repos = Array.isArray(data.repos) ? data.repos : []
   const out: FleetRepo[] = []
@@ -106,7 +111,7 @@ export function deadCiRepos(statuses: readonly RepoCiStatus[]): string[] {
   return statuses
     .filter(status => status.pushRuns === 0)
     .map(status => status.name)
-    .sort()
+    .toSorted()
 }
 
 // True when `gh` is installed and authenticated — the precondition for the

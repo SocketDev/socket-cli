@@ -60,7 +60,7 @@ function evidenceRow(candidate: Candidate, index: number): string {
 
 // Render the full compact output: badge, a date-range + active-source line, the
 // bounded evidence envelope of ranked candidates, and the pass-through footer.
-export function renderCompact(options: {
+export function renderCompact(config: {
   candidates: readonly Candidate[]
   results: readonly SourceResult[]
   topic: string
@@ -70,8 +70,8 @@ export function renderCompact(options: {
 }): string {
   const { candidates, fromDate, results, savedPath, syncedDate, topic } = {
     __proto__: null,
-    ...options,
-  } as typeof options
+    ...config,
+  } as typeof config
   const activeSources = results
     .filter(result => result.status === 'ok')
     .map(result => result.source)

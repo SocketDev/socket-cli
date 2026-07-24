@@ -87,19 +87,19 @@ export interface RunPlaceholderOptions {
  */
 export function buildPlaceholderCargoToml(
   name: string,
-  options: PlaceholderCargoTomlOptions,
+  config: PlaceholderCargoTomlOptions,
 ): string {
-  const opts = { __proto__: null, ...options } as PlaceholderCargoTomlOptions
+  const cfg = { __proto__: null, ...config } as PlaceholderCargoTomlOptions
   const lines = [
     '[package]',
     `name = "${name}"`,
     `version = "${PLACEHOLDER_VERSION}"`,
     'edition = "2021"',
-    `description = "${opts.description}"`,
+    `description = "${cfg.description}"`,
     'license = "MIT"',
   ]
-  if (opts.repository) {
-    lines.push(`repository = "${opts.repository}"`)
+  if (cfg.repository) {
+    lines.push(`repository = "${cfg.repository}"`)
   }
   return `${lines.join('\n')}\n`
 }
@@ -187,12 +187,13 @@ async function defaultRemoveDir(dir: string): Promise<void> {
  */
 export function formatSummary(
   results: readonly PlaceholderResult[],
-  apply: boolean,
+  config: { apply: boolean },
 ): string {
+  const cfg = { __proto__: null, ...config } as { apply: boolean }
   const count = (status: PlaceholderStatus): number =>
     results.filter(r => r.status === status).length
   return (
-    `Placeholder ${apply ? 'publish' : 'dry-run'} summary: ` +
+    `Placeholder ${cfg.apply ? 'publish' : 'dry-run'} summary: ` +
     `${count('published')} published, ${count('planned')} planned, ` +
     `${count('skipped')} skipped, ${count('failed')} failed.`
   )
@@ -271,7 +272,7 @@ export async function runPlaceholder(
   }
 
   logger.log('')
-  logger.log(formatSummary(results, apply))
+  logger.log(formatSummary(results, { apply }))
   return results
 }
 

@@ -77,7 +77,9 @@ export function collectLintRules(repoRoot: string): LintRuleInventory {
     const config = JSON.parse(readFileSync(configPath, 'utf8')) as {
       rules?: Record<string, unknown> | undefined
     }
-    for (const key of Object.keys(config.rules ?? {})) {
+    const ruleKeys = Object.keys(config.rules ?? {})
+    for (let i = 0, { length } = ruleKeys; i < length; i += 1) {
+      const key = ruleKeys[i]!
       if (key.startsWith('typescript/')) {
         tsRules.add(key.slice('typescript/'.length))
       }

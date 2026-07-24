@@ -57,19 +57,19 @@ export function extractNpmrcMinReleaseAge(npmrc: string): number | undefined {
  * Mismatches between the data files and the canonical constant. Empty = in
  * sync.
  */
-export function findSoakInconsistencies(options: SoakSurfaces): string[] {
-  const opts = { __proto__: null, ...options } as SoakSurfaces
+export function findSoakInconsistencies(config: SoakSurfaces): string[] {
+  const cfg = { __proto__: null, ...config } as SoakSurfaces
   const out: string[] = []
-  if (opts.pnpmMinutes !== opts.soakMinutes) {
+  if (cfg.pnpmMinutes !== cfg.soakMinutes) {
     out.push(
-      `pnpm-workspace.yaml minimumReleaseAge is ${opts.pnpmMinutes ?? '(missing)'}, ` +
-        `wanted ${opts.soakMinutes} (SOAK_DAYS ${opts.soakDays} × 1440 minutes).`,
+      `pnpm-workspace.yaml minimumReleaseAge is ${cfg.pnpmMinutes ?? '(missing)'}, ` +
+        `wanted ${cfg.soakMinutes} (SOAK_DAYS ${cfg.soakDays} × 1440 minutes).`,
     )
   }
-  if (opts.npmrcDays !== opts.soakDays) {
+  if (cfg.npmrcDays !== cfg.soakDays) {
     out.push(
-      `.npmrc min-release-age is ${opts.npmrcDays ?? '(missing)'}, ` +
-        `wanted ${opts.soakDays} (SOAK_DAYS).`,
+      `.npmrc min-release-age is ${cfg.npmrcDays ?? '(missing)'}, ` +
+        `wanted ${cfg.soakDays} (SOAK_DAYS).`,
     )
   }
   return out

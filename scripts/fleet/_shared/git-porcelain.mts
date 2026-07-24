@@ -82,7 +82,9 @@ export function gitPorcelain(
  */
 export function parsePorcelain(out: string): PorcelainEntry[] {
   const entries: PorcelainEntry[] = []
-  for (const line of out.split('\n')) {
+  const lines = out.split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
     if (!line) {
       continue
     }

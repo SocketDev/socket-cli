@@ -92,20 +92,20 @@ async function listTrackedFiles(cwd: string): Promise<string[]> {
  */
 export async function collectTrackedFiles(
   patterns: readonly string[],
-  options: CollectTrackedFilesOptions,
+  config: CollectTrackedFilesOptions,
 ): Promise<string[]> {
-  const opts = { __proto__: null, ...options } as CollectTrackedFilesOptions
-  const { absolute = false, cwd } = opts
+  const cfg = { __proto__: null, ...config } as CollectTrackedFilesOptions
+  const { absolute = false, cwd } = cfg
   const submodulePaths = await getSubmodulePaths({ cwd })
   const ignore = [
     ...defaultIgnore,
     ...submodulePaths.map(mount => `${mount}/**`),
-    ...(opts.ignore ?? []),
+    ...(cfg.ignore ?? []),
   ]
   const candidates = globSync([...patterns], {
     absolute: false,
     cwd,
-    ...(opts.dot === undefined ? {} : { dot: opts.dot }),
+    ...(cfg.dot === undefined ? {} : { dot: cfg.dot }),
     ignore,
   })
   const tracked = await listTrackedFiles(cwd)

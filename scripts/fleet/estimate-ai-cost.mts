@@ -165,7 +165,9 @@ export function daysOld(snapshotIso: string, now: Date): number {
 function knownModelIds(pricing: PricingData): string[] {
   const ids: string[] = []
   const services = pricing.services ?? {}
-  for (const serviceId of Object.keys(services)) {
+  const serviceIdList = Object.keys(services)
+  for (let i = 0, { length } = serviceIdList; i < length; i += 1) {
+    const serviceId = serviceIdList[i]!
     ids.push(...Object.keys(services[serviceId]?.models ?? {}))
   }
   return ids
@@ -180,7 +182,9 @@ export function findModelPricing(
   modelId: string,
 ): FoundModel | undefined {
   const services = pricing.services ?? {}
-  for (const serviceId of Object.keys(services)) {
+  const serviceIds = Object.keys(services)
+  for (let i = 0, { length } = serviceIds; i < length; i += 1) {
+    const serviceId = serviceIds[i]!
     const serviceEntry = services[serviceId]
     if (!serviceEntry) {
       continue

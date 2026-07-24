@@ -38,8 +38,6 @@ export const SOCKET_PACKAGE_PATTERNS: readonly string[] = [
   // prefix glob (`socket-*` would soak-bypass any attacker-published
   // `socket-<anything>`) — every non-scoped Socket package is named EXACTLY.
   '@sdxgen/*',
-  '@socketaddon/*',
-  '@socketbin/*',
   '@socketoverride/*',
   '@socketregistry/*',
   '@socketsecurity/*',
@@ -204,8 +202,8 @@ export function isSocketSourcedPackage(purlOrName: string): boolean {
  * SOCKET_PACKAGE_PATTERNS so `.npmrc` never hand-copies the list. npm reads
  * these lines; pnpm reads the (also-derived) `pnpm-workspace.yaml`
  * `minimumReleaseAgeExclude` block — both flow from this ONE source. The
- * `npmrc-socket-soak-excludes-are-derived` check regenerates `.npmrc`'s marked
- * block from this and fails the gate on drift.
+ * `.npmrc` generator (scripts/repo/gen/npmrc.mts in the source repo) renders
+ * these into the cascade-distributed template/generated/.npmrc.
  */
 export function npmrcSocketSoakExcludeLines(): readonly string[] {
   return SOCKET_PACKAGE_PATTERNS.map(

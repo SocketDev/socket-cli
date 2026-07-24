@@ -77,7 +77,9 @@ export function readHitLocation(sourceMetadata: unknown): {
 export function parseTruffleHogFindings(jsonlOutput: string): TruffleHogHit[] {
   const hits: TruffleHogHit[] = []
   const seen = new Set<string>()
-  for (const rawLine of jsonlOutput.split('\n')) {
+  const lines = jsonlOutput.split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const rawLine = lines[i]!
     const trimmed = rawLine.trim()
     if (!trimmed || trimmed[0] !== '{') {
       continue

@@ -83,7 +83,9 @@ export function jaccardSimilarity(
 
 function tokensOf(normalized: string): Set<string> {
   const tokens = new Set<string>()
-  for (const token of normalized.split(' ')) {
+  const parts = normalized.split(' ')
+  for (let i = 0, { length } = parts; i < length; i += 1) {
+    const token = parts[i]!
     if (token.length > 1 && !STOPWORDS.has(token)) {
       tokens.add(token)
     }

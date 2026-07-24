@@ -84,7 +84,7 @@ function trackedFiles(): string[] {
     logger.fail(
       '[trust-gates-are-not-weakened] could not enumerate tracked files; the ' +
         'opt-out scan did not run.\n' +
-        `  Where: ${process.cwd()}\n` +
+        `  Where: ${REPO_ROOT}\n` +
         `  Saw: git ls-files exited ${String(result.status)}${stderr ? ` — ${stderr.trim()}` : ''}\n` +
         '  Fix: run the check inside a git work tree (a scan that reads zero ' +
         'files must not report green).',

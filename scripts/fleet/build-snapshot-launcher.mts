@@ -53,7 +53,7 @@ import { createRequire } from 'node:module'
 import path from 'node:path'
 import process from 'node:process'
 
-import { DISPATCH_DIR } from './make-hook-dispatch.mts'
+import { DISPATCH_DIR } from './gen/hook-dispatch.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 
 const require = createRequire(import.meta.url)
@@ -139,13 +139,13 @@ export interface CompilerPlan {
  * (prefer gcc when present), plain `cc` everywhere else.
  */
 export function selectCompiler(
-  isWin: boolean,
-  haveGcc: boolean,
   src: string,
   outBin: string,
+  config: { haveGcc: boolean; isWin: boolean },
 ): CompilerPlan {
-  if (isWin) {
-    return haveGcc
+  const cfg = { __proto__: null, ...config } as typeof config
+  if (cfg.isWin) {
+    return cfg.haveGcc
       ? {
           args: [
             '-O2',
@@ -182,12 +182,13 @@ export type LauncherAction = 'build' | 'missing-bundle' | 'print-build'
  */
 export function planLauncherAction(
   argv: readonly string[],
-  bundleExists: boolean,
+  config: { bundleExists: boolean },
 ): LauncherAction {
+  const cfg = { __proto__: null, ...config } as { bundleExists: boolean }
   if (argv.includes('--print-build')) {
     return 'print-build'
   }
-  if (!bundleExists) {
+  if (!cfg.bundleExists) {
     return 'missing-bundle'
   }
   return 'build'
@@ -212,7 +213,7 @@ function buildHostLauncher(): boolean {
   // is the simplest; MSVC `cl` is the CI default. Prefer gcc if present.
   const haveGcc =
     isWin && spawnSync('gcc', ['--version'], { stdio: 'ignore' }).status === 0
-  const { args, cc } = selectCompiler(isWin, haveGcc, src, outBin)
+  const { args, cc } = selectCompiler(src, outBin, { haveGcc, isWin })
 
   const r = spawnSync(cc, args, { stdio: 'inherit' })
   if (r.status !== 0 || !existsSync(outBin)) {
@@ -241,7 +242,9 @@ function writeSidecars(): void {
 }
 
 function main(): void {
-  const action = planLauncherAction(process.argv, existsSync(SNAPSHOT_BUNDLE))
+  const action = planLauncherAction(process.argv, {
+    bundleExists: existsSync(SNAPSHOT_BUNDLE),
+  })
   if (action === 'print-build') {
     process.stdout.write(BUILD_RECIPE + '\n')
     return

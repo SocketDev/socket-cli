@@ -12,10 +12,11 @@
 import os from 'node:os'
 import process from 'node:process'
 
+import { httpRequest } from '@socketsecurity/lib-stable/http-request'
 import { sleep } from '@socketsecurity/lib/promises/timers'
 import { checkbox, password } from '@socketsecurity/lib/stdio/prompts'
 
-import { ensureTagAndRelease } from '../release.mts'
+import { releaseBehindLiveGate } from '../release.mts'
 import {
   logger,
   rootPath,
@@ -68,7 +69,7 @@ async function openBrowser(url: string, cwd: string): Promise<void> {
 async function webLogin(home: string): Promise<boolean> {
   // `npm-auth-type: web` is load-bearing: without it the registry 401s the
   // session create (it gates the endpoint on the client declaring web auth).
-  const created = await fetch(`${NPM_REGISTRY}/-/v1/login`, {
+  const created = await httpRequest(`${NPM_REGISTRY}/-/v1/login`, {
     body: '{}',
     headers: {
       'content-type': 'application/json',
@@ -81,10 +82,10 @@ async function webLogin(home: string): Promise<boolean> {
     logger.fail(`Web-login session create failed (${created.status}).`)
     return false
   }
-  const session = (await created.json()) as {
+  const session = created.json<{
     doneUrl?: string | undefined
     loginUrl?: string | undefined
-  }
+  }>()
   if (!session.loginUrl || !session.doneUrl) {
     logger.fail('Web-login session response missing loginUrl/doneUrl.')
     return false
@@ -96,11 +97,11 @@ async function webLogin(home: string): Promise<boolean> {
   const deadline = Date.now() + 10 * 60 * 1000
   while (Date.now() < deadline) {
     // eslint-disable-next-line no-await-in-loop
-    const done = await fetch(session.doneUrl, {
+    const done = await httpRequest(session.doneUrl, {
       headers: { 'npm-auth-type': 'web', 'npm-command': 'login' },
     })
     if (done.status === 200) {
-      const { token } = (await done.json()) as { token?: string | undefined }
+      const { token } = done.json<{ token?: string | undefined }>()
       if (!token) {
         logger.fail('Web-login done response carried no token.')
         return false
@@ -128,7 +129,10 @@ async function webLogin(home: string): Promise<boolean> {
       logger.fail(`Web-login poll failed (${done.status}).`)
       return false
     }
-    const retryAfter = Number(done.headers.get('retry-after'))
+    const retryAfterHeader = done.headers['retry-after']
+    const retryAfter = Number(
+      Array.isArray(retryAfterHeader) ? retryAfterHeader[0] : retryAfterHeader,
+    )
     // eslint-disable-next-line no-await-in-loop
     await sleep(
       Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 2000,
@@ -194,16 +198,17 @@ export function buildApproveChoices(
  * are selected, and (absent `otpFromFlag`) 2FA falls through to the browser
  * web-OTP challenge.
  */
-export async function runApprove(options: {
+export async function runApprove(config: {
   dryRun: boolean
   noScan: boolean
   otpFromFlag: string | undefined
+  skipRelease?: boolean | undefined
   yes: boolean
 }): Promise<void> {
-  const { dryRun, noScan, otpFromFlag, yes } = {
+  const { dryRun, noScan, otpFromFlag, skipRelease, yes } = {
     __proto__: null,
-    ...options,
-  } as typeof options
+    ...config,
+  } as typeof config
   if (!(await ensureNpmLogin())) {
     process.exitCode = 1
     return
@@ -336,7 +341,8 @@ export async function runApprove(options: {
     logger.log('--no-scan: skipping the Socket full-scan gate.')
   } else {
     const scanned: string[] = []
-    for (const stageId of verified) {
+    for (let i = 0, { length } = verified; i < length; i += 1) {
+      const stageId = verified[i]!
       const entry = eligible.find(e => e.stageId === stageId)
       if (
         entry?.name &&
@@ -400,11 +406,30 @@ export async function runApprove(options: {
   // locally where git, gh, and npm are all authenticated; the CI --staged step
   // holds only an OIDC npm token (no contents:write / GH_TOKEN), so a release
   // attempt there fails and is also premature (nothing is public yet).
+  // `skipRelease` (--no-release) hands the tag + release to the caller — the
+  // publish pipeline's release stage owns them there, with verify-time
+  // checksums.
+  if (skipRelease) {
+    logger.log(
+      '--no-release: leaving the tag + GitHub release to the caller ' +
+        '(publish-pipeline release stage).',
+    )
+    return
+  }
   for (let i = 0, { length } = approvedEntries; i < length; i += 1) {
     const entry = approvedEntries[i]!
     if (entry.name && entry.version) {
+      // The tag + immutable release are the LAST markers: cut them only once
+      // the approved version is actually resolvable on the registry.
       // eslint-disable-next-line no-await-in-loop
-      await ensureTagAndRelease({ name: entry.name, version: entry.version })
+      const released = await releaseBehindLiveGate({
+        isLive: () => isAlreadyPublished(entry.name!, entry.version!, rootPath),
+        pkg: { name: entry.name, version: entry.version },
+        registry: 'npm',
+      })
+      if (!released) {
+        process.exitCode = 1
+      }
     }
   }
 }

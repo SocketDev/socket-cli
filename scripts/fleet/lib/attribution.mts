@@ -13,7 +13,7 @@
  * trailer naming an AI assistant. Anchored per line; case-insensitive.
  */
 export const AI_ATTRIBUTION_LINE_RE =
-  /^\s*(?:co-authored-by:.*(?:claude|copilot|anthropic|openai|chatgpt|gemini|cursor)|(?:🤖\s*)?generated with\s+\[?(?:claude|copilot|chatgpt|gemini|cursor))/i
+  /^\s*(?:(?:🤖\s*)?generated with\s+\[?(?:chatgpt|claude|copilot|cursor|gemini)|co-authored-by:.*(?:anthropic|chatgpt|claude|copilot|cursor|gemini|openai))/i
 
 /**
  * True when any line of the message is an AI-attribution line.

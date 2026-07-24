@@ -111,7 +111,7 @@ export async function runCheck(repoRoot: string): Promise<number> {
   let contracts: readonly UpstreamContract[]
   try {
     const mod = (await import(pathToFileURL(contractsPath).href)) as {
-      UPSTREAM_CONTRACTS?: readonly UpstreamContract[]
+      UPSTREAM_CONTRACTS?: readonly UpstreamContract[] | undefined
     }
     if (!Array.isArray(mod.UPSTREAM_CONTRACTS)) {
       logger.fail(

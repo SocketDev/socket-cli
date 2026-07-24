@@ -181,7 +181,9 @@ export function oldNameReferenced(
     } catch {
       continue
     }
-    for (const line of text.split('\n')) {
+    const lines = text.split('\n')
+    for (let i = 0, { length } = lines; i < length; i += 1) {
+      const line = lines[i]!
       if (/renamed-from:/i.test(line)) {
         continue
       }

@@ -11,6 +11,7 @@
  */
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -42,7 +43,7 @@ export function pickConfig(
 
 // Resolve the oxfmt `--ignore-path`. The fleet canonical
 // `.config/fleet/.prettierignore` excludes `.claude/`, the `.agents/` mirror,
-// `**/fleet/**`, and the vendored acorn blob — the patterns every repo shares.
+// `**/fleet/**` — the patterns every repo shares.
 // A repo with its OWN verbatim trees (e.g. socket-btm's
 // `additions/source-patched/` synced into the Node build, or `test/fixtures/`
 // corpora) declares them in a repo overlay at `.config/repo/.prettierignore`.
@@ -105,11 +106,15 @@ export function pickIgnorePath(
 // oxfmt writes. `files` defaults to `['.']` (the whole scoped tree); explicit
 // paths format just those. Pure + exported so the `--ignore-path` invariant is
 // unit-testable without spawning a subprocess.
-export function buildOxfmtArgs(options?: {
-  check?: boolean | undefined
-  cwd?: string | undefined
-  files?: readonly string[] | undefined
-}): string[] {
+export function buildOxfmtArgs(
+  options?:
+    | {
+        check?: boolean | undefined
+        cwd?: string | undefined
+        files?: readonly string[] | undefined
+      }
+    | undefined,
+): string[] {
   const opts = { __proto__: null, ...options } as {
     check?: boolean | undefined
     cwd?: string | undefined
@@ -170,15 +175,72 @@ export function parseIgnoreGlobs(content: string): string[] {
     .filter(s => s.length > 0 && !s.startsWith('#') && !s.startsWith('!'))
 }
 
+// The GENERATED / VENDORED / dep-0 path segments — artifacts a bundler, codegen
+// step, or upstream owns, never hand-written. These are dropped from the gate in
+// EVERY scope, even under template/ (which otherwise stays gated as the
+// wheelhouse canon): the built bootstrap/fleet.mjs, the _dispatch hook bundle, and the build/vendor/upstream trees
+// live
+// beside hand-written template sources but must never be format- or lint-gated.
+// The MIRROR exclusions (.claude / .agents / **/fleet/**) are deliberately NOT
+// here — template/ dogfoods those. Twin of the generated/vendored entries in
+// .config/fleet/.prettierignore (+ scripts/fleet/constants/generated-globs.mts).
+const NEVER_GATED_SEGMENTS = new Set([
+  'build',
+  'coverage',
+  'dist',
+  'fixtures',
+  'out',
+  'upstream',
+])
+
+/**
+ * Whether `unixPath` is a generated / vendored / dep-0 artifact that must never
+ * be format- or lint-gated in any scope — the built dep-0 fetcher bundle, a
+ * `_dispatch/` hook bundle, a gh-aw `*.lock.yml`, a `.d.ts` type declaration,
+ * or anything under a {@link NEVER_GATED_SEGMENTS} directory. Applied BEFORE
+ * the `template/**` keep so those artifacts drop out even inside the wheelhouse
+ * canon.
+ */
+export function isNeverGated(filePath: string): boolean {
+  const p = normalizePath(filePath)
+  // The rolldown-inlined dep-0 fetcher bundle (bootstrap/src/* IS gated).
+  // socket-lint: allow uncommented-regex -- generated-artifact path, described above.
+  if (/(?:^|\/)bootstrap\/fleet\.mjs$/.test(p)) {
+    return true
+  }
+  // A `.d.ts` / `.d.mts` / `.d.cts` type-declaration file (compiler output).
+  // socket-lint: allow uncommented-regex -- generated-artifact path, described above.
+  if (/\.d\.[cm]?ts$/.test(p)) {
+    return true
+  }
+  if (
+    p.includes('/_dispatch/') ||
+    p.includes('/hooks/fleet/_dist/') ||
+    p.endsWith('/hooks/fleet/index.cjs') ||
+    p.endsWith('.lock.yml')
+  ) {
+    return true
+  }
+  // The rolldown-bundled fleet oxlint plugin (build-oxlint-bundle.mts output).
+  // socket-lint: allow uncommented-regex -- generated-artifact path, described above.
+  if (/(?:^|\/)\.config\/fleet\/oxlint-plugin\.mjs$/.test(p)) {
+    return true
+  }
+  return p.split('/').some(seg => NEVER_GATED_SEGMENTS.has(seg))
+}
+
 /**
  * Filter a file list down to the paths the merged .prettierignore does NOT
- * exclude. oxfmt skips `--ignore-path` for files passed explicitly on the
- * argv (hit live: a member's staged pre-commit red-lit
- * `.claude/skills/fleet/…` cascade payload that the ignore file excludes,
- * wedging every payload landing), so the staged/modified lanes must
- * pre-filter. `template/**` is always kept: it exists only in the wheelhouse,
- * where it is the canonical SOURCE every mirror is cut from — the one place
- * those bytes must stay format-gated.
+ * exclude. oxfmt skips `--ignore-path` for files passed explicitly on the argv
+ * (hit live: a member's staged pre-commit red-lit `.claude/skills/fleet/…`
+ * cascade payload that the ignore file excludes, wedging every payload
+ * landing), so the staged/modified lanes must pre-filter. `template/**` is kept
+ * — it exists only in the wheelhouse, where it is the canonical SOURCE every
+ * mirror is cut from, the one place those bytes stay gated — EXCEPT for
+ * {@link isNeverGated} generated/vendored artifacts, which are dropped
+ * everywhere (oxlint bypasses its own ignorePatterns for files passed
+ * explicitly, so a staged/dogfood generated file would otherwise red-lint the
+ * gate on bundler/vendored bytes the gate never owns).
  */
 export function filterFormatIgnored(
   files: readonly string[],
@@ -194,15 +256,17 @@ export function filterFormatIgnored(
       'utf8',
     )
   } catch {
-    return [...files]
+    return files.filter(f => !isNeverGated(f.replaceAll('\\', '/')))
   }
   const regs = parseIgnoreGlobs(body).map(ignoreGlobToRegExp)
   return files.filter(f => {
     const unix = f.replaceAll('\\', '/')
-    // template/** stays gated (the canon every mirror is cut from) — except
-    // generated _dispatch artifacts (rolldown bundle + maker-written table),
-    // whose bytes the generators own, not the formatter.
-    if (unix.startsWith('template/') && !unix.includes('/_dispatch/')) {
+    // Generated / vendored / dep-0 artifacts are never gated, in any scope.
+    if (isNeverGated(unix)) {
+      return false
+    }
+    // template/** stays gated (the canon every mirror is cut from).
+    if (unix.startsWith('template/')) {
       return true
     }
     return !regs.some(r => r.test(unix))

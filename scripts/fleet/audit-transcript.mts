@@ -315,19 +315,19 @@ export function claudeProjectSlug(cwd: string): string {
 
 export function findRecentTranscript(
   home: string = os.homedir(),
+  // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- audit-transcript intentionally reads the user-invoked cwd to look up the matching Claude Code transcript dir; anchoring on the script's own location would always return the wheelhouse transcripts.
   cwd: string = process.cwd(),
 ): string | undefined {
   // ~/.claude/projects/<encoded-cwd>/<session-id>.jsonl
   // encoded-cwd flattens path separators (and a Windows drive separator) to
   // `-`. The leading `/` becomes the leading `-` automatically. For example,
   // `/Users/foo` -> `-Users-foo`; `C:\\Users\\foo` -> `C--Users-foo`.
-  // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- audit-transcript intentionally reads the user-invoked cwd to look up the matching Claude Code transcript dir; anchoring on the script's own location would always return the wheelhouse transcripts.
   const encoded = claudeProjectSlug(cwd)
   const dir = path.join(home, '.claude', 'projects', encoded)
   if (!existsSync(dir)) {
     return undefined
   }
-  // TOCTOU: another Claude session may rotate/delete a .jsonl between
+  // TOCTOU: another Claude Code session may rotate/delete a .jsonl between
   // readdir and stat. Tolerate missing entries instead of crashing.
   const entries = readdirSync(dir)
     .filter(f => f.endsWith('.jsonl'))
@@ -443,7 +443,9 @@ async function main(): Promise<void> {
     logger.log(`── ${severity.toUpperCase()} ──`)
     for (const [category, fs] of entries) {
       logger.log(`  ${category} (${fs.length})`)
-      for (const f of fs.slice(0, 5)) {
+      const fList = fs.slice(0, 5)
+      for (let i = 0, { length } = fList; i < length; i += 1) {
+        const f = fList[i]!
         logger.log(`    line ${f.line}: ${f.evidence}`)
       }
       if (fs.length > 5) {

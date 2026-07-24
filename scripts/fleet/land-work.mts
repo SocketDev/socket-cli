@@ -35,6 +35,7 @@ import { parsePorcelain } from './_shared/git-porcelain.mts'
 import { summarizeGroups } from './land-work/ai-summary.mts'
 import { commitMessage } from './land-work/message.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { REPO_ROOT } from './paths.mts'
 
 const logger = getDefaultLogger()
 
@@ -194,7 +195,9 @@ export function groupPaths(paths: readonly string[]): CommitGroup[] {
     }
   }
   const groups: CommitGroup[] = []
-  for (const scope of [...byScope.keys()].toSorted()) {
+  const scopes = [...byScope.keys()].toSorted()
+  for (let i = 0, { length } = scopes; i < length; i += 1) {
+    const scope = scopes[i]!
     const sorted = byScope.get(scope)!.slice().toSorted()
     groups.push({ paths: sorted, scope, type: deriveType(sorted) })
   }
@@ -221,17 +224,17 @@ export function partitionTree(entries: readonly DirtyPath[]): PartitionedTree {
   const skippedForeignTree: string[] = []
   const skippedGenerated: string[] = []
   const skippedOutsideSource: string[] = []
-  for (const { path, status } of entries) {
-    if (isUntrackedByDefault(path)) {
-      skippedForeignTree.push(path)
-    } else if (isGenerated(path)) {
-      skippedGenerated.push(path)
+  for (const { path: filePath, status } of entries) {
+    if (isUntrackedByDefault(filePath)) {
+      skippedForeignTree.push(filePath)
+    } else if (isGenerated(filePath)) {
+      skippedGenerated.push(filePath)
     } else if (isBothTouched(status)) {
-      skippedAmbiguous.push(path)
-    } else if (isSourceArea(path)) {
-      landable.push(path)
+      skippedAmbiguous.push(filePath)
+    } else if (isSourceArea(filePath)) {
+      landable.push(filePath)
     } else {
-      skippedOutsideSource.push(path)
+      skippedOutsideSource.push(filePath)
     }
   }
   return {
@@ -297,7 +300,7 @@ function inProgressOp(cwd: string): string | undefined {
 function landGroup(
   cwd: string,
   group: CommitGroup,
-  aiSummary?: string,
+  aiSummary?: string | undefined,
 ): boolean {
   const message = commitMessage(group, aiSummary)
   // `-A -- <paths>` so a DELETED path stages as a deletion — plain `git add`
@@ -325,7 +328,7 @@ function landGroup(
   return true
 }
 
-export async function main(cwd: string = process.cwd()): Promise<number> {
+export async function main(cwd: string = REPO_ROOT): Promise<number> {
   const argv = process.argv.slice(2)
   const doCommit = argv.includes('--commit')
   // Non-flag args restrict landing to EXACTLY this set (repo-relative paths).
@@ -380,7 +383,9 @@ export async function main(cwd: string = process.cwd()): Promise<number> {
     logger.warn(
       `Skipping ${partition.skippedAmbiguous.length} both-touched path(s) (staged + unstaged — a git add could blend a co-tenant's hunks); land by hand:`,
     )
-    for (const p of partition.skippedAmbiguous.slice(0, 10)) {
+    const pList = partition.skippedAmbiguous.slice(0, 10)
+    for (let i = 0, { length } = pList; i < length; i += 1) {
+      const p = pList[i]!
       logger.substep(p)
     }
   }
@@ -390,7 +395,9 @@ export async function main(cwd: string = process.cwd()): Promise<number> {
     logger.warn(
       `${partition.skippedOutsideSource.length} dirty path(s) outside source areas — NOT landed, review manually:`,
     )
-    for (const p of partition.skippedOutsideSource.slice(0, 10)) {
+    const ps = partition.skippedOutsideSource.slice(0, 10)
+    for (let i = 0, { length } = ps; i < length; i += 1) {
+      const p = ps[i]!
       logger.warn(`  ${p}`)
     }
   }

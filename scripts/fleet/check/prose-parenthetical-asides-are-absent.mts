@@ -46,7 +46,7 @@ const MIN_ASIDE_WORDS = 4
 // Lead-ins that make a parenthetical a legitimate reference or gloss, never an
 // aside to rewrite: e.g./i.e./cf./viz./resp./aka, "see ...", and bare URLs.
 const ALLOW_LEADIN =
-  /^(?:e\.g\.|eg\b|i\.e\.|ie\b|cf\.|viz\.|resp\.|aka\b|a\.k\.a\.|see\b|https?:\/\/)/i
+  /^(?:a\.k\.a\.|aka\b|cf\.|e\.g\.|eg\b|https?:\/\/|i\.e\.|ie\b|resp\.|see\b|viz\.)/i
 
 // Punctuation that marks the content as code, not prose: backticks, braces,
 // assignment/semicolons, and the `::` `=>` `->` operator sequences.

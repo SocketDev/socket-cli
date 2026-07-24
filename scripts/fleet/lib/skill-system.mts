@@ -77,7 +77,6 @@ export const FLEET_SKILL_CATALOG: Readonly<Record<string, SkillDefinition>> = {
   prose: { family: 'orient', mode: 'mutating' },
   pushing: { family: 'ship', mode: 'mutating' },
   'refreshing-history': { family: 'fleet', mode: 'mutating' },
-  'regenerating-patches': { family: 'maintain', mode: 'mutating' },
   'releasing-a-package': { family: 'ship', mode: 'mutating' },
   'rendering-chromium-to-png': { family: 'design', mode: 'read-only' },
   'reordering-release-bump': { family: 'ship', mode: 'mutating' },
