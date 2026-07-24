@@ -223,8 +223,6 @@ export function mdTable<T extends Array<Record<string, string>>>(
 
 export function mdTableOfPairs(
   arr: Array<[string, string]>,
-  // This is saying "an array of strings and the strings are a valid key of elements of T"
-  // In turn, T is defined above as the audit log event type from our OpenAPI docs.
   cols: string[],
 ): string {
   // Max col width required to fit all data in that column

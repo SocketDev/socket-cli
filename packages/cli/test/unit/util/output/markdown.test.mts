@@ -372,16 +372,16 @@ describe('markdown utilities', () => {
       expect(lines[3]).toBe('| ------- | ------- |')
     })
 
-    it('handles non-string values', () => {
-      const pairs: Array<[unknown, unknown]> = [
-        [123, true],
-        [false, { key: 'value' }],
+    it('pads keys and values to the widest column entry', () => {
+      const pairs: Array<[string, string]> = [
+        ['123', 'true'],
+        ['false', 'object value'],
       ]
 
       const result = mdTableOfPairs(pairs, ['A', 'B'])
 
-      expect(result).toContain('| 123   | true            |')
-      expect(result).toContain('| false | [object Object] |')
+      expect(result).toContain('| 123   | true         |')
+      expect(result).toContain('| false | object value |')
     })
   })
 })
