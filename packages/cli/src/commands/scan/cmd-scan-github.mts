@@ -137,18 +137,11 @@ export async function run(
     parentName,
   })
 
-  const {
-    githubToken,
-    interactive,
-    json,
-    markdown,
-    org: orgFlag,
-  } = cli.flags
+  const { githubToken, interactive, json, markdown, org: orgFlag } = cli.flags
 
   const dryRun = cli.flags['dryRun']
 
-  let { all, githubApiUrl, orgGithub, repos } =
-    cli.flags
+  let { all, githubApiUrl, orgGithub, repos } = cli.flags
 
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:

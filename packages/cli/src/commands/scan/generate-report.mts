@@ -94,7 +94,7 @@ export function addAlert(
         if (!verMap.has(file)) {
           verMap.set(file, new Map())
         }
-        const key = `${String(alert.type)} at ${alert.start}:${alert.end}`
+        const key = `${alert.type} at ${alert.start}:${alert.end}`
         const fileMap: FileMap = verMap.get(file) as FileMap
         const existing = fileMap.get(key) as ReportLeafNode | undefined
         if (!existing || isStricterPolicy(existing.policy, policyAction)) {

@@ -97,7 +97,8 @@ export async function enablePrAutoMerge({
       }`,
       { pullRequestId: prId },
     )
-    const respPrNumber = gqlResp?.enablePullRequestAutoMerge?.pullRequest?.number
+    const respPrNumber =
+      gqlResp?.enablePullRequestAutoMerge?.pullRequest?.number
     /* c8 ignore start - GraphQL success path requires a successful enablePullRequestAutoMerge response; tests mock the call to fail */
     if (respPrNumber) {
       return { enabled: true }

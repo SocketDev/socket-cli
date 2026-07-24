@@ -131,7 +131,6 @@ export type AskPattern = (typeof PATTERNS)[Exclude<
 const PATTERNS_BY_ACTION: Record<string, AskPattern | null | undefined> =
   PATTERNS
 
-
 /**
  * Severity levels mapping.
  */
