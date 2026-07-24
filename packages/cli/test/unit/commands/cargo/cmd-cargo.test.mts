@@ -203,7 +203,7 @@ describe('cmd-cargo', () => {
           .spyOn(process, 'exit')
           .mockImplementation((() => {}) as unknown)
 
-        cmdCargo.run(['install', 'ripgrep'], importMeta, context)
+        void cmdCargo.run(['install', 'ripgrep'], importMeta, context)
 
         // Simulate successful exit.
         mockChildProcess.emit('exit', 0, undefined)
@@ -243,7 +243,7 @@ describe('cmd-cargo', () => {
           .spyOn(process, 'exit')
           .mockImplementation((() => {}) as unknown)
 
-        cmdCargo.run([], importMeta, context)
+        void cmdCargo.run([], importMeta, context)
 
         // Simulate successful exit.
         mockChildProcess.emit('exit', 0, undefined)

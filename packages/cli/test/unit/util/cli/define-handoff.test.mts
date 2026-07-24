@@ -366,7 +366,7 @@ describe('defineHandoffCommand', () => {
         .spyOn(process, 'exit')
         .mockImplementation((() => {}) as unknown)
       try {
-        cmd.run([], { url: import.meta.url } as ImportMeta, {
+        void cmd.run([], { url: import.meta.url } as ImportMeta, {
           parentName: 'socket',
         })
         // Wait for the listener to register (async spawn resolution).
@@ -396,7 +396,7 @@ describe('defineHandoffCommand', () => {
         .spyOn(process, 'kill')
         .mockImplementation((() => {}) as unknown)
       try {
-        cmd.run([], { url: import.meta.url } as ImportMeta, {
+        void cmd.run([], { url: import.meta.url } as ImportMeta, {
           parentName: 'socket',
         })
         await new Promise(resolve => setImmediate(resolve))

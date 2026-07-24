@@ -64,8 +64,9 @@ describe('cmd-npm', () => {
       signal,
       success: exitCode === 0 && !signal,
     }
-    const spawnPromise = Promise.resolve(result)
-    Object.assign(spawnPromise, { process: mockChildProcess })
+    const spawnPromise = Object.assign(Promise.resolve(result), {
+      process: mockChildProcess,
+    })
     return { spawnPromise }
   }
 

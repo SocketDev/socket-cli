@@ -147,7 +147,7 @@ describe('spawn-node', () => {
     it('spawns node with IPC stdio', () => {
       mockSpawn.mockReturnValue({ process: { send: vi.fn() } })
 
-      spawnNode(['script.js'])
+      void spawnNode(['script.js'])
 
       expect(mockSpawn).toHaveBeenCalled()
       const spawnCall = mockSpawn.mock.calls[0]
@@ -158,7 +158,7 @@ describe('spawn-node', () => {
       const mockProcess = { send: vi.fn() }
       mockSpawn.mockReturnValue({ process: mockProcess })
 
-      spawnNode(['script.js'])
+      void spawnNode(['script.js'])
 
       expect(mockSendBootstrapHandshake).toHaveBeenCalledWith(
         mockProcess,
@@ -173,7 +173,7 @@ describe('spawn-node', () => {
       const mockProcess = { send: vi.fn() }
       mockSpawn.mockReturnValue({ process: mockProcess })
 
-      spawnNode(['script.js'], { ipc: { custom: 'data' } })
+      void spawnNode(['script.js'], { ipc: { custom: 'data' } })
 
       expect(mockSendBootstrapHandshake).toHaveBeenCalledWith(
         mockProcess,
@@ -186,7 +186,7 @@ describe('spawn-node', () => {
     it('preserves existing stdio array', () => {
       mockSpawn.mockReturnValue({ process: { send: vi.fn() } })
 
-      spawnNode(['script.js'], { stdio: ['pipe', 'pipe', 'pipe'] })
+      void spawnNode(['script.js'], { stdio: ['pipe', 'pipe', 'pipe'] })
 
       const spawnCall = mockSpawn.mock.calls[0]
       expect(spawnCall[2].stdio).toEqual(['pipe', 'pipe', 'pipe', 'ipc'])
@@ -195,7 +195,7 @@ describe('spawn-node', () => {
     it('converts string stdio to array with ipc', () => {
       mockSpawn.mockReturnValue({ process: { send: vi.fn() } })
 
-      spawnNode(['script.js'], { stdio: 'inherit' })
+      void spawnNode(['script.js'], { stdio: 'inherit' })
 
       const spawnCall = mockSpawn.mock.calls[0]
       expect(spawnCall[2].stdio).toEqual([
@@ -209,7 +209,7 @@ describe('spawn-node', () => {
     it('keeps stdio array unchanged when ipc is already present', () => {
       mockSpawn.mockReturnValue({ process: { send: vi.fn() } })
 
-      spawnNode(['script.js'], {
+      void spawnNode(['script.js'], {
         stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
       })
 

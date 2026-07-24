@@ -65,7 +65,7 @@ describe('outputUpdateRepo', () => {
         },
       }
 
-    outputUpdateRepo(result, 'test-repo', 'json')
+    await outputUpdateRepo(result, 'test-repo', 'json')
 
     expect(mockSerialize).toHaveBeenCalledWith(result)
     expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result))
@@ -81,7 +81,7 @@ describe('outputUpdateRepo', () => {
         cause: 'Invalid API token',
       }
 
-    outputUpdateRepo(result, 'test-repo', 'json')
+    await outputUpdateRepo(result, 'test-repo', 'json')
 
     expect(mockLogger.log).toHaveBeenCalled()
     expect(process.exitCode).toBe(2)
@@ -96,7 +96,7 @@ describe('outputUpdateRepo', () => {
         },
       }
 
-    outputUpdateRepo(result, 'my-repository', 'text')
+    await outputUpdateRepo(result, 'my-repository', 'text')
 
     expect(mockLogger.success).toHaveBeenCalledWith(
       'Repository `my-repository` updated successfully',
@@ -118,7 +118,7 @@ describe('outputUpdateRepo', () => {
         cause: 'Not found error',
       }
 
-    outputUpdateRepo(result, 'nonexistent-repo', 'text')
+    await outputUpdateRepo(result, 'nonexistent-repo', 'text')
 
     expect(mockFailMsg).toHaveBeenCalledWith(
       'Repository not found',
@@ -137,7 +137,7 @@ describe('outputUpdateRepo', () => {
         },
       }
 
-    outputUpdateRepo(result, 'markdown-repo', 'markdown')
+    await outputUpdateRepo(result, 'markdown-repo', 'markdown')
 
     expect(mockLogger.success).toHaveBeenCalledWith(
       'Repository `markdown-repo` updated successfully',
@@ -153,7 +153,7 @@ describe('outputUpdateRepo', () => {
         },
       }
 
-    outputUpdateRepo(result, 'repo-with-dashes_and_underscores', 'text')
+    await outputUpdateRepo(result, 'repo-with-dashes_and_underscores', 'text')
 
     expect(mockLogger.success).toHaveBeenCalledWith(
       'Repository `repo-with-dashes_and_underscores` updated successfully',
@@ -169,7 +169,7 @@ describe('outputUpdateRepo', () => {
         },
       }
 
-    outputUpdateRepo(result, '', 'text')
+    await outputUpdateRepo(result, '', 'text')
 
     expect(mockLogger.success).toHaveBeenCalledWith(
       'Repository `` updated successfully',
@@ -183,7 +183,7 @@ describe('outputUpdateRepo', () => {
         message: 'Error without code',
       }
 
-    outputUpdateRepo(result, 'test-repo', 'json')
+    await outputUpdateRepo(result, 'test-repo', 'json')
 
     expect(process.exitCode).toBe(1)
   })

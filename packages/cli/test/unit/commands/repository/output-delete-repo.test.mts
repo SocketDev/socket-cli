@@ -65,7 +65,7 @@ describe('outputDeleteRepo', () => {
         },
       }
 
-    outputDeleteRepo(result, 'test-repo', 'json')
+    await outputDeleteRepo(result, 'test-repo', 'json')
 
     expect(mockSerialize).toHaveBeenCalledWith(result)
     expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result))
@@ -81,7 +81,7 @@ describe('outputDeleteRepo', () => {
         cause: 'Invalid API token',
       }
 
-    outputDeleteRepo(result, 'test-repo', 'json')
+    await outputDeleteRepo(result, 'test-repo', 'json')
 
     expect(mockLogger.log).toHaveBeenCalled()
     expect(process.exitCode).toBe(2)
@@ -96,7 +96,7 @@ describe('outputDeleteRepo', () => {
         },
       }
 
-    outputDeleteRepo(result, 'my-repository', 'text')
+    await outputDeleteRepo(result, 'my-repository', 'text')
 
     expect(mockLogger.success).toHaveBeenCalledWith(
       'OK. Repository `my-repository` deleted successfully',
@@ -118,7 +118,7 @@ describe('outputDeleteRepo', () => {
         cause: 'Not found error',
       }
 
-    outputDeleteRepo(result, 'nonexistent-repo', 'text')
+    await outputDeleteRepo(result, 'nonexistent-repo', 'text')
 
     expect(mockFailMsg).toHaveBeenCalledWith(
       'Repository not found',
@@ -137,7 +137,7 @@ describe('outputDeleteRepo', () => {
         },
       }
 
-    outputDeleteRepo(result, 'markdown-repo', 'markdown')
+    await outputDeleteRepo(result, 'markdown-repo', 'markdown')
 
     expect(mockLogger.success).toHaveBeenCalledWith(
       'OK. Repository `markdown-repo` deleted successfully',
@@ -153,7 +153,7 @@ describe('outputDeleteRepo', () => {
         },
       }
 
-    outputDeleteRepo(result, 'repo-with-dashes_and_underscores', 'text')
+    await outputDeleteRepo(result, 'repo-with-dashes_and_underscores', 'text')
 
     expect(mockLogger.success).toHaveBeenCalledWith(
       'OK. Repository `repo-with-dashes_and_underscores` deleted successfully',
@@ -169,7 +169,7 @@ describe('outputDeleteRepo', () => {
         },
       }
 
-    outputDeleteRepo(result, '', 'text')
+    await outputDeleteRepo(result, '', 'text')
 
     expect(mockLogger.success).toHaveBeenCalledWith(
       'OK. Repository `` deleted successfully',
@@ -183,7 +183,7 @@ describe('outputDeleteRepo', () => {
         message: 'Error without code',
       }
 
-    outputDeleteRepo(result, 'test-repo', 'json')
+    await outputDeleteRepo(result, 'test-repo', 'json')
 
     expect(process.exitCode).toBe(1)
   })

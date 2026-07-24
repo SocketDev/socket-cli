@@ -66,7 +66,7 @@ describe('cmd-cargo', () => {
           .mockImplementation((() => {}) as unknown)
         mockKill.mockClear()
 
-        cmdCargo.run(['build'], importMeta, context)
+        void cmdCargo.run(['build'], importMeta, context)
 
         // Wait for handler registration.
         await new Promise(resolve => {
@@ -113,7 +113,7 @@ describe('cmd-cargo', () => {
 
         process.exitCode = undefined
 
-        cmdCargo.run(['build'], importMeta, context)
+        void cmdCargo.run(['build'], importMeta, context)
 
         // Check that exit code was set to 1 before child process exits.
         await vi.waitFor(() => {
@@ -153,7 +153,7 @@ describe('cmd-cargo', () => {
           .spyOn(process, 'exit')
           .mockImplementation((() => {}) as unknown)
 
-        cmdCargo.run(['build'], importMeta, context)
+        void cmdCargo.run(['build'], importMeta, context)
 
         // Wait for event listeners to be registered.
         await new Promise(resolve => {
@@ -193,7 +193,7 @@ describe('cmd-cargo', () => {
           .spyOn(process, 'exit')
           .mockImplementation((() => {}) as unknown)
 
-        cmdCargo.run(['build'], importMeta, context)
+        void cmdCargo.run(['build'], importMeta, context)
 
         // Wait for event listeners to be registered.
         await new Promise(resolve => {
@@ -233,7 +233,7 @@ describe('cmd-cargo', () => {
           .spyOn(process, 'kill')
           .mockImplementation((() => {}) as unknown)
 
-        cmdCargo.run(['build'], importMeta, context)
+        void cmdCargo.run(['build'], importMeta, context)
 
         // Wait for event listeners to be registered.
         await new Promise(resolve => {
@@ -273,7 +273,7 @@ describe('cmd-cargo', () => {
           .spyOn(process, 'kill')
           .mockImplementation((() => {}) as unknown)
 
-        cmdCargo.run(['test'], importMeta, context)
+        void cmdCargo.run(['test'], importMeta, context)
 
         // Wait for event listeners to be registered.
         await new Promise(resolve => {

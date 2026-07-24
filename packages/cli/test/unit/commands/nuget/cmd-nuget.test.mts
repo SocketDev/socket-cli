@@ -234,7 +234,7 @@ describe('cmd-nuget', () => {
         .mockImplementation((() => {}) as unknown)
       mockKill.mockClear()
 
-      cmdNuget.run([], { url: import.meta.url } as unknown, {
+      void cmdNuget.run([], { url: import.meta.url } as unknown, {
         parentName: 'socket',
       })
 
@@ -275,7 +275,7 @@ describe('cmd-nuget', () => {
 
       process.exitCode = undefined
 
-      cmdNuget.run(
+      void cmdNuget.run(
         ['install', 'Newtonsoft.Json'],
         { url: import.meta.url } as ImportMeta,
         {
@@ -321,7 +321,7 @@ describe('cmd-nuget', () => {
         .spyOn(process, 'exit')
         .mockImplementation((() => {}) as unknown)
 
-      cmdNuget.run(
+      void cmdNuget.run(
         ['install', 'Newtonsoft.Json'],
         { url: import.meta.url } as ImportMeta,
         {
@@ -367,7 +367,7 @@ describe('cmd-nuget', () => {
         .spyOn(process, 'kill')
         .mockImplementation((() => {}) as unknown)
 
-      cmdNuget.run(
+      void cmdNuget.run(
         ['install', 'Newtonsoft.Json'],
         { url: import.meta.url } as ImportMeta,
         {
@@ -413,7 +413,7 @@ describe('cmd-nuget', () => {
         .spyOn(process, 'exit')
         .mockImplementation((() => {}) as unknown)
 
-      cmdNuget.run([], { url: import.meta.url } as ImportMeta, {
+      void cmdNuget.run([], { url: import.meta.url } as ImportMeta, {
         parentName: 'socket',
       })
 
@@ -452,7 +452,7 @@ describe('cmd-nuget', () => {
         .spyOn(process, 'exit')
         .mockImplementation((() => {}) as unknown)
 
-      cmdNuget.run(['help'], { url: import.meta.url } as ImportMeta, {
+      void cmdNuget.run(['help'], { url: import.meta.url } as ImportMeta, {
         parentName: 'socket',
       })
 

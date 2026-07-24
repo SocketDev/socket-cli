@@ -3,6 +3,8 @@
  *   registration, execution, middleware, and plugin support.
  */
 
+import process from 'node:process'
+
 import type {
   CommandContext,
   CommandDefinition,
@@ -114,7 +116,17 @@ export class CommandRegistry implements ICommandRegistry {
     } else {
       // Plugin
       this.plugins.push(middlewareOrPlugin)
-      middlewareOrPlugin.install(this)
+      const installed = middlewareOrPlugin.install(this)
+      if (installed) {
+        // Async plugin installs are fire-and-forget from the sync use() API;
+        // attach a rejection handler so a failing install surfaces as a
+        // warning instead of an unhandled rejection.
+        installed.catch((e: unknown) => {
+          process.emitWarning(
+            `Command plugin install failed: ${errorMessage(e)}`,
+          )
+        })
+      }
     }
   }
 

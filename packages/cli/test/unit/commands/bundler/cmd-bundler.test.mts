@@ -196,7 +196,7 @@ describe('cmd-bundler', () => {
           .mockImplementation((() => {}) as unknown)
         mockKill.mockClear()
 
-        cmdBundler.run([], importMeta, context)
+        void cmdBundler.run([], importMeta, context)
 
         await new Promise(resolve => setImmediate(resolve))
         const exitBefore = mockExit.mock.calls.length
@@ -235,7 +235,7 @@ describe('cmd-bundler', () => {
 
         process.exitCode = undefined
 
-        cmdBundler.run(['install'], importMeta, context)
+        void cmdBundler.run(['install'], importMeta, context)
 
         // Check that exit code was set to 1 before child process exits.
         await vi.waitFor(() => {
@@ -275,7 +275,7 @@ describe('cmd-bundler', () => {
           .spyOn(process, 'exit')
           .mockImplementation((() => {}) as unknown)
 
-        cmdBundler.run(['install'], importMeta, context)
+        void cmdBundler.run(['install'], importMeta, context)
 
         // Wait for event listeners to be registered.
         await new Promise(resolve => {
@@ -315,7 +315,7 @@ describe('cmd-bundler', () => {
           .spyOn(process, 'exit')
           .mockImplementation((() => {}) as unknown)
 
-        cmdBundler.run(['install'], importMeta, context)
+        void cmdBundler.run(['install'], importMeta, context)
 
         // Wait for event listeners to be registered.
         await new Promise(resolve => {
@@ -355,7 +355,7 @@ describe('cmd-bundler', () => {
           .spyOn(process, 'kill')
           .mockImplementation((() => {}) as unknown)
 
-        cmdBundler.run(['install'], importMeta, context)
+        void cmdBundler.run(['install'], importMeta, context)
 
         // Wait for event listeners to be registered.
         await new Promise(resolve => {
@@ -395,7 +395,7 @@ describe('cmd-bundler', () => {
           .spyOn(process, 'kill')
           .mockImplementation((() => {}) as unknown)
 
-        cmdBundler.run(['check'], importMeta, context)
+        void cmdBundler.run(['check'], importMeta, context)
 
         // Wait for event listeners to be registered.
         await new Promise(resolve => {
@@ -437,7 +437,7 @@ describe('cmd-bundler', () => {
           .spyOn(process, 'exit')
           .mockImplementation((() => {}) as unknown)
 
-        cmdBundler.run(['install'], importMeta, context)
+        void cmdBundler.run(['install'], importMeta, context)
 
         // Simulate successful exit.
         mockChildProcess.emit('exit', 0, undefined)
@@ -474,7 +474,7 @@ describe('cmd-bundler', () => {
           .spyOn(process, 'exit')
           .mockImplementation((() => {}) as unknown)
 
-        cmdBundler.run([], importMeta, context)
+        void cmdBundler.run([], importMeta, context)
 
         // Simulate successful exit.
         mockChildProcess.emit('exit', 0, undefined)

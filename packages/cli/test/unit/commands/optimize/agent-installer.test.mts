@@ -98,7 +98,7 @@ describe('agent installer utilities', () => {
         agentVersion: { major: 10, minor: 0, patch: 0 },
       } as unknown
 
-      runAgentInstall(pkgEnvDetails)
+      await runAgentInstall(pkgEnvDetails)
 
       expect(spawn).toHaveBeenCalledWith(
         '/usr/bin/npm',
@@ -122,7 +122,7 @@ describe('agent installer utilities', () => {
         agentVersion: { major: 8, minor: 0, patch: 0 },
       } as unknown
 
-      runAgentInstall(pkgEnvDetails)
+      await runAgentInstall(pkgEnvDetails)
 
       expect(spawn).toHaveBeenCalledWith(
         '/usr/bin/pnpm',
@@ -152,7 +152,7 @@ describe('agent installer utilities', () => {
         pkgPath: '/test/project',
       } as unknown
 
-      runAgentInstall(pkgEnvDetails)
+      await runAgentInstall(pkgEnvDetails)
 
       expect(spawn).toHaveBeenCalledWith(
         '/usr/bin/yarn',
@@ -175,7 +175,7 @@ describe('agent installer utilities', () => {
         pkgPath: '/test/project',
       } as unknown
 
-      runAgentInstall(pkgEnvDetails, {
+      await runAgentInstall(pkgEnvDetails, {
         args: ['--frozen-lockfile', '--production'],
       })
 
@@ -203,7 +203,7 @@ describe('agent installer utilities', () => {
         agentVersion: { major: 8, minor: 0, patch: 0 },
       } as unknown
 
-      runAgentInstall(pkgEnvDetails, {
+      await runAgentInstall(pkgEnvDetails, {
         spinner: mockSpinner as unknown,
       })
 
@@ -236,7 +236,7 @@ describe('agent installer utilities', () => {
         pkgPath: '/test/project',
       } as unknown
 
-      runAgentInstall(pkgEnvDetails)
+      await runAgentInstall(pkgEnvDetails)
 
       expect(spawn).toHaveBeenCalledWith(
         '/usr/bin/unknown-agent',
@@ -263,7 +263,7 @@ describe('agent installer utilities', () => {
         stdio: 'inherit' as const,
       }
 
-      runAgentInstall(pkgEnvDetails, options)
+      await runAgentInstall(pkgEnvDetails, options)
 
       expect(spawn).toHaveBeenCalledWith(
         '/usr/bin/yarn',

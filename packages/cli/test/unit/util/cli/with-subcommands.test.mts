@@ -671,7 +671,7 @@ describe('meow-with-subcommands', () => {
           run: vi.fn(async (argv: unknown) => {
             // Simulate package picking deep subcommand.
             if (argv[0] === 'deep') {
-              packageRun(argv)
+              await packageRun(argv)
             }
           }),
         },

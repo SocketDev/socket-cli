@@ -52,4 +52,5 @@ async function main() {
   }
 }
 
-main()
+// main() catches internally and reports via process.exitCode.
+void main()

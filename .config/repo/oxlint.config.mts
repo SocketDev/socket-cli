@@ -20,16 +20,15 @@ import { config } from '../fleet/oxlint.config.mts'
 export default defineConfig(
   config({
     // Burn-down state (2026-07-24): await-thenable, no-base-to-string,
-    // no-unnecessary-type-conversion and restrict-template-expressions are
-    // DONE (entries deleted). 792 findings remain across the three rules
-    // below — no-floating-promises (85) next, then the test-mock-heavy giants
-    // unbound-method (135) and no-unsafe-type-assertion (572, ~57% in
-    // *.test.mts vitest mocks). CAUTION for no-unnecessary-type-conversion-
-    // style autofixes: coercions at the meow flag boundary can look redundant
-    // because number-typed flags used to lie — garbage input arrives as the
-    // raw string (see ValueOfFlagType in packages/cli/src/meow.mts).
+    // no-unnecessary-type-conversion, restrict-template-expressions and
+    // no-floating-promises are DONE (entries deleted). 707 findings remain
+    // across the two test-mock-heavy giants below — unbound-method (135),
+    // then no-unsafe-type-assertion (572, ~57% in *.test.mts vitest mocks).
+    // CAUTION for no-unnecessary-type-conversion-style autofixes: coercions
+    // at the meow flag boundary can look redundant because number-typed flags
+    // used to lie — garbage input arrives as the raw string (see
+    // ValueOfFlagType in packages/cli/src/meow.mts).
     rules: {
-      'typescript/no-floating-promises': 'off',
       'typescript/no-unsafe-type-assertion': 'off',
       'typescript/unbound-method': 'off',
     },

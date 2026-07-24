@@ -194,7 +194,7 @@ describe('cmd-gem', () => {
 
         process.exitCode = undefined
 
-        cmdGem.run(['install', 'rails'], importMeta, context)
+        void cmdGem.run(['install', 'rails'], importMeta, context)
 
         // Check that exit code was set to 1 before child process exits.
         await vi.waitFor(() => {
@@ -234,7 +234,7 @@ describe('cmd-gem', () => {
           .spyOn(process, 'exit')
           .mockImplementation((() => {}) as unknown)
 
-        cmdGem.run(['install', 'rails'], importMeta, context)
+        void cmdGem.run(['install', 'rails'], importMeta, context)
 
         // Wait for event listeners to be registered.
         await new Promise(resolve => {
@@ -274,7 +274,7 @@ describe('cmd-gem', () => {
           .spyOn(process, 'exit')
           .mockImplementation((() => {}) as unknown)
 
-        cmdGem.run(['install', 'rails'], importMeta, context)
+        void cmdGem.run(['install', 'rails'], importMeta, context)
 
         // Wait for event listeners to be registered.
         await new Promise(resolve => {
@@ -314,7 +314,7 @@ describe('cmd-gem', () => {
           .spyOn(process, 'kill')
           .mockImplementation((() => {}) as unknown)
 
-        cmdGem.run(['install', 'rails'], importMeta, context)
+        void cmdGem.run(['install', 'rails'], importMeta, context)
 
         // Wait for event listeners to be registered.
         await new Promise(resolve => {
@@ -354,7 +354,7 @@ describe('cmd-gem', () => {
           .spyOn(process, 'kill')
           .mockImplementation((() => {}) as unknown)
 
-        cmdGem.run(['list'], importMeta, context)
+        void cmdGem.run(['list'], importMeta, context)
 
         // Wait for event listeners to be registered.
         await new Promise(resolve => {
@@ -396,7 +396,7 @@ describe('cmd-gem', () => {
           .spyOn(process, 'exit')
           .mockImplementation((() => {}) as unknown)
 
-        cmdGem.run(['install', 'rails'], importMeta, context)
+        void cmdGem.run(['install', 'rails'], importMeta, context)
 
         // Simulate successful exit.
         mockChildProcess.emit('exit', 0, undefined)
@@ -436,7 +436,7 @@ describe('cmd-gem', () => {
           .spyOn(process, 'exit')
           .mockImplementation((() => {}) as unknown)
 
-        cmdGem.run([], importMeta, context)
+        void cmdGem.run([], importMeta, context)
 
         // Simulate successful exit.
         mockChildProcess.emit('exit', 0, undefined)

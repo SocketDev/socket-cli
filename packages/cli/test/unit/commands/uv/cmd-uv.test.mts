@@ -232,7 +232,7 @@ describe('cmd-uv', () => {
 
       process.exitCode = undefined
 
-      cmdUv.run(
+      void cmdUv.run(
         ['pip', 'install', 'flask'],
         { url: import.meta.url } as ImportMeta,
         {
@@ -278,7 +278,7 @@ describe('cmd-uv', () => {
         .spyOn(process, 'exit')
         .mockImplementation((() => {}) as unknown)
 
-      cmdUv.run(
+      void cmdUv.run(
         ['pip', 'install', 'flask'],
         { url: import.meta.url } as ImportMeta,
         {
@@ -324,7 +324,7 @@ describe('cmd-uv', () => {
         .spyOn(process, 'kill')
         .mockImplementation((() => {}) as unknown)
 
-      cmdUv.run(
+      void cmdUv.run(
         ['pip', 'install', 'flask'],
         { url: import.meta.url } as ImportMeta,
         {
@@ -370,7 +370,7 @@ describe('cmd-uv', () => {
         .spyOn(process, 'exit')
         .mockImplementation((() => {}) as unknown)
 
-      cmdUv.run([], { url: import.meta.url } as ImportMeta, {
+      void cmdUv.run([], { url: import.meta.url } as ImportMeta, {
         parentName: 'socket',
       })
 
@@ -407,7 +407,7 @@ describe('cmd-uv', () => {
         .spyOn(process, 'exit')
         .mockImplementation((() => {}) as unknown)
 
-      cmdUv.run(['--version'], { url: import.meta.url } as ImportMeta, {
+      void cmdUv.run(['--version'], { url: import.meta.url } as ImportMeta, {
         parentName: 'socket',
       })
 

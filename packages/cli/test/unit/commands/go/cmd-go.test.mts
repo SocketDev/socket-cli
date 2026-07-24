@@ -241,9 +241,13 @@ describe('cmd-go', () => {
 
       process.exitCode = undefined
 
-      cmdGo.run(['get', 'package'], { url: import.meta.url } as ImportMeta, {
-        parentName: 'socket',
-      })
+      void cmdGo.run(
+        ['get', 'package'],
+        { url: import.meta.url } as ImportMeta,
+        {
+          parentName: 'socket',
+        },
+      )
 
       // Check that exit code was set to 1 before child process exits.
       await vi.waitFor(() => {
@@ -283,9 +287,13 @@ describe('cmd-go', () => {
         .spyOn(process, 'exit')
         .mockImplementation((() => {}) as unknown)
 
-      cmdGo.run(['get', 'package'], { url: import.meta.url } as ImportMeta, {
-        parentName: 'socket',
-      })
+      void cmdGo.run(
+        ['get', 'package'],
+        { url: import.meta.url } as ImportMeta,
+        {
+          parentName: 'socket',
+        },
+      )
 
       // Wait for event listeners to be registered.
       await new Promise(resolve => {
@@ -325,9 +333,13 @@ describe('cmd-go', () => {
         .spyOn(process, 'kill')
         .mockImplementation((() => {}) as unknown)
 
-      cmdGo.run(['get', 'package'], { url: import.meta.url } as ImportMeta, {
-        parentName: 'socket',
-      })
+      void cmdGo.run(
+        ['get', 'package'],
+        { url: import.meta.url } as ImportMeta,
+        {
+          parentName: 'socket',
+        },
+      )
 
       // Wait for event listeners to be registered.
       await new Promise(resolve => {
@@ -367,7 +379,7 @@ describe('cmd-go', () => {
         .spyOn(process, 'exit')
         .mockImplementation((() => {}) as unknown)
 
-      cmdGo.run([], { url: import.meta.url } as ImportMeta, {
+      void cmdGo.run([], { url: import.meta.url } as ImportMeta, {
         parentName: 'socket',
       })
 
@@ -404,7 +416,7 @@ describe('cmd-go', () => {
         .spyOn(process, 'exit')
         .mockImplementation((() => {}) as unknown)
 
-      cmdGo.run(['version'], { url: import.meta.url } as ImportMeta, {
+      void cmdGo.run(['version'], { url: import.meta.url } as ImportMeta, {
         parentName: 'socket',
       })
 

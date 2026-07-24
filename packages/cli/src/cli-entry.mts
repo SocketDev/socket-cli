@@ -141,7 +141,8 @@ void (async () => {
     const registryUrl = lookupRegistryUrl()
     // Unified update notifier handles both SEA and npm automatically.
     // Fire-and-forget: Don't await to avoid blocking on HTTP keep-alive timeouts.
-    scheduleUpdateCheck({
+    // scheduleUpdateCheck catches internally, so void can't drop a rejection.
+    void scheduleUpdateCheck({
       authInfo: lookupRegistryAuthToken(registryUrl, { recursive: true }),
       name: isSeaBinary()
         ? SOCKET_CLI_BIN_NAME
@@ -152,8 +153,9 @@ void (async () => {
 
     // Write manifest entry if launched via bootstrap (SEA/smol).
     // Bootstrap passes spec and cache dir via env vars.
-    // Fire-and-forget: Don't await to avoid blocking.
-    writeBootstrapManifestEntry()
+    // Fire-and-forget: Don't await to avoid blocking. The function catches
+    // internally, so void can't drop a rejection.
+    void writeBootstrapManifestEntry()
 
     // Background preflight downloads for optional dependencies.
     // This silently downloads @coana-tech/cli, @cyclonedx/cdxgen, and the

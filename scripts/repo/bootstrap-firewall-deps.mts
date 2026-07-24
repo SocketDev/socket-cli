@@ -328,4 +328,10 @@ const main = async (): Promise<number> => {
   return 0
 }
 
-main().then(code => process.exit(code))
+main().then(
+  code => process.exit(code),
+  (e: unknown) => {
+    err(`Bootstrap failed: ${bootstrapErrorMessage(e)}`)
+    process.exit(1)
+  },
+)
