@@ -100,7 +100,7 @@ function resolveTriplets(spec: string): readonly CliExeTriplet[] | undefined {
   const parts = spec.split(',').map(part => part.trim())
   const triplets: CliExeTriplet[] = []
   for (let i = 0, { length } = parts; i < length; i += 1) {
-    const part = parts[i]!
+    const part = parts[i]
     if (!isCliExeTriplet(part)) {
       logger.error(
         `Unknown triplet "${part}" — expected one of: ${CLI_EXE_TRIPLETS.join(', ')}, or all/buildable`,
@@ -190,9 +190,7 @@ async function stageTarget(
   } catch (e) {
     // Non-zero exits reject; the error carries the exit code.
     const errCode =
-      e && typeof e === 'object' && 'code' in e
-        ? (e as { code: unknown }).code
-        : undefined
+      e && typeof e === 'object' && 'code' in e ? e.code : undefined
     code = typeof errCode === 'number' ? errCode : 1
   }
   if (code !== 0) {
@@ -267,7 +265,7 @@ async function main(): Promise<void> {
 
   let ok = true
   for (let i = 0, { length } = targets; i < length; i += 1) {
-    const target = targets[i]!
+    const target = targets[i]
     ok = guardTarget(target, version) && ok
   }
   if (!ok) {
@@ -282,14 +280,14 @@ async function main(): Promise<void> {
       `Plan (${dryRun ? 'dry-run' : 'PUBLISH'}, tag=${tag}, version=${version}):`,
     )
     for (let i = 0, { length } = targets; i < length; i += 1) {
-      const target = targets[i]!
+      const target = targets[i]
       logger.log(`  ${target.name}@${version}  <- ${target.dir}`)
     }
     return
   }
 
   for (let i = 0, { length } = targets; i < length; i += 1) {
-    const target = targets[i]!
+    const target = targets[i]
     // eslint-disable-next-line no-await-in-loop
     const staged = await stageTarget(target, { dryRun, tag })
     if (!staged) {
