@@ -1,9 +1,11 @@
 // Exercises the socket wrapper's bootstrap loader — the name/platform
 // resolution behind the cli.exe → legacy @socketbin fallback chain.
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
+
+import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
 import { afterAll, describe, expect, it } from 'vitest'
 
@@ -79,9 +81,9 @@ describe('socket bootstrap loader', () => {
       )
       expect(paths).toHaveLength(3)
       for (const p of paths) {
-        expect(p.endsWith(path.join('cli.exe.linux-x64', 'bin', 'socket'))).toBe(
-          true,
-        )
+        expect(
+          p.endsWith(path.join('cli.exe.linux-x64', 'bin', 'socket')),
+        ).toBe(true)
       }
     })
   })
@@ -89,9 +91,10 @@ describe('socket bootstrap loader', () => {
   describe('findBinaryPath', () => {
     const tempDirs: string[] = []
 
-    afterAll(() => {
-      for (const dir of tempDirs) {
-        rmSync(dir, { force: true, recursive: true })
+    afterAll(async () => {
+      for (let i = 0, { length } = tempDirs; i < length; i += 1) {
+        // eslint-disable-next-line no-await-in-loop -- sequential teardown of a handful of dirs.
+        await safeDelete(tempDirs[i]!)
       }
     })
 

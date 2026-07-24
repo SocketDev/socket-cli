@@ -33,49 +33,9 @@ const LEGACY_SOCKETBIN_NAMES = {
   'win32-x64': 'cli-win32-x64',
 }
 
-// Detect musl libc on Linux.
-function isMusl() {
-  if (platform() !== 'linux') {
-    return false
-  }
-  try {
-    // Check if we're running on Alpine/musl by looking at the libc.
-    const { execSync } = require('node:child_process')
-    const lddOutput = execSync('ldd --version 2>&1 || true', {
-      encoding: 'utf8',
-    })
-    return lddOutput.includes('musl')
-  } catch {
-    return false
-  }
-}
-
-// Resolve a pack-app triplet from platform + arch + musl flag. Returns
-// undefined on unsupported platforms.
-function resolveTriplet(p, a, musl) {
-  if (p !== 'darwin' && p !== 'linux' && p !== 'win32') {
-    return undefined
-  }
-  if (a !== 'arm64' && a !== 'x64') {
-    return undefined
-  }
-  const muslSuffix = p === 'linux' && musl ? '-musl' : ''
-  return `${p}-${a}${muslSuffix}`
-}
-
 // Binary file name inside a tail package's payload directory.
 function binaryNameFor(triplet) {
   return triplet.startsWith('win32-') ? 'socket.exe' : 'socket'
-}
-
-// Candidate package names for a triplet, preferred first.
-function candidatePackageNames(triplet) {
-  const names = [`@socketsecurity/cli.exe.${triplet}`]
-  const legacy = LEGACY_SOCKETBIN_NAMES[triplet]
-  if (legacy) {
-    names.push(`@socketbin/${legacy}`)
-  }
-  return names
 }
 
 // Candidate binary paths for one package, covering dependency, hoisted, and
@@ -91,6 +51,23 @@ function candidateBinaryPaths(packageName, binaryName, fromDir) {
     // Workspace/monorepo layout.
     join(fromDir, '..', '..', '..', 'node_modules', payload),
   ]
+}
+
+// Candidate package names for a triplet, preferred first.
+function candidatePackageNames(triplet) {
+  const names = [`@socketsecurity/cli.exe.${triplet}`]
+  const legacy = LEGACY_SOCKETBIN_NAMES[triplet]
+  if (legacy) {
+    names.push(`@socketbin/${legacy}`)
+  }
+  return names
+}
+
+// This loader ships dependency-free in the published `socket` wrapper, so the
+// fleet logger is not available at runtime.
+function fail(message) {
+  // oxlint-disable-next-line socket/no-console-prefer-logger -- dependency-free published bin script; the fleet logger cannot be required here.
+  console.error(message)
 }
 
 // Find the first existing binary across the fallback chain.
@@ -121,6 +98,36 @@ function findBinaryPath(triplet, fromDir) {
   return undefined
 }
 
+// Detect musl libc on Linux.
+function isMusl() {
+  if (platform() !== 'linux') {
+    return false
+  }
+  try {
+    // Check if we're running on Alpine/musl by looking at the libc.
+    const { execSync } = require('node:child_process')
+    const lddOutput = execSync('ldd --version 2>&1 || true', {
+      encoding: 'utf8',
+    })
+    return lddOutput.includes('musl')
+  } catch {
+    return false
+  }
+}
+
+// Resolve a pack-app triplet from platform + arch + musl flag. Returns
+// undefined on unsupported platforms.
+function resolveTriplet(p, a, musl) {
+  if (p !== 'darwin' && p !== 'linux' && p !== 'win32') {
+    return undefined
+  }
+  if (a !== 'arm64' && a !== 'x64') {
+    return undefined
+  }
+  const muslSuffix = p === 'linux' && musl ? '-musl' : ''
+  return `${p}-${a}${muslSuffix}`
+}
+
 // Main entry point.
 function main() {
   const triplet = resolveTriplet(platform(), arch(), isMusl())
@@ -130,14 +137,14 @@ function main() {
     const expected = triplet
       ? candidatePackageNames(triplet).join(' or ')
       : `an unsupported platform: ${platform()}-${arch()}`
-    console.error('Socket CLI binary not found for your platform.')
-    console.error(`Expected package: ${expected}`)
-    console.error('')
-    console.error('This may happen if:')
-    console.error('  - Your platform is not supported')
-    console.error('  - The optional dependency failed to install')
-    console.error('')
-    console.error('Try reinstalling: npm install -g socket')
+    fail('Socket CLI binary not found for your platform.')
+    fail(`Expected package: ${expected}`)
+    fail('')
+    fail('This may happen if:')
+    fail('  - Your platform is not supported')
+    fail('  - The optional dependency failed to install')
+    fail('')
+    fail('Try reinstalling: npm install -g socket')
     process.exit(1)
   }
 
@@ -150,7 +157,7 @@ function main() {
   // native spawn (required directly above), which returns a bare ChildProcess;
   // it is not the fleet `@socketsecurity/lib` spawn wrapper this rule guards.
   child.on('error', err => {
-    console.error(`Failed to start Socket CLI: ${err.message}`)
+    fail(`Failed to start Socket CLI: ${err.message}`)
     process.exit(1)
   })
 
