@@ -148,8 +148,8 @@ describe('output-config-get', () => {
 
         const logs = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
         expect(logs).toContain('# Config Value')
-        expect(logs).toContain('defaultOrg')
-        expect(logs).toContain('my-org')
+        // The exact value line — both quotes around the value must be present.
+        expect(logs).toContain("Config key 'defaultOrg' has value 'my-org'")
       })
 
       it('shows read-only note in markdown when config from flag', async () => {
