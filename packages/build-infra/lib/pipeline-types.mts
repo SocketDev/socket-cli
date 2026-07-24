@@ -118,7 +118,7 @@ export interface PipelineStage {
    */
   run: (
     ctx: PipelineContext,
-    params?: Record<string, unknown>,
+    params?: Record<string, unknown> | undefined,
   ) => Promise<StageResult | void>
   /**
    * Checkpoint lives at the shared build dir instead of per-platform (e.g.

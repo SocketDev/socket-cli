@@ -130,8 +130,8 @@ export function parseFlags(argv: string[]): ParsedFlags {
   const getValue = (flag: string): string | undefined => {
     const prefix = `${flag}=`
     for (let i = 0, { length } = argv; i < length; i += 1) {
-      const arg = argv[i]!
-      if (arg.startsWith(prefix)) {
+      const arg = argv[i]
+      if (arg?.startsWith(prefix)) {
         return arg.slice(prefix.length)
       }
     }

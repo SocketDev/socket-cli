@@ -262,7 +262,7 @@ export function getPlatformConfig(target: string) {
 export function formatPlatformTarget(
   platform: string,
   arch: string,
-  libc?: string,
+  libc?: string | undefined,
 ) {
   const muslSuffix = libc === 'musl' ? '-musl' : ''
   return `${platform}-${arch}${muslSuffix}`

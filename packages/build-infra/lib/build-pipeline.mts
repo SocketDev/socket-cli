@@ -75,7 +75,7 @@ const logger = getDefaultLogger()
  * building. Returns the context so the caller can render a summary.
  */
 export async function runPipeline(
-  options: RunPipelineOptions,
+  config: RunPipelineOptions,
   cliOverrides?: ParsedFlags | undefined,
 ): Promise<PipelineContext | undefined> {
   const {
@@ -88,7 +88,7 @@ export async function runPipeline(
     preflight,
     resolvePlatformArch,
     stages,
-  } = { __proto__: null, ...options } as typeof options
+  } = { __proto__: null, ...config } as typeof config
 
   const flags = cliOverrides ?? parseFlags(process.argv.slice(2))
   const buildMode = getBuildMode(flags.raw ?? new Set())
@@ -176,7 +176,10 @@ export async function runPipeline(
     }
     const stagesToClean = stages.slice(idx)
     for (let i = 0, { length } = stagesToClean; i < length; i += 1) {
-      const stage = stagesToClean[i]!
+      const stage = stagesToClean[i]
+      if (!stage) {
+        continue
+      }
       const buildDir = resolveCheckpointBuildDir(stage, ctx)
       const markerDir = path.join(buildDir, 'checkpoints')
       for (const ext of ['.json', '.tar.gz', '.tar.gz.lock']) {
@@ -217,7 +220,10 @@ export async function runPipeline(
 
   const stagesToRun = stages.slice(startIdx)
   for (let i = 0, { length } = stagesToRun; i < length; i += 1) {
-    const stage = stagesToRun[i]!
+    const stage = stagesToRun[i]
+    if (!stage) {
+      continue
+    }
     await runStage(stage, ctx, {})
   }
 
@@ -240,10 +246,10 @@ export async function runPipeline(
  * CLI entry-point helper. Wraps runPipeline with a top-level error handler.
  */
 export async function runPipelineCli(
-  options: RunPipelineOptions,
+  config: RunPipelineOptions,
 ): Promise<void> {
   try {
-    await runPipeline(options)
+    await runPipeline(config)
   } catch (e) {
     // Set exit code and rethrow so the caller's top-level handler is the
     // single place that formats/logs the failure. Logging here AND in the

@@ -70,7 +70,10 @@ export interface CheckpointData {
   platform?: string | undefined
 }
 
-export function checkpointDir(buildDir: string, packageName?: string) {
+export function checkpointDir(
+  buildDir: string,
+  packageName?: string | undefined,
+) {
   return packageName
     ? path.join(buildDir, 'checkpoints', packageName)
     : path.join(buildDir, 'checkpoints')
@@ -87,7 +90,10 @@ export function checkpointFile(
 /**
  * Delete all checkpoints under a build dir (or a single package's scope).
  */
-export async function cleanCheckpoint(buildDir: string, packageName?: string) {
+export async function cleanCheckpoint(
+  buildDir: string,
+  packageName?: string | undefined,
+) {
   const dir = checkpointDir(buildDir, packageName)
   if (!existsSync(dir)) {
     return
@@ -98,10 +104,10 @@ export async function cleanCheckpoint(buildDir: string, packageName?: string) {
 
 export function computeCacheHash(
   sourcePaths: string[] | undefined,
-  options: PlatformCacheKeyOptions,
+  config: PlatformCacheKeyOptions,
 ) {
   const sourcesHash = sourcePaths?.length ? hashSourcePaths(sourcePaths) : ''
-  const platformHash = platformCacheKey(options || {})
+  const platformHash = platformCacheKey(config || {})
   if (!sourcesHash && !platformHash) {
     return ''
   }
@@ -289,7 +295,7 @@ export async function shouldRun(
   packageName: string | undefined,
   name: string,
   force = false,
-  sourcePaths?: string[],
+  sourcePaths?: string[] | undefined,
   options: PlatformCacheKeyOptions = {},
 ) {
   if (force) {
