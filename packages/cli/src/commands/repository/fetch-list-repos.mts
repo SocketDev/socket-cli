@@ -1,16 +1,17 @@
 import { handleApiCall } from '../../util/socket/api.mjs'
 import { setupSdk } from '../../util/socket/sdk.mjs'
 
+import type { Direction, RepositorySort } from './types.mts'
 import type { CResult } from '../../types.mts'
 import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 export type FetchListReposConfig = {
-  direction: string
+  direction: Direction
   orgSlug: string
   page: number
   perPage: number
-  sort: string
+  sort: RepositorySort
 }
 
 export type FetchListReposOptions = {

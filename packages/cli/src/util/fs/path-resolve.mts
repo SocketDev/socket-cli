@@ -7,8 +7,8 @@ import {
   pathsToGlobPatterns,
 } from './glob.mts'
 
+import type { SupportedFiles } from './glob.mts'
 import type { SocketYml } from '../socket-yaml.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 export function findBinPathDetailsSync(binName: string): {
   name: string
@@ -42,7 +42,7 @@ export type PackageFilesForScanOptions = {
 
 export async function getPackageFilesForScan(
   inputPaths: string[],
-  supportedFiles: SocketSdkSuccessResult<'getSupportedFiles'>['data'],
+  supportedFiles: SupportedFiles,
   options?: PackageFilesForScanOptions | undefined,
 ): Promise<string[]> {
   const { config: socketConfig, cwd = process.cwd() } = {

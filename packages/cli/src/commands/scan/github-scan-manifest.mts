@@ -20,7 +20,7 @@ import { socketHttpRequest } from '../../util/socket/api.mjs'
 import { getOctokit, withGitHubRetry } from '../../util/git/github.mts'
 
 import type { CResult } from '../../types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
+import type { SupportedFiles } from '../../util/fs/glob.mts'
 
 const logger = getDefaultLogger()
 
@@ -173,9 +173,7 @@ export async function testAndDownloadManifestFile({
   file: string
   orgGithub: string
   repoSlug: string
-  supportedFiles:
-    | SocketSdkSuccessResult<'getSupportedFiles'>['data']
-    | undefined
+  supportedFiles: SupportedFiles | undefined
   tmpDir: string
 }): Promise<CResult<{ isManifest: boolean }>> {
   debug(`testing: file ${file}`)

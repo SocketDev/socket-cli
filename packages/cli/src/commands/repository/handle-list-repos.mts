@@ -2,7 +2,7 @@ import { fetchListAllRepos } from './fetch-list-all-repos.mts'
 import { fetchListRepos } from './fetch-list-repos.mts'
 import { outputListRepos } from './output-list-repos.mts'
 
-import type { Direction } from './types.mts'
+import type { Direction, RepositorySort } from './types.mts'
 import type { OutputKind } from '../../types.mts'
 
 export async function handleListRepos({
@@ -20,7 +20,7 @@ export async function handleListRepos({
   outputKind: OutputKind
   page: number
   perPage: number
-  sort: string
+  sort: RepositorySort
 }): Promise<void> {
   if (all) {
     const data = await fetchListAllRepos(orgSlug, {

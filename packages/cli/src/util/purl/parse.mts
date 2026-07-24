@@ -154,9 +154,12 @@ export function getPurlObject(
   const { throws } = { __proto__: null, ...options } as PurlObjectOptions
   const shouldThrow = throws === undefined || throws
   try {
+    // The casts brand the parser's `type: string` as the known-ecosystem
+    // PURL_Type union — packageurl-js validates the type component against the
+    // purl spec at construction, but its typings keep the field a plain string.
     return typeof purl === 'string'
       ? (PackageURL.fromString(normalizePurl(purl)) as PurlObject<PackageURL>)
-      : purl
+      : (purl as PurlObject<PackageURL | SocketArtifact>)
   } catch (e) {
     if (shouldThrow) {
       throw e

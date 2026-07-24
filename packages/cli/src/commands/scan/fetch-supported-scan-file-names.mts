@@ -4,8 +4,8 @@ import { setupSdk } from '../../util/socket/sdk.mjs'
 
 import type { CResult } from '../../types.mts'
 import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
+import type { SupportedFiles } from '../../util/fs/glob.mts'
 import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 export type FetchSupportedScanFileNamesOptions = {
   orgSlug?: string | undefined
@@ -15,7 +15,7 @@ export type FetchSupportedScanFileNamesOptions = {
 
 export async function fetchSupportedScanFileNames(
   options?: FetchSupportedScanFileNamesOptions | undefined,
-): Promise<CResult<SocketSdkSuccessResult<'getSupportedFiles'>['data']>> {
+): Promise<CResult<SupportedFiles>> {
   const { orgSlug, sdkOpts, spinner } = {
     __proto__: null,
     ...options,

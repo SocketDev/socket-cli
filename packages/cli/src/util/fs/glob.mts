@@ -18,8 +18,18 @@ import { NODE_MODULES, PNPM } from '../../constants.mts'
 
 import type { Agent } from '../ecosystem/environment.mts'
 import type { SocketYml } from '../socket-yaml.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
+import type { operations } from '@socketsecurity/sdk-stable/types/api'
 import type { Options as GlobOptions } from 'fast-glob'
+
+/**
+ * The `getSupportedFiles` response payload: ecosystem name -> pattern name ->
+ * `{ pattern }` glob. Typed from the SDK's raw OpenAPI schema because the SDK
+ * root export's `SocketSdkSuccessResult<'getSupportedFiles'>['data']` resolves
+ * to `any` under TypeScript 7's nodenext resolution (extensionless relative
+ * imports inside the SDK's dist typings fail to resolve).
+ */
+export type SupportedFiles =
+  operations['getSupportedFiles']['responses']['200']['content']['application/json']
 
 const DEFAULT_IGNORE_FOR_GIT_IGNORE = defaultIgnore.filter(
   (p: string) => !p.endsWith('.gitignore'),
@@ -44,7 +54,7 @@ const IGNORED_DIRS = [
 const IGNORED_DIR_PATTERNS = IGNORED_DIRS.map(i => `**/${i}`)
 
 export function createSupportedFilesFilter(
-  supportedFiles: SocketSdkSuccessResult<'getSupportedFiles'>['data'],
+  supportedFiles: SupportedFiles,
 ): (filepath: string) => boolean {
   const patterns = getSupportedFilePatterns(supportedFiles)
   return (filepath: string) =>
@@ -52,7 +62,7 @@ export function createSupportedFilesFilter(
 }
 
 export function getSupportedFilePatterns(
-  supportedFiles: SocketSdkSuccessResult<'getSupportedFiles'>['data'],
+  supportedFiles: SupportedFiles,
 ): string[] {
   const patterns: string[] = []
   const keys = Object.keys(supportedFiles)
@@ -286,7 +296,7 @@ export function ignorePatternToMinimatch(pattern: string): string {
 
 export function isReportSupportedFile(
   filepath: string,
-  supportedFiles: SocketSdkSuccessResult<'getSupportedFiles'>['data'],
+  supportedFiles: SupportedFiles,
 ) {
   const patterns = getSupportedFilePatterns(supportedFiles)
   return micromatch.some(filepath, patterns, { dot: true })

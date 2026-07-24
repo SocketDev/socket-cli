@@ -13,7 +13,7 @@ import { determineOrgSlug } from '../../util/socket/org-slug.mjs'
 import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
 import { checkCommandInput } from '../../util/validation/check-input.mts'
 
-import type { Direction } from './types.mts'
+import type { Direction, RepositorySort } from './types.mts'
 import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 import type { MeowFlags } from '../../flags.mts'
 
@@ -28,7 +28,7 @@ export interface RepositoryListFlags {
   org: string
   page: number
   perPage: number
-  sort: string
+  sort: RepositorySort
 }
 
 export const CMD_NAME = 'list'
@@ -163,6 +163,12 @@ export async function run(
       nook: true,
       test: direction === 'asc' || direction === 'desc',
       message: 'The --direction value must be "asc" or "desc"',
+      fail: 'unexpected value',
+    },
+    {
+      nook: true,
+      test: sort === 'created_at' || sort === 'name' || sort === 'updated_at',
+      message: 'The --sort value must be "created_at", "name", or "updated_at"',
       fail: 'unexpected value',
     },
   )
