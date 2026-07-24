@@ -389,12 +389,24 @@ async function testAndDownloadManifestFiles({
       if (result.data.isManifest) {
         fileCount += 1
       }
+    } else if (isGitHubBlockingError(result.message)) {
+      // Rate limit / auth / abuse mid-download must stop the run even when
+      // some manifests already succeeded; otherwise scanOneRepo creates a
+      // scan and the multi-repo loop never sees the blocking error.
+      firstFailureResult = result
+      break
     } else if (!firstFailureResult) {
       firstFailureResult = result
     }
   }
   logger.groupEnd()
   logger.info('Found and downloaded', fileCount, 'manifest files')
+
+  // Prefer a blocking GitHub error over a partial success so the outer loop
+  // can fail loudly and skip remaining repos (ASK-167).
+  if (firstFailureResult && isGitHubBlockingError(firstFailureResult.message)) {
+    return firstFailureResult
+  }
 
   if (!fileCount) {
     if (firstFailureResult) {
