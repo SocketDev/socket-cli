@@ -8,6 +8,7 @@ import { parse as yamlParse } from 'yaml'
 import { isDirSync, safeReadFile } from '@socketsecurity/registry/lib/fs'
 import { defaultIgnore } from '@socketsecurity/registry/lib/globs'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
+import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { transform } from '@socketsecurity/registry/lib/streams'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
@@ -226,6 +227,73 @@ type GlobWithGitIgnoreOptions = GlobOptions & {
   socketConfig?: SocketYml | undefined
 }
 
+type IgnoreMatcher = ReturnType<typeof ignore>
+
+// Whether `targetPath` is ignored by the gitignore matchers on its ancestor
+// directories, root to leaf, last match wins. Each matcher tests the path
+// relative to its own directory (how git stores patterns); `isDir` appends a
+// trailing slash so a directory-only rule like `build/` matches the directory.
+// `targetPath` is POSIX, relative to cwd.
+function pathIgnoredByChain(
+  targetPath: string,
+  isDir: boolean,
+  matchersByDir: Map<string, IgnoreMatcher[]>,
+): boolean {
+  let ignored = false
+  // Ancestor directories of targetPath: '', then each parent dir prefix.
+  const segments = targetPath.split('/')
+  segments.pop()
+  const dirs = ['']
+  let prefix = ''
+  for (let i = 0, { length } = segments; i < length; i += 1) {
+    prefix = prefix ? `${prefix}/${segments[i]}` : segments[i]!
+    dirs.push(prefix)
+  }
+  for (let i = 0, { length } = dirs; i < length; i += 1) {
+    const dir = dirs[i]!
+    const matchers = matchersByDir.get(dir)
+    if (!matchers) {
+      continue
+    }
+    const relToDir = dir === '' ? targetPath : targetPath.slice(dir.length + 1)
+    const probe = isDir ? `${relToDir}/` : relToDir
+    for (let j = 0, len = matchers.length; j < len; j += 1) {
+      const result = matchers[j]!.test(probe)
+      if (result.ignored) {
+        ignored = true
+      } else if (result.unignored) {
+        ignored = false
+      }
+    }
+  }
+  return ignored
+}
+
+// Whether `relPath` is ignored, honoring git's rule that an excluded directory
+// is never descended into: a file is ignored if any ancestor directory is, and a
+// deeper `!` cannot re-include a file under an excluded parent. Walks ancestors
+// top-down, short-circuiting on the first excluded one. POSIX, relative to cwd.
+function isIgnoredAlongChain(
+  relPath: string,
+  matchersByDir: Map<string, IgnoreMatcher[]>,
+): boolean {
+  // Outside cwd (a `..` prefix) or empty: outside every gitignore's domain, and
+  // the `ignore` package throws on such input, so report not-ignored.
+  if (!relPath || relPath === '..' || relPath.startsWith('../')) {
+    return false
+  }
+  const segments = relPath.split('/')
+  const last = segments.length - 1
+  let prefix = ''
+  for (let i = 0; i <= last; i += 1) {
+    prefix = prefix ? `${prefix}/${segments[i]}` : segments[i]!
+    if (pathIgnoredByChain(prefix, i < last, matchersByDir)) {
+      return true
+    }
+  }
+  return false
+}
+
 export async function globWithGitIgnore(
   patterns: string[] | readonly string[],
   options: GlobWithGitIgnoreOptions,
@@ -238,19 +306,24 @@ export async function globWithGitIgnore(
     ...additionalOptions
   } = { __proto__: null, ...options } as GlobWithGitIgnoreOptions
 
+  // Anchored minimatch patterns for fast-glob: built-in ignored dirs, venv
+  // markers, projectIgnorePaths, and every discovered `.gitignore`, translated
+  // and anchored from cwd. When no pattern is negated, fast-glob does the whole
+  // gitignore match from this set.
   const ignores = new Set<string>(IGNORED_DIR_PATTERNS)
 
-  // CLI-supplied `additionalIgnores` are already anchored minimatch — they
-  // must not pass through the `ignore` package (whose gitignore "match
-  // anywhere" semantics would re-interpret a bare `tests` to match
-  // `subdir/tests/foo.json`). Keep them in fast-glob's ignore list across
-  // both paths; only gitignore-translated entries go into the `ig` matcher.
+  // CLI-supplied `additionalIgnores` are already anchored minimatch from cwd, so
+  // they go straight to fast-glob and never enter the gitignore matchers (whose
+  // "match anywhere" semantics would re-interpret a bare `tests` as `**/tests`).
   const cliMinimatchIgnores = additionalIgnores ?? []
 
   const projectIgnorePaths = socketConfig?.projectIgnorePaths
-  const projectIgnoreGlobs = Array.isArray(projectIgnorePaths)
+  const projectIgnoreLines = Array.isArray(projectIgnorePaths)
+    ? projectIgnorePaths
+    : []
+  const projectIgnoreGlobs = projectIgnoreLines.length
     ? ignoreFileLinesToGlobPatterns(
-        projectIgnorePaths,
+        projectIgnoreLines,
         path.join(cwd, '.gitignore'),
         cwd,
       )
@@ -259,19 +332,18 @@ export async function globWithGitIgnore(
     ignores.add(pattern)
   }
 
-  // The discovery walk (`.gitignore` files plus `pyvenv.cfg` venv markers) has
-  // to honor the same directory exclusions as the package walk below. Otherwise
-  // an unreadable subtree (e.g. a postgres `pgdata` dir owned by another uid, or
-  // a Docker volume mount) makes fast-glob throw `EACCES: permission denied,
-  // scandir` *here* — before --exclude-paths (`cliMinimatchIgnores`) or
-  // projectIgnorePaths are ever applied to the main walk, which is why excluding
-  // the path did not help. `suppressErrors` is the backstop: a directory the
-  // user simply cannot read cannot contain manifests they could scan anyway, so
-  // skip it instead of aborting the whole `socket fix` / `socket scan` run.
-  // Negated patterns are dropped — for a discovery walk they could only
-  // re-include a subtree (never prevent a crash), and fast-glob treats `!`
-  // ignore entries inconsistently. Folding pyvenv.cfg discovery into this same
-  // walk avoids a second full-tree traversal.
+  // Raw per-directory `.gitignore` contents from discovery. Matchers are built
+  // from these only when a pattern is negated (see below).
+  const gitignoreFiles: Array<{ content: string; dir: string }> = []
+  // Directory excludes from discovered pyvenv.cfg markers, so virtualenvs with
+  // non-conventional names are pruned. Fed to fast-glob's ignore on every path.
+  const venvGlobs: string[] = []
+
+  // Discover `.gitignore` files and `pyvenv.cfg` venv markers in one walk,
+  // honoring the same dir exclusions as the package walk so an unreadable subtree
+  // (EACCES, foreign-uid pgdata, Docker mount) can't abort it. `suppressErrors`
+  // skips dirs the user cannot read; negated patterns are dropped here because
+  // fast-glob treats `!` ignore entries inconsistently.
   const discoveryStream = fastGlob.globStream(
     ['**/.gitignore', `**/${PYVENV_CFG}`],
     {
@@ -288,28 +360,38 @@ export async function globWithGitIgnore(
       suppressErrors: true,
     },
   )
-  for await (const ignorePatterns of transform(
+  for await (const found of transform(
     discoveryStream,
     async (filepath: string) => {
+      const dirRel = normalizePath(path.relative(cwd, path.dirname(filepath)))
       if (path.basename(filepath) === PYVENV_CFG) {
-        // A pyvenv.cfg sits at the venv root, so exclude the whole directory.
-        const relDir = path
-          .relative(cwd, path.dirname(filepath))
-          .replace(/\\/g, '/')
-        // An empty relDir means the scan target itself is a venv root; don't
-        // emit `/**`, which would exclude everything the user explicitly targeted.
-        return relDir ? [`${relDir}/**`] : []
+        // A pyvenv.cfg sits at the venv root, so exclude the whole directory. An
+        // empty dirRel means the scan target itself is a venv root; don't emit
+        // `/**`, which would exclude everything the user explicitly targeted.
+        return {
+          content: '',
+          dir: dirRel,
+          patterns: dirRel ? [`${dirRel}/**`] : [],
+          venv: true,
+        }
       }
-      return ignoreFileToGlobPatterns(
-        (await safeReadFile(filepath)) ?? '',
-        filepath,
-        cwd,
-      )
+      const content = (await safeReadFile(filepath)) ?? ''
+      return {
+        content,
+        dir: dirRel,
+        patterns: ignoreFileToGlobPatterns(content, filepath, cwd),
+        venv: false,
+      }
     },
     { concurrency: 8 },
   )) {
-    for (const p of ignorePatterns) {
+    for (const p of found.patterns) {
       ignores.add(p)
+    }
+    if (found.venv) {
+      venvGlobs.push(...found.patterns)
+    } else if (found.content) {
+      gitignoreFiles.push({ content: found.content, dir: found.dir })
     }
   }
 
@@ -326,46 +408,82 @@ export async function globWithGitIgnore(
     absolute: true,
     cwd,
     dot: true,
+    // With a negation, the per-dir matcher chain (below) covers only gitignore
+    // and projectIgnore patterns, so fast-glob still prunes the built-in ignored
+    // dirs and discovered venvs. Without one, the full anchored set goes to
+    // fast-glob, which does the whole match.
     ignore: hasNegatedPattern
-      ? [...defaultIgnore, ...cliMinimatchIgnores]
+      ? [
+          ...defaultIgnore,
+          ...IGNORED_DIR_PATTERNS,
+          ...venvGlobs,
+          ...cliMinimatchIgnores,
+        ]
       : [...ignores, ...cliMinimatchIgnores].map(stripTrailingSlash),
     ...additionalOptions,
-    // Skip directories the running user cannot read rather than aborting the
-    // whole walk on the first `EACCES` (see the .gitignore discovery walk
-    // above for the full rationale). Pinned after `...additionalOptions` so a
-    // caller's options bag cannot accidentally flip it back to `false` and
-    // re-introduce the crash — `suppressErrors` is a safety invariant here, not
-    // a tunable.
+    // Skip dirs the running user cannot read instead of aborting on the first
+    // `EACCES`. Pinned after `...additionalOptions` so a caller's options bag
+    // cannot flip it off; it is a safety invariant, not a tunable.
     suppressErrors: true,
   } as GlobOptions
 
-  // When no filter is provided and no negated patterns exist, use the fast path.
+  // No negation and no filter: fast-glob's anchored ignore set is authoritative.
   if (!hasNegatedPattern && !filter) {
     return await fastGlob.glob(patterns as string[], globOptions)
   }
-  // Add support for negated "ignore" patterns which many globbing libraries,
-  // including 'fast-glob', 'globby', and 'tinyglobby', lack support for.
-  // Use streaming to avoid unbounded memory accumulation.
-  // This is critical for large monorepos with 100k+ files.
+
+  // When a pattern is negated, match each candidate against the gitignore
+  // ancestor chain. One matcher per `.gitignore` is built from its raw lines and
+  // deduped by content via `igByContent`, keeping compiled-regex memory bounded
+  // by the number of DISTINCT `.gitignore` contents, not by file count (a single
+  // matcher over every anchored pattern can exhaust V8 code space on big repos).
+  let matchersByDir: Map<string, IgnoreMatcher[]> | undefined
+  if (hasNegatedPattern) {
+    const byDir = new Map<string, IgnoreMatcher[]>()
+    const igByContent = new Map<string, IgnoreMatcher>()
+    const addMatcher = (dirRel: string, content: string): void => {
+      let ig = igByContent.get(content)
+      if (!ig) {
+        ig = ignore().add(content.split(/\r?\n/))
+        igByContent.set(content, ig)
+      }
+      const existing = byDir.get(dirRel)
+      if (existing) {
+        existing.push(ig)
+      } else {
+        byDir.set(dirRel, [ig])
+      }
+    }
+    // projectIgnorePaths act as a root-level gitignore.
+    if (projectIgnoreLines.length) {
+      addMatcher('', projectIgnoreLines.join('\n'))
+    }
+    for (let i = 0, { length } = gitignoreFiles; i < length; i += 1) {
+      addMatcher(gitignoreFiles[i]!.dir, gitignoreFiles[i]!.content)
+    }
+    matchersByDir = byDir
+  }
+
+  // Stream so memory stays bounded on large monorepos with 100k+ files: the
+  // optional caller filter drops non-matches before they accumulate. On the slow
+  // path each surviving entry is also re-checked against its gitignore ancestor
+  // chain, which carries the full negation support fast-glob lacks.
   const results: string[] = []
-  const ig = hasNegatedPattern ? ignore().add([...ignores]) : null
   const stream = fastGlob.globStream(
     patterns as string[],
     globOptions,
   ) as AsyncIterable<string>
   for await (const p of stream) {
-    // Check gitignore patterns with negation support.
-    if (ig) {
-      // Note: the input files must be INSIDE the cwd. If you get strange looking
-      // relative path errors here, most likely your path is outside the given cwd.
-      const relPath = globOptions.absolute ? path.relative(cwd, p) : p
-      if (ig.ignores(relPath)) {
+    if (matchersByDir) {
+      // Patterns are forward-slash anchored and tested relative to each
+      // gitignore's directory; normalize so a Windows backslash path matches.
+      const relPath = normalizePath(
+        globOptions.absolute ? path.relative(cwd, p) : p,
+      )
+      if (isIgnoredAlongChain(relPath, matchersByDir)) {
         continue
       }
     }
-    // Apply the optional filter to reduce memory usage.
-    // When scanning large monorepos, this filters early (e.g., to manifest files only)
-    // instead of accumulating all 100k+ files and filtering later.
     if (filter && !filter(p)) {
       continue
     }
