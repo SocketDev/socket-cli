@@ -1,20 +1,18 @@
 /**
  * @file Frozen SEA base-asset pins for the socket-cli-controlled mirror.
- *
  *   SocketDev/socket-btm is descoped and SocketDev/node-smol (its successor)
  *   has no releases yet, so the frozen base assets SEA builds depend on are
  *   mirrored into asset-carrier releases on SocketDev/socket-cli itself:
  *
- *   - base-assets-node-smol-20260418-50af4c8 — Node.js v25.9.0 minimal
- *     binaries, byte-identical mirror of socket-btm node-smol-20260418-50af4c8.
+ *   - base-assets-node-smol-20260418-50af4c8 — Node.js v25.9.0 minimal binaries,
+ *     byte-identical mirror of socket-btm node-smol-20260418-50af4c8.
  *   - base-assets-binject-20260507-f1e66a5 — binject injector binaries,
  *     byte-identical mirror of socket-btm binject-20260507-f1e66a5 (the newest
- *     binject release with the complete 8-platform host set).
- *
- *   Every mirrored asset was SHA-256-verified against the source release's
- *   checksums.txt and GitHub's asset digests. The pins below are the same
- *   checksums, checked in so downloads verify at point of use. The mirror tag
- *   for a socket-btm tool tag is always `base-assets-<tool-tag>`.
+ *     binject release with the complete 8-platform host set). Every mirrored
+ *     asset was SHA-256-verified against the source release's checksums.txt and
+ *     GitHub's asset digests. The pins below are the same checksums, checked in
+ *     so downloads verify at point of use. The mirror tag for a socket-btm tool
+ *     tag is always `base-assets-<tool-tag>`.
  */
 
 /**
