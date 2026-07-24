@@ -42,7 +42,7 @@ interface AlternationGroup {
 }
 
 const SOCKET_LINT_MARKER_RE =
-  /(?:#|\/\/|\/\*)\s*socket-lint:\s*allow(?:\s+(?<tag>[\w-]+))?/
+  /(?:#|\/\*|\/\/)\s*socket-lint:\s*allow(?:\s+(?<tag>[\w-]+))?/
 
 const SIMPLE_ALT_ELEMENT_RE = /^[\w\-:./]+$/
 
@@ -276,7 +276,7 @@ const rule = {
             continue
           }
           const sortedRaw = [...alts].toSorted()
-          if (alts.every((a: string, i: number) => a === sortedRaw[i])) {
+          if (alts.every((a: string, idx: number) => a === sortedRaw[idx])) {
             continue
           }
           context.report({

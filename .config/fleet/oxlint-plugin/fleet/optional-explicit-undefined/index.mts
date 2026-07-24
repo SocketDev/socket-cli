@@ -9,11 +9,11 @@
  *
  *   - Interface members: `interface X { foo?: string }`
  *   - Type-literal members: `type X = { foo?: string }`
- *   - Class fields with `?` and no initializer: `class X { foo?: string }` Skips:
- *   - Properties that are already `?: T | undefined` (or any union containing
- *     `undefined`).
- *   - Function parameters with `?` — convention there is different (`?` already
- *     implies optional + undefined at the call site).
+ *   - Class fields with `?` and no initializer: `class X { foo?: string }`
+ *   - Optional function parameters: `function f(foo?: string)` — including
+ *     methods, arrows, and function-typed signatures. Skips:
+ *   - Properties/params that are already `?: T | undefined` (or any union
+ *     containing `undefined`).
  *   - Mapped types (`{ [K in keyof T]?: T[K] }`) — the `?` is a transform
  *     operator, not a property declaration. Autofix appends ` | undefined` to
  *     the type annotation. Why this matters: with `exactOptionalPropertyTypes:
@@ -21,6 +21,13 @@
  *     type says only `foo?: T`. Mixed-codebase code does both (build options
  *     objects, JSON-derived parsed config, REST API responses) and the `|
  *     undefined` makes the contract honest.
+ *
+ *   Absorbing annotations (`?: unknown`, `?: any`): the type-aware
+ *   `typescript/no-redundant-type-constituents` rule reports `unknown |
+ *   undefined` because `unknown` absorbs `undefined` at the type level. The
+ *   fleet sides with THIS rule — the `| undefined` on an optional is explicit
+ *   convention, not redundancy — so the autofix for an absorbing annotation
+ *   also emits a per-line silence of the typescript rule.
  */
 
 /**
@@ -42,6 +49,8 @@ const rule = {
     messages: {
       missingUndefined:
         'Optional property `{{name}}` should be typed as `{{name}}?: {{type}} | undefined` to pair with `exactOptionalPropertyTypes`.',
+      missingUndefinedAbsorbing:
+        'Optional property `{{name}}` should be typed as `{{name}}?: {{type}} | undefined` to pair with `exactOptionalPropertyTypes`. The autofix also silences typescript/no-redundant-type-constituents on this line — the explicit `| undefined` is the fleet convention, not redundancy.',
     },
     schema: [],
   },
@@ -84,7 +93,9 @@ const rule = {
     function keyName(node: AstNode) {
       const k = node.key
       if (!k) {
-        return 'property'
+        // Optional function parameters are bare Identifiers — the name
+        // lives on the node itself, not a key.
+        return typeof node.name === 'string' ? node.name : 'property'
       }
       if (k.type === 'Identifier') {
         return k.name
@@ -154,23 +165,67 @@ const rule = {
       }
       const name = keyName(node)
       const type = typeText(node)
+      // `unknown` / `any` absorb `undefined`, so the type-aware
+      // typescript/no-redundant-type-constituents rule would report the fixed
+      // union. The fleet sides with explicitness: keep `| undefined` and
+      // silence that rule per-line as part of the fix.
+      const absorbing =
+        ann.type === 'TSAnyKeyword' || ann.type === 'TSUnknownKeyword'
       context.report({
         node: ann,
-        messageId: 'missingUndefined',
+        messageId: absorbing ? 'missingUndefinedAbsorbing' : 'missingUndefined',
         data: { name, type },
         fix(fixer: RuleFixer) {
+          const fixes = []
+          if (absorbing && node.range) {
+            const src = context.sourceCode ?? context.getSourceCode?.()
+            const text = src?.text ?? ''
+            const lineStart = text.lastIndexOf('\n', node.range[0] - 1) + 1
+            const indent = text.slice(lineStart, node.range[0])
+            // Only a pure-whitespace prefix is a safe insertion point — a
+            // property mid-line (single-line type literal) gets the union
+            // member only, and the reader applies the silence by hand.
+            if (/^\s*$/.test(indent)) {
+              fixes.push(
+                fixer.insertTextBefore(
+                  node,
+                  `// oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.\n${indent}`,
+                ),
+              )
+            }
+          }
           // For function/constructor/intersection types we need parens
           // around the existing annotation so ` | undefined` binds to
           // the whole thing, not to the return type / last factor.
           if (needsParens(ann)) {
-            return [
+            fixes.push(
               fixer.insertTextBefore(ann, '('),
               fixer.insertTextAfter(ann, ') | undefined'),
-            ]
+            )
+          } else {
+            fixes.push(fixer.insertTextAfter(ann, ' | undefined'))
           }
-          return fixer.insertTextAfter(ann, ' | undefined')
+          return fixes
         },
       })
+    }
+
+    /**
+     * Optional parameters (`foo?: string`) get the same treatment as optional
+     * properties: the explicit `| undefined` is the fleet convention. A param
+     * is a bare Identifier with `optional: true`; `check` reads its
+     * annotation the same way it reads a property's.
+     */
+    function checkFunctionParams(node: AstNode) {
+      const params = node.params
+      if (!Array.isArray(params)) {
+        return
+      }
+      for (const param of params) {
+        if (param.type === 'Identifier' && param.optional) {
+          check(param)
+        }
+      }
     }
 
     return {
@@ -178,6 +233,13 @@ const rule = {
       // Class fields. ESLint's TS estree calls these PropertyDefinition
       // when in a class. The `?` -> `optional: true` shape matches.
       PropertyDefinition: check,
+      ArrowFunctionExpression: checkFunctionParams,
+      FunctionDeclaration: checkFunctionParams,
+      FunctionExpression: checkFunctionParams,
+      TSConstructorType: checkFunctionParams,
+      TSDeclareFunction: checkFunctionParams,
+      TSFunctionType: checkFunctionParams,
+      TSMethodSignature: checkFunctionParams,
     }
   },
 }

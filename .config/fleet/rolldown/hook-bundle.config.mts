@@ -3,7 +3,7 @@
  *   dispatcher entry (`_dispatch/dispatch-entry.mts`), the generated static
  *   dispatch table, every bundle-safe hook it imports, the `_shared/` helpers,
  *   and only the reachable slices of `@socketsecurity/lib-stable` into a single
- *   CJS `_dispatch/bundle.cjs`. Lives under `.config/fleet/rolldown/`
+ *   CJS `_dist/bundle.cjs`. Lives under `.config/fleet/rolldown/`
  *   (mandatory tier), not `.config/repo/rolldown/` (opt-in tier):
  *   `scripts/fleet/build-hook-bundle.mts` is a mandatory `scripts/fleet` script
  *   every fleet repo carries, so it needs this config unconditionally —
@@ -29,7 +29,7 @@ import {
 import { createLibStubPlugin } from '../../repo/rolldown/lib-stub.mts'
 
 // 1 path, 1 reference: the dispatch entry + bundle output are constructed once
-// in make-hook-dispatch.mts (resolveHookBundleOut honors FLEET_HOOK_BUNDLE_OUT
+// in gen/hook-dispatch.mts (resolveHookBundleOut honors FLEET_HOOK_BUNDLE_OUT
 // so the freshness test can target an isolated os.tmpdir). Never reconstruct
 // them here.
 const config: RolldownOptions = {

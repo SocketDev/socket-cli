@@ -24,8 +24,8 @@
  *   `@socketsecurity/lib-stable/logger/default`. ALSO flags a relative import
  *   that reaches into the repo's own `src/` tree (e.g.
  *   `../../src/packages/read.ts`) from scripts/ + hooks/ — same
- *   WIP-vs-published hazard, just spelled as a relative path instead of the
- *   bare package name. 2026-06-04: a post-build script imported
+ *   unpublished-vs-published hazard, just spelled as a relative path instead of
+ *   the bare package name. 2026-06-04: a post-build script imported
  *   `../../src/packages/read.ts` during the 6.0.7 straddle; the bundler choked
  *   on the source's extensionless imports. No autofix for the relative form
  *   (the src→stable subpath mapping isn't mechanical); the message points at
@@ -112,7 +112,7 @@ const rule = {
     const checkSpecifier = (node: AstNode, raw: string): void => {
       // A relative import that climbs (one or more `../`) into a `src/` tree —
       // e.g. `../../src/packages/read.ts`. From a scripts/ or hooks/ file this
-      // is a reach into the repo's WIP source. Layout-independent: we match the
+      // is a reach into the repo's unvalidated source. Layout-independent: we match the
       // climb-then-`src/` shape rather than resolving against a package root
       // (the file is already known to be under scripts/ or .claude/hooks/).
       if (/^(?:\.\.\/)+src\//.test(raw)) {

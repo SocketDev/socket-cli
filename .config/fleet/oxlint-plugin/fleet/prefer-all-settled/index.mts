@@ -74,8 +74,8 @@ const rule = {
           arg.type === 'CallExpression' &&
           arg.callee?.type === 'MemberExpression' &&
           arg.callee.property?.type === 'Identifier' &&
-          (arg.callee.property.name === 'map' ||
-            arg.callee.property.name === 'flatMap')
+          (arg.callee.property.name === 'flatMap' ||
+            arg.callee.property.name === 'map')
         if (!isArray && !isMapCall) {
           return
         }

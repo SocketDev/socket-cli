@@ -6,20 +6,19 @@
 # EVERY pattern here is `**/`-anchored. oxfmt builds the matcher with
 # `Gitignore::new(path)` (oxc apps/oxfmt/src/cli/resolve.rs), which roots it at
 # THIS file's directory (.config/fleet/) — so a bare slashed pattern like
-# `vendor/**` anchors to `.config/fleet/vendor/**` and silently matches nothing.
+# `upstream/**` anchors to `.config/fleet/upstream/**` and silently matches nothing.
 # A leading `**/` matches at any depth. Enforced by
 # scripts/fleet/check/prettierignore-globs-are-anchored.mts.
 #
 # `.claude/` is treated like node_modules — never formatted, never linted, no
 # matter whether the files are git-tracked. Hooks, skills, settings, and the
-# vendored AST tooling (the acorn wasm blob + its wasm-bindgen `acorn-bindgen.cjs`
-# glue — which the `socket/export-top-level-functions` autofix would rewrite into
-# syntactically-invalid ESM, breaking the first `require()`) are all opaque to
-# the formatter under this single exclusion.
+# acorn AST helper (`_shared/ast/`, a thin npm-backed wrapper over the
+# `@ultrathink/acorn.wasm` wasm parser) are all opaque to the formatter under
+# this single exclusion.
 **/.claude/**
 
 # `.agents/skills/` is the GENERATED cross-tool skill mirror
-# (gen-agents-skills-mirror.mts flattens .claude/skills/{fleet,repo}/<name>/ to
+# (gen/agents-skills-mirror.mts flattens .claude/skills/{fleet,repo}/<name>/ to
 # .agents/skills/<tier>-<name>/ for Codex + OpenCode). Generated output whose
 # source (.claude/, above) is itself unformatted-by-design, so the byte-identical
 # mirror is ignored too. agents-skills-mirror-is-current keeps it in sync.
@@ -43,7 +42,6 @@
 # single source; scripts/fleet/check/generated-globs-are-consistent.mts asserts
 # this file covers every entry).
 **/build/**
-**/coverage/**
 **/dist/**
 **/out/**
 
@@ -56,9 +54,6 @@
 # fires on every formatter pass.
 **/test/fixtures/**
 **/upstream/**
-**/vendor/**
-**/third_party/**
-**/external/**
 
 # gh-aw generated workflows. `gh aw compile` turns a `<name>.md` agentic workflow
 # into a hardened `<name>.lock.yml`; that artifact is tool-owned and must stay

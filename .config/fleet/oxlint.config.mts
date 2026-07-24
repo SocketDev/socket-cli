@@ -28,6 +28,7 @@
  *   })
  */
 
+import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 import { defineConfig } from 'oxlint'
@@ -66,7 +67,9 @@ const fleetConfigDir = fileURLToPath(new URL('.', import.meta.url))
 /**
  * Build the fleet oxlint config object, optionally augmented for a repo.
  */
-export function config(options?: OxlintConfigOptions): Record<string, unknown> {
+export function config(
+  options?: OxlintConfigOptions | undefined,
+): Record<string, unknown> {
   const opts = { __proto__: null, ...options } as OxlintConfigOptions
   const {
     jsPlugins: baseJsPlugins,
@@ -104,13 +107,28 @@ export function config(options?: OxlintConfigOptions): Record<string, unknown> {
   }
 }
 
+// The fleet `socket/*` plugin ships two ways: rule SOURCE in the wheelhouse
+// (edited + tested live, no rebuild loop) and the rolldown bundle
+// `oxlint-plugin.mjs` in members (the rule source dirs don't cascade).
+// Whichever spelling the JSON carries, the factory prefers source when present
+// and falls back to the bundle.
+const FLEET_PLUGIN_ENTRIES: ReadonlySet<string> = new Set([
+  './oxlint-plugin.mjs',
+  './oxlint-plugin/index.mts',
+])
+
 /**
- * Rewrite a fleet `jsPlugins` entry to an absolute path. Relative entries
- * (`./oxlint-plugin/index.mts`) are anchored at this file's directory so they
- * resolve no matter which config imports the factory; non-relative entries
- * (bare specifiers) pass through unchanged.
+ * Rewrite a fleet `jsPlugins` entry to an absolute path. The fleet plugin entry
+ * resolves source-first (bundle fallback — see FLEET_PLUGIN_ENTRIES); other
+ * relative entries are anchored at this file's directory so they resolve no
+ * matter which config imports the factory; non-relative entries (bare
+ * specifiers) pass through unchanged.
  */
 export function resolveFleetJsPlugin(entry: string): string {
+  if (FLEET_PLUGIN_ENTRIES.has(entry)) {
+    const source = `${fleetConfigDir}oxlint-plugin/index.mts`
+    return existsSync(source) ? source : `${fleetConfigDir}oxlint-plugin.mjs`
+  }
   if (entry.startsWith('./')) {
     return `${fleetConfigDir}${entry.slice(2)}`
   }

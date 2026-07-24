@@ -31,7 +31,7 @@
 
 import type { AstNode, RuleContext } from '../../lib/rule-types.mts'
 
-const PURE_MAGIC_RE = /^\s*@(?:__PURE__|__NO_SIDE_EFFECTS__)\s*$/
+const PURE_MAGIC_RE = /^\s*@(?:__NO_SIDE_EFFECTS__|__PURE__)\s*$/
 
 function isMagicCommentText(raw: string | undefined): boolean {
   if (!raw) {

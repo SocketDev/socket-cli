@@ -7,7 +7,7 @@
  *   comment, disclosing internal fleet layout. Patterns:
  *     - paths under the plans or reports directories (untracked operator notes)
  *     - `socket-<repo>/.claude/…` (another fleet repo's private tree)
- *     - `/Users/<name>/…` (absolute home path — username + local layout)
+ *     - `/Users/<user>/…` (absolute home path — username + local layout)
  *     - `../socket-<repo>/…` (sibling fleet-repo relative path — dev-box layout)
  *   Only comments are inspected; a path in a string literal or real code is
  *   left alone. No autofix — the only correct fix is removing the reference,
@@ -29,7 +29,7 @@ const PATTERNS: ReadonlyArray<{ readonly kind: string; readonly re: RegExp }> =
       re: /(?:^|[\s"'`([{<])socket-[a-z0-9][a-z0-9-]*\/\.claude\/[^\s"'`)\]}>]*/i,
     },
     {
-      kind: 'an absolute /Users/<name>/ home path',
+      kind: 'an absolute /Users/<user>/ home path',
       re: /(?:^|[\s"'`([{<])\/Users\/[^/\s"'`)\]}>]+\/[^\s"'`)\]}>]*/,
     },
     {
@@ -43,13 +43,13 @@ const PATTERNS: ReadonlyArray<{ readonly kind: string; readonly re: RegExp }> =
 // single-char / ellipsis home stand-in is SHOWING the pattern it documents, not
 // leaking a real path. Matched against the captured path's owner segment.
 const PLACEHOLDER_MATCH_RE =
-  /(?:^|[/.])(?:socket-foo\b|Users\/(?:x|me|\.\.\.)(?:\/|$))/
+  /(?:^|[/.])(?:socket-foo\b|Users\/(?:\.\.\.|me|x)(?:\/|$))/
 
 // A comment carrying any same-intent opt-out marker is exempt — the author is
 // deliberately SHOWING the pattern (a doc example, this repo's own report path).
 // Mirrors the commit-time check's SUPPRESS_RE so the two surfaces agree.
 const SUPPRESS_RE =
-  /socket-lint:\s*allow\s+(?:private-path|personal-path|cross-repo)\b/
+  /socket-lint:\s*allow\s+(?:cross-repo|personal-path|private-path)\b/
 
 /**
  * The first NON-placeholder private-path match in `value`, or undefined.
@@ -78,7 +78,7 @@ const rule = {
     type: 'problem',
     docs: {
       description:
-        'Forbid an internal/private path (`.claude/plans|reports/…`, `socket-<repo>/.claude/…`, `/Users/<name>/…`, `../socket-<repo>/…`) inside a source-code comment; it leaks internal fleet layout into committed source.',
+        'Forbid an internal/private path (`.claude/plans|reports/…`, `socket-<repo>/.claude/…`, `/Users/<user>/…`, `../socket-<repo>/…`) inside a source-code comment; it leaks internal fleet layout into committed source.',
       category: 'Possible Errors',
       recommended: true,
     },

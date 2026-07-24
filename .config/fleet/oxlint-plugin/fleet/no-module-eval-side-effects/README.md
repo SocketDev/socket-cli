@@ -50,7 +50,7 @@ new pattern is a one-line addition.
 
 The seeded denylist is grounded in the empirically-found snapshot blockers
 documented in
-`template/base/.claude/hooks/fleet/_dispatch/SNAPSHOT-NOTES.md` — every entry
+`template/base/.claude/hooks/fleet/_dispatch/snapshot-notes.md` — every entry
 corresponds to a `[Foreign]`-handle / WASM / circular-init failure that actually
 aborted `--build-snapshot`.
 
@@ -80,7 +80,7 @@ survive the synchronous, statically-frozen snapshot build:
 
 "Snapshot-eligible" = the modules that freeze into the dispatch bundle (the
 rolldown bundle's input closure), mirroring the maker
-(`scripts/fleet/make-hook-dispatch.mts`):
+(`scripts/fleet/gen/hook-dispatch.mts`):
 
 - the `_dispatch/` and `_shared/` dispatch graph (always bundled), and
 - each **bundle-safe** hook `index.mts` — one carrying the maker's two markers:

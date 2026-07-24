@@ -32,6 +32,8 @@ import {
   summarizeImportTarget,
 } from '../../_shared/inject-import.mts'
 
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+
 import type { AstNode, RuleContext, RuleFixer } from '../../lib/rule-types.mts'
 
 const ERROR_PROPS = new Set(['message', 'stack'])
@@ -145,14 +147,14 @@ const rule = {
     }
 
     function importLine(): string {
-      const normalized = filename.replace(/\\/g, '/')
+      const normalized = normalizePath(filename)
       // Scripts / tests / hooks / .config tooling depend on the `-stable`
       // devDep alias; runtime source uses the catalog package. Mirrors the
       // guidance in the sibling `prefer-error-message` rule's message.
       const stable =
         /(?:^|\/)scripts\//.test(normalized) ||
         /(?:^|\/)tests?\//.test(normalized) ||
-        /\.(?:test|spec)\.[cm]?[jt]sx?$/.test(normalized) ||
+        /\.(?:spec|test)\.[cm]?[jt]sx?$/.test(normalized) ||
         normalized.includes('/.claude/hooks/') ||
         normalized.includes('/.config/')
       const specifier = stable

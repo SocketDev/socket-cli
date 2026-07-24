@@ -32,17 +32,23 @@
  *     pattern).
  */
 
-import { createRequire } from 'node:module'
+// regjsparser is CJS (the regexpu / Babel regex parser); a STATIC import (not
+// createRequire) so rolldown inlines it into the oxlint-plugin bundle — a
+// bundle-only member has no regjsparser install, and an opaque runtime
+// require() left the whole plugin dead there. Default-import interop (the CJS
+// module.exports object) rather than a named import: Node's cjs-module-lexer
+// can't statically detect `parse` on regjsparser's exports, so the named form
+// throws at source-load time in the wheelhouse. In source form it resolves from
+// the rule's own package.json (`regjsparser` is a declared dependency).
+import regjsparser from 'regjsparser'
 
 import type { AstNode, RuleContext } from '../../lib/rule-types.mts'
 
-// regjsparser is CJS (the regexpu / Babel regex parser); pull `parse` through
-// createRequire so this ESM rule can use it. Resolved from the rule's own
-// package.json (`regjsparser` is a declared dependency).
-const require = createRequire(import.meta.url)
-const { parse: parseRegex } = require('regjsparser') as {
-  parse: (source: string, flags?: string, opts?: object) => RegjsNode
-}
+const parseRegex = regjsparser.parse as unknown as (
+  source: string,
+  flags?: string | undefined,
+  opts?: object | undefined,
+) => RegjsNode
 
 // Minimal shape of the regjsparser AST we walk. Node `type` is one of
 // 'disjunction' | 'alternative' | 'group' | 'characterClass' | 'quantifier' |
@@ -55,7 +61,7 @@ interface RegjsNode {
 }
 
 const SOCKET_LINT_MARKER_RE =
-  /(?:#|\/\/|\/\*)\s*socket-lint:\s*allow(?:\s+(?<tag>[\w-]+))?/
+  /(?:#|\/\*|\/\/)\s*socket-lint:\s*allow(?:\s+(?<tag>[\w-]+))?/
 
 function isLineMarkered(line: string): boolean {
   const m = line.match(SOCKET_LINT_MARKER_RE)

@@ -12,6 +12,7 @@
  *   that dir inventory.
  */
 
+import bagParamOptionalityNaming from './fleet/bag-param-optionality-naming/index.mts'
 import exportTopLevelFunctions from './fleet/export-top-level-functions/index.mts'
 import guardContract from './fleet/guard-contract/index.mts'
 import inclusiveLanguage from './fleet/inclusive-language/index.mts'
@@ -24,6 +25,7 @@ import noCachedForOnIterable from './fleet/no-cached-for-on-iterable/index.mts'
 import noCommentGlobStarSlash from './fleet/no-comment-glob-star-slash/index.mts'
 import noConsolePreferLogger from './fleet/no-console-prefer-logger/index.mts'
 import noDefaultExport from './fleet/no-default-export/index.mts'
+import noDeprecation from './fleet/no-deprecation/index.mts'
 import noDynamicImportOutsideBundle from './fleet/no-dynamic-import-outside-bundle/index.mts'
 import noEslintBiomeConfigRef from './fleet/no-eslint-biome-config-ref/index.mts'
 import noFetchPreferHttpRequest from './fleet/no-fetch-prefer-http-request/index.mts'
@@ -48,6 +50,7 @@ import noProcessCwdInScriptsHooks from './fleet/no-process-cwd-in-scripts-hooks/
 import noPromiseRace from './fleet/no-promise-race/index.mts'
 import noPromiseRaceInLoop from './fleet/no-promise-race-in-loop/index.mts'
 import noRuntimeFeaturesBelowEngineFloor from './fleet/no-runtime-features-below-engine-floor/index.mts'
+import noSourceContentTests from './fleet/no-source-content-tests/index.mts'
 import noSourceSniffing from './fleet/no-source-sniffing/index.mts'
 import noSpawnStreamDoubleConsume from './fleet/no-spawn-stream-double-consume/index.mts'
 import noSpawnsyncCodeField from './fleet/no-spawnsync-code-field/index.mts'
@@ -80,6 +83,7 @@ import preferExistsSync from './fleet/prefer-exists-sync/index.mts'
 import preferFindRepoRoot from './fleet/prefer-find-repo-root/index.mts'
 import preferFindUpPackageJson from './fleet/prefer-find-up-package-json/index.mts'
 import preferFunctionDeclaration from './fleet/prefer-function-declaration/index.mts'
+import preferLibVersionsOverSemver from './fleet/prefer-lib-versions-over-semver/index.mts'
 import preferMockImport from './fleet/prefer-mock-import/index.mts'
 import preferNodeBuiltinImports from './fleet/prefer-node-builtin-imports/index.mts'
 import preferNodeModulesDotCache from './fleet/prefer-node-modules-dot-cache/index.mts'
@@ -91,7 +95,6 @@ import preferSafeDelete from './fleet/prefer-safe-delete/index.mts'
 import preferSeparateTypeImport from './fleet/prefer-separate-type-import/index.mts'
 import preferShellWin32 from './fleet/prefer-shell-win32/index.mts'
 import preferSpawnOverExecsync from './fleet/prefer-spawn-over-execsync/index.mts'
-import preferStableExternalSemver from './fleet/prefer-stable-external-semver/index.mts'
 import preferStableSelfImport from './fleet/prefer-stable-self-import/index.mts'
 import preferStaticTypeImport from './fleet/prefer-static-type-import/index.mts'
 import preferTypeboxSchema from './fleet/prefer-typebox-schema/index.mts'
@@ -120,6 +123,7 @@ const plugin = {
     version: '0.5.0',
   },
   rules: {
+    'bag-param-optionality-naming': bagParamOptionalityNaming,
     'export-top-level-functions': exportTopLevelFunctions,
     'guard-contract': guardContract,
     'inclusive-language': inclusiveLanguage,
@@ -132,6 +136,7 @@ const plugin = {
     'no-comment-glob-star-slash': noCommentGlobStarSlash,
     'no-console-prefer-logger': noConsolePreferLogger,
     'no-default-export': noDefaultExport,
+    'no-deprecation': noDeprecation,
     'no-dynamic-import-outside-bundle': noDynamicImportOutsideBundle,
     'no-eslint-biome-config-ref': noEslintBiomeConfigRef,
     'no-fetch-prefer-http-request': noFetchPreferHttpRequest,
@@ -157,6 +162,7 @@ const plugin = {
     'no-promise-race': noPromiseRace,
     'no-promise-race-in-loop': noPromiseRaceInLoop,
     'no-runtime-features-below-engine-floor': noRuntimeFeaturesBelowEngineFloor,
+    'no-source-content-tests': noSourceContentTests,
     'no-source-sniffing': noSourceSniffing,
     'no-spawn-stream-double-consume': noSpawnStreamDoubleConsume,
     'no-spawnsync-code-field': noSpawnsyncCodeField,
@@ -189,6 +195,7 @@ const plugin = {
     'prefer-find-repo-root': preferFindRepoRoot,
     'prefer-find-up-package-json': preferFindUpPackageJson,
     'prefer-function-declaration': preferFunctionDeclaration,
+    'prefer-lib-versions-over-semver': preferLibVersionsOverSemver,
     'prefer-mock-import': preferMockImport,
     'prefer-node-builtin-imports': preferNodeBuiltinImports,
     'prefer-node-modules-dot-cache': preferNodeModulesDotCache,
@@ -200,7 +207,6 @@ const plugin = {
     'prefer-separate-type-import': preferSeparateTypeImport,
     'prefer-shell-win32': preferShellWin32,
     'prefer-spawn-over-execsync': preferSpawnOverExecsync,
-    'prefer-stable-external-semver': preferStableExternalSemver,
     'prefer-stable-self-import': preferStableSelfImport,
     'prefer-static-type-import': preferStaticTypeImport,
     'prefer-typebox-schema': preferTypeboxSchema,

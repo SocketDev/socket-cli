@@ -151,7 +151,9 @@ function collectOptsIdentifiers(root: AstNode): AstNode[] {
     ) {
       found.push(n)
     }
-    for (const key of Object.keys(n)) {
+    const keyList = Object.keys(n)
+    for (let j = 0, { length: jlen } = keyList; j < jlen; j += 1) {
+      const key = keyList[j]!
       if (key === 'parent' || TYPE_SUBTREE_KEYS.has(key)) {
         continue
       }

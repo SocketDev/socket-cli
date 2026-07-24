@@ -140,7 +140,9 @@ export function defineGuardedPlugin(define: Record<string, string>): Plugin {
             return
           }
         }
-        for (const k of Object.keys(n)) {
+        const keys = Object.keys(n)
+        for (let i = 0, { length } = keys; i < length; i += 1) {
+          const k = keys[i]!
           if (k === 'end' || k === 'start') {
             continue
           }

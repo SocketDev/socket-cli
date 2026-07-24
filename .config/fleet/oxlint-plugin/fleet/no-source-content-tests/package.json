@@ -1,5 +1,5 @@
 {
-  "name": "socket-oxlint-rule-prefer-stable-external-semver",
+  "name": "socket-oxlint-rule-no-source-content-tests",
   "private": true,
   "type": "module",
   "main": "./index.mts",

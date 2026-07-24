@@ -59,7 +59,7 @@ const rule = {
     )
     // Only enforce on scripts/ + .claude/hooks/ paths.
     if (
-      !/\/(?:scripts|\.claude\/hooks)\//.test(filename) ||
+      !/\/(?:\.claude\/hooks|scripts)\//.test(filename) ||
       // Test files inside those dirs are exempt — tests chdir intentionally.
       /\/test\//.test(filename) ||
       /\.test\.(?:[mc]?[jt]s)$/.test(filename)

@@ -42,7 +42,7 @@ interface CaptureGroup {
 }
 
 const SOCKET_LINT_MARKER_RE =
-  /(?:#|\/\/|\/\*)\s*socket-lint:\s*allow(?:\s+(?<tag>[\w-]+))?/
+  /(?:#|\/\*|\/\/)\s*socket-lint:\s*allow(?:\s+(?<tag>[\w-]+))?/
 
 // Markers that indicate at least one regex in the file uses captures.
 // Conservative — any single hit disables autofix for the whole file

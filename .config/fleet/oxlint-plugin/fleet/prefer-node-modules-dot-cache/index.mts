@@ -45,12 +45,12 @@ const REPO_CACHE_STRING_RE = /(?:^|\/)\.cache\/|\/\.cache$/
 // Identifier names whose value is conventionally a user-home dir.
 // Matched case-insensitively so `home`, `Home`, `homeDir`, `HOME` etc.
 // all hit.
-const HOME_IDENT_RE = /^(?:home(?:dir)?|userhome|userdir|app(?:data|home))$/i
+const HOME_IDENT_RE = /^(?:app(?:data|home)|home(?:dir)?|userdir|userhome)$/i
 
 // Env-var names that hold user-home dirs (the XDG/Windows variants).
 // Used when the first arg is `process.env['VAR']` or `process.env.VAR`.
 const HOME_ENV_RE =
-  /^(?:HOME|XDG_(?:CACHE|CONFIG|DATA|STATE)_HOME|XDG_RUNTIME_DIR|LOCALAPPDATA|APPDATA|USERPROFILE)$/
+  /^(?:APPDATA|HOME|LOCALAPPDATA|USERPROFILE|XDG_(?:CACHE|CONFIG|DATA|STATE)_HOME|XDG_RUNTIME_DIR)$/
 
 /**
  * @type {import('eslint').Rule.RuleModule}
@@ -60,6 +60,7 @@ const rule = {
     type: 'suggestion',
     docs: {
       description:
+        // oxlint-disable-next-line socket/prefer-node-modules-dot-cache -- prose describing the convention, not a path literal the rule should flag
         'Prefer `node_modules/.cache/` over repo-root `.cache/` for per-repo tool caches.',
       category: 'Best Practices',
       recommended: true,
@@ -67,7 +68,8 @@ const rule = {
     fixable: undefined,
     messages: {
       pathLiteral:
-        'Cache path `{{value}}` should live under `node_modules/.cache/`, not repo-root `.cache/`. Fleet convention puts per-repo tool caches in `node_modules/.cache/<name>` (auto-gitignored, swept on `pnpm install`).',
+        // oxlint-disable-next-line socket/prefer-node-modules-dot-cache -- prose describing the convention, not a path literal the rule should flag
+        'Cache path `{{value}}` should live under `node_modules/.cache/`, not repo-root `.cache/`. Fleet convention puts per-repo tool caches in `node_modules/.cache/{fleet,repo}/<name>` — the segment names the writing tier (auto-gitignored, swept on `pnpm install`).',
       pathJoin:
         "`path.join(..., '.cache', ...)` puts the cache at repo root. Use `path.join(<pkgRoot>, 'node_modules', '.cache', <name>)` instead.",
     },

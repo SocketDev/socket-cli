@@ -30,11 +30,11 @@ import type { AstNode, RuleContext } from '../../lib/rule-types.mts'
 
 // A per-site oxlint disable directive — the comment body starts with one of
 // these (anchored, so a prose mention of the directive is NOT a directive).
-const PERSITE_DISABLE_RE = /^oxlint-disable-(?:next-line|line)\b/
+const PERSITE_DISABLE_RE = /^oxlint-disable-(?:line|next-line)\b/
 
 // The canonical shape: directive, at least one rule token, ` -- `, a reason.
 const WELL_FORMED_DISABLE_RE =
-  /^oxlint-disable-(?:next-line|line)\s+\S.*?\s--\s+\S/
+  /^oxlint-disable-(?:line|next-line)\s+\S.*?\s--\s+\S/
 
 // The `socket-lint: allow` grammar comes from the shared marker home; anchor it
 // to the comment body so a prose mention isn't treated as a directive.

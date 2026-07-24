@@ -171,7 +171,9 @@ function isReassignedInBody(body: AstNode, name: string): boolean {
       found = true
       return
     }
-    for (const key of Object.keys(n)) {
+    const keyItems = Object.keys(n)
+    for (let j = 0, { length: jlen } = keyItems; j < jlen; j += 1) {
+      const key = keyItems[j]!
       if (key === 'parent') {
         continue
       }
@@ -283,7 +285,9 @@ const rule = {
           // repoint it at the normalized `opts` local.
           memberObjects.push(n.object)
         }
-        for (const key of Object.keys(n)) {
+        const keyList = Object.keys(n)
+        for (let j = 0, { length: jlen } = keyList; j < jlen; j += 1) {
+          const key = keyList[j]!
           if (key === 'parent') {
             continue
           }

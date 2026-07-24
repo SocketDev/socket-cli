@@ -12,6 +12,8 @@ import { existsSync, readFileSync } from 'node:fs'
 import { getCI } from '@socketsecurity/lib-stable/env/ci'
 import type { CoverageOptions } from 'vitest/node'
 
+import { COVERAGE_SCRATCH_VITEST_DIR } from '../../scripts/fleet/paths.mts'
+
 /**
  * Fleet-shared coverage base. Excludes cover the dirs every fleet repo has
  * (node_modules, dist, test, scripts, perf, external bundles). Repo-specific
@@ -52,6 +54,12 @@ export const baseFleetCoverageConfig: CoverageOptions = {
   reporter: getCI()
     ? ['text', 'json', 'json-summary', 'html', 'lcov', 'clover']
     : ['text', 'json', 'json-summary'],
+  // Vitest tiers report into a THROWAWAY scratch dir (in os.tmpdir), not the
+  // coverage home: `clean: true` wipes the whole reportsDirectory and the
+  // reporter emits a fixed `coverage-final.json`, so the runner renames each
+  // tier's result out to its flat `coverage-final.<tier>.json` in COVERAGE_DIR.
+  // Using the scratch means the top-level `coverage/` never appears.
+  reportsDirectory: COVERAGE_SCRATCH_VITEST_DIR,
   skipFull: false,
 }
 

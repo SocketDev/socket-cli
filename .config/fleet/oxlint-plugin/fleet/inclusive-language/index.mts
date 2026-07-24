@@ -2,7 +2,7 @@
 
 /**
  * @file Per CLAUDE.md "Inclusive language" rule (full table in
- *   docs/references/inclusive-language.md). Substitutions: whitelist →
+ *   docs/agents.md/fleet/inclusive-language.md). Substitutions: whitelist →
  *   allowlist blacklist → denylist master → main / primary slave → replica /
  *   secondary / worker grandfathered → legacy sanity check → quick check dummy
  *   → placeholder Detects identifiers, string literals, and comments containing
@@ -20,10 +20,9 @@
  *     external-api` adjacent to the line.
  *   - Vendored / fixture paths: handled at the .config/fleet/oxlintrc.json
  *     ignorePatterns level; this rule trusts the include set.
- *   - The literal phrase "main / primary" / etc. inside a doc that spells out the
- *     substitution table — handled by the
- *     `docs/references/inclusive-language.md` ignore pattern in
- *     .config/fleet/oxlintrc.json (caller adds the override).
+ *   - The substitution-table doc itself (docs/agents.md/fleet/
+ *     inclusive-language.md) never reaches this rule — oxlint lints JS/TS
+ *     sources only, not markdown.
  */
 
 // [legacyStem, replacementStem]. The detector matches the stem
@@ -140,7 +139,7 @@ const rule = {
     fixable: 'code',
     messages: {
       legacy:
-        '`{{match}}` — replace with the inclusive-language equivalent. See docs/references/inclusive-language.md.',
+        '`{{match}}` — replace with the inclusive-language equivalent. See docs/agents.md/fleet/inclusive-language.md.',
       legacyMaster:
         '`{{match}}` — replace with `main` (branch), `primary` / `controller` (process). Manual rewrite — context decides which fits.',
       legacySlave:

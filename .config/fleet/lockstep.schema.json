@@ -186,7 +186,7 @@
                 "type": "string"
               },
               "materialization": {
-                "description": "Lock-step vs adapt-step mode. `full` (default when omitted) = lock-step: consume the whole pinned upstream, kept fleet-uniform. `sparse` = adapt-step: consume only a sparse-checkout cone / inlined subset of the same pin. Rows omitting this are `full`.",
+                "description": "Port scope — how much of the pinned upstream this port tracks in lock-step, NOT how the submodule is checked out (checkout is always shallow/single-branch/sparse). `full` (default when omitted) = lock-step the whole upstream, kept fleet-uniform. `sparse` = partial lock-step: track only the `sparse_cone` subset of the same pin. Drift for a `sparse` pin counts only commits touching the cone; a `full` pin counts every commit. Rows omitting this are `full`.",
                 "anyOf": [
                   {
                     "const": "full",
@@ -200,7 +200,7 @@
               },
               "sparse_cone": {
                 "minItems": 1,
-                "description": "For `materialization: sparse` — the upstream paths (the sparse-checkout cone) this row actually consumes or inlines. Documents what the adapt-step takes; the harness ignores it when materialization is `full` or omitted.",
+                "description": "For `materialization: sparse` — the repo-relative upstream paths this port actually tracks (e.g. one monorepo package, or one file). Declares PORT SCOPE and scopes drift: commits outside the cone are not drift. Not a git sparse-checkout directive — submodule checkout is always sparse regardless.",
                 "type": "array",
                 "items": {
                   "type": "string"

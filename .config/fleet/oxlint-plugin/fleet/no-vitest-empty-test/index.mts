@@ -53,7 +53,7 @@ function containsAssertion(node: AstNode): boolean {
         // call to it as an assertion is sound, not a coverage dodge.
         if (
           ASSERTION_ROOTS.has(cur.name) ||
-          /^(?:expect|assert)[A-Z]/.test(cur.name)
+          /^(?:assert|expect)[A-Z]/.test(cur.name)
         ) {
           return true
         }
@@ -76,7 +76,9 @@ function containsAssertion(node: AstNode): boolean {
   // that are themselves test cases would require names — kept simple: recurse
   // all; a nested it() with expect is rare inside an it() and still means the
   // outer has an assertion-bearing subtree, which is acceptable.)
-  for (const key of Object.keys(node)) {
+  const keyList = Object.keys(node)
+  for (let i = 0, { length } = keyList; i < length; i += 1) {
+    const key = keyList[i]!
     if (key === 'loc' || key === 'parent' || key === 'range') {
       continue
     }

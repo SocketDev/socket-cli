@@ -1,12 +1,13 @@
 {
   "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/5306f24d9e82ae36ad9c3c964f33075bc589c799/npm/oxlint/configuration_schema.json",
   "plugins": ["typescript", "unicorn", "import"],
-  "jsPlugins": ["./oxlint-plugin/index.mts"],
+  "jsPlugins": ["./oxlint-plugin.mjs"],
   "categories": {
     "correctness": "error",
     "suspicious": "error"
   },
   "rules": {
+    "socket/bag-param-optionality-naming": "error",
     "socket/export-top-level-functions": "error",
     "socket/guard-contract": "error",
     "socket/inclusive-language": "error",
@@ -19,6 +20,7 @@
     "socket/no-comment-glob-star-slash": "error",
     "socket/no-console-prefer-logger": "error",
     "socket/no-default-export": "error",
+    "socket/no-deprecation": "error",
     "socket/no-dynamic-import-outside-bundle": "error",
     "socket/no-eslint-biome-config-ref": "error",
     "socket/no-fetch-prefer-http-request": "error",
@@ -42,6 +44,7 @@
     "socket/no-promise-race": "error",
     "socket/no-promise-race-in-loop": "error",
     "socket/no-runtime-features-below-engine-floor": "error",
+    "socket/no-source-content-tests": "error",
     "socket/no-source-sniffing": "error",
     "socket/no-spawn-stream-double-consume": "error",
     "socket/no-spawnsync-code-field": "error",
@@ -77,6 +80,7 @@
     "socket/prefer-find-repo-root": "error",
     "socket/prefer-find-up-package-json": "error",
     "socket/prefer-function-declaration": "error",
+    "socket/prefer-lib-versions-over-semver": "error",
     "socket/prefer-mock-import": "error",
     "socket/prefer-node-builtin-imports": "error",
     "socket/prefer-node-modules-dot-cache": "error",
@@ -88,7 +92,6 @@
     "socket/prefer-separate-type-import": "error",
     "socket/prefer-shell-win32": "error",
     "socket/prefer-spawn-over-execsync": "error",
-    "socket/prefer-stable-external-semver": "error",
     "socket/prefer-stable-self-import": "error",
     "socket/prefer-static-type-import": "error",
     "socket/prefer-typebox-schema": "error",
@@ -159,11 +162,17 @@
     ],
     "typescript/consistent-type-imports": "error",
     "typescript/no-duplicate-enum-values": "error",
-    "typescript/no-duplicate-type-constituents": "error",
+    "typescript/no-duplicate-type-constituents": [
+      "error",
+      {
+        "ignoreUnions": true
+      }
+    ],
     "typescript/no-explicit-any": "error",
     "typescript/no-extra-non-null-assertion": "error",
     "typescript/no-misused-new": "error",
     "typescript/no-non-null-asserted-optional-chain": "off",
+    "typescript/no-redundant-type-constituents": "off",
     "typescript/no-this-alias": [
       "error",
       {
@@ -211,6 +220,18 @@
       }
     },
     {
+      "files": [
+        "**/template/base/.claude/**",
+        "**/template/base/.config/fleet/**",
+        "**/template/base/.git-hooks/**",
+        "**/template/base/scripts/fleet/**",
+        "**/template/base/test/fleet/**"
+      ],
+      "rules": {
+        "socket/max-file-lines": "off"
+      }
+    },
+    {
       "files": ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts"],
       "rules": {
         "eslint/no-unused-vars": "off"
@@ -224,14 +245,13 @@
     "**/coverage",
     "**/coverage-isolated",
     "**/dist",
-    "**/external",
     "**/node_modules",
     "**/patches",
     "**/test/fixtures",
     "**/test/packages",
     "**/test/repo",
-    "**/vendor/**",
     "**/wasm_exec.js",
+    "**/.config/fleet/oxlint-plugin.mjs",
     "**/*.d.ts",
     "**/*.d.ts.map",
     "**/*.tsbuildinfo",
@@ -248,21 +268,11 @@
     "**/bootstrap/**",
     "**/docs/agents.md/fleet/**",
     "**/scripts/fleet/**",
-    "**/test/_shared/fleet/**",
-    "**/test/scripts/fleet/**",
-    "**/vendor/**",
+    "**/test/fleet/_shared/**",
+    "**/test/fleet/scripts/**",
     "**/wasm_exec.js",
-    "**/scripts/fleet/plugin-patches/**/*.files/**",
-    "**/scripts/fleet/plugin-patches/**/*.patch",
-    "**/.config/fleet/lockstep.schema.json",
     "**/.config/repo/vitest.config.mts",
-    "**/.kimi-code/mcp.json",
     "**/.mcp.json",
-    "**/opencode.json",
-    "**/packages/build-infra/lib/release-checksums/consumer.mts",
-    "**/packages/build-infra/lib/release-checksums/core.mts",
-    "**/packages/build-infra/lib/release-checksums/producer.mts",
-    "**/packages/build-infra/release-assets.schema.json",
     "#fleet-canonical-end"
   ]
 }

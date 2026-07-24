@@ -25,7 +25,7 @@ import type { AstNode, RuleContext, RuleFixer } from '../../lib/rule-types.mts'
 // Matched case-sensitively against the local variable name.
 // require-regex-comment: path-like variable name heuristics — suffix/prefix combos.
 const PATH_VAR_RE =
-  /(?:^|_)(?:path|file|dir|cwd|root|src|dest|target|base|entry|output|input|abs|rel)(?:_|$)|(?:P|p)ath$|(?:F|f)ile$|(?:D|d)ir$/
+  /(?:^|_)(?:abs|base|cwd|dest|dir|entry|file|input|output|path|rel|root|src|target)(?:_|$)|(?:P|p)ath$|(?:F|f)ile$|(?:D|d)ir$/
 
 // Names of normalizing call targets — an assignment from one of these proves
 // the variable is already normalized.

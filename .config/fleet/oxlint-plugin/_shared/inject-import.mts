@@ -36,7 +36,7 @@ export type FixerOp = unknown
 export function summarizeImportTarget(
   program: AstNode,
   importName: string,
-  localName?: string,
+  localName?: string | undefined,
 ): ImportSummary {
   let lastImport: AstNode | undefined
   let hasImport = false
@@ -132,7 +132,7 @@ export function appendImportFixes(
   summary: ImportSummary,
   fixer: RuleFixer,
   importLine: string,
-  hoistLine?: string,
+  hoistLine?: string | undefined,
 ): FixerOp[] {
   const ops: FixerOp[] = []
   if (!summary.hasImport) {

@@ -70,7 +70,7 @@ export const PATTERNS: ReadonlyArray<{
     // No `\b` around the `-n` / `--name` flag: a word boundary fails next to a
     // hyphen (`-` is a non-word char), so anchor the flag on whitespace and a
     // following `=` or space instead.
-    re: /\bchoco\s+feature\s+enable\b[^\n]*(?:^|\s)(?:-n|--name)(?:\s+|\s*=\s*)["']?autoUpdate\b/i,
+    re: /\bchoco\s+feature\s+enable\b[^\n]*(?:^|\s)(?:--name|-n)(?:\s*=\s*|\s+)["']?autoUpdate\b/i,
     knob: 'choco feature enable -n autoUpdate',
     hardened: 'choco feature disable -n autoUpdate',
   },

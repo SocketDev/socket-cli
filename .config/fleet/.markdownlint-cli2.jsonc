@@ -52,9 +52,7 @@
     "**/dist/**",
     "**/build/**",
     "**/coverage/**",
-    "**/vendor/**",
     "**/upstream/**",
-    "**/third_party/**",
     // Test fixtures are data (often vendored external content — e.g. a
     // test262 sparse-checkout submodule); linting them produces findings
     // in files the repo must not rewrite.

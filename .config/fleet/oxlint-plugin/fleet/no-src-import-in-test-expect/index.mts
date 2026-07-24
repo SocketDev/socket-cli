@@ -116,7 +116,9 @@ function collectValueIdentifiers(node: AstNode, out: Set<string>): void {
     out.add(node.name)
     return
   }
-  for (const key of Object.keys(node)) {
+  const keyItems = Object.keys(node)
+  for (let i = 0, { length } = keyItems; i < length; i += 1) {
+    const key = keyItems[i]!
     if (key === 'loc' || key === 'parent' || key === 'range') {
       continue
     }
@@ -228,7 +230,9 @@ const rule = {
               }
             }
           }
-          for (const key of Object.keys(node)) {
+          const keyList = Object.keys(node)
+          for (let j = 0, { length: jlen } = keyList; j < jlen; j += 1) {
+            const key = keyList[j]!
             if (key === 'loc' || key === 'parent' || key === 'range') {
               continue
             }

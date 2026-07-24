@@ -114,13 +114,13 @@ const rule = {
 
     let exportedNames: Set<string> | undefined
 
-    // Shared handler for every top-level declaration shape. `kind` is the
+    // Shared handler for every top-level declaration shape. `kindLabel` is the
     // human label used in the message + autofix (`function`/`interface`/
     // `type`/`class`); `allowMain` exempts the `main` script-entry convention,
     // which only applies to functions.
     function check(
       node: AstNode,
-      kind: string,
+      kindLabel: string,
       { allowMain }: { allowMain: boolean },
     ): void {
       if (!node.id || node.id.type !== 'Identifier') {
@@ -139,14 +139,14 @@ const rule = {
         context.report({
           node: node.id,
           messageId: 'missingAlreadyReExported',
-          data: { kind, name },
+          data: { kind: kindLabel, name },
         })
         return
       }
       context.report({
         node: node.id,
         messageId: 'missing',
-        data: { kind, name },
+        data: { kind: kindLabel, name },
         fix(fixer: RuleFixer) {
           // Insert `export ` at the declaration's start. Handles `function`,
           // `async function`, `interface`, `type`, and `class` alike.

@@ -59,7 +59,7 @@
  *   WHAT "SNAPSHOT-ELIGIBLE" MEANS — the modules that freeze into the dispatch
  *   bundle: the `_dispatch/` + `_shared/` graph (always bundled) and each
  *   BUNDLE-SAFE hook `index.mts` — exactly the maker's criterion in
- *   `scripts/fleet/make-hook-dispatch.mts` (an entrypoint guard
+ *   `scripts/fleet/gen/hook-dispatch.mts` (an entrypoint guard
  *   `import.meta.url === \`file://${process.argv[1]}\`` AND `export function
  *   run(`). A hook that runs via top-level `await runHook(...)` lacks the
  *   `export run` marker, so the maker never bundles it and this rule never
@@ -92,7 +92,7 @@ const TLA_BYPASS_RE = /socket-lint:\s*allow\s+top-level-await/
 // snapshot blocker or import-time handle is a ONE-LINE addition to the relevant
 // set — add a trailing note saying WHY the pattern is a handle/IO blocker.
 // Seeded from the empirically-found snapshot blockers
-// (see template/base/.claude/hooks/fleet/_dispatch/SNAPSHOT-NOTES.md): every
+// (see template/base/.claude/hooks/fleet/_dispatch/snapshot-notes.md): every
 // entry below corresponds to a `[Foreign]`-handle / WASM / circular-init
 // failure that actually aborted `--build-snapshot`.
 
@@ -179,7 +179,7 @@ function isLazy(node: AstNode): boolean {
 // The two snapshot-eligible-only clauses (top-level await, variable-path
 // dynamic import) fire ONLY in modules that freeze into the V8 dispatch bundle.
 // That set is the rolldown bundle's input closure — mirror the maker
-// (scripts/fleet/make-hook-dispatch.mts), DON'T re-derive a different notion:
+// (scripts/fleet/gen/hook-dispatch.mts), DON'T re-derive a different notion:
 //   - the `_dispatch/` + `_shared/` graph (always bundled), and
 //   - each BUNDLE-SAFE hook `index.mts` — entrypoint-guarded AND `export run`.
 // Matched on the absolute file path (works in a real repo AND the RuleTester,
@@ -198,7 +198,7 @@ const BUNDLED_GRAPH_PATH_RE =
 const HOOK_INDEX_PATH_RE =
   /[\\/]\.claude[\\/]hooks[\\/]fleet[\\/](?!_)[^\\/]+[\\/]index\.[mc]?[jt]s$/
 
-// The maker's bundle-safe markers, byte-for-byte (make-hook-dispatch.mts):
+// The maker's bundle-safe markers, byte-for-byte (gen/hook-dispatch.mts):
 // an entrypoint guard so importing doesn't fire main(), AND an exported run().
 const ENTRYPOINT_GUARD_RE =
   /import\.meta\.url\s*===\s*`file:\/\/\$\{process\.argv\[1\]\}`/

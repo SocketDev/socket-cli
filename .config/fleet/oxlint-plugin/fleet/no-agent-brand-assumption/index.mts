@@ -10,13 +10,16 @@
 import type { AstNode, RuleContext } from '../../lib/rule-types.mts'
 
 const GENERIC_CLAUDE_PATTERNS: readonly RegExp[] = [
+  // Matches "Claude" followed by a verb (blocks, can, chooses, ...) describing generic agent behavior.
   /\bClaude\s+(?:blocks?|can|chooses?|loads?|must|needs?|reads?|reports?|runs?|sees|should|uses?|will|writes?)\b/i,
+  // Matches "Claude" (optionally possessive) followed by a generic noun like agent/context/session/tool.
   /\bClaude(?:'s)?\s+(?:agent|assistant|context|output|response|session|tool|tools|turn|workflow)\b/i,
   /\bthe\s+Claude\s+agent\b/i,
 ]
 
+// Matches real Claude-specific integrations (package name, config file, env var, product name, CLI flags) that are exempt from the generic-phrase check.
 const PRODUCT_SPECIFIC_RE =
-  /\b(?:Claude Code|CLAUDE_PROJECT_DIR|CLAUDE\.md|claude\s+(?:-p|--print|CLI|SDK)|@anthropic-ai\/claude)\b/i
+  /\b(?:@anthropic-ai\/claude|CLAUDE\.md|CLAUDE_PROJECT_DIR|Claude Code|claude\s+(?:--print|-p|CLI|SDK))\b/i
 
 function genericClaudePhrase(text: string): string | undefined {
   if (PRODUCT_SPECIFIC_RE.test(text)) {

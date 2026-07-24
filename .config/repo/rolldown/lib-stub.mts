@@ -29,10 +29,10 @@ export type LibStubOptions = {
   readonly stubCode?: string | undefined
 }
 
-export function createLibStubPlugin(options: LibStubOptions): Plugin {
+export function createLibStubPlugin(config: LibStubOptions): Plugin {
   const { stubCode = 'module.exports = {}', stubPattern } = {
     __proto__: null,
-    ...options,
+    ...config,
   } as LibStubOptions
   return {
     name: 'stub-unused-lib-internals',

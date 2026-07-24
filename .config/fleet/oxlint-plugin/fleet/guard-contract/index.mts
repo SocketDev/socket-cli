@@ -15,7 +15,7 @@
  *     `.claude/hooks/**∕index.mts` files that import `guard.mts` — a pure
  *     side-effect hook (output transformer, installer, sweeper) that does NOT
  *     import the contract is exempt and may exit normally. Pairs with
- *     `make-hook-dispatch.mts`'s conformance classifier + the `creating-guards`
+ *     `gen/hook-dispatch.mts`'s conformance classifier + the `creating-guards`
  *     skill. No autofix — removing an exit / argv gate is a structural
  *     rewrite.
  */

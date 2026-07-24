@@ -13,7 +13,7 @@
  *   child-process call — `shell: true` is virtually never used as a non-spawn
  *   flag in fleet code, so the false-positive risk is acceptable. No autofix:
  *   rewriting to `shell: WIN32` requires the file to import `WIN32` from the
- *   canonical `constants/platform` (src) or `test/_shared/fleet/lib/platform`
+ *   canonical `constants/platform` (src) or `test/fleet/_shared/lib/platform`
  *   (tests). Adding that import is non-deterministic enough — different repos
  *   lay it out differently — that the right move is a report-only rule. The fix
  *   is a one-token edit; humans can do it. Bypass: adjacent comment
@@ -44,7 +44,7 @@ const rule = {
     fixable: undefined,
     messages: {
       shellTrue:
-        'Use `shell: WIN32` (imported from `constants/platform` in src or `test/_shared/fleet/lib/platform` in tests). `shell: true` wraps the child in `/bin/sh` on Unix too, which is rarely intended — the fleet idiom is "wrap in cmd.exe on Windows so .cmd/.bat resolves, no shell wrap on Unix". If a cross-platform shell wrap really is intended, add `// prefer-shell-win32: intentional` with a reason.',
+        'Use `shell: WIN32` (imported from `constants/platform` in src or `test/fleet/_shared/lib/platform` in tests). `shell: true` wraps the child in `/bin/sh` on Unix too, which is rarely intended — the fleet idiom is "wrap in cmd.exe on Windows so .cmd/.bat resolves, no shell wrap on Unix". If a cross-platform shell wrap really is intended, add `// prefer-shell-win32: intentional` with a reason.',
     },
     schema: [],
   },

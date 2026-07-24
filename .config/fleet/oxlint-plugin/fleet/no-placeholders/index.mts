@@ -35,12 +35,12 @@ const COMMENT_MARKER_RE =
 // Matches any placeholder keyword inside a function body comment, case-insensitively,
 // including prose forms like "not implemented" and "placeholder".
 const STUB_BODY_MARKER_RE =
-  /\b(?:TODO|FIXME|XXX|HACK|TBD|STUB|WIP|UNIMPLEMENTED|not\s+implemented|unimplemented|placeholder|stub)\b/i
+  /\b(?:FIXME|HACK|STUB|TBD|TODO|UNIMPLEMENTED|WIP|XXX|not\s+implemented|placeholder|stub|unimplemented)\b/i
 
 // Matches placeholder phrases in a thrown Error's message string — the subset of
 // stub markers that commonly appear in `throw new Error("not implemented")` calls.
 const THROW_MESSAGE_RE =
-  /\b(?:TODO|FIXME|not\s+implemented|unimplemented|placeholder|stub)\b/i
+  /\b(?:FIXME|TODO|not\s+implemented|placeholder|stub|unimplemented)\b/i
 
 /**
  * @type {import('eslint').Rule.RuleModule}

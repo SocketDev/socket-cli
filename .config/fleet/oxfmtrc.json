@@ -39,16 +39,14 @@
     "**/coverage",
     "**/coverage-isolated",
     "**/dist",
-    "**/external",
     "**/node_modules",
     "**/package.json",
-    "**/plugin-patches/**",
     "**/pnpm-lock.yaml",
     "**/test/fixtures/**",
     "**/test/packages/**",
     "**/lockstep.schema.json",
     "**/socket-wheelhouse-schema.json",
-    "**/vendor/**",
-    "**/wasm_exec.js"
+    "**/wasm_exec.js",
+    "**/.config/fleet/oxlint-plugin.mjs"
   ]
 }
