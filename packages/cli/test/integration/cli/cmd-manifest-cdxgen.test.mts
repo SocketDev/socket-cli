@@ -13,7 +13,7 @@
  * spawning logic.
  */
 
-import { describe, expect } from 'vitest'
+import { beforeAll, describe, expect } from 'vitest'
 
 import {
   FLAG_CONFIG,
@@ -25,6 +25,24 @@ import { expectDryRunOutput } from '../../helpers/output-assertions.mts'
 import { cmdit, spawnSocketCli } from '../../utils.mts'
 
 const binCliPath = getBinCliPath()
+
+// Warm the cdxgen dlx cache before the suite runs. The --help tests execute a
+// REAL @cyclonedx/cdxgen run through Socket dlx — on a cold cache (every CI
+// run starts cold) that first spawn downloads and installs cdxgen plus its
+// full dependency tree from npm, which routinely blows the 30s per-test
+// budget. Paying the download here once, under a timeout sized for a cold
+// network install, keeps the tests below measuring CLI routing/help behavior
+// instead of npm download throughput. No assertions: if this warm-up fails
+// (network flake), the tests still run and report their own failures.
+beforeAll(async () => {
+  await spawnSocketCli(binCliPath, [
+    'manifest',
+    'cdxgen',
+    FLAG_HELP,
+    FLAG_CONFIG,
+    '{}',
+  ])
+}, 240_000)
 
 describe('socket manifest cdxgen', async () => {
   cmdit(
