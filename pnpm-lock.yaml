@@ -594,6 +594,7 @@ patchedDependencies:
   execa@2.1.0: e06dd2da266f9d3e4ac91468988bdc140c6ec1e5722f321960e1f61c83acb9fd
   execa@5.1.1: ee0e2217eadd7986ec585d2e684030a05ad958593a9b11affa002a14a5d46f77
   node-gyp@12.2.0: 140ba43d43d74f7d3577feb3f8a6efad544dbb0059784102b144a0e2daa437f9
+  taze@19.16.0: 77208c02cff936d0f1dbf2ffcc95f6f0def9697d6ba7ca4671c399c8c933c6fd
 
 importers:
 
@@ -883,7 +884,7 @@ importers:
         version: 4.0.1
       taze:
         specifier: 'catalog:'
-        version: 19.16.0
+        version: 19.16.0(patch_hash=77208c02cff936d0f1dbf2ffcc95f6f0def9697d6ba7ca4671c399c8c933c6fd)
       terminal-link:
         specifier: 'catalog:'
         version: 2.1.1
@@ -11599,7 +11600,7 @@ snapshots:
       minizlib: 3.1.0
       yallist: 5.0.0
 
-  taze@19.16.0:
+  taze@19.16.0(patch_hash=77208c02cff936d0f1dbf2ffcc95f6f0def9697d6ba7ca4671c399c8c933c6fd):
     dependencies:
       '@antfu/ni': 30.2.0
       '@henrygd/queue': 1.2.0

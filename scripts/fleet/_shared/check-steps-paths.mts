@@ -330,6 +330,12 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // patch is opaque + high-trust; an unannotated or force-less one is suspect.
     // See docs/agents.md/fleet/pnpm-patching.md (the patch-for-compat dedup lever).
     () => run('node', ['scripts/fleet/check/dedup-patches-are-justified.mts']),
+    // taze single-registry posture (owner ruling): the fast-npm-meta hosted
+    // endpoint is never network-allowed — no tracked file may carry its host
+    // (guard/test/patch exempt) — and the taze catalog pin must have its
+    // matching patches/taze@<pin>.patch + patchedDependencies entry, so a
+    // taze bump without a regenerated single-registry patch goes red.
+    () => run('node', ['scripts/fleet/check/taze-is-single-registry.mts']),
     // Avoidable dependency duplication (CLAUDE.md dedup discipline). Parses
     // pnpm-lock.yaml and reports packages resolved at >1 major (collapse
     // candidates — informational) and any package carrying a known

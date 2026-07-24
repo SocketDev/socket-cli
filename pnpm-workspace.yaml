@@ -434,6 +434,11 @@ patchedDependencies:
   # hosts) so the CLI package payload carries no compilable C# for AV/pack
   # scanners to flag. Consumer: packages/cli bundled npm tooling.
   node-gyp@12.2.0: patches/node-gyp@12.2.0.patch
+  # Single-registry: drops taze's default-registry fast path in
+  # getVersionsForContext so version lookups stay on the configured registry;
+  # consumer: the fleet update runner (`pnpm run update` via taze), which must
+  # keep version lookups on the registry .npmrc configures.
+  taze@19.16.0: patches/taze@19.16.0.patch
 saveExact: true
 strictPeerDependencies: true
 trustPolicy: no-downgrade

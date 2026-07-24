@@ -1,0 +1,13 @@
+diff --git a/dist/types-BDrH6chW.mjs b/dist/types-BDrH6chW.mjs
+index bab11cf4dfa56322c9893c0a446000ee7f5c33ec..ef9cbdf4c0c7e277a4c7d984af66eee56025c090 100644
+--- a/dist/types-BDrH6chW.mjs
++++ b/dist/types-BDrH6chW.mjs
+@@ -1804,7 +1804,7 @@ async function getVersions(spec, options = {}) {
+ 	return getVersionsForContext(context, options);
+ }
+ function getVersionsForContext(context, options) {
+-	if (isDefaultRegistry(context.registry)) return getVersions$1(context.parsed.raw, toDefaultOptions(options));
++
+ 	return getVersionsFromRegistry(context, options);
+ }
+ function toDefaultOptions(options) {

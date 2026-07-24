@@ -149,13 +149,13 @@ async function main(): Promise<void> {
         '(version lookups failed after a retry).',
     )
     logger.error(
-      '  Where: taze version resolution (fast-npm-meta endpoint npm.antfu.dev, 5s hard timeout).',
+      '  Where: taze version resolution (registry packument fetch via the single-registry patch, hard request timeout).',
     )
     logger.error(
       '  Saw: lookup timeouts/failures; wanted: every dependency checked against its latest soaked version.',
     )
     logger.error(
-      '  Fix: check egress to npm.antfu.dev (or the network), then re-run `pnpm run update`.',
+      '  Fix: check registry egress (and that the taze single-registry patch applied — `pnpm install`), then re-run `pnpm run update`.',
     )
     for (let i = 0, { length } = list; i < length; i += 1) {
       logger.error(`  ✗ ${list[i]!}`)
