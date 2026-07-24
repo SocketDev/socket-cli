@@ -37,6 +37,42 @@ export type ShadowBinResult = {
   spawnPromise: SpawnResult<string, SpawnExtra | undefined>
 }
 
+// Length of the '--node-options=' prefix, used to slice the value out of an
+// npm '--node-options=<value>' argument.
+const NODE_OPTIONS_FLAG_PREFIX_LENGTH = '--node-options='.length
+
+/**
+ * Build the '--node-options=<value>' argument passed to npm so its lifecycle
+ * scripts run with our Node permission flags.
+ *
+ * npm assigns this value to NODE_OPTIONS for the scripts it runs, REPLACING any
+ * inherited NODE_OPTIONS. To avoid clobbering the user's configuration we merge,
+ * in order, the caller's existing process.env.NODE_OPTIONS and any
+ * '--node-options=<value>' npm argument ahead of our permission flags (issue
+ * #1036).
+ *
+ * The value is intentionally NOT wrapped in quotes. shadowNpmBase spawns npm
+ * without a shell, so any quotes would be passed literally to npm and become
+ * part of the NODE_OPTIONS value. Consumers that re-tokenize NODE_OPTIONS on
+ * whitespace (e.g. Next.js) then strip the leading quote off '--permission',
+ * dropping it while keeping the '--allow-*' flags, which crashes Node >= 24
+ * with ERR_MISSING_OPTION (issue #1160).
+ */
+export function buildNpmNodeOptionsArg(
+  envNodeOptions: string | undefined,
+  nodeOptionsArg: string | undefined,
+  permArgs: string[] | readonly string[],
+): string {
+  const value = [
+    envNodeOptions,
+    nodeOptionsArg ? nodeOptionsArg.slice(NODE_OPTIONS_FLAG_PREFIX_LENGTH) : '',
+    cmdFlagsToString(permArgs),
+  ]
+    .filter(Boolean)
+    .join(' ')
+  return `--node-options=${value}`
+}
+
 export default async function shadowNpmBase(
   binName: typeof NPM | typeof NPX,
   args: string[] | readonly string[] = process.argv.slice(2),
@@ -113,7 +149,11 @@ export default async function shadowNpmBase(
       ...noAuditArgs,
       ...(useNodeOptions
         ? [
-            `--node-options='${nodeOptionsArg ? nodeOptionsArg.slice(15) : ''}${cmdFlagsToString(permArgs)}'`,
+            buildNpmNodeOptionsArg(
+              process.env['NODE_OPTIONS'],
+              nodeOptionsArg,
+              permArgs,
+            ),
           ]
         : []),
       '--no-fund',
