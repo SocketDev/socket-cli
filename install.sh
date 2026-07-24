@@ -115,6 +115,26 @@ detect_platform() {
   echo "${os}-${arch}${libc_suffix}"
 }
 
+# Map a platform triplet to the frozen legacy @socketbin package basename.
+# Legacy naming used "alpine" for musl and "win32" for Windows; the
+# cli-win-* and cli-linux-*-musl names that also exist on npm are empty
+# 0.0.0 placeholders and must never be targeted.
+legacy_package_basename() {
+  local platform="$1"
+
+  case "$platform" in
+    linux-arm64-musl)
+      echo "cli-alpine-arm64"
+      ;;
+    linux-x64-musl)
+      echo "cli-alpine-x64"
+      ;;
+    *)
+      echo "cli-${platform}"
+      ;;
+  esac
+}
+
 # Fetch a URL to stdout, enforcing HTTPS.
 #
 # curl enforces HTTPS via `--proto '=https'`. wget's `--https-only` only
@@ -188,6 +208,17 @@ get_latest_version() {
   echo "$version"
 }
 
+# Non-fatal variant of get_latest_version. Prints the latest version, or
+# nothing when the package is missing or the fetch fails — used to probe the
+# preferred package before falling back to the legacy one.
+try_get_latest_version() {
+  local package_name="$1"
+  local body
+
+  body=$(fetch_url "https://registry.npmjs.org/${package_name}/latest" 2>/dev/null) || return 0
+  parse_json_string "$body" "version"
+}
+
 # Get the npm-published integrity string (SSRI format, e.g. "sha512-...") for
 # a specific version.
 get_published_integrity() {
@@ -242,6 +273,7 @@ install_socket_cli() {
   local platform
   local version
   local package_name
+  local package_basename
   local download_url
   local dlx_dir
   local package_hash
@@ -254,15 +286,24 @@ install_socket_cli() {
   platform=$(detect_platform)
   success "Platform detected: ${BOLD}$platform${NC}"
 
-  # Construct package name.
-  package_name="@socketbin/cli-${platform}"
+  # Prefer the current @socketsecurity/cli.exe.<triplet> tail; fall back to
+  # the frozen legacy @socketbin binaries until the new set is live.
+  package_basename="cli.exe.${platform}"
+  package_name="@socketsecurity/${package_basename}"
 
   step "Fetching latest version from npm..."
-  version=$(get_latest_version "$package_name")
-  success "Found version ${BOLD}$version${NC}"
+  version=$(try_get_latest_version "$package_name")
+  if [ -z "$version" ]; then
+    warning "${package_name} is not available yet — using the legacy Socket CLI binary package"
+    package_basename=$(legacy_package_basename "$platform")
+    package_name="@socketbin/${package_basename}"
+    version=$(get_latest_version "$package_name")
+  fi
+  success "Found ${BOLD}${package_name}@${version}${NC}"
 
-  # Construct download URL from npm registry.
-  download_url="https://registry.npmjs.org/${package_name}/-/cli-${platform}-${version}.tgz"
+  # Construct download URL from npm registry. A scoped package's tarball
+  # basename drops the scope: /@scope/name/-/name-version.tgz.
+  download_url="https://registry.npmjs.org/${package_name}/-/${package_basename}-${version}.tgz"
 
   socket_brand "Downloading Socket CLI..."
 
