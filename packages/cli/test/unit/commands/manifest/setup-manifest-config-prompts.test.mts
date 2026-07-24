@@ -99,19 +99,19 @@ describe('setup-manifest-config', () => {
       mockSelect.mockResolvedValueOnce(true)
       await askForEnabled(true)
       expect(mockSelect).toHaveBeenCalledWith(
-        expect.objectContaining({ default: 'enable' }),
+        expect.objectContaining({ default: true }),
       )
 
       mockSelect.mockResolvedValueOnce(false)
       await askForEnabled(false)
       expect(mockSelect).toHaveBeenLastCalledWith(
-        expect.objectContaining({ default: 'disable' }),
+        expect.objectContaining({ default: false }),
       )
 
       mockSelect.mockResolvedValueOnce(undefined)
       await askForEnabled(undefined)
       expect(mockSelect).toHaveBeenLastCalledWith(
-        expect.objectContaining({ default: '' }),
+        expect.objectContaining({ default: undefined }),
       )
     })
   })
