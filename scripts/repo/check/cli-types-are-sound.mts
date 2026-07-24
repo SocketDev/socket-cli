@@ -6,13 +6,13 @@
  *   surfaces it. Runs `tsc --noEmit -p packages/cli/tsconfig.json` (the same
  *   config `pnpm --filter @socketsecurity/cli run type` uses) and fails with
  *   the diagnostics when the tree does not compile.
- *
  *   Usage: node scripts/repo/check/cli-types-are-sound.mts [--quiet]
  */
 
 import path from 'node:path'
 import process from 'node:process'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
@@ -38,11 +38,22 @@ export async function main(): Promise<void> {
       { cwd: REPO_ROOT, stdio: 'pipe', stdioString: true },
     )
   } catch (e) {
-    const err = e as {
-      stderr?: string | undefined
-      stdout?: string | undefined
-    }
-    const output = `${err?.stdout ?? ''}${err?.stderr ?? ''}`.trim()
+    // The lib spawn rejection carries the child's captured stdio.
+    const stdout =
+      e &&
+      typeof e === 'object' &&
+      'stdout' in e &&
+      typeof e.stdout === 'string'
+        ? e.stdout
+        : ''
+    const stderr =
+      e &&
+      typeof e === 'object' &&
+      'stderr' in e &&
+      typeof e.stderr === 'string'
+        ? e.stderr
+        : ''
+    const output = `${stdout}${stderr}`.trim()
     logger.error(
       'packages/cli does not typecheck — fix the tsc diagnostics below (repro: node node_modules/typescript/bin/tsc --noEmit -p packages/cli/tsconfig.json):',
     )
@@ -59,7 +70,7 @@ export async function main(): Promise<void> {
 
 if (isMainModule(import.meta.url)) {
   main().catch((e: unknown) => {
-    logger.error(String(e))
+    logger.error(errorMessage(e))
     process.exitCode = 1
   })
 }
