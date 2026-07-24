@@ -29,7 +29,7 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 const logger = getDefaultLogger()
 
 // The four canonical orphan workflow names the unified ci.yml replaced.
-const ORPHAN_RE = /^(lint|check|type|test)\.ya?ml$/u
+const ORPHAN_RE = /^(check|lint|test|type)\.ya?ml$/u
 
 export interface WorkflowRecord {
   id: number

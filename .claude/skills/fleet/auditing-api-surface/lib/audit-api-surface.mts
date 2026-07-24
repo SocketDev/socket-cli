@@ -125,7 +125,9 @@ export function enumerateSubpaths(
   exportsMap: Record<string, unknown>,
 ): Array<{ subpath: string; sourceFile: string | undefined }> {
   const out: Array<{ subpath: string; sourceFile: string | undefined }> = []
-  for (const key of Object.keys(exportsMap)) {
+  const keys = Object.keys(exportsMap)
+  for (let i = 0, { length } = keys; i < length; i += 1) {
+    const key = keys[i]!
     if (!key.startsWith('./') || key === './package.json') {
       continue
     }
@@ -182,7 +184,9 @@ export async function countInternalRefs(
   )
   // --count-matches prints `file:count` per file; sum them.
   let total = 0
-  for (const line of result.split('\n')) {
+  const lines = result.split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
     const colon = line.lastIndexOf(':')
     if (colon === -1) {
       continue
@@ -228,13 +232,19 @@ export async function harvestConsumerImports(
   }
   rgArgs.push(pattern, consumerDir)
   const out = await runRg(rgArgs, consumerDir)
-  for (const raw of out.split('\n')) {
-    const match = raw.trim()
+  const outLines = out.split('\n')
+  for (let i = 0, { length } = outLines; i < length; i += 1) {
+    const match = outLines[i]!.trim()
     if (!match) {
       continue
     }
     // Strip the prefix, leaving the bare subpath.
-    for (const prefix of importPrefixes) {
+    for (
+      let j = 0, { length: prefixLength } = importPrefixes;
+      j < prefixLength;
+      j += 1
+    ) {
+      const prefix = importPrefixes[j]!
       if (match.startsWith(prefix + '/')) {
         consumed.add(match.slice(prefix.length + 1))
         break
@@ -265,13 +275,13 @@ export function classify(
   return 'dead'
 }
 
-export async function audit(options: CliOptions): Promise<AuditResult> {
-  const opts = { __proto__: null, ...options } as typeof options
-  const hostDir = resolveHostDir(options)
+export async function audit(config: CliOptions): Promise<AuditResult> {
+  const cfg = { __proto__: null, ...config } as typeof config
+  const hostDir = resolveHostDir(config)
   const pkgPath = path.join(hostDir, 'package.json')
   if (!existsSync(pkgPath)) {
     throw new Error(
-      `no package.json at ${pkgPath}. Run audit-api-surface from a repo root, or pass --repo <name> for a checkout under ${opts.projects}.`,
+      `no package.json at ${pkgPath}. Run audit-api-surface from a repo root, or pass --repo <name> for a checkout under ${cfg.projects}.`,
     )
   }
   const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
@@ -294,7 +304,7 @@ export async function audit(options: CliOptions): Promise<AuditResult> {
     if (repoName === hostRepoName) {
       continue
     }
-    const consumerDir = path.join(opts.projects, repoName)
+    const consumerDir = path.join(cfg.projects, repoName)
     if (!existsSync(consumerDir)) {
       unscannedConsumers.push(repoName)
       continue
@@ -339,10 +349,10 @@ export async function audit(options: CliOptions): Promise<AuditResult> {
   }
 }
 
-export function resolveHostDir(options: CliOptions): string {
-  const opts = { __proto__: null, ...options } as typeof options
-  if (opts.repo) {
-    return path.join(opts.projects, opts.repo)
+export function resolveHostDir(config: CliOptions): string {
+  const cfg = { __proto__: null, ...config } as typeof config
+  if (cfg.repo) {
+    return path.join(cfg.projects, cfg.repo)
   }
   return process.cwd()
 }

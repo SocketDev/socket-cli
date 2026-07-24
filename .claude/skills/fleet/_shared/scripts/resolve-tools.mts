@@ -19,6 +19,7 @@
  */
 import { existsSync } from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import { spawn } from '@socketsecurity/lib/process/spawn/child'
 
@@ -118,6 +119,39 @@ const FLEET_FORMATTER_CONFIG = '.oxfmtrc.json'
 const FLEET_TEST_CONFIG = '.config/repo/vitest.config.mts'
 
 /**
+ * Walk up from this module's own location to find the repo root — the
+ * nearest ancestor that has a `package.json`. Anchors the default `cwd` for
+ * `runResolved()` / `hasResolvedTool()` on a stable directory instead of the
+ * process's current working directory, which shifts with wherever the caller
+ * happened to invoke from.
+ *
+ * @throws If no package.json ancestor exists (= we're not in a repo).
+ */
+function resolveRepoRoot(): string {
+  let cur = path.dirname(fileURLToPath(import.meta.url))
+  const root = path.parse(cur).root
+  while (cur && cur !== root) {
+    if (existsSync(path.join(cur, 'package.json'))) {
+      return cur
+    }
+    const parent = path.dirname(cur)
+    if (parent === cur) {
+      break
+    }
+    cur = parent
+  }
+  throw new Error(
+    `Could not resolve repo root from ${fileURLToPath(import.meta.url)} (no ancestor has package.json).`,
+  )
+}
+
+/**
+ * Default `cwd` for `runResolved()` / `hasResolvedTool()` when the caller
+ * doesn't supply one.
+ */
+const DEFAULT_CWD = resolveRepoRoot()
+
+/**
  * Resolve the fleet's linter (currently Oxlint).
  *
  * Returns argv ready for `pnpm exec`. `--config` is always emitted so a swap to
@@ -170,9 +204,9 @@ export function resolveFormatter(
  * only — emitting goes through the bundler.
  */
 export function resolveTypeChecker(
-  options: ResolveTypeCheckerOptions,
+  config: ResolveTypeCheckerOptions,
 ): ResolvedTool {
-  const { project } = { __proto__: null, ...options } as typeof options
+  const { project } = { __proto__: null, ...config } as typeof config
   return {
     args: ['tsc', '--noEmit', '-p', project],
     envs: {},
@@ -221,7 +255,7 @@ export async function runResolved(
   resolved: ResolvedTool,
   options: RunResolvedOptions = {},
 ): Promise<{ exitCode: number; stdout: string; stderr: string }> {
-  const { capture = false, cwd = process.cwd(), extraArgs = [] } = options
+  const { capture = false, cwd = DEFAULT_CWD, extraArgs = [] } = options
 
   const env = { ...process.env, ...resolved.envs }
   const argv = ['exec', ...resolved.args, ...extraArgs]
@@ -247,7 +281,7 @@ export async function runResolved(
  */
 export function hasResolvedTool(
   name: string,
-  cwd: string = process.cwd(),
+  cwd: string = DEFAULT_CWD,
 ): boolean {
   return existsSync(path.join(cwd, 'node_modules', '.bin', name))
 }

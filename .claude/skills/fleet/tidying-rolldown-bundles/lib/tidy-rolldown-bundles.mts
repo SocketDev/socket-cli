@@ -205,9 +205,9 @@ export async function dedupeFix(repoDir: string): Promise<boolean> {
 
 export async function sweepRepo(
   repo: string,
-  options: { fix: boolean },
+  config: { fix: boolean },
 ): Promise<RepoFinding[]> {
-  const opts = { __proto__: null, ...options } as typeof options
+  const cfg = { __proto__: null, ...config } as typeof config
   const repoDir = path.join(PROJECTS, repo)
   if (!existsSync(path.join(repoDir, '.git'))) {
     return []
@@ -237,7 +237,7 @@ export async function sweepRepo(
 
   const dedupe = await dedupeCheck(repoDir)
   if (dedupe.hasChanges) {
-    if (opts.fix) {
+    if (cfg.fix) {
       const ok = await dedupeFix(repoDir)
       findings.push({
         repo,

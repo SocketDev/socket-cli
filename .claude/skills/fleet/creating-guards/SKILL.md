@@ -52,4 +52,4 @@ A pure side-effect hook (output transformer, installer, sweeper) with no block a
 
 ## Wire-up
 
-Registration is generated: `node scripts/fleet/make-hook-dispatch.mts` classifies every guard and moves contract-conformant ones into `_shared/dispatch-manifest.json` (dispatched) — non-conformant ones stay spawned. Run it after adding/converting a guard; `--check` (in `check --all`) fails when the wiring is stale.
+Registration is generated: `node scripts/fleet/gen/hook-dispatch.mts` classifies every guard and moves contract-conformant ones into `_shared/dispatch-manifest.json` (dispatched) — non-conformant ones stay spawned. Run it after adding/converting a guard; `--check` (in `check --all`) fails when the wiring is stale.

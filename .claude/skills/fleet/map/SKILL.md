@@ -2,7 +2,7 @@
 name: map
 description: Emit a token-cheap symbol map for files or directories before reading unfamiliar source in detail.
 user-invocable: true
-allowed-tools: Read, Bash(node scripts/fleet/make-repo-map.mts:*)
+allowed-tools: Read, Bash(node scripts/fleet/gen/repo-map.mts:*)
 ---
 
 # map
@@ -18,7 +18,7 @@ need.
 1. Run the engine on the path argument(s):
 
    ```
-   node scripts/fleet/make-repo-map.mts <file|dir> [<file|dir>…]
+   node scripts/fleet/gen/repo-map.mts <file|dir> [<file|dir>…]
    ```
 
    Skeleton lines go to stdout; a `source → skeleton` savings summary goes to
@@ -35,7 +35,7 @@ need.
 - Read-only. The engine never writes; it only emits the skeleton.
 - This is for NAVIGATION (understanding where code lives). When you are editing a
   file and need exact byte context, a full read is still correct.
-- The engine is `scripts/fleet/make-repo-map.mts` — this skill is a thin wrapper;
+- The engine is `scripts/fleet/gen/repo-map.mts` — this skill is a thin wrapper;
   fix parsing/behavior there, not here.
 </constraints>
 

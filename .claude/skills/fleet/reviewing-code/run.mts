@@ -485,7 +485,7 @@ export async function detectAvailableBackends(): Promise<
 
 export async function git(
   args: readonly string[],
-  cwd?: string,
+  cwd?: string | undefined,
 ): Promise<string> {
   const result = await spawn('git', args as string[], {
     cwd,
@@ -561,7 +561,9 @@ export function parseArgs(argv: readonly string[]): Args {
       continue
     }
     if (arg === '--only') {
-      for (const r of argv[++i].split(',')) {
+      const roles = argv[++i].split(',')
+      for (let j = 0, { length } = roles; j < length; j += 1) {
+        const r = roles[j]
         if (!isRole(r)) {
           throw new Error(`--only: unknown role "${r}"`)
         }

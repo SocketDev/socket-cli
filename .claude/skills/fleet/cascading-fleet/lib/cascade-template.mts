@@ -51,7 +51,9 @@ const DRY_RUN = ARGV.includes('--dry-run')
 const SKIP_REPOS = new Set<string>()
 for (let i = 0, { length } = ARGV; i < length; i += 1) {
   if (ARGV[i] === '--skip' && ARGV[i + 1]) {
-    for (const r of ARGV[i + 1]!.split(',')) {
+    const rs = ARGV[i + 1]!.split(',')
+    for (let j = 0, { length: jlen } = rs; j < jlen; j += 1) {
+      const r = rs[j]!
       const name = r.trim()
       if (name) {
         SKIP_REPOS.add(name)
@@ -79,7 +81,9 @@ function loadOwnerMap(): Map<string, string> {
   const map = new Map<string, string>()
   try {
     const parsed = JSON.parse(readFileSync(FLEET_REPOS_JSON, 'utf8')) as {
-      repos?: Array<{ name?: string; owner?: string }> | undefined
+      repos?:
+        | Array<{ name?: string | undefined; owner?: string | undefined }>
+        | undefined
     }
     for (const entry of parsed.repos ?? []) {
       if (typeof entry.name === 'string' && typeof entry.owner === 'string') {
@@ -258,7 +262,9 @@ function run(
 
 function logTail(out: string, n: number): void {
   const lines = out.split('\n').filter(Boolean)
-  for (const line of lines.slice(-n)) {
+  const lineList = lines.slice(-n)
+  for (let i = 0, { length } = lineList; i < length; i += 1) {
+    const line = lineList[i]!
     log(line)
   }
 }
@@ -295,7 +301,8 @@ function resolveBase(src: string): string {
 
 const fleetReposRaw = readFileSync(FLEET_REPOS_FILE, 'utf8').split('\n')
 
-for (const rawLine of fleetReposRaw) {
+for (let i = 0, { length } = fleetReposRaw; i < length; i += 1) {
+  const rawLine = fleetReposRaw[i]!
   const repo = rawLine.trim()
   if (!repo || repo.startsWith('#')) {
     continue

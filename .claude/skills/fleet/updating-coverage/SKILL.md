@@ -31,14 +31,14 @@ Runs the repo's coverage script and rewrites the README badge so the published n
 
 ## Phases
 
-| #   | Phase     | Outcome                                                                                              |
-| --- | --------- | ---------------------------------------------------------------------------------------------------- |
-| 1   | Discovery | Find the coverage script in `package.json` (`cover` / `coverage` / `test:cover`, in that preference). |
-| 2   | Run       | `pnpm run <script>`. Fail loudly if the run errors.                                                  |
-| 3   | Rewrite   | `node scripts/fleet/make-coverage-badge.mts` — reads `coverage/coverage-summary.json`, rewrites the badge. |
-| 4   | Commit    | `docs(readme): refresh coverage badge to N%`. Direct-push per fleet norm.                            |
+| #   | Phase     | Outcome                                                                                                                              |
+| --- | --------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Discovery | Find the coverage script in `package.json` (`cover` / `coverage` / `test:cover`, in that preference).                                |
+| 2   | Run       | `pnpm run <script>`. Fail loudly if the run errors.                                                                                  |
+| 3   | Rewrite   | `node scripts/fleet/gen/coverage-badge.mts` — reads `node_modules/.cache/fleet/coverage/coverage-summary.json`, rewrites the badge. |
+| 4   | Commit    | `docs(readme): refresh coverage badge to N%`. Direct-push per fleet norm.                                                            |
 
-The parse + rewrite math (read the summary, round the percent, pick the color bucket, edit the README) is owned by `scripts/fleet/make-coverage-badge.mts` and its lib `scripts/fleet/lib/coverage-badge.mts` — the same owner the commit-time gate `scripts/fleet/check/coverage-badge-is-current.mts` reads. This skill never re-derives the number or the format in shell; if it did, the badge it wrote (e.g. two decimals, a hard-coded color) would be rejected by `check --all`. The skill is orchestration over those scripts; the judgment it keeps is surfacing a real coverage-run failure.
+The parse + rewrite math (read the summary, round the percent, pick the color bucket, edit the README) is owned by `scripts/fleet/gen/coverage-badge.mts` and its lib `scripts/fleet/lib/coverage-badge.mts` — the same owner the commit-time gate `scripts/fleet/check/coverage-badge-is-current.mts` reads. This skill never re-derives the number or the format in shell; if it did, the badge it wrote (e.g. two decimals, a hard-coded color) would be rejected by `check --all`. The skill is orchestration over those scripts; the judgment it keeps is surfacing a real coverage-run failure.
 
 ## Phase 1: discovery
 
@@ -59,10 +59,10 @@ Use the standard pnpm runner so the repo's own env config (catalog versions, etc
 ## Phase 3: rewrite
 
 ```sh
-node scripts/fleet/make-coverage-badge.mts
+node scripts/fleet/gen/coverage-badge.mts
 ```
 
-This reads `coverage/coverage-summary.json` (the `json-summary` reporter's output) and rewrites the README badge in place: the percent is `Math.round`-ed to an integer and the color is the bucket `badgeColor` computes (red → brightgreen). Exit 0 = written or already current; exit 1 = no coverage data / no badge to fill. To see the before value first, run `node scripts/fleet/make-coverage-badge.mts --check` — the dry-run the gate uses — and read its output.
+This reads `node_modules/.cache/fleet/coverage/coverage-summary.json` (the `json-summary` reporter's output) and rewrites the README badge in place: the percent is `Math.round`-ed to an integer and the color is the bucket `badgeColor` computes (red → brightgreen). Exit 0 = written or already current; exit 1 = no coverage data / no badge to fill. To see the before value first, run `node scripts/fleet/gen/coverage-badge.mts --check` — the dry-run the gate uses — and read its output.
 
 The canonical badge line in `README.md` is the placeholder a seeded repo ships:
 

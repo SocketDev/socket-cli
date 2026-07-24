@@ -1,6 +1,6 @@
 ---
 name: releasing-a-package
-description: Release a single-package fleet repo: pre-bump, changelog, version tag, and staged publish.
+description: Release a single-package fleet repo: pre-bump, changelog, staged publish, human approve, then the version tag + GitHub release cut last.
 model: claude-sonnet-4-6
 user-invocable: true
 allowed-tools: AskUserQuestion, Bash(git:*), Bash(node:*), Bash(pnpm run:*), Edit, Read
@@ -44,7 +44,10 @@ a botched stage upload is rescued server-side with `pnpm stage reject`.
 5. **Approve — human, local, real terminal.** Run `node scripts/fleet/npm-publish.mts --approve`,
    multi-select the staged package(s), enter one shared 2FA OTP. Leaving the prompt empty
    triggers pnpm's web-OTP flow (opens npmjs.com in a browser); or pass `--otp <code>`. This is
-   the step that makes the package public and creates the `vX.Y.Z` tag + GitHub release.
+   the step that makes the package public. Only AFTER the registry confirms the version is
+   resolvable (`requireRegistryLive`) does it create the `vX.Y.Z` tag + immutable GitHub
+   release — the release is the LAST marker and never precedes the publish. A STAGED package
+   is not published; never tag or cut a release for a version that is only staged.
 6. **Verify.** `node scripts/fleet/check/provenance-is-attested.mts <name>` — confirm the new
    version shows provenance ✓ and trustedPublisher ✓.
 

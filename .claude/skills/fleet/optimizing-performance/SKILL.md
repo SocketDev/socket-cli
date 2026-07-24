@@ -56,5 +56,36 @@ For every kept optimization, state:
   microbenchmark as a substitute for a production parser/service workload.
 - Do not cross JS/native/Wasm boundaries per token, AST node, or byte when a batch or
   typed buffer can express the same work.
-- Keep a portable baseline. `target-cpu=native` and experimental host features are not a
-  distributable default.
+- Keep a portable baseline for a distributable. `target-cpu=native` and experimental host
+  features are not a distributable default.
+
+## Portable SIMD
+
+Portable SIMD is RUNTIME CPU DISPATCH: one binary detects the CPU at run time and uses
+AVX2/NEON when present, scalar/SSE2 otherwise. This is the only way a distributed SIMD path
+both goes fast on new CPUs and runs at all on old ones.
+
+- **Match the microarch pin to who controls the target.** Distributed to CPUs you do NOT
+  control — published npm natives, downloadable CLIs, release artifacts — must NOT pin above
+  the minimum supported microarch: no `-C target-cpu=native`, no baseline
+  `-C target-feature=+avx2`, no `GOAMD64=v2|v3|v4`, each bakes in the build machine's ISA and
+  SIGILLs on older CPUs. Use runtime dispatch instead. A CONTROLLED target — a homogeneous
+  fleet, a constrained container, a per-microarch build matrix with a selecting loader, or a
+  local build where build host == run host — MAY pin to the guaranteed floor, never to
+  `native` on a random build box, and records why. Enforced by
+  `scripts/fleet/check/build-microarch-is-portable.mts`; a pin passes when annotated
+  `# microarch-pin: local-profiling | removable: YYYY-MM-DD` or
+  `# microarch-pin: controlled-target - <justification>`.
+- **The scan kernel is compare-and-reduce.** Load a 16/32-byte chunk, run class compares,
+  OR the class masks, extract to a scalar bitmask, find the first boundary with a
+  count-trailing-zeros, then a scalar tail handles the sub-stride remainder.
+- **Correctness is sacred.** A SIMD path must be byte-identical to its scalar reference —
+  ship a SIMD-vs-scalar differential test plus an exhaustive delimiter-at-every-offset test,
+  and validate end to end.
+- **The optimizer will not autovectorize a data-dependent scan.** Compilers autovec simple
+  counted loops over contiguous numeric slices, not find-first-of-a-byte-set scans; those
+  need explicit SIMD or a `memchr`-family primitive. Profile first; measure in release only.
+- Language mechanics live in [Rust](../optimizing-rust-performance/SKILL.md),
+  [Go](../optimizing-go-performance/SKILL.md), and
+  [C++](../optimizing-cpp-performance/SKILL.md); lexer/scan specifics in
+  [parser performance](../optimizing-parser-performance/SKILL.md).

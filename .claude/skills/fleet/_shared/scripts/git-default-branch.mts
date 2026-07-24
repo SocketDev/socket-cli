@@ -15,16 +15,25 @@
  */
 import path from 'node:path'
 import process from 'node:process'
-import { pathToFileURL } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import { errorMessage } from '@socketsecurity/lib/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 import { isSpawnError } from '@socketsecurity/lib/process/spawn/errors'
 import { spawn } from '@socketsecurity/lib/process/spawn/child'
 
+// Default working directory when the caller passes none: the agent-provided
+// project root, else this file's own location (`.claude/skills/fleet/_shared/
+// scripts/`) walked up to the repo root. Never process.cwd() — skill runners
+// may invoke this from any directory (socket/no-process-cwd-in-scripts-hooks).
+const HERE = path.dirname(fileURLToPath(import.meta.url))
+const DEFAULT_CWD =
+  process.env['CLAUDE_PROJECT_DIR'] ??
+  path.join(HERE, '..', '..', '..', '..', '..')
+
 export type ResolveDefaultBranchOptions = {
   /**
-   * Working directory; defaults to process.cwd().
+   * Working directory; defaults to the session's project root.
    */
   readonly cwd?: string | undefined
   /**
@@ -49,7 +58,7 @@ export type ResolveDefaultBranchOptions = {
 export async function resolveDefaultBranch(
   options: ResolveDefaultBranchOptions = {},
 ): Promise<string> {
-  const { cwd = process.cwd(), remote = 'origin' } = options
+  const { cwd = DEFAULT_CWD, remote = 'origin' } = options
 
   // Step 1: ask the remote what its HEAD points to.
   try {
@@ -106,7 +115,7 @@ async function runGit(args: readonly string[], cwd: string): Promise<string> {
 
 async function main(): Promise<void> {
   const logger = getDefaultLogger()
-  const cwd = process.argv[2] ? path.resolve(process.argv[2]) : process.cwd()
+  const cwd = process.argv[2] ? path.resolve(process.argv[2]) : DEFAULT_CWD
   try {
     logger.log(await resolveDefaultBranch({ cwd }))
   } catch (e) {

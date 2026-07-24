@@ -46,7 +46,7 @@ const logger = getDefaultLogger()
 // through; treat anything else as a local path → file:// URL.
 export function toUrl(target: string): string {
   // Matches http://, https://, file://, or chrome-extension:// URL schemes.
-  if (/^(?:https?|file|chrome-extension):/.test(target)) {
+  if (/^(?:chrome-extension|file|https?):/.test(target)) {
     return target
   }
   return `file://${path.resolve(target)}`

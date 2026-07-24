@@ -40,9 +40,15 @@ import { discoverAiAgents } from '@socketsecurity/lib-stable/ai/discover'
 import { spawnAiAgent } from '@socketsecurity/lib-stable/ai/spawn'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import type { AiEffort } from '@socketsecurity/lib-stable/ai/types'
+import {
+  gitSilent,
+  landMigratedFile,
+  prepareWorktree,
+  run,
+  runGate,
+} from './run-migration-worktree.mts'
 
 const logger = getDefaultLogger()
 
@@ -90,12 +96,6 @@ export interface MigrationReport {
   exceptions: readonly MigrationResult[]
   landed: readonly MigrationResult[]
   prUrls: readonly string[]
-}
-
-interface RunOutcome {
-  code: number
-  stderr: string
-  stdout: string
 }
 
 function usage(): never {
@@ -175,46 +175,6 @@ export function parseArgs(argv: readonly string[]): MigrationArgs {
   }
 }
 
-async function run(
-  cmd: string,
-  args: readonly string[],
-  options: {
-    readonly cwd: string
-    readonly env?: Readonly<Record<string, string>> | undefined
-  },
-): Promise<RunOutcome> {
-  const opts = { __proto__: null, ...options } as {
-    cwd: string
-    env?: Readonly<Record<string, string>> | undefined
-  }
-  try {
-    const result = await spawn(cmd, args, {
-      cwd: opts.cwd,
-      stdioString: true,
-      ...(opts.env ? { env: { ...process.env, ...opts.env } } : {}),
-    })
-    return {
-      code: 0,
-      stderr: String(result.stderr ?? ''),
-      stdout: String(result.stdout ?? ''),
-    }
-  } catch (e) {
-    // lib spawn rejects on non-zero/spawn-error carrying { code, stdout, stderr }.
-    // A spawn ENOENT carries the STRING "ENOENT" as code → map non-numeric to -1.
-    const err = e as {
-      code?: unknown | undefined
-      stderr?: unknown | undefined
-      stdout?: unknown | undefined
-    }
-    const rawCode = err?.code
-    return {
-      code: typeof rawCode === 'number' ? rawCode : -1,
-      stderr: String(err?.stderr ?? errorMessage(e)),
-      stdout: String(err?.stdout ?? ''),
-    }
-  }
-}
-
 // Resolve the remote's default branch — prefer main, fall back to master.
 // Never hard-code one (CLAUDE.md default-branch rule).
 export async function resolveBase(cwd: string): Promise<string> {
@@ -280,12 +240,12 @@ export function slugForFile(file: string): string {
   return file.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 }
 
-export function buildPrompt(options: {
+export function buildPrompt(config: {
   readonly attemptFeedback: string | undefined
   readonly file: string
   readonly rulePack: string
 }): string {
-  const opts = { __proto__: null, ...options } as {
+  const cfg = { __proto__: null, ...config } as {
     attemptFeedback: string | undefined
     file: string
     rulePack: string
@@ -293,20 +253,20 @@ export function buildPrompt(options: {
   return [
     'You are applying a rule-pack migration to ONE target file. The RULE PACK below is your source of truth — it lists each before→after transformation, when it applies, when it does NOT, and a reference implementation.',
     '',
-    `TARGET FILE (relative to the repo root, which is your cwd): ${opts.file}`,
+    `TARGET FILE (relative to the repo root, which is your cwd): ${cfg.file}`,
     '',
     'Do exactly this:',
-    `1. Read ${opts.file}.`,
+    `1. Read ${cfg.file}.`,
     '2. Apply EVERY rule in the pack that matches, producing the after-shape. Where a rule explicitly says it does NOT apply (or defers to a hand-edit), leave that construct unchanged.',
     '3. After editing, run the validation gate yourself: `pnpm run build`, then `pnpm run check`, then `pnpm run test`. If any fails, read the error, fix YOUR edit (never weaken a config or a test to pass), and re-run the gate. Keep the build green.',
     '4. Edit ONLY the target file (and, if a rule explicitly requires it, the one import site the rule names). Do not touch unrelated files, do not commit, do not push — the runner lands the change.',
     '',
-    opts.attemptFeedback
-      ? `PREVIOUS ATTEMPT FAILED THE GATE. The failing output was:\n${opts.attemptFeedback}\nFix the cause in the target file and re-run the gate.`
+    cfg.attemptFeedback
+      ? `PREVIOUS ATTEMPT FAILED THE GATE. The failing output was:\n${cfg.attemptFeedback}\nFix the cause in the target file and re-run the gate.`
       : '',
     '',
     '===== RULE PACK =====',
-    opts.rulePack,
+    cfg.rulePack,
     '===== END RULE PACK =====',
     '',
     'When the gate is green, stop. Report which rules you applied and any construct you left for a hand-edit.',
@@ -315,64 +275,34 @@ export function buildPrompt(options: {
     .join('\n')
 }
 
-// The deterministic gate: build → check → test. Returns the first failing
-// stage's combined output (for the agent's next-attempt context), or undefined
-// when all three pass. Plain code owns the VERDICT — the agent's self-report is
-// never trusted as the pass signal.
-async function runGate(cwd: string): Promise<string | undefined> {
-  for (const script of ['build', 'check', 'test']) {
-    const result = await run('pnpm', ['run', script], {
-      cwd,
-      env: { CI: 'true' },
-    })
-    if (result.code !== 0) {
-      const combined = `${result.stdout}\n${result.stderr}`.trim()
-      return `[pnpm run ${script} exit ${result.code}]\n${combined.slice(-4000)}`
-    }
-  }
-  return undefined
-}
-
-async function gitSilent(cwd: string, args: readonly string[]): Promise<void> {
-  await run('git', args, { cwd })
-}
-
 // Migrate one file end-to-end in its own worktree. The AI transform + gate loop
 // is the intelligent core; the commit/push/PR is deterministic.
-export async function migrateFile(options: {
+export async function migrateFile(config: {
   readonly args: MigrationArgs
   readonly base: string
   readonly file: string
   readonly rulePack: string
 }): Promise<MigrationResult> {
-  const opts = { __proto__: null, ...options } as {
+  const cfg = { __proto__: null, ...config } as {
     args: MigrationArgs
     base: string
     file: string
     rulePack: string
   }
-  const { args, base, file, rulePack } = opts
+  const { args, base, file, rulePack } = cfg
   const slug = slugForFile(file)
   const branch = `migration/${args.name}-${slug}`
   const wt = path.join(args.target, '.claude', 'worktrees', args.name, slug)
 
-  await gitSilent(args.target, ['worktree', 'remove', '--force', wt])
-  await gitSilent(args.target, ['branch', '-D', branch])
-  await gitSilent(args.target, ['fetch', 'origin', base, '--quiet'])
-
-  const wtAdd = await run(
-    'git',
-    ['worktree', 'add', '-b', branch, wt, `origin/${base}`],
-    { cwd: args.target },
-  )
-  if (wtAdd.code !== 0) {
-    return {
-      attempts: 0,
-      failureMode: `worktree: ${wtAdd.stderr.trim().slice(0, 300)}`,
-      file,
-      prUrl: undefined,
-      status: 'exception',
-    }
+  const setupFailure = await prepareWorktree({
+    base,
+    branch,
+    file,
+    target: args.target,
+    wt,
+  })
+  if (setupFailure) {
+    return setupFailure
   }
 
   let attemptFeedback: string | undefined
@@ -431,71 +361,17 @@ export async function migrateFile(options: {
     }
   }
 
-  // Deterministic land: stage exactly the migrated file, commit, push, PR.
-  await run('git', ['add', file], { cwd: wt })
-  const commit = await run(
-    'git',
-    ['commit', '-m', `refactor(${args.name}): migrate ${file}`],
-    { cwd: wt },
-  )
-  if (commit.code !== 0) {
-    return {
-      attempts: usedAttempts,
-      failureMode: `commit: ${commit.stderr.trim().slice(0, 300)}`,
-      file,
-      prUrl: undefined,
-      status: 'exception',
-    }
-  }
-
-  const push = await run('git', ['push', '-u', 'origin', branch], { cwd: wt })
-  if (push.code !== 0) {
-    return {
-      attempts: usedAttempts,
-      failureMode: `push: ${push.stderr.trim().slice(0, 300)}`,
-      file,
-      prUrl: undefined,
-      status: 'exception',
-    }
-  }
-
-  let prUrl: string | undefined
-  if (args.repo) {
-    const prCreate = await run(
-      'gh',
-      [
-        'pr',
-        'create',
-        '--repo',
-        args.repo,
-        '--base',
-        base,
-        '--head',
-        branch,
-        '--title',
-        `refactor(${args.name}): migrate ${file}`,
-        '--body',
-        `Rule-pack migration \`${args.name}\` applied to \`${file}\`.`,
-      ],
-      { cwd: wt },
-    )
-    prUrl =
-      (prCreate.stdout + prCreate.stderr)
-        .trim()
-        .split('\n')
-        .filter(Boolean)
-        .slice(-1)[0] ?? undefined
-  }
-
   // Worktree stays until the PR lands (re-survey / rebase against rule updates
   // needs it); cleaning-ci's sibling cleanup hook reaps it after merge.
-  return {
-    attempts: usedAttempts,
-    failureMode: undefined,
+  return landMigratedFile({
+    base,
+    branch,
     file,
-    prUrl,
-    status: 'landed',
-  }
+    name: args.name,
+    repo: args.repo,
+    usedAttempts,
+    wt,
+  })
 }
 
 // Bounded-concurrency map — the pipeline cap. A simple worker pool over the

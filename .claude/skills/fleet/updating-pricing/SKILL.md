@@ -21,7 +21,7 @@ Re-sources the per-model token prices the fleet routes spend on, so the figure `
 
 - **Invent prices.** The numbers come off the vendor pricing page (or the researching-recency feed), read this run. If neither yields a price, the skill reports that and exits without writing — a stale-but-real snapshot beats a guessed one.
 - **Commit private budgets.** `model-pricing.json` is GENERIC + PUBLIC: vendor list prices + the generic plan STRUCTURE (kind / constraint / public list price) only. An org's real budgets, usage, or subscription specifics live solely in private runtime config — never in this committed, cascaded file.
-- **Re-derive the JSON shape in shell.** The write is owned by `scripts/fleet/update-model-pricing.mts`, the same owner pattern as `make-coverage-badge.mts`: the skill hands it sourced prices for one `--service`, the script stamps that service's date and writes canonically. The skill never hand-edits the JSON.
+- **Re-derive the JSON shape in shell.** The write is owned by `scripts/fleet/update-model-pricing.mts`, the same owner pattern as `gen/coverage-badge.mts`: the skill hands it sourced prices for one `--service`, the script stamps that service's date and writes canonically. The skill never hand-edits the JSON.
 - **Change the multipliers or the model set.** A routine refresh touches per-model rates only. Adding a model/service or changing a discount multiplier (batch / cache) is a deliberate edit to the data file, not a price refresh.
 - **Touch the cost model.** `estimate-ai-cost.mts`'s math is fixed; this skill only refreshes its input data.
 

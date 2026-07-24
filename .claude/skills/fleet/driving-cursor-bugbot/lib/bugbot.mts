@@ -167,7 +167,7 @@ export async function inventory(pr: number): Promise<readonly BugbotFinding[]> {
  * Look up the GraphQL review-thread node id (`PRRT_…`) for a given inline
  * comment databaseId. Returns `undefined` when no matching thread is found.
  */
-export async function findThreadId(options: {
+export async function findThreadId(config: {
   comment: number
   owner: string
   pr: number
@@ -175,8 +175,8 @@ export async function findThreadId(options: {
 }): Promise<string | undefined> {
   const { comment, owner, pr, repo } = {
     __proto__: null,
-    ...options,
-  } as typeof options
+    ...config,
+  } as typeof config
   const query = `
     query BugbotThreadLookup($pr: Int!, $owner: String!, $repo: String!) {
       repository(owner: $owner, name: $repo) {
@@ -233,12 +233,12 @@ export async function resolveThread(threadId: string): Promise<void> {
  * Find the PR number that an inline review comment belongs to.
  */
 export async function prForComment(
-  options: OwnerRepo & { comment: number },
+  config: OwnerRepo & { comment: number },
 ): Promise<number> {
   const { comment, owner, repo } = {
     __proto__: null,
-    ...options,
-  } as typeof options
+    ...config,
+  } as typeof config
   const out = await gh([
     'api',
     `repos/${owner}/${repo}/pulls/comments/${comment}`,
@@ -259,15 +259,15 @@ export async function prForComment(
  * Post a threaded reply on an inline review comment and, for resolving states,
  * resolve the thread. `wont-fix` replies but leaves the thread open.
  */
-export async function replyToFinding(options: {
+export async function replyToFinding(config: {
   body: string
   comment: number
   state: FindingState
 }): Promise<ReplyResult> {
   const { body, comment, state } = {
     __proto__: null,
-    ...options,
-  } as typeof options
+    ...config,
+  } as typeof config
   const { owner, repo } = await resolveOwnerRepo()
   const pr = await prForComment({ comment, owner, repo })
   await gh([

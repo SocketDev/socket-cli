@@ -170,9 +170,9 @@ export interface RepoFilesResult {
 
 export async function tidyRepoFiles(
   repo: string,
-  options: { fix: boolean },
+  config: { fix: boolean },
 ): Promise<RepoFilesResult> {
-  const opts = { __proto__: null, ...options } as typeof options
+  const cfg = { __proto__: null, ...config } as typeof config
   const repoDir = path.join(PROJECTS, repo)
   if (!existsSync(path.join(repoDir, '.git'))) {
     return { repo, deleted: [], missing: true }
@@ -185,7 +185,7 @@ export async function tidyRepoFiles(
     if (!safe) {
       continue
     }
-    if (opts.fix) {
+    if (cfg.fix) {
       const ok = await safeDelete(candidate).then(
         () => true,
         () => false,

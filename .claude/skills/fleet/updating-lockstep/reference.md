@@ -85,10 +85,10 @@ jq --arg id "$ROW_ID" --arg sha "$NEW_SHA" --arg tag "$LATEST" \
   lockstep.json > lockstep.json.tmp && mv lockstep.json.tmp lockstep.json
 ```
 
-Update the submodule ref + its `.gitmodules` version comment through the canonical owner — don't hand-edit the comment (that re-implements `gen-gitmodules-hash.mts`):
+Update the submodule ref + its `.gitmodules` version comment through the canonical owner — don't hand-edit the comment (that re-implements `gen/gitmodules-hash.mts`):
 
 ```bash
-node scripts/fleet/gen-gitmodules-hash.mts --set "$SUBMODULE" "$LATEST"
+node scripts/fleet/gen/gitmodules-hash.mts --set "$SUBMODULE" "$LATEST"
 ```
 
 It bumps the gitlink and rewrites the `# <name>-<version>` comment in one place, so the comment can't drift from the pinned ref.

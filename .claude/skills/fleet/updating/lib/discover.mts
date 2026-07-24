@@ -78,18 +78,18 @@ export interface DiscoveryResult {
   readonly cwd: string
 }
 
-function makeItem(options: {
+function makeItem(config: {
   readonly actionable?: boolean | undefined
   readonly applies: boolean
   readonly blocked?: boolean | undefined
   readonly items?: readonly string[] | undefined
 }): DiscoveryItem {
-  const opts = {
+  const cfg = {
     __proto__: null,
     actionable: false,
     blocked: undefined,
     items: [],
-    ...options,
+    ...config,
   } as {
     actionable: boolean
     applies: boolean
@@ -98,10 +98,10 @@ function makeItem(options: {
   }
   return {
     __proto__: null,
-    actionable: opts.applies && opts.actionable,
-    applies: opts.applies,
-    blocked: opts.blocked,
-    items: opts.items,
+    actionable: cfg.applies && cfg.actionable,
+    applies: cfg.applies,
+    blocked: cfg.blocked,
+    items: cfg.items,
   } as DiscoveryItem
 }
 
@@ -127,7 +127,7 @@ export async function probeCoverage(cwd: string): Promise<DiscoveryItem> {
     return makeItem({ applies: false })
   }
   // Presence is the signal; whether the badge moved is decided by
-  // make-coverage-badge.mts at apply time, not re-derived here.
+  // gen/coverage-badge.mts at apply time, not re-derived here.
   return makeItem({
     actionable: true,
     applies: true,

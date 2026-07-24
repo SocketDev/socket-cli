@@ -1,7 +1,7 @@
 <!--
 Shared snippet — the canonical "1 path, 1 reference" rule text.
 Synced byte-identical across the Socket fleet via socket-wheelhouse's
-sync-scaffolding.mts (SHARED_SKILL_FILES).
+sync-scaffolding.mts (IDENTICAL_FILES).
 
 This file is the source of truth for the rule's wording. Three artifacts
 embed (or paraphrase) it:

@@ -32,8 +32,9 @@ const ARGV = process.argv.slice(2)
 const SKIP_REPOS = new Set<string>()
 for (let i = 0, { length } = ARGV; i < length; i += 1) {
   if (ARGV[i] === '--skip' && ARGV[i + 1]) {
-    for (const r of ARGV[i + 1]!.split(',')) {
-      const name = r.trim()
+    const skipArgs = ARGV[i + 1]!.split(',')
+    for (let j = 0, { length: skipLength } = skipArgs; j < skipLength; j += 1) {
+      const name = skipArgs[j]!.trim()
       if (name) {
         SKIP_REPOS.add(name)
       }
@@ -63,20 +64,20 @@ type RunResult = { status: number; stdout: string; stderr: string }
 function run(
   cmd: string,
   args: string[],
-  options: {
+  config: {
     cwd: string
     env?: NodeJS.ProcessEnv | undefined
     timeoutMs?: number | undefined
   },
 ): RunResult {
-  const opts = { __proto__: null, ...options } as typeof options
+  const cfg = { __proto__: null, ...config } as typeof config
   const r = spawnSync(cmd, args, {
-    cwd: opts.cwd,
-    env: opts.env ?? process.env,
+    cwd: cfg.cwd,
+    env: cfg.env ?? process.env,
     encoding: 'utf8',
     // A wedged install (Socket Firewall proxy contention on a large repo) would
     // otherwise hang the reconcile for hours; cap it. SIGTERM on timeout.
-    timeout: opts.timeoutMs,
+    timeout: cfg.timeoutMs,
   })
   return {
     status: r.status ?? 1,
@@ -116,7 +117,9 @@ function sweepStaleReconcileWorktrees(src: string, repo: string): void {
     return
   }
   const prefix = `reconcile-${repo}-`
-  for (const line of list.stdout.split('\n')) {
+  const lines = list.stdout.split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
     if (!line.startsWith('worktree ')) {
       continue
     }
@@ -173,7 +176,8 @@ function resolveBase(src: string): string {
 const RESULTS: string[] = []
 const fleetReposRaw = readFileSync(FLEET_REPOS_FILE, 'utf8').split('\n')
 
-for (const rawLine of fleetReposRaw) {
+for (let i = 0, { length } = fleetReposRaw; i < length; i += 1) {
+  const rawLine = fleetReposRaw[i]!
   const repo = rawLine.trim()
   if (!repo || repo.startsWith('#')) {
     continue

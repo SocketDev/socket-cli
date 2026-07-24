@@ -55,6 +55,10 @@ node scripts/fleet/lib/security-report.mts handoff --from <state>/handoff.json  
 
 `handoff.json` is `{ skill, status, counts, summary }` — the grade is computed from counts when omitted. Close the checkpoint: `node .claude/skills/fleet/_shared/scripts/checkpoint.mts done <state> <N>`.
 
+## Reference
+
+For rule catalogs (AgentShield + zizmor), common false positives, the severity decision tree, and fix recipes — load [reference.md](./reference.md) when triaging findings.
+
 ## Adjacent scans
 
 Code-side security (insecure defaults, fail-open patterns, security-regression in a diff) lives in `scanning-quality`'s modular scans:

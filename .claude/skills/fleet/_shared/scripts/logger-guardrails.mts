@@ -88,7 +88,7 @@ const DEFAULT_EXCLUDE = [
   '**/dist/**',
   '**/node_modules/**',
   '**/coverage/**',
-  '**/.cache/**',
+  '**/node_modules/.cache/**',
   '**/test/fixtures/**',
   '**/test/packages/**',
   '**/*.d.ts',
@@ -126,6 +126,7 @@ function isCommentLine(trimmed: string): boolean {
 export async function checkLoggerGuardrails(
   options: CheckLoggerGuardrailsOptions = {},
 ): Promise<CheckLoggerGuardrailsResult> {
+  // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- default fallback for an explicit caller-supplied `options.cwd`, not an anchor for this file's own location
   const cwd = options.cwd ?? process.cwd()
   const include = options.include ?? DEFAULT_INCLUDE
   const exclude = options.exclude ?? DEFAULT_EXCLUDE
@@ -162,8 +163,12 @@ export async function checkLoggerGuardrails(
       }
 
       // (1) Status-symbol emoji.
-      for (let i = 0, { length } = STATUS_EMOJI; i < length; i += 1) {
-        const emoji = STATUS_EMOJI[i]!
+      for (
+        let j = 0, { length: emojiCount } = STATUS_EMOJI;
+        j < emojiCount;
+        j += 1
+      ) {
+        const emoji = STATUS_EMOJI[j]!
         const col = line.indexOf(emoji)
         if (col >= 0) {
           violations.push({

@@ -4,7 +4,7 @@
 // provably spent: working tree clean AND (branch gone from the remote OR branch
 // fully merged into origin/<base>). A dirty worktree, or one whose branch still
 // carries unpushed commits, is NEVER touched — it may be live work from a
-// parallel Claude session. This is the low-friction "care and feeding" sweep:
+// parallel agent session. This is the low-friction "care and feeding" sweep:
 // safe to run unattended (e.g. on a /loop), no prompting, conservative by
 // construction.
 //
@@ -276,14 +276,14 @@ export interface RepoResult {
 
 export async function tidyRepo(
   repo: string,
-  options: { fix: boolean; repoDir?: string | undefined },
+  config: { fix: boolean; repoDir?: string | undefined },
 ): Promise<RepoResult> {
   // A repo on the roster lives at $PROJECTS/<repo>; an explicit repoDir (the
   // --here path) overrides that with the current checkout's git toplevel, so
   // the single-repo managing-worktrees Mode 3 can run the SAME engine on the
   // checkout it is invoked from rather than only a $PROJECTS sibling.
-  const opts = { __proto__: null, ...options } as typeof options
-  const repoDir = opts.repoDir ?? path.join(PROJECTS, repo)
+  const cfg = { __proto__: null, ...config } as typeof config
+  const repoDir = cfg.repoDir ?? path.join(PROJECTS, repo)
   if (!existsSync(path.join(repoDir, '.git'))) {
     return { repo, removed: [], kept: [], missing: true }
   }
@@ -293,7 +293,7 @@ export async function tidyRepo(
   for (let i = 0, { length } = entries; i < length; i += 1) {
     const entry = entries[i]!
     if (entry.decision === 'remove') {
-      if (opts.fix) {
+      if (cfg.fix) {
         const ok = await removeWorktree(repoDir, entry)
         if (ok) {
           removed.push(entry.path)
@@ -311,7 +311,7 @@ export async function tidyRepo(
       kept.push(entry)
     }
   }
-  if (opts.fix && removed.length) {
+  if (cfg.fix && removed.length) {
     await gitOk(repoDir, ['worktree', 'prune'])
   }
   return { repo, removed, kept, missing: false }

@@ -45,17 +45,14 @@ import {
   UNRELEASED_HEADING,
 } from '../../../../scripts/fleet/lib/changelog.mts'
 import { slugFromRemoteUrl } from '../../../hooks/fleet/_shared/fleet-repos.mts'
-import {
-  isOptedIn,
-  loadRosterFromRepo,
-  publishProfile,
-} from '../../../hooks/fleet/_shared/fleet-roster.mts'
 import { resolveDefaultBranch } from '../_shared/scripts/git-default-branch.mts'
 import { header, run, timestamp } from '../_shared/scripts/run-helpers.mts'
 import { formatBackupBranch } from '../../../../scripts/fleet/lib/backup-branch.mts'
-import { publishedReleaseBlocksSquash } from '../../../../scripts/fleet/lib/squash-publish-guard.mts'
-import { fetchPublishedVersion } from '../../../../scripts/fleet/publish-infra/cargo/registry.mts'
-import { fetchLatestPublishedVersion } from '../../../../scripts/fleet/publish-infra/npm/registry.mts'
+import { checkNotShallowClone, checkSquashAllowed } from './run-guards.mts'
+import {
+  squashLocalCanonicalMode,
+  squashWorktreeMode,
+} from './run-squash-modes.mts'
 
 const logger = getDefaultLogger()
 
@@ -208,17 +205,17 @@ export interface SquashResult {
  * `--no-verify` bypass to exactly this one command.
  */
 export async function squashSingleCommit(
-  options: SquashOptions,
+  config: SquashOptions,
 ): Promise<SquashResult> {
-  const opts = { __proto__: null, ...options } as {
+  const cfg = { __proto__: null, ...config } as {
     message?: string | undefined
     origHead: string
     sign?: boolean | undefined
     worktree: string
   }
-  const message = opts.message ?? 'chore: initial commit'
-  const sign = opts.sign ?? false
-  const { origHead, worktree } = opts
+  const message = cfg.message ?? 'chore: initial commit'
+  const sign = cfg.sign ?? false
+  const { origHead, worktree } = cfg
 
   // Soft-reset onto the root commit (keeps every change staged), then amend the
   // root so the result is a single commit — not root + 1.
@@ -270,18 +267,18 @@ export async function squashSingleCommit(
  * working tree of `cwd` is touched and no worktree is needed. Signs with the
  * user's configured key and asserts the signature verifies.
  */
-export async function mintSquashRoot(options: {
+export async function mintSquashRoot(config: {
   readonly cwd: string
   readonly message?: string | undefined
   readonly tipSha: string
 }): Promise<SquashResult> {
-  const opts = { __proto__: null, ...options } as {
+  const cfg = { __proto__: null, ...config } as {
     cwd: string
     message?: string | undefined
     tipSha: string
   }
-  const { cwd, tipSha } = opts
-  const message = opts.message ?? 'chore: initial commit'
+  const { cwd, tipSha } = cfg
+  const message = cfg.message ?? 'chore: initial commit'
   const newHead = (
     await run(
       'git',
@@ -344,13 +341,13 @@ export interface ClassifySquashModeOptions {
  *   then re-run.
  */
 export function classifySquashMode(
-  options: ClassifySquashModeOptions,
+  config: ClassifySquashModeOptions,
 ): SquashMode {
-  const opts = { __proto__: null, ...options } as ClassifySquashModeOptions
-  if (opts.localHead === '' || opts.localHead === opts.origHead) {
+  const cfg = { __proto__: null, ...config } as ClassifySquashModeOptions
+  if (cfg.localHead === '' || cfg.localHead === cfg.origHead) {
     return 'origin'
   }
-  return opts.originIsAncestor ? 'local-canonical' : 'diverged'
+  return cfg.originIsAncestor ? 'local-canonical' : 'diverged'
 }
 
 async function main(): Promise<number> {
@@ -368,80 +365,13 @@ async function main(): Promise<number> {
     return 2
   }
 
-  // Code-is-law opt-in gate. Squash is destructive history rewrite, so the
-  // ROSTER decides which repos it may touch — not a path arg a human (or a
-  // fuzzy name-match) points at. Resolve the checkout to its canonical fleet
-  // name (origin slug, EXACT — no fuzzy fallback to a look-alike), then refuse
-  // unless that name carries the `squash-history` opt-in. A non-fleet repo
-  // (no roster, or absent from it) is refused outright: this is the guard that
-  // stops a `cdxgen` from being squashed because it resembles `sdxgen`.
+  // Resolve the checkout to its canonical fleet name (origin slug, EXACT — no
+  // fuzzy fallback to a look-alike), then gate on the roster opt-in and the
+  // published-release safeguard before anything destructive can start.
   const fleetName = await resolveFleetName(src)
-  const roster = loadRosterFromRepo(src)
-  if (!roster) {
-    logger.error(
-      `error: ${src} carries no fleet roster (cascading-fleet/lib/` +
-        `fleet-repos.json) — it is not a fleet repo, so squash is refused. ` +
-        `Squash only opted-in fleet members.`,
-    )
-    return 2
-  }
-  if (!isOptedIn(roster, fleetName, 'squash-history')) {
-    logger.error(
-      `error: ${fleetName} is not opted into 'squash-history' in the fleet ` +
-        `roster — refusing to rewrite its history. ` +
-        `Saw: no 'squash-history' in its optIns; wanted the opt-in. ` +
-        `Fix: add "${fleetName}" with optIns:['squash-history'] to ` +
-        `cascading-fleet/lib/fleet-repos.json (then cascade), or squash a ` +
-        `repo that is already opted in.`,
-    )
-    return 2
-  }
-
-  // Published-release safeguard. A full-root squash is safe for a repo whose
-  // crates.io / npm names are still 0.0.0 placeholders, but it ERASES the
-  // published-release history of a repo that has cut a REAL release. Detect a
-  // real published version and REFUSE — a published repo keeps its history and
-  // consolidates only the range since its last publish. Fail-OPEN: a registry
-  // read error must NOT block a legit squash (the opt-in gate above is the
-  // primary control), so any lookup failure leaves `latest` undefined and the
-  // squash proceeds.
-  const publishes = publishProfile(roster, fleetName)
-  let latest: string | undefined
-  try {
-    if (publishes === 'cargo') {
-      // Crate names match repo names in the fleet.
-      latest = await fetchPublishedVersion(fleetName)
-    } else if (publishes === 'js' || publishes === 'npm') {
-      // An npm package name is frequently SCOPED (e.g. @socketsecurity/sdk) and
-      // differs from the repo/fleet name, so resolve it from the target's
-      // package.json; fall back to fleetName when it is absent / private /
-      // unparsable.
-      let pkgName = fleetName
-      const pkgPath = path.join(src, 'package.json')
-      if (existsSync(pkgPath)) {
-        const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
-          name?: unknown | undefined
-          private?: unknown | undefined
-        }
-        if (typeof pkg.name === 'string' && pkg.name && pkg.private !== true) {
-          pkgName = pkg.name
-        }
-      }
-      latest = await fetchLatestPublishedVersion(pkgName)
-    }
-  } catch {}
-  const block = publishedReleaseBlocksSquash(publishes, latest)
-  if (block) {
-    logger.error(
-      `error: ${fleetName} has a published ${block.registry} release ` +
-        `(${block.version}) — refusing a full-root squash (it erases ` +
-        `published-release history). Fix: remove 'squash-history' from ` +
-        `"${fleetName}" in cascading-fleet/lib/fleet-repos.json (a published ` +
-        `repo keeps its history), then consolidate only the range since the ` +
-        `last publish: git reset --soft <publish-sha> (SHA is in the ` +
-        `published .crate's .cargo_vcs_info.json / the npm tarball's gitHead).`,
-    )
-    return 2
+  const allowedExit = await checkSquashAllowed({ fleetName, src })
+  if (allowedExit !== undefined) {
+    return allowedExit
   }
 
   const repoName = fleetName
@@ -457,22 +387,9 @@ async function main(): Promise<number> {
   header('default branch', base)
   await run('git', ['fetch', 'origin', base], src)
 
-  // A shallow clone's commit graph is grafted, so `rev-list --count` reports
-  // the fetch depth, not the branch's true history — a depth-1 clone always
-  // reads as "already squashed" and the single-commit early-exit silently
-  // no-ops on a full-history remote. Refuse loudly; unshallow first (or
-  // squash via a tree snapshot, which needs no history).
-  const shallow = (
-    await run('git', ['rev-parse', '--is-shallow-repository'], src)
-  ).stdout
-  if (shallow === 'true') {
-    logger.error(
-      `error: ${src} is a SHALLOW clone — its local graph cannot answer ` +
-        `"how many commits does origin/${base} have". ` +
-        `Saw a grafted history; wanted the full graph. ` +
-        `Fix: git -C ${src} fetch --unshallow origin ${base}, then re-run.`,
-    )
-    return 2
+  const shallowExit = await checkNotShallowClone({ base, src })
+  if (shallowExit !== undefined) {
+    return shallowExit
   }
 
   const origHead = (await run('git', ['rev-parse', `origin/${base}`], src))
@@ -505,181 +422,27 @@ async function main(): Promise<number> {
   } catch {}
   const localMode = localHead !== '' && localHead !== origHead
   if (localMode) {
-    const originIsAncestor =
-      (
-        await run(
-          'git',
-          ['merge-base', '--is-ancestor', origHead, localHead],
-          src,
-          {
-            allowFailure: true,
-          },
-        )
-      ).code === 0
-    if (
-      classifySquashMode({ localHead, origHead, originIsAncestor }) ===
-      'diverged'
-    ) {
-      // Diverged: origin holds commits the local branch lacks. Local is
-      // canonical, but a blind squash mints the root from the local tree and
-      // force-pushes — dropping origin's commits (they would survive only in a
-      // backup ref, never on the branch). Refuse loudly; the caller must
-      // reconcile FORWARD (fold origin's commits into local), then re-run.
-      logger.error(
-        `error: origin/${base} (${origHead.slice(0, 8)}) has commits your ` +
-          `local ${base} lacks — local and origin have DIVERGED. Squashing ` +
-          `now would drop origin's commits. Fix: reconcile forward first — ` +
-          `git -C ${src} merge --no-edit origin/${base} (resolve any ` +
-          `conflicts), then re-run.`,
-      )
-      return 2
-    }
-    const localCount = (
-      await run('git', ['rev-list', '--count', localHead], src)
-    ).stdout
-    header(
-      `local ${base}`,
-      `${localHead} (${localCount} commits, ahead of origin)`,
-    )
-
-    // Accrue the [Unreleased] changelog from the commits this squash collapses,
-    // so they survive in the minted tree. Only when src is checked out on the
-    // base branch (the accrual commits there and advances localHead); skip
-    // otherwise so a detached / worktree checkout is never committed onto.
-    const srcBranch = (
-      await run('git', ['symbolic-ref', '--quiet', '--short', 'HEAD'], src, {
-        allowFailure: true,
-      })
-    ).stdout.trim()
-    if (srcBranch === base) {
-      localHead = await accrueUnreleased(src, remoteUrl)
-    } else {
-      logger.substep(`changelog accrual: skipped (src not on ${base})`)
-    }
-
-    const localBackup = await backupBranchForCommit(src, localHead)
-
-    // Backup the LOCAL tip before the rewrite so the pre-squash history is
-    // always recoverable.
-    logger.substep(
-      `pushing remote backup ref: refs/heads/${localBackup} -> ${localHead}`,
-    )
-    await run(
-      'git',
-      [
-        'push',
-        '--no-verify',
-        'origin',
-        `${localHead}:refs/heads/${localBackup}`,
-      ],
+    return await squashLocalCanonicalMode({
+      base,
+      localHead,
+      origHead,
+      remoteUrl,
+      repoName,
       src,
-    )
-
-    const { newHead } = await mintSquashRoot({ cwd: src, tipSha: localHead })
-    logger.success(`minted signed root ${newHead} from local ${base} tree`)
-
-    // Point the local branch at the root (tree-identical, so the working
-    // tree and index stay clean), then lease-push against origin's tip.
-    await run(
-      'git',
-      ['update-ref', `refs/heads/${base}`, newHead, localHead],
-      src,
-    )
-    logger.substep(`force-pushing to ${base}...`)
-    await run(
-      'git',
-      [
-        'push',
-        '--no-verify',
-        `--force-with-lease=${base}:${origHead}`,
-        'origin',
-        `${base}`,
-      ],
-      src,
-      { env: { SQUASH_HISTORY: '1' } },
-    )
-
-    logger.log('')
-    logger.success(`${repoName} squashed (local-canonical mode)`)
-    logger.substep(`new ${base}:   ${newHead}`)
-    logger.substep(`backup ref: refs/heads/${localBackup} -> ${localHead}`)
-    logger.substep(
-      `recover:    git fetch origin ${localBackup} && git push --force origin FETCH_HEAD:${base}`,
-    )
-    return 0
+    })
   }
 
-  if (origCount === '1') {
-    logger.info('already a single commit — nothing to squash')
-    return 0
-  }
-
-  // Phase 2 — worktree (clean any stale state from prior runs).
-  await run('git', ['worktree', 'remove', '--force', worktree], src, {
-    allowFailure: true,
-  })
-  await run('git', ['branch', '-D', squashBranch], src, { allowFailure: true })
-  await run(
-    'git',
-    ['worktree', 'add', '-b', squashBranch, worktree, `origin/${base}`],
+  return await squashWorktreeMode({
+    backup,
+    base,
+    origCount,
+    origHead,
+    remoteUrl,
+    repoName,
+    squashBranch,
     src,
-  )
-
-  // Phase 3 — remote backup ref.
-  logger.substep(
-    `pushing remote backup ref: refs/heads/${backup} -> ${origHead}`,
-  )
-  // --no-verify: the worktree is freshly added off origin/base with no
-  // node_modules, so the repo's git pre-push hook (which imports
-  // @socketsecurity/lib-stable) cannot load. A backup ref carries only the
-  // existing, already-validated history; nothing new exists to verify.
-  await run(
-    'git',
-    ['push', '--no-verify', 'origin', `${origHead}:refs/heads/${backup}`],
-    worktree,
-  )
-
-  // Accrue the [Unreleased] changelog from the commits this squash collapses
-  // (the worktree is on the squash branch, off origin/base). The accrual commit
-  // becomes the new pre-squash tip the integrity gate matches against.
-  const accruedHead = await accrueUnreleased(worktree, remoteUrl)
-
-  // Phase 4 + 5 — squash + integrity (shared engine; HARD exit on mismatch).
-  // sign: a fleet repo's default branch must carry signed commits, and GitHub
-  // enforces required_signatures server-side regardless of --no-verify below.
-  const { newHead } = await squashSingleCommit({
-    origHead: accruedHead,
-    sign: true,
     worktree,
   })
-  logger.success(`squashed ${origCount} commits → 1 commit (${newHead})`)
-  logger.success('integrity: post-squash tree == pre-squash tree')
-
-  // Phase 6 — force-push (lease guards against a racing push).
-  logger.substep(`force-pushing to ${base}...`)
-  // --no-verify for the same reason as the backup push (no node_modules in the
-  // worktree). The squash commit is already integrity-checked and
-  // signature-asserted above, so the pre-push hook's checks are redundant.
-  await run(
-    'git',
-    ['push', '--no-verify', '--force-with-lease', 'origin', `HEAD:${base}`],
-    worktree,
-    { env: { SQUASH_HISTORY: '1' } },
-  )
-
-  // Phase 7 — cleanup.
-  await run('git', ['worktree', 'remove', '--force', worktree], src)
-  await run('git', ['branch', '-D', squashBranch], src, { allowFailure: true })
-
-  // Phase 8 — report.
-  logger.log('')
-  logger.success(`${repoName} squashed`)
-  logger.substep(`new ${base}:   ${newHead}`)
-  logger.substep(`backup ref: refs/heads/${backup} -> ${origHead}`)
-  logger.substep(
-    `recover:    git fetch origin ${backup} && git push --force origin FETCH_HEAD:${base}`,
-  )
-  return 0
 }
 
 // Run as a CLI only when invoked directly, not when imported by a sibling (e.g.

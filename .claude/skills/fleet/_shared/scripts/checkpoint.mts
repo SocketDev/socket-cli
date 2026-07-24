@@ -155,7 +155,7 @@ export function readJsonPayload(src: string | undefined): string {
 
 export function writeProgress(
   stateDir: string,
-  options: {
+  config: {
     readonly status: 'running' | 'complete'
     readonly key: string
     readonly n: number
@@ -164,8 +164,8 @@ export function writeProgress(
 ): void {
   const { key, n, shards, status } = {
     __proto__: null,
-    ...options,
-  } as typeof options
+    ...config,
+  } as typeof config
   atomicWrite(
     path.join(stateDir, 'progress.json'),
     JSON.stringify({
