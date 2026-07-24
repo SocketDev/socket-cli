@@ -65,8 +65,8 @@ catalog:
   '@socketregistry/hyrious__bun.lockb': 1.0.19
   '@socketregistry/indent-string': 1.0.14
   '@socketregistry/is-interactive': 1.0.6
-  '@socketregistry/packageurl-js': 1.4.6
-  '@socketsecurity/lib': 6.2.2
+  '@socketregistry/packageurl-js': 1.4.7
+  '@socketsecurity/lib': 6.2.3
   '@types/shell-quote': 1.7.5
   '@ultrathink/acorn.wasm': npm:@ultrathink/acorn-wasm@0.0.1
   # -stable aliases: pnpm `overrides:` can't redirect a package's own
@@ -76,13 +76,13 @@ catalog:
   # code resolves to the published catalog version regardless of where
   # the importing file lives. See socket-wheelhouse@92cd3e3 for the
   # full rationale.
-  '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.4.6'
+  '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.4.7'
   '@socketregistry/yocto-spinner': 1.0.25
-  '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@6.2.2'
-  '@socketsecurity/registry': 'npm:@socketsecurity/registry@2.0.2'
-  '@socketsecurity/registry-stable': 'npm:@socketsecurity/registry@2.0.2'
-  '@socketsecurity/sdk': 'npm:@socketsecurity/sdk@4.0.2'
-  '@socketsecurity/sdk-stable': 'npm:@socketsecurity/sdk@4.0.2'
+  '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@6.2.3'
+  '@socketsecurity/registry': 'npm:@socketsecurity/registry@2.0.3'
+  '@socketsecurity/registry-stable': 'npm:@socketsecurity/registry@2.0.3'
+  '@socketsecurity/sdk': 'npm:@socketsecurity/sdk@4.0.3'
+  '@socketsecurity/sdk-stable': 'npm:@socketsecurity/sdk@4.0.3'
   '@types/adm-zip': 0.5.7
   '@types/cmd-shim': 5.0.2
   '@types/js-yaml': 4.0.9
@@ -161,7 +161,7 @@ catalog:
   oxfmt: 0.59.0
   oxlint: 1.75.0
   'oxlint-tsgolint': 7.0.2001
-  packageurl-js: npm:@socketregistry/packageurl-js@^1.4.6
+  packageurl-js: npm:@socketregistry/packageurl-js@^1.4.7
   path-parse: npm:@socketregistry/path-parse@^1.0.8
   'playwright-core': 1.61.1
   'portless': 0.15.4
