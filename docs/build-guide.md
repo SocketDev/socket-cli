@@ -9,7 +9,7 @@ The Socket CLI has two main build outputs:
 | Build Type       | Description                                  | Output Location                                              |
 | ---------------- | -------------------------------------------- | ------------------------------------------------------------ |
 | **CLI Bundle**   | JavaScript bundle for npm distribution       | `packages/cli/dist/`                                         |
-| **SEA Binaries** | Standalone executables (no Node.js required) | `packages/package-builder/build/{dev\|prod}/out/socketbin-*` |
+| **SEA Binaries** | Standalone executables (no Node.js required) | `packages/package-builder/build/{dev\|prod}/out/cli.exe.*` |
 
 ## Prerequisites
 
@@ -58,10 +58,10 @@ socket-cli/
 │   ├── package-builder/          # Package generation and build outputs
 │   │   ├── build/
 │   │   │   └── {dev|prod}/out/   # Build outputs by mode
-│   │   │       ├── socketbin-cli-darwin-arm64/
-│   │   │       │   └── socket    # SEA binary
-│   │   │       ├── socketbin-cli-linux-x64/
-│   │   │       │   └── socket
+│   │   │       ├── cli.exe.darwin-arm64/
+│   │   │       │   └── bin/socket    # SEA binary
+│   │   │       ├── cli.exe.linux-x64/
+│   │   │       │   └── bin/socket
 │   │   │       └── ...           # Other platform binaries
 │   ├── build-infra/              # Build infrastructure
 │   │   └── build/
@@ -141,7 +141,7 @@ pnpm build --target darwin-arm64
 pnpm build --platform darwin --arch arm64
 ```
 
-**Output**: `packages/package-builder/build/{dev|prod}/out/socketbin-cli-<platform>-<arch>/socket`
+**Output**: `packages/package-builder/build/{dev|prod}/out/cli.exe.<triplet>/bin/socket` — `bin/socket.exe` on Windows. These directories are the publishable `@socketsecurity/cli.exe.<triplet>` tail packages.
 
 #### Supported Platforms
 
