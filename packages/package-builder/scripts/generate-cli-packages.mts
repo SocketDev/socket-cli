@@ -32,7 +32,8 @@ const PACKAGES = [
     templateDir: CLI_SENTRY_TEMPLATE_DIR,
   },
   {
-    // socket package is bootstrap loader for @socketbin/* SEA binaries.
+    // socket package is the bootstrap loader for the platform SEA binaries —
+    // @socketsecurity/cli.exe.* tails, with the frozen @socketbin/* fallback.
     name: 'socket',
     outputDir: 'socket',
     templateDir: SOCKET_TEMPLATE_DIR,

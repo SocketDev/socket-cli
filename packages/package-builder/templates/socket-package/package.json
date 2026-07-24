@@ -29,14 +29,22 @@
     "registry": "https://registry.npmjs.org/"
   },
   "optionalDependencies": {
-    "@socketbin/cli-darwin-arm64": "0.0.0-replaced-by-publish",
-    "@socketbin/cli-darwin-x64": "0.0.0-replaced-by-publish",
-    "@socketbin/cli-linux-arm64": "0.0.0-replaced-by-publish",
-    "@socketbin/cli-linux-arm64-musl": "0.0.0-replaced-by-publish",
-    "@socketbin/cli-linux-x64": "0.0.0-replaced-by-publish",
-    "@socketbin/cli-linux-x64-musl": "0.0.0-replaced-by-publish",
-    "@socketbin/cli-win-arm64": "0.0.0-replaced-by-publish",
-    "@socketbin/cli-win-x64": "0.0.0-replaced-by-publish"
+    "@socketbin/cli-alpine-arm64": "0.0.0-20251103.61247",
+    "@socketbin/cli-alpine-x64": "0.0.0-20251103.61247",
+    "@socketbin/cli-darwin-arm64": "0.0.0-20251103.61247",
+    "@socketbin/cli-darwin-x64": "0.0.0-20251103.61247",
+    "@socketbin/cli-linux-arm64": "0.0.0-20251103.61247",
+    "@socketbin/cli-linux-x64": "0.0.0-20251103.61247",
+    "@socketbin/cli-win32-arm64": "0.0.0-20251103.61247",
+    "@socketbin/cli-win32-x64": "0.0.0-20251103.61247",
+    "@socketsecurity/cli.exe.darwin-arm64": "0.0.0-replaced-by-publish",
+    "@socketsecurity/cli.exe.darwin-x64": "0.0.0-replaced-by-publish",
+    "@socketsecurity/cli.exe.linux-arm64": "0.0.0-replaced-by-publish",
+    "@socketsecurity/cli.exe.linux-arm64-musl": "0.0.0-replaced-by-publish",
+    "@socketsecurity/cli.exe.linux-x64": "0.0.0-replaced-by-publish",
+    "@socketsecurity/cli.exe.linux-x64-musl": "0.0.0-replaced-by-publish",
+    "@socketsecurity/cli.exe.win32-arm64": "0.0.0-replaced-by-publish",
+    "@socketsecurity/cli.exe.win32-x64": "0.0.0-replaced-by-publish"
   },
   "engines": {
     "node": ">=18"

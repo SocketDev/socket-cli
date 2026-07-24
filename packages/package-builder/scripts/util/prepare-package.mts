@@ -66,7 +66,10 @@ export function preparePackageForPublish(
   if (version) {
     pkg.version = version
 
-    // Update optionalDependencies to use the same version (lockstep).
+    // Update optionalDependencies to use the same version (lockstep). Only
+    // placeholder values are rewritten — exact pins stay put, e.g. the frozen
+    // @socketbin/cli-* fallbacks the socket wrapper pins at their last-ever
+    // published version.
     if (pkg.optionalDependencies) {
       const deps = Object.keys(pkg.optionalDependencies)
       for (let i = 0, { length } = deps; i < length; i += 1) {
@@ -74,7 +77,13 @@ export function preparePackageForPublish(
         if (!dep) {
           continue
         }
-        pkg.optionalDependencies[dep] = version
+        const current = pkg.optionalDependencies[dep]
+        if (
+          typeof current === 'string' &&
+          current.startsWith('0.0.0-replaced-by-')
+        ) {
+          pkg.optionalDependencies[dep] = version
+        }
       }
     }
   }

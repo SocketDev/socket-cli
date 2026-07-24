@@ -2,8 +2,14 @@
 /**
  * Socket CLI bootstrap loader.
  *
- * Finds and executes the appropriate @socketbin/* SEA binary based on the
- * current platform and architecture.
+ * Finds and executes the platform's Socket CLI standalone executable.
+ * Preference order per platform triplet:
+ *
+ * 1. `@socketsecurity/cli.exe.<triplet>` — the current tail family.
+ * 2. `@socketbin/cli-*` — frozen legacy binaries, kept as a fallback until the
+ *    cli.exe tails are live and pinned. Legacy naming used `alpine` for musl
+ *    and `win32` for Windows; the `cli-win-*` and `cli-linux-*-musl` names on
+ *    npm are empty placeholders and are never targeted.
  */
 
 'use strict'
@@ -13,41 +19,22 @@ const { arch, platform } = require('node:os')
 const { join } = require('node:path')
 const { spawn } = require('node:child_process')
 
-// Get the socketbin package name for current platform.
-export function getSocketbinPackageName() {
-  const p = platform()
-  const a = arch()
-  const musl = isMusl() ? '-musl' : ''
-  return `@socketbin/cli-${p}-${a}${musl}`
-}
-
-// Get path to the socket binary.
-export function getSocketbinPath() {
-  const packageName = getSocketbinPackageName()
-  const binaryName = platform() === 'win32' ? 'socket.exe' : 'socket'
-
-  // Try to find the binary in node_modules.
-  const paths = [
-    // Installed as dependency.
-    join(__dirname, '..', 'node_modules', packageName, binaryName),
-    // Hoisted to parent node_modules.
-    join(__dirname, '..', '..', packageName, binaryName),
-    // Workspace/monorepo layout.
-    join(__dirname, '..', '..', '..', 'node_modules', packageName, binaryName),
-  ]
-
-  for (let i = 0, { length } = paths; i < length; i += 1) {
-    const p = paths[i]
-    if (existsSync(p)) {
-      return p
-    }
-  }
-
-  return undefined
+// Legacy @socketbin unscoped names keyed by triplet. Only the frozen names
+// that actually contain binaries.
+const LEGACY_SOCKETBIN_NAMES = {
+  __proto__: null,
+  'darwin-arm64': 'cli-darwin-arm64',
+  'darwin-x64': 'cli-darwin-x64',
+  'linux-arm64': 'cli-linux-arm64',
+  'linux-arm64-musl': 'cli-alpine-arm64',
+  'linux-x64': 'cli-linux-x64',
+  'linux-x64-musl': 'cli-alpine-x64',
+  'win32-arm64': 'cli-win32-arm64',
+  'win32-x64': 'cli-win32-x64',
 }
 
 // Detect musl libc on Linux.
-export function isMusl() {
+function isMusl() {
   if (platform() !== 'linux') {
     return false
   }
@@ -63,20 +50,94 @@ export function isMusl() {
   }
 }
 
+// Resolve a pack-app triplet from platform + arch + musl flag. Returns
+// undefined on unsupported platforms.
+function resolveTriplet(p, a, musl) {
+  if (p !== 'darwin' && p !== 'linux' && p !== 'win32') {
+    return undefined
+  }
+  if (a !== 'arm64' && a !== 'x64') {
+    return undefined
+  }
+  const muslSuffix = p === 'linux' && musl ? '-musl' : ''
+  return `${p}-${a}${muslSuffix}`
+}
+
+// Binary file name inside a tail package's payload directory.
+function binaryNameFor(triplet) {
+  return triplet.startsWith('win32-') ? 'socket.exe' : 'socket'
+}
+
+// Candidate package names for a triplet, preferred first.
+function candidatePackageNames(triplet) {
+  const names = [`@socketsecurity/cli.exe.${triplet}`]
+  const legacy = LEGACY_SOCKETBIN_NAMES[triplet]
+  if (legacy) {
+    names.push(`@socketbin/${legacy}`)
+  }
+  return names
+}
+
+// Candidate binary paths for one package, covering dependency, hoisted, and
+// workspace node_modules layouts relative to `fromDir`. Both tail families
+// ship the executable at `bin/<name>`.
+function candidateBinaryPaths(packageName, binaryName, fromDir) {
+  const payload = join(packageName, 'bin', binaryName)
+  return [
+    // Installed as dependency of this package.
+    join(fromDir, '..', 'node_modules', payload),
+    // Hoisted to parent node_modules.
+    join(fromDir, '..', '..', payload),
+    // Workspace/monorepo layout.
+    join(fromDir, '..', '..', '..', 'node_modules', payload),
+  ]
+}
+
+// Find the first existing binary across the fallback chain.
+function findBinaryPath(triplet, fromDir) {
+  const binaryName = binaryNameFor(triplet)
+  const packageNames = candidatePackageNames(triplet)
+  for (let i = 0, { length } = packageNames; i < length; i += 1) {
+    const packageName = packageNames[i]
+    // require.resolve handles layouts the static probes below miss.
+    try {
+      const manifestPath = require.resolve(`${packageName}/package.json`, {
+        paths: [fromDir],
+      })
+      const resolved = join(manifestPath, '..', 'bin', binaryName)
+      if (existsSync(resolved)) {
+        return resolved
+      }
+    } catch {
+      // Fall through to path probing.
+    }
+    const paths = candidateBinaryPaths(packageName, binaryName, fromDir)
+    for (let j = 0, { length: pl } = paths; j < pl; j += 1) {
+      if (existsSync(paths[j])) {
+        return paths[j]
+      }
+    }
+  }
+  return undefined
+}
+
 // Main entry point.
 function main() {
-  const binaryPath = getSocketbinPath()
+  const triplet = resolveTriplet(platform(), arch(), isMusl())
+  const binaryPath = triplet ? findBinaryPath(triplet, __dirname) : undefined
 
   if (!binaryPath) {
-    const packageName = getSocketbinPackageName()
-    logger.fail(`Socket CLI binary not found for your platform.`)
-    logger.fail(`Expected package: ${packageName}`)
-    logger.fail(``)
-    logger.fail(`This may happen if:`)
-    logger.fail(`  - Your platform is not supported`)
-    logger.fail(`  - The optional dependency failed to install`)
-    logger.fail(``)
-    logger.fail(`Try reinstalling: npm install -g socket`)
+    const expected = triplet
+      ? candidatePackageNames(triplet).join(' or ')
+      : `an unsupported platform: ${platform()}-${arch()}`
+    console.error('Socket CLI binary not found for your platform.')
+    console.error(`Expected package: ${expected}`)
+    console.error('')
+    console.error('This may happen if:')
+    console.error('  - Your platform is not supported')
+    console.error('  - The optional dependency failed to install')
+    console.error('')
+    console.error('Try reinstalling: npm install -g socket')
     process.exit(1)
   }
 
@@ -89,7 +150,7 @@ function main() {
   // native spawn (required directly above), which returns a bare ChildProcess;
   // it is not the fleet `@socketsecurity/lib` spawn wrapper this rule guards.
   child.on('error', err => {
-    logger.fail(`Failed to start Socket CLI: ${err.message}`)
+    console.error(`Failed to start Socket CLI: ${err.message}`)
     process.exit(1)
   })
 
@@ -103,4 +164,15 @@ function main() {
   })
 }
 
-main()
+if (require.main === module) {
+  main()
+}
+
+module.exports = {
+  binaryNameFor,
+  candidateBinaryPaths,
+  candidatePackageNames,
+  findBinaryPath,
+  isMusl,
+  resolveTriplet,
+}
