@@ -77,24 +77,31 @@ export function createPurlObject(
   options?: CreatePurlObjectOptions | undefined,
 ): PurlObject<PackageURL> | undefined {
   let opts: CreatePurlObjectOptions | undefined
+  // The PackageURL constructor takes `unknown` components and validates at
+  // runtime, so a missing `type` flows through to its own error handling.
+  let purlType: string | undefined
   if (isPlainObject(type)) {
     opts = { __proto__: null, ...type } as CreatePurlObjectOptions
-    type = opts.type as string
-    name = opts.name
-  } else if (isPlainObject(name)) {
-    opts = { __proto__: null, ...name } as CreatePurlObjectOptions
+    purlType = opts.type
     name = opts.name
   } else {
-    opts = { __proto__: null, ...options } as CreatePurlObjectOptions
-    if (typeof name !== 'string') {
+    purlType = type
+    if (isPlainObject(name)) {
+      opts = { __proto__: null, ...name } as CreatePurlObjectOptions
       name = opts.name
+    } else {
+      opts = { __proto__: null, ...options } as CreatePurlObjectOptions
+      if (typeof name !== 'string') {
+        name = opts.name
+      }
     }
   }
   const { namespace, qualifiers, subpath, throws, version } = opts
   const shouldThrow = throws === undefined || throws
   try {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- brand cast: the constructor validates the type component against the purl spec at runtime, but packageurl-js types the field as a plain string rather than the known-ecosystem PURL_Type union.
     return new PackageURL(
-      type,
+      purlType,
       namespace,
       name,
       version,
@@ -157,9 +164,14 @@ export function getPurlObject(
     // The casts brand the parser's `type: string` as the known-ecosystem
     // PURL_Type union — packageurl-js validates the type component against the
     // purl spec at construction, but its typings keep the field a plain string.
-    return typeof purl === 'string'
-      ? (PackageURL.fromString(normalizePurl(purl)) as PurlObject<PackageURL>)
-      : (purl as PurlObject<PackageURL | SocketArtifact>)
+    if (typeof purl === 'string') {
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- brand cast, see above.
+      return PackageURL.fromString(
+        normalizePurl(purl),
+      ) as PurlObject<PackageURL>
+    }
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- brand cast, see above.
+    return purl as PurlObject<PackageURL | SocketArtifact>
   } catch (e) {
     if (shouldThrow) {
       throw e

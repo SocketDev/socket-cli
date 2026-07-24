@@ -6,20 +6,34 @@ import { getPurlObject } from '../purl/parse.mts'
 
 import type { CResult } from '../../types.mjs'
 
-const PURL_TO_GITHUB_ECOSYSTEM_MAPPING = {
-  __proto__: null,
-  // GitHub Advisory Database supported ecosystems
-  cargo: 'rust',
-  composer: 'composer',
-  gem: 'rubygems',
-  go: 'go',
-  golang: 'go',
-  maven: 'maven',
-  npm: 'npm',
-  nuget: 'nuget',
-  pypi: 'pip',
-  swift: 'swift',
-} as unknown as Record<string, string>
+// The `ecosystem` union `listGlobalAdvisories` accepts, derived from the
+// Octokit method so it tracks upstream instead of a hand-copied literal union.
+export type GithubAdvisoryEcosystem = NonNullable<
+  NonNullable<
+    Parameters<
+      ReturnType<
+        typeof getOctokit
+      >['rest']['securityAdvisories']['listGlobalAdvisories']
+    >[0]
+  >['ecosystem']
+>
+
+// GitHub Advisory Database supported ecosystems.
+const PURL_TO_GITHUB_ECOSYSTEM_MAPPING = new Map<
+  string,
+  GithubAdvisoryEcosystem
+>([
+  ['cargo', 'rust'],
+  ['composer', 'composer'],
+  ['gem', 'rubygems'],
+  ['go', 'go'],
+  ['golang', 'go'],
+  ['maven', 'maven'],
+  ['npm', 'npm'],
+  ['nuget', 'nuget'],
+  ['pypi', 'pip'],
+  ['swift', 'swift'],
+])
 
 /**
  * Converts PURL to GHSA IDs using GitHub API.
@@ -39,7 +53,7 @@ export async function convertPurlToGhsas(
     const { name, type: ecosystem, version } = purlObj
 
     // Map PURL ecosystem to GitHub ecosystem.
-    const githubEcosystem = PURL_TO_GITHUB_ECOSYSTEM_MAPPING[ecosystem]
+    const githubEcosystem = PURL_TO_GITHUB_ECOSYSTEM_MAPPING.get(ecosystem)
     if (!githubEcosystem) {
       return {
         ok: false,
@@ -55,8 +69,7 @@ export async function convertPurlToGhsas(
 
     const response = await cacheFetch(cacheKey, () =>
       octokit.rest.securityAdvisories.listGlobalAdvisories({
-        // eslint-disable-next-line typescript-eslint/no-explicit-any -- Octokit's listGlobalAdvisories ecosystem union doesn't include the runtime-mapped value here; verified upstream.
-        ecosystem: githubEcosystem as any,
+        ecosystem: githubEcosystem,
         ...(affects ? { affects } : {}),
       }),
     )
