@@ -65,7 +65,7 @@ catalog:
   '@socketregistry/hyrious__bun.lockb': 1.0.19
   '@socketregistry/indent-string': 1.0.14
   '@socketregistry/is-interactive': 1.0.6
-  '@socketregistry/packageurl-js': 1.4.5
+  '@socketregistry/packageurl-js': 1.4.6
   '@socketsecurity/lib': 6.2.2
   '@types/shell-quote': 1.7.5
   '@ultrathink/acorn.wasm': npm:@ultrathink/acorn-wasm@0.0.1
@@ -76,7 +76,7 @@ catalog:
   # code resolves to the published catalog version regardless of where
   # the importing file lives. See socket-wheelhouse@92cd3e3 for the
   # full rationale.
-  '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.4.5'
+  '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.4.6'
   '@socketregistry/yocto-spinner': 1.0.25
   '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@6.2.2'
   '@socketsecurity/registry': 'npm:@socketsecurity/registry@2.0.2'
@@ -161,7 +161,7 @@ catalog:
   oxfmt: 0.59.0
   oxlint: 1.75.0
   'oxlint-tsgolint': 7.0.2001
-  packageurl-js: npm:@socketregistry/packageurl-js@^1.4.4
+  packageurl-js: npm:@socketregistry/packageurl-js@^1.4.6
   path-parse: npm:@socketregistry/path-parse@^1.0.8
   'playwright-core': 1.61.1
   'portless': 0.15.4
@@ -423,11 +423,6 @@ patchedDependencies:
   # bundle loads on node-smol SEA builds, which ship without http2. Consumer:
   # packages/cli SEA binary.
   '@sigstore/sign@4.1.0': patches/@sigstore__sign@4.1.0.patch
-  # The 1.4.5 publish dropped the "types" condition from package.json exports,
-  # so tsc under nodenext resolves the package as untyped any. Restores the
-  # types condition pointing at the shipped dist/*.d.mts files. Consumer:
-  # packages/cli typecheck via the -stable alias.
-  '@socketregistry/packageurl-js@1.4.5': patches/@socketregistry__packageurl-js@1.4.5.patch
   # signal-exit is deduped to v4, which exports a named onExit instead of the
   # v3 default export execa calls; restores the call contract. Consumer:
   # packages/cli bundled npm tooling.
