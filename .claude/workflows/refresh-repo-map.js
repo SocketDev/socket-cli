@@ -5,8 +5,7 @@ export const meta = {
   phases: [
     {
       title: 'Build',
-      detail:
-        'run make-repo-map --write . to (re)build the full skeleton cache',
+      detail: 'run gen/repo-map --write . to (re)build the full skeleton cache',
     },
     {
       title: 'Report',
@@ -56,11 +55,14 @@ const REPORT_SCHEMA = {
 }
 
 phase('Build')
+// socket-lint: allow top-level-await -- Workflow script body executed directly
+// by the Claude Code harness (top-level `phase`/`agent`/`return` are harness
+// globals), never bundled to CJS.
 const build = await agent(
   [
     'Rebuild the repo-map skeleton cache for this repository.',
     '',
-    `Run exactly: node scripts/fleet/make-repo-map.mts --write ${root}`,
+    `Run exactly: node scripts/fleet/gen/repo-map.mts --write ${root}`,
     '',
     'That walks the source tree, writes one .repo-map/<relpath>.skel per source',
     'file, and refreshes .repo-map/index.txt. It is deterministic, gitignored,',
@@ -82,6 +84,9 @@ if (!build || build.outcome !== 'built') {
 }
 
 phase('Report')
+// socket-lint: allow top-level-await -- Workflow script body executed directly
+// by the Claude Code harness (top-level `phase`/`agent`/`return` are harness
+// globals), never bundled to CJS.
 const report = await agent(
   [
     'Read .repo-map/index.txt (the repo-map cache roll-up just rebuilt).',

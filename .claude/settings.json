@@ -3,11 +3,10 @@
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": "Bash|Edit|MultiEdit|NotebookEdit|Write",
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/_dispatch/index.cjs PostToolUse"
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/index.cjs PostToolUse"
           }
         ]
       }
@@ -18,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/_dispatch/index.cjs PreToolUse"
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/index.cjs PreToolUse"
           }
         ]
       },
@@ -37,7 +36,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/_dispatch/index.cjs SessionStart"
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/index.cjs SessionStart"
           }
         ]
       },
@@ -65,23 +64,6 @@
             "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/repo-map-refresh/index.mts"
           }
         ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/enterprise-push-nudge/index.mts"
-          },
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/stale-node-modules-nudge/index.mts"
-          },
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/dirty-lockfile-nudge/index.mts"
-          }
-        ]
       }
     ],
     "Stop": [
@@ -89,7 +71,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/_dispatch/index.cjs Stop"
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/index.cjs Stop"
           }
         ]
       },

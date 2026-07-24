@@ -57,7 +57,18 @@ by `convo-prose-nudge` on PR/issue bodies:
   "basically" — cut them.
 - **Em-dash chains** — more than one per sentence.
 - **"not X, it's Y" contrast pairs** — state the positive directly.
-- **Honesty announcements:** "to be honest", "if I'm honest" — just say it.
+- **Honesty announcements:** "to be honest", "if I'm honest" — and the bare
+  qualifier ("honest status", "the honest answer"); just say it. The shared
+  `_shared/honesty-framing.mts` matcher treats any `honest`/`honestly`/`honesty`
+  token as a verdict.
+
+The prose skill enforces a fuller banned-words and slop-pattern set beyond the
+guard-flagged ones above: banned words (delve, foster, leverage, utilize,
+tapestry, transformative, harness, and more), colon reveals, importance puffery,
+weasel attribution, fake-strong verbs, synonym cycling, negative listing,
+superficial `-ing` clauses, fake-profound kickers, and summary-recap endings.
+The full list with fixes lives in `references/phrases.md`; run human-facing prose
+through the prose skill, which checks against it.
 
 ## GitHub advanced formatting
 

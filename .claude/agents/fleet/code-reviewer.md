@@ -1,6 +1,6 @@
 ---
 name: code-reviewer
-description: Reviews code in this repository against the rules in CLAUDE.md and reports style violations, logic bugs, and test gaps. Spawned by the quality-scan skill or invoked directly on a diff.
+description: Reviews code in this repository against the rules in CLAUDE.md and reports style violations, logic bugs, and test gaps. Spawned by the scanning-quality skill or invoked directly on a diff.
 tools: Read, Grep, Glob, Bash(git:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(wc:*), Bash(cat:*), Bash(head:*), Bash(tail:*)
 ---
 
