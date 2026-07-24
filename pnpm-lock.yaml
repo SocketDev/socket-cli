@@ -504,7 +504,7 @@ catalogs:
       version: 4.1.8
 
 overrides:
-  '@socketregistry/packageurl-js': 1.4.4
+  '@socketregistry/packageurl-js': 1.4.5
   '@socketsecurity/lib': 6.2.2
   '@socketsecurity/registry': npm:@socketsecurity/registry@2.0.2
   '@socketsecurity/sdk': npm:@socketsecurity/sdk@4.0.1
@@ -541,7 +541,7 @@ overrides:
   '@sigstore/core': 3.2.1
   '@sigstore/sign': 4.1.0
   '@sigstore/verify': 3.1.1
-  '@socketregistry/packageurl-js-stable': npm:@socketregistry/packageurl-js@1.4.4
+  '@socketregistry/packageurl-js-stable': npm:@socketregistry/packageurl-js@1.4.5
   '@socketsecurity/lib-stable': npm:@socketsecurity/lib@6.2.2
   '@socketsecurity/registry-stable': npm:@socketsecurity/registry@2.0.2
   '@socketsecurity/sdk-stable': npm:@socketsecurity/sdk@4.0.1
@@ -591,6 +591,7 @@ overrides:
 patchedDependencies:
   '@npmcli/run-script@10.0.4': 65d59a7c4dd7b00f1c218cbcf97d78fe2f462f2e048de4a22b41bd70dbdefcdc
   '@sigstore/sign@4.1.0': cdf99454490d44e78fde33563611c0bf50da7f256a239c94d3eb7af6c7d205fa
+  '@socketregistry/packageurl-js@1.4.5': add8ae1623ef5a692e49865dcaf831da7bdf15c4855cfe934f980a1f49d2c27f
   execa@2.1.0: e06dd2da266f9d3e4ac91468988bdc140c6ec1e5722f321960e1f61c83acb9fd
   execa@5.1.1: ee0e2217eadd7986ec585d2e684030a05ad958593a9b11affa002a14a5d46f77
   node-gyp@12.2.0: 140ba43d43d74f7d3577feb3f8a6efad544dbb0059784102b144a0e2daa437f9
@@ -678,11 +679,11 @@ importers:
         specifier: 'catalog:'
         version: 1.0.6
       '@socketregistry/packageurl-js':
-        specifier: 1.4.4
-        version: 1.4.4
+        specifier: 1.4.5
+        version: 1.4.5(patch_hash=add8ae1623ef5a692e49865dcaf831da7bdf15c4855cfe934f980a1f49d2c27f)
       '@socketregistry/packageurl-js-stable':
-        specifier: npm:@socketregistry/packageurl-js@1.4.4
-        version: '@socketregistry/packageurl-js@1.4.4'
+        specifier: npm:@socketregistry/packageurl-js@1.4.5
+        version: '@socketregistry/packageurl-js@1.4.5(patch_hash=add8ae1623ef5a692e49865dcaf831da7bdf15c4855cfe934f980a1f49d2c27f)'
       '@socketregistry/yocto-spinner':
         specifier: 'catalog:'
         version: 1.0.25
@@ -1076,8 +1077,8 @@ importers:
   .claude/hooks/fleet/check-new-deps:
     dependencies:
       '@socketregistry/packageurl-js-stable':
-        specifier: npm:@socketregistry/packageurl-js@1.4.4
-        version: '@socketregistry/packageurl-js@1.4.4'
+        specifier: npm:@socketregistry/packageurl-js@1.4.5
+        version: '@socketregistry/packageurl-js@1.4.5(patch_hash=add8ae1623ef5a692e49865dcaf831da7bdf15c4855cfe934f980a1f49d2c27f)'
       '@socketsecurity/lib-stable':
         specifier: npm:@socketsecurity/lib@6.2.2
         version: '@socketsecurity/lib@6.2.2(typescript@7.0.2)'
@@ -2236,8 +2237,8 @@ importers:
         specifier: 'catalog:'
         version: 0.34.52
       '@socketregistry/packageurl-js-stable':
-        specifier: npm:@socketregistry/packageurl-js@1.4.4
-        version: '@socketregistry/packageurl-js@1.4.4'
+        specifier: npm:@socketregistry/packageurl-js@1.4.5
+        version: '@socketregistry/packageurl-js@1.4.5(patch_hash=add8ae1623ef5a692e49865dcaf831da7bdf15c4855cfe934f980a1f49d2c27f)'
       '@socketsecurity/lib-stable':
         specifier: npm:@socketsecurity/lib@6.2.2
         version: '@socketsecurity/lib@6.2.2(typescript@7.0.2)'
@@ -2708,11 +2709,11 @@ importers:
         specifier: 'catalog:'
         version: 1.0.6
       '@socketregistry/packageurl-js':
-        specifier: 1.4.4
-        version: 1.4.4
+        specifier: 1.4.5
+        version: 1.4.5(patch_hash=add8ae1623ef5a692e49865dcaf831da7bdf15c4855cfe934f980a1f49d2c27f)
       '@socketregistry/packageurl-js-stable':
-        specifier: npm:@socketregistry/packageurl-js@1.4.4
-        version: '@socketregistry/packageurl-js@1.4.4'
+        specifier: npm:@socketregistry/packageurl-js@1.4.5
+        version: '@socketregistry/packageurl-js@1.4.5(patch_hash=add8ae1623ef5a692e49865dcaf831da7bdf15c4855cfe934f980a1f49d2c27f)'
       '@socketregistry/yocto-spinner':
         specifier: 'catalog:'
         version: 1.0.25
@@ -4085,8 +4086,8 @@ packages:
     resolution: {integrity: sha512-DM81ydAjO2GJKkNf2Vn17InJ37sEYLK1YyhxpDX16OdbOpYlsDIw8QyeFEUZtc7GqsQXbcPKJmz3j/2qS+BhKQ==}
     engines: {node: '>=18'}
 
-  '@socketregistry/packageurl-js@1.4.4':
-    resolution: {integrity: sha512-yC/FL9o4IhTcAn5BILV2L9kCzbopESefffLFbvkWsYUdXSyRbWmmw8+mLhiEL7Zck0A6C1D9rgf8+r4T1WVPLA==}
+  '@socketregistry/packageurl-js@1.4.5':
+    resolution: {integrity: sha512-5/4Lyz5jkjR3argi0lpmztFEZ/n8k26k5Ao0V9O+Cz6bFpUmK5GCnR33DpjgmsgUEO3vNs7qA1aVqirYxGAanA==}
     engines: {node: '>=24', npm: '>=12.0.0', pnpm: '>=11.0.5'}
 
   '@socketregistry/path-parse@1.0.8':
@@ -8630,7 +8631,7 @@ snapshots:
 
   '@socketregistry/isarray@1.0.8': {}
 
-  '@socketregistry/packageurl-js@1.4.4': {}
+  '@socketregistry/packageurl-js@1.4.5(patch_hash=add8ae1623ef5a692e49865dcaf831da7bdf15c4855cfe934f980a1f49d2c27f)': {}
 
   '@socketregistry/path-parse@1.0.8': {}
 
