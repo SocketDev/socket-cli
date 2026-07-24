@@ -173,6 +173,38 @@ describe('scrubSnapshotData', () => {
     })
   })
 
+  describe('git branch names', () => {
+    it('should scrub the auto-detected branch name in dry-run details', () => {
+      const input = '  branchName: "main"'
+      const result = scrubSnapshotData(input)
+      expect(result).toBe('  branchName: "[BRANCH]"')
+    })
+
+    it('should scrub a feature branch name with slashes', () => {
+      const input = '  branchName: "fix/cmd-ci-branch-snapshot"'
+      const result = scrubSnapshotData(input)
+      expect(result).toBe('  branchName: "[BRANCH]"')
+    })
+
+    it('should scrub a detached-HEAD commit-hash fallback', () => {
+      const input = '  branchName: "a0211c9"'
+      const result = scrubSnapshotData(input)
+      expect(result).toBe('  branchName: "[BRANCH]"')
+    })
+
+    it('should not scrub JSON-form branchName (quoted key)', () => {
+      const input = '"branchName":"develop"'
+      const result = scrubSnapshotData(input)
+      expect(result).toBe('"branchName":"develop"')
+    })
+
+    it('should preserve branch names when disabled', () => {
+      const input = '  branchName: "main"'
+      const result = scrubSnapshotData(input, { branches: false })
+      expect(result).toBe('  branchName: "main"')
+    })
+  })
+
   describe('custom patterns', () => {
     it('should apply custom scrubbing patterns', () => {
       const input = 'API key: abc-123-def and token: xyz-456-uvw'
