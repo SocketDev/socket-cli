@@ -256,6 +256,66 @@ describe('fetchThreatFeed', () => {
     )
   })
 
+  it('omits filter, name, and version params entirely when absent', async () => {
+    const mockQueryApiSafeJson = vi.fn()
+
+    vi.doMock(import('../../../../src/util/socket/api.mjs'), () => ({
+      queryApiSafeJson: mockQueryApiSafeJson,
+    }))
+
+    mockQueryApiSafeJson.mockResolvedValue(createSuccessResult({ threats: [] }))
+
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
+
+    await fetchThreatFeed({
+      direction: 'desc',
+      ecosystem: 'npm',
+      filter: '',
+      orgSlug: 'test-org',
+      page: '1',
+      perPage: 100,
+      pkg: '',
+      version: '',
+    })
+
+    // The exact query string: no `filter=`/`name=`/`version=` keys and no
+    // `=&` filler entries from the absent params.
+    expect(mockQueryApiSafeJson).toHaveBeenCalledWith(
+      'orgs/test-org/threat-feed?direction=desc&ecosystem=npm&page_cursor=1&per_page=100',
+      'the Threat Feed data',
+    )
+  })
+
+  it('keeps present optional params in the emitted query string', async () => {
+    const mockQueryApiSafeJson = vi.fn()
+
+    vi.doMock(import('../../../../src/util/socket/api.mjs'), () => ({
+      queryApiSafeJson: mockQueryApiSafeJson,
+    }))
+
+    mockQueryApiSafeJson.mockResolvedValue(createSuccessResult({ threats: [] }))
+
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
+
+    await fetchThreatFeed({
+      direction: 'desc',
+      ecosystem: 'npm',
+      filter: 'mal',
+      orgSlug: 'test-org',
+      page: '1',
+      perPage: 100,
+      pkg: 'lodash',
+      version: '4.17.21',
+    })
+
+    expect(mockQueryApiSafeJson).toHaveBeenCalledWith(
+      'orgs/test-org/threat-feed?direction=desc&ecosystem=npm&filter=mal&page_cursor=1&per_page=100&name=lodash&version=4.17.21',
+      'the Threat Feed data',
+    )
+  })
+
   it('uses null prototype for options', async () => {
     const mockQueryApiSafeJson = vi.fn()
 
