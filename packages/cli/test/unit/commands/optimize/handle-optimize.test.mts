@@ -1,3 +1,5 @@
+// socket-lint: allow bare-semver -- the mock must mirror EnvDetails.agentVersion, a semver SemVer instance; the lib versions helpers are string-based.
+import { SemVer } from 'semver'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleOptimize } from '../../../../src/commands/optimize/handle-optimize.mts'
@@ -79,7 +81,7 @@ describe('handleOptimize', () => {
       ok: true,
       data: {
         agent: 'npm',
-        agentVersion: '10.0.0',
+        agentVersion: new SemVer('10.0.0'),
         manifestPath: '/test/project/package.json',
         lockfilePath: '/test/project/package-lock.json',
       },
@@ -109,7 +111,7 @@ describe('handleOptimize', () => {
     expect(applyOptimization).toHaveBeenCalledWith(
       expect.objectContaining({
         agent: 'npm',
-        agentVersion: '10.0.0',
+        agentVersion: new SemVer('10.0.0'),
       }),
       { pin: false, prod: false },
     )
@@ -191,7 +193,7 @@ describe('handleOptimize', () => {
       ok: true,
       data: {
         agent: 'vlt',
-        agentVersion: '1.0.0',
+        agentVersion: new SemVer('1.0.0'),
         manifestPath: '/test/project/package.json',
         lockfilePath: '/test/project/vlt.lock',
       },
@@ -228,7 +230,7 @@ describe('handleOptimize', () => {
       ok: true,
       data: {
         agent: 'yarn',
-        agentVersion: '3.0.0',
+        agentVersion: new SemVer('3.0.0'),
         manifestPath: '/test/project/package.json',
         lockfilePath: '/test/project/yarn.lock',
       },
@@ -270,7 +272,7 @@ describe('handleOptimize', () => {
       ok: true,
       data: {
         agent: 'pnpm',
-        agentVersion: '8.0.0',
+        agentVersion: new SemVer('8.0.0'),
         manifestPath: '/test/project/package.json',
         lockfilePath: '/test/project/pnpm-lock.yaml',
       },
@@ -311,7 +313,7 @@ describe('handleOptimize', () => {
       ok: true,
       data: {
         agent: 'npm',
-        agentVersion: '10.0.0',
+        agentVersion: new SemVer('10.0.0'),
         manifestPath: '/test/project/package.json',
         lockfilePath: '/test/project/package-lock.json',
       },
@@ -375,7 +377,7 @@ describe('handleOptimize', () => {
       ok: true,
       data: {
         agent: 'npm',
-        agentVersion: '10.0.0',
+        agentVersion: new SemVer('10.0.0'),
         manifestPath: '/p/package.json',
         lockfilePath: '/p/package-lock.json',
       },

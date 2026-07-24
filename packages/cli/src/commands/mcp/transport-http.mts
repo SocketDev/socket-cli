@@ -4,6 +4,7 @@ import { createServer } from 'node:http'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { createConfiguredServer } from './server.mts'
@@ -131,7 +132,7 @@ export async function runHttpTransport(
     try {
       url = new URL(req.url!, `http://localhost:${config.port}`)
     } catch (e) {
-      logger.warn(`Invalid URL in request: ${req.url} - ${e}`)
+      logger.warn(`Invalid URL in request: ${req.url} - ${errorMessage(e)}`)
       writeJson(res, 400, {
         error: { code: -32_000, message: 'Bad Request: Invalid URL' },
         id: undefined,

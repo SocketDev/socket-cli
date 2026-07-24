@@ -40,7 +40,7 @@ vi.mock(import('@socketsecurity/lib-stable/spinner/spinner'), () => ({
 vi.mock(import('../../../../src/util/process/cmd.mts'), () => ({
   cmdFlagsToString: vi.fn(flags =>
     Object.entries(flags || {})
-      .map(([k, v]) => `--${k}=${v}`)
+      .map(([k, v]) => `--${k}=${String(v)}`)
       .join(' '),
   ),
 }))

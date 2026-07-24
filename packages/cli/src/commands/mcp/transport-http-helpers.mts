@@ -315,7 +315,7 @@ export async function handleRequestSafely(
   try {
     await fn()
   } catch (e) {
-    log.error(`Error processing ${label} request: ${e}`)
+    log.error(`Error processing ${label} request: ${errorMessage(e)}`)
     if (!res.headersSent) {
       writeJson(res, 500, {
         error: { code: -32_603, message: 'Internal server error' },

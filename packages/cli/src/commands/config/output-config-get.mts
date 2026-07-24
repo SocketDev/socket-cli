@@ -34,7 +34,7 @@ export async function outputConfigGet(
   if (outputKind === 'markdown') {
     logger.log(mdHeader('Config Value'))
     logger.log('')
-    logger.log(`Config key '${key}' has value '${result.data}`)
+    logger.log(`Config key '${key}' has value '${String(result.data)}`)
     if (readOnly) {
       logger.log('')
       logger.log(
@@ -42,7 +42,7 @@ export async function outputConfigGet(
       )
     }
   } else {
-    logger.log(`${key}: ${result.data}`)
+    logger.log(`${key}: ${String(result.data)}`)
     if (readOnly) {
       logger.log('')
       logger.log(

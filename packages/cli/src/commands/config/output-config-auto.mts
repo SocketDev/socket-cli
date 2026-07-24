@@ -38,7 +38,7 @@ export async function outputConfigAuto(
     )
     logger.log('')
     if (result.ok) {
-      logger.log(`The discovered value is: "${result.data}"`)
+      logger.log(`The discovered value is: "${String(result.data)}"`)
       if (result.message) {
         logger.log('')
         logger.log(result.message)
@@ -50,7 +50,7 @@ export async function outputConfigAuto(
       logger.log(result.message)
       logger.log('')
     }
-    logger.log(`- ${key}: ${result.data}`)
+    logger.log(`- ${key}: ${String(result.data)}`)
     logger.log('')
 
     if (isConfigFromFlag()) {

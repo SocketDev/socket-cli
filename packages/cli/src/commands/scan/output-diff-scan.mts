@@ -138,7 +138,7 @@ export async function handleMarkdown(
     }
     if (!['id', 'organization_id', 'repository_id'].includes(key)) {
       logger.group(
-        `- ${key === 'repository_slug' ? 'repo' : key === 'organization_slug' ? 'org' : key}: ${value}`,
+        `- ${key === 'repository_slug' ? 'repo' : key === 'organization_slug' ? 'org' : key}: ${String(value)}`,
       )
       logger.groupEnd()
     }
@@ -155,7 +155,7 @@ export async function handleMarkdown(
     }
     if (!['id', 'organization_id', 'repository_id'].includes(key)) {
       logger.group(
-        `- ${key === 'repository_slug' ? 'repo' : key === 'organization_slug' ? 'org' : key}: ${value}`,
+        `- ${key === 'repository_slug' ? 'repo' : key === 'organization_slug' ? 'org' : key}: ${String(value)}`,
       )
       logger.groupEnd()
     }

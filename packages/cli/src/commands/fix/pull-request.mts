@@ -2,6 +2,7 @@ import { RequestError } from '@octokit/request-error'
 
 import { UNKNOWN_VALUE } from '@socketsecurity/lib-stable/constants/sentinels'
 import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { isNonEmptyString } from '@socketsecurity/lib-stable/strings/predicates'
 
 import {
@@ -466,7 +467,7 @@ export async function openSocketFixPr(
     }
 
     // Unknown error.
-    debug(`Failed to create pull request: ${e}`)
+    debug(`Failed to create pull request: ${errorMessage(e)}`)
     return { ok: false, reason: 'unknown', error: e as Error }
   }
 }

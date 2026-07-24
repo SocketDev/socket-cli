@@ -255,7 +255,7 @@ export class TelemetryService {
             instance.config = DEFAULT_TELEMETRY_CONFIG
           }
         } catch (e) {
-          debug(`Error initializing telemetry: ${e}`)
+          debug(`Error initializing telemetry: ${errorMessage(e)}`)
           instance.config = DEFAULT_TELEMETRY_CONFIG
         }
 

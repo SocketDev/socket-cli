@@ -55,7 +55,7 @@ export async function handleOptimize({
   }
 
   debug(
-    `Detected package manager: ${pkgEnvDetails.agent} v${pkgEnvDetails.agentVersion}`,
+    `Detected package manager: ${pkgEnvDetails.agent} v${pkgEnvDetails.agentVersion.version}`,
   )
   debugDir({ pkgEnvDetails })
 
@@ -69,7 +69,7 @@ export async function handleOptimize({
         message: 'Unsupported',
         cause: cmdPrefixMessage(
           CMD_NAME,
-          `${agent} v${agentVersion} does not support overrides.`,
+          `${agent} v${agentVersion.version} does not support overrides.`,
         ),
       },
       outputKind,
@@ -77,7 +77,7 @@ export async function handleOptimize({
     return
   }
 
-  logger.info(`Optimizing packages for ${agent} v${agentVersion}.`)
+  logger.info(`Optimizing packages for ${agent} v${agentVersion.version}.`)
   logger.error('')
 
   debug('Applying optimization')

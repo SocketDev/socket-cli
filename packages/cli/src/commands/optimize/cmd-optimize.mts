@@ -113,7 +113,7 @@ export async function run(
     const actions: DryRunAction[] = [
       {
         type: 'fetch',
-        description: `Detected ${agent} v${agentVersion}`,
+        description: `Detected ${agent} v${agentVersion.version}`,
         target: pkgPath,
       },
       {
@@ -141,7 +141,7 @@ export async function run(
     ]
 
     outputDryRunPreview({
-      summary: `Optimize dependencies with @socketregistry overrides (${agent} v${agentVersion})`,
+      summary: `Optimize dependencies with @socketregistry overrides (${agent} v${agentVersion.version})`,
       actions,
       wouldSucceed: true,
     })

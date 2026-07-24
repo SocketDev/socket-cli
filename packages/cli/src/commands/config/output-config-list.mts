@@ -86,8 +86,11 @@ export async function outputConfigList({
           value = '********'
         }
         if (full || value !== undefined) {
+          const displayValue = Array.isArray(value)
+            ? value.join(', ') || '<none>'
+            : String(value ?? '<none>')
           logger.log(
-            `- ${key}:${' '.repeat(Math.max(0, maxWidth - key.length + 3))} ${Array.isArray(value) ? value.join(', ') || '<none>' : (value ?? '<none>')}`,
+            `- ${key}:${' '.repeat(Math.max(0, maxWidth - key.length + 3))} ${displayValue}`,
           )
         }
       }

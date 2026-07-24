@@ -46,6 +46,7 @@ import os from 'node:os'
 import process from 'node:process'
 
 import { debugNs } from '@socketsecurity/lib-stable/debug/output'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { isError } from '@socketsecurity/lib-stable/errors/predicates'
 import { escapeRegExp } from '@socketsecurity/lib-stable/regexps/escape'
 
@@ -291,7 +292,9 @@ export function setupTelemetryExitHandlers(): void {
       /* c8 ignore start - process.on rarely throws for SIGINT/SIGTERM/SIGHUP; cross-platform defensive */
     } catch (e) {
       // Some signals may not be available on all platforms.
-      debug(`Failed to register handler for signal ${signal}: ${e}`)
+      debug(
+        `Failed to register handler for signal ${signal}: ${errorMessage(e)}`,
+      )
     }
     /* c8 ignore stop */
   }
@@ -357,7 +360,7 @@ export async function trackEvent(
     }
   } catch (e) {
     // Telemetry errors should never block CLI execution.
-    debug(`Failed to track event ${eventType}: ${e}`)
+    debug(`Failed to track event ${eventType}: ${errorMessage(e)}`)
   }
 }
 

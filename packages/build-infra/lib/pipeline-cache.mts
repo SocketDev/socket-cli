@@ -99,7 +99,9 @@ export async function loadExternalTools(
   const validated = validateExternalTools(data)
   if (!validated.ok) {
     const details = validated.errors
-      .map(e => `  ${e.path}: ${e.message}`)
+      .map(
+        (e: { path: string; message: string }) => `  ${e.path}: ${e.message}`,
+      )
       .join('\n')
     throw new Error(`Invalid external-tools.json at ${filePath}:\n${details}`)
   }

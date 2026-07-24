@@ -65,7 +65,7 @@ export async function detectAndValidatePackageEnvironment(
     },
   })
   const { agent, nodeVersion, pkgRequirements } = details
-  const agentVersion = details.agentVersion ?? 'unknown'
+  const agentVersion = details.agentVersion?.version ?? 'unknown'
   if (!details.agentSupported) {
     const minVersion = getMinimumVersionByAgent(agent)
     return {
@@ -84,7 +84,7 @@ export async function detectAndValidatePackageEnvironment(
       message: 'Version mismatch',
       cause: cmdPrefixMessage(
         cmdName,
-        `Requires Node >=${minVersion}. Current version: ${nodeVersion}.`,
+        `Requires Node >=${minVersion}. Current version: ${nodeVersion.version}.`,
       ),
     }
   }
@@ -104,7 +104,7 @@ export async function detectAndValidatePackageEnvironment(
       message: 'Version mismatch',
       cause: cmdPrefixMessage(
         cmdName,
-        `Package engine "node" requires ${pkgRequirements.node}. Current version: ${nodeVersion}`,
+        `Package engine "node" requires ${pkgRequirements.node}. Current version: ${nodeVersion.version}`,
       ),
     }
   }

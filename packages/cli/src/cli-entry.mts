@@ -38,6 +38,7 @@ import {
   debugDirNs,
 } from '@socketsecurity/lib-stable/debug/output'
 import { getCI } from '@socketsecurity/lib-stable/env/ci'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import {
   getSocketCliBootstrapCacheDir,
   getSocketCliBootstrapSpec,
@@ -125,7 +126,7 @@ export async function writeBootstrapManifestEntry(): Promise<void> {
     })
   } catch (e) {
     // Silently ignore manifest write errors - not critical
-    debug(`Failed to write bootstrap manifest entry: ${e}`)
+    debug(`Failed to write bootstrap manifest entry: ${errorMessage(e)}`)
   }
 }
 
@@ -165,7 +166,7 @@ void (async () => {
       {
         name: SOCKET_CLI_BIN_NAME,
         argv: process.argv.slice(2),
-        importMeta: { url: `${url.pathToFileURL(__filename)}` } as ImportMeta,
+        importMeta: { url: url.pathToFileURL(__filename).href } as ImportMeta,
         subcommands: rootCommands,
       },
       { aliases: rootAliases, buckets: rootCommandBuckets },
@@ -198,7 +199,7 @@ void (async () => {
         flags: {
           json: { type: 'boolean' },
         },
-        importMeta: { url: `${url.pathToFileURL(__filename)}` } as ImportMeta,
+        importMeta: { url: url.pathToFileURL(__filename).href } as ImportMeta,
       })
       return !!cli.flags.json
     })()

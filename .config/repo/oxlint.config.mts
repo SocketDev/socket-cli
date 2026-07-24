@@ -19,10 +19,10 @@ import { config } from '../fleet/oxlint.config.mts'
 // oxlint-disable-next-line socket/no-default-export -- oxlint loads the config from this module's default export.
 export default defineConfig(
   config({
-    // Burn-down state (2026-07-23): await-thenable, no-base-to-string and
-    // no-unnecessary-type-conversion are DONE (entries deleted). 824 findings
-    // remain across the four rules below — restrict-template-expressions (32)
-    // and no-floating-promises (85) next, then the test-mock-heavy giants
+    // Burn-down state (2026-07-24): await-thenable, no-base-to-string,
+    // no-unnecessary-type-conversion and restrict-template-expressions are
+    // DONE (entries deleted). 792 findings remain across the three rules
+    // below — no-floating-promises (85) next, then the test-mock-heavy giants
     // unbound-method (135) and no-unsafe-type-assertion (572, ~57% in
     // *.test.mts vitest mocks). CAUTION for no-unnecessary-type-conversion-
     // style autofixes: coercions at the meow flag boundary can look redundant
@@ -31,7 +31,6 @@ export default defineConfig(
     rules: {
       'typescript/no-floating-promises': 'off',
       'typescript/no-unsafe-type-assertion': 'off',
-      'typescript/restrict-template-expressions': 'off',
       'typescript/unbound-method': 'off',
     },
   }),

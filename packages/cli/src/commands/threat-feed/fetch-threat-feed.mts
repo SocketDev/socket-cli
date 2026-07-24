@@ -33,7 +33,7 @@ export async function fetchThreatFeed({
   ])
 
   return await queryApiSafeJson(
-    `orgs/${orgSlug}/threat-feed?${queryParams}`,
+    `orgs/${orgSlug}/threat-feed?${queryParams.toString()}`,
     'the Threat Feed data',
   )
 }

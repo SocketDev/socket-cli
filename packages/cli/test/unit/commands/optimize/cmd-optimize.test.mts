@@ -4,6 +4,8 @@
  * Tests the command that optimizes dependencies with @socketregistry overrides.
  */
 
+// socket-lint: allow bare-semver -- the mock must mirror EnvDetails.agentVersion, a semver SemVer instance; the lib versions helpers are string-based.
+import { SemVer } from 'semver'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { cmdOptimize } from '../../../../src/commands/optimize/cmd-optimize.mts'
@@ -33,16 +35,18 @@ vi.mock(
 
 // Mock dependencies.
 const mockHandleOptimize = vi.hoisted(() => vi.fn())
-const mockDetectAndValidatePackageEnvironment = vi.hoisted(() =>
-  vi.fn().mockResolvedValue({
-    ok: true,
-    data: {
-      agent: 'npm',
-      agentVersion: '10.0.0',
-      pkgPath: '/test/path',
-    },
-  }),
-)
+const mockDetectAndValidatePackageEnvironment = vi.hoisted(() => vi.fn())
+// The default resolved value is installed outside vi.hoisted because the real
+// EnvDetails.agentVersion is a SemVer instance and the semver import is not
+// initialized yet inside hoisted callbacks.
+mockDetectAndValidatePackageEnvironment.mockResolvedValue({
+  ok: true,
+  data: {
+    agent: 'npm',
+    agentVersion: new SemVer('10.0.0'),
+    pkgPath: '/test/path',
+  },
+})
 
 vi.mock(
   import('../../../../src/commands/optimize/handle-optimize.mts'),
@@ -194,7 +198,7 @@ describe('cmd-optimize', () => {
         ok: true,
         data: {
           agent: 'pnpm',
-          agentVersion: '9.0.0',
+          agentVersion: new SemVer('9.0.0'),
           pkgPath: '/test/path',
         },
       })

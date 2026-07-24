@@ -297,7 +297,7 @@ export function normalizeConfigKey(
   if (!isSupportedConfigKey(normalizedKey)) {
     return {
       ok: false,
-      message: `Invalid config key: ${normalizedKey}`,
+      message: `Invalid config key: ${String(normalizedKey)}`,
       data: undefined,
     }
   }
@@ -392,8 +392,12 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
     }
   } else {
     if (value === 'false' || value === 'true' || value === 'undefined') {
+      // The narrowed generic (LocalConfig[Key] & string literal) trips
+      // restrict-template-expressions; a plain string re-binding keeps both
+      // that rule and no-unnecessary-type-conversion happy.
+      const raw: string = value
       logger.warn(
-        `Note: The value is set to "${value}", as a string (!). Use \`socket config unset\` to reset a key.`,
+        `Note: The value is set to "${raw}", as a string (!). Use \`socket config unset\` to reset a key.`,
       )
     }
     localConfig[key] = value

@@ -46,7 +46,7 @@ export async function outputScanMetadata(
       ) {
         continue
       }
-      logger.log(`- ${key}: ${value}`)
+      logger.log(`- ${key}: ${String(value)}`)
     }
     logger.log(
       `\nYou can view this report at: [${result.data.html_report_url}](${result.data.html_report_url})\n`,
