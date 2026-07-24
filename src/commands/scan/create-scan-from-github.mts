@@ -57,7 +57,9 @@ export async function createScanFromGithub({
     if (!result.ok) {
       return result
     }
-    targetRepos = result.data.results.map(obj => obj.slug || '')
+    targetRepos = result.data.results.map(
+      (obj: (typeof result.data.results)[number]) => obj.slug || '',
+    )
   }
 
   targetRepos = targetRepos.map(s => s.trim()).filter(Boolean)
@@ -213,6 +215,7 @@ async function scanOneRepo(
     repoSlug,
     defaultBranch,
     orgGithub,
+    orgSlug,
     repoApiUrl,
     githubToken,
   })
@@ -288,6 +291,7 @@ async function testAndDownloadManifestFiles({
   files,
   githubToken,
   orgGithub,
+  orgSlug,
   repoApiUrl,
   repoSlug,
   tmpDir,
@@ -297,6 +301,7 @@ async function testAndDownloadManifestFiles({
   repoSlug: string
   defaultBranch: string
   orgGithub: string
+  orgSlug: string
   repoApiUrl: string
   githubToken: string
 }): Promise<CResult<unknown>> {
@@ -314,6 +319,7 @@ async function testAndDownloadManifestFiles({
       file,
       tmpDir,
       defaultBranch,
+      orgSlug,
       repoApiUrl,
       githubToken,
     })
@@ -349,18 +355,20 @@ async function testAndDownloadManifestFile({
   defaultBranch,
   file,
   githubToken,
+  orgSlug,
   repoApiUrl,
   tmpDir,
 }: {
   file: string
   tmpDir: string
   defaultBranch: string
+  orgSlug: string
   repoApiUrl: string
   githubToken: string
 }): Promise<CResult<{ isManifest: boolean }>> {
   debugFn('notice', 'testing: file', file)
 
-  const supportedFilesCResult = await fetchSupportedScanFileNames()
+  const supportedFilesCResult = await fetchSupportedScanFileNames({ orgSlug })
   const supportedFiles = supportedFilesCResult.ok
     ? supportedFilesCResult.data
     : undefined

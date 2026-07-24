@@ -721,8 +721,11 @@ describe('socket scan create', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
+      // With SDK v4 the supported-manifest-files lookup is org-scoped, so an
+      // invalid token now fails at authentication before the glob runs; a valid
+      // token still reaches the "no eligible files" message on an empty dir.
       expect(output).toMatch(
-        /found no eligible files to scan|An error was thrown while requesting/,
+        /found no eligible files to scan|An error was thrown while requesting|Socket API error|Authentication failed/,
       )
       expect(
         code,

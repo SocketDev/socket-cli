@@ -25,7 +25,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import constants from '../constants.mts'
-import { getCliUserAgent, getExtraCaCerts, setupSdk } from './sdk.mts'
+import {
+  clampApiTimeout,
+  getCliUserAgent,
+  getExtraCaCerts,
+  setupSdk,
+} from './sdk.mts'
 
 import type { RequestInfo, ResponseInfo } from '@socketsecurity/sdk'
 
@@ -752,5 +757,23 @@ describe('setupSdk with extra CA certificates', () => {
       const agentOpts = MockHttpsAgent.mock.calls[0]?.[0]
       expect(agentOpts?.timeout).toBeUndefined()
     }
+  })
+})
+
+describe('clampApiTimeout', () => {
+  it('should leave an in-range timeout unchanged', () => {
+    expect(clampApiTimeout(5_000)).toBe(5_000)
+    expect(clampApiTimeout(60_000)).toBe(60_000)
+    expect(clampApiTimeout(300_000)).toBe(300_000)
+  })
+
+  it('should raise a below-minimum timeout to the floor', () => {
+    expect(clampApiTimeout(1_000)).toBe(5_000)
+    expect(clampApiTimeout(1)).toBe(5_000)
+  })
+
+  it('should lower an above-maximum timeout to the ceiling', () => {
+    expect(clampApiTimeout(999_999)).toBe(300_000)
+    expect(clampApiTimeout(300_001)).toBe(300_000)
   })
 })

@@ -3,7 +3,7 @@ import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SetupSdkOptions } from '../../utils/sdk.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { FullScanListResult } from '@socketsecurity/sdk'
 
 export type FetchOrgFullScanListConfig = {
   branch: string
@@ -23,7 +23,7 @@ export type FetchOrgFullScanListOptions = {
 export async function fetchOrgFullScanList(
   config: FetchOrgFullScanListConfig,
   options?: FetchOrgFullScanListOptions | undefined,
-): Promise<CResult<SocketSdkSuccessResult<'getOrgFullScanList'>['data']>> {
+): Promise<CResult<FullScanListResult['data']>> {
   const { sdkOpts } = {
     __proto__: null,
     ...options,
@@ -41,14 +41,14 @@ export async function fetchOrgFullScanList(
   } as FetchOrgFullScanListConfig
 
   return await handleApiCall(
-    sockSdk.getOrgFullScanList(orgSlug, {
+    sockSdk.listFullScans(orgSlug, {
       ...(branch ? { branch } : {}),
       ...(repo ? { repo } : {}),
-      sort,
-      direction,
+      ...(sort ? { sort: sort as 'name' | 'created_at' } : {}),
+      ...(direction ? { direction: direction as 'asc' | 'desc' } : {}),
       from: from_time,
-      page: String(page),
-      per_page: String(perPage),
+      page,
+      per_page: perPage,
     }),
     { description: 'list of scans' },
   )

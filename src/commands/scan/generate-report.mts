@@ -247,7 +247,10 @@ function createLeaf(
     type: alert.type,
     policy: policyAction,
     url: getSocketDevPackageOverviewUrlFromPurl(art),
-    manifest: art.manifestFiles?.map(o => o.file) ?? [],
+    manifest:
+      art.manifestFiles?.map(
+        (o: NonNullable<typeof art.manifestFiles>[number]) => o.file,
+      ) ?? [],
   }
   return leaf
 }

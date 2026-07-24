@@ -132,7 +132,7 @@ function normalizeScanInputPath(pathToNormalize: string, cwd: string): string {
 
 export async function getPackageFilesForScan(
   inputPaths: string[],
-  supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
+  supportedFiles: SocketSdkSuccessResult<'getSupportedFiles'>['data'],
   options?: PackageFilesForScanOptions | undefined,
 ): Promise<string[]> {
   const {

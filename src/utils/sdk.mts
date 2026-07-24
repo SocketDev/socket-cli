@@ -51,6 +51,20 @@ import { trackCliEvent } from './telemetry/integration.mts'
 import type { CResult } from '../types.mts'
 import type { RequestInfo, ResponseInfo } from '@socketsecurity/sdk'
 
+// SDK v4 rejects request timeouts outside this range (see the SDK's
+// MIN_HTTP_TIMEOUT / MAX_HTTP_TIMEOUT). The SDK does not re-export those
+// constants, so the bounds are mirrored here.
+const MIN_API_TIMEOUT_MS = 5_000
+const MAX_API_TIMEOUT_MS = 300_000
+
+// Clamp a SOCKET_CLI_API_TIMEOUT value into the SDK's accepted range. The SDK
+// throws a TypeError on out-of-range timeouts, so an out-of-range user value
+// would otherwise make every API call fail; clamping preserves intent (a small
+// value maps to the floor, a huge value to the ceiling) while staying valid.
+export function clampApiTimeout(timeout: number): number {
+  return Math.min(Math.max(timeout, MIN_API_TIMEOUT_MS), MAX_API_TIMEOUT_MS)
+}
+
 // Lazy-evaluated full CLI user agent for direct (non-SDK) API calls.
 // Includes the CLI product token, Node.js version, and OS platform/arch.
 // e.g. "socket/1.1.96 node/v22.0.0 linux/arm64"
@@ -229,7 +243,14 @@ export async function setupSdk(
         ? new HttpAgent()
         : new HttpsAgent(ca ? { ca } : undefined),
     ...(apiBaseUrl ? { baseUrl: apiBaseUrl } : {}),
-    timeout: constants.ENV.SOCKET_CLI_API_TIMEOUT,
+    // SDK v4 validates the request timeout to be within [5000, 300000] ms and
+    // throws otherwise. Only forward a truthy timeout; when unset (0) omit it
+    // so the SDK applies its own default instead of rejecting the value. A
+    // truthy-but-out-of-range value is clamped into the accepted range rather
+    // than forwarded, which would make every SDK call throw.
+    ...(constants.ENV.SOCKET_CLI_API_TIMEOUT
+      ? { timeout: clampApiTimeout(constants.ENV.SOCKET_CLI_API_TIMEOUT) }
+      : {}),
     userAgent: createUserAgentFromPkgJson({
       name: constants.ENV.INLINED_SOCKET_CLI_NAME,
       version: constants.ENV.INLINED_SOCKET_CLI_VERSION,
