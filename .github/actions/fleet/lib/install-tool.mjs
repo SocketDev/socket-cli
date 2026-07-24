@@ -62,6 +62,7 @@ if (!url || !integrityArg || !destDir) {
 // sha256 for backward compat — deprecated, will be removed once all
 // call sites pass SRI directly.
 // oxlint-disable-next-line socket/export-top-level-functions -- composite-action helper runs on the raw runner before setup-node; no node_modules, no module boundary worth exporting across.
+// oxlint-disable-next-line typescript/consistent-return -- every non-returning arm ends in process.exit(1); the analyzer cannot see the never.
 function parseIntegrity(s) {
   // Parse an SRI string: (1) the algorithm (sha256/384/512), (2) the base64
   // digest after the dash.
@@ -103,6 +104,7 @@ if (process.env.GITHUB_TOKEN) {
 // the CJS bundle target rejects top-level await, so the download / verify /
 // extract pipeline runs inside an async IIFE.
 // oxlint-disable-next-line socket/export-top-level-functions -- composite-action helper runs on the raw runner before setup-node; no node_modules, no module boundary worth exporting across.
+// oxlint-disable-next-line typescript/consistent-return -- every non-returning arm ends in process.exit(1); the analyzer cannot see the never.
 async function main() {
   // oxlint-disable-next-line socket/no-fetch-prefer-http-request -- pre-setup-node action; @socketsecurity/lib-stable not installed yet, only built-in fetch is available.
   const res = await fetch(url, { redirect: 'follow', headers })

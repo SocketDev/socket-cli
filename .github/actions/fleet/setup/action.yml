@@ -653,13 +653,13 @@ runs:
         echo "GH_TELEMETRY=0" >> "${GITHUB_ENV:-/dev/null}"
 
     - name: Install pinned Homebrew bundle
-      # Only when the repo has enrolled (committed a root Brewfile). Homebrew has
+      # Only when the repo has enrolled (committed a .config/repo/Brewfile). Homebrew has
       # no minimum-release-age, so the fleet enforces one with per-tap SHA pins
       # in scripts/fleet/constants/brew-tap-pins.mts (owned by
       # scripts/fleet/update/brew.mts --apply, gated by
       # scripts/fleet/check/brew-install-is-pinned.mts). Runs after Setup Node.js,
       # but the pins are read with grep/sed so this stays dependency-free.
-      if: ${{ hashFiles('Brewfile') != '' }}
+      if: ${{ hashFiles('.config/repo/Brewfile') != '' }}
       shell: bash
       run: |
         set -euo pipefail
@@ -697,12 +697,12 @@ runs:
           git -C "$REPO" checkout -q -f "$SHA"
         }
         pin_tap core homebrew/core
-        if grep -q '^cask ' "${GITHUB_WORKSPACE}/Brewfile"; then
+        if grep -q '^cask ' "${GITHUB_WORKSPACE}/.config/repo/Brewfile"; then
           pin_tap cask homebrew/cask
         fi
         # Retry the bundle to ride out a transient tap/network hiccup.
         ATTEMPT=0
-        until brew bundle install --file="${GITHUB_WORKSPACE}/Brewfile" --no-upgrade; do
+        until brew bundle install --file="${GITHUB_WORKSPACE}/.config/repo/Brewfile" --no-upgrade; do
           ATTEMPT=$((ATTEMPT + 1))
           if [ "$ATTEMPT" -ge 3 ]; then
             echo "× brew bundle failed after 3 attempts." >&2

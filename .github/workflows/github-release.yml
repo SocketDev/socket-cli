@@ -9,6 +9,13 @@ name: 🚀 GitHub release
 # Default flow: push a signed v* tag → this workflow cuts a GitHub Release for
 # it. A manual dispatch is a DRY-RUN (prints the cut plan) unless
 # `release: true`. Add build steps + assets for whatever this repo ships.
+#
+# ORDER RULE: the tag + immutable GH release are the FINAL markers of a
+# release — they may only exist AFTER the registry publish is live. A STAGED
+# npm package is not published (staging may never be approved), so this
+# workflow refuses to cut when the tagged version is not resolvable on its
+# registry (npm packument / crates.io sparse index). Registry-less repos
+# (private, github-release-only) skip the gate.
 
 on:
   workflow_dispatch:
@@ -62,6 +69,42 @@ jobs:
             exit 1
           fi
           echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
+      # Belt-and-braces publish-before-release gate: refuse to cut when the
+      # tagged version is not actually live on its registry. Runs only when a
+      # real cut would happen (tag push, or dispatch with release: true) so a
+      # dry-run plan stays inspectable pre-publish. curl (not npm view) — the
+      # runner has no install here and npm trips repos' pnpm devEngines.
+      - name: Registry publish is live
+        if: ${{ github.event_name == 'push' || inputs.release }}
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          set -euo pipefail
+          VERSION="${TAG#v}"
+          if [ -f package.json ] && [ "$(node -p "require('./package.json').private === true")" != "true" ]; then
+            NAME="$(node -p "require('./package.json').name")"
+            if ! curl -fsS -o /dev/null "https://registry.npmjs.org/${NAME}/${VERSION}"; then
+              echo "× ${NAME}@${VERSION} is not resolvable on npm — refusing to cut the GH release before the registry publish." >&2
+              echo "  A STAGED package is not published. Fix: approve/complete the publish first, then re-run." >&2
+              exit 1
+            fi
+            echo "✓ ${NAME}@${VERSION} is live on npm."
+          elif [ -f Cargo.toml ]; then
+            NAME="$(node -e "const m=/^name *= *\"([^\"]+)\"/m.exec(require('node:fs').readFileSync('Cargo.toml','utf8')); if(!m){process.exit(1)}; console.log(m[1])")"
+            case "${#NAME}" in
+              1) IDX="1/${NAME}" ;;
+              2) IDX="2/${NAME}" ;;
+              3) IDX="3/${NAME:0:1}/${NAME}" ;;
+              *) IDX="${NAME:0:2}/${NAME:2:2}/${NAME}" ;;
+            esac
+            if ! curl -fsS "https://index.crates.io/${IDX}" | grep -q "\"vers\":\"${VERSION}\""; then
+              echo "× ${NAME}@${VERSION} is not in the crates.io index — refusing to cut the GH release before the registry publish." >&2
+              exit 1
+            fi
+            echo "✓ ${NAME}@${VERSION} is live on crates.io."
+          else
+            echo "No public npm package or crate manifest — skipping the registry-liveness gate (github-release-only repo)."
+          fi
       - name: Mint release-app token
         id: app-token
         uses: ./.github/actions/fleet/github-release-app-token

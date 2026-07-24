@@ -1,13 +1,22 @@
 name: 📦 npm publish
 
-# PRESET — seeded once from template/presets/ (onboarding or first cascade),
-# then repo-owned: customize what + how THIS repo publishes. The inlined
-# per-repo replacement for the socket-registry reusable publish workflow.
+# Cascade-owned — every npm-publishing repo carries the byte-identical copy
+# (adopt by copying the template once; the sync then keeps it in lock-step;
+# member edits are reverted on the next cascade). The thin dispatch shell:
+# checkout → setup-and-install → build → scripts/fleet/npm-publish.mts, which
+# owns what + how the repo publishes.
 #
 # Default flow: manual dispatch, DRY-RUN unless `publish: true`; publishes the
 # workspace's publishable packages via the fleet staged-publish script with
 # npm provenance (OIDC trusted publishing — id-token: write, no long-lived
 # npm token).
+#
+# ORDER RULE: this workflow only STAGES — nothing is public, and NO git tag or
+# GitHub release exists yet. The tag + immutable GH release are cut LAST, by
+# the local `--approve` promote (publish-pipeline.mts / npm-publish.mts
+# --approve), only after the approved version is live on npm. The
+# github-release workflow independently refuses to cut for a version that is
+# not resolvable on the registry.
 
 on:
   workflow_dispatch:
@@ -20,6 +29,18 @@ on:
         description: 'npm dist-tag to publish under.'
         type: string
         default: 'latest'
+      release-as:
+        description: >-
+          Force the bump level. MAJOR is never derived from commits — the
+          bump script stops on breaking commits unless a human selects
+          major here.
+        type: choice
+        options:
+          - ''
+          - major
+          - minor
+          - patch
+        default: ''
 
 permissions:
   contents: read
@@ -27,6 +48,9 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    # npm's trusted-publisher config pins this GitHub environment name; the
+    # OIDC token exchange 404s if the job runs outside it.
+    environment: npm-publish
     permissions:
       contents: read
       # npm provenance / trusted publishing mints its OIDC token here.
@@ -36,9 +60,39 @@ jobs:
       # sfw and socket-cli read SOCKET_API_KEY from the org-wide secret.
       SOCKET_API_KEY: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
     steps:
+      # First step must be the third-party actions/checkout (GitHub fetches it
+      # independently) to populate the workspace so the LOCAL
+      # ./.github/actions/* composite resolves; setup-and-install re-checks-out
+      # at its own deeper default.
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-15)
+        with:
+          fetch-depth: 1
+          persist-credentials: false
       - name: Setup + install
         uses: ./.github/actions/fleet/setup-and-install
+      # Build dist/ before publishing — the staged-publish script imports the
+      # package's own built output (`@socketsecurity/lib/stdio/prompts` self-
+      # resolves to dist/), and `files` ships dist/, so the tarball needs it.
+      - name: Build
+        run: pnpm run build
+      # The release App signs the bump commit via the GitHub API — the
+      # workflow's own GITHUB_TOKEN stays contents: read.
+      - name: Mint release App token
+        id: release-app
+        uses: ./.github/actions/fleet/github-release-app-token
+        with:
+          client-id: ${{ vars.SOCKET_RELEASE_CLIENT_ID }}
+          private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
+      # --bump consumes the committed version hint (X.Y.Z-prerelease →
+      # X.Y.Z), writes CHANGELOG, and commits via the release App (verified,
+      # signed) onto a throwaway npm-publish-v<version> branch — main is
+      # fast-forwarded to it only after the publish succeeds, and it is nuked on
+      # a rejected publish, so a failed stage never creeps the version. The
+      # version decision stays with the human: it is whatever the committed hint
+      # names.
       - name: Publish
         env:
           DIST_TAG: ${{ inputs.dist-tag }}
-        run: node scripts/fleet/npm-publish.mts --staged --tag "$DIST_TAG" ${{ inputs.publish != true && '--dry-run' || '' }}
+          RELEASE_AS: ${{ inputs.release-as }}
+          RELEASE_APP_TOKEN: ${{ steps.release-app.outputs.token }}
+        run: node scripts/fleet/npm-publish.mts --staged --bump --tag "$DIST_TAG" ${RELEASE_AS:+--release-as "$RELEASE_AS"} ${{ inputs.publish != true && '--dry-run' || '' }}

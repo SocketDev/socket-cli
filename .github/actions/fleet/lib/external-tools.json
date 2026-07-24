@@ -1,13 +1,13 @@
 {
-  "$schema": "https://raw.githubusercontent.com/SocketDev/socket-wheelhouse/main/packages/build-infra/lib/external-tools-schema.json",
+  "$schema": "https://raw.githubusercontent.com/SocketDev/socket-wheelhouse/main/scripts/fleet/build-infra/lib/external-tools-schema.json",
   "description": "Build/release tools the from-scratch bootstrap (setup-tools.mjs) installs before pnpm: pnpm itself and Socket Firewall (free + enterprise SKUs). Shape is the shared { tools: { <name>: ToolEntry } } container validated by scripts/fleet/lib/external-tools-schema.mts.",
   "tools": {
     "pnpm": {
       "notes": [
         "pnpm publishes 7 platform-native binaries: linux-{x64,arm64}{,-musl}, darwin-arm64, win-{x64,arm64}. Verified against v11.8.0 (2026-06-18).",
-        "linux-*-musl tarballs are first-class assets with distinct integrity from the glibc tarballs — the binaries are linked against different libcs and only the matching one runs on its target. Don't 'simplify' by pointing musl keys at the glibc asset.",
+        "linux-*-musl tarballs are first-class assets with distinct integrity from the glibc tarballs \u2014 the binaries are linked against different libcs and only the matching one runs on its target. Don't 'simplify' by pointing musl keys at the glibc asset.",
         "darwin-x64 is the odd one out: upstream dropped the SEA binary in 11.0.5 because of nodejs/node#62893 (upstream LIEF/Mach-O bug that the Node team has declined to fix). Intel Mac instead installs the npm-registry JS tarball (`pnpm-<version>.tgz`) + runs it through system Node. update-external-tools.mts recognizes the `<pkg>-<version>.tgz` asset shape and fetches its integrity from the npm registry rather than the GitHub release.",
-        "v11.8.0 had all 8 platforms re-hashed (GitHub assets as sha512 SRIs + darwin-x64 from the npm registry's dist.integrity). It published 2026-06-18, inside the 7-day minimumReleaseAge soak, so the bump rode a dated `soakBypass` entry (auto-disarms at `removable`) — pnpm releases are GitHub-asset distributions from a known publisher; the soak targets npm typosquats / malicious freshpubs. update-external-tools.mts won't auto-pick a still-soaking release, so this was a hand-bump; drop the cleared soakBypass on the next routine bump."
+        "v11.8.0 had all 8 platforms re-hashed (GitHub assets as sha512 SRIs + darwin-x64 from the npm registry's dist.integrity). It published 2026-06-18, inside the 7-day minimumReleaseAge soak, so the bump rode a dated `soakBypass` entry (auto-disarms at `removable`) \u2014 pnpm releases are GitHub-asset distributions from a known publisher; the soak targets npm typosquats / malicious freshpubs. update-external-tools.mts won't auto-pick a still-soaking release, so this was a hand-bump; drop the cleared soakBypass on the next routine bump."
       ],
       "description": "Fast, disk space efficient package manager",
       "repository": "github:pnpm/pnpm",
@@ -55,27 +55,22 @@
     },
     "npm": {
       "notes": [
-        "npm is platform-agnostic — ONE registry tarball (npm-<version>.tgz, pure JS run through node), so a single top-level integrity rather than a per-platform map. install-npm.mts downloads it via the socket-lib download helper, verifies `integrity` (the stored sha512, captured once at pin time + checked against the registry dist.integrity), then drives the DOWNLOADED `node bin/npm-cli.js install -gf` — never `npm install -g npm`, so there's no self-update path. Models npmjs.com/install.sh + the fleet supply-chain gate.",
-        "Bootstrap order: node first (.node-version), then npm (this entry), then the Socket packages — all downloaded + installed through the socket-lib helpers.",
+        "npm is platform-agnostic \u2014 ONE registry tarball (npm-<version>.tgz, pure JS run through node), so a single top-level integrity rather than a per-platform map. install-npm.mts downloads it via the socket-lib download helper, verifies `integrity` (the stored sha512, captured once at pin time + checked against the registry dist.integrity), then drives the DOWNLOADED `node bin/npm-cli.js install -gf` \u2014 never `npm install -g npm`, so there's no self-update path. Models npmjs.com/install.sh + the fleet supply-chain gate.",
+        "Bootstrap order: node first (.node-version), then npm (this entry), then the Socket packages \u2014 all downloaded + installed through the socket-lib helpers.",
         "12.0.0 published 2026-07-09, inside the 7-day minimumReleaseAge soak, so the bump rides a dated soakBypass (auto-disarms at `removable`). update-external-tools.mts recognizes the `<pkg>-<version>.tgz` asset shape and re-fetches integrity from the npm registry on a bump.",
-        "npm carries the `min-release-age-exclude` .npmrc config — kept in lockstep with pnpm-workspace.yaml minimumReleaseAgeExclude."
+        "npm carries the `min-release-age-exclude` .npmrc config \u2014 kept in lockstep with pnpm-workspace.yaml minimumReleaseAgeExclude."
       ],
-      "description": "npm — pinned, SRI-verified registry tarball; installed without self-update",
+      "description": "npm \u2014 pinned, SRI-verified registry tarball; installed without self-update",
       "repository": "npm:npm",
-      "version": "12.0.0",
-      "soakBypass": {
-        "version": "12.0.0",
-        "published": "2026-07-09",
-        "removable": "2026-07-16"
-      },
-      "integrity": "sha512-qzvPQfNSY7louiM6rv7dL0hi5esBGLn1lLwxbdyL5XOIssWzoYMwn8xqvWhYcZL6onTkenYSxrtKxsFrFbUFyw=="
+      "version": "12.0.1",
+      "integrity": "sha512-L5T9i/YAQWQWqTS/xZxJkei/9zcu99hCeE4qi41IyBVV7mRQad3qc2JfuOktwmH+qwGI/V2rbCL+/UYxb1+RQA=="
     },
     "smithers": {
       "notes": [
-        "smithers-orchestrator — AI orchestration framework (durable long-horizon coding-agent workflows). npm registry tarball (pure JS run via node), so a single top-level integrity (npm-shape, like npm itself); install-smithers.mjs downloads + SRI-verifies + racks it, with a bin/smithers shim that runs src/bin/smithers.js through system node.",
-        "0.23.0 published 2026-06-08, inside the 7-day soak — rides a dated soakBypass (auto-disarms 2026-06-15)."
+        "smithers-orchestrator \u2014 AI orchestration framework (durable long-horizon coding-agent workflows). npm registry tarball (pure JS run via node), so a single top-level integrity (npm-shape, like npm itself); install-smithers.mjs downloads + SRI-verifies + racks it, with a bin/smithers shim that runs src/bin/smithers.js through system node.",
+        "0.23.0 published 2026-06-08, inside the 7-day soak \u2014 rides a dated soakBypass (auto-disarms 2026-06-15)."
       ],
-      "description": "smithers-orchestrator — AI agent-workflow orchestrator (pinned, SRI-verified)",
+      "description": "smithers-orchestrator \u2014 AI agent-workflow orchestrator (pinned, SRI-verified)",
       "repository": "npm:smithers-orchestrator",
       "version": "0.23.0",
       "binaryName": "smithers",
@@ -88,10 +83,10 @@
     },
     "fff": {
       "notes": [
-        "fff (dmtrKovalenko/fff) — fast typo-resistant file-search MCP server (Rust). The installable artifact is the per-platform fff-mcp-<target> binary (the asset IS the executable, codedb-shape). Each integrity was captured download-first then cross-checked against the publisher .sha256 sidecar (computed == sidecar for all 8). install-fff.mjs downloads + SRI-verifies + racks it with a bin/fff-mcp shim.",
-        "0.9.4 published 2026-06-09, inside the 7-day soak — rides a dated soakBypass (auto-disarms 2026-06-16)."
+        "fff (dmtrKovalenko/fff) \u2014 fast typo-resistant file-search MCP server (Rust). The installable artifact is the per-platform fff-mcp-<target> binary (the asset IS the executable, codedb-shape). Each integrity was captured download-first then cross-checked against the publisher .sha256 sidecar (computed == sidecar for all 8). install-fff.mjs downloads + SRI-verifies + racks it with a bin/fff-mcp shim.",
+        "0.9.4 published 2026-06-09, inside the 7-day soak \u2014 rides a dated soakBypass (auto-disarms 2026-06-16)."
       ],
-      "description": "fff-mcp — file-search MCP server (pinned, SRI-verified per platform)",
+      "description": "fff-mcp \u2014 file-search MCP server (pinned, SRI-verified per platform)",
       "repository": "github:dmtrKovalenko/fff",
       "version": "0.9.4",
       "release": "asset",
@@ -138,11 +133,11 @@
     },
     "janus": {
       "notes": [
-        "janus (divmain/janus) — single-binary utility some Socket workflows opt into (NOT a security tool). PROMOTED here from the setup-security-tools external-tools.json so the bootstrap reads ONE canonical tool list (the security-tools installer + the `janus` launcher both read this entry — 1 path 1 reference). GitHub release tarball; install-janus.mjs SRI-verifies + racks it with a bin/janus shim. darwin-arm64 ONLY (divmain/janus ships one platform; the installer + launcher no-op with a clear hint on every other platform — add platforms as upstream builds them).",
+        "janus (divmain/janus) \u2014 single-binary utility some Socket workflows opt into (NOT a security tool). PROMOTED here from the setup-security-tools external-tools.json so the bootstrap reads ONE canonical tool list (the security-tools installer + the `janus` launcher both read this entry \u2014 1 path 1 reference). GitHub release tarball; install-janus.mjs SRI-verifies + racks it with a bin/janus shim. darwin-arm64 ONLY (divmain/janus ships one platform; the installer + launcher no-op with a clear hint on every other platform \u2014 add platforms as upstream builds them).",
         "Version is stored bare (1.23.2); the installer prepends the `v` tag prefix, matching sfw/codedb/fff.",
-        "1.23.2 published 2026-07-11, inside the 7-day minimumReleaseAge soak, so it rides a dated soakBypass (published + removable, auto-disarms + is cleaned out of the exclude at `removable` — the same dated-soak-exclusion shape pnpm deps use). update-external-tools.mts will auto-bump janus once past soak; the bypass just clears the current fresh pin. Known-publisher GitHub-release binary; the sha512 SRI was computed from the downloaded asset bytes."
+        "1.23.2 published 2026-07-11, inside the 7-day minimumReleaseAge soak, so it rides a dated soakBypass (published + removable, auto-disarms + is cleaned out of the exclude at `removable` \u2014 the same dated-soak-exclusion shape pnpm deps use). update-external-tools.mts will auto-bump janus once past soak; the bypass just clears the current fresh pin. Known-publisher GitHub-release binary; the sha512 SRI was computed from the downloaded asset bytes."
       ],
-      "description": "janus — divmain/janus single-binary utility (pinned, SRI-verified)",
+      "description": "janus \u2014 divmain/janus single-binary utility (pinned, SRI-verified)",
       "repository": "github:divmain/janus",
       "version": "1.23.2",
       "release": "asset",
@@ -161,10 +156,10 @@
     },
     "uv": {
       "notes": [
-        "uv (Astral) — the fleet's Python project tool. Installed in the bootstrap (release-asset, SRI-verified per platform, like janus/codedb) so a hash-locked uv install is available BEFORE the security-tools step that needs it (SkillSpector installs via a uv project + uv.lock, no pipx — the fleet 'uv for projects' rule). update-external-tools.mts re-hashes the GitHub release assets on a bump.",
-        "0.11.21 published 2026-06-11; the GitHub release is a known-publisher binary distribution (the soak targets npm freshpub typosquats), past its 7-day window now — no soakBypass needed. Pinned bare; the installer prepends no v (uv tags have no v prefix)."
+        "uv (Astral) \u2014 the fleet's Python project tool. Installed in the bootstrap (release-asset, SRI-verified per platform, like janus/codedb) so a hash-locked uv install is available BEFORE the security-tools step that needs it (SkillSpector installs via a uv project + uv.lock, no pipx \u2014 the fleet 'uv for projects' rule). update-external-tools.mts re-hashes the GitHub release assets on a bump.",
+        "0.11.21 published 2026-06-11; the GitHub release is a known-publisher binary distribution (the soak targets npm freshpub typosquats), past its 7-day window now \u2014 no soakBypass needed. Pinned bare; the installer prepends no v (uv tags have no v prefix)."
       ],
-      "description": "uv — Astral Python package/project manager (pinned, SRI-verified)",
+      "description": "uv \u2014 Astral Python package/project manager (pinned, SRI-verified)",
       "repository": "github:astral-sh/uv",
       "version": "0.11.28",
       "release": "asset",
@@ -193,7 +188,7 @@
       }
     },
     "zizmor": {
-      "description": "GitHub Actions security linter — audits .github/ for workflow-injection / credential-leak patterns.",
+      "description": "GitHub Actions security linter \u2014 audits .github/ for workflow-injection / credential-leak patterns.",
       "version": "1.26.1",
       "repository": "github:zizmorcore/zizmor",
       "release": "asset",
@@ -226,10 +221,10 @@
     },
     "sfw-free": {
       "notes": [
-        "SFW (Socket Firewall) free flavor (public, SocketDev/sfw-free). Ships a 7-platform set: linux-{x64,arm64}{,-musl}, darwin-{x64,arm64}, win-x64. win-arm64 is intentionally absent — upstream does not yet build it. SFW is a required dependency of the install flow, so consumers on win-arm64 skip SFW-dependent steps until upstream support lands.",
+        "SFW (Socket Firewall) free flavor (public, SocketDev/sfw-free). Ships a 7-platform set: linux-{x64,arm64}{,-musl}, darwin-{x64,arm64}, win-x64. win-arm64 is intentionally absent \u2014 upstream does not yet build it. SFW is a required dependency of the install flow, so consumers on win-arm64 skip SFW-dependent steps until upstream support lands.",
         "Installed when neither SOCKET_API_KEY nor SOCKET_API_TOKEN is set; the enterprise flavor (sfw-enterprise) is selected when one of those is present. The two flavors share a version and install to the same `sfw` binary name."
       ],
-      "description": "Socket Firewall (free tier) — package manager command wrapper",
+      "description": "Socket Firewall (free tier) \u2014 package manager command wrapper",
       "version": "1.13.1",
       "repository": "github:SocketDev/sfw-free",
       "binaryName": "sfw",
@@ -270,7 +265,7 @@
         "SFW (Socket Firewall) enterprise flavor (private, SocketDev/firewall-release). Same 7-platform set as sfw-free. Enterprise downloads require GITHUB_TOKEN auth (private repo); install-tool.mjs forwards GITHUB_TOKEN automatically when set.",
         "Installed when SOCKET_API_KEY (or SOCKET_API_TOKEN) is set; otherwise the free flavor (sfw-free) is used. The two flavors share a version and install to the same `sfw` binary name."
       ],
-      "description": "Socket Firewall (enterprise tier) — package manager command wrapper",
+      "description": "Socket Firewall (enterprise tier) \u2014 package manager command wrapper",
       "version": "1.13.1",
       "repository": "github:SocketDev/firewall-release",
       "binaryName": "sfw",

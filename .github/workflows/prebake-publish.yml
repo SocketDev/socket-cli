@@ -1,0 +1,73 @@
+name: 🧱 prebake publish
+
+# Generic repo-owned prebake publisher: bakes every image declared in the
+# repo's own `.config/repo/socket-wheelhouse.json` `docker.prebakes` section
+# and pushes it to `<registry>/<name>:latest`. Builds on the runner via
+# buildx + QEMU; the only auth is the job's own GITHUB_TOKEN
+# (packages: write) for the registry push. Each Dockerfile's FLEET_BASE ARG
+# defaults to its published parent ref, so no build-args are injected here.
+# The wheelhouse's shared trunk (base → node-base/c-base/…) uses its own
+# depot-backed variant (template/overrides/socket-wheelhouse/) — heavy
+# compiles need native arm64 builders, which QEMU is not.
+#
+# Manual dispatch only — a bake publishes multi-hundred-MB artifacts consumers
+# pull, so it stays a deliberate act. `only` scopes to an image-name list
+# (declared manifest order is bottom-up); empty bakes everything declared.
+
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: 'Comma-separated image-name list (empty = all declared).'
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  bake:
+    name: bake + push prebakes
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3 (2026-06-02)
+        with:
+          persist-credentials: false
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0 (2026-07-01)
+
+      - name: Setup buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0 (2026-07-02)
+
+      - name: Login to GHCR
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
+        run: printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+
+      - name: Bake + push
+        env:
+          ONLY: ${{ inputs.only }}
+        run: |
+          set -euo pipefail
+          config=.config/repo/socket-wheelhouse.json
+          registry="$(jq -er '.docker.prebakes.registry' "$config")"
+          jq -c '.docker.prebakes.prebakes[]' "$config" | while IFS= read -r entry; do
+            name="$(jq -r '.name' <<<"$entry")"
+            if [ -n "$ONLY" ] && ! printf ',%s,' "$ONLY" | grep -qF ",$name,"; then
+              echo "skipping $name (not in only=$ONLY)"
+              continue
+            fi
+            dockerfile="$(jq -er '.dockerfile' <<<"$entry")"
+            platforms="$(jq -r '(.platforms // ["linux/amd64","linux/arm64"]) | join(",")' <<<"$entry")"
+            echo "baking $name from $dockerfile ($platforms)…"
+            docker buildx build \
+              -f "$dockerfile" \
+              -t "$registry/$name:latest" \
+              --platform "$platforms" \
+              --push .
+          done
