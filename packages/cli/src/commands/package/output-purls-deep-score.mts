@@ -133,7 +133,7 @@ export function createMarkdownReport(data: PurlDataResponse): string {
     o.push(`- Vulnerability: ${score.vulnerability}`)
     o.push(`- License: ${score.license}`)
     o.push('')
-    o.push('### Capabilities')
+    o.push('### Lowest Scoring Package Per Category')
     o.push('')
     o.push(
       'These are the packages with the lowest recorded score. If there is more than one with the lowest score, just one is shown here. This may help you figure out the source of low scores.',
