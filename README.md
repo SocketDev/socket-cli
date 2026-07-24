@@ -33,9 +33,16 @@ socket package npm/express@4.18.0
 # Scan your project's dependencies
 socket scan create
 
-# Audit an install before it runs
+# Audit an install before it runs (npm, pnpm, or yarn)
 socket npm install
+socket pnpm install
+socket yarn add <package>
 ```
+
+`socket npm`, `socket pnpm`, and `socket yarn` each run the underlying
+package manager through [Socket Firewall](https://docs.socket.dev), which
+blocks known-malicious packages before they are installed. Install-time
+protection is no longer npm-only.
 
 See [the Socket docs](https://docs.socket.dev) for the full command reference.
 
