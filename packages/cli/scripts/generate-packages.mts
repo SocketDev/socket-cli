@@ -20,7 +20,7 @@ const packageBuilderScripts = path.resolve(
 
 const scripts = [
   path.join(packageBuilderScripts, 'generate-cli-packages.mts'),
-  path.join(packageBuilderScripts, 'generate-socketbin-packages.mts'),
+  path.join(packageBuilderScripts, 'generate-cli-exe-packages.mts'),
 ]
 
 async function main(): Promise<void> {
