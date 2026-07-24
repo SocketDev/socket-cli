@@ -29,8 +29,7 @@ export default defineConfig(
     // used to lie — garbage input arrives as the raw string (see
     // ValueOfFlagType in packages/cli/src/meow.mts).
     rules: {
-      // BURNDOWN-PROBE: rule enabled for inventory
-      // 'typescript/no-unsafe-type-assertion': 'off',
+      'typescript/no-unsafe-type-assertion': 'off',
     },
   }),
 )
