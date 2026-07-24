@@ -6,9 +6,9 @@ This document explains the Socket CLI build system and how to create various bui
 
 The Socket CLI has two main build outputs:
 
-| Build Type       | Description                                  | Output Location                                              |
-| ---------------- | -------------------------------------------- | ------------------------------------------------------------ |
-| **CLI Bundle**   | JavaScript bundle for npm distribution       | `packages/cli/dist/`                                         |
+| Build Type       | Description                                  | Output Location                                            |
+| ---------------- | -------------------------------------------- | ---------------------------------------------------------- |
+| **CLI Bundle**   | JavaScript bundle for npm distribution       | `packages/cli/dist/`                                       |
 | **SEA Binaries** | Standalone executables (no Node.js required) | `packages/package-builder/build/{dev\|prod}/out/cli.exe.*` |
 
 ## Prerequisites

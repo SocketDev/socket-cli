@@ -153,9 +153,12 @@ export function cliExeDescription(triplet: CliExeTriplet): string {
  * can never resolve on the wrong platform.
  */
 export function cliExeEngineFields(triplet: CliExeTriplet): CliExeEngineFields {
+  // Defaults never hit — CliExeTriplet is a closed `os-cpu[-libc]` union — but
+  // they keep the destructured bindings `string` under noUncheckedIndexedAccess
+  // without a non-null assertion (which the type-aware lint rejects as
+  // unnecessary).
   const parts = triplet.split('-')
-  const os = parts[0]!
-  const cpu = parts[1]!
+  const { 0: os = '', 1: cpu = '' } = parts
   if (os !== 'linux') {
     return { cpu: [cpu], os: [os] }
   }

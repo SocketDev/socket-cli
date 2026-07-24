@@ -94,8 +94,8 @@ if (!all && !triplet) {
     : [triplet as CliExeTriplet]
 
   let ok = true
-  for (let i = 0, { length } = triplets; i < length; i += 1) {
-    ok = prepareTriplet(triplets[i]!, version) && ok
+  for (const t of triplets) {
+    ok = prepareTriplet(t, version) && ok
   }
 
   if (!ok) {

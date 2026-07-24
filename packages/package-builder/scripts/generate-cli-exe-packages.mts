@@ -86,7 +86,7 @@ async function main(): Promise<void> {
   }
 
   for (let i = 0, { length } = CLI_EXE_TRIPLETS; i < length; i += 1) {
-    await generatePackage(CLI_EXE_TRIPLETS[i]!)
+    await generatePackage(CLI_EXE_TRIPLETS[i])
   }
 
   logger.log('')

@@ -24,16 +24,16 @@ musl and `win32` for Windows — the `@socketbin/cli-win-*` and
 `@socketbin/cli-linux-*-musl` names that also exist on npm are empty 0.0.0
 placeholders and are never targeted.
 
-| Triplet          | Preferred                             | Fallback                     |
-| ---------------- | ------------------------------------- | ---------------------------- |
-| darwin-arm64     | @socketsecurity/cli.exe.darwin-arm64  | @socketbin/cli-darwin-arm64  |
-| darwin-x64       | @socketsecurity/cli.exe.darwin-x64    | @socketbin/cli-darwin-x64    |
-| linux-arm64      | @socketsecurity/cli.exe.linux-arm64   | @socketbin/cli-linux-arm64   |
+| Triplet          | Preferred                                | Fallback                    |
+| ---------------- | ---------------------------------------- | --------------------------- |
+| darwin-arm64     | @socketsecurity/cli.exe.darwin-arm64     | @socketbin/cli-darwin-arm64 |
+| darwin-x64       | @socketsecurity/cli.exe.darwin-x64       | @socketbin/cli-darwin-x64   |
+| linux-arm64      | @socketsecurity/cli.exe.linux-arm64      | @socketbin/cli-linux-arm64  |
 | linux-arm64-musl | @socketsecurity/cli.exe.linux-arm64-musl | @socketbin/cli-alpine-arm64 |
-| linux-x64        | @socketsecurity/cli.exe.linux-x64     | @socketbin/cli-linux-x64     |
-| linux-x64-musl   | @socketsecurity/cli.exe.linux-x64-musl | @socketbin/cli-alpine-x64   |
-| win32-arm64      | @socketsecurity/cli.exe.win32-arm64   | @socketbin/cli-win32-arm64   |
-| win32-x64        | @socketsecurity/cli.exe.win32-x64     | @socketbin/cli-win32-x64     |
+| linux-x64        | @socketsecurity/cli.exe.linux-x64        | @socketbin/cli-linux-x64    |
+| linux-x64-musl   | @socketsecurity/cli.exe.linux-x64-musl   | @socketbin/cli-alpine-x64   |
+| win32-arm64      | @socketsecurity/cli.exe.win32-arm64      | @socketbin/cli-win32-arm64  |
+| win32-x64        | @socketsecurity/cli.exe.win32-x64        | @socketbin/cli-win32-x64    |
 
 The frozen fallbacks are pinned at `0.0.0-20251103.61247` in the `socket`
 wrapper's optionalDependencies.
