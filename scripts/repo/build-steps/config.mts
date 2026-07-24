@@ -44,8 +44,6 @@ export const TARGET_PACKAGES: Record<string, string> = {
   all: './packages/**',
   cli: '@socketsecurity/cli',
   'cli-sentry': '@socketsecurity/cli-with-sentry',
-  node: '@socketbin/node-smol-builder-builder',
-  sea: '@socketbin/node-sea-builder-builder',
   socket: 'socket',
 }
 

@@ -155,8 +155,8 @@ void (async () => {
     writeBootstrapManifestEntry()
 
     // Background preflight downloads for optional dependencies.
-    // This silently downloads @coana-tech/cli and @socketbin/cli-ai in the
-    // background to ensure they're cached for future use.
+    // This silently downloads @coana-tech/cli, @cyclonedx/cdxgen, and the
+    // Python tooling in the background so they're cached for future use.
     runPreflightDownloads()
   }
 

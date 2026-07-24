@@ -20,7 +20,8 @@ import { fileURLToPath } from 'node:url'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { parsePlatformArgs } from 'build-infra/lib/platform-targets'
-import { getSocketbinBinaryPath } from 'package-builder/scripts/paths.mts'
+import { tripletFromParts } from 'package-builder/scripts/cli-exe-targets.mts'
+import { getCliExeBinaryPath } from 'package-builder/scripts/paths.mts'
 
 import { buildTarget } from './sea-build-utils/orchestration.mts'
 import {
@@ -142,18 +143,23 @@ async function main() {
   logger.log('')
 
   // Build all targets in parallel.
-  // Output goes directly to socketbin package directories.
+  // Output goes directly into the @socketsecurity/cli.exe.<triplet> tail
+  // package directories, under bin/.
   const settled = await Promise.allSettled(
     targets.map(async target => {
       const targetName = `${target.platform}-${target.arch}${target.libc ? `-${target.libc}` : ''}`
       logger.log(`Building ${targetName}...`)
 
-      // Get output path from socketbin package directory.
-      const outputPath = getSocketbinBinaryPath(
+      // Get output path from the cli.exe tail package directory.
+      const triplet = tripletFromParts(
         target.platform,
         target.arch,
         target.libc,
       )
+      if (!triplet) {
+        throw new Error(`No cli.exe triplet for target ${targetName}`)
+      }
+      const outputPath = getCliExeBinaryPath(triplet)
 
       await buildTarget(target, entryPoint, { outputPath })
       logger.success(
