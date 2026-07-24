@@ -13,6 +13,7 @@ import MagicString from 'magic-string'
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 
 const logger = getDefaultLogger()
 
@@ -87,7 +88,7 @@ async function createPatch(patchDef) {
       logger.log('No changes made, skipping patch commit')
       // Cleanup temp directory.
       if (existsSync(patchPath)) {
-        rmSync(patchPath, { force: true, recursive: true })
+        safeDeleteSync(patchPath)
       }
       return
     }
@@ -98,7 +99,7 @@ async function createPatch(patchDef) {
     logger.error(`Error creating patch for ${packageName}:`, e.message)
     // Cleanup temp directory on error.
     if (patchPath && existsSync(patchPath)) {
-      rmSync(patchPath, { force: true, recursive: true })
+      safeDeleteSync(patchPath)
     }
     throw e
   }
@@ -204,7 +205,7 @@ async function startPatch(packageSpec) {
 
       // Remove existing patch directory.
       logger.log('Removing existing patch directory…')
-      rmSync(existingPatchDir, { force: true, recursive: true })
+      safeDeleteSync(existingPatchDir)
 
       // Try pnpm patch again.
       result = await spawn('pnpm', ['patch', packageSpec], {

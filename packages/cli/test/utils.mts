@@ -11,6 +11,7 @@ import type { SpawnOptions } from '@socketsecurity/lib-stable/process/spawn/type
 
 import { scrubSnapshotData } from './util/scrub-snapshot-data.mts'
 import { execPath } from '../src/constants/paths.mts'
+import { WORKSPACE_ROOT } from '../scripts/paths.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -160,7 +161,10 @@ export async function spawnSocketCli(
   stderr: string
 }> {
   const {
-    cwd = process.cwd(),
+    // Default to the workspace root, not process.cwd(): worker cwd differs
+    // between the fleet root vitest lane (repo root) and the packages/cli
+    // wrapper lane (packages/cli), and snapshots must match in both.
+    cwd = WORKSPACE_ROOT,
     env: spawnEnv,
     ...restOptions
   } = {
@@ -185,10 +189,7 @@ export async function spawnSocketCli(
     // Create a Proxy env that handles Windows case-insensitivity issues.
     // This ensures PATH, TEMP, and other Windows env vars work regardless
     // of case (PATH vs Path vs path).
-    const env = createEnvProxy(
-      constants.processEnv,
-      spawnEnv as Record<string, string | undefined>,
-    )
+    const env = createEnvProxy(constants.processEnv, spawnEnv)
 
     const output = await spawn(command, commandArgs, {
       cwd,

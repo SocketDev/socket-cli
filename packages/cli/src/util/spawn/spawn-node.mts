@@ -173,11 +173,11 @@ export function spawnNode(
     nodePath,
     args,
     {
-      ...(spawnOpts as SpawnOptions),
+      ...spawnOpts,
       // Always ensure stdio includes 'ipc' for handshake.
       // System Node.js will ignore the handshake message.
       // SEA subprocess will use it to skip bootstrap.
-      stdio: ensureIpcInStdio((spawnOpts as SpawnOptions).stdio),
+      stdio: ensureIpcInStdio(spawnOpts.stdio),
     },
     extra,
   )

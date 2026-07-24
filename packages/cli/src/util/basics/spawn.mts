@@ -173,12 +173,12 @@ export type SocketBasicsResult = {
  *     logger.log('Secrets found:', result.data.findings.secrets)
  *   }
  *
- * @param options - Socket-basics configuration options.
+ * @param config - Socket-basics configuration options.
  *
  * @returns Result with path to .socket.facts.json and finding counts.
  */
 export async function runSocketBasics(
-  options: SocketBasicsOptions,
+  config: SocketBasicsOptions,
 ): Promise<CResult<SocketBasicsResult>> {
   const {
     cacheDir,
@@ -191,7 +191,7 @@ export async function runSocketBasics(
     scanSecrets = true,
     spinner,
     timeout = 600_000, // 10 minutes default.
-  } = { __proto__: null, ...options } as typeof options
+  } = { __proto__: null, ...config } as typeof config
 
   // Check if basics tools are available.
   const toolsAvailable = areBasicsToolsAvailable()
@@ -281,9 +281,8 @@ export async function runSocketBasics(
       return {
         ok: false,
         message: 'Failed to install Socket Python CLI',
-        cause: String(
+        cause:
           pipInstallResult.stderr || 'pip install exited with non-zero code',
-        ),
       }
     }
 
@@ -313,13 +312,11 @@ export async function runSocketBasics(
       return {
         ok: false,
         message: 'Failed to verify Socket Python CLI installation',
-        cause: String(
-          verifyResult?.stderr || 'pip show exited with non-zero code',
-        ),
+        cause: verifyResult?.stderr || 'pip show exited with non-zero code',
       }
     }
 
-    const output = String(verifyResult.stdout || '')
+    const output = verifyResult.stdout || ''
     const versionMatch = output.match(/^Version:\s*(.+)$/m)
     const installedVersion =
       versionMatch && versionMatch.length > 1 && versionMatch[1]
@@ -441,9 +438,7 @@ export async function runSocketBasics(
     return {
       ok: false,
       message: 'Socket-basics scan failed',
-      cause: String(
-        basicsResult.stderr || 'socket-basics exited with non-zero code',
-      ),
+      cause: basicsResult.stderr || 'socket-basics exited with non-zero code',
     }
   }
 

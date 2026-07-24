@@ -55,7 +55,7 @@ vi.mock(import('../../../../src/util/cli/completion.mts'), () => ({
 }))
 
 const { mockHomePath } = vi.hoisted(() => ({
-  mockHomePath: { value: '/home/test' as string },
+  mockHomePath: { value: '/home/test' },
 }))
 
 vi.mock(import('../../../../src/constants/paths.mts'), () => ({
@@ -125,7 +125,7 @@ describe('teardownTabCompletion', () => {
       expect(result.data.action).toBe('removed')
     }
     expect(mockWriteFileSync).toHaveBeenCalledTimes(1)
-    const written = mockWriteFileSync.mock.calls[0]![1]
+    const written = mockWriteFileSync.mock.calls[0][1]
     expect(written).not.toContain(validDetails.data.toAddToBashrc)
   })
 
@@ -136,7 +136,7 @@ describe('teardownTabCompletion', () => {
     mockReadFileSync.mockReturnValue(partial)
     const result = await teardownTabCompletion('socket')
     expect(result.ok).toBe(true)
-    const written = mockWriteFileSync.mock.calls[0]![1] as string
+    const written = mockWriteFileSync.mock.calls[0][1] as string
     expect(written).not.toContain(validDetails.data.sourcingCommand)
     expect(written).not.toContain(validDetails.data.completionCommand)
   })

@@ -161,21 +161,22 @@ describe('handleCreateGithubScan', () => {
     expect(mockOutput).toHaveBeenCalledWith(expect.any(Object), 'markdown')
   })
 
-  it('converts parameters to proper types', async () => {
+  it('passes falsy parameters through unmangled', async () => {
     const mockCreate = mockCreateScanFromGithub
 
     mockCreate.mockResolvedValue(createSuccessResult({}))
 
-    // Test with various falsy values.
+    // Falsy-but-typed values (the meow layer guarantees booleans/strings)
+    // must reach createScanFromGithub as-is.
     await handleCreateGithubScan({
-      all: 0 as unknown,
+      all: false,
       githubApiUrl: 'https://api.github.com',
       githubToken: 'token',
-      interactive: undefined as unknown,
+      interactive: false,
       orgGithub: 'org',
       orgSlug: 'org',
       outputKind: 'json',
-      repos: undefined as unknown,
+      repos: '',
     })
 
     expect(mockCreate).toHaveBeenCalledWith({

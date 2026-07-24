@@ -165,7 +165,7 @@ describe('util/dlx/vfs-extract', () => {
       // for everything except the first marker-validation tool check.
       let firstToolCheckSeen = false
       mockExistsSync.mockImplementation((p: string) => {
-        const ps = String(p)
+        const ps = p
         if (ps.endsWith('.extracting')) {
           return false
         }
@@ -188,7 +188,7 @@ describe('util/dlx/vfs-extract', () => {
       mockIsSeaBinary.mockReturnValue(true)
       withMountReturning(async () => '/should-not-call')
       mockExistsSync.mockImplementation((p: string) => {
-        return !String(p).endsWith('.extracted')
+        return !p.endsWith('.extracted')
       })
       mockFsAccess.mockResolvedValue(undefined)
 

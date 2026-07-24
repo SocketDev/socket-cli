@@ -27,6 +27,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { detectManifestActions } from '../../../../src/commands/manifest/detect-manifest-actions.mts'
 
 import type { SocketJson } from '../../../../src/util/socket/json.mts'
+import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
 // Source-of-truth constants/paths.mts evaluates the bundle-tools.json
 // version table at import time, which fails outside of a build (where
@@ -43,8 +44,8 @@ beforeEach(() => {
   cwd = mkdtempSync(path.join(os.tmpdir(), 'detect-manifest-'))
 })
 
-afterEach(() => {
-  rmSync(cwd, { force: true, recursive: true })
+afterEach(async () => {
+  await safeDelete(cwd)
 })
 
 export function touch(rel: string) {

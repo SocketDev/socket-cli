@@ -194,7 +194,7 @@ export async function fetchGhsaDetails(
         advisoryKey
       ] as GhsaDetails | undefined
       if (advisory?.ghsaId) {
-        results.set(id, advisory as GhsaDetails)
+        results.set(id, advisory)
       } else {
         debugNs('notice', `miss: no advisory found for ${id}`)
       }

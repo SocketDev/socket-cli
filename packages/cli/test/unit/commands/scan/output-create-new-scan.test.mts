@@ -291,7 +291,7 @@ describe('outputCreateNewScan', () => {
   it('restarts spinner after JSON output if it was spinning', async () => {
     const spinner = { isSpinning: true, start: vi.fn(), stop: vi.fn() }
     await outputCreateNewScan(
-      { ok: true, data: { id: 'x', html_report_url: 'http://x' } as unknown },
+      { ok: true, data: { id: 'x', html_report_url: 'http://x' } },
       { outputKind: 'json', spinner: spinner as unknown },
     )
 
@@ -312,7 +312,7 @@ describe('outputCreateNewScan', () => {
   it('restarts spinner after markdown output if it was spinning', async () => {
     const spinner = { isSpinning: true, start: vi.fn(), stop: vi.fn() }
     await outputCreateNewScan(
-      { ok: true, data: { id: 'x', html_report_url: 'http://x' } as unknown },
+      { ok: true, data: { id: 'x', html_report_url: 'http://x' } },
       { outputKind: 'markdown', spinner: spinner as unknown },
     )
 
@@ -322,7 +322,7 @@ describe('outputCreateNewScan', () => {
   it('renders no-id markdown branch', async () => {
     const spinner = { isSpinning: false, start: vi.fn(), stop: vi.fn() }
     await outputCreateNewScan(
-      { ok: true, data: { id: '' as unknown, html_report_url: '' as unknown } },
+      { ok: true, data: { id: '', html_report_url: '' } },
       { outputKind: 'markdown', spinner: spinner as unknown },
     )
 

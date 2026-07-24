@@ -108,7 +108,7 @@ describe('ghsa-tracker', () => {
 
       await markGhsaFixed(mockCwd, 'GHSA-no-pr', undefined)
 
-      const savedTracker = mockWriteJson.mock.calls[0]![1] as GhsaTracker
+      const savedTracker = mockWriteJson.mock.calls[0][1] as GhsaTracker
       const record = savedTracker.fixed.find(r => r.ghsaId === 'GHSA-no-pr')
       expect(record).toBeDefined()
       expect(record!.prNumber).toBeUndefined()

@@ -73,7 +73,7 @@ export async function outputConfigList({
 
     logger.log(mdHeader('Local CLI Config'))
     logger.log('')
-    logger.log(`This is the local CLI config (full=${!!full}):`)
+    logger.log(`This is the local CLI config (full=${full}):`)
     logger.log('')
     for (let i = 0, { length } = supportedConfigKeys; i < length; i += 1) {
       const key = supportedConfigKeys[i]!

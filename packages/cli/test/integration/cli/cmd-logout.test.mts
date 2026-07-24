@@ -79,14 +79,22 @@ describe('socket logout', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket logout\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket logout\`, cwd: <redacted>
+
+
+        [DryRun]: Would delete Socket API credentials
+
+          Target: /[HOME]/.config/socket/config.json
+
+          This action cannot be undone.
+          Run without --dry-run to perform this deletion."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

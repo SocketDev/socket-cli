@@ -85,7 +85,7 @@ export function areBasicsToolsAvailable(): boolean {
  *   failed.
  */
 export async function extractBasicsTools(
-  _cacheDir?: string,
+  _cacheDir?: string | undefined,
 ): Promise<string | undefined> {
   if (!isSeaBinary()) {
     logger.warn('Not running in SEA mode - cannot extract basics tools')
@@ -123,7 +123,7 @@ export async function extractBasicsTools(
 
       const mountedPath = await processWithSmol.smol.mount(vfsPath)
 
-      logger.success(`${tool}`)
+      logger.success(tool)
       extractedPaths[tool] = mountedPath
     }
     logger.groupEnd()
@@ -155,7 +155,7 @@ export async function extractBasicsTools(
       )
     }
 
-    const pythonVersion = String(validateResult.stdout || '').trim()
+    const pythonVersion = (validateResult.stdout || '').trim()
     logger.success(`Python: ${pythonVersion}`)
 
     // Validate other security tools.
@@ -180,7 +180,7 @@ export async function extractBasicsTools(
         )
       }
 
-      const toolVersion = String(toolValidateResult.stdout || '').trim()
+      const toolVersion = (toolValidateResult.stdout || '').trim()
       logger.success(`${tool}: ${toolVersion}`)
     }
     logger.groupEnd()

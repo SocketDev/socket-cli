@@ -59,7 +59,7 @@ export function generateCommandHelp(command: CommandDefinition): string {
   const lines: string[] = []
 
   // Name and description
-  lines.push(`${command.name}`)
+  lines.push(command.name)
   lines.push('')
   lines.push(`  ${command.description}`)
   lines.push('')

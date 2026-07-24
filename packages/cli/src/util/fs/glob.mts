@@ -101,14 +101,14 @@ export type GlobWithGitIgnoreOptions = GlobOptions & {
 
 export async function globWithGitIgnore(
   patterns: string[] | readonly string[],
-  options: GlobWithGitIgnoreOptions,
+  config: GlobWithGitIgnoreOptions,
 ): Promise<string[]> {
   const {
     cwd = process.cwd(),
     filter,
     socketConfig,
     ...additionalOptions
-  } = { __proto__: null, ...options } as GlobWithGitIgnoreOptions
+  } = { __proto__: null, ...config } as GlobWithGitIgnoreOptions
 
   const ignores = new Set<string>(IGNORED_DIR_PATTERNS)
 

@@ -13,9 +13,9 @@ const logger = getDefaultLogger()
 
 export function formatReportCard(
   artifact: DedupedArtifact,
-  options: { colorize: boolean },
+  config: { colorize: boolean },
 ): string {
-  const { colorize } = { __proto__: null, ...options } as typeof options
+  const { colorize } = { __proto__: null, ...config } as typeof config
   const scoreResult = {
     'Supply Chain Risk': Math.floor((artifact.score?.supplyChain ?? 0) * 100),
     Maintenance: Math.floor((artifact.score?.maintenance ?? 0) * 100),

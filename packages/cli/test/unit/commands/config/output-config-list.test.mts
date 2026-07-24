@@ -85,7 +85,7 @@ describe('output-config-list', () => {
 
         await outputConfigList({ full: false, outputKind: 'json' })
 
-        const loggedJson = mockLogger.log.mock.calls[0]![0]
+        const loggedJson = mockLogger.log.mock.calls[0][0]
         expect(loggedJson).toContain('********')
       })
 
@@ -106,7 +106,7 @@ describe('output-config-list', () => {
 
         await outputConfigList({ full: true, outputKind: 'json' })
 
-        const loggedJson = mockLogger.log.mock.calls[0]![0]
+        const loggedJson = mockLogger.log.mock.calls[0][0]
         expect(loggedJson).toContain('"readOnly": true')
       })
     })

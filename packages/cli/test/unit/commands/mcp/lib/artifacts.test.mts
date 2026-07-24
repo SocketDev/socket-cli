@@ -23,6 +23,8 @@
 
 import { describe, expect, it } from 'vitest'
 
+import { naturalCompare } from '@socketsecurity/lib-stable/sorts/natural'
+
 import { deduplicateArtifacts } from '../../../../../src/commands/mcp/lib/artifacts.mts'
 
 import type { ArtifactData } from '../../../../../src/commands/mcp/lib/artifacts.mts'
@@ -33,7 +35,7 @@ export function art(overrides: Partial<ArtifactData>): ArtifactData {
     type: 'pypi',
     version: '1.0.0',
     ...overrides,
-  } as ArtifactData
+  }
 }
 
 describe('deduplicateArtifacts', () => {
@@ -52,7 +54,10 @@ describe('deduplicateArtifacts', () => {
       const b = art({ name: 'bar' })
       const result = deduplicateArtifacts([a, b])
       expect(result).toHaveLength(2)
-      expect(result.map(r => r.name).toSorted()).toEqual(['bar', 'foo'])
+      expect(result.map(r => r.name).toSorted(naturalCompare)).toEqual([
+        'bar',
+        'foo',
+      ])
     })
 
     it('groups artifacts that share (type, namespace, name, version)', () => {

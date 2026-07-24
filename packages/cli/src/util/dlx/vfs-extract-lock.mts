@@ -30,9 +30,9 @@ export interface WaitForConcurrentExtractionOptions {
  */
 export function buildAndValidateToolPaths(
   nodeSmolBase: string,
-  options: { isPlatWin: boolean },
+  config: { isPlatWin: boolean },
 ): { toolPaths: Partial<Record<ExternalTool, string>>; allValid: boolean } {
-  const { isPlatWin } = { __proto__: null, ...options } as typeof options
+  const { isPlatWin } = { __proto__: null, ...config } as typeof config
   const toolPaths: Partial<Record<ExternalTool, string>> = {}
   let allValid = true
   for (let i = 0, { length } = EXTERNAL_TOOLS; i < length; i += 1) {
@@ -72,12 +72,12 @@ export function verifyToolPathsStillValid(
  * @throws {Error} If no completion is observed within the wait window.
  */
 export async function waitForConcurrentExtraction(
-  options: WaitForConcurrentExtractionOptions,
+  config: WaitForConcurrentExtractionOptions,
 ): Promise<Record<ExternalTool, string> | 'retry'> {
   const { cacheMarker, isPlatWin, lockFile, nodeSmolBase } = {
     __proto__: null,
-    ...options,
-  } as typeof options
+    ...config,
+  } as typeof config
 
   for (let i = 0; i < 60; i++) {
     await new Promise(resolve => {

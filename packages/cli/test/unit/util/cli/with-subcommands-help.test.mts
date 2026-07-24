@@ -211,7 +211,7 @@ describe('buildHelpLines', () => {
         flags: FLAGS,
         isRootCommand: true,
         name: 'socket',
-        subcommands: { fix: makeSubcommand('fix description') } as unknown,
+        subcommands: { fix: makeSubcommand('fix description') },
       })
       const blob = lines.join('\n')
       expect(blob).toContain('fix')

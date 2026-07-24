@@ -97,10 +97,10 @@ describe('runDepscore — response handling', () => {
       { apiToken: 'test_a' },
     )
     expect(result.isError).toBeUndefined()
-    expect(result.content[0]!.text).toContain('Dependency scores:')
-    expect(result.content[0]!.text).toContain('pkg:npm/lodash@4.17.21')
-    expect(result.content[0]!.text).toContain('quality: 85')
-    expect(result.content[0]!.text).toContain('maintenance: 95')
+    expect(result.content[0].text).toContain('Dependency scores:')
+    expect(result.content[0].text).toContain('pkg:npm/lodash@4.17.21')
+    expect(result.content[0].text).toContain('quality: 85')
+    expect(result.content[0].text).toContain('maintenance: 95')
   })
 
   it('omits overall and uuid from the score breakdown', async () => {
@@ -118,9 +118,9 @@ describe('runDepscore — response handling', () => {
       { packages: [{ depname: 'foo' }] },
       { apiToken: 'test_a' },
     )
-    expect(result.content[0]!.text).toContain('supplyChain: 60')
-    expect(result.content[0]!.text).not.toContain('overall:')
-    expect(result.content[0]!.text).not.toContain('uuid:')
+    expect(result.content[0].text).toContain('supplyChain: 60')
+    expect(result.content[0].text).not.toContain('overall:')
+    expect(result.content[0].text).not.toContain('uuid:')
   })
 
   it('passes numeric values >1 through as-is (no *100 scaling)', async () => {
@@ -139,7 +139,7 @@ describe('runDepscore — response handling', () => {
       { apiToken: 'test_a' },
     )
     // 87 already on 0–100 scale → not re-scaled.
-    expect(result.content[0]!.text).toContain('quality: 87')
+    expect(result.content[0].text).toContain('quality: 87')
   })
 
   it('formats namespace into the PURL when present', async () => {
@@ -158,7 +158,7 @@ describe('runDepscore — response handling', () => {
       { packages: [{ depname: '@scope/pkg' }] },
       { apiToken: 'test_a' },
     )
-    expect(result.content[0]!.text).toContain('pkg:npm/@scope/pkg@1.0.0')
+    expect(result.content[0].text).toContain('pkg:npm/@scope/pkg@1.0.0')
   })
 
   it('returns "No score found" when artifact has no score field', async () => {
@@ -169,7 +169,7 @@ describe('runDepscore — response handling', () => {
       { packages: [{ depname: 'foo' }] },
       { apiToken: 'test_a' },
     )
-    expect(result.content[0]!.text).toContain('No score found')
+    expect(result.content[0].text).toContain('No score found')
   })
 
   it('drops `_type` envelope rows from the response', async () => {
@@ -189,7 +189,7 @@ describe('runDepscore — response handling', () => {
       { apiToken: 'test_a' },
     )
     expect(result.isError).toBeUndefined()
-    expect(result.content[0]!.text).toContain('quality: 80')
+    expect(result.content[0].text).toContain('quality: 80')
   })
 
   it('returns an error when the response only has _type rows', async () => {
@@ -201,7 +201,7 @@ describe('runDepscore — response handling', () => {
       { apiToken: 'test_a' },
     )
     expect(result.isError).toBe(true)
-    expect(result.content[0]!.text).toContain('No valid artifact records')
+    expect(result.content[0].text).toContain('No valid artifact records')
   })
 
   it('returns "No packages were found." when data is empty', async () => {
@@ -211,7 +211,7 @@ describe('runDepscore — response handling', () => {
       { apiToken: 'test_a' },
     )
     expect(result.isError).toBe(true)
-    expect(result.content[0]!.text).toBe('No packages were found.')
+    expect(result.content[0].text).toBe('No packages were found.')
   })
 })
 
@@ -232,7 +232,7 @@ describe('runDepscore — formatScore fallbacks', () => {
       { apiToken: 'test_a' },
     )
     expect(result.isError).toBeUndefined()
-    expect(result.content[0]!.text).toContain('pkg:unknown/unknown@unknown')
-    expect(result.content[0]!.text).toContain('No score found')
+    expect(result.content[0].text).toContain('pkg:unknown/unknown@unknown')
+    expect(result.content[0].text).toContain('No score found')
   })
 })

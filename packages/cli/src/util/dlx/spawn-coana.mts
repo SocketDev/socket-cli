@@ -30,7 +30,7 @@ import type { SpawnExtra } from '@socketsecurity/lib-stable/process/spawn/types'
  */
 export async function spawnCoana(
   args: string[] | readonly string[],
-  orgSlug?: string,
+  orgSlug?: string | undefined,
   options?: CoanaDlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<CResult<string>> {
@@ -50,7 +50,7 @@ export async function spawnCoana(
  */
 export async function spawnCoanaDlx(
   args: string[] | readonly string[],
-  orgSlug?: string,
+  orgSlug?: string | undefined,
   options?: CoanaDlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<CResult<string>> {

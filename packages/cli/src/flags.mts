@@ -177,7 +177,7 @@ export function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
       maxSemiSpaceSize,
     }
   }
-  return rawSpaceSizeFlags!
+  return rawSpaceSizeFlags
 }
 
 /**
@@ -191,6 +191,17 @@ export function resetFlagCache(): void {
   rawSpaceSizeFlags = undefined
   maxOldSpaceSizeFlag = undefined
   maxSemiSpaceSizeFlag = undefined
+}
+
+/**
+ * Narrow a parsed flag value to a string. Handler surfaces receive flag
+ * values as `unknown`; a `typeof` check keeps the narrowing honest instead
+ * of `String()`-coercing values whose stringification could be
+ * '[object Object]'. Empty strings fall back too, matching the
+ * `String(value || fallback)` shape this replaces.
+ */
+export function stringFlagValue(value: unknown, fallback = ''): string {
+  return typeof value === 'string' && value ? value : fallback
 }
 
 // Ensure export because dist/flags.js is required in src/constants.mts.

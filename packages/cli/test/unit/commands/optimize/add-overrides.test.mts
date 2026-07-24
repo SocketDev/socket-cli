@@ -96,7 +96,7 @@ vi.mock(import('@socketsecurity/registry-stable'), () => ({
 }))
 
 vi.mock(import('@socketsecurity/lib-stable/promises/iterate'), () => ({
-  pEach: async (items: unknown[], fn: unknown, opts?: unknown) => {
+  pEach: async (items: unknown[], fn: unknown, opts?: unknown | undefined) => {
     for (let i = 0, { length } = items; i < length; i += 1) {
       const item = items[i]
       await fn(item)

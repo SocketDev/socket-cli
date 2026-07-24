@@ -7,7 +7,7 @@ export const cmdRepositoryView = createRepositoryCommand({
   commandName: CMD_NAME,
   description: 'View repositories in an organization',
   handler: async ({ orgSlug, outputKind, repoName }) => {
-    await handleViewRepo(orgSlug, String(repoName), outputKind)
+    await handleViewRepo(orgSlug, repoName, outputKind)
   },
   helpExamples: ['test-repo', 'test-repo --json'],
 })

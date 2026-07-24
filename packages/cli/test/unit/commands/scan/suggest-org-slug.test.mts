@@ -108,10 +108,10 @@ describe('suggest-org-slug', () => {
       const result = await suggestOrgSlug()
 
       expect(result).toBe('my-slug')
-      const callArg = mockSelect.mock.calls[0]![0] as {
+      const callArg = mockSelect.mock.calls[0][0] as {
         choices: Array<{ name: string }>
       }
-      expect(callArg.choices[0]!.name).toContain('my-slug')
+      expect(callArg.choices[0].name).toContain('my-slug')
     })
 
     it('includes No option in choices', async () => {
@@ -125,7 +125,7 @@ describe('suggest-org-slug', () => {
 
       await suggestOrgSlug()
 
-      const callArg = mockSelect.mock.calls[0]![0] as {
+      const callArg = mockSelect.mock.calls[0][0] as {
         choices: Array<{ name: string; value: string }>
       }
       const noChoice = callArg.choices.find(c => c.name === 'No')
@@ -148,14 +148,14 @@ describe('suggest-org-slug', () => {
 
       await suggestOrgSlug()
 
-      const callArg = mockSelect.mock.calls[0]![0] as {
+      const callArg = mockSelect.mock.calls[0][0] as {
         choices: Array<{ name: string; value: string; description: string }>
       }
       // The choice value must be the slug. The visible label/description
       // still use the friendlier display name.
-      expect(callArg.choices[0]!.value).toBe('example-org-ltd')
-      expect(callArg.choices[0]!.name).toContain('Example Org Ltd')
-      expect(callArg.choices[0]!.description).toContain('Example Org Ltd')
+      expect(callArg.choices[0].value).toBe('example-org-ltd')
+      expect(callArg.choices[0].name).toContain('Example Org Ltd')
+      expect(callArg.choices[0].description).toContain('Example Org Ltd')
     })
   })
 })

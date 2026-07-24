@@ -21,8 +21,8 @@ export interface HandleMcpOptions {
 
 const DEFAULT_OAUTH_REQUIRED_SCOPES = ['packages:list'] as const
 
-export async function handleMcp(options: HandleMcpOptions): Promise<void> {
-  const opts = { __proto__: null, ...options } as typeof options
+export async function handleMcp(config: HandleMcpOptions): Promise<void> {
+  const cfg = { __proto__: null, ...config } as typeof config
   const ENV = constants['ENV'] as { INLINED_VERSION?: string | undefined }
   const version = ENV.INLINED_VERSION || '0.0.0'
 
@@ -32,10 +32,10 @@ export async function handleMcp(options: HandleMcpOptions): Promise<void> {
     version,
   }
 
-  if (opts.http) {
-    const issuer = opts.oauthIssuer ?? ''
-    const clientId = opts.oauthClientId ?? ''
-    const clientSecret = opts.oauthClientSecret ?? ''
+  if (cfg.http) {
+    const issuer = cfg.oauthIssuer ?? ''
+    const clientId = cfg.oauthClientId ?? ''
+    const clientSecret = cfg.oauthClientSecret ?? ''
     const partial =
       (clientId || clientSecret || issuer) &&
       !(clientId && clientSecret && issuer)
@@ -58,9 +58,9 @@ export async function handleMcp(options: HandleMcpOptions): Promise<void> {
       oauthClientSecret: clientSecret,
       oauthIssuer: issuer,
       oauthRequiredScopes:
-        opts.oauthRequiredScopes ?? DEFAULT_OAUTH_REQUIRED_SCOPES,
-      port: opts.port,
-      trustProxy: opts.trustProxy,
+        cfg.oauthRequiredScopes ?? DEFAULT_OAUTH_REQUIRED_SCOPES,
+      port: cfg.port,
+      trustProxy: cfg.trustProxy,
     })
     return
   }

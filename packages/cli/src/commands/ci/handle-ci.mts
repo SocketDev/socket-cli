@@ -1,4 +1,7 @@
+import { env } from 'node:process'
+
 import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
+import { envAsString } from '@socketsecurity/lib-stable/env/string'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
@@ -12,6 +15,17 @@ import { serializeResultJson } from '../../util/output/result-json.mjs'
 import { handleCreateNewScan } from '../scan/handle-create-new-scan.mts'
 
 const logger = getDefaultLogger()
+
+/**
+ * Derive the pull request number from CI environment. GitHub Actions
+ * pull_request events check out `refs/pull/<n>/merge`, so the number is
+ * recoverable from GITHUB_REF; returns 0 outside a PR run (the API omits
+ * `pull_request` for falsy values).
+ */
+export function detectCiPullRequestNumber(): number {
+  const match = /^refs\/pull\/(\d+)\//.exec(envAsString(env['GITHUB_REF']))
+  return match ? Number(match[1]) : 0
+}
 
 export async function handleCi(autoManifest: boolean): Promise<void> {
   debug('Starting CI scan')
@@ -49,7 +63,7 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
     outputKind: 'json',
     // When 'pendingHead' is true, it requires 'branchName' set and 'tmp' false.
     pendingHead: true,
-    pullRequest: 0,
+    pullRequest: detectCiPullRequestNumber(),
     reach: {
       excludePaths: [],
       reachAnalysisMemoryLimit: 0,

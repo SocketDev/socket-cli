@@ -40,8 +40,8 @@ export async function fetchListRepos(
 
   return await handleApiCall<'listRepositories'>(
     sockSdk.listRepositories(orgSlug, {
-      ...(sort ? { sort: sort as 'name' | 'created_at' } : {}),
-      ...(direction ? { direction: direction as 'asc' | 'desc' } : {}),
+      ...(sort ? { sort: sort } : {}),
+      ...(direction ? { direction: direction } : {}),
       per_page: perPage,
       page,
     }),

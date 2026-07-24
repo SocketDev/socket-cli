@@ -35,7 +35,7 @@ vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
 
 // Mock utilities.
 vi.mock(import('../../../../src/util/error/fail-msg-with-badge.mts'), () => ({
-  failMsgWithBadge: (msg: string, cause?: string) =>
+  failMsgWithBadge: (msg: string, cause?: string | undefined) =>
     cause ? `${msg}: ${cause}` : msg,
 }))
 
@@ -240,10 +240,10 @@ describe('output-organization-list', () => {
             organizations: [
               {
                 // All three falsy → exercise all three `|| ''` branches.
-                id: '' as unknown,
-                name: '' as unknown,
+                id: '',
+                name: '',
                 slug: '',
-                plan: '' as unknown,
+                plan: '',
               },
             ],
           },

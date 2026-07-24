@@ -13,6 +13,7 @@
 import { NPX } from '@socketsecurity/lib-stable/constants/agents'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { tolerantSleep } from '../../../../../../test/fleet/_shared/lib/timing.mts'
 import { cmdNpx } from '../../../../src/commands/npx/cmd-npx.mts'
 
 import type { EventEmitter } from 'node:events'
@@ -57,7 +58,7 @@ describe('cmd-npx', () => {
     pid: 12_345,
   }
 
-  const createMockSpawnResult = (exitCode = 0, signal?: string) => {
+  const createMockSpawnResult = (exitCode = 0, signal?: string | undefined) => {
     const result = {
       code: signal ? undefined : exitCode,
       signal,
@@ -382,7 +383,7 @@ describe('cmd-npx', () => {
         exitHandler(42, undefined)
 
         // Wait for telemetry promise to resolve.
-        await new Promise(resolve => setTimeout(resolve, 10))
+        await new Promise(resolve => setTimeout(resolve, tolerantSleep(10)))
 
         expect(mockTrackSubprocessExit).toHaveBeenCalledWith(
           NPX,
@@ -402,7 +403,7 @@ describe('cmd-npx', () => {
         exitHandler(undefined, 'SIGTERM')
 
         // Wait for telemetry promise to resolve.
-        await new Promise(resolve => setTimeout(resolve, 10))
+        await new Promise(resolve => setTimeout(resolve, tolerantSleep(10)))
 
         expect(mockTrackSubprocessExit).toHaveBeenCalledWith(
           NPX,
@@ -422,7 +423,7 @@ describe('cmd-npx', () => {
         exitHandler(1, undefined)
 
         // Wait for telemetry promise to reject and catch handler to run.
-        await new Promise(resolve => setTimeout(resolve, 10))
+        await new Promise(resolve => setTimeout(resolve, tolerantSleep(10)))
 
         // Should still exit even though telemetry failed.
         expect(mockProcessExit).toHaveBeenCalledWith(1)
@@ -437,7 +438,7 @@ describe('cmd-npx', () => {
         // Invoke the exit handler with both null.
         exitHandler(undefined, undefined)
 
-        await new Promise(resolve => setTimeout(resolve, 10))
+        await new Promise(resolve => setTimeout(resolve, tolerantSleep(10)))
 
         expect(mockProcessExit).not.toHaveBeenCalled()
         expect(mockProcessKill).not.toHaveBeenCalled()
@@ -455,7 +456,7 @@ describe('cmd-npx', () => {
         exitHandler(0, undefined)
 
         // Wait for telemetry promise to resolve.
-        await new Promise(resolve => setTimeout(resolve, 10))
+        await new Promise(resolve => setTimeout(resolve, tolerantSleep(10)))
 
         expect(mockTrackSubprocessExit).toHaveBeenCalledWith(NPX, startTime, 0)
       })

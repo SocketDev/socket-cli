@@ -43,7 +43,7 @@ vi.mock(import('../../../../src/util/config.mts'), () => ({
 }))
 
 vi.mock(import('../../../../src/util/error/fail-msg-with-badge.mts'), () => ({
-  failMsgWithBadge: (msg: string, cause?: string) =>
+  failMsgWithBadge: (msg: string, cause?: string | undefined) =>
     cause ? `${msg}: ${cause}` : msg,
 }))
 
@@ -304,9 +304,9 @@ describe('output-config-auto', () => {
           data: ['org-a', 'org-b', 'org-c'],
         }
 
-        await outputConfigAuto('defaultOrg', result as unknown, 'text')
+        await outputConfigAuto('defaultOrg', result, 'text')
 
-        const selectCallArgs = mockSelect.mock.calls[0]![0] as {
+        const selectCallArgs = mockSelect.mock.calls[0][0] as {
           choices: Array<{ value: string }>
         }
         expect(selectCallArgs.choices.length).toBeGreaterThanOrEqual(3)
@@ -320,9 +320,9 @@ describe('output-config-auto', () => {
           data: ['org-a', 'org-b'],
         }
 
-        await outputConfigAuto('enforcedOrgs', result as unknown, 'text')
+        await outputConfigAuto('enforcedOrgs', result, 'text')
 
-        const selectCallArgs = mockSelect.mock.calls[0]![0] as {
+        const selectCallArgs = mockSelect.mock.calls[0][0] as {
           choices: Array<{ value: string }>
         }
         expect(selectCallArgs.choices.length).toBeGreaterThanOrEqual(2)

@@ -127,7 +127,7 @@ describe('handleMcp — stdio path', () => {
     })
     expect(mockRunStdioTransport).toHaveBeenCalledTimes(1)
     expect(mockRunHttpTransport).not.toHaveBeenCalled()
-    const config = mockRunStdioTransport.mock.calls[0]![0]
+    const config = mockRunStdioTransport.mock.calls[0][0]
     expect(config.serverName).toBe('socket')
     expect(config.version).toBe('7.7.7')
     expect(config.getApiToken()).toBe('test_default_token')
@@ -157,7 +157,7 @@ describe('handleMcp — HTTP path', () => {
       trustProxy: true,
     })
     expect(mockRunHttpTransport).toHaveBeenCalledTimes(1)
-    const config = mockRunHttpTransport.mock.calls[0]![0]
+    const config = mockRunHttpTransport.mock.calls[0][0]
     expect(config.serverName).toBe('socket')
     expect(config.version).toBe('7.7.7')
     expect(config.oauthIssuer).toBe('https://auth.example.com')
@@ -176,7 +176,7 @@ describe('handleMcp — HTTP path', () => {
       port: 3000,
       trustProxy: false,
     })
-    const config = mockRunHttpTransport.mock.calls[0]![0]
+    const config = mockRunHttpTransport.mock.calls[0][0]
     expect(config.oauthRequiredScopes).toEqual(['packages:list'])
   })
 
@@ -190,14 +190,14 @@ describe('handleMcp — HTTP path', () => {
       port: 3000,
       trustProxy: false,
     })
-    const config = mockRunHttpTransport.mock.calls[0]![0]
+    const config = mockRunHttpTransport.mock.calls[0][0]
     expect(config.oauthRequiredScopes).toEqual(['foo:read', 'bar:write'])
   })
 
   it('runs HTTP without OAuth when only the local token is set', async () => {
     await handleMcp({ http: true, port: 3000, trustProxy: false })
     expect(mockRunHttpTransport).toHaveBeenCalledTimes(1)
-    const config = mockRunHttpTransport.mock.calls[0]![0]
+    const config = mockRunHttpTransport.mock.calls[0][0]
     expect(config.oauthIssuer).toBe('')
     expect(config.oauthClientId).toBe('')
     expect(config.oauthClientSecret).toBe('')

@@ -154,9 +154,9 @@ export async function execGradleWithSpinner(
   bin: string,
   commandArgs: string[],
   cwd: string,
-  options: { showSpinner: boolean },
+  config: { showSpinner: boolean },
 ): Promise<{ code: number; stdout: string; stderr: string }> {
-  const { showSpinner } = { __proto__: null, ...options } as typeof options
+  const { showSpinner } = { __proto__: null, ...config } as typeof config
   let pass = false
   const spinner = showSpinner ? getDefaultSpinner() : undefined
   try {

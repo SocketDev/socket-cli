@@ -156,7 +156,7 @@ describe('spawnCoanaDlx', () => {
     mockDetectExecutableType.mockReturnValue({ type: 'binary' })
     mockSpawn.mockResolvedValue({ stdout: undefined })
 
-    await spawnCoanaDlx([], 'org', undefined, { stdio: 'pipe' } as never)
+    await spawnCoanaDlx([], 'org', undefined, { stdio: 'pipe' })
 
     expect(mockSpawn).toHaveBeenCalledWith(
       '/local/coana',

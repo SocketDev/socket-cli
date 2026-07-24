@@ -177,6 +177,11 @@ describe('git utilities', () => {
     })
 
     it('handles detached HEAD state', async () => {
+      // Clear CI branch env so the commit-SHA fallback is exercised even
+      // when this test itself runs inside GitHub Actions.
+      vi.stubEnv('GITHUB_HEAD_REF', '')
+      vi.stubEnv('GITHUB_REF_NAME', '')
+      vi.stubEnv('GITHUB_REF_TYPE', '')
       const { spawn } = vi.mocked(
         await import('@socketsecurity/lib-stable/process/spawn/child'),
       )
@@ -190,9 +195,46 @@ describe('git utilities', () => {
 
       const result = await gitBranch()
       expect(result).toBe('abc1234\n')
+      vi.unstubAllEnvs()
+    })
+
+    it('prefers the PR head branch over a commit SHA in detached HEAD CI', async () => {
+      vi.stubEnv('GITHUB_HEAD_REF', 'feature/pr-branch')
+      vi.stubEnv('GITHUB_REF_NAME', '123/merge')
+      vi.stubEnv('GITHUB_REF_TYPE', 'branch')
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/lib-stable/process/spawn/child'),
+      )
+      spawn.mockRejectedValueOnce(new Error('Not on a branch'))
+
+      const result = await gitBranch()
+      expect(result).toBe('feature/pr-branch')
+      // Only the symbolic-ref attempt ran; no rev-parse SHA fallback.
+      expect(spawn).toHaveBeenCalledTimes(1)
+      vi.unstubAllEnvs()
+    })
+
+    it('prefers the pushed branch ref over a commit SHA in detached HEAD CI', async () => {
+      vi.stubEnv('GITHUB_HEAD_REF', '')
+      vi.stubEnv('GITHUB_REF_NAME', 'main')
+      vi.stubEnv('GITHUB_REF_TYPE', 'branch')
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/lib-stable/process/spawn/child'),
+      )
+      spawn.mockRejectedValueOnce(new Error('Not on a branch'))
+
+      const result = await gitBranch()
+      expect(result).toBe('main')
+      expect(spawn).toHaveBeenCalledTimes(1)
+      vi.unstubAllEnvs()
     })
 
     it('handles spawn errors', async () => {
+      // Clear CI branch env so the git failure can't be rescued by the
+      // GITHUB_REF_NAME fallback when this test runs inside GitHub Actions.
+      vi.stubEnv('GITHUB_HEAD_REF', '')
+      vi.stubEnv('GITHUB_REF_NAME', '')
+      vi.stubEnv('GITHUB_REF_TYPE', '')
       const { spawn } = vi.mocked(
         await import('@socketsecurity/lib-stable/process/spawn/child'),
       )
@@ -205,6 +247,7 @@ describe('git utilities', () => {
 
       const result = await gitBranch()
       expect(result).toBeUndefined()
+      vi.unstubAllEnvs()
     })
   })
 

@@ -44,12 +44,7 @@ export async function askForEnabled(
         description: 'Exit configurator',
       },
     ],
-    default:
-      defaultValue === true
-        ? 'enable'
-        : defaultValue === false
-          ? 'disable'
-          : '',
+    default: defaultValue,
   })
 }
 

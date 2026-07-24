@@ -30,12 +30,12 @@ vi.mock(import('@socketsecurity/lib-stable/words/pluralize'), () => ({
 }))
 
 vi.mock(import('../../../../src/util/error/fail-msg-with-badge.mts'), () => ({
-  failMsgWithBadge: (message: string, cause?: string) =>
+  failMsgWithBadge: (message: string, cause?: string | undefined) =>
     cause ? `${message}: ${cause}` : message,
 }))
 
 vi.mock(import('../../../../src/util/output/markdown.mts'), () => ({
-  mdError: (message: string, cause?: string) =>
+  mdError: (message: string, cause?: string | undefined) =>
     cause ? `## Error\n${message}: ${cause}` : `## Error\n${message}`,
   mdHeader: (title: string) => `# ${title}`,
   mdList: (items: string[]) => items.map(i => `- ${i}`).join('\n'),

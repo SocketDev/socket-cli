@@ -13,9 +13,21 @@ import {
 } from '../../../../src/commands/patch/cmd-patch.mts'
 
 import type * as WithSubcommandsModule from '../../../../src/util/cli/with-subcommands.mts'
+import type * as DryRunOutputModule from '../../../../src/util/dry-run/output.mts'
+
+// Mock showHelp. The real meow showHelp calls process.exit, so the mock
+// throws to stop execution the same way an exit would.
+const mockShowHelp = vi.hoisted(() =>
+  vi.fn((code?: number | undefined): never => {
+    throw new Error(`showHelp exit ${code}`)
+  }),
+)
 
 // Mock meowOrExit.
-const mockMeowOrExit = vi.hoisted(() => vi.fn().mockReturnValue({ flags: {} }))
+const mockMeowOrExit = vi.hoisted(() => vi.fn())
+
+// Mock outputDryRunExecute.
+const mockOutputDryRunExecute = vi.hoisted(() => vi.fn())
 
 // Mock spawnSocketPatchDlx.
 const mockSpawnSocketPatchDlx = vi.hoisted(() =>
@@ -39,9 +51,21 @@ vi.mock(import('../../../../src/util/dlx/spawn.mjs'), () => ({
   spawnSocketPatchDlx: mockSpawnSocketPatchDlx,
 }))
 
+vi.mock(
+  import('../../../../src/util/dry-run/output.mjs'),
+  async importOriginal => {
+    const actual = await importOriginal<typeof DryRunOutputModule>()
+    return {
+      ...actual,
+      outputDryRunExecute: mockOutputDryRunExecute,
+    }
+  },
+)
+
 describe('cmd-patch', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockMeowOrExit.mockReturnValue({ flags: {}, showHelp: mockShowHelp })
     process.exitCode = undefined
   })
 
@@ -64,7 +88,12 @@ describe('cmd-patch', () => {
     const context = { parentName: 'socket' }
 
     it('should call meowOrExit when only flags provided', async () => {
-      await cmdPatch.run(['--help'], importMeta, context)
+      // meowOrExit handles --help itself (prints help, exits 0); the mock
+      // returns normally, so the run continues into showHelp(2), which the
+      // mock turns into a throw.
+      await expect(
+        cmdPatch.run(['--help'], importMeta, context),
+      ).rejects.toThrow('showHelp exit 2')
 
       expect(mockMeowOrExit).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -80,8 +109,12 @@ describe('cmd-patch', () => {
       )
     })
 
-    it('should call meowOrExit when no arguments provided', async () => {
-      await cmdPatch.run([], importMeta, context)
+    it('should show help and exit 2 when no arguments provided', async () => {
+      // No subcommand and no --help: missing input, so the command shows
+      // help via showHelp(2) instead of forwarding to socket-patch.
+      await expect(cmdPatch.run([], importMeta, context)).rejects.toThrow(
+        'showHelp exit 2',
+      )
 
       expect(mockMeowOrExit).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -89,10 +122,14 @@ describe('cmd-patch', () => {
           parentName: 'socket',
         }),
       )
+      expect(mockShowHelp).toHaveBeenCalledWith(2)
+      expect(mockSpawnSocketPatchDlx).not.toHaveBeenCalled()
     })
 
     it('should include help text with usage examples', async () => {
-      await cmdPatch.run(['--version'], importMeta, context)
+      await expect(
+        cmdPatch.run(['--version'], importMeta, context),
+      ).rejects.toThrow('showHelp exit 2')
 
       const callArgs = mockMeowOrExit.mock.calls[0]?.[0]
       const helpText = callArgs?.config?.help?.('socket patch')
@@ -105,15 +142,16 @@ describe('cmd-patch', () => {
       expect(helpText).toContain('$ socket patch apply')
     })
 
-    it('should still forward to socket-patch after help path', async () => {
-      await cmdPatch.run(['--json'], importMeta, context)
+    it('should not forward flags-only argv to socket-patch', async () => {
+      // Flags without a subcommand are missing input: show help, exit 2,
+      // never spawn socket-patch.
+      await expect(
+        cmdPatch.run(['--json'], importMeta, context),
+      ).rejects.toThrow('showHelp exit 2')
 
-      // Both meowOrExit and spawnSocketPatchDlx should be called.
       expect(mockMeowOrExit).toHaveBeenCalled()
-      expect(mockSpawnSocketPatchDlx).toHaveBeenCalledWith(
-        ['--json'],
-        expect.objectContaining({ stdio: 'inherit' }),
-      )
+      expect(mockShowHelp).toHaveBeenCalledWith(2)
+      expect(mockSpawnSocketPatchDlx).not.toHaveBeenCalled()
     })
   })
 
@@ -238,6 +276,43 @@ describe('cmd-patch', () => {
         expect.objectContaining({ stdio: 'inherit' }),
       )
     })
+
+    it('should strip Socket global flags before forwarding', async () => {
+      // socket-patch is a strict clap CLI, so Socket CLI flags like --config
+      // (and its value) are filtered out of the forwarded argv.
+      await cmdPatch.run(
+        ['list', '--config', '{"apiToken":"x"}'],
+        importMeta,
+        context,
+      )
+
+      expect(mockMeowOrExit).not.toHaveBeenCalled()
+      expect(mockSpawnSocketPatchDlx).toHaveBeenCalledWith(
+        ['list'],
+        expect.objectContaining({ stdio: 'inherit' }),
+      )
+    })
+
+    it('should keep --help in the forwarded argv', async () => {
+      await cmdPatch.run(['list', '--help'], importMeta, context)
+
+      expect(mockMeowOrExit).not.toHaveBeenCalled()
+      expect(mockSpawnSocketPatchDlx).toHaveBeenCalledWith(
+        ['list', '--help'],
+        expect.objectContaining({ stdio: 'inherit' }),
+      )
+    })
+
+    it('should print dry-run output instead of spawning with --dry-run', async () => {
+      await cmdPatch.run(['list', '--dry-run'], importMeta, context)
+
+      expect(mockOutputDryRunExecute).toHaveBeenCalledWith(
+        'socket-patch',
+        ['list'],
+        'socket-patch',
+      )
+      expect(mockSpawnSocketPatchDlx).not.toHaveBeenCalled()
+    })
   })
 
   describe('exit code handling', () => {
@@ -305,7 +380,9 @@ describe('cmd-patch', () => {
     const importMeta = { url: 'file:///test/cmd-patch.mts' }
 
     it('should use parentName from context', async () => {
-      await cmdPatch.run([], importMeta, { parentName: 'custom-cli' })
+      await expect(
+        cmdPatch.run([], importMeta, { parentName: 'custom-cli' }),
+      ).rejects.toThrow('showHelp exit 2')
 
       expect(mockMeowOrExit).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -324,10 +401,12 @@ describe('cmd-patch', () => {
     })
 
     it('should handle context with additional properties', async () => {
-      await cmdPatch.run([], importMeta, {
-        parentName: 'socket',
-        extraProp: 'ignored',
-      } as unknown)
+      await expect(
+        cmdPatch.run([], importMeta, {
+          parentName: 'socket',
+          extraProp: 'ignored',
+        } as unknown),
+      ).rejects.toThrow('showHelp exit 2')
 
       expect(mockMeowOrExit).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -363,10 +442,7 @@ describe('cmd-patch', () => {
     })
 
     it('should handle readonly argv array', async () => {
-      const readonlyArgv = Object.freeze([
-        'list',
-        '--json',
-      ]) as readonly string[]
+      const readonlyArgv = Object.freeze(['list', '--json'])
 
       await cmdPatch.run(readonlyArgv, importMeta, context)
 

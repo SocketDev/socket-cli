@@ -227,8 +227,8 @@ export async function meowWithSubcommands(
     quiet: quietFlag,
   })
 
-  const compactMode = !!compactHeaderFlag || !!(getCI() && !VITEST)
-  const noSpinner = spinnerFlag === false || isDebug()
+  const compactMode = compactHeaderFlag || (getCI() && !VITEST)
+  const noSpinner = !spinnerFlag || isDebug()
 
   // Use CI spinner style when --no-spinner is passed or debug mode is enabled.
   // This prevents the spinner from interfering with debug output.
@@ -339,7 +339,9 @@ export async function meowWithSubcommands(
   }
   /* c8 ignore start - dry-run process.exit branch; tests avoid invoking this to prevent process termination */
   if (!helpFlag && dryRun) {
-    logger.log(`${DRY_RUN_LABEL}: No-op, call a sub-command; ok`)
+    // Dry-run previews are contextual output, not payload — stderr per the
+    // stream discipline (see util/dry-run/output.mts).
+    logger.error(`${DRY_RUN_LABEL}: No-op, call a sub-command; ok`)
     // Exit immediately to prevent tests from hanging waiting for stdin.
     process.exit(0)
     /* c8 ignore stop */

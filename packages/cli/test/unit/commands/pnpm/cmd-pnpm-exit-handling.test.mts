@@ -13,6 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { PNPM } from '@socketsecurity/lib-stable/constants/agents'
 
+import { tolerantSleep } from '../../../../../../test/fleet/_shared/lib/timing.mts'
 import { cmdPnpm } from '../../../../src/commands/pnpm/cmd-pnpm.mts'
 
 import type { EventEmitter } from 'node:events'
@@ -57,7 +58,7 @@ describe('cmd-pnpm', () => {
     pid: 12_345,
   }
 
-  const createMockSpawnResult = (exitCode = 0, signal?: string) => {
+  const createMockSpawnResult = (exitCode = 0, signal?: string | undefined) => {
     const result = {
       code: signal ? undefined : exitCode,
       signal,
@@ -191,7 +192,7 @@ describe('cmd-pnpm', () => {
         exitHandler(42, undefined)
 
         // Wait for telemetry promise to resolve.
-        await new Promise(resolve => setTimeout(resolve, 10))
+        await new Promise(resolve => setTimeout(resolve, tolerantSleep(10)))
 
         expect(mockTrackSubprocessExit).toHaveBeenCalledWith(
           PNPM,
@@ -211,7 +212,7 @@ describe('cmd-pnpm', () => {
         exitHandler(undefined, 'SIGTERM')
 
         // Wait for telemetry promise to resolve.
-        await new Promise(resolve => setTimeout(resolve, 10))
+        await new Promise(resolve => setTimeout(resolve, tolerantSleep(10)))
 
         expect(mockTrackSubprocessExit).toHaveBeenCalledWith(
           PNPM,
@@ -231,7 +232,7 @@ describe('cmd-pnpm', () => {
         exitHandler(1, undefined)
 
         // Wait for telemetry promise to reject and catch handler to run.
-        await new Promise(resolve => setTimeout(resolve, 10))
+        await new Promise(resolve => setTimeout(resolve, tolerantSleep(10)))
 
         // Should still exit even though telemetry failed.
         expect(mockProcessExit).toHaveBeenCalledWith(1)
@@ -243,7 +244,7 @@ describe('cmd-pnpm', () => {
 
         await cmdPnpm.run(['install', 'lodash'], importMeta, context)
         exitHandler(undefined, undefined)
-        await new Promise(resolve => setTimeout(resolve, 10))
+        await new Promise(resolve => setTimeout(resolve, tolerantSleep(10)))
         expect(mockProcessExit).not.toHaveBeenCalled()
         expect(mockProcessKill).not.toHaveBeenCalled()
       })
@@ -260,7 +261,7 @@ describe('cmd-pnpm', () => {
         exitHandler(0, undefined)
 
         // Wait for telemetry promise to resolve.
-        await new Promise(resolve => setTimeout(resolve, 10))
+        await new Promise(resolve => setTimeout(resolve, tolerantSleep(10)))
 
         expect(mockTrackSubprocessExit).toHaveBeenCalledWith(PNPM, startTime, 0)
       })

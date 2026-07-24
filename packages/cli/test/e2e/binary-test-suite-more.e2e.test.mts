@@ -146,7 +146,7 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
     return
   }
 
-  describe(`${binary.name}`, () => {
+  describe(binary.name, () => {
     let hasAuth = false
     let binaryExists = false
 
@@ -182,7 +182,7 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
 
       // Check authentication.
       if (ENV.RUN_E2E_TESTS) {
-        const apiToken = await getDefaultApiToken()
+        const apiToken = getDefaultApiToken()
         hasAuth = !!apiToken
         if (!apiToken) {
           logger.log('')

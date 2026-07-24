@@ -213,7 +213,8 @@ describe('api utilities', () => {
     it('returns error result for failed API call', async () => {
       const mockApiPromise = Promise.resolve({
         success: false,
-        error: { message: 'API error', statusCode: 400 },
+        status: 400,
+        error: 'API error',
       } as unknown)
 
       const result = await handleApiCall(mockApiPromise)
@@ -299,7 +300,8 @@ describe('api utilities', () => {
       // success: false but it's the SDK-level non-success (not a thrown error).
       const mockApiPromise = Promise.resolve({
         success: false,
-        error: { message: 'fail', statusCode: 500 },
+        status: 500,
+        error: 'fail',
       } as unknown)
       const mockCallSpinner = {
         start: mockStart,
@@ -333,7 +335,7 @@ describe('api utilities', () => {
       const mockApiPromise = Promise.resolve({
         success: false,
         status: 403,
-        error: { message: 'Forbidden', statusCode: 403 },
+        error: 'Forbidden',
       } as unknown)
       await handleApiCall(mockApiPromise, {
         commandPath: 'socket fix',

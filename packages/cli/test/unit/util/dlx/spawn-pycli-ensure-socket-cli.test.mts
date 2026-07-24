@@ -71,10 +71,10 @@ import { ensureSocketPyCli } from '../../../../src/util/dlx/spawn-pycli.mts'
 
 const realSetTimeout = globalThis.setTimeout
 function stubFastTimers() {
-  ;(globalThis as { setTimeout: unknown }).setTimeout = ((cb: () => void) => {
+  ;(globalThis as { setTimeout: unknown }).setTimeout = (cb: () => void) => {
     cb()
     return 0 as never
-  }) as never
+  }
 }
 function restoreTimers() {
   ;(globalThis as { setTimeout: unknown }).setTimeout = realSetTimeout

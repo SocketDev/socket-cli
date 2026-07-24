@@ -61,10 +61,15 @@ export function defineFlags<const F extends MeowFlags>(flags: F): F {
 // `cli.flags.someFlag` from a wide-typed result don't get the wrong
 // runtime shape narrowed away. Concrete schemas with literal `type`
 // strings still resolve to the precise primitive.
+// 'number' maps to `number | string`, not `number`: the parse layer only
+// converts a number flag when `Number(raw)` is not NaN, so garbage input
+// (`--page=invalid`) arrives as the raw STRING. The union keeps that honest
+// at the type level — consumers coerce with `Number(...)` and validate,
+// with the raw string still available for error messages.
 export type ValueOfFlagType<F extends MeowFlag> = F['type'] extends 'string'
   ? string
   : F['type'] extends 'number'
-    ? number
+    ? number | string
     : F['type'] extends 'boolean'
       ? boolean
       : unknown
@@ -118,7 +123,7 @@ export interface MeowResult<F extends MeowFlags = MeowFlags> {
   readonly unnormalizedFlags?: InferFlagValues<F> | undefined
   readonly pkg: Record<string, unknown>
   readonly help: string
-  showHelp: (exitCode?: number) => void
+  showHelp: (exitCode?: number | undefined) => void
   showVersion: () => void
 }
 
@@ -140,7 +145,6 @@ export function meow<const F extends MeowFlags = MeowFlags>(
     booleanDefault,
     collectUnknownFlags = false,
     description,
-    flags = {},
     help: helpText = '',
     helpIndent = 2,
     importMeta,
@@ -158,9 +162,12 @@ export function meow<const F extends MeowFlags = MeowFlags>(
     }
   }
 
-  // Convert meow flags to parseArgs options.
+  // Convert meow flags to parseArgs options. Widen the generic `F` schema to
+  // `MeowFlags` here so `Object.entries` yields typed `MeowFlag` values —
+  // entries over a bare generic (or its `{}` fallback) degrade to `unknown`.
+  const flags: MeowFlags = options.flags ?? {}
   const parseArgsOptions: Record<string, ParseArgsOptionsConfig> = {}
-  const flagEntries = Object.entries(flags as MeowFlags)
+  const flagEntries = Object.entries(flags)
   for (const [name, flag] of flagEntries) {
     const type = flag.type === 'number' ? 'string' : flag.type || 'boolean'
     parseArgsOptions[name] = {
@@ -183,7 +190,7 @@ export function meow<const F extends MeowFlags = MeowFlags>(
 
   // Parse arguments.
   const config: ParseArgsConfig = {
-    args: argv as string[],
+    args: argv,
     options: parseArgsOptions,
     strict: !collectUnknownFlags,
     allowPositionals: true,

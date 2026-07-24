@@ -10,7 +10,7 @@ import { simulateDelay } from './mock-auth-types.mts'
  * Mock GitHub OAuth authentication flow.
  */
 export async function mockGitHubAuth(
-  options?: MockAuthOptions & { code?: string | undefined },
+  options?: (MockAuthOptions & { code?: string | undefined }) | undefined,
 ): Promise<CResult<{ accessToken: string; user: unknown }>> {
   const {
     code = 'github-auth-code-123',
@@ -50,10 +50,12 @@ export async function mockGitHubAuth(
  * Mock SSO authentication flow.
  */
 export async function mockSsoAuth(
-  options?: MockAuthOptions & {
-    ssoProvider?: string | undefined
-    ssoOrgSlug?: string | undefined
-  },
+  options?:
+    | (MockAuthOptions & {
+        ssoProvider?: string | undefined
+        ssoOrgSlug?: string | undefined
+      })
+    | undefined,
 ): Promise<CResult<{ apiToken: string; user: unknown }>> {
   const {
     delay = 300,

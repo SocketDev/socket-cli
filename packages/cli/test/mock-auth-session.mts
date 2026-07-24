@@ -56,7 +56,7 @@ export async function mockInteractiveLogin(
  * Mock logout flow.
  */
 export async function mockLogout(
-  options?: MockAuthOptions,
+  options?: MockAuthOptions | undefined,
 ): Promise<CResult<void>> {
   const {
     delay = 50,
@@ -87,7 +87,7 @@ export async function mockLogout(
  * Mock organization selection.
  */
 export async function mockOrgSelection(
-  options?: MockOrgOptions,
+  options?: MockOrgOptions | undefined,
 ): Promise<CResult<{ orgSlug: string; orgId: string }>> {
   const {
     delay = 50,
@@ -144,7 +144,7 @@ export async function mockOrgSelection(
  */
 export async function mockRefreshToken(
   _refreshToken: string,
-  options?: MockAuthOptions,
+  options?: MockAuthOptions | undefined,
 ): Promise<CResult<{ accessToken: string; expiresIn: number }>> {
   const {
     delay = 100,
@@ -179,7 +179,7 @@ export async function mockRefreshToken(
  */
 export async function mockValidateSession(
   sessionId: string,
-  options?: MockAuthOptions,
+  options?: MockAuthOptions | undefined,
 ): Promise<CResult<{ valid: boolean; expiresAt?: Date | undefined }>> {
   const {
     delay = 50,

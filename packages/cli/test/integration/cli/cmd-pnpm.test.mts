@@ -70,16 +70,27 @@ describe('socket pnpm', async () => {
                 $ socket pnpm
                 $ socket pnpm install
                 $ socket pnpm add package-name
-                $ socket pnpm exec package-name"
-      \`,
-      )
-      expect(\`\n   ${stderr}`,
+                $ socket pnpm dlx package-name"
+      `,
       ).toMatchInlineSnapshot(`
-        "
-           _____         _       _          /---------------
-            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
-            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket pnpm\`, cwd: <redacted>"
+        "Run pnpm with Socket Firewall security
+
+          Usage
+                $ socket pnpm ...
+          
+              API Token Requirements
+                (none)
+          
+              Note: Everything after "pnpm" is forwarded to Socket Firewall (sfw).
+                    Socket Firewall provides real-time security scanning for pnpm packages.
+          
+              Use \`socket wrapper on\` to alias this command as \`pnpm\`.
+          
+              Examples
+                $ socket pnpm
+                $ socket pnpm install
+                $ socket pnpm add package-name
+                $ socket pnpm dlx package-name"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -96,8 +107,8 @@ describe('socket pnpm', async () => {
       })
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(stderr).toContain('CLI')
       expect(code, 'dry-run without args should exit with code 0').toBe(0)
     },
@@ -114,13 +125,13 @@ describe('socket pnpm', async () => {
     ],
     'should handle add with --dry-run flag',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         timeout: 30_000,
       })
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'dry-run add should exit with code 0').toBe(0)
     },
   )
@@ -148,13 +159,13 @@ describe('socket pnpm', async () => {
     ],
     'should handle scoped packages with version',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         timeout: 30_000,
       })
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'dry-run add scoped package should exit with code 0').toBe(0)
     },
   )
@@ -192,13 +203,13 @@ describe('socket pnpm', async () => {
     ],
     'should handle exec with issueRules for malware',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         timeout: 30_000,
       })
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'dry-run exec should exit with code 0').toBe(0)
     },
   )
@@ -215,13 +226,13 @@ describe('socket pnpm', async () => {
     ],
     'should handle exec with --config flag and issueRules for malware',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         timeout: 30_000,
       })
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'dry-run exec with --config should exit with code 0').toBe(0)
     },
   )
@@ -238,13 +249,13 @@ describe('socket pnpm', async () => {
     ],
     'should handle exec with multiple issueRules (malware and gptMalware)',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         timeout: 30_000,
       })
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(
         code,
         'dry-run exec with multiple issueRules should exit with code 0',
@@ -264,13 +275,13 @@ describe('socket pnpm', async () => {
     ],
     'should handle exec with --config flag and multiple issueRules (malware and gptMalware)',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         timeout: 30_000,
       })
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(
         code,
         'dry-run exec with --config and multiple issueRules should exit with code 0',
@@ -288,13 +299,13 @@ describe('socket pnpm', async () => {
     ],
     'should handle install with issueRules for malware',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         timeout: 30_000,
       })
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'dry-run install should exit with code 0').toBe(0)
     },
   )
@@ -309,13 +320,13 @@ describe('socket pnpm', async () => {
     ],
     'should handle install with --config flag and issueRules for malware',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         timeout: 30_000,
       })
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(
         code,
         'dry-run install with --config should exit with code 0',
@@ -333,13 +344,13 @@ describe('socket pnpm', async () => {
     ],
     'should handle install with multiple issueRules (malware and gptMalware)',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         timeout: 30_000,
       })
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(
         code,
         'dry-run install with multiple issueRules should exit with code 0',
@@ -357,13 +368,13 @@ describe('socket pnpm', async () => {
     ],
     'should handle install with --config flag and multiple issueRules (malware and gptMalware)',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         timeout: 30_000,
       })
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(
         code,
         'dry-run install with --config and multiple issueRules should exit with code 0',
@@ -409,7 +420,7 @@ describe('socket pnpm', async () => {
       )
 
     // Create a temporary directory for testing.
-    const tmpDir = path.join(tmpdir(), `pnpm-dlx-test-${Date.now()}`)
+    const tmpDir = path.join(os.tmpdir(), `pnpm-dlx-test-${Date.now()}`)
     await fs.mkdir(tmpDir, { recursive: true })
 
     try {

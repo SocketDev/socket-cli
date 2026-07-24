@@ -45,7 +45,7 @@ describe('defineToolSpawn helpers', () => {
   describe('defineVfsSpawn', () => {
     it('forwards to spawnToolVfs with the configured tool name', async () => {
       mockSpawnToolVfs.mockResolvedValue({ spawnPromise: Promise.resolve() })
-      const fn = defineVfsSpawn('trufflehog' as unknown)
+      const fn = defineVfsSpawn('trufflehog')
       await fn(['scan', '/path'], undefined, undefined)
       expect(mockSpawnToolVfs).toHaveBeenCalledWith(
         'trufflehog',
@@ -57,7 +57,7 @@ describe('defineToolSpawn helpers', () => {
 
     it('passes options + spawnExtra through unchanged', async () => {
       mockSpawnToolVfs.mockResolvedValue({ spawnPromise: Promise.resolve() })
-      const fn = defineVfsSpawn('trivy' as unknown)
+      const fn = defineVfsSpawn('trivy')
       const opts = { env: { FOO: 'bar' } } as unknown
       const extra = { stdio: 'pipe' as unknown }
       await fn(['fs'], opts, extra)
@@ -104,7 +104,7 @@ describe('defineToolSpawn helpers', () => {
           details: { name: 'trivy', version: '1.0.0' } as unknown,
         }),
       })
-      await fn(['fs', '/'], undefined, { stdio: 'pipe' } as unknown)
+      await fn(['fs', '/'], undefined, { stdio: 'pipe' })
       expect(mockSpawn).toHaveBeenCalledWith(
         '/cache/trivy',
         ['fs', '/'],
@@ -122,7 +122,7 @@ describe('defineToolSpawn helpers', () => {
           details: { name: 'opengrep', version: '1.0.0' } as unknown,
         }),
       })
-      await fn([], { env: { FOO: 'bar' } } as unknown, undefined)
+      await fn([], { env: { FOO: 'bar' } }, undefined)
       const callEnv = mockSpawn.mock.calls[0][2].env
       expect(callEnv.FOO).toBe('bar')
     })
@@ -184,7 +184,7 @@ describe('defineToolSpawn helpers', () => {
     it('returns Dlx + Vfs + auto together', () => {
       const triple = defineToolSpawn({
         toolName: 'trufflehog',
-        vfsName: 'trufflehog' as unknown,
+        vfsName: 'trufflehog',
         resolve: () =>
           ({
             type: 'github-release',
@@ -202,7 +202,7 @@ describe('defineToolSpawn helpers', () => {
       mockSpawnToolVfs.mockResolvedValue({ spawnPromise: 'vfs' })
       const triple = defineToolSpawn({
         toolName: 'trivy',
-        vfsName: 'trivy' as unknown,
+        vfsName: 'trivy',
         resolve: () =>
           ({
             type: 'github-release',
@@ -224,7 +224,7 @@ describe('defineToolSpawn helpers', () => {
       mockSpawn.mockReturnValue('p')
       const triple = defineToolSpawn({
         toolName: 'opengrep',
-        vfsName: 'opengrep' as unknown,
+        vfsName: 'opengrep',
         resolve: () =>
           ({
             type: 'github-release',

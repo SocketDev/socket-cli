@@ -23,7 +23,10 @@
  */
 
 import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
-import { messageWithCauses } from '@socketsecurity/lib-stable/errors/message'
+import {
+  errorMessage,
+  messageWithCauses,
+} from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { debugApiResponse } from '../debug.mts'
@@ -60,7 +63,13 @@ export {
   tryReadResponseText,
 } from './api-http.mts'
 
-export { queryApi, queryApiSafeJson, queryApiSafeText } from './api-query.mts'
+export {
+  queryApi,
+  queryApiSafeJson,
+  queryApiSafeText,
+  queryApiSafeTextWithStatus,
+} from './api-query.mts'
+export type { ApiTextResult } from './api-query.mts'
 
 export { sendApiRequest } from './api-send.mts'
 export type { SendApiRequestOptions } from './api-send.mts'
@@ -131,7 +140,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
     debugDir({ sdkResult })
 
     const errCResult = sdkResult as SocketSdkErrorResult<T>
-    const errStr = errCResult.error ? String(errCResult.error).trim() : ''
+    const errStr = errCResult.error ? errCResult.error.trim() : ''
     const message = errStr || NO_ERROR_MESSAGE
     const reason = errCResult.cause || NO_ERROR_MESSAGE
 
@@ -180,7 +189,7 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
     debug(`API request failed: ${description}`)
     debugDir(e)
 
-    const errStr = e ? String(e).trim() : ''
+    const errStr = e ? errorMessage(e).trim() : ''
     const message = 'Socket API error'
     const rawCause = errStr || NO_ERROR_MESSAGE
     const cause = message !== rawCause ? rawCause : ''
@@ -198,9 +207,7 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
     debugDir({ sdkResult })
 
     const sdkErrorResult = sdkResult as SocketSdkErrorResult<T>
-    const errStr = sdkErrorResult.error
-      ? String(sdkErrorResult.error).trim()
-      : ''
+    const errStr = sdkErrorResult.error ? sdkErrorResult.error.trim() : ''
     const message = errStr || NO_ERROR_MESSAGE
     const reason = sdkErrorResult.cause || NO_ERROR_MESSAGE
 

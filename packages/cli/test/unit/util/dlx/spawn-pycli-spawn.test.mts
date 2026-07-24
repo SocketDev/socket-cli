@@ -139,7 +139,7 @@ describe('spawnSocketPyCli', () => {
     mockIsSeaBinary.mockReturnValue(true)
     mockAreBasicsToolsAvailable.mockReturnValue(true)
     mockExtractBasicsTools.mockResolvedValue('/sea/tools' as never)
-    mockGetBasicsToolPaths.mockReturnValue({ python: '/sea/python' } as never)
+    mockGetBasicsToolPaths.mockReturnValue({ python: '/sea/python' })
     mockSpawn.mockResolvedValue({ stdout: Buffer.from('ok'), code: 0 })
 
     await spawnSocketPyCli(['x'])
@@ -220,7 +220,7 @@ describe('spawnSocketPyCliVfs', () => {
 
   it('runs full flow without checksums (dev mode)', async () => {
     mockExtractBasicsTools.mockResolvedValue('/sea/tools' as never)
-    mockGetBasicsToolPaths.mockReturnValue({ python: '/sea/python' } as never)
+    mockGetBasicsToolPaths.mockReturnValue({ python: '/sea/python' })
     const result = await spawnSocketPyCliVfs(['x'])
     expect(result.ok).toBe(true)
   })
@@ -231,7 +231,7 @@ describe('spawnSocketPyCliVfs', () => {
     })
     mockExistsSync.mockReturnValue(true)
     mockExtractBasicsTools.mockResolvedValue('/sea/tools' as never)
-    mockGetBasicsToolPaths.mockReturnValue({ python: '/sea/python' } as never)
+    mockGetBasicsToolPaths.mockReturnValue({ python: '/sea/python' })
     const result = await spawnSocketPyCliVfs(['x'])
     expect(result.ok).toBe(true)
   })
@@ -246,7 +246,7 @@ describe('spawnSocketPyCliVfs', () => {
       json: () => ({ urls: [] }),
     })
     mockExtractBasicsTools.mockResolvedValue('/sea/tools' as never)
-    mockGetBasicsToolPaths.mockReturnValue({ python: '/sea/python' } as never)
+    mockGetBasicsToolPaths.mockReturnValue({ python: '/sea/python' })
 
     const result = await spawnSocketPyCliVfs(['x'])
     expect(result.ok).toBe(false)
@@ -254,7 +254,7 @@ describe('spawnSocketPyCliVfs', () => {
 
   it('returns ok:false when spawn throws during install', async () => {
     mockExtractBasicsTools.mockResolvedValue('/sea/tools' as never)
-    mockGetBasicsToolPaths.mockReturnValue({ python: '/sea/python' } as never)
+    mockGetBasicsToolPaths.mockReturnValue({ python: '/sea/python' })
     mockSpawn.mockRejectedValue(new Error('boom'))
     const result = await spawnSocketPyCliVfs([])
     expect(result.ok).toBe(false)

@@ -35,7 +35,7 @@ vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
 
 // Mock utilities.
 vi.mock(import('../../../../src/util/error/fail-msg-with-badge.mts'), () => ({
-  failMsgWithBadge: (msg: string, cause?: string) =>
+  failMsgWithBadge: (msg: string, cause?: string | undefined) =>
     cause ? `${msg}: ${cause}` : msg,
 }))
 
@@ -126,7 +126,7 @@ describe('output-manifest', () => {
 
         await outputManifest(result, 'markdown', '-')
 
-        const loggedMd = mockLogger.log.mock.calls[0]![0]
+        const loggedMd = mockLogger.log.mock.calls[0][0]
         expect(loggedMd).toContain('# Gradle Manifest Generation')
         expect(loggedMd).toContain('pom.xml')
         expect(loggedMd).toContain('subproject/pom.xml')
@@ -143,7 +143,7 @@ describe('output-manifest', () => {
 
         await outputManifest(result, 'markdown', '-')
 
-        const loggedMd = mockLogger.log.mock.calls[0]![0]
+        const loggedMd = mockLogger.log.mock.calls[0][0]
         expect(loggedMd).toContain('# SBT Manifest Generation')
         expect(loggedMd).toContain('1 POM file')
       })

@@ -97,7 +97,7 @@ describe('package-environment', () => {
 
     it('returns input path when shim regex does not match', () => {
       mockExistsSync.mockReturnValue(true)
-      mockReadFileSync.mockReturnValue('echo "not a node shim"\n' as unknown)
+      mockReadFileSync.mockReturnValue('echo "not a node shim"\n')
       const result = resolveBinPathSync('/usr/local/bin/some-tool')
       expect(result).toBe('/usr/local/bin/some-tool')
     })
@@ -105,7 +105,7 @@ describe('package-environment', () => {
     it('extracts the underlying npm-cli.js when found', () => {
       mockExistsSync.mockReturnValue(true)
       mockReadFileSync.mockReturnValue(
-        'node "/usr/lib/node_modules/npm/bin/npm-cli.js" "$@"\n' as unknown,
+        'node "/usr/lib/node_modules/npm/bin/npm-cli.js" "$@"\n',
       )
       const result = resolveBinPathSync('/usr/local/bin/npm')
       expect(result).toBe('/usr/lib/node_modules/npm/bin/npm-cli.js')
@@ -113,9 +113,7 @@ describe('package-environment', () => {
 
     it('resolves relative shim path against bin dir', () => {
       mockExistsSync.mockReturnValue(true)
-      mockReadFileSync.mockReturnValue(
-        'node "../lib/npm-cli.js" "$@"\n' as unknown,
-      )
+      mockReadFileSync.mockReturnValue('node "../lib/npm-cli.js" "$@"\n')
       const result = resolveBinPathSync('/usr/local/bin/npm')
       // Resolves "../lib/npm-cli.js" relative to /usr/local/bin/.
       expect(result).toContain('npm-cli.js')

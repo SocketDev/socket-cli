@@ -48,9 +48,12 @@ describe('socket config unset', async () => {
               Options
                 --json              Output as JSON
                 --markdown          Output as Markdown
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
           
               Removes a value from a config key, allowing the default value to be used
               for it instead.
+          
+              Keys:
           
               Keys:
           
@@ -116,14 +119,23 @@ describe('socket config unset', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket config unset\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket config unset\`, cwd: <redacted>
+
+
+        [DryRun]: Would unset config value for "test"
+
+          Target file: /[HOME]/.config/socket/config.json
+          Changes:
+            - Remove "test" from config
+
+          Run without --dry-run to apply these changes."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

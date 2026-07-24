@@ -11,6 +11,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { tolerantSleep } from '../../../../../../test/fleet/_shared/lib/timing.mts'
+
 // Mock all external dependencies.
 const mockDownloadPackage = vi.hoisted(() =>
   vi.fn().mockResolvedValue(undefined),
@@ -94,7 +96,7 @@ describe('preflight downloads', () => {
 
       // Should not throw / reject.
       runPreflightDownloads()
-      await new Promise(resolve => setTimeout(resolve, 50))
+      await new Promise(resolve => setTimeout(resolve, tolerantSleep(50)))
       // No assertion needed — test just verifies no unhandled rejection.
       expect(true).toBe(true)
       mockVitest.VITEST = true

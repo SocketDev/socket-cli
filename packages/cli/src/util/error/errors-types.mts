@@ -15,7 +15,7 @@ import {
 export class AuthError extends Error {
   public readonly recovery: string[]
 
-  constructor(message: string, recovery?: string[]) {
+  constructor(message: string, recovery?: string[] | undefined) {
     super(message)
     this.name = 'AuthError'
     this.recovery = recovery || [
@@ -34,7 +34,11 @@ export class InputError extends Error {
   public readonly body: string | undefined
   public readonly recovery: string[]
 
-  constructor(message: string, body?: string | undefined, recovery?: string[]) {
+  constructor(
+    message: string,
+    body?: string | undefined,
+    recovery?: string[] | undefined,
+  ) {
     super(message)
     this.name = 'InputError'
     this.body = body
@@ -109,7 +113,7 @@ export class FileSystemError extends Error {
     this.recovery = recovery || this.getDefaultRecovery(code)
   }
 
-  private getDefaultRecovery(code?: string): string[] {
+  private getDefaultRecovery(code?: string | undefined): string[] {
     switch (code) {
       case 'ENOENT':
         return [

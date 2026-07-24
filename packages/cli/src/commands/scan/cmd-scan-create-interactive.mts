@@ -37,7 +37,7 @@ export interface ScanCreateTargetsAndOrgResult {
  * the caller should stop the command in that case.
  */
 export async function resolveScanCreateTargetsAndOrg(
-  options: ScanCreateTargetsAndOrgInput,
+  config: ScanCreateTargetsAndOrgInput,
 ): Promise<ScanCreateTargetsAndOrgResult> {
   const {
     autoManifest,
@@ -49,7 +49,7 @@ export async function resolveScanCreateTargetsAndOrg(
     orgSlug,
     outputKind,
     sockJson,
-  } = { __proto__: null, ...options } as typeof options
+  } = { __proto__: null, ...config } as typeof config
 
   let updatedInput = false
 

@@ -336,7 +336,7 @@ describe('cmd-oops', () => {
 
     describe('edge cases', () => {
       it('should handle readonly argv array', async () => {
-        const readonlyArgv = Object.freeze(['--markdown']) as readonly string[]
+        const readonlyArgv = Object.freeze(['--markdown'])
 
         await cmdOops.run(readonlyArgv, importMeta, context)
 

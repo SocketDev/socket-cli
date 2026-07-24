@@ -145,7 +145,7 @@ describe('types', () => {
   describe('Type guards and utilities', () => {
     it('can check if result is valid', () => {
       function isValidResult<T>(result: CResult<T>): result is ValidResult<T> {
-        return result.ok === true
+        return result.ok
       }
 
       const valid: CResult<number> = { ok: true, value: 42 }

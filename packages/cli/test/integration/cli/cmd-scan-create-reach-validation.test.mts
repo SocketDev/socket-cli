@@ -58,7 +58,7 @@ describe('socket scan create reachability flag validation', async () => {
     'should succeed when --reach-analysis-memory-limit is used with default value without --reach',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0 when using default value').toBe(0)
     },
   )

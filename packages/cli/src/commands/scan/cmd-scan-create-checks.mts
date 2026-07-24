@@ -41,7 +41,7 @@ export interface ScanCreateInputCheckOptions {
  * we can warn when reachability flags are used without `--reach`.
  */
 export function computeReachabilityFlagUsage(
-  options: ReachabilityFlagUsageInput,
+  config: ReachabilityFlagUsageInput,
 ): boolean {
   const {
     reachAnalysisMemoryLimit,
@@ -53,7 +53,7 @@ export function computeReachabilityFlagUsage(
     reachExcludePaths,
     reachLazyMode,
     reachSkipCache,
-  } = { __proto__: null, ...options } as typeof options
+  } = { __proto__: null, ...config } as typeof config
 
   const hasReachEcosystems = reachEcosystems.length > 0
 
@@ -109,7 +109,7 @@ export function validateReachEcosystems(rawValues: string[]): PURL_Type[] {
  * output-format, api-token, and reachability constraints).
  */
 export function validateScanCreateInput(
-  options: ScanCreateInputCheckOptions,
+  config: ScanCreateInputCheckOptions,
 ): boolean {
   const {
     branchName,
@@ -124,7 +124,7 @@ export function validateScanCreateInput(
     reach,
     reachTargetValidation,
     targets,
-  } = { __proto__: null, ...options } as typeof options
+  } = { __proto__: null, ...config } as typeof config
 
   return checkCommandInput(
     outputKind,

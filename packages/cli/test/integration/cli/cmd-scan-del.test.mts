@@ -44,6 +44,7 @@ describe('socket scan del', async () => {
                 --json              Output as JSON
                 --markdown          Output as Markdown
                 --org               Force override the organization slug, overrides the default org from config
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
           
               Examples
                 $ socket scan del [UUID]
@@ -77,7 +78,7 @@ describe('socket scan del', async () => {
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket scan del\`, cwd: <redacted>
 
-        \\u203c Unable to determine the target org. Trying to auto-discover it now…
+        \\u203c Unable to determine the target org. Trying to auto-discover it now\\u2026
         i Note: Run \`socket login\` to set a default org.
               Use the --org flag to override the default org.
 
@@ -107,13 +108,21 @@ describe('socket scan del', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket scan del\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket scan del\`, cwd: <redacted>
+
+
+        [DryRun]: Would delete scan
+
+          Target: fakeOrg/scanidee
+
+          This action cannot be undone.
+          Run without --dry-run to perform this deletion."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

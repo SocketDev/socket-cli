@@ -27,7 +27,7 @@ describe('socket organization (e2e)', () => {
     if (!RUN) {
       return
     }
-    hasAuth = !!(await getDefaultApiToken())
+    hasAuth = !!getDefaultApiToken()
     if (hasAuth) {
       // Resolve the developer's real default org so --org <real> checks have
       // a value. Read it via `config get` rather than poking at the file

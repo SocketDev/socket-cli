@@ -34,13 +34,13 @@ vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
 
 // Mock utilities.
 vi.mock(import('../../../../src/util/error/fail-msg-with-badge.mts'), () => ({
-  failMsgWithBadge: (msg: string, cause?: string) =>
+  failMsgWithBadge: (msg: string, cause?: string | undefined) =>
     cause ? `${msg}: ${cause}` : msg,
 }))
 
 vi.mock(import('../../../../src/util/output/markdown.mts'), () => ({
-  mdTable: <T,>(data: T[], _columns: string[]) =>
-    `| Table with ${(data as T[]).length} rows |`,
+  mdTable: (data: unknown[], _columns: string[]) =>
+    `| Table with ${data.length} rows |`,
 }))
 
 vi.mock(import('../../../../src/util/output/result-json.mjs'), () => ({

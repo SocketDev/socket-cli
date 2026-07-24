@@ -90,12 +90,12 @@ describe('util/dlx/vfs-extract', () => {
     describe('lock-busy polling loop', () => {
       const realSetTimeout = globalThis.setTimeout
       beforeEach(() => {
-        ;(globalThis as { setTimeout: unknown }).setTimeout = ((
+        ;(globalThis as { setTimeout: unknown }).setTimeout = (
           cb: () => void,
         ) => {
           cb()
           return 0 as never
-        }) as never
+        }
       })
       afterEach(() => {
         ;(globalThis as { setTimeout: unknown }).setTimeout = realSetTimeout
@@ -143,7 +143,7 @@ describe('util/dlx/vfs-extract', () => {
         let phase1Done = false
         let toolMissCount = 0
         mockExistsSync.mockImplementation((p: string) => {
-          const ps = String(p)
+          const ps = p
           if (ps.endsWith('.extracting')) {
             return false
           }
@@ -190,7 +190,7 @@ describe('util/dlx/vfs-extract', () => {
         // re-check (which triggers recursion). After recursion: success.
         let existsCalls = 0
         mockExistsSync.mockImplementation((p: string) => {
-          const ps = String(p)
+          const ps = p
           if (ps.endsWith('.extracted')) {
             existsCalls += 1
             // First few calls: false (inside polling loop).
@@ -237,7 +237,7 @@ describe('util/dlx/vfs-extract', () => {
 
         // Cache marker false through wait loop.
         mockExistsSync.mockImplementation((p: string) => {
-          return !String(p).endsWith('.extracted')
+          return !p.endsWith('.extracted')
         })
 
         try {
@@ -274,7 +274,7 @@ describe('util/dlx/vfs-extract', () => {
           throw new Error('ENOENT')
         })
         mockExistsSync.mockImplementation((p: string) => {
-          return !String(p).endsWith('.extracted')
+          return !p.endsWith('.extracted')
         })
 
         try {
@@ -297,7 +297,7 @@ describe('util/dlx/vfs-extract', () => {
         // existsSync: never true for marker; true for everything else
         // (though we shouldn't reach tool checks).
         mockExistsSync.mockImplementation((p: string) => {
-          return !String(p).endsWith('.extracted')
+          return !p.endsWith('.extracted')
         })
 
         try {
@@ -331,7 +331,7 @@ describe('util/dlx/vfs-extract', () => {
         let recursed = false
         const toolCount = EXTERNAL_TOOLS.length
         mockExistsSync.mockImplementation((p: string) => {
-          const ps = String(p)
+          const ps = p
           if (ps.endsWith('.extracting')) {
             return false
           }
@@ -385,7 +385,7 @@ describe('util/dlx/vfs-extract', () => {
         // is the post-loop "Final check before throwing timeout" at line 327.
         let markerChecks = 0
         mockExistsSync.mockImplementation((p: string) => {
-          const ps = String(p)
+          const ps = p
           if (ps.endsWith('.extracted')) {
             markerChecks += 1
             // First 72 marker checks (inside loop): false. 73rd+: true
@@ -413,7 +413,7 @@ describe('util/dlx/vfs-extract', () => {
 
         let markerChecks = 0
         mockExistsSync.mockImplementation((p: string) => {
-          const ps = String(p)
+          const ps = p
           if (ps.endsWith('.extracted')) {
             markerChecks += 1
             return markerChecks > 72

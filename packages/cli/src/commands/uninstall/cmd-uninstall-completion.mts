@@ -54,7 +54,7 @@ export async function run(
     parentName,
     importMeta,
   })
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
   const targetName = cli.input[0] || 'socket'
 
   if (dryRun) {
@@ -65,5 +65,5 @@ export async function run(
     return
   }
 
-  await handleUninstallCompletion(String(targetName))
+  await handleUninstallCompletion(targetName)
 }

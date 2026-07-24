@@ -50,6 +50,7 @@ describe('socket repository list', async () => {
                 --org               Force override the organization slug, overrides the default org from config
                 --page              Page number
                 --per-page          Number of results per page
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
                 --sort              Sorting option
           
               Examples
@@ -84,7 +85,7 @@ describe('socket repository list', async () => {
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket repository list\`, cwd: <redacted>
 
-        \\u203c Unable to determine the target org. Trying to auto-discover it now…
+        \\u203c Unable to determine the target org. Trying to auto-discover it now\\u2026
         i Note: Run \`socket login\` to set a default org.
               Use the --org flag to override the default org.
 
@@ -115,14 +116,27 @@ describe('socket repository list', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket repository list\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket repository list\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch repositories
+
+          Query parameters:
+            organization: fakeOrg
+            sort: created_at
+            direction: desc
+            page: 1
+            perPage: 30
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -148,7 +162,7 @@ describe('socket repository list', async () => {
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket repository list\`, cwd: <redacted>
 
-        \\u203c Unable to determine the target org. Trying to auto-discover it now…
+        \\u203c Unable to determine the target org. Trying to auto-discover it now\\u2026
         i Note: Run \`socket login\` to set a default org.
               Use the --org flag to override the default org.
 
@@ -175,14 +189,27 @@ describe('socket repository list', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket repository list\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket repository list\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch repositories
+
+          Query parameters:
+            organization: fakeOrg
+            sort: created_at
+            direction: desc
+            page: 1
+            perPage: 30
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -204,14 +231,27 @@ describe('socket repository list', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket repository list\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket repository list\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch repositories
+
+          Query parameters:
+            organization: forcedorg
+            sort: created_at
+            direction: desc
+            page: 1
+            perPage: 30
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

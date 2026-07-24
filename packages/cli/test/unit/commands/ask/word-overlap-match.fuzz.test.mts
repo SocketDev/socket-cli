@@ -28,12 +28,18 @@ import {
 const WORD_CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789_-'
 
 const keepableWord = fc
-  .array(fc.constantFrom(...WORD_CHARS), { minLength: 3, maxLength: 12 })
+  .array(fc.constantFrom(...WORD_CHARS.split('')), {
+    minLength: 3,
+    maxLength: 12,
+  })
   .map(chars => chars.join(''))
 
 // A short lowercase token (length 1..2) that extractWords always drops.
 const droppedWord = fc
-  .array(fc.constantFrom(...WORD_CHARS), { minLength: 1, maxLength: 2 })
+  .array(fc.constantFrom(...WORD_CHARS.split('')), {
+    minLength: 1,
+    maxLength: 2,
+  })
   .map(chars => chars.join(''))
 
 describe('commands/ask/word-overlap-match (fuzz)', () => {

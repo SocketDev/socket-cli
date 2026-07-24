@@ -130,7 +130,7 @@ describe('cmd-package', () => {
 
     it('should handle readonly argv', async () => {
       mockMeowWithSubcommands.mockResolvedValue(undefined)
-      const argv = Object.freeze(['shallow', 'npm/react']) as readonly string[]
+      const argv = Object.freeze(['shallow', 'npm/react'])
 
       await cmdPackage.run(argv, importMeta, context)
 

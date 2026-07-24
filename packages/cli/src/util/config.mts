@@ -201,7 +201,7 @@ export function getConfigValues(retryCount = 0): LocalConfig {
         cachedConfigMtime !== currentMtime ||
         cachedConfigPath !== configFilePath
       ) {
-        cachedConfig = {} as LocalConfig
+        cachedConfig = {}
         const raw = safeReadFileSync(configFilePath)
 
         // Verify mtime hasn't changed during read to prevent TOCTOU race.
@@ -255,7 +255,7 @@ export function getConfigValues(retryCount = 0): LocalConfig {
     } catch {
       // File doesn't exist - clear cache and create directory.
       if (cachedConfig === undefined || cachedConfigPath !== configFilePath) {
-        cachedConfig = {} as LocalConfig
+        cachedConfig = {}
         cachedConfigMtime = undefined
         cachedConfigPath = configFilePath
         safeMkdirSync(socketAppDataPath, { recursive: true })
@@ -263,7 +263,7 @@ export function getConfigValues(retryCount = 0): LocalConfig {
     }
     /* c8 ignore start - socketAppDataPath undefined fallback; tests always have HOME set so getSocketAppDataPath returns a path */
   } else if (cachedConfig === undefined) {
-    cachedConfig = {} as LocalConfig
+    cachedConfig = {}
   }
   /* c8 ignore stop */
   return cachedConfig
@@ -322,7 +322,7 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
     }
   } catch {
     // Force set an empty config to prevent accidentally using system settings.
-    cachedConfig = {} as LocalConfig
+    cachedConfig = {}
     configFromFlag = true
 
     return {
@@ -334,7 +334,7 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
   }
 
   // Only copy supported config keys to prevent prototype pollution.
-  cachedConfig = {} as LocalConfig
+  cachedConfig = {}
   const configObj = config as Record<string, unknown>
   const keys = Object.keys(configObj)
   for (let i = 0, { length } = keys; i < length; i += 1) {
@@ -348,13 +348,13 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
   return { ok: true, data: undefined }
 }
 
-export function overrideConfigApiToken(apiToken: unknown) {
+export function overrideConfigApiToken(apiToken: string | undefined) {
   debugNs('notice', 'override: Socket API token (not stored)')
   // Set token to the local cached config and mark it read-only so it doesn't persist.
   cachedConfig = {
     ...cachedConfig,
-    ...(apiToken === undefined ? {} : { apiToken: String(apiToken) }),
-  } as LocalConfig
+    ...(apiToken === undefined ? {} : { apiToken }),
+  }
   configFromFlag = true
 }
 
@@ -372,7 +372,7 @@ export function resetConfigForTesting(): void {
 }
 
 export function updateConfigValue<Key extends keyof LocalConfig>(
-  configKey: keyof LocalConfig,
+  configKey: Key,
   value: LocalConfig[Key],
 ): CResult<undefined | string> {
   const localConfig = getConfigValues()

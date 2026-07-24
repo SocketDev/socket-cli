@@ -127,10 +127,10 @@ describe('createConfiguredServer — tools/list handler', () => {
       }>
     }
     expect(result.tools).toHaveLength(1)
-    expect(result.tools[0]!.name).toBe('depscore')
-    expect(result.tools[0]!.title).toBe('Dependency Score Tool')
-    expect(result.tools[0]!.annotations?.readOnlyHint).toBe(true)
-    expect(result.tools[0]!.description).toContain('depscore')
+    expect(result.tools[0].name).toBe('depscore')
+    expect(result.tools[0].title).toBe('Dependency Score Tool')
+    expect(result.tools[0].annotations?.readOnlyHint).toBe(true)
+    expect(result.tools[0].description).toContain('depscore')
   })
 
   it('emits a plain JSON Schema (no TypeBox symbols/keys)', async () => {
@@ -142,7 +142,7 @@ describe('createConfiguredServer — tools/list handler', () => {
     )) as {
       tools: Array<{ inputSchema: Record<string, unknown> }>
     }
-    const schema = result.tools[0]!.inputSchema
+    const schema = result.tools[0].inputSchema
     // Round-trippable through JSON.
     expect(() => JSON.parse(JSON.stringify(schema))).not.toThrow()
     // Has the expected shape.
@@ -176,10 +176,10 @@ describe('createConfiguredServer — tools/call handler', () => {
       isError?: boolean | undefined
     }
     expect(mockRunDepscore).toHaveBeenCalledTimes(1)
-    expect(mockRunDepscore.mock.calls[0]![0]).toEqual({
+    expect(mockRunDepscore.mock.calls[0][0]).toEqual({
       packages: [{ depname: 'lodash' }],
     })
-    expect(result.content[0]!.text).toBe('ok')
+    expect(result.content[0].text).toBe('ok')
     expect(result.isError).toBeUndefined()
   })
 
@@ -201,7 +201,7 @@ describe('createConfiguredServer — tools/call handler', () => {
     }
     expect(mockRunDepscore).not.toHaveBeenCalled()
     expect(result.isError).toBe(true)
-    expect(result.content[0]!.text).toContain('Unknown tool: unknown-tool')
+    expect(result.content[0].text).toContain('Unknown tool: unknown-tool')
   })
 
   it('returns isError + validation message when arguments are missing the packages field', async () => {
@@ -219,7 +219,7 @@ describe('createConfiguredServer — tools/call handler', () => {
     }
     expect(mockRunDepscore).not.toHaveBeenCalled()
     expect(result.isError).toBe(true)
-    expect(result.content[0]!.text).toContain('Invalid arguments for depscore')
+    expect(result.content[0].text).toContain('Invalid arguments for depscore')
   })
 
   it('returns isError when packages is the wrong shape (string instead of array)', async () => {
@@ -236,7 +236,7 @@ describe('createConfiguredServer — tools/call handler', () => {
       isError?: boolean | undefined
     }
     expect(result.isError).toBe(true)
-    expect(result.content[0]!.text).toContain('Invalid arguments for depscore')
+    expect(result.content[0].text).toContain('Invalid arguments for depscore')
   })
 
   it('uses the OAuth token from extra.authInfo when present', async () => {
@@ -298,6 +298,6 @@ describe('createConfiguredServer — tools/call handler', () => {
     }
     expect(mockRunDepscore).not.toHaveBeenCalled()
     expect(result.isError).toBe(true)
-    expect(result.content[0]!.text).toContain('Authentication is required')
+    expect(result.content[0].text).toContain('Authentication is required')
   })
 })

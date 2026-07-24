@@ -66,7 +66,7 @@ export function debug(message: string): void {
  */
 export function debugDirWrapper(
   obj: unknown,
-  inspectOpts?: InspectOptions,
+  inspectOpts?: InspectOptions | undefined,
 ): void {
   debugDirNs('socket:telemetry:service', obj, inspectOpts)
 }

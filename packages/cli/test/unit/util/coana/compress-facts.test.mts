@@ -21,6 +21,7 @@ import { brotliDecompressSync } from 'node:zlib'
 import { describe, expect, it } from 'vitest'
 
 import { compressSocketFactsForUpload } from '../../../../src/util/coana/compress-facts.mts'
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 
 describe('compress-facts', () => {
   describe('compressSocketFactsForUpload', () => {
@@ -32,7 +33,7 @@ describe('compress-facts', () => {
 
       try {
         const result = await compressSocketFactsForUpload([inputPath])
-        const swappedPath = result.paths[0]!
+        const swappedPath = result.paths[0]
 
         expect(result.paths).toHaveLength(1)
         expect(swappedPath).toBe(`${inputPath}.br`)
@@ -49,7 +50,7 @@ describe('compress-facts', () => {
         expect(existsSync(swappedPath)).toBe(false)
         expect(existsSync(inputPath)).toBe(true)
       } finally {
-        rmSync(wrapDir, { recursive: true, force: true })
+        safeDeleteSync(wrapDir)
       }
     })
 
@@ -65,7 +66,7 @@ describe('compress-facts', () => {
         expect(result.paths).toEqual([lock, pkg])
       } finally {
         await result.cleanup()
-        rmSync(wrapDir, { recursive: true, force: true })
+        safeDeleteSync(wrapDir)
       }
     })
 
@@ -79,7 +80,7 @@ describe('compress-facts', () => {
         expect(result.paths).toEqual([missingFacts])
       } finally {
         await result.cleanup()
-        rmSync(wrapDir, { recursive: true, force: true })
+        safeDeleteSync(wrapDir)
       }
     })
 
@@ -95,12 +96,12 @@ describe('compress-facts', () => {
         expect(result.paths[0]).toBe(lock)
         expect(result.paths[1]).toBe(`${facts}.br`)
         const roundTripped = JSON.parse(
-          brotliDecompressSync(readFileSync(result.paths[1]!)).toString('utf8'),
+          brotliDecompressSync(readFileSync(result.paths[1])).toString('utf8'),
         )
         expect(roundTripped.tier1ReachabilityScanId).toBe('mix')
       } finally {
         await result.cleanup()
-        rmSync(wrapDir, { recursive: true, force: true })
+        safeDeleteSync(wrapDir)
       }
     })
 
@@ -112,7 +113,7 @@ describe('compress-facts', () => {
       const result = await compressSocketFactsForUpload([facts])
       await result.cleanup()
       await expect(result.cleanup()).resolves.not.toThrow()
-      rmSync(wrapDir, { recursive: true, force: true })
+      safeDeleteSync(wrapDir)
     })
   })
 })

@@ -1,10 +1,14 @@
 import { InputError } from '../../util/error/errors.mts'
 
+// The meow layer types numeric flags as `number`, but at runtime a user who
+// passes `--reach-analysis-timeout=abc` delivers the raw STRING — the honest
+// boundary type is the union, and the `Number(...)` coercions below are what
+// turn garbage into NaN so the validators can reject it.
 export interface ScanCreateNumericFlagsInput {
-  pullRequest: number
-  reachAnalysisMemoryLimit: number
-  reachAnalysisTimeout: number
-  reachConcurrency: number
+  pullRequest: number | string
+  reachAnalysisMemoryLimit: number | string
+  reachAnalysisTimeout: number | string
+  reachConcurrency: number | string
 }
 
 export interface ScanCreateNumericFlagsResult {

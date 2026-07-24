@@ -156,7 +156,7 @@ describe('cmd-scan', () => {
 
     it('should handle readonly argv', async () => {
       mockMeowWithSubcommands.mockResolvedValue(undefined)
-      const argv = Object.freeze(['view', 'scan-id']) as readonly string[]
+      const argv = Object.freeze(['view', 'scan-id'])
 
       await cmdScan.run(argv, importMeta, context)
 

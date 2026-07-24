@@ -14,7 +14,7 @@ const logger = getDefaultLogger()
 export async function validate() {
   logger.log('')
   logger.log('='.repeat(60))
-  logger.log(`${colors.blue('CLI Package Validation')}`)
+  logger.log(colors.blue('CLI Package Validation'))
   logger.log('='.repeat(60))
   logger.log('')
 
@@ -109,12 +109,12 @@ export async function validate() {
   // Print summary.
   logger.log('')
   logger.log('='.repeat(60))
-  logger.log(`${colors.blue('Validation Summary')}`)
+  logger.log(colors.blue('Validation Summary'))
   logger.log('='.repeat(60))
   logger.log('')
 
   if (errors.length > 0) {
-    logger.log(`${colors.red('Errors:')}`)
+    logger.log(colors.red('Errors:'))
     for (let i = 0, { length } = errors; i < length; i += 1) {
       const err = errors[i]
       logger.log(`  ${err}`)
@@ -127,6 +127,7 @@ export async function validate() {
 
   logger.success('Package validation PASSED')
   logger.log('')
+  return errors
 }
 
 // Run validation.

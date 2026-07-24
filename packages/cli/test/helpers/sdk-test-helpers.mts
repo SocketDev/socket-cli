@@ -112,7 +112,9 @@ export async function setupSdkMockSuccess(
  */
 export async function setupSdkSetupFailure(
   message: string,
-  options?: { code?: number | undefined; cause?: string | undefined },
+  options?:
+    | { code?: number | undefined; cause?: string | undefined }
+    | undefined,
 ) {
   const setupSdk = await getMockSetupSdk()
   setupSdk.mockResolvedValue(createErrorResult(message, options))

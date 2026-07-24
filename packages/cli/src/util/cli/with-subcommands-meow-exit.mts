@@ -110,8 +110,8 @@ export function meowOrExit<const F extends MeowFlags = MeowFlags>(
     quiet: quietFlag,
   })
 
-  const compactMode = !!compactHeaderFlag || !!(getCI() && !VITEST)
-  const noSpinner = spinnerFlag === false || isDebug()
+  const compactMode = compactHeaderFlag || (getCI() && !VITEST)
+  const noSpinner = !spinnerFlag || isDebug()
 
   // Use CI spinner style when --no-spinner is passed.
   // This prevents the spinner from interfering with debug output.
@@ -167,7 +167,7 @@ export function meowOrExit<const F extends MeowFlags = MeowFlags>(
     argv,
     // As per https://github.com/sindresorhus/meow/issues/178
     // Setting `allowUnknownFlags: false` makes it reject camel cased flags.
-    allowUnknownFlags: Boolean(allowUnknownFlags),
+    allowUnknownFlags: allowUnknownFlags,
     // Prevent meow from potentially exiting early.
     autoHelp: false,
     autoVersion: false,
@@ -179,5 +179,5 @@ export function meowOrExit<const F extends MeowFlags = MeowFlags>(
   // Ok, no help, reset to default.
   process.exitCode = 0
 
-  return cli as unknown as Result<F>
+  return cli
 }

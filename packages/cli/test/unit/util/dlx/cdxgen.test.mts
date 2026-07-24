@@ -60,7 +60,7 @@ describe('spawnCdxgenDlx', () => {
         stdout: 'cdxgen output',
         stderr: '',
       }),
-    } as unknown)
+    })
 
     await spawnCdxgenDlx(['--help'])
 
@@ -78,7 +78,7 @@ describe('spawnCdxgenDlx', () => {
         stdout: 'cdxgen output',
         stderr: '',
       }),
-    } as unknown)
+    })
 
     const options = {
       env: { CDXGEN_OUTPUT: 'sbom.json' },
@@ -124,7 +124,7 @@ describe('spawnCdxgenDlx', () => {
         stdout: 'cdxgen output',
         stderr: '',
       }),
-    } as unknown)
+    })
 
     const sbomArgs = [
       '--type',
@@ -153,7 +153,7 @@ describe('spawnCdxgenDlx', () => {
         stdout: 'cdxgen output',
         stderr: '',
       }),
-    } as unknown)
+    })
 
     await spawnCdxgenDlx(['-r', '/path/to/scan'])
 

@@ -41,9 +41,9 @@ describe('socket wrapper', async () => {
                 $ socket wrapper <"on" | "off">
           
               Options
-                (none)
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
           
-              While enabled, the wrapper makes it so that when you call npm/pnpm exec on your
+              While enabled, the wrapper makes it so that when you call npm/npx on your
               machine, it will automatically actually run \`socket npm\` / \`socket npx\`
               instead.
           
@@ -95,14 +95,24 @@ describe('socket wrapper', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket wrapper\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket wrapper\`, cwd: <redacted>
+
+
+        [DryRun]: Would enable Socket npm/pnpm exec wrapper
+
+          Target file: /[HOME]/.zshrc
+          Changes:
+            - Add shell aliases/functions to wrap npm/pnpm exec commands
+            - Redirect npm/pnpm exec calls to socket npm/socket npx
+
+          Run without --dry-run to apply these changes."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

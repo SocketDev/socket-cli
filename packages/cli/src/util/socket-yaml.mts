@@ -65,7 +65,7 @@ export function asBooleanRecord(value: unknown): { [k: string]: boolean } {
   for (let i = 0, { length } = keys; i < length; i += 1) {
     const key = keys[i]!
     if (typeof value[key] === 'boolean') {
-      out[key] = value[key] as boolean
+      out[key] = value[key]
     }
   }
   return out
@@ -171,7 +171,7 @@ export function parseSocketConfig(fileContent: string): SocketYml {
   } catch (e) {
     throw new SocketValidationError(
       'Error when parsing socket.yml config',
-      [String((e as Error).message ?? e)],
+      [(e as Error).message ?? e],
       fileContent,
     )
   }
@@ -183,7 +183,7 @@ export function parseSocketConfig(fileContent: string): SocketYml {
     )
   }
   if (looksLikeV1(parsed)) {
-    return migrateV1(parsed as SocketYmlV1Shape)
+    return migrateV1(parsed)
   }
   if (parsed['version'] !== 2 && parsed['version'] !== '2') {
     throw new SocketValidationError(

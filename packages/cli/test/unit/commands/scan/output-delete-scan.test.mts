@@ -22,7 +22,7 @@ vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
 }))
 
 vi.mock(import('../../../../src/util/error/fail-msg-with-badge.mts'), () => ({
-  failMsgWithBadge: (message: string, cause?: string) =>
+  failMsgWithBadge: (message: string, cause?: string | undefined) =>
     cause ? `${message}: ${cause}` : message,
 }))
 

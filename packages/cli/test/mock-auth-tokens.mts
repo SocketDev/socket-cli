@@ -10,7 +10,7 @@ import { MILLISECONDS_30_DAYS, simulateDelay } from './mock-auth-types.mts'
  * Mock API token authentication.
  */
 export async function mockApiTokenAuth(
-  options?: MockTokenOptions,
+  options?: MockTokenOptions | undefined,
 ): Promise<CResult<{ valid: boolean; user?: unknown | undefined }>> {
   const {
     delay = 50,
@@ -53,10 +53,12 @@ export async function mockApiTokenAuth(
  * Mock API key generation.
  */
 export async function mockGenerateApiKey(
-  options?: MockAuthOptions & {
-    keyName?: string | undefined
-    scopes?: string[] | undefined
-  },
+  options?:
+    | (MockAuthOptions & {
+        keyName?: string | undefined
+        scopes?: string[] | undefined
+      })
+    | undefined,
 ): Promise<CResult<{ apiKey: string; keyId: string }>> {
   const {
     delay = 150,
@@ -95,7 +97,7 @@ export async function mockGenerateApiKey(
  */
 export async function mockTokenValidation(
   token: string,
-  options?: MockAuthOptions,
+  options?: MockAuthOptions | undefined,
 ): Promise<CResult<boolean>> {
   const {
     delay = 30,

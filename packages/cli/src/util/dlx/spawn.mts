@@ -291,7 +291,7 @@ export async function spawnDlx(
   )
 
   return {
-    spawnPromise: result.spawnPromise as unknown as SpawnResult,
+    spawnPromise: result.spawnPromise,
   }
 }
 

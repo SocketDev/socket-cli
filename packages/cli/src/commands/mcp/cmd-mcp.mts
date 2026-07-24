@@ -140,9 +140,11 @@ export async function run(
 
   const http = cli.flags.http || getMcpHttpMode()
 
-  const portFlag = cli.flags.port
+  // Coerce at the meow boundary — garbage input arrives as the raw string,
+  // which Number() turns into NaN so the > 0 guard rejects it.
+  const portFlag = Number(cli.flags.port)
   const portRaw =
-    portFlag && portFlag > 0
+    portFlag > 0
       ? portFlag
       : Number.parseInt(getMcpPort() || `${DEFAULT_PORT}`, 10)
   const port = Number.isFinite(portRaw) && portRaw > 0 ? portRaw : DEFAULT_PORT

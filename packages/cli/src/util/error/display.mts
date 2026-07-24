@@ -4,7 +4,10 @@
 
 import colors from 'yoctocolors-cjs'
 
-import { messageWithCauses } from '@socketsecurity/lib-stable/errors/message'
+import {
+  errorMessage,
+  messageWithCauses,
+} from '@socketsecurity/lib-stable/errors/message'
 import { isError } from '@socketsecurity/lib-stable/errors/predicates'
 import { LOG_SYMBOLS } from '@socketsecurity/lib-stable/logger/symbols'
 import { stripAnsi } from '@socketsecurity/lib-stable/ansi/strip'
@@ -39,7 +42,9 @@ export function appendCauseChain(baseMessage: string, cause: unknown): string {
   if (!cause) {
     return baseMessage
   }
-  const causeText = isError(cause) ? messageWithCauses(cause) : String(cause)
+  const causeText = isError(cause)
+    ? messageWithCauses(cause)
+    : errorMessage(cause)
   return `${baseMessage}: ${causeText}`
 }
 
@@ -116,13 +121,15 @@ export function formatErrorForDisplay(
       let depth = 1
 
       while (currentCause && depth <= 5) {
-        // Use .message (or String coercion) here — errorMessage() walks
-        // the entire remaining cause chain via messageWithCauses, which
-        // would duplicate messages since the outer while loop is already
-        // iterating the chain level-by-level.
+        // Use .message here rather than errorMessage() for Errors —
+        // errorMessage() walks the entire remaining cause chain via
+        // messageWithCauses, which would duplicate messages since the outer
+        // while loop is already iterating the chain level-by-level. For
+        // non-Error causes errorMessage() is chain-free coercion (with an
+        // UNKNOWN_ERROR fallback instead of '[object Object]').
         const causeMessage = isError(currentCause)
           ? currentCause.message || String(currentCause)
-          : String(currentCause)
+          : errorMessage(currentCause)
 
         causeLines.push(
           `\n${colors.dim(`Caused by [${depth}]:`)} ${colors.yellow(causeMessage)}`,

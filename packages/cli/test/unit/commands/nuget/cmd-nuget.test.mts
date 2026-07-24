@@ -234,13 +234,9 @@ describe('cmd-nuget', () => {
         .mockImplementation((() => {}) as unknown)
       mockKill.mockClear()
 
-      cmdNuget.run(
-        [],
-        { url: import.meta.url } as unknown,
-        {
-          parentName: 'socket',
-        } as unknown,
-      )
+      cmdNuget.run([], { url: import.meta.url } as unknown, {
+        parentName: 'socket',
+      })
 
       await new Promise(resolve => setImmediate(resolve))
       const exitBefore = mockExit.mock.calls.length

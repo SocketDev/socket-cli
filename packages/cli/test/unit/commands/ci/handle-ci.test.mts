@@ -123,9 +123,29 @@ describe('handleCi', () => {
   afterEach(() => {
     process.cwd = originalCwd
     process.exitCode = originalExitCode
+    vi.unstubAllEnvs()
+  })
+
+  it('derives the pull request number from a GitHub Actions PR ref', async () => {
+    vi.stubEnv('GITHUB_REF', 'refs/pull/482/merge')
+    mockGetDefaultOrgSlug.mockResolvedValue({
+      ok: true,
+      data: 'test-org',
+    })
+    mockGitBranch.mockResolvedValue('feature-branch')
+    mockGetRepoName.mockResolvedValue('test-repo')
+
+    await handleCi(false)
+
+    expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+      expect.objectContaining({ pullRequest: 482 }),
+    )
   })
 
   it('handles CI scan successfully', async () => {
+    // Pin GITHUB_REF so the derived PR number is 0 even when this test
+    // itself runs inside a GitHub Actions pull_request job.
+    vi.stubEnv('GITHUB_REF', 'refs/heads/feature-branch')
     mockGetDefaultOrgSlug.mockResolvedValue({
       ok: true,
       data: 'test-org',

@@ -120,11 +120,11 @@ export function explainCommand(intent: {
 /**
  * Format the ask command output.
  */
-export function outputAskCommand(options: OutputAskCommandOptions): void {
+export function outputAskCommand(config: OutputAskCommandOptions): void {
   const { context, explain, intent, query } = {
     __proto__: null,
-    ...options,
-  } as typeof options
+    ...config,
+  } as typeof config
 
   // Show the query.
   logger.log('')

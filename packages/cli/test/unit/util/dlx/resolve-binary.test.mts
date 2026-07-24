@@ -357,8 +357,8 @@ describe('binary resolution utilities', () => {
       ['linux', 'x64', 'trivy_0.50.0_Linux-64bit.tar.gz'],
       ['win32', 'x64', 'trivy_0.50.0_windows-64bit.zip'],
     ])('returns spec for %s-%s', async (platform, arch, assetName) => {
-      mockOs.platform.mockReturnValue(platform as unknown)
-      mockOs.arch.mockReturnValue(arch as unknown)
+      mockOs.platform.mockReturnValue(platform)
+      mockOs.arch.mockReturnValue(arch)
 
       const { resolveTrivy } =
         await import('../../../../src/util/dlx/resolve-binary.mts')
@@ -379,8 +379,8 @@ describe('binary resolution utilities', () => {
     })
 
     it('throws on unsupported platform', async () => {
-      mockOs.platform.mockReturnValue('win32' as unknown)
-      mockOs.arch.mockReturnValue('arm64' as unknown)
+      mockOs.platform.mockReturnValue('win32')
+      mockOs.arch.mockReturnValue('arm64')
 
       const { resolveTrivy } =
         await import('../../../../src/util/dlx/resolve-binary.mts')
@@ -400,8 +400,8 @@ describe('binary resolution utilities', () => {
       ['win32', 'arm64', 'trufflehog_3.40.0_windows_arm64.tar.gz'],
       ['win32', 'x64', 'trufflehog_3.40.0_windows_amd64.tar.gz'],
     ])('returns spec for %s-%s', async (platform, arch, assetName) => {
-      mockOs.platform.mockReturnValue(platform as unknown)
-      mockOs.arch.mockReturnValue(arch as unknown)
+      mockOs.platform.mockReturnValue(platform)
+      mockOs.arch.mockReturnValue(arch)
 
       const { resolveTrufflehog } =
         await import('../../../../src/util/dlx/resolve-binary.mts')
@@ -421,8 +421,8 @@ describe('binary resolution utilities', () => {
     })
 
     it('throws on unsupported platform', async () => {
-      mockOs.platform.mockReturnValue('freebsd' as unknown)
-      mockOs.arch.mockReturnValue('x64' as unknown)
+      mockOs.platform.mockReturnValue('freebsd')
+      mockOs.arch.mockReturnValue('x64')
 
       const { resolveTrufflehog } =
         await import('../../../../src/util/dlx/resolve-binary.mts')
@@ -441,8 +441,8 @@ describe('binary resolution utilities', () => {
       ['linux', 'x64', 'opengrep-core_linux_x86.tar.gz'],
       ['win32', 'x64', 'opengrep-core_windows_x86.zip'],
     ])('returns spec for %s-%s', async (platform, arch, assetName) => {
-      mockOs.platform.mockReturnValue(platform as unknown)
-      mockOs.arch.mockReturnValue(arch as unknown)
+      mockOs.platform.mockReturnValue(platform)
+      mockOs.arch.mockReturnValue(arch)
 
       const { resolveOpengrep } =
         await import('../../../../src/util/dlx/resolve-binary.mts')
@@ -462,8 +462,8 @@ describe('binary resolution utilities', () => {
     })
 
     it('throws on unsupported platform', async () => {
-      mockOs.platform.mockReturnValue('win32' as unknown)
-      mockOs.arch.mockReturnValue('arm64' as unknown)
+      mockOs.platform.mockReturnValue('win32')
+      mockOs.arch.mockReturnValue('arm64')
 
       const { resolveOpengrep } =
         await import('../../../../src/util/dlx/resolve-binary.mts')

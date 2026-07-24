@@ -127,20 +127,20 @@ export async function run(
 
   const { branch: branchFlag, json, markdown, org: orgFlag } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
-  const interactive = !!cli.flags['interactive']
+  const interactive = cli.flags['interactive']
 
   const noLegacy = !cli.flags['repo']
 
   const [repo = '', branchArg = ''] = cli.input
 
-  const branch = String(branchFlag || branchArg || '')
+  const branch = branchFlag || branchArg || ''
 
   const hasApiToken = hasDefaultApiToken()
 
   const { 0: orgSlug } = await determineOrgSlug(
-    String(orgFlag || ''),
+    orgFlag || '',
     interactive,
     dryRun,
   )
@@ -194,8 +194,8 @@ export async function run(
       organization: orgSlug,
       repo: repo || undefined,
       branch: branch || undefined,
-      sort: String(cli.flags['sort'] || 'created_at'),
-      direction: String(cli.flags['direction'] || 'desc'),
+      sort: cli.flags['sort'] || 'created_at',
+      direction: cli.flags['direction'] || 'desc',
       page: validatedPage,
       perPage: validatedPerPage,
     })
@@ -214,14 +214,14 @@ export async function run(
   }
 
   await handleListScans({
-    branch: branch ? String(branch) : '',
-    direction: String(cli.flags['direction'] || ''),
-    from_time: String(cli.flags['fromTime'] || ''),
+    branch: branch ? branch : '',
+    direction: cli.flags['direction'] || '',
+    from_time: cli.flags['fromTime'] || '',
     orgSlug,
     outputKind,
     page: validatedPage,
     perPage: validatedPerPage,
-    repo: repo ? String(repo) : '',
-    sort: String(cli.flags['sort'] || ''),
+    repo: repo ? repo : '',
+    sort: cli.flags['sort'] || '',
   })
 }

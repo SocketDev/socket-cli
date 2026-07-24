@@ -14,7 +14,7 @@ describe('dlx e2e tests', () => {
   beforeAll(async () => {
     // Check if running e2e tests and if Socket API token is available.
     if (ENV.RUN_E2E_TESTS) {
-      const apiToken = await getDefaultApiToken()
+      const apiToken = getDefaultApiToken()
       hasAuth = !!apiToken
       if (!apiToken) {
         logger.log()
@@ -97,9 +97,9 @@ describe('dlx e2e tests', () => {
               },
             )
             if (r.status !== 0) {
-              throw new Error(String(r.stderr ?? r.stdout ?? ''))
+              throw new Error(r.stderr ?? r.stdout ?? '')
             }
-            expect(String(r.stdout)).toContain('Direct test')
+            expect(r.stdout).toContain('Direct test')
 
             // Verify that adding unsupported flags would fail.
             // For example, --ignore-scripts is only for pnpm install, not dlx.
@@ -110,7 +110,7 @@ describe('dlx e2e tests', () => {
                 { stdio: 'pipe', stdioString: true },
               )
               if (r2.status !== 0) {
-                throw new Error(String(r2.stderr ?? r2.stdout ?? ''))
+                throw new Error(r2.stderr ?? r2.stdout ?? '')
               }
             }).toThrow()
           } catch (e) {

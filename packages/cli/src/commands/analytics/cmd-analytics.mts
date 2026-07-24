@@ -120,7 +120,7 @@ export async function run(
     markdown,
   } = cli.flags as unknown as AnalyticsFlags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
   const noLegacy =
     !cli.flags['scope'] && !cli.flags['repo'] && !cli.flags['time']
@@ -158,7 +158,7 @@ export async function run(
     },
     {
       nook: true,
-      test: !filepath || !!json || !!markdown,
+      test: !filepath || json || markdown,
       message: `The \`--file\` flag is only valid when using \`${FLAG_JSON}\` or \`${FLAG_MARKDOWN}\``,
       fail: 'bad',
     },

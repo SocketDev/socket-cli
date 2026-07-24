@@ -12,6 +12,7 @@
 import { YARN } from '@socketsecurity/lib-stable/constants/agents'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { tolerantSleep } from '../../../../../../test/fleet/_shared/lib/timing.mts'
 import { cmdYarn } from '../../../../src/commands/yarn/cmd-yarn.mts'
 
 import type { EventEmitter } from 'node:events'
@@ -56,7 +57,7 @@ describe('cmd-yarn', () => {
     pid: 12_345,
   }
 
-  const createMockSpawnResult = (exitCode = 0, signal?: string) => {
+  const createMockSpawnResult = (exitCode = 0, signal?: string | undefined) => {
     const result = {
       code: signal ? undefined : exitCode,
       signal,
@@ -127,7 +128,7 @@ describe('cmd-yarn', () => {
         exitHandler(42, undefined)
 
         // Wait for telemetry promise to resolve.
-        await new Promise(resolve => setTimeout(resolve, 10))
+        await new Promise(resolve => setTimeout(resolve, tolerantSleep(10)))
 
         expect(mockTrackSubprocessExit).toHaveBeenCalledWith(
           YARN,
@@ -147,7 +148,7 @@ describe('cmd-yarn', () => {
         exitHandler(undefined, 'SIGTERM')
 
         // Wait for telemetry promise to resolve.
-        await new Promise(resolve => setTimeout(resolve, 10))
+        await new Promise(resolve => setTimeout(resolve, tolerantSleep(10)))
 
         expect(mockTrackSubprocessExit).toHaveBeenCalledWith(
           YARN,
@@ -167,7 +168,7 @@ describe('cmd-yarn', () => {
         exitHandler(1, undefined)
 
         // Wait for telemetry promise to reject and catch handler to run.
-        await new Promise(resolve => setTimeout(resolve, 10))
+        await new Promise(resolve => setTimeout(resolve, tolerantSleep(10)))
 
         // Should still exit even though telemetry failed.
         expect(mockProcessExit).toHaveBeenCalledWith(1)
@@ -179,7 +180,7 @@ describe('cmd-yarn', () => {
 
         await cmdYarn.run(['install', 'lodash'], importMeta, context)
         exitHandler(undefined, undefined)
-        await new Promise(resolve => setTimeout(resolve, 10))
+        await new Promise(resolve => setTimeout(resolve, tolerantSleep(10)))
         expect(mockProcessExit).not.toHaveBeenCalled()
         expect(mockProcessKill).not.toHaveBeenCalled()
       })
@@ -196,7 +197,7 @@ describe('cmd-yarn', () => {
         exitHandler(0, undefined)
 
         // Wait for telemetry promise to resolve.
-        await new Promise(resolve => setTimeout(resolve, 10))
+        await new Promise(resolve => setTimeout(resolve, tolerantSleep(10)))
 
         expect(mockTrackSubprocessExit).toHaveBeenCalledWith(YARN, startTime, 0)
       })

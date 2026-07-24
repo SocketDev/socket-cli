@@ -58,7 +58,7 @@ describe('cmd-npm', () => {
     pid: 12_345,
   }
 
-  const createMockSpawnResult = (exitCode = 0, signal?: string) => {
+  const createMockSpawnResult = (exitCode = 0, signal?: string | undefined) => {
     const result = {
       code: signal ? undefined : exitCode,
       signal,

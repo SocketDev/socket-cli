@@ -112,7 +112,7 @@ describe('runStdioTransport', () => {
   it('connects the server to the stdio transport', async () => {
     await runStdioTransport(baseConfig)
     expect(mockConnect).toHaveBeenCalledTimes(1)
-    expect(mockConnect.mock.calls[0]![0]).toBe(mockStdioTransportInstance)
+    expect(mockConnect.mock.calls[0][0]).toBe(mockStdioTransportInstance)
   })
 
   it('logs the ready message after connect resolves', async () => {

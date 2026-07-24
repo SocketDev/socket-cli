@@ -267,8 +267,8 @@ describe('GitHubProvider', () => {
       })
 
       expect(results).toHaveLength(2)
-      expect(results[0]!.number).toBe(1)
-      expect(results[1]!.number).toBe(2)
+      expect(results[0].number).toBe(1)
+      expect(results[1].number).toBe(2)
     })
   })
 

@@ -56,6 +56,7 @@ describe('socket login', async () => {
               Options
                 --api-base-url      API server to connect to for login
                 --api-proxy         Proxy to use when making connection to API server
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
           
               Examples
                 $ socket login
@@ -87,15 +88,28 @@ describe('socket login', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
+      expectDryRunOutput(stderr)
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket login\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket login\`, cwd: <redacted>
+
+
+        [DryRun]: Would authenticate with Socket API
+
+          Target file: /[HOME]/.config/socket/config.json
+          Changes:
+            - Prompt for Socket API token
+            - Verify token with Socket API
+            - Save API token to config
+            - Optionally set default organization
+            - Optionally install bash completion
+
+          Run without --dry-run to apply these changes."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

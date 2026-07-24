@@ -427,7 +427,7 @@ describe('cmd-raw-npx', () => {
 
     describe('readonly arguments', () => {
       it('should handle readonly argv array', async () => {
-        const readonlyArgv = Object.freeze(['cowsay']) as readonly string[]
+        const readonlyArgv = Object.freeze(['cowsay'])
 
         await cmdRawNpx.run(readonlyArgv, importMeta, context)
 
@@ -439,10 +439,7 @@ describe('cmd-raw-npx', () => {
       })
 
       it('should handle readonly argv in dry-run', async () => {
-        const readonlyArgv = Object.freeze([
-          'cowsay',
-          '--dry-run',
-        ]) as readonly string[]
+        const readonlyArgv = Object.freeze(['cowsay', '--dry-run'])
 
         await cmdRawNpx.run(readonlyArgv, importMeta, context)
 

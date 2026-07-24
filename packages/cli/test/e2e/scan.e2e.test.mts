@@ -28,7 +28,7 @@ describe('socket scan (e2e)', () => {
 
   beforeAll(async () => {
     if (RUN) {
-      hasAuth = !!(await getDefaultApiToken())
+      hasAuth = !!getDefaultApiToken()
     }
   })
 

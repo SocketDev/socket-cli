@@ -113,7 +113,7 @@ describe('spawnSocketPatchDlx', () => {
     mockDownloadGitHubReleaseBinary.mockResolvedValue('/cache/socket-patch')
     mockSpawn.mockReturnValue('p')
 
-    await spawnSocketPatchDlx([], undefined, { stdio: 'pipe' } as unknown)
+    await spawnSocketPatchDlx([], undefined, { stdio: 'pipe' })
 
     expect(mockSpawn).toHaveBeenCalledWith(
       '/cache/socket-patch',
@@ -130,7 +130,7 @@ describe('spawnSocketPatchDlx', () => {
     mockDetectExecutableType.mockReturnValue({ type: 'binary' })
     mockSpawn.mockReturnValue('p')
 
-    await spawnSocketPatchDlx([], { env: { FOO: 'bar' } } as unknown, undefined)
+    await spawnSocketPatchDlx([], { env: { FOO: 'bar' } }, undefined)
 
     const callEnv = mockSpawn.mock.calls[0][2].env
     expect(callEnv.FOO).toBe('bar')

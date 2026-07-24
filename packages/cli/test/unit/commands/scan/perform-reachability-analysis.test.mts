@@ -204,7 +204,7 @@ describe('performReachabilityAnalysis — target normalization', () => {
       reachabilityOptions: baseReachOpts,
       target: '/work/sub',
     })
-    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
+    const args = mockSpawnCoanaDlx.mock.calls[0][0] as string[]
     // Coana args includes 'run' followed by the relativized target.
     const idx = args.indexOf('run')
     expect(args[idx + 1]).toBe('sub')
@@ -216,7 +216,7 @@ describe('performReachabilityAnalysis — target normalization', () => {
       reachabilityOptions: baseReachOpts,
       target: '/work',
     })
-    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
+    const args = mockSpawnCoanaDlx.mock.calls[0][0] as string[]
     const idx = args.indexOf('run')
     expect(args[idx + 1]).toBe('.')
   })
@@ -227,7 +227,7 @@ describe('performReachabilityAnalysis — target normalization', () => {
       reachabilityOptions: baseReachOpts,
       target: 'sub/dir',
     })
-    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
+    const args = mockSpawnCoanaDlx.mock.calls[0][0] as string[]
     const idx = args.indexOf('run')
     expect(args[idx + 1]).toBe('sub/dir')
   })
@@ -282,7 +282,7 @@ describe('performReachabilityAnalysis — manifest upload', () => {
     expect(mockSetupSdk).toHaveBeenCalled()
     expect(mockHandleApiCall).toHaveBeenCalled()
     // Coana args include the tar hash flags.
-    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
+    const args = mockSpawnCoanaDlx.mock.calls[0][0] as string[]
     expect(args).toContain('--manifests-tar-hash')
     expect(args).toContain('abc123')
     expect(result.ok).toBe(true)
@@ -307,11 +307,11 @@ describe('performReachabilityAnalysis — manifest upload', () => {
       reachabilityOptions: baseReachOpts,
       target: '.',
     })
-    const apiCallSpec = mockHandleApiCall.mock.calls[0]![0]
+    const apiCallSpec = mockHandleApiCall.mock.calls[0][0]
     // The first arg to handleApiCall is the SDK promise; we just want
     // to confirm uploadManifestFiles was given the filtered list.
     expect(mockUploadManifestFiles).toHaveBeenCalledTimes(1)
-    const [, filepaths] = mockUploadManifestFiles.mock.calls[0]!
+    const [, filepaths] = mockUploadManifestFiles.mock.calls[0]
     expect(filepaths).toEqual(['pkg/package.json'])
   })
 
@@ -385,7 +385,7 @@ describe('performReachabilityAnalysis — repo and branch env', () => {
       repoName: 'socket-default-repository',
       target: '.',
     })
-    const callOpts = mockSpawnCoanaDlx.mock.calls[0]![2]
+    const callOpts = mockSpawnCoanaDlx.mock.calls[0][2]
     expect(callOpts.env['SOCKET_REPO_NAME']).toBeUndefined()
   })
 
@@ -395,7 +395,7 @@ describe('performReachabilityAnalysis — repo and branch env', () => {
       repoName: 'my-repo',
       target: '.',
     })
-    const callOpts = mockSpawnCoanaDlx.mock.calls[0]![2]
+    const callOpts = mockSpawnCoanaDlx.mock.calls[0][2]
     expect(callOpts.env['SOCKET_REPO_NAME']).toBe('my-repo')
   })
 
@@ -405,7 +405,7 @@ describe('performReachabilityAnalysis — repo and branch env', () => {
       reachabilityOptions: baseReachOpts,
       target: '.',
     })
-    const callOpts = mockSpawnCoanaDlx.mock.calls[0]![2]
+    const callOpts = mockSpawnCoanaDlx.mock.calls[0][2]
     expect(callOpts.env['SOCKET_BRANCH_NAME']).toBeUndefined()
   })
 
@@ -415,7 +415,7 @@ describe('performReachabilityAnalysis — repo and branch env', () => {
       reachabilityOptions: baseReachOpts,
       target: '.',
     })
-    const callOpts = mockSpawnCoanaDlx.mock.calls[0]![2]
+    const callOpts = mockSpawnCoanaDlx.mock.calls[0][2]
     expect(callOpts.env['SOCKET_BRANCH_NAME']).toBe('feat/x')
   })
 })

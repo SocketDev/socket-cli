@@ -46,6 +46,7 @@ describe('socket organization dependencies', async () => {
                 --limit             Maximum number of dependencies returned
                 --markdown          Output as Markdown
                 --offset            Page number
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
           
               Examples
                 socket organization dependencies
@@ -77,13 +78,23 @@ describe('socket organization dependencies', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket organization dependencies\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket organization dependencies\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch organization dependencies
+
+          Query parameters:
+            limit: 50
+            offset: 0
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

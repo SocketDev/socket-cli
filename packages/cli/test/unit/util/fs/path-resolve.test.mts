@@ -16,6 +16,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+import { naturalCompare } from '@socketsecurity/lib-stable/sorts/natural'
 
 import {
   PACKAGE_LOCK_JSON,
@@ -118,13 +119,13 @@ const globPatterns = {
   },
 }
 
-type Fn = (...args: unknown[]) => Promise<unknown[]>
+type Fn = (...args: unknown[]) => Promise<string[]>
 
 const sortedPromise =
   (fn: Fn) =>
   async (...args: unknown[]) => {
     const result = await fn(...args)
-    return result.toSorted()
+    return result.toSorted(naturalCompare)
   }
 const sortedGetPackageFilesFullScans = sortedPromise(getPackageFilesForScan)
 
@@ -442,7 +443,7 @@ describe('Path Resolve', () => {
     })
 
     it('handles single string result', () => {
-      mockWhichRealSync.mockReturnValue('/usr/local/bin/npm' as unknown)
+      mockWhichRealSync.mockReturnValue('/usr/local/bin/npm')
 
       const result = findBinPathDetailsSync('npm')
 

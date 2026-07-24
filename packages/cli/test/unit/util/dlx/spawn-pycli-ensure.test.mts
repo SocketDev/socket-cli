@@ -111,10 +111,10 @@ import {
 
 const realSetTimeout = globalThis.setTimeout
 function stubFastTimers() {
-  ;(globalThis as { setTimeout: unknown }).setTimeout = ((cb: () => void) => {
+  ;(globalThis as { setTimeout: unknown }).setTimeout = (cb: () => void) => {
     cb()
     return 0 as never
-  }) as never
+  }
 }
 function restoreTimers() {
   ;(globalThis as { setTimeout: unknown }).setTimeout = realSetTimeout
@@ -138,7 +138,7 @@ describe('ensurePython', () => {
     mockIsSeaBinary.mockReturnValue(true)
     mockAreBasicsToolsAvailable.mockReturnValue(true)
     mockExtractBasicsTools.mockResolvedValue('/sea/tools' as never)
-    mockGetBasicsToolPaths.mockReturnValue({ python: '/sea/python' } as never)
+    mockGetBasicsToolPaths.mockReturnValue({ python: '/sea/python' })
 
     const result = await ensurePython()
     expect(result).toBe('/sea/python')

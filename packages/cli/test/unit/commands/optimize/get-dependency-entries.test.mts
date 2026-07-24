@@ -115,7 +115,7 @@ describe('get-dependency-entries', () => {
 
       const result = getDependencyEntries(envDetails)
 
-      const deps = result[0]![1]
+      const deps = result[0][1]
       expect(Object.getPrototypeOf(deps)).toBeNull()
     })
   })

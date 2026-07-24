@@ -18,6 +18,7 @@ import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { updatePnpmWorkspaceYamlOverrides } from '../../../../src/commands/optimize/update-pnpm-workspace-yaml.mts'
+import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
 describe('updatePnpmWorkspaceYamlOverrides', () => {
   let tmpDir: string
@@ -26,8 +27,8 @@ describe('updatePnpmWorkspaceYamlOverrides', () => {
     tmpDir = mkdtempSync(path.join(os.tmpdir(), 'socket-cli-yaml-test-'))
   })
 
-  afterEach(() => {
-    rmSync(tmpDir, { force: true, recursive: true })
+  afterEach(async () => {
+    await safeDelete(tmpDir)
   })
 
   it('creates a new pnpm-workspace.yaml when missing', async () => {

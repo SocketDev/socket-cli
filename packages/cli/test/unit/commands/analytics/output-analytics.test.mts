@@ -239,7 +239,7 @@ describe('output-analytics', () => {
       // exact format string.
       const criticalKeys = Object.keys(result.total_critical_alerts)
       expect(criticalKeys.length).toBe(1)
-      const dateKey = criticalKeys[0]!
+      const dateKey = criticalKeys[0]
       expect(result.total_critical_alerts[dateKey]).toBe(11)
       expect(result.total_high_alerts[dateKey]).toBe(22)
       // top_five aggregation also doubles up: 5 + 7 = 12.

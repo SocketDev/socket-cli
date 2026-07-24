@@ -119,7 +119,7 @@ export async function run(
     org: orgFlag,
   } = cli.flags as unknown as ScanDiffFlags
 
-  const interactive = !!cli.flags['interactive']
+  const interactive = cli.flags['interactive']
 
   let [id1 = '', id2 = ''] = cli.input
   // Support dropping in full socket urls to an sbom.
@@ -133,7 +133,7 @@ export async function run(
   const hasApiToken = hasDefaultApiToken()
 
   const { 0: orgSlug } = await determineOrgSlug(
-    String(orgFlag || ''),
+    orgFlag || '',
     interactive,
     dryRun,
   )

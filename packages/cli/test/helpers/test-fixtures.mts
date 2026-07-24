@@ -15,7 +15,7 @@ import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
  */
 export async function createTempFixture(
   fixturePath: string,
-  cleanupHook?: (cleanup: () => Promise<void>) => void,
+  cleanupHook?: ((cleanup: () => Promise<void>) => void) | undefined,
 ): Promise<string> {
   // Create a unique temporary directory.
   const tempBaseDir = os.tmpdir()

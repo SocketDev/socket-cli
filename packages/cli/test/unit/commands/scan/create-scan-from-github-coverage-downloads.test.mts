@@ -272,10 +272,7 @@ describe('create-scan-from-github (coverage)', () => {
         '@socketsecurity/lib-stable/fs/safe',
       )
       mockSafeMkdirSync.mockImplementationOnce((p: string, opts: object) =>
-        actualFs.safeMkdirSync(
-          p,
-          opts as Parameters<typeof actualFs.safeMkdirSync>[1],
-        ),
+        actualFs.safeMkdirSync(p, opts),
       )
       mockSocketHttpRequest.mockResolvedValueOnce({
         ok: true,

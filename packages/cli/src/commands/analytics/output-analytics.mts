@@ -78,7 +78,7 @@ export function formatDataOrg(
       const entry = data[j]!
       const date = formatDate(entry.created_at)
       if (formatted[date]) {
-        formatted[date] += entry[metric]!
+        formatted[date] += entry[metric]
       } else {
         formatted[date] = entry[metric]!
       }
@@ -133,7 +133,7 @@ export function formatDataRepo(
       j += 1
     ) {
       const metric = METRICS[j]!
-      formattedData[metric]![formatDate(entry.created_at)] = entry[metric]
+      formattedData[metric][formatDate(entry.created_at)] = entry[metric]
     }
   }
 

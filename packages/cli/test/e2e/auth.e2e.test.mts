@@ -75,7 +75,7 @@ describe('socket whoami (e2e, auth required)', () => {
   let hasAuth = false
   beforeAll(async () => {
     if (RUN) {
-      hasAuth = !!(await getDefaultApiToken())
+      hasAuth = !!getDefaultApiToken()
     }
   })
 

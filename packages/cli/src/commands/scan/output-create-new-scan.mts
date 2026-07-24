@@ -34,7 +34,7 @@ export async function outputCreateNewScan(
     process.exitCode = result.code ?? 1
   }
 
-  const wasSpinning = !!spinner?.isSpinning
+  const wasSpinning = spinner?.isSpinning
 
   spinner?.stop()
 

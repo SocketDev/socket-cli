@@ -16,7 +16,7 @@ describe('Critical CLI Commands E2E', () => {
   beforeAll(async () => {
     // Check if running E2E tests and if Socket API token is available.
     if (ENV.RUN_INTEGRATION_TESTS) {
-      const apiToken = await getDefaultApiToken()
+      const apiToken = getDefaultApiToken()
       hasAuth = !!apiToken
       if (!apiToken) {
         logger.log()

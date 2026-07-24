@@ -43,7 +43,10 @@ describe('cmd-pip', () => {
   }
 
   // Create a proper promise-like object for spawnPromise.
-  const createMockSpawnResult = (exitCode = 0, signal?: NodeJS.Signals) => {
+  const createMockSpawnResult = (
+    exitCode = 0,
+    signal?: NodeJS.Signals | undefined,
+  ) => {
     const promise: unknown = Promise.resolve({
       success: exitCode === 0 && !signal,
       code: signal ? undefined : exitCode,

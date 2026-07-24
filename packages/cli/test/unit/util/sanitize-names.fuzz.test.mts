@@ -30,7 +30,7 @@ import {
 const ALNUM = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 
 const alnumWord = fc
-  .array(fc.constantFrom(...ALNUM), { minLength: 1, maxLength: 60 })
+  .array(fc.constantFrom(...ALNUM.split('')), { minLength: 1, maxLength: 60 })
   .map(chars => chars.join(''))
 
 // Arbitrary input bounded so the sanitized form never exceeds 100 chars, which

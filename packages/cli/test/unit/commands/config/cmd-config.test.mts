@@ -136,7 +136,7 @@ describe('cmd-config', () => {
 
     it('should handle readonly argv', async () => {
       mockMeowWithSubcommands.mockResolvedValue(undefined)
-      const argv = Object.freeze(['get', 'apiToken']) as readonly string[]
+      const argv = Object.freeze(['get', 'apiToken'])
 
       await cmdConfig.run(argv, importMeta, context)
 

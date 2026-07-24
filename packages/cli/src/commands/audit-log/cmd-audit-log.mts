@@ -25,8 +25,10 @@ export interface AuditLogFlags {
   json: boolean
   markdown: boolean
   org: string
-  page: number
-  perPage: number
+  // The meow layer leaves garbage numeric input (`--page=invalid`) as the
+  // raw string; Number() coercion below turns it into NaN for validation.
+  page: number | string
+  perPage: number | string
 }
 
 export const CMD_NAME = 'audit-log'
@@ -82,7 +84,7 @@ export async function run(
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     This feature requires an Enterprise Plan. To learn more about getting access
-    to this feature and many more, please visit the ${webLink(`${'https://socket.dev'}/pricing`, 'Socket pricing page')}.
+    to this feature and many more, please visit the ${webLink(`https://socket.dev/pricing`, 'Socket pricing page')}.
 
     The type FILTER arg is an enum. Defaults to any. It should be one of these:
       associateLabel, cancelInvitation, changeMemberRole, changePlanSubscriptionSeats,
@@ -121,18 +123,16 @@ export async function run(
     perPage,
   } = cli.flags as unknown as AuditLogFlags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
   const noLegacy = !cli.flags['type']
 
-  let [typeFilter = ''] = cli.input
-
-  typeFilter = String(typeFilter)
+  const [typeFilter = ''] = cli.input
 
   const hasApiToken = hasDefaultApiToken()
 
   const { 0: orgSlug } = await determineOrgSlug(
-    String(orgFlag || ''),
+    orgFlag || '',
     interactive,
     dryRun,
   )

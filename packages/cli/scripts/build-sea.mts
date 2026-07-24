@@ -35,24 +35,24 @@ const logger = getDefaultLogger()
 /**
  * Filter targets based on CLI arguments.
  */
-function filterTargets(targets, options) {
-  const opts = { __proto__: null, ...options } as typeof options
-  if (opts.all) {
+function filterTargets(targets, config) {
+  const cfg = { __proto__: null, ...config }
+  if (cfg.all) {
     return targets
   }
 
   return targets.filter(target => {
-    if (opts.platform && target.platform !== opts.platform) {
+    if (cfg.platform && target.platform !== cfg.platform) {
       return false
     }
-    if (opts.arch && target.arch !== opts.arch) {
+    if (cfg.arch && target.arch !== cfg.arch) {
       return false
     }
-    if (opts.libc) {
+    if (cfg.libc) {
       // Normalize: undefined/null → 'glibc' (default for Linux)
       const targetLibc =
         target.platform === 'linux' && !target.libc ? 'glibc' : target.libc
-      if (targetLibc !== opts.libc) {
+      if (targetLibc !== cfg.libc) {
         return false
       }
     }

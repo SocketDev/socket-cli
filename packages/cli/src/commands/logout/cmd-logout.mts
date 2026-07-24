@@ -81,7 +81,7 @@ export async function run(
     parentName,
   })
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
   if (dryRun) {
     // Runtime read so tests that mutate process.env['HOME'] pick up changes.

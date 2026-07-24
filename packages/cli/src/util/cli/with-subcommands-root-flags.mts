@@ -18,9 +18,9 @@ import type { MeowFlag, MeowFlags } from '../../flags.mts'
  */
 export function applyRootCommandFlagVisibility(
   flags: MeowFlags,
-  options: { isRootCommand: boolean },
+  config: { isRootCommand: boolean },
 ): void {
-  const { isRootCommand } = { __proto__: null, ...options } as typeof options
+  const { isRootCommand } = { __proto__: null, ...config } as typeof config
   if (isRootCommand) {
     const hiddenDebugFlag = !isDebug()
 

@@ -22,7 +22,7 @@ import {
 export async function trackCliComplete(
   argv: string[],
   startTime: number,
-  exitCode?: string | number | undefined | null,
+  exitCode?: string | number | null | undefined,
 ): Promise<void> {
   debug('Capture end of command')
 
@@ -52,7 +52,7 @@ export async function trackCliError(
   argv: string[],
   startTime: number,
   error: unknown,
-  exitCode?: number | string | undefined | null,
+  exitCode?: number | string | null | undefined,
 ): Promise<void> {
   debug('Capture error and stack trace of command')
 

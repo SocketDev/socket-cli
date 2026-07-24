@@ -59,7 +59,7 @@ export function buildApiDebugDetails(
   const details: Record<string, unknown> = {
     __proto__: null,
     ...base,
-  } as Record<string, unknown>
+  }
   if (!requestInfo) {
     return details
   }
@@ -131,6 +131,10 @@ export function debugApiRequest(
 export function debugApiResponse(
   endpoint: string,
   status?: number | undefined,
+  // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
+  // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
+  // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
+  // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
   error?: unknown | undefined,
   requestInfo?: ApiRequestDebugInfo | undefined,
 ): void {
@@ -170,6 +174,10 @@ export function debugApiResponse(
 export function debugConfig(
   source: string,
   found: boolean,
+  // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
+  // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
+  // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
+  // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
   error?: unknown | undefined,
 ): void {
   if (error) {
@@ -192,6 +200,10 @@ export function debugConfig(
 export function debugFileOp(
   operation: 'read' | 'write' | 'delete' | 'create',
   filepath: string,
+  // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
+  // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
+  // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
+  // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
   error?: unknown | undefined,
 ): void {
   if (error) {

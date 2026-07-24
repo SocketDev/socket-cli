@@ -288,7 +288,7 @@ describe('registry-help', () => {
       ]
 
       const mockRegistry = {
-        list: vi.fn().mockImplementation((parent?: string) => {
+        list: vi.fn().mockImplementation((parent?: string | undefined) => {
           if (parent === undefined) {
             return commands
           }
@@ -321,7 +321,7 @@ describe('registry-help', () => {
       ]
 
       const mockRegistry = {
-        list: vi.fn().mockImplementation((parent?: string) => {
+        list: vi.fn().mockImplementation((parent?: string | undefined) => {
           if (parent === undefined) {
             return commands
           }
@@ -361,7 +361,7 @@ describe('registry-help', () => {
       ]
 
       const mockRegistry = {
-        list: vi.fn().mockImplementation((parent?: string) => {
+        list: vi.fn().mockImplementation((parent?: string | undefined) => {
           if (parent === undefined) {
             return topLevelCommands
           }
@@ -408,7 +408,7 @@ describe('registry-help', () => {
       ]
 
       const mockRegistry = {
-        list: vi.fn().mockImplementation((parent?: string) => {
+        list: vi.fn().mockImplementation((parent?: string | undefined) => {
           if (parent === undefined) {
             return topLevelCommands
           }

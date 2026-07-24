@@ -68,13 +68,8 @@ export interface DepscoreOptions {
 export function formatScore(jsonData: ArtifactData): string {
   const ns = jsonData.namespace ? `${jsonData.namespace}/` : ''
   const purl = `pkg:${jsonData.type || 'unknown'}/${ns}${jsonData.name || 'unknown'}@${jsonData.version || 'unknown'}`
-  if (
-    jsonData.score &&
-    (jsonData.score as Record<string, unknown>)['overall'] !== undefined
-  ) {
-    const scoreEntries = Object.entries(
-      jsonData.score as Record<string, unknown>,
-    )
+  if (jsonData.score && jsonData.score['overall'] !== undefined) {
+    const scoreEntries = Object.entries(jsonData.score)
       .filter(([key]) => key !== 'overall' && key !== 'uuid')
       .map(([key, value]) => {
         const numValue = Number(value)
@@ -109,9 +104,9 @@ export async function getSdk(apiToken: string): Promise<SocketSdk> {
 
 export async function runDepscore(
   input: DepscoreInput,
-  options: DepscoreOptions,
+  config: DepscoreOptions,
 ): Promise<DepscoreToolResult> {
-  const opts = { __proto__: null, ...options } as typeof options
+  const cfg = { __proto__: null, ...config } as typeof config
   const { packages, platform } = input
   logger.info(`Received request for ${packages.length} packages`)
 
@@ -131,7 +126,7 @@ export async function runDepscore(
 
   let sdk: SocketSdk
   try {
-    sdk = await getSdk(opts.apiToken)
+    sdk = await getSdk(cfg.apiToken)
   } catch (e) {
     const message = errorMessage(e)
     logger.error(`SDK setup failed: ${message}`)

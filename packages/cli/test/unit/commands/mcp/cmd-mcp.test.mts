@@ -69,7 +69,7 @@ const { mockHandleMcp, mockMeowOrExit } = vi.hoisted(() => ({
       'trust-proxy': false,
     }
     for (let i = 0; i < argv.length; i++) {
-      const a = argv[i]!
+      const a = argv[i]
       if (a === '--http') {
         flags['http'] = true
       } else if (a === '--trust-proxy') {

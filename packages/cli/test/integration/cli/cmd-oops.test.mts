@@ -58,14 +58,24 @@ describe('socket oops', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket oops\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket oops\`, cwd: <redacted>
+
+
+        [DryRun]: Would trigger an intentional error
+
+          This command throws an error for development/testing purposes.
+          Error message: "This error was intentionally left blank."
+
+          Output format: Thrown Error exception
+
+          Run without --dry-run to trigger the error."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

@@ -56,7 +56,7 @@ async function main(): Promise<void> {
   const names = variant === 'all' ? Object.keys(VARIANTS) : [variant]
   const results = await Promise.allSettled(
     names.map(name => {
-      const { config, options } = VARIANTS[name]!
+      const { config, options } = VARIANTS[name]
       return runBuild(config, name, options)
     }),
   )

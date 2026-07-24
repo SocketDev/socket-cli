@@ -44,15 +44,15 @@ export interface UpdateNotificationOptions {
 /**
  * Format an update message with appropriate commands and links.
  */
-export function formatUpdateMessage(options: UpdateNotificationOptions): {
+export function formatUpdateMessage(config: UpdateNotificationOptions): {
   message: string
   command?: string | undefined
   changelog: string
 } {
   const { current, latest, name } = {
     __proto__: null,
-    ...options,
-  } as typeof options
+    ...config,
+  } as typeof config
   const seaBinPath = getSeaBinaryPath()
 
   const message = `📦 Update available for ${colors.cyan(name)}: ${colors.gray(current)} → ${colors.green(latest)}`
@@ -87,14 +87,14 @@ export function formatUpdateMessage(options: UpdateNotificationOptions): {
  * notification doesn't interfere with command output.
  */
 export function scheduleExitNotification(
-  options: UpdateNotificationOptions,
+  config: UpdateNotificationOptions,
 ): void {
   if (!process.stdout?.isTTY) {
     return // Probably piping stdout.
   }
 
   try {
-    const notificationLogger = () => showUpdateNotification(options)
+    const notificationLogger = () => showUpdateNotification(config)
     onExit(notificationLogger)
   } catch (e) {
     logger.warn(`Failed to schedule exit notification: ${errorMessage(e)}`)
@@ -105,14 +105,14 @@ export function scheduleExitNotification(
  * Show update notification immediately.
  */
 export function showUpdateNotification(
-  options: UpdateNotificationOptions,
+  config: UpdateNotificationOptions,
 ): void {
   if (!process.stdout?.isTTY) {
     return // Probably piping stdout.
   }
 
   try {
-    const formatted = formatUpdateMessage(options)
+    const formatted = formatUpdateMessage(config)
     const loggerLocal = getDefaultLogger()
 
     loggerLocal.log(`\n\n${formatted.message}`)
@@ -125,8 +125,8 @@ export function showUpdateNotification(
     const loggerLocal = getDefaultLogger()
     const { current, latest, name } = {
       __proto__: null,
-      ...options,
-    } as typeof options
+      ...config,
+    } as typeof config
     const seaBinPath = getSeaBinaryPath()
 
     loggerLocal.log(

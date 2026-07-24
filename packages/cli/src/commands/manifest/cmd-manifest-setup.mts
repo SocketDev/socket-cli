@@ -74,7 +74,7 @@ export async function run(
   })
 
   const { defaultOnReadError = false } = cli.flags
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
@@ -95,5 +95,5 @@ export async function run(
     return
   }
 
-  await handleManifestSetup(cwd, Boolean(defaultOnReadError))
+  await handleManifestSetup(cwd, defaultOnReadError)
 }

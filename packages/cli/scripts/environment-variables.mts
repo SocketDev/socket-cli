@@ -185,7 +185,7 @@ export class EnvironmentVariables {
    * @returns {Record<string, string>} Object with env var names as keys and
    *   JSON-stringified values.
    */
-  static getDefineEntries(vars?: Record<string, string>) {
+  static getDefineEntries(vars?: Record<string, string> | undefined) {
     const envVars = vars || EnvironmentVariables.load()
 
     // Convert all values to JSON-stringified format for esbuild.

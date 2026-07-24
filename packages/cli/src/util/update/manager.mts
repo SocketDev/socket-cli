@@ -60,7 +60,7 @@ export interface UpdateManagerOptions {
  * the main function that orchestrates the entire update process.
  */
 export async function checkForUpdates(
-  options: UpdateManagerOptions,
+  config: UpdateManagerOptions,
 ): Promise<boolean> {
   const {
     authInfo,
@@ -69,7 +69,7 @@ export async function checkForUpdates(
     registryUrl,
     ttl = UPDATE_CHECK_TTL,
     version,
-  } = { __proto__: null, ...options } as UpdateManagerOptions
+  } = { __proto__: null, ...config } as UpdateManagerOptions
 
   const loggerLocal = getDefaultLogger()
 
@@ -79,21 +79,21 @@ export async function checkForUpdates(
   // Validate required parameters.
   if (!isNonEmptyString(name)) {
     loggerLocal.warn(
-      `checkForUpdates options.name requires a non-empty string (got: ${typeof name === 'string' ? '""' : typeof name}); skipping update check`,
+      `checkForUpdates config.name requires a non-empty string (got: ${typeof name === 'string' ? '""' : typeof name}); skipping update check`,
     )
     return false
   }
 
   if (!isNonEmptyString(version)) {
     loggerLocal.warn(
-      `checkForUpdates options.version requires a non-empty string (got: ${typeof version === 'string' ? '""' : typeof version}); skipping update check`,
+      `checkForUpdates config.version requires a non-empty string (got: ${typeof version === 'string' ? '""' : typeof version}); skipping update check`,
     )
     return false
   }
 
   if (ttl < 0) {
     loggerLocal.warn(
-      `checkForUpdates options.ttl must be >= 0 (saw: ${ttl}); pass a positive number of milliseconds, e.g. 86_400_000 for 24h`,
+      `checkForUpdates config.ttl must be >= 0 (saw: ${ttl}); pass a positive number of milliseconds, e.g. 86_400_000 for 24h`,
     )
     return false
   }
@@ -280,7 +280,7 @@ export async function checkForUpdates(
  * built-in update checker (embedded via --update-config).
  */
 export async function scheduleUpdateCheck(
-  options: UpdateManagerOptions,
+  config: UpdateManagerOptions,
 ): Promise<void> {
   // Skip update checks for SEA binaries - node-smol handles it via embedded update-config.
   if (isSeaBinary()) {
@@ -288,7 +288,7 @@ export async function scheduleUpdateCheck(
   }
 
   // Set immediate to false to show notification on exit.
-  const updateOptions = { ...options, immediate: false }
+  const updateOptions = { ...config, immediate: false }
 
   try {
     await checkForUpdates(updateOptions)

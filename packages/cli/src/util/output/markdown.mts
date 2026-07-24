@@ -45,7 +45,7 @@
  *
  * @returns Markdown formatted error string
  */
-export function mdError(message: string, cause?: string): string {
+export function mdError(message: string, cause?: string | undefined): string {
   const parts = [mdHeader('Error'), '', mdKeyValue('Error', message)]
 
   if (cause) {
@@ -116,11 +116,13 @@ export function mdKeyValue(
  */
 export function mdList(
   items: string[],
-  options?: {
-    ordered?: boolean | undefined
-    indent?: number | undefined
-    truncateAt?: number | undefined
-  },
+  options?:
+    | {
+        ordered?: boolean | undefined
+        indent?: number | undefined
+        truncateAt?: number | undefined
+      }
+    | undefined,
 ): string {
   const { indent = 0, ordered = false, truncateAt } = { ...options }
 
@@ -229,8 +231,8 @@ export function mdTableOfPairs(
   const cws = cols.map(col => col.length)
 
   for (const [key, val] of arr) {
-    cws[0] = Math.max(cws[0] ?? 0, String(key).length)
-    cws[1] = Math.max(cws[1] ?? 0, String(val ?? '').length)
+    cws[0] = Math.max(cws[0] ?? 0, key.length)
+    cws[1] = Math.max(cws[1] ?? 0, (val ?? '').length)
   }
 
   let div = '|'
@@ -247,8 +249,8 @@ export function mdTableOfPairs(
   let body = ''
   for (const [key, val] of arr) {
     body += '|'
-    body += ` ${String(key).padEnd(cws[0] ?? 0, ' ')} |`
-    body += ` ${String(val ?? '').padEnd(cws[1] ?? 0, ' ')} |`
+    body += ` ${key.padEnd(cws[0] ?? 0, ' ')} |`
+    body += ` ${(val ?? '').padEnd(cws[1] ?? 0, ' ')} |`
     body += '\n'
   }
 

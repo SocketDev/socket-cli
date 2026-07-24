@@ -134,7 +134,7 @@ export function filterFlags(
       }
       // Otherwise skip it.
     } else {
-      filtered.push(arg!)
+      filtered.push(arg)
     }
   }
   return filtered

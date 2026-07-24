@@ -156,7 +156,7 @@ describe('cmd-organization', () => {
 
     it('should handle readonly argv', async () => {
       mockMeowWithSubcommands.mockResolvedValue(undefined)
-      const argv = Object.freeze(['list']) as readonly string[]
+      const argv = Object.freeze(['list'])
 
       await cmdOrganization.run(argv, importMeta, context)
 

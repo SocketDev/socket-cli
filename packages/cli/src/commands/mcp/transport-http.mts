@@ -275,7 +275,7 @@ export async function runHttpTransport(
         if (aborted) {
           return
         }
-        return handleRequestSafely('POST', res, logger, async () => {
+        void handleRequestSafely('POST', res, logger, async () => {
           const jsonData = JSON.parse(body)
           const sessionId =
             getRequestHeaderValue(req.headers['mcp-session-id']) || undefined

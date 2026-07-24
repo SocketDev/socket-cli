@@ -32,7 +32,7 @@ export interface DispatchSubcommandOptions {
  * sub-command ran, or because an unknown-command error was already reported).
  */
 export async function tryDispatchSubcommand(
-  options: DispatchSubcommandOptions,
+  config: DispatchSubcommandOptions,
 ): Promise<boolean> {
   const {
     aliases,
@@ -42,7 +42,7 @@ export async function tryDispatchSubcommand(
     name,
     rawCommandArgv,
     subcommands,
-  } = { __proto__: null, ...options } as typeof options
+  } = { __proto__: null, ...config } as typeof config
 
   // Skip command lookup if first arg is a flag (starts with -)
   if (!commandOrAliasName || commandOrAliasName.startsWith('-')) {
@@ -71,7 +71,7 @@ export async function tryDispatchSubcommand(
   // If no command found but defaultSub exists, use it as the command.
   // This treats the first arg as an argument to the default subcommand.
   if (!commandDefinition && defaultSub && subcommands[defaultSub]) {
-    await subcommands[defaultSub]!.run(
+    await subcommands[defaultSub].run(
       [commandOrAliasName, ...rawCommandArgv],
       importMeta,
       {

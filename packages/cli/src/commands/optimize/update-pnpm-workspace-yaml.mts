@@ -14,7 +14,7 @@ import path from 'node:path'
 
 import { safeReadFile } from '@socketsecurity/lib-stable/fs/read-file'
 import { isMap, parseDocument } from 'yaml'
-import type { Document, YAMLMap } from 'yaml'
+import type { Document } from 'yaml'
 
 import type { Overrides } from './types.mts'
 
@@ -44,16 +44,16 @@ export async function updatePnpmWorkspaceYamlOverrides(
   } else {
     // Minimal new file. The Document is empty until we add `overrides:`.
     doc = parseDocument('', { keepSourceTokens: true })
-    doc.contents = doc.createNode({}) as ReturnType<Document['createNode']>
+    doc.contents = doc.createNode({})
   }
 
   // Locate or create the `overrides:` map.
-  let overridesNode = doc.get('overrides', true) as unknown
+  let overridesNode = doc.get('overrides', true)
   if (!isMap(overridesNode)) {
     doc.set('overrides', overrides)
     overridesNode = doc.get('overrides', true)
   } else {
-    const map = overridesNode as YAMLMap<unknown, unknown>
+    const map = overridesNode
     for (const [key, value] of Object.entries(overrides)) {
       map.set(key, value)
     }

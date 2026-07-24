@@ -6,7 +6,7 @@ import { handleThreatFeed } from './handle-threat-feed.mts'
 import { outputDryRunFetch } from '../../util/dry-run/output.mts'
 import { InputError } from '../../util/error/errors.mts'
 import { defineFlags } from '../../meow.mts'
-import { commonFlags, outputFlags } from '../../flags.mts'
+import { commonFlags, outputFlags, stringFlagValue } from '../../flags.mts'
 import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
@@ -188,14 +188,14 @@ export async function run(
     version,
   } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
-  const interactive = !!cli.flags['interactive']
+  const interactive = cli.flags['interactive']
 
-  let ecoFilter = String(eco || '')
-  let versionFilter = String(version || '')
-  let typeFilter = String(typef || '')
-  let nameFilter = String(pkg || '')
+  let ecoFilter = eco || ''
+  let versionFilter = version || ''
+  let typeFilter = stringFlagValue(typef)
+  let nameFilter = pkg || ''
 
   const argSet = new Set(cli.input)
   cli.input.some(str => {
@@ -204,6 +204,7 @@ export async function run(
       argSet.delete(str)
       return true
     }
+    return false
   })
 
   cli.input.some(str => {
@@ -212,6 +213,7 @@ export async function run(
       argSet.delete(str)
       return true
     }
+    return false
   })
 
   cli.input.some(str => {
@@ -220,6 +222,7 @@ export async function run(
       argSet.delete(str)
       return true
     }
+    return false
   })
 
   // oxlint-disable-next-line socket/sort-set-args -- elements are runtime variables (not literals), so there is no comparable sort order to enforce.
@@ -230,6 +233,7 @@ export async function run(
       argSet.delete(str)
       return true
     }
+    return false
   })
 
   if (argSet.size) {
@@ -241,7 +245,7 @@ export async function run(
   const hasApiToken = hasDefaultApiToken()
 
   const { 0: orgSlug } = await determineOrgSlug(
-    String(orgFlag || ''),
+    orgFlag || '',
     interactive,
     dryRun,
   )
@@ -284,8 +288,8 @@ export async function run(
       package: nameFilter || undefined,
       version: versionFilter || undefined,
       perPage: validatedPerPage,
-      page: String(cli.flags['page'] || '1'),
-      direction: String(cli.flags['direction'] || 'desc'),
+      page: cli.flags['page'] || '1',
+      direction: cli.flags['direction'] || 'desc',
     })
     return
   }
@@ -296,12 +300,12 @@ export async function run(
   }
 
   await handleThreatFeed({
-    direction: String(cli.flags['direction'] || 'desc'),
+    direction: cli.flags['direction'] || 'desc',
     ecosystem: ecoFilter,
     filter: typeFilter,
     outputKind,
     orgSlug,
-    page: String(cli.flags['page'] || '1'),
+    page: cli.flags['page'] || '1',
     perPage: validatedPerPage,
     pkg: nameFilter,
     version: versionFilter,

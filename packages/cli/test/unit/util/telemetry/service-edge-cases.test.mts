@@ -9,6 +9,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { tolerantSleep } from '../../../../../../test/fleet/_shared/lib/timing.mts'
+
 // Mock setupSdk.
 const mockSetupSdk = vi.hoisted(() => vi.fn())
 const mockGetOrgTelemetryConfig = vi.hoisted(() => vi.fn())
@@ -155,7 +157,7 @@ describe('TelemetryService', () => {
       }
 
       // Give time for auto-flush to complete.
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await new Promise(resolve => setTimeout(resolve, tolerantSleep(100)))
 
       // Events should have been sent.
       expect(mockPostOrgTelemetry).toHaveBeenCalled()

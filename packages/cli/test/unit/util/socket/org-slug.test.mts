@@ -201,7 +201,7 @@ describe('determineOrgSlug', () => {
 
     it('handles undefined suggestion from suggestOrgSlug', async () => {
       overrideCachedConfig('{}')
-      mockSuggestOrgSlug.mockResolvedValue(undefined as unknown)
+      mockSuggestOrgSlug.mockResolvedValue(undefined)
 
       const result = await determineOrgSlug('', true, false)
 

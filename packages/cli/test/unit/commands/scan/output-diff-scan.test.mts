@@ -134,7 +134,7 @@ describe('outputDiffScan', () => {
         cause: 'Server error',
       })
 
-      await outputDiffScan(result as unknown, {
+      await outputDiffScan(result, {
         depth: 5,
         file: '',
         outputKind: 'text',
@@ -149,7 +149,7 @@ describe('outputDiffScan', () => {
         cause: 'Not found',
       })
 
-      await outputDiffScan(result as unknown, {
+      await outputDiffScan(result, {
         depth: 5,
         file: '',
         outputKind: 'json',
@@ -165,7 +165,7 @@ describe('outputDiffScan', () => {
         cause: 'Network error',
       })
 
-      await outputDiffScan(result as unknown, {
+      await outputDiffScan(result, {
         depth: 5,
         file: '',
         outputKind: 'text',

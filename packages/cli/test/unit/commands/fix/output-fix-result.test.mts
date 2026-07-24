@@ -25,12 +25,12 @@ vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
 
 // Mock utilities.
 vi.mock(import('../../../../src/util/error/fail-msg-with-badge.mts'), () => ({
-  failMsgWithBadge: (msg: string, cause?: string) =>
+  failMsgWithBadge: (msg: string, cause?: string | undefined) =>
     cause ? `${msg}: ${cause}` : msg,
 }))
 
 vi.mock(import('../../../../src/util/output/markdown.mts'), () => ({
-  mdError: (msg: string, cause?: string) =>
+  mdError: (msg: string, cause?: string | undefined) =>
     `## Error: ${msg}${cause ? `\n${cause}` : ''}`,
   mdHeader: (text: string) => `# ${text}`,
 }))

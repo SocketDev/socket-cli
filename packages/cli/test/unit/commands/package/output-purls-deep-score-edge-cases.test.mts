@@ -172,7 +172,7 @@ describe('package score output', async () => {
         code: 7,
       }
       process.exitCode = undefined
-      await outputPurlsDeepScore('pkg:npm/test', result as unknown, 'json')
+      await outputPurlsDeepScore('pkg:npm/test', result, 'json')
       expect(process.exitCode).toBe(7)
       process.exitCode = undefined
     })
@@ -183,7 +183,7 @@ describe('package score output', async () => {
         message: 'Failed without code',
       }
       process.exitCode = undefined
-      await outputPurlsDeepScore('pkg:npm/test', result as unknown, 'json')
+      await outputPurlsDeepScore('pkg:npm/test', result, 'json')
       expect(process.exitCode).toBe(1)
       process.exitCode = undefined
     })

@@ -6,9 +6,16 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { scrubAmbientSocketEnv } from '../../../test/repo/_shared/lib/scrub-socket-env.mts'
+
 // Disable debug output during tests
 process.env.DEBUG = ''
 delete process.env.NODE_DEBUG
+
+// Drop ambient Socket credentials (developer shell tokens) so spawned CLI
+// children resolve tokens from each test's --config override, matching the
+// credential-free CI runners.
+scrubAmbientSocketEnv()
 
 // Load inlined environment variables from bundle-tools.json.
 // These are normally inlined at build time by esbuild, but tests run from source.

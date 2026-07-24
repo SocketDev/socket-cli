@@ -39,6 +39,7 @@ describe('socket manifest scala', async () => {
               Options
                 --bin               Location of sbt binary to use
                 --out               Path of output file; where to store the resulting manifest, see also --stdout
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
                 --sbt-opts          Additional options to pass on to sbt, as per \`sbt --help\`
                 --stdout            Print resulting pom.xml to stdout (supersedes --out)
                 --verbose           Print debug messages
@@ -95,14 +96,22 @@ describe('socket manifest scala', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket manifest scala\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket manifest scala\`, cwd: <redacted>
+
+
+        [DryRun]: Would execute generate pom.xml from Scala project
+
+          Command: sbt
+          Arguments: [PROJECT] --bin sbt --out ./socket.pom.xml
+
+          Run without --dry-run to execute this command."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

@@ -29,7 +29,7 @@ describe('socket repos (e2e)', () => {
 
   beforeAll(async () => {
     if (RUN) {
-      hasAuth = !!(await getDefaultApiToken())
+      hasAuth = !!getDefaultApiToken()
     }
   })
 

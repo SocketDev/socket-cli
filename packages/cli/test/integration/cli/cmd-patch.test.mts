@@ -51,9 +51,10 @@ describe('socket patch', async () => {
       'should show help when no arguments provided',
       async cmd => {
         const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-        // Without subcommand, shows Socket CLI help.
+        // Without subcommand, shows Socket CLI help and exits 2 (missing
+        // input), matching the with-subcommands convention.
         expect(stdout).toContain('Manage CVE patches for dependencies')
-        expect(code).toBe(0)
+        expect(code, 'missing subcommand should exit with code 2').toBe(2)
       },
     )
   })
@@ -84,8 +85,8 @@ describe('socket patch', async () => {
           cwd: pnpmFixtureDir,
         })
         const output = stdout + stderr
-        // socket-patch v2.0.0 lists patches from manifest. May show patches or "no patches".
-        expect(output).toMatch(/patches|manifest|No .socket directory/i)
+        // socket-patch v2.0.0 lists patches from the fixture manifest.
+        expect(output).toMatch(/Found \d+ patch|No patches found|manifest/i)
         // Exit code depends on whether manifest exists.
         expect(typeof code).toBe('number')
       },
@@ -99,8 +100,11 @@ describe('socket patch', async () => {
           cwd: pnpmFixtureDir,
         })
         const output = stdout + stderr
-        // socket-patch v2.0.0 applies patches. Without manifest, shows error.
-        expect(output).toMatch(/Applied|No patches|manifest|nothing to apply/i)
+        // socket-patch v2.0.0 applies patches. Without installed packages it
+        // reports that nothing matches the available patches.
+        expect(output).toMatch(
+          /Applied|No patches|No packages found|manifest|nothing to apply/i,
+        )
         // Exit code depends on state.
         expect(typeof code).toBe('number')
       },

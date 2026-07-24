@@ -38,7 +38,7 @@ export class GitLabProvider implements PrProvider {
     })
   }
 
-  async createPr(options: CreatePrOptions): Promise<PrResponse> {
+  async createPr(config: CreatePrOptions): Promise<PrResponse> {
     const {
       base,
       body,
@@ -47,7 +47,7 @@ export class GitLabProvider implements PrProvider {
       repo,
       retries = 3,
       title,
-    } = { __proto__: null, ...options } as typeof options
+    } = { __proto__: null, ...config } as typeof config
 
     // Get project ID from owner/repo.
     const projectId = `${owner}/${repo}`
@@ -114,11 +114,11 @@ export class GitLabProvider implements PrProvider {
     )
   }
 
-  async updatePr(options: UpdatePrOptions): Promise<void> {
+  async updatePr(config: UpdatePrOptions): Promise<void> {
     const { owner, prNumber, repo } = {
       __proto__: null,
-      ...options,
-    } as typeof options
+      ...config,
+    } as typeof config
 
     const projectId = `${owner}/${repo}`
 
@@ -155,14 +155,14 @@ export class GitLabProvider implements PrProvider {
     }
   }
 
-  async listPrs(options: ListPrsOptions): Promise<PrMatch[]> {
+  async listPrs(config: ListPrsOptions): Promise<PrMatch[]> {
     const {
       author,
       ghsaId,
       owner,
       repo,
       states: statesValue = 'all',
-    } = { __proto__: null, ...options } as typeof options
+    } = { __proto__: null, ...config } as typeof config
     const checkAuthor = isNonEmptyString(author)
     const matches: PrMatch[] = []
     const projectId = `${owner}/${repo}`
@@ -245,11 +245,11 @@ export class GitLabProvider implements PrProvider {
     /* c8 ignore stop */
   }
 
-  async addComment(options: AddCommentOptions): Promise<void> {
+  async addComment(config: AddCommentOptions): Promise<void> {
     const { body, owner, prNumber, repo } = {
       __proto__: null,
-      ...options,
-    } as typeof options
+      ...config,
+    } as typeof config
     const projectId = `${owner}/${repo}`
 
     try {

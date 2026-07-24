@@ -25,7 +25,9 @@ import { defineHandoffCommand } from '../../util/cli/define-handoff.mts'
  *
  * @param invokedAs - The alias name used to invoke the command (e.g., 'pip3').
  */
-export async function getPipBinName(invokedAs?: string): Promise<string> {
+export async function getPipBinName(
+  invokedAs?: string | undefined,
+): Promise<string> {
   const requested = invokedAs === 'pip3' ? invokedAs : 'pip'
   const fallback = requested === 'pip' ? 'pip3' : 'pip'
 

@@ -56,7 +56,7 @@ export function argvObjectToArray(argvObj: ArgvObject): string[] {
     } else if (value === true) {
       result.push(`--${key}`)
     } else if (typeof value === 'string') {
-      result.push(`--${key}`, String(value))
+      result.push(`--${key}`, value)
     } else if (Array.isArray(value)) {
       result.push(`--${key}`, ...value.map(String))
     }

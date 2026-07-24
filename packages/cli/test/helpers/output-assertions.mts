@@ -1,6 +1,7 @@
 /**
- * @file Output assertion helpers for Socket CLI tests. Provides fluent
- *   assertion API for validating CLI output, error messages, and exit codes.
+ * @file Standalone output assertion helpers for Socket CLI tests. Validates
+ *   CLI output shape, error messages, and exit codes. The fluent
+ *   `OutputAssertion` builder lives in `./output-assertion-builder.mts`.
  */
 
 import { expect } from 'vitest'
@@ -10,218 +11,29 @@ import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import type { CliExecutionResult } from './cli-execution.mts'
 
 /**
- * Fluent assertion builder for CLI output validation.
- */
-export class OutputAssertion {
-  private readonly result: CliExecutionResult
-
-  constructor(result: CliExecutionResult) {
-    this.result = result
-  }
-
-  /**
-   * Assert stdout contains expected text.
-   */
-  stdoutContains(expected: string | RegExp, message?: string): this {
-    if (typeof expected === 'string') {
-      expect(this.result.stdout, message).toContain(expected)
-    } else {
-      expect(this.result.stdout, message).toMatch(expected)
-    }
-    return this
-  }
-
-  /**
-   * Assert stdout does not contain text.
-   */
-  stdoutNotContains(notExpected: string | RegExp, message?: string): this {
-    if (typeof notExpected === 'string') {
-      expect(this.result.stdout, message).not.toContain(notExpected)
-    } else {
-      expect(this.result.stdout, message).not.toMatch(notExpected)
-    }
-    return this
-  }
-
-  /**
-   * Assert stdout equals exact text.
-   */
-  stdoutEquals(expected: string, message?: string): this {
-    expect(this.result.stdout, message).toBe(expected)
-    return this
-  }
-
-  /**
-   * Assert stdout is empty.
-   */
-  stdoutEmpty(message?: string): this {
-    expect(this.result.stdout, message).toBe('')
-    return this
-  }
-
-  /**
-   * Assert stderr contains expected text.
-   */
-  stderrContains(expected: string | RegExp, message?: string): this {
-    if (typeof expected === 'string') {
-      expect(this.result.stderr, message).toContain(expected)
-    } else {
-      expect(this.result.stderr, message).toMatch(expected)
-    }
-    return this
-  }
-
-  /**
-   * Assert stderr does not contain text.
-   */
-  stderrNotContains(notExpected: string | RegExp, message?: string): this {
-    if (typeof notExpected === 'string') {
-      expect(this.result.stderr, message).not.toContain(notExpected)
-    } else {
-      expect(this.result.stderr, message).not.toMatch(notExpected)
-    }
-    return this
-  }
-
-  /**
-   * Assert stderr equals exact text.
-   */
-  stderrEquals(expected: string, message?: string): this {
-    expect(this.result.stderr, message).toBe(expected)
-    return this
-  }
-
-  /**
-   * Assert stderr is empty.
-   */
-  stderrEmpty(message?: string): this {
-    expect(this.result.stderr, message).toBe('')
-    return this
-  }
-
-  /**
-   * Assert combined output (stdout + stderr) contains text.
-   */
-  outputContains(expected: string | RegExp, message?: string): this {
-    if (typeof expected === 'string') {
-      expect(this.result.output, message).toContain(expected)
-    } else {
-      expect(this.result.output, message).toMatch(expected)
-    }
-    return this
-  }
-
-  /**
-   * Assert exit code equals expected value.
-   */
-  exitCode(expected: number, message?: string): this {
-    expect(this.result.code, message).toBe(expected)
-    return this
-  }
-
-  /**
-   * Assert command succeeded (exit code 0)
-   */
-  succeeded(message?: string): this {
-    expect(this.result.status, message).toBe(true)
-    expect(this.result.code, message).toBe(0)
-    return this
-  }
-
-  /**
-   * Assert command failed (non-zero exit code)
-   */
-  failed(message?: string): this {
-    expect(this.result.status, message).toBe(false)
-    expect(this.result.code, message).not.toBe(0)
-    return this
-  }
-
-  /**
-   * Assert error was thrown.
-   */
-  hasError(message?: string): this {
-    expect(this.result.error, message).toBeDefined()
-    return this
-  }
-
-  /**
-   * Assert error message contains text.
-   */
-  errorContains(expected: string | RegExp, message?: string): this {
-    expect(this.result.error, message).toBeDefined()
-    if (typeof expected === 'string') {
-      expect(this.result.error?.message, message).toContain(expected)
-    } else {
-      expect(this.result.error?.message, message).toMatch(expected)
-    }
-    return this
-  }
-
-  /**
-   * Assert output matches snapshot.
-   */
-  matchesSnapshot(snapshotName?: string): this {
-    if (snapshotName) {
-      expect(this.result.output).toMatchSnapshot(snapshotName)
-    } else {
-      expect(this.result.output).toMatchSnapshot()
-    }
-    return this
-  }
-
-  /**
-   * Assert stdout matches snapshot.
-   */
-  stdoutMatchesSnapshot(snapshotName?: string): this {
-    if (snapshotName) {
-      expect(this.result.stdout).toMatchSnapshot(snapshotName)
-    } else {
-      expect(this.result.stdout).toMatchSnapshot()
-    }
-    return this
-  }
-
-  /**
-   * Assert stderr matches snapshot.
-   */
-  stderrMatchesSnapshot(snapshotName?: string): this {
-    if (snapshotName) {
-      expect(this.result.stderr).toMatchSnapshot(snapshotName)
-    } else {
-      expect(this.result.stderr).toMatchSnapshot()
-    }
-    return this
-  }
-
-  /**
-   * Get the raw result for custom assertions.
-   */
-  get raw(): CliExecutionResult {
-    return this.result
-  }
-}
-
-/**
- * Validate dry-run test output to prevent flipped snapshots. Dry-run tests
- * should ALWAYS have output starting with "[DryRun]:" If the snapshot gets
- * flipped (expected="" received="[DryRun]:..."), this will catch it.
+ * Validate dry-run test output to prevent flipped snapshots. Under the CLI's
+ * stream discipline (stdout carries only the payload; status output routes to
+ * stderr) the "[DryRun]:" marker is emitted on STDERR, at column 0 after the
+ * banner. Dry-run tests pass `stderr` here and this guard requires a line
+ * starting with "[DryRun]:". If the snapshot gets flipped (expected=""
+ * received="[DryRun]:..."), this will catch it.
  *
- * @param output - CLI output string.
+ * @param output - CLI stderr output string.
  * @param snapshotValue - The value from toMatchInlineSnapshot.
  *
  * @throws Error if snapshot appears to be flipped
  */
 export function expectDryRunOutput(
   output: string,
-  snapshotValue?: string,
+  snapshotValue?: string | undefined,
 ): void {
-  // Output should always start with [DryRun]: for dry-run tests.
-  const startsWithDryRun = output.startsWith('[DryRun]:')
+  // Output should always contain a line starting with [DryRun]: for dry-run
+  // tests (the banner precedes it on stderr, so not startsWith on the blob).
+  const hasDryRunLine = /^\[DryRun\]:/m.test(output)
 
-  if (!startsWithDryRun) {
+  if (!hasDryRunLine) {
     throw new Error(
-      `Expected dry-run output to start with "[DryRun]:" but got: ${output.slice(0, 100)}`,
+      `Expected dry-run output to contain a line starting with "[DryRun]:" but got: ${output.slice(0, 100)}`,
     )
   }
 
@@ -240,12 +52,12 @@ export function expectDryRunOutput(
       )
     }
 
-    // Snapshot should start with [DryRun]: if output does.
-    const snapshotStartsWithDryRun =
-      snapshotValue.startsWith('[DryRun]:') ||
+    // Snapshot should carry the [DryRun]: line if output does.
+    const snapshotHasDryRunLine =
+      /^\[DryRun\]:/m.test(snapshotValue) ||
       snapshotValue.startsWith('"[DryRun]:')
 
-    if (!snapshotStartsWithDryRun) {
+    if (!snapshotHasDryRunLine) {
       throw new Error(
         'FLIPPED SNAPSHOT DETECTED!\n\n' +
           `The snapshot does not start with "[DryRun]:" but the actual output does.\n` +
@@ -259,7 +71,7 @@ export function expectDryRunOutput(
   }
 
   // If we get here, the snapshot looks correct.
-  expect(output).toMatch(/^\[DryRun\]:/)
+  expect(output).toMatch(/^\[DryRun\]:/m)
 }
 
 /**
@@ -380,27 +192,6 @@ export function expectOrderedPatterns(
 }
 
 /**
- * Create fluent assertion builder for CLI output validation.
- *
- * @example
- *   ;```typescript
- *   const result = await executeCliCommand(['scan', '--help'])
- *   expectOutput(result)
- *     .succeeded()
- *     .stdoutContains('Usage')
- *     .stdoutContains('Options')
- *     .stderrEmpty()
- *   ```
- *
- * @param result - CLI execution result.
- *
- * @returns Fluent assertion builder
- */
-export function expectOutput(result: CliExecutionResult): OutputAssertion {
-  return new OutputAssertion(result)
-}
-
-/**
  * Assert stdout contains all expected strings.
  *
  * @example
@@ -483,9 +274,9 @@ export function expectTableStructure(output: string): void {
  *
  * @returns Parsed JSON object
  */
-export function expectValidJson<T = unknown>(output: string): T {
+export function expectValidJson(output: string): unknown {
   try {
-    return JSON.parse(output) as T
+    return JSON.parse(output)
   } catch (e) {
     throw new Error(
       `Expected valid JSON but got parse error: ${errorMessage(e)}\nOutput: ${output}`,

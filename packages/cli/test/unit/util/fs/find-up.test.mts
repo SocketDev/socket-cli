@@ -15,6 +15,8 @@ import path from 'node:path'
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
+
 import { findUp } from '../../../../src/util/fs/find-up.mts'
 
 describe('find-up', () => {
@@ -38,10 +40,10 @@ describe('find-up', () => {
     mkdirSync(path.join(level1, 'target-dir'), { recursive: true })
   })
 
-  afterAll(() => {
+  afterAll(async () => {
     // Clean up test directory.
     if (existsSync(testRoot)) {
-      rmSync(testRoot, { recursive: true, force: true })
+      await safeDelete(testRoot)
     }
   })
 

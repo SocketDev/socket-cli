@@ -76,40 +76,34 @@ describe('util/config', () => {
       // Stringy bool tracks the not-pre-validated path; the function still
       // accepts the value but emits a logger.warn telling the user that
       // they probably meant a real boolean.
-      const result = updateConfigValue('defaultOrg', 'true' as unknown)
+      const result = updateConfigValue('defaultOrg', 'true')
       expect(result.ok).toBe(true)
     })
 
     it('warns when value is the string "false"', () => {
-      const result = updateConfigValue('defaultOrg', 'false' as unknown)
+      const result = updateConfigValue('defaultOrg', 'false')
       expect(result.ok).toBe(true)
     })
 
     it('warns when value is the string "undefined"', () => {
-      const result = updateConfigValue('defaultOrg', 'undefined' as unknown)
+      const result = updateConfigValue('defaultOrg', 'undefined')
       expect(result.ok).toBe(true)
     })
 
     it('handles skipAskToPersistDefaultOrg=true correctly', () => {
-      const result = updateConfigValue(
-        'skipAskToPersistDefaultOrg',
-        'true' as unknown,
-      )
+      const result = updateConfigValue('skipAskToPersistDefaultOrg', 'true')
       expect(result.ok).toBe(true)
     })
 
     it('handles skipAskToPersistDefaultOrg=false correctly', () => {
-      const result = updateConfigValue(
-        'skipAskToPersistDefaultOrg',
-        'false' as unknown,
-      )
+      const result = updateConfigValue('skipAskToPersistDefaultOrg', 'false')
       expect(result.ok).toBe(true)
     })
 
     it('deletes skipAskToPersistDefaultOrg on non-bool value', () => {
       const result = updateConfigValue(
         'skipAskToPersistDefaultOrg',
-        'something' as unknown,
+        'something',
       )
       expect(result.ok).toBe(true)
     })
@@ -134,16 +128,6 @@ describe('util/config', () => {
       expect(result.ok).toBe(true)
       if (result.ok) {
         expect(result.data).toBeUndefined()
-      }
-    })
-
-    it('coerces non-string token via String()', () => {
-      overrideCachedConfig({})
-      overrideConfigApiToken(12_345 as unknown)
-      const result = getConfigValue('apiToken')
-      expect(result.ok).toBe(true)
-      if (result.ok) {
-        expect(result.data).toBe('12345')
       }
     })
   })
@@ -283,31 +267,22 @@ describe('util/config', () => {
 
     it('handles skipAskToPersistDefaultOrg with string "true"', () => {
       resetConfigForTesting()
-      const r = updateConfigValue(
-        'skipAskToPersistDefaultOrg',
-        'true' as unknown,
-      )
+      const r = updateConfigValue('skipAskToPersistDefaultOrg', 'true')
       expect(r.ok).toBe(true)
     })
 
     it('handles skipAskToPersistDefaultOrg with string "false"', () => {
       resetConfigForTesting()
-      const r = updateConfigValue(
-        'skipAskToPersistDefaultOrg',
-        'false' as unknown,
-      )
+      const r = updateConfigValue('skipAskToPersistDefaultOrg', 'false')
       expect(r.ok).toBe(true)
     })
 
     it('deletes skipAskToPersistDefaultOrg when value is unrecognized', () => {
       resetConfigForTesting()
       // Set it first.
-      updateConfigValue('skipAskToPersistDefaultOrg', 'true' as unknown)
+      updateConfigValue('skipAskToPersistDefaultOrg', 'true')
       // Now pass an unrecognized value — should delete the key.
-      const result = updateConfigValue(
-        'skipAskToPersistDefaultOrg',
-        'maybe' as unknown,
-      )
+      const result = updateConfigValue('skipAskToPersistDefaultOrg', 'maybe')
       expect(result.ok).toBe(true)
     })
   })

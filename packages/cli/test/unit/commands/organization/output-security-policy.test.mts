@@ -392,7 +392,7 @@ describe('outputSecurityPolicy', () => {
     }
 
     process.exitCode = undefined
-    await outputSecurityPolicy(result as unknown, 'json')
+    await outputSecurityPolicy(result, 'json')
 
     expect(process.exitCode).toBe(1)
   })

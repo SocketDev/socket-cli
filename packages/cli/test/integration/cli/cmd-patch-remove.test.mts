@@ -19,6 +19,7 @@ import { describe, expect } from 'vitest'
 
 import { FLAG_CONFIG, FLAG_HELP } from '../../../src/constants/cli.mts'
 import { getBinCliPath } from '../../../src/constants/paths.mts'
+import { withTempFixture } from '../../helpers/test-fixtures.mts'
 import { cmdit, spawnSocketCli, testPath } from '../../utils.mts'
 
 const binCliPath = getBinCliPath()
@@ -85,12 +86,26 @@ describe('socket patch remove', async () => {
     ],
     'should support --skip-rollback flag',
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      const output = stdout + stderr
-      // With --skip-rollback, socket-patch only updates manifest.
-      // May show removed, not found, or other status.
-      expect(output).toMatch(/removed|not found|manifest|error/i)
-      expect(typeof code).toBe('number')
+      // `patch remove` deletes the entry from .socket/manifest.json (and GCs
+      // blobs), so run against a temp copy to keep the committed fixture
+      // pristine.
+      const { cleanup, tempDir } = await withTempFixture(pnpmFixtureDir)
+      try {
+        const isolatedCmd = cmd.map(arg =>
+          arg === pnpmFixtureDir ? tempDir : arg,
+        )
+        const { code, stderr, stdout } = await spawnSocketCli(
+          binCliPath,
+          isolatedCmd,
+        )
+        const output = stdout + stderr
+        // With --skip-rollback, socket-patch only updates manifest.
+        // May show removed, not found, or other status.
+        expect(output).toMatch(/removed|not found|manifest|error/i)
+        expect(typeof code).toBe('number')
+      } finally {
+        await cleanup()
+      }
     },
   )
 })

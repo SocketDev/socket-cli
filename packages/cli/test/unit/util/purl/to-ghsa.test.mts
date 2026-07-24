@@ -52,7 +52,7 @@ describe('convertPurlToGhsas', () => {
       name: 'some-package',
       type: 'unsupported-ecosystem',
       version: '1.0.0',
-    } as unknown)
+    })
 
     const result = await convertPurlToGhsas(
       'pkg:unsupported/some-package@1.0.0',
@@ -69,7 +69,7 @@ describe('convertPurlToGhsas', () => {
       name: 'lodash',
       type: 'npm',
       version: '4.17.20',
-    } as unknown)
+    })
 
     const mockOctokit = {
       rest: {
@@ -78,7 +78,7 @@ describe('convertPurlToGhsas', () => {
         },
       },
     }
-    mockGetOctokit.mockReturnValue(mockOctokit as unknown)
+    mockGetOctokit.mockReturnValue(mockOctokit)
 
     mockCacheFetch.mockImplementation(async (_key, _fn) => {
       return {
@@ -106,7 +106,7 @@ describe('convertPurlToGhsas', () => {
       name: 'requests',
       type: 'pypi',
       version: '2.31.0',
-    } as unknown)
+    })
 
     const mockOctokit = {
       rest: {
@@ -115,7 +115,7 @@ describe('convertPurlToGhsas', () => {
         },
       },
     }
-    mockGetOctokit.mockReturnValue(mockOctokit as unknown)
+    mockGetOctokit.mockReturnValue(mockOctokit)
 
     mockCacheFetch.mockImplementation(async (_key, fn) => {
       // Call the function to verify correct parameters.
@@ -138,7 +138,7 @@ describe('convertPurlToGhsas', () => {
       name: 'express',
       type: 'npm',
       version: undefined,
-    } as unknown)
+    })
 
     const mockOctokit = {
       rest: {
@@ -147,7 +147,7 @@ describe('convertPurlToGhsas', () => {
         },
       },
     }
-    mockGetOctokit.mockReturnValue(mockOctokit as unknown)
+    mockGetOctokit.mockReturnValue(mockOctokit)
 
     mockCacheFetch.mockImplementation(async (_key, fn) => {
       await fn()
@@ -173,7 +173,7 @@ describe('convertPurlToGhsas', () => {
       name: 'tokio',
       type: 'cargo',
       version: '1.0.0',
-    } as unknown)
+    })
 
     const mockOctokit = {
       rest: {
@@ -182,7 +182,7 @@ describe('convertPurlToGhsas', () => {
         },
       },
     }
-    mockGetOctokit.mockReturnValue(mockOctokit as unknown)
+    mockGetOctokit.mockReturnValue(mockOctokit)
 
     mockCacheFetch.mockImplementation(async (_key, fn) => {
       await fn()
@@ -204,7 +204,7 @@ describe('convertPurlToGhsas', () => {
       name: 'rails',
       type: 'gem',
       version: '7.0.0',
-    } as unknown)
+    })
 
     const mockOctokit = {
       rest: {
@@ -213,7 +213,7 @@ describe('convertPurlToGhsas', () => {
         },
       },
     }
-    mockGetOctokit.mockReturnValue(mockOctokit as unknown)
+    mockGetOctokit.mockReturnValue(mockOctokit)
 
     mockCacheFetch.mockImplementation(async (_key, fn) => {
       await fn()
@@ -235,9 +235,9 @@ describe('convertPurlToGhsas', () => {
       name: 'package',
       type: 'npm',
       version: '1.0.0',
-    } as unknown)
+    })
 
-    mockGetOctokit.mockReturnValue({} as unknown)
+    mockGetOctokit.mockReturnValue({})
     mockCacheFetch.mockRejectedValue(new Error('API rate limit exceeded'))
 
     const result = await convertPurlToGhsas('pkg:npm/package@1.0.0')
@@ -253,9 +253,9 @@ describe('convertPurlToGhsas', () => {
       name: 'safe-package',
       type: 'npm',
       version: '1.0.0',
-    } as unknown)
+    })
 
-    mockGetOctokit.mockReturnValue({} as unknown)
+    mockGetOctokit.mockReturnValue({})
     mockCacheFetch.mockResolvedValue({ data: [] })
 
     const result = await convertPurlToGhsas('pkg:npm/safe-package@1.0.0')
@@ -282,7 +282,7 @@ describe('convertPurlToGhsas', () => {
         },
       },
     }
-    mockGetOctokit.mockReturnValue(mockOctokit as unknown)
+    mockGetOctokit.mockReturnValue(mockOctokit)
     mockCacheFetch.mockImplementation(async (_key, fn) => {
       await fn()
       return { data: [] }
@@ -293,7 +293,7 @@ describe('convertPurlToGhsas', () => {
         name: 'test-package',
         type: purl,
         version: '1.0.0',
-      } as unknown)
+      })
 
       await convertPurlToGhsas(`pkg:${purl}/test-package@1.0.0`)
 

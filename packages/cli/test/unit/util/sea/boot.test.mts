@@ -48,7 +48,7 @@ describe('sea/boot', () => {
       sendBootstrapHandshake(childProcess, ipcData)
 
       expect(mockSend).toHaveBeenCalledTimes(1)
-      const sentMessage = mockSend.mock.calls[0]![0]
+      const sentMessage = mockSend.mock.calls[0][0]
       expect(sentMessage).toHaveProperty(SOCKET_IPC_HANDSHAKE)
       expect(sentMessage[SOCKET_IPC_HANDSHAKE]).toEqual(ipcData)
     })
@@ -65,7 +65,7 @@ describe('sea/boot', () => {
 
       sendBootstrapHandshake(childProcess, ipcData)
 
-      const sentMessage = mockSend.mock.calls[0]![0]
+      const sentMessage = mockSend.mock.calls[0][0]
       expect(sentMessage[SOCKET_IPC_HANDSHAKE]).toEqual(ipcData)
     })
   })
@@ -95,7 +95,7 @@ describe('sea/boot', () => {
       const originalOff = process.off
 
       Object.defineProperty(process, 'channel', {
-        value: {} as unknown,
+        value: {},
         writable: true,
         configurable: true,
       })
@@ -135,7 +135,7 @@ describe('sea/boot', () => {
       const originalOff = process.off
 
       Object.defineProperty(process, 'channel', {
-        value: {} as unknown,
+        value: {},
         writable: true,
         configurable: true,
       })
@@ -168,7 +168,7 @@ describe('sea/boot', () => {
       const originalOff = process.off
 
       Object.defineProperty(process, 'channel', {
-        value: {} as unknown,
+        value: {},
         writable: true,
         configurable: true,
       })

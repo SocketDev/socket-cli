@@ -122,7 +122,7 @@ export async function run(
 
   const {
     all,
-    direction = 'desc',
+    direction,
     dryRun,
     interactive,
     json,

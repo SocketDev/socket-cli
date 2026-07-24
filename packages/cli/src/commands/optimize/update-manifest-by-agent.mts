@@ -125,7 +125,7 @@ export function updatePkgJsonField(
             ...(isPnpmObj ? oldValue : {}),
             [OVERRIDES]: value,
           },
-        } as typeof editablePkgJson.content)
+        })
       } else if (isPnpmObj) {
         // Drop the overrides key but keep the rest of the pnpm config.
         const { overrides: _omitted, ...rest } = oldValue as Record<
@@ -134,17 +134,17 @@ export function updatePkgJsonField(
         >
         editablePkgJson.update({
           [field]: hasKeys(rest) ? rest : undefined,
-        } as typeof editablePkgJson.content)
+        })
       } else {
         editablePkgJson.update({
           [field]: undefined,
-        } as typeof editablePkgJson.content)
+        })
       }
     } else if (field === OVERRIDES || field === RESOLUTIONS) {
       // Properties with undefined values are deleted when saved as JSON.
       editablePkgJson.update({
         [field]: hasKeys(value) ? value : undefined,
-      } as typeof editablePkgJson.content)
+      })
     } else {
       editablePkgJson.update({ [field]: value })
     }

@@ -74,7 +74,7 @@ export async function run(
   // Feature request: Implement json/markdown output for wrapper command status.
   const { json, markdown } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
   let enable = false
   let disable = false

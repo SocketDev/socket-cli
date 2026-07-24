@@ -317,7 +317,7 @@ describe('cmd-logout', () => {
 
     describe('edge cases', () => {
       it('should handle readonly argv array', async () => {
-        const readonlyArgv = Object.freeze(['--dry-run']) as readonly string[]
+        const readonlyArgv = Object.freeze(['--dry-run'])
 
         await cmdLogout.run(readonlyArgv, importMeta, context)
 

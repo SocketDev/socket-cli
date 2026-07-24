@@ -202,7 +202,7 @@ export async function detectPackageEnvironment({
     typeof pkgJsonPath === 'string' &&
     typeof lockName === 'string'
   ) {
-    agent = LOCKS[lockName] as Agent
+    agent = LOCKS[lockName]
   }
   if (agent === undefined) {
     agent = NPM

@@ -355,11 +355,7 @@ describe('fetchCreateOrgFullScan', () => {
       workspace: 'workspace-1',
     }
 
-    await fetchCreateOrgFullScan(
-      ['/p/package.json'],
-      'my-org',
-      config as unknown,
-    )
+    await fetchCreateOrgFullScan(['/p/package.json'], 'my-org', config)
 
     const callArgs = mockSdk.createFullScan.mock.calls[0]![2]
     expect(callArgs.scan_type).toBe('tier1')

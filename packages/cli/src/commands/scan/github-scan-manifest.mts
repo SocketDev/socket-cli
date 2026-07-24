@@ -31,10 +31,7 @@ export async function cleanupPartialDownload(localPath: string): Promise<void> {
     await safeDelete(localPath, { force: true })
   } catch (e) {
     logger.fail(
-      formatErrorWithDetail(
-        `Error deleting partial file ${localPath}`,
-        e as NodeJS.ErrnoException,
-      ),
+      formatErrorWithDetail(`Error deleting partial file ${localPath}`, e),
     )
   }
 }

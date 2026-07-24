@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import { debugDir, debugNs } from '@socketsecurity/lib-stable/debug/output'
+import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/default'
 import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
@@ -150,7 +151,7 @@ export async function handleCreateNewScan({
   }
   debugNs(
     'notice',
-    `Fetched ${supportedFilesCResult.data['size']} supported file types`,
+    `Fetched supported file types for ${Object.keys(supportedFilesCResult.data).length} ecosystems`,
   )
 
   spinner.start('Searching for local files to include in scan…')
@@ -206,6 +207,7 @@ export async function handleCreateNewScan({
 
   let scanPaths: string[] = packagePaths
   let tier1ReachabilityScanId: string | undefined
+  let reachabilityReport: string | undefined
 
   // If reachability is enabled, perform reachability analysis.
   if (reach.runReachabilityAnalysis) {
@@ -249,7 +251,7 @@ export async function handleCreateNewScan({
 
     logger.success('Reachability analysis completed successfully')
 
-    const reachabilityReport = reachResult.data?.reachabilityReport
+    reachabilityReport = reachResult.data?.reachabilityReport
 
     scanPaths = [
       ...excludeFactsJson(packagePaths),
@@ -345,6 +347,12 @@ export async function handleCreateNewScan({
 
   if (reach && scanId && tier1ReachabilityScanId) {
     await finalizeTier1Scan(tier1ReachabilityScanId, scanId)
+  }
+
+  if (fullScanCResult.ok && reachabilityReport) {
+    // The facts file is an upload artifact, not user-facing output — remove
+    // it once the scan is submitted so it doesn't linger in the project.
+    await safeDelete(path.resolve(cwd, reachabilityReport), { force: true })
   }
 
   if (report && fullScanCResult.ok) {

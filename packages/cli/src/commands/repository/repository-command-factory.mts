@@ -7,7 +7,7 @@ import {
   outputDryRunFetch,
   outputDryRunUpload,
 } from '../../util/dry-run/output.mts'
-import { commonFlags, outputFlags } from '../../flags.mts'
+import { commonFlags, outputFlags, stringFlagValue } from '../../flags.mts'
 import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
@@ -126,7 +126,7 @@ ${spec.helpExamples.map(ex => `      $ ${command} ${ex}`).join('\n')}
       const hasApiToken = hasDefaultApiToken()
 
       const { 0: orgSlug } = await determineOrgSlug(
-        String(orgFlag || ''),
+        stringFlagValue(orgFlag),
         interactive,
         dryRun,
       )

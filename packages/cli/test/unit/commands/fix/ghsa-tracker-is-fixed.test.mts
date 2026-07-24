@@ -78,7 +78,7 @@ describe('ghsa-tracker', () => {
 
     it('returns false when tracker shape is invalid (fixed.some throws)', async () => {
       // Resolve to a malformed tracker so .fixed.some() throws.
-      mockReadJson.mockResolvedValue({ version: 1 } as unknown)
+      mockReadJson.mockResolvedValue({ version: 1 })
 
       const result = await isGhsaFixed(mockCwd, 'GHSA-1234-5678-90ab')
 

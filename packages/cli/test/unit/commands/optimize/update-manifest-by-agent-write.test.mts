@@ -25,6 +25,7 @@ import {
 } from '../../../../src/commands/optimize/update-manifest-by-agent.mts'
 
 import type { EditablePackageJson } from '@socketsecurity/lib-stable/packages/types'
+import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
 describe('update-manifest-by-agent', () => {
   const createEditablePkgJson = (content: Record<string, unknown> = {}) => {
@@ -192,8 +193,8 @@ describe('update-manifest-by-agent', () => {
         )
       })
 
-      afterEach(() => {
-        rmSync(tmpDir, { force: true, recursive: true })
+      afterEach(async () => {
+        await safeDelete(tmpDir)
       })
 
       it('writes overrides to pnpm-workspace.yaml when pnpm@11+', async () => {

@@ -244,10 +244,10 @@ describe('downloadGitHubReleaseBinary', () => {
     })
     // setTimeout: bypass the actual 1s wait.
     const realSetTimeout = globalThis.setTimeout
-    ;(globalThis as { setTimeout: unknown }).setTimeout = ((cb: () => void) => {
+    ;(globalThis as { setTimeout: unknown }).setTimeout = (cb: () => void) => {
       cb()
       return 0 as never
-    }) as never
+    }
     const realKill = process.kill
     // alive: kill returns true without throwing.
     ;(process as { kill: unknown }).kill = vi.fn(() => true)
@@ -283,10 +283,10 @@ describe('downloadGitHubReleaseBinary', () => {
       return existsCount >= 10
     })
     const realSetTimeout = globalThis.setTimeout
-    ;(globalThis as { setTimeout: unknown }).setTimeout = ((cb: () => void) => {
+    ;(globalThis as { setTimeout: unknown }).setTimeout = (cb: () => void) => {
       cb()
       return 0 as never
-    }) as never
+    }
     const realKill = process.kill
     let killCount = 0
     ;(process as { kill: unknown }).kill = vi.fn(() => {
@@ -331,10 +331,10 @@ describe('downloadGitHubReleaseBinary', () => {
       return '99999'
     })
     const realSetTimeout = globalThis.setTimeout
-    ;(globalThis as { setTimeout: unknown }).setTimeout = ((cb: () => void) => {
+    ;(globalThis as { setTimeout: unknown }).setTimeout = (cb: () => void) => {
       cb()
       return 0 as never
-    }) as never
+    }
 
     try {
       await downloadGitHubReleaseBinary(baseSpec).catch(() => {})
@@ -404,10 +404,10 @@ describe('downloadGitHubReleaseBinary', () => {
 
     // setTimeout: bypass the actual 1s polls so reaching i = 4 is instant.
     const realSetTimeout = globalThis.setTimeout
-    ;(globalThis as { setTimeout: unknown }).setTimeout = ((cb: () => void) => {
+    ;(globalThis as { setTimeout: unknown }).setTimeout = (cb: () => void) => {
       cb()
       return 0 as never
-    }) as never
+    }
 
     try {
       const result = await downloadGitHubReleaseBinary(baseSpec)

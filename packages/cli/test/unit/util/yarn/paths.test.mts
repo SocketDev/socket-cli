@@ -49,9 +49,9 @@ describe('yarn-paths utilities', () => {
     // Store original process.exit.
     originalExit = process.exit
     // Mock process.exit to prevent actual exits.
-    process.exit = vi.fn((code?: number) => {
+    process.exit = vi.fn((code?: number | undefined) => {
       throw new Error(`process.exit(${code})`)
-    }) as unknown
+    })
 
     // Re-import functions after module reset to clear caches.
     const yarnPaths = await import('../../../../src/util/yarn/paths.mts')

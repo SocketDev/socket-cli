@@ -145,7 +145,7 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
     return
   }
 
-  describe(`${binary.name}`, () => {
+  describe(binary.name, () => {
     let binaryExists = false
 
     beforeAll(async () => {
@@ -180,7 +180,7 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
 
       // Check authentication.
       if (ENV.RUN_E2E_TESTS) {
-        const apiToken = await getDefaultApiToken()
+        const apiToken = getDefaultApiToken()
         if (!apiToken) {
           logger.log('')
           logger.warn('E2E tests require Socket authentication.')

@@ -70,8 +70,8 @@ export async function run(
     importMeta,
   })
 
-  const dryRun = !!cli.flags['dryRun']
-  const autoManifest = Boolean(cli.flags['autoManifest'])
+  const dryRun = cli.flags['dryRun']
+  const autoManifest = cli.flags['autoManifest']
 
   if (dryRun) {
     const orgSlugCResult = await getDefaultOrgSlug()

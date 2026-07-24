@@ -188,7 +188,7 @@ export class OAuthIntrospector {
       return { ok: false }
     }
     const missing = this.requiredScopes.filter(
-      s => !authInfo!.scopes.includes(s),
+      s => !authInfo.scopes.includes(s),
     )
     if (missing.length > 0) {
       writeOAuthError(

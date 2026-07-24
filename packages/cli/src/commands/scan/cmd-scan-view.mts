@@ -44,12 +44,6 @@ export async function run(
     flags: defineFlags({
       ...commonFlags,
       ...outputFlags,
-      stream: {
-        type: 'boolean',
-        default: false,
-        description:
-          'Only valid with --json. Streams the response as "ndjson" (chunks of valid json blobs).',
-      },
       interactive: {
         type: 'boolean',
         default: true,
@@ -60,6 +54,12 @@ export async function run(
         type: 'string',
         description:
           'Force override the organization slug, overrides the default org from config',
+      },
+      stream: {
+        type: 'boolean',
+        default: false,
+        description:
+          'Only valid with --json. Streams the response as "ndjson" (chunks of valid json blobs).',
       },
     }),
     help: (command: string, helpConfig: { flags: MeowFlags }) => `
@@ -89,16 +89,16 @@ export async function run(
 
   const { json, markdown, org: orgFlag, stream } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
-  const interactive = !!cli.flags['interactive']
+  const interactive = cli.flags['interactive']
 
   const [scanId = '', file = ''] = cli.input
 
   const hasApiToken = hasDefaultApiToken()
 
   const { 0: orgSlug } = await determineOrgSlug(
-    String(orgFlag || ''),
+    orgFlag || '',
     interactive,
     dryRun,
   )
@@ -132,7 +132,7 @@ export async function run(
     },
     {
       nook: true,
-      test: !stream || !!json,
+      test: !stream || json,
       message: 'You can only use --stream when using --json',
       fail: 'Either remove --stream or add --json',
     },
@@ -145,7 +145,7 @@ export async function run(
     outputDryRunFetch('scan details', {
       organization: orgSlug,
       scanId,
-      stream: !!stream || undefined,
+      stream: stream || undefined,
     })
     return
   }

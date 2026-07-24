@@ -24,7 +24,9 @@ export function extractTier1ReachabilityScanId(
     return undefined
   }
   const rawValue = json['tier1ReachabilityScanId']
-  if (rawValue == null) {
+  // Scan ids are strings; tolerate numbers, but reject objects/arrays whose
+  // String() form would be a useless '[object Object]'.
+  if (typeof rawValue !== 'string' && typeof rawValue !== 'number') {
     return undefined
   }
   const tier1ReachabilityScanId = String(rawValue).trim()

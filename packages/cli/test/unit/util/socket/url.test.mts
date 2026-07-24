@@ -60,7 +60,7 @@ describe('socket-url utilities', () => {
         name: 'core',
         version: '7.0.0',
       }
-      mockGetPurlObject.mockReturnValue(purlObj as unknown)
+      mockGetPurlObject.mockReturnValue(purlObj)
 
       const result = getPkgFullNameFromPurl('pkg:npm/@babel/core@7.0.0')
       expect(result).toBe('@babel/core')
@@ -73,9 +73,9 @@ describe('socket-url utilities', () => {
         name: 'commons',
         version: '3.0',
       }
-      mockGetPurlObject.mockReturnValue(purlObj as unknown)
+      mockGetPurlObject.mockReturnValue(purlObj)
 
-      const result = getPkgFullNameFromPurl(purlObj as unknown)
+      const result = getPkgFullNameFromPurl(purlObj)
       expect(result).toBe('org.apache:commons')
     })
 
@@ -86,9 +86,9 @@ describe('socket-url utilities', () => {
         name: 'rest-framework',
         version: '3.0',
       }
-      mockGetPurlObject.mockReturnValue(purlObj as unknown)
+      mockGetPurlObject.mockReturnValue(purlObj)
 
-      const result = getPkgFullNameFromPurl(purlObj as unknown)
+      const result = getPkgFullNameFromPurl(purlObj)
       expect(result).toBe('django/rest-framework')
     })
   })
@@ -163,7 +163,7 @@ describe('socket-url utilities', () => {
         namespace: undefined,
         name: 'express',
         version: '4.18.0',
-      } as unknown)
+      })
 
       const result = getSocketDevPackageOverviewUrlFromPurl(
         'pkg:npm/express@4.18.0',

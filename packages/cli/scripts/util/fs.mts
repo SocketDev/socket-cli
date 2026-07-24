@@ -9,11 +9,11 @@ import path from 'node:path'
  * Find a file or directory by walking up parent directories. Similar to find-up
  * but synchronous and minimal.
  */
-function findUpSync(name, options) {
-  const opts = { __proto__: null, ...options }
+function findUpSync(name, config) {
+  const cfg = { __proto__: null, ...config }
   // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- caller-overridable default; callers always pass a script-anchored cwd or accept the cwd they invoke from.
-  const { cwd = process.cwd() } = opts
-  let { onlyDirectories = false, onlyFiles = true } = opts
+  const { cwd = process.cwd() } = cfg
+  let { onlyDirectories = false, onlyFiles = true } = cfg
   if (onlyDirectories) {
     onlyFiles = false
   }

@@ -98,7 +98,7 @@ describe('SDK Utilities', () => {
 
       expect(result.ok).toBe(true)
       // Get the hooks from the constructor call.
-      const sdkOptions = mockSocketSdkConstructor.mock.calls[0]![1]
+      const sdkOptions = mockSocketSdkConstructor.mock.calls[0][1]
       const { onRequest } = sdkOptions.hooks
 
       // Call onRequest with mock request info.
@@ -117,7 +117,7 @@ describe('SDK Utilities', () => {
       })
 
       expect(result.ok).toBe(true)
-      const sdkOptions = mockSocketSdkConstructor.mock.calls[0]![1]
+      const sdkOptions = mockSocketSdkConstructor.mock.calls[0][1]
       const { onRequest } = sdkOptions.hooks
 
       // Call onRequest with telemetry URL.
@@ -136,7 +136,7 @@ describe('SDK Utilities', () => {
       })
 
       expect(result.ok).toBe(true)
-      const sdkOptions = mockSocketSdkConstructor.mock.calls[0]![1]
+      const sdkOptions = mockSocketSdkConstructor.mock.calls[0][1]
       const { onResponse } = sdkOptions.hooks
 
       // Call onResponse with mock response info.
@@ -158,7 +158,7 @@ describe('SDK Utilities', () => {
       })
 
       expect(result.ok).toBe(true)
-      const sdkOptions = mockSocketSdkConstructor.mock.calls[0]![1]
+      const sdkOptions = mockSocketSdkConstructor.mock.calls[0][1]
       const { onResponse } = sdkOptions.hooks
 
       // Call onResponse with error info.
@@ -181,7 +181,7 @@ describe('SDK Utilities', () => {
       })
 
       expect(result.ok).toBe(true)
-      const sdkOptions = mockSocketSdkConstructor.mock.calls[0]![1]
+      const sdkOptions = mockSocketSdkConstructor.mock.calls[0][1]
       const { onResponse } = sdkOptions.hooks
 
       // Call onResponse with telemetry URL.
@@ -205,7 +205,7 @@ describe('SDK Utilities', () => {
       })
 
       expect(result.ok).toBe(true)
-      const sdkOptions = mockSocketSdkConstructor.mock.calls[0]![1]
+      const sdkOptions = mockSocketSdkConstructor.mock.calls[0][1]
       const { onFileValidation } = sdkOptions
 
       const validationResult = onFileValidation(['/path/to/valid.json'], [], {
@@ -221,7 +221,7 @@ describe('SDK Utilities', () => {
       })
 
       expect(result.ok).toBe(true)
-      const sdkOptions = mockSocketSdkConstructor.mock.calls[0]![1]
+      const sdkOptions = mockSocketSdkConstructor.mock.calls[0][1]
       const { onFileValidation } = sdkOptions
 
       const validationResult = onFileValidation(
@@ -239,7 +239,7 @@ describe('SDK Utilities', () => {
       })
 
       expect(result.ok).toBe(true)
-      const sdkOptions = mockSocketSdkConstructor.mock.calls[0]![1]
+      const sdkOptions = mockSocketSdkConstructor.mock.calls[0][1]
       const { onFileValidation } = sdkOptions
 
       const validationResult = onFileValidation([], ['/path/to/symlink.json'], {

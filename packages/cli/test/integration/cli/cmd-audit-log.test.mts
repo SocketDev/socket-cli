@@ -77,6 +77,7 @@ describe('socket audit-log', async () => {
                 --org               Force override the organization slug, overrides the default org from config
                 --page              Result page to fetch
                 --per-page          Results per page - default is 30
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
           
               Examples
                 $ socket audit-log
@@ -110,7 +111,7 @@ describe('socket audit-log', async () => {
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket audit-log\`, cwd: <redacted>
 
-        \\u203c Unable to determine the target org. Trying to auto-discover it now…
+        \\u203c Unable to determine the target org. Trying to auto-discover it now\\u2026
         i Note: Run \`socket login\` to set a default org.
               Use the --org flag to override the default org.
 
@@ -165,14 +166,26 @@ describe('socket audit-log', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket audit-log\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket audit-log\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch audit log entries
+
+          Query parameters:
+            organization: fakeOrg
+            filter: any
+            page: 1
+            perPage: 30
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -193,14 +206,26 @@ describe('socket audit-log', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket audit-log\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket audit-log\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch audit log entries
+
+          Query parameters:
+            organization: forcedorg
+            filter: any
+            page: 1
+            perPage: 30
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

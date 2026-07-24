@@ -37,6 +37,7 @@ describe('socket manifest setup', async () => {
           
               Options
                 --default-on-read-error  If reading the socket.json fails, just use a default config? Warning: This might override the existing json file!
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
           
               This command will try to detect all supported ecosystems in given CWD. Then
               it starts a configurator where you can setup default values for certain flags
@@ -83,14 +84,25 @@ describe('socket manifest setup', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket manifest setup\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket manifest setup\`, cwd: <redacted>
+
+
+        [DryRun]: Would create or update manifest configuration
+
+          Target file: [PROJECT]/socket.json
+          Changes:
+            - Detect supported ecosystems
+            - Configure manifest generation defaults
+            - Enable/disable specific ecosystems
+
+          Run without --dry-run to apply these changes."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

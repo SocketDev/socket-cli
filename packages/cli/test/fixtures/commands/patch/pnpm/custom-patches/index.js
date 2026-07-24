@@ -14,12 +14,12 @@
 
 module.exports = onHeaders
 
-var http = require('http')
+const http = require('node:http')
 
 // older node versions don't have appendHeader
-var isAppendHeaderSupported =
+const isAppendHeaderSupported =
   typeof http.ServerResponse.prototype.appendHeader === 'function'
-var set1dArray = isAppendHeaderSupported
+const set1dArray = isAppendHeaderSupported
   ? set1dArrayWithAppend
   : set1dArrayWithSet
 
@@ -33,12 +33,12 @@ var set1dArray = isAppendHeaderSupported
  */
 
 function createWriteHead(prevWriteHead, listener) {
-  var fired = false
+  let fired = false
 
   // return function with core name and argument list
   return function writeHead(statusCode) {
     // set headers from arguments
-    var args = setWriteHeadHeaders.apply(this, arguments)
+    const args = setWriteHeadHeaders.apply(this, arguments)
 
     // fire listener
     if (!fired) {
@@ -111,10 +111,10 @@ function setHeadersFromArray(res, headers) {
  */
 
 function setHeadersFromObject(res, headers) {
-  var keys = Object.keys(headers)
-  for (var i = 0; i < keys.length; i++) {
-    var k = keys[i]
-    if (k) res.setHeader(k, headers[k])
+  const keys = Object.keys(headers)
+  for (let i = 0; i < keys.length; i++) {
+    const k = keys[i]
+    if (k) {res.setHeader(k, headers[k])}
   }
 }
 
@@ -127,10 +127,10 @@ function setHeadersFromObject(res, headers) {
  */
 
 function setWriteHeadHeaders(statusCode) {
-  var length = arguments.length
-  var headerIndex = length > 1 && typeof arguments[1] === 'string' ? 2 : 1
+  const length = arguments.length
+  const headerIndex = length > 1 && typeof arguments[1] === 'string' ? 2 : 1
 
-  var headers = length >= headerIndex + 1 ? arguments[headerIndex] : undefined
+  const headers = length >= headerIndex + 1 ? arguments[headerIndex] : undefined
 
   this.statusCode = statusCode
 
@@ -143,8 +143,8 @@ function setWriteHeadHeaders(statusCode) {
   }
 
   // copy leading arguments
-  var args = new Array(Math.min(length, headerIndex))
-  for (var i = 0; i < args.length; i++) {
+  const args = new Array(Math.min(length, headerIndex))
+  for (let i = 0; i < args.length; i++) {
     args[i] = arguments[i]
   }
 
@@ -152,8 +152,8 @@ function setWriteHeadHeaders(statusCode) {
 }
 
 function set2dArray(res, headers) {
-  var key
-  for (var i = 0; i < headers.length; i++) {
+  let key
+  for (let i = 0; i < headers.length; i++) {
     key = headers[i][0]
     if (key) {
       res.setHeader(key, headers[i][1])
@@ -162,12 +162,12 @@ function set2dArray(res, headers) {
 }
 
 function set1dArrayWithAppend(res, headers) {
-  for (var i = 0; i < headers.length; i += 2) {
+  for (let i = 0; i < headers.length; i += 2) {
     res.removeHeader(headers[i])
   }
 
-  var key
-  for (var j = 0; j < headers.length; j += 2) {
+  let key
+  for (let j = 0; j < headers.length; j += 2) {
     key = headers[j]
     if (key) {
       res.appendHeader(key, headers[j + 1])
@@ -176,8 +176,8 @@ function set1dArrayWithAppend(res, headers) {
 }
 
 function set1dArrayWithSet(res, headers) {
-  var key
-  for (var i = 0; i < headers.length; i += 2) {
+  let key
+  for (let i = 0; i < headers.length; i += 2) {
     key = headers[i]
     if (key) {
       res.setHeader(key, headers[i + 1])

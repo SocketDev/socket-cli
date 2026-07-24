@@ -459,7 +459,7 @@ describe('debug utilities', () => {
       expect(result['url']).toBe('https://api.x.com/x')
       expect(result['durationMs']).toBe(250)
       expect(result['requestedAt']).toBe('2026-04-18T00:00:00.000Z')
-      expect((result['headers'] as unknown)?.Authorization).toBe('[REDACTED]')
+      expect(result['headers']?.Authorization).toBe('[REDACTED]')
       expect(result['cfRay']).toBe('ray-123')
       expect(result['responseBody']).toBe('{"ok":true}')
     })

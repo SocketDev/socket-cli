@@ -143,20 +143,20 @@ export async function run(
     reportLevel,
   } = cli.flags as unknown as ScanReportFlags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
-  const interactive = !!cli.flags['interactive']
+  const interactive = cli.flags['interactive']
 
-  const includeLicensePolicy = !!cli.flags['license']
+  const includeLicensePolicy = cli.flags['license']
 
-  const short = !!cli.flags['short']
+  const short = cli.flags['short']
 
   const [scanId = '', filepath = ''] = cli.input
 
   const hasApiToken = hasDefaultApiToken()
 
   const { 0: orgSlug } = await determineOrgSlug(
-    String(orgFlag || ''),
+    orgFlag || '',
     interactive,
     dryRun,
   )

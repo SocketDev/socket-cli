@@ -53,7 +53,7 @@ export async function buildBinary(binaryType) {
   }
 
   logger.log(`${colors.blue('⚙')} Building ${binaryType} binary…`)
-  logger.log(`${colors.dim(`  ${buildCommand.join(' ')}`)}`)
+  logger.log(colors.dim(`  ${buildCommand.join(' ')}`))
   logger.log('')
 
   try {

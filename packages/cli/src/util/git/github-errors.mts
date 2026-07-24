@@ -67,7 +67,7 @@ export function handleGitHubApiError(
           waitTime = undefined
         }
       } else if (resetHeader) {
-        const resetTimestamp = Number.parseInt(String(resetHeader), 10)
+        const resetTimestamp = Number.parseInt(resetHeader, 10)
         if (!Number.isNaN(resetTimestamp)) {
           waitTime = Math.max(0, resetTimestamp - Math.floor(Date.now() / 1000))
         }

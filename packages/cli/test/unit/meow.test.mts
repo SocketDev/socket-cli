@@ -359,9 +359,9 @@ describe('meow', () => {
 
   describe('auto help/version', () => {
     it('auto-shows version when only --version is in argv and autoVersion is on', () => {
-      const mockExit = vi.spyOn(process, 'exit').mockImplementation((() => {
+      const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => {
         throw new Error('exit')
-      }) as never)
+      })
 
       try {
         expect(() =>
@@ -378,9 +378,9 @@ describe('meow', () => {
     })
 
     it('auto-shows help when only --help is in argv and autoHelp is on', () => {
-      const mockExit = vi.spyOn(process, 'exit').mockImplementation((() => {
+      const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => {
         throw new Error('exit')
-      }) as never)
+      })
 
       try {
         expect(() =>

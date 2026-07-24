@@ -144,7 +144,7 @@ const NetworkUtils = {
                 return
               }
 
-              resolve(json as { version?: string | undefined })
+              resolve(json)
               /* c8 ignore start - JSON parse failure path; tests inject pre-parsed mock responses */
             } catch (parseError) {
               const contentType = res.headers['content-type']
@@ -264,22 +264,22 @@ const NetworkUtils = {
  * registry and compares with current.
  */
 export async function checkForUpdates(
-  options: UpdateCheckOptions,
+  config: UpdateCheckOptions,
 ): Promise<UpdateCheckResult> {
   const { authInfo, name, registryUrl, version } = {
     __proto__: null,
-    ...options,
+    ...config,
   } as UpdateCheckOptions
 
   if (!isNonEmptyString(name)) {
     throw new Error(
-      `checkForUpdates options.name requires a non-empty string (got: ${typeof name === 'string' ? '""' : typeof name}); pass an npm package name like "socket" or "@socketsecurity/cli"`,
+      `checkForUpdates config.name requires a non-empty string (got: ${typeof name === 'string' ? '""' : typeof name}); pass an npm package name like "socket" or "@socketsecurity/cli"`,
     )
   }
 
   if (!isNonEmptyString(version)) {
     throw new Error(
-      `checkForUpdates options.version requires a non-empty string (got: ${typeof version === 'string' ? '""' : typeof version}); pass the currently-installed semver like "1.2.3"`,
+      `checkForUpdates config.version requires a non-empty string (got: ${typeof version === 'string' ? '""' : typeof version}); pass the currently-installed semver like "1.2.3"`,
     )
   }
 

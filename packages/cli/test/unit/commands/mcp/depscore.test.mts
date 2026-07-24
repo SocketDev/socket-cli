@@ -70,7 +70,7 @@ vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
   getDefaultApiToken: vi.fn(() => 'test_fake_token'),
 }))
 
-function makeErr(status: number, message: string, cause?: string) {
+function makeErr(status: number, message: string, cause?: string | undefined) {
   return {
     success: false as const,
     status,
@@ -134,7 +134,7 @@ describe('runDepscore — SDK setup', () => {
       { apiToken: 'test_x' },
     )
     expect(result.isError).toBe(true)
-    expect(result.content[0]!.text).toContain('SDK setup failed: no token')
+    expect(result.content[0].text).toContain('SDK setup failed: no token')
     expect(mockBatchPackageFetch).not.toHaveBeenCalled()
   })
 
@@ -173,7 +173,7 @@ describe('runDepscore — payload shaping', () => {
       { apiToken: 'test_a' },
     )
     expect(mockBatchPackageFetch).toHaveBeenCalledTimes(1)
-    const [arg, query] = mockBatchPackageFetch.mock.calls[0]!
+    const [arg, query] = mockBatchPackageFetch.mock.calls[0]
     expect(arg.components).toHaveLength(2)
     expect(arg.components[0].purl).toBe('pkg:npm/lodash@4.17.21')
     expect(arg.components[1].purl).toBe('pkg:pypi/requests@2.31.0')
@@ -191,7 +191,7 @@ describe('runDepscore — payload shaping', () => {
       { packages: [{ depname: 'foo', ecosystem: 'npm', version: '^1.2.3' }] },
       { apiToken: 'test_a' },
     )
-    const purl = mockBatchPackageFetch.mock.calls[0]![0].components[0].purl
+    const purl = mockBatchPackageFetch.mock.calls[0][0].components[0].purl
     expect(purl).toBe('pkg:npm/foo@1.2.3')
   })
 
@@ -200,7 +200,7 @@ describe('runDepscore — payload shaping', () => {
       { packages: [{ depname: 'foo', ecosystem: 'npm', version: '~1.2.3' }] },
       { apiToken: 'test_a' },
     )
-    const purl = mockBatchPackageFetch.mock.calls[0]![0].components[0].purl
+    const purl = mockBatchPackageFetch.mock.calls[0][0].components[0].purl
     expect(purl).toBe('pkg:npm/foo@1.2.3')
   })
 
@@ -209,7 +209,7 @@ describe('runDepscore — payload shaping', () => {
       { packages: [{ depname: 'noeco' }] },
       { apiToken: 'test_a' },
     )
-    const purl = mockBatchPackageFetch.mock.calls[0]![0].components[0].purl
+    const purl = mockBatchPackageFetch.mock.calls[0][0].components[0].purl
     expect(purl).toContain('pkg:npm/noeco')
   })
 
@@ -218,7 +218,7 @@ describe('runDepscore — payload shaping', () => {
       { packages: [{ depname: 'unknownversion' }] },
       { apiToken: 'test_a' },
     )
-    const purl = mockBatchPackageFetch.mock.calls[0]![0].components[0].purl
+    const purl = mockBatchPackageFetch.mock.calls[0][0].components[0].purl
     // 'unknown' sentinel → no @<version> in the PURL.
     expect(purl).toBe('pkg:npm/unknownversion')
   })
@@ -234,7 +234,7 @@ describe('runDepscore — error paths', () => {
       { apiToken: 'test_bad' },
     )
     expect(result.isError).toBe(true)
-    expect(result.content[0]!.text).toContain(
+    expect(result.content[0].text).toContain(
       'Socket authentication failed [401]',
     )
   })
@@ -248,7 +248,7 @@ describe('runDepscore — error paths', () => {
       { apiToken: 'test_locked' },
     )
     expect(result.isError).toBe(true)
-    expect(result.content[0]!.text).toContain('Socket denied access [403]')
+    expect(result.content[0].text).toContain('Socket denied access [403]')
   })
 
   it('surfaces a generic non-2xx with the status code', async () => {
@@ -258,7 +258,7 @@ describe('runDepscore — error paths', () => {
       { apiToken: 'test_a' },
     )
     expect(result.isError).toBe(true)
-    expect(result.content[0]!.text).toContain('[503]')
+    expect(result.content[0].text).toContain('[503]')
   })
 
   it('catches network exceptions from the SDK call', async () => {
@@ -268,7 +268,7 @@ describe('runDepscore — error paths', () => {
       { apiToken: 'test_a' },
     )
     expect(result.isError).toBe(true)
-    expect(result.content[0]!.text).toBe('Error connecting to Socket API')
+    expect(result.content[0].text).toBe('Error connecting to Socket API')
   })
 })
 
@@ -286,7 +286,7 @@ describe('runDepscore — SDK setup error fallback chain', () => {
       { apiToken: 'test_setup_message_only' },
     )
     expect(result.isError).toBe(true)
-    expect(result.content[0]!.text).toContain('Auth Error')
+    expect(result.content[0].text).toContain('Auth Error')
   })
 
   it('uses the hard-coded fallback string when both cause and message are empty', async () => {
@@ -300,7 +300,7 @@ describe('runDepscore — SDK setup error fallback chain', () => {
       { apiToken: 'test_setup_full_fallback' },
     )
     expect(result.isError).toBe(true)
-    expect(result.content[0]!.text).toContain('Failed to set up Socket SDK')
+    expect(result.content[0].text).toContain('Failed to set up Socket SDK')
   })
 
   it('uses String(e) when SDK setup throws a non-Error value', async () => {
@@ -310,7 +310,7 @@ describe('runDepscore — SDK setup error fallback chain', () => {
       { apiToken: 'test_setup_string_throw' },
     )
     expect(result.isError).toBe(true)
-    expect(result.content[0]!.text).toContain('SDK setup failed: plain string')
+    expect(result.content[0].text).toContain('SDK setup failed: plain string')
   })
 })
 
@@ -322,7 +322,7 @@ describe('runDepscore — batchPackageFetch non-Error throw', () => {
       { apiToken: 'test_a' },
     )
     expect(result.isError).toBe(true)
-    expect(result.content[0]!.text).toBe('Error connecting to Socket API')
+    expect(result.content[0].text).toBe('Error connecting to Socket API')
   })
 })
 
@@ -339,7 +339,7 @@ describe('runDepscore — non-success without cause/error fields', () => {
     expect(result.isError).toBe(true)
     // The trailing `${cause ?? ''}` becomes empty; assert the message
     // shape.
-    expect(result.content[0]!.text).toMatch(
+    expect(result.content[0].text).toMatch(
       /Socket authentication failed \[401\]\. Re-authenticate and retry\.\s*$/,
     )
   })
@@ -354,7 +354,7 @@ describe('runDepscore — non-success without cause/error fields', () => {
       { apiToken: 'test_a' },
     )
     expect(result.isError).toBe(true)
-    expect(result.content[0]!.text).toMatch(/Re-authenticate.*retry\.\s*$/)
+    expect(result.content[0].text).toMatch(/Re-authenticate.*retry\.\s*$/)
   })
 
   it('handles non-2xx response with no cause/error gracefully', async () => {
@@ -367,7 +367,7 @@ describe('runDepscore — non-success without cause/error fields', () => {
       { apiToken: 'test_a' },
     )
     expect(result.isError).toBe(true)
-    expect(result.content[0]!.text).toContain('[502]')
+    expect(result.content[0].text).toContain('[502]')
   })
 })
 
@@ -383,7 +383,7 @@ describe('runDepscore — empty data field on success', () => {
       { apiToken: 'test_a' },
     )
     expect(result.isError).toBe(true)
-    expect(result.content[0]!.text).toBe('No packages were found.')
+    expect(result.content[0].text).toBe('No packages were found.')
   })
 })
 
@@ -399,10 +399,10 @@ describe('runDepscore — error fallbacks (cause vs error field)', () => {
       { apiToken: 'test_a' },
     )
     expect(result.isError).toBe(true)
-    expect(result.content[0]!.text).toContain(
+    expect(result.content[0].text).toContain(
       'Socket authentication failed [401]',
     )
-    expect(result.content[0]!.text).toContain('Bad token')
+    expect(result.content[0].text).toContain('Bad token')
   })
 
   it('uses response.error when response.cause is absent on 403', async () => {
@@ -416,8 +416,8 @@ describe('runDepscore — error fallbacks (cause vs error field)', () => {
       { apiToken: 'test_a' },
     )
     expect(result.isError).toBe(true)
-    expect(result.content[0]!.text).toContain('Socket denied access [403]')
-    expect(result.content[0]!.text).toContain('No scope')
+    expect(result.content[0].text).toContain('Socket denied access [403]')
+    expect(result.content[0].text).toContain('No scope')
   })
 
   it('uses response.error when response.cause is absent on a generic non-2xx', async () => {
@@ -431,8 +431,8 @@ describe('runDepscore — error fallbacks (cause vs error field)', () => {
       { apiToken: 'test_a' },
     )
     expect(result.isError).toBe(true)
-    expect(result.content[0]!.text).toContain('[500]')
-    expect(result.content[0]!.text).toContain('Internal Server Error')
+    expect(result.content[0].text).toContain('[500]')
+    expect(result.content[0].text).toContain('Internal Server Error')
   })
 })
 
@@ -466,7 +466,7 @@ describe('runDepscore — platform hint forwarding', () => {
     )
     // After dedup with darwin-arm64 hint, only the macosx wheel survives,
     // so the score line uses the higher number from that artifact.
-    expect(result.content[0]!.text).toContain('quality: 95')
-    expect(result.content[0]!.text).not.toContain('quality: 90')
+    expect(result.content[0].text).toContain('quality: 95')
+    expect(result.content[0].text).not.toContain('quality: 90')
   })
 })

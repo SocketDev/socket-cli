@@ -113,7 +113,7 @@ describe('GitHubProvider', () => {
       })
 
       expect(results).toHaveLength(1)
-      expect(results[0]!.author).toBe('user1')
+      expect(results[0].author).toBe('user1')
     })
 
     it('handles PRs without author', async () => {
@@ -145,7 +145,7 @@ describe('GitHubProvider', () => {
       })
 
       expect(results).toHaveLength(1)
-      expect(results[0]!.author).toBe('<unknown>')
+      expect(results[0].author).toBe('<unknown>')
     })
 
     it('handles specific states filter', async () => {

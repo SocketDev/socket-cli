@@ -38,7 +38,7 @@ vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
 
 // Mock utilities.
 vi.mock(import('../../../../src/util/error/fail-msg-with-badge.mts'), () => ({
-  failMsgWithBadge: (msg: string, cause?: string) =>
+  failMsgWithBadge: (msg: string, cause?: string | undefined) =>
     cause ? `${msg}: ${cause}` : msg,
 }))
 
@@ -121,7 +121,7 @@ describe('output-requirements', () => {
 
         await outputRequirements(result, 'markdown', '-')
 
-        const loggedMd = mockLogger.log.mock.calls[0]![0]
+        const loggedMd = mockLogger.log.mock.calls[0][0]
         expect(loggedMd).toContain('# Converted Conda file')
         expect(loggedMd).toContain('environment.yml')
         expect(loggedMd).toContain('requirements.txt')
@@ -153,7 +153,7 @@ describe('output-requirements', () => {
 
         await outputRequirements(result, 'markdown', '-')
 
-        const loggedMd = mockLogger.log.mock.calls[0]![0]
+        const loggedMd = mockLogger.log.mock.calls[0][0]
         expect(loggedMd).toContain('flask>=2.0\nrequests')
       })
     })

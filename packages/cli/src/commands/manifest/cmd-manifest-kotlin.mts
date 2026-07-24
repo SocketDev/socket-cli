@@ -108,7 +108,7 @@ export async function run(
 
   const { json = false, markdown = false } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
   // Feature request: Pass outputKind to convertGradleToMaven for json/md output support.
   const outputKind = getOutputKind(json, markdown)
@@ -121,7 +121,7 @@ export async function run(
   const sockJson = readOrDefaultSocketJson(cwd)
 
   debug(
-    `override: ${SOCKET_JSON} gradle: ${sockJson?.defaults?.manifest?.gradle}`,
+    `override: ${SOCKET_JSON} gradle: ${JSON.stringify(sockJson?.defaults?.manifest?.gradle)}`,
   )
 
   let { bin, gradleOpts, verbose } = cli.flags as unknown as KotlinFlags
@@ -187,24 +187,24 @@ export async function run(
   if (dryRun) {
     const args = [cwd]
     if (bin) {
-      args.push('--bin', String(bin))
+      args.push('--bin', bin)
     }
     if (gradleOpts) {
-      args.push('--gradle-opts', String(gradleOpts))
+      args.push('--gradle-opts', gradleOpts)
     }
     outputDryRunExecute('gradlew', args, 'generate pom.xml from Kotlin project')
     return
   }
 
   const result = await convertGradleToMaven({
-    bin: String(bin),
+    bin: bin,
     cwd,
-    gradleOpts: String(gradleOpts || '')
+    gradleOpts: (gradleOpts || '')
       .split(' ')
       .map(s => s.trim())
       .filter(Boolean),
     outputKind,
-    verbose: Boolean(verbose),
+    verbose: verbose,
   })
 
   // In text mode, output is already handled by convertGradleToMaven.

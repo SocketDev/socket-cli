@@ -200,7 +200,7 @@ describe('util/dlx/vfs-extract', () => {
       mockIsSeaBinary.mockReturnValue(true)
       withMountReturning(async () => '/extracted')
       mockExistsSync.mockImplementation((p: string) => {
-        return !String(p).endsWith('.extracted')
+        return !p.endsWith('.extracted')
       })
       // Make safeDelete reject during cleanup; the finally block should
       // log and continue. We need the main path to succeed first.
@@ -217,7 +217,7 @@ describe('util/dlx/vfs-extract', () => {
       withMountReturning(async () => '/extracted')
       mockExistsSync.mockImplementation((p: string) => {
         // Cache marker false, tool path true (so access check runs).
-        return !String(p).endsWith('.extracted')
+        return !p.endsWith('.extracted')
       })
       // First access throws (not executable), then re-extract proceeds.
       let accessCount = 0
@@ -241,7 +241,7 @@ describe('util/dlx/vfs-extract', () => {
       let pass = 0
       let toolChecks = 0
       mockExistsSync.mockImplementation((p: string) => {
-        const ps = String(p)
+        const ps = p
         if (ps.endsWith('.extracting')) {
           return false
         }

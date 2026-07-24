@@ -28,7 +28,7 @@ vi.mock(import('node:fs'), () => ({
 // Mock getSocketAppDataPath.
 const mockGetSocketAppDataPath = vi.hoisted(() => vi.fn())
 vi.mock(import('../../../../src/constants/paths.mts'), async importOriginal => {
-  const actual = (await importOriginal()) as typeof PathsModule
+  const actual = await importOriginal()
   return {
     ...actual,
     getSocketAppDataPath: mockGetSocketAppDataPath,

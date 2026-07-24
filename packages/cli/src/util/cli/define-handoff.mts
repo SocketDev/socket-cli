@@ -103,13 +103,13 @@ const DEFAULT_TRACK_TELEMETRY = true
  * Build the help-text generator function used by meow.
  */
 export function buildHelp(
-  options: DefineHandoffCommandOptions,
+  config: DefineHandoffCommandOptions,
   parentName: string,
 ): (command: string) => string {
   const { examples, helpNotes, name, showApiRequirements, wrapperHint } = {
     __proto__: null,
-    ...options,
-  } as typeof options
+    ...config,
+  } as typeof config
 
   return (command: string) => {
     const lines: string[] = []
@@ -164,7 +164,7 @@ export function buildHelp(
  * Returns a CliSubcommand-shaped object ready to plug into the meow router.
  */
 export function defineHandoffCommand(
-  options: DefineHandoffCommandOptions,
+  config: DefineHandoffCommandOptions,
 ): CliSubcommand {
   const {
     description,
@@ -173,7 +173,7 @@ export function defineHandoffCommand(
     spawnMode,
     supportDryRun = DEFAULT_SUPPORT_DRY_RUN,
     trackTelemetry = DEFAULT_TRACK_TELEMETRY,
-  } = { __proto__: null, ...options } as typeof options
+  } = { __proto__: null, ...config } as typeof config
 
   async function run(
     argv: string[] | readonly string[],
@@ -185,19 +185,19 @@ export function defineHandoffCommand(
       ...context,
     } as CliCommandContext
 
-    const config = {
+    const cliConfig = {
       commandName: name,
       description,
       hidden,
       flags: defineFlags({ ...commonFlags }),
-      help: buildHelp(options, parentName),
+      help: buildHelp(config, parentName),
     }
 
-    const cli = meowOrExit({ argv, config, importMeta, parentName })
+    const cli = meowOrExit({ argv, config: cliConfig, importMeta, parentName })
 
     // Pass an explicit empty `exceptions` array so test-side assertions
     // that match the legacy 3-arg call shape stay green.
-    const filteredArgv = filterFlags(argv, config.flags, [])
+    const filteredArgv = filterFlags(argv, cliConfig.flags, [])
 
     if (supportDryRun && cli.flags['dryRun']) {
       outputDryRunExecute(
@@ -209,8 +209,8 @@ export function defineHandoffCommand(
     }
 
     // Resolve the actual binary to forward (pip → pip/pip3 fallback, etc.).
-    const binaryName = options.binaryPicker
-      ? await options.binaryPicker(context)
+    const binaryName = config.binaryPicker
+      ? await config.binaryPicker(context)
       : name
 
     // Default to failure; child's exit listener overwrites on success.
@@ -250,7 +250,7 @@ export function wireChildExit(
   childProcess: NodeJS.Process & {
     on: (event: string, listener: (...args: unknown[]) => void) => void
   },
-  options: {
+  config: {
     name: string
     trackTelemetry: boolean
     subprocessStartTime: number | undefined
@@ -258,8 +258,8 @@ export function wireChildExit(
 ): void {
   const { name, subprocessStartTime, trackTelemetry } = {
     __proto__: null,
-    ...options,
-  } as typeof options
+    ...config,
+  } as typeof config
   childProcess.on(
     'exit',
     (code: number | null, signalName: NodeJS.Signals | null) => {

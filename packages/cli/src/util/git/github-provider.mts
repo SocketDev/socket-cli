@@ -68,7 +68,7 @@ export type GqlPullRequestsResponse = {
  * Octokit.
  */
 export class GitHubProvider implements PrProvider {
-  async createPr(options: CreatePrOptions): Promise<PrResponse> {
+  async createPr(config: CreatePrOptions): Promise<PrResponse> {
     const {
       base,
       body,
@@ -77,7 +77,7 @@ export class GitHubProvider implements PrProvider {
       repo,
       retries = 3,
       title,
-    } = { __proto__: null, ...options } as typeof options
+    } = { __proto__: null, ...config } as typeof config
 
     const octokit = getOctokit()
     const octokitPullsCreateParams = { base, body, head, owner, repo, title }
@@ -108,11 +108,11 @@ export class GitHubProvider implements PrProvider {
     }
   }
 
-  async updatePr(options: UpdatePrOptions): Promise<void> {
+  async updatePr(config: UpdatePrOptions): Promise<void> {
     const { base, head, owner, prNumber, repo } = {
       __proto__: null,
-      ...options,
-    } as typeof options
+      ...config,
+    } as typeof config
 
     const octokit = getOctokit()
 
@@ -175,14 +175,14 @@ export class GitHubProvider implements PrProvider {
     }
   }
 
-  async listPrs(options: ListPrsOptions): Promise<PrMatch[]> {
+  async listPrs(config: ListPrsOptions): Promise<PrMatch[]> {
     const {
       author,
       ghsaId,
       owner,
       repo,
       states: statesValue = 'all',
-    } = { __proto__: null, ...options } as typeof options
+    } = { __proto__: null, ...config } as typeof config
     const checkAuthor = isNonEmptyString(author)
     const octokitGraphql = getOctokitGraphql()
     const matches: PrMatch[] = []
@@ -302,11 +302,11 @@ export class GitHubProvider implements PrProvider {
     }
   }
 
-  async addComment(options: AddCommentOptions): Promise<void> {
+  async addComment(config: AddCommentOptions): Promise<void> {
     const { body, owner, prNumber, repo } = {
       __proto__: null,
-      ...options,
-    } as typeof options
+      ...config,
+    } as typeof config
     const octokit = getOctokit()
 
     const result = await withGitHubRetry(

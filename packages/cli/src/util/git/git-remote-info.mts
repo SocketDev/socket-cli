@@ -6,7 +6,14 @@
  * File size hard cap.
  */
 
+import { env } from 'node:process'
+
 import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
+import {
+  getGithubRefName,
+  getGithubRefType,
+} from '@socketsecurity/lib-stable/env/github'
+import { envAsString } from '@socketsecurity/lib-stable/env/string'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
@@ -79,6 +86,19 @@ export async function gitBranch(
   } catch (e) {
     // Expected in detached HEAD state, fallback to rev-parse.
     debugDir({ message: 'In detached HEAD state', error: e })
+  }
+  // Detached HEAD is the normal state in CI checkouts (actions/checkout),
+  // where the commit-SHA fallback below would mislabel the scan's branch —
+  // a SHA can never match the repo's default branch, so scans vanish from
+  // the Main/PR tabs. Prefer the branch the CI run says it is on: the PR
+  // head branch, else the pushed branch ref.
+  const githubHeadRef = envAsString(env['GITHUB_HEAD_REF'])
+  if (githubHeadRef) {
+    return githubHeadRef
+  }
+  const githubRefName = getGithubRefName()
+  if (getGithubRefType() === 'branch' && githubRefName) {
+    return githubRefName
   }
   // Fallback to using rev-parse to get the short commit hash in a
   // detached HEAD state.

@@ -82,6 +82,29 @@ export async function queryApiSafeText(
   description?: string | undefined,
   commandPath?: string | undefined,
 ): Promise<CResult<string>> {
+  const result = await queryApiSafeTextWithStatus(
+    path,
+    description,
+    commandPath,
+  )
+  return result.ok ? { ok: true, data: result.data.text } : result
+}
+
+export type ApiTextResult = {
+  status: number
+  text: string
+}
+
+/**
+ * Query Socket API endpoint and return the response text together with the
+ * HTTP status code, so callers can react to non-200 success codes like the
+ * 202 "still processing" reply from cached-scan endpoints.
+ */
+export async function queryApiSafeTextWithStatus(
+  path: string,
+  description?: string | undefined,
+  commandPath?: string | undefined,
+): Promise<CResult<ApiTextResult>> {
   const apiToken = getDefaultApiToken()
   if (!apiToken) {
     return {
@@ -179,10 +202,10 @@ export async function queryApiSafeText(
   }
 
   try {
-    const data = result.text()
+    const text = result.text()
     return {
       ok: true,
-      data,
+      data: { status: result.status as number, text },
     }
   } catch (e) {
     debug('Failed to read API response text')

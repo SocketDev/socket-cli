@@ -40,18 +40,18 @@ import { downloadExternalTools, logger } from './downloads.mts'
  * @param {string} target.nodeVersion - Node.js version tag suffix.
  * @param {string} [target.libc] - Linux libc variant ('musl' for Alpine).
  * @param {string} entryPoint - Absolute path to CLI entry point file.
- * @param {object} [options] - Build options.
- * @param {string} [options.outputPath] - Full output path for SEA binary.
- * @param {string} [options.outputDir] - Output directory (deprecated, use
+ * @param {object} config - Build configuration.
+ * @param {string} [config.outputPath] - Full output path for SEA binary.
+ * @param {string} [config.outputDir] - Output directory (deprecated, use
  *   outputPath).
  *
  * @returns Promise resolving to absolute path of built SEA binary.
  */
 // c8 ignore start - Requires downloading binaries, building blobs, and binary injection.
-export async function buildTarget(target, entryPoint, options) {
+export async function buildTarget(target, entryPoint, config) {
   const { outputDir, outputPath: providedOutputPath } = {
     __proto__: null,
-    ...options,
+    ...config,
   }
 
   // Determine output path.
@@ -108,9 +108,9 @@ export async function buildTarget(target, entryPoint, options) {
 
     // Clean up generated blob file.
     // Blob path in config is relative to config directory.
-    const config = JSON.parse(await fs.readFile(configPath, 'utf8'))
-    if (config.output) {
-      const blobPath = path.join(path.dirname(configPath), config.output)
+    const seaConfig = JSON.parse(await fs.readFile(configPath, 'utf8'))
+    if (seaConfig.output) {
+      const blobPath = path.join(path.dirname(configPath), seaConfig.output)
       await safeDelete(blobPath).catch(() => {})
     }
   } finally {

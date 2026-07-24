@@ -247,10 +247,7 @@ describe('cmd-config-set', () => {
 
     describe('edge cases', () => {
       it('should handle readonly argv array', async () => {
-        const readonlyArgv = Object.freeze([
-          'defaultOrg',
-          'my-org',
-        ]) as readonly string[]
+        const readonlyArgv = Object.freeze(['defaultOrg', 'my-org'])
 
         await cmdConfigSet.run(readonlyArgv, importMeta, context)
 

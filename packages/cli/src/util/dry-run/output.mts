@@ -41,7 +41,7 @@ export function outputDryRunDelete(
 export function outputDryRunExecute(
   command: string,
   args: string[],
-  description?: string,
+  description?: string | undefined,
 ): void {
   out('')
   out(`${DRY_RUN_LABEL}: Would execute ${description || 'external command'}`)
@@ -62,7 +62,9 @@ export function outputDryRunExecute(
  */
 export function outputDryRunFetch(
   resourceName: string,
-  queryParams?: Record<string, string | number | boolean | undefined>,
+  queryParams?:
+    | Record<string, string | number | boolean | undefined>
+    | undefined,
 ): void {
   out('')
   out(`${DRY_RUN_LABEL}: Would fetch ${resourceName}`)
@@ -173,7 +175,7 @@ export function outputDryRunUpload(
 export function outputDryRunWrite(
   filePath: string,
   description: string,
-  changes?: string[],
+  changes?: string[] | undefined,
 ): void {
   out('')
   out(`${DRY_RUN_LABEL}: Would ${description}`)

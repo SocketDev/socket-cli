@@ -11,6 +11,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { tolerantSleep } from '../../../../../../test/fleet/_shared/lib/timing.mts'
+
 // Mock setupSdk.
 const mockSetupSdk = vi.hoisted(() => vi.fn())
 const mockGetOrgTelemetryConfig = vi.hoisted(() => vi.fn())
@@ -188,7 +190,7 @@ describe('TelemetryService', () => {
         context: {},
       })
       // Allow microtasks to settle.
-      await new Promise(resolve => setTimeout(resolve, 10))
+      await new Promise(resolve => setTimeout(resolve, tolerantSleep(10)))
       expect(mockPostOrgTelemetry).not.toHaveBeenCalled()
     })
 

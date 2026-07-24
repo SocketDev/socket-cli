@@ -33,7 +33,6 @@ import {
   FLAG_HELP,
 } from '../../../src/constants/cli.mts'
 import { getBinCliPath } from '../../../src/constants/paths.mts'
-import { expectDryRunOutput } from '../../helpers/output-assertions.mts'
 import { cmdit, spawnSocketCli } from '../../utils.mts'
 
 const binCliPath = getBinCliPath()
@@ -62,7 +61,8 @@ describe('socket manifest', async () => {
             Options
           
               --no-banner                 Hide the Socket banner
-              --no-spinner                Hide the console spinner"
+              --no-spinner                Hide the console spinner
+              --quiet                     Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown."
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -87,24 +87,20 @@ describe('socket manifest', async () => {
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
-    'should require args with just dry-run',
+    'should reject unknown subcommands even with dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
-      // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(
-        `"[DryRun]: No-op, call a sub-command; ok"`,
-      )
+      // Unknown subcommands now error out instead of falling through to the
+      // dry-run no-op.
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           _____         _       _          /---------------
-            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
-            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket manifest\`, cwd: <redacted>"
+           \\xd7 Unknown command "mootools".
+        i Tip: Use \`socket pycli\` to invoke the Python CLI directly."
       `)
 
-      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+      expect(code, 'unknown command should exit with code 2').toBe(2)
     },
   )
 })

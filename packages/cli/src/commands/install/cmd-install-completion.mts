@@ -63,7 +63,7 @@ export async function run(
     importMeta,
   })
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
   const targetName = cli.input[0] || 'socket'
 
   if (dryRun) {
@@ -80,5 +80,5 @@ export async function run(
     return
   }
 
-  await handleInstallCompletion(String(targetName))
+  await handleInstallCompletion(targetName)
 }

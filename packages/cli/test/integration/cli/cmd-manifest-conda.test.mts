@@ -51,6 +51,7 @@ describe('socket manifest conda', async () => {
                 --json              Output as JSON
                 --markdown          Output as Markdown
                 --out               Output path (relative to cwd)
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
                 --stdin             Read the input from stdin (supersedes --file)
                 --stdout            Print resulting requirements.txt to stdout (supersedes --out)
                 --verbose           Print debug messages
@@ -82,7 +83,7 @@ describe('socket manifest conda', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testPath,
       })
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
@@ -90,7 +91,14 @@ describe('socket manifest conda', async () => {
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket manifest conda\`, cwd: <redacted>
 
-        \\u203c Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
+        \\u203c Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk.
+
+        [DryRun]: Would execute convert Conda environment.yml to requirements.txt
+
+          Command: conda converter
+          Arguments: environment.yml requirements.txt
+
+          Run without --dry-run to execute this command."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

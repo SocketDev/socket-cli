@@ -23,14 +23,14 @@ export async function handleCreateGithubScan({
   repos: string
 }) {
   const ghScanCResult = await createScanFromGithub({
-    all: Boolean(all),
+    all: all,
     githubApiUrl,
     githubToken,
-    interactive: Boolean(interactive),
+    interactive: interactive,
     orgSlug,
     orgGithub,
     outputKind,
-    repos: String(repos || ''),
+    repos: repos || '',
   })
 
   await outputScanGithub(ghScanCResult, outputKind)

@@ -255,7 +255,9 @@ describe('Error Narrowing', () => {
   })
   it('should properly only detect node errors', () => {
     expect(isErrnoException(new Error())).toBe(false)
-    expect(isErrnoException({ ...new Error() })).toBe(false)
+    // Object.assign intentionally strips the Error prototype — the point is a
+    // plain object with error-shaped own properties.
+    expect(isErrnoException(Object.assign({}, new Error()))).toBe(false)
   })
   it('should return false for non-error values', () => {
     expect(isErrnoException('string')).toBe(false)

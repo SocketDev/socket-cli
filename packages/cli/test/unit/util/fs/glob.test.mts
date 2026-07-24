@@ -322,7 +322,7 @@ describe('util/fs/glob', () => {
       const { safeReadFile } = vi.mocked(
         await import('@socketsecurity/lib-stable/fs/read-file'),
       )
-      safeReadFile.mockResolvedValueOnce(undefined as unknown)
+      safeReadFile.mockResolvedValueOnce(undefined)
       const { getWorkspaceGlobs } =
         await import('../../../../src/util/fs/glob.mts')
       const result = await getWorkspaceGlobs('pnpm', '/repo')
@@ -347,7 +347,7 @@ describe('util/fs/glob', () => {
         await import('@socketsecurity/lib-stable/fs/read-file'),
       )
       // pnpm-workspace.yaml missing → empty workspaceGlobs → early-return [].
-      safeReadFile.mockResolvedValueOnce(undefined as unknown)
+      safeReadFile.mockResolvedValueOnce(undefined)
       const { globWorkspace } = await import('../../../../src/util/fs/glob.mts')
       const result = await globWorkspace('pnpm', '/nonexistent/repo')
       expect(result).toEqual([])

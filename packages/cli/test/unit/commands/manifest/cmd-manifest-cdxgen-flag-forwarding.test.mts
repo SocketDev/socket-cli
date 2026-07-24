@@ -360,7 +360,7 @@ describe('cmd-manifest-cdxgen', () => {
           .spyOn(process, 'exit')
           .mockImplementation((() => {}) as unknown)
 
-        const readonlyArgv = Object.freeze(['.']) as readonly string[]
+        const readonlyArgv = Object.freeze(['.'])
 
         await cmdManifestCdxgen.run(readonlyArgv, importMeta, context)
 

@@ -59,7 +59,7 @@ export async function run(
 
   const { json, markdown, throw: justThrow } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
   if (dryRun) {
     // Dry-run previews are contextual output; route to stderr per the

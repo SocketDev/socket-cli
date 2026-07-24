@@ -99,9 +99,9 @@ describe('cmd-pycli', () => {
       mockSpawnSocketPyCli.mockResolvedValue({ ok: true, data: '' })
 
       // meow's showHelp() calls process.exit(0); intercept with throw.
-      const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {
+      const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
         throw new Error('process.exit')
-      }) as never)
+      })
 
       try {
         await cmdPyCli

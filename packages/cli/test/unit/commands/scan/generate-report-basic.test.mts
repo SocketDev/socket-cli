@@ -57,7 +57,7 @@ describe('generate-report - basic functionality', () => {
       {
         securityPolicyRules: {},
         securityPolicyDefault: 'medium',
-      } as SecurityPolicyData,
+      },
       {
         orgSlug: 'testOrg',
         scanId: 'test-scan-id',

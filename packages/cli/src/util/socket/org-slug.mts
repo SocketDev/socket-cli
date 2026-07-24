@@ -15,7 +15,7 @@ export async function determineOrgSlug(
   dryRun: boolean,
 ): Promise<[string, string | undefined]> {
   const defaultOrgSlug = getConfigValueOrUndef(CONFIG_KEY_DEFAULT_ORG)
-  let orgSlug = String(orgFlag || defaultOrgSlug || '')
+  let orgSlug = orgFlag || defaultOrgSlug || ''
   if (!orgSlug) {
     if (!interactive) {
       logger.warn(

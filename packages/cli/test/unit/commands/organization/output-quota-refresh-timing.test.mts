@@ -47,7 +47,7 @@ describe('outputQuota', () => {
     })
 
     process.exitCode = undefined
-    await outputQuota(result as unknown, 'text')
+    await outputQuota(result, 'text')
 
     // Exact "in X d" count is time-sensitive; just confirm it rendered the ISO date.
     const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0])
@@ -87,7 +87,7 @@ describe('outputQuota', () => {
     })
 
     process.exitCode = undefined
-    await outputQuota(result as unknown, 'text')
+    await outputQuota(result, 'text')
 
     const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0])
     expect(
@@ -126,7 +126,7 @@ describe('outputQuota', () => {
     })
 
     process.exitCode = undefined
-    await outputQuota(result as unknown, 'text')
+    await outputQuota(result, 'text')
 
     const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0])
     expect(
@@ -161,7 +161,7 @@ describe('outputQuota', () => {
     })
 
     process.exitCode = undefined
-    await outputQuota(result as unknown, 'text')
+    await outputQuota(result, 'text')
 
     const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0])
     expect(
@@ -196,7 +196,7 @@ describe('outputQuota', () => {
     })
 
     process.exitCode = undefined
-    await outputQuota(result as unknown, 'text')
+    await outputQuota(result, 'text')
 
     const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0])
     expect(
@@ -231,7 +231,7 @@ describe('outputQuota', () => {
     })
 
     process.exitCode = undefined
-    await outputQuota(result as unknown, 'text')
+    await outputQuota(result, 'text')
 
     const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0])
     expect(
@@ -264,7 +264,7 @@ describe('outputQuota', () => {
     })
 
     process.exitCode = undefined
-    await outputQuota(result as unknown, 'text')
+    await outputQuota(result, 'text')
 
     const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0])
     expect(

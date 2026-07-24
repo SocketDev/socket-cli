@@ -18,6 +18,7 @@ import { describe, expect } from 'vitest'
 
 import { FLAG_CONFIG, FLAG_HELP } from '../../../src/constants/cli.mts'
 import { getBinCliPath } from '../../../src/constants/paths.mts'
+import { withTempFixture } from '../../helpers/test-fixtures.mts'
 import { cmdit, spawnSocketCli, testPath } from '../../utils.mts'
 
 const binCliPath = getBinCliPath()
@@ -64,11 +65,25 @@ describe('socket patch get', async () => {
     ],
     'should handle non-existent package gracefully',
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      const output = stdout + stderr
-      // socket-patch v2.0.0 shows error when patch not found.
-      expect(output).toMatch(/not found|no patches|error/i)
-      expect(code, 'should exit with non-zero code').not.toBe(0)
+      // `patch get` rewrites .socket/manifest.json, so run against a temp
+      // copy to keep the committed fixture pristine.
+      const { cleanup, tempDir } = await withTempFixture(pnpmFixtureDir)
+      try {
+        const isolatedCmd = cmd.map(arg =>
+          arg === pnpmFixtureDir ? tempDir : arg,
+        )
+        const { code, stderr, stdout } = await spawnSocketCli(
+          binCliPath,
+          isolatedCmd,
+        )
+        const output = stdout + stderr
+        // socket-patch v2.0.0 treats an unknown name as a package-name search
+        // and reports that nothing installed matches — a graceful zero exit.
+        expect(output).toMatch(/package name search|No packages found/i)
+        expect(code, 'should exit with code 0 when nothing matches').toBe(0)
+      } finally {
+        await cleanup()
+      }
     },
   )
 
@@ -85,14 +100,27 @@ describe('socket patch get', async () => {
     ],
     'should support --save-only flag',
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      const output = stdout + stderr
-      // With --save-only, socket-patch downloads without applying.
-      // May succeed or show "already patched" or error.
-      expect(output).toMatch(
-        /saved|downloaded|already|not found|error|patches/i,
-      )
-      expect(typeof code).toBe('number')
+      // `patch get --save-only` writes the manifest + blobs, so run against a
+      // temp copy to keep the committed fixture pristine.
+      const { cleanup, tempDir } = await withTempFixture(pnpmFixtureDir)
+      try {
+        const isolatedCmd = cmd.map(arg =>
+          arg === pnpmFixtureDir ? tempDir : arg,
+        )
+        const { code, stderr, stdout } = await spawnSocketCli(
+          binCliPath,
+          isolatedCmd,
+        )
+        const output = stdout + stderr
+        // With --save-only, socket-patch downloads without applying.
+        // May succeed or show "already patched" or error.
+        expect(output).toMatch(
+          /saved|downloaded|already|not found|error|patches|packages/i,
+        )
+        expect(typeof code).toBe('number')
+      } finally {
+        await cleanup()
+      }
     },
   )
 })

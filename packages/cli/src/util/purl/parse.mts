@@ -80,18 +80,18 @@ export function createPurlObject(
   if (isPlainObject(type)) {
     opts = { __proto__: null, ...type } as CreatePurlObjectOptions
     type = opts.type as string
-    name = opts.name as string
+    name = opts.name
   } else if (isPlainObject(name)) {
     opts = { __proto__: null, ...name } as CreatePurlObjectOptions
-    name = opts.name as string
+    name = opts.name
   } else {
     opts = { __proto__: null, ...options } as CreatePurlObjectOptions
     if (typeof name !== 'string') {
-      name = opts.name as string
+      name = opts.name
     }
   }
   const { namespace, qualifiers, subpath, throws, version } = opts
-  const shouldThrow = throws === undefined || !!throws
+  const shouldThrow = throws === undefined || throws
   try {
     return new PackageURL(
       type,
@@ -152,11 +152,11 @@ export function getPurlObject(
   options?: PurlObjectOptions | undefined,
 ): PurlObject<PackageURL | SocketArtifact> | undefined {
   const { throws } = { __proto__: null, ...options } as PurlObjectOptions
-  const shouldThrow = throws === undefined || !!throws
+  const shouldThrow = throws === undefined || throws
   try {
     return typeof purl === 'string'
       ? (PackageURL.fromString(normalizePurl(purl)) as PurlObject<PackageURL>)
-      : (purl as PurlObject<PackageURL | SocketArtifact>)
+      : purl
   } catch (e) {
     if (shouldThrow) {
       throw e

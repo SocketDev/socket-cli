@@ -107,7 +107,7 @@ describe('basics/vfs-extract', () => {
         '/snapshot/trivy': '/cache/trivy',
         '/snapshot/trufflehog': '/cache/trufflehog',
       }
-      const mount = vi.fn(async (vfsPath: string) => mountedPaths[vfsPath]!)
+      const mount = vi.fn(async (vfsPath: string) => mountedPaths[vfsPath])
       ;(process as unknown).smol = { mount }
 
       mockSpawn.mockResolvedValue({ code: 0, stdout: '1.0.0', stderr: '' })

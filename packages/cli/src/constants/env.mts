@@ -239,7 +239,7 @@ const envSnapshot = {
 // This allows tests to manipulate process.env and see those changes reflected in ENV,
 // while production builds use the more efficient snapshot.
 // Check if we're in VITEST mode once at module load time.
-const isVitestMode = !!VITEST
+const isVitestMode = VITEST
 
 const ENV = new Proxy(envSnapshot, {
   get(target, prop) {

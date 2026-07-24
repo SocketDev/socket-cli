@@ -66,7 +66,7 @@ export async function run(
     importMeta,
   })
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
   const { defaultOnReadError = false } = cli.flags
 
   let [cwd = '.'] = cli.input
@@ -84,5 +84,5 @@ export async function run(
     return
   }
 
-  await handleScanConfig(cwd, Boolean(defaultOnReadError))
+  await handleScanConfig(cwd, defaultOnReadError)
 }

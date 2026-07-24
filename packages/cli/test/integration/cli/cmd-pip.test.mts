@@ -39,10 +39,10 @@ describe('socket pip', async () => {
 
           Usage
                 $ socket pip ...
-
+          
               Note: Everything after "pip" is forwarded to Socket Firewall (sfw).
                     Socket Firewall provides real-time security scanning for pip packages.
-
+          
               Examples
                 $ socket pip install flask
                 $ socket pip install -r requirements.txt
@@ -73,10 +73,10 @@ describe('socket pip3', async () => {
 
           Usage
                 $ socket pip ...
-
+          
               Note: Everything after "pip" is forwarded to Socket Firewall (sfw).
                     Socket Firewall provides real-time security scanning for pip packages.
-
+          
               Examples
                 $ socket pip install flask
                 $ socket pip install -r requirements.txt

@@ -55,6 +55,7 @@ describe('socket scan list', async () => {
                 --org               Force override the organization slug, overrides the default org from config
                 --page              Page number - Default is 1
                 --per-page          Results per page - Default is 30
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
                 --sort              Sorting option (\`name\` or \`created_at\`) - default is \`created_at\`
                 --until-time        Until time - as a unix timestamp
           
@@ -90,7 +91,7 @@ describe('socket scan list', async () => {
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket scan list\`, cwd: <redacted>
 
-        \\u203c Unable to determine the target org. Trying to auto-discover it now…
+        \\u203c Unable to determine the target org. Trying to auto-discover it now\\u2026
         i Note: Run \`socket login\` to set a default org.
               Use the --org flag to override the default org.
 
@@ -118,13 +119,26 @@ describe('socket scan list', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket scan list\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket scan list\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch scans
+
+          Query parameters:
+            organization: fakeOrg
+            sort: created_at
+            direction: desc
+            page: 1
+            perPage: 30
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

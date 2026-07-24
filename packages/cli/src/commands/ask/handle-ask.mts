@@ -164,11 +164,11 @@ export async function getProjectContext(cwd: string): Promise<{
 /**
  * Main handler for ask command.
  */
-export async function handleAsk(options: HandleAskOptions): Promise<void> {
+export async function handleAsk(config: HandleAskOptions): Promise<void> {
   const { execute, explain, query } = {
     __proto__: null,
-    ...options,
-  } as typeof options
+    ...config,
+  } as typeof config
 
   // Parse the intent.
   const intent = await parseIntent(query)

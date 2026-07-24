@@ -302,14 +302,14 @@ describe('OAuthIntrospector — verifyAccessToken', () => {
     const intro = newIntrospector()
     await intro.verifyAccessToken('the-token')
     const introCall = mockHttpRequest.mock.calls[1]
-    expect(introCall![0]).toBe('https://auth.example.com/introspect')
+    expect(introCall[0]).toBe('https://auth.example.com/introspect')
     const expectedAuth =
       'Basic ' + Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64')
-    expect(introCall![1].headers.authorization).toBe(expectedAuth)
-    expect(introCall![1].headers['content-type']).toBe(
+    expect(introCall[1].headers.authorization).toBe(expectedAuth)
+    expect(introCall[1].headers['content-type']).toBe(
       'application/x-www-form-urlencoded',
     )
-    expect(introCall![1].body).toBe('token=the-token')
-    expect(introCall![1].method).toBe('POST')
+    expect(introCall[1].body).toBe('token=the-token')
+    expect(introCall[1].method).toBe('POST')
   })
 })

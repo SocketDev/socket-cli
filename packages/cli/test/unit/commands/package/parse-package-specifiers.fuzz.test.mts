@@ -21,7 +21,9 @@ import { parsePackageSpecifiers } from '../../../../src/commands/package/parse-p
 // A pure-alpha ecosystem token (matches the /^[a-zA-Z]+$/ fast path).
 const alphaEcosystem = fc
   .array(
-    fc.constantFrom(...'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'),
+    fc.constantFrom(
+      ...'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
+    ),
     { minLength: 1, maxLength: 8 },
   )
   .map(chars => chars.join(''))
@@ -33,7 +35,10 @@ const SAFE_PKG_CHARS =
   'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@/._-'
 
 const safePkg = fc
-  .array(fc.constantFrom(...SAFE_PKG_CHARS), { minLength: 1, maxLength: 20 })
+  .array(fc.constantFrom(...SAFE_PKG_CHARS.split('')), {
+    minLength: 1,
+    maxLength: 20,
+  })
   .map(chars => chars.join(''))
 
 describe('commands/package/parse-package-specifiers (fuzz)', () => {

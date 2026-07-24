@@ -204,22 +204,22 @@ export function validateSocketJsonContract<T = unknown>(
       `Socket JSON contract violation: "ok" must be a boolean (got ${typeof ok}).\nstdout: ${stdout}`,
     )
   }
-  if (expectedExitCode === 0 && ok !== true) {
+  if (expectedExitCode === 0 && !ok) {
     throw new Error(
       `Socket JSON contract violation: exit code 0 but "ok" is ${ok} (expected true).\nstdout: ${stdout}`,
     )
   }
-  if (expectedExitCode !== 0 && ok !== false) {
+  if (expectedExitCode !== 0 && ok) {
     throw new Error(
       `Socket JSON contract violation: exit code ${expectedExitCode} but "ok" is ${ok} (expected false).\nstdout: ${stdout}`,
     )
   }
-  if (ok === true && (obj['data'] === undefined || obj['data'] === null)) {
+  if (ok && (obj['data'] === undefined || obj['data'] === null)) {
     throw new Error(
       `Socket JSON contract violation: ok:true must include a non-null "data" field (return an empty object/array if no payload).\nstdout: ${stdout}`,
     )
   }
-  if (ok === false) {
+  if (!ok) {
     const message = obj['message']
     if (typeof message !== 'string' || message.length === 0) {
       throw new Error(

@@ -172,7 +172,7 @@ async function downloadWasm() {
   if (existsSync(outputFile)) {
     const stats = await fs.stat(outputFile)
     logger.warn(' WASM bundle already exists:')
-    logger.substep(`${outputFile}`)
+    logger.substep(outputFile)
     logger.substep(`Size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`)
     logger.error('')
 

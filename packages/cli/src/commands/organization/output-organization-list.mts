@@ -60,7 +60,7 @@ export async function outputOrganizationList(
     mw2 = Math.max(mw2, o.id.length)
     mw3 = Math.max(mw3, o.plan.length)
   }
-  logger.log(`${mdHeader('Organizations')}`)
+  logger.log(mdHeader('Organizations'))
   logger.log('')
   logger.log(
     `List of organizations associated with your API token, starting with: ${colors.italic(visibleTokenPrefix)}`,

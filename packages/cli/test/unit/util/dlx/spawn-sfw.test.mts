@@ -119,7 +119,7 @@ describe('spawnSfwDlx', () => {
     mockDetectExecutableType.mockReturnValue({ type: 'binary' })
     mockSpawn.mockReturnValue('p')
 
-    await spawnSfwDlx(['npm'], undefined, { stdio: 'pipe' } as unknown)
+    await spawnSfwDlx(['npm'], undefined, { stdio: 'pipe' })
 
     expect(mockSpawn).toHaveBeenCalledWith(
       '/local/sfw',

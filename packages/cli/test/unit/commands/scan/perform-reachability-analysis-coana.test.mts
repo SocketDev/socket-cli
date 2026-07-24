@@ -144,7 +144,7 @@ describe('performReachabilityAnalysis — coana flag forwarding', () => {
       reachabilityOptions: baseReachOpts,
       target: '.',
     })
-    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
+    const args = mockSpawnCoanaDlx.mock.calls[0][0] as string[]
     expect(args).toContain('--disable-report-submission')
     expect(args).toContain('--disable-analysis-splitting')
     expect(args).toContain('--socket-mode')
@@ -172,7 +172,7 @@ describe('performReachabilityAnalysis — coana flag forwarding', () => {
       },
       target: '.',
     })
-    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
+    const args = mockSpawnCoanaDlx.mock.calls[0][0] as string[]
     expect(args).toContain('--analysis-timeout')
     expect(args).toContain('600')
     expect(args).toContain('--memory-limit')
@@ -204,7 +204,7 @@ describe('performReachabilityAnalysis — coana flag forwarding', () => {
       reachabilityOptions: baseReachOpts,
       target: '.',
     })
-    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
+    const args = mockSpawnCoanaDlx.mock.calls[0][0] as string[]
     expect(args).not.toContain('--purl-types')
   })
 
@@ -213,7 +213,7 @@ describe('performReachabilityAnalysis — coana flag forwarding', () => {
       reachabilityOptions: baseReachOpts,
       target: '.',
     })
-    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
+    const args = mockSpawnCoanaDlx.mock.calls[0][0] as string[]
     expect(args).not.toContain('--exclude-dirs')
   })
 })
@@ -225,8 +225,8 @@ describe('performReachabilityAnalysis — machine-output mode', () => {
       reachabilityOptions: baseReachOpts,
       target: '.',
     })
-    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
-    const opts = mockSpawnCoanaDlx.mock.calls[0]![2]
+    const args = mockSpawnCoanaDlx.mock.calls[0][0] as string[]
+    const opts = mockSpawnCoanaDlx.mock.calls[0][2]
     expect(args[0]).toBe('--silent')
     expect(opts.stdio).toBe('ignore')
   })
@@ -237,7 +237,7 @@ describe('performReachabilityAnalysis — machine-output mode', () => {
       reachabilityOptions: baseReachOpts,
       target: '.',
     })
-    const opts = mockSpawnCoanaDlx.mock.calls[0]![2]
+    const opts = mockSpawnCoanaDlx.mock.calls[0][2]
     expect(opts.stdio).toBe('inherit')
   })
 })
@@ -280,7 +280,7 @@ describe('performReachabilityAnalysis — coana result handling', () => {
     if (result.ok) {
       expect(result.data.reachabilityReport).toBe('/custom/out.json')
     }
-    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
+    const args = mockSpawnCoanaDlx.mock.calls[0][0] as string[]
     expect(args).toContain('/custom/out.json')
   })
 

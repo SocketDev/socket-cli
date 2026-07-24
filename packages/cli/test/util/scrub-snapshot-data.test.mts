@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest'
 
 import { scrubSnapshotData, toSnapshotString } from './scrub-snapshot-data.mts'
 
+import { WORKSPACE_ROOT } from '../../scripts/paths.mts'
+
 describe('scrubSnapshotData', () => {
   describe('timestamps', () => {
     it('should scrub ISO timestamps', () => {
@@ -64,9 +66,8 @@ describe('scrubSnapshotData', () => {
       expect(result).toBe('C:\\[HOME]\\projects and C:\\[HOME]\\Documents')
     })
 
-    it('should scrub project root paths', () => {
-      const cwd = process.cwd()
-      const input = `Project located at ${cwd}/src/utils`
+    it('should scrub workspace root paths', () => {
+      const input = `Project located at ${WORKSPACE_ROOT}/src/utils`
       const result = scrubSnapshotData(input)
       expect(result).toBe('Project located at [PROJECT]/src/utils')
     })
@@ -214,9 +215,8 @@ Updated: 2 days ago
       expect(result).toContain('[RELATIVE_TIME]')
     })
 
-    it('should scrub project root path before home directory', () => {
-      const cwd = process.cwd()
-      const input = `Working in ${cwd}/src/utils`
+    it('should scrub workspace root path before home directory', () => {
+      const input = `Working in ${WORKSPACE_ROOT}/src/utils`
       const result = scrubSnapshotData(input)
       expect(result).toBe('Working in [PROJECT]/src/utils')
     })

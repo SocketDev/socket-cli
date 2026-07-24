@@ -47,6 +47,7 @@ describe('socket ci', async () => {
           
               Options
                 --auto-manifest     Auto generate manifest files where detected? See autoManifest flag in \`socket scan create\`
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
           
               This command is intended to use in CI runs to allow automated systems to
               accept or reject a current build. It will use the default org of the
@@ -82,14 +83,29 @@ describe('socket ci', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket ci\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket ci\`, cwd: <redacted>
+
+
+        [DryRun]: Would upload CI scan
+
+          Details:
+            autoManifest: false
+            branchName: "main"
+            cwd: "[PROJECT]"
+            organizationSlug: "(from API token)"
+            repoName: "socket-cli"
+            report: true
+            targets:
+              0: "."
+
+          Run without --dry-run to perform this upload."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

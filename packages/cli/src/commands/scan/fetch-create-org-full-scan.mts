@@ -68,16 +68,16 @@ export async function fetchCreateOrgFullScan(
       ...(commitMessage ? { commit_message: commitMessage } : {}),
       ...(committers ? { committers } : {}),
       ...(defaultBranch !== undefined
-        ? { make_default_branch: Boolean(defaultBranch) }
+        ? { make_default_branch: defaultBranch }
         : {}),
       ...(pullRequest ? { pull_request: String(pullRequest) } : {}),
       ...(repoName ? { repo: repoName } : {}),
       ...(scanType ? { scan_type: scanType } : {}),
       ...(workspace ? { workspace } : {}),
       ...(pendingHead !== undefined
-        ? { set_as_pending_head: Boolean(pendingHead) }
+        ? { set_as_pending_head: pendingHead }
         : {}),
-      ...(tmp !== undefined ? { tmp: Boolean(tmp) } : {}),
+      ...(tmp !== undefined ? { tmp: tmp } : {}),
       // eslint-disable-next-line typescript-eslint/no-explicit-any -- SDK option shape varies by spread; downstream validates against canonical API contract.
     } as any),
     {

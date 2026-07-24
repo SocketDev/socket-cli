@@ -7,6 +7,8 @@
  * across different systems or time periods.
  */
 
+import { WORKSPACE_ROOT } from '../../scripts/paths.mts'
+
 interface ScrubOptions {
   /**
    * Scrub absolute file paths (default: true).
@@ -83,9 +85,14 @@ export function scrubSnapshotData(
 
   // Phase 2: Absolute paths.
   if (paths) {
-    // Project root (use process.cwd()) - must come before user home scrubbing.
-    const cwd = process.cwd()
-    scrubbed = scrubbed.replaceAll(cwd, '[PROJECT]')
+    // Workspace root - must come before user home scrubbing. Anchoring on
+    // WORKSPACE_ROOT (not process.cwd()) keeps [PROJECT] stable across test
+    // lanes: the fleet root vitest lane runs workers at the repo root while
+    // the packages/cli wrapper lane runs them at packages/cli.
+    scrubbed = scrubbed.replaceAll(WORKSPACE_ROOT, '[PROJECT]')
+    // Worker cwd, for the rare case it sits outside the workspace root
+    // (no-op when nested - the root pass already rewrote its prefix).
+    scrubbed = scrubbed.replaceAll(process.cwd(), '[PROJECT]')
 
     // Unix home directories.
     scrubbed = scrubbed.replace(/\/Users\/[^/\s]+/g, '/[HOME]')

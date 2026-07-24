@@ -362,7 +362,7 @@ describe('outputQuota', () => {
     const result = createErrorResult('Error')
 
     process.exitCode = undefined
-    await outputQuota(result as unknown, 'json')
+    await outputQuota(result, 'json')
 
     expect(process.exitCode).toBe(1)
   })
@@ -395,7 +395,7 @@ describe('outputQuota', () => {
     }
 
     process.exitCode = undefined
-    await outputQuota(result as unknown, 'json')
+    await outputQuota(result, 'json')
 
     expect(process.exitCode).toBe(1)
   })

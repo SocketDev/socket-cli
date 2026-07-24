@@ -124,7 +124,7 @@ describe('util/dlx/vfs-extract', () => {
       for (let i = 0, { length } = EXTERNAL_TOOLS; i < length; i += 1) {
         const tool = EXTERNAL_TOOLS[i]
         expect(paths[tool]).toBeTypeOf('string')
-        expect((paths[tool] as string).length).toBeGreaterThan(0)
+        expect(paths[tool].length).toBeGreaterThan(0)
       }
     })
 

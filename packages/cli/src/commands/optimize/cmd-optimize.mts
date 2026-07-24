@@ -74,7 +74,7 @@ export async function run(
     parentName,
   })
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
   const { json, markdown, pin, prod } = cli.flags
 
@@ -89,7 +89,7 @@ export async function run(
     // Detect package environment to show meaningful dry-run output.
     const pkgEnvCResult = await detectAndValidatePackageEnvironment(cwd, {
       cmdName: CMD_NAME_FULL,
-      prod: Boolean(prod),
+      prod: prod,
     })
 
     if (!pkgEnvCResult.ok) {
@@ -150,8 +150,8 @@ export async function run(
 
   await handleOptimize({
     cwd,
-    pin: Boolean(pin),
+    pin: pin,
     outputKind,
-    prod: Boolean(prod),
+    prod: prod,
   })
 }

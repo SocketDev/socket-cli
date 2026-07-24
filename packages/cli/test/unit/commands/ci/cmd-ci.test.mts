@@ -96,6 +96,19 @@ const mockMeowOrExit = vi.hoisted(() =>
     const argv = options.argv as string[] | readonly string[]
     const flags: Record<string, unknown> = {}
 
+    // Real meow seeds every declared flag with its `default` before argv
+    // overrides — mirror that from the command's own config so the mock
+    // never delivers `undefined` where production delivers `false`.
+    const declared = (options.config?.flags ?? {}) as Record<
+      string,
+      { default?: unknown | undefined }
+    >
+    for (const [name, def] of Object.entries(declared)) {
+      if (def && 'default' in def) {
+        flags[name] = def.default
+      }
+    }
+
     // Parse flags from argv.
     if (argv.includes('--dry-run')) {
       flags['dryRun'] = true

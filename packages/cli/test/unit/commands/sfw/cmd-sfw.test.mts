@@ -29,7 +29,10 @@ describe('cmd-sfw', () => {
     pid: 12_345,
   }
 
-  const createMockSpawnResult = (exitCode = 0, signal?: string) => ({
+  const createMockSpawnResult = (
+    exitCode = 0,
+    signal?: string | undefined,
+  ) => ({
     spawnPromise: Promise.resolve({
       code: signal ? undefined : exitCode,
       signal,
@@ -161,9 +164,9 @@ describe('cmd-sfw', () => {
     it('shows wrapper help when --help is passed and skips spawn', async () => {
       mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0))
 
-      const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {
+      const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
         throw new Error('process.exit')
-      }) as never)
+      })
 
       try {
         await cmdSfw.run(['--help'], importMeta, context).catch(() => undefined)
@@ -195,7 +198,7 @@ describe('cmd-sfw', () => {
           signal: undefined,
           success: false,
         }),
-      } as unknown)
+      })
       process.exitCode = undefined
 
       const killSpy = vi

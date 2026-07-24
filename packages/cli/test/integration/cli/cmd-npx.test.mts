@@ -40,23 +40,23 @@ describe('socket npx', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`
-        "Wraps pnpm exec with Socket security scanning
+        "Run pnpm exec with Socket Firewall security
 
           Usage
-                $ socket pnpm exec ...
+                $ socket npx ...
           
               API Token Requirements
                 - Quota: 100 units
                 - Permissions: packages:list
           
-              Note: Everything after "npx" is passed to the pnpm exec command.
-                    Only the \`--dry-run\` and \`--help\` flags are caught here.
+              Note: Everything after "npx" is forwarded to Socket Firewall (sfw).
+                    Socket Firewall provides real-time security scanning for npx packages.
           
               Use \`socket wrapper on\` to alias this command as \`npx\`.
           
               Examples
-                $ socket pnpm exec cowsay
-                $ socket pnpm exec cowsay@1.6.0 hello"
+                $ socket npx cowsay
+                $ socket npx cowsay@1.6.0 hello"
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -78,14 +78,22 @@ describe('socket npx', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket npx\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket npx\`, cwd: <redacted>
+
+
+        [DryRun]: Would execute npx with Socket security scanning
+
+          Command: sfw
+          Arguments: npx
+
+          Run without --dry-run to execute this command."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -124,11 +132,11 @@ describe('socket npx', async () => {
     ],
     'should handle pnpm exec with -c flag and issueRules for malware',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'dry-run pnpm exec with -c should exit with code 0').toBe(0)
     },
   )
@@ -144,11 +152,11 @@ describe('socket npx', async () => {
     ],
     'should handle pnpm exec with --config flag and issueRules for malware',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(
         code,
         'dry-run pnpm exec with --config should exit with code 0',
@@ -167,11 +175,11 @@ describe('socket npx', async () => {
     ],
     'should handle pnpm exec with -c flag and multiple issueRules (malware and gptMalware)',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(
         code,
         'dry-run pnpm exec with multiple issueRules should exit with code 0',
@@ -190,11 +198,11 @@ describe('socket npx', async () => {
     ],
     'should handle pnpm exec with --config flag and multiple issueRules (malware and gptMalware)',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(
         code,
         'dry-run pnpm exec with --config and multiple issueRules should exit with code 0',

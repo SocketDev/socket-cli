@@ -1,17 +1,15 @@
 /**
  * Unit tests for fetchScan.
  *
- * Purpose: Tests fetching individual scan results via the Socket API. Validates
- * scan retrieval by ID.
+ * Purpose: Tests fetching individual scan results via the Socket API. Scan
+ * reads always go through the cached immutable-store endpoint
+ * (`?cached=true`) and poll transparently while the server computes results.
  *
- * Test Coverage: - Successful API operation - SDK setup failure handling - API
- * call error scenarios - Custom SDK options (API tokens, base URLs) - Null
- * prototype usage for security.
+ * Testing Approach: Mocks the status-aware API query helper to simulate 200
+ * (ready), 202 (processing), and error responses. The sleep helper is mocked
+ * so polling loops run instantly.
  *
- * Testing Approach: Uses SDK test helpers to mock Socket API interactions.
- * Validates comprehensive error handling and API integration.
- *
- * Related Files: - src/commands/Scan.mts (implementation)
+ * Related Files: - src/commands/scan/fetch-scan.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -28,7 +26,8 @@ const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
 }))
 
-const mockQueryApiSafeText = vi.hoisted(() => vi.fn())
+const mockQueryApiSafeTextWithStatus = vi.hoisted(() => vi.fn())
+const mockSleep = vi.hoisted(() => vi.fn(() => Promise.resolve()))
 const mockDebug = vi.hoisted(() => vi.fn())
 const mockDebugDir = vi.hoisted(() => vi.fn())
 const mockIsDebug = vi.hoisted(() => vi.fn())
@@ -40,7 +39,12 @@ vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
 }))
 
 vi.mock(import('../../../../src/util/socket/api.mjs'), () => ({
-  queryApiSafeText: mockQueryApiSafeText,
+  queryApiSafeTextWithStatus: mockQueryApiSafeTextWithStatus,
+}))
+
+vi.mock(import('@socketsecurity/lib-stable/promises/timers'), () => ({
+  sleep: mockSleep,
+  yieldToEventLoop: vi.fn(() => Promise.resolve()),
 }))
 
 vi.mock(import('@socketsecurity/lib-stable/debug/output'), () => ({
@@ -55,29 +59,37 @@ vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
   getDefaultApiToken: mockGetDefaultApiToken,
 }))
 
+function readyResponse(text: string) {
+  return { ok: true, data: { status: 200, text } }
+}
+
+function processingResponse(scanId = 'scan-123') {
+  return {
+    ok: true,
+    data: { status: 202, text: `{"status":"processing","id":"${scanId}"}` },
+  }
+}
+
 describe('fetchScan', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('fetches scan successfully', async () => {
-    const mockQueryApiText = vi.mocked(mockQueryApiSafeText)
-
+  it('fetches cached scan results successfully', async () => {
     const mockScanData = [
       '{"type":"package","name":"lodash","version":"4.17.21"}',
       '{"type":"vulnerability","id":"CVE-2023-001","severity":"high"}',
       '{"type":"license","name":"MIT","approved":true}',
     ].join('\n')
 
-    mockQueryApiText.mockResolvedValue({
-      ok: true,
-      data: mockScanData,
-    })
+    mockQueryApiSafeTextWithStatus.mockResolvedValue(
+      readyResponse(mockScanData),
+    )
 
     const result = await fetchScan('test-org', 'scan-123')
 
-    expect(mockQueryApiText).toHaveBeenCalledWith(
-      'orgs/test-org/full-scans/scan-123',
+    expect(mockQueryApiSafeTextWithStatus).toHaveBeenCalledWith(
+      'orgs/test-org/full-scans/scan-123?cached=true',
       'a scan',
     )
     expect(result.ok).toBe(true)
@@ -88,44 +100,50 @@ describe('fetchScan', () => {
     ])
   })
 
-  it('handles API call failure', async () => {
-    const mockQueryApiText = vi.mocked(mockQueryApiSafeText)
+  it('polls on 202 until cached results are ready', async () => {
+    mockQueryApiSafeTextWithStatus
+      .mockResolvedValueOnce(processingResponse())
+      .mockResolvedValueOnce(processingResponse())
+      .mockResolvedValueOnce(readyResponse('{"type":"package","name":"ready"}'))
 
+    const result = await fetchScan('test-org', 'scan-123')
+
+    expect(mockQueryApiSafeTextWithStatus).toHaveBeenCalledTimes(3)
+    expect(mockSleep).toHaveBeenCalledTimes(2)
+    expect(result.ok).toBe(true)
+    expect(result.data).toEqual([{ type: 'package', name: 'ready' }])
+  })
+
+  it('handles API call failure', async () => {
     const error = {
       ok: false,
       code: 404,
       message: 'Scan not found',
       cause: 'The specified scan does not exist',
     }
-    mockQueryApiText.mockResolvedValue(error)
+    mockQueryApiSafeTextWithStatus.mockResolvedValue(error)
 
     const result = await fetchScan('test-org', 'nonexistent-scan')
 
     expect(result).toEqual(error)
+    expect(mockSleep).not.toHaveBeenCalled()
   })
 
   it('handles invalid JSON in scan data', async () => {
-    const mockQueryApiText = vi.mocked(mockQueryApiSafeText)
-    const mockDebugFn = vi.mocked(mockDebug)
-    const mockDebugDirFn = vi.mocked(mockDebugDir)
-
     const invalidJson = [
       '{"type":"package","name":"valid"}',
       '{"invalid":json}',
       '{"type":"another","name":"valid"}',
     ].join('\n')
 
-    mockQueryApiText.mockResolvedValue({
-      ok: true,
-      data: invalidJson,
-    })
+    mockQueryApiSafeTextWithStatus.mockResolvedValue(readyResponse(invalidJson))
 
     const result = await fetchScan('test-org', 'scan-123')
 
-    expect(mockDebugFn).toHaveBeenCalledWith(
+    expect(mockDebug).toHaveBeenCalledWith(
       'Failed to parse scan result line as JSON',
     )
-    expect(mockDebugDirFn).toHaveBeenCalledWith({
+    expect(mockDebugDir).toHaveBeenCalledWith({
       error: expect.any(SyntaxError),
       line: '{"invalid":json}',
     })
@@ -137,12 +155,7 @@ describe('fetchScan', () => {
   })
 
   it('handles empty scan data', async () => {
-    const mockQueryApiText = vi.mocked(mockQueryApiSafeText)
-
-    mockQueryApiText.mockResolvedValue({
-      ok: true,
-      data: '',
-    })
+    mockQueryApiSafeTextWithStatus.mockResolvedValue(readyResponse(''))
 
     const result = await fetchScan('test-org', 'empty-scan')
 
@@ -151,8 +164,6 @@ describe('fetchScan', () => {
   })
 
   it('filters out empty lines but fails on invalid JSON', async () => {
-    const mockQueryApiText = vi.mocked(mockQueryApiSafeText)
-
     // The function filters out empty lines with .filter(Boolean), but '   ' is truthy.
     // So it will try to parse '   ' as JSON and fail.
     const dataWithEmptyLines = [
@@ -164,10 +175,9 @@ describe('fetchScan', () => {
       '',
     ].join('\n')
 
-    mockQueryApiText.mockResolvedValue({
-      ok: true,
-      data: dataWithEmptyLines,
-    })
+    mockQueryApiSafeTextWithStatus.mockResolvedValue(
+      readyResponse(dataWithEmptyLines),
+    )
 
     const result = await fetchScan('test-org', 'scan-123')
 
@@ -177,30 +187,24 @@ describe('fetchScan', () => {
   })
 
   it('properly URL encodes scan ID', async () => {
-    const mockQueryApiText = vi.mocked(mockQueryApiSafeText)
-
-    mockQueryApiText.mockResolvedValue({
-      ok: true,
-      data: '{"type":"test"}',
-    })
+    mockQueryApiSafeTextWithStatus.mockResolvedValue(
+      readyResponse('{"type":"test"}'),
+    )
 
     const specialCharsScanId = 'scan+with%special&chars/and?query=params'
 
     await fetchScan('test-org', specialCharsScanId)
 
-    expect(mockQueryApiText).toHaveBeenCalledWith(
-      'orgs/test-org/full-scans/scan%2Bwith%25special%26chars%2Fand%3Fquery%3Dparams',
+    expect(mockQueryApiSafeTextWithStatus).toHaveBeenCalledWith(
+      'orgs/test-org/full-scans/scan%2Bwith%25special%26chars%2Fand%3Fquery%3Dparams?cached=true',
       'a scan',
     )
   })
 
   it('handles different org slugs', async () => {
-    const mockQueryApiText = vi.mocked(mockQueryApiSafeText)
-
-    mockQueryApiText.mockResolvedValue({
-      ok: true,
-      data: '{"type":"test"}',
-    })
+    mockQueryApiSafeTextWithStatus.mockResolvedValue(
+      readyResponse('{"type":"test"}'),
+    )
 
     const testCases = [
       'org-with-dashes',
@@ -213,23 +217,20 @@ describe('fetchScan', () => {
       const orgSlug = testCases[i]
       await fetchScan(orgSlug, 'scan-123')
 
-      expect(mockQueryApiText).toHaveBeenCalledWith(
-        `orgs/${orgSlug}/full-scans/scan-123`,
+      expect(mockQueryApiSafeTextWithStatus).toHaveBeenCalledWith(
+        `orgs/${orgSlug}/full-scans/scan-123?cached=true`,
         'a scan',
       )
     }
   })
 
   it('handles single line of JSON', async () => {
-    const mockQueryApiText = vi.mocked(mockQueryApiSafeText)
-
     const singleLineData =
       '{"type":"package","name":"single","version":"1.0.0"}'
 
-    mockQueryApiText.mockResolvedValue({
-      ok: true,
-      data: singleLineData,
-    })
+    mockQueryApiSafeTextWithStatus.mockResolvedValue(
+      readyResponse(singleLineData),
+    )
 
     const result = await fetchScan('test-org', 'single-line-scan')
 
@@ -237,20 +238,5 @@ describe('fetchScan', () => {
     expect(result.data).toEqual([
       { type: 'package', name: 'single', version: '1.0.0' },
     ])
-  })
-
-  it('uses null prototype internally', async () => {
-    const mockQueryApiText = vi.mocked(mockQueryApiSafeText)
-
-    mockQueryApiText.mockResolvedValue({
-      ok: true,
-      data: '{"type":"test"}',
-    })
-
-    // This tests that the function works without prototype pollution issues.
-    await fetchScan('test-org', 'scan-123')
-
-    // The function should work properly.
-    expect(mockQueryApiText).toHaveBeenCalled()
   })
 })

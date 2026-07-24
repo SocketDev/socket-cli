@@ -91,12 +91,14 @@ describe('SEA detection utilities', () => {
       vi.resetModules()
       vi.doMock(import('node:module'), async importOriginal => {
         const actual = await importOriginal<typeof ModuleModule>()
-        return {
-          ...actual,
+        // node:module is an `export =` CJS namespace typed as the Module
+        // class; Object.assign copies its own enumerable exports without a
+        // class spread.
+        return Object.assign({}, actual, {
           createRequire: () => () => {
             throw new Error('Cannot find module node:sea')
           },
-        }
+        })
       })
       const fresh =
         await import('../../../../src/util/sea/detect.mts?cache_bust=throw')

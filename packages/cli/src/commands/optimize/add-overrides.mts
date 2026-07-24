@@ -30,7 +30,6 @@ import type { GetOverridesResult } from './get-overrides-by-agent.mts'
 import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
 import type { AliasResult } from '../../util/npm/package-arg.mts'
 import type { Logger } from '@socketsecurity/lib-stable/logger/logger'
-import type { PackageJson } from '@socketsecurity/lib-stable/packages/types'
 import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 
 export type AddOverridesOptions = {
@@ -179,9 +178,7 @@ export async function addOverrides(
         // The lockSrcIncludes and lsStdoutIncludes functions overlap in their
         // first two parameters. lockSrcIncludes accepts an optional third parameter
         // which lsStdoutIncludes will ignore.
-        const thingScanner = (
-          isLockScanned ? lockSrcIncludes : lsStdoutIncludes
-        ) as typeof lockSrcIncludes
+        const thingScanner = isLockScanned ? lockSrcIncludes : lsStdoutIncludes
 
         const thingToScan = isLockScanned
           ? lockSrc
@@ -309,9 +306,7 @@ export async function addOverrides(
   }
 
   if (state.added.size > 0 || state.updated.size > 0) {
-    pkgEnvDetails.editablePkgJson.update(
-      Object.fromEntries(depEntries) as PackageJson,
-    )
+    pkgEnvDetails.editablePkgJson.update(Object.fromEntries(depEntries))
     if (isWorkspaceRoot) {
       for (const { overrides, type } of overridesDataObjects) {
         // updateManifest is async because the pnpm 11+ path writes to

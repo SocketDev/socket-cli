@@ -78,7 +78,7 @@ ${getSupportedConfigEntries()
 
   const { json, markdown } = cli.flags as unknown as ConfigAutoFlags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
   const [key = ''] = cli.input
 

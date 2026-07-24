@@ -56,14 +56,14 @@ describe('suggest_target', () => {
 
       await suggestTarget()
 
-      const callArg = mockSelect.mock.calls[0]![0] as {
+      const callArg = mockSelect.mock.calls[0][0] as {
         choices: Array<{ name: string; value: boolean }>
       }
       expect(callArg.choices).toHaveLength(2)
-      expect(callArg.choices[0]!.name).toBe('Yes')
-      expect(callArg.choices[0]!.value).toBe(true)
-      expect(callArg.choices[1]!.name).toBe('No')
-      expect(callArg.choices[1]!.value).toBe(false)
+      expect(callArg.choices[0].name).toBe('Yes')
+      expect(callArg.choices[0].value).toBe(true)
+      expect(callArg.choices[1].name).toBe('No')
+      expect(callArg.choices[1].value).toBe(false)
     })
   })
 })

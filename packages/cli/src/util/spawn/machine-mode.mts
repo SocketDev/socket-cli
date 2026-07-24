@@ -34,7 +34,7 @@ export interface MachineModeOutput {
  * tools respect at least one of these.
  */
 const UNIVERSAL_ENV: NodeJS.ProcessEnv = {
-  __proto__: undefined as never,
+  __proto__: undefined,
   CLICOLOR_FORCE: '0',
   FORCE_COLOR: '0',
   NO_COLOR: '1',

@@ -44,7 +44,7 @@ export function emitBanner(
   name: string,
   orgFlag: string | undefined,
   compactMode = false,
-  flags?: Record<string, unknown>,
+  flags?: Record<string, unknown> | undefined,
 ) {
   // Print a banner at the top of each command.
   // This helps with brand recognition and marketing.
@@ -64,7 +64,7 @@ export function getAsciiHeader(
   command: string,
   orgFlag: string | undefined,
   compactMode = false,
-  flags?: Record<string, unknown>,
+  flags?: Record<string, unknown> | undefined,
 ) {
   // Note: In tests we return <redacted> because otherwise snapshots will fail.
   const redacting = VITEST
@@ -154,7 +154,9 @@ export function getAsciiHeader(
 /**
  * Get header theme from flags or use default.
  */
-export function getHeaderTheme(flags?: Record<string, unknown>): HeaderTheme {
+export function getHeaderTheme(
+  flags?: Record<string, unknown> | undefined,
+): HeaderTheme {
   const theme = flags?.['headerTheme']
   const validThemes: HeaderTheme[] = [
     'default',
@@ -190,7 +192,9 @@ export function getTokenOrigin(): string {
 /**
  * Determine if header should animate (shimmer effect).
  */
-export function shouldAnimateHeader(flags?: Record<string, unknown>): boolean {
+export function shouldAnimateHeader(
+  flags?: Record<string, unknown> | undefined,
+): boolean {
   // Disable animation in CI, tests, or when explicitly disabled.
   if (getCI() || VITEST || !process.stdout.isTTY || !supportsFullColor()) {
     return false

@@ -353,7 +353,7 @@ describe('outputLicensePolicy', () => {
     const result = createErrorResult('Error')
 
     process.exitCode = undefined
-    await outputLicensePolicy(result as unknown, 'json')
+    await outputLicensePolicy(result, 'json')
 
     expect(process.exitCode).toBe(1)
   })
@@ -388,7 +388,7 @@ describe('outputLicensePolicy', () => {
     }
 
     process.exitCode = undefined
-    await outputLicensePolicy(result as unknown, 'json')
+    await outputLicensePolicy(result, 'json')
 
     expect(process.exitCode).toBe(1)
   })
@@ -434,9 +434,7 @@ describe('outputLicensePolicy', () => {
 
     expect(mockMdTableOfPairs).toHaveBeenCalled()
     // mockMdTableOfPairs is called with sorted pairs.
-    const sortedPairs = mockMdTableOfPairs.mock.calls[0]![0] as Array<
-      [string, string]
-    >
+    const sortedPairs = mockMdTableOfPairs.mock.calls[0][0]
     const customPair = sortedPairs.find(p => p[0] === 'CUSTOM')
     expect(customPair?.[1]).toBe(' no')
   })

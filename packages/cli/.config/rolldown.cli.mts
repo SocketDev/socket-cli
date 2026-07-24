@@ -8,7 +8,7 @@
  * rolldown `resolveId` / `load` hooks below.
  */
 
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync, realpathSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -30,6 +30,23 @@ const inlinedEnvVars = getInlinedEnvVars()
 // Matches ./external/, ../external/, ../../external/, etc. (forward + back slash).
 const socketLibExternalPathRegExp = /^(?:(?:\.\.[/\\])+|\.[/\\])external[/\\]/
 
+/**
+ * Collapse symlinked module ids (pnpm `@socketsecurity/lib` + `lib-stable`
+ * aliases both point at one real package) to the physical path. Without this,
+ * the same prebundled external (e.g. npm-pack.js) enters the module graph
+ * under two ids, gets bundled twice, and rolldown's identifier deconflicting
+ * collides on the prebundles' pre-suffixed `require_lib$N` names — at runtime
+ * Arborist's `pacote` binding then resolves to a different chunk's module
+ * ("pacote.manifest is not a function" during dlx installs).
+ */
+function toRealPath(p: string): string {
+  try {
+    return realpathSync(p)
+  } catch {
+    return p
+  }
+}
+
 export function findSocketLibPath(importerPath: string): string | undefined {
   const match = importerPath.match(/^(.*\/@socketsecurity\/lib)\b/)
   if (match) {
@@ -48,8 +65,8 @@ export function resolveSocketLibExternal(
 ): string | undefined {
   if (packageName.startsWith('@')) {
     const parts = packageName.split('/')
-    const scope = parts[0]!
-    const name = parts[1]!
+    const scope = parts[0]
+    const name = parts[1]
     const p = path.join(socketLibPath, 'dist', 'external', scope, `${name}.js`)
     return existsSync(p) ? p : undefined
   }
@@ -100,10 +117,36 @@ function resolveSocketLibInternalsPlugin(): Plugin {
       'constants',
       `${source.replace(strip, '')}.js`,
     )
-    return existsSync(p) ? { id: p } : undefined
+    return existsSync(p) ? { id: toRealPath(p) } : undefined
   }
   return {
     name: 'resolve-socket-lib-internals',
+    // socket-lib's prebundled dist files carry bundler-generated CJS factory
+    // names like `require_lib$36`. When rolldown flattens several of those
+    // files into one output scope it deconflicts colliding names by appending
+    // its own `$N` suffixes — and a generated name (`require_lib$10`) can
+    // collide with a DIFFERENT file's pre-existing `require_lib$10`, silently
+    // rebinding e.g. Arborist's `pacote` to libnpmpack ("pacote.manifest is
+    // not a function" during dlx installs). Rewrite the pre-suffixed factory
+    // names (file-internal, never imported across files) to a `$`-free form
+    // so the deconflicter can't generate a colliding name.
+    load(id) {
+      if (
+        /[/\\]@socketsecurity[/\\]lib(?:-stable)?[/\\]dist[/\\]|[/\\]socket-lib[/\\]dist[/\\]/.test(
+          id,
+        ) &&
+        id.endsWith('.js')
+      ) {
+        const code = readFileSync(id, 'utf8')
+        return {
+          // Matches a whole CJS factory name: `require_` + identifier chars
+          // (captured as $1), then a literal `$` + digits (the bundler's
+          // numeric suffix, captured as $2), e.g. `require_lib$36`.
+          code: code.replace(/\b(require_[A-Za-z_][\w]*)\$(\d+)\b/g, '$1_v$2'),
+        }
+      }
+      return undefined
+    },
     resolveId(source, importer) {
       if (source.startsWith('../constants/')) {
         return resolveConstant(source, importer, /^\.\.\/constants\//)
@@ -123,7 +166,7 @@ function resolveSocketLibInternalsPlugin(): Plugin {
           .replace(socketLibExternalPathRegExp, '')
           .replace(/\.js$/, '')
         const p = resolveSocketLibExternal(socketLibPath, externalPath)
-        return p ? { id: p } : undefined
+        return p ? { id: toRealPath(p) } : undefined
       }
       // Source is a bare-package or scoped-package specifier:
       // ^               anchors to start of string
@@ -140,9 +183,9 @@ function resolveSocketLibInternalsPlugin(): Plugin {
         }
         const packageName = source.startsWith('@')
           ? source.split('/').slice(0, 2).join('/')
-          : source.split('/')[0]!
+          : source.split('/')[0]
         const p = resolveSocketLibExternal(socketLibPath, packageName)
-        return p ? { id: p } : undefined
+        return p ? { id: toRealPath(p) } : undefined
       }
       return undefined
     },

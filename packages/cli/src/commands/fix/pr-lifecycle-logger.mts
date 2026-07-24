@@ -26,7 +26,7 @@ export function logPrEvent(
   event: PrLifecycleEvent,
   prNumber: number,
   ghsaId: string,
-  details?: string,
+  details?: string | undefined,
 ): void {
   const prRef = `PR #${prNumber}`
   const detailsSuffix = details ? `: ${details}` : ''

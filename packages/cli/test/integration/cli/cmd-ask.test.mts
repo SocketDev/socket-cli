@@ -21,7 +21,6 @@ import {
   FLAG_HELP,
 } from '../../../src/constants/cli.mts'
 import { getBinCliPath } from '../../../src/constants/paths.mts'
-import { expectDryRunOutput } from '../../helpers/output-assertions.mts'
 import { cmdit, spawnSocketCli } from '../../utils.mts'
 
 const binCliPath = getBinCliPath()
@@ -45,11 +44,12 @@ describe('socket ask', async () => {
 
   cmdit(
     ['ask', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
-    `should support ${FLAG_DRY_RUN}`,
+    `should require a query even with ${FLAG_DRY_RUN}`,
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expectDryRunOutput(stdout)
-      expect(code, 'dry-run should exit with code 0').toBe(0)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      // Input validation runs before the dry-run bail: no query is an error.
+      expect(stderr).toContain('requires a QUERY positional argument')
+      expect(code, 'should exit with non-zero code').not.toBe(0)
     },
   )
 
@@ -57,8 +57,9 @@ describe('socket ask', async () => {
     ['ask', FLAG_CONFIG, '{}'],
     'should error when no query provided',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toContain('requires a QUERY positional argument')
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      // Validation errors are status output and route to stderr.
+      expect(stderr).toContain('requires a QUERY positional argument')
       expect(code, 'should exit with non-zero code').not.toBe(0)
     },
   )
@@ -67,7 +68,7 @@ describe('socket ask', async () => {
     ['ask', 'scan for vulnerabilities', FLAG_CONFIG, '{}'],
     'should process natural language query',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       // Should show query interpretation.
       expect(stdout).toContain('You asked')
       expect(stdout).toContain('scan for vulnerabilities')
@@ -84,7 +85,7 @@ describe('socket ask', async () => {
     ['ask', 'fix critical issues', FLAG_CONFIG, '{}'],
     'should interpret fix command with severity',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toContain('You asked')
       expect(stdout).toContain('fix critical issues')
       expect(stdout).toContain('Command')

@@ -56,6 +56,7 @@ describe('socket scan diff', async () => {
                 --json              Output as JSON
                 --markdown          Output as Markdown
                 --org               Force override the organization slug, overrides the default org from config
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
           
               Examples
                 $ socket scan diff [UUID] [UUID]
@@ -89,7 +90,7 @@ describe('socket scan diff', async () => {
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket scan diff\`, cwd: <redacted>
 
-        \\u203c Unable to determine the target org. Trying to auto-discover it now…
+        \\u203c Unable to determine the target org. Trying to auto-discover it now\\u2026
         i Note: Run \`socket login\` to set a default org.
               Use the --org flag to override the default org.
 
@@ -121,13 +122,25 @@ describe('socket scan diff', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket scan diff\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket scan diff\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch scan differences
+
+          Query parameters:
+            organization: fakeOrg
+            scanId1: x
+            scanId2: y
+            depth: 2
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

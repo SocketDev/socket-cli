@@ -124,7 +124,7 @@ export function getHelpListOutput(
     result += preDescription
 
     const description = entryIsObj
-      ? String(entry['description'] ?? '')
+      ? (entry['description'] ?? '')
       : String(entry)
     if (description) {
       result += indentString(description, {

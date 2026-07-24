@@ -86,8 +86,8 @@ export async function run(
     )
   }
 
-  const execute = !!cli.flags['execute']
-  const explain = !!cli.flags['explain']
+  const execute = cli.flags['execute']
+  const explain = cli.flags['explain']
 
   await handleAsk({
     query,

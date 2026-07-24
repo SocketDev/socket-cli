@@ -46,11 +46,11 @@ export function capitalize(s: string): string {
  *
  * Used by every tool wrapper in the dlx/spawn-* family.
  */
-export function defineAutoDispatch(options: {
+export function defineAutoDispatch(config: {
   vfs: ToolSpawnFn
   dlx: ToolSpawnFn
 }): ToolSpawnFn {
-  const { dlx, vfs } = { __proto__: null, ...options } as typeof options
+  const { dlx, vfs } = { __proto__: null, ...config } as typeof config
   return async (args, dlxOptions, spawnExtra) => {
     if (isSeaBinary() && areExternalToolsAvailable()) {
       return await vfs(args, dlxOptions, spawnExtra)
@@ -64,14 +64,14 @@ export function defineAutoDispatch(options: {
  * releases (trufflehog, trivy, opengrep). Throws a clearly-attributed
  * resolver-contract error if the resolver returns a non-github-release type.
  */
-export function defineGitHubReleaseSpawn(options: {
+export function defineGitHubReleaseSpawn(config: {
   toolName: string
   resolve: () => BinaryResolution
 }): ToolSpawnFn {
   const { resolve, toolName } = {
     __proto__: null,
-    ...options,
-  } as typeof options
+    ...config,
+  } as typeof config
   return async (args, dlxCallOptions, spawnExtra) => {
     const resolution = resolve()
 
@@ -107,7 +107,7 @@ export function defineGitHubReleaseSpawn(options: {
  * Returns `{ Dlx, Vfs, auto }` where `auto` is the public spawnFoo() dispatcher
  * and Dlx/Vfs are the underlying spawners.
  */
-export function defineToolSpawn(options: {
+export function defineToolSpawn(config: {
   toolName: string
   vfsName: ExternalTool
   resolve: () => BinaryResolution
@@ -116,12 +116,12 @@ export function defineToolSpawn(options: {
   Vfs: ToolSpawnFn
   auto: ToolSpawnFn
 } {
-  const opts = { __proto__: null, ...options } as typeof options
+  const cfg = { __proto__: null, ...config } as typeof config
   const Dlx = defineGitHubReleaseSpawn({
-    toolName: opts.toolName,
-    resolve: opts.resolve,
+    toolName: cfg.toolName,
+    resolve: cfg.resolve,
   })
-  const Vfs = defineVfsSpawn(opts.vfsName)
+  const Vfs = defineVfsSpawn(cfg.vfsName)
   const auto = defineAutoDispatch({ vfs: Vfs, dlx: Dlx })
   return { Dlx, Vfs, auto }
 }
@@ -132,7 +132,7 @@ export function defineToolSpawn(options: {
  * The VFS name (e.g. 'trufflehog') is the directory key under the SEA bundle.
  */
 export function defineVfsSpawn(vfsName: ExternalTool): ToolSpawnFn {
-  return async (args, options, spawnExtra) => {
-    return await spawnToolVfs(vfsName, args, options, spawnExtra)
+  return async (args, dlxOptions, spawnExtra) => {
+    return await spawnToolVfs(vfsName, args, dlxOptions, spawnExtra)
   }
 }

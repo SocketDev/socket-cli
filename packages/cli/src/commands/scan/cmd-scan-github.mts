@@ -138,14 +138,14 @@ export async function run(
   })
 
   const {
-    githubToken = getSocketCliGithubToken(),
-    interactive = true,
+    githubToken,
+    interactive,
     json,
     markdown,
     org: orgFlag,
   } = cli.flags as unknown as ScanGithubFlags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
   let { all, githubApiUrl, orgGithub, repos } =
     cli.flags as unknown as ScanGithubFlags
@@ -156,7 +156,7 @@ export async function run(
   cwd = path.resolve(process.cwd(), cwd)
 
   let { 0: orgSlug } = await determineOrgSlug(
-    String(orgFlag || ''),
+    orgFlag || '',
     interactive,
     dryRun,
   )
@@ -268,10 +268,10 @@ export async function run(
   }
 
   await handleCreateGithubScan({
-    all: Boolean(all),
+    all: all,
     githubApiUrl,
     githubToken: githubToken || '',
-    interactive: Boolean(interactive),
+    interactive: interactive,
     orgSlug,
     orgGithub,
     outputKind,

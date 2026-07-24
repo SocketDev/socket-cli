@@ -56,7 +56,7 @@ export async function run(
     parentName,
   })
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
   if (dryRun) {
     outputDryRunExecute(
@@ -75,7 +75,7 @@ export async function runRawNpx(
 ): Promise<void> {
   process.exitCode = 1
 
-  const spawnPromise = spawn(getNpxBinPath(), argv as string[], {
+  const spawnPromise = spawn(getNpxBinPath(), argv, {
     // On Windows, npx is often a .cmd file that requires shell execution.
     // The spawn function from @socketsecurity/registry will handle this properly
     // when shell is true.

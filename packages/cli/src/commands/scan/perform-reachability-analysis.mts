@@ -156,7 +156,7 @@ export async function performReachabilityAnalysis(
       return uploadCResult
     }
 
-    tarHash = (uploadCResult.data as { tarHash?: string | undefined })?.tarHash
+    tarHash = uploadCResult.data?.tarHash
     if (!tarHash) {
       /* c8 ignore start - wasSpinning only set when caller passes a running spinner; unit tests pass undefined */
       if (wasSpinning) {

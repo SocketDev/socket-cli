@@ -129,7 +129,7 @@ describe('cmd-repository', () => {
 
     it('should handle readonly argv', async () => {
       mockMeowWithSubcommands.mockResolvedValue(undefined)
-      const argv = Object.freeze(['list']) as readonly string[]
+      const argv = Object.freeze(['list'])
 
       await cmdRepository.run(argv, importMeta, context)
 

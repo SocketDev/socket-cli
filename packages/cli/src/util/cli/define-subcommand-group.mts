@@ -76,7 +76,7 @@ export interface DefineSubcommandGroupOptions {
  * object identity / strict shape working.
  */
 export function defineSubcommandGroup(
-  options: DefineSubcommandGroupOptions,
+  config: DefineSubcommandGroupOptions,
 ): CliSubcommand {
   const {
     aliases,
@@ -86,7 +86,7 @@ export function defineSubcommandGroup(
     name,
     passCommonFlags,
     subcommands,
-  } = { __proto__: null, ...options } as typeof options
+  } = { __proto__: null, ...config } as typeof config
 
   const effectiveFlags =
     flags ?? (passCommonFlags ? defineFlags({ ...commonFlags }) : undefined)

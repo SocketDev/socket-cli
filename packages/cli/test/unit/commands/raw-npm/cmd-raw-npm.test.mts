@@ -423,10 +423,7 @@ describe('cmd-raw-npm', () => {
 
     describe('readonly arguments', () => {
       it('should handle readonly argv array', async () => {
-        const readonlyArgv = Object.freeze([
-          'install',
-          'cowsay',
-        ]) as readonly string[]
+        const readonlyArgv = Object.freeze(['install', 'cowsay'])
 
         await cmdRawNpm.run(readonlyArgv, importMeta, context)
 
@@ -438,10 +435,7 @@ describe('cmd-raw-npm', () => {
       })
 
       it('should handle readonly argv in dry-run', async () => {
-        const readonlyArgv = Object.freeze([
-          'install',
-          '--dry-run',
-        ]) as readonly string[]
+        const readonlyArgv = Object.freeze(['install', '--dry-run'])
 
         await cmdRawNpm.run(readonlyArgv, importMeta, context)
 

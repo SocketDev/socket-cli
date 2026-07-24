@@ -161,7 +161,7 @@ export async function run(
     unknownFlags = [],
   } = cli.flags as unknown as FixFlags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
   const minSatisfying =
     (cli.flags as unknown as FixFlags).minSatisfying || !maxSatisfying
@@ -347,7 +347,7 @@ export async function run(
     coanaVersion: fixVersion,
     cwd,
     debug,
-    disableExternalToolChecks: Boolean(disableExternalToolChecks),
+    disableExternalToolChecks: disableExternalToolChecks,
     disableMajorUpdates,
     ecosystems: validatedEcosystems,
     exclude: excludePatterns,

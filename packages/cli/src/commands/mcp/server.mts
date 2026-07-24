@@ -13,8 +13,6 @@ import {
   runDepscore,
 } from './depscore.mts'
 
-import type { DepscoreInput } from './depscore.mts'
-
 export interface ServerConfig {
   getApiToken: () => string | undefined
   serverName: string
@@ -75,8 +73,7 @@ export function createConfiguredServer(config: ServerConfig): Server {
       }
     }
 
-    const authToken =
-      (extra.authInfo?.token as string | undefined) || config.getApiToken()
+    const authToken = extra.authInfo?.token || config.getApiToken()
 
     if (!authToken) {
       return {
@@ -90,7 +87,7 @@ export function createConfiguredServer(config: ServerConfig): Server {
       }
     }
 
-    const result = await runDepscore(args as DepscoreInput, {
+    const result = await runDepscore(args, {
       apiToken: authToken,
     })
     return {

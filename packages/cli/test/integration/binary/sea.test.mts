@@ -31,7 +31,7 @@ if (BINARY.enabled) {
 
       // Check authentication.
       if (ENV.RUN_INTEGRATION_TESTS) {
-        const apiToken = await getDefaultApiToken()
+        const apiToken = getDefaultApiToken()
         hasAuth = !!apiToken
         if (!apiToken && !process.env.CI) {
           logger.log('')

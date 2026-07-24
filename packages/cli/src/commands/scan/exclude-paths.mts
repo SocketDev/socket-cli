@@ -169,12 +169,12 @@ export function projectIgnorePathToReachExcludePaths(
  */
 export function projectIgnorePathsToReachExcludePaths(
   paths: readonly string[] | undefined,
-  options: { cwd: string; target: string },
+  config: { cwd: string; target: string },
 ): string[] {
   // GitHub App-style projectIgnorePaths support negation. Coana's
   // --exclude-dirs does not, so keep the existing Coana behavior and let it
   // infer config ignores itself when any negation is present.
-  const opts = { __proto__: null, ...options } as typeof options
+  const cfg = { __proto__: null, ...config } as typeof config
   if (
     !Array.isArray(paths) ||
     paths.some(ignorePath => ignorePath.includes('!'))
@@ -184,9 +184,9 @@ export function projectIgnorePathsToReachExcludePaths(
 
   // projectIgnorePaths are rooted at the project cwd. Coana receives excludes
   // relative to its analysis target, so nested target scans need translation.
-  const targetPath = path.isAbsolute(opts.target)
-    ? path.relative(opts.cwd, opts.target)
-    : opts.target
+  const targetPath = path.isAbsolute(cfg.target)
+    ? path.relative(cfg.cwd, cfg.target)
+    : cfg.target
   const targetPattern = toPosixPath(stripTrailingSlash(targetPath))
   return paths.flatMap(ignorePath =>
     projectIgnorePathToReachExcludePaths(ignorePath, targetPattern),

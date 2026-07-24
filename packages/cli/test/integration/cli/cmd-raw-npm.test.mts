@@ -72,14 +72,22 @@ describe('socket raw-npm', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket raw-npm\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket raw-npm\`, cwd: <redacted>
+
+
+        [DryRun]: Would execute raw npm command
+
+          Command: /[HOME]/.socket/_wheelhouse/rack/npm/12.0.1/package/bin/npm-cli.js
+          Arguments: --dry-run --config {"apiToken":"fakeToken"}
+
+          Run without --dry-run to execute this command."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

@@ -134,7 +134,7 @@ describe('ghsa-tracker', () => {
       )
 
       // Verify only one record exists (old one was removed).
-      const savedTracker = mockWriteJson.mock.calls[0]![1] as GhsaTracker
+      const savedTracker = mockWriteJson.mock.calls[0][1] as GhsaTracker
       expect(savedTracker.fixed).toHaveLength(1)
     })
 
@@ -156,9 +156,9 @@ describe('ghsa-tracker', () => {
       // Add a new record with a later timestamp.
       await markGhsaFixed(mockCwd, 'GHSA-new', 200)
 
-      const savedTracker = mockWriteJson.mock.calls[0]![1] as GhsaTracker
-      expect(savedTracker.fixed[0]!.ghsaId).toBe('GHSA-new')
-      expect(savedTracker.fixed[1]!.ghsaId).toBe('GHSA-old')
+      const savedTracker = mockWriteJson.mock.calls[0][1] as GhsaTracker
+      expect(savedTracker.fixed[0].ghsaId).toBe('GHSA-new')
+      expect(savedTracker.fixed[1].ghsaId).toBe('GHSA-old')
     })
 
     it('handles errors gracefully', async () => {

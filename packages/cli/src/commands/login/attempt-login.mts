@@ -53,7 +53,7 @@ export async function attemptLogin(
   if (!sockSdkCResult.ok) {
     process.exitCode = 1
     logger.fail(failMsgWithBadge(sockSdkCResult.message, sockSdkCResult.cause))
-    return
+    return undefined
   }
 
   const sockSdk = sockSdkCResult.data
@@ -65,7 +65,7 @@ export async function attemptLogin(
   if (!orgsCResult.ok) {
     process.exitCode = 1
     logger.fail(failMsgWithBadge(orgsCResult.message, orgsCResult.cause))
-    return
+    return undefined
   }
 
   const { organizations } = orgsCResult.data
@@ -185,4 +185,5 @@ export async function attemptLogin(
     process.exitCode = 1
     logger.fail('API login failed')
   }
+  return undefined
 }

@@ -244,7 +244,7 @@ describe('meow-with-subcommands', () => {
         help: '',
         showHelp: vi.fn(),
         showVersion: vi.fn(),
-      } as unknown)
+      })
 
       const exitSpy = vi
         .spyOn(process, 'exit')
@@ -303,7 +303,7 @@ describe('meow-with-subcommands', () => {
       const result = description({
         description: 'Test command description',
         run: vi.fn(),
-      } as unknown)
+      })
       expect(result).toBe('Test command description')
     })
 
@@ -317,7 +317,7 @@ describe('meow-with-subcommands', () => {
       const result = description({
         description: 42 as unknown as string,
         run: vi.fn(),
-      } as unknown)
+      })
       expect(result).toBe('42')
     })
   })
@@ -485,7 +485,7 @@ describe('meow-with-subcommands', () => {
     function withTokenEnvCleared(fn: () => void): void {
       const saved = new Map(TOKEN_ENV_KEYS.map(k => [k, process.env[k]]))
       for (let i = 0, { length } = TOKEN_ENV_KEYS; i < length; i += 1) {
-        delete process.env[TOKEN_ENV_KEYS[i]!]
+        delete process.env[TOKEN_ENV_KEYS[i]]
       }
       try {
         fn()

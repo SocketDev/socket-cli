@@ -48,7 +48,7 @@ describe('socket scan reach - validation tests', () => {
       'should accept --output flag with .json extension',
       async cmd => {
         const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+        expect(stdout).toMatchInlineSnapshot(`""`)
         expect(code, 'should exit with code 0').toBe(0)
       },
     )
@@ -68,7 +68,7 @@ describe('socket scan reach - validation tests', () => {
       'should accept -o short flag with .json extension',
       async cmd => {
         const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+        expect(stdout).toMatchInlineSnapshot(`""`)
         expect(code, 'should exit with code 0').toBe(0)
       },
     )
@@ -88,7 +88,7 @@ describe('socket scan reach - validation tests', () => {
       'should accept --output flag with path',
       async cmd => {
         const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+        expect(stdout).toMatchInlineSnapshot(`""`)
         expect(code, 'should exit with code 0').toBe(0)
       },
     )
@@ -221,11 +221,15 @@ describe('socket scan reach - validation tests', () => {
         FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
-      'should show clear error for invalid memory limit',
+      'should preview execution under dry-run despite invalid memory limit',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         const output = stdout + stderr
-        expect(output).toContain('[DryRun]: Bailing now')
+        // Dry-run now previews the coana invocation instead of bailing;
+        // numeric flag values are validated at execution time.
+        expect(output).toContain(
+          '[DryRun]: Would execute reachability analysis',
+        )
         expect(code).toBe(0)
       },
     )
@@ -242,11 +246,15 @@ describe('socket scan reach - validation tests', () => {
         FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
-      'should show clear error for negative memory limit',
+      'should preview execution under dry-run despite negative memory limit',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         const output = stdout + stderr
-        expect(output).toContain('[DryRun]: Bailing now')
+        // Dry-run now previews the coana invocation instead of bailing;
+        // numeric flag values are validated at execution time.
+        expect(output).toContain(
+          '[DryRun]: Would execute reachability analysis',
+        )
         expect(code).toBe(0)
       },
     )
@@ -263,11 +271,15 @@ describe('socket scan reach - validation tests', () => {
         FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
-      'should show clear error for invalid timeout value',
+      'should preview execution under dry-run despite invalid timeout value',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         const output = stdout + stderr
-        expect(output).toContain('[DryRun]: Bailing now')
+        // Dry-run now previews the coana invocation instead of bailing;
+        // numeric flag values are validated at execution time.
+        expect(output).toContain(
+          '[DryRun]: Would execute reachability analysis',
+        )
         expect(code).toBe(0)
       },
     )
@@ -284,11 +296,15 @@ describe('socket scan reach - validation tests', () => {
         FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
-      'should show clear error for zero timeout',
+      'should preview execution under dry-run with zero timeout',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         const output = stdout + stderr
-        expect(output).toContain('[DryRun]: Bailing now')
+        // Dry-run now previews the coana invocation instead of bailing;
+        // numeric flag values are validated at execution time.
+        expect(output).toContain(
+          '[DryRun]: Would execute reachability analysis',
+        )
         expect(code).toBe(0)
       },
     )
@@ -371,7 +387,10 @@ describe('socket scan reach - validation tests', () => {
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         const output = stdout + stderr
-        expect(output).toMatch(/invalid.*ecosystem.*invalid-ecosystem/i)
+        // The validator lists the supported ecosystems and echoes the
+        // offending value.
+        expect(output).toContain('--reach-ecosystems must be one of')
+        expect(output).toContain('invalid-ecosystem')
         expect(code).toBeGreaterThan(0)
       },
     )

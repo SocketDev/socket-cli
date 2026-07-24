@@ -40,6 +40,7 @@ describe('socket manifest gradle', async () => {
               Options
                 --bin               Location of gradlew binary to use, default: CWD/gradlew
                 --gradle-opts       Additional options to pass on to ./gradlew, see \`./gradlew --help\`
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
                 --verbose           Print debug messages
           
               Uses gradle, preferably through your local project \`gradlew\`, to generate a
@@ -89,14 +90,22 @@ describe('socket manifest gradle', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket manifest gradle\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket manifest gradle\`, cwd: <redacted>
+
+
+        [DryRun]: Would execute generate pom.xml from Gradle project
+
+          Command: gradlew
+          Arguments: [PROJECT] --bin [PROJECT]/gradlew
+
+          Run without --dry-run to execute this command."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

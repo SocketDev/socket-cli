@@ -118,7 +118,7 @@ export async function run(
 
   const { json = false, markdown = false } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
@@ -130,7 +130,9 @@ export async function run(
 
   const sockJson = readOrDefaultSocketJson(cwd)
 
-  debug(`override: ${SOCKET_JSON} sbt: ${sockJson?.defaults?.manifest?.sbt}`)
+  debug(
+    `override: ${SOCKET_JSON} sbt: ${JSON.stringify(sockJson?.defaults?.manifest?.sbt)}`,
+  )
 
   let { bin, out, sbtOpts, stdout, verbose } =
     cli.flags as unknown as ScalaFlags
@@ -212,33 +214,33 @@ export async function run(
   if (dryRun) {
     const args = [cwd]
     if (bin) {
-      args.push('--bin', String(bin))
+      args.push('--bin', bin)
     }
     if (out) {
-      args.push('--out', String(out))
+      args.push('--out', out)
     }
     if (sbtOpts) {
-      args.push('--sbt-opts', String(sbtOpts))
+      args.push('--sbt-opts', sbtOpts)
     }
     outputDryRunExecute('sbt', args, 'generate pom.xml from Scala project')
     return
   }
 
   const result = await convertSbtToMaven({
-    bin: String(bin),
+    bin: bin,
     cwd: cwd,
-    out: String(out),
+    out: out,
     outputKind,
-    sbtOpts: String(sbtOpts)
+    sbtOpts: sbtOpts
       .split(' ')
       .map(s => s.trim())
       .filter(Boolean),
-    verbose: Boolean(verbose),
+    verbose: verbose,
   })
 
   // In text mode, output is already handled by convertSbtToMaven.
   // For json/markdown modes, we need to call the output helper.
   if (outputKind !== 'text') {
-    await outputManifest(result, outputKind, String(out))
+    await outputManifest(result, outputKind, out)
   }
 }

@@ -106,7 +106,7 @@ describe('outputListScans', () => {
         cause: 'Server error',
       })
 
-      await outputListScans(result as unknown, 'json')
+      await outputListScans(result, 'json')
 
       expect(mockSerializeResultJson).toHaveBeenCalledWith(result)
       expect(mockLogger.log).toHaveBeenCalled()
@@ -150,7 +150,7 @@ describe('outputListScans', () => {
         cause: 'Network error',
       })
 
-      await outputListScans(result as unknown, 'text')
+      await outputListScans(result, 'text')
 
       expect(mockFailMsgWithBadge).toHaveBeenCalledWith(
         'Failed to list scans',
@@ -206,7 +206,7 @@ describe('outputListScans', () => {
     it('sets exit code from error result', async () => {
       const result = createErrorResult('Error', { code: 42 })
 
-      await outputListScans(result as unknown, 'text')
+      await outputListScans(result, 'text')
 
       expect(process.exitCode).toBe(42)
     })

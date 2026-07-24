@@ -52,11 +52,13 @@ describe('socket organization', async () => {
               dependencies                Search for any dependency that is being used in your organization
               list                        List organizations associated with the Socket API token
               policy                      Organization policy details
+              quota                       Show remaining Socket API quota for the current token, plus refresh window
           
             Options
           
               --no-banner                 Hide the Socket banner
-              --no-spinner                Hide the console spinner"
+              --no-spinner                Hide the console spinner
+              --quiet                     Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown."
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -80,16 +82,15 @@ describe('socket organization', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(
-        `"[DryRun]: No-op, call a sub-command; ok"`,
-      )
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket organization\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket organization\`, cwd: <redacted>
+        [DryRun]: No-op, call a sub-command; ok"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

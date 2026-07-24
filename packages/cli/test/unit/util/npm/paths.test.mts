@@ -37,14 +37,14 @@ vi.mock(import('node:fs'), () => ({
 
 vi.mock(import('node:module'), async importOriginal => {
   const actual = await importOriginal<typeof ModuleModule>()
-  return {
-    ...actual,
+  // node:module is an `export =` CJS namespace typed as the Module class;
+  // Object.assign copies its own enumerable exports without a class spread.
+  return Object.assign({}, actual, {
     createRequire: vi.fn(),
-    default: {
-      ...actual.default,
+    default: Object.assign({}, actual.default, {
       createRequire: vi.fn(),
-    },
-  }
+    }),
+  })
 })
 
 const mockLogger = vi.hoisted(() => ({
@@ -90,9 +90,9 @@ describe('npm-paths utilities', () => {
     // Store original process.exit.
     originalExit = process.exit
     // Mock process.exit to prevent actual exits.
-    process.exit = vi.fn((code?: number) => {
+    process.exit = vi.fn((code?: number | undefined) => {
       throw new Error(`process.exit(${code})`)
-    }) as unknown
+    })
 
     // Re-import functions after module reset to clear caches.
     const npmPaths = await import('../../../../src/util/npm/paths.mts')

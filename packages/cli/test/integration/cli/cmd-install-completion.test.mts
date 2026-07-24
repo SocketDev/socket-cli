@@ -63,7 +63,7 @@ describe('socket install completion', async () => {
               different alias for socket on your system.
           
               Options
-                (none)
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
           
               Examples
           
@@ -99,14 +99,24 @@ describe('socket install completion', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket install completion\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket install completion\`, cwd: <redacted>
+
+
+        [DryRun]: Would install bash completion for "socket"
+
+          Target file: /[HOME]/.bashrc
+          Changes:
+            - Add completion script source command to ~/.bashrc
+            - Enable tab completion in current shell
+
+          Run without --dry-run to apply these changes."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

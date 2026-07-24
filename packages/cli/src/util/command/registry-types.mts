@@ -138,7 +138,7 @@ export interface CommandRegistry {
   register(command: CommandDefinition): void
   execute(commandName: string, args: string[]): Promise<CResult<unknown>>
   get(commandName: string): CommandDefinition | undefined
-  list(parent?: string): CommandDefinition[]
+  list(parent?: string | undefined): CommandDefinition[]
   has(commandName: string): boolean
   use(middleware: MiddlewareFn | CommandPlugin): void
 }

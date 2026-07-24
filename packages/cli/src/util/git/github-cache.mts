@@ -57,7 +57,7 @@ export async function cacheFetch<T>(
       const fetchPromise = (async () => {
         try {
           const result = await fetcher()
-          await writeCache(key, result as JsonContent)
+          await writeCache(key, result)
           return result
         } finally {
           inflightRequests.delete(key)

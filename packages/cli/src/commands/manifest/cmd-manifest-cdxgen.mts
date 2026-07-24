@@ -254,7 +254,7 @@ export async function run(
     '-h',
   ])
   const yargv = {
-    ...yargsParse(argsToProcess as string[], yargsConfig),
+    ...yargsParse(argsToProcess, yargsConfig),
     // eslint-disable-next-line typescript-eslint/no-explicit-any -- yargs-parser returns a dynamic flag bag; downstream code reads .help/.lifecycle/.output/.type/_/--.
   } as any
 

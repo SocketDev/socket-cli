@@ -72,9 +72,9 @@ export async function run(
   // Feature request: Pass outputKind to manifest generators for json/md output support.
   const { json, markdown, verbose: verboseFlag } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
-  const verbose = !!verboseFlag
+  const verbose = verboseFlag
 
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:

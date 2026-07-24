@@ -64,7 +64,7 @@ export async function outputScanReport(
     return
   }
 
-  const spinner = getDefaultSpinner()!
+  const spinner = getDefaultSpinner()
   const scanReport = generateReport(
     result.data.scan,
     result.data.securityPolicy,

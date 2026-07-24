@@ -174,7 +174,7 @@ describe('spawnToolVfs', () => {
     } as never)
     mockSpawn.mockReturnValue('p')
 
-    await spawnToolVfs('sfw', [], undefined, { stdio: 'pipe' } as never)
+    await spawnToolVfs('sfw', [], undefined, { stdio: 'pipe' })
 
     expect(mockSpawn).toHaveBeenCalledWith(
       '/path/to/sfw',

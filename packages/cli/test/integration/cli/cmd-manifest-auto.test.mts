@@ -25,7 +25,6 @@ import {
   FLAG_HELP,
 } from '../../../src/constants/cli.mts'
 import { getBinCliPath } from '../../../src/constants/paths.mts'
-import { expectDryRunOutput } from '../../helpers/output-assertions.mts'
 import { cmdit, spawnSocketCli } from '../../utils.mts'
 
 const binCliPath = getBinCliPath()
@@ -43,6 +42,7 @@ describe('socket manifest auto', async () => {
                 $ socket manifest auto [options] [CWD=.]
           
               Options
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
                 --verbose           Enable debug output (only for auto itself; sub-steps need to have it pre-configured), may help when running into errors
           
               Tries to figure out what language your target repo uses. If it finds a
@@ -74,13 +74,15 @@ describe('socket manifest auto', async () => {
 
   cmdit(
     ['manifest', 'auto', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
-    'should require args with just dry-run',
+    'should report when no manifest targets are detected',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
-      // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      // manifest auto scans the cwd for generatable manifest targets and
+      // reports when none exist; there is no dry-run bail anymore.
+      expect(stdout).toMatchInlineSnapshot(
+        `"No manifest targets detected in the specified directory."`,
+      )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
@@ -89,7 +91,7 @@ describe('socket manifest auto', async () => {
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket manifest auto\`, cwd: <redacted>"
       `)
 
-      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+      expect(code, 'should exit with code 0 when nothing to generate').toBe(0)
     },
   )
 })

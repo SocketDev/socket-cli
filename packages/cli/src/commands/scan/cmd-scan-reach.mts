@@ -35,9 +35,12 @@ export interface ScanReachFlags {
   markdown: boolean
   org: string
   output: string
-  reachAnalysisMemoryLimit: number
-  reachAnalysisTimeout: number
-  reachConcurrency: number
+  // The meow layer leaves garbage numeric input (`--reach-concurrency=abc`)
+  // as the raw string; the Number() coercions below turn it into NaN so the
+  // validators can reject it.
+  reachAnalysisMemoryLimit: number | string
+  reachAnalysisTimeout: number | string
+  reachConcurrency: number | string
   reachDebug: boolean
   reachDetailedAnalysisLogFile: boolean
   reachDisableAnalytics: boolean
@@ -64,6 +67,12 @@ const generalFlags: MeowFlags = {
     type: 'string',
     default: '',
     description: 'working directory, defaults to process.cwd()',
+  },
+  interactive: {
+    type: 'boolean',
+    default: true,
+    description:
+      'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
   },
   org: {
     type: 'string',
@@ -140,7 +149,7 @@ export async function run(
 
   const {
     cwd: cwdOverride,
-    interactive = true,
+    interactive,
     json,
     markdown,
     org: orgFlag,
@@ -321,20 +330,19 @@ export async function run(
       reachAnalysisMemoryLimit: validatedReachAnalysisMemoryLimit,
       reachAnalysisTimeout: validatedReachAnalysisTimeout,
       reachConcurrency: validatedReachConcurrency,
-      reachDebug: Boolean(reachDebug),
-      reachDetailedAnalysisLogFile: Boolean(reachDetailedAnalysisLogFile),
-      reachDisableAnalytics: Boolean(reachDisableAnalytics),
-      reachDisableExternalToolChecks: Boolean(reachDisableExternalToolChecks),
-      reachEnableAnalysisSplitting: Boolean(reachEnableAnalysisSplitting),
+      reachDebug: reachDebug,
+      reachDetailedAnalysisLogFile: reachDetailedAnalysisLogFile,
+      reachDisableAnalytics: reachDisableAnalytics,
+      reachDisableExternalToolChecks: reachDisableExternalToolChecks,
+      reachEnableAnalysisSplitting: reachEnableAnalysisSplitting,
       reachEcosystems,
       reachExcludePaths,
-      reachLazyMode: Boolean(reachLazyMode),
-      reachMinSeverity: String(reachMinSeverity),
-      reachSkipCache: Boolean(reachSkipCache),
-      reachUseOnlyPregeneratedSboms: Boolean(reachUseOnlyPregeneratedSboms),
-      reachUseUnreachableFromPrecomputation: Boolean(
+      reachLazyMode: reachLazyMode,
+      reachMinSeverity: reachMinSeverity,
+      reachSkipCache: reachSkipCache,
+      reachUseOnlyPregeneratedSboms: reachUseOnlyPregeneratedSboms,
+      reachUseUnreachableFromPrecomputation:
         reachUseUnreachableFromPrecomputation,
-      ),
       reachVersion: reachVersion || undefined,
     },
   })

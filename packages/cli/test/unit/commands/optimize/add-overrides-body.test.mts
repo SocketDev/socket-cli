@@ -53,7 +53,7 @@ async function loadAddOverrides(opts: {
 }) {
   const { manifestEntries } = opts
   vi.doMock(import('@socketsecurity/registry-stable'), () => ({
-    getManifestData: (agent?: string) =>
+    getManifestData: (agent?: string | undefined) =>
       agent === 'npm' ? manifestEntries : [],
   }))
   vi.doMock(import('@socketsecurity/lib-stable/promises/iterate'), () => ({

@@ -45,6 +45,7 @@ describe('socket package shallow', async () => {
               Options
                 --json              Output as JSON
                 --markdown          Output as Markdown
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
           
               Show scoring details for one or more packages purely based on their own package.
               This means that any dependency scores are not reflected by the score. You can
@@ -123,14 +124,24 @@ describe('socket package shallow', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket package shallow\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket package shallow\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch package information
+
+          Query parameters:
+            packages: pkg:npm/babel
+            count: 1
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

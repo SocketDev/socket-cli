@@ -10,7 +10,7 @@ import { debugNs } from '@socketsecurity/lib-stable/debug/output'
 
 // Access internals via kInternalsSymbol.
 export type SentryClient = {
-  captureException(exception: unknown, hint?: unknown): string
+  captureException(exception: unknown, hint?: unknown | undefined): string
 }
 const constants = {
   [kInternalsSymbol]: {} as { getSentry?: () => SentryClient | undefined },
@@ -40,6 +40,6 @@ export function captureExceptionSync(
   }
   /* c8 ignore start - Sentry is undefined in tests (Sentry build mode is opt-in only) */
   debugNs('notice', 'send: exception to Sentry')
-  return Sentry.captureException(exception, hint) as string
+  return Sentry.captureException(exception, hint)
   /* c8 ignore stop */
 }

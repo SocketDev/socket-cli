@@ -26,7 +26,7 @@ process.emitWarning = function (warning, ...args) {
     // Suppress the specific MaxListenersExceeded warning for AbortSignal.
     return
   }
-  return Reflect.apply(originalEmitWarning, this, [warning, ...args])
+  Reflect.apply(originalEmitWarning, this, [warning, ...args])
 }
 
 import lookupRegistryAuthToken from 'registry-auth-token'

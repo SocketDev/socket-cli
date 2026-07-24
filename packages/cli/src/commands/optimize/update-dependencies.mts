@@ -20,7 +20,7 @@ export type UpdateDependenciesOptions = {
 
 export async function updateDependencies(
   pkgEnvDetails: EnvDetails,
-  options: UpdateDependenciesOptions,
+  config: UpdateDependenciesOptions,
 ): Promise<CResult<unknown>> {
   const {
     cmdName = '',
@@ -28,7 +28,7 @@ export async function updateDependencies(
     spinner,
   } = {
     __proto__: null,
-    ...options,
+    ...config,
   } as UpdateDependenciesOptions
 
   const wasSpinning = !!spinner?.isSpinning

@@ -346,7 +346,7 @@ describe('update/checker', () => {
       await expect(
         checkForUpdates({ name: '', version: '1.0.0' }),
       ).rejects.toThrow(
-        /checkForUpdates options\.name requires a non-empty string/,
+        /checkForUpdates config\.name requires a non-empty string/,
       )
     })
 
@@ -354,7 +354,7 @@ describe('update/checker', () => {
       await expect(
         checkForUpdates({ name: 'test', version: '' }),
       ).rejects.toThrow(
-        /checkForUpdates options\.version requires a non-empty string/,
+        /checkForUpdates config\.version requires a non-empty string/,
       )
     })
 

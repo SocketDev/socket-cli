@@ -68,7 +68,7 @@ describe('generate-report', () => {
       const scan = [createArtifact()]
       const policy = createSecurityPolicy()
 
-      const result = generateReport(scan, policy as unknown, defaultOptions)
+      const result = generateReport(scan, policy, defaultOptions)
 
       expect(result.ok).toBe(true)
       expect(result.data).toEqual(
@@ -84,7 +84,7 @@ describe('generate-report', () => {
       const scan = [createArtifact()]
       const policy = createSecurityPolicy()
 
-      const result = generateReport(scan, policy as unknown, {
+      const result = generateReport(scan, policy, {
         ...defaultOptions,
         short: true,
       })
@@ -103,7 +103,7 @@ describe('generate-report', () => {
         badAlert: { action: 'error' },
       })
 
-      const result = generateReport(scan, policy as unknown, defaultOptions)
+      const result = generateReport(scan, policy, defaultOptions)
 
       expect(result.ok).toBe(true)
       expect(result.data).toEqual(
@@ -124,7 +124,7 @@ describe('generate-report', () => {
         warnAlert: { action: 'warn' },
       })
 
-      const result = generateReport(scan, policy as unknown, {
+      const result = generateReport(scan, policy, {
         ...defaultOptions,
         reportLevel: REPORT_LEVEL_WARN,
       })
@@ -147,7 +147,7 @@ describe('generate-report', () => {
         warnAlert: { action: 'warn' },
       })
 
-      const result = generateReport(scan, policy as unknown, {
+      const result = generateReport(scan, policy, {
         ...defaultOptions,
         reportLevel: REPORT_LEVEL_WARN,
       })
@@ -167,7 +167,7 @@ describe('generate-report', () => {
         warnAlert: { action: 'warn' },
       })
 
-      const result = generateReport(scan, policy as unknown, {
+      const result = generateReport(scan, policy, {
         ...defaultOptions,
         reportLevel: REPORT_LEVEL_ERROR,
       })
@@ -189,7 +189,7 @@ describe('generate-report', () => {
         monitorAlert: { action: 'monitor' },
       })
 
-      const result = generateReport(scan, policy as unknown, {
+      const result = generateReport(scan, policy, {
         ...defaultOptions,
         reportLevel: REPORT_LEVEL_MONITOR,
       })
@@ -211,7 +211,7 @@ describe('generate-report', () => {
         ignoreAlert: { action: 'ignore' },
       })
 
-      const result = generateReport(scan, policy as unknown, {
+      const result = generateReport(scan, policy, {
         ...defaultOptions,
         reportLevel: REPORT_LEVEL_IGNORE,
       })
@@ -231,7 +231,7 @@ describe('generate-report', () => {
         deferAlert: { action: 'defer' },
       })
 
-      const result = generateReport(scan, policy as unknown, {
+      const result = generateReport(scan, policy, {
         ...defaultOptions,
         reportLevel: REPORT_LEVEL_DEFER,
       })
@@ -250,14 +250,10 @@ describe('generate-report', () => {
       })
 
       it('folds by package when fold is pkg', () => {
-        const result = generateReport(
-          [alertedArtifact],
-          errorPolicy as unknown,
-          {
-            ...defaultOptions,
-            fold: FOLD_SETTING_PKG,
-          },
-        )
+        const result = generateReport([alertedArtifact], errorPolicy, {
+          ...defaultOptions,
+          fold: FOLD_SETTING_PKG,
+        })
 
         expect(result.ok).toBe(true)
         const data = result.data as { alerts: Map<string, unknown> }
@@ -269,14 +265,10 @@ describe('generate-report', () => {
       })
 
       it('folds by version when fold is version', () => {
-        const result = generateReport(
-          [alertedArtifact],
-          errorPolicy as unknown,
-          {
-            ...defaultOptions,
-            fold: FOLD_SETTING_VERSION,
-          },
-        )
+        const result = generateReport([alertedArtifact], errorPolicy, {
+          ...defaultOptions,
+          fold: FOLD_SETTING_VERSION,
+        })
 
         expect(result.ok).toBe(true)
         const data = result.data as { alerts: Map<string, unknown> }
@@ -289,14 +281,10 @@ describe('generate-report', () => {
       })
 
       it('folds by file when fold is file', () => {
-        const result = generateReport(
-          [alertedArtifact],
-          errorPolicy as unknown,
-          {
-            ...defaultOptions,
-            fold: FOLD_SETTING_FILE,
-          },
-        )
+        const result = generateReport([alertedArtifact], errorPolicy, {
+          ...defaultOptions,
+          fold: FOLD_SETTING_FILE,
+        })
 
         expect(result.ok).toBe(true)
         const data = result.data as { alerts: Map<string, unknown> }
@@ -310,14 +298,10 @@ describe('generate-report', () => {
       })
 
       it('does not fold when fold is none', () => {
-        const result = generateReport(
-          [alertedArtifact],
-          errorPolicy as unknown,
-          {
-            ...defaultOptions,
-            fold: FOLD_SETTING_NONE,
-          },
-        )
+        const result = generateReport([alertedArtifact], errorPolicy, {
+          ...defaultOptions,
+          fold: FOLD_SETTING_NONE,
+        })
 
         expect(result.ok).toBe(true)
         const data = result.data as { alerts: Map<string, unknown> }
@@ -345,7 +329,7 @@ describe('generate-report', () => {
         badAlert: { action: 'error' },
       })
 
-      const result = generateReport(scan, policy as unknown, defaultOptions)
+      const result = generateReport(scan, policy, defaultOptions)
 
       expect(result.ok).toBe(true)
       expect(result.data).toEqual(
@@ -366,7 +350,7 @@ describe('generate-report', () => {
         badAlert: { action: 'error' },
       })
 
-      const result = generateReport(scan, policy as unknown, defaultOptions)
+      const result = generateReport(scan, policy, defaultOptions)
 
       expect(result.ok).toBe(true)
     })
@@ -381,7 +365,7 @@ describe('generate-report', () => {
         badAlert: { action: 'error' },
       })
 
-      const result = generateReport(scan, policy as unknown, {
+      const result = generateReport(scan, policy, {
         ...defaultOptions,
         fold: FOLD_SETTING_NONE,
       })
@@ -401,7 +385,7 @@ describe('generate-report', () => {
         unknownAlert: { action: 'unknown-action' },
       })
 
-      const result = generateReport(scan, policy as unknown, defaultOptions)
+      const result = generateReport(scan, policy, defaultOptions)
 
       expect(result.ok).toBe(true)
       expect(result.data).toEqual(
@@ -419,7 +403,7 @@ describe('generate-report', () => {
       ]
       const policy = {} // No securityPolicyRules.
 
-      const result = generateReport(scan, policy as unknown, defaultOptions)
+      const result = generateReport(scan, policy, defaultOptions)
 
       expect(result.ok).toBe(true)
       expect(result.data).toEqual(
@@ -443,7 +427,7 @@ describe('generate-report', () => {
         errorAlert: { action: 'error' },
       })
 
-      const result = generateReport(scan, policy as unknown, {
+      const result = generateReport(scan, policy, {
         ...defaultOptions,
         fold: FOLD_SETTING_PKG,
         reportLevel: REPORT_LEVEL_WARN,
@@ -464,7 +448,7 @@ describe('generate-report', () => {
       const scan = [createArtifact()]
       const policy = createSecurityPolicy()
 
-      generateReport(scan, policy as unknown, {
+      generateReport(scan, policy, {
         ...defaultOptions,
         spinner: mockSpinner as unknown,
       })
@@ -485,7 +469,7 @@ describe('generate-report', () => {
         badAlert: { action: 'error' },
       })
 
-      const result = generateReport(scan, policy as unknown, {
+      const result = generateReport(scan, policy, {
         ...defaultOptions,
         short: true,
       })

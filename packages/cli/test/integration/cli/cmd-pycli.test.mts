@@ -46,8 +46,8 @@ describe('socket pycli', async () => {
     ['pycli', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
     `should support ${FLAG_DRY_RUN}`,
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expectDryRunOutput(stdout)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expectDryRunOutput(stderr)
       expect(code, 'dry-run should exit with code 0').toBe(0)
     },
   )
@@ -56,8 +56,8 @@ describe('socket pycli', async () => {
     ['pycli', FLAG_DRY_RUN, '--generate-license', FLAG_CONFIG, '{}'],
     `should support ${FLAG_DRY_RUN} with Python CLI flags`,
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expectDryRunOutput(stdout)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expectDryRunOutput(stderr)
       expect(code, 'dry-run should exit with code 0').toBe(0)
     },
   )

@@ -80,8 +80,8 @@ export async function loadGhsaTracker(cwd: string): Promise<GhsaTracker> {
 export async function markGhsaFixed(
   cwd: string,
   ghsaId: string,
-  prNumber?: number,
-  branch?: string,
+  prNumber?: number | undefined,
+  branch?: string | undefined,
 ): Promise<void> {
   const trackerPath = path.join(cwd, TRACKER_FILE)
   const lockFile = `${trackerPath}.lock`

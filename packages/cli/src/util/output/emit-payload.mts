@@ -28,25 +28,22 @@ export interface EmitPayloadOptions {
 
 export function emitJsonPayload(
   value: unknown,
-  options: EmitPayloadOptions,
+  config: EmitPayloadOptions,
 ): void {
   // JSON.stringify(undefined) returns undefined, which logs as the
   // literal string "undefined" — serialize as null instead so we
   // always emit syntactically valid JSON.
   const serialized = JSON.stringify(value) ?? 'null'
-  emitPayload(serialized, options)
+  emitPayload(serialized, config)
 }
 
-export function emitPayload(
-  payload: string,
-  options: EmitPayloadOptions,
-): void {
+export function emitPayload(payload: string, config: EmitPayloadOptions): void {
   // logger.log appends its own \n, so strip ONE trailing newline from
   // the payload to avoid a doubled \n. Applied in both modes so the
   // output is consistent regardless of mode.
-  const opts = { __proto__: null, ...options } as typeof options
+  const cfg = { __proto__: null, ...config } as typeof config
   const normalized = payload.endsWith('\n') ? payload.slice(0, -1) : payload
-  if (isMachineOutputMode(opts.flags)) {
+  if (isMachineOutputMode(cfg.flags)) {
     logger.log(SENTINEL_BEGIN)
     logger.log(normalized)
     logger.log(SENTINEL_END)

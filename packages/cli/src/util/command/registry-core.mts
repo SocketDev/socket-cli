@@ -90,7 +90,7 @@ export class CommandRegistry implements ICommandRegistry {
   /**
    * List all registered commands, optionally filtered by parent.
    */
-  list(parent?: string): CommandDefinition[] {
+  list(parent?: string | undefined): CommandDefinition[] {
     const commands = Array.from(this.commands.values())
 
     // Remove duplicates (aliases point to same command)
