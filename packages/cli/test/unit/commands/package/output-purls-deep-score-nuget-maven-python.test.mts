@@ -71,7 +71,7 @@ describe('package score output', async () => {
         - Vulnerability: 84
         - License: 100
 
-        ### Capabilities
+        ### Lowest Scoring Package Per Category
 
         These are the packages with the lowest recorded score. If there is more than one with the lowest score, just one is shown here. This may help you figure out the source of low scores.
 
@@ -163,7 +163,7 @@ describe('package score output', async () => {
         - Vulnerability: 25
         - License: 50
 
-        ### Capabilities
+        ### Lowest Scoring Package Per Category
 
         These are the packages with the lowest recorded score. If there is more than one with the lowest score, just one is shown here. This may help you figure out the source of low scores.
 
@@ -268,7 +268,7 @@ describe('package score output', async () => {
         - Vulnerability: 100
         - License: 70
 
-        ### Capabilities
+        ### Lowest Scoring Package Per Category
 
         These are the packages with the lowest recorded score. If there is more than one with the lowest score, just one is shown here. This may help you figure out the source of low scores.
 
