@@ -131,9 +131,6 @@ export type AskPattern = (typeof PATTERNS)[Exclude<
 const PATTERNS_BY_ACTION: Record<string, AskPattern | null | undefined> =
   PATTERNS
 
-export function lookupPattern(action: string): AskPattern | undefined {
-  return PATTERNS_BY_ACTION[action] ?? undefined
-}
 
 /**
  * Severity levels mapping.
@@ -226,6 +223,13 @@ export async function handleAsk(config: HandleAskOptions): Promise<void> {
     logger.error(`Command failed with exit code ${result.code}`)
     process.exit(result.code)
   }
+}
+
+/**
+ * Look up a PATTERNS entry from a dynamic matcher action string.
+ */
+export function lookupPattern(action: string): AskPattern | undefined {
+  return PATTERNS_BY_ACTION[action] ?? undefined
 }
 
 /**
