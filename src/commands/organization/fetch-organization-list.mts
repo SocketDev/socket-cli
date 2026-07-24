@@ -5,7 +5,7 @@ import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SetupSdkOptions } from '../../utils/sdk.mts'
-import type { SocketSdk, SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { OrganizationsResult, SocketSdk } from '@socketsecurity/sdk'
 
 export type FetchOrganizationOptions = {
   description?: string | undefined
@@ -20,8 +20,7 @@ export type EnterpriseOrganization = Omit<Organization, 'plan'> & {
 
 export type EnterpriseOrganizations = EnterpriseOrganization[]
 
-export type Organization =
-  SocketSdkSuccessResult<'getOrganizations'>['data']['organizations'][string]
+export type Organization = OrganizationsResult['data']['organizations'][number]
 
 export type Organizations = Organization[]
 
@@ -51,7 +50,7 @@ export async function fetchOrganization(
     sockSdk = sockSdkCResult.data
   }
 
-  const orgsCResult = await handleApiCall(sockSdk.getOrganizations(), {
+  const orgsCResult = await handleApiCall(sockSdk.listOrganizations(), {
     description,
     silence,
   })

@@ -9,10 +9,10 @@ import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
 import type { Direction } from './types.mts'
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { RepositoriesListResult } from '@socketsecurity/sdk'
 
 export async function outputListRepos(
-  result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']>,
+  result: CResult<RepositoriesListResult['data']>,
   outputKind: OutputKind,
   page: number,
   nextPage: number | null,

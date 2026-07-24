@@ -71,8 +71,8 @@ export async function attemptLogin(
   const enterpriseOrgs = getEnterpriseOrgs(organizations)
 
   const enforcedChoices: OrgChoices = enterpriseOrgs.map(org => ({
-    name: org.name ?? 'undefined',
-    value: org.id,
+    name: org['name'] ?? 'undefined',
+    value: org['id'],
   }))
 
   let enforcedOrgs: string[] = []

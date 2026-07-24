@@ -8,10 +8,10 @@ import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { FullScanListResult } from '@socketsecurity/sdk'
 
 export async function outputListScans(
-  result: CResult<SocketSdkSuccessResult<'getOrgFullScanList'>['data']>,
+  result: CResult<FullScanListResult['data']>,
   outputKind: OutputKind,
 ): Promise<void> {
   if (!result.ok) {
@@ -37,21 +37,23 @@ export async function outputListScans(
     ],
   }
 
-  const formattedResults = result.data.results.map(d => {
-    return {
-      id: d.id,
-      report_url: colors.underline(`${d.html_report_url}`),
-      created_at: d.created_at
-        ? new Date(d.created_at).toLocaleDateString('en-us', {
-            year: 'numeric',
-            month: 'numeric',
-            day: 'numeric',
-          })
-        : '',
-      repo: d.repo,
-      branch: d.branch,
-    }
-  })
+  const formattedResults = result.data.results.map(
+    (d: FullScanListResult['data']['results'][number]) => {
+      return {
+        id: d.id,
+        report_url: colors.underline(`${d.html_report_url}`),
+        created_at: d.created_at
+          ? new Date(d.created_at).toLocaleDateString('en-us', {
+              year: 'numeric',
+              month: 'numeric',
+              day: 'numeric',
+            })
+          : '',
+        repo: d.repo,
+        branch: d.branch,
+      }
+    },
+  )
 
   logger.log(chalkTable(options, formattedResults))
 }

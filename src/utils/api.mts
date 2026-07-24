@@ -44,12 +44,6 @@ import { getCliUserAgent, getDefaultApiToken, getExtraCaCerts } from './sdk.mts'
 
 import type { CResult } from '../types.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
-import type {
-  SocketSdkErrorResult,
-  SocketSdkOperations,
-  SocketSdkResult,
-  SocketSdkSuccessResult,
-} from '@socketsecurity/sdk'
 
 const MAX_REDIRECTS = 20
 const NO_ERROR_MESSAGE = 'No error message returned'
@@ -288,17 +282,58 @@ export type HandleApiCallOptions = {
   commandPath?: string | undefined
 }
 
-export type ApiCallResult<T extends SocketSdkOperations> = CResult<
-  SocketSdkSuccessResult<T>['data']
+/**
+ * The subset of a Socket SDK result that {@link handleApiCall} reads. Both the
+ * OpenAPI-derived `SocketSdkResult<T>` family and the SDK 4.x strict result
+ * types (`OrganizationsResult`, `RepositoryResult`, `DeleteResult`, ...)
+ * structurally satisfy this shape, so a caller can pass whichever result a
+ * given SDK method returns without forcing a (sometimes stale) operation-key
+ * shape onto the strict return types.
+ */
+export type SocketSdkReturnedResult =
+  | {
+      cause?: undefined
+      data: unknown
+      error?: undefined
+      status: number
+      success: true
+    }
+  | {
+      cause?: string | undefined
+      data?: undefined
+      error: string
+      status: number
+      success: false
+      url?: string | undefined
+    }
+
+/**
+ * The success `data` type carried by a Socket SDK result union `R`. The
+ * conditional distributes over `R`'s members, so only the success member(s)
+ * contribute their `data`; the error member resolves to `never` and drops out.
+ * Inferring the whole result `R` and extracting here (rather than inferring a
+ * bare `Data` from a `Promise<{ data: Data } | ...>`) avoids `Data` absorbing
+ * the error branch's `data?: undefined` — which would otherwise widen every
+ * result to `CResult<Data | undefined>`.
+ */
+export type ApiCallSuccessData<R> = R extends {
+  success: true
+  data: infer Data
+}
+  ? Data
+  : never
+
+export type ApiCallResult<R extends SocketSdkReturnedResult> = CResult<
+  ApiCallSuccessData<R>
 >
 
 /**
  * Handle Socket SDK API calls with error handling and permission logging.
  */
-export async function handleApiCall<T extends SocketSdkOperations>(
-  value: Promise<SocketSdkResult<T>>,
+export async function handleApiCall<R extends SocketSdkReturnedResult>(
+  value: Promise<R>,
   options?: HandleApiCallOptions | undefined,
-): Promise<ApiCallResult<T>> {
+): Promise<ApiCallResult<R>> {
   const {
     commandPath,
     description,
@@ -317,7 +352,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
     }
   }
 
-  let sdkResult: SocketSdkResult<T>
+  let sdkResult: R
   try {
     sdkResult = await value
     if (!silence) {
@@ -336,7 +371,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
     }
   } catch (e) {
     spinner?.stop()
-    const socketSdkErrorResult: ApiCallResult<T> = {
+    const socketSdkErrorResult: ApiCallResult<R> = {
       ok: false,
       message: 'Socket API error',
       cause: messageWithCauses(e as Error),
@@ -349,22 +384,22 @@ export async function handleApiCall<T extends SocketSdkOperations>(
     return socketSdkErrorResult
   }
 
-  // Note: TS can't narrow down the type of result due to generics.
+  // The `success` discriminant is a concrete boolean literal in both branches,
+  // so this narrows the result to its error branch regardless of `R`.
   if (sdkResult.success === false) {
     const endpoint = description || 'Socket API'
-    debugApiResponse('API', endpoint, sdkResult.status as number)
+    debugApiResponse('API', endpoint, sdkResult.status)
     debugDir('inspect', { sdkResult })
 
-    const errCResult = sdkResult as SocketSdkErrorResult<T>
-    const errStr = errCResult.error ? String(errCResult.error).trim() : ''
+    const errStr = sdkResult.error ? String(sdkResult.error).trim() : ''
     const message = errStr || NO_ERROR_MESSAGE
-    const reason = errCResult.cause || NO_ERROR_MESSAGE
+    const reason = sdkResult.cause || NO_ERROR_MESSAGE
     const baseCause =
       reason && message !== reason ? `${message} (reason: ${reason})` : message
-    const cause = errCResult.url
-      ? `${baseCause} (url: ${errCResult.url})`
+    const cause = sdkResult.url
+      ? `${baseCause} (url: ${sdkResult.url})`
       : baseCause
-    const socketSdkErrorResult: ApiCallResult<T> = {
+    const socketSdkErrorResult: ApiCallResult<R> = {
       ok: false,
       message: 'Socket API error',
       cause,
@@ -380,18 +415,21 @@ export async function handleApiCall<T extends SocketSdkOperations>(
 
     return socketSdkErrorResult
   }
-  const socketSdkSuccessResult: ApiCallResult<T> = {
+  // Narrowing a type parameter by its `success` discriminant resolves `.data`
+  // through the constraint's success branch (`unknown`); re-apply the precise
+  // per-call success type the return contract already guarantees.
+  const socketSdkSuccessResult: ApiCallResult<R> = {
     ok: true,
-    data: (sdkResult as SocketSdkSuccessResult<T>).data,
+    data: sdkResult.data as ApiCallSuccessData<R>,
   }
   return socketSdkSuccessResult
 }
 
-export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
-  value: Promise<SocketSdkResult<T>>,
+export async function handleApiCallNoSpinner<R extends SocketSdkReturnedResult>(
+  value: Promise<R>,
   description: string,
-): Promise<CResult<SocketSdkSuccessResult<T>['data']>> {
-  let sdkResult: SocketSdkResult<T>
+): Promise<ApiCallResult<R>> {
+  let sdkResult: R
   try {
     sdkResult = await value
   } catch (e) {
@@ -410,21 +448,19 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
     }
   }
 
-  // Note: TS can't narrow down the type of result due to generics
+  // The `success` discriminant is a concrete boolean literal in both branches,
+  // so this narrows the result to its error branch regardless of `R`.
   if (sdkResult.success === false) {
     debugFn('error', `fail: ${description} bad response`)
     debugDir('inspect', { sdkResult })
 
-    const sdkErrorResult = sdkResult as SocketSdkErrorResult<T>
-    const errStr = sdkErrorResult.error
-      ? String(sdkErrorResult.error).trim()
-      : ''
+    const errStr = sdkResult.error ? String(sdkResult.error).trim() : ''
     const message = errStr || NO_ERROR_MESSAGE
-    const reason = sdkErrorResult.cause || NO_ERROR_MESSAGE
+    const reason = sdkResult.cause || NO_ERROR_MESSAGE
     const baseCause =
       reason && message !== reason ? `${message} (reason: ${reason})` : message
-    const cause = sdkErrorResult.url
-      ? `${baseCause} (url: ${sdkErrorResult.url})`
+    const cause = sdkResult.url
+      ? `${baseCause} (url: ${sdkResult.url})`
       : baseCause
 
     return {
@@ -436,10 +472,12 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
       },
     }
   } else {
-    const sdkSuccessResult = sdkResult as SocketSdkSuccessResult<T>
+    // Narrowing a type parameter by its `success` discriminant resolves `.data`
+    // through the constraint's success branch (`unknown`); re-apply the precise
+    // per-call success type the return contract already guarantees.
     return {
       ok: true,
-      data: sdkSuccessResult.data,
+      data: sdkResult.data as ApiCallSuccessData<R>,
     }
   }
 }
@@ -461,14 +499,22 @@ async function queryApi(path: string, apiToken: string) {
   return result
 }
 
+export type ApiTextResult = {
+  status: number
+  text: string
+}
+
 /**
- * Query Socket API endpoint and return text response with error handling.
+ * Query a Socket API endpoint and return the HTTP status alongside the text
+ * body, with error handling. Unlike queryApiSafeText this surfaces the status
+ * on success (including 2xx statuses like 202 Accepted), so callers can drive
+ * status-dependent flows such as the cached-scan 202 poll loop.
  */
-export async function queryApiSafeText(
+export async function queryApiSafeTextWithStatus(
   path: string,
   description?: string | undefined,
   commandPath?: string | undefined,
-): Promise<CResult<string>> {
+): Promise<CResult<ApiTextResult>> {
   const apiToken = getDefaultApiToken()
   if (!apiToken) {
     return {
@@ -546,10 +592,13 @@ export async function queryApiSafeText(
   }
 
   try {
-    const data = await result.text()
+    const text = await result.text()
     return {
       ok: true,
-      data,
+      data: {
+        status: result.status,
+        text,
+      },
     }
   } catch (e) {
     debugFn('error', 'Failed to read API response text')
@@ -561,6 +610,22 @@ export async function queryApiSafeText(
       cause: `Unexpected error reading response text (path: ${path})`,
     }
   }
+}
+
+/**
+ * Query Socket API endpoint and return text response with error handling.
+ */
+export async function queryApiSafeText(
+  path: string,
+  description?: string | undefined,
+  commandPath?: string | undefined,
+): Promise<CResult<string>> {
+  const result = await queryApiSafeTextWithStatus(
+    path,
+    description,
+    commandPath,
+  )
+  return result.ok ? { ok: true, data: result.data.text } : result
 }
 
 /**

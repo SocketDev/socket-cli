@@ -3,7 +3,7 @@ import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SetupSdkOptions } from '../../utils/sdk.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { RepositoryResult } from '@socketsecurity/sdk'
 
 export type FetchViewRepoOptions = {
   sdkOpts?: SetupSdkOptions | undefined
@@ -13,7 +13,7 @@ export async function fetchViewRepo(
   orgSlug: string,
   repoName: string,
   options?: FetchViewRepoOptions | undefined,
-): Promise<CResult<SocketSdkSuccessResult<'getOrgRepo'>['data']>> {
+): Promise<CResult<RepositoryResult['data']>> {
   const { sdkOpts } = { __proto__: null, ...options } as FetchViewRepoOptions
 
   const sockSdkCResult = await setupSdk(sdkOpts)
@@ -22,7 +22,7 @@ export async function fetchViewRepo(
   }
   const sockSdk = sockSdkCResult.data
 
-  return await handleApiCall(sockSdk.getOrgRepo(orgSlug, repoName), {
+  return await handleApiCall(sockSdk.getRepository(orgSlug, repoName), {
     description: 'repository data',
   })
 }

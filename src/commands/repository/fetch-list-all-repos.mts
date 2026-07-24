@@ -3,7 +3,7 @@ import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SetupSdkOptions } from '../../utils/sdk.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { RepositoriesListResult } from '@socketsecurity/sdk'
 
 export type FetchListAllReposOptions = {
   direction?: string | undefined
@@ -14,7 +14,7 @@ export type FetchListAllReposOptions = {
 export async function fetchListAllRepos(
   orgSlug: string,
   options?: FetchListAllReposOptions | undefined,
-): Promise<CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']>> {
+): Promise<CResult<RepositoriesListResult['data']>> {
   const { direction, sdkOpts, sort } = {
     __proto__: null,
     ...options,
@@ -26,7 +26,7 @@ export async function fetchListAllRepos(
   }
   const sockSdk = sockSdkCResult.data
 
-  const rows: SocketSdkSuccessResult<'getOrgRepoList'>['data']['results'] = []
+  const rows: RepositoriesListResult['data']['results'] = []
   let protection = 0
   let nextPage = 0
   while (nextPage >= 0) {
@@ -39,11 +39,11 @@ export async function fetchListAllRepos(
     }
     // eslint-disable-next-line no-await-in-loop
     const orgRepoListCResult = await handleApiCall(
-      sockSdk.getOrgRepoList(orgSlug, {
-        sort,
-        direction,
-        per_page: String(100), // max
-        page: String(nextPage),
+      sockSdk.listRepositories(orgSlug, {
+        ...(sort ? { sort: sort as 'name' | 'updated_at' | 'created_at' } : {}),
+        ...(direction ? { direction: direction as 'asc' | 'desc' } : {}),
+        per_page: 100, // max
+        page: nextPage,
       }),
       { description: 'list of repositories' },
     )

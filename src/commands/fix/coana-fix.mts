@@ -158,6 +158,7 @@ export async function coanaFix(
   const sockSdk = sockSdkCResult.data
 
   const supportedFilesCResult = await fetchSupportedScanFileNames({
+    orgSlug,
     spinner: silence ? undefined : spinner,
     silence,
   })
@@ -209,7 +210,9 @@ export async function coanaFix(
     }
   }
   const uploadCResult = await handleApiCall(
-    sockSdk.uploadManifestFiles(orgSlug, scanFilepaths, cwd),
+    sockSdk.uploadManifestFiles(orgSlug, scanFilepaths, {
+      pathsRelativeTo: cwd,
+    }),
     {
       description: 'upload manifests',
       spinner,

@@ -3,7 +3,7 @@ import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SetupSdkOptions } from '../../utils/sdk.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { RepositoryResult } from '@socketsecurity/sdk'
 
 export type FetchCreateRepoConfig = {
   defaultBranch: string
@@ -21,7 +21,7 @@ export type FetchCreateRepoOptions = {
 export async function fetchCreateRepo(
   config: FetchCreateRepoConfig,
   options?: FetchCreateRepoOptions | undefined,
-): Promise<CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']>> {
+): Promise<CResult<RepositoryResult['data']>> {
   const {
     defaultBranch,
     description,
@@ -43,12 +43,11 @@ export async function fetchCreateRepo(
   const sockSdk = sockSdkCResult.data
 
   return await handleApiCall(
-    sockSdk.createOrgRepo(orgSlug, {
+    sockSdk.createRepository(orgSlug, repoName, {
       default_branch: defaultBranch,
       description,
       homepage,
-      name: repoName,
-      visibility,
+      visibility: visibility as 'private' | 'public',
     }),
     { description: 'to create a repository' },
   )
