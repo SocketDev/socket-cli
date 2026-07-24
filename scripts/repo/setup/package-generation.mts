@@ -29,7 +29,7 @@ export async function generateCliSentryPackage({
   // which node cannot load as a filesystem path.
   const scriptPath = fileURLToPath(
     new URL(
-      '../../packages/package-builder/scripts/generate-cli-sentry-package.mts',
+      '../../../packages/package-builder/scripts/generate-cli-sentry-package.mts',
       import.meta.url,
     ),
   )
@@ -61,7 +61,7 @@ export async function generateSocketbinPackages({
   // fileURLToPath, not URL.pathname — see generateCliSentryPackage above.
   const scriptPath = fileURLToPath(
     new URL(
-      '../../packages/package-builder/scripts/generate-socketbin-packages.mts',
+      '../../../packages/package-builder/scripts/generate-socketbin-packages.mts',
       import.meta.url,
     ),
   )

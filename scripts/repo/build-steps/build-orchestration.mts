@@ -24,7 +24,7 @@ import {
   buildPlatformSea,
   buildTarget,
 } from './build-targets.mts'
-import { BUILD_PACKAGES, TARGET_PACKAGES } from './config.mts'
+import { CLI_BUILD_PACKAGE, TARGET_PACKAGES } from './config.mts'
 import type { BuildTargetResult } from './config.mts'
 import { logger, rootDir } from './context.mts'
 
@@ -38,7 +38,7 @@ export async function runParallelBuilds(
   logger.log('')
   logger.log('='.repeat(60))
   logger.log(
-    `${colors.blue('Building ' + targetsToBuild.length + ' targets in parallel')}`,
+    colors.blue('Building ' + targetsToBuild.length + ' targets in parallel'),
   )
   logger.log('='.repeat(60))
   logger.log('')
@@ -53,7 +53,7 @@ export async function runParallelBuilds(
     const cliOutputPath = path.join(rootDir, 'packages/cli/dist/index.js')
     if (!existsSync(cliOutputPath)) {
       logger.log(`${colors.cyan('→')} Building CLI first…`)
-      const cliResult = await buildPackage(BUILD_PACKAGES[0]!, {
+      const cliResult = await buildPackage(CLI_BUILD_PACKAGE, {
         force: false,
       })
       if (!cliResult.success) {
@@ -73,7 +73,7 @@ export async function runParallelBuilds(
 
   logger.log('')
   logger.log('='.repeat(60))
-  logger.log(`${colors.blue('Build Summary')}`)
+  logger.log(colors.blue('Build Summary'))
   logger.log('='.repeat(60))
   logger.log('')
 
@@ -111,7 +111,7 @@ export async function runSequentialBuilds(
   logger.log('')
   logger.log('='.repeat(60))
   logger.log(
-    `${colors.blue('Building ' + targetsToBuild.length + ' targets sequentially')}`,
+    colors.blue('Building ' + targetsToBuild.length + ' targets sequentially'),
   )
   logger.log('='.repeat(60))
   logger.log('')
@@ -126,7 +126,7 @@ export async function runSequentialBuilds(
     const cliOutputPath = path.join(rootDir, 'packages/cli/dist/index.js')
     if (!existsSync(cliOutputPath)) {
       logger.log(`${colors.cyan('→')} Building CLI first…`)
-      const cliResult = await buildPackage(BUILD_PACKAGES[0]!, {
+      const cliResult = await buildPackage(CLI_BUILD_PACKAGE, {
         force: false,
       })
       if (!cliResult.success) {
@@ -141,7 +141,10 @@ export async function runSequentialBuilds(
   const results: BuildTargetResult[] = []
 
   for (let i = 0, { length } = targetsToBuild; i < length; i += 1) {
-    const target = targetsToBuild[i]!
+    const target = targetsToBuild[i]
+    if (!target) {
+      continue
+    }
     const result = await buildTarget(target, buildArgs)
     results.push(result)
 
@@ -154,7 +157,7 @@ export async function runSequentialBuilds(
 
   logger.log('')
   logger.log('='.repeat(60))
-  logger.log(`${colors.blue('Build Summary')}`)
+  logger.log(colors.blue('Build Summary'))
   logger.log('='.repeat(60))
   logger.log('')
 
@@ -195,7 +198,7 @@ export async function runSequentialBuilds(
 export async function runSmartBuild(force: boolean): Promise<void> {
   // The orchestrator reads --force/--clean/... off process.argv itself; we
   // only pass `force` here so the SEA stage knows whether to run.
-  const cliPkg = BUILD_PACKAGES[0]!
+  const cliPkg = CLI_BUILD_PACKAGE
   const cliOutputPath = path.join(rootDir, cliPkg.outputCheck)
 
   await runPipelineCli({
@@ -283,7 +286,7 @@ export async function runTargetedBuild(
     const cliOutputPath = path.join(rootDir, 'packages/cli/dist/index.js')
     if (!existsSync(cliOutputPath)) {
       logger.log(`${colors.cyan('→')} Building CLI first…`)
-      const cliResult = await buildPackage(BUILD_PACKAGES[0]!, {
+      const cliResult = await buildPackage(CLI_BUILD_PACKAGE, {
         force: false,
       })
       if (!cliResult.success) {

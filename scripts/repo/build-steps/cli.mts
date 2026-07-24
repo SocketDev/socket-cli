@@ -28,17 +28,25 @@ export function parseArgs(): ParsedArgs {
   const buildArgs: string[] = []
 
   for (let i = 0; i < args.length; i++) {
-    const arg = args[i]!
-    if (arg === '--target' && i + 1 < args.length) {
-      target = args[++i]
-    } else if (arg === '--targets' && i + 1 < args.length) {
-      targets = args[++i]!.split(',').map(t => t.trim())
-    } else if (arg === '--platform' && i + 1 < args.length) {
-      platform = args[++i]
+    const arg = args[i]
+    if (arg === undefined) {
+      continue
+    }
+    const next = args[i + 1]
+    if (arg === '--target' && next !== undefined) {
+      target = next
+      i += 1
+    } else if (arg === '--targets' && next !== undefined) {
+      targets = next.split(',').map(t => t.trim())
+      i += 1
+    } else if (arg === '--platform' && next !== undefined) {
+      platform = next
+      i += 1
     } else if (arg.startsWith('--platform=')) {
       platform = arg.split('=')[1]
-    } else if (arg === '--arch' && i + 1 < args.length) {
-      arch = args[++i]
+    } else if (arg === '--arch' && next !== undefined) {
+      arch = next
+      i += 1
     } else if (arg.startsWith('--arch=')) {
       arch = arg.split('=')[1]
     } else if (arg === '--platforms') {
@@ -77,7 +85,7 @@ export function parseArgs(): ParsedArgs {
  */
 export function showHelp(): void {
   logger.log('')
-  logger.log(`${colors.blue('Socket CLI Build System')}`)
+  logger.log(colors.blue('Socket CLI Build System'))
   logger.log('')
   logger.log('Usage:')
   logger.log(

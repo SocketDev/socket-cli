@@ -59,7 +59,7 @@ export interface BabelTypes {
   identifier(name: string): BabelIdentifierNode
   isIdentifier(
     node: BabelNode | null | undefined,
-    opts?: { name: string },
+    opts?: { name: string } | undefined,
   ): node is BabelIdentifierNode
   isMemberExpression(
     node: BabelNode | null | undefined,
@@ -73,7 +73,7 @@ export interface BabelTypes {
   memberExpression(
     object: BabelNode,
     property: BabelNode,
-    computed?: boolean,
+    computed?: boolean | undefined,
   ): BabelMemberExpressionNode
   numericLiteral(value: number): BabelNode
   objectExpression(properties: BabelNode[]): BabelNode

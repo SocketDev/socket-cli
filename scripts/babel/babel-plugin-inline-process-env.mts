@@ -34,7 +34,7 @@ export interface BabelTypes {
   identifier(name: string): BabelNode
   isIdentifier(
     node: BabelNode | null | undefined,
-    opts?: { name: string },
+    opts?: { name: string } | undefined,
   ): node is BabelIdentifierNode
   isMemberExpression(
     node: BabelNode | null | undefined,

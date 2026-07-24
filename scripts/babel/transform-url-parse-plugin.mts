@@ -23,11 +23,13 @@ export default function ({ types: t }: BabelApi) {
           node.callee.property.name === 'parse' &&
           node.arguments.length === 1
         ) {
+          const firstArg = node.arguments[0]
+          if (!firstArg) {
+            return
+          }
           const { parent } = path
           // Create an AST node for `new URL(<arg>)`.
-          const newUrl = t.newExpression(t.identifier('URL'), [
-            node.arguments[0]!,
-          ])
+          const newUrl = t.newExpression(t.identifier('URL'), [firstArg])
           // Check if the result of `url.parse()` is immediately accessed, e.g.
           // `url.parse(x).protocol`.
           if (t.isMemberExpression(parent) && parent.object === node) {

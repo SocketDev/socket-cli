@@ -72,9 +72,9 @@ export async function buildCurrentPlatformSea(): Promise<{ success: boolean }> {
  */
 export async function buildPackage(
   pkg: BuildPackageConfig,
-  options: { force: boolean },
+  config: { force: boolean },
 ): Promise<BuildResult> {
-  const { force } = { __proto__: null, ...options } as typeof options
+  const { force } = { __proto__: null, ...config } as typeof config
   const skip = !needsBuild(pkg, { force })
 
   if (skip) {

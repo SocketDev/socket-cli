@@ -18,8 +18,6 @@
  *
  *   - `fetch()` is used directly instead of `httpJson` from
  *     `@socketsecurity/lib-stable/http-request`.
- *   - `rmSync` is used directly instead of `safeDelete` from
- *     `@socketsecurity/lib-stable/fs`.
  *   - Caught errors use the local zero-dependency `bootstrapErrorMessage()`
  *     pattern instead of `errorMessage()` from
  *     `@socketsecurity/lib-stable/errors`. These exceptions are intentional,
@@ -30,7 +28,7 @@
  */
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 
 import os from 'node:os'
 
@@ -38,6 +36,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { fileURLToPath } from 'node:url'
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // oxlint-disable-next-line socket/prefer-find-up-package-json, socket/prefer-find-repo-root -- this zero-dependency bootstrap cannot import the fleet/lib helpers it installs.
@@ -102,7 +101,10 @@ const checkFirewall = async (
       )
       const topAlerts = alerts.slice(0, 10)
       for (let i = 0, { length } = topAlerts; i < length; i += 1) {
-        const a = topAlerts[i]!
+        const a = topAlerts[i]
+        if (!a) {
+          continue
+        }
         err(
           `    ${a.type ?? a.key ?? 'malware'}${a.severity ? ` (${a.severity})` : ''}`,
         )
@@ -190,7 +192,10 @@ const readPinnedVersion = (pkgName: string): string => {
           /^\s+['"]?([@A-Za-z0-9_/-]+)['"]?\s*:\s*['"]?([^'"\s]+)['"]?\s*$/,
         )
         if (m && m[1] === pkgName) {
-          return stripRange(m[2]!)
+          const pinned = m[2]
+          if (pinned !== undefined) {
+            return stripRange(pinned)
+          }
         }
       }
     }
@@ -261,7 +266,7 @@ const bootstrapPackage = async (pkgName: string): Promise<void> => {
   // Build the registry tarball URL. The npm registry redirects
   // /<pkg>/-/<basename>-<version>.tgz, but for scoped packages the
   // basename is the unscoped portion.
-  const unscoped = pkgName.startsWith('@') ? pkgName.split('/')[1]! : pkgName
+  const unscoped = pkgName.startsWith('@') ? pkgName.split('/')[1] : pkgName
   const tarballUrl = `https://registry.npmjs.org/${pkgName}/-/${unscoped}-${version}.tgz`
 
   log(`Fetching ${tarballUrl}`)
@@ -283,7 +288,7 @@ const bootstrapPackage = async (pkgName: string): Promise<void> => {
 
   // Ensure dest exists and is empty for clean extraction.
   if (existsSync(dest)) {
-    rmSync(dest, { recursive: true, force: true })
+    safeDeleteSync(dest)
   }
   mkdirSync(dest, { recursive: true })
 
@@ -299,7 +304,7 @@ const bootstrapPackage = async (pkgName: string): Promise<void> => {
     throw new Error(`Failed to extract ${tarballPath} into ${dest}.`)
   }
 
-  rmSync(tarballPath, { force: true })
+  safeDeleteSync(tarballPath)
   log(`${pkgName}@${version} → node_modules/${pkgName}`)
 }
 
@@ -308,7 +313,10 @@ const main = async (): Promise<number> => {
     `Bootstrapping ${BOOTSTRAP_PACKAGES.length} package(s) from npm registry…`,
   )
   for (let i = 0, { length } = BOOTSTRAP_PACKAGES; i < length; i += 1) {
-    const pkg = BOOTSTRAP_PACKAGES[i]!
+    const pkg = BOOTSTRAP_PACKAGES[i]
+    if (!pkg) {
+      continue
+    }
     try {
       await bootstrapPackage(pkg)
     } catch (e) {

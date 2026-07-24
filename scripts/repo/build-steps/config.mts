@@ -50,23 +50,28 @@ export const TARGET_PACKAGES: Record<string, string> = {
 }
 
 /**
+ * Build configuration for the CLI package — the first (and currently only)
+ * entry in the default build order, referenced directly by orchestration
+ * steps that build the CLI before platform targets.
+ */
+export const CLI_BUILD_PACKAGE: BuildPackageConfig = {
+  filter: '@socketsecurity/cli',
+  inputs: [
+    'packages/cli/.config/**/*.{mts,ts,json}',
+    'packages/cli/scripts/**/*.{mts,ts}',
+    'packages/cli/src/**/*.{mts,ts,cts,json}',
+    'packages/cli/package.json',
+    'packages/cli/tsconfig.json',
+    'packages/build-infra/lib/**/*.{mts,ts}',
+    'packages/build-infra/package.json',
+    'pnpm-lock.yaml',
+    '.node-version',
+  ],
+  name: 'CLI Package',
+  outputCheck: 'packages/cli/dist/index.js',
+}
+
+/**
  * Build configuration for each package in the default build order.
  */
-export const BUILD_PACKAGES: BuildPackageConfig[] = [
-  {
-    name: 'CLI Package',
-    filter: '@socketsecurity/cli',
-    outputCheck: 'packages/cli/dist/index.js',
-    inputs: [
-      'packages/cli/.config/**/*.{mts,ts,json}',
-      'packages/cli/scripts/**/*.{mts,ts}',
-      'packages/cli/src/**/*.{mts,ts,cts,json}',
-      'packages/cli/package.json',
-      'packages/cli/tsconfig.json',
-      'packages/build-infra/lib/**/*.{mts,ts}',
-      'packages/build-infra/package.json',
-      'pnpm-lock.yaml',
-      '.node-version',
-    ],
-  },
-]
+export const BUILD_PACKAGES: BuildPackageConfig[] = [CLI_BUILD_PACKAGE]

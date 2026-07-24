@@ -54,7 +54,7 @@ export async function getVersion(
       stdio: 'pipe',
     })
     if (result.code === 0) {
-      return String(result.stdout).trim()
+      return result.stdout.trim()
     }
   } catch {
     // Ignore.
@@ -82,14 +82,21 @@ export async function hasCommand(command: string): Promise<boolean> {
  * Parse version string to compare.
  */
 function parseVersion(versionString: string): VersionInfo | undefined {
-  const match = versionString.match(/(\d+)\.(\d+)\.(\d+)/)
-  if (!match) {
+  const match = versionString.match(
+    /(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)/,
+  )
+  const groups = match?.groups
+  if (!groups) {
+    return undefined
+  }
+  const { major, minor, patch } = groups
+  if (major === undefined || minor === undefined || patch === undefined) {
     return undefined
   }
   return {
-    major: Number.parseInt(match[1]!, 10),
-    minor: Number.parseInt(match[2]!, 10),
-    patch: Number.parseInt(match[3]!, 10),
+    major: Number.parseInt(major, 10),
+    minor: Number.parseInt(minor, 10),
+    patch: Number.parseInt(patch, 10),
   }
 }
 

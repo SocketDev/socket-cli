@@ -110,11 +110,11 @@ export interface BabelTypes {
   isBooleanLiteral(node: BabelNode | null | undefined): boolean
   isIdentifier(
     node: BabelNode | null | undefined,
-    opts?: { name?: string | undefined },
+    opts?: { name?: string | undefined } | undefined,
   ): node is BabelIdentifier
   isLogicalExpression(
     node: BabelNode | null | undefined,
-    opts?: { operator?: string | undefined },
+    opts?: { operator?: string | undefined } | undefined,
   ): node is BabelLogicalExpression
   isMemberExpression(
     node: BabelNode | null | undefined,
@@ -134,7 +134,7 @@ export interface BabelTypes {
   memberExpression(
     object: BabelNode,
     property: BabelNode,
-    computed?: boolean,
+    computed?: boolean | undefined,
   ): BabelMemberExpression
   newExpression(callee: BabelNode, args: BabelNode[]): BabelNode
   nullLiteral(): BabelNode

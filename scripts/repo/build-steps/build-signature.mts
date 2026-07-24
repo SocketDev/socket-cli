@@ -46,9 +46,9 @@ export function computeBuildSignature(pkg: BuildPackageConfig): string {
  */
 export function needsBuild(
   pkg: BuildPackageConfig,
-  options: { force: boolean },
+  config: { force: boolean },
 ): boolean {
-  const { force } = { __proto__: null, ...options } as typeof options
+  const { force } = { __proto__: null, ...config } as typeof config
   if (force) {
     return true
   }
