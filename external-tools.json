@@ -19,7 +19,7 @@
         "Node 24+ runs .mts files with default-on native type stripping; Node 24.12+ marks it stable",
         "Install via volta / nvm / fnm / official installer",
         "The pinned version lives in .node-version at the repo root",
-        "Docker prebakes: node-base (docker/fleet-bases/node-base.Dockerfile) builds node from source at the .node-version pin with V8 pointer compression (--experimental-enable-pointer-compression = lower memory), replicating the vendored platformatic/node-caged recipe rather than pulling its DockerHub image. scripts/repo/build-prebakes.mts injects NODE_VERSION (.node-version) + PNPM_VERSION (pnpm pin) as build-args; every compiler-base build COPYs node --from=node-base instead of installing it."
+        "Docker prebakes: node-base (docker/fleet/node-base.Dockerfile) builds node from source at the .node-version pin with V8 pointer compression (--experimental-enable-pointer-compression = lower memory), replicating the vendored platformatic/node-caged recipe rather than pulling its DockerHub image. scripts/repo/build-prebakes.mts injects NODE_VERSION (.node-version) + PNPM_VERSION (pnpm pin) as build-args; every compiler-base build COPYs node --from=node-base instead of installing it."
       ]
     },
     "pnpm": {
