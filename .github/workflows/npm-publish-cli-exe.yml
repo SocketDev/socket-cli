@@ -104,3 +104,37 @@ jobs:
           --version="$VERSION" --tag="$DIST_TAG" --stamp
           ${{ inputs.family == 'cli-exe-tails' && '--triplets="$TRIPLETS"' || '--wrapper' }}
           ${{ inputs.publish == true && '--publish' || '' }}
+      # `pnpm stage publish` packs each tarball in a temp dir and uploads it
+      # (dry run: discards it) without leaving a .tgz behind, so re-pack the
+      # stamped packages for audit. Version-stamped + non-private selects
+      # exactly the directories the Stage step staged — unstamped scaffolds,
+      # e.g. the skipped win32 pair, are still private. BUILD_MODE resolves
+      # to prod under CI, so generated packages live in build/prod/out.
+      - name: Pack tarballs for audit
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          version="${VERSION#v}"
+          dest="$RUNNER_TEMP/cli-exe-tarballs"
+          mkdir -p "$dest"
+          for dir in packages/package-builder/build/prod/out/*/; do
+            manifest="${dir}package.json"
+            [ -f "$manifest" ] || continue
+            staged="$(node -e 'const m = require(process.argv[1]); if (m.version === process.argv[2] && !m.private) process.stdout.write("yes")' "$PWD/$manifest" "$version")"
+            [ "$staged" = "yes" ] || continue
+            (cd "$dir" && pnpm pack --pack-destination "$dest")
+          done
+          ls -l "$dest"
+      # Run outputs stay downloadable for audit — manifest + payload checks
+      # happen from the artifact instead of a local re-pack. Uploads on dry
+      # runs too, and errors when the pack produced nothing. Short retention:
+      # these are audit copies, not a release channel. The .tgz payloads are
+      # already gzip-compressed, so skip artifact-level re-compression.
+      - name: Upload packed tarballs
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1 (2026-05-15)
+        with:
+          name: ${{ inputs.family }}-tarballs-${{ inputs.version }}
+          path: ${{ runner.temp }}/cli-exe-tarballs/*.tgz
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
