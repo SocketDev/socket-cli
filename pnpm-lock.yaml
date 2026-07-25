@@ -1331,6 +1331,12 @@ importers:
         specifier: 'catalog:'
         version: 26.1.1
 
+  .claude/hooks/fleet/fixes-need-tests-nudge:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.1.1
+
   .claude/hooks/fleet/follow-direct-imperative-nudge:
     devDependencies:
       '@types/node':
@@ -1378,6 +1384,12 @@ importers:
       '@socketsecurity/lib-stable':
         specifier: npm:@socketsecurity/lib@6.2.3
         version: '@socketsecurity/lib@6.2.3(typescript@7.0.2)'
+
+  .claude/hooks/fleet/honesty-framing-guard:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.1.1
 
   .claude/hooks/fleet/immutable-release-guard:
     devDependencies:
@@ -2064,6 +2076,12 @@ importers:
         specifier: 'catalog:'
         version: 26.1.1
 
+  .claude/hooks/fleet/primary-checkout-on-default-stop-guard:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.1.1
+
   .claude/hooks/fleet/private-name-nudge:
     devDependencies:
       '@types/node':
@@ -2156,6 +2174,15 @@ importers:
         version: 26.1.1
 
   .claude/hooks/fleet/reserved-script-dir-guard:
+    devDependencies:
+      '@socketsecurity/lib-stable':
+        specifier: npm:@socketsecurity/lib@6.2.3
+        version: '@socketsecurity/lib@6.2.3(typescript@7.0.2)'
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.1.1
+
+  .claude/hooks/fleet/rg-replace-flag-nudge:
     devDependencies:
       '@socketsecurity/lib-stable':
         specifier: npm:@socketsecurity/lib@6.2.3
@@ -2513,6 +2540,8 @@ importers:
   .config/fleet/oxlint-plugin/fleet/no-promise-race: {}
 
   .config/fleet/oxlint-plugin/fleet/no-promise-race-in-loop: {}
+
+  .config/fleet/oxlint-plugin/fleet/no-required-in-options-bag: {}
 
   .config/fleet/oxlint-plugin/fleet/no-runtime-features-below-engine-floor: {}
 
