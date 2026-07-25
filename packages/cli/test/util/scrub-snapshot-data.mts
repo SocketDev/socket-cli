@@ -31,6 +31,10 @@ interface ScrubOptions {
    */
   ipAddresses?: boolean | undefined
   /**
+   * Scrub git branch names in dry-run details (default: true).
+   */
+  branches?: boolean | undefined
+  /**
    * Scrub email addresses (default: false - usually stable in mocks).
    */
   emails?: boolean | undefined
@@ -56,6 +60,7 @@ export function scrubSnapshotData(
   options: ScrubOptions = {},
 ): string {
   const {
+    branches = true,
     custom = [],
     emails = false,
     ids = true,
@@ -149,7 +154,26 @@ export function scrubSnapshotData(
     )
   }
 
-  // Phase 7: Custom patterns.
+  // Phase 7: Git branch names in dry-run details.
+  if (branches) {
+    // The CLI resolves the branch from the ambient git checkout
+    // (`git symbolic-ref`) or the CI env (GITHUB_HEAD_REF / GITHUB_REF_NAME),
+    // so the rendered `branchName: "…"` is whatever branch the test happens to
+    // run on — "main" on a main push, the PR head branch on a PR build, the
+    // local feature branch when run from a worktree, or a short commit hash on
+    // a detached HEAD with no CI env. Pin it so the snapshot is branch-agnostic
+    // (this test failed on every non-main PR before). The branch-resolution
+    // logic itself stays covered by the unit tests that mock `gitBranch`
+    // (handle-ci / cmd-ci unit specs). Only matches the human-readable details
+    // form (`branchName: "…"`, space after the unquoted key), not JSON output
+    // (`"branchName":"…"`).
+    scrubbed = scrubbed.replace(
+      /branchName: "[^"]*"/g,
+      'branchName: "[BRANCH]"',
+    )
+  }
+
+  // Phase 8: Custom patterns.
   for (const { pattern, replacement } of custom) {
     scrubbed = scrubbed.replace(pattern, replacement)
   }
