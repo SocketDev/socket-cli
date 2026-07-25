@@ -71,7 +71,7 @@
 // Reads a Claude Code PreToolUse JSON payload from stdin:
 //   { "tool_name": "Bash", "tool_input": { "command": "..." } }
 
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -103,17 +103,26 @@ import {
 export const triggers: readonly string[] = ['dispatches', 'workflow']
 
 // Bypass phrase: `Allow workflow-dispatch bypass: <workflow>`.
-// Authorizes EXACTLY ONE dispatch of the named workflow when the
-// user types the phrase verbatim in a recent turn. Re-dispatching
-// the same workflow needs a fresh phrase. Dispatching a different
-// workflow needs its own phrase.
+// Typed once, it authorizes dispatches of the NAMED workflow for the
+// rest of the session — a durable per-workflow grant. Dispatching a
+// DIFFERENT workflow needs its own phrase.
 //
-// Why per-workflow + per-trigger: an earlier shape just matched the
-// bare string `Allow workflow-dispatch bypass`, which authorized
-// every dispatch in the next 8 user turns. That was too permissive
-// — one phrase shouldn't open the door for an unrelated workflow
-// later in the session. The colon-suffix form names the workflow
-// being authorized so each phrase consumes one specific dispatch.
+// Why per-workflow: an earlier shape just matched the bare string
+// `Allow workflow-dispatch bypass`, which authorized every dispatch
+// in the next 8 user turns. That was too permissive — one phrase
+// shouldn't open the door for an unrelated workflow later in the
+// session. The colon-suffix form names exactly what is authorized.
+//
+// Why session-durable (not one-phrase-one-dispatch): release
+// engineering retries. A dispatch that startup-fails on an Actions
+// allowlist gap, dies on a missing asset, or gets cancelled consumes
+// no prod side effect — forcing a fresh phrase for every retry of
+// the SAME workflow makes the operator re-type the same
+// authorization a dozen times in one debugging loop (which happened,
+// 2026-07-24, and helped nobody). The user's intent for that
+// workflow is established by the first phrase; the guard's job is
+// blocking UNAUTHORIZED workflows, not rationing retries of an
+// authorized one.
 //
 // `<workflow>` is the literal token passed to `gh workflow run` —
 // either the workflow filename (`publish.yml`), the basename
@@ -129,16 +138,10 @@ export const triggers: readonly string[] = ['dispatches', 'workflow']
 //   - Re-dispatches after a transient infra failure (cache miss,
 //     runner timeout) where the user has already verified the
 //     previous run's intent.
-//
-// Once-and-done: once the hook authorizes a dispatch against a
-// phrase, that exact phrase doesn't authorize a second dispatch.
-// Implementation note: we don't write to disk to track consumption —
-// instead the test "is this phrase present AFTER my last dispatch
-// of this workflow" answers it. See `findUnclaimedBypassPhrase`.
 const BYPASS_PHRASE_PREFIX = 'Allow workflow-dispatch bypass:'
 
 /**
- * Build the canonical phrase variants that authorize ONE dispatch of
+ * Build the canonical phrase variants that authorize dispatches of
  * `workflow`. The user can name the workflow in any of three shapes — the
  * filename, the basename (drop `.yml` / `.yaml`), or the numeric workflow id —
  * and any of them counts.
@@ -164,12 +167,13 @@ export function countPriorDispatches(
   transcriptPath: string | undefined,
   workflow: string,
 ): number {
-  if (!transcriptPath || !workflow) {
+  const { resolvedPath } = resolveTranscriptSource(transcriptPath)
+  if (!resolvedPath || !workflow) {
     return 0
   }
   let raw: string
   try {
-    raw = readFileSync(transcriptPath, 'utf8')
+    raw = readFileSync(resolvedPath, 'utf8')
   } catch {
     return 0
   }
@@ -239,27 +243,102 @@ export function countPriorDispatches(
   return count
 }
 
-// Chronological credit/debit ledger over the whole transcript: each accepted
-// phrase OCCURRENCE in a user turn adds one credit; each PRIOR non-denied
-// dispatch of the same workflow consumes one (floored at zero, so a dispatch
-// that ran outside this gate — web UI, user terminal — never eats a future
-// credit). Windowing phrases while counting dispatches unwindowed was the
-// prior design's defect: as phrases aged out of the window the un-aged
-// dispatch debits ate every fresh phrase, and the budget could never go
-// positive again.
-export function dispatchLedgerRemaining(
+export interface TranscriptSource {
+  givenPath: string | undefined
+  resolvedPath: string | undefined
+  state: 'given' | 'missing' | 'sibling-fallback'
+}
+
+/**
+ * Resolve the transcript file the ledger reads. The harness-provided
+ * `transcript_path` is authoritative when its file exists. A continued or
+ * compacted session can hand hooks a transcript_path whose file was never
+ * materialized while the live events keep appending to the original session's
+ * file in the same project directory — so when the given path is absent, fall
+ * back to the NEWEST `.jsonl` sibling in its directory. Without the fallback
+ * every credit reads as zero and a typed bypass phrase is silently ignored
+ * (observed 2026-07-24: five denials against a provably positive ledger).
+ */
+export function resolveTranscriptSource(
+  transcriptPath: string | undefined,
+): TranscriptSource {
+  if (!transcriptPath) {
+    return {
+      givenPath: transcriptPath,
+      resolvedPath: undefined,
+      state: 'missing',
+    }
+  }
+  if (existsSync(transcriptPath)) {
+    return {
+      givenPath: transcriptPath,
+      resolvedPath: transcriptPath,
+      state: 'given',
+    }
+  }
+  try {
+    const dir = path.dirname(transcriptPath)
+    let newest: string | undefined
+    let newestMtime = -1
+    for (const name of readdirSync(dir)) {
+      if (!name.endsWith('.jsonl')) {
+        continue
+      }
+      const candidate = path.join(dir, name)
+      const { mtimeMs } = statSync(candidate)
+      if (mtimeMs > newestMtime) {
+        newestMtime = mtimeMs
+        newest = candidate
+      }
+    }
+    if (newest) {
+      return {
+        givenPath: transcriptPath,
+        resolvedPath: newest,
+        state: 'sibling-fallback',
+      }
+    }
+  } catch {
+    // Directory unreadable/absent — fall through to missing.
+  }
+  return {
+    givenPath: transcriptPath,
+    resolvedPath: undefined,
+    state: 'missing',
+  }
+}
+
+export interface DispatchLedgerReport {
+  consumed: number
+  credits: number
+  remaining: number
+  source: TranscriptSource
+}
+
+// Session ledger over the whole transcript. `credits` counts accepted phrase
+// OCCURRENCES in user turns — any credit > 0 means the user has authorized
+// this workflow for the session (the grant is durable; see the
+// BYPASS_PHRASE_PREFIX doctrine block). `consumed` counts prior non-denied
+// dispatches of the same workflow (floored at the credit balance) — kept
+// PURELY for the diagnostics a denial banner prints, it plays no part in the
+// allow/deny decision. Returns the full report (not just a boolean) so a
+// denial can print WHICH transcript it read and the credit/consumed split —
+// the diagnosability a bare "no" denies the operator.
+export function dispatchLedgerReport(
   transcriptPath: string | undefined,
   phrases: readonly string[],
   workflow: string,
-): number {
-  if (!transcriptPath || !workflow) {
-    return 0
+): DispatchLedgerReport {
+  const source = resolveTranscriptSource(transcriptPath)
+  const empty = { consumed: 0, credits: 0, remaining: 0, source }
+  if (!source.resolvedPath || !workflow) {
+    return empty
   }
   let raw: string
   try {
-    raw = readFileSync(transcriptPath, 'utf8')
+    raw = readFileSync(source.resolvedPath, 'utf8')
   } catch {
-    return 0
+    return empty
   }
   const lines = raw.split('\n')
   const deniedIds = collectHookDeniedToolUseIds(lines)
@@ -267,6 +346,7 @@ export function dispatchLedgerRemaining(
   const accepted = new Set([workflow, workflow.replace(/\.(?:yaml|yml)$/i, '')])
   const needles = phrases.map(p => normalizeBypassText(p))
   let credits = 0
+  let consumed = 0
   for (let i = 0, { length } = lines; i < length; i += 1) {
     const line = lines[i]!
     if (!line) {
@@ -337,11 +417,15 @@ export function dispatchLedgerRemaining(
       }
       const dispatch = detectDispatch(cmd)
       if (dispatch.workflow && accepted.has(dispatch.workflow)) {
-        credits = credits > 0 ? credits - 1 : 0
+        // Consume floored at the credit balance: a dispatch that ran outside
+        // this gate never eats a future credit.
+        if (consumed < credits) {
+          consumed += 1
+        }
       }
     }
   }
-  return credits
+  return { consumed, credits, remaining: credits - consumed, source }
 }
 
 // Marker every PreToolUse denial carries in its tool_result content. The
@@ -855,27 +939,36 @@ export const check = bashGuard((command, payload) => {
     return undefined
   }
 
-  // Per-trigger phrase bypass. The user types
-  // `Allow workflow-dispatch bypass: <workflow>` verbatim — one
-  // phrase authorizes exactly one dispatch of that workflow. A
-  // second dispatch of the same workflow needs a fresh phrase.
-  //
-  // Implementation: count the matching phrases the user has typed
-  // and subtract the number of prior dispatches against the same
-  // workflow already in the transcript. If anything's left, this
-  // dispatch consumes one slot and is allowed.
+  // Per-workflow phrase bypass. The user types
+  // `Allow workflow-dispatch bypass: <workflow>` verbatim ONCE and
+  // every dispatch of that workflow for the rest of the session is
+  // authorized (durable grant — see the BYPASS_PHRASE_PREFIX doctrine
+  // block). A different workflow needs its own phrase.
+  let ledgerDiagnostic = ''
   /* c8 ignore next - workflow is always defined when detectDispatch returns blocked:true; defensive guard for future code paths */
   if (workflow) {
-    const remaining = dispatchLedgerRemaining(
+    const report = dispatchLedgerReport(
       payload.transcript_path,
       buildAcceptedPhrases(workflow),
       workflow,
     )
-    if (remaining > 0) {
+    if (report.credits > 0) {
+      const via =
+        report.source.state === 'sibling-fallback'
+          ? `; transcript via sibling fallback ${report.source.resolvedPath}`
+          : ''
       return notify(
-        `[release-workflow-guard] ALLOWED: ${shape} on ${workflow} — bypass phrase consumed (${remaining - 1} remaining for this workflow)`,
+        `[release-workflow-guard] ALLOWED: ${shape} on ${workflow} — session bypass phrase in effect for this workflow${via}`,
       )
     }
+    // Denials must be diagnosable in the field: say WHICH transcript the
+    // scan read (or that none resolved), so "typed the phrase, still
+    // blocked" is triageable from the banner alone.
+    const read =
+      report.source.resolvedPath === undefined
+        ? `NONE resolved (given: ${report.source.givenPath ?? '<absent>'})`
+        : `${report.source.resolvedPath}${report.source.state === 'sibling-fallback' ? ' (sibling fallback)' : ''}`
+    ledgerDiagnostic = `  No session grant for ${workflow}: 0 phrase occurrences found.\n  Transcript read: ${read}\n`
   }
 
   /* c8 ignore start - workflow is always defined when blocked:true; the else/null arms here are defensive fallbacks unreachable from detectDispatch */
@@ -902,12 +995,13 @@ export const check = bashGuard((command, payload) => {
       '          its workflow_dispatch.inputs block.',
       '        - No force-prod overrides may be set',
       '          (e.g. -f release=true / -f publish=true).',
-      `    (b) Per-trigger phrase bypass: the user types`,
+      `    (b) Per-workflow phrase bypass: the user types`,
       `        \`${phraseExample}\``,
-      '        verbatim in a recent message. ONE phrase authorizes ONE',
-      '        dispatch of that exact workflow. A second dispatch (or a',
-      '        different workflow) needs its own phrase.',
+      '        verbatim, once. That authorizes dispatches of this exact',
+      '        workflow for the rest of the session. A different workflow',
+      '        needs its own phrase.',
       '',
+      ...(ledgerDiagnostic ? [ledgerDiagnostic] : []),
       '  Without a bypass, the user runs workflow_dispatch jobs',
       '  manually. Tell the user to run the command in their own',
       '  terminal (or via the GitHub Actions UI), then resume.',

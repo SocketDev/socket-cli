@@ -49,6 +49,7 @@ export const CONVENTION_GUARDS: readonly string[] = [
   'no-revert-guard',
   'no-upstream-edit-guard',
   'no-upstream-gitlink-guard',
+  'primary-checkout-on-default-stop-guard',
   'private-name-nudge',
   'shallow-clone-guard',
   'test-script-defers-guard',

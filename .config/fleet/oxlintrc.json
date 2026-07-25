@@ -43,6 +43,7 @@
     "socket/no-process-cwd-in-scripts-hooks": "error",
     "socket/no-promise-race": "error",
     "socket/no-promise-race-in-loop": "error",
+    "socket/no-required-in-options-bag": "error",
     "socket/no-runtime-features-below-engine-floor": "error",
     "socket/no-source-content-tests": "error",
     "socket/no-source-sniffing": "error",

@@ -161,7 +161,7 @@ export function computeNextVersion(current: string, level: BumpLevel): string {
   return `${major}.${minor}.${patch + 1}`
 }
 
-export interface ResolveBumpBaseOptions {
+export interface ResolveBumpBaseConfig {
   manifestVersion: string
   publishedVersion?: string | undefined
   tagVersion?: string | undefined
@@ -177,8 +177,8 @@ export interface ResolveBumpBaseOptions {
  * can never inflate it. Falls back to the manifest core ONLY for a genuine
  * first release (no published version, no tag).
  */
-export function resolveBumpBase(config: ResolveBumpBaseOptions): string {
-  const cfg = { __proto__: null, ...config } as ResolveBumpBaseOptions
+export function resolveBumpBase(config: ResolveBumpBaseConfig): string {
+  const cfg = { __proto__: null, ...config } as ResolveBumpBaseConfig
   const released: string[] = []
   if (cfg.publishedVersion) {
     released.push(cfg.publishedVersion)
@@ -320,8 +320,11 @@ export function withChangelogEntry(section: string, bullet: string): string {
  * Promote the accrued `## [Unreleased]` section to a released `versionHeading`.
  * Returns the promoted section (heading + the accrued body) and the changelog
  * with the `[Unreleased]` block removed, or undefined when there is no
- * `[Unreleased]` section with entries to promote (so the caller falls back to
- * commit-derivation, then the empty-guard). Pure over its inputs.
+ * `[Unreleased]` section with entries to promote (so the caller releases the
+ * commit-derived section alone, then the empty-guard). The block is removed,
+ * not left empty: the fleet style creates the heading on demand —
+ * `mergeUnreleased` recreates it at the next squash-time accrual. Pure over
+ * its inputs.
  */
 
 /**
@@ -348,6 +351,36 @@ export function parseSectionBullets(section: string): Map<string, string[]> {
     }
   }
   return out
+}
+
+/**
+ * Union two rendered changelog sections under `heading`: every bullet of
+ * `primary` in order, then every `secondary` bullet not already present
+ * verbatim, grouped under their matching `### <Section>` headings. THE merge
+ * primitive for the two bullet sources — commit-derived and hand-written —
+ * so neither source can drop the other's content and exact-duplicate lines
+ * collapse. `mergeUnreleased` builds on it at squash time and
+ * `composeReleaseSection` in bump.mts at release time. Pure over inputs.
+ */
+export function unionSections(
+  heading: string,
+  primary: string,
+  secondary: string,
+): string {
+  const merged = new Map<string, string[]>()
+  for (const [section, bullets] of parseSectionBullets(primary)) {
+    merged.set(section, [...bullets])
+  }
+  for (const [section, bullets] of parseSectionBullets(secondary)) {
+    const arr = merged.get(section) ?? []
+    for (const bullet of bullets) {
+      if (!arr.includes(bullet)) {
+        arr.push(bullet)
+      }
+    }
+    merged.set(section, arr)
+  }
+  return renderSectionMap(heading, merged)
 }
 
 /**
@@ -390,20 +423,7 @@ export function mergeUnreleased(
     after = lines.slice(range.end)
   }
   // Incoming (newest) first, then the existing accrued bullets, deduped.
-  const merged = new Map<string, string[]>()
-  for (const [section, bullets] of incoming) {
-    merged.set(section, [...bullets])
-  }
-  for (const [section, bullets] of parseSectionBullets(existingBody)) {
-    const arr = merged.get(section) ?? []
-    for (const bullet of bullets) {
-      if (!arr.includes(bullet)) {
-        arr.push(bullet)
-      }
-    }
-    merged.set(section, arr)
-  }
-  const block = renderSectionMap(UNRELEASED_HEADING, merged)
+  const block = unionSections(UNRELEASED_HEADING, entriesSection, existingBody)
   const beforeText = before.join('\n').replace(/\s*$/u, '')
   const afterText = after.join('\n').replace(/^\s*/u, '')
   return `${beforeText}\n\n${block}\n\n${afterText}`

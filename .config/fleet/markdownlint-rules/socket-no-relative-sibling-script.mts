@@ -39,9 +39,9 @@ const rule: MarkdownlintRule = {
       return
     }
     for (let i = 0; i < params.lines.length; i += 1) {
-      const line = params.lines[i]
+      const line = params.lines[i]!
       for (let j = 0; j < SIBLING_PATH_RES.length; j += 1) {
-        const re = SIBLING_PATH_RES[j]
+        const re = SIBLING_PATH_RES[j]!
         const match = re.exec(line)
         if (!match) {
           continue

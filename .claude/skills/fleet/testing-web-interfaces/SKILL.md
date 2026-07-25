@@ -1,6 +1,8 @@
 ---
 name: testing-web-interfaces
 description: Tests web interfaces across component and browser layers.
+metadata:
+  internal: true
 ---
 
 # Testing Web Interfaces

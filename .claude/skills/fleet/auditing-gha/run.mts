@@ -32,42 +32,14 @@ import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 import { spawn } from '@socketsecurity/lib/process/spawn/child'
 
+// The canonical allowlist is DATA shared with the
+// gha-allowlist-matches-template-uses fleet check — it lives in its own
+// side-effect-free module because importing run.mts executes main().
+import { CANONICAL_PATTERNS } from './canonical-patterns.mts'
 import type { ConformResult, RepoFinding } from './run-report.mts'
 import { runAudit, runConform } from './run-report.mts'
 
 const logger = getDefaultLogger()
-
-// Canonical fleet allowlist. Every entry here is referenced by at least
-// one shared workflow under socket-registry/.github/workflows/ or by a
-// fleet repo's own workflows. Removing one breaks every consumer that
-// pins through those shared workflows. Add a new entry only when a new
-// shared workflow references it, and cascade to every consumer org.
-//
-// Third-party patterns (dtolnay/, hendrikmuhs/, HaaLeo/,
-// pnpm/action-setup, softprops/, Swatinem/) were removed in favor of
-// hand-rolled composites under SocketDev/socket-registry/.github/actions/.
-// Anything new third-party should be ported to a composite there rather
-// than added to this list.
-//
-// Sorted alphabetically.
-const CANONICAL_PATTERNS: readonly string[] = [
-  'actions/cache/restore@*',
-  'actions/cache/save@*',
-  'actions/cache@*',
-  'actions/checkout@*',
-  'actions/deploy-pages@*',
-  'actions/download-artifact@*',
-  'actions/github-script@*',
-  'actions/setup-go@*',
-  'actions/setup-node@*',
-  'actions/setup-python@*',
-  'actions/upload-artifact@*',
-  'actions/upload-pages-artifact@*',
-  'depot/build-push-action@*',
-  'depot/setup-action@*',
-  'github/codeql-action/upload-sarif@*',
-  'github/gh-aw-actions/*',
-]
 
 export async function auditOne(repo: string): Promise<RepoFinding> {
   const details: string[] = []

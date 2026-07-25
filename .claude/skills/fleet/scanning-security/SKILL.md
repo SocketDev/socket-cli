@@ -5,6 +5,8 @@ user-invocable: true
 allowed-tools: Task, Read, Write, Bash(node scripts/fleet/security.mts:*), Bash(node scripts/fleet/lib/security-report.mts:*), Bash(node .claude/skills/fleet/_shared/scripts/checkpoint.mts:*)
 model: claude-opus-4-8
 context: fork
+metadata:
+  internal: true
 ---
 
 # scanning-security

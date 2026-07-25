@@ -4,6 +4,8 @@ description: Minimize submodule sparse-checkouts to only the trees the repo actu
 user-invocable: true
 allowed-tools: Bash(git config:*), Bash(git submodule:*), Bash(git -C:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(du:*), Bash(node scripts/fleet/optimizing-submodules/collect-submodule-consumers.mts:*), Bash(node scripts/fleet/git-partial-submodule.mts:*), Bash(node scripts/fleet/verify-submodule-sparse.mts:*), Bash(node scripts/fleet/check/submodules-are-sparse-or-annotated.mts:*), Read, Grep, Glob
 model: claude-sonnet-4-6
+metadata:
+  internal: true
 ---
 
 # optimizing-submodules

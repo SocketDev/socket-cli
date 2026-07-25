@@ -69,7 +69,7 @@ export type ResolveFormatterOptions = {
   readonly paths?: readonly string[] | undefined
 }
 
-export type ResolveTypeCheckerOptions = {
+export type ResolveTypeCheckerConfig = {
   /**
    * Path to the tsconfig that drives the type check.
    */
@@ -204,7 +204,7 @@ export function resolveFormatter(
  * only — emitting goes through the bundler.
  */
 export function resolveTypeChecker(
-  config: ResolveTypeCheckerOptions,
+  config: ResolveTypeCheckerConfig,
 ): ResolvedTool {
   const { project } = { __proto__: null, ...config } as typeof config
   return {

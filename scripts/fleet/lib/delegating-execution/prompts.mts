@@ -4,33 +4,33 @@
 
 import type { TierSensitivity } from './types.mts'
 
-export interface ExecutePromptOptions {
+export interface ExecutePromptConfig {
   readonly planDocPath: string
   readonly task: string
 }
 
-export interface FollowupPromptOptions {
+export interface FollowupPromptConfig {
   readonly findings: string
   readonly planDocPath: string
   readonly task: string
 }
 
-export interface PlanPromptOptions {
+export interface PlanPromptConfig {
   readonly sensitivity: TierSensitivity
   readonly task: string
 }
 
-export interface ReviewPromptOptions {
+export interface ReviewPromptConfig {
   readonly planDocPath: string
   readonly sensitivity: TierSensitivity
   readonly task: string
 }
 
-export function executePrompt(config: ExecutePromptOptions): string {
-  const cfg: ExecutePromptOptions = {
+export function executePrompt(config: ExecutePromptConfig): string {
+  const cfg: ExecutePromptConfig = {
     __proto__: null,
     ...config,
-  } as ExecutePromptOptions
+  } as ExecutePromptConfig
   return [
     `Task: ${cfg.task}`,
     '',
@@ -45,11 +45,11 @@ export function executePrompt(config: ExecutePromptOptions): string {
   ].join('\n')
 }
 
-export function followupPrompt(config: FollowupPromptOptions): string {
-  const cfg: FollowupPromptOptions = {
+export function followupPrompt(config: FollowupPromptConfig): string {
+  const cfg: FollowupPromptConfig = {
     __proto__: null,
     ...config,
-  } as FollowupPromptOptions
+  } as FollowupPromptConfig
   return [
     `Task: ${cfg.task}`,
     '',
@@ -67,11 +67,11 @@ export function followupPrompt(config: FollowupPromptOptions): string {
   ].join('\n')
 }
 
-export function planPrompt(config: PlanPromptOptions): string {
-  const cfg: PlanPromptOptions = {
+export function planPrompt(config: PlanPromptConfig): string {
+  const cfg: PlanPromptConfig = {
     __proto__: null,
     ...config,
-  } as PlanPromptOptions
+  } as PlanPromptConfig
   return [
     `Task: ${cfg.task}`,
     `Sensitivity: ${cfg.sensitivity}`,
@@ -90,11 +90,11 @@ export function planPrompt(config: PlanPromptOptions): string {
   ].join('\n')
 }
 
-export function reviewPrompt(config: ReviewPromptOptions): string {
-  const cfg: ReviewPromptOptions = {
+export function reviewPrompt(config: ReviewPromptConfig): string {
+  const cfg: ReviewPromptConfig = {
     __proto__: null,
     ...config,
-  } as ReviewPromptOptions
+  } as ReviewPromptConfig
   return [
     `Task: ${cfg.task}`,
     `Sensitivity: ${cfg.sensitivity}`,

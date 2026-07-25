@@ -1,6 +1,8 @@
 ---
 name: optimizing-rust-performance
 description: Audits measured Rust performance.
+metadata:
+  internal: true
 ---
 
 # Optimizing Rust Performance

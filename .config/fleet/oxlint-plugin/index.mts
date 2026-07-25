@@ -49,6 +49,7 @@ import noProcessChdir from './fleet/no-process-chdir/index.mts'
 import noProcessCwdInScriptsHooks from './fleet/no-process-cwd-in-scripts-hooks/index.mts'
 import noPromiseRace from './fleet/no-promise-race/index.mts'
 import noPromiseRaceInLoop from './fleet/no-promise-race-in-loop/index.mts'
+import noRequiredInOptionsBag from './fleet/no-required-in-options-bag/index.mts'
 import noRuntimeFeaturesBelowEngineFloor from './fleet/no-runtime-features-below-engine-floor/index.mts'
 import noSourceContentTests from './fleet/no-source-content-tests/index.mts'
 import noSourceSniffing from './fleet/no-source-sniffing/index.mts'
@@ -161,6 +162,7 @@ const plugin = {
     'no-process-cwd-in-scripts-hooks': noProcessCwdInScriptsHooks,
     'no-promise-race': noPromiseRace,
     'no-promise-race-in-loop': noPromiseRaceInLoop,
+    'no-required-in-options-bag': noRequiredInOptionsBag,
     'no-runtime-features-below-engine-floor': noRuntimeFeaturesBelowEngineFloor,
     'no-source-content-tests': noSourceContentTests,
     'no-source-sniffing': noSourceSniffing,

@@ -62,7 +62,7 @@ export interface TrimLoopResult {
   outcomes: TrimOutcome[]
 }
 
-export interface TrimLoopOptions {
+export interface TrimLoopConfig {
   repoDir: string
   candidates: readonly string[]
   dryRun: boolean
@@ -126,9 +126,9 @@ async function runTests(repoDir: string): Promise<boolean> {
 }
 
 export async function trimLoop(
-  config: TrimLoopOptions,
+  config: TrimLoopConfig,
 ): Promise<TrimLoopResult> {
-  const cfg = { __proto__: null, ...config } as TrimLoopOptions
+  const cfg = { __proto__: null, ...config } as TrimLoopConfig
   const { candidates, dryRun, repoDir } = cfg
   const configPath = path.join(
     repoDir,
@@ -228,7 +228,7 @@ export async function trimLoop(
   }
 }
 
-export function parseArgs(argv: readonly string[]): TrimLoopOptions & {
+export function parseArgs(argv: readonly string[]): TrimLoopConfig & {
   json: boolean
 } {
   let repoDir = process.cwd()

@@ -74,11 +74,16 @@ const rule = {
 
   create(context: RuleContext) {
     const hasBypassComment = makeBypassChecker(context, BYPASS_RE)
-    const filename = context.filename ?? context.getFilename?.() ?? ''
+    // Normalize once, then every check runs on the same `/`-separated path;
+    // the directory test is a plain segment check, not a separator regex.
+    const filename = normalizePath(
+      context.filename ?? context.getFilename?.() ?? '',
+    )
     if (
       /\.d\.[cm]?ts$/.test(filename) ||
       /\.test\.[cm]?[jt]sx?$/.test(filename) ||
-      /\/test\//.test(normalizePath(filename))
+      filename.includes('/test/') ||
+      filename.startsWith('test/')
     ) {
       return {}
     }

@@ -5,6 +5,8 @@ user-invocable: true
 allowed-tools: Read, Write, WebSearch, AskUserQuestion, Bash(node:*), Bash(gh:*)
 model: claude-opus-4-8
 context: fork
+metadata:
+  internal: true
 ---
 
 # researching-recency

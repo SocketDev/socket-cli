@@ -29,13 +29,13 @@ export interface BlockedTarget {
   readonly path: string
 }
 
-export interface ExtractEditedTargetsOptions {
+export interface ExtractEditedTargetsConfig {
   readonly cwd: string
   readonly toolInput: unknown
   readonly toolName?: string | undefined
 }
 
-export interface FindBlockedTargetOptions {
+export interface FindBlockedTargetConfig {
   readonly targets: readonly string[]
   readonly transcriptPath?: string | undefined
 }
@@ -120,9 +120,9 @@ export function extractApplyPatchPaths(patchText: string): string[] {
  * freeform text. Deduplicated, resolved against `cwd`.
  */
 export function extractEditedTargets(
-  config: ExtractEditedTargetsOptions,
+  config: ExtractEditedTargetsConfig,
 ): string[] {
-  const cfg = { __proto__: null, ...config } as ExtractEditedTargetsOptions
+  const cfg = { __proto__: null, ...config } as ExtractEditedTargetsConfig
   const { cwd, toolInput } = cfg
   const targets = new Set<string>()
   if (toolInput && typeof toolInput === 'object' && !Array.isArray(toolInput)) {
@@ -152,9 +152,9 @@ export function extractEditedTargets(
  * `undefined` when all are allowed.
  */
 export async function findBlockedTarget(
-  config: FindBlockedTargetOptions,
+  config: FindBlockedTargetConfig,
 ): Promise<BlockedTarget | undefined> {
-  const cfg = { __proto__: null, ...config } as FindBlockedTargetOptions
+  const cfg = { __proto__: null, ...config } as FindBlockedTargetConfig
   const { targets, transcriptPath } = cfg
   for (let i = 0, { length } = targets; i < length; i += 1) {
     const abs = targets[i]!

@@ -1,6 +1,8 @@
 ---
 name: optimizing-go-performance
 description: Audits measured Go performance.
+metadata:
+  internal: true
 ---
 
 # Optimizing Go Performance

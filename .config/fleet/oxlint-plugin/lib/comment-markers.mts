@@ -68,7 +68,7 @@ export function makeBypassCommentChecker(
  * oxlint plugin engine exposes (`getSourceCode().getText()` vs a `sourceCode`
  * with `getText()` or a `.text` field).
  */
-function sourceTextOf(context: RuleContext): string {
+export function sourceTextOf(context: RuleContext): string {
   const sourceCode = context.getSourceCode
     ? context.getSourceCode()
     : context.sourceCode
@@ -150,4 +150,63 @@ export function makeBypassChecker(
     }
     return false
   }
+}
+
+// Canonical single-file lockstep-mirror marker. A verbatim upstream mirror — a
+// shim kept byte-close to its upstream source so it stays trivially diffable
+// when upstream bumps — carries ONE header line naming the upstream source plus
+// the SHA it was copied at:
+//
+//   // @lockstep-mirror packages/core/src/lib/yoga.ts @ 0c8c4f7cff2927e3df63a9757a45eff9a343611c
+//
+// It is the single-file analogue of the multi-file `BEGIN LOCK-STEP HEADER`
+// block — same "name the upstream source + sha" provenance convention, one line
+// because a verbatim mirror has exactly one upstream source. `<upstream-path>`
+// is a non-whitespace token: the path inside the upstream submodule (a file-fork
+// row's `upstream_path`) or the upstream module a conformance shim re-exposes.
+// `<sha>` is the 40-hex upstream commit the mirror was copied at, reusing the
+// lockstep schema's FULL_SHA_PATTERN. Like the `socket-lint:` markers above the
+// regex is UNANCHORED — the reader line-scans the raw header. Defined ONCE here
+// (the marker-reading home) so rules, the validator, and the format-deriver
+// can't drift on the grammar.
+export const LOCKSTEP_MIRROR_MARKER_RE =
+  /@lockstep-mirror\s+(\S+)\s+@\s+([0-9a-f]{40})/
+
+export interface LockstepMirrorMarker {
+  readonly upstreamPath: string
+  readonly sha: string
+}
+
+/**
+ * Parse the `@lockstep-mirror <upstream-path> @ <sha>` header marker from a
+ * file's source text. The marker must live in the leading comment block —
+ * before the first non-comment statement, the same first-lines header window
+ * `max-file-lines` scans — so a stray match deep in the file (a doc example, a
+ * fixture string) can't turn an arbitrary file into a declared mirror. Returns
+ * the parsed `{ upstreamPath, sha }`, or undefined when no well-formed marker
+ * is present in the header. A raw-line scan, engine-version-independent,
+ * exactly like `makeBypassChecker`.
+ */
+export function parseLockstepMirrorMarker(
+  sourceText: string,
+): LockstepMirrorMarker | undefined {
+  const lines = sourceText.split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
+    const trimmed = line.trim()
+    // Skip a leading shebang and any blank lines ahead of the comment block.
+    if (trimmed === '' || trimmed.startsWith('#!')) {
+      continue
+    }
+    // The marker must sit in the leading comment block: stop at the first
+    // real (non-comment) line so a later match in the file body never counts.
+    if (!COMMENT_LINE_RE.test(line)) {
+      break
+    }
+    const m = LOCKSTEP_MIRROR_MARKER_RE.exec(line)
+    if (m) {
+      return { upstreamPath: m[1]!, sha: m[2]! }
+    }
+  }
+  return undefined
 }

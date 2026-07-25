@@ -1,9 +1,11 @@
 ---
 name: releasing-a-package
-description: Release a single-package fleet repo: pre-bump, changelog, staged publish, human approve, then the version tag + GitHub release cut last.
+description: "Release a single-package fleet repo: pre-bump, changelog, staged publish, human approve, then the version tag + GitHub release cut last."
 model: claude-sonnet-4-6
 user-invocable: true
 allowed-tools: AskUserQuestion, Bash(git:*), Bash(node:*), Bash(pnpm run:*), Edit, Read
+metadata:
+  internal: true
 ---
 
 # releasing-a-package

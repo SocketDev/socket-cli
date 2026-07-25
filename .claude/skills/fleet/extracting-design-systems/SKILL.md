@@ -1,6 +1,8 @@
 ---
 name: extracting-design-systems
 description: Consolidates repeated UI patterns. Use after a pattern proves stable.
+metadata:
+  internal: true
 ---
 
 # Extracting Design Systems

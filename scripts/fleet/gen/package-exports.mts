@@ -28,6 +28,10 @@ import { toSortedObject } from '@socketsecurity/lib-stable/objects/sort'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { REPO_ROOT } from '../paths.mts'
+import {
+  resolveSourcePath,
+  resolveTypesPath,
+} from '../lib/exports-conditions.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
@@ -179,11 +183,16 @@ export function publicPathFor(relPath: string, outDir: string): string {
  *   defensively via {@link isPrivatePath}).
  * @param srcFiles Set of source files relative to `src/` (sans extension is
  *   resolved internally) used to emit the dev-only `source` condition.
+ * @param declFiles Set of ALL published declaration files relative to the
+ *   package root, globbed WITHOUT the config `ignore` globs, used to resolve a
+ *   runtime entry's declaration twin into a `types` condition even when the
+ *   config keeps that declaration from becoming an export entry of its own.
  */
 export function buildExportsMap(
   config: ExportsConfig,
   publicFiles: readonly string[],
   srcFiles: ReadonlySet<string>,
+  declFiles: ReadonlySet<string> = new Set(),
 ): Record<string, ExportConditions | string> {
   const { outDir } = config
   const map: Record<string, ExportConditions | string> = {}
@@ -213,10 +222,15 @@ export function buildExportsMap(
       if (sourcePath && !existing.source) {
         existing.source = sourcePath
       }
+      if (!isDts && !existing.types) {
+        existing.types = resolveTypesPath(rel, declFiles)
+      }
     } else {
       map[publicPath] = {
         source: sourcePath,
-        types: isDts ? filePath : undefined,
+        // `types` MUST precede `default` — TypeScript matches export
+        // conditions in declaration order, a trailing `types` never wins.
+        types: isDts ? filePath : resolveTypesPath(rel, declFiles),
         default: isDts ? undefined : filePath,
       }
     }
@@ -225,30 +239,6 @@ export function buildExportsMap(
   applyBrowserConditions(map, config)
   applyAliases(map, config)
   return sortExportsMap(map)
-}
-
-// Resolve a `src/<path>.{ts,mts,cts}` twin for the dev `source` condition.
-// Only when the file is a dist build artifact with a real source behind it.
-export function resolveSourcePath(
-  rel: string,
-  outDir: string,
-  srcFiles: ReadonlySet<string>,
-): string | undefined {
-  if (!outDir || !rel.startsWith(`${outDir}/`)) {
-    return undefined
-  }
-  const ext = detectExt(rel)
-  const distRel = rel.slice(outDir.length + 1).slice(0, -ext.length)
-  for (const candidate of [
-    `${distRel}.ts`,
-    `${distRel}.mts`,
-    `${distRel}.cts`,
-  ]) {
-    if (srcFiles.has(candidate)) {
-      return `./src/${candidate}`
-    }
-  }
-  return undefined
 }
 
 // Shallow glob match used for browser-safe + ignore globs. `*` matches one
@@ -461,7 +451,17 @@ async function runGenerator(): Promise<void> {
     }),
   )
 
-  const exports = buildExportsMap(config, publicFiles, srcFiles)
+  // Every published declaration file, globbed WITHOUT the config `ignore`
+  // globs, so `types` twins resolve even for configs that keep declarations
+  // from becoming export entries of their own.
+  const declFiles = new Set<string>(
+    await glob(
+      [`${config.outDir ? `${config.outDir}/` : ''}**/*.{d.ts,d.mts,d.cts}`],
+      { cwd: packageDir, ignore: [...DEFAULT_IGNORE_GLOBS] },
+    ),
+  )
+
+  const exports = buildExportsMap(config, publicFiles, srcFiles, declFiles)
   pkgJson['exports'] = exports
   // A declared browser-safe surface implies the package targets the browser, so
   // a downstream browser bundle will traverse its `node:*` imports — stub every

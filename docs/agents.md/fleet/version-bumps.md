@@ -145,6 +145,116 @@ when the manifest is more than one valid bump ahead of the published latest, and
 fails open (no published version / registry unreachable) so offline lint lanes
 never trip it.
 
+## The bump happens exactly once
+
+`bump.mts` owns the version write, and the whole pipeline + workflow chain
+runs it exactly once. Two guards enforce that:
+
+- the publish pipeline's stage-publish leg dispatches `npm-publish.yml` with
+  `bump: false` — its own bump stage already landed the bump commit, so the
+  workflow's CI bump step is skipped. Manual dispatches keep the default
+  `bump: true` hint-consuming flow; `remote:npm:publish --no-bump` is the
+  manual opt-out.
+- `bump.mts` is idempotent per version: when `CHANGELOG.md` already carries
+  the section for the computed next version and `package.json` already reads
+  it, the run is a loud no-op. A re-entrant CI bump once re-derived the same
+  6.2.1 and committed a DUPLICATE changelog section via the release App;
+  `insertChangelogSection` now refuses to insert a section for a version the
+  changelog already has.
+
+## The changelog range anchors to the released version, never an older tag
+
+`deriveReleaseCommits` in `bump.mts` is the ONE derivation both the bump and
+the `changelog-is-commit-derived` check run — same base, same anchor, same
+commit stream — so generation and verification cannot disagree. Its range
+anchor resolves through a strict chain: the previous release's own
+`v<version>` tag when it exists on HEAD's lineage; else the commit that
+flipped `package.json` to that version — the release's bump commit; else the
+registry's publish timestamp for that version as a `--since` bound. A
+previous release no link can anchor stops the bump loud, and the drift check
+skips. The chain never falls back to an OLDER tag: socket-lib 6.2.2's
+generated section re-listed the already-shipped 6.2.1 fix because the missing
+v6.2.1 tag silently widened the range to v6.2.0.
+
+## Hand-written notes accrue under [Unreleased]; the bump promotes them
+
+Derivation only sees typed commits: feat / fix / perf / revert reach the
+CHANGELOG; chore / style / test / docs / ci / build / refactor never do. Work
+that ships under an invisible type still needs documenting — write its bullets
+by hand under `## [Unreleased]` as the work lands. That section is the ONE
+home for hand-written release notes; hand-editing a version section directly
+is still drift.
+
+At bump time `composeReleaseSection` in `bump.mts` builds the release section
+from BOTH sources: the commit-derived bullets unioned with the hand-written
+`[Unreleased]` bullets, merged under their matching Added / Changed / Fixed
+headings, exact-duplicate lines collapsed. Promotion then empties the
+`[Unreleased]` block — the fleet style creates the heading on demand, so
+squash-time accrual recreates it when the next entry lands.
+
+`changelog-is-commit-derived` verifies the derived side only: every
+commit-derived bullet must be PRESENT in the pending section, and the
+anchor/range must be correct. Hand-written extras are tolerated — hand content
+is human-owned — and a present `[Unreleased]` section is never a finding.
+Losing derived content stays red.
+
+The safety net is a bump-time WARNING, never a red: commits since the anchor
+that touch `src/` but are typed chore / style / test are invisible to
+derivation, so the bump names them and asks you to add `[Unreleased]` bullets
+or retype the commits if they carry user-facing work. The same text lands in
+the CI job summary when the bump runs there. It cannot fail the bump — a
+chore commit touching `src/` is often genuinely internal, and over-absolute
+rules get enforced and block real work.
+
+WHY: sdk 4.0.2 shipped its cached-scan/pollIntervalMs feature UNDOCUMENTED.
+The feature's bullets were hand-written under `[Unreleased]`, its commits were
+chore-typed, and the then-strict commit-derived regeneration dropped the hand
+side at bump time. The union rule, the superset-tolerant check, and the
+warning close that hole from three directions.
+
+## Verify is auth-honest, and approve reconciles from registry truth
+
+`pnpm stage list` 401s without npm auth and its failure output parses as an
+EMPTY list. The verify stage treats that as auth unavailable — a `blocked`
+receipt carrying the `npm whoami` evidence — never as a failed verify with
+"0 staged entries"; the 6.2.1 run recorded exactly that false negative and
+stranded the pipeline with no path to the tag + GH release. When the target
+version is ALREADY live on the registry, verify and `--approve` recover from
+registry truth instead: re-pack at the bump commit, compare against the
+packument `dist` digests with the extracted-contents fallback, mint the
+verify + approve receipts from that evidence, and continue into the normal
+release stage — so the tag + immutable GH release still cut behind the
+confirmed publish. Divergent bytes refuse loudly; registry truth is
+evidence, never a rubber stamp.
+
+## Backfill: republish a skipped GAP version
+
+WHY: a version can end up skipped — 1.4.3 between a live 1.4.2 and 1.4.4 —
+and the normal path can't fill it: the bump gate anchors to registry latest
+and refuses anything at-or-below it, and a historical branch can't be
+dispatched because `workflow_dispatch` needs `npm-publish.yml` on the
+dispatched ref. Backfill is the sanctioned gap-fill: dispatch
+`npm-publish.yml` from MAIN — the workflow definition always exists there —
+with `backfill-version` naming the gap and `checkout-ref` naming the content
+commit. The bump/changelog gate is bypassed; hard guards in
+`scripts/fleet/publish-infra/npm/backfill.mts` replace it, each refusing
+loud:
+
+1. the version is absent from the registry `time` map — never published,
+   never published-then-unpublished; an unreadable map fails closed;
+2. the version is LOWER than registry latest — gap-fill only, never a
+   forward bump-gate bypass;
+3. the dist-tag is explicitly non-`latest` — the latest pointer never moves;
+4. `checkout-ref` is set — the content ref is never implied;
+5. the checked-out `package.json` version equals `backfill-version` — the
+   content commit declares itself.
+
+The publish then runs the normal staged path: stage in CI, verify + promote
+with the usual local `--approve`. Approve from a checkout of the SAME
+content ref, with `--no-reconcile`: the pre-approve integrity gate packs the
+local tree and refuses a mismatch, and the post-approve reconcile assumes a
+tip-of-main release, which a backfill is not.
+
 ## Why this order
 
 - **Bisecting from `main` past the tag must not land on a

@@ -3,6 +3,8 @@ name: map
 description: Emit a token-cheap symbol map for files or directories before reading unfamiliar source in detail.
 user-invocable: true
 allowed-tools: Read, Bash(node scripts/fleet/gen/repo-map.mts:*)
+metadata:
+  internal: true
 ---
 
 # map

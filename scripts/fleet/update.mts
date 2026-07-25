@@ -1,20 +1,20 @@
 /**
  * Update: two-pass taze to apply the fleet's maturity policy correctly.
  *
- * Pass 1: default config (.config/fleet/taze.config.mts) — non-Socket deps
- * respect maturityPeriod: 7.
+ * Pass 1: third-party deps — soak-gated, Socket scopes and the pinned dev
+ * toolchain excluded.
  *
- * Pass 2: CLI-flag override — Socket-owned scopes only, maturityPeriod: 0.
- * taze's config auto-discovery is path-based and doesn't support a --config
- * override, so the second pass uses `--include <scopes> --maturity- period 0`
- * flags instead of a second config file.
+ * Pass 2: Socket-owned scopes only, no cooldown.
+ *
+ * The full policy rides CLI flags: taze only discovers a root-level
+ * `taze.config.<ext>`, never `.config/fleet/taze.config.mts`, so the config
+ * file documents the policy while the flag lists in
+ * scripts/fleet/constants/taze-passes.mts enforce it — including
+ * `--include-locked`, without which taze silently skips every exact catalog
+ * pin. See that module for the per-flag rationale.
  *
  * Pass 3: pnpm install to refresh the lockfile against the updated
  * package.json.
- *
- * SOCKET_SCOPES is the single shared constant (scripts/fleet/constants/
- * socket-scopes.mts) — the same one .config/fleet/taze.config.mts imports, so
- * the two can't drift (was previously hand-copied in both, "MUST match").
  *
  * This is a reference script. Consuming repos can drop it into their own
  * scripts/ dir and wire it in via a `"update": "node scripts/fleet/update.mts"`
@@ -27,7 +27,10 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { SOAK_DAYS } from './constants/soak.mts'
-import { SOCKET_SCOPES } from './constants/socket-scopes.mts'
+import {
+  TAZE_PASS_SOCKET_ARGS,
+  TAZE_PASS_THIRD_PARTY_ARGS,
+} from './constants/taze-passes.mts'
 import { FLEET_CATALOG_YAML, PNPM_WORKSPACE_YAML, REPO_ROOT } from './paths.mts'
 import { applyStableAliasReconcile } from './lib/stable-alias.mts'
 import { collectPackumentFailures } from './lib/taze-output.mts'
@@ -87,27 +90,17 @@ interface Step {
 }
 
 const steps: Step[] = [
-  /* Pass 1 — third-party deps, respects the 7-day cooldown.
-   *
-   * `--maturity-period 7` MUST be passed on the CLI even though
-   * the config file (.config/fleet/taze.config.mts) sets the same
-   * value. Taze's CLI default for this flag is 0, and CLI
-   * defaults override config — without this flag, the cooldown
-   * is silently disabled. */
+  // Pass 1 — third-party deps, soak-gated. The arg list lives in
+  // constants/taze-passes.mts so the integration tests exercise the exact
+  // invocation this script spawns; see that module for the per-flag rationale.
   {
-    args: ['--maturity-period', '7', '--write'],
+    args: [...TAZE_PASS_THIRD_PARTY_ARGS],
     cmd: path.join(REPO_ROOT, 'node_modules', '.bin', 'taze'),
     tazePass: true,
   },
-  /* Pass 2 — Socket deps, no cooldown. --include is comma-separated. */
+  // Pass 2 — Socket deps, no cooldown.
   {
-    args: [
-      '--include',
-      SOCKET_SCOPES.join(','),
-      '--maturity-period',
-      '0',
-      '--write',
-    ],
+    args: [...TAZE_PASS_SOCKET_ARGS],
     cmd: path.join(REPO_ROOT, 'node_modules', '.bin', 'taze'),
     tazePass: true,
   },

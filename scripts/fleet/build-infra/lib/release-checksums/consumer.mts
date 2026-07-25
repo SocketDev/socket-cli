@@ -51,7 +51,7 @@ export function clearChecksumCache(): void {
   checksumCache.clear()
 }
 
-export interface GetChecksumsOptions {
+export interface GetChecksumsConfig {
   /**
    * The producing repo whose releases we're verifying against.
    */
@@ -91,7 +91,7 @@ export interface GetChecksumsOptions {
  * Network failures fall back to embedded checksums when available.
  */
 export async function getReleaseChecksums(
-  config: GetChecksumsOptions,
+  config: GetChecksumsConfig,
 ): Promise<ChecksumsResult> {
   const {
     preferEmbedded = true,

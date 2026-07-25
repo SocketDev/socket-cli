@@ -8,6 +8,8 @@
 
 import { logger, rootPath, runCapture } from '../shared.mts'
 
+import type { RegistryLatestRead } from '../../lib/release-anchor.mts'
+
 const CRATES_IO_API = 'https://crates.io/api/v1'
 
 // crates.io rejects requests without a descriptive User-Agent (HTTP 403); this
@@ -65,40 +67,102 @@ export async function isAlreadyPublished(
 }
 
 /**
+ * Classify a crates.io `/crates/{name}` response into a `RegistryLatestRead`:
+ * a crate object carries the latest version (`crate.max_stable_version`
+ * preferred, else `crate.newest_version`); an `errors` body is crates.io
+ * answering "never published" — a readable ledger; a failed curl or an
+ * unrecognized body means the registry could not be consulted, which is NEVER
+ * treated as unpublished. Pure — exported for tests.
+ */
+export function classifyCrateLatest(
+  code: number,
+  stdout: string,
+): RegistryLatestRead {
+  if (code !== 0) {
+    return { reachable: false }
+  }
+  let parsed: {
+    crate?:
+      | {
+          max_stable_version?: unknown | undefined
+          newest_version?: unknown | undefined
+        }
+      | undefined
+    errors?: unknown | undefined
+  }
+  try {
+    parsed = JSON.parse(stdout) as typeof parsed
+  } catch {
+    return { reachable: false }
+  }
+  const crate = parsed.crate
+  if (crate && typeof crate === 'object') {
+    if (
+      typeof crate.max_stable_version === 'string' &&
+      crate.max_stable_version
+    ) {
+      return { latest: crate.max_stable_version, reachable: true }
+    }
+    if (typeof crate.newest_version === 'string' && crate.newest_version) {
+      return { latest: crate.newest_version, reachable: true }
+    }
+    return { latest: undefined, reachable: true }
+  }
+  if (parsed.errors) {
+    return { latest: undefined, reachable: true }
+  }
+  return { reachable: false }
+}
+
+/**
+ * The latest published version of `name` on crates.io, distinguishing "the
+ * registry answered: never published" from "crates.io could not be consulted"
+ * (see `classifyCrateLatest`). The changelog anchor derivation hard-stops on
+ * `reachable: false`: offline, the released base cannot be confirmed and a
+ * stale local tag would silently widen the range.
+ */
+export async function fetchPublishedVersionChecked(
+  name: string,
+): Promise<RegistryLatestRead> {
+  const { code, stdout } = await cratesIoGet(`/crates/${name}`)
+  return classifyCrateLatest(code, stdout)
+}
+
+/**
  * The latest published version of `name` on crates.io:
  * `crate.max_stable_version` (preferred) or `crate.newest_version`. Returns
- * undefined when the crate is unpublished or the lookup failed.
+ * undefined when the crate is unpublished or the lookup failed — the tolerant
+ * twin of `fetchPublishedVersionChecked` for callers that only display or
+ * compare a best-effort latest.
  */
 export async function fetchPublishedVersion(
   name: string,
 ): Promise<string | undefined> {
-  const { code, stdout } = await cratesIoGet(`/crates/${name}`)
+  const read = await fetchPublishedVersionChecked(name)
+  return read.reachable ? read.latest : undefined
+}
+
+/**
+ * The crates.io publish timestamp for `name@version` — `version.created_at`
+ * from `/crates/{name}/{version}`, an ISO 8601 string — or undefined when the
+ * version is unknown or the lookup failed. crates.io's publish ledger is
+ * PERMANENT (a version can be yanked but its record remains), so this is the
+ * last anchor link for a release whose tag and bump commit are both gone.
+ */
+export async function fetchPublishedAt(
+  name: string,
+  version: string,
+): Promise<string | undefined> {
+  const { code, stdout } = await cratesIoGet(`/crates/${name}/${version}`)
   if (code !== 0) {
     return undefined
   }
   try {
     const parsed = JSON.parse(stdout) as {
-      crate?:
-        | {
-            max_stable_version?: unknown | undefined
-            newest_version?: unknown | undefined
-          }
-        | undefined
+      version?: { created_at?: unknown | undefined } | undefined
     }
-    const crate = parsed.crate
-    if (!crate) {
-      return undefined
-    }
-    if (
-      typeof crate.max_stable_version === 'string' &&
-      crate.max_stable_version
-    ) {
-      return crate.max_stable_version
-    }
-    if (typeof crate.newest_version === 'string' && crate.newest_version) {
-      return crate.newest_version
-    }
-    return undefined
+    const createdAt = parsed.version?.created_at
+    return typeof createdAt === 'string' && createdAt ? createdAt : undefined
   } catch {
     return undefined
   }

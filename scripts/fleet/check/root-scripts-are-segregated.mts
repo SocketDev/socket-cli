@@ -41,6 +41,9 @@ async function main(): Promise<number> {
   logger.log(
     'Fix: move fleet-managed scripts to scripts/fleet/ and repo-owned scripts to scripts/repo/, then update every package, workflow, and documentation reference.',
   )
+  logger.log(
+    'Scope: only ROOT scripts/* move. A workspace member package resolves `node scripts/<name>.mts` against its OWN directory — those files do not move, so never blanket-rewrite `scripts/<name>.mts` strings tree-wide. Verify every rewritten reference still resolves (script-paths-resolve gates this, including member manifests).',
+  )
   return 1
 }
 

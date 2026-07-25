@@ -28,6 +28,15 @@
  *   fleet sides with THIS rule — the `| undefined` on an optional is explicit
  *   convention, not redundancy — so the autofix for an absorbing annotation
  *   also emits a per-line silence of the typescript rule.
+ *
+ *   Optional parameters and `typescript/no-duplicate-type-constituents`: an
+ *   optional param's checker type carries an implicit `undefined`, so that
+ *   type-aware rule reads the explicit `| undefined` this rule enforces as a
+ *   duplicate — and its autofix strips the union member, leaving whitespace
+ *   residue that ping-pongs against this rule's fixer across fix passes. The
+ *   canonical oxlintrc therefore configures it with `ignoreUnions: true`; the
+ *   fleet sides with THIS rule (see docs/agents.md/fleet/lint-rules.md,
+ *   "Optional `| undefined` vs typescript/no-duplicate-type-constituents").
  */
 
 /**

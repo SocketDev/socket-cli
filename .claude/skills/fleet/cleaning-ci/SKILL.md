@@ -5,6 +5,8 @@ user-invocable: true
 allowed-tools: Read, Edit, Write, Glob, Grep, Bash(node .claude/skills/fleet/cleaning-ci/lib/clean-ci.mts:*), Bash(gh:*), Bash(git:*), Bash(ls:*), Bash(rm:*), Bash(find:*), Bash(jq:*)
 model: claude-haiku-4-5
 context: fork
+metadata:
+  internal: true
 ---
 
 # cleaning-ci

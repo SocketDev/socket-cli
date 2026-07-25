@@ -217,6 +217,58 @@ harness rules above: each rule was validated in production by the stuie port.
   [`portable-microarch.md`](portable-microarch.md) — runtime dispatch for
   distributed targets, floor pins only for controlled ones.
 
+## Verbatim mirrors — the `@lockstep-mirror` exemption
+
+Some `file-fork` copies are **verbatim upstream mirrors**: kept byte-close to
+their upstream source so they stay trivially diffable on the next bump. The
+canonical case is a conformance shim that re-exposes upstream's public API so
+upstream's OWN test suite runs against a port — the upstream test does
+`import Yoga from "../../yoga.js"`, so the mirror must keep upstream's default
+export, its file/dir names, its 1400-line single-unit shape, and its idioms.
+That legitimately fights the fleet fidelity rules — `no-default-export`,
+`max-file-lines`, the `sort-*` family, `prefer-undefined-over-null`,
+`prefer-node-builtin-imports`, `export-top-level-functions`,
+`prefer-function-declaration` — and oxfmt.
+
+A mirror declares itself with ONE header line in its leading comment block, the
+single-file analogue of the multi-file `BEGIN LOCK-STEP HEADER` block:
+
+```ts
+// @lockstep-mirror packages/core/src/lib/yoga.ts @ 0c8c4f7cff2927e3df63a9757a45eff9a343611c
+```
+
+`<upstream-path>` is the path inside the upstream submodule, matching the
+covering row's `upstream_path`; `<sha>` is the 40-hex commit the mirror was
+copied at, matching `forked_at_sha`. Grammar + parser live once in the oxlint
+plugin's `lib/comment-markers.mts`; the rule-facing `isLockstepMirror(context)`
+and the one-source `LOCKSTEP_MIRROR_EXEMPT_RULES` list live in
+`lib/lockstep-mirror.mts`.
+
+How the exemption is bounded — it is NOT a blanket dir ignore:
+
+- **socket/\* rules self-exempt.** Each fidelity rule calls
+  `isLockstepMirror(context)` and returns no visitors on a marked mirror — the
+  same shape as the `isConfigEntrypoint` guard. A rule that never consults it
+  can't be silenced by the marker.
+- **Core rules the fleet doesn't own** — e.g. `curly` — route through a
+  file-scope `oxlint-disable` that `no-file-scope-oxlint-disable` PERMITS only
+  when every named rule is in `LOCKSTEP_MIRROR_EXEMPT_RULES`.
+- **Format** is skipped via a manifest-derived, `**`-anchored block in
+  `.config/fleet/.prettierignore` between `# BEGIN lockstep-mirrors (generated)`
+  and `# END`. Regenerate with `pnpm run lockstep:emit-mirror-globs`; a comment
+  can't blanket a 1400-line file because oxfmt only honors per-node
+  `// prettier-ignore`.
+
+Declare a mirror by adding `mirror: true` to its `file-fork` row and the header
+marker to the file, then running `pnpm run lockstep:emit-mirror-globs`. A
+deviating fork — mouse-parser and friends — stays `mirror: false` and may NOT
+carry the marker. `scripts/fleet/check/lockstep-mirror-markers-are-declared.mts`
+gates both directions: a marked file with no covering `mirror: true` row, or a
+marker whose path/sha disagrees with the row, fails; and a `mirror: true` row
+missing its marker or its .prettierignore entry fails. It also re-asserts that
+a file-scope disable on a mirror names only exempt rules. So the exemption can't
+be pasted onto an arbitrary file and can't silently drift from the pin.
+
 ## Pin the latest release — always
 
 Porting an upstream means the LATEST shipped release, not a stale or inherited

@@ -5,6 +5,8 @@ user-invocable: true
 allowed-tools: Bash(node:*), Bash(pnpm dedupe:*), Bash(pnpm run build:*), Read
 model: claude-haiku-4-5
 context: fork
+metadata:
+  internal: true
 ---
 
 # tidying-rolldown-bundles

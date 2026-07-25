@@ -290,7 +290,8 @@ export async function main(): Promise<void> {
       // by default — the 'shared' tier always runs, 'isolated' only when its
       // suite is resolved. Flip on with FLEET_COVER_STRICT_TIERS=1 once a
       // supervised `cover` run confirms the wheelhouse emits every resolved
-      // tier; step 2 promotes this gate into `.config/repo/cover.json`.
+      // tier; step 2 promotes this gate into the `cover` section of
+      // `.config/repo/socket-wheelhouse.json`.
       const expectedTiers =
         process.env['FLEET_COVER_STRICT_TIERS'] === '1'
           ? ['shared', ...(isolatedVitestArgs ? ['isolated'] : [])]
@@ -330,7 +331,7 @@ export async function main(): Promise<void> {
       })
 
       // Gate on configured thresholds: any metric under its minimum fails the
-      // run. Repos with no thresholds in cover.json are report-only.
+      // run. Repos with no thresholds in their cover config are report-only.
       const thresholdFailures = checkThresholds(
         aggregateCoverage,
         coverConfig.thresholds,

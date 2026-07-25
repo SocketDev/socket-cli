@@ -1,7 +1,9 @@
 ---
 name: authoring-spec
-description: Turn the current conversation into a spec: problem, solution, stories, tests, enforcement.
+description: "Turn the current conversation into a spec: problem, solution, stories, tests, enforcement."
 user-invocable: true
+metadata:
+  internal: true
 ---
 
 # authoring-spec

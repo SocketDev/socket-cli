@@ -9,7 +9,10 @@ import process from 'node:process'
 
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
-export function isRootReadme(filePath, cwd = process.cwd()) {
+export function isRootReadme(
+  filePath: string | undefined,
+  cwd = process.cwd(),
+) {
   if (!filePath) {
     return false
   }

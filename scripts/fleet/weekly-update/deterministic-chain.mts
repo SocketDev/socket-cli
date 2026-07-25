@@ -19,13 +19,22 @@
  *      repo with `.gitmodules` but NO lockstep manifest has only repo-specific
  *      submodule bumps, which stay with the AI pass (no single deterministic
  *      entrypoint). Recorded as a skip note so the remainder is explicit.
- *   3. npm deps — `update.mts` (taze 2-pass + lockfile). Mechanical.
+ *   3. npm deps — the update script (taze 2-pass + lockfile), resolved
+ *      overlay-first: scripts/repo/update.mts when the repo ships one, else the
+ *      canonical scripts/fleet/update.mts. Mechanical.
  *   4. package-manager pins — `sync-package-manager-pins.mts` rewrites the
  *      `package.json` pnpm/npm pins from `external-tools.json`.
  *   5. gh-aw action pins — `sync-gh-aw-action-pins.mts` recompiles every tracked
  *      `*.github/workflows/*.md` via `gh aw compile --approve`, refreshing action
  *      SHAs and container image digests in the sibling `.lock.yml` +
  *      `.github/aw/actions-lock.json`. Best-effort when `gh aw` is not installed.
+ *   6. vendored action reference pins — `vendor-actions.mts --check` reports
+ *      any `upstream/<owner>-<repo>` reference behind its latest soaked
+ *      release. Check-only, never auto-writes: re-pinning a ported upstream
+ *      requires the paired re-port review that advances `portedAt` in the port
+ *      map (`action-ports-are-lock-stepped`), so the drift is surfaced as an
+ *      advisory note for the AI pass. Skipped where no reference is vendored —
+ *      members carry no upstream action pins.
  *
  * The chain mutates the working tree; the caller commits/PRs afterward.
  */
@@ -40,6 +49,10 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { applyBump, planFromReport } from '../lockstep/auto-bump.mts'
 import { readManifest } from '../lockstep/manifest.mts'
 import { lockstepManifestCandidates, REPO_ROOT } from '../paths.mts'
+import {
+  runCheck as vendorActionsCheck,
+  vendoringEnrolled,
+} from '../vendor-actions.mts'
 
 import type { Report } from '../lockstep/types.mts'
 
@@ -228,13 +241,31 @@ export function noteSubmoduleRemainder(): ChainStepResult {
   }
 }
 
-// npm deps via the existing update.mts (taze 2-pass + lockfile).
+// Resolve the update script overlay-first: a repo-specific
+// scripts/repo/update.mts — the seam socket-registry uses for its manifest
+// regen — wins over the canonical scripts/fleet/update.mts, mirroring
+// resolveBumpScript's overlay-over-canonical precedence. `repoRoot` is
+// injectable for tests.
+export function resolveUpdateScript(repoRoot: string): string {
+  const repoUpdate = path.join(repoRoot, 'scripts', 'repo', 'update.mts')
+  return existsSync(repoUpdate)
+    ? repoUpdate
+    : path.join(repoRoot, 'scripts', 'fleet', 'update.mts')
+}
+
+// npm deps via the update entrypoint (taze 2-pass + lockfile), resolved
+// overlay-first so the weekly path runs the SAME script the interactive
+// `pnpm run update` wiring points at. Invoking scripts/fleet/update.mts
+// directly here used to bypass repo overlays entirely — a repo's own update
+// hooks never ran on the weekly cadence.
 export async function bumpNpmDeps(): Promise<ChainStepResult> {
-  const updateScript = path.join(REPO_ROOT, 'scripts', 'fleet', 'update.mts')
+  const updateScript = resolveUpdateScript(REPO_ROOT)
   const ok = await run(process.execPath, [updateScript])
   return {
     name: 'npm-deps',
-    note: ok ? undefined : 'update.mts exited non-zero',
+    note: ok
+      ? undefined
+      : `${path.relative(REPO_ROOT, updateScript)} exited non-zero`,
     ok,
   }
 }
@@ -277,6 +308,38 @@ export async function syncGhAwActionPins(): Promise<ChainStepResult> {
   }
 }
 
+// Vendored upstream action reference pins — check-only drift report. A pin
+// behind its latest soaked release is an ADVISORY note for the AI pass, never
+// an auto-write: the re-pin must land together with the re-port review that
+// advances the port map's `portedAt`, or `action-ports-are-lock-stepped` reds.
+// Skipped where no reference is vendored; a gh/network failure warns without
+// blocking the chain.
+export async function checkVendoredActionPins(): Promise<ChainStepResult> {
+  if (!vendoringEnrolled()) {
+    return {
+      name: 'vendored-action-pins',
+      note: 'no vendored upstream action pins — skipped',
+      ok: true,
+    }
+  }
+  try {
+    const behind = vendorActionsCheck() !== 0
+    return {
+      name: 'vendored-action-pins',
+      note: behind
+        ? 'reference pin(s) behind latest — re-pin + re-port review left for the AI pass'
+        : undefined,
+      ok: true,
+    }
+  } catch (e) {
+    return {
+      name: 'vendored-action-pins',
+      note: errorMessage(e),
+      ok: false,
+    }
+  }
+}
+
 // Run the full deterministic chain in order. Each step is best-effort: a
 // non-zero step logs and the chain continues, so a single flaky step never
 // blocks the others or the AI advisory pass.
@@ -287,6 +350,7 @@ export async function runDeterministicChain(): Promise<ChainStepResult[]> {
   steps.push(await bumpNpmDeps())
   steps.push(await syncPackageManagerPins())
   steps.push(await syncGhAwActionPins())
+  steps.push(await checkVendoredActionPins())
   for (let i = 0, { length } = steps; i < length; i += 1) {
     const step = steps[i]!
     const suffix = step.note ? ` — ${step.note}` : ''

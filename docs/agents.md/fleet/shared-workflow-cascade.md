@@ -32,9 +32,7 @@ from the template is drift.
 
 Where a workflow needs a stable `workflow_call` entry point, the delegator is
 a LOCAL file in the same repo — e.g. `get-green.yml` runs
-`uses: ./.github/workflows/get-green.lock.yml`, and the `workflow_dispatch`
-wrapper `_local-not-for-reuse-get-green.yml` runs
-`uses: ./.github/workflows/get-green.yml`. Every `uses:` in the chain is a
+`uses: ./.github/workflows/get-green.lock.yml`. Every `uses:` in the chain is a
 `./` ref that resolves inside the repo the run executes in — auditable by
 zizmor/actionlint at rest, no cross-repo SHA to keep in step.
 
@@ -92,3 +90,20 @@ The dispatch target is a workflow BASENAME resolved in the same repo — rename
 engine + model per workflow, so a two-model escalation is two workflows. This
 same dispatch pattern is the substrate the fleet's planned multi-agent harness
 builds on.
+
+## Issue suggestions are convenience-tier
+
+gh-aw's issue-intent metadata — `issue-intent: true` on a mutation safe
+output, available from gh-aw v0.82.13 and surfaced by GitHub's
+agent-automation controls for issues — lets agent issue mutations such as
+close, label, assign, and type changes land as suggestions with a confidence
+and rationale, batch-approvable from the issue's approval panel. Treat that
+layer as UX, not a trust boundary: GitHub documents the approvals as a
+workflow convenience with no server-side enforcement, so the fleet's hard
+guards — authorization phrases, publish gates, and the compiled `network:`
+egress allowlist — remain the security controls. Enabling `issue-intent` on a
+safe output changes how a mutation is reviewed, never what an agent may reach
+or publish. Issue CREATION stays direct either way: a failure report must not
+need approval to exist. Repo-admin confidence thresholds — which confidence
+tiers auto-apply — are a per-repo owner console setting, not something the
+cascade can ship.

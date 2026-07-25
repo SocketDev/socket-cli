@@ -8,7 +8,7 @@
  *   - Codex: a generated `.codex/hooks.json` PreToolUse `command` entry
  *     (scripts/fleet/mcp-config.mts).
  *   - Kimi: a `[[hooks]]` PreToolUse block in the user `config.toml`
- *     (scripts/fleet/setup/setup-kimi-user-config.mts). Both send the
+ *     (scripts/fleet/setup/kimi-user-config.mts). Both send the
  *     PreToolUse payload as JSON on stdin (`{ hook_event_name, tool_name,
  *     tool_input, cwd, transcript_path, ... }`) and read a decision from
  *     stdout. To deny, both want `{ hookSpecificOutput: { hookEventName:

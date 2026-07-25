@@ -1,6 +1,8 @@
 ---
 name: optimizing-compiler-performance
 description: Audits compiler and codegen performance.
+metadata:
+  internal: true
 ---
 
 # Optimizing Compiler Performance

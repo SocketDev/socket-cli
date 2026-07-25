@@ -5,6 +5,8 @@ user-invocable: true
 allowed-tools: AskUserQuestion, Bash(node:*), Bash(git:*)
 model: claude-haiku-4-5
 context: fork
+metadata:
+  internal: true
 ---
 
 # reordering-release-bump

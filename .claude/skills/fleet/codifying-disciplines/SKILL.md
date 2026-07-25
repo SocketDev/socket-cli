@@ -5,6 +5,8 @@ user-invocable: true
 allowed-tools: Workflow, Task, Read, Grep, Glob, Write, AskUserQuestion, Bash(git status:*), Bash(git log:*), Bash(git diff:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(cat:*), Bash(wc:*), Bash(head:*), Bash(tail:*), Bash(node scripts/fleet/ai-codify/cli.mts:*), Bash(node scripts/fleet/codify-rule.mts:*), Bash(node scripts/fleet/codify-scan/inventory.mts:*), Bash(node scripts/repo/run-hook-tests.mts:*), Bash(node scripts/fleet/check/:*), Bash(node scripts/repo/sync-scaffolding/cli.mts:*)
 model: claude-opus-4-8
 context: fork
+metadata:
+  internal: true
 ---
 
 # codifying-disciplines

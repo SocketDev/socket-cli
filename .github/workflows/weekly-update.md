@@ -25,7 +25,21 @@ on:
 
 engine:
   id: claude
-  model: claude-haiku-4-5
+  # Dated snapshot id ON PURPOSE — do not "simplify" back to the bare alias.
+  # Anthropic's live /v1/models lists Haiku 4.5 only in dated form, so the bare
+  # `claude-haiku-4-5` never direct-matches in the AWF api-proxy model resolver
+  # and every request falls through to token steering's middle-power MEDIAN of
+  # the live model list. That median silently served claude-opus-4-8 for weeks,
+  # then broke fleet-wide on 2026-07-25 when Anthropic added claude-opus-5 to
+  # the live list: the median shifted onto an id absent from AWF's frozen
+  # ai-credits pricing table and, with max-ai-credits set and no default
+  # pricing, every first model request 400'd (unknown_model_ai_credits). The
+  # dated id direct-matches, prices at haiku rates ($1/$5 per Mtok) in the AWF
+  # table, and keeps this workflow on the tier the routing doctrine assigns
+  # (haiku = mechanical). It is also registered in
+  # scripts/fleet/constants/model-pricing.json via update-model-pricing.mts so
+  # the gh-aw-workflow-models-are-canonical gate recognizes it.
+  model: claude-haiku-4-5-20251001
 
 permissions:
   contents: read
@@ -65,6 +79,33 @@ network:
     - defaults
     - api.anthropic.com
 
+# Pre-agent provisioning in the AGENT job. gh-aw inserts these custom steps
+# right after its github-app checkout (they contain no checkout of their own,
+# so gh-aw keeps its injected one). The agent cannot provision itself: corepack
+# cannot parse the devEngines.packageManager RANGE pin (and fleet rules forbid
+# corepack), so without this the agent job has no pnpm and no node_modules and
+# the update spine (`pnpm run update` / build / test) is dead on arrival.
+steps:
+  # Fleet-pinned pnpm through the Socket firewall (sfw shims) + `pnpm install`.
+  # checkout: 'false' — gh-aw's github-app checkout above already populated the
+  # workspace this local composite resolves from.
+  - name: Setup and install
+    uses: ./.github/actions/fleet/setup-and-install
+    with:
+      checkout: 'false'
+  - name: Expose pnpm inside the agent sandbox
+    shell: bash
+    run: |
+      # The agent executes inside the AWF firewall container, which sees the
+      # workspace + RUNNER_TOOL_CACHE but NOT ${RUNNER_TEMP}/pnpm-bin where
+      # setup-and-install staged pnpm (only ${RUNNER_TEMP}/gh-aw is mounted).
+      # The gh-aw harness prepends every bin/ dir under RUNNER_TOOL_CACHE to
+      # the container PATH, so stage the pnpm binary there. The sfw shim stays
+      # host-only: inside the sandbox the AWF egress allowlist (network:
+      # above) is the firewall.
+      mkdir -p "${RUNNER_TOOL_CACHE}/fleet-pnpm/bin"
+      cp -a "${RUNNER_TEMP}/pnpm-bin/." "${RUNNER_TOOL_CACHE}/fleet-pnpm/bin/"
+
 # Deterministic gate — single source in weekly-update.mts (`--check-updates`
 # exits 0 on actionable drift: pnpm outdated / lockstep exit 2 / submodule-behind
 # / soaked-cleared exclude). Cadence-agnostic: a soaked-cleared exclude makes the
@@ -73,7 +114,9 @@ network:
 jobs:
   check-updates:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # 15, not 10: the job now also provisions pnpm + runs `pnpm install`
+    # (setup-and-install below) before the gate script.
+    timeout-minutes: 15
     outputs:
       cadence: ${{ steps.cadence.outputs.cadence }}
       has-updates: ${{ steps.check.outputs.has-updates }}
@@ -132,6 +175,15 @@ jobs:
             git fetch "${FETCH_ARGS[@]}"
           fi
           git checkout -q --detach FETCH_HEAD
+      # Provision the fleet-pinned pnpm (through the Socket firewall) and
+      # install node_modules — the gate script below imports
+      # @socketsecurity/lib-stable from the workspace, so a bare checkout dies
+      # with ERR_MODULE_NOT_FOUND. checkout: 'false' keeps the bootstrap
+      # checkout above as the only fetch.
+      - name: Setup and install
+        uses: ./.github/actions/fleet/setup-and-install
+        with:
+          checkout: 'false'
       - name: Determine cadence
         id: cadence
         shell: bash
@@ -167,6 +219,14 @@ safe-outputs:
     client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
     private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
     owner: ${{ github.repository_owner }}
+  # A no-op run is the healthy steady state for a scheduled updater — most days
+  # nothing both drifts AND has cleared the 7-day soak, so the agent legitimately
+  # makes no changes and exits. gh-aw's default appends every such run to an
+  # "[aw] No-Op Runs" tracking issue, which is pure noise. Silence it — genuine
+  # failures still surface via the missing-tool / incomplete-result /
+  # engine-failure issue paths, which stay on.
+  noop:
+    report-as-issue: false
   create-pull-request:
     title-prefix: 'chore(deps): '
     draft: true

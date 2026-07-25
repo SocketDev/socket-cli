@@ -2,6 +2,8 @@
 name: opening-pr
 description: Implement a requested change, verify it, commit it, and open or update the PR.
 user-invocable: true
+metadata:
+  internal: true
 ---
 
 # opening-pr

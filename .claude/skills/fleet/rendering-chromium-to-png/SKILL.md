@@ -5,6 +5,8 @@ user-invocable: true
 allowed-tools: Read, Bash(node:*), Bash(pnpm exec playwright:*), Bash(ls:*)
 model: claude-haiku-4-5
 context: fork
+metadata:
+  internal: true
 ---
 
 # rendering-chromium-to-png

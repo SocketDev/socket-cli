@@ -59,7 +59,7 @@ export const MIN_PUBLISH_AGE_CONFIG_KEY = 'registry.global-min-publish-age'
 export const INCOMPATIBLE_PUBLISH_AGE_CONFIG_KEY =
   'resolver.incompatible-publish-age'
 
-export interface CargoUpdateArgsOptions {
+export interface CargoUpdateArgsConfig {
   readonly precise?: string | undefined
   readonly soakDays: number
   readonly toolchain: string
@@ -94,7 +94,7 @@ export function assertPositiveSoakDays(soakDays: number): void {
  * not the argv; it is validated here so a bad trust-gate value fails before
  * any spawn.
  */
-export function buildCargoUpdateArgs(config: CargoUpdateArgsOptions): string[] {
+export function buildCargoUpdateArgs(config: CargoUpdateArgsConfig): string[] {
   const { precise, soakDays, toolchain, workspace } = {
     __proto__: null,
     ...config,
@@ -177,14 +177,14 @@ export function parseCargoUpdateOutput(stdout: string): CargoUpdate[] {
   return updates
 }
 
-interface CargoUpdateCliOptions {
+interface CargoUpdateCliConfig {
   readonly apply: boolean
   readonly precise: string | undefined
   readonly soakDays: number | undefined
   readonly workspace: boolean
 }
 
-function parseCliArgs(argv: readonly string[]): CargoUpdateCliOptions {
+function parseCliArgs(argv: readonly string[]): CargoUpdateCliConfig {
   let apply = false
   let precise: string | undefined
   let soakDays: number | undefined

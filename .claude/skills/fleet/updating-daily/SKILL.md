@@ -5,6 +5,8 @@ user-invocable: true
 allowed-tools: Read, Bash(node scripts/fleet/check/soak-excludes-have-dates.mts:*), Bash(pnpm install:*), Bash(git:*)
 model: claude-haiku-4-5
 context: fork
+metadata:
+  internal: true
 ---
 
 # updating-daily

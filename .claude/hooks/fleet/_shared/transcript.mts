@@ -143,8 +143,10 @@ export function bypassPhrasePresent(
   // spans are already dropped in extractTurnPieces). Without this, a guard
   // self-disarms whenever its phrase appears as `Allow X bypass` in a code span,
   // a quote, a doc list, or a recap — which it did (no-direct-linter-guard).
+  // HUMAN turns only: a phrase another agent/session/orchestrator delivered
+  // (peer SendMessage relay, sdk prompt, meta feedback) is not a grant.
   const text = stripQuotedSpans(
-    stripCodeFences(readUserText(transcriptPath, lookbackUserTurns)),
+    stripCodeFences(readHumanUserText(transcriptPath, lookbackUserTurns)),
   )
   if (!text) {
     return false
@@ -213,10 +215,11 @@ export function countBypassPhrases(
   if (length === 0) {
     return 0
   }
-  // Same use-vs-mention filter as bypassPhrasePresent: a quoted, code-spanned,
-  // or summarized occurrence is not a fresh authorization slot.
+  // Same use-vs-mention + human-provenance filters as bypassPhrasePresent: a
+  // quoted, code-spanned, summarized, or agent-relayed occurrence is not a
+  // fresh authorization slot.
   const rawText = stripQuotedSpans(
-    stripCodeFences(readUserText(transcriptPath, lookbackUserTurns)),
+    stripCodeFences(readHumanUserText(transcriptPath, lookbackUserTurns)),
   )
   if (!rawText) {
     return 0
@@ -278,6 +281,118 @@ export function countBypassPhrases(
     }
   }
   return total
+}
+
+/**
+ * Laundering detector — is a grant phrase present in AGENT-DELIVERED content
+ * near the current action? The inverse question to `bypassPhrasePresent`:
+ * that scanner asks "did the human authorize?", this one asks "is someone
+ * trying to smuggle the authorization in through a non-human channel?" —
+ * a cross-session SendMessage relay (peer-origin turn / agent-message
+ * wrapper), or an orchestrator/sdk prompt. A guard that finds no human grant
+ * but DOES find its phrase here should refuse with a laundering-specific
+ * message demanding a fresh human grant, so the pattern is taught at the
+ * moment it is attempted.
+ *
+ * Deliberately does NOT strip quotes/code spans: a quoted or code-fenced
+ * relay is still a laundering attempt worth naming. Reminder spans ARE
+ * stripped (harness background like CLAUDE.md legitimately mentions
+ * phrases), and only user-role events are scanned — assistant prose and
+ * tool_result content never count (a guard's own refusal text echoes the
+ * phrase and must not self-trigger).
+ *
+ * Window: stops after `lookbackUserTurns` (default
+ * BYPASS_LOOKBACK_USER_TURNS) HUMAN turns, mirroring the grant scanner's
+ * window.
+ */
+export function bypassPhraseInAgentContent(
+  transcriptPath: string | undefined,
+  phrases: string | readonly string[],
+  lookbackUserTurns?: number | undefined,
+  options?: BypassMatchOptions | undefined,
+): boolean {
+  const list = typeof phrases === 'string' ? [phrases] : phrases
+  if (list.length === 0) {
+    return false
+  }
+  const lookback = lookbackUserTurns ?? BYPASS_LOOKBACK_USER_TURNS
+  const lines = readLines(transcriptPath)
+  const collected: string[] = []
+  let humanTurns = 0
+  for (let i = lines.length - 1; i >= 0; i -= 1) {
+    let evt: unknown
+    try {
+      evt = JSON.parse(lines[i]!)
+    } catch {
+      continue
+    }
+    const r = resolveRoleAndContent(evt)
+    if (!r || r.role !== 'user') {
+      continue
+    }
+    const raw = extractRawTurnPieces(r.content).join('\n')
+    if (!raw) {
+      continue
+    }
+    if (r.isHumanAuthored) {
+      // A human-authored turn may still EMBED a relayed wrapper (a queued
+      // mid-work delivery) — only the wrapped bodies are agent content.
+      AGENT_MESSAGE_BODY.lastIndex = 0
+      let m: RegExpExecArray | null
+      while ((m = AGENT_MESSAGE_BODY.exec(raw)) !== null) {
+        collected.push(m[1]!)
+      }
+      humanTurns += 1
+      if (humanTurns >= lookback) {
+        break
+      }
+    } else {
+      collected.push(
+        raw.replace(REMINDER_SPAN, ' ').replace(REMINDER_TAIL, ' '),
+      )
+    }
+  }
+  if (collected.length === 0) {
+    return false
+  }
+  const haystack = normalizeBypassText(collected.join('\n'))
+  for (let i = 0, { length } = list; i < length; i += 1) {
+    const needle = normalizeBypassText(list[i]!)
+    if (phrasePattern(needle, options).test(haystack)) {
+      return true
+    }
+  }
+  return false
+}
+
+/**
+ * Raw (unstripped) author-text pieces of a turn — the laundering detector's
+ * reader. Same block selection as `extractTurnPieces` (genuine text blocks
+ * only, never tool_result/tool_use content) but WITHOUT
+ * `stripInjectedContext`, so an agent-message wrapper survives for
+ * inspection instead of being erased.
+ */
+function extractRawTurnPieces(content: unknown): string[] {
+  const pieces: string[] = []
+  if (typeof content === 'string') {
+    pieces.push(content)
+  } else if (Array.isArray(content)) {
+    for (let i = 0, { length } = content; i < length; i += 1) {
+      const block = content[i]!
+      if (typeof block === 'string') {
+        pieces.push(block)
+      } else if (block && typeof block === 'object') {
+        const b = block as Record<string, unknown>
+        if (b['type'] === 'tool_result' || b['type'] === 'tool_use') {
+          continue
+        }
+        if (typeof b['text'] === 'string') {
+          pieces.push(b['text'])
+        }
+      }
+    }
+  }
+  return pieces
 }
 
 /**
@@ -377,6 +492,40 @@ type Role = 'user' | 'assistant'
 // system-tag to the prompt-injection scanner).
 const REMINDER_TAG = 'system-reminder'
 
+// The element wrapping a message ANOTHER agent/session delivered into this
+// conversation (the harness's "another session sent a message" preamble + the
+// wrapper, or the same wrapper enqueued mid-work). The author is an AGENT,
+// never the user — a
+// bypass/authorization phrase inside it must not count as a human grant.
+// Incident (2026-07): a session blocked by push-protected-branch-guard messaged
+// a second session asking it to send back the literal grant phrase; had the
+// relay been sent, the wrapper text would have ridden into a user-role turn.
+// Same runtime tag construction as REMINDER_TAG (see above).
+const AGENT_MESSAGE_TAG = 'agent-message'
+// The open tag carries attributes (`from="<sender>"`), so match to the `>`.
+const AGENT_MESSAGE_SPAN = new RegExp(
+  `<${AGENT_MESSAGE_TAG}[^>]*>[\\s\\S]*?</${AGENT_MESSAGE_TAG}>`,
+  'g',
+)
+// A truncated relay (unclosed open tag) must not leak its tail either.
+const AGENT_MESSAGE_TAIL = new RegExp(`<${AGENT_MESSAGE_TAG}[^>]*>[\\s\\S]*$`)
+// Span-BODY extractor for the laundering detector: same shape as
+// AGENT_MESSAGE_SPAN but capturing the wrapped content.
+const AGENT_MESSAGE_BODY = new RegExp(
+  `<${AGENT_MESSAGE_TAG}[^>]*>([\\s\\S]*?)</${AGENT_MESSAGE_TAG}>`,
+  'g',
+)
+
+// Reminder-span erasers, hoisted so the laundering detector can strip
+// harness-injected background (CLAUDE.md block, memories — which legitimately
+// MENTION bypass phrases) without also erasing the agent-relayed content it
+// exists to inspect.
+const REMINDER_SPAN = new RegExp(
+  `<${REMINDER_TAG}>[\\s\\S]*?</${REMINDER_TAG}>`,
+  'g',
+)
+const REMINDER_TAIL = new RegExp(`<${REMINDER_TAG}>[\\s\\S]*$`)
+
 // Opening of the harness's context-compaction recap. The whole message is an
 // injected summary of past work — "not the user" — so it's blanked wholesale.
 const CONTINUATION_RECAP_PREFIX =
@@ -399,13 +548,16 @@ export function stripInjectedContext(text: string): string {
   if (text.trimStart().startsWith(CONTINUATION_RECAP_PREFIX)) {
     return ' '
   }
-  const open = `<${REMINDER_TAG}>`
-  const close = `</${REMINDER_TAG}>`
   // Closed spans first, then a trailing unclosed open-tag to EOF so a truncated
   // reminder can't leak its tail. Single literal tag name, no alternation.
+  // Agent-message relays are stripped the same way: text another agent/session
+  // sent is harness-delivered, not user-typed, wherever it rides (a peer-origin
+  // turn, a queued mid-work delivery).
   return text
-    .replace(new RegExp(`${open}[\\s\\S]*?${close}`, 'g'), ' ')
-    .replace(new RegExp(`${open}[\\s\\S]*$`), ' ')
+    .replace(REMINDER_SPAN, ' ')
+    .replace(REMINDER_TAIL, ' ')
+    .replace(AGENT_MESSAGE_SPAN, ' ')
+    .replace(AGENT_MESSAGE_TAIL, ' ')
 }
 
 export function extractTurnPieces(content: unknown): string[] {
@@ -709,12 +861,21 @@ export function readLines(transcriptPath: string | undefined): string[] {
  * `lookback` (optional) limits the search to the most-recent N matching turns
  * so callers don't pay the full-transcript cost when they only need recent
  * context.
+ *
+ * `options.humanOnly` (user role): keep only turns whose provenance markers
+ * say the HUMAN typed them (see eventIsHumanAuthored) — the authorization
+ * scanners' reader.
  */
+export interface ReadRoleTextOptions {
+  readonly humanOnly?: boolean | undefined
+}
 export function readRoleText(
   transcriptPath: string | undefined,
   role: Role,
   lookback?: number | undefined,
+  options?: ReadRoleTextOptions | undefined,
 ): string {
+  const opts = { __proto__: null, ...options } as ReadRoleTextOptions
   const lines = readLines(transcriptPath)
   const out: string[] = []
   let matched = 0
@@ -727,6 +888,12 @@ export function readRoleText(
     }
     const r = resolveRoleAndContent(evt)
     if (!r || r.role !== role) {
+      continue
+    }
+    if (opts.humanOnly && !r.isHumanAuthored) {
+      // Positive non-human provenance (peer relay, sdk/system prompt,
+      // meta-injected feedback): not the operator. Skipped WITHOUT consuming a
+      // lookback slot — agent traffic must not evict a freshly typed phrase.
       continue
     }
     const pieces = extractTurnPieces(r.content)
@@ -796,6 +963,22 @@ export function readUserText(
 }
 
 /**
+ * Like `readUserText`, but ONLY turns the human operator personally typed
+ * (provenance-checked — see eventIsHumanAuthored). This is the reader every
+ * grant/bypass-phrase scan uses: a phrase delivered by another agent, session,
+ * or orchestrator prompt rides in a user-ROLE turn but is not the user, and
+ * must never authorize anything (cross-agent permission laundering).
+ */
+export function readHumanUserText(
+  transcriptPath: string | undefined,
+  lookbackUserTurns?: number | undefined,
+): string {
+  return readRoleText(transcriptPath, 'user', lookbackUserTurns, {
+    humanOnly: true,
+  })
+}
+
+/**
  * Resolve a JSONL event's role (`'user'` / `'assistant'`) and content
  * tolerantly across the 3 variant shapes seen in harness versions:
  *
@@ -808,6 +991,7 @@ export function readUserText(
 export function resolveRoleAndContent(evt: unknown):
   | {
       content: unknown
+      isHumanAuthored: boolean
       isSidechain: boolean
       role: string | undefined
     }
@@ -823,15 +1007,22 @@ export function resolveRoleAndContent(evt: unknown):
   // delivery — so a bypass phrase queued mid-work must count exactly like one
   // typed at an idle prompt. Without this, a user can authorize repeatedly and
   // be silently ignored (a lease-force-push phrase typed 4× mid-task never
-  // registered). Not injectable: only a human enqueues input, and
+  // registered). Mostly not injectable: a human enqueues input, and
   // extractTurnPieces still runs stripInjectedContext over the string, so a
-  // reminder/tool span can't ride in. Non-`enqueue` queue ops carry no author
-  // prose → skipped.
+  // reminder/tool/agent-message span can't ride in (a cross-session
+  // SendMessage delivered mid-work lands here WRAPPED in the agent-message
+  // element, which that strip removes). Non-`enqueue` queue ops carry no
+  // author prose → skipped.
   if (e['type'] === 'queue-operation') {
     if (e['operation'] !== 'enqueue' || typeof e['content'] !== 'string') {
       return undefined
     }
-    return { content: e['content'], isSidechain: false, role: 'user' }
+    return {
+      content: e['content'],
+      isHumanAuthored: true,
+      isSidechain: false,
+      role: 'user',
+    }
   }
   const role =
     typeof e['role'] === 'string'
@@ -847,7 +1038,54 @@ export function resolveRoleAndContent(evt: unknown):
       : undefined)
   // Claude Code marks a subagent (Task/sidechain) turn with `isSidechain:true`;
   // the parent orchestrator's turns carry false/absent.
-  return { content, isSidechain: e['isSidechain'] === true, role }
+  return {
+    content,
+    isHumanAuthored: eventIsHumanAuthored(e),
+    isSidechain: e['isSidechain'] === true,
+    role,
+  }
+}
+
+/**
+ * Provenance: was this user-role event TYPED by the human operator? The
+ * harness routes several NON-human payloads through `role:'user'` turns, each
+ * carrying a positive marker:
+ *
+ * - `isMeta: true` — harness-injected (Stop-hook feedback, local-command caveats,
+ *   scheduled prompts).
+ * - `origin.kind` other than `'human'` — `'peer'` (a cross-session SendMessage
+ *   relay: THE permission-laundering vector), `'task-notification'`, etc.
+ *   Genuine typing carries `'human'`.
+ * - `promptSource` other than `'typed'` / `'queued'` — `'sdk'` (an
+ *   orchestrator/workflow prompt driving a headless session), `'system'`.
+ *
+ * Rejection is POSITIVE-SIGNAL only: an event with none of these fields (older
+ * harness versions, minimal test fixtures) still counts as human, so the
+ * bypass path can't silently break for the operator on a format change. The
+ * grant-phrase scanners (`bypassPhrasePresent` / `countBypassPhrases`) read
+ * only human-authored turns — a phrase an agent relays, however delivered,
+ * never authorizes anything.
+ */
+export function eventIsHumanAuthored(e: Record<string, unknown>): boolean {
+  if (e['isMeta'] === true) {
+    return false
+  }
+  const origin = e['origin']
+  if (origin && typeof origin === 'object') {
+    const kind = (origin as Record<string, unknown>)['kind']
+    if (typeof kind === 'string' && kind !== 'human') {
+      return false
+    }
+  }
+  const promptSource = e['promptSource']
+  if (
+    typeof promptSource === 'string' &&
+    promptSource !== 'typed' &&
+    promptSource !== 'queued'
+  ) {
+    return false
+  }
+  return true
 }
 
 /**

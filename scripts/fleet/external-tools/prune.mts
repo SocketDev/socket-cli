@@ -36,15 +36,13 @@ import { readSoakRules } from '../soak-rules.mts'
 
 const logger = getDefaultLogger()
 
-export interface PruneOptions {
+export interface PruneConfig {
   target: string | undefined
   apply: boolean
 }
 
-export function parseArgs(
-  argv: string[] = process.argv.slice(2),
-): PruneOptions {
-  const opts: PruneOptions = { target: undefined, apply: false }
+export function parseArgs(argv: string[] = process.argv.slice(2)): PruneConfig {
+  const opts: PruneConfig = { target: undefined, apply: false }
   for (let i = 0, { length } = argv; i < length; i += 1) {
     const a = argv[i]!
     if (a === '--apply') {

@@ -20,7 +20,7 @@ import {
 
 import type { GuardCheck } from './guard.mts'
 
-export interface DocLocationGuardOptions {
+export interface DocLocationGuardConfig {
   /**
    * Also block a bare `<dirName>/` outside `.claude/` (the report guard's
    * extra rule — a tracked top-level `reports/` tree). Defaults to false.
@@ -183,7 +183,7 @@ export function filenameLooksLikeDoc(
  * lives under a blocked dir passes through for the human to judge.
  */
 export function makeDocLocationCheck(
-  config: DocLocationGuardOptions,
+  config: DocLocationGuardConfig,
 ): GuardCheck {
   const {
     bareDirBlocked = false,

@@ -1,6 +1,6 @@
 /**
  * @file Shared seams + defaults for the per-ecosystem setup steps
- *   (`setup-brew`, `setup-go`, `setup-python`, `setup-rust`). Each step is
+ *   (`brew`, `go`, `python`, `rust`). Each step is
  *   self-detecting: it no-ops with a clear skip line when its ecosystem is
  *   absent or the platform does not apply, and otherwise installs ONLY through
  *   the locked/soaked artifact the fleet already pins (a soaked Homebrew tap
@@ -88,7 +88,7 @@ export interface EcosystemStepResult {
 /**
  * The seams with every default filled in.
  */
-export interface ResolvedEcosystemOptions {
+export interface ResolvedEcosystemConfig {
   readonly commandExists: CommandExists
   readonly logger: Logger
   readonly platform: NodeJS.Platform
@@ -102,7 +102,7 @@ export interface ResolvedEcosystemOptions {
  */
 export function resolveEcosystemOptions(
   options?: EcosystemStepOptions | undefined,
-): ResolvedEcosystemOptions {
+): ResolvedEcosystemConfig {
   const opts = options ?? {}
   return {
     commandExists: opts.commandExists ?? defaultCommandExists,

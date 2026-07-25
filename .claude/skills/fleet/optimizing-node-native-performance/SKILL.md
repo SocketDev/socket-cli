@@ -1,6 +1,8 @@
 ---
 name: optimizing-node-native-performance
 description: Audits Node addon and native-boundary performance.
+metadata:
+  internal: true
 ---
 
 # Optimizing Node Native Performance

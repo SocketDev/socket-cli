@@ -20,7 +20,7 @@ import { readManifest } from './manifest.mts'
 
 import type { Manifest } from './types.mts'
 
-export interface ApplyOptions {
+export interface ApplyConfig {
   id: string
   manifestPath: string
   repoRoot: string
@@ -170,8 +170,8 @@ export function writePinnedFields(
 // commit SHA, rewrite the manifest row, regenerate the .gitmodules annotation,
 // then commit. The caller (skill) is responsible for the test gate + locked-row
 // approval BEFORE calling this — apply is the deterministic write half.
-export function applyBump(config: ApplyOptions): ApplyResult {
-  const cfg = { __proto__: null, ...config } as ApplyOptions
+export function applyBump(config: ApplyConfig): ApplyResult {
+  const cfg = { __proto__: null, ...config } as ApplyConfig
   const { id, manifestPath, repoRoot, targetSha, targetTag } = cfg
   if ((targetTag === undefined) === (targetSha === undefined)) {
     throw new Error(

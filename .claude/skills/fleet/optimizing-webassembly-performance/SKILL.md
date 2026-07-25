@@ -1,6 +1,8 @@
 ---
 name: optimizing-webassembly-performance
 description: Audits WebAssembly performance and capability fallbacks.
+metadata:
+  internal: true
 ---
 
 # Optimizing WebAssembly Performance

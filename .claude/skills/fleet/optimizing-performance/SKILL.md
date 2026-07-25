@@ -1,6 +1,8 @@
 ---
 name: optimizing-performance
 description: Audits performance in Rust, Go, C++, JS/TS, parsers, Node addons, and WebAssembly.
+metadata:
+  internal: true
 ---
 
 # Optimizing Performance

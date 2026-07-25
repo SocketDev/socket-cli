@@ -5,6 +5,8 @@ user-invocable: true
 allowed-tools: Workflow, Task, Read, Grep, Glob, Write, AskUserQuestion, Bash(pnpm run check:*), Bash(pnpm run test:*), Bash(pnpm test:*), Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*)
 model: claude-opus-4-8
 context: fork
+metadata:
+  internal: true
 ---
 
 # scanning-quality

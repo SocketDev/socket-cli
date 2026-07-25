@@ -47,6 +47,35 @@ of the same SHA.
   entry. On a fresh checkout the reference is materialized on demand (it is not a
   `git submodule update` target, since nothing is tracked to update).
 
+## Ported actions: the port map + the lock-step rule
+
+The composites under `.github/actions/fleet/*` are the fleet's inlined ports of
+third-party GitHub Actions — checkout's inline git-fetch, the app-token minter,
+the gh-CLI release, the GPG signing pair, the pnpm and Go toolchain installs.
+Each port's provenance is code, not prose, in two records:
+
+- **`scripts/fleet/vendor-actions.mts`** vendors every ported-from upstream —
+  any `<owner>/<repo>`, not just `actions/*` — as an `upstream/<owner>-<repo>`
+  reference block, pinned at the newest stable release that has **soaked** for
+  `SOAK_DAYS`, the same window npm deps get. Its vendored set is derived from
+  the `uses:` surface plus the port map below, so declaring a port IS what
+  provisions its pin. `--check` exits 1 when any pin is behind its latest
+  soaked release.
+- **`scripts/fleet/_shared/action-port-map.mts`** is the composite → upstream
+  **port map**: a TOTAL record with one entry per composite. A ported composite
+  declares its upstream slug and `portedAt` — the upstream release tag the port
+  was last reviewed against; a Socket-original declares `[]`. A new composite
+  with no entry fails the gate, so nothing lands silently unpinned.
+
+The **lock-step rule**: `portedAt` must equal the pinned tag in `.gitmodules`.
+Re-pinning an upstream without re-reviewing the composite against the upstream
+diff reds `action-ports-are-lock-stepped` until `portedAt` advances with the
+review — an upstream release can never go silently stale, and a pin bump can
+never outrun its port. Cadence: the weekly update's check-updates gate and
+deterministic chain run `vendor-actions.mts --check`, so a newly soaked
+upstream release surfaces as an actionable advisory — re-pin, re-review, bump
+`portedAt` — in the weekly PR.
+
 ## Adding one
 
 No `git submodule add` (it stages a gitlink) and no `.gitignore` re-include —
@@ -92,3 +121,11 @@ blocks the staging that would create one in the first place.
   `# no-release-tag: <reason>` annotation (upstream has no releases).
 - `gitmodules-comment-guard` requires the `# <name>-<version>` header, and
   `uses-sha-verify-guard` requires the `sha256:` hash and a resolving `ref`.
+- `scripts/fleet/check/action-ports-are-lock-stepped.mts` fails when a
+  `.github/actions/fleet/*` composite has no port-map entry, a declared port
+  lacks its release-tagged + sha256-stamped reference block, or `portedAt`
+  differs from the pinned tag — the lock-step gate described above.
+- `scripts/fleet/vendor-actions.mts --check` fails when a vendored reference
+  pin is behind its latest soaked upstream release. Network-bound, so it runs
+  on the weekly-update cadence — the gate and the deterministic chain — not in
+  the offline `check --all` gate.

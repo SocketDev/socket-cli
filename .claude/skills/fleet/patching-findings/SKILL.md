@@ -6,6 +6,8 @@ user-invocable: true
 allowed-tools: Workflow, Task, Read, Glob, Grep, Edit, Write, AskUserQuestion, Bash(git status:*), Bash(git diff:*), Bash(git add:*), Bash(git commit:*), Bash(git log:*), Bash(rg:*), Bash(grep:*), Bash(ls:*), Bash(wc:*), Bash(node .claude/skills/fleet/_shared/scripts/checkpoint.mts:*), Bash(node scripts/fleet/patching-findings/cli.mts:*)
 model: claude-opus-4-8
 context: fork
+metadata:
+  internal: true
 ---
 
 # patching-findings

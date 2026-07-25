@@ -54,6 +54,10 @@ import { getCI } from '@socketsecurity/lib-stable/env/ci'
 
 import { runApprove } from './publish-infra/npm/approve.mts'
 import {
+  backfillFlagConflict,
+  runBackfillGate,
+} from './publish-infra/npm/backfill.mts'
+import {
   fetchPublishedVersion,
   findPublishedBaseSha,
   rebaseOntoPublishedBase,
@@ -95,7 +99,9 @@ async function main(): Promise<void> {
   const { values } = parseArgs({
     options: {
       approve: { default: false, type: 'boolean' },
+      backfill: { type: 'string' },
       bump: { default: false, type: 'boolean' },
+      'checkout-ref': { type: 'string' },
       direct: { default: false, type: 'boolean' },
       'dry-run': { default: false, type: 'boolean' },
       help: { default: false, type: 'boolean' },
@@ -173,6 +179,21 @@ async function main(): Promise<void> {
     logger.log(
       '  --release-as <lvl>   force bump level major|minor|patch (with --bump)',
     )
+    logger.log(
+      '  --backfill <ver>     CI: stage a never-published GAP version of prior',
+    )
+    logger.log(
+      '                       content. Bypasses the bump/changelog gate behind',
+    )
+    logger.log(
+      '                       hard guards; requires --checkout-ref + a',
+    )
+    logger.log(
+      '                       non-latest --tag. See publish-infra/npm/backfill.mts',
+    )
+    logger.log(
+      '  --checkout-ref <ref> the content ref a --backfill republishes',
+    )
     process.exitCode = 0
     return
   }
@@ -203,6 +224,41 @@ async function main(): Promise<void> {
   // `--staged` runs on a clean OIDC checkout and must never touch git.
   // `--no-reconcile` is the deliberate local opt-out.
   const reconcile = !getCI() && !values['no-reconcile']
+  const backfillVersion =
+    typeof values['backfill'] === 'string' && values['backfill']
+      ? values['backfill']
+      : undefined
+  const checkoutRef =
+    typeof values['checkout-ref'] === 'string' && values['checkout-ref']
+      ? values['checkout-ref']
+      : undefined
+  const flagConflict = backfillFlagConflict({
+    backfillVersion,
+    bump: !!values['bump'],
+    checkoutRef,
+    mode,
+    releaseAs,
+  })
+  if (flagConflict) {
+    logger.fail(flagConflict)
+    process.exitCode = 1
+    return
+  }
+  // Backfill: the ONLY sanctioned path to a version below registry latest.
+  // The bump/changelog gate is bypassed — the backfill guards replace it —
+  // and on a pass the publish continues through the normal staged path with
+  // the checked-out content as-is.
+  if (backfillVersion) {
+    const allowed = await runBackfillGate({
+      backfillVersion,
+      checkoutRef,
+      distTag: String(values['tag']),
+    })
+    if (!allowed) {
+      process.exitCode = 1
+      return
+    }
+  }
   // CI release path: `--staged --bump` bumps + commits (via the release App) on
   // a throwaway release branch before staging, so the publish targets the bumped
   // tree without touching main. `bumpResult` is undefined on a dry-run / no-op

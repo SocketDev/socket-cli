@@ -1,6 +1,8 @@
 ---
 name: optimizing-parser-performance
 description: Audits parser and tokenizer performance.
+metadata:
+  internal: true
 ---
 
 # Optimizing Parser Performance

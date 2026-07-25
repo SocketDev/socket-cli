@@ -21,7 +21,7 @@ import type { ToolEntry } from './tool-config.mts'
 
 const logger = getDefaultLogger()
 
-export interface InstallGitHubToolOptions {
+export interface InstallGitHubToolConfig {
   /**
    * Logical tool name (used for log banner + cache key).
    */
@@ -70,9 +70,9 @@ export interface InstallGitHubToolOptions {
  */
 export async function runInstallGitHubReleaseTool(
   // oxlint-disable-next-line no-shadow -- required config param name matches the module-level tool-manifest `config` by convention
-  config: InstallGitHubToolOptions,
+  config: InstallGitHubToolConfig,
 ): Promise<boolean> {
-  const cfg = { __proto__: null, ...config } as InstallGitHubToolOptions
+  const cfg = { __proto__: null, ...config } as InstallGitHubToolConfig
   const { binaryNameInArchive, displayName, finalBinaryName, name, tool } = cfg
   logger.log(`=== ${displayName} ===`)
 
@@ -185,9 +185,9 @@ export async function runInstallGitHubReleaseTool(
  */
 export async function runInstallGitHubReleaseToolWithTag(
   // oxlint-disable-next-line no-shadow -- required config param name matches the module-level tool-manifest `config` by convention
-  config: InstallGitHubToolOptions & { tag: string },
+  config: InstallGitHubToolConfig & { tag: string },
 ): Promise<boolean> {
-  const cfg = { __proto__: null, ...config } as InstallGitHubToolOptions & {
+  const cfg = { __proto__: null, ...config } as InstallGitHubToolConfig & {
     tag: string
   }
   const { binaryNameInArchive, displayName, finalBinaryName, name, tag, tool } =

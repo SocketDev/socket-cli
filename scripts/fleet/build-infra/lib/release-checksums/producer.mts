@@ -52,7 +52,7 @@ export async function hashDirectory(
   return out
 }
 
-export interface UpdateAssetsOptions {
+export interface UpdateAssetsConfig {
   /**
    * Path to `release-assets.json`.
    */
@@ -86,7 +86,7 @@ export interface UpdateAssetsOptions {
  *
  * The manifest's $schema field (if present) is preserved.
  */
-export function updateReleaseAssets(config: UpdateAssetsOptions): void {
+export function updateReleaseAssets(config: UpdateAssetsConfig): void {
   const { checksums, description, manifestPath, tag, tool } = {
     __proto__: null,
     ...config,
@@ -118,7 +118,7 @@ export function updateReleaseAssets(config: UpdateAssetsOptions): void {
   writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n', 'utf8')
 }
 
-export interface WriteChecksumsOptions {
+export interface WriteChecksumsConfig {
   /**
    * Directory containing the artifacts to hash.
    */
@@ -145,7 +145,7 @@ export interface WriteChecksumsOptions {
  * default for stable diffs.
  */
 export async function writeChecksumsFile(
-  config: WriteChecksumsOptions,
+  config: WriteChecksumsConfig,
 ): Promise<Record<string, string>> {
   const {
     inputDir,

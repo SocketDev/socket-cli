@@ -38,6 +38,7 @@
  */
 
 import type { AstNode, RuleContext, RuleFixer } from '../../lib/rule-types.mts'
+import { isLockstepMirror } from '../../lib/lockstep-mirror.mts'
 
 const rule = {
   meta: {
@@ -60,6 +61,10 @@ const rule = {
   },
 
   create(context: RuleContext) {
+    // Verbatim upstream mirrors keep upstream's shape; see lib/lockstep-mirror.mts.
+    if (isLockstepMirror(context)) {
+      return {}
+    }
     /**
      * Walk up through TS type-cast wrappers (`x as T`, `x as const`, `<T>x`) so
      * that `null as never` inside `{ __proto__: null as never }` still matches

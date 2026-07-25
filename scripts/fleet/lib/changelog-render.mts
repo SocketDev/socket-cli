@@ -32,12 +32,25 @@ function escapeMarkdownText(value: string): string {
     .replaceAll('>', '&gt;')
 }
 
+// A commit description is plain text, but it lands as free markdown prose in the
+// generated bullet. A literal `*`, `_`, or backtick in it (glob patterns,
+// identifiers, code refs like `_stream_*` or `*Options`) would otherwise render
+// as a markdown emphasis/code span — and because CHANGELOG.md is lint-scoped,
+// that trips markdownlint MD037/MD049/MD050 and blocks the release `fix` gate.
+// Backslash-escape each so it renders verbatim. Single-pass (backslash first in
+// the class) so an author-written backslash can't double-escape. Not applied to
+// the scope: that is wrapped in a backtick code span where these chars are
+// already literal, and adding backslashes there would show them.
+function escapeMarkdownProse(value: string): string {
+  return escapeMarkdownText(value).replace(/[\\`*_]/gu, '\\$&')
+}
+
 export function renderBullet(commit: ConventionalCommit): string {
   const breaking = commit.breaking ? '**BREAKING:** ' : ''
   const scope = commit.scope
     ? `**\`${escapeMarkdownText(commit.scope)}\`** — `
     : ''
-  return `- ${breaking}${scope}${escapeMarkdownText(commit.description)}`
+  return `- ${breaking}${scope}${escapeMarkdownProse(commit.description)}`
 }
 
 /**

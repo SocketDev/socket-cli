@@ -38,6 +38,11 @@
  *      `check/brew-install-is-pinned.mts` red. Always runs (cheap file
  *      reads); auto-fixed (rewrites the Brewfile) under --fix, otherwise
  *      reported loud. A repo with no Brewfile is not enrolled — no finding.
+ *   11. gh default repo ≠ origin (GAP 12) — in a fork checkout, bare gh
+ *      commands resolve the fork PARENT unless `gh repo set-default` was run
+ *      (workflow dispatches 404, issue/PR queries read the wrong repo). Runs
+ *      with the git probes; auto-fixed under --fix by marking origin as gh's
+ *      default. Pairs with check/gh-default-repo-matches-origin.mts.
  *
  *   CLI: node scripts/fleet/doctor.mts [--fix] [--probe-install] [--probe-git]
  *        [--probe-secrets]

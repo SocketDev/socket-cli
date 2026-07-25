@@ -5,6 +5,8 @@ user-invocable: true
 allowed-tools: Bash(node:*), Bash(git worktree:*), Bash(git branch:*), Bash(git fetch:*), Bash(pnpm i:*), Read
 model: claude-haiku-4-5
 context: fork
+metadata:
+  internal: true
 ---
 
 # tidying-worktrees

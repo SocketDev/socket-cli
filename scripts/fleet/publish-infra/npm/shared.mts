@@ -5,11 +5,20 @@
  *   staging-expected trust check consumed by both --staged and --direct.
  */
 
-import { readFileSync } from 'node:fs'
-import path from 'node:path'
+import os from 'node:os'
 
+import { resolveReleaseSubject } from '../../_shared/release-subject.mts'
 import { extractFirstJson, rootPath, runCapture } from '../shared.mts'
 import { fetchVersionTrustInfo } from './registry.mts'
+
+/**
+ * Raised when the staged-entry listing could not be AUTHENTICATED. The stage
+ * endpoints 401 without npm auth and `pnpm stage list`'s failure output
+ * parses as an EMPTY list — the 6.2.1 run recorded that as verify=failed
+ * "0 staged entries", a false negative that stranded the pipeline. Callers
+ * must treat this error as "auth unavailable", never as an empty stage list.
+ */
+export class StageListAuthError extends Error {}
 
 export interface StageListEntry {
   name?: string | undefined
@@ -24,16 +33,24 @@ export interface StageListEntry {
   shasum?: string | undefined
 }
 
-export function readPackageJson(): {
+/**
+ * The PUBLISH SUBJECT's name/version/repository — the root package.json for a
+ * plain repo, the `publishConfig.directory` manifest for a redirected monorepo
+ * like socket-registry. Every guard that keys on "this repo's package"
+ * (already-published refusal, cross-repo pack refusal, approve's local-entry
+ * match) must see the subject, never a private root. `root` is injectable for
+ * tests.
+ */
+export function readPackageJson(root: string = rootPath): {
   name: string
   version: string
   repository?: string | { url?: string | undefined } | undefined
 } {
-  const raw = readFileSync(path.join(rootPath, 'package.json'), 'utf8')
-  return JSON.parse(raw) as {
-    name: string
-    version: string
-    repository?: string | { url?: string | undefined } | undefined
+  const subject = resolveReleaseSubject(root)
+  return {
+    name: subject.name,
+    repository: subject.repository,
+    version: subject.version,
   }
 }
 
@@ -136,15 +153,36 @@ export function parseStageListJson(stdout: string): StageListEntry[] {
 
 /**
  * Resolve all currently-staged packages by running `pnpm stage list --json`
- * and normalizing the output (see parseStageListJson).
+ * and normalizing the output (see parseStageListJson). Auth-honest: an empty
+ * result (or a non-zero exit) is only trusted after `npm whoami` proves local
+ * npm auth exists — an unauthenticated `pnpm stage list` 401s and its output
+ * parses as an EMPTY list, indistinguishable from "nothing staged". Without
+ * that proof this throws StageListAuthError carrying the whoami evidence, so
+ * a missing token can never masquerade as "0 staged entries".
  */
 export async function listStagedPackages(): Promise<StageListEntry[]> {
-  const { stdout } = await runCapture(
+  const { code, stdout } = await runCapture(
     'pnpm',
     ['stage', 'list', '--json'],
     rootPath,
   )
-  return parseStageListJson(stdout)
+  const entries = parseStageListJson(stdout)
+  if (code === 0 && entries.length > 0) {
+    return entries
+  }
+  // `npm whoami` runs from the OS home dir: the repo's devEngines pins pnpm
+  // as the package manager and vetoes bare `npm` invocations in-repo.
+  const whoami = await runCapture('npm', ['whoami'], os.homedir())
+  if (whoami.code !== 0) {
+    throw new StageListAuthError(
+      `\`npm whoami\` exited ${whoami.code} — no npm auth, so the staging ` +
+        `endpoints 401 — and \`pnpm stage list --json\` exited ${code} with ` +
+        `${entries.length} parseable entr${entries.length === 1 ? 'y' : 'ies'}. ` +
+        `An unauthenticated stage list parses as EMPTY; refusing to report ` +
+        `"0 staged entries" without auth.`,
+    )
+  }
+  return entries
 }
 
 /**

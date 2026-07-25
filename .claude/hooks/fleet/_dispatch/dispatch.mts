@@ -152,6 +152,35 @@ export interface DispatchHookEntry {
   ) => DispatchVerdict | Promise<DispatchVerdict>) | undefined
 }
 
+/**
+ * The single-hook addressing protocol version. The literal is embedded in the
+ * built bundle (`_dist/bundle.cjs`), so a name-scoped caller — the user-global
+ * `~/.claude/hooks/wheelhouse-dispatch.mts` — can grep the bundle bytes to
+ * learn the bundle understands `index.cjs <Event> <hook-name>` before relying
+ * on it. An older bundle without the literal would IGNORE argv[3] and run the
+ * whole event's hook set, so the capability probe is load-bearing.
+ */
+export const SINGLE_HOOK_PROTOCOL = 'fleet-dispatch-single-hook-v1'
+
+/**
+ * Exit code for name-scoped dispatch when the named hook has no entry in the
+ * event's table. Distinct from 0 (allow) and 2 (block) so the caller can fall
+ * back to running the hook's source `.mts` instead of treating the miss as a
+ * silent allow.
+ */
+export const SINGLE_HOOK_NOT_FOUND_EXIT = 3
+
+/**
+ * True when the event's table carries an entry named `hookName`. Pure; the
+ * name-scoped CLI path uses it to distinguish "bundled hook, tool just didn't
+ * match" (normal allow) from "hook not bundled at all" (caller falls back to
+ * source).
+ */
+export function hookInTable(event: string, hookName: string): boolean {
+  const entries = DISPATCH_TABLE[event] ?? []
+  return entries.some(entry => entry.name === hookName)
+}
+
 export interface DispatchResult {
   /**
    * `'block'` when any fired guard returned a block verdict; else `'allow'`.
@@ -195,12 +224,19 @@ export function hookHandlesTool(
  * A `block` verdict short-circuits: once a guard blocks, later hooks are
  * skipped (a block is terminal — the tool call is rejected — so there is no
  * point running the rest, and it matches the per-process guard semantics).
+ *
+ * `onlyHook` narrows the run to the single table entry with that name (the
+ * `SINGLE_HOOK_PROTOCOL` addressing mode): the caller wants exactly one hook's
+ * verdict, not the whole event set.
  */
 export async function dispatch(
   event: string,
   payload: DispatchPayload,
+  onlyHook?: string | undefined,
 ): Promise<DispatchResult> {
-  const entries = DISPATCH_TABLE[event] ?? []
+  const all = DISPATCH_TABLE[event] ?? []
+  const entries =
+    onlyHook === undefined ? all : all.filter(entry => entry.name === onlyHook)
   const reminders: string[] = []
   const toolName = payload.tool_name
   let blockReason: string | undefined
@@ -248,12 +284,21 @@ export async function dispatch(
  * auto-run) so the rolldown bundle entry (`dispatch-entry.mts`) can call it
  * unconditionally while unit tests / the source module stay import-safe — a
  * CJS bundle has no `import.meta`, so an entrypoint-guard can't gate it there.
+ *
+ * An optional `process.argv[3]` names ONE hook to run (`SINGLE_HOOK_PROTOCOL`):
+ * the user-global wheelhouse dispatcher addresses a single bundled hook per
+ * settings.json line, so it passes `<Event> <hook-name>` and the run narrows
+ * to that entry. A name with no entry in the event's table exits
+ * `SINGLE_HOOK_NOT_FOUND_EXIT` so the caller can fall back to the hook's
+ * source `.mts` instead of mistaking the miss for an allow. In-repo
+ * settings.json never passes argv[3]; event-wide dispatch is unchanged.
  */
 export async function runDispatcherCli(): Promise<void> {
   const event = process.argv[2]
   if (!event) {
     process.exit(0)
   }
+  const onlyHook = process.argv[3]
   let raw: string
   try {
     raw = await readStdin()
@@ -269,7 +314,13 @@ export async function runDispatcherCli(): Promise<void> {
   } catch {
     process.exit(0)
   }
-  const result = await dispatch(event, payload)
+  if (onlyHook !== undefined && !hookInTable(event, onlyHook)) {
+    process.stderr.write(
+      `[fleet-dispatch] ${SINGLE_HOOK_PROTOCOL}: no bundled hook '${onlyHook}' for ${event}\n`,
+    )
+    process.exit(SINGLE_HOOK_NOT_FOUND_EXIT)
+  }
+  const result = await dispatch(event, payload, onlyHook)
   if (result.reminders.length) {
     process.stderr.write(result.reminders.join('\n') + '\n')
   }

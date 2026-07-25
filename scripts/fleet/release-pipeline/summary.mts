@@ -12,6 +12,7 @@ import type { StageId } from './stages.mts'
 import type { PipelineState, StageReceipt } from './state.mts'
 
 const STATUS_MARKS: Readonly<Record<string, string>> = {
+  blocked: '!',
   deferred: '~',
   failed: 'x',
   passed: 'ok',

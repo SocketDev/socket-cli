@@ -21,6 +21,7 @@ import path from 'node:path'
 
 import { detectSourceType } from '../../lib/detect-source-type.mts'
 import type { AstNode, RuleContext, RuleFixer } from '../../lib/rule-types.mts'
+import { isLockstepMirror } from '../../lib/lockstep-mirror.mts'
 
 const SCRIPT_ENTRY_NAMES = new Set(['main'])
 
@@ -79,6 +80,10 @@ const rule = {
   },
 
   create(context: RuleContext) {
+    // Verbatim upstream mirrors keep upstream's shape; see lib/lockstep-mirror.mts.
+    if (isLockstepMirror(context)) {
+      return {}
+    }
     const sourceCode = context.getSourceCode
       ? context.getSourceCode()
       : context.sourceCode

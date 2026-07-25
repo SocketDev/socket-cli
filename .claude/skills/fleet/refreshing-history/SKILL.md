@@ -5,6 +5,8 @@ user-invocable: true
 allowed-tools: AskUserQuestion, Bash(git:*), Bash(pnpm:*), Bash(diff:*), Bash(ls:*)
 model: claude-haiku-4-5
 context: fork
+metadata:
+  internal: true
 ---
 
 # refreshing-history

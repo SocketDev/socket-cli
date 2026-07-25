@@ -1,6 +1,8 @@
 ---
 name: optimizing-javascript-performance
 description: Audits measured JavaScript and TypeScript performance.
+metadata:
+  internal: true
 ---
 
 # Optimizing JavaScript Performance

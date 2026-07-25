@@ -15,6 +15,8 @@ import { existsSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { hashTarball } from '../lib/verify-release-hashes.mts'
+import { resolveBumpScript } from '../publish-infra/npm/bump.mts'
+import { StageListAuthError } from '../publish-infra/npm/shared.mts'
 import { buildWorkflowRunArgs } from '../publish-infra/remote-dispatch.mts'
 import {
   buildNpmPublishSpec,
@@ -24,6 +26,7 @@ import { headIsOnOrigin } from './gate-runners.mts'
 import { readPkg, resolveSeams } from './seams.mts'
 import { deriveReleaseLevel } from './stages.mts'
 
+import type { StageListEntry } from '../publish-infra/npm/shared.mts'
 import type { RunnerSeams, StageOutcome } from './seams.mts'
 import type { ReleaseChecksums, StageReceipt } from './state.mts'
 
@@ -54,7 +57,10 @@ export async function runBumpStage(config: {
   if (derived.error !== undefined) {
     return { detail: derived.error, status: 'failed' }
   }
-  const args = ['scripts/fleet/bump.mts', '--release-as', derived.level]
+  // Overlay-first: a repo-specific scripts/repo/bump.mts (monorepo / custom
+  // bumps, e.g. socket-registry's publishConfig.directory subject) wins over
+  // the canonical scripts/fleet/bump.mts — same precedence as the CI bump.
+  const args = [resolveBumpScript(cfg.cwd), '--release-as', derived.level]
   if (cfg.dryRun) {
     args.push('--dry-run')
   }
@@ -166,6 +172,16 @@ export async function runStagePublish(config: {
     return await runLocalStagePublish(cfg, seams)
   }
   const spec = buildNpmPublishSpec({
+    // The pipeline never backfills — gap-fill republishes are a deliberate
+    // manual dispatch of npm-publish.yml (see publish-infra/npm/backfill.mts).
+    backfillVersion: undefined,
+    // The pipeline's bump stage already landed the bump commit (the runner
+    // refuses to dispatch from an unpushed head), so the workflow's CI bump
+    // step must NOT run again: the whole chain bumps exactly once. A
+    // re-entrant CI bump once re-derived the same version and committed a
+    // duplicate 6.2.1 CHANGELOG section.
+    bump: false,
+    checkoutRef: undefined,
     distTag: cfg.distTag,
     dryRun: false,
     publish: true,
@@ -311,7 +327,55 @@ export async function runVerifyStage(config: {
     }
   }
   const pkg = readPkg(cfg.cwd)
-  const staged = await seams.listStaged()
+  let staged: StageListEntry[]
+  try {
+    staged = await seams.listStaged()
+  } catch (e) {
+    if (!(e instanceof StageListAuthError)) {
+      throw e
+    }
+    // No npm auth: the staged listing has NO evidence either way — an
+    // unauthenticated `pnpm stage list` parses as EMPTY. Recording that as
+    // verify=failed "0 staged entries" is the 6.2.1 false negative. One
+    // authenticated-source fallback exists: when the version is ALREADY LIVE
+    // on the registry, PUBLIC reads (packument digests + published tarball)
+    // verify the bytes without local auth. Otherwise the honest outcome is
+    // `blocked` (stops the run, never satisfies a resume) — a staged-but-
+    // unpublished entry's digest is only visible authenticated.
+    const truth = await verifyAgainstRegistry({
+      cwd: cfg.cwd,
+      seams: cfg.seams,
+      targetVersion: cfg.targetVersion,
+    })
+    if (truth.status === 'match') {
+      return {
+        detail: `${truth.detail} — verified from PUBLIC registry reads (no npm auth needed)`,
+        releaseChecksums: truth.releaseChecksums,
+        status: 'passed',
+      }
+    }
+    if (truth.status === 'mismatch') {
+      // The version IS observable without auth and the bytes diverge (or
+      // can't be compared) — that is a real verify failure, not missing
+      // evidence.
+      return {
+        detail:
+          `registry-truth verify FAILED for ${pkg.name}@${cfg.targetVersion}.\n` +
+          `  Where: ${truth.detail}\n` +
+          `  Fix: never release divergent bytes — reconcile the tree with the published content, then re-run.`,
+        status: 'failed',
+      }
+    }
+    return {
+      detail:
+        `staged-entry listing is UNAUTHENTICATED — verify has no evidence either way.\n` +
+        `  Where: ${e.message}\n` +
+        `  Not recording a verify verdict: a missing local token is not an integrity failure ` +
+        `(and ${pkg.name}@${cfg.targetVersion} is not live on the registry, so no public fallback exists).\n` +
+        `  Fix: authenticate npm (npm login / browser web-OTP), then re-run the verify stage.`,
+      status: 'blocked',
+    }
+  }
   const entry = staged.find(
     e => e.name === pkg.name && e.version === cfg.targetVersion,
   )
@@ -361,6 +425,112 @@ export async function runVerifyStage(config: {
       version: cfg.targetVersion,
     },
     status: 'passed',
+  }
+}
+
+// ── registry truth (already-published reconcile) ───────────────────────────
+
+/**
+ * What a registry-truth verification concluded. `match` carries the
+ * release-asset checksums computed over the verified local re-pack, so the
+ * caller can mint a verify receipt exactly the way runVerifyStage does.
+ */
+export type RegistryTruth =
+  | { detail: string; releaseChecksums: ReleaseChecksums; status: 'match' }
+  | { detail: string; status: 'mismatch' }
+  | { detail: string; status: 'not-live' }
+
+/**
+ * Verify a version that is ALREADY LIVE on the registry from PUBLIC reads —
+ * no npm auth. Re-packs at the bump commit (package.json must read the
+ * target version) and compares against the packument `dist` digests. The
+ * gzip envelope is platform-sensitive — a CI-published tarball and a local
+ * re-pack legitimately wrap identical contents differently — so a digest
+ * mismatch falls back to downloading the published tarball and comparing
+ * EXTRACTED CONTENTS, the same honest axis verifyStagedEntry uses. This is
+ * the sanctioned reconcile evidence for a pipeline whose verify/approve
+ * receipts went missing after the version already shipped (the 6.2.1
+ * strand): registry truth, never a rubber stamp — divergent bytes refuse.
+ */
+export async function verifyAgainstRegistry(config: {
+  cwd: string
+  seams?: RunnerSeams | undefined
+  targetVersion: string
+}): Promise<RegistryTruth> {
+  const cfg = { __proto__: null, ...config } as typeof config
+  const seams = resolveSeams(cfg.seams)
+  const pkg = readPkg(cfg.cwd)
+  const dist = await seams.fetchRegistryDist(pkg.name)
+  const live = dist[cfg.targetVersion]
+  if (!live) {
+    return {
+      detail: `${pkg.name}@${cfg.targetVersion} is not on the registry (public packument read)`,
+      status: 'not-live',
+    }
+  }
+  if (pkg.version !== cfg.targetVersion) {
+    return {
+      detail:
+        `package.json reads ${pkg.version}, not ${cfg.targetVersion} — the re-pack must run ` +
+        `at the bump commit so the compared bytes are the published content`,
+      status: 'mismatch',
+    }
+  }
+  if (!live.shasum && !live.integrity) {
+    return {
+      detail: `the packument for ${pkg.name}@${cfg.targetVersion} exposes no dist.shasum/integrity to compare against`,
+      status: 'mismatch',
+    }
+  }
+  const tarballPath = await seams.packTarball(pkg.name, cfg.targetVersion)
+  if (!tarballPath || !existsSync(tarballPath)) {
+    return {
+      detail: `could not re-pack ${pkg.name}@${cfg.targetVersion} locally for the registry compare`,
+      status: 'mismatch',
+    }
+  }
+  const digest = hashTarball(tarballPath)
+  const digestMatch =
+    (live.shasum !== undefined && digest.shasum === live.shasum) ||
+    (live.integrity !== undefined && digest.integrity === live.integrity)
+  let evidence: string
+  if (digestMatch) {
+    evidence = `local re-pack sha1 ${digest.shasum} matches the packument dist digest`
+  } else {
+    // Envelope-sensitive digests differ across platforms; compare what
+    // actually ships — the extracted files — against the published tarball.
+    const published = await seams.downloadRegistryTarball(
+      pkg.name,
+      cfg.targetVersion,
+    )
+    if (!published) {
+      return {
+        detail:
+          `digest mismatch (local sha1 ${digest.shasum} vs registry ${live.shasum ?? live.integrity}) ` +
+          `AND the published tarball could not be downloaded for a content compare`,
+        status: 'mismatch',
+      }
+    }
+    const contents = await seams.compareTarballContents(published, tarballPath)
+    if (!contents.equal) {
+      return {
+        detail:
+          `published contents DIVERGE from the local re-pack: ${contents.detail} ` +
+          `(local sha1 ${digest.shasum}, registry ${live.shasum ?? live.integrity})`,
+        status: 'mismatch',
+      }
+    }
+    evidence = `contents byte-identical to the published tarball (${contents.detail}); only the gzip envelope differs`
+  }
+  return {
+    detail: `registry truth for ${pkg.name}@${cfg.targetVersion}: ${evidence}`,
+    releaseChecksums: {
+      sha1: digest.shasum,
+      sha512: digest.integrity.replace(/^sha512-/, ''),
+      tarballName: path.basename(tarballPath),
+      version: cfg.targetVersion,
+    },
+    status: 'match',
   }
 }
 
@@ -532,7 +702,7 @@ export async function runReleaseStage(config: {
   }
   // Belt-and-braces: the version must be LIVE on the registry — an approve
   // exit code alone is not proof the publish landed.
-  const live = await seams.registryLive(pkg.name, pkg.version, cfg.cwd)
+  const live = await seams.registryLive(pkg.name, pkg.version)
   if (!live) {
     return {
       detail:

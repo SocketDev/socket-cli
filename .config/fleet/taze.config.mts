@@ -1,10 +1,20 @@
 import { defineConfig } from 'taze'
 
-// Socket-owned scopes bypass the 7-day maturity cooldown (the cooldown catches
-// compromised upstreams before adoption; Socket-published packages go through
-// our own provenance + publish pipeline). EXCLUDED from pass 1 (cooldown) and
-// INCLUDED in pass 2 (immediate bump). SOCKET_SCOPES is the single shared
-// constant — scripts/fleet/update.mts imports the same one, so they can't drift.
+// NOTE: taze never auto-discovers this file — its config lookup only finds a
+// root-level `taze.config.<ext>` walking up from cwd, not `.config/fleet/`.
+// This config documents the update policy for humans and for ad-hoc runs that
+// symlink or copy it to the root; the ENFORCED policy is the CLI flag lists in
+// scripts/fleet/constants/taze-passes.mts, which `pnpm run update` spawns.
+// Keep the two aligned. Do not move this file to the repo root: a discovered
+// config `exclude` overrides the CLI `--include`, which would turn update.mts
+// pass 2 into a no-op.
+//
+// Socket-owned scopes bypass the 7-day maturity cooldown — the cooldown
+// catches compromised upstreams before adoption, while Socket-published
+// packages go through our own provenance + publish pipeline. EXCLUDED from
+// pass 1, the cooldown pass, and INCLUDED in pass 2, the immediate-bump pass.
+// SOCKET_SCOPES is the single shared constant — the taze-passes flag lists
+// import the same one, so they can't drift.
 import { SOAK_DAYS } from '../../scripts/fleet/constants/soak.mts'
 import {
   SOCKET_SCOPES,

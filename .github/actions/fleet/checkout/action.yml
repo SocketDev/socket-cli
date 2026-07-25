@@ -107,7 +107,7 @@ runs:
         set -euo pipefail
         # The checkout action runs while the workspace may still contain only
         # the initial .github/ sparse checkout. Keep its pins beside the action.
-        TOOLS_FILE="${GITHUB_ACTION_PATH}/../lib/external-tools.json"
+        TOOLS_FILE="${GITHUB_ACTION_PATH}/../_shared/external-tools.json"
         if [ ! -f "$TOOLS_FILE" ]; then
           echo "× the fleet checkout action is broken: external-tools.json not found at ${TOOLS_FILE}." >&2
           echo "  This is a packaging bug in the fleet scaffolding, not a consumer issue. File a bug." >&2
@@ -130,7 +130,7 @@ runs:
         # the rationale (Node is universally preinstalled where jq is
         # not). The reader exits non-zero on missing/empty values, so
         # set -e turns a packaging bug here into a loud failure.
-        JQ="${GITHUB_ACTION_PATH}/../lib/jq.mjs"
+        JQ="${GITHUB_ACTION_PATH}/../_shared/jq.mjs"
         # The tools file nests entries under `tools` (current schema) or at the
         # top level (legacy flat). Probe once; an empty $NS splits away.
         NS="tools"
@@ -145,7 +145,7 @@ runs:
         # failing because zizmor is a security audit, not a build
         # dependency: losing the audit on win-arm64 is worse than
         # failing the whole build there.
-        PLATFORM_TOOL="${GITHUB_ACTION_PATH}/../lib/platform.mjs"
+        PLATFORM_TOOL="${GITHUB_ACTION_PATH}/../_shared/platform.mjs"
         PLATFORM="$(node "$PLATFORM_TOOL")"
         # Soft-skip when zizmor upstream has no binary for this
         # platform. SOCKET_TOOL_ZIZMOR_AVAILABLE=false signals the
@@ -165,7 +165,7 @@ runs:
         ZIZMOR_BIN="$ZIZMOR_DIR/zizmor"
         [[ "$ASSET" == *.zip ]] && ZIZMOR_BIN="$ZIZMOR_DIR/zizmor.exe"
         # Shared installer: fetches, integrity-verifies (SRI), extracts.
-        INSTALL_TOOL="${GITHUB_ACTION_PATH}/../lib/install-tool.mjs"
+        INSTALL_TOOL="${GITHUB_ACTION_PATH}/../_shared/install-tool.mjs"
         if [ ! -x "$ZIZMOR_BIN" ]; then
           node "$INSTALL_TOOL" \
             "https://github.com/zizmorcore/zizmor/releases/download/v${ZIZMOR_VERSION}/${ASSET}" \

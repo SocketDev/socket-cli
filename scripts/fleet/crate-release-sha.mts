@@ -36,7 +36,7 @@ export interface CrateReleaseInfo extends CargoVcsInfo {
   version: string
 }
 
-interface CliOptions {
+interface CliConfig {
   crate: string
   json: boolean
   version?: string | undefined
@@ -211,7 +211,7 @@ async function download(
   })
 }
 
-function parseCli(args: string[]): CliOptions {
+function parseCli(args: string[]): CliConfig {
   let crate = ''
   let json = false
   let version: string | undefined
@@ -239,8 +239,8 @@ function parseCli(args: string[]): CliOptions {
   return { crate, json, version }
 }
 
-async function crateReleaseInfo(config: CliOptions): Promise<CrateReleaseInfo> {
-  const cfg = { __proto__: null, ...config } as CliOptions
+async function crateReleaseInfo(config: CliConfig): Promise<CrateReleaseInfo> {
+  const cfg = { __proto__: null, ...config } as CliConfig
   const name = encodeURIComponent(cfg.crate)
   let version = cfg.version
   if (!version) {

@@ -2,6 +2,8 @@
 name: decomposing-tickets
 description: Break a plan, spec, or findings report into independently-grabbable vertical-slice tracker tickets.
 user-invocable: true
+metadata:
+  internal: true
 ---
 
 # decomposing-tickets

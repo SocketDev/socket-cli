@@ -2,6 +2,8 @@
 name: consolidating-commits
 description: Regroup commits since a base into logical commits, keeping any version bump last; not squash-to-one.
 model: haiku
+metadata:
+  internal: true
 ---
 
 # Consolidating commits

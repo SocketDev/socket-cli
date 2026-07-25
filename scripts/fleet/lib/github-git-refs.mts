@@ -18,7 +18,7 @@ import {
 
 const DEFAULT_API_URL = 'https://api.github.com'
 
-export interface GitRefOptions {
+export interface GitRefConfig {
   // Override the API origin (GitHub Enterprise / tests). Defaults to api.github.com.
   readonly apiUrl?: string | undefined
   // Short branch name without the `refs/heads/` prefix (e.g. 'npm-publish-v1.4.3').
@@ -29,7 +29,7 @@ export interface GitRefOptions {
   readonly token: string
 }
 
-export interface CreateOrUpdateRefOptions extends GitRefOptions {
+export interface CreateOrUpdateRefConfig extends GitRefConfig {
   // Optional for `updateBranchRef`: allow a non-fast-forward advance. Defaults to
   // false so GitHub rejects (422) anything that would rewrite history.
   readonly force?: boolean | undefined
@@ -52,9 +52,9 @@ function refHeaders(token: string): Record<string, string> {
  * decides whether to force-update it instead).
  */
 export async function createBranchRef(
-  config: CreateOrUpdateRefOptions,
+  config: CreateOrUpdateRefConfig,
 ): Promise<void> {
-  const cfg = { __proto__: null, ...config } as CreateOrUpdateRefOptions
+  const cfg = { __proto__: null, ...config } as CreateOrUpdateRefConfig
   const apiUrl = cfg.apiUrl ?? DEFAULT_API_URL
   await httpJson(`${apiUrl}/repos/${cfg.repo}/git/refs`, {
     body: JSON.stringify({ ref: `refs/heads/${cfg.branch}`, sha: cfg.sha }),
@@ -71,9 +71,9 @@ export async function createBranchRef(
  * `HttpResponseError` on any non-2xx response.
  */
 export async function updateBranchRef(
-  config: CreateOrUpdateRefOptions,
+  config: CreateOrUpdateRefConfig,
 ): Promise<void> {
-  const cfg = { __proto__: null, ...config } as CreateOrUpdateRefOptions
+  const cfg = { __proto__: null, ...config } as CreateOrUpdateRefConfig
   const apiUrl = cfg.apiUrl ?? DEFAULT_API_URL
   await httpJson(`${apiUrl}/repos/${cfg.repo}/git/refs/heads/${cfg.branch}`, {
     body: JSON.stringify({ force: cfg.force ?? false, sha: cfg.sha }),
@@ -88,8 +88,8 @@ export async function updateBranchRef(
  * is swallowed so cleanup after a failed or re-run publish never itself throws.
  * Any other non-2xx (e.g. 401/403 auth) propagates.
  */
-export async function deleteBranchRef(config: GitRefOptions): Promise<void> {
-  const cfg = { __proto__: null, ...config } as GitRefOptions
+export async function deleteBranchRef(config: GitRefConfig): Promise<void> {
+  const cfg = { __proto__: null, ...config } as GitRefConfig
   const apiUrl = cfg.apiUrl ?? DEFAULT_API_URL
   try {
     await httpText(`${apiUrl}/repos/${cfg.repo}/git/refs/heads/${cfg.branch}`, {

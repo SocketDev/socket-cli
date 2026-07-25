@@ -5,6 +5,8 @@ user-invocable: true
 allowed-tools: Bash, Read, Edit
 model: claude-haiku-4-5
 context: fork
+metadata:
+  internal: true
 ---
 
 # agent-ci

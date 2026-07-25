@@ -34,7 +34,7 @@ import type { ExternalToolsJson, PlatformEntry, Tool } from './update.mts'
 
 const logger = getDefaultLogger()
 
-export interface EditOptions {
+export interface EditConfig {
   name: string | undefined
   target: string | undefined
   apply: boolean
@@ -46,8 +46,8 @@ export interface EditOptions {
   sha: string | undefined
 }
 
-export function parseArgs(argv: string[] = process.argv.slice(2)): EditOptions {
-  const opts: EditOptions = {
+export function parseArgs(argv: string[] = process.argv.slice(2)): EditConfig {
+  const opts: EditConfig = {
     name: undefined,
     target: undefined,
     apply: false,

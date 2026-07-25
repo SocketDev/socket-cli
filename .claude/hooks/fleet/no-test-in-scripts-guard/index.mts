@@ -38,8 +38,14 @@ import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 // single-separator.
 const TEST_IN_SCRIPTS_RE = /(?:^|\/)scripts\/.*\.test\.[a-z]+$/
 
+// A `scripts/` SUBFOLDER of a test tree (test/scripts/fleet/…) is
+// runner-visible and exempt — the guard targets tests co-located under a
+// top-level scripts/ tree, not test suites organized by subject.
+const TEST_TREE_SCRIPTS_RE = /(?:^|\/)test\/(?:.*\/)?scripts\//
+
 export function isTestInScripts(filePath: string): boolean {
-  return TEST_IN_SCRIPTS_RE.test(normalizePath(filePath))
+  const norm = normalizePath(filePath)
+  return TEST_IN_SCRIPTS_RE.test(norm) && !TEST_TREE_SCRIPTS_RE.test(norm)
 }
 
 export const check = editGuard((filePath, _content, _payload) => {

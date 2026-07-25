@@ -31,7 +31,7 @@ import { globSync } from '@socketsecurity/lib-stable/globs/match'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
-export interface CollectTrackedFilesOptions {
+export interface CollectTrackedFilesConfig {
   /**
    * The repo (or subtree) root the patterns and the git query resolve against.
    */
@@ -92,9 +92,9 @@ async function listTrackedFiles(cwd: string): Promise<string[]> {
  */
 export async function collectTrackedFiles(
   patterns: readonly string[],
-  config: CollectTrackedFilesOptions,
+  config: CollectTrackedFilesConfig,
 ): Promise<string[]> {
-  const cfg = { __proto__: null, ...config } as CollectTrackedFilesOptions
+  const cfg = { __proto__: null, ...config } as CollectTrackedFilesConfig
   const { absolute = false, cwd } = cfg
   const submodulePaths = await getSubmodulePaths({ cwd })
   const ignore = [

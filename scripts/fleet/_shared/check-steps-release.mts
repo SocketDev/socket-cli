@@ -165,6 +165,15 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // format/git half of the generated-tree single source of truth.
     () =>
       run('node', ['scripts/fleet/check/generated-globs-are-consistent.mts']),
+    // The `@lockstep-mirror` lint/format exemption may only land on a genuine
+    // verbatim mirror declared `mirror: true` in the lockstep manifest, and
+    // every declared mirror must actually carry the marker + its
+    // .prettierignore entry. Forward + reverse gates tie the paste-anywhere
+    // escape hatch to the manifest so the exempt set can't grow silently.
+    () =>
+      run('node', [
+        'scripts/fleet/check/lockstep-mirror-markers-are-declared.mts',
+      ]),
     // A PENDING release's CHANGELOG entry must be DERIVED from the commits it
     // releases (run `node scripts/fleet/bump.mts`), never hand-written ahead of the
     // tag. Fires only when package.json is ahead of the last v<semver> tag;
@@ -239,6 +248,17 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // no-ops in offline CI lanes + repos with no pin (the wheelhouse producer).
     releaseStep([
       'scripts/fleet/check/release-and-cascade-are-paired.mts',
+      '--quiet',
+    ]),
+    // The RELEASE CASCADE GRAPH's read side: every published fleet package's
+    // downstream declarations — consumer catalog pins, the fleet catalog,
+    // socket-registry's manifest.json purl entry — track its registry latest,
+    // with lag going red and the owed action named. Registry reads → release
+    // tier; sibling-clone/offline gaps skip honestly; wheelhouse-only in
+    // effect (members have no template/base → vacuous pass). Graph:
+    // scripts/fleet/lib/release-cascade.mts.
+    releaseStep([
+      'scripts/fleet/check/cascade-followups-are-settled.mts',
       '--quiet',
     ]),
     // Persisted release pins store ONLY exact canonical values — the belt twin of

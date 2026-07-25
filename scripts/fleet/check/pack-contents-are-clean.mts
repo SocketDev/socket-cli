@@ -9,6 +9,12 @@
 // contract. A wrong `files` field publishes silently; this catches it at
 // check time from the REAL pack output, not a prediction.
 //
+// It also gates the PACKED MANIFEST's lifecycle scripts: every declared
+// preinstall/install/postinstall/prepare/prepack must resolve to a file
+// INSIDE the tarball — the consumer's installer runs these from the tarball
+// alone, so a repo-only target breaks every install (the sdk 4.0.3 manifest
+// shipped `preinstall` → scripts/fleet/setup/… with no such file packed).
+//
 // Private packages (`"private": true`) never publish, so the check passes
 // without packing. The pipeline (release program 13d) runs this before every
 // staged publish; `check --all` runs it too.
@@ -20,13 +26,25 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 // oxlint-disable-next-line socket/prefer-async-spawn -- sync CLI check; pack + tar listing are sequential by nature.
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { REPO_ROOT } from '../paths.mts'
+import { findDanglingLifecycleScripts } from '../_shared/lifecycle-scripts.mts'
+import { isCoveredByFiles } from '../_shared/pack-files.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { resolveReleaseSubject } from '../_shared/release-subject.mts'
+import { withPrunedPackManifest } from '../publish-infra/npm/pack-manifest.mts'
+
+import type { DanglingLifecycleScript } from '../_shared/lifecycle-scripts.mts'
+
+// Re-exported for the isCoveredByFiles consumers/tests that import it from
+// this check — the implementation moved to _shared/pack-files.mts so the
+// publish pack surface shares the one files-field matcher.
+export { isCoveredByFiles } from '../_shared/pack-files.mts'
 
 const logger = getDefaultLogger()
 
@@ -55,35 +73,6 @@ export interface PackClassification {
   readonly hidden: string[]
   readonly outsideFiles: string[]
   readonly scaffolding: string[]
-}
-
-/**
- * True when a tarball-relative path is covered by a package.json `files`
- * entry (a listed file, or anything under a listed directory). A missing /
- * empty `files` field covers everything (npm's default). Pure.
- */
-export function isCoveredByFiles(
-  entry: string,
-  filesField: readonly string[] | undefined,
-): boolean {
-  if (!filesField || filesField.length === 0) {
-    return true
-  }
-  const e = normalizePath(entry)
-  for (const f of filesField) {
-    const nf = normalizePath(f).replace(/\/+$/, '')
-    if (e === nf || e.startsWith(`${nf}/`)) {
-      return true
-    }
-    // A simple one-level glob (`lib/*.js`) — match by prefix + suffix.
-    if (nf.includes('*')) {
-      const [pre = '', post = ''] = nf.split('*', 2)
-      if (e.startsWith(pre) && e.endsWith(post)) {
-        return true
-      }
-    }
-  }
-  return false
 }
 
 /**
@@ -128,12 +117,39 @@ export function classifyPackEntries(
   return { clean, hidden, outsideFiles, scaffolding }
 }
 
+export interface PackInspection {
+  /**
+   * Tarball entries, stripped of the leading `package/`.
+   */
+  readonly entries: string[]
+  /**
+   * The `scripts` map of the PACKED package.json (what consumers install).
+   */
+  readonly packedScripts: Record<string, unknown> | undefined
+}
+
+/**
+ * The dangling lifecycle scripts of a PACKED manifest: every declared
+ * preinstall/install/postinstall/prepare/prepack whose `node <path>` target
+ * is not a tarball entry. Consumers run these from the tarball alone, so any
+ * hit is a broken install. Pure.
+ */
+export function findPackedManifestDanglers(
+  packedScripts: Record<string, unknown> | undefined,
+  entries: readonly string[],
+): DanglingLifecycleScript[] {
+  const entrySet = new Set(entries.map(e => normalizePath(e)))
+  return findDanglingLifecycleScripts(packedScripts, rel =>
+    entrySet.has(normalizePath(rel)),
+  )
+}
+
 /**
  * Pack the package at `pkgRoot` into a temp dir and return the tarball's
- * entry list (stripped of the leading `package/`). Undefined on pack/tar
- * failure (the caller fails loud).
+ * entry list (stripped of the leading `package/`) plus the packed manifest's
+ * `scripts` map. Undefined on pack/tar failure (the caller fails loud).
  */
-export function packAndList(pkgRoot: string): string[] | undefined {
+export function packAndInspect(pkgRoot: string): PackInspection | undefined {
   const dest = mkdtempSync(path.join(os.tmpdir(), 'pack-clean-'))
   const packed = spawnSync('pnpm', ['pack', '--pack-destination', dest], {
     cwd: pkgRoot,
@@ -155,14 +171,35 @@ export function packAndList(pkgRoot: string): string[] | undefined {
   if (listed.status !== 0) {
     return undefined
   }
-  return String(listed.stdout ?? '')
+  const entries = String(listed.stdout ?? '')
     .split('\n')
     .map(s => s.trim())
     .filter(Boolean)
     .map(e => e.replace(/^package\//, ''))
+  // The manifest consumers actually install is the one INSIDE the tarball —
+  // the on-disk manifest can differ (pnpm's exportable rewrite, the publish
+  // pipeline's pack-time pruning), so read the packed bytes.
+  const manifestRead = spawnSync(
+    'tar',
+    ['-xzOf', tarball, 'package/package.json'],
+    { timeout: 60_000 },
+  )
+  if (manifestRead.status !== 0) {
+    return undefined
+  }
+  let packedScripts: Record<string, unknown> | undefined
+  try {
+    const packedManifest = JSON.parse(String(manifestRead.stdout ?? '')) as {
+      scripts?: Record<string, unknown> | undefined
+    }
+    packedScripts = packedManifest.scripts
+  } catch {
+    return undefined
+  }
+  return { entries, packedScripts }
 }
 
-function main(): void {
+async function main(): Promise<void> {
   const quiet = process.argv.includes('--quiet')
   const manifestPath = path.join(REPO_ROOT, 'package.json')
   const pkg = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
@@ -178,21 +215,49 @@ function main(): void {
     }
     return
   }
-  const entries = packAndList(REPO_ROOT)
-  if (!entries) {
+  // Pack through the SAME manifest-prune bracket the publish pipeline packs
+  // through, so this gate verifies the sanctioned pack surface end-to-end: a
+  // pruning regression leaves the dangling lifecycle ref in the packed
+  // manifest and this check goes red.
+  const subject = resolveReleaseSubject(REPO_ROOT)
+  const inspection = await withPrunedPackManifest(subject.dir, async () =>
+    packAndInspect(REPO_ROOT),
+  )
+  if (!inspection) {
     logger.fail(
       '[pack-contents-are-clean] pnpm pack (or tar listing) failed — cannot verify the tarball. Run `pnpm pack` manually to see the error.',
     )
     process.exitCode = 1
     return
   }
+  const { entries, packedScripts } = inspection
   const { hidden, outsideFiles, scaffolding } = classifyPackEntries(
     entries,
     pkg.files,
   )
+  const danglers = findPackedManifestDanglers(packedScripts, entries)
+  if (danglers.length) {
+    const lines = [
+      `[pack-contents-are-clean] ${pkg.name ?? 'package'} PACKED manifest declares ${danglers.length} lifecycle script${danglers.length === 1 ? '' : 's'} whose target is not in the tarball — consumer installs will break:`,
+    ]
+    for (const d of danglers) {
+      lines.push(
+        `  ${d.name}: ${d.command}`,
+        `    missing from tarball: ${d.missing.join(', ')}`,
+      )
+    }
+    lines.push(
+      '',
+      '  Fix: drop the repo-only lifecycle script from the published manifest',
+      '  (the publish pipeline prunes these at pack time via',
+      '  publish-infra/npm/pack-manifest.mts) or ship the target in `files`.',
+    )
+    logger.fail(lines.join('\n'))
+    process.exitCode = 1
+  }
   const bad = scaffolding.length + hidden.length + outsideFiles.length
   if (bad === 0) {
-    if (!quiet) {
+    if (!quiet && danglers.length === 0) {
       logger.success(
         `[pack-contents-are-clean] tarball is clean (${entries.length} entries).`,
       )
@@ -229,5 +294,10 @@ function main(): void {
 }
 
 if (isMainModule(import.meta.url)) {
-  main()
+  // No top-level await (CJS bundle target): fail the process loud on an
+  // unexpected rejection instead.
+  main().catch((e: unknown) => {
+    logger.fail(`[pack-contents-are-clean] ${errorMessage(e)}`)
+    process.exitCode = 1
+  })
 }

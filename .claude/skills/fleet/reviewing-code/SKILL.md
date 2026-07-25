@@ -5,6 +5,8 @@ user-invocable: true
 allowed-tools: Workflow, Read, Grep, Glob, Bash(node:*), Bash(git:*), Bash(command -v:*)
 model: claude-opus-4-8
 context: fork
+metadata:
+  internal: true
 ---
 
 # reviewing-code

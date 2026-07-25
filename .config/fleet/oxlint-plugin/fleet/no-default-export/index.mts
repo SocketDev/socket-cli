@@ -44,6 +44,7 @@
 
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import type { AstNode, RuleContext, RuleFixer } from '../../lib/rule-types.mts'
+import { isLockstepMirror } from '../../lib/lockstep-mirror.mts'
 
 // Tooling config entrypoints whose loader reads the module's `default` export
 // by contract (vitest / oxlint / rolldown / vite / tsup / …): `foo.config.mts`,
@@ -76,6 +77,10 @@ const rule = {
   },
 
   create(context: RuleContext) {
+    // Verbatim upstream mirrors keep upstream's shape; see lib/lockstep-mirror.mts.
+    if (isLockstepMirror(context)) {
+      return {}
+    }
     const filename = context.filename ?? context.getFilename?.() ?? ''
     if (isConfigEntrypoint(filename)) {
       return {}

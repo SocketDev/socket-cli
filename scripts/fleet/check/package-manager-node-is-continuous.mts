@@ -29,7 +29,7 @@ export function sameExecutable(left: string, right: string): boolean {
   }
 }
 
-export interface PackageManagerNodeOptions {
+export interface PackageManagerNodeConfig {
   executablePath: string
   npmNodeExecPath: string | undefined
 }
@@ -40,9 +40,9 @@ export function isNodeExecutablePath(executablePath: string): boolean {
 }
 
 export function packageManagerNodeExecutables(
-  config: PackageManagerNodeOptions,
+  config: PackageManagerNodeConfig,
 ): readonly string[] {
-  const cfg = { __proto__: null, ...config } as PackageManagerNodeOptions
+  const cfg = { __proto__: null, ...config } as PackageManagerNodeConfig
   // npm_node_execpath is historically a Node executable, but standalone pnpm
   // sets it to its own launcher in some CI environments. A package-manager
   // launcher is not evidence of a second Node runtime, so only compare the

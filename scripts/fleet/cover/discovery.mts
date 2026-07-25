@@ -67,17 +67,20 @@ export interface ResolvedSuite {
   runExclude: string[]
 }
 
-// Read the repo-owned cover config (`.config/repo/cover.json`, legacy
-// `.config/cover.json` fallback). Returns an empty config when absent so
-// callers get fleet defaults. A malformed file is reported and treated as
-// empty rather than crashing the run. `repoDir` defaults to the live repo
-// root; tests pass a fixture dir.
+// Read the repo's cover config from the `cover` section of socket-wheelhouse.json
+// (`.config/repo/socket-wheelhouse.json`) — folded in from the former standalone
+// cover.json per config-segregation. Returns an empty config when the file or
+// section is absent so callers get fleet defaults. A malformed file is reported
+// and treated as empty rather than crashing the run. `repoDir` defaults to the
+// live repo root; tests pass a fixture dir.
 export function readCoverConfig(repoDir: string): CoverConfig {
-  const configPath = [
-    path.join(repoDir, '.config', 'repo', 'cover.json'),
-    path.join(repoDir, '.config', 'cover.json'),
-  ].find(p => existsSync(p))
-  if (!configPath) {
+  const configPath = path.join(
+    repoDir,
+    '.config',
+    'repo',
+    'socket-wheelhouse.json',
+  )
+  if (!existsSync(configPath)) {
     return {}
   }
   try {
@@ -88,7 +91,11 @@ export function readCoverConfig(repoDir: string): CoverConfig {
       )
       return {}
     }
-    return parsed as CoverConfig
+    const cover = (parsed as { cover?: unknown | undefined }).cover
+    if (!cover || typeof cover !== 'object') {
+      return {}
+    }
+    return cover as CoverConfig
   } catch (e) {
     logger.warn(
       `Failed to parse ${path.relative(repoDir, configPath)}: ${errorMessage(e)} — ignoring`,

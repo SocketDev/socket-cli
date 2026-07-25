@@ -12,11 +12,15 @@
 // bumped 1.4.3 → 1.4.4, so 1.4.3 was never published. The VERSION is the user's
 // decision; derived bumps are patch/minor (patch default), MAJOR never derived.
 //
-// The sanctioned flow: gather evidence with `bump.mts --dry-run` (always
-// allowed), present the version question to the user, and STOP. After the
-// user names the version they authorize the run with `Allow release-bump
-// bypass`; a MAJOR run additionally requires `Allow major-bump bypass`. In
-// CI, major happens only when a human manually selected it on the
+// The sanctioned flow: the RELEASE SCRIPT owns the bump — it derives the
+// version + CHANGELOG. To name the TARGET without a real bump, set a
+// `-prerelease` hint (`X.Y.Z-prerelease` in package.json / Cargo.toml) — that
+// write is ALLOWED here, and committedVersionHint() then pre-authorizes the
+// release tooling's finalize (no version-naming, no bypass). Evidence-gathering
+// `bump.mts --dry-run` is always allowed. A direct hand-bump (bump.mts write /
+// `npm version <arg>` / a manual non-prerelease version edit) still needs
+// `Allow release-bump bypass`; MAJOR additionally requires `Allow major-bump
+// bypass`. In CI, major happens only when a human selected it on the
 // workflow_dispatch form (this hook never runs there).
 //
 // This guard exists because an agent once decided a major bump from
@@ -180,6 +184,15 @@ export function manualBumpViolation(
     if (!incoming) {
       return undefined
     }
+    // Setting a `-prerelease` HINT (`X.Y.Z-prerelease`) is the sanctioned way to
+    // name the release TARGET for the release script — not a real bump. The
+    // release tooling consumes the hint and derives the final version +
+    // CHANGELOG, and committedVersionHint() then pre-authorizes that finalize.
+    // Blocking the hint-write forced the very "agent names a version" dance this
+    // guard exists to avoid; the release script owns the actual bump.
+    if (isPrereleaseHint(incoming)) {
+      return undefined
+    }
     let current: string | undefined
     try {
       current = (
@@ -266,11 +279,13 @@ export function check(payload: ToolCallPayload): GuardResult {
       '         default), MAJOR is never derived, and the bump + CHANGELOG',
       '         belong to the release workflow/scripts.',
       '',
-      '  Fix:   (1) gather evidence with `node scripts/fleet/bump.mts --dry-run`',
-      '             (always allowed);',
-      '         (2) present the version question to the user and STOP;',
-      '         (3) after the user names X.Y.Z they authorize the run by',
-      `             typing: ${BYPASS_PHRASE}`,
+      '  Fix:   let the RELEASE SCRIPT own the bump — it derives the version +',
+      '         CHANGELOG. Preferred: name the TARGET as a `-prerelease` hint',
+      '         (package.json version `X.Y.Z-prerelease`, or Cargo.toml for a',
+      '         crate) — setting that hint is allowed, and the release tooling',
+      '         consumes it and finalizes, no version-naming or bypass needed.',
+      '         Evidence-gathering `node scripts/fleet/bump.mts --dry-run` is',
+      `         always allowed. A direct hand-bump still needs: ${BYPASS_PHRASE}`,
       majorLine,
       '  In CI, major happens only when a human selects it on the',
       '  workflow_dispatch form.',

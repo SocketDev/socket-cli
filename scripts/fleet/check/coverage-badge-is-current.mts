@@ -48,7 +48,7 @@ const FIX_HINT =
   // oxlint-disable-next-line socket/prefer-node-modules-dot-cache -- socket-lint FP: the string already targets node_modules/.cache/ — it's a human-facing message, and the rule's string matcher can't see the node_modules/ prefix on the same path.
   '  Fix: run `node scripts/fleet/gen/coverage-badge.mts` and commit the refreshed badge (it regenerates from node_modules/.cache/fleet/coverage/coverage-summary.json).'
 
-export interface CoverageBadgeCheckOptions {
+export interface CoverageBadgeCheckConfig {
   // Suppress the success line (check --all batch mode).
   quiet?: boolean | undefined
   // The repo to check. main() passes REPO_ROOT; tests pass a tmp repo.
@@ -61,7 +61,7 @@ export interface CoverageBadgeCheckOptions {
  * 1 — stale or broken.
  */
 export function checkCoverageBadgeIsCurrent(
-  config: CoverageBadgeCheckOptions,
+  config: CoverageBadgeCheckConfig,
 ): number {
   const cfg = { __proto__: null, quiet: false, ...config }
   const readmePath = path.join(cfg.repoRoot, 'README.md')

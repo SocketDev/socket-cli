@@ -120,7 +120,7 @@ Record the bumped row in the summary accumulator.
 For each row in **advisory**, accumulate a markdown line:
 
 ```
-- **file-fork** `<id>`: `<local>` — <N> upstream commit(s) since <forked_at_sha[0:12]>. Review diff, cherry-pick if applicable, bump forked_at_sha.
+- **file-fork** `<id>`: `<local>` — <N> upstream commit(s) since <forked_at_sha[0:12]>. Review diff, cherry-pick if applicable, bump forked_at_sha. A `mirror: true` row re-copies verbatim instead: file bytes + `@lockstep-mirror` header sha + `forked_at_sha` move together, then `pnpm run lockstep:emit-mirror-globs`.
 - **feature-parity** `<id>`: parity score <score> below floor <floor>. Implement or downgrade criticality with reason.
 - **spec-conformance** `<id>`: upstream spec repo moved. Review for breaking changes before bumping spec_version.
 - **lang-parity** `<id>`: <details from messages[]>.

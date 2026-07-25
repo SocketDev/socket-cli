@@ -85,13 +85,13 @@ export type AuditResult = {
   readonly findings: readonly SubpathFinding[]
 }
 
-export type CliOptions = {
+export type CliConfig = {
   readonly emit: 'json' | 'report'
   readonly repo: string | undefined
   readonly projects: string
 }
 
-export function parseArgs(argv: readonly string[]): CliOptions {
+export function parseArgs(argv: readonly string[]): CliConfig {
   let emit: 'json' | 'report' = 'report'
   let repo: string | undefined
   const projects = PROJECTS
@@ -275,7 +275,7 @@ export function classify(
   return 'dead'
 }
 
-export async function audit(config: CliOptions): Promise<AuditResult> {
+export async function audit(config: CliConfig): Promise<AuditResult> {
   const cfg = { __proto__: null, ...config } as typeof config
   const hostDir = resolveHostDir(config)
   const pkgPath = path.join(hostDir, 'package.json')
@@ -349,7 +349,7 @@ export async function audit(config: CliOptions): Promise<AuditResult> {
   }
 }
 
-export function resolveHostDir(config: CliOptions): string {
+export function resolveHostDir(config: CliConfig): string {
   const cfg = { __proto__: null, ...config } as typeof config
   if (cfg.repo) {
     return path.join(cfg.projects, cfg.repo)

@@ -6,6 +6,8 @@ user-invocable: true
 allowed-tools: Workflow, Task, Read, Glob, Grep, Write, AskUserQuestion, Bash(git:*), Bash(gh api:*), Bash(find:*), Bash(ls:*), Bash(node .claude/skills/fleet/_shared/scripts/checkpoint.mts:*)
 model: claude-opus-4-8
 context: fork
+metadata:
+  internal: true
 ---
 
 # threat-modeling

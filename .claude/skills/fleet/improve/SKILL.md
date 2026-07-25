@@ -3,6 +3,7 @@ name: improve
 description: Read-only senior codebase survey that returns prioritized implementation plans for other agents to execute.
 license: MIT
 metadata:
+  internal: true
   author: shadcn
   version: "1.0.0"
 ---

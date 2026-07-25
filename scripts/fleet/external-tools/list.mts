@@ -22,12 +22,12 @@ import {
 
 const logger = getDefaultLogger()
 
-export interface ListOptions {
+export interface ListConfig {
   target: string | undefined
 }
 
-export function parseArgs(argv: string[] = process.argv.slice(2)): ListOptions {
-  const opts: ListOptions = { target: undefined }
+export function parseArgs(argv: string[] = process.argv.slice(2)): ListConfig {
+  const opts: ListConfig = { target: undefined }
   for (let i = 0, { length } = argv; i < length; i += 1) {
     const a = argv[i]!
     if (a === '--target') {

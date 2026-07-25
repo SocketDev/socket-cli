@@ -24,7 +24,7 @@ import {
   cascadeMirrorOxfmtExcludeArgs,
   cascadeMirrorOxlintIgnoreArgs,
 } from './cascade-mirror-scope.mts'
-import { buildOxfmtArgs } from './format-scope.mts'
+import { buildOxfmtArgs, NEVER_GATED_SEGMENTS } from './format-scope.mts'
 import {
   isTemplatePayloadPath,
   templatePayloadIgnoreArgs,
@@ -183,7 +183,21 @@ export function oxlintIgnoreArgs(configPath: string): string[] {
   }
   // The pattern→args re-emission (with `/**` recursion twins) lives in
   // template-payload-scope.mts and is shared with the payload pass's floor.
-  return toIgnorePatternArgs(patterns)
+  // The never-gated segment globs ride along so whole-workspace oxlint
+  // enumeration honors the same generated/vendored floor the scoped
+  // file-set path applies via `isNeverGated` — without them, `--all` linted
+  // re-tracked build payloads (packages/npm/*/package/build) that every
+  // other scope skipped.
+  const segmentGlobs = [...NEVER_GATED_SEGMENTS].map(
+    segment => `**/${segment}/**`,
+  )
+  const merged = [
+    ...new Set([
+      ...patterns.filter(pattern => typeof pattern === 'string'),
+      ...segmentGlobs,
+    ]),
+  ]
+  return toIgnorePatternArgs(merged)
 }
 
 /**

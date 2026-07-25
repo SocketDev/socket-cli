@@ -1,6 +1,8 @@
 ---
 name: optimizing-cpp-performance
 description: Audits measured C++ performance.
+metadata:
+  internal: true
 ---
 
 # Optimizing C++ Performance

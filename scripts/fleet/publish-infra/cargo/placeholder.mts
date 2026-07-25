@@ -46,7 +46,7 @@ export const PLACEHOLDER_DESCRIPTION =
   'Placeholder to reserve the name for crates.io trusted publishing. ' +
   'Real releases publish via CI (OIDC).'
 
-export interface PlaceholderCargoTomlOptions {
+export interface PlaceholderCargoTomlConfig {
   // The `description` field (crates.io requires it).
   description: string
   // The `repository` field, emitted only when provided (crates.io does not
@@ -87,9 +87,9 @@ export interface RunPlaceholderOptions {
  */
 export function buildPlaceholderCargoToml(
   name: string,
-  config: PlaceholderCargoTomlOptions,
+  config: PlaceholderCargoTomlConfig,
 ): string {
-  const cfg = { __proto__: null, ...config } as PlaceholderCargoTomlOptions
+  const cfg = { __proto__: null, ...config } as PlaceholderCargoTomlConfig
   const lines = [
     '[package]',
     `name = "${name}"`,

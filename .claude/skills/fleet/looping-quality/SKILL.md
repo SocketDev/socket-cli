@@ -4,6 +4,8 @@ description: Run scanning-quality, fix findings, and repeat until clean or the c
 user-invocable: true
 allowed-tools: Skill, Task, Read, Grep, Glob, Bash(pnpm run check:*), Bash(pnpm run test:*), Bash(pnpm test:*), Bash(pnpm run build:*), Bash(git status:*), Bash(git diff:*), Bash(git add:*), Bash(git commit:*)
 model: claude-sonnet-4-6
+metadata:
+  internal: true
 ---
 
 # looping-quality

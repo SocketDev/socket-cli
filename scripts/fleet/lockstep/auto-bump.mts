@@ -49,7 +49,7 @@ import {
   resolveManifestRoot,
 } from './manifest.mts'
 
-import type { ApplyOptions, ApplyResult } from './auto-bump-apply.mts'
+import type { ApplyConfig, ApplyResult } from './auto-bump-apply.mts'
 import type { Report, VersionPinReport } from './types.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 
@@ -60,7 +60,7 @@ export {
   isSuspectBackward,
   writePinnedFields,
 }
-export type { ApplyOptions, ApplyResult }
+export type { ApplyConfig, ApplyResult }
 
 export type UpgradePolicy = 'track-latest' | 'major-gate' | 'locked'
 

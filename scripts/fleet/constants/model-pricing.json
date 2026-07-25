@@ -9,7 +9,7 @@
       "kind": "first-party",
       "apiBase": "https://api.anthropic.com",
       "pricingSource": "https://platform.claude.com/docs/en/about-claude/pricing",
-      "snapshot": "2026-07-12",
+      "snapshot": "2026-07-25",
       "notes": [
         "multipliers.batch 0.5 = the Batch API's 50%-off on input + output.",
         "multipliers.cacheRead 0.1 = a prompt-cache hit costs 0.1x base input.",
@@ -51,6 +51,11 @@
           "outputPerMtok": 50,
           "contextWindow": 1000000,
           "suspended": true
+        },
+        "claude-haiku-4-5-20251001": {
+          "inputPerMtok": 1,
+          "outputPerMtok": 5,
+          "contextWindow": 200000
         }
       },
       "plans": {

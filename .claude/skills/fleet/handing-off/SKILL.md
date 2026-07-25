@@ -6,6 +6,8 @@ argument-hint: 'What will the next session focus on?'
 allowed-tools: Bash(mkdir:*), Bash(date:*), Read, Write
 model: claude-haiku-4-5
 context: fork
+metadata:
+  internal: true
 ---
 
 # handing-off

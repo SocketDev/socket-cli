@@ -1,0 +1,182 @@
+name: 🩹 Release reconcile
+
+# TAG-GAP HEALER — heals versions that are LIVE on the npm registry but have
+# no v* tag + immutable GH release. Owner promotes happen in the npm web UI,
+# where no local pipeline is running, so the published version sits tagless
+# until someone reconciles; this workflow does that automatically:
+#
+#   1. gap — near-free on the common path: ONE public packument read + ONE
+#      `git ls-remote --tags`, no install, exits early when every published
+#      version carries its tag. Handles multi-version gaps, oldest first,
+#      ratcheted to versions above the newest existing tag so pre-convention
+#      untagged history never red-loops the cron.
+#   2. reconcile — only on a gap: checks out the version's CONTENT COMMIT
+#      (the bump commit where package.json flipped to it, resolved via
+#      bump.mts's exported anchor logic), rebuilds it, and runs the pipeline's
+#      registry-truth reconcile (`publish-pipeline.mts --reconcile`): re-pack
+#      vs the packument dist digests, then the tag + immutable GH release via
+#      the existing ensureTagAndRelease path behind requireRegistryLive.
+#
+# SAFETY: never publishes, never touches npm auth or an OTP, never moves
+# dist-tags. A content mismatch fails the job LOUDLY — a tag is never forced
+# onto bytes that don't match the published tarball. Tag push + release cut
+# authenticate via the release App token, exactly like github-release.yml.
+# Cascade-owned: byte-identical fleet-wide (bundle.json mirror); edit
+# template/base/.github/workflows/release-reconcile.yml and re-cascade.
+
+on:
+  schedule:
+    # Every 30 minutes, offset from the top of the hour. The gap job is two
+    # unauthenticated-grade network reads on the no-gap path — near-free.
+    - cron: '13,43 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Walk the reconcile without pushing a tag or cutting a release.'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# Two runs must never race a tag push — queue, never cancel a healing run.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  gap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      has-gap: ${{ steps.gap.outputs.has-gap }}
+      gaps: ${{ steps.gap.outputs.gaps }}
+    steps:
+      # First step can't call the local ./.github/actions/fleet/checkout
+      # composite (nothing checked out yet); bootstrap the workspace with the
+      # same inline git-fetch shape at fetch-depth 1, non-persisting auth.
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+          else
+            git fetch "${FETCH_ARGS[@]}"
+          fi
+          git checkout -q --detach FETCH_HEAD
+      # Deliberately NO setup-and-install: reconcile-gap.mts is dependency-free
+      # by design (node builtins only) so the cron's common no-gap path runs on
+      # the runner's preinstalled Node — modern runner images strip .mts types
+      # natively. Registry-less repos (private, no package name) self-skip.
+      - name: Detect tag gaps
+        id: gap
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+        run: node scripts/fleet/release-pipeline/reconcile-gap.mts
+
+  reconcile:
+    needs: gap
+    if: ${{ needs.gap.outputs.has-gap == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      # Heal strictly one version at a time: distinct versions tag distinct
+      # commits, but sequential runs keep tag pushes + summaries linear.
+      max-parallel: 1
+      matrix:
+        version: ${{ fromJSON(needs.gap.outputs.gaps) }}
+    env:
+      # Socket Firewall + CLI auth for the sfw-wrapped setup + pnpm install.
+      SOCKET_API_KEY: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+    steps:
+      # First step must be the third-party actions/checkout (GitHub fetches it
+      # independently) to populate the workspace so the LOCAL
+      # ./.github/actions/* composite resolves; setup-and-install re-checks-out
+      # at the full depth below.
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-15)
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup + install
+        uses: ./.github/actions/fleet/setup-and-install
+        with:
+          # Full history + tags: the content-commit search walks package.json
+          # history, and the release stage checks the existing v* tags.
+          checkout-fetch-depth: '0'
+      # The version's content commit: the bump commit where package.json
+      # flipped to it. A missing flip commit fails LOUDLY — the healer never
+      # guesses a commit to tag.
+      - name: Resolve content commit
+        id: flip
+        env:
+          VERSION: ${{ matrix.version }}
+        run: |
+          set -euo pipefail
+          echo "pipeline-sha=$(git rev-parse HEAD)" >> "${GITHUB_OUTPUT}"
+          node scripts/fleet/release-pipeline/reconcile-gap.mts --flip "${VERSION}"
+      - name: Checkout content commit
+        env:
+          FLIP_SHA: ${{ steps.flip.outputs.flip }}
+          PIPELINE_SHA: ${{ steps.flip.outputs.pipeline-sha }}
+        run: |
+          set -euo pipefail
+          git checkout --detach "${FLIP_SHA}"
+          # Run TODAY's pipeline code against the historical content: overlay
+          # the default branch's scripts/fleet as an uncommitted working-tree
+          # change — HEAD stays the content commit, so the tag lands on it.
+          # Fleet packages don't ship scripts/ in their pack; if one does, the
+          # verify digest compare fails loudly rather than tagging mixed
+          # content.
+          git checkout "${PIPELINE_SHA}" -- scripts/fleet
+          # Re-install against the content commit's lockfile so the rebuild
+          # reproduces the published bytes.
+          pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm run build
+      # Tag push + immutable release cut authenticate via the release App —
+      # the same minter github-release.yml uses; the workflow's own token
+      # stays contents: read.
+      - name: Mint release App token
+        id: app-token
+        uses: ./.github/actions/fleet/github-release-app-token
+        with:
+          client-id: ${{ vars.SOCKET_RELEASE_CLIENT_ID }}
+          private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+      - name: Reconcile tag + release
+        env:
+          DRY_RUN: ${{ inputs.dry-run == true && 'true' || 'false' }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          SERVER_URL: ${{ github.server_url }}
+          VERSION: ${{ matrix.version }}
+        run: |
+          set -euo pipefail
+          # ensureTagAndRelease pushes the tag with plain git; authorize the
+          # push for this job via a local extraheader — cleared in the always()
+          # step below, never persisted into the checkout credentials.
+          AUTH_B64="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 | tr -d '\n')"
+          git config --local "http.${SERVER_URL}/.extraheader" "AUTHORIZATION: basic ${AUTH_B64}"
+          ARGS=(--reconcile "${VERSION}")
+          if [ "${DRY_RUN}" = "true" ]; then
+            ARGS+=(--dry-run)
+          fi
+          node scripts/fleet/publish-pipeline.mts "${ARGS[@]}"
+      - name: Clear tag-push credentials
+        if: ${{ always() }}
+        env:
+          SERVER_URL: ${{ github.server_url }}
+        run: git config --local --unset-all "http.${SERVER_URL}/.extraheader" || true

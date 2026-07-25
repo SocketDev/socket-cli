@@ -4,6 +4,7 @@ description: Designs and reviews accessible interfaces using reference research 
 license: MIT
 compatibility: Useful on its own as a design methodology and craft reference; works best with Refero MCP available for live style, screen, and flow research.
 metadata:
+  internal: true
   author: SocketDev
   sources: Refero skill @ f78b4ecc (2026-07-10)
 ---

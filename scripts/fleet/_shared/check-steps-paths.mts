@@ -138,6 +138,26 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // upstream/ tree). See docs/agents.md/fleet/upstream-references.md.
     () =>
       run('node', ['scripts/fleet/check/upstream-contracts-are-current.mts']),
+    // The composite → upstream PORT MAP is total (every .github/actions/fleet/*
+    // composite declares what it ports — `[]` for a Socket-original), every
+    // declared port has a release-tagged + sha256-stamped upstream/ reference
+    // block, and `portedAt` equals the pinned tag — so a vendor-actions re-pin
+    // without a re-port review goes red. THE lock-step gate for inlined
+    // third-party actions. See docs/agents.md/fleet/upstream-references.md.
+    () =>
+      run('node', ['scripts/fleet/check/action-ports-are-lock-stepped.mts']),
+    // The canonical GH Actions allowlist (auditing-gha CANONICAL_PATTERNS)
+    // matches the template's workflow surface in BOTH directions: every
+    // cascaded template/base `uses:` is pattern-covered — GitHub validates
+    // selected-actions at plan time, so a miss startup-fails every
+    // strict-allowlist repo's scheduled runs with 0 jobs (incident
+    // 2026-07-21: gh-aw cascaded actions/create-github-app-token into
+    // weekly-update.lock.yml with no canonical pattern) — and every canonical
+    // entry has a live consumer, in-template or declared external.
+    () =>
+      run('node', [
+        'scripts/fleet/check/gha-allowlist-matches-template-uses.mts',
+      ]),
     // Belt: no `upstream/` reference is git-tracked as a gitlink — the
     // `.gitmodules` `ref`+`sha256:` is the pin, so a `160000` index entry is a
     // redundant copy. Write-time twin: no-upstream-gitlink-guard. See
@@ -155,6 +175,17 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     () =>
       run('node', [
         'scripts/fleet/check/ignored-files-are-untracked.mts',
+        '--quiet',
+      ]),
+    // Companion: no build OUTPUT is tracked (bundle / dispatch tables / oxlint
+    // plugin / anything under _dist/). Knows a path is an output structurally
+    // from paths.mts, so it catches a new output tracked BEFORE it is gitignored
+    // — the gap the ignore-based belt above can't see. Only the dep-0 seeds
+    // (fleet.mjs, .npmrc) may be committed. See
+    // docs/agents.md/fleet/generated-outputs-are-untracked.md.
+    () =>
+      run('node', [
+        'scripts/fleet/check/generated-outputs-are-untracked.mts',
         '--quiet',
       ]),
     // Companion: every sparse submodule declares a `verify =` consumer (the
@@ -290,6 +321,14 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // gate on any unsigned/bad-signed commit ahead of the base; fail-open when
     // the base can't be resolved (offline/shallow CI).
     () => run('node', ['scripts/fleet/check/commits-are-signed.mts']),
+    // gh's default repo must resolve to origin. In a fork checkout an
+    // unset/misdirected default sends bare gh commands (workflow dispatch,
+    // issue/PR queries) to the UPSTREAM PARENT (2026-07-24: npm-publish.yml
+    // dispatch 404'd on package-url/packageurl-js — twice). Local-only
+    // (git config reads); fix = `gh repo set-default <origin>`, auto-applied
+    // by `doctor --fix` / `pnpm run fix --all`.
+    () =>
+      run('node', ['scripts/fleet/check/gh-default-repo-matches-origin.mts']),
     // Fleet soak-exclude parity. Wheelhouse-only at runtime — the script
     // no-ops when `scripts/sync-scaffolding/manifest.mts` is absent (i.e.
     // in every cascaded fleet repo). Enforces that every versioned soak

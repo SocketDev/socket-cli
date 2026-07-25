@@ -5,6 +5,8 @@ user-invocable: true
 allowed-tools: Read, Bash, Edit, Write
 model: claude-sonnet-4-6
 context: fork
+metadata:
+  internal: true
 ---
 
 # setup-repo

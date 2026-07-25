@@ -5,6 +5,8 @@ user-invocable: true
 allowed-tools: Workflow, AskUserQuestion, Read, Edit, Grep, Glob, Bash(gh api:*), Bash(gh auth:*), Bash(pnpm:*), Bash(git:*), Bash(node:*), Bash(jq:*)
 model: claude-sonnet-4-6
 context: fork
+metadata:
+  internal: true
 ---
 
 # updating-security

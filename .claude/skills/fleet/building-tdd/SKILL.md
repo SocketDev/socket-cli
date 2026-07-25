@@ -1,6 +1,8 @@
 ---
 name: building-tdd
 description: Use red-green-refactor for a feature or bug fix when the user asks for test-first work.
+metadata:
+  internal: true
 ---
 
 # building-tdd

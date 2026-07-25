@@ -163,7 +163,7 @@ export function expandNames(raw: string): string[] {
 // whole enclosing section's links, while findings stay paragraph-granular.
 const SECTION_HEADER_RE = /^###\s+\S/
 
-export interface ParagraphScanOptions {
+export interface ParagraphScanConfig {
   // Restrict to the CLAUDE.md fleet block (BEGIN/END FLEET-CANONICAL). For docs
   // the whole body is in scope and each paragraph's "section" is delimited by
   // `###` headings.
@@ -177,7 +177,7 @@ export interface ParagraphScanOptions {
 export function sirenParagraphs(
   file: string,
   body: string,
-  config: ParagraphScanOptions,
+  config: ParagraphScanConfig,
 ): RuleParagraph[] {
   const { fleetOnly } = { __proto__: null, ...config } as typeof config
   const lines = body.split('\n')
@@ -323,8 +323,8 @@ export function optOutCategory(text: string): string | undefined {
   return m ? m[1]!.toLowerCase() : undefined
 }
 
-export interface AuditOptions {
-  // Restrict to the CLAUDE.md fleet block (see ParagraphScanOptions).
+export interface AuditConfig {
+  // Restrict to the CLAUDE.md fleet block (see ParagraphScanConfig).
   readonly fleetOnly: boolean
   // Resolve a linked fleet detail doc's text (repo-root-relative path →
   // contents), undefined when the file is missing.
@@ -336,7 +336,7 @@ export function auditFile(
   file: string,
   body: string,
   inv: EnforcerInventory,
-  config: AuditOptions,
+  config: AuditConfig,
 ): AuditResult {
   const { fleetOnly, readDoc } = {
     __proto__: null,

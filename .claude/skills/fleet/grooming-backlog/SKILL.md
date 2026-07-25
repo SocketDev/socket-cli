@@ -1,7 +1,9 @@
 ---
 name: grooming-backlog
-description: Collapse noisy backlogs: verify done work, fold duplicates, delete stale tasks.
+description: "Collapse noisy backlogs: verify done work, fold duplicates, delete stale tasks."
 user-invocable: true
+metadata:
+  internal: true
 ---
 
 # grooming-backlog

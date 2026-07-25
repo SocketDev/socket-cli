@@ -21,6 +21,7 @@
 import { stringComparator } from '../../lib/comparators.mts'
 
 import type { AstNode, RuleContext, RuleFixer } from '../../lib/rule-types.mts'
+import { isLockstepMirror } from '../../lib/lockstep-mirror.mts'
 
 // The opt-in marker: a `/* sort */` block comment (any inner whitespace).
 const SORT_MARKER_RE = /^\s*sort\s*$/
@@ -66,6 +67,10 @@ const rule = {
   },
 
   create(context: RuleContext) {
+    // Verbatim upstream mirrors keep upstream's shape; see lib/lockstep-mirror.mts.
+    if (isLockstepMirror(context)) {
+      return {}
+    }
     const sourceCode = context.getSourceCode
       ? context.getSourceCode()
       : context.sourceCode

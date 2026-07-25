@@ -5,6 +5,8 @@ user-invocable: true
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash(git:*), Bash(node:*), Bash(pnpm:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(cat:*), Bash(head:*), Bash(tail:*), Bash(docker info:*), Bash(open -a OrbStack:*)
 model: claude-sonnet-4-6
 context: fork
+metadata:
+  internal: true
 ---
 
 # greening-ci-local

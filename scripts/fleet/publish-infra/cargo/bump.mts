@@ -1,14 +1,16 @@
 /**
  * @file Version-bump orchestration for the cargo-publish CI path: derive the
  *   next version + CHANGELOG section from the Conventional Commits since the
- *   last release tag (the registry-agnostic lib/changelog.mts helpers, the same
- *   ones scripts/fleet/bump.mts uses), write the version into Cargo.toml
- *   (`[workspace.package]` if present, else `[package]`) with a table-scoped
- *   replace that never touches dependency versions, prepend the CHANGELOG
- *   section, then commit the changed files (Cargo.toml, CHANGELOG.md, and
- *   Cargo.lock if it changed) via the GitHub git-objects API for a signed
- *   commit without a local GPG key. No dist/ rebuild step (unlike npm) — cargo
- *   builds from source at publish time.
+ *   LAST RELEASED version (the shared lib/release-anchor.mts chain bound to
+ *   crates.io — tag → Cargo.toml version-flip commit → crates.io publish time,
+ *   else stop loud, never widen to an older tag — feeding the registry-agnostic
+ *   lib/changelog.mts helpers, the same ones scripts/fleet/bump.mts uses),
+ *   write the version into Cargo.toml (`[workspace.package]` if present, else
+ *   `[package]`) with a table-scoped replace that never touches dependency
+ *   versions, prepend the CHANGELOG section, then commit the changed files
+ *   (Cargo.toml, CHANGELOG.md, and Cargo.lock if it changed) via the GitHub
+ *   git-objects API for a signed commit without a local GPG key. No dist/
+ *   rebuild step (unlike npm) — cargo builds from source at publish time.
  */
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
@@ -20,58 +22,144 @@ import { gt } from '@socketsecurity/lib-stable/versions/compare'
 import {
   bumpLevelFor,
   changelogHeading,
-  COMMIT_LOG_FORMAT,
   computeNextVersion,
   generateChangelogSection,
-  parseConventionalCommits,
   promoteUnreleased,
   repoBaseUrl,
-  resolveBumpBase,
   sectionHasEntries,
   versionHintFrom,
 } from '../../lib/changelog.mts'
 import { commitViaGithubApi } from '../../lib/commit-via-github-api.mts'
+import {
+  deriveReleaseCommits,
+  describeAnchor,
+} from '../../lib/release-anchor.mts'
 import {
   discardReleaseBranch,
   openReleaseBranch,
   resolveReleaseEnv,
 } from '../release-branch.mts'
 import { logger, rootPath, runCapture } from '../shared.mts'
-import { fetchPublishedVersion } from './registry.mts'
+import { fetchPublishedAt, fetchPublishedVersionChecked } from './registry.mts'
 import { readCargoPackage } from './shared.mts'
 
 import type { BumpLevel } from '../../lib/changelog.mts'
+import type {
+  ReleaseDerivation,
+  ReleaseLane,
+} from '../../lib/release-anchor.mts'
 import type { BumpResult } from '../release-branch.mts'
+import type { CargoPackage } from './shared.mts'
 
 /**
- * Resolve the most recent `v<semver>` release tag, or undefined for a repo with
- * no release tags yet (first release — all history is the changelog). Mirrors
- * scripts/fleet/bump.mts.
+ * The `version = "…"` value scoped to a specific TOML `table`
+ * (`workspace.package` or `package`), or undefined when the table or its
+ * version line isn't found. The reading twin of `replaceCargoVersion`, with
+ * the same table-scoped line scan so a dependency version can never match.
+ * Pure — exported for tests.
  */
-export async function lastReleaseTag(): Promise<string | undefined> {
-  const r = await runCapture(
-    'git',
-    ['describe', '--tags', '--abbrev=0', '--match', 'v[0-9]*'],
-    rootPath,
+export function readCargoVersion(
+  raw: string,
+  table: string,
+): string | undefined {
+  const lines = raw.split('\n')
+  const headerRe = new RegExp(
+    `^\\s*\\[\\s*${table.replace(/\./g, '\\.')}\\s*\\]\\s*$`,
   )
-  const tag = r.stdout.trim()
-  return r.code === 0 && tag ? tag : undefined
+  let start = -1
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    if (headerRe.test(lines[i]!)) {
+      start = i
+      break
+    }
+  }
+  if (start === -1) {
+    return undefined
+  }
+  for (let i = start + 1, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
+    // The version must live in THIS table — stop at the next table header.
+    if (/^\s*\[/.test(line)) {
+      break
+    }
+    const m = /^\s*version\s*=\s*"([^"]*)"/.exec(line)
+    if (m) {
+      return m[1]
+    }
+  }
+  return undefined
 }
 
 /**
- * Read the commit stream between `fromTag` (exclusive) and HEAD in the
- * parseable COMMIT_LOG_FORMAT. With no prior tag, reads all history.
+ * A Cargo manifest's release version: `[workspace.package]` version when
+ * present (workspace-inherited), else the `[package]` version. Pure —
+ * exported for tests.
  */
-export async function readCommitStream(
-  fromTag: string | undefined,
-): Promise<string> {
-  const range = fromTag ? `${fromTag}..HEAD` : 'HEAD'
-  const r = await runCapture(
-    'git',
-    ['log', range, `--format=${COMMIT_LOG_FORMAT}`],
-    rootPath,
+export function cargoManifestVersion(raw: string): string | undefined {
+  return (
+    readCargoVersion(raw, 'workspace.package') ??
+    readCargoVersion(raw, 'package')
   )
-  return r.code === 0 ? r.stdout : ''
+}
+
+/**
+ * The repo-relative path of the manifest whose version flip marks a release:
+ * the workspace-root Cargo.toml when its `[workspace.package]` carries the
+ * version, else the crate's own manifest. Mirrors `runBump`'s write-side
+ * preference so the anchor probe reads the same file the bump writes.
+ */
+export function cargoVersionManifestPath(
+  pkg: CargoPackage,
+  cwd: string = rootPath,
+): string {
+  const rootCargoToml = path.join(cwd, 'Cargo.toml')
+  if (
+    existsSync(rootCargoToml) &&
+    readCargoVersion(readFileSync(rootCargoToml, 'utf8'), 'workspace.package')
+  ) {
+    return 'Cargo.toml'
+  }
+  return path.relative(cwd, pkg.manifestPath)
+}
+
+/**
+ * The cargo binding of the shared anchor chain (lib/release-anchor.mts): the
+ * version flip lives in Cargo.toml (`[workspace.package]` else `[package]`),
+ * the publish ledger is crates.io (`max_stable_version` + per-version
+ * `created_at`).
+ */
+export function cargoReleaseLane(
+  pkg: CargoPackage,
+  cwd: string = rootPath,
+): ReleaseLane {
+  return {
+    fetchLatest: () => fetchPublishedVersionChecked(pkg.name),
+    fetchPublishedAt: version => fetchPublishedAt(pkg.name, version),
+    manifestPath: cargoVersionManifestPath(pkg, cwd),
+    parseManifestVersion: cargoManifestVersion,
+  }
+}
+
+/**
+ * THE single cargo-lane derivation code path for a release's commit set — the
+ * shared chain bound to crates.io. Returns `undefined` when a previous
+ * release exists but no anchor resolves, or when crates.io is unreachable
+ * (offline the released base cannot be confirmed) — never widen to an older
+ * tag.
+ */
+export async function deriveCargoReleaseCommits(config: {
+  cwd?: string | undefined
+  pkg: CargoPackage
+}): Promise<ReleaseDerivation | undefined> {
+  const { cwd = rootPath, pkg } = { __proto__: null, ...config } as {
+    cwd?: string | undefined
+    pkg: CargoPackage
+  }
+  return await deriveReleaseCommits({
+    cwd,
+    lane: cargoReleaseLane(pkg, cwd),
+    manifestVersion: pkg.version,
+  })
 }
 
 /**
@@ -168,17 +256,26 @@ export async function runBump(config: {
   const { dryRun, releaseAs } = cfg
   const pkg = await readCargoPackage(cfg.packageName)
 
-  const fromTag = await lastReleaseTag()
-  const commits = parseConventionalCommits(await readCommitStream(fromTag))
-  // Anchor the bump base to what actually RELEASED (crates.io latest + last
-  // tag), NEVER the Cargo.toml version — a pre-bumped manifest would otherwise
-  // skip a version.
-  const publishedVersion = await fetchPublishedVersion(pkg.name)
-  const base = resolveBumpBase({
-    manifestVersion: pkg.version,
-    publishedVersion,
-    tagVersion: fromTag ?? undefined,
-  })
+  // ONE derivation resolves the released base (crates.io latest + last tag,
+  // NEVER the Cargo.toml version — a pre-bumped manifest would otherwise skip
+  // a version), the range anchor, and the commit set — the shared chain that
+  // never silently widens to an older tag.
+  const derivation = await deriveCargoReleaseCommits({ pkg })
+  if (!derivation) {
+    logger.fail(
+      `Cannot anchor the changelog range: either crates.io is unreachable ` +
+        `(offline, the released base cannot be confirmed and \`git describe\` ` +
+        `may resolve an OLDER tag), or a previous release exists but its ` +
+        `v-tag is missing (or off-lineage), no Cargo.toml version-flip ` +
+        `commit for it is reachable, and its crates.io publish time is ` +
+        `unavailable. Re-run online, or restore the previous release's tag ` +
+        `(git tag v<version> <release-commit> && git push origin --tags) — ` +
+        `deriving from an OLDER tag would re-list already-shipped commits.`,
+    )
+    process.exitCode = 1
+    return
+  }
+  const { anchor, base, commits } = derivation
   // Version resolution: the --release-as flag wins, else a committed
   // `X.Y.Z-prerelease` hint names the exact target, else the commit-type
   // heuristic. MAJOR is never derived — it needs the explicit --release-as
@@ -239,7 +336,7 @@ export async function runBump(config: {
     level = bumpLevelFor(commits)
     if (level === 'major') {
       logger.fail(
-        `Breaking commit(s) found since ${fromTag ?? 'the start of history'} — ` +
+        `Breaking commit(s) found since ${describeAnchor(anchor)} — ` +
           'a MAJOR bump requires an explicit human decision. Re-run with ' +
           '--release-as major, or --release-as minor|patch if the breaking ' +
           'marker is wrong.',
@@ -250,7 +347,7 @@ export async function runBump(config: {
   }
   if (!level) {
     logger.fail(
-      `No user-visible commits since ${fromTag ?? 'the start of history'} — ` +
+      `No user-visible commits since ${describeAnchor(anchor)} — ` +
         'nothing to release (feat / fix / perf / revert only). Land a ' +
         'user-visible change, or pass --release-as <major|minor|patch> to force.',
     )
@@ -327,7 +424,7 @@ export async function runBump(config: {
   logger.log(
     `${pkg.name}: ${pkg.version} → ${nextVersion} (${level}` +
       `${releaseAs ? ' — forced via --release-as' : ''}; ` +
-      `${promoted ? 'from [Unreleased]' : `${commits.length} commit(s) since ${fromTag ?? 'start'}`})`,
+      `${promoted ? 'from [Unreleased]' : `${commits.length} commit(s) since ${describeAnchor(anchor)}`})`,
   )
   logger.log('')
   logger.log(section)

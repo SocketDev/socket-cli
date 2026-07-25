@@ -132,18 +132,35 @@ export function diffActionPins(
   return bumps.toSorted((a, b) => a.repo.localeCompare(b.repo))
 }
 
+// Owner-directed force-ahead receipts, keyed by exact `repo@version`. An
+// entry adopts ONE action release before its soak window clears — the gh-aw
+// action-pin analog of a dated `minimumReleaseAgeExclude` bullet, same
+// pattern as pnpm 11.10.0 and @shadscan/cli 0.2.0. The key carries the
+// version, so the next release re-soaks; drop an entry once its removable
+// date passes.
+export const FORCED_AHEAD_ACTION_PINS: ReadonlySet<string> = new Set()
+
 // Soak-partition pin bumps. Socket-owned action repos are exempt (own
-// provenance pipeline, mirroring the npm SOCKET_SCOPES bypass). Every other
+// provenance pipeline, mirroring the npm SOCKET_SCOPES bypass), as is any
+// `repo@version` carrying a dated force-ahead receipt in `forcedAhead` —
+// injectable for tests, defaulting to FORCED_AHEAD_ACTION_PINS. Every other
 // bump must clear `soakDays` measured from its new SHA's commit date; a
 // too-young OR unverifiable date is held at the old pin. Pure given
 // `resolveCommitDate` — the primary unit-test target.
 export function partitionActionPinBumps(config: {
   bumps: readonly ActionPinBump[]
+  forcedAhead?: ReadonlySet<string> | undefined
   now: Date
   resolveCommitDate: ResolveCommitDate
   soakDays: number
 }): ActionPinPartition {
-  const { bumps, now, resolveCommitDate, soakDays } = {
+  const {
+    bumps,
+    forcedAhead = FORCED_AHEAD_ACTION_PINS,
+    now,
+    resolveCommitDate,
+    soakDays,
+  } = {
     __proto__: null,
     ...config,
   } as typeof config
@@ -154,7 +171,10 @@ export function partitionActionPinBumps(config: {
   const held: HeldActionPin[] = []
   for (let i = 0, { length } = bumps; i < length; i += 1) {
     const bump = bumps[i]!
-    if (isSocketSourcedRepository(bump.repo)) {
+    if (
+      isSocketSourcedRepository(bump.repo) ||
+      forcedAhead.has(`${bump.repo}@${bump.version}`)
+    ) {
       exempt.push(bump)
       continue
     }
@@ -240,7 +260,13 @@ export function soakGateCompile(config: {
     return []
   }
   for (const [file, content] of beforeContents) {
-    writeFileSync(file, content, 'utf8')
+    // Restore only files the compile actually changed. Rewriting unchanged
+    // snapshot files is not just wasted IO — a read-only tracked neighbor
+    // like a cascade-generated workflow yml makes the blanket write throw
+    // EACCES mid-restore, stranding the rollback half-applied.
+    if (readFileSafe(file) !== content) {
+      writeFileSync(file, content, 'utf8')
+    }
   }
   for (let i = 0, { length } = outputPaths; i < length; i += 1) {
     const file = outputPaths[i]!

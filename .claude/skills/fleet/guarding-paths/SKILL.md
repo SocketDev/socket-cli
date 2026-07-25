@@ -5,6 +5,8 @@ user-invocable: true
 allowed-tools: Task, Read, Edit, Write, Grep, Glob, AskUserQuestion, Bash(pnpm run check:*), Bash(node scripts/fleet/check/paths-are-canonical.mts:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(git:*)
 model: claude-haiku-4-5
 context: fork
+metadata:
+  internal: true
 ---
 
 # guarding-paths

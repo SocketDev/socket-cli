@@ -5,6 +5,8 @@ model: claude-haiku-4-5
 context: fork
 user-invocable: false
 allowed-tools: Read, Edit, Write, Grep, Glob, Bash
+metadata:
+  internal: true
 ---
 
 # creating-guards

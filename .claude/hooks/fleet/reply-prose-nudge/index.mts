@@ -17,11 +17,6 @@
 import { AI_SLOP_PATTERNS } from '../_shared/ai-slop-patterns.mts'
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
-import {
-  HONESTY_FRAMING_RE,
-  HONESTY_LABEL,
-  HONESTY_WHY,
-} from '../_shared/honesty-framing.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import {
   formatReminderBlock,
@@ -181,14 +176,6 @@ const SELF_NARRATION: ReminderGroup = {
       regex:
         /\b(?:i'?ll be (?:careful|disciplined|rigorous|thorough)\s+here|let me (?:step back|think (?:carefully|hard))(?:\s+(?:about|here|on))?|let me be (?:careful|disciplined|honest|methodical|precise|rigorous|thorough)|to be (?:careful|disciplined|precise|rigorous|safe|thorough))\b/i,
       why: "Diligence theater — performing rigor instead of doing it. Cut the preamble and do the careful thing; the work IS the evidence of care. (Chat analog of the prose skill's throat-clearing-opener ban.)",
-    },
-    {
-      // The honesty matcher is the shared _shared/honesty-framing.mts source —
-      // a categorical ban, NOT one of the over-firing heuristics below: a match
-      // here is always wrong, never a false positive.
-      label: HONESTY_LABEL,
-      regex: HONESTY_FRAMING_RE,
-      why: HONESTY_WHY,
     },
     {
       label:

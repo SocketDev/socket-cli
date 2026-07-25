@@ -30,7 +30,36 @@ const CHANGELOG_RE = /(?:^|\/)CHANGELOG\.md$/
 const README_RE = /(?:^|\/)README\.md$/
 const DOCS_MD_RE = /(?:^|\/)docs\/.+\.md$/
 
+// Enforcement-defining trees are use-vs-mention exempt: a hook/rule README
+// that DOCUMENTS a banned pattern must be able to name it (the honesty
+// guard's own README cannot avoid its hook name). Same shape as the
+// authorization-phrase guard's phrase-defining-tree exemption. Plain
+// segment checks on the ALREADY-normalized path — no separator regex.
+const ENFORCEMENT_TREES = [
+  '.claude/hooks/',
+  '.config/fleet/oxlint-plugin/',
+] as const
+
+const ENFORCEMENT_CATALOG = 'docs/agents.md/fleet/hook-registry.md'
+
+function isEnforcementSurface(rawPath: string): boolean {
+  const unixPath = normalizePath(rawPath)
+  for (let i = 0, { length } = ENFORCEMENT_TREES; i < length; i += 1) {
+    const tree = ENFORCEMENT_TREES[i]!
+    if (unixPath.startsWith(tree) || unixPath.includes(`/${tree}`)) {
+      return true
+    }
+  }
+  return (
+    unixPath === ENFORCEMENT_CATALOG ||
+    unixPath.endsWith(`/${ENFORCEMENT_CATALOG}`)
+  )
+}
+
 function isProseSurface(normalizedPath: string): boolean {
+  if (isEnforcementSurface(normalizedPath)) {
+    return false
+  }
   return (
     CHANGELOG_RE.test(normalizedPath) ||
     README_RE.test(normalizedPath) ||

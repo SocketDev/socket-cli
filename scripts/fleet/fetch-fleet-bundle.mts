@@ -21,6 +21,7 @@ import {
   mkdtempSync,
   readdirSync,
   readFileSync,
+  writeFileSync,
 } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -33,6 +34,11 @@ import { safeDeleteSync } from '@socketsecurity/lib/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 import { spawn } from '@socketsecurity/lib/process/spawn/child'
 
+import {
+  hasFleetCanonicalEndSentinel,
+  spliceFleetCanonicalContent,
+} from './_shared/fleet-canonical-splice.mts'
+
 const logger = getDefaultLogger()
 
 const DEFAULT_REPO = 'SocketDev/socket-wheelhouse'
@@ -44,21 +50,21 @@ const repoRoot = path.resolve(
   '..',
 )
 
-export interface FetchOptions {
+export interface FetchConfig {
   dest: string
   dryRun: boolean
   ref: string | undefined
   repo: string
 }
 
-export function parseArgs(argv: readonly string[]): FetchOptions {
+export function parseArgs(argv: readonly string[]): FetchConfig {
   const opts = {
     __proto__: null,
     dest: repoRoot,
     dryRun: argv.includes('--dry-run'),
     ref: undefined,
     repo: DEFAULT_REPO,
-  } as unknown as FetchOptions
+  } as unknown as FetchConfig
   for (let i = 0, { length } = argv; i < length; i += 1) {
     const arg = argv[i]!
     if (arg === '--ref') {
@@ -119,6 +125,40 @@ export function verifyFiles(
     }
   }
   return problems
+}
+
+// Place verified bundle files into the repo. Sentinel-scoped for files
+// carrying `#fleet-canonical-end` — today `.config/fleet/oxlintrc.json`: the
+// bundle bytes replace everything through the end sentinel, and the repo-local
+// tail after it survives byte-for-byte. The lint runner re-emits that tail as
+// CLI ignore args, so a whole-file copy here silently unmasks hundreds of
+// findings — the recurring socket-registry incident. Every other file is a
+// plain byte copy, as is a sentinel file landing for the first time.
+export function placeFiles(
+  filesDir: string,
+  rels: readonly string[],
+  destDir: string,
+): void {
+  for (let i = 0, { length } = rels; i < length; i += 1) {
+    const rel = rels[i]!
+    const src = path.join(filesDir, rel)
+    const dest = path.join(destDir, rel)
+    mkdirSync(path.dirname(dest), { recursive: true })
+    if (existsSync(dest)) {
+      const srcBuf = readFileSync(src)
+      if (hasFleetCanonicalEndSentinel(srcBuf.toString('utf8'))) {
+        writeFileSync(
+          dest,
+          spliceFleetCanonicalContent(
+            srcBuf.toString('utf8'),
+            readFileSync(dest, 'utf8'),
+          ),
+        )
+        continue
+      }
+    }
+    cpSync(src, dest)
+  }
 }
 
 export async function main(): Promise<number> {
@@ -203,13 +243,7 @@ export async function main(): Promise<number> {
     }
 
     // 5. Place the verified files into the repo.
-    const rels = Object.keys(manifest.files)
-    for (let i = 0, { length } = rels; i < length; i += 1) {
-      const rel = rels[i]!
-      const dest = path.join(opts.dest, rel)
-      mkdirSync(path.dirname(dest), { recursive: true })
-      cpSync(path.join(filesDir, rel), dest)
-    }
+    placeFiles(filesDir, Object.keys(manifest.files), opts.dest)
     logger.log(
       `Placed ${count} verified file(s) from ${opts.ref} (template ${manifest.templateSha}).`,
     )

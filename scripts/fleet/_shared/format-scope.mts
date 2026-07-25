@@ -184,13 +184,16 @@ export function parseIgnoreGlobs(content: string): string[] {
 // The MIRROR exclusions (.claude / .agents / **/fleet/**) are deliberately NOT
 // here — template/ dogfoods those. Twin of the generated/vendored entries in
 // .config/fleet/.prettierignore (+ scripts/fleet/constants/generated-globs.mts).
-const NEVER_GATED_SEGMENTS = new Set([
+export const NEVER_GATED_SEGMENTS: ReadonlySet<string> = new Set([
   'build',
   'coverage',
   'dist',
+  'external',
   'fixtures',
   'out',
+  'third_party',
   'upstream',
+  'vendor',
 ])
 
 /**

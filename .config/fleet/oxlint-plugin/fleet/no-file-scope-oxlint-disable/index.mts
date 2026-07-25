@@ -30,6 +30,10 @@
 // Path-recognition helpers shared with sibling rules. See
 // `../lib/fleet-paths.mts` for the rationale behind each exemption.
 import { isPathsModule, isPluginInternalPath } from '../../lib/fleet-paths.mts'
+import {
+  isLockstepMirror,
+  isLockstepMirrorExemptRule,
+} from '../../lib/lockstep-mirror.mts'
 import type { AstNode, RuleContext } from '../../lib/rule-types.mts'
 
 // Matches a comment line that opens with `/*` or `//`, then has `oxlint-disable`
@@ -62,6 +66,12 @@ const rule = {
     const sourceCode = context.getSourceCode
       ? context.getSourceCode()
       : context.sourceCode
+    // A declared verbatim upstream mirror MAY carry a file-scope disable, but
+    // ONLY for rules in LOCKSTEP_MIRROR_EXEMPT_RULES (curly + any future core
+    // rule the fleet doesn't own — socket rules self-exempt on the marker and
+    // need no disable line). A disable naming anything outside the allowlist is
+    // still reported. See lib/lockstep-mirror.mts.
+    const mirror = isLockstepMirror(context)
     return {
       Program(_node: AstNode) {
         const comments =
@@ -87,6 +97,15 @@ const rule = {
             reconstructed,
           )
           const ruleName = m?.[1] ? m[1].trim() : '<rule>'
+          // A declared mirror permits a file-scope disable only when EVERY rule
+          // it names is in LOCKSTEP_MIRROR_EXEMPT_RULES. One stray non-exempt
+          // name (or a marker-less file) falls through to the report.
+          if (mirror && ruleName !== '<rule>') {
+            const names = ruleName.split(/\s+/).filter(Boolean)
+            if (names.every(isLockstepMirrorExemptRule)) {
+              continue
+            }
+          }
           context.report({
             node: c as AstNode,
             messageId: 'fileScopeDisable',

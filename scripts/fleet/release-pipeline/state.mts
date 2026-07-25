@@ -17,9 +17,13 @@ import type { StageId } from './stages.mts'
 
 /**
  * Receipt statuses a stage can record. `deferred` = intentionally not run
- * (e.g. CI on an unpushed head: "local-only, CI deferred").
+ * (e.g. CI on an unpushed head: "local-only, CI deferred"). `blocked` = the
+ * stage could not gather evidence either way (e.g. verify with no npm auth:
+ * an unauthenticated `pnpm stage list` parses as EMPTY, which is not a
+ * verdict) — it stops the run like a failure and never satisfies a resume,
+ * but records the honest "no evidence" reason instead of a false negative.
  */
-export type ReceiptStatus = 'deferred' | 'failed' | 'passed'
+export type ReceiptStatus = 'blocked' | 'deferred' | 'failed' | 'passed'
 
 export interface StageReceipt {
   /**

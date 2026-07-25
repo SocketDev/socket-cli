@@ -1,6 +1,8 @@
 ---
 name: grilling-plan
 description: Stress-test a plan one question at a time before building, especially for shared fleet resources.
+metadata:
+  internal: true
 ---
 
 # grilling-plan

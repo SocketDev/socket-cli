@@ -33,6 +33,7 @@ import process from 'node:process'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
@@ -59,6 +60,16 @@ const PNPM_RUN_RE = /pnpm run ([A-Za-z][A-Za-z0-9:_*-]*)/g
 // same documentation-placeholder carve-out script-paths-resolve makes for a
 // `<name>` path segment.
 const PLACEHOLDER_NAMES = new Set(['bar', 'baz', 'foo', 'qux'])
+
+// Repo-shape-dependent script families. `build` exists only in buildable
+// repos; a build-less member (bun-security-scanner) legitimately defines no
+// `build`/`build:*` script at all. The fleet-tier skill/command docs describe
+// the canonical fleet flow and ship byte-identical everywhere, so a fleet-doc
+// citation to a script from an entirely-absent family is vacuous there, not
+// rot. A repo-owned doc (outside the fleet tier) gets no such pass, and a repo
+// that defines ANY script in the family is buildable — its citations must
+// resolve for real.
+const REPO_SHAPE_SCRIPT_FAMILIES = ['build'] as const
 
 export interface ScriptRefHit {
   readonly doc: string
@@ -103,6 +114,45 @@ export function scriptExists(
 }
 
 /**
+ * True when `relDoc` is a fleet-tier (cascaded, byte-identical fleet-wide)
+ * skill/command doc — the tier whose repo-shape-dependent citations get the
+ * vacuous pass in build-less repos.
+ */
+export function isFleetTierDoc(relDoc: string): boolean {
+  const normalized = normalizePath(relDoc)
+  return (
+    normalized.includes('.claude/skills/fleet/') ||
+    normalized.includes('.claude/commands/fleet/')
+  )
+}
+
+/**
+ * True when `name` cites a repo-shape-dependent script family (`build` /
+ * `build:*`) and `scriptNames` carries NO script in that family — the repo is
+ * shaped without it, so a fleet-tier doc's citation is vacuous.
+ */
+export function isAbsentShapeFamilyCitation(
+  name: string,
+  scriptNames: readonly string[],
+): boolean {
+  for (let i = 0, { length } = REPO_SHAPE_SCRIPT_FAMILIES; i < length; i += 1) {
+    const family = REPO_SHAPE_SCRIPT_FAMILIES[i]!
+    const cites = name === family || name.startsWith(`${family}:`)
+    if (!cites) {
+      continue
+    }
+    for (let j = 0, { length: sLen } = scriptNames; j < sLen; j += 1) {
+      const s = scriptNames[j]!
+      if (s === family || s.startsWith(`${family}:`)) {
+        return false
+      }
+    }
+    return true
+  }
+  return false
+}
+
+/**
  * Find every `pnpm run <name>` citation in a markdown body whose <name>
  * resolves to no script in `scriptNames`. Skips a YAML-frontmatter
  * `allowed-tools:` line: those carry Bash() permission globs, not single-script
@@ -125,6 +175,13 @@ export function scanDoc(
     while (m) {
       const scriptName = m[1]!
       if (PLACEHOLDER_NAMES.has(scriptName)) {
+        m = PNPM_RUN_RE.exec(line)
+        continue
+      }
+      if (
+        isFleetTierDoc(relDoc) &&
+        isAbsentShapeFamilyCitation(scriptName, scriptNames)
+      ) {
         m = PNPM_RUN_RE.exec(line)
         continue
       }

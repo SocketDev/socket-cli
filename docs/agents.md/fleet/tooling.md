@@ -39,6 +39,10 @@ exclude-newer = "7 days"
 
 uv is pre-1.0 (`0.x`) — adopted as a noted exception to the stable-1.0+ rule because it is de-facto stable, Astral-backed, Apache-2.0 / MIT, and ships as a single static binary. It replaces the unpinned `pip3 install --break-system-packages` pattern in Dockerfiles, which has no lockfile or soak.
 
+## ripgrep: `-r` never clusters
+
+rg's `-r` (`--replace`) takes a value, so inside a short-flag cluster it consumes the REST of the cluster as the replacement text: `rg -rln <pattern>` parses as `rg --replace 'ln' <pattern>`. Every match is rewritten to the literal text `ln` instead of listing files with line numbers, and the command still exits 0, so the corruption is easy to miss. Spell `-r` separately (`rg -l -n`), use long flags, or pass `--replace '<text>'` only when a replacement is meant. `-r` last in a cluster (`-lnr <text>`) and standalone `-r <text>` read the next argument as the replacement and are fine. Nudged by `.claude/hooks/fleet/rg-replace-flag-nudge/`.
+
 ## Reserved `scripts/` dir names
 
 Script tiers are `scripts/fleet/` + `scripts/repo/`; name any other dir for its job, never a build/output concept (`build`, `dist`, `node_modules`, `coverage`, `cache`). Bypass `Allow reserved-script-dir bypass` (`.claude/hooks/fleet/reserved-script-dir-guard/`).
@@ -104,6 +108,25 @@ Vitest `include` globs must not match `node:test` files. Mismatched runners prod
 ## Bundler
 
 `rolldown`, NOT `esbuild`. The fleet standardizes on rolldown for direct bundling (see `template/.config/rolldown/`). Transitive esbuild deps (e.g. via vitest) are unavoidable today. The rule is no _new direct_ esbuild use anywhere in the fleet.
+
+## Engine-gate folding (`engine-gate-fold`)
+
+`.config/repo/rolldown/engine-gate-fold.mts` (`createEngineGateFoldPlugin`) precomputes semver-vs-runtime engine gates in bundled (vendored) code from the `engines.node` of the package being built. Vendored deps ship gates like `useNative = node.satisfies('>=16.7.0')` (the @npmcli/fs `lib/common/node.js` shape) whose losing branch — usually a polyfill — is dead weight the bundler can't drop because the gate looks dynamic. Motivating incident: socket-packageurl-js's bundled `dist/exists.js` crashed at require-time on exactly that vendored gate.
+
+- **Statically-safe shapes only, string-literal ranges only**: `satisfies(process.version, 'R')` / `semver.satisfies(process.version, 'R')` and comparator forms `gte|gt|lte|lt(process.version, 'V')` when the callee provably binds to the `semver` package, plus `helper.satisfies('R')` when the callee resolves to a vendored node-version helper module structurally verified to wrap `semver.satisfies(process.version, range)`. Anything dynamic stays untouched.
+- **Verdicts are interval math against `engines.node`** (read once at plugin creation; the factory throws without a valid range): engines ⊆ gate-range → literal `true`; provably disjoint → literal `false`; partial overlap → untouched. Unbounded floors are honest: `>=99` under engines `>=18` is a partial overlap — a future node 99 exists in both sets — not a false fold — provable `false` comes from upper-bounded gates (`lt(process.version, '18.0.0')` under `>=18`) or bounded engines unions (`^18 || ^20` vs `>=99`).
+- **The literal lets rolldown DCE drop the dead branch** (and its polyfill imports). Every folded site is logged (module id + gate source + verdict) — silent transforms are banned.
+- **Wire it into the repo's `rolldown.config.mts` `plugins`**: `createEngineGateFoldPlugin()` (reads `engines.node` from cwd; pass `{ packageDir }` otherwise). Requires `semver` catalog-pinned in devDependencies and `define-guarded.mts` alongside (it imports its AST helpers) — the cascade delivers the file to every repo carrying `.config/repo/rolldown/define-guarded.mts` (CONDITIONAL_FILES marker).
+
+## Factory-collision guards (`factory-collision`)
+
+`.config/repo/rolldown/factory-collision.mts` guards the nested-bundle factory-collision class: re-bundling a file that is ITSELF a bundler output — a pre-bundled dependency like socket-lib's `dist/external/npm-pack.js` — carries pre-suffixed CJS factory bindings such as `require_node$2`, and rolldown's identifier deconflicter can rename another `require_node` onto exactly that pre-existing name in the same emitted scope. The later `var` declaration silently clobbers the earlier, so an unrelated binding resolves to the wrong module at runtime. Motivating incidents: socket-cli's dlx crash — Arborist's `pacote` rebound to libnpmpack via a colliding `require_lib$10` — and socket-packageurl-js's `dist/exists.js` require-time crash, where two `var require_node$2` in one scope turned `node.satisfies` into a class.
+
+Two independent guards; adopt either or both in the repo's `rolldown.config.mts` `plugins`:
+
+- **`createPrebundleRenamePlugin({ prebundlePattern })` is the fix** — the proven socket-cli mechanics, generalized. It rewrites `require_*$N` factory names inside files matching `prebundlePattern` to a `$`-free form (`require_lib$36` → `require_lib_v36`) the deconflicter can never generate, and realpath-normalizes resolved ids so a symlink-aliased prebundle (pnpm's `@socketsecurity/lib` + `lib-stable` aliases point at one real package) can't enter the graph twice and force the deconflict at all. Place it FIRST in `plugins` so its `resolveId` hook sees every resolution; custom `resolveId` hooks that hand-compute paths should return `toRealPath(p)` themselves.
+- **`createCollisionDetectorPlugin()` is the backstop** — a post-render `generateBundle` check that fails the build when any emitted chunk declares the same `var require_*` binding twice in one scope. Cheap: a regex pass filters chunks that can't collide, only suspects pay for the scope-aware AST scan. Wire it even where the rename plugin isn't adopted — a silent wrong-module rebinding is strictly worse than a red build.
+- **Delivery**: same CONDITIONAL_FILES channel as engine-gate-fold — every repo carrying `.config/repo/rolldown/define-guarded.mts` receives the file on sync.
 
 ## Compile-time defines (`INLINED_*`)
 

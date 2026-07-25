@@ -17,6 +17,14 @@ name: 📦 npm publish
 # --approve), only after the approved version is live on npm. The
 # github-release workflow independently refuses to cut for a version that is
 # not resolvable on the registry.
+#
+# BACKFILL: to republish prior content as a skipped GAP version — 1.4.3
+# between a live 1.4.2 and 1.4.4 — dispatch from MAIN, where this file always
+# exists, with `backfill-version` + `checkout-ref`. The checkout-ref supplies
+# the CONTENT while the workflow definition stays main's. The bump/changelog
+# gate is bypassed; hard gap-fill-only guards replace it (never-published
+# version, lower than latest, non-latest dist-tag, content declares its own
+# version) — see scripts/fleet/publish-infra/npm/backfill.mts.
 
 on:
   workflow_dispatch:
@@ -40,6 +48,31 @@ on:
           - major
           - minor
           - patch
+        default: ''
+      bump:
+        description: >-
+          Run the CI bump step: consume the committed version hint, write
+          CHANGELOG, and commit via the release App before staging. The
+          publish pipeline dispatches with false — its bump stage already
+          landed the bump commit, and a re-entrant CI bump once committed a
+          duplicate CHANGELOG section. Ignored by backfills, which never
+          bump.
+        type: boolean
+        default: true
+      backfill-version:
+        description: >-
+          Backfill a never-published GAP version below registry latest with
+          the content at checkout-ref. Bypasses the bump/changelog gate
+          behind hard gap-fill-only guards; requires checkout-ref and a
+          non-latest dist-tag.
+        type: string
+        default: ''
+      checkout-ref:
+        description: >-
+          Backfill only — the branch/tag/SHA whose CONTENT is republished.
+          The workflow definition always comes from the dispatched ref,
+          main, so historical content stays reachable.
+        type: string
         default: ''
 
 permissions:
@@ -66,18 +99,31 @@ jobs:
       # at its own deeper default.
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-15)
         with:
+          # Backfill checks out the content ref; empty = the dispatched ref.
+          ref: ${{ inputs.checkout-ref }}
           fetch-depth: 1
           persist-credentials: false
       - name: Setup + install
         uses: ./.github/actions/fleet/setup-and-install
+        with:
+          # Forward the backfill content ref — setup-and-install re-checks-out
+          # internally (fleet checkout falls back to the TRIGGERING ref when
+          # unset), which would silently swap the backfill content back to
+          # main's tree; the backfill gate then refuses against main's
+          # version. Empty forwards as unset, so normal dispatches keep the
+          # dispatched-ref re-checkout.
+          checkout-ref: ${{ inputs.checkout-ref }}
       # Build dist/ before publishing — the staged-publish script imports the
       # package's own built output (`@socketsecurity/lib/stdio/prompts` self-
       # resolves to dist/), and `files` ships dist/, so the tarball needs it.
       - name: Build
         run: pnpm run build
       # The release App signs the bump commit via the GitHub API — the
-      # workflow's own GITHUB_TOKEN stays contents: read.
+      # workflow's own GITHUB_TOKEN stays contents: read. A backfill never
+      # commits a bump, and a bump=false pipeline dispatch already carries
+      # its bump commit, so both skip the mint.
       - name: Mint release App token
+        if: ${{ inputs.backfill-version == '' && inputs.bump }}
         id: release-app
         uses: ./.github/actions/fleet/github-release-app-token
         with:
@@ -90,9 +136,22 @@ jobs:
       # a rejected publish, so a failed stage never creeps the version. The
       # version decision stays with the human: it is whatever the committed hint
       # names.
+      # The bump runs EXACTLY ONCE across the pipeline + workflow chain: the
+      # publish pipeline dispatches with bump=false because its own bump stage
+      # already landed the bump commit — the CI re-bump once re-derived the
+      # same version and committed a duplicate CHANGELOG section. Manual
+      # dispatches keep the default bump=true hint-consuming flow.
+      # Backfill swaps --bump for --backfill + --checkout-ref: no bump commit,
+      # no changelog — the checked-out content publishes as-is once the
+      # backfill guards pass (npm-publish.mts fails loud when they don't).
       - name: Publish
         env:
+          BACKFILL_VERSION: ${{ inputs.backfill-version }}
+          CHECKOUT_REF: ${{ inputs.checkout-ref }}
           DIST_TAG: ${{ inputs.dist-tag }}
           RELEASE_AS: ${{ inputs.release-as }}
           RELEASE_APP_TOKEN: ${{ steps.release-app.outputs.token }}
-        run: node scripts/fleet/npm-publish.mts --staged --bump --tag "$DIST_TAG" ${RELEASE_AS:+--release-as "$RELEASE_AS"} ${{ inputs.publish != true && '--dry-run' || '' }}
+        # CHECKOUT_REF forwards on its own so a checkout-ref dispatch WITHOUT
+        # backfill-version is refused by the script instead of silently
+        # bump-publishing historical content.
+        run: node scripts/fleet/npm-publish.mts --staged ${{ (inputs.backfill-version == '' && inputs.bump) && '--bump' || '' }} --tag "$DIST_TAG" ${RELEASE_AS:+--release-as "$RELEASE_AS"} ${BACKFILL_VERSION:+--backfill "$BACKFILL_VERSION"} ${CHECKOUT_REF:+--checkout-ref "$CHECKOUT_REF"} ${{ inputs.publish != true && '--dry-run' || '' }}

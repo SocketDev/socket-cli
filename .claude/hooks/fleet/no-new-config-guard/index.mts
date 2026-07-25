@@ -34,6 +34,10 @@ import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 // is matched by basename too.
 const ALLOWED_BASENAMES: ReadonlySet<string> = new Set([
   '.socket-wheelhouse.json',
+  // A workspace-member manifest, not config data — every oxlint-plugin rule
+  // dir under `.config/fleet/oxlint-plugin/` carries one so pnpm treats the
+  // rule as a workspace member.
+  'package.json',
   'socket-wheelhouse-schema.json',
   'socket-wheelhouse.json',
 ])

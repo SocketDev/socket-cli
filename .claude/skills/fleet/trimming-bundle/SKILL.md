@@ -5,6 +5,8 @@ user-invocable: true
 allowed-tools: Read, Edit, Grep, Glob, AskUserQuestion, Bash(pnpm:*), Bash(node:*), Bash(grep:*), Bash(rg:*), Bash(find:*), Bash(ls:*), Bash(wc:*), Bash(du:*), Bash(stat:*), Bash(git status:*), Bash(git diff:*)
 model: claude-haiku-4-5
 context: fork
+metadata:
+  internal: true
 ---
 
 # trimming-bundle

@@ -2,8 +2,9 @@
  * @file One `.gitmodules` parser shared by the submodule checks. Splits the
  *   file into one entry per `[submodule "<name>"]` block, capturing the fields
  *   the fleet gates read: the sparse-checkout pattern + `# full-checkout:`
- *   annotation (submodules-are-sparse-or-annotated) and the `shallow` +
- *   `branch` reference fields (upstream-submodules-are-shallow-single-branch).
+ *   annotation (submodules-are-sparse-or-annotated), the `shallow` +
+ *   `branch` reference fields (upstream-submodules-are-shallow-single-branch),
+ *   and the `# … sha256:<64hex>` header hash (action-ports-are-lock-stepped).
  *   A single pass avoids a per-check fork of the same section scanner.
  */
 
@@ -29,6 +30,9 @@ export interface GitmodulesEntry {
   // The `# full-checkout: <reason>` reason from the header comment, else
   // undefined.
   fullCheckoutReason: string | undefined
+  // The `sha256:<64hex>` archive content-hash from the header comment, else
+  // undefined.
+  headerSha: string | undefined
 }
 
 // Parse `.gitmodules` into one entry per submodule. Comment annotations are
@@ -43,17 +47,24 @@ export function parseGitmodules(text: string): GitmodulesEntry[] {
       continue
     }
     // Scan the contiguous comment lines directly above for a full-checkout
-    // annotation (it may sit on the `# <name>-<version>` header or its own
-    // comment line).
+    // annotation and the `sha256:` content-hash (either may sit on the
+    // `# <name>-<version>` header or its own comment line).
     let fullCheckoutReason: string | undefined
+    let headerSha: string | undefined
     for (let j = i - 1; j >= 0; j -= 1) {
       const prev = lines[j]!
       if (!prev.trimStart().startsWith('#')) {
         break
       }
       const m = /#.*\bfull-checkout:\s*(.+?)\s*$/.exec(prev)
-      if (m) {
+      if (m && fullCheckoutReason === undefined) {
         fullCheckoutReason = m[1]
+      }
+      const sha = /#.*\bsha256:([0-9a-f]{64})\b/.exec(prev)
+      if (sha && headerSha === undefined) {
+        headerSha = sha[1]
+      }
+      if (fullCheckoutReason !== undefined && headerSha !== undefined) {
         break
       }
     }
@@ -102,6 +113,7 @@ export function parseGitmodules(text: string): GitmodulesEntry[] {
       hasSparse: sparse !== undefined,
       verify,
       fullCheckoutReason,
+      headerSha,
     })
   }
   return entries

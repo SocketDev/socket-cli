@@ -6,6 +6,8 @@ argument-hint: '<task summary> [benign|security]'
 allowed-tools: Bash(node:*), Read, Workflow, Write
 model: claude-sonnet-4-6
 context: fork
+metadata:
+  internal: true
 ---
 
 # delegating-execution

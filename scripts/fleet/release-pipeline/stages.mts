@@ -167,7 +167,7 @@ export function isReceiptCurrent(
   if (!receipt || receipt.dryRun) {
     return false
   }
-  if (receipt.status === 'failed') {
+  if (receipt.status === 'blocked' || receipt.status === 'failed') {
     return false
   }
   if (stageKeyKind(cfg.stage) === 'tree') {

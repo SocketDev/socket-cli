@@ -20,13 +20,13 @@ import {
 
 const logger = getDefaultLogger()
 
-export interface ShowOptions {
+export interface ShowConfig {
   name: string | undefined
   target: string | undefined
 }
 
-export function parseArgs(argv: string[] = process.argv.slice(2)): ShowOptions {
-  const opts: ShowOptions = { name: undefined, target: undefined }
+export function parseArgs(argv: string[] = process.argv.slice(2)): ShowConfig {
+  const opts: ShowConfig = { name: undefined, target: undefined }
   for (let i = 0, { length } = argv; i < length; i += 1) {
     const a = argv[i]!
     if (a === '--target') {

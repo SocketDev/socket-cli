@@ -68,7 +68,7 @@ runs:
         set -euo pipefail
         # Bundle fleet pins beside the action so sparse bootstrap checkouts have them.
         # A repo-root external-tools.json is optional and may contain repo-only tools.
-        TOOLS_FILE="${GITHUB_ACTION_PATH}/../lib/external-tools.json"
+        TOOLS_FILE="${GITHUB_ACTION_PATH}/../_shared/external-tools.json"
         if [ ! -f "$TOOLS_FILE" ]; then
           echo "× the fleet setup action is broken: external-tools.json not found at ${TOOLS_FILE}." >&2
           echo "  This is a packaging bug in the fleet scaffolding, not a consumer issue. File a bug." >&2
@@ -116,7 +116,7 @@ runs:
         # missing/empty values, so set -e turns a packaging bug here
         # into a loud failure rather than a silent empty env export
         # that surfaces later as `cp: cannot stat ''`.
-        JQ="${GITHUB_ACTION_PATH}/../lib/jq.mjs"
+        JQ="${GITHUB_ACTION_PATH}/../_shared/jq.mjs"
         # The tools file nests entries under `tools` (current schema) or at the
         # top level (legacy flat). Probe once; an empty $NS splits away.
         NS="tools"
@@ -126,7 +126,7 @@ runs:
         # Canonical platform string (linux-x64, linux-arm64-musl,
         # darwin-arm64, win-x64, …). Detects musl via Node's own
         # process.report so we don't shell out to ldd.
-        PLATFORM_TOOL="${GITHUB_ACTION_PATH}/../lib/platform.mjs"
+        PLATFORM_TOOL="${GITHUB_ACTION_PATH}/../_shared/platform.mjs"
         PLATFORM="$(node "$PLATFORM_TOOL")"
         ASSET="$(node "$JQ" "$TOOLS_FILE" $NS pnpm platforms "$PLATFORM" asset)"
         INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS pnpm platforms "$PLATFORM" integrity)"
@@ -140,7 +140,7 @@ runs:
         PNPM_BIN="$PNPM_DIR/pnpm"
         [[ "$ASSET" == *.zip ]] && PNPM_BIN="$PNPM_DIR/pnpm.exe"
         # Shared installer: fetches, integrity-verifies (SRI), extracts.
-        INSTALL_TOOL="${GITHUB_ACTION_PATH}/../lib/install-tool.mjs"
+        INSTALL_TOOL="${GITHUB_ACTION_PATH}/../_shared/install-tool.mjs"
         if [ ! -x "$PNPM_BIN" ]; then
           if [ "$SOURCE" = "npm-registry" ]; then
             URL="https://registry.npmjs.org/pnpm/-/${ASSET}"
@@ -234,14 +234,14 @@ runs:
         # platform's integrity (SRI string) there in the same commit.
         # The lib/ scripts below resolve platform → asset → URL →
         # install at the currently-detected runner.
-        TOOLS_FILE="${GITHUB_ACTION_PATH}/../lib/external-tools.json"
-        JQ="${GITHUB_ACTION_PATH}/../lib/jq.mjs"
+        TOOLS_FILE="${GITHUB_ACTION_PATH}/../_shared/external-tools.json"
+        JQ="${GITHUB_ACTION_PATH}/../_shared/jq.mjs"
         # The tools file nests entries under `tools` (current schema) or at the
         # top level (legacy flat). Probe once; an empty $NS splits away.
         NS="tools"
         node "$JQ" "$TOOLS_FILE" tools >/dev/null 2>&1 || NS=""
-        PLATFORM_TOOL="${GITHUB_ACTION_PATH}/../lib/platform.mjs"
-        INSTALL_TOOL="${GITHUB_ACTION_PATH}/../lib/install-tool.mjs"
+        PLATFORM_TOOL="${GITHUB_ACTION_PATH}/../_shared/platform.mjs"
+        INSTALL_TOOL="${GITHUB_ACTION_PATH}/../_shared/install-tool.mjs"
         # Enterprise flavor when SOCKET_API_TOKEN is set, otherwise free.
         # Enterprise downloads from the private firewall-release repo
         # are auth'd via GITHUB_TOKEN inside install-tool.mjs.

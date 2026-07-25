@@ -1,23 +1,29 @@
 #!/usr/bin/env node
 /**
  * @file Pin the third-party GitHub Actions the fleet ports from as `upstream/`
- *   submodule REFERENCES, at each action's LATEST release — generalizing the
- *   hand-made `upstream/actions-checkout` entry. These are reference-only: the
- *   fleet lock-step ports ONLY what it needs into its own controlled
+ *   submodule REFERENCES, at each action's LATEST SOAKED release — generalizing
+ *   the hand-made `upstream/actions-checkout` entry. These are reference-only:
+ *   the fleet lock-step ports ONLY what it needs into its own controlled
  *   `.github/actions/fleet/*` composites and never `uses:` `upstream/*`
- *   directly — the refs are the porting source + drift-watch signal. For every
- *   action it
- *   resolves the latest release tag and that tag's commit SHA, upserts a
- *   `[submodule "upstream/actions-<name>"]` block in `.gitmodules` (`shallow`,
+ *   directly — the refs are the porting source + drift-watch signal. The
+ *   vendored set is the union of the `actions/*` the fleet `uses:` across its
+ *   workflows and every upstream the composite port map declares
+ *   (`_shared/action-port-map.mts`), so declaring a port IS what provisions its
+ *   pin. For every action it resolves the latest release tag — adopted only
+ *   once it has soaked for `SOAK_DAYS` — and that tag's commit SHA, upserts a
+ *   `[submodule "upstream/<owner>-<repo>"]` block in `.gitmodules` (`shallow`,
  *   single-`branch`, `ignore = dirty`), then runs `gen/gitmodules-hash.mts
- *   --write` to stamp the `# <name>-<version> sha256:<64hex>` archive
+ *   --write` to stamp the `# <owner>-<repo>-<version> sha256:<64hex>` archive
  *   content-hash comment that `uses-sha-verify-guard` requires. The `160000`
  *   gitlink is never tracked (`upstream/` is gitignored) — the `ref` +
  *   `sha256:` ARE the pin. Third-party action pins are cascade-owned: this
- *   script IS the generator, so nobody hand-edits the blocks. Usage:
- *   vendor-actions.mts upsert .gitmodules to the latest pins + stamp hashes
+ *   script IS the generator, so nobody hand-edits the blocks. Re-pinning a
+ *   PORTED upstream reds `action-ports-are-lock-stepped` until the composite's
+ *   `portedAt` advances with a re-port review — that is the lock-step. Usage:
+ *   vendor-actions.mts upsert .gitmodules to the latest soaked pins + stamp
+ *   hashes
  *   vendor-actions.mts --check exit 1 if any vendored action is behind its
- *   latest release.
+ *   latest soaked release.
  */
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
@@ -28,27 +34,38 @@ import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
+import { SOAK_DAYS } from './constants/soak.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import {
+  portedUpstreams,
+  upstreamSubmoduleName,
+} from './_shared/action-port-map.mts'
 import { REPO_ROOT } from './paths.mts'
 
 const logger = getDefaultLogger()
 
-// The `actions/*` the fleet `uses:` across its workflows (kept sorted). Add a
-// name here to vendor it; re-run the script to pin it.
-const ACTIONS: readonly string[] = [
-  'cache',
-  'checkout',
-  'download-artifact',
-  'github-script',
-  'setup-node',
-  'upload-artifact',
+// The `<owner>/<repo>` actions the fleet `uses:` across its workflows (kept
+// sorted). Add a slug here to vendor a directly-consumed action; ported
+// upstreams come from the port map and never need a second entry.
+const USES_ACTIONS: readonly string[] = [
+  'actions/cache',
+  'actions/checkout',
+  'actions/download-artifact',
+  'actions/github-script',
+  'actions/setup-node',
+  'actions/upload-artifact',
 ]
 
-const OWNER = 'actions'
+// Everything to vendor: the `uses:` surface plus every ported upstream the
+// composite port map declares, deduped + sorted.
+export const VENDORED_ACTIONS: readonly string[] = [
+  ...new Set([...USES_ACTIONS, ...portedUpstreams()]),
+].toSorted()
+
 const GITMODULES = path.join(REPO_ROOT, '.gitmodules')
 
 export interface ActionPin {
-  name: string
+  slug: string
   sha: string
   tag: string
 }
@@ -81,25 +98,47 @@ export function ghApi(endpoint: string, jq: string): string {
 }
 
 /**
- * The latest release tag for `actions/<name>` and that tag's COMMIT sha
- * (dereferencing an annotated-tag object to its commit). Pure w.r.t. inputs;
- * network via ghApi.
+ * True when a release published at `publishedAt` has SOAKED — is at least
+ * `soakDays` old at `nowMs` — the same doctrine `min-release-age` applies to
+ * npm deps. An unparseable/empty timestamp never soaks, so a malformed API
+ * row can't fast-track adoption. Pure.
  */
-export function resolveLatest(name: string): ActionPin {
-  const tag = ghApi(`repos/${OWNER}/${name}/releases/latest`, '.tag_name')
-  const refType = ghApi(
-    `repos/${OWNER}/${name}/git/ref/tags/${tag}`,
-    '.object.type',
+export function isSoaked(
+  publishedAt: string,
+  nowMs: number,
+  soakDays: number = SOAK_DAYS,
+): boolean {
+  const published = Date.parse(publishedAt)
+  if (Number.isNaN(published)) {
+    return false
+  }
+  return published <= nowMs - soakDays * 24 * 60 * 60 * 1000
+}
+
+/**
+ * The latest release tag for `<owner>/<repo>` — GitHub's own latest semantics,
+ * newest stable release — and that tag's COMMIT sha (dereferencing an
+ * annotated-tag object to its commit), or undefined when that release has not
+ * soaked yet: the current pin then stands until the release clears the soak
+ * window, never a downgrade to an older line. Pure w.r.t. inputs; network via
+ * ghApi.
+ */
+export function resolveLatest(slug: string): ActionPin | undefined {
+  const raw = ghApi(
+    `repos/${slug}/releases/latest`,
+    '[.tag_name, .published_at] | @tsv',
   )
-  const refSha = ghApi(
-    `repos/${OWNER}/${name}/git/ref/tags/${tag}`,
-    '.object.sha',
-  )
+  const [tag = '', publishedAt = ''] = raw.split('\t')
+  if (!tag || !isSoaked(publishedAt, Date.now())) {
+    return undefined
+  }
+  const refType = ghApi(`repos/${slug}/git/ref/tags/${tag}`, '.object.type')
+  const refSha = ghApi(`repos/${slug}/git/ref/tags/${tag}`, '.object.sha')
   const sha =
     refType === 'tag'
-      ? ghApi(`repos/${OWNER}/${name}/git/tags/${refSha}`, '.object.sha')
+      ? ghApi(`repos/${slug}/git/tags/${refSha}`, '.object.sha')
       : refSha
-  return { name, sha, tag }
+  return { slug, sha, tag }
 }
 
 /**
@@ -108,16 +147,18 @@ export function resolveLatest(name: string): ActionPin {
  * match git's `.gitmodules` convention. Pure.
  */
 export function blockFor(pin: ActionPin): string {
-  const sub = `upstream/${OWNER}-${pin.name}`
+  const sub = upstreamSubmoduleName(pin.slug)
+  const label = sub.slice('upstream/'.length)
   return [
-    // The `# <name>-<version>` header gen/gitmodules-hash --write attaches the
-    // sha256 to (gitmodules-comment-guard shape). Version tracks the branch.
-    `# ${OWNER}-${pin.name}-${pin.tag}`,
+    // The `# <owner>-<repo>-<version>` header gen/gitmodules-hash --write
+    // attaches the sha256 to (gitmodules-comment-guard shape). Version tracks
+    // the branch.
+    `# ${label}-${pin.tag}`,
     `[submodule "${sub}"]`,
     '\tignore = dirty',
     `\tref = ${pin.sha}`,
     `\tpath = ${sub}`,
-    `\turl = https://github.com/${OWNER}/${pin.name}.git`,
+    `\turl = https://github.com/${pin.slug}.git`,
     `\tbranch = ${pin.tag}`,
     '\tshallow = true',
   ].join('\n')
@@ -129,9 +170,9 @@ export function blockFor(pin: ActionPin): string {
  */
 export function currentPin(
   gitmodules: string,
-  name: string,
+  slug: string,
 ): { ref: string; branch: string } | undefined {
-  const sub = `upstream/${OWNER}-${name}`
+  const sub = upstreamSubmoduleName(slug)
   const lines = gitmodules.split('\n')
   const start = lines.findIndex(l => l.trim() === `[submodule "${sub}"]`)
   if (start === -1) {
@@ -157,6 +198,20 @@ export function currentPin(
 }
 
 /**
+ * True when this repo carries at least one vendored reference block — the
+ * enrollment signal the weekly cadence keys on. Members carry no upstream
+ * action pins — the record is template-source-owned — so their weekly runs
+ * never fabricate vendoring work.
+ */
+export function vendoringEnrolled(): boolean {
+  if (!existsSync(GITMODULES)) {
+    return false
+  }
+  const gitmodules = readFileSync(GITMODULES, 'utf8')
+  return VENDORED_ACTIONS.some(slug => currentPin(gitmodules, slug))
+}
+
+/**
  * Upsert every action's block into the `.gitmodules` text (update
  * `ref`/`branch` in place when present, append a fresh block when absent),
  * returning the new text. Non-action blocks are left untouched. Pure.
@@ -167,7 +222,7 @@ export function upsertAll(
 ): string {
   let text = gitmodules
   for (const pin of pins) {
-    const sub = `upstream/${OWNER}-${pin.name}`
+    const sub = upstreamSubmoduleName(pin.slug)
     const lines = text.split('\n')
     const header = lines.findIndex(l => l.trim() === `[submodule "${sub}"]`)
     if (header === -1) {
@@ -228,15 +283,20 @@ export function runCheck(): number {
   }
   const gitmodules = readFileSync(GITMODULES, 'utf8')
   const behind: string[] = []
-  for (let i = 0, { length } = ACTIONS; i < length; i += 1) {
-    const name = ACTIONS[i]!
-    const latest = resolveLatest(name)
-    const current = currentPin(gitmodules, name)
+  for (let i = 0, { length } = VENDORED_ACTIONS; i < length; i += 1) {
+    const slug = VENDORED_ACTIONS[i]!
+    const latest = resolveLatest(slug)
+    if (!latest) {
+      // Latest release has not soaked yet — the current pin stands until it
+      // clears the soak window; never a drift signal.
+      continue
+    }
+    const current = currentPin(gitmodules, slug)
     if (!current) {
-      behind.push(`${OWNER}/${name}: not vendored (latest ${latest.tag})`)
+      behind.push(`${slug}: not vendored (latest ${latest.tag})`)
     } else if (current.ref !== latest.sha) {
       behind.push(
-        `${OWNER}/${name}: ${current.branch} @ ${current.ref.slice(0, 9)} → ${latest.tag} @ ${latest.sha.slice(0, 9)}`,
+        `${slug}: ${current.branch} @ ${current.ref.slice(0, 9)} → ${latest.tag} @ ${latest.sha.slice(0, 9)}`,
       )
     }
   }
@@ -245,13 +305,15 @@ export function runCheck(): number {
       [
         `[vendor-actions] ${behind.length} vendored action(s) behind latest:`,
         ...behind.map(b => `  ${b}`),
-        '  Fix: run `node scripts/fleet/vendor-actions.mts` to re-pin.',
+        '  Fix: run `node scripts/fleet/vendor-actions.mts` to re-pin, then',
+        '  re-review each ported composite against the upstream diff and bump',
+        '  its portedAt in scripts/fleet/_shared/action-port-map.mts.',
       ].join('\n'),
     )
     return 1
   }
   logger.success(
-    '[vendor-actions] all vendored actions pin their latest release.',
+    '[vendor-actions] all vendored actions pin their latest soaked release.',
   )
   return 0
 }
@@ -261,10 +323,17 @@ export function runWrite(): number {
     ? readFileSync(GITMODULES, 'utf8')
     : ''
   const pins: ActionPin[] = []
-  for (let i = 0, { length } = ACTIONS; i < length; i += 1) {
-    const pin = resolveLatest(ACTIONS[i]!)
+  for (let i = 0, { length } = VENDORED_ACTIONS; i < length; i += 1) {
+    const slug = VENDORED_ACTIONS[i]!
+    const pin = resolveLatest(slug)
+    if (!pin) {
+      logger.warn(
+        `  ${slug}: latest release has not soaked yet — current pin stands.`,
+      )
+      continue
+    }
     pins.push(pin)
-    logger.log(`  ${OWNER}/${pin.name} → ${pin.tag} (${pin.sha.slice(0, 9)})`)
+    logger.log(`  ${pin.slug} → ${pin.tag} (${pin.sha.slice(0, 9)})`)
   }
   writeFileSync(GITMODULES, upsertAll(gitmodules, pins))
   stampHashes()

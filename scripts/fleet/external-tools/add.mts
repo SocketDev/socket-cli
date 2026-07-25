@@ -45,7 +45,7 @@ const logger = getDefaultLogger()
 // Entry builders (network isolated behind injectable deps for the unit test)
 // ---------------------------------------------------------------------------
 
-export interface BuildGithubEntryOptions {
+export interface BuildGithubEntryConfig {
   // owner/repo (a leading `github:` is tolerated + stripped).
   repo: string
   // Stored in the `version` field verbatim.
@@ -73,7 +73,7 @@ export interface BuildGithubEntryDeps {
  * same safety the updater enforces on a bump.
  */
 export function buildGithubEntry(
-  config: BuildGithubEntryOptions,
+  config: BuildGithubEntryConfig,
   deps?: BuildGithubEntryDeps | undefined,
 ): GithubReleaseTool {
   const cfg = { __proto__: null, ...config } as typeof config
@@ -125,7 +125,7 @@ export function buildGithubEntry(
   return entry
 }
 
-export interface BuildNpmEntryOptions {
+export interface BuildNpmEntryConfig {
   npmName: string
   version: string
   description?: string | undefined
@@ -143,7 +143,7 @@ export interface BuildNpmEntryDeps {
  * no integrity for that version.
  */
 export async function buildNpmEntry(
-  config: BuildNpmEntryOptions,
+  config: BuildNpmEntryConfig,
   deps?: BuildNpmEntryDeps | undefined,
 ): Promise<NpmTool> {
   const cfg = { __proto__: null, ...config } as typeof config
@@ -178,7 +178,7 @@ export async function buildNpmEntry(
 // CLI
 // ---------------------------------------------------------------------------
 
-export interface AddOptions {
+export interface AddConfig {
   name: string | undefined
   target: string | undefined
   apply: boolean
@@ -192,8 +192,8 @@ export interface AddOptions {
   platforms: Record<string, string>
 }
 
-export function parseArgs(argv: string[] = process.argv.slice(2)): AddOptions {
-  const opts: AddOptions = {
+export function parseArgs(argv: string[] = process.argv.slice(2)): AddConfig {
+  const opts: AddConfig = {
     name: undefined,
     target: undefined,
     apply: false,

@@ -280,6 +280,20 @@ descriptive comment about the orchestrator's own bookkeeping is a legitimate
 (if rare) reason for the name to appear. The workflow author dismisses it or
 reworks the prompt.
 
+## Delegated fix-work standards
+
+Work handed to a subagent, or done in a delegated session, meets the same bar as work done in the main session. Each standard below cites the named hook that enforces it, or is marked guidance-only where the concern cannot be gated deterministically.
+
+1. **Every code fix ships unit tests.** A fix commits the unit test that covers the fixed behavior. When a layer is not unit-testable, extract the pure logic into a testable function and cover that instead; if even that is impractical, state why in the PR. Enforcer: `fixes-need-tests-nudge` reminds at `git commit` when the staged change set touches authored source but includes no test-file change (`.claude/hooks/fleet/fixes-need-tests-nudge/`).
+
+2. **PR descriptions read at a junior-developer level.** Write full sentences that plainly say what changed and why, and fold long detail into a collapsed `<details>` block. This is guidance-only: prose reading level cannot be gated deterministically. The adjacent concern of AI-tell prose (em-dash chains, throat-clearing, hedging) in committed markdown is covered by `anti-prose-guard` (`.claude/hooks/fleet/anti-prose-guard/`).
+
+3. **Respond to all review feedback, bot and human, and collapse bot comments when resolving.** Resolving bot feedback means the full visual collapse: resolve the review threads AND minimize the bot's top-level summaries as `RESOLVED`. Enforcer: `bot-comment-collapse-guard` blocks ending a turn while a PR whose threads this session resolved still carries un-minimized bot surfaces (`.claude/hooks/fleet/bot-comment-collapse-guard/`).
+
+4. **Keep worktree discipline.** Never switch a shared checkout's branch; work in a worktree off `origin/<ref>`. Enforcers: `primary-checkout-branch-guard`, `primary-checkout-on-default-stop-guard`, `no-pr-from-default-checkout-guard`, and `worktree-remove-relink-nudge` (`.claude/hooks/fleet/{primary-checkout-branch-guard,primary-checkout-on-default-stop-guard,no-pr-from-default-checkout-guard,worktree-remove-relink-nudge}/`).
+
+5. **No AI attribution in commits or PRs.** Commits and every GitHub prose surface carry no `Co-Authored-By`, `Assisted-by`, or "Generated with" attribution line. Enforcers: `no-commit-ai-attribution-guard` and `no-github-ai-attribution-guard` (`.claude/hooks/fleet/{no-commit-ai-attribution-guard,no-github-ai-attribution-guard}/`).
+
 ## Compatibility note
 
 Codex is fleet-wide — the `codex` CLI is a fleet plugin. OpenCode and the `delegate` subagent are **per-developer**: they require local setup outside the repo. Skills that automate work across the fleet must not assume `delegate` exists; humans driving Claude in their own checkout can use it freely.

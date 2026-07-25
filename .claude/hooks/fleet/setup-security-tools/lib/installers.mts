@@ -34,7 +34,7 @@ import {
   runInstallGitHubReleaseTool,
   runInstallGitHubReleaseToolWithTag,
 } from './github-release.mts'
-import type { InstallGitHubToolOptions } from './github-release.mts'
+import type { InstallGitHubToolConfig } from './github-release.mts'
 import { runEnsureJanusQueue, runSetupJanus } from './janus.mts'
 import { runSetupAll } from './run-all.mts'
 import { runSetupSfw } from './sfw.mts'
@@ -143,7 +143,7 @@ export function resolvePlatformEntry(platforms: ToolEntry['platforms']): {
  * `github-release.mts`; see that file's docblock for the archive-shape matrix.
  */
 export async function installGitHubReleaseTool(
-  config: InstallGitHubToolOptions,
+  config: InstallGitHubToolConfig,
 ): Promise<boolean> {
   return runInstallGitHubReleaseTool(config)
 }
@@ -153,7 +153,7 @@ export async function installGitHubReleaseTool(
  * prefix (astral-sh/uv). Full implementation in `github-release.mts`.
  */
 export async function installGitHubReleaseToolWithTag(
-  config: InstallGitHubToolOptions & { tag: string },
+  config: InstallGitHubToolConfig & { tag: string },
 ): Promise<boolean> {
   return runInstallGitHubReleaseToolWithTag(config)
 }
@@ -206,7 +206,7 @@ export async function ensureJanusQueue(janusBin: string): Promise<void> {
   return runEnsureJanusQueue(janusBin)
 }
 
-interface NpmToolInstallOptions {
+interface NpmToolInstallConfig {
   /**
    * Logical tool name (used for log banner + bin name).
    */
@@ -231,7 +231,7 @@ interface NpmToolInstallOptions {
  */
 export async function setupNpmTool(
   // oxlint-disable-next-line no-shadow -- required config param name matches the module-level tool-manifest `config` by convention
-  config: NpmToolInstallOptions,
+  config: NpmToolInstallConfig,
 ): Promise<boolean> {
   const { displayName, name, tool } = {
     __proto__: null,

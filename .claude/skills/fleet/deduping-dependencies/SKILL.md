@@ -5,6 +5,8 @@ user-invocable: true
 allowed-tools: Bash(node:*), Bash(git:*), Bash(grep:*), Bash(rg:*), Bash(ls:*), Bash(pnpm install:*), Bash(pnpm patch:*), Bash(pnpm patch-commit:*), Read, Edit, Write
 model: claude-sonnet-4-6
 context: fork
+metadata:
+  internal: true
 ---
 
 # deduping-dependencies

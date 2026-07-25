@@ -6,6 +6,8 @@ user-invocable: true
 allowed-tools: Workflow, Task, Read, Glob, Grep, Write, Bash(rg:*), Bash(grep:*), Bash(ls:*), Bash(wc:*), Bash(head:*), Bash(find:*), Bash(node scripts/fleet/scanning-vulns/cli.mts:*)
 model: claude-opus-4-8
 context: fork
+metadata:
+  internal: true
 ---
 
 # scanning-vulns

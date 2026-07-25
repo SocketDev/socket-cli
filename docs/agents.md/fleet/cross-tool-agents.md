@@ -73,7 +73,7 @@ authority and generates the Kimi adapter from it.
   HTTP OAuth servers as `.codex/config.toml` and `opencode.json`, but in Kimi's
   native JSON shape.
 - **`~/.kimi-code/config.toml`** is managed by
-  `scripts/fleet/setup/setup-kimi-user-config.mts`
+  `scripts/fleet/setup/kimi-user-config.mts`
   (`pnpm run setup:kimi-user-config`). It extracts the fleet-canonical
   `permissions` block from `.claude/settings.json` and rewrites it as Kimi
   `[[permission.rules]]` entries, preserving any user-owned rules outside the

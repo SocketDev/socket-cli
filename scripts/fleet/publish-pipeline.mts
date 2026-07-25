@@ -39,8 +39,17 @@
  *   stashes the release-asset checksums) → approve (explicit, never part of
  *   a run) → release (same invocation as approve, cut LAST).
  *
+ *   Tag-gap healing: `--reconcile X.Y.Z` is the stateless registry-truth
+ *   reconcile for a version that is already LIVE on the registry but missing
+ *   its v* tag + GH release — the gap an npm-UI owner promote leaves behind.
+ *   It runs ONLY the registry-truth verify (re-pack at the version's content
+ *   commit vs the packument digests) and the release stage; no staging, no
+ *   npm auth, no OTP, and divergent bytes fail loud. The release-reconcile
+ *   workflow drives it on a cron.
+ *
  *   Usage: node scripts/fleet/publish-pipeline.mts [--dry-run] [--approve]
  *          [--status] [--reset] [--tag <dist-tag>] [--local]
+ *          [--reconcile X.Y.Z]
  */
 import process from 'node:process'
 
@@ -52,6 +61,7 @@ import {
   headSha,
   persistOutcome,
   runApproveMode,
+  runReconcileMode,
   runStage,
 } from './release-pipeline.mts'
 import { planRun, PUBLISH_STAGE_ORDER } from './release-pipeline/stages.mts'
@@ -83,6 +93,12 @@ const USAGE = `Usage: node scripts/fleet/publish-pipeline.mts [options]
                          instead of dispatching the npm-publish.yml workflow;
                          only for genuinely offline use — the default keeps
                          registry credentials out of the local machine
+  --reconcile X.Y.Z      TAG-GAP HEALER: registry-truth verify + release stage
+                         ONLY, for a version already LIVE on the registry but
+                         missing its v* tag + GH release (an npm-UI promote).
+                         Runs at the version's content commit; no staging, no
+                         npm auth, no OTP — divergent bytes fail loud, never
+                         force a tag
   --status               print the receipt table and exit
   --reset                discard pipeline state and exit
   --tag <dist-tag>       npm dist-tag for the staged publish (default latest)`
@@ -154,7 +170,7 @@ export async function runPublishPipeline(
       ms: Date.now() - stageStartMs,
     })
     ran.push(stage)
-    if (outcome.status === 'failed') {
+    if (outcome.status === 'blocked' || outcome.status === 'failed') {
       logger.fail(
         `Publish stopped at ${stage}. Fix the failure above and re-run — receipts resume here.`,
       )
@@ -173,6 +189,7 @@ async function main(): Promise<void> {
       'dry-run': { default: false, type: 'boolean' },
       help: { default: false, type: 'boolean' },
       local: { default: false, type: 'boolean' },
+      reconcile: { type: 'string' },
       reset: { default: false, type: 'boolean' },
       status: { default: false, type: 'boolean' },
       tag: { default: 'latest', type: 'string' },
@@ -201,6 +218,34 @@ async function main(): Promise<void> {
     localPublish: !!values['local'],
     namedVersion: undefined,
     preflightAll: false,
+  }
+  const reconcileVersion =
+    typeof values['reconcile'] === 'string' ? values['reconcile'] : ''
+  if (reconcileVersion) {
+    // The tag-gap healer: registry-truth verify + release stage ONLY, keyed
+    // on the named version. Deliberately stateless — it never loads or
+    // requires the resumable pipeline state, so CI can heal a gap on a fresh
+    // checkout of the version's content commit. Mutually exclusive with
+    // --approve: reconcile never promotes anything.
+    if (cli.approve) {
+      logger.fail(
+        '--reconcile and --approve are mutually exclusive: reconcile heals an ' +
+          'ALREADY-LIVE version and never promotes.',
+      )
+      process.exitCode = 1
+      return
+    }
+    if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(reconcileVersion)) {
+      logger.fail(
+        `--reconcile needs a semver version, saw "${reconcileVersion}".`,
+      )
+      process.exitCode = 1
+      return
+    }
+    await runReconcileMode(reconcileVersion, cli, {
+      summaryPath: process.env['GITHUB_STEP_SUMMARY'],
+    })
+    return
   }
   const state = loadState(file)
   if (!state) {

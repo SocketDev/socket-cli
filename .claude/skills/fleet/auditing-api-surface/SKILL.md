@@ -5,6 +5,8 @@ user-invocable: true
 allowed-tools: Read, Grep, Glob, Bash(node:*), Bash(rg:*), Bash(git:*), Bash(gh:*)
 model: claude-haiku-4-5
 context: fork
+metadata:
+  internal: true
 ---
 
 # auditing-api-surface

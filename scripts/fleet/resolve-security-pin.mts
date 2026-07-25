@@ -60,7 +60,7 @@ export type ResolveOutcome =
   | 'no-candidate'
   | 'resolved'
 
-export interface ResolveSecurityPinOptions {
+export interface ResolveSecurityPinConfig {
   // first_patched_version from the advisory (the lowest version that clears the
   // CVE for our vulnerable range).
   firstPatched: string
@@ -104,9 +104,9 @@ export function isSoaked(
 // version list, and per-version publish dates, resolve the exact pin (or the
 // reason there is none). Pure — no network, no clock; the caller injects `now`.
 export function resolveSecurityPin(
-  config: ResolveSecurityPinOptions,
+  config: ResolveSecurityPinConfig,
 ): ResolveSecurityPinResult {
-  const cfg = { __proto__: null, ...config } as ResolveSecurityPinOptions
+  const cfg = { __proto__: null, ...config } as ResolveSecurityPinConfig
   const { firstPatched, now, publishedAt, publishedVersions } = cfg
   const major = getMajorVersion(firstPatched)
   if (major === undefined) {

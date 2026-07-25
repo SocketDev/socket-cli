@@ -1,6 +1,8 @@
 ---
 name: reviewing-web-interfaces
 description: Reviews web interface quality before landing UI changes.
+metadata:
+  internal: true
 ---
 
 # Reviewing Web Interfaces
@@ -10,14 +12,17 @@ redesign a product without the [Designing Interfaces](../designing-interfaces/SK
 
 ## Workflow
 
-1. Capture the affected route and viewport(s) with
+1. For a React shadcn app, run the deterministic shadscan audit first per
+   [shadscan-audit.md](references/shadscan-audit.md) — it produces the missing
+   UI fundamentals report from static evidence before anything renders.
+2. Capture the affected route and viewport(s) with
    [rendering-chromium-to-png](../rendering-chromium-to-png/SKILL.md).
-2. For a material UI change, get a fresh-context critique when an independent reviewer is
+3. For a material UI change, get a fresh-context critique when an independent reviewer is
    available. Keep its evidence separate from the implementation rationale.
-3. Review semantics, keyboard flow, focus, overflow, contrast, responsive states, production
+4. Review semantics, keyboard flow, focus, overflow, contrast, responsive states, production
    states, and user-facing copy using [review-checklist.md](references/review-checklist.md)
    and [interface-copy.md](../designing-interfaces/references/interface-copy.md).
-4. Re-render after each material correction. Report the remaining risks with evidence.
+5. Re-render after each material correction. Report the remaining risks with evidence.
 
 ## Design Cluster
 
@@ -31,3 +36,4 @@ regressions to [testing-web-interfaces](../testing-web-interfaces/SKILL.md).
 ## References
 
 - [Review checklist](references/review-checklist.md)
+- [Shadscan audit](references/shadscan-audit.md)

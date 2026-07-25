@@ -1,6 +1,8 @@
 ---
 name: diagnosing-bugs
 description: Run the diagnosis loop for hard bugs, failing behavior, regressions, thrown errors, or slow paths.
+metadata:
+  internal: true
 ---
 
 # diagnosing-bugs

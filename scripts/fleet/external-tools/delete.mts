@@ -25,7 +25,7 @@ import type { ExternalToolsJson, Tool } from './update.mts'
 
 const logger = getDefaultLogger()
 
-export interface DeleteOptions {
+export interface DeleteConfig {
   name: string | undefined
   target: string | undefined
   apply: boolean
@@ -33,8 +33,8 @@ export interface DeleteOptions {
 
 export function parseArgs(
   argv: string[] = process.argv.slice(2),
-): DeleteOptions {
-  const opts: DeleteOptions = {
+): DeleteConfig {
+  const opts: DeleteConfig = {
     name: undefined,
     target: undefined,
     apply: false,

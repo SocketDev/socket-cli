@@ -153,7 +153,7 @@ export function parseChecksums(content: string): Record<string, string> {
   return checksums
 }
 
-export interface VerifyOptions {
+export interface VerifyConfig {
   filePath: string
   assetName: string
   tool: string
@@ -189,7 +189,7 @@ export interface VerifyOptions {
  *    deliberately-untracked tool back into `{ valid: true, skipped: true }`.
  */
 export async function verifyReleaseChecksum(
-  config: VerifyOptions,
+  config: VerifyConfig,
 ): Promise<VerifyResult> {
   const {
     assetName,

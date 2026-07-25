@@ -27,7 +27,7 @@ const WIN32 = process.platform === 'win32'
  * Options for the default GitHub-asset digest fetcher. `assetName` is the
  * release asset filename (the same basename the local `pnpm pack` produced).
  */
-export interface GitHubAssetDigestOptions {
+export interface GitHubAssetDigestConfig {
   assetName: string
   cwd: string
   tag: string
@@ -68,10 +68,10 @@ export interface TarballDigest {
   shasum: string
 }
 
-export interface VerifyReleaseHashesOptions {
+export interface VerifyReleaseHashesConfig {
   cwd: string
   fetchGitHubAssetDigest?:
-    | ((options: GitHubAssetDigestOptions) => Promise<HashSource>)
+    | ((options: GitHubAssetDigestConfig) => Promise<HashSource>)
     | undefined
   fetchRegistryDigest?:
     | ((name: string, version: string) => Promise<HashSource>)
@@ -175,9 +175,9 @@ export function compareHashSources(
  * stage list`, since a staged version is not yet in the public packument).
  */
 export async function verifyReleaseHashes(
-  config: VerifyReleaseHashesOptions,
+  config: VerifyReleaseHashesConfig,
 ): Promise<HashComparison> {
-  const cfg = { __proto__: null, ...config } as VerifyReleaseHashesOptions
+  const cfg = { __proto__: null, ...config } as VerifyReleaseHashesConfig
   const hashLocal = cfg.hashLocalTarball ?? hashTarball
   const fetchGitHub =
     cfg.fetchGitHubAssetDigest ?? defaultFetchGitHubAssetDigest
@@ -207,7 +207,7 @@ export async function verifyReleaseHashes(
 }
 
 function buildMismatchMessage(
-  config: VerifyReleaseHashesOptions,
+  config: VerifyReleaseHashesConfig,
   sources: readonly HashSource[],
   comparison: HashComparison,
 ): string {
@@ -246,9 +246,9 @@ async function defaultFetchRegistryDigest(
 }
 
 async function defaultFetchGitHubAssetDigest(
-  config: GitHubAssetDigestOptions,
+  config: GitHubAssetDigestConfig,
 ): Promise<HashSource> {
-  const cfg = { __proto__: null, ...config } as GitHubAssetDigestOptions
+  const cfg = { __proto__: null, ...config } as GitHubAssetDigestConfig
   const dir = mkdtempSync(path.join(os.tmpdir(), 'release-verify-'))
   const result = await spawn(
     'gh',

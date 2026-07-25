@@ -12,6 +12,7 @@
 import { stringComparator } from '../../lib/comparators.mts'
 
 import type { AstNode, RuleContext, RuleFixer } from '../../lib/rule-types.mts'
+import { isLockstepMirror } from '../../lib/lockstep-mirror.mts'
 
 const SET_NAMES = new Set(['SafeSet', 'Set'])
 
@@ -50,6 +51,10 @@ const rule = {
   },
 
   create(context: RuleContext) {
+    // Verbatim upstream mirrors keep upstream's shape; see lib/lockstep-mirror.mts.
+    if (isLockstepMirror(context)) {
+      return {}
+    }
     return {
       NewExpression(node: AstNode) {
         const callee = node.callee

@@ -9,7 +9,8 @@
  *   .md):
  *
  *   1. check-updates gate — `pnpm outdated`, lockstep `--json` exit 2,
- *      submodule-behind, and soaked-cleared minimumReleaseAgeExclude entries.
+ *      submodule-behind, vendored action reference pins behind their latest
+ *      soaked release, and soaked-cleared minimumReleaseAgeExclude entries.
  *      No-op exit when nothing is actionable. Exposed as a
  *      standalone `--check-updates` mode (exit 0 = updates, 1 = none) so the
  *      gh-aw workflow's gate job calls THIS, not an inline bash port.
@@ -49,12 +50,16 @@ import {
   PNPM_WORKSPACE_YAML,
   REPO_ROOT,
 } from './paths.mts'
+import {
+  runCheck as vendorActionsCheck,
+  vendoringEnrolled,
+} from './vendor-actions.mts'
 import { runDeterministicChain } from './weekly-update/deterministic-chain.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
-export interface WeeklyUpdateOptions {
+export interface WeeklyUpdateConfig {
   testSetupScript: string
   testScript: string
   updateModel: string
@@ -68,7 +73,7 @@ export interface WeeklyUpdateOptions {
 // Parse argv into options. Defaults mirror the gh-aw weekly-update inputs; --pr
 // is opt-in (local default leaves the branch) so a local run never surprises
 // with a PR.
-export function parseArgs(argv: readonly string[]): WeeklyUpdateOptions {
+export function parseArgs(argv: readonly string[]): WeeklyUpdateConfig {
   const flag = (name: string): string | undefined => {
     const i = argv.indexOf(name)
     return i !== -1 ? argv[i + 1] : undefined
@@ -118,8 +123,9 @@ async function capture(
 
 // The deterministic check-updates gate, ported from the gh-aw workflow: true
 // when `pnpm outdated` reports drift, the lockstep manifest is behind (exit 2),
-// a submodule is behind its remote, or a soaked minimumReleaseAgeExclude entry
-// has cleared its removable date. This is the single source of the gate logic —
+// a submodule is behind its remote, a vendored upstream action reference pin
+// is behind its latest soaked release, or a soaked minimumReleaseAgeExclude
+// entry has cleared its removable date. This is the single source of the gate logic —
 // the gh-aw `weekly-update.md` check-updates job calls
 // `weekly-update.mts --check-updates`, not an inline bash port of it.
 export async function hasActionableUpdates(): Promise<boolean> {
@@ -151,6 +157,19 @@ export async function hasActionableUpdates(): Promise<boolean> {
   if (!hasLockstep && existsSync(path.join(REPO_ROOT, '.gitmodules'))) {
     if (await anySubmoduleBehind()) {
       return true
+    }
+  }
+  // A vendored upstream action reference behind its latest soaked release is
+  // actionable: the run surfaces the re-pin + re-port review for the AI pass.
+  // Enrollment-gated — members carry no reference pins — and a gh/network
+  // failure never fabricates work.
+  if (vendoringEnrolled()) {
+    try {
+      if (vendorActionsCheck() !== 0) {
+        return true
+      }
+    } catch {
+      // Transient gh/network failure — never a drift signal.
     }
   }
   // Soaked-cleared minimumReleaseAgeExclude entries (their `removable:` date is
@@ -222,7 +241,7 @@ export async function agentAvailable(): Promise<boolean> {
 
 const UPDATING_PROMPT = `You are the fleet's weekly dependency-update agent, running outside gh-aw as a plain job. The deterministic chain has ALREADY run and committed the mechanical updates: npm dependencies (update.mts), lockstep version-pin auto-bumps, package-manager pins, and gh-aw action pins. Do NOT redo any of those.
 
-Run the /updating umbrella skill ONLY for the advisory remainder that needs judgment: lockstep file-fork / feature-parity / spec-conformance / lang-parity rows, non-lockstep submodule bumps, open Dependabot security advisories, the coverage badge, model pricing, and GitHub settings drift. Work in CI mode: skip builds/tests during the update. Make atomic commits (one logical change per commit) so the PR history is reviewable. Do NOT push or open a PR — the runner handles that.`
+Run the /updating umbrella skill ONLY for the advisory remainder that needs judgment: lockstep file-fork / feature-parity / spec-conformance / lang-parity rows, non-lockstep submodule bumps, vendored upstream action reference pins behind latest (run scripts/fleet/vendor-actions.mts to re-pin, re-review each ported composite against the upstream diff, then advance its portedAt in scripts/fleet/_shared/action-port-map.mts), open Dependabot security advisories, the coverage badge, model pricing, and GitHub settings drift. Work in CI mode: skip builds/tests during the update. Make atomic commits (one logical change per commit) so the PR history is reviewable. Do NOT push or open a PR — the runner handles that.`
 
 async function main(): Promise<void> {
   // --check-updates: the deterministic gate as a standalone mode. Exits 0 when

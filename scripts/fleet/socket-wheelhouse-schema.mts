@@ -225,6 +225,61 @@ const LockstepSchema = Type.Object(
 )
 
 // ---------------------------------------------------------------------------
+// Cover block — the `cover` suite's per-repo overrides (was cover.json).
+// ---------------------------------------------------------------------------
+
+const CoverSchema = Type.Object(
+  {
+    suites: Type.Optional(
+      Type.Record(
+        Type.String(),
+        Type.Object(
+          {
+            config: Type.Optional(
+              Type.String({
+                description:
+                  'Explicit vitest config path override (repo-root-relative) for this suite; defaults to the repo-first resolution of the suite basename.',
+              }),
+            ),
+            runExclude: Type.Optional(
+              Type.Array(Type.String(), {
+                description:
+                  'Globs passed as `vitest --exclude` for this suite — skips running matching test files (e.g. a cross-package test that would pollute this repo’s coverage denominator).',
+              }),
+            ),
+          },
+          { additionalProperties: false },
+        ),
+        {
+          description:
+            'Per-suite cover overrides, keyed by suite name (unit, shared, isolated, …).',
+        },
+      ),
+    ),
+    thresholds: Type.Optional(
+      Type.Object(
+        {
+          statements: Type.Optional(Type.Number()),
+          branches: Type.Optional(Type.Number()),
+          functions: Type.Optional(Type.Number()),
+          lines: Type.Optional(Type.Number()),
+        },
+        {
+          additionalProperties: false,
+          description:
+            'Per-metric coverage thresholds (percent) the cover suite enforces; an absent metric inherits the fleet default.',
+        },
+      ),
+    ),
+  },
+  {
+    additionalProperties: false,
+    description:
+      'Coverage config the `cover` suite reads (folded in from the former .config/repo/cover.json): per-suite run overrides + per-metric thresholds. Absent = fleet defaults.',
+  },
+)
+
+// ---------------------------------------------------------------------------
 // Vitest block — test-suite tuning the canonical vitest config reads.
 // ---------------------------------------------------------------------------
 
@@ -735,24 +790,25 @@ export const SocketWheelhouseConfigSchema = Type.Object(
           'Additional publish channels beyond the primary `build` — e.g. a Rust crate (crates-registry/rust) that also ships a `.node` addon to npm carries `{from:npm-registry, type:addon}`. Each channel gets its own publish workflow.',
       }),
     ),
-    release: Type.Optional(ReleaseSchema),
+    claude: Type.Optional(ClaudeSchema),
+    cover: Type.Optional(CoverSchema),
     design: Type.Optional(DesignSchema),
     docker: Type.Optional(DockerSchema),
+    github: Type.Optional(GithubSchema),
     hooks: Type.Optional(HooksSchema),
-    scripts: Type.Optional(ScriptsSchema),
     lint: Type.Optional(LintSchema),
     lockstep: Type.Optional(LockstepSchema),
-    vitest: Type.Optional(VitestSchema),
-    workflows: Type.Optional(WorkflowsSchema),
-    claude: Type.Optional(ClaudeSchema),
-    workspace: Type.Optional(WorkspaceSchema),
-    github: Type.Optional(GithubSchema),
     pathsAllowlist: Type.Optional(
       Type.Array(PathsAllowlistEntrySchema, {
         description:
           'Exemptions for the path-hygiene gate (scripts/fleet/check/paths-are-canonical.mts). Each entry needs a `reason`; prefer narrow entries (rule + file + snippet_hash + pattern) over blanket file-level exempts.',
       }),
     ),
+    release: Type.Optional(ReleaseSchema),
+    scripts: Type.Optional(ScriptsSchema),
+    vitest: Type.Optional(VitestSchema),
+    workflows: Type.Optional(WorkflowsSchema),
+    workspace: Type.Optional(WorkspaceSchema),
   },
   {
     description:

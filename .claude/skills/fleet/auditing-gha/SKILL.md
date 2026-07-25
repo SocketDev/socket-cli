@@ -5,6 +5,8 @@ user-invocable: true
 allowed-tools: Read, Grep, Glob, Bash(gh:*), Bash(node:*), Bash(jq:*)
 model: claude-haiku-4-5
 context: fork
+metadata:
+  internal: true
 ---
 
 # auditing-gha
@@ -25,27 +27,11 @@ Diff a fleet repo's GitHub Actions repository-level settings against the canonic
 | `allowed_actions`                  | `'selected'`               | "Allow enterprise, and select non-enterprise, actions and reusable workflows" — the only mode where the explicit allowlist is the source of truth.                                                                                                                |
 | `github_owned_allowed`             | `false`                    | Don't blanket-allow `actions/*`. The canonical patterns list already names every github-owned action we need; unlisted ones must be explicit.                                                                                                                     |
 | `verified_allowed`                 | `false`                    | Marketplace "verified creator" is not implicit allow — every action must be on the canonical patterns list.                                                                                                                                                       |
-| `patterns_allowed ⊇ canonical set` | Each fleet pattern present | Each canonical entry is referenced by at least one socket-registry shared workflow; missing one breaks every consumer.                                                                                                                                            |
+| `patterns_allowed ⊇ canonical set` | Each fleet pattern present | Every canonical entry has a named consumer — a template workflow/composite or a declared fleet-member workflow — enforced by the `gha-allowlist-matches-template-uses` fleet check; missing one breaks its consumer at plan time.                                 |
 
-The **canonical patterns** (every fleet repo must have all of these):
+The **canonical patterns** — every fleet repo must have all of these — live in [`canonical-patterns.mts`](canonical-patterns.mts) next to this skill. That file is the single source of truth: the audit and `--conform` import it, and the `gha-allowlist-matches-template-uses` fleet check enforces it against the template's workflow surface in both directions, so this document intentionally does not carry a copy that can drift.
 
-- `actions/cache/restore@*`
-- `actions/cache/save@*`
-- `actions/cache@*`
-- `actions/checkout@*`
-- `actions/deploy-pages@*`
-- `actions/download-artifact@*`
-- `actions/github-script@*`
-- `actions/setup-go@*`
-- `actions/setup-node@*`
-- `actions/setup-python@*`
-- `actions/upload-artifact@*`
-- `actions/upload-pages-artifact@*`
-- `depot/build-push-action@*`
-- `depot/setup-action@*`
-- `github/codeql-action/upload-sarif@*`
-
-Extras beyond the canonical set are tolerated (reported as info, not failure). A repo may pin a one-off action, but each extra should map to a real consumer; orphans should be pruned.
+Extras beyond the canonical set are tolerated — reported as info, not failure. A repo may pin a one-off action, but each extra should map to a real consumer; orphans should be pruned.
 
 **Third-party actions are NOT on the allowlist.** Anything outside `actions/`, `github/`, and `depot/` should be ported to a hand-rolled composite under `SocketDev/socket-registry/.github/actions/` rather than added here. The current set of socket-registry composite replacements:
 

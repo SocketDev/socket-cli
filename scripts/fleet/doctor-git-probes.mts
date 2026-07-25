@@ -12,6 +12,10 @@ import path from 'node:path'
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
+import {
+  applyGhDefaultRepoFix,
+  detectGhDefaultRepoGap,
+} from './check/gh-default-repo-matches-origin.mts'
 import type { DoctorFinding } from './lib/doctor/catalog-gap.mts'
 import {
   detectDivergedMain,
@@ -134,6 +138,25 @@ export function runGitHygieneProbes(config: {
         findings.push(divergedFinding)
       }
     }
+  }
+
+  // GAP 12: gh default repo ≠ origin. In a fork checkout, bare gh commands
+  // resolve the fork PARENT unless `gh repo set-default` was run — workflow
+  // dispatches 404 and issue/PR queries read the wrong repo (2026-07-24,
+  // twice, on socket-packageurl-js → package-url/packageurl-js). Local-only
+  // probe; auto-fixed under --fix by marking origin as gh's default
+  // (`remote.origin.gh-resolved = base` — what `gh repo set-default <origin>`
+  // writes).
+  const ghGap = detectGhDefaultRepoGap(cwd)
+  if (ghGap && !(cfg.doFix && applyGhDefaultRepoFix(cwd))) {
+    findings.push({
+      fix: ghGap.fix,
+      fixable: true,
+      saw: ghGap.reason,
+      what: 'gh default repo does not match origin',
+      wanted: `bare gh commands targeting origin (${ghGap.origin})`,
+      where: `${cwd}/.git/config`,
+    })
   }
 
   // GAP 10: removable cascade worktrees.

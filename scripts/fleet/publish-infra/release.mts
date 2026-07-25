@@ -11,18 +11,27 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
-import { sleep } from '@socketsecurity/lib/promises/timers'
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
+import { sleep } from '@socketsecurity/lib-stable/promises/timers'
 
+import { resolveReleaseSubject } from '../_shared/release-subject.mts'
+import { withPrunedPackManifest } from './npm/pack-manifest.mts'
 import { logger, rootPath, runCapture } from './shared.mts'
 
 /**
  * Extract the CHANGELOG.md section for `version` (from its `## <version>`
- * heading to the next `## `). The release body comes from here so the GitHub
+ * heading to the next `## `) — the PUBLISH SUBJECT's changelog, which is the
+ * root CHANGELOG.md for a plain repo and the publishConfig.directory one for
+ * a redirected monorepo. The release body comes from here so the GitHub
  * release and the changelog can never tell different stories. Falls back to a
- * one-liner when the file or section is missing.
+ * one-liner when the file or section is missing. `root` is injectable for
+ * tests.
  */
-export function extractChangelogSection(version: string): string {
-  const changelogPath = path.join(rootPath, 'CHANGELOG.md')
+export function extractChangelogSection(
+  version: string,
+  root: string = rootPath,
+): string {
+  const changelogPath = resolveReleaseSubject(root).changelogPath
   if (!existsSync(changelogPath)) {
     return `Release ${version}.`
   }
@@ -160,9 +169,17 @@ async function defaultPackAssets(pkg: {
   name: string
   version: string
 }): Promise<string[]> {
-  const packed = await runCapture('pnpm', ['pack'], rootPath)
+  const subject = resolveReleaseSubject(rootPath)
+  // Prune repo-only lifecycle scripts for this pack too — the release-asset
+  // tarball must stay installable, same as the registry-bound packs.
+  const packed = await withPrunedPackManifest(subject.dir, () =>
+    runCapture('pnpm', ['pack'], rootPath),
+  )
   const tarballName = `${pkg.name.replace(/^@/, '').replace('/', '-')}-${pkg.version}.tgz`
-  const tarballPath = path.join(rootPath, tarballName)
+  // pnpm pack writes into the publish subject's directory when
+  // publishConfig.directory redirects the publish; for a plain repo packDir
+  // IS the root.
+  const tarballPath = path.join(subject.packDir, tarballName)
   if (packed.code !== 0 || !existsSync(tarballPath)) {
     logger.warn(`pnpm pack failed (${packed.code}); releasing without assets.`)
     return []
@@ -250,47 +267,59 @@ export async function ensureTagAndRelease(
 
   // Immutable-release pattern: create as draft, upload assets, then undraft.
   // A single-call create would race the Sigstore attestation.
-  const create = await runCapture(
-    'gh',
-    [
-      'release',
-      'create',
-      tagName,
-      '--draft',
-      '--verify-tag',
-      '--title',
-      tagName,
-      '--notes-file',
-      notesFile,
-    ],
-    rootPath,
-  )
-  if (create.code !== 0) {
-    logger.fail(`gh release create failed (${create.code})`)
-    process.exitCode = 1
-    return
-  }
-  if (assets.length) {
-    const upload = await runCapture(
+  try {
+    const create = await runCapture(
       'gh',
-      ['release', 'upload', tagName, ...assets],
+      [
+        'release',
+        'create',
+        tagName,
+        '--draft',
+        '--verify-tag',
+        '--title',
+        tagName,
+        '--notes-file',
+        notesFile,
+      ],
       rootPath,
     )
-    if (upload.code !== 0) {
-      logger.fail(`gh release upload failed (${upload.code})`)
+    if (create.code !== 0) {
+      logger.fail(`gh release create failed (${create.code})`)
       process.exitCode = 1
       return
     }
+    if (assets.length) {
+      const upload = await runCapture(
+        'gh',
+        ['release', 'upload', tagName, ...assets],
+        rootPath,
+      )
+      if (upload.code !== 0) {
+        logger.fail(`gh release upload failed (${upload.code})`)
+        process.exitCode = 1
+        return
+      }
+    }
+    const undraft = await runCapture(
+      'gh',
+      ['release', 'edit', tagName, '--draft=false'],
+      rootPath,
+    )
+    if (undraft.code !== 0) {
+      logger.fail(`gh release edit --draft=false failed (${undraft.code})`)
+      process.exitCode = 1
+      return
+    }
+    logger.success(`Release ${tagName} published from the CHANGELOG entry.`)
+  } finally {
+    // The checksums file is written into the repo tree solely so `gh release
+    // upload` can attach it — remove it once the upload path is done (success
+    // OR failure) so it never lingers as untracked residue.
+    for (let i = 0, { length } = assets; i < length; i += 1) {
+      const asset = assets[i]!
+      if (path.basename(asset) === 'checksums.txt') {
+        safeDeleteSync(asset)
+      }
+    }
   }
-  const undraft = await runCapture(
-    'gh',
-    ['release', 'edit', tagName, '--draft=false'],
-    rootPath,
-  )
-  if (undraft.code !== 0) {
-    logger.fail(`gh release edit --draft=false failed (${undraft.code})`)
-    process.exitCode = 1
-    return
-  }
-  logger.success(`Release ${tagName} published from the CHANGELOG entry.`)
 }

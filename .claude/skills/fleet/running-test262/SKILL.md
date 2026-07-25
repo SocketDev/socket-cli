@@ -5,6 +5,8 @@ user-invocable: true
 allowed-tools: Bash(node:*), Bash(pnpm:*), Bash(ls:*), Bash(cat:*), Bash(grep:*), Bash(find:*), Read
 model: claude-haiku-4-5
 context: fork
+metadata:
+  internal: true
 ---
 
 # running-test262

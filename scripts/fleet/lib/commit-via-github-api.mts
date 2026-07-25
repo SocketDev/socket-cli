@@ -28,7 +28,7 @@ export interface CommitFile {
   readonly path: string
 }
 
-export interface CommitViaGithubApiOptions {
+export interface CommitViaGithubApiConfig {
   // Override the API origin (GitHub Enterprise / tests). Defaults to api.github.com.
   readonly apiUrl?: string | undefined
   // SHA of the tree to layer the new files onto (usually `HEAD^{tree}`).
@@ -52,9 +52,9 @@ export interface CommitViaGithubApiOptions {
  * the new (verified) commit SHA. Throws on any non-2xx API response.
  */
 export async function commitViaGithubApi(
-  config: CommitViaGithubApiOptions,
+  config: CommitViaGithubApiConfig,
 ): Promise<string> {
-  const cfg = { __proto__: null, ...config } as CommitViaGithubApiOptions
+  const cfg = { __proto__: null, ...config } as CommitViaGithubApiConfig
   const apiUrl = cfg.apiUrl ?? DEFAULT_API_URL
   const git = `${apiUrl}/repos/${cfg.repo}/git`
   const headers = {

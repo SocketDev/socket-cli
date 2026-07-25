@@ -84,3 +84,39 @@ and legitimate. See the language mechanics in
 [optimizing-rust-performance](../../../.claude/skills/fleet/optimizing-rust-performance/SKILL.md),
 [optimizing-go-performance](../../../.claude/skills/fleet/optimizing-go-performance/SKILL.md),
 and [optimizing-cpp-performance](../../../.claude/skills/fleet/optimizing-cpp-performance/SKILL.md).
+
+## SIMD heuristics
+
+When a hot loop tempts you toward SIMD, apply these in order. Source: Erin
+Catto's box2d solver write-up at
+<https://box2d.org/posts/2024/08/simd-matters/>; each rule carries our own
+receipts where we have them. These are heuristics with a measure-first rule,
+not absolutes.
+
+- **Measure the autovectorization ceiling first.** Element-wise byte and
+  integer loops routinely hit it: stuie-cabi's per-frame buffer loops gained
+  5-16x from structure-only rewrites — `slice::fill`, block `memcmp`,
+  `copy_from_slice` — with zero intrinsics, stuie commit `b3e23ac`. Structured
+  float math does not: box2d's scalar solver shared the exact SoA layout with
+  the SIMD path and still ran ~2x slower than hand-written SSE2, 524 vs 982
+  FPS on a 7950X. Bench the structural rewrite first; reach for wide types
+  only when the measured gap justifies them.
+- **Restructure the data, don't retrofit intrinsics.** box2d's graph coloring
+  batches constraints so no two in a color share a body: one data
+  reorganization buys SIMD lanes AND atomics-free threading, and the coloring
+  is maintained incrementally on add and remove, never recomputed per step.
+  Pay for layout once; an intrinsic loop retrofitted onto a hostile layout
+  pays gather/scatter on every iteration.
+- **One codebase, a wide typedef.** box2d's `FloatW` typedefs to
+  `__m128`/`__m256`/NEON/scalar-struct behind one gather/scatter boundary.
+  Portability is a thin width abstraction — and that code shape is what makes
+  the runtime dispatch required by the pinning rule above cheap.
+- **Wider lanes saturate.** AVX2 beat SSE2 by ~14% despite 2x the lane width,
+  1117 vs 982 FPS, because gather/scatter and memory traffic dominate. Quote
+  this when someone proposes chasing a wider ISA before fixing layout.
+- **SIMD selectively.** box2d kept collision detection scalar; only the
+  math-dense solver went wide. Math density per byte moved decides where SIMD
+  belongs.
+
+Everything above is orthogonal to WHO CONTROLS THE TARGET: a distributed
+artifact still ships runtime dispatch, per the rule at the top of this page.

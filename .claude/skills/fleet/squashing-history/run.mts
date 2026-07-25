@@ -168,7 +168,7 @@ export async function accrueUnreleased(
   }
 }
 
-export interface SquashOptions {
+export interface SquashConfig {
   /**
    * Commit subject for the collapsed commit. Defaults to
    * 'chore: initial commit'.
@@ -205,7 +205,7 @@ export interface SquashResult {
  * `--no-verify` bypass to exactly this one command.
  */
 export async function squashSingleCommit(
-  config: SquashOptions,
+  config: SquashConfig,
 ): Promise<SquashResult> {
   const cfg = { __proto__: null, ...config } as {
     message?: string | undefined
@@ -312,7 +312,7 @@ export async function mintSquashRoot(config: {
 
 export type SquashMode = 'origin' | 'local-canonical' | 'diverged'
 
-export interface ClassifySquashModeOptions {
+export interface ClassifySquashModeConfig {
   /**
    * Local branch tip sha, or `''` when there is no local branch.
    */
@@ -341,9 +341,9 @@ export interface ClassifySquashModeOptions {
  *   then re-run.
  */
 export function classifySquashMode(
-  config: ClassifySquashModeOptions,
+  config: ClassifySquashModeConfig,
 ): SquashMode {
-  const cfg = { __proto__: null, ...config } as ClassifySquashModeOptions
+  const cfg = { __proto__: null, ...config } as ClassifySquashModeConfig
   if (cfg.localHead === '' || cfg.localHead === cfg.origHead) {
     return 'origin'
   }

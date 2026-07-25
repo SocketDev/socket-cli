@@ -16,7 +16,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-function resolveRepoName(cwd) {
+function resolveRepoName(cwd: string) {
   return process.env['SOCKET_FLEET_REPO_NAME'] || path.basename(cwd)
 }
 

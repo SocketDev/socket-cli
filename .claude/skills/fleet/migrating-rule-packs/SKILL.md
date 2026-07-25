@@ -5,6 +5,8 @@ user-invocable: true
 allowed-tools: Workflow, Read, Edit, Write, Grep, Glob, Bash(git worktree:*), Bash(git branch:*), Bash(git status:*), Bash(git rev-parse:*), Bash(git symbolic-ref:*), Bash(git show-ref:*), Bash(git add:*), Bash(git commit:*), Bash(git push:*), Bash(git log:*), Bash(git diff:*), Bash(node:*), Bash(pnpm:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(cat:*), Bash(mkdir:*), Bash(rm:*), Bash(mv:*), Bash(cp:*)
 model: claude-sonnet-4-6
 context: fork
+metadata:
+  internal: true
 ---
 
 # migrating-rule-packs

@@ -36,7 +36,7 @@ import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
-export interface MakeCoverageBadgeOptions {
+export interface MakeCoverageBadgeConfig {
   // Dry-run: report staleness via the exit code, write nothing.
   check?: boolean | undefined
   // The repo to operate on. main() passes REPO_ROOT; tests pass a tmp repo.
@@ -48,7 +48,7 @@ export interface MakeCoverageBadgeOptions {
  * Returns the process exit code: 0 on success/current, 1 on a missing
  * precondition or (under `check`) a stale badge.
  */
-export function makeCoverageBadge(config: MakeCoverageBadgeOptions): number {
+export function makeCoverageBadge(config: MakeCoverageBadgeConfig): number {
   const cfg = { __proto__: null, check: false, ...config }
   const readmePath = path.join(cfg.repoRoot, 'README.md')
   if (!existsSync(readmePath)) {

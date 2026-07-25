@@ -40,6 +40,10 @@ Only hooks that are entrypoint-guarded (`import.meta.url` matches `process.argv[
 
 For `PreToolUse`/`PostToolUse` the event's coarse `settings.json` matcher is a regex prefilter — Claude Code only spawns the dispatcher when the tool matches it, then the dispatcher does an exact per-hook `tools` match. A tool a bundled hook declares but the coarse matcher omits never reaches the dispatcher, so `dispatch-matchers-cover-hook-tools` asserts every bundled hook's `tools` is covered by its event's matcher.
 
+## Single-hook addressing (`fleet-dispatch-single-hook-v1`)
+
+`index.cjs <Event> <hook-name>` narrows the dispatch to the ONE table entry with that name. The wheelhouse's user-global dispatcher — canonical copy `scripts/repo/user-global/wheelhouse-dispatch.mts`, installed to `~/.claude/hooks/wheelhouse-dispatch.mts` — uses this to run a single named hook through the self-contained bundle from ANY repo session, so a concurrent `pnpm install` purge window in the wheelhouse's live node_modules cannot crash session hooks. Contract: a name with no entry in the event's table exits `SINGLE_HOOK_NOT_FOUND_EXIT` (3) so the caller falls back to the hook's source `.mts`; the `SINGLE_HOOK_PROTOCOL` literal is embedded in the built bundle, and callers MUST probe the bundle bytes for it before passing argv[3] — an older bundle ignores the extra arg and runs the whole event's set. In-repo `settings.json` never passes argv[3]; event-wide dispatch is unchanged.
+
 ## Staleness reminder
 
 `bundle-stale-reminder` (PostToolUse, Edit|Write) fires after an edit to the dispatcher, the dispatch table, a bundled hook source, or `_shared/`, and reminds you to rebuild. It never blocks. Rebuild with:

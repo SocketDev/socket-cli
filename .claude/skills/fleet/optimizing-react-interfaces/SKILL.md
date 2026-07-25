@@ -1,6 +1,8 @@
 ---
 name: optimizing-react-interfaces
 description: Optimizes measured React interface performance.
+metadata:
+  internal: true
 ---
 
 # Optimizing React Interfaces

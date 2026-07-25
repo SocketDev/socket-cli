@@ -4,23 +4,27 @@
  *   staged-publish approver, trusted-publisher attribution).
  */
 
-import { httpJson } from '@socketsecurity/lib-stable/http-request'
+import {
+  httpJson,
+  HttpResponseError,
+} from '@socketsecurity/lib-stable/http-request'
 
 import { NPM_REGISTRY_URL } from '../../constants/npm-registry.mts'
-import { runCapture } from '../shared.mts'
+
+import type { RegistryLatestRead } from '../../lib/release-anchor.mts'
 
 /**
- * The registry `dist-tags.latest` for a package — the currently-published
- * version — or undefined on any failure/unpublished. Reads the packument (not
- * `npm view`, which trips this repo's pnpm devEngines). The tolerant twin of
- * reconcile's throwing reader: the bump uses it to anchor the base version to
- * what actually published (never a possibly-ahead manifest), so it must NOT
- * throw on a first-publish / offline registry — it returns undefined and the
- * caller falls back.
+ * The registry `dist-tags.latest` for a package, distinguishing "the registry
+ * answered: never published" (a 404 — `reachable: true, latest: undefined`)
+ * from "the registry could not be consulted" (network failure, timeout, 5xx —
+ * `reachable: false`). Reads the packument (not `npm view`, which trips this
+ * repo's pnpm devEngines). The changelog anchor derivation hard-stops on
+ * `reachable: false`: offline, the released base cannot be confirmed and a
+ * stale local tag would silently widen the range.
  */
-export async function fetchLatestPublishedVersion(
+export async function fetchLatestPublishedVersionChecked(
   name: string,
-): Promise<string | undefined> {
+): Promise<RegistryLatestRead> {
   const url = `${NPM_REGISTRY_URL}/${encodeURIComponent(name).replace('%40', '@')}`
   try {
     const json = await httpJson<{
@@ -29,27 +33,96 @@ export async function fetchLatestPublishedVersion(
       headers: { accept: 'application/vnd.npm.install-v1+json' },
       timeout: 15_000,
     })
-    return json['dist-tags']?.latest
+    return { latest: json['dist-tags']?.latest, reachable: true }
+  } catch (e) {
+    if (e instanceof HttpResponseError && e.response.status === 404) {
+      return { latest: undefined, reachable: true }
+    }
+    return { reachable: false }
+  }
+}
+
+/**
+ * The registry `dist-tags.latest` for a package — the currently-published
+ * version — or undefined on any failure/unpublished. The tolerant twin of
+ * reconcile's throwing reader and of `fetchLatestPublishedVersionChecked`:
+ * callers that only display or compare a best-effort latest (version-ahead
+ * check, reconcile) must NOT throw on a first-publish / offline registry — it
+ * returns undefined and the caller falls back.
+ */
+export async function fetchLatestPublishedVersion(
+  name: string,
+): Promise<string | undefined> {
+  const read = await fetchLatestPublishedVersionChecked(name)
+  return read.reachable ? read.latest : undefined
+}
+
+/**
+ * The registry state the backfill gate reads in one packument fetch: the
+ * `dist-tags.latest` pointer plus the `time` map. The time map is the
+ * registry's PERMANENT publish ledger — it keeps an entry for every version
+ * ever published, including versions later unpublished — so it is the one
+ * source that can prove a version was NEVER published. Requires the full
+ * packument; the abbreviated format drops `time`.
+ */
+export interface RegistryReleaseState {
+  latest: string | undefined
+  timeMap: Record<string, string>
+}
+
+/**
+ * Fetch `RegistryReleaseState` for a package, or undefined on ANY failure —
+ * network, 404, or a packument without a `time` map. The backfill gate fails
+ * CLOSED on undefined: an unreadable publish ledger is never treated as an
+ * empty one.
+ */
+export async function fetchRegistryReleaseState(
+  name: string,
+): Promise<RegistryReleaseState | undefined> {
+  const url = `${NPM_REGISTRY_URL}/${encodeURIComponent(name).replace('%40', '@')}`
+  try {
+    const json = await httpJson<{
+      'dist-tags'?: { latest?: string | undefined } | undefined
+      time?: Record<string, string> | undefined
+    }>(url, {
+      // Full packument — the abbreviated install-v1 format drops `time`.
+      headers: { accept: 'application/json' },
+      timeout: 15_000,
+    })
+    if (!json.time || typeof json.time !== 'object') {
+      return undefined
+    }
+    return { latest: json['dist-tags']?.latest, timeMap: json.time }
   } catch {
     return undefined
   }
 }
 
 /**
- * `npm view <name>@<version> version` exits 0 iff the version exists on the
- * registry. Faster than fetching the full packument for a yes/no check.
+ * Whether `<name>@<version>` exists on the public registry. An abbreviated
+ * packument read (not `npm view`: bare npm invocations die on EBADDEVENGINES
+ * inside repos whose devEngines pin pnpm, which made this probe false-negative
+ * everywhere — including the release stage's registry-liveness gate). Staged
+ * entries are absent from the public packument, so a staged-only version
+ * correctly reads as not published. Returns false on any network failure,
+ * matching the old exit-code semantics.
  */
 export async function isAlreadyPublished(
   name: string,
   version: string,
-  cwd: string,
 ): Promise<boolean> {
-  const { code } = await runCapture(
-    'npm',
-    ['view', `${name}@${version}`, 'version'],
-    cwd,
-  )
-  return code === 0
+  const url = `${NPM_REGISTRY_URL}/${encodeURIComponent(name).replace('%40', '@')}`
+  try {
+    const json = await httpJson<{
+      versions?: Record<string, unknown> | undefined
+    }>(url, {
+      headers: { accept: 'application/vnd.npm.install-v1+json' },
+      timeout: 15_000,
+    })
+    return Boolean(json.versions && version in json.versions)
+  } catch {
+    return false
+  }
 }
 
 /**

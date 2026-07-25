@@ -90,7 +90,7 @@ function routingDoc(): string {
 // new snapshot. The replace uses `$1<date>` so only the date changes.
 const SNAPSHOT_MARKER_RE = /(MODEL-PRICING-SNAPSHOT:\s*)(\d{4}-\d{2}-\d{2})/
 
-export interface UpdatePricingOptions {
+export interface UpdatePricingConfig {
   // Which service's models the sourced prices merge into (e.g. 'anthropic').
   service: string
   prices: Record<string, ModelPrice>
@@ -133,7 +133,7 @@ export function readSourcedPrices(
 // Returns the new PricingData; pure given its inputs.
 export function applyPricingUpdate(
   current: PricingData,
-  config: UpdatePricingOptions,
+  config: UpdatePricingConfig,
 ): PricingData {
   config = { __proto__: null, ...config } as typeof config
   const services = {

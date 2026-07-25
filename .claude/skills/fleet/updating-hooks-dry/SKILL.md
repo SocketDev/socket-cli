@@ -5,6 +5,8 @@ user-invocable: true
 allowed-tools: Workflow, Task, Read, Grep, Glob, Write, AskUserQuestion, Bash(node scripts/fleet/check/shared-hook-helpers-are-used.mts:*), Bash(node scripts/fleet/check/hooks-have-no-guard-nudge-overlap.mts:*), Bash(node scripts/fleet/check/hook-registry-is-current.mts:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(wc:*), Bash(cat:*), Bash(head:*), Bash(tail:*)
 model: claude-opus-4-8
 context: fork
+metadata:
+  internal: true
 ---
 
 # updating-hooks-dry

@@ -36,7 +36,7 @@ const rule: MarkdownlintRule = {
     }
     let inFence = false
     for (let i = 0; i < params.lines.length; i += 1) {
-      const line = params.lines[i]
+      const line = params.lines[i]!
       // Track fenced-code state. Open/close on lines that START with ``` or ~~~.
       if (/^\s*(?:```|~~~)/.test(line)) {
         inFence = !inFence

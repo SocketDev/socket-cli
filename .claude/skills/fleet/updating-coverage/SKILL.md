@@ -5,6 +5,8 @@ user-invocable: true
 allowed-tools: Read, Bash(pnpm run cover:*), Bash(pnpm run coverage:*), Bash(pnpm run test:cover:*), Bash(node:*), Bash(git:*)
 model: claude-haiku-4-5
 context: fork
+metadata:
+  internal: true
 ---
 
 # updating-coverage

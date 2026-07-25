@@ -228,6 +228,12 @@ const FileForkRowSchema = Type.Object(
       description:
         'Full 40-char SHA of the upstream commit we forked from. The harness runs `git log <sha>..HEAD -- <upstream_path>` inside the submodule to surface drift.',
     }),
+    mirror: Type.Optional(
+      Type.Boolean({
+        description:
+          "True = this fork is a VERBATIM upstream mirror kept byte-close to upstream so it stays trivially diffable on the next bump (e.g. a conformance shim re-exposing upstream's API so upstream's own tests run against a port). A mirror MUST carry the `// @lockstep-mirror <upstream_path> @ <forked_at_sha>` header marker and a matching .config/fleet/.prettierignore entry; lockstep-mirror-markers-are-declared enforces both directions. Defaults to false — a deviating fork (mouse-parser, etc.) is NOT a mirror and may not carry the marker.",
+      }),
+    ),
     deviations: Type.Array(Type.String(), {
       minItems: 1,
       description:

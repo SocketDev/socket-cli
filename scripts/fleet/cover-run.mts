@@ -354,7 +354,8 @@ export interface RunPlan {
   typeCoverageArgs: string[]
 }
 
-// Resolve the repo's cover.json config, its resolved suites, and the vitest
+// Resolve the repo's cover config (the `cover` section of socket-wheelhouse.json),
+// its resolved suites, and the vitest
 // argv for each — threading a suite's per-run --exclude globs (so a test that
 // exercises another package is skipped in this repo's coverage run).
 export function resolveRunPlan(repoRoot: string): RunPlan {

@@ -1,6 +1,8 @@
 ---
 name: managing-pnpm-workspaces
 description: Maintains pnpm workspace dependencies safely.
+metadata:
+  internal: true
 ---
 
 # Managing pnpm Workspaces

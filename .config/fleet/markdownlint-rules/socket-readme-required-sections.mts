@@ -49,10 +49,10 @@ const rule: MarkdownlintRule = {
     }
     const headings = []
     for (let i = 0; i < params.lines.length; i += 1) {
-      const line = params.lines[i]
+      const line = params.lines[i]!
       const m = /^##\s+(.+?)\s*$/.exec(line)
       if (m) {
-        headings.push({ text: m[1], lineNumber: i + 1 })
+        headings.push({ text: m[1]!, lineNumber: i + 1 })
       }
     }
     let cursor = 0
@@ -60,7 +60,7 @@ const rule: MarkdownlintRule = {
       const want = REQUIRED_SECTIONS[r]
       let found = -1
       for (let h = cursor; h < headings.length; h += 1) {
-        if (headings[h].text === want) {
+        if (headings[h]!.text === want) {
           found = h
           break
         }

@@ -244,13 +244,11 @@ type RunResult = {
 function run(
   cmd: string,
   args: string[],
-  opts: { cwd: string; env?: NodeJS.ProcessEnv | undefined } = {
-    cwd: process.cwd(),
-  },
+  config: { cwd: string; env?: NodeJS.ProcessEnv | undefined },
 ): RunResult {
   const r = spawnSync(cmd, args, {
-    cwd: opts.cwd,
-    env: opts.env ?? process.env,
+    cwd: config.cwd,
+    env: config.env ?? process.env,
     encoding: 'utf8',
   })
   return {

@@ -40,7 +40,7 @@ const rule: MarkdownlintRule = {
     }
     const content = params.lines.join('\n')
     for (let i = 0, { length } = SOCIAL_BADGES; i < length; i += 1) {
-      const badge = SOCIAL_BADGES[i]
+      const badge = SOCIAL_BADGES[i]!
       if (!badge.signature.test(content)) {
         onError({
           lineNumber: 1,

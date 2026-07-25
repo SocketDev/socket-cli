@@ -1,9 +1,11 @@
 name: 🧹 Prune Workflow Runs
 
 # Deletes stale GitHub Actions run history on a weekly cadence:
-#   - runs older than the retention window for workflows still present on the
-#     default branch, and
-#   - ALL runs for workflows whose source is gone from the default branch.
+#   - keeps only the newest 20 runs per workflow still present on the default
+#     branch (an optional `days` input adds a time window),
+#   - purges dependabot / gh-audit run groups wholesale, and
+#   - purges every run of workflows whose source is gone from the default
+#     branch.
 # See scripts/fleet/prune-workflow-runs.mts. Byte-identical across the fleet
 # (cascaded); edit template/base/.github/workflows/prune-workflow-runs.yml and
 # re-cascade via `pnpm run sync`.
@@ -15,10 +17,10 @@ on:
   workflow_dispatch:
     inputs:
       days:
-        description: 'Retention window in days for present workflows'
+        description: 'Optional retention window in days for present workflows (empty = keep-count policy only)'
         required: false
         type: string
-        default: '15'
+        default: ''
       dry-run:
         description: 'Report what would be deleted without deleting'
         required: false
@@ -66,10 +68,16 @@ jobs:
       - name: Prune workflow runs
         env:
           GH_TOKEN: ${{ github.token }}
-          DAYS: ${{ inputs.days || '15' }}
+          DAYS: ${{ inputs.days || '' }}
           DRY_RUN: ${{ inputs.dry-run }}
         run: |
-          ARGS=(--days "$DAYS")
+          # No --days by default: the script's own policy applies (keep the
+          # newest 20 runs per present workflow, purge dependabot/gh-audit
+          # run groups and absent workflows).
+          ARGS=()
+          if [ -n "$DAYS" ]; then
+            ARGS+=(--days "$DAYS")
+          fi
           if [ "$DRY_RUN" = "true" ]; then
             ARGS+=(--dry-run)
           fi

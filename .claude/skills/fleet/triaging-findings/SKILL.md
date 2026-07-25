@@ -6,6 +6,8 @@ user-invocable: true
 allowed-tools: Workflow, Task, Read, Glob, Grep, Write, AskUserQuestion, Bash(git log:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(wc:*), Bash(node .claude/skills/fleet/_shared/scripts/checkpoint.mts:*), Bash(node scripts/fleet/triaging-findings/cli.mts:*)
 model: claude-opus-4-8
 context: fork
+metadata:
+  internal: true
 ---
 
 # triaging-findings

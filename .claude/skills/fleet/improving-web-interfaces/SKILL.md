@@ -1,6 +1,8 @@
 ---
 name: improving-web-interfaces
 description: Improves web interfaces after design direction is locked.
+metadata:
+  internal: true
 ---
 
 # Improving Web Interfaces

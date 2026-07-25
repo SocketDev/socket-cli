@@ -5,6 +5,8 @@ user-invocable: true
 allowed-tools: Workflow, Read, Edit, Grep, Glob, Bash(pnpm:*), Bash(npm:*), Bash(git:*), Bash(node:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(cat:*), Bash(head:*), Bash(tail:*), Bash(wc:*), Bash(diff:*)
 model: claude-haiku-4-5
 context: fork
+metadata:
+  internal: true
 ---
 
 # updating-lockstep
@@ -57,6 +59,7 @@ Worktree isolation is **not** needed: each row touches a distinct submodule path
 - **Atomic commits**: one commit per auto-bumped row. Conventional Commits format.
 - **`.gitmodules` version comments**: keep `# <name>-<version>` annotations synchronized with `pinned_tag`.
 - **Stable releases only**: filter `-rc` / `-alpha` / `-beta` / `-dev` / `-snapshot` / `-nightly` / `-preview` (full pattern in `reference.md`).
+- **Mirror rows move as a unit**: re-copying a `mirror: true` `file-fork` updates the file bytes, its `// @lockstep-mirror <upstream_path> @ <sha>` header, and the row's `forked_at_sha` together, then `pnpm run lockstep:emit-mirror-globs`. `lockstep-mirror-markers-are-declared` fails any half-move. Doctrine: `docs/agents.md/fleet/lockstep.md` § Verbatim mirrors.
 - **No `npx` / `pnpm dlx` / `yarn dlx`**: `pnpm exec` or `pnpm run` per CLAUDE.md _Tooling_.
 - **Edit tool, not `sed`**: for `.gitmodules` annotation updates.
 

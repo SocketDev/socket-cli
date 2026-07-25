@@ -75,7 +75,7 @@ export const MECHANICAL_ROUTE: TierRoute = {
 // apex tier — `mechanical` is meaningless there and is ignored. ASCII-sorted.
 export const MECHANICAL_PHASES = ['execute', 'followup'] as const
 
-export interface TierRouteOptions {
+export interface TierRouteConfig {
   readonly phase: TierPhase
   readonly sensitivity: TierSensitivity
   // When true AND the phase is execute/followup, route to the haiku/low floor
@@ -83,11 +83,11 @@ export interface TierRouteOptions {
   readonly mechanical?: boolean | undefined
 }
 
-export function routeTierForTask(config: TierRouteOptions): TierRoute {
-  const cfg: TierRouteOptions = {
+export function routeTierForTask(config: TierRouteConfig): TierRoute {
+  const cfg: TierRouteConfig = {
     __proto__: null,
     ...config,
-  } as TierRouteOptions
+  } as TierRouteConfig
   if (!PHASES.includes(cfg.phase)) {
     throw new Error(
       `routeTierForTask: unknown phase. Where: options.phase. Saw: ${String(cfg.phase)}. Wanted one of: ${PHASES.join(', ')}. Fix: pass a PHASES member.`,

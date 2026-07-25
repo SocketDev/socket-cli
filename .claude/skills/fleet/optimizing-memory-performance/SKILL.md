@@ -1,6 +1,8 @@
 ---
 name: optimizing-memory-performance
 description: Audits measured memory and allocation performance.
+metadata:
+  internal: true
 ---
 
 # Optimizing Memory Performance

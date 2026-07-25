@@ -5,6 +5,8 @@ user-invocable: true
 allowed-tools: Read, Edit, Write, Grep, Glob, AskUserQuestion, Bash(node:*), Bash(gh:*), Bash(git:*), Bash(pnpm run:*), Bash(rg:*), Bash(grep:*)
 model: claude-sonnet-4-6
 context: fork
+metadata:
+  internal: true
 ---
 
 # driving-cursor-bugbot

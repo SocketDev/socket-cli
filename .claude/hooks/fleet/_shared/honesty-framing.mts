@@ -15,14 +15,18 @@
 // is why the bare ban is safe to share across all three surfaces without
 // per-surface softening.
 
-// Three branches. The bare word (`honest`/`honestly`/`honesty`) is the
-// categorical ban — it ALREADY subsumes every framing phrase the three source
-// patterns spelled out ("in all honesty", "to be honest", "if I'm honest",
-// "the honest <X>", "honestly <residual|answer|…>"), so those are not repeated
-// here. The remaining branches add the only framing with no "honest" token:
-// the bare opener "Frankly," (line-start) and the "papered over" self-defense.
+// Three branches, each an EXPLICIT word alternation — no compressed suffix
+// tricks, no positional anchors that inflections or sentence position dodge:
+//
+//   1. honest / honestly / honesty — the categorical ban; subsumes every
+//      framing phrase ("in all honesty", "to be honest", "if I'm honest",
+//      "the honest <X>") since each carries one of the three tokens.
+//   2. frankly — categorical for the same reason, wherever it sits in the
+//      sentence ("Frankly, …", "quite frankly", "frankly speaking").
+//   3. paper over in any inflection (paper/papers/papered/papering over) —
+//      the self-defense framing with no honesty token.
 export const HONESTY_FRAMING_RE =
-  /\bhonest(?:ly|y)?\b|(?:^|\n)\s*frankly,|\bpapered over\b/i
+  /\b(?:honest|honestly|honesty)\b|\bfrankly\b|\bpaper(?:ed|ing|s)?\s+over\b/i
 
 // Shared label + rationale so consumers render one consistent message.
 export const HONESTY_LABEL =
