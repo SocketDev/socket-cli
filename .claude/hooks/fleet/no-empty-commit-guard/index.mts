@@ -70,7 +70,7 @@ export function isCherryPickAllowEmpty(command: string): boolean {
   )
 }
 
-export const check = bashGuard((command, payload) => {
+export const check = bashGuard(command => {
   const allowEmptyCommit = isAllowEmptyCommit(command)
   const allowEmptyCherryPick = isCherryPickAllowEmpty(command)
   if (!allowEmptyCommit && !allowEmptyCherryPick) {

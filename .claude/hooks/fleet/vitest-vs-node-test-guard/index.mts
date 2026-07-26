@@ -61,7 +61,7 @@ export function extractIncludeGlobs(configText: string): string[] | undefined {
   if (!m) {
     return undefined
   }
-  const body = m.groups!.body!
+  const body = m.groups!['body']!
   // Bail if the body has anything that isn't a string literal, comma, or
   // whitespace.
   if (/[^\s,'"`\w./*[\]{}-]/.test(body)) {
@@ -72,7 +72,7 @@ export function extractIncludeGlobs(configText: string): string[] | undefined {
   const stringRe = /(?<q>['"`])(?<glob>(?:(?!\k<q>).|\\.)*?)\k<q>/g
   let strM: RegExpExecArray | null
   while ((strM = stringRe.exec(body)) !== null) {
-    globs.push(strM.groups!.glob!)
+    globs.push(strM.groups!['glob']!)
   }
   if (globs.length === 0) {
     return undefined
@@ -189,6 +189,7 @@ export function relPathFromRepoRoot(
 }
 
 export const check = editGuard((filePath, content, payload) => {
+  void content
   if (!/\.(cjs|cts|js|mjs|mts|ts)$/.test(filePath)) {
     return undefined
   }

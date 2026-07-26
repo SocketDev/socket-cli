@@ -48,7 +48,7 @@ export function findFindings(text: string): Finding[] {
   ES_YEAR_RE.lastIndex = 0
   // oxlint-disable-next-line no-cond-assign -- standard global-regex exec loop.
   while ((m = ES_YEAR_RE.exec(text))) {
-    const year = m.groups!.year!
+    const year = m.groups!['year']!
     if (Number(year) < ES_YEAR_FLOOR) {
       years.add(year)
     }

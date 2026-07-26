@@ -7,15 +7,27 @@
  *   under the fleet's file-size cap.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs'
 import path from 'node:path'
+import process from 'node:process'
 
 import { stripAnsi } from '@socketsecurity/lib-stable/ansi/strip'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import type { CoverThresholds } from './cover/discovery.mts'
-import { REPO_ROOT } from './paths.mts'
-import type { AggregateCoverage } from './util/coverage-merge.mts'
+import { COVERAGE_FINAL_PATH, REPO_ROOT } from './paths.mts'
+import { coveredCounts } from './util/coverage-merge.mts'
+import type {
+  AggregateCoverage,
+  CoverageFileFinal,
+} from './util/coverage-merge.mts'
 import type { SuiteResult } from './cover.mts'
 
 const rootPath = REPO_ROOT
@@ -259,6 +271,95 @@ export function buildSuiteFailureReport(
   ]
 }
 
+// The N files with the most UNCOVERED branches in the merged coverage-final
+// (skips test files + files with no branches). Pure read; returns [] on any
+// read/parse failure so the caller stays best-effort.
+export function topUncoveredBranchFiles(
+  limit: number,
+  finalPath: string = COVERAGE_FINAL_PATH,
+): Array<{ file: string; covered: number; total: number; missing: number }> {
+  let merged: Record<string, CoverageFileFinal>
+  try {
+    merged = JSON.parse(readFileSync(finalPath, 'utf8')) as Record<
+      string,
+      CoverageFileFinal
+    >
+  } catch {
+    return []
+  }
+  const rows: Array<{
+    file: string
+    covered: number
+    total: number
+    missing: number
+  }> = []
+  for (const [abs, entry] of Object.entries(merged)) {
+    const rel = normalizePath(path.relative(rootPath, abs))
+    if (rel.endsWith('.test.mts') || /(?:^|\/)test\//.test(rel)) {
+      continue
+    }
+    let total = 0
+    const branchArrs = Object.values(entry?.b ?? {})
+    for (let i = 0, { length } = branchArrs; i < length; i += 1) {
+      total += branchArrs[i]!.length
+    }
+    if (total === 0) {
+      continue
+    }
+    const { branches: covered } = coveredCounts(entry)
+    const missing = total - covered
+    if (missing > 0) {
+      rows.push({ covered, file: rel, missing, total })
+    }
+  }
+  rows.sort((a, b) => b.missing - a.missing)
+  return rows.slice(0, limit)
+}
+
+// Visibility: echo the aggregate + the top uncovered-branch files to stdout AND
+// (when running under Actions) GITHUB_STEP_SUMMARY, so a CI cover run surfaces
+// its real number + the biggest gaps. Pure logging — best-effort, never throws.
+export function emitCoverageVisibility(aggregate: AggregateCoverage): void {
+  const top = topUncoveredBranchFiles(5)
+  if (top.length > 0) {
+    logger.log('')
+    logger.log(' Top uncovered-branch files:')
+    for (let i = 0, { length } = top; i < length; i += 1) {
+      const r = top[i]!
+      logger.log(
+        `   ${r.covered}/${r.total} branches — ${r.file} (${r.missing} uncovered)`,
+      )
+    }
+  }
+  const summaryPath = process.env['GITHUB_STEP_SUMMARY']
+  if (!summaryPath) {
+    return
+  }
+  const lines = [
+    '### Aggregate code coverage (Main + Isolated)',
+    '',
+    `- Statements: ${aggregate.statements}%`,
+    `- Branches: ${aggregate.branches}%`,
+    `- Functions: ${aggregate.functions}%`,
+    `- Lines: ${aggregate.lines}%`,
+  ]
+  if (top.length > 0) {
+    lines.push('', '#### Top uncovered-branch files', '')
+    for (let i = 0, { length } = top; i < length; i += 1) {
+      const r = top[i]!
+      lines.push(
+        `- \`${r.file}\` — ${r.covered}/${r.total} branches (${r.missing} uncovered)`,
+      )
+    }
+  }
+  lines.push('')
+  try {
+    appendFileSync(summaryPath, `${lines.join('\n')}\n`)
+  } catch {
+    // Best-effort: a missing/unwritable step-summary file must not fail cover.
+  }
+}
+
 // Print the test summary, optional v8 detail table, and the coverage summary.
 export function renderCodeCoverageDisplay(
   mainOutput: string,
@@ -325,6 +426,11 @@ export function renderCodeCoverageDisplay(
     logger.log(
       `   Functions:  ${aggregateCoverage.functions}% | Lines:    ${aggregateCoverage.lines}%`,
     )
+    // Visibility: echo the aggregate + the biggest uncovered-branch files to
+    // stdout AND GITHUB_STEP_SUMMARY, so a CI cover run SHOWS its real number
+    // and the top gaps instead of only failing a threshold. Pure logging — no
+    // gating logic, best-effort (any read/write error is swallowed).
+    emitCoverageVisibility(aggregateCoverage)
   }
 
   if (typeCoveragePercent !== undefined) {

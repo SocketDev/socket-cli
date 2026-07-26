@@ -33,11 +33,11 @@ export async function runSetupZizmor(): Promise<boolean> {
   const systemBin = whichSync('zizmor', { nothrow: true })
   if (systemBin && typeof systemBin === 'string') {
     if (await checkZizmorVersion(systemBin)) {
-      logger.log(`Found on PATH: ${systemBin} (${releaseTag(ZIZMOR.version)})`)
+      logger.log(`Found on PATH: ${systemBin} (${releaseTag(ZIZMOR.version!)})`)
       return true
     }
     logger.log(
-      `Found on PATH but wrong version (need ${releaseTag(ZIZMOR.version)})`,
+      `Found on PATH but wrong version (need ${releaseTag(ZIZMOR.version!)})`,
     )
   }
 
@@ -50,9 +50,9 @@ export async function runSetupZizmor(): Promise<boolean> {
   }
   const { asset, integrity: expectedIntegrity } = platformEntry
   const repo = ZIZMOR.repository?.replace(/^[^:]+:/, '') ?? ''
-  const url = `https://github.com/${repo}/releases/download/${releaseTag(ZIZMOR.version)}/${asset}`
+  const url = `https://github.com/${repo}/releases/download/${releaseTag(ZIZMOR.version!)}/${asset}`
 
-  logger.log(`Downloading zizmor ${releaseTag(ZIZMOR.version)} (${asset})...`)
+  logger.log(`Downloading zizmor ${releaseTag(ZIZMOR.version!)} (${asset})...`)
   const { binaryPath: archivePath, downloaded } = await downloadBinary({
     url,
     name: `zizmor-${ZIZMOR.version}-${asset}`,
@@ -68,7 +68,7 @@ export async function runSetupZizmor(): Promise<boolean> {
   const ext = process.platform === 'win32' ? '.exe' : ''
   const binPath = path.join(path.dirname(archivePath), `zizmor${ext}`)
   if (existsSync(binPath) && (await checkZizmorVersion(binPath))) {
-    logger.log(`Cached: ${binPath} (${releaseTag(ZIZMOR.version)})`)
+    logger.log(`Cached: ${binPath} (${releaseTag(ZIZMOR.version!)})`)
     return true
   }
 

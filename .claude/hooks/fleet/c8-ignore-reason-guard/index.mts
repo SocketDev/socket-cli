@@ -57,11 +57,11 @@ export function findUnexplainedIgnores(source: string): Finding[] {
     IGNORE_DIRECTIVE_RE.lastIndex = 0
     let match: RegExpExecArray | null
     while ((match = IGNORE_DIRECTIVE_RE.exec(line)) !== null) {
-      const kind = match.groups!.kind!
+      const kind = match.groups!['kind']!
       if (kind === 'stop') {
         continue
       }
-      const rawTail = match.groups!.tail!
+      const rawTail = match.groups!['tail']!
       // A multi-line `next N` (N >= 2) is broken even WITH a reason: c8/v8
       // count physical lines, not statements, so `next 3` silently drops
       // covered lines. Require a start/stop bracket instead. Bare `next`
@@ -70,7 +70,7 @@ export function findUnexplainedIgnores(source: string): Finding[] {
       if (
         kind === 'next' &&
         countMatch &&
-        Number(countMatch.groups!.count) >= 2
+        Number(countMatch.groups!['count']) >= 2
       ) {
         findings.push({ line: i + 1, text: line.trim(), kind: 'next-n' })
         continue

@@ -151,7 +151,7 @@ export function applyAllowMarkerFilter(
   return out
 }
 
-export const check = editGuard((filePath, content, payload) => {
+export const check = editGuard((filePath, content) => {
   if (!isApplicable(filePath)) {
     return undefined
   }

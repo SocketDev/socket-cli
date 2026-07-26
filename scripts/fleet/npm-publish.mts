@@ -45,8 +45,6 @@
  *   step, and the approve flow).
  */
 
-import { readFileSync } from 'node:fs'
-import path from 'node:path'
 import process from 'node:process'
 
 import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
@@ -67,6 +65,7 @@ import { resolveBumpScript, runBump } from './publish-infra/npm/bump.mts'
 import {
   isStagingExpected,
   parseStageListJson,
+  readPackageJson,
   readStagedShasum,
 } from './publish-infra/npm/shared.mts'
 import {
@@ -285,10 +284,11 @@ async function main(): Promise<void> {
       // matches the now-updated origin. Fail-loud on a conflict — never guess a
       // lineage.
       if (reconcile && !dryRun) {
-        const pkgName = String(
-          JSON.parse(readFileSync(path.join(rootPath, 'package.json'), 'utf8'))
-            .name,
-        )
+        // The PUBLISH SUBJECT's name — the root for a plain repo, the
+        // redirected subject for a publishConfig.directory monorepo, the MAIN
+        // package for a multi-package workspace (a private root has no
+        // registry history to reconcile against).
+        const pkgName = readPackageJson().name
         const published = await fetchPublishedVersion(pkgName)
         const baseSha = await findPublishedBaseSha(rootPath, published)
         await rebaseOntoPublishedBase(rootPath, baseSha)

@@ -49,16 +49,9 @@
 //   { "tool_name": "Bash", "tool_input": { "command": "..." },
 //     "transcript_path": "..." }
 
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import process from 'node:process'
 
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
@@ -507,7 +500,7 @@ function readGhAuthStatus(): GhAuthStatus {
   const scopesText = githubComBlock ?? text
   const scopesMatch = scopesText.match(/Token scopes:\s*(?<list>.+)/i)
   const scopes = scopesMatch
-    ? scopesMatch.groups!.list!.split(',').map(s =>
+    ? scopesMatch.groups!['list']!.split(',').map(s =>
         // Trim, then strip one leading or trailing quote char (a single- or
         // double-quoted scope token in the `gh auth status` output).
         s.trim().replace(/^['"]|['"]$/g, ''),

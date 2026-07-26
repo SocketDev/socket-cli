@@ -275,8 +275,8 @@ export function findShapeViolations(
     for (let i = 0, { length } = lines; i < length; i += 1) {
       /* c8 ignore next */
       const m = /^##\s+(?<heading>.+?)\s*$/.exec(lines[i] ?? '')
-      if (m && m.groups?.heading) {
-        headings.push(m.groups.heading)
+      if (m && m.groups?.['heading']) {
+        headings.push(m.groups['heading'])
       }
     }
     let cursor = 0

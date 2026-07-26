@@ -95,8 +95,8 @@ export function uppercaseFirstLetterAfterMarker(line: string): string {
   if (!m) {
     return line
   }
-  const prefix = m.groups!.prefix!
-  const firstChar = m.groups!.firstChar!
+  const prefix = m.groups!['prefix']!
+  const firstChar = m.groups!['firstChar']!
   return prefix + firstChar.toUpperCase() + line.slice(prefix.length + 1)
 }
 

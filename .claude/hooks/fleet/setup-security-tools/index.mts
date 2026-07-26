@@ -38,7 +38,7 @@
 // not block the conversation on its own bugs.
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-import { existsSync, promises as fs } from 'node:fs'
+import { existsSync, promises as fs, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -90,7 +90,7 @@ export function checkEdition(): Finding[] {
   }
   let content = ''
   try {
-    content = require('node:fs').readFileSync(shimPath, 'utf8') as string
+    content = readFileSync(shimPath, 'utf8')
   } catch {
     return []
   }

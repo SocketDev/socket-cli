@@ -70,7 +70,7 @@ export function findOrphanSubmoduleSections(text: string): string[] {
     const prev = i > 0 ? lines[i - 1] : ''
     if (!prev || !COMMENT_RE.test(prev)) {
       /* c8 ignore next - SUBMODULE_RE always captures `name`; the `?? line` fallback is a defensive dead branch */
-      orphans.push(match.groups?.name ?? line)
+      orphans.push(match.groups?.['name'] ?? line)
     }
   }
   return orphans

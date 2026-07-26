@@ -16,8 +16,8 @@ export function findUsesIssues(content: string, cache: Cache): UsesIssue[] {
     if (!m) {
       continue
     }
-    const ownerRepoPath = m.groups!.ownerRepoPath!
-    const ref = m.groups!.ref!
+    const ownerRepoPath = m.groups!['ownerRepoPath']!
+    const ref = m.groups!['ref']!
     const ownerRepo = normalizePath(ownerRepoPath)
       .split('/')
       .slice(0, 2)

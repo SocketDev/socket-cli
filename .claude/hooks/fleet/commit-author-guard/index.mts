@@ -56,8 +56,8 @@ export function parseAuthorOverride(command: string): GitAuthor | undefined {
     )
   if (authorEq) {
     return {
-      name: authorEq.groups!.name!.trim(),
-      email: authorEq.groups!.email!.trim(),
+      name: authorEq.groups!['name']!.trim(),
+      email: authorEq.groups!['email']!.trim(),
     }
   }
   // --author "Name <email>"
@@ -67,8 +67,8 @@ export function parseAuthorOverride(command: string): GitAuthor | undefined {
     )
   if (authorSpace) {
     return {
-      name: authorSpace.groups!.name!.trim(),
-      email: authorSpace.groups!.email!.trim(),
+      name: authorSpace.groups!['name']!.trim(),
+      email: authorSpace.groups!['email']!.trim(),
     }
   }
   // -c user.email=...
@@ -79,9 +79,9 @@ export function parseAuthorOverride(command: string): GitAuthor | undefined {
     )
   if (cEmail || cName) {
     return {
-      email: cEmail?.groups?.email,
+      email: cEmail?.groups?.['email'],
       name: cName
-        ? (cName.groups?.quotedName ?? cName.groups?.bareName)
+        ? (cName.groups?.['quotedName'] ?? cName.groups?.['bareName'])
         : undefined,
     }
   }

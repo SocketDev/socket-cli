@@ -24,7 +24,6 @@
 
 import path from 'node:path'
 
-import { safeReadFileSync } from '@socketsecurity/lib-stable/fs/read-file'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'

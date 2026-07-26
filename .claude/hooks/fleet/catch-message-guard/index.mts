@@ -125,7 +125,7 @@ export function findCatchMessageViolations(after: string): Finding[] {
     CATCH_OPEN_RE.lastIndex = 0
     const pending: string[] = []
     while ((m = CATCH_OPEN_RE.exec(code)) !== null) {
-      pending.push(m.groups!.binding!)
+      pending.push(m.groups!['binding']!)
     }
     // Look for ${<binding>.message} for any currently-open binding
     // BEFORE updating depth, so the line that closes the catch
@@ -261,6 +261,7 @@ function escapeRegex(s: string): string {
 }
 
 export const check = editGuard((filePath, content, payload) => {
+  void content
   if (!isJsOrTs(filePath) || isTestTree(filePath)) {
     return undefined
   }

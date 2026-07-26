@@ -78,9 +78,6 @@ export const COMPOSITE_ACTION_PORTS: Readonly<
   'setup-git-signing': [
     { portedAt: 'v7.0.0', upstream: 'crazy-max/ghaction-import-gpg' },
   ],
-  // template/conditional/go overlay — self-declared inline port of setup-go's
-  // version-resolution fallback chain.
-  'setup-go-toolchain': [{ portedAt: 'v7.0.0', upstream: 'actions/setup-go' }],
 }
 
 // Split an `<owner>/<repo>` slug; undefined when the shape is wrong. Pure.

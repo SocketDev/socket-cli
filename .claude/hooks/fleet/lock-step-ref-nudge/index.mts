@@ -189,9 +189,9 @@ export function findCanonicalRefs(content: string): MatchedRef[] {
     let match: RegExpExecArray | null
     while ((match = CANONICAL_RE.exec(line)) !== null) {
       hits.push({
-        form: match.groups!.form as 'with' | 'from',
-        lang: match.groups!.lang!,
-        refPath: match.groups!.refPath!,
+        form: match.groups!['form'] as 'with' | 'from',
+        lang: match.groups!['lang']!,
+        refPath: match.groups!['refPath']!,
         lineNumber: i + 1,
         preview: line.trim().slice(0, 100),
       })

@@ -49,7 +49,7 @@ function isAscadSorted(keys: readonly string[]): boolean {
 function indentOf(line: string): number {
   const m = line.match(/^(?<indent>\s*)/)
   /* c8 ignore next - regex always matches, fallback is unreachable */
-  return m ? m.groups!.indent!.length : 0
+  return m ? m.groups!['indent']!.length : 0
 }
 
 // Walk lines, grouping maximal runs of lines that (a) match `keyFor` to a
@@ -94,7 +94,7 @@ function scanRuns(
 // JSON / JSONC object keys: `"name": ...` (allow trailing comma).
 function jsonKey(line: string): string | undefined {
   const m = line.match(/^\s*"(?<key>[^"]+)"\s*:/)
-  return m ? m.groups?.key : undefined
+  return m ? m.groups?.['key'] : undefined
 }
 
 // YAML mapping keys: `name:` at line start (not a `- ` sequence item, not a
@@ -104,7 +104,7 @@ function yamlKey(line: string): string | undefined {
     return undefined
   }
   const m = line.match(/^\s*(?<key>[A-Za-z0-9_.-]+)\s*:(?:\s|$)/)
-  return m ? m.groups?.key : undefined
+  return m ? m.groups?.['key'] : undefined
 }
 
 // Markdown bullets: `- text` / `* text`. Returns the text after the marker.
@@ -114,13 +114,13 @@ function mdBullet(line: string): string | undefined {
     return undefined
   }
   // Skip task-list checkboxes and nested numbered intent.
-  return m.groups!.text!.toLowerCase()
+  return m.groups!['text']!.toLowerCase()
 }
 
 // Bash all-caps assignments: `NAME=...` (cache-key var style).
 function bashAssign(line: string): string | undefined {
   const m = line.match(/^\s*(?<name>[A-Z][A-Z0-9_]+)=/)
-  return m ? m.groups?.name : undefined
+  return m ? m.groups?.['name'] : undefined
 }
 
 /**

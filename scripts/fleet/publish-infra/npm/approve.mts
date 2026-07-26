@@ -11,21 +11,12 @@
  *   human authenticates in the browser instead of the terminal).
  */
 
-import os from 'node:os'
 import process from 'node:process'
 
-import { httpRequest } from '@socketsecurity/lib-stable/http-request'
-import { sleep } from '@socketsecurity/lib-stable/promises/timers'
 import { checkbox, password } from '@socketsecurity/lib-stable/stdio/prompts'
 
 import { releaseBehindLiveGate } from '../release.mts'
-import {
-  logger,
-  rootPath,
-  runCapture,
-  runInherit,
-  runInheritTty,
-} from '../shared.mts'
+import { logger, rootPath, runInheritTty } from '../shared.mts'
 import { isAlreadyPublished } from './registry.mts'
 import type { StageListEntry } from './shared.mts'
 import {
@@ -34,142 +25,24 @@ import {
   listStagedPackages,
   readPackageJson,
 } from './shared.mts'
+import { ensureNpmLogin } from './login.mts'
 import { scanStagedEntry } from './scan.mts'
-import { verifyStagedEntry } from './staged.mts'
+import { defaultDownloadStagedTarball, verifyStagedEntry } from './staged.mts'
+import {
+  packWorkspaceReleaseAssets,
+  verifyStagedPlatformEntry,
+} from './staged-workspace.mts'
+import {
+  findWorkspacePackageByName,
+  resolveNpmWorkspaceLayout,
+} from './workspace.mts'
+
+export { ensureNpmLogin }
 
 export interface ApproveChoice {
   checked: boolean
   name: string
   value: string
-}
-
-const NPM_REGISTRY = 'https://registry.npmjs.org'
-
-// Best-effort: pop the default browser at `url`. Non-fatal when it can't
-// (headless / CI) — the caller prints the URL either way.
-async function openBrowser(url: string, cwd: string): Promise<void> {
-  const opener =
-    process.platform === 'darwin'
-      ? 'open'
-      : process.platform === 'win32'
-        ? 'start'
-        : 'xdg-open'
-  try {
-    await runCapture(opener, [url], cwd)
-  } catch {
-    // Printing the URL is the fallback; nothing to do.
-  }
-}
-
-/**
- * The registry's web-login protocol, done by hand: create a session
- * (POST /-/v1/login), hand the human the login URL (opening the browser
- * best-effort), poll `doneUrl` until the token arrives, persist it with
- * `npm config set`. `npm login` isn't spawnable here: without a TTY its web
- * flow bails to the legacy `Username:` prompt, which EOFs and dies in
- * agent-driven runs — and those runs are the reason `--yes` exists.
- */
-async function webLogin(home: string): Promise<boolean> {
-  // `npm-auth-type: web` is load-bearing: without it the registry 401s the
-  // session create (it gates the endpoint on the client declaring web auth).
-  const created = await httpRequest(`${NPM_REGISTRY}/-/v1/login`, {
-    body: '{}',
-    headers: {
-      'content-type': 'application/json',
-      'npm-auth-type': 'web',
-      'npm-command': 'login',
-    },
-    method: 'POST',
-  })
-  if (!created.ok) {
-    logger.fail(`Web-login session create failed (${created.status}).`)
-    return false
-  }
-  const session = created.json<{
-    doneUrl?: string | undefined
-    loginUrl?: string | undefined
-  }>()
-  if (!session.loginUrl || !session.doneUrl) {
-    logger.fail('Web-login session response missing loginUrl/doneUrl.')
-    return false
-  }
-  logger.log(`Authenticate in the browser: ${session.loginUrl}`)
-  await openBrowser(session.loginUrl, home)
-  // Poll until authenticated: 202 (+ retry-after) while pending, 200 + token
-  // once the human completes the browser challenge. Cap at ~10 minutes.
-  const deadline = Date.now() + 10 * 60 * 1000
-  while (Date.now() < deadline) {
-    // eslint-disable-next-line no-await-in-loop
-    const done = await httpRequest(session.doneUrl, {
-      headers: { 'npm-auth-type': 'web', 'npm-command': 'login' },
-    })
-    if (done.status === 200) {
-      const { token } = done.json<{ token?: string | undefined }>()
-      if (!token) {
-        logger.fail('Web-login done response carried no token.')
-        return false
-      }
-      const { code } = await runCapture(
-        'npm',
-        [
-          'config',
-          'set',
-          `//registry.npmjs.org/:_authToken=${token}`,
-          '--location=user',
-        ],
-        home,
-      )
-      if (code !== 0) {
-        logger.fail(
-          `Persisting the npm token failed (npm config set → ${code}).`,
-        )
-        return false
-      }
-      logger.success('npm web login complete; token saved to the user npmrc.')
-      return true
-    }
-    if (done.status !== 202) {
-      logger.fail(`Web-login poll failed (${done.status}).`)
-      return false
-    }
-    const retryAfterHeader = done.headers['retry-after']
-    const retryAfter = Number(
-      Array.isArray(retryAfterHeader) ? retryAfterHeader[0] : retryAfterHeader,
-    )
-    // eslint-disable-next-line no-await-in-loop
-    await sleep(
-      Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 2000,
-    )
-  }
-  logger.fail('Web-login timed out after 10 minutes.')
-  return false
-}
-
-/**
- * Ensure local npm auth before touching the staging endpoints — they 401
- * without a token, and `pnpm stage list`'s failure output parses as an EMPTY
- * stage list, which would silently no-op the whole approve. When logged out:
- * on a real terminal, defer to `npm login` (its web-first flow is the nicest
- * UX there); without a TTY, run the web-login protocol directly. npm
- * commands run from the OS home dir because the repo's devEngines pins pnpm
- * as the package manager and vetoes bare `npm` invocations in-repo.
- */
-export async function ensureNpmLogin(): Promise<boolean> {
-  const home = os.homedir()
-  const { code } = await runCapture('npm', ['whoami'], home)
-  if (code === 0) {
-    return true
-  }
-  logger.log('Not logged in to npm — starting browser login…')
-  if (process.stdin.isTTY) {
-    const login = await runInherit('npm', ['login'], home)
-    if (login !== 0) {
-      logger.fail(`npm login exited ${login}.`)
-      return false
-    }
-    return true
-  }
-  return await webLogin(home)
 }
 
 /**
@@ -224,25 +97,32 @@ export async function runApprove(config: {
 
   // The stage list is ACCOUNT-scoped, not repo-scoped: entries staged by this
   // account from OTHER repos show up here too. Approve must skip those — the
-  // verify gate can only ever pack THIS repo's package (defaultPackTarball
-  // packs rootPath), so a foreign entry could never verify; worse, its verify
-  // pack would pin THIS repo's README against the FOREIGN entry's version (a
-  // wrong-manifest pin) and then fail with advice to reject an artifact that
-  // is perfectly good in its own repo.
-  const localName = readPackageJson().name
+  // verify gate can only ever pack THIS repo's packages (defaultPackTarball
+  // packs this checkout), so a foreign entry could never verify; worse, its
+  // verify pack would pin THIS repo's README against the FOREIGN entry's
+  // version (a wrong-manifest pin) and then fail with advice to reject an
+  // artifact that is perfectly good in its own repo. "Ours" is the full
+  // publishable-name set: the single subject for a plain repo, every
+  // workspace member (loader + platform packages) for a multi layout.
+  const layout = resolveNpmWorkspaceLayout(rootPath)
+  const localNames =
+    layout.kind === 'multi'
+      ? new Set(layout.packages.map(pkg => pkg.name))
+      : new Set([readPackageJson().name])
+  const localLabel = [...localNames].toSorted().join(', ')
   const ours: StageListEntry[] = []
   for (const entry of staged) {
-    if (entry.name === localName) {
+    if (entry.name && localNames.has(entry.name)) {
       ours.push(entry)
     } else {
       logger.log(
         `Skipping ${entry.name}@${entry.version} — staged by this account but ` +
-          `not this repo's package (${localName}). Run --approve from its own repo.`,
+          `not this repo's package (${localLabel}). Run --approve from its own repo.`,
       )
     }
   }
   if (ours.length === 0) {
-    logger.log(`No staged entries for ${localName}; nothing to approve here.`)
+    logger.log(`No staged entries for ${localLabel}; nothing to approve here.`)
     return
   }
 
@@ -271,11 +151,23 @@ export async function runApprove(config: {
   // never re-stage), so verification must complete successfully BEFORE the
   // approve step is offered: a divergent or unverifiable artifact never
   // reaches the multi-select, the 2FA prompt, or `pnpm stage approve`.
+  // Generated PLATFORM packages verify structurally on the staged bytes
+  // (their CI-built payload has no local twin to byte-compare — see
+  // verifyStagedPlatformEntry); everything else keeps the local-pack
+  // byte-compare gate.
   const verifiedEntries: StageListEntry[] = []
   for (let i = 0, { length } = eligible; i < length; i += 1) {
     const entry = eligible[i]!
+    const member = entry.name
+      ? findWorkspacePackageByName(layout, entry.name)
+      : undefined
     // eslint-disable-next-line no-await-in-loop
-    if (await verifyStagedEntry(entry)) {
+    const verified = member?.platform
+      ? await verifyStagedPlatformEntry(entry, member, {
+          downloadStagedTarball: defaultDownloadStagedTarball,
+        })
+      : await verifyStagedEntry(entry)
+    if (verified) {
       verifiedEntries.push(entry)
     }
   }
@@ -349,12 +241,21 @@ export async function runApprove(config: {
     for (let i = 0, { length } = selected; i < length; i += 1) {
       const stageId = selected[i]!
       const entry = verifiedEntries.find(e => e.stageId === stageId)
-      if (
-        entry?.name &&
-        entry.version &&
-        // eslint-disable-next-line no-await-in-loop
-        (await scanStagedEntry({ name: entry.name, version: entry.version }))
-      ) {
+      if (!entry?.name || !entry.version) {
+        continue
+      }
+      // Platform packages scan the DOWNLOADED staged tarball — the artifact
+      // the structural verify gate just checked — since a local pack cannot
+      // reproduce their CI-built payload.
+      const member = findWorkspacePackageByName(layout, entry.name)
+      const scanSubject = { name: entry.name, version: entry.version }
+      // eslint-disable-next-line no-await-in-loop
+      const scanOk = member?.platform
+        ? await scanStagedEntry(scanSubject, {
+            packTarball: () => defaultDownloadStagedTarball(stageId),
+          })
+        : await scanStagedEntry(scanSubject)
+      if (scanOk) {
         scanned.push(stageId)
       }
     }
@@ -446,6 +347,24 @@ export async function runApprove(config: {
       '--no-release: leaving the tag + GitHub release to the caller ' +
         '(publish-pipeline release stage).',
     )
+    return
+  }
+  // Multi-package layout: every member shares one lockstep version, so ONE
+  // tag + immutable release covers the whole approved set — keyed on the
+  // MAIN package's liveness, with every member tarball (+ checksums) as
+  // assets. Per-entry releases would fight over the same v<version> tag.
+  if (layout.kind === 'multi' && approvedEntries.length > 0) {
+    const main = layout.main!
+    const version = layout.versionSource.version
+    const released = await releaseBehindLiveGate({
+      isLive: () => isAlreadyPublished(main.name, version),
+      packAssets: () => packWorkspaceReleaseAssets(layout),
+      pkg: { name: main.name, version },
+      registry: 'npm',
+    })
+    if (!released) {
+      process.exitCode = 1
+    }
     return
   }
   for (let i = 0, { length } = approvedEntries; i < length; i += 1) {

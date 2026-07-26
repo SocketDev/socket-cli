@@ -19,10 +19,10 @@
  *      `REPO_ROOT`, `CONFIG_DIR`, `NODE_MODULES_CACHE_DIR`. Importable as-is.
  *   2. RESOLVER FUNCTIONS — paths that need a search (multiple accepted locations)
  *      or runtime input (a target directory, a package name). Example:
- *      `findSocketWheelhouseConfig(repoRoot)` returns the first of
- *      `.config/socket-wheelhouse.json` or `.socket-wheelhouse.json` that
- *      exists. Resolution from script call sites: every script anchors on its
- *      own location via `fileURLToPath(import.meta.url)`, then walks up to the
+ *      `findSocketWheelhouseConfig(repoRoot)` resolves
+ *      `.config/repo/socket-wheelhouse.json` when it exists. Resolution from
+ *      script call sites: every script anchors on its own location via
+ *      `fileURLToPath(import.meta.url)`, then walks up to the
  *      package.json-bearing ancestor. `process.cwd()` is forbidden in scripts/
  *      per fleet rule (the user / Claude Code may invoke from any subdir).
  *
@@ -199,11 +199,18 @@ export const COVERAGE_SUMMARY_PATH = path.join(
  * each tier's throwaway `coverage-final.json` never clutter COVERAGE_DIR. Lives
  * in the OS temp dir and is wiped per run. `os` is a node builtin so paths.mts
  * stays import-safe for the rolldown loader.
+ *
+ * A cover run pins a UNIQUE per-run dir via the FLEET_COVERAGE_SCRATCH_DIR env
+ * (set by scripts/fleet/cover/scratch-isolation.mts, imported before this
+ * module loads) so concurrent cover runs never wipe each other's raw child
+ * dumps or the vitest v8 `.tmp` at startup — the source of the cover-gate
+ * measurement wobble. Consumers that don't set it (measure-one-enforcer, ad-hoc
+ * tools) fall back to the fixed shared path. Keep this env-name literal in
+ * lockstep with scratch-isolation.mts's FLEET_COVERAGE_SCRATCH_DIR_ENV.
  */
-export const COVERAGE_SCRATCH_DIR = path.join(
-  os.tmpdir(),
-  'fleet-coverage-scratch',
-)
+export const COVERAGE_SCRATCH_DIR =
+  process.env['FLEET_COVERAGE_SCRATCH_DIR'] ||
+  path.join(os.tmpdir(), 'fleet-coverage-scratch')
 
 /**
  * Throwaway reportsDirectory for the vitest tiers (main / isolated). A
@@ -477,10 +484,9 @@ export interface LoadedSocketWheelhouseConfig {
 }
 
 /**
- * Find the socket-wheelhouse.json under `repoRoot` (defaults to the current
- * repo's root). Returns the first matching location, or `undefined` if neither
- * file exists. When both exist, emits a stderr warning + returns the primary
- * location.
+ * Find the member config at `.config/repo/socket-wheelhouse.json` under
+ * `repoRoot` (defaults to the current repo's root). Returns `undefined` when
+ * the file is absent.
  */
 export function findSocketWheelhouseConfig(
   repoRoot: string = REPO_ROOT,

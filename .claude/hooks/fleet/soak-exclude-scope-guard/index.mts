@@ -51,7 +51,7 @@ const ENTRY_RE = /^\s*-\s*['"]?(?<entry>[^'"\s]+)['"]?\s*$/
 interface OffendingEntry {
   readonly line: number
   readonly entry: string
-  readonly scope: string | null
+  readonly scope: string | undefined
 }
 
 export function isPnpmWorkspaceYaml(filePath: string): boolean {
@@ -81,16 +81,16 @@ export function parseExcludeEntries(text: string): Map<string, number> {
     }
     const m = ENTRY_RE.exec(line)
     if (m) {
-      out.set(m.groups!.entry!, i + 1)
+      out.set(m.groups!['entry']!, i + 1)
     }
   }
   return out
 }
 
 // Pull the scope from an entry. Returns the scope token (e.g.
-// `@socketsecurity`) or `null` for un-scoped entries (`defu`,
+// `@socketsecurity`) or `undefined` for un-scoped entries (`defu`,
 // `defu@6.1.6`).
-export function entryScope(entry: string): string | null {
+export function entryScope(entry: string): string | undefined {
   if (!entry.startsWith('@')) {
     return undefined
   }
@@ -102,8 +102,8 @@ export function entryScope(entry: string): string | null {
   return entry.slice(0, slash)
 }
 
-export function isAllowedScope(scope: string | null): boolean {
-  return scope !== null && ALLOWED_SCOPES.has(scope)
+export function isAllowedScope(scope: string | undefined): boolean {
+  return scope !== undefined && ALLOWED_SCOPES.has(scope)
 }
 
 export const check = editGuard((filePath, _content, payload) => {

@@ -48,7 +48,7 @@ export function isLintConfigPath(filePath: string): boolean {
 export function extractDisabledRules(content: string): Set<string> {
   const out = new Set<string>()
   for (const m of content.matchAll(RULE_DISABLE_RE)) {
-    const rule = m.groups?.rule
+    const rule = m.groups?.['rule']
     /* c8 ignore next */
     if (rule) {
       out.add(rule)

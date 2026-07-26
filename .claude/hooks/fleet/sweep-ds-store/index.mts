@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Claude Code Stop hook — sweep-ds-store.
 //
-// Fires at turn-end. Walks the worktree (current working directory)
+// Fires at turn-end. Walks the worktree (CLAUDE_PROJECT_DIR)
 // and deletes any `.DS_Store` files Finder created mid-session.
 // Excludes `.git/` and `node_modules/` so we don't churn through
 // directories full of vendor noise.
@@ -15,7 +15,7 @@
 //     - Spotlight indexing churn
 //   The right fix is to delete them, not just ignore them.
 //
-// Silent on the happy path. When files are found, logs:
+// Silent on the happy path. When files are found, notifies:
 //
 //   [sweep-ds-store] swept N .DS_Store file(s):
 //     ./path/to/.DS_Store
@@ -24,10 +24,6 @@
 // No bypass — `.DS_Store` is never wanted in a repo. If you have a
 // reason to keep one (very rare — testing macOS-specific code), use
 // a name like `.DS_Store.fixture` and adjust the test fixture.
-//
-// Stop hooks receive a JSON payload on stdin but the body shape is
-// irrelevant here; we ignore it. Drains the pipe so the upstream
-// doesn't buffer-stall.
 
 import { existsSync, promises as fs } from 'node:fs'
 import type { Dirent } from 'node:fs'
@@ -35,6 +31,8 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
+
+import { defineHook, notify, runHook } from '../_shared/guard.mts'
 
 const TARGET = '.DS_Store'
 const EXCLUDE_DIRS = new Set(['.git', 'node_modules'])
@@ -107,50 +105,33 @@ async function walk(
   }
 }
 
-/* c8 ignore start - main() is the CLI entrypoint; not callable in-process from tests */
-async function main(): Promise<void> {
-  // Drain stdin so the upstream pipe doesn't buffer-stall, but ignore
-  // the body — Stop hooks pass a JSON payload that we don't need.
-  process.stdin.resume()
-  process.stdin.on('data', () => {})
-  // Short timeout — if stdin never closes we still want to run.
-  await new Promise<void>(resolve => {
-    process.stdin.on('end', () => resolve())
-    setTimeout(() => resolve(), 100)
-  })
-
-  const root = process.env['CLAUDE_PROJECT_DIR']
-  if (!root || !existsSync(root)) {
-    return
-  }
-  const { swept, errors } = await sweepDsStore(root)
-  if (swept.length === 0 && errors.length === 0) {
-    return
-  }
-  const lines: string[] = []
-  if (swept.length > 0) {
-    lines.push(`[sweep-ds-store] swept ${swept.length} .DS_Store file(s):`)
-    for (let i = 0, { length } = swept; i < length; i += 1) {
-      lines.push(`  ${swept[i]!}`)
+export const hook = defineHook({
+  check: async () => {
+    const root = process.env['CLAUDE_PROJECT_DIR']
+    if (!root || !existsSync(root)) {
+      return undefined
     }
-  }
-  if (errors.length > 0) {
-    lines.push(`[sweep-ds-store] ${errors.length} delete error(s):`)
-    for (let i = 0, { length } = errors; i < length; i += 1) {
-      lines.push(`  ${errors[i]!}`)
+    const { swept, errors } = await sweepDsStore(root)
+    if (swept.length === 0 && errors.length === 0) {
+      return undefined
     }
-  }
-  process.stderr.write(lines.join(os.EOL) + os.EOL)
-}
+    const lines: string[] = []
+    if (swept.length > 0) {
+      lines.push(`[sweep-ds-store] swept ${swept.length} .DS_Store file(s):`)
+      for (let i = 0, { length } = swept; i < length; i += 1) {
+        lines.push(`  ${swept[i]!}`)
+      }
+    }
+    if (errors.length > 0) {
+      lines.push(`[sweep-ds-store] ${errors.length} delete error(s):`)
+      for (let i = 0, { length } = errors; i < length; i += 1) {
+        lines.push(`  ${errors[i]!}`)
+      }
+    }
+    return notify(lines.join(os.EOL))
+  },
+  event: 'Stop',
+  type: 'nudge',
+})
 
-// CLI entrypoint — only fires when this file is the main module so
-// the test importer can pull `sweepDsStore` without triggering the
-// stdin reader.
-if (process.argv[1]?.endsWith('index.mts')) {
-  main().catch(e => {
-    process.stderr.write(
-      `[sweep-ds-store] hook error (allowing): ${(e as Error).message}${os.EOL}`,
-    )
-  })
-}
-/* c8 ignore stop */
+void runHook(hook, import.meta.url)

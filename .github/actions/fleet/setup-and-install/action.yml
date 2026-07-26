@@ -1,8 +1,8 @@
-# Layer 2b — aggregator. References Layer 1 (checkout, install,
-# setup-go-toolchain) + Layer 2a (setup). When ANY of those bump,
-# THIS file bumps next, then Layer 3 (ci.yml / provenance.yml /
-# weekly-update.yml) bumps to ref this file's new SHA. See the
-# updating-workflows skill at .claude/skills/updating-workflows/.
+# Layer 2b — aggregator. References Layer 1 (checkout, install) +
+# Layer 2a (setup). When ANY of those bump, THIS file bumps next, then
+# Layer 3 (ci.yml / provenance.yml / weekly-update.yml) bumps to ref
+# this file's new SHA. See the updating-workflows skill at
+# .claude/skills/updating-workflows/.
 
 name: 'Setup and Install'
 description: 'Aggregate: checkout + setup environment + install dependencies'
@@ -17,7 +17,6 @@ description: 'Aggregate: checkout + setup environment + install dependencies'
 #   - actions/cache/save@v6.1.0 (explicit save after install; see the
 #     "Save pnpm store" step below)
 #   - ./.github/actions/install
-#   - ./.github/actions/setup-go-toolchain (when setup-go: 'true')
 
 inputs:
   checkout:
@@ -50,21 +49,6 @@ inputs:
     description: 'npm registry URL'
     required: false
     default: 'https://registry.npmjs.org'
-  setup-go:
-    description: |
-      "true" runs setup-go-toolchain after install — surfaces a usable
-      `go` on macOS/Windows runners (where the hosted toolcache version
-      isn't always on PATH after node + sfw setup) and on Linux for
-      consistency. "false" skips. Default "false" preserves existing
-      behavior for repos that don't need go.
-    required: false
-    default: 'false'
-  setup-go-version:
-    description: |
-      Major.minor Go version to ensure when setup-go is "true". Empty
-      picks the runner's default toolcache version.
-    required: false
-    default: ''
   socket-api-token:
     description: 'Socket API token — when provided, uses sfw-enterprise instead of sfw-free'
     required: false
@@ -125,12 +109,6 @@ runs:
       with:
         path: ${{ env.PNPM_STORE_PATH }}
         key: ${{ env.PNPM_STORE_CACHE_KEY }}
-
-    - name: Setup Go toolchain
-      if: inputs.setup-go == 'true'
-      uses: ./.github/actions/fleet/setup-go-toolchain
-      with:
-        version: ${{ inputs.setup-go-version }}
 
     - name: Build oxlint plugin
       # oxlint-plugin.mjs is GENERATED (gitignored, never committed); tests that

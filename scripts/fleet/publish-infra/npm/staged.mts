@@ -28,6 +28,11 @@ import { withPrunedPackManifest } from './pack-manifest.mts'
 import { isAlreadyPublished } from './registry.mts'
 import type { StageListEntry } from './shared.mts'
 import { isStagingExpected } from './shared.mts'
+import {
+  packWorkspaceMemberTarball,
+  runWorkspacePublish,
+} from './staged-workspace.mts'
+import { resolveNpmWorkspaceLayout } from './workspace.mts'
 import { resolveReleaseSubject } from '../../_shared/release-subject.mts'
 import { tarExecutable } from '../../_shared/tar-executable.mts'
 
@@ -66,6 +71,14 @@ export async function runStaged(
   config: { dryRun: boolean },
 ): Promise<void> {
   const { dryRun } = { __proto__: null, ...config } as typeof config
+  // Multi-package workspace (decmpfs, stuie): the workspace runner publishes
+  // every member in dependency order behind the lockstep + hollow gates.
+  // Single-package repos take the identical-to-before subject path below.
+  const layout = resolveNpmWorkspaceLayout(rootPath)
+  if (layout.kind === 'multi') {
+    await runWorkspacePublish('staged', tag, layout, { dryRun })
+    return
+  }
   const pkg = resolveReleaseSubject(rootPath)
   logger.log(
     `Staging ${pkg.name}@${pkg.version} (tag=${tag})${dryRun ? ' [dry-run]' : ''}`,
@@ -141,6 +154,12 @@ export async function runDirect(
   config: { dryRun: boolean },
 ): Promise<void> {
   const { dryRun } = { __proto__: null, ...config } as typeof config
+  // Multi-package workspace: same delegation as runStaged.
+  const layout = resolveNpmWorkspaceLayout(rootPath)
+  if (layout.kind === 'multi') {
+    await runWorkspacePublish('direct', tag, layout, { dryRun })
+    return
+  }
   const pkg = resolveReleaseSubject(rootPath)
   logger.log(
     `Direct-publishing ${pkg.name}@${pkg.version} (tag=${tag})${dryRun ? ' [dry-run]' : ''}`,
@@ -226,6 +245,13 @@ export async function defaultPackTarball(
   version: string,
   root: string = rootPath,
 ): Promise<string | undefined> {
+  // Multi-package workspace: pack the member that publishes `name` from its
+  // own directory (pnpm packs the cwd package); a name no member publishes
+  // gets the same cross-repo refusal as the single-subject path below.
+  const layout = resolveNpmWorkspaceLayout(root)
+  if (layout.kind === 'multi') {
+    return await packWorkspaceMemberTarball(layout, name, version)
+  }
   // Refuse a cross-repo pack outright: the stage list is account-scoped, so a
   // caller can hand this an entry staged from ANOTHER repo. Packing it here
   // would pin the README against the wrong manifest — this repo's repository

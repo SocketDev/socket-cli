@@ -63,7 +63,7 @@ export function synthesizedScriptKeys(manifestText: string): Set<string> {
     /^[ \t]*(?:'(?<sq>[^']+)'|"(?<dq>[^"]+)"|(?<bare>[A-Za-z_][\w-]*))\s*:/gm
   let m: RegExpExecArray | null
   while ((m = re.exec(body)) !== null) {
-    const key = m.groups?.sq ?? m.groups?.dq ?? m.groups?.bare
+    const key = m.groups?.['sq'] ?? m.groups?.['dq'] ?? m.groups?.['bare']
     /* c8 ignore next - regex alternation guarantees one named group is always set */
     if (key) {
       keys.add(key)
