@@ -34,12 +34,54 @@ import npmShallow from '../../../../src/commands/package/fixtures/npm_shallow.js
 import nugetShallow from '../../../../src/commands/package/fixtures/nuget_shallow.json' with { type: 'json' }
 import rubyShallow from '../../../../src/commands/package/fixtures/ruby_shallow.json' with { type: 'json' }
 import {
+  formatReportCard,
   generateMarkdownReport,
   generateTextReport,
   preProcess,
 } from '../../../../src/commands/package/output-purls-shallow-score.mts'
 
+import type { DedupedArtifact } from '../../../../src/commands/package/output-purls-shallow-score.mts'
+
 describe('package score output', async () => {
+  describe('namespaced packages in shallow report purl', () => {
+    function makeArtifact(
+      overrides: Partial<DedupedArtifact>,
+    ): DedupedArtifact {
+      return {
+        ecosystem: 'npm',
+        namespace: '',
+        name: 'react',
+        version: '4.11.0',
+        score: {
+          supplyChain: 99,
+          maintenance: 95,
+          quality: 100,
+          vulnerability: 100,
+          license: 70,
+        },
+        alerts: new Map(),
+        ...overrides,
+      }
+    }
+
+    it('should include the npm namespace in the reported purl', () => {
+      const card = formatReportCard(makeArtifact({ namespace: '@axe-core' }), {
+        colorize: false,
+      })
+      // Regression: the namespace was dropped, so the card reported
+      // `pkg:npm/react@4.11.0` instead of `pkg:npm/@axe-core/react@4.11.0`.
+      expect(card).toContain('Package: pkg:npm/@axe-core/react@4.11.0')
+      expect(card).not.toContain('Package: pkg:npm/react@4.11.0')
+    })
+
+    it('should omit the namespace segment when there is none', () => {
+      const card = formatReportCard(makeArtifact({ name: 'express' }), {
+        colorize: false,
+      })
+      expect(card).toContain('Package: pkg:npm/express@4.11.0')
+    })
+  })
+
   describe('npm', () => {
     it('should report shallow as text', () => {
       const { missing, rows } = preProcess(npmShallow.data, [])
@@ -101,7 +143,7 @@ describe('package score output', async () => {
                      reflect the scores of any dependencies, transitive or otherwise.
 
 
-        Package: [1mpkg:golang/tlsproxy@v0.0.0-20250304082521-29051ed19c60[22m
+        Package: [1mpkg:golang/github.com/steelpoor/tlsproxy@v0.0.0-20250304082521-29051ed19c60[22m
 
         - Supply Chain Risk:  [31m 39[39m
         - Maintenance:       [32m100[39m
@@ -126,7 +168,7 @@ describe('package score output', async () => {
 
 
 
-        ## Package: pkg:golang/tlsproxy@v0.0.0-20250304082521-29051ed19c60
+        ## Package: pkg:golang/github.com/steelpoor/tlsproxy@v0.0.0-20250304082521-29051ed19c60
 
         - Supply Chain Risk:   39
         - Maintenance:       100
@@ -248,7 +290,7 @@ describe('package score output', async () => {
                      reflect the scores of any dependencies, transitive or otherwise.
 
 
-        Package: [1mpkg:maven/beam-runners-flink-1.15-job-server@2.58.0[22m
+        Package: [1mpkg:maven/org.apache.beam/beam-runners-flink-1.15-job-server@2.58.0[22m
 
         - Supply Chain Risk:  [33m 67[39m
         - Maintenance:       [32m100[39m
@@ -273,7 +315,7 @@ describe('package score output', async () => {
 
 
 
-        ## Package: pkg:maven/beam-runners-flink-1.15-job-server@2.58.0
+        ## Package: pkg:maven/org.apache.beam/beam-runners-flink-1.15-job-server@2.58.0
 
         - Supply Chain Risk:   67
         - Maintenance:       100
