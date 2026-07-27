@@ -317,11 +317,11 @@ export function parseMissingPackages(stderr: string): readonly string[] {
   const pkgs = new Set<string>()
   // ESM form: Cannot find package '<name>' …
   for (const m of stderr.matchAll(/Cannot find package '(?<pkg>[^']+)'/g)) {
-    pkgs.add(m.groups!.pkg!)
+    pkgs.add(m.groups!['pkg']!)
   }
   // CJS form: Cannot find module '<name>'
   for (const m of stderr.matchAll(/Cannot find module '(?<pkg>[^']+)'/g)) {
-    const name = m.groups!.pkg!
+    const name = m.groups!['pkg']!
     // Skip relative + absolute paths (those are import-path bugs, not
     // missing-dep bugs, and the user can't `pnpm i` a relative path).
     if (!name.startsWith('.') && !name.startsWith('/')) {

@@ -52,7 +52,10 @@ export function extractCoauthors(message: string): Coauthor[] {
   COAUTHOR_RE.lastIndex = 0
   let m: RegExpExecArray | null
   while ((m = COAUTHOR_RE.exec(message))) {
-    out.push({ email: m.groups!.email!.trim(), name: m.groups!.name!.trim() })
+    out.push({
+      email: m.groups!['email']!.trim(),
+      name: m.groups!['name']!.trim(),
+    })
   }
   return out
 }

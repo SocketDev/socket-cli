@@ -19,13 +19,15 @@ import type { MarkdownlintRule } from './_shared/rule-types.mts'
 
 const RULE_NAME = 'socket-no-private-wheelhouse-leak'
 const FORBIDDEN_TOKEN_RE = /socket-wheelhouse/i
-// Two LOCAL-DISK forms carry the name functionally and must stay mentionable:
+// LOCAL-DISK forms carry the name functionally and must stay mentionable:
 // the per-repo settings file (socket-wheelhouse.json / the root
-// .socket-wheelhouse.json alternative) and the dep-0 bootstrap cache dir
-// (node_modules/.cache/socket-wheelhouse/). Both are artifacts on the
+// .socket-wheelhouse.json alternative), its schema module
+// (socket-wheelhouse-schema.mts), and the dep-0 bootstrap cache dir
+// (node_modules/.cache/socket-wheelhouse/ or the tiered
+// node_modules/.cache/fleet/socket-wheelhouse/). All are artifacts on the
 // reader's own machine, not links to the private repo.
 const SETTINGS_FILENAME_RE =
-  /\.?socket-wheelhouse\.json|\.cache\/socket-wheelhouse\b/i
+  /\.?socket-wheelhouse\.json|socket-wheelhouse-schema\.mts|\.cache\/(?:fleet\/)?socket-wheelhouse\b/i
 
 const rule: MarkdownlintRule = {
   description:

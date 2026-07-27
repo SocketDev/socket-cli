@@ -35,6 +35,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import {
   BADGE_PLACEHOLDER,
   badgeAssetPath,
+  hasUnrecognizedCoverageBadge,
   parseBadgeSvgValue,
   readCoveragePct,
   readmeBadgeForm,
@@ -68,9 +69,21 @@ export function checkCoverageBadgeIsCurrent(
   if (!existsSync(readmePath)) {
     return 0
   }
-  const form = readmeBadgeForm(readFileSync(readmePath, 'utf8'))
+  const readme = readFileSync(readmePath, 'utf8')
+  const form = readmeBadgeForm(readme)
   if (!form) {
-    // No badge in either form — a repo that opted out.
+    if (hasUnrecognizedCoverageBadge(readme)) {
+      // A coverage-badge-looking line the recognizer can't see (e.g. a
+      // hand-written shields.io HTML <img>). Treating it as an opt-out let a
+      // stale hand-written percent ship on a public README while this gate
+      // stayed green — fail loud instead.
+      logger.fail(
+        '[check-coverage-badge-is-current] README carries a coverage badge in an unrecognized form — the freshness gate cannot verify it. Rewrite it as `![Coverage](assets/repo/badges/coverage.svg)` and run gen/coverage-badge (which migrates it to the dimensioned <img> form).',
+      )
+      logger.error(FIX_HINT)
+      return 1
+    }
+    // No badge at all — a repo that opted out.
     return 0
   }
   const pct = readCoveragePct(cfg.repoRoot)

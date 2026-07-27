@@ -99,7 +99,6 @@ import {
   readParked,
   resolveParkedFile,
 } from '../_shared/parked-paths.mts'
-import type { ParkedEntry } from '../_shared/parked-paths.mts'
 import { block, defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'

@@ -84,15 +84,25 @@ in the mirror manifest) and the hybrid-spliced files the repo part-owns.
 A bundle update reaches a thin member as a true SYNC, and two different
 mechanisms prune what a new release dropped:
 
-- **Wholly-fleet dir roots** (the `fleet/` tiers): after placing the bundle,
-  `pruneStaleFleetFiles()` (`bootstrap/src/install.mts`) deletes any on-disk
-  file under those roots that the fetched manifest no longer lists. Renames,
-  deletions, and additions inside a mirror tree need NO bookkeeping — the
-  fetch prunes them, and the cascade's delete-and-replace does the same for
-  tracked members.
-- **Loose files outside the mirror roots**: these need a `removed[]` tombstone
-  in `scripts/repo/sync-scaffolding/manifest/bundle.json`; the cascade fixer
-  `safeDelete`s the path in every member.
+- **The applied-files record**: after placing the bundle,
+  `pruneStaleFleetFiles()` (`bootstrap/src/install.mts`) deletes any file the
+  LAST-applied manifest owned (the `applied-files` record under
+  `node_modules/.cache/`) that the fetched manifest no longer lists. Renames,
+  deletions, and additions inside a mirror tree need NO bookkeeping — but the
+  record is per-workspace state: a fresh clone, a CI checkout, or a member
+  whose record began after a move prunes nothing (the v1.0.12
+  `.github/actions/fleet/lib` → `_shared` move orphaned `lib/` fleet-wide
+  exactly this way).
+- **Tombstones** (`removed[]` in
+  `scripts/repo/sync-scaffolding/manifest/bundle.json`): the durable deletion
+  record. The cascade fixer `safeDelete`s each path in every member, AND
+  `make-release-bundle` ships the same list in the bundle manifest as
+  `removedPaths`, which both installers (`bootstrap/src/install.mts`
+  `removeTombstonedPaths()` + `scripts/fleet/fetch-fleet-bundle.mts`) delete
+  after placement — so a moved/retired path heals on the next refresh even
+  with no applied-files record. A move must ship its deletion: retire a path,
+  add its tombstone in the same change. Belt on both legs: a tombstone the
+  current bundle ships a file at/under is skipped, never applied.
 
 The LAW joining the two (`fleetMirroredTombstones` in
 `scripts/repo/sync-scaffolding/manifest/identical-files.mts`): **never

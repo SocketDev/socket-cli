@@ -109,6 +109,7 @@ export function isGuardedFleetConfig(filePath: string): boolean {
 }
 
 export const check = editGuard((filePath, content, payload) => {
+  void content
   if (!isGuardedFleetConfig(filePath)) {
     return undefined
   }

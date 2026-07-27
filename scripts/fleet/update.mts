@@ -35,6 +35,34 @@ import { FLEET_CATALOG_YAML, PNPM_WORKSPACE_YAML, REPO_ROOT } from './paths.mts'
 import { applyStableAliasReconcile } from './lib/stable-alias.mts'
 import { collectPackumentFailures } from './lib/taze-output.mts'
 import { scanRepoForTelemetry } from './lib/telemetry-scan.mts'
+import {
+  applyFleetPinLockstep,
+  applyOverridePinLockstep,
+} from './update/fleet-pins.mts'
+import {
+  findStalePatchKeysInFile,
+  formatStalePatchKeysError,
+} from './update/patched-deps.mts'
+
+// Canonical homes of the fleet-owned pins (wheelhouse-only; absent in member
+// repos, where the lockstep appliers skip them): the fleet catalog template
+// and the sync-scaffolding override-pin manifest.
+const TEMPLATE_FLEET_CATALOG_YAML = path.join(
+  REPO_ROOT,
+  'template',
+  'base',
+  '.config',
+  'fleet',
+  'pnpm-workspace.fleet.yaml',
+)
+const OVERRIDE_PIN_MANIFEST = path.join(
+  REPO_ROOT,
+  'scripts',
+  'repo',
+  'sync-scaffolding',
+  'manifest',
+  'catalog-overrides.mts',
+)
 
 const logger = getDefaultLogger()
 
@@ -156,6 +184,45 @@ async function main(): Promise<void> {
     process.exitCode = 1
   }
 
+  // Pass 3a.0 — fleet-pin lockstep. The taze passes bump the LIVE
+  // pnpm-workspace.yaml, but a fleet-canonical pin's source of truth is the
+  // wheelhouse template catalog + the sync-scaffolding override-pin manifest —
+  // a live-only bump loses at the next cascade, which splices the old version
+  // straight back (svgo, vite, iconv-lite, lru-cache, string-width all bounced
+  // this way). Mirror every fleet-owned bump into the canonical files in the
+  // same wave so the update engine and the cascade agree. Only newer versions
+  // mirror (the template→live direction belongs to the cascade); differing
+  // drift that can't be mirrored is warned, never silently dropped.
+  if (process.exitCode !== 1) {
+    const pinResults = applyFleetPinLockstep(PNPM_WORKSPACE_YAML, [
+      FLEET_CATALOG_YAML,
+      TEMPLATE_FLEET_CATALOG_YAML,
+    ])
+    const overrideResult = applyOverridePinLockstep(
+      PNPM_WORKSPACE_YAML,
+      OVERRIDE_PIN_MANIFEST,
+    )
+    if (overrideResult) {
+      pinResults.push(overrideResult)
+    }
+    for (let i = 0, { length } = pinResults; i < length; i += 1) {
+      const r = pinResults[i]!
+      const rel = path.relative(REPO_ROOT, r.file)
+      for (let j = 0, jl = r.mirrored.length; j < jl; j += 1) {
+        const m = r.mirrored[j]!
+        logger.info(
+          `update: fleet-pin lockstep ${rel} '${m.name}' ${m.canonicalValue} → ${m.liveValue} (${m.blockKey})`,
+        )
+      }
+      for (let j = 0, jl = r.skipped.length; j < jl; j += 1) {
+        const s = r.skipped[j]!
+        logger.warn(
+          `update: fleet-pin drift NOT mirrored to ${rel} — '${s.name}' live ${s.liveValue} vs canonical ${s.canonicalValue} (${s.reason}); reconcile via the cascade.`,
+        )
+      }
+    }
+  }
+
   // Pass 3a — reconcile `-stable` aliases, THEN resync the lockfile. A pass-2
   // Socket bump moves the floating base (`@socketsecurity/lib: 6.0.10`); the
   // pinned alias (`@socketsecurity/lib-stable: 'npm:@socketsecurity/lib@…'`) must
@@ -168,14 +235,7 @@ async function main(): Promise<void> {
       PNPM_WORKSPACE_YAML,
       FLEET_CATALOG_YAML,
       path.join(REPO_ROOT, 'template', 'base', 'pnpm-workspace.yaml'),
-      path.join(
-        REPO_ROOT,
-        'template',
-        'base',
-        '.config',
-        'fleet',
-        'pnpm-workspace.fleet.yaml',
-      ),
+      TEMPLATE_FLEET_CATALOG_YAML,
     ]
     const reconciled = applyStableAliasReconcile(catalogFiles)
     for (let i = 0, { length } = reconciled; i < length; i += 1) {
@@ -188,9 +248,20 @@ async function main(): Promise<void> {
         )
       }
     }
-    const { ok } = await run('pnpm', ['install'])
-    if (!ok) {
-      process.exitCode = process.exitCode || 1
+    // Stale-patch gate: a bump that leaves a `patchedDependencies` key on the
+    // old version strands the very install below (ERR_PNPM_UNUSED_PATCH) — and
+    // a half-state referencing a nonexistent patch file once got committed.
+    // Fail loud BEFORE the lockfile resync with the exact re-key instructions;
+    // never silently bump past a keyed patch.
+    const stalePatchKeys = findStalePatchKeysInFile(PNPM_WORKSPACE_YAML)
+    if (stalePatchKeys.length > 0) {
+      logger.fail(formatStalePatchKeysError(stalePatchKeys))
+      process.exitCode = 1
+    } else {
+      const { ok } = await run('pnpm', ['install'])
+      if (!ok) {
+        process.exitCode = process.exitCode || 1
+      }
     }
   }
 

@@ -41,7 +41,13 @@
 # `**/fleet/**` glob above does not reach it (the whole-tree walk's matcher skips
 # the dotdir `.config`), so it needs an explicit line — twin of isNeverGated() in
 # scripts/fleet/_shared/format-scope.mts and the oxfmtrc.json ignorePatterns.
-**/.config/fleet/oxlint-plugin.mjs
+# NB: this matcher is rooted at THIS file's dir (.config/fleet/), so the pattern
+# is anchored to the BASENAME — a `**/.config/fleet/oxlint-plugin.mjs` form is a
+# silent no-op here (the file's path relative to the matcher root is just
+# `oxlint-plugin.mjs`). The `.gitignore` twin keeps the repo-root-anchored
+# `**/.config/fleet/oxlint-plugin.mjs` form because THAT matcher roots at the
+# repo root.
+**/oxlint-plugin.mjs
 
 # Generated build/test output — machine-written trees whose generators own the
 # bytes; formatting them is churn against the next build. These are the

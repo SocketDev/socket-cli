@@ -92,7 +92,7 @@ export function defineGuardedPlugin(define: Record<string, string>): Plugin {
       // when the transform hook hands one over; same .overwrite()/.toString()
       // API as the npm package. Fall back to a JS instance otherwise.
       const native = (
-        meta as { magicString?: MagicString | undefined } | undefined
+        meta as unknown as { magicString?: MagicString | undefined } | undefined
       )?.magicString
       const ms = native ?? new MagicString(code)
       let rewrote = false
@@ -161,7 +161,10 @@ export function defineGuardedPlugin(define: Record<string, string>): Plugin {
       if (native) {
         return { code: ms as unknown as string }
       }
-      return { code: ms.toString(), map: ms.generateMap({ hires: true }) }
+      return {
+        code: ms.toString(),
+        map: ms.generateMap({ hires: true }).toString(),
+      }
     },
   }
 }

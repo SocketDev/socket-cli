@@ -37,7 +37,7 @@ export function findGitmodulesIssues(
     if (!open) {
       continue
     }
-    const name = open.groups!.name!
+    const name = open.groups!['name']!
     let headerSha: string | undefined
     for (let j = i - 1; j >= 0; j -= 1) {
       const prev = lines[j]!
@@ -46,7 +46,7 @@ export function findGitmodulesIssues(
       }
       const headerMatch = GITMODULES_HEADER_RE.exec(prev)
       if (headerMatch) {
-        headerSha = headerMatch.groups!.sha
+        headerSha = headerMatch.groups!['sha']
         break
       }
     }
@@ -60,13 +60,13 @@ export function findGitmodulesIssues(
       if (!refSha) {
         const refMatch = GITMODULES_REF_RE.exec(next)
         if (refMatch) {
-          refSha = refMatch.groups!.ref
+          refSha = refMatch.groups!['ref']
         }
       }
       if (!ownerRepo) {
         const urlMatch = GITMODULES_URL_RE.exec(next)
         if (urlMatch) {
-          ownerRepo = urlMatch.groups!.ownerRepo
+          ownerRepo = urlMatch.groups!['ownerRepo']
         }
       }
     }

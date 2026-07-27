@@ -38,7 +38,7 @@ export async function runSetupSfw(
   // Integrity + asset.
   const { asset, integrity } = platformEntry
   const repo = sfwConfig.repository?.replace(/^[^:]+:/, '') ?? ''
-  const url = `https://github.com/${repo}/releases/download/${releaseTag(sfwConfig.version)}/${asset}`
+  const url = `https://github.com/${repo}/releases/download/${releaseTag(sfwConfig.version!)}/${asset}`
   const binaryName = isEnterprise ? 'sfw' : 'sfw-free'
 
   // Download (with cache + integrity check).

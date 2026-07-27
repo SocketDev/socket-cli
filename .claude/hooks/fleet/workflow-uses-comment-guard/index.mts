@@ -71,7 +71,7 @@ export function findBadUsesLines(text: string): BadLine[] {
     if (!m) {
       continue
     }
-    const comment = (m.groups?.comment ?? '').trim()
+    const comment = (m.groups?.['comment'] ?? '').trim()
     if (!comment) {
       bad.push({ line: line.trim(), reason: 'no comment on uses:' })
       continue

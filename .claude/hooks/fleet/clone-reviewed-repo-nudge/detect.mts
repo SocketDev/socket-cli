@@ -39,13 +39,19 @@ export function parseGithubSlug(
     /github\.com[/:](?<owner>[^/\s]+)\/(?<repo>[^/\s]+?)(?:\.git)?\/?$/,
   )
   if (urlMatch) {
-    return { owner: urlMatch.groups!.owner!, repo: urlMatch.groups!.repo! }
+    return {
+      owner: urlMatch.groups!['owner']!,
+      repo: urlMatch.groups!['repo']!,
+    }
   }
   // Bare owner/repo slug (exactly one slash, no scheme, no host).
   if (!value.includes('://')) {
     const slugMatch = value.match(/^(?<owner>[\w.-]+)\/(?<repo>[\w.-]+)$/)
     if (slugMatch) {
-      return { owner: slugMatch.groups!.owner!, repo: slugMatch.groups!.repo! }
+      return {
+        owner: slugMatch.groups!['owner']!,
+        repo: slugMatch.groups!['repo']!,
+      }
     }
   }
   return undefined
@@ -122,7 +128,7 @@ export function externalGhRepo(
     // `--repo=<slug>`.
     const eq = a.match(/^--repo=(?<value>.+)$/)
     if (eq) {
-      const parsed = parseGithubSlug(eq.groups!.value!)
+      const parsed = parseGithubSlug(eq.groups!['value']!)
       if (parsed && !isFleetOrg(parsed.owner)) {
         return parsed
       }

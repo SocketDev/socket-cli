@@ -111,6 +111,25 @@ export function readmeBadgeForm(readme: string): BadgeForm | undefined {
   return undefined
 }
 
+// A coverage-badge-shaped line in ANY spelling: a `![Coverage](…)` markdown
+// image or an `<img>` whose alt names coverage. Broader than the recognized
+// forms above on purpose — its only job is telling "opted out" apart from
+// "carries a badge the recognizer can't see".
+const COVERAGE_BADGE_MARKER_RE =
+  /!\[Coverage\]\(|<img\b[^>]*\balt="Coverage[^"]*"/i // socket-lint: allow uncommented-regex
+
+// True when the README carries a coverage-badge-looking line that
+// readmeBadgeForm() does NOT recognize — e.g. a hand-written shields.io HTML
+// `<img>`. Such a badge silently escaped the freshness gate (the check read
+// "no badge" as an opt-out), which is how a stale hand-written percent shipped
+// on a public README while the check stayed green.
+export function hasUnrecognizedCoverageBadge(readme: string): boolean {
+  return (
+    readmeBadgeForm(readme) === undefined &&
+    COVERAGE_BADGE_MARKER_RE.test(readme)
+  )
+}
+
 /**
  * Rewrite whatever coverage-badge line the README carries to the current
  * dimensioned `<img>` reference for `svg` (retired shields.io, the legacy

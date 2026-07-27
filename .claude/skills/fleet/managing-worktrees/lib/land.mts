@@ -37,6 +37,7 @@ import process from 'node:process'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
+import { filterFormatIgnored } from '../../../../../scripts/fleet/_shared/format-scope.mts'
 import {
   git,
   gitOk,
@@ -111,58 +112,18 @@ export async function commitChangedFiles(
 }
 
 /**
- * Pick the oxlint config the way scripts/fleet/lint.mts's pickOxlintConfig does
- * — prefer the repo overlay (.config/repo/oxlint.config.mts) over the fleet
- * canonical, then the JSON variants. Hardcoding the fleet config made the
- * re-assert run STRICTER rules than the edit-time gate: a repo overlay relaxes
- * rules for, e.g., packages/npm/**, so a diff clean under the repo's actual
- * gate failed the land. Resolve the same config the edit-time gate used.
- * repoDir-relative: cwd may be a subdir, so the existsSync probes join repoDir.
- */
-export function pickOxlintConfig(repoDir: string): string {
-  const candidates = [
-    path.join('.config', 'repo', 'oxlint.config.mts'),
-    path.join('.config', 'fleet', 'oxlint.config.mts'),
-    path.join('.config', 'repo', 'oxlintrc.json'),
-    path.join('.config', 'fleet', 'oxlintrc.json'),
-  ]
-  for (let i = 0, { length } = candidates; i < length; i += 1) {
-    if (existsSync(path.join(repoDir, candidates[i]!))) {
-      return candidates[i]!
-    }
-  }
-  return path.join('.config', 'fleet', 'oxlintrc.json')
-}
-
-/**
- * Build the oxlint argv for a scoped file list, mirroring the invocation shape
- * scripts/fleet/lint.mts uses in its runFiles() path. Source of truth: lint.mts
- * runFiles() — same config picker, same --no-error-on-unmatched-pattern flag.
- * Exported so unit tests can pin the argv and detect divergence from lint.mts.
- */
-export function buildLintArgs(repoDir: string, files: string[]): string[] {
-  // Mirrors lint.mts runFiles():
-  //   pnpm exec oxlint -c <config> --no-error-on-unmatched-pattern <files>
-  // Running via the local binary (not pnpm exec) keeps land.mts dependency-free
-  // on the pnpm wrapper, but the config path and flags MUST match lint.mts.
-  return [
-    '-c',
-    pickOxlintConfig(repoDir),
-    '--no-error-on-unmatched-pattern',
-    ...files,
-  ]
-}
-
-/**
  * Re-assert the edit-time lint gate on the landing commits' changed files. The
  * fleet lints as it edits, so this should pass instantly; a failure means the
  * contract was bypassed and the land is unsafe. Returns true when clean (or
  * when there are no lintable files). Skipped by the caller under
  * --no-verify-lint (e.g. a worktree without node_modules).
  *
- * Invocation shape matches scripts/fleet/lint.mts runFiles() exactly:
- * -c <config> --no-error-on-unmatched-pattern <files>
- * See buildLintArgs() — lint.mts is the source of truth.
+ * Delegates to `scripts/fleet/lint.mts <files>` — the wrapper that owns the
+ * config plumbing (the `.mts` factory build, ignore-pattern re-rooting, the
+ * generated socket plugin, mirror-file filtering). A hand-rolled bare-oxlint
+ * invocation here drifted from that plumbing twice (a `.mts` config bare
+ * oxlint silently no-ops on; unfiltered mirror payload), so the wrapper's exit
+ * code is the one signal this gate trusts.
  */
 export async function lintLandsClean(
   repoDir: string,
@@ -179,53 +140,39 @@ export async function lintLandsClean(
   if (!lintable.length) {
     return true
   }
-  const lintBin = path.join(repoDir, 'node_modules', '.bin', 'oxlint')
-  if (!existsSync(lintBin)) {
+  const lintWrapper = path.join(repoDir, 'scripts', 'fleet', 'lint.mts')
+  if (
+    !existsSync(lintWrapper) ||
+    !existsSync(path.join(repoDir, 'node_modules', '.bin', 'oxlint'))
+  ) {
     logger.warn(
-      'land: oxlint not installed in this checkout; cannot re-assert the lint gate. ' +
-        'Pass --no-verify-lint to land anyway (only safe when the diff was lint-clean at edit time).',
+      'land: the fleet lint wrapper (or oxlint) is not available in this checkout; ' +
+        'cannot re-assert the lint gate. Pass --no-verify-lint to land anyway ' +
+        '(only safe when the diff was lint-clean at edit time).',
     )
     return false
   }
-  // oxlint's exit code is unreliable as a clean/dirty signal here (the Socket
-  // Firewall wrapper / warning-level findings can exit non-zero on a clean
-  // run), so key on the reported ERROR COUNT instead. The summary line is
-  // `Found <W> warnings and <E> errors.`; clean ⟺ E === 0. spawn rejects on a
-  // non-zero exit, so read stdout/stderr off either the resolved result or the
-  // caught error.
-  const result = (await spawn(lintBin, buildLintArgs(repoDir, lintable), {
-    cwd: repoDir,
-    stdioString: true,
-  }).catch((e: unknown) => e)) as {
+  const result = (await spawn(
+    process.execPath,
+    [lintWrapper, ...lintable],
+    // stdio MUST pipe — without it the lib spawn discards output and the
+    // failure detail below is lost.
+    { cwd: repoDir, stdio: 'pipe', stdioString: true },
+  ).catch((e: unknown) => e)) as {
+    code?: number | undefined
+    exitCode?: number | undefined
     stdout?: string | undefined
     stderr?: string | undefined
   }
-  const output = `${result?.stdout ?? ''}\n${result?.stderr ?? ''}`
-  // Files outside this config's lint scope (e.g. `template/**`, which the
-  // wheelhouse oxlint config ignores because the template is linted as its
-  // cascaded LIVE copies, not the seed path) make oxlint report "No files
-  // found to lint". With --no-error-on-unmatched-pattern this still exits 0
-  // and produces no summary line. That's not a dirty diff; the edit-time gate
-  // covers those files at their real path. Say so LOUDLY so the reader knows
-  // the re-assert didn't run on them.
-  if (/No files found to lint/.test(output)) {
-    logger.warn(
-      `land: ${lintable.length} file(s) are outside this checkout's lint scope ` +
-        `(e.g. template/** is linted as its live copies, not the seed path) — ` +
-        `the lint gate could not re-assert them here. Relying on the edit-time ` +
-        `gate that already covered them: ${lintable.join(', ')}`,
-    )
+  const code = result?.code ?? result?.exitCode
+  if (code === 0) {
     return true
   }
-  // oxlint's summary line is `Found <W> warnings and <E> errors.`; clean ⟺
-  // E === 0. Anchor on the error count, not the exit code.
-  const match = /Found \d+ warnings? and (\d+) errors?/.exec(output)
-  if (!match) {
-    // No summary line and no "no files" signal — oxlint itself failed (bad
-    // config, crash). Fail closed: never land an unverified diff.
-    return false
+  const output = `${result?.stdout ?? ''}\n${result?.stderr ?? ''}`.trim()
+  if (output) {
+    logger.error(output.split('\n').slice(-40).join('\n'))
   }
-  return Number(match[1]) === 0
+  return false
 }
 
 /**
@@ -403,14 +350,20 @@ export async function main(): Promise<number> {
   }
 
   // Changed-file set shared by both edit-time re-assert gates (lint + format).
-  const allFiles = new Set<string>()
+  // Runs through the same never-gated pre-filter as lint.mts/format.mts —
+  // cascade-mirror payload and generated/vendored artifacts are gated at the
+  // template source only, and oxlint/oxfmt bypass their own ignorePatterns for
+  // explicitly-passed files, so an unfiltered set false-reds the land on
+  // dogfooded mirror bytes.
+  const changed = new Set<string>()
   if (!skipLint || !skipFormat) {
     for (const sha of commits) {
       for (const f of await commitChangedFiles(repoDir, sha)) {
-        allFiles.add(f)
+        changed.add(f)
       }
     }
   }
+  const allFiles = filterFormatIgnored([...changed], { cwd: repoDir })
 
   if (!skipLint) {
     const clean = await lintLandsClean(repoDir, [...allFiles])

@@ -20,7 +20,6 @@
 
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 
 import { errorMessage } from '@socketsecurity/lib/errors/message'
 import { safeMkdir } from '@socketsecurity/lib/fs/safe'

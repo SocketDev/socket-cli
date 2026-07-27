@@ -22,7 +22,7 @@
  *   - a read of a `.skel` file itself (already the skeleton)
  */
 
-import { existsSync, statSync } from 'node:fs'
+import { statSync } from 'node:fs'
 import path from 'node:path'
 
 import { defineHook, notify, runHook } from '../_shared/guard.mts'

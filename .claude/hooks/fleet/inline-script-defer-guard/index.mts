@@ -54,7 +54,7 @@ export function findInlineDeferOrAsync(text: string):
   SCRIPT_OPENER_RE.lastIndex = 0
   while ((m = SCRIPT_OPENER_RE.exec(text)) !== null) {
     /* c8 ignore next - named-group regex always populates m.groups when it matches */
-    const attrs = m.groups?.attrs ?? ''
+    const attrs = m.groups?.['attrs'] ?? ''
     if (!/\b(?:async|defer)\b/i.test(attrs)) {
       continue
     }

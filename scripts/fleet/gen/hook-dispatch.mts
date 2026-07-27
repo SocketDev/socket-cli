@@ -167,7 +167,7 @@ export function renderDispatchTable(
     `export const DISPATCH_TABLE: Record<string, readonly DispatchHookEntry[]> = {\n` +
     `  __proto__: null,\n` +
     (tableBody ? tableBody + '\n' : '') +
-    `} as Record<string, readonly DispatchHookEntry[]>\n` +
+    `} as unknown as Record<string, readonly DispatchHookEntry[]>\n` +
     hints
   )
 }

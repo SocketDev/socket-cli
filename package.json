@@ -42,6 +42,7 @@
     "// lockstep": "",
     "lockstep": "node scripts/fleet/lockstep.mts",
     "lockstep:emit-schema": "node scripts/fleet/lockstep-emit-schema.mts",
+    "lockstep:emit-mirror-globs": "node scripts/fleet/lockstep-emit-mirror-globs.mts",
     "// Setup": "",
     "setup": "node scripts/repo/setup.mts",
     "postinstall": "node scripts/repo/setup.mts --install --quiet",

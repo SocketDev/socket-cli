@@ -215,7 +215,7 @@ export function detectEditDowngrade(
   }
   // Lowering minimumReleaseAge below the floor.
   const m = /minimumReleaseAge\s*:\s*(?<value>\d+)/i.exec(newText)
-  if (m && Number(m.groups!.value) < MIN_RELEASE_AGE_FLOOR) {
+  if (m && Number(m.groups!['value']) < MIN_RELEASE_AGE_FLOOR) {
     return `minimumReleaseAge lowered below the ${MIN_RELEASE_AGE_FLOOR} floor`
   }
   // npm's `.npmrc` `min-release-age` (days) is the npm-side soak — a parallel

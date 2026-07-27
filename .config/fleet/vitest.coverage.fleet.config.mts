@@ -54,6 +54,15 @@ export const baseFleetCoverageConfig: CoverageOptions = {
   reporter: getCI()
     ? ['text', 'json', 'json-summary', 'html', 'lcov', 'clover']
     : ['text', 'json', 'json-summary'],
+  // Emit the coverage report even when tests FAIL. Vitest defaults this to
+  // false, so a single failing (or flaky) test suppresses the ENTIRE
+  // coverage-final.json — the cover runner then reads no in-process tier and
+  // reports the aggregate as unavailable / undercounted (built from the
+  // subprocess children tier alone). That turns any transient test failure
+  // into a coverage-measurement failure, a second source of gate
+  // nondeterminism. The run still fails on the test failure itself (non-zero
+  // exit); this only keeps the measurement honest and stable.
+  reportOnFailure: true,
   // Vitest tiers report into a THROWAWAY scratch dir (in os.tmpdir), not the
   // coverage home: `clean: true` wipes the whole reportsDirectory and the
   // reporter emits a fixed `coverage-final.json`, so the runner renames each

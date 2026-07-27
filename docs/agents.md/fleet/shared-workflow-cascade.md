@@ -21,7 +21,13 @@ The unit that cascades is a pair plus a shared lock:
    GitHub Actions workflow (`<name>.lock.yml`) plus a pinned
    `.github/aw/actions-lock.json`. The three are one unit: edit the `.md`,
    recompile, commit all three together. `gh-aw-locks-are-current` guards the
-   `.md` ↔ `.lock.yml` sync.
+   `.md` ↔ `.lock.yml` sync on both stamped hashes — `body_hash` and
+   `frontmatter_hash` — so a frontmatter-only edit without a recompile goes
+   red too. `gh-aw-emissions-are-declared` keeps the compile surface closed:
+   a gh-aw-generated workflow file with no declared `.md` source and no
+   `SANCTIONED_GHAW_EMISSIONS` entry is an undeclared compiler side-emission,
+   and the sanctioned compile path deletes it rather than letting a bare
+   `gh aw compile` adopt it by drive-by.
 
 Both files are mirror entries in
 `scripts/repo/sync-scaffolding/manifest/bundle.json`, so the fleet cascade

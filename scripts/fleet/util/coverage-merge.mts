@@ -149,6 +149,93 @@ export async function foldTemplateTwins(
   return folded
 }
 
+// Count the covered branch-arms and covered statements in a single coverage
+// entry (a hit count > 0 is "covered"). Used to classify an in-process entry
+// as genuinely 0-executed vs partially covered.
+export function coveredCounts(entry: CoverageFileFinal | undefined): {
+  branches: number
+  statements: number
+} {
+  let branches = 0
+  let statements = 0
+  const stmtCounts = Object.values(entry?.s ?? {})
+  for (let i = 0, { length } = stmtCounts; i < length; i += 1) {
+    if (stmtCounts[i]! > 0) {
+      statements += 1
+    }
+  }
+  const branchArrs = Object.values(entry?.b ?? {})
+  for (let i = 0, { length } = branchArrs; i < length; i += 1) {
+    const arr = branchArrs[i]!
+    for (let j = 0, { length: len } = arr; j < len; j += 1) {
+      if (arr[j]! > 0) {
+        branches += 1
+      }
+    }
+  }
+  return { branches, statements }
+}
+
+/**
+ * Fold the subprocess CHILDREN tier into the in-process (main/isolated) tiers.
+ * Two cases, both of which only ever RAISE coverage:
+ *
+ * 1. ABSENT in-process — a script entrypoint exercised only via spawn, which the
+ *    vitest tiers never loaded, so it has no in-process entry. Gap-fill it
+ *    wholesale (added to the isolated map, which the aggregate tallies).
+ * 2. LOADED but 0-EXECUTED in-process — a file IMPORTED by a test (so it has an
+ *    in-process entry) but whose code runs only in a spawned subprocess. Its
+ *    in-process entry reads 0 covered while the children tier holds the real
+ *    coverage. vitest-v8 and c8 segment the same file's statements and branches
+ *    INCOMPATIBLY (different id counts + statementMaps), so a per-id max-merge
+ *    across the tiers is unsound — the children tier is the only truthful
+ *    measurement. Replace the 0-entry wholesale. STRICTLY bounded to entries
+ *    with 0 covered branches AND 0 covered statements in-process, so a
+ *    partially-covered file is NEVER touched and the fold cannot lower any
+ *    file's coverage. The children entry must itself cover something, else
+ *    there is nothing to recover.
+ */
+export function foldChildrenTier(
+  mainFinal: Record<string, CoverageFileFinal>,
+  isolatedFinal: Record<string, CoverageFileFinal>,
+  childrenFinal: Record<string, CoverageFileFinal>,
+): void {
+  const keys = Object.keys(childrenFinal)
+  for (let i = 0, { length } = keys; i < length; i += 1) {
+    const key = keys[i]!
+    const childEntry = childrenFinal[key]!
+    const inMain = key in mainFinal
+    const inIso = key in isolatedFinal
+    if (!inMain && !inIso) {
+      // Case 1: subprocess-only file absent in-process — gap-fill it.
+      isolatedFinal[key] = childEntry
+      continue
+    }
+    // Case 2: the children tier must actually have covered it (a 0/0 child
+    // entry would only add noise, not recover coverage).
+    const child = coveredCounts(childEntry)
+    if (child.branches === 0 && child.statements === 0) {
+      continue
+    }
+    // Replace only a genuinely 0-executed in-process entry (loaded but never
+    // run in-process). Both maps are checked/replaced independently so a file
+    // present in both tiers converges on the same children entry (a later
+    // per-id merge of two identical entries is a no-op).
+    if (inMain) {
+      const c = coveredCounts(mainFinal[key])
+      if (c.branches === 0 && c.statements === 0) {
+        mainFinal[key] = childEntry
+      }
+    }
+    if (inIso) {
+      const c = coveredCounts(isolatedFinal[key])
+      if (c.branches === 0 && c.statements === 0) {
+        isolatedFinal[key] = childEntry
+      }
+    }
+  }
+}
+
 // Merge coverage-final.json from the main and isolated suites using a
 // max-hit-count strategy. Returns aggregate percentages, or undefined when
 // neither report exists.
@@ -234,25 +321,21 @@ export async function mergeCoverageFinal(config: {
   await foldTemplateTwins(isolatedFinal)
 
   // Children tier (subprocess coverage): script entrypoints exercised via
-  // spawn run outside the in-process V8 session, so the vitest tiers read
-  // them as zero. cover.mts converts the raw NODE_V8_COVERAGE output to the
-  // children tier's coverage-final.json; entries here GAP-FILL only —
-  // a file the vitest tiers already measured keeps its in-process entry
-  // (the two reports segment statements differently, so a per-id max-merge
-  // across them would misalign). Absent file → tier skipped silently (the
-  // children capture is best-effort by design).
+  // spawn run outside the in-process V8 session, so the vitest tiers read them
+  // as zero. cover.mts converts the raw NODE_V8_COVERAGE output to the children
+  // tier's coverage-final.json; foldChildrenTier then (1) gap-fills files
+  // absent in-process and (2) replaces a genuinely 0-executed in-process entry
+  // (a file imported by a test but run only in a subprocess) with the children
+  // entry — the two reports segment statements incompatibly, so a per-id merge
+  // is unsound; the children tier is the only truthful measurement for such
+  // files. Bounded to 0-covered in-process entries, so it only ever RAISES.
+  // Absent children file → tier skipped silently (the capture is best-effort).
   try {
     const childrenFinal = JSON.parse(
       await fs.readFile(childrenFinalPath, 'utf8'),
     ) as Record<string, CoverageFileFinal>
     await foldTemplateTwins(childrenFinal)
-    const childrenKeys = Object.keys(childrenFinal)
-    for (let i = 0, { length } = childrenKeys; i < length; i += 1) {
-      const key = childrenKeys[i]!
-      if (!(key in mainFinal) && !(key in isolatedFinal)) {
-        isolatedFinal[key] = childrenFinal[key]!
-      }
-    }
+    foldChildrenTier(mainFinal, isolatedFinal, childrenFinal)
   } catch (e) {
     const err = e as NodeJS.ErrnoException | null
     if (err?.code !== 'ENOENT') {

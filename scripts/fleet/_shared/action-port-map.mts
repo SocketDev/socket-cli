@@ -78,9 +78,13 @@ export const COMPOSITE_ACTION_PORTS: Readonly<
   'setup-git-signing': [
     { portedAt: 'v7.0.0', upstream: 'crazy-max/ghaction-import-gpg' },
   ],
-  // template/conditional/go overlay — self-declared inline port of setup-go's
-  // version-resolution fallback chain.
-  'setup-go-toolchain': [{ portedAt: 'v7.0.0', upstream: 'actions/setup-go' }],
+  // Socket-original inline Go-toolchain locator: its header states it is
+  // "written inline so we don't depend on a third-party action". It only takes
+  // inspiration from actions/setup-go's generic fallback ordering (PATH →
+  // hosted toolcache → distro package manager → bail); it ports neither that
+  // action's input surface nor its go.dev/dl download algorithm, so there is no
+  // upstream release to lock-step against.
+  'setup-go-toolchain': [],
 }
 
 // Split an `<owner>/<repo>` slug; undefined when the shape is wrong. Pure.

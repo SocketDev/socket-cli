@@ -520,6 +520,7 @@ overrides:
   hasown: npm:@socketregistry/hasown@1.0.7
   iconv-lite: 0.7.2
   isexe@>=3: 4.0.0
+  js-yaml@>=5.0.0 <5.2.2: 5.2.2
   lru-cache@>=10: 11.3.6
   magic-string: 1.0.0
   mime-db: 1.54.0
@@ -5749,8 +5750,8 @@ packages:
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
 
-  js-yaml@5.2.0:
-    resolution: {integrity: sha512-YeLUMlvR4Ou1B119LIaM0r65JvbOBooJDc9yEu0dClb/uSC5P4FrLU8OCCz/HXWvtPoIrR0dRzABTjo1sTN9Bw==}
+  js-yaml@5.2.2:
+    resolution: {integrity: sha512-dayzUzKkJ1MkuUtZglSebU43utNXH0OWQByK9rKOOuYIO8M5TV1y+n8ALMdG0rdzBnfNkOmZEqrURepb0ejqBw==}
     hasBin: true
 
   jsesc@3.1.0:
@@ -10171,7 +10172,7 @@ snapshots:
 
   js-tokens@4.0.0: {}
 
-  js-yaml@5.2.0:
+  js-yaml@5.2.2:
     dependencies:
       argparse: 2.0.1
 
@@ -10379,7 +10380,7 @@ snapshots:
   markdownlint-cli2@0.23.0:
     dependencies:
       globby: 16.2.0
-      js-yaml: 5.2.0
+      js-yaml: 5.2.2
       jsonc-parser: 3.3.1
       jsonpointer: 5.0.1
       markdown-it: 14.2.0

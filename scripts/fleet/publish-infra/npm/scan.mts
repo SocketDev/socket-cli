@@ -23,14 +23,35 @@ import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
  * the staged upload once the shasum gate has passed), extracts the tarball's
  * `package/` root into a temp dir, and gates on the Socket CLI's exit code.
  * The scan is marked `--tmp` (hidden from the dashboard scan list) — it's a
- * promotion gate, not a tracked branch scan.
+ * promotion gate, not a tracked branch scan. `options.packTarball` swaps the
+ * artifact source: a generated platform package's payload is CI-built with no
+ * local twin, so the approve flow passes a provider that downloads the STAGED
+ * tarball (whose structure the platform verify gate has already checked)
+ * instead of packing locally.
  */
-export async function scanStagedEntry(entry: {
-  name: string
-  version: string
-}): Promise<boolean> {
+export async function scanStagedEntry(
+  entry: {
+    name: string
+    version: string
+  },
+  options?:
+    | {
+        packTarball?:
+          | ((name: string, version: string) => Promise<string | undefined>)
+          | undefined
+      }
+    | undefined,
+): Promise<boolean> {
+  const { packTarball = defaultPackTarball } = {
+    __proto__: null,
+    ...options,
+  } as {
+    packTarball?:
+      | ((name: string, version: string) => Promise<string | undefined>)
+      | undefined
+  }
   const { name, version } = entry
-  const tarballPath = await defaultPackTarball(name, version)
+  const tarballPath = await packTarball(name, version)
   if (!tarballPath) {
     logger.fail(
       `Scan gate: could not pack ${name}@${version} locally; refusing to approve unscanned bytes.`,

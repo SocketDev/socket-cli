@@ -5,7 +5,7 @@
  *   across action steps. Node gives us platform/arch directly, and
  *   `process.report` exposes libc (glibcVersionRuntime is the string "musl" on
  *   musl Node, otherwise a glibc version number). No shelling out. Usage: node
- *   .github/actions/fleet/lib/platform.mjs Exits non-zero on unsupported
+ *   .github/actions/fleet/_shared/platform.mjs Exits non-zero on unsupported
  *   platform/arch.
  */
 

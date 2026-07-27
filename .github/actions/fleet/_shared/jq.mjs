@@ -3,7 +3,7 @@
  *   steps that run before actions/setup-node, so this only relies on the system
  *   Node every GitHub-hosted runner image ships with. Also useful in
  *   node:*-alpine and distroless Docker base images where jq is not installed.
- *   Usage: node .github/actions/fleet/lib/jq.mjs <file|-> <key> [<key> ...]
+ *   Usage: node .github/actions/fleet/_shared/jq.mjs <file|-> <key> [<key> ...]
  *   Pass `-` as the file argument to read JSON from stdin. Exits non-zero on
  *   missing/empty value. A file whose root carries an `extends` field (the
  *   external-tools.json chains in socket-btm / ultrathink) is resolved before

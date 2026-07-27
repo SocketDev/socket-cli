@@ -1,8 +1,7 @@
 # Layer 2a — references Layer 1 (debug). Consumed by `setup-and-install`
 # (Layer 2b). When this file bumps, cascade is: 2b → 3 → 4 → external
 # repos. See updating-workflows skill at .claude/skills/updating-workflows/.
-# cascade-data-deps: ., .github, .github/actions/fleet/lib,
-# .github/actions/fleet/lib
+# cascade-data-deps: ., .github, .github/actions/fleet/_shared
 # (read at runtime via ${GITHUB_ACTION_PATH}/../… — implicit edges with no
 # `uses:` line; action-pins-are-current.mts tracks them for staleness.)
 
@@ -130,13 +129,18 @@ runs:
         PLATFORM="$(node "$PLATFORM_TOOL")"
         ASSET="$(node "$JQ" "$TOOLS_FILE" $NS pnpm platforms "$PLATFORM" asset)"
         INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS pnpm platforms "$PLATFORM" integrity)"
-        # Optional `source` field. When set to `npm-registry`, the asset
-        # is a JS-only npm tarball (e.g. pnpm-11.0.8.tgz) — runs through
-        # the system Node instead of being a SEA binary. Currently used
-        # only for darwin-x64 because upstream pnpm dropped the SEA
-        # binary in 11.0.5 due to nodejs/node#62893.
-        SOURCE="$(node "$JQ" "$TOOLS_FILE" $NS pnpm platforms "$PLATFORM" source 2>/dev/null || echo "")"
+        # An `<name>-<version>.tgz` asset is a JS-only npm-registry tarball
+        # (pnpm ships no darwin-x64 SEA binary since 11.0.5,
+        # nodejs/node#62893) — it downloads from the npm registry and runs
+        # through the system Node. Derived from the asset shape itself: the
+        # external-tools updater regenerates platform entries as
+        # asset+integrity pairs, so a separate `source` data field silently
+        # vanishes on update (it did — every fleet copy lost it and Intel
+        # mac setup 404'd against the GitHub release).
+        SOURCE=""
+        [[ "$ASSET" == *.tgz ]] && SOURCE="npm-registry"
         BINARY_REL="$(node "$JQ" "$TOOLS_FILE" $NS pnpm platforms "$PLATFORM" binary 2>/dev/null || echo "")"
+        BINARY_REL="${BINARY_REL:-package/bin/pnpm.cjs}"
         PNPM_BIN="$PNPM_DIR/pnpm"
         [[ "$ASSET" == *.zip ]] && PNPM_BIN="$PNPM_DIR/pnpm.exe"
         # Shared installer: fetches, integrity-verifies (SRI), extracts.

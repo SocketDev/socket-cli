@@ -52,6 +52,16 @@ export interface ParseOptions {
    * model.
    */
   comments?: boolean | undefined
+  /**
+   * Attach a 1-based `loc` object (start/end line + column) to every node.
+   * Honored by the underlying parser at runtime; default `false`.
+   */
+  locations?: boolean | undefined
+  /**
+   * Attach a `range` `[start, end]` tuple to every node. Honored by the
+   * underlying parser at runtime; default `false`.
+   */
+  ranges?: boolean | undefined
 }
 
 export interface CallSite {
@@ -73,6 +83,8 @@ export const DEFAULT_PARSE_OPTIONS: Required<ParseOptions> = {
   comments: false,
   ecmaVersion: 2026,
   jsx: false,
+  locations: false,
+  ranges: false,
   sourceType: 'module',
   typescript: true,
 }

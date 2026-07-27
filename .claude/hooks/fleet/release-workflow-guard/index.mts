@@ -712,11 +712,14 @@ export function resolveSearchRoots(command: string): string[] {
     projectDir = process.cwd()
   }
   const repoMatch = GH_REPO_FLAG_RE.exec(command)
-  if (repoMatch && path.basename(projectDir) !== repoMatch.groups!.repoName!) {
+  if (
+    repoMatch &&
+    path.basename(projectDir) !== repoMatch.groups!['repoName']!
+  ) {
     // Cross-repo dispatch: only look in the sibling clone. Excluding
     // projectDir keeps a same-name workflow in the current checkout
     // from false-positiving the verification.
-    return [path.join(path.dirname(projectDir), repoMatch.groups!.repoName!)]
+    return [path.join(path.dirname(projectDir), repoMatch.groups!['repoName']!)]
   }
   // Same-repo (no --repo, or --repo names the current project): add
   // process.cwd() when it differs from projectDir AND any inline
@@ -744,7 +747,9 @@ export function resolveSearchRoots(command: string): string[] {
     // single-quoted / double-quoted / bare forms via three
     // alternation groups in INLINE_CD_RE.
     const cdPath =
-      inlineCd.groups?.sq ?? inlineCd.groups?.dq ?? inlineCd.groups?.bare
+      inlineCd.groups?.['sq'] ??
+      inlineCd.groups?.['dq'] ??
+      inlineCd.groups?.['bare']
     /* c8 ignore next - cdPath is always defined when INLINE_CD_RE matches; all three alternation groups guarantee at least one capture */
     if (cdPath) {
       const resolved = path.isAbsolute(cdPath)
@@ -914,7 +919,7 @@ export function detectDispatch(command: string): DispatchResult {
           return {
             blocked: true,
             shape: 'gh api .../dispatches',
-            workflow: m.groups!.workflowId,
+            workflow: m.groups!['workflowId'],
           }
         }
       }

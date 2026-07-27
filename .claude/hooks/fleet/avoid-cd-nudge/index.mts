@@ -42,7 +42,7 @@ function detectsBareCd(command: string): boolean {
   const cdRe = /(?:^|[\s;&|])cd\s+(?<target>\S+)/g
   let m: RegExpExecArray | null
   while ((m = cdRe.exec(flat)) !== null) {
-    const target = m.groups!.target!
+    const target = m.groups!['target']!
 
     // Skip `cd -` (intentional return).
     if (target === '-') {

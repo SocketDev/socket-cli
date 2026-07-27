@@ -3,43 +3,33 @@
 //
 // renamed-from: bundle-stale-guard
 //
-// Mirrors extension-build-current-reminder. Fires after an Edit/Write whose
-// path is a hook-bundle SOURCE: the `_dispatch/` dispatcher, the generated
-// `dispatch-table.mts`, any bundled hook's `index.mts`, or anything under
-// `_shared/`. When the edited source is NEWER than the built
-// `_dist/bundle.cjs`, the bundle is stale and the operator is reminded to
-// rebuild it with `node scripts/fleet/build-hook-bundle.mts`.
+// Fires after an Edit/Write whose path is a hook-bundle SOURCE: the
+// `_dispatch/` dispatcher, the generated `dispatch-table.mts`, any bundled
+// hook's `index.mts`, or anything under `_shared/`. When the edited source is
+// NEWER than the built `_dist/bundle.cjs`, the bundle is stale and the
+// operator is reminded to rebuild it with
+// `node scripts/fleet/build-hook-bundle.mts`.
 //
-// The hook is a REMINDER, never a block: it only writes to stderr and always
-// exits 0. PostToolUse can't reject the prior tool call anyway.
+// The hook is a REMINDER, never a block: it returns a notify verdict, so the
+// tool call always proceeds. PostToolUse can't reject the prior tool call
+// anyway.
 //
-// Bypass: `Allow hook-bundle-current bypass` (silences the reminder when the
-// rebuild is genuinely deferred). See docs/agents.md/fleet/hook-bundle.md.
+// Bypass: the `hook-bundle-current` slug is declared as `bypass` metadata on
+// defineHook — the framework wires phrase detection and the uniform footer
+// from that one array, so typing the phrase silences the reminder when the
+// rebuild is genuinely deferred. See docs/agents.md/fleet/hook-bundle.md.
 
 import { existsSync, statSync } from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
-import { isHookEntrypoint } from '../_shared/entrypoint.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import { defineHook, notify, runHook } from '../_shared/guard.mts'
+import type { GuardResult } from '../_shared/guard.mts'
+import { readFilePath } from '../_shared/payload.mts'
+import type { ToolCallPayload } from '../_shared/payload.mts'
 import { resolveProjectDir } from '../_shared/project-dir.mts'
 
-export interface BundleStalePayload {
-  readonly cwd?: string | undefined
-  readonly hook_event_name?: string | undefined
-  readonly tool_input?: { readonly file_path?: unknown | undefined } | undefined
-  readonly tool_name?: string | undefined
-  readonly transcript_path?: string | undefined
-}
-
-// Read by scripts/fleet/gen/hook-dispatch.mts to place this hook in the
-// static dispatch table (the bundled fast-path). PostToolUse, Edit|Write.
-export const DISPATCH_EVENT = 'PostToolUse'
-export const DISPATCH_TOOLS: readonly string[] = ['Edit', 'Write']
-
-const BYPASS_PHRASE = 'Allow hook-bundle-current bypass'
 const BUNDLE_REL = '.claude/hooks/fleet/_dist/bundle.cjs'
 // The wheelhouse holds TWO bundles: the live one (above) and the cascaded
 // canonical under template/base/. A hook-source edit leaves both stale until
@@ -144,45 +134,38 @@ export function bundleIsStale(
 }
 
 /**
- * Builds the multi-line stderr reminder.
+ * Builds the multi-line reminder. The bypass instruction is NOT part of the
+ * message — defineHook appends the uniform footer from the `bypass` metadata.
  */
 export function formatReminder(sourceRel: string): string {
-  return (
-    [
-      `[bundle-stale-reminder] Edited a hook-bundle source without rebuilding the bundle.`,
-      ``,
-      `  Source:  ${sourceRel}`,
-      `  Bundle:  ${BUNDLE_REL}`,
-      `           (+ ${TEMPLATE_BUNDLE_REL} in the wheelhouse) — missing or older than the source`,
-      ``,
-      `  Rebuild so warm hook dispatch loads current code:`,
-      `    node scripts/fleet/build-hook-bundle.mts`,
-      ``,
-      `  Deferring the rebuild on purpose? Type "${BYPASS_PHRASE}".`,
-    ].join('\n') + '\n'
-  )
+  return [
+    `[bundle-stale-reminder] Edited a hook-bundle source without rebuilding the bundle.`,
+    ``,
+    `  Source:  ${sourceRel}`,
+    `  Bundle:  ${BUNDLE_REL}`,
+    `           (+ ${TEMPLATE_BUNDLE_REL} in the wheelhouse) — missing or older than the source`,
+    ``,
+    `  Rebuild so warm hook dispatch loads current code:`,
+    `    node scripts/fleet/build-hook-bundle.mts`,
+  ].join('\n')
 }
 
 /**
  * Core hook logic, decoupled from process I/O so the dispatcher bundle can
- * call it directly. Returns the reminder text when the bundle is stale, or
- * undefined when there is nothing to say.
+ * call it via the `check` seam. Returns a notify verdict when the bundle is
+ * stale, or undefined when there is nothing to say.
  */
-export function run(payload: BundleStalePayload): string | undefined {
-  if (payload.hook_event_name && payload.hook_event_name !== 'PostToolUse') {
+export const check = (payload: ToolCallPayload): GuardResult => {
+  const eventName = (payload as { hook_event_name?: unknown | undefined })
+    .hook_event_name
+  if (eventName && eventName !== 'PostToolUse') {
     return undefined
   }
   if (payload.tool_name !== 'Edit' && payload.tool_name !== 'Write') {
     return undefined
   }
-  const filePath =
-    typeof payload.tool_input?.file_path === 'string'
-      ? payload.tool_input.file_path
-      : ''
+  const filePath = readFilePath(payload)
   if (!filePath || !isBundledSource(filePath)) {
-    return undefined
-  }
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
     return undefined
   }
   const cwd = resolveProjectDir(
@@ -199,50 +182,14 @@ export function run(payload: BundleStalePayload): string | undefined {
     return undefined
   }
   const sourceRel = path.relative(repoRoot, sourceAbs) || filePath
-  return formatReminder(sourceRel)
+  return notify(formatReminder(sourceRel))
 }
 
-/* c8 ignore start - process-entrypoint I/O; only reachable when invoked as main script */
-async function readStdin(): Promise<string> {
-  let raw = ''
-  for await (const chunk of process.stdin) {
-    raw += chunk
-  }
-  return raw
-}
-
-async function main(): Promise<void> {
-  let raw: string
-  try {
-    raw = await readStdin()
-  } catch {
-    process.exit(0)
-  }
-  if (!raw.trim()) {
-    process.exit(0)
-  }
-  let payload: BundleStalePayload
-  try {
-    payload = JSON.parse(raw) as BundleStalePayload
-  } catch {
-    process.exit(0)
-  }
-  const reminder = run(payload)
-  if (reminder) {
-    process.stderr.write(reminder)
-  }
-  // Reminder-only: never blocks.
-  process.exit(0)
-}
-
-// Entrypoint-guarded: run main() only when invoked directly, NOT when the test
-// or the dispatch bundle imports this module for its pure `run` helper.
-// `isHookEntrypoint` also short-circuits inside a snapshot build pass, where the
-// absolute-`--build-snapshot`-path coincidence would otherwise fire this guard
-// during the build and abort serialization (see _shared/entrypoint.mts).
-if (isHookEntrypoint(import.meta.url)) {
-  main().catch(() => {
-    process.exit(0)
-  })
-}
-/* c8 ignore stop */
+export const hook = defineHook({
+  bypass: ['hook-bundle-current'],
+  check,
+  event: 'PostToolUse',
+  matcher: ['Edit', 'Write'],
+  type: 'nudge',
+})
+void runHook(hook, import.meta.url)

@@ -1,7 +1,7 @@
 # Socket CLI
 
 [![Socket Badge](https://socket.dev/api/badge/npm/package/socket)](https://socket.dev/npm/package/socket)
-![Coverage](https://img.shields.io/badge/coverage-75.08%25-brightgreen)
+![Coverage](assets/repo/badges/coverage.svg)
 
 [![Follow @SocketSecurity](https://img.shields.io/twitter/follow/SocketSecurity?style=social)](https://twitter.com/SocketSecurity)
 [![Follow @socket.dev on Bluesky](https://img.shields.io/badge/Follow-@socket.dev-1DA1F2?style=social&logo=bluesky)](https://bsky.app/profile/socket.dev)
@@ -33,9 +33,16 @@ socket package npm/express@4.18.0
 # Scan your project's dependencies
 socket scan create
 
-# Audit an install before it runs
+# Audit an install before it runs (npm, pnpm, or yarn)
 socket npm install
+socket pnpm install
+socket yarn add <package>
 ```
+
+`socket npm`, `socket pnpm`, and `socket yarn` each run the underlying
+package manager through [Socket Firewall](https://docs.socket.dev), which
+blocks known-malicious packages before they are installed. Install-time
+protection is no longer npm-only.
 
 See [the Socket docs](https://docs.socket.dev) for the full command reference.
 
