@@ -18,6 +18,7 @@ import {
   resetMachineOutputMode,
   setMachineOutputMode,
 } from '../output/ambient-mode.mts'
+import { applyMachineOutputStreamPolicy } from '../output/machine-output-streams.mts'
 import { emitBanner, shouldSuppressBanner } from './with-subcommands-banner.mts'
 
 import type { CliCommandConfig } from './with-subcommands.mts'
@@ -105,6 +106,13 @@ export function meowOrExit<const F extends MeowFlags = MeowFlags>(
   // so prior in-worker state doesn't leak across sequential invocations.
   resetMachineOutputMode()
   setMachineOutputMode({
+    json: jsonFlag,
+    markdown: markdownFlag,
+    quiet: quietFlag,
+  })
+  // Route the logger's stdout-bound status helpers (step / substep) to stderr
+  // when machine-output mode is engaged, so stdout carries only the payload.
+  applyMachineOutputStreamPolicy({
     json: jsonFlag,
     markdown: markdownFlag,
     quiet: quietFlag,
