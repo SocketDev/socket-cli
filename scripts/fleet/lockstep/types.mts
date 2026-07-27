@@ -41,7 +41,10 @@ export interface FileForkReport extends ReportBase {
 export interface VersionPinReport extends ReportBase {
   kind: 'version-pin'
   upstream: string
-  pinned_sha: string
+  // The effective pin: the row's stored pinned_sha when present, else the value
+  // derived from the `.gitmodules` `ref =`. `undefined` only on the error path
+  // where neither is resolvable.
+  pinned_sha: string | undefined
   pinned_tag: string | undefined
   upgrade_policy: string
   head_sha: string | undefined

@@ -7,6 +7,7 @@
 
 import { AI_SLOP_PATTERNS } from '../_shared/ai-slop-patterns.mts'
 import { HONESTY_FRAMING_RE } from '../_shared/honesty-framing.mts'
+import { HEADING_LISTY_ASIDE_RE } from '../_shared/trailing-aside.mts'
 
 export interface ProsePattern {
   readonly label: string
@@ -46,6 +47,14 @@ export const PROSE_PATTERNS: readonly ProsePattern[] = [
     // the honesty is assumed, not announced.
     regex: HONESTY_FRAMING_RE,
     why: 'Announcing your own honesty is throat-clearing. Drop "honest"/"papered over" framing and state the fact plainly.',
+  },
+  {
+    label: 'heading trailing parenthetical aside',
+    // Shares the value-level "extra bits" detector's source
+    // (_shared/trailing-aside.mts) so a heading and a manifest description are
+    // judged by one matcher. Fires on a listy trailing parenthetical.
+    regex: HEADING_LISTY_ASIDE_RE,
+    why: 'Heading ends with a listy parenthetical aside. State the heading plainly; move the "(a, b, c)" tail into the body.',
   },
   // The no-ai-slop tells (purple-prose words, importance puffery, weasel
   // attribution, colon reveals, faux-insight, summary-recap) are the shared

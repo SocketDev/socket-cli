@@ -1529,6 +1529,12 @@ importers:
         specifier: 'catalog:'
         version: 26.1.1
 
+  .claude/hooks/fleet/no-description-aside-guard:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.1.1
+
   .claude/hooks/fleet/no-direct-linter-guard:
     devDependencies:
       '@socketsecurity/lib-stable':

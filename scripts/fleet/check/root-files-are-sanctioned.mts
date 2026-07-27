@@ -86,6 +86,10 @@ export const SANCTIONED_ROOT_NAMES: ReadonlySet<string> = new Set([
   'examples',
   'fuzz',
   'llms.txt',
+  // The lockstep shim layout: an empty-rows root manifest whose `includes`
+  // anchor the segregated .config/repo/lockstep.json's relative paths at the
+  // repo root (lockstepManifestCandidates in paths.mts prefers it).
+  'lockstep.json',
   'macos',
   'Makefile',
   'napi',

@@ -49,10 +49,16 @@ skip):
   (`git log <sha>..HEAD -- <path>` inside the submodule, `checks.mts:90-102`).
   A missing local/upstream file or an unreachable SHA (too-shallow submodule)
   is an error, not drift (`checks.mts:71-88`).
-- **`version-pin`** — a submodule pinned to `pinned_sha` (full 40-hex,
-  authoritative; `pinned_tag` is informational — `schema.mts:227-237`). The
-  submodule HEAD must equal the pin or the row errors ("run
-  `git submodule update`", `checks.mts:153-159`). Before counting, the checker
+- **`version-pin`** — a submodule pinned to the `.gitmodules` `ref =`, which is
+  the SINGLE authoritative pin (per `no-upstream-gitlink-guard` +
+  `uses-sha-verify-guard`). The row's `pinned_sha` is OPTIONAL and DERIVED from
+  that ref (`resolvePinnedSha` in `gen/gitmodules-hash.mts`,
+  injected by `loadManifestTree`); it is present only on legacy manifests and is
+  migrated away — dropped — on the next auto-bump. `pinned_tag` is
+  informational. A stored `pinned_sha` that DISAGREES with the `.gitmodules` ref
+  is drift: it errors so the stale duplicate gets removed. The submodule HEAD
+  must equal the derived pin or the row errors ("run `git submodule update`",
+  `checks.mts` `checkVersionPin`). Before counting, the checker
   runs a best-effort `git fetch --tags` in the submodule — `fetchTagsQuiet` in
   `git.mts` — so a shallow or never-fetched clone can't under-report against a
   STALE remote ref, the opentui trap where drift read "1 commit" while the true
@@ -276,11 +282,21 @@ pin. Before adding or changing a `version-pin` row or a `.gitmodules` submodule
 pin:
 
 1. `git fetch --tags` in the submodule so the local view is current.
-2. Pin the NEWEST release tag — `gen/gitmodules-hash.mts --set` for
-   `.gitmodules`, the `version-pin` row for `lockstep.json`.
+2. Pin the NEWEST release with `gen/gitmodules-hash.mts --set`, which writes
+   the `.gitmodules` `ref =` — the single source of truth — AND its `sha256:`
+   annotation in one step. Do NOT also store a `pinned_sha` in the `version-pin`
+   row — the harness derives it from the ref. Set `pinned_tag` in the row only
+   as an informational release label.
 3. Never port against a stale/inherited pin, and never trust a drift count from
    a clone that hasn't fetched tags — a shallow or never-fetched clone reports a
    falsely-low number.
+
+**Never add a port-completion marker.** Do NOT introduce an
+`UPSTREAM_PORTED`-style marker file or sidecar to record which commit a port was
+done against — the submodule's `.gitmodules` `ref =` IS that pin, and the
+`version-pin` row derives from it. This adapts bun's single-source
+`react_compiler` convention (one pin, no duplicate marker) to the fleet's
+submodule model: one source of truth, never two.
 
 Enforced at edit time by `.claude/hooks/fleet/latest-release-pin-guard/`, which
 fetches the upstream's tags with `git ls-remote --tags` when a pin is set or

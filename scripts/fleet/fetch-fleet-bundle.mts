@@ -38,6 +38,7 @@ import { spawn } from '@socketsecurity/lib/process/spawn/child'
 
 import {
   hasFleetCanonicalEndSentinel,
+  isFleetCanonicalSpliceFile,
   spliceFleetCanonicalContent,
 } from './_shared/fleet-canonical-splice.mts'
 
@@ -82,9 +83,11 @@ export function parseArgs(argv: readonly string[]): FetchConfig {
 
 // The manifest the producer (make-release-bundle.mts) writes alongside the
 // tarball: a flat map of repo-relative path → sha256 hex, plus the tombstoned
-// paths a past bundle shipped that have since moved/retired.
+// paths a past bundle shipped that have since moved/retired and the shipped
+// GENERATED outputs that must never be git-tracked.
 export interface BundleManifest {
   readonly files: Record<string, string>
+  readonly generatedPaths?: readonly string[] | undefined
   readonly movedPaths?: ReadonlyArray<{ from: string; to: string }> | undefined
   readonly removedPaths?: readonly string[] | undefined
   readonly templateSha: string
@@ -132,13 +135,18 @@ export function verifyFiles(
   return problems
 }
 
-// Place verified bundle files into the repo. Sentinel-scoped for files
-// carrying `#fleet-canonical-end` — today `.config/fleet/oxlintrc.json`: the
-// bundle bytes replace everything through the end sentinel, and the repo-local
-// tail after it survives byte-for-byte. The lint runner re-emits that tail as
-// CLI ignore args, so a whole-file copy here silently unmasks hundreds of
-// findings — the recurring socket-registry incident. Every other file is a
-// plain byte copy, as is a sentinel file landing for the first time.
+// Place verified bundle files into the repo. Sentinel-scoped ONLY for the
+// DESIGNATED segment files (FLEET_CANONICAL_SPLICE_FILES — today
+// `.config/fleet/oxlintrc.json`): the bundle bytes replace everything through
+// the fleet-canonical end sentinel, and the repo-local tail after it survives
+// byte-for-byte. The lint runner re-emits that tail as CLI ignore args, so a
+// whole-file copy there silently unmasks hundreds of findings — the recurring
+// socket-registry incident. Every other file is a plain byte copy — the PATH
+// gate is load-bearing: content-only gating spliced ANY placed file that
+// merely mentioned the sentinel token, stitching stale member tails onto
+// fresh bundle heads (the v1.0.14 fetcher-chimera incident, seeded by this
+// very comment carrying the raw token). A designated file landing for the
+// first time also byte-copies.
 export function placeFiles(
   filesDir: string,
   rels: readonly string[],
@@ -149,21 +157,63 @@ export function placeFiles(
     const src = path.join(filesDir, rel)
     const dest = path.join(destDir, rel)
     mkdirSync(path.dirname(dest), { recursive: true })
-    if (existsSync(dest)) {
-      const srcBuf = readFileSync(src)
-      if (hasFleetCanonicalEndSentinel(srcBuf.toString('utf8'))) {
+    if (isFleetCanonicalSpliceFile(rel) && existsSync(dest)) {
+      const srcContent = readFileSync(src, 'utf8')
+      if (hasFleetCanonicalEndSentinel(srcContent)) {
         writeFileSync(
           dest,
-          spliceFleetCanonicalContent(
-            srcBuf.toString('utf8'),
-            readFileSync(dest, 'utf8'),
-          ),
+          spliceFleetCanonicalContent(srcContent, readFileSync(dest, 'utf8')),
         )
         continue
       }
     }
     cpSync(src, dest)
   }
+}
+
+// Untrack the manifest's GENERATED outputs (`generatedPaths`) after
+// placement, mirroring the bootstrap installer's untrackGeneratedOutputs: the
+// bundle SHIPS these files (placement keeps them on disk) while the fleet
+// gitignore block ignores them and `generated-outputs-are-untracked` forbids
+// TRACKING them. A member that historically committed one (the root MCP
+// projections `opencode.json` + `.kimi-code/mcp.json`, `bundle.cjs` et al.)
+// heals on the next fetch: the file stays on disk but leaves the index.
+// Non-fatal by design; a non-git dest or an already-clean index is a no-op
+// (`--ignore-unmatch`). Returns the count of declared paths submitted for
+// untracking (0 when skipped or failed).
+export async function untrackGeneratedOutputs(
+  destDir: string,
+  manifest: BundleManifest,
+): Promise<number> {
+  const generatedPaths = manifest.generatedPaths
+  if (!generatedPaths || generatedPaths.length === 0) {
+    return 0
+  }
+  // `.git` is a dir in a normal checkout and a FILE in a worktree/submodule;
+  // existsSync covers both. A non-git dest has no index to heal.
+  if (!existsSync(path.join(destDir, '.git'))) {
+    return 0
+  }
+  try {
+    await spawn(
+      'git',
+      [
+        'rm',
+        '--cached',
+        '--quiet',
+        '--ignore-unmatch',
+        '--',
+        ...generatedPaths,
+      ],
+      { cwd: destDir, stdioString: true },
+    )
+  } catch (e) {
+    logger.warn(
+      `Untracking generated outputs failed (non-fatal): ${errorMessage(e)}`,
+    )
+    return 0
+  }
+  return generatedPaths.length
 }
 
 // Apply the manifest's per-repo-owned file MOVES (movedPaths) — the rename
@@ -328,6 +378,7 @@ export async function main(): Promise<number> {
     // paths (moved/retired payload) still present — the deletion half of a
     // fleet move, so a refresh is a true sync.
     placeFiles(filesDir, Object.keys(manifest.files), opts.dest)
+    await untrackGeneratedOutputs(opts.dest, manifest)
     const moved = applyMovedPaths(opts.dest, manifest)
     const tombstoned = removeTombstonedPaths(opts.dest, manifest)
     const movedNote = moved > 0 ? `, moved ${moved} relocated path(s)` : ''

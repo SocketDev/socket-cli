@@ -19,9 +19,11 @@ import type { Static } from '@sinclair/typebox'
 // Shared primitives.
 // ---------------------------------------------------------------------------
 
-// Full git commit SHA. Used by file-fork.forked_at_sha and
-// version-pin.pinned_sha. Centralized so adding a new SHA-bearing
-// field can't accidentally accept short SHAs.
+// Full git commit SHA. Used by file-fork.forked_at_sha and the OPTIONAL
+// version-pin.pinned_sha. Centralized so adding a new SHA-bearing field can't
+// accidentally accept short SHAs. version-pin.pinned_sha is now derived from
+// the `.gitmodules` `ref =` and optional; when a legacy manifest still carries
+// it, this pattern keeps it a full 40-hex.
 const FULL_SHA_PATTERN = '^[0-9a-f]{40}$'
 
 const IdSchema = Type.String({
@@ -257,15 +259,17 @@ const VersionPinRowSchema = Type.Object(
     notes: Type.Optional(NotesSchema),
     materialization: Type.Optional(MaterializationSchema),
     sparse_cone: Type.Optional(SparseConeSchema),
-    pinned_sha: Type.String({
-      pattern: FULL_SHA_PATTERN,
-      description:
-        'Full 40-char SHA the submodule is pinned to. Authoritative — the harness compares this against the submodule HEAD, not against `pinned_tag`.',
-    }),
+    pinned_sha: Type.Optional(
+      Type.String({
+        pattern: FULL_SHA_PATTERN,
+        description:
+          "OPTIONAL / derived — the authoritative pin is the submodule's `ref =` in `.gitmodules` (single source of truth, per no-upstream-gitlink-guard). When omitted the harness resolves it from there (`resolvePinnedSha`); this field is present only on legacy manifests, and auto-bump migrates a row to the derived model by dropping it on the next bump. When present it must still be a full 40-char SHA AND must not disagree with the `.gitmodules` ref (a stale stored copy is drift).",
+      }),
+    ),
     pinned_tag: Type.Optional(
       Type.String({
         description:
-          'Human-readable release tag for reports / PR titles (e.g. `v3.2.1`). Informational only — `pinned_sha` is the source of truth. Useful when an upstream cuts a release without changing semver but moves the SHA.',
+          'Human-readable release tag for reports / PR titles (e.g. `v3.2.1`). Informational only — the `.gitmodules` `ref =` is the source of truth. Useful when an upstream cuts a release without changing semver but moves the SHA.',
       }),
     ),
     upgrade_policy: Type.Union(

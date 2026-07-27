@@ -67,8 +67,9 @@ export function emitHuman(reports: Report[], summaries: AreaSummary[]): number {
     } else if (r.kind === 'version-pin') {
       logger.info(banner)
       const tag = r.pinned_tag ? ` (${r.pinned_tag})` : ''
+      const pin = r.pinned_sha ? r.pinned_sha.slice(0, 12) : '(unresolved)'
       logger.info(
-        `  upstream: ${r.upstream} @ ${r.pinned_sha.slice(0, 12)}${tag}, policy=${r.upgrade_policy}`,
+        `  upstream: ${r.upstream} @ ${pin}${tag}, policy=${r.upgrade_policy}`,
       )
     } else if (r.kind === 'feature-parity') {
       logger.info(banner)
