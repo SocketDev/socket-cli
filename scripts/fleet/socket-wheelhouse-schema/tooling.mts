@@ -7,6 +7,22 @@
 import { Type } from '@sinclair/typebox'
 
 // ---------------------------------------------------------------------------
+// AI block — keyless local AI opt-ins.
+// ---------------------------------------------------------------------------
+
+export const AiSchema = Type.Object(
+  {
+    localAssist: Type.Optional(
+      Type.Boolean({
+        description:
+          'Opt into keyless single-shot AI assists via the locai CLI from SocketDev/socket-gemini-nano — on-device backends such as Gemini Nano through headless Chrome, a loopback llama-server, or the deterministic simulator; no ANTHROPIC_API_KEY involved. Summary-class tasks only, read by scripts/fleet/_shared/locai.mts consumers such as the land-work commit-body summarizer. Default false; when no locai backend resolves the assist is a clean skip, never a failure.',
+      }),
+    ),
+  },
+  { description: 'Keyless local AI opt-ins. Per-repo, default all-off.' },
+)
+
+// ---------------------------------------------------------------------------
 // Hooks block — git hook variant selection.
 // ---------------------------------------------------------------------------
 

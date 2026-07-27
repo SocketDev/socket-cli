@@ -9,9 +9,16 @@
  *   Auth: ambient `gh` (GH_TOKEN env / keychain). socket-wheelhouse is private,
  *   so in CI the release App token is exported as GH_TOKEN before this runs.
  *   USAGE — `node scripts/fleet/fetch-fleet-bundle.mts --ref <tag>
- *   [--repo <owner/repo>] [--dest <dir>] [--dry-run]`. `--ref` is the release
+ *   [--repo <owner/repo>] [--dest <dir>] [--dry-run]
+ *   [--allow-non-member --reason <why>]`. `--ref` is the release
  *   tag (e.g. `fleet-<sha>`). Default repo SocketDev/socket-wheelhouse, default
  *   dest the repo root.
+ *   MEMBERSHIP GATE — the destination (default repo root or `--dest`) must be
+ *   a fleet-roster member (origin remote resolved against
+ *   `.claude/skills/fleet/cascading-fleet/lib/fleet-repos.json`) before any
+ *   file is placed. A non-member destination refuses; the audited escape
+ *   hatch is `--allow-non-member --reason "<why>"` — the reason is required
+ *   and logged. `--dry-run` writes nothing, so it is exempt.
  */
 
 import {
@@ -43,6 +50,10 @@ import {
   isFleetCanonicalSpliceFile,
   spliceFleetCanonicalContent,
 } from './_shared/fleet-canonical-splice.mts'
+import {
+  gateWriteDest,
+  parseNonMemberOverride,
+} from './_shared/fleet-membership.mts'
 
 const logger = getDefaultLogger()
 
@@ -56,17 +67,22 @@ const repoRoot = path.resolve(
 )
 
 export interface FetchConfig {
+  allowNonMember: boolean
   dest: string
   dryRun: boolean
+  reason: string | undefined
   ref: string | undefined
   repo: string
 }
 
 export function parseArgs(argv: readonly string[]): FetchConfig {
+  const override = parseNonMemberOverride(argv)
   const opts = {
     __proto__: null,
+    allowNonMember: override.allowNonMember,
     dest: repoRoot,
     dryRun: argv.includes('--dry-run'),
+    reason: override.reason,
     ref: undefined,
     repo: DEFAULT_REPO,
   } as unknown as FetchConfig
@@ -328,6 +344,23 @@ export async function main(): Promise<number> {
       'Missing --ref. Pass the release tag to fetch, e.g. `--ref fleet-<sha>`.',
     )
     return 1
+  }
+
+  // Membership gate — refuse a non-member destination before anything is
+  // downloaded or placed. `--dry-run` writes nothing, so it is exempt.
+  if (!opts.dryRun) {
+    const gate = gateWriteDest({
+      destDir: opts.dest,
+      override: { allowNonMember: opts.allowNonMember, reason: opts.reason },
+      toolName: 'fetch-fleet-bundle',
+    })
+    if (!gate.allowed) {
+      logger.error(gate.message)
+      return 1
+    }
+    if (gate.note !== undefined) {
+      logger.warn(gate.note)
+    }
   }
 
   const tmp = mkdtempSync(path.join(os.tmpdir(), 'fleet-bundle-'))

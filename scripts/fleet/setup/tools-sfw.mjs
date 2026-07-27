@@ -1,6 +1,6 @@
 /**
- * @file Sfw flavor + shim helpers for the dep-free setup-tools.mjs bootstrap.
- *   Split out to keep setup-tools.mjs under the file-size cap. Dep-free (system
+ * @file Sfw flavor + shim helpers for the dep-free tools.mjs bootstrap.
+ *   Split out to keep tools.mjs under the file-size cap. Dep-free (system
  *   Node + `node:` builtins only) for the same reason as its caller: it runs
  *   before `@socketsecurity/lib` / node_modules exist.
  */
@@ -117,7 +117,7 @@ export function posixRealShimLines(cmd, sfwBin, real) {
 }
 
 // Windows (.cmd) body for a real-tool sfw shim: the same sentinel guard, no
-// trap-and-reap (batch has no POSIX process groups — see setup-tools.mjs).
+// trap-and-reap (batch has no POSIX process groups — see tools.mjs).
 // goto/label instead of an `if defined (...)` block: cmd.exe substitutes
 // %errorlevel% once at PARSE time for everything inside a single parenthesized
 // block, so reading it there would capture the exit code from BEFORE the
@@ -147,7 +147,7 @@ export function hintFor(cmd) {
     case 'yarn':
       return 'Install Yarn from https://yarnpkg.com'
     case 'pnpm':
-      return 'Run the fleet setup: `node scripts/fleet/setup/setup-tools.mjs` (installs pnpm via dlx+integrity — the fleet does NOT use corepack).'
+      return 'Run the fleet setup: `node scripts/fleet/setup/tools.mjs` (installs pnpm via dlx+integrity — the fleet does NOT use corepack).'
     case 'pip':
     case 'pip3':
       return `Install Python (which provides ${cmd}) from https://www.python.org or via brew: brew install python`

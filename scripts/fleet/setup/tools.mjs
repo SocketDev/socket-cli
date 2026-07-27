@@ -22,7 +22,7 @@
  *      disk yet). Idempotent: re-running with the pinned versions already
  *      installed is a no-op. Accepts `--ci` (reserved; CI calls this same
  *      script via the setup action — currently a no-op locally). Usage: node
- *      setup-tools.mjs [--ci]
+ *      tools.mjs [--ci]
  */
 
 // oxlint-disable-next-line socket/prefer-async-spawn -- pre-pnpm bootstrap: runs before node_modules exists, so the lib spawn wrapper isn't importable; sync child_process is the only option (same constraint as lib/install-tool.mjs).
@@ -64,12 +64,12 @@ import {
   posixRealShimLines,
   shimCommands,
   windowsRealShimLines,
-} from './setup-tools-sfw.mjs'
+} from './tools-sfw.mjs'
 
 // ── 3. sfw shims (POSIX) ─────────────────────────────────────────────────────
 // Route package managers through sfw. Mirrors the CI action's "Create sfw
 // shims" step (POSIX branch). shimCommands / hintFor / hasSocketToken live in
-// ./setup-tools-sfw.mjs (split out for file size).
+// ./tools-sfw.mjs (split out for file size).
 function regenerateShims(sfwBin, enterprise) {
   // BIN_DIR is the SHARED handle dir (_wheelhouse/bin) — it also holds the
   // sfw / headroom handles, so NEVER rm the whole dir.
@@ -93,7 +93,7 @@ function regenerateShims(sfwBin, enterprise) {
         const lines = [
           '@echo off',
           `echo sfw: "${cmd}" is not installed on this machine. 1>&2`,
-          'echo   Install it, then re-run: node scripts/fleet/setup/setup-tools.mjs 1>&2',
+          'echo   Install it, then re-run: node scripts/fleet/setup/tools.mjs 1>&2',
           'exit /b 127',
         ]
         writeFileSync(winShim, `${lines.join('\r\n')}\r\n`)
@@ -117,7 +117,7 @@ function regenerateShims(sfwBin, enterprise) {
         'echo',
         `echo '  ${hint}'`,
         'echo',
-        'echo "  Install the tool, then re-run: node scripts/fleet/setup/setup-tools.mjs"',
+        'echo "  Install the tool, then re-run: node scripts/fleet/setup/tools.mjs"',
         'exit 127',
       ]
       writeFileSync(shimPath, `${lines.join('\n')}\n`)
@@ -250,13 +250,13 @@ function main() {
   bootstrapZeroDepPackages()
   // CI: pnpm + the tool shims live in BIN_DIR, which is NOT on PATH for the
   // later workflow steps. `--ci` persists it via $GITHUB_PATH so the next
-  // `pnpm install` step resolves the pnpm shim — a raw `node setup-tools.mjs`
+  // `pnpm install` step resolves the pnpm shim — a raw `node tools.mjs`
   // without this leaves pnpm unfindable (exit 127, which broke release-bundle).
   if (process.argv.includes('--ci') && process.env['GITHUB_PATH']) {
     appendFileSync(process.env['GITHUB_PATH'], `${BIN_DIR}\n`)
     log(`✓ added ${BIN_DIR} to GITHUB_PATH`)
   }
-  log('✓ setup-tools complete.')
+  log('✓ tools complete.')
 }
 
 main()

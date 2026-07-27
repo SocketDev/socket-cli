@@ -13,7 +13,7 @@ metadata:
 
 Eliminate AI writing patterns from prose.
 
-Hardik Pandya wrote the upstream version (`stop-slop`). MIT-licensed. Source: https://github.com/hardikpandya/stop-slop. Core rules + references run verbatim. Edit only in `socket-wheelhouse/template/`; the cascade refreshes downstream copies.
+Hardik Pandya wrote the upstream version (`stop-slop`). MIT-licensed. Source: https://github.com/hardikpandya/stop-slop. Core rules + references run near-verbatim, with fleet additions marked (rule 3 + references/idioms.md are fleet-authored). Edit only in `socket-wheelhouse/template/`; the cascade refreshes downstream copies.
 
 Fleet doctrine (voice, evidence standard, anti-patterns, surface routing) is codified in `.claude/rules/fleet/prose-style-and-doctrine.md` and `docs/agents.md/fleet/prose-style-and-doctrine.md`. Both are loaded by the skill; future skills (to-pr, to-tickets, to-spec) reuse the same reference.
 
@@ -59,17 +59,19 @@ If an edit changes meaning or loses the author's voice, revert it. Never rewrite
 
 2. **Break formulaic structures.** Avoid binary contrasts, negative listings, dramatic fragmentation, rhetorical setups, false agency. See [references/structures.md](references/structures.md).
 
-3. **Prefer active voice when it clarifies the actor.** Keep passive constructions when they are more precise or the actor is intentionally unknown. Avoid inanimate objects performing human actions ("the complaint becomes a fix").
+3. **Keep the idiom.** Sayings in the maintainer's Gen X / late-millennial register — "earning its keep", "not my first rodeo", "side quest" — are ENCOURAGED, one per thought, decorating a plain claim rather than replacing it. Do not strip them as slop; the removal lists never included them. See [references/idioms.md](references/idioms.md).
 
-4. **Be specific.** No vague declaratives ("The reasons are structural"). Name the specific thing. No lazy extremes ("every," "always," "never") doing vague work.
+4. **Prefer active voice when it clarifies the actor.** Keep passive constructions when they are more precise or the actor is intentionally unknown. Avoid inanimate objects performing human actions ("the complaint becomes a fix").
 
-5. **Put the reader in the room.** No narrator-from-a-distance voice. "You" beats "People." Specifics beat abstractions.
+5. **Be specific.** No vague declaratives ("The reasons are structural"). Name the specific thing. No lazy extremes ("every," "always," "never") doing vague work.
 
-6. **Vary rhythm.** Mix sentence lengths. Two items beat three. End paragraphs differently. No em dashes.
+6. **Put the reader in the room.** No narrator-from-a-distance voice. "You" beats "People." Specifics beat abstractions.
 
-7. **Trust readers.** State facts directly. Skip softening, justification, hand-holding.
+7. **Vary rhythm.** Mix sentence lengths. Two items beat three. End paragraphs differently. No em dashes.
 
-8. **Cut quotables.** If it sounds like a pull-quote, rewrite it.
+8. **Trust readers.** State facts directly. Skip softening, justification, hand-holding.
+
+9. **Cut quotables.** If it sounds like a pull-quote, rewrite it.
 
 ## Quick Checks
 
@@ -87,6 +89,7 @@ Before delivering prose:
 - Vague declarative ("The implications are significant")? Name the specific implication.
 - Narrator-from-a-distance ("Nobody designed this")? Put the reader in the scene.
 - Meta-joiners ("The rest of this essay...")? Delete. Let the essay move.
+- Did an edit strip a saying ("earning its keep", "side quest")? Restore it — idioms are voice, not slop (references/idioms.md).
 
 ## Scoring
 

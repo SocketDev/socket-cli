@@ -54,3 +54,5 @@ the immediate one: delete the thing, fix the callers, ship it. (Incident: an
 empty `SHARED_SKILL_FILES` alias was kept `@deprecated` "until consumers stop
 spreading it" — the consumers spread an always-empty array, a no-op; deleting the
 export and dropping the spreads was the whole migration.)
+
+**Why delete beats `@deprecated` for agent-readability.** A coding agent navigates by grep and reuses whatever it finds. A `@deprecated` marker is still a grep hit an agent will surface and adopt — the marker is a comment, not a compile error. Deleting the thing removes the hit entirely, so no future agent or human can mis-adopt it. This is the fleet's answer to "legacy code gets discovered and used": there is no legacy to discover.

@@ -130,6 +130,18 @@ CI carries the **Claude key only** (`ANTHROPIC_API_KEY` as a GitHub secret); `co
 
 Provider tokens resolve through **`resolveProviderCredential`** (`@socketsecurity/lib/ai/credentials`): explicit → env var → keychain. In CI pass `allowEnvOnly: true` so a missing token returns `undefined` immediately instead of blocking on a keychain prompt that can't be answered headlessly; the GitHub-secret env var (`ANTHROPIC_API_KEY`) is read by the same call. Fireworks / Synthetic / Codex stay dev-only by design — their tokens are not added to CI, so an HTTP-provider call in CI fails closed with the "set the env var" error rather than silently reaching a paid endpoint.
 
+## Keyless local tier (locai)
+
+A fourth tier sits below all keyed backends: the **`locai` CLI** from `SocketDev/socket-gemini-nano`, which runs single-shot tasks against on-device models — Gemini Nano through headless Chrome, a loopback `llama-server`, Apple FoundationModels, or a deterministic simulator — with **no API key at all**. The fleet wrapper is `scripts/fleet/_shared/locai.mts`; its contract is the CLI's exit codes: `0` = JSON result on stdout, `69` = no backend available = **clean skip, never a failure**. Everything routed through this seam is fail-open by construction.
+
+Scope is deliberately narrow, per the locai bench evidence:
+
+- **Admitted: summary-class single-shot tasks only** — `summarize`, `commit-msg`, `triage`; the scenario family small local models pass reliably. The wired consumer is the land-work commit-body summarizer, which falls back to locai when no `claude` CLI resolves.
+- **Per-repo opt-in, never a fleet-wide flip**: `ai.localAssist: true` in `.config/repo/socket-wheelhouse.json`. Default off everywhere.
+- **NOT admitted**: the `ai-lint-fix` code-repair leg — bench-gated until a real `llama-server` + 7B-coder engine run clears the admission bar — and the gh-aw **engine replacement** for agentic workflows. The gh-aw plumbing for a keyless engine shim is confirmed to exist — `engine.env` `ANTHROPIC_BASE_URL` routes through the firewall config — but no current keyless local model can carry a multi-turn 60+-tool agent job, so that leg is unbuilt on purpose. CI agent workflows still require `ANTHROPIC_API_KEY`.
+
+The `locai` binary is not yet published to npm: dev machines link it from a `socket-gemini-nano` clone or set `LOCAI_BIN`. `pnpm run` → `node scripts/fleet/ai-backends-status.mts` reports the tier's readiness; `locai backends` prints per-backend detail.
+
 ## When NOT to use
 
 - Skills that only need _one_ agent — the current Claude session driving the user. No detection needed; just do the work.

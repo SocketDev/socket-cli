@@ -34,7 +34,7 @@ const DECL_PREFIX_RE = /^\s*(?:export\s+)?(?:const|let|var)\s+[\w$]+\s*=\s*$/
 
 function isSortableElement(node: AstNode) {
   return (
-    node !== null &&
+    node !== undefined &&
     node.type === 'Literal' &&
     (typeof node.value === 'string' || typeof node.value === 'number')
   )
@@ -113,7 +113,9 @@ const rule = {
           return
         }
         if (
-          els.some((e: AstNode) => e !== null && e.type === 'SpreadElement')
+          els.some(
+            (e: AstNode) => e !== undefined && e.type === 'SpreadElement',
+          )
         ) {
           return
         }

@@ -73,12 +73,19 @@ const FLEET_REPOS_FILE = path.join(SCRIPT_DIR, 'fleet-repos.txt')
 const FLEET_REPOS_JSON = path.join(SCRIPT_DIR, 'fleet-repos.json')
 const PROJECTS = process.env['PROJECTS'] || path.join(os.homedir(), 'projects')
 
-// Map bare repo name → GitHub owner (default 'SocketDev'). Only the gh-PR
-// fallback below needs the owner — the worktree fetch/push use the local clone's
-// own `origin`, already per-repo correct. Absent .json / entry / owner field ⇒
-// 'SocketDev' (backward-compatible: existing entries carry no `owner`).
-function loadOwnerMap(): Map<string, string> {
-  const map = new Map<string, string>()
+// The canonical roster view this driver needs: every member NAME (the
+// membership gate below) plus the bare-name → GitHub-owner map (default
+// 'SocketDev'). Only the gh-PR fallback needs the owner — the worktree
+// fetch/push use the local clone's own `origin`, already per-repo correct.
+// Absent .json / entry / owner field ⇒ 'SocketDev' (backward-compatible:
+// existing entries carry no `owner`).
+interface RosterView {
+  readonly names: ReadonlySet<string>
+  readonly owners: ReadonlyMap<string, string>
+}
+function loadRoster(): RosterView {
+  const names = new Set<string>()
+  const owners = new Map<string, string>()
   try {
     const parsed = JSON.parse(readFileSync(FLEET_REPOS_JSON, 'utf8')) as {
       repos?:
@@ -86,16 +93,22 @@ function loadOwnerMap(): Map<string, string> {
         | undefined
     }
     for (const entry of parsed.repos ?? []) {
-      if (typeof entry.name === 'string' && typeof entry.owner === 'string') {
-        map.set(entry.name, entry.owner)
+      if (typeof entry.name !== 'string') {
+        continue
+      }
+      names.add(entry.name)
+      if (typeof entry.owner === 'string') {
+        owners.set(entry.name, entry.owner)
       }
     }
   } catch {
-    // No / invalid .json — every repo defaults to SocketDev via ownerOf.
+    // No / invalid .json — every repo defaults to SocketDev via ownerOf, and
+    // the membership gate below refuses the wave (no roster, no writes).
   }
-  return map
+  return { names, owners }
 }
-const OWNER_MAP = loadOwnerMap()
+const ROSTER = loadRoster()
+const OWNER_MAP = ROSTER.owners
 function ownerOf(repo: string): string {
   return OWNER_MAP.get(repo) ?? 'SocketDev'
 }
@@ -298,6 +311,25 @@ function resolveBase(src: string): string {
 }
 
 const fleetReposRaw = readFileSync(FLEET_REPOS_FILE, 'utf8').split('\n')
+
+// Roster gate: the .txt is the worktree-cascade WAVE subset, never an
+// independent roster — every name must exist in the canonical
+// fleet-repos.json, or the wave refuses before touching any repo. A name
+// only in the .txt is exactly the drift the single-source rule forbids;
+// fleet tooling must confirm roster membership before writing into a repo.
+{
+  const unknown = fleetReposRaw
+    .map(line => line.trim())
+    .filter(name => name && !name.startsWith('#') && !ROSTER.names.has(name))
+  if (unknown.length > 0) {
+    logger.error(
+      `cascade-template: ${unknown.join(', ')} in fleet-repos.txt but not in ` +
+        `the canonical roster fleet-repos.json — fix the roster first; the ` +
+        `wave refuses to write into a non-member.`,
+    )
+    process.exit(2)
+  }
+}
 
 for (let i = 0, { length } = fleetReposRaw; i < length; i += 1) {
   const rawLine = fleetReposRaw[i]!

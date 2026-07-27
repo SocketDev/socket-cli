@@ -112,6 +112,49 @@ Never re-race a pool that survives across iterations (the handlers stack). See `
 
 When you `await Promise.all([...])` and DISCARD the resolved array — the await is its own statement — the only thing `Promise.all` does that `Promise.allSettled` doesn't is abort the whole batch on the first rejection — leaving the sibling promises' rejections unhandled. For order-independent concurrent work prefer `Promise.allSettled(...)` so one failure doesn't abandon the rest (then `.filter(Boolean)` / inspect the settled results). Keep `Promise.all` when you consume the positional result (`const [a, b] = await Promise.all(...)`) or genuinely want fail-fast — for the latter, mark it: `// oxlint-disable-next-line socket/prefer-all-settled -- fail-fast: <reason>`. Enforced by `socket/prefer-all-settled` (report-only; the fix changes error semantics, so it's the author's call).
 
+## Prefer the keyed combinators for named values
+
+The positional forms fit a list of the SAME kind of thing. When you are
+combining a fixed set of NAMED things, positional destructuring bites: put the
+names in a different order than the calls and the values swap, with no error
+anywhere.
+
+```ts
+// Runs fine. config now holds the lockfile and lockfile holds the config.
+const [config, lockfile] = await Promise.all([readLockfile(), readConfig()])
+```
+
+Keys can't swap. Use the keyed helpers from socket-lib
+(`@socketsecurity/lib/promises/all-keyed`, the tc39 proposal-await-dictionary
+shapes; no engine ships them natively yet):
+
+```ts
+import { pAllKeyed } from '@socketsecurity/lib/promises/all-keyed'
+
+// All three reads start together (no waterfall), and each value lands
+// under its own name no matter how the lines are ordered.
+const { config, manifest, lockfile } = await pAllKeyed({
+  config: readConfig(),
+  manifest: readManifest(),
+  lockfile: readLockfile(),
+})
+```
+
+Decision table:
+
+| Shape of the work | Use |
+| --- | --- |
+| A fixed set of named values, fail-fast | `pAllKeyed({...})` |
+| A fixed set of named values, per-key failure handling | `pAllSettledKeyed({...})` |
+| A list of the same kind, result consumed positionally, fail-fast | `Promise.all([...])` |
+| A list of the same kind, order-independent, failures inspected | `Promise.allSettled([...])` (the rule above) |
+| List with a concurrency cap / retries | `pEach` / `pFilter` (`promises/iterate`) |
+
+Same rejection semantics as their positional cousins: `pAllKeyed` fail-fast
+with every value subscribed (no unhandled-rejection stragglers), and
+`pAllSettledKeyed` always resolves with `{ status, value | reason }` records.
+The result is a null-prototype object; own enumerable keys, symbols included.
+
 ## `Safe` suffix
 
 Non-throwing wrappers end in `Safe` (`safeDelete`, `safeDeleteSync`, `applySafe`, `weakRefSafe`). Read it as "X, but safe from throwing." The wrapper traps the thrown value internally and returns `undefined` (or the documented fallback). Don't invent alternative suffixes (`Try`, `OrUndefined`, `Maybe`). Pick `Safe`.
@@ -119,3 +162,11 @@ Non-throwing wrappers end in `Safe` (`safeDelete`, `safeDeleteSync`, `applySafe`
 ## `node:smol-*` modules
 
 Feature-detect, then require. From outside socket-btm (socket-lib, socket-cli, anywhere else): `import { isBuiltin } from 'node:module'; if (isBuiltin('node:smol-X')) { const mod = require('node:smol-X') }`. The `node:smol-*` namespace is provided by socket-btm's smol Node binary; on stock Node `isBuiltin` returns false and the require would throw. Wrap the loader in a `/*@__NO_SIDE_EFFECTS__*/` lazy-load that caches the result. See `socket-lib/src/smol/util.ts` and `socket-lib/src/smol/primordial.ts` for canonical shape. **Inside** socket-btm's `additions/source-patched/` JS — the smol binary's own bootstrap code — use `internalBinding('smol_X')` directly. That's the C++-binding access path and it's guaranteed available there.
+
+## Agent-readability: name for grep
+
+A coding agent (and a hurried human) navigates by grep/ripgrep, not a dependency graph or language server, and pays roughly 10 tokens per line it reads. So how code is *named* and *typed* is what makes it findable or noise. Three rules:
+
+- **An exported name carries a domain word.** A single generic token (`create`, `parse`, `get`, `handle`, `diff`) is a grep-noise magnet. In one audit `create` matched 1585 times across 459 files, versus 43 across 19 for `createStripeClient`. One-word names are about 61% unique, two-word about 88%, three-word about 96%, so every export should carry a domain word. Enforced by `socket/exported-name-has-domain-word` plus the edit-time `generic-export-name-nudge`; the shared denylist and the sanctioned-convention exemptions (`check`, `main`, `run`, …) live in `.config/fleet/oxlint-plugin/lib/generic-name-tokens.mts`.
+- **The definition line is the one line the agent is guaranteed to read.** Put the orienting one-liner at the `@file` header or directly above the export — the fleet already does this. If code deliberately does not do something a reader expects, say so at the definition where they will search, not in a distant note.
+- **Types are documentation.** A typed signature answers "what flows through here?" without reading the body, and every `any` forces an implementation read (already `error` fleet-wide). Branded ID types (`UserId` instead of a bare `string`) let the compiler name the mistake, so the fix is one turn instead of a debugging session.

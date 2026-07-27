@@ -249,7 +249,7 @@ export function runBrewFix(violations: readonly FloorViolation[]): number {
       `[path-tools-are-at-pinned-version] ${v.bin} is ${now ?? 'unresolved'} after brew upgrade — still below floor ${v.floor}.\n` +
         `  A non-Homebrew ${v.bin} likely wins PATH (e.g. fnm/nvm). Remove it or\n` +
         `  reinstall the pinned version via the racked installer:\n` +
-        `    node scripts/fleet/setup/setup-tools.mjs`,
+        `    node scripts/fleet/setup/tools.mjs`,
     )
   }
   return unresolved
@@ -288,7 +288,7 @@ function main(): void {
     '  sub-pin uv resolves outside the soak-locked closure.',
     '',
     '  Fix: install the pinned version via the fleet racked installer so it',
-    '  wins PATH resolution, e.g. node scripts/fleet/setup/setup-tools.mjs',
+    '  wins PATH resolution, e.g. node scripts/fleet/setup/tools.mjs',
     '  (or remove the stray Homebrew/corepack binary from PATH).',
   )
   logger.fail(lines.join('\n'))

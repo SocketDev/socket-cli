@@ -316,5 +316,16 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
         'scripts/fleet/check/release-publish-scripts-are-conventionally-named.mts',
         '--quiet',
       ]),
+    // Publish WORKFLOWS follow the `<target>-publish[-variant].yml` filename +
+    // `<target>-publish` environment + `id-token: write` OIDC convention. The
+    // workflow-file twin of the script-name check above — trusted-publisher
+    // config pins the filename, so a live publisher hidden under provenance.yml /
+    // publish-npm.yml is real drift. Body-driven; REPORT-ONLY (exit 0) while the
+    // fleet migrates off the legacy shapes.
+    () =>
+      run('node', [
+        'scripts/fleet/check/publish-workflows-are-conventionally-named.mts',
+        '--quiet',
+      ]),
   ]
 }

@@ -42,7 +42,9 @@ export async function runConform(
     results.push(await conformOne(repos[i]!))
   }
   if (cfg.json) {
-    logger.info(JSON.stringify(results, null, 2))
+    // Plain stdout, not the logger: --json is the machine-readable contract
+    // (`run.mts --json | jq`) and the logger decorates + writes to stderr.
+    process.stdout.write(`${JSON.stringify(results, null, 2)}\n`)
   } else {
     for (let i = 0, { length } = results; i < length; i += 1) {
       const r = results[i]!
@@ -83,7 +85,9 @@ export async function runAudit(
     findings.push(await auditOne(repos[i]!))
   }
   if (cfg.json) {
-    logger.info(JSON.stringify(findings, null, 2))
+    // Plain stdout, not the logger: --json is the machine-readable contract
+    // (`run.mts --json | jq`) and the logger decorates + writes to stderr.
+    process.stdout.write(`${JSON.stringify(findings, null, 2)}\n`)
   } else {
     let okCount = 0
     let failCount = 0

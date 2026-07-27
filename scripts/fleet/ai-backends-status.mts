@@ -7,12 +7,17 @@
  *   (`detectAvailableBackends` = which CLIs are on PATH) and reads each backend's
  *   own auth home WITHOUT triggering a keychain/login prompt: codex's
  *   `~/.codex/auth.json`, opencode's `auth list`, and the `ANTHROPIC_API_KEY`
- *   env slot. INFORMATIONAL by design — these backends are dev-only (CI carries
+ *   env slot. Also reports the keyless local tier: the `locai` CLI from
+ *   SocketDev/socket-gemini-nano, which runs single-shot summary-class tasks
+ *   against on-device backends with no key at all (_shared/locai.mts). The
+ *   locai row probes bin presence only — `locai backends` prints the
+ *   per-backend detail without this script guessing at Chrome state.
+ *   INFORMATIONAL by design — these backends are dev-only (CI carries
  *   the Claude key only; see _shared/multi-agent-backends.md), so absence is not
  *   a failure and the default exit is 0. Pass `--require <codex|fireworks|
- *   synthetic|anthropic>` (repeatable, comma-ok) to fail loud (exit 1) with the
- *   exact `codex login` / `opencode auth login` fix when a backend you depend on
- *   is not ready. Invocation: node scripts/fleet/ai-backends-status.mts
+ *   synthetic|anthropic|local>` (repeatable, comma-ok) to fail loud (exit 1)
+ *   with the exact `codex login` / `opencode auth login` fix when a backend you
+ *   depend on is not ready. Invocation: node scripts/fleet/ai-backends-status.mts
  *   [--require codex,fireworks].
  */
 
@@ -25,6 +30,7 @@ import { detectAvailableBackends } from '@socketsecurity/lib/ai/backends'
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 import { spawn } from '@socketsecurity/lib/process/spawn/child'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { resolveLocaiBin } from './_shared/locai.mts'
 
 const logger = getDefaultLogger()
 
@@ -37,6 +43,7 @@ export interface BackendProbe {
   readonly anthropicKeyed: boolean
   readonly codexAuthed: boolean
   readonly installed: ReadonlySet<string>
+  readonly locaiBin: string | undefined
   readonly opencodeProviders: ReadonlySet<string>
 }
 
@@ -98,6 +105,16 @@ export function summarizeAiBackends(probe: BackendProbe): BackendStatus[] {
           ? undefined
           : 'opencode auth login  # then select Synthetic',
     },
+    {
+      key: 'local',
+      label:
+        'Local keyless via locai (summary-class — Gemini Nano / llama-server / simulator)',
+      ready: probe.locaiBin !== undefined,
+      fix:
+        probe.locaiBin !== undefined
+          ? undefined
+          : 'link the locai CLI from SocketDev/socket-gemini-nano or set LOCAI_BIN; `locai backends` then shows per-backend readiness',
+    },
   ]
 }
 
@@ -139,7 +156,8 @@ export async function probeAiBackends(): Promise<BackendProbe> {
   const opencodeProviders = installed.has('opencode')
     ? await readOpencodeProviders()
     : new Set<string>()
-  return { anthropicKeyed, codexAuthed, installed, opencodeProviders }
+  const locaiBin = resolveLocaiBin()
+  return { anthropicKeyed, codexAuthed, installed, locaiBin, opencodeProviders }
 }
 
 /**

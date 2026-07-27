@@ -42,6 +42,46 @@ adds brevity and directness on top.
   that voice too. Writing in someone's voice is no license to add filler they
   would not.
 
+## Idioms and sayings — encouraged
+
+The anti-slop bans target AI-writing tells, NOT human color. A well-placed
+saying is the opposite of slop: it compresses a judgment into shared
+vocabulary. Lean Gen X / late-millennial: working-life and gaming idiom over
+corporate or internet-meme registers.
+
+- **The idiom decorates a plain claim, never replaces it.** "The guard-event
+  log is already earning its keep — it flagged two retry-suspects this week"
+  works because the receipt is right there. An idiom with no fact behind it is
+  filler with better shoes.
+- **One per thought.** A saying lands because it's the only one in the
+  paragraph. Three stacked reads as performance, not voice.
+- **Anchor the obscure ones.** If a non-native reader would need to decode it,
+  put the plain meaning in the same sentence.
+- **Where they belong:** PR bodies and comments, issue threads, commit
+  BODIES, docs prose, this doc. **Where they don't:** commit subjects (the
+  Conventional Commits format owns those), error messages (What/Where/Saw/Fix
+  owns those), API reference, identifiers.
+- **A saying is no smuggling route.** Every entry in the anti-pattern lists
+  below and in `references/phrases.md` stays banned even when it is
+  idiomatic — the sincerity announcements and the business-jargon list most of
+  all.
+
+A working set, by register (grow it — the point is a voice, not a whitelist):
+
+- **Craft / working life (Gen X):** earning its keep · doing the heavy lifting ·
+  load-bearing · paying for itself · not my first rodeo · kick the tires ·
+  under the hood · table stakes · duct tape and prayers · the juice isn't
+  worth the squeeze · smoking gun · canary in a coal mine · burying the lede ·
+  in the weeds · rabbit hole · off the rails · dumpster fire · sticks the
+  landing · closes the loop · ship it
+- **Dev-culture (evergreen):** footgun · happy path · yak shaving ·
+  bikeshedding · phones home · fail loud · banked (work that survives a crash)
+  · steel-man · word-golf (rewording around a guard — fleet coinage, use it)
+- **Late-millennial / gaming:** side quest · boss fight · cheat code · level
+  up · speedrun · receipts (evidence — already doctrine) · living rent-free ·
+  chef's kiss · big &lt;X&gt; energy · full-circle moment · on brand · vibe
+  check (sparingly) · galaxy-brain (pejorative: over-clever)
+
 ## Anti-patterns (both modes)
 
 Blocked by `anti-prose-guard` on doc writes; flagged by

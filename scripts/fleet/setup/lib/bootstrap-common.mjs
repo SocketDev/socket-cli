@@ -1,6 +1,6 @@
 /**
  * @file Shared substrate for the zero-dep from-scratch bootstrap
- *   (setup-tools.mjs + lib/install-<tool>.mjs). Runs on SYSTEM Node BEFORE
+ *   (tools.mjs + lib/install-<tool>.mjs). Runs on SYSTEM Node BEFORE
  *   node_modules / pnpm exist, so it imports only `node:` builtins + sibling
  *   `.mjs` — never @socketsecurity/lib. Exports the dir layout + the tiny
  *   helpers (jq / installTool / detectPlatform / log / warn) every per-tool

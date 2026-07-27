@@ -113,6 +113,11 @@ steps:
     uses: ./.github/actions/fleet/setup-and-install
     with:
       checkout: 'false'
+      # The agent runs pnpm inside the AWF container, which mounts the
+      # workspace but NOT the runner home — node_modules linked against the
+      # default home store would fail there with a store mismatch, so the
+      # whole job uses a workspace-local store both sides can read.
+      store-dir: ${{ github.workspace }}/.pnpm-store
   - name: Expose pnpm inside the agent sandbox
     shell: bash
     run: |
@@ -300,6 +305,11 @@ safe-outputs:
       # socket-btm gate block. The trim converges on the canonical template
       # content, so letting it ride the weekly PR beats blocking the run.
       - 'CLAUDE.md'
+      # The fix harness also converges the cascaded .gitattributes fleet block
+      # (sync-scaffolding gitattributes-fleet-block: linguist-generated globs +
+      # the gh-aw merge=ours lock stamp) — the 2026-07-27 socket-lib gate
+      # block. Same convergence contract as the CLAUDE.md trim above.
+      - '.gitattributes'
       # Wheelhouse-only twins of the writers above, absent in member repos:
       # the template CLAUDE.md trim target, the stable-alias reconcile +
       # fleet-pin mirror into the canonical template catalogs, and the

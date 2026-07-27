@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/SocketDev/socket-wheelhouse/main/scripts/fleet/build-infra/lib/external-tools-schema.json",
-  "description": "Build/release tools the from-scratch bootstrap (setup-tools.mjs) installs before pnpm: pnpm itself and Socket Firewall (free + enterprise SKUs). Shape is the shared { tools: { <name>: ToolEntry } } container validated by scripts/fleet/lib/external-tools-schema.mts.",
+  "description": "Build/release tools the from-scratch bootstrap (tools.mjs) installs before pnpm: pnpm itself and Socket Firewall (free + enterprise SKUs). Shape is the shared { tools: { <name>: ToolEntry } } container validated by scripts/fleet/lib/external-tools-schema.mts.",
   "tools": {
     "pnpm": {
       "notes": [

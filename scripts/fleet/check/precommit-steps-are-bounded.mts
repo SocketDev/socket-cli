@@ -33,6 +33,10 @@ const BOUNDED_RUNNER = 'run_step_bounded'
 
 const HOOK_PATH = path.join('.git-hooks', 'fleet', 'pre-commit')
 
+// The shared step-runner the hook sources; the budget declaration lives here
+// (one home for run_step / run_step_bounded and their budget).
+const RUN_STEP_PATH = path.join('.git-hooks', '_shared', 'run-step.sh')
+
 function isCommentLine(line: string): boolean {
   return line.trimStart().startsWith('#')
 }
@@ -53,7 +57,21 @@ export function findUnboundedHeavySteps(hookText: string): string[] {
     }
     for (let j = 0, jlen = HEAVY_STEP_COMMANDS.length; j < jlen; j += 1) {
       const cmd = HEAVY_STEP_COMMANDS[j]!
-      if (line.includes(cmd) && !line.startsWith(`${BOUNDED_RUNNER} `)) {
+      // Flags may sit between the binary and the script name
+      // (`pnpm --config.x=y lint`), so walk tokens: find the binary, skip
+      // dash-led tokens, and require the script name next.
+      const [binary, script] = cmd.split(' ')
+      const tokens = line.split(/\s+/)
+      const binaryAt = tokens.indexOf(binary ?? '')
+      let invoked = false
+      if (binaryAt !== -1) {
+        let k = binaryAt + 1
+        while (k < tokens.length && tokens[k]!.startsWith('-')) {
+          k += 1
+        }
+        invoked = tokens[k] === script
+      }
+      if (invoked && !line.startsWith(`${BOUNDED_RUNNER} `)) {
         findings.push(`${cmd} (line ${i + 1})`)
       }
     }
@@ -81,7 +99,12 @@ function main(): void {
   }
   const hookText = readFileSync(HOOK_PATH, 'utf8')
   const unbounded = findUnboundedHeavySteps(hookText)
-  const budget = readBudgetSeconds(hookText)
+  // The budget lives in the shared runner the hook sources; older hooks
+  // declared it inline, so both homes are read.
+  const runStepText = existsSync(RUN_STEP_PATH)
+    ? readFileSync(RUN_STEP_PATH, 'utf8')
+    : ''
+  const budget = readBudgetSeconds(hookText) ?? readBudgetSeconds(runStepText)
 
   const errors: string[] = []
   if (unbounded.length > 0) {

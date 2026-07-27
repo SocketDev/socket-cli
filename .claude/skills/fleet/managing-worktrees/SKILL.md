@@ -75,7 +75,7 @@ This is the multi-Claude review setup: each open PR gets its own checkout so a p
 
 ### Mode 3: `prune`
 
-Remove a worktree when its **working tree is clean** AND it has **nothing left to land**. "Nothing to land" means EITHER the branch is **fully merged into the remote's default branch** (every commit is already an ancestor of `origin/<base>`) OR the **branch no longer exists on the remote AND the worktree is not ahead of the base**. A worktree that is **ahead of the base** is ALWAYS kept — even when its branch is gone from the remote — because a local-only branch never pushed (e.g. an isolation worktree) reads as "branch gone from remote" yet carries unpushed commits that pruning would destroy.
+Remove a worktree when its **working tree is clean** AND it has **nothing left to land**. "Nothing to land" means the branch is **fully merged into the remote's default branch** (every commit is already an ancestor of `origin/<base>`), OR the branch is **100% landed** (each ahead commit is content-equivalent to the base — its work arrived via a squash-merge, auto-land, or rebase; proven per commit with in-memory `git merge-tree`, so a history squash can't hide it), OR the **branch no longer exists on the remote AND the worktree is not ahead of the base**. A worktree **ahead of the base with content the base lacks** is kept — even when its branch is gone from the remote — because a local-only branch never pushed (e.g. an isolation worktree) reads as "branch gone from remote" yet carries unpushed work that pruning would destroy.
 
 This is the same removability predicate (`decideWorktree`) the fleet-wide `tidying-worktrees` sweep applies — Mode 3 is the single-repo entry to that one engine, so it inherits the load-bearing `aheadOfBase` guard rather than re-deriving a weaker check in shell.
 
@@ -104,7 +104,13 @@ node .claude/skills/fleet/managing-worktrees/lib/land.mts --last 2 --push
 
 # Land explicit SHAs (oldest-first cherry-pick order).
 node .claude/skills/fleet/managing-worktrees/lib/land.mts <sha-a> <sha-b> --push
+
+# Land onto LOCAL <base> (no push) — fast-forwards the primary checkout's
+# branch; the tool for moving verified worktree commits onto local main.
+node .claude/skills/fleet/managing-worktrees/lib/land.mts --last 2 --push --local
 ```
+
+The cherry-pick runs per commit with an outcome table: a content-equivalent commit (already landed via a squash-merge or auto-land — the headline scenario) is DROPPED as `skipped-already-landed`, and only a real conflict aborts. To see per-commit landed/unlanded/superseded verdicts for every worktree before landing anything, run the read-only audit: `node .claude/skills/fleet/tidying-worktrees/lib/tidy-worktrees.mts --audit`.
 
 The lint re-assert is the contract: a clean diff lands instantly; a lint failure ABORTS — the lint-as-edit contract was bypassed → `pnpm run fix` + re-commit. Only pass `--no-verify-lint` when the checkout genuinely can't run oxlint (no `node_modules`) AND you know the diff was lint-clean at edit time. The throwaway worktree + branch are cleaned up automatically; the `git push --no-verify` is deliberate — the diff is lint-verified above, and a fresh worktree's hooks can't load the lib.
 

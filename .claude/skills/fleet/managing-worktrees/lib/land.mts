@@ -26,11 +26,14 @@
  *      Usage: node land.mts <commit>... # dry-run: plan landing these commits
  *      node land.mts --last 2 # the last 2 commits of HEAD node land.mts
  *      <commit>... --push # actually land them node land.mts --last 2 --push
+ *      --local # target the LOCAL <base> instead of origin — fast-forwards
+ *      the primary checkout's branch (no push), the tool for landing
+ *      verified worktree commits onto local main
  *      --no-verify-lint / --no-verify-format # skip the lint / format re-assert
  *      (each only when a worktree can't run that tool)
  */
 
-import { existsSync } from 'node:fs'
+import { existsSync, symlinkSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -38,11 +41,14 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { filterFormatIgnored } from '../../../../../scripts/fleet/_shared/format-scope.mts'
+import { isMainModule } from '../../../../../scripts/fleet/_shared/is-main-module.mts'
 import {
   git,
   gitOk,
+  parseWorktreePorcelain,
   resolveBase,
 } from '../../tidying-worktrees/lib/tidy-worktrees.mts'
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 
 const logger = getDefaultLogger()
 
@@ -240,6 +246,105 @@ export async function formatLandsClean(
   return code === 0
 }
 
+export interface PickOutcome {
+  readonly sha: string
+  readonly outcome: 'applied' | 'skipped-already-landed' | 'conflict'
+}
+
+/**
+ * Cherry-pick the series one commit at a time, recording a per-commit
+ * outcome. A content-equivalent commit (already landed via a squash-merge
+ * or auto-land — Mode 4's headline scenario) becomes empty and is DROPPED,
+ * not misreported as a conflict; only a real conflict aborts. `--empty=drop`
+ * needs git ≥ 2.45 — an older git's usage error falls back to a plain pick
+ * plus an explicit empty-detect + `--skip`.
+ */
+export async function cherryPickSeries(
+  worktreePath: string,
+  commits: readonly string[],
+): Promise<PickOutcome[]> {
+  const outcomes: PickOutcome[] = []
+  for (let i = 0, { length } = commits; i < length; i += 1) {
+    const sha = commits[i]!
+    const before = await git(worktreePath, ['rev-parse', 'HEAD'])
+    if (await gitOk(worktreePath, ['cherry-pick', '--empty=drop', sha])) {
+      const after = await git(worktreePath, ['rev-parse', 'HEAD'])
+      outcomes.push({
+        sha,
+        outcome: after === before ? 'skipped-already-landed' : 'applied',
+      })
+      continue
+    }
+    const opInProgress = await gitOk(worktreePath, [
+      'rev-parse',
+      '-q',
+      '--verify',
+      'CHERRY_PICK_HEAD',
+    ])
+    if (!opInProgress) {
+      // No pick started — an old git rejected `--empty=drop` itself. Plain
+      // pick, then classify a failure by hand.
+      if (await gitOk(worktreePath, ['cherry-pick', sha])) {
+        outcomes.push({ sha, outcome: 'applied' })
+        continue
+      }
+    }
+    const conflicted =
+      (
+        await git(worktreePath, ['diff', '--name-only', '--diff-filter=U'])
+      ).trim().length > 0
+    if (!conflicted && (await gitOk(worktreePath, ['cherry-pick', '--skip']))) {
+      outcomes.push({ sha, outcome: 'skipped-already-landed' })
+      continue
+    }
+    await git(worktreePath, ['cherry-pick', '--abort'])
+    outcomes.push({ sha, outcome: 'conflict' })
+    return outcomes
+  }
+  return outcomes
+}
+
+/**
+ * Run `fn` against a throwaway GATE worktree checked out at `tipSha` —
+ * the landing set's tip commit — with the primary checkout's
+ * node_modules symlinked in for the toolchain. The edit-time gates then
+ * assert the COMMIT bytes, not the working tree's: an uncommitted edit
+ * (or revert) sitting on a changed file in the invoking checkout can
+ * neither green nor red a land it isn't part of.
+ */
+export async function withGateWorktree<T>(
+  repoDir: string,
+  tipSha: string,
+  fn: (gateDir: string) => Promise<T>,
+): Promise<T> {
+  const gateDir = path.join(
+    repoDir,
+    '..',
+    `${path.basename(repoDir)}-land-gate-${tipSha.slice(0, 8)}`,
+  )
+  if (existsSync(gateDir)) {
+    await git(repoDir, ['worktree', 'remove', gateDir, '--force'])
+  }
+  await git(repoDir, ['worktree', 'add', '--detach', gateDir, tipSha])
+  const linkedModules = path.join(gateDir, 'node_modules')
+  try {
+    const primaryModules = path.join(repoDir, 'node_modules')
+    if (existsSync(primaryModules) && !existsSync(linkedModules)) {
+      symlinkSync(primaryModules, linkedModules, 'dir')
+    }
+    return await fn(gateDir)
+  } finally {
+    try {
+      safeDeleteSync(linkedModules)
+    } catch {
+      // Never linked, or already gone.
+    }
+    await git(repoDir, ['worktree', 'remove', gateDir, '--force']).catch(
+      () => {},
+    )
+  }
+}
+
 /**
  * Build the land plan: resolve base + the throwaway worktree location.
  */
@@ -265,17 +370,29 @@ export async function planLand(
 }
 
 /**
- * Execute the plan: fetch base, worktree off origin/<base>, cherry-pick, verify
- * fast-forward, push, clean up. Returns the landed tip SHA.
+ * Execute the plan: worktree off the base, per-commit cherry-pick with an
+ * outcome table, verify fast-forward, finish, clean up. Two finishes:
+ * origin mode (default) fast-forward-pushes `origin/<base>`; `--local`
+ * mode fast-forwards the LOCAL `<base>` in the primary checkout — no push,
+ * the tool for landing verified worktree commits onto local main.
+ * Returns the landed tip SHA.
  */
 export async function executeLand(
   repoDir: string,
   plan: LandPlan,
+  options?: { local?: boolean | undefined } | undefined,
 ): Promise<string> {
+  const opts = { __proto__: null, ...options } as {
+    local?: boolean | undefined
+  }
+  const local = opts.local === true
   const { base, commits, landBranch, worktreePath } = plan
-  await git(repoDir, ['fetch', 'origin', base])
+  const baseRef = local ? base : `origin/${base}`
+  if (!local) {
+    await git(repoDir, ['fetch', 'origin', base])
+  }
 
-  // Fresh worktree off origin/<base> — a clean tree, no divergence, no
+  // Fresh worktree off the base — a clean tree, no divergence, no
   // parallel-session dirt.
   if (existsSync(worktreePath)) {
     await git(repoDir, ['worktree', 'remove', worktreePath, '--force'])
@@ -286,35 +403,53 @@ export async function executeLand(
     '-b',
     landBranch,
     worktreePath,
-    `origin/${base}`,
+    baseRef,
   ])
 
   try {
-    const picked = await gitOk(worktreePath, ['cherry-pick', ...commits])
-    if (!picked) {
-      await git(worktreePath, ['cherry-pick', '--abort'])
+    const outcomes = await cherryPickSeries(worktreePath, commits)
+    for (let i = 0, { length } = outcomes; i < length; i += 1) {
+      const o = outcomes[i]!
+      logger.log(`  ${o.sha.slice(0, 8)}  ${o.outcome}`)
+    }
+    const conflict = outcomes.find(o => o.outcome === 'conflict')
+    if (conflict) {
       throw new Error(
-        `land: cherry-pick of ${commits.length} commit(s) onto origin/${base} hit a conflict.\n` +
-          `  Fix: the commits don't apply cleanly on the current ${base} — rebase them first, or land manually.`,
+        `land: ${conflict.sha.slice(0, 8)} hit a real conflict on the current ${baseRef} ` +
+          `(${outcomes.filter(o => o.outcome === 'applied').length} applied, ` +
+          `${outcomes.filter(o => o.outcome === 'skipped-already-landed').length} already landed before it).\n` +
+          `  Fix: rebase that commit first, or land manually.`,
       )
+    }
+    if (!outcomes.some(o => o.outcome === 'applied')) {
+      logger.success(
+        `land: every commit is already content-equivalent on ${baseRef} — nothing to move.`,
+      )
+      return await git(worktreePath, ['rev-parse', 'HEAD'])
     }
     const tip = await git(worktreePath, ['rev-parse', 'HEAD'])
 
-    // Confirm a clean fast-forward: origin/<base> must be an ancestor of tip.
-    await git(repoDir, ['fetch', 'origin', base])
+    // Confirm a clean fast-forward: the base must be an ancestor of tip.
+    if (!local) {
+      await git(repoDir, ['fetch', 'origin', base])
+    }
     const isFf = await gitOk(worktreePath, [
       'merge-base',
       '--is-ancestor',
-      `origin/${base}`,
+      baseRef,
       'HEAD',
     ])
     if (!isFf) {
       throw new Error(
-        `land: origin/${base} moved and is no longer an ancestor — not a clean fast-forward.\n` +
-          `  Fix: re-run land (it re-cherry-picks onto the new origin/${base}).`,
+        `land: ${baseRef} moved and is no longer an ancestor — not a clean fast-forward.\n` +
+          `  Fix: re-run land (it re-cherry-picks onto the new ${baseRef}).`,
       )
     }
 
+    if (local) {
+      await finishLocalLand(repoDir, base, tip)
+      return tip
+    }
     // Fast-forward push. NEVER force. The pre-push hooks are skipped via
     // --no-verify because (a) the diff was lint-verified above and (b) a fresh
     // worktree may lack node_modules, which crashes the lib-importing hooks.
@@ -331,9 +466,50 @@ export async function executeLand(
   }
 }
 
+/**
+ * Fast-forward the LOCAL base branch to `tip`. The base is normally checked
+ * out in the primary worktree, so the move runs THERE via `merge --ff-only`
+ * (which updates its index + working tree consistently and refuses cleanly
+ * on divergence or conflicting dirt). When no worktree has the base checked
+ * out, a compare-and-swap `update-ref` moves it without touching any tree.
+ */
+export async function finishLocalLand(
+  repoDir: string,
+  base: string,
+  tip: string,
+): Promise<void> {
+  const porcelain = await git(repoDir, ['worktree', 'list', '--porcelain'])
+  const worktrees = parseWorktreePorcelain(porcelain)
+  const holder = worktrees.find(w => w.branch === base)
+  if (holder) {
+    const merged = await gitOk(holder.path, ['merge', '--ff-only', tip])
+    if (!merged) {
+      throw new Error(
+        `land: could not fast-forward local ${base} in ${holder.path} — it diverged or has conflicting dirt.\n` +
+          `  Fix: re-run land (it re-cherry-picks onto the current ${base}), or resolve that checkout first.`,
+      )
+    }
+    return
+  }
+  const oldTip = await git(repoDir, ['rev-parse', `refs/heads/${base}`])
+  const swapped = await gitOk(repoDir, [
+    'update-ref',
+    `refs/heads/${base}`,
+    tip,
+    oldTip,
+  ])
+  if (!swapped) {
+    throw new Error(
+      `land: local ${base} moved while landing — not updating it out from under the writer.\n` +
+        `  Fix: re-run land.`,
+    )
+  }
+}
+
 export async function main(): Promise<number> {
   const argv = process.argv.slice(2)
   const push = argv.includes('--push')
+  const local = argv.includes('--local')
   const skipLint = argv.includes('--no-verify-lint')
   const skipFormat = argv.includes('--no-verify-format')
   const repoDir =
@@ -342,8 +518,9 @@ export async function main(): Promise<number> {
 
   const commits = await resolveCommits(repoDir, argv)
   const plan = await planLand(repoDir, commits)
+  const target = local ? `local ${plan.base}` : `origin/${plan.base}`
 
-  logger.log(`land: ${commits.length} commit(s) → origin/${plan.base}`)
+  logger.log(`land: ${commits.length} commit(s) → ${target}`)
   for (const sha of commits) {
     const subject = await git(repoDir, ['log', '-1', '--format=%s', sha])
     logger.log(`  ${sha.slice(0, 8)} ${subject}`)
@@ -365,49 +542,63 @@ export async function main(): Promise<number> {
   }
   const allFiles = filterFormatIgnored([...changed], { cwd: repoDir })
 
-  if (!skipLint) {
-    const clean = await lintLandsClean(repoDir, [...allFiles])
-    if (!clean) {
-      logger.error(
-        'land: the landing diff does not lint clean (the lint-as-edit contract was bypassed).\n' +
-          '  Fix: `pnpm run fix` the offending files + re-commit, or pass --no-verify-lint if you must.',
-      )
+  if (!skipLint || !skipFormat) {
+    // Gate the COMMIT bytes: the tip of the landing set is checked out
+    // into a throwaway gate worktree and the gates run there.
+    const tipSha = commits[commits.length - 1]!
+    const gatesClean = await withGateWorktree(
+      repoDir,
+      tipSha,
+      async gateDir => {
+        if (!skipLint) {
+          const clean = await lintLandsClean(gateDir, [...allFiles])
+          if (!clean) {
+            logger.error(
+              'land: the landing commits do not lint clean (the lint-as-edit contract was bypassed).\n' +
+                '  Fix: `pnpm run fix` the offending files + re-commit, or pass --no-verify-lint if you must.',
+            )
+            return false
+          }
+          logger.success(
+            'land: landing commits lint clean (edit-time gate re-asserted on commit bytes).',
+          )
+        }
+        if (!skipFormat) {
+          const clean = await formatLandsClean(gateDir, [...allFiles])
+          if (!clean) {
+            logger.error(
+              'land: the landing commits are not format-clean (the format-as-edit contract was bypassed).\n' +
+                '  Fix: `pnpm run format` the offending files + re-commit, or pass --no-verify-format if you must.',
+            )
+            return false
+          }
+          logger.success(
+            'land: landing commits are format-clean (edit-time gate re-asserted on commit bytes).',
+          )
+        }
+        return true
+      },
+    )
+    if (!gatesClean) {
       return 1
     }
-    logger.success(
-      'land: landing diff lints clean (edit-time gate re-asserted).',
-    )
-  }
-
-  if (!skipFormat) {
-    const clean = await formatLandsClean(repoDir, [...allFiles])
-    if (!clean) {
-      logger.error(
-        'land: the landing diff is not format-clean (the format-as-edit contract was bypassed).\n' +
-          '  Fix: `pnpm run format` the offending files + re-commit, or pass --no-verify-format if you must.',
-      )
-      return 1
-    }
-    logger.success(
-      'land: landing diff is format-clean (edit-time gate re-asserted).',
-    )
   }
 
   if (!push) {
     logger.log(
-      `land: dry-run. Would fast-forward origin/${plan.base} to these commits via a throwaway worktree. Re-run with --push to act.`,
+      `land: dry-run. Would fast-forward ${target} to these commits via a throwaway worktree. Re-run with --push to act.`,
     )
     return 0
   }
 
-  const tip = await executeLand(repoDir, plan)
+  const tip = await executeLand(repoDir, plan, { local })
   logger.success(
-    `land: fast-forwarded origin/${plan.base} to ${tip.slice(0, 8)} (${commits.length} commit(s)).`,
+    `land: fast-forwarded ${target} to ${tip.slice(0, 8)} (${commits.length} commit(s)).`,
   )
   return 0
 }
 
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+if (isMainModule(import.meta.url)) {
   void (async () => {
     process.exitCode = await main()
   })()

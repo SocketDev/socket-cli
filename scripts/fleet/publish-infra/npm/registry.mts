@@ -253,3 +253,54 @@ export async function fetchVersionTrustInfo(
   }
   return result
 }
+
+/**
+ * Post-failure diagnosis for a staged upload under CI OIDC. pnpm's token
+ * exchange 404s (`ERR_PNPM_AUTH_TOKEN_EXCHANGE`, logged as "Skipped OIDC")
+ * when the registry has NO trusted-publisher registration matching this
+ * run's OIDC claims — the upload then proceeds tokenless and fails. The
+ * packument's per-version `_npmUser.trustedPublisher` splits the two causes:
+ * never registered vs. registered-but-claims-drifted. Returns the diagnosis
+ * lines to log (empty outside GitHub Actions).
+ */
+export async function diagnoseStagedAuthFailure(
+  name: string,
+): Promise<string[]> {
+  if (process.env['GITHUB_ACTIONS'] !== 'true') {
+    return []
+  }
+  const trust = await fetchVersionTrustInfo(name, 'full')
+  const trusted = Object.entries(trust).filter(
+    ([, info]) => info.trustedPublisher !== undefined,
+  )
+  const repo = process.env['GITHUB_REPOSITORY'] ?? '<owner>/<repo>'
+  const workflowRef = process.env['GITHUB_WORKFLOW_REF'] ?? ''
+  const workflow =
+    /\/(\.github\/workflows\/[^@]+)@/.exec(workflowRef)?.[1] ??
+    '.github/workflows/npm-publish.yml'
+  if (trusted.length === 0) {
+    return [
+      `Probable cause: npm trusted publishing is NOT registered for ${name}.`,
+      `  Where: npmjs.com -> ${name} -> Settings -> Trusted publisher.`,
+      `  Saw: the packument shows no version ever published via a trusted`,
+      `  publisher, and pnpm's token exchange 404 (ERR_PNPM_AUTH_TOKEN_EXCHANGE,`,
+      `  logged as "Skipped OIDC") is the no-registration signature; wanted a`,
+      `  registration matching repository ${repo}, workflow ${workflow}, and`,
+      `  the GitHub environment this workflow binds.`,
+      `  Fix: add the trusted publisher with those exact values, then`,
+      `  re-dispatch the publish workflow.`,
+    ]
+  }
+  const [latestTrustedVersion, latestInfo] = trusted[trusted.length - 1]!
+  return [
+    `Probable cause: this run's OIDC claims do not match ${name}'s`,
+    `  trusted-publisher registration.`,
+    `  Where: npmjs.com -> ${name} -> Settings -> Trusted publisher.`,
+    `  Saw: ${latestTrustedVersion} published via trusted publisher`,
+    `  ${latestInfo.trustedPublisher?.id ?? '<unknown>'}, but this run presents`,
+    `  repository ${repo} and workflow ${workflow}; wanted the registration and`,
+    `  the run's claims (repository, workflow file, environment) to agree.`,
+    `  Fix: align the npm trusted-publisher entry with this workflow, then`,
+    `  re-dispatch.`,
+  ]
+}

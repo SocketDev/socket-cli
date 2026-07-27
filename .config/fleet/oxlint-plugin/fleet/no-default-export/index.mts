@@ -4,7 +4,7 @@
  *   lets the caller rename freely), defeat grep / "find references" tools, and
  *   don't compose with re-exports (`export * from 'mod'` skips the default).
  *   Style signal that motivated the rule: across socket-sdk-js, socket-cli,
- *   socket-packageurl-js, socket-sdxgen, socket-lib, and socket-stuie, the
+ *   socket-packageurl-js, sdxgen, socket-lib, and stuie, the
  *   named-vs-default ratio is essentially 100-to-1 — socket-lib has zero
  *   `export default` statements, the other repos have a handful of stragglers
  *   each. Autofix scope:

@@ -155,7 +155,10 @@ File-doc uses `@file`, never `@fileoverview` (socket/no-fileoverview-prefer-file
 ## State the present, never the removed past
 
 A comment describes what the code does NOW. It never narrates what was removed,
-replaced, or deprecated — the dead past is noise the reader never needs.
+replaced, or deprecated — the dead past is noise the reader never needs. It also
+never describes the code by what it is NOT, lacks, or is unlike — no "not a
+fork", "inspired by X", "unlike Y", "we don't include Z". State the positive:
+what the code does, not what it declines to do or resemble.
 
 Banned shapes (`no-removal-comment-nudge` flags them on Edit/MultiEdit):
 

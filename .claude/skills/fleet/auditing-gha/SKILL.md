@@ -1,6 +1,6 @@
 ---
 name: auditing-gha
-description: Audit GitHub Actions permissions and allowlists against the fleet baseline; report settings drift only.
+description: Audit GitHub Actions permissions and allowlists against the fleet baseline; report drift, and conform additively with --conform.
 user-invocable: true
 allowed-tools: Read, Grep, Glob, Bash(gh:*), Bash(node:*), Bash(jq:*)
 model: claude-haiku-4-5
@@ -11,7 +11,7 @@ metadata:
 
 # auditing-gha
 
-Diff a fleet repo's GitHub Actions repository-level settings against the canonical baseline. Read-only: surfaces what to change, doesn't change it.
+Diff a fleet repo's GitHub Actions repository-level settings against the canonical baseline. The default run is a read-only audit; `--conform` writes the additive baseline — union the allowlist with the canonical set, tighten the two blanket-allow toggles, never prune. Destructive changes stay manual.
 
 ## When to use
 
@@ -51,23 +51,11 @@ Note: `enabled: false` from the per-repo API does NOT mean Actions are disabled.
 
     node .claude/skills/fleet/auditing-gha/run.mts SocketDev/socket-btm SocketDev/socket-cli
 
-Or all-at-once with the canonical fleet list (manual today; the orchestrator skill prompt expands the list at call time):
+Or across the whole fleet, derived at run time from the single-source roster [`fleet-repos.json`](../cascading-fleet/lib/fleet-repos.json) — never a hand-maintained slug list, which is how a typo once dropped a repo from the fleet pass for a week:
 
-    node .claude/skills/fleet/auditing-gha/run.mts \
-      SocketDev/socket-btm \
-      SocketDev/socket-cli \
-      SocketDev/socket-gemini-nano \
-      SocketDev/socket-lib \
-      SocketDev/socket-mcp \
-      SocketDev/socket-packageurl-js \
-      SocketDev/socket-registry \
-      SocketDev/socket-sdk-js \
-      SocketDev/socket-sdxgen \
-      SocketDev/socket-stuie \
-      SocketDev/socket-vscode \
-      SocketDev/socket-webext \
-      SocketDev/socket-wheelhouse \
-      SocketDev/ultrathink
+    node .claude/skills/fleet/auditing-gha/run.mts --fleet
+
+A repo argument that does not exist on GitHub is a loud per-repo failure naming the roster surface to fix, distinct from an admin-scope or org-policy fetch failure — a skipped repo reads as conformed.
 
 For machine-readable output (one finding per repo):
 
@@ -75,34 +63,25 @@ For machine-readable output (one finding per repo):
 
 ## How to fix the findings
 
-Each finding line names the exact toggle to flip. The fix is **manual**: the runner does not write. Flipping these silently is a credible attack vector and should always be a human action.
+Each finding line names the exact toggle to flip. Additive fixes are automated; destructive ones stay a human action.
 
-Two paths:
+1.  **`--conform` (alias `--fix`) — the sanctioned write path** for baseline drift. It is additive-only and extras-preserving: sets `allowed_actions=selected`, tightens `github_owned_allowed` and `verified_allowed` to `false`, and PUTs the UNION of the repo's current patterns + the canonical set — a repo's extra pins survive, only missing canonical patterns are added, nothing is ever pruned. Needs admin scope. A repo whose per-repo override is unset is skipped with an error: org policy governs there, and conform never creates an override behind the operator's back.
 
-1.  **Web UI (preferred)**: Repo → Settings → Actions → General. The settings map 1:1 with the audit findings:
+        node .claude/skills/fleet/auditing-gha/run.mts --conform --fleet
+
+2.  **Web UI — for destructive changes**: pruning orphaned extras, disabling Actions, or handing a repo back to org policy affects every workflow on the repo and stays manual: Repo → Settings → Actions → General. The settings map 1:1 with the audit findings:
     - "Allow enterprise, and select non-enterprise, actions and reusable workflows" → flips `allowed_actions` to `selected`.
     - Uncheck "Allow actions created by GitHub" → `github_owned_allowed: false`.
     - Uncheck "Allow Marketplace actions by verified creators" → `verified_allowed: false`.
     - "Allow specified actions and reusable workflows" textarea: paste the canonical patterns list (one per line). Existing extras can stay; remove only ones with no consumer.
 
-2.  **`gh api` PUT (admin-scoped tokens only)**: surfaced for completeness; prefer the UI:
-
-        gh api -X PUT repos/<owner>/<repo>/actions/permissions \
-          -F enabled=true -F allowed_actions=selected
-        gh api -X PUT repos/<owner>/<repo>/actions/permissions/selected-actions \
-          -F github_owned_allowed=false -F verified_allowed=false \
-          -f patterns_allowed[]='actions/cache/restore@*' \
-          -f patterns_allowed[]='actions/cache/save@*' \
-          # ...one -f per canonical pattern...
-
-    The whole-list replace semantics on the selected-actions endpoint mean **omitting a repo's existing extras drops them**. Preserve them when relevant.
-
 ## Anti-patterns
 
-- **Auto-PUT-ing the baseline from a script.** Don't. The settings affect every workflow on the repo and a wrong setting silently weakens supply-chain posture. The user runs the audit, the user fixes.
+- **Hand-rolling `gh api` PUTs against the selected-actions endpoint.** The endpoint has whole-list replace semantics: a PUT that omits the repo's existing extras silently drops them. `--conform` exists to do the union + toggle-tighten safely; use it instead of ad-hoc PUT commands.
+- **Pruning allowlist extras from a script.** Conform is additive by design — removing an entry breaks whatever consumer pinned it. Prune manually, after `rg <pattern> .github/workflows/` shows the extra has no consumer.
 - **Adding an action to the allowlist to make a one-off workflow happy.** First ask: should the workflow use a shared socket-registry workflow that already references an approved action? Adding entries to the canonical set means cascading them to every consumer org. A real commitment.
 - **Treating the audit as a security review.** It checks policy state, not workflow content. A workflow that uses an allowed action insecurely (e.g. `pull_request_target` + `actions/checkout` of untrusted ref) is invisible to this audit; that's `pull-request-target-guard`'s job.
 
 ## Companion: `greening-ci`
 
-If a CI failure shows `action <X> is not allowed by enterprise admin` or `not allowed to be used in this repository`, that's an allowlist gap. Run this audit, fix the gap manually, then re-run `/green-ci` to confirm the build goes green.
+If a CI failure shows `action <X> is not allowed by enterprise admin` or `not allowed to be used in this repository`, that's an allowlist gap. Run this audit, close the gap with `--conform` when it's a missing canonical pattern, then re-run `/green-ci` to confirm the build goes green.

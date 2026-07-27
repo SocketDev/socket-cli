@@ -5,7 +5,7 @@
  */
 
 import crypto from 'node:crypto'
-import { existsSync, promises as fs } from 'node:fs'
+import { existsSync, promises as fs, readFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
@@ -22,10 +22,17 @@ import {
   hashTarball,
 } from '../../lib/verify-release-hashes.mts'
 import { releaseBehindLiveGate } from '../release.mts'
-import { logger, rootPath, runCapture, runInherit } from '../shared.mts'
+import {
+  logger,
+  provenanceAllowed,
+  rootPath,
+  runCapture,
+  runInherit,
+} from '../shared.mts'
 import { withPinnedReadme } from '../pin-readme.mts'
 import { withPrunedPackManifest } from './pack-manifest.mts'
-import { isAlreadyPublished } from './registry.mts'
+import { verifyPackedPayload } from './pack-preflight.mts'
+import { diagnoseStagedAuthFailure, isAlreadyPublished } from './registry.mts'
 import type { StageListEntry } from './shared.mts'
 import { isStagingExpected } from './shared.mts'
 import {
@@ -36,6 +43,7 @@ import { resolveNpmWorkspaceLayout } from './workspace.mts'
 import { resolveReleaseSubject } from '../../_shared/release-subject.mts'
 import { tarExecutable } from '../../_shared/tar-executable.mts'
 
+import type { WorkspaceManifestShape } from './workspace.mts'
 import type { ReleaseSubject } from '../../_shared/release-subject.mts'
 
 // The README-pin bracket target for a publish subject: the pinned README is
@@ -63,8 +71,10 @@ function pinTargetFor(subject: ReleaseSubject): {
  * Reads the local package.json for name + version, refuses to stage an
  * already-published version (npm rejects republishes outright; we surface the
  * error before the network call). Runs `pnpm stage publish` with --provenance
- * when GITHUB_ACTIONS is set so the OIDC token gets embedded into the
- * provenance attestation.
+ * when GITHUB_ACTIONS is set AND the source repository is public
+ * (provenanceAllowed) so the OIDC token gets embedded into the provenance
+ * attestation; a private-repo run skips the flag loudly instead of hitting
+ * npm's E422 sigstore-visibility rejection.
  */
 export async function runStaged(
   tag: string,
@@ -103,7 +113,16 @@ export async function runStaged(
     '--ignore-scripts',
   ]
   if (process.env['GITHUB_ACTIONS'] === 'true') {
-    args.push('--provenance')
+    if (provenanceAllowed()) {
+      args.push('--provenance')
+    } else {
+      logger.warn(
+        'Provenance skipped: npm only verifies sigstore bundles from PUBLIC ' +
+          'source repositories, and this run is not one. The upload proceeds ' +
+          'unattested; provenance turns back on automatically when the repo ' +
+          'is public.',
+      )
+    }
   }
   if (dryRun) {
     // pnpm stage publish --dry-run does everything except the actual
@@ -116,12 +135,37 @@ export async function runStaged(
   // immutable + matches this version instead of a moving HEAD ref, and prune
   // repo-only lifecycle scripts from the manifest that packs. The same
   // brackets wrap the --approve verify pack (defaultPackTarball) so the
-  // integrity gate sees identical bytes.
+  // integrity gate sees identical bytes. The pack preflight runs INSIDE the
+  // brackets too — the bytes it inspects are the bytes the stage command
+  // uploads — and a tarball missing any declared payload file stops the
+  // publish before the command runs.
+  const subjectManifest = JSON.parse(
+    readFileSync(pkg.manifestPath, 'utf8'),
+  ) as WorkspaceManifestShape
+  let preflightOk = true
   const code = await withPinnedReadme(pinTargetFor(pkg), () =>
-    withPrunedPackManifest(pkg.dir, () => runInherit('pnpm', args, rootPath)),
+    withPrunedPackManifest(pkg.dir, async () => {
+      preflightOk = await verifyPackedPayload({
+        dir: pkg.dir,
+        manifest: subjectManifest,
+        name: pkg.name,
+        version: pkg.version,
+      })
+      if (!preflightOk) {
+        return 1
+      }
+      return await runInherit('pnpm', args, rootPath)
+    }),
   )
+  if (!preflightOk) {
+    process.exitCode = 1
+    return
+  }
   if (code !== 0) {
     logger.fail(`pnpm stage publish exited ${code}`)
+    for (const line of await diagnoseStagedAuthFailure(pkg.name)) {
+      logger.fail(line)
+    }
     process.exitCode = code
     return
   }
@@ -140,7 +184,8 @@ export async function runStaged(
  * `--direct` mode: classic single-step `pnpm publish` — upload + make public in
  * one call, no stage/approve. Escape hatch for environments where the stage
  * endpoint is unreachable. Adds `--provenance` automatically when
- * GITHUB_ACTIONS is set so the OIDC token still embeds into the provenance
+ * GITHUB_ACTIONS is set and the source repository is public
+ * (provenanceAllowed) so the OIDC token still embeds into the provenance
  * attestation.
  *
  * Refuses to run when the package's prior versions used staging (per the
@@ -198,16 +243,45 @@ export async function runDirect(
     '--ignore-scripts',
   ]
   if (process.env['GITHUB_ACTIONS'] === 'true') {
-    args.push('--provenance')
+    if (provenanceAllowed()) {
+      args.push('--provenance')
+    } else {
+      logger.warn(
+        'Provenance skipped: npm only verifies sigstore bundles from PUBLIC ' +
+          'source repositories, and this run is not one. The upload proceeds ' +
+          'unattested; provenance turns back on automatically when the repo ' +
+          'is public.',
+      )
+    }
   }
   if (dryRun) {
     args.push('--dry-run')
   }
   // Pin the SUBJECT README to the release tag + prune repo-only lifecycle
-  // scripts for the published tarball only (see runStaged).
+  // scripts for the published tarball only, and run the pack preflight inside
+  // the same brackets so a hollow tarball never publishes (see runStaged).
+  const subjectManifest = JSON.parse(
+    readFileSync(pkg.manifestPath, 'utf8'),
+  ) as WorkspaceManifestShape
+  let preflightOk = true
   const code = await withPinnedReadme(pinTargetFor(pkg), () =>
-    withPrunedPackManifest(pkg.dir, () => runInherit('pnpm', args, rootPath)),
+    withPrunedPackManifest(pkg.dir, async () => {
+      preflightOk = await verifyPackedPayload({
+        dir: pkg.dir,
+        manifest: subjectManifest,
+        name: pkg.name,
+        version: pkg.version,
+      })
+      if (!preflightOk) {
+        return 1
+      }
+      return await runInherit('pnpm', args, rootPath)
+    }),
   )
+  if (!preflightOk) {
+    process.exitCode = 1
+    return
+  }
   if (code !== 0) {
     logger.fail(`pnpm publish exited ${code}`)
     process.exitCode = code

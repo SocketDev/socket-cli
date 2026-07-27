@@ -61,6 +61,16 @@ inputs:
     description: 'Working directory'
     required: false
     default: '.'
+  store-dir:
+    description: >-
+      Pin the pnpm store to this path for the whole job (exported as
+      npm_config_store_dir before restore + install). Pass a
+      workspace-relative path when a later step runs pnpm inside a
+      container/sandbox that mounts the workspace but not the runner home —
+      node_modules linked against the default home store are unreadable
+      there and pnpm fails with a store mismatch.
+    required: false
+    default: ''
 
 runs:
   using: 'composite'
@@ -82,6 +92,14 @@ runs:
         registry-url: ${{ inputs.registry-url }}
         socket-api-token: ${{ inputs.socket-api-token != '' && inputs.socket-api-token || inputs.socket-api-key }}
         working-directory: ${{ inputs.working-directory }}
+
+    - name: Pin the pnpm store location
+      # Before restore + install so the cache action's `pnpm store path`,
+      # the install, and every later pnpm in the job (including one inside
+      # a workspace-mounted sandbox) resolve the SAME store.
+      if: inputs.store-dir != ''
+      shell: bash
+      run: echo "npm_config_store_dir=${{ inputs.store-dir }}" >> "$GITHUB_ENV"
 
     - name: Cache pnpm store
       # Restore-only. Exports PNPM_STORE_PATH / PNPM_STORE_CACHE_KEY /

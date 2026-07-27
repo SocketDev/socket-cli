@@ -13,10 +13,13 @@
  *      `scripts/sync-scaffolding/manifest.mts` + cascade. The daily
  *      `updating-daily` job removes the entry again once `removable` passes, so
  *      this is add-only; promotion is automatic. Usage: `node
- *      scripts/fleet/soak-bypass.mts <pkg>@<version>` Exit codes:
+ *      scripts/fleet/soak-bypass.mts <pkg>@<version>
+ *      [--allow-non-member --reason <why>]` Exit codes:
  *
  *   - 0 — entry added (or already present).
- *   - 1 — bad args, version not found on npm, or no `minimumReleaseAge:` anchor.
+ *   - 1 — bad args, version not found on npm, no `minimumReleaseAge:` anchor,
+ *     or a non-member repo root (the destination must be in the fleet roster;
+ *     `--allow-non-member --reason "<why>"` is the audited escape hatch).
  */
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
@@ -25,6 +28,10 @@ import process from 'node:process'
 
 import { PNPM_WORKSPACE_YAML, REPO_ROOT } from './paths.mts'
 import { fetchPackagePublishDate } from './registry-publish-date.mts'
+import {
+  gateWriteDest,
+  parseNonMemberOverride,
+} from './_shared/fleet-membership.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 
 const SOAK_DAYS = 7
@@ -148,9 +155,27 @@ async function main(): Promise<void> {
   if (!spec) {
     process.stderr.write(
       'Usage: node scripts/fleet/soak-bypass.mts <pkg>@<version>\n' +
-        '  e.g. node scripts/fleet/soak-bypass.mts compromise@14.15.1\n',
+        '  e.g. node scripts/fleet/soak-bypass.mts compromise@14.15.1\n' +
+        '  Non-member repo root? Audited escape hatch:\n' +
+        '    --allow-non-member --reason "<why>"\n',
     )
     process.exit(1)
+  }
+
+  // Membership gate — this tool WRITES pnpm-workspace.yaml + .npmrc at the
+  // resolved repo root, so the root must be a fleet-roster member before any
+  // byte lands. Audited escape hatch: `--allow-non-member --reason "<why>"`.
+  const gate = gateWriteDest({
+    destDir: REPO_ROOT,
+    override: parseNonMemberOverride(process.argv.slice(2)),
+    toolName: 'soak-bypass',
+  })
+  if (!gate.allowed) {
+    process.stderr.write(`${gate.message}\n`)
+    process.exit(1)
+  }
+  if (gate.note !== undefined) {
+    process.stderr.write(`${gate.note}\n`)
   }
 
   // The lean registry helper returns the already-sliced `YYYY-MM-DD` publish

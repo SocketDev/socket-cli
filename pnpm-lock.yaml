@@ -340,6 +340,9 @@ catalogs:
     '@typescript/native-preview':
       specifier: 7.0.0-dev.20260510.1
       version: 7.0.0-dev.20260510.1
+    '@ultrathink/acorn.rs.wasm':
+      specifier: 0.0.1
+      version: 0.0.1
     '@ultrathink/acorn.wasm':
       specifier: npm:@ultrathink/acorn-wasm@0.0.1
       version: 0.0.1
@@ -2473,9 +2476,9 @@ importers:
 
   .config/fleet/oxlint-plugin:
     dependencies:
-      '@ultrathink/acorn.wasm':
+      '@ultrathink/acorn.rs.wasm':
         specifier: 'catalog:'
-        version: '@ultrathink/acorn-wasm@0.0.1'
+        version: 0.0.1
       regjsparser:
         specifier: 'catalog:'
         version: 0.13.2
@@ -2483,6 +2486,8 @@ importers:
   .config/fleet/oxlint-plugin/fleet/bag-param-optionality-naming: {}
 
   .config/fleet/oxlint-plugin/fleet/export-top-level-functions: {}
+
+  .config/fleet/oxlint-plugin/fleet/exported-name-has-domain-word: {}
 
   .config/fleet/oxlint-plugin/fleet/guard-contract: {}
 
@@ -4560,6 +4565,10 @@ packages:
 
   '@ultrathink/acorn-wasm@0.0.1':
     resolution: {integrity: sha512-XAYEvamnSuvhLxQm5eXl31dxMmh+fhhJrZDOY70siPU46feNF9In5utVjhzskezBoqRaSn7/QlbMcZSTd4KE7A==}
+    engines: {node: '>=18'}
+
+  '@ultrathink/acorn.rs.wasm@0.0.1':
+    resolution: {integrity: sha512-XZLeVZKgcswjnBqHD/jfdAxS+/8wUwShxPjJjTmJD9CtHwZ8sb/XNWYt0oGfUErX+YzzJfX9JCd+gWTmkw6/cQ==}
     engines: {node: '>=18'}
 
   '@vitest/coverage-v8@4.1.10':
@@ -8982,6 +8991,8 @@ snapshots:
     optional: true
 
   '@ultrathink/acorn-wasm@0.0.1': {}
+
+  '@ultrathink/acorn.rs.wasm@0.0.1': {}
 
   '@vitest/coverage-v8@4.1.10(vitest@4.1.10)':
     dependencies:

@@ -9,6 +9,7 @@
   "rules": {
     "socket/bag-param-optionality-naming": "error",
     "socket/export-top-level-functions": "error",
+    "socket/exported-name-has-domain-word": "error",
     "socket/guard-contract": "error",
     "socket/inclusive-language": "error",
     "socket/max-file-lines": "error",

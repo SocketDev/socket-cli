@@ -72,6 +72,19 @@ export async function runBump(config: {
     logger.log('[bump] dry-run — previewed, nothing committed.')
     return
   }
+  // The bump rewrote manifest versions (and the platform generator re-pins
+  // sibling rows), so the lockfile's specifiers are now stale. Regenerate the
+  // lockfile ONLY, before the diff below, so it rides the same signed bump
+  // commit — otherwise the post-bump rebuild's `pnpm install` (CI defaults to
+  // --frozen-lockfile) rejects the tree it is supposed to build.
+  const lockfileRegen = await runInherit(
+    'pnpm',
+    ['install', '--lockfile-only', '--no-frozen-lockfile'],
+    rootPath,
+  )
+  if (lockfileRegen !== 0) {
+    throw new Error(`[bump] lockfile regen exited ${lockfileRegen}`)
+  }
   const diff = await runCapture('git', ['diff', '--name-only'], rootPath)
   const files = diff.stdout
     .split('\n')

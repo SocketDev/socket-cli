@@ -113,6 +113,60 @@ function runGit(repoRoot: string, args: readonly string[]): string {
   return String(result.stdout)
 }
 
+// The `[submodule "<name>"]` block name whose `path =` matches submodulePath,
+// read structurally via `git config -f .gitmodules`. Returns undefined when no
+// block declares the path. Exported for tests.
+export function gitmodulesBlockName(
+  repoRoot: string,
+  submodulePath: string,
+): string | undefined {
+  const out = gitmodulesRead(repoRoot, undefined)
+  if (out === undefined) {
+    return undefined
+  }
+  // Windows git emits \r\n. The `u` flag doesn't change what this pattern
+  // matches — it opts into strict escape parsing (malformed escapes are
+  // early SyntaxErrors instead of silent literals), the regex convention
+  // this codebase uses throughout.
+  const lines = out.split(/\r?\n/u)
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    // `git config --get-regexp` prints `submodule.<name>.path <value>` per
+    // block: group 1 captures the block name, group 2 the path value.
+    const m = /^submodule\.(.+)\.path (.+)$/.exec(lines[i]!.trim())
+    if (m && m[2] === submodulePath) {
+      return m[1]
+    }
+  }
+  return undefined
+}
+
+// Read one key (or, with undefined, every `submodule.*.path` mapping) from
+// .gitmodules via `git config -f`. Returns undefined when the key is absent —
+// `git config --get` exits 1 for a missing key, which is not an error here.
+// Exported for tests.
+export function gitmodulesRead(
+  repoRoot: string,
+  key: string | undefined,
+): string | undefined {
+  const args = key
+    ? ['config', '-f', path.join(repoRoot, '.gitmodules'), '--get', key]
+    : [
+        'config',
+        '-f',
+        path.join(repoRoot, '.gitmodules'),
+        '--get-regexp',
+        String.raw`^submodule\..*\.path$`,
+      ]
+  const result = spawnSync('git', ['-C', repoRoot, ...args], {
+    stdio: ['ignore', 'pipe', 'pipe'],
+    stdioString: true,
+  })
+  if (result.error || result.status !== 0) {
+    return undefined
+  }
+  return String(result.stdout).trim()
+}
+
 // Locate the version-pin row + its submodule path in the manifest. Returns
 // undefined for either when the id is unknown or its upstream has no submodule
 // — the apply path turns those into a skipped (not thrown) result so a stale id
@@ -316,16 +370,44 @@ export function applyBump(config: ApplyConfig): ApplyResult {
     )
   }
 
+  // A tag bump moves the block's `branch =` too — the single-branch fetch
+  // config must name the fetched tag, or the next materialization fetches a
+  // stale ref. `git config -f` keeps the rewrite structured. SHA bumps track
+  // the default branch, which the existing value already names.
+  if (targetTag) {
+    const blockName = gitmodulesBlockName(repoRoot, submodulePath)
+    if (
+      blockName &&
+      gitmodulesRead(repoRoot, `submodule.${blockName}.branch`) !== undefined
+    ) {
+      runGit(repoRoot, [
+        'config',
+        '-f',
+        path.join(repoRoot, '.gitmodules'),
+        `submodule.${blockName}.branch`,
+        targetTag,
+      ])
+    }
+  }
+
   const upstreamAlias = found.upstreamAlias
   // Tag bumps read `bump <upstream> to <tag>`; HEAD bumps read
   // `bump <upstream> to <short-sha> (<commit-date>)`.
   const commitTarget = targetTag
     ? targetTag
     : `${pinnedSha.slice(0, 12)} (${runGit(submoduleDir, ['show', '-s', '--format=%cs', pinnedSha]).trim()})`
+  // A fleet upstream pin carries no gitlink (`no-upstream-gitlink-guard`) —
+  // the submodule path is ignored/untracked, and `git commit -o <path>` on it
+  // errors. Include the path leg only when a gitlink actually exists.
+  const gitlink = runGit(repoRoot, [
+    'ls-files',
+    '-s',
+    '--',
+    submodulePath,
+  ]).trim()
   runGit(repoRoot, [
     'commit',
-    '-o',
-    submodulePath,
+    ...(gitlink ? ['-o', submodulePath] : []),
     '-o',
     manifestPath,
     '-o',

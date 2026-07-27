@@ -159,11 +159,30 @@ export function expandWorkspaceGlob(rootPath: string, glob: string): string[] {
         }
         next.push(...children.toSorted())
       } else if (segment.includes('*')) {
-        // Partial-wildcard segments (`pkg-*`) are not used by fleet workspace
-        // files; matching nothing here keeps the expansion honest (the caller
-        // sees the member missing and fails loud downstream, never a silent
-        // partial expansion).
-        continue
+        // Partial-wildcard segment (`@*`, `pkg-*`) — fleet workspace files use
+        // the scope form (`packages/npm/@*/*`). Match child dirs on the
+        // literal prefix + suffix around a single `*`.
+        const star = segment.indexOf('*')
+        const prefix = segment.slice(0, star)
+        const suffix = segment.slice(star + 1)
+        let children: string[]
+        try {
+          children = readdirSync(dir, { withFileTypes: true })
+            .filter(entry => entry.isDirectory())
+            .map(entry => entry.name)
+        } catch {
+          continue
+        }
+        const matched = children
+          .filter(
+            name =>
+              name.length >= prefix.length + suffix.length &&
+              name.startsWith(prefix) &&
+              name.endsWith(suffix),
+          )
+          .toSorted()
+          .map(name => path.join(dir, name))
+        next.push(...matched)
       } else {
         const child = path.join(dir, segment)
         if (existsSync(child)) {

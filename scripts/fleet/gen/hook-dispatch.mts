@@ -48,6 +48,7 @@ export {
   resolveHookBundleOut,
 } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { withMirrorLockLiftedSync } from '../_shared/mirror-lock.mts'
 
 /**
  * Render the dispatch-table.mts source from the eligible-hook list. Each hook
@@ -309,14 +310,20 @@ function main(): void {
     return
   }
   for (const [variant, outPath] of TABLE_OUTPUTS) {
-    writeFileSync(
-      outPath,
-      generateDispatchTableSource(FLEET_HOOKS_DIR, variant),
+    // The outputs live inside the cascade-locked hook mirror; lift the
+    // read-only lock around each regeneration write.
+    withMirrorLockLiftedSync(outPath, () =>
+      writeFileSync(
+        outPath,
+        generateDispatchTableSource(FLEET_HOOKS_DIR, variant),
+      ),
     )
   }
-  writeFileSync(
-    DISPATCH_MANIFEST_PATH,
-    generateDispatchManifestSource(FLEET_HOOKS_DIR),
+  withMirrorLockLiftedSync(DISPATCH_MANIFEST_PATH, () =>
+    writeFileSync(
+      DISPATCH_MANIFEST_PATH,
+      generateDispatchManifestSource(FLEET_HOOKS_DIR),
+    ),
   )
   // Dogfood: the wheelhouse carries template/base/ (a member does not). Mirror
   // the generated full table + manifest into the template so its CI readers +

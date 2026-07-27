@@ -50,7 +50,13 @@ The `FLEET_SYNC=1` sentinel is recognized by the wheelhouse `no-revert-guard` + 
 node .claude/skills/fleet/cascading-fleet/lib/cascade-template.mts <template-sha>
 ```
 
-The script reads the fleet-repo list from `lib/fleet-repos.txt` (single source of truth), iterates, and writes a per-repo result line to stdout. Output also tees to `/tmp/cascade-<sha>.log` for post-hoc inspection.
+The script reads the wave list from `lib/fleet-repos.txt` — the worktree-cascade SUBSET of the canonical roster `lib/fleet-repos.json`, validated against it at startup, where an unknown name refuses the whole wave — iterates, and writes a per-repo result line to stdout. Output also tees to `/tmp/cascade-<sha>.log` for post-hoc inspection.
+
+## Membership gate — sweeps write only into roster members
+
+A repo is fleet surface because its **origin remote resolves to a roster member** (`lib/fleet-repos.json`), never because it sits under `~/projects`. A past sweep treated a non-member clone there as fleet surface and landed a fleet-convention commit into it. Every fleet tool that WRITES into a working tree asserts destination membership first and refuses non-members: `fetch-fleet-bundle.mts` (default root and `--dest`), `gen/agents-skills-mirror.mts`, `soak-bypass.mts`, `scripts/repo/sync.mts` + `sync-scaffolding/cli.mts` path targets, and this wave driver (txt-vs-json validation). The shared predicates live in `scripts/fleet/_shared/fleet-membership.mts`, deriving from the hooks' `fleet-repos.mts` — one roster, many readers.
+
+The escape hatch is explicit and audited — never an env var: `--allow-non-member --reason "<why>"`. The reason is required and logged, so a sanctioned non-member write always leaves a line in the transcript. The commit-side backstop is `no-fleet-scope-in-non-member-guard`, which blocks a `<type>(fleet): …` commit subject in a repo whose origin is outside the roster.
 
 ## Post-cascade: reconcile lockfiles (in parallel)
 

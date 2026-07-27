@@ -69,7 +69,7 @@ The fleet bootstrap owns shim generation — one deterministic generator,
 no hand-saved script:
 
 ```bash
-node scripts/fleet/setup/setup-tools.mjs
+node scripts/fleet/setup/tools.mjs
 ```
 
 It writes the shims into `~/.socket/_wheelhouse/bin/` (the one PATH

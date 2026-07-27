@@ -14,6 +14,12 @@
  *   headless child inherits (spawnAiAgent forwards process.env), so the child's
  *   own auto-land-on-stop hook no-ops — the read-only profile also lets it
  *   mutate nothing.
+ *   Keyless fallback: when no claude CLI resolves, a repo that opted into
+ *   `ai.localAssist` in `.config/repo/socket-wheelhouse.json` gets the same
+ *   below-the-fold summaries from the locai CLI — on-device, summary-class,
+ *   no ANTHROPIC_API_KEY (_shared/locai.mts). Same fail-open contract: any
+ *   skip or failure keeps the deterministic body, and the whole leg is
+ *   bounded by a total budget so a cold local model never stalls a land.
  */
 
 import process from 'node:process'
@@ -25,6 +31,11 @@ import { spawnAiAgent } from '@socketsecurity/lib-stable/ai/spawn'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { FLOOR_EFFORT, FLOOR_MODEL } from '../lib/known-models.mts'
+import {
+  localAssistEnabled,
+  resolveLocaiBin,
+  runLocai,
+} from '../_shared/locai.mts'
 
 import type { CommitGroup } from '../land-work.mts'
 
@@ -35,6 +46,12 @@ const MAX_PROMPT_CHARS = 40_000
 const MAX_SUMMARY_CHARS = 400
 // Bounded so a slow/cold AI never stalls turn-end for long — fail-open on timeout.
 const SUMMARY_TIMEOUT_MS = 30_000
+// Keyless-fallback bounds. locai is one call PER GROUP — small local models
+// can't hold a multi-group prompt — so each call gets a per-prompt budget
+// wide enough for a cold headless-Chrome bridge launch, and the loop stops at
+// a total budget so a long land never queues minutes of local inference.
+const LOCAI_PROMPT_TIMEOUT_MS = 45_000
+const LOCAI_TOTAL_BUDGET_MS = 90_000
 
 async function claudeAvailable(cwd: string): Promise<boolean> {
   const discovered = await discoverAiAgents({ repoRoot: cwd })
@@ -142,7 +159,7 @@ export async function summarizeGroups(
     return new Map()
   }
   if (!(await claudeAvailable(cwd))) {
-    return new Map()
+    return await locaiSummaries(cwd, multi)
   }
   let result: Awaited<ReturnType<typeof spawnAiAgent>>
   try {
@@ -168,4 +185,58 @@ export async function summarizeGroups(
     result.stdout,
     multi.map(g => g.scope),
   )
+}
+
+/**
+ * Keyless fallback: summarize each multi-file group's diff through the locai
+ * CLI. Runs ONLY when the repo opted into `ai.localAssist` and a locai binary
+ * resolves — otherwise an empty map, same as every other unavailable path.
+ * One `locai summarize` call per group because small on-device models can't
+ * hold the multi-group prompt the claude path sends; the loop stops on the
+ * first failure and at the total budget, and any partial result is fine —
+ * groups without a summary keep their deterministic body.
+ */
+export async function locaiSummaries(
+  cwd: string,
+  groups: readonly CommitGroup[],
+): Promise<Map<string, string>> {
+  const out = new Map<string, string>()
+  if (!localAssistEnabled(cwd)) {
+    return out
+  }
+  const bin = resolveLocaiBin()
+  if (!bin) {
+    return out
+  }
+  const deadline = Date.now() + LOCAI_TOTAL_BUDGET_MS
+  for (const g of groups) {
+    if (Date.now() >= deadline) {
+      break
+    }
+    const diff = groupDiff(cwd, g.paths)
+    if (!diff) {
+      continue
+    }
+    const run = await runLocai('summarize', diff, {
+      bin,
+      cwd,
+      timeoutMs: LOCAI_PROMPT_TIMEOUT_MS,
+    })
+    if (run.outcome !== 'ok') {
+      // A skip means no backend at all and a failure would repeat per group —
+      // either way the remaining groups keep their deterministic bodies.
+      break
+    }
+    const value = run.value as { summary?: unknown | undefined }
+    if (typeof value?.summary === 'string') {
+      const clean = value.summary
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, MAX_SUMMARY_CHARS)
+      if (clean) {
+        out.set(g.scope, clean)
+      }
+    }
+  }
+  return out
 }

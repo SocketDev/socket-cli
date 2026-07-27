@@ -115,7 +115,7 @@ async function main(): Promise<void> {
 
   if (!skipTools) {
     logger.log('── Tools (pnpm + sfw + bootstrap) ─────────')
-    results.push(['Tools', run(path.join(__dirname, 'setup-tools.mjs'))])
+    results.push(['Tools', run(path.join(__dirname, 'tools.mjs'))])
     logger.log('')
   }
 

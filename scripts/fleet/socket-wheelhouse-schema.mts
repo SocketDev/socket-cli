@@ -42,6 +42,7 @@ import {
   VitestSchema,
 } from './socket-wheelhouse-schema/testing.mts'
 import {
+  AiSchema,
   HooksSchema,
   LintSchema,
   LockstepSchema,
@@ -80,6 +81,7 @@ export const SocketWheelhouseConfigSchema = Type.Object(
           'Additional publish channels beyond the primary `build` — e.g. a Rust crate (crates-registry/rust) that also ships a `.node` addon to npm carries `{from:npm-registry, type:addon}`. Each channel gets its own publish workflow.',
       }),
     ),
+    ai: Type.Optional(AiSchema),
     claude: Type.Optional(ClaudeSchema),
     cover: Type.Optional(CoverSchema),
     design: Type.Optional(DesignSchema),
@@ -109,7 +111,7 @@ export const SocketWheelhouseConfigSchema = Type.Object(
 
 export type SocketWheelhouseConfig = Static<typeof SocketWheelhouseConfigSchema>
 export type Repo = Static<typeof RepoSchema>
-export type Build = Static<typeof BuildSchema>
+export type BuildConfig = Static<typeof BuildSchema>
 export type Secondary = Static<typeof SecondarySchema>
 export type Vite = Static<typeof ViteSchema>
 export type Vitest = Static<typeof VitestSchema>

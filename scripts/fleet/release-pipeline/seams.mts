@@ -11,6 +11,7 @@ import os from 'node:os'
 import path from 'node:path'
 
 import { resolveReleaseSubject } from '../_shared/release-subject.mts'
+import { resolveNpmWorkspaceLayout } from '../publish-infra/npm/workspace.mts'
 import {
   ensureTagAndRelease,
   requireRegistryLive,
@@ -194,11 +195,20 @@ export function resolveSeams(seams: RunnerSeams | undefined): ResolvedSeams {
 
 /**
  * Read the release subject's name + version: `<cwd>/package.json` for a plain
- * repo, the `publishConfig.directory` manifest for a redirected monorepo —
- * the version the pipeline bumps/verifies/releases is the SUBJECT's, never a
- * private root's.
+ * repo, the `publishConfig.directory` manifest for a redirected monorepo, and
+ * the MAIN workspace anchor for a multi-package layout — the staged entries a
+ * multi layout uploads carry the members' names, so a verify/promote keyed on
+ * the private root's name can never find them. The version the pipeline
+ * bumps/verifies/releases is the SUBJECT's, never a private root's.
  */
 export function readPkg(cwd: string): { name: string; version: string } {
+  const layout = resolveNpmWorkspaceLayout(cwd)
+  if (layout.kind === 'multi' && layout.main) {
+    return {
+      name: layout.main.name,
+      version: layout.versionSource.version,
+    }
+  }
   const subject = resolveReleaseSubject(cwd)
   return { name: subject.name, version: subject.version }
 }

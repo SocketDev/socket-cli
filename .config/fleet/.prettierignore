@@ -13,7 +13,7 @@
 # `.claude/` is treated like node_modules — never formatted, never linted, no
 # matter whether the files are git-tracked. Hooks, skills, settings, and the
 # acorn AST helper (`_shared/ast/`, a thin npm-backed wrapper over the
-# `@ultrathink/acorn.wasm` wasm parser) are all opaque to the formatter under
+# `@ultrathink/acorn.rs.wasm` wasm parser) are all opaque to the formatter under
 # this single exclusion.
 **/.claude/**
 

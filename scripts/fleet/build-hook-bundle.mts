@@ -32,6 +32,16 @@ import {
 import { REPO_ROOT } from './paths.mts'
 import { hasFleetHookSource } from './_shared/fleet-source-present.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import {
+  liftMirrorLockSync,
+  withMirrorLockLiftedSync,
+} from './_shared/mirror-lock.mts'
+
+// The dispatch table + manifest live inside the cascade-locked hook
+// mirror; regeneration must lift the read-only lock around the write.
+function writeThroughLock(filePath: string, content: string): void {
+  withMirrorLockLiftedSync(filePath, () => writeFileSync(filePath, content))
+}
 
 const logger = getDefaultLogger()
 
@@ -122,11 +132,11 @@ function main(): void {
     logger.log('dispatch-table.mts + dispatch-manifest.json are current.')
     return
   }
-  writeFileSync(DISPATCH_TABLE_PATH, generated)
+  writeThroughLock(DISPATCH_TABLE_PATH, generated)
   // The dep-0 bootstrap dispatcher routes off the manifest; regenerate it in
   // lock-step with the table so the two never drift (this is the dogfood path —
   // build-hook-bundle writes the table directly, not via gen/hook-dispatch).
-  writeFileSync(DISPATCH_MANIFEST_PATH, generatedManifest)
+  writeThroughLock(DISPATCH_MANIFEST_PATH, generatedManifest)
 
   // Dogfood: the wheelhouse carries template/base/ (a member does not). Mirror
   // the generated table + manifest into the template so its CI readers + the
@@ -138,11 +148,13 @@ function main(): void {
     'template/base/.claude/hooks/fleet/_dispatch',
   )
   if (existsSync(templateDispatchDir)) {
-    writeFileSync(
+    // Also through the lock: a pre-fix dogfood mirror propagated 0444 onto
+    // these template artifacts, and the lift is a no-op when writable.
+    writeThroughLock(
       path.join(templateDispatchDir, 'dispatch-table.mts'),
       generated,
     )
-    writeFileSync(
+    writeThroughLock(
       path.join(
         REPO_ROOT,
         'template/base/.claude/hooks/fleet/_shared/dispatch-manifest.json',
@@ -159,6 +171,10 @@ function main(): void {
     process.exitCode = 2
     return
   }
+  // Rolldown rewrites the bundle itself and cannot lift a mirror lock an
+  // earlier cascade left on it; clear it (no re-lock — generated outputs
+  // stay writable).
+  liftMirrorLockSync(HOOK_BUNDLE_PATH)
   const result = spawnSync(ROLLDOWN_BIN, ['-c', ROLLDOWN_CONFIG], {
     cwd: REPO_ROOT,
     // Windows: node_modules/.bin/rolldown has no extension, so a direct spawn

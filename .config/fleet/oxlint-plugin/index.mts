@@ -14,6 +14,7 @@
 
 import bagParamOptionalityNaming from './fleet/bag-param-optionality-naming/index.mts'
 import exportTopLevelFunctions from './fleet/export-top-level-functions/index.mts'
+import exportedNameHasDomainWord from './fleet/exported-name-has-domain-word/index.mts'
 import guardContract from './fleet/guard-contract/index.mts'
 import inclusiveLanguage from './fleet/inclusive-language/index.mts'
 import maxFileLines from './fleet/max-file-lines/index.mts'
@@ -126,6 +127,7 @@ const plugin = {
   rules: {
     'bag-param-optionality-naming': bagParamOptionalityNaming,
     'export-top-level-functions': exportTopLevelFunctions,
+    'exported-name-has-domain-word': exportedNameHasDomainWord,
     'guard-contract': guardContract,
     'inclusive-language': inclusiveLanguage,
     'max-file-lines': maxFileLines,

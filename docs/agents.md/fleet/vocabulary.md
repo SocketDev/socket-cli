@@ -27,3 +27,14 @@ ref with its subject on first mention — "#12 (remove npm-run-all2)",
 in the same paragraph may shorten once the binding is established.
 GitHub `owner/repo#N` autolinks are exempt — the repo half carries context.
 Enforced by the `named-task-refs` group in `reply-prose-nudge`.
+
+## One term per concept, and enough words to be unique
+
+Pick one spelling per concept across the codebase and never alternate synonyms
+(`orgId` vs `organizationId`, or `customers` vs `organizations` for the same
+thing). A grepping coding agent cannot tell they mean the same and reads both
+trees. Give a name enough words to be unique too: one-word names are about 61%
+unique, two-word about 88%, three-word about 96%, so an exported name should
+carry a domain word (`createStripeClient`, not `create`). The exported-name half
+is enforced by `socket/exported-name-has-domain-word`; the one-term-per-concept
+half is a review call.

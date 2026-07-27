@@ -9,15 +9,31 @@
  *   (and any aligned session's) cumulative work — land it, don't investigate.
  *   A genuine parallel-session conflict is a divergent same-file edit that
  *   appears WHILE you work (a file changing between two of your own reads).
- *   History alone cannot show that; this tool does not pretend to. It answers
- *   the question that actually mis-fires — "is this unfamiliar commit mine?" —
- *   with "local + your identity = yours by default."
- *   Run it whenever `git log` surprises you, before ever pausing to warn about
- *   a parallel agent. Informational: exits 0 unless git itself fails.
+ *   History alone cannot show that — the DIRTY-FILE section answers it from
+ *   the active-edits ledger instead: each dirty path gets a verdict (a live
+ *   actor wrote it recently / a stale actor / a shared generated artifact /
+ *   nothing recorded), with the writer's actor id and write age, via the SAME
+ *   attribution loop the dirty-worktree stop guard blocks on.
+ *   Run it whenever `git log` or `git status` surprises you, before ever
+ *   pausing to warn about a parallel agent. Informational: exits 0 unless git
+ *   itself fails.
  */
+
+import { statSync } from 'node:fs'
+import path from 'node:path'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
+
+import {
+  attributeDirtyPath,
+  COLLISION_WINDOW_MS,
+  listOtherActorLedgerPaths,
+  normalizeForLedger,
+  readActorLedger,
+  resolveStoreRoot,
+} from '../../.claude/hooks/fleet/_shared/active-edits-ledger.mts'
+import { isGenerated } from '../../.claude/hooks/fleet/_shared/landable.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 import { REPO_ROOT } from './paths.mts'
 
@@ -210,18 +226,146 @@ export function formatReport(config: {
   return lines.join('\n')
 }
 
+export interface DirtyVerdict {
+  readonly path: string
+  readonly verdict:
+    | 'LIVE-ACTOR'
+    | 'STALE-ACTOR'
+    | 'SHARED-ARTIFACT'
+    | 'UNATTRIBUTED'
+  readonly actorId?: string | undefined
+  readonly ageMinutes?: number | undefined
+  readonly via?: string | undefined
+}
+
+/**
+ * Attribute every dirty path via the active-edits ledger. A CLI run has no
+ * transcript, so "own vs foreign" cannot be split — every actor ledger is a
+ * candidate writer and the verdict names the most-recent one. The calling
+ * session knows its own recent edits; anything LIVE-ACTOR it does not
+ * recognize as its own is hands-off.
+ */
+export function attributeDirtyPaths(cwd: string): DirtyVerdict[] {
+  // stdioString:false — the trimming default eats the leading space of an
+  // unstaged ` M <path>` entry and shifts the first parsed path left by
+  // one char (the land-work porcelain pitfall).
+  const status = spawnSync('git', ['status', '--porcelain', '-z'], {
+    cwd,
+    stdioString: false,
+    timeout: 10_000,
+  })
+  if (status.status !== 0) {
+    return []
+  }
+  const dirty = String(status.stdout ?? '')
+    .split('\0')
+    .filter(Boolean)
+    .map(entry => entry.slice(3))
+    .filter(Boolean)
+  const storeRoot = resolveStoreRoot(cwd)
+  // Own actor unknown in a CLI run — pass '' so every ledger is a candidate.
+  const ledgers = listOtherActorLedgerPaths(storeRoot, '').map(p =>
+    readActorLedger(p),
+  )
+  const now = Date.now()
+  const out: DirtyVerdict[] = []
+  for (let i = 0, { length } = dirty; i < length; i += 1) {
+    const rel = dirty[i]!
+    if (isGenerated(rel)) {
+      out.push({ path: rel, verdict: 'SHARED-ARTIFACT' })
+      continue
+    }
+    const normalized = normalizeForLedger(path.resolve(cwd, rel))
+    const attribution = attributeDirtyPath(normalized, undefined, ledgers, {
+      now,
+    })
+    if (attribution.owner === 'unknown') {
+      out.push({ path: rel, verdict: 'UNATTRIBUTED' })
+      continue
+    }
+    out.push({
+      path: rel,
+      verdict:
+        attribution.owner === 'foreign-live' ? 'LIVE-ACTOR' : 'STALE-ACTOR',
+      actorId: attribution.actorLabel
+        ? `${attribution.actorId} (${attribution.actorLabel}${attribution.actorPid ? `, pid ${attribution.actorPid}` : ''})`
+        : attribution.actorId,
+      ageMinutes: attribution.ageMs
+        ? Math.round(attribution.ageMs / 60_000)
+        : undefined,
+      via: attribution.via,
+    })
+  }
+  return out
+}
+
+/**
+ * Report .git/index.lock contention: present + fresh = an in-flight git op
+ * (retry shortly); present + old = likely orphaned by a crashed process.
+ */
+export function formatIndexLockReport(cwd: string): string | undefined {
+  const lockPath = path.join(cwd, '.git', 'index.lock')
+  let stat
+  try {
+    // oxlint-disable-next-line socket/prefer-exists-sync -- need mtime for the age readout
+    stat = statSync(lockPath)
+  } catch {
+    return undefined
+  }
+  const ageSec = Math.round((Date.now() - stat.mtimeMs) / 1000)
+  return (
+    `.git/index.lock present (${ageSec}s old) — ` +
+    (ageSec < 120
+      ? 'an in-flight git operation; retry shortly rather than removing it.'
+      : 'older than any normal operation; likely orphaned by a crashed process.')
+  )
+}
+
+export function formatDirtyReport(verdicts: readonly DirtyVerdict[]): string {
+  if (verdicts.length === 0) {
+    return 'Working tree clean — no dirty paths to attribute.'
+  }
+  const lines = [`Dirty paths (${verdicts.length}) — ledger attribution:`]
+  for (let i = 0, { length } = verdicts; i < length; i += 1) {
+    const v = verdicts[i]!
+    const who = v.actorId ? `  actor ${v.actorId}` : ''
+    const age = v.ageMinutes !== undefined ? `  ${v.ageMinutes}m ago` : ''
+    const via = v.via ? `  (via ${v.via})` : ''
+    lines.push(`  ${v.verdict.padEnd(15)} ${v.path}${who}${age}${via}`)
+  }
+  lines.push(
+    '',
+    `LIVE-ACTOR = a live session wrote it (${Math.round(COLLISION_WINDOW_MS / 60_000)}m collision window applies) —`,
+    'hands off unless the actor is you. UNATTRIBUTED = no ledger record (a',
+    'human edit, a pre-session write, or a Bash write the recorder missed).',
+  )
+  return lines.join('\n')
+}
+
 export function main(cwd: string = REPO_ROOT): number {
   const baseRef = resolveBaseRef(cwd)
   const myEmail = currentIdentityEmail(cwd)
   const commits = baseRef ? localAheadCommits(cwd, baseRef) : []
   const classification = classifyWork({ commits, myEmail })
+  const dirtyVerdicts = attributeDirtyPaths(cwd)
   const asJson = process.argv.includes('--json')
   if (asJson) {
     logger.log(
-      JSON.stringify({ baseRef, myEmail, ...classification }, undefined, 2),
+      JSON.stringify(
+        { baseRef, dirty: dirtyVerdicts, myEmail, ...classification },
+        undefined,
+        2,
+      ),
     )
   } else {
     logger.log(formatReport({ baseRef, classification, myEmail }))
+    logger.log('')
+    logger.log(formatDirtyReport(dirtyVerdicts))
+    const lockReport = formatIndexLockReport(cwd)
+    if (lockReport) {
+      logger.log('')
+      logger.log(lockReport)
+    }
   }
   return 0
 }

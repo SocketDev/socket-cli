@@ -761,7 +761,19 @@ async function main(): Promise<void> {
       ? branchRaw
       : `detached-${await git(['rev-parse', '--short', 'HEAD'], repoRoot)}`
   const baseRef = await resolveBaseRef(args.baseRef, repoRoot)
-  const mergeBase = await git(['merge-base', baseRef, 'HEAD'], repoRoot)
+  let mergeBase: string
+  try {
+    mergeBase = await git(['merge-base', baseRef, 'HEAD'], repoRoot)
+  } catch {
+    logger.error(
+      `No common ancestor between ${baseRef} and HEAD in ${repoRoot}. ` +
+        'Saw: git merge-base exited non-zero (disjoint histories — a ' +
+        'post-squash orphan branch, or the wrong base). ' +
+        'Fix: pass --base-ref <ref that shares history with HEAD>, or ' +
+        'rebase the branch onto the current base first.',
+    )
+    process.exit(1)
+  }
   const range = `${mergeBase}..HEAD`
   const commitList = await git(
     ['log', '--oneline', '--no-decorate', range],

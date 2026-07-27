@@ -83,6 +83,22 @@ export function fetchTagsQuiet(submoduleDir: string): boolean {
 }
 
 /**
+ * The remote default-branch head via `git ls-remote origin HEAD` — a network
+ * read that needs no local commit graph, so it works inside the fleet's
+ * mandated-shallow submodule clones. Returns undefined when the remote is
+ * unreachable or the output has no SHA.
+ */
+export function lsRemoteHead(submoduleDir: string): string | undefined {
+  try {
+    const out = gitIn(submoduleDir, ['ls-remote', 'origin', 'HEAD'])
+    const sha = out.split(/\s+/u)[0]
+    return sha && /^[0-9a-f]{40}$/u.test(sha) ? sha : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/**
  * True when the submodule is a shallow clone (`git rev-parse
  * --is-shallow-repository`). A shallow clone can't yield a trustworthy
  * `pinned_sha..origin` count — `rev-list` truncates at the graft boundary — so

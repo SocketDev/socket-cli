@@ -724,6 +724,65 @@ async function main(): Promise<void> {
       )
       return
     }
+    if (versionHintFrom(pkg.version) === nextVersion) {
+      // The changelog section landed but the version source still carries
+      // the release HINT (`X.Y.Z-prerelease`) — a member manifest joined the
+      // layout after the section was written, or an earlier run finalized
+      // only part of the tree. Complete the bump: finalize the manifest(s)
+      // without touching the changelog.
+      logger.log(
+        `CHANGELOG.md already carries ${nextVersion}; finalizing the ` +
+          `manifest hint ${pkg.version} → ${nextVersion}.`,
+      )
+      let finalized: string[]
+      if (multi) {
+        const written = await applyLockstepBump(layout, nextVersion)
+        if (!written) {
+          process.exitCode = 1
+          return
+        }
+        finalized = written
+      } else {
+        writeFileSync(
+          path.join(rootPath, 'package.json'),
+          replaceVersion(pkgRaw, nextVersion),
+        )
+        finalized = ['package.json']
+      }
+      const addFinalize = await runCapture(
+        'git',
+        ['add', ...finalized],
+        rootPath,
+      )
+      if (addFinalize.code !== 0) {
+        logger.fail('git add failed.')
+        process.exitCode = 1
+        return
+      }
+      const commitFinalize = await runCapture(
+        'git',
+        [
+          'commit',
+          '-o',
+          ...finalized,
+          '-m',
+          `chore: bump version to ${nextVersion}`,
+        ],
+        rootPath,
+      )
+      if (commitFinalize.code !== 0) {
+        logger.fail('git commit failed:')
+        logger.fail(commitFinalize.stdout)
+        process.exitCode = 1
+        return
+      }
+      logger.success(
+        `Finalized ${finalized.join(' + ')} at ${nextVersion}. Push, then ` +
+          `trigger the publish workflow (stage), then ` +
+          `\`node scripts/fleet/npm-publish.mts --approve\` to promote.`,
+      )
+      return
+    }
     logger.fail(
       `CHANGELOG.md already has a ${nextVersion} section but package.json ` +
         `reads ${pkg.version} — a half-applied bump.\n` +

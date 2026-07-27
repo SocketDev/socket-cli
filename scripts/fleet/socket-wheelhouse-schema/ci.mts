@@ -15,11 +15,6 @@ export const WorkflowsSchema = Type.Object(
     ci: Type.Optional(
       Type.Boolean({ description: 'Ship `.github/workflows/ci.yml`.' }),
     ),
-    weeklyUpdate: Type.Optional(
-      Type.Boolean({
-        description: 'Ship `.github/workflows/weekly-update.yml`.',
-      }),
-    ),
     provenance: Type.Optional(
       Type.Boolean({
         description:

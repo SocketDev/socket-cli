@@ -7,7 +7,7 @@
     ".": "./index.mts"
   },
   "dependencies": {
-    "@ultrathink/acorn.wasm": "catalog:",
+    "@ultrathink/acorn.rs.wasm": "catalog:",
     "regjsparser": "catalog:"
   }
 }

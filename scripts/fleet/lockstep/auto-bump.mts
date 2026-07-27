@@ -39,7 +39,9 @@ import { REPO_ROOT } from '../paths.mts'
 import {
   applyBump,
   classifyTarget,
+  gitmodulesBlockName,
   gitmodulesLabelForTag,
+  gitmodulesRead,
   isSuspectBackward,
   writePinnedFields,
 } from './auto-bump-apply.mts'
@@ -57,7 +59,9 @@ import { isMainModule } from '../_shared/is-main-module.mts'
 export {
   applyBump,
   classifyTarget,
+  gitmodulesBlockName,
   gitmodulesLabelForTag,
+  gitmodulesRead,
   isSuspectBackward,
   writePinnedFields,
 }

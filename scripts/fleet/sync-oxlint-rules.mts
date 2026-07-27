@@ -47,6 +47,7 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { LINT_RULE_TEST_DIRS, REPO_ROOT } from './paths.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { withMirrorLockLiftedSync } from './_shared/mirror-lock.mts'
 
 const PLUGIN_DIR = path.join(REPO_ROOT, '.config', 'fleet', 'oxlint-plugin')
 // Each rule is its own dir under the cascaded `fleet/` tier (mirrors
@@ -409,7 +410,10 @@ function reconcileGenerated(config: {
     )
     return { drifted: true, problem: undefined }
   }
-  writeFileSync(cfg.filePath, next)
+  // The target can be a cascade-locked 0444 mirror; lift for the write.
+  withMirrorLockLiftedSync(cfg.filePath, () =>
+    writeFileSync(cfg.filePath, next),
+  )
   return { drifted: true, problem: undefined }
 }
 

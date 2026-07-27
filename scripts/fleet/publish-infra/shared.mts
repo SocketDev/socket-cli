@@ -6,6 +6,7 @@
  *   helpers live in the per-registry subfolders (`npm/`).
  */
 
+import { readFileSync } from 'node:fs'
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
@@ -176,4 +177,45 @@ export function extractFirstJson(text: string): string | undefined {
     }
   }
   return undefined
+}
+
+/**
+ * Whether this CI run may request npm provenance. The sigstore bundle is
+ * verifiable only when the source repository is PUBLIC — npm rejects a
+ * private-repo attestation with `E422 … Unsupported GitHub Actions source
+ * repository visibility: "private"`. Reads the Actions event payload
+ * (`repository.private` / `repository.visibility`); outside Actions, or when
+ * the payload is unreadable, provenance stays OFF (fail-closed: a wrong
+ * `--provenance` hard-fails the upload, a missing one only skips the
+ * attestation). Logs the skip loudly so a private repo going public flips
+ * provenance back on with zero config.
+ */
+export function provenanceAllowed(): boolean {
+  if (process.env['GITHUB_ACTIONS'] !== 'true') {
+    return false
+  }
+  const eventPath = process.env['GITHUB_EVENT_PATH']
+  if (!eventPath) {
+    return false
+  }
+  try {
+    const event = JSON.parse(readFileSync(eventPath, 'utf8')) as {
+      repository?:
+        | {
+            private?: boolean | undefined
+            visibility?: string | undefined
+          }
+        | undefined
+    }
+    const repo = event.repository
+    if (!repo) {
+      return false
+    }
+    if (repo.visibility !== undefined) {
+      return repo.visibility === 'public'
+    }
+    return repo.private === false
+  } catch {
+    return false
+  }
 }
