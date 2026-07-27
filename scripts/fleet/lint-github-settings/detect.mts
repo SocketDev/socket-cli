@@ -10,16 +10,13 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { REPO_ROOT } from './paths.mts'
-import {
-  REQUIRED_APP_SLUGS,
-  SHARED_WORKFLOW_BASENAMES,
-} from './lint-github-settings-types.mts'
+import { REPO_ROOT } from '../paths.mts'
+import { REQUIRED_APP_SLUGS, SHARED_WORKFLOW_BASENAMES } from './types.mts'
 import type {
   CheckSuitesPayload,
   CustomPropertyValue,
   WorkflowsPayload,
-} from './lint-github-settings-types.mts'
+} from './types.mts'
 
 // Inline path + config-loader equivalents of the wheelhouse template's
 // paths.mts helpers. `lint-github-settings.mts` cascades into fleet

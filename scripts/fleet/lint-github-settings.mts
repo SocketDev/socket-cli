@@ -23,9 +23,9 @@
  *   audit (skip cache) node scripts/fleet/lint-github-settings.mts --fix #
  *   audit + apply fixes node scripts/fleet/lint-github-settings.mts --json #
  *   machine-readable. Detection helpers (`gh api` wrapper, app/workflow probes)
- *   live in `lint-github-settings-detect.mts`; the settings→findings decision
- *   tree lives in `lint-github-settings-evaluate.mts`; shared types live in
- *   `lint-github-settings-types.mts` — split out to keep each file under the
+ *   live in `lint-github-settings/detect.mts`; the settings→findings decision
+ *   tree lives in `lint-github-settings/evaluate.mts`; shared types live in
+ *   `lint-github-settings/types.mts` — split out to keep each file under the
  *   500-line soft cap.
  */
 
@@ -41,15 +41,15 @@ import {
   loadCustomProperties,
   readDeclaredApps,
   resolveRepo,
-} from './lint-github-settings-detect.mts'
-import { evaluate } from './lint-github-settings-evaluate.mts'
+} from './lint-github-settings/detect.mts'
+import { evaluate } from './lint-github-settings/evaluate.mts'
 import type {
   BranchProtectionPayload,
   CacheEntry,
   CliFlags,
   Finding,
   RepoApiPayload,
-} from './lint-github-settings-types.mts'
+} from './lint-github-settings/types.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 
 // Inline path equivalent of the wheelhouse template's paths.mts helper.

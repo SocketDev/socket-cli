@@ -18,13 +18,13 @@ import {
   readGitOutput,
   runGit,
   toWorktreeRelative,
-} from './git-partial-submodule-internal.mts'
+} from './internal.mts'
 import type {
   AddOpts,
   CloneOpts,
   SaveOrRestoreOpts,
   Submodule,
-} from './git-partial-submodule-internal.mts'
+} from './internal.mts'
 
 // The `git clone --filter=blob:none --no-checkout --separate-git-dir …` argv
 // for `cmdAdd`'s initial partial clone into the submodule's private repo dir.

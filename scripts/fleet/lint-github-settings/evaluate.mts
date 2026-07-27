@@ -9,8 +9,8 @@ import type {
   Finding,
   RepoApiPayload,
   Severity,
-} from './lint-github-settings-types.mts'
-import { REQUIRED_APP_SLUGS } from './lint-github-settings-types.mts'
+} from './types.mts'
+import { REQUIRED_APP_SLUGS } from './types.mts'
 
 /**
  * Custom-property opt-out knobs that downgrade specific rules from 'error' to

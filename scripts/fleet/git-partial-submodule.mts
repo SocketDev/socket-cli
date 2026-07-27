@@ -18,15 +18,15 @@ import process from 'node:process'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 
-import { checkGitVersion, logger } from './git-partial-submodule-internal.mts'
-import type { CommonOpts } from './git-partial-submodule-internal.mts'
-import type { AddOpts } from './git-partial-submodule-internal.mts'
+import { checkGitVersion, logger } from './git-partial-submodule/internal.mts'
+import type { CommonOpts } from './git-partial-submodule/internal.mts'
+import type { AddOpts } from './git-partial-submodule/internal.mts'
 import {
   cmdAdd,
   cmdClone,
   cmdRestoreSparse,
   cmdSaveSparse,
-} from './git-partial-submodule-commands.mts'
+} from './git-partial-submodule/commands.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 
 const USAGE = `git-partial-submodule — add / clone / save-sparse / restore-sparse partial submodules

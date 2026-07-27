@@ -140,15 +140,13 @@ export interface WorkflowsPayload {
  *    shape.
  * 2. `# socket-wheelhouse-shadow-allow: <reason>` header line — maintainer's
  *    explicit, audit-able commitment that the local workflow inlines logic by
- *    design (e.g. socket-cli's publish-npm.yml does CLI-specific multi-package
- *    release orchestration that doesn't fit the generic shared shape). The
- *    comment text serves as the documented reason.
+ *    design that doesn't fit the generic shared shape. The comment text serves
+ *    as the documented reason.
  */
 export const SHARED_WORKFLOW_BASENAMES = [
   'build.yml',
   'install.yml',
   'lint.yml',
-  'publish-npm.yml',
   'release.yml',
   'setup.yml',
   'test.yml',
