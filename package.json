@@ -48,7 +48,7 @@
     "postinstall": "node scripts/repo/setup.mts --install --quiet",
     "prepare": "node scripts/fleet/install-git-hooks.mts && node scripts/fleet/prepare.mts",
     "fleet:update": "node scripts/repo/bootstrap/fleet.mjs --update",
-    "setup:kimi-user-config": "node scripts/fleet/setup/setup-kimi-user-config.mts",
+    "setup:kimi-user-config": "node scripts/fleet/setup/kimi-user-config.mts",
     "pretest": "pnpm run build:cli && node scripts/repo/warm-dlx-cache.mts",
     "setup-security-tools": "node .claude/hooks/fleet/setup-security-tools/install.mts",
     "ci:local": "node scripts/fleet/agent-ci-skip-locks.mts run --all --quiet --pause-on-failure --github-token",
@@ -59,12 +59,12 @@
     "sync-package-manager-pins": "node scripts/fleet/sync-package-manager-pins.mts",
     "doctor": "node scripts/fleet/doctor.mts",
     "gen:llms-txt": "node scripts/fleet/gen/llms-txt.mts --no-ai",
-    "setup:brew": "node scripts/fleet/setup/setup-brew.mts",
-    "setup:go": "node scripts/fleet/setup/setup-go.mts",
-    "setup:mcp": "node scripts/fleet/setup/setup-mcp.mts",
-    "setup:python": "node scripts/fleet/setup/setup-python.mts",
-    "setup:refero": "node scripts/fleet/setup/setup-refero.mts",
-    "setup:rust": "node scripts/fleet/setup/setup-rust.mts"
+    "setup:brew": "node scripts/fleet/setup/brew.mts",
+    "setup:go": "node scripts/fleet/setup/go.mts",
+    "setup:mcp": "node scripts/fleet/setup/mcp.mts",
+    "setup:python": "node scripts/fleet/setup/python.mts",
+    "setup:refero": "node scripts/fleet/setup/refero.mts",
+    "setup:rust": "node scripts/fleet/setup/rust.mts"
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "catalog:",
