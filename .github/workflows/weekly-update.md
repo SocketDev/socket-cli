@@ -255,13 +255,26 @@ safe-outputs:
     # createCommitOnBranch / GitHub web-flow signature), preserving the fleet's
     # signed-commit invariant without the legacy BOT_GPG_PRIVATE_KEY plumbing.
     #
-    # Positive allowlist of paths a PR may change — the UNION of both cadences: a
-    # weekly /updating touches manifests / lockfiles / submodules / lockstep; a
-    # daily /updating-daily only touches the workspace yaml + lockfile (a subset),
-    # so one allowlist safely covers both.
+    # Positive allowlist of paths a PR may change — the UNION of both cadences
+    # plus every deterministic writer in the update flow. A weekly /updating
+    # touches manifests / lockfiles / submodules / lockstep; a daily
+    # /updating-daily only touches the workspace yaml + lockfile, a subset.
+    # Matcher semantics per the pinned v0.83.2 glob_pattern_helpers: anchored
+    # full-path match, `*` never crosses `/`, `**` does.
+    #
+    # Deliberately NOT allowed — these stay gate-blocked for human review:
+    # model-pricing writes, since vendor pricing pages are egress-blocked in
+    # this workflow and a CI pricing diff would mean fabricated numbers; new
+    # pnpm compat patches under patches/, which are judgment-heavy and
+    # review-worthy; and advisory lockstep surfaces — file-fork mirrors and
+    # the .prettierignore mirror-globs block — which the weekly agent never
+    # auto-applies.
     allowed-files:
       - 'package.json'
-      - '*/package.json'
+      # Workspace member manifests at ANY depth — socket-registry nests them
+      # two deep — bumped by updates and spliced by the fix-harness doctor's
+      # catalog fixer.
+      - '**/package.json'
       - 'pnpm-lock.yaml'
       - '*/pnpm-lock.yaml'
       - '.npmrc'
@@ -269,6 +282,32 @@ safe-outputs:
       - '.gitmodules'
       - '.config/repo/lockstep.json'
       - '.config/lockstep.json'
+      # update.mts pass 3a — fleet-pin lockstep + `-stable` alias reconcile —
+      # mirrors catalog bumps into the cascaded fleet catalog every member
+      # carries, in the same wave as the live bump.
+      - '.config/fleet/pnpm-workspace.fleet.yaml'
+      # Lockstep version-pin rows auto-bump submodule gitlinks; the fleet
+      # convention roots every submodule at upstream/<name>. Single-star
+      # matches exactly the gitlink entry, never files inside the submodule.
+      - 'upstream/*'
+      # Coverage phase: scripts/fleet/gen/coverage-badge.mts rewrites the root
+      # README badge reference and the repo-local badge SVG — the 2026-07-27
+      # socket-registry gate block.
+      - 'README.md'
+      - 'assets/repo/badges/coverage.svg'
+      # The fix harness runs the deterministic CLAUDE.md fleet-block over-cap
+      # trimmer, scripts/fleet/lib/claude-md-trim.mts — the 2026-07-27
+      # socket-btm gate block. The trim converges on the canonical template
+      # content, so letting it ride the weekly PR beats blocking the run.
+      - 'CLAUDE.md'
+      # Wheelhouse-only twins of the writers above, absent in member repos:
+      # the template CLAUDE.md trim target, the stable-alias reconcile +
+      # fleet-pin mirror into the canonical template catalogs, and the
+      # override-pin manifest applyOverridePinLockstep rewrites.
+      - 'template/base/CLAUDE.md'
+      - 'template/base/pnpm-workspace.yaml'
+      - 'template/base/.config/fleet/pnpm-workspace.fleet.yaml'
+      - 'scripts/repo/sync-scaffolding/manifest/catalog-overrides.mts'
     # gh-aw protects manifests/lockfiles by default (supply-chain guard) with a
     # request_review block — but changing exactly those IS this workflow's job,
     # and allowed-files already constrains the surface. Disable the redundant gate.
