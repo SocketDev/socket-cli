@@ -23,7 +23,7 @@ export function fileExists(filePath) {
 /**
  * Main validation function.
  */
-export async function validate() {
+export async function validatePackage() {
   logger.log('')
   logger.log('='.repeat(60))
   logger.log(colors.blue('CLI with Sentry Package Validation'))
@@ -160,7 +160,7 @@ export async function validate() {
 }
 
 // Run validation.
-validate().catch(e => {
+validatePackage().catch(e => {
   logger.error('')
   logger.fail(`Unexpected error: ${e.message}`)
   logger.error('')
