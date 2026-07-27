@@ -14,7 +14,7 @@ git history then carries only what it owns, not thousands of mirrored files.
   from the download/fetch action, not from git-synced commits.
 - **Tracked (stays in git)** — *hybrid* files the cascade MERGES, where the repo
   owns part: `CLAUDE.md` (fleet block + repo postamble), `pnpm-workspace.yaml`
-  (fleet sections + repo `packages:`), `package.json`. Plus `bootstrap/fleet.mjs`
+  (fleet sections + repo `packages:`), `package.json`. Plus `scripts/repo/bootstrap/fleet.mjs`
   itself — the dep-0 bootstrap. It is the fetcher, so it can't ship inside the
   bundle it fetches: it's EXCLUDED from the release (`releaseExclude` in the
   mirror manifest) and cascaded the OLD way — a manual safe-copy that paves over
@@ -22,7 +22,7 @@ git history then carries only what it owns, not thousands of mirrored files.
   set, so a bootstrap change reaches members via a fleet-wave cascade, not the
   belt fetch.
 
-The untrack set is computed by `bootstrap/fleet.mjs --thin` (`thinIgnoreEntries`):
+The untrack set is computed by `scripts/repo/bootstrap/fleet.mjs --thin` (`thinIgnoreEntries`):
 it collapses only to the `fleet/` tier (convention-guaranteed all-fleet) and
 lists every other wholly-fleet file EXACTLY — so it can NEVER catch a repo-owned
 sibling (`.claude/hooks/repo/`, `.config/repo/`, the member's own
@@ -41,8 +41,9 @@ A thin member repopulates its payload BOTH ways — neither alone is enough, so
 both are required (and enforced):
 
 - **Belt (dev / clone)** — `package.json` `prepare` starts with
-  `node bootstrap/prepare.mts` (`PREPARE_FETCH` in `bootstrap/src/install.mts`),
-  which runs `node bootstrap/fleet.mjs --if-current` then reconciles the
+  `node scripts/repo/bootstrap/prepare.mts` (`PREPARE_FETCH` in
+  `template/bootstrap/src/install.mts`),
+  which runs `node scripts/repo/bootstrap/fleet.mjs --if-current` then reconciles the
   install. A fresh clone / `pnpm install` fetches + applies the pinned bundle
   BEFORE the (itself-untracked) install-git-hooks step + any chained build.
   `--if-current` is idempotent: it skips when the pinned ref is already applied
@@ -63,7 +64,7 @@ both are required (and enforced):
 that went thin (its `.gitignore` untracks the fleet payload — detected by the
 `scripts/fleet/` untrack entry, which every repo has but only a thin one
 gitignores) is missing the prepare belt. A non-thin member (it tracks the
-payload) is exempt. Run `node bootstrap/fleet.mjs --wire` to add the belt +
+payload) is exempt. Run `node scripts/repo/bootstrap/fleet.mjs --wire` to add the belt +
 `sync-fleet` script. The CI suspenders are enforced by the `ci.yml`-shape check
 (workflow-fleet-block), which pins the fleet block that runs the
 setup-and-install composite.
@@ -75,7 +76,7 @@ Going thin never untracks `.github/workflows/**` or
 a scheduled workflow registers its cron from the DEFAULT branch's committed
 file, and a `uses: ./.github/actions/...` composite must exist at checkout —
 before any fetch step could run. Workflow + composite updates therefore always
-travel in the cascade COMMIT, never the release bundle. Same for `bootstrap/`
+travel in the cascade COMMIT, never the release bundle. Same for `scripts/repo/bootstrap/`
 itself (the fetcher can't ship inside the bundle it fetches — `releaseExclude`
 in the mirror manifest) and the hybrid-spliced files the repo part-owns.
 
@@ -85,7 +86,7 @@ A bundle update reaches a thin member as a true SYNC, and two different
 mechanisms prune what a new release dropped:
 
 - **The applied-files record**: after placing the bundle,
-  `pruneStaleFleetFiles()` (`bootstrap/src/install.mts`) deletes any file the
+  `pruneStaleFleetFiles()` (`template/bootstrap/src/install.mts`) deletes any file the
   LAST-applied manifest owned (the `applied-files` record under
   `node_modules/.cache/`) that the fetched manifest no longer lists. Renames,
   deletions, and additions inside a mirror tree need NO bookkeeping — but the
@@ -97,7 +98,7 @@ mechanisms prune what a new release dropped:
   `scripts/repo/sync-scaffolding/manifest/bundle.json`): the durable deletion
   record. The cascade fixer `safeDelete`s each path in every member, AND
   `make-release-bundle` ships the same list in the bundle manifest as
-  `removedPaths`, which both installers (`bootstrap/src/install.mts`
+  `removedPaths`, which both installers (`template/bootstrap/src/install.mts`
   `removeTombstonedPaths()` + `scripts/fleet/fetch-fleet-bundle.mts`) delete
   after placement — so a moved/retired path heals on the next refresh even
   with no applied-files record. A move must ship its deletion: retire a path,
@@ -131,8 +132,8 @@ Everything else arrives via the belt fetch on the next `pnpm install`.
 
 ## Commands
 
-- `node bootstrap/fleet.mjs --ref fleet-<sha> --thin --wire` — convert a repo to
+- `node scripts/repo/bootstrap/fleet.mjs --ref fleet-<sha> --thin --wire` — convert a repo to
   thin: fetch + apply, untrack the payload, write the belt.
-- `node bootstrap/fleet.mjs --if-current` — the belt/CI fetch (idempotent, ref
+- `node scripts/repo/bootstrap/fleet.mjs --if-current` — the belt/CI fetch (idempotent, ref
   from settings).
 - `pnpm run sync-fleet` — manual full re-fetch.

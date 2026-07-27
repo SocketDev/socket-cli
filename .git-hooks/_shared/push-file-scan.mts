@@ -176,9 +176,10 @@ export const scanFilesInRange = (range: string): number => {
       !file.startsWith('.claude/hooks/') &&
       !file.startsWith('.git-hooks/') &&
       !file.startsWith('scripts/') &&
-      // The dep-0 bootstrap (bootstrap/fleet.mjs, bootstrap/prepare.mts) runs
-      // before any dependency exists, so it never imports socket-lib's logger
-      // and must call console.* directly — same exemption as scripts/.
+      // The dep-0 bootstrap runs before any dependency exists, so it never
+      // imports socket-lib's logger and must call console.* directly. Its live
+      // home, scripts/repo/bootstrap/, is covered by the scripts/ exemption;
+      // this covers the LEGACY root copies until the fleet sweep lands.
       !file.startsWith('bootstrap/') &&
       // template/ holds the canonical sources that cascade to
       // .claude/hooks/, .git-hooks/, and scripts/ in downstream

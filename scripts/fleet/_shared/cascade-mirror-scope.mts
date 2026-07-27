@@ -36,7 +36,7 @@ export const CASCADE_MIRROR_GLOBS: readonly string[] = [
   '.config/repo/vitest.config.mts',
   '.git-hooks/**',
   '.mcp.json',
-  'bootstrap/**',
+  'scripts/repo/bootstrap/**',
   'docs/agents.md/fleet/**',
   'scripts/fleet/**',
   'test/fleet/_shared/**',

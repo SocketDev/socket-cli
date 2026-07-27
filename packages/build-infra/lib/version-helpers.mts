@@ -21,7 +21,8 @@ export function getNodeVersion(): string {
 }
 
 /**
- * Read a pinned tool version from the package's external-tools.json.
+ * Read a pinned tool version from the package's
+ * .config/repo/external-tools.json.
  *
  * @throws When the file is missing or the tool has no version recorded.
  */
@@ -29,7 +30,7 @@ export async function getToolVersion(
   packageRoot: string,
   toolName: string,
 ): Promise<string> {
-  const filePath = path.join(packageRoot, 'external-tools.json')
+  const filePath = path.join(packageRoot, '.config/repo/external-tools.json')
   let raw: string
   try {
     raw = await fs.readFile(filePath, 'utf8')

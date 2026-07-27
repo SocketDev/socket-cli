@@ -133,6 +133,18 @@ export function resolveMaxWorkers(): number {
     resolveFallbackMaxWorkers(),
   )
 }
+/**
+ * Fast-fail bail count. A coverage run MUST execute the FULL suite to measure
+ * it, so bail is INERT under coverage (like the lane filter): bailing on the
+ * first failure aborts ~half the suite and its subprocess coverage, collapsing
+ * the aggregate to a phantom partial (#79: CI read 36% vs the true ~73% because
+ * one failing test bailed the run after 249 of 1224 files). Plain CI test jobs
+ * (no coverage) keep fast-fail bail=1; local (no CI) runs the whole suite.
+ * Pure so the resolution is unit-testable without a real CI/coverage env.
+ */
+export function resolveBail(isCoverage: boolean, isCI: boolean): number {
+  return !isCoverage && isCI ? 1 : 0
+}
 export function resolvePool(): 'forks' | 'threads' {
   const fleet = readVitestConfigTier('.config/fleet/vitest.json').pool
   const repo = readVitestConfigTier('.config/repo/vitest.json').pool
@@ -327,7 +339,7 @@ export default defineConfig({
     // locally.
     testTimeout: getCI() ? 60_000 : isCoverageEnabled ? 30_000 : 10_000,
     hookTimeout: getCI() ? 60_000 : isCoverageEnabled ? 30_000 : 10_000,
-    bail: getCI() ? 1 : 0,
+    bail: resolveBail(isCoverageEnabled, Boolean(getCI())),
     // Coverage shape comes from the fleet base merged with the repo-owned
     // `.config/repo/coverage.json` overlay (include replace, exclude
     // add/remove) — one canonical exclude list instead of a drifted copy here.

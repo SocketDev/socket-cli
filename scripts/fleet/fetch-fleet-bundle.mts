@@ -21,6 +21,7 @@ import {
   mkdtempSync,
   readdirSync,
   readFileSync,
+  renameSync,
   writeFileSync,
 } from 'node:fs'
 import os from 'node:os'
@@ -84,6 +85,7 @@ export function parseArgs(argv: readonly string[]): FetchConfig {
 // paths a past bundle shipped that have since moved/retired.
 export interface BundleManifest {
   readonly files: Record<string, string>
+  readonly movedPaths?: ReadonlyArray<{ from: string; to: string }> | undefined
   readonly removedPaths?: readonly string[] | undefined
   readonly templateSha: string
   readonly version: string

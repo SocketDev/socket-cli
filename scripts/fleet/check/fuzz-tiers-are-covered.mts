@@ -208,6 +208,8 @@ export const INFRA_TS_PREFIXES = [
   '.claude/',
   '.config/',
   '.git-hooks/',
+  // Legacy root bootstrap copies — the live home, scripts/repo/bootstrap/, is
+  // covered by the scripts/ prefix. Drop once the fleet sweep lands.
   'bootstrap/',
   'scripts/',
   'test/fleet/',

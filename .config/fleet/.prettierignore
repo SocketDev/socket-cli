@@ -34,7 +34,10 @@
 # The rolldown-inlined dep-0 fetcher — a build artifact (from template/bootstrap/
 # src/* via scripts/repo/gen/bootstrap.mts), not hand-written source; oxfmt would
 # fight the bundler output. The template/bootstrap/src/* modules ARE formatted.
+# The .d.mts sibling is the generator's rolldown-plugin-dts declaration emit —
+# same contract.
 **/bootstrap/fleet.mjs
+**/bootstrap/fleet.d.mts
 
 # The rolldown-bundled fleet oxlint plugin (scripts/fleet/build-oxlint-bundle.mts
 # output) — generated + gitignored; oxfmt would fight the bundler output. The
@@ -66,6 +69,10 @@
 # stay byte-identical to their pinned upstream or the owning sync's drift check
 # fires on every formatter pass.
 **/test/fixtures/**
+# `tests/fixtures/` is the cargo-convention spelling of the same contract —
+# a Rust crate's `tests/` dir carrying language fixtures (e.g. golden .d.ts
+# inputs) that must stay byte-stable for its harness.
+**/tests/fixtures/**
 **/upstream/**
 
 # gh-aw generated workflows. `gh aw compile` turns a `<name>.md` agentic workflow

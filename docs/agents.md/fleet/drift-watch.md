@@ -24,10 +24,12 @@ The recovery model is symmetric. If a cascade over-applies or applies a stale va
 
 ## Where drift commonly hides
 
-- **`external-tools.json`** (repo root, read at runtime by the inlined
-  `.github/actions/fleet/*` composites): tool versions plus per-platform
-  sha256s. Bumped by the tool-pin cascade (`scripts/repo/cascade-fleet.mts`),
-  never hand-edited; a hand-diverged copy is drift.
+- **`.config/repo/external-tools.json`** (read by the local install/check
+  surface — `install-sfw`, `path-tools-are-at-pinned-version`; the inlined
+  `.github/actions/fleet/*` composites read their bundled `_shared/` copy):
+  tool versions plus per-platform sha256s. Bumped by the tool-pin cascade
+  (`scripts/repo/cascade-fleet.mts`), never hand-edited; a hand-diverged copy
+  is drift.
 - **`.github/workflows/*.yml` + `.github/actions/fleet/*`**: cascade-owned
   whole files (see "Workflows and composites are inlined" below); a member
   copy that differs from the template is drift.

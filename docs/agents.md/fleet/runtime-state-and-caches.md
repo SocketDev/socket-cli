@@ -25,7 +25,7 @@ untracked, dirty file.)
     with only a path (walk to the nearest `node_modules`). The segment is the
     WRITING code's tier — cascaded fleet code writes under `fleet/`, repo-owned
     code under `repo/` — mirroring `.claude/hooks/{fleet,repo}`. The bootstrap
-    fetcher (`bootstrap/fleet.mjs`) runs at `prepare`, BEFORE the payload +
+    fetcher (`scripts/repo/bootstrap/fleet.mjs`) runs at `prepare`, BEFORE the payload +
     socket-lib exist, so it is strictly dep-0 —
     `node_modules/.cache/fleet/socket-wheelhouse/` is its cacache-equivalent.
 
@@ -45,7 +45,7 @@ untracked, dirty file.)
   runtime state.
 - **`node_modules/.cache/fleet/socket-wheelhouse/bundle-applied`** (dep-0 fetcher
   cache) — the bootstrap fetcher records the `bundle.ref` it last applied so
-  `bootstrap/fleet.mjs --if-current` skips a redundant warm fetch in local dev. A
+  `scripts/repo/bootstrap/fleet.mjs --if-current` skips a redundant warm fetch in local dev. A
   fresh clone / CI has no `node_modules/.cache`, so the fetch runs. Inspect:
   `cat node_modules/.cache/fleet/socket-wheelhouse/bundle-applied`; clear: delete it (or
   the whole `.cache` dir) and the next `prepare` re-fetches. The fetcher migrates

@@ -3,7 +3,7 @@
  *   Every tool-data file across the fleet uses one container shape — `{ tools:
  *   { <name>: ToolEntry } }`:
  *
- *   - build/release tools — `external-tools.json` at repo root,
+ *   - build/release tools — `.config/repo/external-tools.json`,
  *   - security-hook tools —
  *     `.claude/hooks/fleet/setup-security-tools/external-tools.json`,
  *   - CLI-VFS-bundled tools — `packages/cli/bundle-tools.json`. They share one

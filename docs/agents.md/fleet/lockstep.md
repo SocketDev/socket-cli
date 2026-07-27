@@ -6,7 +6,7 @@ vendored file forks, pinned submodules, behavioral reimplementations, spec
 conformance, and sibling language ports. One manifest declares what must stay
 in step; `pnpm run lockstep` reports where it hasn't.
 
-Not to be confused with `bootstrap/src/lockstep.mts`, which enforces the
+Not to be confused with `template/bootstrap/src/lockstep.mts`, which enforces the
 thin-distribution bundle-pin invariant (`bundle.cascadeSha === templateSha`) —
 same word, different subsystem (see
 [`thin-distribution.md`](thin-distribution.md)).

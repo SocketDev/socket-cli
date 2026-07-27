@@ -66,7 +66,7 @@ runs:
       run: | # zizmor: ignore[github-env]
         set -euo pipefail
         # Bundle fleet pins beside the action so sparse bootstrap checkouts have them.
-        # A repo-root external-tools.json is optional and may contain repo-only tools.
+        # A repo's own .config/repo/external-tools.json is optional and may contain repo-only tools.
         TOOLS_FILE="${GITHUB_ACTION_PATH}/../_shared/external-tools.json"
         if [ ! -f "$TOOLS_FILE" ]; then
           echo "× the fleet setup action is broken: external-tools.json not found at ${TOOLS_FILE}." >&2
@@ -100,14 +100,20 @@ runs:
           echo "× failed to stage external-tools.json at ${TOOLS_DEST} (missing or empty after copy)." >&2
           exit 1
         fi
+        # Branch decisions — the tools-file schema probe and the extended-env
+        # disabled-seam gating — live in the co-located plan-setup-tools.mjs:
+        # pure functions, unit-tested in the wheelhouse, run via
+        # $GITHUB_ACTION_PATH so it travels when a member consumes the action
+        # — same shape as github-status-check's probe-github-status.mjs.
+        # Inputs go in via env; decisions come back on stdout.
+        PLAN="${GITHUB_ACTION_PATH}/plan-setup-tools.mjs"
+        export TOOLS_FILE
         # The staged file always exists at $TOOLS_DEST; only the env-var
         # pointer to it is gated. Disabled-seam: the cp above stays
         # unconditional (the wire-in point), but the SOCKET_TOOL_CHECKSUMS_FILE
         # export — which no load-bearing step reads — is off unless a consumer
         # opts in via extended-env. See disabled-seam-pattern (fleet docs).
-        if [ "$EXTENDED_ENV" = "true" ]; then
-          echo "SOCKET_TOOL_CHECKSUMS_FILE=$TOOLS_DEST" >> "${GITHUB_ENV:-/dev/null}"
-        fi
+        TOOLS_DEST="$TOOLS_DEST" node "$PLAN" pnpm-checksums-env >> "${GITHUB_ENV:-/dev/null}"
         # Read JSON values via lib/jq.mjs. Node is preinstalled on
         # every GitHub-hosted runner image and in node:* Docker base
         # images, so this avoids depending on jq (absent from
@@ -118,8 +124,7 @@ runs:
         JQ="${GITHUB_ACTION_PATH}/../_shared/jq.mjs"
         # The tools file nests entries under `tools` (current schema) or at the
         # top level (legacy flat). Probe once; an empty $NS splits away.
-        NS="tools"
-        node "$JQ" "$TOOLS_FILE" tools >/dev/null 2>&1 || NS=""
+        NS="$(node "$PLAN" namespace)"
         PNPM_VERSION="$(node "$JQ" "$TOOLS_FILE" $NS pnpm version)"
         PNPM_DIR="${RUNNER_TEMP:-/tmp}/pnpm-bin"
         # Canonical platform string (linux-x64, linux-arm64-musl,
@@ -186,16 +191,8 @@ runs:
         # load-bearing wire-in), so these provenance vars have no required
         # consumer — gated off unless extended-env opts in. See
         # disabled-seam-pattern (fleet docs).
-        if [ "$EXTENDED_ENV" = "true" ]; then
-          {
-            echo "SOCKET_TOOL_PNPM_VERSION=$PNPM_VERSION"
-            echo "SOCKET_TOOL_PNPM_PLATFORM=$PLATFORM"
-            echo "SOCKET_TOOL_PNPM_ASSET=$ASSET"
-            echo "SOCKET_TOOL_PNPM_INTEGRITY=$INTEGRITY"
-            echo "SOCKET_TOOL_PNPM_BIN=$PNPM_BIN"
-            echo "SOCKET_TOOL_PNPM_DIR=$PNPM_DIR"
-          } >> "${GITHUB_ENV:-/dev/null}"
-        fi
+        export PNPM_VERSION PLATFORM ASSET INTEGRITY PNPM_BIN PNPM_DIR
+        node "$PLAN" pnpm-env >> "${GITHUB_ENV:-/dev/null}"
 
     - name: Setup Node.js
       uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0 (2026-05-15)
@@ -240,53 +237,45 @@ runs:
         # install at the currently-detected runner.
         TOOLS_FILE="${GITHUB_ACTION_PATH}/../_shared/external-tools.json"
         JQ="${GITHUB_ACTION_PATH}/../_shared/jq.mjs"
-        # The tools file nests entries under `tools` (current schema) or at the
-        # top level (legacy flat). Probe once; an empty $NS splits away.
-        NS="tools"
-        node "$JQ" "$TOOLS_FILE" tools >/dev/null 2>&1 || NS=""
         PLATFORM_TOOL="${GITHUB_ACTION_PATH}/../_shared/platform.mjs"
         INSTALL_TOOL="${GITHUB_ACTION_PATH}/../_shared/install-tool.mjs"
-        # Enterprise flavor when SOCKET_API_TOKEN is set, otherwise free.
-        # Enterprise downloads from the private firewall-release repo
-        # are auth'd via GITHUB_TOKEN inside install-tool.mjs.
-        if [ -n "$SOCKET_API_TOKEN" ]; then
-          SFW_FLAVOR="enterprise"
-          SFW_REPO="SocketDev/firewall-release"
-        else
-          SFW_FLAVOR="free"
-          SFW_REPO="SocketDev/sfw-free"
-        fi
-        # Shape probe: canonical entries are `sfw-free`/`sfw-enterprise`
-        # (external-tools-schema.mts — ToolEntry rejects nested flavor
-        # objects); legacy flat files use `sfw.{version,free,enterprise}`.
-        # sfw_path echoes the entry path for the ACTIVE flavor — unquoted
-        # at the call sites (like $NS) so the legacy two-word path splits.
-        SFW_SHAPE="canonical"
-        node "$JQ" "$TOOLS_FILE" $NS sfw-free version >/dev/null 2>&1 || SFW_SHAPE="legacy"
-        sfw_path() {
-          if [ "$SFW_SHAPE" = "canonical" ]; then
-            echo "sfw-${SFW_FLAVOR}"
-          else
-            echo "sfw ${SFW_FLAVOR}"
-          fi
-        }
-        if [ "$SFW_SHAPE" = "canonical" ]; then
-          SFW_VERSION="$(node "$JQ" "$TOOLS_FILE" $NS "sfw-${SFW_FLAVOR}" version)"
-        else
-          SFW_VERSION="$(node "$JQ" "$TOOLS_FILE" $NS sfw version)"
-        fi
+        # Branch decisions — flavor selection on SOCKET_API_TOKEN, the
+        # tools-file schema probes (tools namespace + canonical-vs-legacy sfw
+        # shape), probe-output classification, and the GITHUB_ENV export plan
+        # — live in the co-located plan-setup-tools.mjs: pure functions,
+        # unit-tested in the wheelhouse, run via $GITHUB_ACTION_PATH so it
+        # travels when a member consumes the action. Inputs go in via env;
+        # decisions come back on stdout. The schema probes go through the
+        # same _shared jq.mjs the value reads below use, so `extends`-chain
+        # semantics stay single-sourced.
+        PLAN="${GITHUB_ACTION_PATH}/plan-setup-tools.mjs"
+        export TOOLS_FILE
+        # $SFW_PATH is the entry path for the ACTIVE flavor — unquoted at the
+        # call sites (like $NS) so the legacy two-word path splits.
+        # $SFW_VERSION_PATH differs from it on legacy files, which share one
+        # `sfw version` across flavors.
+        SFW_SELECT="$(node "$PLAN" select-sfw)"
+        {
+          read -r NS
+          read -r SFW_SHAPE
+          read -r SFW_FLAVOR
+          read -r SFW_REPO
+          read -r SFW_VERSION_PATH
+          read -r SFW_PATH
+        } <<<"$SFW_SELECT"
+        SFW_VERSION="$(node "$JQ" "$TOOLS_FILE" $NS $SFW_VERSION_PATH)"
         PLATFORM="$(node "$PLATFORM_TOOL")"
         # Hard-fail with a clear message on unsupported platforms (eg
         # win-arm64) rather than silently skipping. SFW is a required
         # dependency of the install flow, unlike zizmor (audit-only).
-        if ! ASSET="$(node "$JQ" "$TOOLS_FILE" $NS $(sfw_path) platforms "$PLATFORM" asset 2>/dev/null)"; then
+        if ! ASSET="$(node "$JQ" "$TOOLS_FILE" $NS $SFW_PATH platforms "$PLATFORM" asset 2>/dev/null)"; then
           echo "× SFW (${SFW_FLAVOR}) is not published for ${PLATFORM} at v${SFW_VERSION}." >&2
           echo "  Supported: linux-{x64,arm64}{,-musl}, darwin-{x64,arm64}, win-x64." >&2
           echo "  win-arm64 has no upstream binary — skip SFW-dependent steps on that runner or wait for upstream support." >&2
           exit 1
         fi
-        INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS $(sfw_path) platforms "$PLATFORM" integrity)"
-        SFW_BIN_NAME="$(node "$JQ" "$TOOLS_FILE" $NS $(sfw_path) binaryName)"
+        INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS $SFW_PATH platforms "$PLATFORM" integrity)"
+        SFW_BIN_NAME="$(node "$JQ" "$TOOLS_FILE" $NS $SFW_PATH binaryName)"
         if [[ "$ASSET" == *.exe ]]; then
           SFW_BIN_NAME="${SFW_BIN_NAME}.exe"
         fi
@@ -352,52 +341,69 @@ runs:
           for delay in "${PROBE_DELAYS[@]}"; do
             PROBE_ATTEMPT=$((PROBE_ATTEMPT + 1))
             SFW_PROBE_OUT="$("$SFW_BIN" --version 2>&1 || true)"
-            # Success = probe didn't surface a 5xx response. Anything
-            # else (clean version output, 403/SKU error, hostname
-            # resolution failure) takes us to the post-probe branches.
-            #
-            # 5xx shapes seen in the wild:
-            #   "Socket API returned status code 503"   (sfw stdout)
-            #   "validation got status of 503"          (setup-and-install)
-            if ! echo "$SFW_PROBE_OUT" | grep -qE "status (code|of) 5[0-9][0-9]"; then
+            # Success = probe didn't surface a 5xx response. Anything else
+            # (clean version output, 403/SKU error, hostname resolution
+            # failure) takes us to the post-probe branches. The 5xx shapes
+            # and the SKU string live in plan-setup-tools.mjs.
+            PROBE_CLASS="$(SFW_PROBE_OUT="$SFW_PROBE_OUT" node "$PLAN" classify-sfw-probe)"
+            if [ "$PROBE_CLASS" != "5xx" ]; then
               PROBE_SUCCESS=true
               break
             fi
             echo "Note: sfw-enterprise probe attempt $PROBE_ATTEMPT/${#PROBE_DELAYS[@]} got 5xx from Socket API; retrying in ${delay}s…" >&2
             sleep "$delay"
           done
+          SFW_FALLBACK=false
           if ! "$PROBE_SUCCESS"; then
             echo "Note: sfw-enterprise probe still 5xx after ${#PROBE_DELAYS[@]} attempts — Socket API likely having an outage." >&2
             echo "  Last probe output:" >&2
             echo "$SFW_PROBE_OUT" | head -3 | sed 's/^/    /' >&2
             echo "  Falling back to sfw-free for the rest of the workflow." >&2
-            SFW_FLAVOR="free"
-            SFW_REPO="SocketDev/sfw-free"
-          elif echo "$SFW_PROBE_OUT" | grep -q "identifying active SKUs"; then
+            SFW_FALLBACK=true
+          elif [ "$PROBE_CLASS" = "sku" ]; then
             echo "Note: sfw-enterprise SKU probe returned 403 — the SOCKET_API_TOKEN" >&2
             echo "  in this CI is valid but lacks the firewall-enterprise SKU." >&2
             echo "  Falling back to sfw-free for the rest of the workflow." >&2
-            SFW_FLAVOR="free"
-            SFW_REPO="SocketDev/sfw-free"
+            SFW_FALLBACK=true
           fi
-          if [ "$SFW_FLAVOR" = "free" ]; then
-            # Canonical entries carry per-flavor versions — re-read for the
-            # flavor we just fell back to (legacy shares one version).
-            if [ "$SFW_SHAPE" = "canonical" ]; then
-              SFW_VERSION="$(node "$JQ" "$TOOLS_FILE" $NS sfw-free version)"
+          if [ "$SFW_FALLBACK" = "true" ]; then
+            # Free-flavor re-selection: fallback-sfw echoes a NON-EMPTY
+            # version path only when a re-read is due — canonical entries
+            # carry per-flavor versions; legacy shares one.
+            SFW_SELECT="$(SFW_SHAPE="$SFW_SHAPE" node "$PLAN" fallback-sfw)"
+            {
+              read -r SFW_FLAVOR
+              read -r SFW_REPO
+              read -r SFW_VERSION_PATH
+              read -r SFW_PATH
+            } <<<"$SFW_SELECT"
+            if [ -n "$SFW_VERSION_PATH" ]; then
+              SFW_VERSION="$(node "$JQ" "$TOOLS_FILE" $NS $SFW_VERSION_PATH)"
             fi
-            if ! ASSET="$(node "$JQ" "$TOOLS_FILE" $NS $(sfw_path) platforms "$PLATFORM" asset 2>/dev/null)"; then
+            if ! ASSET="$(node "$JQ" "$TOOLS_FILE" $NS $SFW_PATH platforms "$PLATFORM" asset 2>/dev/null)"; then
               echo "× SFW-free fallback: no asset for ${PLATFORM} at v${SFW_VERSION}." >&2
               exit 1
             fi
-            INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS $(sfw_path) platforms "$PLATFORM" integrity)"
-            SFW_BIN_NAME="$(node "$JQ" "$TOOLS_FILE" $NS $(sfw_path) binaryName)"
+            INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS $SFW_PATH platforms "$PLATFORM" integrity)"
+            SFW_BIN_NAME="$(node "$JQ" "$TOOLS_FILE" $NS $SFW_PATH binaryName)"
+            if [[ "$ASSET" == *.exe ]]; then
+              SFW_BIN_NAME="${SFW_BIN_NAME}.exe"
+            fi
             rm -rf "$SFW_DIR"
             mkdir -p "$SFW_DIR"
+            # DIVERGENCE from the pinned characterization behavior, the
+            # deliberate-fix path scenarios S5/S10/S11 reserved: the old
+            # re-install passed six args — repo, tag, asset, integrity, dir,
+            # bin — to install-tool.mjs, whose signature is <url> <integrity>
+            # <dest-dir> <bin-name>, so every SKU-403/outage fallback
+            # hard-failed at parseIntegrity with "unrecognized integrity
+            # format: v<version>" instead of downgrading. The call now
+            # mirrors the primary install above: URL composed from
+            # repo/version/asset, then integrity, dest dir, bin name — and
+            # the re-read bin name takes the same .exe suffix the primary
+            # path applies.
             node "$INSTALL_TOOL" \
-              "$SFW_REPO" \
-              "v${SFW_VERSION}" \
-              "$ASSET" \
+              "https://github.com/${SFW_REPO}/releases/download/v${SFW_VERSION}/${ASSET}" \
               "$INTEGRITY" \
               "$SFW_DIR" \
               "$SFW_BIN_NAME"
@@ -409,45 +415,15 @@ runs:
             echo "sfw-free (fallback) installed: $(ls -la "$SFW_BIN")"
           fi
         fi
-        SFW_IS_ENTERPRISE=false
-        if [ "$SFW_FLAVOR" = "enterprise" ]; then
-          SFW_IS_ENTERPRISE=true
-        fi
-        # Export the API token under BOTH names whenever it is present —
-        # not only in the enterprise branch. SOCKET_API_TOKEN is canonical;
-        # SOCKET_API_KEY is the same value under the name the dev-machine OS
-        # keychain stores, so CI and local expose the identical var name (the
-        # only sanctioned CI-vs-local difference is the transport: secret-env
-        # in CI, keychain locally — the value and the name match). Downstream
-        # consumers (sfw, scripts, tests) that read either name work in both.
-        if [ -n "$SOCKET_API_TOKEN" ]; then
-          {
-            echo "SOCKET_API_TOKEN=$SOCKET_API_TOKEN"
-            echo "SOCKET_API_KEY=$SOCKET_API_TOKEN"
-          } >> "${GITHUB_ENV:-/dev/null}"
-        fi
-        # SFW_BIN + SFW_IS_ENTERPRISE are load-bearing (external steps run
-        # `[ -x "$SFW_BIN" ]`; the Create-shims step reads SFW_IS_ENTERPRISE
-        # cross-step) — always exported. The SOCKET_TOOL_SFW_* provenance has
-        # no required consumer; disabled-seam-gated off unless extended-env
-        # opts in. See disabled-seam-pattern (fleet docs).
-        # SFW_SILENT keeps the firewall's stdout banners out of every
-        # wrapped command — scripts that parse a tool's stdout (pack --json,
-        # the format pipe) would otherwise ingest banner lines as data.
-        {
-          echo "SFW_BIN=$SFW_BIN"
-          echo "SFW_IS_ENTERPRISE=$SFW_IS_ENTERPRISE"
-          echo "SFW_SILENT=true"
-        } >> "${GITHUB_ENV:-/dev/null}"
-        if [ "$EXTENDED_ENV" = "true" ]; then
-          {
-            echo "SOCKET_TOOL_SFW_FLAVOR=$SFW_FLAVOR"
-            echo "SOCKET_TOOL_SFW_VERSION=$SFW_VERSION"
-            echo "SOCKET_TOOL_SFW_PLATFORM=$PLATFORM"
-            echo "SOCKET_TOOL_SFW_ASSET=$ASSET"
-            echo "SOCKET_TOOL_SFW_INTEGRITY=$INTEGRITY"
-          } >> "${GITHUB_ENV:-/dev/null}"
-        fi
+        # The step's whole GITHUB_ENV plan — the API token under BOTH names
+        # (SOCKET_API_TOKEN canonical + SOCKET_API_KEY, the dev-machine
+        # keychain name) whenever it is present, the always-exported
+        # load-bearing trio (SFW_BIN, SFW_IS_ENTERPRISE derived from the
+        # FINAL flavor, SFW_SILENT), and the extended-env-gated
+        # SOCKET_TOOL_SFW_* provenance — comes from plan-setup-tools.mjs,
+        # where the WHY for each group is documented.
+        export SFW_BIN SFW_FLAVOR SFW_VERSION PLATFORM ASSET INTEGRITY
+        node "$PLAN" sfw-env >> "${GITHUB_ENV:-/dev/null}"
 
     - name: Create sfw shims
       shell: bash

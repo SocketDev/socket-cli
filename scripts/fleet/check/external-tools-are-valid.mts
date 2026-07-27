@@ -13,7 +13,7 @@
 // fails `check --all` on any violation, so drift is caught at the edit instead.
 //
 // Scanned files (whichever exist in the repo), all the `{ tools }` shape:
-//   - <root>/external-tools.json
+//   - <root>/.config/repo/external-tools.json
 //   - <root>/packages/* / **/bundle-tools.json
 //   - .claude/hooks/**/external-tools.json
 //

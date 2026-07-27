@@ -13,7 +13,9 @@
  *      `@file` doc, the `@type` JSDoc, the `meta` block, and `export default
  *      plugin` are left byte-for-byte.
  *   2. `.config/fleet/oxlintrc.json` — the top-level `rules` block. Every rule
- *      gets a `socket/<id>: "error"` activation. Activations for rules no
+ *      gets a `socket/<id>: "error"` activation, EXCEPT a rule whose existing
+ *      value is an array (options and/or a deliberate severity override like
+ *      `["warn"]`), which is preserved verbatim. Activations for rules no
  *      longer present are dropped. Non-socket rules, the `overrides` block
  *      (which carries intentional per-path socket disables), `ignorePatterns`,
  *      and existing key ordering are all preserved — missing socket rules are
@@ -347,6 +349,13 @@ export function rewriteOxlintrc(
   const newSocketLines = active.map(id => {
     const key = `${SOCKET_PREFIX}${id}`
     const prev = existing[key]
+    // Plain-string activations are normalized to "error"; an ARRAY-form value is
+    // preserved verbatim. That array form is how a rule carries options AND how
+    // a deliberate severity override survives regen — e.g.
+    // `socket/no-required-in-options-bag` is pinned to `["warn"]` in oxlintrc:
+    // its error-rollout was premature (114 legitimate *Options config-bag idioms
+    // across the fleet), so it warns pending incremental migration. Do not
+    // flatten these back to "error".
     const value = Array.isArray(prev) ? prev : 'error'
     return `${indent}${JSON.stringify(key)}: ${renderValue(value)},`
   })

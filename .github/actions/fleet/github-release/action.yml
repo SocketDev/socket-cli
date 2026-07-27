@@ -43,7 +43,12 @@ runs:
   using: composite
   steps:
     # Single bash step; every input is env-mapped so no ${{ inputs.* }} is
-    # interpolated into shell (zizmor template-injection).
+    # interpolated into shell (zizmor template-injection). The gh probes stay
+    # thin here (they need the runner's auth context); every branch decision
+    # lives in the co-located cut-immutable-release.mjs — pure functions,
+    # unit-tested in the wheelhouse — run via $GITHUB_ACTION_PATH so it
+    # travels with the action, same shape as github-release-app-token's
+    # minter.
     - shell: bash
       env:
         ASSETS: ${{ inputs.assets }}
@@ -58,71 +63,17 @@ runs:
 
         # The release ties to an already-pushed tag — never an invented one.
         # gh api exits non-zero (404) when the tag ref is absent on origin.
-        if ! gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${TAG}" >/dev/null 2>&1; then
-          echo "× tag \"${TAG}\" is not on origin ${GITHUB_REPOSITORY}." >&2
-          echo "  A release must tie to an already-pushed tag; this action never creates tags." >&2
-          echo "  Fix: create + push the signed tag first, then re-run:" >&2
-          echo "    git tag -s ${TAG} -m \"release ${TAG}\" && git push origin ${TAG}" >&2
-          exit 1
-        fi
-
-        # Releases are immutable — creating over an existing one is always a
-        # mistake (verify-state-before-acting). Read before create.
-        if gh release view "${TAG}" >/dev/null 2>&1; then
-          echo "× a GitHub Release for \"${TAG}\" already exists in ${GITHUB_REPOSITORY}." >&2
-          echo "  Releases are immutable: never re-cut an existing version." >&2
-          echo "  Fix: bump the version, push a new tag, and release that instead." >&2
-          exit 1
-        fi
-
-        TITLE="${TITLE:-${TAG}}"
-        NOTES_ARGS=()
-        if [ -n "${NOTES_FILE}" ]; then
-          if [ ! -f "${NOTES_FILE}" ]; then
-            echo "× notes-file \"${NOTES_FILE}\" does not exist." >&2
-            echo "  Fix: point notes-file at a real file, or pass notes instead." >&2
-            exit 1
+        # The release-view probe only runs when the tag probe passes,
+        # preserving the original short-circuit; the refusal branching on
+        # these results lives in cut-immutable-release.mjs
+        # (verify-state-before-acting).
+        TAG_ON_ORIGIN=false
+        RELEASE_EXISTS=false
+        if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${TAG}" >/dev/null 2>&1; then
+          TAG_ON_ORIGIN=true
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            RELEASE_EXISTS=true
           fi
-          NOTES_ARGS=(--notes-file "${NOTES_FILE}")
-        elif [ -n "${NOTES}" ]; then
-          NOTES_ARGS=(--notes "${NOTES}")
-        else
-          NOTES_ARGS=(--notes "Release ${TAG}.")
         fi
-
-        # Newline-separated asset list; every listed path must exist (a typo'd
-        # asset silently missing from a release is worse than a failed cut).
-        ASSET_PATHS=()
-        while IFS= read -r line; do
-          line="$(echo "${line}" | xargs)"
-          [ -z "${line}" ] && continue
-          if [ ! -f "${line}" ]; then
-            echo "× asset \"${line}\" does not exist." >&2
-            echo "  Fix: build the asset before cutting the release, or drop it from assets." >&2
-            exit 1
-          fi
-          ASSET_PATHS+=("${line}")
-        done <<< "${ASSETS}"
-
-        if [ "${DRY_RUN}" != "false" ]; then
-          echo "[dry-run] tag ${TAG} is on origin and unreleased. Would run, in order:"
-          echo "  gh release create ${TAG} --draft --title \"${TITLE}\" ${NOTES_ARGS[*]}"
-          if [ "${#ASSET_PATHS[@]}" -gt 0 ]; then
-            echo "  gh release upload ${TAG} ${ASSET_PATHS[*]} --clobber"
-          fi
-          echo "  gh release edit ${TAG} --draft=false"
-          echo "Pass dry-run: false to execute the 3-step immutable release."
-          exit 0
-        fi
-
-        # The immutable 3-step (immutable-release-guard): a draft assembles
-        # everything privately; publishing (un-drafting) happens exactly once.
-        echo "creating draft release ${TAG}…"
-        gh release create "${TAG}" --draft --title "${TITLE}" "${NOTES_ARGS[@]}"
-        if [ "${#ASSET_PATHS[@]}" -gt 0 ]; then
-          echo "uploading ${#ASSET_PATHS[@]} asset(s)…"
-          gh release upload "${TAG}" "${ASSET_PATHS[@]}" --clobber
-        fi
-        echo "publishing (un-drafting)…"
-        gh release edit "${TAG}" --draft=false
-        echo "Created release ${TAG}."
+        export TAG_ON_ORIGIN RELEASE_EXISTS
+        node "${GITHUB_ACTION_PATH}/cut-immutable-release.mjs"

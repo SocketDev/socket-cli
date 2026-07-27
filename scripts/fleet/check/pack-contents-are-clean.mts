@@ -56,8 +56,10 @@ const SCAFFOLDING_PREFIXES = [
   '.config/',
   '.git-hooks/',
   '.github/',
+  // Legacy root bootstrap copies — drop once the fleet sweep lands.
   'bootstrap/',
   'scripts/fleet/',
+  'scripts/repo/bootstrap/',
   'template/',
 ]
 

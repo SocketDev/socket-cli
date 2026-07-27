@@ -82,7 +82,7 @@ authority and generates the Kimi adapter from it.
   overrides without dirtying the tree.
 
 Kimi ships in the release bundle as generated files only (no symlinks). The
-bootstrap installer (`bootstrap/fleet.mjs --update`) and `pnpm install` prepare
+bootstrap installer (`scripts/repo/bootstrap/fleet.mjs --update`) and `pnpm install` prepare
 step keep the project-local `.kimi-code/mcp.json` and user config current.
 
 ## Detection + paths — `@socketsecurity/lib/ai/agent-context`

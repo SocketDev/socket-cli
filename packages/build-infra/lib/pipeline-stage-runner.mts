@@ -42,7 +42,7 @@ export async function runStage(
 
   const buildDir = resolveCheckpointBuildDir(stage, ctx)
   const sourcePaths = [
-    path.join(ctx.packageRoot, 'external-tools.json'),
+    path.join(ctx.packageRoot, '.config/repo/external-tools.json'),
     path.join(ctx.packageRoot, 'package.json'),
     ...(stage.sourcePaths ?? []),
   ].filter(p => existsSync(p))

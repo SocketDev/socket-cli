@@ -1,27 +1,33 @@
 #!/usr/bin/env node
 /*
- * @file `check --all` gate: the repo-root `external-tools.json` shared-tool
- *   entries match the wheelhouse copy.
+ * @file `check --all` gate: the repo's `.config/repo/external-tools.json`
+ *   shared-tool entries match the wheelhouse copy.
  *
- *   external-tools.json is per-repo owned, but the cascade-owned composite
- *   actions (`.github/actions/fleet/{setup,setup-and-install,checkout}`) read
- *   it at runtime — so the CODE and its DATA drift independently. 2026-07-08:
- *   five repos failed CI in setup-and-install on stale copies (sfw entries
- *   missing `binaryName`, sha256-era integrity where the action expects
- *   sha512 SRI, years-old pnpm pins), and three more were missing the file
- *   entirely.
+ *   external-tools.json is per-repo owned, but fleet tooling reads it —
+ *   `scripts/fleet/install-sfw.mts` resolves the sfw pin from it and the
+ *   `path-tools-are-at-pinned-version` gate reads its version floors — so the
+ *   CODE and its DATA drift independently. 2026-07-08: five repos failed CI on
+ *   stale copies (sfw entries missing `binaryName`, sha256-era integrity where
+ *   the installer expects sha512 SRI, years-old pnpm pins), and three more
+ *   were missing the file entirely. The composite actions no longer read this
+ *   file at runtime — they read the bundled `_shared/external-tools.json`
+ *   beside them — but the local install/check surface still does, so the fleet
+ *   setup action's presence remains the "this is a fleet member" signal that
+ *   makes a missing file fail loud.
  *
  *   The gate compares each SHARED tool entry (a tool name that also exists in
  *   the wheelhouse copy) deep-equal against the wheelhouse value. Repo-specific
  *   tools (keys absent from the wheelhouse copy) are untouched — sdxgen's
- *   language toolchains stay repo-owned. A missing file fails loud when the
- *   fleet setup actions are present (they hard-require it).
+ *   language toolchains stay repo-owned. A copy still at the LEGACY repo-root
+ *   location fails with a move instruction (the sync-scaffolding cascade and
+ *   the bundle installer both perform that move automatically).
  *
  *   Resolution order for the reference copy: a sibling `socket-wheelhouse`
- *   checkout, else the wheelhouse root when running IN the wheelhouse (the
- *   gate self-passes there). No network: when no reference copy is findable
- *   (CI of a member repo), the gate SKIPS explicitly — cross-repo state is a
- *   local-dev/cascade concern, and CI must not depend on a sibling checkout.
+ *   checkout, else the wheelhouse's own copy when running IN the wheelhouse
+ *   (the gate self-passes there). No network: when no reference copy is
+ *   findable (CI of a member repo), the gate SKIPS explicitly — cross-repo
+ *   state is a local-dev/cascade concern, and CI must not depend on a sibling
+ *   checkout.
  *
  *   Fix: copy the wheelhouse file verbatim when the repo has no repo-specific
  *   tools; otherwise update just the drifted shared entries.
@@ -40,7 +46,10 @@ import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
-const TOOLS_FILE = 'external-tools.json'
+const TOOLS_FILE = '.config/repo/external-tools.json'
+// The pre-move location. A copy still here is a stale layout, not a valid
+// alternate home — fail with a move instruction until the fleet sweep lands.
+const LEGACY_TOOLS_FILE = 'external-tools.json'
 const SETUP_ACTION = '.github/actions/fleet/setup-and-install/action.yml'
 
 export interface ExternalToolsDoc {
@@ -110,6 +119,20 @@ export function findReferenceCopy(repoRoot: string): string | undefined {
   return existsSync(sibling) ? sibling : undefined
 }
 
+/**
+ * A copy still at the legacy repo-root location, when the canonical
+ * `.config/repo/` path is empty. Returns the legacy absolute path, or
+ * undefined when the repo is already on the canonical layout (or has no copy
+ * at all).
+ */
+export function findLegacyCopy(repoRoot: string): string | undefined {
+  if (existsSync(path.join(repoRoot, TOOLS_FILE))) {
+    return undefined
+  }
+  const legacy = path.join(repoRoot, LEGACY_TOOLS_FILE)
+  return existsSync(legacy) ? legacy : undefined
+}
+
 function main(): number {
   const quiet = process.argv.includes('--quiet')
   const memberPath = path.join(REPO_ROOT, TOOLS_FILE)
@@ -125,6 +148,17 @@ function main(): number {
     return 0
   }
 
+  const legacyPath = findLegacyCopy(REPO_ROOT)
+  if (legacyPath) {
+    logger.fail(
+      `[external-tools-match-wheelhouse] ${LEGACY_TOOLS_FILE} sits at the LEGACY repo-root location — the canonical home is ${TOOLS_FILE}.\n` +
+        `  Fix: git mv ${LEGACY_TOOLS_FILE} ${TOOLS_FILE}\n` +
+        `  The sync-scaffolding cascade and the fleet bundle installer both perform this move automatically on their next pass.`,
+    )
+    process.exitCode = 1
+    return 1
+  }
+
   if (!existsSync(memberPath)) {
     if (!setupActionPresent) {
       if (!quiet) {
@@ -135,7 +169,7 @@ function main(): number {
       return 0
     }
     logger.fail(
-      `[external-tools-match-wheelhouse] ${TOOLS_FILE} is MISSING but ${SETUP_ACTION} reads it at runtime — CI setup will fail on every job.\n` +
+      `[external-tools-match-wheelhouse] ${TOOLS_FILE} is MISSING but this repo carries the fleet setup action — the local install/check surface (install-sfw, path-tools-are-at-pinned-version) reads it.\n` +
         `  Fix: copy it from the wheelhouse (verbatim when this repo has no repo-specific tools):\n` +
         `    cp ${refPath} ${memberPath}`,
     )
