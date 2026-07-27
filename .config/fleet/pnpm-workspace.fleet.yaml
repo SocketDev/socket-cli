@@ -31,9 +31,9 @@ catalog:
   '@types/node': 26.1.1
   '@types/semver': 7.7.1
   '@types/shell-quote': 1.7.5
-  # Aliased to the published pre-rename artifact until @ultrathink/acorn.wasm
-  # ships; then flip to a plain version + npm deprecate the old name.
-  '@ultrathink/acorn.wasm': 'npm:@ultrathink/acorn-wasm@0.0.1'
+  # Rust wasm parser artifact (dot-naming: acorn.rs.wasm = acorn, Rust impl,
+  # wasm target) — the AST dep of the fleet hooks + the socket/* oxlint plugin.
+  '@ultrathink/acorn.rs.wasm': 0.0.1
   # istanbul-org converter for raw NODE_V8_COVERAGE output — cover.mts turns
   # spawned-child coverage into the children merge tier with `c8 report`.
   # Soaked (11.0.0 published 2026-02-22).
@@ -101,6 +101,13 @@ catalog:
 # resolve versions for catalog: refs that are missing their catalog entry.
 catalogOptional:
   'rolldown': 1.1.4
+  # rolldown-plugin-dts — build-time declaration emit for the dep-0 bootstrap
+  # bundle (scripts/repo/gen/bootstrap.mts): bundles a single self-contained
+  # fleet.d.mts beside fleet.mjs so the typed source's consumers resolve types
+  # without a hand-maintained declaration. Wheelhouse-only (only the wheelhouse
+  # builds the bundle); soak-bypassed at 0.27.14 (build-only dev tool, never
+  # shipped to runtime) per RELEASE_AGE_EXCLUDE_ANNOTATIONS.
+  'rolldown-plugin-dts': 0.27.14
   'svgo': 4.0.2
   # vitiate — coverage-guided fuzzer (SWC-instrumented, native @vitiate/engine).
   # Optional tier: adopted only in repos that fuzz an input boundary (parsers,
