@@ -166,6 +166,83 @@ export function placeFiles(
   }
 }
 
+// Apply the manifest's per-repo-owned file MOVES (movedPaths) — the rename
+// half of relocating a file the fleet does NOT byte-mirror, mirroring the
+// bootstrap installer's applyMovedPaths. A plain tombstone would delete the
+// member's only copy (the file is repo-owned; the bundle never ships it), so
+// rename `from` → `to` when `to` is absent — repo-owned content survives
+// byte-for-byte — and delete a stale `from` leftover once `to` exists. Runs
+// BEFORE removeTombstonedPaths. Belt: a move whose `from` the manifest ships
+// a file at/under is skipped. Returns the count of paths acted on.
+export function applyMovedPaths(
+  destDir: string,
+  manifest: BundleManifest,
+): number {
+  const movedPaths = manifest.movedPaths
+  if (!movedPaths || movedPaths.length === 0) {
+    return 0
+  }
+  const shipped = Object.keys(manifest.files).map(rel => normalizePath(rel))
+  let moved = 0
+  for (let i = 0, { length } = movedPaths; i < length; i += 1) {
+    const entry = movedPaths[i]!
+    const from = normalizePath(entry.from)
+    const to = normalizePath(entry.to)
+    if (
+      !from ||
+      !to ||
+      shipped.some(f => f === from || f.startsWith(`${from}/`))
+    ) {
+      continue
+    }
+    const fromAbs = path.join(destDir, from)
+    if (!existsSync(fromAbs)) {
+      continue
+    }
+    const toAbs = path.join(destDir, to)
+    if (existsSync(toAbs)) {
+      // The canonical copy already exists — the leftover source is stale.
+      safeDeleteSync(fromAbs)
+    } else {
+      mkdirSync(path.dirname(toAbs), { recursive: true })
+      renameSync(fromAbs, toAbs)
+    }
+    moved += 1
+  }
+  return moved
+}
+
+// Delete the manifest's TOMBSTONED paths (files or whole dirs) that still
+// exist in the repo — the deletion half of a fleet move/retire, mirroring the
+// bootstrap installer's removeTombstonedPaths (a bundle refresh must be a true
+// sync: the v1.0.12 `.github/actions/fleet/lib` → `_shared` move shipped no
+// deletion and orphaned `lib/` fleet-wide). Belt: a tombstone the current
+// manifest ships a file at/under is skipped, so a bad producer entry can never
+// delete freshly placed payload. Returns the count deleted.
+export function removeTombstonedPaths(
+  destDir: string,
+  manifest: BundleManifest,
+): number {
+  const removedPaths = manifest.removedPaths
+  if (!removedPaths || removedPaths.length === 0) {
+    return 0
+  }
+  const shipped = Object.keys(manifest.files).map(rel => normalizePath(rel))
+  let removed = 0
+  for (let i = 0, { length } = removedPaths; i < length; i += 1) {
+    const rel = normalizePath(removedPaths[i]!)
+    if (!rel || shipped.some(f => f === rel || f.startsWith(`${rel}/`))) {
+      continue
+    }
+    const abs = path.join(destDir, rel)
+    if (existsSync(abs)) {
+      safeDeleteSync(abs)
+      removed += 1
+    }
+  }
+  return removed
+}
+
 export async function main(): Promise<number> {
   const opts = parseArgs(process.argv.slice(2))
   if (!opts.ref) {
@@ -247,10 +324,17 @@ export async function main(): Promise<number> {
       return 0
     }
 
-    // 5. Place the verified files into the repo.
+    // 5. Place the verified files into the repo, then drop any tombstoned
+    // paths (moved/retired payload) still present — the deletion half of a
+    // fleet move, so a refresh is a true sync.
     placeFiles(filesDir, Object.keys(manifest.files), opts.dest)
+    const moved = applyMovedPaths(opts.dest, manifest)
+    const tombstoned = removeTombstonedPaths(opts.dest, manifest)
+    const movedNote = moved > 0 ? `, moved ${moved} relocated path(s)` : ''
+    const tombstonedNote =
+      tombstoned > 0 ? `, removed ${tombstoned} tombstoned path(s)` : ''
     logger.log(
-      `Placed ${count} verified file(s) from ${opts.ref} (template ${manifest.templateSha}).`,
+      `Placed ${count} verified file(s)${movedNote}${tombstonedNote} from ${opts.ref} (template ${manifest.templateSha}).`,
     )
     return 0
   } finally {
