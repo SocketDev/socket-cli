@@ -162,7 +162,7 @@ Drift is directional. A pin behind a newer `external-tools.json` warns and conti
 node scripts/repo/cascade-fleet.mts --pnpm 11.3.0 [--dry-run] [--self]
 ```
 
-The bump stage (`pipeline-stages.mts#runBump` → `tools/<tool>.mts#applyToRegistry`) downloads every platform binary from upstream, recomputes sha256 ourselves (integrity = binary-download + own-checksum, never trust in upstream-published values), writes `external-tools.json`, and commits. Tools with a `sourceDir` override (node, npm) write the wheelhouse root instead (`.node-version` / `package.json` engines).
+The bump stage (`pipeline-stages.mts#runBump` → `tools/<tool>.mts#applyToRegistry`) downloads every platform binary from upstream, recomputes sha256 ourselves (integrity = binary-download + own-checksum, never trust in upstream-published values), writes `socket-registry/.config/repo/external-tools.json`, and commits. Tools with a `sourceDir` override (node, npm) write the wheelhouse root instead (`.node-version` / `package.json` engines).
 
 **Propagation is the sync-scaffolding cascade, not this script.** external-tools.json is a cascaded file — after a bump, run the cascade to fan it out to every member. The former registry-hosted reconcile / gate / propagate stages (which pinned members to a socket-registry SHA) were retired with the socket-registry shared-source model; fleet actions now live in each repo as `.github/actions/fleet/*`, referenced by local `./` path, so there is no cross-repo pin to rewrite. (`--skip-ci-wait` / `--ci-timeout` are vestigial no-ops from the retired gate stage.)
 
@@ -254,7 +254,7 @@ start, native `docker` CLI compatibility). macOS-only; Linux dev hosts use
 the distro's native Docker/Podman and don't need it. It's a recommended
 dev convenience, not a build requirement — CI builds run on Linux runners
 with native Docker, so OrbStack only affects local Mac iteration. Repos
-that consume it pin it in their own `external-tools.json` (per-repo, not
+that consume it pin it in their own `.config/repo/external-tools.json` (per-repo, not
 template) and may wire a `brew install --cask orbstack` onboarding step.
 
 ## Local CI runs (`agent-ci`)
@@ -270,7 +270,7 @@ download + integrity-verify the pinned package through Socket Firewall):
 
 ```mts
 import { dlxPackage, executePackage } from '@socketsecurity/lib/dlx/package'
-// version resolves from the repo's external-tools.json `agent-ci` pin
+// version resolves from the repo's .config/repo/external-tools.json `agent-ci` pin
 ```
 
 **Limitations** ([compatibility](https://agent-ci.dev/compatibility)) — it
@@ -279,7 +279,7 @@ concurrency groups, and a simplified job-`if` evaluator. The fleet `ci.yml`
 is self-contained: its jobs call local `./.github/actions/fleet/*` composite
 actions (which agent-ci runs), never a cross-repo reusable workflow — so
 agent-ci runs the full lint / type / test matrix. Repos that adopt it pin
-the version in their own `external-tools.json`.
+the version in their own `.config/repo/external-tools.json`.
 
 ## npm 2FA registry ops
 

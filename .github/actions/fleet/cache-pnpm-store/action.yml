@@ -65,49 +65,37 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - name: Resolve pnpm store path
+    - name: Resolve pnpm store path and cache key
       id: store
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: | # zizmor: ignore[github-env]
-        # `pnpm store path` is authoritative — it honors store-dir config,
-        # PNPM_HOME, and the platform default. Fall back to the documented
-        # per-OS default only if the query fails (pnpm absent would already
-        # have failed `setup`, so this is belt-and-suspenders).
-        STORE_PATH="$(pnpm store path 2>/dev/null || true)"
-        if [ -z "$STORE_PATH" ]; then
-          if [ "${RUNNER_OS}" = "Windows" ]; then
-            STORE_PATH="${LOCALAPPDATA}/pnpm/store/v3"
-            STORE_PATH="$(echo "$STORE_PATH" | sed 's|\\|/|g')"
-          else
-            STORE_PATH="${HOME}/.local/share/pnpm/store/v3"
-          fi
-          echo "ⓘ pnpm store path query failed; using default ${STORE_PATH}"
-        fi
-        echo "path=${STORE_PATH}" >> "$GITHUB_OUTPUT"
-        # $GITHUB_ENV (not just step outputs) so the save step in
-        # setup-and-install — a different composite scope — can read it.
-        echo "PNPM_STORE_PATH=${STORE_PATH}" >> "$GITHUB_ENV"
-        echo "pnpm store path: ${STORE_PATH}"
-
-    - name: Read Node major for cache key
-      id: node
-      shell: bash
-      run: |
-        # The Node ABI (major version) partitions the store key — packages
-        # with prebuilt native binaries cache a different artifact per major.
-        NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 'x')"
-        echo "major=${NODE_MAJOR}" >> "$GITHUB_OUTPUT"
-
-    - name: Export cache key
-      shell: bash
       env:
+        KEY_PREFIX: ${{ inputs.key-prefix }}
+        CACHE_VERSION: ${{ inputs.cache-version }}
         # Lockfile hash makes the exact key; OS + Node major partition by
         # platform/ABI; cache-version is the manual bust knob. Computed once
         # so restore and save use the byte-identical key.
-        CACHE_KEY: ${{ inputs.key-prefix }}-${{ inputs.cache-version }}-${{ runner.os }}-node${{ steps.node.outputs.major }}-${{ hashFiles('**/pnpm-lock.yaml') }}
-      run: | # zizmor: ignore[github-env]
-        echo "PNPM_STORE_CACHE_KEY=${CACHE_KEY}" >> "$GITHUB_ENV"
+        LOCKFILE_HASH: ${{ hashFiles('**/pnpm-lock.yaml') }}
+      run: |
+        set -euo pipefail
+        # Decision core extracted to the co-located resolve-store-cache.mjs —
+        # per-OS fallback chain, Node-major partition, and the byte-load-
+        # bearing cache-key composition, pure functions with fixture tests in
+        # the wheelhouse unit suite; this step is only the probe + invocation.
+        # `pnpm store path` is authoritative — it honors store-dir config,
+        # PNPM_HOME, and the platform default; the script falls back to the
+        # documented per-OS default only when the query prints nothing (pnpm
+        # absent would already have failed `setup`, so this is
+        # belt-and-suspenders). Dependency-free .mjs on the runner's system
+        # Node, reached via $GITHUB_ACTION_PATH so it travels when a member
+        # consumes the action — same shape as github-status-check's probe.
+        # The script writes path/major step outputs and exports
+        # PNPM_STORE_PATH / PNPM_STORE_CACHE_KEY via $GITHUB_ENV (not just
+        # step outputs) so the save step in setup-and-install — a different
+        # composite scope — can read them.
+        QUERIED_STORE_PATH="$(pnpm store path 2>/dev/null || true)"
+        export QUERIED_STORE_PATH
+        node "${GITHUB_ACTION_PATH}/resolve-store-cache.mjs"
 
     - name: Restore pnpm store
       id: cache
@@ -116,7 +104,7 @@ runs:
         path: ${{ env.PNPM_STORE_PATH }}
         key: ${{ env.PNPM_STORE_CACHE_KEY }}
         restore-keys: |
-          ${{ inputs.key-prefix }}-${{ inputs.cache-version }}-${{ runner.os }}-node${{ steps.node.outputs.major }}-
+          ${{ inputs.key-prefix }}-${{ inputs.cache-version }}-${{ runner.os }}-node${{ steps.store.outputs.major }}-
           ${{ inputs.key-prefix }}-${{ inputs.cache-version }}-${{ runner.os }}-
 
     - name: Export cache-hit for the save step

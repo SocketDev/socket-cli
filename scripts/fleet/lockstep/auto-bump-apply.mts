@@ -134,17 +134,19 @@ function findVersionPinRow(
   return undefined
 }
 
-// Rewrite ONE version-pin row's `pinned_tag` + `pinned_sha` in the manifest
-// JSON, preserving the file's existing 2-space formatting + trailing newline.
-// A pinnedTag of `undefined` DELETES the row's pinned_tag (SHA pins carry no
-// release label).
+// Rewrite ONE version-pin row's `pinned_tag` in the manifest JSON, preserving
+// the file's existing 2-space formatting + trailing newline. The pin SHA is NOT
+// written here — SHA-DRY: `.gitmodules` `ref =` is the single source of truth,
+// written authoritatively by `gen/gitmodules-hash.mts --set`. So this ALWAYS
+// DELETES a legacy `pinned_sha`, migrating a legacy row to the derived model on
+// its next bump. A `pinnedTag` of `undefined` DELETES the row's pinned_tag (SHA
+// pins carry no release label).
 export function writePinnedFields(
   manifestPath: string,
   id: string,
-  config: { pinnedSha: string; pinnedTag: string | undefined },
+  config: { pinnedTag: string | undefined },
 ): void {
-  const { pinnedSha, pinnedTag } = { __proto__: null, ...config } as {
-    pinnedSha: string
+  const { pinnedTag } = { __proto__: null, ...config } as {
     pinnedTag: string | undefined
   }
   const raw = readFileSync(manifestPath, 'utf8')
@@ -154,7 +156,7 @@ export function writePinnedFields(
   for (let i = 0, rows = manifest.rows, { length } = rows; i < length; i += 1) {
     const row = rows[i]!
     if (row.kind === 'version-pin' && row.id === id) {
-      row.pinned_sha = pinnedSha
+      delete row.pinned_sha
       if (pinnedTag === undefined) {
         delete row.pinned_tag
       } else {
@@ -282,8 +284,10 @@ export function applyBump(config: ApplyConfig): ApplyResult {
         .trim()
         .replaceAll('-', '.')}`
 
+  // Migrate the row to the derived model: drop any stored pinned_sha and set
+  // the pinned_tag. The pin SHA itself is written to `.gitmodules` below (the
+  // single source of truth).
   writePinnedFields(manifestPath, id, {
-    pinnedSha,
     pinnedTag: targetTag,
   })
 

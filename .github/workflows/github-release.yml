@@ -51,60 +51,33 @@ jobs:
           persist-credentials: false
       - name: Checkout
         uses: ./.github/actions/fleet/checkout
+      # The resolved tag is the single input every later step trusts — it
+      # feeds the registry-liveness gate as TAG and names the release cut, so
+      # wrong resolution here silently bypasses the publish-before-release
+      # order rule. The branch logic lives in the dependency-free
+      # scripts/fleet/resolve-release-tag.mjs (system Node only — no install
+      # has run here), where the wheelhouse unit suite regression-tests it;
+      # byte-parity with the inline predecessor is pinned per scenario.
       - name: Resolve tag
         id: tag
         env:
           EVENT_NAME: ${{ github.event_name }}
           INPUT_TAG: ${{ inputs.tag }}
           REF_NAME: ${{ github.ref_name }}
-        run: |
-          set -euo pipefail
-          if [ "${EVENT_NAME}" = "push" ]; then
-            TAG="${REF_NAME}"
-          elif [ -n "${INPUT_TAG}" ]; then
-            TAG="${INPUT_TAG}"
-          else
-            echo "× a manual dispatch needs the tag input (tag pushes resolve it from the ref)." >&2
-            echo "  Fix: re-dispatch with tag: v<version> (the tag must already be pushed)." >&2
-            exit 1
-          fi
-          echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
+        run: node scripts/fleet/resolve-release-tag.mjs
       # Belt-and-braces publish-before-release gate: refuse to cut when the
       # tagged version is not actually live on its registry. Runs only when a
       # real cut would happen (tag push, or dispatch with release: true) so a
-      # dry-run plan stays inspectable pre-publish. curl (not npm view) — the
-      # runner has no install here and npm trips repos' pnpm devEngines.
+      # dry-run plan stays inspectable pre-publish. The branch logic lives in
+      # the dependency-free scripts/fleet/registry-liveness-gate.mjs (system
+      # Node only — no install has run here), where the wheelhouse unit suite
+      # regression-tests it; the inline predecessor was untestable and shipped
+      # a regressed single-crate-only gate to cargo workspaces in v1.0.13.
       - name: Registry publish is live
         if: ${{ github.event_name == 'push' || inputs.release }}
         env:
           TAG: ${{ steps.tag.outputs.tag }}
-        run: |
-          set -euo pipefail
-          VERSION="${TAG#v}"
-          if [ -f package.json ] && [ "$(node -p "require('./package.json').private === true")" != "true" ]; then
-            NAME="$(node -p "require('./package.json').name")"
-            if ! curl -fsS -o /dev/null "https://registry.npmjs.org/${NAME}/${VERSION}"; then
-              echo "× ${NAME}@${VERSION} is not resolvable on npm — refusing to cut the GH release before the registry publish." >&2
-              echo "  A STAGED package is not published. Fix: approve/complete the publish first, then re-run." >&2
-              exit 1
-            fi
-            echo "✓ ${NAME}@${VERSION} is live on npm."
-          elif [ -f Cargo.toml ]; then
-            NAME="$(node -e "const m=/^name *= *\"([^\"]+)\"/m.exec(require('node:fs').readFileSync('Cargo.toml','utf8')); if(!m){process.exit(1)}; console.log(m[1])")"
-            case "${#NAME}" in
-              1) IDX="1/${NAME}" ;;
-              2) IDX="2/${NAME}" ;;
-              3) IDX="3/${NAME:0:1}/${NAME}" ;;
-              *) IDX="${NAME:0:2}/${NAME:2:2}/${NAME}" ;;
-            esac
-            if ! curl -fsS "https://index.crates.io/${IDX}" | grep -q "\"vers\":\"${VERSION}\""; then
-              echo "× ${NAME}@${VERSION} is not in the crates.io index — refusing to cut the GH release before the registry publish." >&2
-              exit 1
-            fi
-            echo "✓ ${NAME}@${VERSION} is live on crates.io."
-          else
-            echo "No public npm package or crate manifest — skipping the registry-liveness gate (github-release-only repo)."
-          fi
+        run: node scripts/fleet/registry-liveness-gate.mjs
       - name: Mint release-app token
         id: app-token
         uses: ./.github/actions/fleet/github-release-app-token

@@ -96,7 +96,9 @@ function evaluate(
 
 export function main(): void {
   const rootManifestPath = resolveManifestRoot(rootDir)
-  const { areas, merged } = loadManifestTree(rootManifestPath)
+  // Pass rootDir so version-pin rows without a stored pinned_sha get it derived
+  // from `<rootDir>/.gitmodules` (single source of truth).
+  const { areas, merged } = loadManifestTree(rootManifestPath, rootDir)
 
   const rowsWithArea: Array<{ row: Row; area: string }> = []
   for (const { area, manifest } of areas) {

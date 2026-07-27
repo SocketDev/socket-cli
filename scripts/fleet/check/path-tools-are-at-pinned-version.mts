@@ -97,7 +97,7 @@ export function pathToolPins(repoRoot: string): PathToolPin[] {
       pins.push({ bin, floor, source: `package.json engines.${bin}` })
     }
   }
-  const ext = readJson('external-tools.json')
+  const ext = readJson('.config/repo/external-tools.json')
   const tools = ext?.['tools'] as Record<string, unknown> | undefined
   const uv = tools?.['uv'] as Record<string, unknown> | undefined
   const uvVersion =
@@ -108,7 +108,7 @@ export function pathToolPins(repoRoot: string): PathToolPin[] {
       pins.push({
         bin: 'uv',
         floor,
-        source: 'external-tools.json tools.uv.version',
+        source: '.config/repo/external-tools.json tools.uv.version',
       })
     }
   }

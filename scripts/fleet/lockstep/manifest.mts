@@ -18,6 +18,7 @@ import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { validateSchema } from '@socketsecurity/lib-stable/schema/validate'
 
+import { resolvePinnedSha } from '../gen/gitmodules-hash.mts'
 import { lockstepManifestCandidates } from '../paths.mts'
 
 import { LockstepManifestSchema } from './schema.mts'
@@ -90,8 +91,18 @@ export function listManifestFiles(rootManifestPath: string): string[] {
  * Resolve a manifest + all its `includes[]` sub-manifests into a single
  * flattened view. Each sub-manifest contributes its rows; the top-level
  * upstreams/sites maps are merged (top-level wins on conflict).
+ *
+ * When `repoRoot` is supplied, every `version-pin` row that OMITS `pinned_sha`
+ * has it derived from the authoritative `<repoRoot>/.gitmodules` `ref =`
+ * (single source of truth) so downstream consumers see a self-describing row.
+ * Fill-when-absent only: a legacy row that still carries `pinned_sha` is left
+ * untouched (backward-compat). Rows are shared object refs between `areas` and
+ * the merged view, so the in-place fill propagates to both.
  */
-export function loadManifestTree(rootManifestPath: string): {
+export function loadManifestTree(
+  rootManifestPath: string,
+  repoRoot?: string | undefined,
+): {
   areas: Array<{ area: string; manifest: Manifest }>
   merged: Manifest
 } {
@@ -136,6 +147,29 @@ export function loadManifestTree(rootManifestPath: string): {
   for (const { manifest } of areas) {
     mergedRows.push(...manifest.rows)
   }
+
+  // Derive `pinned_sha` from the authoritative `.gitmodules` `ref =` for every
+  // version-pin row that omits it (SHA-DRY: one source of truth). Fill-when-
+  // absent so a legacy stored `pinned_sha` stays intact and checkVersionPin
+  // behaves identically when it agrees with the ref.
+  if (repoRoot !== undefined) {
+    const gitmodulesPath = path.join(repoRoot, '.gitmodules')
+    for (let i = 0, { length } = mergedRows; i < length; i += 1) {
+      const row = mergedRows[i]!
+      if (row.kind !== 'version-pin' || row.pinned_sha !== undefined) {
+        continue
+      }
+      const submodule = mergedUpstreams[row.upstream]?.submodule
+      if (submodule === undefined) {
+        continue
+      }
+      const derived = resolvePinnedSha(gitmodulesPath, submodule)
+      if (derived !== undefined) {
+        row.pinned_sha = derived
+      }
+    }
+  }
+
   return {
     areas,
     merged: {

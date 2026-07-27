@@ -13,11 +13,13 @@
  *   dead. An `undefined` count (no `ci.yml` workflow, or an unreadable/errored
  *   query) is NOT dead — only a real 0 counts, so the audit never invents a
  *   finding it cannot stand behind.
- *   Skips CLEANLY — never false-green — when it cannot audit: not on the
- *   release/CI tier (a network sweep has no place in the interactive inner
- *   loop — gated on FLEET_CHECK_RELEASE), no fleet-repos.json (a member
- *   checkout / fresh clone), or `gh` is unauthenticated. Each prints an
- *   explicit "skipped (…)" and exits 0.
+ *   Skips CLEANLY — never false-green — when it cannot or must not audit: not
+ *   on the release/CI tier (a network sweep has no place in the interactive
+ *   inner loop — gated on FLEET_CHECK_RELEASE), a member checkout (the audit
+ *   is wheelhouse-only, gated on template/base ownership — the cascaded
+ *   roster no longer marks the wheelhouse), no fleet-repos.json (a fresh
+ *   clone mid-bootstrap), or `gh` is unauthenticated. Each prints an explicit
+ *   "skipped (…)" and exits 0.
  *   Report mode for now (loud warning, exit 0): a known-open, out-of-repo fix
  *   (org/enterprise Actions activation) leaves the fleet with a dead-CI member,
  *   so a hard gate would false-block every push. Flip MODE to 'strict' once the
@@ -33,7 +35,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { isMainModule } from '../_shared/is-main-module.mts'
-import { REPO_ROOT } from '../paths.mts'
+import { OWNS_RELOCATED_TESTS, REPO_ROOT } from '../paths.mts'
 
 const logger = getDefaultLogger()
 
@@ -57,9 +59,11 @@ export interface RepoCiStatus {
 }
 
 /**
- * The canonical private fleet roster path. Present only in the wheelhouse (the
- * sole sanctioned private-name list); absent in a member checkout, where the
- * audit skips.
+ * The canonical fleet roster path — the sole sanctioned private-name list.
+ * Cascaded fleet-wide: the hook membership law
+ * (`.claude/hooks/fleet/_shared/fleet-repos.mts`) imports it in every member,
+ * so its presence does NOT mark the wheelhouse. Wheelhouse-only audits gate on
+ * template/base ownership — OWNS_RELOCATED_TESTS — never on this file existing.
  */
 export function fleetReposPath(repoRoot: string): string {
   return path.join(
@@ -150,10 +154,19 @@ export function main(): void {
   if (!process.env['FLEET_CHECK_RELEASE']) {
     return
   }
+  // Wheelhouse-only: the roster cascades fleet-wide for the hook membership
+  // law, so every member carries it — without this gate every member's
+  // release CI would re-run the same fleet-wide sweep.
+  if (!OWNS_RELOCATED_TESTS) {
+    logger.log(
+      'member-ci-fires-on-push: skipped (member checkout — the audit is wheelhouse-only).',
+    )
+    return
+  }
   const reposPath = fleetReposPath(REPO_ROOT)
   if (!existsSync(reposPath)) {
     logger.log(
-      'member-ci-fires-on-push: skipped (no fleet-repos.json — member checkout / fresh clone).',
+      'member-ci-fires-on-push: skipped (no fleet-repos.json — fresh clone mid-bootstrap).',
     )
     return
   }

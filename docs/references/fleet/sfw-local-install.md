@@ -42,11 +42,11 @@ older lib versions).
 
 ### 2. Download the enterprise binary
 
-Pull the version + sha256 from `socket-registry/external-tools.json`
+Pull the version + sha256 from `socket-registry/.config/repo/external-tools.json`
 (canonical fleet pin):
 
 ```bash
-TOOLS=~/projects/socket-registry/external-tools.json
+TOOLS=~/projects/socket-registry/.config/repo/external-tools.json
 SFW_VERSION=$(node -e "console.log(require('$TOOLS').sfw.version)")
 PLATFORM=darwin-arm64   # or: darwin-x64, linux-x64, linux-arm64, linux-x64-musl, linux-arm64-musl
 ASSET=$(node -e "console.log(require('$TOOLS').sfw.enterprise.checksums['$PLATFORM'].asset)")
@@ -125,7 +125,7 @@ the version number.
 ## Drift watch
 
 The sfw version + per-platform sha256s live in
-`socket-registry/external-tools.json`. When CI bumps that file, your
+`socket-registry/.config/repo/external-tools.json`. When CI bumps that file, your
 local install drifts. Re-run the install steps above whenever you pull
 socket-registry. The local file `~/.socket/_wheelhouse/bin/sfw-<old-version>` is
 safe to keep — the `sfw` symlink is what matters.

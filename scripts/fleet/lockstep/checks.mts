@@ -31,6 +31,7 @@ import type {
   VersionPinReport,
 } from './types.mts'
 
+import { resolvePinnedSha } from '../gen/gitmodules-hash.mts'
 import {
   driftCommitsSince,
   fetchTagsQuiet,
@@ -129,6 +130,34 @@ export function checkVersionPin(
     base.severity = 'error'
     return base
   }
+  // The authoritative pin is the `.gitmodules` `ref =` (single source of truth).
+  // `effectivePin` prefers a legacy stored `pinned_sha` (a belt for direct
+  // callers / unit tests that bypass loadManifestTree — the harness path already
+  // fills row.pinned_sha from the same ref), else derives it here.
+  const gmSha = resolvePinnedSha(
+    path.join(rootDir, '.gitmodules'),
+    upstream.submodule,
+  )
+  const effectivePin = row.pinned_sha ?? gmSha
+  base.pinned_sha = effectivePin
+  if (!effectivePin) {
+    base.severity = 'error'
+    messages.push(
+      `version-pin has no pinned_sha and no \`ref =\` resolvable in .gitmodules for ${upstream.submodule} — add the submodule's ref to .gitmodules`,
+    )
+    return base
+  }
+  // A legacy stored pinned_sha that disagrees with the authoritative
+  // `.gitmodules` ref is drift: pinned_sha is derived now, so a stale stored
+  // copy is a defect. Derived rows have pinned_sha === gmSha, so this never
+  // false-positives on the normal path.
+  if (row.pinned_sha && gmSha && row.pinned_sha !== gmSha) {
+    base.severity = 'error'
+    messages.push(
+      `manifest pinned_sha (${row.pinned_sha.slice(0, 12)}) disagrees with authoritative .gitmodules ref (${gmSha.slice(0, 12)}) — pinned_sha is derived; remove it so .gitmodules is the single source of truth`,
+    )
+    return base
+  }
   const submoduleDir = path.join(rootDir, upstream.submodule)
   if (!existsSync(submoduleDir)) {
     base.severity = 'error'
@@ -137,7 +166,7 @@ export function checkVersionPin(
     )
     return base
   }
-  if (!shaIsReachable(submoduleDir, row.pinned_sha)) {
+  if (!shaIsReachable(submoduleDir, effectivePin)) {
     base.severity = 'error'
     messages.push(`pinned_sha unreachable — submodule too shallow, or SHA typo`)
     return base
@@ -152,10 +181,10 @@ export function checkVersionPin(
   }
   base.head_sha = head
 
-  if (head !== row.pinned_sha) {
+  if (head !== effectivePin) {
     base.severity = 'error'
     messages.push(
-      `submodule HEAD (${head.slice(0, 12)}) does not match pinned_sha (${row.pinned_sha.slice(0, 12)}) — run \`git submodule update\``,
+      `submodule HEAD (${head.slice(0, 12)}) does not match .gitmodules ref (${effectivePin.slice(0, 12)}) — run \`git submodule update\``,
     )
     return base
   }
@@ -220,7 +249,7 @@ export function checkVersionPin(
   // are not drift. A `full` (lock-step) pin counts every commit on the branch.
   const cone = row.materialization === 'sparse' ? (row.sparse_cone ?? []) : []
   try {
-    const revArgs = ['rev-list', '--count', `${row.pinned_sha}..${driftRef}`]
+    const revArgs = ['rev-list', '--count', `${effectivePin}..${driftRef}`]
     if (cone.length) {
       revArgs.push('--', ...cone)
     }

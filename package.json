@@ -47,7 +47,7 @@
     "setup": "node scripts/repo/setup.mts",
     "postinstall": "node scripts/repo/setup.mts --install --quiet",
     "prepare": "node scripts/fleet/install-git-hooks.mts && node scripts/fleet/prepare.mts",
-    "fleet:update": "node bootstrap/fleet.mjs --update",
+    "fleet:update": "node scripts/repo/bootstrap/fleet.mjs --update",
     "setup:kimi-user-config": "node scripts/fleet/setup/setup-kimi-user-config.mts",
     "pretest": "pnpm run build:cli && node scripts/repo/warm-dlx-cache.mts",
     "setup-security-tools": "node .claude/hooks/fleet/setup-security-tools/install.mts",

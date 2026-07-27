@@ -1,8 +1,9 @@
 /*
  * @file Code-as-law for the taze single-registry posture (owner ruling):
  *   taze resolves versions via the CONFIGURED registry only — its
- *   fast-npm-meta hosted endpoint (npm.antfu.dev) is never network-allowed,
- *   anywhere. Unpatched, every taze lookup leaves for that endpoint, fleet
+ *   fast-npm-meta hosted endpoint (the vetoed host imported below from the
+ *   fleet denylist) is never network-allowed, anywhere. Unpatched, every
+ *   taze lookup leaves for that endpoint, fleet
  *   egress policy blocks it, each lookup times out and taze still exits 0
  *   (false green). The fix is the single-registry pnpm patch, so two gates:
  *
@@ -32,23 +33,26 @@ import process from 'node:process'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
+import { TAZE_FAST_NPM_META_HOST } from '../../../.claude/hooks/fleet/_shared/denied-domains.mts'
 import { isChangelogPath } from '../_shared/changelog-path.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
-// The vetoed fast-npm-meta host. This guard file itself is path-exempt below,
-// so the literal here doesn't trip the scan.
-const FORBIDDEN_HOST = 'npm.antfu.dev'
+// The vetoed fast-npm-meta host, imported from the canonical fleet denylist
+// (_shared/denied-domains.mts) so the two enforcement points can never
+// disagree on the string. Scan behavior below is unchanged.
+const FORBIDDEN_HOST = TAZE_FAST_NPM_META_HOST
 
 // Paths where the host string may legitimately appear: this guard (live +
-// template copies), its basename-matched test, and the taze patch file
-// (redirected-code context). A CHANGELOG is exempt too (via isChangelogPath) —
-// change-description prose names the host to record a fix, not to allow egress.
-// Everything else is a violation.
+// template copies), its basename-matched test, the taze patch file
+// (redirected-code context), and the canonical fleet denylist module the
+// FORBIDDEN_HOST constant is imported from. A CHANGELOG is exempt too (via
+// isChangelogPath) — change-description prose names the host to record a fix,
+// not to allow egress. Everything else is a violation.
 // oxlint-disable-next-line socket/require-regex-comment -- documented above
 const EXEMPT_RE =
-  /(?:^|\/)(?:scripts\/fleet\/check\/taze-is-single-registry\.mts|taze-is-single-registry\.test\.mts|patches\/taze@[^/]+\.patch)$/
+  /(?:^|\/)(?:scripts\/fleet\/check\/taze-is-single-registry\.mts|taze-is-single-registry\.test\.mts|patches\/taze@[^/]+\.patch|\.claude\/hooks\/fleet\/_shared\/denied-domains\.mts)$/
 
 function trackedFiles(cwd: string): string[] {
   const result = spawnSync('git', ['ls-files', '-z'], { cwd, stdio: 'pipe' })

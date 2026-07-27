@@ -43,6 +43,7 @@ import {
   collectChurnNotes,
   collectLiveActorNotes,
   executeTestSuites,
+  IncompleteChildCaptureError,
   reexecWithHeapHeadroom,
   resolveRunPlan,
   runQuietCommand,
@@ -308,7 +309,18 @@ export async function main(): Promise<void> {
       try {
         await convertChildrenCoverage()
       } catch (e) {
-        logger.warn(`Subprocess coverage conversion failed: ${errorMessage(e)}`)
+        if (e instanceof IncompleteChildCaptureError) {
+          // Provably-incomplete capture — fail LOUD rather than merge a partial
+          // (which would silently under-report the aggregate on runner timing).
+          logger.error(
+            `Subprocess coverage capture incomplete: ${errorMessage(e)}`,
+          )
+          exitCode = exitCode === 0 ? 1 : exitCode
+        } else {
+          logger.warn(
+            `Subprocess coverage conversion failed: ${errorMessage(e)}`,
+          )
+        }
       }
       let aggregateCoverage: AggregateCoverage | undefined
       try {

@@ -91,7 +91,7 @@ export interface LoadedExternalTools {
 export async function loadExternalTools(
   packageRoot: string,
 ): Promise<LoadedExternalTools> {
-  const filePath = path.join(packageRoot, 'external-tools.json')
+  const filePath = path.join(packageRoot, '.config/repo/external-tools.json')
   const data = await readJson(filePath)
   if (!data) {
     return { versions: {}, rawHash: '' }

@@ -42,109 +42,24 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
-        # @socketsecurity/lib is required for downloadNpmPackage (used below
-        # to provision agentshield) and for several downstream build
-        # scripts across the Socket fleet. We resolve it via Node's own
-        # resolver rather than a file check, so the guard fires the same
-        # way we'd actually fail at runtime.
-        #
-        # Floor version: the latest @socketsecurity/lib published to npm,
-        # queried at action runtime so the floor tracks reality without
-        # manual bumps in this action. If the npm query fails (offline,
-        # rate-limited, registry down), fall back to HARDCODED_FLOOR —
-        # the lowest version known to contain the un-stubbed pacote
-        # fetchers required by downloadNpmPackage (commit 320c757, shipped
-        # in 5.24.0). Older versions throw "this pacote fetcher is
-        # stubbed out" at runtime.
-        HARDCODED_FLOOR="5.24.0"
-        # Probe the @socketsecurity/lib-stable tooling alias FIRST: a repo
-        # whose PRODUCT pins (or bundles) an older @socketsecurity/lib —
-        # e.g. a backfill content ref rebuilding historical dist — decouples
-        # fleet tooling from that product pin via the -stable alias, the
-        # same indirection every fleet script imports through. The floor
-        # applies to whichever copy the tooling below will actually import.
-        LIB_PKG="@socketsecurity/lib-stable"
-        ACTUAL_VERSION="$(node -e "
-          try {
-            process.stdout.write(require('@socketsecurity/lib-stable/package.json').version);
-          } catch {
-            process.stdout.write('');
-          }
-        ")"
-        if [ -z "$ACTUAL_VERSION" ]; then
-          LIB_PKG="@socketsecurity/lib"
-          ACTUAL_VERSION="$(node -e "
-            try {
-              process.stdout.write(require('@socketsecurity/lib/package.json').version);
-            } catch {
-              process.stdout.write('');
-            }
-          ")"
-        fi
-        if [ -z "$ACTUAL_VERSION" ]; then
-          CWD="$(pwd)"
-          cat >&2 <<EOF
-        × @socketsecurity/lib not resolvable from ${CWD}.
-          The the fleet install action requires it at runtime for
-          downloadNpmPackage (used to provision agentshield and related
-          tools). Expected Node's module resolver to find the package
-          after \`pnpm install\` completed, but
-          \`require('@socketsecurity/lib/package.json')\` failed.
-          Fix: add "@socketsecurity/lib" as a pinned exact version (e.g.
-          "${HARDCODED_FLOOR}", not "^${HARDCODED_FLOOR}" or "*") to your
-          package.json — prefer referencing a pnpm-workspace.yaml catalog
-          entry so every workspace package shares the same pin. Commit
-          the updated pnpm-lock.yaml, then push and re-run the workflow.
-        EOF
-          exit 1
-        fi
-        # Latest published version is the ideal floor. Bound the npm
-        # query to 10s so a slow registry doesn't stall the job.
-        # Validate the response matches plain semver via the colocated semver.mjs
-        # — Socket Firewall and other npm proxies sometimes intercept
-        # queries and return a banner string, which would otherwise
-        # poison the comparison below.
-        SEMVER="${GITHUB_ACTION_PATH}/semver.mjs"
+        # @socketsecurity/lib is required for downloadNpmPackage — used
+        # below to provision agentshield — and for several downstream build
+        # scripts across the Socket fleet. Decision core extracted to the
+        # co-located verify-lib-floor.mjs: the package.json probes with the
+        # lib-stable → lib alias fallback, the floor comparison, and the
+        # banner-string validation are pure functions with fixture tests in
+        # the wheelhouse unit suite; this step keeps only the network probe.
+        # Latest published version is the ideal floor: query npm at action
+        # runtime so the floor tracks reality without manual bumps in this
+        # action, bounded to 10s so a slow registry doesn't stall the job.
+        # The script falls back to its hardcoded floor when the query fails
+        # — offline, rate-limited, registry down — or returns a non-semver
+        # banner from Socket Firewall or another intercepting npm proxy.
+        # Dependency-free .mjs reached via $GITHUB_ACTION_PATH so it travels
+        # when a member consumes the action — same shape as
+        # github-status-check's probe.
         NPM_LATEST="$(timeout 10 npm view @socketsecurity/lib version 2>/dev/null || true)"
-        if [ -n "$NPM_LATEST" ] && node "$SEMVER" valid "$NPM_LATEST"; then
-          MIN_VERSION="$NPM_LATEST"
-          MIN_SOURCE="latest published on npm"
-        else
-          MIN_VERSION="$HARDCODED_FLOOR"
-          if [ -n "$NPM_LATEST" ]; then
-            MIN_SOURCE="hardcoded floor (npm view returned non-semver: ${NPM_LATEST:0:80})"
-          else
-            MIN_SOURCE="hardcoded floor (npm query failed)"
-          fi
-        fi
-        # Defensive: ACTUAL_VERSION should always be plain semver since
-        # it comes from package.json, but validate so a malformed pin
-        # produces a clear error rather than a cryptic bash failure.
-        if ! node "$SEMVER" valid "$ACTUAL_VERSION"; then
-          echo "× ${LIB_PKG} package.json reports non-semver version: ${ACTUAL_VERSION:0:200}" >&2
-          echo "  Expected MAJOR.MINOR.PATCH. Check the installed package's package.json." >&2
-          exit 1
-        fi
-        if node "$SEMVER" lt "$ACTUAL_VERSION" "$MIN_VERSION"; then
-          cat >&2 <<EOF
-        × ${LIB_PKG} ${ACTUAL_VERSION} is below the required
-          floor ${MIN_VERSION} (${MIN_SOURCE}).
-          The the fleet install action requires
-          ${LIB_PKG} >= ${MIN_VERSION}; older versions either
-          ship a stubbed pacote fetcher (< ${HARDCODED_FLOOR}) or are
-          missing fixes consumed by downloadNpmPackage and related fleet
-          tooling.
-          Fix: bump "${LIB_PKG}" in package.json (or the
-          pnpm-workspace.yaml catalog entry) to "${MIN_VERSION}" — pin
-          exact, not "^" or "~". A repo whose product must keep an older
-          @socketsecurity/lib can instead add the tooling alias
-          "@socketsecurity/lib-stable": "npm:@socketsecurity/lib@${MIN_VERSION}".
-          Run \`pnpm install\`, commit pnpm-lock.yaml, then push and
-          re-run the workflow.
-        EOF
-          exit 1
-        fi
-        echo "${LIB_PKG} ${ACTUAL_VERSION} >= ${MIN_VERSION} (${MIN_SOURCE})"
+        NPM_LATEST="$NPM_LATEST" node "${GITHUB_ACTION_PATH}/verify-lib-floor.mjs"
 
     - name: Install agentshield
       # Auto-skip in matrix cells: AgentShield's scan is

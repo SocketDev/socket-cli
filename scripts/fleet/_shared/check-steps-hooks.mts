@@ -92,6 +92,15 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
     // form of single-source-of-truth — a drifted copy mints with stale logic).
     () =>
       run('node', ['scripts/fleet/check/app-token-minters-are-identical.mts']),
+    // Edit-one-edit-all for the inline git-fetch bootstrap: the checkout
+    // composite plus the two first-step workflow copies (release-reconcile,
+    // prune-workflow-runs) can't share code — a job's first step runs before
+    // any checkout exists — so this gate holds the tri-plicated block in
+    // lock-step by its stable markers instead.
+    () =>
+      run('node', [
+        'scripts/fleet/check/git-fetch-bootstraps-are-lock-stepped.mts',
+      ]),
     // Structural floor: every skill dir is a well-formed skill — has a SKILL.md
     // with frontmatter whose name matches the dir + a description. Catches a
     // half-built skill (engine/test, no SKILL.md) that the mirror + citation

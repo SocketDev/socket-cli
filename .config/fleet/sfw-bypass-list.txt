@@ -74,7 +74,13 @@ bypass:proxy.golang.org
 bypass:sum.golang.org
 bypass:storage.googleapis.com
 
-# Cargo web portal (search/info API).
+# Cargo web portal (search/info API). The sparse-index and tarball hosts
+# (index.crates.io, static.crates.io) stay PROXIED on purpose: sfw-enterprise
+# intercepts at the system level, and its bypass path hands cargo a cert
+# chain schannel rejects ("untrusted root" on every registry fetch —
+# ultrathink runs 30226404634/30228147887), while the proxied path verifies
+# via the CA sfw installs at setup. The sparse-index request storm is tamed
+# client-side with CARGO_HTTP_MULTIPLEXING=false instead.
 bypass:crates.io
 
 # Conda ecosystem.

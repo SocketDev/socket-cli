@@ -15,12 +15,15 @@
  */
 
 import {
+  chmodSync,
   cpSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
   readdirSync,
   readFileSync,
+  renameSync,
+  statSync,
   writeFileSync,
 } from 'node:fs'
 import os from 'node:os'
@@ -37,6 +40,7 @@ import { spawn } from '@socketsecurity/lib/process/spawn/child'
 
 import {
   hasFleetCanonicalEndSentinel,
+  isFleetCanonicalSpliceFile,
   spliceFleetCanonicalContent,
 } from './_shared/fleet-canonical-splice.mts'
 
@@ -81,9 +85,12 @@ export function parseArgs(argv: readonly string[]): FetchConfig {
 
 // The manifest the producer (make-release-bundle.mts) writes alongside the
 // tarball: a flat map of repo-relative path → sha256 hex, plus the tombstoned
-// paths a past bundle shipped that have since moved/retired.
+// paths a past bundle shipped that have since moved/retired and the shipped
+// GENERATED outputs that must never be git-tracked.
 export interface BundleManifest {
   readonly files: Record<string, string>
+  readonly generatedPaths?: readonly string[] | undefined
+  readonly movedPaths?: ReadonlyArray<{ from: string; to: string }> | undefined
   readonly removedPaths?: readonly string[] | undefined
   readonly templateSha: string
   readonly version: string
@@ -130,13 +137,18 @@ export function verifyFiles(
   return problems
 }
 
-// Place verified bundle files into the repo. Sentinel-scoped for files
-// carrying `#fleet-canonical-end` — today `.config/fleet/oxlintrc.json`: the
-// bundle bytes replace everything through the end sentinel, and the repo-local
-// tail after it survives byte-for-byte. The lint runner re-emits that tail as
-// CLI ignore args, so a whole-file copy here silently unmasks hundreds of
-// findings — the recurring socket-registry incident. Every other file is a
-// plain byte copy, as is a sentinel file landing for the first time.
+// Place verified bundle files into the repo. Sentinel-scoped ONLY for the
+// DESIGNATED segment files (FLEET_CANONICAL_SPLICE_FILES — today
+// `.config/fleet/oxlintrc.json`): the bundle bytes replace everything through
+// the fleet-canonical end sentinel, and the repo-local tail after it survives
+// byte-for-byte. The lint runner re-emits that tail as CLI ignore args, so a
+// whole-file copy there silently unmasks hundreds of findings — the recurring
+// socket-registry incident. Every other file is a plain byte copy — the PATH
+// gate is load-bearing: content-only gating spliced ANY placed file that
+// merely mentioned the sentinel token, stitching stale member tails onto
+// fresh bundle heads (the v1.0.14 fetcher-chimera incident, seeded by this
+// very comment carrying the raw token). A designated file landing for the
+// first time also byte-copies.
 export function placeFiles(
   filesDir: string,
   rels: readonly string[],
@@ -147,21 +159,166 @@ export function placeFiles(
     const src = path.join(filesDir, rel)
     const dest = path.join(destDir, rel)
     mkdirSync(path.dirname(dest), { recursive: true })
-    if (existsSync(dest)) {
-      const srcBuf = readFileSync(src)
-      if (hasFleetCanonicalEndSentinel(srcBuf.toString('utf8'))) {
-        writeFileSync(
-          dest,
-          spliceFleetCanonicalContent(
-            srcBuf.toString('utf8'),
-            readFileSync(dest, 'utf8'),
+    if (isFleetCanonicalSpliceFile(rel) && existsSync(dest)) {
+      const srcContent = readFileSync(src, 'utf8')
+      if (hasFleetCanonicalEndSentinel(srcContent)) {
+        withWriteBitLifted(dest, () =>
+          writeFileSync(
+            dest,
+            spliceFleetCanonicalContent(srcContent, readFileSync(dest, 'utf8')),
           ),
         )
         continue
       }
     }
-    cpSync(src, dest)
+    withWriteBitLifted(dest, () => cpSync(src, dest))
   }
+}
+
+// Run `write` with the destination's user write bit lifted. The cascade's
+// mirror-mode locks placed mirrors 0o444, and both cpSync and the sentinel
+// splicer open the DESTINATION for write — POSIX open(2) refuses that on a
+// read-only file, so a locked mirror EACCESed mid-place and stranded a
+// half-placed tree. Restoring the prior mode afterward keeps the mirror lock
+// intact across a refresh.
+function withWriteBitLifted(dest: string, write: () => void): void {
+  if (!existsSync(dest)) {
+    write()
+    return
+  }
+  const { mode } = statSync(dest)
+  if ((mode & 0o200) !== 0) {
+    write()
+    return
+  }
+  chmodSync(dest, mode | 0o200)
+  try {
+    write()
+  } finally {
+    chmodSync(dest, mode)
+  }
+}
+
+// Untrack the manifest's GENERATED outputs (`generatedPaths`) after
+// placement, mirroring the bootstrap installer's untrackGeneratedOutputs: the
+// bundle SHIPS these files (placement keeps them on disk) while the fleet
+// gitignore block ignores them and `generated-outputs-are-untracked` forbids
+// TRACKING them. A member that historically committed one (the root MCP
+// projections `opencode.json` + `.kimi-code/mcp.json`, `bundle.cjs` et al.)
+// heals on the next fetch: the file stays on disk but leaves the index.
+// Non-fatal by design; a non-git dest or an already-clean index is a no-op
+// (`--ignore-unmatch`). Returns the count of declared paths submitted for
+// untracking (0 when skipped or failed).
+export async function untrackGeneratedOutputs(
+  destDir: string,
+  manifest: BundleManifest,
+): Promise<number> {
+  const generatedPaths = manifest.generatedPaths
+  if (!generatedPaths || generatedPaths.length === 0) {
+    return 0
+  }
+  // `.git` is a dir in a normal checkout and a FILE in a worktree/submodule;
+  // existsSync covers both. A non-git dest has no index to heal.
+  if (!existsSync(path.join(destDir, '.git'))) {
+    return 0
+  }
+  try {
+    await spawn(
+      'git',
+      [
+        'rm',
+        '--cached',
+        '--quiet',
+        '--ignore-unmatch',
+        '--',
+        ...generatedPaths,
+      ],
+      { cwd: destDir, stdioString: true },
+    )
+  } catch (e) {
+    logger.warn(
+      `Untracking generated outputs failed (non-fatal): ${errorMessage(e)}`,
+    )
+    return 0
+  }
+  return generatedPaths.length
+}
+
+// Apply the manifest's per-repo-owned file MOVES (movedPaths) — the rename
+// half of relocating a file the fleet does NOT byte-mirror, mirroring the
+// bootstrap installer's applyMovedPaths. A plain tombstone would delete the
+// member's only copy (the file is repo-owned; the bundle never ships it), so
+// rename `from` → `to` when `to` is absent — repo-owned content survives
+// byte-for-byte — and delete a stale `from` leftover once `to` exists. Runs
+// BEFORE removeTombstonedPaths. Belt: a move whose `from` the manifest ships
+// a file at/under is skipped. Returns the count of paths acted on.
+export function applyMovedPaths(
+  destDir: string,
+  manifest: BundleManifest,
+): number {
+  const movedPaths = manifest.movedPaths
+  if (!movedPaths || movedPaths.length === 0) {
+    return 0
+  }
+  const shipped = Object.keys(manifest.files).map(rel => normalizePath(rel))
+  let moved = 0
+  for (let i = 0, { length } = movedPaths; i < length; i += 1) {
+    const entry = movedPaths[i]!
+    const from = normalizePath(entry.from)
+    const to = normalizePath(entry.to)
+    if (
+      !from ||
+      !to ||
+      shipped.some(f => f === from || f.startsWith(`${from}/`))
+    ) {
+      continue
+    }
+    const fromAbs = path.join(destDir, from)
+    if (!existsSync(fromAbs)) {
+      continue
+    }
+    const toAbs = path.join(destDir, to)
+    if (existsSync(toAbs)) {
+      // The canonical copy already exists — the leftover source is stale.
+      safeDeleteSync(fromAbs)
+    } else {
+      mkdirSync(path.dirname(toAbs), { recursive: true })
+      renameSync(fromAbs, toAbs)
+    }
+    moved += 1
+  }
+  return moved
+}
+
+// Delete the manifest's TOMBSTONED paths (files or whole dirs) that still
+// exist in the repo — the deletion half of a fleet move/retire, mirroring the
+// bootstrap installer's removeTombstonedPaths (a bundle refresh must be a true
+// sync: the v1.0.12 `.github/actions/fleet/lib` → `_shared` move shipped no
+// deletion and orphaned `lib/` fleet-wide). Belt: a tombstone the current
+// manifest ships a file at/under is skipped, so a bad producer entry can never
+// delete freshly placed payload. Returns the count deleted.
+export function removeTombstonedPaths(
+  destDir: string,
+  manifest: BundleManifest,
+): number {
+  const removedPaths = manifest.removedPaths
+  if (!removedPaths || removedPaths.length === 0) {
+    return 0
+  }
+  const shipped = Object.keys(manifest.files).map(rel => normalizePath(rel))
+  let removed = 0
+  for (let i = 0, { length } = removedPaths; i < length; i += 1) {
+    const rel = normalizePath(removedPaths[i]!)
+    if (!rel || shipped.some(f => f === rel || f.startsWith(`${rel}/`))) {
+      continue
+    }
+    const abs = path.join(destDir, rel)
+    if (existsSync(abs)) {
+      safeDeleteSync(abs)
+      removed += 1
+    }
+  }
+  return removed
 }
 
 export async function main(): Promise<number> {
@@ -245,10 +402,18 @@ export async function main(): Promise<number> {
       return 0
     }
 
-    // 5. Place the verified files into the repo.
+    // 5. Place the verified files into the repo, then drop any tombstoned
+    // paths (moved/retired payload) still present — the deletion half of a
+    // fleet move, so a refresh is a true sync.
     placeFiles(filesDir, Object.keys(manifest.files), opts.dest)
+    await untrackGeneratedOutputs(opts.dest, manifest)
+    const moved = applyMovedPaths(opts.dest, manifest)
+    const tombstoned = removeTombstonedPaths(opts.dest, manifest)
+    const movedNote = moved > 0 ? `, moved ${moved} relocated path(s)` : ''
+    const tombstonedNote =
+      tombstoned > 0 ? `, removed ${tombstoned} tombstoned path(s)` : ''
     logger.log(
-      `Placed ${count} verified file(s) from ${opts.ref} (template ${manifest.templateSha}).`,
+      `Placed ${count} verified file(s)${movedNote}${tombstonedNote} from ${opts.ref} (template ${manifest.templateSha}).`,
     )
     return 0
   } finally {

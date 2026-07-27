@@ -5,10 +5,10 @@
  *   a thin fail-soft CLI shell:
  *
  *   1. Manifest resolution — `resolveManifestPaths` globs the shipped
- *      external-tools.json set (the root build/release manifest, the setup
- *      manifest, the security-hook manifest, and the cascaded template/base
- *      mirrors) down to the ones that actually exist; `resolveTargets` narrows
- *      to a single `--target` when given.
+ *      external-tools.json set (the .config/repo build/release manifest, the
+ *      setup manifest, the security-hook manifest, and the cascaded
+ *      template/base mirrors) down to the ones that actually exist;
+ *      `resolveTargets` narrows to a single `--target` when given.
  *   2. Format-preserving I/O — `loadManifest` reads through socket-lib's
  *      `EditableJson` so a verb's `.update({ … })` / `.save({ sort:false })`
  *      keeps key order + indentation (a surgical diff), never a
@@ -33,23 +33,25 @@ import type { ExternalToolsJson, Tool } from './update.mts'
 // Manifest resolution
 // ---------------------------------------------------------------------------
 
-// Every external-tools.json the repo ships, repo-root-relative. The root has no
-// template/base mirror (it's wheelhouse-only build/release config); the other
-// two are cascaded, so their template/base source-of-truth copies are listed
-// too. build/release-bundle copies are generated artifacts — deliberately NOT
-// listed (CRUD operates on sources, never build output).
+// Every external-tools.json the repo ships, repo-root-relative. The
+// build/release manifest lives at .config/repo/external-tools.json — the
+// per-repo-owned config tier; repo roots stay clutter-free — and has no
+// template/base mirror (repo-specific tools are allowed; only SHARED entries
+// sync). The other two are cascaded, so their template/base source-of-truth
+// copies are listed too. build/release-bundle copies are generated artifacts —
+// deliberately NOT listed (CRUD operates on sources, never build output).
 export const MANIFEST_RELATIVE_PATHS: readonly string[] = [
-  'external-tools.json',
+  '.config/repo/external-tools.json',
   'scripts/fleet/setup/external-tools.json',
   '.claude/hooks/fleet/setup-security-tools/external-tools.json',
   'template/base/scripts/fleet/setup/external-tools.json',
   'template/base/.claude/hooks/fleet/setup-security-tools/external-tools.json',
 ]
 
-// The default `add` target when --target is omitted: the root build/release
+// The default `add` target when --target is omitted: the build/release
 // manifest. `add` can't glob "every manifest containing the tool" (a new tool
 // is in none), so it writes to one canonical file — override with --target.
-export const DEFAULT_ADD_RELATIVE_PATH = 'external-tools.json'
+export const DEFAULT_ADD_RELATIVE_PATH = '.config/repo/external-tools.json'
 
 /**
  * The shipped manifests that actually exist under `repoRoot`, absolute. Missing

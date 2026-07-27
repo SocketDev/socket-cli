@@ -468,8 +468,9 @@ const main = (): number => {
       file.startsWith('.git-hooks/') ||
       file.startsWith('scripts/') ||
       // The dep-0 bootstrap runs before any dependency exists, so it never
-      // imports socket-lib's logger and must call console.* directly — same
-      // exemption as scripts/.
+      // imports socket-lib's logger and must call console.* directly. Its live
+      // home, scripts/repo/bootstrap/, is covered by the scripts/ exemption;
+      // this covers the LEGACY root copies until the fleet sweep lands.
       file.startsWith('bootstrap/') ||
       // template/ is the canonical source for code that cascades to
       // .claude/hooks/, .git-hooks/, and scripts/. Apply the same

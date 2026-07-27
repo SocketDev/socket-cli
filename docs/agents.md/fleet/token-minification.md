@@ -7,7 +7,7 @@ semantics: the model sees the same information, fewer tokens.
 ## headroom-ai
 
 A telemetry-locked wire-level proxy (a 3rd-party tool pinned in
-`external-tools.json`, run via `uv`) that sits between Claude Code and the API
+`.config/repo/external-tools.json`, run via `uv`) that sits between Claude Code and the API
 and compresses traffic. Started by `.claude/hooks/fleet/headroom-proxy-start/`
 at SessionStart, which also sets `ANTHROPIC_BASE_URL` to the local proxy. Held
 telemetry-OFF and fail-closed; the sfw CDN allowlist is the runtime backstop.

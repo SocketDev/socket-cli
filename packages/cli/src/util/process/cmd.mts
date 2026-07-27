@@ -146,3 +146,25 @@ export function filterFlags(
 export function isHelpFlag(cmdArg: string): boolean {
   return helpFlags.has(cmdArg)
 }
+
+/**
+ * Merge Node flags into a NODE_OPTIONS value without clobbering an inherited
+ * one.
+ *
+ * A child process' NODE_OPTIONS env var REPLACES (does not extend) the
+ * parent's, so setting it to only our own flags silently drops any NODE_OPTIONS
+ * the user configured globally. This joins, in order, the caller's existing
+ * NODE_OPTIONS ahead of the flags we add so both are honoured.
+ *
+ * The value is intentionally not quoted: it is assigned directly to an env var
+ * (not passed through a shell), and consumers that re-tokenize NODE_OPTIONS on
+ * whitespace (e.g. Next.js) mishandle embedded quotes.
+ */
+export function mergeNodeOptions(
+  envNodeOptions: string | undefined,
+  addedFlags: string[] | readonly string[],
+): string {
+  return [envNodeOptions, cmdFlagsToString(addedFlags)]
+    .filter(Boolean)
+    .join(' ')
+}

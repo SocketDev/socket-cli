@@ -18,8 +18,9 @@
  *
  * --apply --id <row-id> --target-tag <tag> [--manifest <lockstep.json>]
  * Lands ONE resolved bump: checkout the target tag inside the row's
- * submodule, rewrite that version-pin row's `pinned_tag` + `pinned_sha`
- * in `lockstep.json`, regenerate the `.gitmodules` `# <name>-<version>
+ * submodule, rewrite that version-pin row's `pinned_tag` in `lockstep.json`
+ * (and drop any legacy `pinned_sha` — the pin is derived), write the pin SHA
+ * authoritatively to the `.gitmodules` `ref =` + `# <name>-<version>
  * sha256:…` annotation via gen/gitmodules-hash.mts --set, and commit
  * `chore(deps): bump <upstream> to <tag>`. Collapses reference.md Phase 3
  * (the bash the skill used to inline). The skill still owns the per-row
@@ -387,7 +388,7 @@ export function gatherLocalTags(
   reports: readonly Report[],
   repoRoot: string,
 ): Record<string, string[]> {
-  const { merged } = loadManifestTree(rootManifestPath)
+  const { merged } = loadManifestTree(rootManifestPath, repoRoot)
   const out: Record<string, string[]> = {
     __proto__: null,
   } as unknown as Record<string, string[]>
@@ -419,7 +420,7 @@ export function gatherOriginHeads(
   reports: readonly Report[],
   repoRoot: string,
 ): Record<string, string> {
-  const { merged } = loadManifestTree(rootManifestPath)
+  const { merged } = loadManifestTree(rootManifestPath, repoRoot)
   const out: Record<string, string> = { __proto__: null } as unknown as Record<
     string,
     string

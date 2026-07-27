@@ -304,12 +304,13 @@ async function main(): Promise<void> {
     }
     throw e
   }
-  // The publish SUCCEEDED — fast-forward main to the bump commit (same SHA) and
-  // remove the release branch. This is deliberately OUTSIDE the try: if the
-  // fast-forward fails (main moved mid-publish, or a branch-protected main the
-  // App can't advance), the throw must NOT discard the branch — the version is
-  // already published, so promoteReleaseBranch leaves the branch intact for
-  // manual reconcile and fails loud.
+  // The publish SUCCEEDED — land the bump on main by opening a PR from the
+  // release branch and enabling squash auto-merge (a branch-protected main
+  // rejects a direct ref push from the release App with 422). This is
+  // deliberately OUTSIDE the try: if the promote fails, the throw must NOT
+  // discard the branch — the version is already published, so
+  // promoteReleaseBranch leaves the branch intact (its PR keeps the bump
+  // reachable) and fails loud.
   if (bumpResult) {
     await promoteReleaseBranch(bumpResult.releaseBranch, bumpResult.sha)
   }

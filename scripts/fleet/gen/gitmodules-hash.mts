@@ -26,7 +26,7 @@
  */
 
 import crypto from 'node:crypto'
-import { existsSync, promises as fs } from 'node:fs'
+import { existsSync, promises as fs, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -150,6 +150,31 @@ export function parseBlocks(lines: string[]): Block[] {
     })
   }
   return blocks
+}
+
+// Resolve the AUTHORITATIVE pinned SHA for a submodule from `.gitmodules` — the
+// `ref = <sha>` of the `[submodule]` block whose `path =` matches
+// `submodulePath`. `no-upstream-gitlink-guard` + `uses-sha-verify-guard`
+// already treat this `ref` as the single source of truth for the pin, so
+// lockstep DERIVES a `version-pin` row's pin from here rather than storing a
+// duplicate `pinned_sha`. Pure + sync; fails open to `undefined` (never throws
+// at this public boundary) when the `.gitmodules` file is absent / unreadable,
+// no block matches the path, or the matched block carries no `ref =`.
+export function resolvePinnedSha(
+  gitmodulesPath: string,
+  submodulePath: string,
+): string | undefined {
+  if (!existsSync(gitmodulesPath)) {
+    return undefined
+  }
+  let raw: string
+  try {
+    raw = readFileSync(gitmodulesPath, 'utf8')
+  } catch {
+    return undefined
+  }
+  const blocks = parseBlocks(raw.split(/\r?\n/))
+  return blocks.find(b => b.path === submodulePath)?.ref
 }
 
 // SHA-256 of the codeload .tar.gz at `ref`. Uses the lib http helper so the

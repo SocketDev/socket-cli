@@ -34,6 +34,12 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // Root `scripts/` is a namespace only: fleet and repo automation must
     // declare ownership by living below scripts/fleet/ or scripts/repo/.
     () => run('node', ['scripts/fleet/check/root-scripts-are-segregated.mts']),
+    // The repo ROOT is a namespace too: every tracked root entry is a
+    // sanctioned tool-anchored name / tier dir, or carries a documented
+    // per-repo allowlist reason (.config/repo/root-files.json). The legacy
+    // root bootstrap/ + external-tools.json spread fleet-wide exactly because
+    // no gate owned the root; this is that gate.
+    () => run('node', ['scripts/fleet/check/root-files-are-sanctioned.mts']),
     // Windows-portability classes (unshelled .cmd spawns, URL .pathname as a
     // filesystem path, hand-rolled platform literals) — each shipped a real
     // windows-only CI failure that failed OPEN (the bump-order pre-release
@@ -413,6 +419,13 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // off the public-CDN/registry allowlist (catches a bare CDN domain the
     // edit-time guard's fetch-attached detection misses).
     () => run('node', ['scripts/fleet/check/cdn-allowlist-is-respected.mts']),
+    // Commit-time twin of denied-domain-reference-guard: no tracked file may
+    // reference a fleet-DENIED domain or filename IOC (single source:
+    // .claude/hooks/fleet/_shared/denied-domains.mts), and no gh-aw
+    // allowDomains / egress-allowlist grant may cover one, wildcard-aware.
+    // Exempt, narrowly: the denylist surfaces, their tests, CHANGELOGs, and
+    // marked IOC-citation docs under docs/; egress surfaces are never exempt.
+    () => run('node', ['scripts/fleet/check/denied-domains-are-absent.mts']),
     // Commit-time twin of package-manager-auto-update-guard: every installed
     // package manager has auto-update disabled (no silent self-bump).
     () =>

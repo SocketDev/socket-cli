@@ -136,6 +136,10 @@
                 "description": "Full 40-char SHA of the upstream commit we forked from. The harness runs `git log <sha>..HEAD -- <upstream_path>` inside the submodule to surface drift.",
                 "type": "string"
               },
+              "mirror": {
+                "description": "True = this fork is a VERBATIM upstream mirror kept byte-close to upstream so it stays trivially diffable on the next bump (e.g. a conformance shim re-exposing upstream's API so upstream's own tests run against a port). A mirror MUST carry the `// @lockstep-mirror <upstream_path> @ <forked_at_sha>` header marker and a matching .config/fleet/.prettierignore entry; lockstep-mirror-markers-are-declared enforces both directions. Defaults to false — a deviating fork (mouse-parser, etc.) is NOT a mirror and may not carry the marker.",
+                "type": "boolean"
+              },
               "deviations": {
                 "minItems": 1,
                 "description": "Human-readable list of intentional differences from upstream. Zero deviations = the file should not be forked; consume upstream directly. Each entry is one short sentence (e.g. `swap require() for import` or `remove Node 14 fallback`).",
@@ -154,7 +158,6 @@
               "kind",
               "id",
               "upstream",
-              "pinned_sha",
               "upgrade_policy"
             ],
             "properties": {
@@ -208,11 +211,11 @@
               },
               "pinned_sha": {
                 "pattern": "^[0-9a-f]{40}$",
-                "description": "Full 40-char SHA the submodule is pinned to. Authoritative — the harness compares this against the submodule HEAD, not against `pinned_tag`.",
+                "description": "OPTIONAL / derived — the authoritative pin is the submodule's `ref =` in `.gitmodules` (single source of truth, per no-upstream-gitlink-guard). When omitted the harness resolves it from there (`resolvePinnedSha`); this field is present only on legacy manifests, and auto-bump migrates a row to the derived model by dropping it on the next bump. When present it must still be a full 40-char SHA AND must not disagree with the `.gitmodules` ref (a stale stored copy is drift).",
                 "type": "string"
               },
               "pinned_tag": {
-                "description": "Human-readable release tag for reports / PR titles (e.g. `v3.2.1`). Informational only — `pinned_sha` is the source of truth. Useful when an upstream cuts a release without changing semver but moves the SHA.",
+                "description": "Human-readable release tag for reports / PR titles (e.g. `v3.2.1`). Informational only — the `.gitmodules` `ref =` is the source of truth. Useful when an upstream cuts a release without changing semver but moves the SHA.",
                 "type": "string"
               },
               "upgrade_policy": {

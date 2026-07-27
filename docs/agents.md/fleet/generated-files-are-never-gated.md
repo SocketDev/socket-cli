@@ -5,7 +5,7 @@ any scope, including `lint --staged` / explicit-file runs and the wheelhouse
 `template/` dogfood pass. Their bytes belong to a bundler, a codegen step, or an
 upstream source of truth; the gate rewriting them is churn against the next build
 (or, worse, a broken artifact — a formatter reflow once ASI-mangled the dep-0
-`bootstrap/fleet.mjs` into `const line = lines[i]if (…)`).
+`scripts/repo/bootstrap/fleet.mjs` into `const line = lines[i]if (…)`).
 
 ## The mechanism
 
@@ -13,7 +13,7 @@ upstream source of truth; the gate rewriting them is churn against the next buil
 directory **walk**. When a file is passed **explicitly** on the argv — which is
 exactly what `lint --staged`, `lint <file>`, and the pre-commit hook do — the
 tool lints/formats it regardless of the ignore. So a staged generated file
-(`bootstrap/fleet.mjs`, a `dist/` bundle, the vendored `acorn` AST tooling)
+(`scripts/repo/bootstrap/fleet.mjs`, a `dist/` bundle, the vendored `acorn` AST tooling)
 red-lights the gate on bytes it never owns.
 
 The fix is to pre-filter the file list before it reaches the tool.
@@ -21,7 +21,7 @@ The fix is to pre-filter the file list before it reaches the tool.
 predicate; `filterFormatIgnored()` applies it **before** the `template/**` keep,
 so the artifacts drop out even inside the wheelhouse canon. It covers:
 
-- the dep-0 fetcher bundle (`bootstrap/fleet.mjs`) — `bootstrap/src/*` IS gated;
+- the dep-0 fetcher bundle (`scripts/repo/bootstrap/fleet.mjs`) — `template/bootstrap/src/*` IS gated;
 - `.d.ts` / `.d.mts` / `.d.cts` compiler output;
 - `_dispatch/` hook bundles and gh-aw `*.lock.yml` compiled workflows;
 - directories a generator or upstream owns: `acorn`, `build`, `coverage`, `dist`,

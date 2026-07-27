@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * @file Assertion: every repo in fleet-repos.json resolves to a real repo in its
- *   org (a roster reference resolves to an actual GitHub repo). Onboarding
+ * @file Assertion: every repo in fleet-repos.json resolves to a real repo in
+ *   its org (a roster reference resolves to an actual GitHub repo). Onboarding
  *   must update the roster AND create the actual GitHub repo (in the exact org)
  *   — a roster entry with no repo is a half-onboarded member.
  *   socket-gemini-nano sat in the roster with no `SocketDev/` repo, so its
@@ -10,11 +10,13 @@
  *   a 404 (repo not found, OR inaccessible to this token) is reported. The
  *   roster's per-entry `owner` defaults to the home org, so a cross-org member
  *   is checked against its own org. Skips CLEANLY — never false-green — off the
- *   release/CI tier (FLEET_CHECK_RELEASE), with no fleet-repos.json (a member
- *   checkout), or when `gh` is unauthenticated. Report mode (loud warn, exit
- *   0): a 404 can also mean "private + no token access", so a hard gate would
- *   false-block; flip MODE to 'strict' once every member repo is confirmed
- *   present + visible.
+ *   release/CI tier (FLEET_CHECK_RELEASE), in a member checkout (the audit is
+ *   wheelhouse-only, gated on template/base ownership — the cascaded roster no
+ *   longer marks the wheelhouse), with no fleet-repos.json (a fresh clone
+ *   mid-bootstrap), or when `gh` is unauthenticated. Report mode (loud warn,
+ *   exit 0): a 404 can also mean "private + no token access", so a hard gate
+ *   would false-block; flip MODE to 'strict' once every member repo is
+ *   confirmed present + visible.
  */
 
 import { existsSync, readFileSync } from 'node:fs'
@@ -25,7 +27,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { isMainModule } from '../_shared/is-main-module.mts'
-import { REPO_ROOT } from '../paths.mts'
+import { OWNS_RELOCATED_TESTS, REPO_ROOT } from '../paths.mts'
 import { fleetReposPath, parseFleetRepos } from './member-ci-fires-on-push.mts'
 import type { FleetRepo } from './member-ci-fires-on-push.mts'
 
@@ -82,10 +84,19 @@ export function main(): void {
   if (!process.env['FLEET_CHECK_RELEASE']) {
     return
   }
+  // Wheelhouse-only: the roster cascades fleet-wide for the hook membership
+  // law, so every member carries it — without this gate every member's
+  // release CI would re-run the same fleet-wide sweep.
+  if (!OWNS_RELOCATED_TESTS) {
+    logger.log(
+      'member-repos-resolve: skipped (member checkout — the audit is wheelhouse-only).',
+    )
+    return
+  }
   const reposPath = fleetReposPath(REPO_ROOT)
   if (!existsSync(reposPath)) {
     logger.log(
-      'member-repos-resolve: skipped (no fleet-repos.json — member checkout / fresh clone).',
+      'member-repos-resolve: skipped (no fleet-repos.json — fresh clone mid-bootstrap).',
     )
     return
   }

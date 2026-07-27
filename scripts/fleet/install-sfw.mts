@@ -50,7 +50,10 @@ import { isMainModule } from './_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
-const EXTERNAL_TOOLS_PATH = path.join(REPO_ROOT, 'external-tools.json')
+const EXTERNAL_TOOLS_PATH = path.join(
+  REPO_ROOT,
+  '.config/repo/external-tools.json',
+)
 
 // Resolve the user-home wheelhouse umbrella via the canonical lib-stable
 // helper (getSocketAppDir('wheelhouse') → ~/.socket/_wheelhouse/). Cross-

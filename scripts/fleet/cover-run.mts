@@ -26,6 +26,7 @@ import {
   spawnSync,
 } from '@socketsecurity/lib-stable/process/spawn/child'
 
+import { sleep } from './_shared/backoff.mts'
 import type { CoverConfig, ResolvedSuite } from './cover/discovery.mts'
 import {
   readCoverConfig,
@@ -249,6 +250,166 @@ export function collectChurnNotes(snapshot: EnvSnapshot): string[] {
   return out
 }
 
+// Thrown when the subprocess coverage capture is PROVABLY incomplete at the
+// drain timeout — the raw-fragment dir is still growing, or a fragment is
+// truncated (a child was mid-write when read). Failing loud is deliberate:
+// silently merging a partial capture under-reports the aggregate (a coverage
+// false-red that flips on runner timing). See drainChildFragments.
+export class IncompleteChildCaptureError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'IncompleteChildCaptureError'
+  }
+}
+
+// A raw NODE_V8_COVERAGE fragment is a complete JSON document; a file still
+// being written parses as incomplete. Used by the drain to distinguish "still
+// flushing" from "settled". Empty → not yet complete.
+export function isCompleteJsonFragment(content: string): boolean {
+  if (content.length === 0) {
+    return false
+  }
+  try {
+    JSON.parse(content)
+    return true
+  } catch {
+    return false
+  }
+}
+
+// Injected I/O + clock so the drain is unit-testable without real timing.
+export interface DrainChildDeps {
+  listFragments: () => string[]
+  now: () => number
+  readFragment: (name: string) => string
+  sizeOf: (name: string) => number
+  sleep: (ms: number) => Promise<void>
+}
+
+export interface DrainChildOptions {
+  maxWaitMs?: number | undefined
+  quietSamples?: number | undefined
+  sampleMs?: number | undefined
+}
+
+interface FragmentSnapshot {
+  count: number
+  names: string[]
+  totalSize: number
+}
+
+function snapshotFragments(deps: DrainChildDeps): FragmentSnapshot {
+  const names = deps.listFragments()
+  let totalSize = 0
+  for (let i = 0, { length } = names; i < length; i += 1) {
+    totalSize += deps.sizeOf(names[i]!)
+  }
+  return { count: names.length, names, totalSize }
+}
+
+function allFragmentsComplete(deps: DrainChildDeps, names: string[]): boolean {
+  for (let i = 0, { length } = names; i < length; i += 1) {
+    if (!isCompleteJsonFragment(deps.readFragment(names[i]!))) {
+      return false
+    }
+  }
+  return true
+}
+
+function fragmentsStable(a: FragmentSnapshot, b: FragmentSnapshot): boolean {
+  return a.count === b.count && a.totalSize === b.totalSize
+}
+
+/**
+ * Drain the raw child-fragment dir to a SETTLED state before the merge reads
+ * it. A slower runner (CI, fewer cores) can reach the merge while a just-exited
+ * child is still flushing its NODE_V8_COVERAGE file, so the merge captures a
+ * VARIABLE subset — under-reporting the aggregate on runner timing alone. This
+ * waits until the fragment set is stable (count + total size unchanged) AND
+ * every fragment parses as complete JSON, across `quietSamples` consecutive
+ * samples, hard-capped at `maxWaitMs`. Returns the settled fragment count.
+ *
+ * FAIL LOUD: if the cap is hit while the dir is STILL growing or a fragment is
+ * truncated, throw IncompleteChildCaptureError rather than merge a partial —
+ * never silently report a low aggregate. Conservative: if the final observed
+ * state is stable + complete (just short of the quiet streak), it ACCEPTS
+ * rather than false-red a genuinely settled dir.
+ *
+ * Honest limit: a child SIGKILLed on a test-timeout wrote no fragment at all,
+ * so it can never be "waited for" here — those lines stay uncovered (a
+ * test-budget issue, surfaced by the capture-count visibility, not this drain).
+ */
+export async function drainChildFragments(
+  deps: DrainChildDeps,
+  options?: DrainChildOptions | undefined,
+): Promise<number> {
+  const opts = { __proto__: null, ...options } as DrainChildOptions
+  const sampleMs = opts.sampleMs ?? 250
+  const quietSamples = opts.quietSamples ?? 3
+  const maxWaitMs = opts.maxWaitMs ?? 10_000
+  const start = deps.now()
+  let prev = snapshotFragments(deps)
+  let stableStreak = 0
+  // The last observed sample's verdict — read at the cap so "still growing" is
+  // decided by the final loop comparison (a post-loop re-snapshot would equal
+  // `prev`, hiding growth). An empty dir is settled at count 0.
+  let lastStable = true
+  let lastComplete = allFragmentsComplete(deps, prev.names)
+  while (deps.now() - start < maxWaitMs) {
+    // eslint-disable-next-line no-await-in-loop
+    await deps.sleep(sampleMs)
+    const cur = snapshotFragments(deps)
+    lastStable = fragmentsStable(prev, cur)
+    lastComplete = allFragmentsComplete(deps, cur.names)
+    if (lastStable && lastComplete) {
+      stableStreak += 1
+      if (stableStreak >= quietSamples) {
+        return cur.count
+      }
+    } else {
+      stableStreak = 0
+    }
+    prev = cur
+  }
+  // Cap hit — fail only on PROVABLE incompleteness (conservative).
+  if (!lastComplete) {
+    throw new IncompleteChildCaptureError(
+      `subprocess coverage capture incomplete: truncated fragment(s) after ${maxWaitMs}ms drain`,
+    )
+  }
+  if (!lastStable) {
+    throw new IncompleteChildCaptureError(
+      `subprocess coverage capture incomplete: raw fragment dir still growing after ${maxWaitMs}ms drain`,
+    )
+  }
+  // Stable + complete at the cap, just short of the quiet streak — accept it
+  // rather than false-red a genuinely settled capture.
+  return prev.count
+}
+
+// Production drain deps: real fs against the raw dir, real clock + sleep.
+function realDrainDeps(rawDir: string): DrainChildDeps {
+  return {
+    listFragments: () => readdirSync(rawDir).filter(f => f.endsWith('.json')),
+    now: () => Date.now(),
+    readFragment: name => {
+      try {
+        return readFileSync(path.join(rawDir, name), 'utf8')
+      } catch {
+        return ''
+      }
+    },
+    sizeOf: name => {
+      try {
+        return statSync(path.join(rawDir, name)).size
+      } catch {
+        return 0
+      }
+    },
+    sleep: ms => sleep(ms),
+  }
+}
+
 /**
  * Convert the raw NODE_V8_COVERAGE output spawned children wrote during the
  * suites into the children tier's coverage-final.json via c8's programmatic
@@ -260,10 +421,23 @@ export function collectChurnNotes(snapshot: EnvSnapshot): string[] {
  */
 export async function buildChildrenCoverageReport(): Promise<boolean> {
   const rawDir = COVERAGE_CHILDREN_RAW_DIR
+  // Drain the raw dir to a settled capture BEFORE reading it, so a slow runner
+  // doesn't merge while children are still flushing (fail-loud if the capture
+  // is provably incomplete). Skipped when the dir doesn't exist yet.
+  if (existsSync(rawDir)) {
+    await drainChildFragments(realDrainDeps(rawDir))
+  }
   const scratchReportDir = path.join(COVERAGE_SCRATCH_DIR, 'children')
   const rawFiles = existsSync(rawDir)
     ? readdirSync(rawDir).filter(f => f.endsWith('.json'))
     : []
+  // ALWAYS surface the capture count (even 0) — this is the key CI-vs-local
+  // diagnostic: a CI runner with fewer cores can capture fewer child fragments
+  // than local, silently lowering the aggregate. Printed unconditionally so
+  // every run (incl a failing CI cut) shows it via stdout / gh run --log.
+  logger.info(
+    `Subprocess coverage: captured ${rawFiles.length} raw child fragment(s).`,
+  )
   if (rawFiles.length === 0) {
     return false
   }
