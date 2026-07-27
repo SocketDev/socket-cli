@@ -29,6 +29,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
+import type { SpawnSyncOptions } from '@socketsecurity/lib-stable/process/spawn/types'
 
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
@@ -133,11 +134,13 @@ export function autoCascade(repoDir: string): {
   const r = spawnSync(
     'node',
     ['scripts/repo/sync-scaffolding/cli.mts', '--target', '.', '--fix'],
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- null-proto options-bag idiom: `__proto__: null` keeps the options prototype-free but changes the literal's inferred type, so the double cast is required to pass it as SpawnSyncOptions.
     {
+      __proto__: null,
       cwd: repoDir,
       env: { __proto__: null, ...process.env, FLEET_SYNC: '1' },
       timeout: 180_000,
-    },
+    } as unknown as SpawnSyncOptions,
   )
   return {
     ok: r.status === 0,

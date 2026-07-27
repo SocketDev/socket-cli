@@ -70,8 +70,8 @@ export function findBareUsesIssues(
   let m: RegExpExecArray | null
   BARE_USES_RE_GLOBAL.lastIndex = 0
   while ((m = BARE_USES_RE_GLOBAL.exec(scanInput)) !== null) {
-    const ownerRepoPath = m.groups!.ownerRepoPath!
-    const ref = m.groups!.ref!
+    const ownerRepoPath = m.groups!['ownerRepoPath']!
+    const ref = m.groups!['ref']!
     const ownerRepo = normalizePath(ownerRepoPath)
       .split('/')
       .slice(0, 2)
@@ -98,7 +98,7 @@ function targetWorkflowOwnerRepos(command: string): string[] {
   BASH_WORKFLOW_PATH_RE_GLOBAL.lastIndex = 0
   let pm: RegExpExecArray | null
   while ((pm = BASH_WORKFLOW_PATH_RE_GLOBAL.exec(command)) !== null) {
-    const relPath = pm.groups!.path!
+    const relPath = pm.groups!['path']!
     // Reject `..`-escape paths. The regex is prefix-anchored to
     // `.github/` but doesn't forbid `..` segments — without this
     // check, a Bash command could coerce the hook into reading any
@@ -123,7 +123,7 @@ function targetWorkflowOwnerRepos(command: string): string[] {
       if (!m) {
         continue
       }
-      const ownerRepoPath = m.groups!.ownerRepoPath!
+      const ownerRepoPath = m.groups!['ownerRepoPath']!
       const ownerRepo = normalizePath(ownerRepoPath)
         .split('/')
         .slice(0, 2)
@@ -142,7 +142,7 @@ function targetGitmodulesOwnerRepos(command: string): string[] {
   BASH_GITMODULES_PATH_RE_GLOBAL.lastIndex = 0
   let pm: RegExpExecArray | null
   while ((pm = BASH_GITMODULES_PATH_RE_GLOBAL.exec(command)) !== null) {
-    const relPath = pm.groups!.path!
+    const relPath = pm.groups!['path']!
     if (!isPathInsideCwd(relPath)) {
       continue
     }
@@ -159,7 +159,7 @@ function targetGitmodulesOwnerRepos(command: string): string[] {
       if (!m) {
         continue
       }
-      ownerRepos.add(m.groups!.ownerRepo!)
+      ownerRepos.add(m.groups!['ownerRepo']!)
     }
   }
   return Array.from(ownerRepos)
@@ -186,7 +186,7 @@ export function findLoneShaIssues(
   LONE_SHA_RE_GLOBAL.lastIndex = 0
   let m: RegExpExecArray | null
   while ((m = LONE_SHA_RE_GLOBAL.exec(command)) !== null) {
-    const sha = m.groups!.sha!.toLowerCase()
+    const sha = m.groups!['sha']!.toLowerCase()
     if (seen.has(sha)) {
       continue
     }

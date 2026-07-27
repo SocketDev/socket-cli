@@ -191,7 +191,7 @@ export function findUnsafeForkExecution(content: string): Finding[] {
     // pattern on a later line also hit because we're scanning every
     // line.
     const runHit = /^\s*-?\s*run\s*:\s*(?<body>.*)/.exec(line)
-    const bodyLine = runHit ? runHit.groups!.body! : line
+    const bodyLine = runHit ? runHit.groups!['body']! : line
     for (let j = 0, { length: len } = EXECUTE_PATTERNS; j < len; j += 1) {
       const ep = EXECUTE_PATTERNS[j]!
       if (!ep.re.test(bodyLine)) {
@@ -215,7 +215,7 @@ export function findUnsafeForkExecution(content: string): Finding[] {
   return findings
 }
 
-export const check = editGuard((filePath, content, payload) => {
+export const check = editGuard((filePath, content) => {
   if (!isWorkflowPath(filePath)) {
     return undefined
   }

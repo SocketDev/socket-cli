@@ -22,11 +22,11 @@ catalog:
   '@socketregistry/packageurl-js': 1.4.7
   '@socketsecurity/lib': 6.2.3
   '@socketsecurity/registry': 2.0.4
-  '@socketsecurity/sdk': 4.0.4
+  '@socketsecurity/sdk': 4.1.1
   '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.4.7'
   '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@6.2.3'
   '@socketsecurity/registry-stable': 'npm:@socketsecurity/registry@2.0.4'
-  '@socketsecurity/sdk-stable': 'npm:@socketsecurity/sdk@4.0.4'
+  '@socketsecurity/sdk-stable': 'npm:@socketsecurity/sdk@4.1.1'
   '@types/mdast': 4.0.4
   '@types/node': 26.1.1
   '@types/semver': 7.7.1
@@ -53,7 +53,7 @@ catalog:
   # .claude/skills/fleet/property-and-fuzz-testing.
   'fast-check': 4.9.0
   'magic-string': 1.0.0
-  'markdownlint-cli2': 0.23.0
+  'markdownlint-cli2': 0.23.1
   'mdast-util-from-markdown': 2.0.3
   'micromark': 4.0.2
   'neosanitize': 0.3.0
@@ -94,7 +94,7 @@ catalog:
 # resolve versions for catalog: refs that are missing their catalog entry.
 catalogOptional:
   'rolldown': 1.1.4
-  'svgo': 4.0.1
+  'svgo': 4.0.2
   # vitiate — coverage-guided fuzzer (SWC-instrumented, native @vitiate/engine).
   # Optional tier: adopted only in repos that fuzz an input boundary (parsers,
   # decoders, native addons), so its native @swc/core engine never installs
@@ -102,5 +102,5 @@ catalogOptional:
   # changes the crash exit code 1→77 (timeout→70) — pin -error_exitcode /
   # -timeout_exitcode in the runner. See .claude/skills/fleet/property-and-fuzz-testing.
   '@vitiate/core': 0.3.1
-  'vite': 8.1.0
+  'vite': 8.1.5
   'vitiate': 0.3.1

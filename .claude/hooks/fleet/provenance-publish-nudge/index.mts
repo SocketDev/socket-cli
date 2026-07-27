@@ -73,7 +73,7 @@ function isReleaseHead(repoRoot: string, pkgVersion: string): boolean {
     const subject = (msg.stdout as string | undefined)?.split('\n')[0] ?? ''
     /* c8 ignore stop */
     const m = RELEASE_MESSAGE_RE.exec(subject)
-    if (m && m.groups!.version === pkgVersion) {
+    if (m && m.groups!['version'] === pkgVersion) {
       return true
     }
   }
@@ -93,7 +93,7 @@ function isReleaseHead(repoRoot: string, pkgVersion: string): boolean {
   for (let i = 0, { length } = tags; i < length; i += 1) {
     const t = tags[i]!
     const m = RELEASE_TAG_RE.exec(t)
-    if (m && m.groups!.version === pkgVersion) {
+    if (m && m.groups!['version'] === pkgVersion) {
       return true
     }
   }

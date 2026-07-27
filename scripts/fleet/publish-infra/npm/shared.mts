@@ -7,9 +7,9 @@
 
 import os from 'node:os'
 
-import { resolveReleaseSubject } from '../../_shared/release-subject.mts'
 import { extractFirstJson, rootPath, runCapture } from '../shared.mts'
 import { fetchVersionTrustInfo } from './registry.mts'
+import { resolveNpmWorkspaceLayout } from './workspace.mts'
 
 /**
  * Raised when the staged-entry listing could not be AUTHENTICATED. The stage
@@ -36,21 +36,22 @@ export interface StageListEntry {
 /**
  * The PUBLISH SUBJECT's name/version/repository — the root package.json for a
  * plain repo, the `publishConfig.directory` manifest for a redirected monorepo
- * like socket-registry. Every guard that keys on "this repo's package"
- * (already-published refusal, cross-repo pack refusal, approve's local-entry
- * match) must see the subject, never a private root. `root` is injectable for
- * tests.
+ * like socket-registry, and the MAIN package (+ lockstep version source) for
+ * a multi-package workspace like decmpfs/stuie. Every guard that keys on
+ * "this repo's package" (already-published refusal, cross-repo pack refusal,
+ * approve's local-entry match) must see the subject, never a private root.
+ * `root` is injectable for tests.
  */
 export function readPackageJson(root: string = rootPath): {
   name: string
   version: string
   repository?: string | { url?: string | undefined } | undefined
 } {
-  const subject = resolveReleaseSubject(root)
+  const layout = resolveNpmWorkspaceLayout(root)
   return {
-    name: subject.name,
-    repository: subject.repository,
-    version: subject.version,
+    name: layout.versionSource.name,
+    repository: layout.repository,
+    version: layout.versionSource.version,
   }
 }
 

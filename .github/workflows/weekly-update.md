@@ -49,6 +49,26 @@ permissions:
 # Per-run + 24h AI-credit budget — the safety win the legacy claude --print lacked.
 max-ai-credits: 1500
 
+# Fallback pricing for any model missing from AWF's build-time-frozen
+# ai-credits table — gh-aw v0.83.2, ADR-47687. Without it, max-ai-credits +
+# an unknown model 400s every request: the 2026-07-25 fleet outage, when
+# token steering's middle-power median landed on a model the frozen table
+# could not price. Priced at the opus tier, the highest this fleet would
+# tolerate, so an unknown model is over-counted against the credit cap and
+# trips the budget early — never under-counted. Defense in depth alongside
+# the dated engine pin above, not a replacement for it.
+# KEY LOCATION IS SCHEMA-VERIFIED, NOT DOCS-VERIFIED: the v0.83.2 release
+# notes place this key under sandbox.agent, but the v0.83.2 schema
+# authoritatively defines it at models.default-ai-credits-pricing — see
+# pkg/parser/schemas/main_workflow_schema.json at that tag, confirmed by the
+# compiled lock emitting apiProxy.defaultAiCreditsPricing. Trust the schema
+# over the release notes when moving this key on a compiler bump; gh-aw main
+# has since refactored the sandbox.agent variant into models.*.
+models:
+  default-ai-credits-pricing:
+    input: 5.0
+    output: 25.0
+
 # Auth without a PAT: the Socket PR App mints a short-lived installation token
 # per run for gh-aw's checkout, the GitHub MCP server, and the safe-output PR.
 # gh aw compile injects actions/create-github-app-token and revokes at run end;
@@ -253,11 +273,70 @@ safe-outputs:
     # request_review block — but changing exactly those IS this workflow's job,
     # and allowed-files already constrains the surface. Disable the redundant gate.
     protected-files: 'allowed'
-  # On test failure, escalate to the stronger model via a separate gh-aw workflow
-  # (one engine/model per workflow → the fix is its own workflow).
-  dispatch-workflow:
-    workflows: [get-green]
-    max: 1
+  # On test failure, escalate to the stronger model via a separate gh-aw
+  # workflow — one engine/model per workflow, so the fix is its own workflow.
+  # This is a custom safe-job, NOT the dispatch-workflow safe-output: declaring
+  # dispatch-workflow makes the v0.83.2 compiler add actions:write to the
+  # safe_outputs/conclusion app mint — pkg/workflow/safe_output_handlers.go
+  # returns NewPermissionsActionsWrite unconditionally, token-blind — and the
+  # Socket PR App deliberately carries no actions permission: the fleet
+  # composite github-pr-app-token declares contents/issues/pull-requests write
+  # as the exact scope this app needs, so every mint failed with "The
+  # permissions requested are not granted to this installation". The safe-job
+  # keeps the agent-driven dispatch but rides the job's own default
+  # GITHUB_TOKEN, which CAN dispatch same-repo workflows because this job —
+  # unlike the workflow-level `permissions: {}` default — explicitly grants
+  # actions:write. The app mint shrinks back to exactly the composite trio.
+  jobs:
+    dispatch-get-green:
+      description: 'Dispatch the get-green fix workflow when a dependency update breaks the build or tests'
+      runs-on: ubuntu-latest
+      output: 'get-green dispatched — the sonnet-tier fix worker takes it from here'
+      permissions:
+        actions: write
+      inputs:
+        branch:
+          description: 'The update branch with the failing changes to fix'
+          required: true
+          type: string
+        build-log:
+          description: 'Last 100 lines of the failing build output'
+          required: false
+          type: string
+        test-log:
+          description: 'Last 100 lines of the failing test output'
+          required: false
+          type: string
+      steps:
+        - name: Dispatch get-green
+          env:
+            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          run: |
+            # Read the agent's dispatch_get_green item from the safe-outputs
+            # artifact. No GitHub expression interpolation in the shell body —
+            # a literal dollar-brace pair here would even fail workflow parsing,
+            # since run blocks are expression-evaluated, unlike YAML comments.
+            # Inputs arrive via jq from the artifact and via env, zizmor
+            # expression-injection.
+            set -euo pipefail
+            item="$(jq -c '[.items[] | select(.type == "dispatch_get_green")][0]' "$GH_AW_AGENT_OUTPUT")"
+            if [ -z "$item" ] || [ "$item" = "null" ]; then
+              echo "no dispatch_get_green item in agent output" >&2
+              exit 1
+            fi
+            branch="$(jq -r '.branch // empty' <<<"$item")"
+            if [ -z "$branch" ]; then
+              echo "dispatch_get_green item is missing the required branch input" >&2
+              exit 1
+            fi
+            build_log="$(jq -r '.["build-log"] // ""' <<<"$item")"
+            test_log="$(jq -r '.["test-log"] // ""' <<<"$item")"
+            gh workflow run get-green.lock.yml \
+              --repo "$GITHUB_REPOSITORY" \
+              --ref "$GITHUB_REF_NAME" \
+              -f "branch=$branch" \
+              -f "build-log=$build_log" \
+              -f "test-log=$test_log"
 ---
 
 # Dependency update
@@ -298,6 +377,6 @@ Two schedules share this workflow. The cadence for this run is
    ran, then a `<details><summary>View commit history</summary>` block with the
    commit list.
 
-4. **If tests fail:** do NOT open a PR. Dispatch the `get-green` workflow via the
-   `dispatch_workflow` safe output, passing the branch and the build/test logs, so
-   the stronger model attempts the fix.
+4. **If tests fail:** do NOT open a PR. Call the `dispatch_get_green` tool with
+   the branch and the last 100 lines of the failing build and test logs, so the
+   stronger model attempts the fix in the dispatched `get-green` workflow.

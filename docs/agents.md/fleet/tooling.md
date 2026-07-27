@@ -144,9 +144,15 @@ FORBIDDEN to maintain. Remove when encountered.
 
 ## `packageManager` field
 
-The fleet pins `packageManager` to a **forgiving floor**, `pnpm@>=<floor>` (currently `pnpm@>=11.0.5`), matching the `engines.pnpm` floor. `pnpm-workspace.yaml` sets `managePackageManagerVersions: false` plus `pmOnFail: warn`, so pnpm treats the field as a minimum hint rather than a version lock: it never switches pnpm versions and only warns on a mismatch. The exact pnpm for CI comes from the setup action (`external-tools.json`), not this field. `derivePins` (`sync-package-manager-pins.mts`) emits the floor from root `engines.pnpm`, and the cascade propagates both pins via `sync.mts package-manager --fleet`. A `packageManager` drift is always benign (`isBehindSource`) because the field is only a hint; the enforced gate is `engines.pnpm`.
+Retired — there is NO `packageManager` field, and corepack is disabled fleet-wide. `scripts/fleet/sync-package-manager-pins.mts` is the code-as-law: it derives every pin from `external-tools.json`'s `tools.{pnpm,npm}.version`, deletes any legacy `packageManager` it finds, and writes:
 
-pnpm 11 stores the integrity hash in `pnpm-lock.yaml` — a separate YAML document — rather than inline. The lockfile is the integrity source of truth, and a legacy `pnpm@<version>+sha512.<hex>` migrates on first install.
+- `devEngines.packageManager` — pnpm at the major-bounded SemVer range derived from the floor, `11.0.5` → `>=11.0.0 <12.0.0`, with `onFail: error`. This is the enforced manager pin: a mismatched pnpm is refused, and the fleet provisions pnpm out-of-band — the setup action reads `external-tools.json` in CI, local uses the racked pnpm — so nothing ever downloads a package manager on the fly.
+- `engines.pnpm` — the `>=<floor>` floor.
+- `engines.npm` — the `>=<npm-version>` floor.
+
+`pnpm-workspace.yaml` keeps `managePackageManagerVersions: false` plus `pmOnFail: warn` as a belt: pnpm's legacy `packageManager` self-check stays off and is moot without the field. Integrity needs no field-level hash either — pnpm 11 stores it in `pnpm-lock.yaml`, the integrity source of truth.
+
+Drift is directional. A pin behind a newer `external-tools.json` warns and continues — a cascade reconciles it during a rollout window, and hard-failing would block unrelated member PRs. A pin ahead of the source, or otherwise inconsistent, fails. `packageManager` removal and any `devEngines.packageManager` reshape are advisory, never a hard fail. Run the sync after a bump — `update-external-tools.mts` calls it and `pnpm run update` runs it; the `package-manager-pins-are-synced` check gates drift in CI.
 
 ## Bumping a versioned tool fleet-wide (pnpm, zizmor, sfw)
 

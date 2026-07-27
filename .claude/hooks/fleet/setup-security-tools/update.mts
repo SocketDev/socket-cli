@@ -69,7 +69,7 @@ export function readSoakWindowMs(): number {
         const content = readFileSync(candidate, 'utf8')
         const match = /^minimumReleaseAge:\s*(?<value>\d+)/m.exec(content)
         if (match) {
-          return Number(match.groups!.value) * MS_PER_MINUTE
+          return Number(match.groups!['value']) * MS_PER_MINUTE
         }
       } catch {
         // Read error.
@@ -277,7 +277,7 @@ export async function updateGithubReleaseTool(
             line.trim(),
           )
           if (match) {
-            checksumMap[match.groups!.filename!] = match.groups!.hash!
+            checksumMap[match.groups!['filename']!] = match.groups!['hash']!
           }
         }
       }

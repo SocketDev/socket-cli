@@ -79,7 +79,7 @@ export function addsUndeferredRule(content: string): boolean {
   return !DOC_LINK_RE.test(content)
 }
 
-export const check = editGuard((filePath, content, payload) => {
+export const check = editGuard((filePath, content) => {
   if (!isClaudeMd(filePath) || !content) {
     return undefined
   }

@@ -12,7 +12,7 @@
 # cannot call this local composite, since nothing is checked out yet for GitHub
 # to resolve `./.github/actions/*` from.
 #
-# cascade-data-deps: ., .github, .github/actions/fleet/lib
+# cascade-data-deps: ., .github, .github/actions/fleet/_shared
 # (read at runtime via ${GITHUB_ACTION_PATH}/../… — implicit edges with no
 # `uses:` line; action-pins-are-current.mts tracks them for staleness.)
 

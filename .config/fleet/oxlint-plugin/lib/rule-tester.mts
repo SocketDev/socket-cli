@@ -92,11 +92,11 @@ export interface InvalidTestCase extends ValidTestCase {
     readonly data?: Record<string, unknown> | undefined
   }>
   /**
-   * Expected source after autofix. If provided, the tester reruns `oxlint
-   * --fix` against a copy of the fixture and asserts the result. Omit when the
-   * rule has no autofix.
+   * Expected source after autofix. If a string, the tester reruns `oxlint
+   * --fix` against a copy of the fixture and asserts the result. Omit — or set
+   * `null`, matching ESLint's RuleTester — when the rule applies no autofix.
    */
-  readonly output?: string | undefined
+  readonly output?: string | null | undefined
 }
 
 export interface RunOpts {

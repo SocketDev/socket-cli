@@ -124,11 +124,11 @@ export function isEnterpriseRulesetFailure(output: string): boolean {
 export function parseGitHubSlug(url: string): string | undefined {
   const sshMatch = /git@github\.com:(?<owner>[^/]+)\/(?<repo>[^/.]+)/.exec(url)
   if (sshMatch) {
-    return `${sshMatch.groups!.owner}/${sshMatch.groups!.repo}`
+    return `${sshMatch.groups!['owner']}/${sshMatch.groups!['repo']}`
   }
   const httpsMatch = /github\.com\/(?<owner>[^/]+)\/(?<repo>[^/.]+)/.exec(url)
   if (httpsMatch) {
-    return `${httpsMatch.groups!.owner}/${httpsMatch.groups!.repo}`
+    return `${httpsMatch.groups!['owner']}/${httpsMatch.groups!['repo']}`
   }
   return undefined
 }

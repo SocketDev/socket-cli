@@ -30,7 +30,8 @@ import {
   runHook,
 } from '../_shared/guard.mts'
 import { parseCommands } from '../_shared/shell-command.mts'
-import type { GuardResult, ToolCallPayload } from '../_shared/guard.mts'
+import type { GuardResult } from '../_shared/guard.mts'
+import type { ToolCallPayload } from '../_shared/payload.mts'
 
 export const triggers: readonly string[] = ['upstream/']
 

@@ -6,3 +6,4 @@
 
 export declare function resolveReal(cmd: string): string | undefined
 export declare function isFirewallShim(filePath: string): boolean
+export declare function rustupProxyFor(cmd: string): string

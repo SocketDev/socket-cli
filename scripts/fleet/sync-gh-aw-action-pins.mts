@@ -15,17 +15,30 @@
  *   - `gh aw compile` exits non-zero for any workflow
  *   - a non-Socket action pin is younger than the soak window (held) Vacuous
  *     pass when no tracked `.md` workflows exist.
+ *
+ *   Post-compile hygiene: the compiler can side-emit workflow files nobody
+ *   declared — v0.83.2's `agentics-maintenance.yml`. After compiling, every
+ *   undeclared gh-aw emission in the workflow dirs is deleted with one log
+ *   line each, so a drive-by cannot survive the sanctioned path; adoption is
+ *   an explicit SANCTIONED_GHAW_EMISSIONS edit in
+ *   check/gh-aw-emissions-are-declared.mts, never a compile side effect.
  */
 
 // prefer-async-spawn: sync-required — sequential per-workflow gh subprocess +
 // git file-list; no async flow needed.
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
+import {
+  findUndeclaredGhAwEmissions,
+  SANCTIONED_GHAW_EMISSIONS,
+} from './check/gh-aw-emissions-are-declared.mts'
+import type { GhAwSurfaceFile } from './check/gh-aw-emissions-are-declared.mts'
 import { SOAK_DAYS } from './constants/soak.mts'
 import {
   actionsLockPathFor,
@@ -305,6 +318,53 @@ export function runCompileGate(config: {
   return { anyFailed, heldPins, results }
 }
 
+// Delete every undeclared gh-aw emission in the compiled workflows' dirs —
+// the deterministic hygiene that keeps a bare-compile drive-by from surviving
+// the sanctioned path. Enumerates the ACTUAL on-disk .yml/.yaml files, so a
+// fresh untracked emission is swept too. Returns the deleted repo-relative
+// paths; logs one line per deletion.
+export function sweepUndeclaredEmissions(mdFiles: readonly string[]): string[] {
+  const mdSourceRelPaths = mdFiles.map(abs => path.relative(REPO_ROOT, abs))
+  const dirs = [...new Set(mdFiles.map(abs => path.dirname(abs)))].toSorted()
+  const files: GhAwSurfaceFile[] = []
+  for (let i = 0, { length } = dirs; i < length; i += 1) {
+    const dir = dirs[i]!
+    let names: string[]
+    try {
+      names = readdirSync(dir)
+    } catch {
+      continue
+    }
+    const sortedNames = names.toSorted()
+    for (let j = 0, len = sortedNames.length; j < len; j += 1) {
+      const name = sortedNames[j]!
+      if (!/\.ya?ml$/u.test(name)) {
+        continue
+      }
+      const abs = path.join(dir, name)
+      let text: string
+      try {
+        text = readFileSync(abs, 'utf8')
+      } catch {
+        continue
+      }
+      files.push({ relPath: path.relative(REPO_ROOT, abs), text })
+    }
+  }
+  const undeclared = findUndeclaredGhAwEmissions({
+    files,
+    mdSourceRelPaths,
+    sanctionedTails: SANCTIONED_GHAW_EMISSIONS,
+  })
+  for (const rel of undeclared) {
+    safeDeleteSync(path.join(REPO_ROOT, rel))
+    logger.warn(
+      `[sync-gh-aw-action-pins] deleted undeclared gh-aw emission: ${rel} — adopt via SANCTIONED_GHAW_EMISSIONS in scripts/fleet/check/gh-aw-emissions-are-declared.mts or leave deleted`,
+    )
+  }
+  return undeclared
+}
+
 function main(): void {
   const { quiet } = parseSyncArgs(process.argv.slice(2))
 
@@ -345,6 +405,10 @@ function main(): void {
     resolveCommitDate: resolveCommitDateViaGhApi,
     soakGate: soakGateCompile,
   })
+
+  // Closed-surface hygiene: sweep compiler side-emissions the moment they
+  // appear, so adoption is always an explicit allowlist edit.
+  sweepUndeclaredEmissions(mdFiles)
 
   const { bumped, failed, unchanged } = categorizeResults(results)
 

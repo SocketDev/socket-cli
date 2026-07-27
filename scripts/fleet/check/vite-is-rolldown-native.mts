@@ -27,32 +27,29 @@ import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { PNPM_LOCK } from '../paths.mts'
+import { loadSocketWheelhouseConfig, PNPM_LOCK } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
-// Repo overlay opt-out for the esbuild ban ONLY (the vite<8 floor is
-// unconditional). A repo with a legitimate non-bundler esbuild use — e.g.
-// socket-lib's browser-bundle e2e arm — declares it with a reason:
-//   .config/repo/vite-rolldown.json  →  { "allowEsbuild": "<why>" }
+// Repo opt-out for the esbuild ban ONLY (the vite<8 floor is unconditional).
+// A repo with a legitimate non-bundler esbuild use — e.g. socket-lib's
+// browser-bundle e2e arm, meander's opt-in minify pass — declares it with a
+// reason in the ONE member config surface (config-segregation: no new loose
+// config files):
+//   socket-wheelhouse.json  →  { "vite": { "allowEsbuild": "<why>" } }
 // The build bundler stays rolldown either way; this tolerates esbuild as a
 // declared test/dev dependency, never as the bundler.
-const REPO_OVERLAY = '.config/repo/vite-rolldown.json'
-export function esbuildAllowReason(): string | undefined {
-  if (!existsSync(REPO_OVERLAY)) {
-    return undefined
-  }
-  try {
-    const parsed = JSON.parse(readFileSync(REPO_OVERLAY, 'utf8')) as {
-      allowEsbuild?: string | undefined
-    }
-    return typeof parsed.allowEsbuild === 'string' && parsed.allowEsbuild
-      ? parsed.allowEsbuild
+export function esbuildAllowReason(
+  repoRoot?: string | undefined,
+): string | undefined {
+  const loaded = loadSocketWheelhouseConfig(repoRoot)
+  const vite = loaded?.value['vite']
+  const reason =
+    vite && typeof vite === 'object'
+      ? (vite as Record<string, unknown>)['allowEsbuild']
       : undefined
-  } catch {
-    return undefined
-  }
+  return typeof reason === 'string' && reason ? reason : undefined
 }
 
 export interface ViteFinding {
@@ -121,7 +118,7 @@ export function main(): void {
     findings = findings.filter(f => f.kind !== 'esbuild-present')
     if (tolerated.length > 0 && !quiet) {
       logger.log(
-        `vite-is-rolldown-native: tolerating ${tolerated.length} esbuild resolution(s) — ${REPO_OVERLAY}: ${allowReason}`,
+        `vite-is-rolldown-native: tolerating ${tolerated.length} esbuild resolution(s) — socket-wheelhouse.json vite.allowEsbuild: ${allowReason}`,
       )
     }
   }
@@ -142,7 +139,7 @@ export function main(): void {
     )
   }
   logger.log(
-    'Fix: catalog `vite: 8.x` + overrides `vite`/`rolldown`: `catalog:`, bump any vitest hard-pin to the catalog version, `ignoredOptionalDependencies: [esbuild]`, then `rm -rf node_modules pnpm-lock.yaml && pnpm install`.',
+    'Fix: catalog `vite: 8.x` + overrides `vite`/`rolldown`: `catalog:`, bump any vitest hard-pin to the catalog version, `ignoredOptionalDependencies: [esbuild]`, then `rm -rf node_modules pnpm-lock.yaml && pnpm install`. A legitimate NON-BUNDLER esbuild use (test/dev only) declares `vite.allowEsbuild: "<why>"` in socket-wheelhouse.json instead.',
   )
   process.exitCode = 1
 }

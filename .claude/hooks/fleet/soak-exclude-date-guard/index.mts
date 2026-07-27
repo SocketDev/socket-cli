@@ -122,8 +122,8 @@ export function findOrphanEntries(text: string): OrphanReport[] {
       orphans.push({
         line: i + 1,
         /* c8 ignore start - ENTRY_RE named groups are always populated when the regex matches */
-        name: m.groups?.name ?? '<unknown>',
-        version: m.groups?.version ?? '<unknown>',
+        name: m.groups?.['name'] ?? '<unknown>',
+        version: m.groups?.['version'] ?? '<unknown>',
         /* c8 ignore stop */
       })
     }

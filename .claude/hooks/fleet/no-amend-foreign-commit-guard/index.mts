@@ -117,6 +117,7 @@ export function readAmendHeadInfo(repoDir: string): AmendHeadInfo {
 
 export const check = bashGuard(
   (command: string, payload: ToolCallPayload): GuardResult => {
+    void payload
     if (!isAmendCommit(command)) {
       return undefined
     }

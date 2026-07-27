@@ -13,12 +13,19 @@
  *   --summary hide the detailed v8 table, show only the summary.
  */
 
+// Imported FIRST: pins a per-run-unique FLEET_COVERAGE_SCRATCH_DIR into the env
+// BEFORE paths.mts derives COVERAGE_SCRATCH_DIR from it, so concurrent cover
+// runs can't wipe each other's scratch (the cover-gate wobble). Side-effect
+// import — keep it above every import that transitively loads paths.mts.
+import './cover/scratch-isolation.mts'
+
 import { performance } from 'node:perf_hooks'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { printHeader } from '@socketsecurity/lib-stable/stdio/header'
 
@@ -51,7 +58,7 @@ import {
   resolveConfiguredUnitBudgetMs,
 } from './cover-report.mts'
 import { ensurePinnedNode } from './lib/ensure-node.mts'
-import { REPO_ROOT } from './paths.mts'
+import { COVERAGE_SCRATCH_DIR, REPO_ROOT } from './paths.mts'
 import type { AggregateCoverage } from './util/coverage-merge.mts'
 import {
   mergeCoverageFinal,
@@ -403,5 +410,11 @@ if (isMainModule(import.meta.url)) {
     })
     .finally(() => {
       unregisterActiveRun()
+      // Remove this run's private scratch dir. With a fixed shared path the
+      // next run's startup wipe reclaimed it; a per-run-unique dir has no next
+      // run to clean it, so it must clean up after itself or leak into tmpdir.
+      // COVERAGE_DIR (the persisted summary/final the badge + gate read) lives
+      // elsewhere and is untouched.
+      safeDeleteSync(COVERAGE_SCRATCH_DIR, { force: true, recursive: true })
     })
 }

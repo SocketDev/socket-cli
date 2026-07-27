@@ -83,6 +83,7 @@ export function isWorkflowYaml(filePath: string): boolean {
 }
 
 export const check = editGuard((filePath, content, payload) => {
+  void content
   if (!isWorkflowYaml(filePath)) {
     return undefined
   }

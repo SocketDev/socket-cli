@@ -29,7 +29,7 @@ export function formatReportCard(
     debug(`miss: artifact ecosystem ${JSON.stringify(artifact)}`)
   }
   /* c8 ignore stop */
-  const purl = `pkg:${artifact.ecosystem}/${artifact.name}${artifact.version ? `@${artifact.version}` : ''}`
+  const purl = `pkg:${artifact.ecosystem}/${artifact.namespace ? `${artifact.namespace}/` : ''}${artifact.name}${artifact.version ? `@${artifact.version}` : ''}`
 
   // Calculate proper padding based on longest label.
   const maxLabelLength = Math.max(

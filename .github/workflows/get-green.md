@@ -71,6 +71,24 @@ permissions:
 # Sonnet is the pricier escalation tier — a higher per-run cap than the haiku update.
 max-ai-credits: 3000
 
+# Fallback pricing for any model missing from AWF's build-time-frozen
+# ai-credits table — gh-aw v0.83.2, ADR-47687. Without it, max-ai-credits +
+# an unknown model 400s every request: the 2026-07-25 fleet outage class.
+# Priced at the opus tier, the highest this fleet would tolerate, so an
+# unknown model is over-counted against the credit cap and trips the budget
+# early — never under-counted.
+# KEY LOCATION IS SCHEMA-VERIFIED, NOT DOCS-VERIFIED: the v0.83.2 release
+# notes place this key under sandbox.agent, but the v0.83.2 schema
+# authoritatively defines it at models.default-ai-credits-pricing — see
+# pkg/parser/schemas/main_workflow_schema.json at that tag, confirmed by the
+# compiled lock emitting apiProxy.defaultAiCreditsPricing. Trust the schema
+# over the release notes when moving this key on a compiler bump; gh-aw main
+# has since refactored the sandbox.agent variant into models.*.
+models:
+  default-ai-credits-pricing:
+    input: 5.0
+    output: 25.0
+
 network:
   allowed:
     - defaults

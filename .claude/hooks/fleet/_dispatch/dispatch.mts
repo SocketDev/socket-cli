@@ -138,7 +138,8 @@ export interface DispatchHookEntry {
   /**
    * Legacy pure entry: returns reminder text to surface on stderr, or
    * `undefined`. Mutually exclusive with `check` — exactly one is set per entry.
-   * (bundle-stale-reminder style.)
+   * No current hook uses it — every bundled hook is a `defineHook` `check`;
+   * the seam stays for a future legacy port.
    */
   readonly run?: (payload: DispatchPayload) => string | undefined
   /**
@@ -177,7 +178,7 @@ export const SINGLE_HOOK_NOT_FOUND_EXIT = 3
  * source).
  */
 export function hookInTable(event: string, hookName: string): boolean {
-  const entries = DISPATCH_TABLE[event] ?? []
+  const entries: readonly DispatchHookEntry[] = DISPATCH_TABLE[event] ?? []
   return entries.some(entry => entry.name === hookName)
 }
 
@@ -234,7 +235,7 @@ export async function dispatch(
   payload: DispatchPayload,
   onlyHook?: string | undefined,
 ): Promise<DispatchResult> {
-  const all = DISPATCH_TABLE[event] ?? []
+  const all: readonly DispatchHookEntry[] = DISPATCH_TABLE[event] ?? []
   const entries =
     onlyHook === undefined ? all : all.filter(entry => entry.name === onlyHook)
   const reminders: string[] = []

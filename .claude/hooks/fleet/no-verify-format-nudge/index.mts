@@ -24,7 +24,6 @@
 // reminder must never block a commit on its own bug.
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-import process from 'node:process'
 
 import { gitSubcommand } from '../_shared/commit-command.mts'
 import { actedOnPath } from '../_shared/fleet-context.mts'

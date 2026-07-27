@@ -426,7 +426,7 @@ function validateTypedArrayReceiver(receiver: unknown): TypedArrayInstance {
   if (!ArrayBuffer.isView(receiver) || receiver instanceof DataView) {
     throw new TypeError('Receiver must be a TypedArray')
   }
-  return receiver as TypedArrayInstance
+  return receiver as unknown as TypedArrayInstance
 }
 
 // 23.2.3.32 %TypedArray%.prototype.toReversed.

@@ -32,6 +32,7 @@ import { hash } from '@socketsecurity/lib/crypto/hash'
 import { errorMessage } from '@socketsecurity/lib/errors/message'
 import { safeDeleteSync } from '@socketsecurity/lib/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
+import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 import { spawn } from '@socketsecurity/lib/process/spawn/child'
 
 import {
@@ -79,9 +80,11 @@ export function parseArgs(argv: readonly string[]): FetchConfig {
 }
 
 // The manifest the producer (make-release-bundle.mts) writes alongside the
-// tarball: a flat map of repo-relative path → sha256 hex.
+// tarball: a flat map of repo-relative path → sha256 hex, plus the tombstoned
+// paths a past bundle shipped that have since moved/retired.
 export interface BundleManifest {
   readonly files: Record<string, string>
+  readonly removedPaths?: readonly string[] | undefined
   readonly templateSha: string
   readonly version: string
 }

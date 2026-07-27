@@ -348,6 +348,7 @@ function clip(s: string): string {
 }
 
 export const check = editGuard((filePath, content, payload) => {
+  void content
   if (isSelfFile(filePath)) {
     return undefined
   }

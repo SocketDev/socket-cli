@@ -45,7 +45,7 @@ import {
   isPlaceholderSubject,
 } from '../../../../.git-hooks/_shared/commit-subject.mts'
 
-export const check = bashGuard((command, payload) => {
+export const check = bashGuard(command => {
   if (!isGitCommit(command)) {
     return undefined
   }

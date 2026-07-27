@@ -88,7 +88,7 @@ export function extractExcludeNames(yamlText: string): Set<string> {
     if (!itemMatch) {
       continue
     }
-    let name = itemMatch.groups!.item!.trim()
+    let name = itemMatch.groups!['item']!.trim()
     // Strip a surrounding pair of single or double quotes from a YAML scalar value.
     name = name.replace(/^["']|["']$/g, '')
     if (name) {
