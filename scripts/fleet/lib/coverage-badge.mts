@@ -80,10 +80,26 @@ const MARKDOWN_BADGE_RE = /!\[Coverage\]\(assets\/repo\/badges\/coverage\.svg\)/
 // The legacy pre-badges/ asset path, matched only to migrate it.
 const LEGACY_ASSET_BADGE_RE = /!\[Coverage\]\(assets\/repo\/coverage\.svg\)/ // socket-lint: allow uncommented-regex
 
+// The percent-and-color tail of a retired shields.io coverage URL: the
+// `<PCT>` seed placeholder or an integer/decimal percent — member READMEs
+// shipped `99`, `99.10`, and `97.5` — then a lowercase color word. Shared by
+// the markdown and HTML spellings below so both recognize the same URLs.
+const SHIELDS_URL_SOURCE =
+  'https:\\/\\/img\\.shields\\.io\\/badge\\/coverage-(?:<PCT>|\\d+(?:\\.\\d+)?)%25-[a-z]+'
+
 // The retired third-party badge form, matched only to migrate it:
-//   ![Coverage](https://img.shields.io/badge/coverage-<PCT|NN>%25-<color>)
-const SHIELDS_BADGE_RE =
-  /!\[Coverage\]\(https:\/\/img\.shields\.io\/badge\/coverage-(?:<PCT>|\d+)%25-[a-z]+\)/ // socket-lint: allow uncommented-regex
+//   ![Coverage](https://img.shields.io/badge/coverage-<PCT|NN|NN.NN>%25-<color>)
+const SHIELDS_BADGE_RE = new RegExp(
+  `!\\[Coverage\\]\\(${SHIELDS_URL_SOURCE}\\)`,
+)
+
+// The hand-written HTML spelling of the same retired badge — an `<img>` whose
+// src is a shields.io coverage URL, attribute order and extras like `height`
+// free — matched only to migrate it. meander carried this shape:
+//   <img alt="Coverage" src="https://img.shields.io/badge/coverage-99%25-brightgreen" height="20">
+const SHIELDS_IMG_BADGE_RE = new RegExp(
+  `<img\\b[^>]*\\bsrc="${SHIELDS_URL_SOURCE}"[^>]*>`,
+)
 
 // The `aria-label="coverage: <value>"` the renderer stamps on the SVG — the
 // machine-readable percent the check reads back.
@@ -105,7 +121,7 @@ export function readmeBadgeForm(readme: string): BadgeForm | undefined {
   if (LEGACY_ASSET_BADGE_RE.test(readme)) {
     return 'legacy-asset'
   }
-  if (SHIELDS_BADGE_RE.test(readme)) {
+  if (SHIELDS_BADGE_RE.test(readme) || SHIELDS_IMG_BADGE_RE.test(readme)) {
     return 'shields'
   }
   return undefined
@@ -119,10 +135,11 @@ const COVERAGE_BADGE_MARKER_RE =
   /!\[Coverage\]\(|<img\b[^>]*\balt="Coverage[^"]*"/i // socket-lint: allow uncommented-regex
 
 // True when the README carries a coverage-badge-looking line that
-// readmeBadgeForm() does NOT recognize — e.g. a hand-written shields.io HTML
-// `<img>`. Such a badge silently escaped the freshness gate (the check read
-// "no badge" as an opt-out), which is how a stale hand-written percent shipped
-// on a public README while the check stayed green.
+// readmeBadgeForm() does NOT recognize — e.g. a coverage `<img>` pointing at a
+// host the recognizer doesn't model. Such a badge silently escaped the
+// freshness gate — the check read "no badge" as an opt-out — which is how a
+// stale hand-written percent shipped on a public README while the check
+// stayed green.
 export function hasUnrecognizedCoverageBadge(readme: string): boolean {
   return (
     readmeBadgeForm(readme) === undefined &&
@@ -141,6 +158,7 @@ export function migrateReadmeBadge(readme: string, svg: string): string {
   const ref = coverageBadgeRef(svg)
   return readme
     .replace(SHIELDS_BADGE_RE, ref)
+    .replace(SHIELDS_IMG_BADGE_RE, ref)
     .replace(LEGACY_ASSET_BADGE_RE, ref)
     .replace(MARKDOWN_BADGE_RE, ref)
     .replace(IMG_BADGE_RE, ref)

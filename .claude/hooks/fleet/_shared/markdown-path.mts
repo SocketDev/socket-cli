@@ -126,6 +126,24 @@ export function classifyMarkdownPath(absPath: string): Verdict {
     return { ok: true }
   }
 
+  // SKILL.md — the Anthropic Agent Skills manifest. The spec dictates this
+  // exact SCREAMING_CASE name at a skill's root, so the name is
+  // ecosystem-dictated there and only there. Scoped, not blanket: the
+  // allowance anchors on a skills/ discovery segment — .agents/skills/<name>/,
+  // a plugin's skills/<name>/ — while .claude/skills/ is already exempt via
+  // the .claude/ carve-out above. A SKILL.md dropped in docs/ or at the repo
+  // root is a misplaced doc and still fails.
+  if (filename === 'SKILL.md') {
+    if (isAtSkillRoot(relPath)) {
+      return { ok: true }
+    }
+    return {
+      ok: false,
+      message: `SKILL.md is the Agent Skills manifest name and is allowed only at a skill root — a directory under a skills/ segment, e.g. .agents/skills/<skill-name>/SKILL.md. This path is outside any skills/ tree.`,
+      suggestion: `Move it to <skills-dir>/<skill-name>/SKILL.md, or rename the doc to a lowercase-with-hyphens name under docs/.`,
+    }
+  }
+
   // SCREAMING_CASE allowlist.
   if (ALLOWED_SCREAMING_CASE.has(nameWithoutExt)) {
     if (isAtAllowedScreamingLocation(relPath)) {
@@ -226,6 +244,20 @@ export function isAtAllowedScreamingLocation(relPath: string): boolean {
     dir === 'template/base/docs' ||
     dir === 'template/docs'
   )
+}
+
+/**
+ * A SKILL.md's parent must be a skill root: a directory nested under a
+ * `skills/` path segment, e.g. `.agents/skills/<name>/` or a plugin's
+ * `skills/<name>/`. Namespacing dirs in between are fine:
+ * `skills/fleet/<name>/` also qualifies. Segment equality, not substring, so
+ * `my-skills/` does not match; and `skills/` itself does not qualify — the
+ * manifest must live in a directory INSIDE the discovery tree.
+ */
+export function isAtSkillRoot(relPath: string): boolean {
+  const segments = normalizePath(path.posix.dirname(relPath)).split('/')
+  const idx = segments.indexOf('skills')
+  return idx !== -1 && idx < segments.length - 1
 }
 
 export function isLowercaseHyphenated(nameWithoutExt: string): boolean {

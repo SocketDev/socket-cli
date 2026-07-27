@@ -233,12 +233,39 @@ function persistSuiteFailureOutput(
   }
 }
 
+// Pull the FAILING test-file paths out of vitest's buffered output. cover runs
+// vitest buffered (runQuietCommand), so a below-threshold / test-failure cut
+// only re-emits the summary — the failing FILE names never reach the CI log
+// (only the runner's inaccessible last-failure log). Two vitest markers name a
+// failing file: the "FAIL <path>" failure header and the file-tree entry
+// "❯ <path> (N tests | M failed)". The count/threshold lines give totals, not
+// paths — so without this the gate says "2 failed" but never WHICH two. Pure +
+// exported for unit testing.
+export function extractFailingTestFiles(lines: readonly string[]): string[] {
+  const fileToken = String.raw`(\S+\.(?:test|spec)\.[cm]?[jt]sx?)`
+  const failHeader = new RegExp(String.raw`(?:^|\s)FAIL\s+${fileToken}`)
+  const failTreeEntry = new RegExp(
+    String.raw`❯\s+${fileToken}\s+\([^)]*\bfailed\)`,
+  )
+  const paths = new Set<string>()
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
+    const match = failHeader.exec(line) ?? failTreeEntry.exec(line)
+    if (match?.[1]) {
+      paths.add(match[1])
+    }
+  }
+  return [...paths].toSorted()
+}
+
 // Explain a failing suite: vitest prints its per-config coverage-threshold
 // misses (e.g. "ERROR: Coverage for branches (46.92%) does not meet global
 // threshold (49%)") to the suite's own output, which the summary display
 // filters out — a bare "Coverage failed" strands the operator without the
-// failing metric. Returns the error-ish lines from the suite output (deduped,
-// capped), falling back to the output tail; empty for a passing suite.
+// failing metric. NAMES the failing test files up front (see
+// extractFailingTestFiles), then returns the error-ish lines from the suite
+// output (deduped, capped), falling back to the output tail; empty for a
+// passing suite.
 export function buildSuiteFailureReport(
   name: string,
   result: SuiteResult,
@@ -255,17 +282,25 @@ export function buildSuiteFailureReport(
     ...new Set(
       lines.filter(line =>
         // `ERROR` keyword; vitest coverage threshold message ("does not meet"
-        // / "threshold"); vitest final summary line ("Tests N failed").
-        /\bERROR\b|does not meet|threshold|Tests\s+\d+\s+failed/i.test(line),
+        // / "threshold"); vitest final summary ("Tests N failed"); the vitest
+        // per-file failure header ("FAIL <path>") and file-tree entry
+        // ("❯ <path> (… | M failed)") that name WHICH files failed.
+        /\bERROR\b|does not meet|threshold|Tests\s+\d+\s+failed|\bFAIL\b|\|\s*\d+\s+failed\)/i.test(
+          line,
+        ),
       ),
     ),
   ]
   const detail = (errorLines.length > 0 ? errorLines : lines.slice(-maxLines))
     .slice(0, maxLines)
     .map(line => `  ${line}`)
+  const failingFiles = extractFailingTestFiles(lines)
   const dumpPath = persistSuiteFailureOutput(name, result)
   return [
     `${name} suite failed (exit ${result.exitCode}):`,
+    ...(failingFiles.length > 0
+      ? [`  failing file(s): ${failingFiles.join(', ')}`]
+      : []),
     ...detail,
     ...(dumpPath ? [`  full suite output: ${dumpPath}`] : []),
   ]

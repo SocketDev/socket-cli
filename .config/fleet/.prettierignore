@@ -79,3 +79,12 @@
 # into a hardened `<name>.lock.yml`; that artifact is tool-owned and must stay
 # byte-identical to the compiler output (the .md is the source of truth).
 **/.github/workflows/*.lock.yml
+
+# Everything from the top of this file through the end sentinel below is
+# fleet-canonical: cascade and bundle placement rewrite that whole span from
+# the wheelhouse source on every refresh — see
+# scripts/fleet/_shared/fleet-canonical-splice.mts. Member-generated content,
+# like the lockstep-mirrors block scripts/fleet/lockstep/emit-mirror-globs.mts
+# appends, must live BELOW the end sentinel; placement preserves that tail
+# byte-for-byte.
+#fleet-canonical-end

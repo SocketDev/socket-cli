@@ -15,6 +15,7 @@
  */
 
 import {
+  chmodSync,
   cpSync,
   existsSync,
   mkdirSync,
@@ -22,6 +23,7 @@ import {
   readdirSync,
   readFileSync,
   renameSync,
+  statSync,
   writeFileSync,
 } from 'node:fs'
 import os from 'node:os'
@@ -160,14 +162,40 @@ export function placeFiles(
     if (isFleetCanonicalSpliceFile(rel) && existsSync(dest)) {
       const srcContent = readFileSync(src, 'utf8')
       if (hasFleetCanonicalEndSentinel(srcContent)) {
-        writeFileSync(
-          dest,
-          spliceFleetCanonicalContent(srcContent, readFileSync(dest, 'utf8')),
+        withWriteBitLifted(dest, () =>
+          writeFileSync(
+            dest,
+            spliceFleetCanonicalContent(srcContent, readFileSync(dest, 'utf8')),
+          ),
         )
         continue
       }
     }
-    cpSync(src, dest)
+    withWriteBitLifted(dest, () => cpSync(src, dest))
+  }
+}
+
+// Run `write` with the destination's user write bit lifted. The cascade's
+// mirror-mode locks placed mirrors 0o444, and both cpSync and the sentinel
+// splicer open the DESTINATION for write — POSIX open(2) refuses that on a
+// read-only file, so a locked mirror EACCESed mid-place and stranded a
+// half-placed tree. Restoring the prior mode afterward keeps the mirror lock
+// intact across a refresh.
+function withWriteBitLifted(dest: string, write: () => void): void {
+  if (!existsSync(dest)) {
+    write()
+    return
+  }
+  const { mode } = statSync(dest)
+  if ((mode & 0o200) !== 0) {
+    write()
+    return
+  }
+  chmodSync(dest, mode | 0o200)
+  try {
+    write()
+  } finally {
+    chmodSync(dest, mode)
   }
 }
 

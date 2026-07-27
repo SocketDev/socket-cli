@@ -8,9 +8,13 @@
  *   once put 2174 files into the wheelhouse). This fails LOUD so the stray is
  *   REMOVED — not gitignored: hiding dead code lets it rot and re-sweep. The
  *   real member always lives at the sibling ~/projects/<name>. Wheelhouse-only:
- *   fleet-repos.json is the wheelhouse's private roster, absent in members →
- *   vacuous pass. Usage: node
- *   scripts/fleet/check/member-dirs-are-not-nested.mts.
+ *   gated on template/base ownership — OWNS_RELOCATED_TESTS — NOT on roster
+ *   presence. The roster cascades fleet-wide because the hook membership law,
+ *   `.claude/hooks/fleet/_shared/fleet-repos.mts`, imports it in every member,
+ *   so a member checkout carries fleet-repos.json too; gating on it armed this
+ *   check in members and flagged the `skills` repo's own `skills/` source tree
+ *   as a nested scaffold. Members vacuous-pass via the wheelhouse gate.
+ *   Usage: node scripts/fleet/check/member-dirs-are-not-nested.mts.
  */
 
 import { existsSync, readFileSync, statSync } from 'node:fs'
@@ -20,7 +24,7 @@ import process from 'node:process'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { REPO_ROOT } from '../paths.mts'
+import { OWNS_RELOCATED_TESTS, REPO_ROOT } from '../paths.mts'
 import { fleetReposPath, parseFleetRepos } from './member-ci-fires-on-push.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 
@@ -29,12 +33,21 @@ const logger = getDefaultLogger()
 /**
  * Roster member names that exist as a DIRECTORY at the wheelhouse root — each
  * is a stray nested scaffold (dead code), since a member is a sibling repo,
- * never a subdir. Pure; exported for tests.
+ * never a subdir. A "nested member" is a wheelhouse-only defect: in a member
+ * checkout — no template/base — the scan no-ops and returns [], because a
+ * member's own source tree can legitimately share a roster name (the `skills`
+ * repo's `skills/` directory). Fixture tests force `isWheelhouse` so both
+ * arms run everywhere. Exported for tests.
  */
 export function findNestedMemberDirs(
   repoRoot: string,
   memberNames: readonly string[],
+  options?: { isWheelhouse?: boolean | undefined } | undefined,
 ): string[] {
+  const opts = { __proto__: null, ...options }
+  if (!(opts.isWheelhouse ?? OWNS_RELOCATED_TESTS)) {
+    return []
+  }
   const out: string[] = []
   for (let i = 0, { length } = memberNames; i < length; i += 1) {
     const name = memberNames[i]!
@@ -47,9 +60,15 @@ export function findNestedMemberDirs(
 }
 
 export function main(): void {
+  if (!OWNS_RELOCATED_TESTS) {
+    // A member checkout: the cascaded roster is present — the hook membership
+    // law needs it — but a nested-member scaffold is a wheelhouse-only defect,
+    // and a member's own tree can share a roster name. Vacuous pass.
+    return
+  }
   const reposPath = fleetReposPath(REPO_ROOT)
   if (!existsSync(reposPath)) {
-    // A member checkout has no private roster — nothing to check.
+    // No roster to read — a partial checkout mid-bootstrap. Nothing to check.
     return
   }
   let names: string[]

@@ -1,16 +1,17 @@
 /*
  * @file Sentinel-scoped splice for the DESIGNATED fleet-mirror segment files
- *   (`FLEET_CANONICAL_SPLICE_FILES` — today only
- *   `.config/fleet/oxlintrc.json`). Everything from the start of the file
+ *   (`FLEET_CANONICAL_SPLICE_FILES` — `.config/fleet/oxlintrc.json` and
+ *   `.config/fleet/.prettierignore`). Everything from the start of the file
  *   THROUGH the end sentinel is fleet-owned and is replaced from the canonical
  *   source on placement; member content after the end sentinel — the repo-local
- *   `ignorePatterns` tail — is preserved byte-for-byte. The begin marker is NOT
- *   a placement boundary: the head above it — rules, overrides, plugins, the
- *   default ignore prefix — is also canonical and must keep cascading, so the
- *   repo-owned surface is strictly the tail. Every placement path shares this
- *   one primitive — the sync-scaffolding check + copy fixer and the member-side
- *   release-bundle placement — so check and fix can never disagree on the
- *   boundary. Two incidents this module answers for:
+ *   `ignorePatterns` tail, the derived lockstep-mirrors block — is preserved
+ *   byte-for-byte. Any begin marker is NOT a placement boundary: the head above
+ *   it — rules, overrides, plugins, the default ignore prefix — is also
+ *   canonical and must keep cascading, so the repo-owned surface is strictly
+ *   the tail. Every placement path shares this one primitive — the
+ *   sync-scaffolding check + copy fixer, the member-side release-bundle
+ *   placement, and the dep-0 bootstrap installer — so check and fix can never
+ *   disagree on the boundary. Two incidents this module answers for:
  *
  *   - the byte-identical mirror copy wiped socket-registry's repo-local tail
  *     three times, unmasking ~298 lint findings each time, because the lint
@@ -38,7 +39,13 @@ export const FLEET_CANONICAL_END_SENTINEL = ['#fleet', 'canonical', 'end'].join(
 // must land in this list AND as a file-shaped mirror entry in bundle.json
 // (the fleet-canonical-splice unit sweep enforces both directions).
 export const FLEET_CANONICAL_SPLICE_FILES: readonly string[] = [
+  // Member tail: the repo-local `ignorePatterns` entries the lint runner
+  // re-emits as CLI ignore args.
   '.config/fleet/oxlintrc.json',
+  // Member tail: the derived lockstep-mirrors block emit-mirror-globs.mts
+  // appends below the end sentinel — a whole-file copy wiped it at stuie on
+  // every refresh, unmasking the verbatim upstream mirrors to oxfmt.
+  '.config/fleet/.prettierignore',
 ]
 
 /**

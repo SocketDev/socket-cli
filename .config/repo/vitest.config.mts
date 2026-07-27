@@ -10,6 +10,7 @@
  *   excludes them. No file → everything isolated.
  */
 import { existsSync, readFileSync } from 'node:fs'
+import path from 'node:path'
 import process from 'node:process'
 
 import { envAsBoolean } from '@socketsecurity/lib-stable/env/boolean'
@@ -35,10 +36,15 @@ const isCoverageEnabled =
 //                        (e.g. `tools/**/test/**` for a `node --test` tool corpus).
 //                        prefer-vitest-guard reads the SAME key so its allowlist
 //                        and this exclude never drift.
+//   alias              — module resolve aliases for the test transform, e.g.
+//                        `{ "@socketsecurity/sdk": "./dist/index.browser.js" }`.
+//                        Maps merge per key with the repo tier winning; see
+//                        mergeVitestAlias for the relative-path semantics.
 // Array values from both tiers are concatenated (a repo extends, never shrinks,
 // the fleet defaults). Replaces the former vitest-non-isolated.json +
 // vitest-extra-exclude.json sidecars.
 export interface VitestRepoConfig {
+  alias?: Record<string, string> | undefined
   maxWorkers?: number | undefined
   nonIsolated?: string[] | undefined
   nodeTestExclude?: string[] | undefined
@@ -145,6 +151,44 @@ export function resolveMaxWorkers(): number {
 export function resolveBail(isCoverage: boolean, isCI: boolean): number {
   return !isCoverage && isCI ? 1 : 0
 }
+/**
+ * Resolve-alias tier merge. This config is CASCADED — a member repo that
+ * edited it directly lost the edit on the next cascade: socket-webext's
+ * `@socketsecurity/sdk` → browser-build alias was wiped exactly that way. The
+ * `alias` key of .config/{fleet,repo}/vitest.json is the repo-owned surface
+ * that survives: maps merge per key with the repo tier winning, matching the
+ * pool/maxWorkers repo-over-fleet precedence. Dot-relative replacements — `./`
+ * or `../` — resolve against `root`, the repo root at config-load time,
+ * because vite substitutes alias replacements verbatim: left relative, the
+ * result would resolve against each importer instead of the repo root. Bare
+ * package names and absolute paths pass through untouched.
+ */
+export function mergeVitestAlias(
+  fleet: unknown,
+  repo: unknown,
+  root: string = process.cwd(),
+): Record<string, string> {
+  const entries = (tier: unknown): Array<[string, string]> =>
+    tier && typeof tier === 'object' && !Array.isArray(tier)
+      ? Object.entries(tier).filter(
+          (e): e is [string, string] => typeof e[1] === 'string',
+        )
+      : []
+  return Object.fromEntries(
+    [...entries(fleet), ...entries(repo)].map(([find, replacement]) => [
+      find,
+      replacement.startsWith('./') || replacement.startsWith('../')
+        ? path.resolve(root, replacement)
+        : replacement,
+    ]),
+  )
+}
+export function resolveVitestAlias(): Record<string, string> {
+  return mergeVitestAlias(
+    readVitestConfigTier('.config/fleet/vitest.json').alias,
+    readVitestConfigTier('.config/repo/vitest.json').alias,
+  )
+}
 export function resolvePool(): 'forks' | 'threads' {
   const fleet = readVitestConfigTier('.config/fleet/vitest.json').pool
   const repo = readVitestConfigTier('.config/repo/vitest.json').pool
@@ -160,6 +204,7 @@ export function resolveVitestKey(key: keyof VitestRepoConfig): string[] {
   ].filter(g => typeof g === 'string')
 }
 const nonIsolatedGlobs = readNonIsolatedGlobs()
+const repoResolveAlias = resolveVitestAlias()
 
 // Lane resolution. The runner sets FLEET_LANE (bare `pnpm test` → 'fast'); the
 // filter is inert under coverage and for an unset lane, so --all / scoped /
@@ -177,6 +222,13 @@ const laneToTestGlobs = (globs: string[]): string[] =>
   globs.map(g => `${g.replace(/\/\*+$/, '')}/**/*.test.{js,ts,mjs,mts,cjs}`)
 
 export default defineConfig({
+  // Repo-owned resolve aliases from the `alias` key of
+  // .config/{fleet,repo}/vitest.json — see mergeVitestAlias. Spread
+  // conditionally so repos without aliases keep vite's own resolution
+  // untouched.
+  ...(Object.keys(repoResolveAlias).length
+    ? { resolve: { alias: repoResolveAlias } }
+    : {}),
   test: {
     deps: {
       interopDefault: false,

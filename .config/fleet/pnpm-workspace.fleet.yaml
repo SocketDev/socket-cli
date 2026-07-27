@@ -57,11 +57,18 @@ catalog:
   'mdast-util-from-markdown': 2.0.3
   'micromark': 4.0.2
   'neosanitize': 0.3.0
-  # 15.0.0 is the fleet-wide migrated version (the @mswjs/interceptors rewrite;
-  # suites use static replies or scope.on('request') capture — no 2-arity reply
-  # functions, no this.req). Upstream marks 15.0.0 deprecated ("released
-  # accidentally"); bump to the stabilized 15.x when it ships.
-  'nock': 15.0.0
+  # Pinned back 15.0.0 -> 14.0.16 on 2026-07-27: 15.0.0 ships
+  # @mswjs/interceptors 0.39.8, whose fetch bypass path clones an
+  # already-consumed request and throws TypeError: unusable on any fetch
+  # POST-with-body to an enableNetConnect-allowed host — broke the
+  # socket-gemini-nano and socket-mcp Test jobs. 14.0.16 is the same
+  # interceptors-based API family — static replies, scope.on('request')
+  # capture, no 2-arity reply functions, no this.req — published
+  # 2026-06-26, past soak, and passes the regression repro. Upstream
+  # marks 15.0.0 deprecated as "released accidentally" and the fix lives
+  # in 15.0.0-beta.14, a beta still inside the 7-day soak; bump to the
+  # stabilized 15.x when it ships.
+  'nock': 14.0.16
   'npm-run-all2': 9.0.2
   'oxfmt': 0.59.0
   'oxlint': 1.75.0
