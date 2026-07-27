@@ -22,7 +22,7 @@ import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 import { getOwn } from '@socketsecurity/lib-stable/objects/inspect'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import { cmdFlagsToString } from '../../util/process/cmd.mts'
+import { mergeNodeOptions } from '../../util/process/cmd.mts'
 
 import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
 import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
@@ -91,7 +91,9 @@ export function runAgentInstall(
       ...process.env,
       // Set CI mode for pnpm to ensure consistent behavior.
       ...(isPnpm ? { CI: '1' } : {}),
-      NODE_OPTIONS: cmdFlagsToString([
+      // Merge our flags into any inherited NODE_OPTIONS instead of replacing
+      // it, so a user's globally-configured NODE_OPTIONS is preserved.
+      NODE_OPTIONS: mergeNodeOptions(process.env['NODE_OPTIONS'], [
         ...(skipNodeHardenFlags ? [] : getNodeHardenFlags()),
         ...getNodeNoWarningsFlags(),
         ...getNodeDisableSigusr1Flags(),
