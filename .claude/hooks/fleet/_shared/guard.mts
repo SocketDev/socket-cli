@@ -20,8 +20,10 @@
  *   remain the lower-level verdict primitives `defineHook` builds on.
  */
 
+import { appendFileSync, mkdirSync, renameSync, statSync } from 'node:fs'
+import path from 'node:path'
 import process from 'node:process'
-import { pathToFileURL } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import v8 from 'node:v8'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
@@ -261,13 +263,80 @@ export function guardBlocked(): boolean {
   return blockedThisProcess
 }
 
+// ── Guard-event log ─────────────────────────────────────────────────────
+// Every non-silent verdict appends one JSONL record under
+// node_modules/.cache/fleet/guard-events/ — the observability layer for
+// guard precision: repeated blocks on one file within minutes are the
+// word-golf signature of a false positive, and without a record those
+// incidents vanish into reworded retries. Aggregate with
+// `node scripts/fleet/guard-stats.mts`. Fail-open: a logging failure
+// never costs (or delays) the verdict itself.
+const GUARD_EVENT_MAX_BYTES = 1024 * 1024
+
+// require-regex-comment: `\b` word boundary, `[a-z][a-z0-9-]*` one
+// kebab-case word, `-(?:detector|guard|nudge|sweeper)` the hook-type
+// suffix — the directory-name convention every hook message leads with.
+const HOOK_NAME_IN_MESSAGE_RE =
+  /\b([a-z][a-z0-9-]*-(?:detector|guard|nudge|sweeper))\b/
+
+function recordGuardEvent(
+  kind: 'block' | 'notify',
+  message: string,
+  payload: ToolCallPayload | undefined,
+  hookName: string | undefined,
+): void {
+  try {
+    const dir = path.join(
+      resolveProjectDir(),
+      'node_modules',
+      '.cache',
+      'fleet',
+      'guard-events',
+    )
+    mkdirSync(dir, { recursive: true })
+    const file = path.join(dir, 'events.jsonl')
+    try {
+      if (statSync(file).size > GUARD_EVENT_MAX_BYTES) {
+        renameSync(file, path.join(dir, 'events.1.jsonl'))
+      }
+    } catch {
+      // Missing file — first event.
+    }
+    // Under the rolldown bundle every module's import.meta.url is the
+    // bundle file, so the dir-derived name collapses to _dist — fall back
+    // to the guard-name convention in the message itself.
+    const hook =
+      hookName && hookName !== '_dist'
+        ? hookName
+        : HOOK_NAME_IN_MESSAGE_RE.exec(message)?.[1]
+    appendFileSync(
+      file,
+      `${JSON.stringify({
+        ts: Date.now(),
+        kind,
+        hook,
+        tool: payload?.tool_name,
+        file: payload ? readFilePath(payload) : undefined,
+        message: message.split('\n')[0]?.slice(0, 200),
+      })}\n`,
+    )
+  } catch {
+    // Fail-open — observability must never wedge a verdict.
+  }
+}
+
 export function applyGuardResult(
   result: GuardResult,
   payload?: ToolCallPayload | undefined,
+  options?: { hookName?: string | undefined } | undefined,
 ): void {
+  const opts = { __proto__: null, ...options } as {
+    hookName?: string | undefined
+  }
   if (!result) {
     return
   }
+  recordGuardEvent(result.kind, result.message, payload, opts.hookName)
   if (result.kind === 'block') {
     blockedThisProcess = true
     // A Stop event (no tool_name) blocks via Claude Code's stdout JSON decision
@@ -313,7 +382,11 @@ export async function runGuard(
     if (!payload) {
       return
     }
-    applyGuardResult(await check(payload), payload)
+    // The hook's directory name identifies it in the guard-event log.
+    const hookName = moduleUrl
+      ? path.basename(path.dirname(fileURLToPath(moduleUrl)))
+      : undefined
+    applyGuardResult(await check(payload), payload, { hookName })
   } catch (e) {
     // Fail-open stays fail-open in prod — a buggy hook must never wedge the
     // session. But a silent `catch {}` here means a genuine environment-

@@ -37,7 +37,7 @@ import process from 'node:process'
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import { readSessionTouchedPaths } from '../_shared/foreign-paths.mts'
+import { readSessionTouchedPathsDetailed } from '../_shared/foreign-paths.mts'
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import {
@@ -146,8 +146,13 @@ export const check = (payload: ToolCallPayload): GuardResult => {
   ) {
     return undefined
   }
-  const allTouched = [...readSessionTouchedPaths(payload.transcript_path)]
-  if (allTouched.length === 0) {
+  // AUTHORED paths only — a path this session merely `git add`ed was
+  // written by someone else; landing it here would sign a peer's
+  // half-done work. Staged-but-not-authored paths are surfaced instead.
+  const detailed = readSessionTouchedPathsDetailed(payload.transcript_path)
+  const allTouched = [...detailed.authored]
+  const stagedOnly = [...detailed.stagedOnly]
+  if (allTouched.length === 0 && stagedOnly.length === 0) {
     return undefined
   }
   // User-intent HOLD (#238): paths the user parked (hold/park/wait, recorded
@@ -168,9 +173,21 @@ export const check = (payload: ToolCallPayload): GuardResult => {
         'node .claude/hooks/fleet/auto-land-on-stop/hold.mts --clear <path…>.\n',
     )
   }
+  const stagedOnlyNote =
+    stagedOnly.length > 0
+      ? [
+          `Staged-but-not-authored (NOT landed — this session only git-add'ed them;`,
+          'a peer or human wrote the content, so they need their own commit):',
+          ...stagedOnly.slice(0, 8).map(p => `  ${p}`),
+        ]
+      : []
   const byRoot = groupByRepo(touched, dir => gitToplevel(dir))
   if (byRoot.size === 0) {
-    return undefined
+    return stagedOnlyNote.length
+      ? notify(
+          `[auto-land-on-stop] nothing landed.\n${stagedOnlyNote.join('\n')}\n`,
+        )
+      : undefined
   }
   // Resolve land-work FLEET-FIRST (the session's own repo), then fall back to
   // the wheelhouse source-of-truth, and run it against each touched repo via cwd
@@ -192,7 +209,11 @@ export const check = (payload: ToolCallPayload): GuardResult => {
     }
   }
   if (landed.length === 0) {
-    return undefined
+    return stagedOnlyNote.length
+      ? notify(
+          `[auto-land-on-stop] nothing landed.\n${stagedOnlyNote.join('\n')}\n`,
+        )
+      : undefined
   }
   const lines = [
     `[auto-land-on-stop] landed this session's authored source in ${landed.length} repo(s):`,
@@ -206,6 +227,7 @@ export const check = (payload: ToolCallPayload): GuardResult => {
       '  node .claude/hooks/fleet/auto-land-on-stop/hold.mts --clear <path…>',
     )
   }
+  lines.push(...stagedOnlyNote)
   return notify(`${lines.join('\n')}\n`)
 }
 

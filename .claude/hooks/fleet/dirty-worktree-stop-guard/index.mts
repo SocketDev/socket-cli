@@ -79,6 +79,7 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import {
+  attributeDirtyPath,
   CHILD_LIVE_WINDOW_MS,
   computeActorId,
   hasLiveBackgroundChild,
@@ -86,7 +87,6 @@ import {
   LEDGER_TTL_MS,
   ledgerFilePath,
   listOtherActorLedgerPaths,
-  lookupPath,
   normalizeForLedger,
   pruneLedger,
   readActorLedger,
@@ -341,36 +341,23 @@ export function partitionByLedger(
     const entry = dirty[i]!
     const abs = path.resolve(repoDir, entry.path)
     const normalized = normalizeForLedger(abs)
-    // Own-actor's most-recent write timestamp for this path (undefined if never
-    // recorded by us). Used below to determine who is the true most-recent writer.
-    const ownWrite = ownLedger ? lookupPath(ownLedger, normalized) : undefined
-    // Find the most-recently-writing foreign actor for this path. "First found"
-    // is wrong when there are multiple foreign writers or when own actor wrote it
-    // more recently — scan all foreign ledgers and take the highest timestamp.
-    let foreignLatestTs: number | undefined
-    let foreignLatestId: string | undefined
-    for (let j = 0, { length: fl } = foreignLedgers; j < fl; j += 1) {
-      const ledger = foreignLedgers[j]
-      if (!ledger) {
-        continue
-      }
-      const lastWrite = lookupPath(ledger, normalized)
-      if (lastWrite !== undefined) {
-        if (foreignLatestTs === undefined || lastWrite > foreignLatestTs) {
-          foreignLatestTs = lastWrite
-          foreignLatestId = ledger.actorId
-        }
-      }
-    }
-    // Sanction only when the foreign actor's most-recent write is STRICTLY NEWER
-    // than own actor's most-recent write (or own actor never wrote it). If own
-    // wrote it at the same time or later, it belongs to us — blocking.
-    const foreignIsNewer =
-      foreignLatestId !== undefined &&
-      foreignLatestTs !== undefined &&
-      (ownWrite === undefined || foreignLatestTs > ownWrite)
-    if (foreignIsNewer) {
-      sanctioned.push({ entry, ownerActorId: foreignLatestId! })
+    // One attribution loop for the fleet (shared with whose-work): the
+    // most-recent writer wins; foreign beats own only when STRICTLY newer.
+    // The foreignLedgers input here is already liveness-filtered, so any
+    // foreign owner is a live one — sanction it; everything else blocks.
+    const attribution = attributeDirtyPath(
+      normalized,
+      ownLedger,
+      foreignLedgers,
+      {
+        now,
+      },
+    )
+    if (
+      attribution.owner === 'foreign-live' ||
+      attribution.owner === 'foreign-stale'
+    ) {
+      sanctioned.push({ entry, ownerActorId: attribution.actorId! })
     } else {
       blocking.push(entry)
     }

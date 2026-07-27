@@ -90,10 +90,110 @@ export function cargoVersionHint(dir: string): boolean {
   return false
 }
 
+// The `-prerelease` hint carried by a WORKSPACE MEMBER manifest — a
+// member-anchored release keeps the root private/plain while the shipping
+// package names the target (`packages/npm/@scope/pkg` at `X.Y.Z-prerelease`).
+// Walks the pnpm-workspace `packages:` globs one directory level per `*`
+// segment (prefix+suffix match, so `@*` scope segments expand), bounded so a
+// pathological workspace cannot stall the hook. Exported for tests.
+export function workspaceMemberVersionHint(dir: string): boolean {
+  let workspaceYaml: string
+  try {
+    workspaceYaml = readFileSync(path.join(dir, 'pnpm-workspace.yaml'), 'utf8')
+  } catch {
+    return false
+  }
+  const globs: string[] = []
+  let inPackages = false
+  const lines = workspaceYaml.split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
+    if (/^packages:\s*$/.test(line)) {
+      inPackages = true
+      continue
+    }
+    if (inPackages) {
+      const item = /^\s+-\s+['"]?([^'"#]+?)['"]?\s*$/.exec(line)
+      if (item) {
+        globs.push(item[1]!)
+        continue
+      }
+      if (!/^\s*(#|$)/.test(line)) {
+        inPackages = false
+      }
+    }
+  }
+  let budget = 500
+  for (let i = 0, { length: globLength } = globs; i < globLength; i += 1) {
+    const glob = globs[i]!
+    if (glob.startsWith('!')) {
+      continue
+    }
+    let dirs = [dir]
+    const segments = glob.split('/').filter(Boolean)
+    for (
+      let j = 0, { length: segmentLength } = segments;
+      j < segmentLength;
+      j += 1
+    ) {
+      const segment = segments[j]!
+      const next: string[] = []
+      for (let k = 0, { length: dirLength } = dirs; k < dirLength; k += 1) {
+        const parent = dirs[k]!
+        if (budget <= 0) {
+          return false
+        }
+        if (segment.includes('*')) {
+          const star = segment.indexOf('*')
+          const prefix = segment.slice(0, star)
+          const suffix = segment.slice(star + 1)
+          let names: string[]
+          try {
+            names = readdirSync(parent)
+          } catch {
+            continue
+          }
+          for (
+            let m = 0, { length: nameLength } = names;
+            m < nameLength;
+            m += 1
+          ) {
+            const name = names[m]!
+            if (
+              name.length >= prefix.length + suffix.length &&
+              name.startsWith(prefix) &&
+              name.endsWith(suffix)
+            ) {
+              next.push(path.join(parent, name))
+              budget -= 1
+            }
+          }
+        } else {
+          next.push(path.join(parent, segment))
+          budget -= 1
+        }
+      }
+      dirs = next
+    }
+    for (let m = 0, { length: dirLength } = dirs; m < dirLength; m += 1) {
+      const memberDir = dirs[m]!
+      try {
+        const manifest = JSON.parse(
+          readFileSync(path.join(memberDir, 'package.json'), 'utf8'),
+        ) as { version?: string | undefined }
+        if (isPrereleaseHint(manifest.version)) {
+          return true
+        }
+      } catch {}
+    }
+  }
+  return false
+}
+
 // True when the checked-out tree carries a `-prerelease` version hint
-// (`X.Y.Z-prerelease`) — in package.json (npm) or Cargo.toml (cargo). The human
-// wrote the release target into the tree, so a non-major bump that consumes it
-// is already user-authorized.
+// (`X.Y.Z-prerelease`) — in package.json (npm), Cargo.toml (cargo), or a
+// workspace member manifest. The human wrote the release target into the
+// tree, so a non-major bump that consumes it is already user-authorized.
 export function committedVersionHint(): boolean {
   const dir = resolveProjectDir()
   try {
@@ -106,7 +206,7 @@ export function committedVersionHint(): boolean {
       return true
     }
   } catch {}
-  return cargoVersionHint(dir)
+  return cargoVersionHint(dir) || workspaceMemberVersionHint(dir)
 }
 
 const BYPASS_PHRASE = 'Allow release-bump bypass'
@@ -140,7 +240,14 @@ export interface BumpViolation {
 // package-manager `version` subcommand only counts with a mutation argument.
 export function bumpViolationIn(command: string): BumpViolation | undefined {
   for (const cmd of commandsFor(command, 'node')) {
-    const script = cmd.args.find(a => a.endsWith('bump.mts'))
+    // The release bump script is the `bump.mts` FILE — match it on a path-
+    // segment boundary (`lockstep/auto-bump.mts`, the upstream pin bumper the
+    // updating-lockstep skill drives, shares the raw suffix but is a
+    // different surface with its own commit flow).
+    const script = cmd.args.find(a => {
+      const arg = normalizePath(a)
+      return arg === 'bump.mts' || arg.endsWith('/bump.mts')
+    })
     if (script && !cmd.args.includes('--dry-run')) {
       const releaseAs = cmd.args[cmd.args.indexOf('--release-as') + 1]
       return {
@@ -153,7 +260,9 @@ export function bumpViolationIn(command: string): BumpViolation | undefined {
   }
   for (let i = 0, { length } = PM_BINARIES; i < length; i += 1) {
     const binary = PM_BINARIES[i]!
-    for (const cmd of commandsFor(command, binary)) {
+    const cmds = commandsFor(command, binary)
+    for (let j = 0, { length: cmdLength } = cmds; j < cmdLength; j += 1) {
+      const cmd = cmds[j]!
       if (cmd.args[0] === 'version' && cmd.args.length > 1) {
         return {
           invocation: `${binary} version`,

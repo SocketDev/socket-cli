@@ -6,6 +6,7 @@
  *   --staged). Nothing goes public here — staging is server-side on npm.
  */
 
+import { versionHintFrom } from '../../lib/changelog.mts'
 import { resolveBumpScript } from '../../publish-infra/npm/bump.mts'
 import { buildWorkflowRunArgs } from '../../publish-infra/remote-dispatch.mts'
 import {
@@ -41,14 +42,26 @@ export async function runBumpStage(config: {
       status: 'passed',
     }
   }
-  const derived = deriveReleaseLevel(pkg.version, cfg.targetVersion)
-  if (derived.error !== undefined) {
-    return { detail: derived.error, status: 'failed' }
+  // A committed `X.Y.Z-prerelease` hint already names the landing spot.
+  // When the target IS the hint's base, bump.mts consumes the hint on its
+  // own — run it with no --release-as instead of deriving a level (the
+  // hint's base is never a sequential increment of the hint itself).
+  const hinted = versionHintFrom(pkg.version)
+  const hintNamesTarget = hinted === cfg.targetVersion
+  const levelArgs: string[] = []
+  let bumpMode = `the committed ${pkg.version} hint`
+  if (!hintNamesTarget) {
+    const derived = deriveReleaseLevel(pkg.version, cfg.targetVersion)
+    if (derived.error !== undefined) {
+      return { detail: derived.error, status: 'failed' }
+    }
+    levelArgs.push('--release-as', derived.level)
+    bumpMode = `--release-as ${derived.level}`
   }
   // Overlay-first: a repo-specific scripts/repo/bump.mts (monorepo / custom
   // bumps, e.g. socket-registry's publishConfig.directory subject) wins over
   // the canonical scripts/fleet/bump.mts — same precedence as the CI bump.
-  const args = [resolveBumpScript(cfg.cwd), '--release-as', derived.level]
+  const args = [resolveBumpScript(cfg.cwd), ...levelArgs]
   if (cfg.dryRun) {
     args.push('--dry-run')
   }
@@ -63,7 +76,7 @@ export async function runBumpStage(config: {
   }
   if (cfg.dryRun) {
     return {
-      detail: `[dry-run] bump.mts preview for ${cfg.targetVersion} (--release-as ${derived.level})`,
+      detail: `[dry-run] bump.mts preview for ${cfg.targetVersion} (${bumpMode})`,
       status: 'passed',
     }
   }
@@ -72,14 +85,14 @@ export async function runBumpStage(config: {
     return {
       detail:
         `bump landed on the wrong version.\n` +
-        `  Where: package.json after bump.mts --release-as ${derived.level}\n` +
+        `  Where: package.json after bump.mts (${bumpMode})\n` +
         `  Saw ${after.version}, wanted ${cfg.targetVersion}.\n` +
         `  Fix: reconcile the named version with bump.mts's computation (it increments from ${pkg.version}).`,
       status: 'failed',
     }
   }
   return {
-    detail: `bump.mts committed chore: bump version to ${cfg.targetVersion} (--release-as ${derived.level})`,
+    detail: `bump.mts committed chore: bump version to ${cfg.targetVersion} (${bumpMode})`,
     status: 'passed',
   }
 }

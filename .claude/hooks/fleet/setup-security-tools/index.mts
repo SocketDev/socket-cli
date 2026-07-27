@@ -164,7 +164,7 @@ export async function checkShims(): Promise<Finding[]> {
         `evicted (rack rotation, dlx cleanup, version-manager upgrade). ` +
         `Every command through ${broken.length === 1 ? 'that shim' : 'those shims'} ` +
         `currently fails with "No such file or directory." Run ` +
-        `\`node scripts/fleet/setup/setup-tools.mjs\` (or the interactive ` +
+        `\`node scripts/fleet/setup/tools.mjs\` (or the interactive ` +
         `\`node .claude/hooks/fleet/setup-security-tools/install.mts\`) to ` +
         `rewrite the shims.`,
     },
@@ -265,7 +265,7 @@ export function repairShims(home: string): Finding[] {
     'scripts',
     'fleet',
     'setup',
-    'setup-tools.mjs',
+    'tools.mjs',
   )
 
   // Both the sfw binary and the generator must exist. If either is

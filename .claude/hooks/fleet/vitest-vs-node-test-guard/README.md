@@ -13,7 +13,7 @@ to Node's built-in test runner. But if the repo's `vitest.config.*` has
 
     Error: No test suite found in file scripts/fleet/test/foo.test.mts
 
-This was a real instance in socket-stuie — 4 `scripts/fleet/test/` files cascaded
+This was a real instance in stuie — 4 `scripts/fleet/test/` files cascaded
 from wheelhouse used `node:test` while the repo's vitest include caught
 them.
 

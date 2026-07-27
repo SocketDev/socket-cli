@@ -46,6 +46,10 @@ import {
 } from './paths.mts'
 import { hasFleetHookSource } from './_shared/fleet-source-present.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import {
+  liftMirrorLockSync,
+  withMirrorLockLiftedSync,
+} from './_shared/mirror-lock.mts'
 
 const logger = getDefaultLogger()
 
@@ -107,18 +111,26 @@ function main(): void {
   }
   // All three table variants: the FULL table (index.cjs path), the
   // snapshot-SAFE table (aliased into the snapshot bundle), and the
-  // EXCLUDED table (the sibling runtime bundle's source).
-  writeFileSync(
-    DISPATCH_TABLE_PATH,
-    generateDispatchTableSource(FLEET_HOOKS_DIR),
+  // EXCLUDED table (the sibling runtime bundle's source). The outputs live
+  // inside the cascade-locked hook mirror; lift the read-only lock around
+  // each regeneration write.
+  withMirrorLockLiftedSync(DISPATCH_TABLE_PATH, () =>
+    writeFileSync(
+      DISPATCH_TABLE_PATH,
+      generateDispatchTableSource(FLEET_HOOKS_DIR),
+    ),
   )
-  writeFileSync(
-    DISPATCH_TABLE_SNAPSHOT_PATH,
-    generateDispatchTableSource(FLEET_HOOKS_DIR, 'snapshot'),
+  withMirrorLockLiftedSync(DISPATCH_TABLE_SNAPSHOT_PATH, () =>
+    writeFileSync(
+      DISPATCH_TABLE_SNAPSHOT_PATH,
+      generateDispatchTableSource(FLEET_HOOKS_DIR, 'snapshot'),
+    ),
   )
-  writeFileSync(
-    DISPATCH_TABLE_EXCLUDED_PATH,
-    generateDispatchTableSource(FLEET_HOOKS_DIR, 'excluded'),
+  withMirrorLockLiftedSync(DISPATCH_TABLE_EXCLUDED_PATH, () =>
+    writeFileSync(
+      DISPATCH_TABLE_EXCLUDED_PATH,
+      generateDispatchTableSource(FLEET_HOOKS_DIR, 'excluded'),
+    ),
   )
 
   mkdirSync(DISPATCH_DIR, { recursive: true })
@@ -132,7 +144,10 @@ function main(): void {
   }
 
   // The excluded-hooks sibling first: deserialize-main requires it at
-  // runtime, so it must exist alongside every snapshot blob.
+  // runtime, so it must exist alongside every snapshot blob. Its output
+  // lives inside the cascade-locked hook mirror; lift the read-only lock
+  // before rolldown writes it.
+  liftMirrorLockSync(EXCLUDED_BUNDLE_PATH)
   const excluded = spawnSync(ROLLDOWN_BIN, ['-c', EXCLUDED_CONFIG], {
     cwd: REPO_ROOT,
     stdio: 'inherit',
@@ -150,6 +165,9 @@ function main(): void {
     return
   }
 
+  // Same lock-lift as above: SNAPSHOT_BUNDLE lives inside the cascade-locked
+  // hook mirror.
+  liftMirrorLockSync(SNAPSHOT_BUNDLE)
   const bundle = spawnSync(ROLLDOWN_BIN, ['-c', SNAPSHOT_CONFIG], {
     cwd: REPO_ROOT,
     stdio: 'inherit',

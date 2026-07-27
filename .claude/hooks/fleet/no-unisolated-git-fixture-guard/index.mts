@@ -33,9 +33,13 @@
 // Fails open on non-test files / parse problems — under-blocking beats
 // blocking on infrastructure noise.
 
+import path from 'node:path'
+
+import { safeReadFileSync } from '@socketsecurity/lib-stable/fs/read-file'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { materializePostEditContent } from '../_shared/edit-content.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 // A path is a test file if its basename matches `*.test.*` / `*.spec.*` or it
 // lives under a `test/` / `__tests__/` directory.
@@ -102,12 +106,29 @@ export function shouldBlock(filePath: string, content: string): boolean {
   return true
 }
 
+// A vitest suite is isolated by the repo's vitest setup when that setup
+// side-effect imports the shared helper — verified on disk, not assumed.
+export function vitestSetupIsolates(): boolean {
+  const setupPath = path.join(
+    resolveProjectDir(),
+    'test',
+    'fleet',
+    'scripts',
+    'setup.mts',
+  )
+  const setup = safeReadFileSync(setupPath)
+  return typeof setup === 'string' && setup.includes('isolate-git-env')
+}
+
 export const check = editGuard((filePath, content, payload) => {
   // Reason about the WHOLE post-edit file, not the Edit fragment: the isolation
   // import lives at the top of the file, so an Edit appending a git fixture
   // would false-positive if we only saw `new_string`.
   const full = materializePostEditContent(filePath, content, payload) ?? content
   if (!shouldBlock(filePath, full ?? '')) {
+    return undefined
+  }
+  if (/from\s+['"]vitest['"]/.test(full ?? '') && vitestSetupIsolates()) {
     return undefined
   }
   return block(

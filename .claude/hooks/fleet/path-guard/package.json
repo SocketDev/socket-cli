@@ -10,6 +10,6 @@
     "test": "node --test test/*.test.mts"
   },
   "dependencies": {
-    "@ultrathink/acorn.wasm": "catalog:"
+    "@ultrathink/acorn.rs.wasm": "catalog:"
   }
 }

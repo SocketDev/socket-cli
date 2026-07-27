@@ -23,10 +23,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { isHookEntrypoint } from '../_shared/entrypoint.mts'
-
-const logger = getDefaultLogger()
+import { defineHook, runHook } from '../_shared/guard.mts'
 
 const REPO_MAP_DIR = '.repo-map'
 const GEN_REPO_MAP = 'scripts/fleet/gen/repo-map.mts'
@@ -69,24 +66,18 @@ export function shouldRefresh(repoRoot: string): boolean {
   )
 }
 
-/* c8 ignore start - main() depends on real machine state: CLAUDE_PROJECT_DIR + a detached spawn */
-function main(): void {
-  const repoRoot = process.env['CLAUDE_PROJECT_DIR'] ?? DEFAULT_REPO_ROOT
-  if (shouldRefresh(repoRoot)) {
-    spawnRefresh(repoRoot)
-  }
-}
-/* c8 ignore stop */
-
-// Entrypoint-guarded so the test can import spawnRefresh without firing main().
-/* c8 ignore next - entrypoint guard only fires when the script is run directly */
-if (isHookEntrypoint(import.meta.url)) {
-  /* c8 ignore start - direct-invocation body only reachable when run as a CLI */
-  try {
-    main()
-  } catch (e) {
-    logger.fail(`repo-map-refresh hook error: ${String(e)}`)
-  }
-  process.exit(0)
+export const hook = defineHook({
+  /* c8 ignore start - check() depends on real machine state: CLAUDE_PROJECT_DIR + a detached spawn */
+  check: async () => {
+    const repoRoot = process.env['CLAUDE_PROJECT_DIR'] ?? DEFAULT_REPO_ROOT
+    if (shouldRefresh(repoRoot)) {
+      spawnRefresh(repoRoot)
+    }
+    return undefined
+  },
   /* c8 ignore stop */
-}
+  event: 'SessionStart',
+  type: 'nudge',
+})
+
+void runHook(hook, import.meta.url)

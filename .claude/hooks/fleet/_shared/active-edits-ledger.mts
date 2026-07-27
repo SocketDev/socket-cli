@@ -57,13 +57,25 @@ export const CHILD_LIVE_WINDOW_MS = 5 * 60 * 1000
 const STORE_NAME = 'socket-active-edits'
 
 /**
- * The on-disk shape for one actor's ledger. `paths` maps repo-relative
- * normalized path → last-write epoch (ms). `updatedAt` is the ledger's own
- * last-flush time — used for TTL of the whole file.
+ * The on-disk shape for one actor's ledger. `paths` maps ABSOLUTE normalized
+ * path (see normalizeForLedger) → last-write epoch (ms). `updatedAt` is the
+ * ledger's own last-flush time — used for TTL of the whole file.
  */
 export interface ActorLedger {
   readonly actorId: string
+  // Nameable metadata (best-effort, local-only runtime state): the
+  // recording process pid and the transcript basename, so a collision
+  // message or whose-work can say WHICH session owns a path instead of
+  // an opaque hash. Absent on pre-metadata ledgers.
+  readonly pid?: number | undefined
+  readonly label?: string | undefined
   readonly paths: Record<string, number>
+  // Optional per-path provenance: how the write was observed. Absent →
+  // 'edit' (the Edit/Write/NotebookEdit recorder). 'bash' → inferred from
+  // a write-capable Bash command (fixer, formatter, install, codegen) by
+  // the bash recorder — a weaker authorship signal consumers may treat
+  // differently (a fixer touching a peer's file is not authorship).
+  readonly via?: Record<string, string> | undefined
   readonly updatedAt: number
 }
 
@@ -136,13 +148,23 @@ export function pruneLedger(
     return undefined
   }
   const pruned: Record<string, number> = {}
+  const prunedVia: Record<string, string> = {}
   const threshold = now - ttlMs
   for (const [p, ts] of Object.entries(ledger.paths)) {
     if (ts >= threshold) {
       pruned[p] = ts
+      const via = ledger.via?.[p]
+      if (via) {
+        prunedVia[p] = via
+      }
     }
   }
-  return { actorId: ledger.actorId, paths: pruned, updatedAt: ledger.updatedAt }
+  return {
+    actorId: ledger.actorId,
+    paths: pruned,
+    ...(Object.keys(prunedVia).length ? { via: prunedVia } : {}),
+    updatedAt: ledger.updatedAt,
+  }
 }
 
 /**
@@ -204,6 +226,78 @@ export function lookupPath(
   return ledger.paths[normalizedPath]
 }
 
+export interface DirtyAttribution {
+  readonly owner: 'own' | 'foreign-live' | 'foreign-stale' | 'unknown'
+  readonly actorId?: string | undefined
+  readonly actorLabel?: string | undefined
+  readonly actorPid?: number | undefined
+  readonly ageMs?: number | undefined
+  readonly via?: string | undefined
+}
+
+/**
+ * Attribute one dirty path across the actor ledgers: the most-recent
+ * writer wins. Foreign beats own only when STRICTLY newer (a tie or an
+ * own-later write is own work); 'foreign-live' vs 'foreign-stale' splits
+ * on the winning ledger's liveness. 'unknown' = no ledger ever recorded
+ * the path (a human's edit, a pre-ledger write, or a Bash write the
+ * recorder's heuristics missed). This is the single attribution loop the
+ * stop guard blocks on and whose-work reports from — one implementation,
+ * so a path the guard sanctions is never one whose-work calls yours.
+ */
+export function attributeDirtyPath(
+  normalizedPath: string,
+  ownLedger: ActorLedger | undefined,
+  foreignLedgers: ReadonlyArray<ActorLedger | undefined>,
+  config: { now: number },
+): DirtyAttribution {
+  const cfg = { __proto__: null, ...config } as typeof config
+  const ownWrite = ownLedger ? lookupPath(ownLedger, normalizedPath) : undefined
+  let latestTs: number | undefined
+  let latestLedger: ActorLedger | undefined
+  for (let j = 0, { length } = foreignLedgers; j < length; j += 1) {
+    const ledger = foreignLedgers[j]
+    if (!ledger) {
+      continue
+    }
+    const lastWrite = lookupPath(ledger, normalizedPath)
+    if (
+      lastWrite !== undefined &&
+      (latestTs === undefined || lastWrite > latestTs)
+    ) {
+      latestTs = lastWrite
+      latestLedger = ledger
+    }
+  }
+  const foreignIsNewer =
+    latestLedger !== undefined &&
+    latestTs !== undefined &&
+    (ownWrite === undefined || latestTs > ownWrite)
+  if (foreignIsNewer) {
+    const live = isActorLive(latestLedger!, {
+      now: cfg.now,
+      ttlMs: LEDGER_TTL_MS,
+    })
+    return {
+      owner: live ? 'foreign-live' : 'foreign-stale',
+      actorId: latestLedger!.actorId,
+      actorLabel: latestLedger!.label,
+      actorPid: latestLedger!.pid,
+      ageMs: cfg.now - latestTs!,
+      via: latestLedger!.via?.[normalizedPath],
+    }
+  }
+  if (ownWrite !== undefined) {
+    return {
+      owner: 'own',
+      actorId: ownLedger?.actorId,
+      ageMs: cfg.now - ownWrite,
+      via: ownLedger?.via?.[normalizedPath],
+    }
+  }
+  return { owner: 'unknown' }
+}
+
 /**
  * Produce a new ledger with `normalizedPath` recorded at `now`. Carries
  * forward existing non-stale entries. Pure — no IO.
@@ -212,13 +306,25 @@ export function recordPath(
   existing: ActorLedger | undefined,
   actorId: string,
   normalizedPath: string,
-  config: { now: number; ttlMs: number },
+  config: { now: number; ttlMs: number; via?: string | undefined },
 ): ActorLedger {
-  const { now, ttlMs } = { __proto__: null, ...config } as typeof config
+  const { now, ttlMs, via } = { __proto__: null, ...config } as typeof config
   const base = existing ? pruneLedger(existing, { now, ttlMs }) : undefined
   const paths: Record<string, number> = { ...(base?.paths ?? {}) }
   paths[normalizedPath] = now
-  return { actorId, paths, updatedAt: now }
+  const viaMap: Record<string, string> = { ...(base?.via ?? {}) }
+  if (via) {
+    viaMap[normalizedPath] = via
+  } else {
+    // A direct Edit/Write supersedes weaker provenance for the path.
+    delete viaMap[normalizedPath]
+  }
+  return {
+    actorId,
+    paths,
+    ...(Object.keys(viaMap).length ? { via: viaMap } : {}),
+    updatedAt: now,
+  }
 }
 
 // ── Thin fs shell ─────────────────────────────────────────────────────────

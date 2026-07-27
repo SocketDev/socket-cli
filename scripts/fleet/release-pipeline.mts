@@ -39,6 +39,7 @@ import process from 'node:process'
 import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
+import { versionHintFrom } from './lib/changelog.mts'
 import { renderOwedAfterRelease } from './lib/release-cascade.mts'
 import { REPO_ROOT } from './paths.mts'
 import { runCapture } from './publish-infra/shared.mts'
@@ -649,8 +650,13 @@ async function main(): Promise<void> {
   }
   if (cli.namedVersion !== undefined) {
     // The version comes from the USER — the pipeline only validates that
-    // bump.mts can land exactly there (or already has).
-    if (pkg.version !== cli.namedVersion) {
+    // bump.mts can land exactly there (or already has). A committed
+    // `X.Y.Z-prerelease` hint whose base IS the named version needs no level
+    // derivation: bump.mts consumes the hint directly.
+    if (
+      pkg.version !== cli.namedVersion &&
+      versionHintFrom(pkg.version) !== cli.namedVersion
+    ) {
       const derived = deriveReleaseLevel(pkg.version, cli.namedVersion)
       if (derived.error !== undefined) {
         logger.fail(derived.error)

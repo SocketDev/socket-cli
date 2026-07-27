@@ -76,6 +76,19 @@ const SGR_CONCEAL_RE = /\[(?:\d{1,3};)*8(?:;\d{1,3})*m/
 interface Pattern {
   readonly label: string
   readonly re: RegExp
+  // False → skip the whitespace-folded whole-text window pass. The window
+  // folds newlines to spaces, which disables the [^.\n] proximity brake the
+  // loose verb+noun patterns rely on (two benign adjacent lines read as one
+  // sentence). Those patterns match per-line only; the strongly-shaped
+  // directive patterns keep the window, which is what a split-across-lines
+  // injection actually looks like.
+  readonly multiLine?: boolean | undefined
+  // True → in code files, match against a copy whose short string-literal
+  // contents are blanked. A quoted reason/message naming a destructive verb
+  // is data ('remove …' in a decision string), and a directive smuggled
+  // inside a string is still caught by the agent-addressing patterns, which
+  // stay un-blinded.
+  readonly blindStringsInCode?: boolean | undefined
 }
 
 // Injection-shape patterns. Case-insensitive. Each targets a directive
@@ -128,6 +141,8 @@ const INJECTION_PATTERNS: readonly Pattern[] = [
     // a hyphenated-identifier fragment (`test-org`, `data-color-mode`) via a
     // trailing `(?!-)`. "delete the data" / "wipe the database" still match.
     re: /(?<!\.)\b(?:corrupt|delete|destroy|drop|erase|remove|rm\s+-rf|truncate|wipe)\b(?!\s*\()[^.\n]{0,24}\b(?:all\s+)?(?:the\s+)?(?:tests?|test\s+suite|code\s*base|code|files?|sources?|repository|repo|commits?|history|database|data)\b(?!-)/i,
+    multiLine: false,
+    blindStringsInCode: true,
   },
   {
     label: 'agent-addressing prohibition ("you must not use this library")',
@@ -138,8 +153,23 @@ const INJECTION_PATTERNS: readonly Pattern[] = [
     label: 'result-suppression directive ("ignore all results/output")',
     // Matches "ignore/discard/suppress … all results/output/findings/warnings … from/of".
     re: /\b(?:discard|disregard|do\s+not\s+(?:report|trust|use)|ignore|suppress)\b[^.\n]{0,24}\b(?:all\s+)?(?:errors?|findings?|output|results?|warnings?)\b[^.\n]{0,24}\b(?:from|of)\b/i,
+    multiLine: false,
   },
 ]
+
+// Length-preserving blank of every short string literal ('…', "…", `…`)
+// that opens and closes on the line — the technique stripNestedTypeGroups
+// uses. 200-char cap: a literal long enough to hold a full smuggled
+// directive stays scannable.
+export function blankShortStringLiterals(line: string): string {
+  return line.replace(
+    /(['"`])(?:\\.|(?!\1)[^\\\n]){0,200}?\1/g,
+    (whole: string) => `${whole[0]}${' '.repeat(whole.length - 2)}${whole[0]}`,
+  )
+}
+
+// File extensions where string-literal contents are code DATA, not prose.
+const CODE_EXT_RE = /\.(?:c|m)?[jt]sx?$/
 
 // AI/agent-addressing vocabulary — escalates a hiding-mechanism finding
 // even when no full directive pattern matched on its own.
@@ -156,21 +186,38 @@ export function isSelfFile(filePath: string): boolean {
   return SELF_DIR_RE.test(normalizePath(filePath))
 }
 
-function matchPatterns(text: string): string[] {
+function matchPatterns(
+  text: string,
+  options?: ScanOptions | undefined,
+): string[] {
+  const opts = { __proto__: null, ...options } as ScanOptions
   const out: string[] = []
-  for (const { label, re } of INJECTION_PATTERNS) {
-    if (re.test(text)) {
+  let blanked: string | undefined
+  for (const { blindStringsInCode, label, re } of INJECTION_PATTERNS) {
+    const target =
+      blindStringsInCode === true && opts.codeFile === true
+        ? (blanked ??= blankShortStringLiterals(text))
+        : text
+    if (re.test(target)) {
       out.push(label)
     }
   }
   return out
 }
 
+export interface ScanOptions {
+  codeFile?: boolean | undefined
+}
+
 // Walk the after-text and collect every injection-shape finding across
 // three complementary passes (per-line raw, per-line normalized, and a
 // whitespace-folded whole-text window for split-across-lines directives).
 // Pre-existing matches are filtered by the caller (only NEW findings).
-export function findInjectionFindings(after: string): Finding[] {
+export function findInjectionFindings(
+  after: string,
+  options?: ScanOptions | undefined,
+): Finding[] {
+  const scanOpts = { __proto__: null, ...options } as ScanOptions
   const text =
     after.length > MAX_SCAN_BYTES ? after.slice(0, MAX_SCAN_BYTES) : after
   const rawLines = text.split('\n')
@@ -197,7 +244,10 @@ export function findInjectionFindings(after: string): Finding[] {
         : undefined
     const smuggle = invisibleSmugglingLabel(raw)
 
-    const labels = new Set([...matchPatterns(raw), ...matchPatterns(norm)])
+    const labels = new Set([
+      ...matchPatterns(raw, scanOpts),
+      ...matchPatterns(norm, scanOpts),
+    ])
     for (const label of labels) {
       const tag = hidden ? ` [${hidden}]` : smuggle ? ' [obfuscated]' : ''
       push({ label: `${label}${tag}`, line: i + 1, source: clip(raw.trim()) })
@@ -217,7 +267,12 @@ export function findInjectionFindings(after: string): Finding[] {
   }
 
   const windowText = normalizeForScan(text).replace(/\s+/g, ' ')
-  for (const { label, re } of INJECTION_PATTERNS) {
+  for (const { label, multiLine, re } of INJECTION_PATTERNS) {
+    // The fold turns newlines into spaces, so the [^.\n] proximity brake
+    // in the loose patterns cannot fire — those are per-line only.
+    if (multiLine === false) {
+      continue
+    }
     const m = re.exec(windowText)
     if (m) {
       push({
@@ -365,10 +420,13 @@ export const check = editGuard((filePath, content, payload) => {
   // Only NEW findings — pre-existing injection text in the file (e.g.
   // an upstream we already vendored) isn't re-flagged on an unrelated
   // edit; only text this edit introduces.
+  const scanOpts = { codeFile: CODE_EXT_RE.test(filePath) }
   const beforeKeys = new Set(
-    findInjectionFindings(currentText).map(f => `${f.label}:${f.source}`),
+    findInjectionFindings(currentText, scanOpts).map(
+      f => `${f.label}:${f.source}`,
+    ),
   )
-  const newFindings = findInjectionFindings(afterText).filter(
+  const newFindings = findInjectionFindings(afterText, scanOpts).filter(
     f => !beforeKeys.has(`${f.label}:${f.source}`),
   )
   if (newFindings.length === 0) {

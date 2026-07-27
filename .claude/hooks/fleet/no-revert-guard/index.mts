@@ -38,7 +38,8 @@
 
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
-import { isFleetTarget } from '../_shared/fleet-context.mts'
+import { actedOnPath, isFleetTarget } from '../_shared/fleet-context.mts'
+import { currentBranch, gitOut } from '../_shared/git-branch.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import { commandsFor, isFleetSyncCommand } from '../_shared/shell-command.mts'
@@ -450,6 +451,7 @@ export function blockMessage(
   command: string,
   match: RevertCheck,
   matchedSubstring: string,
+  lossFacts?: ResetHardLossFacts | undefined,
 ): string {
   const lines: string[] = []
   lines.push('[no-revert-guard] Blocked: destructive / hook-bypass command.')
@@ -474,6 +476,16 @@ export function blockMessage(
     lines.push('  Resetting local main to origin/<default>? In squash-cadence')
     lines.push('  fleet repos LOCAL main is canonical — origin ahead usually')
     lines.push('  means your own squashed/bot commits, not newer work.')
+    if (
+      lossFacts &&
+      (lossFacts.aheadCount > 0 || lossFacts.addedFiles.length)
+    ) {
+      lines.push(
+        `  This one drops ${lossFacts.aheadCount} commit${lossFacts.aheadCount === 1 ? '' : 's'} + ` +
+          `${lossFacts.addedFiles.length} file${lossFacts.addedFiles.length === 1 ? '' : 's'} not on ${lossFacts.target} —`,
+      )
+      lines.push('  a backup ref already holds it, so this is recoverable.')
+    }
     lines.push('  Reconcile FORWARD: compare timestamps, then amend (1-commit')
     lines.push('  squash) or lease-force-push local main. Never rewind local')
     lines.push(
@@ -483,25 +495,199 @@ export function blockMessage(
   return lines.join('\n')
 }
 
-// A `git reset --hard` whose target is an `origin/<branch>` ref — the exact
-// shape that rewinds local main to the remote. Flag order is free
-// (`reset --hard origin/main` and `reset origin/main --hard` both match), so
-// test the two tokens independently within the command.
-export function isResetHardToOrigin(command: string): boolean {
+// The target ref of a `git reset --hard <target>` (any ref: `origin/*`, a
+// local branch, a SHA, `HEAD~N`), or `undefined` for a bare `git reset --hard`
+// with no explicit target (implicit HEAD — discards working-tree/index
+// changes only, never commits, so there's nothing a work-loss check needs to
+// evaluate). Flag order is free (`reset --hard <ref>` and
+// `reset <ref> --hard` both match); the target is the first positional arg
+// that isn't `--hard` and doesn't look like a flag.
+export function resetHardTarget(command: string): string | undefined {
   for (const c of commandsFor(command, 'git')) {
     const [sub, ...rest] = c.args
-    if (
-      sub === 'reset' &&
-      rest.includes('--hard') &&
-      rest.some(a => a.startsWith('origin/'))
-    ) {
-      return true
+    if (sub !== 'reset' || !rest.includes('--hard')) {
+      continue
+    }
+    for (const a of rest) {
+      if (a === '--hard' || a.startsWith('-')) {
+        continue
+      }
+      return a
     }
   }
-  return false
+  return undefined
+}
+
+// A `git reset --hard` whose target is an `origin/<branch>` ref — the exact
+// shape that rewinds local main to the remote.
+export function isResetHardToOrigin(command: string): boolean {
+  return resetHardTarget(command)?.startsWith('origin/') ?? false
+}
+
+// The facts a `git reset --hard <target>` would discard, gathered straight
+// from the repo. Undefined when any git query fails — the caller treats a
+// gathering failure as "can't tell", which must never manufacture a block.
+export interface ResetHardLossFacts {
+  readonly target: string
+  // `git rev-list --count <target>..HEAD` — commits on HEAD the reset drops.
+  readonly aheadCount: number
+  // The first ~10 of those commit SHAs (newest-first, rev-list's default
+  // order), for the enumerated block message.
+  readonly aheadShas: readonly string[]
+  // `git diff --diff-filter=A --name-only <target>..HEAD` — files added on
+  // HEAD that the target doesn't have, capped to the first ~10.
+  readonly addedFiles: readonly string[]
+  // True when some ref OTHER than the current branch's own ref and OTHER
+  // than the reset target already contains HEAD — i.e. a backup exists that
+  // would still hold this work after the reset lands.
+  readonly hasBackup: boolean
+}
+
+const MAX_LISTED_LOSS_ITEMS = 10
+
+export function gatherResetHardLossFacts(
+  repoDir: string,
+  target: string,
+): ResetHardLossFacts | undefined {
+  const countOut = gitOut(repoDir, ['rev-list', '--count', `${target}..HEAD`])
+  if (countOut === undefined) {
+    return undefined
+  }
+  const aheadCount = Number(countOut)
+  if (!Number.isInteger(aheadCount)) {
+    return undefined
+  }
+  const shaList = gitOut(repoDir, ['rev-list', `${target}..HEAD`])
+  if (shaList === undefined) {
+    return undefined
+  }
+  const aheadShas = shaList
+    .split('\n')
+    .filter(Boolean)
+    .slice(0, MAX_LISTED_LOSS_ITEMS)
+  const filesOut = gitOut(repoDir, [
+    'diff',
+    '--diff-filter=A',
+    '--name-only',
+    `${target}..HEAD`,
+  ])
+  if (filesOut === undefined) {
+    return undefined
+  }
+  const addedFiles = filesOut
+    .split('\n')
+    .filter(Boolean)
+    .slice(0, MAX_LISTED_LOSS_ITEMS)
+  const refsOut = gitOut(repoDir, [
+    'for-each-ref',
+    '--format=%(refname)',
+    '--contains',
+    'HEAD',
+  ])
+  if (refsOut === undefined) {
+    return undefined
+  }
+  const refs = refsOut.split('\n').filter(Boolean)
+  const branch = currentBranch(repoDir)
+  const currentRef = branch ? `refs/heads/${branch}` : undefined
+  const targetRef = target.startsWith('refs/')
+    ? target
+    : target.startsWith('origin/')
+      ? `refs/remotes/${target}`
+      : `refs/heads/${target}`
+  const hasBackup = refs.some(r => r !== currentRef && r !== targetRef)
+  return { target, aheadCount, aheadShas, addedFiles, hasBackup }
+}
+
+// Pure: decide whether an unbacked `git reset --hard <target>` must be
+// blocked UNCONDITIONALLY — independent of the revert bypass phrase. Takes
+// precomputed facts (no git calls inside), so the decision is directly
+// unit-testable with no live repo. Returns the block message, or undefined
+// when there's nothing to lose (no commits ahead, no added files) or a
+// backup ref already holds the work (falls through to the existing phrase
+// gate, since the loss is recoverable).
+export function decideResetHardLoss(
+  facts: ResetHardLossFacts,
+): string | undefined {
+  const { addedFiles, aheadCount, aheadShas, hasBackup, target } = facts
+  if (aheadCount <= 0 && addedFiles.length === 0) {
+    return undefined
+  }
+  if (hasBackup) {
+    return undefined
+  }
+  const lines: string[] = []
+  lines.push(
+    '[no-revert-guard] Blocked: unbacked git reset --hard would destroy work.',
+  )
+  lines.push('')
+  lines.push(
+    `  What:  this reset drops ${aheadCount} commit${aheadCount === 1 ? '' : 's'} + ` +
+      `${addedFiles.length} file${addedFiles.length === 1 ? '' : 's'} not on ${target}.`,
+  )
+  lines.push(`  Where: HEAD, reset target ${target}.`)
+  lines.push(
+    '  Saw:   no other ref (branch/tag) contains HEAD — wanted at least one,',
+  )
+  lines.push('         so nothing preserves this work once the reset lands.')
+  if (aheadShas.length) {
+    lines.push('')
+    lines.push('  Commits that would be dropped:')
+    for (const sha of aheadShas) {
+      lines.push(`    ${sha.slice(0, 8)}`)
+    }
+  }
+  if (addedFiles.length) {
+    lines.push('')
+    lines.push(`  Files on HEAD absent on ${target}:`)
+    for (const f of addedFiles) {
+      lines.push(`    ${f}`)
+    }
+  }
+  lines.push('')
+  lines.push('  Fix: back up first: `git branch backup/<name> HEAD`; better:')
+  lines.push(
+    '  reconcile FORWARD (managing-worktrees land / cherry-pick) — never',
+  )
+  lines.push('  rewind local to origin.')
+  lines.push('')
+  lines.push(
+    '  This block is unconditional — it fires even with the revert bypass',
+  )
+  lines.push('  phrase, because no ref would survive to recover the work.')
+  return lines.join('\n')
 }
 
 export const check = bashGuard((command, payload): GuardResult => {
+  // Unbacked work-loss gate: a `git reset --hard <target>` with no other
+  // ref preserving HEAD's ahead commits or added files is blocked
+  // UNCONDITIONALLY — even when the revert bypass phrase is present, since
+  // the phrase can authorize a recoverable operation but can't manufacture
+  // a backup that isn't there. Runs first and fails open on any git-query
+  // error (repoDir unresolvable, git unavailable, non-integer count) so a
+  // hook bug never blocks — it just falls through to the existing checks.
+  const resetTarget = resetHardTarget(command)
+  // Threaded to the later blockMessage() call so a RECOVERABLE reset-to-
+  // origin (a backup exists) still names the exact commit/file count instead
+  // of just the generic reconcile-forward steer.
+  let resetLossFacts: ResetHardLossFacts | undefined
+  if (resetTarget !== undefined) {
+    const repoDir = gitOut(actedOnPath(payload), [
+      'rev-parse',
+      '--show-toplevel',
+    ])
+    resetLossFacts =
+      repoDir !== undefined
+        ? gatherResetHardLossFacts(repoDir, resetTarget)
+        : undefined
+    if (resetLossFacts) {
+      const lossMessage = decideResetHardLoss(resetLossFacts)
+      if (lossMessage) {
+        return block(lossMessage)
+      }
+    }
+  }
+
   // Allowlist: fleet-sync cascade commands run in batches across every
   // repo and would otherwise need a fresh bypass phrase per repo. The
   // caller marks intent by setting `FLEET_SYNC=1` inline (the same way
@@ -596,7 +782,12 @@ export const check = bashGuard((command, payload): GuardResult => {
   }
 
   return block(
-    blockMessage(command, triggered.check, triggered.matchedSubstring),
+    blockMessage(
+      command,
+      triggered.check,
+      triggered.matchedSubstring,
+      resetLossFacts,
+    ),
   )
 })
 

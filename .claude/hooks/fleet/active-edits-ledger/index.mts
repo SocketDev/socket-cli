@@ -74,7 +74,11 @@ export const check = (payload: ToolCallPayload): GuardResult => {
     now,
     ttlMs: LEDGER_TTL_MS,
   })
-  writeActorLedger(fp, updated)
+  writeActorLedger(fp, {
+    ...updated,
+    pid: process.pid,
+    label: transcriptPath ? path.basename(transcriptPath, '.jsonl') : undefined,
+  })
   sweepStaleLedgers(storeRoot, { now, ttlMs: LEDGER_TTL_MS })
   return undefined
 }

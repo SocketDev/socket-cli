@@ -12,9 +12,12 @@
  * The collision is better caught HERE, before the write lands.
  *
  * Actor key: sha256(transcript_path).slice(0,16). The transcript_path
- * discriminates actors — each subagent / workflow-agent gets its own JSONL
- * while the main session has a different one. Keying by its hash gives a
- * stable, content-free filesystem key. See _shared/active-edits-ledger.mts.
+ * discriminates SEPARATE interactive sessions. It does NOT discriminate a
+ * spawned subagent from its parent — Claude Code delivers the PARENT
+ * session's transcript_path to hooks even for a subagent's writes, so a
+ * subagent's edits collapse into the parent actor's ledger (the stop guard
+ * detects live children from their own transcript files instead). See the
+ * computeActorId note in _shared/active-edits-ledger.mts.
  *
  * Block message shape: What / Where / Saw-vs-wanted / Fix — three sanctioned
  * moves:

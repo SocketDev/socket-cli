@@ -1,6 +1,6 @@
 # Layer 2b — aggregator. References Layer 1 (checkout, install) +
 # Layer 2a (setup). When ANY of those bump, THIS file bumps next, then
-# Layer 3 (ci.yml / npm-publish.yml / weekly-update.yml) bumps to ref
+# Layer 3 (ci.yml / provenance.yml / weekly-update.yml) bumps to ref
 # this file's new SHA. See the updating-workflows skill at
 # .claude/skills/updating-workflows/.
 
@@ -97,9 +97,15 @@ runs:
       # Before restore + install so the cache action's `pnpm store path`,
       # the install, and every later pnpm in the job (including one inside
       # a workspace-mounted sandbox) resolve the SAME store.
+      # Env-var indirection, never `${{ }}` inside the run block — an inline
+      # expansion of a caller-controlled input into shell source is the
+      # zizmor template-injection shape (its gate fails the job on it).
       if: inputs.store-dir != ''
       shell: bash
-      run: echo "npm_config_store_dir=${{ inputs.store-dir }}" >> "$GITHUB_ENV"
+      env:
+        PNPM_STORE_DIR_INPUT: ${{ inputs.store-dir }}
+      run: | # zizmor: ignore[github-env] - pnpm store path from the caller's own input, not runtime-attacker data.
+        echo "npm_config_store_dir=${PNPM_STORE_DIR_INPUT}" >> "$GITHUB_ENV"
 
     - name: Cache pnpm store
       # Restore-only. Exports PNPM_STORE_PATH / PNPM_STORE_CACHE_KEY /

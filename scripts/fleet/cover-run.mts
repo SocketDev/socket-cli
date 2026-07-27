@@ -239,7 +239,7 @@ export function collectChurnNotes(snapshot: EnvSnapshot): string[] {
   if (now.lockfileMtimeMs !== snapshot.lockfileMtimeMs) {
     out.push('pnpm-lock.yaml CHANGED during the run (a concurrent install).')
   }
-  if (now.pnpmDirMtimeMs !== snapshot.pnpmDirMtimeMs) {
+  if (pnpmDirChurned(snapshot, now)) {
     out.push(
       'node_modules/.pnpm CHANGED during the run — module resolution may have been transiently broken for spawned workers.',
     )
@@ -248,6 +248,108 @@ export function collectChurnNotes(snapshot: EnvSnapshot): string[] {
     out.push(`live during the run: ${line}`)
   }
   return out
+}
+
+// Pure churn detection over a before/after install-state snapshot pair: TRUE
+// when node_modules/.pnpm moved between the two. That directory turning over is
+// the signal that a concurrent install re-linked deps mid-run, so module
+// resolution may have been transiently broken for the spawned test workers — a
+// failure observed across that window is inconclusive, not necessarily a
+// regression.
+export function pnpmDirChurned(
+  before: EnvSnapshot,
+  after: EnvSnapshot,
+): boolean {
+  return before.pnpmDirMtimeMs !== after.pnpmDirMtimeMs
+}
+
+export interface ChurnRetryDecision {
+  readonly attempt: number
+  readonly churnedDuringRun: boolean
+  readonly failed: boolean
+  readonly maxAttempts: number
+}
+
+// Pure retry decision for a cover suite run. Retry ONLY when the suite failed
+// AND that run overlapped concurrent node_modules/.pnpm churn (the failure is
+// inconclusive) AND the attempt budget is not yet spent. A churn-free failure
+// is a genuine failure and is never retried; a passing run is never retried;
+// and an exhausted budget stops the loop so a repo under sustained churn can't
+// spin forever. `attempt` is 1-based; `maxAttempts` is the total run budget
+// (initial run + retries).
+export function shouldRetryForChurn(decision: ChurnRetryDecision): boolean {
+  const { attempt, churnedDuringRun, failed, maxAttempts } = decision
+  if (!failed || !churnedDuringRun) {
+    return false
+  }
+  return attempt < maxAttempts
+}
+
+// Injected clock / mtime probe / sleep so the quiescence wait is unit-testable
+// without real timing or a real filesystem.
+export interface QuiescenceDeps {
+  now: () => number
+  pnpmDirMtimeMs: () => number
+  sleep: (ms: number) => Promise<void>
+}
+
+export interface QuiescenceOptions {
+  maxWaitMs?: number | undefined
+  quietMs?: number | undefined
+  sampleMs?: number | undefined
+}
+
+// Production quiescence deps: real clock + sleep, real node_modules/.pnpm mtime.
+function realQuiescenceDeps(): QuiescenceDeps {
+  const pnpmDir = path.join(rootPath, 'node_modules', '.pnpm')
+  return {
+    now: () => Date.now(),
+    pnpmDirMtimeMs: () => {
+      try {
+        return statSync(pnpmDir).mtimeMs
+      } catch {
+        return 0
+      }
+    },
+    sleep: ms => sleep(ms),
+  }
+}
+
+/**
+ * Wait until node_modules/.pnpm has settled — its mtime unchanged for a
+ * quiescence window — before a churn-inconclusive suite is re-run, so the retry
+ * doesn't race a still-in-flight concurrent install. Samples the mtime every
+ * `sampleMs`; each observed change resets the quiet timer. Returns TRUE once
+ * the dir stays quiet for `quietMs`, or FALSE at the `maxWaitMs` cap. BOUNDED
+ * by design: it never blocks forever, so a repo under sustained churn still
+ * makes progress (the caller retries against a best-effort-settled tree, and an
+ * exhausted attempt budget is still fatal).
+ */
+export async function waitForPnpmQuiescence(
+  deps: QuiescenceDeps = realQuiescenceDeps(),
+  options?: QuiescenceOptions | undefined,
+): Promise<boolean> {
+  const opts = { __proto__: null, ...options } as QuiescenceOptions
+  const sampleMs = opts.sampleMs ?? 250
+  const quietMs = opts.quietMs ?? 1000
+  const maxWaitMs = opts.maxWaitMs ?? 15_000
+  const start = deps.now()
+  let lastMtime = deps.pnpmDirMtimeMs()
+  let quietSince = deps.now()
+  while (deps.now() - start < maxWaitMs) {
+    // eslint-disable-next-line no-await-in-loop
+    await deps.sleep(sampleMs)
+    const mtime = deps.pnpmDirMtimeMs()
+    if (mtime !== lastMtime) {
+      lastMtime = mtime
+      quietSince = deps.now()
+      continue
+    }
+    if (deps.now() - quietSince >= quietMs) {
+      return true
+    }
+  }
+  return false
 }
 
 // Thrown when the subprocess coverage capture is PROVABLY incomplete at the

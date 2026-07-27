@@ -13,6 +13,6 @@
     "@types/node": "catalog:"
   },
   "dependencies": {
-    "@ultrathink/acorn.wasm": "catalog:"
+    "@ultrathink/acorn.rs.wasm": "catalog:"
   }
 }

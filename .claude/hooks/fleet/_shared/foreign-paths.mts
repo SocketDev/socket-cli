@@ -126,6 +126,32 @@ export function addTouchedFromBash(
   command: string,
   touched: Set<string>,
 ): void {
+  const detailed = touchedFromBashDetailed(command)
+  for (const p of detailed.authored) {
+    touched.add(p)
+  }
+  for (const p of detailed.staged) {
+    touched.add(p)
+  }
+}
+
+export interface TouchedFromBash {
+  // `git mv` / `git rm` targets — a rename or deletion this session
+  // performed IS its work.
+  readonly authored: Set<string>
+  // `git add` targets — staging is NOT authorship: adding a path a peer
+  // session wrote must not make it land under this session's signature.
+  readonly staged: Set<string>
+}
+
+/**
+ * The `git add|mv|rm` targets in a Bash command, split by what the verb
+ * proves. Same tolerance as addTouchedFromBash for env assignments, git
+ * global options, and command chains.
+ */
+export function touchedFromBashDetailed(command: string): TouchedFromBash {
+  const authored = new Set<string>()
+  const staged = new Set<string>()
   const segments = command.split(/(?:&&|;|\n|\|\|)/)
   for (let i = 0, { length } = segments; i < length; i += 1) {
     const tokens = segments[i]!.trim().split(/\s+/)
@@ -158,9 +184,15 @@ export function addTouchedFromBash(
       if (arg.startsWith('-') || arg === '.') {
         continue
       }
-      touched.add(base ? path.resolve(base, arg) : path.resolve(arg))
+      const abs = base ? path.resolve(base, arg) : path.resolve(arg)
+      if (verb === 'add') {
+        staged.add(abs)
+      } else {
+        authored.add(abs)
+      }
     }
   }
+  return { authored, staged }
 }
 
 /**
@@ -238,6 +270,108 @@ export function readTouchedPaths(
   return touched
 }
 
+export interface SessionTouched {
+  // Paths the session provably wrote: Edit/Write/NotebookEdit targets and
+  // git mv/rm targets, from the transcript plus the same-turn ledger.
+  readonly authored: Set<string>
+  // Paths the session only ever `git add`ed — staged, never written. A
+  // lander must NOT commit these as this session's work: a surgical add
+  // of a peer's file would land their half-done content under this
+  // session's signature.
+  readonly stagedOnly: Set<string>
+}
+
+/**
+ * The session's touched paths, split by what the evidence proves. The
+ * plain `readSessionTouchedPaths` (the union) remains for consumers where
+ * staging IS the right signal (the staging guard passing your own adds).
+ */
+export function readSessionTouchedPathsDetailed(
+  transcriptPath: string | undefined,
+): SessionTouched {
+  const authored = new Set<string>()
+  const staged = new Set<string>()
+  // Transcript pass — same walk as readTouchedPaths, verb-aware.
+  if (transcriptPath) {
+    let raw: string | undefined
+    try {
+      raw = readFileSync(transcriptPath, 'utf8')
+    } catch {
+      raw = undefined
+    }
+    if (raw) {
+      const lineItems = raw.split('\n')
+      for (let j = 0, { length: jlen } = lineItems; j < jlen; j += 1) {
+        const line = lineItems[j]!
+        if (!line.trim()) {
+          continue
+        }
+        let entry: unknown
+        try {
+          entry = JSON.parse(line)
+        } catch {
+          continue
+        }
+        const msg = (entry as { message?: unknown | undefined } | undefined)
+          ?.message
+        const content = (msg as { content?: unknown | undefined } | undefined)
+          ?.content
+        if (!Array.isArray(content)) {
+          continue
+        }
+        for (let i = 0, { length } = content; i < length; i += 1) {
+          const part = content[i] as
+            | { name?: unknown | undefined; input?: unknown | undefined }
+            | undefined
+          const toolName = part?.name
+          const toolInput = part?.input as
+            | {
+                file_path?: unknown | undefined
+                command?: unknown | undefined
+              }
+            | undefined
+          if (typeof toolName !== 'string' || !toolInput) {
+            continue
+          }
+          if (
+            typeof toolInput.file_path === 'string' &&
+            toolInput.file_path &&
+            (toolName === 'Edit' ||
+              toolName === 'NotebookEdit' ||
+              toolName === 'Write')
+          ) {
+            authored.add(path.resolve(toolInput.file_path))
+          }
+          if (toolName === 'Bash' && typeof toolInput.command === 'string') {
+            const detailed = touchedFromBashDetailed(toolInput.command)
+            for (const p of detailed.authored) {
+              authored.add(p)
+            }
+            for (const p of detailed.staged) {
+              staged.add(p)
+            }
+          }
+        }
+      }
+    }
+  }
+  // Same-turn ledger pass — provenance-tagged lines split the same way.
+  const ledger = readLedgerPathsDetailed(transcriptPath)
+  for (const p of ledger.authored) {
+    authored.add(p)
+  }
+  for (const p of ledger.staged) {
+    staged.add(p)
+  }
+  const stagedOnly = new Set<string>()
+  for (const p of staged) {
+    if (!authored.has(p)) {
+      stagedOnly.add(p)
+    }
+  }
+  return { authored, stagedOnly }
+}
+
 // ── Same-turn touched-path ledger ──────────────────────────────────
 //
 // The transcript JSONL lags WITHIN a turn: a PreToolUse hook fires BEFORE the
@@ -279,14 +413,19 @@ export function touchedLedgerPath(
 export function recordTouchedPath(
   transcriptPath: string | undefined,
   absPath: string,
+  options?: { via?: string | undefined } | undefined,
 ): void {
+  const opts = { __proto__: null, ...options } as { via?: string | undefined }
   const ledger = touchedLedgerPath(transcriptPath)
   if (!ledger) {
     return
   }
   try {
     mkdirSync(path.dirname(ledger), { recursive: true })
-    appendFileSync(ledger, `${path.resolve(absPath)}\n`)
+    // Line format: `<abs>` (authored) or `<abs>\t<via>` (weaker provenance,
+    // e.g. `add` for a git-add-derived entry). Readers split on the tab.
+    const tag = opts.via ? `\t${opts.via}` : ''
+    appendFileSync(ledger, `${path.resolve(absPath)}${tag}\n`)
   } catch {
     // Fail-open: an unwritable temp dir just means no same-turn memory.
   }
@@ -309,10 +448,15 @@ export function recordTouchedFromBash(
   if (!touchedLedgerPath(transcriptPath)) {
     return
   }
-  const touched = new Set<string>()
-  addTouchedFromBash(command, touched)
-  for (const abs of touched) {
+  const detailed = touchedFromBashDetailed(command)
+  for (const abs of detailed.authored) {
     recordTouchedPath(transcriptPath, abs)
+  }
+  for (const abs of detailed.staged) {
+    // A git-add target is staged, not authored — tag it so the detailed
+    // readers can keep the split without re-deriving it (and without the
+    // circularity of reading authorship back out of add-derived entries).
+    recordTouchedPath(transcriptPath, abs, { via: 'add' })
   }
 }
 
@@ -323,26 +467,54 @@ export function recordTouchedFromBash(
 export function readLedgerPaths(
   transcriptPath: string | undefined,
 ): Set<string> {
-  const out = new Set<string>()
+  const detailed = readLedgerPathsDetailed(transcriptPath)
+  const out = new Set<string>(detailed.authored)
+  for (const p of detailed.staged) {
+    out.add(p)
+  }
+  return out
+}
+
+/**
+ * The per-session ledger split by line provenance: bare lines are
+ * authored; `\tadd`-tagged lines are git-add-derived (staged, not
+ * authored). Pre-tag ledgers (all bare) read as fully authored — the
+ * pre-existing behavior.
+ */
+export function readLedgerPathsDetailed(transcriptPath: string | undefined): {
+  authored: Set<string>
+  staged: Set<string>
+} {
+  const authored = new Set<string>()
+  const staged = new Set<string>()
   const ledger = touchedLedgerPath(transcriptPath)
   if (!ledger) {
-    return out
+    return { authored, staged }
   }
   let raw: string
   try {
     raw = readFileSync(ledger, 'utf8')
   } catch {
-    return out
+    return { authored, staged }
   }
   const lineList = raw.split('\n')
   for (let i = 0, { length } = lineList; i < length; i += 1) {
-    const line = lineList[i]!
-    const p = line.trim()
-    if (p) {
-      out.add(p)
+    const line = lineList[i]!.trim()
+    if (!line) {
+      continue
+    }
+    const tab = line.indexOf('\t')
+    if (tab === -1) {
+      authored.add(line)
+    } else {
+      const p = line.slice(0, tab).trim()
+      const via = line.slice(tab + 1).trim()
+      if (p) {
+        ;(via === 'add' ? staged : authored).add(p)
+      }
     }
   }
-  return out
+  return { authored, staged }
 }
 
 /**

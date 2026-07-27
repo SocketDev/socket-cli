@@ -6,14 +6,35 @@ import path from 'node:path'
 
 import { commandsFor } from '../_shared/shell-command.mts'
 
+// The git SUBCOMMAND: the first non-option token, skipping the global
+// value-taking options (`git -C <path> tag …`, `git -c <k=v> tag …`).
+function gitSubcommand(args: readonly string[]): string | undefined {
+  for (let i = 0, { length } = args; i < length; i += 1) {
+    const arg = args[i]!
+    if (arg === '-C' || arg === '-c') {
+      i += 1
+      continue
+    }
+    if (arg.startsWith('-')) {
+      continue
+    }
+    return arg
+  }
+  return undefined
+}
+
 // `git tag <name>` (also `git tag -a`, `git tag -s`, etc.) creating a
-// version tag (`vX.Y.Z`). Parser-based: a real `git` command with a
-// `tag` arg and a version-shaped arg — so a quoted "git tag v1.2.3" in
-// a message or a sibling command's string isn't a false trigger.
+// version tag (`vX.Y.Z`). Parser-based: a real `git` command whose
+// SUBCOMMAND is `tag` with a version-shaped arg — so `git fetch origin
+// tag v1.2.3` (fetching an upstream's tag ref) and a quoted "git tag
+// v1.2.3" in a message or a sibling command's string aren't false
+// triggers.
 const VERSION_ARG_RE = /^v\d+\.\d+\.\d+$/
 export function isVersionTagCommand(command: string): boolean {
   return commandsFor(command, 'git').some(
-    c => c.args.includes('tag') && c.args.some(a => VERSION_ARG_RE.test(a)),
+    c =>
+      gitSubcommand(c.args) === 'tag' &&
+      c.args.some(a => VERSION_ARG_RE.test(a)),
   )
 }
 

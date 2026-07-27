@@ -44,9 +44,22 @@ import {
   collectLiveActorNotes,
   executeTestSuites,
   IncompleteChildCaptureError,
+  pnpmDirChurned,
   reexecWithHeapHeadroom,
   resolveRunPlan,
   runQuietCommand,
+  shouldRetryForChurn,
+  waitForPnpmQuiescence,
+} from './cover-run.mts'
+export {
+  pnpmDirChurned,
+  shouldRetryForChurn,
+  waitForPnpmQuiescence,
+} from './cover-run.mts'
+export type {
+  ChurnRetryDecision,
+  QuiescenceDeps,
+  QuiescenceOptions,
 } from './cover-run.mts'
 import {
   armUnitBudgetWatchdog,
@@ -69,6 +82,13 @@ import {
 const rootPath = REPO_ROOT
 
 const logger = getDefaultLogger()
+
+// Total suite-run budget when a failure coincides with concurrent
+// node_modules/.pnpm churn: the initial run plus up to two churn-inconclusive
+// retries. A churn-free failure never consumes the budget (it fails on the
+// first run), and the bound guarantees a repo under sustained install churn
+// still terminates instead of retrying forever.
+const COVER_MAX_ATTEMPTS = 3
 
 export interface SuiteResult {
   exitCode: number
@@ -266,15 +286,42 @@ export async function main(): Promise<void> {
       }
     } else {
       const budgetMs = resolveUnitBudgetMs()
-      const suiteStart = performance.now()
-      const stopWatchdog = startUnitBudgetWatchdog(budgetMs)
+      // Run the suites, and when a failure coincides with concurrent
+      // node_modules/.pnpm churn treat it as INCONCLUSIVE: wait for the install
+      // state to settle, then re-run (bounded by COVER_MAX_ATTEMPTS). A
+      // churn-free failure breaks out immediately and stays fatal.
       let suiteResults: TestSuitesResult
-      try {
-        suiteResults = await runTestSuites(mainVitestArgs, isolatedVitestArgs)
-      } finally {
-        stopWatchdog()
+      let attempt = 1
+      for (;;) {
+        const beforeRun = snapshotEnvState()
+        const suiteStart = performance.now()
+        const stopWatchdog = startUnitBudgetWatchdog(budgetMs)
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          suiteResults = await runTestSuites(mainVitestArgs, isolatedVitestArgs)
+        } finally {
+          stopWatchdog()
+        }
+        warnIfOverBudget(performance.now() - suiteStart, budgetMs)
+        const churnedDuringRun = pnpmDirChurned(beforeRun, snapshotEnvState())
+        const failed = suiteResults.combined.exitCode !== 0
+        if (
+          !shouldRetryForChurn({
+            attempt,
+            churnedDuringRun,
+            failed,
+            maxAttempts: COVER_MAX_ATTEMPTS,
+          })
+        ) {
+          break
+        }
+        logger.warn(
+          `Suite failed while node_modules/.pnpm churned mid-run (attempt ${attempt}/${COVER_MAX_ATTEMPTS}) — treating as INCONCLUSIVE; waiting for install-state to settle before re-running.`,
+        )
+        attempt += 1
+        // eslint-disable-next-line no-await-in-loop
+        await waitForPnpmQuiescence()
       }
-      warnIfOverBudget(performance.now() - suiteStart, budgetMs)
       const { combined, isolatedResult, mainResult } = suiteResults
       exitCode = combined.exitCode
 

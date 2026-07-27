@@ -1,13 +1,14 @@
 /**
  * @file AST parse primitives for fleet hooks — the lazy
- *   `@ultrathink/acorn.wasm` loader plus the narrow `tryParse` / `walkSimple`
- *   surface and the shared `AcornNode` / `ParseOptions` / `CallSite` types the
- *   sibling modules (`comments`, `calls`, `literals`) build on. Import the
- *   whole helper set from the specific `../ast/*.mts` module. No vendored wasm:
- *   the parser comes from the npm `@ultrathink/acorn.wasm` catalog dep,
- *   `require()`d LAZILY (first use, not module eval) so a V8 startup-snapshot
- *   build pass — which evaluates every module with no `WebAssembly` global —
- *   stays safe; instantiation happens at runtime.
+ *   `@ultrathink/acorn.rs.wasm` loader plus the narrow `tryParse` /
+ *   `walkSimple` surface and the shared `AcornNode` / `ParseOptions` /
+ *   `CallSite` types the sibling modules (`comments`, `calls`, `literals`)
+ *   build on. Import the whole helper set from the specific `../ast/*.mts`
+ *   module. No vendored wasm: the parser comes from the npm
+ *   `@ultrathink/acorn.rs.wasm` catalog dep, `require()`d LAZILY (first use,
+ *   not module eval) so a V8 startup-snapshot build pass — which evaluates
+ *   every module with no `WebAssembly` global — stays safe; instantiation
+ *   happens at runtime.
  */
 
 import { createRequire } from 'node:module'
@@ -108,7 +109,7 @@ let cachedWasm: AcornWasm | undefined
 // runtime-only, where `WebAssembly` is present.
 function acornWasm(): AcornWasm {
   if (cachedWasm === undefined) {
-    cachedWasm = require('@ultrathink/acorn.wasm') as AcornWasm
+    cachedWasm = require('@ultrathink/acorn.rs.wasm') as AcornWasm
   }
   return cachedWasm
 }

@@ -31,7 +31,9 @@
 // Exit codes: 0 pass, 2 block. Fails open on malformed payloads.
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import { resolveEditedText } from '../_shared/payload.mts'
 import { isRepoTestHome } from '../_shared/repo-test-home.mts'
+import { safeReadFileSync } from '@socketsecurity/lib-stable/fs/read-file'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 interface Finding {
@@ -158,8 +160,15 @@ export function isExemptPath(filePath: string): boolean {
   )
 }
 
+// Identity for a finding across edits: the param name + its normalized
+// signature line. NEVER the line number — unrelated edits shift lines and
+// would make a pre-existing trap read as new.
+export function findingKey(f: Finding): string {
+  return `${f.param}:${f.text}`
+}
+
 export const check = editGuard(
-  (filePath, content) => {
+  (filePath, content, payload) => {
     if (isExemptPath(filePath)) {
       return undefined
     }
@@ -167,7 +176,10 @@ export const check = editGuard(
     if (!/\.(?:c|m)?tsx?$/.test(filePath)) {
       return undefined
     }
-    const text = content ?? ''
+    // Scan the POST-EDIT document (handles Edit and MultiEdit), not the raw
+    // new_string fragment — a fragment whose context window merely QUOTES a
+    // pre-existing signature is not an introduction.
+    const text = resolveEditedText(payload) ?? content ?? ''
     if (!text) {
       return undefined
     }
@@ -175,7 +187,19 @@ export const check = editGuard(
     if (findings.length === 0) {
       return undefined
     }
-    const lines = findings
+    // Diff-aware: block only traps ABSENT from the on-disk file. The
+    // pre-existing backlog belongs to the lint gate, not an edit block.
+    const before = safeReadFileSync(filePath)
+    const beforeKeys = new Set(
+      typeof before === 'string'
+        ? findBooleanTrapParams(before).map(f => findingKey(f))
+        : [],
+    )
+    const fresh = findings.filter(f => !beforeKeys.has(findingKey(f)))
+    if (fresh.length === 0) {
+      return undefined
+    }
+    const lines = fresh
       .map(f => `  ${filePath}:${f.line}  param \`${f.param}\`\n    ${f.text}`)
       .join('\n')
     return block(

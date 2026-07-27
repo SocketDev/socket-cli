@@ -66,6 +66,7 @@ import {
 } from '../_shared/foreign-paths.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import {
+  commandWorkingDir,
   detectBroadGitAdd,
   findInvocation,
   invocationHasFlag,
@@ -150,7 +151,12 @@ export const check = bashGuard((command, payload) => {
     return undefined
   }
 
-  const repoDir = getProjectDir()
+  // Resolve the repo the command actually targets (a cd chain or git -C):
+  // a git op against a scratch repo elsewhere must be judged by THAT
+  // repo's state, not the primary checkout's foreign dirt.
+  const commandDir = commandWorkingDir(command)
+  const repoDir =
+    commandDir && commandDir !== '.' ? commandDir : getProjectDir()
 
   // Squash-history relaxation. A repo opted into `squash-history` flattens its
   // default branch to one commit before every push, so commit order and
