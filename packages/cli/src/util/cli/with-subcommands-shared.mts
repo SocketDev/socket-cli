@@ -9,7 +9,7 @@
 
 import { indentString } from '@socketsecurity/lib-stable/strings/format'
 
-import type { Options } from '../../meow.mts'
+import type { MeowOptions as MeowBaseOptions } from '../../meow.mts'
 
 export interface CliAlias {
   description: string
@@ -46,7 +46,10 @@ export type CliBucket = 'main' | 'api' | 'tools' | 'config'
 
 export type CliBuckets = Readonly<Record<string, CliBucket>>
 
-export interface MeowOptions extends Omit<Options, 'argv' | 'importMeta'> {
+export interface MeowOptions extends Omit<
+  MeowBaseOptions,
+  'argv' | 'importMeta'
+> {
   aliases?: CliAliases | undefined
   /**
    * Per-subcommand bucket assignments for the root-help layout. Only consumed

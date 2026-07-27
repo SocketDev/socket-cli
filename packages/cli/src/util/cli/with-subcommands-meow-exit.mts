@@ -23,7 +23,7 @@ import { emitBanner, shouldSuppressBanner } from './with-subcommands-banner.mts'
 
 import type { CliCommandConfig } from './with-subcommands.mts'
 import type { MeowFlags } from '../../flags.mts'
-import type { Result } from '../../meow.mts'
+import type { MeowResult } from '../../meow.mts'
 
 const logger = getDefaultLogger()
 
@@ -55,7 +55,7 @@ export type MeowOrExitOptions = {
 export function meowOrExit<const F extends MeowFlags = MeowFlags>(
   config: MeowOrExitConfig<F>,
   options?: MeowOrExitOptions | undefined,
-): Result<F> {
+): MeowResult<F> {
   const {
     argv,
     config: cliConfig,

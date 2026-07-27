@@ -11,7 +11,7 @@ const packageRoot = path.resolve(__dirname, '..')
 
 const logger = getDefaultLogger()
 
-export async function validate() {
+export async function validatePackage() {
   logger.log('')
   logger.log('='.repeat(60))
   logger.log(colors.blue('CLI Package Validation'))
@@ -131,7 +131,7 @@ export async function validate() {
 }
 
 // Run validation.
-validate().catch(e => {
+validatePackage().catch(e => {
   logger.error('')
   logger.fail(`Unexpected error: ${e.message}`)
   logger.error('')

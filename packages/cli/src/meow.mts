@@ -127,11 +127,6 @@ export interface MeowResult<F extends MeowFlags = MeowFlags> {
   showVersion: () => void
 }
 
-// Type aliases for compatibility.
-export type Flag = MeowFlag
-export type Options<F extends MeowFlags = MeowFlags> = MeowOptions<F>
-export type Result<F extends MeowFlags = MeowFlags> = MeowResult<F>
-
 /**
  * Parse command-line arguments meow-style.
  */

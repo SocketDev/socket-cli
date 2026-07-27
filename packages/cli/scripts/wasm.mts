@@ -60,7 +60,7 @@ async function buildWasm() {
   logger.info('Step 1: Converting CodeT5 models to ONNX INT4…')
   logger.error('')
   try {
-    await exec('node', [convertScript], { stdio: 'inherit' })
+    await execCommand('node', [convertScript], { stdio: 'inherit' })
   } catch (e) {
     logger.error('')
     logger.fail('❌ CodeT5 conversion failed')
@@ -77,7 +77,7 @@ async function buildWasm() {
     if (isDev) {
       buildArgs.push('--dev')
     }
-    await exec('node', buildArgs, { stdio: 'inherit' })
+    await execCommand('node', buildArgs, { stdio: 'inherit' })
   } catch (e) {
     logger.error('')
     logger.fail('❌ WASM bundle build failed')
@@ -216,7 +216,7 @@ async function downloadWasm() {
 /**
  * Execute command and wait for completion.
  */
-export async function exec(command, args, options = {}) {
+export async function execCommand(command, args, options = {}) {
   const result = await spawn(command, args, {
     stdio: options.stdio || 'pipe',
     stdioString: true,

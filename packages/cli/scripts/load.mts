@@ -5,8 +5,8 @@
  *   --import=./scripts/load.mts script.mts.
  */
 
-// Export a no-op resolve function for compatibility.
-// Node.js --import expects this export to exist.
+// Node's module-hooks API requires a loader to export exactly `resolve`.
+// oxlint-disable-next-line socket/exported-name-has-domain-word -- the export name is Node's module-hooks contract, not ours to qualify.
 export function resolve(specifier, context, nextResolve) {
   // Pass through to default resolver - no custom aliasing.
   return nextResolve(specifier, context)
