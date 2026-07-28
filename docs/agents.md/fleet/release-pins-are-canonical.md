@@ -7,8 +7,9 @@ persisted pin stores **only exact canonical values**.
 
 ## The canonical forms
 
-- `bundle.ref` — an exact `fleet-<hex>` release tag (`fleet-a1b2c3d`). No semver,
-  no range, no `latest`/`main`/`stable`/`newest` alias.
+- `bundle.ref` — an exact `fleet-bundle-<hex>` release tag
+  (`fleet-bundle-a1b2c3d`), the content-addressed template-SHA stamp. No
+  semver, no range, no `latest`/`main`/`stable`/`newest` alias.
 - `bundle.cascadeSha` — a bare 40-hex git SHA (lowercase, no `v` prefix, no
   range, no alias). A manifest's `templateSha` is the same shape.
 - No pin stores **both** an alias and its canonical form. Any field beside `ref`

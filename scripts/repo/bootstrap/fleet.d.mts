@@ -477,8 +477,8 @@ interface RefValidation {
 }
 /**
  * Validate a `bundle.ref` value at WRITE time. Rejects an empty, fuzzy, ranged,
- * or aliased ref — only an exact `fleet-<hex>` tag is legal. Returns the list
- * of problems (empty === valid).
+ * or aliased ref — only an exact `fleet-bundle-<hex>` tag is legal. Returns the
+ * list of problems (empty === valid).
  */
 declare function validateRef(ref: unknown): RefValidation;
 /**
@@ -582,8 +582,9 @@ declare function assertLockStep(config: {
   readonly ref: string;
 }): boolean;
 /**
- * Resolve the NEWEST `fleet-*` release tag via `gh release list`. Returns the
- * latest tag, or undefined when none / offline. The list is newest-first.
+ * Resolve the NEWEST `fleet-bundle-<hex>` release tag via `gh release list`.
+ * Returns the latest tag, or undefined when none / offline. The list is
+ * newest-first.
  */
 declare function resolveNewestRef(repo: string): string | undefined;
 /**

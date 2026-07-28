@@ -31,7 +31,7 @@ sibling (`.claude/hooks/repo/`, `.config/repo/`, the member's own
 ## The ref pin
 
 A thin member pins which bundle to fetch in its wheelhouse settings file:
-`.config/socket-wheelhouse.json` → `"bundle": { "ref": "fleet-<sha>" }`. That
+`.config/socket-wheelhouse.json` → `"bundle": { "ref": "fleet-bundle-<sha>" }`. That
 file is the single member-owned config surface. The bootstrap defaults its
 `--ref` from there, so the pin lives in exactly one place.
 
@@ -140,7 +140,7 @@ Everything else arrives via the belt fetch on the next `pnpm install`.
 
 ## Commands
 
-- `node scripts/repo/bootstrap/fleet.mjs --ref fleet-<sha> --thin --wire` — convert a repo to
+- `node scripts/repo/bootstrap/fleet.mjs --ref fleet-bundle-<sha> --thin --wire` — convert a repo to
   thin: fetch + apply, untrack the payload, write the belt.
 - `node scripts/repo/bootstrap/fleet.mjs --if-current` — the belt/CI fetch (idempotent, ref
   from settings).

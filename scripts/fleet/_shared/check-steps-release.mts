@@ -291,8 +291,8 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // Persisted release pins store ONLY exact canonical values — the belt twin of
     // the write-time bundle-pin validators (bootstrap/src/lockstep.mts +
     // sync-scaffolding/socket-wheelhouse-config.mts). Asserts the committed
-    // bundle.ref is an exact fleet-<hex> tag (no latest/main/head/stable/newest
-    // alias), bundle.cascadeSha / a manifest templateSha is a bare 40-hex SHA, and
+    // bundle.ref is an exact fleet-bundle-<hex> tag (no latest/main/head/stable/
+    // newest alias), bundle.cascadeSha / a manifest templateSha is a bare 40-hex SHA, and
     // no alias is stored beside a canonical value. Pure local reads → always on;
     // vacuous pass where nothing is pinned (the producer / a non-thin member).
     () => run('node', ['scripts/fleet/check/release-pins-are-canonical.mts']),

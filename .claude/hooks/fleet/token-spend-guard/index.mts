@@ -19,12 +19,19 @@
 // agent sees it and either drops the model/effort or types a bypass.
 //
 // Bypass: "Allow model bypass", keep the premium model, or "Allow effort
-// bypass", keep high effort, in a recent user turn, or
+// bypass", keep high effort, in a recent user turn, or skip the whole check
+// on a subagent turn — a subagent can't change its own model/effort, can't
+// delegate further, and can't type a bypass, so firing here would only trap
+// it.
 
 import process from 'node:process'
 
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
-import { bypassPhrasePresent, readLines } from '../_shared/transcript.mts'
+import {
+  bypassPhrasePresent,
+  mostRecentAssistantIsSidechain,
+  readLines,
+} from '../_shared/transcript.mts'
 
 const MODEL_BYPASS = ['Allow model bypass', 'Allow model-spend bypass'] as const
 const EFFORT_BYPASS = ['Allow effort bypass'] as const
@@ -88,6 +95,14 @@ function readCurrentModel(transcriptPath: string | undefined): string {
 
 export const check = bashGuard((command, payload) => {
   if (!isMechanical(command)) {
+    return undefined
+  }
+
+  // A subagent can't act on this nudge: it can't change its own model/effort
+  // (the parent sets those at spawn time — see ai-spawns-have-paired-effort),
+  // can't delegate (no Agent tool), and can't type a human-only bypass. Firing
+  // here only traps it. The nudge belongs at spawn time, so skip subagent turns.
+  if (mostRecentAssistantIsSidechain(payload.transcript_path)) {
     return undefined
   }
 

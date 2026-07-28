@@ -39,7 +39,7 @@ untracked, dirty file.)
 ## Known state stores
 
 - **`bundle.ref`** (`.config/socket-wheelhouse.json`) — a CUSTOM pin (not a
-  standard field): the wheelhouse bundle ref (`fleet-<sha>`) a thin consumer
+  standard field): the wheelhouse bundle ref (`fleet-bundle-<sha>`) a thin consumer
   fetches. The fleet's equivalent of a payload lockfile pin; the version decision
   lives in exactly one auditable place. This one IS tracked — it's config, not
   runtime state.

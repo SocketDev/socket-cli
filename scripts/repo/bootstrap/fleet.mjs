@@ -1198,13 +1198,13 @@ function applyThinMode(config) {
 
 //#endregion
 //#region scripts/repo/gen/bootstrap/src/lockstep.mts
-const FLEET_REF_RE = /^fleet-[0-9a-f]{7,}$/
+const FLEET_REF_RE = /^fleet-bundle-[0-9a-f]{7,40}$/
 const FULL_SHA_RE = /^[0-9a-f]{40}$/
 const FUZZY_REF_RE = /[\^~*]|\b(?:canary|head|latest|lts|main|master|next)\b/i
 /**
  * Validate a `bundle.ref` value at WRITE time. Rejects an empty, fuzzy, ranged,
- * or aliased ref — only an exact `fleet-<hex>` tag is legal. Returns the list
- * of problems (empty === valid).
+ * or aliased ref — only an exact `fleet-bundle-<hex>` tag is legal. Returns the
+ * list of problems (empty === valid).
  */
 function validateRef(ref) {
   const errors = []
@@ -1217,11 +1217,11 @@ function validateRef(ref) {
   }
   if (FUZZY_REF_RE.test(ref))
     errors.push(
-      `\`bundle.ref\` must be an exact \`fleet-<hex>\` tag — no range/alias (\`^\` \`~\` \`*\` \`latest\` \`lts\` \`main\` …); got ${JSON.stringify(ref)}.`,
+      `\`bundle.ref\` must be an exact \`fleet-bundle-<hex>\` tag — no range/alias (\`^\` \`~\` \`*\` \`latest\` \`lts\` \`main\` …); got ${JSON.stringify(ref)}.`,
     )
   if (!FLEET_REF_RE.test(ref))
     errors.push(
-      `\`bundle.ref\` must match ${String(FLEET_REF_RE)} (a \`fleet-<hex>\` release tag); got ${JSON.stringify(ref)}.`,
+      `\`bundle.ref\` must match ${String(FLEET_REF_RE)} (a \`fleet-bundle-<hex>\` release tag); got ${JSON.stringify(ref)}.`,
     )
   return {
     ok: errors.length === 0,
@@ -1446,8 +1446,9 @@ function assertLockStep(config) {
   return false
 }
 /**
- * Resolve the NEWEST `fleet-*` release tag via `gh release list`. Returns the
- * latest tag, or undefined when none / offline. The list is newest-first.
+ * Resolve the NEWEST `fleet-bundle-<hex>` release tag via `gh release list`.
+ * Returns the latest tag, or undefined when none / offline. The list is
+ * newest-first.
  */
 function resolveNewestRef(repo) {
   try {
@@ -1470,7 +1471,10 @@ function resolveNewestRef(repo) {
     )
     const rows = JSON.parse(out)
     for (const row of rows)
-      if (typeof row.tagName === 'string' && row.tagName.startsWith('fleet-'))
+      if (
+        typeof row.tagName === 'string' &&
+        /^fleet-bundle-[0-9a-f]{7,40}$/.test(row.tagName)
+      )
         return row.tagName
     return
   } catch {
@@ -2096,7 +2100,7 @@ async function installFleet(config) {
       return 0
     }
     logger.log(
-      'install-fleet: no --ref and no `bundle.ref` in .config/repo/socket-wheelhouse.json. Pass --ref fleet-<sha> or set bundle.ref.',
+      'install-fleet: no --ref and no `bundle.ref` in .config/repo/socket-wheelhouse.json. Pass --ref fleet-bundle-<sha> or set bundle.ref.',
     )
     return 1
   }

@@ -156,6 +156,11 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
     // external-tools.json, the single source; this gate fails on drift.
     () =>
       run('node', ['scripts/fleet/check/package-manager-pins-are-synced.mts']),
+    // A FLEET tool belongs in scripts/fleet/setup/external-tools.json beside
+    // its installer; .config/repo/external-tools.json is for tools only this
+    // repo needs. Two copies meant the pin depended on which file you opened.
+    () =>
+      run('node', ['scripts/fleet/check/external-tools-are-declared-once.mts']),
     // A lint config's `!` re-include must never re-expose vendored files to
     // lint/--fix, the acorn wasm-bindgen glue break. Fails when a vendored glob
     // is left before the last negation.
