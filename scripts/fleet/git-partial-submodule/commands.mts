@@ -48,7 +48,7 @@ export function buildAddCloneArgs(
 }
 
 // The `git clone` argv for `cmdClone`'s per-submodule partial clone; sparse
-// patterns (if any) are applied afterward via applySparsePatterns.
+// patterns, if any, are applied afterward via applySparsePatterns.
 export function buildSubmoduleCloneArgs(
   submodule: Pick<Submodule, 'branch'>,
   url: string,

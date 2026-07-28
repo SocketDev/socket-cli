@@ -1,7 +1,7 @@
 /**
  * @file Shared types + git/fs helpers for the git-partial-submodule CLI. Split
  *   out of `git-partial-submodule.mts` so the four subcommand implementations
- *   (-commands.mts) and the argparse CLI (the main file) both import this leaf
+ *   (-commands.mts) and the argparse CLI, the main file, both import this leaf
  *   layer without a cycle: internal ← commands ← cli. Ported from
  *   Reedbeta/git-partial-submodule (Apache-2.0).
  */
@@ -100,7 +100,7 @@ export async function checkGitVersion(
 ): Promise<void> {
   const out = await readGitOutput(['--version'])
   // Match `git version 2.43.0`: literal prefix then three `(\d+)` capture
-  // groups (major, minor, patch) separated by escaped dots.
+  // groups, major, minor, patch, separated by escaped dots.
   const match = out.match(/git version (\d+)\.(\d+)\.(\d+)/)
   if (!match) {
     logger.error(`Couldn't parse git version from: ${out.trim()}`)
@@ -209,7 +209,7 @@ export async function getRoots(): Promise<{
 
 /**
  * Apply sparse-checkout patterns within a submodule worktree. Patterns are
- * split on whitespace (quoted paths are not yet supported).
+ * split on whitespace, quoted paths are not yet supported.
  */
 export async function applySparsePatterns(
   config: CommonOpts,

@@ -318,7 +318,7 @@ export function evaluate(
     }
     // Force pushes — must be disabled. A force push to main is the
     // recovery-from-bad-state pattern that also enables stolen-token
-    // attacks (rewrite history, push back).
+    // attacks, rewrite history, push back.
     if (apiProtection.allow_force_pushes?.enabled === true) {
       findings.push({
         rule: 'main branch protection: allow_force_pushes must be disabled',

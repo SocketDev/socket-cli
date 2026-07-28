@@ -17,7 +17,7 @@ import os from 'node:os'
 import path from 'node:path'
 
 // Two-file extends layout: `.config/fleet/<config>.json` is fleet-canonical
-// (byte-identical across the fleet, owned by the wheelhouse cascade).
+// byte-identical across the fleet, owned by the wheelhouse cascade.
 // A repo with overrides ships `.config/repo/<config>.json` that uses
 // `extends: ['../fleet/<config>.json']` + a small `overrides` block.
 // Auto-discover: prefer the repo overlay if it exists, else the fleet
@@ -29,7 +29,7 @@ export function pickConfig(
   options?: { cwd?: string | undefined } | undefined,
 ): string {
   // `cwd` exists for tests: worker-thread pools can't process.chdir(), so a
-  // fixture root is passed explicitly. Runtime callers omit it (repo root).
+  // fixture root is passed explicitly. Runtime callers omit it, repo root.
   const opts = { __proto__: null, ...options } as {
     cwd?: string | undefined
   }
@@ -103,7 +103,7 @@ export function pickIgnorePath(
 // Build the `pnpm exec oxfmt …` argv. The `--ignore-path` is non-negotiable —
 // it is the whole reason this helper exists, so it is threaded unconditionally.
 // `check: true` verifies without writing (the `format:check` script); otherwise
-// oxfmt writes. `files` defaults to `['.']` (the whole scoped tree); explicit
+// oxfmt writes. `files` defaults to `['.']`, the whole scoped tree; explicit
 // paths format just those. Pure + exported so the `--ignore-path` invariant is
 // unit-testable without spawning a subprocess.
 export function buildOxfmtArgs(
@@ -211,7 +211,7 @@ export function isNeverGated(filePath: string): boolean {
   if (/(?:^|\/)bootstrap\/fleet\.mjs$/.test(p)) {
     return true
   }
-  // A `.d.ts` / `.d.mts` / `.d.cts` type-declaration file (compiler output).
+  // A `.d.ts` / `.d.mts` / `.d.cts` type-declaration file, compiler output.
   // socket-lint: allow uncommented-regex -- generated-artifact path, described above.
   if (/\.d\.[cm]?ts$/.test(p)) {
     return true
@@ -268,7 +268,7 @@ export function filterFormatIgnored(
     if (isNeverGated(unix)) {
       return false
     }
-    // template/** stays gated (the canon every mirror is cut from).
+    // template/** stays gated, the canon every mirror is cut from.
     if (unix.startsWith('template/')) {
       return true
     }

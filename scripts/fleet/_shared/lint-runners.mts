@@ -12,7 +12,7 @@
  */
 
 // prefer-async-spawn: sync-required — the lint runner is a top-level CLI whose
-// entire flow is sync (sequential gates, exit-code aggregation).
+// entire flow is sync, sequential gates, exit-code aggregation.
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import type { SpawnSyncOptions } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
@@ -55,7 +55,7 @@ const MARKDOWN_TIMEOUT_MS = 300_000
 // every fleet-canonical file (`template/.claude/hooks/`, `template/.config/
 // fleet/oxlint-plugin/`, `template/scripts/fleet/`, …) that ships byte-identical
 // to every fleet repo via the sync-scaffolding cascade. `template/**` is in the
-// canonical ignorePatterns (downstream repos consume it as opaque tooling), so
+// canonical ignorePatterns, downstream repos consume it as opaque tooling, so
 // it's passed explicitly + re-included by the dogfood config so oxlint walks it
 // with the full socket/* rule set. The wheelhouse must lint here, BEFORE the
 // code propagates — downstream repos can't fix drift in a cascaded file.
@@ -69,7 +69,7 @@ const MARKDOWN_TIMEOUT_MS = 300_000
 const DOGFOOD_LINT_PATHS = ['template']
 
 // The dogfood oxlint config is wheelhouse-only — it re-includes `template/`
-// (the fleet source), a path that exists only in the wheelhouse — so it lives
+// the fleet source, a path that exists only in the wheelhouse — so it lives
 // in `.config/repo/`, never the cascaded `.config/fleet/` tier. Generated +
 // gitignored: runDogfood regenerates it via the wheelhouse generator below.
 // In member repos the generator is absent and the dogfood pass is skipped.
@@ -82,11 +82,11 @@ const DOGFOOD_CONFIG_GENERATOR = 'scripts/repo/gen/dogfood-oxlint-config.mts'
  */
 export interface LintRunnerContext {
   /**
-   * `--fix` — auto-fix issues (loop to a fixpoint), vs a single verify pass.
+   * `--fix` — auto-fix issues, loop to a fixpoint, vs a single verify pass.
    */
   fix: boolean
   /**
-   * `--quiet`/`--silent` — suppress progress output (pipe child stdio).
+   * `--quiet`/`--silent` — suppress progress output, pipe child stdio.
    */
   quiet: boolean
   /**
@@ -99,7 +99,7 @@ export interface LintRunnerContext {
    */
   useShell: boolean
   /**
-   * Progress logger honoring `--quiet` (no-op when quiet).
+   * Progress logger honoring `--quiet`, no-op when quiet.
    */
   log: (message: string) => void
 }
@@ -160,7 +160,7 @@ function ignorePatternSource(configPath: string): string | undefined {
 // fleet configs — which live under `.config/` but must ignore repo-root paths
 // like `scripts/fleet/**` and `.claude/**` — silently lint every "ignored" file
 // (1.73 rooted patterns at the project root). CLI `--ignore-pattern` flags stay
-// rooted at the cwd (repo root), so re-emit the config's ignorePatterns as CLI
+// rooted at the cwd, repo root, so re-emit the config's ignorePatterns as CLI
 // args to restore the intended scope. The config's canonical `oxlintrc.json`
 // stays the single source of truth (a `.mts` factory wraps it); the
 // `#…`-prefixed fleet-canonical markers are gitignore comments and are dropped.
@@ -292,7 +292,7 @@ export function createLintRunners(context: LintRunnerContext): LintRunners {
     return 0
   }
 
-  // Format `files` (the whole scoped tree when omitted). In --check mode: one
+  // Format `files`, the whole scoped tree when omitted. In --check mode: one
   // verify pass. In --fix mode: loop format→check to a stable fixpoint (cap
   // FORMAT_MAX_PASSES), so a one-pass non-idempotency residual never reaches the
   // verify gate; fail LOUD on genuine oscillation (a real oxfmt bug, not a
@@ -374,7 +374,7 @@ export function createLintRunners(context: LintRunnerContext): LintRunners {
     return res.status === 0 ? 0 : 1
   }
 
-  // Template code-payload pass (wheelhouse-only by construction): lint the
+  // Template code-payload pass, wheelhouse-only by construction: lint the
   // `template/base/` sources of the fleet-canonical cascade with the SAME
   // canonical config the live tree uses — but with the payload ignore floor
   // instead of the canonical ignore list, whose `**/`-anchored mirror globs
@@ -409,7 +409,7 @@ export function createLintRunners(context: LintRunnerContext): LintRunners {
       return 0
     }
     // The dogfood config is generated + gitignored — regenerate it on a fresh
-    // checkout. A repo without the generator (a member) has no dogfood
+    // checkout. A repo without the generator, a member, has no dogfood
     // surface, so the pass is a no-op there. A failed generation fails LOUD:
     // silently skipping would false-green the dogfood gate.
     if (!existsSync(DOGFOOD_CONFIG)) {
@@ -479,13 +479,13 @@ export function createLintRunners(context: LintRunnerContext): LintRunners {
         ...oxlintIgnoreArgs(allConfig),
         // Type-aware rules run on the whole-tree gate only: runFiles() keeps
         // the pre-commit 10s budget, runDogfood() lints template/ which has no
-        // tsconfig project. Needs the oxlint-tsgolint sidecar (fleet catalog).
+        // tsconfig project. Needs the oxlint-tsgolint sidecar, fleet catalog.
         '--type-aware',
       ]) !== 0
     ) {
       return 1
     }
-    // Second oxlint leg (still before the format pass): the template
+    // Second oxlint leg, still before the format pass: the template
     // code-payload sources the canonical ignores shadow.
     if (runTemplatePayload(templatePayloadLintPaths()) !== 0) {
       return 1

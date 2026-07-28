@@ -169,7 +169,7 @@ export function loadCustomProperties(
  * when a secret is found, so a clean repo with the app installed would
  * false-negative under check-suites detection alone).
  *
- * Audit treats apps listed here as installed (trust the manifest). The
+ * Audit treats apps listed here as installed, trust the manifest. The
  * maintainer's signed statement IS the install record — trust +
  * verify-once-via-eyeballs > unreliable automation.
  */
@@ -196,7 +196,7 @@ export function readDeclaredApps(): Set<string> {
 }
 
 /**
- * Probe app presence by listing check-SUITES (not check-runs) on recent
+ * Probe app presence by listing check-SUITES, not check-runs, on recent
  * commits. Why suites and not runs: - Check-runs are only created when an app
  * posts a finding. Apps like socket-trufflehog that only report on
  * secrets-found don't post check-runs on clean commits — listing check-runs
