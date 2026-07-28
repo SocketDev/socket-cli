@@ -254,7 +254,7 @@ describe('bazel-repo-discovery', () => {
           probeResult({
             code: 2,
             stderr:
-              'ERROR: In extension argument @rules_jvm_external//:extensions.bzl%maven: No module with the apparent repo name @rules_jvm_external exists in the dependency graph. Type \'bazel help mod\' for syntax and help.\n',
+              "ERROR: In extension argument @rules_jvm_external//:extensions.bzl%maven: No module with the apparent repo name @rules_jvm_external exists in the dependency graph. Type 'bazel help mod' for syntax and help.\n",
           }),
           0,
         ),

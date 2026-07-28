@@ -243,18 +243,18 @@ describe('evaluateEcosystemOutcomes (explicit mode)', () => {
 })
 
 describe('perRepoTimeout flag wiring', () => {
-  const importMeta = { url: 'file:///cmd-manifest-bazel.test.mts' } as ImportMeta
+  const importMeta = {
+    url: 'file:///cmd-manifest-bazel.test.mts',
+  } as ImportMeta
 
   beforeEach(() => {
     vi.mocked(extractBazelToMaven).mockClear()
   })
 
   it('defaults the explicit command to a 120s per-repo timeout', async () => {
-    await cmdManifestBazel.run(
-      [FLAG_CONFIG, '{}', '.'],
-      importMeta,
-      { parentName: 'manifest' } as CliCommandContext,
-    )
+    await cmdManifestBazel.run([FLAG_CONFIG, '{}', '.'], importMeta, {
+      parentName: 'manifest',
+    } as CliCommandContext)
     expect(extractBazelToMaven).toHaveBeenCalledTimes(1)
     expect(extractBazelToMaven).toHaveBeenCalledWith(
       expect.objectContaining({ perRepoTimeoutMs: 120_000 }),

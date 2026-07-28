@@ -1192,9 +1192,7 @@ Fetched repositories:
     expect(result.status).toBe('partial')
     expect(result.complete).toBe(false)
     expect(result.manifestPaths).toHaveLength(1)
-    const loadFailed = result.workspaceOutcomes.filter(
-      w => w.load === 'failed',
-    )
+    const loadFailed = result.workspaceOutcomes.filter(w => w.load === 'failed')
     expect(loadFailed).toHaveLength(1)
   })
 
