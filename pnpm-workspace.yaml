@@ -68,7 +68,7 @@ catalog:
   '@socketregistry/packageurl-js': 1.4.8
   '@socketsecurity/lib': 6.3.0
   '@types/shell-quote': 1.7.5
-  '@ultrathink/acorn.rs.wasm': 0.0.1
+  '@ultrathink/acorn.rs.wasm': 0.1.1
   '@ultrathink/acorn.wasm': npm:@ultrathink/acorn-wasm@0.0.1
   # -stable aliases: pnpm `overrides:` can't redirect a package's own
   # name from inside the same package — Node ESM resolves it as a
