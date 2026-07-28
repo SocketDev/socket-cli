@@ -505,7 +505,7 @@ catalogs:
 
 overrides:
   '@socketregistry/packageurl-js': 1.4.8
-  '@socketsecurity/lib': 6.3.0
+  '@socketsecurity/lib': 6.4.0
   '@socketsecurity/registry': npm:@socketsecurity/registry@2.0.5
   '@socketsecurity/sdk': npm:@socketsecurity/sdk@4.1.2
   '@sindresorhus/df': 5.0.0
@@ -695,8 +695,8 @@ importers:
         specifier: 'catalog:'
         version: 1.0.25
       '@socketsecurity/lib':
-        specifier: 6.3.0
-        version: 6.3.0(typescript@7.0.2)
+        specifier: 6.4.0
+        version: 6.4.0(typescript@7.0.2)
       '@socketsecurity/lib-stable':
         specifier: npm:@socketsecurity/lib@6.3.0
         version: '@socketsecurity/lib@6.3.0(typescript@7.0.2)'
@@ -1543,6 +1543,16 @@ importers:
         specifier: 'catalog:'
         version: 26.1.1
 
+  .claude/hooks/fleet/land-as-you-go-nudge:
+    dependencies:
+      '@socketsecurity/lib-stable':
+        specifier: npm:@socketsecurity/lib@6.3.0
+        version: '@socketsecurity/lib@6.3.0(typescript@7.0.2)'
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.1.1
+
   .claude/hooks/fleet/land-fast-nudge:
     devDependencies:
       '@socketsecurity/lib-stable':
@@ -1874,6 +1884,12 @@ importers:
         version: 26.1.1
 
   .claude/hooks/fleet/no-pr-from-default-checkout-guard:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.1.1
+
+  .claude/hooks/fleet/no-pr-in-squash-repo-guard:
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -2694,6 +2710,16 @@ importers:
         specifier: 'catalog:'
         version: 26.1.1
 
+  .claude/hooks/fleet/tsc-canonical-tsconfig-guard:
+    dependencies:
+      '@socketsecurity/lib-stable':
+        specifier: npm:@socketsecurity/lib@6.3.0
+        version: '@socketsecurity/lib@6.3.0(typescript@7.0.2)'
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.1.1
+
   .claude/hooks/fleet/unaddressed-review-feedback-guard:
     dependencies:
       '@socketsecurity/lib-stable':
@@ -3067,8 +3093,8 @@ importers:
         specifier: 'catalog:'
         version: 0.34.52
       '@socketsecurity/lib':
-        specifier: 6.3.0
-        version: 6.3.0(typescript@7.0.2)
+        specifier: 6.4.0
+        version: 6.4.0(typescript@7.0.2)
       '@socketsecurity/lib-stable':
         specifier: npm:@socketsecurity/lib@6.3.0
         version: '@socketsecurity/lib@6.3.0(typescript@7.0.2)'
@@ -3127,8 +3153,8 @@ importers:
         specifier: 'catalog:'
         version: 1.0.25
       '@socketsecurity/lib':
-        specifier: 6.3.0
-        version: 6.3.0(typescript@7.0.2)
+        specifier: 6.4.0
+        version: 6.4.0(typescript@7.0.2)
       '@socketsecurity/lib-stable':
         specifier: npm:@socketsecurity/lib@6.3.0
         version: '@socketsecurity/lib@6.3.0(typescript@7.0.2)'
@@ -3265,8 +3291,8 @@ importers:
   packages/package-builder:
     dependencies:
       '@socketsecurity/lib':
-        specifier: 6.3.0
-        version: 6.3.0(typescript@7.0.2)
+        specifier: 6.4.0
+        version: 6.4.0(typescript@7.0.2)
       build-infra:
         specifier: workspace:1.0.0
         version: link:../build-infra
@@ -4607,6 +4633,16 @@ packages:
 
   '@socketsecurity/lib@6.3.0':
     resolution: {integrity: sha512-Ir/4StXaF0v+G/aEGOTxt088T6VR56pMRX5Ln9by6+zUQkRo/7LP1yV0GGtqKaOlKKVEx0fwOTtun8hAoBfEiA==}
+    engines: {node: '>=22', npm: '>=12.0.1', pnpm: '>=11.0.5'}
+    hasBin: true
+    peerDependencies:
+      typescript: '>=5.0.0'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
+  '@socketsecurity/lib@6.4.0':
+    resolution: {integrity: sha512-hhaMhF8AW37Q8XYUzt2ZktFXhkb/8pZV7ksGdv15Jf90btVCCHI13tAwURAcYze3x+kcVnNmQV1oFG5DfRAoXA==}
     engines: {node: '>=22', npm: '>=12.0.1', pnpm: '>=11.0.5'}
     hasBin: true
     peerDependencies:
@@ -8952,6 +8988,10 @@ snapshots:
       yoctocolors-cjs: 2.1.3
 
   '@socketsecurity/lib@6.3.0(typescript@7.0.2)':
+    optionalDependencies:
+      typescript: 7.0.2
+
+  '@socketsecurity/lib@6.4.0(typescript@7.0.2)':
     optionalDependencies:
       typescript: 7.0.2
 
