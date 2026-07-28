@@ -53,8 +53,8 @@
     "@sentry/node": "catalog:"
   },
   "devDependencies": {
-    "@socketsecurity/cli": "workspace:3.0.0-pre.0",
-    "build-infra": "workspace:1.0.0",
+    "@socketsecurity/cli": "workspace:*",
+    "build-infra": "workspace:*",
     "rolldown": "catalog:"
   },
   "engines": {

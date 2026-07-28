@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@socketsecurity/lib": "catalog:",
-    "build-infra": "workspace:1.0.0",
+    "build-infra": "workspace:*",
     "handlebars": "^4.7.9"
   }
 }
