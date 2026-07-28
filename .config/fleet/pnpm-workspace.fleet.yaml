@@ -61,7 +61,7 @@ catalog:
   # @mswjs/interceptors 0.39.8, whose fetch bypass path clones an
   # already-consumed request and throws TypeError: unusable on any fetch
   # POST-with-body to an enableNetConnect-allowed host — broke the
-  # socket-gemini-nano and socket-mcp Test jobs. 14.0.16 is the same
+  # odai and socket-mcp Test jobs. 14.0.16 is the same
   # interceptors-based API family — static replies, scope.on('request')
   # capture, no 2-arity reply functions, no this.req — published
   # 2026-06-26, past soak, and passes the regression repro. Upstream
