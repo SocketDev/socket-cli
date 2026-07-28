@@ -70,7 +70,7 @@ describe('@socketsecurity/cli package template', () => {
 
       expect(pkgJson.devDependencies).toBeDefined()
       expect(pkgJson.devDependencies.rolldown).toBeDefined()
-      expect(pkgJson.devDependencies['build-infra']).toBe('workspace:*')
+      expect(pkgJson.devDependencies['build-infra']).toBe('workspace:1.0.0')
     })
   })
 

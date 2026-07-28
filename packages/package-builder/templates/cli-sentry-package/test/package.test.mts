@@ -75,7 +75,9 @@ describe('@socketsecurity/cli-with-sentry package template', () => {
       // The CLI source is bundled at build time, so the workspace link is a
       // devDependency rather than a runtime dependency.
       expect(pkgJson.devDependencies).toBeDefined()
-      expect(pkgJson.devDependencies['@socketsecurity/cli']).toBe('workspace:*')
+      expect(pkgJson.devDependencies['@socketsecurity/cli']).toBe(
+        'workspace:0.0.0',
+      )
       expect(pkgJson.devDependencies.rolldown).toBeDefined()
     })
   })
