@@ -14,13 +14,13 @@
  *      declarations are hoisted, so reordering them is safe for runtime
  *      semantics; the leading JSDoc / line-comment block above each declaration
  *      travels with the function. The rule only autofixes when every function
- *      in the file has a name (anonymous default exports are skipped) and when
+ *      in the file has a name, anonymous default exports are skipped, and when
  *      there are no top-level non-function statements interleaved between
  *      functions — interleaved statements can carry side-effects or rely on
  *      declaration order, so we don't reshuffle around them.
  *
  *   Escape hatch: a file whose functions are intentionally grouped by call-flow
- *   / theme (a multi-step pipeline that reads top-to-bottom) opts out with a
+ *   / theme, a multi-step pipeline that reads top-to-bottom, opts out with a
  *   single `// socket-lint: allow source-method-order` comment anywhere in it —
  *   reordering such a file to alphabetical degrades its deliberate structure for
  *   no real findability gain. Mirrors `allow object-property-order`.
@@ -151,7 +151,7 @@ export function leadingCommentStart(
 
 /**
  * Locate the byte-range end of a function entry, including any trailing comment
- * that's contiguous (no blank line between) and exclusive of the next function.
+ * that's contiguous, no blank line between, and exclusive of the next function.
  * Useful for capturing c8-ignore-stop markers that pair with a start above the
  * function — those need to travel with the function when reordered.
  */

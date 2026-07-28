@@ -4,7 +4,7 @@
 // Blocks `gh pr create` / `gh issue create` / `gh release create`
 // calls that target a repository NOT in the fleet roster. The
 // canonical fleet rule: never auto-submit publicly-visible artifacts
-// (PRs, issues, releases) to upstream / third-party repos without
+// PRs, issues, releases, to upstream / third-party repos without
 // explicit user confirmation. Captured plan text + batched "do all N
 // tasks" directives are NOT standing authorization to post under the
 // user's gh identity.
@@ -46,7 +46,7 @@ import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 import type { Command } from '../_shared/shell-command.mts'
 
-// Bare, session-wide form (kept as a fallback). The scoped form is
+// Bare, session-wide form, kept as a fallback. The scoped form is
 // preferred — it names the exact repo so authorization can't leak to an
 // unrelated non-fleet publish later in the session.
 const BYPASS_PHRASE = 'Allow non-fleet-publish bypass'

@@ -8,7 +8,7 @@
  *   submodule update` drags the branch's full history into every clone. Scope
  *   is the top-level `upstream/` convention only — a nested
  *   `packages/x/upstream/y` conformance submodule is subtree-sparse'd instead
- *   (submodules-are-sparse-or-annotated owns that shape) and is left alone
+ *   submodules-are-sparse-or-annotated owns that shape, and is left alone
  *   here. Exit: 0 — every upstream reference is shallow single-branch (or there
  *   are none); 1 — one or more is missing a field. Usage: node
  *   scripts/fleet/check/upstream-submodules-are-shallow-single-branch.mts

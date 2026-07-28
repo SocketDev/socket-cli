@@ -192,7 +192,7 @@ const rule = {
             const lineStart = text.lastIndexOf('\n', node.range[0] - 1) + 1
             const indent = text.slice(lineStart, node.range[0])
             // Only a pure-whitespace prefix is a safe insertion point — a
-            // property mid-line (single-line type literal) gets the union
+            // property mid-line, single-line type literal, gets the union
             // member only, and the reader applies the silence by hand.
             if (/^\s*$/.test(indent)) {
               fixes.push(

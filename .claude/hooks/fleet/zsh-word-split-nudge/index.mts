@@ -21,8 +21,8 @@
  * command substitution that produces a multi-entry list (`tr '\n' ' '`,
  * `find`, `ls`, `grep -l` / `rg -l` pipelines) and (b) later expands that
  * variable unquoted as a standalone argument. Stderr reminder; never
- * blocks. Skips `${=name}` (already split), `"${name}"`/`"$name"`
- * (deliberately one word), and `${name[@]}` (array expansion).
+ * blocks. Skips `${=name}`, already split, `"${name}"`/`"$name"`
+ * deliberately one word, and `${name[@]}`, array expansion.
  */
 
 import { bashGuard, defineHook, notify, runHook } from '../_shared/guard.mts'
@@ -52,7 +52,7 @@ function looksLikeListRhs(rhs: string): boolean {
   )
 }
 
-// A quoted value is a list-of-args (not prose): 2+ whitespace-separated
+// A quoted value is a list-of-args, not prose: 2+ whitespace-separated
 // tokens where at least one looks like a path (`/`), a flag (`-…`), a
 // dotted filename, or another variable expansion. `msg="hello world"` is not
 // flagged; `paths=".config/a .config/b"` is.
@@ -71,7 +71,7 @@ function looksLikeListLiteral(val: string): boolean {
 }
 
 // A bare, unquoted `$name` expansion used as an argument after `from`.
-// `${=name}` (forced split), quoted forms, and `${name[@]}` arrays are fine.
+// `${=name}`, forced split, quoted forms, and `${name[@]}` arrays are fine.
 function bareUnquotedUseAfter(
   flat: string,
   from: number,

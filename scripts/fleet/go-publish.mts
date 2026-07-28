@@ -69,10 +69,10 @@ import { isMainModule } from './_shared/is-main-module.mts'
 
 import type { VerifyResult } from './publish-infra/go/shared.mts'
 
-// Re-export the pure helpers so the go-publish.yml workflow (and tests) can
+// Re-export the pure helpers so the go-publish.yml workflow, and tests, can
 // reuse the unit-tested implementations from a single import surface. These are
 // imported above for local use; the bare `export { … }` re-exports those
-// bindings (no duplicate module specifier).
+// bindings, no duplicate module specifier.
 export {
   buildModuleTag,
   canonicalVersion,
@@ -217,7 +217,7 @@ export function formatSummary(
 }
 
 /**
- * Publish (or plan) each module, isolated. For every module dir: read its
+ * Publish, or plan, each module, isolated. For every module dir: read its
  * go.mod module path (missing → skipped), build its release tag from --version
  * (a root module tags `vX.Y.Z`, a nested one `<subdir>/vX.Y.Z`), enforce the
  * semantic-import major-suffix rule, then either PRINT the plan (dry-run) or
@@ -239,7 +239,7 @@ export async function runGoPublish(
   const { apply } = args
   // Canonicalize the version ONCE (→ vX.Y.Z) so the git tag AND the proxy
   // verify URL use the identical form. main() already validates, but a direct
-  // caller (a test) may pass `1.2.3`; undefined = no --version given.
+  // caller, a test, may pass `1.2.3`; undefined = no --version given.
   const version =
     args.version === undefined ? undefined : canonicalVersion(args.version)
 

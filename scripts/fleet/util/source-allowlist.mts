@@ -1,7 +1,7 @@
 /**
  * @file Schema for cross-org publish allowlists used by infrastructure
- *   publishers (socket-addon, socket-bin). Each entry authorizes one
- *   (source-repo, build-workflow, tag-pattern) tuple to feed one (target-scope,
+ *   publishers, socket-addon, socket-bin. Each entry authorizes one
+ *   source-repo, build-workflow, tag-pattern, tuple to feed one (target-scope,
  *   name-prefix, triplet-set) family of npm tail packages. The allowlist is the
  *   trust boundary: an authorized source can mint binaries; an unauthorized
  *   source cannot. Adding a row is a PR review. This file declares only the
@@ -134,7 +134,7 @@ export interface SourceAllowlistEntry {
   readonly kind: SourceAllowlistBinaryKind
 
   /**
-   * Base file name of the binary (no extension, no platform suffix). Combined
+   * Base file name of the binary, no extension, no platform suffix. Combined
    * with `kind` + the triplet to derive the in-tail path. Example: `binaryName:
    * 'acorn'` + `kind: 'cli'` + triplet `win32-x64` → `bin/acorn.exe`;
    * `binaryName: 'iocraft'` + `kind: 'napi'` + triplet `darwin-arm64` →
@@ -174,7 +174,7 @@ export interface SourceAllowlistEntry {
   /**
    * Name of the release asset carrying the per-file sha256 manifest. Defaults
    * to `'SHA256SUMS'` (coreutils `sha256sum` convention). Set to
-   * `'checksums.txt'` (or any other name) for a family whose build workflow
+   * `'checksums.txt'`, or any other name, for a family whose build workflow
    * emits a differently-named manifest — the manifest's line format
    * (`<64-hex-sha>  <filename>`) is unchanged regardless of the file name.
    */

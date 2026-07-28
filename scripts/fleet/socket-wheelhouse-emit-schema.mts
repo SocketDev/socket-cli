@@ -5,7 +5,7 @@
  *   is a per-repo artifact derived from the fleet-canonical TypeBox source: it
  *   is written next to the per-repo config at `.config/repo/`, whose `$schema`
  *   ref is the sibling `./socket-wheelhouse-schema.json`. `.config/repo/` is
- *   the repo-owned tier (not cascaded), so every repo emits its own copy from
+ *   the repo-owned tier, not cascaded, so every repo emits its own copy from
  *   the identical source rather than receiving a byte-mirrored one.
  */
 

@@ -20,7 +20,7 @@ export const MIN_RELEASE_AGE_MINUTES = 10_080
 export const MIN_RELEASE_AGE_DAYS = 7
 
 /**
- * Read the npm `min-release-age` value (in days) from a `.npmrc` text, or
+ * Read the npm `min-release-age` value, in days, from a `.npmrc` text, or
  * undefined when the key is absent. `.npmrc` is `key=value`, one per line, with
  * `#` / `;` comments. A non-numeric value yields undefined (treated as absent —
  * fail-open, since a malformed line is not a deliberate downgrade we can
@@ -105,7 +105,7 @@ const MIN_RELEASE_AGE_YAML_RE = /^minimumReleaseAge\s*:\s*(?<value>\d+)/m
  * "must be at least this strong" invariant, independent of any single edit).
  * The commit-time `trust-gates-are-not-weakened.mts` check calls this with the
  * on-disk text. pnpm-workspace.yaml is REQUIRED to carry all three pnpm gates;
- * `.npmrc` `min-release-age` is optional (the pnpm gate is primary) but, when
+ * `.npmrc` `min-release-age` is optional, the pnpm gate is primary, but, when
  * present, must meet the day floor.
  */
 export function checkGateFloors(

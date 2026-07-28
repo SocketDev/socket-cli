@@ -19,7 +19,7 @@ import path from 'node:path'
 import { COVERAGE_SUMMARY_PATH, REPO_ROOT } from '../paths.mts'
 
 // Where the generated badge lives, relative to the repo root. `assets/repo/`
-// is the repo-owned asset tier (never cascade-synced), so each repo's percent
+// is the repo-owned asset tier, never cascade-synced, so each repo's percent
 // is its own. Seeded as a preset placeholder ("n/a", grey) so a fresh README
 // never references a missing image.
 export const BADGE_ASSET_PATH = 'assets/repo/badges/coverage.svg'
@@ -47,7 +47,7 @@ export function svgWidth(svg: string): string | undefined {
 
 /**
  * A README `<img>` for a local badge SVG: standardized `height="20"` + the
- * SVG's exact `width` (so badges align on one row, precise, no reflow). Inline
+ * SVG's exact `width`, so badges align on one row, precise, no reflow. Inline
  * <img> (not markdown `![]`) is what lets us pin the height — and it renders on
  * GitHub + npm, unlike an inlined `<svg>`.
  */
@@ -58,7 +58,7 @@ export function badgeImgTag(src: string, alt: string, svg: string): string {
 }
 
 // The current README reference to the coverage badge — a dimensioned <img>.
-// The `![Coverage](…)` markdown form is legacy (recognized only to migrate it).
+// The `![Coverage](…)` markdown form is legacy, recognized only to migrate it.
 export function coverageBadgeRef(svg: string): string {
   return badgeImgTag(BADGE_ASSET_PATH, 'Coverage', svg)
 }
@@ -278,12 +278,12 @@ export function badgeAssetPath(repoRoot: string): string {
 // The line-coverage total percent from a coverage `coverage-summary.json` (the
 // `json-summary` reporter's shape, under node_modules/.cache/fleet/coverage/).
 // Returns undefined when the file is absent or shapeless — the caller decides
-// whether that's fail-open (the check) or an error (the writer, which needs a
+// whether that's fail-open, the check, or an error (the writer, which needs a
 // real number).
 export function readCoveragePct(repoRoot: string): number | undefined {
   // The merged json-summary the coverage runner persists at the coverage-home
-  // root (twin-folded, subprocess tier included) — the only summary persisted in
-  // COVERAGE_DIR (per-tier reports are transient scratch). Re-anchored on the
+  // root, twin-folded, subprocess tier included — the only summary persisted in
+  // COVERAGE_DIR, per-tier reports are transient scratch. Re-anchored on the
   // passed repoRoot so tests + multi-repo callers read the right tree.
   const summaryPath = path.join(
     repoRoot,

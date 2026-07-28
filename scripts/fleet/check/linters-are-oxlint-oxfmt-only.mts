@@ -1,6 +1,6 @@
 /**
  * @file Code-is-law check for the fleet "oxlint + oxfmt only" rule. Scans the
- *   COMMITTED state (git-tracked files) for foreign linter/formatter configs +
+ *   COMMITTED state, git-tracked files, for foreign linter/formatter configs +
  *   package.json deps that the edit-time `no-other-linters-guard` hook blocks —
  *   so a config/dep that slipped in before the hook existed (or via
  *   --no-verify) is caught at `check --all` time. The hook is the edit-time

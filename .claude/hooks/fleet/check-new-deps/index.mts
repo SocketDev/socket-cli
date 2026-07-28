@@ -25,7 +25,7 @@
 // module's file-header comment for the Threat 2.2 mitigation.
 //
 // Verdict:
-//   undefined = allow (no new deps, all clean, or non-dep file)
+//   undefined = allow, no new deps, all clean, or non-dep file
 //   block(...) = block (malware detected by Socket.dev)
 
 import {
@@ -57,7 +57,7 @@ const CACHE_TTL = 5 * 60 * 1000
 // Maximum cache entries before forced eviction of oldest.
 const MAX_CACHE_SIZE = 500
 
-// SDK instance using the public API token (no user config needed).
+// SDK instance using the public API token, no user config needed.
 // oxlint-disable-next-line socket/no-module-eval-side-effects -- this hook is snapshot-excluded (the SDK's native [Foreign] handles can't serialize); a lazy memoized client is the tracked upstream @socketsecurity/sdk fix.
 const sdk = new SocketSdk(SOCKET_PUBLIC_API_TOKEN, {
   timeout: API_TIMEOUT,

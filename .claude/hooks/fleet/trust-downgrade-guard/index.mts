@@ -26,7 +26,7 @@
 //        the npm-side parallel of the pnpm `minimumReleaseAge` soak.
 //
 // The Bash surface AST-parses the command via _shared/shell-command.mts
-// (per the no-command-regex-in-hooks rule) and inspects the pnpm/npm
+// per the no-command-regex-in-hooks rule, and inspects the pnpm/npm
 // segment args, so a downgrade flag can't be smuggled behind a `&&`
 // chain, quoting, or `$(…)` substitution, and a flag mentioned inside an
 // unrelated quoted string never false-fires.
@@ -100,10 +100,10 @@ function valueOf(
 }
 
 // Inspect ONE parsed pnpm/npm command segment's args for a downgrade flag.
-// AST-based (per the no-command-regex-in-hooks rule): the command line is
+// AST-based, per the no-command-regex-in-hooks rule: the command line is
 // tokenized by _shared/shell-command.mts first, so `&&` chains, quoting, and
 // `$(…)` substitution can't smuggle a flag past us, and a flag mentioned
-// inside an unrelated quoted string (a commit message, a grep arg) is not a
+// inside an unrelated quoted string, a commit message, a grep arg, is not a
 // segment arg and never matches.
 function downgradeFlagInArgs(args: readonly string[]): string | undefined {
   // `pnpm config set <key> <value>` is the persisted-config form of a flag.
@@ -198,7 +198,7 @@ function isPolicyFile(filePath: string): boolean {
 // Inspect the NEW text an Edit/Write would write. We can only see the
 // replacement fragment (Edit `new_string`) or full `content` (Write),
 // not the resulting whole file — so we flag the *removal/weakening
-// shapes* that appear in the new text, and (for Write) the absence of
+// shapes* that appear in the new text, and, for Write, the absence of
 // the no-downgrade line when the file is being rewritten wholesale.
 export function detectEditDowngrade(
   toolName: string,
@@ -230,7 +230,7 @@ export function detectEditDowngrade(
     }
   }
   // A wholesale Write of pnpm-workspace.yaml that drops the
-  // no-downgrade line entirely is a downgrade (the gate vanishes).
+  // no-downgrade line entirely is a downgrade, the gate vanishes.
   if (
     (toolName === 'Write' || fullContent !== undefined) &&
     path.basename(filePath) === 'pnpm-workspace.yaml'
@@ -256,7 +256,7 @@ export function detectEditDowngrade(
 }
 
 // Count prior trust-downgrade actions in the assistant tool-use history
-// — each consumes one bypass-phrase occurrence (single-use semantics).
+// — each consumes one bypass-phrase occurrence, single-use semantics.
 // Mirrors release-workflow-guard's countPriorDispatches.
 export function countPriorDowngrades(
   transcriptPath: string | undefined,

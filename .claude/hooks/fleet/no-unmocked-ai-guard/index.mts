@@ -10,7 +10,8 @@
 //   - Fires only on Write/Edit whose target path looks like a test file
 //     (`*.test.*` / `*.spec.*`, or under a `test/` / `__tests__/` directory).
 //   - Looks at the post-edit content (`content` for Write, `new_string` for
-//     Edit).
+//     Edit) for the CALL, and at the whole file on disk for the MOCK — an
+//     Edit's fragment does not carry the hoisted `vi.mock` at the file top.
 //   - Flags an AI call: `spawnAiAgent(` — the fleet's canonical AI-spawn helper.
 //     String/template-literal spans are stripped first, so a static-analysis
 //     FIXTURE that merely embeds the call name in a string (the ai-spawns
@@ -22,6 +23,7 @@
 // Bypass: `Allow unmocked-ai-in-tests bypass` typed verbatim in a recent user
 // turn. Fails open on non-test files / absent content.
 
+import { safeReadFileSync } from '@socketsecurity/lib-stable/fs/read-file'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
@@ -87,9 +89,24 @@ export function callsUnmockedAi(content: string): boolean {
   return !/\bvi\s*\.\s*mock\s*\(/.test(code)
 }
 
+// True when the file ALREADY on disk mocks something. An Edit's content is
+// only the inserted fragment, so a test whose `vi.mock` sits at the top of the
+// file, where it must, to be hoisted, looks unmocked to a fragment-only scan —
+// adding any `spawnAiAgent(` call to a properly-mocked suite would false-block.
+// The whole-file read is the authority for the mock, the payload for the call.
+export function fileAlreadyMocks(filePath: string): boolean {
+  const onDisk = safeReadFileSync(filePath)
+  return typeof onDisk === 'string'
+    ? /\bvi\s*\.\s*mock\s*\(/.test(stripStringLiterals(onDisk))
+    : false
+}
+
 export const hook = defineHook({
   check: editGuard((filePath, content) => {
     if (!content || !isTestFilePath(filePath) || !callsUnmockedAi(content)) {
+      return undefined
+    }
+    if (fileAlreadyMocks(filePath)) {
       return undefined
     }
     return block(

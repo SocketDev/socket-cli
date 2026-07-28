@@ -1,7 +1,7 @@
 /*
  * @file Shared dependency-spec classifier — the single source consumed by the
  *   `link-protocol-dep-guard` hook (edit-time) and the
- *   `dependency-specs-are-registry-or-workspace` check (committed state).
+ *   `dependency-specs-are-registry-or-workspace` check, committed state.
  *
  *   A fleet dependency spec must be a PIN, and the fleet has a PREFERENCE
  *   ORDER among the pinned forms (`docs/agents.md/fleet/dependency-spec-pinning.md`):

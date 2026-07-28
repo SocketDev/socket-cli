@@ -217,7 +217,7 @@ export async function squashSingleCommit(
   const sign = cfg.sign ?? false
   const { origHead, worktree } = cfg
 
-  // Soft-reset onto the root commit (keeps every change staged), then amend the
+  // Soft-reset onto the root commit, keeps every change staged, then amend the
   // root so the result is a single commit — not root + 1.
   const firstCommit = (
     await run('git', ['rev-list', '--max-parents=0', 'HEAD'], worktree)
@@ -332,12 +332,12 @@ export interface ClassifySquashModeConfig {
  * whether origin is an ancestor of local (`''` localHead = no local branch):
  *
  * - `origin`: no local branch, or local == origin — squash origin's history.
- * - `local-canonical`: local is ahead (origin is its ancestor) — squash the local
+ * - `local-canonical`: local is ahead, origin is its ancestor — squash the local
  *   tree; origin's tip is already contained.
  * - `diverged`: local and origin each hold commits the other lacks — MUST be
  *   refused. A blind squash mints the root from the local tree and
  *   force-pushes, dropping origin's commits (they survive only in a backup ref,
- *   never on the branch). Reconcile forward first (merge origin into local),
+ *   never on the branch). Reconcile forward first, merge origin into local,
  *   then re-run.
  */
 export function classifySquashMode(
@@ -409,11 +409,11 @@ async function main(): Promise<number> {
     ).stdout.trim() || undefined
 
   // Local main is canonical in the fleet. When the local branch is AHEAD of
-  // origin (origin is its ancestor), the squash must collapse the LOCAL tree
+  // origin, origin is its ancestor, the squash must collapse the LOCAL tree
   // — squashing origin's stale tree would mint a root missing local work and
   // the next push would obliterate the squash. When local and origin have
-  // DIVERGED (each has commits the other lacks), refuse loudly: reconcile
-  // forward first (merge origin into local), then re-run.
+  // DIVERGED, each has commits the other lacks, refuse loudly: reconcile
+  // forward first, merge origin into local, then re-run.
   let localHead = ''
   try {
     localHead = (

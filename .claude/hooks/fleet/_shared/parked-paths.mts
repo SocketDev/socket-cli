@@ -4,11 +4,11 @@
  *   (via auto-land-on-stop/hold.mts); auto-land-on-stop then EXCLUDES parked
  *   paths from landing and dirty-worktree-stop-guard treats them as
  *   sanctioned-dirty instead of re-blocking every turn. One checkout-scoped
- *   file (not per-actor): parking states an intent about the PATH, so it holds
+ *   file, not per-actor: parking states an intent about the PATH, so it holds
  *   for every session sharing the checkout. Storage follows the runtime-state
  *   rule: `node_modules/.cache/fleet/socket-parked-paths/parked.json`, falling back
  *   to OS temp when node_modules is unavailable. Entries expire after
- *   PARKED_TTL_MS (a parked path is a short-lived instruction, not config) and
+ *   PARKED_TTL_MS, a parked path is a short-lived instruction, not config, and
  *   are cleared explicitly on the user's next go-ahead. Every reader
  *   fail-opens to "nothing parked" — a broken ledger must not wedge Stop.
  */

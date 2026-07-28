@@ -7,7 +7,7 @@
 // what's left, and stops — instead of continuing through the queue
 // the user already authorized.
 //
-// What this hook catches (regex on code-fence-stripped text):
+// What this hook catches, regex on code-fence-stripped text:
 //
 //   - "Stopping here" / "I'll stop here"
 //   - "Honest stopping point" / "natural stopping point"
@@ -135,7 +135,7 @@ const STOP_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> = [
     // "X is a follow-up" / "as a follow-up" / "leave it for a follow-up"
     // / "follow-up:" — the queue equivalent of "I'll do it later". A
     // lint/fix/test item in your window is fixed NOW, never deferred to
-    // a follow-up (see Fix-it-don't-defer). Pick it up instead.
+    // a follow-up, see Fix-it-don't-defer. Pick it up instead.
     regex:
       /\b(?:(?:are|is)\s+a\s+follow-?up|as\s+a\s+follow-?up|leave\s+[^.?!\n]{0,40}(?:as|for|to)\s+(?:a\s+)?(?:follow-?up|later)|defer(?:red)?\s+[^.?!\n]{0,30}follow-?up|follow-?up\s*:)/i,
   },

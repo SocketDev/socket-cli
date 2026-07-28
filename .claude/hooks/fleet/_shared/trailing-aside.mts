@@ -1,5 +1,5 @@
 // Shared detector for "extra bits" trailing parenthetical asides: a short line
-// (a manifest description, a heading) that ends with a parenthetical re-listing
+// a manifest description, a heading, that ends with a parenthetical re-listing
 // detail the line already implies. The tell is a LIST inside the trailing
 // parens — items joined by a comma, ` + `, ` / `, or ` and ` — or a long aside
 // of five or more words. A short qualifier like "(experimental)" or
@@ -12,7 +12,7 @@ const TRAILING_ASIDE_RE = /\(([^()]+)\)$/
 // A Markdown heading (ATX, `#` … `######`) ending with a listy parenthetical.
 // Tuned tighter than the value-level detector to stay off common headings: it
 // fires only on ` + `, ` / `, or a two-comma list, so "## Setup (Linux, macOS)"
-// passes while "## Features (bulk, live, offline)" and "## Modes (a + b)" do not.
+// passes while "## Features, bulk, live, offline, " and "## Modes (a + b)" do not.
 export const HEADING_LISTY_ASIDE_RE =
   /^#{1,6} .*\((?:[^()\n]*(?:\s\+\s|\s\/\s)[^()\n]*|[^()\n]*,[^()\n]*,[^()\n]*)\)\s*$/im
 

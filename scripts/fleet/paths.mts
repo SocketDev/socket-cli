@@ -17,8 +17,8 @@
  *
  *   1. STATIC CONSTANTS — paths that don't depend on runtime input. Example:
  *      `REPO_ROOT`, `CONFIG_DIR`, `NODE_MODULES_CACHE_DIR`. Importable as-is.
- *   2. RESOLVER FUNCTIONS — paths that need a search (multiple accepted locations)
- *      or runtime input (a target directory, a package name). Example:
+ *   2. RESOLVER FUNCTIONS — paths that need a search, multiple accepted locations
+ *      or runtime input, a target directory, a package name. Example:
  *      `findSocketWheelhouseConfig(repoRoot)` resolves
  *      `.config/repo/socket-wheelhouse.json` when it exists. Resolution from
  *      script call sites: every script anchors on its own location via
@@ -107,7 +107,7 @@ export function segregatedConfigPath(repoRoot: string, file: string): string {
 
 /**
  * Lockstep-manifest candidates for a repo root, most-preferred first: a root
- * `lockstep.json` (shim layout) wins, then the segregated repo-owned manifest.
+ * `lockstep.json`, shim layout, wins, then the segregated repo-owned manifest.
  */
 export function lockstepManifestCandidates(repoRoot: string): string[] {
   return [
@@ -265,7 +265,7 @@ export const FLEET_HOOKS_DIR = path.join(REPO_ROOT, '.claude', 'hooks', 'fleet')
 export const DISPATCH_DIR = path.join(FLEET_HOOKS_DIR, '_dispatch')
 
 /**
- * Built hook artifacts (rolldown output). This dir plus the loader is the
+ * Built hook artifacts, rolldown output. This dir plus the loader is the
  * ENTIRE hook payload a member receives: `.claude/hooks/fleet/index.cjs` +
  * `.claude/hooks/fleet/_dist/bundle.cjs`. Underscore-prefixed so the hook-dir
  * scanners skip it, like `_shared/` and `_dispatch/`.
@@ -328,7 +328,7 @@ export const HOOK_BUNDLE_PATH = path.join(DIST_DIR, 'bundle.cjs')
  * The fleet oxlint plugin source dir + its rolldown-bundled artifact. Members
  * load the bundle via `jsPlugins`; the wheelhouse edits + tests the source and
  * builds the bundle from it (scripts/fleet/build-oxlint-bundle.mts). The bundle
- * is release-only (gitignored, never committed) like the hook bundle above.
+ * is release-only, gitignored, never committed, like the hook bundle above.
  */
 export const OXLINT_PLUGIN_DIR = path.join(
   REPO_ROOT,
@@ -365,7 +365,7 @@ export const PNPM_WORKSPACE_YAML = path.join(REPO_ROOT, 'pnpm-workspace.yaml')
 /**
  * Absolute path to the cascaded fleet catalog — the fleet-canonical `catalog:`
  * slice every member carries. The `.fleet` infix keeps it from colliding with
- * the real `pnpm-workspace.yaml` (see the file's own header).
+ * the real `pnpm-workspace.yaml`, see the file's own header.
  */
 export const FLEET_CATALOG_YAML = path.join(
   CONFIG_DIR,
@@ -434,7 +434,7 @@ export const GIT_HOOK_TEST_DIRS: readonly string[] = [
  * True only in the wheelhouse, which OWNS the relocated tests under
  * `test/repo/`. A member repo ships the rule/hook SOURCES but not their tests
  * (wheelhouse-only) — so test-presence assertions must gate on this and pass
- * (return no gaps) in a member. The wheelhouse is the repo carrying
+ * return no gaps, in a member. The wheelhouse is the repo carrying
  * `template/base/`.
  */
 export const OWNS_RELOCATED_TESTS = existsSync(
@@ -485,7 +485,7 @@ export interface LoadedSocketWheelhouseConfig {
 
 /**
  * Find the member config at `.config/repo/socket-wheelhouse.json` under
- * `repoRoot` (defaults to the current repo's root). Returns `undefined` when
+ * `repoRoot`, defaults to the current repo's root. Returns `undefined` when
  * the file is absent.
  */
 export function findSocketWheelhouseConfig(

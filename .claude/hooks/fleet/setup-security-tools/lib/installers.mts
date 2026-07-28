@@ -3,10 +3,10 @@
 //
 // Configures three tools:
 // 1. AgentShield — scans Claude AI config for prompt injection / secrets.
-//    Downloaded as npm package via dlx (pinned version, cached).
+//    Downloaded as npm package via dlx, pinned version, cached.
 // 2. Zizmor — static analysis for GitHub Actions workflows. Downloads the
 //    correct binary, verifies SHA-256, cached via the dlx system.
-// 3. SFW (Socket Firewall) — intercepts package manager commands to scan
+// 3. SFW, Socket Firewall — intercepts package manager commands to scan
 //    for malware. Downloads binary, verifies SHA-256, creates PATH shims.
 //    Enterprise vs free determined by SOCKET_API_KEY (primary; universally
 //    supported) or SOCKET_API_TOKEN (forward-canonical; accepted as secondary)
@@ -110,7 +110,7 @@ export function hostPlatformKey(): string {
 // Resolve a tool's asset entry for `hostKey`, applying the win-arm64→win-x64
 // fallback: Windows-on-ARM runs win-x64 binaries under emulation and upstreams
 // rarely ship a native win-arm64 asset, so an ARM-Windows host gets the win-x64
-// build rather than a spurious "unsupported platform". Pure (host key passed in)
+// build rather than a spurious "unsupported platform". Pure, host key passed in
 // so it's unit-testable; `resolvePlatformEntry` supplies the live host key.
 export function pickPlatformEntry(
   platforms: ToolEntry['platforms'],

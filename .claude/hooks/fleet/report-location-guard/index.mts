@@ -8,7 +8,7 @@
 // storage" rule, reports are ephemeral working artifacts and must not be
 // tracked by version control.
 //
-// Blocked target paths (any depth from repo root):
+// Blocked target paths, any depth from repo root:
 //
 //   - `**/docs/reports/**/*.md` — the classic "I saved the report
 //     somewhere visible" failure mode (root docs/reports/ + package
@@ -31,7 +31,7 @@
 //     "audit", or "findings".
 //
 // The classify + heuristic + bypass engine is the shared
-// `_shared/doc-location-guard.mts` (also driving plan-location-guard);
+// `_shared/doc-location-guard.mts`, also driving plan-location-guard;
 // this wrapper supplies the report-specific token lists, the bare-dir
 // rule, and the message.
 //
@@ -50,7 +50,7 @@
 // Exits:
 //   0 — allowed.
 //   2 — blocked (stderr explains rule + fix + bypass phrase).
-//   0 (with stderr log) — fail-open on hook bugs.
+//   0, with stderr log — fail-open on hook bugs.
 
 import {
   basenameStem,
@@ -64,7 +64,7 @@ import { defineHook, runHook } from '../_shared/guard.mts'
 const BYPASS_PHRASE = 'Allow report-location bypass'
 
 // Filename-stem tokens that mark a doc as "report-shaped." Checked on
-// the base name (extension stripped, lowercased).
+// the base name, extension stripped, lowercased.
 const REPORT_FILENAME_TOKENS = [
   'report',
   'scan',
@@ -80,7 +80,7 @@ const REPORT_FILENAME_TOKENS = [
 const REPORT_HEADING_TOKENS = ['report', 'scan', 'audit', 'findings']
 
 // The stem/classify/heuristic helpers are the shared doc-location ones,
-// re-exported (specialized to the report shape) so this guard's tests
+// re-exported, specialized to the report shape, so this guard's tests
 // exercise the exact predicates the check runs.
 export { basenameStem }
 

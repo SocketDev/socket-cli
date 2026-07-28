@@ -52,7 +52,7 @@ const ANY_TOP_LEVEL_KEY = /^[A-Za-z_][\w-]*:\s*(?:\S.*)?$/
 //   - '@scope/*'            (glob)
 //   - 'bare-name@1.2.3'
 //   - 'bare-name'
-// Quoted or unquoted. Captures group 1 = full entry (no quotes).
+// Quoted or unquoted. Captures group 1 = full entry, no quotes.
 const ENTRY_RE = /^\s*-\s*['"]?(?<entry>[^'"\s]+)['"]?\s*$/
 
 interface OffendingEntry {
@@ -66,7 +66,7 @@ export function isPnpmWorkspaceYaml(filePath: string): boolean {
 }
 
 // Extract every per-entry value inside `minimumReleaseAgeExclude:`.
-// Returns a Map keyed by entry value (the raw package selector) →
+// Returns a Map keyed by entry value, the raw package selector →
 // line number (1-indexed) where the entry sits in the file.
 export function parseExcludeEntries(text: string): Map<string, number> {
   const out = new Map<string, number>()

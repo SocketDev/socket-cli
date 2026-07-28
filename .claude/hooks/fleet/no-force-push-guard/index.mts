@@ -45,7 +45,7 @@ import {
   operatorBypassPresent,
 } from '../_shared/transcript.mts'
 
-// Pre-flight trigger: every git-push command (force or not) carries the
+// Pre-flight trigger: every git-push command, force or not, carries the
 // literal `push` token, so this is the necessary substring the dispatcher
 // gates on before importing this guard.
 export const triggers: readonly string[] = ['push']
@@ -174,7 +174,7 @@ export function blockMessage(
 /**
  * Branch-scoped combo phrases for this command's push destinations.
  * `Allow force-with-lease <branch> bypass` authorizes BOTH the force flag
- * (this guard) and the protected-branch push (`push-protected-branch-guard`)
+ * this guard, and the protected-branch push (`push-protected-branch-guard`)
  * for exactly that branch — one phrase for the one operation a squash-repo
  * reconciliation performs, and it cannot leak to a different branch later.
  */
@@ -195,7 +195,7 @@ export function scopedLeasePhrases(command: string): string[] {
 
 export const check = bashGuard((command, payload): GuardResult => {
   // Allowlist: the squashing-history skill's force-push is intrinsic to the
-  // squash (byte-verified tree, backup branch already pushed) — see
+  // squash, byte-verified tree, backup branch already pushed — see
   // `_shared/squash-sentinel.mts` for the hardened shape this honors.
   if (squashSentinelAllows(command)) {
     return undefined
@@ -208,7 +208,7 @@ export const check = bashGuard((command, payload): GuardResult => {
 
   const phrases = [...ACCEPTED_PHRASES, ...scopedLeasePhrases(command)]
   // operatorBypassPresent, not bypassPhrasePresent: a subagent never inherits
-  // the operator's grant for an irreversible op (see its doc comment).
+  // the operator's grant for an irreversible op, see its doc comment.
   if (operatorBypassPresent(payload.transcript_path, phrases)) {
     return undefined
   }

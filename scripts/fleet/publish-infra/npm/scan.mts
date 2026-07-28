@@ -22,11 +22,11 @@ import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
  * Scan one staged entry's artifact. Packs the local tree (byte-identical to
  * the staged upload once the shasum gate has passed), extracts the tarball's
  * `package/` root into a temp dir, and gates on the Socket CLI's exit code.
- * The scan is marked `--tmp` (hidden from the dashboard scan list) — it's a
+ * The scan is marked `--tmp`, hidden from the dashboard scan list — it's a
  * promotion gate, not a tracked branch scan. `options.packTarball` swaps the
  * artifact source: a generated platform package's payload is CI-built with no
  * local twin, so the approve flow passes a provider that downloads the STAGED
- * tarball (whose structure the platform verify gate has already checked)
+ * tarball, whose structure the platform verify gate has already checked
  * instead of packing locally.
  */
 export async function scanStagedEntry(

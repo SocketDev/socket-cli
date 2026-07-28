@@ -8,10 +8,10 @@
 // Why:
 //
 //   `src/http-request/node.ts`   — Node.js implementation (uses node:https)
-//   `src/http-request/browser.ts` — Browser implementation (uses fetch)
+//   `src/http-request/browser.ts` — Browser implementation, uses fetch
 //
 //   Importing either one directly hard-codes the platform and bypasses the
-//   package.json `"browser"` condition that bundlers (rolldown, vite, webpack)
+//   package.json `"browser"` condition that bundlers, rolldown, vite, webpack
 //   use to swap implementations at build time.  A server-side module importing
 //   `/node` is technically OK, but it creates an asymmetry with browser builds
 //   and hides the platform choice from tooling.
@@ -27,7 +27,7 @@
 // Mirrors the commit-time `socket/no-platform-specific-import` oxlint
 // rule.  Catching it at edit time avoids lint failures at commit.
 //
-// Exit 2 = refuse the tool call.  Exit 0 = allow (fails open on errors).
+// Exit 2 = refuse the tool call.  Exit 0 = allow, fails open on errors.
 //
 // Bypass: user types `Allow platform-http-import bypass` in a recent turn,
 // OR add `// no-platform-http-import: <reason>` on the preceding line.
@@ -50,7 +50,7 @@ const EXEMPT_MODULE_DIRS = ['http-request', 'logger']
 
 export function isExemptPath(filePath: string): boolean {
   const norm = normalizePath(filePath)
-  // Files inside the platform-split module dirs are exempt (they form the implementation).
+  // Files inside the platform-split module dirs are exempt, they form the implementation.
   return EXEMPT_MODULE_DIRS.some(m => norm.includes(`/${m}/`))
 }
 

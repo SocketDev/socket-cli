@@ -2,7 +2,7 @@
 // cache hit / extract → chmod 0o755. Lives in its own file because
 // installers.mts is at the 500-line soft cap; this is the "install a tool
 // shipped as a GitHub release asset" domain, used by every binary-release
-// tool (actionlint, cdxgen, janus, opengrep, trivy, trufflehog, uv).
+// tool, actionlint, cdxgen, janus, opengrep, trivy, trufflehog, uv.
 
 import { existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
@@ -35,13 +35,13 @@ export interface InstallGitHubToolConfig {
    */
   tool: ToolEntry
   /**
-   * Name of the binary inside the archive (without extension). For bare-binary
-   * assets (no archive), pass the same string used as the asset name — the
+   * Name of the binary inside the archive, without extension. For bare-binary
+   * assets, no archive, pass the same string used as the asset name — the
    * helper detects and skips extraction.
    */
   binaryNameInArchive: string
   /**
-   * Final binary name on disk (without extension). Usually same as
+   * Final binary name on disk, without extension. Usually same as
    * `binaryNameInArchive`.
    */
   finalBinaryName: string
@@ -52,7 +52,7 @@ export interface InstallGitHubToolConfig {
   pathInArchive?: string | undefined
   /**
    * Optional absolute directory to install the final binary into. When set, the
-   * binary is copied here (creating parent dirs as needed) instead of landing
+   * binary is copied here, creating parent dirs as needed, instead of landing
    * alongside the dlx-cached archive. Use for shared cross-fleet locations
    * (e.g. `~/.socket/_wheelhouse/<tool>/`) so multiple consumers reuse the same
    * install.

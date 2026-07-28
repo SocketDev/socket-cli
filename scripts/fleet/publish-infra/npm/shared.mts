@@ -58,9 +58,9 @@ export interface StageListEntry {
   // sha1 hex npm recorded for the staged tarball. `pnpm stage list --json` is
   // the ONLY pre-approve source of the server-side digest — a staged version is
   // not in the public packument, so fetchVersionTrustInfo can't see it. Live
-  // pnpm emits it top-level as `shasum` (verified against a real staged run);
+  // pnpm emits it top-level as `shasum`, verified against a real staged run;
   // readStagedShasum keeps the `dist.shasum` probe as a fallback and the gate
-  // fails LOUD (never silently skips) when none resolve.
+  // fails LOUD, never silently skips, when none resolve.
   shasum?: string | undefined
 }
 
@@ -88,9 +88,9 @@ export function readPackageJson(root: string = rootPath): {
 
 /**
  * Extract the staged tarball's sha1 from a `pnpm stage list --json` entry.
- * Live pnpm emits top-level `shasum` (verified against a real staged run);
+ * Live pnpm emits top-level `shasum`, verified against a real staged run;
  * `dist.shasum` stays as a fallback probe. Returns undefined when none
- * resolve; the pre-approve gate then fails LOUD (never silently skips) so a
+ * resolve; the pre-approve gate then fails LOUD, never silently skips, so a
  * field-name drift surfaces as a hard stop, not a false-green. (`integrity` is
  * sha512 — a different axis — so it is not reduced to sha1 here.)
  */
@@ -146,7 +146,7 @@ function normalizeStageEntry(raw: RawStageEntry): StageListEntry | undefined {
 
 /**
  * Parse `pnpm stage list --json` output into normalized entries. Live pnpm
- * (verified against a real staged run) emits an ARRAY of
+ * verified against a real staged run, emits an ARRAY of
  * `{ id, packageName, version, shasum, … }`; the older keyed-map shape
  * (`{ '<name>@<version>': { stageId, name, … } }`) is kept as a fallback.
  * Entries that don't resolve a stage id are dropped (defensive). Pure —
@@ -186,7 +186,7 @@ export function parseStageListJson(stdout: string): StageListEntry[] {
 /**
  * Resolve all currently-staged packages by running `pnpm stage list --json`
  * and normalizing the output (see parseStageListJson). Auth-honest: an empty
- * result (or a non-zero exit) is only trusted after `npm whoami` proves local
+ * result, or a non-zero exit, is only trusted after `npm whoami` proves local
  * npm auth exists — an unauthenticated `pnpm stage list` 401s and its output
  * parses as an EMPTY list, indistinguishable from "nothing staged". Without
  * that proof this throws StageListAuthError carrying the whoami evidence, so
@@ -273,7 +273,7 @@ export function formatPriorProvenance(
  *
  * Used by --direct to refuse running when the package's prior versions used
  * staging: we want that trade-off to be a deliberate choice, not an accident.
- * First-publish packages (no prior versions) get a pass — they have no staged
+ * First-publish packages, no prior versions, get a pass — they have no staged
  * history to preserve.
  */
 export async function isStagingExpected(pkgName: string): Promise<boolean> {

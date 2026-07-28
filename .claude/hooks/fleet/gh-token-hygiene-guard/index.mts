@@ -18,7 +18,7 @@
 //
 //   2. 8-HOUR IDLE TIMEOUT. The hook stamps ~/.claude/gh-token-issued-at on
 //      `gh auth login` / `gh auth refresh` AND on every allowed `gh` command
-//      (each use is activity), then blocks non-auth `gh` only once the token
+//      each use is activity, then blocks non-auth `gh` only once the token
 //      has sat IDLE — no gh command — for >8h. Active use (pushing, API
 //      calls) keeps resetting the clock, so a busy session never trips it;
 //      only genuine inactivity counts toward the timeout. Self-recovery:
@@ -39,7 +39,7 @@
 //      find-generic-password` etc. — not duplicated here.
 //
 // Exit codes:
-//   - 0: pass (not a gh command, or all checks satisfied)
+//   - 0: pass, not a gh command, or all checks satisfied
 //   - 2: block (one of the invariants violated; stderr explains)
 //
 // Fail-open on hook bugs: runGuard swallows any throw and leaves exit 0
@@ -78,7 +78,7 @@ const TOKEN_ISSUED_AT_FILE = path.join(
   '.claude',
   'gh-token-issued-at',
 )
-const TOKEN_TTL_MS = 8 * 60 * 60 * 1000 // 8 hours IDLE (reset on each gh use)
+const TOKEN_TTL_MS = 8 * 60 * 60 * 1000 // 8 hours IDLE, reset on each gh use
 
 interface GhAuthStatus {
   storage: 'keyring' | 'file' | 'unknown'
@@ -123,7 +123,7 @@ export const check = bashGuard((command, payload): GuardResult => {
   // running `gh auth refresh -h github.com` even when expired).
   // isTokenFresh() self-heals stale stamps via a `gh api user` probe,
   // so reaching here means the token genuinely failed the live probe
-  // (or hit the network timeout).
+  // or hit the network timeout.
   if (!isAuthMaintenanceCommand(command) && !isTokenFresh()) {
     return fail(
       'gh-token-hygiene-guard: gh token idle >8h (and live probe failed)',
@@ -162,7 +162,7 @@ export const check = bashGuard((command, payload): GuardResult => {
   const isWorkflowRefresh = isWorkflowScopeRefresh(command)
   const hasWorkflowScope = status.scopes.includes('workflow')
   if (isWorkflowRefresh) {
-    // Revoke is always allowed (no bypass needed) — it's the de-elevation
+    // Revoke is always allowed, no bypass needed — it's the de-elevation
     // this guard pushes you toward.
     if (isWorkflowScopeRevoke(command)) {
       return undefined
@@ -217,16 +217,16 @@ export const check = bashGuard((command, payload): GuardResult => {
 // True when any command segment actually invokes the `gh` binary. Uses
 // the shell parser, not regex: a regex on `gh` over-matched (a path or a
 // quoted string containing "gh" tripped it — see the false positives this
-// hook used to throw on `grep gh`) AND under-matched (missed indirection).
+// hook used to throw on `grep gh`) AND under-matched, missed indirection.
 // The parser reads the real binary at each segment, so `echo "gh ..."`
-// (quoted, not a command) is correctly ignored and `cmd1 && gh ...`
+// quoted, not a command, is correctly ignored and `cmd1 && gh ...`
 // (chained) is caught.
 function containsGhInvocation(command: string): boolean {
   return findInvocation(command, { binary: 'gh' })
 }
 
 // Flags on `gh workflow run` that take a value, so the value is never
-// mistaken for the workflow target (mirrors release-workflow-guard).
+// mistaken for the workflow target, mirrors release-workflow-guard.
 const GH_WORKFLOW_VALUE_FLAGS = new Set([
   '--field',
   '--json',
@@ -409,7 +409,7 @@ function isTokenFresh(): boolean {
     if (!Number.isFinite(recorded)) {
       return false
     }
-    // Malformed value (zero, POSIX-seconds, garbage) — re-stamp and
+    // Malformed value, zero, POSIX-seconds, garbage — re-stamp and
     // treat as fresh. The actual gh token in keychain is what matters
     // for security; this stamp file just tracks when we last saw a
     // confirmed refresh. A wrong value here would lock the user out
@@ -466,7 +466,7 @@ function recordTokenIssuedAt(): void {
 }
 
 function readGhAuthStatus(): GhAuthStatus {
-  // `gh auth status` is a LOCAL keyring read (no network); spawnTimeoutMs keeps
+  // `gh auth status` is a LOCAL keyring read, no network; spawnTimeoutMs keeps
   // it tight on POSIX but gives win32 headroom for cmd.exe spawn latency. Too
   // tight and a slow-but-alive gh is killed → empty output → this reads it as
   // "gh absent" and fail-opens, silently skipping the storage check.

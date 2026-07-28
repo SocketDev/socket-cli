@@ -7,7 +7,7 @@
 // the nudge in favor of the hard guard. This check stops it from recurring.
 //
 // ERROR: a base name has BOTH `<base>-guard` and `<base>-nudge`. That is an
-// exact same-concern duplicate — collapse to one (prefer the guard).
+// exact same-concern duplicate — collapse to one, prefer the guard.
 //
 // ADVISORY: two hooks share a leading name segment but differ after it (e.g.
 // `ai-config-poisoning-guard` + `ai-config-drift-nudge`, or
@@ -36,7 +36,7 @@ export interface OverlapReport {
 
 /**
  * List the immediate `<name>` hook directories under a fleet hooks dir. Returns
- * an empty array when the dir is absent (a repo with no hooks).
+ * an empty array when the dir is absent, a repo with no hooks.
  */
 export function listHookNames(hooksDir: string): string[] {
   let entries: string[]
@@ -82,7 +82,7 @@ export function sharedPrefixSegments(
  *
  * - Exact collision: `<base>-guard` AND `<base>-nudge` both present.
  * - Prefix pair: a `*-guard` and a `*-nudge` share their first `-` segment but
- *   are not an exact-base collision (advisory only).
+ *   are not an exact-base collision, advisory only.
  */
 export function findOverlap(names: readonly string[]): OverlapReport {
   const guards = new Set<string>()
@@ -108,7 +108,7 @@ export function findOverlap(names: readonly string[]): OverlapReport {
   for (const guardBase of guards) {
     const guardSegs = guardBase.split('-')
     for (const nudgeBase of nudges) {
-      // Skip the exact-collision case (reported above).
+      // Skip the exact-collision case, reported above.
       if (
         guardBase === nudgeBase ||
         collisionSet.has(guardBase) ||

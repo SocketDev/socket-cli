@@ -22,7 +22,7 @@ import type { Dirent } from 'node:fs'
 
 export interface PluginLoadResult {
   // 'ok' — loads + rule count matches. 'no-plugin' — scaffolding-only repo,
-  // nothing to verify (not a failure). 'load-threw' — import threw (dead
+  // nothing to verify, not a failure. 'load-threw' — import threw (dead
   // plugin). 'empty' — loaded but registered 0 rules. 'count-mismatch' — a rule
   // dir exists but isn't wired into the index registry.
   readonly status:
@@ -84,18 +84,18 @@ async function loadPluginRules(
  * Verify the fleet oxlint plugin actually loads + registers its rules. Two
  * shapes, one gate:
  *
- * - SOURCE present (the wheelhouse): the plugin ships as ~100 rule dirs under
+ * - SOURCE present, the wheelhouse: the plugin ships as ~100 rule dirs under
  *   `<repoRoot>/.config/fleet/oxlint-plugin/fleet/`. Import the source index
  *   and assert it registers exactly that many rules (`count-mismatch` catches a
  *   rule dir that isn't wired into the registry).
- * - SOURCE absent, BUNDLE present (a bundle-only member): the runtime artifact is
+ * - SOURCE absent, BUNDLE present, a bundle-only member: the runtime artifact is
  *   `<repoRoot>/.config/fleet/oxlint-plugin.mjs`. Import it and assert a
  *   non-empty rules map — a dead bundle is exactly the vacuous pass this gate
  *   exists to catch. There is no source count to compare against, so `ok` means
  *   "registered ≥ 1".
  *
  * Returns a structured verdict; never throws (a load failure is `load-threw`).
- * A repo with neither source nor bundle returns `no-plugin` (not a failure).
+ * A repo with neither source nor bundle returns `no-plugin`, not a failure.
  */
 export async function assertPluginLoads(
   repoRoot: string,

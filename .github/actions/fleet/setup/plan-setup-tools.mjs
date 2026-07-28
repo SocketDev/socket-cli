@@ -4,8 +4,8 @@
  *   branch decisions live here, unchanged from the inline blocks and proven
  *   byte-identical old-vs-new side-by-side before extraction:
  *
- *   - tools-file schema: entries nest under `tools` (current schema) or sit at
- *     the top level (legacy flat), and sfw flavors are their own `sfw-<flavor>`
+ *   - tools-file schema: entries nest under `tools`, current schema, or sit at
+ *     the top level, legacy flat, and sfw flavors are their own `sfw-<flavor>`
  *     entries (canonical — external-tools-schema.mts ToolEntry rejects nested
  *     flavor objects) or nest under one `sfw.{version,free,enterprise}` key
  *     (legacy). The probes SPAWN the sibling _shared/jq.mjs exactly the way the
@@ -19,10 +19,10 @@
  *     enterprise-probe classification — transient 5xx (retry, then treat as a
  *     Socket-side outage) vs terminal SKU 403 (the token lacks the
  *     firewall-enterprise SKU) — and the free-fallback re-selection, where only
- *     the canonical shape re-reads a version (legacy shares one). An output
+ *     the canonical shape re-reads a version, legacy shares one. An output
  *     matching BOTH shapes classifies as 5xx: the inline loop's 5xx grep ran
  *     first, so 5xx always outranked the SKU string.
- *   - extended-env gating (disabled-seam-pattern, fleet docs): the optional
+ *   - extended-env gating, disabled-seam-pattern, fleet docs: the optional
  *     SOCKET_TOOL_* provenance exports emit only when EXTENDED_ENV=true; the
  *     load-bearing exports — SFW_BIN, SFW_IS_ENTERPRISE (with its
  *     enterprise-flag derivation), SFW_SILENT, and the SOCKET_API_TOKEN /
@@ -59,7 +59,7 @@ import { fileURLToPath } from 'node:url'
 
 /**
  * Namespace decision: the tools file nests entries under `tools` (current
- * schema) or at the top level (legacy flat). `hasToolsKey` is the probe
+ * schema) or at the top level, legacy flat. `hasToolsKey` is the probe
  * result for the top-level `tools` key; an empty namespace splits away
  * unquoted at the jq call sites.
  */
@@ -142,7 +142,7 @@ export function fallbackSfwSelection(shape) {
 
 /**
  * Classify one `sfw --version` probe output. 5xx shapes seen in the wild:
- * "Socket API returned status code 503" (sfw stdout) and "validation got
+ * "Socket API returned status code 503", sfw stdout, and "validation got
  * status of 503" (setup-and-install). `sku` is the terminal 403 "Error while
  * identifying active SKUs" refusal — the token lacks the firewall-enterprise
  * SKU. 5xx is checked FIRST, exactly like the inline loop where the 5xx grep

@@ -31,13 +31,13 @@ export interface StableAliasDesync {
    */
   readonly base: string
   /**
-   * The version the base catalog entry declares (what the alias should be).
+   * The version the base catalog entry declares, what the alias should be.
    */
   readonly baseVersion: string
 }
 
 // A catalog entry line: <indent><key>: <value>. Key may be single-quoted; value
-// may be single-quoted (an alias spec) or bare (a version). Captures indent (1),
+// may be single-quoted, an alias spec, or bare, a version. Captures indent (1),
 // key (3, unquoted), value (5, unquoted).
 const ENTRY_RE = /^(\s+)('?)(@?[\w./-]+)\2:[ \t]+('?)(.+?)\4[ \t]*$/
 
@@ -116,7 +116,7 @@ export function findStableAliasDesyncs(text: string): StableAliasDesync[] {
 
 /**
  * Rewrite every desynced `-stable` alias to pin its base's version. Returns the
- * updated text and the list of changes (empty when already in sync). Preserves
+ * updated text and the list of changes, empty when already in sync. Preserves
  * each line's original quoting + indentation — only the version token changes.
  * Pure + idempotent.
  */
@@ -158,7 +158,7 @@ export interface StableAliasFileResult {
 /**
  * Reconcile `-stable` aliases across the given catalog files IN PLACE. Reads
  * each existing file, rewrites any desynced alias to its base version, and only
- * writes when something changed (no spurious mtime churn). Missing files are
+ * writes when something changed, no spurious mtime churn. Missing files are
  * skipped. Returns one result per file that changed. Shared by `update.mts`
  * (post-bump) and the fix path (`pnpm run fix`).
  */

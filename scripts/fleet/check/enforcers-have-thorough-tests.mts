@@ -19,10 +19,10 @@
 // (OWNS_RELOCATED_TESTS); a member returns no gaps. See
 // docs/agents.md/fleet/test-layout.md.
 //
-// ERROR when, for an enforcer (wheelhouse only):
+// ERROR when, for an enforcer, wheelhouse only:
 //   - no test file exists (hook: test/repo/.../hooks/<name>.test.mts; rule:
 //     test/repo/.../lint-rules/<name>.test.mts), OR
-//   - the test is a TOKEN test (not thorough):
+//   - the test is a TOKEN test, not thorough:
 //       * hook test with fewer than MIN_HOOK_CASES `test(`/`it(` cases, or
 //       * lint-rule test missing a `valid:` array OR an `invalid:` array
 //         (a RuleTester run must exercise BOTH arms).
@@ -48,7 +48,7 @@ const logger = getDefaultLogger()
 
 // A hook test must exercise at least this many cases to count as thorough:
 // the fires-case + the does-not-fire case at minimum. Real guards have far
-// more (each shape, bypass, pass-through, malformed); two is the floor below
+// more, each shape, bypass, pass-through, malformed; two is the floor below
 // which it is provably a token test.
 const MIN_HOOK_CASES = 2
 

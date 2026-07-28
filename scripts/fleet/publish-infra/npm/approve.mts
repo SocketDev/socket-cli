@@ -83,7 +83,7 @@ export async function runApprove(config: {
   otpFromFlag: string | undefined
   skipRelease?: boolean | undefined
   yes: boolean
-  // ── Injected collaborator seams (dependency injection). Every field
+  // ── Injected collaborator seams, dependency injection. Every field
   // defaults to the real import below, so omitting them leaves prod behavior
   // unchanged; tests pass fakes to drive each decision path without spawning
   // npm/pnpm/git/gh, prompting a TTY, or touching the registry. Typed as
@@ -140,7 +140,7 @@ export async function runApprove(config: {
   // verify gate can only ever pack THIS repo's packages (defaultPackTarball
   // packs this checkout), so a foreign entry could never verify; worse, its
   // verify pack would pin THIS repo's README against the FOREIGN entry's
-  // version (a wrong-manifest pin) and then fail with advice to reject an
+  // version, a wrong-manifest pin, and then fail with advice to reject an
   // artifact that is perfectly good in its own repo. "Ours" is the full
   // publishable-name set: the single subject for a plain repo, every
   // workspace member (loader + platform packages) for a multi layout.
@@ -247,7 +247,7 @@ export async function runApprove(config: {
   let selected: string[] | undefined
   if (yes) {
     // --yes (agent / scripted runs, no TTY): approve everything eligible —
-    // the same set the interactive default offers (every row pre-checked).
+    // the same set the interactive default offers, every row pre-checked.
     // The rows still print so the prior-provenance annotations stay visible.
     logger.log('--yes: approving all staged packages:')
     for (const choice of choices) {
@@ -388,7 +388,7 @@ export async function runApprove(config: {
   // GitHub release are created here rather than at --staged time. This runs
   // locally where git, gh, and npm are all authenticated; the CI --staged step
   // holds only an OIDC npm token (no contents:write / GH_TOKEN), so a release
-  // attempt there fails and is also premature (nothing is public yet).
+  // attempt there fails and is also premature, nothing is public yet.
   // `skipRelease` (--no-release) hands the tag + release to the caller — the
   // publish pipeline's release stage owns them there, with verify-time
   // checksums.

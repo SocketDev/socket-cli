@@ -32,7 +32,7 @@
 //
 // Bypass: `Allow other-linter bypass` typed verbatim in a recent user turn.
 //
-// Fails open on parse errors (better to under-block than brick a non-JSON edit).
+// Fails open on parse errors, better to under-block than brick a non-JSON edit.
 
 import path from 'node:path'
 
@@ -86,7 +86,7 @@ export const check = editGuard((filePath, content, payload) => {
     )
   }
 
-  // (2) Foreign tool PACKAGE in a package.json dep block (Write or Edit),
+  // (2) Foreign tool PACKAGE in a package.json dep block, Write or Edit,
   // minus deps allowed under the `fleet.hostTestDeps` host-test contract.
   if (basename === 'package.json') {
     const afterText = content ?? ''

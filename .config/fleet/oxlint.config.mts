@@ -39,7 +39,7 @@ import { GENERATED_GLOBS } from '../../scripts/fleet/constants/generated-globs.m
 
 export interface OxlintConfigOptions {
   /**
-   * Extra `jsPlugins` entries (repo-local oxlint plugins). Relative paths are
+   * Extra `jsPlugins` entries, repo-local oxlint plugins. Relative paths are
    * resolved by oxlint against the importing config's directory, so a repo
    * passing `./oxlint-plugin/index.mts` gets its own plugin. Merged AFTER the
    * fleet plugin, so both load.
@@ -52,7 +52,7 @@ export interface OxlintConfigOptions {
   rules?: Record<string, unknown> | undefined
   /**
    * Extra `overrides` blocks appended after the fleet overrides. Globs are
-   * matched relative to the working directory (repo root), same as the fleet
+   * matched relative to the working directory, repo root, same as the fleet
    * blocks.
    */
   overrides?: readonly unknown[] | undefined
@@ -109,7 +109,7 @@ export function config(
 
 // The fleet `socket/*` plugin ships two ways: rule SOURCE in the wheelhouse
 // (edited + tested live, no rebuild loop) and the rolldown bundle
-// `oxlint-plugin.mjs` in members (the rule source dirs don't cascade).
+// `oxlint-plugin.mjs` in members, the rule source dirs don't cascade.
 // Whichever spelling the JSON carries, the factory prefers source when present
 // and falls back to the bundle.
 const FLEET_PLUGIN_ENTRIES: ReadonlySet<string> = new Set([

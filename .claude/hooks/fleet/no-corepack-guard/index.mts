@@ -16,9 +16,9 @@
 // RECORD (kept in lockstep with external-tools.json); this guard only blocks
 // the corepack COMMANDS that would activate it.
 //
-// Detection (AST-parsed via the shared shell-command helper, not a raw regex):
+// Detection, AST-parsed via the shared shell-command helper, not a raw regex:
 // the command runs the `corepack` binary with an activating subcommand.
-// `corepack --version` / `corepack --help` are allowed (they activate nothing).
+// `corepack --version` / `corepack --help` are allowed, they activate nothing.
 //
 // Bypass: `Allow corepack bypass` typed verbatim in a recent user turn.
 //

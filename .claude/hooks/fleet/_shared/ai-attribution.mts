@@ -1,6 +1,6 @@
 /**
  * @file Canonical AI-attribution pattern list. Both the commit-message-format
- *   guard (PreToolUse, blocks) and the commit-pr reminder (Stop, nudges) match
+ *   guard (PreToolUse, blocks) and the commit-pr reminder, Stop, nudges, match
  *   against this one source so a string blocked at one gate is flagged at the
  *   other. Each entry carries a `why` the reminder surfaces; the guard uses the
  *   `label` only. The fleet forbids AI attribution anywhere in commit/PR text.
@@ -40,7 +40,7 @@ export const AI_ATTRIBUTION_PATTERNS: readonly AiAttributionPattern[] = [
   {
     // The `Claude-Session:` trailer Claude Code auto-appends — a
     // `Key: value` git-trailer line carrying a session permalink. Match
-    // the trailer key (anchored to its own line) OR the session-URL
+    // the trailer key, anchored to its own line, OR the session-URL
     // shape, so a partial form can't slip past one gate while failing
     // another. The hyphenated `Claude-Session:` key never appears in
     // legitimate prose, so this does not over-match a sentence that

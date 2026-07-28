@@ -190,7 +190,7 @@ export function hasAnchorBranch(alts: readonly string[]): boolean {
 
 /**
  * Sort an alternation in alphanumeric order. Returns null if any element isn't
- * a simple literal (caller should report-only).
+ * a simple literal, caller should report-only.
  */
 function sortAlternativesIfSimple(
   pattern: string,
@@ -262,7 +262,7 @@ const rule = {
         const group = groups[i]!
         // Position-anchored alternations (`(^|\/)`, `(^|$)`) mix a zero-width
         // anchor with literal text — different kinds, no meaningful order.
-        // Skip entirely (neither sort nor flag), like prefix-overlap groups.
+        // Skip entirely, neither sort nor flag, like prefix-overlap groups.
         const groupAlts = group.altsRanges.map((r: AltRange) =>
           pattern.slice(r.start, r.end),
         )
@@ -271,11 +271,11 @@ const rule = {
         }
         const result = sortAlternativesIfSimple(pattern, group)
         if (!result) {
-          // Not simple: still flag if alternation is unsorted (caller picks).
+          // Not simple: still flag if alternation is unsorted, caller picks.
           const alts = group.altsRanges.map((r: AltRange) =>
             pattern.slice(r.start, r.end),
           )
-          // Prefix-overlap groups are order-sensitive (leftmost match wins);
+          // Prefix-overlap groups are order-sensitive, leftmost match wins;
           // neither sorting nor "sort manually" is correct advice — skip them.
           if (hasPrefixOverlap(alts)) {
             continue

@@ -20,7 +20,7 @@
  *   enforcer or an explicit deferral/n-a stamp.
  *   Skips CLEANLY — never false-green — when no memory store exists for this
  *   project (CI, a fresh checkout, a teammate's machine): prints an explicit
- *   "skipped (no memory store)" and exits 0.
+ *   "skipped, no memory store, " and exits 0.
  */
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs'

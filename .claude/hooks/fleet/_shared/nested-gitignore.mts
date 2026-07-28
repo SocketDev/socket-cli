@@ -9,7 +9,7 @@
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 /**
- * A repo-relative POSIX path is a NESTED `.gitignore` (a violation) when its
+ * A repo-relative POSIX path is a NESTED `.gitignore`, a violation, when its
  * basename is `.gitignore` and it does NOT sit at a canonical root — the repo
  * root (`.gitignore`) or a template archetype root (`template/<archetype>/
  * .gitignore`). Any deeper `.gitignore` is nested. Pure.

@@ -9,8 +9,8 @@
 // so they never get pruned.
 //
 // This script reads the HOST repo's export map, then for each subpath grep the
-// rest of the lib (internal use) and every sibling fleet repo under $PROJECTS
-// (external use). It classifies each subpath and emits a ranked report. It is
+// rest of the lib, internal use, and every sibling fleet repo under $PROJECTS
+// external use. It classifies each subpath and emits a ranked report. It is
 // REPO-GENERIC: it reads the host's own `package.json#name` + export map, so
 // the same code audits any lib-shaped fleet repo, not just socket-lib.
 //
@@ -146,7 +146,7 @@ export function enumerateSubpaths(
 }
 
 // Count references to a source file from elsewhere in the same repo's `src/`.
-// We grep for the file's import stem (its path minus extension) so both
+// We grep for the file's import stem, its path minus extension, so both
 // `./discover` and `../ai/discover.mts` style relative imports are caught. The
 // source file itself and its co-located test are excluded from the count.
 export async function countInternalRefs(
@@ -159,7 +159,7 @@ export async function countInternalRefs(
   // `./src/ai/discover.mts` -> stem `discover`. Matching the basename stem is
   // intentionally loose; a positive count means "referenced somewhere", which
   // is all the classification needs. False positives keep an export, which is
-  // the safe direction (never auto-deletes).
+  // the safe direction, never auto-deletes.
   const base = path.basename(sourceFile).replace(/\.[cm]?[jt]s$/u, '')
   if (!base) {
     return 0
@@ -210,7 +210,7 @@ export function consumerImportsSubpath(
 }
 
 // Harvest every `<prefix>/<subpath>` a consumer repo imports, normalized to the
-// bare subpath. One rg pass per repo (not per subpath) — the whole reason the
+// bare subpath. One rg pass per repo, not per subpath — the whole reason the
 // scan is fast. Returns the set of subpaths this repo consumes.
 export async function harvestConsumerImports(
   consumerDir: string,

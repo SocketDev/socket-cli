@@ -35,7 +35,7 @@
 // PostToolUse, not PreToolUse: we react to the rejection, we don't
 // try to predict it. Server-side rulesets are the ground truth.
 //
-// Fail-open on hook bugs: notify (never blocks) so a bad deploy
+// Fail-open on hook bugs: notify, never blocks, so a bad deploy
 // can't suppress legitimate push errors.
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
@@ -47,7 +47,7 @@ import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 // The enterprise-ruleset rejection = the header line PLUS at least one of the
 // two specific rules. Requiring the header avoids false positives from generic
 // push failures (auth, conflict, etc.); allowing EITHER specific rule means a
-// workflow-only rejection fires too (a bare header never does).
+// workflow-only rejection fires too, a bare header never does.
 const RULESET_HEADER = /Repository rule violations found/
 const PR_RULE = /Changes must be made through a pull request/
 const WORKFLOW_RULE = /Required workflow .* is not satisfied/
@@ -100,7 +100,7 @@ export function extractOutput(value: unknown): string {
 }
 
 // Which rules the push tripped, or undefined when the output isn't an
-// enterprise-ruleset rejection (no header, or header with no specific rule).
+// enterprise-ruleset rejection, no header, or header with no specific rule.
 export function rulesetRejection(output: string): RulesetRejection | undefined {
   if (!RULESET_HEADER.test(output)) {
     return undefined

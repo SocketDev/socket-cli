@@ -7,7 +7,7 @@
 // (minutes) — same field that gates npm package adoption — so the
 // policy reads identically across the fleet whether you're talking
 // about npm deps or security-tool versions. Socket-owned tools (sfw)
-// skip the soak (we trust our own publishing pipeline).
+// skip the soak, we trust our own publishing pipeline.
 //
 // Updates external-tools.json when new versions or checksums are found.
 
@@ -502,18 +502,18 @@ async function main(): Promise<void> {
   const config = readConfig()
   const allResults: UpdateResult[] = []
 
-  // 1. Check zizmor (third-party, respects soak time).
+  // 1. Check zizmor, third-party, respects soak time.
   allResults.push(await updateZizmor(config))
   logger.log('')
 
-  // 2. Check agentshield (third-party, respects soak time).
+  // 2. Check agentshield, third-party, respects soak time.
   // Only runs if external-tools.json has an `agentshield` entry —
   // updateGithubReleaseTool returns skipped:'not in config' otherwise,
   // so this is safe to leave wired even on repos that don't yet list it.
   allResults.push(await updateAgentshield(config))
   logger.log('')
 
-  // 3. Check sfw (Socket-owned, soak time not enforced).
+  // 3. Check sfw, Socket-owned, soak time not enforced.
   const sfwResults = await updateSfw(config)
   allResults.push(...sfwResults)
   logger.log('')

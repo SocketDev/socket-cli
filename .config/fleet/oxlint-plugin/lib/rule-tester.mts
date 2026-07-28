@@ -116,7 +116,7 @@ export interface OxlintDiagnostic {
 }
 
 /**
- * One oxlint child invocation. Pipe (never inherit) the child's stdio: oxlint
+ * One oxlint child invocation. Pipe, never inherit, the child's stdio: oxlint
  * detects a TTY and emits an OSC-52 clipboard escape when stdout/stderr is a
  * terminal, which trips the OS "terminal attempted to access the clipboard"
  * denial on every test run. Piping makes isatty() false so the escape is never

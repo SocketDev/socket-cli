@@ -1,4 +1,4 @@
-// SkillSpector installer — installed from a LOCKED uv project (no pipx).
+// SkillSpector installer — installed from a LOCKED uv project, no pipx.
 // Upstream NVIDIA/skillspector has no PyPI release / no GH releases / no
 // tags, so a git SHA IS the pin — but a bare `pipx install git+…@sha`
 // re-resolves the whole dependency closure freshly on every machine. Instead
@@ -11,8 +11,8 @@
 // enforced by skillspector-pin-is-consistent.mts.
 //
 // Requirements:
-//   - uv on PATH (the bootstrap installs it). If absent, point at the bootstrap.
-//   - Python 3.12+ (upstream requirement) — uv provisions one if missing.
+//   - uv on PATH, the bootstrap installs it. If absent, point at the bootstrap.
+//   - Python 3.12+ upstream requirement — uv provisions one if missing.
 //
 // Lives in its own file because installers.mts is at the 500-line soft cap.
 
@@ -64,7 +64,7 @@ export async function runSetupSkillSpector(): Promise<boolean> {
     return false
   }
 
-  // The locked uv project sits beside this lib dir's parent (the hook root),
+  // The locked uv project sits beside this lib dir's parent, the hook root,
   // next to external-tools.json: setup-security-tools/skillspector/.
   const projectDir = path.join(__dirname, '..', 'skillspector')
   const pyproject = path.join(projectDir, 'pyproject.toml')

@@ -22,6 +22,7 @@ The fleet runs on `chore(wheelhouse): cascade template@<sha>` commits. Every whe
 
 Tool-version bumps (pnpm, zizmor, sfw, …) route through the wheelhouse-owned
 <!-- socket-lint: allow cross-repo -->
+
 pipeline (`node scripts/repo/pipeline.mts`, run FROM the wheelhouse: bump →
 reconcile → CI-green gate → propagate); this skill then carries the resulting
 template change fleet-wide like any other.
@@ -40,6 +41,12 @@ Propagates a `socket-wheelhouse/template/` SHA to every fleet repo. The flow:
 6. Clean up the worktree + the temp branch.
 
 The `FLEET_SYNC=1` sentinel is recognized by the wheelhouse `no-revert-guard` + `overeager-staging-guard` hooks. It allowlists exactly: `git commit --no-verify` whose message starts with `chore(wheelhouse): cascade template@`, `git push --no-verify`, and `git add -A`/`-u`/`.`. Nothing else.
+
+## Pre-cascade gate — a wave refuses to start on a red wheelhouse
+
+The wave driver's preflight refuses in three ways before touching any repo. First, a dirty `template/`: the sync runner silently skips a dirty fleet dir, so the wave lands a partial cascade. Second, another cascade already in flight. Third, a red `pnpm run check --all` in the wheelhouse. The wheelhouse gates ARE the fleet gates, so a check that is red locally goes red in every member the wave pushes to; the action-port lock-step defect shipped exactly that way, with a working gate that was never run before the wave.
+
+Every red check refuses the wave. The gate ships no committed waiver list: a standing exemption in the tree carries no expiry and no owner, so the gate quietly stops protecting and nobody is accountable for clearing it. A genuinely unrelated failure is exempted for ONE run via the `knownRed` allowlist argument on `runPrecascadeGate`, passed at the call site where a reviewer sees it. The gate is fail-closed — a non-zero exit that the runner's summary line cannot attribute to a named check refuses too. `--dry-run` skips the gate; it pushes nothing.
 
 🚨 **Dogfood from a place of passing locally.** Before any dogfood cascade run the local-green gate IN ORDER: `pnpm run update` → `pnpm i` → `pnpm run fix --all` → `pnpm run check --all` → `pnpm run test` (or `pnpm run cover`); if green, commit (and fix + commit), THEN dogfood. `pnpm run update` runs FIRST so pending catalog / tool drift resolves in its own commit and does not ride the feature dogfood. Canonical reference + rationale: `docs/agents.md/repo/fleet-sync-and-release-flow.md` (stage b, DOGFOOD).
 

@@ -25,18 +25,18 @@
  *      Report-only; fails loud (tool-missing) rather than silent-clean.
  *   8. Lockfile ↔ catalog drift — a pnpm-workspace.yaml catalog entry bumped
  *      but not reflected in pnpm-lock.yaml's resolved catalogs (CI's
- *      --frozen-lockfile then fails). Always runs (cheap file reads);
+ *      --frozen-lockfile then fails). Always runs, cheap file reads;
  *      report-only, operator runs `pnpm install`.
  *   9. Pin-shadowed catalog entries (GAP 11) — a package.json pins a version
  *      directly while the catalog carries the same dep, so catalog bumps
  *      silently no-op. Auto-fixed to "catalog:" under --fix; deliberate
  *      off-catalog pins opt out via catalogShadowIgnore: in
  *      pnpm-workspace.yaml.
- *   10. Brewfile drift — an enrolled repo's (repo-root Brewfile present)
+ *   10. Brewfile drift — an enrolled repo's, repo-root Brewfile present
  *      committed Brewfile out of sync with a fresh render of the current
  *      `.github/` brew install sites, which is what makes
  *      `check/brew-install-is-pinned.mts` red. Always runs (cheap file
- *      reads); auto-fixed (rewrites the Brewfile) under --fix, otherwise
+ *      reads); auto-fixed, rewrites the Brewfile, under --fix, otherwise
  *      reported loud. A repo with no Brewfile is not enrolled — no finding.
  *   11. gh default repo ≠ origin (GAP 12) — in a fork checkout, bare gh
  *      commands resolve the fork PARENT unless `gh repo set-default` was run
@@ -45,7 +45,7 @@
  *      default. Pairs with check/gh-default-repo-matches-origin.mts.
  *
  *   CLI: node scripts/fleet/doctor.mts [--fix] [--probe-install] [--probe-git]
- *        [--probe-secrets]
+ *        [--probe-secrets] [--await-quiescent]
  *   Exit 0 = healthy or all gaps fixed. Exit 1 = any unfixed finding.
  */
 
@@ -76,6 +76,7 @@ import {
 } from './lib/doctor/catalog-gap.mts'
 import type { DoctorFinding } from './lib/doctor/catalog-gap.mts'
 import { runGitHygieneProbes } from './doctor-git-probes.mts'
+import { readyToLand, runWorktreeProbes } from './doctor-worktree-probes.mts'
 import { diagnoseLockfileCatalogDrift } from './lib/doctor/lockfile-catalog-gap.mts'
 import {
   applyPinShadowFixes,
@@ -199,7 +200,7 @@ export function resolveTrufflehogBinaries(): string[] {
 // system/unpinned one — TruffleHog has been supply-chain-compromised in the
 // past, so the pin + version-gate is the trust boundary). Resolves the binary
 // (PATH then the dlx cache), accepts only the pinned --version, then scans the
-// repo's git tree. Fails LOUD (tool-missing finding) rather than silent-clean
+// repo's git tree. Fails LOUD, tool-missing finding, rather than silent-clean
 // when the pinned binary is unavailable or the wrong version.
 async function runSecretScan(cwd: string): Promise<DoctorFinding[]> {
   const pinnedVersion = readPinnedTrufflehogVersion(cwd)
@@ -261,11 +262,15 @@ async function main(): Promise<void> {
 
   // --root <dir>: explicit repo-root override — the seam fixture-driven tests
   // use to point the doctor at a temp repo. Production runs omit it and the
-  // script-location REPO_ROOT holds (cwd-independent by convention).
+  // script-location REPO_ROOT holds, cwd-independent by convention.
   const rootFlagIndex = argv.indexOf('--root')
   const rootOverride =
     rootFlagIndex !== -1 ? argv[rootFlagIndex + 1] : undefined
   const cwd = rootOverride ?? REPO_ROOT
+  if (!(await readyToLand(argv, cwd))) {
+    process.exitCode = 1
+    return
+  }
 
   // Read pnpm-workspace.yaml — required; fail loud if unreadable.
   const workspaceYamlPath = path.join(cwd, 'pnpm-workspace.yaml')
@@ -378,7 +383,7 @@ async function main(): Promise<void> {
     )
   }
 
-  // GAP: Brewfile drift — an enrolled repo's (repo-root Brewfile present)
+  // GAP: Brewfile drift — an enrolled repo's, repo-root Brewfile present
   // committed Brewfile out of sync with a fresh render of the current
   // `.github/` brew install sites, which is what makes
   // `check/brew-install-is-pinned.mts` red. Cheap pure file reads, so it
@@ -455,6 +460,7 @@ async function main(): Promise<void> {
   // lightweight flag; --fix also enables them since a healthy install requires
   // a healthy git state.
   allFindings.push(...runGitHygieneProbes({ cwd, doFix, doProbeGit }))
+  allFindings.push(...(await runWorktreeProbes({ cwd, doFix })))
 
   // Secret-scan probe — gated behind --probe-secrets only (spawns the
   // fleet-pinned TruffleHog + scans the git tree, slower than the pure checks,

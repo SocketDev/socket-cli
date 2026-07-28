@@ -24,7 +24,7 @@ export interface ActionPin {
   version: string
 }
 
-// A pin whose resolved SHA changed (or newly appeared) across a recompile,
+// A pin whose resolved SHA changed, or newly appeared, across a recompile,
 // keyed by the action's `owner/repo/...` identity. `oldSha` is undefined for a
 // newly-introduced action.
 export interface ActionPinBump {
@@ -44,7 +44,7 @@ export interface HeldActionPin {
 }
 
 // The soak partition of a set of pin bumps: `advanced` cleared the window,
-// `exempt` are Socket-owned (own provenance pipeline, no soak), `held` are the
+// `exempt` are Socket-owned, own provenance pipeline, no soak, `held` are the
 // too-young / unverifiable non-Socket bumps the gate keeps at their old pin.
 export interface ActionPinPartition {
   advanced: ActionPinBump[]
@@ -54,7 +54,7 @@ export interface ActionPinPartition {
 
 // Resolves the commit date of `sha` in `owner/repo`. Injectable so the unit
 // tests drive the partition without `gh` or the network; returns undefined when
-// the date can't be resolved (an unverifiable date is never soak-cleared).
+// the date can't be resolved, an unverifiable date is never soak-cleared.
 export type ResolveCommitDate = (
   ownerRepo: string,
   sha: string,
@@ -109,7 +109,7 @@ export function actionOwnerRepo(repo: string): string {
 }
 
 // Diff two pin maps by repo identity: every after-pin whose SHA differs from
-// its before-pin (or that is newly present) is a bump. Keying on repo (not the
+// its before-pin, or that is newly present, is a bump. Keying on repo (not the
 // `repo@version` lock key) means a version bump that changes the key is still
 // recognized as the same action advancing.
 export function diffActionPins(
@@ -226,7 +226,7 @@ export function readFileSafe(file: string): string {
 
 // Enforce the soak window on the pins one recompile advanced. Diffs the
 // workflow's `actions-lock.json` before/after; a non-Socket action whose new
-// SHA is younger than SOAK_DAYS (or whose commit date can't be verified) is
+// SHA is younger than SOAK_DAYS, or whose commit date can't be verified, is
 // HELD — every output file is rolled back to its pre-compile state so a fresh
 // third-party action can't land before its soak. Files that existed before are
 // restored from `beforeContents`; files the recompile created fresh (absent

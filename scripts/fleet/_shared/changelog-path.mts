@@ -14,7 +14,7 @@ import path from 'node:path'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 /**
- * True when `file` is a CHANGELOG (root or nested), matched by basename so any
+ * True when `file` is a CHANGELOG, root or nested, matched by basename so any
  * dir depth counts. Case-insensitive on the stem; accepts `.md`/`.markdown` or
  * no extension (the fleet uses `CHANGELOG.md`).
  */

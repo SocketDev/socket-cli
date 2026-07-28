@@ -115,7 +115,7 @@ export const scanSoakExcludeDateAnnotations = (text: string): LineHit[] => {
 // the npm-worm postinstall signature. The edit-time ai-config-poisoning-guard
 // sees only Claude's OWN writes; a poison file that arrives via a dependency /
 // merge / outside editor reaches push unscanned. Heuristic + literal-pattern, so
-// it WARNS (surfaces for a human glance) rather than blocking — a false block on
+// it WARNS, surfaces for a human glance, rather than blocking — a false block on
 // a mandatory push gate is worse than a missed nudge.
 const POISON_RES: readonly RegExp[] = [
   // An `Allow <x> bypass` phrase planted in a config file (not a hook/doc).

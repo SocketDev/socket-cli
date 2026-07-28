@@ -3,7 +3,7 @@
 //
 // A fixer / formatter / install run by session A rewrites whatever is
 // dirty — including files a live session B wrote seconds ago, whose next
-// Edit then fails on an anchor mismatch (or silently blends). The
+// Edit then fails on an anchor mismatch, or silently blends. The
 // collision guard cannot see this (it gates Edit/Write, not Bash), so
 // this nudge warns BEFORE a write-capable command runs when the repo's
 // dirty set intersects paths live FOREIGN actors recorded recently.
@@ -46,7 +46,7 @@ export const check = (payload: ToolCallPayload): GuardResult => {
   const projectDir = resolveProjectDir()
   // stdioString:false — the trimming default eats the leading space of an
   // unstaged ` M <path>` entry and shifts the first parsed path left by
-  // one char (the land-work porcelain pitfall).
+  // one char, the land-work porcelain pitfall.
   const status = spawnSync('git', ['status', '--porcelain', '-z'], {
     cwd: projectDir,
     stdioString: false,

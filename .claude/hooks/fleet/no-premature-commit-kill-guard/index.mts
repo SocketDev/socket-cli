@@ -15,10 +15,10 @@
 //   1. Backgrounding it (`run_in_background: true`) hides the bounded run's
 //      completion, so the operator checks too early, sees it "still going",
 //      and concludes it hung.
-//   2. Then `pkill`/`kill` of the git op (or the vitest it spawned) tears down
+//   2. Then `pkill`/`kill` of the git op, or the vitest it spawned, tears down
 //      a mid-hook run — which corrupts the index (a half-written
 //      `.git/index.lock`) and leaks vitest worker processes. A `git push` has
-//      the same shape (its pre-push gate is also bounded), and a BROAD kill
+//      the same shape, its pre-push gate is also bounded, and a BROAD kill
 //      pattern (bare `git push` / `pre-push`) matches the same op in every
 //      sibling checkout — so it can reap a PARALLEL session's git op in
 //      another repo.
@@ -65,7 +65,7 @@ export const triggers: readonly string[] = ['git', 'kill', 'pause-on-failure']
 const GIT_PRE_COMMIT_SUBCOMMANDS = ['commit', 'rebase', 'merge', 'cherry-pick']
 
 // True when the command invokes a git subcommand that triggers the pre-commit
-// chain (and thus the bounded staged-test reminder).
+// chain, and thus the bounded staged-test reminder.
 export function invokesPreCommitGit(command: string): string | undefined {
   for (let i = 0, { length } = GIT_PRE_COMMIT_SUBCOMMANDS; i < length; i += 1) {
     const sub = GIT_PRE_COMMIT_SUBCOMMANDS[i]!

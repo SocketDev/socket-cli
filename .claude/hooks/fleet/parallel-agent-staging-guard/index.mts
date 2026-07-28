@@ -7,12 +7,12 @@
 // set), changed recently — see `_shared/foreign-paths.mts`.
 //
 // Gated operations (only blocked WHEN foreign paths exist):
-//   • `git add -A` / `.` / `--all` / `-u` / `--update`  (broad stage)
+//   • `git add -A` / `.` / `--all` / `-u` / `--update`, broad stage
 //   • `git commit -a` / `--all`                          (stage+commit)
-//   • `git stash` / `git stash push`                     (hides theirs)
-//   • `git reset --hard`                                 (destroys theirs)
-//   • `git checkout <branch>` / `git switch <branch>`    (may clobber)
-//   • `git restore <path>`                               (reverts theirs)
+//   • `git stash` / `git stash push`, hides theirs
+//   • `git reset --hard`, destroys theirs
+//   • `git checkout <branch>` / `git switch <branch>`, may clobber
+//   • `git restore <path>`, reverts theirs
 //
 // Surgical `git add <file>` and every op when NO foreign paths are
 // present pass through untouched.
@@ -28,7 +28,7 @@
 //
 // Relationship to overeager-staging-guard: that hook owns the GENERAL
 // staging-sweep rules regardless of parallel-agent signal — it blocks
-// `git add -A` AND a bare `git commit` (no pathspec) whose index holds
+// `git add -A` AND a bare `git commit`, no pathspec, whose index holds
 // files this session didn't touch, steering to `git commit -o <paths>`.
 // This hook adds the parallel-agent-specific destructive-op coverage
 // (commit -a / stash / reset --hard / checkout / restore) that the
@@ -38,7 +38,7 @@
 // paths). The bare-commit sweep is left to overeager-staging-guard so a
 // single shape never double-blocks with two different bypass phrases.
 //
-// Why this exists (incident, socket-lib): see
+// Why this exists, incident, socket-lib: see
 // parallel-agent-on-stop-nudge. The Stop reminder surfaces the
 // signal; this guard refuses the destructive action before it lands.
 //
@@ -136,7 +136,7 @@ export const check = bashGuard((command, payload) => {
   // Record any `git add|mv|rm <path>` targets into the session ledger BEFORE
   // any return. The transcript lags within a turn, so without this a `git mv
   // old new` here followed by an Edit to `new` next would read `new` as foreign
-  // (a parallel agent's file) and block the session's own rename. This is the
+  // a parallel agent's file, and block the session's own rename. This is the
   // only PreToolUse hook that sees every Bash command, so it owns the recording.
   recordTouchedFromBash(payload.transcript_path, command)
 
@@ -162,7 +162,7 @@ export const check = bashGuard((command, payload) => {
   // default branch to one commit before every push, so commit order and
   // granularity carry no meaning — a broad `git add -A` / `git commit -a` that
   // sweeps a parallel actor's in-flight work into a shared commit is harmless:
-  // the work LANDS (not lost), then the pre-push squash collapses it. Only the
+  // the work LANDS, not lost, then the pre-push squash collapses it. Only the
   // NON-destructive staging sweeps relax here; stash / reset --hard / restore /
   // checkout still hide or DESTROY uncommitted work, which squashing does not
   // undo, so they stay gated even in a squash repo.

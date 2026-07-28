@@ -14,7 +14,7 @@
  *   assert its typed export, or parse the AST — not its bytes. Deliberately
  *   narrow (no `src`/`code`/`contents`, no bare `readFileSync(...)`) so honest
  *   content checks ("does package.json contain X?") don't false-positive. No
- *   autofix (the rewrite is structural). Pairs with the import-based dispatch
+ *   autofix, the rewrite is structural. Pairs with the import-based dispatch
  *   classifier + `hook-names-are-accurate`.
  */
 
@@ -41,7 +41,7 @@ function isRegexLike(node: AstNode): boolean {
 // checks, and a false-positive error rule gets disabled. The import-based
 // dispatch classifier + `hook-names-are-accurate` are the real enforcement;
 // this rule catches the obvious regression — a `*Source` var grepped for a code
-// idiom (the shape that decided dispatch-vs-spawn from hook source text).
+// idiom, the shape that decided dispatch-vs-spawn from hook source text.
 function isSourceOperand(node: AstNode): boolean {
   return (
     node?.type === 'Identifier' &&

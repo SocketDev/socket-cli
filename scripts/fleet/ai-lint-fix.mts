@@ -9,7 +9,7 @@
  *   1. Run `pnpm run lint --json` to capture remaining violations.
  *   2. If there are any findings the AI step is allowed to handle, build a
  *      per-file batch and spawn a headless `claude --print` with Sonnet, the
- *      four lockdown flags, and a tight tool list (Read, Edit, Grep, Glob).
+ *      four lockdown flags, and a tight tool list, Read, Edit, Grep, Glob.
  *      Each spawn handles one file's worth of findings to keep the context
  *      window predictable.
  *   3. After all spawns finish, re-run `pnpm run lint` (without --fix) to verify
@@ -24,7 +24,7 @@
  *     is re-evaluated on the next `pnpm run fix` once a client is available).
  *
  *   Once a probe finds a runnable client, environmental per-spawn failures
- *   (workspace trust, broken launcher, tool-policy mismatch, silent exits)
+ *   workspace trust, broken launcher, tool-policy mismatch, silent exits
  *   are classified (./ai-lint-fix/health.mts), and two consecutive ones abort
  *   the remaining files — each spawn would fail identically and a long
  *   residue would otherwise burn a 5-minute timeout per file. The four
@@ -38,8 +38,8 @@
  *     The AI can only edit files that already exist.
  *   - permissionMode `acceptEdits` so Edit calls don't deadlock on the missing
  *     AskUserQuestion surface. Modules: ./ai-lint-fix/oxlint-json.mts (lint data
- *     + runner), ./ai-lint-fix/prompt.mts (per-file prompt corpus),
- *     ./ai-lint-fix/claude.mts (headless spawn), ./ai-lint-fix/rule-guidance.mts
+ *     + runner), ./ai-lint-fix/prompt.mts, per-file prompt corpus,
+ *     ./ai-lint-fix/claude.mts, headless spawn, ./ai-lint-fix/rule-guidance.mts
  *     (which rules the AI handles + per-rule guidance + model tiers).
  */
 
@@ -141,7 +141,7 @@ export async function main(): Promise<void> {
   // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- relative path for log output; user invokes `pnpm run fix` from their cwd and expects paths relative to where they ran.
   const cwd = process.cwd()
 
-  // No resolvable AI client (claude or a fallback agent) is a clean skip,
+  // No resolvable AI client, claude or a fallback agent, is a clean skip,
   // not a failure — the fleet has fallbacks, so this is an environment gap
   // rather than a findings-owner failure. The residue re-evaluates on the
   // next `pnpm run fix` once a client is available.
@@ -159,7 +159,7 @@ export async function main(): Promise<void> {
   // spawn fails identically — abort instead of burning a 5-minute timeout
   // per remaining file. File-specific failures reset the streak.
   let envFailureStreak = 0
-  // Per-file progress counter. A long residue (dozens of files) emits one
+  // Per-file progress counter. A long residue, dozens of files, emits one
   // `[i/N]` line per file so the run never reads as "nothing happening" — a
   // long-running step must surface incremental progress as it goes, not only
   // at the start and end.

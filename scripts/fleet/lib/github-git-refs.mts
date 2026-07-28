@@ -65,7 +65,7 @@ export async function createBranchRef(
 }
 
 /**
- * Advance `refs/heads/<branch>` to `sha`. With `force` false (the default) a
+ * Advance `refs/heads/<branch>` to `sha`. With `force` false, the default, a
  * non-fast-forward advance is rejected by GitHub (422) — the fast-forward is
  * what lets `main` inherit the release branch's exact commit SHA. Throws
  * `HttpResponseError` on any non-2xx response.
@@ -84,7 +84,7 @@ export async function updateBranchRef(
 }
 
 /**
- * Delete `refs/heads/<branch>`. Idempotent: a 404/422 (the ref is already gone)
+ * Delete `refs/heads/<branch>`. Idempotent: a 404/422, the ref is already gone
  * is swallowed so cleanup after a failed or re-run publish never itself throws.
  * Any other non-2xx (e.g. 401/403 auth) propagates.
  */

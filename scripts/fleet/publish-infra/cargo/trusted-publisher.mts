@@ -24,7 +24,7 @@
  *   `--repo <owner/name>` is the separate override for the GitHub slug a config
  *   is stored under, and each flag REFUSES a value shaped like the other's so a
  *   mix-up says which flag to use instead of resolving somewhere unrelated.
- *   Dry-run by default (prints the plan, writes nothing); `--apply` creates the
+ *   Dry-run by default, prints the plan, writes nothing; `--apply` creates the
  *   missing configs. Per-crate isolation: one crate failing never aborts the
  *   rest, and a summary prints at the end. Fail-soft — main() catches, logs,
  *   and sets a non-zero exit code; it never throws. Auth: a crates.io API token
@@ -72,7 +72,7 @@ const REQUEST_TIMEOUT_MS = 20_000
 const REJECTED_ENVIRONMENT_CHARS = '\'"`,;\\'
 
 // The workflow basenames that carry the fleet's cargo publish job. crates.io
-// stores a BASENAME (it rejects a path), so the config's `workflow_filename` is
+// stores a BASENAME, it rejects a path, so the config's `workflow_filename` is
 // exactly one of these.
 export const CARGO_PUBLISH_WORKFLOW_BASENAMES = [
   'cargo-publish.yaml',
@@ -469,7 +469,7 @@ export async function createGitHubConfig(
 
 /**
  * The checkout every derivation reads: the `--path` value resolved against the
- * caller's `cwd` (so a relative path means what the operator typed it from), or
+ * caller's `cwd`, so a relative path means what the operator typed it from, or
  * this script's own repo root when `--path` is absent. Cascaded copies pass
  * nothing and keep inspecting their own checkout. Pure — exported for tests.
  */
@@ -747,7 +747,7 @@ const VALUE_FLAGS = ['--environment', '--path', '--repo', '--workflow']
  * Dry-run is the default (no `--apply`). `--path` is the checkout to inspect;
  * `--repo` overrides the owner/name the config is stored under. Positional args
  * are crate names; with none, the caller targets every publishable crate in the
- * workspace. Exits (usage error) on an unknown flag or a value-taking flag with
+ * workspace. Exits, usage error, on an unknown flag or a value-taking flag with
  * no value.
  */
 export function parseArgs(argv: readonly string[]): TrustedPublisherArgs {

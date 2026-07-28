@@ -7,7 +7,7 @@
 // `.git-hooks/_shared/helpers.mts` (scanAwsKeys / scanGitHubTokens /
 // scanPrivateKeys / scanSocketApiKeys) and the BASH-TIME `token-guard`: a
 // secret written into a file was previously caught only at commit, so it sat
-// in the working tree (and got read back, echoed, cached) until then. All
+// in the working tree, and got read back, echoed, cached, until then. All
 // three gates read the SAME `_shared/token-patterns.mts` SECRET_VALUE_PATTERNS
 // catalog, so a new vendor shape is added once (code is law, DRY).
 //

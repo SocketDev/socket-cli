@@ -4,7 +4,7 @@
  *   readiness, naming the exact next action for each state in its failure
  *   ladder. The `refero-design` skill degrades to fallback craft knowledge
  *   when live Refero is unavailable, and the ladder has THREE independently
- *   discovered layers (each masked the next in a real incident): the server
+ *   discovered layers, each masked the next in a real incident: the server
  *   config awaiting session approval, an expired OAuth token, and — invisible
  *   to `claude mcp list`, which reports Connected — an inactive paid MCP
  *   subscription (tool calls fail NO_SUBSCRIPTION; upgrade at

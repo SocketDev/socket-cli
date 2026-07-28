@@ -3,7 +3,7 @@
  *   per-tag JSON feeds (`lobste.rs/t/<tag>.json`) of recent stories. The
  *   adapter maps the search query to candidate tags, pulls each feed, and keeps
  *   stories inside the look-back window. Keyless — always available,
- *   best-effort (an unknown tag just yields nothing).
+ *   best-effort, an unknown tag just yields nothing.
  */
 
 import { httpJson } from '@socketsecurity/lib-stable/http-request'

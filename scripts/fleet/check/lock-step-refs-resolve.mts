@@ -29,8 +29,8 @@
  *   \+ fail on rot node scripts/fleet/check/lock-step-refs-resolve.mts --json #
  *   machine-readable node scripts/fleet/check/lock-step-refs-resolve.mts
  *   --quiet # silent on clean Exit codes: 0 — clean, or repo has no
- *   lock-step-refs config (opt-in absent) 1 — at least one stale reference
- *   found 2 — gate itself crashed (malformed config, walker failure)
+ *   lock-step-refs config, opt-in absent, 1 — at least one stale reference
+ *   found 2 — gate itself crashed, malformed config, walker failure.
  */
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'

@@ -2,7 +2,7 @@
 // strip invisible Unicode + fold homoglyphs before scanning, and label
 // invisible-Unicode smuggling channels. One source so the homoglyph table and
 // channel labels can't drift between the two guards that defeat obfuscated
-// payloads (was a hand-synced inline copy in each).
+// payloads, was a hand-synced inline copy in each.
 
 // Invisible / format characters with no legitimate use in the prose or
 // source we author: soft hyphen, zero-width space/non-joiner/joiner,

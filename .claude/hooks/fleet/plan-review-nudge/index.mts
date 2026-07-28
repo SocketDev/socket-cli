@@ -28,7 +28,7 @@ import {
 } from '../_shared/transcript.mts'
 
 // Plan-announcement phrases. Each fires only if the announcement is
-// NOT followed (within a window of text) by a numbered list.
+// NOT followed, within a window of text, by a numbered list.
 const PLAN_PHRASE_RE =
   /\b(?:approach:|here'?s the plan|i will:|my plan is|step 1|steps:)\b/i
 
@@ -92,7 +92,7 @@ export const check = (payload: ToolCallPayload): GuardResult => {
   if (FLEET_SHARED_RE.test(rawText) && !SECOND_OPINION_RE.test(text)) {
     // Only fire if it really looks like a plan (rather than just a
     // mention of a fleet path in passing). Check both the raw text
-    // (which keeps the I'll context) and the stripped text.
+    // which keeps the I'll context, and the stripped text.
     if (
       PLAN_PHRASE_RE.test(text) ||
       /\b(?:I will|I'?ll|I'm going to)\b/i.test(rawText)
@@ -108,7 +108,7 @@ export const check = (payload: ToolCallPayload): GuardResult => {
   // Check 3: a plan that establishes a NAME or SCHEMA SHAPE spread across more
   // than one file / commit / the cascade, without signalling the final shape is
   // settled. Once a name or schema field lands across the fleet, renaming it is
-  // expensive — settle it in the plan (or route the choice to the user) first.
+  // expensive — settle it in the plan, or route the choice to the user, first.
   const looksLikePlan =
     PLAN_PHRASE_RE.test(text) ||
     /\b(?:I will|I'?ll|I'm going to|plan(?:ning)? to)\b/i.test(rawText)

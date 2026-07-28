@@ -1,5 +1,5 @@
 /*
- * @file Forbid `import * as x from '…'` (a namespace import). The fleet uses
+ * @file Forbid `import * as x from '…'`, a namespace import. The fleet uses
  *   named imports only. A namespace import pulls a module's WHOLE surface under
  *   one local binding, which:
  *

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Claude Code PreToolUse hook — consumer-grep-nudge.
 //
-// Reminder (not blocker) on Edit/Write operations that DELETE a CSS
+// Reminder, not blocker, on Edit/Write operations that DELETE a CSS
 // class, HTML attribute, element selector, or named export. The
 // concern: when the repo has `upstream/` or `additions/source-patched/`
 // submodules / vendored trees, repo-root grep for "is
@@ -16,7 +16,7 @@
 //   - Check whether the repo has any of the canonical "consumer-bearing"
 //     submodule / vendored directories.
 //   - If yes, emit a stderr reminder pointing at the dirs to grep
-//     BEFORE deleting. Exit 0 (no block).
+//     BEFORE deleting. Exit 0, no block.
 //
 // This is reminder-only because the false-positive surface is real:
 // not every CSS class removal is a hydration-target removal. The

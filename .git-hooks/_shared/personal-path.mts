@@ -1,7 +1,7 @@
 // Personal-path leak matcher — shared by the commit-time scanPersonalPaths
 // (.git-hooks/_shared/helpers.mts) and the edit-time personal-path-guard
 // (.claude/hooks/fleet/). Both surfaces import THESE regexes + helpers so the
-// two can't drift (they were previously lock-step inline copies). Gate-free
+// two can't drift, they were previously lock-step inline copies. Gate-free
 // (no Node-25 hard-exit like helpers.mts) so the Claude hook can import it on
 // the operator's possibly-older Node.
 //
@@ -16,7 +16,7 @@
 export const PERSONAL_PATH_RE =
   /(?:\/Users\/[^/\s]+\/|\/home\/[^/\s]+\/|C:\\Users\\[^\\]+\\)/
 
-// Placeholder forms we ALLOW (documentation, not leaks): `<...>` components and
+// Placeholder forms we ALLOW, documentation, not leaks: `<...>` components and
 // `$VAR` / `${VAR}` under the platform user dir. Canonical fleet style:
 //   /Users/<user>/...   /home/<user>/...   C:\Users\<USERNAME>\...
 export const PERSONAL_PATH_PLACEHOLDER_RE =

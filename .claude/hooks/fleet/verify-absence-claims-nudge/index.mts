@@ -5,7 +5,7 @@
 // claim stated as fact — "there are no X", "X doesn't exist here", "X is
 // vendored from Y", "that would land in <other repo>" — and reminds the agent
 // to VALIDATE it before asserting: re-run the search WITHOUT path exclusions
-// (the dir you excluded may be the one holding it) and check `git ls-files`.
+// the dir you excluded may be the one holding it, and check `git ls-files`.
 //
 // Why: a confident negative ("no wasm generators here; acorn is vendored from
 // socket-lib") stated off a too-narrow grep — one that excluded the very tree
@@ -51,7 +51,7 @@ const ABSENCE_PATTERNS: ReadonlyArray<{ label: string; re: RegExp }> = [
 ]
 
 // Drop fenced + inline code so an example / quoted snippet doesn't trip the
-// matcher (the claim we care about is prose, not a pasted command).
+// matcher, the claim we care about is prose, not a pasted command.
 export function stripCode(text: string): string {
   // socket-lint: allow uncommented-regex -- fenced then inline code spans.
   return text.replace(/```[\s\S]*?```/g, '').replace(/`[^`\n]+`/g, '')

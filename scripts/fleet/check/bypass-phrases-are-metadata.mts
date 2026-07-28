@@ -8,11 +8,11 @@
  *   and the uniform footer, so the phrase a guard prompts is provably the phrase
  *   it accepts. A phrase advertised in a message with NO backing metadata is the
  *   drift this effort removed — a guard that prompts a bypass the detector never
- *   wires (prefer-json-clone-guard shipped exactly that latent bug).
+ *   wires, prefer-json-clone-guard shipped exactly that latent bug.
  *
  *   FAIL: a `defineHook` hook that references an `Allow <slug> bypass` phrase
  *   whose slug is declared by NO hook.
- *   REPORT (informational, exit unaffected): a legacy non-`defineHook` hook that
+ *   REPORT, informational, exit unaffected: a legacy non-`defineHook` hook that
  *   references an undeclared phrase — it has no HookSpec to attach metadata to
  *   and is ported separately. The last such hook, bundle-stale-reminder, is now
  *   ported; the branch stays as the tripwire for any future legacy hook.

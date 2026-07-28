@@ -17,13 +17,14 @@
  *   fleet-catalog copy only.
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 
 import { escapeRegExp } from '@socketsecurity/lib-stable/regexps/escape'
 import { gt } from '@socketsecurity/lib-stable/versions/compare'
 import { isValidVersion } from '@socketsecurity/lib-stable/versions/parse'
 
 import { parseCatalogBlock } from '../lib/workspace-yaml.mts'
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
 /**
  * The canonical block a fleet pin lives in: a fleet-catalog block of the
@@ -58,7 +59,7 @@ export interface FleetPinSkip {
 
 /**
  * A lockstep plan: the pins to mirror into the canonical file and the differing
- * pins deliberately left alone (surfaced so the operator sees them).
+ * pins deliberately left alone, surfaced so the operator sees them.
  */
 export interface FleetPinPlan {
   readonly mirrors: FleetPinMirror[]
@@ -76,7 +77,7 @@ export interface FleetPinFileResult {
 }
 
 // A `<key>: <value>` entry line inside an indented YAML block. Key may be
-// quoted; value may be quoted (alias/protocol specs) or bare (a version);
+// quoted; value may be quoted (alias/protocol specs) or bare, a version;
 // a trailing `# comment` is tolerated. Comment-only lines never match (the
 // leading char of the key can't be `#` — callers skip them explicitly too).
 const BLOCK_ENTRY_RE =
@@ -171,7 +172,7 @@ export function isFleetTemplateOwned(
 /**
  * True when the live pin value should overwrite the canonical one: both carry
  * an extractable version and the live one is strictly newer. `false` = live is
- * at/behind canonical (the cascade owns that direction); `undefined` = one
+ * at/behind canonical, the cascade owns that direction; `undefined` = one
  * side has no extractable version, so never guess. Pure.
  */
 export function isNewerPin(
@@ -315,7 +316,7 @@ export function applyFleetPinLockstep(
       text = rewriteBlockPin(text, m.blockKey, m.name, m.liveValue)
     }
     if (mirrors.length > 0) {
-      writeFileSync(file, text)
+      writeThroughMirrorLock(file, text)
     }
     if (mirrors.length > 0 || skips.length > 0) {
       results.push({ file, mirrored: mirrors, skipped: skips })
@@ -325,14 +326,14 @@ export function applyFleetPinLockstep(
 }
 
 // One override-pin literal inside the FLEET_CANONICAL_OVERRIDES object:
-// `'key': 'value',` or `key: 'value',` (keys may be bare identifiers).
+// `'key': 'value',` or `key: 'value',`, keys may be bare identifiers.
 const OVERRIDE_LITERAL_RE =
   /^\s*(?:'([^']+)'|([$A-Za-z_][\w$-]*)):\s*'([^']*)',?\s*$/
 
 /**
  * Parse the `FLEET_CANONICAL_OVERRIDES` object literal out of the
  * sync-scaffolding override-pin manifest source into a key → value map.
- * Line-anchored (comment lines skipped) so it never needs a TS parser. Pure.
+ * Line-anchored, comment lines skipped, so it never needs a TS parser. Pure.
  */
 export function parseOverridePinLiterals(mtsText: string): Map<string, string> {
   const out = new Map<string, string>()
@@ -434,7 +435,7 @@ export function applyOverridePinLockstep(
     text = rewriteOverridePinLiteral(text, m.name, m.liveValue)
   }
   if (mirrors.length > 0) {
-    writeFileSync(manifestPath, text)
+    writeThroughMirrorLock(manifestPath, text)
   }
   if (mirrors.length === 0 && skips.length === 0) {
     return undefined

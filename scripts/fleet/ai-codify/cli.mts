@@ -11,7 +11,7 @@
  *   Why a script and not just a Workflow agent: the skill's Workflow PROPOSES
  *   the codification (scan → dedup → rank → diff sketch). This script is the
  *   APPLY engine for one chosen gap — it pins model + effort to the surface
- *   (token-spend rule), enforces the four-flag programmatic-Claude lockdown via
+ *   token-spend rule, enforces the four-flag programmatic-Claude lockdown via
  *   AI_PROFILE, and runs the surface's own verifier (the new hook's tests, the
  *   new check, the lint plugin load) at the SCRIPT level the way ai-lint-fix
  *   re-runs lint — "give the agent a way to verify its work," done by the
@@ -84,7 +84,7 @@ export function parseArgs(argv: readonly string[]): CodifyGapArgs {
       const value = argv[i + 1] ?? ''
       i += 1
       if (!isCodifySurface(value)) {
-        // oxlint-disable-next-line unicorn/no-array-sort -- the spread copies CODIFY_SURFACES into a fresh array (no shared mutation); .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
+        // oxlint-disable-next-line unicorn/no-array-sort -- the spread copies CODIFY_SURFACES into a fresh array, no shared mutation; .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
         const surfaces = [...CODIFY_SURFACES].sort().join(', ')
         throw new Error(
           `--surface must be one of ${surfaces}; saw "${value}". Fix: pass the surface codifying-disciplines chose for this gap.`,
@@ -106,7 +106,7 @@ export function parseArgs(argv: readonly string[]): CodifyGapArgs {
     }
   }
   if (!surface) {
-    // oxlint-disable-next-line unicorn/no-array-sort -- the spread copies CODIFY_SURFACES into a fresh array (no shared mutation); .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
+    // oxlint-disable-next-line unicorn/no-array-sort -- the spread copies CODIFY_SURFACES into a fresh array, no shared mutation; .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
     const surfaces = [...CODIFY_SURFACES].sort().join(', ')
     throw new Error(
       '--surface is required (one of ' +
@@ -180,7 +180,7 @@ export function buildCodifyPrompt(args: CodifyGapArgs): string {
 /**
  * Author the `agents-doc` surface by shelling out to codify-rule.mts rather
  * than spawning our own agent — that script owns the CLAUDE.md byte budget +
- * defer-to-docs split. Requires a memory file (its source-of-truth input).
+ * defer-to-docs split. Requires a memory file, its source-of-truth input.
  */
 async function delegateToCodifyRule(
   args: CodifyGapArgs,

@@ -2,7 +2,7 @@
 /**
  * @file Drift gate between the subagent return-status contract in code and its
  *   documentation. `@socketsecurity/lib/ai/subagent-status` defines the
- *   `SubagentStatus` union (the source of truth an orchestrator routes on), and
+ *   `SubagentStatus` union, the source of truth an orchestrator routes on, and
  *   `docs/agents.md/fleet/agent-delegation.md` documents the same four states
  *   in a table. If the doc and the code disagree — a state renamed in code but
  *   not the doc, or a fifth state documented but never typed — an orchestrator
@@ -31,7 +31,7 @@ const logger = getDefaultLogger()
 
 // The canonical four-state vocabulary. Origin of truth: the `SubagentStatus`
 // union in `@socketsecurity/lib/ai/subagent-status`. Kept in sync by this
-// check; bump all three (lib union, doc table, this list) together.
+// check; bump all three, lib union, doc table, this list, together.
 const CANONICAL_STATUSES = [
   'blocked',
   'done',
@@ -54,7 +54,7 @@ const SECTION_HEADING = '## Subagent return contract'
 
 // Extract the documented status set: every `\`status\`` code span inside the
 // return-contract section that matches the kebab-case status shape. Returns
-// undefined when the section is absent (caller fails open).
+// undefined when the section is absent, caller fails open.
 export function parseDocumentedStatuses(
   docText: string,
 ): ReadonlySet<string> | undefined {
@@ -71,9 +71,9 @@ export function parseDocumentedStatuses(
   let m: RegExpExecArray | null
   while ((m = spanRe.exec(section))) {
     const token = m[1]!
-    // Only collect tokens that look like a status (kebab-case word), and only
+    // Only collect tokens that look like a status, kebab-case word, and only
     // those in the canonical set OR a near-miss — a stray prose code span like
-    // `advance` (an escalation, not a status) is filtered by intersecting with
+    // `advance`, an escalation, not a status, is filtered by intersecting with
     // the union of canonical + any token that isn't a known escalation verb.
     if (!ESCALATION_VERBS.has(token)) {
       found.add(token)

@@ -13,7 +13,7 @@
  * up.
  *
  * Crucially, the `hook-snapshot-is-wired` check ("hook-snapshot-is-active")
- * only fires on a machine that OPTED IN (the native launcher exists) AND is
+ * only fires on a machine that OPTED IN, the native launcher exists, AND is
  * RELEASE-tier: it gates `github-release.yml`, NOT `⚡ CI` (which runs the
  * interactive `pnpm run check --all`). So a reverted wiring never reds ⚡ CI, and
  * hand-editing `settings.json` to chase that check is wasted effort. Re-wire with
@@ -41,10 +41,10 @@ import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 
 // The per-machine snapshot launcher binary name; its presence in a settings.json
-// dispatch command means the fast path was hand-wired (the cascade never adds it).
+// dispatch command means the fast path was hand-wired, the cascade never adds it.
 const LAUNCHER_TOKEN = 'dispatch-launcher'
 
-// Bash write verbs whose target settings.json means a re-wire (not a read).
+// Bash write verbs whose target settings.json means a re-wire, not a read.
 const WRITE_TO_FILE = new Set(['tee'])
 
 export const triggers: readonly string[] = [LAUNCHER_TOKEN]
@@ -65,7 +65,7 @@ export function rewiresSettingsInBash(command: string): boolean {
   if (!command.includes(LAUNCHER_TOKEN)) {
     return false
   }
-  // Match `>` / `>>` redirects, capturing the (optionally quoted) target path
+  // Match `>` / `>>` redirects, capturing the, optionally quoted, target path
   // and stopping at whitespace or the next shell operator (`|`, `;`, `&`).
   const redirects = command.match(/>>?\s*("?)([^\s"'|;&]+)\1/g) ?? []
   for (let i = 0, { length } = redirects; i < length; i += 1) {

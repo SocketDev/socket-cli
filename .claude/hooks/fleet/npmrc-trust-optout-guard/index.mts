@@ -13,7 +13,7 @@
 //
 //   1. Bash — a command that sets/exports either var (`FOO=… cmd`,
 //      `export FOO=…`, bare `FOO=…`). AST-parsed via _shared/shell-command.mts
-//      (per the no-command-regex-in-hooks rule), so the assignment is read off
+//      per the no-command-regex-in-hooks rule, so the assignment is read off
 //      parsed command segments, not a raw-string regex.
 //   2. Edit/Write — landing either var into a committed config / script /
 //      workflow file (`.npmrc`, `*.sh`, `*.mts`/`*.ts`, `.github/**`,

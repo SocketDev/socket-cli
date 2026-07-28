@@ -29,7 +29,7 @@
  *   - Operates on `tool_input.new_string` (Edit) or `tool_input.content`
  *     (Write). When an Edit is a partial replacement we read the on-
  *     disk file and apply the diff in-memory. If we can't reliably
- *     compute (ambiguous Edit), we fail open.
+ *     compute, ambiguous Edit, we fail open.
  */
 
 import { existsSync, readFileSync } from 'node:fs'
@@ -44,7 +44,7 @@ const DEFAULT_CAP_BYTES = 40 * 1024
  * Compute the post-edit text. For Write, that's just `content`. For Edit,
  * splice the on-disk file: replace `old_string` with `new_string` once. If the
  * on-disk file isn't readable or `old_string` doesn't match exactly, return
- * undefined (caller fails open).
+ * undefined, caller fails open.
  */
 export function computePostEditText(
   toolName: string,

@@ -9,10 +9,10 @@
  *   platform's SRI integrity --platform <key> --sha <hex> same, from a raw
  *   sha-512 hex digest (converted via the updater's hexToSri) Multi-manifest
  *   like `show` / `delete`: the edit lands in every shipped manifest that
- *   carries the tool (keeping cascaded copies in sync), or a single `--target`.
+ *   carries the tool, keeping cascaded copies in sync, or a single `--target`.
  *   Dry-run by default; `--apply` writes. A requested platform that a
  *   manifest's entry lacks is reported and that manifest is left untouched
- *   (never a partial edit), and the run exits non-zero. Usage: node
+ *   never a partial edit, and the run exits non-zero. Usage: node
  *   scripts/fleet/external-tools/edit.mts <name> [edits …] [--target <file>]
  *   [--apply]
  */
@@ -269,7 +269,7 @@ export async function main(
   return anyProblem ? 1 : 0
 }
 
-// Guarded so importing this module (the unit test) doesn't run the CLI. Fail-
+// Guarded so importing this module, the unit test, doesn't run the CLI. Fail-
 // soft: surface the reason via logger.error, set a non-zero exit code, never a
 // raw unhandled throw.
 if (import.meta.main) {

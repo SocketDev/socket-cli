@@ -66,7 +66,7 @@ export const check = async (
   payload: ToolCallPayload & { stop_hook_active?: boolean | undefined },
 ): Promise<GuardResult> => {
   // Suppress when Claude Code reports `stop_hook_active: true`, so the block
-  // fires at most once per stop chain (matches the original blocking guard).
+  // fires at most once per stop chain, matches the original blocking guard.
   if (payload.stop_hook_active) {
     return undefined
   }

@@ -16,7 +16,7 @@
  *   `scratchpad/` or `claude-<uid>/` marker) is never fleet source, so it
  *   resolves NON-fleet, not fail-safe-to-fleet. A plain `/tmp` repo worktree
  *   (CI runner, `git worktree`) has no scratch marker, so it still fails safe.
- *   Security / safety guards (secret content, personal paths, git-state) must
+ *   Security / safety guards, secret content, personal paths, git-state, must
  *   NOT use this — they apply everywhere, so they don't opt into the fleet
  *   skip.
  */
@@ -29,7 +29,7 @@ import { isEphemeralPath } from './ephemeral-path.mts'
 /**
  * True when `filePath` lives inside a fleet-managed repo (root has
  * `.config/fleet/`). Confidently false only when a `.git` repo root is reached
- * with no `.config/fleet/`. Undeterminable → true (fail toward enforcement).
+ * with no `.config/fleet/`. Undeterminable → true, fail toward enforcement.
  */
 export function isFleetManagedPath(filePath: string): boolean {
   if (!filePath) {
@@ -39,7 +39,7 @@ export function isFleetManagedPath(filePath: string): boolean {
 }
 
 /**
- * True when `dir` (or an ancestor) is the root of a fleet-managed repo
+ * True when `dir`, or an ancestor, is the root of a fleet-managed repo
  * (`.config/fleet/`). Confidently false only when a `.git` repo root is
  * reached with no `.config/fleet/`. Undeterminable → true (fail toward
  * enforcement). Used by Bash lint/tooling guards to skip commands whose

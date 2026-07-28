@@ -3,7 +3,7 @@
 //
 // The SKILL.md prose tells the model what the engine emits: the badge first
 // line, the evidence-envelope fences (read-don't-dump), and the pass-through
-// footer fences (copy verbatim). Those literal strings are the contract surface
+// footer fences, copy verbatim. Those literal strings are the contract surface
 // between the prose and the engine. If the engine renames a marker but the
 // SKILL.md isn't updated, the model's pass-through/synthesis instructions point
 // at strings that no longer appear in the output — a silent contract drift no

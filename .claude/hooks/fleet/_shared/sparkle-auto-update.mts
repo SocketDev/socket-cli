@@ -11,7 +11,7 @@
  *   (reproducibility + supply-chain hazard); the install also rides the app's
  *   own update channel, outside the fleet's soak gate. Sparkle reads
  *   `SUEnableAutomaticChecks` / `SUAutomaticallyUpdate` from the app's macOS
- *   defaults domain (the app bundle id); a user-level `defaults write`
+ *   defaults domain, the app bundle id; a user-level `defaults write`
  *   overrides the Info.plist default, so writing them `false` durably disables
  *   both the background check and silent install.
  */
@@ -54,15 +54,15 @@ export interface SparkleStatus {
   domain: string
   // 'disabled' = both keys read false (good); 'enabled' = at least one key is
   // not false (drift); 'absent' = not macOS / the app's defaults domain has no
-  // Sparkle keys (app not installed or never launched) — not applicable.
+  // Sparkle keys, app not installed or never launched — not applicable.
   state: 'disabled' | 'enabled' | 'absent'
-  // The disable keys whose value is not `false` (drives the fix list).
+  // The disable keys whose value is not `false`, drives the fix list.
   enabledKeys: readonly string[]
   reason: string
 }
 
 // Read one `defaults read <domain> <key>` value, or undefined when the key /
-// domain is unset (exit non-zero). Never throws. Array args — no shell parsing.
+// domain is unset, exit non-zero. Never throws. Array args — no shell parsing.
 export function readDefault(domain: string, key: string): string | undefined {
   try {
     const result = spawnSync('defaults', ['read', domain, key], {
@@ -79,7 +79,7 @@ export function readDefault(domain: string, key: string): string | undefined {
 }
 
 // A defaults bool reads back as `0` (false) or `1` (true). True when the value
-// is explicitly `0` — i.e. the key is set to false (auto-update disabled).
+// is explicitly `0` — i.e. the key is set to false, auto-update disabled.
 export function defaultIsFalse(value: string | undefined): boolean {
   return value === '0'
 }
@@ -98,7 +98,7 @@ export function classifySparkle(
     return { ...base, state: 'absent', enabledKeys: [], reason: 'not macOS' }
   }
   // If neither key is present in the domain at all, the app isn't installed /
-  // never launched (no Sparkle prefs written) — not applicable.
+  // never launched, no Sparkle prefs written — not applicable.
   if (values.every(v => v.value === undefined)) {
     return {
       ...base,

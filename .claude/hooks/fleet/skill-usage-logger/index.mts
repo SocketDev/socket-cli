@@ -8,7 +8,7 @@
 // Format: `<ISO-timestamp>\t<skill-name>\t<cwd>\n`
 //
 // The hook is read-only telemetry. Every failure path falls open
-// (no log write, silent allow) so a broken log directory or unparseable
+// no log write, silent allow, so a broken log directory or unparseable
 // payload never costs the user a Skill call.
 //
 // Disable for one session: set `SOCKET_SKILL_USAGE_LOG=` (empty).
@@ -84,7 +84,7 @@ export const hook = defineHook({
         mkdirSync(dir, { recursive: true })
       }
     } catch {
-      // Unwritable log dir — fall open (no telemetry, never a blocked call).
+      // Unwritable log dir — fall open, no telemetry, never a blocked call.
       return undefined
     }
     // Cap the log at 1 MB. The audit script reads the full file; an

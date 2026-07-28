@@ -5,8 +5,8 @@
  *   (three surfaces, one rule — code is law). The incident: an agent leaked a
  *   scaffolding-repo plans-directory path into a public napi-rs source
  *   comment, disclosing internal fleet layout. Patterns:
- *     - paths under the plans or reports directories (untracked operator notes)
- *     - `socket-<repo>/.claude/…` (another fleet repo's private tree)
+ *     - paths under the plans or reports directories, untracked operator notes
+ *     - `socket-<repo>/.claude/…`, another fleet repo's private tree
  *     - `/Users/<user>/…` (absolute home path — username + local layout)
  *     - `../socket-<repo>/…` (sibling fleet-repo relative path — dev-box layout)
  *   Only comments are inspected; a path in a string literal or real code is
@@ -39,21 +39,21 @@ const PATTERNS: ReadonlyArray<{ readonly kind: string; readonly re: RegExp }> =
   ]
 
 // Canonical fleet PLACEHOLDER owners — documentation, never a real leak. A
-// comment that uses `socket-foo` (the placeholder sibling repo) or a bespoke
+// comment that uses `socket-foo`, the placeholder sibling repo, or a bespoke
 // single-char / ellipsis home stand-in is SHOWING the pattern it documents, not
 // leaking a real path. Matched against the captured path's owner segment.
 const PLACEHOLDER_MATCH_RE =
   /(?:^|[/.])(?:socket-foo\b|Users\/(?:\.\.\.|me|x)(?:\/|$))/
 
 // A comment carrying any same-intent opt-out marker is exempt — the author is
-// deliberately SHOWING the pattern (a doc example, this repo's own report path).
+// deliberately SHOWING the pattern, a doc example, this repo's own report path.
 // Mirrors the commit-time check's SUPPRESS_RE so the two surfaces agree.
 const SUPPRESS_RE =
   /socket-lint:\s*allow\s+(?:cross-repo|personal-path|private-path)\b/
 
 /**
  * The first NON-placeholder private-path match in `value`, or undefined.
- * `value` is a comment body (delimiters stripped by oxlint). Exported for unit
+ * `value` is a comment body, delimiters stripped by oxlint. Exported for unit
  * tests.
  */
 export function firstPrivatePath(

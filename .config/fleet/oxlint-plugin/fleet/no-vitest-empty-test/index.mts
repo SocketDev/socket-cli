@@ -1,6 +1,6 @@
 /**
  * @file Flag a test case (`it` / `test`) whose body contains NO assertion. A
- *   test with no `expect(...)` (or recognized assertion helper) passes
+ *   test with no `expect(...)`, or recognized assertion helper, passes
  *   vacuously — it proves nothing but shows green, the worst kind of false
  *   confidence. The fleet survey found a placeholder `expect(true).toBe(true)`
  *   shape used to satisfy "needs an assertion"; this rule is the reason to

@@ -1,7 +1,7 @@
 /*
  * @file Per CLAUDE.md "HTTP — never `fetch()`. Use httpJson / httpText /
  *   httpRequest from @socketsecurity/lib-stable/http-request." Reports any
- *   `fetch(...)` call (global fetch). Does NOT auto-fix because the right
+ *   `fetch(...)` call, global fetch. Does NOT auto-fix because the right
  *   replacement (`httpJson` vs `httpText` vs `httpRequest`) depends on what the
  *   caller does with the response — a wrong autofix would silently change
  *   behavior. Reporting only. Allowed exceptions (skipped):
@@ -44,7 +44,7 @@ const rule = {
     return {
       CallExpression(node: AstNode) {
         const callee = node.callee
-        // Only flag direct `fetch(...)` calls (Identifier callee).
+        // Only flag direct `fetch(...)` calls, Identifier callee.
         if (callee.type !== 'Identifier' || callee.name !== 'fetch') {
           return
         }

@@ -5,7 +5,7 @@
 // `publish`, `access`, `owner`, `unpublish`, `dist-tag`. npm's PREFERRED
 // one-time-password flow opens a browser and waits on an interactive TTY
 // prompt ("Authenticate your account at: <url> / Press any key…"). The
-// `!`-prefixed Bash channel (and any headless driver) is NOT a TTY, so that
+// `!`-prefixed Bash channel, and any headless driver, is NOT a TTY, so that
 // prompt is swallowed and the command dies with `npm error code EOTP`
 // without ever opening the browser.
 //
@@ -19,7 +19,7 @@
 //        npm deprecate <pkg> "<msg>" --otp=<6-digit-code>
 //
 // Stderr reminder; never blocks (exit 0). Skips when `--otp=` is already
-// present (the caller chose the fallback deliberately).
+// present, the caller chose the fallback deliberately.
 //
 
 import { bashGuard, defineHook, notify, runHook } from '../_shared/guard.mts'
@@ -37,7 +37,7 @@ const OTP_SUBCOMMANDS = new Set([
 ])
 
 export const check = bashGuard(command => {
-  // AST parse (per no-command-regex-in-hooks): inspect every real `npm`
+  // AST parse, per no-command-regex-in-hooks: inspect every real `npm`
   // invocation in the command (sees through chains / quotes / `$(…)`).
   const npmCalls = commandsFor(command, 'npm')
   if (!npmCalls.length) {

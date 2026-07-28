@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * @file Install-only entry point for one-off tools: cdxgen (SBOM), synp
- *   (lockfile interop), and janus. Slim leaf of the `setup-security-tools`
+ *   lockfile interop, and janus. Slim leaf of the `setup-security-tools`
  *   umbrella. Run via: node .claude/hooks/fleet/setup-misc-tools/install.mts
  *   For the full setup (firewall + scanners + socket-basics + misc), use `node
  *   .claude/hooks/fleet/setup-security-tools/install.mts`.

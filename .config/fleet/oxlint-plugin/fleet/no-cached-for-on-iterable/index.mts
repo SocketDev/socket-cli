@@ -3,7 +3,7 @@
  *   `for` loop is applied to a Set / Map / Iterable instead of an array. The
  *   bug shape: const s: Set<string> = new Set() … for (let i = 0, { length } =
  *   s; i < length; i += 1) { const item = s[i]! // s isn't indexable; type is
- *   undefined … // body never runs (length is undefined) } `Set` / `Map` /
+ *   undefined … // body never runs, length is undefined } `Set` / `Map` /
  *   `WeakSet` / `WeakMap` / generic `Iterable` don't expose `.length`, and
  *   `s[i]` isn't a defined access either. The destructure `{ length } = s`
  *   reads `s.length === undefined`, the test `i < undefined` is `false`, and
@@ -125,7 +125,7 @@ const rule = {
     // for a given iterable name. When a MemberExpression visitor
     // later sees `iterName[i]` or `iterName.length` *inside* one
     // of these loops, we suppress the secondary finding — the
-    // single root cause (the loop shape) is already reported, and
+    // single root cause, the loop shape, is already reported, and
     // emitting both findings creates one noise-per-iteration of
     // body access for the user to ignore. The body fix follows
     // from fixing the loop, so the secondary report is redundant.

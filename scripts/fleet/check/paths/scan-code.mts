@@ -29,7 +29,7 @@ import { pushFinding } from './state.mts'
 export const PATH_CALL_RE = /\bpath\.(?:join|resolve)\s*\(/g
 // Match a single- or double-quoted string literal, handling backslash escapes.
 // Capture group 1 is the opening quote character; group 2 is the string body
-// (escape sequences or any character that is not the matching closing quote).
+// escape sequences or any character that is not the matching closing quote.
 export const STRING_LITERAL_RE = /(['"])((?:\\.|(?!\1)[^\\])*)\1/g
 
 // Template literal scanner. Captures backtick-delimited strings
@@ -172,7 +172,7 @@ export const scanCodeFile = (repoRoot: string, relPath: string): void => {
 
     // Rule B: each '..' opens a window; the window stays open only
     // until the next non-'..' literal. A sibling-package literal
-    // *immediately after* a '..' (no path segment between them)
+    // *immediately after* a '..', no path segment between them
     // triggers, AND there must be build context elsewhere in the
     // call. Resetting per-segment prevents false positives where '..'
     // appears earlier and sibling-name appears much later in an
@@ -203,7 +203,7 @@ export const scanCodeFile = (repoRoot: string, relPath: string): void => {
     }
   }
 
-  // Rule A (template literal variant). Backtick strings that stitch
+  // Rule A, template literal variant. Backtick strings that stitch
   // stage tokens inline construct paths the same way `path.join(...)`
   // does — flag the same shapes. TEMPLATE_LITERAL_RE matches any
   // backtick string and we rely on segment composition to decide if

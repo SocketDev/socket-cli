@@ -17,13 +17,13 @@
  *      value is an array (options and/or a deliberate severity override like
  *      `["warn"]`), which is preserved verbatim. Activations for rules no
  *      longer present are dropped. Non-socket rules, the `overrides` block
- *      (which carries intentional per-path socket disables), `ignorePatterns`,
+ *      which carries intentional per-path socket disables, `ignorePatterns`,
  *      and existing key ordering are all preserved — missing socket rules are
  *      spliced into the existing run of socket rules, alpha-sorted among
  *      themselves, and nothing else moves. Run modes:
  *
  *   - default (write): edit index.mts + oxlintrc.json in place.
- *   - `--check`: exit non-zero if either would change (no write). Used by the
+ *   - `--check`: exit non-zero if either would change, no write. Used by the
  *     pre-commit hook + sync-scaffolding so a half-wired rule can't land. What
  *     this does NOT generate: per-rule test files. A rule without a
  *     `test/repo/{unit,integration}/lint-rules/<id>.test.mts` is reported (it's a coverage gap the
@@ -37,7 +37,7 @@
  *     step.
  */
 
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -47,7 +47,7 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { LINT_RULE_TEST_DIRS, REPO_ROOT } from './paths.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
-import { withMirrorLockLiftedSync } from './_shared/mirror-lock.mts'
+import { writeThroughMirrorLock } from './_shared/mirror-lock.mts'
 
 const PLUGIN_DIR = path.join(REPO_ROOT, '.config', 'fleet', 'oxlint-plugin')
 // Each rule is its own dir under the cascaded `fleet/` tier (mirrors
@@ -156,7 +156,7 @@ function ruleIds(): string[] {
           existsSync(path.join(FLEET_RULES_DIR, d.name, 'index.mts')),
       )
       .map(d => d.name)
-      // oxlint-disable-next-line unicorn/no-array-sort -- .map() already returns a fresh array (no shared mutation); .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
+      // oxlint-disable-next-line unicorn/no-array-sort -- .map() already returns a fresh array, no shared mutation; .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
       .sort()
   )
 }
@@ -168,7 +168,7 @@ function ruleIds(): string[] {
  * members as dead weight the member vitest config excludes); they live under
  * `test/repo/` and run as vitest. See docs/agents.md/fleet/test-layout.md.
  *
- * Those tests are WHEELHOUSE-ONLY (never cascaded). In a member repo the rules
+ * Those tests are WHEELHOUSE-ONLY, never cascaded. In a member repo the rules
  * are present but their tests live upstream — so only the wheelhouse (which
  * owns `template/base/`) asserts test presence; a member always returns [].
  */
@@ -232,9 +232,9 @@ function rewriteIndex(source: string, ids: readonly string[]): string {
     })
     .join('\n')
   return withImports.replace(
-    // Splice the rules block: capture group 1 = `\n<indent>rules: {\n` (opening brace line);
+    // Splice the rules block: capture group 1 = `\n<indent>rules: {\n`, opening brace line;
     // `[\s\S]*?` = lazy-any — skips existing entries non-greedily;
-    // capture group 2 = `\n<indent>},\n` (closing brace line with trailing newline).
+    // capture group 2 = `\n<indent>},\n`, closing brace line with trailing newline.
     // Both captured delimiters are re-emitted verbatim; only the body between them is replaced.
     /(\n\s*rules:\s*\{\n)[\s\S]*?(\n\s*\},\n)/,
     (_m, open: string, close: string) => `${open}${registryEntries}${close}`,
@@ -247,13 +247,13 @@ function rewriteIndex(source: string, ids: readonly string[]): string {
  * of the JSON stay byte-identical. The socket rules occupy a contiguous run
  * (they sort before eslint/import/typescript/unicorn); we replace that run with
  * the desired sorted set. Returns the new file text. Throws if the rules block
- * or socket run can't be located (a structural assumption broke).
+ * or socket run can't be located, a structural assumption broke.
  */
 export function rewriteOxlintrc(
   source: string,
   ids: readonly string[],
 ): string {
-  // oxlint-disable-next-line unicorn/no-array-sort -- .filter() already returns a fresh array (no shared mutation); .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
+  // oxlint-disable-next-line unicorn/no-array-sort -- .filter() already returns a fresh array, no shared mutation; .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
   const active = ids.filter(id => !(id in DORMANT_RULES)).sort()
   // Parse to recover any array-form (rule + options) configs we must preserve
   // verbatim rather than flatten to "error".
@@ -263,7 +263,7 @@ export function rewriteOxlintrc(
   const existing = parsed.rules ?? {}
 
   // Socket rule ids appear in TWO places: the top-level `rules` block
-  // (activations we manage) and the `overrides[].rules` blocks (intentional
+  // activations we manage, and the `overrides[].rules` blocks (intentional
   // per-path disables we must never touch). Scope the splice to the top-level
   // `rules` object by brace-matching from its opening line to its close.
   const lines = source.split('\n')
@@ -332,7 +332,7 @@ export function rewriteOxlintrc(
   }
   const firstSocket = socketLineIdx[0]!
   const lastSocket = socketLineIdx[socketLineIdx.length - 1]!
-  // Guard: the socket spans must be contiguous (no interleaved foreign rules).
+  // Guard: the socket spans must be contiguous, no interleaved foreign rules.
   // If a non-socket rule sneaked into the run, bail loudly rather than corrupt.
   const socketLineSet = new Set(socketLineIdx)
   for (let i = firstSocket; i <= lastSocket; i += 1) {
@@ -411,9 +411,7 @@ function reconcileGenerated(config: {
     return { drifted: true, problem: undefined }
   }
   // The target can be a cascade-locked 0444 mirror; lift for the write.
-  withMirrorLockLiftedSync(cfg.filePath, () =>
-    writeFileSync(cfg.filePath, next),
-  )
+  writeThroughMirrorLock(cfg.filePath, next)
   return { drifted: true, problem: undefined }
 }
 
@@ -467,7 +465,7 @@ function main(): number {
     }
   }
 
-  // 3. test coverage (reported, never auto-written)
+  // 3. test coverage, reported, never auto-written
   const missingTests = rulesMissingTests(ids)
   for (const id of missingTests) {
     problems.push(
@@ -495,7 +493,7 @@ function main(): number {
   )
   if (missingTests.length > 0) {
     // Missing tests are a coverage gap; surface but don't fail the write path
-    // (the author may be mid-adding the rule). `--check` fails on them.
+    // the author may be mid-adding the rule. `--check` fails on them.
     process.stderr.write(
       `[sync-oxlint-rules] WARNING — ${missingTests.length} rule(s) missing a test:\n${missingTests
         .map(id => `  - ${id}`)

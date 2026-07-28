@@ -4,7 +4,7 @@
 //
 // The gh-token-hygiene system tracks token age via a heartbeat stamp file;
 // once the stamp exceeds the TTL the token is treated as stale and rotated
-// (logged out), which strands any recurring gh loop between ticks. A loop
+// logged out, which strands any recurring gh loop between ticks. A loop
 // that is ACTIVELY and successfully using the token is proof of liveness,
 // so each tick re-stamps — but only after PROBING that the token actually
 // works. Stamping a dead token fresh would mask a real expiry, so the probe
@@ -49,7 +49,7 @@ export interface HeartbeatResult {
   readonly stamped: boolean
 }
 
-// Re-stamp the heartbeat when (and only when) the token demonstrably works.
+// Re-stamp the heartbeat when, and only when, the token demonstrably works.
 export function refreshGhHeartbeat(
   options?: HeartbeatOptions | undefined,
 ): HeartbeatResult {

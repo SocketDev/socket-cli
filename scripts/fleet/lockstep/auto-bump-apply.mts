@@ -70,7 +70,7 @@ export function isSuspectBackward(
  * Three-way target classification against the current pin. Pure — the
  * ancestry probe is injected so the unit is testable without a git fixture.
  * `isAncestor(a, b)` answers "is commit a an ancestor of commit b" and
- * returns undefined when ancestry is unknowable (shallow clone) — unknown
+ * returns undefined when ancestry is unknowable, shallow clone — unknown
  * proceeds forward, matching the harness's drift-forwardness guarantee.
  */
 export function classifyTarget(
@@ -169,7 +169,7 @@ export function gitmodulesRead(
 
 // Locate the version-pin row + its submodule path in the manifest. Returns
 // undefined for either when the id is unknown or its upstream has no submodule
-// — the apply path turns those into a skipped (not thrown) result so a stale id
+// — the apply path turns those into a skipped, not thrown, result so a stale id
 // from a re-run plan is a no-op, not a crash.
 function findVersionPinRow(
   manifest: Manifest,

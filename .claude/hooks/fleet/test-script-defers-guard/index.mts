@@ -20,7 +20,7 @@
 //
 // Detection: parses the INCOMING content of a package.json edit as JSON, then
 // classifies each `test`/`test:*` script value via the AST shell-command
-// parser (not a regex over the value, per no-hook-cmd-regex-guard). Does not
+// parser, not a regex over the value, per no-hook-cmd-regex-guard. Does not
 // compare with prior content — the check script
 // (`test-scripts-are-deferred.mts`) covers the full-scan backlog; this guard
 // blocks net-new introductions.
@@ -52,7 +52,7 @@ const RAW_RUNNER_BINARIES: ReadonlySet<string> = new Set([
   'vitest',
 ])
 
-// A compliant command: `node <path>.mts` (optionally followed by more args).
+// A compliant command: `node <path>.mts`, optionally followed by more args.
 // Matched on the AST, not a regex, per no-hook-cmd-regex-guard.
 function isMtsWrapper(cmd: Command): boolean {
   return (

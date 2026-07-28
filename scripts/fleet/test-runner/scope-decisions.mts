@@ -9,7 +9,7 @@
 // Paths that, when changed, force the full suite to run.
 export const ESCALATION_PATTERNS = [
   // Discovery / resolution config only — a change here is invisible to the
-  // module-graph walk (no source file imports it) yet changes which tests run
+  // module-graph walk, no source file imports it, yet changes which tests run
   // or how specifiers resolve, so the scoped run can't be trusted. An ordinary
   // source file under scripts/ or .config/ is NOT here: its tests are reachable
   // via `vitest related`, so escalating on it just runs the whole suite for

@@ -45,7 +45,7 @@ export interface RunWorkflowDispatchOptions {
 /**
  * Build the `gh workflow run …` argv for `spec`. Pure — exported for tests.
  * Order: `workflow run <file>`, then `--repo` / `--ref` when set, then one
- * `-f key=value` per input (in insertion order).
+ * `-f key=value` per input, in insertion order.
  */
 export function buildWorkflowRunArgs(spec: WorkflowDispatchSpec): string[] {
   const args = ['workflow', 'run', spec.workflow]

@@ -36,6 +36,12 @@ export interface AggregateCoverage {
   functions: string
   lines: string
   statements: string
+  // Total instrumented statements across the merged report. Zero means the
+  // report has no measurable code — the signal the runner pairs with a positive
+  // raw-v8-profile count to catch an empty v8→istanbul conversion (a false-green
+  // 0.00%) distinctly from a genuine 0%-covered project (statements present,
+  // none executed).
+  totalStatements: number
 }
 
 export interface CoverageMergeLogger {
@@ -44,7 +50,7 @@ export interface CoverageMergeLogger {
 
 // Thrown when an EXPECTED coverage tier produced no coverage-final.json — a
 // suite that ran but dropped its report. Silently skipping it computes the
-// aggregate over FEWER tiers and over-reports (a coverage false-green). Callers
+// aggregate over FEWER tiers and over-reports, a coverage false-green. Callers
 // opt into this hard failure by passing `expectedTiers`; cover.mts treats it as
 // a non-zero exit, distinct from the general merge warning.
 export class MissingTierCoverageError extends Error {
@@ -64,7 +70,7 @@ function pct(covered: number, total: number): string {
 
 /**
  * Max-hit union of two per-file coverage entries. Sound only for the SAME
- * source bytes (identical statement maps) — the twin fold verifies byte
+ * source bytes, identical statement maps — the twin fold verifies byte
  * identity before calling this.
  */
 export function mergeFileFinal(
@@ -108,7 +114,7 @@ export function mergeFileFinal(
 /**
  * Fold byte-identical template/live twins so mirrored source counts ONCE.
  * The wheelhouse measures both `template/base/<x>` (canonical) and `<x>`
- * (its cascaded live mirror); tests import one tier, so the other tier's
+ * its cascaded live mirror; tests import one tier, so the other tier's
  * twin reads uncovered and halves the honest percentage. Every report key
  * under `template/base/` whose live twin is byte-identical on disk folds
  * into the live key (max-hit). Diverged pairs (a preset, a repo-owned
@@ -136,7 +142,7 @@ export async function foldTemplateTwins(
       ])
       identical = templateBytes === liveBytes
     } catch {
-      // Either side unreadable (template-only file, removed live twin) —
+      // Either side unreadable, template-only file, removed live twin —
       // not a twin pair; leave the entry untouched.
     }
     if (!identical) {
@@ -182,7 +188,7 @@ export function coveredCounts(entry: CoverageFileFinal | undefined): {
  *
  * 1. ABSENT in-process — a script entrypoint exercised only via spawn, which the
  *    vitest tiers never loaded, so it has no in-process entry. Gap-fill it
- *    wholesale (added to the isolated map, which the aggregate tallies).
+ *    wholesale, added to the isolated map, which the aggregate tallies.
  * 2. LOADED but 0-EXECUTED in-process — a file IMPORTED by a test (so it has an
  *    in-process entry) but whose code runs only in a spawned subprocess. Its
  *    in-process entry reads 0 covered while the children tier holds the real
@@ -249,7 +255,7 @@ export async function mergeCoverageFinal(config: {
     ...config,
   } as typeof config
   // Flat per-tier report paths, re-anchored on the caller's rootPath: the
-  // COVERAGE_* constants are absolute (anchored on this repo's root), so a test
+  // COVERAGE_* constants are absolute, anchored on this repo's root, so a test
   // passing a tmp root — or a caller measuring another repo — reads that root's
   // coverage cache, not this one's.
   const mainFinalPath = path.join(
@@ -298,7 +304,7 @@ export async function mergeCoverageFinal(config: {
   // Strict-tier gate (#213): every tier a caller says SHOULD have run must have
   // produced its coverage-final.json. A missing expected tier throws rather
   // than silently narrowing the aggregate. Opt-in — an empty `expectedTiers`
-  // (or omitting it) preserves the prior report-only behavior.
+  // or omitting it, preserves the prior report-only behavior.
   if (expectedTiers?.length) {
     const present: Record<string, boolean> = {
       isolated: isolatedTierPresent,
@@ -320,16 +326,16 @@ export async function mergeCoverageFinal(config: {
   await foldTemplateTwins(mainFinal)
   await foldTemplateTwins(isolatedFinal)
 
-  // Children tier (subprocess coverage): script entrypoints exercised via
+  // Children tier, subprocess coverage: script entrypoints exercised via
   // spawn run outside the in-process V8 session, so the vitest tiers read them
   // as zero. cover.mts converts the raw NODE_V8_COVERAGE output to the children
   // tier's coverage-final.json; foldChildrenTier then (1) gap-fills files
   // absent in-process and (2) replaces a genuinely 0-executed in-process entry
-  // (a file imported by a test but run only in a subprocess) with the children
+  // a file imported by a test but run only in a subprocess, with the children
   // entry — the two reports segment statements incompatibly, so a per-id merge
   // is unsound; the children tier is the only truthful measurement for such
   // files. Bounded to 0-covered in-process entries, so it only ever RAISES.
-  // Absent children file → tier skipped silently (the capture is best-effort).
+  // Absent children file → tier skipped silently, the capture is best-effort.
   try {
     const childrenFinal = JSON.parse(
       await fs.readFile(childrenFinalPath, 'utf8'),
@@ -386,7 +392,7 @@ export async function mergeCoverageFinal(config: {
       const mainArr = main?.b?.[id] ?? []
       const isoArr = iso?.b?.[id] ?? []
       // Merge element-wise up to the longer array; iterate over it so the
-      // cached-length `{ length }` form applies (the bound is its length).
+      // cached-length `{ length }` form applies, the bound is its length.
       const longer = mainArr.length >= isoArr.length ? mainArr : isoArr
       const branchCounts: number[] = []
       for (let j = 0, { length: len } = longer; j < len; j += 1) {
@@ -443,6 +449,7 @@ export async function mergeCoverageFinal(config: {
     functions: pct(coveredFunctions, totalFunctions),
     lines: pct(coveredLines, totalLines),
     statements: pct(coveredStatements, totalStatements),
+    totalStatements,
   }
 
   // Persist the combined report + json-summary at the coverage-home root

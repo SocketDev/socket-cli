@@ -1,6 +1,6 @@
 // Source-code reference convention scanners: the logger-leak scanner (direct
 // console.* / process.std*.write calls) and the cross-repo path scanner
-// (referencing another fleet repo by an escaping path). Both wrap the shared
+// referencing another fleet repo by an escaping path. Both wrap the shared
 // AST / regex detectors so the commit-time and edit-time surfaces agree.
 
 import {
@@ -87,7 +87,7 @@ export function scanLoggerLeaks(text: string): LineHit[] {
 // Two forbidden forms catch the same mistake — referencing another
 // fleet repo by a path that escapes the current repo:
 //
-//   1. `../<fleet-repo>/…` (cross-repo relative). Hardcodes the
+//   1. `../<fleet-repo>/…`, cross-repo relative. Hardcodes the
 //      assumption that both repos are sibling clones under the same
 //      projects root; breaks in CI sandboxes / fresh clones / non-
 //      standard layouts.

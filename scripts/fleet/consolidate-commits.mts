@@ -1,5 +1,5 @@
 /*
- * @file Consolidate a commit range into LOGICAL commits (never one squash).
+ * @file Consolidate a commit range into LOGICAL commits, never one squash.
  *
  *   "Consolidate commits" in fleet vocabulary means regrouping the work since
  *   a base ref into one commit per logical concern (the auto-lander's
@@ -68,7 +68,7 @@ function gitOrDie(args: readonly string[], what: string): string {
 
 /**
  * The default base: the newest `chore: bump version to …` commit strictly
- * below `tip` (the previous release bump), else the latest version tag, else
+ * below `tip`, the previous release bump, else the latest version tag, else
  * undefined (caller must pass --base).
  */
 export function defaultBase(tip: string): string | undefined {
@@ -91,8 +91,8 @@ export function defaultBase(tip: string): string | undefined {
 
 /**
  * True when `base` and `originRef` have DIVERGED — neither contains the
- * other. A base above origin's tip (unpushed span on the same lineage) and a
- * base below it (normal release anchor) are both legitimate; divergence means
+ * other. A base above origin's tip, unpushed span on the same lineage, and a
+ * base below it, normal release anchor, are both legitimate; divergence means
  * the base sits on superseded history and consolidating onto it re-embeds
  * old-lineage commits.
  */

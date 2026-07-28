@@ -22,7 +22,7 @@ export function teamActivityDir(): string {
   return path.join(wheelhouseHooksDir(), 'team-activity')
 }
 
-// The default config path for a named watch (the wizard writes here).
+// The default config path for a named watch, the wizard writes here.
 export function configPathFor(name: string): string {
   return path.join(teamActivityDir(), `${name}.json`)
 }

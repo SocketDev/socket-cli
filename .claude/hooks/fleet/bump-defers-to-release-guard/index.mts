@@ -10,18 +10,18 @@
 // OWNS the version bump + CHANGELOG. Prepping them by hand BEFORE triggering the
 // release skips versions — package.json pre-bumped to 1.4.3, then the workflow
 // bumped 1.4.3 → 1.4.4, so 1.4.3 was never published. The VERSION is the user's
-// decision; derived bumps are patch/minor (patch default), MAJOR never derived.
+// decision; derived bumps are patch/minor, patch default, MAJOR never derived.
 //
 // The sanctioned flow: the RELEASE SCRIPT owns the bump — it derives the
 // version + CHANGELOG. To name the TARGET without a real bump, set a
 // `-prerelease` hint (`X.Y.Z-prerelease` in package.json / Cargo.toml) — that
 // write is ALLOWED here, and committedVersionHint() then pre-authorizes the
-// release tooling's finalize (no version-naming, no bypass). Evidence-gathering
+// release tooling's finalize, no version-naming, no bypass. Evidence-gathering
 // `bump.mts --dry-run` is always allowed. A direct hand-bump (bump.mts write /
 // `npm version <arg>` / a manual non-prerelease version edit) still needs
 // `Allow release-bump bypass`; MAJOR additionally requires `Allow major-bump
 // bypass`. In CI, major happens only when a human selected it on the
-// workflow_dispatch form (this hook never runs there).
+// workflow_dispatch form, this hook never runs there.
 //
 // This guard exists because an agent once decided a major bump from
 // export-surface evidence, authored a synthetic `refactor!:` commit to steer
@@ -244,7 +244,7 @@ export function bumpViolationIn(command: string): BumpViolation | undefined {
     // segment boundary (`lockstep/auto-bump.mts`, the upstream pin bumper the
     // updating-lockstep skill drives, shares the raw suffix but is a
     // different surface with its own commit flow), and ONLY in the script
-    // position (the first non-flag arg): a bump.mts path appearing later in
+    // position, the first non-flag arg: a bump.mts path appearing later in
     // argv is another script's TARGET (`node lint.mts .../bump.mts`), not a
     // bump run.
     const scriptArg = cmd.args.find(a => !a.startsWith('-'))
@@ -281,11 +281,11 @@ export function bumpViolationIn(command: string): BumpViolation | undefined {
 }
 
 // The manual-edit vector of the SAME anti-pattern: hand-editing package.json's
-// `version` (a pre-release bump) or writing a CHANGELOG release entry. The
+// `version`, a pre-release bump, or writing a CHANGELOG release entry. The
 // release workflow (npm-publish.mts --bump) owns BOTH — pre-bumping by hand is
 // what skipped 1.4.3 (package.json pre-set to 1.4.3, then the workflow bumped
 // 1.4.3 → 1.4.4, so 1.4.3 was never published). Compares the incoming version
-// to the on-disk one, so a same-version edit (touching other keys) is clean.
+// to the on-disk one, so a same-version edit, touching other keys, is clean.
 export function manualBumpViolation(
   filePath: string,
   content: string | undefined,
@@ -334,7 +334,7 @@ export function manualBumpViolation(
   return undefined
 }
 
-// Decide what (if anything) to block for a payload. Pure — the test drives
+// Decide what, if anything, to block for a payload. Pure — the test drives
 // it directly. A Bash command bump OR a manual Edit/Write to package.json /
 // CHANGELOG.md — both defer to the release workflow.
 export function bumpViolation(

@@ -144,59 +144,31 @@ packages/socket/*.png
 !src/types/**/*.d.ts
 !packages/*/src/types/**/*.d.ts
 
-# ─── BEGIN fleet-canonical (managed by socket-wheelhouse sync) ──
-# Managed by socket-wheelhouse. Don't edit locally — edit upstream
-# in scripts/sync-scaffolding/checks/gitignore-fleet-block.mts and
-# re-cascade via `pnpm run sync`. Project-specific ignores stay
-# OUTSIDE this block; the fixer preserves them.
-# Per-machine Claude Code permission config + log dirs stay ignored;
-# the cascaded subdirs (agents, commands, hooks, settings.json, skills,
-# workflows) are explicitly re-included so the wheelhouse cascade can
-# ship them.
-/.claude/*
-!/.claude/agents/
-!/.claude/commands/
-!/.claude/hooks/
-!/.claude/settings.json
-!/.claude/skills/
-!/.claude/workflows/
-
-# OS noise
-.DS_Store
-._.DS_Store
-Thumbs.db
-
-# Build outputs — universal across the fleet. Project-specific
-# variants (e.g. a non-standard dist path) go OUTSIDE this block.
-**/build/
-**/coverage/
-**/dist/
-**/.cache/
-
-# Node
-node_modules/
-npm-debug.log
-pnpm-debug.log
-*.tgz
-# ─── END fleet-canonical ────────────────────────────────────────
-
 # <fleet-canonical>
 # Managed by socket-wheelhouse. Don't edit locally — edit upstream
 # in scripts/sync-scaffolding/checks/gitignore-fleet-block.mts and
 # re-cascade via `pnpm run sync`. Project-specific ignores stay
 # OUTSIDE this block; the fixer preserves them.
 # Per-machine Claude Code permission config + log dirs stay ignored;
-# the cascaded subdirs (agents, commands, hooks, settings.json, skills,
-# workflows) are explicitly re-included so the wheelhouse cascade can
-# ship them.
+# the cascaded subdirs (agents, commands, hooks, output-styles,
+# settings.json, skills, workflows) are explicitly re-included so the
+# wheelhouse cascade can ship them.
 /.claude/*
 !/.claude/agents/
 !/.claude/commands/
 !/.claude/hooks/
+!/.claude/output-styles/
 !/.claude/rules/
 !/.claude/settings.json
 !/.claude/skills/
 !/.claude/workflows/
+# Transient agent work-state: handoff + planning docs live in these
+# gitignored operator-notes homes and are NEVER committed. Re-asserted here
+# AFTER the re-include lines above so a future `!/.claude/<x>/` re-include
+# can't accidentally start tracking them. Dir-scoped so no sibling path is
+# caught. handoff-docs-are-untracked backstops a stray committed handoff doc.
+/.claude/plans/
+/.claude/reports/
 # Release-only GENERATED hook-dispatch artifacts: all three dispatch-table
 # variants, the rolldown bundles, the native snapshot launcher + its frozen
 # sidecars, and the dispatch manifest. Rebuilt by
@@ -207,6 +179,12 @@ pnpm-debug.log
 # files. Keep in lock-step with RELEASE_ONLY_DIR_MIRROR_FILES (scripts/repo/
 # sync-scaffolding/dir-mirror-skip.mts). See docs/agents.md/fleet/release-vs-cascade.md.
 **/.claude/hooks/fleet/_dist/bundle.cjs
+# Legacy pre-v1.0.16 dispatch layout: socket-sdk-js still tracks the
+# _dispatch/index.cjs loader, which requires ./bundle.cjs — that generated
+# bundle must stay untracked there. Keep this entry until every member
+# has migrated to the fleet/index.cjs + _dist/bundle.cjs layout; it
+# matches nothing once the legacy bundle is gone.
+**/.claude/hooks/fleet/_dispatch/bundle.cjs
 **/.claude/hooks/fleet/_dispatch/dispatch-launcher
 **/.claude/hooks/fleet/_dispatch/dispatch-launcher.exe
 **/.claude/hooks/fleet/_dispatch/dispatch-table-excluded.mts
@@ -283,6 +261,10 @@ Thumbs.db
 
 # Node
 node_modules/
+# Workspace-local pnpm store — CI jobs whose pnpm runs inside a
+# workspace-mounted sandbox pin the store here (setup-and-install
+# store-dir input); never committed.
+/.pnpm-store/
 npm-debug.log
 pnpm-debug.log
 *.tgz

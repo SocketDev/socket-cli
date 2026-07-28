@@ -44,7 +44,7 @@ import { bypassPhrasePresent } from '../_shared/transcript.mts'
 const BYPASS_PHRASE = 'Allow off-default bypass'
 
 /**
- * True when `cwd` is the PRIMARY checkout (not a linked worktree). A linked
+ * True when `cwd` is the PRIMARY checkout, not a linked worktree. A linked
  * worktree's `git rev-parse --git-dir` resolves under `.git/worktrees/<name>`;
  * the primary's is the repo's own `.git`. Fails closed (false → skip) when git
  * is unavailable, so a non-git dir never blocks a stop.

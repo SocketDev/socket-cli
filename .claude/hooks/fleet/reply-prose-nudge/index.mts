@@ -10,7 +10,7 @@
 // NOT merged in: commit-pr-nudge (AI-attribution, backed by the
 // shared _shared/ai-attribution.mts catalog — a different concern), and
 // the blocking hooks dont-blame-nudge / excuse-detector, and the
-// NLP hook judgment-nudge (real per-hook logic). Those stay separate.
+// NLP hook judgment-nudge, real per-hook logic. Those stay separate.
 //
 // Informational; never blocks.
 

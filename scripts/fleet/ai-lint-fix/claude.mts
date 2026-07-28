@@ -26,7 +26,7 @@ export async function runClaudeFix(
   // rewrites run on Sonnet/medium; module-split refactors
   // (`socket/max-file-lines`) run on Opus/high. Pinning effort alongside the
   // model is the CLAUDE.md token-spend rule — a cheap model left on the
-  // session's default (often high) still burns reasoning a mechanical
+  // session's default, often high, still burns reasoning a mechanical
   // rewrite never needs.
   const { exitCode, stderr, stdout } = await spawnAiAgent({
     ...AI_PROFILE.edit,

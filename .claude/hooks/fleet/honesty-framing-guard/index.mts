@@ -6,7 +6,7 @@
 // patterns stay in reply-prose-nudge (advisory — they can over-fire), but a
 // honesty match is always wrong: claiming honesty implies the rest is not.
 // This guard blocks turn-end once so the reply gets rewritten, degrading to
-// a notice when `stop_hook_active` is set (no Stop loops). Origin: the
+// a notice when `stop_hook_active` is set, no Stop loops. Origin: the
 // nudge-only surface let a "Post-push CI, honestly:" reply ship after the
 // word joined the shared matcher — the teeth live here now, consuming the
 // same `_shared/honesty-framing.mts` source every prose surface shares.

@@ -51,8 +51,8 @@ interface RawCargoPackage {
 /**
  * Whether a `cargo metadata` `publish` value means the package may be
  * published. cargo emits `null` for the Cargo.toml default (publishable
- * anywhere), `[]` for `publish = false` (never publish), and a non-empty array
- * (e.g. `["crates-io"]`) for an allowlist (still publishable). Only an explicit
+ * anywhere), `[]` for `publish = false`, never publish, and a non-empty array
+ * (e.g. `["crates-io"]`) for an allowlist, still publishable. Only an explicit
  * empty array opts out — so we treat null/undefined and any non-empty allowlist
  * as publishable.
  */

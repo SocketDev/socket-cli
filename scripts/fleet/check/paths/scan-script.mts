@@ -1,6 +1,6 @@
 /**
  * @file Rule G scanner for Makefile / Dockerfile / shell. Same shape as Rule A
- *   (multi-stage path constructed inline), applied to executable artifacts that
+ *   multi-stage path constructed inline, applied to executable artifacts that
  *   can't `import` a TS `paths.mts`. Each canonical construction in a script
  *   must reference the source-of- truth TS module by comment so the script
  *   can't drift from TS without a flagged change. Dockerfile-aware: each `FROM
@@ -19,7 +19,7 @@ import { pushFinding } from './state.mts'
 // before a mode token (BUILD_MODE, MODE, dev, or prod) with an optional
 // closing `}`, a slash, a platform-or-arch segment (word chars plus `${}.-`),
 // then `/out/` followed by one of the canonical output-tier names
-// (Compressed, Final, Optimized, Release, Stripped, or Synced).
+// Compressed, Final, Optimized, Release, Stripped, or Synced.
 export const SCRIPT_HAND_BUILT_RE =
   /build\/\$?\{?(?:BUILD_MODE|MODE|dev|prod)\}?\/[\w${}.-]*\/out\/(?:Compressed|Final|Optimized|Release|Stripped|Synced)/g
 

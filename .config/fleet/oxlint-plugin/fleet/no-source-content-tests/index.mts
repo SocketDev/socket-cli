@@ -76,7 +76,7 @@ function readCalleeName(node: AstNode): string | undefined {
   return undefined
 }
 
-// True when `node`'s subtree contains a string literal (or template quasi)
+// True when `node`'s subtree contains a string literal, or template quasi
 // naming a repo code file.
 function subtreeNamesRepoSource(node: AstNode): boolean {
   let found = false

@@ -16,7 +16,7 @@
  *      string literals that invoke the lookup commands — either as a bare
  *      argv[0] (`spawnSync('which', ['oxlint'])`) or as the head of a shell
  *      string (`execSync('which oxlint')`, `'command -v foo'`). Reporting only
- *      (no autofix): the right replacement depends on which `.bin` dir to scope
+ *      no autofix: the right replacement depends on which `.bin` dir to scope
  *      to and whether the caller is sync/async. Allowed (skipped):
  *
  *   - The plugin's own rules/ + test/ files (this file names the banned commands
@@ -31,7 +31,7 @@ import { isPluginSelfFile } from '../../lib/fleet-paths.mts'
 import type { AstNode, RuleContext } from '../../lib/rule-types.mts'
 
 // A full PATH-lookup shell string: a lookup command followed by exactly one
-// binary-name token (and nothing more). `command -v` / `command -V` and
+// binary-name token, and nothing more. `command -v` / `command -V` and
 // `type -P` are the POSIX-portable forms; `which` / `where` are the direct
 // commands. The single-token tail is what separates a real lookup
 // (`which oxlint`, `command -v pnpm`) from prose that merely starts with the

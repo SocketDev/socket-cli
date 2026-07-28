@@ -8,7 +8,7 @@
  *   advance `main` by hand. Routing the promote through a PR + auto-merge works
  *   WITHIN branch protection — no bypass needed. `createPullRequest` is
  *   idempotent (a leftover open PR from a re-run is reused, not duplicated).
- *   `enablePullRequestAutoMerge` is GraphQL (the only auto-merge surface);
+ *   `enablePullRequestAutoMerge` is GraphQL, the only auto-merge surface;
  *   `mergePullRequest` is the REST fallback for the "already mergeable, nothing
  *   to wait on" case where GitHub refuses to enable auto-merge. All calls go
  *   over node:http (httpJson), so nock intercepts them in tests.
@@ -113,7 +113,7 @@ export async function createPullRequest(
     if (status !== 422) {
       throw e
     }
-    // A PR for this head already exists (a re-run) — find + reuse it.
+    // A PR for this head already exists, a re-run — find + reuse it.
     const owner = cfg.repo.slice(0, cfg.repo.indexOf('/'))
     const existing = await httpJson<Array<{ node_id: string; number: number }>>(
       `${apiUrl}/repos/${cfg.repo}/pulls?head=${encodeURIComponent(
@@ -135,10 +135,10 @@ export async function createPullRequest(
 
 /**
  * Enable SQUASH auto-merge on a PR, so GitHub merges it the moment its branch-
- * protection requirements clear (required review, checks) — no push-bypass and
+ * protection requirements clear, required review, checks — no push-bypass and
  * no local wait. `commitHeadline` pins the squash commit subject so the bump
- * subject (the reconcile anchor) survives. Auto-merge is a GraphQL-only
- * surface. Returns `false` (never throws) when GitHub refuses because the PR is
+ * subject, the reconcile anchor, survives. Auto-merge is a GraphQL-only
+ * surface. Returns `false`, never throws, when GitHub refuses because the PR is
  * already in a clean/mergeable state with nothing to wait on — the caller then
  * merges immediately via `mergePullRequest`. Throws on any other GraphQL
  * error.
@@ -185,8 +185,8 @@ export async function enablePullRequestAutoMerge(
 
 /**
  * Merge a PR NOW via REST, squashing to a single commit whose subject is
- * `commitTitle` (the bump subject). The immediate-merge fallback for when
- * auto-merge can't be enabled (nothing to wait on). Throws `HttpResponseError`
+ * `commitTitle`, the bump subject. The immediate-merge fallback for when
+ * auto-merge can't be enabled, nothing to wait on. Throws `HttpResponseError`
  * on a non-2xx (e.g. a required review the App can't satisfy — a real block the
  * operator must resolve, surfaced loud).
  */

@@ -37,7 +37,7 @@ export function installUv(platform) {
   // The uv release archives wrap the binary in a top-level dir named for the
   // asset stem (e.g. `uv-aarch64-apple-darwin/uv`); install-tool.mjs extracts
   // with no --strip-components, so the binary lands under that subdir, not at
-  // destDir root (unlike a bare-binary asset like codedb).
+  // destDir root, unlike a bare-binary asset like codedb.
   const assetStem = asset.replace(/\.(?:tar\.gz|tgz|zip)$/, '')
   const uvBin = path.join(destDir, assetStem, exe)
   const shimPath = path.join(BIN_DIR, exe)

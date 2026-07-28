@@ -28,7 +28,7 @@
 
 import type { AstNode, RuleContext, RuleFixer } from '../../lib/rule-types.mts'
 
-// The base (left-most object) of a member/call access chain. For `a.b.c()` the
+// The base, left-most object, of a member/call access chain. For `a.b.c()` the
 // base is `a`; for `a[0].f` the base is `a[0]`'s object `a`. We return the node
 // whose text is the guard the left operand must equal — i.e. the object of the
 // OUTERMOST member access in `right`.

@@ -3,7 +3,7 @@
  *   canonical fleet name is `SOCKET_API_TOKEN`. The legacy names
  *   `SOCKET_API_KEY`, `SOCKET_SECURITY_API_TOKEN`, and
  *   `SOCKET_SECURITY_API_KEY` are accepted as aliases for one cycle
- *   (deprecation grace period) — bootstrap hooks read all four and normalize to
+ *   deprecation grace period — bootstrap hooks read all four and normalize to
  *   `SOCKET_API_TOKEN` going forward. Detects string literals naming any of the
  *   legacy aliases:
  *
@@ -22,7 +22,7 @@ import type { AstNode, RuleContext, RuleFixer } from '../../lib/rule-types.mts'
 
 // This rule DEFINES the legacy-alias set; the strings here are rule data, not
 // env-var consumers. The plugin-self-file guard in `create()` exempts this file
-// (and the test fixtures) so the rule doesn't flag its own lookup table.
+// and the test fixtures, so the rule doesn't flag its own lookup table.
 const LEGACY_ALIASES = new Set([
   'SOCKET_API_KEY',
   'SOCKET_SECURITY_API_KEY',
@@ -126,7 +126,7 @@ const rule = {
         }
         checkStringValue(node, node.quasis[0].value.cooked)
       },
-      // Also catch `process.env.SOCKET_API_KEY` (member expression).
+      // Also catch `process.env.SOCKET_API_KEY`, member expression.
       MemberExpression(node: AstNode) {
         if (node.computed) {
           return

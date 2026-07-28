@@ -119,7 +119,7 @@ export async function requireRegistryLive(config: {
  * registry liveness (requireRegistryLive), then — and only then — create the
  * git tag + immutable GitHub release.
  *
- * Returns false (after failing loud) on EITHER half: the version never turned
+ * Returns false, after failing loud, on EITHER half: the version never turned
  * up, or the tag/release leg itself failed. The second half is the dangerous
  * one — the registry write already landed and cannot be undone, so a
  * `false`/throwing tag step gets the full four-part release-gap message naming
@@ -192,8 +192,8 @@ export async function releaseBehindLiveGate(config: {
 
 /**
  * Default (npm) release-asset packer: `pnpm pack` the tarball in this same run
- * (the bytes the registry received) + write a `checksums.txt` (sha1 + sha512),
- * returning both paths. Returns an empty array (with a warning) when the pack
+ * the bytes the registry received + write a `checksums.txt` (sha1 + sha512),
+ * returning both paths. Returns an empty array, with a warning, when the pack
  * fails, so the release still lands without assets. Extracted so
  * `ensureTagAndRelease` can accept an alternate packer without changing the npm
  * behavior.
@@ -231,7 +231,7 @@ async function defaultPackAssets(pkg: {
 
 /**
  * Post-publish: make the git tag + GitHub release exist for this version.
- * Tag-if-missing (push tolerated when the remote already has it); the release
+ * Tag-if-missing, push tolerated when the remote already has it; the release
  * body is the version's CHANGELOG section; the release ships IMMUTABLE via the
  * 3-step draft → upload → undraft flow. Assets are the tarball packed from
  * this same tree in this same run — the identical bytes the registry just
@@ -239,7 +239,7 @@ async function defaultPackAssets(pkg: {
  * shasum is directly comparable to the npm staged/published shasum.
  *
  * Returns TRUE only when the tag exists ON ORIGIN and the GitHub release is
- * published (or already existed). Every failure path returns FALSE and sets a
+ * published, or already existed. Every failure path returns FALSE and sets a
  * non-zero exit code, so the caller (releaseBehindLiveGate) can raise the
  * four-part release-gap message: the registry write has already succeeded, so
  * a quiet `void` here is exactly how a half-done release escapes unnoticed.

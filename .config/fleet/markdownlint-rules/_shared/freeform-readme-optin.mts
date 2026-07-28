@@ -8,7 +8,7 @@
  *   wheelhouse-leak / sibling-path rules still apply. Sync (markdownlint-cli2
  *   calls rule init synchronously) and dependency-free (loaded as a regular ESM
  *   module, not bundled). Resolves the current repo name from
- *   SOCKET_FLEET_REPO_NAME (CI) then the cwd basename (local checkout), and
+ *   SOCKET_FLEET_REPO_NAME (CI) then the cwd basename, local checkout, and
  *   reads the roster relative to the cwd.
  */
 

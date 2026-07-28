@@ -4,8 +4,8 @@
  *   junior, per the CLAUDE.md comment rule) shouldn't have to mentally execute
  *   `/(?:[\s,{]|^)model\s*[:,}]/` to learn it matches a `model` property KEY.
  *   This rule flags a regex literal that has NO nearby comment, so the author
- *   (or the AI-fix step) writes a breakdown. "Nearby comment" = a `//` or block
- *   comment on the SAME line (trailing or leading), OR anywhere in the
+ *   or the AI-fix step, writes a breakdown. "Nearby comment" = a `//` or block
+ *   comment on the SAME line, trailing or leading, OR anywhere in the
  *   contiguous lead-in block above the regex — the comments-before-the-code
  *   plus the statement's own continuation/opener lines (`= ( [ { : , …`). That
  *   span is oxfmt-stable: the formatter reflows a regex onto its own line and
@@ -75,7 +75,7 @@ function isLineMarkered(line: string): boolean {
 // Node kinds that make a disjunction BRANCH dense to read: a characterClass is
 // a set, a group nests, a quantifier repeats. Deliberately NOT `anchor` (a `^` /
 // `$` branch like `(?:$|/)` reads fine) and NOT `reference` (a backreference is
-// caught separately, tree-wide). A branch built from `value` (literal chars),
+// caught separately, tree-wide). A branch built from `value`, literal chars,
 // `dot`, and `anchor` reads at a glance — `tar|tgz`, `^\.config(?:$|/)`.
 const STRUCTURAL_BRANCH_TYPES = new Set([
   'characterClass',
@@ -130,8 +130,8 @@ function containsStructural(node: RegjsNode): boolean {
 //     `(?:[\s,{]|^)`), OR the alternation is enclosed by a quantifier (the
 //     repeat interacts with the choice — e.g. `(alpha|beta|gamma)+`). A plain
 //     alternation of anchors + flat literals reads fine and is NOT non-trivial,
-//     even inside a capturing group (capturing alone adds no reading load):
-//     `tar|tgz`, `(?:tar|tgz)`, `(^|\/)` (the anchor-or-slash path idiom).
+//     even inside a capturing group, capturing alone adds no reading load:
+//     `tar|tgz`, `(?:tar|tgz)`, `(^|\/)`, the anchor-or-slash path idiom.
 function analyze(node: RegjsNode): {
   groups: number
   lookarounds: number
@@ -182,7 +182,7 @@ function analyze(node: RegjsNode): {
 //     / lookaround — a multi-way structural switch), OR
 //   - 2+ groups (nested / sequential capture), OR
 //   - 2+ lookarounds (stacked assertions, e.g. a password `(?=…)(?=…)` chain), OR
-//   - a lookaround combined with a group (assertion layered on structure), OR
+//   - a lookaround combined with a group, assertion layered on structure, OR
 //   - a backreference (`\1` / `\k<n>`).
 // A lone group, a lone char class, a flat-literal alternation (`tar|tgz`,
 // `^\.config(?:$|/)`), or a single lone lookaround all read fine and stay

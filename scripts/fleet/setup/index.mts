@@ -87,7 +87,7 @@ export function formatSummaryLines(
 // nothing), so it runs UNCONDITIONALLY — never behind `--skip-tools`, like the
 // Claude-config step — otherwise `setup-all --skip-tools` would leave a member
 // with no Codex MCP config or PreToolUse guard. A missing `.mcp.json` is not a
-// failure (nothing to project). See docs/agents.md/fleet/release-vs-cascade.md.
+// failure, nothing to project. See docs/agents.md/fleet/release-vs-cascade.md.
 export function generateCodexAdapters(): boolean {
   const canonicalPath = path.join(REPO_ROOT, '.mcp.json')
   if (!existsSync(canonicalPath)) {

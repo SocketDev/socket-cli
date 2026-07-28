@@ -4,7 +4,7 @@
  *   top level, or in a hook runs at collection time or once — not as part of a
  *   test case — so a failure is mis-attributed or silently ignored. The fleet
  *   survey found zero today; this guard keeps it that way. An `expect` inside a
- *   hook (`beforeEach`) is allowed (a common setup-assertion pattern). Scope:
+ *   hook (`beforeEach`) is allowed, a common setup-assertion pattern. Scope:
  *   `*.test.*`. Report-only. Ported from `@vitest/eslint-plugin`'s
  *   `no-standalone-expect`, on lib/vitest-fn-call.mts. Like upstream, the
  *   `additionalTestBlockFunctions` option names custom test-registering

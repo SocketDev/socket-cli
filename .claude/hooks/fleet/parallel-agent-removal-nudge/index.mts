@@ -4,7 +4,7 @@
 // Fires at turn-end. Detects files THIS session previously READ that
 // have since VANISHED or been MOVED on disk — without this session
 // running `rm` / `git rm` / `safeDelete` / `unlink` on them. That
-// asymmetry (I read it, I didn't delete it, it's gone) is the
+// asymmetry, I read it, I didn't delete it, it's gone, is the
 // fingerprint of another agent session sharing the same `.git/`
 // removing or moving files mid-flight under us. Emits a loud stderr
 // warning + pause-work instruction.
@@ -25,7 +25,7 @@
 //   3. If missing: check that THIS session didn't do the removal. The
 //      session "removed" a path if the transcript contains:
 //        - a Bash command with `rm` / `git rm` / `safeDelete` /
-//          `unlink` / `safeRm` and the path (or its dirname).
+//          `unlink` / `safeRm` and the path, or its dirname.
 //        - an Edit/Write whose target replaced the file at that path
 //          (rare — we'd see the new content via Write).
 //   4. Survivors are foreign removals — list them.

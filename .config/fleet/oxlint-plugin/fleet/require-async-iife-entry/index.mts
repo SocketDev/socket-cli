@@ -27,7 +27,7 @@ function memberPropName(node: AstNode): string | undefined {
 }
 
 function isEntryGuardTest(test: AstNode): boolean {
-  // Unwrap a ChainExpression (optional chaining) to its inner expression.
+  // Unwrap a ChainExpression, optional chaining, to its inner expression.
   let expr = test
   if (expr?.type === 'ChainExpression') {
     expr = expr.expression
@@ -90,7 +90,7 @@ function collectAsyncFnNames(programBody: AstNode[]): Set<string> {
 // How an entry-guard statement (wrongly) invokes its async fn.
 //   'await'    — `await main()` (top-level await; also caught by
 //                no-top-level-await, but we give the specific IIFE fix here)
-//   'floating' — `void main()` or bare `main()` (drops the promise)
+//   'floating' — `void main()` or bare `main()`, drops the promise
 // A correct `void (async () => { await main() })()` returns undefined (the
 // callee is a function expression, not the named async fn).
 export interface EntryCall {
@@ -104,7 +104,7 @@ export function entryCall(stmt: AstNode): EntryCall | undefined {
   }
   let expr = stmt.expression
   let form: EntryCall['form'] = 'floating'
-  // `void f()` -> unwrap the UnaryExpression (still floating).
+  // `void f()` -> unwrap the UnaryExpression, still floating.
   if (expr?.type === 'UnaryExpression' && expr.operator === 'void') {
     expr = expr.argument
   } else if (expr?.type === 'AwaitExpression') {

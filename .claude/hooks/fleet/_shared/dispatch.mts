@@ -4,7 +4,7 @@
  *   command instead of N separate hook commands, so a tool call pays one node
  *   start + one `@socketsecurity/lib-stable` import for the whole set instead
  *   of one per guard. It reads the payload once, re-exposes it via env so each
- *   in-process guard's `readStdin` returns the same bytes (no fd race), parses
+ *   in-process guard's `readStdin` returns the same bytes, no fd race, parses
  *   `tool_name`, and imports every guard the manifest registers for the event —
  *   filtered by matcher for PreToolUse. Each guard's top-level `runGuard`
  *   applies its verdict to the shared `process.exitCode`; a block (2) is

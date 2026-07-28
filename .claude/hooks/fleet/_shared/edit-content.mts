@@ -15,7 +15,7 @@ import type { ToolCallPayload } from './payload.mts'
 
 // Apply an Edit's `old_string` → `new_string` substitution against the on-disk
 // file. Returns undefined when the file is unreadable, the inputs are missing,
-// or `old_string` is absent / ambiguous (occurs more than once) — the caller
+// or `old_string` is absent / ambiguous, occurs more than once — the caller
 // then falls back to the fragment.
 export function applyEditToFile(
   filePath: string,
@@ -47,7 +47,7 @@ export function applyEditToFile(
 }
 
 // Full post-edit content: Write → `content`; Edit → on-disk with the diff
-// applied, falling back to the `new_string` (partial coverage) when the file
+// applied, falling back to the `new_string`, partial coverage, when the file
 // can't be read or the match is ambiguous. Undefined only when nothing usable.
 export function materializePostEditContent(
   filePath: string,

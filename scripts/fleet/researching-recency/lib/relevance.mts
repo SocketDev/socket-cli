@@ -137,7 +137,7 @@ export function tokenize(text: string): Set<string> {
   const expanded = new Set(tokens)
   for (const token of tokens) {
     // Object.hasOwn guards against a token like "constructor"/"toString"
-    // resolving to an Object.prototype member (a non-iterable function)
+    // resolving to an Object.prototype member, a non-iterable function
     // instead of a real synonym entry.
     if (Object.hasOwn(SYNONYMS, token)) {
       for (const alias of SYNONYMS[token]!) {

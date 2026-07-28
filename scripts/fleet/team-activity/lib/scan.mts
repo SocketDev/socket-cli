@@ -2,7 +2,7 @@
  * @file One full scan pass, composed from the discovery, review-state, and
  *   follow-up stages. Pure orchestration over an injected `GhRunner`, so a test
  *   drives the whole pass with a scripted runner and no spawn. Mutates
- *   `state.reactions` (the reaction memo); the caller stamps `state.scannedAt`
+ *   `state.reactions`, the reaction memo; the caller stamps `state.scannedAt`
  *   after the pass so `since` stays the previous tick.
  */
 

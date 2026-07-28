@@ -6,7 +6,7 @@
  *   Allowed: `await` inside async functions / async arrows / async methods (the
  *   rule walks the parent chain to find an enclosing FunctionDeclaration /
  *   FunctionExpression / ArrowFunctionExpression). Allowed: `for await` and
- *   `await using` at non-module-scope (already inside a function). Reporting +
+ *   `await using` at non-module-scope, already inside a function. Reporting +
  *   autofix-free: rewriting TLA to an IIFE or to top-level Promise chains
  *   requires reading the surrounding intent; we report so the author makes the
  *   call.

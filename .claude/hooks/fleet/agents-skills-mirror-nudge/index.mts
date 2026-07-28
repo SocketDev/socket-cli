@@ -3,7 +3,7 @@
  *   `.agents/skills/` mirror is a DERIVED artifact: the generator
  *   `scripts/fleet/gen/agents-skills-mirror.mts` hoists each segmented
  *   `.claude/skills/{fleet,repo}/<name>/` skill into a flat `.agents/skills/`
- *   view so Codex + OpenCode (which discover skills one level deep) find every
+ *   view so Codex + OpenCode, which discover skills one level deep, find every
  *   fleet/repo skill. The `agents-skills-mirror-is-current` CI check reds when
  *   the committed mirror drifts from the source. A cascade regenerates the
  *   mirror in the same wave that copies a skill source (sync-scaffolding's
@@ -61,7 +61,7 @@ export function parseChangedPaths(
 
 // True when this session touched any `.claude/skills/**` file — committed vs
 // origin plus the dirty working tree. Two name-only git calls; a `.git`-less
-// dir reports nothing (every git call fails, so the scan finds no match).
+// dir reports nothing, every git call fails, so the scan finds no match.
 export function touchedSkillSource(repoDir: string): boolean {
   for (const args of [
     ['diff', '--name-only', 'origin/HEAD…HEAD'],
@@ -85,7 +85,7 @@ export function touchedSkillSource(repoDir: string): boolean {
 }
 
 // Run the generator's `--check` mode; exit 1 means the mirror is stale. Absent
-// generator (a repo that doesn't ship the mirror) → not stale (no-op).
+// generator, a repo that doesn't ship the mirror → not stale (no-op).
 export function mirrorIsStale(repoDir: string): boolean {
   const gen = path.join(
     repoDir,

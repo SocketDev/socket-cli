@@ -5,7 +5,7 @@
  *   dispatcher (`_shared/dispatch.mts`) — so two things break it:
  *
  *   - `process.exit(...)` — a hard exit kills the dispatcher mid-loop, silently
- *     skipping every guard registered after it (a security hole). A guard
+ *     skipping every guard registered after it, a security hole. A guard
  *     signals a block by RETURNING `block(msg)` (exitCode 2), never by
  *     exiting.
  *   - a `process.argv[1]` entrypoint gate — it misfires when the dispatcher
@@ -13,7 +13,7 @@
  *     standalone-vs-dispatched decision lives in `runGuard(check,
  *     import.meta.url)`, not a hand-rolled argv check. Scope: only
  *     `.claude/hooks/**∕index.mts` files that import `guard.mts` — a pure
- *     side-effect hook (output transformer, installer, sweeper) that does NOT
+ *     side-effect hook, output transformer, installer, sweeper, that does NOT
  *     import the contract is exempt and may exit normally. Pairs with
  *     `gen/hook-dispatch.mts`'s conformance classifier + the `creating-guards`
  *     skill. No autofix — removing an exit / argv gate is a structural

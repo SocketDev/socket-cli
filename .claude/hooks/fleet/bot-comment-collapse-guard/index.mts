@@ -65,7 +65,7 @@ const THREAD_ID_RE = /PRRT_[A-Za-z0-9_-]+/g
 /**
  * Pull every distinct `PRRT_…` id out of the session's Bash commands that
  * ran a resolveReviewThread mutation. Commands that merely LIST threads
- * (a query, not the mutation) contribute nothing.
+ * a query, not the mutation, contribute nothing.
  */
 export function extractResolvedThreadIds(
   commands: readonly string[],

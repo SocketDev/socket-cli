@@ -49,7 +49,7 @@ function actionRoots(repoRoot: string): string[] {
   ]
 }
 
-// Recursively collect every co-located minter file under `dir` (if it exists).
+// Recursively collect every co-located minter file under `dir`, if it exists.
 export function collectMinters(dir: string): string[] {
   if (!existsSync(dir)) {
     return []
@@ -73,7 +73,7 @@ export function collectMinters(dir: string): string[] {
 }
 
 // Pure drift detector: the relPaths whose content differs from the first copy
-// (the reference). Empty = 0/1 copies, or every copy identical.
+// the reference. Empty = 0/1 copies, or every copy identical.
 export function findDrift(copies: MinterCopy[]): string[] {
   if (copies.length < 2) {
     return []

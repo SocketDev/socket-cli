@@ -14,7 +14,7 @@
 // Fires in two cases:
 //   1. On main/master in ANY repo — try `git push origin <branch>` first.
 //   2. On a FEATURE branch in a FLEET repo — the right move is usually
-//      `git push origin <branch>:main` (the commits go straight to main),
+//      `git push origin <branch>:main`, the commits go straight to main,
 //      NOT a PR. This is the case that bit a session 2026-06-02: the agent
 //      ASSUMED socket-lib was PR-only from commit history + GitHub's
 //      "create a PR" hint, cut a feature branch, and nearly opened a PR —
@@ -130,7 +130,7 @@ export function isTargetedBase(
 }
 
 // Does a parsed `git push` refspec target the default branch? Refspecs
-// look like `<src>:<dst>` or a bare `<branch>`; the dst (or the bare ref)
+// look like `<src>:<dst>` or a bare `<branch>`; the dst, or the bare ref
 // is what lands on the remote. `HEAD:main`, `feat/x:main`, or a bare
 // `main` all count as pushing TO the default branch.
 function pushTargetsDefault(c: Command, defaultBranch: string): boolean {
@@ -331,7 +331,7 @@ export const hook = defineHook({
     }
 
     // Classify the repo. Feature-branch reminders only apply to FLEET
-    // repos (direct-push-to-main is the fleet default); non-fleet repos
+    // repos, direct-push-to-main is the fleet default; non-fleet repos
     // like firewall legitimately use PR-from-feature-branch flow.
     const slug = originSlug(cwd)
     const fleet = slug ? isFleetRepo(slug) : false

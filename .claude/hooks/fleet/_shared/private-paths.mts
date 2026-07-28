@@ -12,7 +12,7 @@
  *   `scripts/fleet/check/private-paths-are-absent.mts` commit-time check.
  *
  *   The matchers are pure + side-effect free so they unit-test cleanly. Fail
- *   open is the caller's job (a hook never throws).
+ *   open is the caller's job, a hook never throws.
  */
 
 export interface PrivatePathFinding {
@@ -39,7 +39,7 @@ export interface PrivatePathFinding {
 }
 
 // Patterns, in priority order. Each carries its finding `kind`. They match the
-// PATH TOKEN itself (not anchored on a comment marker) — the callers feed only
+// PATH TOKEN itself, not anchored on a comment marker — the callers feed only
 // comment-body text so a path inside a string literal or real source never
 // reaches these.
 //
@@ -74,7 +74,7 @@ export const PRIVATE_PATH_PATTERNS: ReadonlyArray<{
     // references presume a shared parent dir that only exists on a dev box. A
     // bare `../lib/` / `../http-request/` is an IN-repo relative import (a
     // sibling source dir), not a sibling REPO — only `../socket-<repo>/`
-    // (another fleet checkout) is the leak the no-cross-repo-relative-paths rule
+    // another fleet checkout, is the leak the no-cross-repo-relative-paths rule
     // names, so the `socket-` segment prefix is required.
     kind: 'sibling-repo-rel',
     re: /(?:^|[\s"'`([{<])\.\.\/socket-[a-z0-9][a-z0-9-]*\/[^\s"'`)\]}>]*/i,
@@ -128,9 +128,9 @@ export function describePrivatePathKind(
 }
 
 /**
- * Scan raw comment-BODY lines (no comment markers) for private paths, one
+ * Scan raw comment-BODY lines, no comment markers, for private paths, one
  * finding per matching line. `bodyLines` is the comment text already split into
- * lines by the caller (which owns marker stripping for its language).
+ * lines by the caller, which owns marker stripping for its language.
  */
 export function scanCommentBodyLines(
   bodyLines: readonly string[],
@@ -162,7 +162,7 @@ const LINE_COMMENT_RE = /(?:#|--|\/\/)\s?(.*)$/
 
 /**
  * One extracted comment body, paired with its 1-based source line number. The
- * `body` is comment TEXT only (markers stripped) — feed it straight to
+ * `body` is comment TEXT only, markers stripped — feed it straight to
  * `matchPrivatePath`.
  */
 export interface LexicalCommentBody {

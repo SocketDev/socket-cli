@@ -7,13 +7,13 @@
  *      `files:` missing entirely (publishes everything not in `.npmignore`) or
  *      `files: ["."]` (same).
  *   2. **Undershoot** — `files:` entry that matches nothing in the publish output
- *      (rotted after a rename or directory deletion). Stays silent until
+ *      rotted after a rename or directory deletion. Stays silent until
  *      consumers complain the package is missing a file.
  *   3. **Missing essentials** — common files (`README.md`, `LICENSE*`) absent from
  *      the publish output. README + LICENSE are required-by- convention;
  *      missing them ships malformed packages. Skips workspaces marked
- *      `"private": true` (those don't publish). Uses a `pack --dry-run
- *      --json` (pnpm first, npm fallback) as the source of truth for "what
+ *      `"private": true`, those don't publish. Uses a `pack --dry-run
+ *      --json`, pnpm first, npm fallback, as the source of truth for "what
  *      would publish" — the registry's own logic, including `.npmignore`
  *      resolution + the
  *      unconditionally-included file list. CI gate via `scripts/check.mts`.
@@ -184,9 +184,9 @@ export function readPackageJson(pkgDir: string): PackageJson | undefined {
  * Run a pack dry-run in `pkgDir` and parse the publish file list. pnpm goes
  * first — the fleet baseline pins `devEngines.packageManager: pnpm` with
  * `onFail: 'error'`, which makes `npm pack` hard-fail EBADDEVENGINES in any
- * repo whose root package is publishable (hit live in socket-sdk-js). npm is
+ * repo whose root package is publishable, hit live in socket-sdk-js. npm is
  * the fallback for a repo without pnpm on PATH. Returns `undefined` when both
- * fail (caller emits a finding).
+ * fail, caller emits a finding.
  */
 export function runPackDryRun(pkgDir: string): PackOutput | undefined {
   return packWithPnpm(pkgDir) ?? packWithNpm(pkgDir)
@@ -385,7 +385,7 @@ export function computeCanonicalFiles(packOut: PackOutput): string[] {
       dirs.add(p.slice(0, slash))
     }
   }
-  // oxlint-disable-next-line unicorn/no-array-sort -- the spread literal already builds a fresh array (no shared mutation); .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
+  // oxlint-disable-next-line unicorn/no-array-sort -- the spread literal already builds a fresh array, no shared mutation; .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
   return [...dirs, ...topFiles].sort()
 }
 
@@ -395,7 +395,7 @@ export function computeCanonicalFiles(packOut: PackOutput): string[] {
  * (0 = clean / fixed, 1 = findings remain in report mode).
  */
 // Packages that legitimately have no publish surface to allowlist here:
-// `"private": true` (never published), and os/cpu-gated platform binary packages
+// `"private": true`, never published, and os/cpu-gated platform binary packages
 // (e.g. @abitious/<triple>) whose prebuilt binary is absent in the source
 // checkout until the publish job fetches it — `pack --dry-run` then finds
 // nothing, a false "missing essentials" hit. Mirrors public-files-are-exported's

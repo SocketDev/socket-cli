@@ -120,7 +120,7 @@ export async function runStaged(
   config: { dryRun: boolean },
 ): Promise<void> {
   const { dryRun } = { __proto__: null, ...config } as typeof config
-  // Multi-package workspace (decmpfs, stuie): the workspace runner publishes
+  // Multi-package workspace, decmpfs, stuie: the workspace runner publishes
   // every member in dependency order behind the lockstep + hollow gates.
   // Single-package repos take the identical-to-before subject path below.
   const layout = resolveNpmWorkspaceLayout(rootPath)
@@ -183,7 +183,7 @@ export async function runStaged(
     args.push('--dry-run')
   }
   // Pin the SUBJECT README's relative asset URLs to the release tag for the
-  // packed tarball only (restored right after) so the npm page's badge is
+  // packed tarball only, restored right after, so the npm page's badge is
   // immutable + matches this version instead of a moving HEAD ref, and prune
   // repo-only lifecycle scripts from the manifest that packs. The same
   // brackets wrap the --approve verify pack (defaultPackTarball) so the
@@ -393,7 +393,7 @@ export async function defaultPackTarball(
   root: string = rootPath,
 ): Promise<string | undefined> {
   // Multi-package workspace: pack the member that publishes `name` from its
-  // own directory (pnpm packs the cwd package); a name no member publishes
+  // own directory, pnpm packs the cwd package; a name no member publishes
   // gets the same cross-repo refusal as the single-subject path below.
   const layout = resolveNpmWorkspaceLayout(root)
   if (layout.kind === 'multi') {
@@ -440,7 +440,7 @@ export async function defaultPackTarball(
 
 /**
  * Download the staged tarball for `stageId` into a fresh temp dir and return
- * its path (undefined on failure). The download endpoint requires the same
+ * its path, undefined on failure. The download endpoint requires the same
  * npm auth as the rest of the stage API.
  */
 export async function defaultDownloadStagedTarball(
@@ -456,7 +456,7 @@ export async function defaultDownloadStagedTarball(
   return tgz ? path.join(tmpDir, tgz) : undefined
 }
 
-// Relative path → sha1-of-content for every file under `dir` (sorted walk).
+// Relative path → sha1-of-content for every file under `dir`, sorted walk.
 async function hashDirContents(dir: string): Promise<Map<string, string>> {
   const result = new Map<string, string>()
   const entries = await fs.readdir(dir, {

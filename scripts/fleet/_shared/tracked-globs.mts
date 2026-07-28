@@ -33,7 +33,7 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 export interface CollectTrackedFilesConfig {
   /**
-   * The repo (or subtree) root the patterns and the git query resolve against.
+   * The repo, or subtree, root the patterns and the git query resolve against.
    */
   readonly cwd: string
   /**

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * @file Render a page (or a real Chrome extension popup) to a PNG so an agent
+ * @file Render a page, or a real Chrome extension popup, to a PNG so an agent
  *   can SEE it — open the PNG with the Read tool and the rendered pixels go
  *   into context, catching layout / color / empty-state / render-throw bugs
  *   that code-reading misses. Pairs with the fleet "verify rendered output
@@ -16,7 +16,7 @@
  *
  *   2. Extension mode — load an unpacked MV3 extension with its REAL chrome.*
  *      powers (background service worker + content scripts + popup), then
- *      screenshot a page inside it (the popup by default):
+ *      screenshot a page inside it, the popup by default:
  *        node scripts/fleet/screenshot.mts --extension <unpacked-dir> [--page popup.html]
  *          [--out p.png] [--width 580] [--wait 2500] [--theme dark|light]
  *      Uses `channel: 'chromium'` — the documented way to run extensions in
@@ -25,7 +25,7 @@
  *   Browser: playwright-core's bundled Chromium (a wheelhouse devDep). If the
  *   browser binary is missing, run `node_modules/.bin/playwright install chromium`.
  *
- *   Exit codes: 0 — PNG written (path printed); 1 — render / launch failed.
+ *   Exit codes: 0 — PNG written, path printed; 1 — render / launch failed.
  */
 
 import { mkdtempSync } from 'node:fs'

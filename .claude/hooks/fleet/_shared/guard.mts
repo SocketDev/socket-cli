@@ -9,12 +9,12 @@
  *   2, or emits the Stop decision JSON), `notify(message)` (stderr, exit 0), or
  *   `undefined` (allow). A hook NEVER calls `process.exit` and runs no
  *   top-level logic beyond `runHook`, so many run in ONE dispatcher process
- *   (one node start, one lib import) instead of a process each — the fix for
+ *   one node start, one lib import, instead of a process each — the fix for
  *   the per-tool-call hook tax. The metadata (`event` / `type` / `matcher` /
  *   `triggers`) is read at BUILD time by `gen/hook-dispatch.mts`, which
  *   imports each hook and wires it by discovery — nothing is registered by
  *   hand, so a hook can never be silently left unwired. A unit test SPAWNS the
- *   hook (stdin payload) or calls `hook.invoke(payload)` directly. Enforced by
+ *   hook, stdin payload, or calls `hook.invoke(payload)` directly. Enforced by
  *   the lint rule `socket/guard-contract` and scaffolded by the
  *   `creating-guards` skill. `runGuard(check)` / `bashGuard` / `editGuard`
  *   remain the lower-level verdict primitives `defineHook` builds on.
@@ -80,7 +80,7 @@ export interface GuardNotify {
 
 /**
  * A guard's verdict: block (exit 2), notify (stderr, exit 0), or `undefined`
- * (silent allow).
+ * silent allow.
  */
 export type GuardResult = GuardBlock | GuardNotify | undefined
 
@@ -129,7 +129,7 @@ export type HookMatcher = string
 
 /**
  * The declarative spec a hook module passes to `defineHook`. The metadata
- * (event, type, matcher, triggers) is read at BUILD time by the dispatch
+ * event, type, matcher, triggers, is read at BUILD time by the dispatch
  * generator; `check` is the runtime verdict function.
  */
 export interface HookSpec {
@@ -163,7 +163,7 @@ export interface HookSpec {
   // Safety / supply-chain / work-loss hooks omit this — they fire everywhere.
   readonly scope?: 'convention' | undefined
   // Pre-flight keywords: the dispatcher skips importing this hook unless one
-  // appears in the raw payload. Omit for open-ended scanners (always run).
+  // appears in the raw payload. Omit for open-ended scanners, always run.
   readonly triggers?: readonly string[] | undefined
   readonly type: HookType
 }
@@ -256,7 +256,7 @@ export function editGuard(
  */
 let blockedThisProcess = false
 
-// True once any guard in this (possibly shared dispatcher) process has blocked.
+// True once any guard in this, possibly shared dispatcher, process has blocked.
 // The dispatcher reads it to early-exit — covering BOTH block protocols (a
 // PreToolUse exitCode-2 block and a Stop stdout-JSON block, which leaves
 // exitCode 0).
@@ -271,7 +271,7 @@ export function guardBlocked(): boolean {
 // word-golf signature of a false positive, and without a record those
 // incidents vanish into reworded retries. Aggregate with
 // `node scripts/fleet/guard-stats.mts`. Fail-open: a logging failure
-// never costs (or delays) the verdict itself.
+// never costs, or delays, the verdict itself.
 const GUARD_EVENT_MAX_BYTES = 1024 * 1024
 
 // require-regex-comment: `\b` word boundary, `[a-z][a-z0-9-]*` one
@@ -475,7 +475,7 @@ function withBypass(
  * A `scope: 'convention'` spec gets its check wrapped so the hook stands down
  * when the acted-on repo is not fleet-managed (no `.config/fleet/` at its root)
  * — fleet conventions never bind a foreign repo unless it opts in by carrying
- * that directory. A `bypass` spec (auto mode) wraps the check so a block/nudge
+ * that directory. A `bypass` spec, auto mode, wraps the check so a block/nudge
  * honors the declared phrase (withBypass). The module's own exported raw
  * `check` is untouched, so in-process tests still exercise the logic.
  */
@@ -523,7 +523,7 @@ export async function runHook(
 }
 
 // True when the guard should actually read the payload + run: under the
-// dispatcher (env set), or when this module IS the process entrypoint.
+// dispatcher, env set, or when this module IS the process entrypoint.
 export function isGuardRunContext(moduleUrl: string | undefined): boolean {
   // A snapshot BUILD pass is never a run context. A bundled hook's `runHook`
   // sits in the snapshot bundle's top-level eval graph, and when

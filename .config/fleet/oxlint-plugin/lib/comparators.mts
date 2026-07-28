@@ -1,7 +1,7 @@
 /**
  * @file Shared sort helpers for the `socket/sort-*` rules. Every sort rule
  *   extracts a string key per sibling, checks whether the keys are already in
- *   order, and (when not) re-emits them sorted by the same total order. These
+ *   order, and, when not, re-emits them sorted by the same total order. These
  *   two primitives — `stringComparator` and `isAlreadySorted` — were
  *   copy-pasted into each rule; centralizing them keeps the fleet's
  *   alphanumeric order identical across every sort surface. The order is the

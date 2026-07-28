@@ -110,7 +110,7 @@ export function readCoverConfig(repoDir: string): CoverConfig {
 }
 
 // Resolve the repo's source-map build entry, or undefined when none exists.
-// Tooling repos (the wheelhouse itself) have no buildable artifact — coverage
+// Tooling repos, the wheelhouse itself, have no buildable artifact — coverage
 // then instruments the sources directly instead of building first.
 export function resolveBuildEntry(repoDir: string): string | undefined {
   for (let i = 0, { length } = BUILD_ENTRY_CANDIDATES; i < length; i += 1) {

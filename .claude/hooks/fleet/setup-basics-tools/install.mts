@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * @file Install-only entry point for the socket-basics workflow stack:
- *   TruffleHog (secrets scanner), Trivy (vuln/SBOM scanner), OpenGrep (SAST),
- *   and uv (Python package manager bootstrap). Slim leaf of the
+ *   TruffleHog, secrets scanner, Trivy (vuln/SBOM scanner), OpenGrep (SAST),
+ *   and uv, Python package manager bootstrap. Slim leaf of the
  *   `setup-security-tools` umbrella. Run via: node
  *   .claude/hooks/fleet/setup-basics-tools/install.mts For the full setup
  *   (firewall + scanners + socket-basics + misc), use `node

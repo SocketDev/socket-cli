@@ -39,7 +39,7 @@ export function hasRegistryMutation(content: string): boolean {
 }
 
 /**
- * True when `filePath` (any separator) is a script file under `scripts/repo/`.
+ * True when `filePath`, any separator, is a script file under `scripts/repo/`.
  */
 export function isRepoScript(filePath: string): boolean {
   const unix = normalizePath(filePath)

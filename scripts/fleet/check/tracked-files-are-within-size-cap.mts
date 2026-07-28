@@ -6,7 +6,7 @@
  *   per-file LINE count for source) — this is a whole-tree BYTE-size scan.
  *   Skips build/cache/vendor dirs (node_modules, dist, build, coverage, vendor,
  *   .git, …); a small allowlist covers fleet-canonical generated artifacts
- *   whose size is bounded by what they bundle (the rolldown hook dispatcher).
+ *   whose size is bounded by what they bundle, the rolldown hook dispatcher.
  *   Exits non-zero on any violation.
  */
 
@@ -28,7 +28,7 @@ const MAX_FILE_SIZE = 2 * 1024 * 1024
 // (.claude/…) and the wheelhouse template/base/.claude/… mirror are covered.
 const ALLOWED_LARGE_SUFFIXES: readonly string[] = [
   // Rolldown-bundled fleet hook dispatcher, its V8-snapshot variant, and the
-  // excluded-hooks companion bundle (non-bundle-safe hooks, same build).
+  // excluded-hooks companion bundle, non-bundle-safe hooks, same build.
   '.claude/hooks/fleet/_dist/bundle.cjs',
   '.claude/hooks/fleet/_dispatch/excluded-bundle.cjs',
   '.claude/hooks/fleet/_dispatch/snapshot-bundle.cjs',
@@ -108,7 +108,7 @@ const SKIP_DIRS = new Set<string>([
   'coverage',
   'dist',
   'dist-app',
-  // Vendored upstream trees (submodule corpora) are foreign content sized by
+  // Vendored upstream trees, submodule corpora, are foreign content sized by
   // their upstreams, not this repo's tracked surface.
   'external',
   'node_modules',
@@ -163,7 +163,7 @@ export async function scanDirectory(
   for (const entry of entries) {
     const fullPath = path.join(dir, entry.name)
     if (entry.isDirectory()) {
-      // Skip excluded + hidden dirs (except the fleet config trees).
+      // Skip excluded + hidden dirs, except the fleet config trees.
       if (
         !SKIP_DIRS.has(entry.name) &&
         (!entry.name.startsWith('.') ||

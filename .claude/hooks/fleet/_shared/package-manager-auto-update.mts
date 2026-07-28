@@ -1,8 +1,8 @@
 /**
  * @file Single source of truth for "is this package manager's auto-update
  *   disabled on this machine?" — shared by the pkg-auto-update-guard hook
- *   (point-of-use block), the audit-pkg-auto-update.mts script (drift report in
- *   `check --all`), and setup-security-tools (which sets the knobs). A package
+ *   point-of-use block, the audit-pkg-auto-update.mts script (drift report in
+ *   `check --all`), and setup-security-tools, which sets the knobs. A package
  *   manager that auto-updates mid-task can change a tool's version underneath a
  *   build/scan, add latency, or pull an unsoaked package — a reproducibility +
  *   supply-chain hazard. The knob lives OUTSIDE the repo (env vars, npmrc,
@@ -25,7 +25,7 @@ export type PkgManagerPlatform = 'darwin' | 'linux' | 'win32' | 'all'
 export interface AutoUpdateStatus {
   // The manager id (matches AutoUpdateCheck.id).
   id: string
-  // 'disabled' = auto-update is off (good); 'enabled' = on (drift, blockable);
+  // 'disabled' = auto-update is off (good); 'enabled' = on, drift, blockable;
   // 'absent' = the manager isn't installed/configured on this machine, so the
   // check is not applicable (never blocks, never fails CI).
   state: 'disabled' | 'enabled' | 'absent'
@@ -63,7 +63,7 @@ export function envIsOn(name: string): boolean {
 
 // Shell startup files any zsh/bash invocation may export from. A var exported in
 // one of these is present in EVERY shell that runs the package manager, even when
-// this hook's own process env (inherited from the editor that launched it) lacks
+// this hook's own process env, inherited from the editor that launched it, lacks
 // it. ASCII-sorted.
 const SHELL_RC_FILES: readonly string[] = [
   '.bash_profile',
@@ -76,7 +76,7 @@ const SHELL_RC_FILES: readonly string[] = [
 
 // True when `export <name>=<truthy>` appears in any shell rc under `home`.
 function shellRcExportsOn(name: string, home: string): boolean {
-  // Match an `export NAME=value` line, capturing the (optionally quoted) value.
+  // Match an `export NAME=value` line, capturing the, optionally quoted, value.
   const re = new RegExp(`^\\s*export\\s+${name}=(.+)$`, 'mu')
   for (let i = 0, { length } = SHELL_RC_FILES; i < length; i += 1) {
     let content: string
@@ -103,7 +103,7 @@ function shellRcExportsOn(name: string, home: string): boolean {
 // True when the var is "on" in this process's env OR persistently exported in the
 // user's shell rc. The shell that actually runs the package manager sources these
 // rc files, so a var set there means auto-update is off even when THIS hook's
-// inherited env (the editor that launched it) never had it.
+// inherited env, the editor that launched it, never had it.
 export function envOrShellRcIsOn(
   name: string,
   // getHome() (fleet-canonical, honors HOME / USERPROFILE) with an os.homedir()
@@ -115,8 +115,8 @@ export function envOrShellRcIsOn(
 }
 
 // Run a binary with args and return trimmed stdout, or undefined when the
-// binary is missing / the call exits non-zero (manager absent). Never throws.
-// Takes an arg array (not a shell string) so no shell parsing / injection.
+// binary is missing / the call exits non-zero, manager absent. Never throws.
+// Takes an arg array, not a shell string, so no shell parsing / injection.
 export function readCommand(
   binary: string,
   args: readonly string[],
@@ -133,8 +133,8 @@ export function readCommand(
   }
 }
 
-// True when `binary` resolves on PATH (manager installed). `command -v` is a
-// shell builtin (not spawnable directly), so probe with the platform's PATH
+// True when `binary` resolves on PATH, manager installed. `command -v` is a
+// shell builtin, not spawnable directly, so probe with the platform's PATH
 // resolver binary: `where` on Windows, `which` elsewhere.
 export function hasBinary(binary: string): boolean {
   return os.platform() === 'win32'
@@ -359,7 +359,7 @@ export const MACOS_PKG_AUTO_UPDATE_ENV: readonly MacosPkgAutoUpdateEnv[] = [
   },
 ]
 
-// True when `name` (a platform string) applies to the current OS.
+// True when `name`, a platform string, applies to the current OS.
 export function platformApplies(platform: PkgManagerPlatform): boolean {
   return platform === 'all' || platform === os.platform()
 }
@@ -386,7 +386,7 @@ export function bypassPhrasesFor(check: AutoUpdateCheck): string[] {
   return phrases
 }
 
-// The check whose binary the command invokes, if any (AST-matched, no regex).
+// The check whose binary the command invokes, if any, AST-matched, no regex.
 // Used by the guard to map a Bash command → the manager to verify.
 export function matchInvokedManager(
   command: string,
@@ -403,7 +403,7 @@ export function matchInvokedManager(
 }
 
 // Run every check that applies to the current platform. Used by the audit
-// script; 'absent' results are informational (never a drift failure).
+// script; 'absent' results are informational, never a drift failure.
 export function auditCurrentPlatform(): AutoUpdateStatus[] {
   const results: AutoUpdateStatus[] = []
   for (let i = 0, { length } = AUTO_UPDATE_CHECKS; i < length; i += 1) {

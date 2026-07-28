@@ -2,9 +2,9 @@
 /**
  * @file Assertion: every repo in fleet-repos.json resolves to a real repo in
  *   its org (a roster reference resolves to an actual GitHub repo). Onboarding
- *   must update the roster AND create the actual GitHub repo (in the exact org)
+ *   must update the roster AND create the actual GitHub repo, in the exact org
  *   — a roster entry with no repo is a half-onboarded member.
- *   socket-gemini-nano sat in the roster with no `SocketDev/` repo, so its
+ *   odai sat in the roster with no `SocketDev/` repo, so its
  *   cascade commits stranded (no origin/main to push to) and its environment
  *   provisioning 404'd. For each member it reads `gh api repos/<owner>/<name>`;
  *   a 404 (repo not found, OR inaccessible to this token) is reported. The

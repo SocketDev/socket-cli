@@ -1,14 +1,14 @@
 /**
  * @file Single source of truth for "what's the Socket API token?" Resolution
- *   order (first hit wins): env → keychain. External fleet docs / workflow
- *   inputs / .env.example use SOCKET_API_TOKEN (the promoted name); internally
+ *   order, first hit wins: env → keychain. External fleet docs / workflow
+ *   inputs / .env.example use SOCKET_API_TOKEN, the promoted name; internally
  *   we read both SOCKET_API_TOKEN and SOCKET_API_KEY because every Socket tool
  *   supports SOCKET_API_KEY (CLI, SDK, sfw, fleet scripts). Returns `undefined`
  *   when no token is found. Never throws — callers decide how to react (use
  *   free SFW, skip auth-gated install, prompt). **No `.env` / `.env.local`
  *   reads.** Dotfiles leak — they get accidentally committed, read by every dev
  *   tool that walks the project dir, swept into log scrapers. Tokens belong in
- *   env (for CI) or in the OS keychain (for dev local). **Module- scope
+ *   env (for CI) or in the OS keychain, for dev local. **Module- scope
  *   cache.** Each successful resolution is memoized for the lifetime of the
  *   process. Reason: every `security find-generic-password` call on macOS
  *   triggers a fresh Keychain ACL check, which surfaces the "this app wants to

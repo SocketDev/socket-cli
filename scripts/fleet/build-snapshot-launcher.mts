@@ -8,7 +8,7 @@
  *   SECOND `node --snapshot-blob …` — a two-process tax (~30 ms over
  *   snapshot-direct) that erases the snapshot's win. The launcher removes it:
  *
- *     - POSIX (mac, linux): `dispatch-launcher.c` re-execs node in ONE process
+ *     - POSIX, mac, linux: `dispatch-launcher.c` re-execs node in ONE process
  *       transition (`execv` REPLACES the launcher image — no parent node, no
  *       fork, no wait, no second resident process). Measured ~1.4 ms intrinsic
  *       overhead over a bare `execv`, ≈ snapshot-direct, ~1.25× faster than the
@@ -16,7 +16,7 @@
  *       x64 1.36× vs coverage-matched compile-cache index.cjs — Docker-measured).
  *     - WINDOWS (`dispatch-launcher-win.c`): Windows has no image-replacing
  *       execv, so the launcher `CreateProcess`es node, `WaitForSingleObject`s,
- *       and propagates the exit code (a thin native parent that only waits). It
+ *       and propagates the exit code, a thin native parent that only waits. It
  *       still removes the loader's full PARENT-node startup (two node processes
  *       → one node + a ~150 KB native parent). Whether that preserves the win is
  *       a Windows-CI question (CreateProcess is heavier than execv and the thin
@@ -71,7 +71,7 @@ const SNAPSHOT_BUNDLE = path.join(DISPATCH_DIR, 'snapshot-bundle.cjs')
 
 /**
  * Per-platform build recipe. The HOST row is what `main()` runs; the others are
- * the Docker/CI incantations (documented, not executed here) that produce the
+ * the Docker/CI incantations, documented, not executed here, that produce the
  * launcher for a non-host target. Cross-compiling the WINDOWS launcher is done
  * with mingw from a POSIX host (proven: PE32+ x64 + PE32 i686 both build); the
  * arm64-windows target has no mingw toolchain and is built on the
@@ -140,7 +140,7 @@ export interface CompilerPlan {
 
 /**
  * Pick the compiler + flags for this host: mingw gcc or MSVC `cl` on Windows
- * (prefer gcc when present), plain `cc` everywhere else.
+ * prefer gcc when present, plain `cc` everywhere else.
  */
 export function selectCompiler(
   src: string,

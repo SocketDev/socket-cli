@@ -53,7 +53,7 @@ export function dedupeFindings(
 }
 
 // Merge variant findings discovered in the Variant stage into the base set,
-// deduping the combined list (a variant that re-finds a base finding collapses).
+// deduping the combined list, a variant that re-finds a base finding collapses.
 export function mergeVariants(
   base: readonly QualityFinding[],
   variants: readonly QualityFinding[],

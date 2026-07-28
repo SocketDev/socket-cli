@@ -16,8 +16,8 @@
  *   - Use string-literal right operands (number / boolean / template literals are
  *     skipped — those rarely benefit from alpha order and confuse the autofix).
  *     Autofix: rewrites the right-hand string literals in sorted order. Skipped
- *     (reports without fix) when:
- *   - Any clause's left operand differs (mixed identifier).
+ *     reports without fix, when:
+ *   - Any clause's left operand differs, mixed identifier.
  *   - Any clause's right operand isn't a plain string literal.
  *   - Any clause uses a different operator from the first.
  *   - Comments live between clauses (reordering through a comment would break
@@ -167,7 +167,7 @@ const rule = {
 
       // Operator/leftText must be uniform within the chain. For `||`
       // chains the natural shape is `===`; for `&&` chains it's `!==`
-      // (De Morgan). Mixed → skip (rare and the rewrite would change
+      // De Morgan. Mixed → skip (rare and the rewrite would change
       // semantics).
       const firstLeft = clauses[0]!.leftText
       const firstOp = clauses[0]!.operator
@@ -182,7 +182,7 @@ const rule = {
 
       // For `||` chains, expect `===`. For `&&` chains, expect `!==`.
       // Other combinations are valid logic but not the shape this rule
-      // sorts (they'd be tautologies or contradictions).
+      // sorts, they'd be tautologies or contradictions.
       if (op === '||' && firstOp !== '===') {
         return
       }
@@ -219,7 +219,7 @@ const rule = {
         fix(fixer: RuleFixer) {
           // Replace each leaf's right-string-literal with the
           // sorted-position counterpart. Because the chain is
-          // homogeneous (same left, same op), the rewrite is safe
+          // homogeneous, same left, same op, the rewrite is safe
           // semantically — only the comparand strings reorder.
           const fixes: AstNode[] = []
           for (let i = 0; i < leaves.length; i++) {

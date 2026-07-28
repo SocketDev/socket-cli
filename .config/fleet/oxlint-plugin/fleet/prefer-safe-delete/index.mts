@@ -11,12 +11,12 @@
  *     safeDelete } from '@socketsecurity/lib-stable/fs/safe'` (or
  *     `safeDeleteSync`) when missing. The autofix is conservative — it only
  *     fires when the call shape is "obviously equivalent" to safeDelete:
- *   - The first argument is a single expression (the path).
+ *   - The first argument is a single expression, the path.
  *   - Any second argument is an options object literal (we drop it; safeDelete
  *     handles recursive/force internally).
  *   - No third argument (rules out fs.rm with an explicit callback).
- *   - Not a node-callback-style usage (no trailing function expression). Skipped
- *     (reported without fix):
+ *   - Not a node-callback-style usage, no trailing function expression. Skipped
+ *     reported without fix:
  *   - `fs.rm(p, opts, cb)` — node-callback style; semantics differ.
  *   - Calls whose result is checked/assigned in a way that depends on fs.rm's
  *     specific throw-on-missing or callback contract. Spawn-based bans (`rm
@@ -160,7 +160,7 @@ const rule = {
     // one. Covers `fs.rm` / `fs.promises.rm` / `promises.rm` / `fsPromises.rm`
     // (member) AND a bare `rmSync(...)` whose name is a node:fs delete import
     // (bare). A method call on an unrelated object (`child.unlink()`) or a local
-    // `rm`/`unlink` helper (not imported from fs) is skipped.
+    // `rm`/`unlink` helper, not imported from fs, is skipped.
     function detectFsDeleteMethod(callee: AstNode): string | undefined {
       if (callee.type === 'MemberExpression') {
         if (

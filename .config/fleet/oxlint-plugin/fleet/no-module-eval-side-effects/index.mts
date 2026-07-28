@@ -57,14 +57,14 @@
  *     string-literal `import('node:fs')` is snapshottable.
  *
  *   WHAT "SNAPSHOT-ELIGIBLE" MEANS — the modules that freeze into the dispatch
- *   bundle: the `_dispatch/` + `_shared/` graph (always bundled) and each
+ *   bundle: the `_dispatch/` + `_shared/` graph, always bundled, and each
  *   BUNDLE-SAFE hook `index.mts` — exactly the maker's criterion in
  *   `scripts/fleet/gen/hook-dispatch.mts` (an entrypoint guard
  *   `import.meta.url === \`file://${process.argv[1]}\`` AND `export function
  *   run(`). A hook that runs via top-level `await runHook(...)` lacks the
  *   `export run` marker, so the maker never bundles it and this rule never
  *   snapshot-flags it. Eligibility is computed per-file from the absolute path +
- *   (for hook index files) the file's own source, so it works both in a real
+ *   for hook index files, the file's own source, so it works both in a real
  *   repo and in the RuleTester's tmp-dir fixtures (which control the path tail
  *   via `filename:`).
  *
@@ -77,7 +77,7 @@
  *   `// oxlint-disable-next-line socket/no-module-eval-side-effects -- <reason>`
  *   (line-scoped only — `socket/no-file-scope-oxlint-disable` forbids the
  *   file-scope form). Report-only: the lazy rewrite needs the surrounding
- *   intent, so the human (or the AI-fix step) makes the call.
+ *   intent, so the human, or the AI-fix step, makes the call.
  */
 
 import { makeBypassChecker } from '../../lib/comment-markers.mts'
@@ -97,7 +97,7 @@ const TLA_BYPASS_RE = /socket-lint:\s*allow\s+top-level-await/
 // failure that actually aborted `--build-snapshot`.
 
 // `new X(...)` at module scope, by constructor NAME, captures a native handle
-// (or, for Comparator, trips a circular semver init under the bundled snapshot).
+// or, for Comparator, trips a circular semver init under the bundled snapshot.
 const DENYLISTED_CONSTRUCTORS = new Set<string>([
   // node:async_hooks — captures an async-context [Foreign] handle.
   'AsyncLocalStorage',
@@ -175,12 +175,12 @@ function isLazy(node: AstNode): boolean {
   return false
 }
 
-// ─────────────────── snapshot-eligibility (clause scope) ───────────────────
+// ─────────────────── snapshot-eligibility, clause scope ───────────────────
 // The two snapshot-eligible-only clauses (top-level await, variable-path
 // dynamic import) fire ONLY in modules that freeze into the V8 dispatch bundle.
 // That set is the rolldown bundle's input closure — mirror the maker
 // (scripts/fleet/gen/hook-dispatch.mts), DON'T re-derive a different notion:
-//   - the `_dispatch/` + `_shared/` graph (always bundled), and
+//   - the `_dispatch/` + `_shared/` graph, always bundled, and
 //   - each BUNDLE-SAFE hook `index.mts` — entrypoint-guarded AND `export run`.
 // Matched on the absolute file path (works in a real repo AND the RuleTester,
 // which controls the path tail via `filename:`), plus — for a hook index file —
@@ -245,7 +245,7 @@ function calleeName(callee: AstNode | undefined): string | undefined {
 
 /**
  * `WebAssembly.<member>` member expression → the member name, else undefined.
- * Matches the `WebAssembly` object by identifier name (the global).
+ * Matches the `WebAssembly` object by identifier name, the global.
  */
 function webAssemblyMember(node: AstNode | undefined): string | undefined {
   if (
@@ -295,7 +295,7 @@ const rule = {
   },
 
   create(context: RuleContext) {
-    // Eligibility is decided once per file (cheap regex tests). The hygiene
+    // Eligibility is decided once per file, cheap regex tests. The hygiene
     // visitors run unconditionally; the snapshot-eligible-only visitors are
     // registered only when this file freezes into the dispatch bundle.
     const filename = context.physicalFilename || context.filename || ''

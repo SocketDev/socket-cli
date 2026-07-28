@@ -2,12 +2,12 @@
 // Claude Code Stop hook — adversarial-review-nudge.
 //
 // Fires when the assistant's most-recent turn treats a clean automated
-// review (a review bot reporting no findings) as a review verdict, with no
+// review, a review bot reporting no findings, as a review verdict, with no
 // evidence that an adversarial self-review ran. A clean bot pass is one
 // reviewer shape finding nothing — absence of findings, not evidence of
 // absence. The nudge points at the adversarial self-review loop:
 // independent reviewers with distinct lenses prompted to REFUTE, findings
-// verified against live behavior (not speculation), rounds iterated until
+// verified against live behavior, not speculation, rounds iterated until
 // one adds nothing load-bearing (each round attacks what the previous
 // round's fixes introduced), and one consolidated record (adopted /
 // accepted / refuted) posted at the end.
@@ -18,9 +18,9 @@
 // default.
 //
 // Detection model:
-//   - Reads the last assistant turn's text (code fences stripped).
+//   - Reads the last assistant turn's text, code fences stripped.
 //   - Fires when a review-bot token and a clean-verdict token appear in
-//     the same sentence-ish window (either order).
+//     the same sentence-ish window, either order.
 //   - Suppressed when the same turn carries adversarial-review evidence:
 //     refute/adversarial/red-team language in the prose, or a spawned
 //     reviewer agent (Task/Agent tool use whose prompt reads as a review).
@@ -55,7 +55,7 @@ const CLEAN_BOT_PATTERNS: readonly RegExp[] = [
   ),
 ]
 
-// Prose that shows the adversarial loop is already running (or ran).
+// Prose that shows the adversarial loop is already running, or ran.
 const ADVERSARIAL_EVIDENCE_RE =
   /\badversari|\bred[- ]team|\brefut(?:e|ed|ing|ation)\b|devil'?s advocate|\bskeptic/i
 

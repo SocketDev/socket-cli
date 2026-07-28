@@ -29,7 +29,7 @@ export const PackageManager = Type.Union([
 ])
 
 // How a GitHub-hosted tool ships: a release asset, a source archive, or a
-// locked uv project (Python security-hook tools). The `uv-project` kind is a
+// locked uv project, Python security-hook tools. The `uv-project` kind is a
 // package pinned via a committed pyproject.toml + uv.lock closure, installed
 // with `uv sync --locked` (e.g. headroom-ai — see
 // scripts/fleet/install-headroom.mts — and skillspector). The fleet installs
@@ -103,7 +103,7 @@ export const ToolEntry = Type.Object(
   {
     description: Type.Optional(Type.String()),
     version: Type.Optional(Type.String()),
-    // ISO date (YYYY-MM-DD) a pinned version was selected (security tools).
+    // ISO date (YYYY-MM-DD) a pinned version was selected, security tools.
     versionDate: Type.Optional(Type.String()),
     // GitHub release tag when it differs from `version` (e.g. python).
     tag: Type.Optional(Type.String()),
@@ -118,7 +118,7 @@ export const ToolEntry = Type.Object(
     // npm SRI (sha512-…) or single-artifact SRI (sha256-…).
     integrity: Type.Optional(Type.String()),
     // checksum map: key → hex sha256 (bundle-tools) or { asset, sha256 }
-    // (external-tools per-platform). See ChecksumValue.
+    // external-tools per-platform. See ChecksumValue.
     checksums: Type.Optional(Type.Record(Type.String(), ChecksumValue)),
     // platform key → { asset, integrity } for per-platform binaries.
     platforms: Type.Optional(Type.Record(Type.String(), PlatformEntry)),
@@ -181,7 +181,7 @@ export interface ValidationFailure {
 
 /**
  * Non-throwing validation against the given schema. Returns the list of issues
- * (empty when valid). Lets a caller (e.g. the fleet check) report every file's
+ * empty when valid. Lets a caller (e.g. the fleet check) report every file's
  * problems without aborting on the first.
  */
 export function collectIssues(

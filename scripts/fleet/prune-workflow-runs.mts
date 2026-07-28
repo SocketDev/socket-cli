@@ -18,7 +18,7 @@
  *   finds nothing to prune, so API-capped run listings still converge.
  *
  *   Deletes are paced + exponentially backed off: GitHub's SECONDARY rate
- *   limit 403-throttles rapid run-deletes (separate from the primary quota),
+ *   limit 403-throttles rapid run-deletes, separate from the primary quota,
  *   so a tight loop stalls.
  *
  *   Usage: node scripts/fleet/prune-workflow-runs.mts
@@ -144,7 +144,7 @@ export function computeCutoff(retentionDays: number, now: number): number {
 }
 
 // The retention decision, pure — no gh/network access. Purged and absent
-// workflows (and orphaned run groups missing from the status map) lose every
+// workflows, and orphaned run groups missing from the status map, lose every
 // run; a present workflow keeps its newest `policy.keep` runs, minus any
 // that predate `policy.cutoff`.
 export function selectRunsToDelete(
@@ -216,7 +216,7 @@ export async function resolveDefaultBranch(
 }
 
 // Whether the workflow source file exists on the branch. Only an explicit
-// HTTP 404 body counts as absent; any other failure (rate limit, network)
+// HTTP 404 body counts as absent; any other failure, rate limit, network
 // reports 'error' so the caller aborts instead of dooming live runs.
 export async function sourceExistsOnBranch(
   repo: string,
@@ -407,7 +407,7 @@ export async function pruneRepo(
     )
     if (doomed.length === 0) {
       // Nothing left to prune — clear any refused snapshot from the prior
-      // round (those runs are gone now, however they went).
+      // round, those runs are gone now, however they went.
       result.failed = 0
       break
     }

@@ -13,7 +13,7 @@
  *   identifiers in a single chain is the structural signal that it's a flag
  *   list, not a guard. Detects: chains of `&&` or `||` whose operands are ALL
  *   bare Identifiers (length ≥ 3, no duplicates, uniform operator across the
- *   flattened chain). Skipped (not reported):
+ *   flattened chain). Skipped, not reported:
  *
  *   - Length 2 — guard patterns; narrative order is intentional.
  *   - Any operand isn't a bare `Identifier` (Calls / member-access / literals /
@@ -22,7 +22,7 @@
  *     observable).
  *   - Duplicate identifiers in the chain (rare, but rewriting through the
  *     duplicate would silently drop one).
- *   - Comments live between operands (autofix would relocate them). Why a
+ *   - Comments live between operands, autofix would relocate them. Why a
  *     separate rule from sort-equality-disjunctions: that rule sorts the
  *     right-hand string-literal of an equality chain (`x === 'a' || x ===
  *     'b'`); this rule sorts the bare-identifier operands of a pure-identifier
@@ -85,7 +85,7 @@ const rule = {
     }
 
     // A `&&`/`||` chain is safe to reorder ONLY when its result is consumed as
-    // a boolean test (truthiness only). In a VALUE position
+    // a boolean test, truthiness only. In a VALUE position
     // (`const x = a && b`, `return a && b`, a call arg) `&&`/`||` yields a
     // SPECIFIC operand, so reordering changes the value: `(c && a && b)` is `0`
     // but `(a && b && c)` is `null`. Walk out through same-operator parents and

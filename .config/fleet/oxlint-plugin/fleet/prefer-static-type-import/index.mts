@@ -11,7 +11,7 @@
  *      static `import type { Remap, Spinner }` advertises the file's external
  *      dependencies at the top.
  *   3. Bundlers / language servers can deduplicate static imports more reliably
- *      than inline ones; some tools (oxfmt, prettier-tsdoc) don't reformat
+ *      than inline ones; some tools, oxfmt, prettier-tsdoc, don't reformat
  *      inline-import expressions consistently. Detects:
  *
  *   - `import('module').Name` (TSImportType AST node — TypeScript's type-context
@@ -70,7 +70,7 @@ const rule = {
 
         // Source-literal field name varies by AST version:
         //   - Older ESTree-ish: `node.argument.literal.value` (TSLiteralType wrapper)
-        //   - Mid: `node.argument.value` (direct string literal)
+        //   - Mid: `node.argument.value`, direct string literal
         //   - Current oxlint: `node.source.value` (StringLiteral child named
         //     `source`, mirroring ImportDeclaration's `source` field)
         // Cover all three so the rule survives further AST drift.

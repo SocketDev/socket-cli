@@ -5,17 +5,17 @@
  *   when the repo ships one, an isolated suite (forks, full isolation for tests
  *   that mock globals / chdir / mutate process.env); the two coverage reports
  *   are merged with a max-hit-count strategy. Byte-identical across every fleet
- *   repo (sync-scaffolding flags drift). Config discovery is repo-first:
+ *   repo, sync-scaffolding flags drift. Config discovery is repo-first:
  *   `.config/repo/vitest.config.mts` then legacy `.config/vitest.config.mts`;
  *   the isolated suite runs only when `.config/repo/vitest.config.isolated.mts`
  *   (or the legacy `.config/` location) exists. Options: --code-only run only
- *   code coverage (skip type coverage); --type-only run only type coverage;
+ *   code coverage, skip type coverage; --type-only run only type coverage;
  *   --summary hide the detailed v8 table, show only the summary.
  */
 
 // Imported FIRST: pins a per-run-unique FLEET_COVERAGE_SCRATCH_DIR into the env
 // BEFORE paths.mts derives COVERAGE_SCRATCH_DIR from it, so concurrent cover
-// runs can't wipe each other's scratch (the cover-gate wobble). Side-effect
+// runs can't wipe each other's scratch, the cover-gate wobble. Side-effect
 // import — keep it above every import that transitively loads paths.mts.
 import './cover/scratch-isolation.mts'
 
@@ -42,22 +42,30 @@ import {
   captureEnvSnapshot,
   collectChurnNotes,
   collectLiveActorNotes,
+  countRawV8Profiles,
   executeTestSuites,
   IncompleteChildCaptureError,
+  isConversionEmptyDespiteProfiles,
   pnpmDirChurned,
   reexecWithHeapHeadroom,
   resolveRunPlan,
   runQuietCommand,
   shouldRetryForChurn,
+  shouldRetryForEmptyConversion,
   waitForPnpmQuiescence,
 } from './cover-run.mts'
 export {
+  countRawV8Profiles,
+  isConversionEmptyDespiteProfiles,
   pnpmDirChurned,
   shouldRetryForChurn,
+  shouldRetryForEmptyConversion,
   waitForPnpmQuiescence,
 } from './cover-run.mts'
 export type {
   ChurnRetryDecision,
+  EmptyConversionDecision,
+  EmptyConversionRetryDecision,
   QuiescenceDeps,
   QuiescenceOptions,
 } from './cover-run.mts'
@@ -72,7 +80,7 @@ import {
   resolveConfiguredUnitBudgetMs,
 } from './cover-report.mts'
 import { ensurePinnedNode } from './lib/ensure-node.mts'
-import { COVERAGE_SCRATCH_DIR, REPO_ROOT } from './paths.mts'
+import { COVERAGE_DIR, COVERAGE_SCRATCH_DIR, REPO_ROOT } from './paths.mts'
 import type { AggregateCoverage } from './util/coverage-merge.mts'
 import {
   mergeCoverageFinal,
@@ -117,7 +125,7 @@ export interface EnvSnapshot {
 }
 
 // Compare merged aggregate coverage against configured thresholds. Returns the
-// list of metrics that fell short (empty when all pass or no thresholds set).
+// list of metrics that fell short, empty when all pass or no thresholds set.
 export function checkThresholds(
   aggregate: AggregateCoverage | undefined,
   thresholds: CoverThresholds | undefined,
@@ -173,7 +181,7 @@ export function parseTypeCoveragePercent(output: string): number | undefined {
 }
 
 // Explain a failing suite — see cover-report.mts for the full rationale.
-// Returns the error-ish lines from the suite output (deduped, capped),
+// Returns the error-ish lines from the suite output, deduped, capped,
 // falling back to the output tail; empty for a passing suite.
 export function extractSuiteFailureLines(
   name: string,
@@ -229,7 +237,7 @@ export async function convertChildrenCoverage(): Promise<boolean> {
 }
 
 export async function main(): Promise<void> {
-  // Re-exec under the pinned node when a stale PATH node (below the hook floor)
+  // Re-exec under the pinned node when a stale PATH node, below the hook floor
   // is active, so the coverage vitest + the hooks it spawns run on the fleet
   // runtime instead of failing "Hook requires Node >= 24".
   ensurePinnedNode()
@@ -286,13 +294,42 @@ export async function main(): Promise<void> {
       }
     } else {
       const budgetMs = resolveUnitBudgetMs()
-      // Run the suites, and when a failure coincides with concurrent
-      // node_modules/.pnpm churn treat it as INCONCLUSIVE: wait for the install
-      // state to settle, then re-run (bounded by COVER_MAX_ATTEMPTS). A
-      // churn-free failure breaks out immediately and stays fatal.
+      // Disabled seam (#213 step 1): strict-tier enforcement. A suite that ran
+      // must have produced its tier's coverage-final.json; a dropped tier
+      // silently narrows the merge and over-reports, a false-green. Gated OFF
+      // by default — the 'shared' tier always runs, 'isolated' only when its
+      // suite is resolved. Flip on with FLEET_COVER_STRICT_TIERS=1 once a
+      // supervised `cover` run confirms the wheelhouse emits every resolved
+      // tier; step 2 promotes this gate into the `cover` section of
+      // `.config/repo/socket-wheelhouse.json`.
+      const expectedTiers =
+        process.env['FLEET_COVER_STRICT_TIERS'] === '1'
+          ? ['shared', ...(isolatedVitestArgs ? ['isolated'] : [])]
+          : undefined
+
+      // Run the suites, convert the raw v8 profiles, and merge — retrying when
+      // the run is INCONCLUSIVE. Two inconclusive conditions share one bounded
+      // budget (COVER_MAX_ATTEMPTS):
+      //   1. A test failure that coincided with concurrent node_modules/.pnpm
+      //      churn, module resolution was transiently broken.
+      //   2. An empty v8→istanbul conversion despite raw profiles being
+      //      captured — the false-green this runner exists to catch: a churn
+      //      mid-conversion can gut coverage-final.json while the raw dumps are
+      //      intact, so 0.00% is reported for every file. A re-run regenerates
+      //      the raw profiles AND reconverts, resolving a churn-corrupted
+      //      conversion. A churn-free test failure breaks out immediately and
+      //      stays fatal; a persistently-empty conversion fails LOUD below.
       let suiteResults: TestSuitesResult
+      let aggregateCoverage: AggregateCoverage | undefined
+      let conversionEmptyDespiteProfiles = false
+      let rawProfileCount = 0
+      let captureIncomplete = false
+      let tierDropped = false
       let attempt = 1
       for (;;) {
+        captureIncomplete = false
+        tierDropped = false
+        aggregateCoverage = undefined
         const beforeRun = snapshotEnvState()
         const suiteStart = performance.now()
         const stopWatchdog = startUnitBudgetWatchdog(budgetMs)
@@ -305,25 +342,95 @@ export async function main(): Promise<void> {
         warnIfOverBudget(performance.now() - suiteStart, budgetMs)
         const churnedDuringRun = pnpmDirChurned(beforeRun, snapshotEnvState())
         const failed = suiteResults.combined.exitCode !== 0
-        if (
-          !shouldRetryForChurn({
-            attempt,
-            churnedDuringRun,
-            failed,
-            maxAttempts: COVER_MAX_ATTEMPTS,
+
+        // Count the raw v8 profiles THIS run produced BEFORE the conversion
+        // consumes, and deletes, the children-raw dir — the "raw profiles
+        // present" half of the false-green test.
+        rawProfileCount = countRawV8Profiles()
+
+        // Convert the raw subprocess coverage the suites' children wrote before
+        // the merge reads the children tier.
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          await convertChildrenCoverage()
+        } catch (e) {
+          if (e instanceof IncompleteChildCaptureError) {
+            // Provably-incomplete capture — fail LOUD rather than merge a
+            // partial, which would silently under-report on runner timing.
+            logger.error(
+              `Subprocess coverage capture incomplete: ${errorMessage(e)}`,
+            )
+            captureIncomplete = true
+          } else {
+            logger.warn(
+              `Subprocess coverage conversion failed: ${errorMessage(e)}`,
+            )
+          }
+        }
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          aggregateCoverage = await mergeCoverageFinal({
+            expectedTiers,
+            logger,
+            rootPath,
           })
-        ) {
+        } catch (e) {
+          if (e instanceof MissingTierCoverageError) {
+            logger.error(`Coverage tier dropped: ${errorMessage(e)}`)
+            tierDropped = true
+          } else {
+            logger.warn(
+              `Could not compute aggregate coverage: ${errorMessage(e)}`,
+            )
+          }
+        }
+
+        // The false-green: raw v8 profiles captured but the merged report has
+        // no measurable statements (an empty/unpopulated coverage-final.json).
+        // Distinct from a genuine 0% statements present, none covered, and a
+        // genuinely empty scope, no raw profiles.
+        conversionEmptyDespiteProfiles = isConversionEmptyDespiteProfiles({
+          hasMeasurableStatements:
+            aggregateCoverage !== undefined &&
+            aggregateCoverage.totalStatements > 0,
+          rawProfileCount,
+        })
+
+        const retryForChurn = shouldRetryForChurn({
+          attempt,
+          churnedDuringRun,
+          failed,
+          maxAttempts: COVER_MAX_ATTEMPTS,
+        })
+        const retryForEmptyConversion = shouldRetryForEmptyConversion({
+          attempt,
+          conversionEmpty: conversionEmptyDespiteProfiles,
+          maxAttempts: COVER_MAX_ATTEMPTS,
+        })
+        if (!retryForChurn && !retryForEmptyConversion) {
           break
         }
-        logger.warn(
-          `Suite failed while node_modules/.pnpm churned mid-run (attempt ${attempt}/${COVER_MAX_ATTEMPTS}) — treating as INCONCLUSIVE; waiting for install-state to settle before re-running.`,
-        )
+        if (retryForEmptyConversion) {
+          logger.warn(
+            `Coverage conversion produced empty output despite ${rawProfileCount} raw v8 profile(s) (attempt ${attempt}/${COVER_MAX_ATTEMPTS}) — a v8→istanbul conversion failure (typically a mid-run node_modules/.pnpm churn), NOT a real 0%. Waiting for install-state to settle, then re-running to regenerate + reconvert.`,
+          )
+        } else {
+          logger.warn(
+            `Suite failed while node_modules/.pnpm churned mid-run (attempt ${attempt}/${COVER_MAX_ATTEMPTS}) — treating as INCONCLUSIVE; waiting for install-state to settle before re-running.`,
+          )
+        }
         attempt += 1
         // eslint-disable-next-line no-await-in-loop
         await waitForPnpmQuiescence()
       }
       const { combined, isolatedResult, mainResult } = suiteResults
       exitCode = combined.exitCode
+      if (captureIncomplete) {
+        exitCode = exitCode === 0 ? 1 : exitCode
+      }
+      if (tierDropped) {
+        exitCode = exitCode === 0 ? 1 : exitCode
+      }
 
       const mainOutput = cleanOutput(mainResult.stdout + mainResult.stderr)
       const combinedOutput = cleanOutput(combined.stdout + combined.stderr)
@@ -339,52 +446,17 @@ export async function main(): Promise<void> {
         typeCoveragePercent = parseTypeCoveragePercent(typeCoverageOutput)
       }
 
-      // Disabled seam (#213 step 1): strict-tier enforcement. A suite that ran
-      // must have produced its tier's coverage-final.json; a dropped tier
-      // silently narrows the merge and over-reports (a false-green). Gated OFF
-      // by default — the 'shared' tier always runs, 'isolated' only when its
-      // suite is resolved. Flip on with FLEET_COVER_STRICT_TIERS=1 once a
-      // supervised `cover` run confirms the wheelhouse emits every resolved
-      // tier; step 2 promotes this gate into the `cover` section of
-      // `.config/repo/socket-wheelhouse.json`.
-      const expectedTiers =
-        process.env['FLEET_COVER_STRICT_TIERS'] === '1'
-          ? ['shared', ...(isolatedVitestArgs ? ['isolated'] : [])]
-          : undefined
-      // Convert the raw subprocess coverage the suites' children wrote before
-      // the merge reads the children tier.
-      try {
-        await convertChildrenCoverage()
-      } catch (e) {
-        if (e instanceof IncompleteChildCaptureError) {
-          // Provably-incomplete capture — fail LOUD rather than merge a partial
-          // (which would silently under-report the aggregate on runner timing).
-          logger.error(
-            `Subprocess coverage capture incomplete: ${errorMessage(e)}`,
-          )
-          exitCode = exitCode === 0 ? 1 : exitCode
-        } else {
-          logger.warn(
-            `Subprocess coverage conversion failed: ${errorMessage(e)}`,
-          )
-        }
-      }
-      let aggregateCoverage: AggregateCoverage | undefined
-      try {
-        aggregateCoverage = await mergeCoverageFinal({
-          expectedTiers,
-          logger,
-          rootPath,
-        })
-      } catch (e) {
-        if (e instanceof MissingTierCoverageError) {
-          logger.error(`Coverage tier dropped: ${errorMessage(e)}`)
-          exitCode = exitCode === 0 ? 1 : exitCode
-        } else {
-          logger.warn(
-            `Could not compute aggregate coverage: ${errorMessage(e)}`,
-          )
-        }
+      // FAIL LOUD: raw v8 profiles were captured but the conversion STILL
+      // produced an empty report after the retry budget — never report 0.00%
+      // and exit 0 (a false-green the badge + release gate would trust).
+      if (conversionEmptyDespiteProfiles) {
+        logger.error(
+          `Coverage conversion produced empty output despite ${rawProfileCount} raw v8 profile(s). ` +
+            `Where: mergeCoverageFinal over ${COVERAGE_DIR}. ` +
+            `Saw vs wanted: saw 0 measured statements from a populated raw-profile capture; wanted the real per-file coverage. ` +
+            `Fix: a mid-run node_modules/.pnpm churn most likely broke module resolution for the v8→istanbul conversion — re-run \`pnpm run cover\` on a quiescent tree, or investigate the conversion step (c8 Report / vitest v8 provider).`,
+        )
+        exitCode = exitCode === 0 ? 1 : exitCode
       }
 
       // mergeCoverageFinal (above) persists the folded coverage-final.json +

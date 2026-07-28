@@ -14,7 +14,7 @@
 // and `$(…)` substitution and false-positives on a literal in a grep
 // arg; the parser handles all of it.
 //
-// This guard detects a CODE pattern (a regex literal in source text),
+// This guard detects a CODE pattern, a regex literal in source text,
 // not a shell command — so it is itself allowed to use regex.
 //
 // Scope: only files under `.claude/hooks/`. Application code elsewhere
@@ -59,7 +59,7 @@ interface Finding {
 // adjacent to a whitespace/boundary metachar.
 const REGEX_LITERAL = /\/((?:\\.|[^/\n\\])+)\/[dgimsuvy]*/g
 
-// Within a regex body, a shell binary token followed (allowing flags) by
+// Within a regex body, a shell binary token followed, allowing flags, by
 // a whitespace/boundary metachar — `\bgit\b`, `git\s+`, `gh\s+pr`,
 // `pnpm +run`, etc. The binary is captured for the diagnostic.
 function commandShapeBinary(regexBody: string): string | undefined {

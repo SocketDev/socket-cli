@@ -6,14 +6,14 @@
  *
  *   1. CROSS-MAJOR DUPLICATES — a package resolved at more than one distinct
  *      major version in the install tree. Each extra major is dead weight
- *      (more bytes, more attack surface, bigger bundles). The skill's decision
+ *      more bytes, more attack surface, bigger bundles. The skill's decision
  *      tree classifies whether a given family is collapsible; this gate just
  *      surfaces the family so it can't silently re-accumulate.
  *   2. UN-REDIRECTED DROP-INS — a package that has a known
  *      `@socketregistry/<name>` hardened drop-in yet still resolves from npm
  *      under its own bare name. The drop-in universe is learned from the
  *      RESOLVED world: every `@socketregistry/*` name the lockfile mentions
- *      (override values, resolved package keys, importer specifiers) plus the
+ *      override values, resolved package keys, importer specifiers, plus the
  *      cascaded fleet catalog (`.config/fleet/pnpm-workspace.fleet.yaml`).
  *      pnpm rewrites every matching resolution when a redirect override is
  *      present, so a surviving bare package key IS a missing redirect — ranged
@@ -40,10 +40,10 @@
  *   rolldown (dev)dependency OR a rolldown config file (scripts/plugins that
  *   bundle). A non-bundling repo keeps the cross-major report informational
  *   (exit 0). A missing `@socketregistry` redirect is always a hard failure
- *   (the redirect is safe to add). No-ops when `pnpm-lock.yaml` is absent.
+ *   the redirect is safe to add. No-ops when `pnpm-lock.yaml` is absent.
  *   Exit codes:
  *
- *   - 0 — no missing `@socketregistry` redirect, and (rolldown repo) zero
+ *   - 0 — no missing `@socketregistry` redirect, and, rolldown repo, zero
  *     cross-major duplicates in the production closure.
  *   - 1 — a missing `@socketregistry` redirect, or a cross-major duplicate in
  *     the production closure of a rolldown repo.
@@ -482,7 +482,7 @@ function main(): void {
   // Auto-gated on rolldown, no opt-in: a repo that bundles with rolldown pays
   // real bytes for every duplicate major IN ITS PRODUCTION CLOSURE, so there
   // ANY such cross-major family is a hard failure — the bar is zero dups
-  // (force the format-flips, patch-and-force the API-breaks). A dup outside
+  // force the format-flips, patch-and-force the API-breaks. A dup outside
   // the closure (dev/test/publish-only tooling) never reaches bundle bytes, so
   // it stays informational even in a rolldown repo. A non-bundling repo keeps
   // the whole report informational.

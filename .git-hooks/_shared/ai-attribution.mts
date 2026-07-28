@@ -1,5 +1,5 @@
 // AI-attribution matcher — shared by the commit-msg git-stage backstop + the
-// pre-push hook (commit messages) AND the Claude-side
+// pre-push hook, commit messages, AND the Claude-side
 // no-github-ai-attribution-guard (PR/issue/comment/release/discussion prose).
 // Gate-free (no Node-25 hard-exit, unlike helpers.mts) so the Claude hook can
 // import it on the operator's Node, mirroring external-issue-ref.mts.
@@ -15,7 +15,7 @@
 
 // CRLF-tolerant line split. Inlined (not imported from helpers.mts) so this
 // module stays free of the Node-25 hard-exit gate helpers.mts carries — a
-// Claude hook importing it must run on the operator's (possibly older) Node.
+// Claude hook importing it must run on the operator's, possibly older, Node.
 function splitLines(text: string): string[] {
   return text.replace(/\r\n/g, '\n').split('\n')
 }

@@ -7,7 +7,7 @@
 // single-call-site exemptions belong in a `oxlint-disable-next-line
 // <rule> -- <reason>` comment on the violating line.
 //
-// Trigger surface (filename match, anywhere in the path):
+// Trigger surface, filename match, anywhere in the path:
 //   - oxlintrc.json
 //   - oxlintrc.dogfood.json
 //   - any *oxlintrc*.json
@@ -16,7 +16,7 @@
 // Detection: compare old vs new content. If new_string adds a string
 // matching /"<rule-name>": "off"/ (or "warn") that wasn't in
 // old_string, block. The check is text-based — works for both Edit
-// (old_string + new_string fields) and Write (full file content).
+// (old_string + new_string fields) and Write, full file content.
 //
 // Bypass: `Allow disable-lint-rule bypass` typed verbatim in a
 // recent user message.
@@ -31,7 +31,7 @@ import type { ToolCallPayload } from '../_shared/payload.mts'
 const CONFIG_FILE_RE =
   /(?:^|\/)(?:[^/]*oxlintrc[^/]*\.json|\.eslintrc(?:\.[a-z]+)?|eslint\.config\.[a-z]+)$/i
 
-// Matches a rule-off (or rule-warn) entry. Captures the rule name.
+// Matches a rule-off, or rule-warn, entry. Captures the rule name.
 const RULE_DISABLE_RE = /"(?<rule>[a-z][a-z0-9/-]+)":\s*"(?:off|warn)"/gi
 
 /**

@@ -1,5 +1,5 @@
 // Shared detection for unbacked success claims — consumed by BOTH
-// `stop-claim-verify-nudge` (Stop-time nudge) and
+// `stop-claim-verify-nudge`, Stop-time nudge, and
 // `unbacked-claim-commit-guard` (PreToolUse block on commit/push). One matcher,
 // two enforcement points, no drift.
 //

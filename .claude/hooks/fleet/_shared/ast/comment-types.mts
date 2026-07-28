@@ -6,12 +6,12 @@
 
 /**
  * Comment-kind enum modeled on oxc-project's `CommentKind`. Three variants
- * because downstream tools (formatters, code-mods) need to distinguish a
+ * because downstream tools, formatters, code-mods, need to distinguish a
  * one-line `/* … *\/` from a multi-line one — preserving the latter on rewrites
  * matters more.
  *
  * `Hashbang` is a fleet extension on top of oxc's kinds: oxc treats `#!` as a
- * separate node type entirely (not a comment), but for fleet-hook purposes a
+ * separate node type entirely, not a comment, but for fleet-hook purposes a
  * hashbang IS comment-shaped trivia that hooks may want to walk uniformly with
  * line/block comments.
  */
@@ -96,11 +96,11 @@ export interface CommentSite {
    */
   newlines: CommentNewlines
   /**
-   * Byte offset of the start of the comment (including marker).
+   * Byte offset of the start of the comment, including marker.
    */
   start: number
   /**
-   * Byte offset of the end of the comment (after closing marker).
+   * Byte offset of the end of the comment, after closing marker.
    */
   end: number
   /**
@@ -111,7 +111,7 @@ export interface CommentSite {
    */
   attachedTo: number
   /**
-   * Raw comment body (text between markers, no marker chars).
+   * Raw comment body, text between markers, no marker chars.
    */
   value: string
   /**
@@ -140,7 +140,7 @@ export function classifyCommentContent(
 ): CommentContent {
   // `Hashbang` and `Line` comments don't carry block-only annotations.
   // We still classify `Line` against the Pure / NoSideEffects / coverage
-  // markers because some tools (uglify, terser) accept them in line form.
+  // markers because some tools, uglify, terser, accept them in line form.
   const trimmedBody = body.trim()
 
   // Block-style annotations — only relevant when this is a block.

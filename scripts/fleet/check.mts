@@ -1,7 +1,7 @@
 /**
  * @file Unified check runner — delegates to lint + type + path-hygiene.
  *   Forwards CLI scope flags to the lint script so `pnpm run check --all`
- *   actually runs a full-scope lint (not the default modified-only scope).
+ *   actually runs a full-scope lint, not the default modified-only scope.
  *   `pnpm type` doesn't accept our scope flags, so it's always a full check.
  *   Usage: pnpm run check # lint in modified scope + full type check +
  *   path-hygiene pnpm run check --staged # lint staged + full type + paths pnpm
@@ -66,7 +66,7 @@ export function computeForwardedArgs(argv: string[]): string[] {
 }
 
 // Parallel width for the read-only check pool: all cores but one by default
-// (leave the box responsive), overridable via FLEET_CHECK_CONCURRENCY (=1 is
+// leave the box responsive, overridable via FLEET_CHECK_CONCURRENCY (=1 is
 // the honest serial baseline when measuring the pool's win). Each check is its
 // own subprocess, so this caps CONCURRENT spawns, not the total check count.
 // Pure — exported for tests.
@@ -88,7 +88,7 @@ const CONCURRENCY = resolveConcurrency(
 
 /**
  * Render the per-check wall-time summary, slowest first, with the pool's
- * aggregate (sum of subprocess time) vs implied wall win. Timing regressions
+ * aggregate, sum of subprocess time, vs implied wall win. Timing regressions
  * in an individual check are visible run over run instead of hiding inside
  * the pool's overlap. Pure — exported for tests.
  */
@@ -169,7 +169,7 @@ export async function main(): Promise<void> {
     )
   }
 
-  // Release/CI tier: --release (pre-push-gate passes it) or CI (GitHub Actions
+  // Release/CI tier: --release, pre-push-gate passes it, or CI (GitHub Actions
   // sets CI=true) opts into the heavy long poles + network/release-verification
   // checks. The interactive default runs the FAST tier only (~seconds) — the
   // long poles are still enforced before every push/merge, never silently
@@ -202,12 +202,12 @@ export async function main(): Promise<void> {
   // incident: template-fleet-oxlint-ignore-is-current re-spliced oxlintrc.json
   // during `check --all`, which then tripped dogfood-is-current on the next
   // run. Snapshot around the run and fail naming the offending paths. Skipped
-  // in --fix mode (fixers are meant to write) and fail-open outside git.
+  // in --fix mode, fixers are meant to write, and fail-open outside git.
   const isFix = forwardedArgs.includes('--fix')
   const before = isFix ? undefined : gitPorcelain()
 
   // Write a check's captured block atomically, newline-terminated so adjacent
-  // blocks never run together (some checks don't trail a newline).
+  // blocks never run together, some checks don't trail a newline.
   const emit = (r: { output: string }): void => {
     if (r.output) {
       process.stdout.write(r.output.endsWith('\n') ? r.output : `${r.output}\n`)
@@ -230,7 +230,7 @@ export async function main(): Promise<void> {
     // Read-only checks run CONCURRENTLY (the read-only-tree guard proves they
     // don't write, so there's no race). NO fail-fast — every step runs, so one
     // pass surfaces EVERY failure instead of one-per-rerun. Each check's block
-    // is captured + written atomically on completion (progress, never interleaved).
+    // is captured + written atomically on completion, progress, never interleaved.
     const failedLabels: string[] = []
     const timings: Array<{ label: string; ms: number }> = []
     await runPool(steps, CONCURRENCY, async step => {

@@ -6,7 +6,7 @@
 // under `.claude/hooks/*/` or `.claude/skills/*/`. Past incident: a
 // cascading agent used `git add -f` to commit `.claude/hooks/check-new-
 // deps/node_modules/` into 6 fleet repos. Removing it required force-
-// push (which is itself a hazard) or filter-branch/filter-repo.
+// push, which is itself a hazard, or filter-branch/filter-repo.
 //
 // The `-f` (force) flag exists for the rare case where a gitignored
 // file legitimately needs to be staged. It should never be used for
@@ -15,7 +15,7 @@
 //
 // Detection: parse the Bash command, look for `git add -f` (or
 // `--force`), then check every path argument. If any path contains
-// `node_modules/` (anywhere in the path) OR points at a
+// `node_modules/`, anywhere in the path, OR points at a
 // `package-lock.json` under `.claude/hooks/<name>/` /
 // `.claude/skills/<name>/`, block.
 //

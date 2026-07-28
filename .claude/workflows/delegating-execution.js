@@ -74,7 +74,7 @@ const FLOOR = mechanical
   ? { effort: 'low', model: 'claude-haiku-4-5' }
   : { effort: 'medium', model: 'claude-sonnet-4-6' }
 
-// JSON Schema objects for structured agent output (properties ASCII-sorted).
+// JSON Schema objects for structured agent output, properties ASCII-sorted.
 const EXECUTE_SCHEMA = {
   additionalProperties: false,
   properties: {

@@ -5,7 +5,7 @@
  *   builds from its packaged sources (`cargo publish --dry-run`), produce the
  *   `.crate` artifact, and record its sha256 as the digest a downstream
  *   `--approve` gate compares against — nothing is uploaded. Publishing is
- *   PERMANENT (a version can only be yanked, never overwritten). The cargo
+ *   PERMANENT, a version can only be yanked, never overwritten. The cargo
  *   analog of npm/staged.mts.
  */
 
@@ -27,7 +27,7 @@ import {
 
 /**
  * Run `cargo package` (with `--locked` unless `locked` is false) and return the
- * packaged `.crate` path if it now exists, else undefined (pack failed).
+ * packaged `.crate` path if it now exists, else undefined, pack failed.
  */
 export async function packCrate(
   name: string,
@@ -42,7 +42,7 @@ export async function packCrate(
   if (locked) {
     args.push('--locked')
   }
-  // Only when a README pin (or another controlled staging step) has dirtied the
+  // Only when a README pin, or another controlled staging step, has dirtied the
   // tree — cargo otherwise refuses to package a VCS-dirty repo.
   if (allowDirty) {
     args.push('--allow-dirty')
@@ -96,7 +96,7 @@ export async function packCrateAssets(
  * (crates.io never allows a re-publish — surfaced before the network call),
  * then runs `cargo publish --dry-run --locked` — which packages AND compiles
  * from the packaged sources, the real verification that the uploaded bytes
- * build. On success (and not a bare dry-run), packs the `.crate` and records
+ * build. On success, and not a bare dry-run, packs the `.crate` and records
  * its sha256 in a `<crate>.sha256` sidecar so `--approve` can integrity-gate
  * against it. In CI the workflow — not this script — handles
  * provenance/attestation.

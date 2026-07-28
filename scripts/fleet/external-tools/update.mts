@@ -19,7 +19,7 @@
  *      write. `--apply` flushes changes. Idempotent — re-running on an already-
  *      up-to-date file is a no-op. Reads soak time from wheelhouse's own
  *      pnpm-workspace.yaml. Other repos that have their own external-tools.json
- *      (via the setup-security-tools cascade) inherit the same window because
+ *      via the setup-security-tools cascade, inherit the same window because
  *      the file is byte-cascaded; running this script against a downstream repo
  *      would use that repo's pnpm-workspace.yaml soak time. Invoked as: node
  *      scripts/update-external-tools.mts [--apply] [--target <path>] Where
@@ -36,7 +36,7 @@ import path from 'node:path'
 // Fleet convention (socket/prefer-async-spawn): use the lib's
 // spawnSync, not node:child_process. Drop `encoding:` from options —
 // the lib's `stdioString: true` default already returns strings.
-// oxlint-disable-next-line socket/prefer-async-spawn -- audit/cascade script needs sync stdin/stdout + typed string return; v5 lib spawnSync omits 'encoding' from SpawnSyncOptions and returns string-or-Buffer. v6 lib (when published) will obviate this.
+// oxlint-disable-next-line socket/prefer-async-spawn -- audit/cascade script needs sync stdin/stdout + typed string return; v5 lib spawnSync omits 'encoding' from SpawnSyncOptions and returns string-or-Buffer. v6 lib, when published, will obviate this.
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { fetchPackageManifest } from '@socketsecurity/lib/packages/manifest'
@@ -196,7 +196,7 @@ interface NpmVersionMeta {
 /**
  * Cheap preflight: resolve the `latest` dist-tag for an npm package. Used by
  * the npm-registry preflight in `planGithubUpdate` for tools whose npm version
- * line tracks the GitHub release line 1:1 (pnpm today).
+ * line tracks the GitHub release line 1:1, pnpm today.
  *
  * Goes through `@socketsecurity/lib`'s `fetchPackageManifest` rather than a raw
  * curl so we get the fleet's standard packument cache, `.npmrc` auth handling,
@@ -207,7 +207,7 @@ interface NpmVersionMeta {
  *
  * Does NOT apply the soak time. That's intentional: if npm `latest` is younger
  * than the soak, semver.lte against our current pin will say `latest <=
- * current` (we're already on the newest soaked version) and short-circuit
+ * current`, we're already on the newest soaked version, and short-circuit
  * correctly. If `latest` is older than our pin we also short-circuit. The only
  * case the preflight lets through is `latest > current`, which then re-enters
  * the GitHub path where soak is enforced — so this is a strict superset of
@@ -245,7 +245,7 @@ export async function fetchNpmVersionIntegrity(
 /**
  * Pick the newest npm version of `name` that's older than the soak window.
  * Returns the version string + integrity hash, or undefined if the registry has
- * no soak-cleared release (very new package).
+ * no soak-cleared release, very new package.
  */
 export function pickNewestSoakedNpm(
   name: string,
@@ -261,7 +261,7 @@ export function pickNewestSoakedNpm(
   // Bypass the soak window when the package is Socket-owned (trust model — see
   // pickNewestSoakedRelease) OR explicitly listed in the workspace's
   // `minimumReleaseAgeExclude`, so this tool follows the SAME bypass surface
-  // pnpm honors for npm installs (one rule, read via soak-rules).
+  // pnpm honors for npm installs, one rule, read via soak-rules.
   const bypass =
     isSocketSourcedPackage(name) || isSoakExcluded(name, undefined, soakExclude)
   const cutoff = bypass ? Date.now() : Date.now() - soakMinutes * 60_000
@@ -308,11 +308,11 @@ export interface ToolUpdate {
 
 /**
  * Compute the update plan for one tool. Returns undefined when no change is
- * needed (already on the newest soak-cleared release).
+ * needed, already on the newest soak-cleared release.
  *
  * For GitHub-release-based tools, also re-downloads each platform-arch asset
  * and recomputes its integrity against the current declared value, surfacing a
- * warning if there's a mismatch (release-bytes drift).
+ * warning if there's a mismatch, release-bytes drift.
  */
 export function planNpmUpdate(
   name: string,
@@ -355,7 +355,7 @@ export interface PlanAllResult {
   failures: ToolFailure[]
 }
 
-// All optional so a caller (a test) overrides only the planner it wants to
+// All optional so a caller, a test, overrides only the planner it wants to
 // stub — mirrors PlanGithubUpdateDeps. Defaults are the real planners.
 export interface PlanAllDeps {
   planNpmUpdate?:
@@ -383,7 +383,7 @@ export interface PlanAllDeps {
  * the codedb `linux-arm64` regression) is CAUGHT, recorded in `failures`, and
  * the sweep CONTINUES to the remaining tools. Never aborts the run before the
  * others are reached. The per-tool "refuse to write a stale integrity" safety
- * still lives in `planGithubUpdate` (it throws); here that throw only skips +
+ * still lives in `planGithubUpdate`, it throws; here that throw only skips +
  * reports that one tool.
  *
  * GitHub tools are mutated in place on a successful bump (planGithubUpdate

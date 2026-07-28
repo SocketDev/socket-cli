@@ -146,7 +146,7 @@ function main(): number {
       drift += 1
       continue
     }
-    // A non-oxc $schema (or none at all) is out of scope for this pin.
+    // A non-oxc $schema, or none at all, is out of scope for this pin.
     if (decision.kind === 'match' || decision.kind === 'out-of-scope') {
       continue
     }

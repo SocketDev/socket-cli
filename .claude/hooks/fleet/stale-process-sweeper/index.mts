@@ -16,7 +16,7 @@
 //     yarn invocation goes through one, and the wrapper sometimes
 //     outlives its pnpm child. On a busy day this can pile up to
 //     hundreds of orphans holding ~200MB RSS each (20+GB total).
-//     Only orphans are reaped (parent dead or init) — live-parent
+//     Only orphans are reaped, parent dead or init — live-parent
 //     wrappers might be tied to an in-progress install.
 //
 // What's NOT swept:
@@ -53,8 +53,8 @@ const STALE_PATTERNS: Array<{ name: string; rx: RegExp }> = [
   },
   // Vitest parent runner that survived its own children's exit.
   // Matches both shapes:
-  //   - `node ... vitest/dist/cli ... run`         (older entry point)
-  //   - `node ... vitest/dist/node.mjs ... run`    (alternate entry point)
+  //   - `node ... vitest/dist/cli ... run`, older entry point
+  //   - `node ... vitest/dist/node.mjs ... run`, alternate entry point
   //   - `node node_modules/.bin/../vitest/vitest.mjs run` (current shape
   //     spawned by `pnpm test` / `vitest run`)
   {
@@ -88,9 +88,9 @@ const STALE_PATTERNS: Array<{ name: string; rx: RegExp }> = [
   //   - ~/.socket/_dlx/<hash>/sfw                      (dlxBinary store — the
   //                                                     real binary behind the
   //                                                     rack symlink)
-  //   - ~/.socket/sfw/bin/sfw[-<version>]              (legacy versioned install)
-  //   - ~/.socket/_wheelhouse/sfw-stable/sfw           (legacy shim exec target)
-  //   - ~/.socket/_wheelhouse/bin/sfw[-<version>]      (legacy dev install)
+  //   - ~/.socket/sfw/bin/sfw[-<version>], legacy versioned install
+  //   - ~/.socket/_wheelhouse/sfw-stable/sfw, legacy shim exec target
+  //   - ~/.socket/_wheelhouse/bin/sfw[-<version>], legacy dev install
   //   - ${RUNNER_TEMP}/sfw-bin/sfw[.exe]               (CI runner install)
   // Path component is invariant across home prefixes (/Users/<user>/ vs
   // /home/<user>/). The CI path uses RUNNER_TEMP which varies per OS but
@@ -106,18 +106,18 @@ const STALE_PATTERNS: Array<{ name: string; rx: RegExp }> = [
     name: 'sfw-wrapper',
     // Breakdown of the pattern below:
     //   (?:                          ── start: alternation of parent dirs
-    //     \.socket\/                  literal ".socket/" (the install root)
+    //     \.socket\/                  literal ".socket/", the install root
     //     (?:                         ── one of these subtrees under .socket/
     //       _dlx\/[0-9a-f]+           "_dlx/<hex-hash>"  — dlxBinary store
     //       | sfw\/bin                "sfw/bin"          — legacy dev install
     //       | _wheelhouse\/           "_wheelhouse/" then one of…
-    //         (?: bin                   "bin"            (legacy dev install)
-    //           | rack\/sfw\/[\w.]+     "rack/sfw/<ver>" (current readable path)
-    //           | sfw-stable )          "sfw-stable"     (legacy shim target)
+    //         (?: bin                   "bin", legacy dev install
+    //           | rack\/sfw\/[\w.]+     "rack/sfw/<ver>", current readable path
+    //           | sfw-stable )          "sfw-stable", legacy shim target
     //     )
     //     | sfw-bin                   OR bare "sfw-bin"  — CI ${RUNNER_TEMP}/sfw-bin
     //   )
-    //   \/sfw                         literal "/sfw" (the binary name)
+    //   \/sfw                         literal "/sfw", the binary name
     //   (?:-[\w.]+)?                  optional "-<version>" suffix (e.g. -1.12.0)
     //   (?:\.exe)?                    optional ".exe" (Windows)
     //   \b                            word boundary — don't match "sfwfoo"
@@ -125,7 +125,7 @@ const STALE_PATTERNS: Array<{ name: string; rx: RegExp }> = [
     // the .socket/… path segment is the invariant. listProcesses() swaps
     // `\` → `/` in the command first, so this `/`-only pattern (incl. the
     // `.exe` branch) matches a future Windows process source too. Negative
-    // cases: a plain "/Library/pnpm/pnpm" (no sfw wrapper) and editors/IDEs
+    // cases: a plain "/Library/pnpm/pnpm", no sfw wrapper, and editors/IDEs
     // never match.
     rx: /(?:\.socket\/(?:_dlx\/[0-9a-f]+|_wheelhouse\/(?:bin|rack\/sfw\/[\w.]+|sfw-stable)|sfw\/bin)|sfw-bin)\/sfw(?:-[\w.]+)?(?:\.exe)?\b/,
   },
@@ -145,7 +145,7 @@ const STALE_PATTERNS: Array<{ name: string; rx: RegExp }> = [
 //   - `bash -c … until [ -f …/tasks/<id>.output.exitcode ]; do sleep`
 //     background-task pollers waiting on an exitcode file that never lands
 const AGENT_PATTERNS: Array<{ name: string; rx: RegExp }> = [
-  // Codex app-server + its broker (the noisiest leaker observed).
+  // Codex app-server + its broker, the noisiest leaker observed.
   {
     name: 'codex-app-server',
     rx: /\bcodex\b.*\bapp-server\b|app-server-broker\.[mc]?js\b/,
@@ -227,8 +227,8 @@ export function parseEtime(etime: string): number {
 
 export function listProcesses(): ProcRow[] {
   // -A: all processes, -o: custom format, no truncation. macOS + Linux
-  // both support `pcpu` (instantaneous CPU%) and `etime` (elapsed time).
-  // Windows isn't supported (Stop hook is unix-only in practice).
+  // both support `pcpu` (instantaneous CPU%) and `etime`, elapsed time.
+  // Windows isn't supported, Stop hook is unix-only in practice.
   const result = spawnSync(
     'ps',
     ['-A', '-o', 'pid=,ppid=,rss=,pcpu=,etime=,command='],
@@ -238,7 +238,7 @@ export function listProcesses(): ProcRow[] {
     return []
   }
   const rows: ProcRow[] = []
-  // `ps -A` is unix-only (see comment above), so the output uses LF
+  // `ps -A` is unix-only, see comment above, so the output uses LF
   // line endings — no CRLF normalization needed here.
   const lines = String(result.stdout).split('\n')
   for (let i = 0, { length } = lines; i < length; i += 1) {
@@ -248,7 +248,7 @@ export function listProcesses(): ProcRow[] {
     }
     // Split into [pid, ppid, rss, pcpu, etime, ...command]. `command`
     // may contain arbitrary spaces, so re-join after the first five
-    // fields. `pcpu` and `etime` are well-formed (no embedded space).
+    // fields. `pcpu` and `etime` are well-formed, no embedded space.
     const parts = line.trim().split(/\s+/)
     if (parts.length < 6) {
       continue
@@ -300,9 +300,9 @@ export function isAlive(pid: number): boolean {
 
 // Active-run markers — pidfiles under
 // ~/.claude/hooks/stale-process-sweeper/active-runs/, one `<pid>` file per
-// long-running fleet command (coverage, full builds) that declares its
+// long-running fleet command, coverage, full builds, that declares its
 // worker tree healthy-on-purpose. Writer + contract:
-// scripts/fleet/_shared/active-run-marker.mts (keep in lockstep). Only the
+// scripts/fleet/_shared/active-run-marker.mts, keep in lockstep. Only the
 // STUCK branch consults this — orphan reaping is unaffected.
 export function readActiveRunPids(homeDir?: string | undefined): Set<number> {
   const dir = path.join(
@@ -329,7 +329,7 @@ export function readActiveRunPids(homeDir?: string | undefined): Set<number> {
   return pids
 }
 
-// True when `pid`'s ancestor chain (via the captured ps snapshot) reaches
+// True when `pid`'s ancestor chain, via the captured ps snapshot, reaches
 // any of `ancestors`. Bounded hops guard against ppid cycles in a torn
 // snapshot.
 // Append one line per kill to ~/.claude/hooks/stale-process-sweeper/kills.log
@@ -502,7 +502,7 @@ export function sweep(options?: SweepOptions | undefined): {
 
   for (let i = 0, { length } = rows; i < length; i += 1) {
     const row = rows[i]!
-    // Never touch ourselves or our parent (Claude Code).
+    // Never touch ourselves or our parent, Claude Code.
     if (row.pid === myPid || row.pid === myPpid) {
       continue
     }
@@ -594,7 +594,7 @@ export function sweep(options?: SweepOptions | undefined): {
 }
 
 // Format the killed-worker list into one report line, or undefined when
-// there's nothing to say (a silent no-op sweep on the Stop-hook path). In
+// there's nothing to say, a silent no-op sweep on the Stop-hook path. In
 // explicit `--all` mode a no-op still reports so the operator isn't left
 // wondering whether anything ran.
 export function buildSweepReport(
@@ -661,7 +661,7 @@ export function runSweep(options?: SweepOptions | undefined): void {
 //   node .claude/hooks/fleet/stale-process-sweeper/index.mts --all
 // Run directly, NOT via the dispatcher, so it drives runSweep straight through
 // with SIGKILL. The dispatcher never passes `--all`, so the else branch runs
-// the Stop-hook check via runHook (a no-op on bundle import).
+// the Stop-hook check via runHook, a no-op on bundle import.
 if (process.argv.includes('--all') || process.argv.includes('--force')) {
   runSweep({ all: true })
 } else {

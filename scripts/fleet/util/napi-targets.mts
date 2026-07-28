@@ -68,7 +68,7 @@ export const NAPI_TARGETS_DEFAULT = [
 ] as const satisfies readonly NapiTarget[]
 
 /**
- * O(1) membership set for hot paths (lint rules, allowlist validators).
+ * O(1) membership set for hot paths, lint rules, allowlist validators.
  * Materialized once at module load.
  */
 export const NAPI_TARGET_SET: ReadonlySet<NapiTarget> = new Set(NAPI_TARGETS)
@@ -122,7 +122,7 @@ export interface CurrentNapiTargetInputs {
 /**
  * Pure-function napi-target resolver for runtime loader require-chains.
  * Returns the native target for the given runtime inputs, or `undefined` when
- * no native target matches (the caller then falls back to the wasm binding).
+ * no native target matches, the caller then falls back to the wasm binding.
  *
  * Examples: - `{ platform: 'linux', arch: 'x64', isMusl: false }` →
  * `linux-x64-gnu` - `{ platform: 'linux', arch: 'x64', isMusl: true }` →

@@ -3,7 +3,7 @@
 //
 // renamed-from: prefer-rebase-over-revert-guard
 //
-// Reminder hook (never blocks) that fires when a Bash command runs
+// Reminder hook, never blocks, that fires when a Bash command runs
 // `git revert <ref>` against a ref that's still local-only (not yet
 // on origin). For unpushed commits, `git reset --soft HEAD~N` or
 // `git rebase -i HEAD~N` cleanly drops the commit; a revert commit
@@ -13,13 +13,13 @@
 // rewrite shared history. So the hook only nudges when the target
 // is provably unpushed.
 //
-// Always exits 0 (reminder, not enforcer). Writes the suggestion
+// Always exits 0, reminder, not enforcer. Writes the suggestion
 // to stderr so the operator sees it before approving the tool call.
 //
 // Skipped silently:
 //   - tool_name !== 'Bash'.
 //   - Command doesn't contain `git revert` outside quoted strings.
-//   - Command has `--no-edit` or `--no-commit` (advanced workflows).
+//   - Command has `--no-edit` or `--no-commit`, advanced workflows.
 //   - Target ref can't be parsed (defensive — never false-positive).
 //
 // Reads a Claude Code PreToolUse JSON payload from stdin:
@@ -76,7 +76,7 @@ export function isRefPushed(ref: string): boolean | undefined {
   // user's `git revert` would run in.
   const opts = { encoding: 'utf8' as const, stdio: 'pipe' as const }
 
-  // 1. Resolve the symbolic upstream. Empty = no upstream (new branch).
+  // 1. Resolve the symbolic upstream. Empty = no upstream, new branch.
   const upstream = spawnSync(
     'git',
     ['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{upstream}'],

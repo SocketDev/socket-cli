@@ -13,7 +13,7 @@
  *   retired shields.io URLs → the local assets/fleet/ SVGs) still counts.
  *   Fires only on the repo-root README (nested READMEs under `packages/`,
  *   `docs/`, etc. are scoped docs with their own shape). No autofix: badge
- *   placement is contextual (under the title, after any status badges).
+ *   placement is contextual, under the title, after any status badges.
  */
 
 import type { MarkdownlintRule } from './_shared/rule-types.mts'

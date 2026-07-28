@@ -97,7 +97,7 @@ const rule = {
      * arity) - argument is not a SpreadElement.
      *
      * The call is often wrapped in `await` — that's fine. Replacing `await
-     * fileExists(p)` with `existsSync(p)` (no await) is the intended rewrite;
+     * fileExists(p)` with `existsSync(p)`, no await, is the intended rewrite;
      * existsSync is sync and the surrounding `await` collapses to a no-op on a
      * non-promise value.
      */
@@ -148,7 +148,7 @@ const rule = {
               data: { name },
               fix(fixer: RuleFixer) {
                 // Replace just the callee identifier — preserve
-                // arg text + parens. `await` (if present) becomes a
+                // arg text + parens. `await`, if present, becomes a
                 // no-op against a sync boolean return; safe to leave.
                 return [
                   fixer.replaceText(node, `existsSync(${argText})`),

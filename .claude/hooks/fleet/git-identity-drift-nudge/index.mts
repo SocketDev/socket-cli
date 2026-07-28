@@ -2,7 +2,7 @@
 // Claude Code Stop hook — git-identity-drift-nudge.
 //
 // Fires at turn-end. Reads the EFFECTIVE git `user.email` for the project
-// dir (local over global, the value git would stamp on a commit) and, if
+// dir, local over global, the value git would stamp on a commit, and, if
 // it's a non-verifiable placeholder (`*@example.com`, `agent-ci@…`, an
 // RFC-2606 reserved domain), prints a stderr reminder to fix it before a
 // push.

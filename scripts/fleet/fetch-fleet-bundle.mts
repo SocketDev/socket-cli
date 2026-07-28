@@ -22,7 +22,6 @@
  */
 
 import {
-  chmodSync,
   cpSync,
   existsSync,
   mkdirSync,
@@ -30,8 +29,6 @@ import {
   readdirSync,
   readFileSync,
   renameSync,
-  statSync,
-  writeFileSync,
 } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -54,6 +51,10 @@ import {
   gateWriteDest,
   parseNonMemberOverride,
 } from './_shared/fleet-membership.mts'
+import {
+  withMirrorLockLiftedSync,
+  writeThroughMirrorLock,
+} from './_shared/mirror-lock.mts'
 
 const logger = getDefaultLogger()
 
@@ -131,7 +132,7 @@ export function walkFiles(dir: string, base: string): string[] {
 }
 
 // Compare every manifest entry against the extracted file's actual SHA-256.
-// Returns the list of problems (missing or mismatched) — empty means verified.
+// Returns the list of problems, missing or mismatched — empty means verified.
 export function verifyFiles(
   filesDir: string,
   manifest: BundleManifest,
@@ -178,46 +179,20 @@ export function placeFiles(
     if (isFleetCanonicalSpliceFile(rel) && existsSync(dest)) {
       const srcContent = readFileSync(src, 'utf8')
       if (hasFleetCanonicalEndSentinel(srcContent)) {
-        withWriteBitLifted(dest, () =>
-          writeFileSync(
-            dest,
-            spliceFleetCanonicalContent(srcContent, readFileSync(dest, 'utf8')),
-          ),
+        writeThroughMirrorLock(
+          dest,
+          spliceFleetCanonicalContent(srcContent, readFileSync(dest, 'utf8')),
         )
         continue
       }
     }
-    withWriteBitLifted(dest, () => cpSync(src, dest))
-  }
-}
-
-// Run `write` with the destination's user write bit lifted. The cascade's
-// mirror-mode locks placed mirrors 0o444, and both cpSync and the sentinel
-// splicer open the DESTINATION for write — POSIX open(2) refuses that on a
-// read-only file, so a locked mirror EACCESed mid-place and stranded a
-// half-placed tree. Restoring the prior mode afterward keeps the mirror lock
-// intact across a refresh.
-function withWriteBitLifted(dest: string, write: () => void): void {
-  if (!existsSync(dest)) {
-    write()
-    return
-  }
-  const { mode } = statSync(dest)
-  if ((mode & 0o200) !== 0) {
-    write()
-    return
-  }
-  chmodSync(dest, mode | 0o200)
-  try {
-    write()
-  } finally {
-    chmodSync(dest, mode)
+    withMirrorLockLiftedSync(dest, () => cpSync(src, dest))
   }
 }
 
 // Untrack the manifest's GENERATED outputs (`generatedPaths`) after
 // placement, mirroring the bootstrap installer's untrackGeneratedOutputs: the
-// bundle SHIPS these files (placement keeps them on disk) while the fleet
+// bundle SHIPS these files, placement keeps them on disk, while the fleet
 // gitignore block ignores them and `generated-outputs-are-untracked` forbids
 // TRACKING them. A member that historically committed one (the root MCP
 // projections `opencode.json` + `.kimi-code/mcp.json`, `bundle.cjs` et al.)
@@ -306,7 +281,7 @@ export function applyMovedPaths(
   return moved
 }
 
-// Delete the manifest's TOMBSTONED paths (files or whole dirs) that still
+// Delete the manifest's TOMBSTONED paths, files or whole dirs, that still
 // exist in the repo — the deletion half of a fleet move/retire, mirroring the
 // bootstrap installer's removeTombstonedPaths (a bundle refresh must be a true
 // sync: the v1.0.12 `.github/actions/fleet/lib` → `_shared` move shipped no
@@ -365,7 +340,7 @@ export async function main(): Promise<number> {
 
   const tmp = mkdtempSync(path.join(os.tmpdir(), 'fleet-bundle-'))
   try {
-    // 1. Download the tarball + manifest assets via gh (ambient auth).
+    // 1. Download the tarball + manifest assets via gh, ambient auth.
     logger.log(`Downloading bundle ${opts.ref} from ${opts.repo}…`)
     try {
       await run('gh', [
@@ -416,7 +391,7 @@ export async function main(): Promise<number> {
       return 1
     }
 
-    // 4. Verify EVERY file's SHA-256 before placing anything (fail closed).
+    // 4. Verify EVERY file's SHA-256 before placing anything, fail closed.
     const problems = verifyFiles(filesDir, manifest)
     if (problems.length > 0) {
       logger.error(

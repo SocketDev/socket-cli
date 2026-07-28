@@ -21,7 +21,7 @@
 // against the module.
 //
 // Vacuous pass when .config/fleet/.prettierignore is absent (a non-fleet
-// repo). When .gitignore has no fleet-canonical block (a pre-cascade repo),
+// repo). When .gitignore has no fleet-canonical block, a pre-cascade repo,
 // the whole file is scanned instead so coverage is still asserted.
 //
 // Exit: 0 = both surfaces cover every entry; 1 = at least one uncovered entry.
@@ -65,7 +65,7 @@ export function coveringForms(glob: string): string[] {
 }
 
 /**
- * The active (non-blank, non-comment) patterns of an ignore surface, trimmed.
+ * The active, non-blank, non-comment, patterns of an ignore surface, trimmed.
  */
 export function activePatterns(content: string): Set<string> {
   const patterns = new Set<string>()
@@ -102,7 +102,7 @@ export function findUncoveredGlobs(
 
 /**
  * The region of a .gitignore this check asserts against: the fleet-canonical
- * block (exclusive of its markers) when present — that is the cascade-owned
+ * block, exclusive of its markers, when present — that is the cascade-owned
  * source the entries must live in — else the whole file, so a pre-cascade
  * repo is still checked rather than false-greening.
  */
@@ -135,7 +135,7 @@ function main(): void {
   const quiet = process.argv.includes('--quiet')
   const prettierignoreAbs = path.join(REPO_ROOT, PRETTIERIGNORE_PATH)
   if (!existsSync(prettierignoreAbs)) {
-    // No fleet .prettierignore (a non-fleet repo) — nothing to assert.
+    // No fleet .prettierignore, a non-fleet repo — nothing to assert.
     return
   }
   const gitignoreAbs = path.join(REPO_ROOT, GITIGNORE_PATH)

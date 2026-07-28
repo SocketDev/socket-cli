@@ -158,7 +158,7 @@ export interface MultiPackagePublishResult {
 
 /**
  * Thrown when a stage attempt fails. Carries the stage where it failed + the
- * offending tail (if known) so the wrapping script can render a focused error.
+ * offending tail, if known, so the wrapping script can render a focused error.
  */
 export class MultiPackageStageError extends Error {
   readonly stage:
@@ -385,7 +385,7 @@ export async function stageMultiPackagePublish(
       }
     }
 
-    // Stage into consumer's per-tail dir (unless dry-run).
+    // Stage into consumer's per-tail dir, unless dry-run.
     const tailDir = config.tailDirFor(triplet)
     if (!existsSync(tailDir)) {
       throw new MultiPackageStageError(

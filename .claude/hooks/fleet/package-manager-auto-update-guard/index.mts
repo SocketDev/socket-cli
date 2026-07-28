@@ -6,7 +6,7 @@
 // machine. An auto-updating manager can change a tool's version underneath a
 // build / scan, add latency, or pull an unsoaked package — a reproducibility +
 // supply-chain hazard (CLAUDE.md Tooling). The fix is to disable auto-update
-// (run setup-security-tools, which sets the knob).
+// run setup-security-tools, which sets the knob.
 //
 // All detection logic lives in _shared/package-manager-auto-update.mts — the
 // SAME module the audit-package-manager-auto-update.mts script and
@@ -35,7 +35,7 @@ export const check = bashGuard((command, payload) => {
   }
   const status = invoked.detect()
   // Only block when auto-update is actively ENABLED. 'absent' (manager not
-  // installed) and 'disabled' (already hardened) both pass.
+  // installed) and 'disabled', already hardened, both pass.
   if (status.state !== 'enabled') {
     return undefined
   }

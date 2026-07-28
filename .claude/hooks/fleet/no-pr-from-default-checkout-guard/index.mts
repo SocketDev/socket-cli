@@ -74,7 +74,7 @@ export const hook = defineHook({
     // An explicit `--repo` naming a DIFFERENT repository than this checkout's
     // origin means the cwd checkout is not the PR's source — its branch is
     // irrelevant (the sibling no-pr-from-default-branch-guard still vets the
-    // PR head). Only same-repo (or repo-less) invocations are the
+    // PR head). Only same-repo, or repo-less, invocations are the
     // wrong-checkout mistake this guard exists to stop.
     const explicitRepo = explicitRepoTarget(command)
     if (explicitRepo) {

@@ -9,7 +9,7 @@
  *   copy `…non-gh-aw.yml.disabled` → `…non-gh-aw.yml` (now live + listed). The
  *   enabled copy is gitignored, so it's transient and never re-committed (the
  *   `.disabled` file stays the source of truth). disable — remove the enabled
- *   `…non-gh-aw.yml` (back to dormant). Idempotent. run — enable → run it
+ *   `…non-gh-aw.yml`, back to dormant. Idempotent. run — enable → run it
  *   locally via Agent CI → disable, even on failure. This is the supported way
  *   to exercise the fallback: Agent CI can't see a `.disabled` file, so it must
  *   be enabled for the run and re-hidden after. (Agent CI also can't simulate
@@ -119,7 +119,7 @@ async function main(): Promise<void> {
     disableWorkflow()
     return
   }
-  // run: enable → Agent CI the workflow → disable (always, even on failure).
+  // run: enable → Agent CI the workflow → disable, always, even on failure.
   if (!enableWorkflow()) {
     process.exitCode = 1
     return

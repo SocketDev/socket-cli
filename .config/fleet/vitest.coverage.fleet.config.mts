@@ -55,7 +55,7 @@ export const baseFleetCoverageConfig: CoverageOptions = {
     ? ['text', 'json', 'json-summary', 'html', 'lcov', 'clover']
     : ['text', 'json', 'json-summary'],
   // Emit the coverage report even when tests FAIL. Vitest defaults this to
-  // false, so a single failing (or flaky) test suppresses the ENTIRE
+  // false, so a single failing, or flaky, test suppresses the ENTIRE
   // coverage-final.json — the cover runner then reads no in-process tier and
   // reports the aggregate as unavailable / undercounted (built from the
   // subprocess children tier alone). That turns any transient test failure

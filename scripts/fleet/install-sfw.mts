@@ -76,7 +76,7 @@ const LEGACY_SFW_DIR = path.join(getUserHomeDir(), '.socket', 'sfw')
 const SFW_BIN_DIR = WHEELHOUSE_BIN_DIR
 
 // Migrate a pre-rename legacy install in place, then ensure the expected
-// subdir layout exists. Called from main() (never at import time) so
+// subdir layout exists. Called from main() never at import time, so
 // importing this module for its pure helpers never touches the filesystem.
 // safeMkdirSync is recursive + EEXIST-safe by default.
 export function ensureWheelhouseLayout(): void {
@@ -287,7 +287,7 @@ async function main(): Promise<void> {
     linkPath: string,
     type: 'dir' | 'file',
   ): Promise<void> {
-    // oxlint-disable-next-line socket/prefer-exists-sync -- lstat detects a broken symlink that existsSync (follows the link) would miss, leaving it stale.
+    // oxlint-disable-next-line socket/prefer-exists-sync -- lstat detects a broken symlink that existsSync, follows the link, would miss, leaving it stale.
     const linkExists = await fsPromises
       .lstat(linkPath)
       .then(() => true)
@@ -299,7 +299,7 @@ async function main(): Promise<void> {
   }
 
   // Layer two readable handles over the hash-named _dlx binary:
-  //   1. rack alias: rack/sfw/<ver> → the _dlx/<hash> dir (the readable store).
+  //   1. rack alias: rack/sfw/<ver> → the _dlx/<hash> dir, the readable store.
   //   2. PATH handle: bin/sfw → rack/sfw/<ver>/sfw (so PATH never sees the
   //      hash; consumers reference the stable rack path). Both refresh on every
   //      install so a version bump repoints them.

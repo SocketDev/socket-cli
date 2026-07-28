@@ -16,7 +16,7 @@
  *   `errors/message`).
  *
  *   Flagged: `@socketsecurity/lib/errors` (barrel → autofix `/errors/message`),
- *   `@socketsecurity/lib-stable/arrays` (no such bare export), etc.
+ *   `@socketsecurity/lib-stable/arrays`, no such bare export, etc.
  */
 
 import type { AstNode, RuleContext, RuleFixer } from '../../lib/rule-types.mts'
@@ -25,7 +25,7 @@ import type { AstNode, RuleContext, RuleFixer } from '../../lib/rule-types.mts'
 // legitimate bare imports (env-swap routers + single-file/module leaves).
 // `barrels` = a bare area to forbid mapped to its canonical leaf (autofixable
 // because the mapping is 1:1). Keep `allowed` in lockstep with each package's
-// actual single-segment `exports` keys (minus the barrels).
+// actual single-segment `exports` keys, minus the barrels.
 const OWNED: Readonly<
   Record<
     string,

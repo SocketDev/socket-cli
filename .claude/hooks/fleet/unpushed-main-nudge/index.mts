@@ -17,10 +17,10 @@
 // before the next reset.
 //
 // Only fires on the default branch: an unpushed feature branch is normal
-// (you push it when ready); an unpushed DEFAULT branch ahead of origin is
+// you push it when ready; an unpushed DEFAULT branch ahead of origin is
 // the reset-wipe hazard.
 //
-// Exit codes: 0 — always (informational Stop hook). Fails open.
+// Exit codes: 0 — always, informational Stop hook. Fails open.
 
 import process from 'node:process'
 
@@ -47,7 +47,7 @@ export function commitsAhead(repoDir: string, branch: string): number {
   return Number.isFinite(n) ? n : 0
 }
 
-// Count of origin/<branch> commits NOT in local HEAD (origin ahead of local).
+// Count of origin/<branch> commits NOT in local HEAD, origin ahead of local.
 export function commitsBehind(repoDir: string, branch: string): number {
   const out = gitOut(repoDir, ['rev-list', '--count', `HEAD..origin/${branch}`])
   if (out === undefined) {
@@ -61,7 +61,7 @@ export function commitsBehind(repoDir: string, branch: string): number {
 // A bot author email (cascade/CI/dependabot). The fleet's own cascade +
 // auto-lander commit as the USER, so those are "own", not "bot"; this catches
 // the DISTINCT bot identities that also legitimately land on origin. Plain
-// substring tests (no regex) so the fleet command-regex guard stays quiet.
+// substring tests, no regex, so the fleet command-regex guard stays quiet.
 export function isBotEmail(email: string): boolean {
   const e = email.toLowerCase()
   return (
@@ -83,7 +83,7 @@ export function originAheadEmails(repoDir: string, branch: string): string[] {
 }
 
 // True when EVERY origin-ahead commit is the current identity or a bot — i.e. a
-// squash/consolidation of your own (or a bot's) work, not a real other user's
+// squash/consolidation of your own, or a bot's, work, not a real other user's
 // landing. Pure.
 export function allOwnOrBot(config: {
   emails: readonly string[]

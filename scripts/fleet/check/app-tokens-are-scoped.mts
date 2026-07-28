@@ -13,7 +13,7 @@
  *   the repo, the cascaded `template/base/.github/**`, and the fleet-shared
  *   override actions under `template/overrides/socket-registry/.github/**`
  *   (which host the shared github-release-/github-pr-app-token actions every
- *   member consumes). Exit 0 = every minter step scoped (or none used). Exit 1
+ *   member consumes). Exit 0 = every minter step scoped, or none used. Exit 1
  *   = an unscoped step, listed with What / Where / Saw-vs-wanted / Fix. CI gate
  *   via `scripts/check.mts`. Usage: node
  *   scripts/fleet/check/app-tokens-are-scoped.mts.
@@ -65,7 +65,7 @@ export function findUnscopedAppTokenUses(yaml: string): UnscopedUse[] {
       continue
     }
     const runIndent = ln.length - ln.trimStart().length
-    // Walk up to the step's `- ` sequence item (shallower than the run line).
+    // Walk up to the step's `- ` sequence item, shallower than the run line.
     let stepStart = i
     let stepIndent = runIndent
     for (let j = i; j >= 0; j -= 1) {
@@ -76,7 +76,7 @@ export function findUnscopedAppTokenUses(yaml: string): UnscopedUse[] {
         break
       }
     }
-    // Walk down to the next sibling item / dedent (the step's end).
+    // Walk down to the next sibling item / dedent, the step's end.
     let stepEnd = length
     for (let j = i + 1; j < length; j += 1) {
       const cur = lines[j]!
@@ -105,7 +105,7 @@ export function findUnscopedAppTokenUses(yaml: string): UnscopedUse[] {
 }
 
 /**
- * Recursively collect `*.yml` / `*.yaml` files under `dir` (if it exists).
+ * Recursively collect `*.yml` / `*.yaml` files under `dir`, if it exists.
  */
 export function collectYamlFiles(dir: string): string[] {
   if (!existsSync(dir)) {
@@ -130,7 +130,7 @@ export function collectYamlFiles(dir: string): string[] {
 }
 
 export function runCheck(repoRoot: string): number {
-  // The live .github, the cascaded source (wheelhouse dogfood), and the shared
+  // The live .github, the cascaded source, wheelhouse dogfood, and the shared
   // socket-registry override actions — so an unscoped token can't hide in the
   // host's workflows, the template it ships, or the fleet-shared actions.
   const dirs = [

@@ -1,5 +1,5 @@
 // Fleet check — every claude-fable-5 / claude-mythos-5 spawn either routes
-// through spawnTierWithFallback (which owns the fallback centrally) or the
+// through spawnTierWithFallback, which owns the fallback centrally, or the
 // result is checked for `refused`/`servedByFallback` in the enclosing function.
 // A fable spawn whose result binding is never inspected for the refusal signal
 // is a silent-refusal bug — the caller treats a classifier refusal as success.
@@ -192,8 +192,8 @@ export function scanSpawnCalls(
   return hits
 }
 
-// Rule 1 (tier variant): spawnTierWithFallback('fable',…) — exempt from the
-// fallback-check rule (it owns the fallback), but still check for budget knobs
+// Rule 1, tier variant: spawnTierWithFallback('fable',…) — exempt from the
+// fallback-check rule, it owns the fallback, but still check for budget knobs
 // in the options arg (Rule 2).
 export function scanTierCalls(
   text: string,

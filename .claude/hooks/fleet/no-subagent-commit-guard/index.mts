@@ -12,10 +12,10 @@
 // commit whose most-recent assistant turn is a subagent is blocked; the parent's
 // commit always passes (the parent IS the landing gate).
 //
-// Platform limit (honest scope): an inline Task subagent's turns are written
+// Platform limit, honest scope: an inline Task subagent's turns are written
 // into this transcript, so this guard catches them. A background / workflow
 // subagent writes to its own transcript and its tool call reaches the hook with
-// the PARENT's transcript (see unbacked-claim-commit-guard's note), so this
+// the PARENT's transcript, see unbacked-claim-commit-guard's note, so this
 // guard cannot attribute a background child's commit and does not fire for it.
 // Those are held by the agent-prompt discipline (every delegation forbids
 // committing) plus the orchestrator gate. This guard is defense-in-depth for the
@@ -49,9 +49,9 @@ export const check = bashGuard((command, payload) => {
   }
   const transcriptPath = payload.transcript_path
   if (!mostRecentAssistantIsSidechain(transcriptPath)) {
-    // The parent orchestrator (or an unattributable background child) — allow.
+    // The parent orchestrator, or an unattributable background child — allow.
     // The parent is the landing gate; a background child is held by prompt
-    // discipline (see header).
+    // discipline, see header.
     return undefined
   }
   return block(

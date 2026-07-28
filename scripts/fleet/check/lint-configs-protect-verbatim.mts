@@ -48,7 +48,7 @@ interface OxlintConfigShape {
 /**
  * The protected-verbatim globs a `!` re-include leaves re-exposed in one
  * ignorePatterns array: present in the list but last-seen BEFORE the last
- * negation (so the negation re-includes them). Empty = safe. Pure.
+ * negation, so the negation re-includes them. Empty = safe. Pure.
  */
 export function reexposedVerbatim(patterns: readonly string[]): string[] {
   let lastNeg = -1

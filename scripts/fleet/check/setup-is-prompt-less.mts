@@ -285,7 +285,7 @@ function checkSocketTokenInEnv(): CheckResult {
   // keychain-fallback getter would defeat the check.
   const env =
     // socket-api-token-getter: allow direct-env
-    // oxlint-disable-next-line socket/socket-api-token-env -- audit script: must check the primary slot because that's literally what's being audited (whether the install hook's primary export is wired up).
+    // oxlint-disable-next-line socket/socket-api-token-env -- audit script: must check the primary slot because that's literally what's being audited, whether the install hook's primary export is wired up.
     process.env['SOCKET_API_KEY'] || process.env['SOCKET_API_TOKEN']
   if (env) {
     // socket-api-token-getter: allow direct-env -- audit reports which raw env name is set.

@@ -93,7 +93,7 @@ export const check = async (payload: ToolCallPayload): Promise<GuardResult> => {
     return undefined
   }
   if (MESSAGE_TOOLS.has(tool)) {
-    // RAW scan of the full payload (message, prompt, summary, any field): a
+    // RAW scan of the full payload, message, prompt, summary, any field: a
     // quoted relay is still a relay. JSON-escaped line breaks are folded to
     // spaces so a phrase split across lines still matches — the receiving
     // side's scanner folds real newlines the same way.

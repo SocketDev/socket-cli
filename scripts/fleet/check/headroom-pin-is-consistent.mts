@@ -6,13 +6,13 @@
  *   so the version IS the pin (unlike SkillSpector's git SHA); this check is the
  *   code-is-law backstop that keeps the three records in lockstep:
  *
- *   1. external-tools.json headroom.version (fleet-canonical version)
+ *   1. external-tools.json headroom.version, fleet-canonical version
  *   2. pyproject.toml dependencies headroom-ai[proxy]==<version>
  *   3. uv.lock the resolved headroom-ai package version
  *
  *   The generic `uv-lockfiles-are-current` check proves the lock is internally
  *   consistent; this one proves the three RECORDS agree, so a hand-edit to one
- *   (a bumped external-tools version without re-locking, say) is caught at commit
+ *   a bumped external-tools version without re-locking, say, is caught at commit
  *   time rather than installing a version nobody pinned.
  *
  *   Usage: node scripts/fleet/check/headroom-pin-is-consistent.mts [--quiet]
@@ -87,7 +87,7 @@ export function readLockVersion(text: string): string | undefined {
 }
 
 function main(): number {
-  // Vacuous pass when the project isn't present (downstream repo without it).
+  // Vacuous pass when the project isn't present, downstream repo without it.
   if (!existsSync(PYPROJECT)) {
     logger.log('headroom-pin-is-consistent: no headroom uv project (n/a).')
     return 0

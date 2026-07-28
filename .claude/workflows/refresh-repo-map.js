@@ -16,7 +16,7 @@ export const meta = {
     'Seed the repo-map cache on a fresh clone, or force a full rebuild after large refactors. The SessionStart repo-map-refresh hook keeps it warm incrementally between runs, so this full pass is occasional, not per-session. args: { root?: string (subtree to map; default ".") }.',
 }
 
-// Normalize args: object, JSON string, or a bare path string (the root).
+// Normalize args: object, JSON string, or a bare path string, the root.
 let input = args
 if (typeof input === 'string') {
   try {

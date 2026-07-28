@@ -4,7 +4,7 @@
  *   profile, using the sourced + timestamped pricing data in
  *   `scripts/fleet/constants/model-pricing.json`. Replaces guessed budget
  *   ceilings (e.g. a round `max-ai-credits`) with a figure derived from real
- *   vendor prices. Cost model (per the vendor pricing page): usd =
+ *   vendor prices. Cost model, per the vendor pricing page: usd =
  *   inputTokens/1e6 * inputPerMtok + outputTokens/1e6 * outputPerMtok with
  *   optional multipliers: --batch (0.5x both), and a cache-read fraction
  *   (cacheReadTokens billed at 0.1x input instead of 1x). Token profile: pass
@@ -14,7 +14,7 @@
  *   profile (higher reasoning effort → more output/thinking tokens). Pricing
  *   freshness is NOT gated by an arbitrary day-count here: the
  *   `updating-pricing` sub-skill refreshes the data on the weekly `/updating`
- *   cadence (and on demand). This tool just PRINTS the snapshot age + source so
+ *   cadence, and on demand. This tool just PRINTS the snapshot age + source so
  *   staleness is visible. Usage: node scripts/fleet/estimate-ai-cost.mts
  *   --model claude-haiku-4-5 --input 60000 --output 8000 node
  *   scripts/fleet/estimate-ai-cost.mts --model claude-haiku-4-5 --workload
@@ -105,7 +105,7 @@ export interface FoundModel {
   serviceEntry: ServiceEntry
 }
 
-// Rough per-workload token profiles. These are ESTIMATES (flagged as such):
+// Rough per-workload token profiles. These are ESTIMATES, flagged as such:
 // seed values to be replaced with measured profiles from `gh aw logs` as real
 // runs accrue. Effort scales `output` (the reasoning/thinking side).
 export const WORKLOAD_PROFILES: Readonly<

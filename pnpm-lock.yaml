@@ -277,6 +277,9 @@ catalogs:
     '@redwoodjs/agent-ci':
       specifier: 0.17.1
       version: 0.17.1
+    '@shadscan/cli':
+      specifier: 0.2.0
+      version: 0.2.0
     '@sinclair/typebox':
       specifier: 0.34.52
       version: 0.34.52
@@ -667,6 +670,9 @@ importers:
       '@redwoodjs/agent-ci':
         specifier: 'catalog:'
         version: 0.17.1
+      '@shadscan/cli':
+        specifier: 'catalog:'
+        version: 0.2.0
       '@sinclair/typebox':
         specifier: 'catalog:'
         version: 0.34.52
@@ -2899,6 +2905,8 @@ importers:
 
   .config/fleet/oxlint-plugin/fleet/no-package-manager-auto-update-reenable: {}
 
+  .config/fleet/oxlint-plugin/fleet/no-parenthetical-aside: {}
+
   .config/fleet/oxlint-plugin/fleet/no-placeholders: {}
 
   .config/fleet/oxlint-plugin/fleet/no-platform-specific-import: {}
@@ -4499,6 +4507,11 @@ packages:
 
   '@sec-ant/readable-stream@0.4.1':
     resolution: {integrity: sha512-831qok9r2t8AlxLko40y2ebgSDhenenCatLVeW/uBtnHPyhHOvG0C7TvfgecV+wHzIm5KUICgzmVpWS+IMEAeg==}
+
+  '@shadscan/cli@0.2.0':
+    resolution: {integrity: sha512-yVctx2RgrKInob4H+5zrQiNDfmRAL2oFPMinkeNdJxdOgHUiDVke8waEFDzNm2tVAfqn4myTUY8fLBXj4niu4w==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   '@sigstore/bundle@4.0.0':
     resolution: {integrity: sha512-NwCl5Y0V6Di0NexvkTqdoVfmjTaQwoLM236r89KEojGmq/jMls8S+zb7yOwAPdXvbwfKDlP+lmXgAL4vKSQT+A==}
@@ -7293,6 +7306,10 @@ packages:
     resolution: {integrity: sha512-SHf/r48b7vOrjve9PxJo3MN5v5yuyjHvdUcrQffT3WXMUfnGmHDVbC4k3sHJaJTgZCwpUplIaAo5ANtMyp3YHg==}
     engines: {node: '>=18'}
 
+  tinyglobby@0.2.15:
+    resolution: {integrity: sha512-j2Zq4NyQYG5XMST4cbs02Ak8iJUdxRM0XI5QyxXuZOzKOINmWurp3smXu3y5wDcJrptwpSjgXHzIQxR0omXljQ==}
+    engines: {node: '>=12.0.0'}
+
   tinyglobby@0.2.17:
     resolution: {integrity: sha512-wXR/dYpcqKmfWpEdZjiKJOwCNFndD0DMnrW/cYjVGttEkBfVgcLFHoNrlj47mjOVic9yyNu65alsgF4NQyTa2g==}
     engines: {node: '>=12.0.0'}
@@ -7375,6 +7392,11 @@ packages:
   type-is@2.1.0:
     resolution: {integrity: sha512-faYHw0anBbc/kWF3zFTEnxSFOAGUX9GFbOBthvDdLsIlEoWOFOtS0zgCiQYwIskL9iGXZL3kAXD8OoZ4GmMATA==}
     engines: {node: '>= 18'}
+
+  typescript@5.9.3:
+    resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
 
   typescript@7.0.2:
     resolution: {integrity: sha512-8FYau96o3NKOhbjKi/qNvG/W5jhzxkbdm5sj9AbZ/5T5sWqn3hJgLfGx27sRKZWTvyzCP8dLRBTf5tBTSRVUNA==}
@@ -7677,6 +7699,9 @@ packages:
 
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+
+  zod@4.1.13:
+    resolution: {integrity: sha512-AvvthqfqrAhNH9dnfmrfKzX5upOdjUVJYFqNSlkmGf64gRaTzlPwz99IHYnVs28qYAybvAlBV+H7pn0saFY4Ig==}
 
   zod@4.4.3:
     resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
@@ -8843,6 +8868,15 @@ snapshots:
   '@rolldown/pluginutils@1.0.1': {}
 
   '@sec-ant/readable-stream@0.4.1': {}
+
+  '@shadscan/cli@0.2.0':
+    dependencies:
+      cross-spawn: 7.0.6
+      jsonc-parser: 3.3.1
+      picocolors: 1.1.1
+      tinyglobby: 0.2.15
+      typescript: 5.9.3
+      zod: 4.1.13
 
   '@sigstore/bundle@4.0.0':
     dependencies:
@@ -11721,6 +11755,11 @@ snapshots:
 
   tinyexec@1.2.4: {}
 
+  tinyglobby@0.2.15:
+    dependencies:
+      fdir: 6.5.0(picomatch@4.0.5)
+      picomatch: 4.0.5
+
   tinyglobby@0.2.17:
     dependencies:
       fdir: 6.5.0(picomatch@4.0.5)
@@ -11805,6 +11844,8 @@ snapshots:
       content-type: 2.0.0
       media-typer: 1.1.0
       mime-types: 3.0.2
+
+  typescript@5.9.3: {}
 
   typescript@7.0.2:
     optionalDependencies:
@@ -12066,5 +12107,7 @@ snapshots:
       zod: 4.4.3
 
   zod@3.25.76: {}
+
+  zod@4.1.13: {}
 
   zod@4.4.3: {}

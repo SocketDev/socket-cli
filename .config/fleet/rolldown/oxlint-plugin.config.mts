@@ -3,7 +3,7 @@
  *   entry (`.config/fleet/oxlint-plugin/index.mts`) + every `socket/*` rule it
  *   imports into a single ESM `.config/fleet/oxlint-plugin.mjs`, so a member
  *   receives ONE loadable plugin artifact instead of the ~100 rule source dirs
- *   (each currently a workspace package). The rule SOURCE lives once in the
+ *   each currently a workspace package. The rule SOURCE lives once in the
  *   wheelhouse (edited + tested there); members run the bundle via
  *   `jsPlugins: ["./oxlint-plugin.mjs"]`. Modeled on hook-bundle.config.mts.
  *   ESM output (not CJS): the plugin entry is native ESM (`export default`) and

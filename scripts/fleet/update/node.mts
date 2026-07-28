@@ -6,7 +6,7 @@
  *   a newer release of the SAME major line whose upstream RELEASE date has
  *   cleared the `--soak-days` trust window — the same discipline every
  *   ecosystem update runner applies, so a fresh Node release can't land before
- *   its soak. Node is nodejs-owned (third-party to the fleet), so it is NEVER
+ *   its soak. Node is nodejs-owned, third-party to the fleet, so it is NEVER
  *   soak-exempt; the Socket-provenance bypass that exempts `@socketsecurity/*`
  *   never applies here. Fail-closed: a release whose date can't be resolved is
  *   not a candidate. Modes: node scripts/fleet/update/node.mts --soak-days 7

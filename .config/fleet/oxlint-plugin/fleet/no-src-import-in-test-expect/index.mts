@@ -1,6 +1,6 @@
 /**
  * @file In a test file, a lib utility imported from the local `src/` tree must
- *   not be used as a TOOL inside `expect(...)` (to build the expected value).
+ *   not be used as a TOOL inside `expect(...)`, to build the expected value.
  *   Doing so validates `src` against itself: if the utility has a bug, the API
  *   output AND the expected value are wrong the same way, so the assertion
  *   still passes and the bug hides. The system-under-test legitimately imports
@@ -209,7 +209,7 @@ const rule = {
           }
           // Only matcher invocations build the EXPECTED value:
           // `expect(actual).toBe(<expected>)`. Skip the inner `expect(actual)`
-          // call (its argument is the system-under-test), and skip
+          // call, its argument is the system-under-test, and skip
           // class-identity matchers (`.toThrow(PurlError)` /
           // `.toBeInstanceOf(X)`) whose argument must be the src class so
           // `instanceof` holds.

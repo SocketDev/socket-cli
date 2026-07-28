@@ -1,6 +1,6 @@
 /**
  * @file Fleet-canonical vitest setup, wired via `setupFiles` in
- *   `.config/repo/vitest.config.mts` (loaded only when present). Registers the
+ *   `.config/repo/vitest.config.mts`, loaded only when present. Registers the
  *   fleet's custom matchers globally with `expect.extend` so every test under
  *   `test/**` can use them without an import. Currently: `toContainPath` — a
  *   separator-agnostic path-substring assertion (see ./../_shared/lib/

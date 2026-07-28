@@ -1,6 +1,6 @@
 /**
  * @file Shared "is this command a public-facing publish?" check. The
- *   public-surface-nudge (Stop, nudges), private-name-nudge (PreToolUse),
+ *   public-surface-nudge, Stop, nudges, private-name-nudge (PreToolUse),
  *   and issue-autolink-nudge all gate on the same set of outward-facing
  *   commands — commit, push, gh pr/issue/release, mutating gh api. One
  *   source keeps the gates from drifting. Detection rides the

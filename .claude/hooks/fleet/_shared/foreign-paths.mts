@@ -1,7 +1,7 @@
 /*
  * @file Shared heuristic for "which dirty paths in this checkout were authored
  *   by ANOTHER agent, not this session". Two responsibilities the
- *   parallel-agent hooks (and overeager-staging-guard) share:
+ *   parallel-agent hooks, and overeager-staging-guard, share:
  *
  *   1. `readTouchedPaths(transcriptPath)` — the set of absolute paths THIS session
  *      modified: Edit / Write `file_path` targets plus `git add|mv|rm <path>`
@@ -10,7 +10,7 @@
  *      instead of drifting copies.
  *   2. `listForeignDirtyPaths(repoDir, touched, opts)` — dirty paths (`git status
  *      --porcelain`) that this session did NOT touch and whose mtime is recent
- *      (so stale pre-session dirt doesn't false-fire). These are the likely
+ *      so stale pre-session dirt doesn't false-fire. These are the likely
  *      fingerprints of a concurrent Claude session sharing the `.git/` — the
  *      failure mode where `git add -A` / `git stash` / `git reset --hard` would
  *      sweep up or destroy another agent's work. Fail-open contract (matches
@@ -77,7 +77,7 @@ export function isUntrackedByDefault(p: string): boolean {
 }
 
 // git's global options that sit BEFORE the subcommand. `-C <dir>` and
-// `-c <name>=<value>` take a value (the next token); the rest are flags. A
+// `-c <name>=<value>` take a value, the next token; the rest are flags. A
 // session that runs the parallel-safe `git -C <repo> mv old new` form would
 // otherwise be read as verb `-C`, skipped entirely, and its authorship lost —
 // so the guards false-fire on this session's OWN renamed/staged files.
@@ -283,8 +283,8 @@ export interface SessionTouched {
 
 /**
  * The session's touched paths, split by what the evidence proves. The
- * plain `readSessionTouchedPaths` (the union) remains for consumers where
- * staging IS the right signal (the staging guard passing your own adds).
+ * plain `readSessionTouchedPaths`, the union, remains for consumers where
+ * staging IS the right signal, the staging guard passing your own adds.
  */
 export function readSessionTouchedPathsDetailed(
   transcriptPath: string | undefined,
@@ -389,7 +389,7 @@ export function readSessionTouchedPathsDetailed(
 // back to transcript-only authorship — the pre-existing behavior).
 
 // Derive the ledger file path for a session. Returns undefined when there is no
-// transcript path to key on (the caller then skips the ledger entirely).
+// transcript path to key on, the caller then skips the ledger entirely.
 export function touchedLedgerPath(
   transcriptPath: string | undefined,
 ): string | undefined {
@@ -407,7 +407,7 @@ export function touchedLedgerPath(
 /**
  * Record an absolute path as touched-by-this-session in the per-session ledger.
  * Call this from a guard right before it ALLOWS an edit, so the next invocation
- * (same turn, transcript not yet flushed) recognizes the file as the session's
+ * same turn, transcript not yet flushed, recognizes the file as the session's
  * own. No-op on missing transcript path or any I/O error (fail-open).
  */
 export function recordTouchedPath(
@@ -478,7 +478,7 @@ export function readLedgerPaths(
 /**
  * The per-session ledger split by line provenance: bare lines are
  * authored; `\tadd`-tagged lines are git-add-derived (staged, not
- * authored). Pre-tag ledgers (all bare) read as fully authored — the
+ * authored). Pre-tag ledgers, all bare, read as fully authored — the
  * pre-existing behavior.
  */
 export function readLedgerPathsDetailed(transcriptPath: string | undefined): {
@@ -520,7 +520,7 @@ export function readLedgerPathsDetailed(transcriptPath: string | undefined): {
 /**
  * The session's touched-path set: the transcript-derived authorship UNION the
  * same-turn ledger. This is what the parallel-agent guards should consult so a
- * file the session edited earlier this turn (not yet in the transcript) is
+ * file the session edited earlier this turn, not yet in the transcript, is
  * recognized as its own. Drop-in replacement for `readTouchedPaths` at the
  * guard call sites.
  */
@@ -570,7 +570,7 @@ export function parsePorcelain(out: string): DirtyEntry[] {
  * its resolved absolute path is not in `touched`, AND - its on-disk mtime is
  * within `maxAgeMs` of `now`, AND - it is not a staged rename (index column
  * `R`), which is always a deliberate `git mv` in this checkout, never a
- * parallel agent's loose edit. Deleted paths (no mtime) are included only if
+ * parallel agent's loose edit. Deleted paths, no mtime, are included only if
  * their status is `D` — a delete by another agent is still foreign. Returns
  * repo-relative paths.
  */

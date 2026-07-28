@@ -105,7 +105,7 @@ interface AcornWasm {
 
 let cachedWasm: AcornWasm | undefined
 
-// Lazy so the WASM is never touched during a snapshot build pass (module eval);
+// Lazy so the WASM is never touched during a snapshot build pass, module eval;
 // runtime-only, where `WebAssembly` is present.
 function acornWasm(): AcornWasm {
   if (cachedWasm === undefined) {
@@ -173,7 +173,7 @@ export function walkSimple(
  * doesn't emit `loc` data even with `locations: true`, but every node carries
  * `start` / `end` byte offsets — this function bridges the gap.
  *
- * Counts `\n`, `\r`, AND `\r\n` (treated as one newline) so the line number
+ * Counts `\n`, `\r`, AND `\r\n`, treated as one newline, so the line number
  * agrees with `splitLines(source)[line - 1]` regardless of the source's newline
  * convention.
  */
@@ -202,7 +202,7 @@ export function offsetToLineCol(
 
 /**
  * Split source text into lines while normalizing the three legal newline
- * conventions: `\r\n` (Windows), `\n` (Unix), `\r` (legacy Mac). Hooks that
+ * conventions: `\r\n` (Windows), `\n` (Unix), `\r`, legacy Mac. Hooks that
  * inspect source line-by-line should ALWAYS go through this helper — a raw
  * `source.split('\n')` over a CRLF file leaves a trailing `\r` on every line,
  * breaking line-snippet display and regex anchors.

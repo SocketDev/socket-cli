@@ -46,7 +46,7 @@ export function resolveBumpScript(root: string = rootPath): string {
  * the checkout to the new commit so the publish runs against the bumped tree,
  * and returns the branch + tip SHA for the caller to promote / discard.
  * Dry-run previews the bump (bump.mts --dry-run writes nothing), commits
- * nothing, and returns undefined; a no-op bump (no file changes) also returns
+ * nothing, and returns undefined; a no-op bump, no file changes, also returns
  * undefined.
  */
 export async function runBump(config: {

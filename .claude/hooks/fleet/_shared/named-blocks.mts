@@ -35,7 +35,7 @@
  *       without a grammar change.
  *     - The CLOSE marker is a bare close tag `</tag>` — no attributes.
  *     - Blocks NEST and must be BALANCED by tag name, like HTML elements.
- *       the WHATWG parser is lenient (it never errors on bad nesting), so the
+ *       the WHATWG parser is lenient, it never errors on bad nesting, so the
  *       "nested-but-not-malformed → reject" rule is enforced HERE by a
  *       stack walk over the marker sequence: overlap (`BEGIN a … BEGIN b …
  *       END a`), an unclosed open, or a close with no open match are

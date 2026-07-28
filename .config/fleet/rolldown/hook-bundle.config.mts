@@ -4,15 +4,15 @@
  *   dispatch table, every bundle-safe hook it imports, the `_shared/` helpers,
  *   and only the reachable slices of `@socketsecurity/lib-stable` into a single
  *   CJS `_dist/bundle.cjs`. Lives under `.config/fleet/rolldown/`
- *   (mandatory tier), not `.config/repo/rolldown/` (opt-in tier):
+ *   mandatory tier, not `.config/repo/rolldown/`, opt-in tier:
  *   `scripts/fleet/build-hook-bundle.mts` is a mandatory `scripts/fleet` script
  *   every fleet repo carries, so it needs this config unconditionally —
  *   cascading it opt-in left members unable to resolve the rolldown entry.
  *   Output is CJS (not type-stripped ESM .mts) on purpose: V8's compile cache
  *   reliably caches AND auto-flushes plain CJS, so the hand-written `index.cjs`
  *   loader's `enableCompileCache` actually persists between spawns. Not
- *   minified (fleet hard rule), no source maps, no `.d.ts`. node: built-ins
- *   stay external (the bundle runs under Node, which has them). Heavy
+ *   minified, fleet hard rule, no source maps, no `.d.ts`. node: built-ins
+ *   stay external, the bundle runs under Node, which has them. Heavy
  *   unreachable lib subgraphs are stubbed via the fleet-canonical
  *   `createLibStubPlugin`.
  */
@@ -65,7 +65,7 @@ const config: RolldownOptions = {
       // Matches @socketsecurity/lib or lib-stable imports ending in /globs.js or /sorts.js.
       stubPattern: /@socketsecurity\/lib(?:-stable)?\/.*\/(?:globs|sorts)\.js$/,
     }),
-    // Lazy-`semver` stub (mirrors the snapshot config). `alpha-sort-nudge` deep-
+    // Lazy-`semver` stub, mirrors the snapshot config. `alpha-sort-nudge` deep-
     // imports `sorts/natural` (NOT the `sorts.js` barrel the stub above catches),
     // which transitively pulls `external/semver.js`; semver's `index.js` builds
     // `new Comparator(">=0.0.0-0")` at module-eval, and once `codeSplitting: false`

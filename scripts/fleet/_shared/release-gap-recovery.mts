@@ -38,7 +38,7 @@ export const APPROVE_IS_NOT_A_RESUME_PATH =
 
 /**
  * The four-part (What / Where / Saw vs. wanted / Fix) release-gap message.
- * `saw` states what was actually observed (a failed step, a missing tag);
+ * `saw` states what was actually observed, a failed step, a missing tag;
  * `where` names the surface that observed it. The Fix line always carries the
  * literal reconcile command plus the note that `--approve` is not the retry.
  */

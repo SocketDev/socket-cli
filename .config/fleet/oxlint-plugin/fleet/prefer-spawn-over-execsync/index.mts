@@ -5,7 +5,7 @@
  *
  *   1. Command-injection surface — `execSync(cmd)` runs `cmd` through a shell; any
  *      string concatenation into `cmd` is a potential injection vector.
- *      `execFileSync(file, args)` is safer (no shell) but still picks up `PATH`
+ *      `execFileSync(file, args)` is safer, no shell, but still picks up `PATH`
  *      lookups and offers no structured error shape.
  *   2. Consistency — the fleet `spawn` wrapper ships a typed `SpawnError` shape,
  *      an `isSpawnError` guard, and accepts an array-of-args contract that

@@ -17,7 +17,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-// Resolve an `extends` chain (string or array of relative paths) into a flat
+// Resolve an `extends` chain, string or array of relative paths, into a flat
 // `tools` view. Fails LOUD on a circular chain or an unreadable base file —
 // a silently half-resolved view surfaces later as a mysterious missing key.
 function resolveExtends(data, resolvedPath, visited) {
@@ -80,5 +80,5 @@ if (v == null || v === '') {
   process.exit(1)
 }
 
-// oxlint-disable-next-line socket/no-console-prefer-logger -- composite-action helper runs on the raw runner before setup-node; the action's stdout IS the contract (consumed via shell command substitution).
+// oxlint-disable-next-line socket/no-console-prefer-logger -- composite-action helper runs on the raw runner before setup-node; the action's stdout IS the contract, consumed via shell command substitution.
 console.log(typeof v === 'string' ? v : JSON.stringify(v))

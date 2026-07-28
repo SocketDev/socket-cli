@@ -19,7 +19,7 @@
 //
 //   (d) Missing a canonical social-follow badge. Every fleet README
 //       carries both the X / Twitter and Bluesky follow badges under
-//       the title (byte-identical fleet-canonical).
+//       the title, byte-identical fleet-canonical.
 //
 // Only fires on the REPO-ROOT README.md (basename === 'README.md' AND
 // directory is repo root). Nested READMEs (packages/, docs/, .claude/,
@@ -31,10 +31,10 @@
 //
 // Companion to:
 //   - scripts/sync-scaffolding/checks/readme-skeleton-drift.mts
-//     (sync-time check, no autofix)
+//     sync-time check, no autofix
 //   - template/.config/fleet/markdownlint-rules/socket-{readme-required-sections,
 //     readme-social-badges, no-private-wheelhouse-leak,
-//     no-relative-sibling-script}.mts (lint-time check)
+//     no-relative-sibling-script}.mts, lint-time check
 //
 // This hook is the edit-time enforcement — it fires when the README is
 // being written, catching the failure mode at its earliest surface.
@@ -86,7 +86,7 @@ const SIBLING_PATH_RES: readonly RegExp[] = [
 ]
 
 // The canonical social-follow badge block every fleet README carries under
-// the title (byte-identical fleet-canonical, not repo-contextual). Both must
+// the title, byte-identical fleet-canonical, not repo-contextual. Both must
 // be present. Matched by the stable LINK target, not the badge image, so an
 // image-host change (shields.io → the local assets/fleet/ SVGs) or reworded
 // alt-text still counts.
@@ -118,9 +118,9 @@ const HOOK_REPO_ROOT = path.resolve(
  * README looks the member up in the wheelhouse's authoritative roster.
  */
 /**
- * Non-fleet opt-in check. A foreign repo (origin not in the fleet roster)
+ * Non-fleet opt-in check. A foreign repo, origin not in the fleet roster
  * owns its README shape by default; it ADOPTS the fleet skeleton + hygiene
- * rules (minus the social badges) either durably — a
+ * rules, minus the social badges, either durably — a
  * `.config/readme-fleet-shape.json` with `{"optIn": true}` at its root — or
  * for the session via the opt-in phrase.
  */
@@ -170,7 +170,7 @@ export function isFreeformReadmeRepo(readmePath: string): boolean {
  */
 /**
  * Walk up from `startDir` to the repo root — the nearest ancestor holding a
- * `.git` entry (a directory in a normal checkout, a file in a linked worktree).
+ * `.git` entry, a directory in a normal checkout, a file in a linked worktree.
  * Returns undefined when no `.git` is found (the path is not inside a git
  * repo).
  */
@@ -371,7 +371,7 @@ export const check = editGuard((filePath, content, payload) => {
     return undefined
   }
 
-  // The full shape (badges included) is the fleet's contract with itself; a
+  // The full shape, badges included, is the fleet's contract with itself; a
   // NON-fleet repo never owes the Socket follow badges, and owes the rest of
   // the shape only after adopting it via the opt-in marker/phrase. No opt-in →
   // the README is entirely the repo's own business.

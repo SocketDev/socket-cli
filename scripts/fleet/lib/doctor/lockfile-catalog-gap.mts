@@ -114,7 +114,7 @@ function driftFinding(config: {
  * lockfile's resolved catalog specifiers. Report-only: an entry the lockfile
  * resolved but whose specifier differs from the workspace value is a pending
  * `pnpm install`. Entries absent from the lockfile catalogs are skipped
- * (defined-but-unreferenced, not drift).
+ * defined-but-unreferenced, not drift.
  */
 export function diagnoseLockfileCatalogDrift(config: {
   lockfileYaml: string
@@ -133,7 +133,7 @@ export function diagnoseLockfileCatalogDrift(config: {
     for (let i = 0, { length } = deps; i < length; i += 1) {
       const dep = deps[i]!
       const workspaceValue = workspaceEntries[dep]!
-      // A `catalog:`-forwarded entry (rare in the catalog block itself) has no
+      // A `catalog:`-forwarded entry, rare in the catalog block itself, has no
       // concrete version to compare — skip it.
       if (workspaceValue.startsWith('catalog:')) {
         continue

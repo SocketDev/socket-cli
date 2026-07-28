@@ -4,16 +4,16 @@
  *   "Edit" | "Write" | "Bash" | ..., "tool_input": {...} } The shape of
  *   `tool_input` varies by tool. The fleet's hooks need three subsets:
  *
- *   - Edit/Write hooks read `file_path` (always present) and either `content`
+ *   - Edit/Write hooks read `file_path`, always present, and either `content`
  *     (Write) or `new_string` (Edit).
- *   - Bash hooks read `command` (the shell line to run).
- *   - A few hooks (cross-repo-guard, no-fleet-fork-guard) read `file_path` to
+ *   - Bash hooks read `command`, the shell line to run.
+ *   - A few hooks, cross-repo-guard, no-fleet-fork-guard, read `file_path` to
  *     gate edits to specific paths. Each hook used to declare its own
  *     `tool_input` type inline — 7 distinct shapes existed across the fleet for
  *     the same data. This file centralizes them so:
  *
  *   1. Future hooks copy-paste the right type instead of inventing one.
- *   2. A schema change (new tool, new field) is a one-file edit.
+ *   2. A schema change, new tool, new field, is a one-file edit.
  *   3. The `unknown`-vs-`string` widening choice is consistent across hooks (we
  *      widen to `unknown` and narrow at use; that's the defensive shape for a
  *      payload we don't fully control). All fields are optional + `unknown`
@@ -123,7 +123,7 @@ export function readWriteContent(payload: ToolCallPayload): string | undefined {
  * - Write → `content` verbatim.
  * - Edit → the on-disk file with `old_string` replaced by `new_string` (first
  *   occurrence, matching the Edit tool). `undefined` if the file is unreadable
- *   or `old_string` isn't present (the edit wouldn't apply).
+ *   or `old_string` isn't present, the edit wouldn't apply.
  * - MultiEdit → the on-disk file with each `{ old_string, new_string }` folded in
  *   order; `undefined` if any step's `old_string` is absent.
  *

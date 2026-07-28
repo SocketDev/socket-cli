@@ -17,7 +17,7 @@ export interface ProseSlot {
    */
   charBudget: number
   /**
-   * Source text the AI uses to ground its answer (no hallucination).
+   * Source text the AI uses to ground its answer, no hallucination.
    */
   source: string
 }
@@ -31,7 +31,7 @@ export interface LlmsLink {
    */
   name: string
   /**
-   * Relative URL (never absolute).
+   * Relative URL, never absolute.
    */
   url: string
   /**

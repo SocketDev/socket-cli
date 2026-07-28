@@ -109,7 +109,7 @@ export type RunResolvedOptions = {
   readonly extraArgs?: readonly string[] | undefined
   /**
    * If true, `stdout` / `stderr` are buffered and returned on the resolved
-   * result. Default false (inherit terminal).
+   * result. Default false, inherit terminal.
    */
   readonly capture?: boolean | undefined
 }
@@ -152,7 +152,7 @@ function resolveRepoRoot(): string {
 const DEFAULT_CWD = resolveRepoRoot()
 
 /**
- * Resolve the fleet's linter (currently Oxlint).
+ * Resolve the fleet's linter, currently Oxlint.
  *
  * Returns argv ready for `pnpm exec`. `--config` is always emitted so a swap to
  * a tool with different config-discovery rules doesn't silently change
@@ -175,7 +175,7 @@ export function resolveLinter(
 }
 
 /**
- * Resolve the fleet's formatter (currently Oxfmt).
+ * Resolve the fleet's formatter, currently Oxfmt.
  */
 export function resolveFormatter(
   options: ResolveFormatterOptions = {},
@@ -214,7 +214,7 @@ export function resolveTypeChecker(
 }
 
 /**
- * Resolve the fleet's test runner (currently Vitest).
+ * Resolve the fleet's test runner, currently Vitest.
  */
 export function resolveTestRunner(
   options: ResolveTestRunnerOptions = {},

@@ -1,6 +1,6 @@
 /**
  * @file `--staged` / `--direct` publish over a MULTI-PACKAGE workspace layout
- *   (decmpfs, stuie): gate the whole set first — version lockstep, every
+ *   decmpfs, stuie: gate the whole set first — version lockstep, every
  *   declared platform package present on disk, no hollow platform package, an
  *   orderable dependency graph — then publish each member
  *   in dependency order (platform packages before the loader that
@@ -78,7 +78,7 @@ function pinTargetForPackage(
 
 /**
  * Pack the workspace member that publishes `name` from its own directory
- * (pnpm packs the cwd package and writes the tarball there), with the same
+ * pnpm packs the cwd package and writes the tarball there, with the same
  * README-pin + manifest-prune brackets as the publish itself so the
  * approve-time verify pack sees identical bytes. Fails loud (returning
  * undefined) when no member publishes `name` — the stage list is
@@ -213,7 +213,7 @@ export function gateWorkspaceForPublish(
  * `files` entries + `main`) present AND non-empty inside it — a hollow
  * platform tarball never reaches the approve prompt. Fails LOUD and returns
  * false on any missing evidence. `downloadStagedTarball` is injected by the
- * caller (approve passes the stage-download helper) — also the test seam.
+ * caller, approve passes the stage-download helper — also the test seam.
  */
 export async function verifyStagedPlatformEntry(
   entry: StageListEntry,

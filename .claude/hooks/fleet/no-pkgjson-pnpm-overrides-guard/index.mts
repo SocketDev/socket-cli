@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Claude Code PreToolUse hook — no-pkgjson-pnpm-overrides-guard.
 //
-// Blocks Edit/Write operations that add (or expand) a `pnpm.overrides`
+// Blocks Edit/Write operations that add, or expand, a `pnpm.overrides`
 // block in any `package.json`. The fleet keeps dependency overrides in
 // `pnpm-workspace.yaml` `overrides:` as the single source of truth. A
 // `pnpm.overrides` block in package.json splits that surface and sits
@@ -10,7 +10,7 @@
 // Detection model:
 //   - Fires only on Edit / Write to files named `package.json`.
 //   - Parses before + after JSON. Reports the override keys that are
-//     present in the after-state but absent (or fewer) in the before.
+//     present in the after-state but absent, or fewer, in the before.
 //   - New / expanded `pnpm.overrides` → block.
 //
 // Bypass: `Allow package-json-overrides bypass` typed verbatim in a

@@ -15,7 +15,7 @@
  *   the researching-recency feed, restamp its snapshot). Reminds rather than
  *   hard-fails: stale pricing is advisory, not a correctness break, so blocking
  *   every commit fleet-wide the day a window lapses would be too aggressive.
- *   The reminder is loud (it prints in the check summary); the fix is one skill
+ *   The reminder is loud, it prints in the check summary; the fix is one skill
  *   invocation. Fails open (exit 0, silent) when neither the JSON nor the doc
  *   marker is present — a repo without pricing data has nothing to keep fresh.
  *   Exit code: always 0. This surface reminds; it never blocks.
@@ -82,7 +82,7 @@ export function freshnessWindow(service: string): number {
 }
 
 // Parse the snapshot date from the routing-doc text. Returns undefined when the
-// marker is absent or the date is unparseable (the caller fails open).
+// marker is absent or the date is unparseable, the caller fails open.
 export function parseSnapshotDate(docText: string): Date | undefined {
   const match = SNAPSHOT_RE.exec(docText)
   if (!match) {
@@ -93,7 +93,7 @@ export function parseSnapshotDate(docText: string): Date | undefined {
 }
 
 // The services whose snapshot is older than their freshness window. Pure given
-// `now`. Skips a service with an unparseable snapshot (fails open per-service).
+// `now`. Skips a service with an unparseable snapshot, fails open per-service.
 export function staleServices(pricing: PricingData, now: Date): StaleService[] {
   const stale: StaleService[] = []
   const services = pricing.services ?? {}
@@ -151,7 +151,7 @@ function main(): void {
   try {
     pricing = loadPricing()
   } catch {
-    // No JSON — fall back to the doc marker (repo may carry only the doc).
+    // No JSON — fall back to the doc marker, repo may carry only the doc.
     pricing = undefined
   }
   if (!pricing?.services) {

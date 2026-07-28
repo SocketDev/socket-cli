@@ -12,7 +12,7 @@
  *   File-level gate (no YAML parser dep): a workflow that contains a native
  *   test-run invocation must also reference `run-offline`. Per-step wrapping is
  *   the doctrine's job; this catches a repo that skips the pattern entirely. A
- *   `--no-run` invocation (build only, no runtime network) and comment lines are
+ *   `--no-run` invocation, build only, no runtime network, and comment lines are
  *   ignored. js/ts is covered separately by the runtime `nock` setup + the
  *   `no-unmocked-net-guard` hook, so this check is native-only.
  *
@@ -43,7 +43,7 @@ const logger = getDefaultLogger()
 // repo cannot land an ungated test workflow.
 const ENFORCING = false
 
-// A native test-RUN invocation. `--no-run` (build only) is excluded by the
+// A native test-RUN invocation. `--no-run`, build only, is excluded by the
 // caller — it never runs a test binary, so it needs no network gate.
 // oxlint-disable-next-line socket/require-regex-comment -- documented above
 const NATIVE_TEST_RE = /\b(?:cargo\s+(?:nextest\s+run|test)|ctest|go\s+test)\b/

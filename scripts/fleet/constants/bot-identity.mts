@@ -12,7 +12,7 @@
  *   the same identity. Consumers that cannot import a .mts — a GitHub Actions
  *   YAML step, a shell script — read the same values with
  *   `node -p "require('./scripts/fleet/constants/bot-identity.mjs').SOCKET_BOT.email"`
- *   (or mirror them with a comment pointing back here). The .mts is the source.
+ *   or mirror them with a comment pointing back here. The .mts is the source.
  *
  *   The numeric-prefixed `users.noreply.github.com` email (the account's id +
  *   login) is what links a commit to the socket-bot GitHub account — its avatar

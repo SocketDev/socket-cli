@@ -11,19 +11,19 @@
 // mistake this guard prevents. An AGENT cannot self-authorize: the only
 // thing that lifts the block is the HUMAN typing "push" / "Allow push
 // to main" in a genuine user turn of THIS session. The bypass scanner
-// matches on transcript role PROVENANCE (human-typed turns only), so a
+// matches on transcript role PROVENANCE, human-typed turns only, so a
 // phrase relayed by another agent/session (a peer SendMessage, an
 // orchestrator/sdk prompt, an agent-message wrapper) never counts — and
 // when such a relay is detected next to a blocked push, the guard
 // refuses with a laundering-specific lesson demanding a fresh human
 // grant (see bypassPhraseInAgentContent).
 //
-// What it DENIES (a write to a protected branch):
+// What it DENIES, a write to a protected branch:
 //   - git push origin main
 //   - git push origin HEAD:main
 //   - git push origin <sha>:refs/heads/main
 //   - git push --force / --force-with-lease … main|master
-//   - git push origin :main          (deleting a protected branch)
+//   - git push origin :main, deleting a protected branch
 //   - a BARE `git push` on a checkout whose current branch is
 //     main|master (it targets the upstream main|master)
 //
@@ -31,7 +31,7 @@
 //   - git push fork perf/foo
 //   - git push origin feature-x
 //   - git push -u fork branch:branch
-//   - git push origin v1.0  /  git push origin tag v1.0  (a tag)
+//   - git push origin v1.0  /  git push origin tag v1.0, a tag
 //   - git commit / git fetch / any non-push git command
 //
 // Detection: the push is found via the fleet shell parser (sees through

@@ -25,7 +25,7 @@
  *   (b) queue the edit for after the run lands,
  *   (c) user types `Allow live-edit-collision bypass` verbatim.
  *
- * Fail-open: any IO / parse error falls through (no block), per the fleet's
+ * Fail-open: any IO / parse error falls through, no block, per the fleet's
  * hook contract — "a buggy hook silently allows" beats "a buggy hook wedges
  * the session."
  */

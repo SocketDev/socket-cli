@@ -9,15 +9,38 @@
 
 import { existsSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
+import process from 'node:process'
 
 import { hashTarball } from '../../lib/verify-release-hashes.mts'
 import { formatReleaseGapFailure } from '../../_shared/release-gap-recovery.mts'
+import {
+  buildPtyInvocation,
+  NON_INTERACTIVE_RENDER_ENV,
+  PTY_FILE_STDOUT_MESSAGE,
+  stdoutIsFileBacked,
+} from '../../publish-infra/shared.mts'
 import { readPkg, resolveSeams } from '../seams.mts'
 
 import type { RunnerSeams, StageOutcome } from '../seams.mts'
 import type { ReleaseChecksums, StageReceipt } from '../state.mts'
 
 // ── separate explicit step: approve ────────────────────────────────────────
+
+// `pnpm stage approve` prompts with an interactive multi-select. Without a TTY
+// the prompt takes no input, prints "Nothing selected; exiting", and exits 0 —
+// so a non-TTY run promoted NOTHING while this step minted a "public on npm"
+// receipt. The registry-liveness gate on the release stage caught it, but only
+// after the false receipt was already written. Refuse up front instead: a
+// promote that cannot receive a selection is not a promote.
+export const NO_TTY_APPROVE_DETAIL =
+  'approve needs an interactive terminal, or --yes.\n' +
+  '  What:  the promote is an interactive multi-select plus browser web-OTP 2FA.\n' +
+  '  Where: this channel has no TTY, so the prompt receives no selection,\n' +
+  '         reports "Nothing selected; exiting", and exits 0 having promoted nothing.\n' +
+  '  Saw:   stdin/stdout are not a TTY; wanted a real terminal or the --yes opt-in.\n' +
+  '  Fix:   add --yes to approve every eligible staged entry without the prompt\n' +
+  '         (the run is wrapped in a PTY so npm still opens the browser for 2FA),\n' +
+  '         or run the same command in a terminal directly. Either is idempotent.'
 
 /**
  * Approve: promote the staged package to public. A SEPARATE explicit
@@ -32,15 +55,51 @@ import type { ReleaseChecksums, StageReceipt } from '../state.mts'
 export async function runApproveStep(config: {
   cwd: string
   dryRun: boolean
+  isTty?: boolean | undefined
+  platform?: NodeJS.Platform | undefined
   seams?: RunnerSeams | undefined
+  stdoutIsFile?: boolean | undefined
+  yes?: boolean | undefined
 }): Promise<StageOutcome> {
   const cfg = { __proto__: null, ...config } as typeof config
   const seams = resolveSeams(cfg.seams)
+  const isTty = cfg.isTty ?? seams.isTty
+  // Without a TTY the multi-select takes no input and exits 0 having promoted
+  // nothing. `--yes` replaces the selection outright, so it is the one way a
+  // terminal-less run can still be a real promote.
+  if (!cfg.dryRun && !isTty && !cfg.yes) {
+    return { detail: NO_TTY_APPROVE_DETAIL, status: 'failed' }
+  }
   const args = ['scripts/fleet/npm-publish.mts', '--approve', '--no-release']
+  if (cfg.yes) {
+    args.push('--yes')
+  }
   if (cfg.dryRun) {
     args.push('--dry-run')
   }
-  const code = await seams.runInherit('node', args, cfg.cwd)
+  // A --yes run off a terminal still needs a PTY: the registry challenges 2FA
+  // and npm only opens the browser, and stays alive to poll, when it believes
+  // it has one. On a real TTY npm drives its own flow, so run unwrapped.
+  const pty =
+    !cfg.dryRun && !isTty
+      ? buildPtyInvocation(cfg.platform ?? process.platform, 'node', args)
+      : undefined
+  // Refuse before spawning rather than let script(1) die with no output. The
+  // promote is the one step where an opaque exit-1 is most expensive to
+  // diagnose, and a captured/backgrounded run lands here every time.
+  if (pty && (cfg.stdoutIsFile ?? stdoutIsFileBacked())) {
+    return { detail: PTY_FILE_STDOUT_MESSAGE, status: 'failed' }
+  }
+  // The PTY re-enables the child's spinners; force plain rendering so the
+  // scan gate's progress display cannot flood the captured stream.
+  const code = pty
+    ? await seams.runInherit(
+        pty.command,
+        pty.args,
+        cfg.cwd,
+        NON_INTERACTIVE_RENDER_ENV,
+      )
+    : await seams.runInherit('node', args, cfg.cwd)
   if (code !== 0) {
     return {
       detail:
@@ -49,12 +108,31 @@ export async function runApproveStep(config: {
       status: 'failed',
     }
   }
-  return {
-    detail: cfg.dryRun
-      ? '[dry-run] approve preview (no promote)'
-      : 'staged package approved — public on npm',
-    status: 'passed',
+  if (cfg.dryRun) {
+    return {
+      detail: '[dry-run] approve preview (no promote)',
+      status: 'passed',
+    }
   }
+  // Exit 0 is NOT proof of a promote. Three ways this step has exited clean
+  // having published nothing: the multi-select taking no input off a terminal,
+  // a browser 2FA that was never approved, and `script`'s status not always
+  // being the child's. The registry is the only authority — read it before
+  // minting a receipt, because a passing receipt is what the release stage
+  // trusts AND what makes a later --approve skip the promote entirely.
+  const pkg = readPkg(cfg.cwd)
+  if (!(await seams.registryLive(pkg.name, pkg.version))) {
+    return {
+      detail:
+        `approve exited 0 but ${pkg.name}@${pkg.version} is NOT on the registry — nothing was promoted.\n` +
+        `  Where: the approve subprocess returned success; the registry read disagrees.\n` +
+        `  Saw:   the version is unresolvable; wanted it live and public.\n` +
+        `  Fix:   likely the browser 2FA was never completed (the promote waits on it).\n` +
+        `         Re-run --approve and finish the 2FA in the browser it opens.`,
+      status: 'failed',
+    }
+  }
+  return { detail: 'staged package approved — public on npm', status: 'passed' }
 }
 
 // ── final stage: tag + immutable GH release (cut LAST) ─────────────────────

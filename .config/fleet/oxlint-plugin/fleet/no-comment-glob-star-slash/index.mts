@@ -13,7 +13,7 @@
  *   contains a star-immediately-before-slash sequence (escaped backslash-slash
  *   included) and autofixes it to the backtick-split form. Line comments are
  *   exempt — they have no closing token to break. The comment's own trailing
- *   close token is not matched (it is the close, not prose).
+ *   close token is not matched, it is the close, not prose.
  */
 
 import type { AstNode, RuleContext } from '../../lib/rule-types.mts'
@@ -23,9 +23,9 @@ import type { AstNode, RuleContext } from '../../lib/rule-types.mts'
 // span, insert a backtick break so the stars and the slash land in separate
 // backtick runs (the stars get their own run; the rest of the glob token gets
 // one). A boundary already inside backticks is left alone — so the transform is
-// idempotent (re-running on fixed text is a no-op) and never doubles a backtick.
+// idempotent, re-running on fixed text is a no-op, and never doubles a backtick.
 //   double-star-slash-star-dot-yml      -> backtick-stars + slash + backtick-rest
-//   escaped backslash form               -> same (the backslash is dropped)
+//   escaped backslash form               -> same, the backslash is dropped
 //   an already-backtick-split occurrence -> unchanged
 // Returns the rewritten text; equal to the input when there was nothing to fix.
 export function backtickSplitGlobs(value: string): string {
@@ -49,7 +49,7 @@ export function backtickSplitGlobs(value: string): string {
       }
       if (value[k] === '/') {
         // Boundary found: emit `<stars>`/` then the rest of the glob token
-        // (non-space, non-backtick) wrapped in its own backtick run.
+        // non-space, non-backtick, wrapped in its own backtick run.
         const stars = value.slice(i, j)
         let m = k + 1
         while (m < length && !/\s/.test(value[m]!) && value[m] !== '`') {
@@ -66,7 +66,7 @@ export function backtickSplitGlobs(value: string): string {
 }
 
 // Does the comment body carry a star-then-slash sequence in prose, OUTSIDE any
-// backtick span (an already-backtick-split glob is fine)? `value` is the comment
+// backtick span, an already-backtick-split glob is fine? `value` is the comment
 // text without the delimiters, so the fix and the detector use the same walk:
 // the body needs a fix exactly when re-emitting it would differ.
 function bodyHasGlobStarSlash(value: string): boolean {

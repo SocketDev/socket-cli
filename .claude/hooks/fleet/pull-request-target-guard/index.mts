@@ -21,7 +21,7 @@
 // Reference threat write-up:
 //   https://bsky.app/profile/43081j.com/post/3mlnme43qnc2e
 //
-// What zizmor already covers (we don't duplicate):
+// What zizmor already covers, we don't duplicate:
 //   - `dangerous-triggers`: flags ANY `pull_request_target` use.
 //   - `bot-conditions`, `github-env`, `template-injection`,
 //     `overprovisioned-secrets`, `artipacked`: collateral patterns.
@@ -33,7 +33,7 @@
 //
 // Bypass: `Allow pr-target-execution bypass` in a recent user turn.
 // Use case: a workflow that genuinely needs to execute fork code in
-// the privileged context (rare, reviewer-acknowledged trade-off).
+// the privileged context, rare, reviewer-acknowledged trade-off.
 //
 // Exit codes:
 //   0 — pass (not a workflow file, not the dangerous combo, or all
@@ -185,7 +185,7 @@ export function findUnsafeForkExecution(content: string): Finding[] {
   const lines = content.split('\n')
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i]!
-    // Only inspect `run:` lines (and block-scalar continuations).
+    // Only inspect `run:` lines, and block-scalar continuations.
     // A coarse signal — when a `run:` step contains the pattern,
     // count it as an execute. Multi-line `run: |` blocks with the
     // pattern on a later line also hit because we're scanning every

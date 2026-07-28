@@ -3,7 +3,7 @@
  * @file Drive a workflow through Agent-CI in LOCAL Docker containers and surface
  *   the first paused step — the local twin of greening-ci/run.mts. This runner
  *   is eyes-only: it launches agent-ci with `--pause-on-failure`, watches for
- *   the launcher's exit-77 (a step paused) or a clean exit (green), dumps the
+ *   the launcher's exit-77, a step paused, or a clean exit (green), dumps the
  *   paused-runner log tail to a tmp file, classifies the failure as a code/config
  *   defect vs. a local env-gap (Docker base image missing a runner-only lib,
  *   Depot/OIDC unavailable, a macOS leg skipped for no tart), and prints a JSON
@@ -58,12 +58,12 @@ interface CliArgs {
   // Runner name from a prior `status: "paused"` verdict; present → resume that
   // runner after a local fix rather than launch a fresh run.
   retry: string | undefined
-  // With --retry: resume from this step index (skip earlier passing steps).
+  // With --retry: resume from this step index, skip earlier passing steps.
   fromStep: number | undefined
   // GitHub token for fetching the SocketDev/socket-registry reusable workflow.
   // Bare (true) → agent-ci resolves via `gh auth token`; a string overrides.
   githubToken: boolean | string
-  // Wall-clock cap on the whole run. Default 600s (single non-matrix workflow);
+  // Wall-clock cap on the whole run. Default 600s, single non-matrix workflow;
   // bump for a full local matrix (Docker image pulls + per-leg builds).
   budgetSec: number
 }

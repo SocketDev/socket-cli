@@ -319,7 +319,7 @@ export function findRecentTranscript(
   cwd: string = process.cwd(),
 ): string | undefined {
   // ~/.claude/projects/<encoded-cwd>/<session-id>.jsonl
-  // encoded-cwd flattens path separators (and a Windows drive separator) to
+  // encoded-cwd flattens path separators, and a Windows drive separator, to
   // `-`. The leading `/` becomes the leading `-` automatically. For example,
   // `/Users/foo` -> `-Users-foo`; `C:\\Users\\foo` -> `C--Users-foo`.
   const encoded = claudeProjectSlug(cwd)
@@ -340,7 +340,7 @@ export function findRecentTranscript(
       }
     })
     .filter((x): x is { full: string; mtime: number } => x !== undefined)
-    // oxlint-disable-next-line unicorn/no-array-sort -- .filter() already returns a fresh array (no shared mutation); .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
+    // oxlint-disable-next-line unicorn/no-array-sort -- .filter() already returns a fresh array, no shared mutation; .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
     .sort((a, b) => b.mtime - a.mtime)
   return entries[0]?.full
 }

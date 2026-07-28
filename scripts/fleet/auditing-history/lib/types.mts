@@ -10,7 +10,7 @@
 export interface WindowCommit {
   sha: string
   /**
-   * Subject line (first line of the message).
+   * Subject line, first line of the message.
    */
   subject: string
   authorName: string
@@ -38,7 +38,7 @@ export interface WindowCommit {
 export type Attribution = 'same-session' | 'cross-session' | 'cross-author'
 
 /**
- * Signal 1 (highest confidence): a later commit whose diff is the inverse of an
+ * Signal 1, highest confidence: a later commit whose diff is the inverse of an
  * earlier in-window commit's diff (same `git patch-id`), where the later commit
  * is NOT `revert:`-tagged.
  */
@@ -56,7 +56,7 @@ export interface RevertPair {
 }
 
 /**
- * Signal 2 (medium confidence): a file line-region that flips `+ → − → +` (or
+ * Signal 2, medium confidence: a file line-region that flips `+ → − → +` (or
  * `− → + → −`) across ≥3 in-window commits — the same surface set, unset,
  * re-set.
  */
@@ -71,7 +71,7 @@ export interface OscillationRun {
 }
 
 /**
- * Signal 3 (lowest confidence): a file touched by ≥`minTouches` in-window
+ * Signal 3, lowest confidence: a file touched by ≥`minTouches` in-window
  * commits whose net diff against the window start is empty or near-empty —
  * churn that nets ~zero.
  */

@@ -10,8 +10,8 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 /**
  * True when a tarball-relative path is covered by a package.json `files`
- * entry (a listed file, or anything under a listed directory). A missing /
- * empty `files` field covers everything (npm's default). Pure.
+ * entry, a listed file, or anything under a listed directory. A missing /
+ * empty `files` field covers everything, npm's default. Pure.
  */
 export function isCoveredByFiles(
   entry: string,

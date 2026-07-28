@@ -1,7 +1,7 @@
 /**
  * @file Claude Code PreToolUse hook — sed-in-place-guard. BLOCKS a Bash
  *   command that edits files with an in-place stream editor: `sed -i` /
- *   `--in-place` (and gsed), `perl -pi` / `ruby -pi` style clusters, and
+ *   `--in-place`, and gsed, `perl -pi` / `ruby -pi` style clusters, and
  *   gawk's `-i inplace`. Why: agents address these edits by LINE NUMBER or
  *   regex against a file state read earlier in the session — the file drifts
  *   (another actor commits, a linter reformats, an earlier edit shifts
@@ -29,12 +29,12 @@ import { parseCommands } from '../_shared/shell-command.mts'
 // Editor commands and the flag shapes that flip them into in-place mode.
 // Perl/ruby clusters restrict the letters allowed BEFORE the `i` to the
 // common wrapper flags (p/n/l/w and octal record separators) so `-Ilib`
-// (include path, capital I with an attached value) does not false-positive.
+// include path, capital I with an attached value, does not false-positive.
 const SED_NAMES = new Set(['gsed', 'sed'])
 const PERLISH_NAMES = new Set(['perl', 'ruby'])
 const AWK_NAMES = new Set(['awk', 'gawk'])
 const PERLISH_IN_PLACE_RE = /^-[pnlw0-7]*i/
-// Matches sed's long `--in-place` flag, or a short-flag cluster (any letters)
+// Matches sed's long `--in-place` flag, or a short-flag cluster, any letters
 // ending in `i` (e.g. `-i`, `-ni`, `-e i`-style clusters).
 const SED_IN_PLACE_RE = /^(?:--in-place|-[A-Za-z]*i)/
 
@@ -45,7 +45,7 @@ const SED_IN_PLACE_RE = /^(?:--in-place|-[A-Za-z]*i)/
  * sed -i`, since those pass the editor name as a literal argument word) for
  * an editor name and inspects the dash-cluster tokens that follow it. Each
  * segment's tokens come from the shared quote-aware `parseCommands` parser,
- * so a quoted string (a commit message, a rg pattern) is one token and can
+ * so a quoted string, a commit message, a rg pattern, is one token and can
  * never be mistaken for a sequence of command-position words.
  */
 export function detectInPlaceEdit(command: string): string | undefined {

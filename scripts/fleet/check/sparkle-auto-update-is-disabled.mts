@@ -5,9 +5,9 @@
  *   DISABLED on this machine. A Sparkle app that auto-updates can swap a tool
  *   version under a running build / scan and rides its own update channel
  *   outside the fleet soak gate — a reproducibility + supply-chain hazard. The
- *   knob lives in the app's macOS defaults domain (outside the repo), so it
+ *   knob lives in the app's macOS defaults domain, outside the repo, so it
  *   drifts per machine; this gate catches the drift. Shares ALL detection with
- *   setup-security-tools (which writes the disable) via
+ *   setup-security-tools, which writes the disable, via
  *   `_shared/sparkle-auto-update.mts` (code is law, DRY — the two never
  *   diverge). There is no PreToolUse guard twin: a Sparkle app self-updates
  *   with no Bash invocation to gate, so persist + audit are the enforcement

@@ -41,7 +41,7 @@ export default defineConfig({
   // typescript) can exceed taze's 5s default cold — and every lookup goes
   // through the direct-registry client (the single-registry patch in
   // patches/taze@*.patch), which fetches full packuments. Config-wired since
-  // taze 19.16.0 (this replaced the timeout half of that patch).
+  // taze 19.16.0, this replaced the timeout half of that patch.
   requestTimeout: 30_000,
   // Edit package.json in place.
   write: true,

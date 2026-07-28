@@ -37,7 +37,7 @@ export function formatStageMs(ms: number): string {
 }
 
 /**
- * One table line for a stage + its receipt (or pending marker). Receipts
+ * One table line for a stage + its receipt, or pending marker. Receipts
  * written with a wall time render it so per-stage latency regressions are
  * visible straight from `--status`.
  */

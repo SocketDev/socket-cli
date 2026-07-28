@@ -9,7 +9,7 @@
 // `git clone --help` and `git clone -h` are information queries that download
 // nothing and are always allowed.
 //
-// Detection (shell-command tokenized, not a raw regex): the command invokes
+// Detection, shell-command tokenized, not a raw regex: the command invokes
 // `git` with `clone` as its first bare argument; `--help`/`-h` exempt it;
 // hasDepth1 is true when `--depth=1` appears OR `--depth` is followed by `1`
 // as a separate token; hasSingleBranch is true when `--single-branch` appears.
@@ -49,7 +49,7 @@ export function detectShallowClone(command: string): ShallowCloneDetection {
       continue
     }
 
-    // Allow `git clone --help` / `git clone -h` (information only).
+    // Allow `git clone --help` / `git clone -h`, information only.
     if (args.includes('--help') || args.includes('-h')) {
       return { detected: false, hasDepth1: false, hasSingleBranch: false }
     }

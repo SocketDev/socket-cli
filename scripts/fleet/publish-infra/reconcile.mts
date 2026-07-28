@@ -2,7 +2,7 @@
  * @file Publish-flow git reconcile (code-as-law). After a release publishes,
  *   local main must be aligned with the freshly-released remote — our remaining
  *   changes on top of the newly-published base, never a divergent local main.
- *   Two fail-LOUD steps (a publish lineage is never auto-resolved), both run
+ *   Two fail-LOUD steps, a publish lineage is never auto-resolved, both run
  *   ONCE PUBLISHED — after `--approve`, default on a LOCAL publish;
  *   `--no-reconcile` opts out; CI `--staged` never reconciles:
  *
@@ -20,7 +20,7 @@ import { logger, runCapture } from './shared.mts'
 
 /**
  * The registry `dist-tags.latest` for a package — the currently-published
- * version. Wraps the tolerant reader (single dist-tags source of truth) and
+ * version. Wraps the tolerant reader, single dist-tags source of truth, and
  * throws What/Where/Saw/Fix when the tag can't be resolved, because a reconcile
  * lineage is never auto-resolved on a missing base.
  */
@@ -73,7 +73,7 @@ export async function findPublishedBaseSha(
 }
 
 /**
- * Rebase the local branch's commits onto `baseSha` (the published release). The
+ * Rebase the local branch's commits onto `baseSha`, the published release. The
  * working tree MUST be clean. Any conflict aborts the rebase and throws — a
  * publish lineage is never auto-resolved. No-op when already on `baseSha`.
  */

@@ -42,7 +42,7 @@ import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { findInvocation } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
-// Bare, session-wide form (kept as a fallback). The scoped form below
+// Bare, session-wide form, kept as a fallback. The scoped form below
 // is preferred — it names the exact repo so the authorization can't
 // leak to an unrelated non-fleet push later in the session.
 const BYPASS_PHRASE = 'Allow non-fleet-push bypass'
@@ -64,7 +64,7 @@ export function acceptedBypassPhrases(
 }
 
 export const check = bashGuard((command, payload) => {
-  // Detect `git push` via the shell parser (not regex): it splits the
+  // Detect `git push` via the shell parser, not regex: it splits the
   // command line into segments, sees through `&&`/`|`/`;` chains and
   // `$(…)` substitution, and ignores `push` inside a quoted commit
   // message — so `git commit -m "git push later"` is correctly NOT a

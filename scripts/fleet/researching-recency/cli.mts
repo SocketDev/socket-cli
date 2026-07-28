@@ -108,7 +108,7 @@ export function parseArgs(argv: readonly string[]): CliArgs {
 }
 
 // Resolve the plan: from --plan (a JSON string or a path to a JSON file), else a
-// default single-subquery plan over the requested (or keyless) sources.
+// default single-subquery plan over the requested, or keyless, sources.
 async function resolvePlan(args: CliArgs): Promise<QueryPlan> {
   if (args.planArg) {
     const trimmed = args.planArg.trim()

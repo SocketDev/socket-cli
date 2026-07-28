@@ -4,7 +4,7 @@
  *   the 6.0.0 supply-chain posture: either the installed Homebrew is below
  *   6.0.0, or HOMEBREW_REQUIRE_TAP_TRUST / HOMEBREW_CASK_OPTS_REQUIRE_SHA is
  *   unset. Why (https://brew.sh/2026/06/11/homebrew-6.0.0/): 6.0.0 added tap
- *   trust (refuse untrusted third-party tap code) + cask checksum enforcement
+ *   trust, refuse untrusted third-party tap code + cask checksum enforcement
  *   (refuse a `sha256 :no_check` download). Both env knobs are silently ignored
  *   by an older brew, so a version floor is the only real enforcement. This is
  *   a distinct concern from package-manager-auto-update-guard

@@ -14,8 +14,8 @@
 //     for Edit).
 //   - Flags a network call: `httpJson(`, `httpText(`, `httpRequest(`,
 //     `fetch(`, or `.request(` — the fleet HTTP surface plus raw fetch.
-//   - If the content references `nock` (the file mocks the network), allow.
-//   - If every network call targets localhost / 127.0.0.1 (a fixture server),
+//   - If the content references `nock`, the file mocks the network, allow.
+//   - If every network call targets localhost / 127.0.0.1, a fixture server,
 //     allow.
 //   - Otherwise block.
 //

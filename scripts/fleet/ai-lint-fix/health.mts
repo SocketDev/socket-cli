@@ -102,7 +102,7 @@ export function classifyAiFailure(
 /**
  * Interpret a `<agent> --version` exec result. Exit 0 means the launcher can
  * actually run; anything else means it resolved on PATH but cannot execute
- * (the npm launcher without its platform binary is the incident shape).
+ * the npm launcher without its platform binary is the incident shape.
  */
 export function evaluateCliProbe(result: {
   exitCode: number
@@ -127,7 +127,7 @@ export function evaluateCliProbe(result: {
  * Tries each agent `discoverAiAgents` finds, in discovery order, and returns
  * the first one whose `--version` actually exits 0. There is no preference
  * for `claude` beyond it typically being first in that order — the fleet
- * has fallback agents (opencode, codex, gemini), and any of them running is
+ * has fallback agents, opencode, codex, gemini, and any of them running is
  * a healthy leg. `ok: false` with `reason: 'launcher-broken'` means agents
  * were found but none could execute; `reason: 'not-on-path'` means
  * discovery found none at all.

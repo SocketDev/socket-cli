@@ -9,7 +9,7 @@
  *   undoes itself without saying so. `findUntaggedReverts` is PURE (operates on
  *   already-collected `WindowCommit[]`), so the same function backs both the
  *   auditing-history skill engine and the commit-thrash-nudge Stop hook —
- *   the two can't drift. Collecting the commits (running git) is the caller's
+ *   the two can't drift. Collecting the commits, running git, is the caller's
  *   job (`window.mts`).
  */
 
@@ -25,7 +25,7 @@ import type { Attribution, RevertPair, WindowCommit } from './types.mts'
  * - Different author → `cross-author` (two people/sessions collided)
  *
  * `same-email` with a wide time gap is still the same author; the cross-SESSION
- * nuance (one author, two concurrent worktrees) can't be proven from git
+ * nuance, one author, two concurrent worktrees, can't be proven from git
  * metadata alone, so we fold it into the author-identity axis: different email
  * is the actionable "someone else stepped on this" case.
  */
@@ -37,7 +37,7 @@ export function classifyAttribution(
     return 'cross-author'
   }
   // Same author. If the two commits are far apart in time, treat as cross-session self-collision
-  // (likely two work sessions); otherwise a single session's own churn.
+  // likely two work sessions; otherwise a single session's own churn.
   const gapMs = Math.abs(Date.parse(a.when) - Date.parse(b.when))
   const SIX_HOURS_MS = 6 * 60 * 60 * 1000
   return gapMs > SIX_HOURS_MS ? 'cross-session' : 'same-session'

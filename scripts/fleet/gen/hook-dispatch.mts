@@ -52,7 +52,7 @@ import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
 /**
  * Render the dispatch-table.mts source from the eligible-hook list. Each hook
- * gets a STATIC import (so rolldown bundles it) and a table row keyed by event.
+ * gets a STATIC import, so rolldown bundles it, and a table row keyed by event.
  */
 export type TableVariant = 'excluded' | 'full' | 'snapshot'
 
@@ -151,7 +151,7 @@ export function renderDispatchTable(
     .join('\n')
   // Every variant exports the hints: dispatch-snapshot-entry imports them
   // through './dispatch-table.mts', which resolves to the FULL table outside
-  // the snapshot build (dev runs, type-checking) and to the snapshot variant
+  // the snapshot build, dev runs, type-checking, and to the snapshot variant
   // inside it — the export must exist in both.
   const hints =
     '\n' + renderExcludedHints(allHooks.filter(h => h.snapshotExcluded))
@@ -321,11 +321,11 @@ function main(): void {
     DISPATCH_MANIFEST_PATH,
     generateDispatchManifestSource(FLEET_HOOKS_DIR),
   )
-  // Dogfood: the wheelhouse carries template/base/ (a member does not). Mirror
+  // Dogfood: the wheelhouse carries template/base/ a member does not. Mirror
   // the generated full table + manifest into the template so its CI readers +
   // the release-bundle walk find them — both are gitignored + never committed,
   // so a fresh checkout has none. Computed relative to REPO_ROOT so this file
-  // stays cascade-safe (no wheelhouse-only imports). Pure JS (no rolldown), so
+  // stays cascade-safe, no wheelhouse-only imports. Pure JS, no rolldown, so
   // it runs cross-platform in CI setup where build-hook-bundle's native rolldown
   // spawn does not.
   const templateDispatch = path.join(

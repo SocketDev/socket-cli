@@ -2,7 +2,7 @@
  * @file Enforce `.claude/{agents,commands,hooks,skills}/` segmentation. Every
  *   entry in those four directories must live under `fleet/<name>/` (when the
  *   wheelhouse template ships an entry with that name) or `repo/<name>/`
- *   (everything else). Dangling top-level entries
+ *   everything else. Dangling top-level entries
  *   (`.claude/skills/<name>/SKILL.md` instead of
  *   `.claude/skills/fleet/<name>/SKILL.md`) are pre-segmentation leftovers and
  *   should be removed or rehomed. Why this matters: the wheelhouse cascade
@@ -55,7 +55,7 @@ const KINDS: readonly KindSpec[] = [
 interface DanglingEntry {
   kind: KindSpec['dir']
   name: string
-  // Absolute path of the dangling entry (dir or file).
+  // Absolute path of the dangling entry, dir or file.
   src: string
   // Resolution: 'dup-of-fleet' | 'rehome-to-fleet' | 'move-to-repo'.
   action: 'dup-of-fleet' | 'rehome-to-fleet' | 'move-to-repo'

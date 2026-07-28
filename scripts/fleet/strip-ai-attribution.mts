@@ -4,7 +4,7 @@
  *   "AI attribution found in commit messages". Never hand-dance a
  *   `git rebase -i` with scripted GIT_SEQUENCE_EDITOR/GIT_EDITOR editors:
  *   that path is quoting-fragile, silently no-ops when the todo regex misses,
- *   and leaves no verification (all three happened live before this existed).
+ *   and leaves no verification, all three happened live before this existed.
  *
  *   Flow: verify clean worktree → walk `base..HEAD` oldest-first with
  *   plumbing (`commit-tree`, preserving tree, author identity, and author

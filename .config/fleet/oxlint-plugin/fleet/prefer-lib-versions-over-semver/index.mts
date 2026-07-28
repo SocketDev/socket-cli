@@ -18,7 +18,7 @@
  *   rewrite can't be correct. The message names the mapping; the author rewrites
  *   the call sites. Skips:
  *
- *   - Files under `src/external/` (a wrapper that legitimately imports upstream).
+ *   - Files under `src/external/`, a wrapper that legitimately imports upstream.
  *   - Type-only imports (`import type … from 'semver'`) — no runtime dep.
  *   - A call site carrying `socket-lint: allow bare-semver`.
  */

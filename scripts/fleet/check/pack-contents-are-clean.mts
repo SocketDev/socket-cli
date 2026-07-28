@@ -125,7 +125,7 @@ export interface PackInspection {
    */
   readonly entries: string[]
   /**
-   * The `scripts` map of the PACKED package.json (what consumers install).
+   * The `scripts` map of the PACKED package.json, what consumers install.
    */
   readonly packedScripts: Record<string, unknown> | undefined
 }
@@ -149,7 +149,7 @@ export function findPackedManifestDanglers(
 /**
  * Pack the package at `pkgRoot` into a temp dir and return the tarball's
  * entry list (stripped of the leading `package/`) plus the packed manifest's
- * `scripts` map. Undefined on pack/tar failure (the caller fails loud).
+ * `scripts` map. Undefined on pack/tar failure, the caller fails loud.
  */
 export function packAndInspect(pkgRoot: string): PackInspection | undefined {
   const dest = mkdtempSync(path.join(os.tmpdir(), 'pack-clean-'))

@@ -62,7 +62,7 @@ const NotesSchema = Type.String({
 // PORT SCOPE — how much of a pinned upstream this port commits to tracking in
 // lock-step. This is NOT how the submodule is checked out: every upstream
 // submodule is shallow + single-branch + sparse regardless (see the
-// upstream-submodules-are-* checks). `full` (the default when omitted) =
+// upstream-submodules-are-* checks). `full`, the default when omitted =
 // lock-step the WHOLE upstream, kept fleet-uniform across consumers so any
 // divergence is a defect. `sparse` = a PARTIAL lock-step port: track only the
 // `sparse_cone` subset of the same pin (e.g. one package of a monorepo, or one

@@ -27,7 +27,7 @@
 //      mention it. Lookback: 5 prior assistant turns (cheap on long
 //      transcripts, broad enough to catch "fix it again 4 turns later").
 //
-// Rule-promotion evidence (any one suppresses):
+// Rule-promotion evidence, any one suppresses:
 //
 //   1. Edit/Write to a documented rule surface (CLAUDE.md, hooks/,
 //      skills/, fleet lint rules) in the current turn.
@@ -318,7 +318,7 @@ export const check = (payload: ToolCallPayload): GuardResult => {
   // Prose signal: assistant text mentions repeat-finding language.
   const proseHits = detectRepeatFindings(text)
   // Behavioral signal: current turn edits a fleet-canonical surface
-  // that a prior turn also edited (within the lookback window).
+  // that a prior turn also edited, within the lookback window.
   const currentToolUses = readLastAssistantToolUses(payload.transcript_path)
   const priorToolUses = readPriorAssistantToolUses(payload.transcript_path, 5)
   const editHits = detectRepeatEdits(currentToolUses, priorToolUses)
@@ -409,7 +409,7 @@ export const check = (payload: ToolCallPayload): GuardResult => {
   lines.push('  line GENERICALLY, as a timeless example — not a dated incident')
   lines.push('  log (no dates / version deltas / percentages / SHAs).')
   lines.push('')
-  // If the rule is fleet-wide (not just this repo), it belongs in
+  // If the rule is fleet-wide, not just this repo, it belongs in
   // socket-wheelhouse/template/. Help the user find the right path
   // — or fall back to the PR link if the wheelhouse isn't local.
   const wheelhouseMd = findWheelhouseClaudeMd(resolveProjectDir())

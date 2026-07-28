@@ -10,11 +10,11 @@
 // a fresh release was needed faster than the 7-day soak window. Without
 // a documented removable-on date, entries pile up and nobody knows when
 // they can be removed. The standard format lets a periodic sweep
-// (manual or scripted) grep for `removable: <past-date>` to find
+// manual or scripted, grep for `removable: <past-date>` to find
 // candidates for cleanup.
 //
 // What's enforced (inside `minimumReleaseAgeExclude:` blocks only):
-//   - Each `  - 'NAME@VERSION'` line (exact-pin form) must be preceded by
+//   - Each `  - 'NAME@VERSION'` line, exact-pin form, must be preceded by
 //     a comment line matching:
 //       # published: YYYY-MM-DD | removable: YYYY-MM-DD
 //     The annotation must be the IMMEDIATELY-PRECEDING comment line (the
@@ -23,7 +23,7 @@
 // What's exempt:
 //   - Scope-glob entries (`@socketsecurity/*`, `@socketregistry/*`, etc.) —
 //     persistent fleet policy, not a time-bound bypass.
-//   - Bare-name entries without `@version` (also persistent).
+//   - Bare-name entries without `@version`, also persistent.
 //   - Lines marked `# socket-lint: allow soak-exclude-no-date-annotation`.
 //
 // Bypass: `Allow soak-exclude-no-date-annotation bypass` (typed verbatim
@@ -53,7 +53,7 @@ const ANY_TOP_LEVEL_KEY = /^[A-Za-z_][\w-]*:\s*(?:\S.*)?$/
 const ENTRY_RE =
   /^\s*-\s*['"]?(?<name>(?:@[^@/'"\s]+\/)?[^@'"\s]+)@(?<version>[^'"\s]+)['"]?\s*$/
 
-// Glob entries (scope-wide, exempt).
+// Glob entries, scope-wide, exempt.
 const GLOB_ENTRY_RE = /^\s*-\s*['"]?[^'"\s]*\*[^'"\s]*['"]?\s*$/
 
 // Bare name entries (no @version, exempt — persistent policy).
@@ -101,7 +101,7 @@ export function findOrphanEntries(text: string): OrphanReport[] {
     // Per-line allow marker. ENTRY_RE requires the line ends with optional
     // quote + optional spaces, so a trailing `# socket-lint: allow …` comment
     // prevents ENTRY_RE from matching — the continue here is structurally
-    // unreachable in practice (a code path the regex composition forecloses).
+    // unreachable in practice, a code path the regex composition forecloses.
     /* c8 ignore start - ENTRY_RE's trailing `['"]?\s*$` prevents a line with the allow marker from matching */
     if (line.includes(ALLOW_MARKER)) {
       continue
@@ -115,7 +115,7 @@ export function findOrphanEntries(text: string): OrphanReport[] {
     // Walk upward to find the IMMEDIATELY-PRECEDING comment line. Skip
     // intervening blank lines? No — the canonical form requires the
     // annotation to be the LAST comment above the bullet, contiguous.
-    /* c8 ignore start - i===0 arm unreachable: an entry requires inBlock=true, which requires seeing the section header at i>=0, so any entry is at i>=1; lines[i-1] is always a string (split never yields undefined) */
+    /* c8 ignore start - i===0 arm unreachable: an entry requires inBlock=true, which requires seeing the section header at i>=0, so any entry is at i>=1; lines[i-1] is always a string, split never yields undefined*/
     const prev = i > 0 ? (lines[i - 1] ?? '') : ''
     /* c8 ignore stop */
     if (!ANNOTATION_RE.test(prev)) {

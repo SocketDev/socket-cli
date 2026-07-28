@@ -3,7 +3,7 @@
 //
 // Fires at turn-end. Groups THIS session's authored source changes into logical
 // commits and lands them to local main, in EVERY repo the session touched
-// (started in one repo, moved to another, both get their own commits). The
+// started in one repo, moved to another, both get their own commits. The
 // fleet biases toward landing often: banked work survives compaction, and a
 // clean tree is far less ambiguous to the next session's collision heuristics.
 //
@@ -20,10 +20,10 @@
 //     paths AND skips generated / both-touched (concurrent index+worktree, which
 //     a `git add` would blend) / unmerged-conflict paths, and lands clean source
 //     even mid-rebase.
-//   - Each commit passes that repo's own pre-commit gate (broken code caught).
-//     The staged run is scoped `related` (not full-suite) so turn-end stays fast.
+//   - Each commit passes that repo's own pre-commit gate, broken code caught.
+//     The staged run is scoped `related`, not full-suite, so turn-end stays fast.
 //   - Fail-open + deterministic: a per-repo spawn is bounded; any failure skips
-//     that repo and the hook always exits cleanly (Stop hooks must not hang).
+//     that repo and the hook always exits cleanly, Stop hooks must not hang.
 //   - Skipped entirely during a cascade (`FLEET_SYNC`) or a history squash
 //     (`SQUASH_HISTORY`) — those own their own commits.
 //
@@ -189,9 +189,9 @@ export const check = (payload: ToolCallPayload): GuardResult => {
         )
       : undefined
   }
-  // Resolve land-work FLEET-FIRST (the session's own repo), then fall back to
+  // Resolve land-work FLEET-FIRST, the session's own repo, then fall back to
   // the wheelhouse source-of-truth, and run it against each touched repo via cwd
-  // (so a repo needn't ship its own copy to have its work land to local main).
+  // so a repo needn't ship its own copy to have its work land to local main.
   const landWork = resolveLandWork(primaryDir())
   if (!landWork) {
     return undefined

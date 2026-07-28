@@ -10,12 +10,12 @@
 //      so the intended backend never runs.
 //   2. It lists a HYBRID backend (opencode) in the order. Hybrid backends
 //      dispatch to whatever provider their own config selects, so the resolver
-//      NEVER auto-picks them (model attribution would be wrong); listing one in
+//      NEVER auto-picks them, model attribution would be wrong; listing one in
 //      a preference order is a no-op that reads as if it would run. opencode is
 //      reachable only via an explicit override (`--pass role=opencode`).
 //
 // Why a check on top of the shared lib: the lib enforces the policy at RUNTIME
-// (a bad entry is skipped), but a skill author reading a preference order can't
+// a bad entry is skipped, but a skill author reading a preference order can't
 // tell a dead/no-op entry from a live one. This gate surfaces it at commit time,
 // against the registry as the single source of truth — so the doc
 // (`_shared/multi-agent-backends.md`), the lib, and every skill stay aligned.
@@ -94,7 +94,7 @@ export function scanRouting(text: string, file: string): RoutingViolation[] {
     for (const q of body.matchAll(QUOTED_RE)) {
       const name = q[1] ?? ''
       if (!KNOWN_BACKENDS.has(name)) {
-        // oxlint-disable-next-line unicorn/no-array-sort -- the spread copies KNOWN_BACKENDS into a fresh array (no shared mutation); .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
+        // oxlint-disable-next-line unicorn/no-array-sort -- the spread copies KNOWN_BACKENDS into a fresh array, no shared mutation; .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
         const known = [...KNOWN_BACKENDS].sort().join(', ')
         out.push({
           detail: `preferenceOrder names unknown backend "${name}" — not in @socketsecurity/lib/ai/backends BACKENDS (${known}). Fix the name or add the backend to the registry.`,

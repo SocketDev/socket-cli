@@ -13,11 +13,11 @@
 //
 //   - A single function that legitimately needs the space (the user
 //     notes this inline at the top of the function).
-//   - Generated artifacts (lockfiles, schema dumps, vendored data).
+//   - Generated artifacts, lockfiles, schema dumps, vendored data.
 //
 // The hook walks the most-recent assistant turn's tool-use events,
 // finds Write/Edit/NotebookEdit calls, reads each target file from
-// disk (post-edit state, since the hook fires after the tool ran),
+// disk, post-edit state, since the hook fires after the tool ran,
 // counts lines, and flags any file past either cap.
 //
 // Skips paths matching the generated-artifact heuristic — anything
@@ -69,7 +69,7 @@ const SKIP_PATH_SUBSTRINGS: readonly string[] = [
   'package-lock.json',
   'yarn.lock',
   'Cargo.lock',
-  // Type declarations (often generated)
+  // Type declarations, often generated
   '.d.ts',
   '.d.ts.map',
   '.tsbuildinfo',

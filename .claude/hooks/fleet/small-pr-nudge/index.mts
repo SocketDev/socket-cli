@@ -122,7 +122,7 @@ export function parseShortstat(shortstat: string): DiffSize | undefined {
  * The size of the PR's three-dot diff (`git diff --shortstat base...HEAD`)
  * run in `cwd`. Three-dot compares HEAD against the merge base with `base`,
  * which is what a PR actually proposes. Returns undefined when the diff
- * can't be computed (git errors, base ref absent) so the hook fails open.
+ * can't be computed, git errors, base ref absent, so the hook fails open.
  */
 export function prDiffSize(cwd: string, base: string): DiffSize | undefined {
   const r = spawnSync('git', ['diff', '--shortstat', `${base}...HEAD`], {

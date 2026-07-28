@@ -2,7 +2,7 @@
 // Claude Code PostToolUse hook — actionlint-on-workflow-edit.
 //
 // After an Edit/Write touches `.github/workflows/*.y*ml`, invoke local
-// `actionlint` AND `zizmor` (if installed) against the file. Surface
+// `actionlint` AND `zizmor`, if installed, against the file. Surface
 // findings as stderr so the agent sees them before the next turn.
 //
 // Two scanners, independent:
@@ -13,7 +13,7 @@
 //     escalation — supply-chain risks actionlint doesn't model
 //
 // PostToolUse (not PreToolUse) so the edit lands first and the scanners
-// read on-disk state. No block — reporting only (a nudge). The block
+// read on-disk state. No block — reporting only, a nudge. The block
 // surface is covered by sibling hooks (`workflow-uses-comment-guard`,
 // `workflow-multiline-body-guard`, `pull-request-target-guard`).
 //
@@ -47,7 +47,7 @@ export function isWorkflowYaml(filePath: string): boolean {
   )
 }
 
-// PostToolUse — reporting only, never blocks (a nudge). Runs both scanners
+// PostToolUse — reporting only, never blocks, a nudge. Runs both scanners
 // (independent; both can flag the same file) and returns their combined output.
 export const check = editGuard(filePath => {
   if (!isWorkflowYaml(filePath)) {

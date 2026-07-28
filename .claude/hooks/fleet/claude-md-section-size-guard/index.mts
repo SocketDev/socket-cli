@@ -33,7 +33,7 @@
 //     when it fits on few lines. Override via env
 //     `CLAUDE_MD_FLEET_SECTION_MAX_BYTES`.
 //   - LINE cap: default 12 body lines per `### ` section. A bullet-list
-//     `Detail:` block (one line per linked doc) spends 3-6 lines, so the
+//     `Detail:` block, one line per linked doc, spends 3-6 lines, so the
 //     cap is above the old prose-era 8. Override via env
 //     `CLAUDE_MD_FLEET_SECTION_MAX_LINES`.
 //   - A section is flagged when it exceeds EITHER cap; the message names
@@ -164,7 +164,7 @@ export function findTooLongSections(
   maxBodyBytes: number,
 ): SectionTooLong[] {
   // The thin CLAUDE.md is a flat bullet index — each rule is ONE `- ` line, no
-  // `### ` sections. The per-section line cap is moot (a bullet is one line);
+  // `### ` sections. The per-section line cap is moot, a bullet is one line;
   // `maxBodyLines` is kept for signature/back-compat but unused. The byte cap
   // is what matters: a bullet over `maxBodyBytes` carries inline detail that
   // belongs in its docs/agents.md/<topic>.md page. (40 KB whole-file cap stays,
@@ -277,7 +277,7 @@ export const check = editGuard((filePath, content, payload) => {
     const fleetMax = getFleetBlockMaxBytes()
     // A SHRINKING edit of an already-over-cap block is exactly the remediation
     // this guard's message asks for — let it through so the block can be
-    // trimmed incrementally. Growth (or holding steady) while over stays
+    // trimmed incrementally. Growth, or holding steady, while over stays
     // blocked, as does any edit that pushes an under-cap block over.
     const preFleetBytes = filePath ? onDiskFleetBytes(filePath) : undefined
     const shrinksOverCapBlock =

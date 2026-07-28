@@ -4,7 +4,7 @@
 // A skill (SKILL.md) / command (.claude/commands/**/*.md) is a THIN wrapper —
 // the heavy lifting belongs in a backing `.mts` script it INVOKES, not inline
 // in the markdown. Inline logic isn't tested, linted, or reusable. This NUDGES
-// (never blocks) when an edited skill/command embeds a large fenced code block
+// never blocks, when an edited skill/command embeds a large fenced code block
 // (bash/js/ts/…) without referencing a backing `scripts/**.mts` script.
 //
 // NUDGE, not a guard: whether a block is "logic to extract" vs a documentation

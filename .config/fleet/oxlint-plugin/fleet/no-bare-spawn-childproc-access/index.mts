@@ -97,7 +97,7 @@ const rule = {
     const hasBypassComment = makeBypassChecker(context, ALLOW_RE)
     // Identifiers bound to a bare `spawn(...)` call this file. `const c =
     // spawn(...)` adds `c`; `const c = spawn(...).process` and
-    // `const { process } = spawn(...)` do NOT (those already route correctly).
+    // `const { process } = spawn(...)` do NOT, those already route correctly.
     const bareSpawnNames = new Set<string>()
     return {
       VariableDeclarator(node: AstNode) {

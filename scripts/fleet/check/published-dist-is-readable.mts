@@ -21,14 +21,14 @@
  *      chars/line) with ~7x headroom; a real minifier output measures in the
  *      thousands of chars/line (verified against tweetnacl / protobufjs
  *      minified bundles: ~9,000-19,000 chars/line).
- *   3. The bundler config itself sets `minify: false` EXPLICITLY (a literal grep)
+ *   3. The bundler config itself sets `minify: false` EXPLICITLY, a literal grep
  *      — pins intent so a future edit can't silently fall back to the bundler's
  *      default. The `no-minified-bundler-output` oxlint rule enforces this at
  *      AUTHOR time; this check re-verifies it at RELEASE time as a second,
  *      independent gate over the built artifact. MODE: REPORT-ONLY (exits 0,
  *      lists findings) — the member-ci-fires-on-push /
  *      published-packages-have-files-field rollout pattern: flip to 'strict'
- *      once the fleet backlog (if any) clears, so a pre-existing violation
+ *      once the fleet backlog, if any, clears, so a pre-existing violation
  *      can't ship red fleet-wide on day one. Usage: node
  *      scripts/fleet/check/published-dist-is-readable.mts
  */
@@ -45,18 +45,18 @@ import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
-// Report now; flip to 'strict' once the fleet backlog (if any) clears.
+// Report now; flip to 'strict' once the fleet backlog, if any, clears.
 const MODE: 'report' | 'strict' = 'report'
 
 // Calibrated against socket-lib's own unminified dist (~40 chars/line);
-// generous headroom before a legitimately long (but not minified) line trips
+// generous headroom before a legitimately long, but not minified, line trips
 // it, while a real minifier's output (thousands of chars/line) clears it by
 // an order of magnitude. A single-megaline file is the degenerate case of
 // this same average (one line's length IS the average when there's only one
 // line), so one threshold covers both "many long lines" and "one giant line"
 // — no separate near-zero-newline branch needed.
 const MAX_AVG_LINE_LENGTH = 300
-// Sample this many dist files per package (traversal order) rather than
+// Sample this many dist files per package, traversal order, rather than
 // reading every file in a large bundle.
 const SAMPLE_FILE_COUNT = 5
 
@@ -95,7 +95,7 @@ export function publishesDist(pkg: PackageJsonFiles): boolean {
  * under `.config/{fleet,repo}/`, the same locations
  * `dependencies-are-deduped.mts`'s `repoUsesRolldown` checks for a rolldown
  * dep-less bundling script. Returns the first match, or undefined when no
- * bundler config exists (the repo doesn't bundle).
+ * bundler config exists, the repo doesn't bundle.
  */
 export function findBundlerConfig(repoRoot: string): string | undefined {
   const dirs = [
@@ -116,7 +116,7 @@ export function findBundlerConfig(repoRoot: string): string | undefined {
 }
 
 /**
- * True when `configText` sets `minify: false` (any spacing around the colon)
+ * True when `configText` sets `minify: false`, any spacing around the colon
  * literally — pins intent so a future edit can't silently fall back to the
  * bundler's own minify default. An honest content check (does the config
  * TEXT contain this literal token?), not a behavior-inference — deliberately
@@ -127,7 +127,7 @@ export function bundlerPinsNoMinify(configText: string): boolean {
 }
 
 /**
- * Recursively collect every file under `dir` (absolute paths). Returns `[]`
+ * Recursively collect every file under `dir`, absolute paths. Returns `[]`
  * when `dir` doesn't exist — the "dist not built yet" case this check must
  * skip cleanly rather than false-block on.
  */
@@ -153,7 +153,7 @@ export function walkFiles(dir: string): string[] {
  * The minification heuristic for one file's source text: an average line
  * length over MAX_AVG_LINE_LENGTH. A single-megaline file (real bundlers wrap
  * at module/statement boundaries; a minifier collapses onto one or a handful
- * of lines) is caught by the same formula — with zero (or near-zero) newlines
+ * of lines) is caught by the same formula — with zero, or near-zero, newlines
  * the "average" IS the file's own length. Pure; unit-tested directly against
  * literal strings calibrated from real unminified (socket-lib, ~40
  * chars/line) and minified (tweetnacl / protobufjs, ~9,000-19,000

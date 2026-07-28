@@ -12,20 +12,20 @@
  *   4. Fleet doctor --fix — auto-fixes catalog: refs missing their catalog entry
  *      from the cascaded fleet catalog (pnpm-workspace.fleet.yaml); reports
  *      soak-window install failures loud with the exact annotated exclude.
- *      Runs only when --all is passed (member-health fix, not staged-only).
+ *      Runs only when --all is passed, member-health fix, not staged-only.
  *   5. AI-assisted lint fix — headless claude (Sonnet) with a restricted toolset
  *      for judgment-call rules. Skipped silently when the claude CLI isn't
  *      installed, when SKIP_AI_FIX=1, or when --no-ai is passed. See
  *      scripts/fleet/ai-lint-fix.mts. Forwards `process.argv.slice(2)` to the
  *      lint step, so `pnpm run fix --all` runs `pnpm run lint --fix --all`
- *      (full-tree fix), and `pnpm run fix --staged` does the staged-only flow.
+ *      full-tree fix, and `pnpm run fix --staged` does the staged-only flow.
  *
  *   Scope: like lint.mts, the no-flag default is the MODIFIED (working-tree
  *   vs HEAD) scope. A run whose scope resolves to ZERO files early-exits
  *   before spawning any fixer — the release-pipeline preflight re-runs fix on
  *   a tree that is usually already clean at the receipt sha, and the full
  *   spawn chain (lint --fix, zizmor, agentshield, ai-lint-fix, verify lint)
- *   costs seconds-to-minutes for nothing. `--all` (and explicit file args)
+ *   costs seconds-to-minutes for nothing. `--all`, and explicit file args
  *   always run the full pipeline. The per-runner fixpoint caps
  *   (FORMAT_MAX_PASSES / OXLINT_MAX_PASSES in _shared/lint-runners.mts) are
  *   untouched — this exit sits entirely above them.
@@ -60,7 +60,7 @@ const logger = getDefaultLogger()
 
 // Pull the numeric exit code out of a lib-spawn rejection. The rejection
 // carries `{ code }` — a number for a normal non-zero exit, a string (e.g.
-// 'ENOENT') for a spawn failure. Non-numeric → 1 (treat as a generic failure).
+// 'ENOENT') for a spawn failure. Non-numeric → 1, treat as a generic failure.
 function exitCodeOf(e: unknown): number {
   if (e && typeof e === 'object' && 'code' in e) {
     const { code } = e as { code: unknown }
@@ -176,7 +176,7 @@ async function runFixers(argv: string[]): Promise<void> {
   })
 
   // zizmor — fixes GitHub Actions workflow security issues. Only runs when
-  // .github/ exists (some repos don't have workflows).
+  // .github/ exists, some repos don't have workflows.
   if (existsSync('.github')) {
     await run('zizmor', ['--fix', '.github/'], {
       label: 'zizmor --fix',
@@ -194,7 +194,7 @@ async function runFixers(argv: string[]): Promise<void> {
   }
 
   // Fleet doctor — member-health fixes. Runs after the deterministic
-  // lint/security fixers and before AI (code-first-then-ai ordering). Scans
+  // lint/security fixers and before AI, code-first-then-ai ordering. Scans
   // workspace package.jsons for catalog: refs missing their catalog entry and
   // splices the version from the cascaded fleet catalog. Reports soak-window
   // install failures loud with the exact annotated fix. Runs only when --all
@@ -273,7 +273,7 @@ async function runFixers(argv: string[]): Promise<void> {
 
   // Verify: re-run lint (no --fix) to set the real exit code. `fix` succeeds
   // only when nothing remains after the deterministic + AI passes; a lingering
-  // violation (or a genuine lint crash) surfaces here as a non-zero exit.
+  // violation, or a genuine lint crash, surfaces here as a non-zero exit.
   const verifyCode = await run('pnpm', ['run', 'lint', ...argv], {
     label: 'lint (verify)',
     required: false,

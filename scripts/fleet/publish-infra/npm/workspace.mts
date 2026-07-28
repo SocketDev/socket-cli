@@ -210,7 +210,7 @@ export function expandWorkspaceGlob(rootPath: string, glob: string): string[] {
  * version), then add generated platform packages by convention — any
  * publishable `npm/<platformId>/` dir under a discovered package that owns a
  * `scripts/make-npm-dirs.mts` generator — even when those dirs are not
- * workspace members (the stuie shape). Deduped by dir, sorted by relDir.
+ * workspace members, the stuie shape. Deduped by dir, sorted by relDir.
  */
 export function discoverWorkspacePackages(
   rootPath: string,
@@ -370,7 +370,7 @@ export function resolveNpmWorkspaceLayout(
   if (packages.length === 0) {
     if (typeof root?.version === 'string' && root.version) {
       // A private, versioned root with no publishable members: the
-      // bump-only shape (the wheelhouse itself). The root stays the subject.
+      // bump-only shape, the wheelhouse itself. The root stays the subject.
       const subject = resolveReleaseSubject(rootPath)
       return {
         kind: 'single',
@@ -436,9 +436,9 @@ export function workspacePublishableNames(rootPath: string): Set<string> {
 }
 
 /**
- * Find the publishable package (or single subject) that publishes `name`.
+ * Find the publishable package, or single subject, that publishes `name`.
  * Returns its directory + platform flag, or undefined when this repo does not
- * publish `name` (the cross-repo staged-entry case).
+ * publish `name`, the cross-repo staged-entry case.
  */
 export function findWorkspacePackageByName(
   layout: NpmWorkspaceLayout,

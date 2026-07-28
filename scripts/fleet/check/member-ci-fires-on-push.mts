@@ -9,7 +9,7 @@
  *   test matrix land unnoticed — is the incident this audit makes loud.
  *   For each repo in fleet-repos.json it reads the push-event run count of the
  *   `ci.yml` workflow via `gh` (`.../actions/workflows/ci.yml/runs?event=push`)
- *   and treats a concrete 0 (workflow registered, never triggered on push) as
+ *   and treats a concrete 0, workflow registered, never triggered on push, as
  *   dead. An `undefined` count (no `ci.yml` workflow, or an unreadable/errored
  *   query) is NOT dead — only a real 0 counts, so the audit never invents a
  *   finding it cannot stand behind.

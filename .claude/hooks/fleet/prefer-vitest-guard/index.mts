@@ -3,8 +3,8 @@
 //
 // Blocks raw test-runner invocations — `node --test <file>` for src/repo tests
 // AND any raw `vitest` binary call (bare `vitest` or `node_modules/.bin/vitest`)
-// — and steers to the fleet-canonical SCRIPT runner: `pnpm test` (whole suite)
-// or `pnpm test <file>` (fast, file-scoped). The bare binary is never run by
+// — and steers to the fleet-canonical SCRIPT runner: `pnpm test`, whole suite
+// or `pnpm test <file>`, fast, file-scoped. The bare binary is never run by
 // hand: the script owns --config, scope detection, and the single-worker
 // pre-commit setting; reaching past it loses all three.
 //
@@ -23,18 +23,18 @@
 //       - `.config/fleet/oxlint-plugin/**/test/**` — socket/* lint-rule tests.
 //       - `scripts/**/test/**` — script-suite tests.
 //       - `.git-hooks/**` — git-hook tests.
-//       - repo-tunable `nodeTestExclude` globs (see below).
+//       - repo-tunable `nodeTestExclude` globs, see below.
 //     A `node --test` whose targets are all in these tiers is ALLOWED.
 //
 // Also nudges toward targeting a specific file rather than the full suite —
 // `pnpm test path/to/foo.test.mts` is faster and scoped to the change in
 // flight (test.mts runs `vitest run <file>` for explicit positional paths).
 //
-// Detection: parses the command string for `node ... --test` (flag anywhere)
+// Detection: parses the command string for `node ... --test`, flag anywhere
 // or `node --test` (shorthand). The `node --run` form (pnpm/npm built-in
 // script runner) is NOT blocked — that's the fleet-canonical way to invoke
 // package.json scripts via the node binary. A `node --test` whose every target
-// resolves under a `.claude/hooks/**/test/` path is allowed (hook tier).
+// resolves under a `.claude/hooks/**/test/` path is allowed, hook tier.
 //
 // Fails open on parse / payload errors.
 
@@ -50,7 +50,7 @@ import { commandsFor, parseCommands } from '../_shared/shell-command.mts'
 // Pre-flight skip set. The dispatcher imports + runs this guard only when the
 // raw command contains one of these substrings. A block can ONLY arise from
 // path (a) `node --test` (always carries `--test`), path (b) a bare
-// `tsx`/`ts-node` test-file invocation (always carries the binary name), or
+// `tsx`/`ts-node` test-file invocation, always carries the binary name, or
 // path (c) a raw `vitest` binary call (always carries `vitest`); so a command
 // lacking all of these can never block. `tsx` is NOT a substring of `ts-node`,
 // so both are listed. `pnpm test` does NOT contain `vitest`, so the sanctioned
@@ -188,7 +188,7 @@ const VITEST_SUBCOMMANDS: ReadonlySet<string> = new Set([
 
 // Raw `vitest` / `node_modules/.bin/vitest …` — the bare binary. NEVER a
 // sanctioned Claude Bash invocation: src / repo tests run through `pnpm test`
-// (whole suite) or `pnpm test <file>` (fast, file-scoped — scripts/fleet/
+// whole suite, or `pnpm test <file>` (fast, file-scoped — scripts/fleet/
 // test.mts runs `vitest run <file>` for explicit paths), and the node:test
 // tiers use `node --test`. The test runner's OWN spawn of node_modules/.bin/
 // vitest is a child process, not a Bash tool call, so this never sees it.

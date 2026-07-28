@@ -2,7 +2,7 @@
 // Validates each `[submodule "..."]` block:
 //   - the preceding `# <name>-<version> sha256:<64hex>` header comment
 //   - the `ref = <40hex>` field shape
-//   - (when cache is provided) reachability of refSha in the
+//   - when cache is provided, reachability of refSha in the
 //     submodule's GitHub url
 
 import { verifyCommitSha } from './cache.mts'

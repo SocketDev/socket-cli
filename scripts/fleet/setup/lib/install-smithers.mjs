@@ -4,7 +4,7 @@
  *   node), the same shape as npm itself: a SINGLE top-level integrity.
  *   Downloaded + SRI-verified + extracted by lib/install-tool.mjs into
  *   rack/smithers/<v>; a bin/smithers shim runs the package's bin entry
- *   (src/bin/smithers.js) through system node. Skipped (no error) when smithers
+ *   (src/bin/smithers.js) through system node. Skipped, no error, when smithers
  *   is absent from external-tools.json. Imports only bootstrap-common.mjs +
  *   `node:`.
  */
@@ -49,7 +49,7 @@ export function installSmithers() {
   } else {
     log(`✓ smithers@${version} already installed at ${pkgDir}`)
   }
-  // Shim: run the JS entry through system node (pure-JS package, no binary).
+  // Shim: run the JS entry through system node, pure-JS package, no binary.
   mkdirSync(BIN_DIR, { recursive: true })
   writeFileSync(shimPath, `#!/bin/bash\nexec node "${entry}" "$@"\n`)
   chmodSync(shimPath, 0o755)

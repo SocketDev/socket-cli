@@ -13,7 +13,7 @@
 // without a prompt; this hook is the safety rail that keeps "allow" from
 // meaning "create any release at any ref".
 //
-// Tag existence is checked two ways (either is sufficient):
+// Tag existence is checked two ways, either is sufficient:
 //   - local:  `git rev-parse --verify --quiet refs/tags/<ref>`
 //   - remote: `git ls-remote --tags origin <ref>` returns a ref line
 //
@@ -26,7 +26,7 @@
 // release itself (publish-pipeline.mts --approve, via a child spawn this hook
 // never sees) — an agent-run `gh release create` is by definition outside it,
 // so it must stand on a confirmed publish. Registry-less repos and non-semver
-// refs skip the gate. Unverifiable liveness (network error, missing tool)
+// refs skip the gate. Unverifiable liveness, network error, missing tool
 // BLOCKS — an irreversible-release guard errs strict; the bypass phrase
 // covers genuine exceptions.
 //
@@ -74,7 +74,7 @@ export interface ReleaseCreateDetection {
   readonly detected: boolean
   // The release ref (first positional after `create`); '' when none was found.
   readonly ref: string
-  // True when `--target <commitish>` is present (gh would create the tag).
+  // True when `--target <commitish>` is present, gh would create the tag.
   readonly hasTarget: boolean
 }
 
@@ -137,7 +137,7 @@ export function tagExists(ref: string, cwd: string): boolean {
     cwd,
     stdio: 'pipe',
   })
-  /* c8 ignore next - remote exits 0 with empty stdout only in live-network git; in-process tests always see exit 128 (no auth) */
+  /* c8 ignore next - remote exits 0 with empty stdout only in live-network git; in-process tests always see exit 128, no auth*/
   return !remote.error && remote.status === 0 && !!String(remote.stdout).trim()
 }
 
@@ -323,7 +323,7 @@ export function makeCheck(probes?: RegistryProbes | undefined): GuardCheck {
     if (!detection.hasTarget && tagExists(detection.ref, cwd)) {
       // Existing tag, no --target: the legitimate backfill shape — allowed
       // only once the tagged version is live on the repo's registry
-      // (publish-before-release order).
+      // publish-before-release order.
       const orderBlock = publishBeforeReleaseGate(detection.ref, cwd, probes)
       return orderBlock === undefined ? undefined : block(orderBlock)
     }

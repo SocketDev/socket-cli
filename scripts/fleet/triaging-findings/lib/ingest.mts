@@ -63,7 +63,7 @@ export interface Finding {
   recommendation?: string | undefined
   scanner_confidence?: number | undefined
   missing_fields: string[]
-  // Set on an unlocatable finding (no resolvable file).
+  // Set on an unlocatable finding, no resolvable file.
   verdict?: string | undefined
   verify_verdict?: string | undefined
   confidence?: number | undefined

@@ -7,7 +7,7 @@
  *
  *   This enforces a bidirectional invariant over the curated CONVENTION_GUARDS
  *   set and the guards that actually import `isFleetTarget`:
- *     - a convention guard that DROPS the import (silent regression) fails, and
+ *     - a convention guard that DROPS the import, silent regression, fails, and
  *     - a guard that STARTS importing the detector without being registered
  *       here fails.
  *   Either way the convention-vs-safety classification stays explicit + current
@@ -31,7 +31,7 @@ import { REPO_ROOT } from '../paths.mts'
 import { hasFleetHookSource } from '../_shared/fleet-source-present.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 
-// Guards that MUST consult `isFleetTarget` (they lighten outside a fleet repo).
+// Guards that MUST consult `isFleetTarget`, they lighten outside a fleet repo.
 // Sorted. Thread the detector into a guard, then add it here — the check fails
 // until both are true.
 export const CONVENTION_GUARDS: readonly string[] = [

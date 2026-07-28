@@ -53,11 +53,11 @@ export type DiscoveryCategory =
 
 export interface DiscoveryItem {
   /**
-   * Whether this category applies (the repo carries the relevant artifact).
+   * Whether this category applies, the repo carries the relevant artifact.
    */
   readonly applies: boolean
   /**
-   * Whether applicable work was found (drift, staleness, behind submodules).
+   * Whether applicable work was found, drift, staleness, behind submodules.
    * Always false when `applies` is false.
    */
   readonly actionable: boolean
@@ -156,7 +156,7 @@ export async function probeLockstep(cwd: string): Promise<DiscoveryItem> {
           items: ['lockstep drift — run per-row auto-bumps'],
         })
       }
-      // Exit 1 (schema error) or any other failure stops the line.
+      // Exit 1, schema error, or any other failure stops the line.
       return makeItem({
         applies: true,
         blocked: true,

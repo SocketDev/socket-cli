@@ -10,7 +10,7 @@
 // `.DS_Store`, edit-time) into a fleet-wide, multi-pattern engine. The hook
 // stays as the in-session complement; this is the periodic sweep.
 //
-// Default is --dry-run (report only). Pass --fix to delete.
+// Default is --dry-run, report only. Pass --fix to delete.
 //
 // Usage:
 //   node tidy-files.mts            # dry-run: report what WOULD be deleted
@@ -253,7 +253,7 @@ export async function main(): Promise<void> {
     }
   }
 
-  // Stray tmp scratch (only when sweeping the whole fleet, not a single repo).
+  // Stray tmp scratch, only when sweeping the whole fleet, not a single repo.
   if (!onlyRepo) {
     const stray = findStrayTmp(os.tmpdir())
     if (stray.length) {

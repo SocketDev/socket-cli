@@ -3,7 +3,7 @@
 //
 // Nudges when the last assistant turn introduced a conservative build/lang
 // target where an evergreen one fits. The fleet default is latest-and-greatest:
-// for an auto-updating runtime (a Chrome extension, the web, a CI-pinned Node)
+// for an auto-updating runtime, a Chrome extension, the web, a CI-pinned Node
 // a back-versioned `tsconfig` `target`/`lib` leaves modern syntax downleveled
 // or untyped for no benefit. JSON config (tsconfig, package.json, browserslist)
 // is not lintable by oxlint, so this Stop nudge is the only enforcement surface
@@ -30,7 +30,7 @@ interface Finding {
 // year", not a specific number.
 const ES_YEAR_FLOOR = 2024
 
-// `ES<year>` token (target value or lib-array entry). `ESNext` has no 4-digit
+// `ES<year>` token, target value or lib-array entry. `ESNext` has no 4-digit
 // run, so it never matches.
 const ES_YEAR_RE = /\bES(?<year>\d{4})\b/g
 

@@ -12,7 +12,7 @@
 //
 // Heuristic — fires when ALL of:
 //
-//   1. The Edit/Write targets a CLAUDE.md (root or repo-specific).
+//   1. The Edit/Write targets a CLAUDE.md, root or repo-specific.
 //   2. The new content adds at least one NEW `### ` heading inside the
 //      fleet block (the `<fleet-canonical>` markers).
 //   3. The new section's body contains ≥3 non-blank lines.
@@ -21,7 +21,7 @@
 //
 // Why all four conditions:
 //
-//   - Per-section gate (not whole-file): a 2-line one-liner rule
+//   - Per-section gate, not whole-file: a 2-line one-liner rule
 //     doesn't need an external doc.
 //   - "NEW section only": existing sections can grow without re-firing
 //     the same reminder every edit. Triggered by a section heading the
@@ -150,7 +150,7 @@ interface AddedSection {
 
 /**
  * Diff pre-edit vs post-edit fleet blocks and return sections whose heading is
- * NEW (didn't exist before this edit) AND whose body is long enough + lacks a
+ * NEW, didn't exist before this edit, AND whose body is long enough + lacks a
  * docs/agents.md/ link to merit the reminder.
  */
 export function findAddedSectionsLackingLink(

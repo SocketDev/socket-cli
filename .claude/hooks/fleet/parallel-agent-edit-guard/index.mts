@@ -25,7 +25,7 @@
 // companion shared one socket-wheelhouse checkout. One session kept
 // re-cascading shell-command.mts / test files, silently reverting the
 // other's type-error fixes Edit-by-Edit. The staging guard didn't catch
-// it (no git op involved) — the clobber was a plain Write.
+// it, no git op involved — the clobber was a plain Write.
 //
 // Bypass:
 //   • `Allow parallel-agent-edit bypass` in a recent user turn

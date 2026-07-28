@@ -35,7 +35,7 @@
 // thing" — a GH-release-only workflow that takes `publish=true` may
 // be wired to also npm-publish in that branch.
 //
-// Recovery (when a wrong release lands):
+// Recovery, when a wrong release lands:
 //   - `gh release delete <tag> --cleanup-tag --yes`
 //     (drops the GH release and the git tag in one command)
 //
@@ -113,7 +113,7 @@ export const triggers: readonly string[] = ['dispatches', 'workflow']
 // shouldn't open the door for an unrelated workflow later in the
 // session. The colon-suffix form names exactly what is authorized.
 //
-// Why session-durable (not one-phrase-one-dispatch): release
+// Why session-durable, not one-phrase-one-dispatch: release
 // engineering retries. A dispatch that startup-fails on an Actions
 // allowlist gap, dies on a missing asset, or gets cancelled consumes
 // no prod side effect — forcing a fresh phrase for every retry of
@@ -130,7 +130,7 @@ export const triggers: readonly string[] = ['dispatches', 'workflow']
 // any of those three shapes for the same workflow because the user
 // might write whichever feels natural.
 //
-// Use cases that need the bypass (the dry-run path doesn't cover):
+// Use cases that need the bypass, the dry-run path doesn't cover:
 //   - Workflows that don't accept a `dry-run` input by design
 //     (e.g. node-smol's main build, which has 30-minute side effects
 //     but no inverse).
@@ -149,7 +149,7 @@ const BYPASS_PHRASE_PREFIX = 'Allow workflow-dispatch bypass:'
 export function buildAcceptedPhrases(workflow: string): readonly string[] {
   const stripped = workflow.replace(/\.(?:yaml|yml)$/i, '')
   // De-duplicate when filename and basename collapse to the same
-  // string (the workflow target was already stripped).
+  // string, the workflow target was already stripped.
   const tokens = stripped === workflow ? [workflow] : [workflow, stripped]
   return tokens.map(token => `${BYPASS_PHRASE_PREFIX} ${token}`)
 }
@@ -198,7 +198,7 @@ export function countPriorDispatches(
       continue
     }
     // Look at assistant tool-use blocks only — the user's Bash
-    // calls (if any) don't count, and our own future calls are
+    // calls, if any, don't count, and our own future calls are
     // not yet in the transcript when this hook runs.
     if (
       !evt ||
@@ -319,9 +319,9 @@ export interface DispatchLedgerReport {
 // OCCURRENCES in user turns — any credit > 0 means the user has authorized
 // this workflow for the session (the grant is durable; see the
 // BYPASS_PHRASE_PREFIX doctrine block). `consumed` counts prior non-denied
-// dispatches of the same workflow (floored at the credit balance) — kept
+// dispatches of the same workflow, floored at the credit balance — kept
 // PURELY for the diagnostics a denial banner prints, it plays no part in the
-// allow/deny decision. Returns the full report (not just a boolean) so a
+// allow/deny decision. Returns the full report, not just a boolean, so a
 // denial can print WHICH transcript it read and the credit/consumed split —
 // the diagnosability a bare "no" denies the operator.
 export function dispatchLedgerReport(
@@ -366,7 +366,7 @@ export function dispatchLedgerReport(
           stripQuotedSpans(stripCodeFences(pieces.join('\n'))),
         )
         // One credit per typed phrase occurrence. A needle set holds
-        // VARIANTS of the same phrase (exact, extension-stripped), so one
+        // VARIANTS of the same phrase, exact, extension-stripped, so one
         // typed phrase can match several needles — take the max occurrence
         // count across needles instead of summing, or a single phrase
         // would mint multiple credits.
@@ -524,7 +524,7 @@ const WORKFLOW_DRY_RUN_INPUT_RE = /^\s+dry-run:\s*$/m
 // publishes to npm — irreversible after the 24h unpublish window.
 // Always block these dispatches unless the user runs them themselves.
 //   - `npm publish` / `pnpm publish` / `yarn publish` (CLI)
-//   - `JS-DevTools/npm-publish` (popular publish action)
+//   - `JS-DevTools/npm-publish`, popular publish action
 // The whitespace tolerance handles `pnpm  publish` and `npm     publish`
 // found in real workflow YAML.
 const WORKFLOW_NPM_PUBLISH_RE =
@@ -546,7 +546,7 @@ const GH_REPO_FLAG_RE = /\s--repo\s+\S*?\/(?<repoName>[^\s/]+)/
 // Inline `cd <path> && …` parser. Captures the destination path so
 // the search-roots resolver can include it. Claude Code's Bash tool
 // invokes PreToolUse hooks with cwd = the session's project dir
-// (not the cwd the chained command will switch to), so without this
+// not the cwd the chained command will switch to, so without this
 // parse the hook can't locate a workflow YAML that lives in the
 // sibling clone the user is targeting via `cd`. The path may be
 // quoted ("..." or '...'); strip the quotes for the resolver.
@@ -659,7 +659,7 @@ export function workflowDeclaresDryRunInput(
 // Decide whether a dispatch on `workflow` should be allowed because
 // it's a verifiable dry-run. All four conditions must hold:
 //   1. `-f dry-run=true|1|yes` is explicitly present in the command
-//   2. `-f dry-run=false|0|no` is NOT present (user didn't override)
+//   2. `-f dry-run=false|0|no` is NOT present, user didn't override
 //   3. No force-prod input is present (release/publish/prod=true)
 //   4. The target workflow YAML declares a `dry-run:` input under
 //      its `workflow_dispatch.inputs` block — without that, the gh
@@ -708,7 +708,7 @@ export function resolveSearchRoots(command: string): string[] {
     /* c8 ignore stop */
   }
   if (!projectDir) {
-    // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- documented last resort (see resolution order above): env unset AND the module-path walk found no .github/workflows; the invoking shell's directory is the only remaining candidate for the workflow root.
+    // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- documented last resort, see resolution order above: env unset AND the module-path walk found no .github/workflows; the invoking shell's directory is the only remaining candidate for the workflow root.
     projectDir = process.cwd()
   }
   const repoMatch = GH_REPO_FLAG_RE.exec(command)
@@ -730,7 +730,7 @@ export function resolveSearchRoots(command: string): string[] {
   // workflow YAML when the user types `cd ../sibling && gh workflow
   // run ...` from a session pinned to a different project.
   const roots: string[] = [projectDir]
-  // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- deliberate live-cwd probe (see comment above): the invoking shell's directory is added as a SECONDARY workflow root when it differs from projectDir; an anchored path would make the branch dead.
+  // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- deliberate live-cwd probe, see comment above: the invoking shell's directory is added as a SECONDARY workflow root when it differs from projectDir; an anchored path would make the branch dead.
   const cwd = process.cwd()
   if (
     cwd !== projectDir &&
@@ -843,7 +843,7 @@ function extractWorkflowTarget(args: readonly string[]): string | undefined {
       continue
     }
     if (arg.startsWith('-')) {
-      // A bare flag with no value (rare here) — skip just the flag.
+      // A bare flag with no value, rare here — skip just the flag.
       continue
     }
     return arg
@@ -967,7 +967,7 @@ export const check = bashGuard((command, payload) => {
       )
     }
     // Denials must be diagnosable in the field: say WHICH transcript the
-    // scan read (or that none resolved), so "typed the phrase, still
+    // scan read, or that none resolved, so "typed the phrase, still
     // blocked" is triageable from the banner alone.
     const read =
       report.source.resolvedPath === undefined

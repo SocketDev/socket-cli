@@ -12,7 +12,7 @@
 // This check parses each tool-data file with the shared TypeBox schema and
 // fails `check --all` on any violation, so drift is caught at the edit instead.
 //
-// Scanned files (whichever exist in the repo), all the `{ tools }` shape:
+// Scanned files, whichever exist in the repo, all the `{ tools }` shape:
 //   - <root>/.config/repo/external-tools.json
 //   - <root>/packages/* / **/bundle-tools.json
 //   - .claude/hooks/**/external-tools.json
@@ -49,7 +49,7 @@ export function findToolFiles(repoRoot: string): string[] {
     // `dot: true` — the security-hook tool data lives under `.claude/hooks/**`,
     // a dot-directory `**` skips by default. Without this the check globs only
     // non-dot trees and reports green while never seeing the `.claude/**` files
-    // (a false-green that let unmodeled fields drift in undetected).
+    // a false-green that let unmodeled fields drift in undetected.
     dot: true,
     ignore: [
       '**/node_modules/**',
@@ -64,7 +64,7 @@ export function findToolFiles(repoRoot: string): string[] {
 
 /**
  * Validate every tool-data file under repoRoot. Returns one FileIssue per
- * schema violation (empty when all files are valid). A file that is not valid
+ * schema violation, empty when all files are valid. A file that is not valid
  * JSON is itself reported as an issue rather than throwing.
  */
 export function scanRepo(repoRoot: string): FileIssue[] {

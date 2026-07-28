@@ -1,7 +1,7 @@
 /*
  * @file Parse a `git push` command's refspecs to decide whether the push WRITES
  *   a protected branch (`main` / `master`) on the remote. Shared by
- *   `push-protected-branch-guard` (the agent-side block) and its tests so the
+ *   `push-protected-branch-guard`, the agent-side block, and its tests so the
  *   two reason about a refspec identically and never drift.
  *   Why a dedicated parser: a `git push` updates a remote ref, and the ref it
  *   updates is encoded in a refspec that has many spellings — a bare branch
@@ -21,7 +21,7 @@
  *     `:` as the destination (a colon-less refspec is its own destination; a
  *     `:dst` delete still names `dst`), strip a `refs/heads/` / `refs/` prefix,
  *     and compare the leaf to `main` / `master`.
- *   - `HEAD` (bare, or as a destination) and the no-refspec case resolve to the
+ *   - `HEAD`, bare, or as a destination, and the no-refspec case resolve to the
  *     repo's CURRENT branch via the caller-supplied resolver — a bare `git
  *     push` on a `main`-tracking checkout is the canonical incident.
  *     Conservative by construction: a destination we can't classify is treated
@@ -37,7 +37,7 @@ import { commandsFor } from './shell-command.mts'
 export const PROTECTED_BRANCHES: readonly string[] = ['main', 'master']
 
 // `git push` flags that take a SEPARATE-WORD value, so the following token is
-// that value (a count, a repo name, a refname) and must NOT be read as the
+// that value, a count, a repo name, a refname, and must NOT be read as the
 // remote or a refspec. The `--flag=value` forms are self-contained and handled
 // by the generic flag skip. `--force-with-lease` is deliberately absent: git
 // only accepts its value ATTACHED (`--force-with-lease[=<ref>[:<expect>]]`),
@@ -151,7 +151,7 @@ export function pushDestinations(pushArgs: readonly string[]): PushTargets {
 export interface ProtectedPush {
   // The destination branch that tripped the check (`main` / `master`).
   readonly branch: string
-  // The remote it would be pushed to, when resolvable (else undefined).
+  // The remote it would be pushed to, when resolvable, else undefined.
   readonly remote: string | undefined
 }
 

@@ -13,7 +13,7 @@
  *   model's job (SKILL.md Phases 2–3, 5). This loop owns Phase 4: stub → rebuild
  *   → test → keep-or-revert, with a `dryRun` mode that reports what it would do.
  *
- *   Usage (from a skill driver or directly):
+ *   Usage, from a skill driver or directly:
  *     node lib/trim-loop.mts --repo <dir> --candidates globs,sorts,http-request
  *       [--dry-run] [--json]
  */
@@ -48,7 +48,7 @@ export interface TrimOutcome {
   // Bundle size before this candidate's stub (bytes).
   beforeBytes: number
   // Bundle size after this candidate's stub (bytes); equals beforeBytes on a
-  // build that didn't run (dry run) or a test-revert measured pre-build.
+  // build that didn't run, dry run, or a test-revert measured pre-build.
   afterBytes: number
   // afterBytes - beforeBytes (negative = shrank).
   deltaBytes: number
@@ -189,7 +189,7 @@ export async function trimLoop(
     const afterBytes = (await measureBundle(repoDir)).bundleSizeBytes
     const deltaBytes = afterBytes - beforeBytes
     if (deltaBytes >= 0) {
-      // No shrink (regex didn't match) or grew (stub overhead). Revert.
+      // No shrink, regex didn't match, or grew, stub overhead. Revert.
       writeFileSync(configPath, current)
       outcomes.push({
         afterBytes,

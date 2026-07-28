@@ -22,7 +22,7 @@
  *   1. a hook — `.claude/hooks/{fleet,repo}/<name>/` that exists on disk with an
  *      index.mts OR install.mts (installer hooks enforce off the host
  *      machine);
- *   2. a lint rule — backticked `socket/<rule>` (registered in the plugin) or
+ *   2. a lint rule — backticked `socket/<rule>`, registered in the plugin, or
  *      `typescript/<rule>` (a key in .config/fleet/oxlintrc.json);
  *   3. a script — any `scripts/fleet/<path>.mts` that resolves on disk (a check/
  *      invariant OR build-step automation — both are executable law).
@@ -30,12 +30,12 @@
  *      an inline opt-out comment `<!-- enforcement: <category> — <reason> -->`
  *      with <category> in {human-review, off-machine, installer}; those pass
  *      and are listed in the report so the opt-out set stays visible and small.
- *      Gated surfaces (a finding fails the gate): the CLAUDE.md fleet block and
- *      docs/agents.md/fleet/*.md. Advisory surfaces (reported, never fail):
+ *      Gated surfaces, a finding fails the gate: the CLAUDE.md fleet block and
+ *      docs/agents.md/fleet/*.md. Advisory surfaces, reported, never fail:
  *      docs/** outside fleet, README.md, hook READMEs, SKILL.md — prose there
  *      is not a structured rule surface, so a 🚨 with no enforcer is surfaced,
  *      not enforced. Exit codes: 0 — every gated 🚨 rule resolves to an
- *      executable enforcer (or a declared opt-out); 1 — at least one gated 🚨
+ *      executable enforcer, or a declared opt-out; 1 — at least one gated 🚨
  *      rule is policy-on-paper. Fail-open: no CLAUDE.md → success;
  *      plugin-absent repo → arm 2's socket/ half is skipped (matches
  *      claude-md-citations-resolve).
@@ -205,7 +205,7 @@ export function sirenParagraphs(
     return out
   }
 
-  // Docs (whole body): 🚨 paragraphs within `###` sections; sectionText is the
+  // Docs, whole body: 🚨 paragraphs within `###` sections; sectionText is the
   // enclosing section, for the detail-link fallback.
   let sectionLines: string[] = []
   let pending: Array<{ line: number; text: string }> = []
@@ -285,7 +285,7 @@ export function textCitesEnforcer(
   return false
 }
 
-// The fleet detail surfaces a paragraph links to (repo-root-relative paths):
+// The fleet detail surfaces a paragraph links to, repo-root-relative paths:
 // docs/agents.md/fleet/*.md pages and .claude/skills/**/SKILL.md procedures.
 export function linkedDetailDocs(text: string): string[] {
   const out: string[] = []
@@ -417,7 +417,7 @@ async function main(): Promise<void> {
   optOuts.push(...claudeResult.optOuts)
   checked += claudeResult.checked
 
-  // Gated surface 2: docs/agents.md/fleet/*.md (fleet-canonical detail pages).
+  // Gated surface 2: docs/agents.md/fleet/*.md, fleet-canonical detail pages.
   for (const docPath of collectFleetDocs(REPO_ROOT)) {
     const rel = path.relative(REPO_ROOT, docPath)
     const result = auditFile(rel, readFileSync(docPath, 'utf8'), inv, {

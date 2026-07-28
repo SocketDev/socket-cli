@@ -1,4 +1,4 @@
-// Fleet check — error messages are thorough (no vague-only throws).
+// Fleet check — error messages are thorough, no vague-only throws.
 //
 // Commit-time complement to the `error-message-quality-nudge` Stop hook. The
 // reminder grades the error-message strings in code BLOCKS the assistant wrote
@@ -17,13 +17,13 @@
 // drift. AST-based: `findThrowNew` walks every `throw new <Ctor>(…)`, then the
 // static-string first arg runs through `gradeMessage`. Template literals with
 // interpolation, identifiers, and any message carrying a colon / quoted value /
-// length > 40 clear the bar (presumed specific).
+// length > 40 clear the bar, presumed specific.
 //
 // Scope: the repo's own source trees (src / scripts / packages), skipping
 // build output, vendored trees, node_modules, tests + fixtures, and the
 // `.claude/` hook tree (the reminder + the guard fixtures legitimately name the
 // vague phrases). Reporting-only candidates the human rewrites; never auto-fixed
-// (the right specific message needs judgment).
+// the right specific message needs judgment.
 //
 // Usage: node scripts/fleet/check/error-messages-are-thorough.mts [--quiet]
 
@@ -49,7 +49,7 @@ const logger = getDefaultLogger()
 const SCAN_ROOTS = ['src', 'scripts', 'packages']
 
 // Directories never worth walking: build output, vendored trees, deps, and the
-// test/fixtures corpora (fixture files legitimately carry bad messages).
+// test/fixtures corpora, fixture files legitimately carry bad messages.
 const SKIP_DIRS = new Set([
   '.git',
   '.next',
@@ -70,7 +70,7 @@ const SCAN_EXTENSIONS = ['.cjs', '.cts', '.js', '.mjs', '.mts', '.ts']
 
 // Path fragments (normalized to `/`) whose files are exempt: they legitimately
 // author the vague phrases (the shared classifier + the reminder that consumes
-// it), and test files (fixtures of bad messages).
+// it), and test files, fixtures of bad messages.
 const SELF_EXEMPT_FRAGMENTS = [
   '_shared/error-message-quality',
   'error-message-quality-nudge/',

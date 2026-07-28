@@ -76,7 +76,7 @@ export function resolveStorePath({
 }
 
 /**
- * The Node ABI (major version) partitions the store key — packages with
+ * The Node ABI, major version, partitions the store key — packages with
  * prebuilt native binaries cache a different artifact per major. 'x' for an
  * empty version string, the `|| echo 'x'` arm of the old probe.
  */

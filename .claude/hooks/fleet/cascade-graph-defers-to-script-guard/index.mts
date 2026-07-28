@@ -4,7 +4,7 @@
 // Makes the agent STOP eyeballing the raw release-cascade graph and run the
 // SMART scripts that reason about downstream obligations for it. The graph in
 // scripts/fleet/lib/release-cascade.mts is DATA, not the whole story: some fleet
-// repos (socket-packageurl-js, socket-sdk-js) ship zero runtime dependencies
+// repos, socket-packageurl-js, socket-sdk-js, ship zero runtime dependencies
 // and BUNDLE their upstreams into dist/**, so an upstream bump owes a downstream
 // RELEASE, not just a catalog pin. Reading the graph text by hand and reasoning
 // ad-hoc misses that — the exact mistake that concluded "a socket-lib bump owes

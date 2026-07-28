@@ -27,7 +27,7 @@ import type { AiEffort } from '@socketsecurity/lib-stable/ai/types'
 
 /**
  * The enforcement surfaces ai-codify knows how to author. A codification gap
- * resolves to one (or, for defense-in-depth, several) of these. `agents-doc` is
+ * resolves to one, or, for defense-in-depth, several, of these. `agents-doc` is
  * the documentation surface — handled by codify-rule.mts, listed here so the
  * orchestrator can route to it uniformly.
  */
@@ -108,7 +108,7 @@ export const TIER_EFFORT: Readonly<
 
 /**
  * Resolve a surface to its { model, effort } tier. Unknown surface → sonnet
- * (the historical default), so a future surface added to CODIFY_SURFACES
+ * the historical default, so a future surface added to CODIFY_SURFACES
  * without a SURFACE_TIER entry degrades safely rather than throwing.
  */
 export function tierFor(surface: CodifySurface): {

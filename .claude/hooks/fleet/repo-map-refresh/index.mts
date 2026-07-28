@@ -14,7 +14,7 @@
 // suggesting a `--write` generate.
 //
 // **Fail-open**: spawned DETACHED + unref'd with stdio ignored, so it adds zero
-// session latency and any error (no git, missing script, spawn failure) is
+// session latency and any error, no git, missing script, spawn failure, is
 // swallowed — the session proceeds with a possibly-staler cache, never a break.
 
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'

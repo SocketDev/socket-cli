@@ -10,7 +10,7 @@
 //
 //   1. SFW shim integrity. Walks `~/.socket/_wheelhouse/shims/*` and reports
 //      shims whose dlx-cached binary target no longer exists on disk.
-//      Cache eviction (manifest rebuild, manual cleanup) leaves
+//      Cache eviction, manifest rebuild, manual cleanup, leaves
 //      shims pointing at vanished hashes — every `pnpm` / `npm` /
 //      etc. call then fails with "No such file or directory" until
 //      the shims are rewritten.
@@ -144,7 +144,7 @@ export async function checkShims(): Promise<Finding[]> {
       continue
     }
     // Only bash shim files carry exec targets; binaries/symlinks in the same
-    // bin dir (flat racked-tool handles) have no quoted paths and skip clean.
+    // bin dir, flat racked-tool handles, have no quoted paths and skip clean.
     if (!content.startsWith('#!')) {
       continue
     }
@@ -245,7 +245,7 @@ export async function checkToken401(
  * + the regenerate script are both present. This handles the common failure
  * shape where shims got renamed/moved (`shims.broken-backup/`) and the operator
  * forgot to re-run the regenerator. Returns a single 'auto-repaired' finding on
- * success (so the user sees one tidy notice instead of nothing) — or nothing if
+ * success, so the user sees one tidy notice instead of nothing — or nothing if
  * the repair conditions weren't met / the script failed.
  */
 export function repairShims(home: string): Finding[] {
@@ -277,7 +277,7 @@ export function repairShims(home: string): Finding[] {
 
   // Repair triggers when the shim dir is missing OR every core shim is
   // absent (the "shims were wiped / never generated" shape). A partially
-  // populated dir is handled by checkShims() (per-shim broken reporting) —
+  // populated dir is handled by checkShims() per-shim broken reporting —
   // the bin dir also holds flat racked-tool handles, so plain emptiness is
   // not a usable signal.
   const wiped =

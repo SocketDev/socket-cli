@@ -16,7 +16,7 @@
  *   Only the ADDED content matters: a Write's full content, or an Edit's
  *   new_string. Scope is `.mts`/`.ts` source under `src/`, `scripts/`, or
  *   `.claude/hooks/` — a generated/vendored/build/node_modules path is never
- *   scanned. A nudge, not a guard: no bypass phrase (it never blocks).
+ *   scanned. A nudge, not a guard: no bypass phrase, it never blocks.
  */
 
 import path from 'node:path'

@@ -12,7 +12,7 @@
  *   un-ignores the path so it is no longer reported here. Superset of
  *   `upstream-gitlinks-are-absent` (a tracked `upstream/` gitlink is one kind
  *   of tracked-ignored path); this belt catches every other kind too. Exit: 0 —
- *   no tracked-ignored path (or git is unavailable); 1 — at least one. Usage:
+ *   no tracked-ignored path, or git is unavailable; 1 — at least one. Usage:
  *   node scripts/fleet/check/ignored-files-are-untracked.mts [--quiet]
  */
 

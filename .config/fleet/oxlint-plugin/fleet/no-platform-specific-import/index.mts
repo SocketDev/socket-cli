@@ -4,7 +4,7 @@
  *   `src/http-request/node.ts` and `src/http-request/browser.ts` are platform
  *   implementations. The barrel `src/http-request/index.ts` (or the package
  *   export `http-request`) re-exports the right one via the package.json
- *   `"browser"` condition. Bundlers (rolldown, vite, webpack) and the Node
+ *   `"browser"` condition. Bundlers, rolldown, vite, webpack, and the Node
  *   resolver read that condition at build time; hard-coding `/node` or
  *   `/browser` defeats the condition and ships the wrong platform code in
  *   browser builds. Allowed:

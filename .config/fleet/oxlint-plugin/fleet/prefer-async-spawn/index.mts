@@ -191,7 +191,7 @@ const rule = {
         // shape flips from a synchronous `{ status, stdout, stderr }`
         // object to an awaited Promise of a different shape (`.code`,
         // not `.status`). Callers using `r.status` would silently break.
-        // Imports get auto-fixed (source rewrite only); call sites
+        // Imports get auto-fixed, source rewrite only; call sites
         // need human eyes to decide if sync semantics were load-bearing.
         context.report({
           node,

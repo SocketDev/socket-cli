@@ -22,7 +22,7 @@ export interface BrewfileDriftResult {
   // True when `brewfileContent` differs from a fresh render of `discoveredTools`.
   // Always false when the repo is not enrolled.
   drifted: boolean
-  // True when a repo-root Brewfile is present (the enrollment signal).
+  // True when a repo-root Brewfile is present, the enrollment signal.
   enrolled: boolean
   // The freshly-rendered Brewfile text — what --fix writes when drifted.
   expected: string
@@ -31,7 +31,7 @@ export interface BrewfileDriftResult {
 /**
  * Decide whether an enrolled repo's Brewfile has drifted from a fresh render
  * of its discovered `.github/` brew install sites. `brewfileContent` is
- * `undefined` when the repo has no repo-root Brewfile (not enrolled) — the
+ * `undefined` when the repo has no repo-root Brewfile, not enrolled — the
  * result reports `enrolled: false` and never `drifted: true` in that case.
  */
 export function findBrewfileDrift(config: {

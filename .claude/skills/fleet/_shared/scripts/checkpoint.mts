@@ -12,7 +12,7 @@
  *     shard  <state_dir> <shard_id> --from F              -> shard_<id>.json; shards_done += id
  *     done   <state_dir> <N> [--key K]                    -> progress.json status=complete
  *     load   <state_dir>                                  -> progress.json to stdout
- *     append <output_file> --from F                       -> appended (creates if absent)
+ *     append <output_file> --from F                       -> appended, creates if absent
  *     reset  <state_dir>                                  -> rm -rf state dir
  *
  *   Three safety properties, preserved from the reference Python implementation:
@@ -20,11 +20,11 @@
  *   1. Atomic writes (tmp + rename) so a kill mid-write never leaves a partial
  *      file that breaks resume.
  *   2. Path confinement: every target path must resolve under CHECKPOINT_ROOT
- *      (default cwd). The Bash permission is a prefix wildcard, so a
+ *      default cwd. The Bash permission is a prefix wildcard, so a
  *      prompt-injected agent could otherwise point append/reset at ~/.ssh,
  *      ~/.bashrc, etc. Confining to cwd keeps the blast radius at the repo
  *      being scanned.
- *   3. Payload always comes from `--from <file>` (written via the Write tool),
+ *   3. Payload always comes from `--from <file>`, written via the Write tool,
  *      never stdin or heredoc: target-derived strings in a heredoc could
  *      collide with the delimiter and break out to shell. With --from, no
  *      repo-derived bytes touch the Bash argv.

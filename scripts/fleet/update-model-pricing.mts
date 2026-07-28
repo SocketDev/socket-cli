@@ -97,7 +97,7 @@ export interface UpdatePricingConfig {
   date: string
   source?: string | undefined
   // `--replace`: the provided `prices` REPLACE the service's `models` block
-  // wholesale (each value used as-is, not merged onto an existing key) — the
+  // wholesale, each value used as-is, not merged onto an existing key — the
   // migration path for renaming/pruning model ids, which a merge can't express.
   replace?: boolean | undefined
   // `--aliases`: when present, REPLACE the service's `aliases` map (routing

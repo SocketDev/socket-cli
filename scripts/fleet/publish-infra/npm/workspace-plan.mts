@@ -84,7 +84,7 @@ export function checkVersionLockstep(layout: NpmWorkspaceLayout): string[] {
 /**
  * Dependency-aware publish order over the publishable members —
  * `pnpm -r publish`'s topological semantics, computed here so the staged
- * loop's gates (hollow, already-published, drift) run per package in the
+ * loop's gates, hollow, already-published, drift, run per package in the
  * order the registry must receive them: a platform package always precedes
  * the loader that optional-depends on it. Kahn's algorithm with a sorted
  * ready set for determinism. Returns the cycle members instead of an order
@@ -228,7 +228,7 @@ function isPlatformSiblingName(ownerName: string, depName: string): boolean {
  * Absent-platform-package detection: a loader that DECLARES sibling platform
  * packages in `optionalDependencies` must have every one of them on disk as a
  * real package directory at publish time. An absent directory is invisible to
- * the hollow gate (which can only inspect dirs that exist), yet publishing the
+ * the hollow gate, which can only inspect dirs that exist, yet publishing the
  * loader anyway ships `optionalDependencies` pointing at names that 404 — every
  * consumer install breaks. Repos gitignore their generated `npm/<platformId>/`
  * dirs, so a clean CI checkout has NONE of them until the platform matrix build
@@ -238,7 +238,7 @@ function isPlatformSiblingName(ownerName: string, depName: string): boolean {
  * happens to be on disk: every generator-owning package's exact-version
  * (`X.Y.Z…`) `optionalDependencies` row naming one of its platform siblings.
  * A name the by-convention discovery in workspace.mts already resolved to a
- * package directory is present (its payload is the hollow gate's business);
+ * package directory is present, its payload is the hollow gate's business;
  * anything left over is missing. Pure over the discovered packages.
  */
 export function findAbsentPlatformPackages(

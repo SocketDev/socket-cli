@@ -25,14 +25,14 @@
 //   without going through its `exports`. Forces consumers to declare a
 //   workspace dep and import the sibling's `paths.mts`.
 //
-// What the hook does NOT check (the gate handles repo-wide concerns):
+// What the hook does NOT check, the gate handles repo-wide concerns:
 //
 //   Rule C — workflow YAML repetition (gate scans .yml files).
 //   Rule D — comment-encoded paths (gate scans comments + JSDoc).
 //   Rule F — same path reconstructed in multiple files.
 //   Rule G — Makefile / Dockerfile / shell-script paths.
 //
-// AST-based detector (vendored acorn-wasm). Replaces the prior
+// AST-based detector, vendored acorn-wasm. Replaces the prior
 // regex+paren-balance string scanner that the previous file's
 // `extractPathCalls` had to roll by hand because regex couldn't
 // handle nested parens in argument lists like
@@ -45,7 +45,7 @@
 // Scope:
 //   - Fires only on `Edit` and `Write` tool calls.
 //   - Only `.mts` / `.cts` source files.
-//   - Skips `paths.mts` itself (canonical constructor) and the gate /
+//   - Skips `paths.mts` itself, canonical constructor, and the gate /
 //     hook implementations that enumerate stage tokens.
 //
 // The hook fails OPEN on its own bugs (exit 0 + stderr log).
@@ -70,7 +70,7 @@ import {
 
 // Files that are allowed to construct paths directly rather than importing from
 // the canonical paths module. The first pattern matches any file named paths.cts
-// or paths.mts (at the root or after a slash) — that is, the canonical owner
+// or paths.mts, at the root or after a slash — that is, the canonical owner
 // itself and any sub-package that inherits it. Remaining entries cover the
 // check script that audits canonicality, the path-guard hook's own source, and
 // the consistency checker, all of which must reference raw path strings by necessity.

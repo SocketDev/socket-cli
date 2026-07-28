@@ -68,7 +68,7 @@ interface SummaryEntry {
   readonly title: string | undefined
 }
 
-// Blank out fenced code blocks (preserving line count) so example snippets
+// Blank out fenced code blocks, preserving line count, so example snippets
 // inside a comment can't trip the scanners.
 export function stripCodeFences(body: string): string {
   const lines = body.split('\n')
@@ -264,7 +264,7 @@ function lintDetailsIndent(lines: string[]): CommentViolation[] {
   const violations: CommentViolation[] = []
   for (let i = 0, { length } = lines; i < length; i += 1) {
     // A line whose trimmed content is exactly `</summary>`, or ends with
-    // `</summary>` optionally followed by whitespace (inline close).
+    // `</summary>` optionally followed by whitespace, inline close.
     if (!/^<\/summary>$|<\/summary>\s*$/.test(lines[i]!.trim())) {
       continue
     }
@@ -309,7 +309,7 @@ const BULLET_CIRCLE_SHAPE =
   /^- <abbr title="([^"]+)">(\S+|🔴|🟠|🟡|🟢)<\/abbr> /u
 
 // Inside a "Smaller items" fold, every bullet carries its OWN severity circle
-// (with canonical hover text), and the fold's summary circle matches the most
+// with canonical hover text, and the fold's summary circle matches the most
 // severe bullet inside it.
 function lintSmallerItems(lines: string[]): CommentViolation[] {
   const violations: CommentViolation[] = []

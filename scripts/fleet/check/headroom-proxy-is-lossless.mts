@@ -2,7 +2,7 @@
 /*
  * @file `check --all` gate: the headroom proxy is started fully lossless.
  *   headroom's default `token` mode is LOSSY via two layers that abbreviate
- *   content and garble proper nouns (paths, package names, identifiers) in large
+ *   content and garble proper nouns, paths, package names, identifiers, in large
  *   tool reads, which is silently wrong for a coding agent: CCR
  *   context-compression (off via `--lossless`) and the Kompress ML compressor
  *   (off via `--disable-kompress`; MEASURED as the proper-noun abbreviator).
@@ -50,7 +50,7 @@ export function missingProxyFlags(source: string): string[] {
 
 export function main(): number {
   const quiet = process.argv.includes('--quiet')
-  // Vacuous pass when the hook isn't present (a repo without headroom).
+  // Vacuous pass when the hook isn't present, a repo without headroom.
   if (!existsSync(HOOK)) {
     if (!quiet) {
       logger.log(

@@ -19,7 +19,7 @@ import { buildReleaseAndDocsSteps } from './check-steps-release.mts'
 // One check's outcome: the exit-zero verdict, a short LABEL (so the parallel
 // runner can name failures — concurrent output blocks can't be traced back to a
 // step by position), and its FULL captured output (stdout + stderr). Output is
-// CAPTURED (not inherited) so the runner prints each block atomically —
+// CAPTURED, not inherited, so the runner prints each block atomically —
 // concurrent checks would otherwise interleave their streams into noise.
 export interface StepResult {
   label: string

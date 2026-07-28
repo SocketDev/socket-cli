@@ -27,7 +27,7 @@ import type { WorkspaceManifestShape } from './workspace.mts'
 export interface PackPreflightConfig {
   /**
    * The directory `pnpm pack` runs in — the publish subject's own directory
-   * (pnpm packs the cwd package and writes the tarball there).
+   * pnpm packs the cwd package and writes the tarball there.
    */
   dir: string
   manifest: WorkspaceManifestShape

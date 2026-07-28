@@ -9,7 +9,7 @@
 //      against a ref whose patch is empty relative to HEAD.
 //
 // Why blocking, not reminder: empty commits pollute `git log`, break
-// CHANGELOG generators (which expect each commit to carry a diff),
+// CHANGELOG generators, which expect each commit to carry a diff,
 // and hide intent ("did the author mean to anchor a tag? amend a
 // previous commit? something else?"). The canonical way to anchor
 // a release tag forward is `git tag -f vX.Y.Z` against the actual
@@ -30,7 +30,7 @@
 //   0  — allow.
 //   2  — block. Stderr carries the operator-facing message.
 //
-// squash-history repos (roster opt-in) are EXEMPT — no bypass needed: every
+// squash-history repos, roster opt-in, are EXEMPT — no bypass needed: every
 // commit collapses into the lone `chore: initial commit`, so an empty commit is
 // absorbed by the next squash and never reaches the log/CHANGELOG this protects.
 //
@@ -77,7 +77,7 @@ export const check = bashGuard(command => {
     return undefined
   }
 
-  // squash-history repos (roster opt-in) collapse ALL commits into the one
+  // squash-history repos, roster opt-in, collapse ALL commits into the one
   // canonical `chore: initial commit` — an empty commit is absorbed on the next
   // squash, so it never reaches the `git log` / CHANGELOG the ban protects. No
   // bypass needed there; the rationale simply doesn't apply.

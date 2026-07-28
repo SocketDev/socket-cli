@@ -16,8 +16,8 @@
 //      like `pbpasterc` or a quoted literal doesn't false-fire:
 //        macOS:   pbpaste                          (read-only)
 //        Linux:   wl-paste                          (read-only)
-//                 xclip -o / -out / -output         (xclip writes by default)
-//                 xsel (default outputs) unless a write flag (-i/-a/-c/-k)
+//                 xclip -o / -out / -output, xclip writes by default
+//                 xsel, default outputs, unless a write flag (-i/-a/-c/-k)
 //      Write-only tools (`pbcopy`, `wl-copy`, `clip`/`clip.exe`) and a writing
 //      `xclip` / `xsel -i` are NOT blocked — writing to the clipboard is fine.
 //
@@ -38,7 +38,7 @@ import { commandsFor } from '../_shared/shell-command.mts'
 // payload contains one of these. Every block path requires one — a clipboard
 // READ binary name for the Bash arm (write-only `pbcopy`/`wl-copy`/`clip` are
 // deliberately absent so a write never even imports the guard), or the `]52;`
-// OSC-52 prefix (present under every escape spelling) for the Edit/Write arm.
+// OSC-52 prefix, present under every escape spelling, for the Edit/Write arm.
 export const triggers: readonly string[] = [
   ']52;',
   'pbpaste',
@@ -79,7 +79,7 @@ const CLIPBOARD_READERS: ReadonlyArray<{
     reads: args =>
       args.some(a => a === '-o' || a === '-out' || a === '-output'),
   },
-  // xsel prints the selection by default (a read); a write/clear/keep flag
+  // xsel prints the selection by default, a read; a write/clear/keep flag
   // means it is not reading.
   {
     binary: 'xsel',
@@ -114,7 +114,7 @@ export function hasOsc52(text: string): boolean {
   return OSC52_RE.test(text)
 }
 
-// Decide what (if anything) to block for a payload. Returns the block reason,
+// Decide what, if anything, to block for a payload. Returns the block reason,
 // or undefined to pass. Pure — the test drives it directly.
 export function clipboardViolation(
   payload: ToolCallPayload,

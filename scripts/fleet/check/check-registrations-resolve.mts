@@ -40,7 +40,7 @@ const logger = getDefaultLogger()
 // oxlint-disable-next-line socket/require-regex-comment -- documented above
 const REGISTRATION_RE = /'(scripts\/fleet\/check\/[\w-]+\.mts)'/g
 
-// Any reference to a fleet check path (quoted or bare) — used by the reverse
+// Any reference to a fleet check path, quoted or bare — used by the reverse
 // gate to decide a check is WIRED into some runner (check-steps, package.json
 // script, workflow, git-hook), not just the quoted check-steps registration.
 // oxlint-disable-next-line socket/require-regex-comment -- documented above
@@ -106,7 +106,7 @@ export function registrationSources(
 }
 
 // Fleet checks that are DELIBERATELY not wired into any `check --all` runner
-// (each with the reason it stands alone) — the reverse gate's allowlist. A
+// each with the reason it stands alone — the reverse gate's allowlist. A
 // standalone check invoked only manually / post-publish belongs here so the
 // gate stays loud about the ACCIDENTALLY-orphaned enforcer (the class that let
 // publishable-version-is-prerelease-hint sit inert), not the intentional one.
@@ -151,7 +151,7 @@ export function findUnregisteredChecks(
 
 // Every fleet-check rel path (bare, treePrefix-stripped) referenced by a runner
 // in `treePrefix`: the check-steps/check.mts registrations PLUS package.json
-// scripts and CI workflows (where standalone checks are invoked). A check named
+// scripts and CI workflows, where standalone checks are invoked. A check named
 // in any of these is WIRED.
 export function collectWiredChecks(
   repoRoot: string,

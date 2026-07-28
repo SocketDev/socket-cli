@@ -103,7 +103,7 @@ const rule = {
           return
         }
         // Bypass checks: the property itself, the value, and the
-        // enclosing statement (where adjacent line-comments attach).
+        // enclosing statement, where adjacent line-comments attach.
         if (hasBypassComment(node) || hasBypassComment(value)) {
           return
         }

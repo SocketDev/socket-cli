@@ -125,7 +125,7 @@ export function renderMirrorBlock(globs: readonly string[]): string {
 
 /**
  * Replace the existing fenced block in `content` with a freshly rendered one.
- * When no block exists, append it (preceded by a blank line) so the deriver is
+ * When no block exists, append it, preceded by a blank line, so the deriver is
  * idempotent on a first run.
  */
 export function spliceMirrorBlock(
@@ -139,7 +139,7 @@ export function spliceMirrorBlock(
     const trimmed = content.replace(/\n+$/, '')
     return `${trimmed}\n\n${block}\n`
   }
-  // Splice from the header comment (first line of the header) through END. The
+  // Splice from the header comment, first line of the header, through END. The
   // header's first line is 5 lines above BEGIN.
   const headerStart = Math.max(0, beginIdx - 5)
   const endIdx = lines.findIndex(l => l.trim() === LOCKSTEP_MIRRORS_END)

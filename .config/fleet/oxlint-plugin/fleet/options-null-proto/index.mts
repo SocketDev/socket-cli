@@ -24,11 +24,11 @@
  *   dropping it changes nothing observable. The fix never reassigns the param
  *   in place — the fleet bans variable shadowing,
  *   and an in-place `options = …` conflates the raw input with its normalized
- *   form (the anti-pattern options-param-naming kills). The member-access fix
+ *   form, the anti-pattern options-param-naming kills. The member-access fix
  *   only applies when the param is literally `options` (a param already named
  *   `opts` would collide with the new local → reported without a fix;
  *   options-param-naming renames it `opts`→`options` first). A function that
- *   passes `options` straight through untouched (never reads a property) is not
+ *   passes `options` straight through untouched, never reads a property, is not
  *   flagged. Test files (`*.test.*`, `/test/`) are skipped — they mock
  *   options-shaped literals, not production readers. Bypass: a `socket-lint:
  *   allow options-null-proto` comment.
@@ -52,7 +52,7 @@
  *   `opts.ecmaVersion >= 6` check compared the string and read false —
  *   `const` was rejected as a pre-ES6 token, 75 Test262 failures, no lint/type
  *   error, only a runtime behavior change. The walk is deliberately
- *   scope-naive (no binding resolution) — a same-named binding inside a
+ *   scope-naive, no binding resolution — a same-named binding inside a
  *   NESTED function reads as a hit too, which only makes the guard bail more
  *   often, never miss a real reassignment.
  */
@@ -133,7 +133,7 @@ function patternWrites(pattern: AstNode | undefined, name: string): boolean {
   return false
 }
 
-// Is `name` (the options-bag param) reassigned anywhere in `body`? A hoisted
+// Is `name`, the options-bag param, reassigned anywhere in `body`? A hoisted
 // snapshot taken at the top of the function is only safe when nothing between
 // the snapshot and a rewritten read can change what `name` refers to — see the
 // file-level doc for the production corruption this guards against. Detects:
@@ -257,7 +257,7 @@ const rule = {
       }
 
       // Find the first read of the param: a `const { … } = options`
-      // destructure (fixable in place) and/or every `options.<x>` /
+      // destructure, fixable in place, and/or every `options.<x>` /
       // `options?.<x>` member access (fixable by introducing a normalized
       // `opts` local). Walk the body's statements collecting both.
       let firstDestructure: AstNode | undefined
@@ -315,14 +315,14 @@ const rule = {
       // cast, since there's no type checker to satisfy and `as` is a
       // SyntaxError outside TypeScript):
       //   - a `const { … } = options` destructure → rewrite its init to the
-      //     normalized spread in place (no new binding, no shadow).
+      //     normalized spread in place, no new binding, no shadow.
       //   - member-access readers → introduce a NORMALIZED LOCAL
       //     `const opts = { __proto__: null, ...options }` (plus the cast on
       //     TS files) as the first body statement and repoint each
       //     `options.x` read at it. We never reassign the param
       //     (`options = …`): the fleet bans variable shadowing, and an
       //     in-place reassign conflates the raw input with its normalized
-      //     form (the anti-pattern options-param-naming kills). The
+      //     form, the anti-pattern options-param-naming kills. The
       //     `options` → `opts` rename is only safe when the param is literally
       //     `options`; a param already named `opts` would collide with the new
       //     local, so that case is reported WITHOUT a fix — options-param-naming

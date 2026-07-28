@@ -5,7 +5,7 @@
 // is never sent on a red tree.
 //
 // Runs, in order (stops + fails loud on the first red step):
-//   1. pnpm run update      — refresh tool/catalog pins (soak-held held)
+//   1. pnpm run update      — refresh tool/catalog pins, soak-held held
 //   2. pnpm install         — reconcile the lockfile
 //   3. pnpm run fix --all   — lint/format autofix
 //   4. pnpm run check --all --release — the fleet check gates, FULL tier
@@ -30,7 +30,7 @@ import { runMain } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
-// The gate, in order. `cover` is last because it is the slowest (full suite).
+// The gate, in order. `cover` is last because it is the slowest, full suite.
 export const GATE_STEPS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ['pnpm', ['run', 'update']],
   ['pnpm', ['install']],

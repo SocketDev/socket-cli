@@ -44,7 +44,7 @@ const logger = getDefaultLogger()
 // require-regex-comment: matches a package.json scripts key named `test` or `test:<suffix>`.
 const TEST_SCRIPT_KEY_RE = /^test(?::.+)?$/
 
-// A compliant value: `node <path>.mts` (optionally followed by more args).
+// A compliant value: `node <path>.mts`, optionally followed by more args.
 // The wrapper OWNS the runner call; what it does internally is out of scope.
 // require-regex-comment: matches `node <path ending in .mts>` at the start of a script value.
 const MTS_WRAPPER_RE = /^node\s+\S+\.mts\b/

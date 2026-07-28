@@ -377,8 +377,8 @@ export const CODEX_ADAPTER_PATHS: readonly string[] = CODEX_ADAPTERS.map(
 
 /**
  * Write the Codex project adapters into `repoRoot`'s LIVE tree. Generated-
- * untracked (gitignored, regenerated at setup) — so they land at the repo root,
- * never `template/base` (they are not a cascade source) and never committed.
+ * untracked, gitignored, regenerated at setup — so they land at the repo root,
+ * never `template/base`, they are not a cascade source, and never committed.
  */
 export function writeCodexAdapters(
   repoRoot: string,
@@ -394,7 +394,7 @@ export function writeCodexAdapters(
 
 /**
  * Regenerate the project MCP adapters from `.mcp.json`. `.codex/*` writes to
- * the repo-root LIVE tree (generated-untracked, gitignored); `opencode.json` +
+ * the repo-root LIVE tree, generated-untracked, gitignored; `opencode.json` +
  * `.kimi-code/mcp.json` are tracked cascade sources, written to `configRoot`
  * (`template/base` in the wheelhouse, the repo root in a member).
  */

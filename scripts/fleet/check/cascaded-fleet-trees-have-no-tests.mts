@@ -9,7 +9,7 @@
  *   the wheelhouse alone validates.
  *
  *   So the wheelhouse's own hook / lint-rule / git-hook tests live under
- *   `test/repo/{unit,integration,e2e}/` (wheelhouse-only, run under vitest),
+ *   `test/repo/{unit,integration,e2e}/`, wheelhouse-only, run under vitest,
  *   NOT co-located in the cascaded trees. This gate fails loud if a `*.test.*`
  *   reappears under a cascaded tree — at which point it would silently ride out
  *   to members + the release again.

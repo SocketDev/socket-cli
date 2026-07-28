@@ -2,14 +2,14 @@
 /*
  * @file Assert no tracked symlink is self-referential or points at an absolute
  *   path inside this repo. A symlink committed as `node_modules → /Users/.../
- *   <repo>/node_modules` (a self-loop) bricks every fresh clone: `pnpm install`
+ *   <repo>/node_modules`, a self-loop, bricks every fresh clone: `pnpm install`
  *   aborts with `ELOOP: too many symbolic links`, and git keeps the symlink
- *   tracked despite `.gitignore` (ignore only applies to UNtracked paths). Root
+ *   tracked despite `.gitignore`, ignore only applies to UNtracked paths. Root
  *   incident: a cascade swept a stray `node_modules` self-symlink into the tree
  *   via a broad `git add`; it shipped fleet-wide and broke installs until
  *   untracked. The edit-time `no-self-referential-symlink-guard` blocks the
  *   `git add`; this check is the commit-time / `check --all` backstop that
- *   catches one already committed (regardless of how it got staged). Flagged:
+ *   catches one already committed, regardless of how it got staged. Flagged:
  *
  *   - a tracked symlink (git mode 120000) whose target resolves to its own path
  *     (`a/b → /abs/a/b`), OR
@@ -37,7 +37,7 @@ const logger = getDefaultLogger()
 // `git ls-files --stage` emits `<mode> <oid> <stage>\t<path>`. Mode 120000 is a
 // symlink; its blob content is the link target. Read the tree (HEAD/index) so
 // the check works even when the working copy has replaced the symlink with a
-// real dir (exactly the post-untrack state).
+// real dir, exactly the post-untrack state.
 function trackedSymlinks(repoRoot: string): Array<{ p: string; oid: string }> {
   const r = spawnSync('git', ['ls-files', '--stage'], {
     cwd: repoRoot,
@@ -63,7 +63,7 @@ function trackedSymlinks(repoRoot: string): Array<{ p: string; oid: string }> {
   return out
 }
 
-// Read a symlink blob's target text from the object store (not the worktree).
+// Read a symlink blob's target text from the object store, not the worktree.
 function readLinkTarget(repoRoot: string, oid: string): string {
   const r = spawnSync('git', ['cat-file', '-p', oid], {
     cwd: repoRoot,

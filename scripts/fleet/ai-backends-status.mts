@@ -8,14 +8,14 @@
  *   own auth home WITHOUT triggering a keychain/login prompt: codex's
  *   `~/.codex/auth.json`, opencode's `auth list`, and the `ANTHROPIC_API_KEY`
  *   env slot. Also reports the keyless local tier: the `locai` CLI from
- *   SocketDev/socket-gemini-nano, which runs single-shot summary-class tasks
+ *   SocketDev/odai, which runs single-shot summary-class tasks
  *   against on-device backends with no key at all (_shared/locai.mts). The
  *   locai row probes bin presence only — `locai backends` prints the
  *   per-backend detail without this script guessing at Chrome state.
  *   INFORMATIONAL by design — these backends are dev-only (CI carries
  *   the Claude key only; see _shared/multi-agent-backends.md), so absence is not
  *   a failure and the default exit is 0. Pass `--require <codex|fireworks|
- *   synthetic|anthropic|local>` (repeatable, comma-ok) to fail loud (exit 1)
+ *   synthetic|anthropic|local>`, repeatable, comma-ok, to fail loud (exit 1)
  *   with the exact `codex login` / `opencode auth login` fix when a backend you
  *   depend on is not ready. Invocation: node scripts/fleet/ai-backends-status.mts
  *   [--require codex,fireworks].
@@ -113,7 +113,7 @@ export function summarizeAiBackends(probe: BackendProbe): BackendStatus[] {
       fix:
         probe.locaiBin !== undefined
           ? undefined
-          : 'link the locai CLI from SocketDev/socket-gemini-nano or set LOCAI_BIN; `locai backends` then shows per-backend readiness',
+          : 'link the locai CLI from SocketDev/odai or set LOCAI_BIN; `locai backends` then shows per-backend readiness',
     },
   ]
 }
@@ -122,7 +122,7 @@ export function summarizeAiBackends(probe: BackendProbe): BackendStatus[] {
  * Read which providers opencode has authed by parsing `opencode auth list`.
  * Lenient substring match against the provider display names — opencode prints
  * a formatted tree, not JSON. Returns an empty set when opencode is absent or
- * the call fails (reported as unauthed, never a crash).
+ * the call fails, reported as unauthed, never a crash.
  */
 export async function readOpencodeProviders(): Promise<Set<string>> {
   const found = new Set<string>()

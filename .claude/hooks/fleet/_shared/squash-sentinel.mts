@@ -1,6 +1,6 @@
 // Shared squash-sentinel authorization. The `squashing-history` skill collapses
 // the default branch to one commit and force-pushes it; the collapse commit
-// (whole-tree index, files deleted since root) and the force-push legitimately
+// whole-tree index, files deleted since root, and the force-push legitimately
 // trip several guards. They all honor the inline `SQUASH_HISTORY=1` sentinel via
 // this ONE hardened check (1 path, 1 reference) instead of re-implementing it.
 
@@ -27,7 +27,7 @@ const FORBIDDEN_PUSH_FLAGS = new Set([
 ])
 
 // Reads the `-m` / `--message` value out of a parsed git arg list. Supports
-// both `-m value` (two tokens) and `--message=value` (one token). Returns
+// both `-m value`, two tokens, and `--message=value`, one token. Returns
 // undefined when no message flag is present.
 export function readCommitMessageArg(
   args: readonly string[],
@@ -118,7 +118,7 @@ export function squashSentinelAllows(command: string): boolean {
     // Positional (non-flag) args = remote + optional ref. Allow a bare
     // remote with at most one ref: a plain branch name, or the canonical
     // squash refspec `HEAD:<branch>`. Everything else stays rejected —
-    // `a:b` (arbitrary refspec), `:branch` (a DELETE: empty src), globs.
+    // `a:b`, arbitrary refspec, `:branch` (a DELETE: empty src), globs.
     const positionals = rest.filter(a => !a.startsWith('-'))
     if (positionals.length < 1 || positionals.length > 2) {
       return false

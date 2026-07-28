@@ -2,7 +2,7 @@
  * @file Fail-soft entrypoint runner for fleet + repo CLI scripts. Wraps a
  *   script's `main()` so a throw / rejection can NEVER escape as an unhandled
  *   rejection + raw stack trace: the error is surfaced via the logger as a
- *   MESSAGE (never a stack) and the process exits non-zero. `main()` may return
+ *   MESSAGE, never a stack, and the process exits non-zero. `main()` may return
  *   its exit code (or nothing → 0). This replaces the bare `void (async () => {
  *   process.exitCode = await main() })()` entry pattern, which crashes with a
  *   raw stack if `main()` throws. Enforced by
@@ -48,7 +48,7 @@ export function runMain(main: MainFn): void {
 /**
  * The awaitable core of {@link runMain} — set `process.exitCode` from `main()`'s
  * resolved return (`?? 0`), or on any throw log the message + set exit code 1.
- * Resolves (never rejects). Exported so tests can await the settled result;
+ * Resolves, never rejects. Exported so tests can await the settled result;
  * production entrypoints call the fire-and-forget {@link runMain}.
  */
 export async function runMainAsync(main: MainFn): Promise<void> {

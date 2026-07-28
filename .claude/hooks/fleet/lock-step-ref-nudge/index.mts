@@ -19,9 +19,9 @@
 // Convention spec: `docs/agents.md/fleet/parser-comments.md` §5–6.
 // Recognized forms:
 //
-//   //! Lock-step with <Lang>: <path>               (canonical side)
-//   //! Lock-step from <Lang>: <path>               (port side)
-//   // Lock-step with <Lang>: <path>[:<lineno>]     (inline cross-ref)
+//   //! Lock-step with <Lang>: <path>               canonical side
+//   //! Lock-step from <Lang>: <path>               port side
+//   // Lock-step with <Lang>: <path>[:<lineno>], inline cross-ref
 //   // Lock-step note: <freeform>                   (rationale; not validated)
 //
 // Behavior:
@@ -74,7 +74,7 @@ const NOTE_RE = /Lock-step note:/
 //
 // 1. Lowercased / unhyphenated: `lockstep`, `lock step`, `Lockstep`.
 // 2. Missing `with`/`from`/`note` discriminator: `Lock-step Rust: …`.
-// 3. Hyphen-in-Lang gone wrong: `Lock-step with: …` (no lang).
+// 3. Hyphen-in-Lang gone wrong: `Lock-step with: …`, no lang.
 // 4. Comma instead of colon: `Lock-step with Rust, src/foo.rs`.
 const MALFORMED_PATTERNS: ReadonlyArray<{
   readonly re: RegExp
@@ -94,7 +94,7 @@ const MALFORMED_PATTERNS: ReadonlyArray<{
   },
   {
     // "Lock-step" followed by an uppercase letter that isn't the start of an
-    // allowed discriminator keyword (from, note, with) — catches bare "Lock-step Go:"
+    // allowed discriminator keyword, from, note, with — catches bare "Lock-step Go:"
     // or similar missing-keyword forms.
     re: /Lock-step (?!(?:from|note|with)\b)[A-Z]/,
     hint:

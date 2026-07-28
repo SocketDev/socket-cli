@@ -1,5 +1,5 @@
 /**
- * @file Single source of truth for the fleet's uv (Astral Python tool) policy —
+ * @file Single source of truth for the fleet's uv, Astral Python tool, policy —
  *   shared by the uv-lockfiles-are-current check and any future uv guard so
  *   they never diverge. uv is the fleet's Python PROJECT tool (replaces
  *   unpinned `pip3 install`); pipx stays the dev shortcut for one-off CLI
@@ -55,7 +55,7 @@ export function hasExcludeNewer(pyprojectText: string): boolean {
 
 // Inspect one pyproject.toml: is it a uv project, and if so does it ship a
 // uv.lock + an exclude-newer soak pin? A non-uv pyproject returns ok:true with
-// no issues (not applicable). Never throws — unreadable file → reported issue.
+// no issues, not applicable. Never throws — unreadable file → reported issue.
 export function inspectUvProject(pyprojectPath: string): UvProjectStatus {
   let text: string
   try {

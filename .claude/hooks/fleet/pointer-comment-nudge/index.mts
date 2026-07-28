@@ -19,7 +19,7 @@
 // comment block). It can't verify (a) — that would require following
 // the pointer and assessing destination quality.
 //
-// What we accept (passing comments):
+// What we accept, passing comments:
 //
 //   // Why uncurried, not Fast-API'd: see the fileoverview JSDoc
 //   // above. V8's existing hot path beats trampoline overhead.
@@ -30,7 +30,7 @@
 //   // See https://example.com for details about the X-Y-Z header
 //   // shape; that spec also dictates the ordering used below.
 //
-// What we flag (bare pointers, no claim):
+// What we flag, bare pointers, no claim:
 //
 //   // See the @fileoverview JSDoc above.
 //
@@ -43,7 +43,7 @@
 //     / .jsx). Markdown, configs, and tests are skipped.
 //   - Only applies to comments that begin with a pointer phrase. A
 //     comment that has the claim FIRST and the pointer second always
-//     passes (the bug we're guarding against is pointer-without-why).
+//     passes, the bug we're guarding against is pointer-without-why.
 //
 // Bypass: "Allow pointer-comment bypass" in a recent user turn, or
 
@@ -75,9 +75,9 @@ const POINTER_OPENERS_RE =
 //   - "X beats / wins / wraps / replaces / avoids / prevents / forces
 //      / requires / blocks / matches / fails / throws Y"
 //   - "because / since / due to / so that / to <verb>"
-//   - "X is Y" / "X are Y" (assertion shape)
+//   - "X is Y" / "X are Y", assertion shape
 //   - "X — Y" / "X: Y" / "X; Y" (em-dash / colon / semicolon claim)
-//   - "X — Y" with Y being a sentence (verb present)
+//   - "X — Y" with Y being a sentence, verb present
 //
 // This is heuristic, not parser-accurate; we err on the side of
 // passing comments to keep false-positive cost low. The flag only

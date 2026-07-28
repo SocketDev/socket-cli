@@ -96,7 +96,7 @@ export function findEmptySections(
  * Compute the post-edit text. For Write, that's just `content`. For Edit,
  * splice the on-disk file: replace `old_string` with `new_string` once. If the
  * on-disk file isn't readable or `old_string` doesn't match exactly, return
- * undefined (caller fails open).
+ * undefined, caller fails open.
  */
 export function computePostEditText(
   toolName: string,
@@ -134,7 +134,7 @@ export function computePostEditText(
 
 /**
  * Build the block message naming each empty section + the bypass phrase. Same
- * text the hook previously wrote to stderr (the runner appends the newline).
+ * text the hook previously wrote to stderr, the runner appends the newline.
  */
 export function buildBlockMessage(
   filePath: string,

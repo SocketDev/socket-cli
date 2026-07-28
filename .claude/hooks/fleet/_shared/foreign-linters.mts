@@ -1,7 +1,7 @@
 /*
  * @file Shared foreign-linter detection — the single classifier consumed by
  *   the `no-other-linters-guard` hook (edit-time) and the
- *   `linters-are-oxlint-oxfmt-only` check (committed state). The fleet lints +
+ *   `linters-are-oxlint-oxfmt-only` check, committed state. The fleet lints +
  *   formats with oxlint + oxfmt ONLY; foreign tools (ESLint, Prettier, Biome,
  *   dprint, rome) are blocked as configs and as package.json deps.
  *
@@ -13,7 +13,7 @@
  *     "fleet": { "hostTestDeps": ["eslint"] }
  *
  *   The allowance holds only while ALL of:
- *     1. the dep name is listed in `fleet.hostTestDeps` (exact match);
+ *     1. the dep name is listed in `fleet.hostTestDeps`, exact match;
  *     2. the dep appears only in devDependencies / peerDependencies — a
  *        runtime `dependencies` / `optionalDependencies` entry ships the
  *        foreign tool to consumers and stays blocked;
@@ -29,7 +29,7 @@ import path from 'node:path'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 // One whole-basename pattern per foreign linter/formatter config file shape.
-// One regex per tool (rather than a single mega-alternation) keeps each
+// One regex per tool, rather than a single mega-alternation, keeps each
 // pattern simple to read and sidesteps alternation-ordering churn. Sorted by
 // tool name.
 export const CONFIG_FILE_PATTERNS: readonly RegExp[] = [
@@ -148,10 +148,10 @@ export function foreignToolBinary(name: string): string {
 
 /**
  * Command words of a package.json script value: the head token of each
- * `&&` / `||` / `;` / `|` segment (after env-var assignments), plus the tool
+ * `&&` / `||` / `;` / `|` segment, after env-var assignments, plus the tool
  * token behind runner indirection (`npx eslint`, `pnpm exec eslint`). Words
  * are reduced to their basename so `node_modules/.bin/eslint` reads as
- * `eslint`. Bare arguments (file paths, test names) are NOT command words —
+ * `eslint`. Bare arguments, file paths, test names, are NOT command words —
  * `vitest run to-eslint.test.ts` yields only `vitest`.
  */
 export function commandWords(script: string): string[] {
@@ -196,7 +196,7 @@ export function commandWords(script: string): string[] {
 /**
  * Audit a package.json's text for foreign linter/formatter deps under the
  * `fleet.hostTestDeps` contract (see @file). Fails open: unparseable JSON
- * yields an empty audit (better to under-block than brick a non-JSON edit).
+ * yields an empty audit, better to under-block than brick a non-JSON edit.
  */
 export function auditForeignDeps(jsonText: string): ForeignDepAudit {
   const empty: ForeignDepAudit = { allowed: [], blocked: [] }

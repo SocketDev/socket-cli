@@ -22,7 +22,7 @@
  *   - `import { join } from 'node:path'` → `import path from 'node:path'` AND
  *     every `join(...)` reference in the file is rewritten to `path.join(...)`.
  *     Same shape for os/url/crypto. Skipped when the file already has a default
- *     import for the module (would double-import).
+ *     import for the module, would double-import.
  *   - `import fs from 'node:fs'` / `import * as fs from 'node:fs'` → scans the
  *     file's references to the local binding (e.g. `fs`), collects the set of
  *     accessed properties (`fs.existsSync`, `fs.readFileSync`), and rewrites
@@ -85,7 +85,7 @@ const rule = {
 
     /**
      * Look at the program body to determine whether `localName` is already in
-     * use (any binding form). If so, autofixing to a default import would
+     * use, any binding form. If so, autofixing to a default import would
      * shadow it.
      */
     function localBindingExists(
@@ -227,7 +227,7 @@ const rule = {
           }
 
           // Skip autofix if any accessed name collides with an
-          // existing top-level binding (would shadow on rewrite).
+          // existing top-level binding, would shadow on rewrite.
           const programBody = sourceCode.ast.body
           for (const name of accessed) {
             if (localBindingExists(programBody, name)) {
@@ -319,7 +319,7 @@ const rule = {
 
         // Reference rewriting needs scope analysis to find every `homedir()` /
         // `platform()` call site and prefix it with `<local>.`. When the oxlint
-        // engine doesn't expose `getScope` (older versions return nothing), we
+        // engine doesn't expose `getScope`, older versions return nothing, we
         // can only safely rewrite the import line — which would leave the bare
         // call sites undefined (`ReferenceError`). So in that case report WITHOUT
         // a fix: the author rewrites by hand. Better a manual fix than a
@@ -380,7 +380,7 @@ const rule = {
             // strings/comments to avoid breaking unrelated text.
             //
             // Scope analysis is guaranteed available here — the report above
-            // returns early (report-only, no fix) when getScope is absent.
+            // returns early, report-only, no fix, when getScope is absent.
             const scope = scopeForFix
             const targetNames = new Set(
               violatingNames.map((s: AstNode) => s.local.name),

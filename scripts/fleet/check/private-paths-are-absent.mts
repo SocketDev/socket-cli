@@ -61,7 +61,7 @@ const SUPPRESS_RE =
   /socket-lint:\s*allow\s+(?:cross-repo|personal-path|private-path)\b/
 
 // Files that legitimately NAME these patterns: the three enforcement surfaces
-// (this check, the edit-time hook, the lint rule), the shared matcher, the doc
+// this check, the edit-time hook, the lint rule, the shared matcher, the doc
 // home, and their tests. A path-component match covers the cascaded
 // `template/base/` copies too.
 const SELF_EXEMPT_SUBSTRINGS: readonly string[] = [
@@ -152,7 +152,7 @@ function scanJsTs(relFile: string, text: string): PrivatePathHit[] {
 }
 
 /**
- * Lexical scan for non-JS sources (Rust, Go, Python, C, shell). Defers
+ * Lexical scan for non-JS sources, Rust, Go, Python, C, shell. Defers
  * comment-body extraction (block spans, single-line `/* … *\/`, line comments)
  * to the shared `extractLexicalCommentBodies` — same source of truth as the
  * hook — and checks the RAW source line for a per-line `socket-lint: allow`

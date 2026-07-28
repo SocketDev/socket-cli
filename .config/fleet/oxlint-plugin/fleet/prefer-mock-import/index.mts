@@ -5,7 +5,7 @@
  *   passes against the real implementation. The `import(...)` form is a real
  *   dynamic-import expression: TypeScript resolves it, so a rename/move is a
  *   compile error instead of a silent miss. vitest treats both identically at
- *   runtime (it statically extracts the specifier), so the rewrite is safe.
+ *   runtime, it statically extracts the specifier, so the rewrite is safe.
  *   Applies to `vi.mock` / `vi.doMock` / `vi.unmock` / `vi.doUnmock` and the
  *   `vitest.*` aliases. Autofix wraps the string literal in `import(...)`.
  */

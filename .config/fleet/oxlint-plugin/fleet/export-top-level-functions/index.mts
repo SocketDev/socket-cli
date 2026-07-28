@@ -10,7 +10,7 @@
  *   only the top-level surface needs explicit export. Allowed exceptions
  *   (skipped):
  *
- *   - A function named `main` (script entrypoint convention). Autofix: prepends
+ *   - A function named `main`, script entrypoint convention. Autofix: prepends
  *     `export ` to the declaration when it isn't already named in a sibling
  *     `export { ... }` statement. If a named-re-export already exists, report
  *     without autofix (the human picks: keep the named-re-export shape, or

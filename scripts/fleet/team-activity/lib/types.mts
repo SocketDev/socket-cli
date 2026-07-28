@@ -90,8 +90,8 @@ export interface ScanState {
 }
 
 // The output of one scan pass. `newItems` are open items needing a human look;
-// the rest carry the follow-up signals (replies, reactions, dup movement) and a
-// loud error list (an empty-but-errored report must never read as all-quiet).
+// the rest carry the follow-up signals, replies, reactions, dup movement, and a
+// loud error list, an empty-but-errored report must never read as all-quiet.
 export interface ScanReport {
   readonly closedDups: string[]
   readonly errors: string[]

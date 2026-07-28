@@ -1,10 +1,10 @@
 /*
  * @file Per CLAUDE.md "null vs undefined": use `undefined`. `null` is allowed
- *   only for `__proto__: null` (object-literal prototype null) or external API
+ *   only for `__proto__: null`, object-literal prototype null, or external API
  *   requirements (e.g., JSON encoding, `Object.create(null)`, listener-error
  *   sinks, third-party callbacks). Fix scope:
  *
- *   - **Skip predicates (deterministic, no report at all)**: the rule never
+ *   - **Skip predicates, deterministic, no report at all**: the rule never
  *     even flags `null` when the immediate AST shape proves it's required —
  *     `__proto__: null` (with or without `as` cast), `Object.create(null)` /
  *     `Object.setPrototypeOf(o, null)` / `Reflect.setPrototypeOf(o, null)`,
@@ -225,8 +225,8 @@ const rule = {
         ? context.getSourceCode()
         : context.sourceCode
       const text = sourceCode.getText().slice(declStart, litStart)
-      // Require `: <typeexpr>... null ... =` — colon (type annotation),
-      // literal `null` token, then `=` (initializer separator).
+      // Require `: <typeexpr>... null ... =` — colon, type annotation,
+      // literal `null` token, then `=`, initializer separator.
       return /:[^=]*\bnull\b[^=]*=/.test(text)
     }
 
@@ -268,8 +268,8 @@ const rule = {
      * or silently changes semantics:
      *
      * - `Object.create(null)` — first arg, throws if undefined.
-     * - `Object.setPrototypeOf(o, null)` — second arg, semantics differ
-     *   (undefined is rejected by the spec).
+     * - `Object.setPrototypeOf(o, null)` — second arg, semantics differ undefined
+     *   is rejected by the spec.
      * - `Reflect.setPrototypeOf(o, null)` — same as above.
      *
      * Each entry is `[object, method, argIndex]` where argIndex is the

@@ -67,7 +67,7 @@ export interface Violation {
 
 /**
  * Error carrying the HTTP status of a failed proxy query so the GOPROXY chain
- * can decide whether to fall through (404/410) or stop (other statuses).
+ * can decide whether to fall through (404/410) or stop, other statuses.
  */
 export class ProxyStatusError extends Error {
   statusCode: number
@@ -80,7 +80,7 @@ export class ProxyStatusError extends Error {
 
 /**
  * Go module-path / version escaping for proxy URLs: every uppercase letter `X`
- * becomes `!x` (a bang followed by the lowercase letter), so a case-insensitive
+ * becomes `!x`, a bang followed by the lowercase letter, so a case-insensitive
  * filesystem can't collide two module paths. Non-letters pass through.
  */
 export function escapeModulePath(p: string): string {
@@ -157,7 +157,7 @@ export function isNotFound(error: unknown): boolean {
 /**
  * GET `<proxyBase>/<esc-module>/@v/<esc-version>.info` from a single proxy and
  * return the publish `Time` as a `Date`. Throws `ProxyStatusError` on a non-2xx
- * status (so the chain can decide fall-through) and a plain `Error` on a
+ * status, so the chain can decide fall-through, and a plain `Error` on a
  * missing/invalid `Time`.
  */
 export async function fetchVersionTime(
@@ -235,7 +235,7 @@ export async function fetchVersionTimeWithFallback(
 
 /**
  * GET `<proxyBase>/<esc-module>/@v/list` and return the newline-separated
- * version list (blank lines dropped).
+ * version list, blank lines dropped.
  */
 export async function listVersions(
   proxyBase: string,
@@ -287,7 +287,7 @@ export function newestSoakClearedVersion(
 }
 
 /**
- * The gate (gomod-age parity): flag every module whose resolved publish time is
+ * The gate, gomod-age parity: flag every module whose resolved publish time is
  * younger than `soakDays`. `fetchTime` resolves a module@version's publish
  * `Date` and is injectable for tests. A module whose time can't be resolved is
  * skipped (fail-open — the gate never blocks on an unreachable proxy).
@@ -386,7 +386,7 @@ export function formatDays(ms: number): string {
 
 /**
  * Thin dry-run planner. `--check` gates every own go.mod (prints violations and
- * exits non-zero on any). `--fix` (or default) plans a `go get module@<newest
+ * exits non-zero on any). `--fix`, or default, plans a `go get module@<newest
  * soak-cleared version>` per module but NEVER runs the go toolchain — the apply
  * is a separate step. `soakDays` comes from `--soak-days <n>` (the orchestrator
  * passes the fleet soak); it is never hardcoded to a policy value.

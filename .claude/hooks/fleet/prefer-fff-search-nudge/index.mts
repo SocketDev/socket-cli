@@ -82,7 +82,7 @@ export function touchState(): void {
 }
 
 // True when a bash command reaches for ripgrep/grep as a REPO SEARCH: the
-// dedicated search binaries `rg` / `ripgrep` (any invocation), or a recursive
+// dedicated search binaries `rg` / `ripgrep`, any invocation, or a recursive
 // `grep` (`-r` / `-R` / `--recursive`). A bare `… | grep foo` pipe-filter of
 // another command's output is NOT a repo search and is intentionally left
 // alone. Parser-backed (findInvocation), so a quoted "rg" or a path containing

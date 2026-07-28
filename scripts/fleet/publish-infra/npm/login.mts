@@ -43,7 +43,7 @@ async function openBrowser(url: string, cwd: string): Promise<void> {
  */
 async function webLogin(home: string): Promise<boolean> {
   // `npm-auth-type: web` is load-bearing: without it the registry 401s the
-  // session create (it gates the endpoint on the client declaring web auth).
+  // session create, it gates the endpoint on the client declaring web auth.
   const created = await httpRequest(`${NPM_REGISTRY_URL}/-/v1/login`, {
     body: '{}',
     headers: {

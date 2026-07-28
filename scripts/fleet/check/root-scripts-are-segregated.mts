@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /*
  * @file Enforces the fleet script layout: root `scripts/` is a namespace only;
- *   executable scripts live under `scripts/fleet/` (cascaded tooling) or
- *   `scripts/repo/` (repo-owned tooling). Loose root scripts are ambiguous
+ *   executable scripts live under `scripts/fleet/`, cascaded tooling, or
+ *   `scripts/repo/`, repo-owned tooling. Loose root scripts are ambiguous
  *   during cascades and let fleet/repo ownership drift silently.
  */
 

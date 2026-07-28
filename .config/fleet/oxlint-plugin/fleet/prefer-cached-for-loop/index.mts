@@ -37,7 +37,7 @@
  *   and the bound `i` is provably in `[0, length)`. The assertion
  *   suppresses TS18048 at every read of `item` downstream. No-op
  *   for tsconfigs without the strict flag.
- *   Autofix scope (deterministic only):
+ *   Autofix scope, deterministic only:
  *   - `arr.forEach((item) => { body })` →
  *   ```
  *   for (let i = 0, { length } = arr; i < length; i += 1) {
@@ -62,7 +62,7 @@
  *   body
  *   }
  *   ```
- *   Skips (report-only or skip entirely):
+ *   Skips, report-only or skip entirely:
  *   - `.forEach` with a function reference (not an inline arrow /
  *   function expression) — e.g. `arr.forEach(handler)` — the
  *   callback is opaque; rewriting would change semantics if the
@@ -174,7 +174,7 @@ const rule = {
         }
         if (node.arguments.length === 0 || node.arguments.length > 1) {
           // 0 args is invalid JS; 2 args means a `thisArg` was passed
-          // (changes semantics if we drop it).
+          // changes semantics if we drop it.
           return
         }
         const cb = node.arguments[0]
@@ -295,7 +295,7 @@ const rule = {
         const itemName = itemParam.name
         // Scope-aware counter: an explicit index param is already a bound name
         // (safe); otherwise pick one colliding with neither the item nor a body
-        // identifier. Skip (report, no fix) when no safe counter exists or the
+        // identifier. Skip, report, no fix, when no safe counter exists or the
         // body uses `length` — the `{ length } = arr` head would shadow it.
         const indexName = indexParam
           ? indexParam.name
@@ -425,7 +425,7 @@ const rule = {
         const itemName = declarator.id.name
         const iterText = iter.name
         // Scope-aware counter: pick one colliding with neither the loop var nor
-        // a body identifier; skip (report, no fix) when none is free or the body
+        // a body identifier; skip, report, no fix, when none is free or the body
         // uses `length` — the `{ length } = arr` head would shadow it. This is
         // the collision that silently broke a body already binding its own `i`.
         const forOfBodyText = sourceCode.getText(node.body)
@@ -495,7 +495,7 @@ const ASI_HAZARD_LEAD = /[([`+\-*/]/
 
 /**
  * Does the loop body text reference `name` as a standalone identifier? A
- * word-boundary textual probe (not a substring match). Conservative: a false
+ * word-boundary textual probe, not a substring match. Conservative: a false
  * positive only forces a different counter name or a skip — both safe.
  */
 export function referencesIdentifier(bodyText: string, name: string): boolean {
@@ -529,7 +529,7 @@ export function pickCounterName(
  * Textual check: does the loop body reassign the named identifier? Catches
  * `name = ...`, `name +=`, `name++`, `++name`, etc., and
  * destructuring-as-assignment patterns. Conservative: false positives only
- * force `let` (semantically safe), false negatives trip `no-const-assign` (the
+ * force `let`, semantically safe, false negatives trip `no-const-assign` (the
  * bug this guards against).
  *
  * AST-walking would be more precise but oxlint's plugin host doesn't expose a
@@ -580,7 +580,7 @@ export function leadingIndent(sourceCode: AstNode, node: AstNode): string {
   const indent = text.slice(lineStart, start)
   // Strip non-whitespace (in case the line has content before this
   // statement). Indent is the leading-whitespace prefix only.
-  // /^\s*/ always matches (zero-length match guaranteed), so exec() is never null.
+  // /^\s*/ always matches, zero-length match guaranteed, so exec() is never null.
   /* c8 ignore next */
   return /^\s*/.exec(indent)?.[0] ?? ''
 }

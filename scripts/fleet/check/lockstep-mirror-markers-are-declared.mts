@@ -22,7 +22,7 @@
  *   4. MEMBERSHIP (defense-in-depth): a file-scope `oxlint-disable` on a marked
  *      mirror may name only rules in LOCKSTEP_MIRROR_EXEMPT_RULES.
  *
- *   A repo with NO lockstep manifest (not enrolled in lockstep) VACUOUS-PASSES
+ *   A repo with NO lockstep manifest, not enrolled in lockstep, VACUOUS-PASSES
  *   the declared-mirror gates — nothing is declared, so there is nothing to
  *   verify — while the FORWARD anti-abuse gate and the FORMAT-BLOCK gate still
  *   run against the empty set (a marker or a stray .prettierignore glob with no

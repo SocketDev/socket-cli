@@ -102,7 +102,7 @@ export function posixRealShimLines(cmd, sfwBin, real) {
     `export ${sentinel}=1`,
     'export SFW_UNKNOWN_HOST_ACTION=ignore',
     // uv-only: opt the Socket Firewall into malware scanning of the packages a
-    // `uv` install resolves (parallel to the pnpm supply-chain gate). Harmless
+    // `uv` install resolves, parallel to the pnpm supply-chain gate. Harmless
     // where unrecognized; enables the check where sfw honors it.
     ...(cmd === 'uv' ? ['export UV_MALWARE_CHECK=1'] : []),
     'set -m',

@@ -34,7 +34,7 @@ export const check = editGuard((filePath, content, payload) => {
     return undefined
   }
   // Only block CREATION of a new `.expected.json`. Editing one that already
-  // exists (a pre-rule fixture, or a rename-in-progress) must never block.
+  // exists, a pre-rule fixture, or a rename-in-progress, must never block.
   if (existsSync(filePath)) {
     return undefined
   }

@@ -61,7 +61,7 @@ export function formatNudge(command: string): string {
 }
 
 export const check = bashGuard((command, payload) => {
-  // Only inspect commands that used --filter (the zero-match path requires it).
+  // Only inspect commands that used --filter, the zero-match path requires it.
   if (!command.includes('--filter')) {
     return undefined
   }

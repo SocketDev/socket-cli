@@ -1,6 +1,6 @@
 /**
  * @file Code-as-law: the fleet SIGNS every commit. GitHub branch rulesets
- *   reject an unsigned push, but that failure surfaces late (at push) and not
+ *   reject an unsigned push, but that failure surfaces late, at push, and not
  *   at all for a local-only branch — and a spawned tool whose environment can't
  *   reach the signing key commits UNSIGNED silently (observed: a subagent's
  *   `commit.gpgsign` quietly no-op'd, leaving three `%G? = N` commits that
@@ -83,7 +83,7 @@ function gitRunner(cwd: string): Runner {
 /**
  * Resolve the base ref to diff against: the tracked upstream if set, else the
  * origin default branch (`origin/HEAD` → e.g. `origin/main`), else undefined
- * (caller fail-opens). Never HEAD's parent — the scope is the whole unpushed
+ * caller fail-opens. Never HEAD's parent — the scope is the whole unpushed
  * set.
  */
 async function resolveBase(git: Runner): Promise<string | undefined> {

@@ -444,7 +444,7 @@ export function typedArrayToReversed(
   return out
 }
 
-// 23.2.3.33 %TypedArray%.prototype.toSorted (default compare is numeric).
+// 23.2.3.33 %TypedArray%.prototype.toSorted, default compare is numeric.
 export function typedArrayToSorted(
   this: TypedArrayInstance,
   comparator?: ((a: never, b: never) => number) | undefined,
@@ -470,7 +470,7 @@ export function typedArrayToSorted(
   return comparator === undefined ? out.sort() : out.sort(comparator)
 }
 
-// 23.2.3.36 %TypedArray%.prototype.with (value coerced to the element type).
+// 23.2.3.36 %TypedArray%.prototype.with, value coerced to the element type.
 export function typedArrayWith(
   this: TypedArrayInstance,
   index: unknown,
@@ -489,7 +489,7 @@ export function typedArrayWith(
     // oxlint-disable-next-line oxc/no-this-in-exported-function -- spec polyfill: `this` is the typed-array receiver per the ES spec call-site binding
     out[k] = this[k]!
   }
-  // Element assignment applies ToNumber / ToBigInt coercion (throws on mismatch).
+  // Element assignment applies ToNumber / ToBigInt coercion, throws on mismatch.
   out[actualIndex] = value
   return out
 }

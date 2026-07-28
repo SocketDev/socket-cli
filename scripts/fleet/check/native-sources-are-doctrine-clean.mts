@@ -25,7 +25,7 @@
  *       rows) mirror upstream file structure, so the cap must not force a
  *       restructure that breaks diffability against upstream.
  *     - `upstream/`, `vendor/`, `third_party/` trees are wholly skipped; a
- *       dangling symlink (sparse submodule checkouts) is skipped, never a
+ *       dangling symlink, sparse submodule checkouts, is skipped, never a
  *       crash.
  *
  *   Conservative by design: it flags only unambiguous violations so a cascade
@@ -121,7 +121,7 @@ export interface ScanOptions {
 }
 
 /**
- * True when `relPath` sits under (or is) one of `roots` — POSIX-normalized
+ * True when `relPath` sits under, or is, one of `roots` — POSIX-normalized
  * prefix match on whole segments.
  */
 export function isUnderAny(relPath: string, roots: readonly string[]): boolean {
@@ -146,7 +146,7 @@ export function isCorpusPath(relPath: string): boolean {
 
 /**
  * Mask string/char-literal CONTENTS on one line so the unicode scans see only
- * code + comments. Handles `"…"`, `'…'`, and `` `…` `` (Go raw) with
+ * code + comments. Handles `"…"`, `'…'`, and `` `…` ``, Go raw, with
  * backslash escapes for the quote forms; an unterminated opener masks to end
  * of line (the conservative side of a multi-line literal: its interior is
  * data). The delimiters themselves survive so the line stays recognizable.

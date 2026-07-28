@@ -14,7 +14,7 @@
 // while the hooks' `tools` are read by gen/hook-dispatch.mts. Nothing tied the
 // two together, so they drifted. This check ties them: it reads the eligible
 // hooks (via the maker's own collector — single source) and asserts, per event:
-//   - no match-all hook (tools omitted): every explicit `tools` token is present
+//   - no match-all hook, tools omitted: every explicit `tools` token is present
 //     in the coarse matcher; a missing token means that hook is silently dead
 //     for that tool.
 //   - a match-all hook (Stop / SessionStart style): the dispatcher entry must
@@ -83,7 +83,7 @@ export function matcherCoversAll(matcher: string | undefined): boolean {
 /**
  * Pull the dispatcher matcher entry for each event out of a parsed settings
  * shape. The dispatcher entry is the one whose command runs
- * `index.cjs <Event>`; other entries (standalone per-hook wiring) are
+ * `index.cjs <Event>`; other entries, standalone per-hook wiring, are
  * ignored. Pure + exported for unit tests.
  */
 export function extractDispatcherEntries(

@@ -81,7 +81,7 @@ const rule = {
      * Is the leading segment of `value` already `node_modules`? Catches
      * `node_modules/.cache/foo` (allowed) without false-positive on
      * `.cache/foo` (forbidden). Input is expected to be already normalized
-     * (forward slashes).
+     * forward slashes.
      */
     function isNodeModulesCache(value: string): boolean {
       // Matches `node_modules/.cache` as a path prefix or full segment (start-of-string or after `/`).

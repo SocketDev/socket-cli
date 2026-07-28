@@ -76,7 +76,7 @@ export interface SubQuery {
 }
 
 // X-handle scoping for the x source. `allowed` restricts the X search to those
-// accounts only (an allowlist); `excluded` searches all of X except them (a
+// accounts only, an allowlist; `excluded` searches all of X except them (a
 // denylist). Mutually exclusive at the xAI API — allow wins when both are set.
 // Each caps at 20 handles; bare (no leading @).
 export interface XHandles {
@@ -98,7 +98,7 @@ export interface QueryPlan {
   xHandles?: XHandles | undefined
 }
 
-// A fused candidate: one logical result, merged across every (subquery, source)
+// A fused candidate: one logical result, merged across every, subquery, source
 // stream that surfaced it. `rrfScore` is the reciprocal-rank-fusion total;
 // `localRelevance`/`freshness`/`engagement` carry the best signal seen across
 // the merged source items. Produced by `weightedRrf` in rank.mts.
@@ -123,7 +123,7 @@ export interface Candidate {
 
 // Per-fetch knobs handed to every adapter: the look-back window and how many
 // items to pull per stream (set by --depth). `now` is injected so fetches and
-// scoring share one clock (and tests can pin it).
+// scoring share one clock, and tests can pin it.
 export interface FetchContext {
   days: number
   now: number

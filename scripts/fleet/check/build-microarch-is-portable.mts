@@ -161,7 +161,7 @@ export function findMicroarchPins(text: string, file: string): MicroarchPin[] {
 // pin as a string don't self-trip.
 /**
  * True when `relPath` is a build-config surface this gate scans. Pure — path is
- * normalized to forward slashes before matching (fleet path-hygiene rule).
+ * normalized to forward slashes before matching, fleet path-hygiene rule.
  */
 export function isBuildConfigPath(relPath: string): boolean {
   const norm = normalizePath(relPath)

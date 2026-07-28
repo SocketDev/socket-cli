@@ -9,11 +9,11 @@
 // of that same SHA. `upstream/` is always git-ignored and is never re-included
 // with a `!` negation.
 //
-// `git update-index --force-remove upstream/…` (dropping a stray gitlink) and
-// `git add .gitmodules` (the record itself) are the FIX, not the violation — the
+// `git update-index --force-remove upstream/…`, dropping a stray gitlink, and
+// `git add .gitmodules`, the record itself, are the FIX, not the violation — the
 // guard leaves both alone.
 //
-// Detection is shell-command tokenized (not a raw regex): the git subcommand is
+// Detection is shell-command tokenized, not a raw regex: the git subcommand is
 // the first bare token; a path argument is "under upstream/" after normalizing
 // separators + stripping a leading `./`. Fails open on parse errors — a guard
 // bug must not wedge every Bash call.

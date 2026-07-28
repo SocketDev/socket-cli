@@ -46,7 +46,7 @@ function versionTag() {
 // to index.cjs (correct, ~13-16ms slower), the fast path never survived a temp
 // sweep. node_modules/.cache persists until an explicit node_modules rebuild, at
 // which point the next hook-bundle build regenerates the blob; a missing blob is
-// never an error (launcher fail-opens, builder recreates). Build-time only — the
+// never an error, launcher fail-opens, builder recreates. Build-time only — the
 // launcher reads the frozen snapshot-blob.path sidecar, never this module.
 //
 // Walk to the workspace marker instead of assuming this file has a fixed depth:
@@ -119,7 +119,7 @@ function pruneStaleBlobs(keepBlobPath) {
         name.startsWith(entryPrefix)
       ) {
         try {
-          // oxlint-disable-next-line socket/prefer-safe-delete -- dep-0 hook-dispatch .cjs: cannot import lib safeDelete; unlink is fail-open-wrapped (prune of an orphan blob)
+          // oxlint-disable-next-line socket/prefer-safe-delete -- dep-0 hook-dispatch .cjs: cannot import lib safeDelete; unlink is fail-open-wrapped, prune of an orphan blob
           fs.unlinkSync(path.join(dir, name))
         } catch {
           // Fail-open: an undeletable orphan is harmless — the launcher only

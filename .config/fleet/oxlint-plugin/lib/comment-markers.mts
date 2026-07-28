@@ -11,7 +11,7 @@
  *   suppress. Scanning the raw source by line is engine-version-independent.
  *   `makeBypassChecker(context, bypassRe)` reads the source once per
  *   `create(context)` call and returns `hasBypassComment(node)`. A node is
- *   bypassed when the marker appears on the node's own line (trailing comment)
+ *   bypassed when the marker appears on the node's own line, trailing comment
  *   or in the contiguous block of comment lines directly above it — the walk
  *   stops at the first non-comment, non-blank line so the marker must be
  *   genuinely adjacent, not somewhere arbitrary earlier in the file.
@@ -28,7 +28,7 @@ const MAX_LEADING_COMMENT_LINES = 3
 const COMMENT_LINE_RE = /^\s*(?:\*|\/\*|\/\/)/
 
 // Canonical `socket-lint: allow <id>` opt-out marker grammar, defined once here
-// (the marker-reading home) so consumers can't drift: a rule builds its bypass
+// the marker-reading home, so consumers can't drift: a rule builds its bypass
 // regex via `socketLintAllowRe(<id>)` for `makeBypassChecker`, and the
 // `socket/no-malformed-bypass-marker` validator reuses these `.source` strings
 // (anchored) to decide what is well-formed. `<id>` is lowercase-kebab. Regexes
@@ -123,7 +123,7 @@ export function makeBypassChecker(
       return false
     }
     // sourceLines is 0-indexed; node line is 1-based, so the node's own line
-    // is sourceLines[line - 1]. Check that (trailing-comment case) first.
+    // is sourceLines[line - 1]. Check that, trailing-comment case, first.
     const ownIdx = line - 1
     if (
       ownIdx >= 0 &&
@@ -167,7 +167,7 @@ export function makeBypassChecker(
 // `<sha>` is the 40-hex upstream commit the mirror was copied at, reusing the
 // lockstep schema's FULL_SHA_PATTERN. Like the `socket-lint:` markers above the
 // regex is UNANCHORED — the reader line-scans the raw header. Defined ONCE here
-// (the marker-reading home) so rules, the validator, and the format-deriver
+// the marker-reading home, so rules, the validator, and the format-deriver
 // can't drift on the grammar.
 export const LOCKSTEP_MIRROR_MARKER_RE =
   /@lockstep-mirror\s+(\S+)\s+@\s+([0-9a-f]{40})/

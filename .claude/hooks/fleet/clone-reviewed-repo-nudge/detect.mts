@@ -44,7 +44,7 @@ export function parseGithubSlug(
       repo: urlMatch.groups!['repo']!,
     }
   }
-  // Bare owner/repo slug (exactly one slash, no scheme, no host).
+  // Bare owner/repo slug, exactly one slash, no scheme, no host.
   if (!value.includes('://')) {
     const slugMatch = value.match(/^(?<owner>[\w.-]+)\/(?<repo>[\w.-]+)$/)
     if (slugMatch) {

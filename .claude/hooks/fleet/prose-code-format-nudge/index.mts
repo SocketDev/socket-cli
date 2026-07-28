@@ -14,7 +14,7 @@
 // Cargo.toml) plus a small curated EXTRA_NAMES, minus an AMBIGUOUS_DENYLIST so
 // short/English-colliding names don't fire on ordinary sentences.
 //
-// PostToolUse (not Pre) so the edit lands first and the scanner reads on-disk
+// PostToolUse, not Pre, so the edit lands first and the scanner reads on-disk
 // state. Exits deterministically; fails open.
 
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
@@ -37,7 +37,7 @@ export const check = editGuard((filePath, content) => {
     return undefined
   }
   // PostToolUse: prefer the on-disk (post-edit) content; fall back to the
-  // Write payload's content when the file isn't readable (ephemeral test).
+  // Write payload's content when the file isn't readable, ephemeral test.
   const prose = safeRead(filePath) ?? content
   if (!prose) {
     return undefined

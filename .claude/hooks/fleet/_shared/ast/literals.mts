@@ -65,7 +65,7 @@ export function findRegexLiterals(
 
 export interface TemplateLiteralSite extends CallSite {
   /**
-   * The concatenated quasi (static text) segments of the template, with `${…}`
+   * The concatenated quasi, static text, segments of the template, with `${…}`
    * expression slots replaced by a single `\0` NUL byte sentinel. Callers split
    * this on `/`, `.`, etc. to inspect path segments without mistaking
    * interpolated content for a segment.
@@ -160,7 +160,7 @@ export interface ThrowSite extends CallSite {
  * error-message-quality rule to inspect the message string of thrown errors.
  * `ctor` semantics:
  *
- * - `undefined` — match every constructor (custom error classes too).
+ * - `undefined` — match every constructor, custom error classes too.
  * - `string` — exact-match `NewExpression.callee.name`.
  * - `RegExp` — match the callee name against the regex. Use this to catch
  *   class-name patterns like `/Error$/` (every *Error class).

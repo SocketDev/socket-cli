@@ -90,7 +90,7 @@ export function listMtsFiles(dir: string): string[] {
 }
 
 // Resolve an import specifier to an absolute path, keeping only relative
-// imports of a `.mts` living under some `_shared/` dir (the shareable kind).
+// imports of a `.mts` living under some `_shared/` dir, the shareable kind.
 export function resolveSharedImport(
   fromFile: string,
   spec: string,
@@ -316,7 +316,7 @@ export function readFacts(file: string, tree: FileFacts['tree']): FileFacts {
   // can't parse (`stripTypeSpace`); the parser is still partial-TS and rejects
   // assorted other annotated shapes, so on a parse failure we DON'T silently
   // skip the file — we fall back to a conservative regex extractor. A silent
-  // skip would be a blind spot (the exact drift this check guards against).
+  // skip would be a blind spot, the exact drift this check guards against.
   const parseSrc = stripTypeSpace(src)
   const ast = tryParse(parseSrc)
   if (ast) {
@@ -328,8 +328,8 @@ export function readFacts(file: string, tree: FileFacts['tree']): FileFacts {
       },
       // `export { x } from '…'` is an import-with-source, not a local decl.
       // `export function f(){}` / `export const C = …` is BOTH a top-level
-      // declaration (caught below) and an export — its name is the module's
-      // fork-able surface. `export { x }` (no source) re-exports a local name.
+      // declaration, caught below, and an export — its name is the module's
+      // fork-able surface. `export { x }`, no source, re-exports a local name.
       ExportNamedDeclaration(node: AcornNode) {
         if (node['source']) {
           addImportSource(
@@ -417,7 +417,7 @@ export function readFacts(file: string, tree: FileFacts['tree']): FileFacts {
 
 function main(): void {
   // Parse every file in both trees once. A _shared module's fork-able surface is
-  // its EXPORTED symbols (what a consumer can import); a re-fork is a consumer
+  // its EXPORTED symbols, what a consumer can import; a re-fork is a consumer
   // re-declaring one of those exported names. A module's PRIVATE helper (e.g. a
   // local `splitLines`) coincidentally sharing a name with another file's private
   // helper is independent, not a fork — so private names never trigger the gate.
@@ -448,7 +448,7 @@ function main(): void {
 
   let errors = 0
 
-  // A re-fork is precise (no symbol-NAME-collision noise): a file that IMPORTS a
+  // A re-fork is precise, no symbol-NAME-collision noise: a file that IMPORTS a
   // cross-tree-shared module AND ALSO top-level re-declares one of that module's
   // EXPORTED symbols. You imported it — re-declaring the same exported name
   // shadows the import and is the copy-instead-of-reuse the shared module exists

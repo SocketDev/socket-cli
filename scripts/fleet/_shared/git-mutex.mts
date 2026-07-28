@@ -2,15 +2,15 @@
  * @file Cross-session git coordination primitives. Multiple Claude sessions
  *   share one checkout and their Stop hooks can land work near-simultaneously;
  *   git serializes on `.git/index.lock`, so the loser of that race used to
- *   fail (and the fail-open landing contract swallowed it). Two remedies, both
+ *   fail, and the fail-open landing contract swallowed it. Two remedies, both
  *   advisory and bounded:
  *
  *   - acquireGitMutex: a per-repo lock under `node_modules/.cache/fleet/` (atomic
  *     mkdir) so concurrent landers queue instead of colliding. Stale locks
- *     (dead pid or past the stale window) are stolen, so a crashed session
+ *     dead pid or past the stale window, are stolen, so a crashed session
  *     never wedges the repo.
  *   - retryGit: bounded backoff for the residual index.lock contention a mutex
- *     cannot cover (a human's editor, a non-fleet tool holding git).
+ *     cannot cover, a human's editor, a non-fleet tool holding git.
  */
 
 import { promises as fs } from 'node:fs'
@@ -40,7 +40,7 @@ export interface GitRunLike {
 }
 
 /**
- * Repo-ROOT for `dir` (its git toplevel), falling back to `dir` when git
+ * Repo-ROOT for `dir`, its git toplevel, falling back to `dir` when git
  * cannot answer. Callers pass an arbitrary cwd — land-work passes the
  * session's — and anchoring the mutex on that raw path writes
  * `<cwd>/node_modules/` wherever the caller happened to stand. When that cwd
@@ -83,7 +83,7 @@ function pidAlive(pid: number): boolean {
 
 /**
  * True when a git failure's output is index/lock contention — another
- * process holds `.git/index.lock` (or a ref lock) right now. These are
+ * process holds `.git/index.lock`, or a ref lock, right now. These are
  * the retryable failures; anything else is a real error.
  */
 export function isGitIndexContention(out: string): boolean {
@@ -93,7 +93,7 @@ export function isGitIndexContention(out: string): boolean {
 /**
  * Acquire the per-repo landing mutex. Resolves to a release function, or
  * undefined when the lock could not be acquired inside `timeoutMs` — the
- * caller decides whether to skip (Stop-hook lander) or fail loud (manual
+ * caller decides whether to skip, Stop-hook lander, or fail loud (manual
  * run). Atomic mkdir is the lock; a meta.json records holder pid + time
  * so a stale lock (dead pid, or older than `staleMs`) is stolen rather
  * than wedging every future landing.
@@ -132,7 +132,7 @@ export async function acquireGitMutex(
       } catch {
         // Unreadable meta on an existing lock — age unknowable; steal only
         // after the stale window from NOW would loop forever, so treat an
-        // unreadable meta as stale (the writer crashed mid-write).
+        // unreadable meta as stale, the writer crashed mid-write.
         stale = true
       }
       if (stale) {

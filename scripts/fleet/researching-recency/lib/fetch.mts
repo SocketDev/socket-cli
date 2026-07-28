@@ -1,7 +1,7 @@
 /**
- * @file Parallel fan-out across (subquery, source) pairs. Resolves each plan
+ * @file Parallel fan-out across, subquery, source, pairs. Resolves each plan
  *   subquery's sources to their adapters, runs the fetches concurrently under a
- *   small cap (so the per-source rate limits aren't tripped), annotates each
+ *   small cap, so the per-source rate limits aren't tripped, annotates each
  *   returned stream with local scores, and returns both the streams keyed for
  *   fusion and the per-source statuses the footer reports. One dead source
  *   can't sink the run — every adapter returns a status rather than throwing.
@@ -50,7 +50,7 @@ const MAX_CONCURRENCY = 4
 // source's reserved diversity slots into the pool as noise.
 const MIN_RELEVANCE = 0.05
 
-// What fetchAll returns: the per-(label, source) streams ready for fusion, and
+// What fetchAll returns: the per-label, source, streams ready for fusion, and
 // the per-source statuses the footer renders.
 export interface FetchOutcome {
   streams: Map<string, SourceItem[]>
@@ -86,7 +86,7 @@ async function runPooled<T, R>(
   return results
 }
 
-// Expand the plan into one job per (subquery, source) pair that has a network
+// Expand the plan into one job per, subquery, source, pair that has a network
 // adapter. The `web` source is skipped here — the CLI feeds it separately.
 function jobsFromPlan(plan: QueryPlan): FetchJob[] {
   const jobs: FetchJob[] = []
@@ -111,9 +111,9 @@ function jobsFromPlan(plan: QueryPlan): FetchJob[] {
   return jobs
 }
 
-// Fan out every (subquery, source) fetch, annotate each returned stream with
+// Fan out every, subquery, source, fetch, annotate each returned stream with
 // local scores, and collect the streams + statuses. Streams are keyed via
-// `streamKeyOf` so fusion can read the (label, source) pair back.
+// `streamKeyOf` so fusion can read the, label, source, pair back.
 export async function fetchAll(
   plan: QueryPlan,
   context: FetchContext,

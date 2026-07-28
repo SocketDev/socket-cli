@@ -1,5 +1,5 @@
 // AgentShield installer — scans Claude AI config for prompt injection /
-// secrets. Downloaded as an npm package via dlx (pinned version, cached).
+// secrets. Downloaded as an npm package via dlx, pinned version, cached.
 // Lives in its own file because installers.mts is at the 500-line soft cap.
 
 import { readFileSync } from 'node:fs'

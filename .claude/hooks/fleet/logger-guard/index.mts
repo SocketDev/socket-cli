@@ -150,7 +150,7 @@ export function scan(source: string): Hit[] {
 }
 
 // Decoration applies more broadly than the console-leak rule: scripts/ and
-// .claude/hooks/ legitimately call console in a few spots (hence exempt above)
+// .claude/hooks/ legitimately call console in a few spots, hence exempt above
 // but must NOT hand-roll logger prefixes. So decoration has its own, narrower
 // exempt set — external/vendored code, test files (which build expected-output
 // fixtures with glyphs), and the logger's own implementation.

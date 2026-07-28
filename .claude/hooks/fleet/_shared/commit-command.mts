@@ -1,8 +1,8 @@
 /**
  * @file Shared parsing of a `git commit` Bash command — does it invoke commit,
  *   and what inline `-m` / `--message` subject does it carry. Imported by both
- *   `commit-message-format-guard` (CC-format check) and
- *   `no-placeholder-commit-subject-guard` (junk-subject check) so the two parse
+ *   `commit-message-format-guard`, CC-format check, and
+ *   `no-placeholder-commit-subject-guard`, junk-subject check, so the two parse
  *   the command identically and never drift. Lives in `_shared/` rather than in
  *   a guard's `index.mts` because a guard module runs `withBashGuard` at load —
  *   importing it for its helpers would fire that guard as a side effect.
@@ -74,7 +74,7 @@ export function isGitCommit(command: string): boolean {
  * Returns undefined when the command has no inline message (uses `-F file`,
  * `-e` editor, or neither) — those forms are owned by the editor / file, not
  * this parse. Multiple `-m` flags concatenate with blank-line separators
- * (matching git); the first line of the joined result is the header. The
+ * matching git; the first line of the joined result is the header. The
  * values come from the parsed segment's args, already unquoted with embedded
  * newlines intact.
  */

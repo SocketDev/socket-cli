@@ -10,7 +10,7 @@
 //   - Bash writes whose TARGET is under `upstream/`: `sed -i … upstream/…`,
 //     `tee upstream/…`, `rm … upstream/…`, `… > upstream/…` / `… >> upstream/…`,
 //     and `cp`/`mv`/`ln` whose final destination arg is under `upstream/`.
-// Reading FROM `upstream/` (the porting source) is always allowed. Refreshing a
+// Reading FROM `upstream/`, the porting source, is always allowed. Refreshing a
 // pin is `vendor-actions.mts` / `gen/gitmodules-hash.mts --set`, not a hand-edit.
 //
 // Detection normalizes separators before the prefix test and fails open on parse
@@ -37,7 +37,7 @@ export const triggers: readonly string[] = ['upstream/']
 
 // Commands where EVERY bare operand is a write target (fanout / delete).
 const WRITE_ALL_ARGS = new Set(['rm', 'tee'])
-// Commands whose LAST bare operand is the destination (the rest are sources).
+// Commands whose LAST bare operand is the destination, the rest are sources.
 const WRITE_DEST_ARG = new Set(['cp', 'ln', 'mv'])
 
 // True when a path arg resolves to the `upstream/` tree itself or a child.
@@ -53,7 +53,7 @@ function isSedInPlace(args: readonly string[]): boolean {
 
 /**
  * The first `upstream/` WRITE target in a Bash command, or undefined. Covers
- * `>`/`>>` redirects (the shell parser drops these, so match them directly),
+ * `>`/`>>` redirects, the shell parser drops these, so match them directly,
  * `sed -i`, `tee`, `rm`, and `cp`/`mv`/`ln` destinations. Reads are ignored.
  */
 export function detectUpstreamWrite(command: string): string | undefined {

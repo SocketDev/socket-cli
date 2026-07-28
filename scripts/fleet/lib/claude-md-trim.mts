@@ -10,8 +10,8 @@
  *   `-separated clause from the fattest bullet that (a) carries a doc link (so
  *   its detail has a home) and (b) has more than one clause (so it never
  *   empties a bullet). Bounded (only fires over cap, only the fattest trimmable
- *   bullet), reported (every drop is returned), and git-reversible. Pairs with
- *   the `claude-md-section-size-guard` (the cap gate) and runs in `pnpm run
+ *   bullet), reported, every drop is returned, and git-reversible. Pairs with
+ *   the `claude-md-section-size-guard`, the cap gate, and runs in `pnpm run
  *   fix`. Mirrors the guard's measurement exactly: the block is the lines from
  *   the `<!-- <fleet-canonical> -->` BEGIN marker (inclusive) up to the `<!--
  *   </fleet-canonical> -->` END marker (exclusive), and its size is that
@@ -69,7 +69,7 @@ export function fleetBlockBounds(
 }
 
 /**
- * The fleet block's UTF-8 byte size (the guard's metric), or undefined when
+ * The fleet block's UTF-8 byte size, the guard's metric, or undefined when
  * there is no well-formed block.
  */
 export function fleetBlockBytes(content: string): number | undefined {
@@ -146,7 +146,7 @@ export function normalizeFleetBlock(lines: string[]): boolean {
 
 /**
  * Trim the fleet block: the non-lossy normalization runs ALWAYS; the lossy
- * clause-dropping (last clause of the fattest trimmable bullet) engages only
+ * clause-dropping, last clause of the fattest trimmable bullet, engages only
  * while the block is still over `capBytes` after normalization. Pure —
  * returns the new content, the lossy trims applied, and whether the
  * non-lossy pass changed anything.
@@ -217,7 +217,7 @@ export interface ClaudeMdTrimResult {
  * Trim the fleet block of each given CLAUDE.md IN PLACE: the non-lossy
  * normalization applies always; the lossy clause-dropping only while over
  * the cap. Reads each existing file, applies `trimFleetBlockToFit`, and
- * writes only when something changed (no spurious mtime churn). Missing
+ * writes only when something changed, no spurious mtime churn. Missing
  * files / files with no fleet block are skipped. Returns one result per file
  * that changed. Shared by the CLI and the fix path.
  */

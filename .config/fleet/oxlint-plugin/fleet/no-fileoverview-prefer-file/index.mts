@@ -50,7 +50,7 @@ const rule = {
         // Find the leading file-doc: the first Block comment in the file that
         // is a JSDoc block (body starts with `*`). "Leading" means it appears
         // before any statement — its end must be at or before the start of the
-        // first program body node (if any).
+        // first program body node, if any.
         let fileDoc: AstNode | undefined
         const bodyNodes: AstNode[] =
           (node as { body?: AstNode[] | undefined }).body ?? []
@@ -65,7 +65,7 @@ const rule = {
           if (c.type !== 'Block') {
             continue
           }
-          // JSDoc block: body (without delimiters) starts with `*`.
+          // JSDoc block: body, without delimiters, starts with `*`.
           const body: string = (c.value as string) ?? ''
           if (!body.startsWith('*')) {
             continue

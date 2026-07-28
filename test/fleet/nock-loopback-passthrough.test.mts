@@ -5,7 +5,7 @@
  *   fetch bypass path clones the request AFTER its body has been consumed
  *   for interceptor matching and throws `TypeError: unusable` — every suite
  *   that POSTs to a local fixture server under the fleet fail-closed setup
- *   went red, including the socket-gemini-nano and socket-mcp Test jobs.
+ *   went red, including the odai and socket-mcp Test jobs.
  *   The catalog pinned back to 14.0.16 on 2026-07-27; this test red-drives
  *   the next nock bump against the same break. The fail-closed net state —
  *   disableNetConnect plus the loopback allowlist — comes from the fleet

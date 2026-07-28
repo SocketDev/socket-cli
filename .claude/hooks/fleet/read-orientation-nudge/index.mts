@@ -16,10 +16,10 @@
  *
  * Advisory only — never blocks. Skips:
  *   - non-Read tools
- *   - a scoped read (offset or limit present) — already reading a span
- *   - small files (below the size threshold) — nothing to save
+ *   - a scoped read, offset or limit present — already reading a span
+ *   - small files, below the size threshold — nothing to save
  *   - non-source files (a skeleton is meaningless for prose/JSON/binaries)
- *   - a read of a `.skel` file itself (already the skeleton)
+ *   - a read of a `.skel` file itself, already the skeleton
  */
 
 import { statSync } from 'node:fs'
@@ -68,9 +68,9 @@ function fileSize(filePath: string): number | undefined {
  * If a FRESH repo-map skeleton exists for `filePath`, return its repo-relative
  * path (`.repo-map/<rel>.skel`); otherwise `undefined`. Fresh = the skeleton's
  * mtime is at or after the source's, so a source edited since the last refresh
- * (stale skeleton with shifted line numbers) falls back to the generate-nudge
+ * stale skeleton with shifted line numbers, falls back to the generate-nudge
  * rather than pointing at wrong spans. Repo root comes from CLAUDE_PROJECT_DIR
- * (set by Claude Code for hooks), else cwd.
+ * set by Claude Code for hooks, else cwd.
  */
 function freshSkelFor(filePath: string): string | undefined {
   const repoRoot = resolveProjectDir()

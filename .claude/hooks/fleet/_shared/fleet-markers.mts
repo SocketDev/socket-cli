@@ -109,7 +109,7 @@ export function extractFleetBlock(content: string): string | undefined {
 /**
  * The per-repo region of a CLAUDE.md: everything after the END marker line (the
  * `🏗️ …-Specific` postamble). A file with no markers at all counts as
- * all-per-repo (the whole file). Returns undefined for a malformed block (a
+ * all-per-repo, the whole file. Returns undefined for a malformed block (a
  * BEGIN with no balanced END) so callers don't double-count the fleet content.
  */
 export function extractPerRepo(content: string): string | undefined {

@@ -105,7 +105,7 @@ export const loadAllowlist = (repoRoot: string): AllowlistEntry[] => {
 
 /**
  * Stable, normalized snippet hash. Whitespace-insensitive so trivial
- * reformatting (indent change, trailing comma, line wrap) doesn't invalidate an
+ * reformatting, indent change, trailing comma, line wrap, doesn't invalidate an
  * allowlist entry, but content-changing edits do. The hash exposes only the
  * first 12 hex chars (~48 bits) which is plenty for collision-resistance within
  * a single repo's finding set and keeps the config entry readable.

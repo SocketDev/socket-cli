@@ -14,7 +14,7 @@
 // What this catches: an assistant turn that BOTH
 //   (a) shows a not-found-shaped error naming a canonical artifact, AND
 //   (b) describes editing / patching a member-repo copy of fleet content,
-// WITHOUT acknowledging the cascade-first path (check wheelhouse, re-cascade).
+// WITHOUT acknowledging the cascade-first path, check wheelhouse, re-cascade.
 //
 // Heuristic; false positives expected. Soft reminder, never blocks.
 // Per CLAUDE.md "Never fork fleet-canonical files locally" (cascade-first

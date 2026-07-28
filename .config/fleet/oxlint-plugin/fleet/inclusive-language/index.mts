@@ -181,7 +181,7 @@ const rule = {
       }
       // Skip positions where the identifier name is LINKAGE, not a name this
       // file owns — renaming it would break the binding: an import/export
-      // specifier (the module exports the original name), a non-computed
+      // specifier, the module exports the original name, a non-computed
       // member property (`obj.whitelist` reads an external field), or a
       // non-computed object-literal key (an API/config shape). Variable,
       // function, and parameter names ARE owned here, so they still flag.

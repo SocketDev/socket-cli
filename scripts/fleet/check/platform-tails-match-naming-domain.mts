@@ -19,10 +19,10 @@
  *   A per-platform tail whose target token, platform tail, and payload shape
  *   disagree makes the artifact kind illegible and breaks the loaders/allowlists
  *   that parse names by domain. The scan classifies each tail by its target
- *   token (payload as a cross-check) and validates the platform tail against
+ *   token, payload as a cross-check, and validates the platform tail against
  *   that target's canonical set, plus os/cpu engine-field consistency.
  *
- *   Legacy (hyphen-only, no dot) names — the pre-dot-naming tail packages still
+ *   Legacy, hyphen-only, no dot, names — the pre-dot-naming tail packages still
  *   in the tree — keep the payload-derived classification: a `bin` field is the
  *   `exe`/pack-app domain, a `.node` payload is the napi domain.
  *
@@ -109,7 +109,7 @@ export function collectManifestPaths(repoRoot: string): string[] {
   const stack = [root]
   while (stack.length > 0) {
     const dir = stack.pop()!
-    // Dirent types (no stat call): a dangling symlink under packages/ (a
+    // Dirent types, no stat call: a dangling symlink under packages/ (a
     // stale build-output link) would crash a follow-the-link statSync with
     // ENOENT; dirents classify it as a symlink and it falls through both
     // branches harmlessly.
@@ -147,7 +147,7 @@ function stringsOf(value: unknown): string[] {
 /**
  * Classify a manifest into a naming domain by its payload shape.
  * `bin` field → 'cli'; a `.node` payload in main/files → 'napi';
- * anything else → undefined (not a platform tail, out of scope).
+ * anything else → undefined, not a platform tail, out of scope.
  */
 export function classifyDomain(m: ManifestShape): 'cli' | 'napi' | undefined {
   if (m.bin !== undefined && stringsOf(m.bin).length > 0) {
@@ -220,7 +220,7 @@ function pushEngineFindings(
 }
 
 /**
- * Validate a dot-named per-platform tail (target read from the name). The
+ * Validate a dot-named per-platform tail, target read from the name. The
  * platform tail must match the target's canonical grammar and the payload must
  * agree with the target.
  */
@@ -319,7 +319,7 @@ function checkDottedTail(
 }
 
 /**
- * Validate a legacy (hyphen-only, no-dot) per-platform tail — domain derived
+ * Validate a legacy, hyphen-only, no-dot, per-platform tail — domain derived
  * from the payload shape, platform parsed off the trailing `-<segment>`.
  */
 function checkLegacyTail(

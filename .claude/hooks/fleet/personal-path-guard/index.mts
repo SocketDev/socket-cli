@@ -30,7 +30,7 @@ import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { lineIsSuppressed } from '../_shared/markers.mts'
 // Personal-path matcher imported from the gate-free cross-tree shared module —
 // the SAME regexes + filter + rewrite the commit-time scanPersonalPaths uses,
-// so the two surfaces can't drift (was a lock-step inline copy).
+// so the two surfaces can't drift, was a lock-step inline copy.
 import {
   isPurePlaceholder,
   PERSONAL_PATH_RE,

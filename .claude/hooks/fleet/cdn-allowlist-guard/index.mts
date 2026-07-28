@@ -7,8 +7,8 @@
  *   logic lives in _shared/cdn-allowlist.mts — the SAME module the commit-time
  *   check consumes, so the two never drift (code is law, DRY). The allowlist
  *   holds ONLY public hosts; an internal `*.svc.cluster.local` host is never on
- *   it (and a fetch to one is correctly blocked). AST-parses the command via
- *   shell-command.mts/findInvocation (per the no-command-regex-in-hooks rule)
+ *   it, and a fetch to one is correctly blocked. AST-parses the command via
+ *   shell-command.mts/findInvocation, per the no-command-regex-in-hooks rule
  *   to detect the fetch binary, then scans the command's URLs. Bypass: `Allow
  *   cdn-allowlist bypass` in a recent user turn. Exit codes: 0 — pass; 2 —
  *   block. Fails open on any throw.

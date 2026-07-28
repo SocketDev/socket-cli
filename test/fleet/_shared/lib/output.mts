@@ -4,7 +4,7 @@
  *   than the styled bytes a TTY renders. Wraps the single-source-of-truth
  *   `stripAnsi` from `@socketsecurity/lib-stable/ansi/strip` (the same helper
  *   socket-cli's test utils use) so there's one ANSI definition fleet-wide.
- *   Pairs with `./platform.mts` (path normalization) — reach for `cleanOutput`
+ *   Pairs with `./platform.mts`, path normalization — reach for `cleanOutput`
  *   instead of hand-rolling an ANSI regex at each call site.
  */
 
@@ -25,7 +25,7 @@ export function cleanOutput(text: string): string {
 
 /**
  * Strip ANSI + decorative glyphs WITHOUT trimming — for when leading/trailing
- * whitespace is part of what's under test (column alignment, indentation).
+ * whitespace is part of what's under test, column alignment, indentation.
  */
 export function stripDecoration(text: string): string {
   return stripAnsi(text).replace(DECORATIVE_RE, '')

@@ -87,7 +87,7 @@ export function readRoster(rosterPath: string): FleetRoster | undefined {
 
 /**
  * Load the cascade roster relative to a repo root, trying the in-repo template
- * seed first (so the wheelhouse itself resolves) then the live tree.
+ * seed first, so the wheelhouse itself resolves, then the live tree.
  */
 export function loadRosterFromRepo(repoRoot: string): FleetRoster | undefined {
   const candidates = fleetRosterPaths(repoRoot)
@@ -196,7 +196,7 @@ export function isSquashOptIn(repoRoot: string): boolean {
  * True when the checkout at `repoRoot` is a thin-distribution consumer — it
  * untracks the wholly-fleet payload and fetches it from the release bundle.
  * The roster is the single source of truth for thin membership: enforcement
- * (the belt-wiring check) derives from this, never from a hand-maintained list.
+ * the belt-wiring check, derives from this, never from a hand-maintained list.
  */
 export function isThinOptIn(repoRoot: string): boolean {
   return isRepoOptedIn(repoRoot, 'thin')

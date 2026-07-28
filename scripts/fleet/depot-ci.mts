@@ -149,7 +149,7 @@ export async function getJobSummary(
 
 /**
  * Grouped failure analysis for a run/workflow/job/attempt. The response shape
- * is upstream-defined and (per the docs) only partially documented, so it is
+ * is upstream-defined and, per the docs, only partially documented, so it is
  * returned as `unknown` for the caller to narrow.
  */
 export async function getFailureDiagnosis(

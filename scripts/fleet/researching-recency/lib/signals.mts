@@ -16,7 +16,7 @@ import type { FreshnessMode, PreparedQuery, SourceItem } from './types.mts'
 // Editorial signal-to-noise weights. Web grounding is the 1.0 baseline;
 // curated dev aggregators (HN, Lobsters) rank high; open social (Reddit, X-like
 // feeds) is discounted for noise. Values match upstream where the source
-// overlaps; new dev sources (lobsters, devto, github) are weighted by curation.
+// overlaps; new dev sources, lobsters, devto, github, are weighted by curation.
 export const SOURCE_QUALITY: Readonly<Record<string, number>> = {
   bluesky: 0.66,
   devto: 0.7,
@@ -65,7 +65,7 @@ export function recencyScore(
 }
 
 // Freshness score shaped by the plan's freshness mode. `strictRecent` returns
-// the raw recency curve; `evergreenOk` flattens it (older items survive);
+// the raw recency curve; `evergreenOk` flattens it, older items survive;
 // `balancedRecent` is the default middle ground.
 export function freshness(
   item: SourceItem,

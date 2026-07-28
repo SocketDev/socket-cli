@@ -10,8 +10,8 @@
  *   `--frozen-lockfile` + `minimumReleaseAge` model. Shares all policy with
  *   `_shared/uv-config.mts` (code is law, DRY). A repo with no uv project (the
  *   common case today) passes vacuously. Exit codes: 0 — every uv project
- *   compliant (or none); 1 — at least one uv project is missing its lock or
- *   soak pin (the per-project fix is printed).
+ *   compliant, or none; 1 — at least one uv project is missing its lock or
+ *   soak pin, the per-project fix is printed.
  */
 
 // oxlint-disable-next-line socket/prefer-async-spawn -- sync check script; needs typed string stdout from `git ls-files`, no async.

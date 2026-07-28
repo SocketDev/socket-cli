@@ -7,7 +7,7 @@
  *   SHA and is forbidden (see docs/agents.md/fleet/upstream-references.md). The
  *   write-time twin is `no-upstream-gitlink-guard`; this belt re-asserts the
  *   invariant over the committed index — catching a gitlink hand-staged past
- *   the guard. Exit: 0 — no tracked upstream gitlink (or git is unavailable); 1
+ *   the guard. Exit: 0 — no tracked upstream gitlink, or git is unavailable; 1
  *   — at least one `160000` entry under `upstream/`. Usage: node
  *   scripts/fleet/check/upstream-gitlinks-are-absent.mts [--quiet]
  */

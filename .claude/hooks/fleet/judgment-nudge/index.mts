@@ -22,7 +22,7 @@
 //
 // The compromise.js NLP layer is what makes modal detection useful:
 // "this could throw" (technical conditional, OK) vs "I could go either
-// way" (judgment hedge, flag). The library tags each token with POS
+// way", judgment hedge, flag. The library tags each token with POS
 // and lets us inspect the verb context. Regex alone gets too many
 // false positives on the technical use.
 //
@@ -30,7 +30,7 @@
 // initializer throws), fall back to regex-only detection — the hook
 // still flags fixed phrases, just misses the modal-verb signal.
 //
-// This is a NUDGE (never blocks): when hits are found it returns
+// This is a NUDGE, never blocks: when hits are found it returns
 // `notify(message)` so the runner prints to stderr and exits 0.
 
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
@@ -119,7 +119,7 @@ export async function detectModalHedges(
   // Compromise.js path: walk sentences, flag any that contain a
   // first-person modal in a judgment context. The library tags each
   // verb with POS; we check sentence-by-sentence so the snippet is
-  // useful (a single sentence rather than the whole turn).
+  // useful, a single sentence rather than the whole turn.
   const doc = nlp(text)
   const sentences = doc.sentences().out('array')
   const hits: ReminderHit[] = []
@@ -130,7 +130,7 @@ export async function detectModalHedges(
     }
     // Compromise gives us POS-aware verb detection; we use it to
     // confirm the modal isn't part of a code-shape conditional like
-    // "could throw" / "might return" (technical, not judgment).
+    // "could throw" / "might return", technical, not judgment.
     const sentenceDoc = nlp(sentence)
     const verbs = sentenceDoc.verbs().out('array')
     const hasJudgmentVerb = verbs.some(v =>

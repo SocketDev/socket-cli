@@ -11,7 +11,7 @@
  *   pin: CI checks the tap out at that >= soakDays-old SHA and runs `brew
  *   bundle` from the committed Brewfile, so every version present at that SHA
  *   is definitionally soaked. A `BREW_SOAK_EXCLUDES` formula is skipped by the
- *   age planner (reported excluded); the tap pin governs its install
+ *   age planner, reported excluded; the tap pin governs its install
  *   regardless. The pure discovery / render helpers live in `brew-parse.mts`;
  *   this file is the CLI shell (`gh` spawns + modes) and re-exports them.
  *   `soakDays` is always caller-supplied, never hardcoded. Usage: node

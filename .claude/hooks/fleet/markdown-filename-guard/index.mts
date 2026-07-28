@@ -5,13 +5,13 @@
 // with a non-canonical filename. Per the fleet's docs convention:
 //
 //   - Allowed everywhere: README.md, LICENSE.
-//   - Allowed at root, docs/, .claude/ (top level only), or any
+//   - Allowed at root, docs/, .claude/ top level only, or any
 //     package root (a directory holding package.json — npm renders
 //     these files from there): the conventional SCREAMING_CASE set
 //     (AUTHORS, CHANGELOG, CLAUDE, CODE_OF_CONDUCT, CONTRIBUTING,
 //     GOVERNANCE, MAINTAINERS, NOTICE, SECURITY, SUPPORT, etc.).
 //   - Everything else must be lowercase-with-hyphens AND placed
-//     under `docs/` or `.claude/` (at any depth).
+//     under `docs/` or `.claude/`, at any depth.
 //
 // Why: SCREAMING_CASE doc filenames optimize for "noticeable in a
 // repo root" but read as shouty + opaque inside body text and TOC

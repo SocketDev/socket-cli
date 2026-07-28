@@ -6,7 +6,7 @@
 // manager, a 2FA code, or anything else on the user's display, and write it to
 // a file the agent then reads. Fleet tooling never needs to screenshot the
 // user's screen; the visual-verify flow renders a known page/extension to PNG
-// via the rendering-chromium-to-png skill (headless Chromium), it does NOT
+// via the rendering-chromium-to-png skill, headless Chromium, it does NOT
 // capture the live desktop. Any screen-capture invocation is therefore a
 // mistake or a poisoning fingerprint.
 //

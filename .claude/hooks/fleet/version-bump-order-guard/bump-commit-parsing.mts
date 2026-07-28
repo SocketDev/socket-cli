@@ -46,8 +46,8 @@ export const BUMP_SUBJECT_RE =
 // `git commit … -m "chore: bump version to X.Y.Z"` — the bump commit itself.
 // Parser-based: a real `git commit` whose `-m`/`--message` value matches the
 // bump-subject shape. The gate runs HERE too, not only at tag time, because the
-// bump commit is the point a still-broken tree (accumulated lint debt) silently
-// lands — by tag time it's already committed (and maybe pushed). A quoted
+// bump commit is the point a still-broken tree, accumulated lint debt, silently
+// lands — by tag time it's already committed, and maybe pushed. A quoted
 // "git commit" inside another command's string isn't a real invocation, so it
 // won't trigger.
 export function bumpCommitMessage(command: string): string | undefined {
@@ -57,7 +57,7 @@ export function bumpCommitMessage(command: string): string | undefined {
     }
     for (let i = 0, { length } = c.args; i < length; i += 1) {
       const arg = c.args[i]!
-      // `-m <msg>` / `--message <msg>` (next arg) or `-m=<msg>` / `--message=<msg>`.
+      // `-m <msg>` / `--message <msg>`, next arg, or `-m=<msg>` / `--message=<msg>`.
       let msg: string | undefined
       if ((arg === '--message' || arg === '-m') && i + 1 < length) {
         msg = c.args[i + 1]
@@ -102,7 +102,7 @@ const COMMIT_VALUE_FLAGS = new Set([
 
 // Explicit pathspecs on a `git commit` (`git commit -o a b -m …`,
 // `git commit a b`, or anything after `--`). Empty when the commit names no
-// paths (it'll commit whatever is staged instead).
+// paths, it'll commit whatever is staged instead.
 function bumpCommitPaths(command: string): string[] {
   const out: string[] = []
   for (const c of commandsFor(command, 'git')) {

@@ -25,7 +25,7 @@
 //
 // Bypass:
 //   - `Allow mass-delete bypass` in a recent user turn — for a genuine large
-//     removal (dropping a vendored tree, deleting a retired package).
+//     removal, dropping a vendored tree, deleting a retired package.
 //   - `FLEET_SYNC=1` prefix — cascade commits legitimately replace whole
 //     fleet dirs and are trusted.
 //
@@ -87,7 +87,7 @@ export function countStagedDeletions(repoDir: string): number {
 }
 
 /**
- * Count files tracked in HEAD's tree (the denominator for the ratio test).
+ * Count files tracked in HEAD's tree, the denominator for the ratio test.
  */
 export function countTrackedFiles(repoDir: string): number {
   const r = spawnSync('git', ['ls-files'], {
@@ -134,7 +134,7 @@ export const check = bashGuard((command, payload) => {
     return undefined
   }
   // The squashing-history collapse commit deletes files removed since the root
-  // commit; the hardened SQUASH_HISTORY=1 sentinel authorizes it (no phrase).
+  // commit; the hardened SQUASH_HISTORY=1 sentinel authorizes it, no phrase.
   if (squashSentinelAllows(command)) {
     return undefined
   }

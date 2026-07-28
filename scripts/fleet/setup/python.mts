@@ -52,7 +52,7 @@ export function isVendoredUvDir(root: string, dir: string): boolean {
  * Every first-party uv project dir under `root`: a dir holding a `uv.lock`, or
  * a `pyproject.toml` whose body declares `[tool.uv]`. Skips vendored / build
  * subtrees via `findOwnFiles`, plus fleet-tooling uv projects under `.claude/`
- * (owned by their own installer). Returns ASCII-sorted absolute dirs.
+ * owned by their own installer. Returns ASCII-sorted absolute dirs.
  */
 export function findUvProjects(root: string): string[] {
   const dirs = new Set<string>()

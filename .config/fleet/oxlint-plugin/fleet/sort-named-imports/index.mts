@@ -12,7 +12,7 @@
  *   multi-line layout: a single-line block stays single-line; a multi-line
  *   block stays multi-line with one specifier per line. Sort key: the
  *   _imported_ name (before any `as` alias), so `Z as a, A as z` sorts to `A as
- *   z, Z as a` (the import side is the stable identity, not the local).
+ *   z, Z as a`, the import side is the stable identity, not the local.
  */
 
 /**

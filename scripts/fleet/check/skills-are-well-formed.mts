@@ -23,7 +23,7 @@
 // resolve (every /fleet:<name> bullet resolves). Those assume a well-formed
 // SKILL.md; this asserts it.
 //
-// `_shared` is not a skill (shared subskill libs) — skipped.
+// `_shared` is not a skill, shared subskill libs — skipped.
 //
 // ERROR (exit 1): any skill dir missing SKILL.md, frontmatter, a matching name,
 // a description, an oversized entry body, or a budget-sized description.
@@ -92,10 +92,10 @@ export function frontmatterValue(
   const lines = frontmatter.split('\n')
   for (let i = 0, { length } = lines; i < length; i += 1) {
     const line = lines[i]!
-    // Top-level key (no leading whitespace) `key: value`.
+    // Top-level key, no leading whitespace, `key: value`.
     const m = new RegExp(`^${key}:[ \\t]*(.*)$`).exec(line)
     if (m) {
-      // Strip one leading or trailing quote char (a YAML-style quoted scalar).
+      // Strip one leading or trailing quote char, a YAML-style quoted scalar.
       return m[1]!.trim().replace(/^['"]|['"]$/g, '') // socket-lint: allow uncommented-regex
     }
   }

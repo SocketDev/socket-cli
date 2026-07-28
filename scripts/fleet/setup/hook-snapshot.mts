@@ -24,10 +24,10 @@
  *        launcher binary. The launcher re-execs `node --snapshot-blob <blob>
  *        <Event>` in ONE process transition (`execv` replaces the launcher image
  *        — no parent node, no second resident process), and FAILS OPEN to
- *        `node index.cjs <Event>` (the compile-cache baseline) on any
+ *        `node index.cjs <Event>`, the compile-cache baseline, on any
  *        missing/blank sidecar, a vanished/mismatched blob, or any error. So the
  *        wired fast path is byte-equivalent to the baseline and never less
- *        correct — worst case is the (complete, correct) compile-cache path.
+ *        correct — worst case is the, complete, correct, compile-cache path.
  *
  *     4. WINDOWS: there is no image-replacing `execv`; the launcher
  *        `CreateProcess`es node + waits, keeping a thin native parent resident.
@@ -126,7 +126,7 @@ function main(): void {
   const unwire = argv.includes('--unwire')
   const isWin = process.platform === 'win32'
 
-  // --unwire is a pure settings revert (no rebuild) — restore the baseline.
+  // --unwire is a pure settings revert, no rebuild — restore the baseline.
   if (unwire) {
     wireSettings(baselineCommand, 'compile-cache baseline')
     return
@@ -199,7 +199,7 @@ function main(): void {
     // the always-present compile-cache baseline. Pinning it into the TRACKED
     // settings.json is FRAGILE: EDR / cleanup reaps the launcher binary, and the
     // committed dispatch then points at an absent file → every hook fails open
-    // (guards inert, fleet-wide, silently). Default to the resilient baseline;
+    // guards inert, fleet-wide, silently. Default to the resilient baseline;
     // opt in with --wire-launcher only on a machine where the launcher persists.
     logger.log(
       'Built the launcher; staying on the compile-cache baseline (pass ' +

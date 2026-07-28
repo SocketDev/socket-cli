@@ -42,7 +42,7 @@ function isSearchResponse(value: unknown): value is GithubSearchResponse {
 }
 
 // Resolve a GitHub token: the env var wins; otherwise try `gh auth token`.
-// Returns undefined when neither is available (the request goes unauthenticated).
+// Returns undefined when neither is available, the request goes unauthenticated.
 export async function resolveToken(): Promise<string | undefined> {
   const fromEnv = process.env['GITHUB_TOKEN'] || process.env['GH_TOKEN']
   if (fromEnv) {

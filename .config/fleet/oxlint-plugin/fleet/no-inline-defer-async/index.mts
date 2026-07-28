@@ -97,7 +97,7 @@ const rule = {
     function checkLiteralText(
       node: AstNode,
       text: string,
-      // Start of the inner content (excluding surrounding quote) in the
+      // Start of the inner content, excluding surrounding quote, in the
       // source. Used to align the autofix range.
       innerStart: number,
     ): void {
@@ -115,7 +115,7 @@ const rule = {
         data: { attr: found.attr },
         fix(fixer: RuleFixer) {
           // Locate the attribute within the source and strip it.
-          // attribute appears as ` defer` (with leading space) or `defer ` —
+          // attribute appears as ` defer`, with leading space, or `defer ` —
           // find the simplest occurrence within the opener span and remove
           // it + one leading whitespace if present.
           const openerStart = innerStart + found.offset
@@ -170,7 +170,7 @@ const rule = {
         if (!range) {
           return
         }
-        // TemplateElement range covers the inner cooked text (no quote chars).
+        // TemplateElement range covers the inner cooked text, no quote chars.
         checkLiteralText(node, cooked, range[0])
       },
     }

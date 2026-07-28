@@ -15,13 +15,13 @@
  *   keeps relative paths (GitHub renders those live at HEAD, and the badge
  *   generators/checks key on the relative form) — so this is applied around the
  *   pack/publish and restored after (try/finally). Why pack-time +
- *   orchestrator-driven (not a prepack hook): the fleet npm publish runs `pnpm
+ *   orchestrator-driven, not a prepack hook: the fleet npm publish runs `pnpm
  *   stage publish --ignore-scripts`, so lifecycle hooks never fire; and npm
  *   `--approve` re-packs locally to integrity-compare against the staged
  *   tarball, so BOTH packs must see the same pinned README or the gate trips on
  *   a content diff. For cargo, crates.io embeds the README from disk at `cargo
  *   publish`/`cargo package` time, and cargo refuses a VCS-dirty tree — so the
- *   bracketed publish passes `--allow-dirty` when (and only when) a pin was
+ *   bracketed publish passes `--allow-dirty` when, and only when, a pin was
  *   written (the [`withPinnedReadme`] callback receives that flag). Pure
  *   helpers here; the pin/restore bracket wraps each registry's pack.
  */
@@ -55,7 +55,7 @@ export function parseGitHubSlug(
 }
 
 /**
- * The `raw.githubusercontent.com` base (trailing slash) for a repo slug + git
+ * The `raw.githubusercontent.com` base, trailing slash, for a repo slug + git
  * ref, e.g. `SocketDev/socket-lib` + `v1.2.3` →
  * `https://raw.githubusercontent.com/SocketDev/socket-lib/v1.2.3/`.
  */
@@ -82,7 +82,7 @@ const COMMIT_SHA_RE = /^[0-9a-f]{40}$/ // socket-lint: allow uncommented-regex
 
 /**
  * The commit sha the local tag `tag` points at, or undefined when the tag
- * doesn't exist (or the sha can't be read). Probes existence first with
+ * doesn't exist, or the sha can't be read. Probes existence first with
  * `show-ref --verify --quiet` — silent on both streams, so the EXPECTED
  * missing-tag case (a dry-run pack, `--direct` mode) doesn't spray a
  * `fatal: ambiguous argument` into the publish output (runCapture inherits
@@ -120,7 +120,7 @@ export interface PinTarget {
   // Repo root the README + pack run from.
   rootPath: string
   // The release version being published (bare, e.g. '1.2.3'); pinned to tag
-  // `v<version>`'s commit sha (tag-name fallback pre-tag).
+  // `v<version>`'s commit sha, tag-name fallback pre-tag.
   version: string
 }
 

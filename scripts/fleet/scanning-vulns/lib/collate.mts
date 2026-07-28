@@ -55,7 +55,7 @@ function compareStrings(a: string, b: string): number {
 }
 
 // Count the non-empty / non-placeholder findings. A focus-area agent that found
-// nothing returns an empty list (or a single placeholder with no file); those
+// nothing returns an empty list, or a single placeholder with no file; those
 // are dropped before collation (Step 3.1).
 export function dropEmpty(findings: readonly Finding[]): Finding[] {
   return findings.filter(f => Boolean(f?.file && f.title))
@@ -63,7 +63,7 @@ export function dropEmpty(findings: readonly Finding[]): Finding[] {
 
 // Light dedupe (Step 3.2): two findings at the same file:line with the same
 // category collapse to one — keep the longer description, count the drop. NOT
-// the heavy semantic dedupe (that's triaging-findings' job).
+// the heavy semantic dedupe, that's triaging-findings' job.
 export function lightDedupe(findings: readonly Finding[]): {
   findings: Finding[]
   duplicates: number
@@ -86,7 +86,7 @@ export function lightDedupe(findings: readonly Finding[]): {
   return { duplicates, findings: [...byKey.values()] }
 }
 
-// The Step 3 sort + id assignment: (severity desc, file, line) order, ids
+// The Step 3 sort + id assignment: severity desc, file, line, order, ids
 // F-001, F-002, … in that order. Mutates a copy, returns it.
 export function assignIds(findings: readonly Finding[]): Finding[] {
   const sorted = [...findings].toSorted((a, b) => {

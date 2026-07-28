@@ -13,9 +13,9 @@
  *   permissions, safe-outputs — leaves the body hash green while the lock
  *   runs the old configuration. Pure node, no gh-aw dependency, so it runs
  *   in CI without the extension installed. A `.md` with no sibling `.lock.yml`
- *   (authored but never compiled) fails too — the `.lock.yml` is what runs, so
+ *   authored but never compiled, fails too — the `.lock.yml` is what runs, so
  *   an uncompiled `.md` is a no-op workflow. A repo with no gh-aw workflows
- *   passes vacuously. Exit 0 — all in sync (or none); 1 — at least one stale /
+ *   passes vacuously. Exit 0 — all in sync, or none; 1 — at least one stale /
  *   missing lock.
  */
 

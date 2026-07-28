@@ -14,7 +14,7 @@
 // Allowed:
 //   - bare `#123` (resolves against the current repo — no cross-repo leak)
 //   - `SocketDev/<repo>#<num>` (same org — fine to ping)
-//   - `https://github.com/SocketDev/...` (same org)
+//   - `https://github.com/SocketDev/...`, same org
 //
 // Blocked:
 //   - `<other-owner>/<repo>#<num>`
@@ -112,7 +112,7 @@ export function extractMessageBodies(command: string): string {
   while ((match = heredocRe.exec(command)) !== null) {
     out.push(match[2]!)
   }
-  // Same for unquoted HEREDOC tags (still common).
+  // Same for unquoted HEREDOC tags, still common.
   const heredocUnquotedRe = /<<\s*([A-Z][A-Z0-9_]*)\b([\s\S]*?)^\s*\1\s*$/gm
   while ((match = heredocUnquotedRe.exec(command)) !== null) {
     out.push(match[2]!)

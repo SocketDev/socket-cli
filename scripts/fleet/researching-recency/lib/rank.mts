@@ -1,6 +1,6 @@
 /**
  * @file Weighted reciprocal-rank fusion, ported from the upstream last30days
- *   `fusion.py`. Merges the per-(subquery, source) ranked streams into one
+ *   `fusion.py`. Merges the per-subquery, source, ranked streams into one
  *   candidate pool: each stream contributes weight / (RRF_K + rank) to the
  *   candidate it surfaced, candidates seen in multiple streams accumulate, and
  *   the pool is capped per author and diversified across sources before
@@ -24,13 +24,13 @@ const DIVERSITY_RELEVANCE_THRESHOLD = 0.25
 const MAX_ITEMS_PER_AUTHOR = 3
 
 // Separator joining a subquery label and a source into a stream key. A subquery
-// label is a slug (no spaces) and a source name is a fixed lowercase token, so a
+// label is a slug, no spaces, and a source name is a fixed lowercase token, so a
 // single space unambiguously splits the two. The format is defined here once;
 // `streamKeyOf` builds it, `parseStreamKey` reads it, and fetch + tests use both
 // rather than hard-coding the separator.
 const STREAM_KEY_SEPARATOR = ' '
 
-// Build the `streams` map key for a (label, source) pair.
+// Build the `streams` map key for a, label, source, pair.
 export function streamKeyOf(label: string, source: SourceName): string {
   return `${label}${STREAM_KEY_SEPARATOR}${source}`
 }
@@ -82,7 +82,7 @@ export function candidateKey(item: SourceItem): string {
   return item.url ? normalizeUrl(item.url) : `${item.source}:${item.itemId}`
 }
 
-// Sort key (ascending compare): higher rrfScore, then relevance, then freshness,
+// Sort key, ascending compare: higher rrfScore, then relevance, then freshness,
 // then source name, then title. Returns negative when `a` should rank first.
 function compareCandidates(a: Candidate, b: Candidate): number {
   return (
@@ -213,7 +213,7 @@ function makeCandidate(
   }
 }
 
-// Fuse the ranked per-(subquery, source) streams into one candidate pool of at
+// Fuse the ranked per-subquery, source, streams into one candidate pool of at
 // most `poolLimit` items. `streams` is keyed via `streamKeyOf(label, source)`.
 export function weightedRrf(
   streams: Map<string, SourceItem[]>,
@@ -304,7 +304,7 @@ export function weightedRrf(
     }
   }
 
-  // oxlint-disable-next-line unicorn/no-array-sort -- the spread of candidates.values() already copies into a fresh array (no shared mutation); .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
+  // oxlint-disable-next-line unicorn/no-array-sort -- the spread of candidates.values() already copies into a fresh array, no shared mutation; .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
   const fused = [...candidates.values()].sort(compareCandidates)
   return diversifyPool(applyPerAuthorCap(fused), poolLimit)
 }

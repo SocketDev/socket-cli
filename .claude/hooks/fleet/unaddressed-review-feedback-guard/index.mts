@@ -2,7 +2,7 @@
 // Claude Code Stop hook — unaddressed-review-feedback-guard.
 //
 // The RESPOND half of the PR review cycle. When THIS session opened or
-// pushed a PR, review feedback (bot or human) must be RESPONDED to — a reply
+// pushed a PR, review feedback, bot or human, must be RESPONDED to — a reply
 // carrying a fix or an evidence-backed explanation — before the turn ends.
 // Operators kept having to repeat "respond to the bot feedback and review";
 // this makes skipping it a block, not a default.
@@ -13,7 +13,7 @@
 // summaries are minimized. This guard fires EARLIER — the session drove a PR
 // but left review threads with no reply — so the two chain: respond here,
 // then resolve + minimize there. `isBotLogin` is imported from the collapse
-// guard (single source of truth for review-bot classification, never forked).
+// guard, single source of truth for review-bot classification, never forked.
 //
 // Detection is code-is-law: the guard scans this session's Bash tool calls
 // for an active-work signal on a PR (`gh pr create`, `git push`, or a
@@ -302,7 +302,7 @@ function ghJson(args: readonly string[]): unknown {
 }
 
 // The live review-thread state + the authenticated operator's login for one
-// PR, or undefined on any gh / parse failure (fail open).
+// PR, or undefined on any gh / parse failure, fail open.
 function threadsForPr(
   pr: PrRef,
 ): { pr: PullRequestThreads; viewer: string } | undefined {

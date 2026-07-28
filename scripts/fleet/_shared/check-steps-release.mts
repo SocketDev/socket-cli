@@ -16,7 +16,7 @@ import type { CheckStep } from './check-steps.mts'
 export function buildReleaseAndDocsSteps(): CheckStep[] {
   return [
     // gh-aw agentic workflows: each `<name>.md` source has a compiled
-    // `<name>.lock.yml` (what Actions runs) whose embedded body_hash AND
+    // `<name>.lock.yml`, what Actions runs, whose embedded body_hash AND
     // frontmatter_hash match the .md — catches a prompt OR frontmatter edited
     // without `gh aw compile`. Pure node, no gh-aw dependency; vacuous pass
     // with no agentic workflows.
@@ -66,7 +66,7 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
       run('node', ['scripts/fleet/check/claude-md-rules-are-informative.mts']),
     // .claude/ segmentation gate. Every entry under
     // .claude/{agents,commands,hooks,skills}/ must live under fleet/<name>/
-    // (when wheelhouse-canonical) or repo/<name>/ (everything else).
+    // when wheelhouse-canonical, or repo/<name>/ everything else.
     // Dangling top-level entries shadow the canonical copy and break
     // skill resolution. Past incident (2026-06-01): fleet-wide audit found
     // ~200 dangling entries across 10 repos. Auto-fixable with
@@ -115,7 +115,7 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // readable, unobscured code. In scope only when package.json `files`
     // includes "dist" AND a rolldown/rollup config exists; vacuous pass
     // otherwise, and skips cleanly when `dist/` isn't built yet. Report-only
-    // (member-ci-fires-on-push rollout pattern) until any fleet backlog clears.
+    // member-ci-fires-on-push rollout pattern, until any fleet backlog clears.
     releaseStep(['scripts/fleet/check/published-dist-is-readable.mts']),
     // Release-gate: the fleet bundle must build → install → verify round-trip
     // cleanly before it ships. Calls validate-release-bundle.mts (wheelhouse-only
@@ -136,7 +136,7 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // gh is unauthenticated / no fleet-repos.json in a member checkout).
     releaseStep(['scripts/fleet/check/member-ci-fires-on-push.mts']),
     // Every repo in fleet-repos.json must EXIST in its org — a roster entry with
-    // no repo is a half-onboarded member (socket-gemini-nano: roster entry, no
+    // no repo is a half-onboarded member (odai: roster entry, no
     // SocketDev/ repo → stranded cascades + 404'd environments). Onboarding must
     // create the repo AND update the roster together. Report-mode + network-gated
     // (a 404 can mean private + no token access), skips cleanly in offline lanes.
@@ -207,7 +207,7 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // published GitHub release. The promote is irreversible and the tag +
     // release are cut in a separate leg after it, so a leg that produces
     // nothing leaves a half-done release nothing else detects. Scoped to the
-    // TAG ERA (anchored at the earliest published version that carries a tag),
+    // TAG ERA, anchored at the earliest published version that carries a tag,
     // so pre-discipline history is not a backlog. Network reads → release tier;
     // fail-open offline / without gh auth.
     releaseStep([
@@ -240,7 +240,7 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // Reminder/guard duplication gate. The fleet convention: a `-guard` hook
     // BLOCKS, a `-nudge` hook NUDGES — one surface per concern, never both.
     // Errors when a base name has both `<base>-guard` and `<base>-nudge`
-    // (an exact same-concern duplicate); advisory-lists 2-segment shared-prefix
+    // an exact same-concern duplicate; advisory-lists 2-segment shared-prefix
     // pairs for a human glance. Past incident (2026-06-03): a prose-antipattern
     // reminder + guard overlapped; resolved by dropping the reminder.
     () =>
@@ -272,7 +272,7 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // matching gh release whose templateSha equals it, and the release at
     // bundle.ref exists. Read-side twin of the dep-0 fetch-path verify (which
     // hard-fails at install). Network-gated: SKIPS when gh is unavailable, so it
-    // no-ops in offline CI lanes + repos with no pin (the wheelhouse producer).
+    // no-ops in offline CI lanes + repos with no pin, the wheelhouse producer.
     releaseStep([
       'scripts/fleet/check/release-and-cascade-are-paired.mts',
       '--quiet',
@@ -344,6 +344,21 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     () =>
       run('node', [
         'scripts/fleet/check/publish-workflows-are-conventionally-named.mts',
+        '--quiet',
+      ]),
+    // Every workflow job that runs a version-derivation leg (bump.mts,
+    // npm-publish.mts --bump, cargo-publish.mts --bump, publish-pipeline.mts)
+    // must check out with the v* tags reachable — `fetch-tags: true`, or a
+    // full-history `fetch-depth: 0`. The bump engine anchors on registry-latest
+    // PLUS the last reachable tag, so on a never-published repo the tags are the
+    // ONLY anchor and a depth-1 tagless checkout derives 0.1.0, then trips the
+    // half-applied-bump gate on historical CHANGELOG sections (decmpfs run
+    // 30226873755). Dual-root in the wheelhouse; absent workflow file is a
+    // clean no-op. STRICT (exit 1) — the invariant is one line with fleet-wide
+    // blast radius.
+    () =>
+      run('node', [
+        'scripts/fleet/check/version-derivation-jobs-have-tags.mts',
         '--quiet',
       ]),
     // A bot workflow that GPG-signs commits MUST use the BARE

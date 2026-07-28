@@ -20,7 +20,7 @@
  *   - Chocolatey: `choco feature enable -n autoUpdate` (any `-n` / `-n=` /
  *     `--name` spelling) re-enables the auto-update feature. Report-only — NO
  *     autofix. The disable knob can be re-enabled deliberately in a few
- *     legitimate places (a teardown that restores prior state, a doc example),
+ *     legitimate places, a teardown that restores prior state, a doc example,
  *     and the deterministic linter can't tell "remove this line" from "flip it
  *     back to the hardened value" without the surrounding intent. The human
  *     picks: delete the re-enable, or restore the disable

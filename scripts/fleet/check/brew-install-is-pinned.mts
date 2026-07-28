@@ -12,7 +12,7 @@
  *   added without regenerating the manifest); (b) every tap pin's `committedAt`
  *   parses as ISO and is >= `SOAK_DAYS` old; (c) no `.github/` brew install
  *   formula is missing from the Brewfile; and the Brewfile's `# soak-days:`
- *   header equals `SOAK_DAYS` (data-file parity). Enrollment is the Brewfile: a
+ *   header equals `SOAK_DAYS`, data-file parity. Enrollment is the Brewfile: a
  *   repo with no repo-root Brewfile has not adopted the pinned-bundle flow, so
  *   the gate no-ops (the cascaded fleet setup action's brew hint strings make
  *   discovery non-empty everywhere, so keying enforcement off discovery alone

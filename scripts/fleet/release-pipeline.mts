@@ -23,7 +23,7 @@
  *   7. bump — bump.mts writes CHANGELOG + the bump commit (LAST commit)
  *
  *   Receipts live in a state file under
- *   node_modules/.cache/fleet/socket-release-pipeline/ (shared with publish-pipeline)
+ *   node_modules/.cache/fleet/socket-release-pipeline/ shared with publish-pipeline
  *   — never the tracked tree — so a re-run resumes at the first missing/stale
  *   stage. `--dry-run` walks the stages without mutations (registry reads +
  *   tmp-dir packs allowed).
@@ -124,6 +124,10 @@ export interface CliOptions {
   localPublish: boolean
   namedVersion: string | undefined
   preflightAll: boolean
+  // Publish pipeline --yes: approve every eligible staged entry without the
+  // interactive multi-select, and let the registry challenge drive the browser
+  // web-OTP. The explicit opt-in that makes --approve runnable off a terminal.
+  yes: boolean
 }
 
 /**
@@ -248,7 +252,7 @@ export async function runPipeline(
     const outcome = await runStage(stage, state, cli)
     const ms = Date.now() - stageStartMs
     // The ci stage may commit fixes, moving HEAD; re-read and re-key the
-    // earlier tree receipts (the committed content is what they verified).
+    // earlier tree receipts, the committed content is what they verified.
     if (stage === 'ci') {
       const newSha = await headSha()
       if (newSha !== sha) {
@@ -411,6 +415,7 @@ export async function runApproveMode(
       cwd: REPO_ROOT,
       dryRun: cli.dryRun,
       seams: opts.seams,
+      yes: cli.yes,
     })
     state_ = persist(state_, 'approve', outcome, {
       dryRun: cli.dryRun,
@@ -627,6 +632,9 @@ async function main(): Promise<void> {
     namedVersion:
       typeof values['version'] === 'string' ? values['version'] : undefined,
     preflightAll: !!values['preflight-all'],
+    // The release pipeline never promotes — runApproveStep is unreachable
+    // here; the field exists to satisfy the shared CliOptions shape.
+    yes: false,
   }
   if (!Number.isFinite(cli.ciTimeoutMs) || cli.ciTimeoutMs <= 0) {
     logger.fail('--ci-timeout must be a positive number of seconds.')

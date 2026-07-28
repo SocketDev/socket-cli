@@ -269,7 +269,7 @@ export interface RegistryVersionInfo {
  * trusted-publisher attribution (check/provenance-is-attested.mts).
  *
  * Use this from `check/provenance-is-attested.mts` (CLI audit), the approve
- * flow (show prior-version status), and the Stop-hook (verify a freshly- bumped
+ * flow, show prior-version status, and the Stop-hook (verify a freshly- bumped
  * version landed with provenance).
  */
 export async function fetchVersionTrustInfo(

@@ -11,7 +11,7 @@
 // change. The agent verified each tree green independently before bypassing, but
 // --no-verify is a blunt instrument: it skips ALL validation, so a real failure
 // in your own change would slip through too. The right move for an index race is
-// to RETRY (the lock clears when the other session's git op finishes) or commit
+// to RETRY, the lock clears when the other session's git op finishes, or commit
 // from an isolated index — not to disable the gate.
 //
 // This is a REMINDER (exit 0 + stderr), not a block — `--no-verify` is already

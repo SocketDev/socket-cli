@@ -13,7 +13,7 @@
 //      next commit. Per CLAUDE.md: "surgical `git add <specific-file>`.
 //      Never `-A` / `.`."
 //
-//   2. BLOCK a bare `git commit` (no pathspec) when the index holds files
+//   2. BLOCK a bare `git commit`, no pathspec, when the index holds files
 //      the agent has NOT touched this session (via Edit / Write / `git add
 //      <path>` / `git rm <path>`). A bare commit commits the ENTIRE index,
 //      so a parallel session's staged work rides in under your authorship.
@@ -78,7 +78,7 @@ const COMMIT_SWEEP_BYPASS = ['Allow index-sweep bypass'] as const
 export function getRepoDir(command: string, cwd?: string | undefined): string {
   // The repo the `git` command actually runs in — `git -C <dir>`, a leading
   // `cd <dir>`, else the command's own cwd. NOT CLAUDE_PROJECT_DIR: that's the
-  // session's project (the wheelhouse), so reading its index from a sibling
+  // session's project, the wheelhouse, so reading its index from a sibling
   // repo's commit cross-repo-false-blocked on the wheelhouse's staged files.
   // Scoped to the commit invocation — a -C inside a $(…) substitution
   // (e.g. a rev-parse composing the message) must not point the index
@@ -91,7 +91,7 @@ export { isGitCommit }
 // True when a `git commit` carries an explicit pathspec — the parallel-safe
 // form, because `git commit <paths>` / `-o`/`--only <paths>` commits ONLY those
 // paths regardless of what else is in the index. Detect: any positional arg
-// after `commit` (a path), or `-o`/`--only`, or a `--` separator, or a
+// after `commit`, a path, or `-o`/`--only`, or a `--` separator, or a
 // `--pathspec-from-file=<file>` (pathspec-limits exactly like `-- <paths>`,
 // just sourced from a file). Flags that take a value (`-m msg`, `-F file`,
 // `--author=…`, etc.) must not be mistaken for a pathspec, so positionals are
@@ -248,7 +248,7 @@ export function checkCommand(command: string, payload: ToolCallPayload) {
   // ── Layer 2: BLOCK a plain `git commit` that would sweep the whole index
   //    when it holds files this session didn't touch ────────────────────────
   //
-  // Parallel-session-cautious by default: a bare `git commit` (no pathspec)
+  // Parallel-session-cautious by default: a bare `git commit`, no pathspec
   // commits the ENTIRE index, so another agent's staged work rides in under
   // your authorship. The safe form is `git commit -o <your-files>` (or
   // `-- <paths>`), which commits ONLY the named paths regardless of the index.
@@ -263,7 +263,7 @@ export function checkCommand(command: string, payload: ToolCallPayload) {
       return undefined
     }
     // The squashing-history collapse commit stages the whole tree on purpose;
-    // the hardened SQUASH_HISTORY=1 sentinel authorizes it (no phrase needed).
+    // the hardened SQUASH_HISTORY=1 sentinel authorizes it, no phrase needed.
     if (squashSentinelAllows(command)) {
       return undefined
     }

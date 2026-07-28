@@ -8,7 +8,7 @@
  *   silent, total failure: the test file looks present but contributes zero
  *   assertions. Why a rule: a fleet sweep found 95 test files in one repo
  *   broken exactly this way (a `globals: true → false` migration that didn't
- *   update test imports). The fix is mechanical (add the import), but nothing
+ *   update test imports). The fix is mechanical, add the import, but nothing
  *   stopped the next one — so this gate fails CI/editor the moment a test uses
  *   a vitest global it didn't import. Scope: `*.test.*`. Stands down when the
  *   file imports from `node:test` (it's a node:test file, not vitest —
@@ -50,7 +50,7 @@ const rule = {
     let importedNames: Set<string> | undefined
     let names: Map<string, string> | undefined
     let importsNodeTest = false
-    // Report each missing global at most once (per local name).
+    // Report each missing global at most once, per local name.
     const reported = new Set<string>()
 
     return {
@@ -71,7 +71,7 @@ const rule = {
         if (!call) {
           return
         }
-        // The local binding name written at the call site (root of the chain).
+        // The local binding name written at the call site, root of the chain.
         const localName = call.localChain[0]
         if (!localName || reported.has(localName)) {
           return
@@ -81,7 +81,7 @@ const rule = {
         // the classifier's camelCase heuristic flags as a describe call) → also
         // fine; it's a real binding, not an unimported global. Only a name that
         // is neither vitest-imported NOR otherwise import-bound is the
-        // globals:false bug (used but undefined at runtime). A bare `describe()`
+        // globals:false bug, used but undefined at runtime. A bare `describe()`
         // with no import is still caught — it's in neither set.
         if (!fromVitestImport.has(localName) && !importedNames.has(localName)) {
           reported.add(localName)

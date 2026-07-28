@@ -8,7 +8,7 @@
  *   vocabulary) — when a dep bump moves the base and leaves the alias behind,
  *   every `import … from '@socketsecurity/lib-stable'` resolves an OLDER build
  *   than the catalog ships, a silent version skew across the fleet. Scans both
- *   catalog surfaces: the live `pnpm-workspace.yaml` (what pnpm resolves) and
+ *   catalog surfaces: the live `pnpm-workspace.yaml`, what pnpm resolves, and
  *   the fleet catalog source `.config/fleet/pnpm-workspace.fleet.yaml` (the
  *   cascade-canonical source members inherit). Fail loud on any desync; `pnpm
  *   run fix` (reconcileStableAliases) auto-syncs. Exit 0 = in sync, exit 1 =

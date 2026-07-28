@@ -5,7 +5,7 @@
  * works from one authoritative set.
  *
  * Thin wrapper: it calls the EXISTING collectors in lib/enforcer-inventory.mts
- * (the same owner the claude-md-rules-are-enforced gate uses) rather than
+ * the same owner the claude-md-rules-are-enforced gate uses, rather than
  * re-deriving the directory conventions. The only logic it adds is splitting
  * the flat hook set into guards / reminders / installers by name suffix, since
  * the scan's overlap check keys on that distinction.

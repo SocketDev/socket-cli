@@ -45,7 +45,7 @@
 // Code reports `stop_hook_active: true`, so it fires at most once per
 // turn and can't loop — that case degrades to a non-blocking notice.
 //
-// Three escapes (any one allows the stop):
+// Three escapes, any one allows the stop:
 //   1. Clean worktree — nothing to do.
 //   2. In a LINKED git worktree — a worktree is a staging area for a
 //      push to main; you may stack WIP there and defer the
@@ -54,7 +54,7 @@
 //   3. The user typed `Allow dirty-worktree bypass` this turn — for the
 //      rare legit can't-commit-yet case in the primary checkout.
 //
-// Complements `no-orphaned-staging` (index entries only). This hook
+// Complements `no-orphaned-staging`, index entries only. This hook
 // catches the broader dirty-worktree case: unstaged modifications and
 // untracked files.
 //
@@ -113,7 +113,7 @@ export function getProjectDir(): string | undefined {
 }
 
 /**
- * True when `dir` is the PRIMARY checkout (not a linked worktree). In a linked
+ * True when `dir` is the PRIMARY checkout, not a linked worktree. In a linked
  * worktree `git rev-parse --git-dir` resolves under `.git/worktrees/<name>`; in
  * the primary it's the repo's own `.git`. Mirrors
  * `primary-checkout-branch-guard`.
@@ -124,7 +124,7 @@ export function isPrimaryCheckout(dir: string): boolean {
     timeout: spawnTimeoutMs(5000),
   })
   if (r.status !== 0) {
-    // Not a git repo (or git unavailable) — nothing to guard, treat as
+    // Not a git repo, or git unavailable — nothing to guard, treat as
     // non-primary so the hook stays out of the way (fail-open).
     return false
   }
@@ -237,7 +237,7 @@ export function listTouchedSiblingDirt(
   }
   const touchedByRoot = new Map<string, Set<string>>()
   for (const p of touched) {
-    // findGitRoot walks UP to the nearest `.git` (dir or file); it returns the
+    // findGitRoot walks UP to the nearest `.git`, dir or file; it returns the
     // input unchanged when none is found, so a touched path outside any repo
     // resolves to its own dir, fails the git-status probe below, and drops out.
     const root = findGitRoot(path.dirname(p))
@@ -270,7 +270,7 @@ export function listTouchedSiblingDirt(
  * leaves dirt this turn never touched; scoping to `touched` keeps the guard
  * from forcing the turn to commit or revert another session's in-flight work —
  * the same scoping `listTouchedSiblingDirt` already applies to sibling repos.
- * Pure (no spawn) so it unit-tests directly.
+ * Pure, no spawn, so it unit-tests directly.
  */
 export function filterTouchedDirty(
   dirty: readonly DirtyEntry[],
@@ -283,13 +283,13 @@ export function filterTouchedDirty(
 /**
  * Live-actor classification for a set of dirty paths. Returns two buckets:
  * `blocking` — paths whose most-recent ledger writer is THIS session or
- * unattributed (no live foreign actor has them), and `sanctioned` — paths
+ * unattributed, no live foreign actor has them, and `sanctioned` — paths
  * whose most-recent writer is a DIFFERENT live actor within LEDGER_TTL_MS.
  * Sanctioned paths are excluded from the blocking count so the guard does not
  * force the turn to commit work that belongs to another live run.
  *
  * Fail-safe toward blocking: any IO / parse error reading the ledger counts
- * the path as blocking (not sanctioned).
+ * the path as blocking, not sanctioned.
  */
 export interface LedgerPartition {
   readonly blocking: readonly DirtyEntry[]
@@ -330,7 +330,7 @@ export function partitionByLedger(
   }
 
   // Read own-actor ledger once for recency comparison. Fail-open (undefined if
-  // unreadable): any IO error here defaults to blocking (not sanctioning) because
+  // unreadable): any IO error here defaults to blocking, not sanctioning, because
   // we can't prove foreign recency beats own recency.
   const ownFp = ledgerFilePath(storeRoot, ownActorId)
   const ownLedger = readActorLedger(ownFp)
@@ -341,7 +341,7 @@ export function partitionByLedger(
     const entry = dirty[i]!
     const abs = path.resolve(repoDir, entry.path)
     const normalized = normalizeForLedger(abs)
-    // One attribution loop for the fleet (shared with whose-work): the
+    // One attribution loop for the fleet, shared with whose-work: the
     // most-recent writer wins; foreign beats own only when STRICTLY newer.
     // The foreignLedgers input here is already liveness-filtered, so any
     // foreign owner is a live one — sanction it; everything else blocks.
@@ -445,7 +445,7 @@ export interface StopInputs {
 // The decision outcomes:
 //   'allow'          — nothing this turn left dirty in a blocking spot.
 //   'note-worktree'  — only the PRIMARY is dirty and it's a linked worktree
-//                      (deferred-WIP staging area), no sibling dirt: note.
+//                      deferred-WIP staging area, no sibling dirt: note.
 //   'note-bypass'    — would block, but the bypass phrase is present: note.
 //   'note-active'    — would block, but stop_hook_active is set (a block already
 //                      fired this turn) → degrade to a note to avoid a loop.
@@ -465,7 +465,7 @@ export type StopAction =
 /**
  * The pure decision: given the resolved git + payload facts, what should the
  * Stop hook do? Kept side-effect-free so it unit-tests directly — no spawn, no
- * git, no subprocess race. A dirty sibling repo (authored this turn) blocks
+ * git, no subprocess race. A dirty sibling repo, authored this turn, blocks
  * even when the primary is clean or a linked worktree — commit-as-you-go spans
  * repos.
  */
@@ -530,7 +530,7 @@ export const check = (payload: ToolCallPayload): GuardResult => {
   )
 
   // Ledger-based sanctioning: split session-touched dirty paths into
-  // blocking (ours or unattributed) vs sanctioned (owned by a live foreign
+  // blocking, ours or unattributed, vs sanctioned (owned by a live foreign
   // actor). Fail-safe toward blocking — any ledger IO error keeps the path
   // in the blocking bucket.
   const ownActorId = computeActorId(payload.transcript_path)

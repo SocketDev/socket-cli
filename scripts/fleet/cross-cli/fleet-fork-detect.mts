@@ -56,7 +56,7 @@ export function applyPatchBaseDir(command: string, cwd: string): string {
 
 /**
  * Gather every string field of a tool input that might carry a shell command or
- * an apply_patch body: `command` (string or argv array), plus the freeform
+ * an apply_patch body: `command`, string or argv array, plus the freeform
  * `content` / `input` / `patch` / `text` fields different tools use.
  */
 export function collectCommandText(toolInput: unknown): string {
@@ -148,7 +148,7 @@ export function extractEditedTargets(
 
 /**
  * Run each candidate path through the Claude no-fleet-fork-guard decision
- * engine, returning the first that would be blocked (with its message), or
+ * engine, returning the first that would be blocked, with its message, or
  * `undefined` when all are allowed.
  */
 export async function findBlockedTarget(

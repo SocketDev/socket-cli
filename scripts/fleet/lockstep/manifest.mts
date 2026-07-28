@@ -1,8 +1,8 @@
 /**
  * @file Manifest loading + sub-manifest tree resolution. `readManifest` parses
- *   one `lockstep.json` (or sub-manifest) and runs it through the TypeBox
+ *   one `lockstep.json`, or sub-manifest, and runs it through the TypeBox
  *   schema; schema failures terminate the process with exit 1 and a per-issue
- *   error trail (deeper than a single throw). `loadManifestTree` walks the
+ *   error trail, deeper than a single throw. `loadManifestTree` walks the
  *   top-level manifest's `includes[]` array, reads each sub-manifest, and
  *   produces a flattened view: per-area manifest list (preserving file
  *   boundaries for per-area reports) plus a merged view (upstreams + sites
@@ -55,7 +55,7 @@ export function readManifest(manifestPath: string): Manifest {
 
 /**
  * Resolve the manifest tree's ROOT file for a repo, in preference order:
- * `<root>/lockstep.json` (the shim-plus-includes layout), then the segregated
+ * `<root>/lockstep.json`, the shim-plus-includes layout, then the segregated
  * `<root>/.config/repo/lockstep.json` (the manifest is repo-owned content —
  * `.config/repo/` holds it, `.config/fleet/lockstep.schema.json` holds the
  * fleet-identical schema), then the legacy loose `<root>/.config/lockstep.json`
@@ -90,11 +90,11 @@ export function listManifestFiles(rootManifestPath: string): string[] {
 /**
  * Resolve a manifest + all its `includes[]` sub-manifests into a single
  * flattened view. Each sub-manifest contributes its rows; the top-level
- * upstreams/sites maps are merged (top-level wins on conflict).
+ * upstreams/sites maps are merged, top-level wins on conflict.
  *
  * When `repoRoot` is supplied, every `version-pin` row that OMITS `pinned_sha`
  * has it derived from the authoritative `<repoRoot>/.gitmodules` `ref =`
- * (single source of truth) so downstream consumers see a self-describing row.
+ * single source of truth, so downstream consumers see a self-describing row.
  * Fill-when-absent only: a legacy row that still carries `pinned_sha` is left
  * untouched (backward-compat). Rows are shared object refs between `areas` and
  * the merged view, so the in-place fill propagates to both.

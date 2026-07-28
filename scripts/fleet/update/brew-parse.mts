@@ -45,7 +45,7 @@ export interface TapFile {
 }
 
 // A resolved tap pin: the `sha` a tap is checked out at + its ISO committer
-// date (the soak clock).
+// date, the soak clock.
 export interface ResolvedTapPin {
   committedAt: string
   sha: string
@@ -144,7 +144,7 @@ export function splitShellStatements(text: string): string[] {
 
 /**
  * Extract brew tools from ONE statement — accepted only when `brew install`
- * lead its command tokens (after an optional prefix), which rejects `echo …
+ * lead its command tokens, after an optional prefix, which rejects `echo …
  * brew install …` prose. A redirection token (`>`, `2>&1`) ends the arguments.
  */
 export function parseBrewInstallStatement(statement: string): BrewTool[] {
@@ -203,15 +203,15 @@ export function parseBrewInstallCommands(text: string): BrewTool[] {
 }
 
 /**
- * Extract `cask "…"` / `brew "…"` declarations from a Brewfile (all explicit).
+ * Extract `cask "…"` / `brew "…"` declarations from a Brewfile, all explicit.
  */
 export function parseBrewfile(text: string): BrewTool[] {
   const tools: BrewTool[] = []
   const lineList = text.split(/\r?\n/)
   for (let i = 0, { length } = lineList; i < length; i += 1) {
     const line = lineList[i]!
-    // A Brewfile entry: capture 1 = the entry kind (brew formula or cask),
-    // capture 2 = the quoted tool name (single or double quotes).
+    // A Brewfile entry: capture 1 = the entry kind, brew formula or cask,
+    // capture 2 = the quoted tool name, single or double quotes.
     const match = /^\s*(brew|cask)\s+["']([^"']+)["']/.exec(line)
     if (match) {
       tools.push({ cask: match[1] === 'cask', explicit: true, name: match[2]! })
@@ -221,7 +221,7 @@ export function parseBrewfile(text: string): BrewTool[] {
 }
 
 /**
- * Deduplicate by (kind, name); an explicit declaration wins over a bare one.
+ * Deduplicate by, kind, name; an explicit declaration wins over a bare one.
  * Returned sorted by name for stable output.
  */
 export function dedupeBrewTools(tools: readonly BrewTool[]): BrewTool[] {
@@ -241,7 +241,7 @@ export function dedupeBrewTools(tools: readonly BrewTool[]): BrewTool[] {
 /**
  * The tap files to probe for a tool, in resolution order. A three-part token
  * (`owner/tap/name`) is a third-party tap `owner/homebrew-tap`; a bare token is
- * homebrew-core (with a homebrew-cask fallback) unless `cask` is set.
+ * homebrew-core, with a homebrew-cask fallback, unless `cask` is set.
  */
 export function tapFileCandidates(tool: BrewTool): TapFile[] {
   const parts = tool.name.split('/')
@@ -371,7 +371,7 @@ export function findBrewToolSites(root: string): BrewTool[] {
  * The brew tools CI installs, from `.github/` only. This is the install
  * manifest surface — the Brewfile is what `brew bundle` installs in CI, so it
  * derives from the CI `brew install` sites, not from `scripts/` dev helpers
- * (whose prose about brew would leak non-tools into the manifest).
+ * whose prose about brew would leak non-tools into the manifest.
  */
 export function findManifestBrewSites(root: string): BrewTool[] {
   const out: BrewTool[] = []
@@ -387,7 +387,7 @@ export function findManifestBrewSites(root: string): BrewTool[] {
 /**
  * Render a repo-root Brewfile: one `brew "name"` / `cask "name"` line per
  * deduped tool, sorted; tap-qualified names keep their prefix. The `soak-days`
- * header mirrors `SOAK_DAYS` (a Brewfile can't import it) for the gate's parity
+ * header mirrors `SOAK_DAYS`, a Brewfile can't import it, for the gate's parity
  * check. Pure + deterministic — the gate re-renders and byte-compares.
  */
 export function renderBrewfile(
@@ -436,7 +436,7 @@ export function parsePinFromCommitsResponse(json: unknown): ResolvedTapPin {
 
 // The static preamble of constants/brew-tap-pins.mts — everything above the
 // generated `BREW_TAP_PINS` array. Kept here because --apply regenerates the
-// whole file (it is script-owned); the gate re-imports the array.
+// whole file, it is script-owned; the gate re-imports the array.
 const BREW_TAP_PINS_HEADER = `/**
  * @file Canonical Homebrew tap SHA pins — the ONE source the pinned-bundle CI
  *   flow reads to check each tap out at a commit at least \`SOAK_DAYS\` old.

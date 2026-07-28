@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /*
  * @file Fleet-wide check: `.github/actions/` is segmented into `fleet/`
- *   (cascade-owned, delete-and-replace mirrored) and `repo/` (host-owned) —
+ *   cascade-owned, delete-and-replace mirrored, and `repo/` (host-owned) —
  *   the same fleet/repo split as `.claude/hooks/` and
  *   `.config/fleet/oxlint-plugin/`. A flat `.github/actions/<name>` entry is a
  *   segmentation violation: the cascade's tombstones prune the historical flat
  *   locations, so a new flat action would sit outside both ownership tiers
- *   (never cascaded, yet not declared repo-owned) and a stray file there is
+ *   never cascaded, yet not declared repo-owned, and a stray file there is
  *   never a valid composite action. CLAUDE.md "hook-registry" (one segmentation
  *   scheme across surfaces).
  *
@@ -34,7 +34,7 @@ const SEGMENT_DIRS = new Set(['fleet', 'repo'])
  * Return the unsegmented entries under an `.github/actions/` directory: every
  * visible entry that is not the `fleet/` or `repo/` segment dir. Dotfiles
  * (.gitkeep, .DS_Store) are skipped — segmentation governs actions, not
- * markers. A missing directory returns [] (repos without local actions pass).
+ * markers. A missing directory returns [], repos without local actions pass.
  */
 export function findUnsegmentedEntries(actionsDir: string): string[] {
   if (!existsSync(actionsDir)) {

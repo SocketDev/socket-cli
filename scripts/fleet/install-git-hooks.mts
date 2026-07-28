@@ -12,10 +12,10 @@
  *
  *   `.git-hooks/` root holds a DISPATCHER per hook type (commit-msg /
  *   pre-commit / pre-push / post-commit) — git invokes these as `<hook-name>`.
- *   Each dispatcher runs the fleet hook then the repo hook (Option A), so both
+ *   Each dispatcher runs the fleet hook then the repo hook, Option A, so both
  *   tiers fire under git's single core.hooksPath. Subdirs:
  *   - `fleet/` — fleet hook entry points + `.mts` implementations + tests,
- *     called BY the root dispatchers (not by git directly).
+ *     called BY the root dispatchers, not by git directly.
  *   - `repo/` — per-repo hook overrides, called BY the root dispatchers when
  *     present. NOT cascaded (host-owned), so other fleet repos never get them.
  *   - `_shared/` — helpers consumed by the entry points (helpers.mts,
@@ -34,7 +34,7 @@ const HOOKS_DIR = '.git-hooks'
 // Resolve the repo root by walking up from this script's own location to the
 // nearest `package.json` ancestor. Inlined (not imported from paths.mts) on
 // purpose: this script runs at `pnpm prepare` time and gets copied/run in
-// isolation (tarball installs, the unit-test fixture), so it must stay
+// isolation, tarball installs, the unit-test fixture, so it must stay
 // self-contained with no sibling-module dependency. The walk is
 // depth-independent — unlike a hardcoded `..` count, it survives the script
 // moving between directories (the 73c691d9 scripts-into-fleet/ refactor broke

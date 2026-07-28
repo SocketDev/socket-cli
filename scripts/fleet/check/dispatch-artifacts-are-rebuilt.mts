@@ -9,7 +9,7 @@
  *     gen/hook-dispatch.mts   -> _dispatch/dispatch-table*.mts   (routing)
  *     build-hook-bundle.mts   -> _dist/bundle.cjs                (table INLINED)
  *     build-hook-snapshot.mts -> _dispatch/{snapshot,excluded}-bundle.cjs + blob
- *     build-snapshot-launcher -> _dispatch/snapshot-blob.path     (blob pin)
+ *     build-snapshot-launcher -> _dispatch/snapshot-blob.path, blob pin
  *
  *   `dispatch-table-is-current` asserts step 1's output matches the hook dirs.
  *   This gate asserts steps 2-4 were rebuilt AFTER it: the launcher prefers the
@@ -226,7 +226,7 @@ function canonicalToolList(literal: string): string {
 }
 
 /**
- * The routing a dispatch table declares — one entry per (event, hook, tools).
+ * The routing a dispatch table declares — one entry per, event, hook, tools.
  * Undefined when the text carries no `DISPATCH_TABLE` literal at all, which is
  * a different failure from an empty table.
  */
@@ -315,7 +315,7 @@ export function compareDispatchArtifactRouting(config: {
  * Whether `snapshot-blob.path` pins a blob built from the CURRENT snapshot
  * bundle. A pin naming an older blob that still exists is the dangerous state —
  * the launcher execs it and the session runs that blob's routing. A pin whose
- * blob is gone (the cache was reaped) is safe: the launcher fails open to
+ * blob is gone, the cache was reaped, is safe: the launcher fails open to
  * `index.cjs`, so it reports absent rather than stale.
  */
 export function classifySnapshotBlobPin(config: {

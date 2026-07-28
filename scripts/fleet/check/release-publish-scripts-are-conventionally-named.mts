@@ -46,7 +46,7 @@ export type ReleasePublishTarget = 'github' | 'npm' | 'cargo' | 'go' | 'python'
 // Body → target patterns. Each entry maps the canonical `<target>:<verb>` name
 // to the regexes that identify that target's work in a script BODY. Ordered so
 // the classification is deterministic; a body matching more than one target is
-// treated as ambiguous (a combined orchestration) and skipped.
+// treated as ambiguous, a combined orchestration, and skipped.
 const TARGET_SIGNATURES: ReadonlyArray<{
   readonly target: ReleasePublishTarget
   readonly expectedName: string

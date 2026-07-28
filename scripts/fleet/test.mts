@@ -13,14 +13,14 @@
  *     mirror it via the MIRROR resolver — never `vitest related` (that broad
  *     walk blew the pre-commit budget on a widely-imported util). The mirror
  *     resolver finds: bare basename tests, shard tests that import the source
- *     (basename-hyphen prefix), check-by-name tests for check scripts, and any
+ *     basename-hyphen prefix, check-by-name tests for check scripts, and any
  *     test file whose first-party imports include the staged source (direct
  *     importers, the accurate catch for not-yet-renamed tests). Untracked paths
  *     are dropped so a foreign, mid-write test another live actor hasn't
  *     committed can't gate a commit. The staged lane stays tight to what is
  *     being committed; the full suite at pre-push + CI covers cross-cutting
  *     impact. A staged source file with no committed mirror test simply runs
- *     nothing at commit time (its impact is caught at the gate).
+ *     nothing at commit time, its impact is caught at the gate.
  *   - `--all` — run the full suite (`vitest run`). Used in CI and on explicit
  *     opt-in. `--shard=<index>/<count>` partitions that full suite across CI
  *     jobs. Flags: `--quiet` / `--silent` suppress progress output. Config /
@@ -244,13 +244,13 @@ function isDelegatedWorkspace(): boolean {
   })
 }
 
-// Filesystem-only test-file count (no vitest subprocess), matching the SAME
+// Filesystem-only test-file count, no vitest subprocess, matching the SAME
 // `**/`-anchored shape as the root vitest config's `include`. Lets `runAll()`
 // fail loud BEFORE spawning vitest, rather than trusting vitest's own
 // `passWithNoTests: true` to silently report "0 tests, all passed" — the
 // zero-package delegation failure mode `runWorkspaceTests()` already guards
 // for the no-root-config layout, extended to the root-config-present one.
-// Counts co-located `src/**` specs too (socket-webext's layout) so a repo
+// Counts co-located `src/**` specs too, socket-webext's layout, so a repo
 // whose config includes them isn't misread as test-less.
 function totalTestFileCount(): number {
   return globSync(
@@ -310,7 +310,7 @@ function runChanged(): number {
 
 function runStaged(files: string[]): number {
   // NARROW staged lane: run the staged test files + each staged source file's
-  // mirror tests via the MIRROR resolver (never vitest related). `vitest run
+  // mirror tests via the MIRROR resolver, never vitest related. `vitest run
   // <files>` runs exactly the resolved test files (no watch).
   //
   // `--no-file-parallelism` forces a single worker for the staged run only —
@@ -335,7 +335,7 @@ function runStaged(files: string[]): number {
 }
 
 function runFiles(files: string[]): number {
-  // `vitest run <files…>` executes exactly the named test files (no watch),
+  // `vitest run <files…>` executes exactly the named test files, no watch,
   // the fast path for "test this one file". --passWithNoTests keeps a path
   // that resolves to no test file from erroring.
   //
@@ -400,7 +400,7 @@ function main(): void {
     return
   }
   // Lane routing (a SPEED category, orthogonal to scope). `--lane fast|mid|slow`
-  // runs that lane; bare `pnpm test` (no scope flag, no explicit files) defaults
+  // runs that lane; bare `pnpm test`, no scope flag, no explicit files, defaults
   // to the fast lane for a quick local loop. --all / --staged / --changed and
   // explicit files intentionally run EVERY lane (so editing a slow-lane test
   // still runs it). The lane reaches the vitest config via FLEET_LANE, which
@@ -428,7 +428,7 @@ function main(): void {
     return
   }
 
-  // Drop generated/vendored paths (build output, vendored trees) before they
+  // Drop generated/vendored paths, build output, vendored trees, before they
   // reach the staged resolver: transforming a tracked multi-MB generated blob
   // (e.g. a base64-embedded wasm) to build the module graph can hang the
   // pre-commit run. They're excluded from discovery anyway (vitest config

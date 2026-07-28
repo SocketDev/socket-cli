@@ -22,7 +22,7 @@
  *   - A file with only `Lock-step from <Lang>: <path>` is a port and is checked
  *     against its canonical source. Header format (single-line `// ` across
  *     every language): // BEGIN LOCK-STEP HEADER // Class Parsing
- *     (Declarations, Expressions, Elements, Methods) // // Lock-step with Go:
+ *     Declarations, Expressions, Elements, Methods // // Lock-step with Go:
  *     src/parser/class.go // Lock-step with C++: src/parser/class.cpp // END
  *     LOCK-STEP HEADER Comparison strips the `// ` prefix from each line; an
  *     empty comment line (`//`) is preserved as an empty content line. The
@@ -30,7 +30,7 @@
  *     scripts/fleet/check/lock-step-headers-match.mts # report + fail node
  *     scripts/fleet/check/lock-step-headers-match.mts --json # machine-readable node
  *     scripts/fleet/check/lock-step-headers-match.mts --quiet # silent on clean Exit
- *     codes: 0 — clean (no quadruplets diverged, or config absent) 1 — at least
+ *     codes: 0 — clean, no quadruplets diverged, or config absent, 1 — at least
  *     one quadruplet has a header diff 2 — gate itself crashed
  */
 

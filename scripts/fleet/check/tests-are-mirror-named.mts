@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /*
  * @file `check --all` gate: every unit test file mirrors the ONE source it
- *   tests. The convention (derived from a fleet-wide audit):
+ *   tests. The convention, derived from a fleet-wide audit:
  *
  *   - **Dir-scoped mirror** — a test at `test/<category>/<subpath>/<name>.test.mts`
  *     tests the source whose basename is `<name>`, matched by the test's FIRST-
- *     party static import (not by filename guessing). Same basename = conforming.
+ *     party static import, not by filename guessing. Same basename = conforming.
  *   - **Detection by direct import** — resolve each test's repo-relative
  *     first-party imports (its own `src/` / `scripts/`, never node_modules or a
  *     sibling repo). ZERO first-party imports → exempt (integration / e2e /
@@ -44,7 +44,7 @@ const logger = getDefaultLogger()
 const EXEMPT_SEGMENTS = new Set(['e2e', 'integration'])
 
 // First-party source roots — a resolved import under one of these is the
-// repo's own code (the mirror target); anything else (node_modules, a sibling
+// repo's own code, the mirror target; anything else (node_modules, a sibling
 // repo, a shared test helper) is not a mirror source.
 const SOURCE_ROOTS = ['src', 'scripts', 'tools']
 

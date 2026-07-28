@@ -29,7 +29,7 @@ import { resolveEditedText } from '../_shared/payload.mts'
 
 // Match builder script paths: a file directly inside a top-level `scripts/`
 // dir or a per-package `packages/<name>/scripts/` dir, with a JS/TS
-// extension (mts, ts, js, mjs, cjs). Anchors to a path segment boundary so
+// extension, mts, ts, js, mjs, cjs. Anchors to a path segment boundary so
 // a bare filename without a leading slash also matches.
 const BUILDER_SCRIPT_RE =
   /(?:^|\/)(?:packages\/[^/]+\/scripts\/|scripts\/)[^/]+\.(?:cjs|js|mjs|mts|ts)$/i

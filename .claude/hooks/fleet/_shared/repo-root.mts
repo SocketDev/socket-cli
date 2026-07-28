@@ -28,7 +28,7 @@ const REPO_ROOT_CACHE = new Map<string, string>()
 
 /**
  * The git toplevel of `dir`, falling back to `dir` when git cannot answer
- * (not a repo, git unavailable, dir missing). Anchor every
+ * not a repo, git unavailable, dir missing. Anchor every
  * `node_modules/.cache/fleet/...` store path on this, never on the raw dir.
  */
 export function resolveRepoRoot(dir: string): string {

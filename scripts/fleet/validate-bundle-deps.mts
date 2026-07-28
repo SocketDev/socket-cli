@@ -26,7 +26,7 @@ const logger = getDefaultLogger()
 const rootPath = REPO_ROOT
 
 // Node.js builtins to ignore (including node: prefix variants).
-// node:smol-* are Socket SEA-bundled optional builtins (smol-util, smol-primordial);
+// node:smol-* are Socket SEA-bundled optional builtins, smol-util, smol-primordial;
 // they appear in dist behind `mod.isBuiltin('node:smol-util')` guards and are only
 // resolvable in SEA binaries, so they should never be expected in dependencies.
 const SOCKET_SEA_BUILTINS = ['node:smol-util', 'node:smol-primordial']
@@ -136,7 +136,7 @@ export async function extractExternalPackages(
     if (!specifier) {
       continue
     }
-    // Skip internal src/external/ wrapper paths (used by socket-lib pattern)
+    // Skip internal src/external/ wrapper paths, used by socket-lib pattern
     if (specifier.includes('/external/')) {
       continue
     }
@@ -151,7 +151,7 @@ export async function extractExternalPackages(
     if (!specifier) {
       continue
     }
-    // Skip internal src/external/ wrapper paths (used by socket-lib pattern)
+    // Skip internal src/external/ wrapper paths, used by socket-lib pattern
     if (specifier.includes('/external/')) {
       continue
     }
@@ -166,7 +166,7 @@ export async function extractExternalPackages(
     if (!specifier) {
       continue
     }
-    // Skip internal src/external/ wrapper paths (used by socket-lib pattern)
+    // Skip internal src/external/ wrapper paths, used by socket-lib pattern
     if (specifier.includes('/external/')) {
       continue
     }
@@ -225,7 +225,7 @@ export async function extractBundledPackages(
       packageName.includes(']') ||
       packageName.includes('(') ||
       packageName.includes(')') ||
-      // Filter out common false positives (strings that appear in code but aren't packages)
+      // Filter out common false positives, strings that appear in code but aren't packages
       packageName === 'bin' ||
       packageName === '.bin' ||
       packageName === 'npm' ||
@@ -246,7 +246,7 @@ export async function extractBundledPackages(
 }
 
 /**
- * Get package name from a module specifier (strip subpaths).
+ * Get package name from a module specifier, strip subpaths.
  */
 export function getPackageName(specifier: string): string | undefined {
   // Relative imports are not packages
@@ -405,7 +405,7 @@ async function validateBundleDeps(): Promise<ValidationResult> {
     }
   }
 
-  // Validate bundled packages are in devDependencies (not dependencies)
+  // Validate bundled packages are in devDependencies, not dependencies
   for (const packageName of allBundled) {
     if (dependencies.has(packageName)) {
       violations.push({

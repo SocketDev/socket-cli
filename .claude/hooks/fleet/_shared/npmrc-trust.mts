@@ -54,7 +54,7 @@ function classifyAssignment(name: string, value: string | undefined): boolean {
   }
   if (name === 'NPM_CONFIG_USERCONFIG' && value !== undefined) {
     // The attack shape is pointing npm/pnpm config at a REPO-LOCAL `.npmrc`
-    // (a relative path, or one inside the checkout) so the committed file's
+    // a relative path, or one inside the checkout, so the committed file's
     // `${ENV}` lines get expanded. A HOME / absolute path (`~/.npmrc`,
     // `$HOME/.npmrc`, `/etc/npmrc`) or `/dev/null` points AWAY from the repo
     // and is the normal, safe setup — benign.

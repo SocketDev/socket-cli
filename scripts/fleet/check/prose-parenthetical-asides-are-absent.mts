@@ -86,7 +86,7 @@ export function isAsideParenthetical(inner: string): boolean {
 
 /**
  * The inner texts of every top-level parenthetical aside in a line of prose
- * (inline code already stripped). Nested parens are treated as one group.
+ * inline code already stripped. Nested parens are treated as one group.
  */
 export function findAsideParentheticals(prose: string): string[] {
   const offenders: string[] = []
@@ -216,7 +216,7 @@ export function findProseAsides(repoRoot: string): string[] {
 }
 
 function main(): number {
-  // Non-flag args scope the scan to explicit paths (self-check a batch);
+  // Non-flag args scope the scan to explicit paths, self-check a batch;
   // otherwise the whole tracked markdown tree gates.
   const paths = process.argv.slice(2).filter(a => !a.startsWith('-'))
   const offenders = paths.length

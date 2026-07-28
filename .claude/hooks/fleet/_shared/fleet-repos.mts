@@ -61,7 +61,7 @@ export function slugFromRemoteUrl(url: string): string | undefined {
   }
   // Capture `<owner>/<repo>` from any of the three remote shapes, then
   // strip a trailing `.git`. The `[^/:]+` owner segment is bounded by the
-  // `:` (scp form) or `/` (URL forms) that precedes it.
+  // `:`, scp form, or `/` (URL forms) that precedes it.
   const match = /[:/]([^/:]+)\/([^/]+?)(?:\.git)?\/?$/.exec(trimmed)
   if (!match) {
     return undefined
@@ -72,7 +72,7 @@ export function slugFromRemoteUrl(url: string): string | undefined {
 /**
  * Like {@link slugFromRemoteUrl}, but returns the case-preserved `owner/repo`
  * (e.g. `PerryTS/perry`), or `undefined` when the URL isn't a recognizable
- * GitHub remote. Owner is KEPT (unlike the membership slug, which drops it) so
+ * GitHub remote. Owner is KEPT, unlike the membership slug, which drops it, so
  * a scoped bypass can be matched against the exact `owner/repo` the user sees.
  */
 export function ownerRepoFromRemoteUrl(url: string): string | undefined {
@@ -92,7 +92,7 @@ export function ownerRepoFromRemoteUrl(url: string): string | undefined {
 
 /**
  * Build the accepted spellings of a repo-scoped bypass: the bare session-wide
- * `basePhrase` (kept as a fallback) plus `<basePhrase>: <target>` for every
+ * `basePhrase`, kept as a fallback, plus `<basePhrase>: <target>` for every
  * identifier the operator might reasonably type — each in original AND
  * lowercased form (GitHub slugs are case-insensitive). The non-fleet guards
  * share this ONE builder so their phrase grammars can't drift.

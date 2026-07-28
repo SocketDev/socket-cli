@@ -81,7 +81,7 @@ export const RULE_MODEL_TIER: Readonly<
   // shape). Sonnet's reasoning is the right depth.
   'socket/no-fetch-prefer-http-request': 'sonnet',
   // Source-sniffing: rewrite a text-scan into a typed-export read or AST parse
-  // (or justify-disable when the scan is genuinely necessary) — reads + reasons
+  // or justify-disable when the scan is genuinely necessary — reads + reasons
   // about surrounding code, not a mechanical substitution.
   'socket/no-source-sniffing': 'sonnet',
   'socket/prefer-async-spawn': 'sonnet',
@@ -164,12 +164,12 @@ export function escalateTier(
       highest = 'sonnet'
     }
   }
-  // No recognized rules → fall back to sonnet (historical default).
+  // No recognized rules → fall back to sonnet, historical default.
   return sawAny ? highest : 'sonnet'
 }
 
 /**
- * Per-rule guidance — concise, low-freedom (one canonical rewrite per rule).
+ * Per-rule guidance — concise, low-freedom, one canonical rewrite per rule.
  * Built per Anthropic's prompt-engineering best practices: direct instructions,
  * XML structure, examples per rule.
  *

@@ -1,7 +1,7 @@
 /**
  * @file Canonical formatter for socket-* repos — the `format` / `format:check`
  *   package.json scripts route through here. Runs oxfmt over the working tree
- *   (or the file paths you pass) WITH the fleet `--ignore-path`, so it formats
+ *   or the file paths you pass, WITH the fleet `--ignore-path`, so it formats
  *   exactly the set the lint gate checks and never the whole tree raw.
  *   Why this script exists instead of an inline `oxfmt … .`: a bare
  *   `oxfmt --write .` omits `--ignore-path` and reformats `.claude/`, the

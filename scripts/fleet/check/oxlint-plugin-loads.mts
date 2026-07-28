@@ -19,11 +19,11 @@
  *      non-empty `rules` object.
  *   2. The registered rule count matches the number of rule DIRS under `fleet/`
  *      (each holds an index.mts) — catches a rule that silently dropped out of
- *      the `index.mts` registry (dir present, never wired). oxlint loads such a
+ *      the `index.mts` registry, dir present, never wired. oxlint loads such a
  *      plugin happily and lints green; this is the only gate that notices. No
  *      magic number — the expected count is derived from the file listing.
  *      Pairs with the edit-time
- *      `.claude/hooks/fleet/oxlint-plugin-load-nudge/` (defense in depth).
+ *      `.claude/hooks/fleet/oxlint-plugin-load-nudge/`, defense in depth.
  *      Exit codes: 0 — plugin loads + count matches; 1 — load threw, empty
  *      rules, or count mismatch. **Why:** memory
  *      `project_oxlint_plugin_load_silent_fail` — a bad import in any rule

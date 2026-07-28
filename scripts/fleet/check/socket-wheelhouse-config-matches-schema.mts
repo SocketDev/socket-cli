@@ -1,5 +1,5 @@
 /*
- * @file CI gate: the per-repo socket-wheelhouse config (when present) validates
+ * @file CI gate: the per-repo socket-wheelhouse config, when present, validates
  *   against the fleet TypeBox schema (scripts/fleet/socket-wheelhouse-schema.mts)
  *   — the same source the emitted .config/repo/socket-wheelhouse-schema.json
  *   derives from, so editor `$schema` hints and this gate can never disagree.

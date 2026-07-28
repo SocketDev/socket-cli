@@ -24,7 +24,7 @@
 // dirty AND not in this session's transcript touched-set AND mtime
 // recent. Vendored / build-copied trees are excluded.
 //
-// Verdict: notify (never blocks). Stop hooks fire after the turn ended —
+// Verdict: notify, never blocks. Stop hooks fire after the turn ended —
 // there's no tool call to refuse.
 
 import {

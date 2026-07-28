@@ -67,7 +67,7 @@ export async function gitSilent(
 }
 
 // The deterministic gate: build → check → test. Returns the first failing
-// stage's combined output (for the agent's next-attempt context), or undefined
+// stage's combined output, for the agent's next-attempt context, or undefined
 // when all three pass. Plain code owns the VERDICT — the agent's self-report is
 // never trusted as the pass signal.
 export async function runGate(cwd: string): Promise<string | undefined> {

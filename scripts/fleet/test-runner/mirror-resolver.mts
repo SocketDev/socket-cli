@@ -23,7 +23,7 @@ import { gitFiles } from './git-files.mts'
 // The test-file glob patterns, one pattern each for .mts/.ts/.mjs/.cjs/.js/.tsx/.jsx.
 export const TEST_EXTENSIONS = '{mts,ts,mjs,cjs,js,tsx,jsx}'
 
-// A path that IS a test file (vitest's default test-file shape).
+// A path that IS a test file, vitest's default test-file shape.
 export function isTestFile(filePath: string): boolean {
   return /\.(?:spec|test)\.[cm]?[jt]sx?$/.test(filePath)
 }

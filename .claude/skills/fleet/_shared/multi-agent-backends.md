@@ -132,7 +132,7 @@ Provider tokens resolve through **`resolveProviderCredential`** (`@socketsecurit
 
 ## Keyless local tier (locai)
 
-A fourth tier sits below all keyed backends: the **`locai` CLI** from `SocketDev/socket-gemini-nano`, which runs single-shot tasks against on-device models — Gemini Nano through headless Chrome, a loopback `llama-server`, Apple FoundationModels, or a deterministic simulator — with **no API key at all**. The fleet wrapper is `scripts/fleet/_shared/locai.mts`; its contract is the CLI's exit codes: `0` = JSON result on stdout, `69` = no backend available = **clean skip, never a failure**. Everything routed through this seam is fail-open by construction.
+A fourth tier sits below all keyed backends: the **`locai` CLI** from `SocketDev/odai`, which runs single-shot tasks against on-device models — Gemini Nano through headless Chrome, a loopback `llama-server`, Apple FoundationModels, or a deterministic simulator — with **no API key at all**. The fleet wrapper is `scripts/fleet/_shared/locai.mts`; its contract is the CLI's exit codes: `0` = JSON result on stdout, `69` = no backend available = **clean skip, never a failure**. Everything routed through this seam is fail-open by construction.
 
 Scope is deliberately narrow, per the locai bench evidence:
 
@@ -140,7 +140,7 @@ Scope is deliberately narrow, per the locai bench evidence:
 - **Per-repo opt-in, never a fleet-wide flip**: `ai.localAssist: true` in `.config/repo/socket-wheelhouse.json`. Default off everywhere.
 - **NOT admitted**: the `ai-lint-fix` code-repair leg — bench-gated until a real `llama-server` + 7B-coder engine run clears the admission bar — and the gh-aw **engine replacement** for agentic workflows. The gh-aw plumbing for a keyless engine shim is confirmed to exist — `engine.env` `ANTHROPIC_BASE_URL` routes through the firewall config — but no current keyless local model can carry a multi-turn 60+-tool agent job, so that leg is unbuilt on purpose. CI agent workflows still require `ANTHROPIC_API_KEY`.
 
-The `locai` binary is not yet published to npm: dev machines link it from a `socket-gemini-nano` clone or set `LOCAI_BIN`. `pnpm run` → `node scripts/fleet/ai-backends-status.mts` reports the tier's readiness; `locai backends` prints per-backend detail.
+The `locai` binary is not yet published to npm: dev machines link it from a `odai` clone or set `LOCAI_BIN`. `pnpm run` → `node scripts/fleet/ai-backends-status.mts` reports the tier's readiness; `locai backends` prints per-backend detail.
 
 ## When NOT to use
 

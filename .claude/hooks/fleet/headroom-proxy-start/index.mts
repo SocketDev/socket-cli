@@ -48,7 +48,7 @@ const HEALTH_URL = `http://localhost:${PROXY_PORT}/health`
 const BIN_PATH = path.join(getSocketAppDir('wheelhouse'), 'bin', 'headroom')
 // `headroom proxy` args. --no-telemetry is belt — the wrapper already exports
 // HEADROOM_TELEMETRY=off. The default `token` mode is LOSSY via two layers that
-// abbreviate content and garble proper nouns (paths, package names, identifiers)
+// abbreviate content and garble proper nouns, paths, package names, identifiers
 // in large tool reads, which is actively wrong for a coding agent:
 //   --lossless          disables the CCR context-compression layer.
 //   --disable-kompress  disables the Kompress ML layer (the proper-noun
@@ -75,7 +75,7 @@ const SPAWN_POLL_INTERVAL_MS = 100
 interface ProbeOutcome {
   healthy: boolean
   /**
-   * Undefined when probe couldn't connect (proxy absent); defined when
+   * Undefined when probe couldn't connect, proxy absent; defined when
    * something else returned.
    */
   status?: number | undefined
@@ -131,7 +131,7 @@ export function spawnDetached(): void {
   // into the proxy.
   const result = spawn(BIN_PATH, PROXY_ARGS, {
     detached: true,
-    // Output-token compression (the received direction): a terseness
+    // Output-token compression, the received direction: a terseness
     // system-prompt note + effort-down on trivial tool-result-resume turns
     // (new questions/errors keep full effort). Input/context compression is
     // already default-on; this turns on the output side too.
@@ -150,11 +150,11 @@ export function spawnDetached(): void {
 
 /**
  * Find PIDs listening on PROXY_PORT whose command line identifies them as OUR
- * proxy (the headroom binary), and SIGKILL them.
+ * proxy, the headroom binary, and SIGKILL them.
  *
  * Used when the port is held but /health is failing — a wedged or hung proxy
  * from an earlier session. TWO independent safety gates so a HEALTHY shared
- * proxy (one another session is using) is never killed:
+ * proxy, one another session is using, is never killed:
  *
  * 1. Re-probe /health first and bail if it's healthy — closes the TOCTOU window
  *    between the caller's probe and this kill.

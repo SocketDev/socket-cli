@@ -9,7 +9,7 @@
 // docs/agents.md/fleet/agent-delegation.md.
 //
 // It is a NUDGE, never a block: plenty of commits are legitimately test-free
-// (a docs edit, a config tweak, a pure refactor with existing coverage), so
+// a docs edit, a config tweak, a pure refactor with existing coverage, so
 // the reminder informs without wedging the commit.
 //
 // Detection is code-is-law: `isGitCommit` is the shared AST parse (tolerates
@@ -143,7 +143,7 @@ function buildMessage(source: readonly string[]): string {
 
 /**
  * The STAGED change set (`git diff --cached --name-only`) in `cwd`. Returns
- * undefined when the diff can't be computed (not a git repo, git errored) —
+ * undefined when the diff can't be computed, not a git repo, git errored —
  * the hook fails open.
  */
 export function stagedPaths(cwd: string): string[] | undefined {

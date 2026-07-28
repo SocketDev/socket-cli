@@ -3,7 +3,7 @@
 //
 // `git commit/push --no-verify` skips the WHOLE pre-commit/pre-push chain —
 // including the oxfmt FORMAT gate, not just the test/lint steps. Reaching for
-// --no-verify to get past a HANGING pre-commit (the common reason) therefore
+// --no-verify to get past a HANGING pre-commit, the common reason, therefore
 // silently ships unformatted files, which then fail CI's format check. This
 // hook runs `oxfmt --check` on the changed format-relevant files the moment a
 // --no-verify commit/push is about to run, and warns about any that aren't
@@ -20,7 +20,7 @@
 //
 // Fires on Bash `git commit/push ... --no-verify` (or `-n`). Silent for
 // FLEET_SYNC=1 cascade commits (the documented --no-verify exception).
-// Fail-open: any error (no git, no oxfmt, spawn failure) exits 0 silently — a
+// Fail-open: any error, no git, no oxfmt, spawn failure, exits 0 silently — a
 // reminder must never block a commit on its own bug.
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'

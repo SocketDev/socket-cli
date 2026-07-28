@@ -80,7 +80,7 @@ export function parseBlocks(text: string): SubmoduleBlock[] {
       continue
     }
     // A `key = value` config line: captures (1) the key token, (2) the value
-    // (trimmed of surrounding whitespace).
+    // trimmed of surrounding whitespace.
     const kv = /^\s*([\w-]+)\s*=\s*(.*?)\s*$/.exec(lines[i]!)
     if (!kv) {
       continue
@@ -122,13 +122,13 @@ function runCheck(blocks: SubmoduleBlock[]): number {
   return 1
 }
 
-// Populate the submodule IN PLACE (sparse, per its recorded pattern) at its
+// Populate the submodule IN PLACE, sparse, per its recorded pattern, at its
 // real repo path, then run its `verify =` consumer FROM THE REPO ROOT — the
 // consumer is a superproject build/test (`pnpm --filter @x test`), so it must
 // see the submodule at its path with the workspace around it, not an isolated
 // temp clone (which would match no workspace project and exit 0 — false green).
 // Returns 0 on a green consumer, 1 otherwise. Leaves the submodule populated
-// (caller's working tree); a fresh `git-partial-submodule.mts clone` is
+// caller's working tree; a fresh `git-partial-submodule.mts clone` is
 // idempotent and the repo's own checkout state is the operator's to manage.
 async function runOne(
   block: SubmoduleBlock,

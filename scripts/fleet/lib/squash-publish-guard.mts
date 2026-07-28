@@ -6,7 +6,7 @@
  *   A published repo must instead KEEP its history and consolidate only the
  *   range since its last publish (`git reset --soft <publish-sha>`), so the
  *   runner refuses a full-root squash the moment this predicate reports a
- *   block. Pure over (publishes-profile, latest-registry-version): the runner
+ *   block. Pure over, publishes-profile, latest-registry-version: the runner
  *   does the registry read (fail-open, so a read error never blocks a legit
  *   squash) and hands the result here for the yes/no verdict, so the decision
  *   is deterministic and unit-testable without a network.

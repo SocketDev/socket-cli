@@ -10,7 +10,7 @@
 // returns `python.exe` there. The implementation was right; the test
 // expectation was POSIX-only.
 //
-// Trigger surface (test files only, by path):
+// Trigger surface, test files only, by path:
 //   test/**/*.test.{ts,mts,js,mjs} | tests/**/*.test.* | __tests__/**/*.test.*
 // Plus the content carrying a known platform-divergent path token but
 // no `process.platform` / `WIN32` / `os.platform()` branch in the same
@@ -23,7 +23,7 @@ import { defineHook, editGuard, notify, runHook } from '../_shared/guard.mts'
 
 // Match a test file path: a `test/`, `tests/`, or `__tests__/` directory
 // segment at any depth, followed by any filename ending in `.test.` or
-// `.spec.` and a JS/TS extension (js, ts, mjs, mts, cjs, cts, jsx, tsx).
+// `.spec.` and a JS/TS extension, js, ts, mjs, mts, cjs, cts, jsx, tsx.
 const TEST_FILE_RE =
   /(?:^|[\\/])(?:test|tests|__tests__)[\\/].+\.(?:spec|test)\.(?:[cm]?[jt]sx?)$/u
 

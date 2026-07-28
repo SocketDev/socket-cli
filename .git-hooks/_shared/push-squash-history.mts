@@ -15,7 +15,7 @@ export const REMOTE_REPO_RE = /[/:](?<repo>[^/:]+?)(?:\.git)?$/
 // True when THIS repo opts into the squash-history convention (roster
 // `optIns: ['squash-history']`). Drives the land-freely teaching in the blocked
 // message: in a squash-history repo, a gate blocked on in-flight WIP or
-// moving-target cascade/format drift (from a parallel session) is NOT a wall —
+// moving-target cascade/format drift, from a parallel session, is NOT a wall —
 // local main is canonical + flattens, so committing the dirty tree + a
 // `--no-verify` push is the sanctioned way through.
 export function isSquashHistoryRepo(): boolean {
@@ -56,7 +56,7 @@ export function isSquashHistoryRepo(): boolean {
         return (entry.optIns ?? []).includes('squash-history')
       }
     } catch {
-      // Unreadable/malformed roster — treat as non-squash (no teaching).
+      // Unreadable/malformed roster — treat as non-squash, no teaching.
     }
   }
   return false

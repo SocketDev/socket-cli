@@ -11,7 +11,7 @@
  *   [--no-bump] [--backfill-version <ver>] [--checkout-ref <ref>]
  *   [--repo <owner/name>]
  *   [--ref <branch|tag>] [--dry-run] `--dry-run` is a LOCAL preview of the
- *   `gh` command (nothing is dispatched); `--publish` controls whether the
+ *   `gh` command, nothing is dispatched; `--publish` controls whether the
  *   dispatched CI run publishes vs. previews. `--backfill-version` +
  *   `--checkout-ref` dispatch the sanctioned gap-fill backfill mode — CI
  *   enforces the hard guards (publish-infra/npm/backfill.mts).
@@ -36,7 +36,7 @@ export interface NpmPublishDispatchArgs {
   distTag: string
   releaseAs: string | undefined
   // False (`--no-bump`) skips the workflow's CI bump step — for callers whose
-  // bump commit already landed (the publish pipeline), so the whole chain
+  // bump commit already landed, the publish pipeline, so the whole chain
   // bumps exactly once.
   bump: boolean
   backfillVersion: string | undefined

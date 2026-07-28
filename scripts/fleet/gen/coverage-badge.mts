@@ -10,7 +10,7 @@
  *   after `pnpm run cover` passes, run this to refresh the badge, then commit
  *   it. `coverage-badge-is-current` (in `check --all`) fails the gate if the
  *   badge drifts from the coverage data, so this is the canonical way to fix
- *   it. Usage: node scripts/fleet/gen/coverage-badge.mts [--check] (no flag)
+ *   it. Usage: node scripts/fleet/gen/coverage-badge.mts [--check], no flag
  *   write assets/repo/badges/coverage.svg (and README.md when migrating).
  *   --check exit 1 if the badge WOULD change (dry-run; mirrors the check). Exit
  *   codes: 0 — badge written (or already current under --check); 1 — no

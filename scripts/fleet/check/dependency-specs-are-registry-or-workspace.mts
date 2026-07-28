@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
  * @file Commit-time gate: every committed dependency spec must be a PIN, and
- *   the fleet prefers `catalog:` (itself exact-pinned in the fleet catalog)
+ *   the fleet prefers `catalog:`, itself exact-pinned in the fleet catalog
  *   over an exact registry version, and both over `workspace:1.2.3` — one
  *   central catalog bump beats a manifest bump per dependent on every sibling
  *   release. Order + rationale:

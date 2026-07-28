@@ -28,7 +28,7 @@
 //     package) invokes `node <path>` where <path> ends in
 //     .mts/.cts/.mjs/.cjs/.js and that file does not exist relative to the
 //     manifest's own directory, OR
-//   - (wheelhouse only) a CANONICAL_SCRIPT_BODIES value names a script file that
+//   - wheelhouse only, a CANONICAL_SCRIPT_BODIES value names a script file that
 //     does not exist under the repo root.
 //
 // Only `node <local-path>` invocations are checked — bin tools (oxfmt, tsgo,
@@ -51,7 +51,7 @@ import { isMainModule } from '../_shared/is-main-module.mts'
 const logger = getDefaultLogger()
 
 // Wheelhouse-only: downstream fleet repos don't ship the manifest. Resolved
-// relative to the repo being scanned (not a module constant) so the check is
+// relative to the repo being scanned, not a module constant, so the check is
 // testable against a fixture repo and always points at the right manifest.
 function manifestPath(repoRoot: string): string {
   return path.join(repoRoot, 'scripts/repo/sync-scaffolding/manifest.mts')
@@ -92,7 +92,7 @@ export function extractNodeScriptPath(command: string): string | undefined {
     if (tok.startsWith('-')) {
       continue
     }
-    // The path token. A `<placeholder>` segment (literal angle brackets) marks a
+    // The path token. A `<placeholder>` segment, literal angle brackets, marks a
     // doc/template stand-in like `node scripts/foo/<name>.mts` — it can never be
     // a real on-disk file, so it's a documentation placeholder, not a broken
     // reference. Skip it rather than flag a phantom "file not found".
@@ -148,9 +148,9 @@ export interface PackageJsonShape {
 /**
  * Repo-relative directories of every pnpm-workspace member package (the dirs
  * whose `package.json` a `packages:` glob matches). Empty when the repo has no
- * pnpm-workspace.yaml (solo layout) or no resolvable `packages:` globs.
+ * pnpm-workspace.yaml, solo layout, or no resolvable `packages:` globs.
  * Negation patterns (leading `!`) are pnpm excludes, not member roots — skip
- * them (the fleet's globs don't rely on subtractive matching for members).
+ * them, the fleet's globs don't rely on subtractive matching for members.
  */
 export function findWorkspacePackageDirs(repoRoot: string): string[] {
   const yamlPath = path.join(repoRoot, 'pnpm-workspace.yaml')
@@ -198,13 +198,13 @@ function readScriptsMap(
 export async function scanRepo(repoRoot: string): Promise<PathHit[]> {
   const hits: PathHit[] = []
 
-  // 1. The live package.json scripts (every fleet repo has this).
+  // 1. The live package.json scripts, every fleet repo has this.
   const rootScripts = readScriptsMap(path.join(repoRoot, 'package.json'))
   if (rootScripts) {
     hits.push(...scanScriptMap(rootScripts, repoRoot, 'package.json'))
   }
 
-  // 1b. Workspace member manifests (mono layout). pnpm runs a member's scripts
+  // 1b. Workspace member manifests, mono layout. pnpm runs a member's scripts
   //     with cwd = the member dir, so each `node <path>` resolves against THAT
   //     dir — the guard the 2026-07-20 rewrite-without-move incident lacked.
   const memberDirs = findWorkspacePackageDirs(repoRoot)
@@ -224,7 +224,7 @@ export async function scanRepo(repoRoot: string): Promise<PathHit[]> {
     }
   }
 
-  // 2. The cascade synthesizer source-of-truth (wheelhouse only). Catching a
+  // 2. The cascade synthesizer source-of-truth, wheelhouse only. Catching a
   //    dangling path HERE stops the cascade from shipping it fleet-wide.
   const manifest = manifestPath(repoRoot)
   if (existsSync(manifest)) {

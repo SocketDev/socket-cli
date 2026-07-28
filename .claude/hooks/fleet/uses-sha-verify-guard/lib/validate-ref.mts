@@ -22,7 +22,7 @@ export type RefValidation = RefShapeOk | RefShapeBad
 
 // Stage 1: shape — must be exactly 40 hex chars. Returns a
 // categorical problem for partial-hex (truncated SHA) vs anything else
-// (version tag, branch name).
+// version tag, branch name.
 export function validateRefShape(ref: string): RefValidation {
   if (/^[0-9a-f]{40}$/i.test(ref)) {
     return { ok: true }

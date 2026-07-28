@@ -17,7 +17,7 @@
  *   name is read from the nearest ancestor `package.json` `name` field (walk-up
  *   from the linted file). Only flags imports of THAT exact package — e.g. in
  *   socket-lib, `@socketsecurity/lib/...` is flagged but
- *   `@socketsecurity/registry/...` is not (socket-lib doesn't own registry).
+ *   `@socketsecurity/registry/...` is not, socket-lib doesn't own registry.
  *   Autofix: rewrite the specifier's package segment from `@scope/name` to
  *   `@scope/name-stable`, preserving the subpath:
  *   `@socketsecurity/lib/logger/default` →
@@ -101,7 +101,7 @@ const rule = {
 
     const owned = findOwnedPackageName(path.dirname(normalizedFilename))
     // No owned name, or the owned name is already a `-stable` alias target
-    // (shouldn't happen, but guard anyway) → nothing to enforce.
+    // shouldn't happen, but guard anyway → nothing to enforce.
     if (!owned || owned.endsWith('-stable')) {
       return {}
     }

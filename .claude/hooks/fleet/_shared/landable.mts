@@ -5,7 +5,7 @@
  *   refuses to land is a path the stop-guard must not demand a human commit.
  *   These lived inside land-work.mts and were only "kept in lock-step" by a
  *   comment; the guard couldn't see them and drifted. Extracted here so both
- *   consumers import ONE definition (single-source-of-truth rule).
+ *   consumers import ONE definition, single-source-of-truth rule.
  *
  *   Pure — no spawn, no IO, no clock. Unit-tested directly.
  */
@@ -51,7 +51,7 @@ export function isUnmerged(status: string): boolean {
  * (e.g. `MM`, `AM`, `RM`): the staged blob and the on-disk file differ, so a
  * `git add` before commit would fold in whatever is unstaged — possibly a
  * concurrent session's hunks to a file both touched. The auto-lander skips
- * these (surfaces for manual review) rather than blend authorship. `??`
+ * these, surfaces for manual review, rather than blend authorship. `??`
  * (untracked) is not both-touched. Pure.
  */
 export function isBothTouched(status: string): boolean {

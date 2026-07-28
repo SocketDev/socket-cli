@@ -174,7 +174,7 @@ export function runGitHygieneProbes(config: {
 
   // GAP 3: stranded cascade artifacts (local-only cascade commits +
   // superseded cascade worktrees). Prefers cleanup-stranded --dry-run when
-  // the wheelhouse-owned script is present (wheelhouse self-doctor). In fleet
+  // the wheelhouse-owned script is present, wheelhouse self-doctor. In fleet
   // members scripts/repo/ is not cascaded, so falls back to an inline git-log
   // grep that detects the same `chore(wheelhouse): cascade template@<sha>`
   // pattern without shelling to a path that does not exist. A missing script

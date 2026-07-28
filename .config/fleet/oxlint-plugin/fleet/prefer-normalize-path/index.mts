@@ -9,7 +9,7 @@
  *   it gives one path representation across darwin / linux / win32, so a regex
  *   written against `/` works everywhere. Flags a `CallExpression` whose callee
  *   is a `.replace(` / `.replaceAll(` MemberExpression and whose FIRST argument
- *   is a separator regex (a manual rewrite), OR a `.test(` / `.exec(` call
+ *   is a separator regex, a manual rewrite, OR a `.test(` / `.exec(` call
  *   whose RECEIVER is a separator regex (a manual match — `/[/\\]/.test(p)` on
  *   an un-normalized path). No autofix — the rewrite is contextual (the right
  *   shape is `normalizePath(p)` at the input boundary, not a local
@@ -17,7 +17,7 @@
  *   canonical separator rewrite legitimately lives: lib's own
  *   `paths/normalize`, and the fleet's dep-0 counterpart
  *   `scripts/fleet/_shared/unix-path.mts` — the leaf a bare-checkout module
- *   (the release-reconcile gap job, a hook script) calls when lib-stable is
+ *   the release-reconcile gap job, a hook script, calls when lib-stable is
  *   unreachable. Pairs with the `path-regex-normalize-nudge` Stop hook + the
  *   `socket/cross-platform-path-matching` doctrine.
  */
@@ -31,8 +31,8 @@ import type { AstNode, RuleContext } from '../../lib/rule-types.mts'
 // slashes), NOT against JS string escaping:
 //
 //   - `\\`        — a lone backslash matcher: `p.replace(/\\/g, '/')`.
-//   - `[\\/]`     — escaped-backslash + slash character class (either separator).
-//   - `[/\\]`     — slash + escaped-backslash character class (either separator).
+//   - `[\\/]`     — escaped-backslash + slash character class, either separator.
+//   - `[/\\]`     — slash + escaped-backslash character class, either separator.
 //
 // Deliberately narrow so an honest `.replace()` over non-path text (a URL
 // segment, a Windows-newline strip `/\r\n/`, an arbitrary class) does not

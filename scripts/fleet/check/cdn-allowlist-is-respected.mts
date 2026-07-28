@@ -11,7 +11,7 @@
  *   (`curl`/`wget`/`fetch`) and flags any whose host isn't allowlisted. The
  *   allowlist holds PUBLIC registries / CDNs only — an internal
  *   `*.svc.cluster.local` host is never on it, so a committed fetch to one is
- *   flagged (route it through the service client, don't allowlist it).
+ *   flagged, route it through the service client, don't allowlist it.
  *   Exit codes: 0 — every committed fetch targets an allowlisted host (or none
  *   found); 1 — at least one off-allowlist fetch is committed.
  */

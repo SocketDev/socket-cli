@@ -48,7 +48,7 @@ export interface DoctorFinding {
    */
   what: string
   /**
-   * The wanted state (what should be present).
+   * The wanted state, what should be present.
    */
   wanted: string
   /**
@@ -134,7 +134,7 @@ export function collectCatalogRefs(config: {
 /**
  * Given the full list of catalog references and the repo's workspace yaml
  * content, identify which default-catalog refs lack an entry in the
- * `catalog:` block. For known fleet names (resolved from the fleet yaml),
+ * `catalog:` block. For known fleet names, resolved from the fleet yaml,
  * produce a fixable finding + fix entry. For unknown names, produce a
  * report-only finding with the four-ingredient error format.
  */

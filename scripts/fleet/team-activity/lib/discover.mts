@@ -1,7 +1,7 @@
 /**
  * @file Cross-repo/issue discovery — the core new capability over the old
  *   single-repo `gh pr list`. Finds open PRs AND issues the team owns, across
- *   every configured repo (or the whole org), with NO date floor, via the
+ *   every configured repo, or the whole org, with NO date floor, via the
  *   GitHub `search/issues` API. Repeated `author:`/`label:` qualifiers AND in
  *   the search grammar, so the roster and label sets are fanned out into one
  *   query each (union by URL), keeping every query well under the 1000-result

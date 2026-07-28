@@ -12,7 +12,7 @@
  *   Reference set = the union of every `allowDomains` array across the repo's
  *   compiled gh-aw `*.lock.yml` files. A gh-aw `*.suffix` wildcard covers any
  *   subdomain of `suffix`. Vacuous pass (exit 0) when the allowlist is absent
- *   (a repo not yet onboarded) or no gh-aw lock declares allowDomains (a pure
+ *   a repo not yet onboarded, or no gh-aw lock declares allowDomains (a pure
  *   consumer with no agentic workflow — nothing to contain against here; the
  *   SSOT is validated in the repos that carry the workflow). Exit 1 only when a
  *   fleet host escapes the gh-aw set.
@@ -57,7 +57,7 @@ export function collectGhAwAllowDomains(lockText: string): string[] {
 
 // A fleet host is covered if it's an exact member of the gh-aw set, or a gh-aw
 // `*.suffix` wildcard covers it. A fleet `*.suffix` wildcard is covered only by
-// an identical gh-aw wildcard (an exact-membership match) — we never widen.
+// an identical gh-aw wildcard, an exact-membership match — we never widen.
 export function isCovered(host: string, ghSet: ReadonlySet<string>): boolean {
   if (ghSet.has(host)) {
     return true

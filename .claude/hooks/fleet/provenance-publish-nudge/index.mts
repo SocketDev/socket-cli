@@ -21,12 +21,12 @@
 //   5. Throttle via .claude/state/provenance-nudge.last so each
 //      release is checked at most once per name@version per session.
 //   6. Fetch the registry packument. If version not yet published,
-//      skip silently (release is in-flight, retry next Stop).
+//      skip silently, release is in-flight, retry next Stop.
 //   7. If version exists AND has both signals → silent.
 //   8. If version exists AND missing one or both → emit a warning to
-//      stderr (visible in transcript, not blocking).
+//      stderr, visible in transcript, not blocking.
 //
-// Configuration env vars (all optional):
+// Configuration env vars, all optional:
 //
 // The hook NEVER fails the turn. Stop hooks shouldn't gate; they
 // nudge. The warning surfaces so the operator decides what to do.
@@ -128,7 +128,7 @@ function recordChecked(repoRoot: string, stateKey: string): void {
 
 /**
  * Fetch a single version's trust info. Returns undefined when the version isn't
- * on the registry yet (the publish hasn't propagated or didn't happen).
+ * on the registry yet, the publish hasn't propagated or didn't happen.
  */
 async function fetchVersionInfo(
   name: string,

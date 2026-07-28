@@ -1,6 +1,6 @@
 /**
  * Active-run markers — a pidfile contract between long-running fleet
- * commands (coverage, full builds) and the stale-process-sweeper hook.
+ * commands, coverage, full builds, and the stale-process-sweeper hook.
  *
  * The sweeper's "stuck" heuristic kills live-parent test workers that run
  * long at high CPU and RSS. A coverage-instrumented vitest worker looks
@@ -9,7 +9,7 @@
  * A command that registers an active-run marker declares "my worker tree
  * is doing real work"; the sweeper's stuck branch skips descendants of a
  * live registered pid. Orphan reaping is unaffected — a dead registrant's
- * marker is ignored (and cleaned by the next writer).
+ * marker is ignored, and cleaned by the next writer.
  *
  * CONTRACT (the sweeper hook implements its own tiny reader against the
  * same layout — keep in lockstep with

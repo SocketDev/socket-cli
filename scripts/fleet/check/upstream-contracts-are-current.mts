@@ -7,7 +7,7 @@
  *   fleet checks: the CHECK is cascaded, the CONTRACT is repo-local (a repo
  *   declares what it pins). The contract is tracked repo DATA under
  *   scripts/repo/ — never inside the git-ignored `upstream/` tree. No-ops when
- *   the repo has no `scripts/repo/upstream-contracts.mts` (most repos).
+ *   the repo has no `scripts/repo/upstream-contracts.mts`, most repos.
  *   FAIL-OPEN when an `upstream/<name>` checkout is absent or not a git tree —
  *   `upstream/` is git-ignored and materialized on demand, so a
  *   fresh/shallow/offline checkout that hasn't materialized it must not red;
@@ -38,7 +38,7 @@ export interface UpstreamContract {
 }
 
 export interface ContractCheckDeps {
-  // Absolute-path existence probe (injected for tests).
+  // Absolute-path existence probe, injected for tests.
   exists: (p: string) => boolean
   // Materialized submodule HEAD by contract name; undefined = not materialized
   // / not a git tree (→ skip the drift comparison, fail-open).
@@ -62,7 +62,7 @@ export function collectContractErrors(
     const c = contracts[i]!
     const upstreamRoot = path.join(root, 'upstream', c.name)
     if (!deps.exists(upstreamRoot)) {
-      // Not materialized — can't verify (git-ignored, on-demand). Fail-open.
+      // Not materialized — can't verify, git-ignored, on-demand. Fail-open.
       continue
     }
     const head = deps.heads[c.name]

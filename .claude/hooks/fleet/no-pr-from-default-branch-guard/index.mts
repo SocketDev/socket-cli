@@ -5,13 +5,13 @@
 // default branch (main / master / the resolved origin/HEAD default). Opening a
 // PR whose head is the default branch is a hard error — you PR from a feature
 // branch, never from main/master. This is the blocking (exit 2) twin of the
-// advisory pr-vs-push-default-nudge (a reminder about push-vs-PR).
+// advisory pr-vs-push-default-nudge, a reminder about push-vs-PR.
 //
 // Universal safety: fires in NON-fleet repos too — the motivating incident was
 // a PR opened against an external repo — so it is NOT gated on fleet membership.
 //
 // The PR head is computed structurally: an explicit `--head` / `-H` value
-// (owner prefix stripped) wins; otherwise the current checkout's branch. The
+// owner prefix stripped, wins; otherwise the current checkout's branch. The
 // `gh pr create` detection uses the shell-quote-backed shell-command.mts parser,
 // NEVER a raw regex on the command string, so `&&` chains, quoting, and `$(…)`
 // substitution are handled and a literal "gh pr create" inside a grep string
@@ -29,7 +29,7 @@ import { resolveProjectDir } from '../_shared/project-dir.mts'
 // so this guard's tests exercise the exact predicate the check runs.
 export { ghPrCreateCommand, isGhPrCreate }
 
-// The explicit `--head` / `-H` branch (owner prefix stripped), or undefined
+// The explicit `--head` / `-H` branch, owner prefix stripped, or undefined
 // when the command carries no head flag.
 export function headBranchFlag(command: string): string | undefined {
   const c = ghPrCreateCommand(command)

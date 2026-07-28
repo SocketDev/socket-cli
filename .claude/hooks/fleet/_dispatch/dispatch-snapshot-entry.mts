@@ -6,8 +6,8 @@
  *   `index.cjs` loader + compile-cache path), this entry does ZERO per-run work
  *   at module eval. Built with `node --build-snapshot`, it:
  *
- *     1. At MODULE EVAL (the snapshot build pass): imports the static dispatch
- *        table + the pure `dispatch()` closure (heap state worth freezing) and
+ *     1. At MODULE EVAL, the snapshot build pass: imports the static dispatch
+ *        table + the pure `dispatch()` closure, heap state worth freezing, and
  *        registers a deserialize-main fn. Nothing reads stdin/argv/env/cwd, no
  *        Date.now()/Math.random(), no timers, no pending promise — so the build
  *        pass is SYNCHRONOUS and snapshot-clean.
@@ -39,7 +39,7 @@ import type { DispatchPayload } from './dispatch.mts'
 // FULL COVERAGE (190/190 in ONE bundle): every candidate hook is now frozen into
 // the snapshot, so the prior hybrid's runtime `loadBundleB()` is gone — there is
 // no second bundle to splice in; the frozen `dispatch()` runs the whole set. The
-// The acorn-WASM guards (now frozen in bundle A) load the parser at RUNTIME via
+// The acorn-WASM guards, now frozen in bundle A, load the parser at RUNTIME via
 // `require('@ultrathink/acorn.rs.wasm')` (the npm catalog dep, resolved from
 // node_modules) — nothing acorn-related is vendored or staged in this `_dispatch/` dir.
 
@@ -67,7 +67,7 @@ function readStdin(): Promise<string> {
 
 /**
  * The runtime entry: everything per-run lives here, run only when booting from
- * the blob. Reads the event from argv[1] (snapshot argv layout), drains stdin,
+ * the blob. Reads the event from argv[1], snapshot argv layout, drains stdin,
  * dispatches, surfaces reminders/blocks, exits. Fail-open on every error.
  */
 async function deserializeMain(): Promise<void> {

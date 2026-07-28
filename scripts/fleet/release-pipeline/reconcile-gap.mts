@@ -77,7 +77,7 @@ const REPO_ROOT = resolveRepoRoot()
 export const MAX_RECONCILE_PER_RUN = 5
 
 /**
- * Normalize one `git ls-remote --tags` ref (or a bare tag name) to a plain
+ * Normalize one `git ls-remote --tags` ref, or a bare tag name, to a plain
  * tag name: strips `refs/tags/` and the `^{}` peeled-annotated suffix.
  */
 export function normalizeTagRef(ref: string): string {
@@ -170,7 +170,7 @@ export function computeTagGaps(config: {
 }
 
 /**
- * Bound a gap list to the per-run cap: `selected` heals now (oldest first),
+ * Bound a gap list to the per-run cap: `selected` heals now, oldest first,
  * `deferredCount` says how many wait for the next cron. Pure.
  */
 export function capGaps(

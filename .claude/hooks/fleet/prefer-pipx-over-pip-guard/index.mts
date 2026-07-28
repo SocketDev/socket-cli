@@ -9,7 +9,7 @@
 //   3. Edit/Write on shell scripts (`*.sh`, `*.bash`)
 //
 // Allowed: `pip install pipx` (bootstrap), `pip install -e .`
-// (editable install of the current project), `pip install -r
+// editable install of the current project, `pip install -r
 // <file>` (requirements file), comment-only mentions, and
 // `pip install --user pipx` patterns used by setup-pipx itself.
 //
@@ -41,7 +41,7 @@ const PIP_INSTALL_RE =
   /(?<![\w/-])(?:(?:python[\d.]*|py)\s+-m\s+)?\b(?:sudo\s+)?(?:[/\w.-]+\/)?pip[\d.]*\s+install\b([^\n;&|]*)/g
 
 // Allowlist matchers applied to the captured "rest of args" string.
-//   - Bootstrap pipx itself: `pip install pipx` (any flags, any version)
+//   - Bootstrap pipx itself: `pip install pipx`, any flags, any version
 //   - Editable install of current project: `-e .` or `-e ./`
 //   - Requirements file: `-r <path>` or `--requirement <path>`
 //   - Setup-pipx self-bootstrap: `--user pipx` with no other targets
@@ -52,7 +52,7 @@ function isAllowedInstall(restOfArgs: string): boolean {
     return true
   }
   // `pip install pipx`, `pip install --user pipx`, `pip install -U pipx`
-  // (any flags but the only target is pipx).
+  // any flags but the only target is pipx.
   if (/(?:^|\s)pipx(?:==|\s|$)/.test(trimmed)) {
     const targets = trimmed.split(/\s+/).filter(t => t && !t.startsWith('-'))
     if (targets.length === 1 && /^pipx(==.*)?$/.test(targets[0]!)) {
@@ -110,7 +110,7 @@ interface Finding {
   args: string
 }
 
-// Scan a text buffer (Bash command, Dockerfile body, shell script)
+// Scan a text buffer, Bash command, Dockerfile body, shell script
 // for `pip install <not-allowed>` patterns. Returns one Finding per
 // hit line. Comments are stripped before matching.
 export function findPipInstalls(text: string): Finding[] {

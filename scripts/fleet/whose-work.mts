@@ -6,9 +6,9 @@
  *   of another agent. The deterministic, git-native discriminator: commits
  *   reachable from HEAD but not from the upstream / default remote branch are
  *   LOCAL work toward local main. On a single-user checkout that is your own
- *   (and any aligned session's) cumulative work — land it, don't investigate.
+ *   and any aligned session's, cumulative work — land it, don't investigate.
  *   A genuine parallel-session conflict is a divergent same-file edit that
- *   appears WHILE you work (a file changing between two of your own reads).
+ *   appears WHILE you work, a file changing between two of your own reads.
  *   History alone cannot show that — the DIRTY-FILE section answers it from
  *   the active-edits ledger instead: each dirty path gets a verdict (a live
  *   actor wrote it recently / a stale actor / a shared generated artifact /
@@ -248,7 +248,7 @@ export interface DirtyVerdict {
 export function attributeDirtyPaths(cwd: string): DirtyVerdict[] {
   // stdioString:false — the trimming default eats the leading space of an
   // unstaged ` M <path>` entry and shifts the first parsed path left by
-  // one char (the land-work porcelain pitfall).
+  // one char, the land-work porcelain pitfall.
   const status = spawnSync('git', ['status', '--porcelain', '-z'], {
     cwd,
     stdioString: false,
@@ -301,7 +301,7 @@ export function attributeDirtyPaths(cwd: string): DirtyVerdict[] {
 
 /**
  * Report .git/index.lock contention: present + fresh = an in-flight git op
- * (retry shortly); present + old = likely orphaned by a crashed process.
+ * retry shortly; present + old = likely orphaned by a crashed process.
  */
 export function formatIndexLockReport(cwd: string): string | undefined {
   const lockPath = path.join(cwd, '.git', 'index.lock')

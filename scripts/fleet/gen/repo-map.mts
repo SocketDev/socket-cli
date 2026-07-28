@@ -1,9 +1,9 @@
 /*
  * @file Repo-map — emits a token-cheap symbol skeleton for a file or directory
- *   instead of its full contents. A model (Claude today, any model later) reads
+ *   instead of its full contents. A model, Claude today, any model later, reads
  *   the skeleton to locate a symbol, then reads only that line span — rather
  *   than pulling whole files into context, where they accumulate and get
- *   re-read on every subsequent turn (the dominant Claude cost surface).
+ *   re-read on every subsequent turn, the dominant Claude cost surface.
  *   Model-agnostic: this is the retrieval substrate the "RAG + repo-map" answer
  *   points at. Deterministic, read-only apart from `--write`.
  *   Two modes:
@@ -71,9 +71,9 @@ interface RepoMapSymbol {
 }
 
 /**
- * Extract top-level symbols (with line spans) from source. Pure. A symbol's
+ * Extract top-level symbols, with line spans, from source. Pure. A symbol's
  * span runs from its declaration line to the line before the next top-level
- * symbol (or end of file), so a reader knows exactly which range to fetch for
+ * symbol, or end of file, so a reader knows exactly which range to fetch for
  * the body.
  */
 export function extractSymbols(source: string): RepoMapSymbol[] {
@@ -177,7 +177,7 @@ export function cacheRelPath(
  * Git-changed source files under `repoRoot`: tracked diff vs HEAD (staged +
  * unstaged) plus untracked-but-not-ignored, filtered to SOURCE_EXTS and files
  * that still exist. Read-only. Returns absolute paths. Fails SOFT — a non-repo,
- * a git error, or a missing binary yields `[]` (the caller then no-ops), so the
+ * a git error, or a missing binary yields `[]`, the caller then no-ops, so the
  * SessionStart refresh never breaks a session over a git hiccup.
  */
 export function gitChangedSources(repoRoot: string): string[] {

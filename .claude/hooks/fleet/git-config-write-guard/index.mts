@@ -25,10 +25,10 @@
 //        identity exists to fall back to. A placeholder author email can't
 //        be verified against the signing key on GitHub, so `required_signa-
 //        tures` rejects the push, and the bad value was planted outside the
-//        tool channel (an agent-CI container entrypoint), so the PreToolUse
+//        tool channel, an agent-CI container entrypoint, so the PreToolUse
 //        write-block never saw it. Unsetting the local override lets the
 //        signed global identity win. With NO global identity to fall back
-//        to, it is reported (not unset) so the repo is not stranded with no
+//        to, it is reported, not unset, so the repo is not stranded with no
 //        author.
 //
 // Bypass: `Allow git-config-write bypass` (single-use, for genuine
@@ -152,7 +152,7 @@ export function findBannedBashWrites(command: string): BannedHit[] {
 // ---------------------------------------------------------------------------
 
 /**
- * Scan a `.git/config` file body (the new content the user is about to write)
+ * Scan a `.git/config` file body, the new content the user is about to write
  * for banned key assignments. Parses the INI-shape: `[section]` then `key =
  * value` lines. Returns one Hit per banned key found.
  */
@@ -177,7 +177,7 @@ export function findBannedConfigWrites(content: string): BannedHit[] {
       continue
     }
     // Match a `key = value` assignment line. Captures the key (alphanumeric,
-    // dots, hyphens) and the rest of the line as the value (may be empty).
+    // dots, hyphens) and the rest of the line as the value, may be empty.
     const kvMatch = /^([\w.-]+)\s*=\s*(.*)$/.exec(line)
     if (!kvMatch) {
       continue
@@ -290,7 +290,7 @@ interface CorruptionFinding {
 
 /**
  * Scan one repo's `.git/config` for known corruption shapes. Returns the issues
- * found (empty array means clean).
+ * found, empty array means clean.
  */
 export function scanRepoConfig(configPath: string): readonly string[] {
   if (!existsSync(configPath)) {
@@ -333,7 +333,7 @@ export function scanRepoConfig(configPath: string): readonly string[] {
 
 /**
  * Probe every fleet repo under `~/projects/` for corruption. Returns the
- * findings list (empty when all clean).
+ * findings list, empty when all clean.
  */
 export function scanFleetRepos(
   projectsDir: string,
@@ -373,7 +373,7 @@ export function scanFleetRepos(
 
 /**
  * Revert `core.bare = true` in a fleet repo's local config by unsetting the key
- * (default is non-bare). Operates on the config FILE directly (`-f`), not
+ * default is non-bare. Operates on the config FILE directly (`-f`), not
  * `--local`: with core.bare=true the checkout reads as bare, so `git config
  * --local` is refused ("must be run in a work tree"). Returns true if it acted.
  * core.bare=true on a non-bare checkout is never intentional, so — unlike the
@@ -420,7 +420,7 @@ function emitSessionStartReport(findings: readonly CorruptionFinding[]): void {
   )
   lines.push('')
   // A placeholder identity is auto-unset ONLY when a global identity exists
-  // to fall back to. Probe once (it's the same global config for every repo).
+  // to fall back to. Probe once, it's the same global config for every repo.
   const globalIdentityExists = hasGlobalIdentity()
   for (let i = 0, { length } = findings; i < length; i += 1) {
     const f = findings[i]!

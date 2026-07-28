@@ -88,7 +88,7 @@ export function normalizeBypassText(text: string): string {
 export interface BypassMatchOptions {
   // LOW-RISK guards ONLY (opt-in): when true, the trailing `bypass` keyword is
   // OPTIONAL — `Allow <slug>` authorizes the same as `Allow <slug> bypass`.
-  // SECURITY guards (the default) omit this: the `bypass` suffix stays REQUIRED
+  // SECURITY guards, the default, omit this: the `bypass` suffix stays REQUIRED
   // as the anti-false-positive anchor that keeps a bare `Allow <slug>` in casual
   // prose from disarming a supply-chain / destructive / exfil guard. See
   // docs/agents.md/fleet/bypass-phrases.md.
@@ -138,7 +138,7 @@ export function bypassPhrasePresent(
     return false
   }
   // A bypass authorization must be DELIBERATE user prose — not a phrase the user
-  // (or an injected summary) merely quoted, code-spanned, or described. Strip
+  // or an injected summary, merely quoted, code-spanned, or described. Strip
   // code fences/inline-code and quoted spans before matching (system-reminder
   // spans are already dropped in extractTurnPieces). Without this, a guard
   // self-disarms whenever its phrase appears as `Allow X bypass` in a code span,
@@ -203,7 +203,7 @@ export function operatorBypassPresent(
  * phrase budget is replenished by every fresh user-typed occurrence.
  *
  * Remaining = phraseCount - priorActionCount remaining > 0 → caller may proceed
- * (one slot consumed by this action) remaining <= 0 → caller must block; phrase
+ * one slot consumed by this action, remaining <= 0 → caller must block; phrase
  * budget exhausted.
  *
  * Per-trigger semantics: a single `Allow X bypass` authorizes exactly one
@@ -432,7 +432,7 @@ function extractRawTurnPieces(content: unknown): string[] {
 
 /**
  * Inverse of `stripCodeFences`: extract the contents of fenced code blocks.
- * Returns each block's body (the lines between the opening and closing fence)
+ * Returns each block's body, the lines between the opening and closing fence
  * as a separate string. The leading language tag (e.g. ` ```ts `) is stripped —
  * only the code lines are kept.
  *
@@ -519,7 +519,7 @@ type Role = 'user' | 'assistant'
  * or a command's stdout). Counting tool-result text as "user text" makes every
  * bypass-phrase check spoofable: a dependency file or command output containing
  * "Allow <X> bypass" would defeat the guard. So we only collect genuine `text`
- * blocks (and bare strings) and never a block's `content` field. Same reasoning
+ * blocks, and bare strings, and never a block's `content` field. Same reasoning
  * for assistant turns: `tool_use` inputs are not prose.
  */
 // The harness-injected reminder element name. Built into tags at runtime so the
@@ -535,14 +535,14 @@ const REMINDER_TAG = 'system-reminder'
 // Incident (2026-07): a session blocked by push-protected-branch-guard messaged
 // a second session asking it to send back the literal grant phrase; had the
 // relay been sent, the wrapper text would have ridden into a user-role turn.
-// Same runtime tag construction as REMINDER_TAG (see above).
+// Same runtime tag construction as REMINDER_TAG, see above.
 const AGENT_MESSAGE_TAG = 'agent-message'
 // The open tag carries attributes (`from="<sender>"`), so match to the `>`.
 const AGENT_MESSAGE_SPAN = new RegExp(
   `<${AGENT_MESSAGE_TAG}[^>]*>[\\s\\S]*?</${AGENT_MESSAGE_TAG}>`,
   'g',
 )
-// A truncated relay (unclosed open tag) must not leak its tail either.
+// A truncated relay, unclosed open tag, must not leak its tail either.
 const AGENT_MESSAGE_TAIL = new RegExp(`<${AGENT_MESSAGE_TAG}[^>]*>[\\s\\S]*$`)
 // Span-BODY extractor for the laundering detector: same shape as
 // AGENT_MESSAGE_SPAN but capturing the wrapped content.
@@ -631,7 +631,7 @@ export function readLastAssistantText(
   // "the most-recent assistant TURN", but the old lookback=1 readRoleText
   // returned only the newest transcript ENTRY — a streamed reply spans many
   // entries, so mid-reply prose escaped every Stop scan built on this helper
-  // (reply-prose-nudge's honesty verdict included).
+  // reply-prose-nudge's honesty verdict included.
   return readLastAssistantTurnText(transcriptPath)
 }
 
@@ -642,7 +642,7 @@ const TURN_SCAN_CAP = 400
 
 /**
  * Read the text of the entire most-recent assistant TURN — every trailing
- * assistant entry back to (but excluding) the last human message.
+ * assistant entry back to, but excluding, the last human message.
  *
  * A long streamed reply lands in the transcript as MULTIPLE assistant
  * entries (per content block / API response, interleaved with tool events),
@@ -656,7 +656,7 @@ const TURN_SCAN_CAP = 400
  * skips tool_result blocks — so tool traffic inside the turn does not end it.
  * Sidechain scoping matches readLastAssistantTextSameActor: the newest
  * assistant entry fixes the scope, and entries of the other scope are
- * skipped, so a parent Stop never scans subagent prose (or vice versa).
+ * skipped, so a parent Stop never scans subagent prose, or vice versa.
  */
 export function readLastAssistantTurnText(
   transcriptPath: string | undefined,
@@ -702,7 +702,7 @@ export function readLastAssistantTurnText(
  * turn of the OTHER scope. A subagent (Task) turn carries `isSidechain:true`,
  * the parent orchestrator's turns carry false. So a subagent's commit is gated
  * by the SUBAGENT's own recent claim and NEVER by the parent orchestrator's
- * prose (a different scope) — fixing the cross-actor false positive where an
+ * prose, a different scope — fixing the cross-actor false positive where an
  * orchestrator's unverified success claim blocked a subagent's commit. When the
  * most-recent assistant turn is the parent's, this reads the parent's turn and
  * the gate is unchanged.
@@ -798,7 +798,7 @@ export function readLastAssistantToolUses(
 
 /**
  * Walk the transcript newest → oldest, return tool-use events from the
- * **prior** assistant turns (skipping the most-recent one). `lookback` caps how
+ * **prior** assistant turns, skipping the most-recent one. `lookback` caps how
  * far back to walk in assistant turns; pass a small N (e.g. 5) so the scan
  * stays cheap on long transcripts. Used by hooks that compare what the
  * assistant is doing now to what it did earlier in the session — e.g.
@@ -849,7 +849,7 @@ export function readPriorAssistantToolUses(
 // past Node's max-string size (~536MB), where a whole-file readFileSync throws
 // ERR_STRING_TOO_LONG and every phrase/turn scan silently sees an EMPTY
 // transcript: bypass phrases stop working and guards fail closed. The signals
-// these scans need (bypass phrases, recent turns) are recent by contract, so a
+// these scans need, bypass phrases, recent turns, are recent by contract, so a
 // bounded tail is both correct and far cheaper than slurping the whole file on
 // every hook invocation.
 const TRANSCRIPT_TAIL_BYTES = 8 * 1024 * 1024
@@ -876,7 +876,7 @@ export function readLines(transcriptPath: string | undefined): string[] {
       } finally {
         closeSync(fd)
       }
-      // Drop the first (almost certainly partial) line of the tail window.
+      // Drop the first, almost certainly partial, line of the tail window.
       const firstNewline = raw.indexOf('\n')
       raw = firstNewline === -1 ? '' : raw.slice(firstNewline + 1)
     } else {
@@ -897,7 +897,7 @@ export function readLines(transcriptPath: string | undefined): string[] {
  * so callers don't pay the full-transcript cost when they only need recent
  * context.
  *
- * `options.humanOnly` (user role): keep only turns whose provenance markers
+ * `options.humanOnly`, user role: keep only turns whose provenance markers
  * say the HUMAN typed them (see eventIsHumanAuthored) — the authorization
  * scanners' reader.
  */
@@ -988,7 +988,7 @@ export function readStdin(): Promise<string> {
  * Read every user-turn text content from a transcript JSONL, joined by
  * newlines. Returns empty string when the path is unset, missing, or
  * unparseable. `lookbackUserTurns` limits to the most-recent N user turns
- * (counted from the tail); omit to read all turns.
+ * counted from the tail; omit to read all turns.
  */
 export function readUserText(
   transcriptPath: string | undefined,
@@ -1002,7 +1002,7 @@ export function readUserText(
  * (provenance-checked — see eventIsHumanAuthored). This is the reader every
  * grant/bypass-phrase scan uses: a phrase delivered by another agent, session,
  * or orchestrator prompt rides in a user-ROLE turn but is not the user, and
- * must never authorize anything (cross-agent permission laundering).
+ * must never authorize anything, cross-agent permission laundering.
  */
 export function readHumanUserText(
   transcriptPath: string | undefined,
@@ -1149,7 +1149,7 @@ export function stripCodeFences(text: string): string {
  * content.
  *
  * Combine with `stripCodeFences` for full noise filtering. Order doesn't matter
- * (the two strip disjoint surfaces).
+ * the two strip disjoint surfaces.
  */
 export function stripQuotedSpans(text: string): string {
   // ASCII double quotes: "…" — up to 80 chars, single line.

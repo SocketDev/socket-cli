@@ -49,7 +49,7 @@ const logger = getDefaultLogger()
 
 // The 7-day malware soak (CLAUDE.md _Tooling_ § minimumReleaseAge). A patched
 // version younger than this is not yet a pin target — the skill records it as
-// awaiting-soak (the soak guard is never bypassed without explicit signoff).
+// awaiting-soak, the soak guard is never bypassed without explicit signoff.
 export const SOAK_DAYS = 7
 
 const MS_PER_DAY = 86_400_000
@@ -78,7 +78,7 @@ export interface ResolveSecurityPinResult {
   outcome: ResolveOutcome
   // The exact version to pin to, or undefined when outcome !== 'resolved'.
   pinTarget: string | undefined
-  // Human-readable explanation of the outcome (for the skill's report line).
+  // Human-readable explanation of the outcome, for the skill's report line.
   reason: string
 }
 
@@ -118,7 +118,7 @@ export function resolveSecurityPin(
   }
   // filterVersions drops pre-releases by default, so a pin can never land on an
   // `-rc` / `-beta`. The `<${major + 1}.0.0` upper bound keeps the pin in-major
-  // (crossing a major is the separate gated path the skill owns).
+  // crossing a major is the separate gated path the skill owns.
   const inMajorRange = `>=${firstPatched} <${major + 1}.0.0`
   const inMajor = filterVersions([...publishedVersions], inMajorRange)
   const inMajorSoaked = inMajor.filter(v => isSoaked(v, { now, publishedAt }))

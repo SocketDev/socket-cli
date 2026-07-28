@@ -80,7 +80,7 @@ export function findMcpClientConfigIssues(repoRoot: string): string[] {
   // `opencode.json` + `.kimi-code/mcp.json` are generated-untracked
   // projections, same contract as `.codex/*`: regenerated at setup:mcp and
   // built into the release bundle by make-release-bundle. An ABSENT copy is
-  // fine (setup recreates it); a PRESENT-but-stale copy is flagged so a
+  // fine, setup recreates it; a PRESENT-but-stale copy is flagged so a
   // hand-edit is caught.
   const generatedAdapters = [
     {

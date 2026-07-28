@@ -155,8 +155,8 @@ export interface RunConfig {
 
 /**
  * True when the wrapper should stay out of the way and exec npm directly: a
- * real TTY is present (npm drives its own flow) or an `--otp` is already
- * supplied (no browser needed).
+ * real TTY is present, npm drives its own flow, or an `--otp` is already
+ * supplied, no browser needed.
  */
 export function isPassthrough(config: {
   readonly isTty: boolean

@@ -46,7 +46,7 @@ export interface UnanchoredFinding {
 /**
  * A pattern is gitignore-anchored to the ignore file's root when, after
  * dropping a leading `!` and a single trailing `/`, it still contains a `/`
- * (leading or interior). Anchored patterns that do NOT start with `**​/` never
+ * leading or interior. Anchored patterns that do NOT start with `**​/` never
  * match a repo-relative path through this ignore file — they are silent
  * no-ops.
  */
@@ -64,7 +64,7 @@ export function findUnanchoredGlobs(content: string): UnanchoredFinding[] {
     if (pattern.startsWith('**/')) {
       continue
     }
-    // Drop a single trailing '/' (a dir marker) before testing for an
+    // Drop a single trailing '/', a dir marker, before testing for an
     // anchoring slash — `node_modules/` is slashless-anchored (matches any
     // depth), `a/b/` and `a/b` are root-anchored.
     const body = pattern.endsWith('/') ? pattern.slice(0, -1) : pattern
@@ -79,7 +79,7 @@ function main(): void {
   const quiet = process.argv.includes('--quiet')
   const abs = path.join(REPO_ROOT, IGNORE_PATH)
   if (!existsSync(abs)) {
-    // No fleet .prettierignore (a non-fleet repo) — nothing to assert.
+    // No fleet .prettierignore, a non-fleet repo — nothing to assert.
     return
   }
   const findings = findUnanchoredGlobs(readFileSync(abs, 'utf8'))

@@ -258,10 +258,10 @@ async function main(): Promise<void> {
       return
     }
   }
-  // CI release path: `--staged --bump` bumps + commits (via the release App) on
+  // CI release path: `--staged --bump` bumps + commits, via the release App, on
   // a throwaway release branch before staging, so the publish targets the bumped
   // tree without touching main. `bumpResult` is undefined on a dry-run / no-op
-  // bump (nothing to promote).
+  // bump, nothing to promote.
   const bumpResult = values['bump']
     ? await runBump({ dryRun, releaseAs })
     : undefined
@@ -296,7 +296,7 @@ async function main(): Promise<void> {
       }
     }
   } catch (e) {
-    // The publish FAILED (before it completed): nuke the release branch so main
+    // The publish FAILED, before it completed: nuke the release branch so main
     // never sees the bump. Discard only runs here, on a pre-success failure —
     // never for a promote failure below.
     if (bumpResult) {

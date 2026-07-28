@@ -11,7 +11,7 @@
 // suite instead of the one file. In a fleet repo the full suite can be minutes
 // (and in a few repos sweeps .claude/hooks tests and hangs). The intent is
 // always "run this one file" — the `--` silently defeats it. Drop the `--`:
-//   pnpm test test/foo.test.mts        (pnpm forwards positionals fine)
+//   pnpm test test/foo.test.mts, pnpm forwards positionals fine
 //   node_modules/.bin/vitest run test/foo.test.mts
 //
 // Detection is AST-based (the fleet shell parser via parseCommands), not regex,
@@ -40,7 +40,7 @@ function isVitestBinary(binary: string): boolean {
   return binary === 'vitest' || /(?:^|\/)vitest$/.test(binary)
 }
 
-// A pnpm/npm/yarn invocation of the `test` script (which wraps vitest):
+// A pnpm/npm/yarn invocation of the `test` script, which wraps vitest:
 //   pnpm test … | pnpm run test … | npm test … | yarn test …
 function isTestScriptRunner(binary: string, args: readonly string[]): boolean {
   if (binary !== 'npm' && binary !== 'pnpm' && binary !== 'yarn') {

@@ -29,7 +29,7 @@
 //     ... }
 //
 // Exit codes:
-//   0 — pass (not Bash, or the command shape isn't the bad one).
+//   0 — pass, not Bash, or the command shape isn't the bad one.
 //   2 — block (install/check command piped to tail/head).
 //
 // Fails open on malformed payloads (exit 0 + stderr log).

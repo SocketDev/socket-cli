@@ -4,7 +4,7 @@
  *   `describe('group', …)`. The fleet leans on describe-nesting for uniqueness,
  *   so a flattened duplicate slips by silently: the runner shows two
  *   identically-named cases and it's ambiguous which failed. Titles are
- *   compared per enclosing describe scope (siblings only), so the same title in
+ *   compared per enclosing describe scope, siblings only, so the same title in
  *   two different groups is fine. Only string-literal / template-without-
  *   substitution titles are compared (a dynamic title can't be statically
  *   deduped). Scope: `*.test.*`. Report-only. Ported from
@@ -20,7 +20,7 @@ import {
 import type { AstNode, RuleContext } from '../../lib/rule-types.mts'
 
 // Extract a static string title from the first argument, or undefined when the
-// title is dynamic (identifier, template with substitutions, expression).
+// title is dynamic, identifier, template with substitutions, expression.
 function staticTitle(node: AstNode): string | undefined {
   const arg = node.arguments?.[0] as AstNode | undefined
   if (!arg) {

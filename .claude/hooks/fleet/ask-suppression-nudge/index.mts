@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Claude Code PreToolUse hook — ask-suppression-nudge.
 //
-// Fires (with a stderr reminder, not a block) when the assistant invokes
+// Fires, with a stderr reminder, not a block, when the assistant invokes
 // AskUserQuestion while the recent transcript carries an explicit go-ahead
 // directive from the user. The hook DOES NOT block — it surfaces a one-line
 // reminder so the assistant notices the dont-ask-proceed signal and picks
@@ -20,7 +20,7 @@
 //   - Looks for go-ahead directives: standalone "yes" / "do it" / "proceed"
 //     / "go" / "continue" / digit-only ("1") / "all of them".
 //   - Conservative: only flags when at least one directive appears AS the
-//     most recent user turn's text content (not buried in a paragraph).
+//     most recent user turn's text content, not buried in a paragraph.
 
 import { readFileSync } from 'node:fs'
 

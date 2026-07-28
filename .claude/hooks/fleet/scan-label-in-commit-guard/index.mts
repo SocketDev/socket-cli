@@ -73,7 +73,7 @@ export function stripFencedCode(body: string): string {
 
 /**
  * Find scan-label matches in a commit message body. Returns one hit per unique
- * (line, label) pair so the error message can name them all.
+ * line, label, pair so the error message can name them all.
  */
 export function findScanLabels(body: string): Hit[] {
   const stripped = stripFencedCode(body)

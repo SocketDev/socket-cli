@@ -36,7 +36,7 @@ export function summarize(reports: Report[]): AreaSummary[] {
     s.total += 1
     s[r.severity] += 1
   }
-  // oxlint-disable-next-line unicorn/no-array-sort -- the spread of byArea.values() already copies into a fresh array (no shared mutation); .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
+  // oxlint-disable-next-line unicorn/no-array-sort -- the spread of byArea.values() already copies into a fresh array, no shared mutation; .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
   return [...byArea.values()].sort((a, b) => a.area.localeCompare(b.area))
 }
 

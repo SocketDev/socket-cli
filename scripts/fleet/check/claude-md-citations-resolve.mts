@@ -5,7 +5,7 @@
  *   enforcing hook (a backticked `.claude/hooks/fleet/<name>/` citation — the
  *   minimal form, no prose wrapper) and the lint rule (a "socket/<rule>"
  *   reference). When a hook is renamed/removed or a rule is dropped, the
- *   citation goes stale and the doc lies — a reader (human or agent) trusts a
+ *   citation goes stale and the doc lies — a reader, human or agent, trusts a
  *   guard that no longer exists. The `new-hook-claude-md-guard` enforces the
  *   FORWARD direction at edit time (new hook ⇒ needs a citation); this gate
  *   enforces the REVERSE at commit time (citation ⇒ the thing exists), which
@@ -15,7 +15,7 @@
  *      hook dir. Brace-grouped citations (`{a,b,c}/`) are expanded. Repo-only
  *      hooks (`.claude/hooks/repo/<name>/`) are checked the same way.
  *   2. Every `socket/<rule>` cited in CLAUDE.md is a registered rule in the oxlint
- *      plugin's fleet/ tier (one dir per rule). Advisory (logged, non-failing):
+ *      plugin's fleet/ tier, one dir per rule. Advisory, logged, non-failing:
  *      hooks on disk with
  *      NO citation, EXCEPT the reminder family + wheelhouse-only set (those
  *      legitimately need none). This surfaces undocumented guards without
@@ -37,7 +37,7 @@ import { hasFleetHookSource } from '../_shared/fleet-source-present.mts'
 
 const logger = getDefaultLogger()
 
-// Citation shapes (mirror new-hook-claude-md-guard): inline + comma-listed both
+// Citation shapes, mirror new-hook-claude-md-guard: inline + comma-listed both
 // contain the literal backticked path; brace-grouped is `{a,b,c}/` expansion.
 const HOOK_CITATION_RE =
   /\.claude\/hooks\/(fleet|repo)\/([a-z][a-z0-9-]*|\{[^}]+\})\//g
@@ -141,7 +141,7 @@ async function main(): Promise<void> {
   for (const { segment, name } of citedHooks(claudeMd)) {
     const present =
       segment === 'fleet' ? fleetHooks.has(name) : repoHooks.has(name)
-    // A hook may be cited at fleet/ but live at repo/ (or vice versa) after a
+    // A hook may be cited at fleet/ but live at repo/ or vice versa, after a
     // move — accept either segment so a relocation isn't a false failure, but
     // require the hook to exist SOMEWHERE.
     const existsEither = fleetHooks.has(name) || repoHooks.has(name)

@@ -14,7 +14,7 @@
  *   Two coupled surfaces consume this:
  *
  *   - socket/* fidelity rules self-exempt: each calls `isLockstepMirror(context)`
- *     and returns `{}` (no visitors) on a marked mirror — the same shape as the
+ *     and returns `{}`, no visitors, on a marked mirror — the same shape as the
  *     existing `isConfigEntrypoint` / `isPluginInternalPath` guards. A rule that
  *     never consults `isLockstepMirror` can never be silenced by the marker, so
  *     the exempt set is bounded structurally, not by a blanket path ignore.
@@ -34,7 +34,7 @@ import type { RuleContext } from './rule-types.mts'
 /**
  * The rules a declared `@lockstep-mirror` file is exempt from — the single
  * source of truth. socket/* entries are the fidelity rules that self-exempt via
- * `isLockstepMirror`; `curly` (and any future non-socket core rule) is exempt
+ * `isLockstepMirror`; `curly`, and any future non-socket core rule, is exempt
  * only through a marker-gated file-scope disable that
  * `no-file-scope-oxlint-disable` allows. Keep this list in sync with the
  * per-rule guards; the validation check asserts a file-scope disable on a

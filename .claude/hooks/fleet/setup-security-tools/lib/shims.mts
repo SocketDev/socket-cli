@@ -90,7 +90,7 @@ export function stableTargetFor(target: string): string | undefined {
 }
 
 /**
- * The `…/_dlx/<hash>` root of a dlx target (the whole dir to mirror).
+ * The `…/_dlx/<hash>` root of a dlx target, the whole dir to mirror.
  */
 function dlxRootOf(target: string): string | undefined {
   const norm = normalizePath(target)
@@ -103,7 +103,7 @@ function dlxRootOf(target: string): string | undefined {
 }
 
 /**
- * Every dlx-backed absolute target a shim executes (present or already-evicted)
+ * Every dlx-backed absolute target a shim executes, present or already-evicted
  * — the GC-fragile set to stabilize. Skips shell tokens (`"$@"`, `"$PATH"`).
  */
 export function findDlxBackedTargets(content: string): string[] {

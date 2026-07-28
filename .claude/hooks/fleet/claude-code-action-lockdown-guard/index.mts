@@ -46,12 +46,12 @@ export function isWorkflowPath(filePath: string): boolean {
 // ref / version suffix).
 const USES_ACTION_RE = /\buses\s*:\s*[^\n]*\banthropics\/claude-code-action\b/
 
-// Untrusted trigger in the `on:` block (any of the four). Same three on-shapes
-// pull-request-target-guard handles (scalar, array, mapping).
+// Untrusted trigger in the `on:` block, any of the four. Same three on-shapes
+// pull-request-target-guard handles, scalar, array, mapping.
 const UNTRUSTED_TRIGGER_RE =
   /^\s*on\s*:[\s\S]*?\b(?:issues|issue_comment|pull_request_target|pull_request)\b/m
 
-// An explicit `permissions:` block anywhere (top-level or job-level).
+// An explicit `permissions:` block anywhere, top-level or job-level.
 const PERMISSIONS_RE = /^\s*permissions\s*:/m
 
 // The lockdown `with:` inputs that pin the agent's surface. All three required:
@@ -68,7 +68,7 @@ export interface LockdownGap {
 }
 
 // Returns the lockdown gaps for a workflow body, or undefined when the hook
-// does not apply (not a claude-code-action workflow, or no untrusted trigger).
+// does not apply, not a claude-code-action workflow, or no untrusted trigger.
 export function findLockdownGaps(content: string): LockdownGap | undefined {
   if (!USES_ACTION_RE.test(content)) {
     return undefined

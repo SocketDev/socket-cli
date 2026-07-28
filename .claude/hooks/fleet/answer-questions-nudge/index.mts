@@ -12,7 +12,7 @@
 //      "can we", "where", "why", "what", "how", "which").
 //   2. The most recent assistant turn either (a) contains a deflection
 //      phrase or (b) doesn't contain text that looks like an answer
-//      (no statement-shape sentence answering the question keywords).
+//      no statement-shape sentence answering the question keywords.
 //
 // Exception: if the user's question contains an explicit pivot signal
 // ("now do X" / "instead let's" / "switch to" / "stop and"), it's not

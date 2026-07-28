@@ -9,13 +9,13 @@
  *   - a REQUIRED param named `options` → should be `config`
  *   - an OPTIONAL param named `config` → should be `options`
  *
- *   Only those two names are in scope (the established convention words), so an
+ *   Only those two names are in scope, the established convention words, so an
  *   arbitrary object param (`spawnResult: {…}`, a domain object) is never
  *   touched — this enforces ONE convention, not a synonym hunt. Report-only (no
  *   auto-fix): renaming a param + its in-body reads without a whole-function
  *   binding-resolution pass risks a collision, so the author does the rename
  *   (matching `options-param-naming`'s report-only stance). Skips `.d.ts`
- *   (mirrors external signatures) and test files (throwaway helpers). Bypass: a
+ *   mirrors external signatures, and test files, throwaway helpers. Bypass: a
  *   `socket-lint: allow bag-param-optionality-naming` comment.
  */
 

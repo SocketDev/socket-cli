@@ -22,7 +22,7 @@
 // the hook is a no-op.
 //
 // Non-blocking: returns a `notify` verdict (printed to stderr, exit 0) —
-// informational, never blocks (Stop hooks fire after the turn).
+// informational, never blocks, Stop hooks fire after the turn.
 
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'

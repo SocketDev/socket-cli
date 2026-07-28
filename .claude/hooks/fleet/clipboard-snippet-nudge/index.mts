@@ -17,7 +17,7 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { defineHook, editGuard, notify, runHook } from '../_shared/guard.mts'
 
-// Extensions that read as a user-run/paste snippet (a shell or script file),
+// Extensions that read as a user-run/paste snippet, a shell or script file,
 // as opposed to data/config the user would never paste into a terminal.
 const SNIPPET_EXTS: ReadonlySet<string> = new Set([
   '.bash',

@@ -71,7 +71,7 @@ export function lastCdTarget(command: string, cwd: string): string | undefined {
   // Windows-drive lane: recover backslash targets from the raw command (the
   // tokenizer ate their backslashes in `target`). Gated on the PARSED loop
   // having seen a real drive-ish cd — a raw-only regex would harvest prose
-  // (an echo'd string mentioning a cd) as a target, the substring-scanner
+  // an echo'd string mentioning a cd, as a target, the substring-scanner
   // class. The LAST drive-shaped cd wins, matching the loop above; absolute
   // by construction, so no resolve against cwd.
   let winTarget: string | undefined
@@ -127,7 +127,7 @@ export function isFleetRepoRoot(repoRoot: string): boolean {
   const remote = gitOut(repoRoot, ['config', '--get', 'remote.origin.url'])
   const slug = remote ? slugFromRemoteUrl(remote.trim()) : undefined
   // Under SOCKET_DEBUG, narrate the membership inputs: a windows CI run
-  // resolved a roster-remoted fixture NON-fleet (skipping a fleet-only gate)
+  // resolved a roster-remoted fixture NON-fleet, skipping a fleet-only gate
   // and only these inputs can say which arm diverged — the git config read,
   // the slug parse, or the roster lookup.
   if (process.env['SOCKET_DEBUG']) {

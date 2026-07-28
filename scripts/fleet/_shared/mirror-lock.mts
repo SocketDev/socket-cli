@@ -13,9 +13,9 @@ import { chmodSync, promises as fs, statSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 /**
- * Lift the read-only lock from a target (file or dir-mirror tree) so a
+ * Lift the read-only lock from a target, file or dir-mirror tree, so a
  * re-cascade can overwrite it. applyMirrorMode re-locks after the copy.
- * A missing target is a no-op (the seed path).
+ * A missing target is a no-op, the seed path.
  */
 export async function liftMirrorLock(targetPath: string): Promise<void> {
   // oxlint-disable-next-line socket/prefer-exists-sync -- need mode + file-type bits, not existence

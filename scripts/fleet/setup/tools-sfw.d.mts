@@ -1,6 +1,6 @@
 /*
  * @file Hand-authored declarations for tools-sfw.mjs — the dep-0
- *   bootstrap script stays plain .mjs (it runs before any install), so the
+ *   bootstrap script stays plain .mjs, it runs before any install, so the
  *   typed test surface is declared here.
  */
 

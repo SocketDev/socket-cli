@@ -27,8 +27,8 @@ const ALLOW_RE = /socket-lint:\s*allow\s+spawnsync-code-field/
 // as `.status`; `.code` is the async-spawn error shape, never on a sync result.
 const BAD_PROP = 'code'
 
-// Nearest enclosing function boundary (or Program) — the lexical bucket a
-// binding lives in. Mock nodes without a parent chain (in-process tests) fall
+// Nearest enclosing function boundary, or Program — the lexical bucket a
+// binding lives in. Mock nodes without a parent chain, in-process tests, fall
 // into one shared `undefined` bucket, degrading to file-wide tracking.
 function enclosingScope(node: AstNode | undefined): AstNode | undefined {
   let current = node?.parent
@@ -94,7 +94,7 @@ const rule = {
     // bucketed by enclosing function scope. A file-wide set cross-contaminates
     // sibling functions: one function's `const r = spawnSync(...)` must not
     // taint a sibling's `const r = await spawn(...)`, whose `.code` IS the
-    // correct field (async rejection shape).
+    // correct field, async rejection shape.
     const spawnSyncNamesByScope = new Map<AstNode | undefined, Set<string>>()
 
     // The receiver of a `.code` access is a spawnSync result: an id tracked in

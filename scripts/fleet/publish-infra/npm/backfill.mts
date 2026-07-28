@@ -11,7 +11,7 @@
  *   hard guards that keep the mode gap-fill-only:
  *
  *   1. The version must not be CURRENTLY published. The registry `time` map
- *      (the permanent publish ledger) plus the live `versions` set split the
+ *      the permanent publish ledger, plus the live `versions` set split the
  *      history three ways: never published (backfillable), published and
  *      still live (refused — nothing to fill), and published-then-UNPUBLISHED
  *      (backfillable — the staging-era registry frees an unpublished number,
@@ -147,7 +147,7 @@ export function evaluateBackfillGate(
   }
   // Guard 1: not CURRENTLY published. The time map is the permanent ledger;
   // the live versions set says what is public NOW. Never-published passes; a
-  // live version refuses (nothing to fill); published-then-UNPUBLISHED
+  // live version refuses, nothing to fill; published-then-UNPUBLISHED
   // passes — the staging-era registry frees an unpublished number, and the
   // stage attempt is server-side rejectable, so the registry itself is the
   // final arbiter. Unreadable state fails CLOSED.

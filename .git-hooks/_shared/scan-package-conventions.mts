@@ -52,9 +52,9 @@ export const scanPackageJsonPnpmOverrides = (text: string): LineHit[] => {
 // (`&&`, `||`, `;`, `|`, `(`, backtick), or directly after a PowerShell
 // `& ` invoke. Exclude JSON-key, env-value, and identifier suffix
 // contexts where `npx` shows up as an embedded substring:
-//   - `"socket-npx": …`            (bin-name suffix)
+//   - `"socket-npx": …`, bin-name suffix
 //   - `"dev:npx": "…SOCKET_CLI_MODE=npx node …"` (script key + env value)
-//   - `cmd-npx-helper`             (identifier interior)
+//   - `cmd-npx-helper`, identifier interior
 // The negative lookbehind catches hyphen / colon / equals / underscore /
 // dot prefixes; the negative lookahead catches the same followed forms
 // (`npx-helper`, `npx:foo`).
@@ -69,7 +69,7 @@ export const scanPackageJsonPnpmOverrides = (text: string): LineHit[] => {
 const NPX_DLX_RE = /(?<![\w\-:=.])\b(npx|yarn dlx)\b(?![\w\-:=.])/
 
 // Suggest the canonical replacement for a runtime npx/dlx call.
-// Documentation contexts (comments, JSDoc) are exempt via
+// Documentation contexts, comments, JSDoc, are exempt via
 // looksLikeDocumentation(); we only ever land here for code lines. The
 // right swap is the bin-direct form `node_modules/.bin/<tool>` — NOT
 // `pnpm exec <tool>`: the Claude Bash-time `no-pm-exec-guard` BLOCKS
@@ -123,7 +123,7 @@ export const scanNpxDlx = (text: string): LineHit[] =>
 // NOT scanned; only block-level fences.
 //
 // Suppression: a line containing `socket-lint: allow pnpm-first`
-// anywhere in the fence (or just above it) skips that block.
+// anywhere in the fence, or just above it, skips that block.
 
 // Match shell install commands at line start (allowing leading
 // whitespace + `$` prompt). Captures the package manager so the
@@ -136,7 +136,7 @@ const NPM_YARN_INSTALL_LINE_RE =
   /^\s*\$?\s*(?:(npm)\s+(?:add|i|install)|(?:yarn)\s+(?:add|install)|(?:yarn))\s/
 
 // Markdown fence opener: ``` or ~~~ at line start, optionally followed
-// by an info string (language hint). We don't require closing match —
+// by an info string, language hint. We don't require closing match —
 // just count fences as we go and treat alternating opens/closes.
 const FENCE_OPEN_RE = /^\s*(?:```|~~~)/
 

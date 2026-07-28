@@ -20,7 +20,7 @@
 // live only in `<session>/subagents/agent-<id>.jsonl`, never inlined into the
 // parent's file). So when a subagent commits, `readLastAssistantTextSameActor`
 // reads the PARENT's last assistant turn — attributing the PARENT's prose to the
-// SUBAGENT's commit (or vice versa). That's a cross-actor false positive, not a
+// SUBAGENT's commit, or vice versa. That's a cross-actor false positive, not a
 // correctly-scoped claim: when a background child is live, actor attribution
 // from the transcript alone is ambiguous, so this guard fails OPEN rather than
 // block on a claim it can't confidently pin on the committing actor. This is
@@ -66,7 +66,7 @@ export const check = bashGuard((command, payload) => {
   }
   const transcriptPath = payload.transcript_path
   // A live background child means attribution is ambiguous — fail open
-  // rather than risk blaming the wrong actor's prose (see header comment).
+  // rather than risk blaming the wrong actor's prose, see header comment.
   if (
     hasLiveBackgroundChild(transcriptPath, {
       now: Date.now(),

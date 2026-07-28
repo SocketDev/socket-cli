@@ -32,7 +32,7 @@ const logger = getDefaultLogger()
 
 /**
  * Roster member names that exist as a DIRECTORY at the wheelhouse root — each
- * is a stray nested scaffold (dead code), since a member is a sibling repo,
+ * is a stray nested scaffold, dead code, since a member is a sibling repo,
  * never a subdir. A "nested member" is a wheelhouse-only defect: in a member
  * checkout — no template/base — the scan no-ops and returns [], because a
  * member's own source tree can legitimately share a roster name (the `skills`

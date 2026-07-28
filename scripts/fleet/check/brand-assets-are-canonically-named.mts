@@ -10,7 +10,7 @@
  *   mark) <ext> svg | png e.g. `sockeye-combomark.svg` (adaptive),
  *   `sockeye-combomark-dark.svg`, `sockeye-logomark.png`,
  *   `sockeye-favicon.svg`. CONDITIONAL: a repo with no `assets/repo/brand/`
- *   directory vacuous-passes (most members carry no brand marks). The gate
+ *   directory vacuous-passes, most members carry no brand marks. The gate
  *   bites only on a repo that HAS brand assets, so a malformed name is caught
  *   the moment marks land. Strict: a non-canonical name exits 1 (no known-good
  *   exceptions — the brand grammar is exact).
@@ -106,7 +106,7 @@ export function canonicalBrandIssue(
 
 /**
  * Scan a brand directory, returning the non-canonical files. Returns [] when
- * the directory is absent (the conditional vacuous pass). Pure; exported for
+ * the directory is absent, the conditional vacuous pass. Pure; exported for
  * tests.
  */
 export function scanBrandDir(dir: string, repoName: string): BrandNameIssue[] {

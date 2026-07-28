@@ -3,7 +3,7 @@
 // Keeps a repo's dependency graph and its rolldown `external/` bundle lean: it
 // reports (and with --fix, applies) the lockfile dedupes pnpm can collapse,
 // checks that Socket-published packages are routed through the `catalog:`
-// overrides (not duplicated at floating versions), and flags any `external/`
+// overrides, not duplicated at floating versions, and flags any `external/`
 // entry that has grown from a thin re-export shim into a fat re-vendored tree.
 // Low-friction "care and feeding": dry-run by default, no prompting, safe to
 // run unattended (e.g. on a /loop).
@@ -17,9 +17,9 @@
 // bundles consolidate shared deps into mega-bundles (e.g. socket-lib's
 // `npm-pack` / `external-pack`) and expose per-dep files as thin re-export
 // shims (`module.exports = require('./npm-pack').semver`). A shim that stops
-// being thin (re-vendors its own tree) is the regression this sweep catches.
+// being thin, re-vendors its own tree, is the regression this sweep catches.
 //
-// Default is --dry-run (report only). Pass --fix to run `pnpm dedupe`.
+// Default is --dry-run, report only. Pass --fix to run `pnpm dedupe`.
 //
 // Usage:
 //   node tidy-rolldown-bundles.mts            # dry-run: report dedupe + override drift
@@ -50,7 +50,7 @@ export { readRoster }
 export const SHIM_MAX_BYTES = 4096
 
 // Socket-published packages that must resolve through the `catalog:` overrides
-// rather than a floating version (the dedupe lever for the Socket surface).
+// rather than a floating version, the dedupe lever for the Socket surface.
 export const CATALOG_PINNED_PREFIXES = [
   '@socketsecurity/',
   '@socketregistry/',

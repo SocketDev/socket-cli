@@ -39,7 +39,7 @@ export function isVscodeTaskPath(filePath: string): boolean {
 
 // The smoking gun: a task whose `runOptions.runOn` is `folderOpen`. JSONC allows
 // comments + arbitrary whitespace, so match the key/value pair tolerantly
-// rather than JSON-parsing (which a comment would break) — `"runOn"` : `"folderOpen"`.
+// rather than JSON-parsing, which a comment would break — `"runOn"` : `"folderOpen"`.
 const FOLDER_OPEN_RE = /"runOn"\s*:\s*"folderOpen"/
 
 export const check = editGuard((filePath, content) => {

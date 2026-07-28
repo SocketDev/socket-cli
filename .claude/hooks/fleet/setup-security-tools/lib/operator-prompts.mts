@@ -171,7 +171,7 @@ export async function offerTokenPrompt(
 }
 
 /**
- * Print a one-paragraph summary of what the shell-rc bridge did (or didn't do),
+ * Print a one-paragraph summary of what the shell-rc bridge did, or didn't do,
  * with a copy-pasteable next step.
  */
 export function reportBridgeOutcome(
@@ -181,7 +181,7 @@ export function reportBridgeOutcome(
   if (!bridge) {
     // Non-macOS or no rc detectable — fall through to a manual line
     // the user can paste. We hand the user a literal-export template
-    // (not a keychain-read) because re-reading the keychain on every
+    // not a keychain-read, because re-reading the keychain on every
     // shell triggers an auth prompt on macOS.
     logger.log('')
     logger.log(
@@ -213,7 +213,7 @@ export function reportBridgeOutcome(
 }
 
 /**
- * Write (or refresh) the keychain → shell-env bridge block in the user's shell
+ * Write, or refresh, the keychain → shell-env bridge block in the user's shell
  * rc. Idempotent: re-running on an already-wired rc is a no-op.
  */
 export function wireBridgeIntoShellRc(logger: Logger, token: string): void {

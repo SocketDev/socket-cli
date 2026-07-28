@@ -69,7 +69,7 @@ function getDefaultRegistryPublishDateCache(): TtlCache {
 /**
  * Fetch the ISO publish date (`YYYY-MM-DD`) of `name@version` from the
  * canonical registry's packument `time` map. Returns the date, or `undefined`
- * on any failure (network error, unknown version, parse). `FETCH_TIMEOUT_MS`
+ * on any failure, network error, unknown version, parse. `FETCH_TIMEOUT_MS`
  * timeout + one retry for a transient blip. Persisted for `CACHE_TTL_MS` (24h)
  * via `cache` (the shared cacache-backed singleton, or an injected instance
  * for test isolation) — a hit within the window skips the network call

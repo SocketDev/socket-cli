@@ -1,12 +1,12 @@
 /*
- * @file Detect whether the host is currently on AC power (vs battery). Used by
+ * @file Detect whether the host is currently on AC power, vs battery. Used by
  *   long-running build/test scripts to size timeouts adaptively — laptops on
  *   battery throttle CPU hard (especially macOS), and a static timeout that
  *   fits AC will kill an otherwise-healthy run on battery. Two paths, in
  *   priority order:
  *
  *   1. `node:smol-power` — when running inside a node-smol binary that ships the
- *      smol_power native binding (socket-btm's custom Node distribution). Pure
+ *      smol_power native binding, socket-btm's custom Node distribution. Pure
  *      C++ syscalls, sub-millisecond.
  *   2. Shellout fallback — system Node doesn't have node:smol-power. Each platform
  *      has a different mechanism:
@@ -17,7 +17,7 @@
  *   - Windows: PowerShell `Get-CimInstance Win32_Battery` On detection failure we
  *     conservatively assume AC — the downstream timeout becomes the shorter /
  *     more aggressive value, which is appropriate for build servers and
- *     headless CI (those environments are expected to run at full speed).
+ *     headless CI, those environments are expected to run at full speed.
  *     Returns a Promise so callers don't block the event loop on shellout
  *     paths. Byte-identical across the fleet via socket-wheelhouse's
  *     sync-scaffolding (IDENTICAL_FILES).

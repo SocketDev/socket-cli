@@ -8,7 +8,7 @@
  *   For that reference to resolve, the cascade must ALSO inject a matching
  *   `catalog:` entry into the member's pnpm-workspace.yaml — and it only
  *   injects the names in EXPECTED_CATALOG_ENTRIES (always) /
- *   OPTIONAL_CATALOG_ENTRIES (when already present). A baseline dep absent from
+ *   OPTIONAL_CATALOG_ENTRIES, when already present. A baseline dep absent from
  *   BOTH maps gets the package.json `catalog:` ref with NO catalog entry, so
  *   the member's next `pnpm install` dies with
  *   ERR_PNPM_CATALOG_ENTRY_NOT_FOUND_FOR_SPEC and can never reconcile. Past
@@ -90,7 +90,7 @@ async function main(): Promise<void> {
   }
   const quiet = process.argv.includes('--quiet')
 
-  // Dynamic import keeps fleet repos (no manifest) from failing at
+  // Dynamic import keeps fleet repos, no manifest, from failing at
   // module-resolution time — the existsSync gate above proves they're loadable.
   const { EXPECTED_CATALOG_ENTRIES, OPTIONAL_CATALOG_ENTRIES } = (await import(
     CATALOG_MANIFEST

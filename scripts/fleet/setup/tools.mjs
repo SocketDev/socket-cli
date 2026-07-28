@@ -69,7 +69,7 @@ import {
 // ── 3. sfw shims (POSIX) ─────────────────────────────────────────────────────
 // Route package managers through sfw. Mirrors the CI action's "Create sfw
 // shims" step (POSIX branch). shimCommands / hintFor / hasSocketToken live in
-// ./tools-sfw.mjs (split out for file size).
+// ./tools-sfw.mjs, split out for file size.
 function regenerateShims(sfwBin, enterprise) {
   // BIN_DIR is the SHARED handle dir (_wheelhouse/bin) — it also holds the
   // sfw / headroom handles, so NEVER rm the whole dir.
@@ -81,7 +81,7 @@ function regenerateShims(sfwBin, enterprise) {
     const real = sfwBin ? resolveReal(cmd) : ''
     if (IS_WINDOWS) {
       // cmd.exe / PowerShell resolve `<cmd>` to `<cmd>.cmd` via PATHEXT. The
-      // POSIX trap-and-reap (process groups, signal traps) has no batch analog,
+      // POSIX trap-and-reap, process groups, signal traps, has no batch analog,
       // so Windows runs sfw in the foreground and lets the console own cleanup.
       const winShim = path.join(BIN_DIR, `${cmd}.cmd`)
       if (real && existsSync(real)) {
@@ -107,7 +107,7 @@ function regenerateShims(sfwBin, enterprise) {
       const lines = posixRealShimLines(cmd, sfwBin, real)
       writeFileSync(shimPath, `${lines.join('\n')}\n`)
     } else {
-      // Helpful-error stub for a tool not installed (or no sfw).
+      // Helpful-error stub for a tool not installed, or no sfw.
       const hint = hintFor(cmd).replace(/'/g, "'\\''")
       const lines = [
         '#!/bin/bash',
@@ -136,7 +136,7 @@ function regenerateShims(sfwBin, enterprise) {
 // installer so resolveReal() can wrap the PINNED racked binary — otherwise the
 // sfw shim would wrap the below-floor stray and only trip
 // path-tools-are-at-pinned-version later. Returns nothing; installers are
-// idempotent (a present, current rack is a no-op).
+// idempotent, a present, current rack is a no-op.
 function refreshStaleRacks(platform) {
   // Map a shimmed tool → its pinned version + the installer that racks it. Only
   // tools the fleet both racks AND version-pins are self-healed; the rest fall
@@ -217,13 +217,13 @@ function main() {
   // The just-racked pnpm is NOT yet on PATH. regenerateShims() below wraps the
   // REAL tool via resolveReal(), which resolves through `command -v` on PATH —
   // so prepend the rack pnpm dir now, else the pnpm shim falls back to the
-  // "not installed" error stub and `pnpm install` exits 127 (broke release-bundle).
+  // "not installed" error stub and `pnpm install` exits 127, broke release-bundle.
   if (pnpmBin) {
     process.env['PATH'] =
       `${path.dirname(pnpmBin)}${path.delimiter}${process.env['PATH'] ?? ''}`
   }
   // node → pnpm → npm: override node's bundled npm with the pinned, verified
-  // version (no self-update) before anything shells out to npm.
+  // version, no self-update, before anything shells out to npm.
   installNpm()
   // Token present (env OR keychain) ⇒ enterprise flavor + its fuller shim set.
   const enterprise = hasSocketToken()
@@ -237,7 +237,7 @@ function main() {
   // PINNED racked binary, not the below-floor stray.
   refreshStaleRacks(platform)
   // uv BEFORE regenerateShims: installUv writes a plain exec-the-rack shim
-  // (its standalone-bootstrap form), and regenerateShims must run after it so
+  // its standalone-bootstrap form, and regenerateShims must run after it so
   // the sfw-wrapped shim is the one that survives — the firewall wrap on uv is
   // the contract (docs/references/fleet/sfw-local-install.md §3). uv here also
   // guarantees a hash-locked install for the uv-project tools (SkillSpector's

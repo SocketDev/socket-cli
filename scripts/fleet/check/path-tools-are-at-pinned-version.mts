@@ -12,7 +12,7 @@
 // of mid-cascade. (It is not hypothetical — a stray pnpm@10.21.0 on PATH did
 // exactly this.)
 //
-// Skips a tool that is not on PATH (absence is a separate concern). Fails ONLY
+// Skips a tool that is not on PATH, absence is a separate concern. Fails ONLY
 // when a PRESENT tool reports a version below its floor.
 //
 // `--fix` heals a below-floor tool that Homebrew provides by running
@@ -170,7 +170,7 @@ export function findBelowFloor(
   return out
 }
 
-// Bins whose pin is a `>=` FLOOR (any newer version satisfies it), so a Homebrew
+// Bins whose pin is a `>=` FLOOR, any newer version satisfies it, so a Homebrew
 // `brew upgrade` to the latest is a valid heal. pnpm + uv are pinned to an EXACT
 // racked version — brew's latest would overshoot the pin, so they are NOT
 // brew-upgradable and keep the racked-installer fix.
@@ -183,7 +183,7 @@ export type BrewFixPlan =
 /**
  * Pure: decide whether a below-floor violation can be healed by `brew upgrade`.
  * Only floor-pinned, brew-provisioned tools qualify; everything else is skipped
- * with a reason (never silently no-op'd).
+ * with a reason, never silently no-op'd.
  */
 export function planBrewFix(config: {
   brewAvailable: boolean

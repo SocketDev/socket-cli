@@ -17,7 +17,7 @@
 // to refuse. The reminder makes cadence + the pre-merge gate visible at the
 // turn that created the state.
 //
-// Scope: only nudges inside a worktree (the workflow this rule targets). In the
+// Scope: only nudges inside a worktree, the workflow this rule targets. In the
 // primary checkout, dirty-worktree-stop-guard + commit-pr-nudge cover
 // the dirty/landing cases; this hook stays quiet there to avoid double-nagging.
 
@@ -37,7 +37,7 @@ function isLinkedWorktree(repoDir: string): boolean {
   return gitDir !== commonDir
 }
 
-// Count of tracked/untracked changes (porcelain lines). Vendored / untracked-
+// Count of tracked/untracked changes, porcelain lines. Vendored / untracked-
 // by-default trees aren't the cadence target, but a coarse count is enough for
 // a reminder — the dirty-worktree hook handles the precise path listing.
 function uncommittedCount(repoDir: string): number {

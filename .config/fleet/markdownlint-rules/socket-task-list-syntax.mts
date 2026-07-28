@@ -16,8 +16,8 @@ import type { MarkdownlintRule } from './_shared/rule-types.mts'
 const RULE_NAME = 'socket-task-list-syntax'
 
 // Matches "- []" — empty brackets with no space, optionally preceded by
-// leading whitespace (for nested lists). The brackets may not contain a space
-// (that is the other pattern) or x/X (valid checked item).
+// leading whitespace, for nested lists. The brackets may not contain a space
+// that is the other pattern, or x/X, valid checked item.
 const EMPTY_BRACKETS_RE = /^(\s*-\s)\[\](\s|$)/
 
 // Matches "- [ ]" or "- [x]"/"- [X]" followed immediately by a non-space
@@ -34,7 +34,7 @@ const rule: MarkdownlintRule = {
       if (!line) {
         continue
       }
-      // Pattern 1: "- []" (no space inside brackets).
+      // Pattern 1: "- []", no space inside brackets.
       const emptyMatch = EMPTY_BRACKETS_RE.exec(line)
       if (emptyMatch) {
         const prefix = emptyMatch[1]!
@@ -54,7 +54,7 @@ const rule: MarkdownlintRule = {
         })
         continue
       }
-      // Pattern 2: "- [ ]text" (no space after the closing bracket).
+      // Pattern 2: "- [ ]text", no space after the closing bracket.
       const noSpaceMatch = NO_SPACE_AFTER_RE.exec(line)
       if (noSpaceMatch) {
         const prefix = noSpaceMatch[1]!

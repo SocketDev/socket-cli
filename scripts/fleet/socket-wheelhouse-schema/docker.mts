@@ -1,7 +1,7 @@
 /*
  * @file Docker block of the socket-wheelhouse config: per-repo Docker
  *   infrastructure declared as data. `prebakes` is the layered base-image
- *   manifest (bases named by toolchain), driving the prebake build + the
+ *   manifest, bases named by toolchain, driving the prebake build + the
  *   downstream `FROM` references.
  */
 

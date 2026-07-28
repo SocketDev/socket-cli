@@ -3,8 +3,8 @@
  *   tests. Re-exports the single-source-of-truth `WIN32` + `normalizePath` from
  *   `@socketsecurity/lib-stable` so tests have one import surface and any
  *   future change to the canonical detection flows through one place. Pairs
- *   with `./timing.mts` (Windows-tolerant timing budgets), `./tags.mts`
- *   (test-title prefixes), and `./env.mts` (env-flag helpers). Adoption is
+ *   with `./timing.mts`, Windows-tolerant timing budgets, `./tags.mts`
+ *   test-title prefixes, and `./env.mts`, env-flag helpers. Adoption is
  *   opt-in by directory presence — the `socket/prefer-windows-test-helpers`
  *   lint rule fires only when `test/fleet/_shared/lib/` is present.
  */

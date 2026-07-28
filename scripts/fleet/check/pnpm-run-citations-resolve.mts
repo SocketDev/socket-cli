@@ -17,7 +17,7 @@
 // `.claude/commands/**/*.md` for `pnpm run <name>` invocations and fails
 // `check --all` when <name> resolves to no script in the repo-root package.json.
 //
-// Out of scope (so we never double-fire with a sibling gate or on prose noise):
+// Out of scope, so we never double-fire with a sibling gate or on prose noise:
 //   - `node <local-script>` references — owned by doc-references-resolve.mts.
 //   - `allowed-tools:` frontmatter lines — those are Bash() permission GLOBS
 //     (`Bash(pnpm run cover:*)`), not citations to a single named script.
@@ -49,7 +49,7 @@ const DOC_ROOTS = [
 ] as const
 
 // Captures the script name token after `pnpm run `. The name may carry a `:`
-// namespace, a trailing `*` glob, or a trailing `:` (a documented prefix). The
+// namespace, a trailing `*` glob, or a trailing `:`, a documented prefix. The
 // extractor stops at whitespace or a markdown/shell delimiter so a citation
 // inside a table cell or backticks reads clean.
 const PNPM_RUN_RE = /pnpm run ([A-Za-z][A-Za-z0-9:_*-]*)/g
@@ -66,7 +66,7 @@ const PLACEHOLDER_NAMES = new Set(['bar', 'baz', 'foo', 'qux'])
 // `build`/`build:*` script at all. The fleet-tier skill/command docs describe
 // the canonical fleet flow and ship byte-identical everywhere, so a fleet-doc
 // citation to a script from an entirely-absent family is vacuous there, not
-// rot. A repo-owned doc (outside the fleet tier) gets no such pass, and a repo
+// rot. A repo-owned doc, outside the fleet tier, gets no such pass, and a repo
 // that defines ANY script in the family is buildable — its citations must
 // resolve for real.
 const REPO_SHAPE_SCRIPT_FAMILIES = ['build'] as const
@@ -114,7 +114,7 @@ export function scriptExists(
 }
 
 /**
- * True when `relDoc` is a fleet-tier (cascaded, byte-identical fleet-wide)
+ * True when `relDoc` is a fleet-tier, cascaded, byte-identical fleet-wide
  * skill/command doc — the tier whose repo-shape-dependent citations get the
  * vacuous pass in build-less repos.
  */

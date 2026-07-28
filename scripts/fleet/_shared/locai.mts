@@ -1,6 +1,6 @@
 /**
  * @file Keyless local AI seam — the fleet-side wrapper for the `locai` CLI
- *   from SocketDev/socket-gemini-nano. locai runs single-shot tasks against
+ *   from SocketDev/odai. locai runs single-shot tasks against
  *   on-device backends — Gemini Nano through headless Chrome, a loopback
  *   llama-server, Apple FoundationModels, or its deterministic simulator —
  *   with no ANTHROPIC_API_KEY involved. The CLI's exit-code contract is the
@@ -58,7 +58,7 @@ export type LocaiRun =
  * Resolve a runnable locai binary: the `LOCAI_BIN` env override when it
  * points at an existing file, else `locai` on PATH. Returns undefined when
  * neither resolves — the package is not yet published to npm, so dev
- * machines link the CLI from a SocketDev/socket-gemini-nano clone or set
+ * machines link the CLI from a SocketDev/odai clone or set
  * `LOCAI_BIN` explicitly.
  */
 export function resolveLocaiBin(

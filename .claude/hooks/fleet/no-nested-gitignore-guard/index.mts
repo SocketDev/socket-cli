@@ -20,7 +20,7 @@
 //
 // Bypass: `Allow nested-gitignore bypass`.
 //
-// Fails open on any parse/payload/git error (a guard bug must not block work).
+// Fails open on any parse/payload/git error, a guard bug must not block work.
 
 import { existsSync } from 'node:fs'
 import path from 'node:path'
@@ -40,7 +40,7 @@ const VENDORED_SUFFIX_RE = /(?:-bundled|-vendored)(?:\/|$)/
 
 /**
  * Resolve the git-toplevel-relative POSIX path for `filePath`, or undefined
- * when the file is not inside a git checkout (guard then fails open).
+ * when the file is not inside a git checkout, guard then fails open.
  */
 export function repoRelativeGitPath(filePath: string): string | undefined {
   try {

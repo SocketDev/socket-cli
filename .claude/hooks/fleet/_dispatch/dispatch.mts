@@ -47,7 +47,7 @@ const MUTATING_GIT_VERBS: ReadonlySet<string> = new Set([
 ])
 
 /**
- * The state-changing segments in `command` (deduped, human-readable), so a
+ * The state-changing segments in `command`, deduped, human-readable, so a
  * block verdict can announce what else its cancellation took down.
  */
 export function mutatingSegments(command: string): string[] {
@@ -115,7 +115,7 @@ export interface DispatchPayload {
 /**
  * A guard verdict the dispatcher understands. Mirrors `_shared/guard.mts`'s
  * `GuardResult` but lives here so the dispatch table can carry `defineHook`
- * hooks (which return a verdict) alongside the legacy pure-`run` hooks (which
+ * hooks, which return a verdict, alongside the legacy pure-`run` hooks (which
  * return a reminder string) WITHOUT the dispatcher importing the guard module.
  * `'block'` sets exitCode 2 + prints `message`; `'notify'` prints `message`
  * (stderr, exit 0); `undefined` is silent allow.
@@ -174,7 +174,7 @@ export const SINGLE_HOOK_NOT_FOUND_EXIT = 3
 /**
  * True when the event's table carries an entry named `hookName`. Pure; the
  * name-scoped CLI path uses it to distinguish "bundled hook, tool just didn't
- * match" (normal allow) from "hook not bundled at all" (caller falls back to
+ * match", normal allow, from "hook not bundled at all" (caller falls back to
  * source).
  */
 export function hookInTable(event: string, hookName: string): boolean {
@@ -327,7 +327,7 @@ export async function runDispatcherCli(): Promise<void> {
   }
   // A Stop-event block uses Claude Code's stdout-JSON decision protocol; a
   // PreToolUse / PostToolUse block uses exitCode 2 + the reason on stderr
-  // (already written above as a reminder line).
+  // already written above as a reminder line.
   if (result.decision === 'block' && result.blockReason !== undefined) {
     if (payload.tool_name === undefined) {
       process.stdout.write(
@@ -346,7 +346,7 @@ export async function runDispatcherCli(): Promise<void> {
 // `dispatch` from here, so this whole module — including this guard — is in
 // the snapshot bundle's top-level eval graph, and the dispatcher must run ONLY
 // from the registered deserialize-main. `isHookEntrypoint` owns that gating
-// (plus the realpath comparison); the hazard detail lives in
+// plus the realpath comparison; the hazard detail lives in
 // `../_shared/entrypoint.mts`.
 if (isHookEntrypoint(import.meta.url)) {
   runDispatcherCli().catch(() => {

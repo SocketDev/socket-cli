@@ -76,7 +76,7 @@ async function main(): Promise<number> {
   ).stdout
   header(`original ${base}`, `${origHead} (${origCount} commits)`)
 
-  // Phase 2 — worktree (clean any stale state from prior runs).
+  // Phase 2 — worktree, clean any stale state from prior runs.
   await run('git', ['worktree', 'remove', '--force', worktree], src, {
     allowFailure: true,
   })

@@ -4,10 +4,10 @@
  *   excluded — there a leading `_` is TypeScript's own sanctioned marker for an
  *   intentionally-unused param under `noUnusedParameters` (TS6133), so banning
  *   it would conflict with the compiler. Privacy in TypeScript is handled by
- *   module boundaries (not exporting) or by the `_internal/` _directory_
+ *   module boundaries, not exporting, or by the `_internal/` _directory_
  *   pattern — not by leading underscores on symbol names. The
  *   underscore-as-internal-marker convention is borrowed from other languages
- *   where it has runtime meaning (Python name mangling, Ruby visibility); in TS
+ *   where it has runtime meaning, Python name mangling, Ruby visibility; in TS
  *   the underscore is decorative and adds noise to `git blame` and IDE
  *   autocomplete. Commit-time partner of the edit-time
  *   `.claude/hooks/fleet/no-underscore-ident-guard/`. Allowed (skipped by this

@@ -11,7 +11,7 @@
  *      `resolveTargets` narrows to a single `--target` when given.
  *   2. Format-preserving I/O — `loadManifest` reads through socket-lib's
  *      `EditableJson` so a verb's `.update({ … })` / `.save({ sort:false })`
- *      keeps key order + indentation (a surgical diff), never a
+ *      keeps key order + indentation, a surgical diff, never a
  *      JSON.parse→stringify reflow.
  *   3. Pure describe / list helpers the read verbs render. The fetch / SRI /
  *      soak-plan machinery is NOT re-implemented here — `add` imports
@@ -100,7 +100,7 @@ export async function loadManifest(
 
 /**
  * A manifest path rendered relative to the repo root for human-readable output
- * (falls back to the absolute path when it lies outside the root).
+ * falls back to the absolute path when it lies outside the root.
  */
 export function relPath(manifestPath: string): string {
   return path.relative(REPO_ROOT, manifestPath) || manifestPath

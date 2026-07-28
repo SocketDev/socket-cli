@@ -9,11 +9,11 @@
 //   `core.hooksPath = .git-hooks`) → node .git-hooks/pre-push.mts
 //
 // Range logic:
-//   New branch:  remote/<default_branch>..<local_sha>  (only new commits)
-//   Existing:    <remote_sha>..<local_sha>             (only new commits)
+//   New branch:  remote/<default_branch>..<local_sha>  only new commits
+//   Existing:    <remote_sha>..<local_sha>             only new commits
 //   We never use release tags — that would re-scan already-merged history.
 //
-// Stdin format (provided by git): one push line per ref, each line:
+// Stdin format, provided by git: one push line per ref, each line:
 //   <local_ref> <local_sha> <remote_ref> <remote_sha>
 //
 // This entry point is a thin orchestrator: each gate lives in a focused
@@ -26,7 +26,7 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-// Import `splitLines` from the barrel (not the scan-core leaf) so the Node-25
+// Import `splitLines` from the barrel, not the scan-core leaf, so the Node-25
 // version gate in `../_shared/helpers.mts` runs at load — every gate below
 // assumes native .mts type stripping.
 import { splitLines } from '../_shared/helpers.mts'
@@ -38,6 +38,7 @@ import {
   scanDispatchDrift,
   scanFastChecks,
   scanSoakAnnotations,
+  scanTypeCheck,
 } from '../_shared/push-repo-gates.mts'
 import { scanSignedCommits } from '../_shared/push-signatures.mts'
 import { isSquashHistoryRepo } from '../_shared/push-squash-history.mts'
@@ -95,7 +96,7 @@ const main = async (): Promise<number> => {
     totalErrors += scanFilesInRange(range)
   }
 
-  // File-targeted scans (working-tree state, not per-commit-range).
+  // File-targeted scans, working-tree state, not per-commit-range.
   totalErrors += scanSoakAnnotations()
 
   // Fast lint/format gate — the build-independent slice of the quality bar,
@@ -105,6 +106,14 @@ const main = async (): Promise<number> => {
   // Dispatch-table drift (wheelhouse-only) — a stale/dangling hook dispatch
   // can't reach origin/main and cascade fleet-wide.
   totalErrors += scanDispatchDrift()
+
+  // Type gate — the mandatory whole-project tsc check. A type error is the one
+  // class of breakage the fast lint/format gate above cannot catch, and the
+  // fast-land path pushes with --no-verify, so without this a bad type reaches
+  // origin/main behind CI alone. Runs AFTER the dispatch-drift check so its
+  // dispatch-table regen cannot mask a stale on-disk table, and (unlike
+  // scanFastChecks) it does not skip under a `.claude/` worktree path.
+  totalErrors += scanTypeCheck()
 
   if (totalErrors > 0) {
     logger.error('')

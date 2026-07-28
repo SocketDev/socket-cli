@@ -6,13 +6,13 @@
  *   - `trust-downgrade-guard` — the pnpm/npm trust-gate FLOORS. This script
  *     asserts the repo's `pnpm-workspace.yaml` still carries a
  *     `minimumReleaseAge` of at least 10080, `trustPolicy: no-downgrade`, and
- *     `blockExoticSubdeps: true`, and that `.npmrc` `min-release-age` (if set)
+ *     `blockExoticSubdeps: true`, and that `.npmrc` `min-release-age`, if set
  *     meets the 7-day floor.
  *   - `npmrc-trust-optout-guard` — the pnpm trust-aware env-expansion opt-out.
  *     This script scans tracked scripts / workflows / configs for a committed
  *     `PNPM_CONFIG_NPMRC_AUTH_FILE` / `NPM_CONFIG_USERCONFIG=<repo .npmrc>`
  *     assignment and for a `${ENV}` placeholder beside an `_authToken` /
- *     `registry` key in a committed `.npmrc`. Defense in depth (code is law):
+ *     `registry` key in a committed `.npmrc`. Defense in depth, code is law:
  *     the hooks block in-session; this catches anything that lands another way.
  *     All detection logic is imported from the SAME `_shared/` modules the
  *     hooks use, so the edit-time and commit-time surfaces never drift. Exit
@@ -128,7 +128,7 @@ interface OptoutHit {
 
 // The opt-out detector + its hook are where these env-var names legitimately
 // live as detection literals, not as a real opt-out. Skip the guard's own dir
-// (in both the live and template trees) so the enforcer doesn't flag itself.
+// in both the live and template trees, so the enforcer doesn't flag itself.
 function isSelfDetectorPath(file: string): boolean {
   return file.includes('npmrc-trust-optout-guard/')
 }

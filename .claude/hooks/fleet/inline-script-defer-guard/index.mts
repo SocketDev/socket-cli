@@ -58,7 +58,7 @@ export function findInlineDeferOrAsync(text: string):
     if (!/\b(?:async|defer)\b/i.test(attrs)) {
       continue
     }
-    // If src= is present (anywhere in the tag), the defer/async IS valid.
+    // If src= is present, anywhere in the tag, the defer/async IS valid.
     if (/\bsrc\s*=/.test(attrs)) {
       continue
     }

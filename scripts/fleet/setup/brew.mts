@@ -44,7 +44,7 @@ export function brewTapSlug(tap: string): string {
 
 /**
  * True when a Brewfile declares any `cask "…"` entry — the signal that the cask
- * tap must be pinned too (core-only Brewfiles skip the cask tap fetch).
+ * tap must be pinned too, core-only Brewfiles skip the cask tap fetch.
  */
 export function brewfileDeclaresCask(brewfileText: string): boolean {
   return /^\s*cask\s/m.test(brewfileText)
@@ -86,7 +86,7 @@ export function brewSkipReason(config: {
 /**
  * Check one tap out at its soaked pin SHA: ensure the tap exists, resolve its
  * local git dir, depth-1 fetch the pinned commit, and check it out. Returns
- * false (after a loud fail) on any resolve/fetch/checkout error so the caller
+ * false, after a loud fail, on any resolve/fetch/checkout error so the caller
  * never proceeds to an unpinned bundle install.
  */
 async function pinTap(

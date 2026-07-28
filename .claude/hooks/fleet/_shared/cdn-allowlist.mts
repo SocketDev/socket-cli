@@ -7,7 +7,7 @@
  *   the canonical registries every ecosystem advertises (crates.io, pypi.org,
  *   …) plus the browser CDNs a front-end's CSP already exposes. These are
  *   public knowledge, so the list is not sensitive: it is an allowlist, not a
- *   secret, and the enforcement (not the secrecy of the list) is the value.
+ *   secret, and the enforcement, not the secrecy of the list, is the value.
  *   🚨 NEVER add an internal host here. A naive `https://` grep of a Socket
  *   service repo surfaces `*.svc.cluster.local` Kubernetes service names
  *   (artifact-search, github-interposer, metadata, nats, pgbouncer,
@@ -25,7 +25,7 @@ import { findInvocation } from './shell-command.mts'
 // curl-family guard never sees, so their registries don't belong here). Each
 // entry carries its reason. Expand as needed — less is more. Sorted alpha.
 export const ALLOWED_CDN_HOSTS: readonly string[] = [
-  // uv installer: `curl -LsSf https://astral.sh/uv/install.sh` (fleet Python tooling).
+  // uv installer: `curl -LsSf https://astral.sh/uv/install.sh`, fleet Python tooling.
   'astral.sh',
   // The Rust package registry's public API — the cargo publish-infra reads
   // crate state before acting (scripts/fleet/publish-infra/cargo/
@@ -52,7 +52,7 @@ export const ALLOWED_CDN_HOSTS: readonly string[] = [
 // Wildcard hosts the fleet fetches from. `*.` matches any subdomain depth of
 // the suffix. EMPTY by design: nothing in the fleet curl/wget/fetches a wildcard
 // host. github.com release downloads redirect to *.githubusercontent.com at
-// runtime, but the COMMITTED url is github.com (an exact host) and the redirect
+// runtime, but the COMMITTED url is github.com, an exact host, and the redirect
 // is followed by the client, not seen by the guard; `$schema` references to
 // raw.githubusercontent.com are JSON keys, not fetch invocations. jsdelivr /
 // unpkg / cloudfront / sanity stay denied (public bundler CDNs = exfil surface).
@@ -91,7 +91,7 @@ export function hostnameOf(url: string): string | undefined {
 // Find the first http(s) URL in a Bash command whose host is NOT allowed,
 // returning { url, host }. Used by the guard. Only flags fetch/download tools
 // (curl / wget / fetch) so unrelated URL mentions don't trip it. AST-matched
-// binary detection (no regex on the command), then a URL scan of the string.
+// binary detection, no regex on the command, then a URL scan of the string.
 export interface DisallowedCdnHit {
   url: string
   host: string

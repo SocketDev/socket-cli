@@ -11,7 +11,7 @@
  */
 
 // Base URL, NO trailing slash — callers append `/${name}` for a packument, or
-// use NPM_REGISTRY (the trailing-slash form) where a config value is expected.
+// use NPM_REGISTRY, the trailing-slash form, where a config value is expected.
 export const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
 
 // Trailing-slash form — the value npm/pnpm write into `.npmrc` `registry=` and

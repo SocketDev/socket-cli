@@ -17,7 +17,7 @@
 // Allowed paths:
 //   .claude/agents/fleet/<name>/...
 //   .claude/agents/repo/<name>/...
-//   .claude/agents/_*/...                  (internals folder exception)
+//   .claude/agents/_*/...                  internals folder exception
 //   .claude/commands/fleet/<name>.md
 //   .claude/commands/repo/<name>.md
 //   .claude/hooks/_shared/...              (and any _-prefixed name)
@@ -37,7 +37,7 @@
 // the same rule — the template ships canonical entries, and the
 // cascade keeps the layout consistent fleet-wide.
 //
-// Fails open on malformed payloads (allow, stderr log handled by the runner).
+// Fails open on malformed payloads, allow, stderr log handled by the runner.
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 

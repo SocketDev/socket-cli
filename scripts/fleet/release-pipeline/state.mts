@@ -31,7 +31,7 @@ export interface StageReceipt {
    */
   at: string
   /**
-   * Human-readable evidence line (what ran, what it saw).
+   * Human-readable evidence line, what ran, what it saw.
    */
   detail: string
   /**
@@ -61,7 +61,7 @@ export interface StageReceipt {
  */
 export interface ReleaseChecksums {
   /**
-   * Sha1 hex of the verified tarball (comparable to npm's staged shasum).
+   * Sha1 hex of the verified tarball, comparable to npm's staged shasum.
    */
   sha1: string
   /**
@@ -70,7 +70,7 @@ export interface ReleaseChecksums {
    */
   sha512: string
   /**
-   * The tarball filename `pnpm pack` produces (scope-stripped name-version).
+   * The tarball filename `pnpm pack` produces, scope-stripped name-version.
    */
   tarballName: string
   /**
@@ -82,7 +82,7 @@ export interface ReleaseChecksums {
 
 export interface PipelineState {
   /**
-   * Package name at pipeline start (drift check on resume).
+   * Package name at pipeline start, drift check on resume.
    */
   packageName: string
   /**

@@ -25,9 +25,9 @@
  *   - `cd ` inside a `()` subshell (pattern (b) — safe)
  *   - `cd ` followed by `&& pwd` or `; pwd` at the end (pattern (c) —
  *     evidenced)
- *   - `cd -` (return to previous dir, intentional)
+ *   - `cd -`, return to previous dir, intentional
  *   - `cd <path> 2>/dev/null` short forms used for existence probes
- *     (caller knows what they're doing)
+ *     caller knows what they're doing
  */
 
 import { bashGuard, defineHook, notify, runHook } from '../_shared/guard.mts'
@@ -44,7 +44,7 @@ function detectsBareCd(command: string): boolean {
   while ((m = cdRe.exec(flat)) !== null) {
     const target = m.groups!['target']!
 
-    // Skip `cd -` (intentional return).
+    // Skip `cd -`, intentional return.
     if (target === '-') {
       continue
     }

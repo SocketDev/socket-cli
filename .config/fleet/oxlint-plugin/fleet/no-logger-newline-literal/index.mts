@@ -48,7 +48,7 @@ const STDERR_METHODS = new Set([
 ])
 
 // All logger methods the rule checks. Excludes `dir`, `group`,
-// `groupEnd`, etc. (no semantic-symbol shape).
+// `groupEnd`, etc. no semantic-symbol shape.
 const LOGGER_METHODS = new Set([
   'error',
   'fail',
@@ -65,18 +65,18 @@ const LOGGER_METHODS = new Set([
 /* oxlint-disable socket/no-status-emoji -- this rule defines the emoji→method table it scans for. */
 // Mirrors @socketsecurity/lib-stable/logger/default's LOG_SYMBOLS (the table built
 // by `symbols-builder.ts`). Each logger method has TWO render
-// shapes — the Unicode form (used on terminals with unicode support)
-// and the ASCII fallback (used otherwise). Authors hand-rolling a
+// shapes — the Unicode form, used on terminals with unicode support
+// and the ASCII fallback, used otherwise. Authors hand-rolling a
 // prefix may type either, plus closely-related variants:
 //
 //   method    Unicode  ASCII   common author variants
 //   ───────   ───────  ─────   ──────────────────────
 //   fail      ✖        ×       ✗ ✘ ❌ ❎ ✖️
 //   info      ℹ        i       ℹ️
-//   progress  ∴        :.      (rarely typed)
+//   progress  ∴        :.      rarely typed
 //   reason    ∴(dim)   :.(dim) (rarely typed; same shape as progress)
-//   skip      ↻        @       (rarely typed)
-//   step      →        >       (rarely typed)
+//   skip      ↻        @       rarely typed
+//   step      →        >       rarely typed
 //   success   ✔        √       ✓ ✅ ☑ ☑️ ✔️
 //   warn      ⚠        ‼       ⚠️ ❗ ❕ 🚨 ⛔
 //
@@ -88,8 +88,8 @@ const LOGGER_METHODS = new Set([
 //    `logger.log('config loaded\n')`. Match anywhere in the string.
 //
 // 2. ANCHORED — `AMBIGUOUS_FALLBACK` covers fallbacks that DO appear
-//    in normal prose: `i` (in any English word), `>` (math/chaining),
-//    `@` (npm package refs, dirs), `:` (host:port, urls). Only match
+//    in normal prose: `i`, in any English word, `>` (math/chaining),
+//    `@`, npm package refs, dirs, `:` (host:port, urls). Only match
 //    when at the START of the string followed by whitespace — that's
 //    the prefix shape the logger emits.
 //
@@ -250,7 +250,7 @@ const rule = {
     }
 
     /**
-     * Find the indentation (leading whitespace on its line) of `node`.
+     * Find the indentation, leading whitespace on its line, of `node`.
      */
     function indentOf(node: AstNode): string {
       const text = sourceCode.getText()
@@ -331,7 +331,7 @@ const rule = {
      * logger.<origMethod>(...) call. Emits an autofix only when the call is
      * `logger.X('<value>')` with exactly one Literal arg, lives in a plain
      * ExpressionStatement, and the newline placement is leading or trailing
-     * (not embedded). Multi-arg + embedded shapes stay unfixed — the rewrite
+     * not embedded. Multi-arg + embedded shapes stay unfixed — the rewrite
      * needs author judgment.
      */
     function reportFor(node: AstNode, value: string, origMethod: string): void {
@@ -363,8 +363,8 @@ const rule = {
       const messageId = `${placement}${messageIdSuffix}`
 
       // Build an autofix when the shape is safe to rewrite mechanically.
-      // Requires: node is a plain string Literal (not a template quasi),
-      // parent is a CallExpression with exactly one argument (this one),
+      // Requires: node is a plain string Literal, not a template quasi,
+      // parent is a CallExpression with exactly one argument, this one,
       // and the call is the entire statement.
       let fixFn: ((fixer: RuleFixer) => unknown) | undefined
       const call = node.parent
@@ -428,7 +428,7 @@ const rule = {
         // Autofix only applies when:
         //   - It's the FIRST quasi with leading-\n, OR the LAST quasi
         //     with trailing-\n
-        //   - The call has exactly one argument (this template)
+        //   - The call has exactly one argument, this template
         //   - The template lives in a plain ExpressionStatement
         // Mixed shapes (embedded \n, multiple newlines, non-edge
         // quasi) get reported without an autofix.

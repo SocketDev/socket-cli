@@ -49,7 +49,7 @@ import { runMain } from '../_shared/run-main.mts'
 const logger = getDefaultLogger()
 
 // The file-type buckets the skill's "Determine" step enumerates. Each is a set
-// of basenames (or a basename predicate) that signals a particular consumption
+// of basenames, or a basename predicate, that signals a particular consumption
 // shape. A surviving outside-hit file is bucketed by its basename; anything
 // unmatched lands in `other`.
 export type ConsumerBucket =
@@ -84,7 +84,7 @@ export interface CollectResult {
   submodules: SubmoduleConsumers[]
 }
 
-// Classify a hit file (a repo-relative path) into one bucket by its basename +
+// Classify a hit file, a repo-relative path, into one bucket by its basename +
 // path shape. Pure — the unit of the bucketing, tested directly.
 export function bucketForFile(relPath: string): ConsumerBucket {
   const base = path.basename(relPath)

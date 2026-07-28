@@ -22,7 +22,7 @@
 // origin main` is allowed (those are interactive one-offs). The hook
 // fires when the command shape implies a reusable script.
 //
-// It ALSO emits a non-blocking reminder (notify, not block) when a
+// It ALSO emits a non-blocking reminder, notify, not block, when a
 // command renames a branch ONTO the default name to switch the default
 // branch — `git branch -m <src> main` / `-M` / `--move`, or the GitHub
 // `.../branches/<src>/rename` API with `new_name=main`. That rename
@@ -41,7 +41,7 @@ import {
   runHook,
 } from '../_shared/guard.mts'
 
-// Patterns we consider "script context" (not interactive one-off):
+// Patterns we consider "script context", not interactive one-off:
 //
 //   BASE=main       — variable assignment defaulting to main
 //   --base=main     — flag value
@@ -75,7 +75,7 @@ const SCRIPT_WRITE_RE =
 
 const TRIPLE_DOT_BRANCH_RE = /\b(?:main|master)\.{2,3}HEAD\b/
 
-// A branch RENAME whose NEW name (the last branch argument) is the default
+// A branch RENAME whose NEW name, the last branch argument, is the default
 // branch: `git branch -m <src> main` / `-M main` / `--move <src> master`.
 // `main`/`master` must be the FINAL token of the segment so a rename AWAY from
 // the default (`git branch -m main develop`) does not match.

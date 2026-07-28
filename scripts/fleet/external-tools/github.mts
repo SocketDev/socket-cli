@@ -85,7 +85,7 @@ export interface PickNewestSoakedReleaseDeps {
  * soak window (`published_at` older than the soak time, unless bypassed). Skips
  * drafts, prereleases, and non-semver tags. Highest-semver — NOT newest by
  * publish date — so an old-line LTS patch published after a newer major never
- * shadows it (which would drive a major downgrade the caller then refuses).
+ * shadows it, which would drive a major downgrade the caller then refuses.
  */
 export function pickNewestSoakedRelease(
   repository: string,
@@ -117,7 +117,7 @@ export function pickNewestSoakedRelease(
   }
   const releases = opts.curlJson<GithubRelease[]>(url, extra)
   if (!releases) {
-    // A successful fetch returns a JSON array (possibly empty); `undefined`
+    // A successful fetch returns a JSON array, possibly empty; `undefined`
     // means curl errored or the body didn't parse. FAIL LOUD — never treat a
     // fetch failure as "no newer release", which silently reports "already
     // current" and skips the bump (the pnpm-11.9 false-green this repo's
@@ -152,7 +152,7 @@ export function pickNewestSoakedRelease(
   // Highest SEMVER wins, NOT newest by publish date: a maintainer may ship an
   // old-line LTS patch (e.g. pnpm 10.34.5) AFTER a newer major (11.11.0), and
   // newest-by-date would pick the patch — a major downgrade the caller refuses.
-  // Tags are `vX.Y.Z`; coerce (non-null after the filter above) + compare(b,a)
+  // Tags are `vX.Y.Z`; coerce, non-null after the filter above + compare(b,a)
   // for descending order.
   cleared.sort(
     (a, b) =>
@@ -187,7 +187,7 @@ export interface PlanGithubUpdateOptions {
 }
 
 // All fields optional: planGithubUpdate spreads these over real-function
-// defaults and casts the result to Required, so a caller (a test) overrides
+// defaults and casts the result to Required, so a caller, a test, overrides
 // only the deps it cares about.
 export interface PlanGithubUpdateDeps {
   fetchNpmLatestVersion?:
@@ -241,7 +241,7 @@ export async function planGithubUpdate(
   // available. The check is safe-by-construction: if npm `latest` is
   // <= our current pin, no newer GitHub tag can exist either.
   //
-  // Hardcoded to `name === 'pnpm'` (not opt-in via a config field):
+  // Hardcoded to `name === 'pnpm'`, not opt-in via a config field:
   //   - sfw publishes to npm too but the npm version line (`sfw@2.x`)
   //     does NOT track the GitHub release line (`SocketDev/sfw-free@
   //     1.7.x`) — applying the preflight would silently mis-report.
@@ -254,7 +254,7 @@ export async function planGithubUpdate(
   //
   // --verify-assets bypasses the preflight: that flag exists to
   // recheck the live asset bytes even when versions are unchanged
-  // (release-bytes drift), and the preflight would short-circuit
+  // release-bytes drift, and the preflight would short-circuit
   // that intent.
   //
   // Soak-bypass carve-out: the safe-by-construction claim above ("npm latest
@@ -356,7 +356,7 @@ export async function planGithubUpdate(
     }
     // Regenerate a version-embedded asset name (trufflehog_3.93.8_… ->
     // trufflehog_3.95.7_…) so the fetch targets the NEW release's asset. Assets
-    // that don't embed the version (sfw, uv, zizmor, cdxgen) are left unchanged.
+    // that don't embed the version, sfw, uv, zizmor, cdxgen, are left unchanged.
     const curBare = current.replace(/^v/, '')
     const newBare = newVersion.replace(/^v/, '')
     const newAsset =

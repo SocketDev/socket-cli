@@ -2,7 +2,7 @@
  * @file Sort an array literal's elements alphanumerically when it carries a
  *   leading `/* sort *​/` marker comment. Per CLAUDE.md "Sorting": config
  *   lists, allowlists, and set-like collections sort; position-bearing arrays
- *   (argv, priority lists, weight tables) keep their meaningful order. Plain
+ *   argv, priority lists, weight tables, keep their meaningful order. Plain
  *   arrays can't be sorted blindly — order often carries meaning — so this rule
  *   is OPT-IN: it fires only on an array whose declaration is preceded by a `/*
  *   sort *​/` block comment, where the author has declared the order
@@ -10,7 +10,7 @@
  *   case-insensitive + numeric-aware), identical to the rest of the
  *   `socket/sort-*` family. Autofix rewrites the elements in order. Only fires
  *   when every element is a string/number Literal — a mixed-type or
- *   expression-bearing array is reported (so the marker isn't silently ignored)
+ *   expression-bearing array is reported, so the marker isn't silently ignored
  *   but not auto-fixed. Detection is range-based rather than
  *   AST-comment-attachment-based: oxlint attaches a leading comment to the
  *   `export`/declaration wrapper, not the ArrayExpression, so the rule pairs
@@ -23,7 +23,7 @@ import { stringComparator } from '../../lib/comparators.mts'
 import type { AstNode, RuleContext, RuleFixer } from '../../lib/rule-types.mts'
 import { isLockstepMirror } from '../../lib/lockstep-mirror.mts'
 
-// The opt-in marker: a `/* sort */` block comment (any inner whitespace).
+// The opt-in marker: a `/* sort */` block comment, any inner whitespace.
 const SORT_MARKER_RE = /^\s*sort\s*$/
 
 // Between the marker comment and the array's `[`, only a declaration prefix may

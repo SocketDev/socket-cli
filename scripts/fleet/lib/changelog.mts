@@ -13,6 +13,7 @@
  *   not internal churn.
  */
 
+import { parseVersion } from '@socketsecurity/lib-stable/versions/parse'
 import { maxVersion } from '@socketsecurity/lib-stable/versions/range'
 
 import {
@@ -50,7 +51,7 @@ const SUBJECT_RE =
 /**
  * Parse one `<type>(<scope>)!: <description>` subject plus its body into a
  * `ConventionalCommit`. Returns `undefined` for a subject that isn't
- * Conventional-Commit-shaped (merge commits, ad-hoc messages) so the caller can
+ * Conventional-Commit-shaped, merge commits, ad-hoc messages, so the caller can
  * skip it.
  */
 export function parseCommit(
@@ -75,7 +76,7 @@ export function parseCommit(
 
 /**
  * Parse a `git log --format=COMMIT_LOG_FORMAT` stream into commits, newest
- * first (git's default order). Non-conforming subjects are dropped.
+ * first, git's default order. Non-conforming subjects are dropped.
  */
 export function parseConventionalCommits(raw: string): ConventionalCommit[] {
   const out: ConventionalCommit[] = []
@@ -129,29 +130,27 @@ export function bumpLevelFor(
  * A committed version HINT: when package.json's version carries a prerelease
  * suffix (`6.0.10-prerelease`, `6.0.10-rc.1`), the base version IS the
  * human-named release target — the bump uses it instead of the commit-type
- * heuristic. A plain release version (no suffix) yields undefined (derive as
+ * heuristic. A plain release version, no suffix, yields undefined (derive as
  * usual). This lets a human pre-commit the version decision as a repo
  * artifact instead of threading a flag.
  */
 export function versionHintFrom(current: string): string | undefined {
-  const dash = current.indexOf('-')
-  if (dash === -1) {
+  const parsed = parseVersion(current)
+  if (!parsed?.prerelease?.length) {
     return undefined
   }
-  const base = current.slice(0, dash).split('+')[0]!
-  return /^\d+\.\d+\.\d+$/.test(base) ? base : undefined
+  return `${parsed.major}.${parsed.minor}.${parsed.patch}`
 }
 
 /**
  * Apply a bump level to a semver `MAJOR.MINOR.PATCH` string. Any prerelease /
- * build suffix is dropped (a release bump produces a clean release version).
+ * build suffix is dropped, a release bump produces a clean release version.
  */
 export function computeNextVersion(current: string, level: BumpLevel): string {
-  const core = current.split('-')[0]!.split('+')[0]!
-  const parts = core.split('.').map(n => Number.parseInt(n, 10))
-  const major = parts[0] ?? 0
-  const minor = parts[1] ?? 0
-  const patch = parts[2] ?? 0
+  const parsed = parseVersion(current)
+  const major = parsed?.major ?? 0
+  const minor = parsed?.minor ?? 0
+  const patch = parsed?.patch ?? 0
   if (level === 'major') {
     return `${major + 1}.0.0`
   }
@@ -175,7 +174,7 @@ export interface ResolveBumpBaseConfig {
  * pre-bumped to 1.4.3, then the release bumped 1.4.3 → 1.4.4, so 1.4.3 was
  * never published. Excluding the manifest from the base means an ahead manifest
  * can never inflate it. Falls back to the manifest core ONLY for a genuine
- * first release (no published version, no tag).
+ * first release, no published version, no tag.
  */
 export function resolveBumpBase(config: ResolveBumpBaseConfig): string {
   const cfg = { __proto__: null, ...config } as ResolveBumpBaseConfig
@@ -223,12 +222,23 @@ export function repoBaseUrl(
  * URL is known). One definition, shared by section generation and Unreleased
  * promotion.
  */
+export function isPrereleaseVersion(version: string): boolean {
+  // parseVersion, not a hand-rolled `-` scan: semver puts build metadata after
+  // `+` and a prerelease after `-`, so string slicing has to special-case
+  // `1.5.0+build` and mis-reads anything unparseable. An unparseable version is
+  // not a prerelease.
+  return (parseVersion(version)?.prerelease?.length ?? 0) > 0
+}
+
 export function changelogHeading(
   version: string,
   date: string,
   repoUrl: string | undefined,
 ): string {
-  return repoUrl
+  // A PRERELEASE version has no release tag yet — the release workflow promotes
+  // this heading when it cuts the real version. Linking it would point at a tag
+  // that never existed, so the prerelease heading stays unlinked.
+  return repoUrl && !isPrereleaseVersion(version)
     ? `## [${version}](${repoUrl}/releases/tag/v${version}) - ${date}`
     : `## ${version} - ${date}`
 }
@@ -329,7 +339,7 @@ export function withChangelogEntry(section: string, bullet: string): string {
 
 /**
  * Parse a changelog section's `### <Section>` blocks into a
- * `{ section -> bullet lines }` map (bullets kept verbatim, already rendered).
+ * `{ section -> bullet lines }` map, bullets kept verbatim, already rendered.
  * Pure over its input.
  */
 export function parseSectionBullets(section: string): Map<string, string[]> {

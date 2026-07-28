@@ -6,7 +6,7 @@
 // pre-push for the final gate.
 //
 // Bypassable: --no-verify skips this hook entirely. Use sparingly
-// (hotfixes, history operations, pre-build states).
+// hotfixes, history operations, pre-build states.
 
 import path from 'node:path'
 import process from 'node:process'
@@ -102,7 +102,7 @@ const main = (): number => {
     '--diff-filter=ACM',
   ).map(normalizePath)
   // No add/change/modify staged — but the empty-index gate above already
-  // proved the commit is non-empty (a pure-deletion or merge commit). Nothing
+  // proved the commit is non-empty, a pure-deletion or merge commit. Nothing
   // for the content scanners to read, so the security sweep is a no-op.
   if (stagedFiles.length === 0) {
     logger.success('No files to scan')
@@ -117,7 +117,7 @@ const main = (): number => {
   //   - `commit.gpgsign` must be `true`
   //   - `user.signingkey` must be set
   // If either is missing, refuse the commit. Pre-push catches the
-  // artifact side (unsigned commits that somehow slipped past); this
+  // artifact side, unsigned commits that somehow slipped past; this
   // gate is the local-config side.
   //
   // Bypass: SOCKET_PRE_COMMIT_ALLOW_UNSIGNED=1. One-shot env var.
@@ -172,7 +172,7 @@ const main = (): number => {
     errors++
   }
 
-  // Log files (ignore test logs).
+  // Log files, ignore test logs.
   logger.info('Checking for log files…')
   const logs = stagedFiles.filter(
     f => f.endsWith('.log') && !/test.*\.log$/.test(f),
@@ -241,7 +241,7 @@ const main = (): number => {
     }
   }
 
-  // Socket API keys (warning, not blocking).
+  // Socket API keys, warning, not blocking.
   logger.info('Checking for API keys…')
   for (let j = 0, { length: jlen } = stagedFiles; j < jlen; j += 1) {
     const file = stagedFiles[j]!
@@ -334,7 +334,7 @@ const main = (): number => {
   // soak is malware protection. The edit-time soak-exclude-date-guard catches
   // Claude edits; pre-push catches non-Claude pushes; this is the commit-time
   // twin so a staged bypass entry can't slip past `git commit`. Scans the staged
-  // working-tree content via readFileForScan (parity with the other scanners).
+  // working-tree content via readFileForScan, parity with the other scanners.
   logger.info('Checking soak-bypass date annotations…')
   if (stagedFiles.includes('pnpm-workspace.yaml')) {
     const text = readFileForScan('pnpm-workspace.yaml')
@@ -410,7 +410,7 @@ const main = (): number => {
     }
   }
 
-  // Documentation pnpm-first scanner (warning, not blocking).
+  // Documentation pnpm-first scanner, warning, not blocking.
   //
   // Fleet rule: user-facing install commands in docs lead with the
   // pnpm form. npm/yarn fallbacks come after. Block-only — inline
@@ -579,7 +579,7 @@ const main = (): number => {
   // process word inside a string / identifier never trips it) and confidently
   // blocks the sequence/quest/process-ref shapes; a lone `#N` cross-ref blocks
   // only when it co-occurs with a process word. shouldSkipFile already exempts
-  // tests/fixtures (which legitimately quote these shapes). Per-line opt-out:
+  // tests/fixtures, which legitimately quote these shapes. Per-line opt-out:
   // `// socket-lint: allow pr-process-comment`.
   logger.info('Checking comments for PR-process / step-N references…')
   for (let j = 0, { length: jlen } = stagedFiles; j < jlen; j += 1) {
@@ -615,9 +615,9 @@ const main = (): number => {
   // oxlintrc activation / rule test is staged, confirm the wiring triad
   // (rule file → import+registry → activation → test) is complete. A
   // half-wired rule sits silently dormant fleet-wide; this catches it at
-  // commit time, not just in a PR (many commits land without one). No-ops
+  // commit time, not just in a PR, many commits land without one. No-ops
   // unless a wiring-relevant file is staged + the generator is present
-  // (so it only runs in the wheelhouse, where the rule files live).
+  // so it only runs in the wheelhouse, where the rule files live.
   logger.info('Checking oxlint plugin rule wiring…')
   const wiringRoot = repoTopline || process.cwd()
   const wiringDrift = checkOxlintRuleWiringStaged(stagedFiles, wiringRoot)

@@ -6,7 +6,7 @@
  *   read-side twin of the dep-0 fetcher's fetch-path verify: the fetcher fails
  *   loud at install time; this fails loud at CI time so a broken pin can't sit
  *   green. Reads the local `.config/socket-wheelhouse.json` `bundle` block. A
- *   repo with no pin (the wheelhouse-as-producer, a non-thin member) passes
+ *   repo with no pin, the wheelhouse-as-producer, a non-thin member, passes
  *   vacuously. When a pin exists, resolves the release at `bundle.ref` via gh
  *   and asserts `templateSha === bundle.cascadeSha`. NETWORK-GATED like the
  *   other registry checks: when gh is unavailable (no binary / not
@@ -104,7 +104,7 @@ interface BundlePin {
 
 /**
  * Read the local `bundle` pin. Returns undefined when there's no config / no
- * pin (a vacuous pass).
+ * pin, a vacuous pass.
  */
 export function readBundlePin(): BundlePin | undefined {
   if (!existsSync(CONFIG_PATH)) {

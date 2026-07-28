@@ -27,7 +27,7 @@
 //
 // Fails open on git errors / detached refs / missing remote-tracking refs:
 // the guard protects a specific hazardous shape, it is not a general
-// force-push gate (that's no-force-push-guard's job).
+// force-push gate, that's no-force-push-guard's job.
 //
 // Reads a Claude Code PreToolUse JSON payload from stdin:
 //   { "tool_name": "Bash",

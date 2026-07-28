@@ -2,7 +2,7 @@
  * @file Fleet-canonical pnpm-workspace.yaml string helpers. Pure functions —
  *   no FS reads, no side effects. All parsing is line-anchored to preserve
  *   hand-written comments (a proper YAML round-trip would drop them).
- *   Exported from here (the fleet-canonical home) and re-exported by
+ *   Exported from here, the fleet-canonical home, and re-exported by
  *   scripts/repo/sync-scaffolding/manifest/catalog.mts +
  *   scripts/repo/sync-scaffolding/fix-workspace-yaml-splicers.mts for
  *   back-compat with their existing importers.
@@ -88,7 +88,7 @@ export function parseListBlock(
     if (!trimmed || trimmed.startsWith('#')) {
       continue
     }
-    // Match `- 'value'`, `- "value"`, or `- value` (with optional trailing comment).
+    // Match `- 'value'`, `- "value"`, or `- value`, with optional trailing comment.
     const m = /^-\s*['"]?([^'"#\n]+?)['"]?\s*(?:#.*)?$/.exec(trimmed)
     if (m?.[1]) {
       results.push(m[1].trim())
@@ -98,7 +98,7 @@ export function parseListBlock(
 }
 
 /**
- * Parse the `catalogs:` block (named catalogs) from a pnpm-workspace.yaml
+ * Parse the `catalogs:` block, named catalogs, from a pnpm-workspace.yaml
  * string. Returns a two-level map: `{ '<catalogName>': { '<dep>': '<version>'
  * } }`. Used for diagnosis only — named-catalog refs that have no matching
  * sub-block are reported as unfixable.
@@ -179,7 +179,7 @@ export function spliceCatalogEntry(
     end += 1
   }
   const blockLines = lines.slice(catalogIdx + 1, end)
-  // Entry already present (drift bump): rewrite the value in place, keeping
+  // Entry already present, drift bump: rewrite the value in place, keeping
   // the original line's whitespace + key quoting. No-op if already current.
   const needle = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const dupRe = new RegExp(`^\\s*['"]?${needle}['"]?\\s*:`)

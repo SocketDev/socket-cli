@@ -74,7 +74,7 @@ export async function findBrokenShims(): Promise<string[]> {
       continue
     }
     // Only bash shim files carry exec targets; binaries/symlinks in the same
-    // bin dir (flat racked-tool handles) have no quoted paths and skip clean.
+    // bin dir, flat racked-tool handles, have no quoted paths and skip clean.
     if (!content.startsWith('#!')) {
       continue
     }
@@ -120,7 +120,7 @@ async function main(): Promise<void> {
   }
 
   // Wire the literal token into the shell rc unconditionally. The
-  // token may have come from env/keychain (no prompt fired) —
+  // token may have come from env/keychain, no prompt fired —
   // without this block, every NEW shell session launches with an
   // empty SOCKET_API_KEY and Socket tools return 401. We embed the
   // token VALUE directly in the rc instead of calling `security
@@ -184,7 +184,7 @@ async function main(): Promise<void> {
     ])
   // Stabilize any dlx-backed shims the installs above just (re)wrote: mirror
   // their targets into the GC-stable dir and repoint the shim, so the next dlx
-  // sweep can't orphan them (the recurring broken-headroom-shim failure). Runs
+  // sweep can't orphan them, the recurring broken-headroom-shim failure. Runs
   // now, while the freshly-installed dlx sources still exist to mirror.
   const stabilized = await stabilizeShims()
   if (stabilized.length > 0) {
@@ -192,7 +192,7 @@ async function main(): Promise<void> {
       `Stabilized ${stabilized.length} shim(s) against dlx GC: ${stabilized.join(', ')}`,
     )
   }
-  // Native messaging host — optional step (only runs when the lib exports it).
+  // Native messaging host — optional step, only runs when the lib exports it.
   // Allows the Chrome Trusted Publisher extension to call the OS keychain
   // without the user having to set SOCKET_API_TOKEN in their browser environment.
   const nativeHostOk = true

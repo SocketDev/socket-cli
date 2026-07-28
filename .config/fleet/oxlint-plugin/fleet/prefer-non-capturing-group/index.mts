@@ -11,7 +11,7 @@
  *   - Array index on a regex result: `match[N]`, `result[N]`, `m[N]`, etc.
  *   - Destructured access: `[, captured] = re.exec(str)` or `[full, first] =
  *     str.match(re)`.
- *   - `RegExp.$1` (legacy global), `.matchAll(...)`, `.match(...)` call sites
+ *   - `RegExp.$1`, legacy global, `.matchAll(...)`, `.match(...)` call sites
  *     where the return value is read by index. Conservative posture: when ANY
  *     of these markers appears anywhere in the file, the rule STAYS SILENT — it
  *     cannot tell which specific regex's captures are being consumed without
@@ -20,7 +20,7 @@
  *     `(...)` (it NEVER autofixes — the heuristic is file-local, so it can't see
  *     a capture read in another file, and an autofix would silently break it).
  *     The author converts it to `(?:...)` if unused, or to a named `(?<name>...)`
- *     capture if used. Allowed exceptions (skipped, no report):
+ *     capture if used. Allowed exceptions, skipped, no report:
  *   - Group already non-capturing: `(?:...)`, `(?=...)`, `(?!...)`,
  *     `(?<...>...)`.
  *   - Single-character groups holding a single alternation element only when the
@@ -46,7 +46,7 @@ const SOCKET_LINT_MARKER_RE =
 
 // Markers that indicate at least one regex in the file uses captures.
 // Conservative — any single hit disables autofix for the whole file
-// (we can't tell which regex the user is referencing).
+// we can't tell which regex the user is referencing.
 const CAPTURE_USAGE_RES: readonly RegExp[] = [
   // Replacement-string indexed captures: `'$1'`, `"$2"`, `` `$3` ``.
   /['"`][^'"`]*\$\d[^'"`]*['"`]/,
@@ -58,7 +58,7 @@ const CAPTURE_USAGE_RES: readonly RegExp[] = [
   // reflexive unused `(…)` groups slip. Requiring index ≥ 1 closes that
   // blind spot. Numeric-index access on arbitrary identifiers is
   // uncommon outside regex / tuple contexts; false positives just keep
-  // the rule silent (no false-flag).
+  // the rule silent, no false-flag.
   /\b[A-Za-z_$][\w$]*\s*\??\.?\s*\[\s*[1-9][0-9]*\s*\]/,
   // Destructured exec/match result: `const [, first] = re.exec(s)` /
   // `const [full, first] = s.match(re)`.
@@ -155,7 +155,7 @@ function findBareCaptureGroups(pattern: string): CaptureGroup[] {
 /**
  * Heuristic: does the file's source contain any markers suggesting at least one
  * regex in this file relies on its captures? When true, we DROP the autofix
- * (still report) so a wrong rewrite can't break unrelated code.
+ * still report, so a wrong rewrite can't break unrelated code.
  */
 function fileUsesCaptures(source: string): boolean {
   for (let i = 0, { length } = CAPTURE_USAGE_RES; i < length; i += 1) {
@@ -227,9 +227,9 @@ const rule = {
       if (groups.length === 0) {
         return
       }
-      // Report each bare numbered capture — no autofix (see meta). The author
+      // Report each bare numbered capture — no autofix, see meta. The author
       // converts it to `(?:...)` when the capture is unused, or to a named
-      // `(?<name>...)` capture when the value is read (possibly cross-file).
+      // `(?<name>...)` capture when the value is read, possibly cross-file.
       for (let i = 0, { length } = groups; i < length; i += 1) {
         context.report({
           node,

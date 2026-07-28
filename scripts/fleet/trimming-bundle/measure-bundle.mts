@@ -6,7 +6,7 @@
  * rawDistImportSurvey}. The reachability-from-entry walk, the set-delta
  * candidate computation, and the HIGH/MEDIUM/LOW confidence grading stay in the
  * model's hands — bundle-trim grades them precisely because the static signal
- * is ambiguous (barrel files, re-exports, dynamic import, conditional exports),
+ * is ambiguous, barrel files, re-exports, dynamic import, conditional exports,
  * and scripting a confidence label would hard-code the heuristic boundary the
  * model is meant to exercise. This helper only measures.
  *
@@ -49,7 +49,7 @@ export interface BundleMeasurement {
 // granularity. Both `import … from '<spec>'` and `require('<spec>')` forms.
 export function extractSpecifiers(source: string): string[] {
   const specs = new Set<string>()
-  // `from`/`import` keyword, optional `(` (dynamic import), then a quoted
+  // `from`/`import` keyword, optional `(`, dynamic import, then a quoted
   // specifier; group 1 captures the specifier between the quotes.
   const importRe = /(?:from|import)\s*\(?\s*['"]([^'"]+)['"]/gu
   // `require(` then a quoted specifier; group 1 captures it.
@@ -115,7 +115,7 @@ export async function measureBundle(
 
 export async function main(argv: readonly string[]): Promise<number> {
   const repoIdx = argv.indexOf('--repo')
-  // Anchor on REPO_ROOT (resolved from this script's own location) rather than
+  // Anchor on REPO_ROOT, resolved from this script's own location, rather than
   // process.cwd() — the trim tool may be invoked from any directory.
   const repoDir = repoIdx !== -1 ? path.resolve(argv[repoIdx + 1]!) : REPO_ROOT
   try {

@@ -12,7 +12,7 @@
 //   • catalog              ← scripts/repo/sync-scaffolding/manifest/catalog.mts (+ pnpm-workspace.fleet.yaml)
 //
 // Forgetting either step trips CI separately — a multi-round-trip trap. This
-// nudges both at the same moment (the manifest edit) so neither is forgotten.
+// nudges both at the same moment, the manifest edit, so neither is forgotten.
 //
 // PostToolUse, notify only — never blocks, always exits 0. No bypass phrase.
 

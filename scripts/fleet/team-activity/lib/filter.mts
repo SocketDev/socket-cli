@@ -2,7 +2,7 @@
  * @file Review-state assessment. Search rows say WHAT is open; they don't carry
  *   comments or review decisions, so each candidate gets one bounded `gh view`
  *   fetch to decide whether it still needs a human look. An item is surfaced
- *   when it is not a draft, no human (non-self, non-bot) has engaged, and the
+ *   when it is not a draft, no human, non-self, non-bot, has engaged, and the
  *   self-login has not engaged — the same convergence the old scanner used, now
  *   across PRs and issues. A fetch failure surfaces the item with a LOUD note
  *   plus a recorded error, never a silent drop.

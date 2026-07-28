@@ -1,8 +1,8 @@
 /**
  * @file Commit-message composition for land-work's grouped auto-commits.
  *   Split out of land-work.mts to stay under the file-size cap. commitMessage
- *   is pure — both land-work.mts (the auto-lander) and consolidate-commits.mts
- *   (the regroup tool) share this one engine, and it is unit-tested without a
+ *   is pure — both land-work.mts, the auto-lander, and consolidate-commits.mts
+ *   the regroup tool, share this one engine, and it is unit-tested without a
  *   working tree.
  *   Layout: a deterministic Conventional-Commit SUBJECT naming the touched
  *   sub-areas, then a per-directory file digest a reader scans in `git log`.
@@ -23,7 +23,7 @@ const MAX_FILES_PER_DIR = 8
 
 /**
  * A short, scannable label for a directory in the subject line: the last two
- * path segments (the identifying tail), or `(root)` for a repo-root file. The
+ * path segments, the identifying tail, or `(root)` for a repo-root file. The
  * body keeps the full path; the subject only needs enough to recognize the
  * area. Pure.
  */

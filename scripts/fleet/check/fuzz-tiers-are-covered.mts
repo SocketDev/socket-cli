@@ -71,7 +71,7 @@ export interface FuzzTierSurfaces {
 /**
  * Gaps between the languages a repo contains and the fuzz tiers it carries.
  * Empty means covered. Pure — the unit-test target. An `exempt` repo has no
- * gaps EXCEPT a missing/blank reason (an exemption must be justified).
+ * gaps EXCEPT a missing/blank reason, an exemption must be justified.
  */
 export function findFuzzTierGaps(surfaces: FuzzTierSurfaces): string[] {
   const {

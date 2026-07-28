@@ -27,7 +27,7 @@ const LIB_DIR = path.join(SCRIPT_DIR, 'lib')
 
 // Walk up from this script's own location to find the repo root — the
 // nearest ancestor with a package.json. `process.cwd()` is unstable here:
-// the caller (a pre-install hook or an agent) may invoke this script from
+// the caller, a pre-install hook or an agent, may invoke this script from
 // any directory.
 function findRepoRoot() {
   let cur = SCRIPT_DIR

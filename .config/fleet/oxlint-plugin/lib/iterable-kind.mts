@@ -12,8 +12,8 @@
  *     annotation → iterable
  *   - `[…]` array literal / `: T[]` / `: Array<...>` / `: ReadonlyArray<...>` /
  *     `Array.from(...)` / `Array.of(...)` / `Object.keys|values|entries(...)` →
- *     array (negative signal)
- *   - anything else → unknown (caller decides whether to skip) Two rules consume
+ *     array, negative signal
+ *   - anything else → unknown, caller decides whether to skip, Two rules consume
  *     this:
  *
  *   1. `no-cached-for-on-iterable` — flags when a cached-length `for (let i = 0, {
@@ -33,8 +33,8 @@
  *   - `BlockStatement` (function body, if/for/while body, bare block)
  *   - `ForStatement` / `ForOfStatement` / `ForInStatement` (the head binding `let
  *     i = 0` is scoped to the loop, not the surrounding block)
- *   - any `Function*` node (parameters are scoped to that function)
- *   - `CatchClause` (the caught-error binding) This is the JS `let`/`const`
+ *   - any `Function*` node, parameters are scoped to that function
+ *   - `CatchClause`, the caught-error binding, This is the JS `let`/`const`
  *     block-scoping model. The fleet's code uses `const` / `let` exclusively
  *     (no `var`), so we don't need to model `var`'s function-scope hoisting
  *     separately. Earlier revisions of this module used a single flat

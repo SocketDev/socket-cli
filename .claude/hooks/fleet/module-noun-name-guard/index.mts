@@ -18,7 +18,7 @@
 // is actually looking for. Grouping by noun keeps the public surface small
 // and the related code co-located.
 //
-// The check is filename-only and fires on CREATION (Write of a new path)
+// The check is filename-only and fires on CREATION, Write of a new path
 // so it never disturbs files that predate the rule. Single-word names are
 // always allowed (a one-word verb like `normalize` reads as the domain);
 // only a multi-segment kebab phrase LED BY an action verb is blocked.
@@ -102,7 +102,7 @@ const ACTION_VERBS: ReadonlySet<string> = new Set([
   'write',
 ])
 
-// Basenames (without extension) that are structural, not domain modules.
+// Basenames, without extension, that are structural, not domain modules.
 const EXEMPT_STEMS: ReadonlySet<string> = new Set([
   'constants',
   'index',

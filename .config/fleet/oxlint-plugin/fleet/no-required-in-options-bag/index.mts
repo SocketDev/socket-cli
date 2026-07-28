@@ -9,9 +9,9 @@
  *
  *   Born from `createBackoff({ initialMs, factor?, maxMs? })` — the required
  *   `initialMs` hid inside the bag until review hoisted it to
- *   `createBackoff(ms, options?)`. Report-only (never auto-fixed): hoisting a
+ *   `createBackoff(ms, options?)`. Report-only, never auto-fixed: hoisting a
  *   member reshapes the API and every call site, so the author does it.
- *   Skips `.d.ts` (mirrors external signatures) and test files (throwaway
+ *   Skips `.d.ts`, mirrors external signatures, and test files (throwaway
  *   helpers). Bypass: a `socket-lint: allow no-required-in-options-bag`
  *   comment.
  */
@@ -34,7 +34,7 @@ function isOptionalityMember(member: AstNode): boolean {
 }
 
 // The members of an object type node, or undefined when the node is not an
-// object literal type (a union, a mapped type, an imported reference).
+// object literal type, a union, a mapped type, an imported reference.
 function typeLiteralMembers(node: AstNode | undefined): AstNode[] | undefined {
   if (node?.type === 'TSTypeLiteral' && Array.isArray(node.members)) {
     return node.members as AstNode[]
@@ -42,7 +42,7 @@ function typeLiteralMembers(node: AstNode | undefined): AstNode[] | undefined {
   return undefined
 }
 
-// Resolve a param to its Identifier (unwrapping a default-value pattern), or
+// Resolve a param to its Identifier, unwrapping a default-value pattern, or
 // undefined for binding patterns with no single name.
 function paramIdentifier(param: AstNode | undefined): AstNode | undefined {
   if (!param || typeof param !== 'object') {

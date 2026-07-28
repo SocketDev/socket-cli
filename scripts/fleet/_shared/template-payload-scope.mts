@@ -87,7 +87,7 @@ export function templatePayloadLintPaths(): string[] {
  * full path, so a bare directory pattern (`**∕test/repo`) matches the dir
  * entry but NOT the files under it — unlike a config `ignorePatterns` entry,
  * which prunes the whole subtree. Emit both the bare pattern (dir entry + file
- * patterns like `**∕*.d.ts`) and a `/**` recursion variant (subtree contents)
+ * patterns like `**∕*.d.ts`) and a `/**` recursion variant, subtree contents
  * unless it already recurses. The extra `/**` on a file pattern matches
  * nothing — harmless. `#…`-prefixed fleet-canonical markers are gitignore
  * comments and are dropped.

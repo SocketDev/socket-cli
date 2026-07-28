@@ -48,7 +48,7 @@ function isPathInsideCwd(relPath: string): boolean {
   return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel))
 }
 
-// Scan an arbitrary text blob (a Bash command, an inline shell-out) for
+// Scan an arbitrary text blob, a Bash command, an inline shell-out, for
 // `<owner>/<repo>(/<path>)?@<sha>` references and apply the same
 // validation findUsesIssues uses for YAML — 40-char hex check + gh
 // api reachability. Used only when the Bash command is targeting a
@@ -108,7 +108,7 @@ function targetWorkflowOwnerRepos(command: string): string[] {
     }
     // Resolve relative to cwd. We trust the cwd because the hook fires
     // inside Claude Code's session, and Bash commands run from the
-    // session cwd. If the file doesn't exist (typo, generated path),
+    // session cwd. If the file doesn't exist, typo, generated path,
     // skip — we'll fail open on that lone SHA.
     let content: string
     try {

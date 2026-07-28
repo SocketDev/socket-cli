@@ -12,7 +12,7 @@
  *        version-bump-order gate silently vanished on every windows run).
  *     2. `new URL(…).pathname` — yields `/D:/…` on windows; any resolve
  *        doubles the drive. Use `fileURLToPath(new URL(…))`.
- *     3. `process.platform === 'win32'` (either operand order) — use the
+ *     3. `process.platform === 'win32'`, either operand order — use the
  *        canonical `WIN32` from `@socketsecurity/lib-stable/constants/platform`.
  *     4. A short raw `timeout: <ms>` (≤ 15000) on a `spawn`/`spawnSync` for a
  *        LOCAL process — win32 process creation (a `.cmd`/`.bat` shim via
@@ -143,7 +143,7 @@ export function scanCmdShimSpawns(raw: string): number[] {
       continue
     }
     // Walk the stripped source to the call's closing paren; a `shell:` key
-    // anywhere inside the call (options object) satisfies the rule.
+    // anywhere inside the call, options object, satisfies the rule.
     let depth = 0
     let end = start
     for (let i = start; i < stripped.length; i += 1) {
@@ -278,7 +278,7 @@ export function scanFile(filePath: string): PortabilityHit[] {
   }
   // spawn-timeout applies to HOOKS only: a PreToolUse guard whose probe is
   // killed by a too-tight win32 timeout fails OPEN *silently*. A script that
-  // times out fails LOUD (non-zero exit), so it isn't the silent-hole this
+  // times out fails LOUD, non-zero exit, so it isn't the silent-hole this
   // rule guards — and scripts can't cleanly import the hook-tier _shared helper.
   if (normalizePath(rel).includes('.claude/hooks/')) {
     for (const line of scanSpawnTimeouts(raw)) {

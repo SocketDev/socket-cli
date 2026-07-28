@@ -64,7 +64,7 @@ function collectMdFiles(dir: string, repoRoot: string, maxDepth = 3): string[] {
 
 /**
  * Read the first non-blank, non-heading line from a markdown file as
- * a description hint (used as the slot source for link notes).
+ * a description hint, used as the slot source for link notes.
  */
 function readMdLead(filePath: string): string | undefined {
   if (!existsSync(filePath)) {
@@ -229,7 +229,7 @@ export function buildSections(
     }
   }
 
-  // --- Packages section (monorepo only) ---
+  // --- Packages section, monorepo only ---
   const packagesLinks: LlmsLink[] = []
   if (facts.layout === 'monorepo') {
     const packagesDir = path.join(repoRoot, 'packages')

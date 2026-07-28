@@ -11,7 +11,7 @@
  *   commit; this pipeline stages the bumped version, verifies it, and its
  *   `--approve` promotes + releases. The two share one state file, so publish
  *   resumes from the recorded target version + a passing `bump` receipt; it
- *   REFUSES when the bump hasn't landed (run the release pipeline first). The
+ *   REFUSES when the bump hasn't landed, run the release pipeline first. The
  *   GATE INVERSION is deliberate: publishing never waits on a GitHub release —
  *   the release waits on the publish. The release stage REFUSES without a
  *   passed approve receipt AND without the version being resolvable on the
@@ -101,7 +101,12 @@ const USAGE = `Usage: node scripts/fleet/publish-pipeline.mts [options]
                          force a tag
   --status               print the receipt table and exit
   --reset                discard pipeline state and exit
-  --tag <dist-tag>       npm dist-tag for the staged publish (default latest)`
+  --tag <dist-tag>       npm dist-tag for the staged publish (default latest)
+  --yes                  with --approve: skip the interactive multi-select and
+                         approve every ELIGIBLE staged entry. The opt-in that
+                         makes --approve work off a terminal — the run is
+                         wrapped in a PTY so npm still opens the browser for
+                         web-OTP 2FA. Never pass --otp on the CLI.`
 
 /**
  * Publish requires a landed bump: a passing, non-dry-run `bump` receipt plus
@@ -162,7 +167,7 @@ export async function runPublishPipeline(
     if (outcome.releaseChecksums) {
       state_ = withReleaseChecksums(state_, outcome.releaseChecksums)
     }
-    // Publish stages key on the target version (the bumped version), never the
+    // Publish stages key on the target version, the bumped version, never the
     // tree sha — the bump commit already moved HEAD by design.
     state_ = persistOutcome(state_, stage, outcome, {
       dryRun: cli.dryRun,
@@ -193,6 +198,7 @@ async function main(): Promise<void> {
       reset: { default: false, type: 'boolean' },
       status: { default: false, type: 'boolean' },
       tag: { default: 'latest', type: 'string' },
+      yes: { default: false, type: 'boolean' },
     },
     allowPositionals: false,
     strict: false,
@@ -218,6 +224,7 @@ async function main(): Promise<void> {
     localPublish: !!values['local'],
     namedVersion: undefined,
     preflightAll: false,
+    yes: !!values['yes'],
   }
   const reconcileVersion =
     typeof values['reconcile'] === 'string' ? values['reconcile'] : ''

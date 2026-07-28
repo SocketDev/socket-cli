@@ -17,7 +17,7 @@ export interface GitmodulesEntry {
   path: string | undefined
   // `url =` value, else undefined.
   url: string | undefined
-  // `branch =` value (single-branch tracking ref), else undefined.
+  // `branch =` value, single-branch tracking ref, else undefined.
   branch: string | undefined
   // True when the block declares `shallow = true`.
   shallow: boolean

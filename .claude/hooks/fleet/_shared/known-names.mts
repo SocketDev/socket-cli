@@ -1,7 +1,7 @@
 /*
  * @file Shared dictionary of known software identifiers + a prose scanner that
- *   finds them written as BARE words (not code spans). Backing lib for the
- *   prose-code-format-nudge hook and the prose skill (one source of truth).
+ *   finds them written as BARE words, not code spans. Backing lib for the
+ *   prose-code-format-nudge hook and the prose skill, one source of truth.
  *
  *   The dictionary is assembled from artifacts the repo already owns
  *   (package.json deps, the pnpm catalog, external-tools.json, Cargo.toml) so it

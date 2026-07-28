@@ -142,7 +142,7 @@ export function shallowVersionPinDrift(
   }
   // `track-latest` here regardless of the row's policy: this is the REPORT
   // layer, and the signal is "a newer stable tag exists"; policy enforcement
-  // (major-gate, locked) stays in the auto-bump planner.
+  // major-gate, locked, stays in the auto-bump planner.
   const { skipReason, targetTag } = resolveTarget(
     row.pinned_tag,
     tags,
@@ -208,7 +208,7 @@ export function checkVersionPin(
     base.severity = 'error'
     return base
   }
-  // The authoritative pin is the `.gitmodules` `ref =` (single source of truth).
+  // The authoritative pin is the `.gitmodules` `ref =`, single source of truth.
   // `effectivePin` prefers a legacy stored `pinned_sha` (a belt for direct
   // callers / unit tests that bypass loadManifestTree — the harness path already
   // fills row.pinned_sha from the same ref), else derives it here.
@@ -441,7 +441,7 @@ export function checkFeatureParity(
   base.total_score = Math.round(total * 100) / 100
 
   // Floor: higher criticality = stricter. Cap at 0.85 so 10/10 criticality
-  // doesn't demand perfect pattern coverage (code is prose, patterns miss).
+  // doesn't demand perfect pattern coverage, code is prose, patterns miss.
   const floor = Math.min(0.85, row.criticality / 10)
   if (total < floor) {
     base.severity = 'drift'
@@ -554,7 +554,7 @@ export function checkLangParity(
 }
 
 // ---------------------------------------------------------------------------
-// Cross-row consistency checks (beyond the schema's per-row validation).
+// Cross-row consistency checks, beyond the schema's per-row validation.
 // ---------------------------------------------------------------------------
 
 /**

@@ -10,8 +10,8 @@
 // throw), so a missing annotation otherwise surfaces only when the cascade
 // crashes mid-run. This front-runs it at edit time — add the annotation first.
 //
-// No bypass — the fix is deterministic (add the date annotation). Fails open on
-// any read error (never blocks on its own bug).
+// No bypass — the fix is deterministic, add the date annotation. Fails open on
+// any read error, never blocks on its own bug.
 
 import path from 'node:path'
 
@@ -44,7 +44,7 @@ export function soakPins(text: string): Set<string> {
   return out
 }
 
-// The pins present after the edit but not before (the ones this edit adds).
+// The pins present after the edit but not before, the ones this edit adds.
 export function addedPins(beforeText: string, afterText: string): string[] {
   const before = soakPins(beforeText)
   const added: string[] = []

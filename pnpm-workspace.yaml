@@ -61,6 +61,7 @@ catalog:
   '@pnpm/logger': 1100.0.0
   '@redwoodjs/agent-ci': 0.17.1
   '@sentry/node': 8.55.2
+  '@shadscan/cli': 0.2.0
   '@sinclair/typebox': 0.34.52
   '@socketregistry/hyrious__bun.lockb': 1.0.19
   '@socketregistry/indent-string': 1.0.14
@@ -276,14 +277,8 @@ minimumReleaseAgeExclude:
   - '@sdxgen/*'
   - 'sdxgen'
   - 'stuie'
-  # published: 2026-07-16 | removable: 2026-07-23
-  - 'magic-string@1.0.0'
   # The fleet-cascaded .npmrc already excludes verkit; mirrored here because
   # pnpm v11 reads excludes from this file.
-  # published: 2026-07-19 | removable: 2026-07-26
-  - 'verkit@0.1.2'
-  # published: 2026-07-16 | removable: 2026-07-23
-  - 'portless@0.15.4'
   # published: 2026-07-21 | removable: 2026-07-28
   - '@oxlint-tsgolint/darwin-arm64@7.0.2001'
   # published: 2026-07-21 | removable: 2026-07-28
@@ -342,6 +337,8 @@ minimumReleaseAgeExclude:
   - 'taze@19.16.0'
   # published: 2026-07-23 | removable: 2026-07-30
   - 'js-yaml@5.2.2'
+  # published: 2026-07-24 | removable: 2026-07-31
+  - '@shadscan/cli@0.2.0'
 
 # Refuse transitive dependencies declared via git/tarball/local-tarball
 # specs — an npm package shouldn't be allowed to drag in a git URL we

@@ -7,7 +7,7 @@
  *   `trufflehog filesystem <repo> --json`. This engine parses that JSONL output
  *   into findings and formats a report-only DoctorFinding per hit. Secrets are
  *   NEVER auto-fixed — rotation + history purge is a human decision. Edit-time
- *   guards (secret-content-guard, no-token-in-dotenv-guard, token-guard) cover
+ *   guards, secret-content-guard, no-token-in-dotenv-guard, token-guard, cover
  *   the write path; this is the missing committed-state scan.
  */
 
@@ -28,15 +28,15 @@ export interface TruffleHogHit {
   line: number | undefined
   /**
    * True when TruffleHog actively verified the credential against its live
-   * service (a confirmed live secret, not just a pattern match).
+   * service, a confirmed live secret, not just a pattern match.
    */
   verified: boolean
 }
 
 /**
  * Pull the file path + line from a TruffleHog SourceMetadata block. TruffleHog
- * nests the location under `Data.Filesystem` (a filesystem scan) or `Data.Git`
- * (a git scan); this reads whichever is present.
+ * nests the location under `Data.Filesystem`, a filesystem scan, or `Data.Git`
+ * a git scan; this reads whichever is present.
  */
 export function readHitLocation(sourceMetadata: unknown): {
   file: string | undefined
@@ -160,7 +160,7 @@ export function formatSecretFindings(
 
 /**
  * Report-only finding emitted when the fleet's pinned TruffleHog binary cannot
- * be resolved (the security-tools setup has not run). This keeps the probe
+ * be resolved, the security-tools setup has not run. This keeps the probe
  * deterministic — a skip-with-notice rather than a false-green "no secrets".
  * The doctor NEVER falls back to a system/unpinned TruffleHog.
  */

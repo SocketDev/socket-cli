@@ -27,7 +27,7 @@
  *      `module.exports`, `exports.X`).
  *   4. Otherwise `'unknown'` — caller decides. Motivating incident: the
  *      `socket/export-top-level-functions` autofix rewrote internal helpers in
- *      `acorn-bindgen.cjs` (wasm-bindgen output) from `function getObject(idx)
+ *      `acorn-bindgen.cjs`, wasm-bindgen output, from `function getObject(idx)
  *      { … }` to `export function getObject(idx) { … }`. The file's public
  *      surface is `module.exports = …` (CJS), so the rewritten `export`
  *      keywords made the file syntactically ESM and the first `require()` of it
@@ -605,7 +605,7 @@ export function scanTopLevelMarker(source: string): ScanMarker {
         }
         if (word === 'const' || word === 'let' || word === 'var') {
           // Walk the full declaration for wrapper-name bindings in
-          // any position (simple, destructured, or comma-separated).
+          // any position, simple, destructured, or comma-separated.
           // See declarationDeclaresWrapper.
           if (declarationDeclaresWrapper(source, i, length)) {
             return 'esm'

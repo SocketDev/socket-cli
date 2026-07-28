@@ -2,7 +2,7 @@
 // Claude Code PreToolUse hook — commit-author-guard.
 //
 // Blocks `git commit` invocations whose author is a denied placeholder
-// identity, or (when an allowlist is configured) not on it. Catches:
+// identity, or, when an allowlist is configured, not on it. Catches:
 //
 //   1. Wrong --author override:
 //        git commit --author="Test <test@example.com>" -m "..."
@@ -13,10 +13,10 @@
 // Identity policy is the cascaded, wheelhouse-scoped config (read by the
 // shared .git-hooks/_shared/git-identity.mts — the SAME source the commit-msg
 // git-stage backstop uses, so the two never diverge):
-//   .config/repo/git-authors.json   (per-repo override, optional)
-//   .config/fleet/git-authors.json  (cascaded fleet default)
+//   .config/repo/git-authors.json, per-repo override, optional
+//   .config/fleet/git-authors.json, cascaded fleet default
 // No machine-local (~/) source by design. The fleet config ships the universal
-// DENYLIST (placeholder identities never valid anywhere); the ALLOWLIST
+// DENYLIST, placeholder identities never valid anywhere; the ALLOWLIST
 // (canonical/aliases) is per-repo. A denylist hit is ALWAYS blocked; an
 // allowlist-miss is blocked only when an allowlist is configured.
 //

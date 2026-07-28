@@ -16,15 +16,15 @@
 // exact friction the `managing-worktrees land` engine (lib/land.mts)
 // automates: it re-asserts the lint gate (the fleet lints as it edits, so
 // no heavy re-run), cherry-picks onto a throwaway origin/<base> worktree,
-// and fast-forwards (never force). This reminder points there at the turn
+// and fast-forwards, never force. This reminder points there at the turn
 // the divergence is visible.
 //
 // Only fires on the default branch when BOTH ahead AND behind: an
-// ahead-only main is the unpushed-main-nudge's job (just push); a
+// ahead-only main is the unpushed-main-nudge's job, just push; a
 // behind-only main just needs a pull; the diverged case is the one the
 // fast-land path exists for.
 //
-// Exit codes: 0 — always (informational Stop hook). Fails open.
+// Exit codes: 0 — always, informational Stop hook. Fails open.
 
 import {
   currentBranch,

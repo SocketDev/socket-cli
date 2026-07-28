@@ -35,7 +35,7 @@ const logger = getDefaultLogger()
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-// The locked uv project sits beside this lib dir's parent (the hook root),
+// The locked uv project sits beside this lib dir's parent, the hook root,
 // next to external-tools.json: setup-security-tools then headroom.
 export const HEADROOM_PROJECT_DIR = path.join(__dirname, '..', 'headroom')
 
@@ -139,7 +139,7 @@ export function platformKey(): string {
 }
 
 // The content-addressed dlx dir for a given headroom version + platform, keyed
-// via the canonical lib helper (never a hand-rolled hash). Returns an absolute
+// via the canonical lib helper, never a hand-rolled hash. Returns an absolute
 // path under the `_dlx` store.
 export function headroomDlxDir(version: string): string {
   const hash = generateCacheKey(`headroom-ai@${version}:proxy:${platformKey()}`)
@@ -177,7 +177,7 @@ async function refreshSymlink(
   linkPath: string,
   type: 'dir' | 'file',
 ): Promise<void> {
-  // oxlint-disable-next-line socket/prefer-exists-sync -- lstat detects a broken symlink that existsSync (follows the link) would miss, leaving it stale.
+  // oxlint-disable-next-line socket/prefer-exists-sync -- lstat detects a broken symlink that existsSync, follows the link, would miss, leaving it stale.
   const linkExists = await fs
     .lstat(linkPath)
     .then(() => true)
@@ -194,9 +194,9 @@ async function refreshSymlink(
 // relocates the venv out of the project dir into the dlx hash dir, and
 // UV_CACHE_DIR keeps the wheel cache `_dlx`-contained; the pyproject's
 // `python-preference = "only-managed"` reuses the uv-managed CPython under
-// `_dlx` (never a system Python).
+// `_dlx`, never a system Python.
 //
-// Requirements: uv on PATH (the bootstrap installs it). Fail-open OPTIONAL when
+// Requirements: uv on PATH, the bootstrap installs it. Fail-open OPTIONAL when
 // uv is absent — matching setupSkillSpector.
 export async function setupHeadroom(version: string): Promise<boolean> {
   logger.log('=== headroom-ai ===')
@@ -264,7 +264,7 @@ export async function setupHeadroom(version: string): Promise<boolean> {
     return false
   }
 
-  // Layer readable handles over the hash-named dlx venv (install-sfw pattern):
+  // Layer readable handles over the hash-named dlx venv, install-sfw pattern:
   //   1. rack alias: rack then headroom then version → the dlx hash dir.
   //   2. PATH handle: bin then headroom → a LOCKDOWN WRAPPER (not a bare
   //      symlink) that exports HEADROOM_LOCKDOWN_ENV then execs the venv entry,

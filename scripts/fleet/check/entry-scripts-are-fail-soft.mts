@@ -5,7 +5,7 @@
  *   main() })()` with NO error handling: if `main()` rejects, the rejection is
  *   unhandled and Node prints a stack + exits nonzero uncontrolled. The fix is
  *   the shared `runMain(main)` (scripts/fleet/_shared/run-main.mts), which
- *   awaits main() inside a try/catch, logs the MESSAGE (not the stack), and
+ *   awaits main() inside a try/catch, logs the MESSAGE, not the stack, and
  *   sets the exit code. This check scans every `.mts` under scripts/fleet/ +
  *   scripts/repo/ and flags any entrypoint guard
  *   (`isMainModule(import.meta.url)` / `import.meta.main`) whose body launches
@@ -29,7 +29,7 @@ const logger = getDefaultLogger()
 export interface Finding {
   // repo-root-relative path of the offending entry script.
   file: string
-  // The crash-prone entry snippet (first offending line, trimmed).
+  // The crash-prone entry snippet, first offending line, trimmed.
   snippet: string
 }
 

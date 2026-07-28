@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Claude Code PreToolUse hook — workflow-agent-task-tools-nudge.
 //
-// Fires (with a stderr reminder, not a block) when a `Workflow` tool call ships
+// Fires, with a stderr reminder, not a block, when a `Workflow` tool call ships
 // a script that references a session task tool — `TaskGet`, `TaskUpdate`,
 // `TaskList`, `TaskCreate`, `TaskOutput`, `TaskStop`. Neither the workflow
 // script body NOR its `agent()` subagents can reach those tools: the task store

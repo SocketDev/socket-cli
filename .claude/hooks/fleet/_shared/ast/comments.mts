@@ -39,12 +39,12 @@ interface ParsedComment {
 
 /**
  * Walk every comment token in `source`. Hooks that grade or filter comments
- * (no-meta-comments, pointer-comment, comment-tone) use this so they don't
+ * no-meta-comments, pointer-comment, comment-tone, use this so they don't
  * false-positive on comment-looking content inside string literals or template
  * strings.
  *
  * Each `CommentSite` carries oxc-shape metadata: `kind` (Line / SingleLineBlock
- * / MultiLineBlock / Hashbang), `content` (pre-classified annotation),
+ * / MultiLineBlock / Hashbang), `content`, pre-classified annotation,
  * `position` (Leading / Trailing), `newlines`, and `attachedTo` (offset of the
  * next token for leading comments).
  *

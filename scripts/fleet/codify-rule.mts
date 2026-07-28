@@ -10,7 +10,7 @@
  *   1. Adds a TERSE one-line `-` bullet to the right CLAUDE.md section (the `## 📚
  *      Wheelhouse Standards` fleet block for `--section fleet`, or the `## 🏗️
  *      …-Specific` postamble for `--section repo`), pointing at the doc.
- *   2. Creates (or extends) the detail doc at
+ *   2. Creates, or extends, the detail doc at
  *      `docs/agents.md/{fleet,repo}/<topic>.md` from the memory's content. The
  *      agent owns the hard part: keeping the CLAUDE.md edit under the 40KB cap
  *      (claude-md-size-guard) and the per-section ≤8-line cap
@@ -179,9 +179,9 @@ export async function main(): Promise<void> {
     return
   }
 
-  // AI_PROFILE.create: Edit + Write (must create the doc), NO Bash — the
+  // AI_PROFILE.create: Edit + Write, must create the doc, NO Bash — the
   // four-flag lockdown the Programmatic-Claude rule mandates. addDirs lets the
-  // agent see template/ + docs/ under the repo root (already the cwd).
+  // agent see template/ + docs/ under the repo root, already the cwd.
   const { exitCode, stderr } = await spawnAiAgent({
     ...AI_PROFILE.create,
     cwd: REPO_ROOT,

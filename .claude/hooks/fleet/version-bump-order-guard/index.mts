@@ -23,12 +23,12 @@
 //
 // It ALSO runs the fast half of the pre-release gate at tag time — the
 // two checks cheap enough for a synchronous hook: `pnpm run lint --all`
-// (the same lint CI's Check job runs) and `pnpm audit` (open security
+// the same lint CI's Check job runs, and `pnpm audit` (open security
 // advisories). A tag whose tree fails either would publish a release CI
 // rejects, or one carrying a known-vulnerable dependency. The slow half
 // of the gate — `pnpm run check --all` typecheck, unit tests, coverage —
 // stays in CI; this hook front-runs the two that catch the common
-// release-day breakage (accumulated lint debt, an unpinned advisory).
+// release-day breakage, accumulated lint debt, an unpinned advisory.
 //
 // Skipped with SOCKET_VERSION_BUMP_SKIP_GATE=1 when the bump ordering is fine
 // but the gate is being run out-of-band.
@@ -115,8 +115,8 @@ export function newestMtime(dir: string): number {
 // source change — proof `pnpm run cover` ran on the current code, not a stale
 // run from before the final edits. Returns a failure string when the repo opts
 // into coverage (a `src/` tree exists) but the coverage summary is missing or
-// older than the newest src file. Fail-open (no failure) when there is no `src/`
-// (nothing to measure) so non-source repos aren't blocked.
+// older than the newest src file. Fail-open, no failure, when there is no `src/`
+// nothing to measure, so non-source repos aren't blocked.
 function coverageFreshnessFailure(cwd: string): string | undefined {
   // Hooks run against the TARGET repo, not this repo's root, so the lookup
   // starts at the payload cwd — resolved to that repo's git toplevel, since a
@@ -222,7 +222,7 @@ async function runPreReleaseGate(config: {
   }
   // `pnpm audit` — open security advisories. Only meaningful against a
   // resolved lockfile; without `pnpm-lock.yaml` it has nothing to audit
-  // and its exit code is noise, so skip it there (fail open).
+  // and its exit code is noise, so skip it there, fail open.
   if (existsSync(path.join(gateCwd, 'pnpm-lock.yaml'))) {
     const auditCode = await runGateCommand(['audit'], { cwd: gateCwd })
     /* c8 ignore start - requires real vulnerable dependencies; not reproducible in a unit test */
@@ -252,12 +252,12 @@ export const check = bashGuard(async (command, payload) => {
 
   // The prep-wave gate (lint --all / audit / coverage freshness) encodes the
   // FLEET release convention; a non-fleet repo keeps only the generic ordering
-  // invariants (bump files bundled, tag sits on a bump commit).
+  // invariants, bump files bundled, tag sits on a bump commit.
   const fleetTarget = isFleetTarget(payload)
 
   // Bump-commit bundling: the bump commit must carry BOTH package.json and
   // CHANGELOG.md. Splitting them ships a release whose CHANGELOG lags the
-  // version (or a version with no public note). Runs for every bump commit,
+  // version, or a version with no public note. Runs for every bump commit,
   // independent of the lint gate below.
   if (bumpMsg) {
     const missing = missingBumpFiles(
@@ -281,7 +281,7 @@ export const check = bashGuard(async (command, payload) => {
   }
 
   // Pre-bump-COMMIT gate: the bump commit is where a still-broken tree
-  // (accumulated lint debt) silently lands — front-run the same fast gate the
+  // accumulated lint debt, silently lands — front-run the same fast gate the
   // tag step runs, so the bump can't be committed onto a tree CI will reject.
   // (Past incident: a `chore: bump version` committed atop 100+ lint errors
   // sailed in, then failed CI on push.)
@@ -315,7 +315,7 @@ export const check = bashGuard(async (command, payload) => {
       ]
       return block(lines.join('\n') + '\n')
     }
-    // A bump commit isn't a tag — once gated (pass or block), we're done.
+    // A bump commit isn't a tag — once gated, pass or block, we're done.
     return undefined
   }
   if (!isTag) {

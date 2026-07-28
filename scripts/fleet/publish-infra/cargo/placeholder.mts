@@ -16,7 +16,7 @@
  *   refusal; the build is still verified (no `--no-verify`). crates.io REQUIRES
  *   `description` + `license`, so the reservation manifest carries both.
  *   CLI: placeholder <name...> [--apply]
- *   Dry-run by default (prints the plan, publishes nothing); `--apply` performs
+ *   Dry-run by default, prints the plan, publishes nothing; `--apply` performs
  *   the publish. Per-name isolation: one name failing never aborts the rest, and
  *   a summary prints at the end. Fail-soft — main() catches, logs, and sets a
  *   non-zero exit code; it never throws. The script handles no tokens — cargo
@@ -335,7 +335,7 @@ export async function runPlaceholder(
 
 /**
  * Parse `placeholder <name...> [--apply]`. Dry-run is the default (no
- * `--apply`). Positional args are crate names. Exits (usage error) on an
+ * `--apply`). Positional args are crate names. Exits, usage error, on an
  * unknown flag, or when no names are given. (crates.io has no per-package
  * access flag, so there is no `--access` here.)
  */

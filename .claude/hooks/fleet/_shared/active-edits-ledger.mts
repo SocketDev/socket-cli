@@ -36,7 +36,7 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { resolveRepoRoot } from './repo-root.mts'
 
-// TTL after which a ledger file is considered stale (actor exited or idle).
+// TTL after which a ledger file is considered stale, actor exited or idle.
 // 15 minutes — generous enough for a slow turn; tight enough to not persist
 // across the next session started in the same project.
 export const LEDGER_TTL_MS = 15 * 60 * 1000
@@ -50,7 +50,7 @@ export const COLLISION_WINDOW_MS = 5 * 60 * 1000
 // it as still running. Generous enough to span a child mid-build (which may not
 // touch its transcript for a bit), tight enough that a finished child stops
 // shielding within a few minutes. The dirty-worktree stop-guard uses this to
-// defer (not block) when a live child is still producing in-flight edits — see
+// defer, not block, when a live child is still producing in-flight edits — see
 // `deriveSubagentsDir` / `hasLiveBackgroundChild`.
 export const CHILD_LIVE_WINDOW_MS = 5 * 60 * 1000
 
@@ -65,7 +65,7 @@ const STORE_NAME = 'socket-active-edits'
  */
 export interface ActorLedger {
   readonly actorId: string
-  // Nameable metadata (best-effort, local-only runtime state): the
+  // Nameable metadata, best-effort, local-only runtime state: the
   // recording process pid and the transcript basename, so a collision
   // message or whose-work can say WHICH session owns a path instead of
   // an opaque hash. Absent on pre-metadata ledgers.
@@ -74,9 +74,9 @@ export interface ActorLedger {
   readonly paths: Record<string, number>
   // Optional per-path provenance: how the write was observed. Absent →
   // 'edit' (the Edit/Write/NotebookEdit recorder). 'bash' → inferred from
-  // a write-capable Bash command (fixer, formatter, install, codegen) by
+  // a write-capable Bash command, fixer, formatter, install, codegen, by
   // the bash recorder — a weaker authorship signal consumers may treat
-  // differently (a fixer touching a peer's file is not authorship).
+  // differently, a fixer touching a peer's file is not authorship.
   readonly via?: Record<string, string> | undefined
   readonly updatedAt: number
 }
@@ -373,7 +373,7 @@ export function readActorLedger(filePath: string): ActorLedger | undefined {
 
 /**
  * Flush an actor's ledger to disk. Creates the store directory if needed.
- * Fail-open: swallows all IO errors (a broken store must not block edits).
+ * Fail-open: swallows all IO errors, a broken store must not block edits.
  */
 export function writeActorLedger(filePath: string, ledger: ActorLedger): void {
   try {
@@ -451,7 +451,7 @@ export function sweepStaleLedgers(
 }
 
 /**
- * List the mtimes (epoch ms) of every direct subagent transcript
+ * List the mtimes, epoch ms, of every direct subagent transcript
  * (`agent-*.jsonl`) in `subagentsDir`. Non-recursive on purpose: a spawned
  * subagent's transcript sits directly under `subagents/`, while a background
  * WORKFLOW's agents nest under `subagents/workflows/<run>/` and are excluded —
@@ -486,7 +486,7 @@ export function listChildTranscriptMtimes(subagentsDir: string): number[] {
 /**
  * True when the session owning `transcriptPath` has a live background child —
  * a spawned subagent whose transcript was appended to within `windowMs`. Used
- * by the dirty-worktree stop-guard to DEFER (not block) when an in-flight child
+ * by the dirty-worktree stop-guard to DEFER, not block, when an in-flight child
  * may still be producing edits: the child's completion notification re-invokes
  * the session to land the work. Fail-open: `false` on any resolution error.
  */

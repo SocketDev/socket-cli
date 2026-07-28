@@ -61,7 +61,7 @@ export function listHookNames(hooksDir: string): string[] {
  * The `type` a hook's `defineHook` instance declares, read by IMPORTING the
  * module (import is side-effect-free: a contract hook's top-level `runHook`
  * no-ops unless it is the entrypoint/dispatcher). Returns undefined when the
- * module exports no `hook` (or fails to import).
+ * module exports no `hook`, or fails to import.
  */
 export async function declaredType(
   indexPath: string,
@@ -78,7 +78,7 @@ export async function declaredType(
 
 /**
  * Pure name⟷type rule. Returns a mismatch when a `-guard`/`-nudge`-named hook's
- * declared `.type` disagrees with its suffix (or it declares none). A name
+ * declared `.type` disagrees with its suffix, or it declares none. A name
  * ending in neither suffix is not a guard/nudge → no opinion (undefined).
  */
 export function typeMismatch(

@@ -30,7 +30,7 @@ import { isFleetTarget } from '../_shared/fleet-context.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 
 // The sanctioned per-member config home + its schema. Everything else new under
-// `.config/` is blocked. `.socket-wheelhouse.json` (root dotfile alternative)
+// `.config/` is blocked. `.socket-wheelhouse.json`, root dotfile alternative
 // is matched by basename too.
 const ALLOWED_BASENAMES: ReadonlySet<string> = new Set([
   '.socket-wheelhouse.json',
@@ -50,7 +50,7 @@ export function isNewConfigViolation(absPath: string): boolean {
     return false
   }
   const norm = normalizePath(absPath)
-  // Only config DATA under a `.config/` directory (at any depth).
+  // Only config DATA under a `.config/` directory, at any depth.
   if (!CONFIG_DATA_EXT.test(norm) || !norm.includes('/.config/')) {
     return false
   }

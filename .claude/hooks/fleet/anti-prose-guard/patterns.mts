@@ -117,7 +117,7 @@ export const CHANGELOG_IMPL_PATTERNS: readonly ProsePattern[] = [
 
 /**
  * Scan a CHANGELOG `content` block for implementation-detail antipatterns.
- * Returns the matched patterns (empty when clean). Caller restricts this to
+ * Returns the matched patterns, empty when clean. Caller restricts this to
  * CHANGELOG.md writes.
  */
 export function findChangelogImplDetail(content: string): ProsePattern[] {

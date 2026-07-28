@@ -8,7 +8,7 @@
  */
 
 import { chmodSync, existsSync, writeFileSync } from 'node:fs'
-// oxlint-disable-next-line socket/prefer-async-spawn -- pre-pnpm bootstrap (no lib spawn wrapper on disk yet).
+// oxlint-disable-next-line socket/prefer-async-spawn -- pre-pnpm bootstrap, no lib spawn wrapper on disk yet.
 import { spawnSync } from 'node:child_process'
 import path from 'node:path'
 

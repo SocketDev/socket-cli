@@ -134,7 +134,7 @@ export function hasDeferral(text: string): boolean {
 }
 
 // Hedge / re-litigation markers — paragraphs that explain WHY the
-// command might not help before (or instead of) the tool call landing.
+// command might not help before, or instead of, the tool call landing.
 const HEDGE_MARKERS: readonly RegExp[] = [
   /\bdoesn't help\b/i,
   /\bwon't help\b/i,

@@ -10,10 +10,10 @@
  *   unless the user manually exports the value from the keychain each session,
  *   every Socket tool launches with an empty token and the API returns 401. The
  *   block is delimited by canonical sentinels so re-running the install script
- *   updates the block in place (no duplicate appends). The block is small
+ *   updates the block in place, no duplicate appends. The block is small
  *   enough that the user can read it before sourcing. macOS only for now — zsh
  *   and bash. Linux's `secret-tool` works the same way but the rc-detection on
- *   Linux distros varies more (system vs user profile, multiple bash variants).
+ *   Linux distros varies more, system vs user profile, multiple bash variants.
  *   Windows uses PowerShell profiles; the equivalent is
  *   `$PROFILE.CurrentUserAllHosts`. Both are tractable but out of scope for
  *   this baseline. Read paths are silent (best-effort). Write paths surface

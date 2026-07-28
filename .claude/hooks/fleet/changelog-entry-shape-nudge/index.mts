@@ -12,7 +12,7 @@
  *   (anti-prose-guard) and impl-detail another. Only the ADDED content
  *   matters: a Write's full content, or an Edit's new_string. We flag a `- `
  *   entry bullet that has no `docs/agents.md/` link and isn't a sub-bullet /
- *   heading / blank. No bypass phrase (it never blocks). Exit 0 always.
+ *   heading / blank. No bypass phrase, it never blocks. Exit 0 always.
  */
 
 import path from 'node:path'

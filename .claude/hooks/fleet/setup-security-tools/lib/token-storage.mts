@@ -1,7 +1,7 @@
 /**
  * @file Cross-platform secure storage for the Socket API token. Wraps each OS's
  *   native credential store: macOS → `security add-generic-password` /
- *   `find-generic-password` (Keychain Access). Linux → `secret-tool store` /
+ *   `find-generic-password`, Keychain Access. Linux → `secret-tool store` /
  *   `secret-tool lookup` (libsecret). Windows → `cmdkey /add` plus PowerShell
  *   readback via `Get-StoredCredential` (CredentialManager module). Falls back
  *   to `DPAPI`-encrypted file under `%APPDATA%\\socketsecurity\\token.enc` when
@@ -45,7 +45,7 @@ export function deleteLinux(account: string, service = SERVICE): void {
 export function deleteMacOS(account: string, service = SERVICE): void {
   // Exit code 44 = entry not found, which is fine. Any other non-
   // zero is an error worth surfacing — but since delete is best-
-  // effort we swallow it (a stale entry is annoying but not blocking).
+  // effort we swallow it, a stale entry is annoying but not blocking.
   spawnSync(
     'security',
     ['delete-generic-password', '-s', service, '-a', account],
@@ -444,7 +444,7 @@ export function writeWindowsDpapiFile(token: string): void {
 }
 
 // Hide unused-import lint when readFileSync / writeFileSync aren't
-// used (Windows-only fallback path). Reference them once at module
+// used, Windows-only fallback path. Reference them once at module
 // scope so the bundler still tree-shakes correctly on non-Windows.
 void readFileSync
 void writeFileSync

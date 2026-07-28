@@ -1,5 +1,5 @@
 // Shared issue shape across the four scan surfaces. The discriminant
-// is implicit (callers know which finder produced which); explicit
+// is implicit, callers know which finder produced which; explicit
 // tagging adds noise without a real use case.
 
 export interface UsesIssue {

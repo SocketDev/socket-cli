@@ -155,7 +155,7 @@ export interface WorktreeEntry {
 
 /**
  * Parse `git worktree list --porcelain` output into a list of secondary
- * worktree entries. The main worktree (the repo root) is skipped — only
+ * worktree entries. The main worktree, the repo root, is skipped — only
  * additional worktrees are returned.
  *
  * Git porcelain format per stanza:
@@ -163,7 +163,7 @@ export interface WorktreeEntry {
  * HEAD <sha>
  * branch refs/heads/<name>   ← present for a normal branch
  * detached                   ← present instead of branch when detached
- * (blank line separates stanzas)
+ * blank line separates stanzas.
  */
 export function parseWorktrees(porcelain: string): WorktreeEntry[] {
   const entries: WorktreeEntry[] = []

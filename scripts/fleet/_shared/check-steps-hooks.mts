@@ -14,7 +14,7 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
     () => run('node', ['scripts/fleet/lint.mts', ...forwardedArgs]),
     // Verify the socket/ oxlint plugin actually LOADS + registers every rule. A
     // broken plugin import disables every socket/ rule; oxlint only warns on
-    // stderr (gating varies by version), and never checks the rule COUNT. This
+    // stderr, gating varies by version, and never checks the rule COUNT. This
     // gate asserts both explicitly and fails closed. No-op in repos with no
     // plugin.
     () => run('node', ['scripts/fleet/check/oxlint-plugin-loads.mts']),
@@ -52,7 +52,7 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
     // docs/agents.md/fleet/hook-registry.md names a real .claude/hooks/fleet/<name>/
     // dir. CLAUDE.md defers its full hook list to the registry, so a stale/renamed
     // bullet points readers at policy that doesn't exist. Stale bullets fail;
-    // undocumented hooks are reported, not enforced (many are internal tooling).
+    // undocumented hooks are reported, not enforced, many are internal tooling.
     () => run('node', ['scripts/fleet/check/hook-registry-is-current.mts']),
     // Report-only (exits 0): surfaces feedback/project memories that lack an
     // `enforcement:` disposition when a local memory store exists; skips clean
@@ -60,7 +60,7 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
     () => run('node', ['scripts/fleet/check/memories-are-codified.mts']),
     // The _dispatch/dispatch-table.mts matches a fresh regen over the tree's hook
     // dirs — catches a hook added/removed without rebuilding, or a byte-cascaded
-    // table referencing an absent hook dir (the concurrent-cargo dangle).
+    // table referencing an absent hook dir, the concurrent-cargo dangle.
     () => run('node', ['scripts/fleet/check/dispatch-table-is-current.mts']),
     // The BUILT artifacts (bundle.cjs, snapshot-bundle.cjs, excluded-bundle.cjs,
     // and the snapshot-blob.path pin) carry the routing of a fresh table regen.
@@ -83,16 +83,16 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
     // Least-privilege GitHub App tokens: every app-token minter step must carry
     // a scoped (non-blank) PERMISSIONS env, never blanket installation
     // permissions. Fleet enforcement of the zizmor `github-app` audit so it holds
-    // even where zizmor soft-skips (no upstream binary for the platform).
+    // even where zizmor soft-skips, no upstream binary for the platform.
     () => run('node', ['scripts/fleet/check/app-tokens-are-scoped.mts']),
     // .github/actions/ segmentation: only the fleet/ (cascade-owned) + repo/
     // (host-owned) tiers — a flat action dir sits outside both ownership tiers
-    // (the cascade's tombstones prune the historical flat locations). Same
+    // the cascade's tombstones prune the historical flat locations. Same
     // fleet/repo split as .claude/hooks/ and the oxlint plugin.
     () => run('node', ['scripts/fleet/check/actions-are-segmented.mts']),
     // Native (rust/go/c++) unit tests run network-off: a workflow that runs
     // cargo test / go test / ctest must gate the run through the run-offline
-    // action (loopback-only netns) — the compiled-language nock equivalent.
+    // action, loopback-only netns — the compiled-language nock equivalent.
     () => run('node', ['scripts/fleet/check/native-tests-are-network-off.mts']),
     // Single-source for the co-located app-token minter: every action dir's
     // mint-app-installation-token.mjs copy must be byte-identical (the inlined
@@ -153,11 +153,11 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
     // detector + footer), never hand-write it. Catches drift regressions.
     () => run('node', ['scripts/fleet/check/bypass-phrases-are-metadata.mts']),
     // package.json's packageManager + engines.{pnpm,npm} are GENERATED from
-    // external-tools.json (the single source); this gate fails on drift.
+    // external-tools.json, the single source; this gate fails on drift.
     () =>
       run('node', ['scripts/fleet/check/package-manager-pins-are-synced.mts']),
     // A lint config's `!` re-include must never re-expose vendored files to
-    // lint/--fix (the acorn wasm-bindgen glue break). Fails when a vendored glob
+    // lint/--fix, the acorn wasm-bindgen glue break. Fails when a vendored glob
     // is left before the last negation.
     () =>
       run('node', ['scripts/fleet/check/lint-configs-protect-verbatim.mts']),
@@ -167,7 +167,7 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
     // gate to verify "current" against. Staleness is handled by the cascade
     // regen + the agents-skills-mirror-nudge hook, not a check here.
     // Code is law for the onboarding skill's CI step: the ci:local script keeps
-    // its canonical agent-ci flag set, and the agent-ci Dockerfile (when adopted)
+    // its canonical agent-ci flag set, and the agent-ci Dockerfile, when adopted
     // stays byte-identical to the template.
     () => run('node', ['scripts/fleet/check/ci-local-is-canonical.mts']),
     // The scope-mode fleet scripts (test/lint/check) default to MODIFIED —
@@ -205,19 +205,19 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
     // Subagent return contract twin: the SubagentStatus union in
     // @socketsecurity/lib/ai/subagent-status and the status table in
     // agent-delegation.md must list the same four states, so an orchestrator
-    // reading the doc routes on a contract the code honors (code is law).
+    // reading the doc routes on a contract the code honors, code is law.
     () =>
       run('node', ['scripts/fleet/check/subagent-status-doc-is-current.mts']),
     // Review-pipeline ordering is a contract: the reviewing-code skill's
     // spec-compliance pass must precede the quality passes (discovery /
     // remediation) in ALL_ROLES, so a quality review never runs on out-of-scope
-    // code. Parses run.mts and fails if the order regressed (code is law).
+    // code. Parses run.mts and fails if the order regressed, code is law.
     () => run('node', ['scripts/fleet/check/review-stages-are-ordered.mts']),
     // Model-pricing data stays fresh: the cost-ladder figures in skill-model-
     // routing.md drive tier routing, and vendor prices move. Parses the doc's
     // MODEL-PRICING-SNAPSHOT date and REMINDS (non-fatal) when it's >35 days old,
     // pointing the fix at the researching-recency skill. Turns the prose
-    // "re-verify if stale" note into an enforced surface (code is law).
+    // "re-verify if stale" note into an enforced surface, code is law.
     () => run('node', ['scripts/fleet/check/pricing-data-is-current.mts']),
     // Multi-agent routing is legal: every skill's per-role `preferenceOrder`
     // names a known backend and never lists a hybrid one (opencode), which the
@@ -244,7 +244,7 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
       run('node', ['scripts/fleet/check/hook-main-is-entrypoint-guarded.mts']),
     // The git pre-commit hook itself must stay bounded: every heavy optional
     // step (`pnpm lint`, `pnpm test`) has to run through the bounded runner
-    // (kills the process group on timeout, fails open), and the declared
+    // kills the process group on timeout, fails open, and the declared
     // budget must stay at or under the cap — the same "never hang" invariant
     // hook-main-is-entrypoint-guarded enforces for hooks, applied to the
     // commit path itself. No-ops where the repo carries no
@@ -252,9 +252,9 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
     () => run('node', ['scripts/fleet/check/precommit-steps-are-bounded.mts']),
     // Every hook dir must be WIRED — gen/hook-dispatch discovers + wires each by
     // its defineHook `hook` export (dispatched) or a SIDE_EFFECT entry (spawned).
-    // ADVISORY (never fails): surface `_shared/` hook-helper exports with no
+    // ADVISORY, never fails: surface `_shared/` hook-helper exports with no
     // in-repo consumer — dead weight in the cascaded layer / a DRY signal. Can't
-    // hard-gate: some are consumed out-of-repo (user-global dispatch) and removal
+    // hard-gate: some are consumed out-of-repo, user-global dispatch, and removal
     // is a judgment call. The fleet DRY sweep is plan-only.
     () => run('node', ['scripts/fleet/check/shared-hook-helpers-are-used.mts']),
     // Error messages are UI (CLAUDE.md "Error messages"): no bare vague-only
@@ -271,7 +271,7 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
     () => run('node', ['scripts/fleet/check/rule-citations-are-generic.mts']),
     // Naming consistency: every check basename reads as an ASSERTION (states the
     // invariant it guarantees — paths-are-canonical, lock-step-refs-resolve), so
-    // the check/ dir reads as a spec. A bare-topic name (paths, provenance) fails.
+    // the check/ dir reads as a spec. A bare-topic name, paths, provenance, fails.
     () => run('node', ['scripts/fleet/check/check-names-are-assertions.mts']),
     // A recorded fleet rename is FINISHED, not half-done. When a file carries a
     // `renamed-from: <old>` marker, the prior name must be fully gone — absent as

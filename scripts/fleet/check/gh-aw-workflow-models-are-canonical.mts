@@ -10,7 +10,7 @@
  *   workflows, not `.github/workflows/*.md` YAML). A workflow with NO explicit
  *   model inherits gh-aw's engine default and is not flagged. Pure node, no
  *   gh-aw dependency, so it runs in CI without the extension installed. Exit
- *   0 — every explicit workflow model is canonical (or none declared); 1 — at
+ *   0 — every explicit workflow model is canonical, or none declared; 1 — at
  *   least one is stale / unknown.
  */
 
@@ -27,7 +27,7 @@ import { isMainModule } from '../_shared/is-main-module.mts'
 const logger = getDefaultLogger()
 
 // The YAML frontmatter block (between the first two `---` lines), or '' when the
-// file has no frontmatter (plain documentation living beside the workflows).
+// file has no frontmatter, plain documentation living beside the workflows.
 export function frontmatterOf(mdText: string): string {
   const parts = mdText.split(/^---\s*$/mu)
   // parts[0] is the pre-frontmatter (empty), parts[1] the frontmatter block.

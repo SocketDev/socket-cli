@@ -9,7 +9,7 @@
 // name, conflating it with its null-proto-safe form.
 //
 // This is the edit-time half of the defense-in-depth pair; the lint half is
-// `socket/options-param-naming` (which also autofixes the rename). The guard
+// `socket/options-param-naming`, which also autofixes the rename. The guard
 // catches the anti-pattern at write time, before lint runs.
 //
 // What's enforced:
@@ -21,11 +21,11 @@
 //   - Destructured params (`{ opts }`), rest params, and a `.opts` PROPERTY or
 //     `{ opts: number }` type member are NOT flagged — they are not a param
 //     binding named `opts`.
-//   - `.d.ts` mirrors (external-package signatures) and test files are exempt.
+//   - `.d.ts` mirrors, external-package signatures, and test files are exempt.
 //   - A line carrying `// socket-lint: allow options-param-naming` (same line
 //     as the param or the line before the function) is exempt for one-offs.
 //
-// Bypass phrase: `Allow options-param-naming bypass` (whole session).
+// Bypass phrase: `Allow options-param-naming bypass`, whole session.
 //
 // Fragment tolerance: Edit's `new_string` is a snippet that may not parse
 // standalone. `tryParse` returns undefined on parse failure and the hook stays
@@ -40,7 +40,7 @@ const ALLOW_MARKER = '// socket-lint: allow options-param-naming'
 const BANNED_PARAM_NAME = 'opts'
 
 // File extensions where the convention applies. `.d.ts` is handled separately
-// (it mirrors external signatures and is always exempt).
+// it mirrors external signatures and is always exempt.
 const APPLICABLE_EXTS = new Set(['.cjs', '.cts', '.js', '.mjs', '.mts', '.ts'])
 
 const FUNCTION_NODE_TYPES = new Set([

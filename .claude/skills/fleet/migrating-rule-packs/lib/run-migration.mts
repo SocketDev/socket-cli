@@ -12,7 +12,7 @@
  *   Pipeline (mirrors cascade-template.mts's per-target worktree shape, with
  *   the inner loop swapped for a rule-pack transform):
  *
- *   1. Resolve target set (no agents): load the rule-pack markdown, survey the
+ *   1. Resolve target set, no agents: load the rule-pack markdown, survey the
  *      before-pattern across the migration scope, resolve the default branch.
  *   2. Per file, bounded-concurrency: a fresh worktree off origin/<base> on a
  *      `migration/<name>-<slug>` branch; spawn the locked-down agent to apply
@@ -82,7 +82,7 @@ export interface MigrationArgs {
 }
 
 // One file's terminal outcome. `landed` files opened a PR; `exception` files
-// failed the gate (or had no agent) and are left for the human — those are the
+// failed the gate, or had no agent, and are left for the human — those are the
 // rule pack's tells about coverage gaps, per SKILL.md "What NOT to do".
 export interface MigrationResult {
   attempts: number
@@ -215,7 +215,7 @@ export function loadRulePack(rulesDir: string): string {
 }
 
 // Survey the target set: rg the before-pattern across the migration scope,
-// return repo-relative file paths (deterministic, no agent). Falls back to a
+// return repo-relative file paths, deterministic, no agent. Falls back to a
 // quiet empty set when rg finds nothing (its exit 1).
 export async function surveyTargets(args: MigrationArgs): Promise<string[]> {
   const scopeDir = path.join(args.target, args.scope)

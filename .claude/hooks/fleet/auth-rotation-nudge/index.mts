@@ -9,7 +9,7 @@
 // LAST Stop event; every Stop is treated as activity and resets that
 // clock. Rotation fires only once the session has sat IDLE — no Stop —
 // for >= the configured idle timeout. A continuously active session
-// (Stops minutes apart) keeps resetting the clock and never rotates
+// Stops minutes apart, keeps resetting the clock and never rotates
 // mid-work; only genuine inactivity counts toward the timeout.
 //
 // Behavior on each Stop event:
@@ -21,10 +21,10 @@
 //      and the hook proceeds. If unexpired, the hook honors the snooze
 //      and exits silently.
 //   4. Read the idle gap (now − last-activity mtime) from the state
-//      file, then record THIS Stop as activity (touch the file to now).
+//      file, then record THIS Stop as activity, touch the file to now.
 //   5. Rotate only when a leak warning was just detected OR the idle gap
 //      is >= the idle timeout (default 1h). The first Stop of a fresh
-//      session (no state file yet) is treated as activity and never
+//      session, no state file yet, is treated as activity and never
 //      rotates.
 //   6. For each service in services.mts:
 //        a. Skip if the binary is missing and `optional: true`.
@@ -41,7 +41,7 @@
 //
 // Removed automatically once the timestamp is reached.
 //
-// Configuration env vars (all optional):
+// Configuration env vars, all optional:
 //
 //   SOCKET_AUTH_ROTATION_INTERVAL_HOURS   default: 1
 //     Idle timeout in hours: how long the session must sit idle (no
@@ -82,7 +82,7 @@ const PREFIX = '[auth-rotation-nudge]'
 // ── Paths ───────────────────────────────────────────────────────────
 
 const STATE_DIR = path.join(os.homedir(), '.claude', 'hooks', 'auth-rotation')
-// Tracks the LAST Stop event (last activity), not the last rotation — its
+// Tracks the LAST Stop event, last activity, not the last rotation — its
 // mtime is the baseline the idle-gap check measures against.
 const STATE_FILE = path.join(STATE_DIR, 'last-activity')
 const GLOBAL_SNOOZE = path.join(STATE_DIR, 'snooze')
@@ -216,7 +216,7 @@ interface LeakDetection {
  * immediately.
  *
  * Caller passes in the raw stdin payload because `main()` already captured it
- * (Node's stdin is single-use).
+ * Node's stdin is single-use.
  */
 export function detectLeakWarning(stdinPayload: string): LeakDetection {
   if (!stdinPayload) {
@@ -257,7 +257,7 @@ export function detectLeakWarning(stdinPayload: string): LeakDetection {
 // ── Idle detection ──────────────────────────────────────────────────
 
 // The configured idle timeout, in milliseconds. The session must sit
-// idle (no Stop events) at least this long before the next Stop rotates.
+// idle, no Stop events, at least this long before the next Stop rotates.
 export function intervalMs(): number {
   const raw = process.env['SOCKET_AUTH_ROTATION_INTERVAL_HOURS']
   const hours = raw === undefined ? 1 : Number.parseFloat(raw)
@@ -272,7 +272,7 @@ export function intervalMs(): number {
 //
 // The state file's mtime records the last Stop event (each Stop is
 // activity). A missing state file is the very first Stop of a fresh
-// session: treat it as activity (return true) so the first run never
+// session: treat it as activity, return true, so the first run never
 // rotates; the caller's touchStateFile() then establishes the baseline.
 export function withinThrottle(): boolean {
   // First Stop of a fresh session — no baseline yet, so nothing has been
@@ -282,7 +282,7 @@ export function withinThrottle(): boolean {
   }
   const idleTimeout = intervalMs()
   // Idle timeout 0 → every gap counts as "past timeout"; rotate on every
-  // Stop after the first (verbose diagnostic mode).
+  // Stop after the first, verbose diagnostic mode.
   if (idleTimeout === 0) {
     return false
   }
@@ -458,7 +458,7 @@ export async function run(
       `${PREFIX} leak warning detected in assistant output ("${leak.matchedPattern}"); bypassing idle timeout`,
     )
   } else if (active) {
-    // Session still active (idle gap below the timeout) or the first Stop
+    // Session still active, idle gap below the timeout, or the first Stop
     // of a fresh session — nothing to rotate yet.
     return lines
   }

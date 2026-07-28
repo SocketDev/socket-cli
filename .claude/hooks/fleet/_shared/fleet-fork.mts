@@ -13,7 +13,7 @@
  *      the canonical home).
  *   3. Otherwise, resolving the repo's canonical set from its `.gitattributes`
  *      `linguist-generated=true` entries → block when the path is canonical
- *      (the template is the single source of truth), with allowances for
+ *      the template is the single source of truth, with allowances for
  *      per-repo markers, operator-local overrides, fleet-block hybrid files,
  *      and the bypass phrase.
  */
@@ -85,7 +85,7 @@ export function findFleetRepoRoot(filePath: string): string | undefined {
 // True when the on-disk file carries the `<fleet-canonical>` block markers —
 // i.e. it's a hybrid file whose content outside the markers is repo-owned. The
 // markers are the same comment sentinels the sync's *-fleet-block checks use
-// (gitignore, gitattributes, workflows). Comment-prefix-agnostic: match the
+// gitignore, gitattributes, workflows. Comment-prefix-agnostic: match the
 // marker text regardless of the leading `#`.
 function hasFleetBlockMarkers(absPath: string): boolean {
   if (!existsSync(absPath)) {
@@ -163,7 +163,7 @@ export function isCanonicalRelativePath(
   const entries = fleetCanonicalEntries(repoRoot)
   for (let i = 0, { length } = entries; i < length; i += 1) {
     const entry = entries[i]!
-    // Skip glob entries (supplemental generated globs) — this guard matches the
+    // Skip glob entries, supplemental generated globs — this guard matches the
     // concrete canonical dirs + files; a glob is best-effort excluded so a bad
     // pattern can never over-block.
     if (entry.includes('*')) {
@@ -205,7 +205,7 @@ export const check = editGuard((filePath, content, payload) => {
     return undefined
   }
 
-  // Operator-local overrides (gitignored, never cascaded) are not forks.
+  // Operator-local overrides, gitignored, never cascaded, are not forks.
   if (isOperatorLocalPath(relToRepo)) {
     return undefined
   }
@@ -233,7 +233,7 @@ export const check = editGuard((filePath, content, payload) => {
   // open/close markers is only PART fleet-managed — content outside the markers
   // is repo-owned (e.g. a workflow's repo-specific jobs below the close marker).
   // Allow edits when the markers are present either on disk OR in the incoming
-  // content (the bootstrap that first adds the markers). The sync's
+  // content, the bootstrap that first adds the markers. The sync's
   // workflow-fleet-block check re-validates the marked block at commit time, so
   // a fork INSIDE the block is still caught.
   if (hasFleetBlockMarkers(absPath) || textHasFleetBlockMarkers(content)) {

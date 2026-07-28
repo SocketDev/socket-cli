@@ -16,7 +16,7 @@
 //     ... }
 //
 // Exit codes:
-//   0 — pass (not a Bash tool, or command doesn't pass the flag).
+//   0 — pass, not a Bash tool, or command doesn't pass the flag.
 //   2 — block (command passes --experimental-strip-types).
 //
 // Fails open on malformed payloads (exit 0 + stderr log).

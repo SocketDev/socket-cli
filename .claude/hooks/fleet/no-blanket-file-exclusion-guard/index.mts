@@ -33,12 +33,12 @@
 //
 // Recognized banned shapes (a size-exemption marker that fails the
 // `<category> — <reason>` contract):
-//   max-file-lines: legitimate                       (self-judgment, no category)
-//   max-file-lines: legitimate — one cohesive module (self-judgment leads)
-//   max-file-lines: ok — it's fine                    (self-judgment word)
-//   max-file-lines: parser                            (category, no reason)
+//   max-file-lines: legitimate, self-judgment, no category
+//   max-file-lines: legitimate — one cohesive module, self-judgment leads
+//   max-file-lines: ok — it's fine, self-judgment word
+//   max-file-lines: parser, category, no reason
 //
-// Allowed shapes (pass through):
+// Allowed shapes, pass through:
 //   max-file-lines: parser — recursive-descent grammar
 //   max-file-lines: state-machine — exhaustive transition table
 //   max-file-lines: integration-test — one end-to-end scenario
@@ -63,7 +63,7 @@
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 
-// A size-exemption marker is present at all (any category text after it).
+// A size-exemption marker is present at all, any category text after it.
 const MARKER_RE = /max-file-lines:\s*\S/i
 
 // A VALID marker: `<category> — <reason>`. The category is one hyphenated

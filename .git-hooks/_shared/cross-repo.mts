@@ -53,7 +53,7 @@ function findRepoRoot(fileAbsPath: string): string | undefined {
 
 // The bare name of the repo a file belongs to — its `.git` root's basename, or
 // undefined when the file is outside any repo. DERIVED from the path so callers
-// never have to pass (and keep in sync) a separate repo-name argument, and with
+// never have to pass, and keep in sync, a separate repo-name argument, and with
 // no `projects/<repo>` layout assumption.
 export function repoNameForFile(fileAbsPath: string): string | undefined {
   const repoRoot = findRepoRoot(fileAbsPath)

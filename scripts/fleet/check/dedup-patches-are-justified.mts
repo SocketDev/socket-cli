@@ -1,11 +1,11 @@
 /*
  * @file Code-as-law for pnpm compatibility patches (see
  *   docs/agents.md/fleet/pnpm-patching.md). A pnpm patch is opaque (a diff
- *   against minified vendor code) and high-trust (it rewrites a dependency).
+ *   against minified vendor code) and high-trust, it rewrites a dependency.
  *   What a patch fixes is an API CONTRACT — the version itself is handled
  *   separately by `overrides:` / the update. So every `patchedDependencies`
  *   entry must be JUSTIFIED on its own terms:
- *     1. a rationale comment naming the API contract it restores (and for whom),
+ *     1. a rationale comment naming the API contract it restores, and for whom,
  *     2. the referenced .patch file exists,
  *     3. the patched `<pkg>@<ver>` is actually RESOLVED in pnpm-lock.yaml — i.e.
  *        the patch applies to something real, not a phantom version (a patch
@@ -70,7 +70,7 @@ function main(): void {
       continue
     }
     // Match a YAML map line `  '<spec>': '<value>'`: group 1 = the key
-    // (spec, optionally quoted), group 2 = the value (patch path), each
+    // spec, optionally quoted, group 2 = the value, patch path, each
     // stopping at a quote, inline `#` comment, or whitespace.
     const m = /^\s+'?([^':]+?)'?\s*:\s*'?([^'#\s]+)'?/.exec(line)
     if (!m) {

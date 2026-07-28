@@ -10,13 +10,13 @@
 // result lands. Only work TRULY blocked on the pending result should pause.
 //
 // Detection is a scan of the recent assistant tool-use blocks for wait signals:
-//   • a Bash tool call with `run_in_background: true` (a detached job still running)
+//   • a Bash tool call with `run_in_background: true`, a detached job still running
 //   • a Bash command that watches/polls remote CI (`gh run watch`, `gh pr checks
 //     --watch`, a `gh api …/runs` poll, a bare `sleep` delay)
-//   • a `Workflow` tool call (background orchestration in flight)
-//   • an `Agent` tool call not explicitly foregrounded (agents run detached by default)
+//   • a `Workflow` tool call, background orchestration in flight
+//   • an `Agent` tool call not explicitly foregrounded, agents run detached by default
 //
-// Verdict: notify (never blocks). A Stop hook fires after the turn ended, so
+// Verdict: notify, never blocks. A Stop hook fires after the turn ended, so
 // there is no tool call to refuse — this is a reminder for the next turn.
 
 import { defineHook, notify, runHook } from '../_shared/guard.mts'

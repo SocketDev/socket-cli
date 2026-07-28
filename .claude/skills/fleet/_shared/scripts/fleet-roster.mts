@@ -7,7 +7,7 @@
  * tidying-rolldown-bundles, auditing-api-surface) each re-declared their own
  * `FLEET_REPOS_FILE` path + `readRoster()`; cascading-fleet builds the path a
  * fifth way. That is five constructions of one path — a "1 path, 1 reference"
- * violation that drifts (one copy's error message, another's filter). This
+ * violation that drifts, one copy's error message, another's filter. This
  * module is the single owner: `FLEET_REPOS_FILE` is built once here, and every
  * consumer imports `readRoster()` instead of re-reading the file.
  *

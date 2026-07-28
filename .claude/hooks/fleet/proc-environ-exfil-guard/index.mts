@@ -3,8 +3,8 @@
 //
 // Blocks authoring a read of `/proc/<pid>/environ` or `/proc/<pid>/cmdline` —
 // the secret + argv harvest path. A process's `/proc/self/environ` exposes its
-// full environment (including any unscrubbed token); `/proc/<pid>/cmdline`
-// exposes another process's argv (where a secret may have been passed). Neither
+// full environment, including any unscrubbed token; `/proc/<pid>/cmdline`
+// exposes another process's argv, where a secret may have been passed. Neither
 // has a legitimate use in fleet code.
 //
 // Why a guard: the Microsoft Security writeup (2026-06-05) on

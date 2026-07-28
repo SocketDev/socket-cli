@@ -30,6 +30,11 @@ import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
+import {
+  formatPrecascadeGateFailure,
+  runPrecascadeGate,
+} from './precascade-gate.mts'
+
 const logger = getDefaultLogger()
 
 const LOG_PATH_PREFIX = '/tmp/cascade-'
@@ -69,7 +74,7 @@ if (!TEMPLATE_SHA) {
 const SCRIPT_DIR = import.meta.dirname
 const FLEET_REPOS_FILE = path.join(SCRIPT_DIR, 'fleet-repos.txt')
 // The structured roster carries each member's GitHub owner. The .txt is bare
-// names; owner (for a cross-org member like decmpfs) lives in the .json sibling.
+// names; owner, for a cross-org member like decmpfs, lives in the .json sibling.
 const FLEET_REPOS_JSON = path.join(SCRIPT_DIR, 'fleet-repos.json')
 const PROJECTS = process.env['PROJECTS'] || path.join(os.homedir(), 'projects')
 
@@ -103,7 +108,7 @@ function loadRoster(): RosterView {
     }
   } catch {
     // No / invalid .json — every repo defaults to SocketDev via ownerOf, and
-    // the membership gate below refuses the wave (no roster, no writes).
+    // the membership gate below refuses the wave, no roster, no writes.
   }
   return { names, owners }
 }
@@ -192,7 +197,7 @@ function preflightOrAbort(): void {
     )
     process.exit(2)
   }
-  // (2) No other cascade in flight (concurrent waves wedge on the sfw proxy).
+  // (2) No other cascade in flight, concurrent waves wedge on the sfw proxy.
   const ps = spawnSync('pgrep', ['-f', 'cascade-template\\.mts'], {
     encoding: 'utf8',
   })
@@ -209,6 +214,17 @@ function preflightOrAbort(): void {
         '  Socket Firewall proxy and wedge. Wait for it to finish.',
       ].join('\n'),
     )
+    process.exit(2)
+  }
+  // (3) The wheelhouse's own `check --all` must be green. The wheelhouse gates
+  // ARE the fleet gates, so a red one here goes red in every member this wave
+  // pushes to. Runs last of the three — it costs minutes, and the two cheap
+  // refusals above should short-circuit first. Every red check refuses: the
+  // gate ships no committed waiver list, and a one-run exemption is the
+  // `knownRed` argument passed here at the call site.
+  const gate = runPrecascadeGate(WH_DIR)
+  if (!gate.ok) {
+    logger.error(formatPrecascadeGateFailure(gate, WH_DIR))
     process.exit(2)
   }
 }

@@ -22,7 +22,7 @@ const logger = getDefaultLogger()
 
 /**
  * Squash local main's own tree onto a freshly minted root and force-push it,
- * for the case where local is ahead of origin (origin is local's ancestor).
+ * for the case where local is ahead of origin, origin is local's ancestor.
  * Refuses (exit 2) when local and origin have DIVERGED — a blind squash would
  * mint the root from the local tree and drop origin's commits.
  */
@@ -63,7 +63,7 @@ export async function squashLocalCanonicalMode(config: {
     // canonical, but a blind squash mints the root from the local tree and
     // force-pushes — dropping origin's commits (they would survive only in a
     // backup ref, never on the branch). Refuse loudly; the caller must
-    // reconcile FORWARD (fold origin's commits into local), then re-run.
+    // reconcile FORWARD, fold origin's commits into local, then re-run.
     logger.error(
       `error: origin/${base} (${origHead.slice(0, 8)}) has commits your ` +
         `local ${base} lacks — local and origin have DIVERGED. Squashing ` +
@@ -187,7 +187,7 @@ export async function squashWorktreeMode(config: {
     return 0
   }
 
-  // Phase 2 — worktree (clean any stale state from prior runs).
+  // Phase 2 — worktree, clean any stale state from prior runs.
   await run('git', ['worktree', 'remove', '--force', worktree], src, {
     allowFailure: true,
   })
@@ -228,7 +228,7 @@ export async function squashWorktreeMode(config: {
   logger.success(`squashed ${origCount} commits → 1 commit (${newHead})`)
   logger.success('integrity: post-squash tree == pre-squash tree')
 
-  // Phase 6 — force-push (lease guards against a racing push).
+  // Phase 6 — force-push, lease guards against a racing push.
   logger.substep(`force-pushing to ${base}...`)
   // --no-verify for the same reason as the backup push (no node_modules in the
   // worktree). The squash commit is already integrity-checked and

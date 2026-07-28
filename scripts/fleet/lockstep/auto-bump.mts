@@ -23,7 +23,7 @@
  * authoritatively to the `.gitmodules` `ref =` + `# <name>-<version>
  * sha256:…` annotation via gen/gitmodules-hash.mts --set, and commit
  * `chore(deps): bump <upstream> to <tag>`. Collapses reference.md Phase 3
- * (the bash the skill used to inline). The skill still owns the per-row
+ * the bash the skill used to inline. The skill still owns the per-row
  * test gate + the locked-row human approval (it only calls --apply for an
  * already-approved, validated row); the deterministic git + edit + commit
  * mechanics live here so they are tested, not re-typed per run.
@@ -178,7 +178,7 @@ export function resolveTarget(
   const current = pinnedTag ? parseTag(pinnedTag) : undefined
   // A pinned tag that EXISTS but doesn't parse must never fall through to
   // unconstrained matching — without the prefix constraint the resolver can
-  // select a different tag series entirely (a downgrade vector). Surface it
+  // select a different tag series entirely, a downgrade vector. Surface it
   // for a human instead.
   if (pinnedTag && current === undefined) {
     return {
@@ -240,7 +240,7 @@ function isVersionPin(r: Report): r is VersionPinReport {
   return r.kind === 'version-pin'
 }
 
-// Partition a lockstep report into the auto (version-pin, actionable policy)
+// Partition a lockstep report into the auto, version-pin, actionable policy
 // and advisory (everything else with drift/error) lists. The auto rows have no
 // targetTag yet — the skill resolves each against its fetched tags via
 // resolveTarget; --plan does that when given a tag map.
@@ -299,7 +299,7 @@ export function planFromReport(
         })
         continue
       }
-      // A version-pin that can't auto-bump (locked-major, no-newer) is an
+      // A version-pin that can't auto-bump, locked-major, no-newer, is an
       // advisory line, not a silent drop.
       advisory.push({
         id: r.id,

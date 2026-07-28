@@ -35,7 +35,7 @@
  *   A workflow whose body does NO recognizable registry-publish work is ignored
  *   here (a `github-release.yml`, a CI workflow). Reusable `workflow_call`
  *   publishers that delegate the environment via an input surface as an
- *   ENVIRONMENT finding under their (already non-conventional) filename — which
+ *   ENVIRONMENT finding under their, already non-conventional, filename — which
  *   is the intended signal to retire them.
  *
  *   INFORMATIONAL for now (exit 0, lists findings): the fleet is mid-migration
@@ -62,7 +62,7 @@ const logger = getDefaultLogger()
 
 // Report-only until the fleet clears the legacy provenance.yml / publish-npm.yml
 // backlog; flip to 'strict' (exit 1) after. Mirrors the report→strict rollout
-// of the other publish-surface gates (published-packages-have-files-field, etc).
+// of the other publish-surface gates, published-packages-have-files-field, etc.
 const MODE: 'report' | 'strict' = 'report'
 
 export type PublishTarget = 'npm' | 'cargo' | 'go'
@@ -70,7 +70,7 @@ export type PublishTarget = 'npm' | 'cargo' | 'go'
 // Body → target patterns. Each entry maps a registry target to the regexes that
 // identify that target's publish work in a workflow BODY. Ordered so
 // classification is deterministic; a body matching more than one target is an
-// ambiguous combined orchestration and is skipped (not this check's concern).
+// ambiguous combined orchestration and is skipped, not this check's concern.
 const TARGET_SIGNATURES: ReadonlyArray<{
   readonly target: PublishTarget
   readonly patterns: readonly RegExp[]
@@ -81,7 +81,7 @@ const TARGET_SIGNATURES: ReadonlyArray<{
     // `npm/pnpm/yarn publish`, `pnpm stage publish`, or the canonical
     // npm-publish.mts engine. Deliberately NOT publish-pipeline.mts: that is the
     // reconcile/orchestration engine invoked by the canonical release-reconcile.yml
-    // (a gap-backfill workflow, not a primary publisher), so matching it would
+    // a gap-backfill workflow, not a primary publisher, so matching it would
     // false-flag release-reconcile.yml as drift.
     patterns: [
       /\b(?:npm|pnpm|yarn)\s+publish\b/,
@@ -143,7 +143,7 @@ export function extractsEnvironment(
  * Classify one workflow (filename + body) against the publish-workflow
  * convention. Returns the verdict when the body performs recognizable
  * registry-publish work for exactly one target, or null when the body does no
- * such work (or is ambiguously multi-target). Pure so it is unit-tested without
+ * such work, or is ambiguously multi-target. Pure so it is unit-tested without
  * a filesystem.
  */
 export function classifyPublishWorkflow(

@@ -16,7 +16,7 @@
 //
 // A directory is a valid hook iff it holds at least one of: index.mts (the
 // PreToolUse/PostToolUse/Stop entrypoint), install.mts (setup-* installer
-// hooks), or README.md (documentation-only entries are still intentional). The
+// hooks), or README.md, documentation-only entries are still intentional. The
 // `_shared/` directory is exempt — it is a helper library, not a hook.
 //
 // Usage: node scripts/fleet/check/hook-dirs-are-not-husks.mts [--quiet]
@@ -44,7 +44,7 @@ const NON_HOOK_DIRS = new Set(['_dispatch', '_dist', '_shared'])
 export interface HuskHit {
   // Repo-relative path of the husk directory.
   dir: string
-  // What the dir actually contained (for the failure message).
+  // What the dir actually contained, for the failure message.
   contents: string[]
 }
 

@@ -6,7 +6,7 @@
 
 // CRLF-tolerant line split. Inlined (not imported from helpers.mts) so this
 // module stays free of the Node-25 hard-exit gate that helpers.mts carries —
-// a Claude hook importing it must run on the operator's (possibly older) Node.
+// a Claude hook importing it must run on the operator's, possibly older, Node.
 function splitLines(text: string): string[] {
   return text.replace(/\r\n/g, '\n').split('\n')
 }
@@ -28,7 +28,7 @@ function splitLines(text: string): string[] {
 // Allowed (NOT reported):
 //   - bare `#123` (resolves against the current repo — no cross-repo leak)
 //   - `SocketDev/<repo>#<num>` (same org — case-insensitive)
-//   - `https://github.com/SocketDev/...` (same org)
+//   - `https://github.com/SocketDev/...`, same org
 //
 // Blocked (reported):
 //   - `<other-owner>/<repo>#<num>`

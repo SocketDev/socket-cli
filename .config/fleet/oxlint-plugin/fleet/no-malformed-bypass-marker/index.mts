@@ -5,7 +5,7 @@
  *
  *   - A per-site oxlint disable: `oxlint-disable-next-line <rule> -- <reason>`
  *     (or `oxlint-disable-line`). The fleet requires BOTH a rule id AND a
- *     `-- <reason>` — a bare `oxlint-disable-next-line` (no rule) silences every
+ *     `-- <reason>` — a bare `oxlint-disable-next-line`, no rule, silences every
  *     rule on the line, and a reasonless disable hides why the gate was waived.
  *     (File-scope `oxlint-disable` with no `-next-line`/`-line` is banned
  *     outright by `socket/no-file-scope-oxlint-disable`; this rule covers the

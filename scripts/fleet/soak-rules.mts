@@ -4,7 +4,7 @@
  *   rule lives in `pnpm-workspace.yaml`: a `minimumReleaseAge` scalar (minutes
  *   a release must soak) plus a `minimumReleaseAgeExclude` bypass list. pnpm
  *   itself enforces this for npm catalog installs. Other soak surfaces —
- *   `update-external-tools.mts` (security-tool binaries) and the
+ *   `update-external-tools.mts`, security-tool binaries, and the
  *   `soak-excludes-have-dates` check — historically each re-derived "what's
  *   exempt" their own way (a separate `isSocketSourced` rule, a duplicated glob
  *   regex), so the three could diverge. This module is the single reader +
@@ -19,7 +19,7 @@ import { readFileSync } from 'node:fs'
 
 export interface SoakRules {
   /**
-   * `minimumReleaseAge` in minutes; 0 when the key is absent (no soak).
+   * `minimumReleaseAge` in minutes; 0 when the key is absent, no soak.
    */
   readonly minutes: number
   /**

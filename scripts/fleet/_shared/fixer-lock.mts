@@ -5,7 +5,7 @@
  *   orphaned fixers raced socket-lib for minutes, 2026-07). Semantics:
  *
  *   - Acquire is O_EXCL pidfile creation. On contention the caller gets the
- *     HOLDER's info (pid, script, since) to print, and must exit non-zero fast
+ *     HOLDER's info, pid, script, since, to print, and must exit non-zero fast
  *     — never queue behind an interactive fixer.
  *   - Stale detection: a holder whose pid is no longer alive (crashed/killed
  *     fixer) is stolen — the stale file is removed and acquisition retried
@@ -72,7 +72,7 @@ export function isPidAlive(pid: number): boolean {
 
 /**
  * Parse a lock file's contents. Undefined on any shape mismatch — an
- * unparseable lock is STALE (a crashed writer), never a blocker.
+ * unparseable lock is STALE, a crashed writer, never a blocker.
  * Pure — exported for tests.
  */
 export function parseLockInfo(raw: string): FixerLockInfo | undefined {
@@ -115,7 +115,7 @@ interface AcquireSeams {
 }
 
 /**
- * Acquire the repo fixer lock (or report the live holder). Reentrant via
+ * Acquire the repo fixer lock, or report the live holder. Reentrant via
  * FLEET_FIXER_LOCK_HELD; stale holders are stolen. The returned `release`
  * removes the lock file and unsets the reentrancy env var — call it in a
  * `finally`. A process crash needs no cleanup: the dead pid is stolen by the
@@ -131,7 +131,7 @@ export function acquireFixerLock(
   const env = s.env ?? process.env
   const pid = s.pid ?? process.pid
   // Reentrant call: an ancestor fixer in this process tree already owns the
-  // tree — do not re-acquire, do not release on exit (the owner does).
+  // tree — do not re-acquire, do not release on exit, the owner does.
   if (env[FIXER_LOCK_ENV]) {
     return { acquired: true, release: () => {} }
   }
@@ -160,7 +160,7 @@ export function acquireFixerLock(
     if (holder && alive(holder.pid) && holder.pid !== pid) {
       return { acquired: false, holder }
     }
-    // Stale (dead pid, our own pid from a crashed prior run, or unparseable):
+    // Stale, dead pid, our own pid from a crashed prior run, or unparseable:
     // sweep and retry once.
     safeDeleteSync(lockFile)
   }

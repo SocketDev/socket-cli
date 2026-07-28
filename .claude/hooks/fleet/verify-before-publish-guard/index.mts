@@ -99,7 +99,7 @@ export interface PublishHit {
   readonly dryRun: boolean
   readonly misparsedArg: string | undefined
   readonly source: string
-  // The first non-flag token after `publish` (the target), or undefined for a
+  // The first non-flag token after `publish`, the target, or undefined for a
   // bare `publish` / `pnpm stage publish`. Used to locate the local
   // package.json for the placeholder carve-out.
   readonly target: string | undefined
@@ -264,7 +264,7 @@ export function detectCargoPublish(command: string): PublishHit[] {
 // The publish-runner scripts an agent must not invoke directly: running them
 // from a local shell publishes from THIS machine, outside the pipeline's
 // receipts. The pipeline itself spawns npm-publish.mts as a CHILD process
-// (never a Bash tool command), so blocking the Bash shape never breaks it.
+// never a Bash tool command, so blocking the Bash shape never breaks it.
 const DIRECT_PUBLISH_SCRIPT_RE = /(?:^|\/)scripts\/fleet\/npm-publish\.mts$/
 const PUBLISH_PIPELINE_SCRIPT_RE =
   /(?:^|\/)scripts\/fleet\/publish-pipeline\.mts$/
@@ -528,13 +528,13 @@ export const check = bashGuard((command, payload) => {
   if (hits.length === 0) {
     return undefined
   }
-  // A broken git-spec target is the most urgent (the command can't succeed).
+  // A broken git-spec target is the most urgent, the command can't succeed.
   const misparsed = publishHits.find(h => h.misparsedArg)
   if (misparsed) {
     return block(formatMisparseBlock(misparsed))
   }
   // A live local `cargo publish` / direct publish-runner script is always a
-  // redirect (no placeholder analog). A --dry-run preview passes.
+  // redirect, no placeholder analog. A --dry-run preview passes.
   const liveCargo = cargoHits.find(h => !h.dryRun)
   if (liveCargo) {
     return block(formatCargoRedirectBlock(liveCargo))

@@ -18,7 +18,7 @@ import type { ResolvedSeams, RunnerSeams, StageOutcome } from './seams.mts'
 
 /**
  * The preflight step list. The DEFAULT scopes fix + check to changed files
- * (their own no-flag default) — the preflight tree is usually already clean
+ * their own no-flag default — the preflight tree is usually already clean
  * at the receipt sha, fix.mts early-exits on a clean scope in under a second,
  * and the repo-wide fix backlog is not a release readiness question. `all`
  * (the pipeline's --preflight-all escape) restores the full-tree

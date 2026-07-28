@@ -11,7 +11,7 @@
  *   {test,lint,check}` / `node scripts/fleet/{test,lint,check}.mts` must
  *   carry `--all`, `--staged`, `--modified` (an explicit choice is
  *   reviewable), or an explicit path argument. Compiled gh-aw `.lock.yml`
- *   files are skipped (generated, agent-runtime commands). Scans the
+ *   files are skipped, generated, agent-runtime commands. Scans the
  *   repo's workflows plus `template/base/.github/workflows/` when present,
  *   so the wheelhouse gates the seed the fleet inherits. Line-based by
  *   design: workflow script args live on the invocation line (multi-line

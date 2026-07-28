@@ -12,12 +12,12 @@
  *
  *   The two blocks differ in cleanup safety, so stale entries are handled
  *   asymmetrically:
- *   - `minimumReleaseAgeExclude` (soak bypass): a cleared soak is ALWAYS safe
+ *   - `minimumReleaseAgeExclude`, soak bypass: a cleared soak is ALWAYS safe
  *     to drop — the 7-day gate would admit the version anyway. Reporting is
  *     informational (exit 0); `--fix` PROMOTE-mode removes each soaked entry
  *     (the bullet + its annotation line) and writes the file. This is what the
  *     daily `updating-daily` job runs.
- *   - `trustPolicyExclude` (supply-chain waiver): removing a waiver re-arms the
+ *   - `trustPolicyExclude`, supply-chain waiver: removing a waiver re-arms the
  *     `no-downgrade` trust gate, which can re-break `pnpm install` if the
  *     waived version still resolves. So a stale trust waiver is a DEFECT
  *     requiring a human re-audit (exit 1) — never auto-promoted, even under

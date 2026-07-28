@@ -15,8 +15,8 @@
  *   pr … --repo <owner/repo>`) where <owner> is not SocketDev → nudge to clone
  *   it to the standard repo-clones dir first. (2) A `git clone` of an external
  *   GitHub repo that omits one or more of the smallest-practical flags → nudge
- *   to add the missing flags (and to target the repo-clones dir). The pure
- *   detection logic lives in ./detect.mts (unit-tested directly); command
+ *   to add the missing flags, and to target the repo-clones dir. The pure
+ *   detection logic lives in ./detect.mts, unit-tested directly; command
  *   segments + args come from commandsFor()/findInvocation() (shell-quote
  *   tokenized), never a raw regex over the whole command line.
  */

@@ -110,7 +110,7 @@ export const FLEET_SKILL_CATALOG: Readonly<Record<string, SkillDefinition>> = {
  * Cross-family routes that must remain visible as direct SKILL.md links.
  */
 /**
- * Fleet skills that operate ON the wheelhouse (not on a member's own code) and
+ * Fleet skills that operate ON the wheelhouse, not on a member's own code, and
  * reference wheelhouse-only machinery such as `scripts/repo/*`. They live in
  * the wheelhouse's own `.claude/skills/fleet/` but are intentionally omitted
  * from member repos by the cascade. The skill-system coherence check honors

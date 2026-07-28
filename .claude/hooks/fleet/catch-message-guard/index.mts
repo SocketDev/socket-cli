@@ -9,7 +9,7 @@
 // new_string / content), tracks open `catch (<binding>)` regions
 // by brace-counting, and flags `${<binding>.message}` reads inside
 // those regions. Pre-existing violations in the surrounding file
-// are not flagged (the hook is for new regressions).
+// are not flagged, the hook is for new regressions.
 //
 // Bypass: `Allow catch-message bypass` typed verbatim in a recent
 // user turn. Per-call-site bypass: `// ok: catch-message <reason>`
@@ -44,7 +44,7 @@ const CATCH_WRONG_BINDING_RE =
   /\bcatch\s*\(\s*(?!_|e\s*[):])(?<bind>[A-Za-z_$][\w$]*)\s*(?::[^)]+)?\)\s*\{/g
 
 // Match the opening of a catch block. The binding is captured.
-// JS-syntax-only `catch {}` (no binding) is skipped.
+// JS-syntax-only `catch {}`, no binding, is skipped.
 const CATCH_OPEN_RE =
   /\bcatch\s*\(\s*(?<binding>[A-Za-z_$][\w$]*)\s*(?::[^)]+)?\)\s*\{/g
 

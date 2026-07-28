@@ -13,7 +13,7 @@
  *   frontmatter `name:` MATCHES its directory name — so the mirror cannot be a
  *   symlink (the `name:` would mismatch). It is a generated COPY with `name:`
  *   rewritten to `<tier>-<name>`. Supporting files (reference.md, scripts/, …)
- *   are copied verbatim. Tool-restriction caveat (documented, by design):
+ *   are copied verbatim. Tool-restriction caveat, documented, by design:
  *   Claude's per-skill `allowed-tools` does NOT port — Codex/OpenCode gate
  *   tools at the agent level. A mirrored skill runs with whatever the
  *   Codex/OpenCode session allows. Mirroring all skills is the chosen policy;
@@ -24,11 +24,11 @@
  *   expose a smaller lazy catalog through `codexSkills.default` in
  *   `.config/socket-wheelhouse.json`; `--only` and `AGENTS_SKILLS` override it.
  *   Idempotent:
- *   regenerates `.agents/skills/` from scratch each run (clears stale entries).
+ *   regenerates `.agents/skills/` from scratch each run, clears stale entries.
  *   The `agents-skills-mirror-current` check fails
  *   `check --all` if the committed mirror drifts from the source — the mirror
  *   is generated, never hand-edited. Usage: node
- *   scripts/fleet/gen/agents-skills-mirror.mts [--check] (no flag) regenerate
+ *   scripts/fleet/gen/agents-skills-mirror.mts [--check], no flag, regenerate
  *   the mirror in place. --check report drift without writing (exit 1 if
  *   stale); used by the check-only twin.
  *   MEMBERSHIP GATE — regeneration writes into the resolved repo root, so the
@@ -270,7 +270,7 @@ export function findMirrorDrift(
   const drift: string[] = []
   const agentsSkills = path.join(repoRoot, '.agents', 'skills')
   const expectedDirs = new Set(entries.map(e => e.mirrorName))
-  // Stale mirror dirs (no longer a source skill).
+  // Stale mirror dirs, no longer a source skill.
   let actualDirs: string[] = []
   try {
     actualDirs = readdirSync(agentsSkills)

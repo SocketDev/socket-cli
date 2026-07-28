@@ -10,12 +10,12 @@
 // What it catches (a `git` command in the primary checkout):
 //   - `git checkout -b <name>` / `git checkout -B <name>`  (create + switch)
 //   - `git switch -c <name>` / `git switch -C <name>`      (create + switch)
-//   - `git switch <name>`                                  (switch existing)
-//   - `git checkout <branch>`                              (switch existing)
+//   - `git switch <name>`, switch existing
+//   - `git checkout <branch>`, switch existing
 //   - `git checkout -` / `git switch -`                    (previous branch —
 //     the `-` shorthand still moves HEAD)
 //
-// What it ALLOWS (not branch ops):
+// What it ALLOWS, not branch ops:
 //   - `git checkout -- <file>` / `git checkout .` (file restore — has `--`
 //     or a `.` arg)
 //   - any of the above inside a LINKED worktree (the sanctioned place for
@@ -23,7 +23,7 @@
 //   - `git checkout`/`switch` with no branch argument
 //
 // Effective directory: `git -C <path> checkout <branch>` runs the checkout in
-// <path>, so the guard resolves the `-C` target (against the session cwd) and
+// <path>, so the guard resolves the `-C` target, against the session cwd, and
 // tests THAT for primary-ness — a worktree cwd can't launder a switch aimed at
 // the primary via `-C`.
 //
@@ -50,7 +50,7 @@ import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 // command contains one of these substrings. `check` can return a block only
 // when `firstBranchOp` finds a `git checkout` / `git switch` segment whose args
 // include the literal `checkout` or `switch` token — so every blocking command
-// necessarily contains one of these. Complete set (no narrower trigger exists).
+// necessarily contains one of these. Complete set, no narrower trigger exists.
 export const triggers: readonly string[] = ['checkout', 'switch']
 
 // A `git checkout` arg list that's a working-tree / file restore rather than a
@@ -61,7 +61,7 @@ function looksLikePathRestore(args: readonly string[]): boolean {
   return args.includes('--') || args.includes('.')
 }
 
-// A ref that moves HEAD: a normal branch/commit name (no leading dash), or the
+// A ref that moves HEAD: a normal branch/commit name, no leading dash, or the
 // `-` shorthand for the previous branch (`git checkout -` / `git switch -`).
 // Without the `-` case, the previous-branch switch slips past the flag filter.
 function isSwitchTarget(arg: string): boolean {
@@ -106,7 +106,7 @@ export function branchOpKind(
 }
 
 /**
- * True when `cwd` is the PRIMARY checkout (not a linked worktree). In a linked
+ * True when `cwd` is the PRIMARY checkout, not a linked worktree. In a linked
  * worktree `git rev-parse --git-dir` resolves under `.git/worktrees/<name>`; in
  * the primary it's the repo's own `.git`.
  */
@@ -116,7 +116,7 @@ export function isPrimaryCheckout(cwd: string): boolean {
     timeout: spawnTimeoutMs(5000),
   })
   if (r.status !== 0) {
-    // Not a git repo (or git unavailable) — nothing to guard, fail open.
+    // Not a git repo, or git unavailable — nothing to guard, fail open.
     return false
   }
   const gitDir = normalizePath(String(r.stdout).trim())
@@ -125,7 +125,7 @@ export function isPrimaryCheckout(cwd: string): boolean {
 
 // `git -C <path> ...` runs the subcommand in <path>. Extract that path so a
 // branch op aimed at the primary via `-C` is judged by the target, not the
-// (possibly worktree) session cwd.
+// possibly worktree, session cwd.
 function dashCDir(args: readonly string[]): string | undefined {
   const i = args.indexOf('-C')
   return i >= 0 && i + 1 < args.length ? args[i + 1] : undefined
@@ -191,7 +191,7 @@ export const check = bashGuard((command, payload) => {
   }
   // Switching TO the default branch in the primary is always safe — it's the
   // sanctioned state, and primary-checkout-on-default-stop-guard REQUIRES it, so
-  // the restore path must not be blocked (else the two guards deadlock).
+  // the restore path must not be blocked, else the two guards deadlock.
   if (op.kind === 'switch' && op.target === resolveDefaultBranch(cwd)) {
     return undefined
   }

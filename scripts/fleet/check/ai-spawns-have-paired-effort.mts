@@ -3,7 +3,7 @@
 //
 // CLAUDE.md token-spend rule: "match model AND effort to the job." A spawn that
 // leaves either field at the session default is a cost leak in both directions —
-// a cheap model on the session's default (often high) burns reasoning a
+// a cheap model on the session's default, often high, burns reasoning a
 // mechanical rewrite never needs, and a premium model on the default low
 // underthinks. The lib's `spawnAiAgent` makes both `model` and `effort` OPTIONAL
 // (`@socketsecurity/lib/ai/types`) and translates effort per-agent (claude
@@ -38,14 +38,14 @@
 // enforcement layer the optional fields can't provide.
 //
 // This check fails `check --all` when a scanned callsite (a) omits model or
-// effort, (b) pins a literal (model, effort) pair off the canonical AI_TIER
+// effort, (b) pins a literal, model, effort, pair off the canonical AI_TIER
 // ladder row for that tier model, or (c) escalates a literal above the floor
 // with no adjacent comment. Exit codes: 0 — every AI spawn pins both, matches
 // the ladder, and justifies any escalation; 1 — at least one does not.
 //
 // Usage: node scripts/fleet/check/ai-spawns-have-paired-effort.mts [--quiet]
 
-// oxlint-disable-next-line socket/no-agent-brand-assumption -- flags this file's "claude block" comment (a real backend-registry key reference, not generic Claude guidance); rule reports comment hits at the Program node.
+// oxlint-disable-next-line socket/no-agent-brand-assumption -- flags this file's "claude block" comment, a real backend-registry key reference, not generic Claude guidance; rule reports comment hits at the Program node.
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -165,7 +165,7 @@ export function stringLiteral(value: string | undefined): string | undefined {
 
 // Is there a justifying comment adjacent to the call? "Adjacent" = a `//` or
 // `/* */` comment inside the call's object-literal span, OR on one of the lines
-// immediately preceding the call (we look back a few lines from the call start).
+// immediately preceding the call, we look back a few lines from the call start.
 export function hasAdjacentComment(
   text: string,
   callStart: number,
@@ -275,8 +275,8 @@ export function scanSpawnCalls(
       })
     }
     // LADDER-PAIR rule: a literal Claude TIER model must ride with its
-    // canonical AI_TIER row effort — (haiku, low), (sonnet, medium),
-    // (opus, high). An off-row pair (`claude-haiku-4-5` + `high`) mismatches
+    // canonical AI_TIER row effort — haiku, low, sonnet, medium,
+    // opus, high. An off-row pair (`claude-haiku-4-5` + `high`) mismatches
     // model and effort in one of the two directions the token-spend rule names,
     // and no justifying comment legalizes it: pick the tier whose ROW matches
     // the job instead. Adaptive-only models (fable / mythos) take no effort

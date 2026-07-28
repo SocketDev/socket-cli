@@ -24,7 +24,7 @@
 // reminder makes the dangling state visible at the very turn that
 // created it.
 //
-// Verdict: notify (never blocks). Stop hooks fire AFTER the turn
+// Verdict: notify, never blocks. Stop hooks fire AFTER the turn
 // ended; there's no tool call to refuse. The signal goes to stderr so
 // the next message includes the warning. The agent can then either
 // commit or explicitly explain why the staged state is intentional.

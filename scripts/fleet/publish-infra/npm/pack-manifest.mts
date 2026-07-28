@@ -7,7 +7,7 @@
  *   install breaks (the sdk 4.0.3 incident). Same shape as the README pin in
  *   ../pin-readme.mts: rewrite the on-disk manifest around the pack, ALWAYS
  *   restore the original bytes (try/finally), and wrap EVERY pack of one
- *   release (stage, direct, approve-time verify re-pack, release-asset pack)
+ *   release, stage, direct, approve-time verify re-pack, release-asset pack
  *   so the integrity gates keep comparing identical bytes. npm-only: cargo
  *   manifests have no lifecycle scripts.
  */
@@ -29,7 +29,7 @@ interface ManifestShape {
 /**
  * The lifecycle scripts of the manifest at `subjectDir` whose `node <path>`
  * targets will not be in the pack file set — the target file is missing on
- * disk (a dangling ref) or not covered by the `files` field (repo-only
+ * disk, a dangling ref, or not covered by the `files` field (repo-only
  * scaffolding npm never packs). Exported for tests.
  */
 export function danglingLifecycleScriptsFor(

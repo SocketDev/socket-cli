@@ -177,7 +177,7 @@ const PATTERNS: readonly RuleViolation[] = [
 ]
 
 // Relaying an unverified subagent/audit claim. A single regex over-fires on
-// "the agent found 52, but grep showed 0" (verified relays), so this is a
+// "the agent found 52, but grep showed 0", verified relays, so this is a
 // two-step sentence-scoped check: find the claim (agent/audit + report-verb +
 // a number = a structural count), then confirm the SAME sentence carries no
 // verification / correction verb. CLAUDE.md "Verify subagent claims": counts
@@ -262,7 +262,7 @@ const PROMISSORY_WAIT_PATTERNS: readonly RegExp[] = [
   /\b(?:i'?ll?\s+)?(?:monitor|watch)\b[^.?!\n]{0,60}\b(?:agent|job|run|task|workflow)\b[^.?!\n]{0,60}\b(?:complete|finish|land|to completion)\b/i,
 ]
 
-// Delegate-wait patterns — UNGATED (no ledger check): a parent ending its
+// Delegate-wait patterns — UNGATED, no ledger check: a parent ending its
 // turn waiting on a spawned delegate parks forever no matter who else is
 // live, because a delegate cannot SendMessage its parent (the parent is not
 // an addressable agent; the child's message bounces and its report lands
@@ -286,7 +286,7 @@ const DELEGATE_WAIT_PATTERNS: readonly RegExp[] = [
  * docs/agents.md/fleet/agent-delegation.md — foreground Agent calls return
  * the child's final text as the tool result; background delegates re-invoke
  * the spawner on completion; anything else means the parent polls the
- * delegate's output (or re-runs verification itself) before ending the turn.
+ * delegate's output, or re-runs verification itself, before ending the turn.
  */
 export function delegateWaitHits(text: string): readonly ReminderHit[] {
   const hits: ReminderHit[] = []

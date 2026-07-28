@@ -37,7 +37,7 @@ const COMMIT_SIZE_LINES = 200
 
 /**
  * The changed-line + file totals of the staged diff. Undefined when the diff
- * can't be computed (not a git repo, git errored) — the hook fails open.
+ * can't be computed, not a git repo, git errored — the hook fails open.
  */
 export interface DiffSize {
   readonly files: number
@@ -90,7 +90,7 @@ export function parseNumstat(numstat: string): DiffSize {
 /**
  * The size of the STAGED diff (`git diff --cached --numstat`) in `cwd`, with
  * generated/mechanical paths excluded so only authored source counts. Returns
- * undefined when the diff can't be computed (fails open).
+ * undefined when the diff can't be computed, fails open.
  */
 export function stagedDiffSize(cwd: string): DiffSize | undefined {
   const r = spawnSync('git', ['diff', '--cached', '--numstat'], {

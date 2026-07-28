@@ -9,6 +9,7 @@
 import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import process from 'node:process'
 
 import { resolveReleaseSubject } from '../_shared/release-subject.mts'
 import { npmIdentityFor } from '../publish-infra/npm/auth-identity.mts'
@@ -82,6 +83,10 @@ export interface RunnerSeams {
     | ((name: string) => Promise<Record<string, RegistryDistInfo>>)
     | undefined
   identityFor?: ((pkg: string) => Promise<NpmIdentityReport>) | undefined
+  // Whether the caller has a real terminal. The approve promote is an
+  // interactive multi-select, so this decides between prompting, refusing, and
+  // the PTY-wrapped --yes path. Injected so the decision is testable.
+  isTty?: boolean | undefined
   listStaged?: (() => Promise<StageListEntry[]>) | undefined
   packTarball?:
     | ((name: string, version: string) => Promise<string | undefined>)
@@ -97,7 +102,12 @@ export interface RunnerSeams {
       ) => Promise<{ stdout: string; code: number }>)
     | undefined
   runInherit?:
-    | ((cmd: string, args: string[], cwd: string) => Promise<number>)
+    | ((
+        cmd: string,
+        args: string[],
+        cwd: string,
+        env?: NodeJS.ProcessEnv | undefined,
+      ) => Promise<number>)
     | undefined
   sleep?: ((ms: number) => Promise<void>) | undefined
   verifyEntry?: ((entry: StageListEntry) => Promise<boolean>) | undefined
@@ -120,6 +130,7 @@ export interface ResolvedSeams {
   ) => Promise<boolean | void>
   fetchRegistryDist: (name: string) => Promise<Record<string, RegistryDistInfo>>
   identityFor: (pkg: string) => Promise<NpmIdentityReport>
+  isTty: boolean
   listStaged: () => Promise<StageListEntry[]>
   packTarball: (name: string, version: string) => Promise<string | undefined>
   registryLive: (name: string, version: string) => Promise<boolean>
@@ -128,7 +139,12 @@ export interface ResolvedSeams {
     args: string[],
     cwd: string,
   ) => Promise<{ stdout: string; code: number }>
-  runInherit: (cmd: string, args: string[], cwd: string) => Promise<number>
+  runInherit: (
+    cmd: string,
+    args: string[],
+    cwd: string,
+    env?: NodeJS.ProcessEnv | undefined,
+  ) => Promise<number>
   sleep: (ms: number) => Promise<void>
   verifyEntry: (entry: StageListEntry) => Promise<boolean>
 }
@@ -189,6 +205,7 @@ export function resolveSeams(seams: RunnerSeams | undefined): ResolvedSeams {
     ensureRelease: s.ensureRelease ?? ensureTagAndRelease,
     fetchRegistryDist: s.fetchRegistryDist ?? defaultFetchRegistryDist,
     identityFor: s.identityFor ?? npmIdentityFor,
+    isTty: s.isTty ?? Boolean(process.stdin.isTTY && process.stdout.isTTY),
     listStaged: s.listStaged ?? listStagedPackages,
     packTarball: s.packTarball ?? defaultPackTarball,
     registryLive: s.registryLive ?? defaultRegistryLive,

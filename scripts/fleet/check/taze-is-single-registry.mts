@@ -1,11 +1,11 @@
 /*
- * @file Code-as-law for the taze single-registry posture (owner ruling):
+ * @file Code-as-law for the taze single-registry posture, owner ruling:
  *   taze resolves versions via the CONFIGURED registry only — its
  *   fast-npm-meta hosted endpoint (the vetoed host imported below from the
  *   fleet denylist) is never network-allowed, anywhere. Unpatched, every
  *   taze lookup leaves for that endpoint, fleet
  *   egress policy blocks it, each lookup times out and taze still exits 0
- *   (false green). The fix is the single-registry pnpm patch, so two gates:
+ *   false green. The fix is the single-registry pnpm patch, so two gates:
  *
  *   1. FORBIDDEN ENDPOINT — no tracked file may carry the endpoint's host:
  *      not a firewall allowlist, not a workflow source, not a compiled lock.
@@ -13,7 +13,7 @@
  *      context), and any CHANGELOG (change-description prose names the host to
  *      record a fix, and a changelog is never loaded as active config).
  *   2. PATCH PARITY — a taze catalog pin REQUIRES the matching
- *      patches/taze@<pin>.patch and (in the root workspace) the paired
+ *      patches/taze@<pin>.patch and, in the root workspace, the paired
  *      patchedDependencies: entry. A taze bump without a regenerated patch
  *      goes red until `pnpm patch taze` + `pnpm patch-commit` produce the new
  *      file; stale taze@<otherVersion>.patch files are flagged too. In the
@@ -46,7 +46,7 @@ const FORBIDDEN_HOST = TAZE_FAST_NPM_META_HOST
 
 // Paths where the host string may legitimately appear: this guard (live +
 // template copies), its basename-matched test, the taze patch file
-// (redirected-code context), and the canonical fleet denylist module the
+// redirected-code context, and the canonical fleet denylist module the
 // FORBIDDEN_HOST constant is imported from. A CHANGELOG is exempt too (via
 // isChangelogPath) — change-description prose names the host to record a fix,
 // not to allow egress. Everything else is a violation.
@@ -198,7 +198,7 @@ function main(): void {
     try {
       return readFileSync(path.join(cwd, file), 'utf8')
     } catch {
-      // Unreadable (deleted mid-scan, submodule stub) — nothing to scan.
+      // Unreadable, deleted mid-scan, submodule stub — nothing to scan.
       return undefined
     }
   })

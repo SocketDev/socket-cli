@@ -85,7 +85,7 @@ export function parseStrandedOutput(output: string): StrandedCascadeReport {
       continue
     }
 
-    // Collect entries under the active section (clean of glyph noise).
+    // Collect entries under the active section, clean of glyph noise.
     if (mode === 'commits' && stripped.length > 0) {
       strandedCommits.push(stripped)
     } else if (mode === 'worktrees' && stripped.length > 0) {

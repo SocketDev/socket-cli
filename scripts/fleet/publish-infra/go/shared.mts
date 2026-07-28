@@ -14,7 +14,7 @@
  *   claim, and there is no token/OIDC publisher to bootstrap. The absence of a
  *   go/placeholder.mts is DELIBERATE, not a gap — do not add one. This module
  *   holds the PURE, unit-tested pieces: release-tag shape validation, the tag ⇄
- *   (module dir, version) mapping, the semantic-import major-version-suffix
+ *   module dir, version, mapping, the semantic-import major-version-suffix
  *   rule, the go.mod `module` directive reader, the bang-escaped proxy `.info`
  *   URL, and the post-tag verify poll (an injectable fetcher + sleep so tests
  *   drive every path with no network). The registry-agnostic spawn/git helpers
@@ -64,7 +64,7 @@ export interface ProxyModuleInfo {
 
 /**
  * The outcome of one proxy `.info` read: `found` is true on an HTTP 200 (with
- * the parsed `info`), false on a 404/410 miss (not indexed yet). A transport /
+ * the parsed `info`), false on a 404/410 miss, not indexed yet. A transport /
  * unexpected-status error rejects instead, so the poll can distinguish "not
  * ready" from "broken".
  */
@@ -230,7 +230,7 @@ function defaultSleep(ms: number): Promise<void> {
 /**
  * Default proxy `.info` reader — socket-lib's `httpRequest` (the fleet "never
  * bare fetch()" rule). HTTP 200 ⇒ `{ found: true, info }`; a 404/410 miss ⇒
- * `{ found: false }` (not indexed yet); any other status throws so the poll
+ * `{ found: false }`, not indexed yet; any other status throws so the poll
  * stops on a real error instead of spinning.
  */
 export async function fetchProxyInfo(url: string): Promise<ProxyInfoResult> {

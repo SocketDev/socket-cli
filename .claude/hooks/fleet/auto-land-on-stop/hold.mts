@@ -5,7 +5,7 @@
  *   auto-lander skips them and dirty-worktree-stop-guard treats them as
  *   sanctioned-dirty until cleared or expired (24h TTL).
  *
- *   Usage (from the repo root):
+ *   Usage, from the repo root:
  *     node .claude/hooks/fleet/auto-land-on-stop/hold.mts <path…> [--note "<why>"]
  *     node .claude/hooks/fleet/auto-land-on-stop/hold.mts --list
  *     node .claude/hooks/fleet/auto-land-on-stop/hold.mts --clear <path…>

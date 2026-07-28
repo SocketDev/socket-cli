@@ -5,7 +5,7 @@
  *   `.mjs` — never @socketsecurity/lib. Exports the dir layout + the tiny
  *   helpers (jq / installTool / detectPlatform / log / warn) every per-tool
  *   installer shares, so each installer is its own module under the 500-line
- *   cap and `local == CI` (the composite action runs the same code).
+ *   cap and `local == CI`, the composite action runs the same code.
  *   Path anchor: constants derive from THIS module's own location
  *   (setup/lib/bootstrap-common.mjs → setupDir = its parent), so they stay
  *   correct no matter which installer imports them.
@@ -54,7 +54,7 @@ export function findRepoRoot(from) {
 // _wheelhouse tool layout — Lock-step with @socketsecurity/lib
 // src/paths/socket.ts: BIN_DIR == getSocketWheelhouseBinDir() (the one PATH
 // entry, flat handles), RACK_DIR == getSocketRackDir() (real binaries racked
-// as rack/<tool>/<version>/…). Hard-coded here (not imported) because this
+// as rack/<tool>/<version>/…). Hard-coded here, not imported, because this
 // bootstrap runs before @socketsecurity/lib is on disk.
 export const SOCKET_HOME = path.join(os.homedir(), '.socket')
 export const WHEELHOUSE_DIR = path.join(SOCKET_HOME, '_wheelhouse')
@@ -79,7 +79,7 @@ export function warn(msg) {
 }
 
 // Run `node <script> <args...>` and return trimmed stdout, or undefined when
-// the script exits non-zero (the lib helpers exit non-zero on missing values).
+// the script exits non-zero, the lib helpers exit non-zero on missing values.
 export function nodeOut(script, args) {
   const r = spawnSync(process.execPath, [script, ...args], {
     encoding: 'utf8',
@@ -216,7 +216,7 @@ export function rackedBinFor(cmd) {
 export const IS_WINDOWS = process.platform === 'win32'
 
 // Write a PATH shim that forwards to a target binary (or `node <entry>`),
-// cross-platform (the cmd-shim trio npm uses). A bare POSIX-sh script at
+// cross-platform, the cmd-shim trio npm uses. A bare POSIX-sh script at
 // `<binDir>/<name>` is ALWAYS written — it is the only form on Unix and the form
 // Git-Bash / MSYS use on Windows (they search PATH by exact name and ignore
 // PATHEXT). On Windows a `<binDir>/<name>.cmd` is added too, which cmd.exe and
@@ -258,7 +258,7 @@ function isExecutable(filePath) {
 
 // Rust tooling is driven by the rustup PROXY at $CARGO_HOME/bin (default
 // ~/.cargo/bin): each proxy reads rust-toolchain.toml and dispatches to the
-// pinned toolchain's compiler. A standalone Homebrew (or system) `cargo`
+// pinned toolchain's compiler. A standalone Homebrew, or system, `cargo`
 // earlier on PATH bundles its OWN rustc and IGNORES the toolchain file, so
 // wrapping it builds every Rust repo with the wrong compiler — observed:
 // Homebrew rustc 1.95.0 shadowing a nightly-pinned repo, so `cargo` under the
@@ -331,7 +331,7 @@ export function resolveReal(cmd) {
 // Every Socket firewall shim (this bootstrap's writeShim output AND the legacy
 // sfw-native rack's) exports SFW_UNKNOWN_HOST_ACTION near the top of a small
 // bash file — a reliable fingerprint that a PATH candidate is a shim, not the
-// real tool. Real binaries are ELF/Mach-O/PE (no match) and real launcher
+// real tool. Real binaries are ELF/Mach-O/PE, no match, and real launcher
 // scripts don't set this sfw-specific knob. Read is capped so sniffing a large
 // binary stays cheap; any read error means "not a shim" (fail open — the walk
 // then behaves exactly as before).

@@ -4,7 +4,7 @@
  *   compile` to re-resolve the latest SHA for every pinned action version +
  *   refresh container image digests, updating the sibling `.lock.yml` and the
  *   shared `.github/aw/actions-lock.json` in one pass. Mirrors the evergreen
- *   pattern of `action-pins-are-current.mts --fix` (internal action pins). The
+ *   pattern of `action-pins-are-current.mts --fix`, internal action pins. The
  *   soak-gate decision + on-disk restore live in `lib/gh-aw-action-pin-soak.mts`.
  *   Usage: node
  *   scripts/fleet/sync-gh-aw-action-pins.mts # recompile all .md workflows node
@@ -58,7 +58,7 @@ const logger = getDefaultLogger()
 
 // Enumerate tracked gh-aw workflow markdown sources via `git ls-files`. The
 // glob `*.github/workflows/*.md` matches both `.github/workflows/*.md` (at the
-// repo root) and nested paths (template layers in the wheelhouse). A gh-aw
+// repo root) and nested paths, template layers in the wheelhouse. A gh-aw
 // workflow source always opens with YAML frontmatter (`---`); plain
 // documentation living beside the workflows (README.md) does not, and feeding
 // it to `gh aw compile` fails the whole sync — filter those out (same gate as
@@ -132,7 +132,7 @@ function snapshotOutputs(mdPath: string): string {
 // Run `gh aw compile <mdFile> --dir <workflowDir> --approve` for one workflow
 // source. `--approve` auto-approves action-addition prompts that strict mode
 // surfaces interactively. Returns whether the compile succeeded and whether the
-// output changed (a changed file means a stale pin advanced).
+// output changed, a changed file means a stale pin advanced.
 export function compileOne(mdPath: string): CompileResult {
   const dir = path.dirname(mdPath)
   const relMd = path.relative(REPO_ROOT, mdPath)
@@ -161,11 +161,11 @@ export function compileOne(mdPath: string): CompileResult {
 // `aw/` dir, plus the deterministic lock + compiled `.lock.yml` paths.
 // Snapshotted so a soak-held recompile can be rolled back: existing files are
 // restored, fresh ones deleted. The deterministic paths seed the set so a
-// first-time compile output (not yet tracked) is still covered.
+// first-time compile output, not yet tracked, is still covered.
 export function workflowOutputPaths(mdPath: string): string[] {
   const dir = path.dirname(mdPath)
   const awDir = path.join(path.dirname(dir), 'aw')
-  // oxlint-disable-next-line socket/sort-set-args -- non-literal elements (runtime path calls); already alphanumeric by call text (actionsLockPathFor < lockYmlPathFor).
+  // oxlint-disable-next-line socket/sort-set-args -- non-literal elements, runtime path calls; already alphanumeric by call text (actionsLockPathFor < lockYmlPathFor).
   const out = new Set<string>([
     actionsLockPathFor(mdPath),
     lockYmlPathFor(mdPath),
@@ -193,7 +193,7 @@ export function workflowOutputPaths(mdPath: string): string[] {
 
 // Resolve a commit's authored date through the sanctioned `gh api` read path.
 // Returns undefined on any failure so the soak gate treats an unverifiable date
-// as not-cleared (fail closed). Never a raw api.github.com fetch.
+// as not-cleared, fail closed. Never a raw api.github.com fetch.
 export const resolveCommitDateViaGhApi: ResolveCommitDate = (
   ownerRepo: string,
   sha: string,
@@ -237,8 +237,8 @@ export interface CategorizedResults {
 }
 
 // Partition compile results into the three reporting buckets: `failed`
-// (compile exited non-zero), `bumped` (compiled clean and advanced a pin), and
-// `unchanged` (compiled clean, already current).
+// compile exited non-zero, `bumped`, compiled clean and advanced a pin, and
+// `unchanged`, compiled clean, already current.
 export function categorizeResults(
   results: readonly CompileResult[],
 ): CategorizedResults {
@@ -293,7 +293,7 @@ export function runCompileGate(config: {
     for (let j = 0, len = outputPaths.length; j < len; j += 1) {
       const file = outputPaths[j]!
       // Snapshot only files that already exist: a held-restore writes these
-      // back verbatim. A file the compile creates fresh (absent before) is
+      // back verbatim. A file the compile creates fresh, absent before, is
       // never in the snapshot; soakGateCompile deletes those on a hold.
       if (existsFile(file)) {
         beforeContents.set(file, readFile(file))

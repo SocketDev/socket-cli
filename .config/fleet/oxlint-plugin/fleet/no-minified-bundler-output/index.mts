@@ -1,7 +1,7 @@
 /*
  * @file Fleet hard rule: a bundler must NOT minify its output and must NOT emit
  *   source maps. A minified bundle is unauditable — you can't read what actually
- *   ships / runs (acute for the security-sensitive hook bundle) — and rolldown's
+ *   ships / runs, acute for the security-sensitive hook bundle — and rolldown's
  *   minifier is young. Source maps leak original sources + bloat the artifact.
  *
  *   Scope: only files that are a bundler config — detected by an import from
@@ -17,9 +17,9 @@
  *   - `minimize: true` (webpack `optimization.minimize`).
  *   - `sourcemap: true | 'inline' | 'external' | 'both' | 'hidden' | {…}`
  *     (rolldown / rollup / esbuild / vite).
- *   - `devtool: <any non-false>` (webpack source maps).
+ *   - `devtool: <any non-false>`, webpack source maps.
  *
- *   Known gap (logged here, not silently dropped): webpack `mode: 'production'`
+ *   Known gap, logged here, not silently dropped: webpack `mode: 'production'`
  *   turns on minification implicitly with no `minify`/`minimize` key to flag —
  *   that escapes this rule. The fleet doesn't use webpack, so it isn't wired up.
  */
@@ -28,7 +28,7 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import type { AstNode, RuleContext, RuleFixer } from '../../lib/rule-types.mts'
 
-// Core bundler package names. A config importing one of these (or a subpath) is
+// Core bundler package names. A config importing one of these, or a subpath, is
 // a bundler config. Plugins (`@rollup/plugin-*`, `rollup-plugin-*`) are NOT in
 // the set — importing a plugin doesn't make a file the bundler config itself.
 const BUNDLER_PACKAGES = ['esbuild', 'rolldown', 'rollup', 'vite', 'webpack']
@@ -40,8 +40,8 @@ const BUNDLER_CONFIG_FILENAME_RE =
   /(?:^|\/)(?:esbuild|rolldown|rollup|vite|webpack)[.-][^/]*config[^/]*\.[cm]?[jt]sx?$/i
 
 // A path inside a `rolldown/` directory — the fleet keeps its rolldown configs
-// under `.config/repo/rolldown/` (per-repo opt-in bundler configs) and
-// `.config/fleet/rolldown/` (the mandatory hook-bundle config); neither has a
+// under `.config/repo/rolldown/`, per-repo opt-in bundler configs, and
+// `.config/fleet/rolldown/`, the mandatory hook-bundle config; neither has a
 // bundler token in its basename, so this signal covers both tiers.
 const ROLLDOWN_DIR_RE = /\/rolldown\//
 
@@ -157,7 +157,7 @@ const rule = {
 
     // Collected so reporting waits for `Program:exit` — a `minify`/`sourcemap`
     // property could be visited before the import that proves this is a bundler
-    // config (in practice imports lead, but collecting is order-independent).
+    // config, in practice imports lead, but collecting is order-independent.
     const violations: Array<{ node: AstNode; messageId: string }> = []
 
     function consider(node: AstNode): void {

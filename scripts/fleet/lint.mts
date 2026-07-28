@@ -11,7 +11,7 @@
  *   infrastructure changes (.config/fleet/oxlintrc.json,
  *   .config/fleet/oxfmtrc.json, tsconfig*.json, pnpm-lock.yaml, .config/**,
  *   scripts/**, package.json) escalate to `--all` automatically, since they can
- *   affect everything — EXCEPT under `--staged` (the pre-commit path), which
+ *   affect everything — EXCEPT under `--staged`, the pre-commit path, which
  *   always scopes strictly to the staged files so the commit hook stays fast (a
  *   config/scripts edit staged for commit would otherwise re-lint the whole
  *   tree, blowing the ≤10s pre-commit budget). The whole-tree correctness net
@@ -140,7 +140,7 @@ export function fixScopeReminder(scopeMode: string): string {
   )
 }
 
-// Lint `files` (already scoped) and report pass/fail + the fix-scope
+// Lint `files`, already scoped, and report pass/fail + the fix-scope
 // reminder. `scopeLabel` names the scope in the progress log — the git-diff
 // mode ('modified'/'staged') or 'explicit' for argv-named files.
 function lintFileSet(scopeLabel: string, files: string[]): void {
@@ -148,7 +148,7 @@ function lintFileSet(scopeLabel: string, files: string[]): void {
   // --ignore-path to explicitly-passed argv files, so without this a staged
   // cascade-mirror path (.claude/**, scripts/fleet/**) red-lights the
   // pre-commit gate on bytes the format run never owns. template/** is exempt
-  // inside filterFormatIgnored (the wheelhouse canon stays gated).
+  // inside filterFormatIgnored, the wheelhouse canon stays gated.
   const extLintable = filterLintable(files)
   const lintable = filterFormatIgnored(extLintable)
   const ignoredCount = extLintable.length - lintable.length

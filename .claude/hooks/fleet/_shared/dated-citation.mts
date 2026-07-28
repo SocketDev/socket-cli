@@ -68,7 +68,7 @@ export interface DatedCitationHit {
 
 /**
  * Scan prose for dated-incident citations. Returns one hit per offending
- * rationale line (first matching specificity token wins per line). `text` is
+ * rationale line, first matching specificity token wins per line. `text` is
  * the trimmed offending line, truncated for display.
  */
 export function findDatedCitations(content: string): DatedCitationHit[] {

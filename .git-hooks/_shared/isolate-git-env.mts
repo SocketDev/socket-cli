@@ -1,9 +1,9 @@
 /*
  * @file Neutralize the inherited git environment so a test's `git` spawns can
  *   never touch the live repo. Importing this module runs the SAFE default
- *   (strip discovery vars) as a side effect; call `isolateGitEnv({ … })` for
+ *   strip discovery vars, as a side effect; call `isolateGitEnv({ … })` for
  *   the stronger variant. Why this is load-bearing: when a suite runs from the
- *   pre-commit / pre-push hook (or just inherits the ambient env), git exports
+ *   pre-commit / pre-push hook, or just inherits the ambient env, git exports
  *   `GIT_DIR` / `GIT_WORK_TREE` / `GIT_INDEX_FILE` pointing at THE LIVE repo,
  *   and git honors those above cwd-based discovery. A fixture that does `git
  *   init` + `git config user.email …` in a `cwd: tmpDir` then escapes onto the

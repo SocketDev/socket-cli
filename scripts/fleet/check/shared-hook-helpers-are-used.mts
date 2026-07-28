@@ -17,8 +17,8 @@
 //      API may be intentionally broad). The fleet's DRY sweep is plan-only.
 //
 // Consumers scanned: every fleet hook `index.mts`, every OTHER `_shared/*.mts`
-// (helpers compose), and the shared test files. A symbol counts as used if its
-// name appears (as a word) anywhere in a consumer — not only in an `import {}`
+// helpers compose, and the shared test files. A symbol counts as used if its
+// name appears, as a word, anywhere in a consumer — not only in an `import {}`
 // line — so a type used purely in an annotation, or a re-export, still counts.
 // That biases toward false-NEGATIVES, the safe bias: it never names a live
 // helper, only the orphaned ones.
@@ -55,7 +55,7 @@ export interface DeadExport {
 export function exportedSymbols(src: string): string[] {
   const out: string[] = []
   // Per line (`m` flag): `export `, an optional `async `, one of the
-  // declaration keywords (alphabetized for sort-regex-alternations), a space,
+  // declaration keywords, alphabetized for sort-regex-alternations, a space,
   // then capture group 1 = the identifier (`[A-Za-z_$][\w$]*`).
   const re =
     /^export\s+(?:async\s+)?(?:class|const|function|interface|let|type)\s+([A-Za-z_$][\w$]*)/gm
@@ -95,7 +95,7 @@ const RELOCATED_TEST_DIRS: readonly string[] = [
 ]
 
 // Collect every consumer file's source text: each fleet hook's index.mts + any
-// co-located test files (member repos still carry these), the relocated
+// co-located test files, member repos still carry these, the relocated
 // wheelhouse tests under `test/repo/`, and every _shared/*.mts EXCEPT the module
 // under test (a helper using its own export is not "another consumer"). Read
 // once, concatenated per check.

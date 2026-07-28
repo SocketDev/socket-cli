@@ -29,7 +29,7 @@ export const meta = {
 // are no-ops. Pass `args` to scope to a subset (e.g. the repos a cascade just
 // touched); omit `args` to sweep the whole fleet.
 //
-// args: string[] of repo names to reconcile (subset of the roster). When
+// args: string[] of repo names to reconcile, subset of the roster. When
 // omitted/empty, reconciles the full roster minus any repo with a live
 // uncommitted session the caller named via `args.skip`. Shape:
 //   - undefined            → reconcile the whole roster

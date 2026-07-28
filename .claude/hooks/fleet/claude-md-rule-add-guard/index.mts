@@ -28,7 +28,7 @@
  * the detail into that doc) or run codify-rule.mts to author both. Bypass:
  * for the rare self-contained rule that genuinely needs no doc.
  *
- * Fails open on parse / payload errors (a guard bug must not block edits).
+ * Fails open on parse / payload errors, a guard bug must not block edits.
  */
 
 import process from 'node:process'
@@ -37,13 +37,13 @@ import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 
 const DOC_LINK_RE = /docs\/agents\.md\/(?:fleet|repo)\//
 
-// True when the edited path is a CLAUDE.md (the repo-root or template copy).
+// True when the edited path is a CLAUDE.md, the repo-root or template copy.
 export function isClaudeMd(filePath: string): boolean {
   return /(?:^|\/)CLAUDE\.md$/.test(filePath.replaceAll('\\', '/'))
 }
 
 // True when a `- ` bullet carries a hard-rule marker / enforcer citation — a
-// rule list-item, which (like a section) must point to a detail doc. A plain
+// rule list-item, which, like a section, must point to a detail doc. A plain
 // bullet with none of these markers is prose, not a rule.
 function isMarkedBullet(line: string): boolean {
   if (!/^\s*-\s/.test(line)) {
@@ -83,7 +83,7 @@ export const check = editGuard((filePath, content) => {
   if (!isClaudeMd(filePath) || !content) {
     return undefined
   }
-  // Sanctioned writers: the cascade (verbatim copy) + the codify script's
+  // Sanctioned writers: the cascade, verbatim copy + the codify script's
   // own agent write. Both legitimately add rules.
   if (
     process.env['FLEET_SYNC'] === '1' ||

@@ -5,7 +5,7 @@
 // git-hook chain (.git-hooks/ wired in via `core.hooksPath`), or
 // otherwise destroy work in flight, unless the conversation has
 // authorized the bypass via the canonical phrase
-// `Allow <X> bypass` (case-sensitive, exact match).
+// `Allow <X> bypass`, case-sensitive, exact match.
 //
 // The bypass-phrase contract:
 //   - Revert (git checkout/restore/reset/stash drop/stash pop/clean) →
@@ -18,7 +18,7 @@
 // its own guard: `.claude/hooks/fleet/no-force-push-guard/`.
 //
 // Phrase scoping: the hook reads the recent user turns from the
-// transcript (most recent N user messages). A phrase from a prior
+// transcript, most recent N user messages. A phrase from a prior
 // session does NOT carry over — only the current conversation counts.
 //
 // Why a hook + a memory + a CLAUDE.md rule: the rule documents the
@@ -57,14 +57,14 @@ type RevertCheck = {
   // work is hazardous in ANY repo, so it fires everywhere. Matches the
   // fleet-context doctrine: convention guards gate, safety doesn't.
   readonly fleetOnly?: boolean | undefined
-  // Human-readable label for the rule (logged on rejection).
+  // Human-readable label for the rule, logged on rejection.
   readonly label: string
   // Detector. Exactly one of `pattern` / `matches` is set:
   //   - `pattern`: a regex matched anywhere in the command. Correct for
   //     flag rules (`--no-verify`, `--no-gpg-sign`) that apply
   //     regardless of which binary they sit on.
   //   - `matches`: a parser-based detector for command-STRUCTURE rules
-  //     (which git subcommand runs). Returns the offending substring for
+  //     which git subcommand runs. Returns the offending substring for
   //     the log, or undefined when no match. Sees through chains / `$(…)`
   //     / quotes, where a regex would over- or under-match.
   readonly pattern?: RegExp | undefined
@@ -83,7 +83,7 @@ type RevertCheck = {
 //   - bash-write alternates over python / sed / cat (heredoc) / tee / dd.
 // Keep COMPLETE: a missing trigger would silently skip the guard for a case it
 // should block. Broad short tokens (`dd`, `tee`, `cat`, `sed`) are fine — over-
-// triggering only re-runs the guard (status quo), it never disables it.
+// triggering only re-runs the guard, status quo, it never disables it.
 export const triggers: readonly string[] = [
   '--no-gpg-sign',
   '--no-verify',
@@ -112,7 +112,7 @@ const CHECKS: readonly RevertCheck[] = [
     fleetOnly: true,
     label: 'git --no-verify (skips .git-hooks/ chain)',
     // `git rebase --no-verify` is exempt: rebase replays existing commits
-    // (already-passed hooks) and the pre-commit chain would re-run hooks
+    // already-passed hooks, and the pre-commit chain would re-run hooks
     // on every replay, which both wastes work and can mutate content
     // mid-rewrite (autofix → diverged commit). The block stays for
     // `git commit --no-verify` and `git push --no-verify`, which is
@@ -169,7 +169,7 @@ const CHECKS: readonly RevertCheck[] = [
     label: 'git stash (primary-checkout parallel-Claude hazard)',
     // Any `git stash` (bare, or push/save/--keep-index/etc.) — but NOT
     // `git stash pop/drop/clear`, which the destructive-git check above
-    // already owns (it's a different destruction surface).
+    // already owns, it's a different destruction surface.
     matches: command =>
       commandsFor(command, 'git').some(c => {
         if (c.args[0] !== 'stash') {
@@ -212,7 +212,7 @@ const CHECKS: readonly RevertCheck[] = [
     //
     // Carve-outs intentionally NOT matched: plain `>` / `>>` (too
     // broad — every build/log/test invocation uses these), `mv` / `cp`
-    // (file moves, not content writes), tools that write their own
+    // file moves, not content writes, tools that write their own
     // output (`tsc`, `pnpm build`, etc. — they don't use Bash write
     // primitives directly).
     bypassPhrase: 'Allow bash-write bypass',
@@ -226,7 +226,7 @@ const CHECKS: readonly RevertCheck[] = [
 // Destructive `git` subcommands the revert rule blocks. Operates on a
 // parsed git command's args (a1 = first arg = subcommand, rest = flags).
 // Mirrors the old regex's surface:
-//   checkout … -- <path> / checkout .   (discards working-tree changes)
+//   checkout … -- <path> / checkout .   discards working-tree changes
 //   restore <path>         (but NOT `restore --staged`, which only unstages)
 //   reset --hard
 //   stash clear|drop|pop
@@ -244,7 +244,7 @@ const CHECKS: readonly RevertCheck[] = [
 // inline (`--no-verify` as a value), any other subcommand. The bypass
 // phrase is still the way through for those.
 // A `git commit` whose `-o`/`--only` pathspec is exactly a pnpm-lock.yaml (any
-// dir) — the sanctioned lockfile-reconcile commit (see dirty-lockfile-nudge).
+// dir) — the sanctioned lockfile-reconcile commit, see dirty-lockfile-nudge.
 // `-o` restricts the commit to the named path, so nothing but the regenerated
 // lockfile can land; that is what makes skipping the pre-commit chain safe.
 // Conservative: requires `-o`/`--only` AND exactly one pathspec that is a
@@ -254,7 +254,7 @@ export function isLockfileOnlyReconcile(rest: readonly string[]): boolean {
   if (!rest.some(a => a === '--only' || a === '-o')) {
     return false
   }
-  // Flags that consume the NEXT arg as their value (so it is not a pathspec).
+  // Flags that consume the NEXT arg as their value, so it is not a pathspec.
   const VALUE_FLAGS = new Set([
     '--author',
     '--date',
@@ -353,19 +353,19 @@ export function matchHuskySkip(command: string): string | undefined {
 }
 
 export function matchNoVerify(command: string): string | undefined {
-  // Match the bare umbrella `--no-verify` (git hook-chain skip) but NOT granular
+  // Match the bare umbrella `--no-verify`, git hook-chain skip, but NOT granular
   // tool flags like `--no-verify-lint` / `--no-verify-format`. `\b` matched at
   // the hyphen (`y`|`-`), so it false-fired on every `--no-verify-<suffix>`; the
   // negative lookahead requires the flag to end (space / operator / EOS), so a
-  // following `-` or word char (a suffixed tool flag) no longer matches.
+  // following `-` or word char, a suffixed tool flag, no longer matches.
   if (!/(?:^|\s)--no-verify(?![-\w])/.test(command)) {
     return undefined
   }
   // Walk every `git ...` invocation in the command (handles pipes,
   // `&&` chains, subshells via shell-quote tokenization). Track
   // whether we ever owned a `--no-verify` so we can tell apart
-  // "all owners allowed" (return undefined) from "no git owner
-  // found at all" (fall through to defensive block).
+  // "all owners allowed", return undefined, from "no git owner
+  // found at all", fall through to defensive block.
   let sawOwnedNoVerify = false
   for (const c of commandsFor(command, 'git')) {
     const [sub, ...rest] = c.args
@@ -411,7 +411,7 @@ export function matchDestructiveGit(command: string): string | undefined {
       continue
     }
     // Both discard the working tree: `git checkout -- <path>` (explicit
-    // pathspec) and `git checkout .` (bare-dot pathspec). A pathspec-less
+    // pathspec) and `git checkout .`, bare-dot pathspec. A pathspec-less
     // `git checkout <branch>` is a SWITCH, not a discard — left to
     // primary-checkout-branch-guard — so we key on `--` or a `.` arg.
     if (sub === 'checkout' && (rest.includes('--') || rest.includes('.'))) {
@@ -601,9 +601,9 @@ export function gatherResetHardLossFacts(
 
 // Pure: decide whether an unbacked `git reset --hard <target>` must be
 // blocked UNCONDITIONALLY — independent of the revert bypass phrase. Takes
-// precomputed facts (no git calls inside), so the decision is directly
+// precomputed facts, no git calls inside, so the decision is directly
 // unit-testable with no live repo. Returns the block message, or undefined
-// when there's nothing to lose (no commits ahead, no added files) or a
+// when there's nothing to lose, no commits ahead, no added files, or a
 // backup ref already holds the work (falls through to the existing phrase
 // gate, since the loss is recoverable).
 export function decideResetHardLoss(
@@ -668,7 +668,7 @@ export const check = bashGuard((command, payload): GuardResult => {
   // hook bug never blocks — it just falls through to the existing checks.
   const resetTarget = resetHardTarget(command)
   // Threaded to the later blockMessage() call so a RECOVERABLE reset-to-
-  // origin (a backup exists) still names the exact commit/file count instead
+  // origin, a backup exists, still names the exact commit/file count instead
   // of just the generic reconcile-forward steer.
   let resetLossFacts: ResetHardLossFacts | undefined
   if (resetTarget !== undefined) {

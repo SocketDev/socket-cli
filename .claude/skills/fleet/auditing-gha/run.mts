@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * @file Check (and optionally conform) a repo's GitHub Actions permissions +
+ * @file Check, and optionally conform, a repo's GitHub Actions permissions +
  *   allowlist against the fleet baseline. Default is read-only audit (reports
  *   drift, exits non-zero on failure); `--conform` (alias `--fix`) WRITES the
- *   baseline via `gh api` PUT (needs admin scope). Conform is superset-safe: it
+ *   baseline via `gh api` PUT, needs admin scope. Conform is superset-safe: it
  *   sets allowed_actions=selected, github_owned_allowed=false,
  *   verified_allowed=false, and the UNION of the repo's current patterns + the
  *   canonical set — a repo's extra pins are preserved, only missing canonical
- *   patterns are added, never pruned. Baseline (every fleet repo must match):
+ *   patterns are added, never pruned. Baseline, every fleet repo must match:
  *   permissions.enabled = true permissions.allowed_actions = 'selected'
  *   selected_actions.github_owned_allowed = false (don't allow github-owned
  *   actions implicitly — the patterns_allowed list IS the canonical set; an
@@ -21,7 +21,7 @@
  *   single-source roster (cascading-fleet/lib/fleet-repos.json). A repo that
  *   does not exist on GitHub is a distinct loud finding — the roster entry is
  *   the defect — never folded into the admin-scope/org-policy fetch failure.
- *   The orchestrator (skill prompt) shapes the human-readable report and tells
+ *   The orchestrator, skill prompt, shapes the human-readable report and tells
  *   the user exactly which Settings → Actions toggles to flip.
  */
 

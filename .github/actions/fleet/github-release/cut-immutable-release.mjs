@@ -11,7 +11,7 @@
  *   - tag not on origin → refuse; this action never creates tags.
  *   - a release for the tag already exists → refuse; releases are immutable,
  *     never re-cut an existing version.
- *   - notes precedence: notes-file (must exist) > notes > "Release <tag>.".
+ *   - notes precedence: notes-file, must exist > notes > "Release <tag>.".
  *   - every listed asset path must exist — a typo'd asset silently missing from a
  *     release is worse than a failed cut.
  *   - dry-run (anything but the string "false") prints the 3-step plan and

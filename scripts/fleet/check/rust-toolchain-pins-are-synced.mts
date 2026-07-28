@@ -14,7 +14,7 @@
  *      This check asserts every derived copy equals 1; `--fix` rewrites the
  *      drifted copies from the canonical channel. Fails the gate on drift,
  *      with What / Where / Saw-vs-wanted / Fix. No-ops when the repo has no
- *      Rust pin (a JS-only member has nothing to sync). Wired into the check
+ *      Rust pin, a JS-only member has nothing to sync. Wired into the check
  *      gate + cascade (--fix). Usage: node
  *      scripts/fleet/check/rust-toolchain-pins-are-synced.mts [--fix]
  */
@@ -31,10 +31,10 @@ import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
-// Capture a rust-toolchain.toml `channel = "…"` line as (prefix, value, close-quote)
+// Capture a rust-toolchain.toml `channel = "…"` line as, prefix, value, close-quote
 // so a fix can splice a new pin while preserving surrounding whitespace/quoting.
 const CHANNEL_RE = /^(\s*channel\s*=\s*")([^"]+)(")/m
-// Capture the `RUST_UPDATER_TOOLCHAIN = '…'` assignment the same way (prefix, value, close-quote).
+// Capture the `RUST_UPDATER_TOOLCHAIN = '…'` assignment the same way, prefix, value, close-quote.
 const UPDATER_RE = /(RUST_UPDATER_TOOLCHAIN\s*=\s*')([^']+)(')/
 
 /**
@@ -48,7 +48,7 @@ export function parseRustChannel(toml: string): string | undefined {
 
 /**
  * Rewrite the `channel = "…"` value in a `rust-toolchain.toml`, preserving the
- * surrounding whitespace + quotes (and the rest of the file byte-for-byte).
+ * surrounding whitespace + quotes, and the rest of the file byte-for-byte.
  * Returns the input unchanged when there is no channel line to rewrite.
  */
 export function withRustChannel(toml: string, channel: string): string {
@@ -112,7 +112,7 @@ export function runCheck(
   const rootToml = path.join(repoRoot, 'rust-toolchain.toml')
   const canonicalPath = existsSync(templateToml) ? templateToml : rootToml
   if (!existsSync(canonicalPath)) {
-    // No Rust pin in this repo — nothing to sync (JS-only member).
+    // No Rust pin in this repo — nothing to sync, JS-only member.
     return 0
   }
   const canonical = parseRustChannel(readFileSync(canonicalPath, 'utf8'))

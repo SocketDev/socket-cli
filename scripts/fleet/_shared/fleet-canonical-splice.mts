@@ -18,10 +18,10 @@
  *     runner re-emits the JSON tail as CLI ignore args — hence the splice;
  *   - the v1.0.14 fanout stitched v1.0.13 tails onto the NEW fetcher in 17
  *     members because splicing was CONTENT-gated: any placed file merely
- *     mentioning the sentinel token (the fetcher carried it in a doc comment)
+ *     mentioning the sentinel token, the fetcher carried it in a doc comment
  *     was spliced — hence the PATH gate: only the designated segment files
  *     listed here may be sentinel-spliced, and no other bundle-shipped file may
- *     contain the raw token (the producer's stray-carrier class check).
+ *     contain the raw token, the producer's stray-carrier class check.
  */
 
 // Assembled from parts so this module never contains the raw sentinel byte
@@ -37,7 +37,7 @@ export const FLEET_CANONICAL_END_SENTINEL = ['#fleet', 'canonical', 'end'].join(
 // member-side fetcher, the cascade check + copy fixer, the producer's class
 // check) shares one declaration and can never disagree. A new segment file
 // must land in this list AND as a file-shaped mirror entry in bundle.json
-// (the fleet-canonical-splice unit sweep enforces both directions).
+// the fleet-canonical-splice unit sweep enforces both directions.
 export const FLEET_CANONICAL_SPLICE_FILES: readonly string[] = [
   // Member tail: the repo-local `ignorePatterns` entries the lint runner
   // re-emits as CLI ignore args.
@@ -49,7 +49,7 @@ export const FLEET_CANONICAL_SPLICE_FILES: readonly string[] = [
 ]
 
 /**
- * True when `relPath` (repo-relative, either separator) is a designated
+ * True when `relPath`, repo-relative, either separator, is a designated
  * segment file — the path gate every splice call site checks first.
  */
 export function isFleetCanonicalSpliceFile(relPath: string): boolean {

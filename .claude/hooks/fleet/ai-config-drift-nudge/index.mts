@@ -6,12 +6,12 @@
  *   Threat (2026-06 Miasma-class npm worm): a self-replicating package's
  *   postinstall WRITES payloads into AI-assistant config files — a
  *   persistence + repo-poisoning angle. Claude Code hooks can't intercept
- *   that OS-level write (it isn't a Claude tool call), but the change shows
+ *   that OS-level write, it isn't a Claude tool call, but the change shows
  *   up as git drift on the next turn. A `.cursor/` or `.gemini/` tree
  *   appearing in a repo that never had one — or `.claude/` files changing
  *   without a corresponding Claude edit — is the postinstall signature.
  *   This reminder surfaces that drift so the agent INSPECTS the files for
- *   poisoning (see ai-config-poisoning-guard for the fingerprint set)
+ *   poisoning, see ai-config-poisoning-guard for the fingerprint set
  *   before trusting or committing them. It never blocks (Stop hooks fire
  *   after the turn) — it makes the drift visible at the turn that revealed
  *   it. Pairs with ai-config-poisoning-guard, which blocks Claude's own

@@ -13,17 +13,17 @@
  *   published GitHub release; every npm version published at-or-after it must
  *   have both markers. Time is the right axis because the tagged versions and
  *   the published versions need not be the same set: decmpfs carried GitHub
- *   releases for v0.1.1 + v0.1.2 (never on npm) beside npm 0.0.0 (a placeholder,
- *   never released) and npm 0.1.3 (the gap) — a membership anchor finds no
+ *   releases for v0.1.1 + v0.1.2, never on npm, beside npm 0.0.0 (a placeholder,
+ *   never released) and npm 0.1.3, the gap — a membership anchor finds no
  *   overlap and passes vacuously, while the timestamp anchor exempts the old
  *   placeholder and catches 0.1.3. A repo with no GitHub release has not started
- *   the discipline and asserts nothing (vacuous pass, stated out loud).
+ *   the discipline and asserts nothing, vacuous pass, stated out loud.
  *   Prereleases are out of scope — they are not tagged or released by the
  *   publish tail.
  *
  *   Data: one packument read (versions + their publish timestamps), one
  *   `git ls-remote --tags origin`, one `gh release list`. Fail-OPEN on every
- *   unreachable source (offline lane, no gh auth, no origin) — an unreadable
+ *   unreachable source, offline lane, no gh auth, no origin — an unreadable
  *   source is un-checkable, not a violation. Release-tier (network) via
  *   `releaseStep` in `_shared/check-steps-release.mts`.
  *
@@ -98,7 +98,7 @@ export function parseRemoteTagNames(stdout: string): Set<string> {
 
 /**
  * Split a `gh release list --json tagName,isDraft,publishedAt` payload into the
- * PUBLISHED (undrafted, dated) releases, oldest first. A draft is invisible to
+ * PUBLISHED, undrafted, dated, releases, oldest first. A draft is invisible to
  * everyone but the maintainers, so it neither anchors the era nor closes a gap.
  * Returns an empty list on malformed input. Pure.
  */
@@ -130,7 +130,7 @@ export function parseGithubReleases(json: string): GithubRelease[] {
 
 /**
  * Pair each published version with its packument publish timestamp, dropping
- * prereleases (never tagged by the publish tail) and any version the `time` map
+ * prereleases, never tagged by the publish tail, and any version the `time` map
  * does not date. Sorted oldest-first so the tag era can be anchored by real
  * publish order rather than semver sort (a backfilled version publishes out of
  * semver order). Pure.
@@ -228,7 +228,7 @@ export function formatReleaseGapReport(config: {
 
 /**
  * Run a read-only command, returning its stdout or undefined when the command
- * is unavailable / exits non-zero (an unreachable source is un-checkable).
+ * is unavailable / exits non-zero, an unreachable source is un-checkable.
  */
 async function readCommandStdout(
   cmd: string,

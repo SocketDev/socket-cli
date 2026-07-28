@@ -25,7 +25,7 @@
  * such text into a config file is exactly the propagation step.
  *
  * Evasion-hardened: reuses prompt-injection-guard's normalizeForScan
- * (strips invisible chars, folds homoglyphs, decodes Unicode Tag blocks)
+ * strips invisible chars, folds homoglyphs, decodes Unicode Tag blocks
  * and invisibleSmuggling detector, so an obfuscated payload can't slip
  * past the literal patterns.
  *
@@ -111,7 +111,7 @@ const POISON_PATTERNS: readonly PoisonPattern[] = [
  */
 export function isAiConfigPath(filePath: string): boolean {
   const normalized = normalizePath(filePath)
-  // Executable code (hooks, lint rules, scripts) is the fleet's ENFORCEMENT
+  // Executable code, hooks, lint rules, scripts, is the fleet's ENFORCEMENT
   // layer — it legitimately CONTAINS detection patterns + documents bypass
   // phrases. Config poisoning targets agent-READ instruction files (CLAUDE.md,
   // settings.json, .cursor/.gemini rule docs), never compiled code. Exempt
@@ -142,7 +142,7 @@ export function isAiConfigPath(filePath: string): boolean {
   // the way CLAUDE.md / settings.json / rule + skill docs are, so a plan or
   // report cannot redirect the agent. They are the legitimate home for
   // DESCRIPTIVE write-ups that mention bypass phrases / reset / force semantics
-  // (a guard postmortem, a cross-repo handoff). A dependency-poisoning worm
+  // a guard postmortem, a cross-repo handoff. A dependency-poisoning worm
   // targets agent-READ surfaces, not these write-only outputs. Exempt them so a
   // report ABOUT guards isn't a false hit — and so report-location-guard (which
   // mandates this exact location) and this guard stop contradicting each other.

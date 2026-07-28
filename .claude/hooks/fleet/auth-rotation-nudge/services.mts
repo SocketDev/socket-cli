@@ -32,7 +32,7 @@ export interface Service {
   docUrl?: string | undefined
 }
 
-// Default skip-list seeds — NONE. Every service (gh included) rotates on the
+// Default skip-list seeds — NONE. Every service, gh included, rotates on the
 // idle-based schedule (see `withinThrottle`): rotation fires ONLY after the
 // session has sat idle for >= the timeout, so an active / heavy session is
 // never logged out mid-use. `gh` USED to be seeded here because the old
@@ -40,7 +40,7 @@ export interface Service {
 // idle-based trigger removes that hazard, so gh now expires on genuine idle
 // like the rest instead of being skipped forever (a stale token that never
 // rotates is the thing we're avoiding). Devs can still skip a specific CLI via
-// the per-user `~/.claude/hooks/auth-rotation/services-skip` (one id per line)
+// the per-user `~/.claude/hooks/auth-rotation/services-skip`, one id per line
 // or per-repo `.claude/auth-rotation.services-skip` files.
 export const DEFAULT_SKIP_IDS: readonly string[] = []
 
@@ -65,7 +65,7 @@ export const SERVICES: readonly Service[] = [
     id: 'yarn',
     name: 'yarn',
     // Yarn Berry's logout lives under `npm` namespace; Yarn Classic's
-    // is bare. We try Berry first (the modern default), fall back to
+    // is bare. We try Berry first, the modern default, fall back to
     // Classic. Detection is the same: `npm whoami` from inside a
     // yarn-managed registry. Yarn doesn't expose a portable whoami,
     // so we approximate by checking for a yarn auth token in
@@ -132,7 +132,7 @@ export const SERVICES: readonly Service[] = [
   {
     id: 'socket',
     name: 'socket',
-    // `socket whoami` (when present in the cli) is the canonical probe.
+    // `socket whoami`, when present in the cli, is the canonical probe.
     // The cli emits exit 0 when authenticated.
     detectCmd: ['socket', 'whoami'],
     // `socket logout` clears the local API token from settings.

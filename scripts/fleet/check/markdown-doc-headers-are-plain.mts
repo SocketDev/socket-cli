@@ -96,7 +96,7 @@ export function collectMtsFiles(dir: string): string[] {
 
 /**
  * The file-doc headers across the canonical trees that would mangle under
- * oxfmt (relative paths). Empty when the tree is clean.
+ * oxfmt, relative paths. Empty when the tree is clean.
  */
 export function findMangledHeaders(repoRoot: string): string[] {
   const offenders: string[] = []

@@ -78,7 +78,7 @@ const rule = {
         }
         /* c8 ignore stop */
         // Word-boundary check: either the match is at the start, or
-        // the preceding char is non-alphanum (whitespace, punctuation).
+        // the preceding char is non-alphanum, whitespace, punctuation.
         let idx = 0
         while ((idx = value.indexOf(match, idx)) !== -1) {
           const before = idx === 0 ? ' ' : value[idx - 1]!

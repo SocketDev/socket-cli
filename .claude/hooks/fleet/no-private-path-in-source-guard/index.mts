@@ -11,11 +11,11 @@
 //   - untracked plans/reports directory paths — untracked operator notes.
 //   - `socket-<repo>/.claude/…` — another fleet repo's private tree.
 //   - `/Users/<user>/…` — an absolute home path (username + local layout).
-//   - `../socket-<repo>/…` — a sibling fleet-repo relative path (dev-box layout).
+//   - `../socket-<repo>/…` — a sibling fleet-repo relative path, dev-box layout.
 //
 // Scope: SOURCE-CODE files only (.rs/.ts/.mts/.js/.go/.py/.c/.h/…). Markdown,
 // docs, JSON/YAML, and the `.claude/` tree itself are NOT checked — those
-// surfaces legitimately reference these paths (a plan doc names a plan path).
+// surfaces legitimately reference these paths, a plan doc names a plan path.
 //
 // Public-surface-hygiene adjacent — pairs with private-name-nudge /
 // public-surface-nudge / the no-cross-repo-relative-paths rule.
@@ -28,7 +28,7 @@
 //
 // Exit codes:
 //   0 — pass (not Edit/Write, non-source file, no private path in a comment).
-//   2 — block (a private path appears inside a source comment).
+//   2 — block, a private path appears inside a source comment.
 //
 // Fails open on malformed payloads (exit 0).
 
@@ -52,7 +52,7 @@ const JS_TS_FILE_RE = /\.(?:[cm]?[jt]sx?)$/
 
 /**
  * Push one finding per matching comment-body line into `findings`. Shared by
- * the two non-AST scan paths (block-span body and line-comment body) so the
+ * the two non-AST scan paths, block-span body and line-comment body, so the
  * lexical walker stays DRY.
  */
 function pushMatch(

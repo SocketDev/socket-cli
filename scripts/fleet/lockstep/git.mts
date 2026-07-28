@@ -1,6 +1,6 @@
 /**
  * @file Git helpers for the lockstep harness. Thin wrappers over `git -C <dir>
- *   <cmd>` that the kind checkers (file-fork, version-pin) use to peek at
+ *   <cmd>` that the kind checkers, file-fork, version-pin, use to peek at
  *   submodule state without dragging in a full libgit binding. The harness is
  *   read-only over the working tree — the ONE mutation is `fetchTagsQuiet`, a
  *   best-effort `git fetch --tags` the version-pin drift path runs so a

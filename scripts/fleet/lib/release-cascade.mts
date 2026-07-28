@@ -205,7 +205,7 @@ export function shipsBundledDist(pkgJson: RepoManifest): boolean {
 /**
  * True when `repoPkgJson` BUNDLES `depName` into its published artifact: the
  * repo has zero runtime `dependencies` (or `depName` is absent from them), the
- * dep is a `devDependency` (compiled in at build time, not installed), AND the
+ * dep is a `devDependency`, compiled in at build time, not installed, AND the
  * repo ships a bundled `dist/`. When all three hold an upstream `depName` bump
  * changes this repo's shipped bytes, so it OWES a follow-up release — a catalog
  * pin absorbs the version but never ships it.

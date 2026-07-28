@@ -14,8 +14,8 @@ const RULE_NAME = 'socket-details-summary-blank-line'
 
 // Matches any line whose last non-whitespace content is </summary>.
 // This covers both:
-//   <summary>Title</summary>   (open and close on one line)
-//   </summary>                 (close tag on its own line)
+//   <summary>Title</summary>   open and close on one line
+//   </summary>                 close tag on its own line
 const SUMMARY_CLOSE_RE = /^.*<\/summary>\s*$/i
 
 const rule: MarkdownlintRule = {

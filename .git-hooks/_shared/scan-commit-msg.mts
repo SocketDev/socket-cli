@@ -1,6 +1,6 @@
 // Commit-message content scrubbers/scanners: the scan-report-internal label
 // scrubber (strips B5/M9/H3/L4 finding IDs) and the Linear reference scanner
-// (commit messages stay tool-agnostic). Gate-free string logic built on
+// commit messages stay tool-agnostic. Gate-free string logic built on
 // scan-core.
 
 import { splitLines } from './scan-core.mts'
@@ -29,7 +29,7 @@ const SCAN_LABEL_RE = /(?<![A-Za-z0-9_-])[BMHL][0-9]{1,4}(?![A-Za-z0-9_-])/g
 const SCAN_LABEL_FENCE_RE = /```[\s\S]*?```/g
 
 // Removes scan-report-internal labels from a commit message, scrubbing
-// the token in place (collapsing the orphaned space) so the surrounding
+// the token in place, collapsing the orphaned space, so the surrounding
 // subject/body text survives. Returns the cleaned text plus the count
 // of label tokens removed, so the caller writes the file only when
 // `removed > 0` — the same { cleaned, removed } contract as
@@ -123,11 +123,11 @@ const LINEAR_REF_RE = new RegExp(
 // Capture groups for LINEAR_REF_RE:
 //   - match[0]: full match including the leading/trailing word
 //     boundary chars (or the linear.app URL).
-//   - match[1]: leading non-word char (when the team-key branch matched).
-//   - match[2]: team key (when the team-key branch matched).
+//   - match[1]: leading non-word char, when the team-key branch matched.
+//   - match[2]: team key, when the team-key branch matched.
 // Use the team-key branch's middle chunk by re-extracting `<KEY>-<N>`
 // from match[0]; the URL branch returns match[0] verbatim minus the
-// surrounding word boundaries (which it doesn't have).
+// surrounding word boundaries, which it doesn't have.
 const LINEAR_KEY_DIGITS_RE = new RegExp(
   `(${LINEAR_TEAM_KEYS.join('|')})-[0-9]+`,
 )

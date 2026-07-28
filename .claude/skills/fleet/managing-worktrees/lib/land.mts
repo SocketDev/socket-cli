@@ -11,26 +11,35 @@
  *   cherry-pick → fast-forward dance with one command:
  *
  *   1. Resolve the remote default branch (reuses resolveBase — never hard-coded).
- *   2. CONFIRM each landing commit's changed files lint clean (a fast,
+ *   2. TYPE-CHECK the landing set with the canonical fleet type gate (tsc
+ *      --noEmit -p .config/fleet/tsconfig.check.json). This is the ONE gate
+ *      edit-time cannot re-assert incrementally: oxlint/oxfmt run per-edit, but
+ *      a type error only surfaces against the whole project, so a fast-land that
+ *      skipped tsc once shipped `safeReadFileSync(filePath, 'utf8')` (a wrong
+ *      2nd arg) to origin and turned CI red. tsc is therefore MANDATORY — it
+ *      runs even under --no-verify-lint / --no-verify-format, which skip only the
+ *      heavy wedge, never this cheap high-value check. A type error aborts.
+ *   3. CONFIRM each landing commit's changed files lint clean (a fast,
  *      deterministic re-assert of the edit-time gate — NOT a heavy test
  *      re-run). A dirty diff aborts: lint-as-edit is the contract, so a lint
  *      failure here means the contract was bypassed and the land is unsafe.
- *   3. Cherry-pick the commits onto a throwaway worktree branched off
+ *   5. Cherry-pick the commits onto a throwaway worktree branched off
  *      `origin/<base>` (a clean tree — no parallel-session dirt, no
  *      divergence).
- *   4. Fast-forward `origin/<base>` to the cherry-picked tip. NEVER force-push; if
+ *   6. Fast-forward `origin/<base>` to the cherry-picked tip. NEVER force-push; if
  *      the push wouldn't be a clean fast-forward, abort and report (someone
  *      pushed since — re-run to pick up their commits).
- *   5. Remove the throwaway worktree + branch. Default is --dry-run (plan only).
+ *   7. Remove the throwaway worktree + branch. Default is --dry-run, plan only.
  *      Pass --push to act. This is the engine behind `managing-worktrees land`.
  *      Usage: node land.mts <commit>... # dry-run: plan landing these commits
  *      node land.mts --last 2 # the last 2 commits of HEAD node land.mts
  *      <commit>... --push # actually land them node land.mts --last 2 --push
  *      --local # target the LOCAL <base> instead of origin — fast-forwards
- *      the primary checkout's branch (no push), the tool for landing
+ *      the primary checkout's branch, no push, the tool for landing
  *      verified worktree commits onto local main
  *      --no-verify-lint / --no-verify-format # skip the lint / format re-assert
- *      (each only when a worktree can't run that tool)
+ *      each only when a worktree can't run that tool. Neither skips the tsc
+ *      type gate — that is mandatory and has no escape flag.
  */
 
 import { existsSync, symlinkSync } from 'node:fs'
@@ -75,6 +84,16 @@ const REASSERT_EXTS: ReadonlySet<string> = new Set([
   '.ts',
 ])
 
+// The canonical fleet type gate — the same whole-project check the `type` npm
+// script, the pre-push wedge, and CI run
+// (`tsc --noEmit -p .config/fleet/tsconfig.check.json`). The land type re-assert
+// runs this exact config so what lands matches what CI verifies.
+const TYPE_CHECK_TSCONFIG: string = path.join(
+  '.config',
+  'fleet',
+  'tsconfig.check.json',
+)
+
 export interface LandPlan {
   base: string
   commits: string[]
@@ -84,8 +103,8 @@ export interface LandPlan {
 
 /**
  * Resolve the list of commit SHAs to land. `--last N` expands to the last N
- * commits of HEAD (oldest-first, the cherry-pick order); explicit SHAs are
- * taken as-is (also normalized oldest-first by their commit order).
+ * commits of HEAD, oldest-first, the cherry-pick order; explicit SHAs are
+ * taken as-is, also normalized oldest-first by their commit order.
  */
 export async function resolveCommits(
   repoDir: string,
@@ -106,7 +125,7 @@ export async function resolveCommits(
     ])
     return range.split('\n').filter(Boolean)
   }
-  // Explicit SHAs (everything that isn't a flag or a flag's value).
+  // Explicit SHAs, everything that isn't a flag or a flag's value.
   const flagValues = new Set<string>()
   const commits: string[] = []
   for (let i = 0, { length } = argv; i < length; i += 1) {
@@ -268,6 +287,95 @@ export async function formatLandsClean(
   return false
 }
 
+/**
+ * Generate the hook dispatch table into `repoDir`. The whole-project type gate
+ * resolves imports across the tree — including `_dispatch/dispatch-table.mts`,
+ * which is generated, not committed, so a fresh land / gate worktree lacks it
+ * and tsc would false-red on the missing module rather than surface real type
+ * errors. Running the generator first makes the type check honest. A repo whose
+ * checkout has no generator, a non-wheelhouse member, is a no-op. Best-effort:
+ * a generator failure leaves the table absent, and tsc then reds loudly on the
+ * missing module — the type gate is never silently turned into a no-op.
+ */
+export async function ensureDispatchTables(repoDir: string): Promise<void> {
+  const gen = path.join(repoDir, 'scripts', 'fleet', 'gen', 'hook-dispatch.mts')
+  if (!existsSync(gen)) {
+    return
+  }
+  const result = (await spawn(process.execPath, [gen], {
+    cwd: repoDir,
+    stdio: 'pipe',
+    stdioString: true,
+  }).catch((e: unknown) => e)) as {
+    code?: number | undefined
+    exitCode?: number | undefined
+  }
+  const code = result?.code ?? result?.exitCode
+  if (code !== 0) {
+    logger.warn(
+      'land: could not regenerate the hook dispatch table before the type ' +
+        'check; tsc will report any resulting missing-module errors.',
+    )
+  }
+}
+
+/**
+ * Run the fleet type gate against `tsconfigRelPath` under `repoDir` and return
+ * true when it exits clean. Fails CLOSED when the compiler or config is absent:
+ * a checkout that cannot run tsc cannot verify the landing set, so it must not
+ * land. On a type error the compiler output is surfaced (What / Where — the
+ * `file(line,col): error TSxxxx` lines — plus a Fix) so the operator sees the
+ * exact breakage the fast-land refused to ship.
+ */
+export async function typeCheckPasses(
+  repoDir: string,
+  tsconfigRelPath: string,
+): Promise<boolean> {
+  const tsc = path.join(repoDir, 'node_modules', 'typescript', 'bin', 'tsc')
+  const tsconfig = path.join(repoDir, tsconfigRelPath)
+  if (!existsSync(tsc) || !existsSync(tsconfig)) {
+    logger.error(
+      'land: cannot run the type gate — the TypeScript compiler or ' +
+        `${tsconfigRelPath} is missing from this checkout.\n` +
+        '  Fix: run the land from a checkout with node_modules installed ' +
+        '(the type check is mandatory and has no skip flag).',
+    )
+    return false
+  }
+  const result = (await spawn(
+    process.execPath,
+    [tsc, '--noEmit', '-p', tsconfig],
+    // stdio MUST pipe — without it the lib spawn discards output and the
+    // failure detail below is lost.
+    { cwd: repoDir, stdio: 'pipe', stdioString: true },
+  ).catch((e: unknown) => e)) as {
+    code?: number | undefined
+    exitCode?: number | undefined
+    stdout?: string | undefined
+    stderr?: string | undefined
+  }
+  const code = result?.code ?? result?.exitCode
+  if (code === 0) {
+    return true
+  }
+  const output = `${result?.stdout ?? ''}\n${result?.stderr ?? ''}`.trim()
+  if (output) {
+    logger.error(output.split('\n').slice(-40).join('\n'))
+  }
+  return false
+}
+
+/**
+ * The land type gate: regenerate the dispatch table, then type-check the whole
+ * project with the canonical fleet tsconfig. Mandatory — the caller runs this
+ * even under --no-verify-lint / --no-verify-format, so a type error can never
+ * reach main behind CI alone.
+ */
+export async function typeLandsClean(repoDir: string): Promise<boolean> {
+  await ensureDispatchTables(repoDir)
+  return await typeCheckPasses(repoDir, TYPE_CHECK_TSCONFIG)
+}
+
 export interface PickOutcome {
   readonly sha: string
   readonly outcome: 'applied' | 'skipped-already-landed' | 'conflict'
@@ -341,7 +449,7 @@ export async function cherryPickSeries(
  * the landing set's tip commit — with the primary checkout's
  * node_modules symlinked in for the toolchain. The edit-time gates then
  * assert the COMMIT bytes, not the working tree's: an uncommitted edit
- * (or revert) sitting on a changed file in the invoking checkout can
+ * or revert, sitting on a changed file in the invoking checkout can
  * neither green nor red a land it isn't part of.
  */
 export async function withGateWorktree<T>(
@@ -574,14 +682,33 @@ export async function main(): Promise<number> {
     }
   }
 
-  if (!skipLint || !skipFormat) {
+  {
     // Gate the COMMIT bytes: the tip of the landing set is checked out
-    // into a throwaway gate worktree and the gates run there.
+    // into a throwaway gate worktree and the gates run there. The gate always
+    // runs — the tsc type check below is mandatory regardless of the
+    // --no-verify-lint / --no-verify-format skips.
     const tipSha = commits[commits.length - 1]!
     const gatesClean = await withGateWorktree(
       repoDir,
       tipSha,
       async gateDir => {
+        // Type check FIRST: it is the mandatory minimal gate — the one check
+        // edit-time cannot re-assert incrementally, so it is the last line
+        // before a type error reaches main behind CI alone.
+        const typeClean = await typeLandsClean(gateDir)
+        if (!typeClean) {
+          logger.error(
+            'land: the landing commits do not type-check (the whole-project ' +
+              'type gate that the pre-push wedge and CI run).\n' +
+              '  Fix: resolve the type error(s) above + re-commit. The type ' +
+              'check is mandatory — there is no skip flag.',
+          )
+          return false
+        }
+        logger.success(
+          'land: landing commits type-check clean (mandatory type gate on ' +
+            'commit bytes).',
+        )
         if (!skipLint) {
           const clean = await lintLandsClean(gateDir, [...changed])
           if (!clean) {

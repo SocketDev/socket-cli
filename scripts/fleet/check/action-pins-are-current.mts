@@ -6,14 +6,14 @@
 // at an older checkout — an IMPLICIT edge with no `uses:` line. A consumer
 // pinning `setup@<sha>` gets external-tools.json AS IT WAS at <sha>, so the
 // DEEPEST pin in a chain decides tool versions, not the entrypoint. That broke
-// fleet CI once (a pinned pnpm version went stale behind the data edge), with
+// fleet CI once, a pinned pnpm version went stale behind the data edge, with
 // nothing to catch it at edit time.
 //
 // The closure model:
 //   CLOSURE(unit) = the unit's own files
 //                 ∪ the closure of each transitive internal `uses:` dep
 //                 ∪ every declared `# cascade-data-deps:` path.
-//   A pin (file, dep, sha) is STALE iff
+//   A pin, file, dep, sha, is STALE iff
 //     `git rev-list --count <sha>..<base> -- <closure(dep) paths>` > 0,
 //   UNREACHABLE if <sha> is not an ancestor of <base>.
 //
@@ -52,7 +52,7 @@ const ACTIONS_DIR = '.github/actions'
 const WORKFLOWS_DIR = '.github/workflows'
 
 // An internal SHA pin: `uses: <Org>/<Repo>/.github/(actions|workflows)/<name>@<40hex>`.
-// The org/repo is captured (not assumed) so the rule stays repo-agnostic.
+// The org/repo is captured, not assumed, so the rule stays repo-agnostic.
 const INTERNAL_REF_RE =
   /uses:\s*([A-Za-z0-9._-]+\/[A-Za-z0-9._-]+)\/\.github\/(actions|workflows)\/([A-Za-z0-9._-]+?)(?:\.yml)?@([0-9a-f]{40})/g
 
@@ -132,7 +132,7 @@ export function stripYamlComments(content: string): string {
 
 // Repo-relative paths an action reads from OUTSIDE its own dir, resolved from
 // `${GITHUB_ACTION_PATH}/../…` against `.github/actions/<name>`. Comment lines
-// are excluded (a documented example must not count as a live edge).
+// are excluded, a documented example must not count as a live edge.
 export function detectEscapingReads(
   actionName: string,
   content: string,
@@ -149,7 +149,7 @@ export function detectEscapingReads(
         path.posix.join(actionDir, '../'.repeat(hops), rest),
       ),
     )
-    // A read resolving to repo root or above (too many hops) is meaningless;
+    // A read resolving to repo root or above, too many hops, is meaningless;
     // keep only in-repo paths.
     if (resolved && !resolved.startsWith('..')) {
       reads.add(resolved)
@@ -225,7 +225,7 @@ export function listActionNames(repoRoot: string): string[] {
     .toSorted()
 }
 
-// `.github/workflows/*.yml` basenames (without extension).
+// `.github/workflows/*.yml` basenames, without extension.
 export function listWorkflowNames(repoRoot: string): string[] {
   const dir = path.join(repoRoot, WORKFLOWS_DIR)
   if (!existsSync(dir)) {

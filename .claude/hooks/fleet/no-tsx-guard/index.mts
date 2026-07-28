@@ -18,7 +18,7 @@
 //
 // The fix the message gives:
 //   - run a script:   node path/to/script.mts
-//   - hook tests:      node --test test/*.test.mts   (from the hook dir)
+//   - hook tests:      node --test test/*.test.mts, from the hook dir
 //   - src/repo tests:  node_modules/.bin/vitest run path/to/foo.test.mts
 //
 // Detection (AST-parsed via the shared shell-command helper, not a raw
@@ -54,7 +54,7 @@ const NODE_LOADER_FLAGS = [
 export interface TsxDetection {
   readonly detected: boolean
   // 'runner' — `tsx`/`ts-node` invoked directly.
-  // 'loader' — `node --import tsx` (or sibling loader flag).
+  // 'loader' — `node --import tsx`, or sibling loader flag.
   readonly kind: 'loader' | 'runner'
   // The offending tool name (tsx / ts-node) for the message.
   readonly tool: string
@@ -99,7 +99,7 @@ export function detectTsx(command: string): TsxDetection {
         }
         continue
       }
-      // Separated form: `--import tsx` (value is the next token).
+      // Separated form: `--import tsx`, value is the next token.
       if ((NODE_LOADER_FLAGS as readonly string[]).includes(arg)) {
         const next = args[i + 1]
         const tool = next ? valueNamesTsRunner(next) : undefined

@@ -9,15 +9,15 @@
  *   motivated the rule: across the fleet's six surveyed repos, the ratio of
  *   `function` declarations to top-level arrow `const`s is overwhelming —
  *   socket-cli 962:5, socket-lib 842:13, socket-sdk-js 200:6. The arrow
- *   stragglers are drift. Autofix scope (deterministic only):
+ *   stragglers are drift. Autofix scope, deterministic only:
  *
- *   - `const foo = () => { ... }` (block body) → `function foo() { ... }`
- *   - `const foo = (a, b) => expr` (expression body) → `function foo(a, b) {
+ *   - `const foo = () => { ... }`, block body → `function foo() { ... }`
+ *   - `const foo = (a, b) => expr`, expression body → `function foo(a, b) {
  *     return expr }`
  *   - `const foo = function (a, b) { ... }` → `function foo(a, b) { ... }`
  *   - `const foo = async () => { ... }` → `async function foo() {}`
  *   - `export const foo = () => {}` → `export function foo() {}` (preserves the
- *     export) Skips (report-only, no fix):
+ *     export) Skips, report-only, no fix:
  *   - Generator function expressions (`function*`) — autofix needs to insert `*`
  *     after `function` without losing the name, and the construct is rare
  *     enough that the human can do it.
@@ -32,7 +32,7 @@
  *     `this`; arrows inherit. Static check: the function body contains the
  *     `this` keyword anywhere.
  *   - Functions inside non-Program scopes (loops, conditionals, etc.) — only the
- *     top-level (Program body) shape is rewritten.
+ *     top-level, Program body, shape is rewritten.
  */
 
 import type { AstNode, RuleContext, RuleFixer } from '../../lib/rule-types.mts'

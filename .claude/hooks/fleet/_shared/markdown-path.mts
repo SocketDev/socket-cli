@@ -16,7 +16,7 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { isEphemeralPath } from './ephemeral-path.mts'
 
-// SCREAMING_CASE files allowed at root / docs/ / .claude/ (top level).
+// SCREAMING_CASE files allowed at root / docs/ / .claude/ top level.
 const ALLOWED_SCREAMING_CASE: ReadonlySet<string> = new Set([
   'AUTHORS',
   'CHANGELOG',
@@ -82,7 +82,7 @@ export function classifyMarkdownPath(absPath: string): Verdict {
 
   // A `.md` under `.github/workflows/` is a GitHub Agentic Workflows (gh-aw)
   // source, not a doc — `gh aw compile` turns it into a sibling `.lock.yml`.
-  // It owns its own naming (lowercase-hyphenated, matching the workflow), so
+  // It owns its own naming, lowercase-hyphenated, matching the workflow, so
   // the human-docs filename convention doesn't apply.
   if (absPath.includes('.github')) {
     const normalized = normalizePath(absPath)
@@ -90,14 +90,14 @@ export function classifyMarkdownPath(absPath: string): Verdict {
       return { ok: true }
     }
     // GitHub Copilot reads `.github/copilot-instructions.md` as its repo
-    // instruction file (a host-dictated name, not a human doc).
+    // instruction file, a host-dictated name, not a human doc.
     if (normalized.endsWith('/.github/copilot-instructions.md')) {
       return { ok: true }
     }
   }
 
   // Cross-harness agent rule adapters: each AI host reads its rules from a
-  // host-named path (Cursor, Windsurf, Cline, Kiro). These are tool config the
+  // host-named path, Cursor, Windsurf, Cline, Kiro. These are tool config the
   // host dictates, not human docs, so the doc-filename convention does not
   // apply.
   const harnessNorm = normalizePath(absPath)
@@ -302,7 +302,7 @@ export function stripCodeFileHintExt(stem: string): string {
  * Special case: socket-wheelhouse keeps the fleet-canonical doc tree under
  * `template/`, which acts as the "repo root" from the fleet perspective. Strip
  * that extra prefix so doc-location rules apply the same way as in a downstream
- * repo (where the docs live at actual root). Without this carve-out, every
+ * repo, where the docs live at actual root. Without this carve-out, every
  * SCREAMING_CASE doc in `template/` (CLAUDE.md, README.md at template root)
  * would trip the SCREAMING_CASE-only-at-repo-root rule.
  */

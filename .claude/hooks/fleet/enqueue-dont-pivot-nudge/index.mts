@@ -105,7 +105,7 @@ export const USER_PIVOT_AUTHORIZATION_RE =
 
 /**
  * Find every pivot tell in the assistant text. Returns the matched label +
- * a trimmed snippet around each hit (for a legible nudge). Pure — exported so
+ * a trimmed snippet around each hit, for a legible nudge. Pure — exported so
  * the matcher set is unit-tested without mocking a transcript file.
  */
 export function findPivotHits(

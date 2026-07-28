@@ -12,7 +12,7 @@
  *   - scan-code.mts — Rule A + B (.mts / .cts)
  *   - scan-workflow.mts — Rule C + D (.github/workflows/*.yml)
  *   - scan-script.mts — Rule G (Makefile / Dockerfile / shell)
- *   - rules.mts — Rule F (cross-file shape repetition)
+ *   - rules.mts — Rule F, cross-file shape repetition
  *   - state.mts — shared findings array + push/get helpers
  *   - types.mts — Finding + AllowlistEntry interfaces Rules enforced (full prose
  *     lives in each scanner module): A — Multi-stage path constructed inline. B
@@ -27,7 +27,7 @@
  *     scripts/fleet/check/paths-are-canonical.mts --explain # long-form explanation node
  *     scripts/fleet/check/paths-are-canonical.mts --json # machine-readable node
  *     scripts/fleet/check/paths-are-canonical.mts --quiet # silent on clean Exit codes: 0 —
- *     clean (no findings, or every finding is allowlisted) 1 — findings present
+ *     clean, no findings, or every finding is allowlisted, 1 — findings present
  *     2 — gate itself crashed
  */
 
@@ -96,7 +96,7 @@ const main = (): number => {
       scanWorkflowFile(REPO_ROOT, rel)
     }
   }
-  // Scan scripts/Makefiles/Dockerfiles (Rule G).
+  // Scan scripts/Makefiles/Dockerfiles, Rule G.
   for (const rel of walk(REPO_ROOT, REPO_ROOT, p => {
     const base = path.basename(p)
     return (

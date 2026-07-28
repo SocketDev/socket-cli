@@ -10,7 +10,7 @@
  *   set is fleet-wide, so this is ONE artifact for every repo. Output is
  *   gitignored + shipped in the release bundle, never committed. Usage: `node
  *   scripts/fleet/build-oxlint-bundle.mts [--check]` --check exit 2 if the
- *   bundle is missing, or (source present) older than the newest plugin source
+ *   bundle is missing, or, source present, older than the newest plugin source
  *   file (stale); does not rebuild.
  */
 
@@ -71,7 +71,7 @@ export function latestSourceMtime(dir: string): number {
 }
 
 /**
- * A bundle is stale when it's missing, or (source present) older than the
+ * A bundle is stale when it's missing, or, source present, older than the
  * newest source file. Pure.
  */
 export function isBundleStale(config: {

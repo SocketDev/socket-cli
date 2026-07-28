@@ -13,8 +13,8 @@
  *
  * What "programmatic / headless" means here (conservative — only fire on
  * clear non-interactive invocations):
- *   - `claude` with `-p` / `--print` (headless print mode).
- *   - `codex exec` (the non-interactive Codex entry point).
+ *   - `claude` with `-p` / `--print`, headless print mode.
+ *   - `codex exec`, the non-interactive Codex entry point.
  * An interactive `claude` (no -p/--print) or a bare `codex` (no `exec`)
  * is fine and passes.
  *
@@ -93,7 +93,7 @@ function hasAnyFlag(
 }
 
 // Inspect every headless `claude` invocation; return a block reason or
-// undefined when all headless calls are locked down (or there are none).
+// undefined when all headless calls are locked down, or there are none.
 export function claudeLockdownReason(command: string): string | undefined {
   for (const cmd of commandsFor(command, 'claude')) {
     const { args } = cmd

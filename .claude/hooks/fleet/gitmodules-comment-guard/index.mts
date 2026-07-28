@@ -80,8 +80,8 @@ export const check = editGuard((filePath, content) => {
   if (!normalizePath(filePath).endsWith('/.gitmodules')) {
     return undefined
   }
-  // Edit gives us new_string (the replacement); Write gives us
-  // content (the full new file). Either way, we scan the proposed
+  // Edit gives us new_string, the replacement; Write gives us
+  // content, the full new file. Either way, we scan the proposed
   // text for the orphan condition. For Edit calls the new_string
   // may be a fragment that doesn't contain a [submodule] header —
   // that's fine, the check passes.

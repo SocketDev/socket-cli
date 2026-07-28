@@ -15,9 +15,9 @@
 //   - Only fires when a `cd <target>` segment is IMMEDIATELY followed by
 //     a `pnpm` / `npm` / `yarn` segment in the same command line.
 //   - Skips when the target is a worktree (`…worktree…`), an absolute
-//     path, `/tmp`, `-` (cd back), `~`, `$VAR`, or `..`-escapes (leaving
+//     path, `/tmp`, `-`, cd back, `~`, `$VAR`, or `..`-escapes (leaving
 //     the repo). Those aren't "cd into a subpackage to run pnpm".
-// Cwd drift from a bare `cd` (without a chained pm) is the
+// Cwd drift from a bare `cd`, without a chained pm, is the
 // avoid-cd-nudge's concern, not this guard's.
 //
 // Bypass: `Allow repo-root bypass`. Fail-open on hook bugs.

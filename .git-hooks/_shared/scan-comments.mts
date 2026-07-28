@@ -105,12 +105,12 @@ import type { LineHit } from './scan-core.mts'
 // scanned; the leak is just as real inside a C-style block as in a `//!` doc).
 // Returns the comment text plus the block state to thread into the next line.
 //
-// Conservative + cheap (no full tokenizer): we only need the prose a human
+// Conservative + cheap, no full tokenizer: we only need the prose a human
 // wrote, and we must not mistake a `//` / `<!--` that sits inside a string for
 // a comment opener. The rules:
 //   • Inside an open block (`block === true`) the WHOLE line is comment text up
 //     to a closing `*/`; a `*/` on the line clears the block state.
-//   • A WHOLE-LINE comment — `//…`, `//!…`, `///…` (Rust doc), `*…` (JSDoc
+//   • A WHOLE-LINE comment — `//…`, `//!…`, `///…`, Rust doc, `*…` (JSDoc
 //     continuation), `/*…`, `#…` (but NOT `#!` shebang), `<!--…` — returns its
 //     text after the opener. A `/*` with no `*/` on the same line OPENS a block.
 //   • A TRAILING `//` or `<!--` comment on a code line returns the text after
@@ -162,7 +162,7 @@ export function commentTextOf(
       from = at + opener.length
     }
   }
-  // A `/*` opened mid-code-line (a trailing block comment) — its body IS prose
+  // A `/*` opened mid-code-line, a trailing block comment — its body IS prose
   // and must be scanned (`code(); /* step 4 of … */` is just as much a leak as
   // a leading one). Slice from after the `/*`; if a `*/` closes it on the same
   // line, that bounds the comment, else the block stays open for the next line.
@@ -258,7 +258,7 @@ const STEP_SEQ_RE = new RegExp(
   'i',
 )
 
-// `quest` (and its qualified effort-noun siblings) means PR-process only in the
+// `quest`, and its qualified effort-noun siblings, means PR-process only in the
 // idiom "<perf/net/opt> <effort-noun>" — the bare noun is a legitimate domain
 // word (a "quests" table, a game's quest log, `the side quest`). Require the
 // process qualifier (`perf rework`, `the net effort`) or an adjacent issue ref;
@@ -284,7 +284,7 @@ const QUEST_RE = new RegExp(
 //   • verb-framed `(added|fixed|resolved|introduced|landed|shipped|merged) in #N`,
 //     now requiring the LITERAL `#` (the old optional `#?` matched bare
 //     dates/versions — `fixed in 26`, `resolved in 14.15.1`, `as of 2026-…`).
-//     `as of` is dropped from the verb list entirely (a data-currency stamp).
+//     `as of` is dropped from the verb list entirely, a data-currency stamp.
 //
 // DELIBERATELY DROPPED from Tier-1 (now block only via the Tier-2 co-occurrence
 // path): the bare parenthesised/bracketed `(#N)` / `[#N]` and the bare `PR #N` /

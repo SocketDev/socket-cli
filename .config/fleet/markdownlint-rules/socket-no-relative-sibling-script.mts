@@ -21,7 +21,7 @@ import type { MarkdownlintRule } from './_shared/rule-types.mts'
 const RULE_NAME = 'socket-no-relative-sibling-script'
 const SIBLING_PATH_RES = [
   // Detect `<runner> ../<sibling>/...` where runner is one of the common
-  // JS/TS toolchain binaries (any runtime invocation).
+  // JS/TS toolchain binaries, any runtime invocation.
   /\b(?:bun|deno|node|npm|pnpm|yarn)\s+\.\.\/[\w@-]+\//,
   // Detect bare ../<segment>/ where the first segment doesn't start with `.`
   // (i.e. genuine sibling, not the current repo's `..` for monorepo packages).

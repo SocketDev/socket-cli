@@ -46,7 +46,7 @@ const BYPASS_PHRASE = 'Allow ai-attribution bypass'
 // match, so the dispatcher skips this guard.
 export const triggers: readonly string[] = ['gh', 'mcp__']
 
-// `gh` subcommands (first non-flag arg) that post prose to a public surface.
+// `gh` subcommands, first non-flag arg, that post prose to a public surface.
 const PROSE_SUBCOMMANDS: ReadonlySet<string> = new Set([
   'api', // commit comments + GraphQL discussions carry a body= field
   'discussion',
@@ -56,7 +56,7 @@ const PROSE_SUBCOMMANDS: ReadonlySet<string> = new Set([
   'release',
 ])
 
-// Flags whose value is human-facing prose (a body, title, or release notes).
+// Flags whose value is human-facing prose, a body, title, or release notes.
 const PROSE_FLAGS: ReadonlySet<string> = new Set([
   '--body',
   '--body-text',
@@ -78,7 +78,7 @@ const API_FIELD_FLAGS: ReadonlySet<string> = new Set([
  * Pull every prose token a `gh` command would post: body / title / notes flag
  * values and `gh api` `body=` / `title=` fields, from the AST-parsed args
  * (already unquoted, chain- and `$(…)`-aware). `--body-file` / `--notes-file`
- * (file paths) are out of scope — we only inspect args-as-text.
+ * file paths, are out of scope — we only inspect args-as-text.
  */
 export function extractProse(command: string): string {
   const out: string[] = []

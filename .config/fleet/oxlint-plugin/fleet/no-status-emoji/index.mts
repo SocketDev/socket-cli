@@ -102,7 +102,7 @@ const rule = {
       leadInfo: LeadInfo,
     ): ((fixer: RuleFixer) => unknown) | undefined {
       const method = (EMOJI_TO_METHOD as Record<string, string>)[leadInfo.emoji]
-      /* c8 ignore start - leadInfo.emoji is always in EMOJI_TO_METHOD (regex is built from its keys) */
+      /* c8 ignore start - leadInfo.emoji is always in EMOJI_TO_METHOD, regex is built from its keys*/
       if (!method) {
         return undefined
       }

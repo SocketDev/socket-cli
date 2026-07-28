@@ -52,7 +52,7 @@ function extractTag(text: string, tag: string): string {
 }
 
 // Parse the five tagged blocks from a patch-agent reply. A `<patch_diff>` of
-// NONE/empty → status no_patch (the finding isn't fixable as described).
+// NONE/empty → status no_patch, the finding isn't fixable as described.
 export function parsePatchResult(text: string): ParsedPatch {
   const out: Record<PatchTag, string> = {
     bypass_considered: '',

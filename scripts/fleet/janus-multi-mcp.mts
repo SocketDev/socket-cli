@@ -2,7 +2,7 @@
 /**
  * @file Multi-Janus MCP shim — a stdio MCP server that fronts MANY repo Janus
  *   queues behind one connection. The native `janus mcp` is rooted at a single
- *   `.janus/` (its launch cwd), so an agent in repo A can't file/read tickets
+ *   `.janus/`, its launch cwd, so an agent in repo A can't file/read tickets
  *   in repo B's queue without switching checkouts. This shim adds a `workspace`
  *   parameter to every tool and routes the call to that repo's `.janus/` by
  *   shelling `janus` with `JANUS_ROOT` (the env knob already ships — zero Janus
@@ -276,7 +276,7 @@ export function handleRequest(
       }
     } catch (e) {
       // Tool-level error → MCP returns it as isError content, not a JSON-RPC
-      // error (so the agent sees the message and can correct).
+      // error, so the agent sees the message and can correct.
       return {
         id,
         jsonrpc: '2.0',

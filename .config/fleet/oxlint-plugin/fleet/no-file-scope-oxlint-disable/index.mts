@@ -10,7 +10,7 @@
  *   the author to write a fresh justification per call site, which surfaces in
  *   code review and in `git blame` next to the actual disabled code. Allowed:
  *
- *   - `// oxlint-disable-next-line <rule> -- <reason>` (per call site)
+ *   - `// oxlint-disable-next-line <rule> -- <reason>`, per call site
  *   - `/* oxlint-disable-next-line <rule> *\/` block form, also per call
  *   - File-scope disable for **plugin-internal rules** where the file itself
  *     defines the rule and intentionally contains the banned shape as
@@ -99,7 +99,7 @@ const rule = {
           const ruleName = m?.[1] ? m[1].trim() : '<rule>'
           // A declared mirror permits a file-scope disable only when EVERY rule
           // it names is in LOCKSTEP_MIRROR_EXEMPT_RULES. One stray non-exempt
-          // name (or a marker-less file) falls through to the report.
+          // name, or a marker-less file, falls through to the report.
           if (mirror && ruleName !== '<rule>') {
             const names = ruleName.split(/\s+/).filter(Boolean)
             if (names.every(isLockstepMirrorExemptRule)) {

@@ -1,7 +1,7 @@
 /**
  * @file Flag non-canonical GFM alert keywords inside blockquotes. GitHub only
  *   renders the five canonical alert markers as styled callout boxes:
- *   NOTE, TIP, IMPORTANT, WARNING, CAUTION (uppercase, singular, no typos).
+ *   NOTE, TIP, IMPORTANT, WARNING, CAUTION, uppercase, singular, no typos.
  *   Any other spelling — plurals like NOTES/TIPS/WARNINGS/CAUTIONS/IMPORTANTS,
  *   lowercase or mixed-case variants, or unknown keywords — silently renders as
  *   plain blockquote text with no callout styling. Autofix: map common
@@ -25,7 +25,7 @@ const CANONICAL_KEYWORDS = new Set([
 ])
 
 /**
- * Map from non-canonical keyword (lowercase normalised) to its canonical form.
+ * Map from non-canonical keyword, lowercase normalised, to its canonical form.
  * Covers plurals and case variants the rule's fixInfo can correct
  * automatically.
  */

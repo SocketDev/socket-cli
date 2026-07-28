@@ -19,7 +19,7 @@
  *   1. `setTimeout(<cb>, N)` with `N ≤ 200` in a test file — small-delay sleeps
  *      are exactly the pattern that flakes on Windows. Suggest
  *      `tolerantSleep(N)` (settle/await shape) or `minTimerQuantum(N)`
- *      (hard-quantum shape) from `test/fleet/_shared/lib/timing.mts`.
+ *      hard-quantum shape, from `test/fleet/_shared/lib/timing.mts`.
  *   2. `it.skipIf(WIN32)(...)` / `describe.skipIf(WIN32)(...)` — replace with the
  *      named `itUnixOnly` / `describeUnixOnly` wrapper from the per-repo
  *      `test/util/skip-helpers.mts`.

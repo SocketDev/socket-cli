@@ -4,7 +4,7 @@
 // scripts/fleet/lib/external-tools-schema.mts is the single source of truth (it
 // drives the runtime validator check/external-tools-are-valid.mts); this emits
 // the JSON-Schema artifact every external-tools.json references via `$schema`,
-// hosted canonically in WHEELHOUSE (not socket-btm) so editors/IDEs resolve one
+// hosted canonically in WHEELHOUSE, not socket-btm, so editors/IDEs resolve one
 // schema. Regenerate on a schema change; --check fails on drift.
 //
 // Usage:
@@ -85,7 +85,7 @@ function main(): void {
       process.exitCode = 1
       return
     }
-    // Compare parsed content (robust to formatter differences).
+    // Compare parsed content, robust to formatter differences.
     if (JSON.stringify(current) !== JSON.stringify(generated)) {
       logger.fail(
         [

@@ -9,7 +9,7 @@
  *   can recognize an auto-landed commit as a logical grouping rather than a
  *   rival's work (see docs/agents.md/fleet/parallel-claude-sessions.md ->
  *   "Auto-landed commits are expected").
- *   Safety: dry-run by default (prints the plan). `--commit` lands each group
+ *   Safety: dry-run by default, prints the plan. `--commit` lands each group
  *   via `git add -- <paths>` + `git commit -o <paths> -S` (surgical, signed —
  *   never `-A`, never a bare commit). Only paths under known SOURCE areas are
  *   landed; untracked-by-default trees (vendor/build/etc.) and anything outside
@@ -53,7 +53,7 @@ const UNTRACKED_BY_DEFAULT_PREFIXES = [
 ]
 
 // Top-level source areas land-work is willing to commit. Anything outside these
-// (a stray file at the repo root, a runtime artifact) is surfaced, not landed.
+// a stray file at the repo root, a runtime artifact, is surfaced, not landed.
 const SOURCE_AREA_PREFIXES = [
   '.claude/',
   '.config/',
@@ -274,7 +274,7 @@ export { GENERATED_PATTERNS, isBothTouched, isGenerated, isUnmerged }
 /**
  * The in-progress git operation ('rebase' | 'merge' | 'cherry-pick'), or
  * undefined when the tree is in a normal state. A rebase's dirty files are
- * intentional + fresh (land them), but the operation state is logged so the
+ * intentional + fresh, land them, but the operation state is logged so the
  * landing is never silent while git is mid-replay.
  */
 function inProgressOp(cwd: string): string | undefined {
@@ -329,7 +329,7 @@ async function landGroup(
 export async function main(cwd: string = REPO_ROOT): Promise<number> {
   const argv = process.argv.slice(2)
   const doCommit = argv.includes('--commit')
-  // Non-flag args restrict landing to EXACTLY this set (repo-relative paths).
+  // Non-flag args restrict landing to EXACTLY this set, repo-relative paths.
   // The auto-land Stop-hook passes only the paths THIS session authored, so a
   // foreign staged feature in the shared index is never swept into a commit.
   // No paths given → land the whole dirty tree (manual `land-work` use).
@@ -417,7 +417,7 @@ export async function main(cwd: string = REPO_ROOT): Promise<number> {
   }
   // Mark the run so the AI summarizer's headless child — which inherits this
   // env and loads this repo's Stop hook — never re-triggers auto-land on the
-  // still-dirty tree (auto-land-on-stop skips when this is set).
+  // still-dirty tree, auto-land-on-stop skips when this is set.
   process.env['SOCKET_LAND_WORK_ACTIVE'] = '1'
   // Deterministic subject + file digest always stand; the floor-tier AI summary
   // is pure enrichment the land never waits on (empty map = digest-only body).

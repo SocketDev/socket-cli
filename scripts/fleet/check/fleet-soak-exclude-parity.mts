@@ -9,7 +9,7 @@
  *   from elsewhere but didn't inherit this entry, so every downstream `pnpm
  *   install` rejected rolldown@1.0.3's transitive dep with
  *   `[ERR_PNPM_NO_MATURE_MATCHING_VERSION]`. The invariant: **anything
- *   wheelhouse needs to install (its own soak-exclude block) must be in
+ *   wheelhouse needs to install, its own soak-exclude block, must be in
  *   `EXPECTED_RELEASE_AGE_EXCLUDE` so it propagates to every fleet repo via the
  *   cascade**. Bare names (`@socketsecurity/*` etc.) are already in the
  *   SOCKET_PACKAGE_PATTERNS spread; this check focuses on the versioned entries
@@ -133,7 +133,7 @@ export function missingSocketPatterns(wheelhouse: readonly string[]): string[] {
  *
  * The drift this surfaces is the case that bit us in cascade@4ec6212c: a
  * `name@version` entry present only in wheelhouse, with no canonical
- * counterpart (bare or pinned), so the cascade omits it entirely.
+ * counterpart, bare or pinned, so the cascade omits it entirely.
  */
 export function diffSoakExclude(
   wheelhouse: readonly string[],
@@ -183,7 +183,7 @@ export function diffSoakExclude(
  * EXPECTED `name@version` soak-pins whose annotated `removable` date is
  * STRICTLY before `today` (ISO `YYYY-MM-DD`). These have cleared their 7-day
  * soak: the gate admits the version without a bypass, so the pin is dead weight
- * that the cascade re-pins (insert loop) and drops (prune loop) on every wave —
+ * that the cascade re-pins, insert loop, and drops, prune loop, on every wave —
  * a tug-of-war. Globs and bare names have no version to soak and are skipped.
  * An entry with no annotation is skipped (can't date it offline; the parity
  * diff already requires versioned entries to be annotated for the synth
@@ -196,7 +196,7 @@ export function diffSoakExclude(
  * `removable` is the publish DATE + 7d, but a package published at 14:39 on the
  * publish date does not clear the 7×24h window until 14:39 on the `removable`
  * date. So on `today === removable` pnpm may still reject the unpinned install
- * (the window clears later that same day). Retiring the pin then leaves a
+ * the window clears later that same day. Retiring the pin then leaves a
  * lockfile pnpm refuses to install. `removable < today` is the first calendar
  * date by which the full 7×24h has elapsed regardless of publish time-of-day,
  * so it can never disagree with pnpm's timestamp comparison.

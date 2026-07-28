@@ -37,6 +37,7 @@
     "socket/no-npx-dlx": "error",
     "socket/no-options-param-mutation": "error",
     "socket/no-package-manager-auto-update-reenable": "error",
+    "socket/no-parenthetical-aside": ["error"],
     "socket/no-placeholders": "error",
     "socket/no-platform-specific-import": "error",
     "socket/no-private-path-in-source": "error",

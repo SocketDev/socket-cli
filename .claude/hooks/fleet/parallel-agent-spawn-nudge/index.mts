@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Claude Code PreToolUse hook — parallel-agent-spawn-nudge.
 //
-// Fires (with a stderr reminder, not a block) when the orchestrator spawns an
+// Fires, with a stderr reminder, not a block, when the orchestrator spawns an
 // agent (the `Task` OR `Agent` tool) whose prompt tells that agent to COMMIT /
 // PUSH / LAND. Parallel agents committing into one shared checkout race the git
 // index and the pre-commit hook (two `git add` + commit runs interleave, one
@@ -11,10 +11,10 @@
 //     runner, a config, a manifest) — edit it yourself, once, BEFORE fanning
 //     out; never delegate a shared file to one agent, which serializes the rest
 //     and races the others,
-//   - give each agent a DISJOINT file area (one lang dir, one module) — no
+//   - give each agent a DISJOINT file area, one lang dir, one module — no
 //     overlap with a sibling or with the shared files you own,
 //   - each agent EDITS + VERIFIES but leaves its work UNCOMMITTED,
-//   - the orchestrator (this session) reviews, re-runs the gates, and lands it
+//   - the orchestrator, this session, reviews, re-runs the gates, and lands it
 //     by explicit path (`git commit -o …`) — one reviewer between work and main.
 //
 // Reminder-only (notify, exit 0): a single agent told to commit on its own
@@ -29,7 +29,7 @@
 //
 // Honest scope: matching both `Task` and `Agent` catches inline + background
 // Agent-tool spawns; a Workflow `agent()` spawn bypasses PreToolUse entirely
-// (platform limit) and is held only by the inlined agent-prompt discipline. And
+// platform limit, and is held only by the inlined agent-prompt discipline. And
 // the "delegate a shared file" half is taught in the message + agent-delegation
 // doc, not auto-detected — a generic hook can't know which paths a repo treats
 // as shared.
@@ -42,7 +42,7 @@ import type { ToolCallPayload } from '../_shared/payload.mts'
 
 // Lowercased substrings that signal the spawned agent is being told to land its
 // own work — the index-race anti-pattern when more than one agent shares the
-// checkout. Kept as plain strings (see the no-regex note in the header).
+// checkout. Kept as plain strings, see the no-regex note in the header.
 const COMMIT_SIGNALS: readonly string[] = [
   'commit and push',
   'commit it',

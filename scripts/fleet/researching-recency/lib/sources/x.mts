@@ -5,7 +5,7 @@
  *   friendly path: a single bearer token (`XAI_API_KEY`), no browser-cookie
  *   scraping. When the key is absent the adapter reports `skipped` with a
  *   reason, so the keyless sources still carry the run. Auth: the key lives in
- *   `XAI_API_KEY` (process env), populated from the OS keychain at session
+ *   `XAI_API_KEY`, process env, populated from the OS keychain at session
  *   start — never read from the keychain on the hot path (that triggers a
  *   per-call UI prompt; see no-blind-keychain-read-guard). See the skill
  *   reference for the keychain how-to.
@@ -44,7 +44,7 @@ export const DEFAULT_DEV_HANDLES: readonly string[] = [
   'jonchurch', // Express.js maintainer
   'JoviDeC', // Preact core / Shopify, DX + web perf
   'kdaigle', // GitHub
-  'Kikobeats', // prolific OSS author (microlink, many npm pkgs)
+  'Kikobeats', // prolific OSS author, microlink, many npm pkgs
   'pnpmjs', // pnpm
   'realamlug', // Perry (TS -> native)
   'robpalmer2', // TC39 / standards
@@ -57,7 +57,7 @@ export const DEFAULT_DEV_HANDLES: readonly string[] = [
 
 // Handle allow/deny for the x_search tool. allowed = only these accounts;
 // excluded = every account but these. The two are mutually exclusive at the API
-// (allow wins here when both are set). Handles are bare (no leading @).
+// allow wins here when both are set. Handles are bare (no leading @).
 export interface XSearchOptions {
   allowedHandles?: readonly string[] | undefined
   excludedHandles?: readonly string[] | undefined
@@ -76,7 +76,7 @@ export function normalizeHandles(handles: readonly string[]): string[] {
 }
 
 // One post as Grok is asked to return it inside the JSON envelope. url is
-// required (it's the citation); the rest is best-effort.
+// required, it's the citation; the rest is best-effort.
 export interface XPost {
   url?: string | undefined
   text?: string | undefined

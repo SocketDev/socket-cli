@@ -151,7 +151,7 @@ export function blockFor(pin: ActionPin): string {
   const label = sub.slice('upstream/'.length)
   return [
     // The `# <owner>-<repo>-<version>` header gen/gitmodules-hash --write
-    // attaches the sha256 to (gitmodules-comment-guard shape). Version tracks
+    // attaches the sha256 to, gitmodules-comment-guard shape. Version tracks
     // the branch.
     `# ${label}-${pin.tag}`,
     `[submodule "${sub}"]`,
@@ -254,7 +254,7 @@ export function upsertAll(
 
 /**
  * Run `gen/gitmodules-hash.mts --write` to (re)stamp the content-hash comments
- * after refs change. Throws on failure (fail loud).
+ * after refs change. Throws on failure, fail loud.
  */
 function stampHashes(): void {
   const script = path.join(

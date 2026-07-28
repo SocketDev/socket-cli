@@ -34,7 +34,7 @@ import type { AstNode, RuleContext, RuleFixer } from '../../lib/rule-types.mts'
 //     `<rest...>`), where the dots mean "one or more" and must stay literal.
 // The leading `[A-Za-z0-9]` rejects CLI rest-args (`foo ...args` — dots after a
 // space) and standalone `...`. `....` (word + 4 dots) is still caught — `\.{3,}`
-// soaks up the run, collapsed to one `…`. The G form (used by the fixer)
+// soaks up the run, collapsed to one `…`. The G form, used by the fixer
 // captures the leading char to preserve it.
 const ELLIPSIS_TAIL = String.raw`(?![./)\]}>])`
 const WORD_FINAL_ELLIPSIS_RE = new RegExp(
@@ -77,7 +77,7 @@ const rule = {
       : context.sourceCode
 
     // Report + autofix a string-literal / template node whose text contains a
-    // WORD-FINAL `...` run (a real ellipsis), skipping path globs + CLI
+    // WORD-FINAL `...` run, a real ellipsis, skipping path globs + CLI
     // rest-args. The fix rewrites the node's source text, collapsing each
     // word-final dot-run to a single `…` while keeping the preceding char.
     function checkTextNode(node: AstNode, text: string): void {

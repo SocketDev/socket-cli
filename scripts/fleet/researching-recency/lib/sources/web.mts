@@ -2,7 +2,7 @@
  * @file Web source adapter. The engine has no web-search API key of its own —
  *   the model runs WebSearch and writes its hits to a JSON file passed as
  *   `--web-file`. This module parses that file into SourceItems. There's no
- *   network call here (the model already did the searching), so it's a pure
+ *   network call here, the model already did the searching, so it's a pure
  *   mapper rather than a fetching adapter.
  */
 
@@ -42,7 +42,7 @@ export function toSourceItem(hit: WebHit, index: number): SourceItem {
 
 // Parse the model-supplied web-hits file content into SourceItems. Accepts
 // either a bare array or a `{ hits: [...] }` wrapper. Malformed entries are
-// dropped (an entry with no url can't be cited).
+// dropped, an entry with no url can't be cited.
 export function parseWebHits(fileContent: string): SourceItem[] {
   let parsed: unknown
   try {

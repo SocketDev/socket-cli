@@ -20,7 +20,7 @@
  *   false-greening (a).
  *
  *   Runs per-tree (wheelhouse + every member). Vacuous pass where the built
- *   fetcher is absent (a partially-onboarded repo). Exit: 0 — clean / no
+ *   fetcher is absent, a partially-onboarded repo. Exit: 0 — clean / no
  *   fetcher; 1 — a CI path is in the untrack set, or the control path is not.
  *
  *   Usage: node scripts/fleet/check/thin-untrack-set-is-ci-safe.mts [--quiet]
@@ -48,7 +48,7 @@ const logger = getDefaultLogger()
 const FLEET_FETCHER_REL = 'scripts/repo/bootstrap/fleet.mjs'
 
 // Canonical CI paths always injected so the exclusion is exercised even in a
-// repo whose tracked CI tree is sparse (a fresh member).
+// repo whose tracked CI tree is sparse, a fresh member.
 const CANONICAL_CI_PATHS: readonly string[] = [
   '.github/actions/fleet/setup/action.yml',
   '.github/workflows/ci.yml',

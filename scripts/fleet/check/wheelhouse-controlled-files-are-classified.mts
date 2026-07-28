@@ -35,13 +35,13 @@ import { isMainModule } from '../_shared/is-main-module.mts'
 import { REPO_ROOT } from '../paths.mts'
 
 // Re-exported so consumers + tests can read the native-handler set from the belt
-// scan too (the write-time guard remains its single owner).
+// scan too, the write-time guard remains its single owner.
 export { NATIVE_HANDLER_FILES }
 
 const logger = getDefaultLogger()
 
 // The byte-canonical template tree the whole fleet syncs against. Computed here
-// (not imported) because scripts/fleet/paths.mts is the cascaded per-member paths
+// not imported, because scripts/fleet/paths.mts is the cascaded per-member paths
 // module and never resolves the wheelhouse-only template root.
 const TEMPLATE_BASE_DIR = path.join(REPO_ROOT, 'template', 'base')
 
@@ -162,7 +162,7 @@ export interface RootCopyDrift {
 
 /**
  * Assertion B: for each byte-controlled file entry, compare the repo's root
- * copy (when present) against its resolved template source. Pure — the resolver
+ * copy, when present, against its resolved template source. Pure — the resolver
  * + reader are injected so tests drive it without the real cascade engine. An
  * absent root copy (optional-when-present) or a path no layer provides for this
  * repo is skipped, not flagged.
@@ -200,7 +200,7 @@ export function findRootCopyDrift(input: {
 }
 
 // The carve-out (`repo/` tier) prefixes, read from the bundle manifest. Returns
-// [] when the file is absent (a member) so classification simply has no
+// [] when the file is absent, a member, so classification simply has no
 // carve-outs there.
 function readCarveOuts(): string[] {
   const bundlePath = path.join(
@@ -232,7 +232,7 @@ async function main(): Promise<void> {
   if (!existsSync(TEMPLATE_BASE_DIR)) {
     return
   }
-  // scripts/repo/ is wheelhouse-only (not cascaded), so a STATIC import would
+  // scripts/repo/ is wheelhouse-only, not cascaded, so a STATIC import would
   // break every member. Import at runtime, guarded by the probe above.
   const manifestUrl = pathToFileURL(
     path.join(REPO_ROOT, 'scripts/repo/sync-scaffolding/manifest.mts'),

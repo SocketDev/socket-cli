@@ -21,7 +21,7 @@
  *   /home/<user>/       → /home/<user>/
  *   C:\Users<X>\    → C:\Users<USERNAME>\
  *   C:/Users/<USERNAME>/    → C:/Users/<USERNAME>/
- *   Real personal data (a literal username instead of a placeholder)
+ *   Real personal data, a literal username instead of a placeholder
  *   is also flagged. Two scenarios:
  *
  *   1. Source code / docs / tests — the path was hand-written and should be
@@ -174,7 +174,7 @@ const rule = {
         return
       }
 
-      // Second pass: real-username detection (no autofix).
+      // Second pass: real-username detection, no autofix.
       for (let i = 0, { length } = REAL_USERNAME_PATTERNS; i < length; i += 1) {
         const re = REAL_USERNAME_PATTERNS[i]!
         const m = re.exec(text)

@@ -23,7 +23,7 @@ import type { AstNode, RuleContext } from '../../lib/rule-types.mts'
 
 // Array.prototype methods matched as `x.<name>(...)`, mapped to the Node major
 // that first shipped them and the exact copy-pasteable Node-floor-safe rewrite.
-// The rewrites copy first (the spread), so the original is never mutated and
+// The rewrites copy first, the spread, so the original is never mutated and
 // behavior matches the non-mutating original — drop the spread only when the
 // receiver is already a throwaway.
 const MEMBER_METHOD_MAJORS = new Map<string, { major: number; fix: string }>([

@@ -20,7 +20,7 @@
 // --force flag is passed only after a clean-tree check, so it overcomes the
 // submodule guard without discarding any work.
 //
-// Default is --dry-run (report only). Pass --fix to actually remove.
+// Default is --dry-run, report only. Pass --fix to actually remove.
 //
 // Usage:
 //   node tidy-worktrees.mts            # dry-run: report what WOULD be removed
@@ -59,7 +59,7 @@ export interface WorktreeFacts {
   mergedIntoBase: boolean
   aheadOfBase: boolean
   // Every commit in origin/<base>..HEAD is content-equivalent to the
-  // base — landed via another path (squash-merge, auto-land). Only
+  // base — landed via another path, squash-merge, auto-land. Only
   // meaningful when aheadOfBase; see isFullyLanded.
   fullyLanded: boolean
   // A remote/base probe ERRORED (network down, origin/<base> ref
@@ -208,7 +208,7 @@ export interface CommitClassification {
  * own delta onto the base in-memory.
  *
  * - Landed — clean merge whose result tree IS the base tree: the base already
- *   contains the content (a squash-merge, an auto-land, a rebase landed it).
+ *   contains the content, a squash-merge, an auto-land, a rebase landed it.
  * - Unlanded — clean merge with a DIFFERING tree: real content the base lacks.
  * - Superseded — the delta conflicts with the base: the base evolved past it (or
  *   it is live divergent work — human review decides).
@@ -284,7 +284,7 @@ export async function classifyCommits(
 /**
  * True when the base already contains the content of EVERY commit the
  * branch carries — every classifyCommits verdict is 'landed'. An empty
- * classification (not ahead once backup-reachable history is excluded),
+ * classification, not ahead once backup-reachable history is excluded,
  * any unlanded/superseded content, or anything unreviewable answers
  * false — the check only ever errs toward keeping.
  */
@@ -406,7 +406,7 @@ export async function inspectRepo(repoDir: string): Promise<WorktreeEntry[]> {
       aheadOfBase = Number(aheadCount) > 0
     }
     // The merge-tree walk is the expensive fact — compute it only when
-    // it can change the decision (clean, ahead, not already merged).
+    // it can change the decision, clean, ahead, not already merged.
     const fullyLanded =
       !isPrimary && !dirty && !mergedIntoBase && aheadOfBase
         ? await isFullyLanded(repoDir, wt.path, base)

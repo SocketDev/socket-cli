@@ -85,7 +85,7 @@ export interface BotSigningEmailVerdict {
 /**
  * Classify one workflow (filename + body) against the bot-signing-email rule.
  * Returns a verdict when the body sets a numeric socket-bot committer email
- * AND GPG-signs (the push-blocking mismatch), otherwise null (no socket-bot
+ * AND GPG-signs, the push-blocking mismatch, otherwise null (no socket-bot
  * signing identity, or already correct). Pure so it is unit-tested without a
  * filesystem.
  */

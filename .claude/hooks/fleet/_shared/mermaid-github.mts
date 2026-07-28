@@ -10,7 +10,7 @@
  *      protect it. The safe shape is `Note over <first>,<last>`: the note spans
  *      the diagram and never overhangs.
  *   2. A `Note over <a>,<rightmost>` still overhangs when the text is wider than
- *      the span (the box centers and spills both sides), so the rewrite anchors
+ *      the span, the box centers and spills both sides, so the rewrite anchors
  *      at the FIRST participant — the span is maximal and the text always fits
  *      inside it.
  *   3. Margins must be generous: GitHub scales a wide SVG down to the container
@@ -88,7 +88,7 @@ export function sequenceParticipants(source: string): string[] {
 }
 
 /**
- * Analyze ONE mermaid source (the fence body) and produce the issues plus
+ * Analyze ONE mermaid source, the fence body, and produce the issues plus
  * the GitHub-safe rewrite. Unknown diagram kinds pass through untouched.
  */
 export function analyzeMermaidSource(source: string): MermaidAnalysis {

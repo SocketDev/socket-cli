@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 // Claude Code PreToolUse hook — codex-no-write-guard.
 //
-// Per "Codex Usage" rule in opt-in repos (ultrathink today, others future):
+// Per "Codex Usage" rule in opt-in repos, ultrathink today, others future:
 // Codex is for advice and assessment ONLY, never code changes. Blocks Bash
 // invocations of the `codex` CLI when `--write` or `-w` is passed, or when the
 // command's own prompt arg carries an implementation-intent verb.
 //
 // Prior incident: Codex added inline asm prefetch causing a 5ms perf
 // regression. Codex's output is well-suited for diagnosis but not for code
-// changes — the regression patterns are subtle (perf, semantic edge cases)
+// changes — the regression patterns are subtle, perf, semantic edge cases
 // that human review catches but Codex doesn't.
 //
-// This hook ships in the wheelhouse template (cascaded everywhere) but is
+// This hook ships in the wheelhouse template, cascaded everywhere, but is
 // wired into `.claude/settings.json` only in opt-in repos. Where unwired,
 // it has zero effect.
 
@@ -38,7 +38,7 @@ const WRITE_INTENT_VERBS = [
   'modify',
 ]
 
-// Broad match (verb anywhere, any inflection) — run on the codex CLI command's
+// Broad match, verb anywhere, any inflection — run on the codex CLI command's
 // own prompt arg, where the entire arg IS the instruction so a
 // descriptive-vs-imperative distinction doesn't apply.
 export function hasWriteIntentInArg(text: string): string | undefined {

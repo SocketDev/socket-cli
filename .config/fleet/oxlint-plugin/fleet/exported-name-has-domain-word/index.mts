@@ -5,7 +5,7 @@
  *   one-word generic export is a grep-noise magnet — `create` matched 1585 times
  *   across 459 files in a real audit vs `createStripeClient` 43 across 19;
  *   one-word names are ~61% unique, three-word ~96%. So a bare generic export
- *   carries no domain signal and taxes every future reader (human or agent).
+ *   carries no domain signal and taxes every future reader, human or agent.
  *   The denylist + predicate are the single source shared with the edit-time
  *   `generic-export-name-nudge` hook (`../../lib/generic-name-tokens.mts`).
  *
@@ -13,7 +13,7 @@
  *   author's business; an export is a fleet-wide search surface. Sanctioned
  *   structural conventions (`check`, `main`, `run`, `handler`, …) are exempt via
  *   the shared SANCTIONED_CONVENTION_NAMES set. No autofix — a rename is
- *   cross-file (it breaks callers), so the fix is a deliberate rename, not a
+ *   cross-file, it breaks callers, so the fix is a deliberate rename, not a
  *   per-file rewrite. Re-export specifiers (`export { x }`) are skipped: the
  *   name is flagged at its definition site, not every forward.
  */

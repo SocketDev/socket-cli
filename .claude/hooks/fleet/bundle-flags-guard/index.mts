@@ -3,7 +3,7 @@
 // Blocks Edit/Write operations that flip `sourceMap`, `declarationMap`,
 // `sourcemap`, or `minify` to `true` in shipped-build configs:
 //
-//   - `tsconfig.json` (any depth)
+//   - `tsconfig.json`, any depth
 //   - `esbuild.config.{mts,ts,js,mjs,cjs}`
 //   - `rolldown.config.{mts,ts,js,mjs,cjs}`
 //   - `tsdown.config.{mts,ts,js,mjs,cjs}`
@@ -50,7 +50,7 @@ const TEST_TREE_RE = /(?:^|\/)(?:test|tests|__tests__)\//
 //
 // Matches: `sourcemap: true`, `sourcemap:true`, `"sourcemap": true`,
 // `sourcemap: 'inline'`, `sourcemap: "external"`. Does NOT match
-// `sourcemap: false` (the desired state) or `// sourcemap: true` (a
+// `sourcemap: false`, the desired state, or `// sourcemap: true` (a
 // comment) or `*sourcemap: true*` (markdown).
 const BAD_SOURCEMAP_RE =
   /(?<![\w/])(?:['"]?sourcemap['"]?)\s*:\s*(?:['"](?:both|external|inline|linked)['"]|true)/i
@@ -79,7 +79,7 @@ export function isTestTree(filePath: string): boolean {
 // happens often — tsconfig.json supports JSONC, comments and trailing
 // commas, and the project shouldn't use a JSON parser strict enough
 // to reject those). When JSON parse fails, the caller treats the
-// before/after as equal (no transition) and the hook falls open.
+// before/after as equal, no transition, and the hook falls open.
 export function readTsconfigFlag(
   jsonText: string,
   key: 'sourceMap' | 'declarationMap',

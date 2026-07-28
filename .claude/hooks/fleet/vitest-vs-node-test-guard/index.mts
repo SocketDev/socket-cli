@@ -81,7 +81,7 @@ export function extractIncludeGlobs(configText: string): string[] | undefined {
 }
 
 export function fileImportsNodeTest(text: string): boolean {
-  // Detect a real `from 'node:test'` import (default, named, or double-quoted);
+  // Detect a real `from 'node:test'` import, default, named, or double-quoted;
   // ignores `from 'node:test/...'`. Comments are stripped first so an
   // illustrative import inside a `//` or `/* */` comment — a config documenting
   // node:test exclusion, or this guard's own JSDoc — is never mistaken for a

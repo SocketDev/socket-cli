@@ -45,7 +45,7 @@ import { isMainModule } from '../_shared/is-main-module.mts'
 const logger = getDefaultLogger()
 
 // Hook trees to scan, relative to REPO_ROOT. `.claude/hooks/repo` is
-// repo-specific (not every fleet member carries one); listMtsFiles returns
+// repo-specific, not every fleet member carries one; listMtsFiles returns
 // `[]` for a missing directory, so an absent tree is simply a no-op — never an
 // error.
 export const HOOK_TREES: readonly string[] = [
@@ -148,7 +148,7 @@ export function extractImportSpecifiers(content: string): string[] {
 
 /**
  * Resolve a bare import specifier to the package name that must be declared
- * in `package.json`: `@scope/name` for a scoped package (subpath dropped), or
+ * in `package.json`: `@scope/name` for a scoped package, subpath dropped, or
  * the first path segment for an unscoped package. Returns `undefined` for a
  * relative (`.`/`..`) or `node:` builtin specifier — neither names an
  * installed package.
@@ -173,7 +173,7 @@ export function packageNameFromSpecifier(
 /**
  * Read `dependencies` + `devDependencies` keys off `packageJsonPath` into one
  * declared-names set. A missing/unparseable `package.json` yields an empty
- * set — fail loud downstream (every import reads as undeclared), which
+ * set — fail loud downstream, every import reads as undeclared, which
  * correctly signals the manifest itself is broken rather than silently
  * passing.
  */

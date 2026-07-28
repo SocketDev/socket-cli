@@ -5,7 +5,7 @@
 //
 //   1. `pnpm exec` / `npm exec` / `yarn exec` — run an already-installed
 //      `node_modules/.bin` binary but wrap it in the package manager's startup +
-//      (in this fleet) the Socket Firewall interception layer on every call —
+//      in this fleet, the Socket Firewall interception layer on every call —
 //      pure overhead. `bare node_modules/.bin/tsgo` ran in 422ms vs the
 //      multi-second `pnpm exec tsgo` wrapper (2026-06-03 slowdown investigation).
 //      Fix: run the bin directly (`node_modules/.bin/<tool>`) or `pnpm run <x>`.
@@ -27,14 +27,14 @@
 import { findInvocation } from '../_shared/shell-command.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 
-// (binary, label) pairs whose `exec` subcommand is banned (overhead/wrapper).
+// binary, label, pairs whose `exec` subcommand is banned (overhead/wrapper).
 const PM_EXEC: ReadonlyArray<readonly [string, string]> = [
   ['pnpm', 'pnpm exec'],
   ['npm', 'npm exec'],
   ['yarn', 'yarn exec'],
 ]
 
-// (binary, subcommand, label) for the fetch+execute forms — `pnpm dlx` /
+// binary, subcommand, label, for the fetch+execute forms — `pnpm dlx` /
 // `yarn dlx` carry a `dlx` subcommand; `npx` / `pnx` are bare binaries (no
 // subcommand). All fetch unpinned code and are banned at run time.
 const FETCH_EXEC: ReadonlyArray<readonly [string, string | undefined, string]> =

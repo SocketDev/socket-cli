@@ -4,7 +4,7 @@
  *   half-done. The fleet renames things (a check, script, hook, lint rule,
  *   skill) and the painful failure mode is a rename that lands across some
  *   surfaces but not all — the OLD name and the NEW name coexist, so a reader
- *   (or a cascade) can't tell which is canonical, and tooling that keys on the
+ *   or a cascade, can't tell which is canonical, and tooling that keys on the
  *   name silently splits. (Motivating churn: a make-/generate-/make- round-trip
  *   and a kind→repo.type schema migration that touched many files.)
  *   The convention this enforces: when you rename a fleet name, record it with
@@ -20,8 +20,8 @@
  *   Deterministic — file existence + a reference scan, no git history. Pairs
  *   with script-paths-resolve / doc-references-resolve (which catch a reference
  *   to a MISSING file); this catches the inverse — a recorded-renamed-from name
- *   whose prior form is still alive (the rename didn't finish).
- *   Exit codes: 0 — every recorded rename is complete (or none recorded);
+ *   whose prior form is still alive, the rename didn't finish.
+ *   Exit codes: 0 — every recorded rename is complete, or none recorded;
  *   1 — at least one `renamed-from: <old>` whose prior name still lives / is
  *   referenced.
  */
@@ -167,7 +167,7 @@ export function oldNameFileExists(repoRoot: string, oldName: string): boolean {
 }
 
 // True when the prior name is still REFERENCED in any scan file, excluding the
-// `renamed-from:` marker line itself (the marker mention is expected).
+// `renamed-from:` marker line itself, the marker mention is expected.
 export function oldNameReferenced(
   files: readonly string[],
   oldName: string,

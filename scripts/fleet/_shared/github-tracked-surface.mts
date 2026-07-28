@@ -24,7 +24,7 @@ export const ALWAYS_TRACKED_GITHUB_PREFIXES: readonly string[] = [
 ]
 
 /**
- * True when `relPath` (repo-relative, either separator) is part of the GitHub
+ * True when `relPath`, repo-relative, either separator, is part of the GitHub
  * CI surface a member must keep git-tracked even when thin — a workflow file or
  * a fleet composite action. `thinIgnoreEntries` gates on this so the untrack
  * set can never strand CI: GitHub reads both surfaces from the committed tree

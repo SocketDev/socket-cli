@@ -5,7 +5,7 @@
 // (or bare `child_process`). The fleet routes every subprocess through
 // `@socketsecurity/lib-stable/process/spawn/child`:
 //
-//   - async `spawn` over `spawnSync` (sync freezes the runner),
+//   - async `spawn` over `spawnSync`, sync freezes the runner,
 //   - a typed `SpawnError` + `isSpawnError` guard,
 //   - an array-of-args contract that avoids `execSync`'s shell-injection
 //     surface.
@@ -22,7 +22,7 @@
 //
 // Fails open on malformed payloads.
 //
-// Bypass (per call): user types `Allow async-spawn bypass`.
+// Bypass, per call: user types `Allow async-spawn bypass`.
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
@@ -56,7 +56,7 @@ const CHILD_PROCESS_REQUIRE_RE =
  * the pre-pnpm bootstrap `.mjs` provisioners under `scripts/fleet/setup/`.
  * Those install pnpm itself on a bare machine BEFORE node_modules exists, so
  * `@socketsecurity/lib`'s async `spawn` wrapper isn't on disk to import — the
- * sync builtin is the only option (same constraint as the markdownlint shim);
+ * sync builtin is the only option, same constraint as the markdownlint shim;
  * each carries an `oxlint-disable socket/prefer-async-spawn` documenting it.
  */
 export function isExemptPath(filePath: string): boolean {
@@ -129,7 +129,7 @@ export const check = editGuard(
       return undefined
     }
 
-    // Low-risk convention guard (oxlint rules backstop it) — `bypass` optional.
+    // Low-risk convention guard, oxlint rules backstop it — `bypass` optional.
     if (
       bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE, undefined, {
         optionalSuffix: true,

@@ -34,7 +34,7 @@ async function cratesIoGet(
 
 /**
  * Whether `name@version` already exists on crates.io. crates.io NEVER allows
- * re-publishing a version (a version can only be yanked, never overwritten), so
+ * re-publishing a version, a version can only be yanked, never overwritten, so
  * this must be surfaced before any publish attempt. HTTP 200 returns a
  * `version` object; a 404 returns an `errors` array. Network / parse failure is
  * treated as "unknown" ⇒ false (mirrors npm's isAlreadyPublished tolerance) but
@@ -146,7 +146,7 @@ export async function fetchPublishedVersion(
  * The crates.io publish timestamp for `name@version` — `version.created_at`
  * from `/crates/{name}/{version}`, an ISO 8601 string — or undefined when the
  * version is unknown or the lookup failed. crates.io's publish ledger is
- * PERMANENT (a version can be yanked but its record remains), so this is the
+ * PERMANENT, a version can be yanked but its record remains, so this is the
  * last anchor link for a release whose tag and bump commit are both gone.
  */
 export async function fetchPublishedAt(

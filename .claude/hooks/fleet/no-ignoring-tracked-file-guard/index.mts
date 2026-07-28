@@ -6,7 +6,7 @@
 //   `ignored-files-are-untracked` check. A tracked-then-ignored file is a bug:
 //   the index and `.gitignore` disagree, and a fresh clone re-ignores it (the
 //   exact way build output / a vendored tree / a stray gitlink leaked into the
-//   cascade). A `!` re-include (which UN-ignores) is always allowed.
+//   cascade). A `!` re-include, which UN-ignores, is always allowed.
 //
 // Only flags a NEWLY-added rule (a pattern in the about-to-land content that
 // the current on-disk `.gitignore` doesn't already carry) — a pre-existing

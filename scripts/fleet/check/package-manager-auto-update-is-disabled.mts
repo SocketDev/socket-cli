@@ -13,7 +13,7 @@
  *   `_shared/package-manager-auto-update.mts` (code is law, DRY — the three
  *   never diverge). A manager that isn't installed (`absent`) is informational,
  *   never a failure — CI runners legitimately lack brew/choco. Exit codes: 0 —
- *   every installed manager has auto-update disabled (or none installed); 1 —
+ *   every installed manager has auto-update disabled, or none installed; 1 —
  *   at least one installed manager still has auto-update enabled (drift). The
  *   fix per manager is printed; `setup-security-tools` sets them all.
  */

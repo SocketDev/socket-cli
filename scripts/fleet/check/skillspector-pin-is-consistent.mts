@@ -38,7 +38,7 @@ const UV_LOCK = path.join(PROJECT_DIR, 'uv.lock')
 const EXTERNAL_TOOLS = path.join(SECURITY_TOOLS_DIR, 'external-tools.json')
 
 // The pyproject `rev` and external-tools `version` use the SHORT SHA; the lock
-// records the FULL SHA. A match is "one is a prefix of the other" (both lowercased).
+// records the FULL SHA. A match is "one is a prefix of the other", both lowercased.
 export function shaAgrees(a: string, b: string): boolean {
   if (!a || !b) {
     return false
@@ -99,7 +99,7 @@ export function readLockSha(text: string): string | undefined {
 }
 
 function main(): number {
-  // Vacuous pass when the project isn't present (downstream repo without it).
+  // Vacuous pass when the project isn't present, downstream repo without it.
   if (!existsSync(PYPROJECT)) {
     logger.log(
       'skillspector-pin-is-consistent: no SkillSpector uv project (n/a).',

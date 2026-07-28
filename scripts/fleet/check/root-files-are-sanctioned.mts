@@ -40,7 +40,7 @@ const logger = getDefaultLogger()
 // Exact tracked names allowed at the repo root, fleet-wide (sorted, one flat
 // set): root-anchored dotfiles + tool config, the fleet tier dirs
 // (.claude/.config/.git-hooks/.github), package-manager + language manifests
-// (cargo, pnpm, make), GitHub-rendered root prose, root-anchored standards
+// cargo, pnpm, make, GitHub-rendered root prose, root-anchored standards
 // (llms.txt, depot.json, socket.yml which the Socket app reads at the root,
 // the dotenv-convention .env.example/.env.test shareable variants, the vitest
 // fuzz-child auto-discovery config), and repo content dirs. Bare `.env` stays

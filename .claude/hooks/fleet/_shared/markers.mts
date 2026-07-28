@@ -48,7 +48,7 @@ export function aliasMatches(marker: string, rule: string): boolean {
 
 /**
  * True when `line` carries a marker that suppresses `rule`. A bare
- * `socket-lint: allow` (no rule name) is treated as a blanket allow and returns
+ * `socket-lint: allow`, no rule name, is treated as a blanket allow and returns
  * true for every `rule`.
  *
  * `rule === undefined` means "is any marker present at all" — used by generic

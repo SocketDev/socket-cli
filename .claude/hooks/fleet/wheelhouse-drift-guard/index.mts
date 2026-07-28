@@ -8,12 +8,12 @@
 //   wheelhouse-controlled file is edited only in `template/base` then re-cascaded
 //   — never hand-patched at the root (the silent-drift class that shipped a stale
 //   github-release.yml / npm-publish.yml). It never fires on a path under
-//   `template/` (the canonical source), on an already-matching edit, on an
-//   EXPECTED / PRESET / native-handler path (content varies per repo), or in a
+//   `template/`, the canonical source, on an already-matching edit, on an
+//   EXPECTED / PRESET / native-handler path, content varies per repo, or in a
 //   member (no `template/base` → this is no-fleet-fork-guard's job).
 //
 // Wheelhouse-only in effect: the classification manifest + cascade resolver live
-// under `scripts/repo/` (not cascaded), imported at runtime and guarded — a
+// under `scripts/repo/`, not cascaded, imported at runtime and guarded — a
 // member fails open (allow).
 //
 // Fix: edit `template/base/<path>`, then re-cascade
@@ -38,7 +38,7 @@ import { resolveEditedText } from '../_shared/payload.mts'
 export interface WheelhouseDriftDeps {
   // True when `relPosix` is byte-controlled (under a mirror / optional entry).
   readonly isByteControlled: (relPosix: string) => boolean
-  // True when `relPosix` is EXPECTED / PRESET / native-handler (content varies).
+  // True when `relPosix` is EXPECTED / PRESET / native-handler, content varies.
   readonly isExcluded: (relPosix: string) => boolean
   // The resolved template winner content for `relPosix` (base + kind +
   // overrides), or undefined when no layer provides it for this repo.
@@ -49,7 +49,7 @@ export interface WheelhouseDriftDeps {
  * True when editing `filePath` (a root copy under `repoRoot`) to `content`
  * would drift it from its resolved template source. Pure: the manifest +
  * resolver are injected via `deps`. Never fires for a path under `template/`
- * (the source), an excluded (per-repo-varying) path, a path with no resolvable
+ * the source, an excluded (per-repo-varying) path, a path with no resolvable
  * winner, or an edit whose post-edit text already matches the winner.
  */
 export function isWheelhouseControlledDrift(
@@ -73,7 +73,7 @@ export function isWheelhouseControlledDrift(
   }
   const winner = deps.resolveWinnerContent(rel)
   // No resolvable canonical source, or an undeterminable post-edit text — fail
-  // open (can't prove drift).
+  // open, can't prove drift.
   if (winner === undefined || content === undefined) {
     return false
   }

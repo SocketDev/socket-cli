@@ -64,7 +64,7 @@ export const PACK_APP_TRIPLETS_WIN32 = [
 ] as const satisfies readonly PackAppTriplet[]
 
 /**
- * Glibc-only subset (excludes musl). For families whose Linux build doesn't
+ * Glibc-only subset, excludes musl. For families whose Linux build doesn't
  * support musl distros (Alpine, …).
  */
 export const PACK_APP_TRIPLETS_GLIBC = [
@@ -77,7 +77,7 @@ export const PACK_APP_TRIPLETS_GLIBC = [
 ] as const satisfies readonly PackAppTriplet[]
 
 /**
- * O(1) membership set for hot paths (lint rules, allowlist validators).
+ * O(1) membership set for hot paths, lint rules, allowlist validators.
  * Materialized once at module load.
  */
 export const PACK_APP_TRIPLET_SET: ReadonlySet<PackAppTriplet> = new Set(

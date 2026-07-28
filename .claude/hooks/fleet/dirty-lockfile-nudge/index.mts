@@ -21,7 +21,7 @@
 // On match it returns a non-blocking notify reminder to run `pnpm i`. It
 // does NOT run the install itself — `pnpm i` hits the network/Socket-firewall
 // and can run build scripts, too heavy to fire blind from inside a fast
-// hook; the agent runs it (the reminder names the exact command). The
+// hook; the agent runs it, the reminder names the exact command. The
 // command gate keeps it quiet: a non-git/non-pnpm Bash call never triggers
 // a `git status` probe.
 //
@@ -41,7 +41,7 @@ import { resolveProjectDir } from '../_shared/project-dir.mts'
 // Binaries whose use means the lockfile may have just drifted or is about
 // to be committed. A `git commit`/`git add` is the land path; a `git
 // status` is the moment a dirty lockfile becomes visible; a `pnpm`
-// install/run is what regenerates (or fails to regenerate) it.
+// install/run is what regenerates, or fails to regenerate, it.
 const TRIGGER_BINARIES = ['git', 'pnpm']
 
 // The lockfile basename we reconcile. pnpm is the fleet package manager;

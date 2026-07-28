@@ -46,7 +46,7 @@ export interface ReleaseBranch {
   // The resolved CI release environment.
   readonly env: ReleaseEnv
   // The version this branch bumps to — pins the promote PR's squash subject to
-  // `chore: bump version to <version>` (the reconcile anchor) and titles the PR.
+  // `chore: bump version to <version>`, the reconcile anchor, and titles the PR.
   readonly version: string
 }
 
@@ -72,7 +72,7 @@ export interface BumpResult {
 export function resolveReleaseEnv(): ReleaseEnv {
   const repo = process.env['GITHUB_REPOSITORY']
   const mainBranch = process.env['GITHUB_REF_NAME']
-  // The in-house release App token (minted by the workflow's app-token action),
+  // The in-house release App token, minted by the workflow's app-token action,
   // NOT the default github.token — least-privilege + verified/app-attributed.
   const token =
     process.env['RELEASE_APP_TOKEN'] || process.env['GH_TOKEN'] || ''
@@ -167,10 +167,10 @@ export async function openReleaseBranch(config: {
  * works WITHIN branch protection — no bypass needed.
  *
  * The squash commit subject is pinned to `chore: bump version to <version>`
- * (the same subject the bump commit carries) so the reconcile anchor survives
+ * the same subject the bump commit carries, so the reconcile anchor survives
  * the squash — `findPublishedBaseSha` / the version-flip anchor lookups keep
  * resolving the landed bump. Branch protection typically permits only a squash
- * merge (linear history), so the release App's exact app-signed commit SHA is
+ * merge, linear history, so the release App's exact app-signed commit SHA is
  * not preserved verbatim; the squashed commit is created under the release App
  * and GitHub-signed (Verified), carrying byte-identical bump content.
  *

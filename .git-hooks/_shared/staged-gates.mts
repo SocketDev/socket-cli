@@ -15,9 +15,9 @@ import { git, gitLines } from './git.mts'
 const OXLINT_WIRING_PATH_RE =
   /(?:^|\/)(?:template\/)?\.config\/oxlint-plugin\/rules\/[^/]+\.mts$|(?:^|\/)(?:template\/)?\.config\/oxlint-plugin\/index\.mts$|(?:^|\/)(?:template\/)?\.config\/oxlintrc\.json$|(?:^|\/)(?:template\/)?\.config\/oxlint-plugin\/test\/[^/]+\.test\.mts$/
 
-// Path (relative to repo root) of the rule-wiring generator. Present only in
+// Path, relative to repo root, of the rule-wiring generator. Present only in
 // the wheelhouse — downstream fleet repos don't carry it, so the gate no-ops
-// there (they have no plugin rule files to wire).
+// there, they have no plugin rule files to wire.
 const SYNC_OXLINT_RULES_REL = 'scripts/fleet/sync-oxlint-rules.mts'
 
 /**
@@ -29,7 +29,7 @@ const SYNC_OXLINT_RULES_REL = 'scripts/fleet/sync-oxlint-rules.mts'
  *
  * Returns the generator's diagnostic text when wiring is out of sync, or
  * `undefined` when everything is in sync, no relevant file is staged, or the
- * generator isn't present (downstream repo). Deliberately fail-closed only on a
+ * generator isn't present, downstream repo. Deliberately fail-closed only on a
  * real drift signal: a generator that can't run (missing deps pre-install,
  * spawn error) returns undefined so a fresh checkout isn't blocked.
  *
@@ -52,7 +52,7 @@ export const checkOxlintRuleWiringStaged = (
     cwd: repoRoot,
     encoding: 'utf8',
   })
-  // Spawn failure (missing deps, node error) — fail open so a pre-install
+  // Spawn failure, missing deps, node error — fail open so a pre-install
   // checkout isn't blocked. Only a clean non-zero EXIT is a drift signal.
   if (r.error || typeof r.status !== 'number') {
     return undefined
@@ -112,7 +112,7 @@ export function runStagedTestsReminder(
     return undefined
   }
   // Announce the bound BEFORE the spawn. The run is silent otherwise, so a
-  // commit that is mid-run (especially a backgrounded one) is visually
+  // commit that is mid-run, especially a backgrounded one, is visually
   // indistinguishable from a true hang — which invites the wrong reaction
   // (`pkill -f vitest`, then concluding "it hung"). A visible deadline makes
   // the budget legible: this line + the skip note below mean an observer can
@@ -146,7 +146,7 @@ export function runStagedTestsReminder(
     )
     return undefined
   }
-  // Fail open: a spawn error (missing deps on a fresh checkout, node crash) is
+  // Fail open: a spawn error, missing deps on a fresh checkout, node crash, is
   // not a test failure. Only a clean non-zero exit means staged tests failed.
   if (r.error || typeof r.status !== 'number' || r.status === 0) {
     return undefined
@@ -158,7 +158,7 @@ export function runStagedTestsReminder(
   )
 }
 
-// ── Catastrophic mass-deletion (pre-commit tier) ────────────────────
+// ── Catastrophic mass-deletion, pre-commit tier ────────────────────
 //
 // The PreToolUse `mass-delete-guard` inspects the staged index when the `git
 // commit` Bash command is FIRST seen — but a pre-commit step (lint/test) can

@@ -126,7 +126,7 @@ export async function runLintJson(
     return []
   }
   // The Socket Firewall (sfw) install wrapper prepends a "Protected by Socket
-  // Firewall" banner (and may append a trailer) to stdout, so the captured
+  // Firewall" banner, and may append a trailer, to stdout, so the captured
   // payload is not pure JSON. Extract the root object span — first `{` to last
   // `}` — before parsing. A no-banner environment slices to the whole string.
   const jsonStart = stdout.indexOf('{')

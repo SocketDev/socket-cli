@@ -62,7 +62,7 @@ export const MODIFIER_NAMES: ReadonlySet<string> = new Set([
 
 // Names that the fleet's globals-off configs would NOT make available without
 // an import, but which are still unambiguous test/hook/expect roots — kept as a
-// fallback so a globals-on fixture (or a stray) still classifies.
+// fallback so a globals-on fixture, or a stray, still classifies.
 //
 // Trade-off: seeding these as always-known means a LOCAL binding that shadows a
 // vitest name (`const it = somethingElse`) is still classified as vitest. In
@@ -232,7 +232,7 @@ export interface VitestCall {
   kind: 'test' | 'describe' | 'hook' | 'expect'
   // Modifier names chained after the root, in source order (only/skip/each/…).
   modifiers: string[]
-  // The dotted chain of local names as written (root first).
+  // The dotted chain of local names as written, root first.
   localChain: string[]
 }
 

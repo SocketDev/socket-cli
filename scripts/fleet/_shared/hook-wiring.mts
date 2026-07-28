@@ -39,16 +39,16 @@ export const INDEX_REL = '.claude/hooks/fleet/index.cjs'
 export const LAUNCHER_REL = '.claude/hooks/fleet/_dispatch/dispatch-launcher'
 
 /**
- * The compile-cache baseline command for an event (the cascaded canonical).
+ * The compile-cache baseline command for an event, the cascaded canonical.
  */
 export function baselineCommand(event: string): string {
   return `node "$CLAUDE_PROJECT_DIR"/${INDEX_REL} ${event}`
 }
 
 /**
- * A dispatch command for `event` in either form (baseline or launcher). Used to
+ * A dispatch command for `event` in either form, baseline or launcher. Used to
  * recognize an existing dispatch entry regardless of which path it's wired to,
- * so a rewrite is idempotent and replaces (never duplicates) the entry.
+ * so a rewrite is idempotent and replaces, never duplicates, the entry.
  */
 export function isDispatchCommand(command: string, event: string): boolean {
   return (
@@ -114,7 +114,7 @@ export interface DispatchSettings {
  * Rewrite every recognized dispatch command in `settings` to the form
  * `make(event)` produces. Returns the number of commands changed. Mutates in
  * place; the caller decides whether to persist. Passing `baselineCommand` as
- * `make` CANONICALIZES (both forms collapse to the baseline) — the shape the
+ * `make` CANONICALIZES, both forms collapse to the baseline — the shape the
  * fleet-drift comparison needs so a launcher-wired host doesn't read as drift.
  */
 export function rewriteDispatchCommands(

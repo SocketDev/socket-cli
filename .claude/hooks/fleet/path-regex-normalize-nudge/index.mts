@@ -127,7 +127,7 @@ export function findFindings(code: string): Finding[] {
       // The constructor takes the pattern as a STRING — backslash
       // escapes are JS-string escapes, so `"[/\\\\]"` in source
       // becomes `"[/\\]"` as the value, then `[/\\]` as the regex.
-      // We test against the value (already one level of unescaping).
+      // We test against the value, already one level of unescaping.
       if (!isDualSeparator(pattern)) {
         return
       }

@@ -92,7 +92,7 @@ const rule = {
         // Report each inline type specifier so the user sees every
         // offender. Attach the autofix to the first one only — ESLint
         // dedupes overlapping fixes and the rewrite replaces the
-        // whole statement (plus possibly inserts a new one).
+        // whole statement, plus possibly inserts a new one.
         const source = node.source.value
         const indent = (() => {
           const text = sourceCode.text

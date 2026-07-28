@@ -21,7 +21,7 @@ import { globSync } from '@socketsecurity/lib-stable/globs/match'
 
 // Known telemetry / analytics / phone-home SDK package-name patterns across npm,
 // PyPI, and cargo. High-signal: SDKs that SHIP usage data. Inert APIs are
-// excluded on purpose — `opentelemetry-api` alone cannot export (no exporter),
+// excluded on purpose — `opentelemetry-api` alone cannot export, no exporter,
 // so it is NOT listed; the SDK + exporters CAN, so they are.
 export const TELEMETRY_SDKS: readonly RegExp[] = [
   /^@sentry\//,
@@ -58,14 +58,14 @@ export const TELEMETRY_SDKS: readonly RegExp[] = [
 ]
 
 // Telemetry SDKs already present in the tree that have been REVIEWED + accepted
-// (or judged inert), each with the reason it is tolerated. The scanner FAILS on
+// or judged inert, each with the reason it is tolerated. The scanner FAILS on
 // any telemetry SDK NOT listed here — i.e. one ADDED by a dependency update or a
 // newly-pulled external tool. Keep this short + justified; it is the exact
 // reviewed set, not an escape hatch. Re-review on every bump.
 export const REVIEWED_TELEMETRY: Readonly<Record<string, string>> = {
   __proto__: null,
   // No telemetry SDK is currently tolerated in the tree. A telemetry SDK that
-  // shows up here (via a dependency update or a newly-pulled tool) FAILS the
+  // shows up here, via a dependency update or a newly-pulled tool, FAILS the
   // scan until it is reviewed and re-added with its justification. (PostHog was
   // dropped with @rely-ai/caliber — the only SDK that had pulled it in.)
 } as unknown as Record<string, string>

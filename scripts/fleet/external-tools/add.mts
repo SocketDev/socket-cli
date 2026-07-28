@@ -5,7 +5,7 @@
  *   tool (purl + registry integrity). Reuses the phase-1 bulk updater's
  *   curlSha512 / hexToSri / fetchNpmVersionIntegrity so the integrity is
  *   computed the SAME way a bump computes it — one asset-verification codepath.
- *   FAILS LOUD (throws, aborting before any write) when an asset can't be
+ *   FAILS LOUD, throws, aborting before any write, when an asset can't be
  *   fetched or the registry has no integrity for the version — refusing to
  *   persist an entry with an unverifiable integrity. Dry-run by default: prints
  *   the entry it would write; `--apply` commits it through EditableJson so the
@@ -42,7 +42,7 @@ import { REPO_ROOT } from '../paths.mts'
 const logger = getDefaultLogger()
 
 // ---------------------------------------------------------------------------
-// Entry builders (network isolated behind injectable deps for the unit test)
+// Entry builders, network isolated behind injectable deps for the unit test
 // ---------------------------------------------------------------------------
 
 export interface BuildGithubEntryConfig {
@@ -313,7 +313,7 @@ export async function main(
     return 0
   }
   // Append the new key through EditableJson so the rest of the file keeps its
-  // key order + formatting (a surgical one-key diff).
+  // key order + formatting, a surgical one-key diff.
   editable.update({
     tools: { ...editable.content.tools, [opts.name]: entry },
   })
@@ -322,7 +322,7 @@ export async function main(
   return 0
 }
 
-// Guarded so importing this module (the unit test) doesn't run the CLI. Fail-
+// Guarded so importing this module, the unit test, doesn't run the CLI. Fail-
 // soft: surface the reason via logger.error, set a non-zero exit code, never a
 // raw unhandled throw.
 if (import.meta.main) {

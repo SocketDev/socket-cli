@@ -2,8 +2,8 @@
 /*
  * @file gh/GraphQL plumbing for the `driving-cursor-bugbot` skill — the
  *   mechanical half of the Bugbot review-and-fix loop, so the skill keeps only
- *   the AI judgment (classify each finding) and the human-stop inline. Every
- *   GitHub call goes through the `gh` CLI (keychain-auth, no token in argv);
+ *   the AI judgment, classify each finding, and the human-stop inline. Every
+ *   GitHub call goes through the `gh` CLI, keychain-auth, no token in argv;
  *   owner/repo resolve from `gh repo view` so the script works in any checkout.
  *
  *   Subcommands:
@@ -302,7 +302,7 @@ export async function replyToFinding(config: {
 
 /**
  * Sweep a PR's Bugbot review threads and resolve every one that already has an
- * author reply (more than one comment in the thread) and isn't resolved yet.
+ * author reply, more than one comment in the thread, and isn't resolved yet.
  * Returns the thread ids resolved.
  */
 export async function resolveRepliedThreads(
@@ -406,7 +406,7 @@ export async function scanAlreadyFixed(pr: number): Promise<
 }
 
 /**
- * List local commits after `sinceSha` that touch `path` (newest first).
+ * List local commits after `sinceSha` that touch `path`, newest first.
  */
 export async function gitCommitsTouchingSince(
   sinceSha: string,

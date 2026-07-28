@@ -13,7 +13,7 @@
  *   accepted in exchange for speed; the lint rule is the authoritative gate.
  *
  *   Exit codes:
- *   - 0 — all clean (no un-normalized matches)
+ *   - 0 — all clean, no un-normalized matches
  *   - 1 — at least one finding (file:line list emitted to stderr)
  *
  *   Usage: node scripts/fleet/check/paths-are-normalized-before-match.mts [--quiet]
@@ -40,7 +40,7 @@ const SOURCE_FILE_RE = /\.(?:[cm]?tsx?|ts)$/
 const SKIP_DIR_RE =
   /_dispatch\/(?:bundle|snapshot-bundle)\.cjs|\/node_modules\/|\/vendor\/|\/third_party\/|\/upstream\/|\/build\//
 
-// Path-like variable name heuristics (same shape as the lint rule).
+// Path-like variable name heuristics, same shape as the lint rule.
 // require-regex-comment: path-like variable name suffix/prefix patterns.
 const PATH_VAR_IDENT_RE =
   /(?:^|_)(?:abs|base|cwd|dest|dir|entry|file|from|input|output|path|rel|root|src|target|to)(?:_|$)|Path$|File$|Dir$/

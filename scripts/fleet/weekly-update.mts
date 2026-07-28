@@ -22,7 +22,7 @@
  *      `/updating` umbrella via the locked-down `spawnAiAgent` (AI_PROFILE.full
  *      = the four-flag lockdown the Programmatic-Claude rule mandates). No
  *      agent → log a skip note and continue on the deterministic result. A
- *      missing key NEVER fails the run (the resilience point).
+ *      missing key NEVER fails the run, the resilience point.
  *   4. test — the configured setup and test commands.
  *   5. PR — on pass, open a PR via `gh` (unless --no-pr); on fail, print the logs
  *      and the next step without opening a PR. Flags mirror the gh-aw inputs
@@ -87,7 +87,7 @@ export function parseArgs(argv: readonly string[]): WeeklyUpdateConfig {
     testScript: flag('--test-script') ?? 'pnpm test',
     testSetupScript: flag('--test-setup-script') ?? 'pnpm run build',
     // A weekly dependency update is mechanical — pair the cheap model with
-    // medium effort (token-spend rule). Override with --update-effort.
+    // medium effort, token-spend rule. Override with --update-effort.
     updateEffort: (flag('--update-effort') as AiEffort | undefined) ?? 'medium',
     updateModel: flag('--update-model') ?? 'haiku',
   }
@@ -247,7 +247,7 @@ async function main(): Promise<void> {
   // --check-updates: the deterministic gate as a standalone mode. Exits 0 when
   // there is actionable drift, 1 when there is not — so the gh-aw
   // `weekly-update.md` check-updates job runs `weekly-update.mts --check-updates`
-  // instead of an inline bash port (one source of the gate logic).
+  // instead of an inline bash port, one source of the gate logic.
   if (process.argv.includes('--check-updates')) {
     const actionable = await hasActionableUpdates()
     logger.info(

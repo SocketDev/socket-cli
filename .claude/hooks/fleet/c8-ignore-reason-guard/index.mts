@@ -15,8 +15,8 @@
  *   c8 ignore start - third-party throw path  …  c8 ignore stop
  *   v8 ignore next - unreachable: exhaustive switch default
  *   Blocked shapes:
- *   c8 ignore next                  (no reason)
- *   v8 ignore start                 (no reason)
+ *   c8 ignore next, no reason
+ *   v8 ignore start, no reason
  *   c8 ignore next 3 - reason       (multi-line next N — use start/stop)
  *   `stop` markers need no reason (the paired `start` carries it).
  *   Exit codes: 0 pass, 2 block. Fails open on its own errors.
@@ -65,7 +65,7 @@ export function findUnexplainedIgnores(source: string): Finding[] {
       // A multi-line `next N` (N >= 2) is broken even WITH a reason: c8/v8
       // count physical lines, not statements, so `next 3` silently drops
       // covered lines. Require a start/stop bracket instead. Bare `next`
-      // and `next 1` (a single physical line) stay allowed.
+      // and `next 1`, a single physical line, stay allowed.
       const countMatch = /^\s*(?<count>\d+)/.exec(rawTail)
       if (
         kind === 'next' &&

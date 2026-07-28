@@ -2,7 +2,7 @@
 // tree.
 //
 //   1. RULE — the fleet bundler is rolldown, and esbuild is banned (CLAUDE.md
-//      Tooling). vite 8.x is rolldown-native (bundles rolldown, no esbuild);
+//      Tooling). vite 8.x is rolldown-native, bundles rolldown, no esbuild;
 //      vite 6/7 hard-depend on esbuild. A repo that runs vitest pulls vite
 //      transitively, so without a `vite: 8.x` catalog pin + a `'vite':
 //      'catalog:'` override the transitive vite floats to 7.x and drags esbuild
@@ -14,10 +14,10 @@
 //      didn't get the rolldown-native pin.
 //   3. THE FIX — catalog `vite: 8.x`, overrides `'vite': 'catalog:'` +
 //      `'rolldown': 'catalog:'`, bump any package.json vitest hard-pin to the
-//      catalog version (a hard-pin masks the catalog), and
+//      catalog version, a hard-pin masks the catalog, and
 //      `ignoredOptionalDependencies: [esbuild]` to drop vite 8's optional
 //      esbuild peer, then `rm -rf node_modules pnpm-lock.yaml && pnpm install`
-//      (a gentle relock won't re-derive). See docs/agents.md/fleet/tooling.md.
+//      a gentle relock won't re-derive. See docs/agents.md/fleet/tooling.md.
 //
 //   Exit codes: 0 — clean (vite 8.x, no esbuild) or no lockfile; 1 — drift.
 //   Usage: node scripts/fleet/check/vite-is-rolldown-native.mts [--quiet]
@@ -71,7 +71,7 @@ const ESBUILD_RE = /^ {2}'?(@esbuild\/[a-z0-9-]+|esbuild)@\d/u
 
 /**
  * Scan a pnpm-lock.yaml body for vite-too-old / esbuild-present resolutions.
- * Pure (string in, findings out) so it unit-tests without a real lockfile.
+ * Pure, string in, findings out, so it unit-tests without a real lockfile.
  */
 export function scanLock(lockBody: string): ViteFinding[] {
   const findings: ViteFinding[] = []

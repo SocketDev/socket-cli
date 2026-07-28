@@ -5,7 +5,7 @@
  *   segment vocabulary in order to flag everyone else. Pure data + predicate;
  *   no I/O. Paths are normalized to forward-slash form before matching so the
  *   regexes work on Windows too — see [`docs/agents.md/fleet/code-style.md`]
- *   (cross-platform path matching).
+ *   cross-platform path matching.
  */
 
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'

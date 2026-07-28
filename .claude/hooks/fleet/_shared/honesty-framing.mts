@@ -1,6 +1,6 @@
 // Canonical honesty-filler matcher — the single source for every hook that
 // flags "honest"/"honestly"/"honesty" framing. Consumed by reply-prose-nudge
-// (Stop, chat voice), convo-prose-nudge (PreToolUse, gh pr/issue
+// Stop, chat voice, convo-prose-nudge (PreToolUse, gh pr/issue
 // bodies), and anti-prose-guard (PreToolUse, doc writes). Before this,
 // each carried its own divergent copy: reply-prose had the bare word ban, the
 // conversational nudge only "to be honest", and the prose guard only the

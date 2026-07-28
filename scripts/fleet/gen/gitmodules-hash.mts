@@ -117,7 +117,7 @@ export function parseBlocks(lines: string[]): Block[] {
       if (/^\s*\[/.test(next)) {
         break
       }
-      // A `url = …github.com…<owner>/<repo>` line (https or ssh form), captures
+      // A `url = …github.com…<owner>/<repo>` line, https or ssh form, captures
       // `owner/repo` (sans optional `.git`). Alternation sorted (`git@` before
       // `https`) per sort-regex-alternations.
       const urlMatch =
@@ -198,7 +198,7 @@ export async function archiveSha256(
 // SHAs are git's immutable content addresses and `ls-tree` output is
 // git-version-stable, so this hash is an UNMOVABLE content pin tied to the
 // commit — it cannot shift under our feet the way a gitiles `+archive` .tar.gz
-// (gzip-timestamped, regenerated per fetch) does. This is the content-hash for
+// gzip-timestamped, regenerated per fetch, does. This is the content-hash for
 // a non-codeload remote (e.g. *.googlesource.com); the codeload archive hash
 // stays the pin for GitHub remotes. Requires the worktree checked out at `ref`.
 export async function treeManifestSha256(
@@ -234,7 +234,7 @@ export async function treeManifestSha256(
 }
 
 // A submodule worktree is materialized when its checkout dir holds a `.git`
-// pointer (file for a submodule, dir for a plain clone).
+// pointer, file for a submodule, dir for a plain clone.
 export function isMaterialized(worktreeDir: string): boolean {
   return existsSync(path.join(worktreeDir, '.git'))
 }
@@ -318,7 +318,7 @@ export async function resolveAll(
   return out
 }
 
-// Resolve the `.gitmodules` path argument (positional, after any flags) and
+// Resolve the `.gitmodules` path argument, positional, after any flags, and
 // confirm it exists. Exits non-zero with a fix message otherwise.
 export function resolveGitmodulesPath(positional: string | undefined): string {
   const gitmodulesPath = path.resolve(positional ?? '.gitmodules')
@@ -367,7 +367,7 @@ export function parseSetArgs(argv: string[]): SetArgs {
 // sha256 in a single write. This is the sanctioned ref-bump path — a hand-edit
 // of `ref =` alone is (correctly) blocked by uses-sha-verify-guard because the
 // new archive hash can't be computed at edit time. `--label` replaces the
-// `# <name>-<version|date>` prefix (keep it accurate to the new ref's track).
+// `# <name>-<version|date>` prefix, keep it accurate to the new ref's track.
 async function runSet(argv: string[], gitmodulesPath: string): Promise<void> {
   const parsed = parseSetArgs(argv)
   if ('error' in parsed) {

@@ -26,7 +26,7 @@
  *   consumers that never set the env (e.g. scripts/repo/measure-one-enforcer)
  *   keep the fixed default via paths.mts's fallback — they don't accumulate
  *   raw dumps across a concurrent run the way cover does.
- *   The env-name string is duplicated (a literal) in scripts/fleet/paths.mts's
+ *   The env-name string is duplicated, a literal, in scripts/fleet/paths.mts's
  *   COVERAGE_SCRATCH_DIR fallback: importing this module there would fire this
  *   side effect for every paths.mts consumer, not just cover. Keep the two
  *   literals in lockstep — same fleet pattern as FLEET_CHILD_V8_COVERAGE_DIR.
@@ -41,8 +41,8 @@ import process from 'node:process'
 export const FLEET_COVERAGE_SCRATCH_DIR_ENV = 'FLEET_COVERAGE_SCRATCH_DIR'
 
 // The per-run-unique scratch dir for a cover process. Pure so it is unit
-// testable: same (pid, token) → same dir (the whole process tree agrees);
-// different tokens → different dirs (two concurrent runs never collide).
+// testable: same, pid, token → same dir, the whole process tree agrees;
+// different tokens → different dirs, two concurrent runs never collide.
 // Rooted at `fleet-coverage-runs`, NOT the legacy `fleet-coverage-scratch`
 // (paths.mts's fixed fallback): a pre-fix cover run recursively wipes the
 // legacy root on startup, so a per-run dir NESTED under it would be clobbered

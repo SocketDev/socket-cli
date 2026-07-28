@@ -23,7 +23,7 @@
 // for the rare case a path genuinely applies fleet-wide but can't be `**/`
 // anchored.
 //
-// Fails open on any parse/payload error (a guard bug must not block work).
+// Fails open on any parse/payload error, a guard bug must not block work.
 
 import path from 'node:path'
 
@@ -54,7 +54,7 @@ export function isUniversalGlob(glob: string): boolean {
 }
 
 // Collect every path-glob from a parsed oxlint/oxfmt config's override + ignore
-// surfaces. Tolerant of missing keys / shapes (returns what it finds).
+// surfaces. Tolerant of missing keys / shapes, returns what it finds.
 export function collectConfigGlobs(parsed: unknown): string[] {
   const out: string[] = []
   if (!parsed || typeof parsed !== 'object') {
@@ -118,7 +118,7 @@ export const check = editGuard((filePath, content, payload) => {
     return undefined
   }
 
-  // Only flag globs the edit INTRODUCES (present in after, absent before) so a
+  // Only flag globs the edit INTRODUCES, present in after, absent before, so a
   // pre-existing entry doesn't block an unrelated edit.
   const before = new Set(repoSpecificGlobs(safeReadFileSync(filePath) ?? ''))
   const introduced = repoSpecificGlobs(afterText).filter(g => !before.has(g))

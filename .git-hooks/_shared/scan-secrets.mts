@@ -6,7 +6,7 @@ import { SOCKET_PUBLIC_API_KEY } from '@socketsecurity/lib-stable/constants/sock
 
 import { scanLines } from './scan-core.mts'
 // Personal-path matcher lives in the gate-free _shared/personal-path.mts so the
-// edit-time personal-path-guard shares THIS code (was a lock-step inline copy).
+// edit-time personal-path-guard shares THIS code, was a lock-step inline copy.
 import {
   isPurePlaceholder,
   PERSONAL_PATH_RE,
@@ -74,7 +74,7 @@ export const filterAllowedApiKeys = (lines: readonly string[]): string[] =>
 
 // ── Personal-path scanner ──────────────────────────────────────────
 // PERSONAL_PATH_RE / the placeholder filter / suggestPlaceholder are imported
-// from _shared/personal-path.mts (the cross-tree canonical home). See that
+// from _shared/personal-path.mts, the cross-tree canonical home. See that
 // module for the leak shapes + allowed-placeholder rationale.
 
 // Returns lines that contain a real personal path (excludes lines that
@@ -82,7 +82,7 @@ export const filterAllowedApiKeys = (lines: readonly string[]): string[] =>
 // carries a `suggested` rewrite when the scanner can offer one — the
 // caller surfaces it to the user as the fix recipe. The regex, the
 // pure-placeholder filter, and suggestPlaceholder are imported from the
-// shared _shared/personal-path.mts (single source for both hook trees).
+// shared _shared/personal-path.mts, single source for both hook trees.
 export const scanPersonalPaths = (text: string): LineHit[] =>
   scanLines(text, PERSONAL_PATH_RE, {
     // NFKC-normalize before match — catches full-width and ligature

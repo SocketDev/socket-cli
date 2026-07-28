@@ -3,7 +3,7 @@
  *   server (Rust). Per-platform raw binary (the asset IS the executable,
  *   codedb-shape): version + per-platform asset/integrity from
  *   external-tools.json, GitHub release-download, SRI-verified + racked by
- *   lib/install-tool.mjs, with a bin/fff-mcp shim. Skipped (no error) when fff
+ *   lib/install-tool.mjs, with a bin/fff-mcp shim. Skipped, no error, when fff
  *   isn't pinned for this platform. Imports only bootstrap-common.mjs +
  *   `node:`.
  */

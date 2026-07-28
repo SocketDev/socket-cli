@@ -1,8 +1,8 @@
 /*
  * @file Single source of truth for "is this machine's Homebrew hardened to the
  *   6.0.0 supply-chain posture?" — shared by the brew-supply-chain-guard hook
- *   (point-of-use block), the brew-supply-chain-is-hardened.mts check (drift
- *   report in `check --all`), and setup-security-tools (which sets the knobs).
+ *   point-of-use block, the brew-supply-chain-is-hardened.mts check (drift
+ *   report in `check --all`), and setup-security-tools, which sets the knobs.
  *   Homebrew 6.0.0 (https://brew.sh/2026/06/11/homebrew-6.0.0/) added two
  *   opt-in supply-chain controls plus the machinery they depend on:
  *
@@ -71,8 +71,8 @@ export const MACOS_BREW_SECURITY_ENV: readonly BrewSecurityEnv[] = [
 
 export interface BrewSecurityStatus {
   // 'hardened' = brew is >= the floor AND every knob is on (good); 'unhardened'
-  // = brew present but the floor or a knob is unmet (blockable drift); 'absent'
-  // = brew isn't on PATH, so the check is not applicable (never blocks).
+  // = brew present but the floor or a knob is unmet, blockable drift; 'absent'
+  // = brew isn't on PATH, so the check is not applicable, never blocks.
   state: 'hardened' | 'unhardened' | 'absent'
   // The detected Homebrew version, or undefined when brew is absent / its
   // version couldn't be read.
@@ -172,7 +172,7 @@ export function detectBrewSecurity(): BrewSecurityStatus {
   }
 }
 
-// True when the Bash command invokes `brew` (AST-matched, no regex). Used by
+// True when the Bash command invokes `brew`, AST-matched, no regex. Used by
 // the guard to decide whether to verify brew's posture before the call runs.
 export function commandInvokesBrew(command: string): boolean {
   return findInvocation(command, { binary: 'brew' })

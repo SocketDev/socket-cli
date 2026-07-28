@@ -16,7 +16,7 @@ import { findMemberCalls } from '../../.claude/hooks/fleet/_shared/ast/calls.mts
 export interface LoggerLeak {
   // 1-based line of the call.
   line: number
-  // Source text of the line (trimmed by the caller as needed).
+  // Source text of the line, trimmed by the caller as needed.
   text: string
   // The dotted call, e.g. `console.log` / `process.stderr.write`.
   fullCall: string
@@ -44,7 +44,7 @@ export const FORBIDDEN_LOGGER_CALLS: ReadonlyArray<{
 // Find every direct logger-leak call in `source` via the AST. Returns one entry
 // per call site with its line, the dotted call, and the canonical replacement.
 // Per-line `// socket-lint: allow console` suppression is the CALLER's job
-// (each tree applies its own marker semantics).
+// each tree applies its own marker semantics.
 export function findLoggerLeaks(source: string): LoggerLeak[] {
   const leaks: LoggerLeak[] = []
   for (let i = 0, { length } = FORBIDDEN_LOGGER_CALLS; i < length; i += 1) {
@@ -72,7 +72,7 @@ export interface LoggerDecoration {
   method: string
   // What kind of hand-rolled decoration leads the first argument.
   kind: 'glyph' | 'indent' | 'bullet'
-  // For 'glyph': the leading glyph + the logger method that OWNS it (the fix).
+  // For 'glyph': the leading glyph + the logger method that OWNS it, the fix.
   glyph: string | undefined
   ownerMethod: string | undefined
 }
@@ -93,7 +93,7 @@ const DECORATION_SCAN_METHODS = [
 ]
 
 // Status glyph → the logger method that OWNS it. The method renders the glyph;
-// hand-writing it double-marks (and skips theme-aware color). Keep in lockstep
+// hand-writing it double-marks, and skips theme-aware color. Keep in lockstep
 // with @socketsecurity/lib-stable/logger symbols-builder + the no-status-emoji rule.
 const GLYPH_OWNER: Readonly<Record<string, string>> = {
   '‼': 'warn',
@@ -116,7 +116,7 @@ const GLYPH_OWNER: Readonly<Record<string, string>> = {
   ℹ: 'info',
 }
 
-// Leading status glyph (after optional whitespace). One named capture, consumed
+// Leading status glyph, after optional whitespace. One named capture, consumed
 // below to look up the owning method. Built dynamically from GLYPH_OWNER so the
 // table is the single source.
 const GLYPH_LEAD_RE = new RegExp(

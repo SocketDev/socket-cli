@@ -36,7 +36,7 @@ export type RegistryLatestRead =
   | { reachable: false }
 
 /**
- * What a release lane (npm, cargo) plugs into the anchor chain: where its
+ * What a release lane, npm, cargo, plugs into the anchor chain: where its
  * version lives and how its registry answers.
  */
 export interface ReleaseLane {
@@ -73,14 +73,14 @@ export interface ReleaseLane {
  * 1. `tag` — the previous release's own `v<version>` tag (when it exists AND is an
  *    ancestor of HEAD);
  * 2. `bump-commit` — the commit that flipped the manifest's `version` to the
- *    previous released version (the release's bump commit), when the tag was
+ *    previous released version, the release's bump commit, when the tag was
  *    never pushed;
  * 3. `published-at` — the registry's publish timestamp for the previous version as
- *    a `--since` bound, when even the bump commit is gone (history rewrite);
+ *    a `--since` bound, when even the bump commit is gone, history rewrite;
  * 4. `first-release` — no prior release at all: all history is the changelog.
  *
  * A previous release whose anchor can't be resolved by ANY link is a hard
- * stop for the bump (and a fail-open skip for the drift check) — falling back
+ * stop for the bump, and a fail-open skip for the drift check — falling back
  * to an older tag would re-list already-shipped commits.
  */
 export type ReleaseAnchor =
@@ -173,7 +173,7 @@ export async function findVersionFlipCommit(
  * Resolve the changelog range anchor for the previous released version via
  * the strict chain documented on `ReleaseAnchor`. Returns `undefined` when a
  * previous release exists but no anchor link resolves — the caller must stop
- * (bump) or skip (drift check), NEVER widen to an older tag.
+ * (bump) or skip, drift check, NEVER widen to an older tag.
  */
 export async function resolveReleaseAnchor(config: {
   cwd?: string | undefined

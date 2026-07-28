@@ -1,6 +1,6 @@
 /*
  * @file Hand-authored declarations for bootstrap-zero-dep-packages.mjs — the
- *   dep-0 bootstrap entry stays plain .mjs (it runs before any install exists),
+ *   dep-0 bootstrap entry stays plain .mjs, it runs before any install exists,
  *   so the typed test surface is declared here.
  */
 

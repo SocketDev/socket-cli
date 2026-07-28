@@ -6,12 +6,12 @@
  *   `agent` / `conclusion` / `detection` jobs reference `inputs.aw_context` and
  *   the gh-aw container steps), so it returns a template with no `.jobs` and
  *   Agent CI aborts every task with the cryptic `No jobs found in workflow`.
- *   gh-aw workflows are exercised with `gh aw trial` (an isolated trial repo),
+ *   gh-aw workflows are exercised with `gh aw trial`, an isolated trial repo,
  *   never Agent CI — see docs/agents.md/fleet/shared-workflow-cascade.md. This
  *   wrapper makes that boundary legible instead of cryptic:
  *
  *   - An explicit `--workflow <X>.lock.yml` target exits with an informative
- *     error (the verified crash case) — the reader is told to use `gh aw
+ *     error, the verified crash case — the reader is told to use `gh aw
  *     trial`.
  *   - In discovery mode (`--all`), it forwards to Agent CI unchanged but first
  *     prints a one-line note for any `*.lock.yml` present in

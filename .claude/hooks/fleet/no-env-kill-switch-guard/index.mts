@@ -5,17 +5,17 @@
 // a fleet hook's index.mts. Hooks are guardrails for AI-generated code; a
 // per-hook `SOCKET_*_DISABLED` env var lets a session silently neuter a hook,
 // which defeats the point. The ONLY sanctioned way to skip a hook is the
-// `Allow <X> bypass` phrase (user-typed, transcript-scoped, auditable).
+// `Allow <X> bypass` phrase, user-typed, transcript-scoped, auditable.
 //
 // Banned shapes (recognized at edit time in a `.claude/hooks/**/index.mts`):
 //   disabledEnvVar: 'SOCKET_FOO_DISABLED'        (runStopReminder config field)
-//   process.env['SOCKET_FOO_DISABLED']           (direct read)
-//   process.env.SOCKET_FOO_DISABLED              (direct read, dot form)
-//   isHookDisabled('foo')                         (any disable-by-env helper)
+//   process.env['SOCKET_FOO_DISABLED'], direct read
+//   process.env.SOCKET_FOO_DISABLED, direct read, dot form
+//   isHookDisabled('foo')                         any disable-by-env helper
 //
-// Allowed (passes through):
+// Allowed, passes through:
 //   - the SOCKET_PRE_{COMMIT,PUSH}_ALLOW_UNSIGNED escape used by the signing
-//     setup (a documented break-glass, not a hook kill switch), and the
+//     setup, a documented break-glass, not a hook kill switch, and the
 //     wheelhouse-cascade FLEET_SYNC marker — neither matches the *_DISABLED
 //     shape.
 //   - non-hook files (only `.claude/hooks/**/index.mts` is policed).

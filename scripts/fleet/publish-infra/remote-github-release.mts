@@ -5,7 +5,7 @@
  *   default (mirrors the workflow's own `release: false` default — the
  *   dispatch runs the gate + plan, no mutations); pass `--release` to cut
  *   the release for real. The repo-side github-release.yml requires a `tag`
- *   input on manual dispatch (tag pushes resolve it from the pushed ref), so
+ *   input on manual dispatch, tag pushes resolve it from the pushed ref, so
  *   `--tag v<version>` names the already-pushed tag to release. Only inputs
  *   the target workflow declares are ever sent — GitHub rejects a dispatch
  *   carrying an undeclared input (a `release-as` input was once sent here
@@ -14,7 +14,7 @@
  *   never throws.
  *   CLI: remote:github:release [--release] [--tag <vX.Y.Z>]
  *   [--bundle-dry-run] [--repo <owner/name>] [--ref <branch|tag>] [--dry-run]
- *   `--dry-run` is a LOCAL preview of the `gh` command (nothing is dispatched);
+ *   `--dry-run` is a LOCAL preview of the `gh` command, nothing is dispatched;
  *   `--release` controls whether the dispatched CI run mutates vs. plans.
  */
 

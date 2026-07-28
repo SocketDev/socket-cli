@@ -57,7 +57,7 @@ function ngramsOfNormalized(norm: string, n = 3): Set<string> {
   return grams
 }
 
-// Character n-grams of the normalized text (default trigrams).
+// Character n-grams of the normalized text, default trigrams.
 export function getNgrams(text: string, n = 3): Set<string> {
   return ngramsOfNormalized(normalizeText(text), n)
 }
@@ -112,7 +112,7 @@ export function hybridSimilarity(textA: string, textB: string): number {
 }
 
 // Pre-computed text representations for fast repeated similarity checks across
-// a stream (build once per item, compare many times).
+// a stream, build once per item, compare many times.
 export interface PreparedText {
   ngrams: Set<string>
   tokens: Set<string>

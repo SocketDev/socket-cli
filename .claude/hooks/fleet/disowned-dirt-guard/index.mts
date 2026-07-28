@@ -7,9 +7,9 @@
 // uncommitted / WIP state to a "parallel session", "another session", or a
 // "sibling session" is disowning its own work: the paths never get landed,
 // and the excuse survives review because it sounds plausible. This guard
-// blocks turn-end once so the reply (and the dirt) get handled — commit the
+// blocks turn-end once so the reply, and the dirt, get handled — commit the
 // paths logically, or say precisely why they cannot be committed yet.
-// Degrades to a notice when `stop_hook_active` is set (no Stop loops).
+// Degrades to a notice when `stop_hook_active` is set, no Stop loops.
 // Bypass: `Allow disowned-dirt bypass`.
 
 import { block, defineHook, notify, runHook } from '../_shared/guard.mts'

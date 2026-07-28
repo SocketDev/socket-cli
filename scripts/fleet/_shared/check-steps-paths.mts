@@ -64,7 +64,7 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     () => run('node', ['scripts/fleet/check/skill-delegations-resolve.mts']),
     // Dead-code gate: a fleet member is a SIBLING repo, never a wheelhouse
     // subdir. A root dir matching a roster member name is a stray scaffold
-    // someone left in-tree (a full fleet-scaffold copy) that gets swept into
+    // someone left in-tree, a full fleet-scaffold copy, that gets swept into
     // cascade commits — fail loud so it's removed, not gitignored.
     () => run('node', ['scripts/fleet/check/member-dirs-are-not-nested.mts']),
     // Sibling stray-dir gate: pnpm reads any dir holding `node_modules/` as a
@@ -80,7 +80,7 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // exports target resolves to a real file (no stale map entry that throws
     // ERR_MODULE_NOT_FOUND for consumers), and every public built file (privacy
     // taxonomy applied — not external/, not _-prefixed) is reachable through some
-    // exports entry (no orphaned public module). Complements files[] allowlist
+    // exports entry, no orphaned public module. Complements files[] allowlist
     // hygiene and runtime require-ability; this is the map ↔ files check.
     () => run('node', ['scripts/fleet/check/public-files-are-exported.mts']),
     // Every external-tools.json / bundle-tools.json must match the shared
@@ -107,7 +107,7 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     () => run('node', ['scripts/fleet/check/telemetry-deps-are-reviewed.mts']),
     // The universal no-phone-home env (FLEET_ENV) is set in this environment —
     // telemetry + update-notifier opt-outs across npm/pnpm/Claude Code. Deployed
-    // by setup-security-tools (dev shell-rc) + the reusable CI workflow env.
+    // by setup-security-tools, dev shell-rc + the reusable CI workflow env.
     () => run('node', ['scripts/fleet/check/telemetry-env-is-disabled.mts']),
     // Internal GitHub Action / reusable-workflow SHA pins are current w.r.t. their
     // CLOSURE — the pinned unit's own files PLUS its declared `# cascade-data-deps:`
@@ -129,7 +129,7 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // Every top-level `upstream/<name>` reference submodule is shallow
     // single-branch (`shallow = true` + `branch = <ref>`) so a clone pulls only
     // the tracked branch tip, not full history. Complements the sparse gate
-    // above (which owns nested subtree-consumed submodules). See
+    // above, which owns nested subtree-consumed submodules. See
     // docs/agents.md/fleet/upstream-references.md.
     () =>
       run('node', [
@@ -139,7 +139,7 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // Fleet policy: an `upstream/<name>` reference pins the latest RELEASE TAG
     // (immutable), not a moving branch (`main`/`releases/v6`). Fails unless the
     // branch is a `<major>.<minor>` tag or the block is annotated
-    // `# no-release-tag: <reason>` (upstream has no releases). See
+    // `# no-release-tag: <reason>`, upstream has no releases. See
     // docs/agents.md/fleet/upstream-references.md.
     () =>
       run('node', [
@@ -182,10 +182,10 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
         'scripts/fleet/check/upstream-gitlinks-are-absent.mts',
         '--quiet',
       ]),
-    // Belt (superset of the gitlink gate above): no tracked file is matched by
+    // Belt, superset of the gitlink gate above: no tracked file is matched by
     // .gitignore anywhere in the tree — build output, vendored trees, caches, or
     // a stray nested gitlink. `git ls-files -ci --exclude-standard` is the
-    // detector (it honors negations); a hand-authored file under an ignored tree
+    // detector, it honors negations; a hand-authored file under an ignored tree
     // stays tracked via a `!` re-include OUTSIDE the fleet-canonical block.
     () =>
       run('node', [
@@ -203,13 +203,24 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
         'scripts/fleet/check/generated-outputs-are-untracked.mts',
         '--quiet',
       ]),
+    // Companion: no handoff / planning doc is tracked. These are TRANSIENT agent
+    // work-state, a session's in-flight reasoning, whose one home is the
+    // gitignored .claude/plans/ — never source control. Matched by filename
+    // suffix (…handoff.<md|txt|…>), so the legit handoff-command-nudge /
+    // session-handoff-nudge hook dirs (README/index/package basenames) never
+    // trip. Incident: a …-handoff.md landed in the tracked docs tree.
+    () =>
+      run('node', [
+        'scripts/fleet/check/handoff-docs-are-untracked.mts',
+        '--quiet',
+      ]),
     // Companion: every sparse submodule declares a `verify =` consumer (the
     // command that build-proves the pattern) or `verify = none` (reference-only).
     // A sparse pattern with no declared consumer is unproven — the verify is
     // run separately (heavy: clone + build) via verify-submodule-sparse --run.
     () => run('node', ['scripts/fleet/verify-submodule-sparse.mts', '--check']),
     // researching-recency SKILL.md must quote the engine's output markers
-    // verbatim (badge, evidence envelope, footer fences) so the model's
+    // verbatim, badge, evidence envelope, footer fences, so the model's
     // pass-through/synthesis instructions match what the engine emits.
     () =>
       run('node', [
@@ -238,7 +249,7 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     () =>
       run('node', ['scripts/fleet/check/paths-are-canonical.mts', '--quiet']),
     // Separator-sensitive ops on un-normalized path vars — the commit-time
-    // belt for the trees oxlint doesn't reach (live hooks); the AST rule
+    // belt for the trees oxlint doesn't reach, live hooks; the AST rule
     // socket/normalize-path-before-match is the write-time twin. Backlog
     // cleared to zero 2026-07-07; any finding here is a regression.
     () =>
@@ -269,7 +280,7 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
         '--quiet',
       ]),
     // Per-repo socket-wheelhouse config vs the fleet TypeBox schema. The
-    // loader is fail-open by design (hooks must never die on a bad config);
+    // loader is fail-open by design, hooks must never die on a bad config;
     // this is where drift fails LOUD — bad enum, unknown key, malformed
     // docker.prebakes entry. No-op when the repo carries no config.
     () =>
@@ -340,7 +351,7 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // unset/misdirected default sends bare gh commands (workflow dispatch,
     // issue/PR queries) to the UPSTREAM PARENT (2026-07-24: npm-publish.yml
     // dispatch 404'd on package-url/packageurl-js — twice). Local-only
-    // (git config reads); fix = `gh repo set-default <origin>`, auto-applied
+    // git config reads; fix = `gh repo set-default <origin>`, auto-applied
     // by `doctor --fix` / `pnpm run fix --all`.
     () =>
       run('node', ['scripts/fleet/check/gh-default-repo-matches-origin.mts']),
@@ -382,9 +393,9 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // Every pnpm `patchedDependencies` entry is justified: a rationale comment,
     // an existing .patch file, and a corresponding `overrides:` force pin. A
     // patch is opaque + high-trust; an unannotated or force-less one is suspect.
-    // See docs/agents.md/fleet/pnpm-patching.md (the patch-for-compat dedup lever).
+    // See docs/agents.md/fleet/pnpm-patching.md, the patch-for-compat dedup lever.
     () => run('node', ['scripts/fleet/check/dedup-patches-are-justified.mts']),
-    // taze single-registry posture (owner ruling): the fast-npm-meta hosted
+    // taze single-registry posture, owner ruling: the fast-npm-meta hosted
     // endpoint is never network-allowed — no tracked file may carry its host
     // (guard/test/patch exempt) — and the taze catalog pin must have its
     // matching patches/taze@<pin>.patch + patchedDependencies entry, so a
@@ -405,7 +416,7 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // the repo does not carry: a hand-written `link:`/`file:` spec in a
     // package.json dependency block, or a pnpm-GENERATED lockfile `link:`
     // pointing at an untracked (generated/gitignored) directory. Use
-    // workspace: (in-repo), catalog: (centrally pinned), or a registry range.
+    // workspace: (in-repo), catalog: centrally pinned, or a registry range.
     () =>
       run('node', [
         'scripts/fleet/check/dependency-specs-are-registry-or-workspace.mts',
@@ -438,7 +449,7 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // marked IOC-citation docs under docs/; egress surfaces are never exempt.
     () => run('node', ['scripts/fleet/check/denied-domains-are-absent.mts']),
     // Commit-time twin of package-manager-auto-update-guard: every installed
-    // package manager has auto-update disabled (no silent self-bump).
+    // package manager has auto-update disabled, no silent self-bump.
     () =>
       run('node', [
         'scripts/fleet/check/package-manager-auto-update-is-disabled.mts',
@@ -456,7 +467,7 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // `${ENV}` beside an auth/registry key.
     () => run('node', ['scripts/fleet/check/trust-gates-are-not-weakened.mts']),
     // Homebrew supply-chain posture (macOS). Asserts brew >= 6.0.0 with
-    // tap-trust + cask-SHA enforcement; `absent` (no brew) is a pass — CI
+    // tap-trust + cask-SHA enforcement; `absent`, no brew, is a pass — CI
     // runners lack brew. Shares detection with the brew-supply-chain-guard
     // hook + setup-security-tools via _shared/brew-supply-chain.mts.
     () =>
@@ -500,7 +511,7 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     () => run('node', ['scripts/fleet/check/headroom-pin-is-consistent.mts']),
     // headroom's telemetry beacon (default-ON) + its HuggingFace model fetch are
     // forced OFF by the bin/headroom lockdown wrapper. This gate imports the typed
-    // lockdown export (no source-sniffing) and fails if it's weakened — the lib
+    // lockdown export, no source-sniffing, and fails if it's weakened — the lib
     // also throws at import (fail-closed).
     () =>
       run('node', [

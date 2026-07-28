@@ -14,7 +14,7 @@
  *   (K findings, …)` lines visible during `pnpm run security` are from the
  *   ai-lint-fix pass (socket/* oxlint rules), not from these scanners.
  *
- *   Default mode: streams each tool's output live (stdio inherit) and exits
+ *   Default mode: streams each tool's output live, stdio inherit, and exits
  *   non-zero when any tool finds issues.
  *   --json mode: captures each tool's native JSON output where available,
  *   parses to a unified Finding envelope, and writes structured JSON to
@@ -55,7 +55,7 @@ export interface SecurityEnvelope {
   skipped: string[]
 }
 
-// ─── Pure parsers (exported for unit tests) ───────────────────────────────────
+// ─── Pure parsers, exported for unit tests ───────────────────────────────────
 
 // zizmor --format json emits a JSON array where each element has:
 //   ident         — rule identifier (string)
@@ -251,8 +251,8 @@ async function hasExecutable(name: string): Promise<boolean> {
   return Boolean(await which(name))
 }
 
-// Run a tool, returning exit code + captured stdout+stderr (capture mode) or
-// inheriting stdio (default mode, preserving byte-identical non-JSON behavior).
+// Run a tool, returning exit code + captured stdout+stderr, capture mode, or
+// inheriting stdio, default mode, preserving byte-identical non-JSON behavior.
 async function runTool(
   command: string,
   args: string[],

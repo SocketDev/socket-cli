@@ -18,8 +18,8 @@
 // nags during real work. Reminder, not a hard block — but it sets exit 2 so the
 // agent sees it and either drops the model/effort or types a bypass.
 //
-// Bypass: "Allow model bypass" (keep the premium model) or "Allow effort
-// bypass" (keep high effort) in a recent user turn, or
+// Bypass: "Allow model bypass", keep the premium model, or "Allow effort
+// bypass", keep high effort, in a recent user turn, or
 
 import process from 'node:process'
 
@@ -51,7 +51,7 @@ const MECHANICAL_RE = [
   // Wheelhouse cascade sync + its commit.
   /\bpnpm\s+run\s+sync\b/,
   /chore\(wheelhouse\):\s*cascade\b/,
-  // Mass autofix / format sweeps (the whole-tree variants, not a single file).
+  // Mass autofix / format sweeps, the whole-tree variants, not a single file.
   /\b(?:pnpm\s+(?:exec|run)\s+)?(?:eslint|oxlint)\b[^\n]*--fix\b[^\n]*(?:--all|\s\.)\b/,
   /\b(?:pnpm\s+run\s+)?fix\b\s+--all\b/,
   /\boxfmt\b[^\n]*--write\b[^\n]*\s\.(?:\s|$)/,
@@ -99,7 +99,7 @@ export const check = bashGuard((command, payload) => {
 
   // Each dimension is independently bypassable, so only flag the dimensions
   // that are both premium AND not bypassed for this turn.
-  // Low-risk cost nudge (token spend only, nothing security) — `bypass` optional.
+  // Low-risk cost nudge, token spend only, nothing security — `bypass` optional.
   const flagModel =
     modelIsPremium &&
     !bypassPhrasePresent(payload.transcript_path, MODEL_BYPASS, undefined, {

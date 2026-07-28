@@ -2,14 +2,14 @@
 // Claude Code PreToolUse hook — no-underscore-ident-guard.
 //
 // Blocks Edit/Write tool calls that introduce a new underscore-prefixed
-// *identifier* (function, variable, type, export). Privacy in TypeScript
-// is handled by module boundaries (not exporting) or by `_internal/`
+// *identifier* function, variable, type, export. Privacy in TypeScript
+// is handled by module boundaries, not exporting, or by `_internal/`
 // *directory* layout — not by leading underscores on symbol names. The
 // underscore-as-internal-marker convention from other languages adds
 // noise without enforcement: TS doesn't treat `_foo` as private, so
 // the underscore is decorative.
 //
-// Banned identifier shapes (recognized at edit time):
+// Banned identifier shapes, recognized at edit time:
 //   const _foo = ...
 //   let _foo = ...
 //   var _foo = ...
@@ -21,7 +21,7 @@
 //   export const _foo = ...
 //   export { _foo }
 //
-// Allowed (passes through):
+// Allowed, passes through:
 //   - `_internal/` directory paths — the canonical way to signal
 //     module-private files. The rule is about identifiers inside
 //     files, not folder layout.
@@ -37,7 +37,7 @@
 //
 // Exit codes:
 //   0 — pass.
-//   2 — block (at least one banned identifier found).
+//   2 — block, at least one banned identifier found.
 //
 // Fails open on malformed payloads (exit 0 + stderr log).
 

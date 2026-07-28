@@ -25,7 +25,7 @@
 
 /**
  * Npm-scope and exact-name patterns that mark a package as Socket-published.
- * Used by taze (glob exclude) and pnpm (minimumReleaseAgeExclude). Match
+ * Used by taze, glob exclude, and pnpm (minimumReleaseAgeExclude). Match
  * semantics: scope wildcards (`@scope/*`) match every package under a scope WE
  * own; an UNSCOPED name (`sfw`, `socket`) matches EXACTLY. Unscoped prefix
  * globs are forbidden (a `socket-*` glob would soak-bypass any attacker's
@@ -66,7 +66,7 @@ export const SOCKET_PACKAGE_PATTERNS: readonly string[] = [
  * Scoped globs (`@scope/*`) only admit packages under a scope WE own. Every
  * NON-namespaced Socket package is listed by its EXACT name
  * (`ecc-agentshield`, `sfw`) — NO unscoped prefix glob: a `socket-*` would
- * fast-update (skip the maturity cooldown for) any attacker-published
+ * fast-update, skip the maturity cooldown for, any attacker-published
  * `socket-<anything>` already in the manifest, the same supply-chain shape the
  * soak invariant below forbids. Add new non-namespaced Socket packages here by
  * exact name as they ship.
@@ -83,7 +83,7 @@ export const SOCKET_SCOPES: readonly string[] = [
  * from BOTH passes (pass 1 via `.config/fleet/taze.config.mts` `exclude:`; pass
  * 2 only `--include`s SOCKET_SCOPES, so a non-Socket entry here is never
  * bumped). The formatter / linter / bundler / compiler set behavior + output
- * and are bumped DELIBERATELY (a reviewed version change, then soak) — never on
+ * and are bumped DELIBERATELY, a reviewed version change, then soak — never on
  * the automatic cadence, which otherwise churns their per-platform
  * `@<tool>/binding-*` packages through the soak-exclude on every release. The
  * bare names are the direct deps; the `@scope/*` globs cover the bindings. Same
@@ -166,11 +166,11 @@ assertNoUnscopedWildcard('SOCKET_SCOPES', SOCKET_SCOPES)
 assertNoUnscopedWildcard('UPDATE_PINNED_TOOLCHAIN', UPDATE_PINNED_TOOLCHAIN)
 
 /**
- * Return true when an npm purl (or bare package name) matches a Socket-owned
+ * Return true when an npm purl, or bare package name, matches a Socket-owned
  * pattern. Accepts purl form (`pkg:npm/@socketsecurity/lib@6.0.6`) or bare name
  * (`@socketsecurity/lib`). Match shape: `@scope/*` matches any package under
  * the scope; every other (unscoped) pattern matches by EXACT name — there are
- * no unscoped prefix globs (see the security invariant above).
+ * no unscoped prefix globs, see the security invariant above.
  */
 export function isSocketSourcedPackage(purlOrName: string): boolean {
   // Extract the package name from a purl: `pkg:npm/<name>@<version>`

@@ -22,8 +22,8 @@ export const TYPE_TO_SECTION: Record<string, string> = {
 export const SECTION_ORDER: readonly string[] = ['Added', 'Changed', 'Fixed']
 
 /**
- * Render one bullet for a commit: a bold scope prefix when present, the
- * description, and a `**BREAKING:**` marker for breaking changes.
+ * Render one bullet for a commit: a bold scope prefix when present, then the
+ * description, emphasized when the commit is breaking.
  */
 function escapeMarkdownText(value: string): string {
   return value
@@ -46,11 +46,15 @@ function escapeMarkdownProse(value: string): string {
 }
 
 export function renderBullet(commit: ConventionalCommit): string {
-  const breaking = commit.breaking ? '**BREAKING:** ' : ''
   const scope = commit.scope
     ? `**\`${escapeMarkdownText(commit.scope)}\`** — `
     : ''
-  return `- ${breaking}${scope}${escapeMarkdownProse(commit.description)}`
+  const description = escapeMarkdownProse(commit.description)
+  // A breaking change EMPHASIZES the change itself rather than carrying a
+  // `**BREAKING:**` label. The label repeated a word the reader already has to
+  // read past to reach what actually changed; emphasis puts the weight on the
+  // change and keeps the bullet scannable.
+  return `- ${scope}${commit.breaking ? `_${description}_` : description}`
 }
 
 /**
@@ -63,7 +67,12 @@ export function unreleasedRange(
   lines: readonly string[],
   unreleasedHeading: string,
 ): { end: number; start: number } | undefined {
-  const start = lines.findIndex(l => l.trim() === unreleasedHeading)
+  // Case-INSENSITIVE: `## [Unreleased]` is hand-authored as often as it is
+  // generated, and `[unreleased]` / `[UNRELEASED]` mean the same section. An
+  // exact match silently skipped those and promoted nothing, so the accrued
+  // entries stayed behind while the release cut an empty section.
+  const wanted = unreleasedHeading.trim().toLowerCase()
+  const start = lines.findIndex(l => l.trim().toLowerCase() === wanted)
   if (start === -1) {
     return undefined
   }

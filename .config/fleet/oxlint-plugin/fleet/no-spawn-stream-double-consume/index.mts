@@ -20,7 +20,7 @@
  *   c.process.stdout`, or the inline `spawn(...).process.stdout.setEncoding`).
  *   A plain `.on('data')` / `.pipe()` WITHOUT `setEncoding` keeps the stream in
  *   Buffer mode, so the wrapper's concat still works — that is a legitimate
- *   streaming pattern (a hook test streaming stderr does it) and is NOT
+ *   streaming pattern, a hook test streaming stderr does it, and is NOT
  *   flagged. Accessing the stream off the BARE spawn return (`const c =
  *   spawn(...); c.stdout.on(...)`) is a different bug caught by
  *   `socket/no-bare-spawn-childproc-access`. Report-only: the right fix is
@@ -176,7 +176,7 @@ const rule = {
           return
         }
         // Destructuring: `const { process: child } = spawn(...)` adds a proc
-        // name; `const { stdout: s } = child` (child a proc ref) adds a stream.
+        // name; `const { stdout: s } = child`, child a proc ref, adds a stream.
         const fromSpawn =
           isSpawnCall(init) ||
           (init.type === 'Identifier' && spawnNames.has(init.name))

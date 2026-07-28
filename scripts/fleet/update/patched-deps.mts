@@ -1,7 +1,7 @@
 /**
  * @file Stale `patchedDependencies` gate for the update engine. pnpm keys a
  *   patch as `<name>@<version>` → `patches/<name>@<version>.patch`; a version
- *   bump (catalog entry or override pin) that leaves the key on the OLD
+ *   bump, catalog entry or override pin, that leaves the key on the OLD
  *   version strands every later `pnpm install` with ERR_PNPM_UNUSED_PATCH —
  *   and a half-state referencing a nonexistent patch file has already been
  *   committed once. The update engine therefore FAILS LOUD before the
@@ -69,7 +69,7 @@ export function isValidBareVersion(value: string): boolean {
 
 /**
  * Collect every exact version the workspace pins per package name, from the
- * `catalog:` block (bare versions) and the `overrides:` block (bare-version
+ * `catalog:` block, bare versions, and the `overrides:` block (bare-version
  * values, range-scoped keys included; `catalog:` values resolve through the
  * catalog). Alias (`npm:`) values are skipped — they install a different
  * package under the name, so a patch key never matches them. Pure.
@@ -108,7 +108,7 @@ export function collectResolvedPins(
  * resolved pin for its package. Any differing pin counts as stale: a scoped
  * override bumped past the patch key means the patched version stops
  * installing, which is exactly ERR_PNPM_UNUSED_PATCH later. Packages with no
- * exact pin (resolution driven by dependency ranges) are out of scope. Pure.
+ * exact pin, resolution driven by dependency ranges, are out of scope. Pure.
  */
 export function findStalePatchKeys(workspaceYamlText: string): StalePatchKey[] {
   const patched = parseWorkspaceBlock(workspaceYamlText, 'patchedDependencies')
@@ -139,7 +139,7 @@ export function findStalePatchKeys(workspaceYamlText: string): StalePatchKey[] {
 
 /**
  * Read `workspaceYamlPath` and find its stale patch keys. Absent file → no
- * findings (a repo without a workspace file has no patches to strand).
+ * findings, a repo without a workspace file has no patches to strand.
  */
 export function findStalePatchKeysInFile(
   workspaceYamlPath: string,

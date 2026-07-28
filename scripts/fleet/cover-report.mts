@@ -35,7 +35,7 @@ const rootPath = REPO_ROOT
 const logger = getDefaultLogger()
 
 // Compare merged aggregate coverage against configured thresholds. Returns the
-// list of metrics that fell short (empty when all pass or no thresholds set).
+// list of metrics that fell short, empty when all pass or no thresholds set.
 export function computeThresholdFailures(
   aggregate: AggregateCoverage | undefined,
   thresholds: CoverThresholds | undefined,
@@ -236,7 +236,7 @@ function persistSuiteFailureOutput(
 // Pull the FAILING test-file paths out of vitest's buffered output. cover runs
 // vitest buffered (runQuietCommand), so a below-threshold / test-failure cut
 // only re-emits the summary — the failing FILE names never reach the CI log
-// (only the runner's inaccessible last-failure log). Two vitest markers name a
+// only the runner's inaccessible last-failure log. Two vitest markers name a
 // failing file: the "FAIL <path>" failure header and the file-tree entry
 // "❯ <path> (N tests | M failed)". The count/threshold lines give totals, not
 // paths — so without this the gate says "2 failed" but never WHICH two. Pure +
@@ -264,7 +264,7 @@ export function extractFailingTestFiles(lines: readonly string[]): string[] {
 // filters out — a bare "Coverage failed" strands the operator without the
 // failing metric. NAMES the failing test files up front (see
 // extractFailingTestFiles), then returns the error-ish lines from the suite
-// output (deduped, capped), falling back to the output tail; empty for a
+// output, deduped, capped, falling back to the output tail; empty for a
 // passing suite.
 export function buildSuiteFailureReport(
   name: string,
@@ -352,7 +352,7 @@ export function topUncoveredBranchFiles(
 }
 
 // Visibility: echo the aggregate + the top uncovered-branch files to stdout AND
-// (when running under Actions) GITHUB_STEP_SUMMARY, so a CI cover run surfaces
+// when running under Actions, GITHUB_STEP_SUMMARY, so a CI cover run surfaces
 // its real number + the biggest gaps. Pure logging — best-effort, never throws.
 export function emitCoverageVisibility(aggregate: AggregateCoverage): void {
   const top = topUncoveredBranchFiles(5)

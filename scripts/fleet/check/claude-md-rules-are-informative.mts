@@ -56,7 +56,7 @@ const DOCS_LINK_RE = /\]\([^)]*\bdocs\/[^)]+\)/i
 // section to a discoverable artifact beyond the inline prose.
 const SKILL_REFERENCE_RE = /\.claude\/skills\/[^\s`)]+\/SKILL\.md/i
 
-// Explicit opt-out markers (any equivalent form):
+// Explicit opt-out markers, any equivalent form:
 //   - Inline prose: `(advisory, no enforcement)`
 //   - HTML comment: `<!--advisory-->` (or `<!-- advisory -->`)
 // Cheaper byte-wise for terse sections that genuinely have no

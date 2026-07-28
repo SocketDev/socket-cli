@@ -5,7 +5,7 @@
  *   check that then drifts). Combines the priced models in the canonical
  *   pricing registry (scripts/fleet/constants/model-pricing.json, all
  *   providers) with the AI_TIER tier models as a fallback when the registry is
- *   unreadable. Also exposes the floor (cheapest tier) model + effort, the tier
+ *   unreadable. Also exposes the floor, cheapest tier, model + effort, the tier
  *   model ids, and the tier aliases, so ai-spawns-have-paired-effort,
  *   mutating-skills-have-model, and gh-aw-workflow-models-are-canonical all
  *   share ONE definition instead of re-deriving it per check.
@@ -61,18 +61,18 @@ export function ladderRowForModel(model: string): LadderRow | undefined {
 
 // Adaptive-only models (Fable / Mythos) accept NO effort knob at spawn time —
 // socket-lib drops `--effort` for them and the fable-spawns gate bans the key
-// outright — so a (model, effort) pair rule must skip them rather than demand
+// outright — so a, model, effort, pair rule must skip them rather than demand
 // the ladder row's effort. Re-exported so every pair-validating gate shares the
 // lib's one definition of "adaptive-only".
 export { isAdaptiveOnlyModel }
 
 // Every model string the fleet recognizes: the priced models in the canonical
-// registry (all providers) plus the AI_TIER model ids as a fallback when the
+// registry, all providers, plus the AI_TIER model ids as a fallback when the
 // registry is unreadable. A literal `model` outside this set is drift (a
 // stale/renamed id like `claude-sonnet-4-5`) or a typo — not a model any spawn
 // or workflow should pin. Bare aliases (`sonnet`/`haiku`/…) are deliberately
 // EXCLUDED here — a raw CLI `--model` value must be a full id — so a caller that
-// ALSO accepts aliases (skill frontmatter) unions TIER_ALIASES itself.
+// ALSO accepts aliases, skill frontmatter, unions TIER_ALIASES itself.
 export function loadKnownModels(): ReadonlySet<string> {
   const models = new Set<string>(TIER_MODELS)
   const pricingPath = path.join(

@@ -9,7 +9,7 @@
  *   The bar (per CLAUDE.md "Error messages"): a message is vague when it is a
  *   short static string carrying ONLY a vague verb/noun — no "what" rule, no
  *   field/location, no saw-vs-wanted value. A message with a colon (field-path
- *   prefix), an embedded quote (a shown value), or length > 40 is presumed to
+ *   prefix), an embedded quote, a shown value, or length > 40 is presumed to
  *   carry specifics and is NOT graded.
  */
 
@@ -59,7 +59,7 @@ export const VAGUE_MESSAGE_PATTERNS: readonly VaguePattern[] = [
   {
     label: 'bare "not found"',
     // Matches "not found", "not exist", "does not exist", or "missing" as the
-    // entire message (with optional trailing period) — no subject, no path, no
+    // entire message, with optional trailing period — no subject, no path, no
     // context about what was looked for or where.
     regex: /^(?:does not exist|missing|not found|not\s+exist)\.?$/i,
     hint: 'Missing what? Where? Say "config file not found: <path>" with the specific path.',
@@ -85,7 +85,7 @@ export interface MessageGrade {
  * Grade a single thrown-error message string. Returns the matched vague
  * pattern, or undefined when the message clears the bar (carries a colon /
  * quoted value, is longer than 40 chars, or matches no vague-only pattern). A
- * non-string message (template literal with interpolation, an identifier) is
+ * non-string message, template literal with interpolation, an identifier, is
  * out of scope — pass an empty string and it returns undefined.
  */
 export function gradeMessage(message: string): MessageGrade | undefined {

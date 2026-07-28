@@ -5,7 +5,7 @@
  *   allowlist (README, CHANGELOG, …) only at the repo root / docs/ / .claude/.
  *   Commit-time twin of the edit-time markdown-filename-guard hook: the guard
  *   blocks a bad NEW filename at Bash time; this catches one already committed
- *   (or introduced off the Claude path). REUSES the guard's
+ *   or introduced off the Claude path. REUSES the guard's
  *   classifyMarkdownPath predicate (imported directly — runHook is
  *   entrypoint-guarded, so importing the hook is a no-op) so the two can never
  *   drift. Exit 1 on any violation.

@@ -21,7 +21,7 @@ import { offsetToLineCol, splitLines, walkSimple } from './core.mts'
  * opt-out shape). The marker comes through as plain text in the source, so we
  * re-scan around each match for it.
  *
- * Returns an empty array on parse failure (fragment tolerance).
+ * Returns an empty array on parse failure, fragment tolerance.
  */
 export function findBareCallsTo(
   source: string,
@@ -86,7 +86,7 @@ export interface MemberCallSite extends CallSite {
    * Leading STATIC text of the first argument — the string value when it is a
    * string literal, or the cooked text of the FIRST quasi when it is a template
    * literal (`\`  ✗ ${x}\`` → `'  ✗ '`). Undefined for any other first-arg
-   * shape. Lets callers inspect a prefix (status glyph, indent) regardless of
+   * shape. Lets callers inspect a prefix, status glyph, indent, regardless of
    * whether the author wrote a plain string or a template.
    */
   firstArgLeadingText: string | undefined

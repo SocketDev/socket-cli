@@ -7,12 +7,12 @@
 // context", etc. Session/context budget is the assistant's plumbing, not the
 // user's decision — surfacing it makes the user manage the model's limits.
 //
-// What to do instead (the nudge): when deep / near a limit, handle continuation
+// What to do instead, the nudge: when deep / near a limit, handle continuation
 // seamlessly — write a handoff doc to <repo>/.claude/plans/<name>.md capturing
 // done/pending/next-step state, save decisions to memory, and continue (or let
 // compaction / a fresh session resume from the doc). Don't narrate it.
 //
-// Reminder-only (never blocks): sometimes the phrase is legitimate (e.g.
+// Reminder-only, never blocks: sometimes the phrase is legitimate (e.g.
 // quoting the user). Exception: if a recent user turn explicitly said
 // "stop"/"pause"/"we're done", the assistant is just acknowledging — skip.
 

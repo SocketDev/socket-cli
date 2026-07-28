@@ -37,8 +37,8 @@ export async function runSetupAll(): Promise<void> {
   logger.log('')
   const sfwOk = await setupSfw(apiToken)
   logger.log('')
-  // socket-basics SAST + secrets stack + janus (shared wheelhouse) +
-  // npm-only tools (cdxgen, synp) — non-fatal if any individual tool
+  // socket-basics SAST + secrets stack + janus, shared wheelhouse +
+  // npm-only tools, cdxgen, synp — non-fatal if any individual tool
   // fails (the basics workflow degrades cleanly when a scanner is
   // absent; janus is opt-in and mac-only; cdxgen + synp are consumed
   // by socket-cli scan/lockfile codepaths). Install in parallel since

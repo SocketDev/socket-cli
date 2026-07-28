@@ -19,7 +19,7 @@
 //   async function f(x: T, dry?: boolean) { … }
 //   export function f(x: T, verbose: boolean | undefined) { … }
 //
-// Allowed (passes through):
+// Allowed, passes through:
 //   - A single boolean param with NO other params — pure predicate
 //     (`function isValid(value: boolean): boolean`).
 //   - Overload signatures (no body — these are type-only contracts and
@@ -47,11 +47,11 @@ interface Finding {
 // Pattern: `function name(` or `)(` continuation — we scan per line for
 // the inline single-line case; multi-line signatures are flagged when
 // a line contains a boolean param AND the enclosing paren context has
-// other params on the same line (simple heuristic).
+// other params on the same line, simple heuristic.
 //
 // We detect: a parameter name followed by `?:` or `:` and then
 // `boolean` (optionally `| undefined` or `| null`), when the line
-// also contains a comma (other params present) or is a multi-param
+// also contains a comma, other params present, or is a multi-param
 // function header.
 const BOOL_PARAM_RE =
   /\b([A-Za-z_$][A-Za-z0-9_$]*)\??:\s*boolean(?:\s*\|\s*(?:null|undefined))?\b/g
@@ -64,7 +64,7 @@ const FUNC_HEADER_RE =
  * The substring inside the first balanced `(...)` on a line — the parameter
  * list, excluding the return-type annotation that follows `)`. Returns
  * undefined when the line has no `(` or the parens don't close on this line
- * (a multi-line signature). Balances `()[]{}` so a nested object-type param
+ * a multi-line signature. Balances `()[]{}` so a nested object-type param
  * or default value doesn't end the list early. This is what stops a
  * return-type field (`): { ok: boolean }`) from being read as a param.
  */

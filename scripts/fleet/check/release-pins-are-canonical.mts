@@ -33,7 +33,7 @@
  *
  *   Vacuous pass where nothing is pinned (the wheelhouse producer, a non-thin
  *   member) — never false-green. Exit codes: 0 — every persisted pin is
- *   canonical (or none exists); 1 — a persisted pin carries a fuzzy/aliased or
+ *   canonical, or none exists; 1 — a persisted pin carries a fuzzy/aliased or
  *   non-canonical value.
  */
 

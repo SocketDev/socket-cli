@@ -79,7 +79,7 @@ export function readPackageJson(pkgDir: string): PackageJson | undefined {
 
 /**
  * Evaluate one parsed `package.json`. Returns a finding when the package is
- * publishable (not private, has a name) and declares no `files` field, and is
+ * publishable, not private, has a name, and declares no `files` field, and is
  * not in the allowlist. Returns `undefined` when the package is clean or
  * exempt. Pure + side-effect-free so unit tests can exercise it directly.
  */
@@ -97,7 +97,7 @@ export function checkFilesField(
   if (FILES_FIELD_ALLOWLIST.has(name)) {
     return undefined
   }
-  // `files` may be an array (correct), a non-array (malformed but present), or
+  // `files` may be an array (correct), a non-array, malformed but present, or
   // absent. We only flag the fully-absent case — malformed shapes are caught by
   // the package-files-are-allowlisted gate's deeper audit.
   if (pkg.files !== undefined) {

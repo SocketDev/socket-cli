@@ -8,11 +8,11 @@
 //   2. Auto-strip AI attribution lines from the commit message before
 //      git records the commit.
 //
-// Wired via .git-hooks/commit-msg (the sibling shell shim), which git
+// Wired via .git-hooks/commit-msg, the sibling shell shim, which git
 // invokes when `core.hooksPath` points at .git-hooks/ — set by
 // `node scripts/install-git-hooks.mts` at `pnpm install` time. The
 // shim execs this .mts file with the path to the commit message file
-// as argv[2] (after the script path itself).
+// as argv[2], after the script path itself.
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 
@@ -248,7 +248,7 @@ const main = (): number => {
     try {
       ident = gitLines('var', which)[0] ?? ''
     } catch {
-      // `git var` failed (unusual env) — fail open, don't block a real commit.
+      // `git var` failed, unusual env — fail open, don't block a real commit.
       continue
     }
     const who = parseIdent(ident)

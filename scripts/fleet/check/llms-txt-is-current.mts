@@ -6,7 +6,7 @@
  *   Prose is never diffed — only structure is compared, so the check is
  *   credential-free and member-safe.
  *   Fail-open policy: when the repo has no package.json or llms.txt, exits 0
- *   (skip) with a note. A bespoke existing file (unrecognized shape) also
+ *   (skip) with a note. A bespoke existing file, unrecognized shape, also
  *   exits 0.
  *   Usage: node scripts/fleet/check/llms-txt-is-current.mts [--quiet]
  */
@@ -25,7 +25,7 @@ const logger = getDefaultLogger()
 
 export type SkipDecision = { reason: string; skip: true } | { skip: false }
 
-// Fail-open pre-check: skip (with a reason) when the repo carries no
+// Fail-open pre-check: skip, with a reason, when the repo carries no
 // package.json or no llms.txt yet; otherwise the spawn-out check runs.
 export function decideSkip(repoRoot: string): SkipDecision {
   if (!existsSync(path.join(repoRoot, 'package.json'))) {

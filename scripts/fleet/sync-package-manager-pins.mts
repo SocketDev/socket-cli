@@ -21,7 +21,7 @@
  *   `engines.pnpm` carries the `>=<floor>` floor.
  *
  *   Usage: node scripts/fleet/sync-package-manager-pins.mts [--check] [--quiet]
- *     (no flag) rewrite package.json to match external-tools.json
+ *     no flag, rewrite package.json to match external-tools.json
  *     --check     warn on a behind pin, exit non-zero only on real drift
  */
 
@@ -106,7 +106,7 @@ export function derivePins(
 /**
  * Apply derived pins to a parsed package.json object, mutating it in place.
  * Returns the structured list of fields that changed (empty = already in
- * sync). Deletes any legacy `packageManager` (corepack is disabled fleet-wide),
+ * sync). Deletes any legacy `packageManager`, corepack is disabled fleet-wide,
  * writes `devEngines.packageManager`, and touches `engines.{pnpm,npm}`.
  */
 export function applyPins(
@@ -184,7 +184,7 @@ export function formatDrift(drift: PinDrift): string {
  * field was absent, so `actual` is the string `"undefined"`).
  */
 export function extractPinVersion(field: string): string | undefined {
-  // One named capture (consumed below): a leading range/prefix is skipped and
+  // One named capture, consumed below: a leading range/prefix is skipped and
   // the X.Y.Z (plus any prerelease/build tail) is captured.
   const match = /(?<version>\d+\.\d+\.\d+(?:[-+][\w.]+)?)/.exec(field)
   return match?.groups?.['version']
@@ -207,13 +207,13 @@ export function compareSemver(a: string, b: string): number {
 }
 
 /**
- * True when a drift is benign (warn, do not fail). Benign = a pin whose version
+ * True when a drift is benign, warn, do not fail. Benign = a pin whose version
  * simply TRAILS the source (external-tools.json is newer — a wheelhouse bump
  * not yet cascaded here); a cascade reconciles it, and failing would block an
  * unrelated member PR during a rollout window. A pin AHEAD of the source, or an
  * invalid shape, is a hard drift.
  *
- * `packageManager` removal (corepack disabled) and any
+ * `packageManager` removal, corepack disabled, and any
  * `devEngines.packageManager` reshape are always benign — the devEngines range
  * is major-bounded and advisory, so a member on an older cascade still
  * satisfies it and a later cascade reconciles the exact bytes; neither is ever
@@ -238,7 +238,7 @@ export function isBehindSource(drift: PinDrift): boolean {
  * Classify a drift set. `synced` = no drift. `behind` = EVERY drift is benign
  * (an engines floor trailing a newer source, or any `packageManager` reshape)
  * → warn, do not fail. `drifted` = at least one engines floor is ahead of the
- * source or otherwise inconsistent (a hand-edit) → fail.
+ * source or otherwise inconsistent, a hand-edit → fail.
  */
 export function classifyPinDrift(drift: readonly PinDrift[]): PinDriftClass {
   if (!drift.length) {

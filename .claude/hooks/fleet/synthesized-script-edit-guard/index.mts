@@ -11,7 +11,7 @@
 //
 // This hook BLOCKS (exit 2): editing a synthesized `scripts` key in
 // package.json is denied with a pointer to the manifest. Only fires in the
-// wheelhouse (the only repo that ships the manifest); in a cascaded fleet repo
+// wheelhouse, the only repo that ships the manifest; in a cascaded fleet repo
 // the manifest is absent and the hook is a no-op.
 //
 // Exit codes:
@@ -31,7 +31,7 @@ export function getProjectDir(): string {
 // Extract the script KEYS declared in CANONICAL_SCRIPT_BODIES from the manifest
 // source text. The object is `export const CANONICAL_SCRIPT_BODIES: … = { … }`;
 // keys are either bare identifiers (`fix:`) or quoted (`'doctor:auth':`). Parsed
-// textually (not imported) so the hook stays cheap + dependency-free.
+// textually, not imported, so the hook stays cheap + dependency-free.
 export function synthesizedScriptKeys(manifestText: string): Set<string> {
   const keys = new Set<string>()
   const start = manifestText.indexOf('CANONICAL_SCRIPT_BODIES')
@@ -58,7 +58,7 @@ export function synthesizedScriptKeys(manifestText: string): Set<string> {
     }
   }
   const body = manifestText.slice(braceStart + 1, end)
-  // Match `key:` and `'key:sub':` at the start of a (possibly indented) line.
+  // Match `key:` and `'key:sub':` at the start of a, possibly indented, line.
   const re =
     /^[ \t]*(?:'(?<sq>[^']+)'|"(?<dq>[^"]+)"|(?<bare>[A-Za-z_][\w-]*))\s*:/gm
   let m: RegExpExecArray | null

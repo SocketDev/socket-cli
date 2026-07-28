@@ -50,7 +50,7 @@ export function buildConfig(
  * Compare a single error spec against an emitted diagnostic.
  *
  * Two acceptance paths: 1. `messageId` — strict match against `diag.messageId`
- * when the oxlint version emits that field (older builds). Recent builds drop
+ * when the oxlint version emits that field, older builds. Recent builds drop
  * `messageId` from the JSON output entirely, so a `messageId`-only spec falls
  * through to (2): once the runner has already filtered diagnostics down to this
  * rule via `matchesRule`, "the diagnostic is from this rule" is the same claim
@@ -93,7 +93,7 @@ export function fixtureFilename(testCase: ValidTestCase): string {
  * Find the `oxlint` binary. Resolves the LOCALLY-installed `oxlint` package
  * that `pnpm install` linked — never a global `which oxlint`. A global lookup
  * is wrong on two counts: it skips the whole rule-test suite on any normal
- * checkout (oxlint isn't installed globally), turning these tests into silent
+ * checkout, oxlint isn't installed globally, turning these tests into silent
  * no-ops; and if a global oxlint of a different version happens to exist, the
  * tests would run against the wrong engine. Resolve `oxlint`'s package.json via
  * the module system, read its `bin` entry, then hand the path to the
@@ -116,7 +116,7 @@ export function resolveOxlintBinary(): string | undefined {
     const pkg = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as {
       bin?: string | Record<string, string> | undefined
     }
-    // `bin` is either a string (single bin named after the package) or a
+    // `bin` is either a string, single bin named after the package, or a
     // map of bin-name → relative path. Pick the `oxlint` entry, falling
     // back to the string form.
     const binRel =
@@ -169,7 +169,7 @@ export function runOxlintFiles(args: {
   // Parse defensively in that order: try whole-buffer parse first
   // (handles the array AND object shapes), then fall back to
   // line-by-line. Filter every result by rule id so unrelated
-  // findings (autofix from other socket rules in the same config)
+  // findings, autofix from other socket rules in the same config
   // don't inflate the count.
   const stdout = String(r.stdout || '')
   const trimmed = stdout.trim()
@@ -239,7 +239,7 @@ export function runOxlintFiles(args: {
           diagnostics.push(d)
         }
       } catch {
-        // Skip non-JSON lines (oxlint sometimes emits human text).
+        // Skip non-JSON lines, oxlint sometimes emits human text.
       }
     }
   }

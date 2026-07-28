@@ -122,7 +122,7 @@ export function classifyDocPath(
     }
   }
 
-  // A bare `<dirName>/` not under `.claude/` (already handled above).
+  // A bare `<dirName>/` not under `.claude/`, already handled above.
   if (bareDirBlocked) {
     for (let i = 0; i < segs.length - 1; i++) {
       if (segs[i] === dirName) {

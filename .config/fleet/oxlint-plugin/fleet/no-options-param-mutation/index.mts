@@ -103,7 +103,7 @@ const rule = {
           return
         }
         if (scope.params.has(name)) {
-          // It's a param in an enclosing (or current) function — report it.
+          // It's a param in an enclosing, or current, function — report it.
           if (hasBypassComment(node)) {
             return
           }

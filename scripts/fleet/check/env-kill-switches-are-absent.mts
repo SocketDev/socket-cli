@@ -43,7 +43,7 @@ const SELF_EXEMPT_HOOKS = new Set(['no-env-kill-switch-guard'])
 // Patterns that constitute an env kill-switch. The first three are functional
 // (a read / config field / helper call that actually neuters the hook); the
 // last is the bare token, caught so stale comments + messages + docs that
-// advertise a dead escape are flagged too (strict mode).
+// advertise a dead escape are flagged too, strict mode.
 const BANNED_PATTERNS: readonly RegExp[] = [
   /\bdisabledEnvVar\b/,
   /\bisHookDisabled\s*\(/,
@@ -58,7 +58,7 @@ export interface KillSwitchHit {
 }
 
 // Scan one file's text for any banned pattern; returns one hit per matching
-// line (first matching pattern wins, so a line isn't double-counted).
+// line, first matching pattern wins, so a line isn't double-counted.
 export function scanText(relFile: string, text: string): KillSwitchHit[] {
   const hits: KillSwitchHit[] = []
   const lines = text.split('\n')

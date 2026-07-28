@@ -16,7 +16,7 @@
 //
 // Why a reminder, not a block: Stop hooks fire after the turn ended; there is no
 // tool call to refuse. The reminder surfaces the unbacked claim at the very turn
-// that made it, so the assistant runs the check (or qualifies) next turn.
+// that made it, so the assistant runs the check, or qualifies, next turn.
 //
 // Categories + their backing-command signals (a claim fires only when NONE of
 // its signals appears in any Bash command run this session):
@@ -25,7 +25,7 @@
 //   - typecheck: "typechecks" / "no type errors" → tsgo / tsc / `run check`
 //   - lint    : "lint passes" / "lint is clean" → oxlint / `run lint` / `run check`
 //
-// A claim wrapped in a code fence (an example, a quoted plan) is ignored —
+// A claim wrapped in a code fence, an example, a quoted plan, is ignored —
 // code-fence stripping is always on.
 //
 // Verdict: notify (informational; never blocks). Fail-open on any error.

@@ -11,7 +11,7 @@
 
 /**
  * Prefix a test title with `[flaky]` so reporters can group tests carrying a
- * platform-tolerance budget (typically Windows timing).
+ * platform-tolerance budget, typically Windows timing.
  */
 export function taggedFlaky(name: string): string {
   return `[flaky] ${name}`

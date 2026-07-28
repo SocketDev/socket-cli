@@ -123,7 +123,7 @@ export function findViolations(pins: readonly UpstreamPin[]): UpstreamPin[] {
 
 /**
  * Fail the gate when any `upstream/<name>` submodule pins a moving branch
- * instead of a release tag (absent the annotation). Returns the exit code
+ * instead of a release tag, absent the annotation. Returns the exit code
  * (0 = compliant / no .gitmodules / no upstream submodules, 1 = violation).
  */
 export function runCheck(repoRoot: string): number {

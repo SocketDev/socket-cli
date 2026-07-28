@@ -42,7 +42,7 @@ const ALLOW_MARKER = '# socket-lint: allow uses-no-stamp'
 
 // Matches a YAML `uses:` line that pins a 40-char SHA, e.g.
 //   `        uses: actions/checkout@de0fac2e... # v6.0.2 (2026-05-15)`
-// Captures: (1) ref-name, (2) sha, (3) trailing-comment (may be empty).
+// Captures: (1) ref-name, (2) sha, (3) trailing-comment, may be empty.
 const USES_RE =
   /^\s*-?\s*uses:\s+(?:[^\s@]+)@(?:[0-9a-f]{40})(?<comment>\s*#[^\n]*)?\s*$/
 
@@ -105,7 +105,7 @@ export function isWorkflowYamlPath(rawPath: string): boolean {
     return false
   }
   // gh-aw compiles a `<name>.md` agentic workflow to a generated
-  // `<name>.lock.yml`. That artifact is tool-owned (never hand-edited) and
+  // `<name>.lock.yml`. That artifact is tool-owned, never hand-edited, and
   // SHA-pins every action with a `# <version>` comment plus a full manifest
   // header, so the hand-authored `(YYYY-MM-DD)` convention doesn't apply.
   if (/\.lock\.ya?ml$/.test(p)) {

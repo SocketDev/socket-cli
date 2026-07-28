@@ -267,7 +267,7 @@ export async function runStagePublish(config: {
 /**
  * The --local staging leg: defer to the owning publish runner
  * (`npm-publish.mts --staged`), which refuses already-published versions
- * (registry read first) and adds --provenance under GITHUB_ACTIONS.
+ * registry read first, and adds --provenance under GITHUB_ACTIONS.
  */
 async function runLocalStagePublish(
   cfg: { cwd: string; distTag: string; dryRun: boolean },

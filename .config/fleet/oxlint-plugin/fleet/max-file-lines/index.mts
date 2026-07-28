@@ -6,7 +6,7 @@
  *   - > 500 lines (soft band, 501–1000): warning. The file MUST split — there is
  *     no exemption marker in this band. A top-of-file `max-file-lines:` marker is
  *     IGNORED here; the warning fires regardless. Split along a natural seam.
- *   - > 1000 lines (hard cap): error. No autofix — splitting requires judgment
+ *   - > 1000 lines, hard cap: error. No autofix — splitting requires judgment
  *     about where the natural seams are.
  *
  *   The marker exempts ONLY a file past the HARD cap (>1000): the rare genuine
@@ -15,7 +15,7 @@
  *   `max-file-lines: <category> — <reason>` — a category word naming WHAT the
  *   file is (parser, state-machine, table, cli, …) plus a `—`/`-`/`:`-separated
  *   reason for WHY it can't split. The filler word `legitimate` is NOT a category
- *   (it was the loophole that let a padded test dodge splitting). Say what the
+ *   it was the loophole that let a padded test dodge splitting. Say what the
  *   file is, not that you deem it acceptable. A soft-band file CANNOT use this
  *   marker to dodge the cap — the cap forces the split.
  *

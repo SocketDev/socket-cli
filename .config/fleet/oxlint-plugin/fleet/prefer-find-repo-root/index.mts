@@ -21,7 +21,7 @@
  *   segments appended (`path.join(findRepoRoot(import.meta), 'docs',
  *   'foo.md')`) and the file may need a new import. Manual fix per call site.
  *   Activation: `error`. The `REPO_ROOT`-from-`paths.mts` fix is available in
- *   every fleet repo today (it predates the lib helper), so the rule can gate
+ *   every fleet repo today, it predates the lib helper, so the rule can gate
  *   at full strength without waiting on the `findRepoRoot` export to propagate
  *   through the `lib-stable` cascade.
  */

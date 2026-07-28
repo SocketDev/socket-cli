@@ -103,7 +103,7 @@ export function relevantBundleRels(repoRoot: string): readonly string[] {
 
 /**
  * Returns true when any relevant bundle is missing, or older than the edited
- * source file (mtime comparison). A missing bundle is treated as stale.
+ * source file, mtime comparison. A missing bundle is treated as stale.
  */
 export function bundleIsStale(
   repoRoot: string,

@@ -21,8 +21,8 @@
 import { defineHook, editGuard, notify, runHook } from '../_shared/guard.mts'
 
 // A Claude memory-store file, separator-normalized:
-//   …/.claude/projects/<slug>/memory/<file>.md   (per-cwd store)
-//   …/memory/MEMORY.md                           (a store's index)
+//   …/.claude/projects/<slug>/memory/<file>.md, per-cwd store
+//   …/memory/MEMORY.md, a store's index
 const MEMORY_STORE_RE =
   /\/\.claude\/projects\/[^/]+\/memory\/[^/]+\.md$|\/memory\/MEMORY\.md$/
 

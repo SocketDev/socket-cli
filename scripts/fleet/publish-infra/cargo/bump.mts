@@ -10,7 +10,7 @@
  *   versions, prepend the CHANGELOG section, then commit the changed files
  *   (Cargo.toml, CHANGELOG.md, and Cargo.lock if it changed) via the GitHub
  *   git-objects API for a signed commit without a local GPG key. No dist/
- *   rebuild step (unlike npm) — cargo builds from source at publish time.
+ *   rebuild step, unlike npm — cargo builds from source at publish time.
  */
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
@@ -144,7 +144,7 @@ export function cargoReleaseLane(
  * THE single cargo-lane derivation code path for a release's commit set — the
  * shared chain bound to crates.io. Returns `undefined` when a previous
  * release exists but no anchor resolves, or when crates.io is unreachable
- * (offline the released base cannot be confirmed) — never widen to an older
+ * offline the released base cannot be confirmed — never widen to an older
  * tag.
  */
 export async function deriveCargoReleaseCommits(config: {
@@ -167,7 +167,7 @@ export async function deriveCargoReleaseCommits(config: {
  * (`workspace.package` or `package`) — never a dependency version. Finds the
  * table header, then the first `version = "…"` line before the next table
  * header, and rewrites only that. Returns the new text, or undefined when the
- * table or its version line isn't found (so the caller can try the next table).
+ * table or its version line isn't found, so the caller can try the next table.
  * A dependency version (`foo = { version = "1" }`) never matches: the line must
  * START with `version =`. Pure — exported for tests.
  */
@@ -208,7 +208,7 @@ export function replaceCargoVersion(
 
 /**
  * Insert a new CHANGELOG section above the first existing `## ` version heading
- * (after the file's intro). When the file has no version sections yet, append
+ * after the file's intro. When the file has no version sections yet, append
  * after a trailing blank line. Mirrors scripts/fleet/bump.mts. Pure — exported
  * for tests.
  */
@@ -239,7 +239,7 @@ export function insertChangelogSection(
  * succeeds and nukes it on rejection, so a failed publish never creeps the
  * version. Resets the checkout to the new commit so the publish runs against
  * the bumped tree, and returns the branch + tip SHA for the caller to promote /
- * discard. Dry-run previews and writes/commits nothing (returns undefined).
+ * discard. Dry-run previews and writes/commits nothing, returns undefined.
  * Unlike npm there is no dist/ rebuild — cargo builds from source at publish
  * time.
  */
@@ -439,7 +439,7 @@ export async function runBump(config: {
 
   writeFileSync(tomlWrite.path, tomlWrite.content)
   writeFileSync(changelogPath, insertChangelogSection(baseChangelog, section))
-  // Refresh Cargo.lock to the new workspace-member version (not registry deps),
+  // Refresh Cargo.lock to the new workspace-member version, not registry deps,
   // so the later `cargo publish --locked` doesn't fail on a stale lock.
   if (existsSync(path.join(rootPath, 'Cargo.lock'))) {
     const lock = await runCapture('cargo', ['update', '--workspace'], rootPath)

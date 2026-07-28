@@ -17,7 +17,7 @@
       "description": "Command-line interface for socket.dev security analysis"
     },
     {
-      "name": "socket-gemini-nano",
+      "name": "odai",
       "description": "On-device Gemini Nano Prompt API library for browser and Node",
       "publishes": "js"
     },

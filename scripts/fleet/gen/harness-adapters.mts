@@ -3,16 +3,16 @@
  * @file Generate the cross-harness rule adapters for a fleet repo so the repo's
  *   CLAUDE.md governs every AI host, not just Claude Code. Each host reads its
  *   rules from a host-named path; this emits a thin adapter at each. Adapters
- *   are MEMBER-GENERATED (run per-repo, per-platform) and gitignored, NOT
+ *   are MEMBER-GENERATED, run per-repo, per-platform, and gitignored, NOT
  *   tracked. Why member-side: a tracked symlink is checked out as a plain text
  *   file on Windows (without `core.symlinks` + privilege), so it would hold the
  *   literal target path instead of the rules. Generating on the member's own OS
  *   yields a real symlink on mac/linux and a regular pointer file on Windows.
  *   Plain-markdown hosts (AGENTS.md, Windsurf, Cline, Copilot) get a relative
- *   symlink to ./CLAUDE.md (pointer-file fallback on Windows). Cursor + Kiro
+ *   symlink to ./CLAUDE.md, pointer-file fallback on Windows. Cursor + Kiro
  *   need frontmatter, so they get a small generated file pointing at CLAUDE.md
  *   (no content copied — DRY). Usage: node
- *   scripts/fleet/gen/harness-adapters.mts [--check] (no flag) create/repair
+ *   scripts/fleet/gen/harness-adapters.mts [--check], no flag, create/repair
  *   the adapters in place. --check report drift (missing / wrong target /
  *   stale) without writing; exit 1 if any. Used by the check-only twin.
  */
@@ -89,13 +89,13 @@ export function symlinkTarget(dest: string): string {
   return path.posix.relative(fromDir, RULES_FILE)
 }
 
-// Create (or repair) one adapter, idempotently. Symlink hosts get a real
+// Create, or repair, one adapter, idempotently. Symlink hosts get a real
 // symlink; on Windows without symlink privilege (`EPERM`/`ENOSYS`) they fall
 // back to a regular pointer file so the adapter still works.
 export function writeAdapter(repoRoot: string, adapter: Adapter): void {
   const destAbs = path.join(repoRoot, adapter.dest)
   mkdirSync(path.dirname(destAbs), { recursive: true })
-  // Remove any existing form first (symlink, file, or stale) so re-runs are
+  // Remove any existing form first, symlink, file, or stale, so re-runs are
   // idempotent across a symlink <-> pointer-file flip.
   safeDeleteSync(destAbs)
   if (adapter.kind === 'file') {
@@ -123,7 +123,7 @@ export function toPosix(p: string): string {
 
 // Report adapters that are missing, point at the wrong target, or whose
 // generated content is stale. A symlink host is in sync if it is a symlink to
-// the expected target OR (Windows fallback) a regular file holding POINTER_BODY.
+// the expected target OR, Windows fallback, a regular file holding POINTER_BODY.
 export function findDrift(repoRoot: string): string[] {
   const drift: string[] = []
   for (let i = 0, { length } = ADAPTERS; i < length; i += 1) {

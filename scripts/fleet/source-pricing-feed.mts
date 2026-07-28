@@ -7,10 +7,10 @@
  *   lags — this script mines the `researching-recency` multi-source feed
  *   (web / hackernews / lobsters / reddit) for recent pricing announcements for
  *   one service, and prints the engine's compact evidence envelope. The SKILL
- *   (the agentic half) reads that envelope, extracts the current per-token
+ *   the agentic half, reads that envelope, extracts the current per-token
  *   prices, and hands them to `scripts/fleet/update-model-pricing.mts` which
  *   owns the canonical write. This script does the DETERMINISTIC half only:
- *   build a service-tuned query plan (pure, testable) and run the feed engine.
+ *   build a service-tuned query plan, pure, testable, and run the feed engine.
  *   It makes no AI calls itself — the extraction judgment lives in the skill,
  *   where a fetch-failure is surfaced rather than a price guessed. Usage: node
  *   scripts/fleet/source-pricing-feed.mts --service anthropic [--depth deep]

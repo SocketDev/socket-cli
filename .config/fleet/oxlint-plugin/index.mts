@@ -43,6 +43,7 @@ import noNamespaceImport from './fleet/no-namespace-import/index.mts'
 import noNpxDlx from './fleet/no-npx-dlx/index.mts'
 import noOptionsParamMutation from './fleet/no-options-param-mutation/index.mts'
 import noPackageManagerAutoUpdateReenable from './fleet/no-package-manager-auto-update-reenable/index.mts'
+import noParentheticalAside from './fleet/no-parenthetical-aside/index.mts'
 import noPlaceholders from './fleet/no-placeholders/index.mts'
 import noPlatformSpecificImport from './fleet/no-platform-specific-import/index.mts'
 import noPrivatePathInSource from './fleet/no-private-path-in-source/index.mts'
@@ -157,6 +158,7 @@ const plugin = {
     'no-options-param-mutation': noOptionsParamMutation,
     'no-package-manager-auto-update-reenable':
       noPackageManagerAutoUpdateReenable,
+    'no-parenthetical-aside': noParentheticalAside,
     'no-placeholders': noPlaceholders,
     'no-platform-specific-import': noPlatformSpecificImport,
     'no-private-path-in-source': noPrivatePathInSource,

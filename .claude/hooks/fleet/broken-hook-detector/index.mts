@@ -28,10 +28,10 @@
 //       network, since every package is already in .pnpm).
 //
 // What it does:
-//   At SessionStart (once per session, no Bash spam), walk every
+//   At SessionStart, once per session, no Bash spam, walk every
 //   `.claude/hooks/*/index.mts`, probe each via import(), and classify any
 //   ERR_MODULE_NOT_FOUND: GUTTED (pkg in .pnpm store but unlinked + stale
-//   marker present) vs MISSING-DEP (pkg absent from the store). GUTTED is
+//   marker present) vs MISSING-DEP, pkg absent from the store. GUTTED is
 //   auto-repaired under guards (see repairGutted); MISSING-DEP is reported.
 //   A member checkout ships no source `.mts` hooks, so findHookEntrypoints
 //   returns nothing there and the probe loop is a no-op; the loop does its
@@ -48,7 +48,7 @@
 // Project-dir + every derived path resolve at RUNTIME inside check() (never at
 //   module scope) so the hook is correct whether it runs from the require-time
 //   `_dist/bundle.cjs` (member + wheelhouse index.cjs path) or frozen into the
-//   V8 startup snapshot (wheelhouse launcher path) — a module-scope
+//   V8 startup snapshot, wheelhouse launcher path — a module-scope
 //   `process.env` read would freeze to the build-time value in the snapshot.
 //
 // Fail-open: probe + repair never block. On any internal error (timeout,
@@ -80,7 +80,7 @@ const PER_PROBE_TIMEOUT_MS = 1500
 const MAX_PROBES = 120
 
 // Every filesystem location this hook touches, derived from the project dir the
-// session acts on. Resolved at RUNTIME (see the header note on snapshot safety).
+// session acts on. Resolved at RUNTIME, see the header note on snapshot safety.
 export interface RepoPaths {
   readonly hooksDir: string
   readonly libStableLink: string
@@ -180,7 +180,7 @@ export function findHookEntrypoints(hooksDir: string): readonly string[] {
           entries.push(candidate)
         }
       } catch {
-        // Tier entry without index.mts (a non-hook dir); skip.
+        // Tier entry without index.mts, a non-hook dir; skip.
       }
     }
   }
@@ -195,8 +195,8 @@ export function findHookEntrypoints(hooksDir: string): readonly string[] {
 //   3. a sentinel top-level link is MISSING (@socketsecurity/ — every fleet
 //      hook imports @socketsecurity/lib-stable, so its absence is exactly the
 //      crash the session is seeing).
-// A genuine missing-dep (case A) fails #1 (the pkg isn't in the store) or #3
-// (the top level is otherwise linked), so it never trips this.
+// A genuine missing-dep, case A, fails #1, the pkg isn't in the store, or #3
+// the top level is otherwise linked, so it never trips this.
 export function isGuttedNodeModules(paths: RepoPaths): boolean {
   let storePopulated = false
   try {
@@ -219,7 +219,7 @@ export function isGuttedNodeModules(paths: RepoPaths): boolean {
   /* c8 ignore stop */
 }
 
-// MODE B — a DANGLING lib-stable symlink (distinct from the full gut above).
+// MODE B — a DANGLING lib-stable symlink, distinct from the full gut above.
 // When a git worktree exists under the repo and a `pnpm install` runs, pnpm can
 // relink the MAIN repo's `@socketsecurity/lib-stable` to point INTO that
 // worktree's .pnpm store; removing the worktree (`git worktree remove`) then
@@ -228,14 +228,14 @@ export function isGuttedNodeModules(paths: RepoPaths): boolean {
 // above, which keys on the stale marker + the whole @socketsecurity dir being
 // gone, does NOT fire). Signature: the link EXISTS as a symlink (lstat) but its
 // target does NOT resolve (existsSync follows the link → false). A healthy link
-// or a real dir both fail this (target resolves). The repair is the same
+// or a real dir both fail this, target resolves. The repair is the same
 // relink-from-store as the gutted case.
 export function hasDanglingLibSymlink(libStableLink: string): boolean {
   let isSymlink = false
   try {
     isSymlink = lstatSync(libStableLink).isSymbolicLink()
   } catch {
-    // Not present at all → not THIS mode (full-gut handles absence).
+    // Not present at all → not THIS mode, full-gut handles absence.
     /* c8 ignore next - lib-stable missing means full-gut mode; subprocess tests cover this */
     return false
   }
@@ -259,8 +259,8 @@ export function pnpmInstallRunning(): boolean {
     timeout: spawnTimeoutMs(1500),
     encoding: 'utf8',
   })
-  // pgrep exit 1 = no match (safe to install); 0 = match; anything else
-  // (pgrep absent, error) = be conservative and assume running.
+  // pgrep exit 1 = no match, safe to install; 0 = match; anything else
+  // pgrep absent, error = be conservative and assume running.
   if (r.status === 1) {
     return false
   }
@@ -281,7 +281,7 @@ export function pnpmInstallRunning(): boolean {
 /* c8 ignore start - spawns a real install + touch; needs a live install tree no unit test provides */
 export function repairGutted(paths: RepoPaths): string {
   // Drop the once-per-session sentinel up front: if the install hangs or fails,
-  // we do NOT retry within this session (avoids a repair loop).
+  // we do NOT retry within this session, avoids a repair loop.
   try {
     spawnSync('touch', [paths.repairSentinel], {
       timeout: spawnTimeoutMs(1000),
@@ -303,14 +303,14 @@ export function repairGutted(paths: RepoPaths): string {
     encoding: 'utf8',
     env: { ...process.env, CI: 'true' },
     // Windows shell-shim: pnpm is pnpm.cmd there; an unshelled spawnSync
-    // cannot execute it (the variant of the bump-order gate's fail-open).
+    // cannot execute it, the variant of the bump-order gate's fail-open.
     shell: WIN32,
   })
   const relinked = existsSync(path.join(paths.nodeModules, '@socketsecurity'))
   if (r.status === 0 && relinked) {
     return 'node_modules was gutted (pnpm store intact, links missing, stale workspace-state marker). Auto-repaired: removed the stale marker(s) + `CI=true pnpm install` re-linked from the store. Hooks are healthy again.'
   }
-  // Install ran but didn't restore — surface the manual command (don't loop).
+  // Install ran but didn't restore — surface the manual command, don't loop.
   return (
     'node_modules is gutted (pnpm store intact, links missing) and the auto-repair did not restore it. Run manually:\n' +
     '  rm node_modules/.pnpm-workspace-state-v1.json node_modules/.modules.yaml && CI=true pnpm install'
@@ -381,7 +381,7 @@ export function probeHook(
     return undefined
   }
   // Non-zero exit OR timeout. spawnSync sets status=null on timeout;
-  // treat timeout as inconclusive (skip rather than false-positive).
+  // treat timeout as inconclusive, skip rather than false-positive.
   if (result.status === null) {
     return undefined
   }
@@ -439,7 +439,7 @@ export function formatReport(
 // The SessionStart verdict: repair the deterministic gutted/dangling cases
 // first (they make EVERY hook fail, so there's no point probing one-by-one),
 // else probe each source hook for a missing-dep failure. Returns a notify
-// verdict the dispatcher surfaces, or undefined (silent allow). Every path
+// verdict the dispatcher surfaces, or undefined, silent allow. Every path
 // resolves its filesystem locations from `paths` (runtime-derived) — never a
 // module-scope constant.
 export function check(payload: ToolCallPayload): GuardResult {

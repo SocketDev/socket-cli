@@ -7,7 +7,7 @@
  *   `stdioString: false` to get a raw Buffer, stringifies without trim, and
  *   returns the untrimmed string ready for `parsePorcelain`. Consumers:
  *   `scripts/fleet/land-work.mts` has its own inlined copy of this logic
- *   (because it predates this module); new callers should import from here.
+ *   because it predates this module; new callers should import from here.
  */
 
 // oxlint-disable-next-line socket/prefer-async-spawn -- sync helper; callers are sync check scripts needing a one-shot status read before git ops.

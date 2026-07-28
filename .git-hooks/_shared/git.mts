@@ -20,7 +20,7 @@
 //                      it with "no files to check."
 //
 // gitLines goes through gitOrThrow because every call site we have
-// (staged-file iteration, push-range walking, repo-toplevel lookup)
+// staged-file iteration, push-range walking, repo-toplevel lookup
 // makes a security or correctness decision based on the result; an
 // empty array from a failed git invocation is a fail-open.
 

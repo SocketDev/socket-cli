@@ -1,6 +1,6 @@
 /**
  * @file Pure classifier for a dangerous tracked symlink. Shared by the
- *   `tracked-symlinks-are-safe` check (reads the git object's target) so the
+ *   `tracked-symlinks-are-safe` check, reads the git object's target, so the
  *   "is this link self-referential / repo-internal-absolute / a tracked
  *   node_modules" rule lives in one place. The motivating bug: a `node_modules`
  *   symlink whose target was the repo's OWN absolute `node_modules` path (`a/b

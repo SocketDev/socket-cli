@@ -8,7 +8,7 @@
 // import in any rule or lib helper disables EVERY socket/ rule — oxlint only
 // warns and never checks the rule count, so a green lint can hide a dead
 // plugin. This is the edit-time complement to the commit-time gate
-// `scripts/fleet/check/oxlint-plugin-loads.mts` (defense in depth): catch the
+// `scripts/fleet/check/oxlint-plugin-loads.mts`, defense in depth: catch the
 // breakage the moment it's introduced, in the same session, before it rides a
 // cascade out to the fleet.
 //
@@ -19,7 +19,7 @@
 //
 // Delegates the actual check to the canonical script so there's one source of
 // load-verification logic. Skips silently when the script or plugin is absent
-// (scaffolding-only repos) and fails open on any error.
+// scaffolding-only repos, and fails open on any error.
 
 import path from 'node:path'
 

@@ -67,7 +67,7 @@ export const SANCTIONED_TRACKED_SEEDS: readonly string[] = [
 
 /**
  * The repo-root-relative tail of an absolute `paths.mts` constant, normalized
- * to `/`. Matching tracked paths by tail (not exact) is mirror-agnostic: it
+ * to `/`. Matching tracked paths by tail, not exact, is mirror-agnostic: it
  * catches the live copy AND the `template/base/` mirror without listing both.
  */
 export function outputTail(absPath: string): string {
@@ -83,7 +83,7 @@ export interface GeneratedTrackingConfig {
 /**
  * Pure verdict: which tracked paths are build outputs that must not be tracked.
  * A path violates if it lives under an output DIR tail or equals an output FILE
- * tail (tail-match tolerates any mirror prefix), and is not a sanctioned seed.
+ * tail, tail-match tolerates any mirror prefix, and is not a sanctioned seed.
  */
 export function collectGeneratedTrackingViolations(
   trackedPaths: readonly string[],

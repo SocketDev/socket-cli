@@ -22,7 +22,7 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 // A running node below this trips every hook + the tests that spawn them.
 export const NODE_FLOOR_MAJOR = 24
 
-// Env stamp set on the re-exec'd child so it never re-execs again (loop guard).
+// Env stamp set on the re-exec'd child so it never re-execs again, loop guard.
 export const REEXEC_GUARD_ENV = 'FLEET_NODE_REEXEC'
 
 // Re-exec under the pinned node when the running node is below the floor. Pure
@@ -79,7 +79,7 @@ export function majorOf(version: string): number | undefined {
 }
 
 // The highest node binary among fnm version-dir entries whose major is at/above
-// the floor, or undefined. Pure over the listing (testable without a real fnm).
+// the floor, or undefined. Pure over the listing, testable without a real fnm.
 export function pickFnmNode(config: {
   binOf: (version: string) => string
   entries: readonly string[]

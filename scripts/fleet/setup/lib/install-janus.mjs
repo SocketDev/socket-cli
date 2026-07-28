@@ -1,9 +1,9 @@
 /**
  * @file Zero-dep bootstrap installer for janus (divmain/janus) — a
- *   single-binary utility some Socket workflows opt into (not a security tool).
+ *   single-binary utility some Socket workflows opt into, not a security tool.
  *   GitHub release tarball; version + per-platform asset/integrity from
  *   external-tools.json, SRI-verified + extracted by lib/install-tool.mjs into
- *   rack/janus/<v>, with a bin/janus shim. Skipped (no error) when janus isn't
+ *   rack/janus/<v>, with a bin/janus shim. Skipped, no error, when janus isn't
  *   pinned for this platform. Imports only bootstrap-common.mjs + `node:`.
  */
 

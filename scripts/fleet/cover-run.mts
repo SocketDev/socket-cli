@@ -95,7 +95,7 @@ export async function runQuietCommand(
 // Move a vitest tier's throwaway scratch `coverage-final.json` to its flat
 // per-tier path in COVERAGE_DIR. The next tier's `clean: true` wipes the scratch
 // report, so each tier's result must be lifted out before the next runs. copy
-// (not rename) since scratch lives in os.tmpdir, possibly on another device.
+// not rename, since scratch lives in os.tmpdir, possibly on another device.
 // Returns whether a report was present to persist.
 function persistScratchFinal(destPath: string): boolean {
   const scratchFinal = path.join(
@@ -263,6 +263,81 @@ export function pnpmDirChurned(
   return before.pnpmDirMtimeMs !== after.pnpmDirMtimeMs
 }
 
+/**
+ * Count the raw v8 coverage dumps captured during the suites — the subprocess
+ * children-raw dir plus the vitest tiers' raw `.tmp`. A positive count means
+ * test workers/children DID execute and dumped v8 profiles, so a subsequently
+ * empty merged report is a v8→istanbul conversion failure (a false-green
+ * 0.00%), not a real 0% codebase. Best-effort per dir — a missing or unreadable
+ * dir contributes nothing. Must be read BEFORE the conversion, which consumes
+ * and deletes, the children-raw dir.
+ */
+export function countRawV8Profiles(
+  dirs?: readonly string[] | undefined,
+): number {
+  let count = 0
+  const searchDirs = dirs ?? [
+    COVERAGE_CHILDREN_RAW_DIR,
+    path.join(COVERAGE_SCRATCH_VITEST_DIR, '.tmp'),
+  ]
+  for (let i = 0, { length } = searchDirs; i < length; i += 1) {
+    try {
+      const entries = readdirSync(searchDirs[i]!)
+      for (let j = 0, { length: elen } = entries; j < elen; j += 1) {
+        if (entries[j]!.endsWith('.json')) {
+          count += 1
+        }
+      }
+    } catch {
+      // Missing/unreadable dir — contributes nothing.
+    }
+  }
+  return count
+}
+
+export interface EmptyConversionDecision {
+  readonly hasMeasurableStatements: boolean
+  readonly rawProfileCount: number
+}
+
+/**
+ * TRUE = the coverage false-green: raw v8 profiles WERE captured but the
+ * v8→istanbul conversion produced a report with no measurable statements. That
+ * combination is a conversion failure (typically a mid-run node_modules/.pnpm
+ * churn that transiently broke module resolution for the converter), NOT a real
+ * 0% codebase. Precisely distinguished from the two sane 0-ish states so
+ * neither false-alarms:
+ *
+ * - Genuine 0% covered: the merged report HAS statements (hasMeasurableStatements
+ *   true), just none executed → returns false.
+ * - Genuinely empty scope: NO raw profiles were captured (rawProfileCount 0) →
+ *   returns false.
+ */
+export function isConversionEmptyDespiteProfiles(
+  decision: EmptyConversionDecision,
+): boolean {
+  return decision.rawProfileCount > 0 && !decision.hasMeasurableStatements
+}
+
+export interface EmptyConversionRetryDecision {
+  readonly attempt: number
+  readonly conversionEmpty: boolean
+  readonly maxAttempts: number
+}
+
+/**
+ * Retry when the conversion came back empty-despite-profiles and the attempt
+ * budget is not yet spent. A re-run regenerates the raw v8 profiles AND
+ * reconverts, which resolves a churn-corrupted conversion; an exhausted budget
+ * stops the loop so the runner fails LOUD instead of spinning forever.
+ * `attempt` is 1-based; `maxAttempts` is the shared run budget.
+ */
+export function shouldRetryForEmptyConversion(
+  decision: EmptyConversionRetryDecision,
+): boolean {
+  return decision.conversionEmpty && decision.attempt < decision.maxAttempts
+}
+
 export interface ChurnRetryDecision {
   readonly attempt: number
   readonly churnedDuringRun: boolean
@@ -354,7 +429,7 @@ export async function waitForPnpmQuiescence(
 
 // Thrown when the subprocess coverage capture is PROVABLY incomplete at the
 // drain timeout — the raw-fragment dir is still growing, or a fragment is
-// truncated (a child was mid-write when read). Failing loud is deliberate:
+// truncated, a child was mid-write when read. Failing loud is deliberate:
 // silently merging a partial capture under-reports the aggregate (a coverage
 // false-red that flips on runner timing). See drainChildFragments.
 export class IncompleteChildCaptureError extends Error {
@@ -434,7 +509,7 @@ function fragmentsStable(a: FragmentSnapshot, b: FragmentSnapshot): boolean {
  * FAIL LOUD: if the cap is hit while the dir is STILL growing or a fragment is
  * truncated, throw IncompleteChildCaptureError rather than merge a partial —
  * never silently report a low aggregate. Conservative: if the final observed
- * state is stable + complete (just short of the quiet streak), it ACCEPTS
+ * state is stable + complete, just short of the quiet streak, it ACCEPTS
  * rather than false-red a genuinely settled dir.
  *
  * Honest limit: a child SIGKILLed on a test-timeout wrote no fragment at all,
@@ -593,7 +668,7 @@ export async function buildChildrenCoverageReport(): Promise<boolean> {
   return produced
 }
 
-// Build with source maps for coverage (repos that ship a build entry) so v8
+// Build with source maps for coverage, repos that ship a build entry, so v8
 // coverage maps back to original sources; repos with no build entry are
 // instrumented directly. Returns whether the build failed.
 export async function buildWithSourceMaps(repoRoot: string): Promise<boolean> {

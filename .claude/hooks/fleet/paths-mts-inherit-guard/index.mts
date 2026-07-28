@@ -16,7 +16,7 @@
 // What counts as a "sub-package paths.mts":
 //   - File path matches `<something>/scripts/paths.{mts,cts}`
 //   - There exists an ancestor `scripts/paths.{mts,cts}` higher in
-//     the directory tree (and not the same file).
+//     the directory tree, and not the same file.
 //
 // What counts as proper inheritance:
 //   - The final content contains a line matching
@@ -140,7 +140,7 @@ export const hook = defineHook({
     }
 
     // The new content we're about to write. Edit uses `new_string`
-    // (a fragment); Write uses `content` (the full file). For Edit,
+    // a fragment; Write uses `content`, the full file. For Edit,
     // we can't see the surrounding file without reading it, so we
     // approximate: if the fragment itself contains an `export *`,
     // accept; otherwise check the on-disk file. MultiEdit follows

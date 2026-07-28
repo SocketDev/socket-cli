@@ -1,7 +1,7 @@
 /**
  * @file The pre-approve verify runner + its registry-truth reconcile. The
  *   verify stage finds this package's staged entry and checks local pack sha1
- *   vs npm's staged shasum (with the extracted-contents fallback); on a pass it
+ *   vs npm's staged shasum, with the extracted-contents fallback; on a pass it
  *   carries the release-asset checksums for the state stash. The registry-truth
  *   path verifies an ALREADY-LIVE version from PUBLIC reads when no npm auth is
  *   available — divergent bytes refuse, never a rubber stamp.
@@ -64,7 +64,7 @@ export async function runVerifyStage(config: {
     // authenticated-source fallback exists: when the version is ALREADY LIVE
     // on the registry, PUBLIC reads (packument digests + published tarball)
     // verify the bytes without local auth. Otherwise the honest outcome is
-    // `blocked` (stops the run, never satisfies a resume) — a staged-but-
+    // `blocked`, stops the run, never satisfies a resume — a staged-but-
     // unpublished entry's digest is only visible authenticated.
     const truth = await verifyAgainstRegistry({
       cwd: cfg.cwd,
@@ -106,7 +106,7 @@ export async function runVerifyStage(config: {
   if (!entry) {
     // Staged entries are maintainer-visible: a wrong-account login reads an
     // empty list even when the stage succeeded, so the failure names WHO was
-    // looking (the wrong-user trap that cost a real debugging session).
+    // looking, the wrong-user trap that cost a real debugging session.
     // Seamed, like every other effect here — tests stub it.
     const identity = await seams.identityFor(pkg.name)
     return {
@@ -160,7 +160,7 @@ export async function runVerifyStage(config: {
   }
 }
 
-// ── registry truth (already-published reconcile) ───────────────────────────
+// ── registry truth, already-published reconcile ───────────────────────────
 
 /**
  * What a registry-truth verification concluded. `match` carries the
@@ -217,7 +217,7 @@ export async function verifyAgainstRegistry(config: {
   // A machine-built payload (.wasm/.node) has no local byte-twin — the
   // published artifact came from the CI build, so a local re-pack ALWAYS
   // diverges on those bytes. The honest axis is STRUCTURAL, on the published
-  // tarball itself (the same gate staged platform entries use), and the
+  // tarball itself, the same gate staged platform entries use, and the
   // release checksums hash the downloaded registry bytes — the content the
   // tag marks. Routed for workspace members; a plain single-package repo has
   // no generated machine-built subject today.

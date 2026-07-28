@@ -25,8 +25,8 @@ const logger = getDefaultLogger()
  * Code-is-law opt-in gate plus published-release safeguard, in one guard.
  *
  * Opt-in: squash is destructive history rewrite, so the ROSTER decides which
- * repos it may touch — not a path arg a human (or a fuzzy name-match) points
- * at. A non-fleet repo (no roster, or absent from it) is refused outright:
+ * repos it may touch — not a path arg a human, or a fuzzy name-match, points
+ * at. A non-fleet repo, no roster, or absent from it, is refused outright:
  * this is the guard that stops a `cdxgen` from being squashed because it
  * resembles `sdxgen`.
  *

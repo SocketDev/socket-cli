@@ -11,7 +11,7 @@
  *   already normalized. `options-null-proto` is blind to this: it sees the
  *   `...opts` spread and passes. This rule is the naming half of the same
  *   convention — it flags a function whose options-bag param is named `opts`
- *   and renames the param (and its in-body reads) to `options`. After the
+ *   and renames the param, and its in-body reads, to `options`. After the
  *   rename, `options-null-proto` independently requires the `{ __proto__: null,
  *   ...options }` normalization, and the canonical local name `opts` is freed
  *   up for it. The two rules compose: naming here, prototype-safety there.
@@ -25,7 +25,7 @@
  *     would diverge from the upstream type it documents.
  *   - Test files (`*.test.*`, `/test/`) are skipped: they author throwaway
  *     option-shaped helpers, not production option readers.
- *   - The rename is suppressed (report-only, no suggestion either) when the
+ *   - The rename is suppressed, report-only, no suggestion either, when the
  *     same function ALSO has a param literally named `options` — renaming
  *     `opts`→`options` there would collide. The author must resolve the
  *     two-name clash by hand. Bypass: a `socket-lint: allow
@@ -140,7 +140,7 @@ function collectOptsIdentifiers(root: AstNode): AstNode[] {
     if (
       n.type === 'Identifier' &&
       n.name === BANNED_PARAM_NAME &&
-      // Skip `x.opts` (a property name, not our variable).
+      // Skip `x.opts`, a property name, not our variable.
       !(
         parent?.type === 'MemberExpression' &&
         parent.property === n &&

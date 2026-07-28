@@ -9,8 +9,8 @@
 // store) is the right place for a given fact, unless told.
 //
 // This hook tells it, at session start:
-//   1. Where THIS repo's memory store is (resolved generically from cwd).
-//   2. Where the shared FLEET/wheelhouse store is (the cross-repo brain) — so a
+//   1. Where THIS repo's memory store is, resolved generically from cwd.
+//   2. Where the shared FLEET/wheelhouse store is, the cross-repo brain — so a
 //      fact owned by the fleet gets filed there, not siloed under whatever repo
 //      the session happens to be standing in.
 //   3. The filing convention: remember a fact in the store of the repo that OWNS
@@ -28,19 +28,19 @@ import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 // The wheelhouse is the fleet's shared memory store — facts that apply to every
-// fleet repo (canonical rules, cascade mechanics, cross-repo standards) belong
+// fleet repo, canonical rules, cascade mechanics, cross-repo standards, belong
 // here, NOT under the repo a session happens to be in. Resolved by the wheelhouse
 // checkout's conventional sibling location relative to the current repo's parent.
 const WHEELHOUSE_DIR_NAME = 'socket-wheelhouse'
 
 // Slugify an absolute project path the way the harness keys its memory store:
-// every "/" (including the leading one) becomes "-".
+// every "/", including the leading one, becomes "-".
 export function projectSlug(absPath: string): string {
   return absPath.replace(/\//g, '-')
 }
 
 // The memory dir for a given absolute project path, or undefined if the path is
-// not absolute (can't be slugified into a stable key).
+// not absolute, can't be slugified into a stable key.
 export function memoryDirFor(absPath: string): string | undefined {
   if (!absPath || !path.isAbsolute(absPath)) {
     return undefined

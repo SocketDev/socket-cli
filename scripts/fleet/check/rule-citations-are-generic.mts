@@ -3,7 +3,7 @@
 // Commit-time complement to the `dated-citation-guard` PreToolUse hook. The
 // reminder nudges when an edit ADDS a dated citation this turn; this check
 // sweeps the same shape across the COMMITTED prose tree, so a dated citation
-// that slipped in before the hook existed (or in a turn it didn't see) still
+// that slipped in before the hook existed, or in a turn it didn't see, still
 // gets caught. Same edit-nudge + commit-check twin pattern as
 // error-message-quality-nudge / error-messages-are-thorough.
 //
@@ -22,7 +22,7 @@
 //
 // Scope: the fleet-facing rule-prose surfaces — CLAUDE.md, docs/agents.md/fleet,
 // .claude/skills/**/SKILL.md, .claude/hooks/fleet/**/README.md. Reporting-only;
-// never auto-fixed (rewriting to the generic form needs judgment).
+// never auto-fixed, rewriting to the generic form needs judgment.
 //
 // Usage: node scripts/fleet/check/rule-citations-are-generic.mts [--quiet]
 

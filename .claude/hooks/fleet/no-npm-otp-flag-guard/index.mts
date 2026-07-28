@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Claude Code PreToolUse hook — no-npm-otp-flag-guard.
 //
-// Blocks an npm-family command (npm, pnpm, yarn) that passes the 2FA one-time
+// Blocks an npm-family command, npm, pnpm, yarn, that passes the 2FA one-time
 // code as a flag (`--otp=<code>` or `--otp <code>`).
 //
 // Passing the OTP on the command line leaks the one-time code into the shell
@@ -35,8 +35,8 @@ const NPM_BINARIES: readonly string[] = ['npm', 'pnpm', 'yarn']
 export const triggers: readonly string[] = ['--otp']
 
 // True when `arg` is an `--otp` flag in either form:
-//   --otp=<code>   (value attached)
-//   --otp          (value in the next arg)
+//   --otp=<code>   value attached
+//   --otp, value in the next arg
 function isOtpFlag(arg: string): boolean {
   return arg === '--otp' || arg.startsWith('--otp=')
 }
@@ -57,7 +57,7 @@ export function otpFlagBinaryIn(command: string): string | undefined {
   return undefined
 }
 
-// Decide what (if anything) to block for a payload. Returns the offending
+// Decide what, if anything, to block for a payload. Returns the offending
 // binary, or undefined to pass. Pure — the test drives it directly.
 export function otpFlagViolation(payload: ToolCallPayload): string | undefined {
   if (payload.tool_name !== 'Bash') {

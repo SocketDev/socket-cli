@@ -16,9 +16,9 @@
 //   /* oxlint-disable <rule> */            (no -next-line suffix)
 //   // oxlint-disable <rule>                (line comment, no -next-line)
 //
-// Allowed shapes (passes through):
-//   /* oxlint-disable-next-line <rule> */   (block, per call)
-//   // oxlint-disable-next-line <rule>       (line, per call)
+// Allowed shapes, passes through:
+//   /* oxlint-disable-next-line <rule> */   block, per call
+//   // oxlint-disable-next-line <rule>       line, per call
 //   /* oxlint-enable <rule> */               (re-enables; pairs with disables)
 //
 // Exemption: files under the plugin's rule subtree
@@ -32,7 +32,7 @@
 //
 // Exit codes:
 //   0 — pass.
-//   2 — block (at least one file-scope oxlint-disable found).
+//   2 — block, at least one file-scope oxlint-disable found.
 //
 // Fails open on malformed payloads (exit 0 + stderr log).
 

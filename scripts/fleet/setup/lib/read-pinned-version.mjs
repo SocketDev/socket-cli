@@ -1,11 +1,11 @@
 /**
  * @file Print the pinned version of a Socket package to stdout, reading from
- *   (in order):
+ *   in order:
  *
  *   1. pnpm-workspace.yaml `catalog:` entries
  *   2. Root package.json `dependencies` / `devDependencies` (skipping "catalog:" /
  *      "workspace:" / "*" / "" placeholders) Prints the empty string if not
- *      pinned (caller decides what to do). Usage: node read-pinned-version.mjs
+ *      pinned, caller decides what to do. Usage: node read-pinned-version.mjs
  *      <package-name> Used by the setup composite action's bootstrap step. Kept
  *      as a standalone .mjs file (rather than an inline `node -e "..."` blob in
  *      action.yml) so the YAML stays readable and the parsing logic is
@@ -31,7 +31,7 @@ function stripRange(v) {
 // can pin `@socketsecurity/lib-stable: npm:@socketsecurity/lib@5.28.0`
 // to alias one name onto another's published tarball. Return the
 // alias TARGET so the tarball URL points at a real published package
-// (the alias name itself has no tarball on the registry). When the
+// the alias name itself has no tarball on the registry. When the
 // pinned value is an alias, the caller needs the resolved package
 // name too, so emit `<pkg>\t<version>` (TAB-separated); plain
 // versions emit `<version>` alone.
@@ -69,7 +69,7 @@ function fromCatalog(pkg) {
       continue
     }
     // Parse an indented `  "<name>": "<version>"` catalog/deps line: (1) the
-    // package key (optionally quoted), (2) the value (optionally quoted).
+    // package key, optionally quoted, (2) the value, optionally quoted.
     const m = line.match(
       /^\s+['"]?([@A-Za-z0-9_/-]+)['"]?\s*:\s*['"]?([^'"\s]+)['"]?\s*$/,
     )

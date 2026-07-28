@@ -19,7 +19,7 @@
 //   1. Bash output with ERR_MODULE_NOT_FOUND / "Cannot find package" for a
 //      scoped workspace package (`@<scope>/...`) — the dangling symlink.
 //   2. Bash output with ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY — the
-//      follow-on trap where `pnpm install` (the obvious fix) itself dies
+//      follow-on trap where `pnpm install`, the obvious fix, itself dies
 //      because pnpm wants to purge the stale modules dir and has no TTY to
 //      confirm. Without handling this, the suggested fix is blocked and we
 //      step on ourselves.
@@ -29,7 +29,7 @@
 // install or retry — the operator decides.
 //
 // PostToolUse, not PreToolUse: we react to the failure; we don't predict
-// it. Fail-open on hook bugs (notice only, never blocks).
+// it. Fail-open on hook bugs, notice only, never blocks.
 
 import { bashGuard, defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
@@ -93,7 +93,7 @@ export function isNoTtyPurgeAbort(output: string): boolean {
 }
 
 // Which dangle face fired, or undefined for neither.
-//   'resolution' — the import failed (dangling symlink).
+//   'resolution' — the import failed, dangling symlink.
 //   'purge-abort' — the relink itself was blocked on a TTY prompt.
 export type DangleKind = 'purge-abort' | 'resolution'
 

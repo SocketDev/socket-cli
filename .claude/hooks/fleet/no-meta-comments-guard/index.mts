@@ -20,7 +20,7 @@
 //
 // Exit codes:
 //   0 — pass (not Edit/Write, no meta comments).
-//   2 — block (at least one meta-comment pattern found).
+//   2 — block, at least one meta-comment pattern found.
 //
 // Fails open on malformed payloads (exit 0 + stderr log).
 

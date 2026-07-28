@@ -61,7 +61,7 @@ const CRYPTO_NAMED_EXPORTS = new Set([
 ])
 
 /**
- * Collect the names bound by a single statement-list element (a declaration).
+ * Collect the names bound by a single statement-list element, a declaration.
  * Covers the forms that can shadow a crypto export name in practice: `const` /
  * `let` / `var` declarators (incl. simple destructuring), function + class
  * declarations. Not exhaustive ESTree binding analysis — just enough to tell a

@@ -4,7 +4,7 @@
  *   the three things every
  *   runner needs identically: the vendored-tree exclusion set, the own-file
  *   walker, and the `--soak-days` trust-gate arg parse. Each runner keeps only
- *   its ecosystem-specific logic (proxy protocol, registry dance, cargo flags).
+ *   its ecosystem-specific logic, proxy protocol, registry dance, cargo flags.
  */
 
 import { readdirSync, statSync } from 'node:fs'

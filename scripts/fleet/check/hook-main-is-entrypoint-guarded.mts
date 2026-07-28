@@ -4,7 +4,7 @@
 // `void main()` / `main().catch(...)`, or a top-level `await withEditGuard` /
 // `withBashGuard`) at MODULE TOP LEVEL hangs forever when its test `import`s
 // the module for those helpers: the top-level call fires on import and blocks
-// reading a stdin that never arrives, so `node --test` (the hook-test runner)
+// reading a stdin that never arrives, so `node --test`, the hook-test runner
 // times out and gets SIGKILLed.
 //
 // The fix is the entrypoint guard — run main() only when the module is the
@@ -32,19 +32,19 @@
 //     `.../<name>/index.mts` (or `/index`), via a static `import` or
 //     `await import(`. This is the load-bearing precondition: the hang happens
 //     ONLY on import, so a hook whose test spawns it as a subprocess instead
-//     (and never imports it) is safe even when unguarded — flagging it would be
+//     and never imports it, is safe even when unguarded — flagging it would be
 //     a false positive. No importing test → no hang → exempt.
 //   - The module has a top-level `main()` invocation: a line matching `main()`
 //     / `void main()` / `main().catch(` / `await main(` at COLUMN 0 (a guarded
 //     call is indented inside the `if` block, so column-0 == unguarded), OR a
 //     column-0 `await withEditGuard(` / `await withBashGuard(`.
 //
-// The relocated tests are WHEELHOUSE-ONLY (never cascaded): a member ships the
+// The relocated tests are WHEELHOUSE-ONLY, never cascaded: a member ships the
 // hook sources but not their tests, so the scan no-ops (no `test/repo/`) outside
 // the wheelhouse — `OWNS_RELOCATED_TESTS` gates it.
 //
-// Exempt: `_shared/` (helper library, not a hook); any hook with no index.mts;
-// and any hook whose test does not import the module (spawn-only, or no test).
+// Exempt: `_shared/`, helper library, not a hook; any hook with no index.mts;
+// and any hook whose test does not import the module, spawn-only, or no test.
 //
 // Usage: node scripts/fleet/check/hook-main-is-entrypoint-guarded.mts [--quiet]
 
@@ -79,7 +79,7 @@ export interface UnguardedHit {
 export interface ScanResult {
   // Offending hooks (unguarded top-level main() behind an importing test).
   hits: UnguardedHit[]
-  // How many hooks were actually examined (an importing test exists). A zero
+  // How many hooks were actually examined, an importing test exists. A zero
   // here means the scan is vacuous — surfaced so a no-op can't pass as green.
   scanned: number
 }
@@ -88,7 +88,7 @@ export interface ScanResult {
 // lives at `test/repo/{unit,integration}/hooks/<name>.test.mts` (wheelhouse-only)
 // and imports the source by its full path, which ENDS IN `.../<name>/index.mts`
 // (or `/index`). That import is the precondition for the hang: a spawn-only test
-// (or no test) never loads the module in the test process, so an unguarded
+// or no test, never loads the module in the test process, so an unguarded
 // main() can't block it.
 //
 // Two import shapes are in use, both keyed on the hook `<name>`:
@@ -230,7 +230,7 @@ function main(): void {
   // Surface the scanned count: a vacuous scan (0) is the very failure mode this
   // check was rewritten to fix, so make it visible rather than report a silent
   // green. In the wheelhouse `scanned` must be non-zero; a member legitimately
-  // scans 0 (it ships no relocated tests) and the check no-ops in scanHookMains.
+  // scans 0, it ships no relocated tests, and the check no-ops in scanHookMains.
   if (OWNS_RELOCATED_TESTS && scanned === 0) {
     logger.fail(
       '[check-hook-main-is-entrypoint-guarded] scanned 0 hooks — the relocated-test discovery found no importing test (vacuous scan); check test/repo/{unit,integration}/hooks wiring.',

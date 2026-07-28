@@ -1,6 +1,6 @@
 /*
  * @file Steer manual error-message extraction to the `errorMessage` helper from
- *   `@socketsecurity/lib/errors/message` (runtime source) /
+ *   `@socketsecurity/lib/errors/message`, runtime source /
  *   `@socketsecurity/lib-stable/errors/message` (scripts / tests / hooks). The
  *   helper centralizes cause-chain / aggregate handling and keeps every call
  *   site identical, so a future change (redacting tokens, walking `cause`, etc.)
@@ -11,10 +11,10 @@
  *
  *   1. `<id> instanceof Error ? <id>.message : String(<id>)` — and the `.stack`
  *      consequent variant `<id> instanceof Error ? <id>.stack : String(<id>)`.
- *   2. `<id>.stack ?? <id>.message` (either order) — the nullish "prefer stack,
+ *   2. `<id>.stack ?? <id>.message`, either order — the nullish "prefer stack,
  *      fall back to message" chain. Only flagged when BOTH sides are `.stack` /
  *      `.message` members of the SAME identifier; `<id>?.message ?? String(<id>)`
- *      (optional chain, different semantics) is deliberately left alone.
+ *      optional chain, different semantics, is deliberately left alone.
  *   3. `String(<id>)` used as the sole error text of a `logger.error(...)` call
  *      or a bare `throw String(<id>)`.
  *
@@ -136,7 +136,7 @@ const rule = {
         return summary
       }
       // localName === importName: a file that already binds `errorMessage`
-      // (import, const, or function) is detected so the fix neither injects a
+      // import, const, or function, is detected so the fix neither injects a
       // duplicate import nor rewrites into a colliding local binding.
       summary = summarizeImportTarget(
         sourceCode.ast,
@@ -164,7 +164,7 @@ const rule = {
     }
 
     /**
-     * Report `node` (the whole matched expression) and, when safe, autofix it
+     * Report `node`, the whole matched expression, and, when safe, autofix it
      * to `errorMessage(<name>)` plus the missing import.
      */
     function reportPreferHelper(node: AstNode, name: string): void {
@@ -212,7 +212,7 @@ const rule = {
         reportPreferHelper(node, name)
       },
 
-      // Pattern 2: `<id>.stack ?? <id>.message` (either order) — both sides
+      // Pattern 2: `<id>.stack ?? <id>.message`, either order — both sides
       // `.stack` / `.message` members of the same identifier.
       LogicalExpression(node: AstNode) {
         if (node.operator !== '??') {

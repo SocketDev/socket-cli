@@ -22,7 +22,7 @@
  *      pins 1.95.0) — stable cargo ignores unknown `[unstable]` keys. The
  *      committed lock is therefore the real build-time enforcement; a rust repo
  *      with no tracked lock has none, regardless of what the config file says.
- *      Skipped where there's no own Cargo.toml (nothing to build). Usage: node
+ *      Skipped where there's no own Cargo.toml, nothing to build. Usage: node
  *      scripts/fleet/check/cargo-soak-config-is-current.mts [--quiet]
  */
 
@@ -136,7 +136,7 @@ export function findCargoSoakConfigIssues(
 /**
  * True when at least one `Cargo.lock` is tracked by git under `repoRoot`.
  * Reads the git index, not the working tree, so it also catches a lock that
- * is staged but not yet built locally. Returns `false` (never throws) when
+ * is staged but not yet built locally. Returns `false`, never throws, when
  * `repoRoot` is not a git repository.
  */
 export function hasTrackedCargoLock(repoRoot: string): boolean {

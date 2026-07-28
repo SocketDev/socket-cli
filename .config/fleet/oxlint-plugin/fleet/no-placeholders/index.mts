@@ -181,7 +181,7 @@ const rule = {
 
       // Body that is just `return` / `return undefined` paired with a
       // placeholder marker comment is a stub. A real return-undefined
-      // function with no marker is allowed (it's just terse).
+      // function with no marker is allowed, it's just terse.
       if (stmts.length === 1) {
         const only = stmts[0]
         const isBareReturn =

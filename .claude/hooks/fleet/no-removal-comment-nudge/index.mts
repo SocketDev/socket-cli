@@ -23,9 +23,9 @@
 //     something is removed or absent, the code simply doesn't mention it.
 //
 //   Does NOT fire when:
-//   - Only comments changed (no code removal).
+//   - Only comments changed, no code removal.
 //   - The added comment doesn't carry a relocation phrase.
-//   - The comment was already present in old_string (not newly added).
+//   - The comment was already present in old_string, not newly added.
 //   - Write tool calls (no old/new distinction — Write replaces the whole
 //     file, so there's no meaningful "removal site" context).
 //
@@ -43,8 +43,8 @@
 
 import { defineHook, editGuard, notify, runHook } from '../_shared/guard.mts'
 
-// A line is a comment if it starts (after optional whitespace) with a
-// comment marker. Covers: `//`, `#`, `*` (block-comment continuation),
+// A line is a comment if it starts, after optional whitespace, with a
+// comment marker. Covers: `//`, `#`, `*`, block-comment continuation,
 // `/*`, `*/`. Does NOT cover inline comments (`code // comment`) — those
 // are treated as code lines because the code portion is present.
 const COMMENT_LINE_RE = /^\s*(?:\/\/|\/\*|\*\/|\*|#)\s*/
@@ -78,7 +78,7 @@ const RELOCATION_RE =
 
 // Temporal-deprecation NARRATION: a comment that describes the dead past
 // instead of the present. Distinct from RELOCATION_RE — this fires anywhere
-// (no code-removal gate) because narrating "what it used to be" is noise even
+// no code-removal gate, because narrating "what it used to be" is noise even
 // far from a deletion. Kept to distinctive multi-word shapes so it doesn't
 // false-positive on ordinary prose ("no longer than 80 chars", "the value
 // replaced in the map"): a temporal contrast ("used to be"), a replacement
@@ -115,7 +115,7 @@ export interface RemovalCommentFinding {
  * Algorithm:
  *
  * 1. Split both fragments into lines.
- * 2. Check old_string has at least one code line (non-comment, non-blank).
+ * 2. Check old_string has at least one code line, non-comment, non-blank.
  * 3. Build a set of comment texts that exist in old_string (so we can skip
  *    comments that weren't newly added).
  * 4. For each comment line in new_string that is NOT already in old_string, check

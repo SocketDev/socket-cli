@@ -1,7 +1,7 @@
 /**
  * Reviewing-code skill runner — multi-agent multi-pass review of a branch.
  *
- * Pipeline (defaults): 1. spec-compliance — codex (gates the quality passes) 2.
+ * Pipeline (defaults): 1. spec-compliance — codex, gates the quality passes, 2.
  * discovery — codex 3. discovery-secondary — codex 4. remediation — codex 5.
  * verify — claude.
  *
@@ -173,7 +173,7 @@ type RoleSpec = {
   readonly headingForVerify?: string | undefined
   readonly preferenceOrder: readonly BackendName[]
   // Wall-clock cap per spawn for this role. Heavyweight investigation
-  // passes (discovery, discovery-secondary, remediation) cap at 15min
+  // passes, discovery, discovery-secondary, remediation, cap at 15min
   // per docs/agents.md/fleet/agent-delegation.md — rescue-tier work.
   // Verify is a quick check on an already-written report, so 5min.
   // Spawn rejects on timeout; the catch in runBackend logs cleanly.
@@ -388,7 +388,7 @@ type Args = {
 
 // Order is the contract: spec-compliance runs FIRST and gates the quality
 // passes (discovery / remediation). Matching an implementation against its
-// stated intent (over-building, scope creep, under-building) is cheaper to fix
+// stated intent, over-building, scope creep, under-building, is cheaper to fix
 // before quality review than after, and a quality pass on out-of-scope code
 // wastes the round-trip. The check `review-stages-are-ordered.mts` asserts this
 // ordering so it can't silently regress.
@@ -417,7 +417,7 @@ export function extractSpecSection(report: string): string {
 // Guarantee the spec-compliance block survives a pass that rewrote the whole
 // report. If `written` already contains a `## Stated Intent` section the agent
 // preserved it — return as-is. Otherwise re-insert the captured block ahead of
-// the first `## ` section (or prepend it) so the gate's verdict is never lost.
+// the first `## ` section, or prepend it, so the gate's verdict is never lost.
 export function ensureSpecSection(
   written: string,
   specSection: string,
@@ -815,7 +815,7 @@ async function main(): Promise<void> {
   })
 
   // Captured after the spec-compliance pass so later overwriting passes can't
-  // silently drop the gate's verdict (code-level guarantee, not prompt trust).
+  // silently drop the gate's verdict, code-level guarantee, not prompt trust.
   let specSection = ''
 
   for (let i = 0, { length } = rolesToRun; i < length; i += 1) {

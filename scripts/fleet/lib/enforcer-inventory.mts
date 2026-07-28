@@ -123,7 +123,7 @@ function walkMts(dir: string, base: string, out: Set<string>): void {
 // `fleet/check/foo.mts`, `repo/cascade-fleet.mts`). A citation is written as
 // `scripts/<key>`; the check strips the leading `scripts/` before lookup. Both
 // tiers count: scripts/fleet/ is cascaded executable law, scripts/repo/ is
-// wheelhouse-owned automation (the cascade engine itself) — both are code that
+// wheelhouse-owned automation, the cascade engine itself — both are code that
 // enforces a rule when run.
 export function collectScriptPaths(repoRoot: string): Set<string> {
   const base = path.join(repoRoot, 'scripts')

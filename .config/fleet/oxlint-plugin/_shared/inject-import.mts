@@ -21,7 +21,7 @@ export type FixerOp = unknown
 
 /**
  * Walk a Program node body once and figure out: - the last top-level
- * ImportDeclaration node (or undefined) - whether `importName` is already
+ * ImportDeclaration node, or undefined - whether `importName` is already
  * imported (from ANY source) - whether a top-level `localName` identifier
  * already exists (any const/let/var or import-as-local with that name)
  *

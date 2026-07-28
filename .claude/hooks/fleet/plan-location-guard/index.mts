@@ -35,7 +35,7 @@
 //     include "plan", "roadmap", "migration plan", or "design doc".
 //
 // The classify + heuristic + bypass engine is the shared
-// `_shared/doc-location-guard.mts` (also driving report-location-guard);
+// `_shared/doc-location-guard.mts`, also driving report-location-guard;
 // this wrapper supplies the plan-specific token lists and message.
 //
 // Bypass phrase: `Allow plan-location bypass`. Reading recent user
@@ -61,7 +61,7 @@ import { defineHook, runHook } from '../_shared/guard.mts'
 const BYPASS_PHRASE = 'Allow plan-location bypass'
 
 // Filename-stem tokens that mark a doc as "plan-shaped." The check
-// is on the base name (extension stripped, lowercased).
+// is on the base name, extension stripped, lowercased.
 const PLAN_FILENAME_TOKENS = [
   'plan',
   'roadmap',
@@ -77,7 +77,7 @@ const PLAN_FILENAME_TOKENS = [
 const PLAN_HEADING_TOKENS = ['plan', 'roadmap', 'migration plan', 'design doc']
 
 // The stem/classify/heuristic helpers are the shared doc-location ones,
-// re-exported (specialized to the plan shape) so this guard's tests
+// re-exported, specialized to the plan shape, so this guard's tests
 // exercise the exact predicates the check runs.
 export { basenameStem }
 

@@ -20,7 +20,7 @@
  *   APP_PRIVATE_KEY (required) the app private key (PEM)
  *   OWNER           (required) org/owner to mint the installation token for
  *   PERMISSIONS     (optional) JSON object, e.g. {"contents":"write"}; an empty
- *                              object is rejected (would mint blanket perms)
+ *                              object is rejected, would mint blanket perms
  *   REPOSITORIES    (optional) newline/comma repo NAMES to scope the token to
  *   GITHUB_OUTPUT   (required) set by the runner; token is written here.
  */
@@ -88,7 +88,7 @@ function gh(method, path, jwt, body) {
 // Parse a PERMISSIONS string (a JSON object) into the access-token request, or
 // undefined when blank. Throws on malformed or empty-object input — an empty
 // object would mint a blanket-permission token, the opposite of least-privilege.
-// Pure (the raw string is the argument) + exported so it is unit-testable.
+// Pure, the raw string is the argument + exported so it is unit-testable.
 export function parsePermissions(rawInput) {
   const raw = rawInput?.trim()
   if (!raw) {
@@ -296,7 +296,7 @@ async function main() {
   process.stdout.write(`::add-mask::${token}\n`)
   appendFileSync(env('GITHUB_OUTPUT'), `token=${token}\n`)
 
-  // Expose the app slug (from the installation lookup) so the caller can build
+  // Expose the app slug, from the installation lookup, so the caller can build
   // the `<slug>[bot]` committer identity. An installation token cannot call
   // `gh api /user` (403 — it has no user), so the workflow needs the slug to do
   // a by-name `gh api /users/<slug>[bot]` lookup instead.

@@ -1,6 +1,6 @@
 /**
  * Shared run/timestamp/header helpers for history-rewriting skill runners
- * (refreshing-history, and any sibling that wraps git in a worktree). These
+ * refreshing-history, and any sibling that wraps git in a worktree. These
  * were declared inline in refreshing-history/run.mts; squashing-history wanted
  * the same trio, so they live in one owner rather than a second copy.
  *

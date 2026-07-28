@@ -6,7 +6,7 @@
 // `@socketsecurity/lib-stable/logger/default` directly for output; this module
 // stays import-light so the cost of `import '../_shared/helpers.mts'` is bounded.
 //
-// Requires Node 24+ for default-on native .mts type-stripping (no flag needed).
+// Requires Node 24+ for default-on native .mts type-stripping, no flag needed.
 //
 // Hooks run *after* `pnpm install`, so `@socketsecurity/lib-stable` is on the
 // resolution path for any caller that imports it.
@@ -109,7 +109,7 @@ export {
 } from './ai-attribution.mts'
 
 // External GitHub issue/PR reference scanner, re-exported from the gate-free
-// _shared/external-issue-ref.mts (single definition). The Claude-side
+// _shared/external-issue-ref.mts, single definition. The Claude-side
 // no-ext-issue-ref-guard imports that module directly because this barrel
 // carries a Node-25 hard-exit a Claude hook on an older operator Node must not
 // trip; the git-stage commit-msg backstop imports it from here.

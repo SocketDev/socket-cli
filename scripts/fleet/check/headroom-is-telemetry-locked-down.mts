@@ -2,7 +2,7 @@
 /**
  * @file `check --all` gate: the headroom-ai install enforces the telemetry +
  *   model-download lockdown. headroom ships an anonymous telemetry beacon ON BY
- *   DEFAULT (POSTs aggregate stats to a headroom Supabase) and fetches a
+ *   DEFAULT, POSTs aggregate stats to a headroom Supabase, and fetches a
  *   compression model from HuggingFace on first use. The installed
  *   `bin/headroom` wrapper exports HEADROOM_LOCKDOWN_ENV before exec,
  *   disabling both for every invocation. This check IMPORTS the typed

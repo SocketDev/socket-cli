@@ -71,7 +71,7 @@ export const check = (
   }
 
   const repoName = resolveRepoName(repoRoot)
-  /* c8 ignore start - defensive: resolveRepoName returns undefined only when path.basename returns empty (root path), unreachable in tests */
+  /* c8 ignore start - defensive: resolveRepoName returns undefined only when path.basename returns empty, root path, unreachable in tests */
   if (!repoName) {
     return undefined
   }

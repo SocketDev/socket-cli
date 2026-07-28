@@ -6,7 +6,7 @@
  *   evaded by ordinary shell indirection — `g=git; $g push`, `eval "git push"`,
  *   `git $(printf push)`, `\git push`. CLAUDE.md ("Background Bash") mandates
  *   AST-based parsing for structure-sensitive Bash rules; this is the fleet's
- *   JS parser layer, built on `shell-quote` (the fleet-canonical shell parser).
+ *   JS parser layer, built on `shell-quote`, the fleet-canonical shell parser.
  *   What it gives you:
  *
  *   - `parseCommands(command)` — split a command line into Command segments, one
@@ -28,7 +28,7 @@
  */
 
 // Use the fleet-canonical shell parser from @socketsecurity/lib-stable
-// (built on shell-quote) instead of depending on the raw `shell-quote`
+// built on shell-quote, instead of depending on the raw `shell-quote`
 // package directly. lib-stable is already a declared dep of every hook,
 // so this avoids a separate per-hook `shell-quote` dependency that
 // package.json regeneration tends to drop, and `parseShell` is already
@@ -50,7 +50,7 @@ const COMMAND_SEPARATORS = new Set(['\n', ';', '&', '&&', '|', '||'])
 // (`2>&1` → bare `'2'`, {op:'>&'}, bare `'1'`; `> /dev/null` → {op:'>'}, bare
 // `'/dev/null'`) are NOT command args — they must not leak into the parsed arg
 // list (a leaked `'2'`/`'1'`/`'/dev/null'` trips arg-shape guards). Excludes the
-// `$` substitution sigil (handled as plain indirection, not a redirect).
+// `$` substitution sigil, handled as plain indirection, not a redirect.
 const REDIRECT_OPS = new Set([
   '&>',
   '&>>',
@@ -68,7 +68,7 @@ const FD_DIGIT_RE = /^\d+$/
 
 export interface Command {
   /**
-   * The resolved binary (first non-assignment token), or '' when it could not
+   * The resolved binary, first non-assignment token, or '' when it could not
    * be statically resolved (e.g. `$VAR` indirection).
    */
   readonly binary: string
@@ -85,7 +85,7 @@ export interface Command {
    */
   readonly viaVariable: boolean
   /**
-   * True when the binary is `eval` (the command it runs is opaque).
+   * True when the binary is `eval`, the command it runs is opaque.
    */
   readonly viaEval: boolean
 }
@@ -174,8 +174,8 @@ export function parseCommands(command: string): Command[] {
       } else if (REDIRECT_OPS.has(e.op)) {
         // A redirect is not a command arg. shell-quote emits the fd/target as
         // bare tokens AROUND the op (`2>&1` → `'2'`, {op:'>&'}, `'1'`; `> file`
-        // → {op:'>'}, `'file'`). Drop a preceding bare fd digit (the source fd)
-        // and skip the operand entry that follows (target file or fd) so
+        // → {op:'>'}, `'file'`). Drop a preceding bare fd digit, the source fd
+        // and skip the operand entry that follows, target file or fd, so
         // neither leaks into args.
         if (tokens.length > 0 && FD_DIGIT_RE.test(tokens[tokens.length - 1]!)) {
           tokens.pop()
@@ -283,7 +283,7 @@ export function commandsFor(command: string, binary: string): Command[] {
  * `-u` / `--update` / `.`), returning a label like `git add -A` or undefined.
  * Parses with the shared tokenizer so chains, quoting, and leading env-var
  * assignments are handled, and a quoted "git add ." inside a message can't
- * false-fire. `git add ./path` (a surgical dotfile add) is not confused with
+ * false-fire. `git add ./path`, a surgical dotfile add, is not confused with
  * `git add .` because the parser preserves the exact arg. Shared by
  * overeager-staging-guard + parallel-agent-staging-guard.
  */
@@ -361,7 +361,7 @@ export function flagValue(
 /**
  * True when the command uses indirection a static parser can't resolve to a
  * concrete binary: a `$VAR`-sourced binary or an `eval`. A guard that wants to
- * be strict (fail-closed on evasion attempts) can treat this as suspicious; a
+ * be strict, fail-closed on evasion attempts, can treat this as suspicious; a
  * guard that wants to stay permissive can ignore it.
  */
 export function hasOpaqueInvocation(command: string): boolean {

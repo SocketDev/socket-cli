@@ -16,7 +16,7 @@
  *      scripts/fleet/soak-bypass.mts <pkg>@<version>
  *      [--allow-non-member --reason <why>]` Exit codes:
  *
- *   - 0 — entry added (or already present).
+ *   - 0 — entry added, or already present.
  *   - 1 — bad args, version not found on npm, no `minimumReleaseAge:` anchor,
  *     or a non-member repo root (the destination must be in the fleet roster;
  *     `--allow-non-member --reason "<why>"` is the audited escape hatch).
@@ -38,7 +38,7 @@ const SOAK_DAYS = 7
 
 /**
  * Append `min-release-age-exclude[]=<name>` to the repo's `.npmrc` so npm
- * honors the bypass immediately. Idempotent (no duplicate line). `.npmrc` is
+ * honors the bypass immediately. Idempotent, no duplicate line. `.npmrc` is
  * cascade-generated (scripts/repo/gen/npmrc.mts in the source repo), so this
  * local line lives only until the next cascade re-canonicalizes the file — the
  * durable fleet-wide form is the manifest EXPECTED_RELEASE_AGE_EXCLUDE entry.
@@ -106,7 +106,7 @@ export function spliceSoakEntry(
   removableISO: string,
 ): string | undefined {
   const tag = `${spec.name}@${spec.version}`
-  // Already excluded (any annotation state) → no-op.
+  // Already excluded, any annotation state → no-op.
   const dupRe = new RegExp(
     `^\\s*-\\s*['"]?${tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"]?\\s*$`,
     'm',
@@ -180,7 +180,7 @@ async function main(): Promise<void> {
 
   // The lean registry helper returns the already-sliced `YYYY-MM-DD` publish
   // date (or undefined when the version is unknown / the registry is
-  // unreachable). soak-bypass is interactive (run by hand to bypass a soak), so
+  // unreachable). soak-bypass is interactive, run by hand to bypass a soak, so
   // an undefined here is a hard stop, not the fail-open a CI check wants.
   const publishedISO = await fetchPackagePublishDate(spec.name, spec.version)
   if (!publishedISO) {

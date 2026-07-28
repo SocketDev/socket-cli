@@ -22,10 +22,10 @@
 // Fires on:
 //   - Write to `<repo>/template/base/.claude/hooks/<name>/index.mts` (wheelhouse)
 //   - Edit to `<repo>/template/base/.claude/hooks/<name>/index.mts` (wheelhouse)
-//   - Write/Edit to `<repo>/.claude/hooks/<name>/index.mts` (any fleet repo)
+//   - Write/Edit to `<repo>/.claude/hooks/<name>/index.mts`, any fleet repo
 //
 // Skips:
-//   - `_shared/` (not a hook, just helpers)
+//   - `_shared/`, not a hook, just helpers
 //   - Test files (`test/*.test.mts`)
 //   - This hook itself (chicken-and-egg)
 //
@@ -39,7 +39,7 @@ import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 
 // Match either:
 //   <repo>/template/.claude/hooks/<name>/index.mts    (wheelhouse)
-//   <repo>/.claude/hooks/<name>/index.mts             (any fleet repo)
+//   <repo>/.claude/hooks/<name>/index.mts, any fleet repo
 //
 // Captures the hook name in group 1. The optional `template/` segment
 // covers the wheelhouse path; the optional `fleet/` or `repo/` segment
@@ -66,13 +66,13 @@ export function findCanonicalClaudeMd(
 ): string | undefined {
   const normalizedFilePath = normalizePath(filePath)
   // Wheelhouse mode: `<repo>/template/base/.claude/hooks/<name>/index.mts`
-  // → check `<repo>/template/base/CLAUDE.md` (the fleet-canonical source).
+  // → check `<repo>/template/base/CLAUDE.md`, the fleet-canonical source.
   const tplIdx = normalizedFilePath.indexOf('/template/base/.claude/hooks/')
   if (tplIdx >= 0) {
     return normalizedFilePath.slice(0, tplIdx) + '/template/base/CLAUDE.md'
   }
   // Downstream mode: `<repo>/.claude/hooks/<name>/index.mts`
-  // → check `<repo>/CLAUDE.md` (the cascaded fleet block lives here).
+  // → check `<repo>/CLAUDE.md`, the cascaded fleet block lives here.
   const repoIdx = normalizedFilePath.indexOf('/.claude/hooks/')
   if (repoIdx >= 0) {
     return normalizedFilePath.slice(0, repoIdx) + '/CLAUDE.md'
@@ -99,7 +99,7 @@ export const check = editGuard((filePath, _content, payload) => {
   if (!match) {
     return undefined
   }
-  // match[1] = "fleet" | "repo" | undefined (legacy top-level layout).
+  // match[1] = "fleet" | "repo" | undefined, legacy top-level layout.
   // match[2] = leaf hook name.
   const segment = match[1]
   const hookName = match[2]!
@@ -107,9 +107,9 @@ export const check = editGuard((filePath, _content, payload) => {
   // verbatim in CLAUDE.md citations:
   //   fleet  →  `fleet/<name>`
   //   repo   →  `repo/<name>`  (per-repo, normally exempt — see below)
-  //   (none) →  `<name>`        (legacy top-level)
+  //   (none) →  `<name>`, legacy top-level
   const hookPathSuffix = segment ? `${segment}/${hookName}` : hookName
-  // Skip _shared (helpers, not a hook) and wheelhouse-only hooks.
+  // Skip _shared, helpers, not a hook, and wheelhouse-only hooks.
   if (hookName === '_shared' || WHEELHOUSE_ONLY_HOOKS.has(hookName)) {
     return undefined
   }
@@ -160,7 +160,7 @@ export const check = editGuard((filePath, _content, payload) => {
   // `### Hook registry` section explicitly points at as the "full listing"
   // — is the canonical low-cost home for per-hook associations. The registry
   // lists each fleet hook as a `- \`<leaf>\` — description` bullet, so a
-  // backticked leaf there satisfies the gate (in addition to the path forms).
+  // backticked leaf there satisfies the gate, in addition to the path forms.
   const registryPath = claudeMdPath.replace(
     /CLAUDE\.md$/,
     'docs/agents.md/fleet/hook-registry.md',

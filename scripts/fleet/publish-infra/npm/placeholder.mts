@@ -13,7 +13,7 @@
  *   empty `files: []` guarantees nothing else ships) and runs
  *   `npm publish --access <access>` from it.
  *   CLI: placeholder <name...> [--access public|restricted] [--apply]
- *   Dry-run by default (prints the plan, publishes nothing); `--apply` performs
+ *   Dry-run by default, prints the plan, publishes nothing; `--apply` performs
  *   the publish. Per-name isolation: one name failing never aborts the rest, and
  *   a summary prints at the end. Fail-soft — main() catches, logs, and sets a
  *   non-zero exit code; it never throws.
@@ -47,7 +47,7 @@ export interface PlaceholderPackageJson {
   // publishable, and the point is to claim the name on the public registry.
   private: false
   // Mirror the CLI `--access` into the manifest too, so the reservation's
-  // access is self-describing (belt-and-suspenders with the publish flag).
+  // access is self-describing, belt-and-suspenders with the publish flag.
   publishConfig: { access: Access }
   // Empty allow-list: npm still ships the always-included files (package.json +
   // README.md) and NOTHING else — the reservation carries no code.
@@ -155,11 +155,11 @@ export async function assemblePlaceholderDir(
 }
 
 // Default publish executor: the sanctioned one-time LOCAL publish. Routes
-// `npm publish --access <access>` (run from the assembled temp dir) through
+// `npm publish --access <access>`, run from the assembled temp dir, through
 // the npm-web-auth PTY wrapper: on a real TTY, or with --otp supplied, the
 // wrapper execs npm directly; from a NON-interactive agent shell it allocates
 // a PTY so npm's 2FA web-auth flow opens the browser and polls for approval
-// instead of dying EOTP once per name (the ajar-reservation incident shape).
+// instead of dying EOTP once per name, the ajar-reservation incident shape.
 async function defaultPublishExec(
   dir: string,
   access: Access,
@@ -304,7 +304,7 @@ export function expandNapiFamily(meta: string): string[] | undefined {
  * positional is a napi meta-selector expanded to its full reservation family
  * (meta + the 5 fleet-default `.node-<target>` platform packages), so a
  * family claim is ONE short argument instead of a six-name command line that
- * wraps in a terminal and silently drops names. Exits (usage error) on an
+ * wraps in a terminal and silently drops names. Exits, usage error, on an
  * unknown flag, a bad `--access` value, a `--napi-family` positional that
  * already carries a target token, or when no names are given.
  */

@@ -42,7 +42,7 @@ export function isMemoryPath(filePath: string): boolean {
 
 // An enforceable lesson: a feedback/project memory whose body states an
 // always/never/MUST-shaped rule or a build/release step. Reference/user memories
-// (pointers, who-the-user-is) are NOT codification candidates.
+// pointers, who-the-user-is, are NOT codification candidates.
 export function isEnforceableLesson(content: string): boolean {
   // frontmatter `type:` (possibly nested under metadata:) is feedback|project.
   const typeMatch = /^\s*type:\s*(?:feedback|project)\b/m.exec(content)

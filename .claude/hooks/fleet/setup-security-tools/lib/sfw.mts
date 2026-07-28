@@ -87,7 +87,7 @@ export async function runSetupSfw(
       //
       // Dotfile fallback (`.env` / `.env.local`) is intentionally NOT
       // checked here per CLAUDE.md token-hygiene: tokens belong in env
-      // (CI) or the OS keychain (dev local), never in dotfiles. The
+      // (CI) or the OS keychain, dev local, never in dotfiles. The
       // shell-rc bridge installed by setup-security-tools writes the
       // export line into ~/.zshenv so every new shell already has the
       // env var set.

@@ -3,7 +3,7 @@
  *   soak is NATIVE now: cargo nightly ships `-Zmin-publish-age` under RFC 3923.
  *   This runner DRIVES cargo — it is not a hand-rolled crates.io resolver. The
  *   flag only ENABLES the feature; the actual soak threshold is a separate
- *   registry config key (a duration string), and the resolver must be told to
+ *   registry config key, a duration string, and the resolver must be told to
  *   DENY too-new versions or the age is advisory only. Modes: node
  *   scripts/fleet/update/cargo.mts --soak-days 7 Dry plan (default): print the
  *   cargo command + soak config it WOULD run for each own Cargo.toml root. Runs
@@ -160,7 +160,7 @@ export function findOwnCargoManifests(root: string): string[] {
 /**
  * Parse cargo update's "Updating <name> v<from> -> v<to>" lines into structured
  * records. Cargo prints these status lines to stderr; pass whichever stream
- * carries them (or both joined). Non-matching lines (Adding/Removing/etc.) are
+ * carries them, or both joined. Non-matching lines (Adding/Removing/etc.) are
  * ignored.
  */
 export function parseCargoUpdateOutput(stdout: string): CargoUpdate[] {

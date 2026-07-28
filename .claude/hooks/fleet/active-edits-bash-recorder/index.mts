@@ -9,14 +9,14 @@
 // whose-work drew a blank. This companion fires after a write-capable
 // Bash command and records the RECENTLY-MUTATED dirty paths into this
 // actor's ledger with `via: 'bash'` provenance — a weaker signal than an
-// Edit (a fixer touching a peer's file is not authorship), which
+// Edit, a fixer touching a peer's file is not authorship, which
 // consumers can distinguish via the ledger's `via` map.
 //
 // Heuristic, fail-open, never blocks: no Pre/Post snapshot pair exists,
 // so "recently mutated" = dirty in `git status` AND mtime within the
 // recent window. Covers the fixer / formatter / install / codegen
 // command shapes; a bespoke redirect or heredoc write stays invisible
-// (the parser drops redirect operands by design).
+// the parser drops redirect operands by design.
 
 import { statSync } from 'node:fs'
 import path from 'node:path'
@@ -92,7 +92,7 @@ export const check = (payload: ToolCallPayload): GuardResult => {
   const projectDir = resolveProjectDir()
   // stdioString:false — the trimming default eats the leading space of an
   // unstaged ` M <path>` entry and shifts the first parsed path left by
-  // one char (the land-work porcelain pitfall).
+  // one char, the land-work porcelain pitfall.
   const status = spawnSync(
     'git',
     ['status', '--porcelain', '--untracked-files=all', '-z'],
@@ -116,7 +116,7 @@ export const check = (payload: ToolCallPayload): GuardResult => {
       break
     }
     if (isGenerated(dirty[i]!)) {
-      // Shared generated artifacts (lockfile, bundles) are everyone's —
+      // Shared generated artifacts, lockfile, bundles, are everyone's —
       // recording them as this actor's writes would false-fire the
       // collision guard on the noisiest files in the repo.
       continue

@@ -17,14 +17,14 @@
  *
  *   The gate compares each SHARED tool entry (a tool name that also exists in
  *   the wheelhouse copy) deep-equal against the wheelhouse value. Repo-specific
- *   tools (keys absent from the wheelhouse copy) are untouched — sdxgen's
+ *   tools, keys absent from the wheelhouse copy, are untouched — sdxgen's
  *   language toolchains stay repo-owned. A copy still at the LEGACY repo-root
  *   location fails with a move instruction (the sync-scaffolding cascade and
  *   the bundle installer both perform that move automatically).
  *
  *   Resolution order for the reference copy: a sibling `socket-wheelhouse`
  *   checkout, else the wheelhouse's own copy when running IN the wheelhouse
- *   (the gate self-passes there). No network: when no reference copy is
+ *   the gate self-passes there. No network: when no reference copy is
  *   findable (CI of a member repo), the gate SKIPS explicitly — cross-repo
  *   state is a local-dev/cascade concern, and CI must not depend on a sibling
  *   checkout.
@@ -74,7 +74,7 @@ export function parseTools(
 
 /**
  * Diff a member's tools map against the wheelhouse reference. Only SHARED
- * keys (present in both) are compared; repo-specific tools pass untouched.
+ * keys, present in both, are compared; repo-specific tools pass untouched.
  * Returns the drifted shared tool names.
  */
 export function driftedSharedTools(

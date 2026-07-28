@@ -8,7 +8,7 @@
 //
 // IDENTITY — presence of CODEX_COMPANION_SESSION_ID is NOT enough. The codex
 // plugin's SessionStart hook exports that var into EVERY session's env with
-// the session's OWN id (job tracking), so the primary session sees it too —
+// the session's OWN id, job tracking, so the primary session sees it too —
 // treating presence as "companion" once blanket-blocked every work tool in a
 // primary session after 60s (even `ls`), which is exactly the failure a
 // guard must never have. The real discriminator: a session's transcript_path
@@ -46,7 +46,7 @@ export interface BudgetVerdict {
 }
 
 // Pure decision: has `nowMs - startMs` passed `budgetMs`, and how many whole
-// minutes have elapsed (for the message). Negative elapsed clamps to 0.
+// minutes have elapsed, for the message. Negative elapsed clamps to 0.
 export function budgetVerdict(
   budgetMs: number,
   nowMs: number,
@@ -81,7 +81,7 @@ export function isOwnSessionId(
 }
 
 // The marker file holding a companion's first-tool-call timestamp, keyed by the
-// companion id (sanitized to a safe filename). Runtime state — never tracked.
+// companion id, sanitized to a safe filename. Runtime state — never tracked.
 // Anchored on the git toplevel: `projectDir` is a raw session cwd, and joining
 // node_modules onto one under a workspace glob (`template/base/**`) poisons
 // pnpm resolution for the whole checkout (see _shared/repo-root.mts).
@@ -110,7 +110,7 @@ export function readStartMs(file: string): number | undefined {
 }
 
 // Stamp the start timestamp. Fail-open: if it can't be written, the guard simply
-// can't enforce this session (never throws into the tool call).
+// can't enforce this session, never throws into the tool call.
 export function stampStartMs(file: string, startMs: number): void {
   try {
     mkdirSync(path.dirname(file), { recursive: true })
@@ -123,7 +123,7 @@ export function check(payload: ToolCallPayload): GuardResult {
   if (!companionId) {
     return undefined
   }
-  // Self-id (or unidentifiable session) → primary session, not a companion.
+  // Self-id, or unidentifiable session → primary session, not a companion.
   if (isOwnSessionId(companionId, payload.transcript_path)) {
     return undefined
   }

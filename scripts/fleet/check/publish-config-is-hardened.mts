@@ -11,7 +11,7 @@
  *     - `provenance: true`   — `npm publish` emits NO provenance attestation
  *                              without it, even when the upload authenticates
  *                              via a GitHub Actions OIDC trusted publisher.
- *     - `registry` (if set)  — a provenance-signed tarball must land on npm; a
+ *     - `registry`, if set  — a provenance-signed tarball must land on npm; a
  *                              stray registry pin publishes it elsewhere.
  *
  *   Beyond the required floor, the rest of the pnpm-documented publishConfig
@@ -192,7 +192,7 @@ export function unknownPublishConfigKeys(pc: PublishConfig): string[] {
 
 /**
  * Evaluate one parsed `package.json`. Returns a finding per violated
- * requirement — the required floor first (access, provenance, registry), then
+ * requirement — the required floor first, access, provenance, registry, then
  * the shape findings (types completeness, executableFiles, directory,
  * linkDirectory, unknown keys); an empty array means the package is hardened
  * (or is `private` and therefore never publishes). Pure + side-effect-free so

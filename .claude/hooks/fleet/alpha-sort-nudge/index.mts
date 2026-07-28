@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Claude Code PreToolUse hook — alpha-sort-nudge.
 //
-// Nudges (never blocks) when an Edit/Write to a non-code file introduces a
+// Nudges, never blocks, when an Edit/Write to a non-code file introduces a
 // block of sibling items that looks unsorted. oxlint only sees JS/TS, so the
 // `socket/sort-*` lint rules can't reach JSON / YAML / markdown / bash — this
 // hook covers those surfaces per `docs/agents.md/fleet/sorting.md`:
@@ -9,13 +9,13 @@
 //   - JSON / JSONC: runs of `"key":` lines at one indent, natural order.
 //   - YAML: runs of `key:` mapping lines at one indent (env:/with:/matrix).
 //   - Markdown: runs of `-`/`*` bullets; also flags trailing-ellipsis lines.
-//   - Bash: runs of `NAME=...` assignments (cache-key var blocks).
+//   - Bash: runs of `NAME=...` assignments, cache-key var blocks.
 //
 // Detection is deliberately conservative: 3+ adjacent siblings at the same
 // indent, natural order (case-insensitive + numeric-aware, lib's
 // naturalCompare). False quiet beats false nag — a missed
 // block is a review catch, a wrong nag trains the agent to ignore the hook.
-// Returns a `notify` verdict (never blocks); the message is informational.
+// Returns a `notify` verdict, never blocks; the message is informational.
 //
 
 import path from 'node:path'
@@ -30,7 +30,7 @@ export interface SortFinding {
 }
 
 // Minimum sibling count before a run is worth flagging. Two-item runs carry
-// too little signal (and are often guard pairs); 3+ is unambiguously a list.
+// too little signal, and are often guard pairs; 3+ is unambiguously a list.
 const MIN_RUN = 3
 
 // Fleet natural order (case-insensitive + numeric-aware, via lib's
@@ -91,7 +91,7 @@ function scanRuns(
   flush()
 }
 
-// JSON / JSONC object keys: `"name": ...` (allow trailing comma).
+// JSON / JSONC object keys: `"name": ...`, allow trailing comma.
 function jsonKey(line: string): string | undefined {
   const m = line.match(/^\s*"(?<key>[^"]+)"\s*:/)
   return m ? m.groups?.['key'] : undefined
@@ -117,7 +117,7 @@ function mdBullet(line: string): string | undefined {
   return m.groups!['text']!.toLowerCase()
 }
 
-// Bash all-caps assignments: `NAME=...` (cache-key var style).
+// Bash all-caps assignments: `NAME=...`, cache-key var style.
 function bashAssign(line: string): string | undefined {
   const m = line.match(/^\s*(?<name>[A-Z][A-Z0-9_]+)=/)
   return m ? m.groups?.['name'] : undefined
@@ -125,7 +125,7 @@ function bashAssign(line: string): string | undefined {
 
 /**
  * Inspect file content for likely-unsorted sibling blocks. Pure — no I/O.
- * Returns a finding per surface that looks unsorted (deduped by surface).
+ * Returns a finding per surface that looks unsorted, deduped by surface.
  */
 export function findUnsortedBlocks(
   filePath: string,
@@ -207,7 +207,7 @@ function buildMessage(
 }
 
 export const check = editGuard((filePath, content) => {
-  // Write → full content; Edit → the replacement text (best-effort window).
+  // Write → full content; Edit → the replacement text, best-effort window.
   if (!content) {
     return undefined
   }

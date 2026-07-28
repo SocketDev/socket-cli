@@ -36,7 +36,7 @@ export const PLUGIN_FLEET_DIR = '.config/fleet/oxlint-plugin/fleet/'
 export const PLUGIN_REPO_DIR = '.config/repo/oxlint-plugin/'
 
 /**
- * True when `filename` is inside the plugin's own rule subtree (either tier).
+ * True when `filename` is inside the plugin's own rule subtree, either tier.
  */
 export function isPluginInternalPath(filename: string): boolean {
   const normalized = normalizePath(filename)

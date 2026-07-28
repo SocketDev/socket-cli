@@ -18,7 +18,7 @@
  *     remotes (e.g. origin + upstream) — the ambiguous shape where a bare gh
  *     mis-resolves or prompts. PASS when origin is absent / not GitHub (nothing
  *     to assert), when the marker resolves to origin, or when a single-repo
- *     checkout has no marker (gh uses the only remote). Entirely LOCAL (git
+ *     checkout has no marker, gh uses the only remote. Entirely LOCAL (git
  *     config + git remote parses; no network, no gh dependency). Fail-open on
  *     any git error. Fix: `gh repo set-default <origin-owner/name>` —
  *     equivalently `git config remote.origin.gh-resolved base`, which is what
@@ -93,12 +93,12 @@ export function parseGhResolved(configOutput: string): Map<string, string> {
   for (let i = 0, { length } = lines; i < length; i += 1) {
     const line = lines[i]!.trim()
     // A `git config --get-regexp` line: `remote.<name>.gh-resolved` with an
-    // optional whitespace-separated value (absent for the bare-key form).
+    // optional whitespace-separated value, absent for the bare-key form.
     const m = /^remote\.(.+)\.gh-resolved(?:\s+(.*))?$/.exec(line)
     if (!m) {
       continue
     }
-    // A bare `remote.origin.gh-resolved` (no value) is how gh marks "this
+    // A bare `remote.origin.gh-resolved`, no value, is how gh marks "this
     // remote's own repo is the default" in some versions — same as `base`.
     out.set(m[1]!, m[2]?.trim() || 'base')
   }
@@ -107,7 +107,7 @@ export function parseGhResolved(configOutput: string): Map<string, string> {
 
 export interface GhDefaultRepoGap {
   /**
-   * What gh currently resolves to (or undefined when no marker exists).
+   * What gh currently resolves to, or undefined when no marker exists.
    */
   effective: string | undefined
   /**
@@ -126,7 +126,7 @@ export interface GhDefaultRepoGap {
 
 /**
  * Pure core: given the parsed remotes + gh-resolved markers, return the gap
- * (or undefined when healthy). See the file header for the rules.
+ * or undefined when healthy. See the file header for the rules.
  */
 export function evaluateGhDefaultRepo(
   remotes: ReadonlyMap<string, string>,
@@ -156,7 +156,7 @@ export function evaluateGhDefaultRepo(
     return undefined
   }
   // No marker: ambiguous only when 2+ distinct GitHub repos are configured
-  // (fork checkout with an upstream remote) — the shape that mis-resolves.
+  // fork checkout with an upstream remote — the shape that mis-resolves.
   const distinct = new Set<string>()
   for (const repo of remotes.values()) {
     distinct.add(repo.toLowerCase())

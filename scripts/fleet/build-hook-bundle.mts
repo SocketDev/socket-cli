@@ -13,7 +13,7 @@
  */
 
 // prefer-async-spawn: sync-required — top-level CLI build runner; the flow is
-// sequential (regenerate table, then bundle, then check the artifact).
+// sequential, regenerate table, then bundle, then check the artifact.
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
@@ -132,7 +132,7 @@ function main(): void {
   // build-hook-bundle writes the table directly, not via gen/hook-dispatch).
   writeThroughMirrorLock(DISPATCH_MANIFEST_PATH, generatedManifest)
 
-  // Dogfood: the wheelhouse carries template/base/ (a member does not). Mirror
+  // Dogfood: the wheelhouse carries template/base/ a member does not. Mirror
   // the generated table + manifest into the template so its CI readers + the
   // release-bundle walk find them — both are gitignored + never committed, so a
   // fresh checkout has none. Computed relative to REPO_ROOT (not the

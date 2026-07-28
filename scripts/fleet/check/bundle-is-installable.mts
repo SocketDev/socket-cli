@@ -2,7 +2,7 @@
  * @file Release-gate: the fleet bundle must build → install → verify
  *   round-trip cleanly before it ships. Wheelhouse-only — fleet repos don't
  *   produce bundles; when `scripts/repo/validate-release-bundle.mts` is absent
- *   (every cascaded member) this check is a vacuous pass.
+ *   every cascaded member, this check is a vacuous pass.
  *
  *   Delegates to `validate-release-bundle.mts` which:
  *     1. Calls `makeBundle({ tar: true })` into a temp dir.

@@ -30,7 +30,7 @@
  *   app captures the mouse; ctrl+c and /copy are unaffected.
  *   Idempotent: a no-op when the keys are already correct. Backs the file up
  *   once before the first write, preserves every other key, and re-reads to
- *   confirm. Absent `~/.claude.json` (fresh install) is not an error — the
+ *   confirm. Absent `~/.claude.json`, fresh install, is not an error — the
  *   client writes its own on first run; this step skips and the check tolerates
  *   absence.
  */

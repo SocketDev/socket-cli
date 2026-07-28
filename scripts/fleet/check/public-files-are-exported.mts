@@ -21,9 +21,9 @@
  *      glob that swallowed `dist/{index,exists}.d.mts` and shipped `source` +
  *      `default` only.
  *
- *   Complements (does not duplicate):
+ *   Complements, does not duplicate:
  *      `package-files-are-allowlisted` (files[] tarball hygiene) and
- *      socket-lib's repo-tier `dist-exports` (runtime require-ability). This
+ *      socket-lib's repo-tier `dist-exports`, runtime require-ability. This
  *      check is about the MAP ↔ FILES correspondence. Skips: private packages,
  *      packages with no `exports`, binary platform packages (`os`/`cpu` gated,
  *      no JS API), and packages with no built output. Per-package opt-out for a
@@ -60,7 +60,7 @@ export interface ExportsFinding {
   readonly detail: string
 }
 
-// Built output roots a public file may live under (or the package root itself).
+// Built output roots a public file may live under, or the package root itself.
 const OUTPUT_DIRS = ['dist', 'build']
 
 // Public-file candidate extensions (runtime + declarations).
@@ -70,13 +70,13 @@ const PUBLIC_EXT_RE = /\.(?:c?js|d\.c?ts|d\.mts|mjs)$/
 // DEFAULT_IGNORE_GLOBS without dragging fast-glob into a sync check).
 const JUNK_SEGMENT_RE =
   // Matches a junk directory segment anywhere in a normalized (unix-slash) path.
-  // (\/|^) — literal "/" or start-of-string (segment boundary on the left)
+  // (\/|^) — literal "/" or start-of-string, segment boundary on the left
   // (?:coverage|…|vendor) — non-capturing alternation of the known junk dir names
-  // ($|\/) — end-of-string or "/" (segment boundary on the right)
+  // ($|\/) — end-of-string or "/", segment boundary on the right
   /(?:\/|^)(?:coverage|node_modules|scripts|src|test|tests|tools|vendor)(?:$|\/)/
 
 /**
- * Collect every export target (string leaf) from an `exports` value, descending
+ * Collect every export target, string leaf, from an `exports` value, descending
  * through condition objects. Returns relative file paths (the `./x` form).
  */
 export function collectExportTargets(
@@ -97,7 +97,7 @@ export function collectExportTargets(
 }
 
 /**
- * Walk a package's built output for public files (privacy taxonomy applied).
+ * Walk a package's built output for public files, privacy taxonomy applied.
  * `privateSegments` extends the built-in private set (external/, `_`-prefixed)
  * to match the same per-package config the generator uses. Returns paths
  * relative to the package root.
@@ -166,7 +166,7 @@ export interface CheckOptions {
 /**
  * Check one package. Returns findings (empty = clean). `exportsValue` is the
  * raw `exports` field; `pkgDir` the package root. A built file is "covered"
- * (not an orphan) when it is an export target, a `bin` target, or matches a
+ * not an orphan, when it is an export target, a `bin` target, or matches a
  * config `ignoreGlobs` entry.
  */
 export function checkPackageExports(
@@ -194,7 +194,7 @@ export function checkPackageExports(
   }
 
   // 1. Stale exports — every target file must exist. A target into an unbuilt
-  // output dir is skipped (can't validate output that was never produced), and
+  // output dir is skipped, can't validate output that was never produced, and
   // so is a config-ignored target: an ignoreGlobs entry declares a build
   // artifact produced OUTSIDE the output dirs (e.g. a package-root wasm/mjs
   // materialized by a fetch step), which is equally absent in an unbuilt
@@ -286,7 +286,7 @@ function shouldSkip(pkg: Record<string, unknown>): boolean {
   return false
 }
 
-// Bin targets from a package.json `bin` field (string or object form).
+// Bin targets from a package.json `bin` field, string or object form.
 export function binTargetsOf(pkg: Record<string, unknown>): string[] {
   const bin = pkg['bin']
   if (typeof bin === 'string') {

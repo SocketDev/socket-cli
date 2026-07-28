@@ -41,7 +41,7 @@
 // Use when you genuinely need to verify a keychain entry exists
 // (e.g. operator-invoked diagnostics).
 //
-// Verdict (uniform guard contract): `check` returns `block(message)` to block
+// Verdict, uniform guard contract: `check` returns `block(message)` to block
 // (the runner prints the message + sets exitCode 2) or `undefined` to allow.
 // `runGuard` fails open on malformed payloads — the fleet's hook contract.
 
@@ -60,7 +60,7 @@ interface Hit {
 // is the literal anchor a `READ_PATTERNS` entry requires, so no command
 // can match a pattern without containing one of them: `find-*-password`
 // (macOS `security`), `secret-tool` (Linux), `Get-StoredCredential` and
-// `ConvertFrom-SecureString` (Windows readback pipe), `keyring` (Python
+// `ConvertFrom-SecureString`, Windows readback pipe, `keyring` (Python
 // CLI). Writes/deletes share these substrings too, so the guard still
 // runs for them and correctly returns no hit.
 export const triggers: readonly string[] = [
@@ -88,7 +88,7 @@ const READ_PATTERNS: ReadonlyArray<{
     platform: 'macos',
   },
   // Linux — `secret-tool`. `lookup` returns the password; `search`
-  // lists matches (also surfaces the libsecret prompt).
+  // lists matches, also surfaces the libsecret prompt.
   {
     re: /\bsecret-tool\s+(?:lookup|search)\b/,
     tool: 'secret-tool lookup/search',
@@ -104,7 +104,7 @@ const READ_PATTERNS: ReadonlyArray<{
   },
   // PowerShell `Get-Credential -Credential` piped to
   // `ConvertFrom-SecureString -AsPlainText` is the readback shape.
-  // The bare `Get-Credential` (no pipe) is a fresh-prompt-the-user
+  // The bare `Get-Credential`, no pipe, is a fresh-prompt-the-user
   // flow and not the issue here — match only the readback pipe.
   {
     re: /\bGet-Credential\b[^|]*\|\s*ConvertFrom-SecureString\b/,

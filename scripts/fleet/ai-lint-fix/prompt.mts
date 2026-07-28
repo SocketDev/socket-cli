@@ -60,7 +60,7 @@ export function renderRuleGuidance(findings: OxlintMessage[]): string {
     }
   }
   const entries = [...seen]
-    // oxlint-disable-next-line unicorn/no-array-sort -- the spread copies `seen` into a fresh array (no shared mutation); .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
+    // oxlint-disable-next-line unicorn/no-array-sort -- the spread copies `seen` into a fresh array, no shared mutation; .toSorted() would trip socket/no-runtime-features-below-engine-floor in cascaded Node-18 repos.
     .sort()
     .map(id => {
       const guidance = RULE_GUIDANCE[id]
@@ -85,7 +85,7 @@ export function renderRuleGuidance(findings: OxlintMessage[]): string {
  * - <task>: one-sentence framing.
  * - <file>: the target path. Edits must stay scoped to it.
  * - <findings>: machine-readable list of violations.
- * - <rules>: per-rule canonical rewrite + good/bad examples (low freedom).
+ * - <rules>: per-rule canonical rewrite + good/bad examples, low freedom.
  * - <process>: numbered steps that force a Read → reason → Edit → self-verify
  *   loop. Self-verify is the highest-leverage step — it catches the
  *   import/callsite mismatch class that produced past breakage.

@@ -120,7 +120,7 @@ export async function main(
   return 0
 }
 
-// Guarded so importing this module (the unit test) doesn't run the CLI. Fail-
+// Guarded so importing this module, the unit test, doesn't run the CLI. Fail-
 // soft: surface the reason via logger.error, set a non-zero exit code, never a
 // raw unhandled throw.
 if (import.meta.main) {

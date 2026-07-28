@@ -8,7 +8,7 @@
 
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
-// Basename ends with `.expected.json` (case-insensitive extension).
+// Basename ends with `.expected.json`, case-insensitive extension.
 const EXPECTED_JSON_RE = /\.expected\.json$/i
 
 /**

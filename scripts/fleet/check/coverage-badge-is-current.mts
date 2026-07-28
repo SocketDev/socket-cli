@@ -10,8 +10,8 @@
  *   `lib/coverage-badge.mts` so the writer and the gate can't disagree.
  *
  *   Fails-open (exit 0, no finding) when the badge can't be meaningfully checked:
- *     - no README badge in either form (a repo that opted out);
- *     - the badge SVG is still the "n/a" placeholder (seeded, never measured);
+ *     - no README badge in either form, a repo that opted out;
+ *     - the badge SVG is still the "n/a" placeholder, seeded, never measured;
  *     - no coverage-summary.json (a lint/type CI lane that didn't run coverage,
  *       or a fresh clone). Coverage drift is caught the moment cover IS run.
  *

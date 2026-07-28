@@ -3,7 +3,7 @@
  *   dual-separator-only surface of `prefer-normalize-path` at the write-time
  *   AST layer: that rule catches explicit `replace(/[/\\]/…)` rewrites; this
  *   rule catches separator-regex `.test/.exec` where the path-like variable is
- *   the argument (not the receiver), AND string separator ops (`.split('/')` /
+ *   the argument, not the receiver, AND string separator ops (`.split('/')` /
  *   `.startsWith('…/')` / `.includes('/')` / `.endsWith('/')`) on a path-like
  *   var that is NOT proven-normalized (i.e. not assigned from `normalizePath()`
  *   or `toUnixPath()` earlier in scope). Autofix wraps the subject in
@@ -130,7 +130,7 @@ const rule = {
     // Import-insertion state for the fixer. The wrap alone would strand an
     // undefined `normalizePath` reference (the incident that demoted this
     // rule to detection-only), so every fix carries the import with it:
-    //   - `lastImportNode`     — insertion anchor (after the final import).
+    //   - `lastImportNode`     — insertion anchor, after the final import.
     //   - `hasNormalizeImport` — a `normalizePath` named import already lands.
     //   - `importPkg`          — which package family the FILE already uses;
     //     when it imports neither, the fix is withheld entirely rather than
@@ -171,7 +171,7 @@ const rule = {
       }
     }
 
-    // Build the fix for one finding: wrap `subject` (an Identifier node) in
+    // Build the fix for one finding: wrap `subject`, an Identifier node, in
     // `normalizePath(…)`, plus the import insertion when the file needs one.
     // Returns undefined when the file gives the fixer no safe import anchor
     // or package choice — the finding stays report-only there.

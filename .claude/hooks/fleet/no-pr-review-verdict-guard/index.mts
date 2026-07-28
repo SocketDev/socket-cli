@@ -5,7 +5,7 @@
 // `--request-changes` / `-r`. Approving or requesting changes is a human's
 // call; the agent reviews by leaving findings and flags the PR for the user.
 //
-// `gh pr review --comment` / `-c` (a comment-only review) and `gh pr comment`
+// `gh pr review --comment` / `-c`, a comment-only review, and `gh pr comment`
 // pass untouched — the agent may comment, never render a verdict. The guard is
 // deliberately narrow: it fires ONLY on a `gh pr review` invocation carrying an
 // approve/request-changes flag, parsed with the fleet shell tokenizer so a
@@ -56,7 +56,7 @@ export function reviewVerdictFlagIn(command: string): string | undefined {
   return undefined
 }
 
-// Decide what (if anything) to block for a payload. Returns the offending flag,
+// Decide what, if anything, to block for a payload. Returns the offending flag,
 // or undefined to pass. Pure — the test drives it directly.
 export function reviewVerdictViolation(
   payload: ToolCallPayload,

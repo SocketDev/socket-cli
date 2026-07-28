@@ -7,7 +7,7 @@
  *   fires on the annotation FORM only — a line whose first non-comment token is
  *   the tag (a `* @deprecated` JSDoc continuation, a `// @deprecated` line, a
  *   block comment opened with the tag) — so an inline prose mention of the word
- *   (this very sentence, a doc) does not trip.
+ *   this very sentence, a doc, does not trip.
  *   The broader "no legacy fallback / no alias" doctrine is too semantic to
  *   lint precisely; it lives in the topic doc. Skips:
  *

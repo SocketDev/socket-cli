@@ -40,7 +40,7 @@ const logger = getDefaultLogger()
 const DOCKER_HUB_REGISTRY = 'registry-1.docker.io'
 
 // Media types offered on a manifest GET so the registry serves either a single
-// image manifest or a multi-arch index/list (distribution-spec Accept set).
+// image manifest or a multi-arch index/list, distribution-spec Accept set.
 const MANIFEST_ACCEPT = [
   'application/vnd.oci.image.manifest.v1+json',
   'application/vnd.oci.image.index.v1+json',
@@ -122,7 +122,7 @@ export function parseWwwAuthenticate(
   }
   const params: Record<string, string> = Object.create(null)
   // Each challenge param is `key="value"`: capture 1 = the word-char key,
-  // capture 2 = the quoted value (anything but a double quote).
+  // capture 2 = the quoted value, anything but a double quote.
   for (const match of bearer[1]!.matchAll(/(\w+)="([^"]*)"/g)) {
     params[match[1]!] = match[2]!
   }
@@ -155,7 +155,7 @@ export function resolveRegistryRepo(image: string): {
 
 // Split an image token into its written name, tag, and digest. A trailing
 // `@sha256:...` is the digest; a `:` is a tag separator only when what follows
-// has no `/` (otherwise it's a registry port).
+// has no `/`, otherwise it's a registry port.
 function splitImageRef(token: string): {
   name: string
   tag: string | undefined
@@ -347,7 +347,7 @@ export async function getRegistryToken(
   return data.token ?? data.access_token ?? ''
 }
 
-// GET `/v2/<repo>/tags/list`. Returns the advertised tags (empty when none).
+// GET `/v2/<repo>/tags/list`. Returns the advertised tags, empty when none.
 export async function listTags(
   registry: string,
   repo: string,
@@ -362,8 +362,8 @@ export async function listTags(
   return data.tags ?? []
 }
 
-// GET one manifest by ref (tag or digest). Returns the `Docker-Content-Digest`
-// response header (the canonical content digest for the pin) plus the parsed
+// GET one manifest by ref, tag or digest. Returns the `Docker-Content-Digest`
+// response header, the canonical content digest for the pin, plus the parsed
 // manifest body.
 async function fetchManifest(
   registry: string,
@@ -406,7 +406,7 @@ function pickPlatformManifestDigest(body: ManifestBody): string | undefined {
 
 // Resolve the pin digest + creation time for an image ref. The pinned digest is
 // the top-level tag digest (multi-arch-safe); `.created` comes from the config
-// blob of a concrete platform image (resolved through the index when needed).
+// blob of a concrete platform image, resolved through the index when needed.
 export async function imageCreatedTime(
   registry: string,
   repo: string,
@@ -476,7 +476,7 @@ function parseSemverish(tag: string): Semverish | undefined {
   return { flavor: tag.slice(end), nums }
 }
 
-// Order two semver-ish tags: numeric components first (higher wins), then a
+// Order two semver-ish tags: numeric components first, higher wins, then a
 // bare flavor outranks a suffixed one, then lexical flavor. Positive when `a` is
 // the higher (newer) tag.
 function compareSemverish(a: Semverish, b: Semverish): number {
@@ -548,7 +548,7 @@ export function repinFrom(
 ): string {
   const canonical = digest.startsWith('sha256:') ? digest : `sha256:${digest}`
   // Split a Dockerfile FROM line: capture 1 = leading whitespace + the FROM
-  // keyword + trailing space (preserved verbatim), capture 2 = the rest.
+  // keyword + trailing space, preserved verbatim, capture 2 = the rest.
   const from = /^(\s*FROM\s+)(.*)$/i.exec(line)
   if (!from) {
     return line

@@ -11,7 +11,7 @@
  *   `Allow <slug> bypass: <target>`. Matching (normalizeBypassText +
  *   phrasePattern in transcript.mts) is case-insensitive and tolerant of the
  *   slug's separator (hyphen / space / joined), of whitespace on both sides of
- *   the `:` target separator, and of newlines (folded to spaces) — so the user
+ *   the `:` target separator, and of newlines, folded to spaces — so the user
  *   can type the phrase however is natural.
  */
 

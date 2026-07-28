@@ -4,7 +4,7 @@
  *   bundle. SPIKE (spike/snapshot-hooks): proves a snapshot-booted dispatcher
  *   runs an event end-to-end at near-zero startup cost. Three steps:
  *
- *     1. Regenerate the static dispatch table (shared with the normal build).
+ *     1. Regenerate the static dispatch table, shared with the normal build.
  *     2. Rolldown the SNAPSHOT entry (`dispatch-snapshot-entry.mts`, which
  *        registers a V8 deserialize-main fn) to `_dispatch/snapshot-bundle.cjs`,
  *        with the logger stubbed (the logger graph is snapshot-hostile — it
@@ -59,14 +59,14 @@ const ROLLDOWN_BIN = path.join(REPO_ROOT, 'node_modules', '.bin', 'rolldown')
 const SNAPSHOT_CONFIG = path.join(
   REPO_ROOT,
   '.config',
-  'repo',
+  'fleet',
   'rolldown',
   'hook-bundle-snapshot.config.mts',
 )
 const EXCLUDED_CONFIG = path.join(
   REPO_ROOT,
   '.config',
-  'repo',
+  'fleet',
   'rolldown',
   'hook-bundle-excluded.config.mts',
 )
@@ -115,8 +115,8 @@ function main(): void {
     return
   }
   // All three table variants: the FULL table (index.cjs path), the
-  // snapshot-SAFE table (aliased into the snapshot bundle), and the
-  // EXCLUDED table (the sibling runtime bundle's source). The outputs live
+  // snapshot-SAFE table, aliased into the snapshot bundle, and the
+  // EXCLUDED table, the sibling runtime bundle's source. The outputs live
   // inside the cascade-locked hook mirror; lift the read-only lock around
   // each regeneration write.
   writeThroughMirrorLock(
@@ -209,7 +209,7 @@ function main(): void {
   }
   logger.log(`Built ${blobOut}.`)
   // Reclaim orphans from prior bundle edits — keep only the blob just built. The
-  // launcher's snapshot-blob.path sidecar (frozen next by build-snapshot-launcher)
+  // launcher's snapshot-blob.path sidecar, frozen next by build-snapshot-launcher
   // will name exactly this one, so every other blob is a stale content hash.
   pruneStaleBlobs(blobOut)
 }

@@ -12,7 +12,7 @@
 // The nudge just prompts the author to confirm intent before it sends. Never
 // blocks (notify, exit 0). Universal: bare `#N` auto-links on ANY GitHub repo,
 // so this is not fleet-scoped. Internal task lists in the agent's own prose
-// (never sent to a public surface) are unaffected.
+// never sent to a public surface, are unaffected.
 
 import { bashGuard, defineHook, notify, runHook } from '../_shared/guard.mts'
 import { isPublicSurface } from '../_shared/public-surfaces.mts'
@@ -20,7 +20,7 @@ import { isPublicSurface } from '../_shared/public-surfaces.mts'
 export const triggers: readonly string[] = ['gh', 'git']
 
 // A bare `#N`: a `#` immediately followed by digits, NOT preceded by a backtick
-// (already code-formatted) or a word char (so `abc#3` and `v1.2.3#4` don't
+// already code-formatted, or a word char (so `abc#3` and `v1.2.3#4` don't
 // count). A `#L12` line anchor starts with a letter, so it never matches. This
 // scans message text for a display artifact, not shell-command structure.
 const BARE_ISSUE_REF_RE = /(?<![`\w])#(\d+)\b/g

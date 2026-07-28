@@ -41,7 +41,7 @@ const rule: MarkdownlintRule = {
     if (!isRootReadme(params.name)) {
       return
     }
-    // Product / marketplace repos (freeform-readme roster opt-in) carry public
+    // Product / marketplace repos, freeform-readme roster opt-in, carry public
     // READMEs that don't fit the five-section infra skeleton. The universal
     // badge / leak / sibling rules still apply; this section rule does not.
     if (isFreeformReadmeOptIn()) {

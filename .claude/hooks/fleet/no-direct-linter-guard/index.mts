@@ -15,7 +15,7 @@
 //      `upstream/` trees the fleet must never touch.
 //
 // Foreign tools (`eslint`/`prettier`/`biome`/`dprint`) are not fleet tools at
-// all (see no-other-linters-guard); `cargo fmt` / `rustfmt` / `gofmt` reflow
+// all, see no-other-linters-guard; `cargo fmt` / `rustfmt` / `gofmt` reflow
 // hand-formatted code. Runner-wrapped forms (`yarn prettier`, `npx prettier`,
 // `pnpm exec prettier`, `bunx prettier`) are caught too; only
 // `<runner> run <script>` (a package.json script) passes.
@@ -33,7 +33,7 @@
 //
 // The binary is matched on its BASENAME (so `node_modules/.bin/oxlint` and a
 // bare `oxlint` both match) via shell-command.mts/parseCommands — AST parse,
-// never a raw regex on the command string (no-command-regex-in-hooks rule).
+// never a raw regex on the command string, no-command-regex-in-hooks rule.
 // The scripts' OWN internal `node_modules/.bin/oxlint` spawns are child
 // processes, not Claude Bash calls, so this hook never sees them.
 //
@@ -79,7 +79,7 @@ const BANNED_SUBCOMMANDS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
 // <bin>`, classic `yarn <bin>`, and the exec / dlx / x subcommands of pnpm,
 // npm, bun, and yarn all run the bin directly — the same hazard as a bare call
 // (`yarn prettier -w` was the gap that let a hand-formatter through). A runner
-// `run <script>` invokes a package.json SCRIPT (the sanctioned path), NOT a
+// `run <script>` invokes a package.json SCRIPT, the sanctioned path, NOT a
 // bin, so it is never flagged.
 const PACKAGE_RUNNERS: ReadonlySet<string> = new Set([
   'bun',

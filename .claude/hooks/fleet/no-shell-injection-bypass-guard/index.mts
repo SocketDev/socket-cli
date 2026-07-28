@@ -16,7 +16,7 @@
 //      zsh/net/tcp, zsh/system, zsh/zpty, zsh/files) plus the builtins it
 //      enables (`ztcp` network exfil, `zpty` command exec, `sysopen`/`sysread`/
 //      `syswrite`/`sysseek` raw file IO that bypass binary checks), and
-//      `emulate -c` (an eval-equivalent). Blocked as defense-in-depth.
+//      `emulate -c`, an eval-equivalent. Blocked as defense-in-depth.
 //
 // NOT blocked: `$(...)` / `${...}` / backtick substitution — legitimate and
 // common in fleet Bash (e.g. `$(git symbolic-ref ...)` in the default-branch
@@ -134,8 +134,8 @@ function processSubstitutionBypass(command: string): string | undefined {
     }
     // Split form: an opening `(` whose immediately-preceding token marks it as
     // a process substitution rather than a subshell or command substitution.
-    //   - `>(tee …)`  → parser emits `{op:'>'}` then `{op:'('}` (output proc-sub)
-    //   - `=(sort …)` → parser emits the WORD `=` then `{op:'('}` (zsh proc-sub)
+    //   - `>(tee …)`  → parser emits `{op:'>'}` then `{op:'('}`, output proc-sub
+    //   - `=(sort …)` → parser emits the WORD `=` then `{op:'('}`, zsh proc-sub
     // We must NOT flag the lookalikes the parser tokenizes the same shape as:
     //   - `$(…)` command substitution → `(` preceded by the WORD `$` (allowed)
     //   - a bare subshell `(…)` → `(` at position 0 / not preceded by `>`|`=`

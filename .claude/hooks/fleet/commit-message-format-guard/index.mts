@@ -40,7 +40,7 @@ import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 // Conventional Commits header validation lives in the cross-tree canonical home
 // .git-hooks/_shared/commit-format.mts so the commit-msg git-stage backstop
-// shares THIS code (the shared thing is the validation). That module is
+// shares THIS code, the shared thing is the validation. That module is
 // side-effect-free; importing it never triggers a hook's stdin-reading main().
 import {
   ALLOWED_TYPES,
@@ -50,7 +50,7 @@ import {
 } from '../../../../.git-hooks/_shared/commit-format.mts'
 import type { HeaderCheck } from '../../../../.git-hooks/_shared/commit-format.mts'
 
-// Re-exported so existing importers (and the placeholder-subject guard) can
+// Re-exported so existing importers, and the placeholder-subject guard, can
 // reach them; the canonical definitions live in _shared/commit-command.mts /
 // commit-format.mts.
 export { extractCommitMessage, isGitCommit }
@@ -141,7 +141,7 @@ export const check = bashGuard((command, payload) => {
     // separately — bypass-format does not authorize AI attribution.
   }
 
-  // AI-attribution check (independent of the format bypass).
+  // AI-attribution check, independent of the format bypass.
   const aiLabel = findAiAttribution(message)
   if (aiLabel) {
     if (bypassPhrasePresent(payload.transcript_path, BYPASS_AI)) {

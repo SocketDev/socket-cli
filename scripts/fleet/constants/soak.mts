@@ -7,12 +7,12 @@
  *
  *   - `.config/fleet/taze.config.mts` → `maturityPeriod: SOAK_DAYS` (imports
  *     this)
- *   - `pnpm-workspace.yaml` → `minimumReleaseAge: SOAK_MINUTES` (data file)
- *   - `.npmrc` → `min-release-age=SOAK_DAYS` (data file)
+ *   - `pnpm-workspace.yaml` → `minimumReleaseAge: SOAK_MINUTES`, data file
+ *   - `.npmrc` → `min-release-age=SOAK_DAYS`, data file
  *   - the multi-ecosystem update runners (`scripts/fleet/update/*.mts`) take it
  *     as their soak threshold The two DATA files can't import this module, so
  *     `scripts/fleet/check/soak-time-is-consistent.mts` asserts they match the
- *     constant (code-is-law parity gate).
+ *     constant, code-is-law parity gate.
  */
 
 export const SOAK_DAYS = 7

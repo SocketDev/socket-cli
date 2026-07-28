@@ -5,11 +5,11 @@
  *   maintainers, so a non-maintainer login makes `pnpm stage list` read as
  *   EMPTY and every verify/approve silently no-ops — the operator debugs
  *   "0 staged entries" instead of "wrong account". ensureNpmIdentity reads
- *   who is needed (the packument's maintainers), who is logged in
+ *   who is needed, the packument's maintainers, who is logged in
  *   (`npm whoami`), and on mismatch prompts for the logout/login rotation on
  *   a TTY or fails LOUD with the exact commands otherwise. The maintainer
  *   read is a three-way discriminant — known / unpublished / unreachable —
- *   because only a 404 (first publish) may pass silently: a transient
+ *   because only a 404, first publish, may pass silently: a transient
  *   registry failure on a KNOWN-published package would otherwise fail open
  *   and re-open the exact wrong-account trap this gate closes. npm commands
  *   run from the OS home dir because the repo's devEngines pins pnpm and
@@ -33,7 +33,7 @@ import { logger, runCapture, runInherit } from '../shared.mts'
 
 /**
  * The npm username the local machine is logged in as, or undefined when
- * logged out (or npm is unusable). Runs from the OS home dir — the repo's
+ * logged out, or npm is unusable. Runs from the OS home dir — the repo's
  * devEngines veto in-repo `npm`.
  */
 export async function npmWhoami(): Promise<string | undefined> {
@@ -87,7 +87,7 @@ export async function readPackageMaintainers(
 export interface NpmIdentityReport {
   /**
    * True when the flow may proceed: the login matches a maintainer, or the
-   * package has never been published (nothing to match on a first publish).
+   * package has never been published, nothing to match on a first publish.
    */
   ok: boolean
   currentUser: string | undefined
@@ -131,8 +131,8 @@ export function describeNpmIdentity(report: NpmIdentityReport, pkg: string) {
 
 /**
  * Compute the identity report for a publish subject: logged-in user vs the
- * packument's maintainers. Unpublished passes (first publish); unreachable
- * and non-membership (including an empty maintainer set) do not.
+ * packument's maintainers. Unpublished passes, first publish; unreachable
+ * and non-membership, including an empty maintainer set, do not.
  */
 export async function npmIdentityFor(pkg: string): Promise<NpmIdentityReport> {
   const [currentUser, read] = await Promise.all([
