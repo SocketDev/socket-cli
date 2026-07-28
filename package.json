@@ -149,7 +149,7 @@
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
-    "package-builder": "workspace:*",
+    "package-builder": "workspace:1.0.0",
     "playwright-core": "catalog:",
     "portless": "catalog:",
     "postject": "catalog:",
