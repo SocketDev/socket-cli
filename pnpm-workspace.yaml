@@ -468,6 +468,10 @@ patchedDependencies:
   # CLI's rolldown bundle keeps the lookup at runtime instead of inlining a
   # build-machine path. Consumer: packages/cli bundled npm shim.
   '@npmcli/run-script@10.0.4': patches/@npmcli__run-script@10.0.4.patch
+  # de-http2: inline the HTTP header/status constants in dist/external/fetch.js
+  # so @sigstore/sign resolves without the node:http2 builtin, keeping the CLI
+  # bundle node:http2-free. Consumer: the CLI's sigstore-backed provenance path.
+  # Re-keyed across the 4.1.0 -> 5.0.0 bump.
   '@sigstore/sign@5.0.0': patches/@sigstore__sign@5.0.0.patch
   # Replaces the unconditional require('http2') constants with literals so the
   # bundle loads on node-smol SEA builds, which ship without http2. Consumer:
