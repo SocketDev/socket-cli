@@ -11,7 +11,7 @@
 //   still exist on disk. They surface in:
 //     - `find` output, polluting search results
 //     - `git status --ignored` reports
-//     - non-git tooling (rsync, tar, zip)
+//     - non-git tooling, rsync, tar, zip
 //     - Spotlight indexing churn
 //   The right fix is to delete them, not just ignore them.
 //

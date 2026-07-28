@@ -14,7 +14,7 @@
 //   1. HEAD is ahead of the remote default branch (origin/<default>..HEAD ≥ 1),
 //      so the amend rewrites local-only history; AND
 //   2. HEAD's commit timestamp is older than a freshly-made-tip threshold
-//      (it isn't a commit you just created this turn).
+//      it isn't a commit you just created this turn.
 //
 // Detection reads git state from the target repo (extractGitCwd); the
 // block/allow decision is the pure `shouldBlockAmend`, which the test drives.
@@ -24,7 +24,7 @@
 // wrong commit and rewrote its message. A `git status` HEAD-check before
 // amending would have caught it; this enforces that check.
 //
-// Squash-history repos (roster opt-in) are EXEMPT: their lone `chore: initial
+// Squash-history repos, roster opt-in, are EXEMPT: their lone `chore: initial
 // commit` is amended by every session by design (the collaborative land model),
 // so the unpushed+old heuristic always mis-fires there and stands down.
 //
@@ -60,7 +60,7 @@ export interface AmendHeadInfo {
   headCommitMs: number | undefined
 }
 
-// Is this command a `git commit --amend`? (any git segment carrying both).
+// Is this command a `git commit --amend`? any git segment carrying both.
 export function isAmendCommit(command: string): boolean {
   for (const c of commandsFor(command, 'git')) {
     if (c.args.includes('commit') && c.args.includes('--amend')) {
@@ -71,7 +71,7 @@ export function isAmendCommit(command: string): boolean {
 }
 
 // The pure block decision. Blocks only when the amend rewrites an unpushed,
-// not-freshly-made tip (a parallel session's commit). `nowMs` is injected so
+// not-freshly-made tip, a parallel session's commit. `nowMs` is injected so
 // the test is deterministic. Returns a reason when blocking, else undefined.
 export function shouldBlockAmend(
   info: AmendHeadInfo,
