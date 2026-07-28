@@ -8,8 +8,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- **`check`** — add external-tools-release-tags-resolve gate
-- **`hooks`** — add claude-md-size-guard and no-revert-guard
 - **`cli`** — add defineHandoffCommand factory for ecosystem hand-off wrappers
 - **`optimize`** — write pnpm 11+ overrides to pnpm-workspace.yaml
 - **`mcp`** — port socket-mcp standalone into `socket mcp` subcommand
@@ -23,7 +21,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`organization`** — show quota usage, max, and refresh time (#1236)
 - **`cli`** — rename --default-branch (scan create) to --make-default-branch; harden default-branch flags (#1230)
 - backport v1.x features and DRY out HTTP layer
-- **`ci`** — add updating skill and weekly-update workflow
 - **`sea`** — bundle Python packages at build time for offline operation
 - **`build`** — pre-install socketsecurity into bundled Python for SEA
 - **`vfs`** — add opengrep, trivy, trufflehog, python to SEA VFS extraction
@@ -57,7 +54,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`skills`** — add validation and chain-of-thought to quality-scan
 - **`scan`** — add socket-basics integration utilities
 - **`claude`** — add quality-scan skill for comprehensive code analysis
-- **`deps`** — add @socketbin packages to update script
 - migrate patch command to @socketsecurity/socket-patch@1.2.0 (#1042)
 - add E2E test sharding and misc fixes (#1022)
 - add alpm and vscode ecosystems, add scan type constants
@@ -65,10 +61,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - add --silence flag to `socket fix`
 - add --reach-lazy-mode flag for reachability analysis
 - **`telemetry`** — adding initial telemetry functionality to the cli
-- **`ci`** — add force rebuild option to all workflow_dispatch workflows
 - **`cli`** — standardize .version tracking across all extract scripts
 - **`sea`** — improve build cache management and add local development mode
-- **`config`** — use EditableJson for non-destructive config saving
 - **`scan`** — add --reach-use-only-pregenerated-sboms flag
 - **`fix`** — add --fix-version flag to override Coana CLI version
 - **`fix`** — add --ecosystems flag and rename --limit to --pr-limit
@@ -85,12 +79,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`build`** — add dead code elimination plugin
 - **`cli`** — optimize development workflow with caching and improved docs
 - **`cli-with-sentry`** — add package structure and build configuration
-- **`bootstrap`** — add SOCKET_CLI_LOCAL_PATH support for testing
 - **`cli`** — add supporting files
 - **`cli`** — add new commands
 - **`sfw`** — add Socket Firewall package manager wrappers
 - **`smol-builder`** — add granular checkpoint system and refactor logger
-- **`bootstrap`** — add Brotli compression for all bootstrap variants
 - **`smol`** — implement binary caching to avoid recompilation on post-processing failures
 - **`dlx`** — implement unified manifest for packages and binaries
 - **`git-hooks`** — make security checks mandatory, lint/test optional
@@ -99,7 +91,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`validation`** — add guard against link: dependencies and remove from root
 - **`preflight`** — add @cyclonedx/cdxgen to background downloads
 - **`nlp`** — add progressive enhancement with ONNX Runtime stub
-- **`ci`** — add quantization level option to WASM workflow
 - **`models`** — add INT8 quantization option for AI model builds
 - **`workflows`** — add toggleable checkboxes for all build workflows
 - **`install`** — enhance installer with Socket branding and better UX
@@ -113,30 +104,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`build`** — add --platform and --arch flags for consistency
 - **`build`** — add parallel builds and consolidate build system
 - **`build`** — add intelligent caching to build system
-- **`bootstrap`** — add IPC handshake support for subprocess detection
 - **`spawn`** — implement system Node.js detection with which
 - **`dlx`** — unify .dlx-metadata.json schema across TypeScript and C++
-- **`ci`** — auto-update socketbin versions in provenance workflow
 - **`cli`** — enhance error handling with network diagnostics and timeout errors
-- **`bootstrap`** — build SEA bootstrap in build script
-- **`bootstrap`** — add SEA bootstrap for minimal SEA binaries
 - **`cli,cli-with-sentry`** — add LICENSE and CHANGELOG.md to packages
 - **`build`** — copy logos and data to packages during build
-- **`ci`** — add npm@latest for trusted publishing support
 - **`cli`** — temporarily disable ONNX Runtime integration
 - **`python`** — add Python CLI version tracking to build configuration
 - **`publish`** — query npm registry for latest @socketbin/\* versions
 - **`publish`** — use base version from package.json for datetime versioning
 - **`cli`** — add custom ONNX Runtime build package following yoga pattern
-- **`bootstrap`** — restore logger with lazy initialization support
 - **`build`** — add comprehensive Unicode property transformations
 - **`build`** — auto-generate socketbin spec for cache keys
 - **`compress`** — add spec string embedding for socket-lib cache keys
 - **`compress`** — implement self-extracting binary architecture
 - **`debug`** — add detailed HTTP request logging for failed API calls
-- **`bootstrap`** — add Unicode property escape transforms for --with-intl=none
-- **`ci`** — use Alpine Docker container for smol musl builds
-- **`ci`** — add Alpine (musl) platform support to SEA and smol builds
 - **`fix`** — integrate provider pattern into PR operations
 - **`git`** — implement GitLab provider with MR operations
 - **`git`** — implement GitHub provider with PR operations
@@ -151,30 +133,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`cli`** — add SHA256 checksum generation for build integrity
 - **`build`** — add network retry utility with exponential backoff
 - **`build`** — auto-build bootstrap package when missing
-- **`bootstrap`** — add system node detection and forwarding control
-- **`bootstrap`** — add system node detection and forwarding control
-- **`bootstrap`** — create shared bootstrap package for npm and smol builds
 - **`socket`** — add comprehensive builtin module mapping for smol
 - **`socket`** — add dual bootstrap build for SEA and smol
-- **`ci`** — build socket package bootstrap before SEA and smol builds
-- **`ci`** — add stripped binary cache checkpoint for smol builds
 - **`build-infra`** — add preflight-checks runner for DRY build validation
 - **`build-infra`** — add script-runner utilities for DRY monorepo operations
 - **`builders`** — add platform/arch arguments and use socket-lib parseArgs
 - **`socket`** — add esbuild-based bootstrap implementation
 - **`self-update`** — improve package manager detection and error messages
 - add install.sh for Socket CLI installation
-- **`ci`** — unify caching strategy across all build workflows
-- **`ci`** — cache ONNX Runtime intermediate build artifacts
-- **`ci`** — add GitHub Actions grouping to WASM and SEA workflows
-- **`ci`** — add Ninja installation for smol builds
 - **`node-smol`** — add GitHub Actions grouping for verbose build steps
-- **`ci`** — add concurrency control to build workflows
 - **`sbom-generator`** — add TypeScript SBOM generator package
-- **`ci`** — reuse cached binaries from build-socketbin.yml
-- **`ci`** — add cache restoration and fallback WASM builds
-- **`ci`** — add @socketbin build workflow with caching
-- **`ci`** — add WASM build workflow with caching
 - add WIN32 shell support and update build infrastructure
 - **`node-sea-builder`** — add hash-based caching for SEA binaries
 - **`node-smol-builder`** — add hash-based caching for build artifacts
@@ -213,7 +181,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`patch`** — add default subcommand handler
 - **`constants`** — add barrel file and fix test imports
 - **`patch`** — enable patch command and fix tests
-- **`config`** — add shared configuration architecture for monorepo
 - add Intl polyfill stub modules for CLI
 - auto-strip AI attribution from commit messages
 - add JS-only fallback release workflow for socket CLI
@@ -274,87 +241,48 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 
 - **`cli`** — use direct env reads for HOME in 5 commands
-- **`ci`** — complete dependency caching for all test jobs
-- **`ci`** — add dependency caching to GitHub Actions
 - **`publish`** — optimize CLI build and consolidate platform definitions
 - **`sea`** — parallelize binary injection for 8x faster builds
 - **`cli`** — add Node.js memory allocation flags for large builds
 - **`scripts`** — optimize build process
 - **`cli`** — defer registryUrl lookup until needed
 - **`smol`** — use vm.compileFunction() and remove internal path remapping
-- **`ci`** — implement critical workflow optimizations
-- **`ci`** — add Emscripten SDK and pip caching to build-sea workflow
-- **`ci`** — add Emscripten SDK and pip package caching to WASM workflow
 - optimize CI and test performance
 - remove lazy-loading of bun lockfile parser
-- **`ci`** — add caching to build-deps jobs
-- **`ci`** — increase max parallel builds to 6 for SEA and smol workflows
-- **`ci`** — add pip cache for Python dependencies in AI models build
-- **`ci`** — optimize runner allocation and switch to Ninja
-- **`ci`** — optimize binary builds with ccache and faster runners
 - **`wasm`** — switch to single-threaded ONNX Runtime variant
 - **`test`** — maximize thread pool based on CPU count
 - **`build,test,ci,docs`** — apply socket-sdk-js optimizations across all phases
 
 ### Fixed
 
-- **`lint`** — split oversize modules, type the build scripts, restore output-assertions helper
-- **`lint`** — clear remaining non-split findings — identity assertions, template method order, changelog format
-- **`ci`** — clear fleet gate findings — patch rationales, soak globs, userconfig opt-out, run-s globs
 - **`build`** — repair createHash import and drop unpublished lib-stable external/semver subpath
 - **`build`** — restore pipeline modules and exports the dead-code sweep removed while still imported
 - **`build`** — restore build-pipeline.mts — scripts/build.mts still imports runPipelineCli
-- **`ci`** — refresh external-tools pins to fleet data format
-- **`config`** — repo.type is mono, not monorepo
-- **`deps`** — bump vulnerable packages to soaked patched versions
 - **`sea`** — repoint build-sea/test-sea imports at sea-build-utils dir
-- **`deps`** — pin rolldown to soaked 1.0.3, matching the fleet baseline
-- **`lint`** — migrate socket-hook markers to socket-lint prefix
 - **`scripts`** — delegate all test scopes to per-package in no-config workspaces
-- **`deps`** — migrate source to lib-stable 6.0.7 API
 - **`scripts`** — make fleet test runner monorepo-safe and drop pnpm exec
 - **`scripts`** — import logger in sync-checksums so log calls don't ReferenceError
-- **`hooks`** — repoint commit-msg husky shim to .git-hooks/fleet/
-- **`hooks`** — repoint husky shims to .git-hooks/fleet/ after segmentation
 - **`debug,git`** — redact GitHub token in debug log; use debugNs for level namespaces
 - **`mcp`** — bind unauthenticated HTTP transport to loopback + cap POST body
 - **`scripts,format`** — repair migration-orphan imports/paths + format-script scope
-- **`deps`** — bump vitest to 4.1.6 to clear GHSA-5xrq-8626-4rwp
-- **`hooks`** — declare shell-quote dep so \_shared parser resolves
 - **`tsconfig`** — point extends at .config/fleet/tsconfig.base.json
 - **`build`** — migrate remaining external-tools.json tools to platforms schema
 - **`build`** — migrate pnpm external-tools entry to platforms schema
-- **`lint`** — revert colocate work in packages/cli/src — fleet rule requires export
 - **`rich-progress`** — restore inadvertently-deleted file + v6 leaf import
 - **`rich-progress`** — inline socket-hook marker so logger-guard sees it on the right line
 - **`build`** — give each downloaded asset its own subdir to avoid .version race
 - **`mcp/transport-http`** — drop `| undefined` from McpHandleRequest's auth field
-- **`lint`** — convert file-scope oxlint disables + clear other violations
 - **`packageManager`** — bump pnpm@11.0.8 → pnpm@11.1.2
 - stop oxfmt from reformatting wheelhouse-schema.json
 - **`scripts/check-prompt-less-setup`** — drop never-used writeFileSync + isLinux
-- **`deps`** — restore -stable catalog aliases for self-named fleet packages
-- **`lint`** — clean lint debt in packages/cli/scripts + src
 - **`types`** — restore explicit-undefined on AuthenticatedRequest.auth
 - **`types`** — resolve 4 tsgo errors in cli
 - **`vitest`** — drop orphan base config + fix stale isolate comment
 - **`scripts`** — restore spawnSync import in bootstrap-firewall-deps
-- **`deps`** — bump hono to 4.12.18, fast-uri to 3.1.2 for CVE patches
-- **`lint`** — dlx test polish — import-type, max-file-lines, sort
 - **`types`** — resolve noUncheckedIndexedAccess + noUncheckedSideEffectImports
-- **`lint`** — generate-report.test — max-file-lines legitimate bypass
-- **`lint`** — cmd-manifest-cdxgen — exported helpers + cached for-loop
-- **`lint`** — telemetry — prefer-function-declaration + cached-for-loop
-- **`lint`** — mark Set-iteration for-of as intentional in 3 sites
 - **`hook`** — mark progress-bar stderr writes as intentional
-- **`lint`** — clear remaining socket/\* rule violations in cli package
-- **`lint`** — scripts and package-builder
-- **`lint`** — cache array.length in build-infra for-loops
 - **`sync`** — cascade prefer-cached-for-loop let/const preservation patch
-- **`lint`** — sort-source-methods - reorder 20 src files + oxfmt drift
 - **`tests`** — restore vi.mock named exports for node:fs / node:os after import refactor
-- **`lint`** — autofix sort-source-methods (13 files) + cascade canonical script fixes
-- **`lint`** — close out non-blocked socket-cli rules
 - **`types`** — no-explicit-any — final 29 src files (1-site fixes, brings count to 0)
 - **`types`** — no-explicit-any — 11 src files, mostly 2-3 sites each
 - **`types`** — no-explicit-any — 7 src files (pull-request, update-manifest, scan-from-github, lockfile-readers, errors, package-alert, shallow-score)
@@ -379,29 +307,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`types`** — consistent-type-imports — hoist inline import() in types.mts
 - **`imports`** — node-builtin — 5 files converted to named imports
 - **`imports`** — node-builtin — 6 files converted to named imports
-- **`lint`** — sort-named-imports — inline-disable intentional domain-grouped barrel import
-- **`lint`** — max-file-lines — file-level bypass on 86 oversized files
-- **`lint`** — no-fetch-prefer-http-request — inline-disable 5 dev-script fetches that need raw Response
-- **`lint`** — apply 2nd-pass oxlint autofixes — sort-source-methods reorder 3 files
-- **`lint`** — personal-path-placeholders — file-level disable on fixture tests + replace example usernames in src comments
-- **`lint`** — prefer-exists-sync — rewrite 2 fileExists helpers + inline-disable legitimate metadata reads
 - **`oxlint`** — rewrite overrides patterns as **/scripts/** etc.
-- **`lint`** — export-top-level-functions — collapse 5 export-block aggregators
-- **`lint`** — apply oxlint autofixes — export-top-level-functions / prefer-exists-sync / prefer-node-builtin-imports / sort-equality-disjunctions / prefer-undefined-over-null
 - **`no-status-emoji`** — cascade rule self-disable + bypass scripts/tests
-- **`lint`** — re-cascade canonical oxlint plugin rules — undo self-corruption
 - lint --fix autofix pass + cascade canonical check-paths.mts
 - **`tests`** — align 39 assertions with null→undefined flip
 - **`types,quality`** — revert Object.create(undefined) regression + finish null→undefined flip
 - **`cli`** — register `mcp` in canonical bucketed-commands set
-- **`deps`** — bump hono via override to ≥4.12.16 (CVE patched)
-- **`hooks`** — release-workflow-guard — multi-root dry-run resolution
 - **`hook`** — release-workflow-guard — derive project dir from script path
-- **`hooks`** — tighten npx-scanner regex to skip identifier/key contexts
-- **`deps`** — override ip-address >=10.1.1 (GHSA-v2v4-37r5-5v8g)
-- **`hooks`** — anchor hook commands + project paths to $CLAUDE_PROJECT_DIR
 - **`test`** — repair four CI-failing assertions on main
-- **`deps`** — regenerate pnpm-lock.yaml for catalog drift
 - **`cli`** — stop socket cdxgen from silently shipping empty-components SBOMs (#1266)
 - **`cli`** — error messages in env/ + constants/ + sea-build scripts (#1258)
 - **`cli`** — error messages in utils/ misc (flags, fs, git, npm, promise, terminal) (#1260)
@@ -410,7 +323,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`cli`** — error messages in commands/ (14 commands + their tests) (#1255)
 - **`cli`** — align test/ error messages with 4-ingredient strategy (#1259)
 - **`cli`** — return org slug, not display name, from org resolution (#1232)
-- **`deps`** — bump nanotar 0.2.0 → 0.2.1 to patch path traversal (CVE-2025-69874) (#1250)
 - **`debug`** — log structured HTTP error details instead of raw response (#1233)
 - **`test`** — pass --passWithNoTests to vitest (#1240)
 - **`scan`** — surface GitHub rate-limit errors in bulk repo scan (#1235)
@@ -418,33 +330,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`api`** — include request path in API error messages (#1224)
 - **`api`** — distinguish 401 (auth failure) from 403 (permissions) (#1226)
 - **`scan`** — respect projectIgnorePaths from socket.yml (#1225)
-- **`ci`** — replace close/reopen hack with workflow_dispatch for bot PRs (#1210)
 - **`build`** — improve asset download resilience against rate limits (#1201)
-- **`config`** — align .npmrc and pnpm-workspace.yaml for pnpm v11 (#1198)
-- **`hooks`** — normalize platform keys and strip host prefix from repository (#1194)
-- **`hooks`** — use strings for binary file scanning in pre-push (#1196)
-- **`hooks`** — update zizmor repo from woodruffw to zizmorcore (#1191)
-- **`deps`** — bump vite to 7.3.2 (security) (#1168)
-- **`ci`** — harden weekly-update — allowedTools, two-phase update, diff validation (#1159)
 - move minimum-release-age to pnpm-workspace.yaml (#1158)
 - **`build`** — fix runtime bugs in build scripts (#1148)
 - upgrade handlebars to 4.7.9, fix pre-push hook (#1134)
 - upgrade brace-expansion to 5.0.5 (CVE-2026-33750) (#1132)
-- **`ci`** — rebuild weekly-update.yml with proper YAML and features
 - harden GitHub Actions workflows (#1129)
-- **`ci`** — update pnpm/action-setup to Node 24 (58e6119)
 - **`skill`** — update updating skill to use pnpm run update and check --all
-- **`ci`** — add timeout-minutes and shell declarations to workflows
-- **`ci`** — add explicit shell: bash declarations to provenance workflow
 - **`types`** — remove unused import and fix context tests
 - **`security`** — make missing SHA-256 checksums a hard error
-- **`ci`** — add complete stub package with JS implementation for iocraft
-- **`ci`** — create stub packages before pnpm install
-- **`ci`** — setup pnpm before node to enable cache
 - **`types`** — resolve TypeScript type errors in iocraft and test helpers
 - **`tui`** — fix border rendering in iocraft column layouts
-- **`deps`** — remove stale restore-cursor patch
-- **`deps`** — remove stale React/Ink dependencies after iocraft migration
 - **`test`** — replace unsafe fs.rm with safeDelete
 - **`cli`** — improve cache coherency and notification handling
 - **`cli`** — handle undefined returns from getMajor in optimize
@@ -459,7 +355,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - properly disable dependabot (#1119)
 - **`publish`** — rename workflow to provenance.yml for trusted publishing
 - **`publish`** — restore socket package and fix paths
-- **`ci`** — read base version from cli-package template
 - **`publish`** — add missing check-version-consistency script and update docs
 - **`sfw`** — use separate versions for SEA and npm CLI distributions
 - address quality scan findings (Round 1)
@@ -469,9 +364,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`quality-scan`** — remove socket-btm cross-project references
 - **`cli`** — replace broken --dry-run with meaningful preview output
 - **`test`** — inject inlined env vars in test setup for e2e tests
-- **`ci`** — remove integration tests job (no integration tests exist)
-- **`ci`** — simplify CI workflow and remove references to non-existent directories
-- **`ci`** — use pnpm/action-setup to read packageManager from package.json
 - **`quality`** — add try-catch for JSON.parse in build scripts
 - **`quality`** — add defensive checks and fix Windows ARM64 Python detection
 - quality scan fixes - NaN validation, logging conventions, docs
@@ -483,8 +375,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`sea`** — fix sfw extraction from VFS with node_modules structure
 - **`sea`** — add Socket Firewall (sfw) to VFS bundling
 - **`scan`** — correct policy strictness comparison in alert aggregation
-- **`hooks`** — check only new commits in pre-push, not all since release
-- **`hooks`** — use portable for loop instead of process substitution in pre-push
 - **`cli`** — address quality scan findings round 10
 - **`package-builder`** — correct dependencies for cli-with-sentry template
 - **`cli`** — restore 'as unknown as' pattern in type assertions
@@ -508,13 +398,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`cli`** — address quality scan findings round 4 (part 1)
 - **`cli`** — address quality scan findings round 3
 - **`cli`** — capture timestamp at function entry for accurate TTL
-- **`ci`** — add required .env.precommit for pre-commit hooks
-- **`ci`** — improve workflow reliability and security validation
 - **`cli`** — add input validation and bounds checking
 - **`cli`** — resolve race conditions and improve locking mechanisms
 - **`cli`** — resolve memory leaks and resource cleanup issues
 - **`cli`** — fix getMaxOldSpaceSizeFlag default calculation
-- **`hooks`** — add prerequisite checks to pre-commit hook
 - **`cli`** — address quality scan findings round 11
 - **`cli`** — address quality scan findings round 10
 - **`cli`** — address quality scan findings round 9
@@ -534,10 +421,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`cli`** — improve type safety in spec parsing and overrides
 - **`scan`** — resolve critical bugs in scan output handlers
 - **`build`** — remove redundant warning emojis from logger.warn calls
-- **`deps`** — always update Socket packages in update script (#1059)
-- **`deps`** — add restore-cursor signal-exit v4 compatibility patch
-- **`deps`** — update @socketsecurity/lib to v5.5.3 and add signal-exit v4 compatibility patches
-- **`deps`** — update Socket packages regardless of taze result
 - prevent heap overflow in large monorepo scans (#1041)
 - remaining fixes from PR 1025 (#1027)
 - ensure build directory exists before writing yoga placeholder
@@ -551,7 +434,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`sea`** — add exit code checking for binject spawn
 - **`build`** — use bracket notation for TypeScript index signatures
 - **`build`** — add GitHub API authentication to avoid rate limits
-- **`deps`** — Remove http2 module dependency from @sigstore/sign
 - **`cli`** — add per-platform caching for parallel SEA builds
 - **`build-infra`** — add GitHub token authentication to API requests
 - **`build-infra`** — Add GitHub API headers to httpRequest calls
@@ -562,17 +444,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`sea`** — update binject command and node-smol URL format
 - **`debug`** — use correct debug functions with proper namespacing
 - **`scan`** — use Octokit for GitHub API calls with proper error handling
-- **`ci`** — add Node.js and pnpm setup immediately after checkout in all workflows
 - **`sea`** — compute rootPath in getBinjectPath function
 - **`build`** — use yoga-sync.mjs from socket-btm and integrate binject
 - **`cli`** — resolve socket-lib external paths at any nesting depth
-- **`bootstrap`** — remove non-existent polyfill imports and fix build errors
 - **`fix`** — add ecosystems support to coana CLI calls
 - **`fix`** — add --limit as alias for --pr-limit
 - **`flags`** — make --exclude and --include visible in socket fix command
 - **`dlx`** — support Coana CLI binary execution via SOCKET_CLI_COANA_LOCAL_PATH
 - **`docs`** — remove hardcoded personal paths and realistic API key examples
-- **`hooks`** — limit pre-push AI attribution check to commits since latest release
 - upload manifest files relative to target for coana-fix and perform-reachability-analysis
 - **`self-update`** — implement bootstrap binary path via IPC handshake
 - **`api`** — improve CVE to GHSA conversion caching and error messaging
@@ -584,10 +463,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`build`** — inline environment variables to prevent package.json errors
 - **`shadow`** — use static imports for shadow bins instead of dynamic require
 - **`spawn`** — add which() resolution for command spawns
-- **`deps`** — fix bin entries and standardize engine requirements
 - **`ui`** — change error badge text from red to white on red background
-- **`deps`** — resolve ANSI bundling compatibility issues
-- **`bootstrap`** — use consistent naming for published build flag
 - **`dev`** — improve fresh clone developer experience
 - **`build`** — fix bundle dependencies validation and add missing deps
 - **`build`** — add TypeScript dependency and fix socket-lib bundling
@@ -596,15 +472,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`build`** — fix bundle dependencies validation
 - **`setup`** — verify gh CLI is accessible after installation
 - **`cli`** — add missing subcommands to help menu validation
-- **`hooks`** — improve AI attribution detection in pre-push hook
-- **`hooks`** — use printf for colored output in pre-push hook
 - **`workflows`** — resolve all zizmor security findings
 - **`socket`** — correct package.json metadata and build script
 - **`socket`** — add missing version defines to bootstrap build config
 - **`cli`** — add src to files array for bin entry
 - **`cli`** — rename duplicate dev script to dev:watch for clarity
 - **`types`** — resolve TypeScript errors in package manager commands
-- **`hooks`** — improve git hook compatibility and formatting
 - **`smol-builder`** — fix spawn import in compress-binary script
 - **`smol-builder`** — fix smokeTestBinary API mismatch
 - **`smol-builder`** — standardize brotli2c naming to socketsecurity\_ prefix
@@ -625,22 +498,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`smol-builder`** — copy brotli header to src directory
 - **`smol-builder`** — update hardcoded patch reference to use numbered prefix
 - **`test`** — correct import path for confirm prompt
-- **`bootstrap`** — use major version only for CLI download spec
 - **`smol`** — implement robust cross-platform strip with capability detection
 - **`smol`** — use platform-specific strip flags for binary optimization
 - **`smol`** — use shell for execCapture and enable fail-fast for builds
-- **`bootstrap`** — show Socket CLI version instead of Node.js version
-- **`bootstrap`** — skip preflight on --version for instant response
 - **`smol`** — skip CLI bootstrap for basic Node.js operations
-- **`ci`** — make WASM optional in SEA builds with graceful fallback
-- **`ci`** — remove ai-cache-valid references from build-sea workflow
-- **`ci`** — comment out socketbin-cli-ai references in build-sea workflow
-- **`ci`** — update ONNX Runtime artifact verification to check for .mjs files
 - **`onnx`** — add existence checks to patch verification
 - **`onnx`** — verify wasm_post_build.js patch in cache validation
 - **`onnx`** — clean stale cache after GitHub Actions restoration
 - **`onnxruntime`** — patch wasm_post_build.js in both source and build directories
-- **`bootstrap`** — remove unnecessary empty log after spinner completes
 - **`test`** — reduce thread count on macOS CI to prevent SIGABRT
 - **`types`** — resolve exactOptionalPropertyTypes issue in UpdateStore
 - **`update`** — only show content-type warning in debug mode on parse failure
@@ -649,8 +514,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`types`** — update handleApiCall signature for SDK v3 compatibility
 - **`types`** — revert to use SDK v3 method names in type references
 - **`types`** — update SDK operation names to match API types
-- **`deps`** — update all packages to use catalog for @socketsecurity/lib
-- **`lint`** — fix all lint errors and update dependencies
 - **`build`** — externalize Socket dependencies and add bundle validation test
 - update for @socketsecurity/lib 3.0.5 compatibility
 - **`build`** — use default export workaround for CommonJS imports with --import flag
@@ -658,18 +521,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`smol`** — use Module.prototype.require.bind for virtual module
 - **`smol`** — use Module.createRequire for proper module context
 - **`onnx`** — patch wasm_post_build.js to handle modern Emscripten
-- **`bootstrap`** — correct stream/promises module path for smol builds
-- **`ci`** — remove expression from build-models job name
 - **`models`** — correct --all flag logic to build both models
-- **`ci`** — build all AI models in workflow
 - **`models`** — check for all expected ONNX files during conversion
 - **`models`** — fix method variable scope in quantization fallback
-- **`ci`** — remove invalid job-level matrix conditions from workflows
 - **`onnxruntime`** — remove EXPORT_ES6=0 patch for threading compatibility
 - **`onnxruntime`** — enable threading and SIMD for v1.21.1 compatibility
-- **`ci`** — mark ONNX Runtime WASM build as non-blocking
 - **`models`** — update INT4 quantization API for onnxruntime 1.20+
-- **`ci`** — install optimum[onnxruntime] for ONNX model export
 - **`onnx`** — remove ES module type from onnxruntime package.json
 - **`socket`** — remove bootstrap-smol.js from npm package build
 - **`patch`** — remove unused imports after duplicate logging removal
@@ -677,10 +534,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`path`** — handle UNC paths correctly on Windows
 - **`path`** — add Windows validation for Unix-style paths in findNpmDirPathSync
 - **`wasm`** — update INT4 quantization to use matmul_nbits_quantizer API
-- **`ci`** — pin onnxruntime>=1.20.0 to ensure INT4 quantization support
-- **`ci`** — upgrade onnxruntime and add INT4 quantization tools
-- **`ci`** — uncomment ONNX Runtime build steps to fix bash syntax error
-- **`bootstrap`** — eliminate spurious error message on successful CLI execution
 - improve bootstrap error handling
 - **`completion`** — resolve CLI package root correctly for tab completion script
 - **`scan`** — flatten SDK options and make repo parameter conditional
@@ -693,19 +546,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`cli-with-sentry`** — add missing esbuild config for shadow-npm-inject
 - **`cli-with-sentry`** — add missing shadow-npm-inject build step
 - **`build`** — skip onnxruntime build (temporarily disabled)
-- **`gitignore`** — allow docs/build directory without requiring -f flag
 - resolve TypeScript errors after nodeDebugFlags removal
 - remove nodeDebugFlags references
 - **`build`** — align platform/arch flags in build-all-binaries
 - **`build`** — disable minifySyntax across all esbuild configs
 - **`socket`** — disable minifySyntax to prevent async function boundary corruption
-- **`ci`** — align smol cache keys with build-smol.yml in publish-socketbin.yml
-- **`ci`** — use SEA binary cache from build-sea.yml in publish-socketbin.yml
 - **`sbom-generator`** — resolve exactOptionalPropertyTypes type errors
 - **`test`** — use proper function syntax for Vitest constructor mocks
-- **`lint`** — resolve lint errors and remove dead getInternals code
 - **`node-sea-builder`** — add missing crypto import
-- **`bootstrap`** — improve error handling for CLI download failures
 - **`cli`** — update getBinCliPath to use dist/index.js instead of bin/cli.js
 - **`environment`** — remove unused createRequire import
 - **`environment`** — lazy-load bun lockfile parser
@@ -716,30 +564,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`cli-with-sentry`** — use dist/index.js and validate cli.js.bz
 - **`cli-with-sentry`** — use socket-with-sentry bin name
 - **`cli-with-sentry`** — move @sentry/node to dependencies
-- **`ci`** — validate yoga WASM cache instead of building on miss
-- **`ci`** — publish from package directories and build yoga WASM on cache miss
-- **`ci`** — replace obsolete external cache with yoga-layout WASM cache
 - **`scripts`** — update dist validation to check for index.js and cli.js.bz
 - **`scripts`** — update pre-publish-validate to accept package path
 - **`scripts`** — remove duplicate colors declaration in pre-publish-validate
-- **`ci`** — use 'pnpm run build' instead of non-existent 'build:dist'
 - **`packages`** — run pnpm pkg fix to normalize package.json fields
 - **`socketbin`** — add repository field to all package.json files
-- **`ci`** — add --tag latest to all npm publish commands for prerelease versions
-- **`ci`** — use semver to extract X.Y.Z from package version before appending timestamp
 - **`scripts`** — skip socketbin-cli-ai version check (not published by workflow)
 - **`scripts`** — skip root package.json check for socketbin versions
-- **`ci`** — install dependencies before version consistency check
-- **`ci`** — use bash shell for verify binary step on Windows
-- **`ci`** — skip smol build when method=sea and use bash shell for Windows compatibility
-- **`ci`** — use 2-core runners in publish-socketbin for better availability
-- **`ci`** — comment out ONNX runtime in build-sea workflow
-- **`ci`** — correct ONNX package paths in build-sea workflow
-- **`ci`** — correct SEA builder package name in publish-socketbin
-- **`ci`** — add CLI build step before SEA binary build in publish-socketbin
 - **`scripts`** — prepublish-socketbin should create bin/socket not bin/cli
-- **`ci`** — align publish-socketbin binary paths with build-sea naming
-- **`ci`** — upgrade actions/cache to v4.3.0 in publish-socketbin workflow
 - **`scripts`** — improve type check error output in check script
 - **`cli`** — add missing INLINED_SOCKET_CLI_PYCLI_VERSION to ENV
 - **`onnxruntime`** — correct EXPORT_ES6=0 to output .js files instead of .mjs
@@ -749,15 +581,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`test`** — fix self-update tests by mocking canSelfUpdate and cleaning up leftover directories
 - **`build`** — add missing INLINED_SOCKET_CLI_CDXGEN_VERSION to esbuild config
 - **`onnxruntime`** — enable WASM threading to fix MLFloat16 build errors
-- **`bootstrap`** — remove logger usage from smol bootstrap for early initialization
 - **`tests`** — fix GitLab provider mock constructor
 - **`tests`** — fix npm-config mock constructor to work with 'new' operator
 - **`scan-reach`** — handle empty string and undefined outputPath properly
 - **`cli`** — inline build-time constants with post-bundle replacement plugin
 - **`build-infra`** — escape regex patterns for string literal context in Unicode transform
 - **`onnxruntime`** — pass WASM_ASYNC_COMPILATION via CMake defines
-- **`ci`** — use package version for WASM workflow cache keys
-- **`ci`** — use package version for ONNX Runtime cache key
 - **`onnxruntime`** — update Eigen hash patch for v1.21.1 deps.txt format
 - **`onnxruntime`** — re-clone if Eigen patch not applied
 - **`onnxruntime`** — clean CMake cache when applying Eigen hash patch
@@ -769,14 +598,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`onnxruntime`** — update to v1.21.1 to fix Eigen hash mismatch
 - remove yoga-layout patch reference from root package.json
 - **`cli`** — handle missing yoga-layout WASM files gracefully
-- **`bootstrap`** — avoid logger initialization before stdout is ready
 - **`cli`** — correct ESLint config paths to monorepo root
 - **`build`** — read socketbin spec from actual package.json
 - **`compress`** — align cache key generation with socket-lib
 - **`scan`** — resolve TypeScript errors from merged PRs
-- **`lint`** — exclude test fixtures from Biome linting
 - **`git`** — correct import path for paths module
-- **`bootstrap`** — load Intl polyfill before logger to prevent smol build failure
 - **`test`** — delete obsolete bootstrap test and fix provider factory assertions
 - **`test`** — add missing paths mock for provider factory tests
 - **`test`** — fix constructor mocks and add missing canSelfUpdate export
@@ -784,71 +610,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`types`** — resolve TypeScript errors in GitLab provider
 - **`cli-with-sentry`** — write esbuild output and add gitignore
 - **`smol`** — fix MODULE_NOT_FOUND error for socketsecurity bootstrap
-- **`ci`** — disable pip cache in build-wasm to prevent cache failures
-- **`ci`** — correct artifact paths in build-sea workflow
-- **`ci`** — correct artifact paths in build-smol workflow
 - **`cli`** — suppress esbuild warnings in CLI build
-- **`ci`** — correct socket package verification in build-sea workflow
-- **`ci`** — remove CLI build from build-deps job in SEA workflow
-- **`ci`** — add detailed cache diagnostics to build-sea workflow
 - **`ai`** — update onnxruntime to 1.21.0+ for INT4 quantization support
-- **`ci`** — add WASM asset verification before CLI build in SEA workflow
-- **`ci`** — include bootstrap deps in SEA binary cache key
-- **`ci`** — include bootstrap deps in smol binary cache key
 - **`smol`** — add diagnostic logging for bootstrap file location
-- **`ci`** — correct artifact download path and add relocation logic
-- **`ci`** — add verification step for downloaded build artifacts
 - **`smol`** — fail build if bootstrap cannot be copied
-- **`lint`** — remove unused variables and parameters
 - **`scripts`** — replace undefined runCommandQuiet with spawn
 - **`socket-fix`** — add missing import and fix optional prNumber type
 - **`socket-fix`** — add remote branch cleanup on PR creation failure
 - **`smol`** — optimize build flow and fix macOS ARM64 signing
-- **`ci`** — split dependency builds from matrix parallelization
 - **`sea`** — use versionSemver from node-version.json to avoid double 'v' prefix
 - **`sea`** — decompress cli.js.bz instead of using build/ intermediate
 - **`sea`** — auto-build CLI package when missing
-- **`ci`** — build bootstrap package before socket and smol/sea builders
 - **`socket`** — reference bootstrap files from packages/bootstrap
 - **`e2e`** — check JS binary existence before running tests
 - **`e2e`** — error and exit if binary doesn't exist when explicitly requested
 - **`e2e`** — disable Node.js binary forwarding in .env.test
 - **`cli`** — remove unnecessary force: true from safeDeleteSync calls
-- **`bootstrap`** — export .config/node-version.mjs for workspace imports
 - **`cli`** — auto-enable RUN_E2E_TESTS when running e2e.mjs
 - **`socket`** — handle prefix-only modules in smol transform
 - **`socket`** — correct internal module paths in smol transform
-- **`ci`** — skip cache restore when force rebuild is requested
 - **`node-smol-builder`** — use socket package bootstrap not local stub
 - **`node-smol-builder`** — add placeholder bootstrap for socketsecurity patch
 - **`sea-builder`** — add shell execution for postject on Windows
 - **`sea-builder`** — use direct postject path instead of pnpm exec
 - **`sea-builder`** — add postject as catalog devDependency
-- **`ci`** — enable cross-OS cache sharing for Windows builds
-- **`ci`** — pass --force flag to WASM build scripts when force rebuild requested
-- **`ci`** — move Windows WASM cache check before build attempt
-- **`ci`** — require WASM cache for Windows SEA builds
-- **`ci`** — add wasm-opt to PATH for Windows Emscripten builds
 - **`sea`** — strip leading '--' from pnpm arguments for correct parsing
 - **`sea`** — enable cross-platform SEA builds using prebuilt Node binaries
-- **`ci`** — limit SEA builds to native architectures only
-- **`ci`** — correct SEA binary build for cross-platform compilation
 - **`build`** — resolve SEA build failures across platforms
 - **`packages`** — correct spawn result access in package build scripts
 - **`build`** — correct spawn result access in build orchestration scripts
 - **`wasm`** — correct spawn result property access in WASM build scripts
 - **`scripts`** — resolve duplicate spawn import and incorrect result access
-- **`ci`** — remove pip upgrade to improve Python dependency caching
 - move .node-source to packages/node-smol-builder/build/
 - **`onnx`** — output to dist/ directory instead of build/wasm/
-- **`ci`** — save ONNX build cache even on failure
 - **`onnx`** — fix second readCheckpoint usage in export stage
 - **`onnx`** — use correct checkpoint function name
 - **`build`** — enable WASM features in wasm-opt optimization
 - **`onnx`** — locate WASM files in MinSizeRel subdirectory
 - **`smol`** — use compressed binary in Final distribution directory
 - **`build`** — use fs.statfs for reliable cross-platform disk space check
-- **`ci`** — use requirements.txt for proper pip caching
 - **`onnx`** — upgrade to v1.23.2 to resolve Eigen hash mismatch
 - **`wasm`** — correct checkDiskSpace parameter units (GB not bytes)
 - **`onnx`** — use build.sh script instead of direct CMake
@@ -859,25 +659,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`onnx-runtime`** — auto-clean stale checkpoints and use existsSync
 - **`yoga-layout`** — auto-clean stale checkpoints when artifacts missing
 - **`yoga-layout`** — throw errors instead of warnings on missing artifacts
-- **`ci`** — add debugging output for WASM build artifact verification
 - **`build-infra`** — replace exec wrappers with direct spawn calls
 - **`ai`** — add progress indicator for brotli compression
 - **`build-infra`** — add exec wrapper to builder classes
-- **`ci`** — fail builds when WASM artifacts are missing
 - **`ai`** — define originalSize/quantSize before use
-- **`ci`** — add cache artifact verification to WASM builds
 - **`onnx`** — use proper spawn command/args pattern
 - replace build-exec with spawn in remaining builder packages
 - **`onnx`** — replace build-exec with spawn
-- **`ci`** — replace shasum with sha256sum for Windows compatibility
-- **`ci`** — use standard ubuntu-latest runners for WASM builds
 - **`node-smol`** — use console.log instead of logger.log in binary smoke test
 - **`cli-ai`** — make INT4 quantization optional with graceful fallback
-- **`ci`** — correct INT4 quantization import and remove invalid autocrlf
-- **`ci`** — remove push triggers from build-wasm to avoid runner contention
 - **`cli-ai`** — correct import path for matmul_4bits_quantizer
-- **`ci`** — require onnxruntime>=1.20.0 for INT4 quantization
-- **`ci`** — use optimum[onnx] instead of optimum[exporters]
 - **`build-infra`** — use result.code instead of result.status
 - **`build-infra`** — import printSubstep for debug logging
 - **`build-infra`** — use shell for Python detection on all platforms
@@ -887,19 +678,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`build-infra`** — restore shell: WIN32 option in Python check
 - **`build-infra`** — use direct python3 execution without shell
 - **`build-infra`** — add detailed error logging to Python check
-- **`ci`** — add Python verification step for debugging
-- **`ci`** — setup Python for all platforms in smol build
-- **`ci`** — add Python 3.11 setup for WASM builds in SEA job
 - **`build-infra`** — remove duplicate imports in tool-installer
 - **`node-smol-builder`** — replace build-exec with spawn wrappers
-- **`ci`** — add WASM asset restoration to SEA build job
-- **`ci`** — correct package names and cache key generation
-- **`ci`** — ensure dist directories exist before verification
-- **`ci`** — include node-smol-builder patches and additions in cache keys
-- **`ci`** — update patches directory path from build/patches to patches
-- **`ci`** — update actions/cache to v4.3.0
-- **`ci`** — add workflow_call trigger to build-wasm workflow
-- **`ci`** — add WASM asset preparation before CI tests
 - **`cli`** — remove unused imports in optional-models.mts
 - **`e2e`** — prompt for sea and smol binaries separately
 - **`test`** — update tests for read-only ENV properties from @socketsecurity/lib
@@ -920,12 +700,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - remove accidental gitlinks for yoga source directories
 - **`cli`** — make path tests cross-platform compatible
 - **`build`** — use fileURLToPath for cross-platform path comparison in esbuild
-- **`ci`** — prevent diagnostic checks from stopping script execution
-- **`gitignore`** — restore dist/ ignore and update build artifact documentation
 - **`test`** — use tmpdir for patch discover test to avoid spawn failures
-- **`ci`** — remove del-cli from test-setup-script
-- **`ci`** — remove redundant pnpm install from test-setup-script
-- **`ci`** — replace rm -rf with cross-platform del-cli command
 - **`cli`** — normalize paths for Windows compatibility in completion and tildify
 - **`cli`** — update NODE_VERSION to getNodeVersion()
 - **`cli`** — skip update checks in test environments
@@ -934,7 +709,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`cli`** — update ONNX runtime extraction
 - **`build-infra`** — improve Emscripten and build execution
 - **`scripts`** — add missing colors import in verify-node-build
-- **`deps`** — use socket-lib 1.3.5 with Windows Proxy fix
 - **`tests`** — pass undefined env to avoid multiple process.env spreads
 - **`tests`** — revert to working spawn pattern from commit 39ee9465
 - **`tests`** — use Proxy in test mode to preserve Windows env behavior
@@ -942,12 +716,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`tests`** — omit env option when no custom env vars provided
 - **`tests`** — avoid spreading process.env in spawn calls
 - **`tests`** — preserve process.env proxy for Windows
-- **`ci`** — resolve dependency caching issue causing test failures
 - **`cli`** — resolve TypeScript strict mode errors
-- **`ci`** — use consistent pnpm --filter pattern in test setup
-- **`ci`** — use pnpm --filter to run scripts in monorepo context
-- **`ci`** — remove redundant cd commands in workflow scripts
-- **`deps`** — correct @socketsecurity/lib references in workspace packages
 - **`scan`** — add optional chaining for spinner safety
 - **`patch`** — wrap logger output in outputKind checks for JSON/markdown
 - **`patch`** — use optional chaining for spinner to handle null in tests
@@ -964,7 +733,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`dlx`** — skip cache entries with invalid metadata in listDlxCache
 - **`tests`** — correct UNKNOWN_ERROR import in errors.test.mts
 - **`tests`** — add missing await to async operations in optimize tests
-- **`ci`** — clear Vitest cache before running tests
 - **`test`** — correct mock setup for scan tests
 - **`test`** — correct mock setup for repository output tests
 - **`test`** — correct mock setup for output-security-policy tests
@@ -973,7 +741,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`test`** — correct mock setup for output-dependencies tests
 - **`tests`** — correct import paths and logger references in organization tests
 - **`tests`** — remove invalid await from destructuring in scan tests
-- **`config`** — handle Buffer return from safeReadFileSync in findSocketYmlSync
 - **`tests`** — update API requirements output test expectations
 - **`tests`** — resolve shadow/links PATH and Windows test issues
 - **`tests`** — correct socket/alerts mock paths
@@ -1012,8 +779,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - update @socketbin/cli packages to available version 0.0.0
 - replace fragile regex parsing with file-based JSON extraction in coana discovery
 - resolve pre-existing unit test failures
-- **`ci`** — remove coverage-script and coverage-report-script
-- **`ci`** — update workflow SHAs to d8ff3b05
 - update build scripts to use pnpm filter for monorepo
 - link to local @socketsecurity/sdk for development Replace @socketsecurity/sdk version dependency with link to sibling socket-sdk-js directory. Remove SDK patch as types are now fixed at source. This enables development on SDK and CLI simultaneously and ensures we're testing against the latest SDK changes.
 - patch @socketsecurity/sdk@2.0.1 to correct type definition paths The SDK package.json incorrectly references index.d.mts and testing.d.mts but the actual files are index.d.ts and testing.d.ts. This patch corrects the types field to point to the correct .d.ts files. Note: This fixes the "could not find declaration file" errors, but there are still type export issues with SDK v2.0.1 that need to be addressed. Socket CLI uses SocketSdkSuccessResult and other types that are not being properly exported from the SDK index despite being defined in types.d.ts.
@@ -1050,6 +815,249 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - add file extension filtering to affected test mapper - Skip non-code files (images, docs, etc.) in test mapping - Prevents running all tests for non-code file changes - Improves test performance
 - resolve ESLint and TypeScript linting issues Fix inline comment positioning (line-comment-position): - Move inline comments to separate lines above code - Affected: cache-strategies.mts and all test files Fix TypeScript index signature access: - Change dot notation to bracket notation for metadata properties - Affected: performance.test.mts Add ESLint disable comments: - Disable no-control-regex for ANSI color code tests - Affected: output-formatting-tables.test.mts All files now pass `pnpm run check` successfully.
 - use Object.create(null) for ResultErrorOptions Replace **proto**: null in typed object literal with Object.create(null) Follows CLAUDE.md pattern for empty null-prototype objects
+- improve organization capabilities detection for plan variants
+- enterprise plan filter (#785) Signed-off-by: Ahmad Nassri <email@ahmadnassri.com> Co-authored-by: John-David Dalton <jdalton@users.noreply.github.com>
+- handle pnpm frozen-lockfile in CI for optimize command In CI environments, pnpm automatically runs with --frozen-lockfile which prevents lockfile updates. When the optimize command tries to add overrides and update the lockfile, it fails with ERR_PNPM_LOCKFILE_CONFIG_MISMATCH. Added explicit --no-frozen-lockfile flag when running pnpm install in CI mode to allow the lockfile to be updated with Socket.dev overrides.
+- Add fallback for npm exec path detection When constants.npmExecPath from the published registry doesn't exist or isn't executable, fall back to using whichBin to find npm. This fixes CI failures where the published version's npm-exec-path module might not correctly detect npm in certain environments.
+- Add defensive check for whichBinSync return value The published version of @socketsecurity/registry may return a string when only one result is found even with all: true. This defensive check handles both cases to ensure compatibility with the current published version and future versions that properly return an array.
+
+### Internal
+
+- **`check`** — add external-tools-release-tags-resolve gate
+- **`hooks`** — add claude-md-size-guard and no-revert-guard
+- **`ci`** — add updating skill and weekly-update workflow
+- **`deps`** — add @socketbin packages to update script
+- **`ci`** — add force rebuild option to all workflow_dispatch workflows
+- **`config`** — use EditableJson for non-destructive config saving
+- **`bootstrap`** — add SOCKET_CLI_LOCAL_PATH support for testing
+- **`bootstrap`** — add Brotli compression for all bootstrap variants
+- **`ci`** — add quantization level option to WASM workflow
+- **`bootstrap`** — add IPC handshake support for subprocess detection
+- **`ci`** — auto-update socketbin versions in provenance workflow
+- **`bootstrap`** — build SEA bootstrap in build script
+- **`bootstrap`** — add SEA bootstrap for minimal SEA binaries
+- **`ci`** — add npm@latest for trusted publishing support
+- **`bootstrap`** — restore logger with lazy initialization support
+- **`bootstrap`** — add Unicode property escape transforms for --with-intl=none
+- **`ci`** — use Alpine Docker container for smol musl builds
+- **`ci`** — add Alpine (musl) platform support to SEA and smol builds
+- **`bootstrap`** — add system node detection and forwarding control
+- **`bootstrap`** — add system node detection and forwarding control
+- **`bootstrap`** — create shared bootstrap package for npm and smol builds
+- **`ci`** — build socket package bootstrap before SEA and smol builds
+- **`ci`** — add stripped binary cache checkpoint for smol builds
+- **`ci`** — unify caching strategy across all build workflows
+- **`ci`** — cache ONNX Runtime intermediate build artifacts
+- **`ci`** — add GitHub Actions grouping to WASM and SEA workflows
+- **`ci`** — add Ninja installation for smol builds
+- **`ci`** — add concurrency control to build workflows
+- **`ci`** — reuse cached binaries from build-socketbin.yml
+- **`ci`** — add cache restoration and fallback WASM builds
+- **`ci`** — add @socketbin build workflow with caching
+- **`ci`** — add WASM build workflow with caching
+- **`config`** — add shared configuration architecture for monorepo
+- **`ci`** — complete dependency caching for all test jobs
+- **`ci`** — add dependency caching to GitHub Actions
+- **`ci`** — implement critical workflow optimizations
+- **`ci`** — add Emscripten SDK and pip caching to build-sea workflow
+- **`ci`** — add Emscripten SDK and pip package caching to WASM workflow
+- **`ci`** — add caching to build-deps jobs
+- **`ci`** — increase max parallel builds to 6 for SEA and smol workflows
+- **`ci`** — add pip cache for Python dependencies in AI models build
+- **`ci`** — optimize runner allocation and switch to Ninja
+- **`ci`** — optimize binary builds with ccache and faster runners
+- **`lint`** — split oversize modules, type the build scripts, restore output-assertions helper
+- **`lint`** — clear remaining non-split findings — identity assertions, template method order, changelog format
+- **`ci`** — clear fleet gate findings — patch rationales, soak globs, userconfig opt-out, run-s globs
+- **`ci`** — refresh external-tools pins to fleet data format
+- **`config`** — repo.type is mono, not monorepo
+- **`deps`** — bump vulnerable packages to soaked patched versions
+- **`deps`** — pin rolldown to soaked 1.0.3, matching the fleet baseline
+- **`lint`** — migrate socket-hook markers to socket-lint prefix
+- **`deps`** — migrate source to lib-stable 6.0.7 API
+- **`hooks`** — repoint commit-msg husky shim to .git-hooks/fleet/
+- **`hooks`** — repoint husky shims to .git-hooks/fleet/ after segmentation
+- **`deps`** — bump vitest to 4.1.6 to clear GHSA-5xrq-8626-4rwp
+- **`hooks`** — declare shell-quote dep so \_shared parser resolves
+- **`lint`** — revert colocate work in packages/cli/src — fleet rule requires export
+- **`lint`** — convert file-scope oxlint disables + clear other violations
+- **`deps`** — restore -stable catalog aliases for self-named fleet packages
+- **`lint`** — clean lint debt in packages/cli/scripts + src
+- **`deps`** — bump hono to 4.12.18, fast-uri to 3.1.2 for CVE patches
+- **`lint`** — dlx test polish — import-type, max-file-lines, sort
+- **`lint`** — generate-report.test — max-file-lines legitimate bypass
+- **`lint`** — cmd-manifest-cdxgen — exported helpers + cached for-loop
+- **`lint`** — telemetry — prefer-function-declaration + cached-for-loop
+- **`lint`** — mark Set-iteration for-of as intentional in 3 sites
+- **`lint`** — clear remaining socket/\* rule violations in cli package
+- **`lint`** — scripts and package-builder
+- **`lint`** — cache array.length in build-infra for-loops
+- **`lint`** — sort-source-methods - reorder 20 src files + oxfmt drift
+- **`lint`** — autofix sort-source-methods (13 files) + cascade canonical script fixes
+- **`lint`** — close out non-blocked socket-cli rules
+- **`lint`** — sort-named-imports — inline-disable intentional domain-grouped barrel import
+- **`lint`** — max-file-lines — file-level bypass on 86 oversized files
+- **`lint`** — no-fetch-prefer-http-request — inline-disable 5 dev-script fetches that need raw Response
+- **`lint`** — apply 2nd-pass oxlint autofixes — sort-source-methods reorder 3 files
+- **`lint`** — personal-path-placeholders — file-level disable on fixture tests + replace example usernames in src comments
+- **`lint`** — prefer-exists-sync — rewrite 2 fileExists helpers + inline-disable legitimate metadata reads
+- **`lint`** — export-top-level-functions — collapse 5 export-block aggregators
+- **`lint`** — apply oxlint autofixes — export-top-level-functions / prefer-exists-sync / prefer-node-builtin-imports / sort-equality-disjunctions / prefer-undefined-over-null
+- **`lint`** — re-cascade canonical oxlint plugin rules — undo self-corruption
+- **`deps`** — bump hono via override to ≥4.12.16 (CVE patched)
+- **`hooks`** — release-workflow-guard — multi-root dry-run resolution
+- **`hooks`** — tighten npx-scanner regex to skip identifier/key contexts
+- **`deps`** — override ip-address >=10.1.1 (GHSA-v2v4-37r5-5v8g)
+- **`hooks`** — anchor hook commands + project paths to $CLAUDE_PROJECT_DIR
+- **`deps`** — regenerate pnpm-lock.yaml for catalog drift
+- **`deps`** — bump nanotar 0.2.0 → 0.2.1 to patch path traversal (CVE-2025-69874) (#1250)
+- **`ci`** — replace close/reopen hack with workflow_dispatch for bot PRs (#1210)
+- **`config`** — align .npmrc and pnpm-workspace.yaml for pnpm v11 (#1198)
+- **`hooks`** — normalize platform keys and strip host prefix from repository (#1194)
+- **`hooks`** — use strings for binary file scanning in pre-push (#1196)
+- **`hooks`** — update zizmor repo from woodruffw to zizmorcore (#1191)
+- **`deps`** — bump vite to 7.3.2 (security) (#1168)
+- **`ci`** — harden weekly-update — allowedTools, two-phase update, diff validation (#1159)
+- **`ci`** — rebuild weekly-update.yml with proper YAML and features
+- **`ci`** — update pnpm/action-setup to Node 24 (58e6119)
+- **`ci`** — add timeout-minutes and shell declarations to workflows
+- **`ci`** — add explicit shell: bash declarations to provenance workflow
+- **`ci`** — add complete stub package with JS implementation for iocraft
+- **`ci`** — create stub packages before pnpm install
+- **`ci`** — setup pnpm before node to enable cache
+- **`deps`** — remove stale restore-cursor patch
+- **`deps`** — remove stale React/Ink dependencies after iocraft migration
+- **`ci`** — read base version from cli-package template
+- **`ci`** — remove integration tests job (no integration tests exist)
+- **`ci`** — simplify CI workflow and remove references to non-existent directories
+- **`ci`** — use pnpm/action-setup to read packageManager from package.json
+- **`hooks`** — check only new commits in pre-push, not all since release
+- **`hooks`** — use portable for loop instead of process substitution in pre-push
+- **`ci`** — add required .env.precommit for pre-commit hooks
+- **`ci`** — improve workflow reliability and security validation
+- **`hooks`** — add prerequisite checks to pre-commit hook
+- **`deps`** — always update Socket packages in update script (#1059)
+- **`deps`** — add restore-cursor signal-exit v4 compatibility patch
+- **`deps`** — update @socketsecurity/lib to v5.5.3 and add signal-exit v4 compatibility patches
+- **`deps`** — update Socket packages regardless of taze result
+- **`deps`** — Remove http2 module dependency from @sigstore/sign
+- **`ci`** — add Node.js and pnpm setup immediately after checkout in all workflows
+- **`bootstrap`** — remove non-existent polyfill imports and fix build errors
+- **`hooks`** — limit pre-push AI attribution check to commits since latest release
+- **`deps`** — fix bin entries and standardize engine requirements
+- **`deps`** — resolve ANSI bundling compatibility issues
+- **`bootstrap`** — use consistent naming for published build flag
+- **`hooks`** — improve AI attribution detection in pre-push hook
+- **`hooks`** — use printf for colored output in pre-push hook
+- **`hooks`** — improve git hook compatibility and formatting
+- **`bootstrap`** — use major version only for CLI download spec
+- **`bootstrap`** — show Socket CLI version instead of Node.js version
+- **`bootstrap`** — skip preflight on --version for instant response
+- **`ci`** — make WASM optional in SEA builds with graceful fallback
+- **`ci`** — remove ai-cache-valid references from build-sea workflow
+- **`ci`** — comment out socketbin-cli-ai references in build-sea workflow
+- **`ci`** — update ONNX Runtime artifact verification to check for .mjs files
+- **`bootstrap`** — remove unnecessary empty log after spinner completes
+- **`deps`** — update all packages to use catalog for @socketsecurity/lib
+- **`lint`** — fix all lint errors and update dependencies
+- **`bootstrap`** — correct stream/promises module path for smol builds
+- **`ci`** — remove expression from build-models job name
+- **`ci`** — build all AI models in workflow
+- **`ci`** — remove invalid job-level matrix conditions from workflows
+- **`ci`** — mark ONNX Runtime WASM build as non-blocking
+- **`ci`** — install optimum[onnxruntime] for ONNX model export
+- **`ci`** — pin onnxruntime>=1.20.0 to ensure INT4 quantization support
+- **`ci`** — upgrade onnxruntime and add INT4 quantization tools
+- **`ci`** — uncomment ONNX Runtime build steps to fix bash syntax error
+- **`bootstrap`** — eliminate spurious error message on successful CLI execution
+- **`gitignore`** — allow docs/build directory without requiring -f flag
+- **`ci`** — align smol cache keys with build-smol.yml in publish-socketbin.yml
+- **`ci`** — use SEA binary cache from build-sea.yml in publish-socketbin.yml
+- **`lint`** — resolve lint errors and remove dead getInternals code
+- **`bootstrap`** — improve error handling for CLI download failures
+- **`ci`** — validate yoga WASM cache instead of building on miss
+- **`ci`** — publish from package directories and build yoga WASM on cache miss
+- **`ci`** — replace obsolete external cache with yoga-layout WASM cache
+- **`ci`** — use 'pnpm run build' instead of non-existent 'build:dist'
+- **`ci`** — add --tag latest to all npm publish commands for prerelease versions
+- **`ci`** — use semver to extract X.Y.Z from package version before appending timestamp
+- **`ci`** — install dependencies before version consistency check
+- **`ci`** — use bash shell for verify binary step on Windows
+- **`ci`** — skip smol build when method=sea and use bash shell for Windows compatibility
+- **`ci`** — use 2-core runners in publish-socketbin for better availability
+- **`ci`** — comment out ONNX runtime in build-sea workflow
+- **`ci`** — correct ONNX package paths in build-sea workflow
+- **`ci`** — correct SEA builder package name in publish-socketbin
+- **`ci`** — add CLI build step before SEA binary build in publish-socketbin
+- **`ci`** — align publish-socketbin binary paths with build-sea naming
+- **`ci`** — upgrade actions/cache to v4.3.0 in publish-socketbin workflow
+- **`bootstrap`** — remove logger usage from smol bootstrap for early initialization
+- **`ci`** — use package version for WASM workflow cache keys
+- **`ci`** — use package version for ONNX Runtime cache key
+- **`bootstrap`** — avoid logger initialization before stdout is ready
+- **`lint`** — exclude test fixtures from Biome linting
+- **`bootstrap`** — load Intl polyfill before logger to prevent smol build failure
+- **`ci`** — disable pip cache in build-wasm to prevent cache failures
+- **`ci`** — correct artifact paths in build-sea workflow
+- **`ci`** — correct artifact paths in build-smol workflow
+- **`ci`** — correct socket package verification in build-sea workflow
+- **`ci`** — remove CLI build from build-deps job in SEA workflow
+- **`ci`** — add detailed cache diagnostics to build-sea workflow
+- **`ci`** — add WASM asset verification before CLI build in SEA workflow
+- **`ci`** — include bootstrap deps in SEA binary cache key
+- **`ci`** — include bootstrap deps in smol binary cache key
+- **`ci`** — correct artifact download path and add relocation logic
+- **`ci`** — add verification step for downloaded build artifacts
+- **`lint`** — remove unused variables and parameters
+- **`ci`** — split dependency builds from matrix parallelization
+- **`ci`** — build bootstrap package before socket and smol/sea builders
+- **`bootstrap`** — export .config/node-version.mjs for workspace imports
+- **`ci`** — skip cache restore when force rebuild is requested
+- **`ci`** — enable cross-OS cache sharing for Windows builds
+- **`ci`** — pass --force flag to WASM build scripts when force rebuild requested
+- **`ci`** — move Windows WASM cache check before build attempt
+- **`ci`** — require WASM cache for Windows SEA builds
+- **`ci`** — add wasm-opt to PATH for Windows Emscripten builds
+- **`ci`** — limit SEA builds to native architectures only
+- **`ci`** — correct SEA binary build for cross-platform compilation
+- **`ci`** — remove pip upgrade to improve Python dependency caching
+- **`ci`** — save ONNX build cache even on failure
+- **`ci`** — use requirements.txt for proper pip caching
+- **`ci`** — add debugging output for WASM build artifact verification
+- **`ci`** — fail builds when WASM artifacts are missing
+- **`ci`** — add cache artifact verification to WASM builds
+- **`ci`** — replace shasum with sha256sum for Windows compatibility
+- **`ci`** — use standard ubuntu-latest runners for WASM builds
+- **`ci`** — correct INT4 quantization import and remove invalid autocrlf
+- **`ci`** — remove push triggers from build-wasm to avoid runner contention
+- **`ci`** — require onnxruntime>=1.20.0 for INT4 quantization
+- **`ci`** — use optimum[onnx] instead of optimum[exporters]
+- **`ci`** — add Python verification step for debugging
+- **`ci`** — setup Python for all platforms in smol build
+- **`ci`** — add Python 3.11 setup for WASM builds in SEA job
+- **`ci`** — add WASM asset restoration to SEA build job
+- **`ci`** — correct package names and cache key generation
+- **`ci`** — ensure dist directories exist before verification
+- **`ci`** — include node-smol-builder patches and additions in cache keys
+- **`ci`** — update patches directory path from build/patches to patches
+- **`ci`** — update actions/cache to v4.3.0
+- **`ci`** — add workflow_call trigger to build-wasm workflow
+- **`ci`** — add WASM asset preparation before CI tests
+- **`ci`** — prevent diagnostic checks from stopping script execution
+- **`gitignore`** — restore dist/ ignore and update build artifact documentation
+- **`ci`** — remove del-cli from test-setup-script
+- **`ci`** — remove redundant pnpm install from test-setup-script
+- **`ci`** — replace rm -rf with cross-platform del-cli command
+- **`deps`** — use socket-lib 1.3.5 with Windows Proxy fix
+- **`ci`** — resolve dependency caching issue causing test failures
+- **`ci`** — use consistent pnpm --filter pattern in test setup
+- **`ci`** — use pnpm --filter to run scripts in monorepo context
+- **`ci`** — remove redundant cd commands in workflow scripts
+- **`deps`** — correct @socketsecurity/lib references in workspace packages
+- **`ci`** — clear Vitest cache before running tests
+- **`config`** — handle Buffer return from safeReadFileSync in findSocketYmlSync
+- **`ci`** — remove coverage-script and coverage-report-script
+- **`ci`** — update workflow SHAs to d8ff3b05
 - **`ci`** — update socket-registry SHA to 5b2880d7
 - **`ci`** — update socket-registry SHA to 662bbcab
 - **`ci`** — update socket-registry SHA to b94a1086
@@ -1062,18 +1070,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`ci`** — update socket-registry SHA to 08fba31a
 - **`ci`** — update socket-registry workflows to latest SHA (c61feb5e)
 - **`ci`** — pin socket-registry workflows to SHA instead of @main
-- improve organization capabilities detection for plan variants
-- enterprise plan filter (#785) Signed-off-by: Ahmad Nassri <email@ahmadnassri.com> Co-authored-by: John-David Dalton <jdalton@users.noreply.github.com>
-- handle pnpm frozen-lockfile in CI for optimize command In CI environments, pnpm automatically runs with --frozen-lockfile which prevents lockfile updates. When the optimize command tries to add overrides and update the lockfile, it fails with ERR_PNPM_LOCKFILE_CONFIG_MISMATCH. Added explicit --no-frozen-lockfile flag when running pnpm install in CI mode to allow the lockfile to be updated with Socket.dev overrides.
-- Add fallback for npm exec path detection When constants.npmExecPath from the published registry doesn't exist or isn't executable, fall back to using whichBin to find npm. This fixes CI failures where the published version's npm-exec-path module might not correctly detect npm in certain environments.
-- Add defensive check for whichBinSync return value The published version of @socketsecurity/registry may return a string when only one result is found even with all: true. This defensive check handles both cases to ensure compatibility with the current published version and future versions that properly return an array.
 
 ## 1.0.0 - 2026-07-09
 
 ### Added
 
-- **`check`** — add external-tools-release-tags-resolve gate
-- **`hooks`** — add claude-md-size-guard and no-revert-guard
 - **`cli`** — add defineHandoffCommand factory for ecosystem hand-off wrappers
 - **`optimize`** — write pnpm 11+ overrides to pnpm-workspace.yaml
 - **`mcp`** — port socket-mcp standalone into `socket mcp` subcommand
@@ -1087,7 +1088,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`organization`** — show quota usage, max, and refresh time (#1236)
 - **`cli`** — rename --default-branch (scan create) to --make-default-branch; harden default-branch flags (#1230)
 - backport v1.x features and DRY out HTTP layer
-- **`ci`** — add updating skill and weekly-update workflow
 - **`sea`** — bundle Python packages at build time for offline operation
 - **`build`** — pre-install socketsecurity into bundled Python for SEA
 - **`vfs`** — add opengrep, trivy, trufflehog, python to SEA VFS extraction
@@ -1121,7 +1121,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`skills`** — add validation and chain-of-thought to quality-scan
 - **`scan`** — add socket-basics integration utilities
 - **`claude`** — add quality-scan skill for comprehensive code analysis
-- **`deps`** — add @socketbin packages to update script
 - migrate patch command to @socketsecurity/socket-patch@1.2.0 (#1042)
 - add E2E test sharding and misc fixes (#1022)
 - add alpm and vscode ecosystems, add scan type constants
@@ -1129,10 +1128,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - add --silence flag to `socket fix`
 - add --reach-lazy-mode flag for reachability analysis
 - **`telemetry`** — adding initial telemetry functionality to the cli
-- **`ci`** — add force rebuild option to all workflow_dispatch workflows
 - **`cli`** — standardize .version tracking across all extract scripts
 - **`sea`** — improve build cache management and add local development mode
-- **`config`** — use EditableJson for non-destructive config saving
 - **`scan`** — add --reach-use-only-pregenerated-sboms flag
 - **`fix`** — add --fix-version flag to override Coana CLI version
 - **`fix`** — add --ecosystems flag and rename --limit to --pr-limit
@@ -1149,12 +1146,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`build`** — add dead code elimination plugin
 - **`cli`** — optimize development workflow with caching and improved docs
 - **`cli-with-sentry`** — add package structure and build configuration
-- **`bootstrap`** — add SOCKET_CLI_LOCAL_PATH support for testing
 - **`cli`** — add supporting files
 - **`cli`** — add new commands
 - **`sfw`** — add Socket Firewall package manager wrappers
 - **`smol-builder`** — add granular checkpoint system and refactor logger
-- **`bootstrap`** — add Brotli compression for all bootstrap variants
 - **`smol`** — implement binary caching to avoid recompilation on post-processing failures
 - **`dlx`** — implement unified manifest for packages and binaries
 - **`git-hooks`** — make security checks mandatory, lint/test optional
@@ -1163,7 +1158,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`validation`** — add guard against link: dependencies and remove from root
 - **`preflight`** — add @cyclonedx/cdxgen to background downloads
 - **`nlp`** — add progressive enhancement with ONNX Runtime stub
-- **`ci`** — add quantization level option to WASM workflow
 - **`models`** — add INT8 quantization option for AI model builds
 - **`workflows`** — add toggleable checkboxes for all build workflows
 - **`install`** — enhance installer with Socket branding and better UX
@@ -1177,30 +1171,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`build`** — add --platform and --arch flags for consistency
 - **`build`** — add parallel builds and consolidate build system
 - **`build`** — add intelligent caching to build system
-- **`bootstrap`** — add IPC handshake support for subprocess detection
 - **`spawn`** — implement system Node.js detection with which
 - **`dlx`** — unify .dlx-metadata.json schema across TypeScript and C++
-- **`ci`** — auto-update socketbin versions in provenance workflow
 - **`cli`** — enhance error handling with network diagnostics and timeout errors
-- **`bootstrap`** — build SEA bootstrap in build script
-- **`bootstrap`** — add SEA bootstrap for minimal SEA binaries
 - **`cli,cli-with-sentry`** — add LICENSE and CHANGELOG.md to packages
 - **`build`** — copy logos and data to packages during build
-- **`ci`** — add npm@latest for trusted publishing support
 - **`cli`** — temporarily disable ONNX Runtime integration
 - **`python`** — add Python CLI version tracking to build configuration
 - **`publish`** — query npm registry for latest @socketbin/\* versions
 - **`publish`** — use base version from package.json for datetime versioning
 - **`cli`** — add custom ONNX Runtime build package following yoga pattern
-- **`bootstrap`** — restore logger with lazy initialization support
 - **`build`** — add comprehensive Unicode property transformations
 - **`build`** — auto-generate socketbin spec for cache keys
 - **`compress`** — add spec string embedding for socket-lib cache keys
 - **`compress`** — implement self-extracting binary architecture
 - **`debug`** — add detailed HTTP request logging for failed API calls
-- **`bootstrap`** — add Unicode property escape transforms for --with-intl=none
-- **`ci`** — use Alpine Docker container for smol musl builds
-- **`ci`** — add Alpine (musl) platform support to SEA and smol builds
 - **`fix`** — integrate provider pattern into PR operations
 - **`git`** — implement GitLab provider with MR operations
 - **`git`** — implement GitHub provider with PR operations
@@ -1215,30 +1200,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`cli`** — add SHA256 checksum generation for build integrity
 - **`build`** — add network retry utility with exponential backoff
 - **`build`** — auto-build bootstrap package when missing
-- **`bootstrap`** — add system node detection and forwarding control
-- **`bootstrap`** — add system node detection and forwarding control
-- **`bootstrap`** — create shared bootstrap package for npm and smol builds
 - **`socket`** — add comprehensive builtin module mapping for smol
 - **`socket`** — add dual bootstrap build for SEA and smol
-- **`ci`** — build socket package bootstrap before SEA and smol builds
-- **`ci`** — add stripped binary cache checkpoint for smol builds
 - **`build-infra`** — add preflight-checks runner for DRY build validation
 - **`build-infra`** — add script-runner utilities for DRY monorepo operations
 - **`builders`** — add platform/arch arguments and use socket-lib parseArgs
 - **`socket`** — add esbuild-based bootstrap implementation
 - **`self-update`** — improve package manager detection and error messages
 - add install.sh for Socket CLI installation
-- **`ci`** — unify caching strategy across all build workflows
-- **`ci`** — cache ONNX Runtime intermediate build artifacts
-- **`ci`** — add GitHub Actions grouping to WASM and SEA workflows
-- **`ci`** — add Ninja installation for smol builds
 - **`node-smol`** — add GitHub Actions grouping for verbose build steps
-- **`ci`** — add concurrency control to build workflows
 - **`sbom-generator`** — add TypeScript SBOM generator package
-- **`ci`** — reuse cached binaries from build-socketbin.yml
-- **`ci`** — add cache restoration and fallback WASM builds
-- **`ci`** — add @socketbin build workflow with caching
-- **`ci`** — add WASM build workflow with caching
 - add WIN32 shell support and update build infrastructure
 - **`node-sea-builder`** — add hash-based caching for SEA binaries
 - **`node-smol-builder`** — add hash-based caching for build artifacts
@@ -1277,7 +1248,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`patch`** — add default subcommand handler
 - **`constants`** — add barrel file and fix test imports
 - **`patch`** — enable patch command and fix tests
-- **`config`** — add shared configuration architecture for monorepo
 - add Intl polyfill stub modules for CLI
 - auto-strip AI attribution from commit messages
 - add JS-only fallback release workflow for socket CLI
@@ -1338,24 +1308,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 
 - **`cli`** — use direct env reads for HOME in 5 commands
-- **`ci`** — complete dependency caching for all test jobs
-- **`ci`** — add dependency caching to GitHub Actions
 - **`publish`** — optimize CLI build and consolidate platform definitions
 - **`sea`** — parallelize binary injection for 8x faster builds
 - **`cli`** — add Node.js memory allocation flags for large builds
 - **`scripts`** — optimize build process
 - **`cli`** — defer registryUrl lookup until needed
 - **`smol`** — use vm.compileFunction() and remove internal path remapping
-- **`ci`** — implement critical workflow optimizations
-- **`ci`** — add Emscripten SDK and pip caching to build-sea workflow
-- **`ci`** — add Emscripten SDK and pip package caching to WASM workflow
 - optimize CI and test performance
 - remove lazy-loading of bun lockfile parser
-- **`ci`** — add caching to build-deps jobs
-- **`ci`** — increase max parallel builds to 6 for SEA and smol workflows
-- **`ci`** — add pip cache for Python dependencies in AI models build
-- **`ci`** — optimize runner allocation and switch to Ninja
-- **`ci`** — optimize binary builds with ccache and faster runners
 - **`wasm`** — switch to single-threaded ONNX Runtime variant
 - **`test`** — maximize thread pool based on CPU count
 - **`build,test,ci,docs`** — apply socket-sdk-js optimizations across all phases
@@ -1365,57 +1325,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`build`** — repair createHash import and drop unpublished lib-stable external/semver subpath
 - **`build`** — restore pipeline modules and exports the dead-code sweep removed while still imported
 - **`build`** — restore build-pipeline.mts — scripts/build.mts still imports runPipelineCli
-- **`ci`** — refresh external-tools pins to fleet data format
-- **`config`** — repo.type is mono, not monorepo
-- **`deps`** — bump vulnerable packages to soaked patched versions
 - **`sea`** — repoint build-sea/test-sea imports at sea-build-utils dir
-- **`deps`** — pin rolldown to soaked 1.0.3, matching the fleet baseline
-- **`lint`** — migrate socket-hook markers to socket-lint prefix
 - **`scripts`** — delegate all test scopes to per-package in no-config workspaces
-- **`deps`** — migrate source to lib-stable 6.0.7 API
 - **`scripts`** — make fleet test runner monorepo-safe and drop pnpm exec
 - **`scripts`** — import logger in sync-checksums so log calls don't ReferenceError
-- **`hooks`** — repoint commit-msg husky shim to .git-hooks/fleet/
-- **`hooks`** — repoint husky shims to .git-hooks/fleet/ after segmentation
 - **`debug,git`** — redact GitHub token in debug log; use debugNs for level namespaces
 - **`mcp`** — bind unauthenticated HTTP transport to loopback + cap POST body
 - **`scripts,format`** — repair migration-orphan imports/paths + format-script scope
-- **`deps`** — bump vitest to 4.1.6 to clear GHSA-5xrq-8626-4rwp
-- **`hooks`** — declare shell-quote dep so \_shared parser resolves
 - **`tsconfig`** — point extends at .config/fleet/tsconfig.base.json
 - **`build`** — migrate remaining external-tools.json tools to platforms schema
 - **`build`** — migrate pnpm external-tools entry to platforms schema
-- **`lint`** — revert colocate work in packages/cli/src — fleet rule requires export
 - **`rich-progress`** — restore inadvertently-deleted file + v6 leaf import
 - **`rich-progress`** — inline socket-hook marker so logger-guard sees it on the right line
 - **`build`** — give each downloaded asset its own subdir to avoid .version race
 - **`mcp/transport-http`** — drop `| undefined` from McpHandleRequest's auth field
-- **`lint`** — convert file-scope oxlint disables + clear other violations
 - **`packageManager`** — bump pnpm@11.0.8 → pnpm@11.1.2
 - stop oxfmt from reformatting wheelhouse-schema.json
 - **`scripts/check-prompt-less-setup`** — drop never-used writeFileSync + isLinux
-- **`deps`** — restore -stable catalog aliases for self-named fleet packages
-- **`lint`** — clean lint debt in packages/cli/scripts + src
 - **`types`** — restore explicit-undefined on AuthenticatedRequest.auth
 - **`types`** — resolve 4 tsgo errors in cli
 - **`vitest`** — drop orphan base config + fix stale isolate comment
 - **`scripts`** — restore spawnSync import in bootstrap-firewall-deps
-- **`deps`** — bump hono to 4.12.18, fast-uri to 3.1.2 for CVE patches
-- **`lint`** — dlx test polish — import-type, max-file-lines, sort
 - **`types`** — resolve noUncheckedIndexedAccess + noUncheckedSideEffectImports
-- **`lint`** — generate-report.test — max-file-lines legitimate bypass
-- **`lint`** — cmd-manifest-cdxgen — exported helpers + cached for-loop
-- **`lint`** — telemetry — prefer-function-declaration + cached-for-loop
-- **`lint`** — mark Set-iteration for-of as intentional in 3 sites
 - **`hook`** — mark progress-bar stderr writes as intentional
-- **`lint`** — clear remaining socket/\* rule violations in cli package
-- **`lint`** — scripts and package-builder
-- **`lint`** — cache array.length in build-infra for-loops
 - **`sync`** — cascade prefer-cached-for-loop let/const preservation patch
-- **`lint`** — sort-source-methods - reorder 20 src files + oxfmt drift
 - **`tests`** — restore vi.mock named exports for node:fs / node:os after import refactor
-- **`lint`** — autofix sort-source-methods (13 files) + cascade canonical script fixes
-- **`lint`** — close out non-blocked socket-cli rules
 - **`types`** — no-explicit-any — final 29 src files (1-site fixes, brings count to 0)
 - **`types`** — no-explicit-any — 11 src files, mostly 2-3 sites each
 - **`types`** — no-explicit-any — 7 src files (pull-request, update-manifest, scan-from-github, lockfile-readers, errors, package-alert, shallow-score)
@@ -1440,29 +1374,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`types`** — consistent-type-imports — hoist inline import() in types.mts
 - **`imports`** — node-builtin — 5 files converted to named imports
 - **`imports`** — node-builtin — 6 files converted to named imports
-- **`lint`** — sort-named-imports — inline-disable intentional domain-grouped barrel import
-- **`lint`** — max-file-lines — file-level bypass on 86 oversized files
-- **`lint`** — no-fetch-prefer-http-request — inline-disable 5 dev-script fetches that need raw Response
-- **`lint`** — apply 2nd-pass oxlint autofixes — sort-source-methods reorder 3 files
-- **`lint`** — personal-path-placeholders — file-level disable on fixture tests + replace example usernames in src comments
-- **`lint`** — prefer-exists-sync — rewrite 2 fileExists helpers + inline-disable legitimate metadata reads
 - **`oxlint`** — rewrite overrides patterns as **/scripts/** etc.
-- **`lint`** — export-top-level-functions — collapse 5 export-block aggregators
-- **`lint`** — apply oxlint autofixes — export-top-level-functions / prefer-exists-sync / prefer-node-builtin-imports / sort-equality-disjunctions / prefer-undefined-over-null
 - **`no-status-emoji`** — cascade rule self-disable + bypass scripts/tests
-- **`lint`** — re-cascade canonical oxlint plugin rules — undo self-corruption
 - lint --fix autofix pass + cascade canonical check-paths.mts
 - **`tests`** — align 39 assertions with null→undefined flip
 - **`types,quality`** — revert Object.create(undefined) regression + finish null→undefined flip
 - **`cli`** — register `mcp` in canonical bucketed-commands set
-- **`deps`** — bump hono via override to ≥4.12.16 (CVE patched)
-- **`hooks`** — release-workflow-guard — multi-root dry-run resolution
 - **`hook`** — release-workflow-guard — derive project dir from script path
-- **`hooks`** — tighten npx-scanner regex to skip identifier/key contexts
-- **`deps`** — override ip-address >=10.1.1 (GHSA-v2v4-37r5-5v8g)
-- **`hooks`** — anchor hook commands + project paths to $CLAUDE_PROJECT_DIR
 - **`test`** — repair four CI-failing assertions on main
-- **`deps`** — regenerate pnpm-lock.yaml for catalog drift
 - **`cli`** — stop socket cdxgen from silently shipping empty-components SBOMs (#1266)
 - **`cli`** — error messages in env/ + constants/ + sea-build scripts (#1258)
 - **`cli`** — error messages in utils/ misc (flags, fs, git, npm, promise, terminal) (#1260)
@@ -1471,7 +1390,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`cli`** — error messages in commands/ (14 commands + their tests) (#1255)
 - **`cli`** — align test/ error messages with 4-ingredient strategy (#1259)
 - **`cli`** — return org slug, not display name, from org resolution (#1232)
-- **`deps`** — bump nanotar 0.2.0 → 0.2.1 to patch path traversal (CVE-2025-69874) (#1250)
 - **`debug`** — log structured HTTP error details instead of raw response (#1233)
 - **`test`** — pass --passWithNoTests to vitest (#1240)
 - **`scan`** — surface GitHub rate-limit errors in bulk repo scan (#1235)
@@ -1479,33 +1397,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`api`** — include request path in API error messages (#1224)
 - **`api`** — distinguish 401 (auth failure) from 403 (permissions) (#1226)
 - **`scan`** — respect projectIgnorePaths from socket.yml (#1225)
-- **`ci`** — replace close/reopen hack with workflow_dispatch for bot PRs (#1210)
 - **`build`** — improve asset download resilience against rate limits (#1201)
-- **`config`** — align .npmrc and pnpm-workspace.yaml for pnpm v11 (#1198)
-- **`hooks`** — normalize platform keys and strip host prefix from repository (#1194)
-- **`hooks`** — use strings for binary file scanning in pre-push (#1196)
-- **`hooks`** — update zizmor repo from woodruffw to zizmorcore (#1191)
-- **`deps`** — bump vite to 7.3.2 (security) (#1168)
-- **`ci`** — harden weekly-update — allowedTools, two-phase update, diff validation (#1159)
 - move minimum-release-age to pnpm-workspace.yaml (#1158)
 - **`build`** — fix runtime bugs in build scripts (#1148)
 - upgrade handlebars to 4.7.9, fix pre-push hook (#1134)
 - upgrade brace-expansion to 5.0.5 (CVE-2026-33750) (#1132)
-- **`ci`** — rebuild weekly-update.yml with proper YAML and features
 - harden GitHub Actions workflows (#1129)
-- **`ci`** — update pnpm/action-setup to Node 24 (58e6119)
 - **`skill`** — update updating skill to use pnpm run update and check --all
-- **`ci`** — add timeout-minutes and shell declarations to workflows
-- **`ci`** — add explicit shell: bash declarations to provenance workflow
 - **`types`** — remove unused import and fix context tests
 - **`security`** — make missing SHA-256 checksums a hard error
-- **`ci`** — add complete stub package with JS implementation for iocraft
-- **`ci`** — create stub packages before pnpm install
-- **`ci`** — setup pnpm before node to enable cache
 - **`types`** — resolve TypeScript type errors in iocraft and test helpers
 - **`tui`** — fix border rendering in iocraft column layouts
-- **`deps`** — remove stale restore-cursor patch
-- **`deps`** — remove stale React/Ink dependencies after iocraft migration
 - **`test`** — replace unsafe fs.rm with safeDelete
 - **`cli`** — improve cache coherency and notification handling
 - **`cli`** — handle undefined returns from getMajor in optimize
@@ -1520,7 +1422,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - properly disable dependabot (#1119)
 - **`publish`** — rename workflow to provenance.yml for trusted publishing
 - **`publish`** — restore socket package and fix paths
-- **`ci`** — read base version from cli-package template
 - **`publish`** — add missing check-version-consistency script and update docs
 - **`sfw`** — use separate versions for SEA and npm CLI distributions
 - address quality scan findings (Round 1)
@@ -1530,9 +1431,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`quality-scan`** — remove socket-btm cross-project references
 - **`cli`** — replace broken --dry-run with meaningful preview output
 - **`test`** — inject inlined env vars in test setup for e2e tests
-- **`ci`** — remove integration tests job (no integration tests exist)
-- **`ci`** — simplify CI workflow and remove references to non-existent directories
-- **`ci`** — use pnpm/action-setup to read packageManager from package.json
 - **`quality`** — add try-catch for JSON.parse in build scripts
 - **`quality`** — add defensive checks and fix Windows ARM64 Python detection
 - quality scan fixes - NaN validation, logging conventions, docs
@@ -1544,8 +1442,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`sea`** — fix sfw extraction from VFS with node_modules structure
 - **`sea`** — add Socket Firewall (sfw) to VFS bundling
 - **`scan`** — correct policy strictness comparison in alert aggregation
-- **`hooks`** — check only new commits in pre-push, not all since release
-- **`hooks`** — use portable for loop instead of process substitution in pre-push
 - **`cli`** — address quality scan findings round 10
 - **`package-builder`** — correct dependencies for cli-with-sentry template
 - **`cli`** — restore 'as unknown as' pattern in type assertions
@@ -1569,13 +1465,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`cli`** — address quality scan findings round 4 (part 1)
 - **`cli`** — address quality scan findings round 3
 - **`cli`** — capture timestamp at function entry for accurate TTL
-- **`ci`** — add required .env.precommit for pre-commit hooks
-- **`ci`** — improve workflow reliability and security validation
 - **`cli`** — add input validation and bounds checking
 - **`cli`** — resolve race conditions and improve locking mechanisms
 - **`cli`** — resolve memory leaks and resource cleanup issues
 - **`cli`** — fix getMaxOldSpaceSizeFlag default calculation
-- **`hooks`** — add prerequisite checks to pre-commit hook
 - **`cli`** — address quality scan findings round 11
 - **`cli`** — address quality scan findings round 10
 - **`cli`** — address quality scan findings round 9
@@ -1595,10 +1488,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`cli`** — improve type safety in spec parsing and overrides
 - **`scan`** — resolve critical bugs in scan output handlers
 - **`build`** — remove redundant warning emojis from logger.warn calls
-- **`deps`** — always update Socket packages in update script (#1059)
-- **`deps`** — add restore-cursor signal-exit v4 compatibility patch
-- **`deps`** — update @socketsecurity/lib to v5.5.3 and add signal-exit v4 compatibility patches
-- **`deps`** — update Socket packages regardless of taze result
 - prevent heap overflow in large monorepo scans (#1041)
 - remaining fixes from PR 1025 (#1027)
 - ensure build directory exists before writing yoga placeholder
@@ -1612,7 +1501,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`sea`** — add exit code checking for binject spawn
 - **`build`** — use bracket notation for TypeScript index signatures
 - **`build`** — add GitHub API authentication to avoid rate limits
-- **`deps`** — Remove http2 module dependency from @sigstore/sign
 - **`cli`** — add per-platform caching for parallel SEA builds
 - **`build-infra`** — add GitHub token authentication to API requests
 - **`build-infra`** — Add GitHub API headers to httpRequest calls
@@ -1623,17 +1511,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`sea`** — update binject command and node-smol URL format
 - **`debug`** — use correct debug functions with proper namespacing
 - **`scan`** — use Octokit for GitHub API calls with proper error handling
-- **`ci`** — add Node.js and pnpm setup immediately after checkout in all workflows
 - **`sea`** — compute rootPath in getBinjectPath function
 - **`build`** — use yoga-sync.mjs from socket-btm and integrate binject
 - **`cli`** — resolve socket-lib external paths at any nesting depth
-- **`bootstrap`** — remove non-existent polyfill imports and fix build errors
 - **`fix`** — add ecosystems support to coana CLI calls
 - **`fix`** — add --limit as alias for --pr-limit
 - **`flags`** — make --exclude and --include visible in socket fix command
 - **`dlx`** — support Coana CLI binary execution via SOCKET_CLI_COANA_LOCAL_PATH
 - **`docs`** — remove hardcoded personal paths and realistic API key examples
-- **`hooks`** — limit pre-push AI attribution check to commits since latest release
 - upload manifest files relative to target for coana-fix and perform-reachability-analysis
 - **`self-update`** — implement bootstrap binary path via IPC handshake
 - **`api`** — improve CVE to GHSA conversion caching and error messaging
@@ -1645,10 +1530,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`build`** — inline environment variables to prevent package.json errors
 - **`shadow`** — use static imports for shadow bins instead of dynamic require
 - **`spawn`** — add which() resolution for command spawns
-- **`deps`** — fix bin entries and standardize engine requirements
 - **`ui`** — change error badge text from red to white on red background
-- **`deps`** — resolve ANSI bundling compatibility issues
-- **`bootstrap`** — use consistent naming for published build flag
 - **`dev`** — improve fresh clone developer experience
 - **`build`** — fix bundle dependencies validation and add missing deps
 - **`build`** — add TypeScript dependency and fix socket-lib bundling
@@ -1657,15 +1539,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`build`** — fix bundle dependencies validation
 - **`setup`** — verify gh CLI is accessible after installation
 - **`cli`** — add missing subcommands to help menu validation
-- **`hooks`** — improve AI attribution detection in pre-push hook
-- **`hooks`** — use printf for colored output in pre-push hook
 - **`workflows`** — resolve all zizmor security findings
 - **`socket`** — correct package.json metadata and build script
 - **`socket`** — add missing version defines to bootstrap build config
 - **`cli`** — add src to files array for bin entry
 - **`cli`** — rename duplicate dev script to dev:watch for clarity
 - **`types`** — resolve TypeScript errors in package manager commands
-- **`hooks`** — improve git hook compatibility and formatting
 - **`smol-builder`** — fix spawn import in compress-binary script
 - **`smol-builder`** — fix smokeTestBinary API mismatch
 - **`smol-builder`** — standardize brotli2c naming to socketsecurity\_ prefix
@@ -1686,22 +1565,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`smol-builder`** — copy brotli header to src directory
 - **`smol-builder`** — update hardcoded patch reference to use numbered prefix
 - **`test`** — correct import path for confirm prompt
-- **`bootstrap`** — use major version only for CLI download spec
 - **`smol`** — implement robust cross-platform strip with capability detection
 - **`smol`** — use platform-specific strip flags for binary optimization
 - **`smol`** — use shell for execCapture and enable fail-fast for builds
-- **`bootstrap`** — show Socket CLI version instead of Node.js version
-- **`bootstrap`** — skip preflight on --version for instant response
 - **`smol`** — skip CLI bootstrap for basic Node.js operations
-- **`ci`** — make WASM optional in SEA builds with graceful fallback
-- **`ci`** — remove ai-cache-valid references from build-sea workflow
-- **`ci`** — comment out socketbin-cli-ai references in build-sea workflow
-- **`ci`** — update ONNX Runtime artifact verification to check for .mjs files
 - **`onnx`** — add existence checks to patch verification
 - **`onnx`** — verify wasm_post_build.js patch in cache validation
 - **`onnx`** — clean stale cache after GitHub Actions restoration
 - **`onnxruntime`** — patch wasm_post_build.js in both source and build directories
-- **`bootstrap`** — remove unnecessary empty log after spinner completes
 - **`test`** — reduce thread count on macOS CI to prevent SIGABRT
 - **`types`** — resolve exactOptionalPropertyTypes issue in UpdateStore
 - **`update`** — only show content-type warning in debug mode on parse failure
@@ -1710,8 +1581,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`types`** — update handleApiCall signature for SDK v3 compatibility
 - **`types`** — revert to use SDK v3 method names in type references
 - **`types`** — update SDK operation names to match API types
-- **`deps`** — update all packages to use catalog for @socketsecurity/lib
-- **`lint`** — fix all lint errors and update dependencies
 - **`build`** — externalize Socket dependencies and add bundle validation test
 - update for @socketsecurity/lib 3.0.5 compatibility
 - **`build`** — use default export workaround for CommonJS imports with --import flag
@@ -1719,18 +1588,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`smol`** — use Module.prototype.require.bind for virtual module
 - **`smol`** — use Module.createRequire for proper module context
 - **`onnx`** — patch wasm_post_build.js to handle modern Emscripten
-- **`bootstrap`** — correct stream/promises module path for smol builds
-- **`ci`** — remove expression from build-models job name
 - **`models`** — correct --all flag logic to build both models
-- **`ci`** — build all AI models in workflow
 - **`models`** — check for all expected ONNX files during conversion
 - **`models`** — fix method variable scope in quantization fallback
-- **`ci`** — remove invalid job-level matrix conditions from workflows
 - **`onnxruntime`** — remove EXPORT_ES6=0 patch for threading compatibility
 - **`onnxruntime`** — enable threading and SIMD for v1.21.1 compatibility
-- **`ci`** — mark ONNX Runtime WASM build as non-blocking
 - **`models`** — update INT4 quantization API for onnxruntime 1.20+
-- **`ci`** — install optimum[onnxruntime] for ONNX model export
 - **`onnx`** — remove ES module type from onnxruntime package.json
 - **`socket`** — remove bootstrap-smol.js from npm package build
 - **`patch`** — remove unused imports after duplicate logging removal
@@ -1738,10 +1601,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`path`** — handle UNC paths correctly on Windows
 - **`path`** — add Windows validation for Unix-style paths in findNpmDirPathSync
 - **`wasm`** — update INT4 quantization to use matmul_nbits_quantizer API
-- **`ci`** — pin onnxruntime>=1.20.0 to ensure INT4 quantization support
-- **`ci`** — upgrade onnxruntime and add INT4 quantization tools
-- **`ci`** — uncomment ONNX Runtime build steps to fix bash syntax error
-- **`bootstrap`** — eliminate spurious error message on successful CLI execution
 - improve bootstrap error handling
 - **`completion`** — resolve CLI package root correctly for tab completion script
 - **`scan`** — flatten SDK options and make repo parameter conditional
@@ -1754,19 +1613,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`cli-with-sentry`** — add missing esbuild config for shadow-npm-inject
 - **`cli-with-sentry`** — add missing shadow-npm-inject build step
 - **`build`** — skip onnxruntime build (temporarily disabled)
-- **`gitignore`** — allow docs/build directory without requiring -f flag
 - resolve TypeScript errors after nodeDebugFlags removal
 - remove nodeDebugFlags references
 - **`build`** — align platform/arch flags in build-all-binaries
 - **`build`** — disable minifySyntax across all esbuild configs
 - **`socket`** — disable minifySyntax to prevent async function boundary corruption
-- **`ci`** — align smol cache keys with build-smol.yml in publish-socketbin.yml
-- **`ci`** — use SEA binary cache from build-sea.yml in publish-socketbin.yml
 - **`sbom-generator`** — resolve exactOptionalPropertyTypes type errors
 - **`test`** — use proper function syntax for Vitest constructor mocks
-- **`lint`** — resolve lint errors and remove dead getInternals code
 - **`node-sea-builder`** — add missing crypto import
-- **`bootstrap`** — improve error handling for CLI download failures
 - **`cli`** — update getBinCliPath to use dist/index.js instead of bin/cli.js
 - **`environment`** — remove unused createRequire import
 - **`environment`** — lazy-load bun lockfile parser
@@ -1777,30 +1631,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`cli-with-sentry`** — use dist/index.js and validate cli.js.bz
 - **`cli-with-sentry`** — use socket-with-sentry bin name
 - **`cli-with-sentry`** — move @sentry/node to dependencies
-- **`ci`** — validate yoga WASM cache instead of building on miss
-- **`ci`** — publish from package directories and build yoga WASM on cache miss
-- **`ci`** — replace obsolete external cache with yoga-layout WASM cache
 - **`scripts`** — update dist validation to check for index.js and cli.js.bz
 - **`scripts`** — update pre-publish-validate to accept package path
 - **`scripts`** — remove duplicate colors declaration in pre-publish-validate
-- **`ci`** — use 'pnpm run build' instead of non-existent 'build:dist'
 - **`packages`** — run pnpm pkg fix to normalize package.json fields
 - **`socketbin`** — add repository field to all package.json files
-- **`ci`** — add --tag latest to all npm publish commands for prerelease versions
-- **`ci`** — use semver to extract X.Y.Z from package version before appending timestamp
 - **`scripts`** — skip socketbin-cli-ai version check (not published by workflow)
 - **`scripts`** — skip root package.json check for socketbin versions
-- **`ci`** — install dependencies before version consistency check
-- **`ci`** — use bash shell for verify binary step on Windows
-- **`ci`** — skip smol build when method=sea and use bash shell for Windows compatibility
-- **`ci`** — use 2-core runners in publish-socketbin for better availability
-- **`ci`** — comment out ONNX runtime in build-sea workflow
-- **`ci`** — correct ONNX package paths in build-sea workflow
-- **`ci`** — correct SEA builder package name in publish-socketbin
-- **`ci`** — add CLI build step before SEA binary build in publish-socketbin
 - **`scripts`** — prepublish-socketbin should create bin/socket not bin/cli
-- **`ci`** — align publish-socketbin binary paths with build-sea naming
-- **`ci`** — upgrade actions/cache to v4.3.0 in publish-socketbin workflow
 - **`scripts`** — improve type check error output in check script
 - **`cli`** — add missing INLINED_SOCKET_CLI_PYCLI_VERSION to ENV
 - **`onnxruntime`** — correct EXPORT_ES6=0 to output .js files instead of .mjs
@@ -1810,15 +1648,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`test`** — fix self-update tests by mocking canSelfUpdate and cleaning up leftover directories
 - **`build`** — add missing INLINED_SOCKET_CLI_CDXGEN_VERSION to esbuild config
 - **`onnxruntime`** — enable WASM threading to fix MLFloat16 build errors
-- **`bootstrap`** — remove logger usage from smol bootstrap for early initialization
 - **`tests`** — fix GitLab provider mock constructor
 - **`tests`** — fix npm-config mock constructor to work with 'new' operator
 - **`scan-reach`** — handle empty string and undefined outputPath properly
 - **`cli`** — inline build-time constants with post-bundle replacement plugin
 - **`build-infra`** — escape regex patterns for string literal context in Unicode transform
 - **`onnxruntime`** — pass WASM_ASYNC_COMPILATION via CMake defines
-- **`ci`** — use package version for WASM workflow cache keys
-- **`ci`** — use package version for ONNX Runtime cache key
 - **`onnxruntime`** — update Eigen hash patch for v1.21.1 deps.txt format
 - **`onnxruntime`** — re-clone if Eigen patch not applied
 - **`onnxruntime`** — clean CMake cache when applying Eigen hash patch
@@ -1830,14 +1665,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`onnxruntime`** — update to v1.21.1 to fix Eigen hash mismatch
 - remove yoga-layout patch reference from root package.json
 - **`cli`** — handle missing yoga-layout WASM files gracefully
-- **`bootstrap`** — avoid logger initialization before stdout is ready
 - **`cli`** — correct ESLint config paths to monorepo root
 - **`build`** — read socketbin spec from actual package.json
 - **`compress`** — align cache key generation with socket-lib
 - **`scan`** — resolve TypeScript errors from merged PRs
-- **`lint`** — exclude test fixtures from Biome linting
 - **`git`** — correct import path for paths module
-- **`bootstrap`** — load Intl polyfill before logger to prevent smol build failure
 - **`test`** — delete obsolete bootstrap test and fix provider factory assertions
 - **`test`** — add missing paths mock for provider factory tests
 - **`test`** — fix constructor mocks and add missing canSelfUpdate export
@@ -1845,71 +1677,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`types`** — resolve TypeScript errors in GitLab provider
 - **`cli-with-sentry`** — write esbuild output and add gitignore
 - **`smol`** — fix MODULE_NOT_FOUND error for socketsecurity bootstrap
-- **`ci`** — disable pip cache in build-wasm to prevent cache failures
-- **`ci`** — correct artifact paths in build-sea workflow
-- **`ci`** — correct artifact paths in build-smol workflow
 - **`cli`** — suppress esbuild warnings in CLI build
-- **`ci`** — correct socket package verification in build-sea workflow
-- **`ci`** — remove CLI build from build-deps job in SEA workflow
-- **`ci`** — add detailed cache diagnostics to build-sea workflow
 - **`ai`** — update onnxruntime to 1.21.0+ for INT4 quantization support
-- **`ci`** — add WASM asset verification before CLI build in SEA workflow
-- **`ci`** — include bootstrap deps in SEA binary cache key
-- **`ci`** — include bootstrap deps in smol binary cache key
 - **`smol`** — add diagnostic logging for bootstrap file location
-- **`ci`** — correct artifact download path and add relocation logic
-- **`ci`** — add verification step for downloaded build artifacts
 - **`smol`** — fail build if bootstrap cannot be copied
-- **`lint`** — remove unused variables and parameters
 - **`scripts`** — replace undefined runCommandQuiet with spawn
 - **`socket-fix`** — add missing import and fix optional prNumber type
 - **`socket-fix`** — add remote branch cleanup on PR creation failure
 - **`smol`** — optimize build flow and fix macOS ARM64 signing
-- **`ci`** — split dependency builds from matrix parallelization
 - **`sea`** — use versionSemver from node-version.json to avoid double 'v' prefix
 - **`sea`** — decompress cli.js.bz instead of using build/ intermediate
 - **`sea`** — auto-build CLI package when missing
-- **`ci`** — build bootstrap package before socket and smol/sea builders
 - **`socket`** — reference bootstrap files from packages/bootstrap
 - **`e2e`** — check JS binary existence before running tests
 - **`e2e`** — error and exit if binary doesn't exist when explicitly requested
 - **`e2e`** — disable Node.js binary forwarding in .env.test
 - **`cli`** — remove unnecessary force: true from safeDeleteSync calls
-- **`bootstrap`** — export .config/node-version.mjs for workspace imports
 - **`cli`** — auto-enable RUN_E2E_TESTS when running e2e.mjs
 - **`socket`** — handle prefix-only modules in smol transform
 - **`socket`** — correct internal module paths in smol transform
-- **`ci`** — skip cache restore when force rebuild is requested
 - **`node-smol-builder`** — use socket package bootstrap not local stub
 - **`node-smol-builder`** — add placeholder bootstrap for socketsecurity patch
 - **`sea-builder`** — add shell execution for postject on Windows
 - **`sea-builder`** — use direct postject path instead of pnpm exec
 - **`sea-builder`** — add postject as catalog devDependency
-- **`ci`** — enable cross-OS cache sharing for Windows builds
-- **`ci`** — pass --force flag to WASM build scripts when force rebuild requested
-- **`ci`** — move Windows WASM cache check before build attempt
-- **`ci`** — require WASM cache for Windows SEA builds
-- **`ci`** — add wasm-opt to PATH for Windows Emscripten builds
 - **`sea`** — strip leading '--' from pnpm arguments for correct parsing
 - **`sea`** — enable cross-platform SEA builds using prebuilt Node binaries
-- **`ci`** — limit SEA builds to native architectures only
-- **`ci`** — correct SEA binary build for cross-platform compilation
 - **`build`** — resolve SEA build failures across platforms
 - **`packages`** — correct spawn result access in package build scripts
 - **`build`** — correct spawn result access in build orchestration scripts
 - **`wasm`** — correct spawn result property access in WASM build scripts
 - **`scripts`** — resolve duplicate spawn import and incorrect result access
-- **`ci`** — remove pip upgrade to improve Python dependency caching
 - move .node-source to packages/node-smol-builder/build/
 - **`onnx`** — output to dist/ directory instead of build/wasm/
-- **`ci`** — save ONNX build cache even on failure
 - **`onnx`** — fix second readCheckpoint usage in export stage
 - **`onnx`** — use correct checkpoint function name
 - **`build`** — enable WASM features in wasm-opt optimization
 - **`onnx`** — locate WASM files in MinSizeRel subdirectory
 - **`smol`** — use compressed binary in Final distribution directory
 - **`build`** — use fs.statfs for reliable cross-platform disk space check
-- **`ci`** — use requirements.txt for proper pip caching
 - **`onnx`** — upgrade to v1.23.2 to resolve Eigen hash mismatch
 - **`wasm`** — correct checkDiskSpace parameter units (GB not bytes)
 - **`onnx`** — use build.sh script instead of direct CMake
@@ -1920,25 +1726,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`onnx-runtime`** — auto-clean stale checkpoints and use existsSync
 - **`yoga-layout`** — auto-clean stale checkpoints when artifacts missing
 - **`yoga-layout`** — throw errors instead of warnings on missing artifacts
-- **`ci`** — add debugging output for WASM build artifact verification
 - **`build-infra`** — replace exec wrappers with direct spawn calls
 - **`ai`** — add progress indicator for brotli compression
 - **`build-infra`** — add exec wrapper to builder classes
-- **`ci`** — fail builds when WASM artifacts are missing
 - **`ai`** — define originalSize/quantSize before use
-- **`ci`** — add cache artifact verification to WASM builds
 - **`onnx`** — use proper spawn command/args pattern
 - replace build-exec with spawn in remaining builder packages
 - **`onnx`** — replace build-exec with spawn
-- **`ci`** — replace shasum with sha256sum for Windows compatibility
-- **`ci`** — use standard ubuntu-latest runners for WASM builds
 - **`node-smol`** — use console.log instead of logger.log in binary smoke test
 - **`cli-ai`** — make INT4 quantization optional with graceful fallback
-- **`ci`** — correct INT4 quantization import and remove invalid autocrlf
-- **`ci`** — remove push triggers from build-wasm to avoid runner contention
 - **`cli-ai`** — correct import path for matmul_4bits_quantizer
-- **`ci`** — require onnxruntime>=1.20.0 for INT4 quantization
-- **`ci`** — use optimum[onnx] instead of optimum[exporters]
 - **`build-infra`** — use result.code instead of result.status
 - **`build-infra`** — import printSubstep for debug logging
 - **`build-infra`** — use shell for Python detection on all platforms
@@ -1948,19 +1745,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`build-infra`** — restore shell: WIN32 option in Python check
 - **`build-infra`** — use direct python3 execution without shell
 - **`build-infra`** — add detailed error logging to Python check
-- **`ci`** — add Python verification step for debugging
-- **`ci`** — setup Python for all platforms in smol build
-- **`ci`** — add Python 3.11 setup for WASM builds in SEA job
 - **`build-infra`** — remove duplicate imports in tool-installer
 - **`node-smol-builder`** — replace build-exec with spawn wrappers
-- **`ci`** — add WASM asset restoration to SEA build job
-- **`ci`** — correct package names and cache key generation
-- **`ci`** — ensure dist directories exist before verification
-- **`ci`** — include node-smol-builder patches and additions in cache keys
-- **`ci`** — update patches directory path from build/patches to patches
-- **`ci`** — update actions/cache to v4.3.0
-- **`ci`** — add workflow_call trigger to build-wasm workflow
-- **`ci`** — add WASM asset preparation before CI tests
 - **`cli`** — remove unused imports in optional-models.mts
 - **`e2e`** — prompt for sea and smol binaries separately
 - **`test`** — update tests for read-only ENV properties from @socketsecurity/lib
@@ -1981,12 +1767,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - remove accidental gitlinks for yoga source directories
 - **`cli`** — make path tests cross-platform compatible
 - **`build`** — use fileURLToPath for cross-platform path comparison in esbuild
-- **`ci`** — prevent diagnostic checks from stopping script execution
-- **`gitignore`** — restore dist/ ignore and update build artifact documentation
 - **`test`** — use tmpdir for patch discover test to avoid spawn failures
-- **`ci`** — remove del-cli from test-setup-script
-- **`ci`** — remove redundant pnpm install from test-setup-script
-- **`ci`** — replace rm -rf with cross-platform del-cli command
 - **`cli`** — normalize paths for Windows compatibility in completion and tildify
 - **`cli`** — update NODE_VERSION to getNodeVersion()
 - **`cli`** — skip update checks in test environments
@@ -1995,7 +1776,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`cli`** — update ONNX runtime extraction
 - **`build-infra`** — improve Emscripten and build execution
 - **`scripts`** — add missing colors import in verify-node-build
-- **`deps`** — use socket-lib 1.3.5 with Windows Proxy fix
 - **`tests`** — pass undefined env to avoid multiple process.env spreads
 - **`tests`** — revert to working spawn pattern from commit 39ee9465
 - **`tests`** — use Proxy in test mode to preserve Windows env behavior
@@ -2003,12 +1783,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`tests`** — omit env option when no custom env vars provided
 - **`tests`** — avoid spreading process.env in spawn calls
 - **`tests`** — preserve process.env proxy for Windows
-- **`ci`** — resolve dependency caching issue causing test failures
 - **`cli`** — resolve TypeScript strict mode errors
-- **`ci`** — use consistent pnpm --filter pattern in test setup
-- **`ci`** — use pnpm --filter to run scripts in monorepo context
-- **`ci`** — remove redundant cd commands in workflow scripts
-- **`deps`** — correct @socketsecurity/lib references in workspace packages
 - **`scan`** — add optional chaining for spinner safety
 - **`patch`** — wrap logger output in outputKind checks for JSON/markdown
 - **`patch`** — use optional chaining for spinner to handle null in tests
@@ -2025,7 +1800,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`dlx`** — skip cache entries with invalid metadata in listDlxCache
 - **`tests`** — correct UNKNOWN_ERROR import in errors.test.mts
 - **`tests`** — add missing await to async operations in optimize tests
-- **`ci`** — clear Vitest cache before running tests
 - **`test`** — correct mock setup for scan tests
 - **`test`** — correct mock setup for repository output tests
 - **`test`** — correct mock setup for output-security-policy tests
@@ -2034,7 +1808,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`test`** — correct mock setup for output-dependencies tests
 - **`tests`** — correct import paths and logger references in organization tests
 - **`tests`** — remove invalid await from destructuring in scan tests
-- **`config`** — handle Buffer return from safeReadFileSync in findSocketYmlSync
 - **`tests`** — update API requirements output test expectations
 - **`tests`** — resolve shadow/links PATH and Windows test issues
 - **`tests`** — correct socket/alerts mock paths
@@ -2073,8 +1846,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - update @socketbin/cli packages to available version 0.0.0
 - replace fragile regex parsing with file-based JSON extraction in coana discovery
 - resolve pre-existing unit test failures
-- **`ci`** — remove coverage-script and coverage-report-script
-- **`ci`** — update workflow SHAs to d8ff3b05
 - update build scripts to use pnpm filter for monorepo
 - link to local @socketsecurity/sdk for development Replace @socketsecurity/sdk version dependency with link to sibling socket-sdk-js directory. Remove SDK patch as types are now fixed at source. This enables development on SDK and CLI simultaneously and ensures we're testing against the latest SDK changes.
 - patch @socketsecurity/sdk@2.0.1 to correct type definition paths The SDK package.json incorrectly references index.d.mts and testing.d.mts but the actual files are index.d.ts and testing.d.ts. This patch corrects the types field to point to the correct .d.ts files. Note: This fixes the "could not find declaration file" errors, but there are still type export issues with SDK v2.0.1 that need to be addressed. Socket CLI uses SocketSdkSuccessResult and other types that are not being properly exported from the SDK index despite being defined in types.d.ts.
@@ -2111,6 +1882,246 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - add file extension filtering to affected test mapper - Skip non-code files (images, docs, etc.) in test mapping - Prevents running all tests for non-code file changes - Improves test performance
 - resolve ESLint and TypeScript linting issues Fix inline comment positioning (line-comment-position): - Move inline comments to separate lines above code - Affected: cache-strategies.mts and all test files Fix TypeScript index signature access: - Change dot notation to bracket notation for metadata properties - Affected: performance.test.mts Add ESLint disable comments: - Disable no-control-regex for ANSI color code tests - Affected: output-formatting-tables.test.mts All files now pass `pnpm run check` successfully.
 - use Object.create(null) for ResultErrorOptions Replace **proto**: null in typed object literal with Object.create(null) Follows CLAUDE.md pattern for empty null-prototype objects
+- improve organization capabilities detection for plan variants
+- enterprise plan filter (#785) Signed-off-by: Ahmad Nassri <email@ahmadnassri.com> Co-authored-by: John-David Dalton <jdalton@users.noreply.github.com>
+- handle pnpm frozen-lockfile in CI for optimize command In CI environments, pnpm automatically runs with --frozen-lockfile which prevents lockfile updates. When the optimize command tries to add overrides and update the lockfile, it fails with ERR_PNPM_LOCKFILE_CONFIG_MISMATCH. Added explicit --no-frozen-lockfile flag when running pnpm install in CI mode to allow the lockfile to be updated with Socket.dev overrides.
+- Add fallback for npm exec path detection When constants.npmExecPath from the published registry doesn't exist or isn't executable, fall back to using whichBin to find npm. This fixes CI failures where the published version's npm-exec-path module might not correctly detect npm in certain environments.
+- Add defensive check for whichBinSync return value The published version of @socketsecurity/registry may return a string when only one result is found even with all: true. This defensive check handles both cases to ensure compatibility with the current published version and future versions that properly return an array.
+
+### Internal
+
+- **`check`** — add external-tools-release-tags-resolve gate
+- **`hooks`** — add claude-md-size-guard and no-revert-guard
+- **`ci`** — add updating skill and weekly-update workflow
+- **`deps`** — add @socketbin packages to update script
+- **`ci`** — add force rebuild option to all workflow_dispatch workflows
+- **`config`** — use EditableJson for non-destructive config saving
+- **`bootstrap`** — add SOCKET_CLI_LOCAL_PATH support for testing
+- **`bootstrap`** — add Brotli compression for all bootstrap variants
+- **`ci`** — add quantization level option to WASM workflow
+- **`bootstrap`** — add IPC handshake support for subprocess detection
+- **`ci`** — auto-update socketbin versions in provenance workflow
+- **`bootstrap`** — build SEA bootstrap in build script
+- **`bootstrap`** — add SEA bootstrap for minimal SEA binaries
+- **`ci`** — add npm@latest for trusted publishing support
+- **`bootstrap`** — restore logger with lazy initialization support
+- **`bootstrap`** — add Unicode property escape transforms for --with-intl=none
+- **`ci`** — use Alpine Docker container for smol musl builds
+- **`ci`** — add Alpine (musl) platform support to SEA and smol builds
+- **`bootstrap`** — add system node detection and forwarding control
+- **`bootstrap`** — add system node detection and forwarding control
+- **`bootstrap`** — create shared bootstrap package for npm and smol builds
+- **`ci`** — build socket package bootstrap before SEA and smol builds
+- **`ci`** — add stripped binary cache checkpoint for smol builds
+- **`ci`** — unify caching strategy across all build workflows
+- **`ci`** — cache ONNX Runtime intermediate build artifacts
+- **`ci`** — add GitHub Actions grouping to WASM and SEA workflows
+- **`ci`** — add Ninja installation for smol builds
+- **`ci`** — add concurrency control to build workflows
+- **`ci`** — reuse cached binaries from build-socketbin.yml
+- **`ci`** — add cache restoration and fallback WASM builds
+- **`ci`** — add @socketbin build workflow with caching
+- **`ci`** — add WASM build workflow with caching
+- **`config`** — add shared configuration architecture for monorepo
+- **`ci`** — complete dependency caching for all test jobs
+- **`ci`** — add dependency caching to GitHub Actions
+- **`ci`** — implement critical workflow optimizations
+- **`ci`** — add Emscripten SDK and pip caching to build-sea workflow
+- **`ci`** — add Emscripten SDK and pip package caching to WASM workflow
+- **`ci`** — add caching to build-deps jobs
+- **`ci`** — increase max parallel builds to 6 for SEA and smol workflows
+- **`ci`** — add pip cache for Python dependencies in AI models build
+- **`ci`** — optimize runner allocation and switch to Ninja
+- **`ci`** — optimize binary builds with ccache and faster runners
+- **`ci`** — refresh external-tools pins to fleet data format
+- **`config`** — repo.type is mono, not monorepo
+- **`deps`** — bump vulnerable packages to soaked patched versions
+- **`deps`** — pin rolldown to soaked 1.0.3, matching the fleet baseline
+- **`lint`** — migrate socket-hook markers to socket-lint prefix
+- **`deps`** — migrate source to lib-stable 6.0.7 API
+- **`hooks`** — repoint commit-msg husky shim to .git-hooks/fleet/
+- **`hooks`** — repoint husky shims to .git-hooks/fleet/ after segmentation
+- **`deps`** — bump vitest to 4.1.6 to clear GHSA-5xrq-8626-4rwp
+- **`hooks`** — declare shell-quote dep so \_shared parser resolves
+- **`lint`** — revert colocate work in packages/cli/src — fleet rule requires export
+- **`lint`** — convert file-scope oxlint disables + clear other violations
+- **`deps`** — restore -stable catalog aliases for self-named fleet packages
+- **`lint`** — clean lint debt in packages/cli/scripts + src
+- **`deps`** — bump hono to 4.12.18, fast-uri to 3.1.2 for CVE patches
+- **`lint`** — dlx test polish — import-type, max-file-lines, sort
+- **`lint`** — generate-report.test — max-file-lines legitimate bypass
+- **`lint`** — cmd-manifest-cdxgen — exported helpers + cached for-loop
+- **`lint`** — telemetry — prefer-function-declaration + cached-for-loop
+- **`lint`** — mark Set-iteration for-of as intentional in 3 sites
+- **`lint`** — clear remaining socket/\* rule violations in cli package
+- **`lint`** — scripts and package-builder
+- **`lint`** — cache array.length in build-infra for-loops
+- **`lint`** — sort-source-methods - reorder 20 src files + oxfmt drift
+- **`lint`** — autofix sort-source-methods (13 files) + cascade canonical script fixes
+- **`lint`** — close out non-blocked socket-cli rules
+- **`lint`** — sort-named-imports — inline-disable intentional domain-grouped barrel import
+- **`lint`** — max-file-lines — file-level bypass on 86 oversized files
+- **`lint`** — no-fetch-prefer-http-request — inline-disable 5 dev-script fetches that need raw Response
+- **`lint`** — apply 2nd-pass oxlint autofixes — sort-source-methods reorder 3 files
+- **`lint`** — personal-path-placeholders — file-level disable on fixture tests + replace example usernames in src comments
+- **`lint`** — prefer-exists-sync — rewrite 2 fileExists helpers + inline-disable legitimate metadata reads
+- **`lint`** — export-top-level-functions — collapse 5 export-block aggregators
+- **`lint`** — apply oxlint autofixes — export-top-level-functions / prefer-exists-sync / prefer-node-builtin-imports / sort-equality-disjunctions / prefer-undefined-over-null
+- **`lint`** — re-cascade canonical oxlint plugin rules — undo self-corruption
+- **`deps`** — bump hono via override to ≥4.12.16 (CVE patched)
+- **`hooks`** — release-workflow-guard — multi-root dry-run resolution
+- **`hooks`** — tighten npx-scanner regex to skip identifier/key contexts
+- **`deps`** — override ip-address >=10.1.1 (GHSA-v2v4-37r5-5v8g)
+- **`hooks`** — anchor hook commands + project paths to $CLAUDE_PROJECT_DIR
+- **`deps`** — regenerate pnpm-lock.yaml for catalog drift
+- **`deps`** — bump nanotar 0.2.0 → 0.2.1 to patch path traversal (CVE-2025-69874) (#1250)
+- **`ci`** — replace close/reopen hack with workflow_dispatch for bot PRs (#1210)
+- **`config`** — align .npmrc and pnpm-workspace.yaml for pnpm v11 (#1198)
+- **`hooks`** — normalize platform keys and strip host prefix from repository (#1194)
+- **`hooks`** — use strings for binary file scanning in pre-push (#1196)
+- **`hooks`** — update zizmor repo from woodruffw to zizmorcore (#1191)
+- **`deps`** — bump vite to 7.3.2 (security) (#1168)
+- **`ci`** — harden weekly-update — allowedTools, two-phase update, diff validation (#1159)
+- **`ci`** — rebuild weekly-update.yml with proper YAML and features
+- **`ci`** — update pnpm/action-setup to Node 24 (58e6119)
+- **`ci`** — add timeout-minutes and shell declarations to workflows
+- **`ci`** — add explicit shell: bash declarations to provenance workflow
+- **`ci`** — add complete stub package with JS implementation for iocraft
+- **`ci`** — create stub packages before pnpm install
+- **`ci`** — setup pnpm before node to enable cache
+- **`deps`** — remove stale restore-cursor patch
+- **`deps`** — remove stale React/Ink dependencies after iocraft migration
+- **`ci`** — read base version from cli-package template
+- **`ci`** — remove integration tests job (no integration tests exist)
+- **`ci`** — simplify CI workflow and remove references to non-existent directories
+- **`ci`** — use pnpm/action-setup to read packageManager from package.json
+- **`hooks`** — check only new commits in pre-push, not all since release
+- **`hooks`** — use portable for loop instead of process substitution in pre-push
+- **`ci`** — add required .env.precommit for pre-commit hooks
+- **`ci`** — improve workflow reliability and security validation
+- **`hooks`** — add prerequisite checks to pre-commit hook
+- **`deps`** — always update Socket packages in update script (#1059)
+- **`deps`** — add restore-cursor signal-exit v4 compatibility patch
+- **`deps`** — update @socketsecurity/lib to v5.5.3 and add signal-exit v4 compatibility patches
+- **`deps`** — update Socket packages regardless of taze result
+- **`deps`** — Remove http2 module dependency from @sigstore/sign
+- **`ci`** — add Node.js and pnpm setup immediately after checkout in all workflows
+- **`bootstrap`** — remove non-existent polyfill imports and fix build errors
+- **`hooks`** — limit pre-push AI attribution check to commits since latest release
+- **`deps`** — fix bin entries and standardize engine requirements
+- **`deps`** — resolve ANSI bundling compatibility issues
+- **`bootstrap`** — use consistent naming for published build flag
+- **`hooks`** — improve AI attribution detection in pre-push hook
+- **`hooks`** — use printf for colored output in pre-push hook
+- **`hooks`** — improve git hook compatibility and formatting
+- **`bootstrap`** — use major version only for CLI download spec
+- **`bootstrap`** — show Socket CLI version instead of Node.js version
+- **`bootstrap`** — skip preflight on --version for instant response
+- **`ci`** — make WASM optional in SEA builds with graceful fallback
+- **`ci`** — remove ai-cache-valid references from build-sea workflow
+- **`ci`** — comment out socketbin-cli-ai references in build-sea workflow
+- **`ci`** — update ONNX Runtime artifact verification to check for .mjs files
+- **`bootstrap`** — remove unnecessary empty log after spinner completes
+- **`deps`** — update all packages to use catalog for @socketsecurity/lib
+- **`lint`** — fix all lint errors and update dependencies
+- **`bootstrap`** — correct stream/promises module path for smol builds
+- **`ci`** — remove expression from build-models job name
+- **`ci`** — build all AI models in workflow
+- **`ci`** — remove invalid job-level matrix conditions from workflows
+- **`ci`** — mark ONNX Runtime WASM build as non-blocking
+- **`ci`** — install optimum[onnxruntime] for ONNX model export
+- **`ci`** — pin onnxruntime>=1.20.0 to ensure INT4 quantization support
+- **`ci`** — upgrade onnxruntime and add INT4 quantization tools
+- **`ci`** — uncomment ONNX Runtime build steps to fix bash syntax error
+- **`bootstrap`** — eliminate spurious error message on successful CLI execution
+- **`gitignore`** — allow docs/build directory without requiring -f flag
+- **`ci`** — align smol cache keys with build-smol.yml in publish-socketbin.yml
+- **`ci`** — use SEA binary cache from build-sea.yml in publish-socketbin.yml
+- **`lint`** — resolve lint errors and remove dead getInternals code
+- **`bootstrap`** — improve error handling for CLI download failures
+- **`ci`** — validate yoga WASM cache instead of building on miss
+- **`ci`** — publish from package directories and build yoga WASM on cache miss
+- **`ci`** — replace obsolete external cache with yoga-layout WASM cache
+- **`ci`** — use 'pnpm run build' instead of non-existent 'build:dist'
+- **`ci`** — add --tag latest to all npm publish commands for prerelease versions
+- **`ci`** — use semver to extract X.Y.Z from package version before appending timestamp
+- **`ci`** — install dependencies before version consistency check
+- **`ci`** — use bash shell for verify binary step on Windows
+- **`ci`** — skip smol build when method=sea and use bash shell for Windows compatibility
+- **`ci`** — use 2-core runners in publish-socketbin for better availability
+- **`ci`** — comment out ONNX runtime in build-sea workflow
+- **`ci`** — correct ONNX package paths in build-sea workflow
+- **`ci`** — correct SEA builder package name in publish-socketbin
+- **`ci`** — add CLI build step before SEA binary build in publish-socketbin
+- **`ci`** — align publish-socketbin binary paths with build-sea naming
+- **`ci`** — upgrade actions/cache to v4.3.0 in publish-socketbin workflow
+- **`bootstrap`** — remove logger usage from smol bootstrap for early initialization
+- **`ci`** — use package version for WASM workflow cache keys
+- **`ci`** — use package version for ONNX Runtime cache key
+- **`bootstrap`** — avoid logger initialization before stdout is ready
+- **`lint`** — exclude test fixtures from Biome linting
+- **`bootstrap`** — load Intl polyfill before logger to prevent smol build failure
+- **`ci`** — disable pip cache in build-wasm to prevent cache failures
+- **`ci`** — correct artifact paths in build-sea workflow
+- **`ci`** — correct artifact paths in build-smol workflow
+- **`ci`** — correct socket package verification in build-sea workflow
+- **`ci`** — remove CLI build from build-deps job in SEA workflow
+- **`ci`** — add detailed cache diagnostics to build-sea workflow
+- **`ci`** — add WASM asset verification before CLI build in SEA workflow
+- **`ci`** — include bootstrap deps in SEA binary cache key
+- **`ci`** — include bootstrap deps in smol binary cache key
+- **`ci`** — correct artifact download path and add relocation logic
+- **`ci`** — add verification step for downloaded build artifacts
+- **`lint`** — remove unused variables and parameters
+- **`ci`** — split dependency builds from matrix parallelization
+- **`ci`** — build bootstrap package before socket and smol/sea builders
+- **`bootstrap`** — export .config/node-version.mjs for workspace imports
+- **`ci`** — skip cache restore when force rebuild is requested
+- **`ci`** — enable cross-OS cache sharing for Windows builds
+- **`ci`** — pass --force flag to WASM build scripts when force rebuild requested
+- **`ci`** — move Windows WASM cache check before build attempt
+- **`ci`** — require WASM cache for Windows SEA builds
+- **`ci`** — add wasm-opt to PATH for Windows Emscripten builds
+- **`ci`** — limit SEA builds to native architectures only
+- **`ci`** — correct SEA binary build for cross-platform compilation
+- **`ci`** — remove pip upgrade to improve Python dependency caching
+- **`ci`** — save ONNX build cache even on failure
+- **`ci`** — use requirements.txt for proper pip caching
+- **`ci`** — add debugging output for WASM build artifact verification
+- **`ci`** — fail builds when WASM artifacts are missing
+- **`ci`** — add cache artifact verification to WASM builds
+- **`ci`** — replace shasum with sha256sum for Windows compatibility
+- **`ci`** — use standard ubuntu-latest runners for WASM builds
+- **`ci`** — correct INT4 quantization import and remove invalid autocrlf
+- **`ci`** — remove push triggers from build-wasm to avoid runner contention
+- **`ci`** — require onnxruntime>=1.20.0 for INT4 quantization
+- **`ci`** — use optimum[onnx] instead of optimum[exporters]
+- **`ci`** — add Python verification step for debugging
+- **`ci`** — setup Python for all platforms in smol build
+- **`ci`** — add Python 3.11 setup for WASM builds in SEA job
+- **`ci`** — add WASM asset restoration to SEA build job
+- **`ci`** — correct package names and cache key generation
+- **`ci`** — ensure dist directories exist before verification
+- **`ci`** — include node-smol-builder patches and additions in cache keys
+- **`ci`** — update patches directory path from build/patches to patches
+- **`ci`** — update actions/cache to v4.3.0
+- **`ci`** — add workflow_call trigger to build-wasm workflow
+- **`ci`** — add WASM asset preparation before CI tests
+- **`ci`** — prevent diagnostic checks from stopping script execution
+- **`gitignore`** — restore dist/ ignore and update build artifact documentation
+- **`ci`** — remove del-cli from test-setup-script
+- **`ci`** — remove redundant pnpm install from test-setup-script
+- **`ci`** — replace rm -rf with cross-platform del-cli command
+- **`deps`** — use socket-lib 1.3.5 with Windows Proxy fix
+- **`ci`** — resolve dependency caching issue causing test failures
+- **`ci`** — use consistent pnpm --filter pattern in test setup
+- **`ci`** — use pnpm --filter to run scripts in monorepo context
+- **`ci`** — remove redundant cd commands in workflow scripts
+- **`deps`** — correct @socketsecurity/lib references in workspace packages
+- **`ci`** — clear Vitest cache before running tests
+- **`config`** — handle Buffer return from safeReadFileSync in findSocketYmlSync
+- **`ci`** — remove coverage-script and coverage-report-script
+- **`ci`** — update workflow SHAs to d8ff3b05
 - **`ci`** — update socket-registry SHA to 5b2880d7
 - **`ci`** — update socket-registry SHA to 662bbcab
 - **`ci`** — update socket-registry SHA to b94a1086
@@ -2123,17 +2134,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`ci`** — update socket-registry SHA to 08fba31a
 - **`ci`** — update socket-registry workflows to latest SHA (c61feb5e)
 - **`ci`** — pin socket-registry workflows to SHA instead of @main
-- improve organization capabilities detection for plan variants
-- enterprise plan filter (#785) Signed-off-by: Ahmad Nassri <email@ahmadnassri.com> Co-authored-by: John-David Dalton <jdalton@users.noreply.github.com>
-- handle pnpm frozen-lockfile in CI for optimize command In CI environments, pnpm automatically runs with --frozen-lockfile which prevents lockfile updates. When the optimize command tries to add overrides and update the lockfile, it fails with ERR_PNPM_LOCKFILE_CONFIG_MISMATCH. Added explicit --no-frozen-lockfile flag when running pnpm install in CI mode to allow the lockfile to be updated with Socket.dev overrides.
-- Add fallback for npm exec path detection When constants.npmExecPath from the published registry doesn't exist or isn't executable, fall back to using whichBin to find npm. This fixes CI failures where the published version's npm-exec-path module might not correctly detect npm in certain environments.
-- Add defensive check for whichBinSync return value The published version of @socketsecurity/registry may return a string when only one result is found even with all: true. This defensive check handles both cases to ensure compatibility with the current published version and future versions that properly return an array.
 
 ## [Unreleased]
-
-### Changed
-
-- `socket organization quota` is no longer hidden and now shows remaining quota, total quota, usage percentage, and the next refresh time in text and markdown output.
 
 ### Added
 
@@ -2153,6 +2155,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Border customization: borderEdges for selective border rendering (top, right, bottom, left)
   - Layout spacing: rowGap and columnGap for fine-grained flex item spacing
 
+### Changed
+
+- `socket organization quota` is no longer hidden and now shows remaining quota, total quota, usage percentage, and the next refresh time in text and markdown output.
+
+### Fixed
+
+- Prevent heap overflow in large monorepo scans by using streaming-based filtering to avoid accumulating all file paths in memory before filtering.
+- `socket scan create` now rejects `--default-branch=<name>` and `--default-branch <name>` (space-separated) with an actionable error instead of silently dropping the branch name. Scans that used the misuse shape were getting recorded without a branch tag and disappearing from the Main/PR dashboard tabs.
+- `socket repository create` / `socket repository update` now reject bare `--default-branch` (no value) and `--default-branch=` (empty value). Previously both persisted a blank default-branch name on the repo record.
+- `socket cdxgen` no longer silently produces SBOMs with an empty `components` array when run in the default `--lifecycle pre-build` + `--no-install-deps` mode against a Node.js project that has no lockfile and no `node_modules/`. The command now fails fast with an actionable error (install dependencies or pass `--lifecycle build`), and when the generated BOM still ends up empty for any other reason (e.g. overly narrow `--filter`/`--only`), emits a post-run warning so the condition is surfaced instead of shipping an SBOM that renders as "no alerts" on the Socket dashboard.
+
 ### Updated
 
 - Updated to @socketsecurity/socket-patch@1.2.0.
@@ -2162,13 +2175,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Deprecated
 
 - `socket scan create --default-branch` / `--defaultBranch` — use `--make-default-branch` instead. The legacy names still work during the deprecation window but emit a warning.
-
-### Fixed
-
-- Prevent heap overflow in large monorepo scans by using streaming-based filtering to avoid accumulating all file paths in memory before filtering.
-- `socket scan create` now rejects `--default-branch=<name>` and `--default-branch <name>` (space-separated) with an actionable error instead of silently dropping the branch name. Scans that used the misuse shape were getting recorded without a branch tag and disappearing from the Main/PR dashboard tabs.
-- `socket repository create` / `socket repository update` now reject bare `--default-branch` (no value) and `--default-branch=` (empty value). Previously both persisted a blank default-branch name on the repo record.
-- `socket cdxgen` no longer silently produces SBOMs with an empty `components` array when run in the default `--lifecycle pre-build` + `--no-install-deps` mode against a Node.js project that has no lockfile and no `node_modules/`. The command now fails fast with an actionable error (install dependencies or pass `--lifecycle build`), and when the generated BOM still ends up empty for any other reason (e.g. overly narrow `--filter`/`--only`), emits a post-run warning so the condition is surfaced instead of shipping an SBOM that renders as "no alerts" on the Socket dashboard.
 
 ## [2.1.0](https://github.com/SocketDev/socket-cli/releases/tag/v2.1.0) - 2025-11-02
 
@@ -2253,16 +2259,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [2.0.0](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.0) - 2025-10-29
 
-### Changed
-
-- **BREAKING**: CLI now ships as single executable binary requiring no external Node.js installation
-
 ### Added
 
 - GitLab merge request support for `socket fix`
 - Persistent GHSA tracking to avoid duplicate fixes
 - Markdown output support for `socket fix` and `socket optimize`
 - `--reach-min-severity` flag to filter reachability analysis by vulnerability severity threshold
+
+### Changed
+
+- **BREAKING**: CLI now ships as single executable binary requiring no external Node.js installation
 
 ### Fixed
 
@@ -2436,13 +2442,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [0.15.64](https://github.com/SocketDev/socket-cli/releases/tag/v0.15.64) - 2025-06-13
 
-### Fixed
-
-- Improved `socket fix` error handling when server rejects request
-
 ### Changed
 
 - Final pre-v1.0.0 stability improvements
+
+### Fixed
+
+- Improved `socket fix` error handling when server rejects request
 
 ## [0.15.63](https://github.com/SocketDev/socket-cli/releases/tag/v0.15.63) - 2025-06-12
 
@@ -2509,17 +2515,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `DISABLE_GITHUB_CACHE` environment variable
 - `cdxgen` lifecycle logging and documentation hyperlinks
 
+### Changed
+
+- Enhanced JSON-safe API handling
+- Updated `cdxgen` flags and configuration
+
 ### Fixed
 
 - Set `exitCode=1` when login steps fail
 - Fixed Socket package URLs
 - Band-aid fix for `socket analytics`
 - Improved handling of non-SDK API calls
-
-### Changed
-
-- Enhanced JSON-safe API handling
-- Updated `cdxgen` flags and configuration
 
 ## [0.14.0](https://github.com/SocketDev/socket-cli/releases/tag/v0.14.0) - 2024-10-10
 
@@ -2532,15 +2538,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `SOCKET_CLI_NO_API_TOKEN` environment variable support
 - Improved test snapshot updating
 
+### Changed
+
+- Added Node permissions for shadow-bin
+
 ### Fixed
 
 - Spinner management in report flow and after API errors
 - API error handling for non-SDK calls
 - Package URL corrections
-
-### Changed
-
-- Added Node permissions for shadow-bin
 
 ## [0.13.0](https://github.com/SocketDev/socket-cli/releases/tag/v0.13.0) - 2024-09-06
 
@@ -2602,15 +2608,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Python report creation capabilities
 - CLI login/logout functionality
 
+### Changed
+
+- Switched to base64 encoding for certain operations
+
 ### Fixed
 
 - Lockfile handling to ensure saves on `socket npm install`
 - Report creation issues
 - Python uploads via CLI
-
-### Changed
-
-- Switched to base64 encoding for certain operations
 
 ## [0.6.0](https://github.com/SocketDev/socket-cli/releases/tag/v0.6.0) - 2023-04-11
 
