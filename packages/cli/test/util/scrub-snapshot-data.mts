@@ -138,6 +138,15 @@ export function scrubSnapshotData(
     scrubbed = scrubbed.replace(/socket@\d+\.\d+\.\d+/g, 'socket@[VERSION]')
   }
 
+  // Detected package manager version: "Detected pnpm v11.11.0". This reads
+  // whatever npm/pnpm/yarn/bun binary is on the ambient PATH, so it varies by
+  // machine and CI runner — always scrubbed, independent of the `versions`
+  // flag above, which stays off by default for values under test.
+  scrubbed = scrubbed.replace(
+    /\b(bun|npm|pnpm|yarn) v\d+\.\d+\.\d+/g,
+    '$1 vX.Y.Z',
+  )
+
   // Phase 5: IP addresses.
   if (ipAddresses) {
     // IPv4.

@@ -98,10 +98,10 @@ describe('socket optimize output formats and paths', () => {
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
-        "[DryRun]: Optimize dependencies with @socketregistry overrides (pnpm v11.11.0)
+        "[DryRun]: Optimize dependencies with @socketregistry overrides (pnpm vX.Y.Z)
 
           Actions that would be performed:
-            - [fetch] Detected pnpm v11.11.0 \\u2192 [PROJECT]
+            - [fetch] Detected pnpm vX.Y.Z \\u2192 [PROJECT]
             - [fetch] Analyze dependencies against @socketregistry overrides \\u2192 package.json and lockfile
             - [modify] Add or update overrides section in package.json \\u2192 [PROJECT]/package.json
                 pin: "No - use version ranges"
@@ -133,10 +133,10 @@ describe('socket optimize output formats and paths', () => {
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
-        "[DryRun]: Optimize dependencies with @socketregistry overrides (pnpm v11.11.0)
+        "[DryRun]: Optimize dependencies with @socketregistry overrides (pnpm vX.Y.Z)
 
           Actions that would be performed:
-            - [fetch] Detected pnpm v11.11.0 \\u2192 [PROJECT]
+            - [fetch] Detected pnpm vX.Y.Z \\u2192 [PROJECT]
             - [fetch] Analyze dependencies against @socketregistry overrides \\u2192 package.json and lockfile
             - [modify] Add or update overrides section in package.json \\u2192 [PROJECT]/package.json
                 pin: "No - use version ranges"
@@ -224,10 +224,10 @@ describe('socket optimize output formats and paths', () => {
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
-        "[DryRun]: Optimize dependencies with @socketregistry overrides (pnpm v11.11.0)
+        "[DryRun]: Optimize dependencies with @socketregistry overrides (pnpm vX.Y.Z)
 
           Actions that would be performed:
-            - [fetch] Detected pnpm v11.11.0 \\u2192 [PROJECT]/packages/cli/test/fixtures/commands/optimize/pnpm
+            - [fetch] Detected pnpm vX.Y.Z \\u2192 [PROJECT]/packages/cli/test/fixtures/commands/optimize/pnpm
             - [fetch] Analyze dependencies against @socketregistry overrides \\u2192 package.json and lockfile
             - [modify] Add or update overrides section in package.json \\u2192 [PROJECT]/packages/cli/test/fixtures/commands/optimize/pnpm/package.json
                 pin: "Yes - pin to specific versions"
@@ -278,10 +278,10 @@ describe('socket optimize output formats and paths', () => {
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
-        "[DryRun]: Optimize dependencies with @socketregistry overrides (pnpm v11.11.0)
+        "[DryRun]: Optimize dependencies with @socketregistry overrides (pnpm vX.Y.Z)
 
           Actions that would be performed:
-            - [fetch] Detected pnpm v11.11.0 \\u2192 [PROJECT]
+            - [fetch] Detected pnpm vX.Y.Z \\u2192 [PROJECT]
             - [fetch] Analyze dependencies against @socketregistry overrides \\u2192 package.json and lockfile
             - [modify] Add or update overrides section in package.json \\u2192 [PROJECT]/package.json
                 pin: "Yes - pin to specific versions"
