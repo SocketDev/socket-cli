@@ -50,7 +50,7 @@
     "verify": "node scripts/verify-package.mts"
   },
   "devDependencies": {
-    "build-infra": "workspace:*",
+    "build-infra": "workspace:1.0.0",
     "rolldown": "catalog:"
   },
   "engines": {

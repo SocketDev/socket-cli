@@ -851,7 +851,7 @@ importers:
         specifier: 'catalog:'
         version: 7.0.2001
       package-builder:
-        specifier: workspace:*
+        specifier: workspace:1.0.0
         version: link:packages/package-builder
       playwright-core:
         specifier: 'catalog:'
@@ -3166,7 +3166,7 @@ importers:
         specifier: 'catalog:'
         version: 4.28.6
       build-infra:
-        specifier: workspace:*
+        specifier: workspace:1.0.0
         version: link:../build-infra
       chalk-table:
         specifier: 'catalog:'
@@ -3220,7 +3220,7 @@ importers:
         specifier: 'catalog:'
         version: 10.2.0
       package-builder:
-        specifier: workspace:*
+        specifier: workspace:1.0.0
         version: link:../package-builder
       registry-auth-token:
         specifier: 'catalog:'
@@ -3268,7 +3268,7 @@ importers:
         specifier: 6.3.0
         version: 6.3.0(typescript@7.0.2)
       build-infra:
-        specifier: workspace:*
+        specifier: workspace:1.0.0
         version: link:../build-infra
       handlebars:
         specifier: ^4.7.9
