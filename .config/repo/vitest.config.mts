@@ -388,9 +388,29 @@ export default defineConfig({
     // 2-core runners × parallel workers starve spawn-per-case suites
     // (RuleTester spawns one oxlint child per case) — the 10s/30s ceilings
     // killed lint-rule suites mid-queue on every OS while the same files pass
-    // locally.
-    testTimeout: getCI() ? 60_000 : isCoverageEnabled ? 30_000 : 10_000,
-    hookTimeout: getCI() ? 60_000 : isCoverageEnabled ? 30_000 : 10_000,
+    // locally. CI *with* coverage is strictly heavier than either alone
+    // (instrumentation + 4-core contention + thousands of instrumented child
+    // spawns in one run), so it gets the longest budget — the plain-CI 60s
+    // still timed out the spawn-per-case hook specs (npm-2fa-needs-pty-guard,
+    // single-lander-guard) under peak release-cover contention, losing their
+    // coverage and failing the gate while all four metrics were above
+    // threshold. Complete the ladder rather than shave the threshold.
+    testTimeout:
+      getCI() && isCoverageEnabled
+        ? 120_000
+        : getCI()
+          ? 60_000
+          : isCoverageEnabled
+            ? 30_000
+            : 10_000,
+    hookTimeout:
+      getCI() && isCoverageEnabled
+        ? 120_000
+        : getCI()
+          ? 60_000
+          : isCoverageEnabled
+            ? 30_000
+            : 10_000,
     bail: resolveBail(isCoverageEnabled, Boolean(getCI())),
     // Coverage shape comes from the fleet base merged with the repo-owned
     // `.config/repo/coverage.json` overlay (include replace, exclude

@@ -21,7 +21,7 @@ catalog:
   '@sinclair/typebox': 0.34.52
   '@socketregistry/packageurl-js': 1.4.8
   '@socketsecurity/lib': 6.3.0
-  '@socketsecurity/registry': 'npm:@socketsecurity/registry@2.0.5'
+  '@socketsecurity/registry': 2.0.5
   '@socketsecurity/sdk': 4.1.2
   '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.4.8'
   '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@6.3.0'
@@ -33,7 +33,7 @@ catalog:
   '@types/shell-quote': 1.7.5
   # Rust wasm parser artifact (dot-naming: acorn.rs.wasm = acorn, Rust impl,
   # wasm target) — the AST dep of the fleet hooks + the socket/* oxlint plugin.
-  '@ultrathink/acorn.rs.wasm': 0.0.1
+  '@ultrathink/acorn.rs.wasm': 0.1.1
   # istanbul-org converter for raw NODE_V8_COVERAGE output — cover.mts turns
   # spawned-child coverage into the children merge tier with `c8 report`.
   # Soaked (11.0.0 published 2026-02-22).
