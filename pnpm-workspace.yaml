@@ -365,6 +365,18 @@ overrides:
   '@socketsecurity/lib': 'catalog:'
   '@socketsecurity/registry': 'catalog:'
   '@socketsecurity/sdk': 'catalog:'
+  # Dedup: @sindresorhus/df 1 (mount-point) + 3 (xdg-trashdir) → 5.0.0, the
+  # only line that is maintained and the one that drops execa@2 (df 5 uses
+  # execa ^9.6.0, which dedups onto the 9.6.1 already in the tree). df 5 is
+  # ESM-only with named exports, so both CJS consumers carry a paired patch
+  # swapping their top-level require for a dynamic import inside the async
+  # function that already wraps the call.
+  '@sindresorhus/df': '5.0.0'
+  # Dedup: execa 2 (the legacy df chain) + 9 → 10.0.0. execa 10 keeps the
+  # named `execa` export and the `{stdout}` result df calls for, and depends
+  # on signal-exit v4 natively — the very mismatch the old execa@2 patch
+  # existed to shim, so that patch retires with this collapse.
+  'execa': '10.0.0'
   # The previous transitive 1.0.2 release failed the trust policy; 1.0.4 has
   # cleared the seven-day soak and restores the normal no-downgrade gate.
   'ast-v8-to-istanbul': '1.0.5'
@@ -473,13 +485,11 @@ patchedDependencies:
   # bundle node:http2-free. Consumer: the CLI's sigstore-backed provenance path.
   # Re-keyed across the 4.1.0 -> 5.0.0 bump.
   '@sigstore/sign@5.0.0': patches/@sigstore__sign@5.0.0.patch
+  '@sindresorhus/df@5.0.0': patches/@sindresorhus__df@5.0.0.patch
   # Replaces the unconditional require('http2') constants with literals so the
   # bundle loads on node-smol SEA builds, which ship without http2. Consumer:
   # packages/cli SEA binary.
-  # signal-exit is deduped to v4, which exports a named onExit instead of the
-  # v3 default export execa calls; restores the call contract. Consumer:
-  # packages/cli bundled npm tooling.
-  execa@2.1.0: patches/execa@2.1.0.patch
+  mount-point@3.0.0: patches/mount-point@3.0.0.patch
   # Same signal-exit v4 named-onExit contract restore as execa@2.1.0.
   # Consumer: packages/cli bundled npm tooling.
   # Drops the bundled Find-VisualStudio.cs source (compiled ad hoc on Windows
@@ -491,6 +501,7 @@ patchedDependencies:
   # consumer: the fleet update runner (`pnpm run update` via taze), which must
   # keep version lookups on the registry .npmrc configures.
   taze@19.16.0: patches/taze@19.16.0.patch
+  xdg-trashdir@3.1.0: patches/xdg-trashdir@3.1.0.patch
 saveExact: true
 strictPeerDependencies: true
 trustPolicy: no-downgrade

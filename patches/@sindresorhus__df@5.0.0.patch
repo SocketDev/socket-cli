@@ -1,0 +1,13 @@
+diff --git a/package.json b/package.json
+index 8a3e3ebab9dc144193f372f6be08be70a30402dc..7b8cc513182c75647a29f42654e866705a3a8d09 100644
+--- a/package.json
++++ b/package.json
+@@ -44,7 +44,7 @@
+ 		"capacity"
+ 	],
+ 	"dependencies": {
+-		"execa": "^9.6.0"
++		"execa": "^10.0.0"
+ 	},
+ 	"devDependencies": {
+ 		"ava": "^6.4.1",
