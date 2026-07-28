@@ -119,7 +119,6 @@
     "@typescript/native-preview": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "@vitest/ui": "catalog:",
-    "@yao-pkg/pkg": "catalog:",
     "browserslist": "catalog:",
     "c8": "catalog:",
     "chalk-table": "catalog:",
