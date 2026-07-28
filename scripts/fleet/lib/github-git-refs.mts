@@ -83,6 +83,39 @@ export async function updateBranchRef(
   })
 }
 
+export interface CreateTagRefConfig {
+  // Override the API origin (GitHub Enterprise / tests). Defaults to api.github.com.
+  readonly apiUrl?: string | undefined
+  // Repo in "owner/name" form.
+  readonly repo: string
+  // Commit SHA the tag should mark.
+  readonly sha: string
+  // Short tag name without the `refs/tags/` prefix, e.g. 'v1.4.3'.
+  readonly tag: string
+  // GitHub token with contents:write (the release App token in CI).
+  readonly token: string
+}
+
+/**
+ * Create `refs/tags/<tag>` pointing at `sha`. The release stage's tag push
+ * runs in a checkout with `persist-credentials: false`, so a plain
+ * `git push origin <tag>` has no credential and exits 128 — this API route
+ * uses the same App token the branch-based bump already holds, so the tag
+ * lands even when git itself cannot push. Throws `HttpResponseError` on a
+ * non-2xx response — including 422 when the tag already exists (the caller
+ * treats an existing tag as success via its own ls-remote check).
+ */
+export async function createTagRef(config: CreateTagRefConfig): Promise<void> {
+  const cfg = { __proto__: null, ...config } as CreateTagRefConfig
+  const apiUrl = cfg.apiUrl ?? DEFAULT_API_URL
+  await httpJson(`${apiUrl}/repos/${cfg.repo}/git/refs`, {
+    body: JSON.stringify({ ref: `refs/tags/${cfg.tag}`, sha: cfg.sha }),
+    headers: refHeaders(cfg.token),
+    method: 'POST',
+    timeout: 30_000,
+  })
+}
+
 /**
  * Delete `refs/heads/<branch>`. Idempotent: a 404/422, the ref is already gone
  * is swallowed so cleanup after a failed or re-run publish never itself throws.

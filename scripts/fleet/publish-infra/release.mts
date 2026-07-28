@@ -15,6 +15,7 @@ import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 import { sleep } from '@socketsecurity/lib-stable/promises/timers'
 
+import { createTagRef } from '../lib/github-git-refs.mts'
 import { formatReleaseGapFailure } from '../_shared/release-gap-recovery.mts'
 import { resolveReleaseSubject } from '../_shared/release-subject.mts'
 import { withPrunedPackManifest } from './npm/pack-manifest.mts'
@@ -291,16 +292,41 @@ export async function ensureTagAndRelease(
       rootPath,
     )
     if (remote.code !== 0 || !remote.stdout.includes(`refs/tags/${tagName}`)) {
-      logger.fail(
-        `could not push tag ${tagName} to origin (git push exited ${pushed.code}) ` +
-          `and origin does not carry it.\n` +
-          `  Wanted: refs/tags/${tagName} on origin before the GitHub release is cut.\n` +
-          `  Fix: resolve the push (auth? protected ref? network?) and re-run the reconcile below.`,
+      // CI checkouts run `persist-credentials: false`, so the plain git push
+      // above has no credential and exits 128 — retry over the GitHub API
+      // with the App token the branch-based bump already holds. This is the
+      // exact shape that stranded a published crate version tagless while
+      // its release branch was already gone.
+      const apiRepo = process.env['GITHUB_REPOSITORY']
+      const apiToken =
+        process.env['RELEASE_APP_TOKEN'] || process.env['GH_TOKEN'] || ''
+      const tagSha = await runCapture(
+        'git',
+        ['rev-parse', `refs/tags/${tagName}`],
+        rootPath,
       )
-      process.exitCode = 1
-      return false
+      if (!apiRepo || !apiToken || tagSha.code !== 0) {
+        logger.fail(
+          `could not push tag ${tagName} to origin (git push exited ${pushed.code}) ` +
+            `and origin does not carry it.\n` +
+            `  Wanted: refs/tags/${tagName} on origin before the GitHub release is cut.\n` +
+            `  Fix: resolve the push (auth? protected ref? network?) — in CI, set ` +
+            `GITHUB_REPOSITORY and an App token env so the GitHub API route can ` +
+            `create the tag — and re-run the reconcile below.`,
+        )
+        process.exitCode = 1
+        return false
+      }
+      await createTagRef({
+        repo: apiRepo,
+        sha: tagSha.stdout.trim(),
+        tag: tagName,
+        token: apiToken,
+      })
+      logger.log(`Created tag ${tagName} on origin via the GitHub API.`)
+    } else {
+      logger.log(`Tag ${tagName} already on origin; continuing.`)
     }
-    logger.log(`Tag ${tagName} already on origin; continuing.`)
   }
 
   const view = await runCapture(

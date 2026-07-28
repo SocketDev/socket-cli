@@ -68,7 +68,8 @@
     "type": "node node_modules/typescript/bin/tsc --noEmit -p .config/fleet/tsconfig.check.json",
     "npm:publish": "node scripts/fleet/publish-pipeline.mts",
     "prepublishOnly": "echo 'ERROR: Use GitHub Actions workflow for publishing' && exit 1",
-    "socket-wheelhouse:emit-schema": "node scripts/fleet/socket-wheelhouse-emit-schema.mts"
+    "socket-wheelhouse:emit-schema": "node scripts/fleet/socket-wheelhouse-emit-schema.mts",
+    "mcp:reset": "node scripts/fleet/mcp-reset.mts"
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "catalog:",

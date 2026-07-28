@@ -31,6 +31,7 @@ export const AI_HANDLED_RULES: ReadonlySet<string> = new Set([
   'socket/no-fetch-prefer-http-request',
   'socket/no-malformed-bypass-marker',
   'socket/no-namespace-import',
+  'socket/no-parenthetical-aside',
   'socket/no-placeholders',
   'socket/no-source-sniffing',
   'socket/personal-path-placeholders',
@@ -95,6 +96,11 @@ export const RULE_MODEL_TIER: Readonly<
   // about pattern semantics — Sonnet's the right depth (Haiku tends to write a
   // shallow restatement; Opus is overkill).
   'socket/require-regex-comment': 'sonnet',
+  // Parenthetical aside: the right rewrite depends on where the prose lives.
+  // Drop the aside from a description or tagline, flesh it into a full sentence
+  // in a code comment, or promote it to a Note: sentence. Prose judgment, not a
+  // mechanical swap, so Sonnet's depth over Haiku's comma-flatten failure mode.
+  'socket/no-parenthetical-aside': 'sonnet',
   // Module decomposition. The model has to read the whole file, partition
   // by domain, decide what each new module exports, and rewrite imports
   // in every consumer. Real refactoring; Opus's depth pays back.
@@ -265,4 +271,45 @@ export const RULE_GUIDANCE: Readonly<Record<string, string>> = {
 + // check for model
   const hasModel = /(?:[\\s,{]|^)model\\s*[:,}]/.test(span)
 </bad-fix>`,
+  'socket/no-parenthetical-aside': `A prose parenthetical aside fired — text shaped like \`word (extra detail) more\`. The detector already skips code-shaped parens such as call args, \`(0o444)\`, and backtick spans, so what fired is genuine prose. Choose the rewrite by WHERE the prose lives. NEVER swap the parens for commas: mechanical comma-flattening is the exact failure this rule exists to stop — it is ungrammatical and cannot tell an aside from a list.
+
+<context-rules>
+  1. JSON "description" fields, package taglines, and README one-line headings: the aside is decoration the line does not need. DROP it and keep the sentence tight.
+  2. Code comments, \`//\` or block form: FLESH the parenthetical into a full-sentence thought. Fold the detail into a real sentence, or a following sentence, so the comment reads as prose rather than a note with a bracketed afterthought.
+  3. A detail that genuinely must stand apart: promote it to a \`Note: …\` sentence instead of a parenthetical.
+</context-rules>
+
+<hard-rules>
+  - NEVER rewrite \`(X)\` to \`, X,\`. Comma-flattening is banned.
+  - Preserve meaning. Only descriptions and taglines may shed a decorative aside; a code comment keeps its information, reshaped into a sentence.
+  - Rewrite ONLY the flagged prose span. Do not touch code, data string literals, or a paren the detector did not flag.
+</hard-rules>
+
+<bad-fix description="Mechanical comma-flatten. Ungrammatical, cannot tell an aside from a list. NEVER do this.">
+- // Resolve the config dir \`~/.gemini\` (all OSes).
++ // Resolve the config dir \`~/.gemini\`, all OSes.
+- // Read the config (and, for Claude, memory).
++ // Read the config, and, for Claude, memory,
+- // Match glob patterns (forward slashes on Win).
++ // Match glob patterns, forward slashes on Win.
+</bad-fix>
+
+<good-fix description="Flesh a code comment into a full sentence; the detail becomes prose.">
+- // Resolve the config dir \`~/.gemini\` (all OSes).
++ // Resolve the config dir \`~/.gemini\`, the same path on every OS.
+- // Read the config (and, for Claude, memory).
++ // Read the config, plus the memory file when the backend is Claude.
+- // Match glob patterns (forward slashes on Win).
++ // Match glob patterns. On Windows the separators are forward slashes.
+</good-fix>
+
+<good-fix description="Description or tagline: drop the decorative aside.">
+- "description": "Fast bundler (written in Rust)"
++ "description": "Fast bundler"
+</good-fix>
+
+<good-fix description="A detail that must stand apart becomes a Note: sentence.">
+- // Retry the request (only idempotent verbs are safe to replay).
++ // Retry the request. Note: only idempotent verbs are safe to replay.
+</good-fix>`,
 } as unknown as Readonly<Record<string, string>>
